@@ -434,11 +434,80 @@ def cmd_scan(args) -> int:
                 if reason:
                     print(f"      - {reason}")
 
+    if result["flagged"] and args.price_first_five:
+        _price_flagged_first_five(result["flagged"], args.date)
+
     if result["flagged"]:
         print("\n  These are candidates to look at, not recommendations. The "
               "thresholds are pre-registered guesses that have never been "
               "validated against a result.")
     return EXIT_OK
+
+
+def _price_flagged_first_five(flagged, game_date) -> None:
+    """Fetch first-five prices for flagged games only.
+
+    Deliberately restricted to flagged games. The per-event endpoint bills per game,
+    so pricing a whole slate's first five costs sixteen times what pricing two flagged
+    games costs, and would exhaust a free month in under two days. This is where the
+    scanner's silence pays for itself.
+    """
+    from src.pipeline import slate as slate_mod
+    from src.providers import odds as odds_prov
+
+    if not odds_prov.is_configured():
+        print(f"\n  (first-five pricing skipped: {odds_prov.status()['message']})")
+        return
+
+    try:
+        events = odds_prov.list_events()
+    except odds_prov.OddsProviderError as exc:
+        print(f"\n  (first-five pricing unavailable: {exc})")
+        return
+
+    by_matchup = {}
+    for event in events:
+        away = slate_mod.team_abbrev_from_name(event.get("away_team"))
+        home = slate_mod.team_abbrev_from_name(event.get("home_team"))
+        if away and home:
+            by_matchup[(away, home)] = event.get("id")
+
+    wanted = ["h2h_1st_5_innings", "totals_1st_5_innings"]
+    cost = odds_prov.estimate_event_credits(len(flagged), markets=wanted)
+    print(f"\n  first-five prices ({cost['credits_total']} credits for "
+          f"{len(flagged)} game(s), {cost['credits_per_event']} each):")
+
+    for scan in flagged:
+        key = (scan["away_team"], scan["home_team"])
+        event_id = by_matchup.get(key)
+        if not event_id:
+            # Named rather than skipped. A missing event is usually a team-code
+            # mismatch between the two feeds, which has silently cost this project
+            # data twice before.
+            print(f"    {scan['away_team']} @ {scan['home_team']}: "
+                  "no matching event in the odds feed")
+            continue
+        try:
+            record = odds_prov.normalize_event(
+                odds_prov.fetch_event_odds(event_id, markets=wanted))
+        except odds_prov.OddsProviderError as exc:
+            print(f"    {scan['away_team']} @ {scan['home_team']}: {exc}")
+            continue
+
+        ml = record["markets"].get("h2h_1st_5_innings")
+        total = record["markets"].get("totals_1st_5_innings")
+        print(f"    {scan['away_team']} @ {scan['home_team']}  (scan likes "
+              f"{scan['side']})")
+        if ml:
+            print(f"      F5 moneyline [{ml['book']}]  away {ml['away_price']:+d}  "
+                  f"home {ml['home_price']:+d}")
+        else:
+            print("      F5 moneyline: not offered")
+        if total:
+            print(f"      F5 total     [{total['book']}]  {total['total']}  "
+                  f"over {total['over_price']:+d}  under {total['under_price']:+d}")
+        else:
+            print("      F5 total: not offered")
 
 
 def cmd_predict(args) -> int:
@@ -807,6 +876,9 @@ def build_parser() -> argparse.ArgumentParser:
                           help="date to scan, YYYY-MM-DD")
     scan_cmd.add_argument("--verbose", action="store_true",
                           help="show why each game did or did not clear the bar")
+    scan_cmd.add_argument("--price-first-five", action="store_true",
+                          help="fetch first-five prices for flagged games only "
+                               "(spends credits per flagged game)")
 
     predict_cmd = sub.add_parser("predict",
                                  help="predict a slate and compare to the market")

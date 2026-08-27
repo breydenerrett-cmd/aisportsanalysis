@@ -49,6 +49,31 @@ ENV_ODDS_FORMAT = "ODDS_API_ODDS_FORMAT"
 
 DEFAULT_REGION = "us"
 DEFAULT_MARKETS = ("h2h", "spreads", "totals")
+
+# First-five-innings markets. These are NOT available on the featured /odds endpoint
+# -- it answers 422 INVALID_MARKET for them, verified against the live API -- and are
+# only served per event by /events/{id}/odds.
+#
+# THE COST SHAPE IS COMPLETELY DIFFERENT AND IT DRIVES THE DESIGN
+# ---------------------------------------------------------------
+# Featured /odds bills markets x regions ONCE for the whole slate. The per-event
+# endpoint bills markets x regions PER EVENT. Measured live: 2 markets on one event
+# cost 2 credits, so a 16-game slate at 2 F5 markets is 32 credits a snapshot, and
+# the 500-credit free month buys about fifteen full-slate F5 snapshots. Fetching the
+# whole slate's first-five prices four times a day would exhaust a month in under
+# two days.
+#
+# So F5 is fetched for NAMED EVENTS ONLY. That is not a limitation worked around; it
+# is the mismatch scanner's output used as it was meant to be. A scanner that stays
+# quiet on twelve of fifteen games is what makes first-five pricing affordable at
+# all, and a scanner that fired on everything would be unaffordable regardless of
+# whether it was right.
+EVENT_MARKETS = ("h2h_1st_5_innings", "spreads_1st_5_innings", "totals_1st_5_innings")
+
+# Everything a caller may legitimately name. Kept separate from DEFAULT_MARKETS,
+# which is what gets requested when nothing is configured -- conflating "allowed"
+# with "default" is what previously made an F5 market unnameable.
+SUPPORTED_MARKETS = DEFAULT_MARKETS + EVENT_MARKETS
 ODDS_FORMAT = "american"
 
 SETUP_MESSAGE = (
@@ -308,6 +333,73 @@ def fetch_odds(markets=None, region=None, env=None,
     return _get_json(f"sports/{SPORT}/odds", params, timeout=timeout)
 
 
+def list_events(env=None, timeout: int = DEFAULT_TIMEOUT):
+    """List upcoming events with their ids. Free -- the /events endpoint costs 0 credits.
+
+    Needed because the per-event odds endpoint is addressed by event id, and ids are
+    not derivable from team names. Being free, this can be called on every run without
+    thinking about the budget, which is why event lookup is not cached.
+    """
+    source = os.environ if env is None else env
+    key = api_key(source)
+    if key is None:
+        raise NotConfigured(SETUP_MESSAGE)
+    return _get_json(f"sports/{SPORT}/events", {"apiKey": key}, timeout=timeout)
+
+
+def fetch_event_odds(event_id, markets=None, region=None, env=None,
+                     timeout: int = DEFAULT_TIMEOUT):
+    """Fetch odds for ONE event, which is the only way to reach first-five markets.
+
+    Billed markets x regions for this single event. Call it for games a scan has
+    actually flagged; calling it across a whole slate is what exhausts a free month
+    in a day and a half. See EVENT_MARKETS for the measured numbers.
+    """
+    source = os.environ if env is None else env
+    key = api_key(source)
+    if key is None:
+        raise NotConfigured(SETUP_MESSAGE)
+    if not event_id or not isinstance(event_id, str):
+        raise OddsProviderError(f"event id must be a non-empty string, got {event_id!r}")
+    resolved = (list(EVENT_MARKETS) if markets is None
+                else _validate_markets(markets, allow_event_markets=True))
+    params = {
+        "apiKey": key,
+        "regions": region or (source.get(ENV_REGION) or "").strip() or DEFAULT_REGION,
+        "markets": ",".join(resolved),
+        "oddsFormat": configured_odds_format(source),
+    }
+    return _get_json(f"sports/{SPORT}/events/{event_id}/odds", params, timeout=timeout)
+
+
+def estimate_event_credits(events: int, markets=None, regions=(DEFAULT_REGION,)) -> dict:
+    """What a per-event fetch costs, stated next to what the same markets would cost
+    if they were available on the featured endpoint.
+
+    The comparison is the point. The featured endpoint's cost is flat in the number
+    of games; this one is linear. Reporting only the total invites the reader to
+    reuse a featured-endpoint intuition that is wrong by a factor of the slate size.
+    """
+    market_list = (list(EVENT_MARKETS) if markets is None
+                   else _validate_markets(markets, allow_event_markets=True))
+    region_list = [r for r in regions if r]
+    if not region_list:
+        raise OddsProviderError("at least one region is required")
+    if events < 0:
+        raise OddsProviderError(f"events must not be negative, got {events}")
+    per_event = len(market_list) * len(region_list)
+    total = per_event * events
+    return {
+        "markets": market_list,
+        "events": events,
+        "credits_per_event": per_event,
+        "credits_total": total,
+        "if_it_were_a_featured_call": per_event,
+        "free_tier_monthly": 500,
+        "snapshots_per_free_month": (500 // total) if total else None,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Normalization
 # ---------------------------------------------------------------------------
@@ -330,12 +422,15 @@ def normalize_event(event: dict, preferred_book=None) -> dict:
     bookmakers = event.get("bookmakers") or []
     ordered = _order_books(bookmakers, preferred_book)
 
-    for market_key in DEFAULT_MARKETS:
+    # The superset, not just the featured three. A market no book offers is simply
+    # absent, so scanning for first-five keys costs nothing on a featured response
+    # and means an event response does not need a second, near-identical normalizer.
+    for market_key in DEFAULT_MARKETS + EVENT_MARKETS:
         for book in ordered:
             market = _find_market(book, market_key)
             if market is None:
                 continue
-            outcomes = _parse_outcomes(market, market_key, record)
+            outcomes = _parse_outcomes(market, _shape_of(market_key), record)
             if outcomes is None:
                 continue
             record["markets"][market_key] = {
@@ -361,6 +456,20 @@ def _find_market(book, market_key):
         if market.get("key") == market_key:
             return market
     return None
+
+
+# First-five markets carry exactly the outcome shape of their full-game counterparts
+# -- two named sides, or Over/Under with a point -- so they are parsed by the same
+# code rather than by a copy of it that could drift.
+_MARKET_SHAPES = {
+    "h2h_1st_5_innings": "h2h",
+    "spreads_1st_5_innings": "spreads",
+    "totals_1st_5_innings": "totals",
+}
+
+
+def _shape_of(market_key):
+    return _MARKET_SHAPES.get(market_key, market_key)
 
 
 def _parse_outcomes(market, market_key, record):
@@ -449,14 +558,28 @@ def _coverage(events) -> dict:
     }
 
 
-def _validate_markets(markets):
+def _validate_markets(markets, allow_event_markets=False):
     market_list = [m.strip() for m in markets if isinstance(m, str) and m.strip()]
     if not market_list:
         raise OddsProviderError("at least one market is required")
-    unknown = [m for m in market_list if m not in DEFAULT_MARKETS]
+    unknown = [m for m in market_list if m not in SUPPORTED_MARKETS]
     if unknown:
         raise OddsProviderError(
             f"unsupported market(s) {', '.join(unknown)}; "
-            f"expected any of {', '.join(DEFAULT_MARKETS)}"
+            f"expected any of {', '.join(SUPPORTED_MARKETS)}"
+        )
+    if allow_event_markets:
+        return market_list
+
+    # Mixing the two families in one call cannot work: they are served by different
+    # endpoints with different billing. Caught here rather than as a 422 halfway
+    # through a snapshot run, because the failure would otherwise land after the
+    # credits for the featured markets had already been spent.
+    event_only = [m for m in market_list if m in EVENT_MARKETS]
+    if event_only:
+        raise OddsProviderError(
+            f"market(s) {', '.join(event_only)} are first-five markets and are not "
+            "served by the featured odds endpoint; use fetch_event_odds, which "
+            "bills per event rather than per slate"
         )
     return market_list

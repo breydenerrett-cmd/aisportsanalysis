@@ -118,6 +118,57 @@ Second: the pipeline requests `h2h`, `spreads`, `totals`. It has **never request
 first-five markets**, which is the market the scanner routes most of its flags to. That
 gap needs closing before any flagged game can actually be priced.
 
+## First running live, 27 Aug 2026
+
+With the 2026 season ingested (4,432 games) and 2026 pitcher logs built (476 pitchers,
+17,635 appearances), the scanner produced its first live output on a 7-game slate:
+
+    2 of 7 games flagged.
+      HOU @ NYY: home (first five) -- K-BB% gap 10.7 points
+      MIL @ NYM: away (first five) -- FIP gap 2.24, K-BB% gap 17.8 points
+
+Five games said no play, each for a different reason, and one of them is the exact
+case the strategy was described with:
+
+    LAD @ ATL  [no_play]
+      - both starters are strong (FIP 3.29 and 2.16, both under 3.50) -- a good
+        pitching matchup on both sides is exactly the game whose outcome you
+        cannot call
+
+The Yamamoto/Sale rule fired on a real Dodgers game on its first day live.
+
+Also suppressed: COL @ WSH, where the starter edge pointed one way and the roster edge
+the other; KC @ TOR, one signal alone; AZ @ SF, a starter under 20 innings.
+
+## An honest problem with the F5 routing
+
+Both flagged games were priced. The first-five moneylines, de-vigged:
+
+| Game | Full-game screen | F5 de-vigged |
+|---|---|---|
+| HOU @ NYY | home 59.0% | home **60.2%** |
+| MIL @ NYM | away 64.1% | away **65.2%** |
+
+The first-five market prices the flagged side **shorter than the full game does**, in
+both cases — and MIL @ NYM at 65.2% is past the 0.65 screen the full-game price passed.
+
+This is not a surprise on reflection, and it partly cuts against the routing argument.
+The reasoning for F5 was that a starter gap is concentrated in innings one to five. But
+the market knows that too: a first-five line is a starter line, and it is priced as
+one. Concentrating the signal concentrates the price along with it.
+
+What survives the objection is narrower than the original claim: F5 is the market that
+*matches the reason for the bet*, so a flagged game there is not being diluted by
+bullpen noise. Whether it is also *cheaper* there is an open question, and on this
+single day's evidence the answer is no.
+
+Two things follow. First, the market screen should probably run against the F5 price
+when a game is routed to F5, not against the full-game price — screening on the wrong
+market let MIL @ NYM through. That is a real defect, and fixing it is a change to what
+the scanner means, so it is recorded here before being made rather than quietly
+patched. Second, the F5-versus-full-game price relationship is measurable going
+forward and is worth logging on every flagged game.
+
 ## What the scanner does not claim
 
 An obvious mismatch is not a profitable bet. Bad teams with bad starters lose more

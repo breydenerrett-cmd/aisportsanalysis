@@ -4,6 +4,7 @@ Two behaviours matter most: the key never appears in any output, and a missing
 market stays missing rather than acquiring a substitute price.
 """
 
+import json
 import unittest
 from unittest import mock
 
@@ -393,3 +394,127 @@ class TestCoverage(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestFirstFiveMarkets(unittest.TestCase):
+    """First-five markets are a different endpoint with a different billing shape.
+
+    The trap this guards is a caller naming an F5 market on the featured endpoint.
+    The live API answers 422 INVALID_MARKET -- but only AFTER the request is made,
+    by which time credits for the rest of the batch are spent. It has to be caught
+    before the call.
+    """
+
+    def test_f5_markets_are_nameable(self):
+        for market in odds.EVENT_MARKETS:
+            self.assertIn(market, odds.SUPPORTED_MARKETS)
+
+    def test_f5_markets_are_not_requested_by_default(self):
+        # Defaulting to them would silently multiply every snapshot's cost by the
+        # size of the slate.
+        for market in odds.EVENT_MARKETS:
+            self.assertNotIn(market, odds.DEFAULT_MARKETS)
+
+    def test_featured_endpoint_refuses_an_f5_market_before_spending_credits(self):
+        with self.assertRaises(odds.OddsProviderError) as ctx:
+            odds._validate_markets(["h2h", "totals_1st_5_innings"])
+        self.assertIn("bills per event", str(ctx.exception))
+
+    def test_event_endpoint_accepts_them(self):
+        resolved = odds._validate_markets(
+            ["h2h_1st_5_innings", "totals_1st_5_innings"], allow_event_markets=True)
+        self.assertEqual(len(resolved), 2)
+
+    def test_genuinely_unknown_markets_are_still_rejected(self):
+        with self.assertRaises(odds.OddsProviderError):
+            odds._validate_markets(["player_strikeouts"], allow_event_markets=True)
+
+    def test_event_id_must_be_a_real_id(self):
+        for bad in (None, "", 12345):
+            with self.assertRaises(odds.OddsProviderError):
+                odds.fetch_event_odds(bad, env={"ODDS_API_KEY": "x"})
+
+
+class TestPerEventCreditMath(unittest.TestCase):
+    """Per-event billing is linear in slate size; featured billing is flat.
+
+    Confirmed against the live API: two markets on one event cost exactly 2 credits.
+    """
+
+    def test_cost_scales_with_the_number_of_events(self):
+        two = odds.estimate_event_credits(
+            16, markets=["h2h_1st_5_innings", "totals_1st_5_innings"])
+        self.assertEqual(two["credits_per_event"], 2)
+        self.assertEqual(two["credits_total"], 32)
+
+    def test_a_full_slate_burns_a_free_month_in_about_fifteen_snapshots(self):
+        est = odds.estimate_event_credits(
+            16, markets=["h2h_1st_5_innings", "totals_1st_5_innings"])
+        self.assertEqual(est["snapshots_per_free_month"], 15)
+
+    def test_scanning_first_makes_it_affordable(self):
+        # The whole reason the scanner's silence matters commercially: two flagged
+        # games instead of sixteen turns fifteen snapshots a month into a hundred
+        # and twenty-five.
+        flagged = odds.estimate_event_credits(
+            2, markets=["h2h_1st_5_innings", "totals_1st_5_innings"])
+        self.assertEqual(flagged["credits_total"], 4)
+        self.assertEqual(flagged["snapshots_per_free_month"], 125)
+
+    def test_the_featured_comparison_is_reported_alongside(self):
+        est = odds.estimate_event_credits(16)
+        self.assertEqual(est["if_it_were_a_featured_call"], 3)
+        self.assertEqual(est["credits_total"], 48)
+
+    def test_zero_events_costs_nothing_and_does_not_divide_by_zero(self):
+        est = odds.estimate_event_credits(0)
+        self.assertEqual(est["credits_total"], 0)
+        self.assertIsNone(est["snapshots_per_free_month"])
+
+    def test_negative_events_is_an_error_not_a_credit(self):
+        with self.assertRaises(odds.OddsProviderError):
+            odds.estimate_event_credits(-3)
+
+
+class TestFirstFiveNormalization(unittest.TestCase):
+    """F5 markets reuse the full-game parsers rather than a copy that could drift."""
+
+    EVENT = {
+        "id": "abc", "home_team": "New York Yankees", "away_team": "Houston Astros",
+        "commence_time": "2026-08-27T23:05:00Z",
+        "bookmakers": [{
+            "key": "fanduel", "last_update": "2026-08-27T22:14:07Z",
+            "markets": [
+                {"key": "h2h_1st_5_innings", "outcomes": [
+                    {"name": "Houston Astros", "price": 138},
+                    {"name": "New York Yankees", "price": -174}]},
+                {"key": "totals_1st_5_innings", "outcomes": [
+                    {"name": "Over", "price": -102, "point": 4.5},
+                    {"name": "Under", "price": -128, "point": 4.5}]},
+            ]}]}
+
+    def test_f5_moneyline_is_flattened_like_a_full_game_moneyline(self):
+        record = odds.normalize_event(self.EVENT)
+        f5 = record["markets"]["h2h_1st_5_innings"]
+        self.assertEqual(f5["home_price"], -174)
+        self.assertEqual(f5["away_price"], 138)
+
+    def test_f5_total_keeps_its_line(self):
+        f5 = odds.normalize_event(self.EVENT)["markets"]["totals_1st_5_innings"]
+        self.assertEqual(f5["total"], 4.5)
+        self.assertEqual(f5["over_price"], -102)
+
+    def test_full_game_markets_are_absent_rather_than_borrowed_from_f5(self):
+        # The single most dangerous possible bug here: silently treating a first-five
+        # total of 4.5 as a full-game total, which would look entirely plausible on
+        # a screen and be wrong by four runs.
+        record = odds.normalize_event(self.EVENT)
+        self.assertNotIn("totals", record["markets"])
+        self.assertNotIn("h2h", record["markets"])
+
+    def test_a_half_filled_f5_market_is_dropped_not_partially_kept(self):
+        event = json.loads(json.dumps(self.EVENT))
+        event["bookmakers"][0]["markets"][1]["outcomes"][1].pop("price")
+        record = odds.normalize_event(event)
+        self.assertNotIn("totals_1st_5_innings", record["markets"])
+        self.assertIn("h2h_1st_5_innings", record["markets"])
