@@ -16,10 +16,10 @@ from src.providers import mlb
 
 
 def final_game(pk, away="TOR", home="CWS", away_score=1, home_score=2,
-               day="2025-07-09"):
+               day="2025-07-09", game_type="R"):
     return {
         "game_pk": pk, "date": day, "start_time_utc": f"{day}T18:10:00Z",
-        "venue": "Rate Field", "state": "final",
+        "venue": "Rate Field", "state": "final", "game_type": game_type,
         "away_team": away, "home_team": home,
         "away_team_id": 141, "home_team_id": 145,
         "away_probable": "Eric Lauer", "home_probable": "Adrian Houser",
@@ -106,6 +106,77 @@ class TestIdempotency(unittest.TestCase):
         # But the manifest records that 7 games existed, so coverage stays honest.
         self.assertEqual(manifest["2025-07-09"]["total"], 7)
         self.assertEqual(manifest["2025-07-09"]["pending"], 5)
+
+
+class TestGameTypeFiltering(unittest.TestCase):
+    """Spring training is real baseball but not the process being modeled.
+
+    Split squads, minor-league rosters, pitchers on artificial pitch counts, and
+    no competitive incentive. Training on it would teach the model from a
+    different sport wearing the same uniforms.
+    """
+
+    def test_spring_training_games_are_not_stored(self):
+        payload = results("2025-03-22", [
+            final_game(1, game_type="S"),
+            final_game(2, game_type="S", away="NYY", home="BOS"),
+        ])
+        with TempStore() as t:
+            with mock.patch.object(mlb, "fetch_results", return_value=payload):
+                history.ingest_range("2025-03-22", "2025-03-22", t.store,
+                                     t.manifest, resume=False)
+            stored = history.read_results(t.store)
+        self.assertEqual(len(stored), 0)
+
+    def test_skipped_spring_games_are_still_counted_in_the_manifest(self):
+        # Coverage must stay honest: the date was fetched and DID have games,
+        # they just were not the kind we train on. That is different from an
+        # off day and different again from an unfetched gap.
+        payload = results("2025-03-22", [final_game(1, game_type="S")])
+        with TempStore() as t:
+            with mock.patch.object(mlb, "fetch_results", return_value=payload):
+                history.ingest_range("2025-03-22", "2025-03-22", t.store,
+                                     t.manifest, resume=False)
+            manifest = history.read_manifest(t.manifest)
+        entry = manifest["2025-03-22"]
+        self.assertEqual(entry["total"], 1)
+        self.assertEqual(entry["stored"], 0)
+        self.assertEqual(entry["skipped_game_type"], 1)
+
+    def test_regular_season_games_are_stored(self):
+        payload = results("2025-07-09", [final_game(1, game_type="R")])
+        with TempStore() as t:
+            with mock.patch.object(mlb, "fetch_results", return_value=payload):
+                history.ingest_range("2025-07-09", "2025-07-09", t.store,
+                                     t.manifest, resume=False)
+            self.assertEqual(len(history.read_results(t.store)), 1)
+
+    def test_mixed_date_stores_only_the_regular_season_game(self):
+        payload = results("2025-03-27", [
+            final_game(1, game_type="S"),
+            final_game(2, game_type="R", away="NYY", home="BOS"),
+        ])
+        with TempStore() as t:
+            with mock.patch.object(mlb, "fetch_results", return_value=payload):
+                history.ingest_range("2025-03-27", "2025-03-27", t.store,
+                                     t.manifest, resume=False)
+            stored = history.read_results(t.store)
+        self.assertEqual(list(stored), ["2"])
+
+    def test_filter_can_be_widened_deliberately(self):
+        payload = results("2025-03-22", [final_game(1, game_type="S")])
+        store, manifest = {}, {}
+        with mock.patch.object(mlb, "fetch_results", return_value=payload):
+            history.ingest_date("2025-03-22", store, manifest,
+                                game_types=frozenset({"R", "S"}))
+        self.assertEqual(len(store), 1)
+
+    def test_none_filter_stores_every_game_type(self):
+        payload = results("2025-03-22", [final_game(1, game_type="S")])
+        store, manifest = {}, {}
+        with mock.patch.object(mlb, "fetch_results", return_value=payload):
+            history.ingest_date("2025-03-22", store, manifest, game_types=None)
+        self.assertEqual(len(store), 1)
 
 
 class TestResumability(unittest.TestCase):

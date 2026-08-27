@@ -42,7 +42,7 @@ DEFAULT_MANIFEST = Path("data/historical/mlb_results.manifest.json")
 # manifest so coverage is accurate, but never enter the results table -- a partial score
 # looks exactly like a final one and would corrupt the training set invisibly.
 RESULT_COLUMNS = [
-    "game_pk", "date", "start_time_utc", "venue",
+    "game_pk", "date", "start_time_utc", "venue", "game_type",
     "away_team", "home_team", "away_team_id", "home_team_id",
     "away_probable", "home_probable", "away_probable_id", "home_probable_id",
     "away_score", "home_score", "winner", "home_won",
@@ -136,17 +136,26 @@ def write_results(store: dict, path=DEFAULT_STORE) -> str:
     return str(target)
 
 
-def ingest_date(game_date, store: dict, manifest: dict, timeout: int = 20) -> dict:
+def ingest_date(game_date, store: dict, manifest: dict, timeout: int = 20,
+                game_types=mlb.TRAINING_GAME_TYPES) -> dict:
     """Fetch one date and merge it into the store. Idempotent by game_pk.
 
-    Mutates `store` and `manifest` in place and returns per-date counts. Re-running the
-    same date overwrites the same keys rather than appending duplicates.
+    `game_types` filters what is STORED, defaulting to regular season only.
+    Spring training is excluded deliberately: split squads, minor-league rosters,
+    pitchers on artificial pitch counts, and no competitive incentive make those
+    games a different process wearing the same uniforms. They are still counted
+    in the manifest so coverage stays honest about what the date contained.
+
+    Mutates `store` and `manifest` in place and returns per-date counts.
     """
     result = mlb.fetch_results(game_date, timeout=timeout)
     day = result["date"]
 
-    added = updated = 0
+    added = updated = skipped = 0
     for game in result["final"]:
+        if game_types is not None and game.get("game_type") not in game_types:
+            skipped += 1
+            continue
         key = str(game["game_pk"])
         if key in store:
             updated += 1
@@ -159,8 +168,11 @@ def ingest_date(game_date, store: dict, manifest: dict, timeout: int = 20) -> di
         "final": result["summary"]["final"],
         "pending": result["summary"]["pending"],
         "cancelled": result["summary"]["cancelled"],
+        "stored": added + updated,
+        "skipped_game_type": skipped,
     }
-    return {"date": day, "added": added, "updated": updated, **result["summary"]}
+    return {"date": day, "added": added, "updated": updated,
+            "skipped_game_type": skipped, **result["summary"]}
 
 
 def ingest_range(start, end, store_path=DEFAULT_STORE,

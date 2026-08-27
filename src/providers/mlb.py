@@ -48,6 +48,39 @@ FINAL_STATE_CODES = frozenset({"F", "O"})
 # failures; they must be recorded and skipped, never graded.
 CANCELLED_STATE_CODES = frozenset({"D", "C", "T", "U"})
 
+# gameType codes. The distinction is not cosmetic: it decides both whether a tie
+# is possible and whether a game belongs in a training set at all.
+GAME_TYPE_REGULAR = "R"
+GAME_TYPE_SPRING = "S"
+GAME_TYPE_EXHIBITION = "E"
+GAME_TYPE_ALL_STAR = "A"
+
+# Competitive games that must produce a winner. A tie here means the data is
+# wrong, not that the game ended level.
+DECISIVE_GAME_TYPES = frozenset({
+    GAME_TYPE_REGULAR,
+    "F",  # Wild Card
+    "D",  # Division Series
+    "L",  # League Championship Series
+    "W",  # World Series
+    "P",  # Playoff (legacy tiebreaker)
+})
+
+# Exhibition play where a tie is a legitimate final result. Spring training games
+# routinely end level once both managers run out of pitchers, and the All-Star
+# Game itself famously ended 7-7 in 2002.
+TIE_ALLOWED_GAME_TYPES = frozenset({
+    GAME_TYPE_SPRING, GAME_TYPE_EXHIBITION, GAME_TYPE_ALL_STAR, "I",
+})
+
+# What belongs in a model's training data. Spring training is excluded on
+# purpose and it is worth being explicit about why: split squads, minor-league
+# rosters, pitchers on artificial pitch counts, and no competitive incentive.
+# Those games are real baseball but they are not the process being modeled, and
+# including them would teach the model from a different sport wearing the same
+# uniforms.
+TRAINING_GAME_TYPES = frozenset({GAME_TYPE_REGULAR})
+
 
 class MLBError(RuntimeError):
     """Raised when the MLB Stats API cannot be reached or returns junk."""
@@ -153,6 +186,7 @@ def parse_game(game: dict) -> dict:
         "date": (game.get("officialDate") or (game.get("gameDate") or "")[:10]) or None,
         "start_time_utc": game.get("gameDate"),
         "state": state,
+        "game_type": game.get("gameType"),
         "detailed_state": (game.get("status") or {}).get("detailedState"),
         "venue": (game.get("venue") or {}).get("name"),
         "away_team": _team_abbrev(away),
@@ -169,19 +203,41 @@ def parse_game(game: dict) -> dict:
         "game_number": game.get("gameNumber"),
     }
 
-    # A winner is only meaningful for a genuinely final game. Ties are not
-    # possible in MLB, so equal scores in a "final" game indicate bad data.
+    # A winner is only meaningful for a genuinely final game -- and whether a tie
+    # is even possible depends on the game type.
+    #
+    # In a competitive game a tied "final" means the data is wrong, so raising is
+    # correct: silently picking a side would put a fabricated winner into the
+    # training set. But spring training and exhibition games legitimately end
+    # level once both managers run out of pitchers, and treating that as
+    # corruption caused four real spring dates to fail ingestion entirely.
     if state == "final":
         away_score, home_score = record["away_score"], record["home_score"]
+        game_type = record["game_type"]
+
         if away_score == home_score:
-            raise MLBError(
-                f"game {record['game_pk']} reports final with a tied score "
-                f"{away_score}-{home_score}; refusing to pick a winner"
+            if game_type in DECISIVE_GAME_TYPES:
+                raise MLBError(
+                    f"game {record['game_pk']} (type {game_type!r}) reports final "
+                    f"with a tied score {away_score}-{home_score}; a competitive "
+                    "game must have a winner, so this is bad data"
+                )
+            if game_type not in TIE_ALLOWED_GAME_TYPES:
+                raise MLBError(
+                    f"game {record['game_pk']} has unknown gameType {game_type!r} "
+                    f"and a tied score {away_score}-{home_score}; refusing to "
+                    "guess whether a tie is legal for this game type"
+                )
+            # A legitimate exhibition tie. There is no winner, and saying so is
+            # the honest answer rather than picking one.
+            record["winner"] = None
+            record["home_won"] = None
+        else:
+            record["winner"] = (
+                record["home_team"] if home_score > away_score else record["away_team"]
             )
-        record["winner"] = (
-            record["home_team"] if home_score > away_score else record["away_team"]
-        )
-        record["home_won"] = 1 if home_score > away_score else 0
+            record["home_won"] = 1 if home_score > away_score else 0
+
         record["total_runs"] = away_score + home_score
         record["run_differential"] = abs(home_score - away_score)
     else:

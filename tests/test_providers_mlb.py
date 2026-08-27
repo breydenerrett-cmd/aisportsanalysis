@@ -14,7 +14,8 @@ from src.providers.mlb import MLBError
 
 def make_game(coded_state="F", away_score=1, home_score=2,
               away="TOR", home="CWS", game_pk=777172,
-              away_probable="Eric Lauer", home_probable="Adrian Houser"):
+              away_probable="Eric Lauer", home_probable="Adrian Houser",
+              game_type="R"):
     """Build an API-shaped game record. Mirrors the live payload structure."""
     def side(abbrev, score, probable, team_id):
         entry = {"team": {"abbreviation": abbrev, "name": abbrev, "id": team_id}}
@@ -26,6 +27,7 @@ def make_game(coded_state="F", away_score=1, home_score=2,
 
     return {
         "gamePk": game_pk,
+        "gameType": game_type,
         "officialDate": "2025-07-09",
         "gameDate": "2025-07-09T18:10:00Z",
         "status": {"codedGameState": coded_state, "detailedState": "X"},
@@ -104,10 +106,63 @@ class TestParseGame(unittest.TestCase):
         self.assertEqual(record["state"], "pending")
         self.assertEqual(record["away_score"], 6)
 
-    def test_tied_final_is_rejected_rather_than_guessed(self):
-        # MLB has no ties; a tied "final" means bad data, not a coin flip.
+    def test_tied_final_in_a_competitive_game_is_rejected(self):
+        # A regular season game must have a winner; a tie means bad data.
+        game = make_game("F", 3, 3)
+        game["gameType"] = "R"
         with self.assertRaises(MLBError):
-            mlb.parse_game(make_game("F", 3, 3))
+            mlb.parse_game(game)
+
+    def test_tied_final_in_spring_training_is_a_legitimate_result(self):
+        # Found live: four March 2025 dates failed to ingest entirely because
+        # spring games legitimately end level once both sides run out of
+        # pitchers. ATL 0-0 DET and WSH 5-5 NYM were real finals.
+        game = make_game("F", 5, 5)
+        game["gameType"] = "S"
+        record = mlb.parse_game(game)
+        self.assertIsNone(record["winner"])
+        self.assertIsNone(record["home_won"])
+        self.assertEqual(record["total_runs"], 10)
+        self.assertEqual(record["run_differential"], 0)
+
+    def test_tied_all_star_game_is_allowed(self):
+        # The 2002 All-Star Game ended 7-7.
+        game = make_game("F", 7, 7)
+        game["gameType"] = "A"
+        self.assertIsNone(mlb.parse_game(game)["winner"])
+
+    def test_tied_postseason_game_is_rejected(self):
+        for game_type in ("F", "D", "L", "W"):
+            with self.subTest(game_type=game_type):
+                game = make_game("F", 2, 2)
+                game["gameType"] = game_type
+                with self.assertRaises(MLBError):
+                    mlb.parse_game(game)
+
+    def test_tied_game_of_unknown_type_refuses_to_guess(self):
+        # Neither decisive nor known-tie-allowed: the honest answer is to stop
+        # rather than assume which rule applies.
+        game = make_game("F", 4, 4)
+        game["gameType"] = "Z"
+        with self.assertRaises(MLBError) as ctx:
+            mlb.parse_game(game)
+        self.assertIn("unknown gameType", str(ctx.exception))
+
+    def test_decided_spring_game_still_gets_a_winner(self):
+        game = make_game("F", 2, 6)
+        game["gameType"] = "S"
+        record = mlb.parse_game(game)
+        self.assertEqual(record["winner"], "CWS")
+        self.assertEqual(record["home_won"], 1)
+
+    def test_game_type_is_captured(self):
+        game = make_game()
+        game["gameType"] = "R"
+        self.assertEqual(mlb.parse_game(game)["game_type"], "R")
+
+    def test_regular_season_is_the_only_training_game_type(self):
+        self.assertEqual(mlb.TRAINING_GAME_TYPES, frozenset({"R"}))
+        self.assertNotIn("S", mlb.TRAINING_GAME_TYPES)
 
     def test_missing_probable_pitcher_stays_none(self):
         record = mlb.parse_game(make_game(away_probable=None))
