@@ -68,12 +68,10 @@ class TestYamamotoSaleRule(unittest.TestCase):
         self.assertTrue(signal["fires"])
         self.assertEqual(signal["side"], "home")
 
-    def test_a_flagged_game_survives_the_full_scan_but_the_ace_duel_does_not(self):
-        duel = dict(GAME, team_features=teams(), pitcher_features=starters(
-            away_fip=2.90, home_fip=3.40), ml_away_price=105, ml_home_price=-115)
-        self.assertEqual(mismatch.scan_game(
-            duel, duel["team_features"], duel["pitcher_features"],
-            105, -115)["verdict"], mismatch.NO_PLAY)
+    def test_the_ace_duel_never_even_becomes_a_candidate(self):
+        scan = mismatch.scan_game(GAME, teams(),
+                                  starters(away_fip=2.90, home_fip=3.40))
+        self.assertEqual(scan["verdict"], mismatch.NO_PLAY)
 
 
 class TestStarterSignal(unittest.TestCase):
@@ -164,36 +162,79 @@ class TestMarketScreen(unittest.TestCase):
 
 
 class TestScanGame(unittest.TestCase):
+    """Stage one is talent only. No price may reach it."""
 
-    def test_two_agreeing_signals_and_a_live_price_flag_the_game(self):
-        scan = mismatch.scan_game(GAME, teams(), starters(), 150, -170)
-        self.assertEqual(scan["verdict"], mismatch.FLAGGED)
+    def test_two_agreeing_signals_make_a_candidate_not_a_flag(self):
+        scan = mismatch.scan_game(GAME, teams(), starters())
+        self.assertEqual(scan["verdict"], mismatch.CANDIDATE)
         self.assertEqual(scan["side"], "home")
+        self.assertEqual(scan["market"], mismatch.MARKET_F5)
+        # Unpriced, so no market signal exists yet.
+        self.assertNotIn("market", scan["signals"])
 
     def test_one_signal_alone_is_below_the_bar(self):
-        # Starters lopsided, teams level. Reported, not flagged.
-        scan = mismatch.scan_game(GAME, teams(away_rd=0.10, home_rd=0.20),
-                                  starters(), 150, -170)
+        scan = mismatch.scan_game(GAME, teams(away_rd=0.10, home_rd=0.20), starters())
         self.assertEqual(scan["verdict"], mismatch.NO_PLAY)
         self.assertEqual(scan["side"], "home")
         self.assertIn("single signal", scan["summary"])
 
     def test_signals_pointing_opposite_ways_are_not_obvious(self):
-        scan = mismatch.scan_game(GAME, teams(away_rd=0.90, home_rd=-0.80),
-                                  starters(), 150, -170)
+        scan = mismatch.scan_game(GAME, teams(away_rd=0.90, home_rd=-0.80), starters())
         self.assertEqual(scan["verdict"], mismatch.NO_PLAY)
         self.assertIn("contradict", scan["summary"])
 
-    def test_an_already_priced_mismatch_is_not_flagged(self):
-        scan = mismatch.scan_game(GAME, teams(), starters(), 380, -500)
-        self.assertEqual(scan["verdict"], mismatch.NO_PLAY)
-        self.assertIn("already prices", scan["summary"])
-
     def test_every_verdict_carries_reasons(self):
         for feats in (teams(), teams(away_rd=0.1, home_rd=0.2)):
-            scan = mismatch.scan_game(GAME, feats, starters(), 150, -170)
+            scan = mismatch.scan_game(GAME, feats, starters())
             self.assertTrue(scan["reasons"])
             self.assertTrue(all(r for r in scan["reasons"]))
+
+
+class TestScreenRunsOnTheRoutedMarket(unittest.TestCase):
+    """The defect the two-stage split exists to fix.
+
+    Measured live on 27 Aug 2026: both flagged games' first-five prices de-vigged
+    SHORTER than their full-game prices, because a first-five line is a starter line
+    and is priced as one. MIL @ NYM passed a 0.65 screen on the full game at 64.1%
+    and would have failed it on the F5 market at 65.2% -- the market it was being
+    routed to. A single-stage scanner screens on whatever price it happens to hold,
+    which is the wrong one for every F5-routed game.
+    """
+
+    def test_a_candidate_needs_a_price_to_become_a_flag(self):
+        candidate = mismatch.scan_game(GAME, teams(), starters())
+        flagged = mismatch.apply_market_screen(candidate, 150, -170)
+        self.assertEqual(flagged["verdict"], mismatch.FLAGGED)
+
+    def test_the_same_candidate_fails_on_a_shorter_routed_price(self):
+        # +160/-190 de-vigs home to 0.6301 and passes; +180/-220 de-vigs to 0.6581
+        # and does not. That gap is the whole defect: it is roughly the distance
+        # measured live between a full-game price and the first-five price of the
+        # same game, and the screen has to see the second one.
+        candidate = mismatch.scan_game(GAME, teams(), starters())
+        self.assertEqual(
+            mismatch.apply_market_screen(candidate, 160, -190)["verdict"],
+            mismatch.FLAGGED)
+        self.assertEqual(
+            mismatch.apply_market_screen(candidate, 180, -220)["verdict"],
+            mismatch.NO_PLAY)
+
+    def test_the_screen_records_which_market_it_priced(self):
+        candidate = mismatch.scan_game(GAME, teams(), starters())
+        screened = mismatch.apply_market_screen(candidate, 150, -170)
+        self.assertEqual(screened["signals"]["market"]["priced_market"],
+                         candidate["market"])
+
+    def test_screening_does_not_mutate_the_candidate(self):
+        candidate = mismatch.scan_game(GAME, teams(), starters())
+        mismatch.apply_market_screen(candidate, 160, -190)
+        self.assertEqual(candidate["verdict"], mismatch.CANDIDATE)
+        self.assertNotIn("market", candidate["signals"])
+
+    def test_screening_a_non_candidate_changes_nothing(self):
+        scan = mismatch.scan_game(GAME, teams(0.1, 0.2), starters())
+        self.assertEqual(mismatch.apply_market_screen(scan, 150, -170)["verdict"],
+                         mismatch.NO_PLAY)
 
 
 class TestMarketRouting(unittest.TestCase):
@@ -212,8 +253,10 @@ class TestMarketRouting(unittest.TestCase):
         route = mismatch.route_market({"fires": True}, {"fires": True})
         self.assertEqual(route["market"], mismatch.MARKET_F5)
 
-    def test_a_flagged_game_carries_its_market(self):
-        scan = mismatch.scan_game(GAME, teams(), starters(), 150, -170)
+    def test_a_candidate_carries_its_market_before_any_price_exists(self):
+        # The routing has to be known BEFORE pricing, because it decides which price
+        # to buy -- and first-five prices are billed per game.
+        scan = mismatch.scan_game(GAME, teams(), starters())
         self.assertEqual(scan["market"], mismatch.MARKET_F5)
 
 
@@ -224,13 +267,12 @@ class TestNoPlayIsAResult(unittest.TestCase):
         games = [dict(GAME, game_pk=i,
                       team_features=teams(away_rd=0.1, home_rd=0.2),
                       pitcher_features=starters(away_fip=3.90, home_fip=4.00,
-                                                away_kbb=0.18, home_kbb=0.19),
-                      ml_away_price=105, ml_home_price=-115)
+                                                away_kbb=0.18, home_kbb=0.19))
                  for i in range(12)]
         result = mismatch.scan_slate(games)
         self.assertEqual(result["verdict"], mismatch.NO_PLAY)
         self.assertEqual(result["games_scanned"], 12)
-        self.assertEqual(result["flagged"], [])
+        self.assertEqual(result["candidates"], [])
         self.assertIn("No play", result["summary"])
         self.assertIn("Most days look like this", result["summary"])
 
@@ -239,25 +281,72 @@ class TestNoPlayIsAResult(unittest.TestCase):
         self.assertEqual(result["verdict"], mismatch.NO_PLAY)
         self.assertIn("no games", result["summary"])
 
-    def test_every_scanned_game_appears_in_scans_even_when_nothing_flags(self):
+    def test_every_scanned_game_appears_in_scans_even_when_nothing_fires(self):
         games = [dict(GAME, game_pk=i, team_features=teams(0.1, 0.2),
                       pitcher_features=starters(known=False))
                  for i in range(5)]
         self.assertEqual(len(mismatch.scan_slate(games)["scans"]), 5)
 
-    def test_a_flagged_slate_names_the_game_and_the_market(self):
+    def test_stage_one_reports_candidates_and_flags_nothing(self):
         games = [
             dict(GAME, game_pk=1, team_features=teams(0.1, 0.2),
                  pitcher_features=starters(known=False)),
             dict(GAME, game_pk=2, away_team="COL", home_team="NYY",
-                 team_features=teams(), pitcher_features=starters(),
-                 ml_away_price=150, ml_home_price=-170),
+                 team_features=teams(), pitcher_features=starters()),
         ]
         result = mismatch.scan_slate(games)
-        self.assertEqual(result["verdict"], mismatch.FLAGGED)
-        self.assertEqual(len(result["flagged"]), 1)
+        self.assertEqual(result["verdict"], mismatch.CANDIDATE)
+        self.assertEqual(len(result["candidates"]), 1)
+        self.assertEqual(result["flagged"], [])
+        self.assertFalse(result["priced"])
         self.assertIn("COL @ NYY", result["summary"])
         self.assertIn("first five", result["summary"])
+
+
+class TestFinalizeSlate(unittest.TestCase):
+
+    def slate(self):
+        return mismatch.scan_slate([
+            dict(GAME, game_pk=1, team_features=teams(0.1, 0.2),
+                 pitcher_features=starters(known=False)),
+            dict(GAME, game_pk=2, away_team="COL", home_team="NYY",
+                 team_features=teams(), pitcher_features=starters()),
+        ])
+
+    def test_a_priced_candidate_becomes_a_flag(self):
+        final = mismatch.finalize_slate(
+            self.slate(), {2: {"away_price": 150, "home_price": -170}})
+        self.assertEqual(final["verdict"], mismatch.FLAGGED)
+        self.assertEqual(len(final["flagged"]), 1)
+
+    def test_an_unpriced_candidate_stays_a_candidate_rather_than_being_flagged(self):
+        # A missing screen is not a pass. Treating it as one would flag every game
+        # whose F5 price happened to be unavailable, which is the opposite of a
+        # scanner that stays quiet.
+        final = mismatch.finalize_slate(self.slate(), {})
+        self.assertEqual(final["flagged"], [])
+        self.assertEqual(len(final["candidates"]), 1)
+        self.assertEqual(final["verdict"], mismatch.NO_PLAY)
+        self.assertIn("could not be priced", final["summary"])
+
+    def test_a_screened_out_candidate_is_neither_flagged_nor_still_a_candidate(self):
+        final = mismatch.finalize_slate(
+            self.slate(), {2: {"away_price": 380, "home_price": -500}})
+        self.assertEqual(final["flagged"], [])
+        self.assertEqual(final["candidates"], [])
+        screened = [s for s in final["scans"] if s["game_pk"] == 2][0]
+        self.assertEqual(screened["verdict"], mismatch.NO_PLAY)
+        self.assertIn("already prices", screened["summary"])
+        # The slate summary must not claim an unpriced quiet day when the quiet
+        # came from a screen that actually ran.
+        self.assertNotIn("could not be priced", final["summary"])
+
+    def test_non_candidates_pass_through_untouched(self):
+        final = mismatch.finalize_slate(
+            self.slate(), {1: {"away_price": 150, "home_price": -170}})
+        passed = [s for s in final["scans"] if s["game_pk"] == 1][0]
+        self.assertEqual(passed["verdict"], mismatch.NO_PLAY)
+        self.assertNotIn("market", passed["signals"])
 
 
 class TestThresholdsArePreRegistered(unittest.TestCase):

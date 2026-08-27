@@ -129,6 +129,7 @@ class MismatchError(RuntimeError):
 # ---------------------------------------------------------------------------
 
 NO_PLAY = "no_play"
+CANDIDATE = "candidate"
 FLAGGED = "flagged"
 INSUFFICIENT_DATA = "insufficient_data"
 
@@ -341,15 +342,27 @@ def route_market(starter, roster) -> dict:
 # Per-game scan
 # ---------------------------------------------------------------------------
 
-def scan_game(game, team_feats, pitcher_feats,
-              away_price=None, home_price=None) -> dict:
-    """Score one game for obviousness of mismatch.
+def scan_game(game, team_feats, pitcher_feats) -> dict:
+    """Stage one: score one game on talent alone, and decide which market it belongs in.
 
-    `game` supplies identity only (date, teams, game_pk). Every judgement comes from
-    the point-in-time feature dicts, which are built by the same leak-free code the
-    model uses -- so a scan run for a past date sees only what was knowable then.
+    NO PRICE ENTERS THIS FUNCTION. That is deliberate and it is not a simplification --
+    it resolves a circularity that a single-stage scanner cannot escape.
 
-    The verdict defaults to no_play and has to be argued up to flagged.
+    The market screen has to run against the market the game is actually routed to. A
+    starter mismatch routed to the first five must be screened on the first-five price,
+    because a first-five line IS a starter line and is priced as one: measured live on
+    27 Aug 2026, both flagged games' F5 prices de-vigged SHORTER than their full-game
+    prices, and one of them passed a screen on the full game that it would have failed
+    on the market it was being sent to.
+
+    But first-five prices are billed per event, so pricing every game to find out costs
+    sixteen times what pricing the candidates costs. You cannot afford to price
+    everything, and you cannot screen correctly until you know the routing.
+
+    Splitting the stages resolves it. Talent and routing are free and run on everything;
+    the price is fetched only for what survives, and only for the market it was routed
+    to. `candidate` is therefore an honest intermediate state, not a weaker verdict --
+    it means "this cleared the talent bar and has not been priced yet".
     """
     starter = starter_signal(pitcher_feats or {})
     roster = roster_signal(team_feats or {})
@@ -387,8 +400,8 @@ def scan_game(game, team_feats, pitcher_feats,
 
     if len(agreeing) < MIN_AGREEING_SIGNALS:
         # One signal firing alone is an observation, not something anyone would call
-        # obvious at a glance. It is reported so a human can look, and it is NOT
-        # flagged -- the bar is deliberately above "one number is big".
+        # obvious at a glance. It is reported so a human can look, and it is NOT a
+        # candidate -- the bar is deliberately above "one number is big".
         record["side"] = side
         record["reasons"] = [agreeing[0]["reason"],
                              "only one signal fires; the other says: "
@@ -396,27 +409,55 @@ def scan_game(game, team_feats, pitcher_feats,
         record["summary"] = f"single signal to {side}, below the bar for obvious"
         return record
 
-    market = market_screen(away_price, home_price, side)
-    record["signals"]["market"] = market
-    if not market["fires"]:
-        record["side"] = side
-        record["reasons"] = [starter["reason"], roster["reason"], market["reason"]]
-        record["summary"] = market["reason"]
-        return record
-
     routing = route_market(starter, roster)
     record.update({
-        "verdict": FLAGGED,
+        "verdict": CANDIDATE,
         "side": side,
         "market": routing["market"],
-        "reasons": [starter["reason"], roster["reason"], market["reason"],
-                    routing["why"]],
+        "reasons": [starter["reason"], roster["reason"], routing["why"]],
     })
     record["summary"] = (
-        f"{side} has a clear advantage on both starter and roster, the market has "
-        f"not blown it out, and it belongs on the "
-        f"{'first five' if routing['market'] == MARKET_F5 else 'full game'}")
+        f"{side} has a clear advantage on both starter and roster; belongs on the "
+        f"{_market_label(routing['market'])}, not yet priced")
     return record
+
+
+def _market_label(market) -> str:
+    return "first five" if market == MARKET_F5 else "full game"
+
+
+def apply_market_screen(scan, away_price, home_price) -> dict:
+    """Stage two: screen a candidate against the price of the market it was routed to.
+
+    The caller is responsible for passing the RIGHT prices -- first-five prices for an
+    F5-routed candidate, full-game prices otherwise. Passing full-game prices for an F5
+    candidate is the exact defect this split exists to fix, so the market the prices
+    came from is recorded on the result and can be checked.
+
+    Returns a new dict; the input scan is not mutated, so an unpriced candidate stays
+    readable next to its priced outcome.
+    """
+    result = dict(scan)
+    result["signals"] = dict(scan["signals"])
+
+    if scan["verdict"] != CANDIDATE:
+        return result
+
+    screen = market_screen(away_price, home_price, scan["side"])
+    screen["priced_market"] = scan["market"]
+    result["signals"]["market"] = screen
+    result["reasons"] = list(scan["reasons"]) + [screen["reason"]]
+
+    if not screen["fires"]:
+        result["verdict"] = NO_PLAY
+        result["summary"] = screen["reason"]
+        return result
+
+    result["verdict"] = FLAGGED
+    result["summary"] = (
+        f"{scan['side']} has a clear advantage on both starter and roster, and the "
+        f"{_market_label(scan['market'])} market has not blown it out")
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -424,49 +465,83 @@ def scan_game(game, team_feats, pitcher_feats,
 # ---------------------------------------------------------------------------
 
 def scan_slate(games) -> dict:
-    """Scan a whole day and report the honest total, including zero.
+    """Stage one across a whole day, reporting the honest total including zero.
 
-    `games` is a list of dicts already carrying `team_features`, `pitcher_features`
-    and optional prices -- assembling those is the caller's job so this stays a pure
-    function of point-in-time inputs and is trivially testable.
+    `games` is a list of dicts already carrying `team_features` and `pitcher_features`
+    -- assembling those is the caller's job so this stays a pure function of
+    point-in-time inputs and is trivially testable.
+
+    Returns candidates, not flags. Nothing here is priced; call `finalize_slate` with
+    prices for the routed markets to reach a flagged verdict.
     """
-    scans = []
-    for game in games:
-        scans.append(scan_game(
-            game,
-            game.get("team_features"),
-            game.get("pitcher_features"),
-            away_price=game.get("ml_away_price"),
-            home_price=game.get("ml_home_price"),
-        ))
-
-    flagged = [s for s in scans if s["verdict"] == FLAGGED]
+    scans = [scan_game(g, g.get("team_features"), g.get("pitcher_features"))
+             for g in games]
+    candidates = [s for s in scans if s["verdict"] == CANDIDATE]
     return {
         "games_scanned": len(scans),
-        "flagged": flagged,
+        "candidates": candidates,
+        "flagged": [],
         "scans": scans,
-        "verdict": FLAGGED if flagged else NO_PLAY,
-        "summary": _slate_summary(len(scans), flagged),
+        "priced": False,
+        "verdict": CANDIDATE if candidates else NO_PLAY,
+        "summary": _slate_summary(len(scans), candidates, priced=False),
     }
 
 
-def _slate_summary(n, flagged) -> str:
+def finalize_slate(result, prices_by_game) -> dict:
+    """Stage two across a slate: screen each candidate on its own routed market.
+
+    `prices_by_game` maps game_pk to {"away_price", "home_price"} for the market that
+    candidate was routed to. A candidate with no entry stays a candidate rather than
+    being flagged or discarded -- an unavailable price is a missing screen, and a
+    missing screen is not a pass.
+    """
+    finalized = []
+    for scan in result["scans"]:
+        prices = (prices_by_game or {}).get(scan.get("game_pk"))
+        if scan["verdict"] != CANDIDATE or not prices:
+            finalized.append(scan)
+            continue
+        finalized.append(apply_market_screen(
+            scan, prices.get("away_price"), prices.get("home_price")))
+
+    flagged = [s for s in finalized if s["verdict"] == FLAGGED]
+    candidates = [s for s in finalized if s["verdict"] == CANDIDATE]
+    return {
+        "games_scanned": len(finalized),
+        "candidates": candidates,
+        "flagged": flagged,
+        "scans": finalized,
+        "priced": True,
+        "verdict": FLAGGED if flagged else NO_PLAY,
+        "summary": _slate_summary(len(finalized), flagged, priced=True,
+                                  unpriced=len(candidates)),
+    }
+
+
+def _slate_summary(n, hits, priced, unpriced=0) -> str:
     if not n:
         return "no games on this date"
-    if not flagged:
+    noun = "flagged" if priced else "candidate(s)"
+    if not hits:
         # This is the expected outcome on most days, and it is stated as a result
         # rather than as an apology. A scanner that finds something daily is
         # measuring noise.
+        tail = (f" {unpriced} cleared the talent bar but could not be priced."
+                if unpriced else "")
         return (
             f"No play. {n} games scanned, none with an advantage obvious enough to "
             "act on. Most days look like this -- two roughly major-league teams "
-            "playing a close game is the normal state of a major-league slate.")
-    lines = [f"{len(flagged)} of {n} games flagged."]
-    for scan in flagged:
-        target = "first five" if scan["market"] == MARKET_F5 else "full game"
+            f"playing a close game is the normal state of a major-league slate.{tail}")
+    lines = [f"{len(hits)} of {n} games {noun}."]
+    for scan in hits:
         lines.append(
             f"  {scan['away_team']} @ {scan['home_team']}: {scan['side']} "
-            f"({target}) -- {scan['signals']['starters']['reason']}")
+            f"({_market_label(scan['market'])}) -- "
+            f"{scan['signals']['starters']['reason']}")
+    if priced and unpriced:
+        lines.append(f"  ({unpriced} more cleared the talent bar but could not be "
+                     "priced, so they are neither flagged nor cleared)")
     return "\n".join(lines)
 
 

@@ -59,7 +59,8 @@ Plus three suppressions, in order:
 2. **Agreement.** Both signals must point at the same team. One signal alone is an
    observation, not something anyone would call obvious at a glance; contradicting
    signals are a disagreement between two measurements, not an edge.
-3. **The market screen.** If the de-vigged price on the flagged side is already ≥ 0.65,
+3. **The market screen**, run on the market the game was routed to (see below). If the
+   de-vigged price on the flagged side is already ≥ 0.65,
    the market has made the mismatch its headline and there is nothing left that other
    people are missing. *No model probability enters this test* — it is a screen on the
    market alone, which is what keeps it from quietly becoming an EV calculation.
@@ -162,12 +163,37 @@ What survives the objection is narrower than the original claim: F5 is the marke
 bullpen noise. Whether it is also *cheaper* there is an open question, and on this
 single day's evidence the answer is no.
 
-Two things follow. First, the market screen should probably run against the F5 price
-when a game is routed to F5, not against the full-game price — screening on the wrong
-market let MIL @ NYM through. That is a real defect, and fixing it is a change to what
-the scanner means, so it is recorded here before being made rather than quietly
-patched. Second, the F5-versus-full-game price relationship is measurable going
-forward and is worth logging on every flagged game.
+### The fix, and why it needed two stages
+
+Screening on the wrong market let MIL @ NYM through, so the screen now runs against
+the price of the market a game is routed to. That is harder than it sounds, because
+the two requirements are circular:
+
+- The screen must use the routed market's price.
+- First-five prices are billed **per game**, so pricing every game to find out costs
+  sixteen times what pricing the survivors costs.
+
+You cannot afford to price everything, and you cannot screen correctly until you know
+the routing. Splitting the stages resolves it:
+
+| Stage | Cost | Produces |
+|---|---|---|
+| 1. Talent + routing | free | `candidate`, with its market named |
+| 2. Screen on that market | per candidate | `flagged` or `no_play` |
+
+`candidate` is an honest intermediate state, not a weaker verdict: it means *cleared
+the talent bar, not yet priced*. A candidate whose price cannot be fetched **stays a
+candidate** rather than being flagged — a missing screen is not a pass, and treating
+it as one would flag every game whose F5 line happened to be unavailable, which is the
+exact opposite of a scanner that stays quiet.
+
+Re-run on the same slate after the fix:
+
+    1 of 7 games flagged.
+      HOU @ NYY: home (first five) -- K-BB% gap 10.7 points
+
+MIL @ NYM is now correctly rejected on its own first-five price. Two flags became one,
+and the one that disappeared was the one that should never have been there.
 
 ## What the scanner does not claim
 
