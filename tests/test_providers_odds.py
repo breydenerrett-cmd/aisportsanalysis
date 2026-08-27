@@ -155,6 +155,71 @@ class TestCreditEstimation(unittest.TestCase):
             odds.estimate_credits(())
 
 
+class TestHistoricalBackfillEstimate(unittest.TestCase):
+    """Historical odds are the one input with no free substitute. Pricing the
+    backfill correctly is what turns 'can we backtest?' into a yes or no."""
+
+    def test_historical_costs_ten_times_live(self):
+        live = odds.estimate_credits(("h2h",), ("us",))["credits_per_call"]
+        hist = odds.estimate_backfill_credits(markets=("h2h",),
+                                              regions=("us",))["credits_per_call"]
+        self.assertEqual(hist, live * odds.HISTORICAL_CREDIT_MULTIPLIER)
+
+    def test_three_seasons_of_moneyline_fits_the_100k_plan(self):
+        estimate = odds.estimate_backfill_credits(seasons=3, markets=("h2h",))
+        self.assertEqual(estimate["total_credits"], 55_800)
+        self.assertEqual(estimate["cheapest_plan"], "100K")
+        self.assertEqual(estimate["one_time_cost_usd"], 59)
+
+    def test_all_markets_three_seasons_needs_the_larger_plan(self):
+        estimate = odds.estimate_backfill_credits(
+            seasons=3, markets=("h2h", "spreads", "totals"))
+        self.assertEqual(estimate["one_time_cost_usd"], 119)
+
+    def test_cost_scales_linearly_with_seasons(self):
+        one = odds.estimate_backfill_credits(seasons=1, markets=("h2h",))
+        three = odds.estimate_backfill_credits(seasons=3, markets=("h2h",))
+        self.assertEqual(three["total_credits"], one["total_credits"] * 3)
+
+    def test_free_tier_never_covers_a_backfill(self):
+        # Even the smallest useful backfill dwarfs 500 credits.
+        estimate = odds.estimate_backfill_credits(seasons=1, markets=("h2h",),
+                                                  snapshots_per_day=1)
+        self.assertGreater(estimate["total_credits"], 500)
+
+    def test_coverage_start_is_reported(self):
+        # Nothing before this date exists, whatever you pay.
+        self.assertEqual(
+            odds.estimate_backfill_credits()["coverage_starts"], "2020-06-06")
+
+    def test_invalid_inputs_rejected(self):
+        for kwargs in ({"seasons": 0}, {"snapshots_per_day": 0}):
+            with self.subTest(kwargs=kwargs):
+                with self.assertRaises(OddsProviderError):
+                    odds.estimate_backfill_credits(**kwargs)
+
+
+class TestLiveScheduleRecommendation(unittest.TestCase):
+    def test_four_snapshots_a_day_fits_the_free_tier(self):
+        result = odds.recommend_live_schedule(daily_snapshots=4)
+        self.assertTrue(result["fits_free_tier"])
+        self.assertEqual(result["credits_per_month"], 360)
+
+    def test_eight_snapshots_a_day_does_not_fit(self):
+        self.assertFalse(
+            odds.recommend_live_schedule(daily_snapshots=8)["fits_free_tier"])
+
+    def test_fifteen_minute_polling_blows_the_budget_badly(self):
+        # 96 polls/day is the naive "just poll constantly" schedule.
+        result = odds.recommend_live_schedule(daily_snapshots=96)
+        self.assertFalse(result["fits_free_tier"])
+        self.assertLess(result["headroom"], -8000)
+
+    def test_fewer_markets_allow_more_snapshots(self):
+        many = odds.recommend_live_schedule(daily_snapshots=8, markets=("h2h",))
+        self.assertTrue(many["fits_free_tier"])
+
+
 class TestNormalization(unittest.TestCase):
     def test_all_three_markets_are_extracted(self):
         record = odds.normalize_event(event())

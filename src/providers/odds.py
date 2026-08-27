@@ -132,6 +132,94 @@ def estimate_credits(markets=DEFAULT_MARKETS, regions=(DEFAULT_REGION,)) -> dict
 # Transport
 # ---------------------------------------------------------------------------
 
+# Verified against the-odds-api.com documentation and pricing pages.
+# Historical endpoints cost 10x the live endpoints and require a paid plan.
+HISTORICAL_CREDIT_MULTIPLIER = 10
+HISTORICAL_COVERAGE_START = "2020-06-06"
+
+# Monthly plans, USD -> credits included.
+PRICING_TIERS = (
+    ("free", 0, 500),
+    ("20K", 30, 20_000),
+    ("100K", 59, 100_000),
+    ("5M", 119, 5_000_000),
+    ("15M", 249, 15_000_000),
+)
+
+# An MLB regular season runs roughly this many days.
+SEASON_DAYS = 186
+
+
+def estimate_backfill_credits(seasons: int = 3, markets=("h2h",),
+                              regions=("us",), snapshots_per_day: int = 10) -> dict:
+    """Cost of backfilling historical closing odds.
+
+    This is the Phase 3 decision gate priced out. Historical odds are the one
+    input with no free substitute -- without them there is no backtest, because
+    you would be betting into prices that no longer exist.
+
+    `snapshots_per_day` defaults to 10 because MLB first pitches span roughly
+    1pm to 10pm ET, and one snapshot per hour catches every game close to its
+    own closing line. One snapshot call returns every game live at that
+    timestamp, so the cost scales with snapshots, not with games.
+
+    The headline: this is a ONE-TIME backfill, not a subscription. Pull the
+    history, then cancel. Daily operation afterwards fits the free tier.
+    """
+    market_list = _validate_markets(markets)
+    region_list = [r for r in regions if r]
+    if not region_list:
+        raise OddsProviderError("at least one region is required")
+    if seasons < 1 or snapshots_per_day < 1:
+        raise OddsProviderError("seasons and snapshots_per_day must be positive")
+
+    per_call = (len(market_list) * len(region_list)
+                * HISTORICAL_CREDIT_MULTIPLIER)
+    calls = snapshots_per_day * SEASON_DAYS * seasons
+    total = per_call * calls
+
+    # Cheapest single month that covers the whole backfill.
+    plan = next(((name, price) for name, price, credits in PRICING_TIERS
+                 if credits >= total), None)
+
+    return {
+        "seasons": seasons,
+        "markets": market_list,
+        "regions": region_list,
+        "snapshots_per_day": snapshots_per_day,
+        "credits_per_call": per_call,
+        "total_calls": calls,
+        "total_credits": total,
+        "cheapest_plan": plan[0] if plan else "exceeds listed tiers",
+        "one_time_cost_usd": plan[1] if plan else None,
+        "coverage_starts": HISTORICAL_COVERAGE_START,
+        "note": "one-time backfill; cancel afterwards. Daily live use is separate.",
+    }
+
+
+def recommend_live_schedule(daily_snapshots: int = 4,
+                            markets=DEFAULT_MARKETS) -> dict:
+    """Find a live snapshot cadence that fits inside the free tier.
+
+    Line movement cannot be backfilled from free sources, so capture has to
+    start early and run continuously. The constraint is that a naive
+    15-minute poll burns the free tier in under two days.
+    """
+    market_list = _validate_markets(markets)
+    per_call = len(market_list)
+    monthly = per_call * daily_snapshots * 30
+    free_credits = PRICING_TIERS[0][2]
+    return {
+        "daily_snapshots": daily_snapshots,
+        "markets": market_list,
+        "credits_per_call": per_call,
+        "credits_per_month": monthly,
+        "free_tier_monthly": free_credits,
+        "fits_free_tier": monthly <= free_credits,
+        "headroom": free_credits - monthly,
+    }
+
+
 def _get_json(path: str, params: dict, timeout: int = DEFAULT_TIMEOUT):
     """Single network seam. Tests patch this and nothing else.
 
