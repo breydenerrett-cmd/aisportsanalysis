@@ -452,7 +452,57 @@ def cmd_predict(args) -> int:
         if check.get("warning"):
             print(f"\n    *** {check['warning']}")
 
+    if getattr(args, "log", False):
+        from src.pipeline import grading
+        check = result.get("ignorance_check", {})
+        for p in result["predictions"]:
+            p["ranking_was_meaningful"] = check.get("ranking_is_meaningful")
+        logged = grading.log_predictions(
+            result["predictions"],
+            model_version=model.get("metadata", {}).get("trained_on"))
+        print(f"\n  logged {logged['logged']} prediction(s) to {logged['path']}")
+        print("  the log is append-only: these cannot be revised later.")
+
     print(f"\n  {result['warning']}")
+    return EXIT_OK
+
+
+def cmd_grade(args) -> int:
+    """Settle logged predictions against final results and report CLV."""
+    from src.pipeline import grading, history, snapshots
+
+    entries = grading.deduplicate(grading.read_log())
+    if not entries:
+        print("no predictions logged yet -- run `predict --log` first.")
+        return EXIT_OK
+
+    settled = grading.settle(entries, history.read_results(),
+                             snapshot_rows=snapshots.read())
+    counts = settled["counts"]
+    print(f"prediction log: {len(entries)} entries\n")
+    print(f"  graded     : {counts['graded']}")
+    print(f"  pending    : {counts['pending']}  (game not final yet)")
+    print(f"  unresolved : {counts['unresolved']}")
+
+    summary = grading.report(settled)
+    if summary["n"] == 0:
+        print(f"\n  {summary['note']}")
+        return EXIT_OK
+
+    print(f"\n  accuracy   : {summary['accuracy']}  (n={summary['n']})")
+    print(f"  brier      : {summary['brier']}")
+    print(f"\n  CLV (the primary metric)")
+    print(f"    graded         : {summary['clv_n']}")
+    if summary["clv_n"]:
+        print(f"    beat the close : {summary['clv_beat_rate']}")
+        print(f"    mean prob edge : {summary['clv_mean_prob_edge']}")
+    if summary["clv_ungraded"]:
+        print(f"    ungraded       : {summary['clv_ungraded']}")
+        for reason, count in summary["clv_ungraded_reasons"].items():
+            print(f"      {count}x {reason}")
+
+    print(f"\n  VERDICT: {summary['verdict']}")
+    print(f"  {summary['note']}")
     return EXIT_OK
 
 
@@ -602,6 +652,10 @@ def build_parser() -> argparse.ArgumentParser:
     predict_cmd = sub.add_parser("predict",
                                  help="predict a slate and compare to the market")
     predict_cmd.add_argument("date", help="YYYY-MM-DD")
+    predict_cmd.add_argument("--log", action="store_true",
+                             help="append predictions to the immutable log")
+
+    sub.add_parser("grade", help="settle logged predictions and report CLV")
 
     sub.add_parser("snapshot", help="capture one odds observation (run on a schedule)")
 
@@ -622,6 +676,7 @@ COMMANDS = {
     "features": cmd_features,
     "train": cmd_train,
     "predict": cmd_predict,
+    "grade": cmd_grade,
     "snapshot": cmd_snapshot,
     "movement": cmd_movement,
     "calibration-demo": cmd_calibration_demo,
