@@ -264,12 +264,17 @@ def matchup_features(store, away_team, home_team, game_date) -> dict:
     return features
 
 
-def build_training_row(store, game) -> dict:
+def build_training_row(store, game, pitcher_logs=None,
+                       fip_constant=None) -> dict:
     """One labelled training row: point-in-time features plus the outcome.
 
     The label is `home_won`, taken from the game itself. The features come only from
     games before it. Games without a decided winner (exhibition ties) are unusable as
     training labels and are rejected rather than silently coerced.
+
+    When `pitcher_logs` is supplied, starting-pitcher features are merged in. Those
+    obey the same cutoff rule through pitchers.appearances_before, so adding them
+    cannot introduce a leak the team features were designed to prevent.
     """
     game_date = game.get("date")
     away, home = game.get("away_team"), game.get("home_team")
@@ -290,12 +295,24 @@ def build_training_row(store, game) -> dict:
         "home_team": home,
     }
     row.update(matchup_features(store, away, home, game_date))
+
+    if pitcher_logs is not None:
+        from src.pipeline import pitchers
+        row.update(pitchers.matchup_pitcher_features(
+            pitcher_logs,
+            game.get("away_probable_id"),
+            game.get("home_probable_id"),
+            game_date,
+            fip_constant=fip_constant,
+        ))
+
     row["home_won"] = int(label)
     return row
 
 
 def build_training_table(store, min_date=None, max_date=None,
-                         require_complete=True) -> dict:
+                         require_complete=True, pitcher_logs=None,
+                         require_pitchers=False) -> dict:
     """Build the full labelled table, oldest first.
 
     `require_complete` drops rows where either side's sample is too thin for rates. Early
@@ -305,7 +322,19 @@ def build_training_table(store, min_date=None, max_date=None,
     Returns the rows plus a report of what was excluded and why -- a silently shortened
     table is how a training set quietly stops representing the season.
     """
-    rows, skipped = [], {"no_label": 0, "thin_sample": 0, "error": 0, "out_of_range": 0}
+    rows, skipped = [], {"no_label": 0, "thin_sample": 0, "error": 0,
+                         "out_of_range": 0, "pitcher_unknown": 0}
+
+    # The FIP constant is season-level and expensive to derive per row, so it is
+    # computed once against the end of the window. That is a deliberate and tiny
+    # relaxation of point-in-time purity: it is a league-wide scaling offset, not a
+    # team or pitcher fact, and it shifts by hundredths across a season. Recomputing
+    # it per row costs a full pass over every log for every game.
+    fip_constant = None
+    if pitcher_logs is not None:
+        from src.pipeline import pitchers
+        cutoff = max_date or "2100-01-01"
+        fip_constant = pitchers.league_fip_constant(pitcher_logs, cutoff)
 
     ordered = sorted(
         store.values(),
@@ -325,13 +354,17 @@ def build_training_table(store, min_date=None, max_date=None,
             continue
 
         try:
-            row = build_training_row(store, game)
+            row = build_training_row(store, game, pitcher_logs=pitcher_logs,
+                                     fip_constant=fip_constant)
         except FeatureError as exc:
             skipped["no_label" if "winner" in str(exc) else "error"] += 1
             continue
 
         if require_complete and row.get("either_sample_thin"):
             skipped["thin_sample"] += 1
+            continue
+        if require_pitchers and not row.get("both_sp_known", True):
+            skipped["pitcher_unknown"] += 1
             continue
         rows.append(row)
 
@@ -344,6 +377,8 @@ def build_training_table(store, min_date=None, max_date=None,
         "last_date": rows[-1]["date"] if rows else None,
         "base_rate": (round(sum(r["home_won"] for r in rows) / len(rows), 4)
                       if rows else None),
+        "fip_constant": fip_constant,
+        "includes_pitchers": pitcher_logs is not None,
     }
 
 

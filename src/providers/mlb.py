@@ -277,6 +277,94 @@ def fetch_results(game_date, timeout: int = DEFAULT_TIMEOUT) -> dict:
     }
 
 
+def fetch_pitcher_game_log(person_id, season, timeout: int = DEFAULT_TIMEOUT) -> list:
+    """Every pitching appearance for one player in one season, oldest first.
+
+    This is the raw material for point-in-time pitcher stats. Season-to-date figures
+    from the API include the whole season and would leak the future into past games;
+    a game log can be accumulated forward to whatever date is needed.
+
+    Returns one record per appearance with the date attached. An empty list is a
+    legitimate answer -- a pitcher who missed the season through injury has no
+    appearances, and that is different from a failed request.
+    """
+    payload = _get_json(
+        f"people/{person_id}/stats",
+        {"stats": "gameLog", "group": "pitching", "season": season},
+        timeout=timeout,
+    )
+    stats = payload.get("stats") or []
+    if not stats:
+        return []
+
+    appearances = []
+    for split in stats[0].get("splits") or []:
+        stat = split.get("stat") or {}
+        appearances.append({
+            "person_id": int(person_id),
+            "date": split.get("date"),
+            "season": str(season),
+            "is_home": split.get("isHome"),
+            "games_started": _as_int(stat.get("gamesStarted")),
+            "innings_pitched": _innings_to_float(stat.get("inningsPitched")),
+            "earned_runs": _as_int(stat.get("earnedRuns")),
+            "runs": _as_int(stat.get("runs")),
+            "hits": _as_int(stat.get("hits")),
+            "walks": _as_int(stat.get("baseOnBalls")),
+            "strikeouts": _as_int(stat.get("strikeOuts")),
+            "home_runs": _as_int(stat.get("homeRuns")),
+            "batters_faced": _as_int(stat.get("battersFaced")),
+            "pitches": _as_int(stat.get("numberOfPitches")),
+        })
+    appearances.sort(key=lambda a: a.get("date") or "")
+    return appearances
+
+
+def _innings_to_float(value):
+    """Convert baseball's innings notation to a real number.
+
+    Innings pitched are written in thirds: "5.1" means five and ONE THIRD innings,
+    not five and one tenth. Treating that string as a float understates every rate
+    statistic computed from it -- ERA, WHIP, K/9 -- by a few percent, consistently
+    and invisibly. It is one of the classic silent errors in baseball data work.
+    """
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    if "." not in text:
+        try:
+            return float(text)
+        except ValueError:
+            return None
+    whole, _, fraction = text.partition(".")
+    try:
+        innings = float(whole)
+    except ValueError:
+        return None
+    if fraction == "1":
+        return innings + 1.0 / 3.0
+    if fraction == "2":
+        return innings + 2.0 / 3.0
+    if fraction == "0":
+        return innings
+    # An unexpected fraction means the notation is not what we think it is.
+    raise MLBError(
+        f"innings pitched {value!r} has an unexpected fraction; baseball uses "
+        "thirds (.0, .1, .2) and misreading it silently skews every rate stat"
+    )
+
+
+def _as_int(value):
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def iter_dates(start, end):
     """Yield ISO dates from start to end inclusive. The backfill driver."""
     first, last = _to_date(start), _to_date(end)
