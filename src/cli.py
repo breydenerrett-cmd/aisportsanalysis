@@ -245,6 +245,46 @@ def cmd_history(args) -> int:
     return EXIT_OK
 
 
+def cmd_features(args) -> int:
+    """Build the point-in-time training table from the historical store."""
+    from src.pipeline import features, history
+
+    store = history.read_results()
+    if not store:
+        print("historical store is empty -- run `ingest` first.", file=sys.stderr)
+        return EXIT_ERROR
+
+    table = features.build_training_table(
+        store, min_date=args.start, max_date=args.end,
+        require_complete=not args.include_thin,
+    )
+
+    print(f"training table from {len(store)} stored games\n")
+    print(f"  labelled rows : {table['count']}")
+    print(f"  span          : {table['first_date']} .. {table['last_date']}")
+    print(f"  home base rate: {table['base_rate']}")
+    print("\n  excluded")
+    for reason, count in sorted(table["skipped"].items()):
+        if count:
+            print(f"    {reason:<16} {count}")
+
+    if table["count"]:
+        path = Path("data/processed/training_table.csv")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        import csv as _csv
+        columns = list(table["rows"][0])
+        with path.open("w", newline="", encoding="utf-8") as handle:
+            writer = _csv.DictWriter(handle, fieldnames=columns)
+            writer.writeheader()
+            writer.writerows(table["rows"])
+        print(f"\n  written to    : {path}")
+        print(f"  columns       : {len(columns)}")
+
+    print("\n  Every feature is computed only from games strictly BEFORE each row's")
+    print("  date. No model is fitted yet -- this is the input, not a prediction.")
+    return EXIT_OK
+
+
 def cmd_snapshot(args) -> int:
     """Capture one odds observation. Meant to run on a schedule.
 
@@ -375,6 +415,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("history", help="coverage and integrity of the historical store")
 
+    features_cmd = sub.add_parser("features",
+                                  help="build the point-in-time training table")
+    features_cmd.add_argument("--start", default=None, help="YYYY-MM-DD")
+    features_cmd.add_argument("--end", default=None, help="YYYY-MM-DD")
+    features_cmd.add_argument("--include-thin", action="store_true",
+                              help="keep rows whose samples are too small for rates")
+
     sub.add_parser("snapshot", help="capture one odds observation (run on a schedule)")
 
     movement_cmd = sub.add_parser("movement", help="show captured line movement")
@@ -391,6 +438,7 @@ COMMANDS = {
     "results": cmd_results,
     "ingest": cmd_ingest,
     "history": cmd_history,
+    "features": cmd_features,
     "snapshot": cmd_snapshot,
     "movement": cmd_movement,
     "calibration-demo": cmd_calibration_demo,

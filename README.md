@@ -16,6 +16,8 @@ answer — including the possibility that the answer is no.
 | Stake sizing | Built, flat by default |
 | Ballpark data | Coordinates yes, orientations **unverified** |
 | MLB results + backfill | Built and verified live |
+| Historical store | Idempotent, resumable, manifest-tracked |
+| Odds snapshots / CLV | Built, capturing |
 | Weather | Built and verified live |
 | Odds provider | Built, key-gated, all 3 markets |
 | Slate pipeline | Built and verified live |
@@ -23,18 +25,21 @@ answer — including the possibility that the answer is no.
 | **Backtest** | **Never run** |
 | **Graded picks** | **Zero** |
 
-272 tests, no network access in the suite, zero runtime dependencies beyond the
-Python standard library.
+350 tests, no network access in the suite (enforced in CI), zero runtime
+dependencies beyond the Python standard library.
 
 ## Quick start
 
 ```bash
-python -m src.cli status                        # what is configured
-python -m src.cli slate 2025-07-09              # build a slate
-python -m src.cli results 2025-07-09            # what is actually final
-python -m src.cli backfill 2024-04-01 2024-04-30 -v   # collect history
-python -m src.cli credits                       # odds API cost before you schedule
-python -m src.cli calibration-demo              # see the metrics work
+python -m src.cli status                          # what is configured
+python -m src.cli slate 2025-07-09                # build a slate
+python -m src.cli results 2025-07-09              # what is actually final
+python -m src.cli ingest 2025-03-20 2025-11-05    # build the historical store
+python -m src.cli history                         # coverage + integrity of that store
+python -m src.cli snapshot                        # capture odds now (run on a schedule)
+python -m src.cli movement                        # line movement captured so far
+python -m src.cli credits                         # odds API cost before you schedule
+python -m src.cli calibration-demo                # see the metrics work
 ```
 
 Everything except odds works with no configuration at all. For odds:
