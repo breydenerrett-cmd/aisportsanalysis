@@ -20,7 +20,7 @@ from pathlib import Path
 from src.pipeline import scanlog
 
 
-def flag(game_pk=1, side="home", implied=0.60, market="first_five_totals"):
+def flag(game_pk=1, side="home", implied=0.60, market="first_five"):
     return {
         "game_pk": game_pk, "date": "2026-08-27", "away_team": "MIL",
         "home_team": "NYM", "side": side, "market": market,

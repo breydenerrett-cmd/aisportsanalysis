@@ -469,7 +469,7 @@ def _price_candidates(candidates, slate_mod, odds_prov):
         if away and home:
             ids[(away, home)] = event.get("id")
 
-    f5 = [c for c in candidates if c["market"] == "first_five_totals"]
+    f5 = [c for c in candidates if c["market"] == "first_five"]
     cost = odds_prov.estimate_event_credits(len(f5), markets=F5_MARKETS)
     print(f"  pricing {len(candidates)} candidate(s); "
           f"{cost['credits_total']} credits for {len(f5)} first-five lookup(s)\n")
@@ -484,7 +484,7 @@ def _price_candidates(candidates, slate_mod, odds_prov):
             print(f"    {scan['away_team']} @ {scan['home_team']}: no matching "
                   "event in the odds feed, so it cannot be screened")
             continue
-        wanted = F5_MARKETS if scan["market"] == "first_five_totals" else ["h2h"]
+        wanted = F5_MARKETS if scan["market"] == "first_five" else ["h2h"]
         try:
             record = odds_prov.normalize_event(
                 odds_prov.fetch_event_odds(event_id, markets=wanted))
@@ -492,7 +492,7 @@ def _price_candidates(candidates, slate_mod, odds_prov):
             print(f"    {scan['away_team']} @ {scan['home_team']}: {exc}")
             continue
 
-        key = ("h2h_1st_5_innings" if scan["market"] == "first_five_totals"
+        key = ("h2h_1st_5_innings" if scan["market"] == "first_five"
                else "h2h")
         moneyline = record["markets"].get(key)
         if not moneyline:

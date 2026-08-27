@@ -133,7 +133,22 @@ CANDIDATE = "candidate"
 FLAGGED = "flagged"
 INSUFFICIENT_DATA = "insufficient_data"
 
-MARKET_F5 = "first_five_totals"
+# Named "first_five", NOT "first_five_totals", and the difference is a finding rather
+# than a naming preference.
+#
+# The market originally named was the over/under on first-five runs, and the routing
+# argument was built for it. Measured across 953 completed games, the scanner's talent
+# bar says nothing about first-five RUNS: candidates averaged 4.99 against 5.07 for
+# everything else, and went over 4.5 at 50.6% against 50.5%. Those are the same number.
+#
+# What the talent bar does appear to track is WHO LEADS. Candidate sides led through
+# five in 60.7% of decided games -- on 61 games, and against a price that would likely
+# have said something similar, so it is a direction to test rather than a result.
+#
+# So the scanner routes to the first-five market and screens the first-five MONEYLINE,
+# which is what the evidence supports. Calling the constant "totals" would have quietly
+# asserted a link between a talent gap and a run total that the data does not show.
+MARKET_F5 = "first_five"
 MARKET_FULL = "full_game"
 
 
