@@ -152,6 +152,54 @@ class TestNoLookahead(unittest.TestCase):
                 self.assertEqual(row, clean_by_pk[row["game_pk"]])
 
 
+class TestSeasonScoping(unittest.TestCase):
+    """A team's record resets every season. Carrying it forward is a silent bug.
+
+    Found live: ingesting a single 2026 date into a store of 2025 games made a
+    2026 prediction see the Yankees' full 163-game 2025 record as current form.
+    Nothing in the output looked wrong -- the numbers were simply about the wrong
+    year. Every existing test used same-year dates, so none of them caught it.
+    """
+
+    def store(self):
+        last_season = [game(i, f"2025-09-{i:02d}", "AAA", "BBB", 9, 1)
+                       for i in range(1, 21)]
+        this_season = [game(100 + i, f"2026-04-{i:02d}", "AAA", "BBB", 1, 9)
+                       for i in range(1, 4)]
+        return store_from(last_season + this_season)
+
+    def test_last_seasons_games_are_excluded_by_default(self):
+        result = features.team_features(self.store(), "AAA", "2026-04-10")
+        self.assertEqual(result["games_played"], 3)
+
+    def test_last_seasons_record_does_not_leak_into_this_season(self):
+        # AAA won 20 straight in 2025 and lost 3 straight in 2026. Season form must
+        # reflect the 3 losses, not the 20 wins.
+        result = features.team_features(self.store(), "AAA", "2026-04-10")
+        self.assertEqual(result["streak"], -3)
+
+    def test_a_thin_new_season_is_reported_thin(self):
+        result = features.team_features(self.store(), "AAA", "2026-04-10")
+        self.assertTrue(result["sample_is_thin"])
+        self.assertIsNone(result["win_pct"])
+
+    def test_the_previous_season_is_still_intact_within_itself(self):
+        result = features.team_features(self.store(), "AAA", "2025-09-25")
+        self.assertEqual(result["games_played"], 20)
+
+    def test_scoping_can_be_disabled_deliberately(self):
+        games = features.games_before(self.store(), "2026-04-10", team="AAA",
+                                      same_season_only=False)
+        self.assertEqual(len(games), 23)
+
+    def test_rest_days_do_not_span_the_off_season(self):
+        # Without scoping this would report a gap measured from last September,
+        # letting the model key on "this is the start of a season".
+        result = features.team_features(self.store(), "AAA", "2026-04-10")
+        self.assertLessEqual(result["rest_days"],
+                             features.MAX_MEANINGFUL_REST_DAYS)
+
+
 class TestTeamFeatures(unittest.TestCase):
     def test_counts_wins_and_losses_correctly(self):
         # AAA is away and wins every game 5-2.

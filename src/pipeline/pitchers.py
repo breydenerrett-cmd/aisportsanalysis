@@ -177,17 +177,27 @@ def _has_season(appearances, season) -> bool:
 # Point-in-time features
 # ---------------------------------------------------------------------------
 
-def appearances_before(logs, person_id, cutoff_date) -> list:
-    """Appearances strictly before a date. The gated accessor, as with team features."""
+def appearances_before(logs, person_id, cutoff_date,
+                       same_season_only: bool = True) -> list:
+    """Appearances strictly before a date. The gated accessor, as with team features.
+
+    Season-scoped by default for the same reason team form is: a pitcher's ERA from
+    two seasons ago describes a different arm, and often a different role. Carrying it
+    forward produces a number that looks plausible and is about the wrong year.
+    """
     cutoff = _to_date(cutoff_date)
+    season = cutoff.year
     result = []
     for appearance in logs.get(str(person_id), []):
         if appearance.get("empty") or not appearance.get("date"):
             continue
         try:
-            if _to_date(appearance["date"]) >= cutoff:
-                continue
+            parsed = _to_date(appearance["date"])
         except PitcherError:
+            continue
+        if parsed >= cutoff:
+            continue
+        if same_season_only and parsed.year != season:
             continue
         result.append(appearance)
     result.sort(key=lambda a: a["date"])

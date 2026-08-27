@@ -135,6 +135,45 @@ class TestNoLookahead(unittest.TestCase):
         )
 
 
+class TestSeasonScoping(unittest.TestCase):
+    """A pitcher's stats from last season describe a different arm, often a
+    different role. Carrying them forward yields a plausible-looking number about
+    the wrong year."""
+
+    def logs(self):
+        return {"1": [appearance(1, f"2025-09-{d:02d}", er=0, season="2025")
+                      for d in range(1, 11)]
+                     + [appearance(1, f"2026-04-{d:02d}", er=8, season="2026")
+                        for d in range(1, 4)]}
+
+    def test_last_seasons_appearances_are_excluded(self):
+        result = pitchers.appearances_before(self.logs(), 1, "2026-04-10")
+        self.assertEqual(len(result), 3)
+
+    def test_last_seasons_era_does_not_leak(self):
+        # 2025 was a shutout streak; 2026 has been rough. With only 3 starts the
+        # rate is suppressed, but the COUNT must reflect this season only.
+        result = pitchers.pitcher_features(self.logs(), 1, "2026-04-10",
+                                           fip_constant=3.1)
+        self.assertEqual(result["sp_appearances"], 3)
+        self.assertTrue(result["sp_thin"])
+
+    def test_the_previous_season_is_intact_within_itself(self):
+        result = pitchers.pitcher_features(self.logs(), 1, "2025-09-15",
+                                           fip_constant=3.1)
+        self.assertEqual(result["sp_appearances"], 10)
+
+    def test_scoping_can_be_disabled_deliberately(self):
+        result = pitchers.appearances_before(self.logs(), 1, "2026-04-10",
+                                             same_season_only=False)
+        self.assertEqual(len(result), 13)
+
+    def test_days_rest_does_not_span_the_off_season(self):
+        result = pitchers.pitcher_features(self.logs(), 1, "2026-04-10",
+                                           fip_constant=3.1)
+        self.assertLessEqual(result["sp_days_rest"], 14)
+
+
 class TestRateComputation(unittest.TestCase):
     def features(self, days=MAY, cutoff="2025-06-01", **kwargs):
         return pitchers.pitcher_features(log_for(1, days, **kwargs), 1, cutoff,

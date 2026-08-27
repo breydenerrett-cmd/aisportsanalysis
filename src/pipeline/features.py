@@ -59,25 +59,39 @@ class FeatureError(ValueError):
 # The single gated accessor to history
 # ---------------------------------------------------------------------------
 
-def games_before(store, cutoff_date, team=None) -> list:
+def games_before(store, cutoff_date, team=None, same_season_only=True) -> list:
     """Every stored game strictly BEFORE cutoff_date, oldest first.
 
     This is the only function in this module that reads the store, and it is the
     structural guarantee against lookahead bias. A game played ON the cutoff date is
     excluded: at the moment a prediction is made, that day's games have not happened.
 
+    SEASON SCOPING. By default only games from the SAME season count. A team's record
+    resets every year -- last season's 95-win roster may have lost three starters to
+    free agency, and carrying that record forward describes a team that no longer
+    exists.
+
+    This is not hypothetical. Ingesting a single 2026 date into a store of 2025 games
+    made a 2026 prediction see the Yankees' full 163-game 2025 record as their current
+    form. The bug is invisible from the output: the numbers all look reasonable, they
+    are simply about the wrong year.
+
     Passing `team` filters to games that team played in, home or away.
     """
     cutoff = _to_date(cutoff_date)
+    season = cutoff.year
     rows = []
     for row in store.values():
         row_date = row.get("date")
         if not row_date:
             continue
         try:
-            if _to_date(row_date) >= cutoff:
-                continue
+            parsed = _to_date(row_date)
         except FeatureError:
+            continue
+        if parsed >= cutoff:
+            continue
+        if same_season_only and parsed.year != season:
             continue
         if team is not None and row.get("away_team") != team and row.get("home_team") != team:
             continue

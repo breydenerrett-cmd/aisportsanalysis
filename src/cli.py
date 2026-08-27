@@ -506,6 +506,78 @@ def cmd_grade(args) -> int:
     return EXIT_OK
 
 
+def cmd_daily(args) -> int:
+    """The whole loop, in the order that keeps the evidence honest.
+
+    Order matters and is not arbitrary:
+      1. snapshot odds FIRST -- line movement cannot be backfilled, so a failure
+         later in the run must not cost the observation.
+      2. ingest yesterday's results, so grading has something to settle against.
+      3. predict today and log, capturing the price at prediction time.
+      4. grade whatever has settled.
+
+    Every step is independent. One failing does not abort the rest, because a
+    missed grading run is recoverable and a missed snapshot is not.
+    """
+    from datetime import datetime, timedelta, timezone
+
+    today = args.date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    yesterday = (datetime.strptime(today, "%Y-%m-%d")
+                 - timedelta(days=1)).strftime("%Y-%m-%d")
+
+    print(f"daily loop for {today}\n")
+    failures = []
+
+    def step(number, name, fn):
+        print(f"[{number}/4] {name}")
+        try:
+            fn()
+        except Exception as exc:  # a step failing must not kill the loop
+            failures.append((name, str(exc)))
+            print(f"      FAILED: {exc}")
+        print()
+
+    # 1. Snapshot first. This is the only irreplaceable step.
+    def do_snapshot():
+        from src.pipeline import snapshots
+        result = snapshots.capture()
+        if not result["configured"]:
+            print(f"      skipped: {result['message']}")
+        elif result.get("error"):
+            raise RuntimeError(result["error"])
+        else:
+            print(f"      captured {result['captured']} observations "
+                  f"across {result['events']} events")
+
+    def do_ingest():
+        from src.pipeline import history
+        report = history.ingest_range(yesterday, yesterday)
+        print(f"      {yesterday}: {report['processed']} date(s) processed, "
+              f"{report['total_games_stored']} games in store")
+
+    def do_predict():
+        from src.pipeline import grading
+        code = cmd_predict(argparse.Namespace(date=today, log=True))
+        if code != EXIT_OK:
+            raise RuntimeError("prediction step returned a non-zero exit")
+
+    def do_grade():
+        cmd_grade(argparse.Namespace())
+
+    step(1, "capture odds snapshot (irreplaceable -- runs first)", do_snapshot)
+    step(2, f"ingest results for {yesterday}", do_ingest)
+    step(3, f"predict and log {today}", do_predict)
+    step(4, "grade settled predictions", do_grade)
+
+    if failures:
+        print(f"loop finished with {len(failures)} failed step(s):")
+        for name, error in failures:
+            print(f"  {name}: {error}")
+        return EXIT_ERROR
+    print("loop finished cleanly.")
+    return EXIT_OK
+
+
 def cmd_snapshot(args) -> int:
     """Capture one odds observation. Meant to run on a schedule.
 
@@ -657,6 +729,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("grade", help="settle logged predictions and report CLV")
 
+    daily_cmd = sub.add_parser("daily", help="run the full daily loop")
+    daily_cmd.add_argument("--date", default=None,
+                           help="YYYY-MM-DD (defaults to today, UTC)")
+
     sub.add_parser("snapshot", help="capture one odds observation (run on a schedule)")
 
     movement_cmd = sub.add_parser("movement", help="show captured line movement")
@@ -677,6 +753,7 @@ COMMANDS = {
     "train": cmd_train,
     "predict": cmd_predict,
     "grade": cmd_grade,
+    "daily": cmd_daily,
     "snapshot": cmd_snapshot,
     "movement": cmd_movement,
     "calibration-demo": cmd_calibration_demo,
