@@ -298,3 +298,83 @@ class TestTransportErrors(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestFirstFive(unittest.TestCase):
+    """Grading a first-five market needs the half-inning line, not the final score.
+
+    The five-inning result cannot be derived from the final score and frequently
+    disagrees with it -- measured on 2026-08-26, CIN @ SF was 2-4 through five and
+    10-9 the other way at the end.
+    """
+
+    @staticmethod
+    def line(*pairs, complete_halves=True):
+        innings = []
+        for i, (away, home) in enumerate(pairs, start=1):
+            entry = {"num": i, "away": {"runs": away}}
+            entry["home"] = {"runs": home} if home is not None else {}
+            innings.append(entry)
+        return {"linescore": {"innings": innings}}
+
+    def test_runs_are_summed_over_exactly_five_innings(self):
+        game = self.line((1, 0), (0, 2), (0, 0), (3, 0), (0, 1), (9, 9))
+        result = mlb.first_five(game)
+        self.assertTrue(result["complete"])
+        self.assertEqual(result["away_runs"], 4)
+        self.assertEqual(result["home_runs"], 3)
+        self.assertEqual(result["total_runs"], 7)
+        self.assertEqual(result["winner"], "away")
+
+    def test_later_innings_are_ignored_entirely(self):
+        # The sixth-inning crooked number must not reach the first-five total.
+        game = self.line((0, 0), (0, 0), (0, 0), (0, 0), (0, 1), (12, 0))
+        self.assertEqual(mlb.first_five(game)["total_runs"], 1)
+        self.assertEqual(mlb.first_five(game)["winner"], "home")
+
+    def test_a_tie_through_five_is_reported_as_a_tie(self):
+        # Unlike a full game, a first-five moneyline can genuinely push. Picking a
+        # side here would fabricate a result.
+        result = mlb.first_five(self.line((0, 0), (1, 1), (0, 0), (0, 0), (0, 0)))
+        self.assertTrue(result["complete"])
+        self.assertIsNone(result["winner"])
+        self.assertEqual(result["total_runs"], 2)
+
+    def test_a_game_with_fewer_than_five_innings_is_void_not_zero(self):
+        result = mlb.first_five(self.line((1, 0), (0, 0), (2, 1)))
+        self.assertFalse(result["complete"])
+        self.assertIsNone(result["total_runs"])
+        self.assertIn("void", result["reason"])
+
+    def test_an_unplayed_home_half_of_the_fifth_is_void(self):
+        # A game called after the top of the fifth with the home team ahead is an
+        # official final game whose first five never finished. Rare, and therefore
+        # dangerous: scoring it as a result would put a weather outcome in the record.
+        result = mlb.first_five(self.line((0, 0), (0, 1), (0, 0), (0, 0), (0, None)))
+        self.assertFalse(result["complete"])
+        self.assertIsNone(result["home_runs"])
+        self.assertIn("five full innings were not played", result["reason"])
+
+    def test_a_missing_half_is_never_treated_as_a_zero(self):
+        # The failure mode this guards: 0 is a perfectly plausible number of runs,
+        # so a defaulted half-inning is invisible in the output.
+        void = mlb.first_five(self.line((0, 0), (0, 0), (0, None), (0, 0), (0, 0)))
+        self.assertFalse(void["complete"])
+        self.assertIsNone(void["away_runs"])
+
+    def test_a_game_with_no_linescore_is_void_rather_than_an_error(self):
+        result = mlb.first_five({})
+        self.assertFalse(result["complete"])
+        self.assertEqual(result["innings_available"], 0)
+
+    def test_parse_game_attaches_it(self):
+        game = dict(self.line((1, 0), (0, 0), (0, 0), (0, 0), (0, 0)))
+        game.update({"gamePk": 1, "officialDate": "2026-08-26",
+                     "status": {"codedGameState": "F", "detailedState": "Final"},
+                     "gameType": "R",
+                     "teams": {"away": {"team": {"abbreviation": "TB"}, "score": 3},
+                               "home": {"team": {"abbreviation": "DET"}, "score": 0}}})
+        parsed = mlb.parse_game(game)
+        self.assertEqual(parsed["first_five"]["away_runs"], 1)
+        # The full-game score is untouched by the first-five calculation.
+        self.assertEqual(parsed["away_score"], 3)

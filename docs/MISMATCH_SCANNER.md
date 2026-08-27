@@ -195,6 +195,50 @@ Re-run on the same slate after the fix:
 MIL @ NYM is now correctly rejected on its own first-five price. Two flags became one,
 and the one that disappeared was the one that should never have been there.
 
+## A first-five moneyline is not a full-game moneyline in miniature
+
+Two measurements, both taken while building the settlement path, that change how the
+market should be read.
+
+### The first five disagrees with the final result far more than it agrees to differ
+
+Across **558 final regular-season games, 1 Jul – 14 Aug 2026**:
+
+| Through five vs. final | Games | Share |
+|---|---|---|
+| Same winner | 391 | 70.1% |
+| **Different winner** | 78 | **14.0%** |
+| **Tied through five** | 89 | **15.9%** |
+| Void (fewer than five full innings) | 0 | 0.0% |
+
+So the five-inning result cannot be derived from the final score, and nearly a third of
+games end up somewhere other than where they were after five. On 26 Aug 2026, CIN @ SF
+was 2–4 through five and 10–9 the other way at the end.
+
+### 15.9% of first-five moneylines push, and that changes what a price means
+
+Every book in the feed offers `h2h_1st_5_innings` **two-way** — checked across FanDuel,
+DraftKings, BetMGM, BetRivers, Bovada, BetOnline, MyBookie and BetUS. Two-way means a
+tie is **refunded, not lost**.
+
+De-vigging a two-way tie-refunded market yields **P(win | no push)**, not P(win). The
+0.65 screen therefore means different things in the two markets:
+
+| Market | 0.65 de-vigged means | Roughly unconditional |
+|---|---|---|
+| Full game | P(win) | 0.65 |
+| First five | P(win \| no push) | 0.65 × 0.841 ≈ **0.55** |
+
+The F5 screen is materially **stricter** in real terms than the full-game one — the
+opposite of what setting one threshold for both implies.
+
+This is **stated rather than corrected**. Converting between the spaces would mean
+applying a league-average push rate to a specific game, and within the first-five
+market's own terms 0.65 reads naturally as "the market has this side at 65% to win the
+first five, ties aside". The screen now says which quantity it is quoting, so the
+number is never silently misread. That the two thresholds are not the same quantity is
+a **known open question**, not a validated choice.
+
 ## What the scanner does not claim
 
 An obvious mismatch is not a profitable bet. Bad teams with bad starters lose more

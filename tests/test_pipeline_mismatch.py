@@ -374,3 +374,40 @@ class TestThresholdsArePreRegistered(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestFirstFivePushSemantics(unittest.TestCase):
+    """A first-five moneyline is two-way and tie-refunded, so its de-vig is conditional.
+
+    Measured on 558 final regular-season games: the first five ended level 15.9% of
+    the time. Every book in the feed offers the market two-way, which means a push,
+    not a loss -- and de-vigging a tie-refunded two-way market gives P(win | no push),
+    not P(win). Reading 0.65 there as an unconditional probability overstates it by
+    about a sixth.
+    """
+
+    def test_a_first_five_screen_says_what_the_number_means(self):
+        screen = mismatch.market_screen(150, -170, "home", market=mismatch.MARKET_F5)
+        self.assertIn("ties refunded", screen["reason"])
+        self.assertTrue(screen["detail"]["conditional_on_no_push"])
+
+    def test_a_full_game_screen_does_not_claim_a_push(self):
+        screen = mismatch.market_screen(150, -170, "home", market=mismatch.MARKET_FULL)
+        self.assertNotIn("ties refunded", screen["reason"])
+        self.assertNotIn("conditional_on_no_push", screen["detail"])
+
+    def test_the_qualifier_appears_on_rejections_too(self):
+        screen = mismatch.market_screen(380, -500, "home", market=mismatch.MARKET_F5)
+        self.assertFalse(screen["fires"])
+        self.assertIn("ties refunded", screen["reason"])
+
+    def test_finalizing_an_f5_candidate_carries_the_qualifier_through(self):
+        candidate = mismatch.scan_game(GAME, teams(), starters())
+        self.assertEqual(candidate["market"], mismatch.MARKET_F5)
+        screened = mismatch.apply_market_screen(candidate, 150, -170)
+        self.assertIn("ties refunded", screened["signals"]["market"]["reason"])
+
+    def test_the_measured_push_rate_is_recorded(self):
+        # Pre-registered alongside the thresholds: it is the number that makes the
+        # two screens incommensurable, and a later quiet edit should be visible.
+        self.assertEqual(mismatch.FIRST_FIVE_PUSH_RATE, 0.159)

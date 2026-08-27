@@ -201,6 +201,7 @@ def parse_game(game: dict) -> dict:
         "home_probable_id": _pitcher_id(home),
         "double_header": game.get("doubleHeader"),
         "game_number": game.get("gameNumber"),
+        "first_five": first_five(game),
     }
 
     # A winner is only meaningful for a genuinely final game -- and whether a tie
@@ -247,6 +248,72 @@ def parse_game(game: dict) -> dict:
         record["run_differential"] = None
 
     return record
+
+
+# The first five innings are a market in their own right, and grading it needs the
+# half-inning line rather than the final score. Five is not a slice of the final
+# score and cannot be derived from it.
+FIRST_FIVE_INNINGS = 5
+
+
+def first_five(game: dict) -> dict:
+    """Runs through five complete innings, or an explicit statement of why not.
+
+    WHY THIS IS STRICTER THAN IT LOOKS
+    ----------------------------------
+    A first-five bet is void unless five full innings are played, and "five full
+    innings" is not the same as "the game was official". A game called after the top
+    of the fifth with the home team ahead is an official, final game -- and its first
+    five never finished, because the home side never batted in the fifth.
+
+    That case is rare, which is exactly what makes it dangerous: a scanner graded
+    across a season would meet it a handful of times, and scoring those as results
+    rather than voids would quietly corrupt the record with games whose outcome was
+    decided by weather.
+
+    So both halves of all five innings must carry an explicit run total. A missing
+    half is void, never zero. `complete` is False and `runs` is None rather than a
+    number that looks usable.
+    """
+    linescore = game.get("linescore") or {}
+    innings = linescore.get("innings") or []
+    result = {"complete": False, "away_runs": None, "home_runs": None,
+              "total_runs": None, "winner": None, "reason": None,
+              "innings_available": len(innings)}
+
+    if len(innings) < FIRST_FIVE_INNINGS:
+        result["reason"] = (
+            f"only {len(innings)} inning(s) in the line; a first-five market needs "
+            f"{FIRST_FIVE_INNINGS} and is void otherwise")
+        return result
+
+    away_total = home_total = 0
+    for inning in innings[:FIRST_FIVE_INNINGS]:
+        for half, running in (("away", "away"), ("home", "home")):
+            runs = (inning.get(half) or {}).get("runs")
+            if runs is None:
+                # A half-inning with no run total was not played. Treating it as a
+                # zero would silently turn a void into a result.
+                result["reason"] = (
+                    f"the {half} half of inning {inning.get('num')} has no run total, "
+                    "so five full innings were not played")
+                return result
+            if half == "away":
+                away_total += runs
+            else:
+                home_total += runs
+
+    result.update({
+        "complete": True,
+        "away_runs": away_total,
+        "home_runs": home_total,
+        "total_runs": away_total + home_total,
+        # A first-five moneyline can genuinely tie, unlike a full game. None is the
+        # honest answer, not a coin flip.
+        "winner": (None if away_total == home_total
+                   else ("home" if home_total > away_total else "away")),
+    })
+    return result
 
 
 def fetch_games(game_date, timeout: int = DEFAULT_TIMEOUT) -> list:

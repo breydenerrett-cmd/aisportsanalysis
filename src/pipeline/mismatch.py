@@ -263,7 +263,26 @@ def roster_signal(team_features) -> dict:
     return result
 
 
-def market_screen(away_price, home_price, side) -> dict:
+# Measured across 558 final regular-season games, 1 Jul - 14 Aug 2026: the first five
+# ended level in 15.9% of them. Every book in the feed offers h2h_1st_5_innings as a
+# TWO-way market, so a tie is refunded rather than lost.
+#
+# That has a consequence which is easy to miss and impossible to see in the numbers:
+# de-vigging a two-way, tie-refunded market yields P(win | no push), NOT P(win). The
+# same 0.65 threshold therefore means different things in the two markets -- roughly
+# 0.65 unconditional on the full game, and about 0.65 x 0.841 = 0.55 unconditional on
+# the first five.
+#
+# It is stated rather than corrected. Converting between the two spaces would mean
+# applying a league-average push rate to a specific game, and the screen is honest as
+# it stands: within the first-five market's own terms, 0.65 is "the market has this
+# side at 65% to win the first five, ties aside", which is the natural reading. That
+# the two thresholds are not the same quantity is a known open question, recorded in
+# docs/MISMATCH_SCANNER.md, not a validated choice.
+FIRST_FIVE_PUSH_RATE = 0.159
+
+
+def market_screen(away_price, home_price, side, market=None) -> dict:
     """Has the market already made this mismatch its headline?
 
     This is NOT an expected-value test. No model probability enters it. It asks one
@@ -292,15 +311,23 @@ def market_screen(away_price, home_price, side) -> dict:
     favoured = home_fair if side == "home" else away_fair
     result["detail"]["side_fair_prob"] = round(favoured, 4)
 
+    # Say which quantity the number is. A first-five price read as an unconditional
+    # win probability overstates it by about a sixth.
+    if market == MARKET_F5:
+        qualifier = " to win the first five, ties refunded"
+        result["detail"]["conditional_on_no_push"] = True
+    else:
+        qualifier = ""
+
     if favoured >= ALREADY_PRICED_PROB:
         result["reason"] = (
-            f"the market already prices {side} at {favoured:.1%} -- this mismatch "
-            "is not one other people are missing")
+            f"the market already prices {side} at {favoured:.1%}{qualifier} -- this "
+            "mismatch is not one other people are missing")
         return result
 
     result["fires"] = True
     result["reason"] = (
-        f"the market has {side} at only {favoured:.1%} despite the gap above")
+        f"the market has {side} at only {favoured:.1%}{qualifier} despite the gap above")
     return result
 
 
@@ -443,7 +470,8 @@ def apply_market_screen(scan, away_price, home_price) -> dict:
     if scan["verdict"] != CANDIDATE:
         return result
 
-    screen = market_screen(away_price, home_price, scan["side"])
+    screen = market_screen(away_price, home_price, scan["side"],
+                           market=scan["market"])
     screen["priced_market"] = scan["market"]
     result["signals"]["market"] = screen
     result["reasons"] = list(scan["reasons"]) + [screen["reason"]]
