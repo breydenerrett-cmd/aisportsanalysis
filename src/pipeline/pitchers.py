@@ -37,9 +37,10 @@ import json
 from datetime import date
 from pathlib import Path
 
+from src.paths import historical_path
 from src.providers import mlb
 
-DEFAULT_LOG_STORE = Path("data/historical/pitcher_logs.jsonl")
+DEFAULT_LOG_STORE = historical_path("pitcher_logs.jsonl")
 
 # Below this many prior innings a rate statistic is noise. Two starts of ERA says
 # nothing, and emitting it invites the model to learn from small-sample luck.

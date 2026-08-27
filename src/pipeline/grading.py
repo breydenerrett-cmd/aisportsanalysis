@@ -34,9 +34,10 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 from src.core import odds as odds_math
+from src.paths import processed_path
 from src.pipeline import snapshots
 
-DEFAULT_LOG = Path("data/processed/predictions.jsonl")
+DEFAULT_LOG = processed_path("predictions.jsonl")
 
 # Thresholds from docs/VALIDATION_CRITERIA.md, pre-registered before any results
 # existed. Restated here so the code and the document cannot drift apart.

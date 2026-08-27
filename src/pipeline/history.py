@@ -33,10 +33,11 @@ import json
 from datetime import date
 from pathlib import Path
 
+from src.paths import historical_path
 from src.providers import mlb
 
-DEFAULT_STORE = Path("data/historical/mlb_results.csv")
-DEFAULT_MANIFEST = Path("data/historical/mlb_results.manifest.json")
+DEFAULT_STORE = historical_path("mlb_results.csv")
+DEFAULT_MANIFEST = historical_path("mlb_results.manifest.json")
 
 # Only genuinely final games are stored. Pending and cancelled games are counted in the
 # manifest so coverage is accurate, but never enter the results table -- a partial score

@@ -44,6 +44,8 @@ DEFAULT_TIMEOUT = 20
 ENV_KEY = "ODDS_API_KEY"
 ENV_BOOK = "DEFAULT_BOOK"
 ENV_REGION = "ODDS_API_REGION"
+ENV_MARKETS = "ODDS_API_MARKETS"
+ENV_ODDS_FORMAT = "ODDS_API_ODDS_FORMAT"
 
 DEFAULT_REGION = "us"
 DEFAULT_MARKETS = ("h2h", "spreads", "totals")
@@ -69,6 +71,42 @@ class NotConfigured(OddsProviderError):
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
+
+def configured_markets(env=None):
+    """Markets to request, honouring ODDS_API_MARKETS.
+
+    This setting has been advertised in .env.example since the beginning and was
+    never read, so every request spent three credits whether or not three markets
+    were wanted. Credits-per-call is exactly the input recommend_live_schedule()
+    uses to choose a cadence against the free tier, so ignoring it meant the
+    snapshot schedule could only ever run at a third of its achievable frequency.
+    """
+    source = os.environ if env is None else env
+    raw = (source.get(ENV_MARKETS) or "").strip()
+    if not raw:
+        return list(DEFAULT_MARKETS)
+    return _validate_markets([m.strip() for m in raw.split(",")])
+
+
+def configured_odds_format(env=None) -> str:
+    """Odds format, honouring ODDS_API_ODDS_FORMAT.
+
+    Only american is supported downstream -- every conversion in src/core/odds.py
+    assumes it -- so an unsupported value is rejected loudly rather than silently
+    returning decimal prices that would be misread as American.
+    """
+    source = os.environ if env is None else env
+    raw = (source.get(ENV_ODDS_FORMAT) or "").strip().lower()
+    if not raw:
+        return ODDS_FORMAT
+    if raw != ODDS_FORMAT:
+        raise OddsProviderError(
+            f"unsupported {ENV_ODDS_FORMAT}={raw!r}; this project's odds maths "
+            f"assumes {ODDS_FORMAT} prices throughout, and a decimal price read "
+            "as American would be silently wrong"
+        )
+    return raw
+
 
 def api_key(env=None):
     """Read the key from the environment. Returns None when absent."""
@@ -96,12 +134,12 @@ def status(env=None) -> dict:
         "env_var": ENV_KEY,
         "default_book": (source.get(ENV_BOOK) or "").strip() or None,
         "region": (source.get(ENV_REGION) or "").strip() or DEFAULT_REGION,
-        "markets": list(DEFAULT_MARKETS),
+        "markets": configured_markets(source),
         "message": None if configured else SETUP_MESSAGE,
     }
 
 
-def estimate_credits(markets=DEFAULT_MARKETS, regions=(DEFAULT_REGION,)) -> dict:
+def estimate_credits(markets=None, regions=(DEFAULT_REGION,), env=None) -> dict:
     """Credit cost of one odds request, before making it.
 
     The Odds API charges 1 credit per region per market for the odds endpoint.
@@ -112,7 +150,8 @@ def estimate_credits(markets=DEFAULT_MARKETS, regions=(DEFAULT_REGION,)) -> dict
     Knowing this before scheduling a snapshot job is the difference between a
     working pipeline and a dead one on the third of the month.
     """
-    market_list = _validate_markets(markets)
+    market_list = (configured_markets(env) if markets is None
+                   else _validate_markets(markets))
     region_list = [r for r in regions if r]
     if not region_list:
         raise OddsProviderError("at least one region is required")
@@ -197,15 +236,16 @@ def estimate_backfill_credits(seasons: int = 3, markets=("h2h",),
     }
 
 
-def recommend_live_schedule(daily_snapshots: int = 4,
-                            markets=DEFAULT_MARKETS) -> dict:
+def recommend_live_schedule(daily_snapshots: int = 4, markets=None,
+                            env=None) -> dict:
     """Find a live snapshot cadence that fits inside the free tier.
 
     Line movement cannot be backfilled from free sources, so capture has to
     start early and run continuously. The constraint is that a naive
     15-minute poll burns the free tier in under two days.
     """
-    market_list = _validate_markets(markets)
+    market_list = (configured_markets(env) if markets is None
+                   else _validate_markets(markets))
     per_call = len(market_list)
     monthly = per_call * daily_snapshots * 30
     free_credits = PRICING_TIERS[0][2]
@@ -247,18 +287,23 @@ def _get_json(path: str, params: dict, timeout: int = DEFAULT_TIMEOUT):
         raise OddsProviderError("odds API returned invalid JSON") from None
 
 
-def fetch_odds(markets=DEFAULT_MARKETS, region=None, env=None,
+def fetch_odds(markets=None, region=None, env=None,
                timeout: int = DEFAULT_TIMEOUT):
-    """Fetch current odds. Raises NotConfigured when no key is present."""
+    """Fetch current odds. Raises NotConfigured when no key is present.
+
+    `markets` defaults to whatever ODDS_API_MARKETS configures, so the credit cost
+    of a call matches what `credits` reports.
+    """
     source = os.environ if env is None else env
     key = api_key(source)
     if key is None:
         raise NotConfigured(SETUP_MESSAGE)
+    resolved = configured_markets(source) if markets is None else _validate_markets(markets)
     params = {
         "apiKey": key,
         "regions": region or (source.get(ENV_REGION) or "").strip() or DEFAULT_REGION,
-        "markets": ",".join(_validate_markets(markets)),
-        "oddsFormat": ODDS_FORMAT,
+        "markets": ",".join(resolved),
+        "oddsFormat": configured_odds_format(source),
     }
     return _get_json(f"sports/{SPORT}/odds", params, timeout=timeout)
 
@@ -369,7 +414,7 @@ def normalize(events, preferred_book=None) -> list:
     return [normalize_event(e, preferred_book=preferred_book) for e in events]
 
 
-def fetch_normalized(markets=DEFAULT_MARKETS, region=None, env=None,
+def fetch_normalized(markets=None, region=None, env=None,
                      preferred_book=None, timeout: int = DEFAULT_TIMEOUT) -> dict:
     """Fetch and normalize in one call, with a fetch timestamp.
 

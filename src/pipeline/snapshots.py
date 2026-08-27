@@ -32,9 +32,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from src.core import odds as odds_math
+from src.paths import processed_path
 from src.providers import odds as odds_provider
 
-DEFAULT_SNAPSHOT_PATH = Path("data/processed/odds_snapshots.jsonl")
+DEFAULT_SNAPSHOT_PATH = processed_path("odds_snapshots.jsonl")
 
 # A snapshot taken after first pitch is not a closing line -- the market has moved on to
 # in-play pricing, which is a different product. This margin keeps late-arriving observations

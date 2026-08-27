@@ -73,6 +73,69 @@ class TestConfiguration(unittest.TestCase):
                          ["h2h", "spreads", "totals"])
 
 
+class TestConfiguredMarkets(unittest.TestCase):
+    """ODDS_API_MARKETS was advertised in .env.example from the start and never
+    read, so every call spent 3 credits whether or not 3 markets were wanted --
+    and credits-per-call is the input that picks the snapshot cadence."""
+
+    def test_default_is_all_three_markets(self):
+        self.assertEqual(odds.configured_markets({}), ["h2h", "spreads", "totals"])
+
+    def test_env_narrows_the_markets(self):
+        self.assertEqual(odds.configured_markets({"ODDS_API_MARKETS": "h2h"}),
+                         ["h2h"])
+
+    def test_whitespace_is_tolerated(self):
+        self.assertEqual(
+            odds.configured_markets({"ODDS_API_MARKETS": " h2h , totals "}),
+            ["h2h", "totals"])
+
+    def test_an_unsupported_market_is_rejected(self):
+        with self.assertRaises(OddsProviderError):
+            odds.configured_markets({"ODDS_API_MARKETS": "h2h,player_props"})
+
+    def test_the_request_asks_only_for_configured_markets(self):
+        env = {"ODDS_API_KEY": FAKE_KEY, "ODDS_API_MARKETS": "h2h"}
+        with mock.patch.object(odds, "_get_json", return_value=[]) as fake:
+            odds.fetch_odds(env=env)
+        self.assertEqual(fake.call_args[0][1]["markets"], "h2h")
+
+    def test_credit_estimate_follows_the_configuration(self):
+        one = odds.estimate_credits(env={"ODDS_API_MARKETS": "h2h"})
+        three = odds.estimate_credits(env={})
+        self.assertEqual(one["credits_per_call"], 1)
+        self.assertEqual(three["credits_per_call"], 3)
+
+    def test_narrowing_markets_triples_the_affordable_cadence(self):
+        # The practical consequence: one market fits a far denser schedule.
+        one = odds.recommend_live_schedule(daily_snapshots=12,
+                                           env={"ODDS_API_MARKETS": "h2h"})
+        three = odds.recommend_live_schedule(daily_snapshots=12, env={})
+        self.assertTrue(one["fits_free_tier"])
+        self.assertFalse(three["fits_free_tier"])
+
+    def test_status_reports_the_configured_markets(self):
+        self.assertEqual(odds.status({"ODDS_API_MARKETS": "h2h"})["markets"],
+                         ["h2h"])
+
+
+class TestConfiguredOddsFormat(unittest.TestCase):
+    def test_default_is_american(self):
+        self.assertEqual(odds.configured_odds_format({}), "american")
+
+    def test_american_is_accepted(self):
+        self.assertEqual(
+            odds.configured_odds_format({"ODDS_API_ODDS_FORMAT": "American"}),
+            "american")
+
+    def test_decimal_is_rejected_loudly(self):
+        # Every conversion downstream assumes American. A decimal price read as
+        # American would be silently, catastrophically wrong rather than an error.
+        with self.assertRaises(OddsProviderError) as ctx:
+            odds.configured_odds_format({"ODDS_API_ODDS_FORMAT": "decimal"})
+        self.assertIn("silently wrong", str(ctx.exception))
+
+
 class TestFailSafe(unittest.TestCase):
     def test_fetch_without_key_raises_not_configured(self):
         with self.assertRaises(NotConfigured) as ctx:

@@ -14,11 +14,12 @@ from pathlib import Path
 
 from src.core import calibration
 from src.data import parks
+from src.paths import processed_path, raw_path
 from src.pipeline import slate as slate_pipeline
 from src.providers import mlb
 from src.providers import odds as odds_provider
 
-DATA_RAW = Path("data/raw")
+DATA_RAW = raw_path()
 
 EXIT_OK = 0
 EXIT_NOT_CONFIGURED = 1
@@ -269,7 +270,7 @@ def cmd_features(args) -> int:
             print(f"    {reason:<16} {count}")
 
     if table["count"]:
-        path = Path("data/processed/training_table.csv")
+        path = processed_path("training_table.csv")
         path.parent.mkdir(parents=True, exist_ok=True)
         import csv as _csv
         columns = list(table["rows"][0])
@@ -346,7 +347,7 @@ def cmd_train(args) -> int:
     for coefficient in logistic.coefficients(model, prep["features"])[:8]:
         print(f"    {coefficient['feature']:<28} {coefficient['weight']:+.4f}")
 
-    path = Path("data/processed/model.json")
+    path = processed_path("model.json")
     logistic.save(model, scaler, prep["features"], path, metadata={
         "trained_on": f"{splits['train']['first_date']}..{splits['train']['last_date']}",
         "rows": splits["train"]["n"],
@@ -370,7 +371,7 @@ def cmd_predict(args) -> int:
     from src.providers import odds as odds_prov
 
     try:
-        model = logistic.load(Path("data/processed/model.json"))
+        model = logistic.load(processed_path("model.json"))
     except logistic.ModelError as exc:
         print(f"ERROR: {exc}\n  run `train` first.", file=sys.stderr)
         return EXIT_ERROR
