@@ -194,6 +194,56 @@ def fetch_for_game(lat: float, lon: float, start_time_utc,
     return reading
 
 
+def fetch_many(locations, game_date, timeout: int = DEFAULT_TIMEOUT) -> list:
+    """Fetch one date's weather for several parks in a SINGLE request.
+
+    Open-Meteo accepts comma-separated coordinate lists and returns one payload
+    per location, in the order requested.
+
+    This matters more than it looks. Fetching a 15-game slate one park at a
+    time is 15 requests against an endpoint that rate-limits, and every retry
+    multiplies the wall-clock. Batching turns that into one request, which is
+    both far faster and far less likely to trip the limiter in the first place.
+
+    Returns payloads in the same order as `locations`. Raises rather than
+    returning a partial list, since a silent length mismatch would misalign
+    every reading with the wrong ballpark.
+    """
+    coordinates = [(lat, lon) for lat, lon in locations]
+    if not coordinates:
+        return []
+    for lat, lon in coordinates:
+        _validate_coordinates(lat, lon)
+
+    day = _validate_date(game_date)
+    age_days = (datetime.now(timezone.utc).date()
+                - date.fromisoformat(day)).days
+    host = ARCHIVE_HOST if age_days > ARCHIVE_LAG_DAYS else FORECAST_HOST
+
+    params = {
+        "latitude": ",".join(str(lat) for lat, _ in coordinates),
+        "longitude": ",".join(str(lon) for _, lon in coordinates),
+        "hourly": HOURLY_FIELDS,
+        "timezone": "UTC",
+        "wind_speed_unit": "mph",
+        "temperature_unit": "fahrenheit",
+        "start_date": day,
+        "end_date": day,
+    }
+    payload = _get_json(host, params, timeout=timeout)
+
+    # A single-location request returns an object; multiple return a list.
+    payloads = payload if isinstance(payload, list) else [payload]
+    if len(payloads) != len(coordinates):
+        raise WeatherError(
+            f"requested {len(coordinates)} locations but received "
+            f"{len(payloads)}; refusing to align readings to parks by guess"
+        )
+    for entry in payloads:
+        entry["_source"] = "archive" if host == ARCHIVE_HOST else "forecast"
+    return payloads
+
+
 def _validate_coordinates(lat, lon):
     for label, value, limit in (("latitude", lat, 90.0), ("longitude", lon, 180.0)):
         if isinstance(value, bool) or not isinstance(value, (int, float)):

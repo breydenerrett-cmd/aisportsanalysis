@@ -1,0 +1,291 @@
+"""Command line entry point.
+
+Run with:  python -m src.cli <command> [args]
+
+Every command fails safe. Missing configuration reports what to do and exits
+non-zero; it never crashes with a stack trace and never prints a key.
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+from src.core import calibration
+from src.data import parks
+from src.pipeline import slate as slate_pipeline
+from src.providers import mlb
+from src.providers import odds as odds_provider
+
+DATA_RAW = Path("data/raw")
+DATA_HISTORICAL = Path("data/historical")
+
+EXIT_OK = 0
+EXIT_NOT_CONFIGURED = 1
+EXIT_ERROR = 2
+
+
+def _load_dotenv(path=".env"):
+    """Read .env into os.environ without adding a dependency.
+
+    Values already in the environment win, so an explicit export is never
+    silently overridden by a stale file.
+    """
+    import os
+    env_file = Path(path)
+    if not env_file.exists():
+        return
+    for line in env_file.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key, value = key.strip(), value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+# ---------------------------------------------------------------------------
+# Commands
+# ---------------------------------------------------------------------------
+
+def cmd_status(args) -> int:
+    """Report configuration and data-source availability."""
+    status = odds_provider.status()
+    print("aisportsanalysis -- status\n")
+    print("  free sources (no key required)")
+    print("    MLB Stats API   : schedule, probables, final results")
+    print("    Open-Meteo      : temperature, wind, humidity\n")
+    print("  odds provider")
+    print(f"    provider        : {status['provider']}")
+    print(f"    configured      : {status['configured']}")
+    print(f"    markets         : {', '.join(status['markets'])}")
+    print(f"    preferred book  : {status['default_book'] or '(first available)'}")
+    if not status["configured"]:
+        print(f"\n  {status['message']}")
+
+    missing = parks.parks_missing_orientation()
+    print(f"\n  park orientation  : {30 - len(missing)}/30 verified")
+    if missing:
+        print("    wind is collected but NOT applied as a model input until")
+        print("    bearings are verified -- see docs/PARK_ORIENTATION.md")
+
+    print("\n  model")
+    print("    probability     : UNCALIBRATED -- no fitted model yet")
+    print("    edge claims     : not available until calibration completes")
+    return EXIT_OK if status["configured"] else EXIT_NOT_CONFIGURED
+
+
+def cmd_credits(args) -> int:
+    """Show odds API credit cost before scheduling anything."""
+    estimate = odds_provider.estimate_credits()
+    print("odds API credit estimate\n")
+    print(f"  markets                  : {', '.join(estimate['markets'])}")
+    print(f"  regions                  : {', '.join(estimate['regions'])}")
+    print(f"  credits per call         : {estimate['credits_per_call']}")
+    print(f"  calls/day at 15-min poll : {estimate['calls_per_day_at_15min']}")
+    print(f"  credits/day              : {estimate['credits_per_day_at_15min']}")
+    print(f"  free tier (monthly)      : {estimate['free_tier_monthly']}")
+    print(f"  free tier lasts          : "
+          f"{estimate['days_until_free_tier_exhausted']} days at that rate\n")
+    print("  A 15-minute snapshot schedule exhausts the free tier in under two")
+    print("  days. Line-movement capture needs either a paid tier or a much")
+    print("  sparser schedule -- open, midpoint, and close.")
+    return EXIT_OK
+
+
+def cmd_slate(args) -> int:
+    """Build a slate for one date and write it to CSV."""
+    try:
+        result = slate_pipeline.build_slate(
+            args.date,
+            include_weather=not args.no_weather,
+            include_odds=not args.no_odds,
+        )
+    except (mlb.MLBError, slate_pipeline.SlateError) as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+
+    rows = result["rows"]
+    if not rows:
+        print(f"no games scheduled for {result['date']}")
+        return EXIT_OK
+
+    path = DATA_RAW / f"mlb_{result['date']}.csv"
+    slate_pipeline.write_slate(rows, path)
+
+    coverage = result["coverage"]
+    print(f"slate {result['date']}: {coverage['games']} games -> {path}\n")
+
+    states = {}
+    for row in rows:
+        states[row["state"]] = states.get(row["state"], 0) + 1
+    print("  states     : " + ", ".join(f"{k}={v}" for k, v in sorted(states.items())))
+    print(f"  analysable : {coverage['analysable']}/{coverage['games']} "
+          "(moneyline priced)")
+
+    print("\n  fill rates")
+    for column in ("away_probable", "weather_temp_f", "weather_wind_from_deg",
+                   "wind_effect", "ml_home_price", "rl_home_price",
+                   "total_line"):
+        rate = coverage["fill_rate"][column]
+        print(f"    {column:<24} {rate * 100:5.1f}%")
+
+    if result["warnings"]:
+        shown = result["warnings"][:8]
+        print(f"\n  warnings ({len(result['warnings'])})")
+        for warning in shown:
+            print(f"    - {warning}")
+        if len(result["warnings"]) > len(shown):
+            print(f"    ... and {len(result['warnings']) - len(shown)} more")
+
+    if not result["odds_configured"]:
+        print("\n  NOTE: no odds key, so no prices were fetched. The slate is")
+        print("  schedule and weather only. Nothing was fabricated.")
+    return EXIT_OK
+
+
+def cmd_results(args) -> int:
+    """Fetch results for a date and report what is genuinely final."""
+    try:
+        result = mlb.fetch_results(args.date)
+    except mlb.MLBError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+
+    summary = result["summary"]
+    print(f"results {result['date']}")
+    print(f"  total     : {summary['total']}")
+    print(f"  final     : {summary['final']}")
+    print(f"  pending   : {summary['pending']}")
+    print(f"  cancelled : {summary['cancelled']}\n")
+
+    for game in result["final"]:
+        print(f"  {game['away_team']:>4} {game['away_score']:>2} @ "
+              f"{game['home_team']:<4} {game['home_score']:<2}  -> {game['winner']}")
+
+    if summary["final"] == 0 and summary["total"] > 0:
+        print("  no games are final yet -- nothing is gradeable for this date.")
+    return EXIT_OK
+
+
+def cmd_backfill(args) -> int:
+    """Collect every final game across a date range into a history CSV."""
+    print(f"backfilling {args.start} .. {args.end}")
+
+    def progress(day_result):
+        summary = day_result["summary"]
+        print(f"  {day_result['date']}  final={summary['final']:>2}  "
+              f"pending={summary['pending']:>2}  cancelled={summary['cancelled']:>2}")
+
+    try:
+        result = mlb.backfill_results(args.start, args.end,
+                                      on_date=progress if args.verbose else None)
+    except mlb.MLBError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+
+    if not result["games"]:
+        print("\nno final games in range -- nothing written.")
+        return EXIT_OK
+
+    path = DATA_HISTORICAL / f"mlb_results_{args.start}_to_{args.end}.csv"
+    slate_pipeline.write_slate(
+        [slate_pipeline._base_row(g) for g in result["games"]], path
+    )
+
+    print(f"\n  dates requested : {result['dates_requested']}")
+    print(f"  dates failed    : {result['dates_failed']}")
+    print(f"  final games     : {result['final_games']}")
+    print(f"  written to      : {path}")
+
+    if result["errors"]:
+        print(f"\n  {len(result['errors'])} date(s) failed:")
+        for error in result["errors"][:5]:
+            print(f"    {error['date']}: {error['error']}")
+    return EXIT_OK
+
+
+def cmd_calibration_demo(args) -> int:
+    """Show the calibration metrics working on synthetic data.
+
+    Included so the instruments can be inspected before there is a real model
+    to measure -- the point being that they are built and verified first.
+    """
+    n = 1000
+    # A well-calibrated predictor: says 0.6, wins 60% of the time.
+    good = [0.6] * n
+    outcomes = [1] * int(n * 0.6) + [0] * (n - int(n * 0.6))
+    # An overconfident one: says 0.9 on the same games.
+    overconfident = [0.9] * n
+
+    print("calibration metrics -- synthetic demonstration\n")
+    for label, preds in (("well-calibrated (says 0.60)", good),
+                         ("overconfident (says 0.90)", overconfident)):
+        scores = calibration.score_all(preds, outcomes)
+        print(f"  {label}")
+        print(f"    brier    {scores['brier']:.4f}")
+        print(f"    log loss {scores['log_loss']:.4f}")
+        print(f"    ECE      {scores['ece']:.4f}")
+        print()
+
+    print("  The overconfident model is WRONG in exactly the way that")
+    print("  manufactures phantom edge: it would find value everywhere and")
+    print("  bet into prices that are actually fair.\n")
+
+    comparison = calibration.compare(good, [0.5] * n, outcomes)
+    print(f"  model beats market : {comparison['model_beats_market']}")
+    print(f"  log loss delta     : {comparison['log_loss_delta']:+.4f}")
+    return EXIT_OK
+
+
+# ---------------------------------------------------------------------------
+# Wiring
+# ---------------------------------------------------------------------------
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="python -m src.cli",
+        description="MLB betting analysis -- free-data alpha",
+    )
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    sub.add_parser("status", help="configuration and source availability")
+    sub.add_parser("credits", help="odds API credit cost estimate")
+    sub.add_parser("calibration-demo", help="show calibration metrics working")
+
+    slate_cmd = sub.add_parser("slate", help="build a slate for one date")
+    slate_cmd.add_argument("date", help="YYYY-MM-DD")
+    slate_cmd.add_argument("--no-weather", action="store_true")
+    slate_cmd.add_argument("--no-odds", action="store_true")
+
+    results_cmd = sub.add_parser("results", help="results for one date")
+    results_cmd.add_argument("date", help="YYYY-MM-DD")
+
+    backfill_cmd = sub.add_parser("backfill", help="collect final games over a range")
+    backfill_cmd.add_argument("start", help="YYYY-MM-DD")
+    backfill_cmd.add_argument("end", help="YYYY-MM-DD")
+    backfill_cmd.add_argument("--verbose", "-v", action="store_true")
+
+    return parser
+
+
+COMMANDS = {
+    "status": cmd_status,
+    "credits": cmd_credits,
+    "slate": cmd_slate,
+    "results": cmd_results,
+    "backfill": cmd_backfill,
+    "calibration-demo": cmd_calibration_demo,
+}
+
+
+def main(argv=None) -> int:
+    _load_dotenv()
+    args = build_parser().parse_args(argv)
+    return COMMANDS[args.command](args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

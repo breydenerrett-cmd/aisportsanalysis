@@ -102,6 +102,76 @@ class TestEndpointSelection(unittest.TestCase):
         self.assertEqual(fake.call_args[0][0], weather.FORECAST_HOST)
 
 
+class TestFetchMany(unittest.TestCase):
+    """Batching is a correctness concern, not just a speed one.
+
+    Fetching a 15-game slate park-by-park is 15 requests against a
+    rate-limited endpoint, and each retry multiplies wall-clock. Worse, a
+    length mismatch between requested parks and returned payloads would
+    silently align every reading to the wrong ballpark.
+    """
+
+    def test_single_request_for_many_parks(self):
+        payloads = [hourly_payload(), hourly_payload(), hourly_payload()]
+        with mock.patch.object(weather, "_get_json",
+                               return_value=payloads) as fake:
+            result = weather.fetch_many(
+                [(41.9, -87.6), (39.9, -75.1), (42.3, -71.0)], "2025-07-09")
+        self.assertEqual(fake.call_count, 1)
+        self.assertEqual(len(result), 3)
+
+    def test_coordinates_are_comma_joined_in_order(self):
+        with mock.patch.object(weather, "_get_json",
+                               return_value=[hourly_payload()] * 2) as fake:
+            weather.fetch_many([(41.9, -87.6), (39.9, -75.1)], "2025-07-09")
+        params = fake.call_args[0][1]
+        self.assertEqual(params["latitude"], "41.9,39.9")
+        self.assertEqual(params["longitude"], "-87.6,-75.1")
+
+    def test_single_location_object_response_is_wrapped(self):
+        # One location returns an object, not a list.
+        with mock.patch.object(weather, "_get_json",
+                               return_value=hourly_payload()):
+            result = weather.fetch_many([(41.9, -87.6)], "2025-07-09")
+        self.assertEqual(len(result), 1)
+
+    def test_length_mismatch_raises_rather_than_misaligning(self):
+        # Two parks requested, one payload returned. Zipping would silently
+        # give park B's weather to nobody and park A's to the wrong game.
+        with mock.patch.object(weather, "_get_json",
+                               return_value=[hourly_payload()]):
+            with self.assertRaises(WeatherError) as ctx:
+                weather.fetch_many([(41.9, -87.6), (39.9, -75.1)], "2025-07-09")
+        self.assertIn("refusing", str(ctx.exception))
+
+    def test_empty_location_list_returns_empty_without_a_request(self):
+        with mock.patch.object(weather, "_get_json") as fake:
+            self.assertEqual(weather.fetch_many([], "2025-07-09"), [])
+        fake.assert_not_called()
+
+    def test_old_date_batches_against_the_archive(self):
+        old = (datetime.now(timezone.utc) - timedelta(days=60)).date().isoformat()
+        with mock.patch.object(weather, "_get_json",
+                               return_value=[hourly_payload()]) as fake:
+            result = weather.fetch_many([(41.9, -87.6)], old)
+        self.assertEqual(fake.call_args[0][0], weather.ARCHIVE_HOST)
+        self.assertEqual(result[0]["_source"], "archive")
+
+    def test_future_date_batches_against_the_forecast(self):
+        soon = (datetime.now(timezone.utc) + timedelta(days=1)).date().isoformat()
+        with mock.patch.object(weather, "_get_json",
+                               return_value=[hourly_payload()]) as fake:
+            result = weather.fetch_many([(41.9, -87.6)], soon)
+        self.assertEqual(fake.call_args[0][0], weather.FORECAST_HOST)
+        self.assertEqual(result[0]["_source"], "forecast")
+
+    def test_invalid_coordinate_in_the_batch_is_rejected(self):
+        with mock.patch.object(weather, "_get_json") as fake:
+            with self.assertRaises(WeatherError):
+                weather.fetch_many([(41.9, -87.6), (999.0, 0.0)], "2025-07-09")
+        fake.assert_not_called()
+
+
 class TestRequestParameters(unittest.TestCase):
     def test_requests_imperial_units(self):
         with mock.patch.object(weather, "_get_json",

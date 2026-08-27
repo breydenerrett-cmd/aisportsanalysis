@@ -1,0 +1,267 @@
+"""Tests for src/providers/odds.py. No network, no real key.
+
+Two behaviours matter most: the key never appears in any output, and a missing
+market stays missing rather than acquiring a substitute price.
+"""
+
+import unittest
+from unittest import mock
+
+from src.providers import odds
+from src.providers.odds import NotConfigured, OddsProviderError
+
+FAKE_KEY = "sk-not-a-real-key-abc123"
+
+
+def event(home="Chicago White Sox", away="Toronto Blue Jays",
+          books=None, event_id="evt1"):
+    return {
+        "id": event_id,
+        "commence_time": "2025-07-09T18:10:00Z",
+        "home_team": home,
+        "away_team": away,
+        "bookmakers": books if books is not None else [full_book()],
+    }
+
+
+def full_book(key="draftkings", home="Chicago White Sox",
+              away="Toronto Blue Jays", home_price=-130, away_price=110):
+    return {
+        "key": key,
+        "last_update": "2025-07-09T17:00:00Z",
+        "markets": [
+            {"key": "h2h", "outcomes": [
+                {"name": home, "price": home_price},
+                {"name": away, "price": away_price},
+            ]},
+            {"key": "spreads", "outcomes": [
+                {"name": home, "price": 150, "point": -1.5},
+                {"name": away, "price": -175, "point": 1.5},
+            ]},
+            {"key": "totals", "outcomes": [
+                {"name": "Over", "price": -110, "point": 8.5},
+                {"name": "Under", "price": -110, "point": 8.5},
+            ]},
+        ],
+    }
+
+
+class TestConfiguration(unittest.TestCase):
+    def test_not_configured_without_a_key(self):
+        self.assertFalse(odds.is_configured({}))
+        self.assertIsNone(odds.api_key({}))
+
+    def test_blank_key_counts_as_missing(self):
+        self.assertFalse(odds.is_configured({"ODDS_API_KEY": "   "}))
+
+    def test_configured_with_a_key(self):
+        self.assertTrue(odds.is_configured({"ODDS_API_KEY": FAKE_KEY}))
+
+    def test_status_succeeds_without_a_key(self):
+        result = odds.status({})
+        self.assertFalse(result["configured"])
+        self.assertIn("the-odds-api.com", result["message"])
+
+    def test_status_never_contains_the_key(self):
+        result = odds.status({"ODDS_API_KEY": FAKE_KEY, "DEFAULT_BOOK": "fanduel"})
+        self.assertNotIn(FAKE_KEY, repr(result))
+        self.assertTrue(result["configured"])
+        self.assertEqual(result["default_book"], "fanduel")
+
+    def test_status_reports_all_three_markets(self):
+        self.assertEqual(sorted(odds.status({})["markets"]),
+                         ["h2h", "spreads", "totals"])
+
+
+class TestFailSafe(unittest.TestCase):
+    def test_fetch_without_key_raises_not_configured(self):
+        with self.assertRaises(NotConfigured) as ctx:
+            odds.fetch_odds(env={})
+        self.assertIn("the-odds-api.com", str(ctx.exception))
+
+    def test_not_configured_message_contains_no_key(self):
+        with self.assertRaises(NotConfigured) as ctx:
+            odds.fetch_odds(env={})
+        self.assertNotIn(FAKE_KEY, str(ctx.exception))
+
+    def test_not_configured_is_an_odds_provider_error(self):
+        self.assertTrue(issubclass(NotConfigured, OddsProviderError))
+
+
+class TestKeyNeverLeaks(unittest.TestCase):
+    """The key travels as a query parameter, so any error text that includes
+    the URL would leak it into logs and stack traces."""
+
+    @staticmethod
+    def http_error(code):
+        import urllib.error
+        return urllib.error.HTTPError(
+            f"https://api.the-odds-api.com/v4/x?apiKey={FAKE_KEY}",
+            code, "err", None, None)
+
+    def test_401_message_excludes_the_key(self):
+        with mock.patch("urllib.request.urlopen", side_effect=self.http_error(401)):
+            with self.assertRaises(OddsProviderError) as ctx:
+                odds.fetch_odds(env={"ODDS_API_KEY": FAKE_KEY})
+        self.assertNotIn(FAKE_KEY, str(ctx.exception))
+        self.assertIn("401", str(ctx.exception))
+
+    def test_429_message_excludes_the_key_and_mentions_quota(self):
+        with mock.patch("urllib.request.urlopen", side_effect=self.http_error(429)):
+            with self.assertRaises(OddsProviderError) as ctx:
+                odds.fetch_odds(env={"ODDS_API_KEY": FAKE_KEY})
+        self.assertNotIn(FAKE_KEY, str(ctx.exception))
+        self.assertIn("quota", str(ctx.exception))
+
+    def test_generic_http_error_excludes_the_key(self):
+        with mock.patch("urllib.request.urlopen", side_effect=self.http_error(503)):
+            with self.assertRaises(OddsProviderError) as ctx:
+                odds.fetch_odds(env={"ODDS_API_KEY": FAKE_KEY})
+        self.assertNotIn(FAKE_KEY, str(ctx.exception))
+
+    def test_key_is_not_in_the_exception_chain(self):
+        # `raise ... from None` suppresses the original, which carried the URL.
+        with mock.patch("urllib.request.urlopen", side_effect=self.http_error(401)):
+            try:
+                odds.fetch_odds(env={"ODDS_API_KEY": FAKE_KEY})
+            except OddsProviderError as exc:
+                self.assertIsNone(exc.__cause__)
+
+
+class TestCreditEstimation(unittest.TestCase):
+    def test_three_markets_one_region_costs_three(self):
+        estimate = odds.estimate_credits(("h2h", "spreads", "totals"), ("us",))
+        self.assertEqual(estimate["credits_per_call"], 3)
+
+    def test_single_market_costs_one(self):
+        self.assertEqual(odds.estimate_credits(("h2h",), ("us",))["credits_per_call"], 1)
+
+    def test_two_regions_double_the_cost(self):
+        estimate = odds.estimate_credits(("h2h",), ("us", "eu"))
+        self.assertEqual(estimate["credits_per_call"], 2)
+
+    def test_free_tier_exhaustion_is_reported(self):
+        # 3 credits * 96 calls/day = 288/day; 500 free credits lasts under 2 days.
+        estimate = odds.estimate_credits()
+        self.assertEqual(estimate["credits_per_day_at_15min"], 288)
+        self.assertLess(estimate["days_until_free_tier_exhausted"], 2.0)
+
+    def test_unknown_market_rejected(self):
+        with self.assertRaises(OddsProviderError):
+            odds.estimate_credits(("h2h", "player_props"))
+
+    def test_empty_markets_rejected(self):
+        with self.assertRaises(OddsProviderError):
+            odds.estimate_credits(())
+
+
+class TestNormalization(unittest.TestCase):
+    def test_all_three_markets_are_extracted(self):
+        record = odds.normalize_event(event())
+        self.assertEqual(sorted(record["markets"]), ["h2h", "spreads", "totals"])
+
+    def test_moneyline_prices_map_to_the_right_sides(self):
+        record = odds.normalize_event(event())
+        self.assertEqual(record["markets"]["h2h"]["home_price"], -130)
+        self.assertEqual(record["markets"]["h2h"]["away_price"], 110)
+
+    def test_run_line_keeps_both_handicap_and_price(self):
+        spreads = odds.normalize_event(event())["markets"]["spreads"]
+        self.assertEqual(spreads["home_line"], -1.5)
+        self.assertEqual(spreads["home_price"], 150)
+        self.assertEqual(spreads["away_line"], 1.5)
+
+    def test_total_keeps_the_number_and_both_prices(self):
+        totals = odds.normalize_event(event())["markets"]["totals"]
+        self.assertEqual(totals["total"], 8.5)
+        self.assertEqual(totals["over_price"], -110)
+        self.assertEqual(totals["under_price"], -110)
+
+    def test_preferred_book_wins_when_it_offers_the_market(self):
+        books = [full_book("fanduel", home_price=-140),
+                 full_book("draftkings", home_price=-130)]
+        record = odds.normalize_event(event(books=books),
+                                      preferred_book="draftkings")
+        self.assertEqual(record["markets"]["h2h"]["book"], "draftkings")
+        self.assertEqual(record["markets"]["h2h"]["home_price"], -130)
+
+    def test_falls_back_to_another_book_when_preferred_is_absent(self):
+        record = odds.normalize_event(event(books=[full_book("fanduel")]),
+                                      preferred_book="draftkings")
+        self.assertEqual(record["markets"]["h2h"]["book"], "fanduel")
+
+    def test_missing_market_is_absent_not_defaulted(self):
+        book = full_book()
+        book["markets"] = [m for m in book["markets"] if m["key"] != "totals"]
+        record = odds.normalize_event(event(books=[book]))
+        self.assertNotIn("totals", record["markets"])
+        self.assertIn("h2h", record["markets"])
+
+    def test_no_bookmakers_yields_no_markets_not_an_error(self):
+        record = odds.normalize_event(event(books=[]))
+        self.assertEqual(record["markets"], {})
+        self.assertEqual(record["home_team"], "Chicago White Sox")
+
+    def test_half_a_market_is_discarded_entirely(self):
+        # One side priced, the other missing -- unusable, so nothing is kept.
+        book = full_book()
+        for market in book["markets"]:
+            if market["key"] == "h2h":
+                market["outcomes"] = [market["outcomes"][0]]
+        record = odds.normalize_event(event(books=[book]))
+        self.assertNotIn("h2h", record["markets"])
+
+    def test_null_price_discards_the_market(self):
+        book = full_book()
+        for market in book["markets"]:
+            if market["key"] == "h2h":
+                market["outcomes"][0]["price"] = None
+        self.assertNotIn("h2h", odds.normalize_event(event(books=[book]))["markets"])
+
+    def test_total_without_a_point_is_discarded(self):
+        book = full_book()
+        for market in book["markets"]:
+            if market["key"] == "totals":
+                market["outcomes"][0].pop("point")
+        self.assertNotIn("totals",
+                         odds.normalize_event(event(books=[book]))["markets"])
+
+    def test_team_name_mismatch_discards_rather_than_guessing(self):
+        # If the book names a team differently, matching by position would be a
+        # coin flip. Better to drop the market than to assign prices wrongly.
+        book = full_book(home="Chicago Whitesox")
+        self.assertNotIn("h2h", odds.normalize_event(event(books=[book]))["markets"])
+
+
+class TestCoverage(unittest.TestCase):
+    def test_coverage_counts_present_markets(self):
+        with mock.patch.object(odds, "_get_json", return_value=[event(), event()]):
+            result = odds.fetch_normalized(env={"ODDS_API_KEY": FAKE_KEY})
+        self.assertEqual(result["event_count"], 2)
+        self.assertEqual(result["coverage"]["by_market"]["h2h"], 2)
+        self.assertEqual(result["coverage"]["missing"]["totals"], 0)
+
+    def test_coverage_surfaces_a_missing_market(self):
+        book = full_book()
+        book["markets"] = [m for m in book["markets"] if m["key"] != "spreads"]
+        with mock.patch.object(odds, "_get_json",
+                               return_value=[event(books=[book])]):
+            result = odds.fetch_normalized(env={"ODDS_API_KEY": FAKE_KEY})
+        self.assertEqual(result["coverage"]["missing"]["spreads"], 1)
+
+    def test_fetch_normalized_stamps_a_timestamp(self):
+        with mock.patch.object(odds, "_get_json", return_value=[event()]):
+            result = odds.fetch_normalized(env={"ODDS_API_KEY": FAKE_KEY})
+        self.assertIn("fetched_utc", result)
+        self.assertTrue(result["fetched_utc"].startswith("20"))
+
+    def test_request_asks_for_all_three_markets(self):
+        with mock.patch.object(odds, "_get_json", return_value=[]) as fake:
+            odds.fetch_odds(env={"ODDS_API_KEY": FAKE_KEY})
+        params = fake.call_args[0][1]
+        self.assertEqual(params["markets"], "h2h,spreads,totals")
+        self.assertEqual(params["oddsFormat"], "american")
+
+
+if __name__ == "__main__":
+    unittest.main()
