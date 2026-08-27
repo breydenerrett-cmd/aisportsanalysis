@@ -19,7 +19,6 @@ from src.providers import mlb
 from src.providers import odds as odds_provider
 
 DATA_RAW = Path("data/raw")
-DATA_HISTORICAL = Path("data/historical")
 
 EXIT_OK = 0
 EXIT_NOT_CONFIGURED = 1
@@ -170,40 +169,79 @@ def cmd_results(args) -> int:
     return EXIT_OK
 
 
-def cmd_backfill(args) -> int:
-    """Collect every final game across a date range into a history CSV."""
-    print(f"backfilling {args.start} .. {args.end}")
+def cmd_ingest(args) -> int:
+    """Ingest a date range into the historical store. Idempotent and resumable."""
+    from src.pipeline import history
 
-    def progress(day_result):
-        summary = day_result["summary"]
-        print(f"  {day_result['date']}  final={summary['final']:>2}  "
-              f"pending={summary['pending']:>2}  cancelled={summary['cancelled']:>2}")
-
-    try:
-        result = mlb.backfill_results(args.start, args.end,
-                                      on_date=progress if args.verbose else None)
-    except mlb.MLBError as exc:
-        print(f"ERROR: {exc}", file=sys.stderr)
-        return EXIT_ERROR
-
-    if not result["games"]:
-        print("\nno final games in range -- nothing written.")
+    remaining = history.missing_dates(args.start, args.end)
+    total = len(list(mlb.iter_dates(args.start, args.end)))
+    if args.resume and not remaining:
+        print(f"{args.start}..{args.end}: all {total} dates already ingested.")
+        print("  pass --no-resume to re-fetch.")
         return EXIT_OK
 
-    path = DATA_HISTORICAL / f"mlb_results_{args.start}_to_{args.end}.csv"
-    slate_pipeline.write_slate(
-        [slate_pipeline._base_row(g) for g in result["games"]], path
+    print(f"ingesting {args.start}..{args.end}  "
+          f"({len(remaining) if args.resume else total} of {total} dates to fetch)")
+
+    def progress(summary):
+        print(f"  {summary['date']}  final={summary['final']:>2}  "
+              f"pending={summary['pending']:>2}  cancelled={summary['cancelled']:>2}  "
+              f"(+{summary['added']} new)")
+
+    report = history.ingest_range(
+        args.start, args.end, resume=args.resume,
+        on_date=progress if args.verbose else None,
     )
 
-    print(f"\n  dates requested : {result['dates_requested']}")
-    print(f"  dates failed    : {result['dates_failed']}")
-    print(f"  final games     : {result['final_games']}")
-    print(f"  written to      : {path}")
+    print(f"\n  attempted    : {report['attempted']}")
+    print(f"  processed    : {report['processed']}")
+    print(f"  skipped      : {report['skipped_already_done']} (already ingested)")
+    print(f"  failed       : {report['failed']}")
+    print(f"  games stored : {report['total_games_stored']}")
+    print(f"  store        : {report['store_path']}")
 
-    if result["errors"]:
-        print(f"\n  {len(result['errors'])} date(s) failed:")
-        for error in result["errors"][:5]:
+    if report["errors"]:
+        print(f"\n  {len(report['errors'])} date(s) failed and will be retried on resume:")
+        for error in report["errors"][:5]:
             print(f"    {error['date']}: {error['error']}")
+    return EXIT_OK
+
+
+def cmd_history(args) -> int:
+    """Report coverage and integrity of the historical store."""
+    from src.pipeline import history
+
+    report = history.quality_report()
+    if report.get("note"):
+        print(f"historical store: {report['games']} games")
+        print(f"  {report['note']}")
+        return EXIT_OK
+
+    print("historical results store\n")
+    print(f"  games stored          : {report['games']}")
+    print(f"  dates fetched         : {report['dates_fetched']}")
+    print(f"  span                  : {report['first_date']} .. {report['last_date']}")
+    print(f"  dates with games      : {report['dates_with_games']}")
+    print(f"  genuine off days      : {report['off_days']}")
+    print(f"  dates still unresolved: {report['dates_with_unresolved_games']}")
+    print(f"  home win rate         : {report['home_win_rate']}")
+
+    if report["gap_count"]:
+        print(f"\n  WARNING: {report['gap_count']} date(s) inside the span were never "
+              "fetched.")
+        print("  These are holes, not off days. Re-run ingest to fill them:")
+        for day in report["unfetched_gaps_in_span"][:10]:
+            print(f"    {day}")
+    else:
+        print("\n  no unfetched gaps inside the span.")
+
+    problems = history.sanity_checks()
+    if problems:
+        print(f"\n  INTEGRITY FAILURES ({len(problems)}):")
+        for problem in problems[:10]:
+            print(f"    {problem}")
+        return EXIT_ERROR
+    print("  integrity checks: all passed")
     return EXIT_OK
 
 
@@ -327,10 +365,15 @@ def build_parser() -> argparse.ArgumentParser:
     results_cmd = sub.add_parser("results", help="results for one date")
     results_cmd.add_argument("date", help="YYYY-MM-DD")
 
-    backfill_cmd = sub.add_parser("backfill", help="collect final games over a range")
-    backfill_cmd.add_argument("start", help="YYYY-MM-DD")
-    backfill_cmd.add_argument("end", help="YYYY-MM-DD")
-    backfill_cmd.add_argument("--verbose", "-v", action="store_true")
+    ingest_cmd = sub.add_parser("ingest", help="ingest results into the historical store")
+    ingest_cmd.add_argument("start", help="YYYY-MM-DD")
+    ingest_cmd.add_argument("end", help="YYYY-MM-DD")
+    ingest_cmd.add_argument("--no-resume", dest="resume", action="store_false",
+                            help="re-fetch dates already ingested")
+    ingest_cmd.add_argument("--verbose", "-v", action="store_true")
+    ingest_cmd.set_defaults(resume=True)
+
+    sub.add_parser("history", help="coverage and integrity of the historical store")
 
     sub.add_parser("snapshot", help="capture one odds observation (run on a schedule)")
 
@@ -346,7 +389,8 @@ COMMANDS = {
     "credits": cmd_credits,
     "slate": cmd_slate,
     "results": cmd_results,
-    "backfill": cmd_backfill,
+    "ingest": cmd_ingest,
+    "history": cmd_history,
     "snapshot": cmd_snapshot,
     "movement": cmd_movement,
     "calibration-demo": cmd_calibration_demo,
