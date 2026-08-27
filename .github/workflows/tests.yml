@@ -1,0 +1,77 @@
+name: tests
+
+# The suite makes no network calls, so it runs anywhere without credentials.
+# That is a deliberate property worth protecting: a test that reaches the MLB
+# API or a sportsbook would be slow, flaky, and would fail on a fork.
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unittest:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The project is stdlib-only, so the realistic risk is a syntax or
+        # stdlib-behaviour difference across versions rather than a dependency
+        # conflict. Testing the span catches that.
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Confirm there are no runtime dependencies
+        run: |
+          if [ -f requirements.txt ]; then
+            echo "requirements.txt exists -- this project is meant to be stdlib-only."
+            echo "If a dependency was added deliberately, update this check."
+            cat requirements.txt
+            exit 1
+          fi
+          echo "no requirements.txt: stdlib-only invariant holds"
+
+      - name: Run the test suite
+        run: python -m unittest discover -s tests -t . -v
+
+      - name: Verify the suite made no network calls
+        # A test that reaches the network would pass here but fail in a
+        # sandboxed or offline environment. Re-running with DNS pointed at a
+        # black hole surfaces that immediately.
+        run: |
+          python - <<'PY'
+          import socket, subprocess, sys
+
+          def blocked(*args, **kwargs):
+              raise AssertionError(
+                  "a test attempted a network connection -- every provider must "
+                  "be mocked at its _get_json seam"
+              )
+
+          socket.socket.connect = blocked
+          socket.create_connection = blocked
+
+          import unittest
+          loader = unittest.TestLoader()
+          suite = loader.discover("tests", top_level_dir=".")
+          result = unittest.TextTestRunner(verbosity=0).run(suite)
+          sys.exit(0 if result.wasSuccessful() else 1)
+          PY
+
+      - name: Confirm no secrets are committed
+        run: |
+          if git ls-files | grep -E '(^|/)\.env$'; then
+            echo "a .env file is tracked -- secrets must never be committed"
+            exit 1
+          fi
+          echo "no .env tracked"
