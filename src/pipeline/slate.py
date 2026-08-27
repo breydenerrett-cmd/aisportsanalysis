@@ -200,7 +200,14 @@ def _match_events(rows, events, warnings):
             by_key[key] = event
 
     for row in rows:
-        key = (row.get("away_team"), row.get("home_team"))
+        # Both sides must be canonicalized before comparing. The MLB schedule
+        # emits AZ/ATH for Arizona/Athletics; the odds feed's club names
+        # resolve to ARI/OAK. Comparing raw abbreviations silently drops every
+        # game for those two clubs -- caught live against a real 2026-08-27
+        # slate, where Arizona @ San Francisco failed to match despite both
+        # teams resolving correctly in isolation.
+        key = (parks.canonical_team(row.get("away_team") or ""),
+               parks.canonical_team(row.get("home_team") or ""))
         event = by_key.get(key)
         if event is None:
             if row.get("state") != "cancelled":

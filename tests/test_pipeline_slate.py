@@ -125,6 +125,30 @@ class TestBuildSlate(unittest.TestCase):
         self.assertEqual(row["total_line"], 8.5)
         self.assertEqual(row["total_over_price"], -110)
 
+    def test_arizona_alias_resolves_on_the_schedule_side(self):
+        # Live bug, caught against a real 2026-08-27 slate: the MLB schedule
+        # emits "AZ" for Arizona while the odds feed's club name resolves to
+        # "ARI". Comparing raw abbreviations silently drops the match even
+        # though both sides individually resolve correctly.
+        result = self.build(
+            [game(away="AZ", home="SF")],
+            env={"ODDS_API_KEY": "k"},
+            odds_events=[odds_event(away="Arizona Diamondbacks",
+                                    home="San Francisco Giants")],
+        )
+        row = result["rows"][0]
+        self.assertEqual(row["ml_home_price"], -130)
+        self.assertFalse(any("no odds matched" in w for w in result["warnings"]))
+
+    def test_athletics_alias_resolves_on_the_schedule_side(self):
+        result = self.build(
+            [game(away="TOR", home="ATH")],
+            env={"ODDS_API_KEY": "k"},
+            odds_events=[odds_event(away="Toronto Blue Jays",
+                                    home="Athletics")],
+        )
+        self.assertEqual(result["rows"][0]["ml_home_price"], -130)
+
     def test_unmatched_odds_event_leaves_prices_blank_and_warns(self):
         result = self.build([game()], env={"ODDS_API_KEY": "k"},
                             odds_events=[odds_event(home="Detroit Tigers")])
