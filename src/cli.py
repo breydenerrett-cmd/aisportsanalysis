@@ -362,6 +362,100 @@ def cmd_train(args) -> int:
     return EXIT_OK
 
 
+def cmd_predict(args) -> int:
+    """Predict a slate and compare the model against the market."""
+    from src.model import logistic
+    from src.pipeline import history, pitchers, predict as predictor
+    from src.pipeline import slate as slate_mod
+    from src.providers import odds as odds_prov
+
+    try:
+        model = logistic.load(Path("data/processed/model.json"))
+    except logistic.ModelError as exc:
+        print(f"ERROR: {exc}\n  run `train` first.", file=sys.stderr)
+        return EXIT_ERROR
+
+    store = history.read_results()
+    if not store:
+        print("historical store is empty -- run `ingest` first.", file=sys.stderr)
+        return EXIT_ERROR
+
+    try:
+        games = mlb.fetch_games(args.date)
+    except mlb.MLBError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+    if not games:
+        print(f"no games scheduled for {args.date}")
+        return EXIT_OK
+
+    logs = pitchers.read_logs() if model["features"] and any(
+        f.startswith(("away_sp", "home_sp", "diff_sp")) for f in model["features"]
+    ) else None
+
+    prices = {}
+    if odds_prov.is_configured():
+        try:
+            payload = odds_prov.fetch_normalized()
+            for event in payload["events"]:
+                h2h = (event.get("markets") or {}).get("h2h")
+                away = slate_mod.team_abbrev_from_name(event.get("away_team"))
+                home = slate_mod.team_abbrev_from_name(event.get("home_team"))
+                if h2h and away and home:
+                    prices[(away, home)] = h2h
+        except odds_prov.OddsProviderError as exc:
+            print(f"  (odds unavailable: {exc})")
+
+    result = predictor.predict_slate(model, store, games,
+                                     pitcher_logs=logs, odds_by_matchup=prices)
+
+    print(f"predictions for {args.date}: {result['count']} game(s), "
+          f"{result['comparable_count']} with market prices\n")
+
+    ordered = sorted(result["predictions"],
+                     key=lambda p: p.get("disagreement_abs") or -1, reverse=True)
+    for p in ordered:
+        line = (f"  {p['away_team']:>4} @ {p['home_team']:<4}  "
+                f"model home {p['home_probability']:.3f}")
+        if p.get("comparable"):
+            robust = p.get("robustness", {})
+            flag = "" if robust.get("robust") else "  [de-vig methods disagree]"
+            line += (f"   market {p['market_home_fair']:.3f}"
+                     f"   gap {p['disagreement_home']:+.3f}"
+                     f"  ({p['model_favours']}){flag}")
+        else:
+            line += "   (no market price)"
+        print(line)
+
+    if result["unusable"]:
+        print(f"\n  {len(result['unusable'])} game(s) not predictable:")
+        for u in result["unusable"][:5]:
+            print(f"    {u.get('away_team','?')}@{u.get('home_team','?')}: "
+                  f"{u.get('reason')}")
+
+    if result["comparable_count"]:
+        print(f"\n  mean |gap| {result['mean_disagreement']:.4f}   "
+              f"largest {result['largest_disagreement']:.4f}   "
+              f"robust across de-vig methods: {result['robust_count']}"
+              f"/{result['comparable_count']}")
+
+    check = result.get("ignorance_check", {})
+    if check.get("checked"):
+        print(f"\n  DIAGNOSTIC")
+        print(f"    model spread  {check['model_spread']:.4f}   "
+              f"market spread {check['market_spread']:.4f}   "
+              f"ratio {check['spread_ratio']}")
+        print(f"    corr(gap, market confidence) "
+              f"{check['correlation_gap_vs_market_confidence']}")
+        print(f"    ranking by disagreement meaningful: "
+              f"{check['ranking_is_meaningful']}")
+        if check.get("warning"):
+            print(f"\n    *** {check['warning']}")
+
+    print(f"\n  {result['warning']}")
+    return EXIT_OK
+
+
 def cmd_snapshot(args) -> int:
     """Capture one odds observation. Meant to run on a schedule.
 
@@ -505,6 +599,10 @@ def build_parser() -> argparse.ArgumentParser:
     train_cmd.add_argument("--test", action="store_true",
                            help="evaluate on the held-out TEST split (use once)")
 
+    predict_cmd = sub.add_parser("predict",
+                                 help="predict a slate and compare to the market")
+    predict_cmd.add_argument("date", help="YYYY-MM-DD")
+
     sub.add_parser("snapshot", help="capture one odds observation (run on a schedule)")
 
     movement_cmd = sub.add_parser("movement", help="show captured line movement")
@@ -523,6 +621,7 @@ COMMANDS = {
     "history": cmd_history,
     "features": cmd_features,
     "train": cmd_train,
+    "predict": cmd_predict,
     "snapshot": cmd_snapshot,
     "movement": cmd_movement,
     "calibration-demo": cmd_calibration_demo,
