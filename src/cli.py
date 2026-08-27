@@ -715,8 +715,12 @@ def cmd_daily(args) -> int:
       1. snapshot odds FIRST -- line movement cannot be backfilled, so a failure
          later in the run must not cost the observation.
       2. ingest yesterday's results, so grading has something to settle against.
-      3. predict today and log, capturing the price at prediction time.
-      4. grade whatever has settled.
+      3. ingest yesterday's PITCHER logs, so today's starter features exist. Skip
+         this and the mismatch scanner silently reports no play every day, because
+         every starter looks like an unknown with no prior appearances.
+      4. scan today for obvious mismatches and log any flags with their prices.
+      5. predict today and log, capturing the price at prediction time.
+      6. grade whatever has settled -- both the model and the scanner.
 
     Every step is independent. One failing does not abort the rest, because a
     missed grading run is recoverable and a missed snapshot is not.
@@ -731,7 +735,7 @@ def cmd_daily(args) -> int:
     failures = []
 
     def step(number, name, fn):
-        print(f"[{number}/4] {name}")
+        print(f"[{number}/6] {name}")
         try:
             fn()
         except Exception as exc:  # a step failing must not kill the loop
@@ -757,6 +761,21 @@ def cmd_daily(args) -> int:
         print(f"      {yesterday}: {report['processed']} date(s) processed, "
               f"{report['total_games_stored']} games in store")
 
+    def do_pitchers():
+        from src.pipeline import history, pitchers
+        store = history.read_results()
+        ids = pitchers.probable_pitcher_ids(store)
+        report = pitchers.build_log_store(ids, today[:4])
+        print(f"      {report['processed']} pitcher(s) fetched, "
+              f"{report['pitchers_in_store']} in store, "
+              f"{report['appearances']} appearances")
+
+    def do_scan():
+        code = cmd_scan(argparse.Namespace(date=today, verbose=False,
+                                           no_price=False, no_log=False))
+        if code != EXIT_OK:
+            raise RuntimeError("scan step returned a non-zero exit")
+
     def do_predict():
         from src.pipeline import grading
         code = cmd_predict(argparse.Namespace(date=today, log=True))
@@ -765,11 +784,15 @@ def cmd_daily(args) -> int:
 
     def do_grade():
         cmd_grade(argparse.Namespace())
+        print()
+        cmd_scan_grade(argparse.Namespace(verbose=False))
 
     step(1, "capture odds snapshot (irreplaceable -- runs first)", do_snapshot)
     step(2, f"ingest results for {yesterday}", do_ingest)
-    step(3, f"predict and log {today}", do_predict)
-    step(4, "grade settled predictions", do_grade)
+    step(3, f"refresh pitcher logs for {today[:4]}", do_pitchers)
+    step(4, f"scan {today} for mismatches", do_scan)
+    step(5, f"predict and log {today}", do_predict)
+    step(6, "grade settled predictions and flags", do_grade)
 
     if failures:
         print(f"loop finished with {len(failures)} failed step(s):")
