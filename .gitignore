@@ -1,0 +1,30 @@
+# Secrets -- never commit these. The repository is public.
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+credentials.json
+
+# Generated data. Raw pulls and processed slates are reproducible from the
+# providers; committing them bloats history and can leak API responses.
+data/raw/*
+data/processed/*
+data/historical/*
+!data/**/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
