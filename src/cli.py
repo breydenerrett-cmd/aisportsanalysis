@@ -285,6 +285,83 @@ def cmd_features(args) -> int:
     return EXIT_OK
 
 
+def cmd_train(args) -> int:
+    """Fit the probability model and evaluate it honestly."""
+    from src.model import dataset, logistic
+    from src.pipeline import features, history
+
+    store = history.read_results()
+    if not store:
+        print("historical store is empty -- run `ingest` first.", file=sys.stderr)
+        return EXIT_ERROR
+
+    table = features.build_training_table(store)
+    prep = dataset.prepare(table["rows"], strategy=args.missing)
+    report = prep["report"]
+
+    print(f"training data: {report['rows_kept']} rows, "
+          f"{report['columns_kept']}/{report['columns_in']} features")
+    if report["columns_dropped"]:
+        print(f"  dropped columns (gaps): {', '.join(report['columns_dropped'])}")
+    profile = report["dropped_date_profile"]
+    if profile.get("biased"):
+        print(f"  WARNING: the {profile['dropped']} dropped rows cluster in time "
+              f"({profile['share_in_first_half']:.0%} in the first half of the "
+              "season). This strategy introduces a temporal bias.")
+
+    splits = dataset.time_split(prep)
+    print("\n  splits (chronological, never random)")
+    for name in ("train", "val", "test"):
+        split = splits[name]
+        print(f"    {name:<6} n={split['n']:<5} "
+              f"{split['first_date']}..{split['last_date']}  "
+              f"base={split['base_rate']}")
+
+    scaler = dataset.fit_scaler(splits["train"]["matrix"])
+    scaled = {k: dataset.apply_scaler(splits[k]["matrix"], scaler)
+              for k in ("train", "val", "test")}
+    labels = {k: splits[k]["labels"] for k in ("train", "val", "test")}
+
+    print("\n  fitting...")
+    model = logistic.fit(scaled["train"], labels["train"],
+                         val_matrix=scaled["val"], val_labels=labels["val"])
+    print(f"    epochs={model['epochs_run']} best_epoch={model['best_epoch']}")
+
+    evaluate = "test" if args.test else "val"
+    predictions = logistic.predict(model, scaled[evaluate])
+    scores = calibration.score_all(predictions, labels[evaluate])
+    baseline = calibration.baseline_base_rate(labels[evaluate])
+
+    print(f"\n  {evaluate.upper()} SET (n={len(labels[evaluate])})")
+    print(f"    model     log_loss={scores['log_loss']:.6f}  "
+          f"brier={scores['brier']:.6f}  ece={scores['ece']:.4f}")
+    print(f"    base rate log_loss={baseline['log_loss']:.6f}")
+    print(f"    beats base rate: {scores['log_loss'] < baseline['log_loss']} "
+          f"({baseline['log_loss'] - scores['log_loss']:+.6f})")
+    print(f"    predicted {scores['mean_predicted']:.4f} vs "
+          f"observed {scores['observed_rate']:.4f}")
+    print(f"    range {min(predictions):.3f}..{max(predictions):.3f}")
+
+    print("\n  top coefficients (scaled, + favours home)")
+    for coefficient in logistic.coefficients(model, prep["features"])[:8]:
+        print(f"    {coefficient['feature']:<28} {coefficient['weight']:+.4f}")
+
+    path = Path("data/processed/model.json")
+    logistic.save(model, scaler, prep["features"], path, metadata={
+        "trained_on": f"{splits['train']['first_date']}..{splits['train']['last_date']}",
+        "rows": splits["train"]["n"],
+        "missing_strategy": args.missing,
+    })
+    print(f"\n  saved to {path}")
+
+    print("\n  WHAT THIS DOES NOT SHOW")
+    print("  Beating a base rate is NOT beating the market. The market prices in")
+    print("  starting pitchers, injuries, and lineups that this model never sees.")
+    print("  Answering 'does this have edge' needs historical closing odds, which")
+    print("  have not been acquired. No bet should be placed on this.")
+    return EXIT_OK
+
+
 def cmd_snapshot(args) -> int:
     """Capture one odds observation. Meant to run on a schedule.
 
@@ -422,6 +499,12 @@ def build_parser() -> argparse.ArgumentParser:
     features_cmd.add_argument("--include-thin", action="store_true",
                               help="keep rows whose samples are too small for rates")
 
+    train_cmd = sub.add_parser("train", help="fit and evaluate the probability model")
+    train_cmd.add_argument("--missing", default="drop_columns",
+                           choices=["drop_columns", "drop_rows"])
+    train_cmd.add_argument("--test", action="store_true",
+                           help="evaluate on the held-out TEST split (use once)")
+
     sub.add_parser("snapshot", help="capture one odds observation (run on a schedule)")
 
     movement_cmd = sub.add_parser("movement", help="show captured line movement")
@@ -439,6 +522,7 @@ COMMANDS = {
     "ingest": cmd_ingest,
     "history": cmd_history,
     "features": cmd_features,
+    "train": cmd_train,
     "snapshot": cmd_snapshot,
     "movement": cmd_movement,
     "calibration-demo": cmd_calibration_demo,
