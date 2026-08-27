@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 from src.core import calibration
@@ -378,6 +379,68 @@ def cmd_train(args) -> int:
     return EXIT_OK
 
 
+def cmd_scan(args) -> int:
+    """Scan a slate for obvious mismatches. Most days the answer is no play."""
+    from src.pipeline import history, mismatch, pitchers
+    from src.pipeline import slate as slate_mod
+    from src.providers import odds as odds_prov
+
+    store = history.read_results()
+    if not store:
+        print("historical store is empty -- run `ingest` first.", file=sys.stderr)
+        return EXIT_ERROR
+
+    try:
+        games = mlb.fetch_games(args.date)
+    except mlb.MLBError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+    if not games:
+        print(f"no games scheduled for {args.date}")
+        return EXIT_OK
+
+    logs = pitchers.read_logs()
+    if not logs:
+        print("  (no pitcher logs -- starter signal unavailable; "
+              "run `pitchers` first)")
+        logs = None
+
+    prices = {}
+    if odds_prov.is_configured():
+        try:
+            payload = odds_prov.fetch_normalized()
+            for event in payload["events"]:
+                h2h = (event.get("markets") or {}).get("h2h")
+                away = slate_mod.team_abbrev_from_name(event.get("away_team"))
+                home = slate_mod.team_abbrev_from_name(event.get("home_team"))
+                if h2h and away and home:
+                    prices[(away, home)] = h2h
+        except odds_prov.OddsProviderError as exc:
+            print(f"  (odds unavailable: {exc})")
+
+    prepared = mismatch.build_scan_inputs(store, games, pitcher_logs=logs,
+                                          odds_by_matchup=prices)
+    result = mismatch.scan_slate(prepared)
+
+    print(f"mismatch scan for {args.date}\n")
+    print(result["summary"])
+
+    if args.verbose:
+        print("\n  every game, with why it did or did not clear the bar:")
+        for scan in result["scans"]:
+            print(f"\n  {scan['away_team']:>4} @ {scan['home_team']:<4}  "
+                  f"[{scan['verdict']}]")
+            for reason in scan["reasons"]:
+                if reason:
+                    print(f"      - {reason}")
+
+    if result["flagged"]:
+        print("\n  These are candidates to look at, not recommendations. The "
+              "thresholds are pre-registered guesses that have never been "
+              "validated against a result.")
+    return EXIT_OK
+
+
 def cmd_predict(args) -> int:
     """Predict a slate and compare the model against the market."""
     from src.model import logistic
@@ -535,7 +598,7 @@ def cmd_daily(args) -> int:
     Every step is independent. One failing does not abort the rest, because a
     missed grading run is recoverable and a missed snapshot is not.
     """
-    from datetime import datetime, timedelta, timezone
+    from datetime import timedelta
 
     today = args.date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
     yesterday = (datetime.strptime(today, "%Y-%m-%d")
@@ -737,6 +800,14 @@ def build_parser() -> argparse.ArgumentParser:
     train_cmd.add_argument("--test", action="store_true",
                            help="evaluate on the held-out TEST split (use once)")
 
+    scan_cmd = sub.add_parser("scan",
+        help="scan a slate for obvious mismatches (usually: no play)")
+    scan_cmd.add_argument("--date",
+                          default=datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+                          help="date to scan, YYYY-MM-DD")
+    scan_cmd.add_argument("--verbose", action="store_true",
+                          help="show why each game did or did not clear the bar")
+
     predict_cmd = sub.add_parser("predict",
                                  help="predict a slate and compare to the market")
     predict_cmd.add_argument("date", help="YYYY-MM-DD")
@@ -767,6 +838,7 @@ COMMANDS = {
     "history": cmd_history,
     "features": cmd_features,
     "train": cmd_train,
+    "scan": cmd_scan,
     "predict": cmd_predict,
     "grade": cmd_grade,
     "daily": cmd_daily,
