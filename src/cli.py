@@ -207,6 +207,70 @@ def cmd_backfill(args) -> int:
     return EXIT_OK
 
 
+def cmd_snapshot(args) -> int:
+    """Capture one odds observation. Meant to run on a schedule.
+
+    Line movement cannot be backfilled from free sources, so this is the one job whose value
+    depends entirely on having started early. Every run that does not happen is market data
+    that can never be recovered.
+    """
+    from src.pipeline import snapshots
+
+    result = snapshots.capture()
+    if not result["configured"]:
+        print(f"not configured: {result['message']}", file=sys.stderr)
+        return EXIT_NOT_CONFIGURED
+    if result.get("error"):
+        print(f"ERROR: {result['error']}", file=sys.stderr)
+        return EXIT_ERROR
+
+    print(f"captured {result['captured']} observations across "
+          f"{result['events']} events at {result['observed_utc']}")
+    print(f"  -> {result['written_to']}")
+
+    history = snapshots.read()
+    report = snapshots.coverage(history)
+    print(f"\n  history: {report['observations']} observations, "
+          f"{report['games']} games")
+    print(f"  closing lines captured: {report['with_closing']}/{report['games']} "
+          f"({report['closing_rate'] * 100:.0f}%)")
+    if report["first_utc"]:
+        print(f"  window: {report['first_utc'][:16]} .. {report['last_utc'][:16]}")
+    return EXIT_OK
+
+
+def cmd_movement(args) -> int:
+    """Show line movement for everything captured so far."""
+    from src.pipeline import snapshots
+
+    history = snapshots.read()
+    if not history:
+        print("no snapshots recorded yet -- run `snapshot` to start capturing.")
+        print("line movement cannot be backfilled, so start this early.")
+        return EXIT_OK
+
+    grouped = snapshots.group_by_game(history, market=args.market)
+    if not grouped:
+        print(f"no observations for market {args.market!r}")
+        return EXIT_OK
+
+    print(f"line movement ({args.market}, home side)\n")
+    for (away, home, day), series in sorted(grouped.items(), key=lambda kv: kv[0][2]):
+        move = snapshots.movement(series)
+        closing = snapshots.closing_observation(series)
+        close_note = "" if closing else "   [no close captured]"
+        if move["observations"] < 2:
+            print(f"  {day}  {away} @ {home}: "
+                  f"{move['observations']} observation(s) -- not enough to show movement"
+                  f"{close_note}")
+            continue
+        print(f"  {day}  {away} @ {home}")
+        print(f"    open {move['opening']:>5}  ->  close {move['closing']:>5}  "
+              f"({move['moved']:+d}, {move['direction']}, "
+              f"{move['observations']} obs){close_note}")
+    return EXIT_OK
+
+
 def cmd_calibration_demo(args) -> int:
     """Show the calibration metrics working on synthetic data.
 
@@ -268,6 +332,12 @@ def build_parser() -> argparse.ArgumentParser:
     backfill_cmd.add_argument("end", help="YYYY-MM-DD")
     backfill_cmd.add_argument("--verbose", "-v", action="store_true")
 
+    sub.add_parser("snapshot", help="capture one odds observation (run on a schedule)")
+
+    movement_cmd = sub.add_parser("movement", help="show captured line movement")
+    movement_cmd.add_argument("--market", default="h2h",
+                              choices=["h2h", "spreads", "totals"])
+
     return parser
 
 
@@ -277,6 +347,8 @@ COMMANDS = {
     "slate": cmd_slate,
     "results": cmd_results,
     "backfill": cmd_backfill,
+    "snapshot": cmd_snapshot,
+    "movement": cmd_movement,
     "calibration-demo": cmd_calibration_demo,
 }
 
