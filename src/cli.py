@@ -329,6 +329,21 @@ def cmd_train(args) -> int:
     print(f"    epochs={model['epochs_run']} best_epoch={model['best_epoch']}")
 
     evaluate = "test" if args.test else "val"
+
+    if evaluate == "test":
+        from src.model import seal
+        split = splits["test"]
+        before = seal.status(split["first_date"], split["last_date"], split["n"])
+        if before["burned"]:
+            print(f"\n  *** SEALED SPLIT ALREADY BURNED ***")
+            print(f"  {before['warning']}")
+            print("  See docs/TEST_SPLIT_STATUS.md. Proceeding, but this number")
+            print("  must NOT be reported as out-of-sample.")
+        after = seal.record_evaluation(
+            split["first_date"], split["last_date"], split["n"],
+            reason=f"cli train --test (missing={args.missing})")
+        print(f"\n  test split evaluations recorded: {after['evaluations']}")
+
     predictions = logistic.predict(model, scaled[evaluate])
     scores = calibration.score_all(predictions, labels[evaluate])
     baseline = calibration.baseline_base_rate(labels[evaluate])

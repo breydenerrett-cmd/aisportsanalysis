@@ -1,0 +1,16 @@
+{
+ "splits": {
+  "2025-08-26..2025-09-28:n=456": {
+   "declared_burned": true,
+   "evaluations": 4,
+   "first_evaluated": "2026-08-27T11:45:07.802831+00:00",
+   "last_evaluated": "2026-08-27T11:45:07.802831+00:00",
+   "reasons": [
+    {
+     "at": "2026-08-27T11:45:07.802831+00:00",
+     "reason": "Evaluated 4 times during development before sealing existed: once for the locked model, twice comparing team-only vs team+pitcher features, and once checking the prediction distribution. Each was individually defensible; together they make every number from this split optimistically biased by an unknown amount."
+    }
+   ]
+  }
+ }
+}
