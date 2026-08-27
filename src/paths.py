@@ -69,3 +69,26 @@ def processed_path(*parts) -> Path:
 
 def historical_path(*parts) -> Path:
     return data_path("historical", *parts)
+
+
+def evidence_path(*parts) -> Path:
+    """Records that are UNBACKFILLABLE, and therefore committed rather than ignored.
+
+    Everything under data/ is gitignored on the correct grounds that it is
+    reproducible: results, slates and pitcher logs can all be re-fetched from the
+    providers, so committing them would bloat history for nothing.
+
+    Forward-looking records are the exact opposite. A prediction is evidence only
+    because it was written down BEFORE the game, and a mismatch flag is evidence only
+    because it carries the price that was available at the moment it was raised. Once
+    the game is played, neither can be reconstructed by anyone, at any cost.
+
+    Left under data/, they were gitignored -- which in a container that gets reclaimed
+    means the forward evidence the entire validation plan rests on quietly evaporates,
+    with the code still running perfectly and the log starting again from zero.
+
+    So they live here, tracked, next to docs/test_split_seal.json for the same reason
+    that file does. Deliberately NOT under AISPORTS_DATA_DIR: redirecting the data root
+    must not silently redirect the evidence too.
+    """
+    return repo_root().joinpath("evidence", *parts)

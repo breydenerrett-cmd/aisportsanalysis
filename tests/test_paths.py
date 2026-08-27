@@ -10,6 +10,7 @@ directory is not the repo.
 
 import os
 import tempfile
+from unittest import mock
 import unittest
 from pathlib import Path
 
@@ -103,3 +104,36 @@ class TestModulesUseAnchoredPaths(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestEvidencePath(unittest.TestCase):
+    """Unbackfillable records must not live where they get gitignored away.
+
+    A prediction is evidence only because it was written down before the game, and a
+    flag is evidence only because it carries the price available when it was raised.
+    Under data/ both were gitignored -- correct for reproducible data, silently fatal
+    for records nobody can reconstruct. In a container that gets reclaimed, the
+    forward evidence the validation plan rests on evaporates with the code still
+    running perfectly and the log starting again from zero.
+    """
+
+    def test_evidence_lives_outside_the_ignored_data_tree(self):
+        self.assertEqual(paths.evidence_path("x.jsonl").parent.name, "evidence")
+        self.assertNotIn("data", paths.evidence_path("x.jsonl").parts[-3:-1])
+
+    def test_evidence_is_anchored_to_the_repo_root(self):
+        self.assertTrue(paths.evidence_path().is_absolute())
+        self.assertEqual(paths.evidence_path().parent, paths.repo_root())
+
+    def test_the_data_dir_override_does_not_move_the_evidence(self):
+        # Redirecting the data root is routine -- tests do it, and so would anyone
+        # keeping the store on another disk. Silently relocating the evidence along
+        # with it would split the record across directories without saying so.
+        with mock.patch.dict(os.environ, {paths.ENV_DATA_DIR: "/tmp/elsewhere"}):
+            self.assertNotIn("elsewhere", str(paths.evidence_path("x.jsonl")))
+            self.assertIn("elsewhere", str(paths.processed_path("x.jsonl")))
+
+    def test_the_two_evidence_logs_are_tracked_files(self):
+        from src.pipeline import grading, scanlog
+        for log in (grading.DEFAULT_LOG, scanlog.DEFAULT_LOG):
+            self.assertEqual(Path(log).parent.name, "evidence")

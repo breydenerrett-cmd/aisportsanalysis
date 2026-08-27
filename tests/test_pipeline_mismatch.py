@@ -411,3 +411,27 @@ class TestFirstFivePushSemantics(unittest.TestCase):
         # Pre-registered alongside the thresholds: it is the number that makes the
         # two screens incommensurable, and a later quiet edit should be visible.
         self.assertEqual(mismatch.FIRST_FIVE_PUSH_RATE, 0.159)
+
+
+class TestScreenRecordsThePrice(unittest.TestCase):
+    """A flag logged without its price cannot be graded against anything.
+
+    The de-vigged probability does not recover the price -- the margin is gone -- so
+    keeping only the probability would make every logged flag permanently ungradeable
+    against the number that was actually available.
+    """
+
+    def test_raw_prices_survive_the_screen(self):
+        screen = mismatch.market_screen(150, -170, "home")
+        self.assertEqual(screen["away_price"], 150)
+        self.assertEqual(screen["home_price"], -170)
+
+    def test_prices_survive_a_rejection_too(self):
+        screen = mismatch.market_screen(380, -500, "home")
+        self.assertFalse(screen["fires"])
+        self.assertEqual(screen["home_price"], -500)
+
+    def test_a_flagged_scan_carries_the_price_it_was_flagged_at(self):
+        candidate = mismatch.scan_game(GAME, teams(), starters())
+        flagged = mismatch.apply_market_screen(candidate, 150, -170)
+        self.assertEqual(flagged["signals"]["market"]["home_price"], -170)

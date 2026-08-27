@@ -302,6 +302,11 @@ def market_screen(away_price, home_price, side, market=None) -> dict:
         return result
 
     away_fair, home_fair = fair
+    # The raw prices are kept, not just the de-vigged probabilities. A flag logged
+    # without the price it was taken at cannot be graded against anything later, and
+    # the probability alone does not recover the price.
+    result["away_price"] = away_price
+    result["home_price"] = home_price
     result["detail"] = {"away_fair_prob": round(away_fair, 4),
                         "home_fair_prob": round(home_fair, 4)}
     if side is None:

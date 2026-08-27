@@ -429,6 +429,11 @@ def cmd_scan(args) -> int:
                 if reason:
                     print(f"      - {reason}")
 
+    if result["flagged"] and not args.no_log:
+        from src.pipeline import scanlog
+        logged = scanlog.log_flags(result)
+        print(f"\n  logged {logged['logged']} flag(s) to {logged['path']}")
+
     if result["flagged"]:
         print("\n  These are candidates to look at, not recommendations. The "
               "thresholds are pre-registered guesses that have never been "
@@ -506,6 +511,57 @@ def _price_candidates(candidates, slate_mod, odds_prov):
         print(line)
     print()
     return prices
+
+
+def cmd_scan_grade(args) -> int:
+    """Settle logged mismatch flags against the first five innings of their games."""
+    from src.pipeline import scanlog
+
+    entries = scanlog.read_log()
+    if not entries:
+        print("no flags logged yet -- run `scan` on a slate first.")
+        return EXIT_OK
+
+    dates = sorted({e.get("date") for e in entries if e.get("date")})
+    results = {}
+    for day in dates:
+        try:
+            for game in mlb.fetch_games(day):
+                results[game["game_pk"]] = game
+        except mlb.MLBError as exc:
+            print(f"  (could not fetch {day}: {exc})")
+
+    settled = scanlog.settle(entries, results)
+    result = scanlog.report(settled)
+
+    counts = result["counts"]
+    print(f"mismatch flags: {result['flags_logged']} logged over "
+          f"{len(dates)} date(s)\n")
+    print(f"  won {counts['won']}   lost {counts['lost']}   "
+          f"pushed {counts['pushed']}   void {counts['void']}   "
+          f"unresolved {counts['unresolved']}")
+
+    if result["decided"]:
+        print(f"\n  decided      {result['decided']}")
+        print(f"  hit rate     {result['hit_rate']:.1%}")
+        print(f"  mean implied {result['mean_implied']:.1%}"
+              "   (conditional on no push, as the two-way price is)")
+        print(f"  edge         {result['edge']:+.1%}")
+
+    print(f"\n  VERDICT: {result['verdict']}")
+    if result["verdict_detail"]:
+        print(f"    {result['verdict_detail']}")
+
+    if args.verbose:
+        print("\n  every settled flag:")
+        for record in settled["settled"]:
+            five = record.get("first_five") or {}
+            score = (f"{five.get('away_runs')}-{five.get('home_runs')}"
+                     if five.get("away_runs") is not None else "--")
+            print(f"    {record['date']}  {record['away_team']:>4} @ "
+                  f"{record['home_team']:<4}  {record['side']:>4}  "
+                  f"F5 {score:>5}  {record['outcome']}")
+    return EXIT_OK
 
 
 def cmd_predict(args) -> int:
@@ -874,9 +930,16 @@ def build_parser() -> argparse.ArgumentParser:
                           help="date to scan, YYYY-MM-DD")
     scan_cmd.add_argument("--verbose", action="store_true",
                           help="show why each game did or did not clear the bar")
+    scan_cmd.add_argument("--no-log", action="store_true",
+                          help="do not append flags to the immutable log")
     scan_cmd.add_argument("--no-price", action="store_true",
                           help="stop after the free talent stage; do not buy prices "
                                "for candidates")
+
+    scan_grade_cmd = sub.add_parser("scan-grade",
+        help="settle logged mismatch flags against first-five results")
+    scan_grade_cmd.add_argument("--verbose", action="store_true",
+                                help="list every settled flag")
 
     predict_cmd = sub.add_parser("predict",
                                  help="predict a slate and compare to the market")
@@ -909,6 +972,7 @@ COMMANDS = {
     "features": cmd_features,
     "train": cmd_train,
     "scan": cmd_scan,
+    "scan-grade": cmd_scan_grade,
     "predict": cmd_predict,
     "grade": cmd_grade,
     "daily": cmd_daily,

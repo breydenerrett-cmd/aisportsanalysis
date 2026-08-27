@@ -13,6 +13,11 @@ data/processed/*
 data/historical/*
 !data/**/.gitkeep
 
+# evidence/ is deliberately NOT ignored. Predictions and mismatch flags are
+# unbackfillable: they are evidence only because they were written down before the
+# games, carrying the prices available at that moment. Nobody can reconstruct them
+# afterwards at any cost, so unlike everything under data/ they are tracked.
+
 # Python
 __pycache__/
 *.py[cod]

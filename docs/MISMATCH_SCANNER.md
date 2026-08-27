@@ -239,6 +239,62 @@ first five, ties aside". The screen now says which quantity it is quoting, so th
 number is never silently misread. That the two thresholds are not the same quantity is
 a **known open question**, not a validated choice.
 
+## How the thresholds will actually be tested
+
+Every threshold here is a pre-registered guess, and they cannot be validated
+backwards: the historical store holds no odds, so the market screen cannot run on a
+past game at all, and a threshold tuned against a backtest stops being a hypothesis
+and becomes a description of that backtest.
+
+So the scanner is graded **forward**, on games unplayed at the moment of flagging —
+the only genuinely sealed evidence available.
+
+### The question being asked
+
+> When the scanner flags a side, does that side win the first five more often than the
+> price implied at the moment of flagging?
+
+Not profit. Not return. If the answer is no, the scanner is an expensive way to
+restate the market. If yes, it knows something — which is still not the same as being
+profitable after vig, and nothing in the code claims otherwise.
+
+### Pushes leave the sample entirely
+
+This falls out of the market's structure rather than being a convenience. The
+de-vigged two-way price is P(win | no push), so grading only the non-push games
+compares a conditional prediction against the condition it was made under.
+
+Scoring pushes as losses, or keeping them in the denominator, would subtract two
+different quantities and understate the scanner by roughly the push rate — 15.9%,
+enough on its own to turn a real effect into no effect and retire the thresholds for
+nothing.
+
+### Pre-registered stopping rules
+
+| | Value | Why |
+|---|---|---|
+| No verdict below | 200 decided flags | Detecting a few points over a ~0.60 base rate needs several hundred; 200 is the floor, not a comfortable sample |
+| "Leaning" band | 50–199 | So a run is visible without being called |
+| Edge to pass | +3.0 pts over mean implied | Above the noise a 200-game sample carries |
+
+At roughly **one flag a day**, 200 decided flags is most of a season. That is not a
+flaw in the logging — it is the arithmetic consequence of a strategy whose whole point
+is to skip most days, and it is stated so a verdict is never quietly claimed on forty
+games.
+
+### Where the evidence lives
+
+`evidence/mismatch_flags.jsonl`, tracked in git — **not** under `data/`.
+
+Everything under `data/` is gitignored on the correct grounds that it is reproducible.
+Forward records are the opposite: a flag is evidence only because it carries the price
+available at the moment it was raised, and once the game is played nobody can
+reconstruct that at any cost. Left under `data/`, the log was gitignored — which in a
+container that gets reclaimed means the evidence quietly evaporates with the code
+still running perfectly and the log starting again from zero.
+
+`evidence/predictions.jsonl` was moved for the same reason; it had the same defect.
+
 ## What the scanner does not claim
 
 An obvious mismatch is not a profitable bet. Bad teams with bad starters lose more

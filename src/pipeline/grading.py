@@ -34,10 +34,13 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 from src.core import odds as odds_math
-from src.paths import processed_path
+from src.paths import evidence_path
 from src.pipeline import snapshots
 
-DEFAULT_LOG = processed_path("predictions.jsonl")
+# Tracked, not under data/. A prediction is evidence only because it was written down
+# before the game; gitignoring it means the record vanishes with the working copy and
+# the CLV plan restarts from zero with nothing to show it ever ran. See evidence_path.
+DEFAULT_LOG = evidence_path("predictions.jsonl")
 
 # Thresholds from docs/VALIDATION_CRITERIA.md, pre-registered before any results
 # existed. Restated here so the code and the document cannot drift apart.
