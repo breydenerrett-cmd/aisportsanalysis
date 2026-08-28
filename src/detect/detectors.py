@@ -48,6 +48,12 @@ TEMP_NOTABLE_F = 14.0
 STRONG_WIND_MPH = 15.0
 LEAGUE_IP_PER_START = 5.30
 IP_PER_START_SPREAD = 0.65
+# A pitch thrown less than a third of the time is not what the lineup is
+# preparing for, and reading a matchup off it overstates its role.
+PRIMARY_PITCH_USAGE = 30.0
+MIN_HITTERS_FOR_PITCH_READ = 5
+LEAGUE_WOBA = 0.318
+WOBA_SPREAD = 0.045
 
 
 class ImpliedBullpenDisagreement(Detector):
@@ -648,10 +654,94 @@ class BullpenExposure(Detector):
         return findings
 
 
+class PitchMixMismatch(Detector):
+    """A starter's most-used pitch, against the lineup that actually faces it.
+
+    THE DECOMPOSITION AT PITCH LEVEL
+    --------------------------------
+    This is the closest baseball gets to the example the project was described
+    with -- a defence that is bad against one position, facing the player who
+    exploits exactly that. Here it is a pitcher who throws one pitch half the
+    time, against nine hitters whose measured performance against that pitch is
+    collectively unusual.
+
+    Both halves come from the same leaderboard, so they are directly comparable:
+    usage share on the pitcher's side, wOBA against that pitch type on each
+    hitter's side, weighted by how much of his own diet it is.
+
+    WHY ONLY THE PRIMARY PITCH
+    --------------------------
+    A pitcher throwing five pitches has five hypotheses, and testing all of them
+    on every game is how a family of forty detectors becomes a family of two
+    hundred without anyone noticing. One pitch per starter -- the one he actually
+    throws most -- keeps the hypothesis count equal to the detector count.
+    """
+
+    name = "pitch_mix_mismatch"
+    markets = ("h2h", "h2h_1st_5_innings", "totals_1st_5_innings")
+    status = UNPROVEN
+
+    def run(self, game):
+        arsenals = game.get("arsenals") or {}
+        lineups = game.get("lineups") or {}
+        if not arsenals or not lineups:
+            return []
+
+        away, home = game.teams
+        findings = []
+        for pitcher_side, lineup_key, pitcher_team, batting_team, side in (
+                ("away", "home", away, home, HOME),
+                ("home", "away", home, away, AWAY)):
+            arsenal = arsenals.get(pitcher_side) or []
+            if not arsenal:
+                continue
+            primary = arsenal[0]
+            usage = primary.get("pitch_usage")
+            if usage is None or usage < PRIMARY_PITCH_USAGE:
+                continue
+
+            batters = (lineups.get(lineup_key) or {}).get("vs_pitch") or {}
+            rows = batters.get(primary.get("pitch_type")) or []
+            if len(rows) < MIN_HITTERS_FOR_PITCH_READ:
+                continue
+
+            # Weight each hitter by how much of his own diet this pitch is, so a
+            # hitter who barely sees it does not swing the lineup's number.
+            weights = [r.get("pa") or 0 for r in rows]
+            total = sum(weights)
+            if not total:
+                continue
+            lineup_woba = sum((r.get("woba") or 0) * w
+                              for r, w in zip(rows, weights)) / total
+
+            score = surprise_score(lineup_woba, LEAGUE_WOBA, WOBA_SPREAD)
+            if score is None or score < 1.0:
+                continue
+            strong = lineup_woba > LEAGUE_WOBA
+            findings.append(Finding(
+                self.name, SIGNAL,
+                f"{pitcher_team}'s starter throws his "
+                f"{primary.get('pitch_name', 'primary pitch').lower()} "
+                f"{usage:.0f}% of the time, and {batting_team}'s posted lineup "
+                f"is at a {lineup_woba:.3f} wOBA against that pitch — a league "
+                f"average is {LEAGUE_WOBA:.3f}.",
+                value=round(lineup_woba, 3), baseline=LEAGUE_WOBA,
+                sample=f"{len(rows)} hitters, {int(total)} plate appearances",
+                surprise=score,
+                side=side if strong else (HOME if side is AWAY else AWAY),
+                market_relevance=(
+                    "Applies while the starter is in the game, so it bears on "
+                    "the first five more than the full nine."),
+                evidence=UNPROVEN,
+                detail={"pitch_type": primary.get("pitch_type"),
+                        "usage": usage, "hitters": len(rows)}))
+        return findings
+
+
 def register_defaults():
     """The pre-registered family. Order is presentation only."""
     for detector in (ImpliedBullpenDisagreement(), BullpenWorkload(),
                      StaleBook(), StarterMismatch(), PlatoonMismatch(),
                      ThinMatchupHistory(), LineupVsStarter(), TravelLoad(),
-                     ParkAndWeather(), BullpenExposure()):
+                     ParkAndWeather(), BullpenExposure(), PitchMixMismatch()):
         register(detector)

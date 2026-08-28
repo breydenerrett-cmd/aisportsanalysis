@@ -16,7 +16,7 @@ from src.pipeline import slate as slate_mod
 def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
                 weather_by_pk=None, lineups_by_pk=None, bullpen_by_team=None,
                 handedness=None, splits_by_pk=None, matchups_by_pk=None,
-                travel_by_pk=None,
+                travel_by_pk=None, arsenals=None, batter_arsenals=None,
                 detectors=None, information_time=None) -> dict:
     """One briefing for one date.
 
@@ -33,10 +33,12 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
             prices=(prices_by_matchup or {}).get(key),
             weather=(weather_by_pk or {}).get(game.get("game_pk")),
             lineups=_lineup_section(
-                (lineups_by_pk or {}).get(game.get("game_pk")), handedness, game),
+                (lineups_by_pk or {}).get(game.get("game_pk")), handedness, game,
+                batter_arsenals),
             splits=(splits_by_pk or {}).get(game.get("game_pk")),
             matchups=(matchups_by_pk or {}).get(game.get("game_pk")),
             travel=(travel_by_pk or {}).get(game.get("game_pk")),
+            arsenals=_arsenal_section(game, arsenals),
             bullpen={team: (bullpen_by_team or {}).get(team) for team in key
                      if (bullpen_by_team or {}).get(team)} or None,
             information_time=information_time,
@@ -66,7 +68,19 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
     }
 
 
-def _lineup_section(posted, handedness, game):
+def _arsenal_section(game, arsenals):
+    """Each starter's arsenal, most-used pitch first."""
+    if not arsenals:
+        return None
+    section = {}
+    for side, key in (("away", "away_probable_id"), ("home", "home_probable_id")):
+        rows = arsenals.get(str(game.get(key)))
+        if rows:
+            section[side] = rows
+    return section or None
+
+
+def _lineup_section(posted, handedness, game, batter_arsenals=None):
     """Posted lineup plus the platoon composition it presents to each starter."""
     if not posted:
         return None
@@ -86,5 +100,17 @@ def _lineup_section(posted, handedness, game):
             "platoon_advantage": lineup_mod.platoon_advantage_share(
                 slots, handedness or {}, throws),
             "faces_starter_throwing": throws,
+            # Each hitter's measured line against each pitch type, grouped by
+            # pitch so a detector can ask one question of the whole lineup.
+            "vs_pitch": _lineup_vs_pitch(slots, batter_arsenals),
         }
     return section
+
+
+def _lineup_vs_pitch(slots, batter_arsenals):
+    grouped = {}
+    for slot in slots or []:
+        for row in (batter_arsenals or {}).get(str(slot.get("person_id")), []):
+            grouped.setdefault(row.get("pitch_type"), []).append(
+                dict(row, batter=slot.get("name")))
+    return grouped

@@ -211,7 +211,7 @@ class TestRegistrationIsTheHypothesisCount(unittest.TestCase):
 
     def test_the_default_family_registers_cleanly(self):
         detectors.register_defaults()
-        self.assertEqual(len(base.registry()), 10)
+        self.assertEqual(len(base.registry()), 11)
 
     def test_every_registered_detector_declares_its_markets(self):
         detectors.register_defaults()
@@ -301,3 +301,63 @@ class TestTravelAndEnvironment(unittest.TestCase):
         found = detectors.ParkAndWeather().run(d)
         self.assertEqual(found[0].evidence, base.BLOCKED)
         self.assertIn("NOT interpreted", found[0].claim)
+
+
+class TestPitchMixMismatch(unittest.TestCase):
+    """The decomposition at pitch level: what he throws vs who can hit it."""
+
+    def setUp(self):
+        self.detector = detectors.PitchMixMismatch()
+
+    def build(self, usage=45.0, woba=0.400, hitters=8, pitch="SI"):
+        d = dossier(away="AZ", home="SF")
+        d.add("arsenals", {"home": [{"pitch_type": pitch, "pitch_name": "Sinker",
+                                     "pitch_usage": usage}]})
+        d.add("lineups", {"away": {"vs_pitch": {pitch: [
+            {"woba": woba, "pa": 100} for _ in range(hitters)]}}})
+        return d
+
+    def test_a_lineup_that_crushes_his_main_pitch_favours_that_lineup(self):
+        found = self.detector.run(self.build())
+        self.assertEqual(found[0].side, base.AWAY)
+        self.assertIn("sinker", found[0].claim)
+
+    def test_a_lineup_helpless_against_it_favours_the_pitcher(self):
+        found = self.detector.run(self.build(woba=0.240))
+        self.assertEqual(found[0].side, base.HOME)
+
+    def test_a_pitch_he_barely_throws_is_not_the_matchup(self):
+        # Reading a matchup off a pitch thrown a fifth of the time overstates
+        # its role in what the lineup is actually preparing for.
+        self.assertEqual(self.detector.run(self.build(usage=20.0)), [])
+
+    def test_too_few_hitters_with_a_line_is_silence(self):
+        self.assertEqual(self.detector.run(self.build(hitters=3)), [])
+
+    def test_an_ordinary_lineup_says_nothing(self):
+        self.assertEqual(self.detector.run(self.build(woba=0.320)), [])
+
+    def test_hitters_are_weighted_by_how_much_they_see_the_pitch(self):
+        # A hitter who has seen it twice must not swing the lineup's number.
+        d = dossier(away="AZ", home="SF")
+        d.add("arsenals", {"home": [{"pitch_type": "SI", "pitch_name": "Sinker",
+                                     "pitch_usage": 45.0}]})
+        d.add("lineups", {"away": {"vs_pitch": {"SI": (
+            [{"woba": 0.300, "pa": 200} for _ in range(5)]
+            + [{"woba": 0.900, "pa": 2}])}}})
+        found = self.detector.run(d)
+        # Unweighted this averages to 0.400 and fires; weighted it is ~0.303.
+        self.assertEqual(found, [])
+
+    def test_only_the_primary_pitch_is_tested(self):
+        # Five pitches would be five hypotheses per start, which is how a family
+        # of forty detectors quietly becomes a family of two hundred.
+        d = self.build()
+        d.sections["arsenals"]["home"].append(
+            {"pitch_type": "SL", "pitch_name": "Slider", "pitch_usage": 40.0})
+        d.sections["lineups"]["away"]["vs_pitch"]["SL"] = [
+            {"woba": 0.500, "pa": 100} for _ in range(8)]
+        self.assertEqual(len(self.detector.run(d)), 1)
+
+    def test_no_arsenal_means_silence_not_an_error(self):
+        self.assertEqual(self.detector.run(dossier()), [])

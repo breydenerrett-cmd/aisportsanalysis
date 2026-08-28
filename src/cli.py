@@ -387,6 +387,7 @@ def cmd_brief(args) -> int:
     from src.providers import odds as odds_prov
     from src.report import dashboard
 
+    season = args.date[:4]
     store = history.read_results()
     if not store:
         print("historical store is empty -- run `ingest` first.", file=sys.stderr)
@@ -444,7 +445,6 @@ def cmd_brief(args) -> int:
         hands = lineups.fetch_handedness(ids)
     print(f"  lineups posted for {len(posted)} of {len(games)} game(s)")
 
-    season = args.date[:4]
     for game in games:
         pk = game.get("game_pk")
         for side, pid_key in (("away", "away_probable_id"),
@@ -465,6 +465,19 @@ def cmd_brief(args) -> int:
                     continue
                 matchups.setdefault(pk, {})[opposing] = lineups.lineup_vs_pitcher(
                     posted[pk][opposing], pid, handedness=hands)
+
+    from src.providers import statcast
+    arsenals = batter_arsenals = {}
+    try:
+        arsenals = statcast.by_player(statcast.read(season, "pitcher"))
+        batter_arsenals = statcast.by_player(statcast.read(season, "batter"))
+        if arsenals:
+            print(f"  arsenals for {len(arsenals)} pitchers, "
+                  f"{len(batter_arsenals)} hitters")
+        else:
+            print("  (no pitch arsenals -- run `arsenals` to enable pitch-mix)")
+    except statcast.StatcastError as exc:
+        print(f"  (arsenals unavailable: {exc})")
 
     trips = {}
     for game in games:
@@ -505,6 +518,7 @@ def cmd_brief(args) -> int:
 
     slate = briefing.build_slate(games, store, pitcher_logs=logs,
                                  travel_by_pk=trips, weather_by_pk=weather_by_pk,
+                                 arsenals=arsenals, batter_arsenals=batter_arsenals,
                                  prices_by_matchup=prices, bullpen_by_team=pens,
                                  lineups_by_pk=posted, handedness=hands,
                                  splits_by_pk=splits, matchups_by_pk=matchups)
