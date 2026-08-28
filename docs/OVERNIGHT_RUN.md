@@ -10,7 +10,7 @@
 | Tests | 884 passing |
 | Detectors | 11 registered, 1 blocked with a stated reason |
 | Credits | ~36,000 spent of 100,000 |
-| Odds backfill | 3 seasons h2h+totals, nearly complete |
+| Odds backfill | **complete** — 1,800 snapshots, 0 failures |
 | First-five backfill | running, 732 candidate games |
 
 ## How to open the demo
@@ -54,9 +54,27 @@ claim, missing data rendered as missing.
 | Bullpen appearances | 1,004 from boxscores |
 | Pitch arsenals | 1,071 pitchers, 956 hitters |
 | Handedness, splits | cached per player |
-| Historical odds | 3 seasons, 3 snapshots/day |
+| Historical odds | **complete** — 1,800 snapshots, 7,439 games matched to a near-closing price |
 | Historical first-five | 732 candidate games |
 | Scanner candidates | 732 of 7,287 games (10.0%) |
+
+## Backfill validation
+
+Closing-price matching across all three seasons, measured after the run:
+
+| Season | Snapshots | Games matched | Median gap to first pitch | Within 3h | Books/game |
+|---|---|---|---|---|---|
+| 2023 | 600 | 2,475 | 84 min | 74.5% | 18 |
+| 2024 | 600 | 2,472 | 85 min | 74.0% | 12 |
+| 2025 | 600 | 2,492 | 84 min | 75.1% | 11 |
+
+Three snapshots a day turns out to be enough for a usable closing proxy: the
+median game's price was captured 84 minutes before first pitch, and three
+quarters are inside three hours. The gap is stored per game, so an analysis can
+drop the stale quarter rather than averaging it in unknowingly.
+
+Book counts fall over time (19 in 2023, 11 in 2025) because the market
+consolidated, not because coverage degraded.
 
 ## Bugs found and fixed this run
 
