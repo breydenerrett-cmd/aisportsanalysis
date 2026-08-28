@@ -44,6 +44,8 @@ LEAGUE_ALTITUDE_M = 150
 LEAGUE_TEMP_F = 74.0
 TEMP_NOTABLE_F = 14.0
 STRONG_WIND_MPH = 15.0
+LEAGUE_IP_PER_START = 5.30
+IP_PER_START_SPREAD = 0.65
 
 
 class ImpliedBullpenDisagreement(Detector):
@@ -573,10 +575,62 @@ class ParkAndWeather(Detector):
         return findings
 
 
+class BullpenExposure(Detector):
+    """How much of tonight's game the bullpens will actually decide.
+
+    The honest version of the third-time-through-order question without
+    pitch-level data. A starter who averages five innings hands his pen four; one
+    who averages six and a half hands them two and a half. Over a season that
+    difference is the single largest driver of how far a full-game result can
+    drift from the first-five result -- which is precisely the gap the
+    implied-bullpen detector reads out of the market.
+
+    So this is the input the market's own number should be compared against, and
+    it is computed from the two starters' innings per start, which the pitcher
+    features already carry.
+    """
+
+    name = "bullpen_exposure"
+    markets = ("h2h", "h2h_1st_5_innings")
+    status = UNPROVEN
+
+    def run(self, game):
+        starters = game.get("starters") or {}
+        away, home = game.teams
+        findings = []
+        for prefix, team, side in (("away_", away, AWAY), ("home_", home, HOME)):
+            per_start = starters.get(f"{prefix}sp_ip_per_start")
+            if per_start is None:
+                continue
+            score = surprise_score(per_start, LEAGUE_IP_PER_START, IP_PER_START_SPREAD)
+            if score is None or score < 1.0:
+                continue
+            exposed = max(0.0, 9.0 - per_start)
+            short = per_start < LEAGUE_IP_PER_START
+            findings.append(Finding(
+                self.name, SIGNAL,
+                f"{team}'s starter averages {per_start:.2f} innings a start "
+                f"against a league {LEAGUE_IP_PER_START:.2f}, so about "
+                f"{exposed:.1f} innings of this game go to a bullpen "
+                f"{'sooner' if short else 'later'} than usual.",
+                value=per_start, baseline=LEAGUE_IP_PER_START,
+                sample=f"{starters.get(prefix + 'sp_innings')} IP",
+                surprise=score,
+                # A short starter argues against his own side on the full game
+                # while leaving the first five largely alone.
+                side=(HOME if side is AWAY else AWAY) if short else side,
+                market_relevance=(
+                    "This is the quantity the market's full-game minus "
+                    "first-five gap is pricing."),
+                evidence=UNPROVEN,
+                detail={"innings_exposed_to_bullpen": round(exposed, 2)}))
+        return findings
+
+
 def register_defaults():
     """The pre-registered family. Order is presentation only."""
     for detector in (ImpliedBullpenDisagreement(), BullpenWorkload(),
                      StaleBook(), StarterMismatch(), PlatoonMismatch(),
                      ThinMatchupHistory(), LineupVsStarter(), TravelLoad(),
-                     ParkAndWeather()):
+                     ParkAndWeather(), BullpenExposure()):
         register(detector)

@@ -385,3 +385,53 @@ class TestValidation(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestInningsPerStartExcludesRelief(unittest.TestCase):
+    """A swingman's relief innings must not be divided by his start count.
+
+    Found live: a pitcher with 44 appearances and 81 innings came out at 13.56
+    innings per start -- physically impossible, silently produced, and fed
+    straight into a detector that then claimed the bullpen would barely be used.
+    Nothing raised, because the arithmetic was valid; it was the wrong numerator.
+    """
+
+    def logs(self):
+        return {"1": [
+            {"person_id": 1, "season": "2026", "date": "2026-05-01",
+             "games_started": 1, "innings_pitched": 6.0, "earned_runs": 2,
+             "hits": 5, "walks": 1, "strikeouts": 7, "home_runs": 1,
+             "batters_faced": 24},
+            {"person_id": 1, "season": "2026", "date": "2026-05-06",
+             "games_started": 1, "innings_pitched": 5.0, "earned_runs": 3,
+             "hits": 6, "walks": 2, "strikeouts": 5, "home_runs": 1,
+             "batters_faced": 22},
+            # Twenty relief innings that belong to nobody's start.
+            {"person_id": 1, "season": "2026", "date": "2026-05-11",
+             "games_started": 0, "innings_pitched": 20.0, "earned_runs": 5,
+             "hits": 15, "walks": 4, "strikeouts": 18, "home_runs": 2,
+             "batters_faced": 80},
+        ]}
+
+    def test_ip_per_start_uses_only_innings_in_starts(self):
+        features = pitchers.pitcher_features(self.logs(), "1", "2026-06-01")
+        # (6 + 5) / 2 starts = 5.5, not (6 + 5 + 20) / 2 = 15.5.
+        self.assertEqual(features["sp_ip_per_start"], 5.5)
+
+    def test_total_innings_still_counts_relief(self):
+        # The pitcher really did throw 31 innings; only the per-start average
+        # was wrong, and total innings is what gates the rate suppression.
+        features = pitchers.pitcher_features(self.logs(), "1", "2026-06-01")
+        self.assertEqual(features["sp_innings"], 31.0)
+
+    def test_a_pure_reliever_has_no_ip_per_start(self):
+        logs = {"1": [{"person_id": 1, "season": "2026", "date": "2026-05-01",
+                       "games_started": 0, "innings_pitched": 25.0,
+                       "earned_runs": 5, "hits": 20, "walks": 5,
+                       "strikeouts": 25, "home_runs": 2, "batters_faced": 100}]}
+        features = pitchers.pitcher_features(logs, "1", "2026-06-01")
+        self.assertIsNone(features["sp_ip_per_start"])
+
+    def test_the_result_is_physically_possible(self):
+        features = pitchers.pitcher_features(self.logs(), "1", "2026-06-01")
+        self.assertLessEqual(features["sp_ip_per_start"], 9.0)

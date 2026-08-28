@@ -211,7 +211,7 @@ class TestRegistrationIsTheHypothesisCount(unittest.TestCase):
 
     def test_the_default_family_registers_cleanly(self):
         detectors.register_defaults()
-        self.assertEqual(len(base.registry()), 9)
+        self.assertEqual(len(base.registry()), 10)
 
     def test_every_registered_detector_declares_its_markets(self):
         detectors.register_defaults()

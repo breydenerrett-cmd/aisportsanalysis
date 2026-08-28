@@ -212,6 +212,17 @@ def _totals(appearances) -> dict:
         "appearances": len(appearances),
         "starts": add("games_started"),
         "innings": sum(a.get("innings_pitched") or 0.0 for a in appearances),
+        # Innings thrown IN STARTS, separately from total innings.
+        #
+        # ip_per_start was innings / starts, which divides a pitcher's RELIEF
+        # innings by his start count. A swingman with 40 relief innings and 3
+        # starts came out at 13.56 innings per start -- an impossible number that
+        # nothing raised on, and that fed straight into a detector claiming the
+        # bullpen would barely be used. Only innings in games he actually started
+        # belong in that average.
+        "innings_as_starter": sum(
+            a.get("innings_pitched") or 0.0 for a in appearances
+            if (a.get("games_started") or 0) > 0),
         "earned_runs": add("earned_runs"),
         "hits": add("hits"),
         "walks": add("walks"),
@@ -311,9 +322,11 @@ def pitcher_features(logs, person_id, as_of_date, prefix="",
             round((totals["strikeouts"] - totals["walks"]) / faced, 4)
             if faced else None)
 
-        # Innings per start decides how much bullpen the game exposes.
+        # Innings per start decides how much bullpen the game exposes, so it has
+        # to be innings AS A STARTER over starts -- see _totals.
         features[f"{prefix}sp_ip_per_start"] = (
-            round(innings / totals["starts"], 3) if totals["starts"] else None)
+            round(totals["innings_as_starter"] / totals["starts"], 3)
+            if totals["starts"] else None)
 
     # Recent form, on its own threshold: three starts is meaningful regardless of
     # how much season has accumulated.
@@ -325,7 +338,8 @@ def pitcher_features(logs, person_id, as_of_date, prefix="",
         round(recent_totals["earned_runs"] * 9.0 / recent_totals["innings"], 4)
         if complete else None)
     features[f"{prefix}sp_recent_ip_per_start"] = (
-        round(recent_totals["innings"] / RECENT_STARTS, 3) if complete else None)
+        round(recent_totals["innings_as_starter"] / RECENT_STARTS, 3)
+        if complete else None)
 
     features[f"{prefix}sp_days_rest"] = _days_rest(prior, as_of_date)
     return features
