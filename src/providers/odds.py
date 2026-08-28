@@ -93,6 +93,19 @@ class NotConfigured(OddsProviderError):
     """Raised when an odds call is attempted with no API key present."""
 
 
+class MarketsUnavailableAtDate(OddsProviderError):
+    """The market exists, but not in the archive on that date.
+
+    A distinct exception because it is not a failure and must not be retried:
+    first-five history begins in mid-May 2023, so every request before then
+    returns 422 forever. Treating it as a transient error would mean re-asking
+    the same dead question on every run.
+
+    Confirmed live: these requests cost ZERO credits, so discovering the
+    boundary is free.
+    """
+
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
@@ -335,6 +348,19 @@ def _get_json_with_usage(path: str, params: dict, timeout: int = DEFAULT_TIMEOUT
         if exc.code == 429:
             raise OddsProviderError(
                 "odds API quota exhausted (HTTP 429) -- check remaining credits"
+            ) from None
+        if exc.code == 422:
+            body = ""
+            try:
+                body = exc.read().decode("utf-8", "replace")
+            except Exception:  # noqa: BLE001 -- the body is a nicety, not a need
+                pass
+            if "HISTORICAL_MARKETS_UNAVAILABLE_AT_DATE" in body:
+                raise MarketsUnavailableAtDate(
+                    "these markets are not in the archive on that date"
+                ) from None
+            raise OddsProviderError(
+                "odds API rejected the request (HTTP 422); check the markets"
             ) from None
         raise OddsProviderError(f"odds API returned HTTP {exc.code}") from None
     except urllib.error.URLError as exc:

@@ -312,3 +312,180 @@ def _parse(value):
         return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
     except ValueError:
         return None
+
+
+# ---------------------------------------------------------------------------
+# First-five backfill, for named games only
+# ---------------------------------------------------------------------------
+
+FIRST_FIVE_MARKETS = ("h2h_1st_5_innings", "totals_1st_5_innings")
+FIRST_FIVE_STORE = historical_path("odds_first_five")
+
+
+def first_five_plan(games, markets=FIRST_FIVE_MARKETS, regions=1) -> dict:
+    """What a first-five backfill costs. Billed PER GAME, unlike the featured feed.
+
+    The whole reason this is affordable is that it runs on named games. Three
+    seasons of every game would be 145,800 credits; three seasons of the ~10%
+    that clear the scanner's talent bar is under 15,000. A scanner that stays
+    quiet is what makes its own evidence purchasable.
+    """
+    # One events lookup per date, at 1 credit, plus the odds per game.
+    dates = len({g.get("date") for g in games})
+    per_game = HISTORICAL_MULTIPLIER * len(markets) * regions
+    return {
+        "games": len(games), "dates": dates,
+        "credits_per_game": per_game,
+        "credits_events": dates,
+        "credits_total": len(games) * per_game + dates,
+    }
+
+
+def run_first_five(games, markets=FIRST_FIVE_MARKETS, budget=None,
+                   store=FIRST_FIVE_STORE, on_game=None, fetch_events=None,
+                   fetch_odds=None, timeout=30) -> dict:
+    """Fetch first-five prices for a named list of games.
+
+    Games are matched to Odds API events by team pair on their own date, because
+    the two feeds do not share ids. An unmatched game is REPORTED rather than
+    skipped -- an unmatched pair is nearly always a team-code mismatch, which has
+    silently cost this project data twice before.
+    """
+    from src.pipeline import slate as slate_mod
+
+    events_for = fetch_events or _historical_events
+    odds_for = fetch_odds or _historical_event_odds
+
+    manifest = read_manifest(store)
+    target = Path(store)
+    target.mkdir(parents=True, exist_ok=True)
+    per_game = HISTORICAL_MULTIPLIER * len(markets)
+
+    report = {"requested": len(games), "fetched": 0, "skipped_cached": 0,
+              "unmatched": 0, "failed": 0, "unavailable_at_date": 0,
+              "credits_spent": 0, "credits_remaining": None,
+              "stopped_early": None, "store": str(store)}
+
+    by_date = {}
+    for game in games:
+        by_date.setdefault(game.get("date"), []).append(game)
+
+    for game_date in sorted(by_date):
+        wanted = [g for g in by_date[game_date]
+                  if f"{game_date}:{g['away_team']}@{g['home_team']}"
+                  not in manifest["snapshots"]]
+        report["skipped_cached"] += len(by_date[game_date]) - len(wanted)
+        if not wanted:
+            continue
+
+        if budget is not None and report["credits_spent"] + 1 > budget:
+            report["stopped_early"] = "budget exhausted before the events lookup"
+            return report
+
+        try:
+            payload, usage = events_for(game_date, timeout=timeout)
+            events = payload.get("data") if isinstance(payload, dict) else payload
+        except odds_provider.OddsProviderError as exc:
+            report["failed"] += len(wanted)
+            if on_game:
+                on_game({"date": game_date, "error": str(exc)})
+            continue
+        report["credits_spent"] += usage.get("last") or 1
+        if usage.get("remaining") is not None:
+            report["credits_remaining"] = usage["remaining"]
+
+        index = {}
+        for event in events:
+            away = slate_mod.team_abbrev_from_name(event.get("away_team"))
+            home = slate_mod.team_abbrev_from_name(event.get("home_team"))
+            if away and home:
+                index[(away, home)] = event
+
+        for game in wanted:
+            key = (game["away_team"], game["home_team"])
+            event = index.get(key)
+            if not event:
+                report["unmatched"] += 1
+                if on_game:
+                    on_game({"date": game_date, "game": key,
+                             "error": "no matching event in the odds feed"})
+                continue
+
+            if budget is not None and report["credits_spent"] + per_game > budget:
+                report["stopped_early"] = (
+                    f"budget of {budget} would be exceeded by the next game "
+                    f"({per_game} credits); the run is resumable")
+                return report
+
+            try:
+                payload, usage = odds_for(game_date, event["id"], markets,
+                                          timeout=timeout)
+            except odds_provider.MarketsUnavailableAtDate:
+                # Not a failure and never retried: first-five history begins in
+                # mid-May 2023, so every earlier date answers 422 forever. It is
+                # recorded in the manifest so a resumed run does not re-ask, and
+                # it costs zero credits either way.
+                report["unavailable_at_date"] += 1
+                manifest["snapshots"][f"{game_date}:{key[0]}@{key[1]}"] = {
+                    "unavailable_at_date": True}
+                write_manifest(manifest, store)
+                if on_game:
+                    on_game({"date": game_date, "game": key,
+                             "unavailable": True})
+                continue
+            except odds_provider.OddsProviderError as exc:
+                report["failed"] += 1
+                if on_game:
+                    on_game({"date": game_date, "game": key, "error": str(exc)})
+                continue
+
+            record = {"date": game_date, "away_team": key[0], "home_team": key[1],
+                      "game_pk": game.get("game_pk"), "event_id": event["id"],
+                      "commence_time": event.get("commence_time"),
+                      "snapshot_at": payload.get("timestamp"),
+                      "markets": sorted(markets),
+                      "data": payload.get("data")}
+            path = target / f"mlb_{game_date[:4]}.jsonl"
+            with path.open("a", encoding="utf-8") as handle:
+                handle.write(json.dumps(record, sort_keys=True) + "\n")
+
+            manifest["snapshots"][f"{game_date}:{key[0]}@{key[1]}"] = {
+                "event_id": event["id"], "snapshot_at": payload.get("timestamp")}
+            write_manifest(manifest, store)
+
+            report["fetched"] += 1
+            report["credits_spent"] += usage.get("last") or per_game
+            if usage.get("remaining") is not None:
+                report["credits_remaining"] = usage["remaining"]
+            if on_game:
+                on_game({"date": game_date, "game": key,
+                         "remaining": usage.get("remaining")})
+
+    return report
+
+
+def _snapshot_instant(game_date) -> str:
+    """The instant to ask about: late evening UTC on the game's own date.
+
+    Games start across a nine-hour spread, so no single instant is every game's
+    close. This is deliberately the same approximation the featured backfill
+    makes, and `closing_gap_minutes` on the stored record is what lets an
+    analysis see how good it was for any given game.
+    """
+    return f"{game_date}T22:50:00Z"
+
+
+def _historical_events(game_date, timeout=30):
+    return odds_provider._get_json_with_usage(
+        f"historical/sports/{odds_provider.SPORT}/events",
+        {"apiKey": odds_provider.api_key(), "date": _snapshot_instant(game_date)},
+        timeout=timeout)
+
+
+def _historical_event_odds(game_date, event_id, markets, timeout=30):
+    return odds_provider._get_json_with_usage(
+        f"historical/sports/{odds_provider.SPORT}/events/{event_id}/odds",
+        {"apiKey": odds_provider.api_key(), "regions": odds_provider.DEFAULT_REGION,
+         "markets": ",".join(markets), "oddsFormat": odds_provider.ODDS_FORMAT,
+         "date": _snapshot_instant(game_date)},
+        timeout=timeout)

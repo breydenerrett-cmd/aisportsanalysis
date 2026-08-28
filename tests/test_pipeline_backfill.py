@@ -191,3 +191,97 @@ class TestSeasonTimestamps(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestFirstFiveBackfill(unittest.TestCase):
+    """Billed per game, so the run has to be picky, resumable, and honest about
+    dates the archive simply does not cover."""
+
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        self.store = Path(self.dir.name)
+
+    def tearDown(self):
+        self.dir.cleanup()
+
+    def games(self, n=2, date="2023-06-04"):
+        return [{"date": date, "away_team": "TB", "home_team": "BOS",
+                 "game_pk": 1}][:n] or []
+
+    def events(self, teams=(("Tampa Bay Rays", "Boston Red Sox"),)):
+        def _fetch(game_date, timeout=30):
+            return ({"data": [{"id": f"e{i}", "away_team": a, "home_team": h,
+                               "commence_time": f"{game_date}T23:05:00Z"}
+                              for i, (a, h) in enumerate(teams)]},
+                    {"remaining": 1000, "last": 1})
+        return _fetch
+
+    def odds(self, raise_with=None):
+        def _fetch(game_date, event_id, markets, timeout=30):
+            if raise_with:
+                raise raise_with
+            return ({"timestamp": f"{game_date}T22:45:00Z",
+                     "data": {"bookmakers": [{"key": "dk"}]}},
+                    {"remaining": 990, "last": 20})
+        return _fetch
+
+    def test_the_per_game_plan_includes_the_events_lookups(self):
+        plan = backfill.first_five_plan(
+            [{"date": "2023-06-04"}, {"date": "2023-06-05"}])
+        self.assertEqual(plan["credits_per_game"], 20)
+        self.assertEqual(plan["credits_events"], 2)
+        self.assertEqual(plan["credits_total"], 42)
+
+    def test_three_seasons_of_candidates_is_affordable(self):
+        # The number that made the whole approach viable: every game would be
+        # 145,800 credits, the scanner's ~10% is under 15,000.
+        plan = backfill.first_five_plan([{"date": f"2024-06-{d:02d}"}
+                                         for d in range(1, 29)] * 26)
+        self.assertLess(plan["credits_total"], 15000)
+
+    def test_a_matched_game_is_stored_with_its_event_and_snapshot(self):
+        report = backfill.run_first_five(
+            self.games(), store=self.store, fetch_events=self.events(),
+            fetch_odds=self.odds())
+        self.assertEqual(report["fetched"], 1)
+        rows = backfill.read_season(2023, self.store)
+        self.assertEqual(rows[0]["away_team"], "TB")
+        self.assertEqual(rows[0]["snapshot_at"], "2023-06-04T22:45:00Z")
+
+    def test_an_unmatched_game_is_reported_not_silently_dropped(self):
+        # An unmatched pair is nearly always a team-code mismatch, which has
+        # silently cost this project data twice before.
+        report = backfill.run_first_five(
+            self.games(), store=self.store,
+            fetch_events=self.events((("Miami Marlins", "New York Mets"),)),
+            fetch_odds=self.odds())
+        self.assertEqual(report["unmatched"], 1)
+        self.assertEqual(report["fetched"], 0)
+
+    def test_a_date_outside_the_archive_is_recorded_and_never_retried(self):
+        # First-five history begins in mid-May 2023, so earlier dates answer 422
+        # forever. Retrying them would re-ask a dead question on every run.
+        report = backfill.run_first_five(
+            self.games(date="2023-04-24"), store=self.store,
+            fetch_events=self.events(),
+            fetch_odds=self.odds(odds_provider.MarketsUnavailableAtDate("nope")))
+        self.assertEqual(report["unavailable_at_date"], 1)
+        self.assertEqual(report["failed"], 0)
+        again = backfill.run_first_five(
+            self.games(date="2023-04-24"), store=self.store,
+            fetch_events=self.events(), fetch_odds=self.odds())
+        self.assertEqual(again["skipped_cached"], 1)
+
+    def test_a_real_failure_is_counted_and_left_to_retry(self):
+        report = backfill.run_first_five(
+            self.games(), store=self.store, fetch_events=self.events(),
+            fetch_odds=self.odds(odds_provider.OddsProviderError("boom")))
+        self.assertEqual(report["failed"], 1)
+        self.assertEqual(backfill.read_manifest(self.store)["snapshots"], {})
+
+    def test_the_budget_stops_before_a_game_is_bought(self):
+        report = backfill.run_first_five(
+            self.games(), store=self.store, budget=5,
+            fetch_events=self.events(), fetch_odds=self.odds())
+        self.assertEqual(report["fetched"], 0)
+        self.assertIn("would be exceeded", report["stopped_early"])
