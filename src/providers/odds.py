@@ -502,6 +502,25 @@ def normalize_event(event: dict, preferred_book=None) -> dict:
     bookmakers = event.get("bookmakers") or []
     ordered = _order_books(bookmakers, preferred_book)
 
+    # EVERY book, not just the chosen one. Keeping one quote of nine discards
+    # eight observations of data that cannot be bought back at any price, and
+    # the spread between books is itself a signal -- a book sitting off the
+    # consensus is a stale line, which is arithmetic rather than prediction.
+    record["all_books"] = {}
+    for book in ordered:
+        for market_key in DEFAULT_MARKETS + EVENT_MARKETS:
+            market = _find_market(book, market_key)
+            if market is None:
+                continue
+            outcomes = _parse_outcomes(market, _shape_of(market_key), record)
+            if outcomes is None:
+                continue
+            record["all_books"].setdefault(market_key, []).append({
+                "book": book.get("key"),
+                "last_update": market.get("last_update") or book.get("last_update"),
+                **outcomes,
+            })
+
     # The superset, not just the featured three. A market no book offers is simply
     # absent, so scanning for first-five keys costs nothing on a featured response
     # and means an event response does not need a second, near-identical normalizer.

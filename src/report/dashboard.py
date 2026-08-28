@@ -303,6 +303,18 @@ _JS = r"""
     wrap.appendChild(el('p', 'empty', 'No games scheduled for this date.'));
   }
 
+  function topSurprise(game) {
+    return (game.findings || []).reduce(function (best, f) {
+      return (f.kind === 'signal' && (f.surprise || 0) > best) ? f.surprise : best;
+    }, -1);
+  }
+  var topIndex = 0, topScore = -1;
+  slate.games.forEach(function (g, i) {
+    var s = topSurprise(g);
+    if (g.verdict !== 'no_play') s += 100;
+    if (s > topScore) { topScore = s; topIndex = i; }
+  });
+
   slate.games.forEach(function (game, index) {
     var card = el('div', 'game ' + game.verdict);
 
@@ -344,7 +356,10 @@ _JS = r"""
       var open = card.classList.toggle('open');
       button.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
-    if (index === 0 && game.verdict !== 'no_play') {
+    // Open the most interesting game, not the first one. On a slate of fifteen
+    // no-plays the first card is arbitrary, and an all-collapsed page reads as
+    // though the tool found nothing at all.
+    if (index === topIndex) {
       card.classList.add('open');
       button.setAttribute('aria-expanded', 'true');
     }
@@ -425,15 +440,36 @@ _JS = r"""
       box.appendChild(el('p', 'gap', game.gaps.market || 'no prices'));
       return box;
     }
-    var rows = [];
+    // Totals are Over/Under with a line, not away/home. Rendering them through
+    // the moneyline columns showed a row of dashes for a market that was
+    // actually priced -- a missing-data display for present data, which is the
+    // one thing this page must never do.
+    var sideRows = [], totalRows = [];
     Object.keys(section.markets || {}).sort().forEach(function (key) {
       var m = section.markets[key];
-      rows.push([key, american(m.away_price), american(m.home_price),
-                 pct(m.away_fair), pct(m.home_fair),
-                 m.hold_pct === undefined ? '--' : num(m.hold_pct, 2) + '%']);
+      if (m.total !== undefined && m.total !== null) {
+        totalRows.push([key, num(m.total, 1), american(m.over_price),
+                        american(m.under_price), pct(m.over_fair),
+                        pct(m.under_fair)]);
+      } else if (m.away_price !== undefined) {
+        sideRows.push([key + (m.home_line !== undefined
+                        ? ' (' + num(m.home_line, 1) + ')' : ''),
+                       american(m.away_price), american(m.home_price),
+                       pct(m.away_fair), pct(m.home_fair),
+                       m.hold_pct === undefined ? '--' : num(m.hold_pct, 2) + '%']);
+      }
     });
-    box.appendChild(table(rows,
-      ['market', 'away', 'home', 'away fair', 'home fair', 'hold']));
+    if (sideRows.length) {
+      box.appendChild(table(sideRows,
+        ['market', 'away', 'home', 'away fair', 'home fair', 'hold']));
+    }
+    if (totalRows.length) {
+      box.appendChild(table(totalRows,
+        ['total', 'line', 'over', 'under', 'over fair', 'under fair']));
+    }
+    if (!sideRows.length && !totalRows.length) {
+      box.appendChild(el('p', 'gap', 'no market priced this game'));
+    }
     if (section.implied_bullpen_shift !== undefined) {
       var shift = section.implied_bullpen_shift;
       var who = shift > 0 ? game.home : game.away;

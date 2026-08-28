@@ -126,8 +126,10 @@ def _market_section(prices) -> dict:
     accidentally compare a model number against a raw implied probability -- the
     error that systematically overstates every edge in the building.
     """
-    section = {"markets": {}}
+    section = {"markets": {}, "all_books": prices.get("all_books") or {}}
     for market, quote in (prices or {}).items():
+        if market == "all_books":
+            continue
         entry = dict(quote)
         away_price, home_price = quote.get("away_price"), quote.get("home_price")
         if away_price is not None and home_price is not None:
@@ -139,6 +141,7 @@ def _market_section(prices) -> dict:
                     odds_math.hold_percentage([away_price, home_price]), 3)
             except odds_math.OddsError as exc:
                 entry["devig_error"] = str(exc)
+        entry.setdefault("total", quote.get("total"))
         over, under = quote.get("over_price"), quote.get("under_price")
         if over is not None and under is not None:
             try:

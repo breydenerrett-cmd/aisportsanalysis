@@ -381,7 +381,8 @@ def cmd_train(args) -> int:
 
 def cmd_brief(args) -> int:
     """Build the slate briefing and write the dashboard."""
-    from src.pipeline import briefing, history, pitchers
+    from src.detect import detectors as detector_defs
+    from src.pipeline import briefing, bullpen, history, pitchers
     from src.pipeline import slate as slate_mod
     from src.providers import odds as odds_prov
     from src.report import dashboard
@@ -405,12 +406,27 @@ def cmd_brief(args) -> int:
                 away = slate_mod.team_abbrev_from_name(event.get("away_team"))
                 home = slate_mod.team_abbrev_from_name(event.get("home_team"))
                 if away and home:
-                    prices[(away, home)] = event.get("markets") or {}
+                    quote = dict(event.get("markets") or {})
+                    quote["all_books"] = event.get("all_books") or {}
+                    prices[(away, home)] = quote
         except odds_prov.OddsProviderError as exc:
             print(f"  (odds unavailable: {exc})")
 
+        if args.f5:
+            _add_first_five(prices, slate_mod, odds_prov)
+
+    detector_defs.register_defaults()
+    pen_log = bullpen.read_log()
+    pens = {}
+    if pen_log:
+        wanted = {t for g in games for t in (g.get("away_team"), g.get("home_team")) if t}
+        for team in wanted:
+            pens[team] = bullpen.team_workload(pen_log, team, args.date)
+    else:
+        print("  (no bullpen log -- run `bullpen` to enable those detectors)")
+
     slate = briefing.build_slate(games, store, pitcher_logs=logs,
-                                 prices_by_matchup=prices)
+                                 prices_by_matchup=prices, bullpen_by_team=pens)
     path = dashboard.render(slate, args.out)
     flagged = sum(1 for g in slate["games"] if g["verdict"] == "flagged")
     cand = sum(1 for g in slate["games"] if g["verdict"] == "candidate")
@@ -419,6 +435,37 @@ def cmd_brief(args) -> int:
     print(f"  {path}")
     print("  open it in a browser -- no server needed")
     return EXIT_OK
+
+
+def _add_first_five(prices, slate_mod, odds_prov):
+    """Attach first-five prices per game. Billed per event, so it is opt-in.
+
+    Without these the implied-bullpen detector cannot fire at all: its whole
+    input is the gap between the full-game and first-five prices.
+    """
+    wanted = ["h2h_1st_5_innings", "totals_1st_5_innings"]
+    try:
+        events = odds_prov.list_events()
+    except odds_prov.OddsProviderError as exc:
+        print(f"  (first-five unavailable: {exc})")
+        return
+    cost = odds_prov.estimate_event_credits(len(events), markets=wanted)
+    print(f"  pricing first five for {len(events)} game(s): "
+          f"{cost['credits_total']} credits")
+    for event in events:
+        away = slate_mod.team_abbrev_from_name(event.get("away_team"))
+        home = slate_mod.team_abbrev_from_name(event.get("home_team"))
+        if not (away and home) or (away, home) not in prices:
+            continue
+        try:
+            record = odds_prov.normalize_event(
+                odds_prov.fetch_event_odds(event["id"], markets=wanted))
+        except odds_prov.OddsProviderError as exc:
+            print(f"    {away} @ {home}: {exc}")
+            continue
+        prices[(away, home)].update(record.get("markets") or {})
+        for market, quotes in (record.get("all_books") or {}).items():
+            prices[(away, home)].setdefault("all_books", {})[market] = quotes
 
 
 def cmd_scan(args) -> int:
@@ -995,6 +1042,9 @@ def build_parser() -> argparse.ArgumentParser:
     brief_cmd.add_argument("--out", default="artifacts/briefing.html")
     brief_cmd.add_argument("--no-odds", action="store_true",
                            help="skip the odds call")
+    brief_cmd.add_argument("--f5", action="store_true",
+                           help="also price first-five per game (20 credits each) "
+                                "-- enables the implied-bullpen detector")
 
     scan_cmd = sub.add_parser("scan",
         help="scan a slate for obvious mismatches (usually: no play)")
