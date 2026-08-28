@@ -379,6 +379,73 @@ def cmd_train(args) -> int:
     return EXIT_OK
 
 
+def cmd_ledger(args) -> int:
+    """Settle forward-ledger entries, and report what the ledger holds."""
+    from src.pipeline import ledger
+    from src.providers import mlb as mlb_provider
+
+    if args.status:
+        report = ledger.status()
+        print(f"forward ledger: {report['games_recorded']} game(s) across "
+              f"{len(report['dates'])} date(s)")
+        print(f"  settled {report['settled']}   pending {report['pending']}")
+        print("  verdicts: " + ", ".join(
+            f"{v} {k}" for k, v in sorted(report["verdicts"].items())))
+        print(f"  actionable (flagged): {report['actionable']}")
+        if report["first_recorded"]:
+            print(f"  first {report['first_recorded'][:19]}   "
+                  f"last {report['last_recorded'][:19]}")
+        return EXIT_OK
+
+    entries = ledger.read()
+    pending = [r for r in ledger.recommendations(entries)
+               if r["game_pk"] not in ledger.settlements(entries)]
+    if not pending:
+        print("nothing pending to settle.")
+        return EXIT_OK
+
+    by_date = {}
+    for row in pending:
+        by_date.setdefault(row["date"], []).append(row)
+
+    settled = 0
+    unresolved = 0
+    for game_date in sorted(by_date):
+        try:
+            games = {g["game_pk"]: g for g in mlb_provider.fetch_games(game_date)}
+        except mlb_provider.MLBError as exc:
+            print(f"  ({game_date}: {exc})")
+            continue
+        for row in by_date[game_date]:
+            game = games.get(row["game_pk"])
+            if not game or game.get("state") != "final":
+                # Not a failure. A postponed or in-progress game is simply not
+                # settleable yet, and writing a settlement now would freeze a
+                # non-result into the record.
+                unresolved += 1
+                continue
+            five = game.get("first_five") or {}
+            ledger.settle(row["game_pk"], {
+                "away_score": game.get("away_score"),
+                "home_score": game.get("home_score"),
+                "winner": game.get("winner"),
+                "home_won": game.get("home_won"),
+                "total_runs": game.get("total_runs"),
+                "first_five": {
+                    "complete": five.get("complete"),
+                    "away_runs": five.get("away_runs"),
+                    "home_runs": five.get("home_runs"),
+                    "total_runs": five.get("total_runs"),
+                    "winner": five.get("winner"),
+                    "reason": five.get("reason"),
+                },
+            })
+            settled += 1
+
+    print(f"settled {settled} game(s); {unresolved} not final yet")
+    return EXIT_OK
+
+
 def cmd_brief(args) -> int:
     """Build the slate briefing and write the dashboard."""
     from src.detect import detectors as detector_defs
@@ -522,6 +589,12 @@ def cmd_brief(args) -> int:
                                  prices_by_matchup=prices, bullpen_by_team=pens,
                                  lineups_by_pk=posted, handedness=hands,
                                  splits_by_pk=splits, matchups_by_pk=matchups)
+    if not args.no_ledger:
+        from src.pipeline import ledger
+        written = ledger.record_slate(slate)
+        print(f"  ledger: {written['recorded']} entries appended "
+              f"({', '.join(f'{v} {k}' for k, v in sorted(written['verdicts'].items()))})")
+
     path = dashboard.render(slate, args.out)
     flagged = sum(1 for g in slate["games"] if g["verdict"] == "flagged")
     cand = sum(1 for g in slate["games"] if g["verdict"] == "candidate")
@@ -902,9 +975,13 @@ def cmd_daily(args) -> int:
       3. ingest yesterday's PITCHER logs, so today's starter features exist. Skip
          this and the mismatch scanner silently reports no play every day, because
          every starter looks like an unknown with no prior appearances.
-      4. scan today for obvious mismatches and log any flags with their prices.
-      5. predict today and log, capturing the price at prediction time.
-      6. grade whatever has settled -- both the model and the scanner.
+      4. refresh bullpen appearances, which availability depends on.
+      5. build today's briefing and append it to the FORWARD LEDGER. This is the
+         only evidence in the project that cannot be corrupted by discipline
+         failing, so it runs every day whether or not anything is flagged.
+      6. settle whatever has finished, against results that were unknowable when
+         the recommendation was written.
+      7. grade the older prediction and flag logs.
 
     Every step is independent. One failing does not abort the rest, because a
     missed grading run is recoverable and a missed snapshot is not.
@@ -919,7 +996,7 @@ def cmd_daily(args) -> int:
     failures = []
 
     def step(number, name, fn):
-        print(f"[{number}/6] {name}")
+        print(f"[{number}/7] {name}")
         try:
             fn()
         except Exception as exc:  # a step failing must not kill the loop
@@ -954,11 +1031,21 @@ def cmd_daily(args) -> int:
               f"{report['pitchers_in_store']} in store, "
               f"{report['appearances']} appearances")
 
-    def do_scan():
-        code = cmd_scan(argparse.Namespace(date=today, verbose=False,
-                                           no_price=False, no_log=False))
+    def do_pen():
+        from src.pipeline import bullpen
+        report = bullpen.build_log(yesterday, yesterday)
+        print(f"      {report['appearances']} appearance(s) from "
+              f"{report['games']} game(s)")
+
+    def do_brief():
+        code = cmd_brief(argparse.Namespace(
+            date=today, out="artifacts/briefing.html", no_odds=False,
+            no_weather=False, no_matchups=False, no_ledger=False, f5=True))
         if code != EXIT_OK:
-            raise RuntimeError("scan step returned a non-zero exit")
+            raise RuntimeError("briefing step returned a non-zero exit")
+
+    def do_settle():
+        cmd_ledger(argparse.Namespace(status=False))
 
     def do_predict():
         from src.pipeline import grading
@@ -974,9 +1061,10 @@ def cmd_daily(args) -> int:
     step(1, "capture odds snapshot (irreplaceable -- runs first)", do_snapshot)
     step(2, f"ingest results for {yesterday}", do_ingest)
     step(3, f"refresh pitcher logs for {today[:4]}", do_pitchers)
-    step(4, f"scan {today} for mismatches", do_scan)
-    step(5, f"predict and log {today}", do_predict)
-    step(6, "grade settled predictions and flags", do_grade)
+    step(4, f"refresh bullpen appearances for {yesterday}", do_pen)
+    step(5, f"brief {today} and append to the forward ledger", do_brief)
+    step(6, "settle finished games", do_settle)
+    step(7, "grade settled predictions and flags", do_grade)
 
     if failures:
         print(f"loop finished with {len(failures)} failed step(s):")
@@ -1130,6 +1218,11 @@ def build_parser() -> argparse.ArgumentParser:
     train_cmd.add_argument("--test", action="store_true",
                            help="evaluate on the held-out TEST split (use once)")
 
+    ledger_cmd = sub.add_parser("ledger",
+        help="settle forward-ledger entries against results")
+    ledger_cmd.add_argument("--status", action="store_true",
+                            help="report what the ledger holds without settling")
+
     brief_cmd = sub.add_parser("brief",
         help="build the slate briefing dashboard (static HTML, no server)")
     brief_cmd.add_argument("--date",
@@ -1137,6 +1230,8 @@ def build_parser() -> argparse.ArgumentParser:
     brief_cmd.add_argument("--out", default="artifacts/briefing.html")
     brief_cmd.add_argument("--no-odds", action="store_true",
                            help="skip the odds call")
+    brief_cmd.add_argument("--no-ledger", action="store_true",
+                           help="do not append to the forward ledger")
     brief_cmd.add_argument("--no-weather", action="store_true",
                            help="skip the weather call")
     brief_cmd.add_argument("--no-matchups", action="store_true",
@@ -1194,6 +1289,7 @@ COMMANDS = {
     "features": cmd_features,
     "train": cmd_train,
     "brief": cmd_brief,
+    "ledger": cmd_ledger,
     "scan": cmd_scan,
     "scan-grade": cmd_scan_grade,
     "predict": cmd_predict,
