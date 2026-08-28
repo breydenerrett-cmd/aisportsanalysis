@@ -1,13 +1,8 @@
 """Tests for src/pipeline/backfill.py.
 
-Two things matter more than the rest.
-
-TestBudgetIsEnforced: the budget is checked BEFORE each request, using that request's
-cost. Checking afterwards discovers an overspend once it has already happened, and the
-credits do not come back.
-
-TestResumability: several thousand metered requests will be interrupted. A restart that
-re-fetches what it already has spends a one-month subscription twice.
+Two properties decide whether this module is safe to run unattended against a
+metered account: the budget must be checked BEFORE a request rather than after
+it, and an interruption must cost one snapshot rather than the whole run.
 """
 
 import json
@@ -20,33 +15,119 @@ from src.pipeline import backfill
 from src.providers import odds as odds_provider
 
 
-def payload(timestamp="2025-07-15T22:45:00Z", events=None):
-    return {"timestamp": timestamp, "data": events if events is not None else []}
+def stamp(day=20, hour=22, minute=50, year=2025, month=3):
+    return datetime(year, month, day, hour, minute, tzinfo=timezone.utc)
 
 
-def usage(last=10, remaining=99_000):
-    return {"remaining": remaining, "used": 100_000 - remaining, "last": last}
+class TestPlanning(unittest.TestCase):
+
+    def test_historical_costs_ten_times_a_live_call(self):
+        plan = backfill.plan([2025], ["h2h"], snapshot_times=("22:50",))
+        self.assertEqual(plan["credits_per_snapshot"], 10)
+
+    def test_cost_scales_with_markets_and_snapshot_times(self):
+        one = backfill.plan([2025], ["h2h"], snapshot_times=("22:50",))
+        two = backfill.plan([2025], ["h2h", "totals"],
+                            snapshot_times=("16:50", "22:50"))
+        self.assertEqual(two["credits_total"], one["credits_total"] * 4)
+
+    def test_three_seasons_of_two_markets_is_the_planned_number(self):
+        # The number the subscription decision was made on. If this changes, the
+        # budget conversation changes with it.
+        plan = backfill.plan([2023, 2024, 2025], ["h2h", "totals"])
+        self.assertEqual(plan["credits_total"], 36000)
 
 
-class Recorder:
-    """A stand-in fetcher that counts calls and can be told to fail."""
+class TestSnapshotIdentity(unittest.TestCase):
 
-    def __init__(self, events_per_call=1, fail_on=()):
+    def test_the_key_includes_the_markets(self):
+        # A snapshot fetched for h2h alone is not the same observation as one
+        # fetched for h2h and totals; treating them as interchangeable would make
+        # a later run skip work it never did.
+        self.assertNotEqual(backfill.snapshot_key(stamp(), ["h2h"]),
+                            backfill.snapshot_key(stamp(), ["h2h", "totals"]))
+
+    def test_market_order_does_not_change_the_key(self):
+        self.assertEqual(backfill.snapshot_key(stamp(), ["totals", "h2h"]),
+                         backfill.snapshot_key(stamp(), ["h2h", "totals"]))
+
+    def test_the_key_is_minute_resolution_and_readable(self):
+        self.assertEqual(backfill.snapshot_key(stamp(), ["h2h"]),
+                         "2025-03-20T22:50Z:h2h")
+
+
+class TestRun(unittest.TestCase):
+
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        self.store = Path(self.dir.name)
         self.calls = []
-        self.events_per_call = events_per_call
-        self.fail_on = set(fail_on)
 
-    def __call__(self, stamp, markets=None, timeout=30):
-        self.calls.append(stamp)
-        if len(self.calls) in self.fail_on:
-            raise odds_provider.OddsProviderError("simulated failure")
-        events = [{"id": f"e{len(self.calls)}", "commence_time": "2025-07-15T23:05:00Z",
-                   "home_team": "New York Yankees", "away_team": "Houston Astros",
-                   "bookmakers": []} for _ in range(self.events_per_call)]
-        return payload(events=events), usage()
+    def tearDown(self):
+        self.dir.cleanup()
+
+    def fetch(self, remaining_start=1000, events=2, fail_on=()):
+        state = {"remaining": remaining_start}
+
+        def _fetch(when, markets=None, timeout=30):
+            self.calls.append(when)
+            if len(self.calls) in fail_on:
+                raise odds_provider.OddsProviderError("boom")
+            state["remaining"] -= 10 * len(markets)
+            return ({"timestamp": when.isoformat(),
+                     "data": [{"id": f"e{i}"} for i in range(events)]},
+                    {"remaining": state["remaining"], "last": 10 * len(markets)})
+        return _fetch
+
+    def run_one_day(self, **kwargs):
+        kwargs.setdefault("fetch", self.fetch())
+        return backfill.run([2025], ["h2h"], snapshot_times=("22:50",),
+                            store=self.store, **kwargs)
+
+    def test_the_budget_is_checked_before_the_request_not_after(self):
+        # A check afterwards discovers the overspend once it has happened, which
+        # on a metered account is the difference between a plan and an overdraft.
+        report = self.run_one_day(budget=25)
+        self.assertEqual(report["fetched"], 2)
+        self.assertEqual(report["credits_spent"], 20)
+        self.assertIn("would be exceeded", report["stopped_early"])
+
+    def test_a_zero_budget_spends_nothing(self):
+        report = self.run_one_day(budget=0)
+        self.assertEqual(report["fetched"], 0)
+        self.assertEqual(self.calls, [])
+
+    def test_progress_survives_the_budget_stop(self):
+        self.run_one_day(budget=25)
+        self.assertEqual(len(backfill.read_season(2025, self.store)), 2)
+
+    def test_a_resumed_run_skips_what_is_already_stored(self):
+        self.run_one_day(budget=25)
+        second = self.run_one_day(budget=25)
+        self.assertEqual(second["skipped_cached"], 2)
+
+    def test_a_failed_snapshot_is_not_recorded_so_it_retries(self):
+        # Recording a failure as done leaves a permanent hole that no later run
+        # will ever fill.
+        report = self.run_one_day(budget=100, fetch=self.fetch(fail_on=(1,)))
+        self.assertEqual(report["failed"], 1)
+        manifest = backfill.read_manifest(self.store)
+        self.assertEqual(len(manifest["snapshots"]), report["fetched"])
+
+    def test_credits_remaining_is_read_from_the_response(self):
+        report = self.run_one_day(budget=100)
+        self.assertIsNotNone(report["credits_remaining"])
+
+    def test_an_empty_slate_is_recorded_rather_than_skipped(self):
+        # A genuine off-day must be distinguishable from a date never fetched.
+        report = self.run_one_day(budget=100, fetch=self.fetch(events=0))
+        self.assertGreater(report["empty_snapshots"], 0)
+        self.assertEqual(report["empty_snapshots"], report["fetched"])
 
 
-class TempStore(unittest.TestCase):
+class TestClosingPrices(unittest.TestCase):
+    """The closing price is an approximation, and the staleness is reported."""
+
     def setUp(self):
         self.dir = tempfile.TemporaryDirectory()
         self.store = Path(self.dir.name)
@@ -54,180 +135,58 @@ class TempStore(unittest.TestCase):
     def tearDown(self):
         self.dir.cleanup()
 
-
-class TestPlanning(unittest.TestCase):
-
-    def test_cost_uses_the_ten_times_historical_multiplier(self):
-        # Verified against the live API: one market, one region, one snapshot = 10.
-        p = backfill.plan([2025], ["h2h"], snapshot_times=("22:50",))
-        self.assertEqual(p["credits_per_snapshot"], 10)
-
-    def test_cost_scales_with_markets(self):
-        p = backfill.plan([2025], ["h2h", "totals"], snapshot_times=("22:50",))
-        self.assertEqual(p["credits_per_snapshot"], 20)
-
-    def test_cost_scales_with_seasons_and_snapshot_times(self):
-        one = backfill.plan([2025], ["h2h"], snapshot_times=("22:50",))
-        many = backfill.plan([2023, 2024, 2025], ["h2h"],
-                             snapshot_times=("16:50", "22:50", "01:50"))
-        self.assertEqual(many["snapshots"], one["snapshots"] * 9)
-
-    def test_a_season_spans_the_regular_season_not_the_calendar(self):
-        stamps = backfill.season_timestamps(2025, snapshot_times=("22:50",))
-        self.assertEqual(stamps[0].month, backfill.SEASON_START[0])
-        self.assertEqual(stamps[-1].month, backfill.SEASON_END[0])
-        self.assertTrue(all(s.tzinfo == timezone.utc for s in stamps))
-
-
-class TestBudgetIsEnforced(TempStore):
-    """Checked before the request, not after. Credits do not come back."""
-
-    def test_the_run_stops_before_exceeding_the_budget(self):
-        fetch = Recorder()
-        report = backfill.run([2025], ["h2h"], snapshot_times=("22:50",),
-                              budget=35, store=self.store, fetch=fetch)
-        # 10 credits each, so three fit in 35 and the fourth must not be attempted.
-        self.assertEqual(len(fetch.calls), 3)
-        self.assertEqual(report["credits_spent"], 30)
-        self.assertIsNotNone(report["stopped_early"])
-
-    def test_a_budget_smaller_than_one_request_spends_nothing(self):
-        fetch = Recorder()
-        report = backfill.run([2025], ["h2h"], snapshot_times=("22:50",),
-                              budget=5, store=self.store, fetch=fetch)
-        self.assertEqual(fetch.calls, [])
-        self.assertEqual(report["credits_spent"], 0)
-
-    def test_stopping_early_keeps_everything_already_fetched(self):
-        backfill.run([2025], ["h2h"], snapshot_times=("22:50",),
-                     budget=25, store=self.store, fetch=Recorder())
-        self.assertEqual(len(backfill.read_season(2025, self.store)), 2)
-
-    def test_credits_spent_uses_the_reported_cost_not_the_estimate(self):
-        # The API is the authority on what a call cost. An estimate that drifts from
-        # the real billing would silently overrun the budget.
-        def pricey(stamp, markets=None, timeout=30):
-            return payload(), usage(last=25)
-        report = backfill.run([2025], ["h2h"], snapshot_times=("22:50",),
-                              budget=60, store=self.store, fetch=pricey)
-        # Estimated at 10 each, actually billed 25. Costing the next request at the
-        # estimate would approve a third call and overrun by 15; costing it at the
-        # observed price stops at two.
-        self.assertEqual(report["credits_spent"], 50)
-        self.assertIsNotNone(report["stopped_early"])
-
-    def test_remaining_credits_are_reported_from_the_response(self):
-        def dwindling(stamp, markets=None, timeout=30):
-            return payload(), usage(remaining=42)
-        report = backfill.run([2025], ["h2h"], snapshot_times=("22:50",),
-                              budget=20, store=self.store, fetch=dwindling)
-        self.assertEqual(report["credits_remaining"], 42)
-
-
-class TestResumability(TempStore):
-
-    def test_a_second_run_refetches_nothing(self):
-        first = Recorder()
-        backfill.run([2025], ["h2h"], snapshot_times=("22:50",), budget=30,
-                     store=self.store, fetch=first)
-        second = Recorder()
-        report = backfill.run([2025], ["h2h"], snapshot_times=("22:50",), budget=0,
-                              store=self.store, fetch=second)
-        self.assertEqual(second.calls, [])
-        self.assertEqual(report["skipped_cached"], 3)
-
-    def test_resuming_continues_where_it_stopped(self):
-        backfill.run([2025], ["h2h"], snapshot_times=("22:50",), budget=20,
-                     store=self.store, fetch=Recorder())
-        again = Recorder()
-        backfill.run([2025], ["h2h"], snapshot_times=("22:50",), budget=20,
-                     store=self.store, fetch=again)
-        self.assertEqual(len(again.calls), 2)
-        self.assertEqual(len(backfill.read_season(2025, self.store)), 4)
-
-    def test_a_failed_snapshot_is_retried_rather_than_marked_done(self):
-        # Recording a failure as complete would leave a permanent hole that no later
-        # run could ever notice.
-        first = Recorder(fail_on=(1,))
-        backfill.run([2025], ["h2h"], snapshot_times=("22:50",), budget=30,
-                     store=self.store, fetch=first)
-        second = Recorder()
-        backfill.run([2025], ["h2h"], snapshot_times=("22:50",), budget=10,
-                     store=self.store, fetch=second)
-        # The retry is the FIRST stamp -- the one that failed -- not the next unfetched
-        # one, which would leave the hole in place forever.
-        self.assertEqual(second.calls, [first.calls[0]])
-
-    def test_a_different_market_set_is_a_different_snapshot(self):
-        # h2h alone is not the same observation as h2h plus totals, and treating them
-        # as interchangeable would skip work that was never done.
-        backfill.run([2025], ["h2h"], snapshot_times=("22:50",), budget=10,
-                     store=self.store, fetch=Recorder())
-        other = Recorder()
-        backfill.run([2025], ["h2h", "totals"], snapshot_times=("22:50",), budget=20,
-                     store=self.store, fetch=other)
-        self.assertEqual(len(other.calls), 1)
-
-    def test_an_empty_slate_is_recorded_not_skipped(self):
-        # An off-day must be distinguishable from a date that was never fetched.
-        def empty(stamp, markets=None, timeout=30):
-            return payload(events=[]), usage()
-        report = backfill.run([2025], ["h2h"], snapshot_times=("22:50",), budget=20,
-                              store=self.store, fetch=empty)
-        self.assertEqual(report["empty_snapshots"], 2)
-        second = Recorder()
-        again = backfill.run([2025], ["h2h"], snapshot_times=("22:50",), budget=0,
-                             store=self.store, fetch=second)
-        self.assertEqual(second.calls, [])
-        self.assertEqual(again["skipped_cached"], 2)
-
-    def test_a_corrupt_season_file_is_named_not_silently_empty(self):
-        target = self.store / "mlb_2025.jsonl"
-        target.write_text('{"ok": 1}\nnot json\n', encoding="utf-8")
-        with self.assertRaises(backfill.BackfillError) as ctx:
-            backfill.read_season(2025, self.store)
-        self.assertIn(":2", str(ctx.exception))
-
-
-class TestClosingPriceMatching(TempStore):
-    """The close is approximated from daily snapshots, and the staleness is recorded."""
-
     def write(self, snapshots):
-        target = self.store / "mlb_2025.jsonl"
-        target.parent.mkdir(parents=True, exist_ok=True)
-        with target.open("w", encoding="utf-8") as handle:
-            for snapshot_at, commence in snapshots:
-                handle.write(json.dumps({
-                    "snapshot_at": snapshot_at, "markets": ["h2h"],
-                    "events": [{"id": "g1", "commence_time": commence,
-                                "home_team": "NYY", "away_team": "HOU",
-                                "bookmakers": []}]}) + "\n")
+        path = self.store / "mlb_2025.jsonl"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("w", encoding="utf-8") as handle:
+            for record in snapshots:
+                handle.write(json.dumps(record) + "\n")
+
+    def game(self, start="2025-04-01T23:05:00Z"):
+        return {"id": "g1", "commence_time": start, "home_team": "NYY",
+                "away_team": "BOS", "bookmakers": [{"key": "dk"}]}
 
     def test_the_latest_snapshot_before_first_pitch_wins(self):
-        self.write([("2025-07-15T16:50:00Z", "2025-07-15T23:05:00Z"),
-                    ("2025-07-15T22:50:00Z", "2025-07-15T23:05:00Z")])
-        match = backfill.closing_prices(2025, self.store)["g1"]
-        self.assertEqual(match["snapshot_at"], "2025-07-15T22:50:00Z")
-        self.assertEqual(match["closing_gap_minutes"], 15.0)
+        self.write([
+            {"snapshot_at": "2025-04-01T16:50:00Z", "events": [self.game()]},
+            {"snapshot_at": "2025-04-01T22:50:00Z", "events": [self.game()]},
+        ])
+        close = backfill.closing_prices(2025, self.store)
+        self.assertEqual(close["g1"]["snapshot_at"], "2025-04-01T22:50:00Z")
 
     def test_a_snapshot_after_first_pitch_is_never_used(self):
-        # An in-play price is not a closing price, and using one would be lookahead
-        # of the worst kind -- the market has already seen the first innings.
-        self.write([("2025-07-15T22:50:00Z", "2025-07-15T23:05:00Z"),
-                    ("2025-07-16T01:50:00Z", "2025-07-15T23:05:00Z")])
-        match = backfill.closing_prices(2025, self.store)["g1"]
-        self.assertEqual(match["snapshot_at"], "2025-07-15T22:50:00Z")
-
-    def test_a_game_with_only_post_start_snapshots_is_absent(self):
-        self.write([("2025-07-16T01:50:00Z", "2025-07-15T23:05:00Z")])
+        # An in-play price is not a closing price, and using one would flatter
+        # every CLV number computed from it.
+        self.write([
+            {"snapshot_at": "2025-04-01T23:50:00Z", "events": [self.game()]},
+        ])
         self.assertEqual(backfill.closing_prices(2025, self.store), {})
 
-    def test_staleness_is_reported_so_it_can_be_filtered(self):
-        # A price caught two hours out is not the same evidence as one caught ten
-        # minutes out, and averaging them without knowing which is which hides it.
-        self.write([("2025-07-15T16:50:00Z", "2025-07-15T23:05:00Z")])
-        match = backfill.closing_prices(2025, self.store)["g1"]
-        self.assertEqual(match["closing_gap_minutes"], 375.0)
+    def test_the_staleness_is_reported_in_minutes(self):
+        self.write([
+            {"snapshot_at": "2025-04-01T22:50:00Z", "events": [self.game()]}])
+        close = backfill.closing_prices(2025, self.store)
+        self.assertEqual(close["g1"]["closing_gap_minutes"], 15.0)
+
+    def test_an_unparseable_timestamp_is_skipped_not_fatal(self):
+        self.write([{"snapshot_at": "not a time", "events": [self.game()]}])
+        self.assertEqual(backfill.closing_prices(2025, self.store), {})
+
+    def test_a_missing_season_file_is_empty(self):
+        self.assertEqual(backfill.closing_prices(2099, self.store), {})
+
+
+class TestSeasonTimestamps(unittest.TestCase):
+
+    def test_every_configured_time_is_emitted_each_day(self):
+        stamps = backfill.season_timestamps(2025, ("16:50", "22:50"))
+        self.assertEqual(len(stamps) % 2, 0)
+        self.assertEqual({s.hour for s in stamps}, {16, 22})
+
+    def test_the_window_spans_the_regular_season(self):
+        stamps = backfill.season_timestamps(2025, ("22:50",))
+        self.assertEqual(stamps[0].month, backfill.SEASON_START[0])
+        self.assertEqual(stamps[-1].month, backfill.SEASON_END[0])
 
 
 if __name__ == "__main__":

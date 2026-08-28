@@ -233,7 +233,10 @@ def run(seasons, markets, snapshot_times=DEFAULT_SNAPSHOT_TIMES,
 
             events = payload.get("data") or []
             record = {
-                "requested_at": snapshot_key(stamp, markets).split(":")[0],
+                # The requested instant, not the key -- splitting the key on ":"
+                # truncated it at the hour because the timestamp contains colons.
+                "requested_at": stamp.astimezone(timezone.utc).strftime(
+                    "%Y-%m-%dT%H:%MZ"),
                 "snapshot_at": payload.get("timestamp"),
                 "markets": sorted(markets),
                 "events": events,
