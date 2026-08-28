@@ -188,6 +188,8 @@ h1 { margin:0 0 6px; font-size:30px; letter-spacing:-.02em; }
         border:1px solid var(--rule); border-radius:5px; }
 .lead h2 { margin:0 0 14px; font-size:13px; letter-spacing:.1em;
            text-transform:uppercase; color:var(--faint); font-weight:700; }
+.leadnote { font-size:12.5px; color:var(--muted); margin:-6px 0 14px;
+            max-width:70ch; line-height:1.45; }
 .leadlist { display:flex; flex-direction:column; gap:11px; }
 .leaditem { display:grid; grid-template-columns:52px 1fr; gap:14px;
             align-items:baseline; background:none; border:0; padding:0;
@@ -329,9 +331,31 @@ _JS = r"""
     return (b.finding.surprise || 0) - (a.finding.surprise || 0);
   });
 
+  // ONE PER DETECTOR. Ranking purely by rarity fills the summary with whichever
+  // detector happens to measure the rarest quantity -- travel distance is rarer
+  // than a low FIP because three quarters of clubs do not travel at all, so a
+  // straight top-six was six travel facts and nothing else. The summary's job
+  // is coverage of what is unusual across the slate, not a leaderboard for one
+  // measurement, so each detector contributes its single strongest finding.
+  var seenDetector = {};
+  top = top.filter(function (item) {
+    if (seenDetector[item.finding.detector]) return false;
+    seenDetector[item.finding.detector] = true;
+    return true;
+  });
+
   if (top.length) {
     var lead = el('section', 'lead');
-    lead.appendChild(el('h2', null, 'Worth looking at'));
+    lead.appendChild(el('h2', null, 'Most unusual on this slate'));
+    // The honest name for what this ranks. Surprise measures how far a value is
+    // from normal, which is RARITY, not importance -- a 2,000-mile flight is
+    // rarer than a 2.60 FIP starter and matters less. Until a discovery pass
+    // measures effect sizes there is nothing better to rank by, and calling it
+    // "worth looking at" would have implied a judgement nothing here has earned.
+    lead.appendChild(el('p', 'leadnote',
+      'Ranked by how far each number sits from normal — that is rarity, not ' +
+      'importance. No effect size has been measured yet, so a rare fact and an ' +
+      'important one are not yet distinguishable here.'));
     var list = el('div', 'leadlist');
     top.slice(0, 6).forEach(function (item) {
       var row = el('button', 'leaditem');

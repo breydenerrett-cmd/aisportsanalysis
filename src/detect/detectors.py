@@ -37,7 +37,11 @@ PLATOON_GAP_SPREAD = 0.090
 THIN_AT_BATS = 20
 LEAGUE_BATTING_AVG = 0.248
 BATTING_AVG_SPREAD = 0.050
-TRAVEL_SPREAD = 700.0
+# MEASURED, not guessed: 1,552 team-games across 60 days of 2025. Three quarters
+# involve no travel at all (a club mid-series does not move), and nonzero trips
+# average 905 miles. Mean 215, standard deviation 496 across all team-games.
+TRAVEL_SPREAD = 496.0
+TRAVEL_BASELINE = 215.0
 LONG_TRIP_MILES = 1200
 # A club plays about six games a week, so six is normal rather than notable.
 DENSE_BASELINE_GAMES = 6
@@ -514,14 +518,18 @@ class TravelLoad(Detector):
                          if load.get("zones", 0) >= 1 else "")
                 findings.append(Finding(
                     self.name, SIGNAL,
+                    # "SD flew 2,078 miles east from SD" is technically correct
+                    # and reads as a typo. When the last venue is the club's own
+                    # park, the English is "from home".
                     f"{team} flew {miles:,.0f} miles {direction} from "
-                    f"{load['last_venue']}{zones}.",
-                    value=miles, baseline=0.0,
+                    f"{'home' if load.get('last_venue') == team else load['last_venue']}"
+                    f"{zones}.",
+                    value=miles, baseline=TRAVEL_BASELINE,
                     # .get, not [] -- every field on a travel load is optional
                     # by design, and a detector that raises on a missing one
                     # turns a partial record into a blocked finding.
                     sample=_since(load),
-                    surprise=surprise_score(miles, 0.0, TRAVEL_SPREAD),
+                    surprise=surprise_score(miles, TRAVEL_BASELINE, TRAVEL_SPREAD),
                     side=HOME if side is AWAY else AWAY,
                     market_relevance=(
                         "Applies to the whole game rather than to the starters."),
