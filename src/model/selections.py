@@ -40,12 +40,22 @@ from src.detect import base as detect
 from src.detect import dossier as dossier_mod
 from src.data import parks
 from src.model import pointintime as pit
+from src.model import rebuilt_sections as rebuilt_sections_mod
 from src.pipeline import slate as slate_mod
 
 # Sections a historical dossier may carry. Deliberately a whitelist: a new
 # section is excluded until it has been audited, rather than included until
 # someone notices.
 HISTORICAL_SECTIONS = ("teams", "starters", "bullpen", "travel", "park", "market")
+
+# Sections a historical dossier may ALSO carry when they are rebuilt from the
+# pitch-level store (src/model/rebuilt_sections.py). Point-in-time BECAUSE
+# sourced from the rebuilt store: every number is accumulated forward from
+# per-pitch rows carrying their own dates, so a cutoff is a filter and nothing
+# after it can contribute. The identically named live-fetch sections remain
+# excluded -- these are only attached when the caller supplies the rebuilt
+# inputs, never from the live endpoints.
+REBUILT_SECTIONS = ("splits", "arsenals", "lineups", "matchup_history")
 
 # How far an odds event's commence_time may sit from the game's own first pitch
 # and still be the same game. The two populations are far apart: a game's own
@@ -111,13 +121,20 @@ def _fair(bookmakers, home_name, away_name):
 
 
 def build(games, store, pitcher_logs, price_pairs, bullpen_by_team=None,
-          registry=None, detectors=None) -> dict:
+          registry=None, detectors=None, acc_for_date=None, lineups_by_pk=None,
+          handedness=None) -> dict:
     """Selections for every clean detector across a set of played games.
 
     `price_pairs` maps (away_abbrev, home_abbrev, date) to a LIST of candidate
     entries produced by backfill.price_pair -- a list because consecutive games
     between the same clubs land on the same key (each event is indexed under
     two dates), and the game's own start time is what picks between them.
+
+    When `acc_for_date` (a callable date -> rebuilt accumulation, e.g. backed
+    by rebuilt.build_snapshots), `lineups_by_pk` (lineup_store.read output) and
+    `handedness` are supplied, the four rebuilt sections are attached so the
+    lineup-and-pitch detectors can run historically; without them those
+    sections stay absent, exactly as before.
     """
     chosen = detectors if detectors is not None else clean_detectors(
         registry or detect.registry())
@@ -148,8 +165,17 @@ def build(games, store, pitcher_logs, price_pairs, bullpen_by_team=None,
             continue
         counts["games_priced"] += 1
 
+        rebuilt_data = None
+        if acc_for_date is not None:
+            # lineup_store.read keys by str(game_pk) -- documented in its
+            # tests as the CSV-round-trip convention -- so the join coerces
+            # explicitly rather than trusting the game record's key type.
+            rebuilt_data = rebuilt_sections_mod.sections_for_game(
+                acc_for_date(game.get("date")), game,
+                (lineups_by_pk or {}).get(str(game.get("game_pk"))),
+                handedness or {})
         dossier = _historical_dossier(game, store, pitcher_logs,
-                                      bullpen_by_team, opening)
+                                      bullpen_by_team, opening, rebuilt_data)
         home_won = _label(game.get("home_won"))
         if home_won is None:
             counts["unresolved"] += 1
@@ -187,12 +213,19 @@ def build(games, store, pitcher_logs, price_pairs, bullpen_by_team=None,
             "detectors": [d.name for d in chosen]}
 
 
-def _historical_dossier(game, store, pitcher_logs, bullpen_by_team, opening):
+def _historical_dossier(game, store, pitcher_logs, bullpen_by_team, opening,
+                        rebuilt_data=None):
     """A dossier carrying only sections that can be reconstructed at that date.
 
     The leaky sections are not attached at all. A detector that reaches for one
     finds nothing, which is the correct historical answer -- and it is safer
     than attaching them and trusting every detector to decline.
+
+    `rebuilt_data` is the (sections, reasons) pair from
+    rebuilt_sections.sections_for_game. Those sections are attached AFTER the
+    whitelist sweep, so the only way splits/arsenals/lineups/matchup_history
+    appear on a historical dossier is from the rebuilt store -- the live-fetch
+    versions are still stripped even if a future caller wires them in.
     """
     from src.pipeline import travel as travel_mod
 
@@ -218,6 +251,15 @@ def _historical_dossier(game, store, pitcher_logs, bullpen_by_team, opening):
         if name not in HISTORICAL_SECTIONS:
             dossier.sections.pop(name)
             dossier.miss(name, "excluded from historical builds: not point-in-time")
+    if rebuilt_data is not None:
+        sections, reasons = rebuilt_data
+        for name in REBUILT_SECTIONS:
+            if name in sections:
+                dossier.gaps.pop(name, None)
+                dossier.add(name, sections[name])
+            else:
+                dossier.miss(name, "rebuilt section unavailable: "
+                             + reasons.get(name, "not built"))
     return dossier
 
 

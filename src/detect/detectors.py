@@ -33,6 +33,13 @@ BOOK_EDGE_THRESHOLD = 0.010
 TYPICAL_UNAVAILABLE = 1
 # A platoon gap this large is a real, visible weakness rather than sampling.
 PLATOON_GAP_SPREAD = 0.090
+# Minimum platoon gap worth a sentence, per metric. The OPS floor is the
+# original; the wOBA floor was PRE-REGISTERED before any historical evaluation
+# ran, by scaling rather than fitting: wOBA moves at roughly 0.42x OPS, and
+# 0.080 * 0.42 ~= 0.034, rounded to 0.035. Fitting it to results would turn a
+# threshold into a tuned parameter.
+PLATOON_OPS_GAP = 0.080
+PLATOON_WOBA_GAP = 0.035
 # Under this many career at-bats, a batter-vs-pitcher line is noise.
 THIN_AT_BATS = 20
 LEAGUE_BATTING_AVG = 0.248
@@ -350,14 +357,27 @@ class PlatoonMismatch(Detector):
             if not known:
                 continue
             exploit_share = exploiting / known
-            if exploit_share < 0.55 or split["gap"] < 0.080:
+            # The same split can arrive on two scales: OPS from the live
+            # statSplits fetch, wOBA from the rebuilt pitch-level store. The
+            # gap floor and the quoted fields must follow the metric, or a
+            # wOBA-scale gap would be judged against an OPS-scale bar and the
+            # detector would fall silent on every historical game.
+            metric = split.get("metric") or "ops"
+            gap_floor = PLATOON_WOBA_GAP if metric == "woba" else PLATOON_OPS_GAP
+            if exploit_share < 0.55 or split["gap"] < gap_floor:
                 continue
 
             hand = "left-handed" if weak_side == "L" else "right-handed"
+            if metric == "woba":
+                allows = (f"allows a {split['vs_left_woba']:.3f} wOBA to "
+                          f"lefties against {split['vs_right_woba']:.3f} to "
+                          f"righties")
+            else:
+                allows = (f"allows {split['vs_left_ops']:.3f} OPS to lefties "
+                          f"against {split['vs_right_ops']:.3f} to righties")
             findings.append(Finding(
                 self.name, SIGNAL,
-                f"{pitcher_team}'s starter allows {split['vs_left_ops']:.3f} OPS "
-                f"to lefties against {split['vs_right_ops']:.3f} to righties, and "
+                f"{pitcher_team}'s starter {allows}, and "
                 f"{batting_team} is starting {exploiting} of {known} {hand} "
                 f"hitters against him tonight.",
                 value=round(split["gap"], 3), baseline=0.0,

@@ -45,9 +45,15 @@ class TestInputAudit(unittest.TestCase):
 
 class TestDetectorInherits(unittest.TestCase):
 
+    def setUp(self):
+        # A synthetic detector mixing a clean and a leaky input. The real four
+        # were remapped to the rebuilt inputs and are clean now, but the
+        # inheritance rule they used to demonstrate still needs proving.
+        pit.DETECTOR_INPUTS["_mixed"] = ("lineups", "splits")
+        self.addCleanup(pit.DETECTOR_INPUTS.pop, "_mixed", None)
+
     def test_a_detector_is_only_as_clean_as_its_dirtiest_input(self):
-        # platoon_mismatch reads lineups (clean) and splits (leaky).
-        entry = pit.detector_status("platoon_mismatch")
+        entry = pit.detector_status("_mixed")
         self.assertEqual(entry["status"], pit.LEAKY)
         self.assertIn("lineups", entry["inputs"])
 
@@ -59,23 +65,47 @@ class TestDetectorInherits(unittest.TestCase):
         self.assertEqual(pit.detector_status("brand_new")["status"], pit.UNKNOWN)
 
     def test_the_route_out_is_carried_up_to_the_detector(self):
-        entry = pit.detector_status("pitch_mix_mismatch")
+        entry = pit.detector_status("_mixed")
         self.assertTrue(entry["unblocked_by"])
         self.assertIn("Statcast", " ".join(entry["unblocked_by"]))
 
+    def test_the_rebuilt_sections_made_the_four_detectors_evaluable(self):
+        # The whole point of the rebuilt store: these four were the excluded
+        # ones, and each now reads only forward-accumulated inputs.
+        for name in ("platoon_mismatch", "pitch_mix_mismatch",
+                     "thin_matchup_history", "lineup_vs_starter"):
+            self.assertEqual(pit.detector_status(name)["status"],
+                             pit.CLEAN, name)
+
+    def test_the_rebuilt_inputs_are_audited_clean(self):
+        for name in ("rebuilt_splits", "rebuilt_arsenals", "rebuilt_matchup"):
+            self.assertEqual(pit.input_status(name)["status"], pit.CLEAN, name)
+
 
 class TestGuard(unittest.TestCase):
+    """The four once-leaky detectors are now CLEAN (remapped to rebuilt_*
+    inputs), so the guard is exercised through a probe detector wired to the
+    still-leaky LIVE-fetch inputs -- which remain in INPUTS precisely so that
+    anything reading those endpoints stays refused."""
+
+    def setUp(self):
+        pit.DETECTOR_INPUTS["_live_splits_probe"] = ("lineups", "splits")
+        pit.DETECTOR_INPUTS["_live_arsenal_probe"] = ("arsenals",)
+
+    def tearDown(self):
+        pit.DETECTOR_INPUTS.pop("_live_splits_probe", None)
+        pit.DETECTOR_INPUTS.pop("_live_arsenal_probe", None)
 
     def test_a_leaky_detector_raises_rather_than_warning(self):
         # A warning in a batch job is a line nobody reads, and the number it
         # accompanies is the one that gets quoted.
         with self.assertRaises(pit.PointInTimeError) as ctx:
-            pit.require_clean("platoon_mismatch")
+            pit.require_clean("_live_splits_probe")
         self.assertIn("cannot be evaluated historically", str(ctx.exception))
 
     def test_the_error_names_what_would_unblock_it(self):
         with self.assertRaises(pit.PointInTimeError) as ctx:
-            pit.require_clean("pitch_mix_mismatch")
+            pit.require_clean("_live_arsenal_probe")
         self.assertIn("unblocked by", str(ctx.exception))
 
     def test_an_unaudited_detector_also_raises(self):

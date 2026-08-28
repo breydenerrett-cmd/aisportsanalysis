@@ -55,23 +55,37 @@ class TestCleanDetectorsOnly(unittest.TestCase):
         for detector in self._saved.values():
             base.register(detector)
 
-    def test_leaky_detectors_are_excluded(self):
+    def test_all_eleven_detectors_are_now_clean(self):
+        # The whole point of the pitch-level rebuild: the four once-excluded
+        # detectors are remapped to rebuilt_* inputs and become evaluable.
         chosen = {d.name for d in selections.clean_detectors(base.registry())}
+        self.assertEqual(len(chosen), 11)
         for name in ("platoon_mismatch", "pitch_mix_mismatch",
-                     "thin_matchup_history", "lineup_vs_starter"):
-            self.assertNotIn(name, chosen)
+                     "thin_matchup_history", "lineup_vs_starter",
+                     "starter_mismatch", "travel_load"):
+            self.assertIn(name, chosen)
 
-    def test_clean_detectors_are_included(self):
-        chosen = {d.name for d in selections.clean_detectors(base.registry())}
-        self.assertIn("starter_mismatch", chosen)
-        self.assertIn("travel_load", chosen)
-
-    def test_the_whitelist_excludes_leaky_sections_by_construction(self):
-        # It is not enough for the detector to be clean if the dossier hands it
-        # a leaky section anyway.
+    def test_the_live_leaky_inputs_are_still_refused(self):
+        # The rebuild does not launder the live endpoints: statSplits and the
+        # arsenal leaderboards remain season-to-date and remain LEAKY. Only the
+        # rebuilt_* inputs are clean.
         for name in ("splits", "arsenals", "matchup_history"):
             self.assertNotIn(name, selections.HISTORICAL_SECTIONS)
             self.assertEqual(pit.input_status(name)["status"], pit.LEAKY)
+        for name in ("rebuilt_splits", "rebuilt_arsenals", "rebuilt_matchup"):
+            self.assertEqual(pit.input_status(name)["status"], pit.CLEAN)
+
+    def test_rebuilt_sections_attach_only_with_a_rebuilt_source(self):
+        # Without acc_for_date the four sections stay off the dossier -- the
+        # names alone must never admit a live-fetched (leaky) payload.
+        self.assertEqual(
+            set(selections.REBUILT_SECTIONS),
+            {"splits", "arsenals", "lineups", "matchup_history"})
+
+    def test_the_woba_platoon_threshold_is_preregistered(self):
+        from src.detect import detectors as dd
+        self.assertEqual(dd.PLATOON_WOBA_GAP, 0.035)
+        self.assertEqual(dd.PLATOON_OPS_GAP, 0.080)
 
 
 class TestConsensusPricing(unittest.TestCase):

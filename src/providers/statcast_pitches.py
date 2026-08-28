@@ -166,6 +166,26 @@ def build(season, store=DEFAULT_STORE, on_window=None, timeout=DEFAULT_TIMEOUT) 
     return report
 
 
+def iter_rows_dated(store=DEFAULT_STORE):
+    """Every stored pitch in game_date order, in one pass.
+
+    Windows never overlap and their keys sort by start date, so global order
+    only needs each window sorted internally -- Savant returns rows in feed
+    order, not date order, and a boundary-straddling cutoff taken mid-window
+    would otherwise see rows from after its date. A window is at most 4 days
+    (bounded by EXPORT_CAP rows), so the per-window buffer stays small.
+    """
+    manifest = read_manifest(store)
+    for key in sorted(manifest["windows"]):
+        path = Path(store) / manifest["windows"][key]["file"]
+        with gzip.open(path, "rt", encoding="utf-8") as handle:
+            rows = [json.loads(line) for line in handle]
+        # Undated rows sort last, mirroring iter_rows' "9999" sentinel: they
+        # are never admitted before any real cutoff.
+        rows.sort(key=lambda row: row.get("game_date") or "9999")
+        yield from rows
+
+
 def iter_rows(store=DEFAULT_STORE, before=None):
     """Every stored pitch, optionally strictly before a date. The accumulation
     primitive every rebuilt feature reads through."""

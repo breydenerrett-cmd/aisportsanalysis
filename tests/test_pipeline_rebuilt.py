@@ -162,6 +162,73 @@ class TestExportCapIsAnError(unittest.TestCase):
         self.assertIn("truncated", str(ctx.exception))
 
 
+class TestBuildSnapshots(StoreCase):
+    """build_snapshots must be indistinguishable from accumulate per cutoff."""
+
+    def seed(self):
+        # Rows straddle the monthly boundaries, and the May window's rows are
+        # written OUT of date order to prove ordering does not depend on how
+        # Savant happened to return the feed.
+        self.write("2023-04-28..2023-05-01", [
+            pitch("2023-04-28", events="single", woba="0.9", denom="1"),
+            pitch("2023-04-30", events="strikeout", woba="0", denom="1"),
+            pitch("2023-05-01", events="double", woba="1.25", denom="1")])
+        self.write("2023-05-29..2023-06-01", [
+            pitch("2023-06-01", events="home_run", woba="2.0", denom="1"),
+            pitch("2023-05-30", events="field_out", woba="0", denom="1"),
+            pitch("2023-05-29", events="single", woba="0.9", denom="1",
+                  pitch_type="SL", description="swinging_strike")])
+
+    def test_each_snapshot_equals_the_per_cutoff_accumulation(self):
+        self.seed()
+        cutoffs = ["2023-05-01", "2023-06-01", "2023-07-01"]
+        snaps = rebuilt.build_snapshots(cutoffs, store=self.store)
+        for cutoff in cutoffs:
+            self.assertEqual(snaps[cutoff],
+                             rebuilt.accumulate(cutoff, self.store))
+
+    def test_rows_on_the_cutoff_date_are_excluded(self):
+        self.seed()
+        snaps = rebuilt.build_snapshots(["2023-05-01"], store=self.store)
+        # 04-28 single + 04-30 strikeout only; the 05-01 double must not leak.
+        self.assertEqual(snaps["2023-05-01"]["matchup"][("9", "1")],
+                         {"ab": 2, "hits": 1, "k": 1, "value": 0.9,
+                          "denom": 2})
+
+    def test_datetime_cutoffs_reduce_to_the_calendar_day(self):
+        # The datetime-vs-date case iter_rows guards: str(datetime) sorts
+        # after the bare date and would admit the cutoff day's own pitches.
+        from datetime import datetime
+        self.seed()
+        cutoff = datetime(2023, 5, 1, 19, 5)
+        snaps = rebuilt.build_snapshots([cutoff], store=self.store)
+        acc = rebuilt.accumulate(cutoff, self.store)
+        self.assertEqual(snaps[str(cutoff)], acc)
+        self.assertEqual(snaps[str(cutoff)]["matchup"][("9", "1")]["ab"], 2)
+
+    def test_snapshots_are_independent_of_later_mutation(self):
+        self.seed()
+        snaps = rebuilt.build_snapshots(["2023-05-01", "2023-07-01"],
+                                        store=self.store)
+        expected = rebuilt.accumulate("2023-05-01", self.store)
+        # Deep-mutate the later snapshot; the earlier one must not move.
+        snaps["2023-07-01"]["matchup"][("9", "1")]["ab"] = 999
+        snaps["2023-07-01"]["arsenal"]["1"]["FF"]["pitches"] = 999
+        snaps["2023-07-01"]["pitcher_vs"][("1", "R")]["bf"] = 999
+        self.assertEqual(snaps["2023-05-01"], expected)
+
+    def test_unsorted_cutoffs_and_one_past_all_data(self):
+        self.seed()
+        snaps = rebuilt.build_snapshots(["2024-01-01", "2023-04-30"],
+                                        store=self.store)
+        self.assertEqual(snaps["2023-04-30"],
+                         rebuilt.accumulate("2023-04-30", self.store))
+        self.assertEqual(snaps["2024-01-01"],
+                         rebuilt.accumulate("2024-01-01", self.store))
+        # Past every stored row, the snapshot sees the full store.
+        self.assertEqual(snaps["2024-01-01"]["matchup"][("9", "1")]["ab"], 6)
+
+
 if __name__ == "__main__":
     unittest.main()
 

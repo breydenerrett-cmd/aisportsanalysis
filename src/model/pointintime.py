@@ -80,6 +80,31 @@ INPUTS = {
         "why": ("the schedule feed returns the lineup that was actually posted "
                 "for that game"),
     },
+    # The three rebuilt inputs. CLEAN because each is accumulated FORWARD from
+    # per-pitch Statcast rows that carry their own game_date: a cutoff is a
+    # filter over rows that already existed, never a re-request of a
+    # season-to-date aggregate (src/pipeline/rebuilt.py).
+    "rebuilt_splits": {
+        "status": CLEAN,
+        "why": ("platoon splits accumulated forward from per-pitch rows "
+                "carrying their own dates; a cutoff filters rows, so nothing "
+                "after it can contribute (rebuilt.platoon_split)"),
+    },
+    "rebuilt_arsenals": {
+        "status": CLEAN,
+        "why": ("pitch usage and wOBA-against accumulated forward from "
+                "per-pitch rows carrying their own dates "
+                "(rebuilt.pitch_mix / batter_vs_pitch_type)"),
+    },
+    "rebuilt_matchup": {
+        "status": CLEAN,
+        "why": ("batter-vs-pitcher lines accumulated forward from per-pitch "
+                "rows carrying their own dates (rebuilt.batter_vs_pitcher)"),
+    },
+    # The three LEAKY entries below describe the LIVE-FETCH path only -- the
+    # endpoints the live briefing still reads. They are kept, unchanged, so
+    # anything wired to those endpoints stays refused; the historical build
+    # uses the rebuilt_* inputs above instead.
     "splits": {
         "status": LEAKY,
         "why": ("the MLB statSplits endpoint IGNORES startDate and endDate -- "
@@ -120,10 +145,14 @@ DETECTOR_INPUTS = {
     "stale_book": ("market",),
     "travel_load": ("travel",),
     "park_and_weather": ("park", "weather"),
-    "platoon_mismatch": ("lineups", "splits"),
-    "pitch_mix_mismatch": ("lineups", "arsenals"),
-    "thin_matchup_history": ("matchup_history",),
-    "lineup_vs_starter": ("matchup_history",),
+    # These four now source their sections from the rebuilt pitch-level store
+    # (src/model/rebuilt_sections.py), which is why they map to the rebuilt_*
+    # inputs. The old leaky entries above still describe the live-fetch
+    # endpoints, which a historical build never touches.
+    "platoon_mismatch": ("lineups", "rebuilt_splits"),
+    "pitch_mix_mismatch": ("lineups", "rebuilt_arsenals"),
+    "thin_matchup_history": ("rebuilt_matchup",),
+    "lineup_vs_starter": ("rebuilt_matchup",),
 }
 
 
