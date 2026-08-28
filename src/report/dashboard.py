@@ -77,6 +77,8 @@ def _payload(slate, stamp) -> dict:
             "games": len(games),
             "flagged": sum(1 for g in games if g["verdict"] == "flagged"),
             "candidates": sum(1 for g in games if g["verdict"] == "candidate"),
+            "no_market": sum(1 for g in games
+                             if g["verdict"] == "market_unavailable"),
         },
         "notes": slate.get("notes", []),
     }
@@ -206,6 +208,7 @@ h1 { margin:0 0 6px; font-size:30px; letter-spacing:-.02em; }
 .game.flagged { border-left:5px solid var(--accent); }
 .game.candidate { border-left:5px solid var(--warn); }
 .game.no_play { border-left:5px solid var(--rule); }
+.game.market_unavailable { border-left:5px dashed var(--clay); }
 .gamehead {
   display:grid; grid-template-columns:1fr auto; gap:14px; align-items:start;
   padding:16px 18px; cursor:pointer; background:none; border:0; width:100%;
@@ -287,7 +290,8 @@ _JS = r"""
     'generated ' + slate.generated_at + ' · all times local'));
 
   var counts = el('div', 'counts');
-  [['games', 'games'], ['flagged', 'flagged'], ['candidates', 'candidates']]
+  [['games', 'games'], ['flagged', 'flagged'], ['candidates', 'candidates'],
+   ['no_market', 'no market']]
     .forEach(function (pair) {
       var box = el('div', 'count');
       box.appendChild(el('b', null, slate.counts[pair[0]]));
@@ -422,7 +426,12 @@ _JS = r"""
     button.appendChild(left);
 
     var right = el('div');
-    var verdictText = game.verdict === 'no_play' ? 'no play' : game.verdict;
+    var verdictText = {
+      no_play: 'no play',
+      market_unavailable: 'no market',
+      candidate: 'candidate',
+      flagged: 'flagged'
+    }[game.verdict] || game.verdict;
     right.appendChild(el('div', 'verdict ' + game.verdict, verdictText));
     var market = (game.sections.market || {}).markets || {};
     if (market.h2h) {

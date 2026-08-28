@@ -45,6 +45,16 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
         )
         findings = detect.run_all(dossier, detectors)
         scan = mismatch.scan_game(game, dossier.get("teams"), dossier.get("starters"))
+
+        # Stage two, using the price for the market the scan actually routed to.
+        # Fetching first-five prices and then never screening with them left the
+        # briefing permanently stuck on "candidate" -- it could describe a game
+        # but never reach a verdict on one.
+        if scan["verdict"] == mismatch.CANDIDATE:
+            quote = _routed_price(dossier, scan["market"])
+            scan = mismatch.apply_market_screen(
+                scan, quote.get("away_price"), quote.get("home_price"))
+
         entries.append({
             "dossier": dossier,
             "findings": findings,
@@ -55,7 +65,17 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
             "scan": scan,
         })
 
-    if not any(e["verdict"] != mismatch.NO_PLAY for e in entries) and entries:
+    unavailable = sum(1 for e in entries
+                      if e["verdict"] == mismatch.MARKET_UNAVAILABLE)
+    if unavailable:
+        notes.append(
+            f"{unavailable} game(s) cleared the talent bar but had no price on "
+            "the market they were routed to. That is a different result from no "
+            "play, and it is common: measured on three seasons, more than a "
+            "third of flagged games have no first-five market at all.")
+
+    if not any(e["verdict"] not in (mismatch.NO_PLAY, mismatch.MARKET_UNAVAILABLE)
+               for e in entries) and entries:
         notes.append(
             "No play on the whole slate. That is the normal case, not a failure "
             "of the scan -- two roughly major-league teams playing a close game "
@@ -114,3 +134,16 @@ def _lineup_vs_pitch(slots, batter_arsenals):
             grouped.setdefault(row.get("pitch_type"), []).append(
                 dict(row, batter=slot.get("name")))
     return grouped
+
+
+def _routed_price(dossier, market):
+    """The moneyline for the market a scan was routed to.
+
+    Screening a first-five routing against a full-game price compares two
+    different quantities -- the first-five price is conditional on no push --
+    so the market is chosen by the routing rather than by what happens to be
+    available.
+    """
+    section = dossier.get("market") or {}
+    key = ("h2h_1st_5_innings" if market == mismatch.MARKET_F5 else "h2h")
+    return (section.get("markets") or {}).get(key) or {}
