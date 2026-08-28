@@ -40,6 +40,10 @@ def accumulate(cutoff, store=sp.DEFAULT_STORE) -> dict:
         "pitches": 0, "value": 0.0, "denom": 0, "whiffs": 0, "swings": 0}))
     matchup = defaultdict(lambda: {"ab": 0, "hits": 0, "k": 0, "value": 0.0,
                                    "denom": 0})
+    # Batter against pitch TYPE, across every pitcher. The pitch-mix detector's
+    # second half: a lineup's measured line against the one pitch tonight's
+    # starter actually throws.
+    batter_vs_pitch = defaultdict(lambda: {"value": 0.0, "denom": 0})
 
     HIT = {"single", "double", "triple", "home_run"}
     AB_EVENTS = HIT | {"strikeout", "strikeout_double_play", "field_out",
@@ -78,6 +82,10 @@ def accumulate(cutoff, store=sp.DEFAULT_STORE) -> dict:
             if pitch_type:
                 arsenal[pitcher][pitch_type]["value"] += value
                 arsenal[pitcher][pitch_type]["denom"] += d
+                if batter:
+                    key = (batter, pitch_type)
+                    batter_vs_pitch[key]["value"] += value
+                    batter_vs_pitch[key]["denom"] += d
 
         event = row.get("events")
         if event and batter:
@@ -94,7 +102,8 @@ def accumulate(cutoff, store=sp.DEFAULT_STORE) -> dict:
 
     return {"cutoff": str(cutoff), "pitcher_vs": dict(pitcher_vs),
             "arsenal": {k: dict(v) for k, v in arsenal.items()},
-            "matchup": dict(matchup)}
+            "matchup": dict(matchup),
+            "batter_vs_pitch": dict(batter_vs_pitch)}
 
 
 def platoon_split(acc, pitcher_id) -> dict:
@@ -153,5 +162,14 @@ def batter_vs_pitcher(acc, batter_id, pitcher_id) -> dict:
     return {"at_bats": entry["ab"], "hits": entry["hits"],
             "strikeouts": entry["k"],
             "avg": round(entry["hits"] / entry["ab"], 3) if entry["ab"] else None,
+            "woba": round(entry["value"] / entry["denom"], 4)
+            if entry["denom"] else None}
+
+
+def batter_vs_pitch_type(acc, batter_id, pitch_type) -> dict:
+    """One hitter's wOBA against one pitch type, as of the cutoff."""
+    entry = acc["batter_vs_pitch"].get((str(batter_id), pitch_type),
+                                       {"value": 0.0, "denom": 0})
+    return {"pa": entry["denom"],
             "woba": round(entry["value"] / entry["denom"], 4)
             if entry["denom"] else None}

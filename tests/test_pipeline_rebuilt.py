@@ -164,3 +164,26 @@ class TestExportCapIsAnError(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestBatterVsPitchType(StoreCase):
+
+    def test_accumulates_across_pitchers(self):
+        # The lineup-vs-pitch read spans every pitcher the hitter has faced,
+        # not just tonight's starter.
+        self.write("2023-04-01..2023-04-04", [
+            pitch("2023-04-01", pitcher="1", pitch_type="SL",
+                  events="single", woba="0.9", denom="1"),
+            pitch("2023-04-02", pitcher="2", pitch_type="SL",
+                  events="field_out", woba="0", denom="1")])
+        acc = rebuilt.accumulate("2023-05-01", self.store)
+        line = rebuilt.batter_vs_pitch_type(acc, 9, "SL")
+        self.assertEqual(line["pa"], 2)
+        self.assertEqual(line["woba"], 0.45)
+
+    def test_an_unseen_combination_is_zero_pa_with_no_invented_woba(self):
+        self.write("2023-04-01..2023-04-04", [pitch("2023-04-01")])
+        acc = rebuilt.accumulate("2023-05-01", self.store)
+        line = rebuilt.batter_vs_pitch_type(acc, 9, "KN")
+        self.assertEqual(line["pa"], 0)
+        self.assertIsNone(line["woba"])
