@@ -1,0 +1,93 @@
+{
+ "count": 21,
+ "fdr_q": 0.1,
+ "hypotheses": [
+  {
+   "detector": "bullpen_exposure",
+   "market": "h2h"
+  },
+  {
+   "detector": "bullpen_exposure",
+   "market": "h2h_1st_5_innings"
+  },
+  {
+   "detector": "bullpen_workload",
+   "market": "h2h"
+  },
+  {
+   "detector": "implied_bullpen_disagreement",
+   "market": "h2h"
+  },
+  {
+   "detector": "implied_bullpen_disagreement",
+   "market": "h2h_1st_5_innings"
+  },
+  {
+   "detector": "lineup_vs_starter",
+   "market": "h2h"
+  },
+  {
+   "detector": "lineup_vs_starter",
+   "market": "h2h_1st_5_innings"
+  },
+  {
+   "detector": "park_and_weather",
+   "market": "totals"
+  },
+  {
+   "detector": "park_and_weather",
+   "market": "totals_1st_5_innings"
+  },
+  {
+   "detector": "pitch_mix_mismatch",
+   "market": "h2h"
+  },
+  {
+   "detector": "pitch_mix_mismatch",
+   "market": "h2h_1st_5_innings"
+  },
+  {
+   "detector": "pitch_mix_mismatch",
+   "market": "totals_1st_5_innings"
+  },
+  {
+   "detector": "platoon_mismatch",
+   "market": "h2h"
+  },
+  {
+   "detector": "platoon_mismatch",
+   "market": "h2h_1st_5_innings"
+  },
+  {
+   "detector": "platoon_mismatch",
+   "market": "totals_1st_5_innings"
+  },
+  {
+   "detector": "stale_book",
+   "market": "h2h"
+  },
+  {
+   "detector": "starter_mismatch",
+   "market": "h2h"
+  },
+  {
+   "detector": "starter_mismatch",
+   "market": "h2h_1st_5_innings"
+  },
+  {
+   "detector": "thin_matchup_history",
+   "market": "h2h"
+  },
+  {
+   "detector": "travel_load",
+   "market": "h2h"
+  },
+  {
+   "detector": "travel_load",
+   "market": "totals"
+  }
+ ],
+ "min_effect": 0.01,
+ "note": "Frozen before any discovery pass. Blocked detectors are excluded because they cannot produce a result to correct.",
+ "registered_at": "2026-08-28T08:39:49.622381+00:00"
+}
