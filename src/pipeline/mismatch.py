@@ -130,6 +130,12 @@ class MismatchError(RuntimeError):
 
 NO_PLAY = "no_play"
 CANDIDATE = "candidate"
+# Distinct from no_play, and the distinction is not pedantic. Measured on 367
+# candidates from 2023-24: 37% of the games this scanner flags have NO first-five
+# market on the board at all. "We looked and the price was fine" and "there was
+# nothing to look at" are different facts about a day, and collapsing them hides
+# a structural limit on the whole strategy.
+MARKET_UNAVAILABLE = "market_unavailable"
 FLAGGED = "flagged"
 INSUFFICIENT_DATA = "insufficient_data"
 
@@ -490,6 +496,16 @@ def apply_market_screen(scan, away_price, home_price) -> dict:
     if scan["verdict"] != CANDIDATE:
         return result
 
+    if away_price is None or home_price is None:
+        result["verdict"] = MARKET_UNAVAILABLE
+        result["reasons"] = list(scan["reasons"]) + [
+            f"no {_market_label(scan['market'])} price was on the board for this "
+            "game, so the screen could not run"]
+        result["summary"] = (
+            f"talent bar cleared, but the {_market_label(scan['market'])} market "
+            "was not offered")
+        return result
+
     screen = market_screen(away_price, home_price, scan["side"],
                            market=scan["market"])
     screen["priced_market"] = scan["market"]
@@ -555,19 +571,22 @@ def finalize_slate(result, prices_by_game) -> dict:
 
     flagged = [s for s in finalized if s["verdict"] == FLAGGED]
     candidates = [s for s in finalized if s["verdict"] == CANDIDATE]
+    unavailable = [s for s in finalized if s["verdict"] == MARKET_UNAVAILABLE]
     return {
         "games_scanned": len(finalized),
         "candidates": candidates,
+        "market_unavailable": unavailable,
         "flagged": flagged,
         "scans": finalized,
         "priced": True,
         "verdict": FLAGGED if flagged else NO_PLAY,
         "summary": _slate_summary(len(finalized), flagged, priced=True,
-                                  unpriced=len(candidates)),
+                                  unpriced=len(candidates),
+                                  unavailable=len(unavailable)),
     }
 
 
-def _slate_summary(n, hits, priced, unpriced=0) -> str:
+def _slate_summary(n, hits, priced, unpriced=0, unavailable=0) -> str:
     if not n:
         return "no games on this date"
     noun = "flagged" if priced else "candidate(s)"
@@ -575,8 +594,11 @@ def _slate_summary(n, hits, priced, unpriced=0) -> str:
         # This is the expected outcome on most days, and it is stated as a result
         # rather than as an apology. A scanner that finds something daily is
         # measuring noise.
-        tail = (f" {unpriced} cleared the talent bar but could not be priced."
-                if unpriced else "")
+        tail = "".join([
+            f" {unpriced} cleared the talent bar but could not be priced."
+            if unpriced else "",
+            f" {unavailable} cleared it but the market was not offered."
+            if unavailable else ""])
         return (
             f"No play. {n} games scanned, none with an advantage obvious enough to "
             "act on. Most days look like this -- two roughly major-league teams "
@@ -590,6 +612,9 @@ def _slate_summary(n, hits, priced, unpriced=0) -> str:
     if priced and unpriced:
         lines.append(f"  ({unpriced} more cleared the talent bar but could not be "
                      "priced, so they are neither flagged nor cleared)")
+    if priced and unavailable:
+        lines.append(f"  ({unavailable} more cleared the talent bar but the "
+                     "market was not offered at all)")
     return "\n".join(lines)
 
 

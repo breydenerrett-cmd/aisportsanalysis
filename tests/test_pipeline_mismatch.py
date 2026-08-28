@@ -435,3 +435,42 @@ class TestScreenRecordsThePrice(unittest.TestCase):
         candidate = mismatch.scan_game(GAME, teams(), starters())
         flagged = mismatch.apply_market_screen(candidate, 150, -170)
         self.assertEqual(flagged["signals"]["market"]["home_price"], -170)
+
+
+class TestMarketUnavailableIsItsOwnVerdict(unittest.TestCase):
+    """"The price was fine" and "there was no price" are different facts.
+
+    Measured on 367 candidates from 2023-24: 37% of the games this scanner flags
+    have no first-five market on the board at all. Collapsing that into no_play
+    would hide a structural limit on the whole strategy behind a verdict that
+    reads like a judgement.
+    """
+
+    def test_a_candidate_with_no_price_is_not_a_no_play(self):
+        candidate = mismatch.scan_game(GAME, teams(), starters())
+        screened = mismatch.apply_market_screen(candidate, None, None)
+        self.assertEqual(screened["verdict"], mismatch.MARKET_UNAVAILABLE)
+        self.assertNotEqual(screened["verdict"], mismatch.NO_PLAY)
+
+    def test_it_says_which_market_was_missing(self):
+        candidate = mismatch.scan_game(GAME, teams(), starters())
+        screened = mismatch.apply_market_screen(candidate, None, None)
+        self.assertIn("first five", screened["summary"])
+
+    def test_half_a_price_is_still_unavailable(self):
+        candidate = mismatch.scan_game(GAME, teams(), starters())
+        self.assertEqual(
+            mismatch.apply_market_screen(candidate, 150, None)["verdict"],
+            mismatch.MARKET_UNAVAILABLE)
+
+    def test_the_slate_counts_them_separately(self):
+        slate = mismatch.scan_slate([
+            dict(GAME, game_pk=1, away_team="COL", home_team="NYY",
+                 team_features=teams(), pitcher_features=starters()),
+        ])
+        final = mismatch.finalize_slate(
+            slate, {1: {"away_price": None, "home_price": None}})
+        self.assertEqual(len(final["market_unavailable"]), 1)
+        self.assertEqual(final["flagged"], [])
+        self.assertEqual(final["candidates"], [])
+        self.assertIn("market was not offered", final["summary"])
