@@ -123,10 +123,34 @@ is built.
 These are not "nice to have with odds". They are the questions that **cannot be
 approached at all** without them.
 
-- **Q5. Does the market screen do anything?** It is one of the scanner's three
-  suppressions and the one carrying *"advantages other people aren't finding"*. With no
-  historical prices it has never run on a single past game. 10.2% is an upper bound on
-  the fire rate and the true rate is unknown.
+- **Q5. Does the market screen do anything?** *(answered — and it found something
+  larger)*
+
+  Run on 367 candidate games from 2023–24 that now have stored first-five prices:
+
+  | | Games | Share |
+  |---|---|---|
+  | Passes the screen | 158 | 43.1% |
+  | Screened out as already priced | 63 | 17.2% |
+  | **No first-five price offered at all** | **136** | **37.1%** |
+  | Unparseable | 10 | 2.7% |
+
+  So the screen does real work: it rejects 63 of the 221 candidates it can actually
+  judge, about **29%**. That is not a rubber stamp.
+
+  But the bigger finding is the row nobody was looking for. **More than a third of the
+  games the scanner flags have no first-five market on the board at all.** The scanner
+  routes its flags to a market that, for those games, does not exist — and no amount of
+  detector work fixes that.
+
+  Three consequences. The realistic fire rate is materially below the 10% talent-bar
+  rate, because a third of candidates are unplayable in the intended market. The
+  full-game line becomes the fallback for those games and needs its own screen rather
+  than inheriting one designed for a conditional price. And forward logging should
+  record *market unavailable* as a distinct outcome from *no play*, because they are
+  different facts about a day.
+
+  No outcomes were read for this: it counts availability and screen rates only.
 - **Q6. Is Q1's gradient already in the line?** The decisive follow-up, and unanswerable
   without posted totals.
 - **Q7. Where is the first-five line relative to the full-game line?** Measured live on

@@ -9,9 +9,9 @@
 | **Demo** | **working** — `artifacts/demo_latest.html` |
 | Tests | 884 passing |
 | Detectors | 11 registered, 1 blocked with a stated reason |
-| Credits | ~36,000 spent of 100,000 |
+| Credits | ~47,000 spent of 100,000 |
 | Odds backfill | **complete** — 1,800 snapshots, 0 failures |
-| First-five backfill | running, 732 candidate games |
+| First-five backfill | 525 games stored, second pass running for 194 afternoon games |
 
 ## How to open the demo
 
@@ -105,6 +105,30 @@ consolidated, not because coverage degraded.
   historically. `assert_point_in_time` raises; game-log reconstruction needed.
 - **Lineup handedness before lineups post** — most of a day has no lineups, and
   that is a normal state rather than a failure.
+
+## First research result
+
+Q5, blocked since the project began, is answered. On 367 candidate games from
+2023–24 with stored first-five prices:
+
+| | Games | Share |
+|---|---|---|
+| Passes the market screen | 158 | 43.1% |
+| Screened out as already priced | 63 | 17.2% |
+| **No first-five price offered at all** | **136** | **37.1%** |
+
+The screen rejects about 29% of the candidates it can judge, so it is doing real
+work rather than rubber-stamping.
+
+The larger finding is the row nobody went looking for: **more than a third of
+flagged games have no first-five market on the board**. The scanner routes to a
+market that, for those games, does not exist. That caps the realistic fire rate
+well below the 10% talent-bar rate, makes the full-game line the fallback for
+those games — needing its own screen rather than one designed for a conditional
+price — and means forward logging must record *market unavailable* as distinct
+from *no play*.
+
+No outcomes were read: this counts availability and screen rates only.
 
 ## Unfinished research, ranked by expected value
 
