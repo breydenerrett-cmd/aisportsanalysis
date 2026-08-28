@@ -17,7 +17,7 @@ losers always reported; credits (53K) spent only deliberately, probe first.
 ## Stage 1 — Historical data integrity / point-in-time reconstruction
 **Objective:** every detector input reconstructible as of a past date, or
 formally excluded.
-**Status: DONE for exclusion; rebuild OPEN.** Audit module enforces; 7 clean /
+**Status: DONE for exclusion; rebuild OPEN.  ← CURRENT** Audit module enforces; 7 clean /
 4 leaky.
 **Remaining:** pitch-level Statcast ingest (~600 chunked requests, free, slow)
 to rebuild splits, arsenals, matchup history forward; then flip those inputs to
@@ -34,7 +34,7 @@ regression-tested.
 **Exit:** every registered detector evaluated or formally excluded.
 **Autonomous:** yes.
 
-## Stage 3 — Candidate falsification  ← **CURRENT**
+## Stage 3 — Candidate falsification — **DONE** (candidate killed; see docs/VALIDATION_PACKAGE_1.md)
 **Objective:** try to kill bullpen_exposure before believing it.
 **Work:** rename CLV proxy honestly; probe for a true closing snapshot
 (credit-safe probe first); robustness battery — season / team concentration /

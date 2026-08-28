@@ -1,0 +1,2 @@
+7e30ce42e87b5841b67edf8099f969f75ab680919192c3a337c9ae4b0c2c3898  data/historical/mlb_results.csv
+4eec8792cbddb6ecbbb5d25a604158e84eca71098b98db99129663b815ed7e00  data/historical/pitcher_logs.jsonl

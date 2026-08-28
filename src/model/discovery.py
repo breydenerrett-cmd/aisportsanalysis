@@ -1,7 +1,7 @@
 """Evaluate a detector against the closing line, with every statistic stated.
 
-WHAT IS BEING MEASURED, AND WHY IT IS CLV FIRST
-------------------------------------------------
+WHAT IS BEING MEASURED, AND WHY MARKET MOVEMENT COMES FIRST
+------------------------------------------------------------
 A detector picks a side. The question is not whether that side won -- over a few
 hundred games a coin-flip strategy wins plenty -- but whether the price MOVED
 toward it between the recommendation and the close. Closing line value converges
@@ -141,7 +141,7 @@ def evaluate(name, rows, min_sample=30) -> dict:
         "decided": len(decided),
         "pushes": sum(1 for r in rows if r.get("won") is None),
         "effect": None, "p": 1.0, "hit_rate": None, "mean_implied": None,
-        "clv": None, "clv_n": 0, "roi": None, "ci": None,
+        "late_move": None, "late_move_n": 0, "roi": None, "ci": None,
         "by_season": {}, "economically_meaningful": None,
         "verdict": None,
     }
@@ -163,16 +163,22 @@ def evaluate(name, rows, min_sample=30) -> dict:
         [dict(r, _diff=d) for r, d in zip(decided, differences)],
         lambda sample: _mean([s["_diff"] for s in sample]))
 
-    # Closing line value, where a closing price exists. Reported on its own
-    # sample size, because a CLV computed on a third of the selections is not
-    # the same claim as one computed on all of them.
+    # LATE-MARKET MOVEMENT, deliberately not called closing line value.
+    #
+    # The "closing" snapshot in the historical store is the latest one before
+    # first pitch, and its median distance from first pitch is 84 minutes. A
+    # real close is the final broadly-available price seconds before the game
+    # locks, and a line can move plenty in the last hour -- so calling this CLV
+    # would claim a measurement we did not make. It is the drift between the
+    # recommendation-time price and a late pre-game snapshot, which is a proxy:
+    # informative, directionally the same quantity, and honestly weaker.
     with_close = [r for r in decided if r.get("closing_implied") is not None]
-    result["clv_n"] = len(with_close)
+    result["late_move_n"] = len(with_close)
     if with_close:
         moves = [r["closing_implied"] - r["implied"] for r in with_close]
-        result["clv"] = round(_mean(moves), 5)
-        result["clv_p"] = round(two_sided_p(result["clv"], moves), 6)
-        result["clv_ci"] = clustered_bootstrap(
+        result["late_move"] = round(_mean(moves), 5)
+        result["late_move_p"] = round(two_sided_p(result["late_move"], moves), 6)
+        result["late_move_ci"] = clustered_bootstrap(
             [dict(r, _diff=m) for r, m in zip(with_close, moves)],
             lambda sample: _mean([s["_diff"] for s in sample]))
 
