@@ -33,6 +33,7 @@ import csv
 import gzip
 import io
 import json
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -49,6 +50,13 @@ DEFAULT_STORE = historical_path("statcast")
 # Savant truncates at exactly this many rows. Hitting it means data loss.
 EXPORT_CAP = 25000
 WINDOW_DAYS = 4
+
+# Savant drops connections under back-to-back heavy exports. A pause between
+# windows plus bounded retries turns an hour of failures into a slower success;
+# a season is ~45 windows, so ten seconds of politeness costs eight minutes.
+INTER_REQUEST_SECONDS = 10
+RETRIES = 4
+RETRY_BACKOFF = (15, 45, 120)
 
 KEEP = ("game_date", "game_pk", "pitcher", "batter", "stand", "p_throws",
         "pitch_type", "release_speed", "events", "description",
@@ -127,12 +135,20 @@ def build(season, store=DEFAULT_STORE, on_window=None, timeout=DEFAULT_TIMEOUT) 
         if key in manifest["windows"]:
             report["skipped"] += 1
             continue
-        try:
-            rows = fetch_window(start, end, timeout=timeout)
-        except StatcastPitchError as exc:
+        rows = None
+        for attempt in range(RETRIES):
+            try:
+                rows = fetch_window(start, end, timeout=timeout)
+                break
+            except StatcastPitchError as exc:
+                last = exc
+                if attempt + 1 < RETRIES:
+                    time.sleep(RETRY_BACKOFF[min(attempt,
+                                                 len(RETRY_BACKOFF) - 1)])
+        if rows is None:
             report["failed"] += 1
             if on_window:
-                on_window({"window": key, "error": str(exc)})
+                on_window({"window": key, "error": str(last)})
             continue
         path = target / f"pitches_{key}.jsonl.gz"
         with gzip.open(path, "wt", encoding="utf-8") as handle:
@@ -146,6 +162,7 @@ def build(season, store=DEFAULT_STORE, on_window=None, timeout=DEFAULT_TIMEOUT) 
         report["rows"] += len(rows)
         if on_window:
             on_window({"window": key, "rows": len(rows)})
+        time.sleep(INTER_REQUEST_SECONDS)
     return report
 
 
