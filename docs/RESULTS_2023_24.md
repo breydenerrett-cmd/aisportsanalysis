@@ -1,3 +1,12 @@
+> **INVALIDATED — 2026-08-28, superseded by the Stage 2 rerun.**
+> An adversarial audit found the historical price join was assigning games the
+> NEXT game's odds in consecutive-day series (55% of matched 2023 selections;
+> 1,966 "recommendation-time" prices captured after the graded game had
+> finished), silently dropping every Diamondbacks game, and feeding the FDR
+> gate an unclustered p. Every number below — the positives, the nulls, and the
+> bullpen_exposure falsification — was computed through those defects and none
+> can be cited. Kept for the record of what was believed and why.
+
 # Discovery results, 2023–24
 
 **Pre-registered family:** `evidence/hypothesis_family.json`, 21 hypotheses,
