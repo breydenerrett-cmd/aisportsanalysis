@@ -132,7 +132,7 @@ def build(games, store, pitcher_logs, price_pairs, bullpen_by_team=None,
 
         dossier = _historical_dossier(game, store, pitcher_logs,
                                       bullpen_by_team, opening)
-        home_won = game.get("home_won")
+        home_won = _label(game.get("home_won"))
         if home_won is None:
             counts["unresolved"] += 1
             continue
@@ -152,7 +152,7 @@ def build(games, store, pitcher_logs, price_pairs, bullpen_by_team=None,
                     "home_team": game.get("home_team"),
                     "side": finding.side,
                     "surprise": finding.surprise,
-                    "won": bool(home_won) if picked_home else not bool(home_won),
+                    "won": bool(home_won) if picked_home else not home_won,
                     "implied": round(
                         opening["home_fair"] if picked_home
                         else opening["away_fair"], 5),
@@ -201,6 +201,32 @@ def _historical_dossier(game, store, pitcher_logs, bullpen_by_team, opening):
             dossier.sections.pop(name)
             dossier.miss(name, "excluded from historical builds: not point-in-time")
     return dossier
+
+
+def _label(value):
+    """The home-win label as an integer, or None.
+
+    The results store is a CSV, so this arrives as the STRING "0" or "1" -- and
+    bool("0") is True. Coercing with bool() made every selection's outcome read
+    as "did we pick the home side", which produced a 9.6-point apparent edge on
+    a detector that mostly picks home teams. Nothing raised; the numbers were
+    plausible; the whole discovery run was wrong.
+
+    Anything that is not recognisably a label returns None so the game is
+    counted as unresolved rather than silently scored.
+    """
+    if value is None or value == "":
+        return None
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, (int, float)):
+        return int(value) if value in (0, 1) else None
+    text = str(value).strip()
+    if text in ("0", "1"):
+        return int(text)
+    if text.lower() in ("true", "false"):
+        return int(text.lower() == "true")
+    return None
 
 
 def _bullpen_for(game, bullpen_by_team):
