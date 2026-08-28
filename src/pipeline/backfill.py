@@ -333,11 +333,12 @@ def first_five_plan(games, markets=FIRST_FIVE_MARKETS, regions=1) -> dict:
     # One events lookup per date, at 1 credit, plus the odds per game.
     dates = len({g.get("date") for g in games})
     per_game = HISTORICAL_MULTIPLIER * len(markets) * regions
+    lookups = dates * len(SNAPSHOT_INSTANTS)
     return {
         "games": len(games), "dates": dates,
         "credits_per_game": per_game,
-        "credits_events": dates,
-        "credits_total": len(games) * per_game + dates,
+        "credits_events": lookups,
+        "credits_total": len(games) * per_game + lookups,
     }
 
 
@@ -382,24 +383,35 @@ def run_first_five(games, markets=FIRST_FIVE_MARKETS, budget=None,
             report["stopped_early"] = "budget exhausted before the events lookup"
             return report
 
-        try:
-            payload, usage = events_for(game_date, timeout=timeout)
-            events = payload.get("data") if isinstance(payload, dict) else payload
-        except odds_provider.OddsProviderError as exc:
-            report["failed"] += len(wanted)
-            if on_game:
-                on_game({"date": game_date, "error": str(exc)})
-            continue
-        report["credits_spent"] += usage.get("last") or 1
-        if usage.get("remaining") is not None:
-            report["credits_remaining"] = usage["remaining"]
-
         index = {}
-        for event in events:
-            away = slate_mod.team_abbrev_from_name(event.get("away_team"))
-            home = slate_mod.team_abbrev_from_name(event.get("home_team"))
-            if away and home:
-                index[(away, home)] = event
+        instant_for = {}
+        failed_lookup = False
+        for instant in _snapshot_instants(game_date):
+            try:
+                payload, usage = events_for(game_date, timeout=timeout,
+                                            instant=instant)
+                events = (payload.get("data") if isinstance(payload, dict)
+                          else payload) or []
+            except odds_provider.OddsProviderError as exc:
+                failed_lookup = True
+                if on_game:
+                    on_game({"date": game_date, "error": str(exc)})
+                continue
+            report["credits_spent"] += usage.get("last") or 1
+            if usage.get("remaining") is not None:
+                report["credits_remaining"] = usage["remaining"]
+            for event in events:
+                away = slate_mod.team_abbrev_from_name(event.get("away_team"))
+                home = slate_mod.team_abbrev_from_name(event.get("home_team"))
+                # The LATER instant wins, since it is closer to first pitch for
+                # any game still on the board at that point.
+                if away and home:
+                    index[(away, home)] = event
+                    instant_for[(away, home)] = instant
+
+        if not index and failed_lookup:
+            report["failed"] += len(wanted)
+            continue
 
         for game in wanted:
             key = (game["away_team"], game["home_team"])
@@ -418,8 +430,9 @@ def run_first_five(games, markets=FIRST_FIVE_MARKETS, budget=None,
                 return report
 
             try:
-                payload, usage = odds_for(game_date, event["id"], markets,
-                                          timeout=timeout)
+                payload, usage = odds_for(
+                    game_date, event["id"], markets, timeout=timeout,
+                    instant=instant_for.get(key))
             except odds_provider.MarketsUnavailableAtDate:
                 # Not a failure and never retried: first-five history begins in
                 # mid-May 2023, so every earlier date answers 422 forever. It is
@@ -464,28 +477,35 @@ def run_first_five(games, markets=FIRST_FIVE_MARKETS, budget=None,
     return report
 
 
+# Two instants per date, not one. A single late-evening lookup misses every
+# afternoon game: by 22:50 UTC a 1pm Eastern start is already over and has left
+# the board entirely, which showed up as "no matching event" on exactly those
+# games. The earlier instant catches the day slate; the later one catches the
+# night slate. One extra credit per date buys back a whole category of game.
+SNAPSHOT_INSTANTS = ("16:50:00Z", "22:50:00Z")
+
+
+def _snapshot_instants(game_date) -> list:
+    return [f"{game_date}T{clock}" for clock in SNAPSHOT_INSTANTS]
+
+
 def _snapshot_instant(game_date) -> str:
-    """The instant to ask about: late evening UTC on the game's own date.
-
-    Games start across a nine-hour spread, so no single instant is every game's
-    close. This is deliberately the same approximation the featured backfill
-    makes, and `closing_gap_minutes` on the stored record is what lets an
-    analysis see how good it was for any given game.
-    """
-    return f"{game_date}T22:50:00Z"
+    """The instant a game's odds are asked for: the latest one on its date."""
+    return _snapshot_instants(game_date)[-1]
 
 
-def _historical_events(game_date, timeout=30):
+def _historical_events(game_date, timeout=30, instant=None):
     return odds_provider._get_json_with_usage(
         f"historical/sports/{odds_provider.SPORT}/events",
-        {"apiKey": odds_provider.api_key(), "date": _snapshot_instant(game_date)},
+        {"apiKey": odds_provider.api_key(),
+         "date": instant or _snapshot_instant(game_date)},
         timeout=timeout)
 
 
-def _historical_event_odds(game_date, event_id, markets, timeout=30):
+def _historical_event_odds(game_date, event_id, markets, timeout=30, instant=None):
     return odds_provider._get_json_with_usage(
         f"historical/sports/{odds_provider.SPORT}/events/{event_id}/odds",
         {"apiKey": odds_provider.api_key(), "regions": odds_provider.DEFAULT_REGION,
          "markets": ",".join(markets), "oddsFormat": odds_provider.ODDS_FORMAT,
-         "date": _snapshot_instant(game_date)},
+         "date": instant or _snapshot_instant(game_date)},
         timeout=timeout)

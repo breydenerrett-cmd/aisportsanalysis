@@ -208,16 +208,24 @@ class TestFirstFiveBackfill(unittest.TestCase):
         return [{"date": date, "away_team": "TB", "home_team": "BOS",
                  "game_pk": 1}][:n] or []
 
-    def events(self, teams=(("Tampa Bay Rays", "Boston Red Sox"),)):
-        def _fetch(game_date, timeout=30):
+    def events(self, teams=(("Tampa Bay Rays", "Boston Red Sox"),),
+               only_instant=None):
+        self.lookups = []
+
+        def _fetch(game_date, timeout=30, instant=None):
+            self.lookups.append(instant)
+            listed = teams if (only_instant is None or instant == only_instant) else ()
             return ({"data": [{"id": f"e{i}", "away_team": a, "home_team": h,
                                "commence_time": f"{game_date}T23:05:00Z"}
-                              for i, (a, h) in enumerate(teams)]},
+                              for i, (a, h) in enumerate(listed)]},
                     {"remaining": 1000, "last": 1})
         return _fetch
 
     def odds(self, raise_with=None):
-        def _fetch(game_date, event_id, markets, timeout=30):
+        self.odds_instants = []
+
+        def _fetch(game_date, event_id, markets, timeout=30, instant=None):
+            self.odds_instants.append(instant)
             if raise_with:
                 raise raise_with
             return ({"timestamp": f"{game_date}T22:45:00Z",
@@ -225,12 +233,40 @@ class TestFirstFiveBackfill(unittest.TestCase):
                     {"remaining": 990, "last": 20})
         return _fetch
 
+    def test_both_instants_are_looked_up_per_date(self):
+        # A single late-evening lookup misses every afternoon game: by 22:50 UTC
+        # a 1pm Eastern start is over and off the board entirely.
+        events = self.events()
+        backfill.run_first_five(self.games(), store=self.store,
+                                fetch_events=events, fetch_odds=self.odds())
+        self.assertEqual(len(self.lookups), len(backfill.SNAPSHOT_INSTANTS))
+
+    def test_a_day_game_only_on_the_early_board_is_still_found(self):
+        early = backfill._snapshot_instants("2023-06-04")[0]
+        report = backfill.run_first_five(
+            self.games(), store=self.store,
+            fetch_events=self.events(only_instant=early),
+            fetch_odds=self.odds())
+        self.assertEqual(report["fetched"], 1)
+        self.assertEqual(report["unmatched"], 0)
+        # And its odds are asked for at the instant it was actually on the board.
+        self.assertEqual(self.odds_instants, [early])
+
+    def test_the_later_instant_wins_when_a_game_is_on_both_boards(self):
+        # Later is closer to first pitch, which is the price worth having.
+        backfill.run_first_five(self.games(), store=self.store,
+                                fetch_events=self.events(),
+                                fetch_odds=self.odds())
+        self.assertEqual(self.odds_instants,
+                         [backfill._snapshot_instants("2023-06-04")[-1]])
+
     def test_the_per_game_plan_includes_the_events_lookups(self):
         plan = backfill.first_five_plan(
             [{"date": "2023-06-04"}, {"date": "2023-06-05"}])
         self.assertEqual(plan["credits_per_game"], 20)
-        self.assertEqual(plan["credits_events"], 2)
-        self.assertEqual(plan["credits_total"], 42)
+        # Two lookups per date, because one misses the afternoon slate.
+        self.assertEqual(plan["credits_events"], 4)
+        self.assertEqual(plan["credits_total"], 44)
 
     def test_three_seasons_of_candidates_is_affordable(self):
         # The number that made the whole approach viable: every game would be
