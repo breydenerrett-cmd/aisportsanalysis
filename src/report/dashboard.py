@@ -156,7 +156,10 @@ _CSS = """
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --paper:#0C100D; --surface:#141A15; --sunk:#101512; --ink:#DCE4DA;
+    /* On a dark ground a recessed panel has to go LIGHTER than the page, not
+       darker -- inverting the light palette literally made the slate summary
+       almost invisible against the body. */
+    --paper:#0C100D; --surface:#141A15; --sunk:#1A211B; --ink:#DCE4DA;
     --muted:#8C9789; --faint:#67725F; --rule:#232B24;
     --accent:#79C298; --clay:#DE9463; --warn:#D6B45C;
   }
