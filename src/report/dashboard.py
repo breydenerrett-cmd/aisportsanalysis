@@ -570,6 +570,27 @@ _JS = r"""
       return [f[0], num(s['away_' + f[1]], f[2]), num(s['home_' + f[1]], f[2])];
     });
     box.appendChild(table(rows, ['', game.away, game.home]));
+    // Home/road and platoon splits, from the season-to-date split records. Shown
+    // beside the season line rather than in their own section, because a split
+    // is only interpretable next to the overall number it deviates from.
+    var splits = game.sections.splits || {};
+    var splitRows = [];
+    [['away', game.away], ['home', game.home]].forEach(function (t) {
+      var record = ((splits[t[0]] || {}).record || {}).splits;
+      if (!record) return;
+      ['Home Games', 'Away Games', 'vs Left', 'vs Right'].forEach(function (key) {
+        var row = record[key];
+        if (!row) return;
+        splitRows.push([t[1] + ' — ' + key, num(row.ops, 3),
+                        row.batters_faced === null ? '--' : row.batters_faced,
+                        row.innings || '--']);
+      });
+    });
+    if (splitRows.length) {
+      box.appendChild(el('h3', null, 'Starter splits (OPS allowed)'));
+      box.appendChild(table(splitRows, ['split', 'OPS', 'BF', 'IP']));
+    }
+
     if (s.either_sp_thin) {
       box.appendChild(el('p', 'gap',
         'One starter is under the innings threshold — his rates are ' +
