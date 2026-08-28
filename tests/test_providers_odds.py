@@ -518,3 +518,46 @@ class TestFirstFiveNormalization(unittest.TestCase):
         record = odds.normalize_event(event)
         self.assertNotIn("totals_1st_5_innings", record["markets"])
         self.assertIn("h2h_1st_5_innings", record["markets"])
+
+
+class TestConnectionFailuresAreCaught(unittest.TestCase):
+    """A dropped connection is not a URLError, and it killed a live backfill.
+
+    http.client.RemoteDisconnected inherits from ConnectionResetError and
+    BadStatusLine, neither of which is urllib.error.URLError -- so it escaped the
+    provider's handler entirely and took down a run that had already spent 30,000
+    credits. Over a few hundred requests that is survivable; over the 1,800 a
+    backfill makes it is a certainty.
+    """
+
+    def transport_error(self, exc):
+        with mock.patch("urllib.request.urlopen", side_effect=exc):
+            with self.assertRaises(odds.OddsProviderError) as ctx:
+                odds._get_json("sports", {"apiKey": "x"})
+        return str(ctx.exception)
+
+    def test_a_dropped_connection_becomes_a_provider_error(self):
+        import http.client
+        message = self.transport_error(
+            http.client.RemoteDisconnected("Remote end closed connection"))
+        self.assertIn("connection failed", message)
+        self.assertIn("RemoteDisconnected", message)
+
+    def test_a_reset_connection_is_caught(self):
+        self.assertIn("connection failed",
+                      self.transport_error(ConnectionResetError("reset")))
+
+    def test_a_timeout_is_caught(self):
+        self.assertIn("connection failed", self.transport_error(TimeoutError()))
+
+    def test_the_key_never_appears_in_a_connection_error(self):
+        import http.client
+        message = self.transport_error(http.client.BadStatusLine("junk"))
+        self.assertNotIn("apiKey", message)
+
+    def test_the_usage_seam_is_protected_too(self):
+        import http.client
+        with mock.patch("urllib.request.urlopen",
+                        side_effect=http.client.RemoteDisconnected("x")):
+            with self.assertRaises(odds.OddsProviderError):
+                odds._get_json_with_usage("sports", {"apiKey": "x"})

@@ -29,6 +29,7 @@ means no bet on that market, which is the correct outcome.
 
 from __future__ import annotations
 
+import http.client
 import json
 import os
 import urllib.error
@@ -321,6 +322,9 @@ def _get_json(path: str, params: dict, timeout: int = DEFAULT_TIMEOUT):
         raise OddsProviderError(f"odds API returned HTTP {exc.code}") from None
     except urllib.error.URLError as exc:
         raise OddsProviderError(f"could not reach odds API: {exc.reason}") from None
+    except (http.client.HTTPException, ConnectionError, TimeoutError, OSError) as exc:
+        raise OddsProviderError(
+            f"odds API connection failed: {type(exc).__name__}: {exc}") from None
     except json.JSONDecodeError:
         raise OddsProviderError("odds API returned invalid JSON") from None
 
@@ -365,6 +369,14 @@ def _get_json_with_usage(path: str, params: dict, timeout: int = DEFAULT_TIMEOUT
         raise OddsProviderError(f"odds API returned HTTP {exc.code}") from None
     except urllib.error.URLError as exc:
         raise OddsProviderError(f"could not reach odds API: {exc.reason}") from None
+    except (http.client.HTTPException, ConnectionError, TimeoutError, OSError) as exc:
+        # A dropped connection is NOT a URLError and was escaping this handler
+        # entirely. Over a few hundred requests that is survivable; over the
+        # 1,800 a backfill makes it is a certainty, and it killed a run that had
+        # already spent 30,000 credits. The run was resumable, so nothing was
+        # lost -- but only because resumability was built first.
+        raise OddsProviderError(
+            f"odds API connection failed: {type(exc).__name__}: {exc}") from None
     except json.JSONDecodeError:
         raise OddsProviderError("odds API returned invalid JSON") from None
 

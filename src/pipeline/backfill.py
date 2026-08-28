@@ -43,6 +43,7 @@ early is visibly different from one caught ten minutes out.
 from __future__ import annotations
 
 import json
+import time
 import urllib.error
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -54,6 +55,12 @@ DEFAULT_STORE = historical_path("odds_history")
 
 # Historical requests cost ten times a live one, per market per region.
 HISTORICAL_MULTIPLIER = 10
+
+# A long run WILL meet a dropped connection. Retrying is safe: a request that
+# never reached the server cost nothing, and the manifest prevents a duplicate
+# write if it did.
+RETRIES = 3
+RETRY_BACKOFF = (2, 5)
 
 # Snapshot times, UTC, chosen against the shape of an MLB day rather than spaced evenly.
 # Afternoon games start around 17:00-20:00 UTC, the eastern evening block around
@@ -176,7 +183,7 @@ def read_season(season, store=DEFAULT_STORE) -> list:
 
 def run(seasons, markets, snapshot_times=DEFAULT_SNAPSHOT_TIMES,
         budget=None, store=DEFAULT_STORE, on_snapshot=None,
-        fetch=None, timeout=30) -> dict:
+        fetch=None, timeout=30, sleep=time.sleep) -> dict:
     """Fetch and store every missing snapshot, inside a credit budget.
 
     `budget` is a hard ceiling on credits this run may spend. It is checked BEFORE
@@ -221,10 +228,24 @@ def run(seasons, markets, snapshot_times=DEFAULT_SNAPSHOT_TIMES,
                     "stored so far and the run is resumable")
                 return report
 
-            try:
-                payload, usage = fetcher(stamp, markets=markets, timeout=timeout)
-            except odds_provider.OddsProviderError as exc:
+            payload = usage = None
+            for attempt in range(RETRIES):
+                try:
+                    payload, usage = fetcher(stamp, markets=markets,
+                                             timeout=timeout)
+                    break
+                except odds_provider.OddsProviderError as exc:
+                    last_error = exc
+                    # A dropped connection over 1,800 requests is a certainty,
+                    # not an anomaly. Retrying costs nothing when the request
+                    # never reached the server, and the manifest makes a genuine
+                    # duplicate impossible anyway.
+                    if attempt + 1 < RETRIES:
+                        # Injectable so the suite does not actually wait.
+                        sleep(RETRY_BACKOFF[attempt])
+            if payload is None:
                 report["failed"] += 1
+                exc = last_error
                 # Not recorded in the manifest, so a later run retries it. Recording
                 # a failure as done would silently leave a permanent hole.
                 if on_snapshot:

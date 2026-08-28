@@ -66,12 +66,12 @@ class TestRun(unittest.TestCase):
     def tearDown(self):
         self.dir.cleanup()
 
-    def fetch(self, remaining_start=1000, events=2, fail_on=()):
+    def fetch(self, remaining_start=1000, events=2, fail_on=(), always_fail=False):
         state = {"remaining": remaining_start}
 
         def _fetch(when, markets=None, timeout=30):
             self.calls.append(when)
-            if len(self.calls) in fail_on:
+            if always_fail or len(self.calls) in fail_on:
                 raise odds_provider.OddsProviderError("boom")
             state["remaining"] -= 10 * len(markets)
             return ({"timestamp": when.isoformat(),
@@ -81,6 +81,7 @@ class TestRun(unittest.TestCase):
 
     def run_one_day(self, **kwargs):
         kwargs.setdefault("fetch", self.fetch())
+        kwargs.setdefault("sleep", lambda seconds: None)
         return backfill.run([2025], ["h2h"], snapshot_times=("22:50",),
                             store=self.store, **kwargs)
 
@@ -106,13 +107,36 @@ class TestRun(unittest.TestCase):
         second = self.run_one_day(budget=25)
         self.assertEqual(second["skipped_cached"], 2)
 
-    def test_a_failed_snapshot_is_not_recorded_so_it_retries(self):
+    def test_a_transient_failure_is_retried_rather_than_lost(self):
+        # A dropped connection over 1,800 requests is a certainty. The first
+        # attempt fails, the retry succeeds, and the snapshot is kept.
+        report = self.run_one_day(budget=100, fetch=self.fetch(fail_on=(1,)))
+        self.assertEqual(report["failed"], 0)
+        self.assertGreater(report["fetched"], 0)
+
+    def test_a_persistent_failure_is_not_recorded_so_it_retries_next_run(self):
         # Recording a failure as done leaves a permanent hole that no later run
         # will ever fill.
-        report = self.run_one_day(budget=100, fetch=self.fetch(fail_on=(1,)))
-        self.assertEqual(report["failed"], 1)
-        manifest = backfill.read_manifest(self.store)
-        self.assertEqual(len(manifest["snapshots"]), report["fetched"])
+        report = self.run_one_day(budget=100, fetch=self.fetch(always_fail=True))
+        self.assertGreater(report["failed"], 0)
+        self.assertEqual(report["fetched"], 0)
+        self.assertEqual(backfill.read_manifest(self.store)["snapshots"], {})
+
+    def test_retries_are_bounded_per_snapshot(self):
+        self.run_one_day(budget=100, fetch=self.fetch(always_fail=True))
+        # Every attempt is a multiple of RETRIES: each snapshot is tried exactly
+        # that many times and then abandoned rather than looping.
+        self.assertEqual(len(self.calls) % backfill.RETRIES, 0)
+        self.assertGreater(len(self.calls), 0)
+
+    def test_a_failing_request_costs_no_credits_so_the_budget_does_not_trip(self):
+        # Worth pinning: a failed request never reached the meter, so a run of
+        # pure failures walks the whole season rather than stopping early. That
+        # is correct, and it is also why "budget exhausted" can never be used as
+        # a proxy for "the run finished".
+        report = self.run_one_day(budget=100, fetch=self.fetch(always_fail=True))
+        self.assertEqual(report["credits_spent"], 0)
+        self.assertIsNone(report["stopped_early"])
 
     def test_credits_remaining_is_read_from_the_response(self):
         report = self.run_one_day(budget=100)
