@@ -293,6 +293,62 @@ def run(seasons, markets, snapshot_times=DEFAULT_SNAPSHOT_TIMES,
 # Closing-price matching
 # ---------------------------------------------------------------------------
 
+# How far before first pitch a "recommendation" is taken. The briefing runs on
+# the morning of the game, so six hours is the honest stand-in -- and it matters
+# that this is bounded rather than "the earliest snapshot we happen to hold".
+# The earliest snapshot for some games is nearly three days out with ONE book on
+# the board, which is not a price anyone could have bet, and using it would
+# manufacture closing line value out of a market that had not opened.
+RECOMMENDATION_LEAD_MINUTES = 360
+
+
+def price_pair(season, store=DEFAULT_STORE,
+               lead_minutes=RECOMMENDATION_LEAD_MINUTES) -> dict:
+    """A recommendation-time price and a closing price for each game.
+
+    Closing line value needs two points. The recommendation point is the LATEST
+    snapshot at least `lead_minutes` before first pitch -- the freshest price the
+    system could have seen when it actually runs -- and the close is the latest
+    snapshot before first pitch.
+    """
+    seen = {}
+    for record in read_season(season, store):
+        snapshot_at = _parse(record.get("snapshot_at"))
+        if snapshot_at is None:
+            continue
+        for event in record.get("events") or []:
+            start = _parse(event.get("commence_time"))
+            if start is None or snapshot_at >= start:
+                continue
+            entry = seen.setdefault(event.get("id"), {
+                "event_id": event.get("id"),
+                "commence_time": event.get("commence_time"),
+                "home_team": event.get("home_team"),
+                "away_team": event.get("away_team"),
+                "open": None, "close": None})
+            gap = (start - snapshot_at).total_seconds() / 60.0
+            quote = {"snapshot_at": record.get("snapshot_at"),
+                     "gap_minutes": round(gap, 1),
+                     "bookmakers": event.get("bookmakers") or []}
+            # Freshest price at least `lead_minutes` out, not the earliest one
+            # on file.
+            if gap >= lead_minutes and (
+                    entry["open"] is None
+                    or gap < entry["open"]["gap_minutes"]):
+                entry["open"] = quote
+            if entry["close"] is None or gap < entry["close"]["gap_minutes"]:
+                entry["close"] = quote
+
+    # A pair whose two ends are the same observation is not a pair. Reported
+    # rather than dropped, so a caller can see how much of the sample has no
+    # usable movement rather than silently receiving a smaller one.
+    for entry in seen.values():
+        entry["distinct"] = bool(
+            entry["open"] and entry["close"]
+            and entry["open"]["snapshot_at"] != entry["close"]["snapshot_at"])
+    return seen
+
+
 def closing_prices(season, store=DEFAULT_STORE) -> dict:
     """For each game, the latest stored price strictly before its own first pitch.
 
