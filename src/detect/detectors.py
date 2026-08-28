@@ -37,6 +37,13 @@ PLATOON_GAP_SPREAD = 0.090
 THIN_AT_BATS = 20
 LEAGUE_BATTING_AVG = 0.248
 BATTING_AVG_SPREAD = 0.050
+TRAVEL_SPREAD = 700.0
+LONG_TRIP_MILES = 1200
+HIGH_ALTITUDE_M = 900
+LEAGUE_ALTITUDE_M = 150
+LEAGUE_TEMP_F = 74.0
+TEMP_NOTABLE_F = 14.0
+STRONG_WIND_MPH = 15.0
 
 
 class ImpliedBullpenDisagreement(Detector):
@@ -449,9 +456,127 @@ class LineupVsStarter(Detector):
         return findings
 
 
+class TravelLoad(Detector):
+    """Distance flown, zones crossed, and schedule density.
+
+    Free, computable from data already on disk, and on nobody's stat page --
+    which is the argument for it. A club that flew 2,000 miles east overnight
+    into the third city of a road trip is in a materially different state from
+    the one whose bus ride was across town, and no line on any screen says so.
+
+    The DIRECTION is reported because it is not symmetric: flying east shortens
+    the night against the body clock. That is a fact about the trip. Whether it
+    costs runs tonight is the hypothesis, and it is the detector's to fail.
+    """
+
+    name = "travel_load"
+    markets = ("h2h", "totals")
+    status = UNPROVEN
+
+    def run(self, game):
+        travel = game.get("travel") or {}
+        away, home = game.teams
+        findings = []
+        for team, side in ((away, AWAY), (home, HOME)):
+            load = travel.get(team)
+            if not load or load.get("miles") is None:
+                continue
+            miles = load["miles"]
+            if miles < LONG_TRIP_MILES and not load.get("dense_stretch"):
+                continue
+
+            parts = []
+            if miles >= LONG_TRIP_MILES:
+                direction = "east" if load.get("eastward") else "west"
+                parts.append(
+                    f"flew {miles:,.0f} miles {direction} from {load['last_venue']}"
+                    + (f", crossing {load['zones']:.1f} time zones"
+                       if load.get("zones", 0) >= 1 else ""))
+            if load.get("dense_stretch"):
+                parts.append(f"has played {load['games_last_7']} games in seven days")
+
+            findings.append(Finding(
+                self.name, SIGNAL if miles >= LONG_TRIP_MILES else CONTEXT,
+                f"{team} " + " and ".join(parts) + ".",
+                value=miles, baseline=float(LONG_TRIP_MILES),
+                sample=f"{load['games_last_7']} games in the window",
+                surprise=surprise_score(miles, LONG_TRIP_MILES, TRAVEL_SPREAD),
+                # The load argues against the travelling club, so the side is
+                # the opponent.
+                side=HOME if side is AWAY else AWAY,
+                market_relevance=(
+                    "Applies to the whole game rather than to the starters."),
+                evidence=UNPROVEN, detail=load))
+        return findings
+
+
+class ParkAndWeather(Detector):
+    """Run environment, where it is actually unusual.
+
+    Weather has been collected by this project since the beginning and used by
+    nothing. Most nights it says nothing worth reading, which is why it stays
+    silent unless the park or the conditions are genuinely off the norm.
+
+    Wind is deliberately NOT interpreted as helping or hurting: park orientation
+    is unknown for all thirty parks, and a wrong bearing inverts a real effect.
+    Reporting speed without direction is the honest half.
+    """
+
+    name = "park_and_weather"
+    markets = ("totals", "totals_1st_5_innings")
+    status = UNPROVEN
+
+    def run(self, game):
+        park = game.get("park") or {}
+        weather = game.get("weather") or {}
+        findings = []
+
+        altitude = park.get("altitude_m")
+        if altitude is not None and altitude >= HIGH_ALTITUDE_M:
+            findings.append(Finding(
+                self.name, SIGNAL,
+                f"{park.get('name')} sits at {altitude:,} m, far above the "
+                f"{LEAGUE_ALTITUDE_M:,} m of a typical park — the ball carries "
+                "and the run environment is not the league's.",
+                value=float(altitude), baseline=float(LEAGUE_ALTITUDE_M),
+                surprise=surprise_score(altitude, LEAGUE_ALTITUDE_M, 250.0),
+                side=NEITHER, evidence=UNPROVEN,
+                market_relevance="Bears on the total, not on either side."))
+
+        temp = weather.get("temp_f")
+        if temp is not None and abs(temp - LEAGUE_TEMP_F) >= TEMP_NOTABLE_F:
+            warmer = temp > LEAGUE_TEMP_F
+            # The physics only runs one way, so the sentence has to. Printing
+            # the cold-air explanation on a 94F night is the kind of detail that
+            # makes a reader stop trusting everything else on the page.
+            physics = ("Warm air is thinner and the ball carries further"
+                       if warmer else
+                       "Cold air is denser and the ball carries less")
+            findings.append(Finding(
+                self.name, SIGNAL,
+                f"First pitch is forecast at {temp:.0f}F against a typical "
+                f"{LEAGUE_TEMP_F:.0f}F. {physics}.",
+                value=float(temp), baseline=float(LEAGUE_TEMP_F),
+                surprise=surprise_score(temp, LEAGUE_TEMP_F, 12.0),
+                side=NEITHER, evidence=UNPROVEN,
+                market_relevance="Bears on the total."))
+
+        wind = weather.get("wind_mph")
+        if wind is not None and wind >= STRONG_WIND_MPH:
+            findings.append(Finding(
+                self.name, CONTEXT,
+                f"Wind is forecast at {wind:.0f} mph. Its direction is NOT "
+                "interpreted here: this park's orientation is unrecorded, and a "
+                "wrong bearing would invert the effect rather than mute it.",
+                value=float(wind), baseline=float(STRONG_WIND_MPH),
+                side=NEITHER, evidence=BLOCKED))
+        return findings
+
+
 def register_defaults():
     """The pre-registered family. Order is presentation only."""
     for detector in (ImpliedBullpenDisagreement(), BullpenWorkload(),
                      StaleBook(), StarterMismatch(), PlatoonMismatch(),
-                     ThinMatchupHistory(), LineupVsStarter()):
+                     ThinMatchupHistory(), LineupVsStarter(), TravelLoad(),
+                     ParkAndWeather()):
         register(detector)

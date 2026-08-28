@@ -382,7 +382,7 @@ def cmd_train(args) -> int:
 def cmd_brief(args) -> int:
     """Build the slate briefing and write the dashboard."""
     from src.detect import detectors as detector_defs
-    from src.pipeline import briefing, bullpen, history, lineups, pitchers
+    from src.pipeline import briefing, bullpen, history, lineups, pitchers, travel
     from src.pipeline import slate as slate_mod
     from src.providers import odds as odds_prov
     from src.report import dashboard
@@ -466,7 +466,45 @@ def cmd_brief(args) -> int:
                 matchups.setdefault(pk, {})[opposing] = lineups.lineup_vs_pitcher(
                     posted[pk][opposing], pid, handedness=hands)
 
+    trips = {}
+    for game in games:
+        home = game.get("home_team")
+        if not home:
+            continue
+        trips[game.get("game_pk")] = {
+            team: travel.travel_load(store, team, args.date, home)
+            for team in (game.get("away_team"), home) if team}
+
+    weather_by_pk = {}
+    if not args.no_weather:
+        try:
+            from src.providers import weather as weather_prov
+            targets = []
+            for game in games:
+                if not game.get("home_team") or not game.get("start_time_utc"):
+                    continue
+                try:
+                    targets.append((game, parks.coordinates(game["home_team"])))
+                except parks.ParkError:
+                    continue
+            if targets:
+                # One batched request for the whole slate. Park-by-park is
+                # fifteen calls against a rate-limited endpoint, and the retries
+                # are what actually cost the wall-clock.
+                payloads = weather_prov.fetch_many(
+                    [coords for _, coords in targets],
+                    targets[0][0]["start_time_utc"][:10])
+                for (game, _), payload in zip(targets, payloads):
+                    reading = weather_prov.extract_hour(
+                        payload, game["start_time_utc"])
+                    if reading:
+                        weather_by_pk[game["game_pk"]] = reading
+            print(f"  weather for {len(weather_by_pk)} of {len(games)} game(s)")
+        except Exception as exc:  # weather is enrichment, never a blocker
+            print(f"  (weather unavailable: {exc})")
+
     slate = briefing.build_slate(games, store, pitcher_logs=logs,
+                                 travel_by_pk=trips, weather_by_pk=weather_by_pk,
                                  prices_by_matchup=prices, bullpen_by_team=pens,
                                  lineups_by_pk=posted, handedness=hands,
                                  splits_by_pk=splits, matchups_by_pk=matchups)
@@ -1085,6 +1123,8 @@ def build_parser() -> argparse.ArgumentParser:
     brief_cmd.add_argument("--out", default="artifacts/briefing.html")
     brief_cmd.add_argument("--no-odds", action="store_true",
                            help="skip the odds call")
+    brief_cmd.add_argument("--no-weather", action="store_true",
+                           help="skip the weather call")
     brief_cmd.add_argument("--no-matchups", action="store_true",
                            help="skip batter-vs-pitcher history (many calls)")
     brief_cmd.add_argument("--f5", action="store_true",

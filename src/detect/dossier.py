@@ -72,7 +72,7 @@ class Dossier:
 
 def build(game, store, pitcher_logs=None, prices=None, weather=None,
           lineups=None, bullpen=None, splits=None, matchups=None,
-          information_time=None) -> Dossier:
+          travel=None, information_time=None) -> Dossier:
     """Assemble one dossier from whatever sources are available."""
     dossier = Dossier(game, information_time=information_time)
     date = game.get("date")
@@ -111,6 +111,11 @@ def build(game, store, pitcher_logs=None, prices=None, weather=None,
         dossier.add("bullpen", bullpen)
     else:
         dossier.miss("bullpen", "bullpen workload not built")
+
+    if travel:
+        dossier.add("travel", travel)
+    else:
+        dossier.miss("travel", "travel load not computed")
 
     if splits:
         dossier.add("splits", splits)

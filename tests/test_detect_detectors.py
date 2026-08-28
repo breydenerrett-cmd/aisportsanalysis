@@ -211,7 +211,7 @@ class TestRegistrationIsTheHypothesisCount(unittest.TestCase):
 
     def test_the_default_family_registers_cleanly(self):
         detectors.register_defaults()
-        self.assertEqual(len(base.registry()), 7)
+        self.assertEqual(len(base.registry()), 9)
 
     def test_every_registered_detector_declares_its_markets(self):
         detectors.register_defaults()
@@ -221,3 +221,63 @@ class TestRegistrationIsTheHypothesisCount(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestTravelAndEnvironment(unittest.TestCase):
+    """Free facts, computed from data already on disk, on nobody's stat page."""
+
+    def travel(self, miles=2000, eastward=True, games=7, zones=2.4):
+        return {"BOS": {"team": "BOS", "miles": miles, "eastward": eastward,
+                        "zones": zones, "games_last_7": games,
+                        "last_venue": "SEA", "dense_stretch": games >= 6}}
+
+    def test_a_long_flight_argues_against_the_travelling_club(self):
+        found = detectors.TravelLoad().run(dossier(away="BOS", home="NYY"))
+        self.assertEqual(found, [])
+        d = dossier(away="BOS", home="NYY")
+        d.add("travel", self.travel())
+        found = detectors.TravelLoad().run(d)
+        self.assertEqual(found[0].side, base.HOME)
+        self.assertIn("east", found[0].claim)
+
+    def test_a_short_trip_on_a_light_schedule_says_nothing(self):
+        d = dossier(away="BOS", home="NYY")
+        d.add("travel", self.travel(miles=200, games=3))
+        self.assertEqual(detectors.TravelLoad().run(d), [])
+
+    def test_an_uncomputable_trip_is_skipped_not_zeroed(self):
+        # Zero miles is a real and different statement from "we do not know
+        # where they were".
+        d = dossier(away="BOS", home="NYY")
+        d.add("travel", {"BOS": {"team": "BOS", "miles": None,
+                                 "games_last_7": 7, "reason": "unknown park"}})
+        self.assertEqual(detectors.TravelLoad().run(d), [])
+
+    def test_hot_and_cold_get_opposite_explanations(self):
+        for temp, expected in ((94.0, "carries further"), (52.0, "carries less")):
+            d = dossier()
+            d.add("weather", {"temp_f": temp})
+            found = detectors.ParkAndWeather().run(d)
+            self.assertIn(expected, found[0].claim)
+
+    def test_an_ordinary_night_says_nothing(self):
+        d = dossier()
+        d.add("weather", {"temp_f": 75.0, "wind_mph": 5.0})
+        d.add("park", {"name": "Somewhere", "altitude_m": 100})
+        self.assertEqual(detectors.ParkAndWeather().run(d), [])
+
+    def test_altitude_fires_and_bears_on_the_total_not_a_side(self):
+        d = dossier()
+        d.add("park", {"name": "Coors Field", "altitude_m": 1580})
+        found = detectors.ParkAndWeather().run(d)
+        self.assertEqual(found[0].side, base.NEITHER)
+        self.assertIn("total", found[0].market_relevance)
+
+    def test_wind_is_reported_but_never_interpreted(self):
+        # Park orientation is unknown for all thirty parks. A wrong bearing
+        # inverts the effect rather than muting it, so the finding ships BLOCKED.
+        d = dossier()
+        d.add("weather", {"wind_mph": 22.0})
+        found = detectors.ParkAndWeather().run(d)
+        self.assertEqual(found[0].evidence, base.BLOCKED)
+        self.assertIn("NOT interpreted", found[0].claim)
