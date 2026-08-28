@@ -4,6 +4,17 @@
 stage below, take its highest-value unfinished item, and go. Update this file as
 stages move. `docs/OVERNIGHT_RUN.md` is the running log; this is the map.
 
+**Stage states:** OPEN / IN PROGRESS / DONE / BLOCKED / RETIRED. A permanently
+BLOCKED item is moved to RETIRED with its reason rather than left to clog
+execution.
+
+**Evidence-integrity rule (permanent):** every major evaluation writes an
+immutable evidence package — code commit, detector-family version, policy
+version, input hashes, recommendation-price definition, comparison/close-price
+definition, exact selection set, exclusions, sample sizes, results, confidence
+intervals, FDR output, robustness output, evaluation timestamp. An evaluation
+that cannot be reproduced from its package is incomplete.
+
 **The split, non-negotiable:** 2023–24 discovery · 2025 tuning only ·
 2026-01-01→08-27 sealed one-shot confirmation · 2026-08-28→ forward proof.
 
@@ -25,33 +36,40 @@ CLEAN and re-audit.
 **Exit:** leaky list empty, or every remaining leak has a documented dead end.
 **Autonomous:** yes, fully.
 
-## Stage 2 — Discovery validation
-**Objective:** trustworthy 2023–24 numbers for every clean detector, losers
-included.
-**Status: DONE first pass** (docs/RESULTS_2023_24.md). Label bug found and
-regression-tested.
-**Remaining:** re-run after Stage 1 unlocks the 4 leaky detectors.
-**Exit:** every registered detector evaluated or formally excluded.
+## Stage 2 — Complete 2023–24 discovery rerun — **OPEN, blocked on Stage 1**
+**Objective:** the FULL pre-registered family evaluated on 2023–24, with the
+four newly point-in-time-safe detectors included; losers reported.
+**Note:** the first pass (docs/RESULTS_2023_24.md, 7 clean detectors) does not
+satisfy this stage — it ran before Stage 1's rebuild.
+**Exit:** every registered hypothesis evaluated or formally excluded, full
+statistics per detector (n, effect, ROI, late_move, clustered CI, raw p, FDR,
+per-season, side balance, fav/dog, team concentration, price bands, book count,
+mechanism, dose-response), evidence package written.
 **Autonomous:** yes.
 
-## Stage 3 — Candidate falsification — **DONE** (candidate killed; see docs/VALIDATION_PACKAGE_1.md)
-**Objective:** try to kill bullpen_exposure before believing it.
-**Work:** rename CLV proxy honestly; probe for a true closing snapshot
-(credit-safe probe first); robustness battery — season / team concentration /
-side / fav-dog / price bands / book count / short-start pitchers /
-doubleheaders / price-construction sensitivity (best-book vs consensus);
-mechanistic story or distrust it.
-**Exit:** a validation package (see milestone) with the candidate either dead
-or still standing with stated caveats.
+## Stage 3B — Falsification of any survivors — **OPEN, blocked on Stage 2**
+**Objective:** kill false signals. Every candidate that survives Stage 2 gets
+the full robustness battery (the one that killed bullpen_exposure — see
+docs/VALIDATION_PACKAGE_1.md): season dependence, team concentration, side
+bias, fav/dog, price bands, book artifacts, thin markets, doubleheaders,
+data-coverage effects, selection-construction sensitivity, extreme
+observations, dose-response, plausible mechanism. No rescue by threshold
+change. Nothing surviving is an acceptable result.
+**History:** the original Stage 3 killed bullpen_exposure (first-pass family).
+**Exit:** every survivor either killed-and-documented or standing with stated
+caveats; falsification results archived.
 **Autonomous:** yes.
 
-## Stage 4 — 2025 tuning
-**Objective:** final thresholds, chosen once, on 2025 only.
-**Prerequisites:** Stage 3 done; archives written (detector defs, family, full
-2023–24 table, code+data hashes) BEFORE first 2025 read.
-**Exit:** thresholds frozen with rationale; 2025 numbers labelled
-tuning-evidence forever.
-**Autonomous:** yes, after archives exist.
+## Stage 4 — 2025 tuning — **BLOCKED until Stages 1, 2 and 3B complete**
+**Objective:** final thresholds and policy parameters, chosen once, on 2025
+only. Constrained, documented tuning budget — no re-optimising until ROI looks
+attractive. Every 2025 number is TUNING EVIDENCE forever.
+**Gate (explicit):** does NOT open merely because the first-pass candidate was
+killed. Requires: Stage 1 finished or formally exhausted; Stage 2 rerun of the
+complete family; Stage 3B on every survivor; the updated 2023–24 package
+archived (detector definitions, family, full results incl. losers,
+falsification output, code hash, data hashes, selection sets).
+**Autonomous:** yes, once the gate is satisfied.
 
 ## Stage 5 — Complete decision-policy freeze
 **Objective:** the whole recommendation policy frozen, not just thresholds:
@@ -69,18 +87,24 @@ permanent; reported honestly either way.
 **Autonomous: NO — requires your explicit go.**
 
 ## Stage 7 — Forward proof (runs continuously under everything)
-**Objective:** ≥300 graded selections; CLV primary.
+**Objective:** graded forward selections; true CLV primary. ≥300 is a FLOOR,
+not automatic proof — if intervals stay wide, keep collecting. Keep the five
+price concepts separate: recommendation price / best-available at
+recommendation / consensus at recommendation / late_move snapshot / true close.
+late_move is never called CLV. Historical true-close credits are spent only on
+candidates that survive free discovery + robustness.
 **Status: LIVE** since 2026-08-28. Daily loop records + settles.
 **Remaining:** true-close capture forward (snapshot near first pitch), CLV
 grading report, monthly summaries.
 **Exit:** the pre-registered criteria in docs/VALIDATION_CRITERIA.md.
 **Autonomous:** yes.
 
-## Stage 8 — Detector expansion
-**Objective:** work through the ~47-item catalogue (docs/ALPHA_ROADMAP.md).
-**Gate:** BLOCKED until Stages 3–5 conclude — new detectors change the
-hypothesis family, which invalidates corrections mid-flight. Re-register the
-family explicitly when opened.
+## Stage 8 — Detector expansion: RESEARCH FAMILY V2
+**Objective:** the ~47-item catalogue (docs/ALPHA_ROADMAP.md), as a SEPARATE
+pre-registered family. V1 must never be contaminated midstream: V2 opens only
+after V1 completes discovery → falsification → tuning → policy freeze, keeps
+its evidence fully separated, and a V2 discovery enters the frozen V1 policy
+only by starting a new validation cycle.
 **Autonomous:** yes once unblocked.
 
 ## Stage 9 — Dashboard / product refinement
