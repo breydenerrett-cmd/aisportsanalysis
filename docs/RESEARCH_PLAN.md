@@ -126,16 +126,16 @@ approached at all** without them.
 - **Q5. Does the market screen do anything?** *(answered — and it found something
   larger)*
 
-  Run on 367 candidate games from 2023–24 that now have stored first-five prices:
+  Run on 454 candidate games from 2023–24 that now have stored first-five prices:
 
   | | Games | Share |
   |---|---|---|
-  | Passes the screen | 158 | 43.1% |
-  | Screened out as already priced | 63 | 17.2% |
-  | **No first-five price offered at all** | **136** | **37.1%** |
-  | Unparseable | 10 | 2.7% |
+  | Passes the screen | 220 | 48.5% |
+  | Screened out as already priced | 88 | 19.4% |
+  | **No first-five price offered at all** | **136** | **30.0%** |
+  | Unparseable | 10 | 2.2% |
 
-  So the screen does real work: it rejects 63 of the 221 candidates it can actually
+  So the screen does real work: it rejects 88 of the 308 candidates it can actually
   judge, about **29%**. That is not a rubber stamp.
 
   But the bigger finding is the row nobody was looking for. **More than a third of the

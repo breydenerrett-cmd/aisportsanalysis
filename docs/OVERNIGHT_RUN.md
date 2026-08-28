@@ -7,11 +7,11 @@
 | | |
 |---|---|
 | **Demo** | **working** — `artifacts/demo_latest.html` |
-| Tests | 884 passing |
-| Detectors | 11 registered, 1 blocked with a stated reason |
-| Credits | ~47,000 spent of 100,000 |
+| Tests | 918 passing |
+| Detectors | 11 registered, family of 21 hypotheses frozen |
+| Credits | 46,700 spent, **53,332 remaining** |
 | Odds backfill | **complete** — 1,800 snapshots, 0 failures |
-| First-five backfill | 525 games stored, second pass running for 194 afternoon games |
+| First-five backfill | **complete** — 661 of 732 candidates (90%) |
 
 ## How to open the demo
 
@@ -55,7 +55,7 @@ claim, missing data rendered as missing.
 | Pitch arsenals | 1,071 pitchers, 956 hitters |
 | Handedness, splits | cached per player |
 | Historical odds | **complete** — 1,800 snapshots, 7,439 games matched to a near-closing price |
-| Historical first-five | 732 candidate games |
+| Historical first-five | 661 games (2023: 265, 2024: 189, 2025: 207) |
 | Scanner candidates | 732 of 7,287 games (10.0%) |
 
 ## Backfill validation
@@ -108,14 +108,14 @@ consolidated, not because coverage degraded.
 
 ## First research result
 
-Q5, blocked since the project began, is answered. On 367 candidate games from
-2023–24 with stored first-five prices:
+Q5, blocked since the project began, is answered. On 454 candidate games from 2023–24
+with stored first-five prices:
 
 | | Games | Share |
 |---|---|---|
-| Passes the market screen | 158 | 43.1% |
-| Screened out as already priced | 63 | 17.2% |
-| **No first-five price offered at all** | **136** | **37.1%** |
+| Passes the market screen | 220 | 48.5% |
+| Screened out as already priced | 88 | 19.4% |
+| **No first-five price offered at all** | **136** | **30.0%** |
 
 The screen rejects about 29% of the candidates it can judge, so it is doing real
 work rather than rubber-stamping.

@@ -131,7 +131,7 @@ class MismatchError(RuntimeError):
 NO_PLAY = "no_play"
 CANDIDATE = "candidate"
 # Distinct from no_play, and the distinction is not pedantic. Measured on 367
-# candidates from 2023-24: 37% of the games this scanner flags have NO first-five
+# candidates from 2023-24: 30% of the games this scanner flags have NO first-five
 # market on the board at all. "We looked and the price was fine" and "there was
 # nothing to look at" are different facts about a day, and collapsing them hides
 # a structural limit on the whole strategy.
