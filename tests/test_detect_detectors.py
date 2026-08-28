@@ -232,13 +232,33 @@ class TestTravelAndEnvironment(unittest.TestCase):
                         "last_venue": "SEA", "dense_stretch": games >= 6}}
 
     def test_a_long_flight_argues_against_the_travelling_club(self):
-        found = detectors.TravelLoad().run(dossier(away="BOS", home="NYY"))
-        self.assertEqual(found, [])
         d = dossier(away="BOS", home="NYY")
         d.add("travel", self.travel())
+        signals = [f for f in detectors.TravelLoad().run(d) if f.kind is base.SIGNAL]
+        self.assertEqual(signals[0].side, base.HOME)
+        self.assertIn("east", signals[0].claim)
+
+    def test_a_home_stand_is_not_surprising(self):
+        # Surprise is absolute distance from a baseline, so a 1,200-mile
+        # threshold scored ZERO miles as 1.7 -- a club that did not travel came
+        # out looking as notable as one that crossed the country.
+        d = dossier(away="BOS", home="NYY")
+        d.add("travel", self.travel(miles=0, games=6))
         found = detectors.TravelLoad().run(d)
-        self.assertEqual(found[0].side, base.HOME)
-        self.assertIn("east", found[0].claim)
+        self.assertEqual([f for f in found if f.kind is base.SIGNAL], [])
+        self.assertTrue(all((f.surprise or 0) < 0.5 for f in found))
+
+    def test_distance_and_density_are_separate_claims(self):
+        # Merging them put a distance baseline on a games-played value.
+        d = dossier(away="BOS", home="NYY")
+        d.add("travel", self.travel(miles=2400, games=7))
+        found = detectors.TravelLoad().run(d)
+        self.assertEqual(len(found), 2)
+        miles = [f for f in found if "flew" in f.claim][0]
+        games = [f for f in found if "games in seven days" in f.claim][0]
+        self.assertEqual(miles.value, 2400)
+        self.assertEqual(games.value, 7.0)
+        self.assertEqual(games.baseline, float(detectors.DENSE_BASELINE_GAMES))
 
     def test_a_short_trip_on_a_light_schedule_says_nothing(self):
         d = dossier(away="BOS", home="NYY")

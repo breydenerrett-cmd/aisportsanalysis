@@ -39,6 +39,8 @@ LEAGUE_BATTING_AVG = 0.248
 BATTING_AVG_SPREAD = 0.050
 TRAVEL_SPREAD = 700.0
 LONG_TRIP_MILES = 1200
+# A club plays about six games a week, so six is normal rather than notable.
+DENSE_BASELINE_GAMES = 6
 HIGH_ALTITUDE_M = 900
 LEAGUE_ALTITUDE_M = 150
 LEAGUE_TEMP_F = 74.0
@@ -458,6 +460,15 @@ class LineupVsStarter(Detector):
         return findings
 
 
+def _since(load) -> str:
+    """Where and when they came from, tolerating a missing day count."""
+    days = load.get("days_since_last_game")
+    where = load.get("last_venue") or "their last game"
+    if days is None:
+        return f"since {where}"
+    return f"since {where}, {days} day(s) ago"
+
+
 class TravelLoad(Detector):
     """Distance flown, zones crossed, and schedule density.
 
@@ -484,31 +495,41 @@ class TravelLoad(Detector):
             if not load or load.get("miles") is None:
                 continue
             miles = load["miles"]
-            if miles < LONG_TRIP_MILES and not load.get("dense_stretch"):
-                continue
 
-            parts = []
+            # Distance and schedule density are two different claims about two
+            # different quantities, and merging them produced a finding that
+            # scored a HOME STAND as surprising: surprise is absolute distance
+            # from a baseline, so zero miles against a 1,200-mile threshold came
+            # out as 1.7. Each claim now carries its own value and baseline, and
+            # distance is measured from zero so a short trip scores near zero.
             if miles >= LONG_TRIP_MILES:
                 direction = "east" if load.get("eastward") else "west"
-                parts.append(
-                    f"flew {miles:,.0f} miles {direction} from {load['last_venue']}"
-                    + (f", crossing {load['zones']:.1f} time zones"
-                       if load.get("zones", 0) >= 1 else ""))
-            if load.get("dense_stretch"):
-                parts.append(f"has played {load['games_last_7']} games in seven days")
+                zones = (f", crossing {load['zones']:.1f} time zones"
+                         if load.get("zones", 0) >= 1 else "")
+                findings.append(Finding(
+                    self.name, SIGNAL,
+                    f"{team} flew {miles:,.0f} miles {direction} from "
+                    f"{load['last_venue']}{zones}.",
+                    value=miles, baseline=0.0,
+                    # .get, not [] -- every field on a travel load is optional
+                    # by design, and a detector that raises on a missing one
+                    # turns a partial record into a blocked finding.
+                    sample=_since(load),
+                    surprise=surprise_score(miles, 0.0, TRAVEL_SPREAD),
+                    side=HOME if side is AWAY else AWAY,
+                    market_relevance=(
+                        "Applies to the whole game rather than to the starters."),
+                    evidence=UNPROVEN, detail=load))
 
-            findings.append(Finding(
-                self.name, SIGNAL if miles >= LONG_TRIP_MILES else CONTEXT,
-                f"{team} " + " and ".join(parts) + ".",
-                value=miles, baseline=float(LONG_TRIP_MILES),
-                sample=f"{load['games_last_7']} games in the window",
-                surprise=surprise_score(miles, LONG_TRIP_MILES, TRAVEL_SPREAD),
-                # The load argues against the travelling club, so the side is
-                # the opponent.
-                side=HOME if side is AWAY else AWAY,
-                market_relevance=(
-                    "Applies to the whole game rather than to the starters."),
-                evidence=UNPROVEN, detail=load))
+            if load.get("dense_stretch"):
+                games = load["games_last_7"]
+                findings.append(Finding(
+                    self.name, CONTEXT,
+                    f"{team} has played {games} games in seven days.",
+                    value=float(games), baseline=float(DENSE_BASELINE_GAMES),
+                    sample="7-day window",
+                    surprise=surprise_score(games, DENSE_BASELINE_GAMES, 1.0),
+                    side=NEITHER, evidence=UNPROVEN, detail=load))
         return findings
 
 

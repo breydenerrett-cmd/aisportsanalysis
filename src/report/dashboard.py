@@ -184,6 +184,19 @@ h1 { margin:0 0 6px; font-size:30px; letter-spacing:-.02em; }
 .chip.historical_candidate{color:var(--muted)} .chip.unproven{color:var(--clay)}
 .chip.blocked{color:var(--faint)}
 
+.lead { margin:0 0 26px; padding:20px 22px; background:var(--sunk);
+        border:1px solid var(--rule); border-radius:5px; }
+.lead h2 { margin:0 0 14px; font-size:13px; letter-spacing:.1em;
+           text-transform:uppercase; color:var(--faint); font-weight:700; }
+.leadlist { display:flex; flex-direction:column; gap:11px; }
+.leaditem { display:grid; grid-template-columns:52px 1fr; gap:14px;
+            align-items:baseline; background:none; border:0; padding:0;
+            text-align:left; font:inherit; color:inherit; cursor:pointer; width:100%; }
+.leaditem:hover .claim { text-decoration:underline; }
+.leaditem:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+.leadmatch { font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+             color:var(--faint); font-weight:700; margin-bottom:2px; }
+
 .game {
   border:1px solid var(--rule); border-radius:5px; background:var(--surface);
   margin-bottom:12px; overflow:hidden;
@@ -298,6 +311,62 @@ _JS = r"""
   if (legend.childNodes.length) head.appendChild(legend);
   wrap.appendChild(head);
 
+  // ---- what's worth looking at ------------------------------------------
+  // The page is scanned, not read. Fifteen collapsed cards make a reader hunt
+  // for the one thing that matters, so the strongest findings across the whole
+  // slate are lifted to the top with the game they belong to.
+  var top = [];
+  slate.games.forEach(function (game, index) {
+    (game.findings || []).forEach(function (f) {
+      if (f.kind === 'context') return;
+      top.push({ game: game, index: index, finding: f });
+    });
+  });
+  top.sort(function (a, b) {
+    var ka = a.finding.kind === 'signal' ? 0 : 1;
+    var kb = b.finding.kind === 'signal' ? 0 : 1;
+    if (ka !== kb) return ka - kb;
+    return (b.finding.surprise || 0) - (a.finding.surprise || 0);
+  });
+
+  if (top.length) {
+    var lead = el('section', 'lead');
+    lead.appendChild(el('h2', null, 'Worth looking at'));
+    var list = el('div', 'leadlist');
+    top.slice(0, 6).forEach(function (item) {
+      var row = el('button', 'leaditem');
+      row.appendChild(el('div', 'spark ' + item.finding.kind,
+        item.finding.surprise === null || item.finding.surprise === undefined
+          ? '—' : num(item.finding.surprise, 1)));
+      var right = el('div');
+      right.appendChild(el('div', 'leadmatch',
+        item.game.away + ' @ ' + item.game.home));
+      right.appendChild(el('div', 'claim', item.finding.claim));
+      row.appendChild(right);
+      row.addEventListener('click', function () {
+        var card = document.getElementById('game-' + item.index);
+        if (!card) return;
+        if (!card.classList.contains('open')) {
+          card.classList.add('open');
+          var head = card.querySelector('.gamehead');
+          if (head) head.setAttribute('aria-expanded', 'true');
+        }
+        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      list.appendChild(row);
+    });
+    lead.appendChild(list);
+    wrap.appendChild(lead);
+  } else if (slate.games.length) {
+    var quiet = el('section', 'lead');
+    quiet.appendChild(el('h2', null, 'Nothing worth looking at'));
+    quiet.appendChild(el('p', 'claim',
+      'No detector found anything unusual on this slate. That is the normal ' +
+      'case, not a failure — most days of major-league baseball are two roughly ' +
+      'major-league teams playing a close game.'));
+    wrap.appendChild(quiet);
+  }
+
   // ---- games ------------------------------------------------------------
   if (!slate.games.length) {
     wrap.appendChild(el('p', 'empty', 'No games scheduled for this date.'));
@@ -317,6 +386,7 @@ _JS = r"""
 
   slate.games.forEach(function (game, index) {
     var card = el('div', 'game ' + game.verdict);
+    card.id = 'game-' + index;
 
     var button = el('button', 'gamehead');
     button.setAttribute('aria-expanded', 'false');
