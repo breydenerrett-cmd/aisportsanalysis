@@ -37,7 +37,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from src.paths import historical_path
@@ -169,10 +169,19 @@ def build(season, store=DEFAULT_STORE, on_window=None, timeout=DEFAULT_TIMEOUT) 
 def iter_rows(store=DEFAULT_STORE, before=None):
     """Every stored pitch, optionally strictly before a date. The accumulation
     primitive every rebuilt feature reads through."""
+    if before is not None:
+        # The gate is a lexicographic compare against 'YYYY-MM-DD' rows, and
+        # str(datetime) carries a time suffix that sorts AFTER the bare date --
+        # which would silently admit every pitch from the cutoff day itself.
+        # Dossier information_times are datetimes, so reduce to the calendar
+        # day before stringifying; the day's own pitches must never leak.
+        if isinstance(before, datetime):
+            before = before.date()
+        before = str(before)
     manifest = read_manifest(store)
     for key in sorted(manifest["windows"]):
         start = key.split("..")[0]
-        if before is not None and start >= str(before):
+        if before is not None and start >= before:
             # Window starts at/after the cutoff; nothing in it is usable and
             # windows are date-sorted, so stop entirely.
             break
@@ -180,5 +189,5 @@ def iter_rows(store=DEFAULT_STORE, before=None):
         with gzip.open(path, "rt", encoding="utf-8") as handle:
             for line in handle:
                 row = json.loads(line)
-                if before is None or (row.get("game_date") or "9999") < str(before):
+                if before is None or (row.get("game_date") or "9999") < before:
                     yield row

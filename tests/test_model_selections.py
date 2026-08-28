@@ -116,6 +116,131 @@ class TestConsensusPricing(unittest.TestCase):
         self.assertIsNone(selections._fair(books, "HOME", "AWAY"))
 
 
+def _event(commence, away_price, home_price):
+    """One backfill.price_pair entry with a single book quoting both sides."""
+    books = [{"key": "bk", "markets": [{"key": "h2h", "outcomes": [
+        {"name": "New York Mets", "price": away_price},
+        {"name": "Miami Marlins", "price": home_price}]}]}]
+    quote = {"snapshot_at": commence, "gap_minutes": 400.0, "bookmakers": books}
+    return {"event_id": commence, "commence_time": commence,
+            "away_team": "New York Mets", "home_team": "Miami Marlins",
+            "open": quote, "close": quote, "distinct": True}
+
+
+class _AlwaysAway:
+    """Stub detector: picks the away side of every game it is shown."""
+    name = "always_away"
+
+    def safe_run(self, dossier):
+        class Finding:
+            detector, side, surprise = "always_away", base.AWAY, 1.0
+        return [Finding()]
+
+
+class TestSeriesCollision(unittest.TestCase):
+    """Consecutive games between the same clubs share an (away, home, date) key.
+
+    Each event is indexed under its UTC date and the day before, so in any
+    normal series the game on date D and the game on D+1 both claim key D. A
+    plain assignment let the second overwrite the first, and 55% of matched
+    2023 games were then priced from -- and graded against -- the NEXT game's
+    odds. The key cannot break the tie; the game's own start time can.
+    """
+
+    def pairs(self):
+        return selections.index_price_pairs({
+            "e1": _event("2023-03-30T20:10:00Z", 130, -150),
+            "e2": _event("2023-03-31T22:40:00Z", 200, -240)})
+
+    def game(self, pk, date, start):
+        return {"game_pk": pk, "date": date, "start_time_utc": start,
+                "away_team": "NYM", "home_team": "MIA", "home_won": "1"}
+
+    def test_each_game_is_priced_from_its_own_event(self):
+        result = selections.build(
+            [self.game("1", "2023-03-30", "2023-03-30T20:10:00Z"),
+             self.game("2", "2023-03-31", "2023-03-31T22:40:00Z")],
+            {}, None, self.pairs(), detectors=[_AlwaysAway()])
+        prices = {s["game_pk"]: s["price"] for s in result["selections"]}
+        # Before the fix the first game silently took the second game's odds.
+        self.assertEqual(prices, {"1": 130, "2": 200})
+
+    def test_a_late_start_still_resolves_across_the_date_line(self):
+        # The reason both dates are indexed at all: a west-coast night game's
+        # UTC first pitch lands on the day after its official date.
+        pairs = selections.index_price_pairs(
+            {"e1": _event("2023-06-10T02:10:00Z", 120, -140)})
+        pair = selections._resolve_pair(
+            pairs[("NYM", "MIA", "2023-06-09")],
+            self.game("1", "2023-06-09", "2023-06-10T02:10:00Z"))
+        self.assertEqual(pair["commence_time"], "2023-06-10T02:10:00Z")
+
+    def test_a_lone_neighbouring_event_is_not_a_match(self):
+        # When a game's own event is missing from the odds archive, the only
+        # candidate on its key is another game's market. Unpriced is correct;
+        # priced from a different game is corruption.
+        pair = selections._resolve_pair(
+            [_event("2023-03-31T22:40:00Z", 200, -240)],
+            self.game("1", "2023-03-30", "2023-03-30T20:10:00Z"))
+        self.assertIsNone(pair)
+
+    def test_no_start_time_and_two_candidates_stays_unpriced(self):
+        # The tie cannot be broken honestly without a start time; a guess would
+        # be right half the time and invisible all the time.
+        game = self.game("1", "2023-03-30", None)
+        candidates = self.pairs()[("NYM", "MIA", "2023-03-30")]
+        self.assertEqual(len(candidates), 2)
+        self.assertIsNone(selections._resolve_pair(candidates, game))
+
+
+class TestAbbreviationJoin(unittest.TestCase):
+    """The results store and the odds feed spell two franchises differently.
+
+    The store keeps the MLB Stats API abbreviations -- AZ for Arizona, and ATH
+    for the Athletics from 2025 -- while index_price_pairs keys are resolved
+    from odds-feed club names, which land on ARI/OAK. Joined raw, the .get()
+    in build() returns None and every game those clubs play is skipped as
+    "unpriced" with nothing raised: 324 of 324 Diamondbacks games across
+    2023-24 evaluated to zero matches. Both sides of the join must pass
+    through parks.canonical_team, exactly as the live slate.match_events does.
+    """
+
+    def _event(self, away_name, home_name):
+        books = [{"key": "bk", "markets": [{"key": "h2h", "outcomes": [
+            {"name": away_name, "price": 130},
+            {"name": home_name, "price": -150}]}]}]
+        quote = {"snapshot_at": "2023-05-12T20:10:00Z", "gap_minutes": 400.0,
+                 "bookmakers": books}
+        return {"event_id": "e1", "commence_time": "2023-05-12T20:10:00Z",
+                "away_team": away_name, "home_team": home_name,
+                "open": quote, "close": quote, "distinct": True}
+
+    def _build(self, away_abbrev, home_abbrev, away_name, home_name):
+        pairs = selections.index_price_pairs(
+            {"e1": self._event(away_name, home_name)})
+        game = {"game_pk": "1", "date": "2023-05-12",
+                "start_time_utc": "2023-05-12T20:10:00Z",
+                "away_team": away_abbrev, "home_team": home_abbrev,
+                "home_won": "1"}
+        return selections.build([game], {}, None, pairs,
+                                detectors=[_AlwaysAway()])
+
+    def test_a_store_az_game_matches_odds_keyed_ari(self):
+        result = self._build("AZ", "SF", "Arizona Diamondbacks",
+                             "San Francisco Giants")
+        self.assertEqual(result["counts"]["games_priced"], 1)
+        self.assertEqual(len(result["selections"]), 1)
+
+    def test_a_store_ath_game_matches_odds_keyed_oak(self):
+        # The 2025+ store spelling for the Athletics.
+        result = self._build("ATH", "SEA", "Athletics", "Seattle Mariners")
+        self.assertEqual(result["counts"]["games_priced"], 1)
+
+    def test_matching_spellings_still_match(self):
+        result = self._build("NYM", "MIA", "New York Mets", "Miami Marlins")
+        self.assertEqual(result["counts"]["games_priced"], 1)
+
+
 class TestDateIndexing(unittest.TestCase):
 
     def test_both_candidate_dates_are_indexed_for_a_late_start(self):

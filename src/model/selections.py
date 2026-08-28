@@ -38,6 +38,7 @@ from __future__ import annotations
 from src.core import odds as odds_math
 from src.detect import base as detect
 from src.detect import dossier as dossier_mod
+from src.data import parks
 from src.model import pointintime as pit
 from src.pipeline import slate as slate_mod
 
@@ -45,6 +46,14 @@ from src.pipeline import slate as slate_mod
 # section is excluded until it has been audited, rather than included until
 # someone notices.
 HISTORICAL_SECTIONS = ("teams", "starters", "bullpen", "travel", "park", "market")
+
+# How far an odds event's commence_time may sit from the game's own first pitch
+# and still be the same game. The two populations are far apart: a game's own
+# event agrees with the MLB schedule to within minutes, while the nearest WRONG
+# event -- the other game of a series sharing a (away, home, date) key -- is a
+# doubleheader partner four-plus hours away or the next night at ~24. Three
+# hours splits them with room on both sides.
+MAX_EVENT_GAP_SECONDS = 3 * 3600
 
 
 class SelectionError(RuntimeError):
@@ -105,8 +114,10 @@ def build(games, store, pitcher_logs, price_pairs, bullpen_by_team=None,
           registry=None, detectors=None) -> dict:
     """Selections for every clean detector across a set of played games.
 
-    `price_pairs` maps (away_abbrev, home_abbrev, date) to the entry produced by
-    backfill.price_pair.
+    `price_pairs` maps (away_abbrev, home_abbrev, date) to a LIST of candidate
+    entries produced by backfill.price_pair -- a list because consecutive games
+    between the same clubs land on the same key (each event is indexed under
+    two dates), and the game's own start time is what picks between them.
     """
     chosen = detectors if detectors is not None else clean_detectors(
         registry or detect.registry())
@@ -117,8 +128,15 @@ def build(games, store, pitcher_logs, price_pairs, bullpen_by_team=None,
 
     for game in games:
         counts["games"] += 1
-        pair = price_pairs.get((game.get("away_team"), game.get("home_team"),
-                                game.get("date")))
+        # Both sides of the join must pass through the same canonicalizer, the
+        # same as the live match in slate.match_events. The results store keeps
+        # the MLB Stats API spellings (AZ, and ATH from 2025), while the price
+        # index is keyed from odds-feed club names (ARI/OAK); comparing them
+        # raw silently drops every game those clubs play as "unpriced".
+        pair = _resolve_pair(
+            price_pairs.get((parks.canonical_team(game.get("away_team") or ""),
+                             parks.canonical_team(game.get("home_team") or ""),
+                             game.get("date"))), game)
         if not pair or not pair.get("distinct"):
             continue
 
@@ -241,19 +259,71 @@ def _bullpen_for(game, bullpen_by_team):
 
 
 def index_price_pairs(pairs) -> dict:
-    """Key backfill.price_pair output by (away, home, date) abbreviations."""
+    """Key backfill.price_pair output by (away, home, date) abbreviations.
+
+    Each key holds a LIST. Because every event is indexed under two dates,
+    consecutive games between the same clubs share a key, and a plain
+    assignment let the later game silently overwrite the earlier one -- 55% of
+    matched 2023 games were then priced from, and graded against, the NEXT
+    game's odds. Both candidates are kept and _resolve_pair picks by the
+    game's own start time.
+    """
     out = {}
     for entry in pairs.values():
-        away = slate_mod.team_abbrev_from_name(entry.get("away_team"))
-        home = slate_mod.team_abbrev_from_name(entry.get("home_team"))
+        # Canonicalized to match the canonicalized lookup in build(): the two
+        # ends of a join must never disagree on a club's spelling.
+        away = parks.canonical_team(
+            slate_mod.team_abbrev_from_name(entry.get("away_team")) or "")
+        home = parks.canonical_team(
+            slate_mod.team_abbrev_from_name(entry.get("home_team")) or "")
         start = entry.get("commence_time") or ""
         if not (away and home and start):
             continue
         # A game's official date can differ from the UTC date of first pitch for
         # late west-coast starts, so both are indexed rather than guessing.
         for date in _candidate_dates(start):
-            out[(away, home, date)] = entry
+            out.setdefault((away, home, date), []).append(entry)
     return out
+
+
+def _resolve_pair(candidates, game):
+    """The one odds event that IS this game, or None.
+
+    The (away, home, date) key cannot distinguish two games of a series, so the
+    tie is broken by time: the event whose commence_time sits within
+    MAX_EVENT_GAP_SECONDS of the game's own first pitch. A lone candidate gets
+    the same check -- when a game's own event is missing from the odds archive,
+    the surviving candidate is its neighbour, and pricing a game from another
+    game's market is corruption, not coverage. No usable start time on the
+    game means the tie cannot be broken honestly, so the game goes unpriced.
+    """
+    if not candidates:
+        return None
+    if isinstance(candidates, dict):  # a caller passing bare entries directly
+        candidates = [candidates]
+    start = _parse_utc(game.get("start_time_utc"))
+    if start is None:
+        return candidates[0] if len(candidates) == 1 else None
+    best, best_gap = None, None
+    for entry in candidates:
+        commence = _parse_utc(entry.get("commence_time"))
+        if commence is None:
+            continue
+        try:
+            gap = abs((commence - start).total_seconds())
+        except TypeError:  # naive vs aware -- not comparable, not a match
+            continue
+        if gap <= MAX_EVENT_GAP_SECONDS and (best_gap is None or gap < best_gap):
+            best, best_gap = entry, gap
+    return best
+
+
+def _parse_utc(stamp):
+    from datetime import datetime
+    try:
+        return datetime.fromisoformat(str(stamp).replace("Z", "+00:00"))
+    except ValueError:
+        return None
 
 
 def _candidate_dates(commence_time) -> list:

@@ -69,8 +69,12 @@ def two_sided_p(effect, values) -> float:
     """p for "the mean of these differences is zero", by a t-like normal approx.
 
     Approximate on purpose and labelled so. At these sample sizes the normal and
-    t answers agree to the third decimal, and the FDR step that consumes this
-    only needs the ordering to be right.
+    t answers agree to the third decimal.
+
+    Valid ONLY for independent draws. Selections are not independent -- the
+    docstring above explains why -- so `evaluate` must never feed per-selection
+    differences through here: use clustered_two_sided_p, which takes its
+    variance at the date level, same as the bootstrap.
     """
     n = len(values)
     if n < 2:
@@ -80,6 +84,43 @@ def two_sided_p(effect, values) -> float:
     if variance <= 0:
         return 0.0 if effect else 1.0
     z = mean / math.sqrt(variance / n)
+    return 2.0 * (1.0 - normal_cdf(abs(z)))
+
+
+def clustered_two_sided_p(effect, rows, diff_key="_diff") -> float:
+    """p for the same mean, with the variance taken at the DATE level.
+
+    The family correction in src/model/family.py consumes only `p`, never the
+    bootstrap interval, so the p it is handed must carry the same correlation
+    structure the interval does: selections on one slate move together, and a
+    variance computed per-selection pretends every pick is a fresh draw --
+    exactly the anticonservative n that turns noise into a result.
+
+    Cluster-robust variance of the overall mean: the point estimate stays the
+    selection-level mean (identical to `effect`, and to what the bootstrap
+    resamples), only its uncertainty is measured across dates. With one
+    selection per date this collapses to the independent formula, so nothing
+    is lost where the clustering is trivial.
+    """
+    by_date = {}
+    for row in rows:
+        by_date.setdefault(row["date"], []).append(row[diff_key])
+    clusters = list(by_date.values())
+    g = len(clusters)
+    n = sum(len(c) for c in clusters)
+    # Fewer than two dates leaves no way to measure between-date variance; the
+    # bootstrap refuses the same case, and a p of 1.0 is the honest refusal
+    # here -- returning the per-selection p instead would be the defect back.
+    if g < 2 or n < 2:
+        return 1.0
+    mean = sum(sum(c) for c in clusters) / n
+    # Sum of within-cluster residual totals, squared: correlated picks inside a
+    # date add up instead of cancelling, which is what widens the variance.
+    variance = (g / (g - 1)) * sum(
+        sum(d - mean for d in c) ** 2 for c in clusters) / (n * n)
+    if variance <= 0:
+        return 0.0 if effect else 1.0
+    z = mean / math.sqrt(variance)
     return 2.0 * (1.0 - normal_cdf(abs(z)))
 
 
@@ -158,10 +199,13 @@ def evaluate(name, rows, min_sample=30) -> dict:
     result["hit_rate"] = round(_mean([1.0 if r["won"] else 0.0 for r in decided]), 4)
     result["mean_implied"] = round(_mean([r["implied"] for r in decided]), 4)
     result["effect"] = round(_mean(differences), 5)
-    result["p"] = round(two_sided_p(result["effect"], differences), 6)
+    # The p and the interval must share the date-cluster structure: family.py
+    # consumes only `p`, so a per-selection p here would hand the FDR gate the
+    # anticonservative n the module docstring forbids.
+    diff_rows = [dict(r, _diff=d) for r, d in zip(decided, differences)]
+    result["p"] = round(clustered_two_sided_p(result["effect"], diff_rows), 6)
     result["ci"] = clustered_bootstrap(
-        [dict(r, _diff=d) for r, d in zip(decided, differences)],
-        lambda sample: _mean([s["_diff"] for s in sample]))
+        diff_rows, lambda sample: _mean([s["_diff"] for s in sample]))
 
     # LATE-MARKET MOVEMENT, deliberately not called closing line value.
     #
@@ -176,11 +220,15 @@ def evaluate(name, rows, min_sample=30) -> dict:
     result["late_move_n"] = len(with_close)
     if with_close:
         moves = [r["closing_implied"] - r["implied"] for r in with_close]
+        move_rows = [dict(r, _diff=m) for r, m in zip(with_close, moves)]
         result["late_move"] = round(_mean(moves), 5)
-        result["late_move_p"] = round(two_sided_p(result["late_move"], moves), 6)
+        # Same clustering as the headline p: line moves on one slate share the
+        # same market conditions, so per-selection independence is just as false
+        # here as it is for outcomes.
+        result["late_move_p"] = round(
+            clustered_two_sided_p(result["late_move"], move_rows), 6)
         result["late_move_ci"] = clustered_bootstrap(
-            [dict(r, _diff=m) for r, m in zip(with_close, moves)],
-            lambda sample: _mean([s["_diff"] for s in sample]))
+            move_rows, lambda sample: _mean([s["_diff"] for s in sample]))
 
     # Return, second and never alone.
     priced = [r for r in decided if r.get("price") is not None]
