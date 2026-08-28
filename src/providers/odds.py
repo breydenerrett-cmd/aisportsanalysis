@@ -312,6 +312,86 @@ def _get_json(path: str, params: dict, timeout: int = DEFAULT_TIMEOUT):
         raise OddsProviderError("odds API returned invalid JSON") from None
 
 
+def _get_json_with_usage(path: str, params: dict, timeout: int = DEFAULT_TIMEOUT):
+    """Same seam as _get_json, but also returns the account's credit counters.
+
+    Every response carries x-requests-remaining. Discarding it is fine for a single
+    live call and wrong for a metered backfill, where the only way to stay inside a
+    budget is to read what is left after each request rather than trust an estimate.
+
+    Returns (payload, usage) where usage has remaining/used/last as ints or None.
+    """
+    url = f"{API_HOST}/{path.lstrip('/')}?{urllib.parse.urlencode(params)}"
+    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+            headers = response.headers
+    except urllib.error.HTTPError as exc:
+        if exc.code == 401:
+            raise OddsProviderError(
+                "odds API rejected the key (HTTP 401) -- verify it is current"
+            ) from None
+        if exc.code == 429:
+            raise OddsProviderError(
+                "odds API quota exhausted (HTTP 429) -- check remaining credits"
+            ) from None
+        raise OddsProviderError(f"odds API returned HTTP {exc.code}") from None
+    except urllib.error.URLError as exc:
+        raise OddsProviderError(f"could not reach odds API: {exc.reason}") from None
+    except json.JSONDecodeError:
+        raise OddsProviderError("odds API returned invalid JSON") from None
+
+    def _int(name):
+        raw = headers.get(name)
+        try:
+            return int(float(raw))
+        except (TypeError, ValueError):
+            return None
+
+    return payload, {
+        "remaining": _int("x-requests-remaining"),
+        "used": _int("x-requests-used"),
+        "last": _int("x-requests-last"),
+    }
+
+
+def fetch_historical_odds(timestamp, markets=None, region=None, env=None,
+                          timeout: int = DEFAULT_TIMEOUT):
+    """Odds for the whole slate as they stood at one instant. Paid plans only.
+
+    Billed at ten times a live call, per market per region -- so this is the cheap way
+    to get history only because ONE request covers every game on the board. The
+    per-event historical endpoint answers a better question and costs per game.
+
+    Returns (payload, usage). The payload has `timestamp` (the actual snapshot the API
+    matched, which is not necessarily the one requested) and `data` (the events).
+    """
+    source = os.environ if env is None else env
+    key = api_key(source)
+    if key is None:
+        raise NotConfigured(SETUP_MESSAGE)
+    resolved = (configured_markets(source) if markets is None
+                else _validate_markets(markets))
+    params = {
+        "apiKey": key,
+        "regions": region or (source.get(ENV_REGION) or "").strip() or DEFAULT_REGION,
+        "markets": ",".join(resolved),
+        "oddsFormat": configured_odds_format(source),
+        "date": _iso_z(timestamp),
+    }
+    return _get_json_with_usage(f"historical/sports/{SPORT}/odds", params,
+                                timeout=timeout)
+
+
+def _iso_z(timestamp) -> str:
+    """The API wants ISO8601 ending in Z, and rejects a +00:00 offset."""
+    if isinstance(timestamp, str):
+        return timestamp
+    stamp = timestamp.astimezone(timezone.utc).replace(microsecond=0)
+    return stamp.isoformat().replace("+00:00", "Z")
+
+
 def fetch_odds(markets=None, region=None, env=None,
                timeout: int = DEFAULT_TIMEOUT):
     """Fetch current odds. Raises NotConfigured when no key is present.
