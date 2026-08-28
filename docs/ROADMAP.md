@@ -28,7 +28,7 @@ losers always reported; credits (53K) spent only deliberately, probe first.
 ## Stage 1 — Historical data integrity / point-in-time reconstruction
 **Objective:** every detector input reconstructible as of a past date, or
 formally excluded.
-**Status: DONE for exclusion; rebuild OPEN.  ← CURRENT** Audit module enforces; 7 clean /
+**Status: DONE** — 2.74M pitches, all four inputs rebuilt point-in-time; live endpoints remain LEAKY by design. Audit module enforces; 7 clean /
 4 leaky.
 **Remaining:** pitch-level Statcast ingest (~600 chunked requests, free, slow)
 to rebuild splits, arsenals, matchup history forward; then flip those inputs to
@@ -36,7 +36,7 @@ CLEAN and re-audit.
 **Exit:** leaky list empty, or every remaining leak has a documented dead end.
 **Autonomous:** yes, fully.
 
-## Stage 2 — Complete 2023–24 discovery rerun — **OPEN, blocked on Stage 1**
+## Stage 2 — Complete 2023–24 discovery rerun — **DONE** (docs/RESULTS_STAGE2.md; zero survivors)
 **Objective:** the FULL pre-registered family evaluated on 2023–24, with the
 four newly point-in-time-safe detectors included; losers reported.
 **Note:** the first pass (docs/RESULTS_2023_24.md, 7 clean detectors) does not
@@ -47,7 +47,7 @@ per-season, side balance, fav/dog, team concentration, price bands, book count,
 mechanism, dose-response), evidence package written.
 **Autonomous:** yes.
 
-## Stage 3B — Falsification of any survivors — **OPEN, blocked on Stage 2**
+## Stage 3B — Falsification of any survivors — **DONE (trivially: no survivors)**
 **Objective:** kill false signals. Every candidate that survives Stage 2 gets
 the full robustness battery (the one that killed bullpen_exposure — see
 docs/VALIDATION_PACKAGE_1.md): season dependence, team concentration, side
@@ -60,7 +60,7 @@ change. Nothing surviving is an acceptable result.
 caveats; falsification results archived.
 **Autonomous:** yes.
 
-## Stage 4 — 2025 tuning — **BLOCKED until Stages 1, 2 and 3B complete**
+## Stage 4 — 2025 tuning — **GATE SATISFIED, BUT EMPTY: no candidate exists to tune. V1 concluded null; see Stage 8.**
 **Objective:** final thresholds and policy parameters, chosen once, on 2025
 only. Constrained, documented tuning budget — no re-optimising until ROI looks
 attractive. Every 2025 number is TUNING EVIDENCE forever.
