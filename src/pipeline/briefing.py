@@ -8,12 +8,14 @@ from __future__ import annotations
 
 from src.detect import base as detect
 from src.detect import dossier as dossier_mod
+from src.pipeline import lineups as lineup_mod
 from src.pipeline import mismatch
 from src.pipeline import slate as slate_mod
 
 
 def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
                 weather_by_pk=None, lineups_by_pk=None, bullpen_by_team=None,
+                handedness=None, splits_by_pk=None, matchups_by_pk=None,
                 detectors=None, information_time=None) -> dict:
     """One briefing for one date.
 
@@ -29,7 +31,10 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
             pitcher_logs=pitcher_logs,
             prices=(prices_by_matchup or {}).get(key),
             weather=(weather_by_pk or {}).get(game.get("game_pk")),
-            lineups=(lineups_by_pk or {}).get(game.get("game_pk")),
+            lineups=_lineup_section(
+                (lineups_by_pk or {}).get(game.get("game_pk")), handedness, game),
+            splits=(splits_by_pk or {}).get(game.get("game_pk")),
+            matchups=(matchups_by_pk or {}).get(game.get("game_pk")),
             bullpen={team: (bullpen_by_team or {}).get(team) for team in key
                      if (bullpen_by_team or {}).get(team)} or None,
             information_time=information_time,
@@ -57,3 +62,27 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
         "games": entries,
         "notes": notes,
     }
+
+
+def _lineup_section(posted, handedness, game):
+    """Posted lineup plus the platoon composition it presents to each starter."""
+    if not posted:
+        return None
+    section = {}
+    # A lineup's platoon composition is only meaningful against the hand of the
+    # pitcher it actually faces, so each side is paired with the OPPOSING
+    # starter. Crossing these over is the sort of mistake that produces a
+    # confident, precisely wrong number on every game.
+    for side, opposing_starter in (("away", "home_probable_id"),
+                                   ("home", "away_probable_id")):
+        slots = posted.get(side) or []
+        pitcher_id = game.get(opposing_starter)
+        throws = ((handedness or {}).get(str(pitcher_id)) or {}).get("throws")
+        section[side] = {
+            "batters": slots,
+            "handedness": lineup_mod.lineup_handedness(slots, handedness or {}),
+            "platoon_advantage": lineup_mod.platoon_advantage_share(
+                slots, handedness or {}, throws),
+            "faces_starter_throwing": throws,
+        }
+    return section

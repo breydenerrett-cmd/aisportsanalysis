@@ -220,7 +220,7 @@ h3 { font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--
 table { border-collapse:collapse; width:100%; font-size:14px; }
 td,th { text-align:left; padding:6px 12px 6px 0; border-bottom:1px solid var(--rule); vertical-align:top; }
 th { font-size:10px; letter-spacing:.09em; text-transform:uppercase; color:var(--faint); font-weight:600; }
-td.n { text-align:right; padding-right:0; font-variant-numeric:tabular-nums;
+td.n, th.n { text-align:right; padding-right:0; font-variant-numeric:tabular-nums;
        font-family:ui-monospace,monospace; white-space:nowrap; }
 .gap { color:var(--clay); font-size:13px; margin:4px 0 0; }
 .tw { overflow-x:auto; }
@@ -347,6 +347,8 @@ _JS = r"""
     body.appendChild(renderFindings(game));
     body.appendChild(renderMarket(game));
     body.appendChild(renderStarters(game));
+    body.appendChild(renderLineups(game));
+    body.appendChild(renderMatchupHistory(game));
     body.appendChild(renderTeams(game));
     body.appendChild(renderEnvironment(game));
     body.appendChild(renderGaps(game));
@@ -503,6 +505,79 @@ _JS = r"""
         'One starter is under the innings threshold — his rates are ' +
         'small-sample noise and are suppressed rather than shown.'));
     }
+    return box;
+  }
+
+  function renderLineups(game) {
+    var box = el('div');
+    var lu = game.sections.lineups, splits = game.sections.splits || {};
+    box.appendChild(el('h3', null, 'Lineups and platoon'));
+    if (!lu) {
+      box.appendChild(el('p', 'gap', game.gaps.lineups || 'not posted'));
+      return box;
+    }
+    [['away', game.away, 'home'], ['home', game.home, 'away']].forEach(function (t) {
+      var side = lu[t[0]] || {};
+      var counts = side.handedness || {};
+      var adv = side.platoon_advantage || {};
+      var split = ((splits[t[2]] || {}).platoon) || {};
+      box.appendChild(el('h3', null, t[1] + ' lineup vs ' +
+        (side.faces_starter_throwing ? side.faces_starter_throwing + 'HP' : 'starter')));
+      var rows = (side.batters || []).map(function (b) {
+        return [b.order + '. ' + b.name, b.position || '', ''];
+      });
+      if (rows.length) box.appendChild(table(rows));
+      var line = counts.L + 'L / ' + counts.R + 'R / ' + counts.S + 'S';
+      if (adv.share !== null && adv.share !== undefined) {
+        line += ' · ' + adv.advantaged + ' of ' + adv.known +
+                ' with the platoon advantage (' + pct(adv.share) + ')';
+      } else if (adv.reason) {
+        line += ' · ' + adv.reason;
+      }
+      box.appendChild(el('p', 'support', line));
+      // The opposing starter's own split is the other half of the matchup, so
+      // it belongs next to the lineup rather than in a separate table.
+      if (split.usable) {
+        box.appendChild(el('p', 'support',
+          'That starter allows ' + num(split.vs_left_ops, 3) + ' OPS to lefties and ' +
+          num(split.vs_right_ops, 3) + ' to righties (' + split.vs_left_faced +
+          ' and ' + split.vs_right_faced + ' batters faced).'));
+      } else if (split.reason) {
+        box.appendChild(el('p', 'gap', split.reason));
+      }
+    });
+    return box;
+  }
+
+  function renderMatchupHistory(game) {
+    var box = el('div');
+    var mh = game.sections.matchup_history;
+    box.appendChild(el('h3', null, 'This lineup vs tonight’s starter'));
+    if (!mh) {
+      box.appendChild(el('p', 'gap', game.gaps.matchup_history || 'not fetched'));
+      return box;
+    }
+    [['away', game.away], ['home', game.home]].forEach(function (t) {
+      var side = mh[t[0]];
+      if (!side) return;
+      box.appendChild(el('h3', null, t[1]));
+      var rows = (side.batters || []).map(function (b) {
+        return [b.name + (b.bats ? ' (' + b.bats + ')' : ''),
+                b.at_bats, b.hits, b.home_runs, b.strikeouts,
+                b.at_bats ? (b.hits / b.at_bats).toFixed(3) : '--'];
+      });
+      if (rows.length) box.appendChild(table(rows, ['batter', 'AB', 'H', 'HR', 'K', 'AVG']));
+      // The sample verdict is stated, not left to the reader. An unqualified
+      // AVG in a table is exactly how a 4-for-8 becomes a betting reason.
+      if (side.usable) {
+        box.appendChild(el('p', 'support',
+          'Combined ' + side.total_hits + '-for-' + side.total_at_bats + ' (' +
+          num(side.aggregate_avg, 3) + '). Large enough to be worth something.'));
+      } else {
+        box.appendChild(el('p', 'gap', side.reason ||
+          'sample too small to read anything into'));
+      }
+    });
     return box;
   }
 

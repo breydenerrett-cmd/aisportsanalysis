@@ -31,6 +31,12 @@ BOOK_EDGE_THRESHOLD = 0.010
 # A typical night leaves about one reliever down. Anything at or below that is
 # context; a signal has to beat the ordinary state of a bullpen in August.
 TYPICAL_UNAVAILABLE = 1
+# A platoon gap this large is a real, visible weakness rather than sampling.
+PLATOON_GAP_SPREAD = 0.090
+# Under this many career at-bats, a batter-vs-pitcher line is noise.
+THIN_AT_BATS = 20
+LEAGUE_BATTING_AVG = 0.248
+BATTING_AVG_SPREAD = 0.050
 
 
 class ImpliedBullpenDisagreement(Detector):
@@ -268,22 +274,184 @@ class StarterMismatch(Detector):
         return findings
 
 
-class LineupHandedness(Detector):
-    """Blocked until lineups are ingested. Declared rather than omitted."""
+class PlatoonMismatch(Detector):
+    """A starter's platoon weakness against the lineup actually posted tonight.
 
-    name = "lineup_handedness"
+    THIS IS THE MATCHUP DECOMPOSITION, MADE COMPUTABLE
+    --------------------------------------------------
+    The framing the project is built for is: decompose both sides into units and
+    roles, then find where one side's strength meets the other's specific hole.
+    Team-level data cannot express that. Two facts can:
+
+      - this starter allows materially more to one handedness than the other
+      - tonight's lineup is stacked with exactly that handedness
+
+    Neither is remarkable alone. Together they are the sentence a knowledgeable
+    bettor did not have.
+
+    BOTH HALVES ARE SAMPLE-GATED
+    ----------------------------
+    A "platoon split" over 30 batters faced is a fortnight, not a tendency, and a
+    lineup with three unknown hitters cannot be characterised. Either failure
+    produces silence with a reason, never a number.
+    """
+
+    name = "platoon_mismatch"
     markets = ("h2h", "h2h_1st_5_innings", "totals_1st_5_innings")
-    status = BLOCKED
-    blocked_reason = (
-        "starting lineups are not yet ingested, so the platoon composition "
-        "facing each starter cannot be computed")
+    status = UNPROVEN
 
     def run(self, game):
-        return []
+        lineups = game.get("lineups") or {}
+        splits = game.get("splits") or {}
+        if not lineups or not splits:
+            return []
+
+        away, home = game.teams
+        findings = []
+        # A starter faces the OPPOSING lineup, so the pairings cross over.
+        for pitcher_side, lineup_key, pitcher_team, batting_team, side in (
+                ("away", "home", away, home, HOME),
+                ("home", "away", home, away, AWAY)):
+            split = (splits.get(pitcher_side) or {}).get("platoon")
+            composition = (lineups.get(lineup_key) or {}).get("platoon_advantage")
+            if not split or not split.get("usable") or not composition:
+                continue
+            share = composition.get("share")
+            if share is None:
+                continue
+
+            weak_side = split["weaker_against"]
+            # The lineup only exploits the weakness if it is stacked with the
+            # handedness the pitcher struggles against.
+            counts = composition.get("counts") or {}
+            exploiting = counts.get(weak_side, 0) + counts.get("S", 0)
+            known = composition.get("known") or 0
+            if not known:
+                continue
+            exploit_share = exploiting / known
+            if exploit_share < 0.55 or split["gap"] < 0.080:
+                continue
+
+            hand = "left-handed" if weak_side == "L" else "right-handed"
+            findings.append(Finding(
+                self.name, SIGNAL,
+                f"{pitcher_team}'s starter allows {split['vs_left_ops']:.3f} OPS "
+                f"to lefties against {split['vs_right_ops']:.3f} to righties, and "
+                f"{batting_team} is starting {exploiting} of {known} {hand} "
+                f"hitters against him tonight.",
+                value=round(split["gap"], 3), baseline=0.0,
+                sample=(f"{split['vs_left_faced']} BF vs L, "
+                        f"{split['vs_right_faced']} vs R"),
+                surprise=surprise_score(split["gap"], 0.0, PLATOON_GAP_SPREAD),
+                side=side,
+                market_relevance=(
+                    "Concentrated in the first five, while the starter is still "
+                    "in the game."),
+                evidence=UNPROVEN,
+                detail={"exploit_share": round(exploit_share, 3), **split}))
+        return findings
+
+
+class ThinMatchupHistory(Detector):
+    """Name the small samples a bettor is about to be shown somewhere else.
+
+    Batter-versus-pitcher is the most quoted statistic in baseball betting and
+    almost all of it is noise: a live check of one star hitter against one
+    pitcher returned two at-bats. Telling a sharp bettor that the 4-for-8 he is
+    looking at is eight at-bats is worth as much as handing him a new angle, and
+    is the half of the product nobody else builds.
+    """
+
+    name = "thin_matchup_history"
+    markets = ("h2h",)
+    status = UNPROVEN
+
+    def run(self, game):
+        history = game.get("matchup_history") or {}
+        findings = []
+        for side_key, side in (("away", AWAY), ("home", HOME)):
+            # lineup_vs_pitcher returns the aggregate WITH the per-hitter lines
+            # nested under "batters". Reading the wrapper as a list is the shape
+            # error safe_run caught on the first live run.
+            entries = (history.get(side_key) or {}).get("batters") or []
+            thin = [e for e in entries
+                    if (e.get("at_bats") or 0) and e["at_bats"] < THIN_AT_BATS]
+            if not thin:
+                continue
+            loud = max(thin, key=lambda e: (e.get("hits") or 0) / max(e["at_bats"], 1))
+            aggregate = history.get(side_key) or {}
+            findings.append(Finding(
+                self.name, DEBUNK,
+                f"{loud.get('name')} is "
+                f"{loud.get('hits')}-for-{loud.get('at_bats')} lifetime against "
+                f"tonight's starter. That is {loud['at_bats']} at-bat"
+                f"{'' if loud['at_bats'] == 1 else 's'} — it will be quoted "
+                "somewhere today and it means nothing.",
+                value=loud.get("at_bats"), sample=f"{loud['at_bats']} AB",
+                # A debunk has no side: it is a reason to discount a number, not
+                # evidence for a team. Claiming one would be a false statement.
+                side=NEITHER, evidence=UNPROVEN,
+                market_relevance="Reason to discount a number, not to act on one.",
+                detail={"thin_matchups": len(thin),
+                        "lineup_total_at_bats": aggregate.get("total_at_bats"),
+                        "lineup_reason": aggregate.get("reason")}))
+        return findings
+
+
+class LineupVsStarter(Detector):
+    """The aggregate matchup history, on the rare occasions it is big enough.
+
+    Nine individually meaningless samples occasionally add up to one that is not.
+    That is the honest version of Jacob's ask -- treat literal batter-versus-
+    pitcher as supporting evidence, gated hard, rather than as a read -- and it
+    is why the aggregate is reported separately from the individual lines the
+    sibling detector debunks.
+
+    Live example: one lineup had 104 career at-bats against tonight's starter
+    while another had 5. The first is worth a sentence; the second is noise, and
+    the difference between them is the sample gate.
+    """
+
+    name = "lineup_vs_starter"
+    markets = ("h2h", "h2h_1st_5_innings")
+    status = UNPROVEN
+
+    def run(self, game):
+        history = game.get("matchup_history") or {}
+        away, home = game.teams
+        findings = []
+        for side_key, team, side in (("away", away, AWAY), ("home", home, HOME)):
+            aggregate = history.get(side_key) or {}
+            if not aggregate.get("usable"):
+                continue
+            avg = aggregate.get("aggregate_avg")
+            if avg is None:
+                continue
+            score = surprise_score(avg, LEAGUE_BATTING_AVG, BATTING_AVG_SPREAD)
+            if score is None or score < 1.0:
+                continue
+            findings.append(Finding(
+                self.name, SIGNAL,
+                f"{team}'s posted lineup is {aggregate['total_hits']}-for-"
+                f"{aggregate['total_at_bats']} ({avg:.3f}) against tonight's "
+                f"starter across their careers, against a league average of "
+                f"{LEAGUE_BATTING_AVG:.3f}. Unusually, that is a large enough "
+                "sample to be worth a sentence.",
+                value=avg, baseline=LEAGUE_BATTING_AVG,
+                sample=f"{aggregate['total_at_bats']} AB",
+                surprise=score,
+                side=side if avg > LEAGUE_BATTING_AVG else (
+                    HOME if side is AWAY else AWAY),
+                market_relevance="Supporting evidence only, never a read on its own.",
+                evidence=UNPROVEN,
+                detail={"home_runs": aggregate.get("total_home_runs"),
+                        "strikeouts": aggregate.get("total_strikeouts")}))
+        return findings
 
 
 def register_defaults():
     """The pre-registered family. Order is presentation only."""
     for detector in (ImpliedBullpenDisagreement(), BullpenWorkload(),
-                     StaleBook(), StarterMismatch(), LineupHandedness()):
+                     StaleBook(), StarterMismatch(), PlatoonMismatch(),
+                     ThinMatchupHistory(), LineupVsStarter()):
         register(detector)

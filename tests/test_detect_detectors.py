@@ -185,11 +185,16 @@ class TestStarterMismatch(unittest.TestCase):
 
 
 class TestBlockedDetectorsAreVisible(unittest.TestCase):
+    """A blocked detector is announced, never omitted."""
 
-    def test_lineup_handedness_declares_itself_blocked(self):
-        found = detectors.LineupHandedness().safe_run(dossier())
+    def test_a_blocked_detector_reports_itself_rather_than_vanishing(self):
+        cls = type("Mute", (base.Detector,),
+                   {"name": "mute", "status": base.BLOCKED,
+                    "blocked_reason": "the data does not exist",
+                    "run": lambda self, g: []})
+        found = cls().safe_run(dossier())
         self.assertEqual(found[0].evidence, base.BLOCKED)
-        self.assertIn("lineups", found[0].claim)
+        self.assertIn("does not exist", found[0].claim)
 
 
 class TestRegistrationIsTheHypothesisCount(unittest.TestCase):
@@ -206,7 +211,7 @@ class TestRegistrationIsTheHypothesisCount(unittest.TestCase):
 
     def test_the_default_family_registers_cleanly(self):
         detectors.register_defaults()
-        self.assertEqual(len(base.registry()), 5)
+        self.assertEqual(len(base.registry()), 7)
 
     def test_every_registered_detector_declares_its_markets(self):
         detectors.register_defaults()

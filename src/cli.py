@@ -382,7 +382,7 @@ def cmd_train(args) -> int:
 def cmd_brief(args) -> int:
     """Build the slate briefing and write the dashboard."""
     from src.detect import detectors as detector_defs
-    from src.pipeline import briefing, bullpen, history, pitchers
+    from src.pipeline import briefing, bullpen, history, lineups, pitchers
     from src.pipeline import slate as slate_mod
     from src.providers import odds as odds_prov
     from src.report import dashboard
@@ -425,8 +425,51 @@ def cmd_brief(args) -> int:
     else:
         print("  (no bullpen log -- run `bullpen` to enable those detectors)")
 
+    posted = {}
+    hands = {}
+    splits = {}
+    matchups = {}
+    try:
+        posted = lineups.fetch_lineups(args.date)
+    except mlb.MLBError as exc:
+        print(f"  (lineups unavailable: {exc})")
+    # Probable starters go into the same handedness lookup as the hitters: the
+    # platoon composition of a lineup is meaningless without knowing which hand
+    # it is facing.
+    ids = [g[k] for g in games for k in ("away_probable_id", "home_probable_id")
+           if g.get(k)]
+    ids += [s["person_id"] for lu in posted.values()
+            for side in ("away", "home") for s in lu[side]]
+    if ids:
+        hands = lineups.fetch_handedness(ids)
+    print(f"  lineups posted for {len(posted)} of {len(games)} game(s)")
+
+    season = args.date[:4]
+    for game in games:
+        pk = game.get("game_pk")
+        for side, pid_key in (("away", "away_probable_id"),
+                              ("home", "home_probable_id")):
+            pid = game.get(pid_key)
+            if not pid:
+                continue
+            try:
+                record = lineups.fetch_pitcher_splits(pid, season)
+            except mlb.MLBError:
+                continue
+            splits.setdefault(pk, {})[side] = {
+                "record": record, "platoon": lineups.platoon_split(record)}
+        if pk in posted and not args.no_matchups:
+            for side, opposing in (("away", "home"), ("home", "away")):
+                pid = game.get(f"{side}_probable_id")
+                if not pid:
+                    continue
+                matchups.setdefault(pk, {})[opposing] = lineups.lineup_vs_pitcher(
+                    posted[pk][opposing], pid, handedness=hands)
+
     slate = briefing.build_slate(games, store, pitcher_logs=logs,
-                                 prices_by_matchup=prices, bullpen_by_team=pens)
+                                 prices_by_matchup=prices, bullpen_by_team=pens,
+                                 lineups_by_pk=posted, handedness=hands,
+                                 splits_by_pk=splits, matchups_by_pk=matchups)
     path = dashboard.render(slate, args.out)
     flagged = sum(1 for g in slate["games"] if g["verdict"] == "flagged")
     cand = sum(1 for g in slate["games"] if g["verdict"] == "candidate")
@@ -1042,6 +1085,8 @@ def build_parser() -> argparse.ArgumentParser:
     brief_cmd.add_argument("--out", default="artifacts/briefing.html")
     brief_cmd.add_argument("--no-odds", action="store_true",
                            help="skip the odds call")
+    brief_cmd.add_argument("--no-matchups", action="store_true",
+                           help="skip batter-vs-pitcher history (many calls)")
     brief_cmd.add_argument("--f5", action="store_true",
                            help="also price first-five per game (20 credits each) "
                                 "-- enables the implied-bullpen detector")
