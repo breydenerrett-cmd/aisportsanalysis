@@ -32,10 +32,8 @@ def slate(findings=(), verdict="no_play", gaps=None):
 
 
 def extract(path):
-    html = Path(path).read_text(encoding="utf-8")
-    raw = re.search(r'<script id="slate" type="application/json">(.*?)</script>',
-                    html, re.S).group(1)
-    return html, json.loads(raw.replace("<\\/", "</"))
+    """The page is now rendered server-side, so the assertions read the HTML."""
+    return Path(path).read_text(encoding="utf-8")
 
 
 class TestSelfContained(unittest.TestCase):
@@ -55,20 +53,42 @@ class TestSelfContained(unittest.TestCase):
             self.assertNotIn(pattern, html,
                              f"page reaches outside itself via {pattern}")
 
-    def test_styles_and_script_are_inline(self):
+    def test_there_is_no_javascript_at_all(self):
+        # An earlier version built the page in JS from an embedded JSON blob.
+        # That renders fine in a normal tab and produces a COMPLETELY BLANK PAGE
+        # anywhere inline scripts are blocked -- a sandboxed preview pane, a
+        # strict CSP, a viewer with scripting off. It failed exactly that way the
+        # first time it was opened somewhere other than here.
         dashboard.render(slate(), self.path)
         html = self.path.read_text(encoding="utf-8")
         self.assertIn("<style>", html)
-        self.assertIn("<script>", html)
+        self.assertNotIn("<script", html)
 
-    def test_the_json_cannot_break_out_of_its_script_tag(self):
-        # A team name containing "</script>" would otherwise end the block and
-        # turn the rest of the payload into markup.
+    def test_the_content_is_in_the_html_not_in_a_data_blob(self):
+        finding = base.Finding("d", base.SIGNAL, "a very specific claim",
+                               value=1, baseline=0)
+        dashboard.render(slate([finding]), self.path)
+        body = self.path.read_text(encoding="utf-8")
+        body = body[body.index("<body>"):]
+        self.assertIn("a very specific claim", body)
+        # And the visible markup is substantial, not a stub waiting for script.
+        self.assertGreater(len(body), 2000)
+
+    def test_expand_and_collapse_is_native(self):
+        dashboard.render(slate(), self.path)
+        html = self.path.read_text(encoding="utf-8")
+        self.assertIn("<details", html)
+        self.assertIn("<summary", html)
+
+    def test_hostile_text_cannot_inject_markup(self):
+        # Venue and team names come from an external feed. Rendering them into
+        # HTML unescaped would turn a feed value into page structure.
         payload = slate()
-        payload["games"][0]["dossier"].game["venue"] = "</script><b>x</b>"
+        payload["games"][0]["dossier"].game["venue"] = "<b>bold</b>"
         dashboard.render(payload, self.path)
         html = self.path.read_text(encoding="utf-8")
-        self.assertNotIn("</script><b>", html)
+        self.assertNotIn("<b>bold</b>", html)
+        self.assertIn("&lt;b&gt;bold&lt;/b&gt;", html)
 
 
 class TestEvidenceLabelling(unittest.TestCase):
@@ -83,10 +103,9 @@ class TestEvidenceLabelling(unittest.TestCase):
     def test_every_finding_carries_a_human_label_and_meaning(self):
         finding = base.Finding("d", base.SIGNAL, "x", value=1, baseline=0,
                                evidence=base.UNPROVEN)
-        _, data = extract(dashboard.render(slate([finding]), self.path))
-        rendered = data["games"][0]["findings"][0]
-        self.assertEqual(rendered["evidence_label"], "Unproven")
-        self.assertIn("Never tested", rendered["evidence_meaning"])
+        html = extract(dashboard.render(slate([finding]), self.path))
+        self.assertIn("Unproven", html)
+        self.assertIn("Never tested", html)
 
     def test_unproven_is_the_default_a_finding_must_argue_out_of(self):
         self.assertEqual(base.Finding("d", base.CONTEXT, "x").evidence,
@@ -97,8 +116,8 @@ class TestEvidenceLabelling(unittest.TestCase):
             self.assertIn(status, dashboard.EVIDENCE_LABELS)
 
     def test_the_footer_always_states_the_paper_only_rule(self):
-        html, _ = extract(dashboard.render(slate(), self.path))
-        self.assertIn("No bet is placed", html)
+        self.assertIn("No bet is placed",
+                      extract(dashboard.render(slate(), self.path)))
 
 
 class TestGapsAreRendered(unittest.TestCase):
@@ -112,14 +131,14 @@ class TestGapsAreRendered(unittest.TestCase):
         self.dir.cleanup()
 
     def test_a_missing_section_carries_its_reason(self):
-        _, data = extract(dashboard.render(
+        html = extract(dashboard.render(
             slate(gaps={"lineups": "not posted yet"}), self.path))
-        self.assertEqual(data["games"][0]["gaps"]["lineups"], "not posted yet")
+        self.assertIn("not posted yet", html)
 
-    def test_counts_are_computed_from_the_verdicts(self):
-        _, data = extract(dashboard.render(slate(verdict="flagged"), self.path))
-        self.assertEqual(data["counts"]["flagged"], 1)
-        self.assertEqual(data["counts"]["games"], 1)
+    def test_counts_are_rendered_from_the_verdicts(self):
+        html = extract(dashboard.render(slate(verdict="flagged"), self.path))
+        self.assertIn("flagged", html)
+        self.assertIn("<b>1</b>", html)
 
 
 class TestPlainSerialisation(unittest.TestCase):

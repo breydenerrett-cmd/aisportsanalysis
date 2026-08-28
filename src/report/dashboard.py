@@ -8,8 +8,20 @@ running; a static file needs nothing. It also means the artifact is a snapshot:
 the page for a given date shows what was known on that date and cannot silently
 change when the data behind it does.
 
-Everything -- data, styles, behaviour -- is inlined. The page works from a
-file:// URL with the network switched off.
+Everything is inlined and the page works from a file:// URL with the network
+switched off.
+
+IT IS ALSO RENDERED SERVER-SIDE, WITH NO JAVASCRIPT AT ALL
+An earlier version built the whole page in JS from an embedded JSON blob. That
+works in a normal browser tab and produces a COMPLETELY BLANK PAGE anywhere
+inline scripts are blocked -- a sandboxed preview pane, a strict CSP, a mail
+client, a viewer with scripting off. It failed exactly that way the first time
+it was opened somewhere other than here.
+
+A briefing that is blank in half the places it gets opened is not a briefing, so
+the HTML is now the content. Expand and collapse use <details>/<summary>, which
+is native browser behaviour and needs no script. There is no JavaScript in the
+output.
 
 WHY EVERY CLAIM CARRIES AN EVIDENCE LABEL
 -----------------------------------------
@@ -125,24 +137,437 @@ def _plain(value):
 
 
 # ---------------------------------------------------------------------------
-# Document
+# Rendering. Server-side, no JavaScript in the output.
 # ---------------------------------------------------------------------------
 
+def _esc(value) -> str:
+    return html.escape("" if value is None else str(value), quote=True)
+
+
+def _num(value, digits=2) -> str:
+    if value is None or value == "":
+        return "--"
+    if isinstance(value, bool):
+        return str(value)
+    if isinstance(value, (int, float)):
+        return f"{value:.{digits}f}"
+    return _esc(value)
+
+
+def _pct(value) -> str:
+    return "--" if value is None else f"{value * 100:.1f}%"
+
+
+def _american(value) -> str:
+    if value is None:
+        return "--"
+    try:
+        value = int(value)
+    except (TypeError, ValueError):
+        return _esc(value)
+    return f"+{value}" if value > 0 else str(value)
+
+
+def _local_time(iso) -> str:
+    """First pitch, in the venue's own clock is not available here, so UTC is
+    labelled as UTC rather than shown bare and misread as local."""
+    if not iso:
+        return ""
+    try:
+        stamp = datetime.fromisoformat(str(iso).replace("Z", "+00:00"))
+    except ValueError:
+        return ""
+    return stamp.astimezone(timezone.utc).strftime("%H:%M UTC")
+
+
+VERDICT_LABELS = {
+    "flagged": "flagged",
+    "candidate": "candidate",
+    "no_play": "no play",
+    "market_unavailable": "no market",
+}
+
+
+def _table(rows, headers=None) -> str:
+    if not rows:
+        return ""
+    numeric = ' class="n"'
+    out = ['<div class="tw"><table>']
+    if headers:
+        cells = "".join("<th" + (numeric if i else "") + ">" + _esc(h) + "</th>"
+                        for i, h in enumerate(headers))
+        out.append(f"<thead><tr>{cells}</tr></thead>")
+    out.append("<tbody>")
+    for row in rows:
+        cells = "".join("<td" + (numeric if i else "") + ">" + _esc(c) + "</td>"
+                        for i, c in enumerate(row))
+        out.append(f"<tr>{cells}</tr>")
+    out.append("</tbody></table></div>")
+    return "".join(out)
+
+
+def _chip(finding) -> str:
+    return (f'<span class="chip {_esc(finding["evidence"])}" '
+            f'title="{_esc(finding["evidence_meaning"])}">'
+            f'{_esc(finding["evidence_label"])}</span>')
+
+
+def _spark(finding) -> str:
+    value = finding.get("surprise")
+    return "&mdash;" if value is None else f"{value:.1f}"
+
+
+def _finding_row(finding) -> str:
+    support = []
+    if finding.get("value") is not None:
+        support.append(f'<span class="mono">value {_num(finding["value"])}</span>')
+    if finding.get("baseline") is not None:
+        support.append(f'<span class="mono">normal {_num(finding["baseline"])}</span>')
+    if finding.get("sample") is not None:
+        support.append(f'<span class="mono">sample {_esc(finding["sample"])}</span>')
+    support.append(_chip(finding))
+    relevance = (f'<div class="support">{_esc(finding["market_relevance"])}</div>'
+                 if finding.get("market_relevance") else "")
+    return (
+        f'<div class="finding {_esc(finding["kind"])}">'
+        f'<div class="spark">{_spark(finding)}</div>'
+        f'<div><div class="claim">{_esc(finding["claim"])}</div>'
+        f'<div class="support">{"".join(support)}</div>{relevance}</div></div>')
+
+
+def _lead(games) -> str:
+    """The slate summary: each detector's single strongest finding."""
+    picks, seen = [], set()
+    ordered = []
+    for index, game in enumerate(games):
+        for finding in game["findings"]:
+            if finding["kind"] != "context":
+                ordered.append((index, game, finding))
+    ordered.sort(key=lambda item: (
+        0 if item[2]["kind"] == "signal" else 1, -(item[2]["surprise"] or 0)))
+    for index, game, finding in ordered:
+        if finding["detector"] in seen:
+            continue
+        seen.add(finding["detector"])
+        picks.append((index, game, finding))
+
+    if not picks:
+        if not games:
+            return ""
+        return (
+            '<section class="lead"><h2>Nothing unusual on this slate</h2>'
+            '<p class="claim">No detector found anything out of the ordinary. '
+            'That is the normal case, not a failure &mdash; most days of '
+            'major-league baseball are two roughly major-league teams playing a '
+            'close game.</p></section>')
+
+    rows = []
+    for index, game, finding in picks[:6]:
+        rows.append(
+            f'<a class="leaditem" href="#game-{index}">'
+            f'<div class="spark {_esc(finding["kind"])}">{_spark(finding)}</div>'
+            f'<div><div class="leadmatch">{_esc(game["away"])} @ '
+            f'{_esc(game["home"])}</div>'
+            f'<div class="claim">{_esc(finding["claim"])}</div></div></a>')
+    return (
+        '<section class="lead"><h2>Most unusual on this slate</h2>'
+        '<p class="leadnote">Ranked by how far each number sits from normal '
+        '&mdash; that is rarity, not importance. No effect size has been '
+        'measured yet, so a rare fact and an important one are not yet '
+        'distinguishable here. One line per detector.</p>'
+        f'<div class="leadlist">{"".join(rows)}</div></section>')
+
+
+def _market_section(game) -> str:
+    section = game["sections"].get("market")
+    if not section:
+        return _gap_block("Market", game["gaps"].get("market", "no prices"))
+    sides, totals = [], []
+    for key in sorted(section.get("markets") or {}):
+        market = section["markets"][key]
+        if market.get("total") is not None:
+            totals.append([key, _num(market["total"], 1),
+                           _american(market.get("over_price")),
+                           _american(market.get("under_price")),
+                           _pct(market.get("over_fair")),
+                           _pct(market.get("under_fair"))])
+        elif market.get("away_price") is not None:
+            label = key + (f' ({_num(market["home_line"], 1)})'
+                           if market.get("home_line") is not None else "")
+            sides.append([label, _american(market["away_price"]),
+                          _american(market.get("home_price")),
+                          _pct(market.get("away_fair")),
+                          _pct(market.get("home_fair")),
+                          "--" if market.get("hold_pct") is None
+                          else f'{market["hold_pct"]:.2f}%'])
+    parts = ["<h3>Market</h3>"]
+    if sides:
+        parts.append(_table(sides, ["market", "away", "home", "away fair",
+                                    "home fair", "hold"]))
+    if totals:
+        parts.append(_table(totals, ["total", "line", "over", "under",
+                                     "over fair", "under fair"]))
+    if not sides and not totals:
+        parts.append('<p class="gap">no market priced this game</p>')
+    shift = section.get("implied_bullpen_shift")
+    if shift is not None:
+        who = game["home"] if shift > 0 else game["away"]
+        parts.append(
+            f'<p class="support">Implied bullpen read: the market gives '
+            f'{_esc(who)} {abs(shift) * 100:.1f} points of win probability from '
+            f'innings 6&ndash;9 &mdash; the gap between the full-game and '
+            f'first-five prices is its bullpen opinion.</p>')
+    return "".join(parts)
+
+
+def _gap_block(title, reason) -> str:
+    reason = _esc(reason or "not available")
+    return f'<h3>{_esc(title)}</h3><p class="gap">{reason}</p>' 
+
+
+def _starters_section(game) -> str:
+    starters = game["sections"].get("starters")
+    if not starters:
+        return _gap_block("Starting pitchers", game["gaps"].get("starters"))
+    fields = [("FIP", "sp_fip", 2), ("ERA", "sp_era", 2), ("WHIP", "sp_whip", 2),
+              ("K/9", "sp_k9", 2), ("BB/9", "sp_bb9", 2),
+              ("K-BB%", "sp_k_bb_pct", 3), ("IP", "sp_innings", 1),
+              ("IP/start", "sp_ip_per_start", 2), ("rest", "sp_days_rest", 0)]
+    rows = [[label, _num(starters.get("away_" + key), digits),
+             _num(starters.get("home_" + key), digits)]
+            for label, key, digits in fields]
+    parts = ["<h3>Starting pitchers</h3>",
+             _table(rows, ["", game["away"], game["home"]])]
+
+    splits = game["sections"].get("splits") or {}
+    split_rows = []
+    for side, team in (("away", game["away"]), ("home", game["home"])):
+        record = ((splits.get(side) or {}).get("record") or {}).get("splits") or {}
+        for key in ("Home Games", "Away Games", "vs Left", "vs Right"):
+            row = record.get(key)
+            if row:
+                split_rows.append([f"{team} — {key}", _num(row.get("ops"), 3),
+                                   row.get("batters_faced") or "--",
+                                   row.get("innings") or "--"])
+    if split_rows:
+        parts.append("<h3>Starter splits (OPS allowed)</h3>")
+        parts.append(_table(split_rows, ["split", "OPS", "BF", "IP"]))
+    if starters.get("either_sp_thin"):
+        parts.append('<p class="gap">One starter is under the innings threshold '
+                     '&mdash; his rates are small-sample noise and are suppressed '
+                     'rather than shown.</p>')
+    return "".join(parts)
+
+
+def _lineups_section(game) -> str:
+    lineups = game["sections"].get("lineups")
+    if not lineups:
+        return _gap_block("Lineups and platoon", game["gaps"].get("lineups"))
+    splits = game["sections"].get("splits") or {}
+    parts = ["<h3>Lineups and platoon</h3>"]
+    for side, team, opposing in (("away", game["away"], "home"),
+                                 ("home", game["home"], "away")):
+        entry = lineups.get(side) or {}
+        counts = entry.get("handedness") or {}
+        advantage = entry.get("platoon_advantage") or {}
+        throws = entry.get("faces_starter_throwing")
+        parts.append(f'<h3>{_esc(team)} lineup vs '
+                     f'{_esc(throws + "HP" if throws else "starter")}</h3>')
+        rows = [[f'{b.get("order")}. {b.get("name")}', b.get("position") or ""]
+                for b in entry.get("batters") or []]
+        parts.append(_table(rows))
+        line = (f'{counts.get("L", 0)}L / {counts.get("R", 0)}R / '
+                f'{counts.get("S", 0)}S')
+        if advantage.get("share") is not None:
+            line += (f' · {advantage["advantaged"]} of {advantage["known"]} with '
+                     f'the platoon advantage ({_pct(advantage["share"])})')
+        elif advantage.get("reason"):
+            line += f' · {advantage["reason"]}'
+        parts.append(f'<p class="support">{_esc(line)}</p>')
+        split = ((splits.get(opposing) or {}).get("platoon")) or {}
+        if split.get("usable"):
+            parts.append(
+                f'<p class="support">That starter allows '
+                f'{_num(split["vs_left_ops"], 3)} OPS to lefties and '
+                f'{_num(split["vs_right_ops"], 3)} to righties '
+                f'({split["vs_left_faced"]} and {split["vs_right_faced"]} '
+                f'batters faced).</p>')
+        elif split.get("reason"):
+            parts.append(f'<p class="gap">{_esc(split["reason"])}</p>')
+    return "".join(parts)
+
+
+def _matchup_section(game) -> str:
+    history = game["sections"].get("matchup_history")
+    if not history:
+        return _gap_block("This lineup vs tonight's starter",
+                          game["gaps"].get("matchup_history"))
+    parts = ["<h3>This lineup vs tonight&rsquo;s starter</h3>"]
+    for side, team in (("away", game["away"]), ("home", game["home"])):
+        entry = history.get(side)
+        if not entry:
+            continue
+        parts.append(f"<h3>{_esc(team)}</h3>")
+        rows = []
+        for batter in entry.get("batters") or []:
+            at_bats = batter.get("at_bats") or 0
+            rows.append([
+                f'{batter.get("name")}'
+                + (f' ({batter["bats"]})' if batter.get("bats") else ""),
+                at_bats, batter.get("hits"), batter.get("home_runs"),
+                batter.get("strikeouts"),
+                f'{batter["hits"] / at_bats:.3f}' if at_bats else "--"])
+        parts.append(_table(rows, ["batter", "AB", "H", "HR", "K", "AVG"]))
+        if entry.get("usable"):
+            parts.append(
+                f'<p class="support">Combined {entry["total_hits"]}-for-'
+                f'{entry["total_at_bats"]} ({_num(entry["aggregate_avg"], 3)}). '
+                f'Large enough to be worth something.</p>')
+        else:
+            parts.append(f'<p class="gap">{_esc(entry.get("reason") or "sample too small")}</p>')
+    return "".join(parts)
+
+
+def _teams_section(game) -> str:
+    teams = game["sections"].get("teams")
+    if not teams:
+        return _gap_block("Teams", game["gaps"].get("teams"))
+    fields = [("Record", "wins", 0), ("Win %", "win_pct", 3),
+              ("Runs/gm", "runs_scored_pg", 2), ("Allowed/gm", "runs_allowed_pg", 2),
+              ("Run diff/gm", "run_diff_pg", 2), ("Last 10 wins", "last10_wins", 0),
+              ("Rest days", "rest_days", 0)]
+    rows = [[label, _num(teams.get("away_" + key), digits),
+             _num(teams.get("home_" + key), digits)]
+            for label, key, digits in fields]
+    return "<h3>Teams</h3>" + _table(rows, ["", game["away"], game["home"]])
+
+
+def _environment_section(game) -> str:
+    park = game["sections"].get("park") or {}
+    weather = game["sections"].get("weather") or {}
+    rows = []
+    if park:
+        rows += [["Park", park.get("name")], ["Roof", park.get("roof")],
+                 ["Altitude (m)", _num(park.get("altitude_m"), 0)]]
+    if weather:
+        rows += [["Temp (F)", _num(weather.get("temp_f"), 0)],
+                 ["Wind (mph)", _num(weather.get("wind_mph"), 0)],
+                 ["Humidity", _num(weather.get("humidity_pct"), 0)]]
+    if not rows:
+        return _gap_block("Environment",
+                          game["gaps"].get("park") or game["gaps"].get("weather"))
+    parts = ["<h3>Environment</h3>", _table(rows)]
+    if park and park.get("orientation_deg") is None:
+        parts.append('<p class="gap">Wind direction is not interpreted: park '
+                     'orientation is unknown, and a wrong bearing would invert a '
+                     'real effect.</p>')
+    return "".join(parts)
+
+
+def _gaps_section(game) -> str:
+    if not game["gaps"]:
+        return ""
+    rows = "".join(f'<p class="gap">{_esc(name)}: {_esc(reason)}</p>'
+                   for name, reason in sorted(game["gaps"].items()))
+    return f"<h3>Missing data</h3>{rows}"
+
+
+def _game_card(index, game) -> str:
+    verdict = game["verdict"]
+    prices = []
+    market = (game["sections"].get("market") or {}).get("markets") or {}
+    if market.get("h2h"):
+        prices.append(f'{_american(market["h2h"].get("away_price"))} / '
+                      f'{_american(market["h2h"].get("home_price"))}')
+    if market.get("h2h_1st_5_innings"):
+        f5 = market["h2h_1st_5_innings"]
+        prices.append(f'F5 {_american(f5.get("away_price"))} / '
+                      f'{_american(f5.get("home_price"))}')
+    price_html = "".join(f'<div class="price mono">{_esc(p)}</div>' for p in prices)
+
+    meta = " · ".join(x for x in (_local_time(game.get("start")),
+                                  game.get("venue")) if x)
+    findings = "".join(_finding_row(f) for f in game["findings"])
+    body = (
+        ('<h3>Why this game is interesting</h3>'
+         f'<div class="findings">{findings}</div>' if findings else
+         '<h3>Why this game is interesting</h3>'
+         '<p class="gap">No detector had anything to say about this game.</p>')
+        + _market_section(game) + _starters_section(game)
+        + _lineups_section(game) + _matchup_section(game)
+        + _teams_section(game) + _environment_section(game)
+        + _gaps_section(game))
+
+    # <details> is native expand/collapse. No script, so it works in a sandboxed
+    # preview, with a strict CSP, or with scripting switched off entirely.
+    return (
+        f'<details class="game {_esc(verdict)}" id="game-{index}"'
+        f'{" open" if game.get("open") else ""}>'
+        f'<summary class="gamehead">'
+        f'<div><div class="match">{_esc(game["away"])} @ {_esc(game["home"])}</div>'
+        f'<div class="meta">{_esc(meta)}</div>'
+        f'<div class="meta">{_esc(game.get("summary") or "")}</div></div>'
+        f'<div class="headright">'
+        f'<div class="verdict {_esc(verdict)}">'
+        f'{_esc(VERDICT_LABELS.get(verdict, verdict))}</div>{price_html}</div>'
+        f'</summary><div class="body">{body}</div></details>')
+
+
 def _document(payload) -> str:
-    data = json.dumps(payload, sort_keys=True).replace("</", "<\\/")
-    date = html.escape(str(payload.get("date") or ""))
+    games = payload["games"]
+
+    # Open the most interesting game. On a slate of fifteen no-plays an
+    # all-collapsed page reads as though the tool found nothing at all.
+    best_index, best_score = None, -1
+    for index, game in enumerate(games):
+        score = max([f["surprise"] or 0 for f in game["findings"]
+                     if f["kind"] == "signal"] or [-1])
+        if game["verdict"] != "no_play":
+            score += 100
+        if score > best_score:
+            best_score, best_index = score, index
+    if best_index is not None:
+        games[best_index]["open"] = True
+
+    counts = payload["counts"]
+    tiles = "".join(
+        f'<div class="count"><b>{counts.get(key, 0)}</b><span>{label}</span></div>'
+        for key, label in (("games", "games"), ("flagged", "flagged"),
+                           ("candidates", "candidates"), ("no_market", "no market")))
+
+    legend, seen = [], set()
+    for game in games:
+        for finding in game["findings"]:
+            if finding["evidence"] not in seen:
+                seen.add(finding["evidence"])
+                legend.append(_chip(finding))
+
+    cards = "".join(_game_card(i, g) for i, g in enumerate(games)) or (
+        '<p class="empty">No games scheduled for this date.</p>')
+    notes = "".join(f"<div>{_esc(n)}</div>" for n in payload.get("notes") or [])
+
     return f"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Slate briefing {date}</title>
+<title>Slate briefing {_esc(payload.get("date"))}</title>
 <style>{_CSS}</style>
 </head>
 <body>
-<div id="app"></div>
-<script id="slate" type="application/json">{data}</script>
-<script>{_JS}</script>
+<div class="wrap">
+<header>
+<h1>Slate briefing &mdash; {_esc(payload.get("date"))}</h1>
+<div class="sub mono">generated {_esc(payload["generated_at"])} &middot; times in UTC</div>
+<div class="counts">{tiles}</div>
+<div class="legend">{"".join(legend)}</div>
+</header>
+{_lead(games)}
+{cards}
+<footer>{notes}<div>Paper only. No bet is placed by any code in this project.
+Every threshold behind these verdicts is an unvalidated guess until the evidence
+label says otherwise.</div></footer>
+</div>
 </body>
 </html>
 """
@@ -197,8 +622,7 @@ h1 { margin:0 0 6px; font-size:30px; letter-spacing:-.02em; }
             max-width:70ch; line-height:1.45; }
 .leadlist { display:flex; flex-direction:column; gap:11px; }
 .leaditem { display:grid; grid-template-columns:52px 1fr; gap:14px;
-            align-items:baseline; background:none; border:0; padding:0;
-            text-align:left; font:inherit; color:inherit; cursor:pointer; width:100%; }
+            align-items:baseline; text-decoration:none; color:inherit; }
 .leaditem:hover .claim { text-decoration:underline; }
 .leaditem:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
 .leadmatch { font-size:11px; letter-spacing:.08em; text-transform:uppercase;
@@ -214,19 +638,19 @@ h1 { margin:0 0 6px; font-size:30px; letter-spacing:-.02em; }
 .game.market_unavailable { border-left:5px dashed var(--clay); }
 .gamehead {
   display:grid; grid-template-columns:1fr auto; gap:14px; align-items:start;
-  padding:16px 18px; cursor:pointer; background:none; border:0; width:100%;
-  text-align:left; color:inherit; font:inherit;
+  padding:16px 18px; cursor:pointer; list-style:none;
 }
+.gamehead::-webkit-details-marker { display:none; }
 .gamehead:hover { background:var(--sunk); }
 .gamehead:focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
+.headright { text-align:right; }
 .match { font-size:19px; font-weight:600; letter-spacing:-.01em; }
 .meta { font-size:12.5px; color:var(--muted); margin-top:3px; }
 .verdict { font-size:11px; letter-spacing:.09em; text-transform:uppercase; font-weight:700; text-align:right; }
 .verdict.flagged{color:var(--accent)} .verdict.candidate{color:var(--warn)} .verdict.no_play{color:var(--faint)}
 .price { font-size:12.5px; color:var(--muted); margin-top:4px; }
 
-.body { display:none; padding:0 18px 18px; border-top:1px solid var(--rule); }
-.game.open .body { display:block; }
+.body { padding:0 18px 18px; border-top:1px solid var(--rule); }
 
 .findings { margin:16px 0 0; display:flex; flex-direction:column; gap:9px; }
 .finding { display:grid; grid-template-columns:56px 1fr; gap:13px; align-items:start; }
@@ -251,533 +675,3 @@ footer { margin-top:34px; padding-top:14px; border-top:1px solid var(--rule);
 """
 
 
-_JS = r"""
-(function () {
-  var slate = JSON.parse(document.getElementById('slate').textContent);
-  var app = document.getElementById('app');
-
-  function el(tag, cls, text) {
-    var node = document.createElement(tag);
-    if (cls) node.className = cls;
-    if (text !== undefined && text !== null) node.textContent = String(text);
-    return node;
-  }
-
-  function num(v, digits) {
-    if (v === null || v === undefined || v === '') return '--';
-    if (typeof v === 'number') return v.toFixed(digits === undefined ? 2 : digits);
-    return String(v);
-  }
-
-  function pct(v) {
-    return (v === null || v === undefined) ? '--' : (v * 100).toFixed(1) + '%';
-  }
-
-  function american(v) {
-    if (v === null || v === undefined) return '--';
-    return v > 0 ? '+' + v : String(v);
-  }
-
-  function localTime(iso) {
-    if (!iso) return '';
-    var d = new Date(iso);
-    if (isNaN(d)) return '';
-    return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  }
-
-  // ---- header -----------------------------------------------------------
-  var wrap = el('div', 'wrap');
-  var head = document.createElement('header');
-  head.appendChild(el('h1', null, 'Slate briefing — ' + (slate.date || '')));
-  head.appendChild(el('div', 'sub mono',
-    'generated ' + slate.generated_at + ' · all times local'));
-
-  var counts = el('div', 'counts');
-  [['games', 'games'], ['flagged', 'flagged'], ['candidates', 'candidates'],
-   ['no_market', 'no market']]
-    .forEach(function (pair) {
-      var box = el('div', 'count');
-      box.appendChild(el('b', null, slate.counts[pair[0]]));
-      box.appendChild(el('span', null, pair[1]));
-      counts.appendChild(box);
-    });
-  head.appendChild(counts);
-
-  // The legend is not decoration. Nothing on this page is proven, and the
-  // reader has to be able to see that at a glance rather than infer it.
-  var legend = el('div', 'legend');
-  var seen = {};
-  slate.games.forEach(function (g) {
-    (g.findings || []).forEach(function (f) {
-      if (!seen[f.evidence]) {
-        seen[f.evidence] = true;
-        var chip = el('span', 'chip ' + f.evidence, f.evidence_label);
-        chip.title = f.evidence_meaning;
-        legend.appendChild(chip);
-      }
-    });
-  });
-  if (legend.childNodes.length) head.appendChild(legend);
-  wrap.appendChild(head);
-
-  // ---- what's worth looking at ------------------------------------------
-  // The page is scanned, not read. Fifteen collapsed cards make a reader hunt
-  // for the one thing that matters, so the strongest findings across the whole
-  // slate are lifted to the top with the game they belong to.
-  var top = [];
-  slate.games.forEach(function (game, index) {
-    (game.findings || []).forEach(function (f) {
-      if (f.kind === 'context') return;
-      top.push({ game: game, index: index, finding: f });
-    });
-  });
-  top.sort(function (a, b) {
-    var ka = a.finding.kind === 'signal' ? 0 : 1;
-    var kb = b.finding.kind === 'signal' ? 0 : 1;
-    if (ka !== kb) return ka - kb;
-    return (b.finding.surprise || 0) - (a.finding.surprise || 0);
-  });
-
-  // ONE PER DETECTOR. Ranking purely by rarity fills the summary with whichever
-  // detector happens to measure the rarest quantity -- travel distance is rarer
-  // than a low FIP because three quarters of clubs do not travel at all, so a
-  // straight top-six was six travel facts and nothing else. The summary's job
-  // is coverage of what is unusual across the slate, not a leaderboard for one
-  // measurement, so each detector contributes its single strongest finding.
-  var seenDetector = {};
-  top = top.filter(function (item) {
-    if (seenDetector[item.finding.detector]) return false;
-    seenDetector[item.finding.detector] = true;
-    return true;
-  });
-
-  if (top.length) {
-    var lead = el('section', 'lead');
-    lead.appendChild(el('h2', null, 'Most unusual on this slate'));
-    // The honest name for what this ranks. Surprise measures how far a value is
-    // from normal, which is RARITY, not importance -- a 2,000-mile flight is
-    // rarer than a 2.60 FIP starter and matters less. Until a discovery pass
-    // measures effect sizes there is nothing better to rank by, and calling it
-    // "worth looking at" would have implied a judgement nothing here has earned.
-    lead.appendChild(el('p', 'leadnote',
-      'Ranked by how far each number sits from normal — that is rarity, not ' +
-      'importance. No effect size has been measured yet, so a rare fact and an ' +
-      'important one are not yet distinguishable here.'));
-    var list = el('div', 'leadlist');
-    top.slice(0, 6).forEach(function (item) {
-      var row = el('button', 'leaditem');
-      row.appendChild(el('div', 'spark ' + item.finding.kind,
-        item.finding.surprise === null || item.finding.surprise === undefined
-          ? '—' : num(item.finding.surprise, 1)));
-      var right = el('div');
-      right.appendChild(el('div', 'leadmatch',
-        item.game.away + ' @ ' + item.game.home));
-      right.appendChild(el('div', 'claim', item.finding.claim));
-      row.appendChild(right);
-      row.addEventListener('click', function () {
-        var card = document.getElementById('game-' + item.index);
-        if (!card) return;
-        if (!card.classList.contains('open')) {
-          card.classList.add('open');
-          var head = card.querySelector('.gamehead');
-          if (head) head.setAttribute('aria-expanded', 'true');
-        }
-        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-      list.appendChild(row);
-    });
-    lead.appendChild(list);
-    wrap.appendChild(lead);
-  } else if (slate.games.length) {
-    var quiet = el('section', 'lead');
-    quiet.appendChild(el('h2', null, 'Nothing worth looking at'));
-    quiet.appendChild(el('p', 'claim',
-      'No detector found anything unusual on this slate. That is the normal ' +
-      'case, not a failure — most days of major-league baseball are two roughly ' +
-      'major-league teams playing a close game.'));
-    wrap.appendChild(quiet);
-  }
-
-  // ---- games ------------------------------------------------------------
-  if (!slate.games.length) {
-    wrap.appendChild(el('p', 'empty', 'No games scheduled for this date.'));
-  }
-
-  function topSurprise(game) {
-    return (game.findings || []).reduce(function (best, f) {
-      return (f.kind === 'signal' && (f.surprise || 0) > best) ? f.surprise : best;
-    }, -1);
-  }
-  var topIndex = 0, topScore = -1;
-  slate.games.forEach(function (g, i) {
-    var s = topSurprise(g);
-    if (g.verdict !== 'no_play') s += 100;
-    if (s > topScore) { topScore = s; topIndex = i; }
-  });
-
-  slate.games.forEach(function (game, index) {
-    var card = el('div', 'game ' + game.verdict);
-    card.id = 'game-' + index;
-
-    var button = el('button', 'gamehead');
-    button.setAttribute('aria-expanded', 'false');
-    var left = el('div');
-    left.appendChild(el('div', 'match', game.away + ' @ ' + game.home));
-    var bits = [localTime(game.start), game.venue].filter(Boolean);
-    left.appendChild(el('div', 'meta', bits.join(' · ')));
-    if (game.summary) left.appendChild(el('div', 'meta', game.summary));
-    button.appendChild(left);
-
-    var right = el('div');
-    var verdictText = {
-      no_play: 'no play',
-      market_unavailable: 'no market',
-      candidate: 'candidate',
-      flagged: 'flagged'
-    }[game.verdict] || game.verdict;
-    right.appendChild(el('div', 'verdict ' + game.verdict, verdictText));
-    var market = (game.sections.market || {}).markets || {};
-    if (market.h2h) {
-      right.appendChild(el('div', 'price mono',
-        american(market.h2h.away_price) + ' / ' + american(market.h2h.home_price)));
-    }
-    if (market.h2h_1st_5_innings) {
-      right.appendChild(el('div', 'price mono', 'F5 ' +
-        american(market.h2h_1st_5_innings.away_price) + ' / ' +
-        american(market.h2h_1st_5_innings.home_price)));
-    }
-    button.appendChild(right);
-    card.appendChild(button);
-
-    var body = el('div', 'body');
-    body.appendChild(renderFindings(game));
-    body.appendChild(renderMarket(game));
-    body.appendChild(renderStarters(game));
-    body.appendChild(renderLineups(game));
-    body.appendChild(renderMatchupHistory(game));
-    body.appendChild(renderTeams(game));
-    body.appendChild(renderEnvironment(game));
-    body.appendChild(renderGaps(game));
-    card.appendChild(body);
-
-    button.addEventListener('click', function () {
-      var open = card.classList.toggle('open');
-      button.setAttribute('aria-expanded', open ? 'true' : 'false');
-    });
-    // Open the most interesting game, not the first one. On a slate of fifteen
-    // no-plays the first card is arbitrary, and an all-collapsed page reads as
-    // though the tool found nothing at all.
-    if (index === topIndex) {
-      card.classList.add('open');
-      button.setAttribute('aria-expanded', 'true');
-    }
-    wrap.appendChild(card);
-  });
-
-  // ---- sections ---------------------------------------------------------
-  function renderFindings(game) {
-    var box = el('div');
-    box.appendChild(el('h3', null, 'Why this game is interesting'));
-    if (!game.findings.length) {
-      box.appendChild(el('p', 'gap',
-        'No detector had anything to say about this game.'));
-      return box;
-    }
-    var list = el('div', 'findings');
-    game.findings.forEach(function (f) {
-      var row = el('div', 'finding ' + f.kind);
-      row.appendChild(el('div', 'spark',
-        f.surprise === null || f.surprise === undefined ? '—' : num(f.surprise, 1)));
-      var right = el('div');
-      right.appendChild(el('div', 'claim', f.claim));
-      var support = el('div', 'support');
-      if (f.value !== null && f.value !== undefined) {
-        support.appendChild(el('span', 'mono', 'value ' + num(f.value)));
-      }
-      if (f.baseline !== null && f.baseline !== undefined) {
-        support.appendChild(el('span', 'mono', 'normal ' + num(f.baseline)));
-      }
-      if (f.sample !== null && f.sample !== undefined) {
-        support.appendChild(el('span', 'mono', 'sample ' + f.sample));
-      }
-      var chip = el('span', 'chip ' + f.evidence, f.evidence_label);
-      chip.title = f.evidence_meaning;
-      support.appendChild(chip);
-      right.appendChild(support);
-      if (f.market_relevance) {
-        right.appendChild(el('div', 'support', f.market_relevance));
-      }
-      row.appendChild(right);
-      list.appendChild(row);
-    });
-    box.appendChild(list);
-    return box;
-  }
-
-  function table(rows, headers) {
-    var wrapper = el('div', 'tw');
-    var t = document.createElement('table');
-    if (headers) {
-      var thead = document.createElement('thead');
-      var tr = document.createElement('tr');
-      headers.forEach(function (h, i) {
-        var th = el('th', i ? 'n' : null, h);
-        tr.appendChild(th);
-      });
-      thead.appendChild(tr);
-      t.appendChild(thead);
-    }
-    var tbody = document.createElement('tbody');
-    rows.forEach(function (cells) {
-      var tr = document.createElement('tr');
-      cells.forEach(function (c, i) {
-        tr.appendChild(el('td', i ? 'n' : null, c));
-      });
-      tbody.appendChild(tr);
-    });
-    t.appendChild(tbody);
-    wrapper.appendChild(t);
-    return wrapper;
-  }
-
-  function renderMarket(game) {
-    var box = el('div');
-    var section = game.sections.market;
-    box.appendChild(el('h3', null, 'Market'));
-    if (!section) {
-      box.appendChild(el('p', 'gap', game.gaps.market || 'no prices'));
-      return box;
-    }
-    // Totals are Over/Under with a line, not away/home. Rendering them through
-    // the moneyline columns showed a row of dashes for a market that was
-    // actually priced -- a missing-data display for present data, which is the
-    // one thing this page must never do.
-    var sideRows = [], totalRows = [];
-    Object.keys(section.markets || {}).sort().forEach(function (key) {
-      var m = section.markets[key];
-      if (m.total !== undefined && m.total !== null) {
-        totalRows.push([key, num(m.total, 1), american(m.over_price),
-                        american(m.under_price), pct(m.over_fair),
-                        pct(m.under_fair)]);
-      } else if (m.away_price !== undefined) {
-        sideRows.push([key + (m.home_line !== undefined
-                        ? ' (' + num(m.home_line, 1) + ')' : ''),
-                       american(m.away_price), american(m.home_price),
-                       pct(m.away_fair), pct(m.home_fair),
-                       m.hold_pct === undefined ? '--' : num(m.hold_pct, 2) + '%']);
-      }
-    });
-    if (sideRows.length) {
-      box.appendChild(table(sideRows,
-        ['market', 'away', 'home', 'away fair', 'home fair', 'hold']));
-    }
-    if (totalRows.length) {
-      box.appendChild(table(totalRows,
-        ['total', 'line', 'over', 'under', 'over fair', 'under fair']));
-    }
-    if (!sideRows.length && !totalRows.length) {
-      box.appendChild(el('p', 'gap', 'no market priced this game'));
-    }
-    if (section.implied_bullpen_shift !== undefined) {
-      var shift = section.implied_bullpen_shift;
-      var who = shift > 0 ? game.home : game.away;
-      box.appendChild(el('p', 'support',
-        'Implied bullpen read: the market gives ' + who + ' ' +
-        Math.abs(shift * 100).toFixed(1) +
-        ' points of win probability from innings 6–9 — the gap between ' +
-        'the full-game and first-five prices is the market’s bullpen opinion.'));
-    }
-    return box;
-  }
-
-  function renderStarters(game) {
-    var box = el('div');
-    var s = game.sections.starters;
-    box.appendChild(el('h3', null, 'Starting pitchers'));
-    if (!s) {
-      box.appendChild(el('p', 'gap', game.gaps.starters || 'not available'));
-      return box;
-    }
-    var fields = [['FIP', 'sp_fip', 2], ['ERA', 'sp_era', 2], ['WHIP', 'sp_whip', 2],
-                  ['K/9', 'sp_k9', 2], ['BB/9', 'sp_bb9', 2],
-                  ['K-BB%', 'sp_k_bb_pct', 3], ['IP', 'sp_innings', 1],
-                  ['IP/start', 'sp_ip_per_start', 2], ['rest', 'sp_days_rest', 0]];
-    var rows = fields.map(function (f) {
-      return [f[0], num(s['away_' + f[1]], f[2]), num(s['home_' + f[1]], f[2])];
-    });
-    box.appendChild(table(rows, ['', game.away, game.home]));
-    // Home/road and platoon splits, from the season-to-date split records. Shown
-    // beside the season line rather than in their own section, because a split
-    // is only interpretable next to the overall number it deviates from.
-    var splits = game.sections.splits || {};
-    var splitRows = [];
-    [['away', game.away], ['home', game.home]].forEach(function (t) {
-      var record = ((splits[t[0]] || {}).record || {}).splits;
-      if (!record) return;
-      ['Home Games', 'Away Games', 'vs Left', 'vs Right'].forEach(function (key) {
-        var row = record[key];
-        if (!row) return;
-        splitRows.push([t[1] + ' — ' + key, num(row.ops, 3),
-                        row.batters_faced === null ? '--' : row.batters_faced,
-                        row.innings || '--']);
-      });
-    });
-    if (splitRows.length) {
-      box.appendChild(el('h3', null, 'Starter splits (OPS allowed)'));
-      box.appendChild(table(splitRows, ['split', 'OPS', 'BF', 'IP']));
-    }
-
-    if (s.either_sp_thin) {
-      box.appendChild(el('p', 'gap',
-        'One starter is under the innings threshold — his rates are ' +
-        'small-sample noise and are suppressed rather than shown.'));
-    }
-    return box;
-  }
-
-  function renderLineups(game) {
-    var box = el('div');
-    var lu = game.sections.lineups, splits = game.sections.splits || {};
-    box.appendChild(el('h3', null, 'Lineups and platoon'));
-    if (!lu) {
-      box.appendChild(el('p', 'gap', game.gaps.lineups || 'not posted'));
-      return box;
-    }
-    [['away', game.away, 'home'], ['home', game.home, 'away']].forEach(function (t) {
-      var side = lu[t[0]] || {};
-      var counts = side.handedness || {};
-      var adv = side.platoon_advantage || {};
-      var split = ((splits[t[2]] || {}).platoon) || {};
-      box.appendChild(el('h3', null, t[1] + ' lineup vs ' +
-        (side.faces_starter_throwing ? side.faces_starter_throwing + 'HP' : 'starter')));
-      var rows = (side.batters || []).map(function (b) {
-        return [b.order + '. ' + b.name, b.position || '', ''];
-      });
-      if (rows.length) box.appendChild(table(rows));
-      var line = counts.L + 'L / ' + counts.R + 'R / ' + counts.S + 'S';
-      if (adv.share !== null && adv.share !== undefined) {
-        line += ' · ' + adv.advantaged + ' of ' + adv.known +
-                ' with the platoon advantage (' + pct(adv.share) + ')';
-      } else if (adv.reason) {
-        line += ' · ' + adv.reason;
-      }
-      box.appendChild(el('p', 'support', line));
-      // The opposing starter's own split is the other half of the matchup, so
-      // it belongs next to the lineup rather than in a separate table.
-      if (split.usable) {
-        box.appendChild(el('p', 'support',
-          'That starter allows ' + num(split.vs_left_ops, 3) + ' OPS to lefties and ' +
-          num(split.vs_right_ops, 3) + ' to righties (' + split.vs_left_faced +
-          ' and ' + split.vs_right_faced + ' batters faced).'));
-      } else if (split.reason) {
-        box.appendChild(el('p', 'gap', split.reason));
-      }
-    });
-    return box;
-  }
-
-  function renderMatchupHistory(game) {
-    var box = el('div');
-    var mh = game.sections.matchup_history;
-    box.appendChild(el('h3', null, 'This lineup vs tonight’s starter'));
-    if (!mh) {
-      box.appendChild(el('p', 'gap', game.gaps.matchup_history || 'not fetched'));
-      return box;
-    }
-    [['away', game.away], ['home', game.home]].forEach(function (t) {
-      var side = mh[t[0]];
-      if (!side) return;
-      box.appendChild(el('h3', null, t[1]));
-      var rows = (side.batters || []).map(function (b) {
-        return [b.name + (b.bats ? ' (' + b.bats + ')' : ''),
-                b.at_bats, b.hits, b.home_runs, b.strikeouts,
-                b.at_bats ? (b.hits / b.at_bats).toFixed(3) : '--'];
-      });
-      if (rows.length) box.appendChild(table(rows, ['batter', 'AB', 'H', 'HR', 'K', 'AVG']));
-      // The sample verdict is stated, not left to the reader. An unqualified
-      // AVG in a table is exactly how a 4-for-8 becomes a betting reason.
-      if (side.usable) {
-        box.appendChild(el('p', 'support',
-          'Combined ' + side.total_hits + '-for-' + side.total_at_bats + ' (' +
-          num(side.aggregate_avg, 3) + '). Large enough to be worth something.'));
-      } else {
-        box.appendChild(el('p', 'gap', side.reason ||
-          'sample too small to read anything into'));
-      }
-    });
-    return box;
-  }
-
-  function renderTeams(game) {
-    var box = el('div');
-    var t = game.sections.teams;
-    box.appendChild(el('h3', null, 'Teams'));
-    if (!t) {
-      box.appendChild(el('p', 'gap', game.gaps.teams || 'not available'));
-      return box;
-    }
-    var fields = [['Record', 'wins', 0], ['Win %', 'win_pct', 3],
-                  ['Runs/gm', 'runs_scored_pg', 2],
-                  ['Allowed/gm', 'runs_allowed_pg', 2],
-                  ['Run diff/gm', 'run_diff_pg', 2],
-                  ['Last 10 wins', 'last10_wins', 0],
-                  ['Rest days', 'rest_days', 0]];
-    var rows = fields.map(function (f) {
-      return [f[0], num(t['away_' + f[1]], f[2]), num(t['home_' + f[1]], f[2])];
-    });
-    box.appendChild(table(rows, ['', game.away, game.home]));
-    return box;
-  }
-
-  function renderEnvironment(game) {
-    var box = el('div');
-    box.appendChild(el('h3', null, 'Environment'));
-    var park = game.sections.park, weather = game.sections.weather;
-    var rows = [];
-    if (park) {
-      rows.push(['Park', park.name]);
-      rows.push(['Roof', park.roof]);
-      rows.push(['Altitude (m)', num(park.altitude_m, 0)]);
-    }
-    if (weather) {
-      rows.push(['Temp (F)', num(weather.temp_f, 0)]);
-      rows.push(['Wind (mph)', num(weather.wind_mph, 0)]);
-      rows.push(['Humidity', num(weather.humidity_pct, 0)]);
-    }
-    if (!rows.length) {
-      box.appendChild(el('p', 'gap', game.gaps.park || game.gaps.weather || 'none'));
-      return box;
-    }
-    box.appendChild(table(rows));
-    if (park && park.orientation_deg === null) {
-      box.appendChild(el('p', 'gap',
-        'Wind direction is not interpreted: park orientation is unknown, and a ' +
-        'wrong bearing would invert a real effect.'));
-    }
-    return box;
-  }
-
-  function renderGaps(game) {
-    var box = el('div');
-    var keys = Object.keys(game.gaps || {});
-    if (!keys.length) return box;
-    box.appendChild(el('h3', null, 'Missing data'));
-    keys.sort().forEach(function (k) {
-      box.appendChild(el('p', 'gap', k + ': ' + game.gaps[k]));
-    });
-    return box;
-  }
-
-  var footer = document.createElement('footer');
-  (slate.notes || []).forEach(function (n) {
-    footer.appendChild(el('div', null, n));
-  });
-  footer.appendChild(el('div', null,
-    'Paper only. No bet is placed by any code in this project. Every threshold ' +
-    'behind these verdicts is an unvalidated guess until the evidence label says ' +
-    'otherwise.'));
-  wrap.appendChild(footer);
-
-  app.appendChild(wrap);
-})();
-"""
