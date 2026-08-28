@@ -379,6 +379,48 @@ def cmd_train(args) -> int:
     return EXIT_OK
 
 
+def cmd_brief(args) -> int:
+    """Build the slate briefing and write the dashboard."""
+    from src.pipeline import briefing, history, pitchers
+    from src.pipeline import slate as slate_mod
+    from src.providers import odds as odds_prov
+    from src.report import dashboard
+
+    store = history.read_results()
+    if not store:
+        print("historical store is empty -- run `ingest` first.", file=sys.stderr)
+        return EXIT_ERROR
+    try:
+        games = mlb.fetch_games(args.date)
+    except mlb.MLBError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+
+    logs = pitchers.read_logs() or None
+    prices = {}
+    if odds_prov.is_configured() and not args.no_odds:
+        try:
+            payload = odds_prov.fetch_normalized()
+            for event in payload["events"]:
+                away = slate_mod.team_abbrev_from_name(event.get("away_team"))
+                home = slate_mod.team_abbrev_from_name(event.get("home_team"))
+                if away and home:
+                    prices[(away, home)] = event.get("markets") or {}
+        except odds_prov.OddsProviderError as exc:
+            print(f"  (odds unavailable: {exc})")
+
+    slate = briefing.build_slate(games, store, pitcher_logs=logs,
+                                 prices_by_matchup=prices)
+    path = dashboard.render(slate, args.out)
+    flagged = sum(1 for g in slate["games"] if g["verdict"] == "flagged")
+    cand = sum(1 for g in slate["games"] if g["verdict"] == "candidate")
+    print(f"briefing for {args.date}: {len(slate['games'])} game(s), "
+          f"{flagged} flagged, {cand} candidate")
+    print(f"  {path}")
+    print("  open it in a browser -- no server needed")
+    return EXIT_OK
+
+
 def cmd_scan(args) -> int:
     """Scan a slate for obvious mismatches. Most days the answer is no play.
 
@@ -946,6 +988,14 @@ def build_parser() -> argparse.ArgumentParser:
     train_cmd.add_argument("--test", action="store_true",
                            help="evaluate on the held-out TEST split (use once)")
 
+    brief_cmd = sub.add_parser("brief",
+        help="build the slate briefing dashboard (static HTML, no server)")
+    brief_cmd.add_argument("--date",
+                           default=datetime.now(timezone.utc).strftime("%Y-%m-%d"))
+    brief_cmd.add_argument("--out", default="artifacts/briefing.html")
+    brief_cmd.add_argument("--no-odds", action="store_true",
+                           help="skip the odds call")
+
     scan_cmd = sub.add_parser("scan",
         help="scan a slate for obvious mismatches (usually: no play)")
     scan_cmd.add_argument("--date",
@@ -994,6 +1044,7 @@ COMMANDS = {
     "history": cmd_history,
     "features": cmd_features,
     "train": cmd_train,
+    "brief": cmd_brief,
     "scan": cmd_scan,
     "scan-grade": cmd_scan_grade,
     "predict": cmd_predict,
