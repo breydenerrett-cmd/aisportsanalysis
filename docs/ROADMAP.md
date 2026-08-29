@@ -99,7 +99,22 @@ grading report, monthly summaries.
 **Exit:** the pre-registered criteria in docs/VALIDATION_CRITERIA.md.
 **Autonomous:** yes.
 
-## Stage 8 — RESEARCH FAMILY V2: market structure — **OPEN** (docs/RESEARCH_V2.md)
+## Stage 8 — RESEARCH FAMILY V2: market structure — **DONE** (docs/RESULTS_V2.md; zero survivors)
+**Result (2026-08-29):** all five hypotheses evaluated on 2023-24 at zero credit
+cost. M5 null (de-vig choice does not matter; proportional stands). M2
+inconclusive (snapshot grid too sparse to run the published test). M1 null
+(autocorrelation +0.013, not negative; fading loses 3.5%, following loses 3.3%
+-- both sides pay the vig). M3 DEBUNK (+8.49pp at p=0.0063 on the baseline,
+killed by dose-response, book concentration and season split). M4 underpowered
+(270 decided games, nothing significant).
+
+**Next, in priority order:** (1) denser forward snapshot grid inside the last
+three hours -- M1 and M2 both died on sampling resolution, and forward
+collection is free; (2) the lineup-release window, which needs (1) first;
+(3) decision support, which is the part with demonstrated value. A fuller F5
+backfill would make M4 answerable but costs credits and awaits Brey's call.
+
+## Stage 8 (pre-registration) — RESEARCH FAMILY V2: market structure (docs/RESEARCH_V2.md)
 **Reframe (2026-08-29):** V1 asked "do we read baseball better than the market?"
 and answered no, consistent with the literature (1,547 MLB moneyline strategies
 tested externally; 0.45% profitable at the 1% level, i.e. the chance rate).

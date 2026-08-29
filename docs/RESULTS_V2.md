@@ -15,9 +15,9 @@
 | **M2** | Weekend day-game staleness | **INCONCLUSIVE** — our snapshots are too sparse to run the test |
 | **M1** | Line overreaction | **NULL** — does not replicate; no directional signal either way |
 | **M3** | Cross-book dispersion | **DEBUNK** — looked significant, failed falsification |
-| **M4** | F5 vs full-game bullpen gap | pending free linescore ingest |
+| **M4** | F5 vs full-game bullpen gap | **UNDERPOWERED** — no signal at n=270 |
 
-**Nothing survives so far.** One hypothesis produced a headline number
+**All five hypotheses ran. None survives.** One produced a headline number
 (+8.5 percentage points, p=0.006) and was killed by the falsification battery
 it was pre-committed to. That is the process working, not the process failing.
 
@@ -225,16 +225,52 @@ not happen.
 
 ---
 
-## M4 — F5 vs full-game bullpen gap: pending
+## M4 — F5 vs full-game bullpen gap: UNDERPOWERED
 
-The pre-registered test needs to know who led after five innings. The results
-CSV records only final scores, so a free MLB StatsAPI linescore ingest is
-running (`src/research/f5_store.py`, no odds credits).
+The test needs to know who led after five innings, which the results CSV does
+not record. A free MLB StatsAPI linescore ingest supplied it
+(`src/research/f5_store.py`): 181 dates, 2,512 games, 0 failures, 0 odds
+credits. 33 games could not be settled — rain-shortened, and recorded as void
+rather than counted as zeros.
 
-**Expect this one to be underpowered regardless.** Only 318 games across
-2023–24 have F5 prices with books attached. That is the binding constraint, and
-if the answer comes back "underpowered" it will be reported as underpowered
-rather than as no effect.
+**Sample: 308 games with both prices, 270 decided, 38 ties.** A five-inning
+moneyline can genuinely end level, and 14% of them did.
+
+**Is the F5 price well calibrated?** Yes.
+
+| | |
+|---|---|
+| Actual home rate | 54.4% |
+| Implied home rate | 53.2% |
+| Effect | +1.25pp |
+| Clustered p | 0.67 |
+| 95% CI | [−4.56pp, +7.12pp] |
+
+**Is the implied bullpen gap biased?** No detectable pattern. Mean gap across
+all games is +0.001 — the market does not systematically favour either side's
+bullpen.
+
+| Gap bucket | n | Mean gap | Effect | p |
+|---|---|---|---|---|
+| −1.000 … −0.020 | 49 | −0.042 | +8.56pp | 0.20 |
+| −0.020 … −0.005 | 52 | −0.012 | +2.11pp | 0.76 |
+| −0.005 … +0.005 | 36 | +0.000 | −5.05pp | 0.50 |
+| +0.005 … +0.020 | 66 | +0.011 | −0.87pp | 0.88 |
+| +0.020 … +1.000 | 49 | +0.045 | +2.36pp | 0.73 |
+
+**A note on watching a pattern dissolve.** At the halfway point of the ingest
+(217 games) these buckets looked like a clean gradient: +8.3pp, +7.2pp, −5.3pp,
+−0.8pp, −0.6pp — effect declining monotonically as the gap went from negative
+to positive, which is exactly the shape the hypothesis predicts. With the full
+sample the gradient is gone: the top bucket flipped from −0.6pp to +2.4pp and
+the second from +7.2pp to +2.1pp. Nothing was significant at either point.
+Reading the partial run as encouraging would have been a mistake, and it is
+recorded here because that is the kind of mistake that is easy to make and
+hard to notice.
+
+**Verdict: underpowered, and no signal within that power.** 270 decided games
+cannot resolve an effect of the size worth having. This is *not* the same claim
+as "the market prices bullpens correctly" — it is "we cannot tell".
 
 ---
 
@@ -263,3 +299,19 @@ efficient at the resolution we can observe it.
 
 **What is not worth building:** more detectors of the V1 kind. The evidence on
 that question is now internal as well as external.
+
+### The one place more credits have a defined purpose
+
+M4 is the only hypothesis that died of sample size rather than of evidence. It
+covers 308 games because that is all the F5 history we bought. A fuller F5
+backfill across 2023–24 would take it to a few thousand and make the question
+answerable either way.
+
+That is a real decision, not a recommendation. Against it: M4 showed no signal
+in the sample we have, its apparent gradient dissolved as data arrived, and the
+standing rule is that credits get spent on candidates that survive free
+robustness — which M4 has not done. In its favour: it is the only structurally
+sound hypothesis left, it needs no baseball opinion, and "we cannot tell" is an
+unsatisfying place to stop.
+
+Brey's call. Nothing gets spent without it.

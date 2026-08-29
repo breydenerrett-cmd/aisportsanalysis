@@ -203,5 +203,43 @@ class FirstFiveStoreTests(unittest.TestCase):
         self.assertEqual(f5_store.read("does/not/exist.jsonl"), {})
 
 
+class BullpenGapTests(unittest.TestCase):
+    """M4 -- first five versus full game."""
+
+    def _row(self, winner, probability=0.55, full=None):
+        return {"game_pk": "1", "event_id": "e", "date": "2024-05-01",
+                "away_team": "NYY", "home_team": "BOS",
+                "f5_probability": probability, "f5_books": 3,
+                "full_probability": full, "f5_winner": winner,
+                "f5_home_won": winner == "home", "f5_tie": winner is None}
+
+    def test_a_level_first_five_is_a_tie_not_a_loss(self):
+        from src.research import m4_bullpen_gap
+        data = [self._row("home") for _ in range(10)]
+        data += [self._row(None) for _ in range(3)]
+        result = m4_bullpen_gap.calibration(data)
+        self.assertEqual(result["ties"], 3)
+        self.assertEqual(result["n"], 10)
+        # The ten decided games all went home, so the actual rate is 1.0 --
+        # the ties neither help nor hurt it.
+        self.assertEqual(result["actual_home_rate"], 1.0)
+
+    def test_calibration_below_the_floor_reports_a_reason(self):
+        from src.research import m4_bullpen_gap
+        result = m4_bullpen_gap.calibration([self._row("home")])
+        self.assertIn("reason", result)
+
+    def test_gap_bias_needs_the_full_game_probability(self):
+        from src.research import m4_bullpen_gap
+        data = [self._row("home") for _ in range(20)]
+        self.assertIn("reason", m4_bullpen_gap.gap_bias(data))
+
+    def test_gap_is_full_game_minus_first_five(self):
+        from src.research import m4_bullpen_gap
+        data = [self._row("home", 0.55, full=0.52) for _ in range(20)]
+        result = m4_bullpen_gap.gap_bias(data)
+        self.assertAlmostEqual(result["mean_gap"], -0.03, places=9)
+
+
 if __name__ == "__main__":
     unittest.main()
