@@ -20,8 +20,25 @@ because the prediction log requires the game to be final; grading run
 Statcast ingest confirmed DONE (2026 season: 39 windows, 593,336 rows,
 0 failed). No further Stage 1 rewiring needed — already complete.
 
-Open question for user: whether to open Research Family V2 (fresh
-pre-registered hypotheses) now that V1 is closed out null.
+**Research Family V2 opened and closed the same day.** Reframed away from
+baseball knowledge (V1's dead end) toward market structure: five pre-registered
+hypotheses about whether the market misprices itself, all testable on data
+already on disk. Zero credits spent. See docs/RESEARCH_V2.md for the
+pre-registration and docs/RESULTS_V2.md for the full tables.
+
+Result: zero survivors. M5 null, M2 inconclusive, M1 null, M3 debunked after
+looking significant, M4 underpowered. Two families, thirteen hypotheses, none
+standing.
+
+New this run: `src/research/` (price-path harness plus one module per
+hypothesis), `src/research/f5_store.py` (free MLB StatsAPI linescore ingest --
+181 dates, 2,512 games, 0 odds credits), 27 tests. 1,038 green.
+
+Open question for user: whether to fund a denser forward snapshot grid. M1 and
+M2 both died on sampling resolution rather than on evidence, and a 15-minute
+grid across the live window costs 132 credits a day (~4,400 for the rest of the
+season, 8% of the 53,155 remaining). It is a recurring cadence, so it waits for
+approval.
 
 ## Status
 
