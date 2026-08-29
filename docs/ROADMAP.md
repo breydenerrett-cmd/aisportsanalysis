@@ -99,7 +99,18 @@ grading report, monthly summaries.
 **Exit:** the pre-registered criteria in docs/VALIDATION_CRITERIA.md.
 **Autonomous:** yes.
 
-## Stage 8 — Detector expansion: RESEARCH FAMILY V2
+## Stage 8 — RESEARCH FAMILY V2: market structure — **OPEN** (docs/RESEARCH_V2.md)
+**Reframe (2026-08-29):** V1 asked "do we read baseball better than the market?"
+and answered no, consistent with the literature (1,547 MLB moneyline strategies
+tested externally; 0.45% profitable at the 1% level, i.e. the chance rate).
+V2 asks a different question — "does the market misprice itself?" — over five
+pre-registered market-structure hypotheses (M1 overreaction, M2 weekend
+day-game staleness, M3 cross-book dispersion, M4 F5-vs-full-game bullpen gap,
+M5 de-vig methodology divergence). All five are testable on data already on
+disk at zero credit cost. Jacob's decomposition idea moves to V3, reframed as a
+conditional market-timing filter rather than a standalone knowledge signal.
+
+## Stage 8 (original scope) — Detector expansion
 **Objective:** the ~47-item catalogue (docs/ALPHA_ROADMAP.md), as a SEPARATE
 pre-registered family. V1 must never be contaminated midstream: V2 opens only
 after V1 completes discovery → falsification → tuning → policy freeze, keeps
