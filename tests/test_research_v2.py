@@ -3,7 +3,8 @@
 import datetime as dt
 import unittest
 
-from src.research import m1_overreaction, m2_staleness, m5_devig, pricepath
+from src.research import (m1_overreaction, m2_staleness, m3_dispersion,
+                           m5_devig, pricepath)
 
 
 def _quote(book, minutes_out, away_price, home_price, start=None):
@@ -135,6 +136,71 @@ class OverreactionTests(unittest.TestCase):
                       _quote("dk", 60, 102, -122)])
         rows = m1_overreaction.changes([path])
         self.assertEqual(m1_overreaction.fade(rows, 0.5)["n"], 0)
+
+
+class DispersionTests(unittest.TestCase):
+    """M3 -- cross-book dispersion."""
+
+    def _spread_path(self, outlier=(140, -160)):
+        # Six books needed before consensus means anything; five agree and one
+        # sits above them on the home team.
+        quotes = [_quote(f"b{i}", 400, 100, -120) for i in range(5)]
+        quotes.append(_quote("outlier", 400, *outlier))
+        return _path(quotes, home_won=True)
+
+    def test_a_snapshot_below_the_book_floor_is_skipped(self):
+        path = _path([_quote(f"b{i}", 400, 100, -120) for i in range(3)])
+        self.assertEqual(m3_dispersion.deviations([path]), [])
+
+    def test_consensus_leaves_the_book_itself_out(self):
+        rows = m3_dispersion.deviations([self._spread_path()])
+        outlier = next(r for r in rows if r["book"] == "outlier")
+        others = [r for r in rows if r["book"] != "outlier"]
+        # The five agreeing books all price identically, so the outlier's
+        # leave-one-out consensus is exactly their shared probability.
+        self.assertAlmostEqual(outlier["consensus_home_probability"],
+                               others[0]["book_home_probability"], places=9)
+        self.assertGreater(outlier["deviation"], 0)
+
+    def test_only_one_snapshot_per_game_contributes(self):
+        early = [_quote(f"b{i}", 600, 100, -120) for i in range(6)]
+        late = [_quote(f"b{i}", 400, 100, -120) for i in range(6)]
+        rows = m3_dispersion.deviations([_path(early + late)])
+        self.assertEqual(len(rows), 6)
+
+    def test_a_book_high_on_home_is_traded_by_backing_away(self):
+        rows = m3_dispersion.deviations([self._spread_path()])
+        result = m3_dispersion.trade(rows, 0.02)
+        self.assertEqual(result["n"], 1)
+        self.assertEqual(result["share_home"], 0.0)
+        # Home won, so backing away lost.
+        self.assertEqual(result["hit_rate"], 0.0)
+
+    def test_one_extreme_book_makes_every_other_book_look_like_an_outlier(self):
+        """A real property of leave-one-out consensus, pinned so it stays visible.
+
+        With six books, an extreme quote is a sixth of the consensus every other
+        book is measured against, so it drags all five of them past the
+        threshold in the opposite direction. One bad price then produces six
+        selections on one game instead of one. It is part of why M3's headline
+        sample spanned fewer events than selections, and why any future revival
+        of this hypothesis has to cap selections per event.
+        """
+        rows = m3_dispersion.deviations([self._spread_path(outlier=(260, -320))])
+        result = m3_dispersion.trade(rows, 0.02)
+        self.assertEqual(result["n"], 6)
+        self.assertEqual(result["events"], 1)
+
+    def test_no_trade_when_every_book_agrees(self):
+        path = _path([_quote(f"b{i}", 400, 100, -120) for i in range(6)])
+        rows = m3_dispersion.deviations([path])
+        self.assertEqual(m3_dispersion.trade(rows, 0.02)["n"], 0)
+
+
+class FirstFiveStoreTests(unittest.TestCase):
+    def test_reading_a_missing_store_is_empty_not_an_error(self):
+        from src.research import f5_store
+        self.assertEqual(f5_store.read("does/not/exist.jsonl"), {})
 
 
 if __name__ == "__main__":
