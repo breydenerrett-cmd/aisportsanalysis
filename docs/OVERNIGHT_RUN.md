@@ -2,6 +2,27 @@
 
 **Started 2026-08-28.** Chat stays short; this is the detail.
 
+## 2026-08-29 update
+
+Stage 1 (point-in-time rebuild) and Stage 2 (full 2023-24 discovery rerun)
+are both DONE — see `docs/RESULTS_STAGE2.md`. Zero of 8 detectors cleared
+FDR + effect-size gates on clean data. V1 concluded null. Stage 4 (2025
+tuning) is gated open but empty: no candidate exists to tune.
+
+Forward ledger (Stage 7, continuous): 32 games across 2026-08-28/29, 15
+settled, 17 pending. Verdicts: 29 no_play, 2 flagged (first candidates
+flagged since forward tracking began), 1 market_unavailable. No graded
+outcomes yet — settled games haven't been scored against predictions
+because the prediction log requires the game to be final; grading run
+2026-08-29 shows 7 pending, 0 graded. First decided mismatch flag: 0-1
+(insufficient sample, as expected this early).
+
+Statcast ingest confirmed DONE (2026 season: 39 windows, 593,336 rows,
+0 failed). No further Stage 1 rewiring needed — already complete.
+
+Open question for user: whether to open Research Family V2 (fresh
+pre-registered hypotheses) now that V1 is closed out null.
+
 ## Status
 
 | | |
