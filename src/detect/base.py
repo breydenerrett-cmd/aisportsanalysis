@@ -43,6 +43,12 @@ from __future__ import annotations
 # a reader can never mistake a hypothesis for a result. The ordering is the
 # strength ordering and is relied on by the UI.
 UNPROVEN = "unproven"
+# Tested against outcomes and found not to predict them. Strictly WEAKER than
+# UNPROVEN, which merely means nobody has looked: an untested guess might work,
+# and this one has been measured and does not. Collapsing the two would let a
+# reader mistake a refuted claim for an open question, which is the single
+# easiest way for this system to mislead the person using it.
+TESTED_NULL = "tested_null"
 BLOCKED = "blocked"
 HISTORICAL_CANDIDATE = "historical_candidate"
 TUNING_EVIDENCE = "tuning_evidence"
@@ -50,8 +56,8 @@ PROVISIONAL = "provisional"
 FORWARD_TESTING = "forward_testing"
 PROVEN = "proven"
 
-EVIDENCE_ORDER = (BLOCKED, UNPROVEN, HISTORICAL_CANDIDATE, TUNING_EVIDENCE,
-                  PROVISIONAL, FORWARD_TESTING, PROVEN)
+EVIDENCE_ORDER = (BLOCKED, TESTED_NULL, UNPROVEN, HISTORICAL_CANDIDATE,
+                  TUNING_EVIDENCE, PROVISIONAL, FORWARD_TESTING, PROVEN)
 
 # What a finding is telling you.
 SIGNAL = "signal"      # something is unusual and points somewhere
@@ -208,14 +214,27 @@ def run_all(game, detectors=None) -> list:
 
 
 def rank(findings) -> list:
-    """Most surprising first; unscored findings after scored ones; context last.
+    """Signals first, then debunks, then context; stronger evidence above weaker;
+    most surprising first within that.
 
     Context never outranks a signal even when it carries a large number, because
     context is by definition the stuff the reader already assumes.
+
+    Evidence sits ABOVE surprise in the ordering, and it has to. Surprise
+    measures how far a number is from normal, not whether that distance means
+    anything. A detector we have measured against outcomes and found not to
+    predict them can still produce a spectacular-looking gap, and before this
+    term existed such a claim would lead the page purely on size -- putting the
+    one thing we know does not work at the top, above claims nobody has ruled
+    out. Sorting by evidence first puts refuted claims where they belong:
+    visible, still true as facts, and below the open questions.
     """
+    strength = {name: index for index, name in enumerate(EVIDENCE_ORDER)}
+
     def key(finding):
         tier = {SIGNAL: 0, DEBUNK: 1, CONTEXT: 2}[finding.kind]
-        return (tier, 0 if not finding.unscored else 1,
+        return (tier, -strength.get(finding.evidence, 0),
+                0 if not finding.unscored else 1,
                 -(finding.surprise or 0.0))
     return sorted(findings, key=key)
 

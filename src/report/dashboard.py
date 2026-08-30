@@ -49,6 +49,8 @@ EVIDENCE_LABELS = {
     detect.TUNING_EVIDENCE: ("Tuning evidence", "Thresholds were fitted on this; optimistic"),
     detect.HISTORICAL_CANDIDATE: ("Candidate", "Looks real in discovery data; untested"),
     detect.UNPROVEN: ("Unproven", "A written-down guess. Never tested."),
+    detect.TESTED_NULL: ("Tested — no edge",
+                         "Measured against outcomes and it did not predict them"),
     detect.BLOCKED: ("Blocked", "Cannot be computed with the data we have"),
 }
 

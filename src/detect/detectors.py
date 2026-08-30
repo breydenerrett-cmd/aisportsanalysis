@@ -11,7 +11,7 @@ from __future__ import annotations
 from src.core import odds as odds_math
 from src.detect.base import (AWAY, BLOCKED, CONTEXT, DEBUNK, Detector, Finding,
                              HOME, HISTORICAL_CANDIDATE, NEITHER, SIGNAL,
-                             UNPROVEN, register, surprise_score)
+                             TESTED_NULL, UNPROVEN, register, surprise_score)
 from src.pipeline import bullpen as bullpen_mod
 
 # Baselines. Each is a measured or stated league norm, not a fitted parameter.
@@ -59,6 +59,15 @@ TEMP_NOTABLE_F = 14.0
 STRONG_WIND_MPH = 15.0
 LEAGUE_IP_PER_START = 5.30
 IP_PER_START_SPREAD = 0.65
+
+# Starts required before an innings-per-start average describes a pitcher.
+#
+# Without this, an opener with one start of one inning reads as 1.00 innings a
+# start against a league 5.30 -- a surprise score of 6.6, the most extreme
+# number on the slate, and completely meaningless. Five starts is the same
+# principle already applied to platoon splits and batter-vs-pitcher history:
+# below the floor the number is not a weaker signal, it is a different thing.
+MIN_STARTS_FOR_EXPOSURE = 5
 # A pitch thrown less than a third of the time is not what the lineup is
 # preparing for, and reading a matchup off it overstates its role.
 PRIMARY_PITCH_USAGE = 30.0
@@ -198,7 +207,7 @@ class BullpenWorkload(Detector):
                 side=AWAY if team == game.teams[0] else HOME,
                 market_relevance=(
                     "Affects the full game far more than the first five."),
-                evidence=UNPROVEN,
+                evidence=TESTED_NULL,
                 detail={"unavailable": [r.get("name") for r in out],
                         "total_innings": workload.get("total_innings")}))
         return findings
@@ -253,7 +262,7 @@ class StaleBook(Detector):
                 surprise=surprise_score(best[index], target, 0.010),
                 side=side,
                 market_relevance="Price execution, independent of any read on the game.",
-                evidence=HISTORICAL_CANDIDATE,
+                evidence=TESTED_NULL,
                 detail={"book": best[0], "price": price,
                         "consensus": round(target, 4)}))
         return findings
@@ -276,7 +285,7 @@ class StarterMismatch(Detector):
                 self.name, DEBUNK,
                 "One starter is under 20 innings this season. Any rate you see "
                 "quoted for him tonight is small-sample noise, not a read.",
-                sample="<20 IP", evidence=UNPROVEN)]
+                sample="<20 IP", evidence=TESTED_NULL)]
 
         away_fip, home_fip = starters.get("away_sp_fip"), starters.get("home_sp_fip")
         if away_fip is None or home_fip is None:
@@ -298,7 +307,7 @@ class StarterMismatch(Detector):
                 surprise=score, side=side if better else (HOME if side is AWAY else AWAY),
                 market_relevance=(
                     "Concentrated in the first five; diluted over nine by the pen."),
-                evidence=UNPROVEN))
+                evidence=TESTED_NULL))
         return findings
 
 
@@ -388,7 +397,7 @@ class PlatoonMismatch(Detector):
                 market_relevance=(
                     "Concentrated in the first five, while the starter is still "
                     "in the game."),
-                evidence=UNPROVEN,
+                evidence=TESTED_NULL,
                 detail={"exploit_share": round(exploit_share, 3), **split}))
         return findings
 
@@ -484,7 +493,7 @@ class LineupVsStarter(Detector):
                 side=side if avg > LEAGUE_BATTING_AVG else (
                     HOME if side is AWAY else AWAY),
                 market_relevance="Supporting evidence only, never a read on its own.",
-                evidence=UNPROVEN,
+                evidence=TESTED_NULL,
                 detail={"home_runs": aggregate.get("total_home_runs"),
                         "strikeouts": aggregate.get("total_strikeouts")}))
         return findings
@@ -553,9 +562,13 @@ class TravelLoad(Detector):
                     side=HOME if side is AWAY else AWAY,
                     market_relevance=(
                         "Applies to the whole game rather than to the starters."),
-                    evidence=UNPROVEN, detail=load))
+                    evidence=TESTED_NULL, detail=load))
 
-            if load.get("dense_stretch"):
+            # A "dense stretch" that matches the baseline exactly is six games
+            # in seven days, which is what a normal week looks like. Saying so
+            # under a heading that promises something interesting spends the
+            # reader's attention on nothing.
+            if load.get("dense_stretch") and load["games_last_7"] > DENSE_BASELINE_GAMES:
                 games = load["games_last_7"]
                 findings.append(Finding(
                     self.name, CONTEXT,
@@ -563,7 +576,7 @@ class TravelLoad(Detector):
                     value=float(games), baseline=float(DENSE_BASELINE_GAMES),
                     sample="7-day window",
                     surprise=surprise_score(games, DENSE_BASELINE_GAMES, 1.0),
-                    side=NEITHER, evidence=UNPROVEN, detail=load))
+                    side=NEITHER, evidence=TESTED_NULL, detail=load))
         return findings
 
 
@@ -657,6 +670,27 @@ class BullpenExposure(Detector):
             per_start = starters.get(f"{prefix}sp_ip_per_start")
             if per_start is None:
                 continue
+
+            # Below the floor, say so instead of pretending to a read. A thin
+            # sample producing an extreme average is the exact failure this
+            # product is supposed to catch for the reader, so catching it in
+            # our own output is not optional.
+            starts = starters.get(f"{prefix}sp_starts")
+            if starts is not None and starts < MIN_STARTS_FOR_EXPOSURE:
+                findings.append(Finding(
+                    self.name, DEBUNK,
+                    f"{team}'s starter averages {per_start:.2f} innings across "
+                    f"only {starts} start(s). That is too few to describe how "
+                    f"long he goes \u2014 an opener or a first-time starter "
+                    f"looks identical to a collapse at this sample size.",
+                    value=per_start, baseline=LEAGUE_IP_PER_START,
+                    sample=f"{starts} start(s)", surprise=None,
+                    side=NEITHER, evidence=TESTED_NULL,
+                    market_relevance=(
+                        "No read either way; the bullpen exposure is unknown, "
+                        "not unusual.")))
+                continue
+
             score = surprise_score(per_start, LEAGUE_IP_PER_START, IP_PER_START_SPREAD)
             if score is None or score < 1.0:
                 continue
@@ -677,7 +711,7 @@ class BullpenExposure(Detector):
                 market_relevance=(
                     "This is the quantity the market's full-game minus "
                     "first-five gap is pricing."),
-                evidence=UNPROVEN,
+                evidence=TESTED_NULL,
                 detail={"innings_exposed_to_bullpen": round(exposed, 2)}))
         return findings
 
@@ -760,7 +794,7 @@ class PitchMixMismatch(Detector):
                 market_relevance=(
                     "Applies while the starter is in the game, so it bears on "
                     "the first five more than the full nine."),
-                evidence=UNPROVEN,
+                evidence=TESTED_NULL,
                 detail={"pitch_type": primary.get("pitch_type"),
                         "usage": usage, "hitters": len(rows)}))
         return findings

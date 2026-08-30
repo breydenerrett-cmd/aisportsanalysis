@@ -299,6 +299,11 @@ def pitcher_features(logs, person_id, as_of_date, prefix="",
         f"{prefix}sp_known": bool(person_id) and bool(prior),
         f"{prefix}sp_appearances": totals["appearances"],
         f"{prefix}sp_innings": round(innings, 2),
+        # Published because an average is only as good as its denominator, and
+        # a consumer of sp_ip_per_start cannot tell one start from thirty
+        # without it. An opener's 1.00 innings a start is arithmetically
+        # identical to an ace's collapse; only the start count separates them.
+        f"{prefix}sp_starts": totals["starts"],
         f"{prefix}sp_thin": thin,
     }
 
