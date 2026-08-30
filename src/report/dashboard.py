@@ -445,6 +445,35 @@ def _matchup_section(game) -> str:
     return "".join(parts)
 
 
+def _news_section(game) -> str:
+    """What changed for either club in the last ten days.
+
+    Placed directly under the findings and above the market, because it is the
+    only section describing a CHANGE rather than a steady state, and a change is
+    what a reader is most likely not to know yet.
+    """
+    news = game["sections"].get("news")
+    if not news:
+        return _gap_block("Recent roster news",
+                          game["gaps"].get("news", "not fetched"))
+    blocks = []
+    for team in sorted(news):
+        rows = news[team] or []
+        if not rows:
+            continue
+        items = "".join(
+            f'<li>{_esc(row.get("sentence") or row.get("description") or "")}'
+            f'<span class="newsdate mono"> {_esc((row.get("date") or "")[:10])}</span></li>'
+            for row in rows)
+        blocks.append(f'<div class="newsteam"><h4>{_esc(team)}</h4>'
+                      f'<ul class="news">{items}</ul></div>')
+    if not blocks:
+        return _gap_block("Recent roster news",
+                          game["gaps"].get("news", "nothing in the window"))
+    return ('<h3>Recent roster news</h3>'
+            f'<div class="newsgrid">{"".join(blocks)}</div>')
+
+
 def _teams_section(game) -> str:
     teams = game["sections"].get("teams")
     if not teams:
@@ -510,6 +539,7 @@ def _game_card(index, game) -> str:
          f'<div class="findings">{findings}</div>' if findings else
          '<h3>Why this game is interesting</h3>'
          '<p class="gap">No detector had anything to say about this game.</p>')
+        + _news_section(game)
         + _market_section(game) + _starters_section(game)
         + _lineups_section(game) + _matchup_section(game)
         + _teams_section(game) + _environment_section(game)
@@ -622,6 +652,13 @@ h1 { margin:0 0 6px; font-size:30px; letter-spacing:-.02em; }
 .count b { display:block; font-size:26px; line-height:1.1; }
 .count span { font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--faint); }
 
+.newsgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:14px; margin:10px 0 4px; }
+.newsteam h4 { margin:0 0 6px; font-size:12px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--faint); }
+ul.news { margin:0; padding-left:18px; }
+ul.news li { margin-bottom:5px; font-size:14px; line-height:1.45; }
+.newsdate { color:var(--faint); font-size:11px; white-space:nowrap; }
 .standing { margin:18px 0 0; padding:12px 14px; border-left:3px solid var(--clay);
   background:var(--sunk); font-size:13px; line-height:1.5; color:var(--muted); }
 .standing b { color:var(--ink); }

@@ -72,7 +72,7 @@ class Dossier:
 
 def build(game, store, pitcher_logs=None, prices=None, weather=None,
           lineups=None, bullpen=None, splits=None, matchups=None,
-          travel=None, arsenals=None, information_time=None) -> Dossier:
+          travel=None, arsenals=None, news=None, information_time=None) -> Dossier:
     """Assemble one dossier from whatever sources are available."""
     dossier = Dossier(game, information_time=information_time)
     date = game.get("date")
@@ -101,6 +101,17 @@ def build(game, store, pitcher_logs=None, prices=None, weather=None,
         dossier.add("weather", weather)
     else:
         dossier.miss("weather", "weather not fetched for this slate")
+
+    # What changed recently, as opposed to every other section, which describes
+    # a steady state. A quiet stretch is a real answer and carries its own
+    # sentence rather than rendering as missing data.
+    if news is not None:
+        if news.get("reason"):
+            dossier.miss("news", news["reason"])
+        else:
+            dossier.add("news", news["teams"])
+    else:
+        dossier.miss("news", "roster news not fetched for this slate")
 
     if lineups:
         dossier.add("lineups", lineups)

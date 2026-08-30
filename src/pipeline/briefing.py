@@ -17,7 +17,7 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
                 weather_by_pk=None, lineups_by_pk=None, bullpen_by_team=None,
                 handedness=None, splits_by_pk=None, matchups_by_pk=None,
                 travel_by_pk=None, arsenals=None, batter_arsenals=None,
-                detectors=None, information_time=None) -> dict:
+                news_by_pk=None, detectors=None, information_time=None) -> dict:
     """One briefing for one date.
 
     The scanner's verdict and the detectors run over the same dossier, so a
@@ -39,6 +39,7 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
             matchups=(matchups_by_pk or {}).get(game.get("game_pk")),
             travel=(travel_by_pk or {}).get(game.get("game_pk")),
             arsenals=_arsenal_section(game, arsenals),
+            news=(news_by_pk or {}).get(game.get("game_pk")),
             bullpen={team: (bullpen_by_team or {}).get(team) for team in key
                      if (bullpen_by_team or {}).get(team)} or None,
             information_time=information_time,

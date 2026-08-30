@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import argparse
 import sys
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 from src.core import calibration
@@ -546,6 +546,27 @@ def cmd_brief(args) -> int:
     except statcast.StatcastError as exc:
         print(f"  (arsenals unavailable: {exc})")
 
+    # Roster news. Ingest is cheap and free, so the store is topped up on every
+    # run rather than depending on a separate scheduled job having fired.
+    news_by_pk = {}
+    if not args.no_news:
+        from src.pipeline import news as news_mod
+        try:
+            news_mod.ingest(
+                (date.fromisoformat(args.date)
+                 - timedelta(days=news_mod.WINDOW_DAYS + 1)).isoformat(),
+                args.date)
+        except Exception as exc:  # noqa: BLE001 -- news is enrichment, never a blocker
+            print(f"  (news feed unavailable: {exc})")
+        news_rows = news_mod.read()
+        if news_rows:
+            for game in games:
+                news_by_pk[game.get("game_pk")] = news_mod.attach(
+                    game, news_rows, args.date)
+            moves = sum(len(v) for entry in news_by_pk.values()
+                        for v in entry["teams"].values())
+            print(f"  roster news: {moves} recent move(s) across the slate")
+
     trips = {}
     for game in games:
         home = game.get("home_team")
@@ -588,7 +609,8 @@ def cmd_brief(args) -> int:
                                  arsenals=arsenals, batter_arsenals=batter_arsenals,
                                  prices_by_matchup=prices, bullpen_by_team=pens,
                                  lineups_by_pk=posted, handedness=hands,
-                                 splits_by_pk=splits, matchups_by_pk=matchups)
+                                 splits_by_pk=splits, matchups_by_pk=matchups,
+                                 news_by_pk=news_by_pk)
     if not args.no_ledger:
         from src.pipeline import ledger
         written = ledger.record_slate(slate)
@@ -1273,6 +1295,8 @@ def build_parser() -> argparse.ArgumentParser:
                            help="skip the weather call")
     brief_cmd.add_argument("--no-matchups", action="store_true",
                            help="skip batter-vs-pitcher history (many calls)")
+    brief_cmd.add_argument("--no-news", action="store_true",
+                           help="skip the roster news and injured-list feed")
     brief_cmd.add_argument("--f5", action="store_true",
                            help="also price first-five per game (20 credits each) "
                                 "-- enables the implied-bullpen detector")
