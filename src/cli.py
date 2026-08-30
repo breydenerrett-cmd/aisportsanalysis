@@ -1075,6 +1075,43 @@ def cmd_daily(args) -> int:
     return EXIT_OK
 
 
+def cmd_dense(args) -> int:
+    """Take a spaced series of snapshots while games are approaching.
+
+    Meant for an hourly schedule. Four captures fifteen minutes apart tile one
+    hour, and the run costs nothing on an hour with no game inside the window.
+    """
+    from src.pipeline import dense
+
+    if args.estimate:
+        cost = dense.estimate_daily_credits()
+        print(f"{cost['credits_per_call']} credits per capture, "
+              f"{cost['captures_per_hour']} per hour")
+        print(f"  {cost['credits_per_day']} credits a day across "
+              f"{cost['hours_of_baseball']} hours of baseball")
+        print(f"  {cost['credits_per_month']} a month if it ran every day")
+        return EXIT_OK
+
+    result = dense.run(captures=args.captures, interval_minutes=args.interval,
+                       window_minutes=args.window)
+    if result.get("skipped"):
+        print(f"skipped: {result['skipped']}")
+        if result.get("credits_remaining") is not None:
+            print(f"  {result['credits_remaining']} credits remaining, "
+                  f"floor is {result['floor']}")
+        return EXIT_OK
+
+    print(f"{result['captures']} capture(s), "
+          f"{result['observations']} observations")
+    for row in result["detail"]:
+        note = f" ERROR: {row['error']}" if row.get("error") else ""
+        print(f"  {row['at']}  {row['games_in_window']} game(s) in window, "
+              f"{row['captured']} observations{note}")
+    if result.get("stopped_early"):
+        print(f"  stopped early: {result['stopped_early']}")
+    return EXIT_OK
+
+
 def cmd_snapshot(args) -> int:
     """Capture one odds observation. Meant to run on a schedule.
 
@@ -1271,6 +1308,16 @@ def build_parser() -> argparse.ArgumentParser:
                            help="YYYY-MM-DD (defaults to today, UTC)")
 
     sub.add_parser("snapshot", help="capture one odds observation (run on a schedule)")
+    dense_parser = sub.add_parser(
+        "dense", help="spaced snapshots while games approach (hourly schedule)")
+    dense_parser.add_argument("--captures", type=int, default=4,
+                              help="captures in this run (default 4)")
+    dense_parser.add_argument("--interval", type=int, default=15,
+                              help="minutes between captures (default 15)")
+    dense_parser.add_argument("--window", type=int, default=180,
+                              help="minutes before first pitch to stay active (default 180)")
+    dense_parser.add_argument("--estimate", action="store_true",
+                              help="print the credit cost and exit without spending")
 
     movement_cmd = sub.add_parser("movement", help="show captured line movement")
     movement_cmd.add_argument("--market", default="h2h",
@@ -1296,6 +1343,7 @@ COMMANDS = {
     "grade": cmd_grade,
     "daily": cmd_daily,
     "snapshot": cmd_snapshot,
+    "dense": cmd_dense,
     "movement": cmd_movement,
     "calibration-demo": cmd_calibration_demo,
 }

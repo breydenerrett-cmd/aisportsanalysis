@@ -394,6 +394,26 @@ def _get_json_with_usage(path: str, params: dict, timeout: int = DEFAULT_TIMEOUT
     }
 
 
+def quota(env=None, timeout: int = DEFAULT_TIMEOUT) -> dict:
+    """Credits remaining, read from the sports list, which is not itself metered.
+
+    Every response carries the counters, but every response that carries useful
+    odds also costs credits. The sports endpoint is free, so a scheduled job can
+    check its budget before deciding whether to spend -- which is the only
+    ordering that lets a floor actually hold.
+
+    Returns remaining/used/last as ints or None. Never raises on a missing key;
+    an unconfigured system reports that instead, because this is what a
+    preflight calls.
+    """
+    source = os.environ if env is None else env
+    if not is_configured(source):
+        return {"configured": False, "remaining": None, "used": None, "last": None}
+    params = {"apiKey": (source.get(ENV_KEY) or "").strip()}
+    _, usage = _get_json_with_usage("sports", params, timeout=timeout)
+    return {"configured": True, **usage}
+
+
 def fetch_historical_odds(timestamp, markets=None, region=None, env=None,
                           timeout: int = DEFAULT_TIMEOUT):
     """Odds for the whole slate as they stood at one instant. Paid plans only.
