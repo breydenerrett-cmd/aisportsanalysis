@@ -216,19 +216,32 @@ def _favorite_underdog(prepared) -> dict:
         "report only -- favorite means implied > 0.5")
 
 
-def _concentration(prepared, key, effect_floor) -> dict:
+def _concentration(prepared, key, effect_floor, member_key=None) -> dict:
     """Leave-one-out over the most-backed teams or books.
 
     The M3 lesson: a market-wide effect survives losing any one participant.
     Only the top slices by count are left out -- dropping a 4-row team tells
     you nothing, and a leave-out that itself falls under the floor is reported
     but never judged (doubt is not death).
+
+    `member_key`, when set, names a LIST-valued row key consulted alongside
+    the scalar: leaving a book out must drop every row where that book carried
+    the best price, including rows where several books tied and an arbitrary
+    one of them landed in the scalar slot. Without this, ties are attributed
+    to whichever book the API happened to list first, and leave-one-out
+    under-removes exactly the rows it exists to remove.
     """
     usable = _usable(prepared, key)
     if not usable:
         return {"skipped": f"no '{key}' key present"}
     if len(usable) < MIN_N:
         return {"skipped": f"only {len(usable)} rows carry '{key}'"}
+
+    def belongs(row, name):
+        if member_key and isinstance(row.get(member_key), (list, tuple)):
+            return name in row[member_key]
+        return row[key] == name
+
     counts = {}
     for row in usable:
         counts[row[key]] = counts.get(row[key], 0) + 1
@@ -236,7 +249,7 @@ def _concentration(prepared, key, effect_floor) -> dict:
         counts.items(), key=lambda kv: (-kv[1], str(kv[0])))[:CONCENTRATION_TOP]]
     leave_one_out, killed_by = {}, []
     for name in top:
-        measured = _measure([r for r in usable if r[key] != name])
+        measured = _measure([r for r in usable if not belongs(r, name)])
         leave_one_out[str(name)] = measured
         # Pre-registered rules 2 and 3: significance AND size both gone once
         # one slice is removed. Signed effect on purpose -- a flip counts.
@@ -314,6 +327,8 @@ def _dose_response(prepared, dose_key, dose_bands, effect_floor) -> dict:
              else _quartile_edges([abs(r[dose_key]) for r in usable]))
     if len(edges) < 2:
         return {"skipped": "dose values have no spread to band"}
+    in_range = [r for r in usable if edges[0] <= abs(r[dose_key]) <= edges[-1]]
+    cropped = len(usable) - len(in_range)
     bands = []
     for i in range(len(edges) - 1):
         lo, hi = edges[i], edges[i + 1]
@@ -324,6 +339,10 @@ def _dose_response(prepared, dose_key, dose_bands, effect_floor) -> dict:
         measured["lo"], measured["hi"] = lo, hi
         bands.append(measured)
     fatal, why = _m3_signature(bands, effect_floor)
+    if cropped:
+        # A band range that crops rows can crop exactly the low-dose region
+        # that would contradict a spike. Naming the count keeps that visible.
+        why += f" ({cropped} row(s) fall outside the supplied band range)"
     return {"n": len(usable), "bands": bands, "fatal": fatal, "note": why}
 
 
@@ -385,7 +404,8 @@ def _threshold_sensitivity(prepared, dose_key) -> dict:
 # The battery
 # ---------------------------------------------------------------------------
 
-def run(rows, *, effect_floor=0.01, dose_key=None, dose_bands=None) -> dict:
+def run(rows, *, effect_floor=0.01, dose_key=None, dose_bands=None,
+        dose_rows=None) -> dict:
     """Run every falsification check and return the verdict.
 
     rows: graded selections (see module docstring for keys). dose_key names
@@ -408,19 +428,32 @@ def run(rows, *, effect_floor=0.01, dose_key=None, dose_bands=None) -> dict:
                      "extreme_removal", "dose_response",
                      "threshold_sensitivity"):
             report[name] = {"skipped": report["baseline"]["skipped"]}
-        return {"survives": True, "fatal": [], "report": report}
+        # survives=True here is VACUOUS -- nothing was checked. `ran` is the
+        # flag a caller must consult before treating survival as meaningful;
+        # promoting a candidate on ran=False is promoting it on zero checks.
+        return {"survives": True, "ran": False, "fatal": [], "report": report}
 
     report["season_split"] = _season_split(prepared, effect_floor)
     report["home_away"] = _home_away(prepared)
     report["favorite_underdog"] = _favorite_underdog(prepared)
     report["team_concentration"] = _concentration(prepared, "team", effect_floor)
-    report["book_concentration"] = _concentration(prepared, "book", effect_floor)
+    report["book_concentration"] = _concentration(
+        prepared, "book", effect_floor, member_key="books_at_best")
     report["price_bands"] = _price_bands(prepared)
     report["extreme_removal"] = _extreme_removal(
         prepared, report["baseline"]["effect"])
+    # The dose checks may receive a WIDER graded sample than the selections
+    # themselves. Running them on selected rows only -- every one of which
+    # cleared the threshold by construction -- leaves no below-threshold band
+    # to contradict a spike, which structurally disarms the check that killed
+    # M3. The caller who has graded sub-threshold rows passes them here; the
+    # baseline and every other check still judge the selections alone.
+    dose_sample = _prepared(dose_rows) if dose_rows is not None else prepared
     report["dose_response"] = _dose_response(
-        prepared, dose_key, dose_bands, effect_floor)
-    report["threshold_sensitivity"] = _threshold_sensitivity(prepared, dose_key)
+        dose_sample, dose_key, dose_bands, effect_floor)
+    report["threshold_sensitivity"] = _threshold_sensitivity(
+        dose_sample, dose_key)
 
     fatal = [name for name in FATAL_CHECKS if report[name].get("fatal")]
-    return {"survives": not fatal, "fatal": fatal, "report": report}
+    return {"survives": not fatal, "ran": True, "fatal": fatal,
+            "report": report}

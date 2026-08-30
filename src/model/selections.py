@@ -345,7 +345,11 @@ def _resolve_pair(candidates, game):
         candidates = [candidates]
     start = _parse_utc(game.get("start_time_utc"))
     if start is None:
-        return candidates[0] if len(candidates) == 1 else None
+        # The docstring's own rule, previously honoured only for multiple
+        # candidates: no usable start time means the gate cannot run, and a
+        # lone candidate is exactly as likely to be the neighbouring game as
+        # a tied one is. Unpriced, not guessed.
+        return None
     best, best_gap = None, None
     for entry in candidates:
         commence = _parse_utc(entry.get("commence_time"))
