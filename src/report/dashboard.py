@@ -42,6 +42,21 @@ from pathlib import Path
 
 from src.detect import base as detect
 
+# What this system currently knows, said plainly and first. Two pre-registered
+# hypothesis families -- eleven baseball-knowledge detectors, then five
+# market-structure hypotheses -- have been evaluated against outcomes on
+# 2023-24. None cleared the significance and effect-size gates. Anyone reading
+# this page should know that before they read a single claim on it, because the
+# claims are individually true and collectively unproven, and that distinction
+# is the whole product.
+_STANDING = (
+    "<b>Nothing on this page is a proven edge.</b> Thirteen pre-registered "
+    "hypotheses have been tested against 2023&ndash;24 outcomes and none "
+    "cleared the bar. What follows is accurate description of tonight&rsquo;s "
+    "games &mdash; useful for deciding what to look at, and for knowing which "
+    "of your own reasons are noise. It is not a model that beats the market."
+)
+
 EVIDENCE_LABELS = {
     detect.PROVEN: ("Proven", "Held up on data it was not built from"),
     detect.FORWARD_TESTING: ("Forward testing", "Logged before the games; still accumulating"),
@@ -562,6 +577,7 @@ def _document(payload) -> str:
 <h1>Slate briefing &mdash; {_esc(payload.get("date"))}</h1>
 <div class="sub mono">generated {_esc(payload["generated_at"])} &middot; times in UTC</div>
 <div class="counts">{tiles}</div>
+<div class="standing">{_STANDING}</div>
 <div class="legend">{"".join(legend)}</div>
 </header>
 {_lead(games)}
@@ -606,6 +622,9 @@ h1 { margin:0 0 6px; font-size:30px; letter-spacing:-.02em; }
 .count b { display:block; font-size:26px; line-height:1.1; }
 .count span { font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--faint); }
 
+.standing { margin:18px 0 0; padding:12px 14px; border-left:3px solid var(--clay);
+  background:var(--sunk); font-size:13px; line-height:1.5; color:var(--muted); }
+.standing b { color:var(--ink); }
 .legend { margin:18px 0 0; display:flex; gap:8px; flex-wrap:wrap; }
 .chip {
   font-size:10px; letter-spacing:.08em; text-transform:uppercase; font-weight:700;

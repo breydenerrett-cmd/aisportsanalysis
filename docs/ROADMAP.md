@@ -133,7 +133,21 @@ its evidence fully separated, and a V2 discovery enters the frozen V1 policy
 only by starting a new validation cycle.
 **Autonomous:** yes once unblocked.
 
-## Stage 9 — Dashboard / product refinement
+## Stage 9 — Dashboard / product refinement — **IN PROGRESS**
+**Direction set 2026-08-29:** with both hypothesis families null, the product's
+value is honest decision support, not edge-finding. Work so far:
+- `TESTED_NULL` evidence state, ranked weaker than `UNPROVEN`, rendered as
+  "Tested — no edge". The eight Stage 2 detectors retagged; `stale_book` had
+  been claiming HISTORICAL_CANDIDATE after coming back +0.03pp at p=0.97.
+- `rank()` sorts by evidence before surprise, so a refuted claim with a big
+  number no longer leads the page over an open question.
+- A standing statement in the page header: nothing here is a proven edge,
+  thirteen hypotheses tested, none cleared the bar.
+- Sample-size guards: `bullpen_exposure` needs five starts and otherwise emits
+  a debunk naming the problem; `travel_load` no longer announces a "dense
+  stretch" that matches the baseline.
+
+## Stage 9 (original scope) — Dashboard / product refinement
 **Objective:** improvements that serve analysis/validation (validation package
 rendering, robustness views, ledger status on page).
 **Gate:** only when it directly supports validation, per standing instruction.
