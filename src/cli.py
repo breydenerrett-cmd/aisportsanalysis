@@ -1062,7 +1062,8 @@ def cmd_daily(args) -> int:
     def do_brief():
         code = cmd_brief(argparse.Namespace(
             date=today, out="artifacts/briefing.html", no_odds=False,
-            no_weather=False, no_matchups=False, no_ledger=False, f5=True))
+            no_weather=False, no_matchups=False, no_news=False,
+            no_ledger=False, f5=True))
         if code != EXIT_OK:
             raise RuntimeError("briefing step returned a non-zero exit")
 
