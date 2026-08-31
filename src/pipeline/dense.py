@@ -60,14 +60,46 @@ CAPTURES_PER_RUN = 4
 # everything else.
 CREDIT_FLOOR = 5000
 
-# F5 close pass: the per-event first-five moneyline for games inside the
-# close window, appended alongside the regular close capture. Per-event
-# billing (1 credit per event) is why this rides ONLY the close pass and is
-# capped -- docs/COLLECTION_POLICY.md prices the whole layer at 10-30
-# credits a day.
+# F5 close pass: the per-event first-five moneyline, priced once per game at
+# the last capture moment before its first pitch.
+#
+# WHY IT RIDES EVERY CAPTURE MOMENT AND NOT JUST THE LAST ONE
+# ------------------------------------------------------------
+# It used to hang off the close pass alone, and that made it structurally
+# blind. A run that finds any game inside the three-hour window always takes
+# all four captures, so `run_end` is pinned to run_start + 45 minutes -- and
+# when no game is inside three hours the loop breaks, but then nothing can be
+# inside twenty-five minutes either, so the break path can never price
+# anything. One instant per hour, therefore, and the T-25 window is a single
+# 25-minute slice of each hour. The slate does not oblige: on the real
+# 2026-09-01 card twelve of fifteen first pitches fall at :38-:45 past the
+# hour, and replaying the true hourly cadence over it reached 3 of 15 games.
+# No trigger phase does better than 6 of 15, because 25 minutes of coverage
+# per 60 cannot.
+#
+# Riding every capture moment closes the gap: at each moment the pass prices
+# the games that will have started before the NEXT moment, which is the last
+# look this run gets at them, and the run's tail keeps the full T-25 reach so
+# consecutive hourly runs tile with no hole. Each event is priced at most
+# ONCE per run, so the spend is about one credit per game per night -- the
+# bottom of the 15-40/day docs/COLLECTION_POLICY.md approved for this layer,
+# which specifies exactly this: "piggybacked on dense capture moments".
 F5_CLOSE_STORE = processed_path("f5_close.jsonl")
 F5_CLOSE_MARKET = "h2h_1st_5_innings"
+
+# Per RUN, not per moment. A doubleheader-heavy hour cannot multiply the
+# spend, and a market that errors on every attempt cannot be retried into a
+# budget hole -- an attempted event counts whether or not it returned prices.
 F5_CLOSE_MAX_EVENTS = 6
+
+# The free MLB schedule and the odds feed disagree about first pitch by about
+# a minute (MLB 22:40 against the odds feed's 22:41, every game, measured
+# 2026-08-31). The schedule is only a free pre-filter here; the odds feed's
+# own commence_time decides what actually gets priced. The slack stops a
+# one-minute skew from closing the gate on a game the pass would have taken,
+# and it is the same tolerance used to match a stored close back to a
+# scheduled game.
+F5_SCHEDULE_SLACK_MINUTES = 2
 
 # The close-capture pass: if a game starts within this many minutes when the
 # 4x15 loop has finished, one more capture is taken. The observation nearest
@@ -197,6 +229,11 @@ def run(env=None, captures=CAPTURES_PER_RUN, interval_minutes=INTERVAL_MINUTES,
     run_start = clock()
     capture_moments = []
 
+    # One F5 budget and one seen-set for the whole run, so the cap bounds the
+    # run rather than each moment inside it.
+    f5_state = {"seen": set(), "budget": F5_CLOSE_MAX_EVENTS,
+                "events": 0, "rows": 0, "errors": []}
+
     results = []
     reason = None
     for index in range(captures):
@@ -223,13 +260,20 @@ def run(env=None, captures=CAPTURES_PER_RUN, interval_minutes=INTERVAL_MINUTES,
                 poll_hook()
             except Exception:  # noqa: BLE001 -- capture outlives the poll
                 pass
-        results.append({
+        row = {
             "at": moment.isoformat().replace("+00:00", "Z"),
             "games_in_window": approaching,
             "captured": captured.get("captured", 0),
             "events": captured.get("events", 0),
             "error": captured.get("error"),
-        })
+        }
+        # The last look this run gets at any game starting before the next
+        # capture. On the final pass through the loop there is no next
+        # capture, so the tail below widens the reach to the full T-25.
+        f5 = _f5_moment(env, moment, interval_minutes, events, f5_state)
+        if f5 is not None:
+            row["f5"] = f5
+        results.append(row)
         if index < captures - 1 and sleep:
             sleep(interval_minutes * 60)
 
@@ -259,13 +303,21 @@ def run(env=None, captures=CAPTURES_PER_RUN, interval_minutes=INTERVAL_MINUTES,
                     "events": captured.get("events", 0),
                     "error": captured.get("error"),
                 }
-                close_capture["f5"] = _f5_close_pass(env, run_end)
+                close_capture["f5"] = _f5_moment(
+                    env, run_end, CLOSE_WINDOW_MINUTES, events_now,
+                    f5_state) or {"events": 0, "rows": 0, "errors": []}
                 results.append(dict(close_capture, close_pass=True,
                                     games_in_window=games_in_window(
                                         events_now, run_end,
                                         CLOSE_WINDOW_MINUTES)))
 
+    # Two gaps, reported separately because they are two different losses.
+    # `missed_windows` is the h2h close; `missed_f5_closes` is the first-five
+    # one, which is the entire evidence base of the market-depth lane and had
+    # no reporting at all -- the pass could no-op every night and the run
+    # still looked healthy.
     missed = _missed_windows(events_now, run_start, run_end, capture_moments)
+    missed_f5 = _missed_f5_closes(events_now, run_start, run_end)
 
     return {
         "captures": len(results),
@@ -273,12 +325,44 @@ def run(env=None, captures=CAPTURES_PER_RUN, interval_minutes=INTERVAL_MINUTES,
         "credits_remaining_before": remaining,
         "stopped_early": reason if reason else None,
         "close_capture": close_capture,
+        "f5_closes": {"events": f5_state["events"], "rows": f5_state["rows"],
+                      "errors": f5_state["errors"]},
         "missed_windows": missed,
+        "missed_f5_closes": missed_f5,
         "detail": results,
     }
 
 
-def _f5_close_pass(env, run_end, store=None) -> dict:
+def _f5_moment(env, moment, lookahead_minutes, events, state):
+    """Price the F5 close for games this run will not get another look at.
+
+    Returns None when there is nothing to do, so a quiet moment adds no noise
+    to the report and costs no request. The gate reads the FREE schedule
+    already in hand; only games it flags reach the odds feed at all.
+    """
+    if state["budget"] <= 0:
+        return None
+    # Slack on BOTH edges. The far edge is obvious; the near edge is the one
+    # that cost two games a night in the replay -- the schedule says 22:45 at
+    # the moment the clock reads 22:45, so the game is not "ahead" by the free
+    # feed's reckoning, while the odds feed still lists it at 22:46 with a
+    # price to give.
+    slack = timedelta(minutes=F5_SCHEDULE_SLACK_MINUTES)
+    if events is not None and games_in_window(
+            events, moment - slack,
+            lookahead_minutes + 2 * F5_SCHEDULE_SLACK_MINUTES) == 0:
+        return None
+    report = _f5_close_pass(env, moment, lookahead_minutes=lookahead_minutes,
+                            seen=state["seen"], budget=state["budget"])
+    state["budget"] -= report["events"]
+    state["events"] += report["events"]
+    state["rows"] += report["rows"]
+    state["errors"].extend(report["errors"])
+    return report
+
+
+def _f5_close_pass(env, moment, store=None, lookahead_minutes=None,
+                   seen=None, budget=None) -> dict:
     """First-five moneyline for games inside the close window, per event.
 
     The events index is unmetered; each odds fetch bills one credit for the
@@ -286,21 +370,40 @@ def _f5_close_pass(env, run_end, store=None) -> dict:
     doubleheader-heavy slate cannot silently multiply the spend. Every
     per-event failure is reported, never fatal -- the h2h close already in
     the store is the run's primary product.
+
+    `lookahead_minutes` is how far ahead this moment is responsible for: the
+    gap to the next capture inside the loop, the full T-25 at the run's tail.
+    `seen` and `budget` are the run's shared state, so an event is paid for
+    once per run and the cap bounds the run rather than each moment in it.
     """
     target = Path(store) if store else Path(F5_CLOSE_STORE)
+    lookahead = (CLOSE_WINDOW_MINUTES if lookahead_minutes is None
+                 else lookahead_minutes)
+    cap = F5_CLOSE_MAX_EVENTS if budget is None else budget
+    if cap <= 0:
+        return {"events": 0, "rows": 0, "errors": []}
     try:
         listed = odds_provider.list_events(env)
     except odds_provider.OddsProviderError as exc:
         return {"events": 0, "rows": 0, "errors": [str(exc)]}
 
-    observed = run_end.isoformat().replace("+00:00", "Z")
-    horizon = run_end + timedelta(minutes=CLOSE_WINDOW_MINUTES)
+    observed = moment.isoformat().replace("+00:00", "Z")
+    horizon = moment + timedelta(minutes=lookahead)
     targets = []
     for event in listed or []:
         commence = _parse_iso(event.get("commence_time"))
-        if commence is not None and run_end < commence <= horizon:
-            targets.append(event)
-    targets = targets[:F5_CLOSE_MAX_EVENTS]
+        if commence is None or not (moment < commence <= horizon):
+            continue
+        if seen is not None and event.get("id") in seen:
+            continue
+        targets.append(event)
+    targets = targets[:cap]
+    if seen is not None:
+        # Marked on ATTEMPT, not on success. A market that is not listed
+        # errors identically at every moment, and retrying it three more
+        # times inside one run would spend the cap on a game that has no
+        # first-five price to give.
+        seen.update(event.get("id") for event in targets)
 
     rows, errors = [], []
     for event in targets:
@@ -343,6 +446,84 @@ def _f5_close_pass(env, run_end, store=None) -> dict:
             for row in rows:
                 handle.write(json.dumps(row, sort_keys=True) + "\n")
     return {"events": len(targets), "rows": len(rows), "errors": errors}
+
+
+def _missed_f5_closes(events, run_start, run_end, store=None):
+    """Games this run was the last look at, with no first-five close stored.
+
+    The same contract as `_missed_windows` and for the same reason: reported,
+    never repaired. This one exists because the F5 layer's failure mode is
+    silence -- the pass no-ops, the run looks healthy, and the absence is only
+    noticed when someone goes looking for a store that was never written. A
+    night that produced no close now says so on the run that produced none.
+
+    A close taken by an EARLIER run legitimately covers the window, so the
+    store's own rows are what is checked, not just this run's spend. Rows are
+    matched to scheduled games on first pitch within F5_SCHEDULE_SLACK_MINUTES,
+    because the two feeds disagree by about a minute.
+
+    The span is every game this run was responsible for: from run_start out to
+    the tail pass's own horizon, since a game inside that horizon has had its
+    last look from this run. A later run can still reach the far end of it, so
+    a line here can occasionally be answered by the next run rather than being
+    permanent -- which is the right way round. A first-five close that goes
+    missing quietly is how this store spent its first night empty while the
+    lane believed it was accumulating.
+    """
+    if not events or run_end <= run_start:
+        return []
+    horizon = run_end + timedelta(minutes=CLOSE_WINDOW_MINUTES)
+    started = []
+    for row in events:
+        start = _parse(row.get("commence_time"))
+        if start is not None and run_start < start <= horizon:
+            started.append(start)
+    if not started:
+        return []
+
+    priced = _f5_priced(store)
+    slack = timedelta(minutes=F5_SCHEDULE_SLACK_MINUTES)
+    missed = []
+    for start in sorted(started):
+        window_open = start - timedelta(minutes=CLOSE_WINDOW_MINUTES)
+        if not any(abs(commence - start) <= slack
+                   and window_open <= observed <= start
+                   for commence, observed in priced):
+            missed.append({
+                "commence_time": start.isoformat().replace("+00:00", "Z"),
+                "reason": (f"this run was its last look and no "
+                           f"{F5_CLOSE_MARKET} price is stored inside its "
+                           f"final {CLOSE_WINDOW_MINUTES} minutes"),
+            })
+    return missed
+
+
+def _f5_priced(store=None):
+    """(first pitch, observation time) for every row already in the F5 store.
+
+    A store that does not exist yet is not an error -- it is the state this
+    lane spent its first night in, and reading it must say "nothing priced"
+    rather than raise on the run that would have priced something.
+    """
+    target = Path(store) if store else Path(F5_CLOSE_STORE)
+    try:
+        text = target.read_text(encoding="utf-8")
+    except OSError:
+        return []
+    priced = []
+    for line in text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+        except ValueError:  # a fragment from a killed run, not evidence
+            continue
+        commence = _parse(row.get("commence_time"))
+        observed = _parse(row.get("observed_utc"))
+        if commence is not None and observed is not None:
+            priced.append((commence, observed))
+    return priced
 
 
 def _parse_iso(stamp):
