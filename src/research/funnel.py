@@ -86,6 +86,20 @@ NUMERIC_FEATURES = ("lineup_platoon_share", "starter_platoon_gap",
                     "lineup_vs_primary_pitch", "primary_pitch_share",
                     "top_minus_bottom")
 
+# An INTERACTION feature is two base features joined by "*": the per-side
+# value is their product, computed on each side before the away-minus-home
+# differential is taken. The matrix already cross-joins every per-side
+# feature against what that side actually faces tonight (away_* features
+# describe the away lineup against the HOME starter), so a product is the
+# "unit versus specific weakness" construction directly: a big one-handed
+# lineup share times a big opposing-starter platoon gap is a lineup built to
+# exploit tonight's exact weakness, and a NEGATIVE component flips the
+# product's sign exactly as the mechanism says it should (a "weakness" that
+# is really a strength counts against the side, not for it). Both components
+# must answer on both sides or the signal is None -- half an interaction is
+# not an interaction.
+INTERACTION_SEPARATOR = "*"
+
 # The only construction rules a spec may name today. Tuples, not strings, so
 # adding a rule is a visible edit here rather than a stringly-typed drive-by.
 MARKETS = ("h2h",)
@@ -145,11 +159,27 @@ def validate_spec(spec) -> dict:
     if spec["market"] not in MARKETS:
         raise FunnelError(f"spec {name!r}: market must be one of {MARKETS}, "
                           f"got {spec['market']!r}")
-    if spec["feature"] not in NUMERIC_FEATURES:
+    feature = spec["feature"]
+    if not isinstance(feature, str):
+        raise FunnelError(f"spec {name!r}: feature must be a string")
+    parts = feature.split(INTERACTION_SEPARATOR)
+    if len(parts) == 2:
+        bad = [p for p in parts if p not in NUMERIC_FEATURES]
+        if bad:
+            raise FunnelError(
+                f"spec {name!r}: interaction component(s) {bad} are not "
+                f"numeric matrix columns; expected {NUMERIC_FEATURES}")
+        if parts[0] == parts[1]:
+            raise FunnelError(
+                f"spec {name!r}: an interaction of a feature with itself is "
+                "a squared single feature wearing a costume; name the single "
+                "feature and its own threshold instead")
+    elif feature not in NUMERIC_FEATURES:
         raise FunnelError(
-            f"spec {name!r}: feature {spec['feature']!r} is not a numeric "
+            f"spec {name!r}: feature {feature!r} is not a numeric "
             f"matrix column; expected one of {NUMERIC_FEATURES} (base name, "
-            "no away_/home_ prefix)")
+            "no away_/home_ prefix) or two of them joined by "
+            f"'{INTERACTION_SEPARATOR}'")
     if spec["side_rule"] not in SIDE_RULES:
         raise FunnelError(f"spec {name!r}: side_rule must be one of "
                           f"{SIDE_RULES}, got {spec['side_rule']!r}")
@@ -242,13 +272,30 @@ def _numeric(value) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
+def _side_value(row, prefix, feature):
+    """One side's value: the column itself, or the interaction product.
+
+    A product with a missing component is None, never a guess -- an
+    interaction half-known is not known at all.
+    """
+    parts = feature.split(INTERACTION_SEPARATOR)
+    if len(parts) == 2:
+        first, second = row.get(prefix + parts[0]), row.get(prefix + parts[1])
+        if not _numeric(first) or not _numeric(second):
+            return None
+        return first * second
+    value = row.get(prefix + feature)
+    return value if _numeric(value) else None
+
+
 def _signal(row, feature):
     """away minus home, or None when either side cannot answer.
 
     The sign convention documented at module top lives here and only here.
     """
-    away, home = row.get("away_" + feature), row.get("home_" + feature)
-    if not _numeric(away) or not _numeric(home):
+    away = _side_value(row, "away_", feature)
+    home = _side_value(row, "home_", feature)
+    if away is None or home is None:
         return None
     return away - home
 
