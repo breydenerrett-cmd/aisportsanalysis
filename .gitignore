@@ -37,3 +37,4 @@ Thumbs.db
 # artifacts/ IS tracked: demo_latest.html is the known-good snapshot that must
 # survive any later refactor. Dated briefings are regenerable and are not.
 artifacts/briefing.html
+artifacts/analyze_*.html
