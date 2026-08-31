@@ -364,3 +364,9 @@ honesty fixes), closing staleness + marker dates, pre-event relevance tiers,
 V4 reproducibility audit (exact). Suite 1,396 -> 1,587 green. Remaining open
 write-ups: one-market-two-stores unification (queue 7); corrupt-ledger-line
 halt semantics (deliberate, documented).
+
+2026-08-31 decisions: public-projection benchmark queue item removed -- the
+dead end (no honestly replayable free source) and the Elo reconstruction
+already answer it (docs/BENCHMARK_ELO.md). Ledger corrupt-line halt KEPT
+deliberately: a tolerant dedup scan risks double-recording after a crash,
+worse for evidence than a loud halt that names its line.

@@ -125,13 +125,9 @@ next research read happens when a V3 class reaches its 30-event floor.
    when the MLB slate empties; plan the off-season posture (lane E).
 5. Product polish batch when functionality pauses: per-game permalinks,
    season archive view (lane D, explicitly after function).
-6. Public projection benchmark (lane B, cheap): does any free public
-   projection replay honestly and beat the close? Elo already lost by
-   0.008 log-loss/game -- extend the yardstick if a replayable source
-   exists; document the dead end if not (docs/BENCHMARK_ELO.md pattern).
-7. Ledger corrupt-line recovery decision: a mid-write crash currently
-   halts recording until a human intervenes (deliberate, documented);
-   decide whether a dedup-path-only tolerant scan is safer (lane E).
+6. Wire the relevance layer into the product: score_events/what_changed
+   (src/analysis/relevance.py) exist but nothing renders them -- add the
+   "what changed, and does it matter" line to the game card (lane D).
 
 DONE this cycle: timestamp audit · V3 freeze · market probe · collection
 policy · lead/lag + eventstudy cores · multibook store · rosterwatch ·
