@@ -67,22 +67,22 @@ falsification (battery RULES_VERSION 2.0.0, frozen) → publish all results →
 archive → next family. Zero survivors is a result, not a stop condition.
 
 ### CURRENT TASK
-Any-matchup Analyzer mode (lane D) + V5 feature groundwork (lane F:
-starter velocity / batted-ball matrix features, point-in-time), while V3
-events accumulate in the background via rosterwatch + multibook capture.
+Steady state: forward capture and V3 event accumulation run on the hourly
+trigger; the daily loop maintains the ledger. Build lanes are clear — the
+next research read happens when a V3 class reaches its 30-event floor.
 
 ### READY QUEUE (refill to ≥3 whenever an item completes)
 1. Protect/run due forward capture (standing, lane A — always first).
-2. Any-matchup Analyzer mode (lane D) — IN FLIGHT.
-3. V5 feature groundwork: starter velocity + batted-ball matrix features,
-   PIT-tested (lane F) — IN FLIGHT.
-4. Narrative quality pass over finding/dossier text (lane D, A3).
-5. V5 pre-registration once the new features' coverage is measured
-   (lane F): coverage-rank, compact family, frozen battery 2.0.0.
-6. Daily-loop resilience: dedup repeated briefing runs per date (audit
-   found 5 duplicate rec sets on 08-30), settle-run gap alerting (lane E).
-7. V3 first class-floor analysis when any class reaches 30 admitted
-   events (lane B; weeks out — do not read early).
+2. V3 first class-floor analysis when any class reaches 30 admitted
+   events (lane B; run `python3 -m src.cli timing` to check accumulation;
+   do not read early).
+3. F5 forward-series review once ~2 weeks of F5 closes exist in
+   data/processed/f5_close.jsonl (lane F: measure coverage/books before
+   designing any F5 family; historical F5 backfill is a HARD GATE item).
+4. Season-end handling (late September): daily loop and capture behavior
+   when the MLB slate empties; plan the off-season posture (lane E).
+5. Product polish batch when functionality pauses: per-game permalinks,
+   season archive view (lane D, explicitly after function).
 
 DONE this cycle: timestamp audit · V3 freeze · market probe · collection
 policy · lead/lag + eventstudy cores · multibook store · rosterwatch ·
