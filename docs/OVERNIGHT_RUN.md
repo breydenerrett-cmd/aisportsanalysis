@@ -345,3 +345,13 @@ closing_observation ignores book_last_update so a suspended book can supply
 "the close" (changing it changes closing semantics — needs a decision),
 (9) grade-B poll markers don't record which date they polled (near-zero
 after the rosterwatch date fix; proper fix = stamp polled date on markers).
+
+2026-08-31 product red-team (commit 1986495): nine rendering honesty defects
+fixed with tests (suite 1475 -> 1507). Worst: the Ranker banner claimed every
+row "beats the consensus" above an all-negative board; hypothetical matchups
+rendered as real games in the saved artifact. Written up, not fixed (queued):
+bullpen_workload's "sample" is a period not a denominator (src/detect);
+thin-starter warning overreaches onto adequately-sampled velocity; one market
+read from two stores (detector vs multibook) shows two book counts; the
+synthesis suppressed-items audit trail is computed but never rendered
+(product call, not defect); "<20 IP" parses as a 20-IP sample.
