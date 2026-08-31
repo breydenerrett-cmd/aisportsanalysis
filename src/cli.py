@@ -1445,6 +1445,21 @@ def cmd_watch(args) -> int:
     return EXIT_ERROR if len(report["errors"]) == 3 else EXIT_OK
 
 
+def cmd_timing(args) -> int:
+    """The V3 accumulation status; pre-registered tables only past the floor."""
+    from src.research import timingreport
+
+    result = timingreport.report()
+    print(timingreport.format_report(result))
+    for name, entry in result["classes"].items():
+        table = entry.get("response_table")
+        if table:
+            import json as json_mod
+            print(f"\n{name} response table:")
+            print(json_mod.dumps(table, indent=2))
+    return EXIT_OK
+
+
 def cmd_calibration_demo(args) -> int:
     """Show the calibration metrics working on synthetic data.
 
@@ -1616,6 +1631,9 @@ def build_parser() -> argparse.ArgumentParser:
                           help="print derived graded events as JSONL "
                                "instead of polling")
 
+    sub.add_parser("timing", help="V3 event accumulation status; tables "
+                                  "appear only past the 30-event class floor")
+
     return parser
 
 
@@ -1640,6 +1658,7 @@ COMMANDS = {
     "dense": cmd_dense,
     "movement": cmd_movement,
     "watch": cmd_watch,
+    "timing": cmd_timing,
     "calibration-demo": cmd_calibration_demo,
 }
 
