@@ -63,10 +63,13 @@ def response_table(measured, *, min_events=MIN_EVENTS) -> dict:
             latencies.setdefault(book, []).append(move["minutes"])
         # Appearance = the book quoted pre-event, whether or not it moved;
         # counting movers only would flatter slow books that simply never
-        # react inside the window.
-        for book in set((event.get("moves") or {}))\
-                .union(event.get("stale_books") or {})\
-                .union(event.get("first_movers") or []):
+        # react inside the window. measure() lists the pre-quoting books
+        # under "books"; the union fallback covers older measured dicts.
+        appeared = event.get("books") or set(
+            (event.get("moves") or {}))\
+            .union(event.get("stale_books") or {})\
+            .union(event.get("first_movers") or [])
+        for book in appeared:
             appearances[book] = appearances.get(book, 0) + 1
         stale = event.get("stale_books") or {}
         if stale:
@@ -78,18 +81,22 @@ def response_table(measured, *, min_events=MIN_EVENTS) -> dict:
             if value is not None:
                 ladder_rows[rung].append(value)
 
+    # Rows come from APPEARANCES, not from movers: a book that quoted
+    # through every window and never reacted is a finding about that book,
+    # not a book to silently drop.
     books = {}
-    for book, times in sorted(latencies.items()):
-        if appearances.get(book, 0) < MIN_BOOK_EVENTS:
-            books[book] = {"n": appearances.get(book, 0),
-                           "note": (f"seen in {appearances.get(book, 0)} "
-                                    f"events; under the {MIN_BOOK_EVENTS} "
-                                    "floor, no median quoted")}
+    for book, seen in sorted(appearances.items()):
+        if seen < MIN_BOOK_EVENTS:
+            books[book] = {"n": seen,
+                           "note": (f"seen in {seen} events; under the "
+                                    f"{MIN_BOOK_EVENTS} floor, no median "
+                                    "quoted")}
             continue
+        times = latencies.get(book, [])
         books[book] = {
-            "n": appearances[book],
+            "n": seen,
             "moved_n": len(times),
-            "median_minutes": round(_median(times), 2),
+            "median_minutes": (round(_median(times), 2) if times else None),
             "first_mover_count": first_counts.get(book, 0),
         }
 

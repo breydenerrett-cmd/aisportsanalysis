@@ -5,12 +5,16 @@ import unittest
 from src.research import leadlag
 
 
-def _event(first=("book_a",), moves=None, stale=None, ladder=None):
+def _event(first=("book_a",), moves=None, stale=None, ladder=None,
+           books=None):
+    moves = moves or {}
     return {
         "excluded": None,
         "first_movers": list(first),
-        "moves": moves or {},
+        "moves": moves,
         "stale_books": stale or {},
+        "books": sorted(books if books is not None
+                        else set(moves) | set(first)),
         "ladder_minutes": ladder or {"25%": 5.0, "50%": 10.0,
                                      "75%": None, "100%": None},
     }
@@ -70,6 +74,21 @@ class TableTests(unittest.TestCase):
         self.assertEqual(table["stale"]["share"], 0.2)
         self.assertEqual(table["stale"]["median_window_minutes"], 25.0)
 
+
+
+class AppearanceTests(unittest.TestCase):
+    def test_a_book_that_quoted_but_never_moved_still_counts_as_seen(self):
+        """A book present pre-event in every window but never reacting must
+        appear in the table (with its appearance count), not vanish -- its
+        absence of movement IS the lead/lag finding about it."""
+        events = [_event(first=("book_a",),
+                         moves={"book_a": {"minutes": 5.0, "magnitude": 0.02}},
+                         books=["book_a", "book_still"])
+                  for _ in range(30)]
+        table = leadlag.response_table(events)
+        self.assertIn("book_still", table["books"])
+        self.assertEqual(table["books"]["book_still"]["n"], 30)
+        self.assertEqual(table["books"]["book_still"]["moved_n"], 0)
 
 class StabilityTests(unittest.TestCase):
     def test_stable_leadership_overlaps_three(self):
