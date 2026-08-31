@@ -37,6 +37,11 @@ from src.providers import odds as odds_provider
 
 DEFAULT_SNAPSHOT_PATH = processed_path("odds_snapshots.jsonl")
 
+# The V3 timing study needs EVERY book's quote at every capture instant, not the
+# one preferred book the legacy store keeps. Multi-book rows go to their OWN
+# append-only file so nothing that reads odds_snapshots.jsonl sees a new shape.
+DEFAULT_MULTIBOOK_PATH = processed_path("odds_multibook.jsonl")
+
 # A snapshot taken after first pitch is not a closing line -- the market has moved on to
 # in-play pricing, which is a different product. This margin keeps late-arriving observations
 # from being mistaken for the close.
@@ -52,11 +57,17 @@ class SnapshotError(RuntimeError):
 # ---------------------------------------------------------------------------
 
 def capture(env=None, path=DEFAULT_SNAPSHOT_PATH, timeout: int = 20,
-            now=None) -> dict:
+            now=None, multibook_path=None) -> dict:
     """Fetch current odds and append one observation per game per market.
 
     Returns a summary. Never raises on a missing key -- an unconfigured system reports
     that and writes nothing, so this is safe to put on a schedule before setup is finished.
+
+    Alongside the legacy one-book rows, every capture ALSO persists the full
+    multi-book h2h board to `multibook_path` (default: odds_multibook.jsonl next
+    to the snapshot store). Both stores are written from the SAME already-fetched
+    API response -- normalize_event keeps every book under `all_books` -- so the
+    multi-book store costs ZERO extra API credits; no additional request is made.
     """
     status = odds_provider.status(env)
     if not status["configured"]:
@@ -90,10 +101,61 @@ def capture(env=None, path=DEFAULT_SNAPSHOT_PATH, timeout: int = 20,
             })
 
     written = append(rows, path=path)
+
+    # Multi-book board, from the same payload. The legacy store above is left
+    # byte-identical in format for its existing readers.
+    mb_target = _resolve_multibook_path(path, multibook_path)
+    mb_rows = multibook_rows(observed, payload["events"])
+    mb_written = append(mb_rows, path=mb_target)
+
     return {
         "captured": written, "events": payload["event_count"],
         "written_to": str(path), "configured": True, "observed_utc": observed,
+        "multibook": mb_written, "multibook_path": str(mb_target),
     }
+
+
+def _resolve_multibook_path(snapshot_path, multibook_path):
+    """The multi-book store lives next to the snapshot store it shadows.
+
+    Deriving the default from `path` (rather than hardcoding the production
+    file) means a caller who redirects the snapshot store -- tests above all --
+    redirects the multi-book store with it, and can never leak rows into the
+    real data directory.
+    """
+    if multibook_path is not None:
+        return Path(multibook_path)
+    snapshot_path = Path(snapshot_path)
+    if snapshot_path == Path(DEFAULT_SNAPSHOT_PATH):
+        return Path(DEFAULT_MULTIBOOK_PATH)
+    return snapshot_path.parent / "odds_multibook.jsonl"
+
+
+def multibook_rows(observed, events) -> list:
+    """One row per (event, book) for the h2h market, from a normalized payload.
+
+    Reads the `all_books` section that odds.normalize_event already carries, so
+    this consumes data the capture has ALREADY paid for -- zero extra credits.
+    A book quoting only half the market is skipped, never half-recorded.
+    """
+    rows = []
+    for event in events or []:
+        quotes = (event.get("all_books") or {}).get("h2h") or []
+        for quote in quotes:
+            if quote.get("home_price") is None or quote.get("away_price") is None:
+                continue
+            rows.append({
+                "observed_utc": observed,
+                "event_id": event.get("event_id"),
+                "commence_time": event.get("commence_time"),
+                "home_team": event.get("home_team"),
+                "away_team": event.get("away_team"),
+                "book": quote.get("book"),
+                "book_last_update": quote.get("last_update"),
+                "home_price": quote.get("home_price"),
+                "away_price": quote.get("away_price"),
+            })
+    return rows
 
 
 def append(rows, path=DEFAULT_SNAPSHOT_PATH) -> int:
@@ -155,6 +217,44 @@ def group_by_game(rows, market: str = "h2h") -> dict:
     for series in grouped.values():
         series.sort(key=lambda r: r.get("observed_utc") or "")
     return grouped
+
+
+def read_multibook(path=DEFAULT_MULTIBOOK_PATH, skip_corrupt: bool = True) -> list:
+    """All multi-book observations. Same resilience rules as `read`."""
+    return read(path=path, skip_corrupt=skip_corrupt)
+
+
+def multibook_quotes(event_id=None, away_team=None, home_team=None, date=None,
+                     path=DEFAULT_MULTIBOOK_PATH, rows=None) -> list:
+    """Quotes for one event, shaped for src/research/eventstudy.measure.
+
+    Filters by event_id when given, otherwise by team names and/or the
+    commence date (YYYY-MM-DD). Returns [{ts, book, away_price, home_price}]
+    sorted oldest first, where ts is OUR observed_utc -- the eventstudy module
+    measures market latency against when WE saw the price, and the book's own
+    last_update stays in the store for anyone who needs it.
+    """
+    if event_id is None and away_team is None and home_team is None and date is None:
+        raise SnapshotError("multibook_quotes needs an event_id, team, or date filter")
+    source = read_multibook(path) if rows is None else rows
+    quotes = []
+    for row in source:
+        if event_id is not None and row.get("event_id") != event_id:
+            continue
+        if away_team is not None and row.get("away_team") != away_team:
+            continue
+        if home_team is not None and row.get("home_team") != home_team:
+            continue
+        if date is not None and (row.get("commence_time") or "")[:10] != date:
+            continue
+        quotes.append({
+            "ts": row.get("observed_utc"),
+            "book": row.get("book"),
+            "away_price": row.get("away_price"),
+            "home_price": row.get("home_price"),
+        })
+    quotes.sort(key=lambda q: q.get("ts") or "")
+    return quotes
 
 
 # ---------------------------------------------------------------------------

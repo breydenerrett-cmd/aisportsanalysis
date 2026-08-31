@@ -56,6 +56,18 @@ CAPTURES_PER_RUN = 4
 # everything else.
 CREDIT_FLOOR = 5000
 
+# The close-capture pass: if a game starts within this many minutes when the
+# 4x15 loop has finished, one more capture is taken. The observation nearest
+# first pitch is the closing line, the single most valuable row in the store,
+# and a loop whose cadence happened to straddle first pitch was silently
+# skipping it.
+CLOSE_WINDOW_MINUTES = 25
+
+# A game that reaches first pitch with no capture anywhere in this many final
+# minutes has no defensible closing observation, and the run reports it as a
+# missed window rather than letting the gap pass silently.
+MISSED_WINDOW_MINUTES = 30
+
 
 class DenseCaptureError(RuntimeError):
     """Raised when a dense run cannot proceed safely."""
@@ -160,10 +172,14 @@ def run(env=None, captures=CAPTURES_PER_RUN, interval_minutes=INTERVAL_MINUTES,
         return {"captures": 0, "skipped": "credit floor",
                 "credits_remaining": remaining, "floor": credit_floor}
 
+    clock = _clock(now)
+    run_start = clock()
+    capture_moments = []
+
     results = []
     reason = None
     for index in range(captures):
-        moment = now or datetime.now(timezone.utc)
+        moment = clock()
         events = _upcoming(moment)
         if events is None:
             reason = "schedule unreachable"
@@ -174,6 +190,7 @@ def run(env=None, captures=CAPTURES_PER_RUN, interval_minutes=INTERVAL_MINUTES,
             break
 
         captured = snapshots.capture(env=env)
+        capture_moments.append(moment)
         results.append({
             "at": moment.isoformat().replace("+00:00", "Z"),
             "games_in_window": approaching,
@@ -184,10 +201,90 @@ def run(env=None, captures=CAPTURES_PER_RUN, interval_minutes=INTERVAL_MINUTES,
         if index < captures - 1 and sleep:
             sleep(interval_minutes * 60)
 
+    # Close-capture pass: one more spend when a game is inside its final
+    # minutes, even though the spaced loop is done. The floor is re-checked
+    # first -- the check is free, so "before every spend" stays literally true.
+    close_capture = None
+    run_end = clock()
+    events_now = _upcoming(run_end)
+    if events_now is not None and games_in_window(
+            events_now, run_end, CLOSE_WINDOW_MINUTES) > 0:
+        try:
+            remaining_now = odds_provider.quota(env).get("remaining")
+        except odds_provider.OddsProviderError as exc:
+            close_capture = {"skipped": "quota unreadable", "message": str(exc)}
+            remaining_now = None
+        else:
+            if remaining_now is not None and remaining_now <= credit_floor:
+                close_capture = {"skipped": "credit floor",
+                                 "credits_remaining": remaining_now}
+            else:
+                captured = snapshots.capture(env=env)
+                capture_moments.append(run_end)
+                close_capture = {
+                    "at": run_end.isoformat().replace("+00:00", "Z"),
+                    "captured": captured.get("captured", 0),
+                    "events": captured.get("events", 0),
+                    "error": captured.get("error"),
+                }
+                results.append(dict(close_capture, close_pass=True,
+                                    games_in_window=games_in_window(
+                                        events_now, run_end,
+                                        CLOSE_WINDOW_MINUTES)))
+
+    missed = _missed_windows(events_now, run_start, run_end, capture_moments)
+
     return {
         "captures": len(results),
         "observations": sum(r["captured"] for r in results),
         "credits_remaining_before": remaining,
-        "stopped_early": reason if len(results) < captures else None,
+        "stopped_early": reason if reason else None,
+        "close_capture": close_capture,
+        "missed_windows": missed,
         "detail": results,
     }
+
+
+def _clock(now):
+    """Wall clock by default; a fixed instant or a callable for tests."""
+    if callable(now):
+        return now
+    if now is not None:
+        return lambda: now
+    return lambda: datetime.now(timezone.utc)
+
+
+def _missed_windows(events, run_start, run_end, capture_moments):
+    """Games that reached first pitch during this run with no capture in
+    their final MISSED_WINDOW_MINUTES. Reported, never repaired -- the price
+    is gone and the honest output is the gap itself.
+
+    A capture from an EARLIER run can legitimately cover the window, so the
+    snapshot store's own timestamps count alongside this run's captures.
+    """
+    if not events or run_end <= run_start:
+        return []
+    started = []
+    for row in events:
+        start = _parse(row.get("commence_time"))
+        if start is not None and run_start < start <= run_end:
+            started.append(start)
+    if not started:
+        return []
+
+    stamps = list(capture_moments)
+    for row in snapshots.read():
+        parsed = _parse(row.get("observed_utc"))
+        if parsed is not None:
+            stamps.append(parsed)
+
+    missed = []
+    for start in sorted(started):
+        window_open = start - timedelta(minutes=MISSED_WINDOW_MINUTES)
+        if not any(window_open <= stamp <= start for stamp in stamps):
+            missed.append({
+                "commence_time": start.isoformat().replace("+00:00", "Z"),
+                "reason": (f"reached first pitch with no capture in its "
+                           f"last {MISSED_WINDOW_MINUTES} minutes"),
+            })
+    return missed

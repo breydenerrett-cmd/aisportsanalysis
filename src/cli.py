@@ -404,6 +404,13 @@ def cmd_ledger(args) -> int:
         print("nothing pending to settle.")
         return EXIT_OK
 
+    # The closing price each settlement was graded against. It comes from the
+    # snapshot store -- the same source the grading path uses -- and it goes ON
+    # the settlement row, because CLV computed later from a ledger whose every
+    # settlement says closing=null is not computable at all.
+    from src.pipeline import snapshots
+    snapshot_series = snapshots.group_by_game(snapshots.read())
+
     by_date = {}
     for row in pending:
         by_date.setdefault(row["date"], []).append(row)
@@ -425,6 +432,7 @@ def cmd_ledger(args) -> int:
                 unresolved += 1
                 continue
             five = game.get("first_five") or {}
+            closing, closing_reason = _settlement_closing(row, snapshot_series)
             ledger.settle(row["game_pk"], {
                 "away_score": game.get("away_score"),
                 "home_score": game.get("home_score"),
@@ -439,11 +447,38 @@ def cmd_ledger(args) -> int:
                     "winner": five.get("winner"),
                     "reason": five.get("reason"),
                 },
-            })
+            }, closing=closing, closing_reason=closing_reason)
             settled += 1
 
     print(f"settled {settled} game(s); {unresolved} not final yet")
     return EXIT_OK
+
+
+def _settlement_closing(rec, snapshot_series):
+    """(closing, reason) for one recommendation, from the snapshot store.
+
+    The close is the last h2h observation strictly before first pitch -- the
+    exact definition the grading path uses -- so a settlement and a grade can
+    never disagree about what "closing" meant. When no such observation
+    exists, closing is null and the reason says so explicitly.
+    """
+    from src.pipeline import snapshots
+
+    key = snapshots.game_key(rec.get("away_team"), rec.get("home_team"),
+                             rec.get("commence_time"))
+    series = snapshot_series.get(key)
+    if not series:
+        return None, "no snapshots recorded for this game"
+    observation = snapshots.closing_observation(series, rec.get("commence_time"))
+    if observation is None:
+        return None, "no snapshot observed before first pitch"
+    return {
+        "market": "h2h",
+        "book": observation.get("book"),
+        "observed_utc": observation.get("observed_utc"),
+        "book_last_update": observation.get("book_last_update"),
+        "prices": observation.get("prices"),
+    }, None
 
 
 def cmd_brief(args) -> int:
@@ -1132,6 +1167,17 @@ def cmd_dense(args) -> int:
               f"{row['captured']} observations{note}")
     if result.get("stopped_early"):
         print(f"  stopped early: {result['stopped_early']}")
+    close = result.get("close_capture")
+    if close:
+        if close.get("skipped"):
+            print(f"  close-capture pass skipped: {close['skipped']}")
+        else:
+            print(f"  close-capture pass at {close['at']}: "
+                  f"{close['captured']} observations (game within "
+                  f"{dense.CLOSE_WINDOW_MINUTES} minutes of first pitch)")
+    for miss in result.get("missed_windows") or []:
+        print(f"  MISSED WINDOW: game at {miss['commence_time']} "
+              f"{miss['reason']}")
     return EXIT_OK
 
 
@@ -1197,6 +1243,33 @@ def cmd_movement(args) -> int:
               f"({move['moved']:+d}, {move['direction']}, "
               f"{move['observations']} obs){close_note}")
     return EXIT_OK
+
+
+def cmd_watch(args) -> int:
+    """One rosterwatch poll (free MLB endpoints, zero odds credits).
+
+    Run every 10-15 minutes; the poll cadence IS the timestamp resolution
+    the V3 event brackets get, so a missed poll widens every bracket that
+    spans it.
+    """
+    import json as json_mod
+    from src.pipeline import rosterwatch
+
+    if args.events:
+        for event in rosterwatch.events():
+            print(json_mod.dumps(event, sort_keys=True))
+        return EXIT_OK
+
+    report = rosterwatch.poll(game_date=args.date)
+    for source in ("probables", "lineups", "transactions"):
+        detail = report[source]
+        print(f"  {source}: " + ("FAILED (skipped)" if detail is None else
+                                 ", ".join(f"{k}={v}" for k, v in detail.items())))
+    for error in report["errors"]:
+        print(f"  ERROR {error['source']}: {error['error']}", file=sys.stderr)
+    print(f"  -> {report['dir']}")
+    # Partial capture is still capture; only a totally blind poll is an error.
+    return EXIT_ERROR if len(report["errors"]) == 3 else EXIT_OK
 
 
 def cmd_calibration_demo(args) -> int:
@@ -1348,6 +1421,15 @@ def build_parser() -> argparse.ArgumentParser:
     movement_cmd.add_argument("--market", default="h2h",
                               choices=["h2h", "spreads", "totals"])
 
+    watch_cmd = sub.add_parser(
+        "watch", help="poll probables/lineups/transactions for event timing "
+                      "(free MLB endpoints; run every 10-15 minutes)")
+    watch_cmd.add_argument("--date", default=None,
+                          help="YYYY-MM-DD (defaults to today, UTC)")
+    watch_cmd.add_argument("--events", action="store_true",
+                          help="print derived graded events as JSONL "
+                               "instead of polling")
+
     return parser
 
 
@@ -1370,6 +1452,7 @@ COMMANDS = {
     "snapshot": cmd_snapshot,
     "dense": cmd_dense,
     "movement": cmd_movement,
+    "watch": cmd_watch,
     "calibration-demo": cmd_calibration_demo,
 }
 

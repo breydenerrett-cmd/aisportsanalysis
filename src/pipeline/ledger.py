@@ -85,7 +85,9 @@ def _entry(game, game_date, stamp, information_time) -> dict:
     market = dossier.get("market") or {}
     lineups = dossier.get("lineups") or {}
 
-    return {
+    books = _books(market)
+    prices = _prices(market)
+    entry = {
         "kind": RECOMMENDATION,
         "recorded_at": stamp,
         # The moment the INPUTS were gathered. A run takes minutes, and claiming
@@ -105,14 +107,22 @@ def _entry(game, game_date, stamp, information_time) -> dict:
         # Every book on the board, not the chosen one. Which price was available
         # is part of what the system knew, and a single quote cannot answer
         # "could we actually have got that number".
-        "books": _books(market),
-        "prices": _prices(market),
+        "books": books,
+        "prices": prices,
         "implied_bullpen_shift": market.get("implied_bullpen_shift"),
         "lineup_status": _lineup_status(lineups, dossier),
         "findings": [_finding(f) for f in game.get("findings", [])],
         "sections_present": sorted(dossier.sections),
         "gaps": dict(dossier.gaps),
     }
+    # An entry with no price on any book is a fact worth explaining, not a pair
+    # of silent empty dicts: 70 rows went into the ledger that way on one date
+    # and nothing recorded why. The dossier already knows the reason when the
+    # market section was missing outright.
+    if not prices and not any(books.values()):
+        entry["price_reason"] = dossier.gaps.get(
+            "market", "market section carried no usable prices at information time")
+    return entry
 
 
 def _books(market) -> dict:
@@ -222,13 +232,17 @@ def settlements(entries=None, path=DEFAULT_LEDGER) -> dict:
 
 
 def settle(game_pk, result, closing=None, path=DEFAULT_LEDGER,
-           settled_at=None) -> dict:
+           settled_at=None, closing_reason=None) -> dict:
     """Append a settlement. Never rewrites the recommendation it settles.
 
     `result` carries the full-game and first-five outcomes; `closing` the price
     at or near close. Both are unknowable at recommendation time, which is the
     whole point -- they go on their own line, so the original entry stays exactly
     as it was written.
+
+    A null closing must never be silent: when `closing` is None the row carries
+    `closing_reason` saying WHY there is no close, so "we never captured one"
+    stays distinguishable from "someone forgot to pass it".
     """
     entry = {
         "kind": SETTLEMENT,
@@ -237,6 +251,8 @@ def settle(game_pk, result, closing=None, path=DEFAULT_LEDGER,
         "result": result,
         "closing": closing,
     }
+    if closing is None:
+        entry["closing_reason"] = closing_reason or "no closing price provided"
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
     with target.open("a", encoding="utf-8") as handle:
