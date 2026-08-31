@@ -125,13 +125,13 @@ next research read happens when a V3 class reaches its 30-event floor.
    when the MLB slate empties; plan the off-season posture (lane E).
 5. Product polish batch when functionality pauses: per-game permalinks,
    season archive view (lane D, explicitly after function).
-6. Product write-ups from the Analyzer red-team (lane D, small batch):
-   bullpen_workload period-not-sample at the detector level; thin-starter
-   warning scoped to season rates; "<20 IP" sample parsing; consider
-   rendering the synthesis suppressed-items audit trail.
-7. Unify the market board: stale_book detector reads game snapshots while
-   prices.py reads the multibook store — one market, two book counts on a
-   card (lane E; spans src/detect + snapshots; design first).
+6. Public projection benchmark (lane B, cheap): does any free public
+   projection replay honestly and beat the close? Elo already lost by
+   0.008 log-loss/game -- extend the yardstick if a replayable source
+   exists; document the dead end if not (docs/BENCHMARK_ELO.md pattern).
+7. Ledger corrupt-line recovery decision: a mid-write crash currently
+   halts recording until a human intervenes (deliberate, documented);
+   decide whether a dedup-path-only tolerant scan is safer (lane E).
 
 DONE this cycle: timestamp audit · V3 freeze · market probe · collection
 policy · lead/lag + eventstudy cores · multibook store · rosterwatch ·
