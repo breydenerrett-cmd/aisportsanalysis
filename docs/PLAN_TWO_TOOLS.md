@@ -113,14 +113,18 @@ beats hunting in the hardest market with mediocre tools.
 
 ### 3. Line shopping — boring, real, available today
 
-Not an edge in the predictive sense, and it is worth more than most claimed
-edges. If eighteen books average +100 on a side and one offers +108, taking the
-+108 every time is worth roughly 2% on turnover. That is larger than nearly
-every "edge" people sell.
+Not an edge in the predictive sense. If eighteen books average +100 on a side
+and one offers +108, taking the +108 every time improves the price of every
+bet you were already making by roughly 2% on turnover. Call this what it is:
+**price improvement, or line-shopping value** — a better execution price, not
+a profit. It only becomes expected value if the bet itself was worth making,
+which requires a defensible fair-price estimate, and it only counts at all if
+the quoted price was actually available to bet. Neither is assumed here.
 
-It requires no forecast, no model, and no luck. It is pure execution. We already
-compute every piece of it. **This is the honest core the Ranker will eventually
-be built on**, and it is the reason the Ranker is worth specifying now.
+It requires no forecast and no model — it is pure execution discipline layered
+on top of whatever betting you do. We already compute every piece of it.
+**This is the honest core the Ranker will eventually be built on**, and it is
+the reason the Ranker is worth specifying now.
 
 ### 4. Standing on other people's work
 
@@ -223,13 +227,21 @@ gate is a fact rather than a judgement call.
 
 ### The two engines, deliberately separate
 
-**Engine 1 — Price value.** No forecast required. Compare the best available
-price on each side against the de-vigged consensus of all books. When one book
-is meaningfully better than the market's own average, that gap is real money
-regardless of who wins.
+**Engine 1 — Price improvement (line-shopping value).** No forecast required.
+Compare the best available price on each side against the de-vigged consensus
+of all books, and show: the best available price, the consensus price, the
+improvement (in percent and implied probability), and how dispersed the books
+are. That is everything Engine 1 may claim. A better-than-consensus price is
+NOT automatically positive expected value, a predictive edge, or guaranteed
+profit — it is a better execution price on a bet whose worth is a separate,
+unanswered question, and it only counts if the quoted price was actually
+executable when shown.
 
 This is honest today. Most of it already exists in `_fair()` in
-`src/model/selections.py` and the `stale_book` detector.
+`src/model/selections.py` and the `stale_book` detector. It stays strictly
+separate from the recommendation price, `late_move` and the true close —
+those measure different things and blending them is how honest numbers turn
+into a sales pitch.
 
 **Engine 2 — Predicted value.** Requires an edge. We do not have one. Empty
 until we do.

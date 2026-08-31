@@ -168,7 +168,7 @@ class FatalRuleTests(unittest.TestCase):
         result = battery.run(rows, dose_key="dose",
                              dose_bands=[0.0, 0.02, 0.025, 0.03])
         self.assertEqual(result["fatal"], ["dose_response"])
-        self.assertIn("M3 signature", result["report"]["dose_response"]["note"])
+        self.assertIn("spike signature", result["report"]["dose_response"]["note"])
 
     def test_a_rising_dose_response_is_not_fatal(self):
         # Same bands, but the effect grows with the dose: a real mechanism's

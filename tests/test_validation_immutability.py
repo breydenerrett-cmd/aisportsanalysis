@@ -183,9 +183,10 @@ class BatteryImmutabilityTests(unittest.TestCase):
                                    for name in NON_DOSE_CHECKS})
         self.assertNotIn("POISON", non_dose_text)
         self.assertNotIn("2023-07-", non_dose_text)
-        # Verdict bookkeeping must agree too -- the wider sample may inform
-        # the dose checks but never the survival verdict's other inputs.
-        self.assertEqual(armed["survives"], unarmed["survives"])
+        # Verdict bookkeeping: the wider sample may inform the dose checks --
+        # arming dose_response is its entire purpose, and under the amended
+        # rules an armed dose check may legitimately change the overall
+        # verdict -- but it must never reach any OTHER fatal rule's outcome.
         self.assertEqual(
             [f for f in armed["fatal"] if f not in DOSE_CHECKS],
             [f for f in unarmed["fatal"] if f not in DOSE_CHECKS])

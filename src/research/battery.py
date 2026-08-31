@@ -40,11 +40,17 @@ after seeing what it kills. "Judgeable" means n >= MIN_N (30).
    sign, each beyond effect_floor in magnitude. A result that points one way
    in 2023 and the other way in 2024 is a year, not an effect.
 2. team_concentration -- over the five most-backed teams, FATAL when leaving
-   any single team out pushes p above 0.10 AND the remaining effect below
-   effect_floor (signed, so a sign flip counts). One club is a story about a
-   club, not a market inefficiency.
-3. book_concentration -- the same rule by book. This is exactly what killed
-   M3: excluding FanDuel gutted it.
+   any single team out either (i) pushes p above LOO_P_CEILING AND the
+   remaining effect below effect_floor (signed, so a sign flip counts), or
+   (ii) when the full slice was itself significant (p <= FULL_P_LINE),
+   pushes p above LOO_P_CEILING AND shrinks the remaining effect below
+   LOO_SHRINKAGE of the full effect. Leg (ii) exists because a genuinely
+   market-wide effect loses SIGNIFICANCE when a sixth of its sample leaves,
+   but not most of its SIZE; an effect that loses both was that one slice.
+   The shrinkage leg forgives pure sample-size significance loss for a
+   uniform effect, whose leave-one-out effect stays near the full effect.
+   One club is a story about a club, not a market inefficiency.
+3. book_concentration -- the same rule by book.
 4. extreme_removal -- drop the 5% of DATES (ceil, at least one) whose cluster
    contribution to the effect is largest, and FATAL if the remaining effect
    crosses zero. Dates, not rows: outcomes are binary, so the honest notion
@@ -52,20 +58,23 @@ after seeing what it kills. "Judgeable" means n >= MIN_N (30).
    |won - implied| happens to round high. Contribution is measured in the
    direction of the baseline effect, and the rule mirrors for a negative
    baseline -- "crosses zero" always means the sign flips.
-5. dose_response -- the M3 signature, encoded exactly. Order the dose bands
-   ascending; the SPIKE is the first judgeable band with effect above
-   effect_floor. FATAL only when all three hold: (a) the band immediately
-   below the spike is judgeable with effect <= 0; (b) at least one judgeable
-   band sits above the spike; (c) no judgeable band above the spike shows a
-   larger effect than the spike. A real dose should deliver more effect with
-   more dose; a spike in one slice with nothing below it and nothing larger
-   above it is the shape of noise. Every missing piece -- no spike, spike in
-   the bottom band, an unjudgeable neighbour, growth above the spike --
-   reports non-fatal, because doubt is not evidence of death either.
+5. dose_response -- the spike signature. Order the dose bands ascending; the
+   SPIKE is the first judgeable band with effect above effect_floor. FATAL
+   when both hold: (a) the band immediately below the spike is judgeable
+   with effect <= 0; (b) no judgeable band above the spike carries an effect
+   of at least half the spike's. A real dose delivers more effect with more
+   dose, so a genuine response shows support above its threshold; a spike
+   sitting on a judgeable contradiction below it, with no support above --
+   an upper tail that is absent, too sparse to judge, or judgeable but far
+   smaller -- is the shape of noise. Doubt BELOW the spike still protects
+   (an unjudgeable below-band is non-fatal, as is a spike in the bottom
+   band): the kill needs positive evidence against. Doubt ABOVE does not
+   rescue once the band below has judged against, because at that point the
+   burden of showing a dose gradient is the candidate's.
    To arm (a) fully, pass the wider graded sample (sub-threshold candidates
    included) with the true selection threshold as one of the dose_bands
-   edges, the way M3's 0.015-0.020 band was built; with selected rows only
-   and quartile bands the below-spike band usually cannot exist.
+   edges; with selected rows only and quartile bands the below-spike band
+   usually cannot exist.
 
 Everything else -- baseline, home/away, favourite/underdog, price bands,
 threshold sensitivity -- is report-only: slices a person should read, none
@@ -94,6 +103,19 @@ MIN_N = 30
 # on purpose: a candidate whose significance cannot survive losing one team or
 # one book even at the looser line was never a market-wide effect.
 LOO_P_CEILING = 0.10
+
+# The shrinkage leg of the concentration rules (rules 2 and 3, leg ii). A
+# full-slice p at or under FULL_P_LINE says the candidate claims significance;
+# losing one unit may cost significance through sample size alone, but a
+# market-wide effect keeps most of its SIZE. Falling below LOO_SHRINKAGE of
+# the full effect at the same time says the removed unit carried the result.
+FULL_P_LINE = 0.05
+LOO_SHRINKAGE = 0.75
+
+# Rule 5's support requirement: once the band below a spike judges against it,
+# some judgeable band above the spike must carry at least this fraction of the
+# spike's effect for the candidate to claim a dose gradient.
+SPIKE_SUPPORT_FRACTION = 0.5
 
 # Fraction of dates removed by extreme_removal, and how many slices the
 # concentration checks leave out (top teams / books by selection count).
@@ -219,7 +241,8 @@ def _favorite_underdog(prepared) -> dict:
 def _concentration(prepared, key, effect_floor, member_key=None) -> dict:
     """Leave-one-out over the most-backed teams or books.
 
-    The M3 lesson: a market-wide effect survives losing any one participant.
+    The lesson of the one real false positive on record: a market-wide
+    effect survives losing any one participant.
     Only the top slices by count are left out -- dropping a 4-row team tells
     you nothing, and a leave-out that itself falls under the floor is reported
     but never judged (doubt is not death).
@@ -247,20 +270,32 @@ def _concentration(prepared, key, effect_floor, member_key=None) -> dict:
         counts[row[key]] = counts.get(row[key], 0) + 1
     top = [name for name, _ in sorted(
         counts.items(), key=lambda kv: (-kv[1], str(kv[0])))[:CONCENTRATION_TOP]]
+    full = _measure(usable)
     leave_one_out, killed_by = {}, []
     for name in top:
         measured = _measure([r for r in usable if not belongs(r, name)])
         leave_one_out[str(name)] = measured
-        # Pre-registered rules 2 and 3: significance AND size both gone once
-        # one slice is removed. Signed effect on purpose -- a flip counts.
-        if (measured["effect"] is not None
-                and measured["p"] > LOO_P_CEILING
-                and measured["effect"] < effect_floor):
+        if measured["effect"] is None or measured["p"] <= LOO_P_CEILING:
+            continue
+        # Pre-registered rules 2 and 3, leg (i): significance AND size both
+        # gone once one slice is removed. Signed effect -- a flip counts.
+        if measured["effect"] < effect_floor:
             killed_by.append(str(name))
-    return {"n": len(usable), "leave_one_out": leave_one_out,
+        # Leg (ii): the full slice claimed significance, and removing one
+        # unit costs both the significance and most of the SIZE. A uniform
+        # effect's leave-one-out effect stays near the full effect, so pure
+        # sample-size significance loss is forgiven; losing the size too
+        # says the removed unit carried the result.
+        elif (full["p"] is not None and full["p"] <= FULL_P_LINE
+                and full["effect"] > 0
+                and measured["effect"] < LOO_SHRINKAGE * full["effect"]):
+            killed_by.append(str(name))
+    return {"n": len(usable), "full": full, "leave_one_out": leave_one_out,
             "fatal": bool(killed_by), "killed_by": killed_by,
             "note": (f"FATAL when dropping one {key} leaves p > "
-                     f"{LOO_P_CEILING} and effect < the floor")}
+                     f"{LOO_P_CEILING} and either effect < the floor, or -- "
+                     f"for a slice significant at {FULL_P_LINE} -- effect < "
+                     f"{LOO_SHRINKAGE} of the full effect")}
 
 
 def _price_bands(prepared) -> dict:
@@ -338,7 +373,7 @@ def _dose_response(prepared, dose_key, dose_bands, effect_floor) -> dict:
         measured = _measure(members)
         measured["lo"], measured["hi"] = lo, hi
         bands.append(measured)
-    fatal, why = _m3_signature(bands, effect_floor)
+    fatal, why = _spike_signature(bands, effect_floor)
     if cropped:
         # A band range that crops rows can crop exactly the low-dose region
         # that would contradict a spike. Naming the count keeps that visible.
@@ -346,11 +381,14 @@ def _dose_response(prepared, dose_key, dose_bands, effect_floor) -> dict:
     return {"n": len(usable), "bands": bands, "fatal": fatal, "note": why}
 
 
-def _m3_signature(bands, effect_floor) -> tuple:
+def _spike_signature(bands, effect_floor) -> tuple:
     """Pre-registered rule 5, exactly as the module docstring states it.
 
-    Any missing piece answers non-fatal: the rule exists to recognise one
-    specific shape of noise, not to punish every non-monotone table.
+    Doubt below the spike answers non-fatal -- the kill needs positive
+    evidence against. Doubt above the spike does not rescue once the band
+    below has judged against: at that point the burden of showing a dose
+    gradient is the candidate's, and an upper tail too sparse to judge is
+    not a gradient.
     """
     spike = None
     for i, band in enumerate(bands):
@@ -368,14 +406,15 @@ def _m3_signature(bands, effect_floor) -> tuple:
                        "in doubt, non-fatal")
     if below["effect"] > 0:
         return False, "the band below the spike is positive; no spike signature"
+    support = SPIKE_SUPPORT_FRACTION * bands[spike]["effect"]
     above = [b["effect"] for b in bands[spike + 1:] if b["effect"] is not None]
-    if not above:
-        return False, ("no judgeable band above the spike; in doubt, non-fatal")
-    if max(above) > bands[spike]["effect"]:
-        return False, ("a band above the spike is larger; dose-response is "
-                       "not ruled out")
-    return True, ("M3 signature: the spike band is positive, the band just "
-                  "below it is <= 0, and nothing above it is larger")
+    if any(effect >= support for effect in above):
+        return False, ("a judgeable band above the spike carries at least "
+                       f"{SPIKE_SUPPORT_FRACTION} of the spike's effect; a "
+                       "dose gradient is not ruled out")
+    return True, ("spike signature: the spike band is positive, the band "
+                  "just below it is <= 0, and no judgeable band above it "
+                  "supports a dose gradient")
 
 
 def _threshold_sensitivity(prepared, dose_key) -> dict:
@@ -404,6 +443,28 @@ def _threshold_sensitivity(prepared, dose_key) -> dict:
 # The battery
 # ---------------------------------------------------------------------------
 
+# The fatal rules are versioned, and every verdict names the rule set that
+# judged it. The fingerprint hashes the fatal-rule implementations together
+# with their constants, so ANY change to what can kill -- a threshold, a
+# branch, a comparison -- produces a different fingerprint even if the
+# version string is forgotten. A verdict can then never be silently compared
+# against one produced by different rules.
+RULES_VERSION = "2.0.0"
+
+
+def rules_fingerprint() -> str:
+    import hashlib
+    import inspect
+    parts = [RULES_VERSION, str(MIN_N), str(LOO_P_CEILING), str(FULL_P_LINE),
+             str(LOO_SHRINKAGE), str(SPIKE_SUPPORT_FRACTION),
+             str(EXTREME_DATE_FRACTION), str(CONCENTRATION_TOP),
+             ",".join(FATAL_CHECKS)]
+    for rule in (_season_split, _concentration, _extreme_removal,
+                 _dose_response, _spike_signature):
+        parts.append(inspect.getsource(rule))
+    return hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()[:16]
+
+
 def run(rows, *, effect_floor=0.01, dose_key=None, dose_bands=None,
         dose_rows=None) -> dict:
     """Run every falsification check and return the verdict.
@@ -431,7 +492,9 @@ def run(rows, *, effect_floor=0.01, dose_key=None, dose_bands=None,
         # survives=True here is VACUOUS -- nothing was checked. `ran` is the
         # flag a caller must consult before treating survival as meaningful;
         # promoting a candidate on ran=False is promoting it on zero checks.
-        return {"survives": True, "ran": False, "fatal": [], "report": report}
+        return {"survives": True, "ran": False, "fatal": [], "report": report,
+                "rules": {"version": RULES_VERSION,
+                          "fingerprint": rules_fingerprint()}}
 
     report["season_split"] = _season_split(prepared, effect_floor)
     report["home_away"] = _home_away(prepared)
@@ -456,4 +519,6 @@ def run(rows, *, effect_floor=0.01, dose_key=None, dose_bands=None,
 
     fatal = [name for name in FATAL_CHECKS if report[name].get("fatal")]
     return {"survives": not fatal, "ran": True, "fatal": fatal,
-            "report": report}
+            "report": report,
+            "rules": {"version": RULES_VERSION,
+                      "fingerprint": rules_fingerprint()}}

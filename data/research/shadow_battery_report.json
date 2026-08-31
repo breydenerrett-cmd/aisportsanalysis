@@ -1,0 +1,228 @@
+{
+  "comparison": "battery rules at commit 915bae6 (old) vs RULES_VERSION 2.0.0 (new)",
+  "run_date": "2026-08-31",
+  "purpose": "machinery validation before the gate opens; not a research evaluation",
+  "comparisons": 15,
+  "changed": 2,
+  "unexpected_changes": 0,
+  "diffs": [
+    {
+      "candidate": "m3_dispersion/registered_bands",
+      "old": {
+        "survives": true,
+        "ran": true,
+        "fatal": []
+      },
+      "new": {
+        "survives": false,
+        "ran": true,
+        "fatal": [
+          "book_concentration",
+          "dose_response"
+        ]
+      },
+      "changed": true,
+      "expectation": "EXPECTED to change: survivor -> killed"
+    },
+    {
+      "candidate": "m3_dispersion/funnel_bands",
+      "old": {
+        "survives": true,
+        "ran": true,
+        "fatal": []
+      },
+      "new": {
+        "survives": false,
+        "ran": true,
+        "fatal": [
+          "book_concentration"
+        ]
+      },
+      "changed": true,
+      "expectation": "EXPECTED to change: survivor -> killed"
+    },
+    {
+      "candidate": "planted_edge/planted_edge",
+      "old": {
+        "status": "candidate",
+        "fatal": []
+      },
+      "new": {
+        "status": "candidate",
+        "fatal": []
+      },
+      "changed": false,
+      "expectation": "expected UNCHANGED"
+    },
+    {
+      "candidate": "planted_noise_family/lineup_platoon_share_pos",
+      "old": {
+        "status": "no_replication",
+        "fatal": null
+      },
+      "new": {
+        "status": "no_replication",
+        "fatal": null
+      },
+      "changed": false,
+      "expectation": "expected UNCHANGED"
+    },
+    {
+      "candidate": "planted_noise_family/lineup_platoon_share_neg",
+      "old": {
+        "status": "screen_dead",
+        "fatal": null
+      },
+      "new": {
+        "status": "screen_dead",
+        "fatal": null
+      },
+      "changed": false,
+      "expectation": "expected UNCHANGED"
+    },
+    {
+      "candidate": "planted_noise_family/starter_platoon_gap_pos",
+      "old": {
+        "status": "screen_dead",
+        "fatal": null
+      },
+      "new": {
+        "status": "screen_dead",
+        "fatal": null
+      },
+      "changed": false,
+      "expectation": "expected UNCHANGED"
+    },
+    {
+      "candidate": "planted_noise_family/starter_platoon_gap_neg",
+      "old": {
+        "status": "no_replication",
+        "fatal": null
+      },
+      "new": {
+        "status": "no_replication",
+        "fatal": null
+      },
+      "changed": false,
+      "expectation": "expected UNCHANGED"
+    },
+    {
+      "candidate": "planted_noise_family/lineup_vs_primary_pitch_pos",
+      "old": {
+        "status": "screen_dead",
+        "fatal": null
+      },
+      "new": {
+        "status": "screen_dead",
+        "fatal": null
+      },
+      "changed": false,
+      "expectation": "expected UNCHANGED"
+    },
+    {
+      "candidate": "planted_noise_family/lineup_vs_primary_pitch_neg",
+      "old": {
+        "status": "screen_dead",
+        "fatal": null
+      },
+      "new": {
+        "status": "screen_dead",
+        "fatal": null
+      },
+      "changed": false,
+      "expectation": "expected UNCHANGED"
+    },
+    {
+      "candidate": "planted_noise_family/primary_pitch_share_pos",
+      "old": {
+        "status": "no_replication",
+        "fatal": null
+      },
+      "new": {
+        "status": "no_replication",
+        "fatal": null
+      },
+      "changed": false,
+      "expectation": "expected UNCHANGED"
+    },
+    {
+      "candidate": "planted_noise_family/primary_pitch_share_neg",
+      "old": {
+        "status": "screen_dead",
+        "fatal": null
+      },
+      "new": {
+        "status": "screen_dead",
+        "fatal": null
+      },
+      "changed": false,
+      "expectation": "expected UNCHANGED"
+    },
+    {
+      "candidate": "planted_noise_family/top_minus_bottom_pos",
+      "old": {
+        "status": "killed_by_battery",
+        "fatal": [
+          "team_concentration"
+        ]
+      },
+      "new": {
+        "status": "killed_by_battery",
+        "fatal": [
+          "team_concentration"
+        ]
+      },
+      "changed": false,
+      "expectation": "expected UNCHANGED"
+    },
+    {
+      "candidate": "planted_noise_family/top_minus_bottom_neg",
+      "old": {
+        "status": "screen_dead",
+        "fatal": null
+      },
+      "new": {
+        "status": "screen_dead",
+        "fatal": null
+      },
+      "changed": false,
+      "expectation": "expected UNCHANGED"
+    },
+    {
+      "candidate": "real_matrix/shadow_platoon_share",
+      "old": {
+        "status": "blocked_coverage",
+        "fatal": null
+      },
+      "new": {
+        "status": "blocked_coverage",
+        "fatal": null
+      },
+      "changed": false,
+      "expectation": "a change is acceptable ONLY if the new fatal list grew via the amended rules; a null must stay a null"
+    },
+    {
+      "candidate": "real_matrix/shadow_starter_gap",
+      "old": {
+        "status": "killed_by_battery",
+        "fatal": [
+          "team_concentration",
+          "book_concentration",
+          "extreme_removal",
+          "dose_response"
+        ]
+      },
+      "new": {
+        "status": "killed_by_battery",
+        "fatal": [
+          "team_concentration",
+          "book_concentration",
+          "extreme_removal",
+          "dose_response"
+        ]
+      },
+      "changed": false,
+      "expectation": "a change is acceptable ONLY if the new fatal list grew via the amended rules; a null must stay a null"
+    }
+  ]
+}
