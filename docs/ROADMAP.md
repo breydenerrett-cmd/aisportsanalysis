@@ -88,8 +88,13 @@ matchup depth running in parallel lanes.
 7. Analyzer matchup depth (lane D): Jacob-style unit-vs-weakness
    decomposition from the rebuilt pitch store.
 8. Forward-ledger reliability audit (lane E).
-9. Public projection benchmark (lane B, when higher-priority blocked).
+9. ~~Public projection benchmark~~ DONE 2026-08-31: no free source is
+   replayable; reconstructed pitcher-free Elo loses to the close by 0.8
+   log-loss points/game, p=0.0003 (docs/BENCHMARK_ELO.md).
 10. Next-family coverage audit (lane F).
+11. V3 event extraction from our own capture stores (lineup postings and
+    probable changes bracketed between fetches), once the timestamp audit
+    names the sources.
 
 ### FUTURE BACKLOG
 V3 falsification battery pass · F5 / F5-totals research families · player-
