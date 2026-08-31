@@ -125,13 +125,21 @@ next research read happens when a V3 class reaches its 30-event floor.
    when the MLB slate empties; plan the off-season posture (lane E).
 5. Product polish batch when functionality pauses: per-game permalinks,
    season archive view (lane D, explicitly after function).
+6. Closing-staleness honesty: closing_observation ignores book_last_update,
+   so a suspended book can supply "the close" — decide semantics, then
+   record staleness on the closing row (lane E; red-team write-up #8).
+7. Stamp the polled date on rosterwatch markers so grade-B brackets can
+   never span a date flip (lane E; red-team write-up #9; small).
 
 DONE this cycle: timestamp audit · V3 freeze · market probe · collection
 policy · lead/lag + eventstudy cores · multibook store · rosterwatch ·
 F5 close pass · settle closing fix · Analyzer matchup depth · price-
 improvement library + Analyzer wiring · Ranker shell (gated by test) ·
 Elo benchmark (close wins, p=0.0003) · V4 (zero survivors) · validation
-gate (adjudicated open).
+gate (adjudicated open) · V5 stuff family (zero survivors) · resource
+architecture (scripts own collection; Opus workers execute) · research
+catalogue (73 ideas classified) · slate health monitor + health CLI ·
+Analyzer synthesis layer · collection red-team (6 reproduced bugs fixed).
 
 ### FUTURE BACKLOG
 V3 falsification battery pass · F5 / F5-totals research families · player-
