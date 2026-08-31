@@ -380,6 +380,43 @@ Non-negotiable; each is a committed test.
 
 ---
 
+## 14b. Stated prior before Phase 2B runs (2026-08-31)
+
+Recorded now, before the enumerable sweep, so that whatever happens we cannot
+later claim we expected something else.
+
+**Phase 2A has already answered the linear version of the lab's question, and
+the answer was no.** With the market's log-odds as a fixed offset, penalised
+logistic regression on the full point-in-time feature set finished
++0.0000412 log-loss/game *worse* than the close (date-clustered p = 0.914),
+and the L1 fit selected the empty model — all 18 coefficients exactly zero.
+The strategy space Phase 2B enumerates is built from **those same features**.
+
+So the honest prior is: **the enumerable space will most likely land
+BELOW_PLACEBO_CEILING**, and the lab's expected output is a strong,
+quantified null rather than a champion.
+
+Phase 2B is still worth running, for three reasons that are not
+rationalisations of a sunk plan:
+
+1. A linear offset model cannot see **threshold and interaction structure** —
+   "fire only in the top decile of this signal, and only when a second
+   confirms" is not a linear function of the inputs. That is precisely the
+   shape the genome expresses and precisely what Phase 2A could not test.
+2. The **noise ceiling is the deliverable regardless of the answer.** Knowing
+   how much apparent edge our search manufactures from nothing is a permanent
+   instrument that every future family gets measured against, whatever it says
+   about this one.
+3. It is nearly free. 11,088 genomes sweep in 51 ms; fifty placebo worlds cost
+   minutes. There is no scenario where the compute is the reason not to look.
+
+**What would change my mind mid-flight:** if the real sweep's maximum sits far
+inside the placebo distribution AND the per-block fitness table shows no
+structure at all, there is no case for building evolution to search harder —
+searching harder in a space with nothing in it only manufactures better-looking
+artifacts. That is the kill criterion below, and Phase 2A makes it the likely
+outcome rather than the pessimistic one.
+
 ## 15. Kill criteria
 
 **If the real search maximum lies inside the placebo maximum distribution — no
