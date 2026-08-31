@@ -326,3 +326,11 @@ now the ones the market cannot trivially price: V3 information timing
 (accumulating) and softer markets (F5 closes accumulating via the dense
 close pass). Another season-level feature family needs a mechanism the
 market plausibly CANNOT price, not merely one it might not.
+
+2026-08-31 14:15Z — health monitor shipped (`python3 -m src.cli health`; 20
+tests). Its first real finding investigated: lineups_watch.jsonl has zero
+lineup rows — verified NOT a bug. The hydrate=lineups fetch returns full
+lineups for yesterday's completed slate (14/14 games); today's store simply
+started at 05:42Z and lineups had not posted yet at 14:11Z. Expected to
+bracket normally from ~14:35Z on. Multibook store starting 08-31 and absent
+f5_close.jsonl are the same story: stores younger than a day.
