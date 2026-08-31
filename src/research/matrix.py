@@ -228,7 +228,7 @@ def row_for_game(acc, game, posted_lineup, handedness,
         for name in ("lineup_platoon_share", "starter_platoon_gap",
                      "lineup_vs_primary_pitch", "primary_pitch",
                      "primary_pitch_share", "top_minus_bottom",
-                     "lineup_vs_starter_history"):
+                     "lineup_vs_starter_history", "starter_velocity_gap"):
             row[prefix + name] = None
 
         if not slots:
@@ -260,6 +260,30 @@ def row_for_game(acc, game, posted_lineup, handedness,
                 row[prefix + "starter_platoon_gap"] = split["gap"]
             else:
                 gaps.append(f"{prefix}starter_platoon_gap: {split['reason']}")
+
+        # starter_velocity_gap -- the OPPOSING starter's average FF/SI
+        # velocity over his last few appearances before the cutoff, minus
+        # the league-average fastball velocity as of the SAME cutoff (so a
+        # league-wide seasonal velocity drift cannot read as one pitcher's
+        # decline). Floors and window live in rebuilt (fastball_velocity);
+        # below the fastball floor it is None with a gap, not a guess.
+        if pitcher_id:
+            velo = rebuilt.fastball_velocity(acc, pitcher_id)
+            league_velo = rebuilt.league_fastball_velocity(acc)
+            if not velo["usable"]:
+                gaps.append(f"{prefix}starter_velocity_gap: {velo['reason']}")
+            elif league_velo is None:
+                gaps.append(f"{prefix}starter_velocity_gap: no measured "
+                            f"fastballs league-wide before the cutoff")
+            else:
+                row[prefix + "starter_velocity_gap"] = round(
+                    velo["avg"] - league_velo, 4)
+
+        # NOTE on the planned starter_groundball_share sibling: the pitch
+        # store keeps no batted-ball-type column (statcast_pitches.KEEP has
+        # no bb_type; measured over the real 2023-24 store, zero of 2.74M
+        # rows carry one), so a ground-ball share cannot be computed honestly
+        # here and is deliberately NOT built from event-name proxies.
 
         # lineup_vs_primary_pitch -- rebuilt.pitch_mix names the opposing
         # starter's most-used pitch (50-pitch floor applied inside), then

@@ -662,6 +662,177 @@ def cmd_brief(args) -> int:
     return EXIT_OK
 
 
+# The exact sentence a hypothetical pairing carries on its starter and lineup
+# sections. It is a constant so the dashboard, the tests, and any future reader
+# of the card are all looking at one string, not three near-copies of it.
+HYPOTHETICAL_GAP = "hypothetical matchup: no posted lineup or probable exists"
+
+
+def _analyze_out_path(away, home, iso_date) -> str:
+    """Where the analyze card is promised to land."""
+    return f"artifacts/analyze_{away}_{home}_{iso_date}.html"
+
+
+def _find_stored_game(store, away, home, iso_date):
+    """The real game(s) for (away, home, date) in the results store, if any.
+
+    Matching is on the exact ordered pairing: CIN @ NYM is not NYM @ CIN.
+    Doubleheaders return both games, ordered by game number, and the caller
+    analyses the first while naming that a second exists.
+    """
+    matches = [row for row in store.values()
+               if row.get("date") == iso_date
+               and row.get("away_team") == away
+               and row.get("home_team") == home]
+    matches.sort(key=lambda r: str(r.get("game_number") or ""))
+    return matches
+
+
+def cmd_analyze(args) -> int:
+    """Analyse one arbitrary pairing -- historical or hypothetical.
+
+    Same dossier, same detectors, same card as the slate briefing; the only
+    difference is where the game comes from. A real game on the date is found
+    in the historical results store and analysed with its own game_pk and
+    probables; a pairing with no real game gets an honest hypothetical card
+    whose starter and lineup sections carry HYPOTHETICAL_GAP instead of data.
+
+    The given date is the information cutoff. Everything point-in-time (team
+    form, starter logs, travel, bullpen workload) is computed strictly from
+    what existed before it; sources that cannot be reconstructed as of that
+    date (weather, odds, arsenals, news) are named gaps, never backfilled
+    from the present.
+    """
+    from src.analysis import prices as prices_mod
+    from src.detect import detectors as detector_defs
+    from src.pipeline import briefing, bullpen, history, lineup_store, pitchers, travel
+    from src.report import dashboard
+
+    try:
+        away = parks.canonical_team(args.away)
+        home = parks.canonical_team(args.home)
+        parks.get_park(away)
+        park = parks.get_park(home)
+    except parks.ParkError as exc:
+        print(f"ERROR: unknown team abbreviation: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+    if away == home:
+        print(f"ERROR: a team cannot play itself ({away} vs {home})",
+              file=sys.stderr)
+        return EXIT_ERROR
+
+    iso = args.date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    try:
+        date.fromisoformat(iso)
+    except ValueError:
+        print(f"ERROR: invalid date {iso!r} -- expected YYYY-MM-DD",
+              file=sys.stderr)
+        return EXIT_ERROR
+
+    store = history.read_results()
+    if not store:
+        print("historical store is empty -- run `ingest` first.", file=sys.stderr)
+        return EXIT_ERROR
+
+    matches = _find_stored_game(store, away, home, iso)
+    hypothetical = not matches
+    if hypothetical:
+        # No real game exists for this pairing on this date. The card is built
+        # anyway, and every section that would need a posting says so.
+        game = {"game_pk": None, "date": iso, "away_team": away,
+                "home_team": home, "venue": park.get("name"),
+                "start_time_utc": None,
+                "away_probable_id": None, "home_probable_id": None}
+        print(f"{away} @ {home} on {iso}: no real game on this date -- "
+              "building an honest hypothetical card")
+    else:
+        stored = matches[0]
+        game = {"game_pk": stored.get("game_pk"), "date": iso,
+                "away_team": away, "home_team": home,
+                "venue": stored.get("venue"),
+                "start_time_utc": stored.get("start_time_utc"),
+                "away_probable": stored.get("away_probable"),
+                "home_probable": stored.get("home_probable"),
+                "away_probable_id": stored.get("away_probable_id"),
+                "home_probable_id": stored.get("home_probable_id")}
+        print(f"{away} @ {home} on {iso}: real game {game['game_pk']}")
+        if len(matches) > 1:
+            print(f"  doubleheader: {len(matches)} games that day; analysing "
+                  f"game {stored.get('game_number') or 1}. Re-run against the "
+                  "other game_pk is not supported yet.")
+
+    logs = pitchers.read_logs() or None
+    if logs is None:
+        print("  (no pitcher logs -- starter section will carry a gap)")
+
+    # Lineups come from the point-in-time lineup STORE, never a live fetch: a
+    # lineup fetched today for a 2023 game is today's data wearing an old date.
+    posted = {}
+    if game["game_pk"]:
+        lineup = lineup_store.read().get(str(game["game_pk"]))
+        if lineup:
+            posted[game["game_pk"]] = lineup
+
+    # Bat/throw side is biographical, not time-varying, so the cache is safe
+    # to use at any cutoff. Cache only -- no network call for a past date.
+    hands = {}
+    try:
+        import json as json_mod
+        from src.pipeline import lineups as lineups_mod
+        cache = Path(lineups_mod.DEFAULT_HANDEDNESS)
+        if cache.exists():
+            hands = json_mod.loads(cache.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        hands = {}
+
+    trips = {game["game_pk"]: {
+        team: travel.travel_load(store, team, iso, home)
+        for team in (away, home)}}
+
+    pens = {}
+    pen_log = bullpen.read_log()
+    if pen_log:
+        for team in (away, home):
+            pens[team] = bullpen.team_workload(pen_log, team, iso)
+
+    # Registration is not idempotent (the registry doubles as the hypothesis
+    # count), so an already-populated registry is used as-is.
+    from src.detect import base as detect_base
+    if not detect_base.registry():
+        detector_defs.register_defaults()
+
+    # The cutoff is the END of the given date: postings made on the date are
+    # in scope, anything after it is not. The point-in-time accessors already
+    # take only games strictly before `iso`; this records the claim.
+    cutoff = datetime.fromisoformat(iso).replace(
+        hour=23, minute=59, second=59, tzinfo=timezone.utc)
+
+    slate = briefing.build_slate(
+        [game], store, pitcher_logs=logs,
+        lineups_by_pk=posted, handedness=hands,
+        travel_by_pk=trips, bullpen_by_team=pens or None,
+        price_improvement_by_key=prices_mod.by_matchup(),
+        information_time=cutoff)
+
+    if hypothetical:
+        # A hypothetical pairing has no probables and no lineup by definition.
+        # Whatever the assembly recorded for those sections (a null-starter
+        # computation, a generic "not posted" reason) is replaced with the one
+        # honest sentence that explains WHY: the game does not exist.
+        dossier = slate["games"][0]["dossier"]
+        for section in ("starters", "lineups"):
+            dossier.sections.pop(section, None)
+            dossier.miss(section, HYPOTHETICAL_GAP)
+
+    out = args.out or _analyze_out_path(away, home, iso)
+    path = dashboard.render(slate, out)
+    entry = slate["games"][0]
+    print(f"  verdict: {entry['verdict']}")
+    print(f"  {path}")
+    print("  open it in a browser -- no server needed")
+    return EXIT_OK
+
+
 def _add_first_five(prices, slate_mod, odds_prov):
     """Attach first-five prices per game. Billed per event, so it is opt-in.
 
@@ -1377,6 +1548,19 @@ def build_parser() -> argparse.ArgumentParser:
                            help="also price first-five per game (20 credits each) "
                                 "-- enables the implied-bullpen detector")
 
+    analyze_cmd = sub.add_parser("analyze",
+        help="analyse one arbitrary matchup -- historical or hypothetical")
+    analyze_cmd.add_argument("--away", required=True,
+                             help="away team abbreviation, e.g. CIN")
+    analyze_cmd.add_argument("--home", required=True,
+                             help="home team abbreviation, e.g. NYM")
+    analyze_cmd.add_argument("--date", default=None,
+                             help="YYYY-MM-DD information cutoff "
+                                  "(defaults to today, UTC)")
+    analyze_cmd.add_argument("--out", default=None,
+                             help="output HTML path (defaults to "
+                                  "artifacts/analyze_<away>_<home>_<date>.html)")
+
     scan_cmd = sub.add_parser("scan",
         help="scan a slate for obvious mismatches (usually: no play)")
     scan_cmd.add_argument("--date",
@@ -1445,6 +1629,7 @@ COMMANDS = {
     "features": cmd_features,
     "train": cmd_train,
     "brief": cmd_brief,
+    "analyze": cmd_analyze,
     "ledger": cmd_ledger,
     "scan": cmd_scan,
     "scan-grade": cmd_scan_grade,

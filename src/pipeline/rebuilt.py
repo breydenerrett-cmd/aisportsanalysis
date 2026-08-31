@@ -35,6 +35,21 @@ from src.providers import statcast_pitches as sp
 MIN_BF_PER_SIDE = 60          # mirrors lineups.MIN_BATTERS_FOR_SPLIT
 MIN_PITCHES_FOR_MIX = 50      # mirrors the Savant leaderboard floor
 
+# Fastball velocity, for the starter_velocity_gap feature. FF (four-seam)
+# and SI (sinker) are the primary fastballs a velocity-decline read cares
+# about; FC (cutter) is excluded because it is thrown 2-4 mph slower by
+# design and a mix shift toward it would masquerade as lost velocity.
+FASTBALL_TYPES = ("FF", "SI")
+# A starter's recent-form window: his last N appearances before the cutoff.
+# Five starts is roughly a month of work -- long enough to smooth one cold
+# night, short enough that April velocity does not hide a June decline.
+VELOCITY_STARTS_WINDOW = 5
+# A single start is ~40-60 fastballs; 100 is about two full starts. Below
+# that, per-game radar/park calibration noise (about +/-0.3 mph) and one
+# amped relief cameo can swing the average more than a real decline would,
+# so the feature reports None rather than a small-sample number.
+MIN_FASTBALLS_FOR_VELOCITY = 100
+
 HIT = {"single", "double", "triple", "home_run"}
 AB_EVENTS = HIT | {"strikeout", "strikeout_double_play", "field_out",
                    "grounded_into_double_play", "force_out", "field_error",
@@ -56,6 +71,15 @@ def _new_state() -> dict:
         # detector's second half: a lineup's measured line against the one
         # pitch tonight's starter actually throws.
         "batter_vs_pitch": defaultdict(lambda: {"value": 0.0, "denom": 0}),
+        # Fastball velocity, kept PER GAME so an accessor can window to a
+        # pitcher's last N appearances: pitcher -> (game_date, game_pk) ->
+        # {sum, count}. A season is ~35 games per pitcher, so keeping every
+        # game costs nothing and lets the window be applied at read time.
+        "fastball_velocity": defaultdict(
+            lambda: defaultdict(lambda: {"sum": 0.0, "count": 0})),
+        # League-wide fastball velocity as of the cutoff, the baseline the
+        # starter's recent average is compared against.
+        "league_fastball": {"sum": 0.0, "count": 0},
     }
 
 
@@ -71,6 +95,22 @@ def _process_row(state, row) -> None:
         return
 
     pitch_type = row.get("pitch_type")
+    if pitch_type in FASTBALL_TYPES:
+        speed = row.get("release_speed")
+        if speed not in (None, ""):
+            try:
+                mph = float(speed)
+            except (TypeError, ValueError):
+                mph = None  # unparseable radar reading: skip, never guess
+            if mph is not None:
+                game_key = (row.get("game_date") or "",
+                            str(row.get("game_pk") or ""))
+                slot = state["fastball_velocity"][pitcher][game_key]
+                slot["sum"] += mph
+                slot["count"] += 1
+                state["league_fastball"]["sum"] += mph
+                state["league_fastball"]["count"] += 1
+
     if pitch_type:
         slot = state["arsenal"][pitcher][pitch_type]
         slot["pitches"] += 1
@@ -124,7 +164,11 @@ def _finalize(state, cutoff) -> dict:
                         for p, slots in state["arsenal"].items()},
             "matchup": {k: dict(v) for k, v in state["matchup"].items()},
             "batter_vs_pitch": {k: dict(v)
-                                for k, v in state["batter_vs_pitch"].items()}}
+                                for k, v in state["batter_vs_pitch"].items()},
+            "fastball_velocity": {p: {g: dict(s) for g, s in games.items()}
+                                  for p, games
+                                  in state["fastball_velocity"].items()},
+            "league_fastball": dict(state["league_fastball"])}
 
 
 def _gate(cutoff) -> str:
@@ -247,3 +291,37 @@ def batter_vs_pitch_type(acc, batter_id, pitch_type) -> dict:
     return {"pa": entry["denom"],
             "woba": round(entry["value"] / entry["denom"], 4)
             if entry["denom"] else None}
+
+
+def fastball_velocity(acc, pitcher_id) -> dict:
+    """A pitcher's average FF/SI velocity over his last N appearances.
+
+    The window is the last VELOCITY_STARTS_WINDOW games with at least one
+    measured fastball, all strictly before the accumulation's cutoff -- the
+    recent-form read, not a career average. Below the
+    MIN_FASTBALLS_FOR_VELOCITY floor across that window the answer is None
+    with a reason, never a small-sample number.
+    """
+    games = (acc.get("fastball_velocity") or {}).get(str(pitcher_id)) or {}
+    # Game keys are (game_date, game_pk); sorting by key IS date order, with
+    # the pk as a stable tie-break for a doubleheader.
+    recent = sorted(games)[-VELOCITY_STARTS_WINDOW:]
+    total = sum(games[key]["count"] for key in recent)
+    if total < MIN_FASTBALLS_FOR_VELOCITY:
+        return {"usable": False, "avg": None, "fastballs": total,
+                "games": len(recent),
+                "reason": (f"only {total} measured fastballs across the "
+                           f"pitcher's last {len(recent)} appearances before "
+                           f"the cutoff; the velocity read needs "
+                           f"{MIN_FASTBALLS_FOR_VELOCITY}")}
+    speed_sum = sum(games[key]["sum"] for key in recent)
+    return {"usable": True, "avg": speed_sum / total, "fastballs": total,
+            "games": len(recent), "reason": None}
+
+
+def league_fastball_velocity(acc):
+    """League-average FF/SI velocity as of the cutoff, or None before any
+    fastball has been thrown (opening week of the store's first season)."""
+    league = acc.get("league_fastball") or {}
+    count = league.get("count") or 0
+    return league["sum"] / count if count else None
