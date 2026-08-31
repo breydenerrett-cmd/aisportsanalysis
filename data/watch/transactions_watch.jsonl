@@ -52,3 +52,12 @@
 {"first_seen_utc": "2026-08-31T20:02:23.786047+00:00", "transaction_id": 940263}
 {"first_seen_utc": "2026-08-31T20:02:23.786047+00:00", "transaction_id": 940264}
 {"first_seen_utc": "2026-08-31T20:02:23.786047+00:00", "transaction_id": 940266}
+{"fetched_utc": "2026-08-31T20:16:37.051625+00:00", "game_date": "2026-08-31", "poll": true}
+{"fetched_utc": "2026-08-31T20:16:40.199186+00:00", "game_date": "2026-08-31", "poll": true}
+{"fetched_utc": "2026-08-31T20:31:43.033103+00:00", "game_date": "2026-08-31", "poll": true}
+{"fetched_utc": "2026-08-31T20:46:45.679154+00:00", "game_date": "2026-08-31", "poll": true}
+{"fetched_utc": "2026-08-31T21:01:48.669559+00:00", "game_date": "2026-08-31", "poll": true}
+{"category": "other", "date": "2026-08-31", "first_seen_utc": "2026-08-31T21:01:48.669559+00:00", "player": "John Peck", "player_id": 807726, "team": "DET", "transaction_id": 940271}
+{"category": "recalled", "date": "2026-08-31", "first_seen_utc": "2026-08-31T21:01:48.669559+00:00", "player": "Yilber D\u00edaz", "player_id": 700270, "team": "DET", "transaction_id": 940272}
+{"category": "optioned", "date": "2026-08-31", "first_seen_utc": "2026-08-31T21:01:48.669559+00:00", "player": "Corey Julks", "player_id": 667452, "team": "DET", "transaction_id": 940273}
+{"category": "designated", "date": "2026-08-31", "first_seen_utc": "2026-08-31T21:01:48.669559+00:00", "player": "Tanner Rainey", "player_id": 663432, "team": "DET", "transaction_id": 940274}
