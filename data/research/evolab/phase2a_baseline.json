@@ -1,0 +1,416 @@
+{
+  "columns": [
+    "d_lineup_platoon_share",
+    "d_lineup_vs_primary_pitch",
+    "d_top_minus_bottom",
+    "d_history_woba",
+    "d_history_pa",
+    "d_starter_platoon_gap",
+    "d_starter_velocity_gap",
+    "d_starter_groundball_share",
+    "d_primary_pitch_share",
+    "m_lineup_platoon_share",
+    "m_lineup_vs_primary_pitch",
+    "m_top_minus_bottom",
+    "m_history_woba",
+    "m_history_pa",
+    "m_starter_platoon_gap",
+    "m_starter_velocity_gap",
+    "m_starter_groundball_share",
+    "m_primary_pitch_share"
+  ],
+  "cv_folds": 5,
+  "eval_season": 2024,
+  "excluded": {
+    "2023": {
+      "no_price_pair": 16,
+      "no_result": 0,
+      "thin_consensus": 5
+    },
+    "2024": {
+      "no_price_pair": 14,
+      "no_result": 0,
+      "thin_consensus": 5
+    }
+  },
+  "min_books": 6,
+  "penalty_grid": [
+    0.1,
+    0.3,
+    1.0,
+    3.0,
+    10.0,
+    30.0,
+    100.0,
+    300.0,
+    1000.0,
+    3000.0,
+    10000.0,
+    30000.0
+  ],
+  "primary": {
+    "columns": [
+      "d_lineup_platoon_share",
+      "d_lineup_vs_primary_pitch",
+      "d_top_minus_bottom",
+      "d_history_woba",
+      "d_history_pa",
+      "d_starter_platoon_gap",
+      "d_starter_velocity_gap",
+      "d_starter_groundball_share",
+      "d_primary_pitch_share",
+      "m_lineup_platoon_share",
+      "m_lineup_vs_primary_pitch",
+      "m_top_minus_bottom",
+      "m_history_woba",
+      "m_history_pa",
+      "m_starter_platoon_gap",
+      "m_starter_velocity_gap",
+      "m_starter_groundball_share",
+      "m_primary_pitch_share"
+    ],
+    "comparisons": {
+      "m1_recalibrated_minus_m0_market": {
+        "clustered_p": 0.896429,
+        "mean_diff": -5.05806188633114e-05
+      },
+      "m2_l1_minus_m0_market": {
+        "clustered_p": 0.896429,
+        "mean_diff": -5.058061886331319e-05
+      },
+      "m2_l1_minus_m1_recalibrated": {
+        "clustered_p": 0.15894,
+        "mean_diff": -1.9133207899762096e-18
+      },
+      "m2_l2_minus_m0_market": {
+        "clustered_p": 0.914273,
+        "mean_diff": 4.1196396698293514e-05
+      },
+      "m2_l2_minus_m1_recalibrated": {
+        "clustered_p": 0.246644,
+        "mean_diff": 9.177701556160512e-05
+      }
+    },
+    "dropped_columns": [],
+    "eval_dates": 183,
+    "eval_games": 2234,
+    "impute_constants": {
+      "history_pa": 0.654046,
+      "history_woba": 0.33686,
+      "lineup_platoon_share": 0.576134,
+      "lineup_vs_primary_pitch": 0.356016,
+      "primary_pitch_share": 0.417593,
+      "starter_groundball_share": 0.426178,
+      "starter_platoon_gap": 0.013715,
+      "starter_velocity_gap": -0.362956,
+      "top_minus_bottom": 0.04169
+    },
+    "leakage_checks": {
+      "design_columns_moved_by_price": 0,
+      "duplicate_game_pks": 0,
+      "eval_cutoff_vs_game_date": {
+        "after": 0,
+        "before": 2173,
+        "equal": 61
+      },
+      "eval_games": 2234,
+      "note": "the offset is the only market number the model sees; every design column comes from matrix.py, which reads pitches before its own monthly cutoff and no price at all",
+      "train_cutoff_vs_game_date": {
+        "after": 0,
+        "before": 2086,
+        "equal": 75
+      },
+      "train_eval_overlap": 0,
+      "train_games": 2161
+    },
+    "m1_intercept": -0.038950619979132836,
+    "models": {
+      "l1": {
+        "b0": -0.038950619979132885,
+        "coefficients": {
+          "d_history_pa": 0.0,
+          "d_history_woba": 0.0,
+          "d_lineup_platoon_share": 0.0,
+          "d_lineup_vs_primary_pitch": 0.0,
+          "d_primary_pitch_share": 0.0,
+          "d_starter_groundball_share": 0.0,
+          "d_starter_platoon_gap": 0.0,
+          "d_starter_velocity_gap": 0.0,
+          "d_top_minus_bottom": 0.0,
+          "m_history_pa": 0.0,
+          "m_history_woba": 0.0,
+          "m_lineup_platoon_share": 0.0,
+          "m_lineup_vs_primary_pitch": 0.0,
+          "m_primary_pitch_share": 0.0,
+          "m_starter_groundball_share": 0.0,
+          "m_starter_platoon_gap": 0.0,
+          "m_starter_velocity_gap": 0.0,
+          "m_top_minus_bottom": 0.0
+        },
+        "cv": {
+          "chosen": 100.0,
+          "norm": "l1",
+          "scores": {
+            "0.1": 0.679169,
+            "0.3": 0.679066,
+            "1.0": 0.678715,
+            "10.0": 0.675842,
+            "100.0": 0.674187,
+            "1000.0": 0.674187,
+            "10000.0": 0.674187,
+            "3.0": 0.677818,
+            "30.0": 0.67433,
+            "300.0": 0.674187,
+            "3000.0": 0.674187,
+            "30000.0": 0.674187
+          }
+        }
+      },
+      "l2": {
+        "b0": -0.03893217284889869,
+        "coefficients": {
+          "d_history_pa": 0.0003476806684527873,
+          "d_history_woba": -0.0005566109085264337,
+          "d_lineup_platoon_share": 0.0012184883737455885,
+          "d_lineup_vs_primary_pitch": 0.0028048803656334585,
+          "d_primary_pitch_share": -0.0007171442520603561,
+          "d_starter_groundball_share": 0.002264203895589591,
+          "d_starter_platoon_gap": 0.002521421659031373,
+          "d_starter_velocity_gap": 0.00030971182796468624,
+          "d_top_minus_bottom": -0.002536990766409694,
+          "m_history_pa": 0.0008372192745416555,
+          "m_history_woba": 0.000151429309976638,
+          "m_lineup_platoon_share": 0.0009138718553460517,
+          "m_lineup_vs_primary_pitch": -0.00027746821764344115,
+          "m_primary_pitch_share": 0.0003629823684560008,
+          "m_starter_groundball_share": 0.000126108281289853,
+          "m_starter_platoon_gap": -0.0027301909767218488,
+          "m_starter_velocity_gap": -0.004513374721989405,
+          "m_top_minus_bottom": 0.0045999709601432185
+        },
+        "cv": {
+          "chosen": 10000.0,
+          "norm": "l2",
+          "scores": {
+            "0.1": 0.679218,
+            "0.3": 0.679212,
+            "1.0": 0.679193,
+            "10.0": 0.678948,
+            "100.0": 0.677261,
+            "1000.0": 0.674497,
+            "10000.0": 0.674176,
+            "3.0": 0.679137,
+            "30.0": 0.678467,
+            "300.0": 0.675673,
+            "3000.0": 0.674206,
+            "30000.0": 0.674181
+          }
+        }
+      }
+    },
+    "requires_distinct_close": true,
+    "summary": {
+      "m0_market": {
+        "brier": 0.23999,
+        "log_loss": 0.67275
+      },
+      "m1_recalibrated": {
+        "brier": 0.23996,
+        "log_loss": 0.6727
+      },
+      "m2_l1": {
+        "brier": 0.23996,
+        "log_loss": 0.6727
+      },
+      "m2_l2": {
+        "brier": 0.24001,
+        "log_loss": 0.67279
+      }
+    },
+    "train_dates": 182,
+    "train_games": 2161
+  },
+  "sensitivity": {
+    "columns": [
+      "d_lineup_platoon_share",
+      "d_lineup_vs_primary_pitch",
+      "d_top_minus_bottom",
+      "d_history_woba",
+      "d_history_pa",
+      "d_starter_platoon_gap",
+      "d_starter_velocity_gap",
+      "d_starter_groundball_share",
+      "d_primary_pitch_share",
+      "m_lineup_platoon_share",
+      "m_lineup_vs_primary_pitch",
+      "m_top_minus_bottom",
+      "m_history_woba",
+      "m_history_pa",
+      "m_starter_platoon_gap",
+      "m_starter_velocity_gap",
+      "m_starter_groundball_share",
+      "m_primary_pitch_share"
+    ],
+    "comparisons": {
+      "m1_recalibrated_minus_m0_market": {
+        "clustered_p": 0.588883,
+        "mean_diff": -0.00020380074106924527
+      },
+      "m2_l1_minus_m0_market": {
+        "clustered_p": 0.588883,
+        "mean_diff": -0.00020380074106924513
+      },
+      "m2_l1_minus_m1_recalibrated": {
+        "clustered_p": 0.948991,
+        "mean_diff": 2.3033672710065488e-20
+      },
+      "m2_l2_minus_m0_market": {
+        "clustered_p": 0.616672,
+        "mean_diff": -0.00018829996273110738
+      },
+      "m2_l2_minus_m1_recalibrated": {
+        "clustered_p": 0.50774,
+        "mean_diff": 1.5500778338137913e-05
+      }
+    },
+    "dropped_columns": [],
+    "eval_dates": 185,
+    "eval_games": 2410,
+    "impute_constants": {
+      "history_pa": 0.656927,
+      "history_woba": 0.337429,
+      "lineup_platoon_share": 0.574137,
+      "lineup_vs_primary_pitch": 0.355694,
+      "primary_pitch_share": 0.418814,
+      "starter_groundball_share": 0.425921,
+      "starter_platoon_gap": 0.013945,
+      "starter_velocity_gap": -0.367823,
+      "top_minus_bottom": 0.041527
+    },
+    "leakage_checks": {
+      "design_columns_moved_by_price": 0,
+      "duplicate_game_pks": 0,
+      "eval_cutoff_vs_game_date": {
+        "after": 0,
+        "before": 2344,
+        "equal": 66
+      },
+      "eval_games": 2410,
+      "note": "the offset is the only market number the model sees; every design column comes from matrix.py, which reads pitches before its own monthly cutoff and no price at all",
+      "train_cutoff_vs_game_date": {
+        "after": 0,
+        "before": 2320,
+        "equal": 89
+      },
+      "train_eval_overlap": 0,
+      "train_games": 2409
+    },
+    "m1_intercept": -0.039792495697267734,
+    "models": {
+      "l1": {
+        "b0": -0.03979249569726773,
+        "coefficients": {
+          "d_history_pa": 0.0,
+          "d_history_woba": 0.0,
+          "d_lineup_platoon_share": 0.0,
+          "d_lineup_vs_primary_pitch": 0.0,
+          "d_primary_pitch_share": 0.0,
+          "d_starter_groundball_share": 0.0,
+          "d_starter_platoon_gap": 0.0,
+          "d_starter_velocity_gap": 0.0,
+          "d_top_minus_bottom": 0.0,
+          "m_history_pa": 0.0,
+          "m_history_woba": 0.0,
+          "m_lineup_platoon_share": 0.0,
+          "m_lineup_vs_primary_pitch": 0.0,
+          "m_primary_pitch_share": 0.0,
+          "m_starter_groundball_share": 0.0,
+          "m_starter_platoon_gap": 0.0,
+          "m_starter_velocity_gap": 0.0,
+          "m_top_minus_bottom": 0.0
+        },
+        "cv": {
+          "chosen": 100.0,
+          "norm": "l1",
+          "scores": {
+            "0.1": 0.681417,
+            "0.3": 0.681343,
+            "1.0": 0.681091,
+            "10.0": 0.678558,
+            "100.0": 0.676529,
+            "1000.0": 0.676529,
+            "10000.0": 0.676529,
+            "3.0": 0.680425,
+            "30.0": 0.676694,
+            "300.0": 0.676529,
+            "3000.0": 0.676529,
+            "30000.0": 0.676529
+          }
+        }
+      },
+      "l2": {
+        "b0": -0.03978804150261732,
+        "coefficients": {
+          "d_history_pa": 4.91459120857955e-06,
+          "d_history_woba": -0.000474996852394691,
+          "d_lineup_platoon_share": 0.00016149154093550019,
+          "d_lineup_vs_primary_pitch": 0.0009654602672520259,
+          "d_primary_pitch_share": -0.0002721612512882488,
+          "d_starter_groundball_share": 0.0007301106965193057,
+          "d_starter_platoon_gap": 0.0006817901812752753,
+          "d_starter_velocity_gap": -3.049658724092477e-05,
+          "d_top_minus_bottom": -0.0007612583356109704,
+          "m_history_pa": 0.0001374975722156224,
+          "m_history_woba": 0.00010866815140542042,
+          "m_lineup_platoon_share": 0.0004265143102829128,
+          "m_lineup_vs_primary_pitch": 0.00058715499883709,
+          "m_primary_pitch_share": 0.00041020426019818413,
+          "m_starter_groundball_share": 0.00039650502688679776,
+          "m_starter_platoon_gap": -0.000443929989494879,
+          "m_starter_velocity_gap": -0.001486150275814831,
+          "m_top_minus_bottom": 0.001495908322417736
+        },
+        "cv": {
+          "chosen": 30000.0,
+          "norm": "l2",
+          "scores": {
+            "0.1": 0.681452,
+            "0.3": 0.681448,
+            "1.0": 0.681433,
+            "10.0": 0.681247,
+            "100.0": 0.679899,
+            "1000.0": 0.677202,
+            "10000.0": 0.676578,
+            "3.0": 0.681391,
+            "30.0": 0.680875,
+            "300.0": 0.678481,
+            "3000.0": 0.676723,
+            "30000.0": 0.676544
+          }
+        }
+      }
+    },
+    "requires_distinct_close": false,
+    "summary": {
+      "m0_market": {
+        "brier": 0.24032,
+        "log_loss": 0.67341
+      },
+      "m1_recalibrated": {
+        "brier": 0.24021,
+        "log_loss": 0.67321
+      },
+      "m2_l1": {
+        "brier": 0.24021,
+        "log_loss": 0.67321
+      },
+      "m2_l2": {
+        "brier": 0.24022,
+        "log_loss": 0.67322
+      }
+    },
+    "train_dates": 182,
+    "train_games": 2409
+  },
+  "train_season": 2023
+}
