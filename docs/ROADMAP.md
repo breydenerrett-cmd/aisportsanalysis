@@ -142,6 +142,37 @@ concurrently for days and every routine check passed:
 STANDING RULE ADDED: a store that should be growing must be checked for
 ROWS, not for the absence of errors. Silence is not success.
 
+### PRODUCT CONCLUSIONS RECORDED (Brey, 2026-08-31)
+
+**1. News speed is NOT a core promise.** Beating books to breaking news is not
+viable at our scale -- books suspend within seconds to low minutes, and X's
+realistic tier prices broad streaming out of reach
+(docs/COMPETITIVE_INTELLIGENCE/X_NEWS_FEASIBILITY.md). The viable product is
+the ORGANISED version: public news / lineup / roster change -> explain the
+baseball relevance -> show the affected matchup or bet -> show market state
+before and after -> tell the user whether the market appears to have reacted
+already. That is a shipping description of what "What changed" plus the
+price board plus V3's measurement already do.
+
+**2. EVIDENTIAL TRANSPARENCY is a positioning HYPOTHESIS, not settled copy.**
+Across 18 audited competitors none has a third-party-audited record and none
+makes publishing its own losses the headline promise; all sell more
+confidence, edge or picks. Candidate territory: sample-size skepticism,
+published losses, evidence states, opposing evidence, explicit uncertainty,
+price improvement held distinct from predictive EV, visible methodology.
+Do NOT harden this into branding copy here -- the local design/brand research
+validates how customers actually understand it first.
+
+**3. Name finalists are FINALISTS ONLY.** Ledgerline, Quiet Signal and
+Coverage Grid are not selected. Each requires a domain recheck (several
+returned 503), an obvious-collision and trademark search, App Store and
+product collision checks, pronunciation and memorability, multi-sport fit,
+and consumer testing against the wider candidate set. No name is chosen.
+
+**4. No product UI implementation** until PRODUCT_DESIGN_HANDOFF.md (being
+written elsewhere) and docs/SAAS_APPLICATION_ARCHITECTURE.md can be reviewed
+together.
+
 ### READY QUEUE (refill to ≥3 whenever an item completes)
 1. Protect/run due forward capture (standing, lane A — always first).
 2. V3 first class-floor analysis when any class reaches 30 admitted
