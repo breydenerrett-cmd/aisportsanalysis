@@ -138,12 +138,20 @@ def _upcoming(now=None, timeout=20):
     was gating. MLB publishes the schedule for nothing, and start times are
     exactly what the window needs.
 
-    Two dates because a late-evening slate runs past midnight UTC, so today's
-    games and tomorrow's calendar date overlap.
+    Three dates, and YESTERDAY is the one that matters. MLB files a game under
+    its Eastern date, so a 22:10 ET first pitch on the 30th is filed under the
+    30th and starts at 02:10 UTC on the 31st. Asking only for the UTC date and
+    the day after meant that from 00:00 UTC -- 8pm Eastern -- the entire
+    still-to-start West Coast slate vanished from this function's view. The
+    loop then stopped with "no game inside the window", the close pass never
+    fired, and `_missed_windows` could not even report the gap, because the
+    games it would have reported were not in `events` either. Every West Coast
+    closing line, every night, silently. The schedule endpoint is free, so the
+    extra call costs nothing but a request.
     """
     now = now or datetime.now(timezone.utc)
     rows = []
-    for offset in (0, 1):
+    for offset in (-1, 0, 1):
         day = (now + timedelta(days=offset)).date().isoformat()
         try:
             for game in mlb.fetch_schedule(day, timeout=timeout):
@@ -327,6 +335,11 @@ def _f5_close_pass(env, run_end, store=None) -> dict:
     if rows:
         target.parent.mkdir(parents=True, exist_ok=True)
         with target.open("a", encoding="utf-8") as handle:
+            # A run killed mid-write leaves a fragment with no newline; without
+            # this the next close pass would weld its first row onto that
+            # fragment and lose a good capture along with the bad one.
+            if snapshots._ends_ragged(target):
+                handle.write("\n")
             for row in rows:
                 handle.write(json.dumps(row, sort_keys=True) + "\n")
     return {"events": len(targets), "rows": len(rows), "errors": errors}

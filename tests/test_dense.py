@@ -129,5 +129,48 @@ class RunTests(unittest.TestCase):
         self.assertEqual(result["stopped_early"], "no game inside the window")
 
 
+class ScheduleHorizonTests(unittest.TestCase):
+    """Which calendar dates the window gate is allowed to ask MLB about."""
+
+    # MLB files a game under its EASTERN date. A 22:10 ET first pitch on the
+    # 30th is filed under the 30th and starts at 02:10 UTC on the 31st.
+    SCHEDULE = {
+        "2026-08-30": [{"gameDate": "2026-08-31T02:10:00Z"}],
+        "2026-08-31": [{"gameDate": "2026-08-31T17:05:00Z"}],
+        "2026-09-01": [],
+    }
+
+    def setUp(self):
+        self.asked = []
+        self.real_schedule = dense.mlb.fetch_schedule
+
+        def fake(day, timeout=20):
+            self.asked.append(day)
+            return self.SCHEDULE.get(day, [])
+
+        dense.mlb.fetch_schedule = fake
+
+    def tearDown(self):
+        dense.mlb.fetch_schedule = self.real_schedule
+
+    def test_yesterdays_slate_is_still_asked_about_after_midnight_utc(self):
+        # 01:50 UTC is 21:50 in Seattle: twenty minutes to first pitch, the
+        # closing line still uncaptured. Asking only for today and tomorrow
+        # made that game invisible -- the loop stopped with "no game inside
+        # the window", the close pass never fired, and _missed_windows could
+        # not report the gap because the game was not in its list either.
+        now = datetime(2026, 8, 31, 1, 50, tzinfo=timezone.utc)
+        events = dense._upcoming(now)
+        self.assertIn("2026-08-30", self.asked)
+        self.assertEqual(dense.games_in_window(events, now), 1)
+        self.assertEqual(
+            dense.games_in_window(events, now, dense.CLOSE_WINDOW_MINUTES), 1)
+
+    def test_a_game_that_already_started_yesterday_still_does_not_count(self):
+        # The extra day widens what we LOOK at, never what counts as upcoming.
+        now = datetime(2026, 8, 31, 3, 0, tzinfo=timezone.utc)
+        self.assertEqual(dense.games_in_window(dense._upcoming(now), now), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -79,14 +79,14 @@ def record_slate(slate, path=DEFAULT_LEDGER, recorded_at=None,
         if existing.get("kind") != RECOMMENDATION:
             continue
         if existing.get("prices") or {}:
-            priced_already.add(existing.get("game_pk"))
+            priced_already.add(_identity(existing))
         else:
-            priceless_already.add(existing.get("game_pk"))
+            priceless_already.add(_identity(existing))
 
     entries, skipped = [], 0
     for game in slate.get("games", []):
         entry = _entry(game, slate.get("date"), stamp, information_time)
-        key = entry.get("game_pk")
+        key = _identity(entry)
         priced = bool(entry.get("prices") or {})
         # A repeat that adds nothing is skipped; the ONE repeat worth
         # keeping is the repair -- a priced entry for a game whose only
@@ -97,15 +97,30 @@ def record_slate(slate, path=DEFAULT_LEDGER, recorded_at=None,
             continue
         entries.append(entry)
 
-    with target.open("a", encoding="utf-8") as handle:
-        for entry in entries:
-            handle.write(json.dumps(entry, sort_keys=True) + "\n")
+    _append_entries(target, entries)
 
     verdicts = {}
     for entry in entries:
         verdicts[entry["verdict"]] = verdicts.get(entry["verdict"], 0) + 1
     return {"recorded": len(entries), "skipped_already_recorded": skipped,
             "verdicts": verdicts, "path": str(target), "recorded_at": stamp}
+
+
+def _identity(entry):
+    """What makes two rows the same game, for dedup and for `recommendations`.
+
+    `game_pk` when there is one. When there is not -- a degraded schedule call
+    can leave it null -- every such game used to collapse onto the key None:
+    a whole slate of them deduped down to one visible recommendation, the rest
+    on disk and invisible, and the next run skipped the entire date as "already
+    recorded". A null pk falls back to the date and the two team names, which is
+    identity enough to keep distinct games distinct.
+    """
+    game_pk = entry.get("game_pk")
+    if game_pk is not None:
+        return game_pk
+    return ("no-pk", entry.get("date"), entry.get("away_team"),
+            entry.get("home_team"), entry.get("commence_time"))
 
 
 def _entry(game, game_date, stamp, information_time) -> dict:
@@ -247,7 +262,7 @@ def recommendations(entries=None, path=DEFAULT_LEDGER) -> list:
     for entry in rows:
         if entry.get("kind") != RECOMMENDATION:
             continue
-        key = entry.get("game_pk")
+        key = _identity(entry)
         priced = bool((entry.get("prices") or {}))
         if key not in kept:
             kept[key] = entry
@@ -292,9 +307,31 @@ def settle(game_pk, result, closing=None, path=DEFAULT_LEDGER,
         entry["closing_reason"] = closing_reason or "no closing price provided"
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
-    with target.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(entry, sort_keys=True) + "\n")
+    _append_entries(target, [entry])
     return entry
+
+
+def _append_entries(target, entries) -> None:
+    """Append rows, newline-terminating any fragment a killed run left behind.
+
+    `read` refuses a corrupt line by design -- this is evidence, and a bad line
+    must be named rather than skipped. That makes the guard more important, not
+    less: without it the next write would weld itself onto the fragment, so one
+    interrupted write would take a good recommendation down with it and the
+    named line would blame the wrong row.
+    """
+    if not entries:
+        return
+    ragged = False
+    if target.exists() and target.stat().st_size:
+        with target.open("rb") as handle:
+            handle.seek(-1, 2)
+            ragged = handle.read(1) != b"\n"
+    with target.open("a", encoding="utf-8") as handle:
+        if ragged:
+            handle.write("\n")
+        for entry in entries:
+            handle.write(json.dumps(entry, sort_keys=True) + "\n")
 
 
 def status(path=DEFAULT_LEDGER) -> dict:
@@ -313,6 +350,13 @@ def status(path=DEFAULT_LEDGER) -> dict:
         "pending": sum(1 for r in recs if r["game_pk"] not in settled),
         "verdicts": verdicts,
         "actionable": len(actionable),
+        # A settlement written for a game_pk the ledger never recommended
+        # settles nothing: it is counted nowhere above, so a settle loop
+        # working off the wrong pk reports success forever while `pending`
+        # never moves. Named here so the loop's own output shows it.
+        "orphan_settlements": sorted(
+            str(pk) for pk in settled
+            if pk not in {r.get("game_pk") for r in recs}),
         "first_recorded": min((r["recorded_at"] for r in recs), default=None),
         "last_recorded": max((r["recorded_at"] for r in recs), default=None),
         "dates": sorted({r["date"] for r in recs if r.get("date")}),

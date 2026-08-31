@@ -365,5 +365,92 @@ class TestCoverage(unittest.TestCase):
         self.assertEqual(report["last_utc"], "2026-08-27T22:00:00+00:00")
 
 
+class TestCrashMidWrite(unittest.TestCase):
+    """A run killed mid-write must cost one observation, not two."""
+
+    def test_the_capture_after_a_killed_run_is_not_eaten_by_its_fragment(self):
+        # The store ends with the half-written line a SIGKILL left behind. The
+        # next scheduled capture appends a perfectly good observation -- one
+        # that can never be taken again -- and it used to be welded onto the
+        # fragment and skipped by read() along with it: one crash, two losses.
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "snaps.jsonl"
+            snapshots.append([observation("2026-08-27T12:00:00+00:00")], path)
+            with path.open("a", encoding="utf-8") as handle:
+                handle.write('{"observed_utc":"2026-08-27T12:15:00+00:00","pri')
+
+            snapshots.append([observation("2026-08-27T12:30:00+00:00")], path)
+
+            recovered = [r["observed_utc"] for r in snapshots.read(path)]
+        self.assertEqual(recovered, ["2026-08-27T12:00:00+00:00",
+                                     "2026-08-27T12:30:00+00:00"])
+
+    def test_the_fragment_itself_is_still_the_only_thing_lost(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "snaps.jsonl"
+            path.write_text('{"observed_utc":"a","mar', encoding="utf-8")
+            snapshots.append([observation("2026-08-27T12:30:00+00:00")], path)
+            self.assertEqual(len(snapshots.read(path)), 1)
+            with self.assertRaises(SnapshotError):
+                snapshots.read(path, skip_corrupt=False)
+
+
+class TestOfficialDateIdentity(unittest.TestCase):
+    """A game is identified by MLB's date, not by the UTC date of first pitch."""
+
+    # Saturday night in the Bronx: 20:10 ET on the 30th is 00:10 UTC on the 31st.
+    SATURDAY = "2026-08-31T00:10:00Z"
+    # The Sunday matinee of the same series, same two teams.
+    SUNDAY = "2026-08-31T17:35:00Z"
+
+    def _series(self):
+        return [
+            observation("2026-08-30T22:00:00Z", commence=self.SATURDAY,
+                        home_price=-130),
+            observation("2026-08-31T00:00:00Z", commence=self.SATURDAY,
+                        home_price=-140),
+            observation("2026-08-31T16:00:00Z", commence=self.SUNDAY,
+                        home_price=115),
+            observation("2026-08-31T17:30:00Z", commence=self.SUNDAY,
+                        home_price=120),
+        ]
+
+    def test_a_night_game_and_the_next_days_matinee_are_two_games(self):
+        # Keyed by UTC date these shared one bucket -- and every three-game
+        # series contains that pair.
+        grouped = snapshots.group_by_game(self._series())
+        self.assertEqual(len(grouped), 2)
+        self.assertEqual(
+            snapshots.game_key("Houston Astros", "New York Yankees",
+                               self.SATURDAY)[2], "2026-08-30")
+
+    def test_each_of_the_two_gets_its_own_closing_line(self):
+        grouped = snapshots.group_by_game(self._series())
+        closes = sorted(
+            snapshots.closing_observation(s)["prices"]["home_price"]
+            for s in grouped.values())
+        self.assertEqual(closes, [-140, 120])
+
+    def test_an_unsnapshotted_game_is_never_handed_last_nights_close(self):
+        # The one that mattered. Sunday was never captured; asking for its
+        # close returned SATURDAY's price, which cli._settlement_closing would
+        # then write onto Sunday's settlement row as evidence.
+        saturday_only = self._series()[:2]
+        grouped = snapshots.group_by_game(saturday_only)
+        key = snapshots.game_key("Houston Astros", "New York Yankees",
+                                 self.SUNDAY)
+        self.assertNotIn(key, grouped)
+
+    def test_coverage_counts_both_games_and_both_closes(self):
+        report = snapshots.coverage(self._series())
+        self.assertEqual(report["games"], 2)
+        self.assertEqual(report["with_closing"], 2)
+
+    def test_a_bare_date_or_an_unparseable_start_is_left_alone(self):
+        self.assertEqual(snapshots.official_date("2026-08-30"), "2026-08-30")
+        self.assertEqual(snapshots.official_date("not a timestamp"), "not a time")
+        self.assertEqual(snapshots.official_date(None), "")
+
+
 if __name__ == "__main__":
     unittest.main()

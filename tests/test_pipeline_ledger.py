@@ -221,5 +221,88 @@ class TestIO(unittest.TestCase):
         self.assertEqual(Path(ledger.DEFAULT_LEDGER).parent.name, "evidence")
 
 
+class TestGamesWithoutAPk(unittest.TestCase):
+    """A missing game_pk must not make several games look like one."""
+
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.dir.cleanup)
+        self.path = Path(self.dir.name) / "ledger.jsonl"
+
+    @staticmethod
+    def _game(away, home):
+        d = dossier_mod.Dossier(
+            {"game_pk": None, "away_team": away, "home_team": home,
+             "date": "2026-08-28", "start_time_utc": "2026-08-28T23:05:00Z"})
+        return {"dossier": d, "findings": [], "verdict": "no_play",
+                "side": "home", "market": "first_five", "summary": "x"}
+
+    def _slate(self):
+        return {"date": "2026-08-28", "notes": [],
+                "games": [self._game("BOS", "NYY"), self._game("LAD", "SFG"),
+                          self._game("HOU", "SEA")]}
+
+    def test_three_pkless_games_stay_three_recommendations(self):
+        # Keyed on game_pk alone they all collapsed onto None: three rows on
+        # disk, one visible recommendation, and status reporting a one-game
+        # slate. The rows were there; nothing could see them.
+        ledger.record_slate(self._slate(), path=self.path)
+        recs = ledger.recommendations(path=self.path)
+        self.assertEqual(len(ledger.read(self.path)), 3)
+        self.assertEqual([(r["away_team"], r["home_team"]) for r in recs],
+                         [("BOS", "NYY"), ("LAD", "SFG"), ("HOU", "SEA")])
+        self.assertEqual(ledger.status(self.path)["games_recorded"], 3)
+
+    def test_a_rerun_still_writes_nothing_new(self):
+        ledger.record_slate(self._slate(), path=self.path)
+        again = ledger.record_slate(self._slate(), path=self.path)
+        self.assertEqual(again["recorded"], 0)
+        self.assertEqual(again["skipped_already_recorded"], 3)
+
+
+class TestSettlementGaps(unittest.TestCase):
+
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.dir.cleanup)
+        self.path = Path(self.dir.name) / "ledger.jsonl"
+
+    def test_a_settlement_for_a_game_never_recommended_is_named(self):
+        # A settle loop working off the wrong pk reports success forever while
+        # `pending` never moves. The row settles nothing and now says so.
+        ledger.record_slate(slate(game(game_pk=1)), path=self.path)
+        ledger.settle(999, {"winner": "home"}, path=self.path)
+        report = ledger.status(self.path)
+        self.assertEqual(report["pending"], 1)
+        self.assertEqual(report["orphan_settlements"], ["999"])
+
+    def test_a_settlement_that_lands_is_not_an_orphan(self):
+        ledger.record_slate(slate(game(game_pk=1)), path=self.path)
+        ledger.settle(1, {"winner": "home"}, path=self.path)
+        self.assertEqual(ledger.status(self.path)["orphan_settlements"], [])
+
+
+class TestCrashMidWrite(unittest.TestCase):
+
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.dir.cleanup)
+        self.path = Path(self.dir.name) / "ledger.jsonl"
+
+    def test_the_next_write_is_not_welded_onto_an_interrupted_one(self):
+        # read() names a corrupt line rather than skipping it, which is why
+        # this matters: without the guard the next settlement would fuse with
+        # the fragment, so one killed write would take a good row with it and
+        # the named line would blame the wrong one.
+        ledger.settle(1, {"winner": "home"}, path=self.path)
+        with self.path.open("a", encoding="utf-8") as handle:
+            handle.write('{"kind":"settlement","game_pk":2,"resu')
+        ledger.settle(3, {"winner": "away"}, path=self.path)
+
+        lines = self.path.read_text(encoding="utf-8").splitlines()
+        self.assertEqual(len(lines), 3)
+        self.assertEqual(json.loads(lines[2])["game_pk"], 3)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -341,5 +341,53 @@ class TestStoreReading(WatchCase):
         self.assertEqual(ends, sorted(ends))
 
 
+class TestWhichSlateIsToday(WatchCase):
+    """The default date is MLB's, and it comes from the injected clock."""
+
+    def _asked(self, clock):
+        asked = []
+
+        def fetch(iso, timeout=20):
+            asked.append(iso)
+            return []
+
+        rosterwatch.poll(watch_dir=self.dir, clock=clock,
+                         fetch_probables=fetch, fetch_lineups=lambda i, timeout=20: {},
+                         fetch_transactions=fetch)
+        return asked
+
+    def test_the_evening_slate_is_watched_until_it_is_actually_over(self):
+        # 01:30 UTC is 21:30 Eastern: the West Coast games are an hour from
+        # first pitch and posting lineups. Defaulting to the UTC date rolled
+        # the poller onto TOMORROW at 20:00 Eastern, so every late lineup and
+        # every late scratch went unwatched -- during exactly the hours the
+        # dense runner calls this hook every fifteen minutes.
+        clock = lambda: datetime(2026, 8, 31, 1, 30, tzinfo=timezone.utc)
+        self.assertEqual(set(self._asked(clock)), {"2026-08-30"})
+
+    def test_it_rolls_over_at_midnight_eastern_not_midnight_utc(self):
+        clock = lambda: datetime(2026, 8, 31, 5, 30, tzinfo=timezone.utc)
+        self.assertEqual(set(self._asked(clock)), {"2026-08-31"})
+
+    def test_an_explicit_date_is_still_obeyed(self):
+        clock = lambda: datetime(2026, 8, 31, 1, 30, tzinfo=timezone.utc)
+        asked = []
+
+        def fetch(iso, timeout=20):
+            asked.append(iso)
+            return []
+
+        rosterwatch.poll(game_date="2026-07-04", watch_dir=self.dir,
+                         clock=clock, fetch_probables=fetch,
+                         fetch_lineups=lambda i, timeout=20: {},
+                         fetch_transactions=fetch)
+        self.assertEqual(set(asked), {"2026-07-04"})
+
+    def test_a_naive_clock_cannot_choose_a_slate(self):
+        with self.assertRaises(rosterwatch.RosterWatchError):
+            rosterwatch.poll(watch_dir=self.dir,
+                             clock=lambda: datetime(2026, 8, 31, 1, 30))
+
+
 if __name__ == "__main__":
     unittest.main()

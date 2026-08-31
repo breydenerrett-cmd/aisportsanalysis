@@ -109,6 +109,28 @@ class F5ClosePassTests(unittest.TestCase):
             self.assertFalse(store.exists())
         self.assertEqual(report["rows"], 0)
 
+    def test_a_killed_pass_does_not_eat_the_next_ones_first_row(self):
+        # The F5 store is written by the close pass and nothing else, so a
+        # fragment left by a killed run sits at the end of the file until the
+        # next close pass -- one night later, one closing line at stake.
+        listed = [_event("near", 10)]
+
+        def fetch(event_id, markets, env):
+            return _payload(event_id, books=("fanduel",))
+
+        with tempfile.TemporaryDirectory() as folder:
+            store = Path(folder) / "f5.jsonl"
+            store.write_text('{"event_id":"yesterday","home_pr',
+                             encoding="utf-8")
+            with mock.patch.object(dense.odds_provider, "list_events",
+                                   return_value=listed), \
+                 mock.patch.object(dense.odds_provider, "fetch_event_odds",
+                                   side_effect=fetch):
+                dense._f5_close_pass(None, NOW, store=store)
+            lines = store.read_text(encoding="utf-8").splitlines()
+        self.assertEqual(len(lines), 2)
+        self.assertEqual(json.loads(lines[1])["event_id"], "near")
+
 
 if __name__ == "__main__":
     unittest.main()

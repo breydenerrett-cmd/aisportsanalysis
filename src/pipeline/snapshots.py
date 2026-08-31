@@ -28,7 +28,7 @@ callers must handle the gap rather than receiving a plausible invention.
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from src.core import odds as odds_math
@@ -46,6 +46,26 @@ DEFAULT_MULTIBOOK_PATH = processed_path("odds_multibook.jsonl")
 # in-play pricing, which is a different product. This margin keeps late-arriving observations
 # from being mistaken for the close.
 CLOSING_GRACE_SECONDS = 0
+
+
+def _eastern():
+    """MLB's official timezone, with a fallback for tzdata-less containers.
+
+    Every regular-season and postseason first pitch falls inside daylight time,
+    and the only dates a fixed -04:00 could get wrong are first pitches between
+    04:00 and 05:00 UTC -- 11pm Eastern, which baseball does not schedule. So the
+    fallback is exact for the games this project sees, and says so rather than
+    pretending the zone database is present.
+    """
+    try:
+        from zoneinfo import ZoneInfo
+
+        return ZoneInfo("America/New_York")
+    except Exception:  # noqa: BLE001 -- no tzdata is a deployment fact, not a bug
+        return timezone(timedelta(hours=-4))
+
+
+_EASTERN = _eastern()
 
 
 class SnapshotError(RuntimeError):
@@ -159,15 +179,35 @@ def multibook_rows(observed, events) -> list:
 
 
 def append(rows, path=DEFAULT_SNAPSHOT_PATH) -> int:
-    """Append observations as JSON Lines. Never rewrites existing content."""
+    """Append observations as JSON Lines. Never rewrites existing content.
+
+    A run killed mid-write leaves a truncated final line with no newline. Without
+    the guard below, the NEXT capture's first row would be appended onto that
+    fragment, and `read` would then skip the merged line -- so one crash would
+    cost TWO observations, the second of them a perfectly good capture that can
+    never be taken again. Terminating the fragment first keeps the damage to the
+    one row that was actually interrupted.
+    """
     if not rows:
         return 0
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
     with target.open("a", encoding="utf-8") as handle:
+        if _ends_ragged(target):
+            handle.write("\n")
         for row in rows:
             handle.write(json.dumps(row, separators=(",", ":")) + "\n")
     return len(rows)
+
+
+def _ends_ragged(target) -> bool:
+    """True when the file ends mid-line -- the signature of an interrupted append."""
+    target = Path(target)
+    if not target.exists() or not target.stat().st_size:
+        return False
+    with target.open("rb") as handle:
+        handle.seek(-1, 2)
+        return handle.read(1) != b"\n"
 
 
 # ---------------------------------------------------------------------------
@@ -200,9 +240,40 @@ def read(path=DEFAULT_SNAPSHOT_PATH, skip_corrupt: bool = True) -> list:
 
 
 def game_key(away_team, home_team, commence_time) -> tuple:
-    """Identity for one scheduled game, stable across observations."""
-    day = (commence_time or "")[:10]
-    return (away_team, home_team, day)
+    """Identity for one scheduled game, stable across observations.
+
+    The day is MLB's OFFICIAL (Eastern) date, not the UTC date of first pitch.
+    Keying on the UTC date silently merged two different games: a 20:10 ET
+    Saturday night game starts at 00:10 UTC Sunday, so it landed in the same
+    bucket as Sunday's 13:35 ET matinee against the same opponent -- and every
+    three-game series has that pair. The consequence was not merely a miscount.
+    `closing_observation` on the merged series would hand Sunday's settlement
+    the last price recorded before Sunday's first pitch, which -- if Sunday
+    itself was never snapshotted -- is Saturday's closing price for a different
+    game, written onto the evidence row as though it were Sunday's close. This
+    module's whole promise is that a missing close stays missing.
+    """
+    return (away_team, home_team, official_date(commence_time))
+
+
+def official_date(commence_time) -> str:
+    """MLB's official calendar date for a first pitch, as YYYY-MM-DD.
+
+    The odds feed timestamps in UTC; MLB files a game under its Eastern date,
+    which is the date every other source in this project agrees on. An
+    unparseable or absent value degrades to the leading ten characters rather
+    than inventing a date.
+    """
+    if commence_time is None:
+        return ""
+    text = str(commence_time).strip()
+    if len(text) == 10:  # already a bare date; nothing to convert
+        return text
+    try:
+        moment = _parse(text)
+    except SnapshotError:
+        return text[:10]
+    return moment.astimezone(_EASTERN).date().isoformat()
 
 
 def group_by_game(rows, market: str = "h2h") -> dict:

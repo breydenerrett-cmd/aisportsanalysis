@@ -54,7 +54,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 from src.paths import data_path
@@ -97,7 +97,11 @@ def poll(game_date=None, watch_dir=DEFAULT_WATCH_DIR,
     failure logs, lands in the report's `errors`, and never blocks the rest.
     """
     clock = clock or (lambda: datetime.now(timezone.utc))
-    iso_date = _to_iso_date(game_date)
+    # The default date comes from the SAME clock that stamps the rows. A poll
+    # that brackets events with an injected clock but asks MLB about whatever
+    # day the wall clock happens to be on is bracketing one world and looking
+    # at another.
+    iso_date = _to_iso_date(game_date, clock)
     directory = Path(watch_dir)
     directory.mkdir(parents=True, exist_ok=True)
 
@@ -438,9 +442,39 @@ def _utc_iso(moment) -> str:
     return moment.astimezone(timezone.utc).isoformat()
 
 
-def _to_iso_date(value) -> str:
+def _eastern():
+    """MLB's official timezone; a fixed -04:00 when no zone database is installed.
+
+    Baseball is played entirely inside daylight time, and the fallback only
+    disagrees with the real zone for the hour after 04:00 UTC -- midnight
+    Eastern, when nothing on the slate has started or is about to.
+    """
+    try:
+        from zoneinfo import ZoneInfo
+
+        return ZoneInfo("America/New_York")
+    except Exception:  # noqa: BLE001 -- no tzdata is a deployment fact
+        return timezone(timedelta(hours=-4))
+
+
+_EASTERN = _eastern()
+
+
+def _to_iso_date(value, clock=None) -> str:
     if value is None:
-        return datetime.now(timezone.utc).date().isoformat()
+        moment = clock() if clock is not None else datetime.now(timezone.utc)
+        if not isinstance(moment, datetime) or moment.tzinfo is None:
+            raise RosterWatchError(
+                "the clock must return a timezone-aware datetime; a naive one "
+                "cannot say which slate is today")
+        # MLB's date, not the UTC date. Defaulting to UTC rolled the poller
+        # over to TOMORROW's slate at 00:00 UTC -- 8pm Eastern -- and the
+        # poller then spent the rest of the evening asking about games that
+        # had not been scheduled yet while the West Coast slate, an hour from
+        # first pitch, posted its lineups and took its scratches unwatched.
+        # The dense runner calls this every fifteen minutes precisely during
+        # those hours, which is when it was least able to see anything.
+        return moment.astimezone(_EASTERN).date().isoformat()
     if isinstance(value, date):
         return value.isoformat()
     return date.fromisoformat(str(value).strip()).isoformat()
