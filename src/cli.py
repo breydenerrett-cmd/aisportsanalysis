@@ -1460,6 +1460,19 @@ def cmd_timing(args) -> int:
     return EXIT_OK
 
 
+def cmd_health(args) -> int:
+    """Slate data-quality health: is today's collection actually collecting?
+
+    Read-only over the stores; exits non-zero on anomalies so the data plane
+    can grep-or-exit-code its way to an ESCALATE line.
+    """
+    from src.pipeline import health
+
+    result = health.report(date=args.date)
+    print(health.format_report(result))
+    return EXIT_OK if result["healthy"] else EXIT_ERROR
+
+
 def cmd_calibration_demo(args) -> int:
     """Show the calibration metrics working on synthetic data.
 
@@ -1634,6 +1647,12 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("timing", help="V3 event accumulation status; tables "
                                   "appear only past the 30-event class floor")
 
+    health_cmd = sub.add_parser("health", help="slate data-quality health "
+                                               "report (read-only; non-zero "
+                                               "exit on anomalies)")
+    health_cmd.add_argument("--date", default=None,
+                            help="YYYY-MM-DD (defaults to today, UTC)")
+
     return parser
 
 
@@ -1654,6 +1673,7 @@ COMMANDS = {
     "predict": cmd_predict,
     "grade": cmd_grade,
     "daily": cmd_daily,
+    "health": cmd_health,
     "snapshot": cmd_snapshot,
     "dense": cmd_dense,
     "movement": cmd_movement,
