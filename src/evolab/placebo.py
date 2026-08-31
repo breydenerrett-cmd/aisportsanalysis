@@ -40,6 +40,16 @@ price-correlated feature can post enormous apparent returns that are an
 artifact of the generator rather than of the search. That is why P5 exists and
 is weighted most: it breaks nothing about the market at all.
 
+A GENERATOR IS A NULL FOR A FITNESS, NEVER IN THE ABSTRACT
+-----------------------------------------------------------
+P1 and P5 move `home_won` and nothing else, so a fitness that never reads
+`home_won` is invariant under them -- which is what the primary MOVEMENT
+fitness of design section 6 does. Their "the champion did not clear" verdict
+there is an arithmetic tie, not a ceiling. The generators are therefore split
+per fitness (`MOVEMENT_NULL_GENERATORS`, `OUTCOME_NULL_GENERATORS`) and P6 is
+the movement analogue of P1. See the SECOND GENERATOR AMENDMENT in design
+section 7.
+
 DETERMINISM
 -----------
 Same world plus same seed yields an identical world, always. Every generator
@@ -66,7 +76,26 @@ P2 = "P2"
 P3 = "P3"
 P4 = "P4"
 P5 = "P5"
+P6 = "P6"
 REAL = "REAL"
+
+# --------------------------------------------------------------------------
+# WHICH GENERATORS NULL WHICH FITNESS (design section 7, SECOND GENERATOR
+# AMENDMENT, adjudicated 2026-08-31)
+# --------------------------------------------------------------------------
+# A generator is a null for a fitness only if it breaks something that fitness
+# reads. P1 and P5 permute or redraw OUTCOMES and touch nothing else, so a
+# MOVEMENT fitness -- computed from `home_fair`, `home_fair_close` and the
+# features (design section 6) -- is mathematically invariant under both: every
+# replicate reproduces the real movement maximum exactly. They are valid nulls
+# for the outcome-ROI confirmation fitness and structurally uninformative for
+# the movement one. P6 is the movement analogue of P1 and restores a
+# three-generator majority for the movement ceiling.
+#
+# P4 is in neither set: it is a dispersion diagnostic, not a null at all
+# (design section 7's first amendment).
+MOVEMENT_NULL_GENERATORS: tuple[str, ...] = (P2, P3, P6)
+OUTCOME_NULL_GENERATORS: tuple[str, ...] = (P1, P2, P3, P5)
 
 # Default number of replicate worlds per generator (design section 7).
 DEFAULT_REPLICATES = 10
@@ -660,6 +689,123 @@ def p5_market_truth(world: World, seed: int, *,
 
 
 # --------------------------------------------------------------------------
+# P6 -- within-date movement permutation (the movement null)
+# --------------------------------------------------------------------------
+
+def p6_movement_permutation(world: World, seed: int, *,
+                            attempts: int = 64) -> World:
+    """P6: permute each game's decision->close movement among the games of a date.
+
+    THE GENERATOR THIS MODULE WAS MISSING. The primary search fitness (design
+    section 6) is market-relative price MOVEMENT: `home_fair_close -
+    home_fair`, signed by the side the strategy took. P1 and P5 permute only
+    `home_won`, so that fitness is invariant under both -- every replicate
+    reproduces the real movement maximum exactly, which is a tie, not a
+    ceiling. P6 is to movement what P1 is to outcome.
+
+    PRESERVES EXACTLY: the daily slate, every price, every de-vigged decision
+    probability `home_fair`, every outcome, every team label, every feature
+    vector on its own game, and -- the property the ceiling depends on -- the
+    MULTISET OF MOVEMENTS ON EACH DATE, to the bit.
+    BREAKS: feature -> movement.
+
+    WHAT MOVES, AND WHY IT MOVES AS ONE PIECE. The unit permuted is the whole
+    (fair-at-decision -> fair-at-close) displacement, applied to the recipient
+    game's own decision price. Permuting the two endpoints independently would
+    manufacture movements no game ever made -- a fabricated quantity, and the
+    fitness reads exactly that quantity. Permuting the endpoint PAIR as a
+    literal (level, close) couple would instead detach `home_fair` from the
+    `home_price` it was de-vigged from and from the outcome it was quoted
+    against, which is precisely the hazard `p2_team_permutation` documents:
+    the resulting world contains a real, trivially findable mispricing and
+    stops being a null. So the displacement travels and the level stays. No
+    movement in a P6 world is invented; every one of them is a whole, real
+    movement that some game on that date actually made.
+
+    P6 IS A MOVEMENT NULL ONLY -- STATED PLAINLY. P6 moves prices, not
+    outcomes. `home_won` is untouched, so a P6 world's outcome ROI is not
+    nulled: any real feature -> outcome relationship survives into it intact,
+    and P6 must never be counted in an outcome-fitness ceiling. That is why
+    `OUTCOME_NULL_GENERATORS` excludes it. What P6 does do to outcome fitness
+    is nothing at all beyond moving the close, which outcome ROI never reads.
+
+    OUT-OF-RANGE GUARD. A donor movement applied to a different level could
+    push a close outside (0, 1). Clamping would silently alter the movement
+    multiset -- the one thing this generator promises exactly -- so instead
+    the date's permutation is redrawn (up to `attempts` times) until every
+    resulting close is a probability. A date that cannot be permuted within
+    range keeps its own movements and is recorded loudly in `params` and
+    `notes`, because an unpermuted date is real feature -> movement alignment
+    leaking into the null and it must never pass unnoticed.
+
+    Games whose close is not knowable (`home_fair_close is None`) are excluded
+    from the permutation and stay unknown. Their movement does not exist, so
+    it is neither permuted nor invented.
+    """
+    rng = random.Random(seed)
+    out: list[Game] = []
+    groups: dict[int, list[Game]] = defaultdict(list)
+    n_without_close = 0
+    for day_index, games in world.days():
+        for g in games:
+            if g.home_fair_close is None:
+                n_without_close += 1
+                out.append(g)
+                continue
+            groups[day_index].append(g)
+
+    n_moved = 0
+    singleton_dates: list[int] = []
+    unpermutable_dates: list[int] = []
+    notes: list[str] = []
+
+    for day_index in sorted(groups):
+        members = groups[day_index]          # game_id order, from world.days()
+        movements = [g.home_fair_close - g.home_fair for g in members]
+        assigned: list[float] | None = None
+        if len(members) < 2:
+            singleton_dates.append(day_index)
+        else:
+            for _ in range(attempts):
+                candidate = list(movements)
+                rng.shuffle(candidate)
+                if all(0.0 < g.home_fair + m < 1.0
+                       for g, m in zip(members, candidate)):
+                    assigned = candidate
+                    break
+            if assigned is None:
+                unpermutable_dates.append(day_index)
+        if assigned is None:
+            assigned = movements
+        for game, movement in zip(members, assigned):
+            n_moved += 1
+            out.append(replace(game, home_fair_close=game.home_fair + movement))
+
+    if singleton_dates:
+        notes.append(
+            f"{len(singleton_dates)} date(s) held a single game with a known "
+            "close and could not be permuted; their feature -> movement "
+            "alignment survives into this world")
+    if unpermutable_dates:
+        notes.append(
+            f"{len(unpermutable_dates)} date(s) admitted no in-range "
+            f"permutation within {attempts} attempts and kept their own "
+            "movements; their feature -> movement alignment survives into "
+            "this world")
+
+    params = {
+        "attempts": attempts,
+        "n_dates_permuted": len(groups) - len(singleton_dates)
+                            - len(unpermutable_dates),
+        "n_singleton_dates": len(singleton_dates),
+        "n_dates_unpermutable": len(unpermutable_dates),
+        "n_movements_permuted": n_moved,
+        "n_games_without_close": n_without_close,
+    }
+    return _rebuilt(world, P6, seed, out, params, notes=tuple(notes))
+
+
+# --------------------------------------------------------------------------
 # registry and suite
 # --------------------------------------------------------------------------
 
@@ -669,9 +815,10 @@ GENERATORS: dict[str, Callable[..., World]] = {
     P3: p3_date_shift,
     P4: p4_block_bootstrap,
     P5: p5_market_truth,
+    P6: p6_movement_permutation,
 }
 
-GENERATOR_IDS: tuple[str, ...] = (P1, P2, P3, P4, P5)
+GENERATOR_IDS: tuple[str, ...] = (P1, P2, P3, P4, P5, P6)
 
 
 def generate(generator_id: str, world: World, seed: int, **params) -> World:
@@ -689,7 +836,8 @@ def placebo_suite(world: World, *, replicates: int = DEFAULT_REPLICATES,
                   base_seed: int = 0,
                   generator_ids: Sequence[str] = GENERATOR_IDS,
                   params: Mapping[str, Mapping[str, object]] | None = None):
-    """Yield `replicates` worlds per generator (50 by default, design section 7).
+    """Yield `replicates` worlds per generator (60 by default, design section 7
+    as amended: six generators, ten replicates each).
 
     Seeds are derived deterministically from `base_seed`, the generator id and
     the replicate index, so the suite is reproducible from `base_seed` alone
@@ -760,3 +908,52 @@ def price_outcome_alignment(world: World) -> float | None:
     if not won or not lost:
         return None
     return sum(won) / len(won) - sum(lost) / len(lost)
+
+
+def movements(world: World) -> list[float]:
+    """Every knowable decision->close movement in the world, in world order."""
+    return [g.home_fair_close - g.home_fair
+            for g in world.games if g.home_fair_close is not None]
+
+
+def movements_by_date(world: World) -> dict[int, list[float]]:
+    """{day_index: sorted movements on that date} -- P6's exactness contract.
+
+    Sorted, so it compares as a multiset. P6 preserves this mapping to the
+    bit; a P6 implementation that clamped, rescaled or dropped a movement
+    would change it, and the test that compares it is the reason no P6 number
+    is reportable until it passes.
+    """
+    buckets: dict[int, list[float]] = defaultdict(list)
+    for g in world.games:
+        if g.home_fair_close is not None:
+            buckets[g.day_index].append(g.home_fair_close - g.home_fair)
+    return {d: sorted(v) for d, v in buckets.items()}
+
+
+def feature_movement_alignment(world: World, feature: str,
+                               threshold: float = 0.5) -> float | None:
+    """Mean movement on games above `threshold` in `feature`, minus below.
+
+    The diagnostic that detects whether feature -> movement survived a
+    generator, and the movement counterpart of `price_outcome_alignment`. In a
+    real world carrying a planted movement edge it is materially non-zero; in
+    a P6 world built from that same world it collapses toward zero, because
+    the movements were dealt out within the date without regard to features.
+    Under P1 and P5 it is unchanged to the bit -- neither generator touches
+    either quantity -- which is exactly why they cannot null this fitness.
+
+    Returns None when either group is empty or the feature is absent.
+    """
+    above, below = [], []
+    for g in world.games:
+        if g.home_fair_close is None:
+            continue
+        value = g.features.get(feature)
+        if value is None:
+            continue
+        (above if value > threshold else below).append(
+            g.home_fair_close - g.home_fair)
+    if not above or not below:
+        return None
+    return sum(above) / len(above) - sum(below) / len(below)

@@ -40,6 +40,14 @@ quietly, because both change how their numbers must be read:
    the search maximum, not the maximum reachable with no edge present. It is
    asserted below that a planted edge does survive it (`test_p4_carries_a_planted_edge`)
    so nobody reads P4 as an edge-destroying null by mistake.
+3. P1 and P5 move `home_won` and nothing else, so the PRIMARY movement fitness
+   of design section 6 is invariant under them -- every replicate reproduces
+   the real movement maximum to the bit. That is pinned as a number in
+   `TestP6VersusP1AndP5`, and it is why the ceiling is now voted PER FITNESS
+   (`placebo.MOVEMENT_NULL_GENERATORS` / `OUTCOME_NULL_GENERATORS`) and why
+   P6 exists at all. `TestEndToEndMovementCeiling` is the acceptance run that
+   was structurally impossible before P6: a planted MOVEMENT edge that can
+   actually clear a ceiling.
 
 Nothing produced by any of this is evidence.
 """
@@ -50,6 +58,7 @@ import math
 import random
 import statistics
 import unittest
+from dataclasses import replace
 
 from src.core import odds as odds_math
 from src.evolab import ceiling, cscv, placebo, spa
@@ -70,6 +79,8 @@ HOLD = 0.045                      # 4.5% two-way hold, proportional
 PLANTED_FEATURE = "home_f0"
 PLANTED_THRESHOLD = 0.5
 PLANTED_EDGE = 0.15               # probability points added to the home side
+PLANTED_MOVEMENT = 0.06           # probability points the close moves, home side
+MOVEMENT_SIGMA = 0.02             # honest decision->close drift with no edge
 
 
 MIN_SELECTIONS = 100              # a gate, not a penalty (design section 6)
@@ -77,7 +88,8 @@ MIN_SELECTIONS = 100              # a gate, not a penalty (design section 6)
 
 def synthetic_world(seed: int, *, edge: float = 0.0, n_days: int = 200,
                     per_day: int = 6, season: int = 2023,
-                    price_feature: bool = False) -> placebo.World:
+                    price_feature: bool = False,
+                    movement_edge: float = 0.0) -> placebo.World:
     """A season of games with known prices, known outcomes and a known edge.
 
     Prices are built from a fair probability inflated by a proportional hold,
@@ -89,8 +101,21 @@ def synthetic_world(seed: int, *, edge: float = 0.0, n_days: int = 200,
     `home_f0 > 0.5` the home side wins `edge` more often than its price says.
     `price_feature` instead makes `home_f0` a copy of the line, which is how
     the P1 artifact is demonstrated.
+
+    Every game also carries a knowable close, so P6 has something to permute:
+    the close drifts from the decision price by `MOVEMENT_SIGMA`, and
+    `movement_edge` plants a genuine feature -> MOVEMENT relationship (the
+    close moves toward the home side when `home_f0 > 0.5`) independently of
+    `edge`, which plants a feature -> OUTCOME one. The two are separate
+    because the generators that null them are separate.
+
+    The close is drawn from its OWN `random.Random` stream, never from `rng`.
+    Threading extra draws through the main stream would silently renumber
+    every world this module has ever pinned a threshold against, so the
+    movement model is added beside the existing world rather than inside it.
     """
     rng = random.Random(seed)
+    move_rng = random.Random((seed << 1) ^ 0x6D0)
     teams = [f"T{i:02d}" for i in range(20)]
     games = []
     for d in range(n_days):
@@ -108,11 +133,25 @@ def synthetic_world(seed: int, *, edge: float = 0.0, n_days: int = 200,
             p = fair
             if edge and feats[PLANTED_FEATURE] > PLANTED_THRESHOLD:
                 p = min(0.97, fair + edge)
+            close = fair + move_rng.gauss(0.0, MOVEMENT_SIGMA)
+            if movement_edge:
+                # Symmetric on purpose: the plant is a feature -> movement
+                # RELATIONSHIP with no net drift, so a P6 world (which
+                # preserves each date's movements exactly) has nothing left
+                # for any rule to collect. A one-sided plant would raise every
+                # date's mean movement and every rule in the P6 world would
+                # inherit that drift -- measuring the plant's bias rather than
+                # the search's adaptivity.
+                half = movement_edge / 2.0
+                close += (half if feats[PLANTED_FEATURE] > PLANTED_THRESHOLD
+                          else -half)
+            close = min(0.97, max(0.03, close))
             games.append(placebo.make_game(
                 game_id=f"{season}-{d:04d}-{g}", date=date, season=season,
                 home_team=home, away_team=away,
                 home_price=home_price, away_price=away_price,
-                home_won=rng.random() < p, features=feats))
+                home_won=rng.random() < p, features=feats,
+                home_fair_close=close))
     return placebo.real_world(games)
 
 
@@ -177,6 +216,51 @@ def roi_search(world: placebo.World, n_blocks: int = 10,
     return totals, per_block
 
 
+def movement_search(world: placebo.World, n_blocks: int = 10,
+                    min_selections: int = MIN_SELECTIONS):
+    """The same enumeration, scored by MARKET-RELATIVE MOVEMENT (section 6).
+
+    A rule's return on a game is how far the de-vigged close moved in the
+    direction of the side it took: `close - decision` for the home side, the
+    negative of that for the away side. Nothing here reads `home_won`, which
+    is precisely why P1 and P5 cannot null it and why P6 exists.
+
+    Same shape as `roi_search`: (total_by_strategy, per_block_by_strategy).
+    """
+    days = world.days()
+    bounds = cscv.chronological_blocks(len(days), n_blocks)
+    block_of = {}
+    for block_index, (lo, hi) in enumerate(bounds):
+        for day_position in range(lo, hi):
+            block_of[days[day_position][0]] = block_index
+
+    totals: dict[str, float] = {}
+    per_block: dict[str, list[float]] = {}
+    for feature in FEATURES:
+        for threshold in THRESHOLDS:
+            for side in SIDES:
+                moved = [0.0] * n_blocks
+                counts = [0] * n_blocks
+                for game in world.games:
+                    if game.home_fair_close is None:
+                        continue      # never score a close we do not know
+                    value = game.features.get(feature)
+                    if value is None or value <= threshold:
+                        continue
+                    block = block_of[game.day_index]
+                    counts[block] += 1
+                    delta = game.home_fair_close - game.home_fair
+                    moved[block] += delta if side == "home" else -delta
+                n = sum(counts)
+                if n < min_selections:
+                    continue
+                sid = f"{feature}>{threshold}|{side}"
+                totals[sid] = sum(moved) / n
+                per_block[sid] = [m / c if c else 0.0
+                                  for m, c in zip(moved, counts)]
+    return totals, per_block
+
+
 def features_key(game: placebo.Game):
     return tuple(sorted(game.features.items()))
 
@@ -230,10 +314,12 @@ class TestDeterminism(unittest.TestCase):
         after = [random.random() for _ in range(3)]
         self.assertEqual(before, after)
 
-    def test_suite_yields_fifty_distinct_worlds(self):
+    def test_suite_yields_sixty_distinct_worlds(self):
+        """Six generators now, ten replicates each (section 7 as amended)."""
         worlds = list(placebo.placebo_suite(self.world, replicates=10, base_seed=3))
-        self.assertEqual(len(worlds), 50)
-        self.assertEqual(len({w.world_id for w in worlds}), 50)
+        self.assertEqual(len(placebo.GENERATOR_IDS), 6)
+        self.assertEqual(len(worlds), 60)
+        self.assertEqual(len({w.world_id for w in worlds}), 60)
         again = list(placebo.placebo_suite(self.world, replicates=10, base_seed=3))
         self.assertEqual([w.world_id for w in worlds], [w.world_id for w in again])
 
@@ -619,6 +705,233 @@ class TestP5MarketTruth(unittest.TestCase):
         b = placebo.p5_market_truth(planted, 7)
         self.assertEqual([g.home_won for g in a.games],
                          [g.home_won for g in b.games])
+
+
+# --------------------------------------------------------------------------
+# P6 -- the movement null
+# --------------------------------------------------------------------------
+
+class TestP6MovementPermutation(unittest.TestCase):
+    """P6 must preserve every date's movement multiset EXACTLY and break
+    feature -> movement, while touching nothing else at all.
+
+    This is the same faithfulness bar that caught P4. No P6 number is
+    reportable until every assertion in this class and in
+    `TestP6VersusP1AndP5` passes.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.world = synthetic_world(71, n_days=200, per_day=6,
+                                    movement_edge=PLANTED_MOVEMENT)
+        cls.p6 = placebo.p6_movement_permutation(cls.world, 6)
+        cls.by_id = {g.game_id: g for g in cls.world.games}
+
+    # -- the exactness contract -------------------------------------------
+
+    def test_per_date_movement_multiset_is_preserved(self):
+        """Exact up to one re-derivation ULP, and that caveat is the whole
+        story: P6 stores `close = fair + movement`, so reading the movement
+        back out as `close - fair` can differ from the movement it was handed
+        in the last bit of a double (~1e-17 on a probability). Nothing is
+        dropped, clamped, rescaled or invented -- the day's multiset is the
+        same numbers. Anything larger than a ULP here is a real defect, so
+        the tolerance is set two orders below any decision-relevant scale
+        rather than left loose.
+        """
+        after = placebo.movements_by_date(self.p6)
+        before = placebo.movements_by_date(self.world)
+        self.assertEqual(sorted(after), sorted(before))
+        worst = max(abs(x - y)
+                    for day in before
+                    for x, y in zip(after[day], before[day]))
+        self.assertLess(worst, 1e-15)
+
+    def test_every_movement_is_a_real_movement_from_its_own_date(self):
+        """No fabricated movement: the two endpoints never move apart."""
+        real_by_date = placebo.movements_by_date(self.world)
+        for game in self.p6.games:
+            delta = game.home_fair_close - game.home_fair
+            self.assertTrue(
+                any(abs(delta - m) < 1e-15 for m in real_by_date[game.day_index]),
+                f"{game.game_id}: movement {delta} was made by no game on its date")
+
+    def test_every_date_was_actually_permuted(self):
+        """An unpermuted date leaks real feature -> movement alignment into
+        the null, so the generator counts them and this world must have none."""
+        self.assertEqual(self.p6.params["n_dates_unpermutable"], 0)
+        self.assertEqual(self.p6.params["n_singleton_dates"], 0)
+        self.assertEqual(self.p6.params["n_games_without_close"], 0)
+        self.assertEqual(self.p6.params["n_movements_permuted"],
+                         self.world.n_games)
+
+    def test_everything_except_the_close_is_bit_identical(self):
+        self.assertEqual([g.game_id for g in self.p6.games],
+                         [g.game_id for g in self.world.games])
+        for game in self.p6.games:
+            source = self.by_id[game.game_id]
+            self.assertEqual(game.home_price, source.home_price)
+            self.assertEqual(game.away_price, source.away_price)
+            self.assertEqual(game.home_fair, source.home_fair)
+            self.assertEqual(game.home_won, source.home_won)
+            self.assertEqual(game.features, source.features)
+            self.assertEqual(game.home_team, source.home_team)
+            self.assertEqual(game.away_team, source.away_team)
+            self.assertEqual(game.date, source.date)
+            self.assertEqual(game.day_index, source.day_index)
+
+    def test_the_close_stays_a_probability(self):
+        for game in self.p6.games:
+            self.assertGreater(game.home_fair_close, 0.0)
+            self.assertLess(game.home_fair_close, 1.0)
+
+    def test_the_market_is_untouched(self):
+        """P6 moves the close only, so decision-price calibration is exact."""
+        self.assertEqual(placebo.price_outcome_alignment(self.p6),
+                         placebo.price_outcome_alignment(self.world))
+        self.assertEqual(placebo.calibration_error(self.p6),
+                         placebo.calibration_error(self.world))
+
+    # -- the thing it is supposed to break ---------------------------------
+
+    def test_the_planted_feature_to_movement_link_is_destroyed(self):
+        real = placebo.feature_movement_alignment(
+            self.world, PLANTED_FEATURE, PLANTED_THRESHOLD)
+        placebo_alignment = placebo.feature_movement_alignment(
+            self.p6, PLANTED_FEATURE, PLANTED_THRESHOLD)
+        self.assertGreater(real, 0.9 * PLANTED_MOVEMENT)
+        self.assertLess(abs(placebo_alignment), 0.25 * PLANTED_MOVEMENT)
+
+    def test_the_alignment_residual_is_structural_and_small(self):
+        """Measured, not hand-waved. A within-date permutation leaves a small
+        POSITIVE residual in a pooled difference-of-means, because dates with
+        more above-threshold games also have a higher mean movement under a
+        symmetric plant and carry more weight in the 'above' pool. It is the
+        exact analogue of P1's residual for outcomes, it does not depend on
+        the seed, and the number that matters -- the search maximum, in
+        `TestP6VersusP1AndP5` -- collapses regardless. Pinned so a future
+        change that inflates it cannot pass quietly.
+        """
+        residuals = [
+            abs(placebo.feature_movement_alignment(
+                placebo.p6_movement_permutation(self.world, 900 + i),
+                PLANTED_FEATURE, PLANTED_THRESHOLD))
+            for i in range(5)]
+        self.assertLess(max(residuals), 0.25 * PLANTED_MOVEMENT)
+        clean = synthetic_world(73, n_days=200, per_day=6)
+        self.assertLess(
+            abs(placebo.feature_movement_alignment(
+                placebo.p6_movement_permutation(clean, 4),
+                PLANTED_FEATURE, PLANTED_THRESHOLD)),
+            0.1 * PLANTED_MOVEMENT)
+
+    # -- determinism -------------------------------------------------------
+
+    def test_same_seed_gives_an_identical_world(self):
+        again = placebo.p6_movement_permutation(self.world, 6)
+        self.assertEqual(again.games, self.p6.games)
+        self.assertEqual(again.world_id, self.p6.world_id)
+
+    def test_different_seeds_give_different_worlds(self):
+        other = placebo.p6_movement_permutation(self.world, 7)
+        self.assertNotEqual(other.games, self.p6.games)
+        self.assertEqual(sorted(placebo.movements_by_date(other)),
+                         sorted(placebo.movements_by_date(self.world)))
+
+    # -- what P6 does NOT null --------------------------------------------
+
+    def test_p6_is_a_movement_null_only_and_says_so(self):
+        """Documented plainly here as well as in the generator's docstring:
+        P6 moves PRICES, not OUTCOMES. A planted feature -> outcome edge
+        survives into a P6 world completely intact, so P6 must never be
+        counted in an outcome-fitness ceiling -- and it is not in
+        `OUTCOME_NULL_GENERATORS`.
+        """
+        world = synthetic_world(72, edge=PLANTED_EDGE, n_days=200, per_day=6)
+        p6 = placebo.p6_movement_permutation(world, 3)
+        self.assertEqual([g.home_won for g in p6.games],
+                         [g.home_won for g in world.games])
+        real_max = ceiling.search_maximum(roi_search(world)[0])[1]
+        p6_max = ceiling.search_maximum(roi_search(p6)[0])[1]
+        self.assertEqual(p6_max, real_max)
+        self.assertNotIn(placebo.P6, placebo.OUTCOME_NULL_GENERATORS)
+        self.assertIn(placebo.P6, placebo.MOVEMENT_NULL_GENERATORS)
+
+    # -- honest edge cases -------------------------------------------------
+
+    def test_games_without_a_known_close_are_left_alone(self):
+        games = list(self.world.games[:20])
+        games[0] = replace(games[0], home_fair_close=None)
+        world = placebo.real_world(games)
+        out = placebo.p6_movement_permutation(world, 1)
+        target = next(g for g in out.games if g.game_id == games[0].game_id)
+        self.assertIsNone(target.home_fair_close)
+        self.assertEqual(out.params["n_games_without_close"], 1)
+
+    def test_a_single_game_date_is_recorded_not_silently_faked(self):
+        one = [replace(g, date="2023-04-01") for g in self.world.games[:1]]
+        out = placebo.p6_movement_permutation(placebo.real_world(one), 1)
+        self.assertEqual(out.params["n_singleton_dates"], 1)
+        self.assertTrue(any("single game" in n for n in out.notes))
+
+
+class TestP6VersusP1AndP5(unittest.TestCase):
+    """THE POINT OF P6, PINNED AS A NUMBER.
+
+    A world with a planted feature -> movement edge. The movement-fitness
+    search maximum is recorded on the real world, on P1 replicates, on P5
+    replicates and on P6 replicates.
+
+    P1 and P5 permute or redraw `home_won` and nothing else. Movement fitness
+    never reads `home_won`. So every P1 and P5 replicate reproduces the real
+    movement maximum to the BIT -- they are not nulls for this fitness at all,
+    and a "does not clear" verdict against them is an arithmetic tie. P6
+    destroys the plant and its maxima fall far below.
+    """
+
+    REPLICATES = 6
+
+    @classmethod
+    def setUpClass(cls):
+        cls.world = synthetic_world(7300, n_days=200, per_day=6,
+                                    movement_edge=PLANTED_MOVEMENT)
+        cls.real_max = ceiling.search_maximum(movement_search(cls.world)[0])[1]
+        cls.maxima = {}
+        for gid in (placebo.P1, placebo.P5, placebo.P6):
+            cls.maxima[gid] = [
+                ceiling.search_maximum(movement_search(
+                    placebo.generate(gid, cls.world, 8300 + i))[0])[1]
+                for i in range(cls.REPLICATES)]
+
+    def test_the_plant_is_findable_at_all(self):
+        # The plant is symmetric (+/- half), so the best one-sided rule
+        # collects about half of PLANTED_MOVEMENT.
+        self.assertGreater(self.real_max, 0.4 * PLANTED_MOVEMENT)
+
+    def test_p1_and_p5_reproduce_the_real_movement_maximum_exactly(self):
+        for gid in (placebo.P1, placebo.P5):
+            with self.subTest(generator=gid):
+                self.assertEqual(self.maxima[gid],
+                                 [self.real_max] * self.REPLICATES)
+
+    def test_p6_destroys_the_plant(self):
+        for value in self.maxima[placebo.P6]:
+            self.assertLess(value, 0.35 * self.real_max)
+
+    def test_the_ceiling_verdict_flips_with_the_generator_set(self):
+        """Same champion, same fitness, two electorates. Over {P1, P5} the
+        planted movement edge cannot clear -- the ceiling IS the real maximum.
+        Over the movement set it clears outright. That is the amendment."""
+        uninformative = ceiling.ceiling_report(
+            self.real_max,
+            {placebo.P1: self.maxima[placebo.P1],
+             placebo.P5: self.maxima[placebo.P5]},
+            min_worlds=self.REPLICATES, min_generators=2)
+        self.assertEqual(uninformative.generators_cleared, ())
+        informative = ceiling.ceiling_report(
+            self.real_max, {placebo.P6: self.maxima[placebo.P6]},
+            min_worlds=self.REPLICATES, min_generators=1)
+        self.assertEqual(informative.verdict, ceiling.CLEARS_PLACEBO_CEILING)
 
 
 # --------------------------------------------------------------------------
@@ -1121,7 +1434,10 @@ class TestEndToEndCeiling(unittest.TestCase):
         totals, per_block = roi_search(world)
         champion, real_max = ceiling.search_maximum(totals)
         maxima = {}
-        for gid in placebo.GENERATOR_IDS:
+        # OUTCOME fitness, so the OUTCOME generator set votes (design section
+        # 7's second amendment). P4 is not a null at all, and P6 moves prices
+        # rather than outcomes -- neither belongs in this electorate.
+        for gid in placebo.OUTCOME_NULL_GENERATORS:
             values = []
             for i in range(cls.REPLICATES):
                 seed = placebo._derive_seed(cls.BASE_SEED, gid, i)
@@ -1129,7 +1445,9 @@ class TestEndToEndCeiling(unittest.TestCase):
                 values.append(ceiling.search_maximum(
                     roi_search(placebo_world)[0])[1])
             maxima[gid] = values
-        report = ceiling.ceiling_report(real_max, maxima, real_champion=champion)
+        report = ceiling.ceiling_report(
+            real_max, maxima, real_champion=champion,
+            min_generators=len(placebo.OUTCOME_NULL_GENERATORS) // 2 + 1)
         return report, cscv.cscv(per_block)
 
     @classmethod
@@ -1208,6 +1526,89 @@ class TestEndToEndCeiling(unittest.TestCase):
                                       if won else -1.0)
                         series[sid][position] = total / len(games)
         return series
+
+
+class TestEndToEndMovementCeiling(unittest.TestCase):
+    """The same acceptance run for the PRIMARY fitness -- and the scenario
+    that was structurally impossible before P6 existed.
+
+    Movement fitness is what the Phase 2B search maximises (design section 6).
+    Its ceiling is voted on by {P2, P3, P6} (`MOVEMENT_NULL_GENERATORS`),
+    because those are the generators that actually break something movement
+    fitness reads. Run over the OLD five-generator set this test could never
+    have registered a CLEARS: P1, P4 and P5 all reproduce the real movement
+    maximum exactly or carry the edge into their world, so a planted movement
+    edge was capped at 2 of 5 and reported INCONCLUSIVE forever.
+    """
+
+    REPLICATES = 10
+    BASE_SEED = 909
+
+    @classmethod
+    def _run(cls, movement_edge):
+        world = synthetic_world(4242, n_days=250, per_day=8,
+                                movement_edge=movement_edge)
+        totals, per_block = movement_search(world)
+        champion, real_max = ceiling.search_maximum(totals)
+        maxima = {}
+        for gid in placebo.MOVEMENT_NULL_GENERATORS:
+            maxima[gid] = [
+                ceiling.search_maximum(movement_search(placebo.generate(
+                    gid, world, placebo._derive_seed(cls.BASE_SEED, gid, i)))[0])[1]
+                for i in range(cls.REPLICATES)]
+        report = ceiling.ceiling_report(
+            real_max, maxima, real_champion=champion,
+            min_generators=len(placebo.MOVEMENT_NULL_GENERATORS) // 2 + 1)
+        return report, cscv.cscv(per_block)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.planted_report, cls.planted_cscv = cls._run(PLANTED_MOVEMENT)
+        cls.noise_report, cls.noise_cscv = cls._run(0.0)
+
+    def test_a_planted_movement_edge_clears_the_movement_ceiling(self):
+        self.assertEqual(self.planted_report.verdict,
+                         ceiling.CLEARS_PLACEBO_CEILING)
+        # Any threshold above the plant's own 0.5 selects only planted games,
+        # so which rung wins is decided by noise; the feature and the side are
+        # what the search had to find.
+        self.assertTrue(
+            self.planted_report.real_champion.startswith(f"{PLANTED_FEATURE}>"),
+            self.planted_report.real_champion)
+        self.assertTrue(self.planted_report.real_champion.endswith("|home"))
+
+    def test_all_three_movement_generators_are_beaten(self):
+        self.assertEqual(set(self.planted_report.generators_cleared),
+                         set(placebo.MOVEMENT_NULL_GENERATORS))
+        for c in self.planted_report.per_generator:
+            self.assertGreater(c.margin, 0.0, c.generator)
+
+    def test_a_planted_movement_edge_gives_low_pbo(self):
+        self.assertLess(self.planted_cscv.pbo, 0.10)
+
+    def test_pure_movement_noise_does_not_clear(self):
+        self.assertEqual(self.noise_report.verdict,
+                         ceiling.BELOW_PLACEBO_CEILING)
+        self.assertEqual(self.noise_report.generators_cleared, ())
+
+    def test_the_noise_world_still_crowns_a_positive_champion(self):
+        """The lab's premise again, on the primary fitness: a world whose
+        closes are pure drift still yields a rule that 'beat the close'."""
+        self.assertGreater(self.noise_report.real_max, 0.0)
+
+    def test_the_outcome_generator_set_would_have_missed_it(self):
+        """Pinned so the amendment cannot be quietly reverted: over P1 and P5
+        the planted movement edge is invisible -- their maxima ARE the real
+        maximum, to the bit."""
+        world = synthetic_world(4242, n_days=250, per_day=8,
+                                movement_edge=PLANTED_MOVEMENT)
+        real_max = ceiling.search_maximum(movement_search(world)[0])[1]
+        for gid in (placebo.P1, placebo.P5):
+            with self.subTest(generator=gid):
+                for i in range(3):
+                    placebo_max = ceiling.search_maximum(movement_search(
+                        placebo.generate(gid, world, 500 + i))[0])[1]
+                    self.assertEqual(placebo_max, real_max)
 
 
 if __name__ == "__main__":

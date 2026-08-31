@@ -12,19 +12,19 @@ The acceptance list this file exists to satisfy:
   2. the bitset fast path agrees with `decide.py`'s reference semantics,
      game for game, genome for genome -- the correctness argument for using
      bitsets at all (design section 12).
-  3. a planted MOVEMENT edge: the real search maximum clears the generators
-     that can see it (P2, P3) and PBO comes out low.
+  3. a planted MOVEMENT edge: the real search maximum clears the movement
+     null set {P2, P3, P6} outright, and PBO comes out low.
   4. a genuine finding surfaced along the way, asserted rather than
      suppressed: P1 and P5 permute only `home_won`, so a MOVEMENT-primary
      fitness (design section 6) is invariant under both -- every placebo
      replicate reproduces the real maximum exactly, and `run_sweep` warns
      about it instead of letting the tie masquerade as "does not clear".
-     This is why the planted-edge scenario checks per-generator ceilings and
-     a majority restricted to the discriminating generators, rather than
-     asserting the default four-generator vote clears -- that vote is
-     structurally capped at 2 of 4 for this fitness, which section 15's
-     kill criterion correctly reports as INCONCLUSIVE, not a bug to route
-     around.
+     Design section 7's SECOND GENERATOR AMENDMENT is the resolution: the
+     ceiling is voted PER FITNESS, movement over {P2, P3, P6} and outcome
+     over {P1, P2, P3, P5}, with P6 the movement analogue of P1. P1 and P5
+     still run and are still reported here; they no longer vote on a
+     ceiling they cannot inform, and asking them to is refused rather than
+     answered.
   5. pure noise: the verdict is BELOW_PLACEBO_CEILING and PBO averages to
      about 0.5 (individual seeds range widely -- the same property
      `tests/test_evolab_stats.py` documents for `cscv.cscv` directly).
@@ -230,31 +230,51 @@ class TestPlantedEdge(unittest.TestCase):
             provider, registry=cls.registry, max_signals=2, replicates=10,
             base_seed=3, spa_n_bootstrap=200)
 
-    def test_p2_and_p3_clear_with_a_real_margin(self):
+    def test_the_movement_generators_all_clear_with_a_real_margin(self):
         by_generator = {c.generator: c for c in self.report.ceiling.per_generator}
-        for gid in (placebo.P2, placebo.P3):
-            c = by_generator[gid]
+        self.assertEqual(set(by_generator), set(sweep.MOVEMENT_CEILING_GENERATORS))
+        for gid, c in sorted(by_generator.items()):
             self.assertTrue(c.clears, f"{gid} should clear for a planted edge")
             self.assertGreater(c.margin, 0.0)
 
     def test_p1_and_p5_tie_the_real_maximum_and_are_flagged(self):
-        """The finding: outcome-only permutation cannot null a movement edge."""
-        by_generator = {c.generator: c for c in self.report.ceiling.per_generator}
+        """The finding: outcome-only permutation cannot null a movement edge.
+
+        P1 and P5 still RUN -- their worlds are built, swept and reported --
+        they simply do not vote on a movement ceiling. The tie is asserted
+        from the recorded maxima and named in the warnings, exactly as before;
+        what changed is that it can no longer be mistaken for a verdict.
+        """
         for gid in (placebo.P1, placebo.P5):
-            c = by_generator[gid]
-            self.assertFalse(c.clears)
-            self.assertEqual(c.placebo_max, self.report.real_max_movement)
+            with self.subTest(generator=gid):
+                self.assertIn(gid, self.report.placebo_maxima)
+                self.assertEqual(
+                    set(self.report.placebo_maxima[gid]),
+                    {self.report.real_max_movement})
+                self.assertNotIn(gid, self.report.config["ceiling_generator_ids"])
         joined = " ".join(self.report.warnings)
         self.assertIn("P1", joined)
         self.assertIn("P5", joined)
         self.assertIn("structurally uninformative", joined)
 
-    def test_default_four_generator_vote_is_inconclusive_not_a_false_clear(self):
-        """2 of 4 clearing is not a majority; the kill criterion must not be
-        fooled into CLEARS by rounding a tie in the champion's favour."""
-        self.assertEqual(self.report.ceiling.verdict, ceiling.INCONCLUSIVE)
+    def test_p6_is_the_generator_that_makes_the_verdict_possible(self):
+        """P6 is a real null here: its maxima are strictly below the real
+        maximum, unlike P1's and P5's, which equal it to the bit."""
+        maxima = self.report.placebo_maxima[placebo.P6]
+        self.assertEqual(len(maxima), 10)
+        for value in maxima:
+            self.assertLess(value, self.report.real_max_movement)
 
-    def test_restricted_to_the_discriminating_generators_it_clears(self):
+    def test_the_default_movement_vote_now_clears(self):
+        """The scenario the second amendment exists for. Over the old
+        five-generator electorate this was capped at 2 of 4 and reported
+        INCONCLUSIVE; over {P2, P3, P6} a real movement edge clears."""
+        self.assertEqual(self.report.ceiling.verdict,
+                         ceiling.CLEARS_PLACEBO_CEILING)
+        self.assertEqual(self.report.config["min_generators"], 2)
+        self.assertEqual(self.report.config["primary_fitness"], "movement")
+
+    def test_the_caller_override_still_narrows_the_electorate(self):
         def provider():
             return sweep.ReplayFeed(world=self.world)
 
@@ -264,6 +284,21 @@ class TestPlantedEdge(unittest.TestCase):
             ceiling_generator_ids=(placebo.P2, placebo.P3), min_generators=2)
         self.assertEqual(restricted.ceiling.verdict,
                          ceiling.CLEARS_PLACEBO_CEILING)
+        self.assertEqual(restricted.config["ceiling_generator_ids"],
+                         [placebo.P2, placebo.P3])
+
+    def test_an_electorate_that_cannot_null_this_fitness_is_refused(self):
+        """Asking for a movement ceiling out of P1 and P5 alone would produce
+        a guaranteed tie dressed as a verdict. It is refused at the door
+        rather than reported."""
+        def provider():
+            return sweep.ReplayFeed(world=self.world)
+
+        with self.assertRaises(sweep.SweepError):
+            sweep.run_sweep(
+                provider, registry=self.registry, max_signals=2, replicates=2,
+                base_seed=3, spa_n_bootstrap=50,
+                generator_ids=(placebo.P1, placebo.P5))
 
     def test_pbo_is_low(self):
         self.assertLess(self.report.cscv.pbo, 0.15)
@@ -344,10 +379,21 @@ class TestP4Excluded(unittest.TestCase):
         self.assertEqual(self.report.p4_dispersion["generator"], placebo.P4)
         self.assertIn("dispersion diagnostic", self.report.p4_dispersion["note"])
 
-    def test_default_ceiling_generator_ids_exclude_p4_only(self):
-        self.assertNotIn(placebo.P4, self.report.config["ceiling_generator_ids"])
-        for gid in (placebo.P1, placebo.P2, placebo.P3, placebo.P5):
-            self.assertIn(gid, self.report.config["ceiling_generator_ids"])
+    def test_default_ceiling_generator_ids_are_the_movement_null_set(self):
+        """P4 is excluded because it nulls nothing; P1 and P5 because they
+        null outcomes, and this sweep's fitness is movement."""
+        self.assertEqual(self.report.config["ceiling_generator_ids"],
+                         list(sweep.MOVEMENT_CEILING_GENERATORS))
+        self.assertEqual(self.report.config["movement_ceiling_generators"],
+                         [placebo.P2, placebo.P3, placebo.P6])
+        self.assertEqual(self.report.config["outcome_ceiling_generators"],
+                         [placebo.P1, placebo.P2, placebo.P3, placebo.P5])
+        self.assertNotIn(placebo.P6,
+                         self.report.config["outcome_ceiling_generators"])
+
+    def test_every_generator_still_ran_even_when_it_does_not_vote(self):
+        for gid in placebo.GENERATOR_IDS:
+            self.assertIn(gid, self.report.placebo_maxima, gid)
 
 
 # ---------------------------------------------------------------------------

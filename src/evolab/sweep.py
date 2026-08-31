@@ -100,8 +100,48 @@ DEFAULT_SPA_BLOCK_LENGTH = 7.0
 
 # Design section 7's P4 note: P4 carries a real edge into its "null" world
 # intact and is reclassified as a dispersion diagnostic, excluded from the
-# ceiling and the kill criterion. Every other default generator is a null.
+# ceiling and the kill criterion.
 CEILING_EXCLUDED_GENERATORS = (placebo.P4,)
+
+# Design section 7's SECOND GENERATOR AMENDMENT: the ceiling is evaluated PER
+# FITNESS, each over the generators that actually null it. This sweep's search
+# maximises MOVEMENT (design section 6), so its ceiling is the movement one.
+# The outcome set is carried here because the confirmation fitness (`roi_table`
+# in `WorldFitness`) is scored on the same worlds and must never be judged
+# against the movement set, nor the movement ceiling against P1/P5 -- both
+# mistakes are silent and both invert the verdict.
+MOVEMENT_CEILING_GENERATORS = placebo.MOVEMENT_NULL_GENERATORS   # (P2, P3, P6)
+OUTCOME_CEILING_GENERATORS = placebo.OUTCOME_NULL_GENERATORS     # (P1,P2,P3,P5)
+
+# The sweep's primary fitness, and therefore which set its ceiling defaults to.
+PRIMARY_FITNESS = "movement"
+
+
+def default_ceiling_generators(generator_ids: Sequence[str],
+                               fitness: str = PRIMARY_FITNESS) -> tuple:
+    """Which of `generator_ids` may vote on `fitness`'s ceiling, in order.
+
+    Intersection, not substitution: a caller who ran a narrower suite gets a
+    narrower vote rather than a vote over worlds that were never built.
+    """
+    if fitness == "movement":
+        allowed = MOVEMENT_CEILING_GENERATORS
+    elif fitness == "outcome":
+        allowed = OUTCOME_CEILING_GENERATORS
+    else:
+        raise SweepError(
+            f"unknown fitness {fitness!r}; known: 'movement', 'outcome'")
+    return tuple(g for g in generator_ids if g in allowed)
+
+
+def majority(n: int) -> int:
+    """A strict majority of `n` voters -- the default `min_generators`.
+
+    `ceiling.DEFAULT_MIN_GENERATORS` is 3, the majority of the original five.
+    With per-fitness sets the size of the electorate changes, so the majority
+    is derived from the set actually voting instead of being pinned to five.
+    """
+    return max(1, n // 2 + 1)
 
 ARTIFACT_ROOT = os.path.join("data", "research", "evolab")
 
@@ -525,7 +565,7 @@ def run_sweep(replay_provider: ReplayProvider, *,
              generator_ids: Sequence[str] = placebo.GENERATOR_IDS,
              ceiling_generator_ids: Sequence[str] | None = None,
              threshold_pct: float = ceiling.DEFAULT_PERCENTILE,
-             min_generators: int = ceiling.DEFAULT_MIN_GENERATORS,
+             min_generators: int | None = None,
              min_worlds: int | None = None,
              spa_n_bootstrap: int = DEFAULT_SPA_N_BOOTSTRAP,
              spa_block_length: float = DEFAULT_SPA_BLOCK_LENGTH,
@@ -546,8 +586,22 @@ def run_sweep(replay_provider: ReplayProvider, *,
             f"got {execution!r}; the other modes are execution-honesty "
             "studies, not predictive search, and must not share this ceiling")
     if ceiling_generator_ids is None:
-        ceiling_generator_ids = tuple(
-            g for g in generator_ids if g not in CEILING_EXCLUDED_GENERATORS)
+        # Per-fitness by default (design section 7's second amendment): this
+        # sweep maximises movement, so P1/P5 -- which cannot move movement --
+        # do not vote, and P4 is excluded by not being in any null set. A
+        # caller who wants a different electorate passes one; the override is
+        # deliberately still here, and the outcome set is one call away
+        # (`default_ceiling_generators(generator_ids, "outcome")`).
+        ceiling_generator_ids = default_ceiling_generators(
+            generator_ids, PRIMARY_FITNESS)
+        if not ceiling_generator_ids:
+            raise SweepError(
+                f"none of generator_ids={list(generator_ids)} nulls the "
+                f"{PRIMARY_FITNESS} fitness (that set is "
+                f"{list(MOVEMENT_CEILING_GENERATORS)}); a ceiling built from "
+                "the rest would be a tie reported as a verdict")
+    if min_generators is None:
+        min_generators = majority(len(ceiling_generator_ids))
     if min_worlds is None:
         min_worlds = replicates
 
@@ -668,6 +722,9 @@ def run_sweep(replay_provider: ReplayProvider, *,
         "replicates": replicates, "base_seed": base_seed,
         "generator_ids": list(generator_ids),
         "ceiling_generator_ids": list(ceiling_generator_ids),
+        "primary_fitness": PRIMARY_FITNESS,
+        "movement_ceiling_generators": list(MOVEMENT_CEILING_GENERATORS),
+        "outcome_ceiling_generators": list(OUTCOME_CEILING_GENERATORS),
         "threshold_pct": threshold_pct, "min_generators": min_generators,
         "min_worlds": min_worlds, "spa_n_bootstrap": spa_n_bootstrap,
         "spa_block_length": spa_block_length, "spa_seed": spa_seed,
