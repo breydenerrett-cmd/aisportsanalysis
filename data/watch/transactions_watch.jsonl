@@ -75,3 +75,9 @@
 {"category": "optioned", "date": "2026-08-31", "first_seen_utc": "2026-08-31T22:16:04.582311+00:00", "player": "Jimmy Crooks", "player_id": 699625, "team": "STL", "transaction_id": 940285}
 {"fetched_utc": "2026-08-31T22:16:06.933483+00:00", "game_date": "2026-08-31", "poll": true}
 {"fetched_utc": "2026-08-31T22:31:09.416278+00:00", "game_date": "2026-08-31", "poll": true}
+{"fetched_utc": "2026-08-31T22:46:13.159861+00:00", "game_date": "2026-08-31", "poll": true}
+{"category": "il_placement", "date": "2026-08-28", "first_seen_utc": "2026-08-31T22:46:13.159861+00:00", "player": "Cole Winn", "player_id": 668390, "team": "TEX", "transaction_id": 940287}
+{"category": "il_placement", "date": "2026-08-30", "first_seen_utc": "2026-08-31T22:46:13.159861+00:00", "player": "Peyton Gray", "player_id": 682608, "team": "TEX", "transaction_id": 940286}
+{"category": "recalled", "date": "2026-08-31", "first_seen_utc": "2026-08-31T22:46:13.159861+00:00", "player": "Robby Ahlstrom", "player_id": 695239, "team": "TEX", "transaction_id": 940288}
+{"category": "recalled", "date": "2026-08-31", "first_seen_utc": "2026-08-31T22:46:13.159861+00:00", "player": "Ben Peoples", "player_id": 687239, "team": "TEX", "transaction_id": 940289}
+{"fetched_utc": "2026-08-31T23:01:16.289845+00:00", "game_date": "2026-08-31", "poll": true}
