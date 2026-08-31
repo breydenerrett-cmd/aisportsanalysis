@@ -67,34 +67,29 @@ falsification (battery RULES_VERSION 2.0.0, frozen) → publish all results →
 archive → next family. Zero survivors is a result, not a stop condition.
 
 ### CURRENT TASK
-V3 information-timing: timestamp-quality audit, then pre-registration, then
-event-study infrastructure — with the market-depth probe and Analyzer
-matchup depth running in parallel lanes.
+Any-matchup Analyzer mode (lane D) + V5 feature groundwork (lane F:
+starter velocity / batted-ball matrix features, point-in-time), while V3
+events accumulate in the background via rosterwatch + multibook capture.
 
 ### READY QUEUE (refill to ≥3 whenever an item completes)
 1. Protect/run due forward capture (standing, lane A — always first).
-2. V3 timestamp-quality audit (lane B): grade every event source A–D;
-   never treat transaction DATE as TIME.
-3. V3 pre-registration (lane B): freeze event classes, windows, move
-   definitions, stale/executable definitions, family, falsification —
-   before reading any event-response result.
-4. Market-depth probe (lane C): F5 ML/totals/RL, alternate lines, pitcher
-   K props — coverage, books, timestamps, cost. Small probes; measure
-   value; then decide.
-5. Event-triggered collection policy (lane C): baseline slate snapshots +
-   dense event windows + true-close capture; maximize future research
-   options per credit.
-6. Cross-book lead/lag measurement infrastructure (lane B/F).
-7. Analyzer matchup depth (lane D): Jacob-style unit-vs-weakness
-   decomposition from the rebuilt pitch store.
-8. Forward-ledger reliability audit (lane E).
-9. ~~Public projection benchmark~~ DONE 2026-08-31: no free source is
-   replayable; reconstructed pitcher-free Elo loses to the close by 0.8
-   log-loss points/game, p=0.0003 (docs/BENCHMARK_ELO.md).
-10. Next-family coverage audit (lane F).
-11. V3 event extraction from our own capture stores (lineup postings and
-    probable changes bracketed between fetches), once the timestamp audit
-    names the sources.
+2. Any-matchup Analyzer mode (lane D) — IN FLIGHT.
+3. V5 feature groundwork: starter velocity + batted-ball matrix features,
+   PIT-tested (lane F) — IN FLIGHT.
+4. Narrative quality pass over finding/dossier text (lane D, A3).
+5. V5 pre-registration once the new features' coverage is measured
+   (lane F): coverage-rank, compact family, frozen battery 2.0.0.
+6. Daily-loop resilience: dedup repeated briefing runs per date (audit
+   found 5 duplicate rec sets on 08-30), settle-run gap alerting (lane E).
+7. V3 first class-floor analysis when any class reaches 30 admitted
+   events (lane B; weeks out — do not read early).
+
+DONE this cycle: timestamp audit · V3 freeze · market probe · collection
+policy · lead/lag + eventstudy cores · multibook store · rosterwatch ·
+F5 close pass · settle closing fix · Analyzer matchup depth · price-
+improvement library + Analyzer wiring · Ranker shell (gated by test) ·
+Elo benchmark (close wins, p=0.0003) · V4 (zero survivors) · validation
+gate (adjudicated open).
 
 ### FUTURE BACKLOG
 V3 falsification battery pass · F5 / F5-totals research families · player-
