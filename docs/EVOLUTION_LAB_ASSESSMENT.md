@@ -42,7 +42,7 @@ fitness signal than ROI**, and **measure the noise ceiling directly**.
 The external evidence agrees. The published test of 1,547 simple MLB strategies
 found ~0.45% profitable at strict significance — the rate pure chance produces.
 Our own record is 25 pre-registered specs across four families, zero survivors,
-and a closing line that beats a tuned Elo by 0.008 log-loss per game
+and a closing line that beats a public-methodology Elo (constants chosen a priori, never tuned on our data) by 0.008 log-loss per game
 (p = 0.0003). Evolution applied naively to this substrate will find spectacular
 backtests. It will find them whether or not any edge exists. That is the
 definition of an instrument that cannot inform us.
@@ -262,7 +262,33 @@ interpretable for rule-based genomes than any attribution approximation.
 
 ---
 
-## 7. Decisions I need from Brey
+## 7. Decisions — BOTH SETTLED BY BREY, 2026-08-31
+
+Recorded here for the history; the live design is `docs/EVOLAB_DESIGN.md`.
+
+**Decision 1 — RESOLVED.** 2023–24 is one explicitly exploratory,
+non-evidential sandbox. 2024 is NOT treated as a pristine holdout: we have
+already learned from it through V1–V5, feature development and architecture
+choices, and pretending otherwise would overstate independence. Chronological
+folds inside 2023–24 remain available as *internal anti-overfit tools*
+(walk-forward diagnostics, stability, PBO/CSCV, placebo calibration) but never
+become clean external evidence. The forward stream is the first independent
+arbiter. 2025 stays tuning-only; sealed 2026 untouched.
+
+**Decision 2 — RESOLVED.** The prop-listing feasibility audit is approved
+narrowly, under a policy amendment separating FEASIBILITY MEASUREMENT from
+RESEARCH COLLECTION. It may record whether pitcher-K markets are listed, which
+books list them, when they first appear, `last_update` stamps and coverage. It
+may not test price strategies, tune thresholds, infer an edge, or run outcome
+analysis. The artifact is frozen and timestamped, and any later pre-registered
+prop hypothesis must state that this coverage information was already known.
+
+**Brey's correction, accepted:** the ~144-selection figure below is an
+optimistic power illustration, not an evidence threshold. Real uncertainty must
+use observed variance with clustering by date, team and book, and resampling
+that respects dependence.
+
+## 7b. The original framing of those decisions
 
 **Decision 1 — the 2024 question.** Do we (A) treat all of 2023–24 as one
 non-evidential search substrate and let forward data be the only holdout — my
