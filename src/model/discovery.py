@@ -131,11 +131,45 @@ def clustered_bootstrap(rows, statistic, resamples=BOOTSTRAP_RESAMPLES,
     Selections on one slate share weather, schedule position and market
     conditions. Drawing them independently pretends to more information than
     the data holds, and the interval comes out too narrow.
+
+    WHY THE DATES ARE SORTED
+    ------------------------
+    The seed fixes the sequence of POSITIONS drawn, not the dates those
+    positions land on. `list(by_date)` is dict insertion order, so the same
+    data handed in a different row order put different dates under the same
+    positions and returned a different interval -- same seed, same data, same
+    cluster multiset. On the frozen 2023-24 selections a reorder moved
+    stale_book's low bound by 0.112 points and bullpen_exposure's by 0.264,
+    while `effect` and `p` stayed exact; `_verdict` reads the interval, so a
+    published live/die call could turn on nothing but iteration order.
+
+    Sorting the keys makes the resample a function of the data alone. Ascending
+    date is the order every published interval was already computed under --
+    selections are stored chronologically -- so this reproduces those numbers
+    rather than replacing them. Nothing statistical changes: same clusters,
+    same resample count, same seed, same percentiles.
+
+    One residual remains, deliberately not papered over: rows WITHIN a date
+    keep their input order, so the statistic accumulates its floats in a
+    different sequence. That is a ~1e-16 effect, far under the 5-decimal
+    rounding below, and closing it would mean imposing a total order on rows
+    the caller never promised.
     """
     by_date = {}
     for row in rows:
         by_date.setdefault(row["date"], []).append(row)
-    dates = list(by_date)
+    try:
+        dates = sorted(by_date)
+    except TypeError as exc:
+        # Sorting is what makes the resample reproducible, so keys that cannot
+        # be ordered have to stop the run rather than fall back to insertion
+        # order. Mixed key types (a date object beside its ISO string) are also
+        # already a clustering bug in the caller: the same slate lands in two
+        # clusters. Better a named refusal here than a bare TypeError from
+        # inside a bootstrap.
+        raise DiscoveryError(
+            "cluster keys are not mutually comparable, so the resample cannot "
+            f"be made reproducible: {exc}") from exc
     if len(dates) < 2:
         return {"low": None, "high": None, "resamples": 0,
                 "reason": "fewer than two distinct dates to resample"}

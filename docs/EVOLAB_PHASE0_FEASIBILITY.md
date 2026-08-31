@@ -551,3 +551,186 @@ engine parameters with defaults recorded in every artifact.
 
 *Read-only audit. No store, test or source file was modified. Full test suite
 run after the audit: 1,684 tests, OK.*
+
+---
+
+# 10. H1 closed: the seeded bootstrap now depends on the data alone
+
+*Appended 2026-08-31, after Phase 0 recommendation 1. Scope: `clustered_bootstrap`
+in `src/model/discovery.py` only. `src/research/battery.py` and every frozen
+artifact were read, never written.*
+
+## 10.1 The defect, and what it actually moved
+
+`clustered_bootstrap` built its resample index from `list(by_date)` — dict
+INSERTION order. The seed fixes the sequence of POSITIONS drawn, not the dates
+those positions land on, so identical data with an identical seed and an
+identical cluster multiset returned a different interval when the rows arrived
+in a different order.
+
+Measured on the frozen selections, five orderings each (as-stored, date-sorted,
+reversed, and two shuffles). `effect` and `p` were exact across all five in
+every case; only `ci` moved.
+
+| slice | n | low-bound spread | high-bound spread | distinct CIs |
+|---|---|---|---|---|
+| archive stale_book | 2655 | 0.00112 | 0.00024 | 4 of 5 |
+| archive bullpen_exposure | 1322 | 0.00264 | 0.00203 | 4 of 5 |
+| archive starter_mismatch | 2018 | 0.00196 | 0.00095 | 4 of 5 |
+| archive travel_load | 526 | 0.00178 | 0.00280 | 4 of 5 |
+| archive bullpen_workload | 899 | 0.00208 | 0.00074 | 4 of 5 |
+| stage2 stale_book | 2949 | 0.00135 | 0.00145 | 4 of 5 |
+| stage2 platoon_mismatch | 104 | 0.00532 | 0.00435 | 4 of 5 |
+
+After the fix every one of those reads 0.00000 spread, 1 distinct CI.
+
+## 10.2 The fix
+
+`dates = sorted(by_date)`. Nothing statistical changed: same clusters, same
+resample count, same seed, same percentiles, same date-level resampling scheme.
+
+Ascending date is not an arbitrary choice of canonical order — it is the order
+every published interval was already computed under, because selections are
+stored chronologically. Sorting therefore REPRODUCES the published numbers
+rather than restating them, which is why almost the whole blast-radius table
+below reads "no move". The one exception (§10.4, M4) is the case where the
+caller's rows were not chronological, and it is reported, not edited away.
+
+Keys that cannot be ordered now raise `DiscoveryError` by name instead of
+falling back to insertion order. Mixed key types were already a clustering bug
+in the caller — the same slate would land in two clusters — so a named refusal
+is the honest outcome.
+
+**Residual, deliberately not papered over:** rows WITHIN a date keep their input
+order, so the statistic accumulates its floats in a different sequence. That is
+the same family as H2 (§10.6), ~1e-16, and far under the 5-decimal rounding.
+
+## 10.3 stale_book, re-run specifically
+
+stale_book was the one number that could not be settled by inspection: its
+published high bound sat only +0.68 points from zero while a reorder was
+observed moving a bound 0.356 points — roughly a 2x margin.
+
+| | published | pre-fix, as-stored | pre-fix, worst observed reorder | post-fix |
+|---|---|---|---|---|
+| V1 (`RESULTS_2023_24.md`, `VALIDATION_PACKAGE_1.md`) | −2.27 .. +0.68 | −2.267 .. +0.676 | −2.155 .. +0.678 | **−2.267 .. +0.676** |
+| Stage 2 (`RESULTS_STAGE2.md`) | −1.35 .. +1.48 | −1.350 .. +1.482 | −1.465 .. +1.434 | **−1.350 .. +1.482** |
+
+**No verdict flipped.** The high bound never crossed zero under any ordering
+tested — the reorder drift landed on the LOW bound, which was nowhere near
+zero. The 2x margin held. `_verdict` still reads "the clustered interval
+includes zero" for stale_book in both runs, and the sentence in
+`RESULTS_2023_24.md:46` ("every interval includes zero") and the equivalent in
+`RESULTS_STAGE2.md` both stand unchanged.
+
+## 10.4 Blast radius: every published number carrying a CI from this function
+
+| document | number | published | post-fix | moves? |
+|---|---|---|---|---|
+| `RESULTS_2023_24.md` (INVALIDATED) / `VALIDATION_PACKAGE_1.md` | bullpen_exposure | +1.26 .. +6.54 | +1.258 .. +6.545 | no |
+| " | stale_book | −2.27 .. +0.68 | −2.267 .. +0.676 | no |
+| " | starter_mismatch | −1.68 .. +2.77 | −1.683 .. +2.767 | no |
+| " | travel_load | −4.59 .. +3.17 | −4.589 .. +3.169 | no |
+| " | bullpen_workload | −2.01 .. +3.40 | −2.009 .. +3.402 | no |
+| `RESULTS_2023_24.md` base-rate re-score | bullpen_exposure vs own-side base | +0.62 .. +5.88 | +0.618 .. +5.881 | no |
+| `RESULTS_2023_24.md:133` late-gain difference | −10.5% .. +11.8% | — | **not recomputed** — bespoke high/low-shift analysis with no surviving script; inside an already-invalidated document |
+| `RESULTS_STAGE2.md` | all 7 detector CIs | see doc | identical to 3 decimals | no |
+| `RESULTS_V2.md:170`, `DEBRIEF.md:373`, `RESEARCH_CATALOGUE.md:144`, `REPRODUCIBILITY_AUDIT_V2.md:120` | M3 dispersion @2pp | +2.34 .. +14.28 | +2.345 .. +14.28 | no |
+| `RESULTS_V2.md:247`, `RESEARCH_V6_CANDIDATES.md:228`, `RESEARCH_CATALOGUE.md:194`, `REPRODUCIBILITY_AUDIT_V2.md:165` | M4 F5 calibration | −4.56 .. +7.12 | **−4.31 .. +6.80** | **YES** |
+| `RESEARCH_V3_TIMING.md` | — | — | — | carries no bootstrap CI; its "interval" is an event-time bracket. Prior pass listed it in error. |
+| frozen JSON under `data/research/`, `evidence/` | — | — | — | contain no `ci` / `low` keys at all |
+
+**The M4 divergence, stated rather than fixed.** `m4_bullpen_gap.rows()` does
+not return rows in date order. The published CI reproduces EXACTLY under the
+pre-fix code in that as-built order (−0.04557, +0.07120 → −4.56, +7.12) and
+becomes −4.31 .. +6.80 once the clusters are sorted. Everything else about that
+result is unchanged and confirmed: n=270, 38 ties, effect +1.25pp, p=0.665,
+163 date clusters. Both intervals straddle zero comfortably, so the published
+finding — "the F5 price is well calibrated; this hypothesis died of sample size,
+not evidence" — is untouched. **Only the printed bound moved.** The published
+documents have been left exactly as they are; this section is the record of the
+divergence.
+
+## 10.5 The fingerprint does not cover this, and that is the wider finding
+
+`battery.rules_fingerprint()` hashes nine constants plus the source of five
+fatal rules. **It does not hash `src/model/discovery.py` at all.** Verified
+before and after: it reads `ac74c7a7f715f9ec` either way.
+
+So artifacts stamped `ac74c7a7f715f9ec` span two different CI-producing
+behaviours, and the stamp cannot tell them apart. This is a finding about the
+fingerprint's COVERAGE, not merely about this bug: every p-value and every
+interval the battery reports comes from `discovery.py`, and none of that
+module's behaviour is inside the hash the artifacts carry. Any future change to
+`clustered_two_sided_p` — including the H2 close below — would be equally
+invisible. Widening the fingerprint to cover the statistics module is a separate
+piece of work; `battery.py` is frozen and was not touched here.
+
+**The verdicts themselves were never at risk, and this was checked rather than
+assumed.** The CI is computed once in `_baseline` (battery.py:183), stored, and
+read by no fatal check. Running the full battery over the frozen selections
+under 8 row orders with the pre-fix bootstrap reinstated produced 8 DISTINCT
+baseline CIs and exactly ONE `(survives, fatal)` verdict per detector:
+
+| slice | verdict, constant across 8 orderings |
+|---|---|
+| archive stale_book | survives=False, fatal=(team_concentration, extreme_removal, dose_response) |
+| archive bullpen_exposure | survives=True, fatal=() |
+| stage2 stale_book | survives=False, fatal=(team_concentration, extreme_removal) |
+| stage2 bullpen_exposure | survives=False, fatal=(extreme_removal) |
+
+Post-fix, each is identical to its pre-fix constant.
+
+## 10.6 H2 assessed, not fixed: float accumulation order in `clustered_two_sided_p`
+
+H2 is a genuinely separate hazard from H1 and must not be conflated with it. H1
+was a LOGIC defect that reordered which dates got drawn; H2 is a floating-point
+ASSOCIATIVITY effect in three plain `sum()` accumulations — the cluster mean,
+the outer sum over clusters, and the inner residual sums — whose order follows
+dict insertion order and within-cluster row order. It matters more in principle
+because, unlike the CI, `p` DOES feed the fatal checks and the FDR gate.
+
+Measured at full precision over 40 orderings per detector on the frozen
+selections:
+
+| | H1 (CI) | H2 (p) |
+|---|---|---|
+| worst absolute movement | 5.3e-03 | 1.8e-15 |
+| worst relative movement | ~1e-01 | 6.1e-15 |
+| distinct values after the code's own rounding | up to 4 of 5 | **1 of 40, every detector** |
+
+**Assessment: real, but not currently a risk.** The jitter is a few ULPs —
+twelve orders of magnitude smaller than H1 — and both `discovery.evaluate` and
+`battery._measure` round `p` to six decimals before anything compares it. For
+the jitter to change a decision it would have to move `p` across a BH line
+(`i·q/m`) or across a 6-decimal rounding half-point from within ~2e-15, and a
+candidate sitting that close to a threshold is one whose call is arbitrary
+anyway. No such case exists in any frozen artifact: every detector collapses to
+a single rounded `p`.
+
+What it would take to close it: replace the three `sum()` calls in
+`clustered_two_sided_p` with `math.fsum`, which is correctly rounded and
+therefore order-invariant by construction, and sort the cluster keys the way
+`clustered_bootstrap` now does. Cost is O(n) on sums already computed once per
+slice — negligible, since these do not run inside the resample loop. That would
+make `p` a pure function of the data, matching the guarantee the interval now
+has. It would also silently change the last digits of every stored unrounded
+`p` (`m1_overreaction`, `m3_dispersion`, `m4_bullpen_gap` return `clustered_p`
+unrounded), which is exactly the kind of change the fingerprint gap in §10.5
+would fail to record — so the two pieces of work belong together.
+
+The honest limit: `clustered_bootstrap`'s statistic is caller-supplied, so
+fsum inside `discovery.py` cannot close the within-cluster accumulation
+residual noted in §10.2. That one needs the callers' statistics to be
+order-invariant too.
+
+## 10.7 Verification
+
+Four tests written and confirmed FAILING before the fix existed, so the
+ordering proves they bind: `TestBootstrapDeterminism` in
+`tests/test_model_discovery.py` (any row order, reversed rows, the canonical
+order being ascending date, and the `evaluate` verdict end to end), plus a
+fifth for the unorderable-keys refusal. Full suite after: **1,856 tests, OK.**
+
+*No published number was edited. No frozen artifact, store, or `battery.py`
+was modified. Nothing committed.*
