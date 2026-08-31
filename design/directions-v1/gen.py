@@ -190,7 +190,7 @@ def game(d):
       f'<div style="font-family: {d["font_head"]}; font-weight: {d["headweight"]}; font-size: {d["h1"]};">San Diego Padres @ Cincinnati Reds</div></div>'
       f'<div style="text-align: right;"><div style="font-family: {d["font_mono"]}; font-size: 13px; color: {d["mut"]};">SD 56.3% · CIN 43.7%</div>'
       f'<div style="font-size: 11px; color: {d["faint"]};">market-implied consensus · 11 books</div></div></div>')
-    factors = (
+    factors = "".join((
       factor(d, "LEANS PADRES", d["cyan"], "Cincinnati&rsquo;s right-handed core loses its platoon edge tonight",
              "The Reds&rsquo; three best bats hit right-handed and face a right-handed starter — the favorable split they had the last two nights is gone.",
              "sample: 402 plate appearances vs RHP this season", "Observation"),
@@ -203,7 +203,7 @@ def game(d):
       factor(d, "CONTEXT", d["mut"], "Interesting matchup, but no demonstrated betting edge",
              "Nothing tonight clears the evidence bar this product holds itself to. The factors above are context for your own judgment, not a recommendation.",
              "27 pre-registered research hypotheses tested to date · zero survived"),
-    )
+    ))
     adv = (
       f'<div style="border-top: {d["border"]}; padding: {d["pad"]}; display: flex; flex-direction: column; gap: 10px;">'
       f'<div style="display: flex; align-items: center; gap: 12px;">'
@@ -279,7 +279,7 @@ def main_cover():
         rows += (f'<div style="background: {dd["panel"]}; border: 1px solid {dd["line"]}; border-radius: {dd["radius"]}; '
                  f'padding: 22px; display: flex; flex-direction: column; gap: 8px;">'
                  f'<div style="font-family: {dd["font_head"]}; font-weight: {dd["headweight"]}; font-size: 20px;">'
-                 f'Direction {k} — {dd["tag"]}</div>'
+                 f'Direction {k} — {dd["name"]} <span style="color: {dd["faint"]}; font-weight: 400;">({dd["tag"]})</span></div>'
                  f'<div style="color: {dd["mut"]};">{dd["motive"]}</div>'
                  f'<div style="color: {dd["faint"]}; font-size: 13px;">Tradeoff: {dd["tradeoff"]}</div></div>')
     inner = (f'<div style="max-width: 860px; margin: 0 auto; padding: 48px 40px; display: flex; '
@@ -316,7 +316,7 @@ for k in "ABC":
     y += 1120
 canvas = {"artboards": boards,
           "annotations": [{"id": "decision-note", "x": 960, "y": 40, "w": 300,
-                           "text": "Rows top to bottom: A Editorial, B Terminal, C Clubhouse.\nOdds and book names are real (captured 6:16 ET tonight).\nMatchup factor stats are representative sample content."}],
+                           "text": "Rows top to bottom: A Editorial, B Terminal, C Clubhouse (Sports-Warm).\nOdds and book names are real (captured 6:16 ET tonight).\nMatchup factor stats are representative sample content."}],
           "launch": {"view": "canvas"}}
 open(os.path.join(OUT, "canvas.json"), "w").write(json.dumps(canvas, indent=1))
 print("wrote", len(files), "artboards + canvas.json")
