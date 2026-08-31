@@ -146,14 +146,11 @@ def _prob_pct(value) -> str:
     return "--" if value is None else f"{value:.1%}"
 
 
-def _prob_points(value) -> str:
-    """A probability difference in WIN-PROBABILITY POINTS.
-
-    The store keeps fractions. This column was headed "prob pts" and printed
-    the fraction (-0.0022), a hundredfold understatement and a different scale
-    from the "N points of win probability" every other surface uses.
-    """
-    return "--" if value is None else f"{value * 100:+.2f}"
+# The conversion, and its docstring, live in prices.py: this page and
+# dashboard.py used to each keep an independent copy (§2.2 of the SaaS
+# audit), which is exactly the kind of drift -- one number, two renderings --
+# this project keeps tripping on.
+_prob_points = prices_mod.format_probability_points
 
 
 def _return_pct(value) -> str:

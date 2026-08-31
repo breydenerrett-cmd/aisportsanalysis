@@ -455,10 +455,16 @@ class TestDashboardRendersIt(unittest.TestCase):
         self.dir.cleanup()
 
     def slate(self, sections=None, findings=()):
+        # The dashboard no longer derives synthesis when it is absent (§2.1):
+        # every entry has to arrive with it already computed, the same way
+        # briefing.build_slate computes it for the real pipeline.
+        dossier = game_dossier(sections)
+        findings = list(findings)
         return {"date": "2026-08-28",
-                "games": [{"dossier": game_dossier(sections),
-                           "findings": list(findings), "verdict": "no_play",
-                           "summary": "x"}],
+                "games": [{"dossier": dossier,
+                           "findings": findings, "verdict": "no_play",
+                           "summary": "x",
+                           "synthesis": synthesis.synthesize(dossier, findings)}],
                 "notes": []}
 
     def render(self, slate):

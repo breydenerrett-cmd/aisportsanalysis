@@ -33,10 +33,41 @@ MIN_BOOKS = 6
 LABEL = ("price improvement / line-shopping value -- a better execution "
          "price, not expected value and not a prediction")
 
+# Said whenever no side on a board beats the de-vigged consensus, which on a
+# normally-priced board is every side. Without it a column of negatives reads
+# as a verdict on the night instead of as the definition of the two numbers
+# being subtracted. This used to live in the renderer (twice -- dashboard.py
+# and ranker.py each kept their own copy of the sign logic), which meant a
+# reader could see the two pages disagree about whether a board had anything
+# positive on it. `snapshot()` computes the sign itself now, once, and every
+# renderer just displays what it is handed.
+NO_IMPROVEMENT_NOTE = (
+    "No side here beats the de-vigged consensus, and that is the usual case "
+    "rather than a bad board: the best available price still carries the "
+    "book's vig while the consensus it is measured against has had the vig "
+    "removed, so the difference is normally negative by roughly the hold. A "
+    "positive number is the exception worth noticing; these are not.")
+
 # Where a board came from, carried on the board itself. A finding or a table
 # that describes a board has to be able to name the store and the instant it
 # read, because "11 books" means nothing without them.
 SOURCE = "multi-book capture store"
+
+
+def format_probability_points(value) -> str:
+    """A probability DIFFERENCE, formatted in win-probability POINTS, or "--".
+
+    The store keeps these as fractions (0.019). Rendering the fraction under a
+    heading that says "points" understates it a hundredfold and puts it on a
+    different scale from every detector sentence on the same page, which all
+    say "N points of win probability". Two decimals is the honest resolution:
+    the inputs are American prices, and a third digit is arithmetic noise.
+
+    dashboard.py and ranker.py each used to keep their own copy of this
+    conversion; one number formatted two ways in two places is exactly the
+    class of drift this module exists to prevent, so both now call this one.
+    """
+    return "--" if value is None else f"{value * 100:+.2f}"
 
 
 def _decimal(price):
@@ -112,7 +143,18 @@ def snapshot(quotes) -> dict:
         "home_probability_range": round(
             max(f[1] for f in fairs) - min(f[1] for f in fairs), 5),
     }
-    return {"sides": sides, "dispersion": dispersion, "label": LABEL}
+    # A derived boolean the renderer used to compute for itself -- does ANY
+    # side here beat the de-vigged consensus? -- plus the note that explains
+    # the answer when it is no. Computing it here means a page can never
+    # print "no improvement" for a board that actually has one, or vice
+    # versa, because there is exactly one place that decides.
+    any_positive = any(
+        detail.get("improvement_points") is not None
+        and detail["improvement_points"] > 0
+        for detail in sides.values())
+    return {"sides": sides, "dispersion": dispersion, "label": LABEL,
+            "any_positive": any_positive,
+            "note": None if any_positive else NO_IMPROVEMENT_NOTE}
 
 
 def latest_instant(quotes) -> list:

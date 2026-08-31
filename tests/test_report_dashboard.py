@@ -29,9 +29,14 @@ def slate(findings=(), verdict="no_play", gaps=None):
                                          "away_fair": 0.41, "home_fair": 0.59}}})
     for name, reason in (gaps or {}).items():
         d.miss(name, reason)
+    findings = list(findings)
+    # The dashboard no longer derives synthesis when it is absent (§2.1) --
+    # every entry it renders has to arrive with it already computed, the way
+    # briefing.build_slate computes it for every real caller.
     return {"date": "2026-08-28",
-            "games": [{"dossier": d, "findings": list(findings),
-                       "verdict": verdict, "summary": "x"}],
+            "games": [{"dossier": d, "findings": findings,
+                       "verdict": verdict, "summary": "x",
+                       "synthesis": synthesis_mod.synthesize(d, findings)}],
             "notes": ["a note"]}
 
 
@@ -369,11 +374,19 @@ class TestPriceImprovementIsNotFlattered(unittest.TestCase):
 
     def _slate(self, sides, observed="2026-08-31T10:08:30+00:00"):
         s = slate()
+        # any_positive and note are prices.py's job now (§2.2) -- a hand-built
+        # section here has to carry them the same way prices.snapshot() would,
+        # rather than the page deriving them from the raw sides.
+        any_positive = any(
+            d.get("improvement_points") is not None
+            and d["improvement_points"] > 0 for d in sides.values())
         s["games"][0]["dossier"].add("price_improvement", {
             "sides": sides,
             "dispersion": {"books": 10, "home_probability_range": 0.0103},
             "observed_utc": observed,
-            "label": prices_mod.LABEL})
+            "label": prices_mod.LABEL,
+            "any_positive": any_positive,
+            "note": None if any_positive else prices_mod.NO_IMPROVEMENT_NOTE})
         return s
 
     def test_points_are_rendered_in_points_not_in_fractions(self):

@@ -21,6 +21,36 @@ from src.pipeline import rosterwatch
 from src.pipeline import slate as slate_mod
 
 
+def make_entry(dossier, findings=None, *, verdict="no_play", side=None,
+              market=None, summary=None, scan=None) -> dict:
+    """The one game-analysis entry: a dossier, its findings, and its
+    synthesis, always together.
+
+    This is the fix for the worst leak the SaaS audit found
+    (docs/SAAS_APPLICATION_ARCHITECTURE.md §2.1): a renderer that computes
+    synthesis for an entry that lacks it means two callers can hand the SAME
+    game to the SAME renderer and get two DIFFERENT domain objects back,
+    invisibly, depending on which one happened to populate the field.
+    `build_slate` uses this for every game on a real slate; anything else
+    that needs to hand a game to a renderer -- a test building a one-game
+    slate by hand, a future caller -- should use it too, so "the entry for
+    this game" means the same object no matter who assembles it.
+    """
+    findings = list(findings or [])
+    entry = {
+        "dossier": dossier,
+        "findings": findings,
+        "synthesis": synthesis_mod.synthesize(dossier, findings),
+        "verdict": verdict,
+        "side": side,
+        "market": market,
+        "summary": summary,
+    }
+    if scan is not None:
+        entry["scan"] = scan
+    return entry
+
+
 def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
                 weather_by_pk=None, lineups_by_pk=None, bullpen_by_team=None,
                 handedness=None, splits_by_pk=None, matchups_by_pk=None,
@@ -107,20 +137,14 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
             scan = mismatch.apply_market_screen(
                 scan, quote.get("away_price"), quote.get("home_price"))
 
-        entries.append({
-            "dossier": dossier,
-            "findings": findings,
-            # The top block of the card: the same dossier and the same
-            # findings, ranked down to the few worth saying out loud. Computed
-            # here so the ledger and any other consumer of a slate sees the
-            # identical summary the page shows.
-            "synthesis": synthesis_mod.synthesize(dossier, findings),
-            "verdict": scan["verdict"],
-            "side": scan.get("side"),
-            "market": scan.get("market"),
-            "summary": scan.get("summary"),
-            "scan": scan,
-        })
+        # The top block of the card -- the same dossier and the same
+        # findings, ranked down to the few worth saying out loud -- is built
+        # by make_entry, unconditionally, so the ledger and any other
+        # consumer of a slate sees the identical summary the page shows.
+        entries.append(make_entry(
+            dossier, findings, verdict=scan["verdict"], side=scan.get("side"),
+            market=scan.get("market"), summary=scan.get("summary"),
+            scan=scan))
 
     unavailable = sum(1 for e in entries
                       if e["verdict"] == mismatch.MARKET_UNAVAILABLE)

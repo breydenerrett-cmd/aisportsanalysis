@@ -41,6 +41,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import src.analysis as analysis
+from src.analysis import prices as prices_mod
 from src.analysis import synthesis as synthesis_mod
 from src.detect import base as detect
 # The one sentence a pairing with no real game carries on its starter and
@@ -150,12 +151,14 @@ def _payload(slate, stamp) -> dict:
     for entry in slate.get("games", []):
         dossier = entry["dossier"]
         findings = entry.get("findings", [])
-        # The briefing computes this; a caller that assembles a slate by hand
-        # (the analyze path, and every test that builds a one-game slate) gets
-        # it here instead, from the same dossier and the same findings.
+        # The domain builds this, unconditionally, for every entry
+        # (src.pipeline.briefing.make_entry) -- the renderer used to derive it
+        # here when absent, which meant a hand-built entry that skipped the
+        # briefing got a DIFFERENT summary object than one that went through
+        # it, invisibly. There is no fallback here any more: an entry with no
+        # synthesis renders as one with nothing to say, which is the honest
+        # (and now impossible, for any real caller) failure mode.
         summary = entry.get("synthesis")
-        if summary is None:
-            summary = synthesis_mod.synthesize(dossier, findings)
         games.append({
             "synthesis": _plain(summary),
             "away": dossier.game.get("away_team"),
@@ -193,6 +196,11 @@ def _payload(slate, stamp) -> dict:
 
 
 def _finding(finding) -> dict:
+    """The Finding -> wire conversion. Every consumer gets sample_n paired
+    with sample here, once, rather than asking synthesis.sample_size() again
+    at render time -- the credibility rule (no "sample" label on a string
+    that names a period rather than a count) is enforced on the object, not
+    reimplemented per renderer."""
     label, meaning = EVIDENCE_LABELS.get(finding.evidence,
                                          (finding.evidence, ""))
     return {
@@ -202,6 +210,7 @@ def _finding(finding) -> dict:
         "value": finding.value,
         "baseline": finding.baseline,
         "sample": finding.sample,
+        "sample_n": synthesis_mod.sample_size(finding.sample),
         "surprise": finding.surprise,
         "side": finding.side,
         "market_relevance": finding.market_relevance,
@@ -259,32 +268,15 @@ def _prob_pct(value) -> str:
     return "--" if value is None else f"{value:.1%}"
 
 
-def _prob_points(value) -> str:
-    """A probability DIFFERENCE, in win-probability points.
-
-    The store keeps these as fractions (0.019). Rendering the fraction under a
-    heading that says "points" understates it a hundredfold and puts it on a
-    different scale from every detector sentence on the same page, which all
-    say "N points of win probability". Two decimals is the honest resolution:
-    the inputs are American prices, and a third digit is arithmetic noise.
-    """
-    return "--" if value is None else f"{value * 100:+.2f}"
+# The conversion itself, and its docstring, live in prices.py now: dashboard
+# and ranker each used to keep an independent copy, which is exactly the kind
+# of drift (one number, two renderings) this project keeps tripping on.
+_prob_points = prices_mod.format_probability_points
 
 
 def _return_pct(value) -> str:
     return "--" if value is None else f"{value:+.2f}%"
 
-
-# Said whenever no side on a board beats the de-vigged consensus, which on a
-# normally-priced board is every side. Without it a column of negatives reads
-# as a verdict on the night instead of as the definition of the two numbers
-# being subtracted.
-NO_IMPROVEMENT_NOTE = (
-    "No side here beats the de-vigged consensus, and that is the usual case "
-    "rather than a bad board: the best available price still carries the "
-    "book's vig while the consensus it is measured against has had the vig "
-    "removed, so the difference is normally negative by roughly the hold. A "
-    "positive number is the exception worth noticing; these are not.")
 
 
 def _american(value) -> str:
@@ -355,7 +347,9 @@ def _finding_row(finding) -> str:
     if finding.get("sample") is not None:
         # Same rule as the synthesis block: "sample 7-day window" names a
         # period, not an amount of evidence, and must not wear the word.
-        if synthesis_mod.sample_size(finding["sample"]) is None:
+        # sample_n was paired with sample once, in _finding(); this only
+        # displays what it was handed.
+        if finding.get("sample_n") is None:
             support.append('<span class="mono">no sample size stated &mdash; '
                            f'{_esc(finding["sample"])}</span>')
         else:
@@ -744,14 +738,16 @@ def _price_improvement_section(game) -> str:
     And a normally-vigged board makes every row negative by construction --
     the best price still carries vig, the consensus does not -- which the page
     never said, leaving a column of minus signs looking like a bad night
-    rather than like arithmetic.
+    rather than like arithmetic. Both are prices.py's job now: `any_positive`
+    and the explanatory note arrive on the section already decided, and this
+    function only displays them.
     """
     section = game["sections"].get("price_improvement")
     if not section:
         return _gap_block("Best price vs consensus",
                           game["gaps"].get("price_improvement",
                                            "no multi-book observations"))
-    rows, any_positive = [], False
+    rows = []
     for side in ("away", "home"):
         detail = (section.get("sides") or {}).get(side) or {}
         if detail.get("skipped"):
@@ -762,8 +758,6 @@ def _price_improvement_section(game) -> str:
         price_text = (f"+{price}" if isinstance(price, int) and price > 0
                       else str(price))
         points = detail.get("improvement_points")
-        if points is not None and points > 0:
-            any_positive = True
         rows.append(
             f'<tr><td>{side}</td>'
             f'<td class="mono">{_esc(price_text)} '
@@ -794,8 +788,8 @@ def _price_improvement_section(game) -> str:
         f'{"--" if spread is None else f"{spread:.4f}"}. '
         f'{_esc(section.get("label") or "")}.</p>',
     ]
-    if not any_positive:
-        parts.append(f'<p class="gap">{_esc(NO_IMPROVEMENT_NOTE)}</p>')
+    if not section.get("any_positive"):
+        parts.append(f'<p class="gap">{_esc(section.get("note") or "")}</p>')
     return "".join(parts)
 
 

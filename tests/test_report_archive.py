@@ -11,6 +11,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from src.analysis import synthesis as synthesis_mod
 from src.detect import base
 from src.detect import dossier as dossier_mod
 from src.report import archive
@@ -28,9 +29,15 @@ def _game(away="BOS", home="NYY", date="2026-08-28", pk=1, number=None):
 
 
 def _slate(dossiers, date="2026-08-28", findings=()):
+    findings = list(findings)
+    # §2.1: the dashboard no longer derives synthesis for an entry that lacks
+    # it, so every hand-built entry has to carry one, computed the same way
+    # briefing.build_slate does for the real pipeline.
     return {"date": date,
-            "games": [{"dossier": d, "findings": list(findings),
-                       "verdict": "no_play", "summary": "x"} for d in dossiers],
+            "games": [{"dossier": d, "findings": findings,
+                       "verdict": "no_play", "summary": "x",
+                       "synthesis": synthesis_mod.synthesize(d, findings)}
+                      for d in dossiers],
             "notes": []}
 
 
