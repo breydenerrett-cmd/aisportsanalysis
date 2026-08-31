@@ -313,3 +313,16 @@ window). bb_type present on 17.4% of pitches -- the balls-in-play rate,
 so coverage is effectively complete. Old store preserved locally as
 statcast_pre_bbtype. This unlocks the batted-ball/contact profile
 features for the V5 pre-registration and the Analyzer.
+
+## 2026-08-31 ~08:00 UTC — V5 run and published: zero survivors
+
+Idea to published result in under an hour on the trusted machine: the two
+new features went through coverage measurement, a three-hypothesis
+pre-registration (docs/RESEARCH_V5_STUFF.md), registration, one batch, and
+full publication. All three died at 2024 replication, two by sign flip --
+the same screen-then-flip shape V4 showed. Running total: four families,
+27 pre-registered hypotheses, zero survivors. The live research lanes are
+now the ones the market cannot trivially price: V3 information timing
+(accumulating) and softer markets (F5 closes accumulating via the dense
+close pass). Another season-level feature family needs a mechanism the
+market plausibly CANNOT price, not merely one it might not.
