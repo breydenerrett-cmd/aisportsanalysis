@@ -413,10 +413,16 @@ def p2_team_permutation(world: World, seed: int, *,
                         away_prefix: str = AWAY_PREFIX) -> World:
     """P2: permute which team's characteristics a game shows, within a season.
 
-    PRESERVES EXACTLY: every price, every outcome, every team label, the
-    calendar, and the per-team distribution of feature blocks (each team's
-    blocks all still appear, in their own order, wearing another team's
-    jersey). The market's calibration is therefore bit-identical to reality.
+    PRESERVES EXACTLY: every price, every outcome, every team label and the
+    calendar, so the market's calibration is bit-identical to reality. Every
+    feature block in the placebo world is a real block that the donor team
+    really produced, on that side, in that season -- features are borrowed,
+    never synthesised.
+
+    PRESERVES UP TO SCHEDULE IMBALANCE: the multiset of blocks. A team takes
+    its donor's blocks by index, so when the two played a different number of
+    home (or away) games, the tail wraps -- a few of the donor's blocks are
+    used twice or not at all. With balanced schedules the multiset is exact.
     BREAKS: feature -> team attribution, hence feature -> outcome through the
     team.
 
