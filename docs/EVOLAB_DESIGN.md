@@ -243,7 +243,31 @@ than reality, which would understate the ceiling.
 > so P1 carries an optional band-preserving mode that restores alignment to
 > 100.5% of real.
 
-**P5 is the sharpest null and the one I weight most** — and it now has the
+> **SECOND GENERATOR AMENDMENT (adjudicated 2026-08-31, found by the sweep
+> driver's cross-checks).** P1 and P5 permute or resample OUTCOMES only, while
+> the PRIMARY search fitness is price MOVEMENT (decision → close), which reads
+> prices and features that neither generator touches. Every P1/P5 replicate
+> therefore reproduces the real movement maximum exactly — they are
+> structurally uninformative nulls for the primary fitness, and the majority
+> vote could never have registered a clearing movement edge. They remain
+> valid nulls for the outcome-ROI confirmation fitness.
+>
+> **Decision: the ceiling is evaluated PER FITNESS, each over the generators
+> that actually null it.** Movement ceiling over {P2, P3, P6}; outcome ceiling
+> over {P1, P2, P3, P5}. P6 is new — the movement analogue of P1: within-date
+> permutation of each game's (fair-at-decision → fair-at-close) movement pair
+> across games, features left attached, preserving the per-date movement
+> distribution exactly while destroying feature→movement alignment. P6 must
+> pass the same faithfulness bar as the others before any number it produces
+> is reported: measured feature→movement association in a P6 world is zero,
+> and a planted movement edge does not survive into it.
+>
+> Two design lessons now on record from one day: P4 was not a null for
+> anything, and P1/P5 were not nulls for the fitness that matters most. Both
+> were caught by machinery built to distrust itself — the faithfulness tests
+> and the driver's tie-detection — before a single real number was produced.
+
+**P5 is the sharpest null for OUTCOME fitness and the one I weight most there** — and it now has the
 measurement to back that claim. On worlds containing no edge, search maxima
 were: real null worlds +0.0298, **P5 +0.0285 (ratio 0.96 — it neither flatters
 nor understates)**, P3 +0.028, P2 +0.034, P1 +0.057, P4 +0.062. P5 is also the
