@@ -52,6 +52,33 @@ DecisionPoint = {game_id, official_date, commence_time, T, point_class}
 `point_class` ∈ {`T_MINUS_24H`, `T_MINUS_6H`, `LINEUP_POSTED`, `T_MINUS_30M`} —
 a fixed, pre-registered ladder so no strategy can invent a bespoke timing.
 
+> **AMENDED BY PHASE 0 (measured, 2026-08-31).** The historical store is
+> **3 snapshots per day** (16:50 / 22:50 / 01:50 UTC). **No two observations
+> anywhere in 2023–24 are closer than 177 minutes; the median gap is 6 hours.**
+> Consequences, which narrow this design rather than caveat it:
+> - The ladder collapses to **two usable classes**: an early board and a late
+>   board. `T_MINUS_30M` exists for only **1,269 of 4,819 games (26%)** and
+>   `LINEUP_POSTED` cannot be dated at all (below).
+> - **Steam, lead/lag, news-reaction, lineup-post-reaction and any intraday
+>   execution-timing gene are UNBACKTESTABLE** on 2023–24 and are excluded
+>   from the genome outright. They are forward-only questions — which is
+>   precisely what the V3 lane is for.
+> - What remains testable is **coarse multi-hour drift**, and the "close" is a
+>   median 85 minutes before first pitch, not a true close.
+> - **No lineup or probable-pitcher posting timestamps exist for 2023–24**, so
+>   any lineup- or starter-conditioned feature has an unprovable
+>   earliest-available time and can only be served under a declared
+>   assumption. Assuming a nominal T-180 post time drops the executable
+>   universe to 3,624 games AND selects survivors by first-pitch time, which
+>   correlates with coast and day of week — a bias that must be reported, never
+>   silently accepted.
+> - Replay universe: **4,819 games** (2,408 in 2023, 2,411 in 2024). The
+>   measurement reproduces the published V1 "4,395 priced" figure exactly,
+>   which is what makes it trustworthy.
+> - The historical store has **no spreads at all** (h2h and totals only), and
+>   F5 is ~290 games at exactly one observation each — so historical F5
+>   research is infeasible and PATH B depends entirely on forward capture.
+
 The engine serves a **WorldView**: everything visible at T and nothing else.
 
 ```
@@ -128,9 +155,17 @@ Three explicit scenarios; never a silent assumption.
 - **`SPECIFIC_BOOK_EXECUTION`** — one named book's price at T, or no bet if
   that book is absent. The realistic single-account case.
 - **`BEST_OBSERVED_EXECUTION`** — best price among books observed at the same
-  instant. **Reported as an upper bound and only permitted if Phase 0 shows
-  quotes were genuinely simultaneous.** If they were stitched across time, this
-  mode is disabled entirely rather than caveated.
+  instant. **Phase 0 PERMITS this**: every book for a game arrives in one API
+  response at one `snapshot_at`, not stitched, with book staleness a median of
+  0.6 minutes (max 14.8). The best price was genuinely on the board at once.
+  Still reported as an upper bound, and with one measured caveat that must be
+  handled rather than ignored: **62.7% (2023) and 78.6% (2024) of instants have
+  two or more books TIED at the best price**, resolved today by iteration
+  order. The tie-break must therefore be an explicit, stated, deterministic
+  rule — and because the identity of the "best book" is not recoverable,
+  `SPECIFIC_BOOK_EXECUTION` results must never be read as "this book was
+  reliably best". Whether the price was takeable at stake is not measurable
+  from anything we hold, and no design choice can fix that.
 
 Never: closing price, retroactive book choice, unavailable markets, assumed
 fills, or unlimited limits. Any strategy whose apparent performance changes
