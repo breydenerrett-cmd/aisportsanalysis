@@ -16,8 +16,18 @@ and `mlb_news.fetch`. Zero odds-API credits are involved.
     transactions;
   * appends a change row to the matching store ONLY when content changed since
     the last stored row (first sighting always writes);
-  * appends one compact poll-marker row `{"fetched_utc": ..., "poll": true}`
-    per source that was successfully fetched.
+  * appends one compact poll-marker row
+    `{"fetched_utc": ..., "poll": true, "game_date": "YYYY-MM-DD"}` per source
+    that was successfully fetched.
+
+WHY THE MARKERS CARRY THE POLLED DATE
+-------------------------------------
+A marker used to say only "we looked at 23:58Z", not WHAT we looked at. The
+poller's slate date rolls over at midnight Eastern, so the first poll after a
+flip would be bracketed by the last poll of the PREVIOUS slate -- a look at a
+different day's games, which never saw the new day's lineup at all. The
+bracket claimed a window whose opening end proved nothing. Stamping the polled
+date lets `events()` refuse such a marker instead of trusting it.
 
 WHY THE POLL MARKERS ARE NOT OPTIONAL
 -------------------------------------
@@ -113,7 +123,7 @@ def poll(game_date=None, watch_dir=DEFAULT_WATCH_DIR,
         games = fetch_probables(iso_date, timeout=timeout)
         fetched = _utc_iso(clock())
         report["probables"] = _record_probables(
-            directory / PROBABLES_FILE, games, fetched)
+            directory / PROBABLES_FILE, games, fetched, iso_date)
     except RosterWatchError:
         raise  # our own store/clock problems are bugs, not weather
     except Exception as exc:  # network failure must not kill the poll
@@ -124,7 +134,7 @@ def poll(game_date=None, watch_dir=DEFAULT_WATCH_DIR,
         posted = fetch_lineups(iso_date, timeout=timeout)
         fetched = _utc_iso(clock())
         report["lineups"] = _record_lineups(
-            directory / LINEUPS_FILE, posted, fetched)
+            directory / LINEUPS_FILE, posted, fetched, iso_date)
     except RosterWatchError:
         raise
     except Exception as exc:
@@ -135,7 +145,7 @@ def poll(game_date=None, watch_dir=DEFAULT_WATCH_DIR,
         rows = fetch_transactions(iso_date, timeout=timeout)
         fetched = _utc_iso(clock())
         report["transactions"] = _record_transactions(
-            directory / TRANSACTIONS_FILE, rows, fetched)
+            directory / TRANSACTIONS_FILE, rows, fetched, iso_date)
     except RosterWatchError:
         raise
     except Exception as exc:
@@ -149,7 +159,7 @@ def _fail(report, source, exc) -> None:
     report["errors"].append({"source": source, "error": str(exc)})
 
 
-def _record_probables(path, games, fetched_utc) -> dict:
+def _record_probables(path, games, fetched_utc, game_date=None) -> dict:
     """Diff-append today's probable pair per game; always append a marker."""
     last = {}  # game_pk -> (away_probable_id, home_probable_id), one pass
     for row in _read_rows(path):
@@ -159,7 +169,7 @@ def _record_probables(path, games, fetched_utc) -> dict:
                                 row.get("home_probable_id"))
 
     written = 0
-    out = [{"fetched_utc": fetched_utc, "poll": True}]
+    out = [_marker(fetched_utc, game_date)]
     for game in games or []:
         game_pk = game.get("game_pk")
         if game_pk is None:
@@ -175,7 +185,7 @@ def _record_probables(path, games, fetched_utc) -> dict:
     return {"games": len(games or []), "written": written}
 
 
-def _record_lineups(path, posted, fetched_utc) -> dict:
+def _record_lineups(path, posted, fetched_utc, game_date=None) -> dict:
     """Diff-append ordered player-id lineups per game; always append a marker.
 
     A game with no posted lineup writes NOTHING for that game -- absence over
@@ -190,7 +200,7 @@ def _record_lineups(path, posted, fetched_utc) -> dict:
                                 tuple(row.get("home_lineup") or []))
 
     written = 0
-    out = [{"fetched_utc": fetched_utc, "poll": True}]
+    out = [_marker(fetched_utc, game_date)]
     for game_pk in sorted(posted or {}):
         record = (posted or {})[game_pk]
         away = tuple(_player_ids(record.get("away")))
@@ -207,7 +217,7 @@ def _record_lineups(path, posted, fetched_utc) -> dict:
     return {"games": len(posted or {}), "written": written}
 
 
-def _record_transactions(path, rows, fetched_utc) -> dict:
+def _record_transactions(path, rows, fetched_utc, game_date=None) -> dict:
     """First-seen rows for transaction ids not already in the store.
 
     Deduplicated against the WHOLE store, not just today: the feed's date
@@ -216,7 +226,7 @@ def _record_transactions(path, rows, fetched_utc) -> dict:
     """
     seen = {row.get("transaction_id") for row in _read_rows(path)
             if not row.get("poll")}
-    out = [{"fetched_utc": fetched_utc, "poll": True}]
+    out = [_marker(fetched_utc, game_date)]
     new = 0
     for row in rows or []:
         transaction_id = row.get("transaction_id")
@@ -249,6 +259,11 @@ def events(store_dir=DEFAULT_WATCH_DIR) -> list:
     `inadmissible: True` -- grade C, stored but excluded from every timing
     measurement.
 
+    A marker that polled a DIFFERENT slate date than the event's game cannot
+    open that game's bracket -- it looked at another day's games and never saw
+    this one. Markers written before the date stamp existed carry no date and
+    are grandfathered in (see `_last_marker_before`).
+
     Reads each store fully once. Sorted by interval end, then class.
     """
     directory = Path(store_dir)
@@ -276,7 +291,9 @@ def _probable_events(path) -> list:
                     "class": STARTER_SCRATCH,
                     "game_pk": game_pk,
                     "interval": (_bracket_start(markers, cur["fetched_utc"],
-                                                prev["fetched_utc"]),
+                                                prev["fetched_utc"],
+                                                _polled_date(markers,
+                                                             cur["fetched_utc"])),
                                  cur["fetched_utc"]),
                     "inadmissible": False,
                     "detail": {"side": side, "from": old, "to": new},
@@ -296,7 +313,9 @@ def _lineup_events(path) -> list:
                 if new and not old:
                     # This side's lineup appeared. Admissible only if an
                     # earlier poll looked at the world and saw it absent.
-                    start = _last_marker_before(markers, cur["fetched_utc"])
+                    start = _last_marker_before(
+                        markers, cur["fetched_utc"],
+                        _polled_date(markers, cur["fetched_utc"]))
                     events_out.append({
                         "class": LINEUP_POSTED,
                         "game_pk": game_pk,
@@ -311,10 +330,11 @@ def _lineup_events(path) -> list:
                         events_out.append({
                             "class": HITTER_SCRATCH,
                             "game_pk": game_pk,
-                            "interval": (_bracket_start(markers,
-                                                        cur["fetched_utc"],
-                                                        prev["fetched_utc"]),
-                                         cur["fetched_utc"]),
+                            "interval": (_bracket_start(
+                                markers, cur["fetched_utc"],
+                                prev["fetched_utc"],
+                                _polled_date(markers, cur["fetched_utc"])),
+                                cur["fetched_utc"]),
                             "inadmissible": False,
                             "detail": {"side": side, "removed": removed},
                         })
@@ -328,6 +348,10 @@ def _transaction_events(path) -> list:
         if row.get("poll"):
             continue
         seen = row["first_seen_utc"]
+        # No slate-date filter here: a transaction belongs to no game, and the
+        # store is deduplicated against its whole history rather than per date,
+        # so any earlier successful poll is a genuine lower bound on when we
+        # first could have seen it.
         start = _last_marker_before(markers, seen)
         events_out.append({
             "class": TRANSACTION_SEEN,
@@ -343,11 +367,14 @@ def _transaction_events(path) -> list:
 
 
 def _split_rows(path):
-    """One pass: sorted marker times, plus data rows grouped per game_pk."""
+    """One pass: sorted markers as (fetched_utc, game_date), plus data rows per game_pk.
+
+    `game_date` is None for markers written before the field existed.
+    """
     markers, by_game = [], {}
     for row in _read_rows(path):
         if row.get("poll"):
-            markers.append(row["fetched_utc"])
+            markers.append((row["fetched_utc"], row.get("game_date")))
         elif "game_pk" in row:
             by_game.setdefault(row["game_pk"], []).append(row)
     markers.sort()
@@ -356,29 +383,53 @@ def _split_rows(path):
     return markers, by_game
 
 
-def _last_marker_before(markers, end):
-    """The last successful poll strictly before `end`, or None.
+def _polled_date(markers, stamp):
+    """Which slate the poll at `stamp` was looking at, or None if unrecorded.
+
+    A change row is written by the same poll that wrote a marker with the SAME
+    fetched_utc, so that marker names the date the change was observed on.
+    """
+    for fetched_utc, game_date in markers:
+        if fetched_utc == stamp:
+            return game_date
+    return None
+
+
+def _last_marker_before(markers, end, game_date=None):
+    """The last successful poll of `game_date` strictly before `end`, or None.
 
     Strict: the poll that wrote the change row also wrote a marker with the
     SAME timestamp, and that poll saw the NEW state, so it cannot open the
     bracket. ISO-8601 UTC strings from one writer compare lexicographically.
+
+    A marker that polled a DIFFERENT slate date cannot open the bracket at
+    all. The poller's date rolls over at midnight Eastern mid-run, so the last
+    marker before the first poll of a new slate is a look at yesterday's games
+    -- it never saw this game's lineup, and letting it open the interval would
+    claim a window whose lower bound proves nothing about this game.
+
+    Markers with no `game_date` are GRANDFATHERED and still accepted: they were
+    written before the field existed, the stores are append-only evidence that
+    is never rewritten, and refusing them would silently downgrade months of
+    already-collected brackets to grade C on no evidence of an actual flip.
     """
     best = None
-    for marker in markers:
-        if marker < end:
-            best = marker
-        else:
+    for fetched_utc, marker_date in markers:
+        if fetched_utc >= end:
             break
+        if game_date and marker_date and marker_date != game_date:
+            continue
+        best = fetched_utc
     return best
 
 
-def _bracket_start(markers, end, floor):
+def _bracket_start(markers, end, floor, game_date=None):
     """Tight interval start: last look that still saw the old state.
 
     Falls back to the previous change row's own time (`floor`) when no marker
     qualifies -- still a fetch of ours, so still grade B, just wider.
     """
-    start = _last_marker_before(markers, end)
+    start = _last_marker_before(markers, end, game_date)
     return start if start is not None and start >= floor else floor
 
 
@@ -387,6 +438,19 @@ def _bracket_start(markers, end, floor):
 # ---------------------------------------------------------------------------
 
 _ABSENT = object()  # sentinel: "no previous row", never equal to any pair
+
+
+def _marker(fetched_utc, game_date=None) -> dict:
+    """One poll marker: when we looked, and which slate we looked at.
+
+    `game_date` is omitted rather than nulled when unknown, so a marker never
+    claims to have polled a date it did not; readers treat an absent field as
+    "unknown date" and grandfather it (see `_last_marker_before`).
+    """
+    marker = {"fetched_utc": fetched_utc, "poll": True}
+    if game_date:
+        marker["game_date"] = game_date
+    return marker
 
 
 def _append(path, rows) -> None:

@@ -461,6 +461,13 @@ def _settlement_closing(rec, snapshot_series):
     exact definition the grading path uses -- so a settlement and a grade can
     never disagree about what "closing" meant. When no such observation
     exists, closing is null and the reason says so explicitly.
+
+    The row also carries how stale that close was: `book_stale_seconds` (None
+    when the observation has no book_last_update -- unknown, never a
+    flattering zero) and the `book_stale` flag, so a settlement priced off a
+    book that had suspended its market before first pitch says so on its face.
+    Settlement rows written before this existed simply lack the two fields;
+    readers must read a missing field as "unknown", not as "fresh".
     """
     from src.pipeline import snapshots
 
@@ -477,6 +484,8 @@ def _settlement_closing(rec, snapshot_series):
         "book": observation.get("book"),
         "observed_utc": observation.get("observed_utc"),
         "book_last_update": observation.get("book_last_update"),
+        "book_stale_seconds": observation.get("book_stale_seconds"),
+        "book_stale": observation.get("book_stale"),
         "prices": observation.get("prices"),
     }, None
 

@@ -52,9 +52,10 @@ class WatchCase(unittest.TestCase):
         self.dir = Path(self.tmp.name)
         self.clock = Fixed()
 
-    def poll(self, probables=None, lineups=None, transactions=None):
+    def poll(self, probables=None, lineups=None, transactions=None,
+             game_date="2026-08-31"):
         return rosterwatch.poll(
-            game_date="2026-08-31", watch_dir=self.dir, clock=self.clock,
+            game_date=game_date, watch_dir=self.dir, clock=self.clock,
             fetch_probables=self._raise_or(probables, []),
             fetch_lineups=self._raise_or(lineups, {}),
             fetch_transactions=self._raise_or(transactions, []))
@@ -387,6 +388,100 @@ class TestWhichSlateIsToday(WatchCase):
         with self.assertRaises(rosterwatch.RosterWatchError):
             rosterwatch.poll(watch_dir=self.dir,
                              clock=lambda: datetime(2026, 8, 31, 1, 30))
+
+
+class TestMarkerDateStamps(WatchCase):
+    """A marker must say WHICH slate it looked at, or it proves nothing."""
+
+    def _markers(self, name):
+        return [r for r in self.rows(name, False) if r.get("poll")]
+
+    def test_every_marker_records_the_polled_date(self):
+        self.poll(probables=[_game(1, away=10, home=20)],
+                  lineups={1: {"away": _lineup(1, 2), "home": []}},
+                  transactions=[{"transaction_id": "t1"}])
+        for name in (rosterwatch.PROBABLES_FILE, rosterwatch.LINEUPS_FILE,
+                     rosterwatch.TRANSACTIONS_FILE):
+            markers = self._markers(name)
+            self.assertEqual(len(markers), 1, name)
+            self.assertEqual(markers[0]["game_date"], "2026-08-31", name)
+
+    def test_a_marker_from_another_slate_cannot_open_a_bracket(self):
+        # 23:50 ET-ish poll looks at the 30th and sees no lineup; the poller
+        # rolls over and the next poll looks at the 31st, where a lineup is
+        # already up. The earlier look never saw this game at all.
+        self.poll(lineups={}, game_date="2026-08-30")
+        self.clock.now = _ts(10)
+        self.poll(lineups={1: {"away": _lineup(1, 2, 3), "home": []}},
+                  game_date="2026-08-31")
+        posted = [e for e in rosterwatch.events(self.dir)
+                  if e["class"] == rosterwatch.LINEUP_POSTED]
+        self.assertEqual(len(posted), 1)
+        self.assertEqual(posted[0]["interval"], (None, _iso(10)))
+        self.assertTrue(posted[0]["inadmissible"])
+
+    def test_a_same_date_marker_still_opens_the_bracket(self):
+        self.poll(lineups={}, game_date="2026-08-31")
+        self.clock.now = _ts(10)
+        self.poll(lineups={1: {"away": _lineup(1, 2, 3), "home": []}},
+                  game_date="2026-08-31")
+        posted = [e for e in rosterwatch.events(self.dir)
+                  if e["class"] == rosterwatch.LINEUP_POSTED]
+        self.assertEqual(posted[0]["interval"], (_iso(9), _iso(10)))
+        self.assertFalse(posted[0]["inadmissible"])
+
+    def test_the_last_same_date_marker_wins_over_a_nearer_other_date(self):
+        # Order: 09:00 (31st), 09:30 (30th), 10:00 change on the 31st. The
+        # nearer marker looked at the wrong slate, so the 09:00 look stands.
+        self.poll(lineups={}, game_date="2026-08-31")
+        self.clock.now = _ts(9, 30)
+        self.poll(lineups={}, game_date="2026-08-30")
+        self.clock.now = _ts(10)
+        self.poll(lineups={1: {"away": _lineup(1, 2, 3), "home": []}},
+                  game_date="2026-08-31")
+        posted = [e for e in rosterwatch.events(self.dir)
+                  if e["class"] == rosterwatch.LINEUP_POSTED]
+        self.assertEqual(posted[0]["interval"], (_iso(9), _iso(10)))
+
+    def test_markers_written_before_the_date_stamp_are_grandfathered(self):
+        # Old rows are append-only evidence and are never rewritten. An undated
+        # marker keeps its previous meaning: a look, admissible as a start.
+        path = self.dir / rosterwatch.LINEUPS_FILE
+        path.write_text("\n".join(json.dumps(row, sort_keys=True) for row in [
+            {"fetched_utc": _iso(9), "poll": True},
+            {"fetched_utc": _iso(10), "poll": True},
+            {"fetched_utc": _iso(10), "game_pk": 1,
+             "away_lineup": [1, 2, 3], "home_lineup": []},
+        ]) + "\n", encoding="utf-8")
+        posted = [e for e in rosterwatch.events(self.dir)
+                  if e["class"] == rosterwatch.LINEUP_POSTED]
+        self.assertEqual(posted[0]["interval"], (_iso(9), _iso(10)))
+        self.assertFalse(posted[0]["inadmissible"])
+
+    def test_a_dated_event_still_accepts_an_undated_legacy_marker(self):
+        path = self.dir / rosterwatch.LINEUPS_FILE
+        path.write_text(json.dumps({"fetched_utc": _iso(9), "poll": True},
+                                   sort_keys=True) + "\n", encoding="utf-8")
+        self.clock.now = _ts(10)
+        self.poll(lineups={1: {"away": _lineup(1, 2, 3), "home": []}})
+        posted = [e for e in rosterwatch.events(self.dir)
+                  if e["class"] == rosterwatch.LINEUP_POSTED]
+        self.assertEqual(posted[0]["interval"], (_iso(9), _iso(10)))
+
+    def test_a_cross_date_scratch_falls_back_to_the_prior_change_row(self):
+        # A starter_scratch keeps a grade-B bracket even when the only nearer
+        # marker polled another slate: the previous change row is our own
+        # fetch of THIS game, so the interval widens honestly instead of
+        # borrowing another day's look.
+        self.poll(probables=[_game(1, away=10, home=20)])
+        self.clock.now = _ts(10)
+        self.poll(probables=[], game_date="2026-08-30")
+        self.clock.now = _ts(11)
+        self.poll(probables=[_game(1, away=99, home=20)])
+        scratches = [e for e in rosterwatch.events(self.dir)
+                     if e["class"] == rosterwatch.STARTER_SCRATCH]
+        self.assertEqual(scratches[0]["interval"], (_iso(9), _iso(11)))
+        self.assertFalse(scratches[0]["inadmissible"])
 
 
 if __name__ == "__main__":

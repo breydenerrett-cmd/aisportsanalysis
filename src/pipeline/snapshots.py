@@ -47,6 +47,20 @@ DEFAULT_MULTIBOOK_PATH = processed_path("odds_multibook.jsonl")
 # from being mistaken for the close.
 CLOSING_GRACE_SECONDS = 0
 
+# How long a book's own price may sit unchanged before the observation we call
+# "the close" is flagged as stale.
+#
+# WHY THIRTY MINUTES: books repost h2h prices continuously in the hours before
+# first pitch, and the feed refreshes them in minutes -- a gap of half an hour
+# in the last window before a game is not a quiet market, it is a market this
+# book has stopped making (suspended for a lineup scratch, a weather hold, or
+# a limit breach). Below roughly this length the gap is indistinguishable from
+# ordinary quiet, so a tighter threshold would flag honest closes; much longer
+# and a book that went dark before first pitch would still pass as live. The
+# flag changes NOTHING about which observation is the close -- the definition
+# is frozen -- it only records how much to trust the one we already picked.
+CLOSING_STALE_SECONDS = 30 * 60
+
 
 def _eastern():
     """MLB's official timezone, with a fallback for tzdata-less containers.
@@ -333,12 +347,27 @@ def multibook_quotes(event_id=None, away_team=None, home_team=None, date=None,
 # ---------------------------------------------------------------------------
 
 def closing_observation(series, commence_time=None):
-    """The last observation strictly BEFORE first pitch.
+    """The last observation strictly BEFORE first pitch, with its staleness recorded.
 
     Returns None when nothing was recorded before the game started. That is a real and common
     outcome -- a job that started mid-season has no closing line for earlier games -- and it
     must stay distinguishable from a captured close, because silently substituting the nearest
     available price would corrupt every CLV number computed from it.
+
+    The returned dict is a COPY of the chosen row with two added fields:
+
+      * `book_stale_seconds` -- how long the book's own price had already been
+        standing when we observed it (observed_utc minus book_last_update), or
+        None when the row carries no book_last_update. None is not zero: a row
+        from before the feed reported last_update simply does not know, and
+        inventing a fresh-looking 0 would be a fabricated fact.
+      * `book_stale` -- True when that age exceeds CLOSING_STALE_SECONDS, i.e.
+        the "closing line" came from a book that had likely stopped quoting.
+
+    WHICH observation is the close does not change -- that definition is frozen,
+    and every CLV number already computed stays reproducible. A suspended book
+    used to supply a close indistinguishable from a live one; now the row says
+    so, and callers can weight or exclude it with the evidence in hand.
     """
     if not series:
         return None
@@ -364,7 +393,32 @@ def closing_observation(series, commence_time=None):
     if not before:
         return None
     before.sort(key=lambda pair: pair[0])
-    return before[-1][1]
+    return _with_staleness(before[-1][1])
+
+
+def _with_staleness(row) -> dict:
+    """Copy of `row` carrying `book_stale_seconds` and `book_stale`.
+
+    A copy, not the row itself: the series belongs to the append-only store's
+    reader and must keep reading back exactly what was written.
+
+    A book_last_update that is AHEAD of our observation (clock skew between the
+    book and us) yields a negative age, which is recorded as-is rather than
+    clamped -- skew is evidence about the feed, and hiding it behind a zero
+    would make an unexplained reading look like a perfect one.
+    """
+    closing = dict(row)
+    age = None
+    stamped = row.get("book_last_update")
+    observed = row.get("observed_utc")
+    if stamped and observed:
+        try:
+            age = (_parse(observed) - _parse(stamped)).total_seconds()
+        except SnapshotError:
+            age = None  # unparseable: unknown, never guessed
+    closing["book_stale_seconds"] = age
+    closing["book_stale"] = age is not None and age > CLOSING_STALE_SECONDS
+    return closing
 
 
 def movement(series, side: str = "home_price") -> dict:

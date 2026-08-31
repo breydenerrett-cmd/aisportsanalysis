@@ -345,6 +345,39 @@ class TestSettlementClosing(unittest.TestCase):
         self.assertEqual(row["closing"]["prices"]["away_price"], 145)
         self.assertNotIn("closing_reason", row)
 
+    def test_the_settlement_row_carries_how_stale_the_close_was(self):
+        series = self._series()
+        key = ("Houston Astros", "New York Yankees", "2026-08-30")
+        series[key][0]["book_last_update"] = "2026-08-30T21:40:00+00:00"
+        closing, reason = cli._settlement_closing(self._rec(), series)
+        self.assertTrue(closing["book_stale"])
+        self.assertEqual(closing["book_stale_seconds"], 4200.0)
+        ledger.settle(1, {"winner": "NYY"}, closing=closing,
+                      closing_reason=reason, path=self.path)
+        row = ledger.settlements(path=self.path)[1]
+        self.assertTrue(row["closing"]["book_stale"])
+
+    def test_a_close_with_no_book_stamp_reports_unknown_staleness(self):
+        series = self._series()
+        key = ("Houston Astros", "New York Yankees", "2026-08-30")
+        series[key][0]["book_last_update"] = None
+        closing, _ = cli._settlement_closing(self._rec(), series)
+        self.assertIsNone(closing["book_stale_seconds"])
+        self.assertFalse(closing["book_stale"])
+
+    def test_settlement_rows_written_before_staleness_existed_still_read(self):
+        # Old evidence is never rewritten, so readers meet closings with no
+        # staleness fields; missing must read as "unknown", not crash.
+        legacy = {"market": "h2h", "book": "fanduel",
+                  "observed_utc": "2026-08-30T22:50:00+00:00",
+                  "book_last_update": "2026-08-30T22:49:00+00:00",
+                  "prices": {"home_price": -170, "away_price": 145}}
+        ledger.settle(1, {"winner": "NYY"}, closing=legacy, path=self.path)
+        row = ledger.settlements(path=self.path)[1]["closing"]
+        self.assertNotIn("book_stale", row)
+        self.assertIsNone(row.get("book_stale_seconds"))
+        self.assertEqual(row["prices"]["home_price"], -170)
+
     def test_no_snapshots_at_all_yields_null_close_with_a_reason(self):
         closing, reason = cli._settlement_closing(self._rec(), {})
         self.assertIsNone(closing)

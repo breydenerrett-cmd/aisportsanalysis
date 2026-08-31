@@ -184,6 +184,79 @@ class TestClosingObservation(unittest.TestCase):
         self.assertIsNone(snapshots.closing_observation(series))
 
 
+class TestClosingStaleness(unittest.TestCase):
+    """The close is still the close; the row now says how stale the book was."""
+
+    @staticmethod
+    def _series(observed, last_update):
+        row = observation(observed)
+        row["book_last_update"] = last_update
+        return [row]
+
+    def test_a_book_that_stopped_quoting_is_flagged_stale(self):
+        # Suspended at 22:10, first pitch 23:05: the 22:55 observation is still
+        # the close, but it is a 45-minute-old price and must say so.
+        series = self._series("2026-08-27T22:55:00+00:00",
+                              "2026-08-27T22:10:00+00:00")
+        closing = snapshots.closing_observation(series)
+        self.assertEqual(closing["book_stale_seconds"], 2700.0)
+        self.assertTrue(closing["book_stale"])
+
+    def test_a_live_book_is_not_flagged(self):
+        series = self._series("2026-08-27T22:55:00+00:00",
+                              "2026-08-27T22:53:00+00:00")
+        closing = snapshots.closing_observation(series)
+        self.assertEqual(closing["book_stale_seconds"], 120.0)
+        self.assertFalse(closing["book_stale"])
+
+    def test_exactly_at_the_threshold_is_not_yet_stale(self):
+        series = self._series("2026-08-27T22:55:00+00:00",
+                              "2026-08-27T22:25:00+00:00")
+        closing = snapshots.closing_observation(series)
+        self.assertEqual(closing["book_stale_seconds"],
+                         float(snapshots.CLOSING_STALE_SECONDS))
+        self.assertFalse(closing["book_stale"])
+
+    def test_absent_book_last_update_is_unknown_not_zero(self):
+        # The flattering answer would be 0 -- "perfectly fresh". We do not know,
+        # and a fabricated freshness is worse than an admitted gap.
+        series = self._series("2026-08-27T22:55:00+00:00", None)
+        closing = snapshots.closing_observation(series)
+        self.assertIsNone(closing["book_stale_seconds"])
+        self.assertFalse(closing["book_stale"])
+
+    def test_unparseable_book_last_update_is_unknown_not_a_guess(self):
+        series = self._series("2026-08-27T22:55:00+00:00", "not a timestamp")
+        closing = snapshots.closing_observation(series)
+        self.assertIsNone(closing["book_stale_seconds"])
+        self.assertFalse(closing["book_stale"])
+
+    def test_clock_skew_is_recorded_as_is_not_clamped(self):
+        series = self._series("2026-08-27T22:55:00+00:00",
+                              "2026-08-27T22:56:00+00:00")
+        closing = snapshots.closing_observation(series)
+        self.assertEqual(closing["book_stale_seconds"], -60.0)
+        self.assertFalse(closing["book_stale"])
+
+    def test_which_observation_is_the_close_does_not_change(self):
+        # The frozen definition: last observation strictly before first pitch,
+        # stale or not. Flagging must never re-pick the close.
+        stale = observation("2026-08-27T22:55:00+00:00", home_price=-150)
+        stale["book_last_update"] = "2026-08-27T20:00:00+00:00"
+        fresh = observation("2026-08-27T22:00:00+00:00", home_price=-145)
+        closing = snapshots.closing_observation([fresh, stale])
+        self.assertEqual(closing["prices"]["home_price"], -150)
+        self.assertTrue(closing["book_stale"])
+
+    def test_the_stored_row_is_not_mutated(self):
+        # The store is append-only evidence; reading it must not edit it.
+        series = self._series("2026-08-27T22:55:00+00:00",
+                              "2026-08-27T22:10:00+00:00")
+        snapshots.closing_observation(series)
+        self.assertNotIn("book_stale", series[0])
+        self.assertNotIn("book_stale_seconds", series[0])
+
+
 class TestMovement(unittest.TestCase):
     def test_reports_opening_closing_and_drift(self):
         series = [
