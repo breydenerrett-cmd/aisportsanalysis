@@ -1,6 +1,45 @@
 # COMMAND CENTER
 
 Operational snapshot. Updated by the orchestrator at every integration point.
+Last update: 2026-08-31 22:10Z. Suite: 2,113 green. Credits: ~52,990.
+
+## PAID BETA LAUNCH SCOREBOARD (day 0 = 2026-08-31)
+TARGET: private alpha ~4-7d · invited alpha ~7-12d · PAID BETA ~10-18d · public V1 ~3-5wk
+EARLIEST PLAUSIBLE paid beta: 2026-09-10 · CURRENT BEST ESTIMATE: 2026-09-12..14
+SLIP RISKS (ranked): 1) design-cycle latency (Brey approval is one gate -- kept
+to a single decision item); 2) external accounts (hosting, Stripe, auth
+provider are Brey-owned purchases -- decision packet in flight); 3) FastAPI
+dependency install through the egress proxy (unverified -- foundation worker
+probes it today, stdlib fallback documented).
+
+### PAID_BETA_CRITICAL_PATH (canonical; nothing enters casually)
+DONE: A capability reconciliation · pricing-calculator review (calculator
+respecified honestly) · extraction (renderer derives nothing) · Bet Check
+domain skeleton.
+IN PROGRESS (this wave): B contracts · C SAAS_IMPLEMENTATION_PLAN ·
+app/api foundation (non-visual) · auth+billing+deploy decision packet ·
+Y banned-language automated check.
+GATED ON DESIGN: D /design three directions -> E Brey approval -> F design
+system -> G-M customer screens.
+THEN: N auth · O user state · P billing · Q one-click cancel · R deploy ·
+S monitoring · T mobile · U stale/partial UX · V security review ·
+W accessibility · X billing QA · Z release check.
+NOT ON THE PATH (deferred to V1+): props UI, other sports, native app,
+community, sportsbook sync, Evolution Lab UI, public forward ledger, deep
+personalization, full alerts, SEO/content build.
+
+### NEXT 24H LAUNCH TASKS
+1. Contracts locked (Milestone 1) -- exit: six contracts + evidence
+   translation + market-semantics separation, all as code with tests.
+2. Implementation plan reconciled from architecture + handoff + capability
+   table.
+3. api/ foundation: package boundary, dependency probe, TODAY served as
+   JSON from real briefing entries (no visual work).
+4. Auth/billing/deploy decision packet to Brey (accounts and spend are his).
+5. /design mission brief prepared so the first artboard pass starts the
+   moment contracts lock.
+
+## PHASE LOG
 Last update: 2026-08-31 21:20Z. Suite: 1,959 green. Credits: ~53,000.
 
 ## PROJECT PHASE CHANGE (21:35Z)
