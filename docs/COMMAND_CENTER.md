@@ -1,7 +1,7 @@
 # COMMAND CENTER
 
 Operational snapshot. Updated by the orchestrator at every integration point.
-Last update: 2026-08-31 22:10Z. Suite: 2,113 green. Credits: ~52,990.
+Last update: 2026-08-31 22:30Z. Suite: 2,201 green. Credits: ~52,990.
 
 ## PAID BETA LAUNCH SCOREBOARD (day 0 = 2026-08-31)
 TARGET: private alpha ~4-7d · invited alpha ~7-12d · PAID BETA ~10-18d · public V1 ~3-5wk
@@ -16,9 +16,13 @@ probes it today, stdlib fallback documented).
 DONE: A capability reconciliation · pricing-calculator review (calculator
 respecified honestly) · extraction (renderer derives nothing) · Bet Check
 domain skeleton.
-IN PROGRESS (this wave): B contracts · C SAAS_IMPLEMENTATION_PLAN ·
-app/api foundation (non-visual) · auth+billing+deploy decision packet ·
-Y banned-language automated check.
+DONE 22:30Z: B contracts LOCKED (Milestone 1) · C implementation plan ·
+api/ foundation (FastAPI CONFIRMED through proxy -- slip risk 3 RETIRED) ·
+LAUNCH_DECISIONS.md packet ready for Brey · Y banned-language tripwire live
+(caught three wordings on day one, all fixed).
+IN PROGRESS: D /design first artboard pass (three Graphite Terminal
+directions) -- THE CRITICAL PATH IS NOW THE DESIGN GATE. Phase 2B real sweep
+computing (watcher armed).
 GATED ON DESIGN: D /design three directions -> E Brey approval -> F design
 system -> G-M customer screens.
 THEN: N auth · O user state · P billing · Q one-click cancel · R deploy ·
