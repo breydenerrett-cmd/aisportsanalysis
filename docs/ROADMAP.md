@@ -25,6 +25,90 @@ losers always reported; credits (53K) spent only deliberately, probe first.
 
 ---
 
+## AUTONOMOUS CONTROL (permanent operating model, set 2026-08-31)
+
+This project is a CONTINUOUS autonomous engineering + research program. A
+completed milestone — a family run, a report, a green suite, a shipped
+feature — is a CHECKPOINT, never an end condition. The standing loop:
+
+ASSESS → SELECT HIGHEST-VALUE UNBLOCKED TASK → EXECUTE → VERIFY → TEST →
+COMMIT/PUSH → UPDATE ROADMAP/STATE → SELECT NEXT TASK → CONTINUE.
+
+Never end a session with "recommended next move: X" — execute X. Checkpoint
+reports are given WHILE working, not instead of working. "Continue
+autonomous work" means: run this loop.
+
+**The only hard stops:** (1) a stage explicitly gated on Brey's approval;
+(2) anything touching sealed 2026-01-01→08-27; (3) irreversible/destructive
+decisions; (4) spend beyond the authorized budget (floor 5,000 credits;
+~132/day dense grid approved; probes small and deliberate); (5) all
+meaningful work genuinely blocked; (6) the session physically cannot
+continue. Everything else: decide and continue. A blocked task is
+documented, marked, and routed around.
+
+**Priority principle:** information gain × project value ÷ wall-clock ÷ API
+cost. Not lines of code, detector count, commit count, or document volume.
+Attack the current largest bottleneck (data, market coverage, event
+timestamps, power, cost, automation, UX, idea quality) — not the most
+familiar subsystem. Forward data overrides reconstructible work, always.
+
+**Lanes** (parallelize when useful; never idle waiting on I/O):
+A live/forward evidence · B research · C data acquisition · D
+Analyzer/product · E reliability/testing · F next-family preparation.
+
+**Done standard:** production-path integrated, tested, edge cases and
+failures handled, point-in-time correct, docs updated, honest terminology,
+regression-protected, committed and pushed. Fewer polished units over piles
+of 80% experiments.
+
+**Research families** run the tested machine: coverage audit → mechanism →
+pre-register → freeze → batch run → replication → FDR → automatic
+falsification (battery RULES_VERSION 2.0.0, frozen) → publish all results →
+archive → next family. Zero survivors is a result, not a stop condition.
+
+### CURRENT TASK
+V3 information-timing: timestamp-quality audit, then pre-registration, then
+event-study infrastructure — with the market-depth probe and Analyzer
+matchup depth running in parallel lanes.
+
+### READY QUEUE (refill to ≥3 whenever an item completes)
+1. Protect/run due forward capture (standing, lane A — always first).
+2. V3 timestamp-quality audit (lane B): grade every event source A–D;
+   never treat transaction DATE as TIME.
+3. V3 pre-registration (lane B): freeze event classes, windows, move
+   definitions, stale/executable definitions, family, falsification —
+   before reading any event-response result.
+4. Market-depth probe (lane C): F5 ML/totals/RL, alternate lines, pitcher
+   K props — coverage, books, timestamps, cost. Small probes; measure
+   value; then decide.
+5. Event-triggered collection policy (lane C): baseline slate snapshots +
+   dense event windows + true-close capture; maximize future research
+   options per credit.
+6. Cross-book lead/lag measurement infrastructure (lane B/F).
+7. Analyzer matchup depth (lane D): Jacob-style unit-vs-weakness
+   decomposition from the rebuilt pitch store.
+8. Forward-ledger reliability audit (lane E).
+9. Public projection benchmark (lane B, when higher-priority blocked).
+10. Next-family coverage audit (lane F).
+
+### FUTURE BACKLOG
+V3 falsification battery pass · F5 / F5-totals research families · player-
+prop feasibility · pitcher-K market research · public projection benchmark
+· any-matchup mode · automated research summaries · event relevance scoring
+· market availability forecasting · true-close infrastructure · line-
+shopping engine (price improvement ONLY — never sold as EV) · V5/V6 family
+design · literature microstructure hypotheses · automation/reliability ·
+data-quality audits · performance · docs/handoff · product polish after
+function. Discover something higher-value? Add it here yourself.
+
+### HARD APPROVAL GATES
+Sealed 2026 evaluation · Ranker Engine 2 activation (all four unlock
+conditions + Brey sign-off) · real-money anything (never) · large
+historical data purchases · any spend program beyond the approved dense
+grid and small probes.
+
+---
+
 ## Stage 1 — Historical data integrity / point-in-time reconstruction
 **Objective:** every detector input reconstructible as of a past date, or
 formally excluded.
