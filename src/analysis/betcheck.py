@@ -37,6 +37,25 @@ context against both the de-vigged consensus and the best number on the
 board, what-changed events when the dossier carries any, sample-quality
 warnings for anything dropped for lacking a sample, and a bottom line that
 says support, opposition, or "does not distinguish" -- never a prediction.
+
+THIRD STAGE -- THE CONTRACT
+----------------------------
+`build_contract(date, away_club, home_club, side, american_price, ...)` is
+the paid-beta API's entry point (docs/SAAS_APPLICATION_ARCHITECTURE.md
+section 3.4). It takes the STRUCTURED bet the API's request model has
+already validated -- a club pair, `side` in {away, home}, an American price
+-- rather than a free-text string, and returns a
+`src.analysis.contracts.BetCheckContract`: the same fixed skeleton every
+other customer surface returns, so an omission is visible rather than
+absorbed into a looser dict shape. It does not call `check()` (that
+function's job is the free-text loop; this one is the structured one) but it
+reuses the same building blocks -- `prices.snapshot` for market context,
+`Finding.side` for the for/against partition, `synthesis.sample_size` and
+`synthesis.EVIDENCE_LABELS` for the sample-and-label pairing -- because the
+underlying facts do not change with the input shape, only their container
+does. A missing board, a thin board, or a side with no priceable quote all
+come back as an explicit "market context unavailable" statement folded into
+`bottom_line` -- never a fabricated price, never a defaulted zero.
 """
 
 from __future__ import annotations
@@ -44,12 +63,16 @@ from __future__ import annotations
 import re
 
 import src.analysis as analysis
+from src.analysis import gamepayload
 from src.analysis import prices as prices_mod
+from src.analysis import relevance as relevance_mod
 from src.analysis import synthesis as synthesis_mod
 from src.core import odds as odds_math
 from src.data import parks
 from src.detect import base as detect
 from src.pipeline import slate as slate_mod
+
+from src.analysis import contracts as c
 
 # ---------------------------------------------------------------------------
 # Parsing
@@ -426,3 +449,290 @@ def check(bet, dossier, board=None, findings=None) -> dict:
         "what_changed": dossier.get("what_changed"),
         "bottom_line": _bottom_line(supporting, opposing),
     }
+
+
+# ---------------------------------------------------------------------------
+# build_contract(): the structured, paid-beta path -> BetCheckContract
+# ---------------------------------------------------------------------------
+
+def _claim_from_finding(finding) -> c.Claim:
+    """One Finding as a customer Claim.
+
+    A claim only carries `value` when it can also carry a positive
+    `sample_n` and a non-empty `sample_unit` -- Rule S, enforced by the
+    dataclass itself (Claim.__post_init__). `sample_unit` is the finding's
+    own sample string verbatim ("8 hitters, 340 plate appearances") rather
+    than a short unit word: that string IS the sample line the product
+    promises, not a label for one.
+    """
+    sample_n = synthesis_mod.sample_size(finding.sample)
+    quantitative = bool(finding.sample) and finding.value is not None \
+        and sample_n is not None and sample_n > 0
+    return c.Claim(
+        statement=finding.claim,
+        value=finding.value if quantitative else None,
+        sample_n=sample_n if quantitative else None,
+        sample_unit=finding.sample if quantitative else None,
+        evidence_label=finding.evidence,
+    )
+
+
+def _cents_delta(stated_price, market_price):
+    """The stated price minus the market's best price, in American-odds
+    "cents" -- the sportsbook convention of comparing two same-side lines
+    directly (e.g. -110 vs -105 is 5 cents). Mixed-sign prices are not
+    directly comparable this way (the scale is not linear across the
+    +100/-100 boundary), so this returns None rather than a misleading raw
+    subtraction; `beats_consensus`-style probability comparisons already
+    cover that case in `_market_facts`.
+    """
+    if stated_price is None or market_price is None:
+        return None
+    if (stated_price > 0) != (market_price > 0):
+        return None
+    return stated_price - market_price
+
+
+def _market_facts(side, american_price, board) -> dict:
+    """Best available price, market-implied consensus, price improvement and
+    whether the stated price sits below the market -- or an explicit
+    unavailable reason. Never a default: a missing board, a thin board, or a
+    side with no priceable quote all come back with every price field None
+    and a stated reason, exactly the "never fabricate" rule §4.11 states for
+    a board without its capture instant.
+    """
+    quotes = _board_quotes(board)
+    observed_utc = board.get("observed_utc") if isinstance(board, dict) else None
+    unavailable = dict(best_available_price=None, market_consensus=None,
+                       your_price_below_market=None, price_improvement=None,
+                       cents_delta=None)
+
+    if not quotes:
+        return dict(unavailable, reason="no multi-book board provided for this game")
+
+    snapshot = prices_mod.snapshot(quotes)
+    if "skipped" in snapshot:
+        return dict(unavailable, reason=snapshot["skipped"])
+    if not observed_utc:
+        return dict(unavailable, reason=("the board carries no capture instant; "
+                                         "a board without one is not a board"))
+
+    detail = (snapshot.get("sides") or {}).get(side) or {}
+    consensus_probability = detail.get("consensus_probability")
+    if detail.get("skipped") or consensus_probability is None:
+        return dict(unavailable, reason=(detail.get("skipped")
+                                         or "no priceable consensus for this side"))
+
+    best_price = c.QuotedPrice(book=detail.get("best_book"),
+                               american_price=detail.get("best_price"),
+                               observed_utc=observed_utc)
+    consensus = c.MarketImpliedConsensus(
+        implied_probability=consensus_probability,
+        books=(snapshot.get("dispersion") or {}).get("books"),
+        observed_utc=observed_utc)
+    improvement = c.PriceImprovement(
+        best=best_price, consensus=consensus,
+        improvement_points=detail.get("improvement_points"),
+        improvement_return_pct=detail.get("improvement_return_pct"))
+
+    try:
+        stated_implied = odds_math.american_to_probability(american_price)
+    except odds_math.OddsError:
+        stated_implied = None
+    your_price_below_market = (stated_implied < consensus_probability
+                               if stated_implied is not None else None)
+
+    return dict(best_available_price=best_price, market_consensus=consensus,
+               your_price_below_market=your_price_below_market,
+               price_improvement=improvement,
+               cents_delta=_cents_delta(american_price, detail.get("best_price")),
+               reason=None)
+
+
+def _evidence_status(claims) -> "str | None":
+    """The single highest customer-evidence label across every surviving
+    claim, or None when there are none to grade -- never a fabricated
+    default badge."""
+    if not claims:
+        return None
+    best = max(claims, key=lambda k: c.customer_evidence(k.evidence_label).tier)
+    return c.customer_evidence(best.evidence_label).label
+
+
+def _historical_support(support_claims) -> "str | None":
+    """Weak/Moderate/Strong from the best evidence tier backing the stated
+    side, or None with no supporting claims at all -- the contract only
+    accepts those three words or None (BetCheckContract.__post_init__)."""
+    if not support_claims:
+        return None
+    top_tier = max(c.customer_evidence(k.evidence_label).tier
+                   for k in support_claims)
+    if top_tier >= 4:
+        return "Strong"
+    if top_tier >= 3:
+        return "Moderate"
+    return "Weak"
+
+
+def _bottom_line_text(support_n, counter_n, market) -> str:
+    """One sentence on the count split, one on price (or its absence), then
+    the permanent no-edge record -- composed from parts, never a single
+    hand-written verdict string."""
+    if support_n == 0 and counter_n == 0:
+        lead = ("The evidence gathered for this game does not distinguish "
+                "for or against this bet.")
+    elif support_n > counter_n:
+        lead = (f"{support_n} finding(s) point toward this side, against "
+               f"{counter_n} pointing away.")
+    elif counter_n > support_n:
+        lead = (f"{counter_n} finding(s) point away from this side, against "
+               f"{support_n} pointing toward it.")
+    else:
+        lead = (f"{support_n} finding(s) point each way; the evidence does "
+               "not distinguish for or against this bet.")
+
+    if market["reason"] is not None:
+        price_clause = f" Market context is unavailable: {market['reason']}."
+    else:
+        cents = market["cents_delta"]
+        best = market["best_available_price"]
+        if cents is None or best is None:
+            price_clause = (" The stated price sits against a de-vigged "
+                            "consensus below -- line-shopping value, not a "
+                            "prediction.")
+        elif cents > 0:
+            price_clause = (f" The stated price is {cents} cents worse than "
+                           f"the best available {_fmt_price(best.american_price)} "
+                           "-- line-shopping value, not a prediction.")
+        elif cents < 0:
+            price_clause = (f" The stated price is {abs(cents)} cents better "
+                           f"than the best available "
+                           f"{_fmt_price(best.american_price)} -- "
+                           "line-shopping value, not a prediction.")
+        else:
+            price_clause = (" The stated price matches the best available "
+                            "price on the board.")
+
+    return lead + price_clause + " " + _NO_EDGE_DISCLAIMER
+
+
+def _change_item(event: dict) -> "c.ChangeItem | None":
+    """One roster-change event as a customer ChangeItem, or None when it has
+    no headline -- a blank headline is not a fabricated one."""
+    headline = event.get("headline") or event.get("summary")
+    if not headline:
+        return None
+    tier = event.get("tier")
+    if tier not in (relevance_mod.HIGH, relevance_mod.MEDIUM,
+                    relevance_mod.LOW, relevance_mod.UNKNOWN):
+        tier = relevance_mod.UNKNOWN
+    return c.ChangeItem(seen_utc=event.get("seen_utc") or "",
+                        category=event.get("category") or event.get("class")
+                                 or "roster",
+                        headline=headline, tier=tier,
+                        game_id=event.get("game_id"))
+
+
+def build_contract(date, away_club, home_club, side, american_price, *,
+                   board=None, findings=None, what_changed=None,
+                   game_pk=None, game_number=None, venue=None,
+                   start_time_utc=None) -> c.BetCheckContract:
+    """The Bet Check API's whole engine step: a structured bet in, a
+    `BetCheckContract` out.
+
+    `date`/`away_club`/`home_club` identify the game (clubs are run through
+    `parks.canonical_team`, the same alias table the price boards use, so
+    "ATH" and "OAK" name the same game here that they do everywhere else).
+    `side` is `"away"` or `"home"` -- the API layer has already resolved the
+    caller's team name to a side before this is called, so there is no
+    parsing or guessing left to do here. `american_price` is the caller's
+    stated price for that side.
+
+    `board` is the game's multi-book board -- a `{"quotes": [...],
+    "observed_utc": ...}` dict (`dossier.get("multibook_board")`, or
+    `src.analysis.prices.boards_by_matchup()[...]`), or a bare list of
+    quotes (in which case there is no capture instant and market context is
+    reported unavailable rather than guessed). `findings` is the list of
+    `Finding`s already computed for this game (`detect.run_all(dossier)`,
+    or whatever a caller already has); passing it in avoids recomputing
+    detectors this function has no dossier to run them against.
+    `what_changed` is an optional list of raw roster-event dicts.
+
+    NO MODEL WIN PROBABILITY is computed, read, or threaded through here --
+    the market context is priced entirely from the board
+    (`prices.snapshot`), never from the uncalibrated model.
+    """
+    if side not in (detect.AWAY, detect.HOME):
+        raise ValueError(f"side must be 'away' or 'home', got {side!r}")
+
+    away = parks.canonical_team(away_club or "")
+    home = parks.canonical_team(home_club or "")
+    # canonical_team passes an unrecognised token straight through rather
+    # than raising, so an unknown club must be checked against the park
+    # table explicitly -- the same check _find_teams uses above -- or a
+    # typo'd club would silently become "the game against itself" instead
+    # of a refusal.
+    if away not in parks.PARKS or home not in parks.PARKS:
+        raise ValueError(
+            "away_club and home_club must each name a known MLB club")
+    team = away if side == detect.AWAY else home
+    opposite_side = detect.HOME if side == detect.AWAY else detect.AWAY
+
+    game_ref = c.GameRef(
+        game_id=gamepayload.game_id({"away_team": away, "home_team": home,
+                                     "date": date, "game_number": game_number,
+                                     "game_pk": game_pk}),
+        away=away, home=home, date=date, start_time_utc=start_time_utc,
+        venue=venue)
+
+    query = c.BetQuery(raw=f"{team} h2h {_fmt_price(american_price)}",
+                       parsed=True, team=team, side=side, market="h2h",
+                       price=american_price)
+
+    support_claims, counter_claims = [], []
+    strongest_claim = weakest_claim = None
+    strongest_surprise = weakest_surprise = None
+    for finding in findings or []:
+        # CONTEXT findings are shown but never ranked (detect.base.rank) --
+        # true and relevant, not evidence for or against a side. Same
+        # exclusion `check()` makes above.
+        if getattr(finding, "kind", None) == detect.CONTEXT:
+            continue
+        if finding.side not in (side, opposite_side):
+            continue
+        claim_obj = _claim_from_finding(finding)
+        if finding.side == side:
+            support_claims.append(claim_obj)
+            if finding.surprise is not None and (
+                    strongest_surprise is None
+                    or finding.surprise > strongest_surprise):
+                strongest_claim, strongest_surprise = finding.claim, finding.surprise
+        else:
+            counter_claims.append(claim_obj)
+            if finding.surprise is not None and (
+                    weakest_surprise is None
+                    or finding.surprise > weakest_surprise):
+                weakest_claim, weakest_surprise = finding.claim, finding.surprise
+
+    market = _market_facts(side, american_price, board)
+    changes = tuple(item for item in
+                    (_change_item(ev) for ev in (what_changed or []))
+                    if item is not None)
+
+    return c.BetCheckContract(
+        query=query,
+        game=game_ref,
+        thesis_support=tuple(support_claims),
+        counterargument=tuple(counter_claims),
+        best_available_price=market["best_available_price"],
+        market_consensus=market["market_consensus"],
+        your_price_below_market=market["your_price_below_market"],
+        what_changed=changes,
+        strongest_reason=strongest_claim,
+        weakest_reason=weakest_claim,
+        historical_support=_historical_support(support_claims),
+        evidence_status=_evidence_status(support_claims + counter_claims),
+        bottom_line=_bottom_line_text(len(support_claims), len(counter_claims),
+                                      market),
+        price_improvement=market["price_improvement"],
+    )
