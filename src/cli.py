@@ -1150,8 +1150,10 @@ def cmd_dense(args) -> int:
         print(f"  {cost['credits_per_month']} a month if it ran every day")
         return EXIT_OK
 
+    from src.pipeline import rosterwatch
     result = dense.run(captures=args.captures, interval_minutes=args.interval,
-                       window_minutes=args.window)
+                       window_minutes=args.window,
+                       poll_hook=rosterwatch.poll)
     if result.get("skipped"):
         print(f"skipped: {result['skipped']}")
         if result.get("credits_remaining") is not None:

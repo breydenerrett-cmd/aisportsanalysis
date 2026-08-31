@@ -147,7 +147,7 @@ def _start_of(game):
 
 def run(env=None, captures=CAPTURES_PER_RUN, interval_minutes=INTERVAL_MINUTES,
         window_minutes=WINDOW_MINUTES, credit_floor=CREDIT_FLOOR,
-        now=None, sleep=time.sleep) -> dict:
+        now=None, sleep=time.sleep, poll_hook=None) -> dict:
     """Take a spaced series of captures, but only while a game is approaching.
 
     The window is re-checked before every capture rather than once at the top.
@@ -191,6 +191,17 @@ def run(env=None, captures=CAPTURES_PER_RUN, interval_minutes=INTERVAL_MINUTES,
 
         captured = snapshots.capture(env=env)
         capture_moments.append(moment)
+        # Piggyback the caller's poll hook (cmd_dense passes
+        # rosterwatch.poll) on every capture moment: the free MLB endpoints
+        # cost nothing, and polling here tightens the V3 event brackets to
+        # the dense spacing exactly when games are approaching -- which is
+        # when lineups post and scratches happen. A poll failure never
+        # blocks the capture that pays for this run.
+        if poll_hook is not None:
+            try:
+                poll_hook()
+            except Exception:  # noqa: BLE001 -- capture outlives the poll
+                pass
         results.append({
             "at": moment.isoformat().replace("+00:00", "Z"),
             "games_in_window": approaching,
