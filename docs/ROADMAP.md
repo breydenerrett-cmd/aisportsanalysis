@@ -96,6 +96,19 @@ forward-series review (~2 weeks of closes) · season-end handling (slate
 empties late September; define off-season capture posture) · lead/lag
 leadership stability read once event counts justify it.
 
+**EVOLUTION LAB (proposed 2026-08-31, assessed, NOT started).**
+Brey proposed a historical replay engine driving an evolving population of
+virtual strategies. Assessment in docs/EVOLUTION_LAB_ASSESSMENT.md: the
+replay engine is worth building; naive evolutionary search over 4,859
+discovery games would manufacture false discoveries faster than we could
+refute them. Reframed so the lab's primary product is the NOISE CEILING —
+the same search run over placebo worlds — with CLV-primary fitness,
+execution frozen during predictive search, and mechanism directions that
+evolution may not flip. Phases 0–3 (feasibility, replay engine, enumerable
+space + placebo harness, regularised model vs the close) come first;
+evolution is built only if the real maximum beats the placebo ceiling.
+AWAITING BREY on the 2024 holdout question before Phase 2.
+
 **NEXT 90 DAYS — evidence branches:**
 - PATH A (V3 shows a timing edge): falsification battery on it → forward
   shadow ledger ≥300 selections → the four Ranker unlock conditions →
@@ -109,18 +122,36 @@ leadership stability read once event counts justify it.
   sealed-2026 one-shot request to Brey (HARD GATE, one evaluation, ever).
 
 ### CURRENT TASK
-Steady state: forward capture and V3 event accumulation run on the hourly
-trigger; the daily loop maintains the ledger. Build lanes are clear — the
-next research read happens when a V3 class reaches its 30-event floor.
+Repairing forward evidence. The 2026-08-31 resume audit found the capture
+lane quietly broken in three places at once (see FORWARD EVIDENCE AUDIT
+below): the F5 close store had never been written, every accumulated V3
+event was unmappable, and the odds captures were gitignored. Nothing about
+"accumulating nicely" was true. Repair before any new research direction.
+
+### FORWARD EVIDENCE AUDIT (2026-08-31, the lesson)
+A monitor that reports health is not the same as health. Three failures ran
+concurrently for days and every routine check passed:
+1. `data/processed/*` was gitignored, so five days of h2h snapshots and
+   every multi-book board lived only on one ephemeral container's disk —
+   one recycle from total loss. Fixed 56b8ccf: forward captures are now
+   tracked as evidence, for the reason `evidence/` already states.
+2. `f5_close.jsonl` never existed. The market-depth lane believed it was
+   accumulating and was accumulating nothing.
+3. V3 held 33 admissible events and 0 measurable ones — transactions with
+   no team recorded, lineup events with no game to map to.
+STANDING RULE ADDED: a store that should be growing must be checked for
+ROWS, not for the absence of errors. Silence is not success.
 
 ### READY QUEUE (refill to ≥3 whenever an item completes)
 1. Protect/run due forward capture (standing, lane A — always first).
 2. V3 first class-floor analysis when any class reaches 30 admitted
-   events (lane B; run `python3 -m src.cli timing` to check accumulation;
-   do not read early).
+   events AND those events are measurable (lane B; run
+   `python3 -m src.cli timing`; do not read early). Mappability is now a
+   precondition, not an assumption.
 3. F5 forward-series review once ~2 weeks of F5 closes exist in
    data/processed/f5_close.jsonl (lane F: measure coverage/books before
    designing any F5 family; historical F5 backfill is a HARD GATE item).
+   BLOCKED until the close pass is confirmed writing rows.
 4. Season-end handling (late September): daily loop and capture behavior
    when the MLB slate empties; plan the off-season posture (lane E).
 5. Forward prop-listing audit -- DESIGNED, AWAITING BREY

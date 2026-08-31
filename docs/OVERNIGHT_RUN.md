@@ -370,3 +370,23 @@ dead end (no honestly replayable free source) and the Elo reconstruction
 already answer it (docs/BENCHMARK_ELO.md). Ledger corrupt-line halt KEPT
 deliberately: a tolerant dedup scan risks double-recording after a crash,
 worse for evidence than a loud halt that names its line.
+
+2026-08-31 resume audit (post usage-limit). Three concurrent forward-evidence
+failures found, none of which raised an error anywhere:
+1. data/processed/* gitignored -- five days of h2h snapshots and every
+   multi-book board existed only on one ephemeral container's disk. Fixed
+   56b8ccf; forward captures are now tracked as evidence.
+2. f5_close.jsonl never existed despite the close pass running for days.
+3. V3: 33 admissible events, 0 measurable (transactions carry no team;
+   lineup events map to no game).
+Also: results store has 251 unfetched dates inside its span; health monitor
+printed "8 of 7 games have a posted lineup" (two different denominators).
+Four workers dispatched under workflow wf_be70a6ab-e3e, each verified
+adversarially. Lesson recorded in ROADMAP: check stores for ROWS, not for
+the absence of errors.
+
+Brey also proposed an Evolution Lab (historical replay + evolving strategy
+population). Assessed before implementation in docs/EVOLUTION_LAB_ASSESSMENT.md
+-- reframed around placebo-calibrated enumeration rather than naive genetic
+search, with two decisions referred to Brey (the 2024 holdout question; the
+prop-listing policy gap).
