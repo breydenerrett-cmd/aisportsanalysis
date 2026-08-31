@@ -43,7 +43,6 @@ from pathlib import Path
 import src.analysis as analysis
 from src.analysis import synthesis as synthesis_mod
 from src.detect import base as detect
-
 # The one sentence a pairing with no real game carries on its starter and
 # lineup sections. Defined by the analyze command (src/cli.py); duplicated here
 # because the report layer cannot import the CLI that imports it, and pinned
@@ -73,17 +72,13 @@ _STANDING = (
     "beats the market."
 )
 
-EVIDENCE_LABELS = {
-    detect.PROVEN: ("Proven", "Held up on data it was not built from"),
-    detect.FORWARD_TESTING: ("Forward testing", "Logged before the games; still accumulating"),
-    detect.PROVISIONAL: ("Provisional", "One-shot backtest; weaker than forward proof"),
-    detect.TUNING_EVIDENCE: ("Tuning evidence", "Thresholds were fitted on this; optimistic"),
-    detect.HISTORICAL_CANDIDATE: ("Candidate", "Looks real in discovery data; untested"),
-    detect.UNPROVEN: ("Unproven", "A written-down guess. Never tested."),
-    detect.TESTED_NULL: ("Tested — no edge",
-                         "Measured against outcomes and it did not predict them"),
-    detect.BLOCKED: ("Blocked", "Cannot be computed with the data we have"),
-}
+# The vocabulary itself lives in src.analysis.synthesis (the domain layer) so
+# there is exactly one place that says what an evidence state means. This used
+# to be a second, independently-typed copy of that dict -- missing the
+# OBSERVED entry synthesis carries -- which meant the two could (and did)
+# silently drift apart with nothing to notice. See
+# tests/test_evidence_labels_unified.py, which fails if that happens again.
+EVIDENCE_LABELS = synthesis_mod.EVIDENCE_LABELS
 
 
 def render(slate, out_path, generated_at=None) -> str:
