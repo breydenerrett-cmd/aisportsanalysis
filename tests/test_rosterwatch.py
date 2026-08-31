@@ -268,6 +268,55 @@ class TestTransactions(WatchCase):
         self.poll(transactions=[{"transaction_id": None, "date": "2026-08-31"}])
         self.assertEqual(self.rows(rosterwatch.TRANSACTIONS_FILE), [])
 
+    def test_a_row_written_now_carries_what_the_game_mapping_needs(self):
+        """A transaction names no game; without the club it can never map."""
+        self.poll(transactions=[{
+            "transaction_id": 700, "date": "2026-08-31", "team": "CIN",
+            "player": "A Hitter", "player_id": 42, "category": "il_placement",
+            "description": "Cincinnati placed A Hitter on the 10-day IL."}])
+        row, = self.rows(rosterwatch.TRANSACTIONS_FILE)
+        self.assertEqual(row["team"], "CIN")
+        self.assertEqual(row["player"], "A Hitter")
+        self.assertEqual(row["player_id"], 42)
+        self.assertEqual(row["category"], "il_placement")
+        self.assertEqual(row["date"], "2026-08-31")
+
+    def test_a_field_the_feed_omitted_is_written_null_not_dropped(self):
+        """Null says we looked and saw nothing; absence says we never looked."""
+        self.poll(transactions=[{"transaction_id": 701, "date": "2026-08-31"}])
+        row, = self.rows(rosterwatch.TRANSACTIONS_FILE)
+        for field in rosterwatch.TRANSACTION_FIELDS:
+            self.assertIn(field, row)
+        self.assertIsNone(row["team"])
+
+    def test_the_event_carries_the_club_and_says_whether_it_was_recorded(self):
+        self.poll(transactions=[{"transaction_id": 702, "date": "2026-08-31",
+                                 "team": "NYM", "player": "A Pitcher"}])
+        self.clock.now = _ts(10)
+        self.poll(transactions=[{"transaction_id": 702, "date": "2026-08-31",
+                                 "team": "NYM", "player": "A Pitcher"},
+                                {"transaction_id": 703, "date": "2026-08-31",
+                                 "team": "CIN", "player": "A Hitter"}])
+        by_id = {e["transaction_id"]: e for e in rosterwatch.events(self.dir)
+                 if e["class"] == rosterwatch.TRANSACTION_SEEN}
+        self.assertEqual(by_id[703]["team"], "CIN")
+        self.assertEqual(by_id[703]["player"], "A Hitter")
+        self.assertTrue(by_id[703]["team_recorded"])
+
+    def test_a_row_written_before_club_capture_is_not_silently_teamless(self):
+        """Old rows are never rewritten; the event must confess, not pretend."""
+        path = self.dir / rosterwatch.TRANSACTIONS_FILE
+        path.write_text(
+            json.dumps({"fetched_utc": _iso(9), "poll": True}) + "\n"
+            + json.dumps({"first_seen_utc": _iso(10),
+                          "transaction_id": 800}) + "\n",
+            encoding="utf-8")
+        event, = [e for e in rosterwatch.events(self.dir)
+                  if e["class"] == rosterwatch.TRANSACTION_SEEN]
+        self.assertIsNone(event["team"])
+        self.assertFalse(event["team_recorded"])
+        self.assertFalse(event["inadmissible"])  # the bracket is still good
+
 
 class TestFailureIsolation(WatchCase):
 

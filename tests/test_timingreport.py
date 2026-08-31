@@ -70,12 +70,6 @@ class JoinTests(unittest.TestCase):
         self.assertEqual(len(quotes), 6)
         self.assertTrue(all(q["book"].startswith("b") for q in quotes))
 
-    def test_an_unmappable_event_is_counted_with_its_reason(self):
-        events = [_event(game_pk="999")]
-        entry = _report(events)["classes"]["starter_scratch"]
-        self.assertEqual(entry["unmappable"],
-                         {"game not in results store": 1})
-
     def test_a_transaction_maps_to_the_clubs_next_game(self):
         pk = timingreport._next_game_for(
             "CIN", _event(end="2026-08-31T20:00:00+00:00"), GAMES)
@@ -83,6 +77,90 @@ class JoinTests(unittest.TestCase):
         none = timingreport._next_game_for(
             "CIN", _event(end="2026-09-05T00:00:00+00:00"), GAMES)
         self.assertIsNone(none)
+
+    def test_a_west_coast_board_is_not_filed_under_tomorrow(self):
+        """commence_time is UTC; MLB files the game under its Eastern date."""
+        rows = [_mb_row(f"b{i}", away="San Diego Padres",
+                        home="Los Angeles Dodgers",
+                        ts="2026-09-01T01:30:00Z") for i in range(6)]
+        for row in rows:
+            row["commence_time"] = "2026-09-01T02:10:00Z"
+        self.assertEqual(len(timingreport._quotes_for_game(rows, GAMES["200"])),
+                         6)
+
+    def test_the_two_clubs_spelt_differently_still_match(self):
+        """The schedule says ATH/AZ where the odds feed resolves OAK/ARI."""
+        game = {"game_pk": "300", "date": "2026-08-31", "away_team": "AZ",
+                "home_team": "ATH", "start_time_utc": "2026-08-31T23:10:00Z"}
+        rows = [_mb_row("b1", away="Arizona Diamondbacks", home="Athletics")]
+        self.assertEqual(len(timingreport._quotes_for_game(rows, game)), 1)
+
+
+class MappabilityTests(unittest.TestCase):
+    """Unmappable is not one condition, and the report must not say it is."""
+
+    def test_tonights_game_is_awaiting_settlement_not_broken(self):
+        games = {k: v for k, v in GAMES.items() if k == "100"}
+        with mock.patch.object(timingreport.rosterwatch, "events",
+                               return_value=[_event(
+                                   game_pk="999",
+                                   end="2026-09-02T20:00:00+00:00")]):
+            result = timingreport.report(multibook_rows=[], games=games,
+                                         transactions=[])
+        entry = result["classes"]["starter_scratch"]
+        self.assertEqual(entry["unmappable"],
+                         {timingreport.NOT_YET_PLAYED: 1})
+        self.assertEqual(result["settled_through"], "2026-08-31")
+
+    def test_a_missing_game_on_a_settled_date_is_named_a_defect(self):
+        entry = _report([_event(game_pk="999")])["classes"]["starter_scratch"]
+        self.assertEqual(entry["unmappable"], {timingreport.GAME_MISSING: 1})
+
+    def test_the_report_distinguishes_the_two_in_its_text(self):
+        events = [_event(game_pk="999"),
+                  _event(game_pk="998", end="2026-09-02T20:00:00+00:00")]
+        text = timingreport.format_report(_report(events))
+        self.assertIn(timingreport.NOT_YET_PLAYED, text)
+        self.assertIn(timingreport.GAME_MISSING, text)
+        self.assertIn("settled through 2026-08-31", text)
+
+    def test_a_transaction_row_written_now_maps_through_its_own_club(self):
+        """No join to the historical store: the watch row carries the club."""
+        event = {"class": "transaction_first_seen", "transaction_id": 5,
+                 "team": "CIN", "team_recorded": True,
+                 "interval": ("2026-08-31T19:45:00+00:00",
+                              "2026-08-31T20:00:00+00:00"),
+                 "inadmissible": False, "detail": None}
+        entry = _report([event])["classes"]["transaction_first_seen"]
+        self.assertEqual(entry["unmappable"], {})
+
+    def test_a_row_written_before_club_capture_is_reported_not_dropped(self):
+        event = {"class": "transaction_first_seen", "transaction_id": 5,
+                 "team": None, "team_recorded": False,
+                 "interval": ("2026-08-31T19:45:00+00:00",
+                              "2026-08-31T20:00:00+00:00"),
+                 "inadmissible": False, "detail": None}
+        entry = _report([event])["classes"]["transaction_first_seen"]
+        self.assertEqual(entry["events"], 1)
+        self.assertEqual(entry["admissible"], 1)
+        self.assertEqual(entry["unmappable"],
+                         {timingreport.TEAM_NOT_RECORDED: 1})
+
+    def test_a_recorded_but_empty_club_is_a_different_answer(self):
+        event = {"class": "transaction_first_seen", "transaction_id": 5,
+                 "team": None, "team_recorded": True,
+                 "interval": ("2026-08-31T19:45:00+00:00",
+                              "2026-08-31T20:00:00+00:00"),
+                 "inadmissible": False, "detail": None}
+        entry = _report([event])["classes"]["transaction_first_seen"]
+        self.assertEqual(entry["unmappable"], {timingreport.TEAM_UNKNOWN: 1})
+
+    def test_a_mapped_event_with_too_thin_a_board_is_excluded_not_unmappable(self):
+        rows = [_mb_row(f"b{i}") for i in range(3)]
+        entry = _report([_event()], rows)["classes"]["starter_scratch"]
+        self.assertEqual(entry["unmappable"], {})
+        self.assertEqual(entry["measurable"], 0)
+        self.assertEqual(sum(entry["excluded"].values()), 1)
 
 
 class FormatTests(unittest.TestCase):

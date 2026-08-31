@@ -225,15 +225,34 @@ def cmd_history(args) -> int:
     print(f"  span                  : {report['first_date']} .. {report['last_date']}")
     print(f"  dates with games      : {report['dates_with_games']}")
     print(f"  genuine off days      : {report['off_days']}")
-    print(f"  dates still unresolved: {report['dates_with_unresolved_games']}")
+    pending = report.get("dates_still_pending") or []
+    print(f"  dates still unresolved: {report['dates_with_unresolved_games']} "
+          f"({report.get('dates_cancelled_only', 0)} cancelled/postponed - terminal, "
+          f"{len(pending)} still pending - retryable)")
     print(f"  home win rate         : {report['home_win_rate']}")
 
-    if report["gap_count"]:
-        print(f"\n  WARNING: {report['gap_count']} date(s) inside the span were never "
-              "fetched.")
-        print("  These are holes, not off days. Re-run ingest to fill them:")
-        for day in report["unfetched_gaps_in_span"][:10]:
+    if pending:
+        print("\n  dates fetched before their games finished (re-run ingest to close):")
+        for day in pending[:10]:
             print(f"    {day}")
+
+    if report["gap_count"]:
+        print(f"\n  {report['gap_count']} date(s) inside the span were never fetched: "
+              f"{report.get('gap_days_in_season', 0)} in-season, "
+              f"{report.get('gap_days_between_seasons', 0)} between seasons.")
+        print("  In-season runs are holes. Between-season runs are unproven, not "
+              "proven empty.")
+        print(f"\n    {'range':<25} {'days':>5}  {'classification':<16} note")
+        for run in report.get("gap_runs", []):
+            note = []
+            if run["touches_season_start"]:
+                note.append("abuts a season start - may contain an opening series")
+            if run["touches_season_end"]:
+                note.append("abuts a season end")
+            span = (run["start"] if run["days"] == 1
+                    else f"{run['start']}..{run['end']}")
+            print(f"    {span:<25} {run['days']:>5}  {run['classification']:<16} "
+                  f"{'; '.join(note)}")
     else:
         print("\n  no unfetched gaps inside the span.")
 

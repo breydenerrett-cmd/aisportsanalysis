@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 from datetime import date
 from pathlib import Path
 
@@ -57,6 +58,33 @@ class HistoryError(RuntimeError):
 
 
 # ---------------------------------------------------------------------------
+# Durable writes
+# ---------------------------------------------------------------------------
+
+def _atomic_write(target: Path, render) -> None:
+    """Write via a temp file and one rename, so a crash cannot truncate the store.
+
+    Both files here are rewritten whole on every flush. Writing in place means a
+    process killed mid-write leaves a TRUNCATED results file next to a manifest
+    that still claims those dates were fetched -- which is precisely the silent
+    hole this module exists to prevent: coverage says the date is done, the rows
+    are gone, and nothing ever asks again. `os.replace` is atomic on POSIX, so
+    the file on disk is always either the old copy or the complete new one.
+    """
+    target.parent.mkdir(parents=True, exist_ok=True)
+    tmp = target.with_name(target.name + ".tmp")
+    try:
+        with tmp.open("w", newline="", encoding="utf-8") as handle:
+            render(handle)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(tmp, target)
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
+
+
+# ---------------------------------------------------------------------------
 # Manifest
 # ---------------------------------------------------------------------------
 
@@ -80,9 +108,11 @@ def read_manifest(path=DEFAULT_MANIFEST) -> dict:
 
 def write_manifest(dates: dict, path=DEFAULT_MANIFEST) -> str:
     target = Path(path)
-    target.parent.mkdir(parents=True, exist_ok=True)
     payload = {"dates": dict(sorted(dates.items()))}
-    target.write_text(json.dumps(payload, indent=1, sort_keys=True), encoding="utf-8")
+    _atomic_write(
+        target,
+        lambda h: h.write(json.dumps(payload, indent=1, sort_keys=True)),
+    )
     return str(target)
 
 
@@ -91,13 +121,37 @@ def fetched_dates(path=DEFAULT_MANIFEST) -> set:
     return set(read_manifest(path))
 
 
-def missing_dates(start, end, path=DEFAULT_MANIFEST) -> list:
-    """Dates in a range that have never been fetched.
+def unfinished_dates(path=DEFAULT_MANIFEST) -> set:
+    """Dates fetched while at least one game had not finished yet.
+
+    A date fetched at 9pm with a west-coast game still in the seventh is recorded
+    with pending>0. Its final games are stored, the unfinished one is not, and the
+    date is now in the manifest -- so a resume-based run considers it DONE and never
+    looks again. The result is a permanent hole that is invisible in every coverage
+    count, because the date is present and the missing game was never a row.
+
+    Pending is the only retryable state. Postponed, cancelled, and suspended games
+    are terminal for the date they were scheduled on (they reappear as a makeup on
+    some other date), so treating those as unfinished would make resume re-fetch the
+    same dates forever without ever converging.
+    """
+    manifest = read_manifest(path)
+    return {d for d, entry in manifest.items() if (entry or {}).get("pending", 0)}
+
+
+def missing_dates(start, end, path=DEFAULT_MANIFEST,
+                  include_unfinished: bool = True) -> list:
+    """Dates in a range that still owe us results.
 
     This is the resume primitive: it answers "what is left to do" from durable state
-    rather than from a counter held in memory by a run that may have died.
+    rather than from a counter held in memory by a run that may have died. Two kinds
+    of date owe results -- one never fetched, and one fetched too early, while games
+    were still in progress. Both must come back or the missing games are lost
+    silently; see `unfinished_dates`.
     """
     already = fetched_dates(path)
+    if include_unfinished:
+        already -= unfinished_dates(path)
     return [d for d in mlb.iter_dates(start, end) if d not in already]
 
 
@@ -123,17 +177,19 @@ def read_results(path=DEFAULT_STORE) -> dict:
 def write_results(store: dict, path=DEFAULT_STORE) -> str:
     """Write the whole store, sorted by date then game_pk for a stable diff."""
     target = Path(path)
-    target.parent.mkdir(parents=True, exist_ok=True)
     rows = sorted(
         store.values(),
         key=lambda r: (r.get("date") or "", str(r.get("game_pk") or "")),
     )
-    with target.open("w", newline="", encoding="utf-8") as handle:
+
+    def render(handle):
         writer = csv.DictWriter(handle, fieldnames=RESULT_COLUMNS,
                                 extrasaction="ignore")
         writer.writeheader()
         for row in rows:
             writer.writerow({c: row.get(c) for c in RESULT_COLUMNS})
+
+    _atomic_write(target, render)
     return str(target)
 
 
@@ -229,6 +285,73 @@ def ingest_range(start, end, store_path=DEFAULT_STORE,
 # Quality
 # ---------------------------------------------------------------------------
 
+def _season_envelopes(manifest: dict) -> dict:
+    """First and last date that actually had baseball, per year.
+
+    Used to tell a hole apart from a winter. A February date with no games is not
+    evidence of anything; a July date with no games is a missing week.
+    """
+    envelopes = {}
+    for day, entry in manifest.items():
+        if not (entry or {}).get("total"):
+            continue
+        year = day[:4]
+        first, last = envelopes.get(year, (day, day))
+        envelopes[year] = (min(first, day), max(last, day))
+    return envelopes
+
+
+def gap_runs(manifest: dict) -> list:
+    """Contiguous blocks of never-fetched dates inside the span, classified.
+
+    251 loose dates tell you nothing. Eight runs with dates on them tell you which
+    are winters nobody asked about and which are weeks of missing baseball.
+
+    `in_season` means the run falls inside a year's played envelope, so those dates
+    could hold real games and the run is a genuine hole. `between_seasons` means it
+    sits outside every envelope -- almost certainly an off-season, but note the word
+    almost: a season that OPENS abroad before the fetched window (the Tokyo and
+    Seoul series) puts real regular-season games in a run this function will call
+    between_seasons. `touches_season_start` / `touches_season_end` flag exactly that
+    case so a boundary run is reviewed rather than assumed empty.
+    """
+    days = sorted(manifest)
+    if not days:
+        return []
+    envelopes = _season_envelopes(manifest)
+
+    runs, current = [], []
+    for day in mlb.iter_dates(days[0], days[-1]):
+        if day not in manifest:
+            current.append(day)
+        elif current:
+            runs.append(current)
+            current = []
+    if current:
+        runs.append(current)
+
+    classified = []
+    for run in runs:
+        start, end = run[0], run[-1]
+        in_season = any(first <= start <= last or first <= end <= last
+                        or (start < first and end > last)
+                        for first, last in envelopes.values())
+        next_day = date.fromisoformat(end).toordinal() + 1
+        after = date.fromordinal(next_day).isoformat()
+        before = date.fromordinal(date.fromisoformat(start).toordinal() - 1).isoformat()
+        classified.append({
+            "start": start,
+            "end": end,
+            "days": len(run),
+            "classification": "in_season" if in_season else "between_seasons",
+            "touches_season_start": any(after == first for first, _ in
+                                        envelopes.values()),
+            "touches_season_end": any(before == last for _, last in
+                                      envelopes.values()),
+        })
+    return classified
+
+
 def quality_report(store_path=DEFAULT_STORE, manifest_path=DEFAULT_MANIFEST) -> dict:
     """Report what is actually in the store and, more importantly, what is not.
 
@@ -247,6 +370,12 @@ def quality_report(store_path=DEFAULT_STORE, manifest_path=DEFAULT_MANIFEST) -> 
     played = [d for d in days if manifest[d]["total"] > 0]
     unresolved = [d for d in days
                   if manifest[d]["pending"] > 0 or manifest[d]["cancelled"] > 0]
+    # Two very different kinds of unresolved. A pending game is a date fetched too
+    # early and it will resolve on a re-fetch. A cancelled game is terminal for the
+    # date it was scheduled on. Counting them together makes a fixable hole and a
+    # permanent fact of the schedule look like the same problem.
+    still_pending = [d for d in days if manifest[d].get("pending", 0) > 0]
+    cancelled_only = [d for d in unresolved if d not in set(still_pending)]
 
     # Dates inside the fetched span that were never attempted are real holes.
     span_gaps = []
@@ -254,6 +383,7 @@ def quality_report(store_path=DEFAULT_STORE, manifest_path=DEFAULT_MANIFEST) -> 
         for day in mlb.iter_dates(days[0], days[-1]):
             if day not in manifest:
                 span_gaps.append(day)
+    runs = gap_runs(manifest)
 
     field_fill = {}
     for column in RESULT_COLUMNS:
@@ -270,8 +400,15 @@ def quality_report(store_path=DEFAULT_STORE, manifest_path=DEFAULT_MANIFEST) -> 
         "dates_with_games": len(played),
         "off_days": len(off_days),
         "dates_with_unresolved_games": len(unresolved),
+        "dates_still_pending": still_pending,
+        "dates_cancelled_only": len(cancelled_only),
         "unfetched_gaps_in_span": span_gaps,
         "gap_count": len(span_gaps),
+        "gap_runs": runs,
+        "gap_days_in_season": sum(r["days"] for r in runs
+                                  if r["classification"] == "in_season"),
+        "gap_days_between_seasons": sum(r["days"] for r in runs
+                                        if r["classification"] == "between_seasons"),
         "home_win_rate": round(home_wins / len(store), 4) if store else None,
         "field_fill": field_fill,
     }

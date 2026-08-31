@@ -33,9 +33,35 @@ raises an anomaly of its own.
 
 The mirror-image trap is the off day. A date with no baseball has no odds, no
 lineups and no captures, and that is not degradation. An empty slate is healthy
--- but only when the schedule store is present and says the slate is empty. When
-we cannot tell "no games" from "no collection", that ambiguity is itself the
+-- but only when the schedule is known and says the slate is empty. When we
+cannot tell "no games" from "no collection", that ambiguity is itself the
 finding, and it is reported as one.
+
+WHERE THE SLATE COMES FROM, AND WHY IT IS NEVER THE ODDS
+---------------------------------------------------------
+The slate is asked of MLB, whose schedule endpoint is free and keyless -- the
+same call dense.py already makes before it spends a credit. Inferring the slate
+from the odds stores instead was the single most misleading thing this module
+did: a denominator built from priced games can only ever count games a book
+priced, so the one failure worth catching -- an entire game nobody quoted --
+subtracted itself from both sides of the ratio and vanished. The count came out
+smaller and the coverage came out perfect. So the odds stores are now a last
+resort used only when MLB cannot be reached, and when they are used the report
+says the slate is unestablished rather than quoting a number as if it were one.
+
+The same reasoning governs every ratio here: both sides must be counted in the
+same identity space or the ratio is not a coverage number. That is why lineups
+are matched to the slate by game_pk and quotes are matched to it by club and
+first pitch, and why a count with no comparable denominator is printed as a
+bare count instead of being divided by whatever number is nearest. "8 of 7
+games have a lineup" is not a coverage figure with a small error in it; it is
+two unrelated numbers sharing a sentence.
+
+MLB files a game under its EASTERN date, so a 21:40 ET first pitch is on the
+same slate as an 13:10 ET one while carrying the next UTC date. The odds stores
+timestamp in UTC. Bucketing quotes by UTC date therefore dropped the whole late
+West Coast half of every slate -- which is why matching is by game identity and
+a first-pitch tolerance, not by string-equal dates.
 
 WHAT "THE USUAL SET" OF BOOKS MEANS
 -----------------------------------
@@ -60,6 +86,7 @@ from src.pipeline import ledger as ledger_mod
 from src.pipeline import rosterwatch
 from src.pipeline.dense import F5_CLOSE_MAX_EVENTS
 from src.pipeline.slate import team_abbrev_from_name
+from src.providers import mlb
 
 # A capture older than this during a live slate means prices are moving that we
 # are not seeing. dense.py takes four captures an hour while games approach, so
@@ -92,6 +119,19 @@ BOOK_USUAL_DAY_FRACTION = 0.5
 
 MARKETS_EXPECTED = ("h2h", "spreads", "totals")
 
+# How far a book's stated first pitch may sit from MLB's before the quote stops
+# being about that game. Wide enough for a rounded or slightly revised start,
+# far narrower than the ~20 hours between two meetings of the same clubs in a
+# series -- which is the collision this tolerance exists to avoid, since a
+# matchup is not a unique key across days.
+SCHEDULE_MATCH_HOURS = 8
+
+# The slate this program collects prices for: regular season and postseason.
+# Spring training and exhibitions appear on the same endpoint, are barely
+# priced, and would otherwise fill February and March with "no book quoted this
+# game" findings that are all true and all meaningless.
+SLATE_GAME_TYPES = mlb.DECISIVE_GAME_TYPES
+
 
 class HealthError(RuntimeError):
     """Raised when the monitor is asked for something it cannot honestly answer."""
@@ -101,22 +141,30 @@ class HealthError(RuntimeError):
 # Report
 # ---------------------------------------------------------------------------
 
-def report(date=None, now=None, data_dir=None, ledger_path=None) -> dict:
-    """Assemble the health report for one slate date, from stores only.
+def report(date=None, now=None, data_dir=None, ledger_path=None,
+           schedule_fetch=None) -> dict:
+    """Assemble the health report for one slate date.
 
     `date` defaults to today in UTC -- the same clock every store timestamps
     with, so the report never straddles two definitions of "today". `data_dir`
     and `ledger_path` exist so tests can point the monitor at a synthetic tree;
     production passes neither and reads the real stores.
 
+    Exactly one thing here leaves the machine: `schedule_fetch`, MLB's free
+    keyless schedule endpoint, which supplies the slate the stores are then
+    measured against. It costs no odds credits -- dense.py already leans on the
+    same call precisely because asking the market what is on tonight would cost
+    as much as the capture itself. Tests pass their own callable; nothing else
+    fetches, and nothing writes.
+
     Every section reports what it found AND whether the store it read was there
-    at all. Nothing in here fetches, and nothing writes.
+    at all.
     """
     moment = _now(now)
     day = _iso_date(date, moment)
     root = Path(data_dir) if data_dir is not None else None
 
-    schedule = _schedule_section(day, root)
+    schedule = _schedule_section(day, root, schedule_fetch)
     odds = _odds_section(day, schedule, root)
     markets = _markets_section(day, schedule, root)
     lineups = _lineups_section(day, schedule, root, moment)
@@ -145,45 +193,106 @@ def report(date=None, now=None, data_dir=None, ledger_path=None) -> dict:
 # Sections
 # ---------------------------------------------------------------------------
 
-def _schedule_section(day, root) -> dict:
+def _schedule_section(day, root, fetch=None) -> dict:
     """Which games exist on this date, and how confident we are in that.
 
-    The slate CSV is authoritative when present: it comes from MLB's own
-    schedule, so it can say "zero games" with authority, which is the one
-    statement that distinguishes an off day from a dead collector. Without it we
-    fall back to whatever the odds stores saw, which can only ever tell us about
-    games a book priced -- it can never reveal a game we missed entirely, and
-    the section says so.
+    Three sources, in falling order of authority:
+
+    1. The slate CSV, when the operator has already built one. It is MLB's own
+       schedule written to disk, so it answers offline and deterministically.
+    2. MLB's schedule endpoint. Free, keyless, and the reason this section can
+       state a true slate at all: it lists the game no book priced, which is
+       the failure most worth catching and the one the odds stores structurally
+       cannot show.
+    3. The odds stores, only if MLB could not be reached -- and then the section
+       declares itself unauthoritative, because a count of priced games is not
+       a slate and must not be quoted as one.
+
+    Two kinds of game are named but held out of the count: one that will not be
+    played (postponed, cancelled, suspended), which no book will settle and no
+    lineup will post, and exhibition play, which is barely priced. Counting
+    either would manufacture missing-coverage findings that are all true and
+    all worthless. Both are reported so the subtraction is visible.
     """
     path = _slate_path(day, root)
+    csv_note = None
     if path.exists():
         try:
             rows = _read_csv(path)
         except OSError as exc:
-            return {"source": "slate_csv", "present": True, "readable": False,
-                    "games": None, "authoritative": False, "keys": [],
-                    "starts": {}, "game_pks": [],
-                    "note": f"slate csv unreadable: {exc}"}
-        games = {}
-        for row in rows:
-            key = _key(row.get("away_team"), row.get("home_team"))
-            if key is None:
-                continue
-            games[key] = {"start": row.get("start_time_utc"),
-                          "game_pk": _int(row.get("game_pk"))}
-        return {
-            "source": "slate_csv", "present": True, "readable": True,
-            "games": len(games), "authoritative": True,
-            "keys": sorted(games),
-            "starts": {k: v["start"] for k, v in games.items()},
-            "game_pks": sorted(v["game_pk"] for v in games.values()
-                               if v["game_pk"] is not None),
-            "note": None,
-        }
+            csv_note = f"slate csv unreadable ({exc}); asked MLB instead"
+        else:
+            games = {}
+            for row in rows:
+                key = _key(row.get("away_team"), row.get("home_team"))
+                if key is None:
+                    continue
+                games[key] = {"start": row.get("start_time_utc"),
+                              "game_pk": _int(row.get("game_pk"))}
+            return _slate_answer("slate_csv", games, note=None)
 
-    # Fallback: the union of games the odds stores saw for this date.
+    # MLB's own schedule. A monitor may not raise: any failure here -- HTTP,
+    # DNS, a timeout, junk JSON -- has to degrade into a stated uncertainty,
+    # exactly as dense.py refuses to spend when this call fails.
+    try:
+        records = (fetch or mlb.fetch_schedule)(day)
+    except Exception as exc:  # noqa: BLE001 -- see above
+        reason = f"{type(exc).__name__}: {exc}"
+        return _odds_derived_schedule(day, root, csv_note, reason)
+
+    games, unplayed, exhibition = {}, [], []
+    for record in records or ():
+        teams = record.get("teams") or {}
+        away = ((teams.get("away") or {}).get("team") or {}).get("name")
+        home = ((teams.get("home") or {}).get("team") or {}).get("name")
+        key = _key(away, home)
+        if key is None:
+            continue
+        if mlb.is_cancelled(record):
+            unplayed.append(key)
+        elif record.get("gameType") not in SLATE_GAME_TYPES:
+            exhibition.append(key)
+        else:
+            games[key] = {"start": record.get("gameDate"),
+                          "game_pk": _int(record.get("gamePk"))}
+
+    held = []
+    if unplayed:
+        held.append(f"{len(unplayed)} not being played ({_names(unplayed)})")
+    if exhibition:
+        held.append(f"{len(exhibition)} exhibition")
+    note = "; ".join(filter(None, [csv_note,
+                                   ("held out of the count: " + ", ".join(held))
+                                   if held else None])) or None
+    answer = _slate_answer("mlb_schedule", games, note=note)
+    answer["unplayed"] = sorted(unplayed)
+    answer["exhibition"] = sorted(exhibition)
+    return answer
+
+
+def _slate_answer(source, games, note) -> dict:
+    return {
+        "source": source, "present": True, "readable": True,
+        "games": len(games), "authoritative": True,
+        "keys": sorted(games),
+        "starts": {k: v["start"] for k, v in games.items()},
+        "game_pks": sorted(v["game_pk"] for v in games.values()
+                           if v["game_pk"] is not None),
+        "note": note, "unplayed": [], "exhibition": [],
+    }
+
+
+def _odds_derived_schedule(day, root, csv_note, reason) -> dict:
+    """Last resort: the games the odds stores happened to see for this date.
+
+    Explicitly not authoritative. This can only ever enumerate games somebody
+    priced, so it cannot be a denominator -- the number it produces is reported
+    as "what was priced", and every ratio that would have used it is withheld
+    rather than computed against the wrong base.
+    """
     seen = {}
-    for row in _odds_rows(day, root) + _multibook_rows(day, root):
+    for row in (_rows_on_day(_snapshot_path(root), day)
+                + _rows_on_day(_multibook_path(root), day)):
         key = _key(row.get("away_team"), row.get("home_team"))
         if key is not None:
             seen.setdefault(key, row.get("commence_time"))
@@ -191,16 +300,18 @@ def _schedule_section(day, root) -> dict:
         "source": "odds_stores", "present": False, "readable": True,
         "games": len(seen) or None, "authoritative": False,
         "keys": sorted(seen), "starts": dict(seen), "game_pks": [],
-        "note": ("no schedule store for this date; the game count is whatever "
-                 "the odds stores happened to see, so a game nobody priced is "
-                 "invisible here"),
+        "unplayed": [], "exhibition": [],
+        "note": (f"MLB's schedule could not be reached ({reason}), so the "
+                 f"slate is unestablished; the games listed are only those "
+                 f"some book priced, and a game nobody priced is invisible"
+                 + (f" [{csv_note}]" if csv_note else "")),
     }
 
 
 def _odds_section(day, schedule, root) -> dict:
     """Books per game on the multi-book board, and who is missing from it."""
     path = _multibook_path(root)
-    rows = _multibook_rows(day, root)
+    rows = _multibook_rows(day, root, schedule)
     by_game = {}
     for row in rows:
         key = _key(row.get("away_team"), row.get("home_team"))
@@ -264,7 +375,7 @@ def _usual_books(day, root):
 def _markets_section(day, schedule, root) -> dict:
     """Which markets actually landed: h2h breadth, and the capped F5 close."""
     snap_path = _snapshot_path(root)
-    rows = _odds_rows(day, root)
+    rows = _odds_rows(day, root, schedule)
     per_market = {}
     for row in rows:
         market = row.get("market")
@@ -273,7 +384,10 @@ def _markets_section(day, schedule, root) -> dict:
             continue
         per_market.setdefault(market, set()).add(key)
 
-    expected = schedule.get("games")
+    # A fraction is only offered when the denominator is a real slate. Dividing
+    # priced games by priced games always returns 1.0, which is the most
+    # confident way this monitor could lie.
+    expected = schedule.get("games") if schedule.get("authoritative") else None
     coverage = {}
     for market in MARKETS_EXPECTED:
         games = len(per_market.get(market, ()))
@@ -286,9 +400,9 @@ def _markets_section(day, schedule, root) -> dict:
     f5_path = _f5_path(root)
     f5_events = None
     if f5_path.exists():
-        f5_events = len({r.get("event_id") for r in _read_jsonl(f5_path)
-                         if (r.get("commence_time") or "")[:10] == day
-                         and r.get("event_id")})
+        f5_events = len({r.get("event_id")
+                         for r in _slate_rows(_read_jsonl(f5_path), day, schedule)
+                         if r.get("event_id")})
     return {
         "snapshot_store_present": snap_path.exists(),
         "coverage": coverage,
@@ -304,10 +418,17 @@ def _markets_section(day, schedule, root) -> dict:
 def _lineups_section(day, schedule, root, moment) -> dict:
     """Posted lineups seen, and how long since each watch stream last looked.
 
-    The watch stores carry no game date -- only the fetch time -- so lineups are
-    attributed to this slate by the game_pks on the schedule when we have them,
-    and otherwise by the UTC date we fetched on. The section names which rule it
-    used, because the second is a proxy and a reader deserves to know.
+    The watch stores carry no game date -- only the fetch time -- so a lineup
+    belongs to this slate only when its game_pk is on the slate. That
+    intersection is what makes the count a coverage numerator: it is drawn from
+    the same set as the denominator, so it cannot exceed it.
+
+    Without game_pks there is no such intersection, and the fetch-date proxy
+    counts lineups for games that may not be on this slate at all -- which is
+    how this section once reported eight of seven games covered, one number
+    from the watch store divided by another from the odds stores. When the two
+    cannot be compared, the count is published alone and `of_scheduled` is
+    None. A bare count nobody can misread beats a ratio everybody will.
     """
     directory = _watch_dir(root)
     streams = {}
@@ -329,25 +450,47 @@ def _lineups_section(day, schedule, root, moment) -> dict:
         }
 
     lineup_path = directory / rosterwatch.LINEUPS_FILE
-    posted, basis = set(), None
-    if lineup_path.exists():
-        pks = set(schedule.get("game_pks") or ())
-        basis = "schedule game_pks" if pks else "fetch date"
-        for row in _read_jsonl(lineup_path):
-            if row.get("poll") or row.get("game_pk") is None:
-                continue
-            if not (row.get("away_lineup") or row.get("home_lineup")):
-                continue
-            if pks:
-                if row["game_pk"] in pks:
-                    posted.add(row["game_pk"])
-            elif (row.get("fetched_utc") or "")[:10] == day:
-                posted.add(row["game_pk"])
+    if not lineup_path.exists():
+        return {"streams": streams, "games_with_posted_lineups": None,
+                "off_slate_lineups": None, "attributed_by": None,
+                "of_scheduled": None, "coverage_measurable": False}
+
+    pks = set(schedule.get("game_pks") or ())
+    # An authoritative empty slate is measurable too: nothing to cover, nothing
+    # covered, 0 of 0. It is only the unknown denominator that blocks a ratio.
+    measurable = bool(pks) or (schedule.get("authoritative")
+                               and schedule.get("games") == 0)
+
+    posted, today = set(), set()
+    for row in _read_jsonl(lineup_path):
+        if row.get("poll") or row.get("game_pk") is None:
+            continue
+        if not (row.get("away_lineup") or row.get("home_lineup")):
+            continue
+        if (row.get("fetched_utc") or "")[:10] == day:
+            today.add(row["game_pk"])
+        if row["game_pk"] in pks:
+            posted.add(row["game_pk"])
+
+    if measurable:
+        return {
+            "streams": streams,
+            "games_with_posted_lineups": len(posted),
+            # Lineups fetched today for games that are not on this slate --
+            # tomorrow's early board, mostly. Harmless, but it is the surplus
+            # that used to be added to the numerator.
+            "off_slate_lineups": len(today - pks),
+            "attributed_by": "schedule game_pks",
+            "of_scheduled": schedule.get("games"),
+            "coverage_measurable": True,
+        }
     return {
         "streams": streams,
-        "games_with_posted_lineups": len(posted) if lineup_path.exists() else None,
-        "attributed_by": basis,
-        "of_scheduled": schedule.get("games"),
+        "games_with_posted_lineups": len(today),
+        "off_slate_lineups": None,
+        "attributed_by": "fetch date",
+        "of_scheduled": None,
+        "coverage_measurable": False,
     }
 
 
@@ -425,12 +568,21 @@ def _anomalies(out) -> list:
         if schedule["authoritative"] and schedule["games"] == 0:
             return found  # A real off day. Everything below would be noise.
         found.append(
-            f"No games could be established for {day} from any store, and no "
-            f"schedule store is present -- an empty slate and a failed "
-            f"collection look identical from here.")
+            f"No games could be established for {day}: {schedule['note']} -- "
+            f"an empty slate and a failed collection look identical from here.")
         return found
 
     games = schedule["games"]
+
+    # --- can this slate be trusted as a denominator? --------------------
+    if not schedule["authoritative"]:
+        # Everything downstream still runs -- a thin book count is worth
+        # knowing either way -- but no coverage ratio is offered against this
+        # number, and the reader is told why before reading any of them.
+        found.append(
+            f"The slate for {day} could not be established: {schedule['note']}. "
+            f"The {games} game(s) below are the ones some book priced, so "
+            f"coverage against the real slate is unknown, not complete.")
 
     # --- odds breadth ---------------------------------------------------
     if odds["store_present"]:
@@ -442,8 +594,8 @@ def _anomalies(out) -> list:
                          f"a slate of {games} games.")
         elif missing:
             found.append(
-                f"{len(missing)} of {games} scheduled games have no quote from "
-                f"any book: {_names(missing)}.")
+                f"{len(missing)} of {games} {_slate_noun(schedule)} have no "
+                f"quote from any book: {_names(missing)}.")
         if odds["books_missing"]:
             found.append(
                 f"{len(odds['books_missing'])} book(s) usually on the board are "
@@ -461,8 +613,8 @@ def _anomalies(out) -> list:
     # --- markets --------------------------------------------------------
     h2h = markets["coverage"]["h2h"]["games"]
     if h2h is not None and h2h < games:
-        found.append(f"h2h prices cover {h2h} of {games} scheduled games "
-                     f"({games - h2h} uncovered).")
+        found.append(f"h2h prices cover {h2h} of {games} "
+                     f"{_slate_noun(schedule)} ({games - h2h} uncovered).")
     if out["all_games_started"] and markets["f5"]["store_present"] \
             and markets["f5"]["events"] == 0 and games:
         found.append(f"The first-five close store holds no rows for {day} "
@@ -484,7 +636,14 @@ def _anomalies(out) -> list:
                 f"limit of three missed polls.")
 
     posted = lineups["games_with_posted_lineups"]
-    if posted is not None and games:
+    if posted is not None and not lineups["coverage_measurable"]:
+        # Said once, plainly, instead of publishing a shortfall computed from
+        # two different populations.
+        found.append(
+            f"Lineup coverage cannot be measured for {day}: lineups are "
+            f"identified by game_pk and this slate carries none, so the "
+            f"{posted} posted lineup(s) seen cannot be matched to its games.")
+    elif posted is not None and games:
         # Lineups post a few hours out and stagger across a slate, so a partial
         # count mid-afternoon is normal. Zero during a live slate is not, and
         # neither is a shortfall once every game has begun.
@@ -529,7 +688,9 @@ def format_report(data) -> str:
     schedule = data["schedule"]
     live = {True: "live", False: "not live", None: "unknown"}[data["slate_live"]]
     lines.append(f"schedule    {_num(schedule['games'])} games "
-                 f"(source: {schedule['source']}, slate {live})")
+                 f"(source: {schedule['source']}"
+                 f"{'' if schedule['authoritative'] else ', NOT AUTHORITATIVE'}"
+                 f", slate {live})")
     if schedule["note"]:
         lines.append(f"            note: {schedule['note']}")
 
@@ -547,14 +708,24 @@ def format_report(data) -> str:
     lines.append("markets     " + ", ".join(
         f"{m} {_num(cov[m]['games'])}" for m in MARKETS_EXPECTED))
     f5 = data["markets"]["f5"]
-    lines.append(f"            F5 close {_num(f5['events'])} events "
-                 f"(cap {f5['cap']}"
-                 f"{'' if f5['store_present'] else ', store absent'})")
+    lines.append("            F5 close "
+                 + (f"{f5['events']} events (cap {f5['cap']})"
+                    if f5["store_present"]
+                    else f"store absent, events unknown (cap {f5['cap']})"))
 
     lineups = data["lineups"]
-    lines.append(f"lineups     {_num(lineups['games_with_posted_lineups'])} of "
-                 f"{_num(lineups['of_scheduled'])} games have a posted lineup "
-                 f"in the watch store")
+    if lineups["coverage_measurable"]:
+        lines.append(f"lineups     {lineups['games_with_posted_lineups']} of "
+                     f"{lineups['of_scheduled']} slate games have a posted "
+                     f"lineup (matched by {lineups['attributed_by']})")
+        if lineups["off_slate_lineups"]:
+            lines.append(f"            plus {lineups['off_slate_lineups']} "
+                         f"fetched today for games not on this slate")
+    else:
+        lines.append(f"lineups     "
+                     f"{_num(lineups['games_with_posted_lineups'])} posted "
+                     f"lineup(s) seen, no comparable slate denominator "
+                     f"(attributed by {_num(lineups['attributed_by'])})")
     for name, stream in lineups["streams"].items():
         age = ("no poll recorded" if stream["age_minutes"] is None
                else f"{_hours(stream['age_minutes'])} ago")
@@ -737,11 +908,57 @@ def _watch_dir(root) -> Path:
     return _base(root) / "watch"
 
 
-def _odds_rows(day, root) -> list:
-    return [r for r in _read_jsonl(_snapshot_path(root))
+def _odds_rows(day, root, schedule=None) -> list:
+    return _slate_rows(_read_jsonl(_snapshot_path(root)), day, schedule)
+
+
+def _multibook_rows(day, root, schedule=None) -> list:
+    return _slate_rows(_read_jsonl(_multibook_path(root)), day, schedule)
+
+
+def _rows_on_day(path, day) -> list:
+    """Rows whose first pitch falls on this UTC date. A blunt instrument.
+
+    Only for the odds-derived fallback, which has no slate to match against.
+    Everywhere else `_slate_rows` is used instead, because MLB files a game
+    under its Eastern date: bucketing by UTC date silently drops the late West
+    Coast half of every slate into the following day.
+    """
+    return [r for r in _read_jsonl(path)
             if (r.get("commence_time") or "")[:10] == day]
 
 
-def _multibook_rows(day, root) -> list:
-    return [r for r in _read_jsonl(_multibook_path(root))
-            if (r.get("commence_time") or "")[:10] == day]
+def _slate_rows(rows, day, schedule) -> list:
+    """The rows that belong to this slate's games, matched by identity.
+
+    A club pairing repeats through a series, so the pairing alone is not a key
+    across days; it is paired with the scheduled first pitch and a tolerance
+    wide enough for a book's rounding but far narrower than the gap between two
+    meetings. A row whose time will not parse falls back to the UTC date, which
+    is at least no worse than the old behaviour.
+
+    With no authoritative slate there is nothing to match against, so this
+    degrades to the UTC-date bucket and the caller has already been told the
+    slate is unestablished.
+    """
+    if not schedule or not schedule.get("authoritative"):
+        return [r for r in rows if (r.get("commence_time") or "")[:10] == day]
+    starts = {key: _parse(value)
+              for key, value in (schedule.get("starts") or {}).items()}
+    selected = []
+    for row in rows:
+        key = _key(row.get("away_team"), row.get("home_team"))
+        if key not in starts:
+            continue
+        wanted, seen = starts[key], _parse(row.get("commence_time"))
+        if wanted is None or seen is None:
+            if (row.get("commence_time") or "")[:10] == day:
+                selected.append(row)
+        elif abs((seen - wanted).total_seconds()) <= SCHEDULE_MATCH_HOURS * 3600:
+            selected.append(row)
+    return selected
+
+
+def _slate_noun(schedule) -> str:
+    return ("scheduled games" if schedule.get("authoritative")
+            else "games seen priced")

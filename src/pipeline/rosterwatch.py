@@ -217,12 +217,38 @@ def _record_lineups(path, posted, fetched_utc, game_date=None) -> dict:
     return {"games": len(posted or {}), "written": written}
 
 
+# Fields copied from the feed row onto a first-seen transaction row. `team` is
+# what the V3 report maps through; `player`/`player_id` are part of the frozen
+# per-event record (docs/RESEARCH_V3_TIMING.md, "affected team · affected
+# player"); `category` and `date` are what the feed itself already decided and
+# cost nothing to keep.
+TRANSACTION_FIELDS = ("team", "player", "player_id", "category", "date")
+
+
 def _record_transactions(path, rows, fetched_utc, game_date=None) -> dict:
     """First-seen rows for transaction ids not already in the store.
 
     Deduplicated against the WHOLE store, not just today: the feed's date
     filter is by transaction date, and a row filed late can resurface on a
     later poll of an earlier date range.
+
+    WHAT A ROW CARRIES, AND WHY IT GREW
+    -----------------------------------
+    A transaction names no game, so mapping one to the board it could have
+    moved needs the CLUB. Rows used to store only the id and the sighting time,
+    which forced the V3 report to join back to data/historical/transactions.jsonl
+    -- a separately ingested store that does not hold today's ids until someone
+    runs an ingest. The join therefore missed almost every forward row and every
+    transaction event reported as "team unknown". The club is already in the
+    feed row at poll time; not writing it was the whole defect.
+
+    Forward-only by construction: rows already on disk are append-only evidence
+    and are never rewritten. Old rows stay unmappable, and the report names them
+    as rows written before the field existed rather than hiding them.
+
+    A field the feed did not supply is written as null, not omitted: an explicit
+    null records that we looked and the feed said nothing, which is a different
+    fact from a row written before we looked at all.
     """
     seen = {row.get("transaction_id") for row in _read_rows(path)
             if not row.get("poll")}
@@ -233,8 +259,11 @@ def _record_transactions(path, rows, fetched_utc, game_date=None) -> dict:
         if transaction_id is None or transaction_id in seen:
             continue
         seen.add(transaction_id)
-        out.append({"first_seen_utc": fetched_utc,
-                    "transaction_id": transaction_id})
+        record = {"first_seen_utc": fetched_utc,
+                  "transaction_id": transaction_id}
+        for field in TRANSACTION_FIELDS:
+            record[field] = row.get(field)
+        out.append(record)
         new += 1
     _append(path, out)
     return {"fetched": len(rows or []), "new": new}
@@ -356,6 +385,13 @@ def _transaction_events(path) -> list:
         events_out.append({
             "class": TRANSACTION_SEEN,
             "transaction_id": row["transaction_id"],
+            "team": row.get("team"),
+            # Presence of the KEY, not truth of the value. A row written before
+            # the club was captured cannot be mapped at all; a row whose feed
+            # entry genuinely named no major-league club is a different fact,
+            # and the report must not report the two as the same failure.
+            "team_recorded": "team" in row,
+            "player": row.get("player"),
             "interval": (start, seen),
             # The first poll of a run sweeps up every transaction already
             # published, with no lower bound on when -- grade C, same as a

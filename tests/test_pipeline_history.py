@@ -248,6 +248,61 @@ class TestResumability(unittest.TestCase):
         self.assertEqual(report["failed"], 1)
         self.assertEqual(report["errors"][0]["date"], "2025-07-02")
 
+    def test_a_date_fetched_before_its_games_finished_is_retried(self):
+        # REGRESSION. The hole this store exists to prevent, in its subtlest form.
+        # Fetch a date at 9pm with a west-coast game still in the seventh: the
+        # finished games are stored, the unfinished one is not, and the date lands
+        # in the manifest. Resume then treats the date as DONE forever. The date is
+        # present, the coverage count is full, and the game is simply gone.
+        with TempStore() as t:
+            history.write_manifest({
+                "2025-07-01": {"total": 15, "final": 14, "pending": 1,
+                               "cancelled": 0},
+            }, t.manifest)
+            missing = history.missing_dates("2025-07-01", "2025-07-01", t.manifest)
+        self.assertEqual(missing, ["2025-07-01"])
+
+    def test_a_cancelled_game_does_not_make_a_date_retry_forever(self):
+        # The other half of the fix. A postponed game is terminal for the date it
+        # was scheduled on -- it reappears as a makeup elsewhere. Retrying those
+        # would mean resume never converges and re-fetches the same 121 dates on
+        # every run.
+        with TempStore() as t:
+            history.write_manifest({
+                "2025-07-01": {"total": 15, "final": 14, "pending": 0,
+                               "cancelled": 1},
+            }, t.manifest)
+            missing = history.missing_dates("2025-07-01", "2025-07-01", t.manifest)
+        self.assertEqual(missing, [])
+
+    def test_resume_refetches_a_pending_date_and_stores_the_finished_game(self):
+        # End to end: the second run must actually recover the missing result.
+        first = results("2025-07-01", [final_game(1)], pending=1)
+        second = results("2025-07-01", [final_game(1), final_game(2, away="NYY",
+                                                                 home="BOS")])
+        with TempStore() as t:
+            with mock.patch.object(mlb, "fetch_results", return_value=first):
+                history.ingest_range("2025-07-01", "2025-07-01", t.store,
+                                     t.manifest, resume=False)
+            self.assertEqual(len(history.read_results(t.store)), 1)
+            with mock.patch.object(mlb, "fetch_results", return_value=second) as fake:
+                history.ingest_range("2025-07-01", "2025-07-01", t.store,
+                                     t.manifest, resume=True)
+            self.assertEqual(fake.call_count, 1)
+            stored = history.read_results(t.store)
+            manifest = history.read_manifest(t.manifest)
+        self.assertEqual(sorted(stored), ["1", "2"])
+        self.assertEqual(manifest["2025-07-01"]["pending"], 0)
+
+    def test_unfinished_dates_lists_only_pending_dates(self):
+        with TempStore() as t:
+            history.write_manifest({
+                "2025-07-01": {"total": 1, "final": 0, "pending": 1, "cancelled": 0},
+                "2025-07-02": {"total": 1, "final": 0, "pending": 0, "cancelled": 1},
+                "2025-07-03": {"total": 1, "final": 1, "pending": 0, "cancelled": 0},
+            }, t.manifest)
+            self.assertEqual(history.unfinished_dates(t.manifest), {"2025-07-01"})
+
     def test_a_failed_date_is_retried_on_the_next_resume(self):
         # It must not be marked done, or the gap becomes permanent.
         def failing(day, timeout=20):
@@ -308,6 +363,83 @@ class TestCoverageHonesty(unittest.TestCase):
             }, t.manifest)
             report = history.quality_report(t.store, t.manifest)
         self.assertEqual(report["dates_with_unresolved_games"], 1)
+
+
+class TestDurableWrites(unittest.TestCase):
+    """A flush that dies mid-write must not truncate what was already collected."""
+
+    class Explodes:
+        def __str__(self):
+            raise RuntimeError("serialisation blew up mid-write")
+
+    def test_a_crash_mid_write_leaves_the_previous_store_intact(self):
+        # REGRESSION. The store is rewritten whole on every flush. Written in
+        # place, a process killed partway through leaves a truncated CSV beside a
+        # manifest that still claims those dates were fetched: coverage reads as
+        # complete, the rows are gone, and resume never asks again.
+        with TempStore() as t:
+            history.write_results({"1": final_game(1), "2": final_game(2)}, t.store)
+            good = history.read_results(t.store)
+
+            poisoned = dict(good)
+            poisoned["3"] = {**final_game(3), "venue": self.Explodes()}
+            with self.assertRaises(RuntimeError):
+                history.write_results(poisoned, t.store)
+
+            self.assertEqual(history.read_results(t.store), good)
+            self.assertFalse(Path(str(t.store) + ".tmp").exists())
+
+    def test_a_crash_mid_manifest_write_leaves_the_previous_manifest_intact(self):
+        with TempStore() as t:
+            entry = {"total": 1, "final": 1, "pending": 0, "cancelled": 0}
+            history.write_manifest({"2025-07-01": entry}, t.manifest)
+            with mock.patch.object(history.json, "dumps",
+                                   side_effect=RuntimeError("boom")):
+                with self.assertRaises(RuntimeError):
+                    history.write_manifest({"2025-07-02": entry}, t.manifest)
+            self.assertEqual(list(history.read_manifest(t.manifest)), ["2025-07-01"])
+
+
+class TestGapClassification(unittest.TestCase):
+    """251 loose dates say nothing; a run with a date range on it says everything."""
+
+    def test_in_season_holes_are_separated_from_off_seasons(self):
+        manifest = {
+            "2024-07-01": {"total": 15, "final": 15, "pending": 0, "cancelled": 0},
+            # 07-02 and 07-03 missing: a hole in the middle of a season.
+            "2024-07-04": {"total": 15, "final": 15, "pending": 0, "cancelled": 0},
+            # 07-05..12-31 missing: winter, nobody asked.
+            "2025-01-01": {"total": 0, "final": 0, "pending": 0, "cancelled": 0},
+        }
+        runs = history.gap_runs(manifest)
+        self.assertEqual(len(runs), 2)
+        self.assertEqual((runs[0]["start"], runs[0]["end"], runs[0]["days"]),
+                         ("2024-07-02", "2024-07-03", 2))
+        self.assertEqual(runs[0]["classification"], "in_season")
+        self.assertEqual(runs[1]["classification"], "between_seasons")
+
+    def test_a_run_abutting_a_season_start_is_flagged_for_review(self):
+        # A season that opens abroad (Tokyo, Seoul) puts real regular-season games
+        # before the fetched window. Such a run classifies as between_seasons and
+        # would be dismissed as winter unless the boundary is called out.
+        manifest = {
+            "2024-11-01": {"total": 0, "final": 0, "pending": 0, "cancelled": 0},
+            "2025-03-20": {"total": 11, "final": 11, "pending": 0, "cancelled": 0},
+        }
+        run = history.gap_runs(manifest)[0]
+        self.assertEqual(run["classification"], "between_seasons")
+        self.assertTrue(run["touches_season_start"])
+
+    def test_report_splits_retryable_pending_from_terminal_cancellations(self):
+        with TempStore() as t:
+            history.write_manifest({
+                "2025-07-01": {"total": 5, "final": 4, "pending": 1, "cancelled": 0},
+                "2025-07-02": {"total": 5, "final": 4, "pending": 0, "cancelled": 1},
+            }, t.manifest)
+            report = history.quality_report(t.store, t.manifest)
+        self.assertEqual(report["dates_with_unresolved_games"], 2)
+        self.assertEqual(report["dates_still_pending"], ["2025-07-01"])
+        self.assertEqual(report["dates_cancelled_only"], 1)
 
 
 class TestSanityChecks(unittest.TestCase):
