@@ -219,3 +219,21 @@ no_play); hourly dense grid had a long gap while the session was held in
 plan mode — roughly 17:15 through 01:15 UTC's firings executed late or
 found no game in window (one run: 0 captures, stopped early). Missed
 capture windows are gone and noted, not backfilled.
+
+## 2026-08-31, later — public-projection benchmark scouting (lane B)
+
+Question: can any FREE public MLB projection be honestly benchmarked
+against the closing line for 2023–24? Answer: **no external source
+qualifies.** FanGraphs game odds are shown live and never archived;
+Baseball Reference/Savant win probabilities are retroactive situational
+models, not pre-game forecasts; FiveThirtyEight's Elo was frozen mid-June
+2023 (no 2024) and its canonical CSV is dead, with the only mirror stale at
+2018; free odds archives stop at 2021; tout sites' "past predictions" are
+self-attested. Every route fails the replayability test the news layer's
+docstring states.
+
+The one honest path: RECONSTRUCT a public-style projection point-in-time
+from data already in the repo — a pitcher-free Elo (results-only, zero
+lookahead) scored by log-loss/Brier against the de-vigged closes already
+held for 2023–24. Queued as its own small pre-registered benchmark;
+expected result, stated in advance, is that it does NOT beat the close.
