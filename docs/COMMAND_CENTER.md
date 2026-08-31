@@ -45,6 +45,11 @@ personalization, full alerts, SEO/content build.
 
 ## PHASE LOG
 
+- 2026-08-31 night: Brey archived the design exploration (moved to a Claude
+  Design web session) and ordered full speed on paid-beta foundations. Lanes
+  dispatched: Bet Check API, Today/Game API slice, auth/user-state
+  scaffolding (provider-agnostic, no registrations), outcome-ceiling wiring.
+
 - 2026-08-31 late: Phase 2B adjudicated + published (BELOW_PLACEBO_CEILING
   stands; SPA disagreement diagnosed as shared board drift, provenance in
   data/research/evolab/drift-measurement-20260831.json). Design review package
@@ -131,9 +136,16 @@ handoff is being produced in a separate session; engine-side preparation
 phase starts fast.
 
 ## CURRENT PRODUCT STATUS
-Static generator, test-enforced honest, no server/auth/payments. Architecture
-plan ready (FastAPI + Pydantic, api/ package, src/ stays stdlib). UI blocked
-on PRODUCT_DESIGN_HANDOFF.md by Brey's instruction.
+Static generator, test-enforced honest, no server/auth/payments yet.
+Architecture plan ready (FastAPI + Pydantic, api/ package, src/ stays stdlib).
+VISUAL DESIGN MOVED TO A SEPARATE CLAUDE DESIGN SESSION (Brey, 2026-08-31):
+design/directions-v1 and the A/B/C review deck are ARCHIVED EXPLORATION, not
+an approved direction. No further mockups/exports/art direction here. Brey
+returns with the approved visual system. Frontend stays structurally ready
+(contracts -> JSON payloads -> template slots) with NO aesthetic decisions.
+Full speed on: contracts, API/backend, auth, billing, deployment, user state,
+Bet Check logic, Today/Game/Odds/What Changed functionality, tests,
+monitoring, research.
 
 ## CURRENT RESEARCH STATUS
 Zero demonstrated predictive edges (25+ prereg hypotheses, all published).
