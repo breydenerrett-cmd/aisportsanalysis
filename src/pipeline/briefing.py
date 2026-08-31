@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from src.analysis import matchup as matchup_mod
 from src.analysis import prices as prices_mod
+from src.analysis import synthesis as synthesis_mod
 from src.detect import base as detect
 from src.detect import dossier as dossier_mod
 from src.pipeline import lineups as lineup_mod
@@ -83,6 +84,11 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
         entries.append({
             "dossier": dossier,
             "findings": findings,
+            # The top block of the card: the same dossier and the same
+            # findings, ranked down to the few worth saying out loud. Computed
+            # here so the ledger and any other consumer of a slate sees the
+            # identical summary the page shows.
+            "synthesis": synthesis_mod.synthesize(dossier, findings),
             "verdict": scan["verdict"],
             "side": scan.get("side"),
             "market": scan.get("market"),

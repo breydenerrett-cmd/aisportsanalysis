@@ -40,6 +40,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+from src.analysis import synthesis as synthesis_mod
 from src.detect import base as detect
 
 # What this system currently knows, said plainly and first. Two pre-registered
@@ -87,7 +88,14 @@ def _payload(slate, stamp) -> dict:
     for entry in slate.get("games", []):
         dossier = entry["dossier"]
         findings = entry.get("findings", [])
+        # The briefing computes this; a caller that assembles a slate by hand
+        # (the analyze path, and every test that builds a one-game slate) gets
+        # it here instead, from the same dossier and the same findings.
+        summary = entry.get("synthesis")
+        if summary is None:
+            summary = synthesis_mod.synthesize(dossier, findings)
         games.append({
+            "synthesis": _plain(summary),
             "away": dossier.game.get("away_team"),
             "home": dossier.game.get("home_team"),
             "start": dossier.game.get("start_time_utc"),
@@ -295,6 +303,44 @@ def _lead(games) -> str:
         'measured yet, so a rare fact and an important one are not yet '
         'distinguishable here. One line per detector.</p>'
         f'<div class="leadlist">{"".join(rows)}</div></section>')
+
+
+def _synthesis_section(game) -> str:
+    """The top block: the three-to-five things that matter, or the no-edge line.
+
+    It sits above every other section on the card because a reader who stops
+    after one block should have read the most important thing rather than the
+    first thing. Nothing here is new information -- every item restates a
+    number from a section below it, sample attached and evidence stamped -- so
+    a reader who does not trust the summary can always go find the source.
+    """
+    summary = game.get("synthesis") or {}
+    items = summary.get("items") or []
+    if not items:
+        return ('<div class="synth empty">'
+                '<h3>What matters tonight</h3>'
+                f'<p class="synthhead">{_esc(summary.get("headline") or synthesis_mod.NO_EDGE_HEADLINE)}</p>'
+                f'<p class="leadnote">{_esc(summary.get("note") or "")}</p>'
+                '</div>')
+    rows = []
+    for rank, item in enumerate(items, start=1):
+        support = [f'<span class="mono">sample {_esc(item.get("sample"))}</span>']
+        if item.get("below_floor"):
+            support.append('<span class="mono">below this section&rsquo;s '
+                           'sample floor</span>')
+        support.append(f'<span class="chip {_esc(item.get("evidence"))}" '
+                       f'title="{_esc(item.get("evidence_meaning"))}">'
+                       f'{_esc(item.get("evidence_label"))}</span>')
+        rows.append(
+            f'<div class="synthitem">'
+            f'<div class="synthrank">{rank}</div>'
+            f'<div><div class="claim">{_esc(item.get("statement"))}</div>'
+            f'<div class="support">{"".join(support)}'
+            f'<span class="mono">{_esc(item.get("source"))}</span>'
+            f'</div></div></div>')
+    return ('<div class="synth"><h3>What matters tonight</h3>'
+            f'<div class="synthlist">{"".join(rows)}</div>'
+            f'<p class="leadnote">{_esc(summary.get("note") or "")}</p></div>')
 
 
 def _market_section(game) -> str:
@@ -627,7 +673,8 @@ def _game_card(index, game) -> str:
                                   game.get("venue")) if x)
     findings = "".join(_finding_row(f) for f in game["findings"])
     body = (
-        ('<h3>Why this game is interesting</h3>'
+        _synthesis_section(game)
+        + ('<h3>Why this game is interesting</h3>'
          f'<div class="findings">{findings}</div>' if findings else
          '<h3>Why this game is interesting</h3>'
          '<p class="gap">No detector had anything to say about this game.</p>')
@@ -802,6 +849,18 @@ ul.news li { margin-bottom:5px; font-size:14px; line-height:1.45; }
 .price { font-size:12.5px; color:var(--muted); margin-top:4px; }
 
 .body { padding:0 18px 18px; border-top:1px solid var(--rule); }
+
+.synth { margin:16px 0 4px; padding:14px 16px 10px; background:var(--sunk);
+         border:1px solid var(--rule); border-radius:4px; }
+.synth h3 { margin-top:0; }
+.synthlist { display:flex; flex-direction:column; gap:11px; }
+.synthitem { display:grid; grid-template-columns:26px 1fr; gap:10px; align-items:baseline; }
+.synthrank { font-size:13px; font-weight:700; color:var(--faint);
+             font-variant-numeric:tabular-nums; }
+.synthhead { font-size:15px; line-height:1.42; margin:0 0 6px; }
+.synth .leadnote { margin:12px 0 0; }
+.synth .chip.observed { color:var(--accent); }
+.synth .chip.tested_null { color:var(--clay); }
 
 .findings { margin:16px 0 0; display:flex; flex-direction:column; gap:9px; }
 .finding { display:grid; grid-template-columns:56px 1fr; gap:13px; align-items:start; }
