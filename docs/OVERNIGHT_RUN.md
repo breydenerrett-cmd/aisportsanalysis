@@ -334,3 +334,14 @@ lineups for yesterday's completed slate (14/14 games); today's store simply
 started at 05:42Z and lineups had not posted yet at 14:11Z. Expected to
 bracket normally from ~14:35Z on. Multibook store starting 08-31 and absent
 f5_close.jsonl are the same story: stores younger than a day.
+
+2026-08-31 red-team round (commit 72c43be): six REPRODUCED collection bugs
+fixed with regression tests; the two worst were losing closing lines nightly
+(dense blind to the West Coast slate after 00:00 UTC; game_key merging a
+night game with the next matinee, letting Saturday's close settle Sunday).
+Three written up, not fixed: (7) a corrupt ledger line halts recording until
+a human intervenes (writer hardened; loud halt kept deliberately), (8)
+closing_observation ignores book_last_update so a suspended book can supply
+"the close" (changing it changes closing semantics — needs a decision),
+(9) grade-B poll markers don't record which date they polled (near-zero
+after the rosterwatch date fix; proper fix = stamp polled date on markers).
