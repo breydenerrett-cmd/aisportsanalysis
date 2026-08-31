@@ -84,7 +84,13 @@ from src.research import scoreboard
 # poverty -- so unknown names are rejected at validation instead.
 NUMERIC_FEATURES = ("lineup_platoon_share", "starter_platoon_gap",
                     "lineup_vs_primary_pitch", "primary_pitch_share",
-                    "top_minus_bottom")
+                    "top_minus_bottom",
+                    # Registered 2026-08-31 with the V5 pre-registration,
+                    # after their point-in-time injection tests and the
+                    # coverage measurement (velocity 55%/75%, groundball
+                    # 60%/85% both-sides by season) -- never before a
+                    # family that uses them exists on paper.
+                    "starter_velocity_gap", "starter_groundball_share")
 
 # An INTERACTION feature is two base features joined by "*": the per-side
 # value is their product, computed on each side before the away-minus-home

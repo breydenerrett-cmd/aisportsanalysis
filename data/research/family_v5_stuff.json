@@ -1,0 +1,41 @@
+{
+ "count": 3,
+ "fdr_q": 0.1,
+ "note": "V5 stuff/contact family per docs/RESEARCH_V5_STUFF.md; battery 2.0.0 fingerprint ac74c7a7f715f9ec",
+ "registered_at": "2026-08-31T07:54:53.674306+00:00",
+ "specs": [
+  {
+   "direction": "negative",
+   "effect_floor": 0.01,
+   "feature": "starter_velocity_gap",
+   "market": "h2h",
+   "mechanism": "a starter whose fastball sits below league pace is measurably losing stuff before his results show it; the market prices the season line, velocity leads it",
+   "min_sample": 200,
+   "name": "facing_soft_stuff",
+   "side_rule": "back_advantaged",
+   "threshold": 3.0167
+  },
+  {
+   "direction": "negative",
+   "effect_floor": 0.01,
+   "feature": "top_minus_bottom*starter_groundball_share",
+   "market": "h2h",
+   "mechanism": "a quality-concentrated lineup lives on balls in the air; a career ground-ball starter takes exactly that away, and club-level pricing averages the collision out",
+   "min_sample": 200,
+   "name": "stacked_top_vs_groundballer",
+   "side_rule": "back_advantaged",
+   "threshold": 0.0137
+  },
+  {
+   "direction": "negative",
+   "effect_floor": 0.01,
+   "feature": "primary_pitch_share*starter_velocity_gap",
+   "market": "h2h",
+   "mechanism": "a starter who leans hardest on one pitch while his velocity sits below league is exploitable through that one pitch; the lean and the decline compound",
+   "min_sample": 200,
+   "name": "fastball_leaning_decliner",
+   "side_rule": "back_advantaged",
+   "threshold": 1.238
+  }
+ ]
+}
