@@ -25,6 +25,24 @@ conditions plus Brey's sign-off; a test enforces the gate).
 - Falsification battery RULES_VERSION 2.0.0, frozen at the adjudicated
   validation gate (docs/VALIDATION_GATE.md).
 
+## Read this first if you are resuming cold (2026-08-31)
+
+A resume audit found three forward-evidence failures running concurrently,
+none of which raised an error: the odds captures were gitignored (living
+only on an ephemeral container's disk), the F5 close store had never been
+written at all, and all 33 accumulated V3 events were unmappable. Repairs
+are in flight under workflow wf_be70a6ab-e3e.
+
+**The standing lesson: a store that should be growing must be checked for
+ROWS, not for the absence of errors.** Silence is not success. Before
+trusting any "accumulating nicely" claim in these docs, count the rows.
+
+Brey has also proposed an Evolution Lab (historical replay + evolving
+strategy population). It is ASSESSED, NOT STARTED — see
+docs/EVOLUTION_LAB_ASSESSMENT.md, which reframes it around measuring the
+noise ceiling rather than hunting champions, and names two decisions that
+belong to Brey.
+
 ## Standing rules (never relax; Brey's words)
 
 No real-money betting or bet-capable code · no fabricated values (None over
