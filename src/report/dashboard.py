@@ -53,8 +53,10 @@ _STANDING = (
     "<b>Nothing on this page is a proven edge.</b> Thirteen pre-registered "
     "hypotheses have been tested against 2023&ndash;24 outcomes and none "
     "cleared the bar. What follows is accurate description of tonight&rsquo;s "
-    "games &mdash; useful for deciding what to look at, and for knowing which "
-    "of your own reasons are noise. It is not a model that beats the market."
+    "games, the way a sharp friend would lay them out &mdash; every number "
+    "with its sample attached, useful for deciding what to look at and for "
+    "knowing which of your own reasons are noise. It is not a model that "
+    "beats the market."
 )
 
 EVIDENCE_LABELS = {
@@ -439,7 +441,8 @@ def _matchup_section(game) -> str:
             parts.append(
                 f'<p class="support">Combined {entry["total_hits"]}-for-'
                 f'{entry["total_at_bats"]} ({_num(entry["aggregate_avg"], 3)}). '
-                f'Large enough to be worth something.</p>')
+                f'Unusually, a sample large enough to be worth a sentence '
+                f'&mdash; supporting evidence, never a read on its own.</p>')
         else:
             parts.append(f'<p class="gap">{_esc(entry.get("reason") or "sample too small")}</p>')
     return "".join(parts)

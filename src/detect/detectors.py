@@ -112,9 +112,10 @@ class ImpliedBullpenDisagreement(Detector):
         favoured = home if shift > 0 else away
         findings = [Finding(
             self.name, CONTEXT,
-            f"The market gives {favoured} {abs(shift) * 100:.1f} points of win "
-            f"probability from innings 6-9 — that gap between the full-game and "
-            f"first-five prices is its bullpen opinion, stated in probability.",
+            f"The full-game and first-five prices on {favoured} differ by "
+            f"{abs(shift) * 100:.1f} points of win probability. The only thing "
+            f"separating those two prices is innings 6-9, so that gap is the "
+            f"market's own opinion of the bullpens, stated in probability.",
             value=round(abs(shift), 4), baseline=0.0,
             surprise=surprise_score(abs(shift), 0.0, BULLPEN_SHIFT_SPREAD),
             side=HOME if shift > 0 else AWAY, evidence=UNPROVEN,
@@ -156,11 +157,13 @@ class ImpliedBullpenDisagreement(Detector):
             names = ", ".join(n for n in favoured_strain["names"] if n)
             findings.append(Finding(
                 self.name, SIGNAL,
-                f"The market prices {favoured}'s bullpen as the better one "
-                f"tonight, but {favoured_strain['unavailable']} of its arms are "
-                f"likely unavailable against {other_strain['unavailable']} for "
-                f"{other}"
-                + (f" ({names})" if names else "") + ".",
+                f"The market's prices say {favoured} has the better bullpen "
+                f"tonight, but {favoured_strain['unavailable']} of its "
+                f"{favoured_strain['arms']} relievers are likely unavailable"
+                + (f" ({names})" if names else "")
+                + f" against {other_strain['unavailable']} for {other} — the "
+                f"pen the price is counting on is the one resting its arms. "
+                f"Whether a gap like this predicts anything is untested.",
                 value=favoured_strain["unavailable"],
                 baseline=other_strain["unavailable"],
                 sample=f"{favoured_strain['arms']} relievers, 7-day window",
@@ -199,8 +202,10 @@ class BullpenWorkload(Detector):
             unusual = len(out) > TYPICAL_UNAVAILABLE
             findings.append(Finding(
                 self.name, SIGNAL if unusual else CONTEXT,
-                f"{team} is down {len(out)} of {len(relievers)} relievers "
-                f"tonight — {worst.get('name')} {worst.get('availability_reason')}.",
+                f"{team} takes the field without {len(out)} of its "
+                f"{len(relievers)} relievers tonight — "
+                f"{worst.get('name')} {worst.get('availability_reason')} — so "
+                f"the late innings fall to whoever is left in the pen.",
                 value=len(out), baseline=float(TYPICAL_UNAVAILABLE),
                 sample=f"{workload.get('window_days')}-day window",
                 surprise=surprise_score(len(out), TYPICAL_UNAVAILABLE, 1.0),
@@ -254,9 +259,11 @@ class StaleBook(Detector):
             price = best[3]["home_price" if side is HOME else "away_price"]
             findings.append(Finding(
                 self.name, SIGNAL,
-                f"{best[0]} has {label} at {price:+d}, which is {edge * 100:.1f} "
-                f"points cheaper than the {len(fairs)}-book consensus. No "
-                f"prediction required — it is the same bet at a better price.",
+                f"{best[0]} is posting {label} at {price:+d}, which works out "
+                f"{edge * 100:.1f} points of win probability cheaper than the "
+                f"{len(fairs)}-book consensus. No prediction required — it is "
+                f"the same bet at a better price, because one book sits off "
+                f"the pack.",
                 value=round(best[index], 4), baseline=round(target, 4),
                 sample=f"{len(fairs)} books",
                 surprise=surprise_score(best[index], target, 0.010),
@@ -284,7 +291,8 @@ class StarterMismatch(Detector):
             return [Finding(
                 self.name, DEBUNK,
                 "One starter is under 20 innings this season. Any rate you see "
-                "quoted for him tonight is small-sample noise, not a read.",
+                "quoted for him tonight, good or bad, is small-sample noise, "
+                "not a read on how he actually pitches.",
                 sample="<20 IP", evidence=TESTED_NULL)]
 
         away_fip, home_fip = starters.get("away_sp_fip"), starters.get("home_sp_fip")
@@ -297,13 +305,17 @@ class StarterMismatch(Detector):
             if score is None or score < 1.0:
                 continue
             better = fip < LEAGUE_FIP
+            innings = starters.get(
+                ("away" if side is AWAY else "home") + "_sp_innings")
             findings.append(Finding(
                 self.name, SIGNAL,
-                f"{team}'s starter is at {fip:.2f} FIP against a league average "
-                f"of {LEAGUE_FIP:.2f} — {'well above' if better else 'well below'} "
-                "an average major-league start.",
+                f"{team}'s starter carries a {fip:.2f} FIP over {innings} IP "
+                f"this season against a league average of {LEAGUE_FIP:.2f} — "
+                f"he has given up {'less' if better else 'more'} than a "
+                f"typical starter all year, and the starter decides most of "
+                f"the first five innings.",
                 value=fip, baseline=LEAGUE_FIP,
-                sample=f"{starters.get(('away' if side is AWAY else 'home') + '_sp_innings')} IP",
+                sample=f"{innings} IP",
                 surprise=score, side=side if better else (HOME if side is AWAY else AWAY),
                 market_relevance=(
                     "Concentrated in the first five; diluted over nine by the pen."),
@@ -386,9 +398,12 @@ class PlatoonMismatch(Detector):
                           f"against {split['vs_right_ops']:.3f} to righties")
             findings.append(Finding(
                 self.name, SIGNAL,
-                f"{pitcher_team}'s starter {allows}, and "
-                f"{batting_team} is starting {exploiting} of {known} {hand} "
-                f"hitters against him tonight.",
+                f"{pitcher_team}'s starter {allows} "
+                f"({split['vs_left_faced']} batters faced left-handed, "
+                f"{split['vs_right_faced']} right), and {batting_team} answers "
+                f"with {exploiting} of its {known} known hitters batting "
+                f"{hand} tonight — most of this lineup steps in on the side "
+                f"he handles worse.",
                 value=round(split["gap"], 3), baseline=0.0,
                 sample=(f"{split['vs_left_faced']} BF vs L, "
                         f"{split['vs_right_faced']} vs R"),
@@ -434,9 +449,10 @@ class ThinMatchupHistory(Detector):
                 self.name, DEBUNK,
                 f"{loud.get('name')} is "
                 f"{loud.get('hits')}-for-{loud.get('at_bats')} lifetime against "
-                f"tonight's starter. That is {loud['at_bats']} at-bat"
-                f"{'' if loud['at_bats'] == 1 else 's'} — it will be quoted "
-                "somewhere today and it means nothing.",
+                f"tonight's starter — a line that will be quoted somewhere "
+                f"today. It is {loud['at_bats']} at-bat"
+                f"{'' if loud['at_bats'] == 1 else 's'}, and at that sample it "
+                "means nothing about tonight.",
                 value=loud.get("at_bats"), sample=f"{loud['at_bats']} AB",
                 # A debunk has no side: it is a reason to discount a number, not
                 # evidence for a team. Claiming one would be a false statement.
@@ -484,9 +500,11 @@ class LineupVsStarter(Detector):
                 self.name, SIGNAL,
                 f"{team}'s posted lineup is {aggregate['total_hits']}-for-"
                 f"{aggregate['total_at_bats']} ({avg:.3f}) against tonight's "
-                f"starter across their careers, against a league average of "
-                f"{LEAGUE_BATTING_AVG:.3f}. Unusually, that is a large enough "
-                "sample to be worth a sentence.",
+                f"starter across their careers, where league average is "
+                f"{LEAGUE_BATTING_AVG:.3f}. Most batter-vs-pitcher history is "
+                f"too thin to mean anything; this one, at "
+                f"{aggregate['total_at_bats']} at-bats, is the rare one large "
+                "enough to be worth a sentence — and no more than that.",
                 value=avg, baseline=LEAGUE_BATTING_AVG,
                 sample=f"{aggregate['total_at_bats']} AB",
                 surprise=score,
@@ -545,6 +563,11 @@ class TravelLoad(Detector):
                 direction = "east" if load.get("eastward") else "west"
                 zones = (f", crossing {load['zones']:.1f} time zones"
                          if load.get("zones", 0) >= 1 else "")
+                mechanism = (
+                    "flying east shortens the night against the body clock"
+                    if load.get("eastward") else
+                    "a flight that long is a different pregame day from a bus "
+                    "ride across town")
                 findings.append(Finding(
                     self.name, SIGNAL,
                     # "SD flew 2,078 miles east from SD" is technically correct
@@ -552,7 +575,7 @@ class TravelLoad(Detector):
                     # park, the English is "from home".
                     f"{team} flew {miles:,.0f} miles {direction} from "
                     f"{'home' if load.get('last_venue') == team else load['last_venue']}"
-                    f"{zones}.",
+                    f"{zones} — {mechanism}.",
                     value=miles, baseline=TRAVEL_BASELINE,
                     # .get, not [] -- every field on a travel load is optional
                     # by design, and a detector that raises on a missing one
@@ -572,7 +595,9 @@ class TravelLoad(Detector):
                 games = load["games_last_7"]
                 findings.append(Finding(
                     self.name, CONTEXT,
-                    f"{team} has played {games} games in seven days.",
+                    f"{team} has played {games} games in seven days, where a "
+                    f"normal week holds {DENSE_BASELINE_GAMES} — more "
+                    f"baseball than the schedule usually asks of one roster.",
                     value=float(games), baseline=float(DENSE_BASELINE_GAMES),
                     sample="7-day window",
                     surprise=surprise_score(games, DENSE_BASELINE_GAMES, 1.0),
@@ -605,9 +630,10 @@ class ParkAndWeather(Detector):
         if altitude is not None and altitude >= HIGH_ALTITUDE_M:
             findings.append(Finding(
                 self.name, SIGNAL,
-                f"{park.get('name')} sits at {altitude:,} m, far above the "
-                f"{LEAGUE_ALTITUDE_M:,} m of a typical park — the ball carries "
-                "and the run environment is not the league's.",
+                f"{park.get('name')} sits at {altitude:,} m, where a typical "
+                f"park sits near {LEAGUE_ALTITUDE_M:,} m — in air that thin "
+                "the ball carries, so tonight's run environment is not the "
+                "league's.",
                 value=float(altitude), baseline=float(LEAGUE_ALTITUDE_M),
                 surprise=surprise_score(altitude, LEAGUE_ALTITUDE_M, 250.0),
                 side=NEITHER, evidence=UNPROVEN,
@@ -625,7 +651,8 @@ class ParkAndWeather(Detector):
             findings.append(Finding(
                 self.name, SIGNAL,
                 f"First pitch is forecast at {temp:.0f}F against a typical "
-                f"{LEAGUE_TEMP_F:.0f}F. {physics}.",
+                f"{LEAGUE_TEMP_F:.0f}F. {physics} — a fact about the run "
+                "environment, not a lean toward either team.",
                 value=float(temp), baseline=float(LEAGUE_TEMP_F),
                 surprise=surprise_score(temp, LEAGUE_TEMP_F, 12.0),
                 side=NEITHER, evidence=UNPROVEN,
@@ -699,9 +726,11 @@ class BullpenExposure(Detector):
             findings.append(Finding(
                 self.name, SIGNAL,
                 f"{team}'s starter averages {per_start:.2f} innings a start "
-                f"against a league {LEAGUE_IP_PER_START:.2f}, so about "
-                f"{exposed:.1f} innings of this game go to a bullpen "
-                f"{'sooner' if short else 'later'} than usual.",
+                f"({starts if starts is not None else '?'} starts, "
+                f"{starters.get(prefix + 'sp_innings')} IP) against a league "
+                f"{LEAGUE_IP_PER_START:.2f}, which hands about {exposed:.1f} "
+                f"innings of tonight's game to the bullpen — the relievers "
+                f"decide {'more' if short else 'less'} of this one than usual.",
                 value=per_start, baseline=LEAGUE_IP_PER_START,
                 sample=f"{starters.get(prefix + 'sp_innings')} IP",
                 surprise=score,
@@ -784,9 +813,11 @@ class PitchMixMismatch(Detector):
                 self.name, SIGNAL,
                 f"{pitcher_team}'s starter throws his "
                 f"{primary.get('pitch_name', 'primary pitch').lower()} "
-                f"{usage:.0f}% of the time, and {batting_team}'s posted lineup "
-                f"is at a {lineup_woba:.3f} wOBA against that pitch — a league "
-                f"average is {LEAGUE_WOBA:.3f}.",
+                f"{usage:.0f}% of the time, and against that same pitch "
+                f"{batting_team}'s posted lineup measures a {lineup_woba:.3f} "
+                f"wOBA ({len(rows)} hitters, {int(total)} PA) against a league "
+                f"{LEAGUE_WOBA:.3f} — the pitch he leans on most is one this "
+                f"lineup has {'handled' if strong else 'not handled'}.",
                 value=round(lineup_woba, 3), baseline=LEAGUE_WOBA,
                 sample=f"{len(rows)} hitters, {int(total)} plate appearances",
                 surprise=score,
