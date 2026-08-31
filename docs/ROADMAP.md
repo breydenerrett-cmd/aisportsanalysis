@@ -123,11 +123,10 @@ next research read happens when a V3 class reaches its 30-event floor.
    designing any F5 family; historical F5 backfill is a HARD GATE item).
 4. Season-end handling (late September): daily loop and capture behavior
    when the MLB slate empties; plan the off-season posture (lane E).
-5. Product polish batch when functionality pauses: per-game permalinks,
-   season archive view (lane D, explicitly after function).
-6. Wire the relevance layer into the product: score_events/what_changed
-   (src/analysis/relevance.py) exist but nothing renders them -- add the
-   "what changed, and does it matter" line to the game card (lane D).
+5. Off-season research prep (lane F): literature microstructure
+   hypotheses that survive the catalogue's raised bar (mechanism the
+   market plausibly CANNOT price), written up as V6 candidates -- design
+   only, no registration before the machinery gate rules.
 
 DONE this cycle: timestamp audit · V3 freeze · market probe · collection
 policy · lead/lag + eventstudy cores · multibook store · rosterwatch ·
@@ -137,7 +136,10 @@ Elo benchmark (close wins, p=0.0003) · V4 (zero survivors) · validation
 gate (adjudicated open) · V5 stuff family (zero survivors) · resource
 architecture (scripts own collection; Opus workers execute) · research
 catalogue (73 ideas classified) · slate health monitor + health CLI ·
-Analyzer synthesis layer · collection red-team (6 reproduced bugs fixed).
+Analyzer synthesis layer · collection red-team (6 reproduced bugs fixed) · product red-team
+(13 honesty fixes) · closing staleness + marker dates · market-board
+unification · relevance layer + What-changed section · V4 reproducibility
+audit (exact) · permalinks + season archive.
 
 ### FUTURE BACKLOG
 V3 falsification battery pass · F5 / F5-totals research families · player-

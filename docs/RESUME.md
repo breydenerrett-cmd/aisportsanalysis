@@ -46,7 +46,7 @@ identifiers in commits/PRs.
 - Branch: `claude/sports-betting-analysis-review-g1o0co`. Commit and push
   every completed unit. API key in gitignored `.env` (ODDS_API_KEY) — a
   fresh clone lacks it.
-- Tests: `python3 -m unittest discover -s tests -q` (~1,400, all green at
+- Tests: `python3 -m unittest discover -s tests -q` (~1,640, all green at
   every commit).
 - Chat with Brey: EXTREMELY concise, few lines, detail goes in docs/.
 
