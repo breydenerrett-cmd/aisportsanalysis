@@ -302,3 +302,14 @@ sentence, mechanism clauses, warnings kept load-bearing).
 
 The two-tools plan's Analyzer items A1–A4 and Ranker items B1–B3 are all
 shipped; the Ranker page remains gated by test. Suite: 1,377.
+
+## 2026-08-31 ~07:30 UTC — pitch store re-ingested with batted-ball type
+
+All 180 windows re-fetched from Savant (free) with bb_type in the kept
+columns: 2,737,968 rows, exactly matching the old store, zero failed
+windows (one mid-transfer hangup killed the first attempt at window
+seven; the retry net now catches IncompleteRead and the resume cost one
+window). bb_type present on 17.4% of pitches -- the balls-in-play rate,
+so coverage is effectively complete. Old store preserved locally as
+statcast_pre_bbtype. This unlocks the batted-ball/contact profile
+features for the V5 pre-registration and the Analyzer.
