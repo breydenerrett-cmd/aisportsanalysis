@@ -285,3 +285,20 @@ data/watch/ with our own fetch times — hourly via the renamed "Forward
 capture: watch + dense grid" trigger, every 15 minutes during dense runs.
 First live poll: 12 probables, 1 transaction. V3's event clock starts
 today; class floors are 30 events each. Suite: 1,319 tests green.
+
+## 2026-08-31 ~07:00 UTC — Analyzer complete through A4, resilience, V3 runner
+
+Shipped this stretch: any-matchup mode ('analyze --away X --home Y', real
+games resolved point-in-time, hypotheticals rendered with named gaps);
+starter_velocity_gap matrix feature (injection-tested; batted-ball share
+correctly NOT built — the store carries no bb_type, so a re-ingest with
+the column is running in the background, ~180 windows, free); ledger
+resilience (write-time dedup with the priced-repair exception, first-
+priced recommendation rule, unsettled-past-date alerting); the V3 timing
+report ('timing' command — counts below the 30-event class floor, pre-
+registered tables only at it; first event already accumulating); and the
+narrative pass over all eleven detector claims (samples inside every
+sentence, mechanism clauses, warnings kept load-bearing).
+
+The two-tools plan's Analyzer items A1–A4 and Ranker items B1–B3 are all
+shipped; the Ranker page remains gated by test. Suite: 1,377.
