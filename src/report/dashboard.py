@@ -490,6 +490,45 @@ def _matchup_depth_section(game) -> str:
     return "".join(parts)
 
 
+def _price_improvement_section(game) -> str:
+    """The best price on the board versus the consensus, labelled honestly.
+
+    The label is part of the section, not decoration: this is line-shopping
+    value -- a better execution price -- and the page never lets it read as
+    expected value or a prediction.
+    """
+    section = game["sections"].get("price_improvement")
+    if not section:
+        return _gap_block("Best price vs consensus",
+                          game["gaps"].get("price_improvement",
+                                           "no multi-book observations"))
+    rows = []
+    for side in ("away", "home"):
+        detail = (section.get("sides") or {}).get(side) or {}
+        if detail.get("skipped"):
+            rows.append(f'<tr><td>{side}</td><td colspan="4" class="gap">'
+                        f'{_esc(detail["skipped"])}</td></tr>')
+            continue
+        price = detail.get("best_price")
+        price_text = f"+{price}" if isinstance(price, int) and price > 0 else str(price)
+        rows.append(
+            f'<tr><td>{side}</td>'
+            f'<td class="mono">{_esc(price_text)} ({_esc(detail.get("best_book") or "?")})</td>'
+            f'<td class="mono">{detail.get("consensus_probability", 0):.1%}</td>'
+            f'<td class="mono">{detail.get("improvement_points", 0):+.4f}</td>'
+            f'<td class="mono">{detail.get("improvement_return_pct", 0):+.2f}%</td></tr>')
+    dispersion = section.get("dispersion") or {}
+    return (
+        '<h3>Best price vs consensus</h3>'
+        '<table class="prices"><tr><th>side</th><th>best available</th>'
+        '<th>consensus</th><th>improvement (prob pts)</th>'
+        '<th>improvement (return)</th></tr>'
+        + "".join(rows) + '</table>'
+        f'<p class="gap">{dispersion.get("books", "?")} books; home-probability '
+        f'spread {dispersion.get("home_probability_range", 0):.4f}. '
+        f'{_esc(section.get("label") or "")}.</p>')
+
+
 def _news_section(game) -> str:
     """What changed for either club in the last ten days.
 
@@ -585,7 +624,7 @@ def _game_card(index, game) -> str:
          '<h3>Why this game is interesting</h3>'
          '<p class="gap">No detector had anything to say about this game.</p>')
         + _news_section(game)
-        + _market_section(game) + _starters_section(game)
+        + _market_section(game) + _price_improvement_section(game) + _starters_section(game)
         + _lineups_section(game) + _matchup_section(game)
         + _matchup_depth_section(game)
         + _teams_section(game) + _environment_section(game)

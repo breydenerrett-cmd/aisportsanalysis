@@ -103,3 +103,36 @@ class ForGameTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class WiringTests(unittest.TestCase):
+    def test_by_matchup_keys_by_abbreviation_and_date(self):
+        rows = [{"observed_utc": "2026-08-31T21:00:00Z", "event_id": "e1",
+                 "commence_time": "2026-08-31T23:10:00Z",
+                 "home_team": "New York Mets",
+                 "away_team": "Cincinnati Reds", "book": f"b{i}",
+                 "book_last_update": "x",
+                 "home_price": -110, "away_price": -110} for i in range(6)]
+        index = prices.by_matchup(rows)
+        self.assertIn(("CIN", "NYM", "2026-08-31"), index)
+        self.assertIn("sides", index[("CIN", "NYM", "2026-08-31")])
+
+    def test_a_thin_board_lands_as_its_reason_not_a_table(self):
+        rows = [{"observed_utc": "2026-08-31T21:00:00Z", "event_id": "e1",
+                 "commence_time": "2026-08-31T23:10:00Z",
+                 "home_team": "New York Mets",
+                 "away_team": "Cincinnati Reds", "book": "only_one",
+                 "book_last_update": "x",
+                 "home_price": -110, "away_price": -110}]
+        index = prices.by_matchup(rows)
+        self.assertIn("skipped", index[("CIN", "NYM", "2026-08-31")])
+
+    def test_the_dossier_records_the_section_or_the_honest_gap(self):
+        from src.detect import dossier as dossier_mod
+        game = {"away_team": "CIN", "home_team": "NYM", "date": "2026-08-31"}
+        with_section = dossier_mod.build(
+            game, None, price_improvement={"sides": {}, "dispersion": {},
+                                           "label": prices.LABEL})
+        self.assertIn("price_improvement", with_section.sections)
+        without = dossier_mod.build(game, None, price_improvement=None)
+        self.assertIn("price_improvement", without.gaps)

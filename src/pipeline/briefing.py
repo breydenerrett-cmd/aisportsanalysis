@@ -7,6 +7,7 @@ what this produces; detectors and the dashboard both stay ignorant of each other
 from __future__ import annotations
 
 from src.analysis import matchup as matchup_mod
+from src.analysis import prices as prices_mod
 from src.detect import base as detect
 from src.detect import dossier as dossier_mod
 from src.pipeline import lineups as lineup_mod
@@ -18,7 +19,8 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
                 weather_by_pk=None, lineups_by_pk=None, bullpen_by_team=None,
                 handedness=None, splits_by_pk=None, matchups_by_pk=None,
                 travel_by_pk=None, arsenals=None, batter_arsenals=None,
-                news_by_pk=None, matchup_depth_by_pk=None, detectors=None,
+                news_by_pk=None, matchup_depth_by_pk=None,
+                price_improvement_by_key=None, detectors=None,
                 information_time=None) -> dict:
     """One briefing for one date.
 
@@ -37,6 +39,12 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
     if matchup_depth_by_pk is None:
         matchup_depth_by_pk = matchup_mod.depth_by_pk(
             games, lineups_by_pk, handedness)
+    # Price improvement comes from the multi-book capture store, read once
+    # per slate; tests inject price_improvement_by_key the same way. A store
+    # that does not exist yet simply yields no sections, and every dossier
+    # then carries the honest gap instead.
+    if price_improvement_by_key is None:
+        price_improvement_by_key = prices_mod.by_matchup()
     for game in games:
         key = (game.get("away_team"), game.get("home_team"))
         dossier = dossier_mod.build(
@@ -53,6 +61,9 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
             arsenals=_arsenal_section(game, arsenals),
             news=(news_by_pk or {}).get(game.get("game_pk")),
             matchup_depth=(matchup_depth_by_pk or {}).get(game.get("game_pk")),
+            price_improvement=(price_improvement_by_key or {}).get(
+                (game.get("away_team"), game.get("home_team"),
+                 game.get("date"))),
             bullpen={team: (bullpen_by_team or {}).get(team) for team in key
                      if (bullpen_by_team or {}).get(team)} or None,
             information_time=information_time,

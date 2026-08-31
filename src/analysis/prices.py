@@ -141,3 +141,37 @@ def for_game(away_team=None, home_team=None, date=None, rows=None) -> dict:
     if "skipped" not in result:
         result["observed_utc"] = board[0].get("ts")
     return result
+
+
+def by_matchup(rows=None) -> dict:
+    """{(away_abbrev, home_abbrev, date): improvement section} for a store.
+
+    The multibook store speaks the odds API's full club names; the briefing
+    speaks abbreviations. The translation happens here, once, so the
+    briefing can look a game up by the key it already has. Rows that name a
+    club the translator does not recognise are dropped -- an unmatchable row
+    can only ever mislabel a game.
+    """
+    from src.pipeline import slate as slate_mod
+    from src.pipeline import snapshots
+
+    source = snapshots.read_multibook() if rows is None else rows
+    grouped = {}
+    for row in source:
+        away = slate_mod.team_abbrev_from_name(row.get("away_team") or "")
+        home = slate_mod.team_abbrev_from_name(row.get("home_team") or "")
+        date = (row.get("commence_time") or "")[:10]
+        if not away or not home or not date:
+            continue
+        grouped.setdefault((away, home, date), []).append(row)
+    out = {}
+    for key, group in grouped.items():
+        quotes = [{"ts": r.get("observed_utc"), "book": r.get("book"),
+                   "away_price": r.get("away_price"),
+                   "home_price": r.get("home_price")} for r in group]
+        board = latest_instant(quotes)
+        section = snapshot(board)
+        if "skipped" not in section:
+            section["observed_utc"] = board[0].get("ts")
+        out[key] = section
+    return out

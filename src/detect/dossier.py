@@ -73,7 +73,7 @@ class Dossier:
 def build(game, store, pitcher_logs=None, prices=None, weather=None,
           lineups=None, bullpen=None, splits=None, matchups=None,
           travel=None, arsenals=None, news=None, matchup_depth=None,
-          information_time=None) -> Dossier:
+          price_improvement=None, information_time=None) -> Dossier:
     """Assemble one dossier from whatever sources are available."""
     dossier = Dossier(game, information_time=information_time)
     date = game.get("date")
@@ -106,6 +106,18 @@ def build(game, store, pitcher_logs=None, prices=None, weather=None,
     # What changed recently, as opposed to every other section, which describes
     # a steady state. A quiet stretch is a real answer and carries its own
     # sentence rather than rendering as missing data.
+    # The best number on the board versus the de-vigged consensus. The
+    # section carries its own label -- line-shopping value, never expected
+    # value -- and a thin board carries its reason instead of a table.
+    if price_improvement is not None:
+        if price_improvement.get("skipped"):
+            dossier.miss("price_improvement", price_improvement["skipped"])
+        else:
+            dossier.add("price_improvement", price_improvement)
+    else:
+        dossier.miss("price_improvement",
+                     "no multi-book observations for this game yet")
+
     if news is not None:
         if news.get("reason"):
             dossier.miss("news", news["reason"])
