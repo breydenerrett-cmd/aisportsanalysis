@@ -445,6 +445,51 @@ def _matchup_section(game) -> str:
     return "".join(parts)
 
 
+def _matchup_depth_section(game) -> str:
+    """The unit-vs-specific-weakness decomposition, sentences first.
+
+    Everything in it is an observation of play before a stated cutoff --
+    the section says so itself -- and every number arrives with its sample.
+    Small-sample warnings and absences render in the gap style so a thin or
+    missing read can never be mistaken for a solid one.
+    """
+    depth = game["sections"].get("matchup_depth")
+    if not depth:
+        return _gap_block("Matchup depth",
+                          game["gaps"].get("matchup_depth", "not built"))
+    parts = ["<h3>Matchup depth</h3>"]
+    note = _esc(depth.get("nature") or "")
+    if depth.get("cutoff"):
+        note += f" Cutoff: pitches before {_esc(depth['cutoff'])}."
+    if note:
+        parts.append(f'<p class="support">{note}</p>')
+    for side, team in (("away", game["away"]), ("home", game["home"])):
+        entry = depth.get(side)
+        if not entry:
+            continue
+        throws = entry.get("opposing_starter_throws")
+        parts.append(f'<h3>{_esc(team)} lineup vs '
+                     f'{_esc(throws + "HP" if throws else "opposing starter")}'
+                     "</h3>")
+        if entry.get("reason"):
+            parts.append(f'<p class="gap">{_esc(entry["reason"])}</p>')
+            continue
+        for name in ("handedness", "pitch_mix", "concentration"):
+            picture = entry.get(name) or {}
+            for sentence in picture.get("sentences") or []:
+                parts.append(f'<p class="support">{_esc(sentence)}</p>')
+            for reason in picture.get("absent") or []:
+                parts.append(f'<p class="gap">not available: {_esc(reason)}</p>')
+            for warning in picture.get("warnings") or []:
+                parts.append(f'<p class="gap">{_esc(warning)}</p>')
+        batters = (entry.get("pitch_mix") or {}).get("batters") or []
+        if batters:
+            rows = [[f'{b.get("order")}. {b.get("name")}', b.get("pa"),
+                     _num(b.get("woba"), 3)] for b in batters]
+            parts.append(_table(rows, ["vs primary pitch", "PA", "wOBA"]))
+    return "".join(parts)
+
+
 def _news_section(game) -> str:
     """What changed for either club in the last ten days.
 
@@ -542,6 +587,7 @@ def _game_card(index, game) -> str:
         + _news_section(game)
         + _market_section(game) + _starters_section(game)
         + _lineups_section(game) + _matchup_section(game)
+        + _matchup_depth_section(game)
         + _teams_section(game) + _environment_section(game)
         + _gaps_section(game))
 

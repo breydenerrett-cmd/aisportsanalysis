@@ -6,6 +6,7 @@ what this produces; detectors and the dashboard both stay ignorant of each other
 
 from __future__ import annotations
 
+from src.analysis import matchup as matchup_mod
 from src.detect import base as detect
 from src.detect import dossier as dossier_mod
 from src.pipeline import lineups as lineup_mod
@@ -17,7 +18,8 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
                 weather_by_pk=None, lineups_by_pk=None, bullpen_by_team=None,
                 handedness=None, splits_by_pk=None, matchups_by_pk=None,
                 travel_by_pk=None, arsenals=None, batter_arsenals=None,
-                news_by_pk=None, detectors=None, information_time=None) -> dict:
+                news_by_pk=None, matchup_depth_by_pk=None, detectors=None,
+                information_time=None) -> dict:
     """One briefing for one date.
 
     The scanner's verdict and the detectors run over the same dossier, so a
@@ -25,6 +27,16 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
     computed from one snapshot of one game's information.
     """
     entries, notes = [], []
+
+    # Matchup depth is derived from inputs this function already holds (the
+    # posted lineups, the handedness cache, the pitch store), so it is built
+    # here rather than passed in from every caller -- the CLI gets it for
+    # free. One walk of the pitch store per slate, and none at all when no
+    # lineup is posted. Tests (and any caller that wants control) inject
+    # `matchup_depth_by_pk` instead, the same way news_by_pk is injected.
+    if matchup_depth_by_pk is None:
+        matchup_depth_by_pk = matchup_mod.depth_by_pk(
+            games, lineups_by_pk, handedness)
     for game in games:
         key = (game.get("away_team"), game.get("home_team"))
         dossier = dossier_mod.build(
@@ -40,6 +52,7 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
             travel=(travel_by_pk or {}).get(game.get("game_pk")),
             arsenals=_arsenal_section(game, arsenals),
             news=(news_by_pk or {}).get(game.get("game_pk")),
+            matchup_depth=(matchup_depth_by_pk or {}).get(game.get("game_pk")),
             bullpen={team: (bullpen_by_team or {}).get(team) for team in key
                      if (bullpen_by_team or {}).get(team)} or None,
             information_time=information_time,

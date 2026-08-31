@@ -72,7 +72,8 @@ class Dossier:
 
 def build(game, store, pitcher_logs=None, prices=None, weather=None,
           lineups=None, bullpen=None, splits=None, matchups=None,
-          travel=None, arsenals=None, news=None, information_time=None) -> Dossier:
+          travel=None, arsenals=None, news=None, matchup_depth=None,
+          information_time=None) -> Dossier:
     """Assemble one dossier from whatever sources are available."""
     dossier = Dossier(game, information_time=information_time)
     date = game.get("date")
@@ -117,6 +118,18 @@ def build(game, store, pitcher_logs=None, prices=None, weather=None,
         dossier.add("lineups", lineups)
     else:
         dossier.miss("lineups", "lineup not posted yet, or not fetched")
+
+    # The unit-vs-specific-weakness decomposition, from the rebuilt pitch
+    # store (src/analysis/matchup.py). An entry can carry its own reason for
+    # not existing -- no posted lineup, no pitch store -- and that reason is
+    # recorded as the gap, mirroring how news handles a quiet feed.
+    if matchup_depth is not None:
+        if matchup_depth.get("reason"):
+            dossier.miss("matchup_depth", matchup_depth["reason"])
+        else:
+            dossier.add("matchup_depth", matchup_depth)
+    else:
+        dossier.miss("matchup_depth", "matchup depth not built for this slate")
 
     if bullpen:
         dossier.add("bullpen", bullpen)
