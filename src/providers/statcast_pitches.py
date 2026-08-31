@@ -61,7 +61,13 @@ RETRY_BACKOFF = (15, 45, 120)
 KEEP = ("game_date", "game_pk", "pitcher", "batter", "stand", "p_throws",
         "pitch_type", "release_speed", "events", "description",
         "woba_value", "woba_denom", "at_bat_number", "pitch_number",
-        "inning", "home_team", "away_team")
+        "inning", "home_team", "away_team",
+        # Batted-ball type (ground_ball/fly_ball/line_drive/popup), added
+        # 2026-08-31 for the batted-ball profile features. Windows fetched
+        # before then lack the column and read as None -- the V5 coverage
+        # audit found 0 of 2.74M stored rows carried it, which is why the
+        # store is being re-ingested rather than the feature faked.
+        "bb_type")
 
 SEASON_BOUNDS = {  # regular season, slightly wide
     2023: ("2023-03-30", "2023-10-01"),

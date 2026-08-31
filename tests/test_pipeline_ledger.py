@@ -187,12 +187,18 @@ class TestDeduplication(unittest.TestCase):
         self.assertEqual(len(kept), 1)
         self.assertEqual(kept[0]["verdict"], "no_play")
 
-    def test_both_lines_remain_on_disk(self):
-        # Deduplication is a reading rule, not a writing one. The file is the
-        # record and nothing is ever removed from it.
+    def test_an_identical_rerun_writes_nothing(self):
+        # Amended 2026-08-31 after the reliability audit: dedup used to be a
+        # reading rule only, and one day of repeated briefing runs left five
+        # identical recommendation sets in an append-only file. A repeat now
+        # writes only when it upgrades a price-less record to a priced one
+        # (tests/test_ledger_resilience.py pins that repair path); an
+        # identical rerun writes nothing. Nothing already on disk is ever
+        # removed -- that half of the old principle stands.
         ledger.record_slate(slate(game()), path=self.path)
-        ledger.record_slate(slate(game()), path=self.path)
-        self.assertEqual(len(ledger.read(self.path)), 2)
+        report = ledger.record_slate(slate(game()), path=self.path)
+        self.assertEqual(len(ledger.read(self.path)), 1)
+        self.assertEqual(report["skipped_already_recorded"], 1)
 
 
 class TestIO(unittest.TestCase):

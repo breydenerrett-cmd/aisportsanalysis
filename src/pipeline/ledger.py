@@ -60,14 +60,42 @@ class LedgerError(RuntimeError):
 
 def record_slate(slate, path=DEFAULT_LEDGER, recorded_at=None,
                  information_time=None) -> dict:
-    """Append one entry per game. Returns what was written."""
+    """Append one entry per game not already recommended. Returns what happened.
+
+    Re-running a briefing used to append the whole slate again -- one 08-30
+    incident left five identical recommendation sets, pure noise in an
+    append-only file. The write rule now: a repeat is skipped and counted
+    UNLESS it is the one repeat that adds information -- a PRICED entry for
+    a game whose only record so far is price-less (a briefing that ran
+    before any snapshot existed), which recommendations() prefers as the
+    first actionable word. A game with a priced record never gets another
+    row; neither does a second price-less run.
+    """
     stamp = _iso(recorded_at)
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
+    priced_already, priceless_already = set(), set()
+    for existing in read(path):
+        if existing.get("kind") != RECOMMENDATION:
+            continue
+        if existing.get("prices") or {}:
+            priced_already.add(existing.get("game_pk"))
+        else:
+            priceless_already.add(existing.get("game_pk"))
 
-    entries = []
+    entries, skipped = [], 0
     for game in slate.get("games", []):
-        entries.append(_entry(game, slate.get("date"), stamp, information_time))
+        entry = _entry(game, slate.get("date"), stamp, information_time)
+        key = entry.get("game_pk")
+        priced = bool(entry.get("prices") or {})
+        # A repeat that adds nothing is skipped; the ONE repeat worth
+        # keeping is the repair -- a priced entry for a game whose only
+        # record so far is price-less (the 04:17-before-any-snapshot case),
+        # which recommendations() will then prefer.
+        if key in priced_already or (key in priceless_already and not priced):
+            skipped += 1
+            continue
+        entries.append(entry)
 
     with target.open("a", encoding="utf-8") as handle:
         for entry in entries:
@@ -76,8 +104,8 @@ def record_slate(slate, path=DEFAULT_LEDGER, recorded_at=None,
     verdicts = {}
     for entry in entries:
         verdicts[entry["verdict"]] = verdicts.get(entry["verdict"], 0) + 1
-    return {"recorded": len(entries), "verdicts": verdicts, "path": str(target),
-            "recorded_at": stamp}
+    return {"recorded": len(entries), "skipped_already_recorded": skipped,
+            "verdicts": verdicts, "path": str(target), "recorded_at": stamp}
 
 
 def _entry(game, game_date, stamp, information_time) -> dict:
@@ -200,24 +228,33 @@ def read(path=DEFAULT_LEDGER) -> list:
 
 
 def recommendations(entries=None, path=DEFAULT_LEDGER) -> list:
-    """First recommendation per game.
+    """First PRICED recommendation per game; first of any kind as fallback.
 
-    Re-running a briefing later in the day appends again, and the later entry
-    carries a price closer to first pitch -- better for reasons that have
-    nothing to do with the system. The earliest entry is what it actually knew
-    when it first spoke.
+    Re-running a briefing later in the day appends again, and the later
+    entry carries a price closer to first pitch -- better for reasons that
+    have nothing to do with the system. The earliest entry is what it
+    actually knew when it first spoke... unless that entry carries no
+    prices at all, in which case it is a diary note, not a recommendation:
+    an 04:17 run before any snapshot existed left a whole date of price-less
+    rows that then permanently defined the "recommendation" for grading. A
+    price-less first entry is superseded by the first entry that actually
+    has a market attached; a game whose entries NEVER carry a price keeps
+    its first row, price_reason and all, so the gap stays visible.
     """
     rows = read(path) if entries is None else entries
-    seen, kept = set(), []
+    kept = {}
+    order = []
     for entry in rows:
         if entry.get("kind") != RECOMMENDATION:
             continue
         key = entry.get("game_pk")
-        if key in seen:
-            continue
-        seen.add(key)
-        kept.append(entry)
-    return kept
+        priced = bool((entry.get("prices") or {}))
+        if key not in kept:
+            kept[key] = entry
+            order.append(key)
+        elif priced and not (kept[key].get("prices") or {}):
+            kept[key] = entry
+    return [kept[key] for key in order]
 
 
 def settlements(entries=None, path=DEFAULT_LEDGER) -> dict:
@@ -279,4 +316,13 @@ def status(path=DEFAULT_LEDGER) -> dict:
         "first_recorded": min((r["recorded_at"] for r in recs), default=None),
         "last_recorded": max((r["recorded_at"] for r in recs), default=None),
         "dates": sorted({r["date"] for r in recs if r.get("date")}),
+        # Dates whose games should long since be final but carry no
+        # settlement: the signature of a daily loop that skipped a day
+        # (08-30 did exactly that). Surfaced here so the loop's own output
+        # flags the gap instead of it waiting for an audit.
+        "unsettled_past_dates": sorted({
+            r["date"] for r in recs
+            if r.get("date") and r["game_pk"] not in settled
+            and r["date"] < (max((x["date"] for x in recs if x.get("date")),
+                                 default=""))}),
     }
