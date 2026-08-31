@@ -50,6 +50,22 @@ VELOCITY_STARTS_WINDOW = 5
 # so the feature reports None rather than a small-sample number.
 MIN_FASTBALLS_FOR_VELOCITY = 100
 
+# Batted-ball profile, for the starter_groundball_share feature. The feed
+# stamps bb_type (ground_ball / fly_ball / line_drive / popup) on every ball
+# in play and nothing else, so "row carries a bb_type" IS the ball-in-play
+# test -- no event-name proxy needed. Only ground_ball feeds the numerator;
+# the denominator is every batted ball.
+GROUND_BALL = "ground_ball"
+# A starter's ~5-6 innings put roughly 20-25 balls in play, so 50 batted
+# balls is about two full starts' worth. Below that, a handful of bloops or
+# bunts moves the share by several points -- more than the real gap between
+# a groundball and a flyball pitcher -- so the feature reports None rather
+# than a small-sample number. No recency window: groundball tendency is a
+# repertoire trait, not a form read, so the share accumulates career-to-
+# cutoff exactly the way the platoon split (pitcher_vs) does, rather than
+# windowing like the velocity read.
+MIN_BATTED_BALLS_FOR_GB_SHARE = 50
+
 HIT = {"single", "double", "triple", "home_run"}
 AB_EVENTS = HIT | {"strikeout", "strikeout_double_play", "field_out",
                    "grounded_into_double_play", "force_out", "field_error",
@@ -80,6 +96,10 @@ def _new_state() -> dict:
         # League-wide fastball velocity as of the cutoff, the baseline the
         # starter's recent average is compared against.
         "league_fastball": {"sum": 0.0, "count": 0},
+        # Batted-ball profile per pitcher, career-to-cutoff (the platoon
+        # split's windowing convention): pitcher -> {ground_balls, batted}.
+        "batted_balls": defaultdict(
+            lambda: {"ground_balls": 0, "batted": 0}),
     }
 
 
@@ -110,6 +130,16 @@ def _process_row(state, row) -> None:
                 slot["count"] += 1
                 state["league_fastball"]["sum"] += mph
                 state["league_fastball"]["count"] += 1
+
+    bb_type = row.get("bb_type")
+    if bb_type not in (None, ""):
+        # Presence of bb_type IS "ball in play"; rows without one (whiffs,
+        # takes, fouls, pre-re-ingest windows) join neither the numerator
+        # nor the denominator, so stale windows dilute nothing.
+        slot = state["batted_balls"][pitcher]
+        slot["batted"] += 1
+        if bb_type == GROUND_BALL:
+            slot["ground_balls"] += 1
 
     if pitch_type:
         slot = state["arsenal"][pitcher][pitch_type]
@@ -168,7 +198,9 @@ def _finalize(state, cutoff) -> dict:
             "fastball_velocity": {p: {g: dict(s) for g, s in games.items()}
                                   for p, games
                                   in state["fastball_velocity"].items()},
-            "league_fastball": dict(state["league_fastball"])}
+            "league_fastball": dict(state["league_fastball"]),
+            "batted_balls": {p: dict(s)
+                             for p, s in state["batted_balls"].items()}}
 
 
 def _gate(cutoff) -> str:
@@ -317,6 +349,29 @@ def fastball_velocity(acc, pitcher_id) -> dict:
     speed_sum = sum(games[key]["sum"] for key in recent)
     return {"usable": True, "avg": speed_sum / total, "fastballs": total,
             "games": len(recent), "reason": None}
+
+
+def groundball_share(acc, pitcher_id) -> dict:
+    """Share of a pitcher's batted balls that were ground balls, as of the
+    cutoff.
+
+    Career-to-cutoff, no recency window -- the platoon split's accumulation
+    convention (pitcher_vs has neither a season scope nor a last-N window),
+    because groundball tendency is a repertoire trait, not recent form.
+    Below MIN_BATTED_BALLS_FOR_GB_SHARE the answer is None with a reason,
+    never a small-sample number.
+    """
+    entry = ((acc.get("batted_balls") or {}).get(str(pitcher_id))
+             or {"ground_balls": 0, "batted": 0})
+    total = entry["batted"]
+    if total < MIN_BATTED_BALLS_FOR_GB_SHARE:
+        return {"usable": False, "share": None, "batted_balls": total,
+                "reason": (f"only {total} batted balls before the cutoff; "
+                           f"the ground-ball share needs "
+                           f"{MIN_BATTED_BALLS_FOR_GB_SHARE}")}
+    return {"usable": True,
+            "share": round(entry["ground_balls"] / total, 4),
+            "batted_balls": total, "reason": None}
 
 
 def league_fastball_velocity(acc):

@@ -228,7 +228,8 @@ def row_for_game(acc, game, posted_lineup, handedness,
         for name in ("lineup_platoon_share", "starter_platoon_gap",
                      "lineup_vs_primary_pitch", "primary_pitch",
                      "primary_pitch_share", "top_minus_bottom",
-                     "lineup_vs_starter_history", "starter_velocity_gap"):
+                     "lineup_vs_starter_history", "starter_velocity_gap",
+                     "starter_groundball_share"):
             row[prefix + name] = None
 
         if not slots:
@@ -279,11 +280,21 @@ def row_for_game(acc, game, posted_lineup, handedness,
                 row[prefix + "starter_velocity_gap"] = round(
                     velo["avg"] - league_velo, 4)
 
-        # NOTE on the planned starter_groundball_share sibling: the pitch
-        # store keeps no batted-ball-type column (statcast_pitches.KEEP has
-        # no bb_type; measured over the real 2023-24 store, zero of 2.74M
-        # rows carry one), so a ground-ball share cannot be computed honestly
-        # here and is deliberately NOT built from event-name proxies.
+        # starter_groundball_share -- the OPPOSING starter's career-to-cutoff
+        # share of batted balls (rows carrying bb_type, present since the
+        # 2026-08-31 re-ingest) that were ground balls. Raw 0..1 share; the
+        # floor and the no-window convention live in rebuilt
+        # (groundball_share). Below the floor, or with the accumulation
+        # empty, it is None with a gap, not a guess. NOT yet registered in
+        # funnel.NUMERIC_FEATURES -- that happens at the next
+        # pre-registration, deliberately.
+        if pitcher_id:
+            gb = rebuilt.groundball_share(acc, pitcher_id)
+            if gb["usable"]:
+                row[prefix + "starter_groundball_share"] = gb["share"]
+            else:
+                gaps.append(
+                    f"{prefix}starter_groundball_share: {gb['reason']}")
 
         # lineup_vs_primary_pitch -- rebuilt.pitch_mix names the opposing
         # starter's most-used pitch (50-pitch floor applied inside), then

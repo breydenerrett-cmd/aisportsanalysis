@@ -1,4 +1,5 @@
-"""V5 feature groundwork tests: starter_velocity_gap, point-in-time.
+"""V5 feature groundwork tests: starter_velocity_gap and
+starter_groundball_share, point-in-time.
 
 Same fixture philosophy as tests/test_matrix.py -- a tiny gzipped store in
 statcast_pitches' exact on-disk shape, walked through rebuilt.build_snapshots
@@ -17,10 +18,13 @@ Velocity fixture, checkable by hand (all speeds exactly representable):
   pitcher 900: 100 FF at 93.0 -- league filler.
   league average = (30*99 + 150*95 + 99*96 + 100*90 + 100*93) / 479
 
-There is no groundball fixture on purpose: the pitch store keeps no
-batted-ball-type column (statcast_pitches.KEEP has no bb_type; zero of the
-real store's 2.74M rows carry one), so starter_groundball_share was
-deliberately not built rather than faked from event-name proxies.
+Groundball fixture (the store was re-ingested 2026-08-31 with bb_type on
+every ball in play), hand-checkable:
+  pitcher 800 (HOME starter): 30 ground_ball + 20 other batted balls = 50,
+    exactly at the floor -> share 30/50 = 0.6; plus 40 bb_type-less rows and
+    all the velocity rows above, none of which may enter either side of the
+    ratio.
+  pitcher 810 (AWAY starter): 49 batted balls -- one under the floor.
 """
 
 from __future__ import annotations
@@ -80,6 +84,33 @@ def _velocity_rows() -> list:
     rows += [_fb("2023-03-03", "3061", "820", "90.0") for _ in range(50)]
     # Pitcher 900: league filler.
     rows += [_fb("2023-03-01", "3070", "900", "93.0") for _ in range(100)]
+    return rows
+
+
+def _bip(day, pk, pitcher, bb_type):
+    """A stored-pitch row for a ball in play (or, with bb_type=None, a pitch
+    that never became one). SL with no radar reading, so groundball rows can
+    never leak into the velocity fixture's arithmetic."""
+    return dict(_pitch(pitcher, "9500", "R", "SL", "0.0", "field_out"),
+                game_date=day, game_pk=pk, bb_type=bb_type)
+
+
+def _groundball_rows() -> list:
+    rows = []
+    # Pitcher 800: exactly 50 batted balls -- 30 ground balls plus 20 spread
+    # across the other three bb_types -> share 0.6, exactly at the floor.
+    rows += [_bip("2023-03-02", "3002", "800", "ground_ball")
+             for _ in range(30)]
+    rows += [_bip("2023-03-03", "3003", "800", "fly_ball") for _ in range(10)]
+    rows += [_bip("2023-03-03", "3003", "800", "line_drive") for _ in range(5)]
+    rows += [_bip("2023-03-04", "3005", "800", "popup") for _ in range(5)]
+    # Rows WITHOUT a bb_type (whiffs, takes, pre-re-ingest windows read as
+    # None) must join neither the numerator nor the denominator.
+    rows += [_bip("2023-03-04", "3005", "800", None) for _ in range(40)]
+    # Pitcher 810: 49 batted balls, one under the floor.
+    rows += [_bip("2023-03-02", "3050", "810", "ground_ball")
+             for _ in range(25)]
+    rows += [_bip("2023-03-02", "3050", "810", "fly_ball") for _ in range(24)]
     return rows
 
 
@@ -237,6 +268,146 @@ class VelocityPointInTimeInjectionTest(unittest.TestCase):
         moved_row = json.loads(tampered)
         self.assertNotEqual(moved_row["away_starter_velocity_gap"],
                             clean_row["away_starter_velocity_gap"])
+
+
+class GroundballShareRowTest(unittest.TestCase):
+    """starter_groundball_share on the hand-built fixture: cross-join
+    direction, exact floor boundary, share arithmetic, and bb_type-less rows
+    staying out of both sides of the ratio."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls._tmp = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls._tmp.cleanup)
+        cls.store = _write_store(
+            Path(cls._tmp.name),
+            {BASE_WINDOW: _velocity_rows() + _groundball_rows()})
+        cls.acc = rebuilt.build_snapshots([CUTOFF], store=cls.store)[CUTOFF]
+        cls.row = matrix.row_for_game(cls.acc, GAME, POSTED, {})
+
+    def test_away_feature_reads_the_home_starter(self):
+        # The cross-join: the AWAY lineup faces the HOME starter 800, so
+        # away_starter_groundball_share is 800's share, not 810's.
+        self.assertEqual(self.row["away_starter_groundball_share"], 0.6)
+
+    def test_share_arithmetic(self):
+        share = rebuilt.groundball_share(self.acc, "800")
+        self.assertTrue(share["usable"])
+        # 30 grounders of exactly 50 batted balls.
+        self.assertEqual(share["batted_balls"], 50)
+        self.assertEqual(share["share"], 0.6)
+        self.assertIsNone(share["reason"])
+
+    def test_floor_boundary_is_exact(self):
+        # 800 sits exactly AT the floor and is usable (asserted above);
+        # 810 is one under and must be None plus a gap, never a number.
+        under = rebuilt.groundball_share(self.acc, "810")
+        self.assertFalse(under["usable"])
+        self.assertEqual(under["batted_balls"],
+                         rebuilt.MIN_BATTED_BALLS_FOR_GB_SHARE - 1)
+        self.assertIsNone(under["share"])
+        self.assertIsNone(self.row["home_starter_groundball_share"])
+        self.assertTrue(any(g.startswith("home_starter_groundball_share:")
+                            and "49 batted balls" in g
+                            for g in self.row["gaps"]))
+
+    def test_rows_without_bb_type_count_nowhere(self):
+        # 800 has 40 explicit bb_type=None rows plus 182 velocity-fixture
+        # rows carrying no bb_type key at all. Were any of them admitted to
+        # the DENOMINATOR the count would exceed 50; to the NUMERATOR (they
+        # are field_outs) the share would exceed 0.6. Both stay exact.
+        share = rebuilt.groundball_share(self.acc, "800")
+        self.assertEqual(share["batted_balls"], 50)
+        self.assertEqual(share["share"], 0.6)
+
+    def test_unknown_pitcher_is_none_with_reason(self):
+        share = rebuilt.groundball_share(self.acc, "999999")
+        self.assertFalse(share["usable"])
+        self.assertEqual(share["batted_balls"], 0)
+        self.assertIsNone(share["share"])
+
+    def test_missing_starter_records_gap(self):
+        game = dict(GAME, home_probable_id=None)
+        row = matrix.row_for_game(self.acc, game, POSTED, {})
+        self.assertIsNone(row["away_starter_groundball_share"])
+        self.assertTrue(any(g.startswith("away_opposing_starter:")
+                            for g in row["gaps"]))
+
+    def test_empty_accumulation_reports_none(self):
+        # A cutoff before the store's first pitch: opening-week honesty.
+        acc = rebuilt.build_snapshots(["2023-01-01"],
+                                      store=self.store)["2023-01-01"]
+        row = matrix.row_for_game(acc, GAME, POSTED, {})
+        self.assertIsNone(row["away_starter_groundball_share"])
+        self.assertIsNone(row["home_starter_groundball_share"])
+        self.assertTrue(any(g.startswith("away_starter_groundball_share:")
+                            for g in row["gaps"]))
+
+
+class GroundballPointInTimeInjectionTest(unittest.TestCase):
+    """The byte-level injection discipline on the groundball feature.
+
+    The payload is 200 ground balls from pitcher 800 -- enough to drag his
+    share from 0.6 to 230/250 = 0.92, so a leak cannot hide in rounding.
+    Identical at every timestamp; only WHEN it claims to be varies, around
+    the 2023-04-01 cutoff of game day 2023-04-05.
+    """
+
+    @staticmethod
+    def _payload(day):
+        return [_bip(day, "9991", "800", "ground_ball") for _ in range(200)]
+
+    @classmethod
+    def _row_line(cls, extra_windows=None) -> bytes:
+        windows = {BASE_WINDOW: _velocity_rows() + _groundball_rows()}
+        windows.update(extra_windows or {})
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            store = _write_store(root, windows)
+            path = matrix.build(2023, dates=[GAME["date"]],
+                                out_dir=root / "research", store=store,
+                                results={"800001": dict(GAME)},
+                                lineups_by_pk={"800001": POSTED},
+                                handedness={})
+            for line in path.read_bytes().splitlines():
+                if json.loads(line).get("game_pk") == "800001":
+                    return line
+        raise AssertionError("game 800001 produced no matrix row")
+
+    @classmethod
+    def setUpClass(cls):
+        cls.clean = cls._row_line()
+
+    def test_build_is_deterministic(self):
+        # The byte comparisons below presume this.
+        self.assertEqual(self._row_line(), self.clean)
+
+    def test_batted_balls_after_game_day_cannot_move_the_row(self):
+        tampered = self._row_line(
+            {"2023-04-06..2023-04-09": self._payload("2023-04-06")})
+        self.assertEqual(tampered, self.clean)
+
+    def test_batted_balls_on_game_day_cannot_move_the_row(self):
+        # After the monthly cutoff even though before first pitch.
+        tampered = self._row_line(
+            {"2023-04-05..2023-04-08": self._payload("2023-04-05")})
+        self.assertEqual(tampered, self.clean)
+
+    def test_batted_balls_between_cutoff_and_game_cannot_move_the_row(self):
+        tampered = self._row_line(
+            {"2023-04-02..2023-04-04": self._payload("2023-04-02")})
+        self.assertEqual(tampered, self.clean)
+
+    def test_detector_fires_on_pre_cutoff_injection(self):
+        # The identical payload BEFORE the cutoff must move the share --
+        # otherwise the silence above proves nothing.
+        tampered = self._row_line(
+            {"2023-03-25..2023-03-28": self._payload("2023-03-25")})
+        self.assertNotEqual(tampered, self.clean)
+        clean_row = json.loads(self.clean)
+        moved_row = json.loads(tampered)
+        self.assertEqual(clean_row["away_starter_groundball_share"], 0.6)
+        self.assertEqual(moved_row["away_starter_groundball_share"], 0.92)
 
 
 if __name__ == "__main__":
