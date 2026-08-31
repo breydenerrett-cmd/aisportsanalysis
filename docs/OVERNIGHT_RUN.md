@@ -272,3 +272,16 @@ beats a clean public-style Elo by 0.8 log-loss points/game, p=0.0003.
 **In flight:** the two capture builds (multi-book store; rosterwatch
 polling store) hit the session usage limit (resets 05:10 UTC) and are
 scheduled to resume right after.
+
+## 2026-08-31 ~06:00 UTC — V3 capture infrastructure LIVE
+
+The capture builds landed (after one usage-limit delay): every dense
+capture now persists all books' h2h to data/processed/odds_multibook.jsonl
+(same payload, zero extra credits); dense gained a T-25 close pass with a
+bounded F5 first-five fetch (≤6 events, 1 credit each) and missed-window
+reporting; settlements carry their closing observation or an explicit
+reason; rosterwatch polls probables/lineups/transactions into
+data/watch/ with our own fetch times — hourly via the renamed "Forward
+capture: watch + dense grid" trigger, every 15 minutes during dense runs.
+First live poll: 12 probables, 1 transaction. V3's event clock starts
+today; class floors are 30 events each. Suite: 1,319 tests green.
