@@ -211,10 +211,45 @@ than reality, which would understate the ceiling.
 | P1 | within-date outcome permutation | daily slate structure, market prices | feature → outcome |
 | P2 | team-identity permutation (consistent within season) | team strength distribution | feature → team attribution |
 | P3 | signal date-shift (features shifted k days) | feature autocorrelation | feature ↔ game alignment |
-| P4 | stationary block bootstrap over game-days | temporal dependence, streaks | long-range structure |
+| P4 | stationary block bootstrap over game-days | temporal dependence, streaks | ~~long-range structure~~ **nothing — see below** |
 | **P5** | **market-truth resampling** — outcomes redrawn from the de-vigged market probability | market calibration exactly, all prices | any edge beyond the market |
 
-**P5 is the sharpest null and the one I weight most.** It asserts exactly one
+> **P4 IS NOT A NULL. My specification was wrong, and it is corrected here
+> rather than quietly patched (decided 2026-08-31).**
+>
+> P4 copies whole game-days with features, prices AND outcomes still attached
+> to each other, so a real edge is carried into the "null" world intact. This
+> was measured, not argued: with a planted edge, P4's maxima centred at 0.230
+> against a real maximum of 0.235 — P4 was the one generator the planted edge
+> failed to clear, and its inflated maxima dragged the POOLED verdict to BELOW
+> while 4 of 5 per-generator verdicts cleared.
+>
+> A generator that a genuine edge cannot clear does not measure the noise
+> ceiling. It measures how much the search maximum wobbles under resampling —
+> a useful quantity with a different name.
+>
+> **Decision: P4 is reclassified as a DISPERSION DIAGNOSTIC and excluded from
+> the ceiling and the kill criterion.** It is not repaired into a null, because
+> P1, P3 and P5 already break the feature-outcome link three different ways and
+> a fourth variant would add redundancy rather than coverage. The kill criterion
+> reads PER-GENERATOR precisely so one mis-specified world cannot poison the
+> verdict — that property was designed in for hypothetical reasons and earned
+> its keep on the first real run.
+>
+> Related measured caveat: **P1 detaches outcome from PRICE, not only from
+> features.** Price/outcome alignment collapses from 0.0295 to 0.0105, and
+> against a price-tracking rule P1's maxima run 22× the real maximum. That is
+> conservative for a ceiling but useless as a null for price-sensitive rules,
+> so P1 carries an optional band-preserving mode that restores alignment to
+> 100.5% of real.
+
+**P5 is the sharpest null and the one I weight most** — and it now has the
+measurement to back that claim. On worlds containing no edge, search maxima
+were: real null worlds +0.0298, **P5 +0.0285 (ratio 0.96 — it neither flatters
+nor understates)**, P3 +0.028, P2 +0.034, P1 +0.057, P4 +0.062. P5 is also the
+only generator that provably erases a planted edge: P5 worlds built from an
+edge-free world and from an identical world *with* an edge come out
+byte-identical. It asserts exactly one
 thing — the market's implied probability is correct — and preserves everything
 else. Apparent edge found there is definitionally search artifact.
 
