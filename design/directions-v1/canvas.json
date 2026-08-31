@@ -4,116 +4,295 @@
    "file": "Main.dc.html",
    "x": 0,
    "y": 0,
-   "w": 900,
-   "h": 640
+   "w": 960,
+   "h": 1360,
+   "page": "start"
+  },
+  {
+   "file": "ABetCheck.dc.html",
+   "x": 0,
+   "y": 0,
+   "w": 1240,
+   "h": 1000,
+   "title": "Editorial \u00b7 Bet Check \u2014 desktop",
+   "page": "dir-a"
+  },
+  {
+   "file": "ABetCheckPhone.dc.html",
+   "x": 0,
+   "y": 1160,
+   "w": 390,
+   "h": 1260,
+   "title": "Editorial \u00b7 Bet Check \u2014 phone 375px",
+   "page": "dir-a"
   },
   {
    "file": "AToday.dc.html",
    "x": 0,
-   "y": 800,
+   "y": 2580,
    "w": 1240,
-   "h": 900,
-   "title": "Editorial \u2014 Today"
+   "h": 960,
+   "title": "Editorial \u00b7 Today \u2014 desktop",
+   "page": "dir-a"
+  },
+  {
+   "file": "ATodayPhone.dc.html",
+   "x": 0,
+   "y": 3700,
+   "w": 390,
+   "h": 1350,
+   "title": "Editorial \u00b7 Today \u2014 phone 375px",
+   "page": "dir-a"
   },
   {
    "file": "AGame.dc.html",
-   "x": 1340,
-   "y": 800,
+   "x": 0,
+   "y": 5210,
    "w": 1240,
-   "h": 860,
-   "title": "Editorial \u2014 Game"
+   "h": 900,
+   "title": "Editorial \u00b7 Game \u2014 quick view desktop",
+   "page": "dir-a"
   },
   {
-   "file": "ABetCheck.dc.html",
-   "x": 2680,
-   "y": 800,
+   "file": "AGameAdvanced.dc.html",
+   "x": 0,
+   "y": 6270,
    "w": 1240,
-   "h": 980,
-   "title": "Editorial \u2014 BetCheck"
+   "h": 2050,
+   "title": "Editorial \u00b7 Game \u2014 Advanced expanded desktop",
+   "page": "dir-a"
   },
   {
-   "file": "AMobile.dc.html",
-   "x": 4020,
-   "y": 800,
+   "file": "AGamePhone.dc.html",
+   "x": 0,
+   "y": 8480,
    "w": 390,
-   "h": 844,
-   "title": "Editorial \u2014 Bet Check 375px"
+   "h": 1310,
+   "title": "Editorial \u00b7 Game \u2014 phone 375px",
+   "page": "dir-a"
+  },
+  {
+   "file": "BBetCheck.dc.html",
+   "x": 0,
+   "y": 0,
+   "w": 1240,
+   "h": 1000,
+   "title": "Terminal \u00b7 Bet Check \u2014 desktop",
+   "page": "dir-b"
+  },
+  {
+   "file": "BBetCheckPhone.dc.html",
+   "x": 0,
+   "y": 1160,
+   "w": 390,
+   "h": 1260,
+   "title": "Terminal \u00b7 Bet Check \u2014 phone 375px",
+   "page": "dir-b"
   },
   {
    "file": "BToday.dc.html",
    "x": 0,
-   "y": 1920,
+   "y": 2580,
    "w": 1240,
-   "h": 900,
-   "title": "Terminal \u2014 Today"
+   "h": 960,
+   "title": "Terminal \u00b7 Today \u2014 desktop",
+   "page": "dir-b"
+  },
+  {
+   "file": "BTodayPhone.dc.html",
+   "x": 0,
+   "y": 3700,
+   "w": 390,
+   "h": 1350,
+   "title": "Terminal \u00b7 Today \u2014 phone 375px",
+   "page": "dir-b"
   },
   {
    "file": "BGame.dc.html",
-   "x": 1340,
-   "y": 1920,
+   "x": 0,
+   "y": 5210,
    "w": 1240,
-   "h": 860,
-   "title": "Terminal \u2014 Game"
+   "h": 900,
+   "title": "Terminal \u00b7 Game \u2014 quick view desktop",
+   "page": "dir-b"
   },
   {
-   "file": "BBetCheck.dc.html",
-   "x": 2680,
-   "y": 1920,
+   "file": "BGameAdvanced.dc.html",
+   "x": 0,
+   "y": 6270,
    "w": 1240,
-   "h": 980,
-   "title": "Terminal \u2014 BetCheck"
+   "h": 2050,
+   "title": "Terminal \u00b7 Game \u2014 Advanced expanded desktop",
+   "page": "dir-b"
   },
   {
-   "file": "BMobile.dc.html",
-   "x": 4020,
-   "y": 1920,
+   "file": "BGamePhone.dc.html",
+   "x": 0,
+   "y": 8480,
    "w": 390,
-   "h": 844,
-   "title": "Terminal \u2014 Bet Check 375px"
+   "h": 1310,
+   "title": "Terminal \u00b7 Game \u2014 phone 375px",
+   "page": "dir-b"
+  },
+  {
+   "file": "CBetCheck.dc.html",
+   "x": 0,
+   "y": 0,
+   "w": 1240,
+   "h": 1000,
+   "title": "Clubhouse \u00b7 Bet Check \u2014 desktop",
+   "page": "dir-c"
+  },
+  {
+   "file": "CBetCheckPhone.dc.html",
+   "x": 0,
+   "y": 1160,
+   "w": 390,
+   "h": 1260,
+   "title": "Clubhouse \u00b7 Bet Check \u2014 phone 375px",
+   "page": "dir-c"
   },
   {
    "file": "CToday.dc.html",
    "x": 0,
-   "y": 3040,
+   "y": 2580,
    "w": 1240,
-   "h": 900,
-   "title": "Clubhouse \u2014 Today"
+   "h": 960,
+   "title": "Clubhouse \u00b7 Today \u2014 desktop",
+   "page": "dir-c"
+  },
+  {
+   "file": "CTodayPhone.dc.html",
+   "x": 0,
+   "y": 3700,
+   "w": 390,
+   "h": 1350,
+   "title": "Clubhouse \u00b7 Today \u2014 phone 375px",
+   "page": "dir-c"
   },
   {
    "file": "CGame.dc.html",
-   "x": 1340,
-   "y": 3040,
+   "x": 0,
+   "y": 5210,
    "w": 1240,
-   "h": 860,
-   "title": "Clubhouse \u2014 Game"
+   "h": 900,
+   "title": "Clubhouse \u00b7 Game \u2014 quick view desktop",
+   "page": "dir-c"
   },
   {
-   "file": "CBetCheck.dc.html",
-   "x": 2680,
-   "y": 3040,
+   "file": "CGameAdvanced.dc.html",
+   "x": 0,
+   "y": 6270,
    "w": 1240,
-   "h": 980,
-   "title": "Clubhouse \u2014 BetCheck"
+   "h": 2050,
+   "title": "Clubhouse \u00b7 Game \u2014 Advanced expanded desktop",
+   "page": "dir-c"
   },
   {
-   "file": "CMobile.dc.html",
-   "x": 4020,
-   "y": 3040,
+   "file": "CGamePhone.dc.html",
+   "x": 0,
+   "y": 8480,
    "w": 390,
-   "h": 844,
-   "title": "Clubhouse \u2014 Bet Check 375px"
+   "h": 1310,
+   "title": "Clubhouse \u00b7 Game \u2014 phone 375px",
+   "page": "dir-c"
+  },
+  {
+   "file": "CompareNotes.dc.html",
+   "x": 0,
+   "y": 0,
+   "w": 1240,
+   "h": 560,
+   "page": "compare"
+  },
+  {
+   "file": "CmpABetCheck.dc.html",
+   "x": 0,
+   "y": 720,
+   "w": 1240,
+   "h": 1000,
+   "title": "Editorial \u00b7 Bet Check desktop",
+   "page": "compare"
+  },
+  {
+   "file": "CmpBBetCheck.dc.html",
+   "x": 1340,
+   "y": 720,
+   "w": 1240,
+   "h": 1000,
+   "title": "Terminal \u00b7 Bet Check desktop",
+   "page": "compare"
+  },
+  {
+   "file": "CmpCBetCheck.dc.html",
+   "x": 2680,
+   "y": 720,
+   "w": 1240,
+   "h": 1000,
+   "title": "Clubhouse \u00b7 Bet Check desktop",
+   "page": "compare"
+  },
+  {
+   "file": "CmpABetCheckPhone.dc.html",
+   "x": 0,
+   "y": 1900,
+   "w": 390,
+   "h": 1260,
+   "title": "Editorial \u00b7 Bet Check phone",
+   "page": "compare"
+  },
+  {
+   "file": "CmpBBetCheckPhone.dc.html",
+   "x": 550,
+   "y": 1900,
+   "w": 390,
+   "h": 1260,
+   "title": "Terminal \u00b7 Bet Check phone",
+   "page": "compare"
+  },
+  {
+   "file": "CmpCBetCheckPhone.dc.html",
+   "x": 1100,
+   "y": 1900,
+   "w": 390,
+   "h": 1260,
+   "title": "Clubhouse \u00b7 Bet Check phone",
+   "page": "compare"
+  }
+ ],
+ "pages": [
+  {
+   "id": "start",
+   "name": "START HERE"
+  },
+  {
+   "id": "dir-a",
+   "name": "A \u2014 Editorial"
+  },
+  {
+   "id": "dir-b",
+   "name": "B \u2014 Terminal"
+  },
+  {
+   "id": "dir-c",
+   "name": "C \u2014 Clubhouse"
+  },
+  {
+   "id": "compare",
+   "name": "Bet Check Comparison"
   }
  ],
  "annotations": [
   {
-   "id": "decision-note",
-   "x": 960,
+   "id": "start-note",
+   "x": 1020,
    "y": 40,
    "w": 300,
-   "text": "Rows top to bottom: A Editorial, B Terminal, C Clubhouse (Sports-Warm).\nOdds and book names are real (captured 6:16 ET tonight).\nMatchup factor stats are representative sample content."
+   "text": "Pages menu \u2192 one page per direction (vertical scroll, full size).\n'Bet Check Comparison' = all three side by side.\nOdds and book names are real (captured 6:16 ET tonight).\nMatchup factor stats are representative sample content."
   }
  ],
  "launch": {
-  "view": "canvas"
+  "view": "canvas",
+  "page": "start"
  }
 }

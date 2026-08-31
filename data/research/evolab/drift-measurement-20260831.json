@@ -1,0 +1,13 @@
+{
+ "purpose": "Provenance for the Phase 2B SPA-vs-ceiling adjudication drift measurement (docs/EVOLAB_PHASE2B_RESULTS.md section 3). A microstructure OBSERVATION, not an edge; unregistered, post-hoc, no multiplicity control; nothing here is bettable as stated.",
+ "measurement": "unconditional early-to-late home-fair consensus movement over the replay feed",
+ "n_games": 4188,
+ "mean_home_fair_move": 0.001541769066725656,
+ "sd": 0.01518425586536093,
+ "t": 6.570964957731871,
+ "mean_move_toward_decision_favorite": 0.0007265689347446655,
+ "sd_favorite": 0.015245039103379912,
+ "t_favorite": 3.084264527496298,
+ "mean_abs_move": 0.010547362522066837,
+ "feed_manifest_note": "same feed as sweep-0014914df78666b9-REAL.json (4815 universe -> 4188 fed)"
+}

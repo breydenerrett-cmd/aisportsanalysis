@@ -44,6 +44,12 @@ personalization, full alerts, SEO/content build.
    moment contracts lock.
 
 ## PHASE LOG
+
+- 2026-08-31 late: Phase 2B adjudicated + published (BELOW_PLACEBO_CEILING
+  stands; SPA disagreement diagnosed as shared board drift, provenance in
+  data/research/evolab/drift-measurement-20260831.json). Design review package
+  restructured per Brey's correction: per-direction pages with seven full-size
+  views each + Bet Check comparison page; republished to the same artifact.
 Last update: 2026-08-31 21:20Z. Suite: 1,959 green. Credits: ~53,000.
 
 ## PROJECT PHASE CHANGE (21:35Z)
@@ -131,7 +137,10 @@ on PRODUCT_DESIGN_HANDOFF.md by Brey's instruction.
 
 ## CURRENT RESEARCH STATUS
 Zero demonstrated predictive edges (25+ prereg hypotheses, all published).
-Phase 2A: no linear information beyond the close. Phase 2B prior: expect
-BELOW_PLACEBO_CEILING. Live lanes: V3 timing (accumulating), F5 depth (first
+Phase 2A: no linear information beyond the close. Phase 2B REAL RUN COMPLETE:
+BELOW_PLACEBO_CEILING (prior held) — per the kill rule, evolution does not get
+built; replay engine + noise-ceiling harness are permanent instruments
+(docs/EVOLAB_PHASE2B_RESULTS.md). Research capacity shifts to F5, props
+feasibility, V3 timing, forward evidence. Live lanes: V3 timing (accumulating), F5 depth (first
 closes tonight), prop listing (feasibility). Sealed 2026 untouched; 2025
 tuning-only.
