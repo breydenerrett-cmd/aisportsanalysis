@@ -246,6 +246,24 @@ moneyline can genuinely end level, and 14% of them did.
 | Clustered p | 0.67 |
 | 95% CI | [−4.56pp, +7.12pp] |
 
+> **CORRECTION, 2026-08-31.** That interval is superseded by
+> **[−4.31pp, +6.80pp]**. The original was correct for the code of its day but
+> was not reproducible: `clustered_bootstrap` drew its resample index from
+> `list(by_date)` — dictionary insertion order — so a seeded interval depended
+> on the order rows arrived in, and `m4_bullpen_gap.rows()` does not return
+> rows in date order. The bootstrap now sorts its cluster keys (commit
+> 6bd4caf), which is the order every other published interval was already
+> computed under. The original number is left in place above rather than
+> overwritten, because rewriting published evidence to match new code is
+> exactly what this project's rules forbid.
+>
+> Nothing else about M4 changes: n=270, 38 ties, effect +1.25pp, p=0.665, 163
+> clusters, all confirmed identical. Both intervals straddle zero, so the
+> finding — that M4 died of sample size rather than of evidence — is untouched.
+> The same superseded figure is restated in `RESEARCH_V6_CANDIDATES.md`,
+> `RESEARCH_CATALOGUE.md` and `REPRODUCIBILITY_AUDIT_V2.md`; this note is the
+> authority for all of them.
+
 **Is the implied bullpen gap biased?** No detectable pattern. Mean gap across
 all games is +0.001 — the market does not systematically favour either side's
 bullpen.
