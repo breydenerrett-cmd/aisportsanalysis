@@ -1,10 +1,9 @@
 # Research Family V3 — information timing (market microstructure)
 
-**STATUS: DRAFT — not yet frozen.** This document freezes when the
-timestamp-quality audit fills the event-class table below. Freezing happens
-BEFORE any event-response result is computed; coverage and data-quality
-numbers may inform this design, outcome numbers may not, and once frozen
-nothing here changes because early results disappoint.
+**STATUS: FROZEN 2026-08-31.** The timestamp-quality audit (see the freeze
+record) filled the event-class table; no event-response result existed
+anywhere when this froze — the capture infrastructure it depends on was not
+yet running. Nothing here changes because early results disappoint.
 
 ## What this family asks, and what it does not
 
@@ -133,6 +132,35 @@ to the next family.
 
 ## Freeze record
 
-_(filled at freeze: admitted classes, per-class event-rate estimates from
-the audit, capture-resolution facts, registered_at timestamp, and the file
-hash of this document at freeze)_
+Frozen 2026-08-31, from the timestamp-quality audit of every event source
+in the repo (docs/OVERNIGHT_RUN.md, same date):
+
+**Admitted classes (the family, denominator 4):**
+
+| class | grade at freeze | mechanism to reach B | est. events/day |
+|-------|-----------------|----------------------|-----------------|
+| lineup_posted | B (forward) | bracketed between successive rosterwatch polls with fetched_utc | ~27 team-lineups |
+| starter_scratch | B (forward) | probable-pitcher change between polls | 0.3–1 |
+| hitter_scratch | B (forward) | posted lineup loses a listed player between polls | 1–2 |
+| il_roster_move | B (forward) | transaction id first seen between polls (the MLB feed itself is day-only, so A is unreachable) | ~20 game-relevant |
+
+**Excluded, with reasons:** reliever_status (no announcement source exists
+in the repo; post-game bullpen usage supports only day-level C inference) ·
+weather_roof (roof state has no feed at all; weather is a single unstamped
+reading) · **all historical replay, 2023–24** (every class is grade C/D:
+transactions day-only, lineups date-only, no probables history, and the
+historical odds store samples 3×/day so any bracket is 6–15 hours wide).
+V3 is a forward study, entirely.
+
+**Response variable at freeze:** forward capture carries grade-A quote
+timestamps (observed_utc to the microsecond, per-book last_update to the
+second) but stored only one book per event until the multi-book store
+shipped; V3's clock starts on the first day the multi-book store and
+rosterwatch are BOTH running. First-sighting lineup rows (no prior poll to
+bracket against) are grade C and inadmissible, per the rosterwatch
+derivation.
+
+**Capture resolution at freeze:** hourly poll baseline (60-minute
+brackets), 15-minute brackets inside dense windows; the reaction ladder's
+resolution floor is therefore the poll spacing in force at each event, and
+the primary hypothesis is stated against exactly that floor.

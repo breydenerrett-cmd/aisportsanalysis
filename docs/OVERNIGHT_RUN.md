@@ -237,3 +237,38 @@ from data already in the repo — a pitcher-free Elo (results-only, zero
 lookahead) scored by log-loss/Brier against the de-vigged closes already
 held for 2023–24. Queued as its own small pre-registered benchmark;
 expected result, stated in advance, is that it does NOT beat the close.
+
+## 2026-08-31, continuous-autonomy session — audits, probe, builds
+
+**Timestamp audit (V3 gate):** every event class is grade C/D today; four
+classes (lineup_posted, starter_scratch, hitter_scratch, il_roster_move)
+reach grade B forward once a polling store records our own fetch times.
+Historical replay is unsupportable (transaction dates are day-only, stored
+lineups are date-only, historical odds sample 3x/day so brackets are 6-15
+hours). Excluded from V3: reliever_status (no announcement source), roof
+(no feed). CRITICAL capture defect found: the forward snapshot store keeps
+ONE book per event (96% fanduel) because normalize() collapses the payload
+-- first-mover/consensus/stale measurements are impossible on it. V3's
+clock starts when the multi-book store and rosterwatch both run.
+
+**Grid/ledger audit:** ledger append-only verified through git history, all
+45 settlements join, zero orphans. Defects: closing=null in every
+settlement (cli never threads it -> no CLV from the ledger); 08-30 rec rows
+carry no prices (briefing ran with no snapshot on file); 32 of 58 window
+games had zero observations in their last 3 pre-pitch hours (the plan-mode
+outage plus cadence).
+
+**Market probe (24 credits; balance 53,083):** F5 h2h 5 books forward at
+1cr/event; HISTORICAL archive has 12 books on a 5-minute grid at 10x;
+alternates 7 books with full ladders at 1cr (best info/credit); K props
+thin. Policy written: docs/COLLECTION_POLICY.md.
+
+**V3 frozen** (docs/RESEARCH_V3_TIMING.md): four admitted classes,
+denominator 4, forward-only, measurement core + lead/lag aggregation built
+and tested. **Elo benchmark published** (docs/BENCHMARK_ELO.md): the close
+beats a clean public-style Elo by 0.8 log-loss points/game, p=0.0003.
+**Analyzer matchup depth shipped** (23 tests).
+
+**In flight:** the two capture builds (multi-book store; rosterwatch
+polling store) hit the session usage limit (resets 05:10 UTC) and are
+scheduled to resume right after.
