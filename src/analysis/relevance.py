@@ -535,6 +535,61 @@ def score_events(events, cutoff, *, store=sp.DEFAULT_STORE, index=None,
     return out
 
 
+def tier_sentence(score) -> str:
+    """The tier as a reader should see it, with UNKNOWN spelled out.
+
+    UNKNOWN is the case a renderer is most likely to flatten into something
+    that reads like a small number. It never renders as a tier word here: it
+    says it is unknown and repeats the module's own reason, so a call-up
+    nobody has seen can never be skimmed as "low".
+    """
+    if score.get("tier") == UNKNOWN:
+        return ("impact unknown -- "
+                + (score.get("unknown_reason")
+                   or "no MLB record at the cutoff"))
+    return f"relevance {score.get('tier')}"
+
+
+def basis_lines(score) -> list:
+    """One line per pre-event fact the tier rests on, denominator attached.
+
+    The tier word is a summary of these lines and nothing else, so a reader
+    who distrusts the word can read the record it was computed from -- 128
+    pitches over three appearances is a different sentence from 2,400 over
+    thirty, and both can score the same tier.
+    """
+    lines = []
+    for fact in score.get("basis") or []:
+        part = fact.get("part") or "player"
+        player = fact.get("player_id")
+        role = fact.get("role")
+        if role == "pitcher":
+            text = (f"{part} pitcher {player}: {fact.get('pitches', 0)} pitches "
+                    f"over {fact.get('appearances', 0)} appearance(s), "
+                    f"{fact.get('starting_appearances', 0)} of at least "
+                    f"{STARTING_APPEARANCE_PITCHES} pitches")
+            if fact.get("pitches_per_start") is not None:
+                text += (f" (mean {fact['pitches_per_start']} pitches in "
+                         "those)")
+        elif role == "batter":
+            text = (f"{part} batter {player}: "
+                    f"{fact.get('plate_appearances', 0)} plate appearances "
+                    f"over {fact.get('games', 0)} game(s)")
+            slot = fact.get("lineup_slot")
+            text += (f", batting {slot}" if slot
+                     else ", lineup slot not supplied")
+        else:
+            text = (f"{part} player {player}: no pitches and no plate "
+                    "appearances in the store before the cutoff")
+        if fact.get("category"):
+            text += f" [{fact['category']}]"
+        tier = fact.get("tier")
+        if tier:
+            text += f" -- {tier}"
+        lines.append(text)
+    return lines
+
+
 def what_changed(score) -> str:
     """One sentence for the Analyzer's "what changed" section.
 

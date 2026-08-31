@@ -6,13 +6,18 @@ what this produces; detectors and the dashboard both stay ignorant of each other
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from src.analysis import matchup as matchup_mod
 from src.analysis import prices as prices_mod
+from src.analysis import relevance as relevance_mod
 from src.analysis import synthesis as synthesis_mod
 from src.detect import base as detect
 from src.detect import dossier as dossier_mod
 from src.pipeline import lineups as lineup_mod
 from src.pipeline import mismatch
+from src.pipeline import news as news_mod
+from src.pipeline import rosterwatch
 from src.pipeline import slate as slate_mod
 
 
@@ -22,6 +27,7 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
                 travel_by_pk=None, arsenals=None, batter_arsenals=None,
                 news_by_pk=None, matchup_depth_by_pk=None,
                 price_improvement_by_key=None, price_boards_by_key=None,
+                roster_events_by_pk=None,
                 detectors=None, information_time=None) -> dict:
     """One briefing for one date.
 
@@ -53,6 +59,13 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
     if price_improvement_by_key is None:
         price_improvement_by_key = prices_mod.by_matchup(
             boards=price_boards_by_key)
+    # What changed since our own last look, scored for pre-event relevance.
+    # Derived here, like matchup depth and the price boards, so the CLI gets
+    # it for free and every caller sees the same point-in-time filter. Tests
+    # inject `roster_events_by_pk` the same way.
+    if roster_events_by_pk is None:
+        roster_events_by_pk = what_changed_by_pk(
+            games, information_time=information_time)
     for game in games:
         key = (game.get("away_team"), game.get("home_team"))
         # Both price stores are filed under canonical abbreviations, so the
@@ -77,6 +90,7 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
             matchup_depth=(matchup_depth_by_pk or {}).get(game.get("game_pk")),
             price_improvement=(price_improvement_by_key or {}).get(price_key),
             price_board=(price_boards_by_key or {}).get(price_key),
+            roster_events=(roster_events_by_pk or {}).get(game.get("game_pk")),
             bullpen={team: (bullpen_by_team or {}).get(team) for team in key
                      if (bullpen_by_team or {}).get(team)} or None,
             information_time=information_time,
@@ -129,6 +143,186 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
         "games": entries,
         "notes": notes,
     }
+
+
+# ---------------------------------------------------------------------------
+# What changed: roster-watch events, matched to a game and scored
+# ---------------------------------------------------------------------------
+
+def what_changed_by_pk(games, information_time=None, *, events=None,
+                       transactions=None, watch_dir=rosterwatch.DEFAULT_WATCH_DIR,
+                       news_store=news_mod.DEFAULT_STORE, index=None) -> dict:
+    """{game_pk: section} of roster events for that game's teams, scored.
+
+    THREE RULES, ALL OF THEM ABOUT NOT LYING TO THE READER
+    ------------------------------------------------------
+    1. An event reaches exactly the game it belongs to. A lineup, probable or
+       hitter event carries its own `game_pk`, which names one game on one
+       slate; a transaction carries none, so it is matched by the club the
+       move is about AND the official date MLB filed it under. Matching a
+       transaction on team alone would put yesterday's call-up on today's
+       card as though it had just happened.
+    2. An event our poller only saw AFTER the briefing's information time
+       does not appear. Point-in-time is not only a property of the model's
+       features: a card that shows a 19:40 scratch under a 17:00 information
+       time is a card that could not have been produced at 17:00.
+    3. A game with nothing to say gets no entry at all, so the card renders
+       no section rather than an empty box. Silence here is the ordinary
+       case and does not need a heading to announce itself.
+
+    The relevance index (one walk of the pitch store) is built ONLY when at
+    least one event actually matched, so a quiet slate costs nothing.
+    """
+    if not games:
+        return {}
+    cutoff = _information_cutoff(information_time)
+    events = rosterwatch.events(watch_dir) if events is None else events
+    events = [e for e in events or [] if _seen_at_or_before(e, cutoff)]
+    if not events:
+        return {}
+
+    by_pk = {g.get("game_pk"): g for g in games if g.get("game_pk") is not None}
+    records = None
+    if any(e.get("class") == rosterwatch.TRANSACTION_SEEN for e in events):
+        if transactions is None:
+            transactions = {row.get("transaction_id"): row
+                            for row in news_mod.read(news_store)}
+        records = transactions
+
+    # (game_pk, event) pairs. One event can only ever land on one game.
+    matched = []
+    for event in events:
+        game_pk = event.get("game_pk")
+        if game_pk is not None:
+            if game_pk in by_pk:
+                matched.append((game_pk, event, None))
+            continue
+        record = (records or {}).get(event.get("transaction_id"))
+        if not record:
+            # Without the parsed feed record the move names no club and no
+            # date, so there is no game it can honestly be attached to.
+            continue
+        target = _game_for_transaction(games, record)
+        if target is not None:
+            matched.append((target.get("game_pk"), event, record))
+    if not matched:
+        return {}
+
+    slate_date = games[0].get("date")
+    scores = relevance_mod.score_events(
+        [event for _, event, _ in matched], slate_date, index=index,
+        transactions={r.get("transaction_id"): r
+                      for _, _, r in matched if r})
+    sections = {}
+    for (game_pk, event, record), score in zip(matched, scores):
+        entry = sections.setdefault(game_pk, {
+            "cutoff": slate_date,
+            "information_time": cutoff.isoformat(),
+            "not_an_edge": relevance_mod.NOT_AN_EDGE,
+            "events": []})
+        entry["events"].append(_rendered_event(
+            event, score, by_pk.get(game_pk) or {}, record))
+    for entry in sections.values():
+        entry["events"].sort(key=lambda item: item.get("seen_utc") or "")
+    return sections
+
+
+def _rendered_event(event, score, game, record) -> dict:
+    """One event as a reader meets it: what happened, how much it could matter,
+    and the record behind that -- with the bracket it was observed in."""
+    start, end = (event.get("interval") or (None, None))
+    return {
+        "class": event.get("class"),
+        "headline": _event_headline(event, game, record),
+        "tier": score.get("tier"),
+        "tier_sentence": relevance_mod.tier_sentence(score),
+        "basis": relevance_mod.basis_lines(score),
+        "reasons": score.get("reasons") or [],
+        "unknown_reason": score.get("unknown_reason"),
+        "seen_utc": end,
+        "timing": (f"observed between our polls at {start} and {end}"
+                   if start else
+                   f"first seen at {end}; no earlier poll of ours bounds when "
+                   "it actually happened"),
+        "inadmissible": bool(event.get("inadmissible")),
+        "summary": relevance_mod.what_changed(score),
+    }
+
+
+def _event_headline(event, game, record) -> str:
+    """The event in plain English, naming the club it belongs to.
+
+    Player ids rather than names for the watch-store classes: the stores keep
+    ids, and inventing a name we do not hold would be the one kind of
+    confidence this page never fabricates.
+    """
+    event_class = event.get("class")
+    detail = event.get("detail") or {}
+    side = detail.get("side")
+    team = game.get(f"{side}_team") if side else None
+    who = f"{team}: " if team else ""
+    if event_class == rosterwatch.STARTER_SCRATCH:
+        return (f"{who}the listed starter changed from player "
+                f"{detail.get('from')} to player {detail.get('to')}")
+    if event_class == rosterwatch.HITTER_SCRATCH:
+        removed = ", ".join(str(p) for p in detail.get("removed") or [])
+        return (f"{who}the posted lineup lost listed hitter(s) {removed}")
+    if event_class == rosterwatch.LINEUP_POSTED:
+        return f"{who}the lineup was posted"
+    if event_class == rosterwatch.TRANSACTION_SEEN:
+        if record:
+            return news_mod.sentence(record)
+        return "a roster move was seen"
+    return "a roster event was seen"
+
+
+def _game_for_transaction(games, record):
+    """The one game this move belongs to: same club, same official date.
+
+    MLB dates a transaction by the day it took effect, and that day is the
+    only slate it can be news for. A move dated yesterday is roster history
+    and is already covered by the ten-day news section.
+    """
+    team = record.get("team")
+    when = str(record.get("date") or "")[:10]
+    if not team or not when:
+        return None
+    for game in games:
+        if str(game.get("date") or "")[:10] != when:
+            continue
+        if team in (game.get("away_team"), game.get("home_team")):
+            return game
+    return None
+
+
+def _information_cutoff(information_time):
+    """The instant the briefing claims to know things as of, in UTC."""
+    if information_time is None:
+        return datetime.now(timezone.utc)
+    if isinstance(information_time, datetime):
+        moment = information_time
+    else:
+        moment = datetime.fromisoformat(
+            str(information_time).replace("Z", "+00:00"))
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+    return moment.astimezone(timezone.utc)
+
+
+def _seen_at_or_before(event, cutoff) -> bool:
+    """Did we see this event by the information time? An unparseable stamp is
+    treated as unseen -- absence over a guess in the direction that could
+    show a reader something the briefing could not have known."""
+    end = (event.get("interval") or (None, None))[1]
+    if not end:
+        return False
+    try:
+        seen = datetime.fromisoformat(str(end).replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    if seen.tzinfo is None:
+        seen = seen.replace(tzinfo=timezone.utc)
+    return seen <= cutoff
 
 
 def _arsenal_section(game, arsenals):

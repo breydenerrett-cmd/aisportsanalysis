@@ -743,6 +743,51 @@ def _price_improvement_section(game) -> str:
     return "".join(parts)
 
 
+def _what_changed_section(game) -> str:
+    """Roster events for these two clubs since our own previous look.
+
+    Renders NOTHING when there is nothing -- no heading, no empty box. Most
+    slates are quiet and a section that announces its own silence on fifteen
+    cards teaches the reader to skip it on the sixteenth.
+
+    Every line carries three things and never fewer: what happened, how much
+    it could plausibly matter (the pre-event relevance tier, with UNKNOWN
+    spelled out as unknown rather than dressed as small), and the record that
+    tier was computed from, denominators attached. The section states in its
+    own words that a tier is description and not an edge.
+    """
+    section = game["sections"].get("what_changed")
+    events = (section or {}).get("events") or []
+    if not events:
+        return ""
+    rows = []
+    for event in events:
+        support = [f'<span class="mono">{_esc(event.get("tier_sentence"))}</span>']
+        if event.get("inadmissible"):
+            support.append('<span class="mono">first sighting &mdash; the '
+                           'timing is unbounded (grade C)</span>')
+        basis = "".join(f"<li>{_esc(line)}</li>"
+                        for line in event.get("basis") or [])
+        basis_html = (f'<ul class="basis">{basis}</ul>' if basis else
+                      '<p class="gap">no pre-event record to show for this '
+                      'event</p>')
+        reasons = "".join(f'<div class="support">{_esc(reason)}</div>'
+                          for reason in event.get("reasons") or [])
+        rows.append(
+            '<div class="changeitem">'
+            f'<div class="claim">{_esc(event.get("headline"))}</div>'
+            f'<div class="support">{"".join(support)}</div>'
+            f'{reasons}{basis_html}'
+            f'<div class="support mono">{_esc(event.get("timing"))}</div>'
+            '</div>')
+    cutoff = section.get("cutoff")
+    note = ('Facts below are the player&rsquo;s own record from pitches '
+            f'stored before {_esc(cutoff)}. ' if cutoff else "")
+    return ('<h3>What changed</h3>'
+            f'<p class="leadnote">{note}{_esc(section.get("not_an_edge") or "")}</p>'
+            f'<div class="changelist">{"".join(rows)}</div>')
+
+
 def _news_section(game) -> str:
     """What changed for either club in the last ten days.
 
@@ -867,6 +912,7 @@ def _game_card(index, game) -> str:
          f'<div class="findings">{findings}</div>' if findings else
          '<h3>Why this game is interesting</h3>'
          '<p class="gap">No detector had anything to say about this game.</p>')
+        + _what_changed_section(game)
         + _news_section(game)
         + _market_section(game) + _price_improvement_section(game) + _starters_section(game)
         + _lineups_section(game) + _matchup_section(game)
@@ -989,6 +1035,10 @@ h1 { margin:0 0 6px; font-size:30px; letter-spacing:-.02em; }
 ul.news { margin:0; padding-left:18px; }
 ul.news li { margin-bottom:5px; font-size:14px; line-height:1.45; }
 .newsdate { color:var(--faint); font-size:11px; white-space:nowrap; }
+.changelist { display:flex; flex-direction:column; gap:12px; margin-top:8px; }
+.changeitem { border-left:3px solid var(--rule); padding-left:12px; }
+ul.basis { margin:5px 0 0; padding-left:18px; }
+ul.basis li { font-size:12.5px; color:var(--muted); line-height:1.45; }
 .standing { margin:18px 0 0; padding:12px 14px; border-left:3px solid var(--clay);
   background:var(--sunk); font-size:13px; line-height:1.5; color:var(--muted); }
 .standing b { color:var(--ink); }

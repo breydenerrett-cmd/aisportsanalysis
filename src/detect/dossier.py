@@ -73,7 +73,7 @@ class Dossier:
 def build(game, store, pitcher_logs=None, prices=None, weather=None,
           lineups=None, bullpen=None, splits=None, matchups=None,
           travel=None, arsenals=None, news=None, matchup_depth=None,
-          price_improvement=None, price_board=None,
+          price_improvement=None, price_board=None, roster_events=None,
           information_time=None) -> Dossier:
     """Assemble one dossier from whatever sources are available."""
     dossier = Dossier(game, information_time=information_time)
@@ -131,6 +131,16 @@ def build(game, store, pitcher_logs=None, prices=None, weather=None,
     else:
         dossier.miss("multibook_board",
                      "no multi-book board captured for this game")
+
+    # What changed since our own last look at the world: roster-watch events
+    # for these two clubs on this date, each with its pre-event relevance.
+    # The ONE section that is silent rather than named when it has nothing:
+    # a gap here would print "no roster event fired between two polls" on
+    # every card of every quiet slate, which is most cards on most days, and
+    # a reader who is told nothing happened fifteen times stops reading the
+    # time it did. The events themselves are already an exception report.
+    if roster_events and roster_events.get("events"):
+        dossier.add("what_changed", roster_events)
 
     if news is not None:
         if news.get("reason"):
