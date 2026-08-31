@@ -1,0 +1,119 @@
+{
+ "artboards": [
+  {
+   "file": "Main.dc.html",
+   "x": 0,
+   "y": 0,
+   "w": 900,
+   "h": 640
+  },
+  {
+   "file": "AToday.dc.html",
+   "x": 0,
+   "y": 800,
+   "w": 1240,
+   "h": 900,
+   "title": "Editorial \u2014 Today"
+  },
+  {
+   "file": "AGame.dc.html",
+   "x": 1340,
+   "y": 800,
+   "w": 1240,
+   "h": 860,
+   "title": "Editorial \u2014 Game"
+  },
+  {
+   "file": "ABetCheck.dc.html",
+   "x": 2680,
+   "y": 800,
+   "w": 1240,
+   "h": 980,
+   "title": "Editorial \u2014 BetCheck"
+  },
+  {
+   "file": "AMobile.dc.html",
+   "x": 4020,
+   "y": 800,
+   "w": 390,
+   "h": 844,
+   "title": "Editorial \u2014 Bet Check 375px"
+  },
+  {
+   "file": "BToday.dc.html",
+   "x": 0,
+   "y": 1920,
+   "w": 1240,
+   "h": 900,
+   "title": "Terminal \u2014 Today"
+  },
+  {
+   "file": "BGame.dc.html",
+   "x": 1340,
+   "y": 1920,
+   "w": 1240,
+   "h": 860,
+   "title": "Terminal \u2014 Game"
+  },
+  {
+   "file": "BBetCheck.dc.html",
+   "x": 2680,
+   "y": 1920,
+   "w": 1240,
+   "h": 980,
+   "title": "Terminal \u2014 BetCheck"
+  },
+  {
+   "file": "BMobile.dc.html",
+   "x": 4020,
+   "y": 1920,
+   "w": 390,
+   "h": 844,
+   "title": "Terminal \u2014 Bet Check 375px"
+  },
+  {
+   "file": "CToday.dc.html",
+   "x": 0,
+   "y": 3040,
+   "w": 1240,
+   "h": 900,
+   "title": "Clubhouse \u2014 Today"
+  },
+  {
+   "file": "CGame.dc.html",
+   "x": 1340,
+   "y": 3040,
+   "w": 1240,
+   "h": 860,
+   "title": "Clubhouse \u2014 Game"
+  },
+  {
+   "file": "CBetCheck.dc.html",
+   "x": 2680,
+   "y": 3040,
+   "w": 1240,
+   "h": 980,
+   "title": "Clubhouse \u2014 BetCheck"
+  },
+  {
+   "file": "CMobile.dc.html",
+   "x": 4020,
+   "y": 3040,
+   "w": 390,
+   "h": 844,
+   "title": "Clubhouse \u2014 Bet Check 375px"
+  }
+ ],
+ "annotations": [
+  {
+   "id": "decision-note",
+   "x": 960,
+   "y": 40,
+   "w": 300,
+   "text": "Rows top to bottom: A Editorial, B Terminal, C Clubhouse.\nOdds and book names are real (captured 6:16 ET tonight).\nMatchup factor stats are representative sample content."
+  }
+ ],
+ "launch": {
+  "view": "canvas"
+ }
+}
