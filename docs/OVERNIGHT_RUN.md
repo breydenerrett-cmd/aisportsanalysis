@@ -415,3 +415,18 @@ prop-listing policy gap).
   fingerprint ac74c7a7f715f9ec.
 - Competitive-intelligence lane opened (Brey): four Sonnet research workers
   on AI-prediction, sharp/odds, props/tracking, and customer pain.
+
+2026-08-31 21:00Z V3 state after the mappability repair. The report now
+distinguishes the two unmappable causes instead of lumping them:
+- lineup_posted 18/30 admitted, unmappable ONLY because the games have not
+  been played yet (later than the last settled results date). This is the
+  healthy case and resolves on settlement. The lane is in better shape than
+  the pre-repair reading suggested.
+- transaction_first_seen 20/30 admitted, unmappable because those rows
+  predate club capture. Permanently unmappable, kept as history rather than
+  deleted or backfilled; rows written from now on carry the club.
+Also landed: bootstrap determinism fix (one published CI superseded, recorded
+as errata with the original left standing), P4 reclassified out of the placebo
+ceiling as a dispersion diagnostic, evolab statistics validated both ways.
+F5 close pass shipped with coverage 3-of-15 to 15-of-15; two reproduced
+defects in its miss-detector and credit cap are being fixed now.
