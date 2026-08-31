@@ -17,7 +17,7 @@ moved.
 |---|-------|--------|----------|
 | 1 | Recover a planted positive effect | PASS | `tests/test_validation_planted.py` — a planted +12.5pp edge, replicated across two seasons, eight clubs, two books and a real dose gradient, comes out `status=candidate`, `q_pass=True`, no fatal battery check |
 | 2 | Reject planted nulls | PASS | same module — ten deterministic noise specs (win counts pinned at ~half) produce zero candidates, with the FDR denominator equal to the full family size on every row |
-| 3 | Reproduce an established null | PASS | V1's platoon analogs, run through the funnel on the real 2023–24 matrix: `lineup_platoon_share` dies at replication (2023 +1.0pp → 2024 −3.77pp, a sign flip mirroring Stage 2's −15.5/+17.5), `starter_platoon_gap` is killed by the battery (pooled +1.14pp, p≈0.39, matching Stage 2's p=0.44). The machinery reproduces in seconds what Stage 2 took a full bespoke pass to establish |
+| 3 | Reproduce an established null | PASS | V1's platoon analogs, run through the funnel on the real 2023–24 matrix, never come out candidates at ANY threshold tried (0.05–0.2, adjudicator-verified): `lineup_platoon_share` dies at replication with a sign flip at every threshold (e.g. threshold 0.1: 2023 +1.19pp → 2024 −1.44pp, echoing Stage 2's −15.5/+17.5 instability), `starter_platoon_gap` dies at the screen or under the battery (threshold 0.05: pooled +1.16pp, p = 0.407, fatal on team/book concentration and extreme removal — consistent with Stage 2's p = 0.44 null). Figures from an earlier inline run quoted in a prior draft of this row came from spec parameters that were never recorded; the numbers above are from re-runs whose exact specs are stored in data/research/shadow_battery_report.json |
 | 4 | Re-falsify the known false positive (M3) | **FAILED, then fixed** | see below — the story of this gate |
 | 5 | Matchup matrix is point-in-time safe | PASS | `tests/test_validation_pit.py` — feature data injected AFTER a game's cutoff leaves the built row byte-identical; the same payload dated before the cutoff moves the row (so the silence is meaningful, not a broken detector); sealed seasons (2025, 2026) are refused structurally; repeated builds are byte-identical |
 | 6 | Compiler path equals hand-written logic | PASS | `tests/test_validation_equivalence.py` — an independent hand implementation matches the compiled spec path to 10 decimal places, both directions |
@@ -126,4 +126,31 @@ eligible for registration.
 
 ## Adjudication
 
-_(recorded when the post-amendment adjudication completes)_
+**gate_open = true** (2026-08-31, independent skeptical agent; nothing
+modified during adjudication). Everything above was re-verified rather than
+trusted: the full suite re-run; M3 re-reproduced from raw price paths with
+its own driver (5,276 / 249 / +8.4920pp exactly) and confirmed killed under
+both band constructions — and confirmed SURVIVING under the old battery, so
+the documented failure was real; every fatal rule diffed semantically
+against commit 915bae6; the shadow table spot-checked with an independently
+loaded copy of the old battery (six of six spot checks matching); every
+validation test module read for substance, not just greenness.
+
+Two concerns were recorded, neither blocking:
+
+1. **The dose rule is a redraw, not a pure tightening.** Where a judgeable
+   above-band carries between 0.5× and 1.0× of the spike's effect, the old
+   rule was fatal and the amended rule is not. Adjudicated acceptable
+   because the change is fully disclosed and versioned; the loosened region
+   demands positive judgeable gradient evidence; keeping both fatal
+   conditions would kill genuine plateaued dose-responses, violating the
+   generality directive; no evaluated candidate anywhere benefits from the
+   loosened region; and M3's kill does not depend on it.
+2. **A prior draft of the check-3 row quoted figures from an inline run
+   whose spec parameters were never recorded.** The substance held under
+   independent re-runs at four thresholds (never a candidate, always the
+   established null); the row now quotes only reproducible numbers and the
+   exact spec dicts are stored in data/research/shadow_battery_report.json.
+
+With the gate adjudicated open, the battery rules were frozen at
+RULES_VERSION 2.0.0 and V4 became eligible for registration.

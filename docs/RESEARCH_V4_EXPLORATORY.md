@@ -92,4 +92,32 @@ their screens are the thinnest — expected pooled n ≈ 570.
 
 ## Results
 
-_(appended after the one batch run; losers included)_
+One batch run, 2026-08-31 02:16 UTC, against the family frozen at
+`data/research/family_v4_exploratory.json` (funnel.run verifies the specs
+byte-for-byte); battery RULES_VERSION 2.0.0. Full rows in
+`data/research/results_v4_run.json`.
+
+**Six hypotheses. Zero survivors.**
+
+| name | died at | the numbers |
+|------|---------|-------------|
+| pitch_lean_vulnerability | falsification battery | the only spec to replicate: 2023 +0.91pp (n=553), pooled +1.06pp over 1,090 selections — but p = 0.45, and fatal on team concentration, book concentration AND extreme date removal: what little effect exists is carried by a handful of clubs, books and dates |
+| stacked_top_platoon | 2023 screen | −0.98pp on 856 selections — wrong direction out of the gate |
+| platoon_pressure | 2023 screen | −0.75pp on 243 selections — the classic platoon-exploitation story, wrong direction; the product fails just like V1's parts did |
+| stacked_top_vs_pitch | 2023 screen | −0.85pp on 602 selections — wrong direction |
+| handed_lineup_vs_pitch | 2024 replication | 2023 +0.15pp, 2024 −3.55pp — a sign flip |
+| stacked_top_weak_starter | 2024 replication | 2023 +0.79pp, 2024 −0.44pp — a sign flip |
+
+No spec passed the family correction (denominator 6, early deaths at
+p = 1.0). Nothing advances to the forward ledger.
+
+### Reading
+
+The interaction premise now has the same answer as the singles: whatever
+"this lineup is built for this starter" information exists, the h2h price
+already carries it. Three of six pointed the WRONG way in the screen year,
+and both replication attempts sign-flipped — the signature of noise, not of
+a weak effect. This is the third family (V1: 13, V2: 5, V4: 6 — 24
+pre-registered hypotheses) to come back empty against the MLB moneyline,
+consistent with the external base rate (0.45% of 1,547 tested strategies
+profitable, the chance rate). The result is published in full, as always.

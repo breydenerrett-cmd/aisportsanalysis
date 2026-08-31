@@ -1,0 +1,74 @@
+{
+ "count": 6,
+ "fdr_q": 0.1,
+ "note": "V4 exploratory interactions; frozen per docs/RESEARCH_V4_EXPLORATORY.md after the validation gate opened; battery 2.0.0 fingerprint ac74c7a7f715f9ec",
+ "registered_at": "2026-08-31T02:16:27.934270+00:00",
+ "specs": [
+  {
+   "direction": "positive",
+   "effect_floor": 0.01,
+   "feature": "primary_pitch_share*lineup_vs_primary_pitch",
+   "market": "h2h",
+   "mechanism": "a starter who leans on one pitch, against a lineup that hits that pitch, has nowhere to hide for eighteen outs; the market prices his season line, not tonight's specific collision",
+   "min_sample": 200,
+   "name": "pitch_lean_vulnerability",
+   "side_rule": "back_advantaged",
+   "threshold": 0.06
+  },
+  {
+   "direction": "positive",
+   "effect_floor": 0.01,
+   "feature": "top_minus_bottom*lineup_platoon_share",
+   "market": "h2h",
+   "mechanism": "a top-heavy order with the platoon advantage concentrates its best bats where the extra plate appearances go; club-level pricing averages that concentration away",
+   "min_sample": 200,
+   "name": "stacked_top_platoon",
+   "side_rule": "back_advantaged",
+   "threshold": 0.0234
+  },
+  {
+   "direction": "positive",
+   "effect_floor": 0.01,
+   "feature": "lineup_platoon_share*starter_platoon_gap",
+   "market": "h2h",
+   "mechanism": "the classic exploitation: a one-handed lineup built against a starter with a genuine platoon split; V1 tested each half alone and found nothing -- the claim here is the product, not either part",
+   "min_sample": 200,
+   "name": "platoon_pressure",
+   "side_rule": "back_advantaged",
+   "threshold": 0.0478
+  },
+  {
+   "direction": "positive",
+   "effect_floor": 0.01,
+   "feature": "top_minus_bottom*lineup_vs_primary_pitch",
+   "market": "h2h",
+   "mechanism": "the concentrated top of the order specifically hits the opposing starter's primary pitch",
+   "min_sample": 200,
+   "name": "stacked_top_vs_pitch",
+   "side_rule": "back_advantaged",
+   "threshold": 0.0117
+  },
+  {
+   "direction": "positive",
+   "effect_floor": 0.01,
+   "feature": "lineup_platoon_share*lineup_vs_primary_pitch",
+   "market": "h2h",
+   "mechanism": "a lineup one-handed on purpose AND good against the starter's main offering -- two independent reads of 'built for this starter' agreeing",
+   "min_sample": 200,
+   "name": "handed_lineup_vs_pitch",
+   "side_rule": "back_advantaged",
+   "threshold": 0.1134
+  },
+  {
+   "direction": "positive",
+   "effect_floor": 0.01,
+   "feature": "top_minus_bottom*starter_platoon_gap",
+   "market": "h2h",
+   "mechanism": "the best bats, concentrated, against a starter with a real measured weakness",
+   "min_sample": 200,
+   "name": "stacked_top_weak_starter",
+   "side_rule": "back_advantaged",
+   "threshold": 0.0028
+  }
+ ]
+}

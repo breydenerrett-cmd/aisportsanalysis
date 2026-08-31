@@ -199,7 +199,18 @@
         "fatal": null
       },
       "changed": false,
-      "expectation": "a change is acceptable ONLY if the new fatal list grew via the amended rules; a null must stay a null"
+      "expectation": "a change is acceptable ONLY if the new fatal list grew via the amended rules; a null must stay a null",
+      "spec": {
+        "name": "shadow_platoon_share",
+        "market": "h2h",
+        "feature": "lineup_platoon_share",
+        "side_rule": "back_advantaged",
+        "threshold": 0.667,
+        "min_sample": 100,
+        "effect_floor": 0.01,
+        "mechanism": "a one-handed lineup vs the wrong-handed starter",
+        "direction": "positive"
+      }
     },
     {
       "candidate": "real_matrix/shadow_starter_gap",
@@ -222,7 +233,19 @@
         ]
       },
       "changed": false,
-      "expectation": "a change is acceptable ONLY if the new fatal list grew via the amended rules; a null must stay a null"
+      "expectation": "a change is acceptable ONLY if the new fatal list grew via the amended rules; a null must stay a null",
+      "spec": {
+        "name": "shadow_starter_gap",
+        "market": "h2h",
+        "feature": "starter_platoon_gap",
+        "side_rule": "back_advantaged",
+        "threshold": 0.035,
+        "min_sample": 100,
+        "effect_floor": 0.01,
+        "mechanism": "a starter with a real platoon weakness",
+        "direction": "positive"
+      }
     }
-  ]
+  ],
+  "note": "real_matrix rows ran funnel.run(family_path=None, scoreboard_path=None) with the exact spec dicts recorded on each row; adjudication flagged the earlier absence of these definitions as a reproducibility gap"
 }

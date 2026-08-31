@@ -193,3 +193,29 @@ No outcomes were read: this counts availability and screen rates only.
 - The 2026 confirmation set has not been touched, and must be evaluated once.
 - No detector has been validated. Every threshold on the page is a written-down
   guess, which is what the evidence labels say.
+
+## 2026-08-31 update — validation gate opened, V4 run, zero survivors
+
+The 7-check machinery gate closed its one failure: the battery originally
+PASSED the real M3 false positive. Two fatal rules were amended as general
+skeptical rules (no M3-specific logic), validated against a six-case
+synthetic generality matrix, an old-vs-new shadow comparison over all 15
+reproducible prior candidates (only M3's verdict changed), and an
+independent skeptical adjudication that re-reproduced everything and
+returned gate_open=true with two recorded, non-blocking concerns. Battery
+rules frozen at RULES_VERSION 2.0.0 with a content fingerprint in every
+verdict. Full story: docs/VALIDATION_GATE.md.
+
+The funnel gained interaction features (a*b products per side). V4 — six
+coverage-ranked unit-vs-weakness interactions, thresholds set from feature
+distributions only — was registered frozen and run as one batch:
+**zero survivors** (3 wrong-direction screens, 2 replication sign flips,
+1 battery kill at p=0.45). Third empty family; 24 pre-registered hypotheses
+total against the h2h moneyline. docs/RESEARCH_V4_EXPLORATORY.md has every
+loser.
+
+Forward lane: daily loop ran clean for 2026-08-31 (12 ledger entries, all
+no_play); hourly dense grid had a long gap while the session was held in
+plan mode — roughly 17:15 through 01:15 UTC's firings executed late or
+found no game in window (one run: 0 captures, stopped early). Missed
+capture windows are gone and noted, not backfilled.
