@@ -35,7 +35,11 @@ from __future__ import annotations
 
 import time
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
+import json
+
+from src.paths import processed_path
 from src.pipeline import snapshots
 from src.providers import mlb
 from src.providers import odds as odds_provider
@@ -55,6 +59,15 @@ CAPTURES_PER_RUN = 4
 # schedule is worth stopping before it eats the reserve that pays for
 # everything else.
 CREDIT_FLOOR = 5000
+
+# F5 close pass: the per-event first-five moneyline for games inside the
+# close window, appended alongside the regular close capture. Per-event
+# billing (1 credit per event) is why this rides ONLY the close pass and is
+# capped -- docs/COLLECTION_POLICY.md prices the whole layer at 10-30
+# credits a day.
+F5_CLOSE_STORE = processed_path("f5_close.jsonl")
+F5_CLOSE_MARKET = "h2h_1st_5_innings"
+F5_CLOSE_MAX_EVENTS = 6
 
 # The close-capture pass: if a game starts within this many minutes when the
 # 4x15 loop has finished, one more capture is taken. The observation nearest
@@ -238,6 +251,7 @@ def run(env=None, captures=CAPTURES_PER_RUN, interval_minutes=INTERVAL_MINUTES,
                     "events": captured.get("events", 0),
                     "error": captured.get("error"),
                 }
+                close_capture["f5"] = _f5_close_pass(env, run_end)
                 results.append(dict(close_capture, close_pass=True,
                                     games_in_window=games_in_window(
                                         events_now, run_end,
@@ -254,6 +268,75 @@ def run(env=None, captures=CAPTURES_PER_RUN, interval_minutes=INTERVAL_MINUTES,
         "missed_windows": missed,
         "detail": results,
     }
+
+
+def _f5_close_pass(env, run_end, store=None) -> dict:
+    """First-five moneyline for games inside the close window, per event.
+
+    The events index is unmetered; each odds fetch bills one credit for the
+    one market x one region it asks for, and the pass is capped so a
+    doubleheader-heavy slate cannot silently multiply the spend. Every
+    per-event failure is reported, never fatal -- the h2h close already in
+    the store is the run's primary product.
+    """
+    target = Path(store) if store else Path(F5_CLOSE_STORE)
+    try:
+        listed = odds_provider.list_events(env)
+    except odds_provider.OddsProviderError as exc:
+        return {"events": 0, "rows": 0, "errors": [str(exc)]}
+
+    observed = run_end.isoformat().replace("+00:00", "Z")
+    horizon = run_end + timedelta(minutes=CLOSE_WINDOW_MINUTES)
+    targets = []
+    for event in listed or []:
+        commence = _parse_iso(event.get("commence_time"))
+        if commence is not None and run_end < commence <= horizon:
+            targets.append(event)
+    targets = targets[:F5_CLOSE_MAX_EVENTS]
+
+    rows, errors = [], []
+    for event in targets:
+        try:
+            payload = odds_provider.fetch_event_odds(
+                event.get("id"), markets=(F5_CLOSE_MARKET,), env=env)
+        except odds_provider.OddsProviderError as exc:
+            errors.append(f"{event.get('id')}: {exc}")
+            continue
+        for book in payload.get("bookmakers") or []:
+            for market in book.get("markets") or []:
+                if market.get("key") != F5_CLOSE_MARKET:
+                    continue
+                prices = {o.get("name"): o.get("price")
+                          for o in market.get("outcomes") or []}
+                home = prices.get(payload.get("home_team"))
+                away = prices.get(payload.get("away_team"))
+                if home is None or away is None:
+                    continue
+                rows.append({
+                    "observed_utc": observed,
+                    "event_id": payload.get("id"),
+                    "commence_time": payload.get("commence_time"),
+                    "home_team": payload.get("home_team"),
+                    "away_team": payload.get("away_team"),
+                    "market": F5_CLOSE_MARKET,
+                    "book": book.get("key"),
+                    "book_last_update": market.get("last_update"),
+                    "home_price": home,
+                    "away_price": away,
+                })
+    if rows:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with target.open("a", encoding="utf-8") as handle:
+            for row in rows:
+                handle.write(json.dumps(row, sort_keys=True) + "\n")
+    return {"events": len(targets), "rows": len(rows), "errors": errors}
+
+
+def _parse_iso(stamp):
+    try:
+        return datetime.fromisoformat(str(stamp).replace("Z", "+00:00"))
+    except ValueError:
+        return None
 
 
 def _clock(now):
