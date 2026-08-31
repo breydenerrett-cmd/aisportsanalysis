@@ -355,3 +355,12 @@ thin-starter warning overreaches onto adequately-sampled velocity; one market
 read from two stores (detector vs multibook) shows two book counts; the
 synthesis suppressed-items audit trail is computed but never rendered
 (product call, not defect); "<20 IP" parses as a 20-IP sample.
+
+2026-08-31 day summary: master-directive day complete. Architecture (scripts
+own collection, Opus workers execute, four-horizon roadmap, RESUME/RUNBOOK),
+research catalogue (73 ideas), synthesis layer, slate health monitor,
+collection red-team (6 reproduced bugs), product red-team (9 + 4 follow-up
+honesty fixes), closing staleness + marker dates, pre-event relevance tiers,
+V4 reproducibility audit (exact). Suite 1,396 -> 1,587 green. Remaining open
+write-ups: one-market-two-stores unification (queue 7); corrupt-ledger-line
+halt semantics (deliberate, documented).
