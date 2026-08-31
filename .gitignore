@@ -13,6 +13,13 @@ data/processed/*
 data/historical/*
 !data/**/.gitkeep
 
+# App state (users, tokens, saved bets) -- src/appstate/*.py. Real user
+# data, not reproducible from a provider, and definitely not something to
+# commit: it holds (hashed) auth tokens and per-user records. APP_DB_PATH
+# overrides the location; this ignores the default path only.
+data/app/*
+!data/app/.gitkeep
+
 # evidence/ is deliberately NOT ignored. Predictions and mismatch flags are
 # unbackfillable: they are evidence only because they were written down before the
 # games, carrying the prices available at that moment. Nobody can reconstruct them
