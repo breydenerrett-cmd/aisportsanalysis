@@ -125,11 +125,13 @@ next research read happens when a V3 class reaches its 30-event floor.
    when the MLB slate empties; plan the off-season posture (lane E).
 5. Product polish batch when functionality pauses: per-game permalinks,
    season archive view (lane D, explicitly after function).
-6. Closing-staleness honesty: closing_observation ignores book_last_update,
-   so a suspended book can supply "the close" — decide semantics, then
-   record staleness on the closing row (lane E; red-team write-up #8).
-7. Stamp the polled date on rosterwatch markers so grade-B brackets can
-   never span a date flip (lane E; red-team write-up #9; small).
+6. Product write-ups from the Analyzer red-team (lane D, small batch):
+   bullpen_workload period-not-sample at the detector level; thin-starter
+   warning scoped to season rates; "<20 IP" sample parsing; consider
+   rendering the synthesis suppressed-items audit trail.
+7. Unify the market board: stale_book detector reads game snapshots while
+   prices.py reads the multibook store — one market, two book counts on a
+   card (lane E; spans src/detect + snapshots; design first).
 
 DONE this cycle: timestamp audit · V3 freeze · market probe · collection
 policy · lead/lag + eventstudy cores · multibook store · rosterwatch ·
