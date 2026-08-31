@@ -71,10 +71,28 @@ DEFAULT_MARKETS = ("h2h", "spreads", "totals")
 # whether it was right.
 EVENT_MARKETS = ("h2h_1st_5_innings", "spreads_1st_5_innings", "totals_1st_5_innings")
 
+# Player-prop markets. Per-event only, same billing shape as EVENT_MARKETS
+# (markets x regions PER EVENT), and named here for exactly one caller:
+# src/pipeline/prop_listing.py, the bounded LISTING-FEASIBILITY audit approved
+# on 2026-08-31 (docs/PROBE_PROP_LISTING.md, docs/COLLECTION_POLICY.md).
+#
+# WHY THE LIST IS ONE KEY LONG
+# ----------------------------
+# The audit measures whether `pitcher_strikeouts` is LISTED and when -- coverage
+# and timestamps, not prices. Nothing else needs a prop key, and adding the rest
+# of the API's prop catalogue here would quietly make a whole prop-collection
+# surface nameable ahead of any hypothesis that asked for one. Keys are added
+# when a registered need names them, not in anticipation.
+PROP_MARKETS = ("pitcher_strikeouts",)
+
+# Markets the featured /odds endpoint does NOT serve, whatever the caller
+# intends. Both families 422 there, and both bill per event on /events/{id}/odds.
+EVENT_ONLY_MARKETS = EVENT_MARKETS + PROP_MARKETS
+
 # Everything a caller may legitimately name. Kept separate from DEFAULT_MARKETS,
 # which is what gets requested when nothing is configured -- conflating "allowed"
 # with "default" is what previously made an F5 market unnameable.
-SUPPORTED_MARKETS = DEFAULT_MARKETS + EVENT_MARKETS
+SUPPORTED_MARKETS = DEFAULT_MARKETS + EVENT_ONLY_MARKETS
 ODDS_FORMAT = "american"
 
 SETUP_MESSAGE = (
@@ -493,6 +511,38 @@ def fetch_event_odds(event_id, markets=None, region=None, env=None,
     actually flagged; calling it across a whole slate is what exhausts a free month
     in a day and a half. See EVENT_MARKETS for the measured numbers.
     """
+    params = _event_odds_params(event_id, markets, region, env)
+    return _get_json(f"sports/{SPORT}/events/{event_id}/odds", params, timeout=timeout)
+
+
+def fetch_event_odds_with_usage(event_id, markets=None, region=None, env=None,
+                                timeout: int = DEFAULT_TIMEOUT):
+    """Same call as `fetch_event_odds`, but returns (payload, usage).
+
+    WHY A SECOND ENTRY POINT RATHER THAN A FLAG
+    -------------------------------------------
+    `fetch_event_odds` throws the response headers away, which is right for a
+    caller that already knows what its markets cost. It is wrong for a caller
+    whose whole first question is "what did that cost?" -- the prop-listing
+    audit's abort A0 turns on `x-requests-last`, the API's own statement of what
+    the request billed, and a budget defended by this module's arithmetic
+    instead of the API's counter is a budget defended by an assumption.
+
+    Every row the audit writes carries the `last` value from its own response,
+    so the store audits its own spend.
+    """
+    params = _event_odds_params(event_id, markets, region, env)
+    return _get_json_with_usage(f"sports/{SPORT}/events/{event_id}/odds", params,
+                                timeout=timeout)
+
+
+def _event_odds_params(event_id, markets, region, env):
+    """Shared parameter build for the per-event odds endpoint.
+
+    One builder so the metered and unmetered entry points cannot drift into
+    requesting different things -- a divergence would show up as a credit cost
+    that does not match the one the audit measured.
+    """
     source = os.environ if env is None else env
     key = api_key(source)
     if key is None:
@@ -501,13 +551,12 @@ def fetch_event_odds(event_id, markets=None, region=None, env=None,
         raise OddsProviderError(f"event id must be a non-empty string, got {event_id!r}")
     resolved = (list(EVENT_MARKETS) if markets is None
                 else _validate_markets(markets, allow_event_markets=True))
-    params = {
+    return {
         "apiKey": key,
         "regions": region or (source.get(ENV_REGION) or "").strip() or DEFAULT_REGION,
         "markets": ",".join(resolved),
         "oddsFormat": configured_odds_format(source),
     }
-    return _get_json(f"sports/{SPORT}/events/{event_id}/odds", params, timeout=timeout)
 
 
 def estimate_event_credits(events: int, markets=None, regions=(DEFAULT_REGION,)) -> dict:
@@ -728,14 +777,17 @@ def _validate_markets(markets, allow_event_markets=False):
     if allow_event_markets:
         return market_list
 
-    # Mixing the two families in one call cannot work: they are served by different
+    # Mixing the families in one call cannot work: they are served by different
     # endpoints with different billing. Caught here rather than as a 422 halfway
     # through a snapshot run, because the failure would otherwise land after the
-    # credits for the featured markets had already been spent.
-    event_only = [m for m in market_list if m in EVENT_MARKETS]
+    # credits for the featured markets had already been spent. The guard covers
+    # props for the same reason it covers first-five markets -- the featured
+    # endpoint answers 422 for both -- so extending the allowed keys did not
+    # widen what the featured endpoint will accept by one market.
+    event_only = [m for m in market_list if m in EVENT_ONLY_MARKETS]
     if event_only:
         raise OddsProviderError(
-            f"market(s) {', '.join(event_only)} are first-five markets and are not "
+            f"market(s) {', '.join(event_only)} are per-event markets and are not "
             "served by the featured odds endpoint; use fetch_event_odds, which "
             "bills per event rather than per slate"
         )

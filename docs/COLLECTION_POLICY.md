@@ -42,7 +42,56 @@ only — when dense fires on approaching games, each capture adds
 inside the envelope given measured baseline usage. Alternates and props
 are NOT collected yet: they are options, priced and documented here, to be
 switched on when a registered hypothesis needs them — option value comes
-from knowing the cost, not from hoarding rows.
+from knowing the cost, not from hoarding rows. The one exception is the
+listing-feasibility measurement below, which collects no prices at all and
+is therefore not the thing this clause forbids.
+
+## Feasibility measurement vs research collection
+
+Amended 2026-08-31. **Brey approved this distinction, narrowly, on
+2026-08-31**, and it is written down because the clause above would
+otherwise read as forbidding a question that costs almost nothing to ask.
+
+The clause above forbids collecting a market's PRICES ahead of a registered
+hypothesis, and it is right to. It was never meant to forbid finding out
+whether a market is carried at all. Those are different acts with different
+costs and different risks:
+
+**FEASIBILITY MEASUREMENT** asks whether an instrument exists and whether we
+could read it — is the market listed, by which books, from when, and what do
+the API's own `last_update` timestamps say. It produces coverage and timing
+facts. It cannot produce a bet, and its result is as useful when it is
+negative: "no book lists it" kills a candidate for the price of a few credits
+and no registration.
+
+**RESEARCH COLLECTION** asks what the market SAYS — prices, points, movement
+— and is the input to a claim about profit. It stays behind a registered
+hypothesis, always, for the reason the roadmap gives: numbers gathered before
+the question is fixed get searched until they answer it.
+
+What a feasibility measurement MAY collect: whether the market is listed,
+which books list it, when it first appears, the market `last_update` per book,
+and coverage/availability. What it MAY NOT do, in any form: test price
+strategies, optimise thresholds, infer an edge, or run outcome analysis.
+Nothing produced under this heading is ever described as EV or edge, because
+it is not: it is a statement about what is on the board, not about what the
+board is worth.
+
+Two conditions hold for every measurement taken under this amendment. Its
+artifact is **frozen and timestamped** when the measurement ends. And any
+later pre-registered hypothesis that touches the same market must **explicitly
+acknowledge that this coverage information was already known** when the
+hypothesis was written — a registration that pretends to be blind to evidence
+already in hand is not a registration.
+
+**PROP LISTING PROBE (bounded, time-limited):** `pitcher_strikeouts` listing
+state only, 3 games/day × 6 slots = 18 credits/day, hard cap 400 credits,
+abort criteria in `docs/PROBE_PROP_LISTING.md`. No prices stored. Lowest
+priority layer; skipped first when a day approaches the envelope, and skipped
+outright below a 5,200 balance. Expires at the cap or at any abort trigger,
+whichever comes first; `scripts/forward_capture.sh` holds the switch that
+turns it off. Nothing here authorizes a historical prop pull — that remains a
+hard approval gate.
 
 **HISTORICAL PURCHASES:** none without a registered hypothesis naming the
 window. The 5-minute historical grid (10 credits/event/snapshot) makes a

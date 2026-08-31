@@ -1,10 +1,13 @@
 # Probe design — forward pitcher-strikeout prop LISTING audit
 
-**DESIGN ONLY. Nothing here has been run. No API call was made to write it, no
-code was changed, no credit was spent.** This is step 2 of the C1 prerequisite
-list in `docs/RESEARCH_V6_CANDIDATES.md` ("a forward prop-listing audit"), and
-it is written so Brey can approve or refuse a bounded spend with the numbers in
-front of him.
+**Sections 1–7 were DESIGN ONLY: nothing in them had been run, no API call was
+made to write them, no code was changed, no credit was spent.** They are left
+exactly as they were written, because a design edited after its results are in
+is not a design. **Brey approved this probe on 2026-08-31** (Option A,
+narrowly — see `docs/COLLECTION_POLICY.md`, "Feasibility measurement vs
+research collection"), and everything measured since is appended in §8. This is
+step 2 of the C1 prerequisite list in `docs/RESEARCH_V6_CANDIDATES.md` ("a
+forward prop-listing audit").
 
 **Written 2026-08-31**, from `docs/RESEARCH_V6_CANDIDATES.md` (C1),
 `docs/COLLECTION_POLICY.md`, `src/providers/odds.py`, `src/pipeline/dense.py`
@@ -293,3 +296,84 @@ Stated so no one reads more out of the result than it holds.
   posting clock. A book that re-serves an unchanged line may or may not advance
   it. **This is the biggest interpretive risk in the design**, and the reason
   A2's threshold is 80% rather than a hair-trigger.
+
+---
+
+## 8. Results appendix — measurements, appended as they arrive
+
+Everything above this line was written before a credit was spent. Everything
+below it is measured. Nothing here is analysis: no price is stored, no
+threshold is tuned, no edge is inferred, and none of it is EV.
+
+### A0 — cost verification, 2026-08-31 20:25Z. **PASSED.**
+
+One call, one event (`07d39d9ad653030c4c89d9a08c4071f5`, SF @ ATL, first pitch
+2026-08-31T22:05Z):
+
+```
+GET /v4/sports/baseball_mlb/events/{id}/odds
+    ?markets=pitcher_strikeouts&regions=us&oddsFormat=american
+```
+
+| Measurement | Value |
+|---|---|
+| **`x-requests-last`** | **1** |
+| `x-requests-remaining` after the call | 53,010 |
+| Market key `pitcher_strikeouts` | valid — no 422 |
+| `last_update` present per book per market | yes |
+| Books listing the market on that event | **7** |
+
+The gate's condition was `x-requests-last > 1` → stop. It came back 1, so the
+budget arithmetic in §4 stands unmultiplied and the grid was cleared to start.
+The endpoint returns the pitcher in each outcome's `description` field and
+Over/Under in `name`; the recorder keeps the pitcher and discards the side, the
+price and the point.
+
+### First live poll, 2026-08-31 20:32Z — 3 credits
+
+Slate date 2026-08-31 (Eastern). **12 games listed at selection, and this date
+was sampled MID-SLATE** — `/events` had already dropped the games that started,
+so the three picks are the earliest, median and latest of what remained, not of
+the day. The row records this as `selected_at_slot: "T-6h"`; a full day is
+sampled at `T-12h`. This is the only date the audit will ever see this way, and
+it is recorded rather than corrected so the coverage number is not quietly
+skewed toward night games.
+
+| Event | First pitch (UTC) | Slot | Books listing |
+|---|---|---|---|
+| SF @ ATL | 22:05 | T-2h | **7** |
+| DET @ MIN | 23:41 | T-4h | **6** |
+| PHI @ ARI | 2026-09-01 01:41 | T-6h | **7** |
+
+Books seen listing `pitcher_strikeouts`: `fanduel`, `fanatics`, `bovada`,
+`betonlineag`, `betmgm`, `draftkings`, `betrivers` — **seven**, not the "3–4,
+listing-dependent" that `COLLECTION_POLICY` recorded from the 24-credit probe.
+Both starters were listed on every game. Coverage is 3 of 3 sampled games at
+first look, which is well clear of abort A1's "fewer than half" — though A1 is
+judged over 5 game-days, not one poll.
+
+**Spend so far: 4 credits** (1 verification + 3). Balance 53,007 against a
+5,000 floor and a 400-credit cap.
+
+Not measurable yet, and not guessed at: the listing TIME (every game here was
+already listed at its first observed slot — left-censored, exactly the case §2
+anticipates), and repricing after the lineup post (Falsifier 1), which needs
+the same event observed at two slots straddling a `lineup_posted` bracket.
+
+### Instrument
+
+`src/pipeline/prop_listing.py`, run last in `scripts/forward_capture.sh` behind
+`PROP_LISTING_AUDIT`. Store: `data/processed/prop_listing.jsonl`, append-only,
+tracked. Spend is counted from the store's own marker rows — one marker per
+billed fetch — rather than from this document's arithmetic.
+
+One known exposure, stated before it shows up in the miss rate: **S6 (T−30m) is
+narrower than the capture cadence.** The grid is executed by the hourly runner,
+so a game whose first pitch falls more than 30 minutes after the hour's run
+gets no S6 observation at all — roughly half of them, by arithmetic, not by
+fault. Those slots are simply absent from the store (no marker, because no poll
+happened), which is the honest record and is what abort A3's miss rate will
+count. The other five slots are all wider than the cadence and are unaffected.
+S6 is the slot that answers "did `last_update` move after the lineup", so a
+thin S6 weakens Falsifier 1's precision, not the coverage or listing-time
+results.
