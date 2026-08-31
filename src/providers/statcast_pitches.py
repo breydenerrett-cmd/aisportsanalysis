@@ -29,6 +29,7 @@ with a manifest, so the ingest is resumable and a crash costs one window.
 
 from __future__ import annotations
 
+import http.client
 import csv
 import gzip
 import io
@@ -101,7 +102,12 @@ def fetch_window(start, end, timeout=DEFAULT_TIMEOUT) -> list:
             raw = response.read().decode("utf-8-sig", "replace")
     except urllib.error.HTTPError as exc:
         raise StatcastPitchError(f"Savant returned HTTP {exc.code}") from None
-    except (urllib.error.URLError, OSError) as exc:
+    except (urllib.error.URLError, OSError,
+            http.client.IncompleteRead) as exc:
+        # IncompleteRead is Savant hanging up mid-transfer -- observed live
+        # on 2026-08-31 killing a 180-window re-ingest at window seven. It
+        # is exactly as transient as a refused connection and must land in
+        # the same retry path, not escape as a raw crash.
         raise StatcastPitchError(f"could not reach Savant: {exc}") from None
 
     rows = []
