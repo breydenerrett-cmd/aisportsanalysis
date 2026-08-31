@@ -343,3 +343,18 @@ always published; nothing labelled proven without the evidence.
 - Ranker shell: asserts it publishes no bet recommendation while Engine 2 is
   empty — a test, so the gate cannot be removed by accident.
 - `artifacts/demo_latest.html` stays untouched.
+
+---
+
+## Status close-out (2026-08-31)
+
+Every work item in Parts 2–5 is shipped: A1 news layer, A2 matchup depth,
+A3 narrative pass, A4 any-matchup mode, B1 price-improvement library
+(wired into the Analyzer), B2 forward ledger (hardened), B3 the Ranker
+shell with its test-enforced gate. The research route in Part 1 has been
+executed further than this plan imagined: V3 information timing is frozen
+and accumulating forward events; V4 (interactions) and V5 (velocity /
+batted-ball) both ran and returned zero survivors; the public-projection
+benchmark ran (the close wins, p=0.0003). Ongoing direction lives in
+docs/ROADMAP.md's AUTONOMOUS CONTROL section — this document is now the
+historical design record.
