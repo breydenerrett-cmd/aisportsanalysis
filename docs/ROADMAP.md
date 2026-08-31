@@ -66,7 +66,26 @@ pre-register → freeze → batch run → replication → FDR → automatic
 falsification (battery RULES_VERSION 2.0.0, frozen) → publish all results →
 archive → next family. Zero survivors is a result, not a stop condition.
 
-### RESOURCE ARCHITECTURE (set 2026-08-31, Brey's master directive)
+### RESOURCE ARCHITECTURE (Max-capacity model, Brey 2026-08-31 evening)
+FABLE 5 orchestrates: state, priorities, worker packets, model selection,
+review, integration, adjudication, evidence standards, the Brey decision
+queue. SONNET 5 is the DEFAULT execution workforce (coding, tests, research,
+docs, product, data plumbing). OPUS 5 is the senior/high-risk worker
+(methodology, PIT/leakage integrity, difficult architecture, adversarial
+validation, repeated Sonnet failure). SCRIPTS are the compute cluster
+(capture, settlement, replay, enumeration, placebo sweeps, bootstraps).
+Fable implements directly only when tiny, integrative, or evidence-urgent.
+Aggressive PRODUCTIVE parallelism approved; never fake parallelism, duplicate
+agents, or expensive models on deterministic work. The live operational
+snapshot (active wave, next 5, lookahead, decision queue, bottleneck) is
+docs/COMMAND_CENTER.md -- this file holds the durable model, that one holds
+the moving state. Priority shift: the project advances simultaneously toward
+SELLABLE PRODUCT and REAL RESEARCH ADVANTAGE; research perfection must not
+indefinitely delay commercialization. UI implementation waits only for
+PRODUCT_DESIGN_HANDOFF.md (separate session) + SAAS_APPLICATION_ARCHITECTURE
+review; engine-side preparation proceeds now.
+
+### RESOURCE ARCHITECTURE (superseded earlier same day, kept for history)
 Fable 5 orchestrates: decisions, task decomposition, verification standards,
 Brey communication. Opus 5 workers execute: implementation, research,
 red-teaming — persistent definitions in `.claude/agents/` (opus-research,

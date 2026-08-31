@@ -1,0 +1,86 @@
+# COMMAND CENTER
+
+Operational snapshot. Updated by the orchestrator at every integration point.
+Last update: 2026-08-31 21:20Z. Suite: 1,959 green. Credits: ~53,000.
+
+## ACTIVE NOW
+| task | lane | model | state |
+|---|---|---|---|
+| Evolab Phase 1 replay engine (WorldView, leakage-proof) | C | Opus | in flight |
+| Hourly capture + first F5 close night at cap 8 | G | script | running |
+| Wave 2 (below) | multiple | Sonnet | launching |
+
+## WAVE 2 — LAUNCHING NOW
+1. Evolab Phase 2B sweep driver (script + module; runs when replay lands) — C
+2. Dashboard business-logic extraction into domain layer (pre-API, per
+   SAAS_APPLICATION_ARCHITECTURE §2) — B/P
+3. Bet Check domain logic (parse bet string, partition evidence for/against;
+   engine only, no UI) — A/B
+4. Season-end / off-season capture posture design (late September is close) — G/N
+5. CI: honest competitor scorecard (us vs them) + customer personas — I/L
+
+## NEXT 5 (promoted as slots free)
+6. API contract structures as stdlib dataclasses in the domain layer — P
+7. Evolab autopsy/death-taxonomy reporting over fitness tables — C
+8. Multi-sport hardcoding audit (what assumes MLB, docs only) — M
+9. Commercial-readiness ladder doc (alpha → beta → paid, requirements per
+   stage) — Q
+10. Reddit + screenshot research re-run when an unblocked environment exists — I
+
+## READY QUEUE / LOOKAHEAD (10–20)
+11. Phase 2B real sweep + 50 placebo worlds + PBO report (after 1+ land) — C
+12. Evolab result adjudication vs the stated prior (Fable-level) — C
+13. Bet Debunker domain logic (challenge a stated stat's sample/meaning) — A
+14. "Why did this line move" assembly (event timeline vs book responses;
+    uses eventstudy + relevance) — A/D
+15. F5 forward-series review (~2 weeks of closes required; first rows land
+    tonight) — E
+16. V3 first class-floor analysis (lineup_posted at 18/30 and mapping as
+    games settle) — D
+17. Prop-listing audit steady state → C1 registration decision packet for
+    Brey when listing-time data suffices — F
+18. SaaS implementation plan (BLOCKED: needs PRODUCT_DESIGN_HANDOFF.md) — A/P
+19. Auth/subscription groundwork per architecture doc (after 18) — R
+20. Performance profile of brief/analyze paths under API load shapes — O
+
+## TIME-GATED
+- V3 floors (30/class; lineup_posted 18, transactions 20-but-legacy) — days-weeks
+- F5 series review — ~2 weeks of closes
+- Season end — late September
+- Forward ledger 300+ selections — months
+
+## NEEDS BREY (decision queue)
+| decision | options | recommendation | continues without it |
+|---|---|---|---|
+| none currently open | — | — | everything |
+(Cleared today: 2024 sandbox ✓, prop audit ✓, F5 cap 8 ✓, news-speed rejection ✓.)
+
+## SHIPPED TODAY (2026-08-31)
+Forward-evidence rescue (gitignored odds stores; tracked now) · F5 close pass
+0→15/15 with identity-matched miss detection, cap 8 · V3 mappability repair ·
+health-monitor truth · results-store holes · bootstrap determinism (M4 errata) ·
+probable-pitcher PIT audit · Evolab: Phase 0 audit, Phase 2A (features carry no
+linear info beyond the close), core (11,088 genomes/51ms), stats (validated
+both directions; P4 reclassified) · prop-listing audit live (7 books, 4 credits)
+· competitive intelligence: 17 products, matrix, pricing, pain, naming,
+X-feasibility, checkpoint · product architecture audit + SaaS boundary plan ·
+evidence-vocabulary unification · V2 + V4 reproducibility audits exact.
+
+## BIGGEST BOTTLENECK
+**No deployable product.** The analysis, honesty machinery and evidence all
+exist and are tested; nothing makes them reachable by a customer. Design
+handoff is being produced in a separate session; engine-side preparation
+(extractions, contracts, Bet Check domain logic) proceeds now so the build
+phase starts fast.
+
+## CURRENT PRODUCT STATUS
+Static generator, test-enforced honest, no server/auth/payments. Architecture
+plan ready (FastAPI + Pydantic, api/ package, src/ stays stdlib). UI blocked
+on PRODUCT_DESIGN_HANDOFF.md by Brey's instruction.
+
+## CURRENT RESEARCH STATUS
+Zero demonstrated predictive edges (25+ prereg hypotheses, all published).
+Phase 2A: no linear information beyond the close. Phase 2B prior: expect
+BELOW_PLACEBO_CEILING. Live lanes: V3 timing (accumulating), F5 depth (first
+closes tonight), prop listing (feasibility). Sealed 2026 untouched; 2025
+tuning-only.
