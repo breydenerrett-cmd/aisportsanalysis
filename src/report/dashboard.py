@@ -372,6 +372,36 @@ def _lead(games) -> str:
         f'<div class="leadlist">{"".join(rows)}</div></section>')
 
 
+def _suppressed_section(game) -> str:
+    """What synthesis considered and cut, with its own reason, collapsed.
+
+    The ranking throws things away for honest reasons -- no sample attached, no
+    comparable scale, a duplicate of a better-stated version of the same fact,
+    outside the top five. Computing that trail and then hiding it made the
+    summary look like everything the system had to say. It is collapsed because
+    it is an audit trail rather than a read, and every reason is printed exactly
+    as synthesis wrote it: nothing here is summarised, ranked or invented.
+    """
+    summary = game.get("synthesis") or {}
+    cut = [item for item in (summary.get("suppressed") or [])
+           if isinstance(item, dict)]
+    if not cut:
+        return ""
+    rows = []
+    for item in cut:
+        statement = item.get("statement")
+        reason = item.get("reason")
+        rows.append(
+            '<div class="cutitem">'
+            f'<div class="claim">{_esc(statement) if statement else "&mdash;"}</div>'
+            '<div class="support">'
+            + (f'{_esc(reason)}' if reason else 'no reason recorded')
+            + '</div></div>')
+    return ('<details class="cut"><summary>What was left out, and why '
+            f'({len(cut)})</summary>'
+            f'<div class="cutlist">{"".join(rows)}</div></details>')
+
+
 def _synthesis_section(game) -> str:
     """The top block: the three-to-five things that matter, or the no-edge line.
 
@@ -388,6 +418,7 @@ def _synthesis_section(game) -> str:
                 '<h3>What matters tonight</h3>'
                 f'<p class="synthhead">{_esc(summary.get("headline") or synthesis_mod.NO_EDGE_HEADLINE)}</p>'
                 f'<p class="leadnote">{_esc(summary.get("note") or "")}</p>'
+                f'{_suppressed_section(game)}'
                 '</div>')
     rows = []
     for rank, item in enumerate(items, start=1):
@@ -417,7 +448,8 @@ def _synthesis_section(game) -> str:
             f'</div></div></div>')
     return ('<div class="synth"><h3>What matters tonight</h3>'
             f'<div class="synthlist">{"".join(rows)}</div>'
-            f'<p class="leadnote">{_esc(summary.get("note") or "")}</p></div>')
+            f'<p class="leadnote">{_esc(summary.get("note") or "")}</p>'
+            f'{_suppressed_section(game)}</div>')
 
 
 def _market_section(game) -> str:
@@ -1019,6 +1051,11 @@ ul.news li { margin-bottom:5px; font-size:14px; line-height:1.45; }
 .synth .leadnote { margin:12px 0 0; }
 .synth .chip.observed { color:var(--accent); }
 .synth .chip.tested_null { color:var(--clay); }
+.cut { margin:10px 0 2px; border-top:1px solid var(--rule); padding-top:8px; }
+.cut > summary { cursor:pointer; font-size:12.5px; color:var(--faint); }
+.cutlist { display:flex; flex-direction:column; gap:8px; margin-top:9px; }
+.cutitem .claim { font-size:13px; color:var(--muted); }
+.cutitem .support { font-size:12px; color:var(--faint); }
 
 .findings { margin:16px 0 0; display:flex; flex-direction:column; gap:9px; }
 .finding { display:grid; grid-template-columns:56px 1fr; gap:13px; align-items:start; }

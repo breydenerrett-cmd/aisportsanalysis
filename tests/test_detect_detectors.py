@@ -9,6 +9,7 @@ bullpen on every game in the league.
 
 import unittest
 
+from src.analysis import synthesis
 from src.detect import base, detectors
 from src.detect import dossier as dossier_mod
 
@@ -113,6 +114,40 @@ class TestBullpenWorkload(unittest.TestCase):
         found = self.detector.run(dossier(bullpen={"NYY": pen("NYY", 3)}))
         self.assertIn("because", found[0].claim)
 
+    def test_the_sample_names_denominators_not_a_period(self):
+        # It read "7-day window" -- the period looked at, no amount of evidence
+        # at all -- so the renderer printed "no sample size stated" beside a
+        # finding that does rest on countable play.
+        found = self.detector.run(dossier(bullpen={"NYY": pen("NYY", 3)}))
+        self.assertIn("8 relievers", found[0].sample)
+        self.assertEqual(synthesis.sample_size(found[0].sample), 8)
+
+    def test_a_complete_pitch_log_is_counted_in_the_sample(self):
+        workload = pen("NYY", 3)
+        for i, reliever in enumerate(workload["relievers"]):
+            reliever["pitches"] = 20 + i
+        found = self.detector.run(dossier(bullpen={"NYY": workload}))
+        total = sum(20 + i for i in range(8))
+        self.assertIn(f"{total} pitches", found[0].sample)
+        self.assertEqual(synthesis.sample_size(found[0].sample), total)
+
+    def test_a_partial_pitch_log_states_no_pitch_total(self):
+        # A total short by one reliever would read as the workload behind the
+        # claim while being smaller than it.
+        workload = pen("NYY", 3)
+        for reliever in workload["relievers"]:
+            reliever["pitches"] = 20
+        workload["relievers"][0]["pitches_known"] = False
+        found = self.detector.run(dossier(bullpen={"NYY": workload}))
+        self.assertNotIn("pitches", found[0].sample)
+        self.assertEqual(synthesis.sample_size(found[0].sample), 8)
+
+    def test_the_score_and_kind_are_untouched_by_the_sample_wording(self):
+        found = self.detector.run(dossier(bullpen={"NYY": pen("NYY", 3)}))
+        self.assertEqual(found[0].kind, base.SIGNAL)
+        self.assertEqual(found[0].value, 3)
+        self.assertEqual(found[0].baseline, float(detectors.TYPICAL_UNAVAILABLE))
+
 
 class TestStaleBook(unittest.TestCase):
     """Arithmetic, not prediction: this is true whether or not anything else is."""
@@ -178,6 +213,24 @@ class TestStarterMismatch(unittest.TestCase):
         found = self.detector.run(dossier(starters=self.starters(1.5, 4.2, thin=True)))
         self.assertEqual(found[0].kind, base.DEBUNK)
         self.assertIn("small-sample", found[0].claim)
+
+    def test_the_thin_warning_is_scoped_to_season_rate_stats(self):
+        # "Any rate you see quoted for him tonight" condemned reads with their
+        # own denominators -- a 129-fastball velocity line printed in the same
+        # card -- and so contradicted the block above it.
+        claim = self.detector.run(
+            dossier(starters=self.starters(1.5, 4.2, thin=True)))[0].claim
+        self.assertIn("rate stats", claim)
+        self.assertNotIn("Any rate you see", claim)
+        self.assertIn("velocity", claim)
+
+    def test_the_thin_warning_states_a_bound_not_a_sample(self):
+        # "<20 IP" says he threw FEWER than twenty innings; counting it as a
+        # twenty-inning denominator credits the claim with the sample it warns
+        # about.
+        found = self.detector.run(dossier(starters=self.starters(1.5, 4.2, thin=True)))
+        self.assertEqual(found[0].sample, "<20 IP")
+        self.assertIsNone(synthesis.sample_size(found[0].sample))
 
     def test_an_unknown_starter_produces_nothing(self):
         self.assertEqual(self.detector.run(dossier(

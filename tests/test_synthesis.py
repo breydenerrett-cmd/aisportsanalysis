@@ -215,6 +215,47 @@ class TestSamplesAlwaysAttached(unittest.TestCase):
         self.assertFalse(result["items"][0]["below_floor"])
 
 
+class TestAnUpperBoundIsNotADenominator(unittest.TestCase):
+    """"<20 IP" says fewer than twenty innings, not twenty innings of evidence.
+
+    The parser read the number and credited the thin-starter debunk with the
+    very sample it exists to warn about -- and the renderer, asking the same
+    function, printed it under the word "sample".
+    """
+
+    def test_a_less_than_bound_names_no_sample(self):
+        self.assertIsNone(synthesis.sample_size("<20 IP"))
+        self.assertIsNone(synthesis.sample_size("under 20 IP"))
+        self.assertIsNone(synthesis.sample_size("fewer than 30 PA"))
+        self.assertIsNone(synthesis.sample_size("at most 12 starts"))
+
+    def test_a_plain_count_is_still_read(self):
+        self.assertEqual(synthesis.sample_size("20 IP"), 20)
+        self.assertEqual(synthesis.sample_size("129 fastballs"), 129)
+
+    def test_a_bound_does_not_swallow_the_counts_beside_it(self):
+        self.assertEqual(
+            synthesis.sample_size("under 20 IP, 129 fastballs"), 129)
+
+    def test_a_bound_scores_as_an_absent_sample_not_a_real_one(self):
+        bounded = synthesis._sample_term(synthesis.sample_size("<20 IP"),
+                                         "detector")
+        absent = synthesis._sample_term(None, "detector")
+        real = synthesis._sample_term(synthesis.sample_size("20 IP"),
+                                      "detector")
+        self.assertEqual(bounded, absent)
+        self.assertNotEqual(real, bounded)
+
+    def test_a_bounded_sample_reaches_the_page_unlabelled(self):
+        # The renderer asks the same function, so the page says "no sample
+        # size stated -- <20 IP" rather than "sample <20 IP".
+        result = synthesis.synthesize(
+            game_dossier(), [finding(detector="starter_mismatch",
+                                     sample="<20 IP")], limit=10)
+        for item in result["items"]:
+            self.assertIsNone(item["sample_n"])
+
+
 class TestRanking(unittest.TestCase):
 
     def test_bigger_and_better_sampled_effects_rank_higher(self):
@@ -447,6 +488,39 @@ class TestDashboardRendersIt(unittest.TestCase):
             "headline": "a precomputed headline", "note": "n",
             "suppressed": []}
         self.assertIn("a precomputed headline", self.render(slate))
+
+    def test_what_was_left_out_is_rendered_with_its_reason(self):
+        # synthesize() computed an honest audit trail and the page threw it
+        # away, so the summary looked like everything the system had to say.
+        unrankable = finding(claim="A claim with no surprise attached.",
+                             surprise=None)
+        html = self.render(self.slate(findings=[unrankable]))
+        self.assertIn("What was left out, and why", html)
+        self.assertIn("A claim with no surprise attached.", html)
+        self.assertIn("could not express its surprise", html)
+
+    def test_the_audit_trail_is_collapsed_by_default(self):
+        html = self.render(self.slate(findings=[finding(surprise=None)]))
+        self.assertIn("<details class=\"cut\">", html)
+        self.assertNotIn("<details class=\"cut\" open", html)
+
+    def test_nothing_left_out_renders_no_section(self):
+        slate = self.slate()
+        slate["games"][0]["synthesis"] = {
+            "items": [], "cleared": False, "headline": "h", "note": "n",
+            "suppressed": []}
+        self.assertNotIn("What was left out, and why", self.render(slate))
+
+    def test_the_reasons_are_the_ones_synthesis_wrote(self):
+        # Nothing here is paraphrased, softened or invented by the renderer.
+        slate = self.slate()
+        slate["games"][0]["synthesis"] = {
+            "items": [], "cleared": False, "headline": "h", "note": "n",
+            "suppressed": [{"statement": "a cut statement",
+                            "reason": "a verbatim reason"}]}
+        html = self.render(slate)
+        self.assertIn("a cut statement", html)
+        self.assertIn("a verbatim reason", html)
 
     def test_the_page_stays_script_free(self):
         html = self.render(self.slate({

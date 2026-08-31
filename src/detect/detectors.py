@@ -177,6 +177,42 @@ class ImpliedBullpenDisagreement(Detector):
         return findings
 
 
+def _pen_pitches(relievers):
+    """Pitches thrown by the relievers counted, or None if any is unknown.
+
+    A partial total would read as the workload behind the claim while being
+    smaller than it, so an incomplete pitch log produces no number at all.
+    """
+    total = 0
+    for reliever in relievers:
+        if not reliever.get("pitches_known", True):
+            return None
+        pitches = reliever.get("pitches")
+        if pitches is None:
+            return None
+        total += pitches
+    return total
+
+
+def _pen_sample(workload, relievers) -> str:
+    """The denominators behind a bullpen-workload claim.
+
+    This field used to read "7-day window", which names the PERIOD the claim
+    looked at and no amount of evidence at all -- the renderer's sample parser
+    rejects it, so the page printed "no sample size stated" beside a finding
+    that does rest on countable play. The denominators are the relievers
+    counted and, when the pitch log is complete for all of them, the pitches
+    they threw; the window stays in the sentence as the period it is.
+    """
+    window = workload.get("window_days")
+    period = f"over the last {window} days" if window else "over the window"
+    pitches = _pen_pitches(relievers)
+    counts = f"{len(relievers)} relievers"
+    if pitches is not None:
+        counts += f", {pitches} pitches"
+    return f"{counts} {period}"
+
+
 class BullpenWorkload(Detector):
     """Who is gassed, stated as usage rather than as a verdict."""
 
@@ -207,7 +243,7 @@ class BullpenWorkload(Detector):
                 f"{worst.get('name')} {worst.get('availability_reason')} — so "
                 f"the late innings fall to whoever is left in the pen.",
                 value=len(out), baseline=float(TYPICAL_UNAVAILABLE),
-                sample=f"{workload.get('window_days')}-day window",
+                sample=_pen_sample(workload, relievers),
                 surprise=surprise_score(len(out), TYPICAL_UNAVAILABLE, 1.0),
                 side=AWAY if team == game.teams[0] else HOME,
                 market_relevance=(
@@ -290,9 +326,13 @@ class StarterMismatch(Detector):
         if starters.get("either_sp_thin"):
             return [Finding(
                 self.name, DEBUNK,
-                "One starter is under 20 innings this season. Any rate you see "
-                "quoted for him tonight, good or bad, is small-sample noise, "
-                "not a read on how he actually pitches.",
+                "One starter is under 20 innings this season, so his season "
+                "rate stats — ERA, FIP, WHIP, the per-inning numbers quoted "
+                "for him tonight — are small-sample noise rather than a read "
+                "on how he actually pitches. It does not condemn every number "
+                "about him: a read with its own denominator, such as a "
+                "velocity or pitch-mix line off a few hundred pitches, "
+                "carries whatever sample is printed beside it.",
                 sample="<20 IP", evidence=TESTED_NULL)]
 
         away_fip, home_fip = starters.get("away_sp_fip"), starters.get("home_sp_fip")

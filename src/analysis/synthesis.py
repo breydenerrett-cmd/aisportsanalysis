@@ -649,6 +649,14 @@ SAMPLE_UNITS = frozenset({
 
 _COUNT = re.compile(r"(\d+(?:\.\d+)?)\s*([A-Za-z][A-Za-z()/\-]*)")
 
+# A number introduced by one of these is a CEILING, not a count: "<20 IP" says
+# the pitcher threw fewer than twenty innings, which is the opposite of twenty
+# innings of evidence. Reading it as a denominator credited the thinnest
+# findings on the page with the sample they were warning about.
+_UPPER_BOUND = re.compile(
+    r"(?:<=?|≤|\b(?:under|below|fewer than|less than|no more than|at most|"
+    r"up to))\s*$", re.IGNORECASE)
+
 
 def _sample_size(sample):
     """The largest countable amount of play named in a sample string, or None.
@@ -658,15 +666,22 @@ def _sample_size(sample):
     denominator the claim actually rests on; the smaller ones count hitters or
     the thinner side. A string that names no countable unit returns None, and
     the sample term then falls back to its conservative default rather than to
-    a number that happened to be lying in the sentence.
+    a number that happened to be lying in the sentence. A count stated as an
+    upper bound ("<20 IP") names no denominator either -- nothing in the
+    string says how much play there actually was.
     """
     if sample is None:
         return None
+    text = str(sample)
     found = []
-    for number, unit in _COUNT.findall(str(sample)):
+    for match in _COUNT.finditer(text):
+        number, unit = match.group(1), match.group(2)
         token = "".join(ch for ch in unit if ch.isalpha()).lower()
-        if token in SAMPLE_UNITS:
-            found.append(int(float(number)))
+        if token not in SAMPLE_UNITS:
+            continue
+        if _UPPER_BOUND.search(text[:match.start()]):
+            continue
+        found.append(int(float(number)))
     return max(found) if found else None
 
 
