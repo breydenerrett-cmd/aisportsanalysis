@@ -162,6 +162,10 @@ class ScheduleHorizonTests(unittest.TestCase):
 
     def setUp(self):
         self.asked = []
+        # Per-test copy: a test that adds a game must not leak it into the
+        # next one.
+        self.SCHEDULE = {day: list(games)
+                         for day, games in type(self).SCHEDULE.items()}
         self.real_schedule = dense.mlb.fetch_schedule
 
         def fake(day, timeout=20):
@@ -191,6 +195,27 @@ class ScheduleHorizonTests(unittest.TestCase):
         now = datetime(2026, 8, 31, 3, 0, tzinfo=timezone.utc)
         self.assertEqual(dense.games_in_window(dense._upcoming(now), now), 0)
 
+    def test_schedule_rows_carry_the_identity_the_miss_detector_needs(self):
+        # Without the clubs, the detector can only match on first pitch, and
+        # four games share 22:40 on a normal card.
+        self.SCHEDULE["2026-08-31"] = [{
+            "gamePk": 778899, "gameDate": "2026-08-31T17:05:00Z",
+            "teams": {"home": {"team": {"name": "New York Mets"}},
+                      "away": {"team": {"name": "Cincinnati Reds"}}}}]
+        rows = dense._upcoming(datetime(2026, 8, 31, 16, 0,
+                                        tzinfo=timezone.utc))
+        row = next(r for r in rows if r["game_pk"] == 778899)
+        self.assertEqual(row["home_team"], "New York Mets")
+        self.assertEqual(row["away_team"], "Cincinnati Reds")
+        self.assertEqual(row["commence_time"], "2026-08-31T17:05:00Z")
+
+    def test_a_schedule_row_with_no_teams_still_yields_a_start_time(self):
+        # A malformed record must not take the window gate down with it.
+        rows = dense._upcoming(datetime(2026, 8, 31, 1, 50,
+                                        tzinfo=timezone.utc))
+        self.assertTrue(all("commence_time" in r for r in rows))
+        self.assertTrue(all(r["home_team"] is None for r in rows))
+
 
 class HourlyCadenceClosePassTests(unittest.TestCase):
     """The F5 close pass under the REAL schedule, not a convenient one.
@@ -215,7 +240,8 @@ class HourlyCadenceClosePassTests(unittest.TestCase):
         self.fetched = []
 
     def _replay(self, starts, hours=30, trigger_minute=TRIGGER_MINUTE,
-                skew_minutes=1, priced=True, captures=4, interval=15):
+                skew_minutes=1, priced=True, captures=4, interval=15,
+                unlisted=()):
         """Run the hourly trigger across a whole slate day.
 
         `skew_minutes` reproduces a measured fact: the free MLB schedule and
@@ -227,28 +253,41 @@ class HourlyCadenceClosePassTests(unittest.TestCase):
         base = (min(parsed).replace(minute=0, second=0, microsecond=0)
                 - timedelta(hours=3))
         hours = max(hours, int((max(parsed) - base).total_seconds() // 3600) + 2)
-        schedule = [{"commence_time": s} for s in starts]
+        # Every game gets its OWN clubs. A real card names sixteen different
+        # matchups, and a replay in which every game is "Home Nine at Away
+        # Nine" cannot tell an identity-matched detector from a clock-matched
+        # one -- which is how a detector blind to simultaneous starts passed
+        # its whole suite.
+        def clubs(index):
+            return {"home_team": f"Home {index}", "away_team": f"Away {index}"}
+
+        schedule = [dict(clubs(i), commence_time=s, game_pk=1000 + i)
+                    for i, s in enumerate(starts)]
+        # `unlisted` are schedule indices the odds feed never offers, so no
+        # spend can reach them: the shape of a genuinely lost close.
         listed = [
-            {"id": f"g{i}",
-             "commence_time": (datetime.fromisoformat(s.replace("Z", "+00:00"))
-                               + timedelta(minutes=skew_minutes))
-             .isoformat().replace("+00:00", "Z"),
-             "home_team": "Home Nine", "away_team": "Away Nine"}
-            for i, s in enumerate(starts)]
+            dict(clubs(i), id=f"g{i}",
+                 commence_time=(datetime.fromisoformat(s.replace("Z", "+00:00"))
+                                + timedelta(minutes=skew_minutes))
+                 .isoformat().replace("+00:00", "Z"))
+            for i, s in enumerate(starts) if i not in set(unlisted)]
 
         def fetch(event_id, markets, env):
             self.fetched.append(event_id)
             event = next(e for e in listed if e["id"] == event_id)
             if not priced:
                 return {"id": event_id, "bookmakers": []}
+            names = clubs(int(event_id[1:]))
             return {
                 "id": event_id, "commence_time": event["commence_time"],
-                "home_team": "Home Nine", "away_team": "Away Nine",
+                "home_team": names["home_team"],
+                "away_team": names["away_team"],
                 "bookmakers": [{"key": "fanduel", "markets": [{
                     "key": dense.F5_CLOSE_MARKET,
                     "last_update": event["commence_time"],
-                    "outcomes": [{"name": "Home Nine", "price": -125},
-                                 {"name": "Away Nine", "price": 105}]}]}],
+                    "outcomes": [
+                        {"name": names["home_team"], "price": -125},
+                        {"name": names["away_team"], "price": 105}]}]}],
             }
 
         reports = []
@@ -384,6 +423,24 @@ class HourlyCadenceClosePassTests(unittest.TestCase):
         self.assertEqual([m for r in reports for m in r["missed_f5_closes"]],
                          [])
 
+    def test_a_lost_close_hiding_behind_a_simultaneous_start_is_reported(self):
+        """DEFECT 1, reproduced on the real card plus one extra 22:40 start.
+
+        Sixteen games, fifteen priced: the sixteenth shares its first pitch
+        with four others, and matching stored closes to scheduled games on
+        first pitch alone let one of those four mark it covered. Sixteen
+        games, one lost close, `missed_f5_closes == []`. Identity matching is
+        what makes the loss visible; on a card with four simultaneous starts
+        a timestamp is not a key.
+        """
+        card = REAL_SLATE_2026_09_01 + ["2026-09-01T22:40:00Z"]
+        ghost = len(card) - 1
+        reports = self._replay(card, unlisted=(ghost,))
+        self.assertEqual(len(set(self.fetched)), len(card) - 1)
+        missed = [m for r in reports for m in r["missed_f5_closes"]]
+        self.assertEqual([m["home_team"] for m in missed], [f"Home {ghost}"])
+        self.assertEqual(missed[0]["commence_time"], "2026-09-01T22:40:00Z")
+
     def test_the_break_path_can_never_produce_a_close(self):
         """Why run_end alone was never enough, stated as a test.
 
@@ -396,6 +453,58 @@ class HourlyCadenceClosePassTests(unittest.TestCase):
         self.assertEqual(dense.games_in_window(quiet, moment), 0)
         self.assertEqual(
             dense.games_in_window(quiet, moment, dense.CLOSE_WINDOW_MINUTES), 0)
+
+
+class DenseCommandOutputTests(unittest.TestCase):
+    """A miss-detector nobody can read is not a miss-detector.
+
+    `run()` returned `missed_f5_closes` and `cmd_dense` never printed it, so
+    the line scripts/forward_capture.sh greps and the operator reads did not
+    exist for the F5 lane at all.
+    """
+
+    def _stdout(self, result):
+        import io
+        import contextlib
+        from src import cli
+
+        args = mock.Mock(estimate=False, captures=4, interval=15, window=180)
+        buffer = io.StringIO()
+        with mock.patch.object(dense, "run", return_value=result), \
+             contextlib.redirect_stdout(buffer):
+            self.assertEqual(cli.cmd_dense(args), cli.EXIT_OK)
+        return buffer.getvalue()
+
+    def _result(self, **extra):
+        base = {"captures": 1, "observations": 30, "detail": [], "close_capture": None,
+                "missed_windows": [], "missed_f5_closes": [],
+                "f5_closes": {"events": 1, "rows": 1, "errors": [],
+                              "dropped": []}}
+        base.update(extra)
+        return base
+
+    def test_a_missed_f5_close_reaches_stdout_named(self):
+        out = self._stdout(self._result(missed_f5_closes=[{
+            "commence_time": "2026-09-01T22:40:00Z",
+            "home_team": "Chicago Cubs", "away_team": "Atlanta Braves",
+            "reason": "no price stored"}]))
+        self.assertIn("MISSED F5 CLOSE", out)
+        self.assertIn("Atlanta Braves at Chicago Cubs", out)
+        self.assertIn("2026-09-01T22:40:00Z", out)
+
+    def test_a_budget_drop_reaches_stdout(self):
+        out = self._stdout(self._result(f5_closes={
+            "events": 6, "rows": 6, "errors": [], "dropped": [{
+                "event_id": "g7", "commence_time": "2026-09-01T22:40:00Z",
+                "home_team": "Seattle Mariners", "away_team": "Texas Rangers",
+                "reason": "F5 close budget bound"}]}))
+        self.assertIn("F5 BUDGET DROP", out)
+        self.assertIn("Seattle Mariners", out)
+
+    def test_a_clean_run_prints_no_alarm(self):
+        out = self._stdout(self._result())
+        self.assertNotIn("MISSED F5 CLOSE", out)
+        self.assertNotIn("F5 BUDGET DROP", out)
 
 
 if __name__ == "__main__":

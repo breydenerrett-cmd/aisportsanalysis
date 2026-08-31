@@ -187,7 +187,8 @@ def _upcoming(now=None, timeout=20):
         day = (now + timedelta(days=offset)).date().isoformat()
         try:
             for game in mlb.fetch_schedule(day, timeout=timeout):
-                rows.append({"commence_time": _start_of(game)})
+                rows.append(dict(_identity_of(game),
+                                 commence_time=_start_of(game)))
         except Exception:  # noqa: BLE001 -- a schedule outage must not spend credits
             return None
     return rows
@@ -196,6 +197,45 @@ def _upcoming(now=None, timeout=20):
 def _start_of(game):
     return (game.get("gameDate") or (game.get("gameData") or {})
             .get("datetime", {}).get("dateTime"))
+
+
+def _identity_of(game):
+    """Who is playing, plus MLB's own game id, from a raw schedule record.
+
+    WHY THE SCHEDULE ROWS CARRY IDENTITY AT ALL
+    -------------------------------------------
+    `_missed_f5_closes` used to decide whether a scheduled game had a stored
+    close by comparing first-pitch times alone. On a normal MLB card that is
+    not a key: the real 2026-09-01 slate has four games at 22:40 and two at
+    22:45, so ONE stored row marked every game sharing its start time as
+    covered and up to three genuinely lost closes were reported as none. The
+    detector was blind to exactly the failure it exists to catch.
+
+    `game_pk` is MLB's identifier and is carried for the operator's benefit;
+    it is not the odds feed's event id, so it cannot join the two feeds. The
+    team pair can: MLB's full club names and the odds feed's are the same
+    strings ("New York Yankees"), and a pair of clubs is unique on a slate
+    even when a doubleheader repeats a start time. If the two feeds ever
+    disagree on a club's name the pair stops matching and the game is
+    reported missed -- a false alarm, which is the safe direction for a
+    detector whose whole purpose is to make silence impossible.
+    """
+    teams = game.get("teams") or {}
+    def name(side):
+        return ((teams.get(side) or {}).get("team") or {}).get("name")
+    return {"game_pk": game.get("gamePk"),
+            "home_team": name("home"), "away_team": name("away")}
+
+
+def _team_key(home, away):
+    """Case- and whitespace-insensitive identity for a scheduled matchup.
+
+    None when either club is missing, which is the signal to fall back to
+    first-pitch matching rather than to guess.
+    """
+    if not home or not away:
+        return None
+    return (str(home).strip().casefold(), str(away).strip().casefold())
 
 
 def run(env=None, captures=CAPTURES_PER_RUN, interval_minutes=INTERVAL_MINUTES,
@@ -232,7 +272,8 @@ def run(env=None, captures=CAPTURES_PER_RUN, interval_minutes=INTERVAL_MINUTES,
     # One F5 budget and one seen-set for the whole run, so the cap bounds the
     # run rather than each moment inside it.
     f5_state = {"seen": set(), "budget": F5_CLOSE_MAX_EVENTS,
-                "events": 0, "rows": 0, "errors": []}
+                "events": 0, "rows": 0, "errors": [], "dropped": [],
+                "budget_exhausted": False}
 
     results = []
     reason = None
@@ -305,7 +346,8 @@ def run(env=None, captures=CAPTURES_PER_RUN, interval_minutes=INTERVAL_MINUTES,
                 }
                 close_capture["f5"] = _f5_moment(
                     env, run_end, CLOSE_WINDOW_MINUTES, events_now,
-                    f5_state) or {"events": 0, "rows": 0, "errors": []}
+                    f5_state) or {"events": 0, "rows": 0, "errors": [],
+                                  "dropped": []}
                 results.append(dict(close_capture, close_pass=True,
                                     games_in_window=games_in_window(
                                         events_now, run_end,
@@ -326,7 +368,10 @@ def run(env=None, captures=CAPTURES_PER_RUN, interval_minutes=INTERVAL_MINUTES,
         "stopped_early": reason if reason else None,
         "close_capture": close_capture,
         "f5_closes": {"events": f5_state["events"], "rows": f5_state["rows"],
-                      "errors": f5_state["errors"]},
+                      "errors": f5_state["errors"],
+                      "dropped": f5_state["dropped"],
+                      "budget": F5_CLOSE_MAX_EVENTS,
+                      "budget_exhausted": f5_state["budget_exhausted"]},
         "missed_windows": missed,
         "missed_f5_closes": missed_f5,
         "detail": results,
@@ -341,6 +386,10 @@ def _f5_moment(env, moment, lookahead_minutes, events, state):
     already in hand; only games it flags reach the odds feed at all.
     """
     if state["budget"] <= 0:
+        # Exhausted earlier in this run. Which games this costs is not known
+        # here without another listing, but nothing is being priced from now
+        # on, and `_missed_f5_closes` names every unpriced game at the end.
+        state["budget_exhausted"] = True
         return None
     # Slack on BOTH edges. The far edge is obvious; the near edge is the one
     # that cost two games a night in the replay -- the schedule says 22:45 at
@@ -358,6 +407,9 @@ def _f5_moment(env, moment, lookahead_minutes, events, state):
     state["events"] += report["events"]
     state["rows"] += report["rows"]
     state["errors"].extend(report["errors"])
+    state["dropped"].extend(report.get("dropped") or [])
+    if report.get("dropped"):
+        state["budget_exhausted"] = True
     return report
 
 
@@ -381,11 +433,11 @@ def _f5_close_pass(env, moment, store=None, lookahead_minutes=None,
                  else lookahead_minutes)
     cap = F5_CLOSE_MAX_EVENTS if budget is None else budget
     if cap <= 0:
-        return {"events": 0, "rows": 0, "errors": []}
+        return {"events": 0, "rows": 0, "errors": [], "dropped": []}
     try:
         listed = odds_provider.list_events(env)
     except odds_provider.OddsProviderError as exc:
-        return {"events": 0, "rows": 0, "errors": [str(exc)]}
+        return {"events": 0, "rows": 0, "errors": [str(exc)], "dropped": []}
 
     observed = moment.isoformat().replace("+00:00", "Z")
     horizon = moment + timedelta(minutes=lookahead)
@@ -397,6 +449,21 @@ def _f5_close_pass(env, moment, store=None, lookahead_minutes=None,
         if seen is not None and event.get("id") in seen:
             continue
         targets.append(event)
+    # The cap binds SILENTLY unless the overflow is carried out. `seen` and
+    # `budget` are per-run and the next run begins after first pitch, so a
+    # game dropped here is never priced by anything -- the loss is permanent
+    # and must be named, not truncated away. Measured spend on the real
+    # 2026-09-01 card is 6, 5, 1, 3 per run, and the 22:15 run spends 6 of 6
+    # with zero headroom, so a seventh start in one span is routine.
+    targets.sort(key=lambda event: _parse_iso(event.get("commence_time"))
+                 or horizon)
+    dropped = [{"event_id": event.get("id"),
+                "commence_time": event.get("commence_time"),
+                "home_team": event.get("home_team"),
+                "away_team": event.get("away_team"),
+                "reason": (f"F5 close budget of {cap} bound at this capture "
+                           f"moment; no later moment can reach this game")}
+               for event in targets[cap:]]
     targets = targets[:cap]
     if seen is not None:
         # Marked on ATTEMPT, not on success. A market that is not listed
@@ -445,7 +512,8 @@ def _f5_close_pass(env, moment, store=None, lookahead_minutes=None,
                 handle.write("\n")
             for row in rows:
                 handle.write(json.dumps(row, sort_keys=True) + "\n")
-    return {"events": len(targets), "rows": len(rows), "errors": errors}
+    return {"events": len(targets), "rows": len(rows), "errors": errors,
+            "dropped": dropped}
 
 
 def _missed_f5_closes(events, run_start, run_end, store=None):
@@ -459,8 +527,15 @@ def _missed_f5_closes(events, run_start, run_end, store=None):
 
     A close taken by an EARLIER run legitimately covers the window, so the
     store's own rows are what is checked, not just this run's spend. Rows are
-    matched to scheduled games on first pitch within F5_SCHEDULE_SLACK_MINUTES,
-    because the two feeds disagree by about a minute.
+    Rows are matched to scheduled games BY IDENTITY -- the pair of clubs,
+    which both feeds name identically -- because first pitch is not a key on a
+    real card. Four games start at 22:40 on 2026-09-01 and two at 22:45; under
+    time-only matching one stored row silenced every game sharing its start,
+    so three lost closes reported as zero. First pitch within
+    F5_SCHEDULE_SLACK_MINUTES stays as the fallback for rows that genuinely
+    carry no identity -- an older store written before the clubs were recorded,
+    or a caller passing bare schedule times -- because the two feeds disagree
+    about first pitch by about a minute.
 
     The span is every game this run was responsible for: from run_start out to
     the tail pass's own horizon, since a game inside that horizon has had its
@@ -477,29 +552,53 @@ def _missed_f5_closes(events, run_start, run_end, store=None):
     for row in events:
         start = _parse(row.get("commence_time"))
         if start is not None and run_start < start <= horizon:
-            started.append(start)
+            started.append((start, row))
     if not started:
         return []
 
     priced = _f5_priced(store)
     slack = timedelta(minutes=F5_SCHEDULE_SLACK_MINUTES)
     missed = []
-    for start in sorted(started):
+    for start, row in sorted(started, key=lambda pair: pair[0]):
         window_open = start - timedelta(minutes=CLOSE_WINDOW_MINUTES)
-        if not any(abs(commence - start) <= slack
-                   and window_open <= observed <= start
-                   for commence, observed in priced):
-            missed.append({
-                "commence_time": start.isoformat().replace("+00:00", "Z"),
-                "reason": (f"this run was its last look and no "
-                           f"{F5_CLOSE_MARKET} price is stored inside its "
-                           f"final {CLOSE_WINDOW_MINUTES} minutes"),
-            })
+        key = _team_key(row.get("home_team"), row.get("away_team"))
+        covered = False
+        for commence, observed, priced_key in priced:
+            if not (window_open <= observed <= start):
+                continue
+            if key is not None and priced_key is not None:
+                # Both sides know who is playing: identity decides, and a
+                # shared start time proves nothing.
+                if key == priced_key:
+                    covered = True
+                    break
+                continue
+            if abs(commence - start) <= slack:
+                covered = True
+                break
+        if covered:
+            continue
+        entry = {
+            "commence_time": start.isoformat().replace("+00:00", "Z"),
+            "reason": (f"this run was its last look and no "
+                       f"{F5_CLOSE_MARKET} price is stored inside its "
+                       f"final {CLOSE_WINDOW_MINUTES} minutes"),
+        }
+        # Named when known, because on a card with four simultaneous starts a
+        # bare timestamp does not tell the operator WHICH game was lost.
+        for field in ("game_pk", "home_team", "away_team"):
+            if row.get(field) is not None:
+                entry[field] = row[field]
+        missed.append(entry)
     return missed
 
 
 def _f5_priced(store=None):
-    """(first pitch, observation time) for every row already in the F5 store.
+    """(first pitch, observation time, team key) per row in the F5 store.
+
+    The team key is None for a row that does not name both clubs; callers fall
+    back to first-pitch matching for those rather than treating an unknown
+    matchup as a match.
 
     A store that does not exist yet is not an error -- it is the state this
     lane spent its first night in, and reading it must say "nothing priced"
@@ -522,7 +621,9 @@ def _f5_priced(store=None):
         commence = _parse(row.get("commence_time"))
         observed = _parse(row.get("observed_utc"))
         if commence is not None and observed is not None:
-            priced.append((commence, observed))
+            priced.append((commence, observed,
+                           _team_key(row.get("home_team"),
+                                     row.get("away_team"))))
     return priced
 
 

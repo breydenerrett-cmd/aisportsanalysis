@@ -1395,7 +1395,28 @@ def cmd_dense(args) -> int:
     for miss in result.get("missed_windows") or []:
         print(f"  MISSED WINDOW: game at {miss['commence_time']} "
               f"{miss['reason']}")
+    # The F5 miss-detector reached stdout for nobody: `run()` returned
+    # `missed_f5_closes` and this block never printed it, so the one signal
+    # that says the market-depth lane lost a closing line was invisible to
+    # both the operator and the text scripts/forward_capture.sh greps.
+    f5 = result.get("f5_closes") or {}
+    for drop in f5.get("dropped") or []:
+        print(f"  F5 BUDGET DROP: {_f5_game_label(drop)} {drop['reason']}")
+    for miss in result.get("missed_f5_closes") or []:
+        print(f"  MISSED F5 CLOSE: {_f5_game_label(miss)} {miss['reason']}")
     return EXIT_OK
+
+
+def _f5_game_label(entry) -> str:
+    """Name the game, not just the clock.
+
+    Four games start at 22:40 on a normal card, so a bare timestamp does not
+    identify which close was lost. Teams when the row has them, timestamp
+    always -- never invented.
+    """
+    away, home = entry.get("away_team"), entry.get("home_team")
+    who = f"{away} at {home} " if away and home else ""
+    return f"{who}({entry.get('commence_time')}):"
 
 
 def cmd_snapshot(args) -> int:

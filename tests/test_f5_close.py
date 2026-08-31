@@ -190,7 +190,8 @@ class F5RunSharedStateTests(unittest.TestCase):
         listed = [_event("near", 10)]
         with mock.patch.object(dense.odds_provider, "list_events") as index:
             report = dense._f5_close_pass(None, NOW, budget=0)
-        self.assertEqual(report, {"events": 0, "rows": 0, "errors": []})
+        self.assertEqual(report, {"events": 0, "rows": 0, "errors": [],
+                                  "dropped": []})
         index.assert_not_called()
 
     def test_the_budget_caps_below_the_standing_maximum(self):
@@ -200,6 +201,26 @@ class F5RunSharedStateTests(unittest.TestCase):
         self.assertEqual(report["events"], 2)
         self.assertEqual(len(fetched), 2)
 
+    def test_the_binding_budget_names_every_game_it_drops(self):
+        # DEFECT 2. The cap used to truncate in silence: `seen` and `budget`
+        # are per-run and the next run begins after first pitch, so a dropped
+        # game is never priced by anything. A permanent loss must be named.
+        listed = [_event(f"e{i}", 5 + i) for i in range(5)]
+        with tempfile.TemporaryDirectory() as folder:
+            report, fetched, _ = self._run(listed, folder, budget=2)
+        self.assertEqual(report["events"], 2)
+        dropped = report["dropped"]
+        self.assertEqual([d["event_id"] for d in dropped],
+                         ["e2", "e3", "e4"])
+        self.assertTrue(all(d["commence_time"] and d["reason"]
+                            for d in dropped))
+
+    def test_a_budget_with_room_drops_nothing(self):
+        listed = [_event("only", 10)]
+        with tempfile.TemporaryDirectory() as folder:
+            report, _, _ = self._run(listed, folder, budget=6)
+        self.assertEqual(report["dropped"], [])
+
 
 class F5MissedReportingTests(unittest.TestCase):
     """The store is the evidence, so the store is what gets checked."""
@@ -207,6 +228,52 @@ class F5MissedReportingTests(unittest.TestCase):
     def _schedule(self, *minutes):
         return [{"commence_time": (NOW + dt.timedelta(minutes=m))
                  .isoformat().replace("+00:00", "Z")} for m in minutes]
+
+    def test_simultaneous_starts_are_matched_by_identity_not_by_clock(self):
+        # DEFECT 1. Four games start at 22:40 on the real 2026-09-01 card.
+        # Matching a stored close to a scheduled game on first pitch alone
+        # let ONE stored row mark all four covered, so up to three genuinely
+        # lost closes reported as zero -- the detector blind to the exact
+        # failure it exists to catch.
+        start = NOW + dt.timedelta(minutes=10)
+        stamp = start.isoformat().replace("+00:00", "Z")
+        card = [{"commence_time": stamp, "game_pk": 700 + i,
+                 "home_team": home, "away_team": away}
+                for i, (home, away) in enumerate(
+                    [("New York Mets", "Cincinnati Reds"),
+                     ("Chicago Cubs", "Atlanta Braves"),
+                     ("Seattle Mariners", "Texas Rangers")])]
+        with tempfile.TemporaryDirectory() as folder:
+            store = Path(folder) / "f5.jsonl"
+            store.write_text(json.dumps({
+                "observed_utc": NOW.isoformat().replace("+00:00", "Z"),
+                "commence_time": stamp,
+                "home_team": "New York Mets",
+                "away_team": "Cincinnati Reds",
+            }) + "\n", encoding="utf-8")
+            missed = dense._missed_f5_closes(
+                card, NOW - dt.timedelta(minutes=45), NOW, store=store)
+        self.assertEqual([m["home_team"] for m in missed],
+                         ["Chicago Cubs", "Seattle Mariners"])
+
+    def test_identity_matching_survives_the_one_minute_feed_skew(self):
+        # The clubs are the key, so the feeds' one-minute disagreement about
+        # first pitch cannot turn a stored close into a reported miss.
+        start = NOW + dt.timedelta(minutes=10)
+        card = [{"commence_time": start.isoformat().replace("+00:00", "Z"),
+                 "home_team": "New York Mets", "away_team": "Cincinnati Reds"}]
+        with tempfile.TemporaryDirectory() as folder:
+            store = Path(folder) / "f5.jsonl"
+            store.write_text(json.dumps({
+                "observed_utc": NOW.isoformat().replace("+00:00", "Z"),
+                "commence_time": (start + dt.timedelta(minutes=1))
+                .isoformat().replace("+00:00", "Z"),
+                "home_team": "new york mets ",
+                "away_team": "Cincinnati Reds",
+            }) + "\n", encoding="utf-8")
+            missed = dense._missed_f5_closes(
+                card, NOW - dt.timedelta(minutes=45), NOW, store=store)
+        self.assertEqual(missed, [])
 
     def test_a_store_that_does_not_exist_yet_reports_every_game_missed(self):
         # The state this lane actually spent its first night in.
