@@ -219,7 +219,7 @@ def _price_note(d, pad=None):
 def today(d, mobile=False):
     if mobile:
         cards = "".join(_game_card(d, *g, pad="16px") for g in TODAY_GAMES)
-        inner = (f'<div style="display: flex; flex-direction: column; min-height: 1330px; background: {d["bg"]};">'
+        inner = (f'<div style="display: flex; flex-direction: column; min-height: 1500px; background: {d["bg"]};">'
                  + mobile_head(d, "Today")
                  + f'<div style="display: flex; flex-direction: column; gap: 14px; padding: 14px 16px 28px;">'
                  + _changed(d, pad="16px") + _verdict(d, pad="4px") + cards + _price_note(d, pad="16px")
@@ -304,7 +304,7 @@ def _advanced_sections(d):
 
 def game(d, mobile=False, advanced=False):
     if mobile:
-        inner = (f'<div style="display: flex; flex-direction: column; min-height: 1290px; background: {d["bg"]};">'
+        inner = (f'<div style="display: flex; flex-direction: column; min-height: 1440px; background: {d["bg"]};">'
                  + mobile_head(d, "Padres @ Reds")
                  + f'<div style="display: flex; flex-direction: column; gap: 12px; padding: 12px 16px 28px;">'
                  + _game_head(d, mobile=True).replace('border-bottom', 'border-radius: 0; border-bottom')
@@ -366,7 +366,7 @@ def betcheck(d, mobile=False):
       f'If you make this bet, three books offer the same position at −130. '
       f'<span style="color: {d["mut"]};">No demonstrated predictive edge exists on this game; that is a price observation, not a prediction.</span></div></div>')
     if mobile:
-        inner = (f'<div style="display: flex; flex-direction: column; min-height: 1240px; background: {d["bg"]};">'
+        inner = (f'<div style="display: flex; flex-direction: column; min-height: 1290px; background: {d["bg"]};">'
                  + mobile_head(d, "Bet Check")
                  + f'<div style="display: flex; flex-direction: column; gap: 14px; padding: 14px 16px 28px;">'
                  + your_bet + support + against + market + bottom + '</div>'
@@ -449,12 +449,12 @@ boards = [{"file": "Main.dc.html", "x": 0, "y": 0, "w": 960, "h": 1360, "page": 
 # per-direction vertical stacks: Bet Check first (priority), then mobile, etc.
 VIEWS = [  # (suffix, title, w, h)
     ("BetCheck",      "Bet Check — desktop", 1240, 1000),
-    ("BetCheckPhone", "Bet Check — phone 375px", 390, 1260),
+    ("BetCheckPhone", "Bet Check — phone 375px", 390, 1320),
     ("Today",         "Today — desktop", 1240, 960),
-    ("TodayPhone",    "Today — phone 375px", 390, 1350),
+    ("TodayPhone",    "Today — phone 375px", 390, 1530),
     ("Game",          "Game — quick view desktop", 1240, 900),
     ("GameAdvanced",  "Game — Advanced expanded desktop", 1240, 2050),
-    ("GamePhone",     "Game — phone 375px", 390, 1310),
+    ("GamePhone",     "Game — phone 375px", 390, 1470),
 ]
 for k in "ABC":
     y = 0
@@ -465,7 +465,7 @@ for k in "ABC":
         y += h + 160
 
 # comparison page: notes, then desktop row, then phone row — full size
-boards.append({"file": "CompareNotes.dc.html", "x": 0, "y": 0, "w": 1240, "h": 560, "page": "compare"})
+boards.append({"file": "CompareNotes.dc.html", "x": 0, "y": 0, "w": 1240, "h": 680, "page": "compare"})
 x = 0
 for k in "ABC":
     boards.append({"file": f"Cmp{k}BetCheck.dc.html", "x": x, "y": 720, "w": 1240, "h": 1000,
@@ -473,7 +473,7 @@ for k in "ABC":
     x += 1340
 x = 0
 for k in "ABC":
-    boards.append({"file": f"Cmp{k}BetCheckPhone.dc.html", "x": x, "y": 1900, "w": 390, "h": 1260,
+    boards.append({"file": f"Cmp{k}BetCheckPhone.dc.html", "x": x, "y": 1900, "w": 390, "h": 1320,
                    "title": f"{DIRS[k]['name']} · Bet Check phone", "page": "compare"})
     x += 550
 

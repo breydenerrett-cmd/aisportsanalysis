@@ -22,14 +22,14 @@
    "x": 0,
    "y": 1160,
    "w": 390,
-   "h": 1260,
+   "h": 1320,
    "title": "Editorial \u00b7 Bet Check \u2014 phone 375px",
    "page": "dir-a"
   },
   {
    "file": "AToday.dc.html",
    "x": 0,
-   "y": 2580,
+   "y": 2640,
    "w": 1240,
    "h": 960,
    "title": "Editorial \u00b7 Today \u2014 desktop",
@@ -38,16 +38,16 @@
   {
    "file": "ATodayPhone.dc.html",
    "x": 0,
-   "y": 3700,
+   "y": 3760,
    "w": 390,
-   "h": 1350,
+   "h": 1530,
    "title": "Editorial \u00b7 Today \u2014 phone 375px",
    "page": "dir-a"
   },
   {
    "file": "AGame.dc.html",
    "x": 0,
-   "y": 5210,
+   "y": 5450,
    "w": 1240,
    "h": 900,
    "title": "Editorial \u00b7 Game \u2014 quick view desktop",
@@ -56,7 +56,7 @@
   {
    "file": "AGameAdvanced.dc.html",
    "x": 0,
-   "y": 6270,
+   "y": 6510,
    "w": 1240,
    "h": 2050,
    "title": "Editorial \u00b7 Game \u2014 Advanced expanded desktop",
@@ -65,9 +65,9 @@
   {
    "file": "AGamePhone.dc.html",
    "x": 0,
-   "y": 8480,
+   "y": 8720,
    "w": 390,
-   "h": 1310,
+   "h": 1470,
    "title": "Editorial \u00b7 Game \u2014 phone 375px",
    "page": "dir-a"
   },
@@ -85,14 +85,14 @@
    "x": 0,
    "y": 1160,
    "w": 390,
-   "h": 1260,
+   "h": 1320,
    "title": "Terminal \u00b7 Bet Check \u2014 phone 375px",
    "page": "dir-b"
   },
   {
    "file": "BToday.dc.html",
    "x": 0,
-   "y": 2580,
+   "y": 2640,
    "w": 1240,
    "h": 960,
    "title": "Terminal \u00b7 Today \u2014 desktop",
@@ -101,16 +101,16 @@
   {
    "file": "BTodayPhone.dc.html",
    "x": 0,
-   "y": 3700,
+   "y": 3760,
    "w": 390,
-   "h": 1350,
+   "h": 1530,
    "title": "Terminal \u00b7 Today \u2014 phone 375px",
    "page": "dir-b"
   },
   {
    "file": "BGame.dc.html",
    "x": 0,
-   "y": 5210,
+   "y": 5450,
    "w": 1240,
    "h": 900,
    "title": "Terminal \u00b7 Game \u2014 quick view desktop",
@@ -119,7 +119,7 @@
   {
    "file": "BGameAdvanced.dc.html",
    "x": 0,
-   "y": 6270,
+   "y": 6510,
    "w": 1240,
    "h": 2050,
    "title": "Terminal \u00b7 Game \u2014 Advanced expanded desktop",
@@ -128,9 +128,9 @@
   {
    "file": "BGamePhone.dc.html",
    "x": 0,
-   "y": 8480,
+   "y": 8720,
    "w": 390,
-   "h": 1310,
+   "h": 1470,
    "title": "Terminal \u00b7 Game \u2014 phone 375px",
    "page": "dir-b"
   },
@@ -148,14 +148,14 @@
    "x": 0,
    "y": 1160,
    "w": 390,
-   "h": 1260,
+   "h": 1320,
    "title": "Clubhouse \u00b7 Bet Check \u2014 phone 375px",
    "page": "dir-c"
   },
   {
    "file": "CToday.dc.html",
    "x": 0,
-   "y": 2580,
+   "y": 2640,
    "w": 1240,
    "h": 960,
    "title": "Clubhouse \u00b7 Today \u2014 desktop",
@@ -164,16 +164,16 @@
   {
    "file": "CTodayPhone.dc.html",
    "x": 0,
-   "y": 3700,
+   "y": 3760,
    "w": 390,
-   "h": 1350,
+   "h": 1530,
    "title": "Clubhouse \u00b7 Today \u2014 phone 375px",
    "page": "dir-c"
   },
   {
    "file": "CGame.dc.html",
    "x": 0,
-   "y": 5210,
+   "y": 5450,
    "w": 1240,
    "h": 900,
    "title": "Clubhouse \u00b7 Game \u2014 quick view desktop",
@@ -182,7 +182,7 @@
   {
    "file": "CGameAdvanced.dc.html",
    "x": 0,
-   "y": 6270,
+   "y": 6510,
    "w": 1240,
    "h": 2050,
    "title": "Clubhouse \u00b7 Game \u2014 Advanced expanded desktop",
@@ -191,9 +191,9 @@
   {
    "file": "CGamePhone.dc.html",
    "x": 0,
-   "y": 8480,
+   "y": 8720,
    "w": 390,
-   "h": 1310,
+   "h": 1470,
    "title": "Clubhouse \u00b7 Game \u2014 phone 375px",
    "page": "dir-c"
   },
@@ -202,7 +202,7 @@
    "x": 0,
    "y": 0,
    "w": 1240,
-   "h": 560,
+   "h": 680,
    "page": "compare"
   },
   {
@@ -237,7 +237,7 @@
    "x": 0,
    "y": 1900,
    "w": 390,
-   "h": 1260,
+   "h": 1320,
    "title": "Editorial \u00b7 Bet Check phone",
    "page": "compare"
   },
@@ -246,7 +246,7 @@
    "x": 550,
    "y": 1900,
    "w": 390,
-   "h": 1260,
+   "h": 1320,
    "title": "Terminal \u00b7 Bet Check phone",
    "page": "compare"
   },
@@ -255,7 +255,7 @@
    "x": 1100,
    "y": 1900,
    "w": 390,
-   "h": 1260,
+   "h": 1320,
    "title": "Clubhouse \u00b7 Bet Check phone",
    "page": "compare"
   }
