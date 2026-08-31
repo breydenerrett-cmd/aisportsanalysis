@@ -73,7 +73,8 @@ class Dossier:
 def build(game, store, pitcher_logs=None, prices=None, weather=None,
           lineups=None, bullpen=None, splits=None, matchups=None,
           travel=None, arsenals=None, news=None, matchup_depth=None,
-          price_improvement=None, information_time=None) -> Dossier:
+          price_improvement=None, price_board=None,
+          information_time=None) -> Dossier:
     """Assemble one dossier from whatever sources are available."""
     dossier = Dossier(game, information_time=information_time)
     date = game.get("date")
@@ -117,6 +118,19 @@ def build(game, store, pitcher_logs=None, prices=None, weather=None,
     else:
         dossier.miss("price_improvement",
                      "no multi-book observations for this game yet")
+
+    # The board itself -- one capture instant from the multi-book store, one
+    # row per book -- as opposed to `price_improvement`, which is that board
+    # summarised. Detectors that want to talk about the board read this, so
+    # every count and every timestamp on the card traces to one selection
+    # (src/analysis/prices.boards_by_matchup). Absent is recorded as a gap
+    # rather than quietly substituting the per-game snapshot's book list: two
+    # stores captured at two moments cannot describe one board.
+    if price_board and price_board.get("quotes"):
+        dossier.add("multibook_board", price_board)
+    else:
+        dossier.miss("multibook_board",
+                     "no multi-book board captured for this game")
 
     if news is not None:
         if news.get("reason"):

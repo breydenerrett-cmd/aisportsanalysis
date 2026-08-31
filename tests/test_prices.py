@@ -136,3 +136,99 @@ class WiringTests(unittest.TestCase):
         self.assertIn("price_improvement", with_section.sections)
         without = dossier_mod.build(game, None, price_improvement=None)
         self.assertIn("price_improvement", without.gaps)
+
+
+class OneBoardTests(unittest.TestCase):
+    """One market, one store (docs/OVERNIGHT_RUN.md 2026-08-31, write-up 4)."""
+
+    def rows(self, books=6, commence="2026-08-31T23:10:00Z",
+             observed="2026-08-31T21:00:00Z"):
+        return [{"observed_utc": observed, "event_id": "e1",
+                 "commence_time": commence, "home_team": "New York Mets",
+                 "away_team": "Cincinnati Reds", "book": f"b{i}",
+                 "book_last_update": "x",
+                 "home_price": -110 - i, "away_price": -110 + i}
+                for i in range(books)]
+
+    def test_a_board_carries_its_quotes_its_instant_and_its_source(self):
+        board = prices.boards_by_matchup(self.rows())[
+            ("CIN", "NYM", "2026-08-31")]
+        self.assertEqual(len(board["quotes"]), 6)
+        self.assertEqual(board["observed_utc"], "2026-08-31T21:00:00Z")
+        self.assertEqual(board["source"], prices.SOURCE)
+
+    def test_only_the_newest_instant_is_on_the_board(self):
+        rows = self.rows() + self.rows(books=3,
+                                       observed="2026-08-31T22:00:00Z")
+        board = prices.boards_by_matchup(rows)[("CIN", "NYM", "2026-08-31")]
+        self.assertEqual(len(board["quotes"]), 3)
+        self.assertEqual(board["observed_utc"], "2026-08-31T22:00:00Z")
+
+    def test_the_summary_describes_exactly_the_board_it_was_given(self):
+        boards = prices.boards_by_matchup(self.rows(books=7))
+        index = prices.by_matchup(boards=boards)
+        key = ("CIN", "NYM", "2026-08-31")
+        self.assertEqual(index[key]["dispersion"]["books"],
+                         len(boards[key]["quotes"]))
+        self.assertEqual(index[key]["observed_utc"],
+                         boards[key]["observed_utc"])
+
+    def test_a_west_coast_game_is_keyed_by_its_official_date(self):
+        """A 20:41 ET first pitch is 00:41 UTC the next day.
+
+        Slicing the UTC commence time filed those games under tomorrow, where
+        the briefing -- which keys by MLB's official date, like everything
+        else here -- never looked, so half a slate silently showed no board.
+        """
+        boards = prices.boards_by_matchup(
+            self.rows(commence="2026-09-01T00:41:00Z"))
+        self.assertIn(("CIN", "NYM", "2026-08-31"), boards)
+        self.assertNotIn(("CIN", "NYM", "2026-09-01"), boards)
+
+
+class BriefingBoardTests(unittest.TestCase):
+    """The board reaches the detector through the dossier, or a gap does."""
+
+    GAME = {"away_team": "CIN", "home_team": "NYM", "date": "2026-08-31",
+            "game_pk": 1}
+
+    def board(self):
+        return {"quotes": [{"ts": "2026-08-31T21:00:00Z", "book": f"b{i}",
+                            "away_price": -110, "home_price": -110}
+                           for i in range(6)],
+                "observed_utc": "2026-08-31T21:00:00Z",
+                "source": prices.SOURCE}
+
+    def test_build_slate_routes_one_board_into_the_dossier(self):
+        from src.pipeline import briefing
+        key = ("CIN", "NYM", "2026-08-31")
+        slate = briefing.build_slate(
+            [dict(self.GAME)], None, detectors={},
+            price_boards_by_key={key: self.board()},
+            price_improvement_by_key={})
+        dossier = slate["games"][0]["dossier"]
+        self.assertEqual(len(dossier.get("multibook_board")["quotes"]), 6)
+
+    def test_the_schedules_spelling_of_a_club_finds_the_feeds_board(self):
+        """ATH/AZ on the schedule, OAK/ARI in the odds feed, one board.
+
+        On 2026-08-31 both those cards said "no multi-book board" while the
+        store held eleven books for each.
+        """
+        from src.pipeline import briefing
+        game = {"away_team": "ATH", "home_team": "AZ", "date": "2026-08-31",
+                "game_pk": 2}
+        slate = briefing.build_slate(
+            [game], None, detectors={},
+            price_boards_by_key={("OAK", "ARI", "2026-08-31"): self.board()},
+            price_improvement_by_key={})
+        self.assertIsNotNone(slate["games"][0]["dossier"].get("multibook_board"))
+
+    def test_a_game_with_no_board_gets_a_named_gap_not_a_substitute(self):
+        from src.pipeline import briefing
+        slate = briefing.build_slate(
+            [dict(self.GAME)], None, detectors={},
+            price_boards_by_key={}, price_improvement_by_key={})
+        dossier = slate["games"][0]["dossier"]
+        self.assertIsNone(dossier.get("multibook_board"))
+        self.assertIn("multibook_board", dossier.gaps)

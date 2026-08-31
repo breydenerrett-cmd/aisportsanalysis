@@ -33,6 +33,11 @@ MIN_BOOKS = 6
 LABEL = ("price improvement / line-shopping value -- a better execution "
          "price, not expected value and not a prediction")
 
+# Where a board came from, carried on the board itself. A finding or a table
+# that describes a board has to be able to name the store and the instant it
+# read, because "11 books" means nothing without them.
+SOURCE = "multi-book capture store"
+
 
 def _decimal(price):
     try:
@@ -143,14 +148,51 @@ def for_game(away_team=None, home_team=None, date=None, rows=None) -> dict:
     return result
 
 
-def by_matchup(rows=None) -> dict:
-    """{(away_abbrev, home_abbrev, date): improvement section} for a store.
+def matchup_key(away, home, date) -> tuple:
+    """The key a board is filed under, and the only key to look one up by.
+
+    Canonical abbreviations, because the same franchise is spelled differently
+    by different sources: the MLB schedule (and so the briefing) says ATH and
+    AZ where the odds feed's club names resolve to OAK and ARI. Comparing raw
+    abbreviations dropped exactly those two clubs' boards -- on 2026-08-31 the
+    Athletics and Diamondbacks cards reported no multi-book board while the
+    store held eleven books apiece. src/pipeline/slate.py carries the same fix
+    for the same reason; this is that lesson applied to the price stores.
+    """
+    from src.data import parks
+
+    return (parks.canonical_team(away or ""),
+            parks.canonical_team(home or ""), date)
+
+
+def boards_by_matchup(rows=None) -> dict:
+    """{(away_abbrev, home_abbrev, date): board} for the multibook store.
+
+    A board is {"quotes": [...], "observed_utc": ts, "source": SOURCE}: ONE
+    capture instant, one row per book, exactly the list `snapshot` summarises.
+
+    THIS FUNCTION IS THE POINT. A game card used to describe its board twice
+    from two different stores -- the stale_book detector counted the per-game
+    snapshot's `all_books`, the price table counted this store -- so the same
+    market rendered as "11 books" in one line and "10 books" two inches below
+    (docs/OVERNIGHT_RUN.md, 2026-08-31, write-up #4). Both surfaces now read
+    the board this function returns, so the counts cannot disagree: they are
+    the same list. Anything else that wants to describe a game's board reads
+    it here too rather than re-deriving one.
 
     The multibook store speaks the odds API's full club names; the briefing
     speaks abbreviations. The translation happens here, once, so the
     briefing can look a game up by the key it already has. Rows that name a
     club the translator does not recognise are dropped -- an unmatchable row
     can only ever mislabel a game.
+
+    The date is MLB's OFFICIAL (Eastern) date, via snapshots.official_date,
+    not the leading ten characters of the UTC commence time. Slicing UTC
+    filed every West Coast game -- a 20:41 ET first pitch is 00:41 UTC the
+    next day -- under tomorrow's key, where the briefing (which keys by the
+    official date, like everything else in this project) never looked. Those
+    games silently showed no board at all while the detector, reading the
+    other store, happily reported eleven books.
     """
     from src.pipeline import slate as slate_mod
     from src.pipeline import snapshots
@@ -160,18 +202,36 @@ def by_matchup(rows=None) -> dict:
     for row in source:
         away = slate_mod.team_abbrev_from_name(row.get("away_team") or "")
         home = slate_mod.team_abbrev_from_name(row.get("home_team") or "")
-        date = (row.get("commence_time") or "")[:10]
+        date = snapshots.official_date(row.get("commence_time"))
         if not away or not home or not date:
             continue
-        grouped.setdefault((away, home, date), []).append(row)
-    out = {}
+        grouped.setdefault(matchup_key(away, home, date), []).append(row)
+    boards = {}
     for key, group in grouped.items():
         quotes = [{"ts": r.get("observed_utc"), "book": r.get("book"),
                    "away_price": r.get("away_price"),
                    "home_price": r.get("home_price")} for r in group]
         board = latest_instant(quotes)
-        section = snapshot(board)
+        if not board:
+            continue
+        boards[key] = {"quotes": board, "observed_utc": board[0].get("ts"),
+                       "source": SOURCE}
+    return boards
+
+
+def by_matchup(rows=None, boards=None) -> dict:
+    """{(away_abbrev, home_abbrev, date): improvement section} for a store.
+
+    Summarises the boards from `boards_by_matchup`. Callers that also need
+    the raw boards (the briefing does -- the stale_book detector reads them)
+    build them once and pass them in, so a slate reads the store once and
+    every surface describes the identical board.
+    """
+    source = boards_by_matchup(rows) if boards is None else boards
+    out = {}
+    for key, board in source.items():
+        section = snapshot(board.get("quotes") or [])
         if "skipped" not in section:
-            section["observed_utc"] = board[0].get("ts")
+            section["observed_utc"] = board.get("observed_utc")
         out[key] = section
     return out

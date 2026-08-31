@@ -9,17 +9,20 @@ bullpen on every game in the league.
 
 import unittest
 
+from src.analysis import prices as prices_mod
 from src.analysis import synthesis
 from src.detect import base, detectors
 from src.detect import dossier as dossier_mod
 
 
 def dossier(market=None, bullpen=None, starters=None,
-            away="BOS", home="NYY"):
+            away="BOS", home="NYY", board=None):
     d = dossier_mod.Dossier({"away_team": away, "home_team": home,
                              "date": "2026-08-28", "game_pk": 1})
     if market is not None:
         d.add("market", market)
+    if board is not None:
+        d.add("multibook_board", board)
     if bullpen is not None:
         d.add("bullpen", bullpen)
     if starters is not None:
@@ -152,20 +155,24 @@ class TestBullpenWorkload(unittest.TestCase):
 class TestStaleBook(unittest.TestCase):
     """Arithmetic, not prediction: this is true whether or not anything else is."""
 
+    INSTANT = "2026-08-28T18:30:05.123456+00:00"
+
     def setUp(self):
         self.detector = detectors.StaleBook()
 
-    def market(self, prices):
-        return {"markets": {}, "all_books": {"h2h": [
-            {"book": name, "away_price": away, "home_price": home}
-            for name, away, home in prices]}}
+    def board(self, prices, observed=INSTANT):
+        """One capture instant's board, shaped as prices.boards_by_matchup builds it."""
+        return {"quotes": [{"ts": observed, "book": name,
+                            "away_price": away, "home_price": home}
+                           for name, away, home in prices],
+                "observed_utc": observed, "source": prices_mod.SOURCE}
 
     def test_fewer_than_three_books_is_not_a_consensus(self):
-        self.assertEqual(self.detector.run(dossier(market=self.market(
+        self.assertEqual(self.detector.run(dossier(board=self.board(
             [("a", 150, -170), ("b", 152, -172)]))), [])
 
     def test_an_outlier_book_is_named_with_its_price(self):
-        found = self.detector.run(dossier(market=self.market([
+        found = self.detector.run(dossier(board=self.board([
             ("a", 150, -170), ("b", 151, -171), ("c", 152, -172),
             ("outlier", 185, -205)])))
         claims = " ".join(f.claim for f in found)
@@ -173,15 +180,75 @@ class TestStaleBook(unittest.TestCase):
         self.assertIn("+185", claims)
 
     def test_books_in_agreement_produce_nothing(self):
-        found = self.detector.run(dossier(market=self.market([
+        found = self.detector.run(dossier(board=self.board([
             ("a", 150, -170), ("b", 150, -170), ("c", 151, -170)])))
         self.assertEqual(found, [])
 
     def test_an_unparseable_quote_is_skipped_not_fatal(self):
-        market = self.market([("a", 150, -170), ("b", 151, -171), ("c", 152, -172)])
-        market["all_books"]["h2h"].append({"book": "bad", "away_price": None,
-                                           "home_price": None})
-        self.detector.run(dossier(market=market))  # must not raise
+        board = self.board([("a", 150, -170), ("b", 151, -171), ("c", 152, -172)])
+        board["quotes"].append({"ts": self.INSTANT, "book": "bad",
+                                "away_price": None, "home_price": None})
+        self.detector.run(dossier(board=board))  # must not raise
+
+    # -- one market, one store (docs/OVERNIGHT_RUN.md 2026-08-31, write-up 4)
+
+    def test_the_per_game_snapshots_book_list_is_never_read(self):
+        """The old source is present and richer, and must be ignored anyway.
+
+        Reading `all_books` is what produced two book counts on one card. A
+        dossier carrying eleven books there and no captured board gets the
+        missing-board answer, not a finding sourced from the other store.
+        """
+        market = {"markets": {}, "all_books": {"h2h": [
+            {"book": f"b{i}", "away_price": 150, "home_price": -170}
+            for i in range(10)] + [{"book": "outlier", "away_price": 185,
+                                    "home_price": -205}]}}
+        found = self.detector.run(dossier(market=market))
+        self.assertEqual([f.kind for f in found], [base.CONTEXT])
+        self.assertNotIn("outlier", found[0].claim)
+
+    def test_a_game_absent_from_the_multibook_store_says_so(self):
+        found = self.detector.run(dossier())
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].kind, base.CONTEXT)
+        self.assertEqual(found[0].evidence, base.BLOCKED)
+        self.assertIn("missing data", found[0].claim)
+
+    def test_the_claim_names_its_source_and_its_instant(self):
+        found = self.detector.run(dossier(board=self.board([
+            ("a", 150, -170), ("b", 151, -171), ("c", 152, -172),
+            ("outlier", 185, -205)])))
+        self.assertIn(prices_mod.SOURCE, found[0].claim)
+        self.assertIn("as of 2026-08-28 18:30Z", found[0].claim)
+        self.assertEqual(found[0].detail["observed_utc"], self.INSTANT)
+
+    def test_a_board_with_no_utc_marker_is_not_labelled_utc(self):
+        """Stamping a "Z" on an offset timestamp would fabricate a fact."""
+        self.assertEqual(detectors._as_of("2026-08-28T18:30:05-04:00"),
+                         " as of 2026-08-28 18:30")
+        self.assertEqual(detectors._as_of(None), "")
+
+    def test_the_detector_and_the_price_table_count_the_same_books(self):
+        """The whole point: one board, one count, two surfaces.
+
+        Eleven books quoted, one of them unpriceable. Whatever the two
+        surfaces do with that board, they must agree on how big it was.
+        """
+        prices = [(f"b{i}", 150 + i, -170 - i) for i in range(10)]
+        prices.append(("outlier", 185, -205))
+        board = self.board(prices)
+        board["quotes"].append({"ts": self.INSTANT, "book": "dead",
+                                "away_price": None, "home_price": None})
+
+        found = self.detector.run(dossier(board=board))
+        section = prices_mod.snapshot(board["quotes"])
+
+        self.assertTrue(found, "expected an outlier finding")
+        self.assertEqual(found[0].sample, "11 books")
+        self.assertEqual(found[0].detail["books"],
+                         section["dispersion"]["books"])
+        self.assertEqual(found[0].detail["observed_utc"],
+                         board["observed_utc"])
 
 
 class TestStarterMismatch(unittest.TestCase):

@@ -21,8 +21,8 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
                 handedness=None, splits_by_pk=None, matchups_by_pk=None,
                 travel_by_pk=None, arsenals=None, batter_arsenals=None,
                 news_by_pk=None, matchup_depth_by_pk=None,
-                price_improvement_by_key=None, detectors=None,
-                information_time=None) -> dict:
+                price_improvement_by_key=None, price_boards_by_key=None,
+                detectors=None, information_time=None) -> dict:
     """One briefing for one date.
 
     The scanner's verdict and the detectors run over the same dossier, so a
@@ -40,14 +40,27 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
     if matchup_depth_by_pk is None:
         matchup_depth_by_pk = matchup_mod.depth_by_pk(
             games, lineups_by_pk, handedness)
-    # Price improvement comes from the multi-book capture store, read once
-    # per slate; tests inject price_improvement_by_key the same way. A store
-    # that does not exist yet simply yields no sections, and every dossier
-    # then carries the honest gap instead.
+    # The multi-book capture store, read ONCE per slate, as boards: one
+    # capture instant per game, one row per book. Every price surface on a
+    # card is derived from these same boards -- the price-improvement table
+    # here, the stale_book detector via the dossier -- so a card cannot show
+    # one book count in a finding and a different one in its price table
+    # (docs/OVERNIGHT_RUN.md, 2026-08-31, write-up #4). Tests inject either
+    # mapping the same way. A store that does not exist yet simply yields no
+    # boards, and every dossier then carries the honest gap instead.
+    if price_boards_by_key is None:
+        price_boards_by_key = prices_mod.boards_by_matchup()
     if price_improvement_by_key is None:
-        price_improvement_by_key = prices_mod.by_matchup()
+        price_improvement_by_key = prices_mod.by_matchup(
+            boards=price_boards_by_key)
     for game in games:
         key = (game.get("away_team"), game.get("home_team"))
+        # Both price stores are filed under canonical abbreviations, so the
+        # lookup has to canonicalise too -- the schedule's ATH/AZ otherwise
+        # miss boards filed under OAK/ARI, and the card reports "no board"
+        # while the store holds eleven books.
+        price_key = prices_mod.matchup_key(
+            game.get("away_team"), game.get("home_team"), game.get("date"))
         dossier = dossier_mod.build(
             game, store,
             pitcher_logs=pitcher_logs,
@@ -62,9 +75,8 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
             arsenals=_arsenal_section(game, arsenals),
             news=(news_by_pk or {}).get(game.get("game_pk")),
             matchup_depth=(matchup_depth_by_pk or {}).get(game.get("game_pk")),
-            price_improvement=(price_improvement_by_key or {}).get(
-                (game.get("away_team"), game.get("home_team"),
-                 game.get("date"))),
+            price_improvement=(price_improvement_by_key or {}).get(price_key),
+            price_board=(price_boards_by_key or {}).get(price_key),
             bullpen={team: (bullpen_by_team or {}).get(team) for team in key
                      if (bullpen_by_team or {}).get(team)} or None,
             information_time=information_time,

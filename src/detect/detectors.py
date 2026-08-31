@@ -8,6 +8,7 @@ because it makes the count unknowable.
 
 from __future__ import annotations
 
+from src.analysis import prices as prices_mod
 from src.core import odds as odds_math
 from src.detect.base import (AWAY, BLOCKED, CONTEXT, DEBUNK, Detector, Finding,
                              HOME, HISTORICAL_CANDIDATE, NEITHER, SIGNAL,
@@ -28,6 +29,12 @@ BULLPEN_SHIFT_SPREAD = 0.020
 # A book this far off the consensus fair probability is quotable value that
 # requires no prediction at all.
 BOOK_EDGE_THRESHOLD = 0.010
+# Fewest books that can form a "consensus" for the stale-book comparison. This
+# is the detector's own pre-registered floor and is deliberately LOWER than
+# prices.MIN_BOOKS (6), which governs whether the board is worth summarising as
+# a market. Two books plus an outlier is arithmetic on three numbers, not a
+# market read; below three there is no pack to sit off.
+MIN_CONSENSUS_BOOKS = 3
 # A typical night leaves about one reliever down. Anything at or below that is
 # context; a signal has to beat the ordinary state of a bullpen in August.
 TYPICAL_UNAVAILABLE = 1
@@ -254,12 +261,44 @@ class BullpenWorkload(Detector):
         return findings
 
 
+def _as_of(observed) -> str:
+    """" as of <instant>" for a claim, or "" when the board carries no stamp.
+
+    A price only counts if it was quoted when shown, so a book count without
+    the moment it was counted is half a fact. Minute precision is what a
+    reader can use; the exact stamp stays in the finding's detail. The "Z" is
+    only appended when the stored value really is UTC -- labelling an offset
+    timestamp as UTC would be a fabricated fact, small and unfixable later.
+    """
+    if not observed:
+        return ""
+    text = str(observed)
+    suffix = "Z" if text.endswith(("Z", "+00:00")) else ""
+    return f" as of {text[:16].replace('T', ' ')}{suffix}"
+
+
 class StaleBook(Detector):
     """A book off the consensus. Arithmetic, not prediction.
 
     This is the one finding on the page that requires no model and no hypothesis:
     if eleven books agree and one does not, the outlier is a better price, and
     that is true whether or not anything else here works.
+
+    ONE MARKET, ONE STORE
+    ---------------------
+    The board comes from the dossier's `multibook_board` section -- the
+    multi-book capture store, sliced to a single capture instant by
+    src/analysis/prices.boards_by_matchup -- and from nowhere else. It used to
+    come from the per-game snapshot's `all_books`, which is a different store
+    captured at a different moment, so one card could say "11-book consensus"
+    here and "10 books" in the price table directly below it, with no way for
+    a reader to tell which board either sentence described
+    (docs/OVERNIGHT_RUN.md, 2026-08-31, write-up #4).
+
+    When the store holds no board for a game this detector says so and stops.
+    Falling back to `all_books` would restore exactly the defect: a count
+    nobody can trace to a moment. The claim names its source and instant for
+    the same reason.
     """
 
     name = "stale_book"
@@ -267,9 +306,19 @@ class StaleBook(Detector):
     status = HISTORICAL_CANDIDATE
 
     def run(self, game):
-        market = game.get("market") or {}
-        quotes = (market.get("all_books") or {}).get("h2h") or []
-        if len(quotes) < 3:
+        board = game.get("multibook_board") or {}
+        quotes = board.get("quotes") or []
+        if not quotes:
+            # Explicit, not silent. An empty list here and "the books agree"
+            # are opposite findings, and rendering both as nothing is how a
+            # dead capture job survives a week unnoticed.
+            return [Finding(
+                self.name, CONTEXT,
+                "No multi-book board was captured for this game, so there is "
+                "no price comparison to make. This is missing data, not "
+                "agreement among the books.",
+                evidence=BLOCKED)]
+        if len(quotes) < MIN_CONSENSUS_BOOKS:
             return []
 
         fairs = []
@@ -280,8 +329,10 @@ class StaleBook(Detector):
             except (odds_math.OddsError, KeyError, TypeError):
                 continue
             fairs.append((quote["book"], away_fair, home_fair, quote))
-        if len(fairs) < 3:
+        if len(fairs) < MIN_CONSENSUS_BOOKS:
             return []
+        observed = board.get("observed_utc")
+        source = board.get("source") or prices_mod.SOURCE
 
         consensus_home = sum(f[2] for f in fairs) / len(fairs)
         findings = []
@@ -299,7 +350,8 @@ class StaleBook(Detector):
                 f"{edge * 100:.1f} points of win probability cheaper than the "
                 f"{len(fairs)}-book consensus. No prediction required — it is "
                 f"the same bet at a better price, because one book sits off "
-                f"the pack.",
+                f"the pack. Board: the {source}"
+                f"{_as_of(observed)}.",
                 value=round(best[index], 4), baseline=round(target, 4),
                 sample=f"{len(fairs)} books",
                 surprise=surprise_score(best[index], target, 0.010),
@@ -307,7 +359,9 @@ class StaleBook(Detector):
                 market_relevance="Price execution, independent of any read on the game.",
                 evidence=TESTED_NULL,
                 detail={"book": best[0], "price": price,
-                        "consensus": round(target, 4)}))
+                        "consensus": round(target, 4),
+                        "books": len(fairs), "source": source,
+                        "observed_utc": observed}))
         return findings
 
 
