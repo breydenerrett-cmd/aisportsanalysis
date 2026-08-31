@@ -66,6 +66,48 @@ pre-register → freeze → batch run → replication → FDR → automatic
 falsification (battery RULES_VERSION 2.0.0, frozen) → publish all results →
 archive → next family. Zero survivors is a result, not a stop condition.
 
+### RESOURCE ARCHITECTURE (set 2026-08-31, Brey's master directive)
+Fable 5 orchestrates: decisions, task decomposition, verification standards,
+Brey communication. Opus 5 workers execute: implementation, research,
+red-teaming — persistent definitions in `.claude/agents/` (opus-research,
+opus-data, opus-builder, opus-product, opus-validator, opus-redteam); tasks
+handed over as OBJECTIVE/WHY/INPUTS/BOUNDARIES/DELIVERABLE/ACCEPTANCE/
+EVIDENCE RULES; high-impact work gets a second worker attacking the first's
+deliverable. Deterministic scripts own routine collection: hourly
+`scripts/forward_capture.sh`, daily `scripts/daily_loop.sh` — a model reads
+only their ESCALATE lines; a no-op capture must not consume model reasoning.
+Concurrency 2–4 workers normally; near a usage limit, checkpoint, update
+docs/RESUME.md, commit and push before stopping.
+
+### FOUR HORIZONS
+
+**TODAY:** forward capture protected (scripts own it) · resource
+architecture live (agents + scripts + trigger prompts) · Analyzer synthesis
+layer ("3–5 most important things" per matchup) · slate health monitor ·
+research catalogue classification · collection red-team round.
+
+**THIS WEEK:** V3 accumulation watch (`python3 -m src.cli timing`; floors 30,
+no early reads) · product red-team of the Analyzer output · pre-event news
+relevance characterization (PRE-RESPONSE data only) · reproducibility audit
+of one archived family · reliability fixes with regression tests.
+
+**THIS MONTH:** first V3 class-floor analyses as floors are hit · F5
+forward-series review (~2 weeks of closes) · season-end handling (slate
+empties late September; define off-season capture posture) · lead/lag
+leadership stability read once event counts justify it.
+
+**NEXT 90 DAYS — evidence branches:**
+- PATH A (V3 shows a timing edge): falsification battery on it → forward
+  shadow ledger ≥300 selections → the four Ranker unlock conditions →
+  Brey sign-off gate.
+- PATH B (V3 null, F5/depth promising): design the first F5 family from
+  forward-captured closes; consider a costed historical F5 backfill
+  proposal for Brey (HARD GATE).
+- PATH C (all markets null): Analyzer becomes the product; off-season =
+  reliability, KBO/NPB feasibility, 2027 capture architecture.
+- PATH D (any real edge survives everything): decision-policy freeze →
+  sealed-2026 one-shot request to Brey (HARD GATE, one evaluation, ever).
+
 ### CURRENT TASK
 Steady state: forward capture and V3 event accumulation run on the hourly
 trigger; the daily loop maintains the ledger. Build lanes are clear — the
