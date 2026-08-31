@@ -466,6 +466,10 @@ def _matchup_depth_section(game) -> str:
         note += f" Cutoff: pitches before {_esc(depth['cutoff'])}."
     if note:
         parts.append(f'<p class="support">{note}</p>')
+    # The stuff intro carries the mechanism once and the V5 no-edge note --
+    # section-level on purpose, so no per-row sentence repeats either.
+    if depth.get("stuff_note"):
+        parts.append(f'<p class="support">{_esc(depth["stuff_note"])}</p>')
     for side, team in (("away", game["away"]), ("home", game["home"])):
         entry = depth.get(side)
         if not entry:
@@ -477,7 +481,8 @@ def _matchup_depth_section(game) -> str:
         if entry.get("reason"):
             parts.append(f'<p class="gap">{_esc(entry["reason"])}</p>')
             continue
-        for name in ("handedness", "pitch_mix", "concentration"):
+        for name in ("handedness", "pitch_mix", "concentration",
+                     "starter_stuff"):
             picture = entry.get(name) or {}
             for sentence in picture.get("sentences") or []:
                 parts.append(f'<p class="support">{_esc(sentence)}</p>')

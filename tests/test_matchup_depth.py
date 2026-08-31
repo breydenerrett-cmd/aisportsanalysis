@@ -17,6 +17,8 @@ What is locked here, in the spirit of tests/test_evidence_honesty.py:
 
 from __future__ import annotations
 
+import gzip
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -25,7 +27,65 @@ from src.analysis import matchup
 from src.detect import dossier as dossier_mod
 from src.pipeline import briefing, rebuilt
 from src.report import dashboard
-from tests.test_matrix import GAME, HANDEDNESS, POSTED, _slots, _write_store
+from tests.test_matrix import (GAME, HANDEDNESS, POSTED, WINDOW, _slots,
+                               _synthetic_rows, _write_store)
+
+
+def _measured_fastball(pitcher, mph, game_date, game_pk):
+    """A radar-measured FF that touches nothing but the velocity counters:
+    no woba_denom, no events, a non-swing description."""
+    return {"game_date": game_date, "game_pk": game_pk, "pitcher": pitcher,
+            "batter": "9999", "stand": "R", "pitch_type": "FF",
+            "release_speed": str(mph), "description": "called_strike",
+            "woba_value": "", "woba_denom": "", "events": ""}
+
+
+def _batted_ball(pitcher, bb_type):
+    """A ball in play carrying only bb_type: no pitch_type, so the arsenal
+    and every wOBA counter stay untouched."""
+    return {"game_date": "2023-03-15", "game_pk": "1", "pitcher": pitcher,
+            "batter": "9999", "stand": "R", "bb_type": bb_type,
+            "description": "hit_into_play", "woba_value": "",
+            "woba_denom": "", "events": ""}
+
+
+def _stuff_rows() -> list:
+    """Velocity and batted-ball rows the shared fixture predates.
+
+    Hand-checkable: pitcher 500 throws 24 measured 92.0-mph fastballs in
+    each of five appearances (120 fastballs, at the window size and past
+    the 100 floor); pitcher 800 throws 120 at 96.0, so the league average
+    is (120*92 + 120*96) / 240 = 94.0 and 500's gap is -2.0 mph. 500 also
+    allows 60 batted balls, 30 of them ground balls -> share 0.500 over
+    the 50-batted-ball floor. Pitcher 600 gets nothing, staying below both
+    floors on purpose.
+    """
+    rows = []
+    for game in range(5):
+        date = f"2023-03-{10 + game:02d}"
+        for _ in range(24):
+            rows.append(_measured_fastball("500", 92.0, date, f"g{game}"))
+    for _ in range(120):
+        rows.append(_measured_fastball("800", 96.0, "2023-03-12", "g800"))
+    for i in range(60):
+        rows.append(_batted_ball("500",
+                                 "ground_ball" if i < 30 else "fly_ball"))
+    return rows
+
+
+def _stuff_store(root: Path) -> Path:
+    """The shared fixture plus the stuff rows, in the same on-disk shape."""
+    store = root / "statcast_stuff"
+    store.mkdir(parents=True)
+    rows = _synthetic_rows() + _stuff_rows()
+    name = f"pitches_{WINDOW}.jsonl.gz"
+    with gzip.open(store / name, "wt", encoding="utf-8") as handle:
+        for row in rows:
+            handle.write(json.dumps(row) + "\n")
+    (store / "manifest.json").write_text(json.dumps(
+        {"windows": {WINDOW: {"rows": len(rows), "file": name}}}),
+        encoding="utf-8")
+    return store
 
 
 class SectionTest(unittest.TestCase):
@@ -57,12 +117,17 @@ class SectionTest(unittest.TestCase):
                          rebuilt.MIN_PITCHES_FOR_MIX)
         self.assertEqual(floors["lineup_vs_pitch_pa"],
                          matchup.MIN_LINEUP_PA_VS_PITCH)
+        self.assertEqual(floors["velocity_fastballs"],
+                         rebuilt.MIN_FASTBALLS_FOR_VELOCITY)
+        self.assertEqual(floors["groundball_batted_balls"],
+                         rebuilt.MIN_BATTED_BALLS_FOR_GB_SHARE)
 
     def test_claims_are_labelled_observations_never_predictions(self):
         self.assertIn("is a prediction", self.section["nature"])
         self.assertIn("Nothing", self.section["nature"])
         for side in ("away", "home"):
-            for name in ("handedness", "pitch_mix", "concentration"):
+            for name in ("handedness", "pitch_mix", "concentration",
+                         "starter_stuff"):
                 for sentence in self.section[side][name]["sentences"]:
                     self.assertNotIn(" will ", sentence,
                                      f"{sentence!r} reads as a prediction")
@@ -178,9 +243,85 @@ class SectionTest(unittest.TestCase):
 
     def test_every_absence_carries_a_nonempty_reason(self):
         for side in ("away", "home"):
-            for name in ("handedness", "pitch_mix", "concentration"):
+            for name in ("handedness", "pitch_mix", "concentration",
+                         "starter_stuff"):
                 for reason in self.section[side][name]["absent"]:
                     self.assertTrue(reason and reason.strip())
+
+
+class StarterStuffTest(unittest.TestCase):
+    """(d) starter stuff, on the fixture extended with measured velocity and
+    batted-ball rows.
+
+    The shared store predates both counters, so SectionTest exercises the
+    no-data path for every starter; this class adds the rows and locks the
+    usable path: the velocity gap against the league at the same cutoff with
+    its fastball count, and the career ground-ball share with its batted-ball
+    count. Pitcher 600 still gets nothing, so the below-floor path is locked
+    on the same section.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls._tmp = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls._tmp.cleanup)
+        cls.store = _stuff_store(Path(cls._tmp.name))
+        cls.acc = rebuilt.build_snapshots(["2023-04-01"],
+                                          store=cls.store)["2023-04-01"]
+        cls.section = matchup.build_section(cls.acc, GAME, POSTED, HANDEDNESS)
+
+    def test_velocity_gap_with_samples(self):
+        # 500: 120 fastballs at 92.0 over 5 appearances; league (with 800's
+        # 120 at 96.0) sits at 94.0 -> gap -2.0, samples attached.
+        picture = self.section["away"]["starter_stuff"]
+        self.assertEqual(picture["velocity"],
+                         {"avg": 92.0, "league_avg": 94.0, "gap": -2.0,
+                          "fastballs": 120, "games": 5})
+        joined = " ".join(picture["sentences"])
+        self.assertIn("120 fastballs", joined)
+        self.assertIn("league average of 94.0 mph", joined)
+        self.assertIn("-2.0 mph", joined)
+
+    def test_groundball_share_with_sample(self):
+        picture = self.section["away"]["starter_stuff"]
+        self.assertEqual(picture["groundball"],
+                         {"share": 0.5, "batted_balls": 60})
+        self.assertIn("60 batted balls", " ".join(picture["sentences"]))
+
+    def test_usable_reads_carry_no_warnings_or_absences(self):
+        picture = self.section["away"]["starter_stuff"]
+        self.assertEqual(picture["warnings"], [])
+        self.assertEqual(picture["absent"], [])
+
+    def test_below_floor_is_absent_with_warning_not_a_guess(self):
+        # 600's fastballs carry no radar reading and no batted ball of his
+        # is stored: both reads stay None, each with a floor-naming reason.
+        picture = self.section["home"]["starter_stuff"]
+        self.assertIsNone(picture["velocity"])
+        self.assertIsNone(picture["groundball"])
+        self.assertTrue(any(str(rebuilt.MIN_FASTBALLS_FOR_VELOCITY) in r
+                            for r in picture["absent"]))
+        self.assertTrue(any(str(rebuilt.MIN_BATTED_BALLS_FOR_GB_SHARE) in r
+                            for r in picture["absent"]))
+        self.assertEqual(len(picture["warnings"]), 2)
+        self.assertTrue(all(w.startswith("Small sample")
+                            for w in picture["warnings"]))
+
+    def test_missing_starter_is_an_absence_with_reason(self):
+        game = dict(GAME, home_probable_id=None)
+        section = matchup.build_section(self.acc, game, POSTED, HANDEDNESS)
+        picture = section["away"]["starter_stuff"]
+        self.assertIsNone(picture["velocity"])
+        self.assertIsNone(picture["groundball"])
+        self.assertTrue(any("no probable starter" in r
+                            for r in picture["absent"]))
+
+    def test_no_edge_note_names_v5_and_stays_observational(self):
+        note = self.section["stuff_note"]
+        self.assertIn("found nothing", note)
+        self.assertIn("not an edge", note)
+        self.assertIn("docs/RESEARCH_V5_STUFF.md", note)
+        self.assertNotIn(" will ", note)
 
 
 class DepthByPkTest(unittest.TestCase):
@@ -298,6 +439,15 @@ class DashboardRenderTest(unittest.TestCase):
         self.assertIn("80 of 120 pitches", html)
         self.assertIn("Small sample:", html)
         self.assertIn("vs primary pitch", html)  # per-batter PA table
+
+    def test_starter_stuff_and_no_edge_note_reach_the_page(self):
+        acc = rebuilt.build_snapshots(
+            ["2023-04-01"], store=_stuff_store(self.root))["2023-04-01"]
+        section = matchup.build_section(acc, GAME, POSTED, HANDEDNESS)
+        html = self._render(self._dossier(section))
+        self.assertIn("120 fastballs", html)
+        self.assertIn("60 batted balls", html)
+        self.assertIn("found nothing (docs/RESEARCH_V5_STUFF.md)", html)
 
     def test_a_missing_section_renders_its_reason(self):
         html = self._render(self._dossier(None))

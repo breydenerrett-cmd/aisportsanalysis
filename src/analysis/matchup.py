@@ -13,7 +13,13 @@ the starter it actually faces:
       posted lineup's measured line against that pitch type, pitch and PA
       counts attached;
   (c) concentration -- pooled wOBA of lineup slots 1-4 against slots 5-9,
-      PA samples attached.
+      PA samples attached;
+  (d) starter stuff -- the opposing starter's average fastball velocity over
+      his recent measured appearances against the league average at the same
+      cutoff, stated as a gap with the fastball count attached, and his
+      career-to-cutoff ground-ball share with its batted-ball count. Both
+      were tested against the market as V5 and found nothing
+      (docs/RESEARCH_V5_STUFF.md), so the section says so itself.
 
 EVERYTHING COMES FROM THE REBUILT POINT-IN-TIME STORE
 -----------------------------------------------------
@@ -74,6 +80,17 @@ NATURE = ("Observations of play recorded before the cutoff, from pitch-level "
           "rows that already existed. Nothing in this section is a "
           "prediction.")
 
+# The starter-stuff intro: the one-clause mechanism lives here, once, not on
+# every row -- and the no-edge sentence is part of the section because a
+# reader who saw the V5 result once must not mistake the observation for an
+# edge on a later page that omits it.
+STUFF_NOTE = ("Starter stuff: a fastball below the league average at the "
+              "same cutoff marks lost velocity before the season line "
+              "reflects it, and a high ground-ball share takes balls out of "
+              "the air. V5 tested both features against the market and found "
+              "nothing (docs/RESEARCH_V5_STUFF.md), so these are "
+              "observations, not an edge.")
+
 
 def build_section(acc, game, posted_lineup, handedness) -> dict:
     """The matchup-depth section for one game, from one rebuilt accumulation.
@@ -87,6 +104,7 @@ def build_section(acc, game, posted_lineup, handedness) -> dict:
     section = {
         "cutoff": acc.get("cutoff"),
         "nature": NATURE,
+        "stuff_note": STUFF_NOTE,
         # Stated so a reader (or a test) can see which gates produced which
         # absences and warnings without opening the source.
         "floors": {
@@ -94,6 +112,8 @@ def build_section(acc, game, posted_lineup, handedness) -> dict:
             "pitch_mix_pitches": rebuilt.MIN_PITCHES_FOR_MIX,
             "lineup_vs_pitch_pa": MIN_LINEUP_PA_VS_PITCH,
             "half_pa": MIN_HALF_PA,
+            "velocity_fastballs": rebuilt.MIN_FASTBALLS_FOR_VELOCITY,
+            "groundball_batted_balls": rebuilt.MIN_BATTED_BALLS_FOR_GB_SHARE,
         },
     }
 
@@ -129,6 +149,7 @@ def _side_depth(acc, game, side, opponent, slots, pitcher_id, handedness,
                                           handedness, opponent),
         "pitch_mix": _pitch_mix_picture(acc, slots, pitcher_id, opponent),
         "concentration": _concentration_picture(slots, batter_totals),
+        "starter_stuff": _starter_stuff_picture(acc, pitcher_id, opponent),
     }
 
 
@@ -325,6 +346,80 @@ def _pooled(slots, batter_totals):
     if not denom:
         return None
     return {"woba": round(value / denom, 4), "pa": denom}
+
+
+# ---------------------------------------------------------------------------
+# (d) starter stuff: fastball velocity vs league, and ground-ball share
+# ---------------------------------------------------------------------------
+
+def _starter_stuff_picture(acc, pitcher_id, opponent) -> dict:
+    """The OPPOSING starter's measured stuff, as of the cutoff.
+
+    Two reads, both through rebuilt's own accessors and floors -- the same
+    calls matrix.row_for_game makes for starter_velocity_gap and
+    starter_groundball_share, so this picture and the research matrix can
+    never disagree about the same pitcher:
+
+      - fastball velocity over his last VELOCITY_STARTS_WINDOW measured
+        appearances (100-fastball floor), against the league average at the
+        SAME cutoff, so a league-wide seasonal drift cannot read as one
+        pitcher's decline;
+      - career-to-cutoff ground-ball share (50-batted-ball floor).
+
+    Below either floor the number is withheld and the reason is stated --
+    unlike the lineup-level floors, these are rebuilt's own gates, so a
+    below-floor read renders as an absence with a warning, never a number.
+    """
+    picture = {"velocity": None, "groundball": None,
+               "sentences": [], "warnings": [], "absent": []}
+    if not pitcher_id:
+        picture["absent"].append(
+            f"no probable starter listed for the {opponent} side, so there "
+            "is no stuff to measure for the starter this lineup faces")
+        return picture
+
+    velocity = rebuilt.fastball_velocity(acc, pitcher_id)
+    league = rebuilt.league_fastball_velocity(acc)
+    if not velocity["usable"]:
+        picture["absent"].append(
+            f"starter fastball velocity: {velocity['reason']}")
+        picture["warnings"].append(f"Small sample: {velocity['reason']}.")
+    elif league is None:
+        picture["absent"].append(
+            "league fastball velocity: no measured fastballs league-wide "
+            "before the cutoff, so there is no baseline for a gap")
+    else:
+        gap = round(velocity["avg"] - league, 2)
+        picture["velocity"] = {
+            "avg": round(velocity["avg"], 2),
+            "league_avg": round(league, 2),
+            "gap": gap,
+            "fastballs": velocity["fastballs"],
+            "games": velocity["games"],
+        }
+        picture["sentences"].append(
+            f"The opposing starter's fastball has averaged "
+            f"{velocity['avg']:.1f} mph over his last {velocity['games']} "
+            f"measured appearances before the cutoff "
+            f"({velocity['fastballs']} fastballs), against a league average "
+            f"of {league:.1f} mph at the same cutoff -- a gap of "
+            f"{gap:+.1f} mph.")
+
+    groundball = rebuilt.groundball_share(acc, pitcher_id)
+    if groundball["usable"]:
+        picture["groundball"] = {
+            "share": groundball["share"],
+            "batted_balls": groundball["batted_balls"],
+        }
+        picture["sentences"].append(
+            f"Ground balls make up {groundball['share']:.1%} of the batted "
+            f"balls against that starter before the cutoff "
+            f"({groundball['batted_balls']} batted balls).")
+    else:
+        picture["absent"].append(
+            f"starter ground-ball share: {groundball['reason']}")
+        picture["warnings"].append(f"Small sample: {groundball['reason']}.")
+    return picture
 
 
 # ---------------------------------------------------------------------------
