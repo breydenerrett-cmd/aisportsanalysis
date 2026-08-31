@@ -311,8 +311,23 @@ class WorldFitness:
     movement_table: Mapping[str, tuple]   # strategy_id -> per-block mean movement
     roi_table: Mapping[str, tuple]        # strategy_id -> per-block mean outcome ROI
     totals_movement: Mapping[str, float]  # strategy_id -> overall mean movement
+    totals_roi: Mapping[str, float]       # strategy_id -> overall mean outcome ROI
     n_selected: Mapping[str, int]         # strategy_id -> selection count
     masks: Mapping[str, tuple]            # strategy_id -> (away_mask, home_mask)
+
+    def totals(self, fitness: str) -> Mapping[str, float]:
+        """The per-strategy overall table for `fitness` -- 'movement' or 'outcome'.
+
+        The single seam the ceiling path reads through so the movement and
+        outcome verdicts are computed by literally the same code, never two
+        parallel copies that could drift (see `run_sweep`'s `primary_fitness`).
+        """
+        if fitness == "movement":
+            return self.totals_movement
+        if fitness == "outcome":
+            return self.totals_roi
+        raise SweepError(
+            f"unknown fitness {fitness!r}; known: 'movement', 'outcome'")
 
 
 def sweep_world(world: "placebo.World", genomes: Sequence,
@@ -354,7 +369,7 @@ def sweep_world(world: "placebo.World", genomes: Sequence,
             block_of_day_index[days[position][0]] = block_index
     game_block = [block_of_day_index[g.day_index] for g in world.games]
 
-    movement_table, roi_table, totals_movement = {}, {}, {}
+    movement_table, roi_table, totals_movement, totals_roi = {}, {}, {}, {}
     n_selected, masks = {}, {}
 
     for g in genomes:
@@ -390,6 +405,7 @@ def sweep_world(world: "placebo.World", genomes: Sequence,
         roi_table[sid] = tuple(
             r / c if c else 0.0 for r, c in zip(roi_returns, roi_counts))
         totals_movement[sid] = (sum(mv_returns) / n_mv) if n_mv else 0.0
+        totals_roi[sid] = (sum(roi_returns) / n_roi) if n_roi else 0.0
         n_selected[sid] = selected
         masks[sid] = (away_mask, home_mask)
 
@@ -397,7 +413,8 @@ def sweep_world(world: "placebo.World", genomes: Sequence,
         world_id=world.world_id, generator=world.generator, seed=world.seed,
         n_games=world.n_games, n_strategies=len(movement_table),
         movement_table=movement_table, roi_table=roi_table,
-        totals_movement=totals_movement, n_selected=n_selected, masks=masks)
+        totals_movement=totals_movement, totals_roi=totals_roi,
+        n_selected=n_selected, masks=masks)
 
 
 def _movement_series_by_day(world: "placebo.World",
@@ -466,6 +483,11 @@ class SweepReport:
     n_games_real: int
     n_strategies_real: int
     real_champion: str | None
+    # Named for the original movement-only sweep; holds the real search
+    # maximum of whichever fitness `config["primary_fitness"]` names (movement
+    # or outcome). Kept as-is rather than renamed so existing consumers and
+    # tests reading this field for the movement sweep are undisturbed --
+    # `config["primary_fitness"]` is the field that says which fitness it is.
     real_max_movement: float | None
     placebo_world_ids: Mapping[str, tuple]
     placebo_seeds: Mapping[str, tuple]
@@ -570,7 +592,8 @@ def run_sweep(replay_provider: ReplayProvider, *,
              spa_n_bootstrap: int = DEFAULT_SPA_N_BOOTSTRAP,
              spa_block_length: float = DEFAULT_SPA_BLOCK_LENGTH,
              spa_seed: int = 0,
-             code_commit: str | None = None) -> SweepReport:
+             code_commit: str | None = None,
+             primary_fitness: str = PRIMARY_FITNESS) -> SweepReport:
     """The Phase 2B sweep: enumerate once, run it identically on every world.
 
     Pure orchestration over already-validated machinery -- see the module
@@ -579,27 +602,43 @@ def run_sweep(replay_provider: ReplayProvider, *,
     returns via `placebo.placebo_suite`, so the real and placebo runs share
     every parameter (`registry`, `n_blocks`, `min_selections`) by construction
     and cannot silently drift apart.
+
+    `primary_fitness` picks which of `WorldFitness`'s two per-strategy tables
+    the champion, the ceiling, and the electorate default are read from
+    (`WorldFitness.totals`): 'movement' (design section 6, the default -- what
+    Phase 2B ran) reads `totals_movement` and votes {P2,P3,P6}; 'outcome'
+    reads `totals_roi` and votes {P1,P2,P3,P5} (design section 7's SECOND
+    GENERATOR AMENDMENT -- P1/P5 permute or resample outcomes only, so they
+    null outcome-ROI fitness but are a tie, not a ceiling, for movement).
+    Both paths run the identical search over the identical worlds; only which
+    column of `sweep_world`'s output the ceiling reads changes, so the two
+    verdicts can never silently disagree about what ran.
     """
+    if primary_fitness not in ("movement", "outcome"):
+        raise SweepError(
+            f"unknown primary_fitness {primary_fitness!r}; known: 'movement', "
+            "'outcome'")
     if execution != "CONSENSUS_EXECUTION":
         raise SweepError(
             "Phase 2B sweeps CONSENSUS_EXECUTION only (design section 5), "
             f"got {execution!r}; the other modes are execution-honesty "
             "studies, not predictive search, and must not share this ceiling")
     if ceiling_generator_ids is None:
-        # Per-fitness by default (design section 7's second amendment): this
-        # sweep maximises movement, so P1/P5 -- which cannot move movement --
-        # do not vote, and P4 is excluded by not being in any null set. A
-        # caller who wants a different electorate passes one; the override is
-        # deliberately still here, and the outcome set is one call away
-        # (`default_ceiling_generators(generator_ids, "outcome")`).
+        # Per-fitness by default (design section 7's second amendment): a
+        # movement sweep excludes P1/P5, which cannot move movement; an
+        # outcome sweep votes {P1,P2,P3,P5} instead, and P4 is excluded from
+        # either by not being in any null set. A caller who wants a different
+        # electorate passes one; the override is deliberately still here.
         ceiling_generator_ids = default_ceiling_generators(
-            generator_ids, PRIMARY_FITNESS)
+            generator_ids, primary_fitness)
         if not ceiling_generator_ids:
+            allowed = (MOVEMENT_CEILING_GENERATORS if primary_fitness == "movement"
+                      else OUTCOME_CEILING_GENERATORS)
             raise SweepError(
                 f"none of generator_ids={list(generator_ids)} nulls the "
-                f"{PRIMARY_FITNESS} fitness (that set is "
-                f"{list(MOVEMENT_CEILING_GENERATORS)}); a ceiling built from "
-                "the rest would be a tie reported as a verdict")
+                f"{primary_fitness} fitness (that set is {list(allowed)}); a "
+                "ceiling built from the rest would be a tie reported as a "
+                "verdict")
     if min_generators is None:
         min_generators = majority(len(ceiling_generator_ids))
     if min_worlds is None:
@@ -625,12 +664,13 @@ def run_sweep(replay_provider: ReplayProvider, *,
 
     real_fitness = sweep_world(real_world, genomes, registry,
                                n_blocks=n_blocks, min_selections=min_selections)
-    if not real_fitness.totals_movement:
+    real_totals = real_fitness.totals(primary_fitness)
+    if not real_totals:
         raise SweepError(
             f"no strategy cleared min_selections={min_selections} on the real "
             f"world ({real_world.n_games} games, {len(genomes)} genomes); "
             "lower the gate or check the feed before sweeping placebo worlds")
-    real_champion, real_max = ceiling.search_maximum(real_fitness.totals_movement)
+    real_champion, real_max = ceiling.search_maximum(real_totals)
 
     warnings: list = []
     placebo_world_ids, placebo_seeds = {}, {}
@@ -646,8 +686,9 @@ def run_sweep(replay_provider: ReplayProvider, *,
             ids.append(world.world_id)
             seeds.append(world.seed)
             n_strats.append(fit.n_strategies)
-            if fit.totals_movement:
-                _, pmax = ceiling.search_maximum(fit.totals_movement)
+            fit_totals = fit.totals(primary_fitness)
+            if fit_totals:
+                _, pmax = ceiling.search_maximum(fit_totals)
             else:
                 pmax = float("-inf")
                 warnings.append(
@@ -670,8 +711,8 @@ def run_sweep(replay_provider: ReplayProvider, *,
             # A generator whose EVERY replicate reproduces the real maximum
             # exactly cannot be a null for whatever fitness the search
             # maximised -- it changed nothing that fitness depends on. This is
-            # a real, measured property of movement fitness under P1 and P5:
-            # both permute only `home_won`, and market-relative movement
+            # a real, measured property: under `primary_fitness='movement'`,
+            # P1 and P5 permute only `home_won`, and market-relative movement
             # (design section 6) is computed from `home_fair`/
             # `home_fair_close`/features alone, none of which either
             # generator touches. It is reported rather than hidden or
@@ -680,9 +721,10 @@ def run_sweep(replay_provider: ReplayProvider, *,
             # discriminate which fitness.
             warnings.append(
                 f"{gid}: every placebo maximum under this generator exactly "
-                f"equals the real maximum; {gid} changed nothing this fitness "
-                "depends on and is structurally uninformative here -- its "
-                "'does not clear' verdict is a tie, not evidence of a ceiling")
+                f"equals the real {primary_fitness} maximum; {gid} changed "
+                f"nothing the {primary_fitness} fitness depends on and is "
+                "structurally uninformative here -- its 'does not clear' "
+                "verdict is a tie, not evidence of a ceiling")
 
     ceiling_maxima = {gid: placebo_maxima[gid] for gid in ceiling_generator_ids}
     report_ceiling = ceiling.ceiling_report(
@@ -722,7 +764,7 @@ def run_sweep(replay_provider: ReplayProvider, *,
         "replicates": replicates, "base_seed": base_seed,
         "generator_ids": list(generator_ids),
         "ceiling_generator_ids": list(ceiling_generator_ids),
-        "primary_fitness": PRIMARY_FITNESS,
+        "primary_fitness": primary_fitness,
         "movement_ceiling_generators": list(MOVEMENT_CEILING_GENERATORS),
         "outcome_ceiling_generators": list(OUTCOME_CEILING_GENERATORS),
         "threshold_pct": threshold_pct, "min_generators": min_generators,
