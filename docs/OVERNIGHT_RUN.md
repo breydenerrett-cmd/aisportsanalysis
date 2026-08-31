@@ -390,3 +390,28 @@ population). Assessed before implementation in docs/EVOLUTION_LAB_ASSESSMENT.md
 -- reframed around placebo-calibrated enumeration rather than naive genetic
 search, with two decisions referred to Brey (the 2024 holdout question; the
 prop-listing policy gap).
+
+2026-08-31 evening results:
+- PHASE 2A (39d6003): our feature set carries NO linear incremental
+  information beyond the close. Pre-registered, market log-odds as offset,
+  train 2023 / eval 2024. L2 is +0.0000412 log-loss/game WORSE than the
+  close (clustered p=0.914); L1 selects the empty model, all 18 coefficients
+  exactly zero. Close reproduces BENCHMARK_ELO 0.67275 to the digit via an
+  independent join. This is the strongest statement the project has made
+  about its own features, and it cost one worker-day rather than the lab.
+- PROBABLE-PITCHER LEAK (0039f15): stored historical probable disagrees with
+  the actual first-pitch starter on only 0.10%/0.08% of sides -- 12-41x too
+  clean versus the estimated scratch rate. The store absorbed scratches, so
+  starter-conditioned historical features knew who really pitched. Exposure
+  2.3-7.6% of the replay universe. Sign favours the features and all families
+  produced zero survivors, so the nulls STRENGTHEN. Forward path unaffected.
+- PROP AUDIT LIVE (6873e19): cost gate passed at exactly 1 credit/fetch,
+  4 credits spent, SEVEN books list pitcher strikeouts (design assumed 3-4).
+- EVOLAB CORE (39d6003): 11,088 genomes sweep in 51ms via integer bitsets.
+  The build found two holes in my design: a negative `weight` was a sign-flip
+  hole defeating the frozen registry, and a genome validated under one
+  registry could silently bet the other side under another. Both refused now.
+- V2 REPRODUCIBILITY (adc04c6): all five hypotheses exact; M3 still killed at
+  fingerprint ac74c7a7f715f9ec.
+- Competitive-intelligence lane opened (Brey): four Sonnet research workers
+  on AI-prediction, sharp/odds, props/tracking, and customer pain.
