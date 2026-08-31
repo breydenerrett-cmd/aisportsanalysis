@@ -61,3 +61,12 @@
 {"category": "recalled", "date": "2026-08-31", "first_seen_utc": "2026-08-31T21:01:48.669559+00:00", "player": "Yilber D\u00edaz", "player_id": 700270, "team": "DET", "transaction_id": 940272}
 {"category": "optioned", "date": "2026-08-31", "first_seen_utc": "2026-08-31T21:01:48.669559+00:00", "player": "Corey Julks", "player_id": 667452, "team": "DET", "transaction_id": 940273}
 {"category": "designated", "date": "2026-08-31", "first_seen_utc": "2026-08-31T21:01:48.669559+00:00", "player": "Tanner Rainey", "player_id": 663432, "team": "DET", "transaction_id": 940274}
+{"fetched_utc": "2026-08-31T21:16:36.088579+00:00", "game_date": "2026-08-31", "poll": true}
+{"category": "traded", "date": "2026-08-31", "first_seen_utc": "2026-08-31T21:16:36.088579+00:00", "player": null, "player_id": null, "team": "TB", "transaction_id": 940275}
+{"category": "other", "date": "2026-08-31", "first_seen_utc": "2026-08-31T21:16:36.088579+00:00", "player": "Jake Cave", "player_id": 595909, "team": "CWS", "transaction_id": 940277}
+{"category": "traded", "date": "2026-08-31", "first_seen_utc": "2026-08-31T21:16:36.088579+00:00", "player": "Tommy Pham", "player_id": 502054, "team": "CWS", "transaction_id": 940279}
+{"category": "other", "date": "2026-08-31", "first_seen_utc": "2026-08-31T21:16:36.088579+00:00", "player": "Tommy Pham", "player_id": 502054, "team": "CWS", "transaction_id": 940280}
+{"fetched_utc": "2026-08-31T21:16:38.437341+00:00", "game_date": "2026-08-31", "poll": true}
+{"fetched_utc": "2026-08-31T21:31:40.803982+00:00", "game_date": "2026-08-31", "poll": true}
+{"fetched_utc": "2026-08-31T21:46:44.930337+00:00", "game_date": "2026-08-31", "poll": true}
+{"fetched_utc": "2026-08-31T22:01:47.497957+00:00", "game_date": "2026-08-31", "poll": true}
