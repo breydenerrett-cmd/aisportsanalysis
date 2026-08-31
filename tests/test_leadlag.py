@@ -39,8 +39,12 @@ class FloorTests(unittest.TestCase):
         self.assertIn("skipped", leadlag.response_table(events))
 
     def test_a_rarely_seen_book_gets_no_median(self):
-        events = _fleet(30)
-        events[0]["moves"]["book_rare"] = {"minutes": 1.0, "magnitude": 0.02}
+        events = _fleet(29)
+        events.append(_event(
+            first=("book_a",),
+            moves={"book_a": {"minutes": 5.0, "magnitude": 0.02},
+                   "book_b": {"minutes": 45.0, "magnitude": 0.02},
+                   "book_rare": {"minutes": 1.0, "magnitude": 0.02}}))
         table = leadlag.response_table(events)
         self.assertIn("note", table["books"]["book_rare"])
         self.assertNotIn("median_minutes", table["books"]["book_rare"])
