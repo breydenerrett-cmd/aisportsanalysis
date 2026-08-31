@@ -17,7 +17,21 @@ capture window, settlement gap, crash).
 1. `git log --oneline -10` — hourly "Forward capture" commits present?
 2. `python3 -m src.cli credits` — credits above 5,000 floor? (~132/day burn)
 3. `python3 -m src.cli timing` — V3 event accumulation by class (floors 30).
-4. Open `artifacts/` latest briefing — renders from file://, looks sane.
+   Read the MEASURABLE count, not just the admitted count: on 2026-08-31
+   there were 33 admitted events and zero of them could be measured.
+4. **Count the rows.** The check that matters most, and the one that was
+   missing when three collection failures ran concurrently for days:
+
+       wc -l data/processed/*.jsonl data/watch/*.jsonl
+
+   Every store that should be growing must have grown since yesterday. A
+   store that is absent entirely is the loudest possible signal — on
+   2026-08-31 `f5_close.jsonl` had never been written at all while the
+   roadmap believed the lane was accumulating. **Silence is not success:
+   no error message is printed when a store is simply never created.**
+5. Open `artifacts/` latest briefing — renders from file://, looks sane.
+6. `python3 -m src.cli health` — slate coverage, book counts, staleness,
+   settlement gaps and anomalies for today.
 
 ## Common operations
 
@@ -33,6 +47,13 @@ capture window, settlement gap, crash).
   to raise budget; nothing resumes spend without you.
 - **Missed capture windows** — gone forever; logged in
   docs/OVERNIGHT_RUN.md. Never backfilled — accept the gap.
+- **A store stopped growing (or never started)** — treat as an outage, not
+  a quiet day. Run the capture manually and read its full output rather
+  than its exit code; a pass that captures nothing still exits 0. Check
+  whether the store's path is tracked by git
+  (`python3 -m unittest tests.test_forward_evidence_tracked`) — an untracked
+  forward store is one container recycle from being lost, which is exactly
+  how five days of prices nearly disappeared on 2026-08-31.
 - **Settlement gap alert** — `python3 -m src.cli ledger` after results
   exist; if it persists, a game's result mapping failed — investigate,
   don't hand-edit the ledger.
