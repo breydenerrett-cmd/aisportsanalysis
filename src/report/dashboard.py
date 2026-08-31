@@ -96,6 +96,60 @@ def render(slate, out_path, generated_at=None) -> str:
     return str(target)
 
 
+# ---------------------------------------------------------------------------
+# Per-game permalinks
+# ---------------------------------------------------------------------------
+#
+# An anchor has to name the GAME, not its position in a list. `#game-3` moves
+# to a different matchup the moment a postponement drops a game from the slate,
+# so a link someone saved yesterday quietly points at the wrong card today. The
+# id is therefore derived from the two clubs and the official date -- the three
+# facts that identify the game itself -- and is byte-identical across rebuilds
+# of the same slate.
+#
+# Doubleheaders are the one case where those three facts do not separate two
+# games, so the tie is broken with another intrinsic fact (MLB's game number,
+# or failing that its game_pk) rather than with the card's ordinal.
+
+ANCHOR_PREFIX = "game-"
+
+
+def _slug(value) -> str:
+    """A URL-fragment-safe token. Never empty, so an id is never bare."""
+    out = "".join(ch if ch.isalnum() else "-" for ch in str(value or ""))
+    out = "-".join(part for part in out.split("-") if part)
+    return out or "x"
+
+
+def _anchor_base(game) -> str:
+    return (f"{ANCHOR_PREFIX}{_slug(game.get('away'))}-"
+            f"{_slug(game.get('home'))}-{_slug(game.get('date'))}")
+
+
+def _assign_anchors(games) -> None:
+    """Give every card a stable id, disambiguating only on intrinsic facts."""
+    grouped = {}
+    for game in games:
+        grouped.setdefault(_anchor_base(game), []).append(game)
+    for base, members in grouped.items():
+        if len(members) == 1:
+            members[0]["anchor"] = base
+            continue
+        # A doubleheader. Both halves are real games with the same clubs on the
+        # same date, so each keeps a suffix that belongs to the game and not to
+        # the page: MLB's own game number where we have it, else the game_pk.
+        for game in members:
+            marker = game.get("game_number") or game.get("game_pk")
+            game["anchor"] = f"{base}-{_slug(marker)}" if marker else base
+        # If even that did not separate them we would be emitting a duplicate
+        # id, which is worse than an ugly one: the browser would send every
+        # link to the first match. Fall back to a stated ordinal and say so.
+        if len({g["anchor"] for g in members}) != len(members):
+            for ordinal, game in enumerate(members, start=1):
+                game["anchor"] = f"{base}-listed-{ordinal}"
+                game["anchor_unstable"] = True
+
+
 def _payload(slate, stamp) -> dict:
     games = []
     for entry in slate.get("games", []):
@@ -111,6 +165,12 @@ def _payload(slate, stamp) -> dict:
             "synthesis": _plain(summary),
             "away": dossier.game.get("away_team"),
             "home": dossier.game.get("home_team"),
+            # Carried for the permalink: the official date of THIS game, which
+            # for a card built by `analyze` can differ from nothing at all but
+            # is still the fact the anchor is named after.
+            "date": dossier.game.get("date") or slate.get("date"),
+            "game_number": dossier.game.get("game_number"),
+            "game_pk": dossier.game.get("game_pk"),
             "start": dossier.game.get("start_time_utc"),
             "venue": dossier.game.get("venue"),
             "verdict": entry.get("verdict", "no_play"),
@@ -121,6 +181,7 @@ def _payload(slate, stamp) -> dict:
             "sections": _sections(dossier),
             "gaps": dossier.gaps,
         })
+    _assign_anchors(games)
     return {
         "date": slate.get("date"),
         "generated_at": stamp.isoformat(),
@@ -358,7 +419,7 @@ def _lead(games) -> str:
     rows = []
     for index, game, finding in picks[:6]:
         rows.append(
-            f'<a class="leaditem" href="#game-{index}">'
+            f'<a class="leaditem" href="#{_esc(game["anchor"])}">'
             f'<div class="spark {_esc(finding["kind"])}">{_spark(finding)}</div>'
             f'<div><div class="leadmatch">{_esc(game["away"])} @ '
             f'{_esc(game["home"])}</div>'
@@ -889,7 +950,30 @@ def _hypothetical_banner(game) -> str:
             'game that was never played.</p>')
 
 
-def _game_card(index, game) -> str:
+def _permalink(game) -> str:
+    """A visible, copyable link to this one card.
+
+    The anchor is worth showing rather than hiding behind a hover affordance:
+    the whole point is that it can be copied out of the page and pasted into a
+    message, and a reader cannot copy what is not on the screen. The sentence
+    beside it states the guarantee -- same id on every rebuild of this date --
+    because an id that silently moved would be worse than no link at all.
+    """
+    anchor = game.get("anchor")
+    if not anchor:
+        return ""
+    if game.get("anchor_unstable"):
+        note = ("this id could not be built from the clubs and the date alone "
+                "and falls back to this card&rsquo;s position on the page, so "
+                "it is NOT guaranteed stable across rebuilds")
+    else:
+        note = ("a stable link to this game &mdash; the same id every time "
+                "this date is rebuilt")
+    return (f'<p class="permalink"><a class="mono" href="#{_esc(anchor)}">'
+            f'#{_esc(anchor)}</a> <span class="support">{note}</span></p>')
+
+
+def _game_card(game) -> str:
     verdict = game["verdict"]
     prices = []
     market = (game["sections"].get("market") or {}).get("markets") or {}
@@ -906,7 +990,8 @@ def _game_card(index, game) -> str:
                                   game.get("venue")) if x)
     findings = "".join(_finding_row(f) for f in game["findings"])
     body = (
-        _hypothetical_banner(game)
+        _permalink(game)
+        + _hypothetical_banner(game)
         + _synthesis_section(game)
         + ('<h3>Why this game is interesting</h3>'
          f'<div class="findings">{findings}</div>' if findings else
@@ -923,7 +1008,7 @@ def _game_card(index, game) -> str:
     # <details> is native expand/collapse. No script, so it works in a sandboxed
     # preview, with a strict CSP, or with scripting switched off entirely.
     return (
-        f'<details class="game {_esc(verdict)}" id="game-{index}"'
+        f'<details class="game {_esc(verdict)}" id="{_esc(game.get("anchor"))}"'
         f'{" open" if game.get("open") else ""}>'
         f'<summary class="gamehead">'
         f'<div><div class="match">{_esc(game["away"])} @ {_esc(game["home"])}'
@@ -934,6 +1019,37 @@ def _game_card(index, game) -> str:
         f'<div class="verdict {_esc(verdict)}">'
         f'{_esc(VERDICT_LABELS.get(verdict, verdict))}</div>{price_html}</div>'
         f'</summary><div class="body">{body}</div></details>')
+
+
+# The machine-readable summary the archive index reads back. It is an HTML
+# COMMENT, not a script and not a data attribute: the page must keep working
+# with scripting off (see the module docstring), and a comment adds nothing a
+# browser will render. The archive parses this when it is present and falls
+# back to reading the visible markup when it is not, so briefings written
+# before this existed still appear in the index instead of vanishing.
+INDEX_MARKER = "briefing-index"
+
+
+def _index_comment(payload) -> str:
+    record = {
+        "date": payload.get("date"),
+        "generated_at": payload.get("generated_at"),
+        "counts": payload.get("counts") or {},
+        "findings": sum(len(g.get("findings") or []) for g in payload["games"]),
+        "games": [{
+            "anchor": g.get("anchor"),
+            "away": g.get("away"),
+            "home": g.get("home"),
+            "verdict": g.get("verdict"),
+            "headline": (g.get("synthesis") or {}).get("headline"),
+        } for g in payload["games"]],
+    }
+    # A JSON string may legitimately contain "--", which cannot appear inside an
+    # HTML comment without risking an early close. Escaping the hyphens as JSON
+    # unicode escapes keeps the payload byte-for-byte parseable while making
+    # "-->" unconstructible from the data.
+    blob = json.dumps(record, sort_keys=True).replace("--", "\\u002d\\u002d")
+    return f"<!--{INDEX_MARKER} {blob}-->"
 
 
 def _document(payload) -> str:
@@ -965,7 +1081,7 @@ def _document(payload) -> str:
                 seen.add(finding["evidence"])
                 legend.append(_chip(finding))
 
-    cards = "".join(_game_card(i, g) for i, g in enumerate(games)) or (
+    cards = "".join(_game_card(g) for g in games) or (
         '<p class="empty">No games scheduled for this date.</p>')
     notes = "".join(f"<div>{_esc(n)}</div>" for n in payload.get("notes") or [])
 
@@ -978,6 +1094,7 @@ def _document(payload) -> str:
 <style>{_CSS}</style>
 </head>
 <body>
+{_index_comment(payload)}
 <div class="wrap">
 <header>
 <h1>Slate briefing &mdash; {_esc(payload.get("date"))}</h1>
@@ -1089,6 +1206,12 @@ ul.basis li { font-size:12.5px; color:var(--muted); line-height:1.45; }
 .price { font-size:12.5px; color:var(--muted); margin-top:4px; }
 
 .body { padding:0 18px 18px; border-top:1px solid var(--rule); }
+
+.permalink { margin:12px 0 0; font-size:12.5px; display:flex; gap:10px;
+             align-items:baseline; flex-wrap:wrap; }
+.permalink a { color:var(--accent); text-decoration:none; word-break:break-all; }
+.permalink a:hover { text-decoration:underline; }
+.permalink .support { margin:0; color:var(--faint); }
 
 .synth { margin:16px 0 4px; padding:14px 16px 10px; background:var(--sunk);
          border:1px solid var(--rule); border-radius:4px; }

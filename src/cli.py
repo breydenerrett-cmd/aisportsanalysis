@@ -677,6 +677,22 @@ def cmd_brief(args) -> int:
 HYPOTHETICAL_GAP = "hypothetical matchup: no posted lineup or probable exists"
 
 
+def cmd_archive(args) -> int:
+    """Index every briefing artifact on disk into one static page."""
+    from src.report import archive
+
+    result = archive.scan(args.dir, out_name=args.out)
+    path = archive.render(args.dir, args.out)
+    bad = sum(1 for r in result["records"] if r.get("unparseable"))
+    print(f"archive of {args.dir}: {len(result['records'])} file(s), "
+          f"{bad} unparseable")
+    for name, reason in result.get("skipped") or []:
+        print(f"  not indexed: {name} ({reason})")
+    print(f"  {path}")
+    print("  open it in a browser -- no server needed")
+    return EXIT_OK
+
+
 def _analyze_out_path(away, home, iso_date) -> str:
     """Where the analyze card is promised to land."""
     return f"artifacts/analyze_{away}_{home}_{iso_date}.html"
@@ -1585,6 +1601,12 @@ def build_parser() -> argparse.ArgumentParser:
                            help="also price first-five per game (20 credits each) "
                                 "-- enables the implied-bullpen detector")
 
+    archive_cmd = sub.add_parser("archive",
+        help="index every briefing artifact on disk (static HTML, no server)")
+    archive_cmd.add_argument("--dir", default="artifacts",
+                             help="directory of briefing artifacts to index")
+    archive_cmd.add_argument("--out", default="artifacts/archive.html")
+
     analyze_cmd = sub.add_parser("analyze",
         help="analyse one arbitrary matchup -- historical or hypothetical")
     analyze_cmd.add_argument("--away", required=True,
@@ -1676,6 +1698,7 @@ COMMANDS = {
     "train": cmd_train,
     "brief": cmd_brief,
     "analyze": cmd_analyze,
+    "archive": cmd_archive,
     "ledger": cmd_ledger,
     "scan": cmd_scan,
     "scan-grade": cmd_scan_grade,
