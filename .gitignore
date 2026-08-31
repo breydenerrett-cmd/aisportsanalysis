@@ -18,6 +18,19 @@ data/historical/*
 # games, carrying the prices available at that moment. Nobody can reconstruct them
 # afterwards at any cost, so unlike everything under data/ they are tracked.
 
+# FORWARD ODDS CAPTURES ARE EVIDENCE, NOT GENERATED DATA -- tracked for exactly
+# the reason above. The rules over data/processed/ were written when that
+# directory held reproducible provider pulls; forward captures were added to it
+# later and silently inherited an ignore meant for regenerable files. They are
+# not regenerable: a price observed at 19:47 tonight cannot be fetched back at
+# any price tomorrow, and this project runs on ephemeral containers whose disks
+# are reclaimed. Found 2026-08-31 with five days of h2h snapshots and a day of
+# multi-book boards living nowhere but one container's disk.
+!data/processed/odds_snapshots.jsonl
+!data/processed/odds_multibook.jsonl
+!data/processed/f5_close.jsonl
+!data/processed/prop_listing.jsonl
+
 # Python
 __pycache__/
 *.py[cod]
