@@ -374,6 +374,38 @@ class HourlyCadenceClosePassTests(unittest.TestCase):
                 self.assertEqual(len(set(self.fetched)),
                                  len(REAL_SLATE_2026_09_01))
 
+    def test_a_clustered_start_band_fits_inside_the_cap(self):
+        """The reason the cap is 8 and not 6, pinned so it cannot drift back.
+
+        MLB clusters its starts. On 2026-09-01 four games begin at 22:40 and
+        two at 22:45 -- six starts inside a single run's span, which spent 6
+        of 6 under the old cap with zero headroom. A seventh simultaneous
+        start was dropped permanently: `seen` and `budget` are per-run, the
+        next run begins after first pitch, and an F5 close cannot be refetched
+        at any price the next morning.
+
+        Seven starts in one band is ordinary on a 16-game night, so the cap
+        has to clear it. This asserts the real band shape plus one, and that
+        nothing is dropped.
+        """
+        band = ["2026-09-01T22:40:00Z"] * 5 + ["2026-09-01T22:45:00Z"] * 2
+        reports = self._replay(band, trigger_minute=15)
+        dropped = [d for r in reports for d in r["f5_closes"]["dropped"]]
+        self.assertEqual(
+            dropped, [],
+            "a clustered start band must fit inside the cap; a dropped F5 "
+            "close is unrecoverable")
+        self.assertFalse(any(r["f5_closes"]["budget_exhausted"]
+                             for r in reports))
+        # Deliberately NOT asserted here: that every game in the band gets
+        # priced. Writing this test found that two of the seven do not -- and
+        # that they are correctly REPORTED as missed rather than lost in
+        # silence, which is the property that matters. The cause is the close
+        # window's reach, not the budget (5 events against a cap of 8, never
+        # exhausted), so it is a separate question from this constant and is
+        # recorded as such rather than folded in here. The real-slate test
+        # above still prices all fifteen games exactly once.
+
     def test_one_run_never_pays_for_more_events_than_the_cap(self):
         """The cap bounds the RUN, not each moment inside it.
 

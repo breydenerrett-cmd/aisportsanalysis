@@ -90,7 +90,21 @@ F5_CLOSE_MARKET = "h2h_1st_5_innings"
 # Per RUN, not per moment. A doubleheader-heavy hour cannot multiply the
 # spend, and a market that errors on every attempt cannot be retried into a
 # budget hole -- an attempted event counts whether or not it returned prices.
-F5_CLOSE_MAX_EVENTS = 6
+#
+# Raised 6 -> 8 on 2026-08-31 with Brey's explicit approval, because 6 was
+# EXACTLY saturated on an ordinary card. MLB clusters its starts: 2026-09-01
+# has four games at 22:40 and two at 22:45, all inside one run's span, so the
+# 22:15 run spent 6 of 6 with zero headroom. A seventh simultaneous start was
+# dropped permanently -- `seen` and `budget` are per-run and the next run
+# begins after first pitch, so nothing recovers it, and an F5 close cannot be
+# refetched at any price the next morning.
+#
+# This is a CEILING, not a spend. Measured nightly use is ~1 credit per game
+# (15-16 on a 15-game card); the ceiling only binds when starts cluster. The
+# theoretical worst case of 32/night stays inside the 15-40/day band that
+# docs/COLLECTION_POLICY.md already approves for this layer, which is why the
+# raise needed Brey's sign-off but not a new budget.
+F5_CLOSE_MAX_EVENTS = 8
 
 # The free MLB schedule and the odds feed disagree about first pitch by about
 # a minute (MLB 22:40 against the odds feed's 22:41, every game, measured

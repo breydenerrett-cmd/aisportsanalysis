@@ -104,3 +104,18 @@ Brey's sign-off per the roadmap's hard gates (large historical purchases).
 Forward evidence first: live odds snapshots, lineup/news timestamps,
 recommendation state, close capture, settlement, ledger integrity.
 Historical and research work yield to these, always.
+
+## F5 close cap raised 6 -> 8 (Brey approved, 2026-08-31)
+
+`F5_CLOSE_MAX_EVENTS` governs how many first-five closing prices one dense run
+may buy. It was 6 and was EXACTLY saturated on an ordinary card: MLB clusters
+its starts, and 2026-09-01 has four games at 22:40 plus two at 22:45, all in
+one run's span. A seventh simultaneous start was dropped permanently -- the
+budget and seen-set are per-run, the next run begins after first pitch, and an
+F5 close cannot be refetched at any price the next morning.
+
+Raised to 8. This is a CEILING, not a spend: measured nightly use is ~1 credit
+per game (15-16 on a 15-game card), and the ceiling only binds when starts
+cluster. Theoretical worst case 32/night remains inside the 15-40/day band
+this policy already approves for the layer, so the change needed sign-off but
+not new budget. Drops are now reported by game rather than silently absorbed.
