@@ -123,10 +123,11 @@ next research read happens when a V3 class reaches its 30-event floor.
    designing any F5 family; historical F5 backfill is a HARD GATE item).
 4. Season-end handling (late September): daily loop and capture behavior
    when the MLB slate empties; plan the off-season posture (lane E).
-5. Off-season research prep (lane F): literature microstructure
-   hypotheses that survive the catalogue's raised bar (mechanism the
-   market plausibly CANNOT price), written up as V6 candidates -- design
-   only, no registration before the machinery gate rules.
+5. Forward prop-listing audit (lane C, cheap probe): when do the 3-4
+   books that carry pitcher-K props actually post them relative to lineup
+   posts? Prerequisite named by docs/RESEARCH_V6_CANDIDATES.md C1; a
+   listing/timing audit, not a price purchase -- design the probe against
+   COLLECTION_POLICY.md before spending anything.
 
 DONE this cycle: timestamp audit · V3 freeze · market probe · collection
 policy · lead/lag + eventstudy cores · multibook store · rosterwatch ·
