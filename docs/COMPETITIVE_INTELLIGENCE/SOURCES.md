@@ -148,3 +148,31 @@ Each RSS feed returned up to 100 individual dated, star-rated user reviews (auth
 - https://apps.apple.com/us/app/juice-reel-bet-tracker-tips/id1527960097 — 2026-08-31
 - https://www.bettoredge.com/ — 2026-08-31 (fetched and rendered directly)
 - WebSearch aggregator results (oddsplays.com, betsmart.co, picksandparlays.net, xclsvmedia.com, sportshandle.com, bettednews.com, rotogrinders.com, bvcompany.org, mybets.gg) — 2026-08-31, used only as secondary/cross-check, not as primary source; flagged inline in SEGMENT_PROPS_TRACKING.md wherever relied upon
+
+## X news feasibility research (2026-08-31)
+
+- [2026-08-31] https://developer.x.com/en/products/x-api — 402 Payment Required, could not fetch
+- [2026-08-31] https://docs.x.com/x-api/getting-started/about-x-api — pay-per-usage model overview, no tier detail
+- [2026-08-31] https://docs.x.com/x-api/getting-started/pricing — read/write per-request pricing, 3M post reads/mo cap on pay-per-use
+- [2026-08-31] https://statsapi.mlb.com/docs/ — redirected, not fetched directly
+- [2026-08-31] https://statsapi.mlb.com/api/v1/teams — confirmed public, copyright notice referencing gdx.mlb.com terms
+- [2026-08-31] http://gdx.mlb.com/components/copyright.txt — non-commercial, non-bulk use only; commercial requires MLBAM written authorization
+- [2026-08-31] WebSearch: "X API pricing tiers 2026 Basic Pro Enterprise post cap filtered stream" — third-party blog summaries (elfsight, postproxy, xpoz, sorsa, netrows) reporting legacy Basic $200/mo, Pro $5,000/mo, Enterprise ~$42k+/mo (not independently confirmed on an official page)
+- [2026-08-31] WebSearch: "Bluesky API firehose access cost commercial use terms" — docs.bsky.app firehose/Jetstream pages via search summary; free, rate-limited by points, commercial reliability caveat
+- [2026-08-31] WebSearch: "sportsbook suspend line seconds after injury news beat reporter report" — industry commentary on books suspending markets within seconds to low minutes of breaking injury news
+- [2026-08-31] WebSearch: "RotoWire injury data API pricing commercial license" — developer.opticodds.com, rotowire.com/ratecard/syndicatedcontent.htm; syndication licensed per-client, no public price
+
+## Naming/brand research domain checks (2026-08-31)
+
+- [2026-08-31] https://ledgerline.com — domain check, 503 error, UNCHECKED
+- [2026-08-31] https://passline.com — domain check, 403 (site exists, blocked)
+- [2026-08-31] https://vantage.com — domain check, live (Vantage Labs, unrelated AI incubator)
+- [2026-08-31] https://meridian.com — domain check, 503 error, UNCHECKED
+- [2026-08-31] https://marketline.com — domain check, live (MarketLine, commercial intelligence platform — adjacent-space collision)
+- [2026-08-31] https://clearline.com — domain check, 503 error, UNCHECKED
+- [2026-08-31] https://fieldnote.com — domain check, 403 (site exists, blocked)
+- [2026-08-31] https://deepslate.com — domain check, 403 (site exists, blocked)
+- [2026-08-31] https://coveragegrid.com — domain check, ENOTFOUND (does not resolve)
+- [2026-08-31] https://tempodesk.com — domain check, live (Malta serviced-office business, unrelated)
+- [2026-08-31] https://fairline.com — domain check, live (Fairline Yachts, unrelated)
+- [2026-08-31] https://quietsignal.com — domain check, redirects to HugeDomains (parked/for sale)
