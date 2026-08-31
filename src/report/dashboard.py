@@ -40,22 +40,35 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+import src.analysis as analysis
 from src.analysis import synthesis as synthesis_mod
 from src.detect import base as detect
 
-# What this system currently knows, said plainly and first. Two pre-registered
-# hypothesis families -- eleven baseball-knowledge detectors, then five
-# market-structure hypotheses -- have been evaluated against outcomes on
-# 2023-24. None cleared the significance and effect-size gates. Anyone reading
-# this page should know that before they read a single claim on it, because the
-# claims are individually true and collectively unproven, and that distinction
-# is the whole product.
+# The one sentence a pairing with no real game carries on its starter and
+# lineup sections. Defined by the analyze command (src/cli.py); duplicated here
+# because the report layer cannot import the CLI that imports it, and pinned
+# equal by tests/test_report_dashboard.py. It is the ONLY marker that reaches
+# the renderer saying "this matchup never happened", and the card has to say so
+# above the fold rather than leaving it buried in the missing-data list.
+HYPOTHETICAL_GAP = "hypothetical matchup: no posted lineup or probable exists"
+
+# What this system currently knows, said plainly and first. Anyone reading this
+# page should know it before they read a single claim, because the claims are
+# individually true and collectively unproven, and that distinction is the whole
+# product.
+#
+# The count comes from src.analysis and nowhere else. This banner used to say
+# "Thirteen" -- the V1-only figure -- while every game card below it said 27,
+# so one page stated two counts of the same fact. See the note in
+# src/analysis/__init__.py.
 _STANDING = (
-    "<b>Nothing on this page is a proven edge.</b> Thirteen pre-registered "
-    "hypotheses have been tested against 2023&ndash;24 outcomes and none "
-    "cleared the bar. What follows is accurate description of tonight&rsquo;s "
-    "games, the way a sharp friend would lay them out &mdash; every number "
-    "with its sample attached, useful for deciding what to look at and for "
+    "<b>Nothing on this page is a proven edge.</b> "
+    f"{analysis.HYPOTHESES_TESTED_WORD} pre-registered hypotheses across "
+    f"{analysis.HYPOTHESIS_FAMILIES_WORD} research families have been measured "
+    "against outcomes and none cleared the bar. What follows is accurate "
+    "description of tonight&rsquo;s games, the way a sharp friend would lay "
+    "them out &mdash; every number with the sample it rests on, or an explicit "
+    "note that it has none &mdash; useful for deciding what to look at and for "
     "knowing which of your own reasons are noise. It is not a model that "
     "beats the market."
 )
@@ -185,6 +198,39 @@ def _pct(value) -> str:
     return "--" if value is None else f"{value * 100:.1f}%"
 
 
+def _prob_pct(value) -> str:
+    """A probability as a percentage, or "--". Never 0.0% for a missing one."""
+    return "--" if value is None else f"{value:.1%}"
+
+
+def _prob_points(value) -> str:
+    """A probability DIFFERENCE, in win-probability points.
+
+    The store keeps these as fractions (0.019). Rendering the fraction under a
+    heading that says "points" understates it a hundredfold and puts it on a
+    different scale from every detector sentence on the same page, which all
+    say "N points of win probability". Two decimals is the honest resolution:
+    the inputs are American prices, and a third digit is arithmetic noise.
+    """
+    return "--" if value is None else f"{value * 100:+.2f}"
+
+
+def _return_pct(value) -> str:
+    return "--" if value is None else f"{value:+.2f}%"
+
+
+# Said whenever no side on a board beats the de-vigged consensus, which on a
+# normally-priced board is every side. Without it a column of negatives reads
+# as a verdict on the night instead of as the definition of the two numbers
+# being subtracted.
+NO_IMPROVEMENT_NOTE = (
+    "No side here beats the de-vigged consensus, and that is the usual case "
+    "rather than a bad board: the best available price still carries the "
+    "book's vig while the consensus it is measured against has had the vig "
+    "removed, so the difference is normally negative by roughly the hold. A "
+    "positive number is the exception worth noticing; these are not.")
+
+
 def _american(value) -> str:
     if value is None:
         return "--"
@@ -251,7 +297,14 @@ def _finding_row(finding) -> str:
     if finding.get("baseline") is not None:
         support.append(f'<span class="mono">normal {_num(finding["baseline"])}</span>')
     if finding.get("sample") is not None:
-        support.append(f'<span class="mono">sample {_esc(finding["sample"])}</span>')
+        # Same rule as the synthesis block: "sample 7-day window" names a
+        # period, not an amount of evidence, and must not wear the word.
+        if synthesis_mod.sample_size(finding["sample"]) is None:
+            support.append('<span class="mono">no sample size stated &mdash; '
+                           f'{_esc(finding["sample"])}</span>')
+        else:
+            support.append(
+                f'<span class="mono">sample {_esc(finding["sample"])}</span>')
     support.append(_chip(finding))
     relevance = (f'<div class="support">{_esc(finding["market_relevance"])}</div>'
                  if finding.get("market_relevance") else "")
@@ -281,12 +334,26 @@ def _lead(games) -> str:
     if not picks:
         if not games:
             return ""
+        # This block used to read "No detector found anything out of the
+        # ordinary" whenever `picks` was empty. But `picks` excludes
+        # context-kind findings, so the page said no detector found anything
+        # while the card directly below listed a travel finding scored 2.0
+        # standard units from normal. The lead now says only what it checked.
+        context_count = sum(1 for game in games for finding in game["findings"]
+                            if finding["kind"] == detect.CONTEXT)
+        tail = (
+            f' {context_count} context finding(s) did fire and are listed on '
+            'the cards below; they describe the game rather than point at a '
+            'side, which is why none of them is summarised here.'
+            if context_count else
+            ' No context finding fired either.')
         return (
-            '<section class="lead"><h2>Nothing unusual on this slate</h2>'
-            '<p class="claim">No detector found anything out of the ordinary. '
-            'That is the normal case, not a failure &mdash; most days of '
-            'major-league baseball are two roughly major-league teams playing a '
-            'close game.</p></section>')
+            '<section class="lead"><h2>No side-pointing finding on this '
+            'slate</h2>'
+            '<p class="claim">No detector produced a finding that points at a '
+            'side or a total. That is the normal case, not a failure &mdash; '
+            'most days of major-league baseball are two roughly major-league '
+            f'teams playing a close game.{_esc(tail)}</p></section>')
 
     rows = []
     for index, game, finding in picks[:6]:
@@ -324,7 +391,17 @@ def _synthesis_section(game) -> str:
                 '</div>')
     rows = []
     for rank, item in enumerate(items, start=1):
-        support = [f'<span class="mono">sample {_esc(item.get("sample"))}</span>']
+        # The page's header promises every number carries the sample it rests
+        # on. Some detector "samples" name an elapsed period rather than an
+        # amount of play -- "7-day window", "since SF, 3 day(s) ago" -- and
+        # synthesis already refuses to count those as denominators. Labelling
+        # them "sample" anyway borrowed credibility they do not have, so the
+        # word is reserved for strings that actually name a countable amount.
+        if item.get("sample_n") is None:
+            support = ['<span class="mono">no sample size stated &mdash; '
+                       f'{_esc(item.get("sample"))}</span>']
+        else:
+            support = [f'<span class="mono">sample {_esc(item.get("sample"))}</span>']
         if item.get("below_floor"):
             support.append('<span class="mono">below this section&rsquo;s '
                            'sample floor</span>')
@@ -404,6 +481,14 @@ def _starters_section(game) -> str:
     parts = ["<h3>Starting pitchers</h3>",
              _table(rows, ["", game["away"], game["home"]])]
 
+    # Which side is thin, not merely that one is: the splits table below shows
+    # per-split OPS for BOTH starters, so a blanket "his rates are suppressed"
+    # sentence was false the moment a thin starter had splits rows. It sat
+    # directly under a table quoting him at .535 OPS on 23 batters faced.
+    thin_sides = [side for side in ("away", "home")
+                  if starters.get(f"{side}_sp_thin")]
+    thin_teams = [game[side] for side in thin_sides]
+
     splits = game["sections"].get("splits") or {}
     split_rows = []
     for side, team in (("away", game["away"]), ("home", game["home"])):
@@ -411,16 +496,29 @@ def _starters_section(game) -> str:
         for key in ("Home Games", "Away Games", "vs Left", "vs Right"):
             row = record.get(key)
             if row:
-                split_rows.append([f"{team} — {key}", _num(row.get("ops"), 3),
+                mark = " (small sample)" if side in thin_sides else ""
+                split_rows.append([f"{team} — {key}{mark}", _num(row.get("ops"), 3),
                                    row.get("batters_faced") or "--",
                                    row.get("innings") or "--"])
+    thin_has_splits = any(
+        ((splits.get(side) or {}).get("record") or {}).get("splits")
+        for side in thin_sides)
     if split_rows:
         parts.append("<h3>Starter splits (OPS allowed)</h3>")
         parts.append(_table(split_rows, ["split", "OPS", "BF", "IP"]))
-    if starters.get("either_sp_thin"):
-        parts.append('<p class="gap">One starter is under the innings threshold '
-                     '&mdash; his rates are small-sample noise and are suppressed '
-                     'rather than shown.</p>')
+    if thin_sides or starters.get("either_sp_thin"):
+        who = " and ".join(_esc(t) for t in thin_teams) or "One team"
+        sentence = (
+            f'{who}&rsquo;s starter is under the innings threshold, so the '
+            'season rate line for him in the table above is withheld rather '
+            'than shown &mdash; a rate off that few innings is noise.')
+        if thin_has_splits:
+            # Say what the page actually does, not what it wishes it did.
+            sentence += (' His rows in the splits table ARE shown, marked '
+                         '&ldquo;small sample&rdquo;: read each against the '
+                         'batters-faced figure beside it, which is the whole '
+                         'sample that row rests on.')
+        parts.append(f'<p class="gap">{sentence}</p>')
     return "".join(parts)
 
 
@@ -550,13 +648,22 @@ def _price_improvement_section(game) -> str:
     The label is part of the section, not decoration: this is line-shopping
     value -- a better execution price -- and the page never lets it read as
     expected value or a prediction.
+
+    Two things this block used to get wrong, both of which flattered the
+    number. The improvement column was headed "prob pts" while printing a
+    probability FRACTION (-0.0056), so it read a hundred times smaller than
+    the "1.9 points of win probability" a detector quotes on the same card.
+    And a normally-vigged board makes every row negative by construction --
+    the best price still carries vig, the consensus does not -- which the page
+    never said, leaving a column of minus signs looking like a bad night
+    rather than like arithmetic.
     """
     section = game["sections"].get("price_improvement")
     if not section:
         return _gap_block("Best price vs consensus",
                           game["gaps"].get("price_improvement",
                                            "no multi-book observations"))
-    rows = []
+    rows, any_positive = [], False
     for side in ("away", "home"):
         detail = (section.get("sides") or {}).get(side) or {}
         if detail.get("skipped"):
@@ -564,23 +671,44 @@ def _price_improvement_section(game) -> str:
                         f'{_esc(detail["skipped"])}</td></tr>')
             continue
         price = detail.get("best_price")
-        price_text = f"+{price}" if isinstance(price, int) and price > 0 else str(price)
+        price_text = (f"+{price}" if isinstance(price, int) and price > 0
+                      else str(price))
+        points = detail.get("improvement_points")
+        if points is not None and points > 0:
+            any_positive = True
         rows.append(
             f'<tr><td>{side}</td>'
-            f'<td class="mono">{_esc(price_text)} ({_esc(detail.get("best_book") or "?")})</td>'
-            f'<td class="mono">{detail.get("consensus_probability", 0):.1%}</td>'
-            f'<td class="mono">{detail.get("improvement_points", 0):+.4f}</td>'
-            f'<td class="mono">{detail.get("improvement_return_pct", 0):+.2f}%</td></tr>')
+            f'<td class="mono">{_esc(price_text)} '
+            f'({_esc(detail.get("best_book") or "?")})</td>'
+            f'<td class="mono">{_prob_pct(detail.get("consensus_probability"))}</td>'
+            f'<td class="mono">{_prob_points(points)}</td>'
+            f'<td class="mono">{_return_pct(detail.get("improvement_return_pct"))}</td>'
+            f'</tr>')
+
     dispersion = section.get("dispersion") or {}
-    return (
-        '<h3>Best price vs consensus</h3>'
+    books = dispersion.get("books")
+    spread = dispersion.get("home_probability_range")
+    observed = section.get("observed_utc")
+    # The capture instant matters: this board is ONE capture, and a detector
+    # elsewhere on the card quotes its own book count from its own snapshot.
+    # Without the timestamp the two counts read as one fact stated twice.
+    when = (f" captured {observed}" if observed
+            else " (capture instant not recorded)")
+    parts = [
+        '<h3>Best price vs consensus</h3>',
         '<table class="prices"><tr><th>side</th><th>best available</th>'
-        '<th>consensus</th><th>improvement (prob pts)</th>'
-        '<th>improvement (return)</th></tr>'
-        + "".join(rows) + '</table>'
-        f'<p class="gap">{dispersion.get("books", "?")} books; home-probability '
-        f'spread {dispersion.get("home_probability_range", 0):.4f}. '
-        f'{_esc(section.get("label") or "")}.</p>')
+        '<th>consensus (de-vigged)</th>'
+        '<th>improvement (win-prob points)</th>'
+        '<th>improvement (return)</th></tr>',
+        "".join(rows), '</table>',
+        f'<p class="gap">{_esc(books if books is not None else "?")} books at '
+        f'one instant{_esc(when)}; home-probability spread '
+        f'{"--" if spread is None else f"{spread:.4f}"}. '
+        f'{_esc(section.get("label") or "")}.</p>',
+    ]
+    if not any_positive:
+        parts.append(f'<p class="gap">{_esc(NO_IMPROVEMENT_NOTE)}</p>')
+    return "".join(parts)
 
 
 def _news_section(game) -> str:
@@ -616,7 +744,9 @@ def _teams_section(game) -> str:
     teams = game["sections"].get("teams")
     if not teams:
         return _gap_block("Teams", game["gaps"].get("teams"))
-    fields = [("Record", "wins", 0), ("Win %", "win_pct", 3),
+    # "Record" over a column holding only wins invited the reader to supply the
+    # losses that were never there. The field is wins; the header says wins.
+    fields = [("Wins", "wins", 0), ("Win %", "win_pct", 3),
               ("Runs/gm", "runs_scored_pg", 2), ("Allowed/gm", "runs_allowed_pg", 2),
               ("Run diff/gm", "run_diff_pg", 2), ("Last 10 wins", "last10_wins", 0),
               ("Rest days", "rest_days", 0)]
@@ -656,6 +786,32 @@ def _gaps_section(game) -> str:
     return f"<h3>Missing data</h3>{rows}"
 
 
+def _is_hypothetical(game) -> bool:
+    """Did this pairing never actually take the field?
+
+    `analyze` will build a card for any two clubs on any date. When no real
+    game exists it says so in the terminal and stamps the honest sentence on
+    the starter and lineup sections -- and that was the ONLY place it appeared,
+    at the bottom of a missing-data list. The saved HTML then read as an
+    ordinary game card: a venue, a verdict, real season records, nothing at all
+    saying the game is invented. The artifact outlives the terminal line, so
+    the card has to carry the fact itself.
+    """
+    gaps = game.get("gaps") or {}
+    return any(gaps.get(section) == HYPOTHETICAL_GAP
+               for section in ("starters", "lineups"))
+
+
+def _hypothetical_banner(game) -> str:
+    if not _is_hypothetical(game):
+        return ""
+    return ('<p class="gap"><b>This game does not exist.</b> No such matchup '
+            'was scheduled on this date, so there is no starter, no lineup and '
+            'no market for it. The team and park numbers below are real and '
+            'point-in-time; the pairing is not, and the verdict describes a '
+            'game that was never played.</p>')
+
+
 def _game_card(index, game) -> str:
     verdict = game["verdict"]
     prices = []
@@ -673,7 +829,8 @@ def _game_card(index, game) -> str:
                                   game.get("venue")) if x)
     findings = "".join(_finding_row(f) for f in game["findings"])
     body = (
-        _synthesis_section(game)
+        _hypothetical_banner(game)
+        + _synthesis_section(game)
         + ('<h3>Why this game is interesting</h3>'
          f'<div class="findings">{findings}</div>' if findings else
          '<h3>Why this game is interesting</h3>'
@@ -691,7 +848,8 @@ def _game_card(index, game) -> str:
         f'<details class="game {_esc(verdict)}" id="game-{index}"'
         f'{" open" if game.get("open") else ""}>'
         f'<summary class="gamehead">'
-        f'<div><div class="match">{_esc(game["away"])} @ {_esc(game["home"])}</div>'
+        f'<div><div class="match">{_esc(game["away"])} @ {_esc(game["home"])}'
+        f'{" — HYPOTHETICAL, never played" if _is_hypothetical(game) else ""}</div>'
         f'<div class="meta">{_esc(meta)}</div>'
         f'<div class="meta">{_esc(game.get("summary") or "")}</div></div>'
         f'<div class="headright">'

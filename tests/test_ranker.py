@@ -8,6 +8,7 @@ someone deliberately updates BOTH the evidence and this file.
 
 import unittest
 
+import src.analysis as analysis
 from src.report import ranker
 
 FULL_SECTION = {
@@ -82,3 +83,92 @@ class ListTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+ALL_NEGATIVE_INDEX = {
+    ("MIA", "WSH", "2026-08-31"): {
+        "sides": {
+            "home": {"best_book": "williamhill_us", "best_price": 110,
+                     "consensus_probability": 0.474,
+                     "improvement_points": -0.0022,
+                     "improvement_return_pct": -0.46},
+            "away": {"best_book": "betus", "best_price": -117,
+                     "consensus_probability": 0.526,
+                     "improvement_points": -0.0132,
+                     "improvement_return_pct": -2.45},
+        },
+        "dispersion": {"books": 11, "home_probability_range": 0.01},
+        "label": "price improvement / line-shopping value",
+    },
+}
+
+
+class BannerTellsTheTruthAboutTheSign(unittest.TestCase):
+    """The banner asserted a fact about its own rows that was false for all of
+    them.
+
+    It read "Everything below is PRICE IMPROVEMENT -- where the best available
+    price beats the market's own consensus", above a real board of twenty-four
+    rows every one of which was NEGATIVE. That is arithmetic, not a bad night:
+    the best available price still carries vig, the consensus it is measured
+    against does not. Sorted best-first, the top row then read as the day's
+    best opportunity while being 0.46% worse than fair.
+    """
+
+    def test_the_banner_no_longer_promises_a_sign(self):
+        self.assertNotIn("where the best available price beats", ranker.BANNER)
+        self.assertIn("normally NEGATIVE", ranker.BANNER)
+
+    def test_an_all_negative_board_says_nothing_on_it_is_an_improvement(self):
+        page = ranker.render(ALL_NEGATIVE_INDEX)
+        self.assertIn("Not one side on today&#x27;s board beats", page)
+        self.assertIn("none of them is a price improvement", page)
+
+    def test_every_row_states_its_own_side_of_zero(self):
+        page = ranker.render(ALL_NEGATIVE_INDEX)
+        self.assertEqual(page.count("worse than consensus"), 2)
+        self.assertNotIn("beats consensus", page)
+
+    def test_a_board_with_a_winner_marks_the_winner_and_keeps_the_losers(self):
+        page = ranker.render(INDEX)
+        self.assertIn("beats consensus", page)
+        self.assertIn("worse than consensus", page)
+        self.assertNotIn("Not one side on today", page)
+
+    def test_negative_rows_are_never_dropped_to_make_the_board_look_better(self):
+        # Hiding them would make an all-negative board render as an empty one,
+        # which reads as "no data" rather than "no improvement".
+        page = ranker.render(ALL_NEGATIVE_INDEX)
+        self.assertIn("MIA @ WSH", page)
+        self.assertNotIn("No multi-book board is thick enough", page)
+
+
+class ImprovementColumnUsesTheUnitsItsHeadingClaims(unittest.TestCase):
+
+    def test_points_are_points_not_fractions(self):
+        page = ranker.render(ALL_NEGATIVE_INDEX)
+        self.assertIn("win-prob points", page)
+        self.assertIn("-0.22", page)
+        self.assertNotIn("-0.0022", page)
+
+    def test_a_missing_number_is_a_dash_not_a_confident_zero(self):
+        index = {("A", "B", "2026-08-31"): {
+            "sides": {"away": {"best_book": "b", "best_price": 100}},
+            "dispersion": {"books": 9}, "label": "x"}}
+        page = ranker.render(index)
+        self.assertNotIn("+0.0000", page)
+        self.assertNotIn("+0.00%", page)
+        self.assertIn("--", page)
+
+
+class TheCountMatchesEverywhereElse(unittest.TestCase):
+    """13 / 24 / 27 for one fact, two of them on one page. Now one constant."""
+
+    def test_the_banner_reads_the_shared_constant(self):
+        self.assertIn(analysis.HYPOTHESES_TESTED_WORD, ranker.BANNER)
+        self.assertIn(analysis.HYPOTHESIS_FAMILIES_WORD, ranker.BANNER)
+
+    def test_no_stale_count_survives_in_the_banner(self):
+        for stale in ("Twenty-four", "twenty-four", "Thirteen", "thirteen",
+                      "three research families"):
+            self.assertNotIn(stale, ranker.BANNER)

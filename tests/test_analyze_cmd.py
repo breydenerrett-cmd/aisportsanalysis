@@ -129,9 +129,9 @@ class AnalyzeCommandTest(unittest.TestCase):
     def test_team_form_is_point_in_time_to_the_given_date(self):
         _, _, _, path = self._run()
         html = Path(path).read_text(encoding="utf-8")
-        wins = re.search(r"Record</td><td class=\"n\">(\d+)</td>"
+        wins = re.search(r"Wins</td><td class=\"n\">(\d+)</td>"
                          r"<td class=\"n\">(\d+)</td>", html)
-        self.assertIsNotNone(wins, "the teams table must render a Record row")
+        self.assertIsNotNone(wins, "the teams table must render a Wins row")
         # CIN is 3-0 before the cutoff. The 4 post-cutoff wins in the store
         # must not appear; 7 here would mean future leakage.
         self.assertEqual(wins.group(1), "3")
@@ -163,7 +163,7 @@ class AnalyzeCommandTest(unittest.TestCase):
         # sentence -- twice in the body, twice in the missing-data list.
         self.assertGreaterEqual(html.count(cli.HYPOTHETICAL_GAP), 2)
         # Team form still computes point-in-time for a hypothetical pairing.
-        self.assertRegex(html, r"Record</td><td class=\"n\">3</td>")
+        self.assertRegex(html, r"Wins</td><td class=\"n\">3</td>")
 
     def test_hypothetical_card_fabricates_no_starter_data(self):
         _, _, _, path = self._run(away="CIN", home="BOS")

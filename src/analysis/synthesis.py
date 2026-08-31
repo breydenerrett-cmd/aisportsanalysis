@@ -65,6 +65,7 @@ from __future__ import annotations
 import math
 import re
 
+import src.analysis as analysis
 from src.detect import base as detect
 
 # ---------------------------------------------------------------------------
@@ -186,7 +187,8 @@ NO_EDGE_HEADLINE = ("Interesting matchup, but no demonstrated betting edge.")
 
 NOTE = ("Ranked by size, sample, how much it depends on tonight, and how "
         "little of it a knowledgeable fan already carries. Nothing here is a "
-        "prediction or an edge: 27 pre-registered hypotheses across V1–V5 "
+        f"prediction or an edge: {analysis.HYPOTHESES_TESTED} pre-registered "
+        f"hypotheses across {analysis.HYPOTHESIS_FAMILIES_WORD} families "
         "have been measured against outcomes and none cleared the bar.")
 
 NOTHING_CLEARED_NOTE = (
@@ -666,6 +668,17 @@ def _sample_size(sample):
         if token in SAMPLE_UNITS:
             found.append(int(float(number)))
     return max(found) if found else None
+
+
+def sample_size(sample):
+    """Public name for `_sample_size`, for the renderer.
+
+    The dashboard needs the same answer this module uses when ranking: does
+    this sample string name an amount of play at all? A string that does not
+    must not be rendered under the word "sample", and the two layers have to
+    agree on the question or the page will label one thing two ways.
+    """
+    return _sample_size(sample)
 
 
 def _batting_side(claim, dossier):
