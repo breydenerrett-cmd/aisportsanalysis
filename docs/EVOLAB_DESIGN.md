@@ -282,8 +282,12 @@ selection, stopping rules, complexity caps, hyperparameters, and later mutation,
 crossover and meta-learning. The ceiling must represent the adaptivity of the
 entire process, not of one scoring function.
 
-10 replicates per generator (50 placebo worlds) as the default; more is cheap
-under §12.
+10 replicates per generator (60 placebo worlds now that P6 exists) as the
+default; more is cheap under §12. The movement ceiling votes over {P2,P3,P6}
+(majority 2 of 3), the outcome ceiling over {P1,P2,P3,P5}. NOTE for the real
+run: read P6's n_singleton_dates / n_dates_unpermutable params -- thin dates
+leak real alignment into the null -- and remember P6 nulls feature-conditional
+movement, not unconditional drift.
 
 ---
 
