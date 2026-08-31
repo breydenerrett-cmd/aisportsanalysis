@@ -3,6 +3,14 @@
 Operational snapshot. Updated by the orchestrator at every integration point.
 Last update: 2026-08-31 21:20Z. Suite: 1,959 green. Credits: ~53,000.
 
+## PROJECT PHASE CHANGE (21:35Z)
+PRODUCT_DESIGN_HANDOFF.md has ARRIVED (docs/, 2,711 lines, browser-verified
+competitor research, full page specs, capability labels). The SaaS pipeline is
+now: capability reconciliation -> domain contracts -> /design artboards (three
+Graphite Terminal directions) -> BREY VISUAL APPROVAL -> design system ->
+Sonnet implementation -> QA -> paid beta. The /design gate blocks ONLY final
+customer visual implementation; research and backend continue.
+
 ## ACTIVE NOW
 | task | lane | model | state |
 |---|---|---|---|

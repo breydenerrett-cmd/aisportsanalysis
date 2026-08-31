@@ -45,6 +45,16 @@ docs/EVOLUTION_LAB_ASSESSMENT.md, which reframes it around measuring the
 noise ceiling rather than hunting champions, and names two decisions that
 belong to Brey.
 
+## Product phase (2026-08-31 evening)
+PRODUCT_DESIGN_HANDOFF.md (canonical product input) + SAAS_APPLICATION_
+ARCHITECTURE.md are both complete. Pipeline: reconcile capability ->
+contracts -> /design (three directions, Graphite Terminal family) -> Brey
+visual approval gate -> design system -> Sonnet implementation. Vocabulary
+rules are load-bearing: MARKET-IMPLIED CONSENSUS (never "market's true
+read"), price improvement never EV/edge, counterargument structurally
+mandatory in Bet Check, customer attention priority is a separate concept
+from research evidence strength.
+
 ## Standing rules (never relax; Brey's words)
 
 No real-money betting or bet-capable code · no fabricated values (None over
