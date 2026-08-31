@@ -120,7 +120,7 @@ class ImpliedBullpenDisagreement(Detector):
         findings = [Finding(
             self.name, CONTEXT,
             f"The full-game and first-five prices on {favoured} differ by "
-            f"{abs(shift) * 100:.1f} points of win probability. The only thing "
+            f"{abs(shift) * 100:.1f} points of implied probability. The only thing "
             f"separating those two prices is innings 6-9, so that gap is the "
             f"market's own opinion of the bullpens, stated in probability.",
             value=round(abs(shift), 4), baseline=0.0,
@@ -347,7 +347,7 @@ class StaleBook(Detector):
             findings.append(Finding(
                 self.name, SIGNAL,
                 f"{best[0]} is posting {label} at {price:+d}, which works out "
-                f"{edge * 100:.1f} points of win probability cheaper than the "
+                f"{edge * 100:.1f} points of implied probability cheaper than the "
                 f"{len(fairs)}-book consensus. No prediction required — it is "
                 f"the same bet at a better price, because one book sits off "
                 f"the pack. Board: the {source}"

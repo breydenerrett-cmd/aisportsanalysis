@@ -862,7 +862,7 @@ Delta · `h2h_1st_5_innings` · raw z-scores · UTC timestamps with microseconds
 | forward ledger entry | **Forward testing** |
 | validated / gate passed | **Validated** |
 | Engine 2 is `None` / Ranker gated | **No demonstrated edge** |
-| de-vig / no-vig fair probability | **Market's true read** |
+| de-vig / no-vig fair probability | ~~Market's true read~~ **MARKET-IMPLIED CONSENSUS** [row corrected 2026-08-31 per Brey: removing vig does not make a market objectively true; the original phrase is hard-banned by tests/test_customer_language.py] |
 | hold | **Book's margin** |
 | book dispersion | **How much books disagree** |
 | `h2h_1st_5_innings` | **First 5 innings — moneyline** |

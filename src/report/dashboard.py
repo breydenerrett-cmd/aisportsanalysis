@@ -538,7 +538,7 @@ def _market_section(game) -> str:
         who = game["home"] if shift > 0 else game["away"]
         parts.append(
             f'<p class="support">Implied bullpen read: the market gives '
-            f'{_esc(who)} {abs(shift) * 100:.1f} points of win probability from '
+            f'{_esc(who)} {abs(shift) * 100:.1f} points of implied probability from '
             f'innings 6&ndash;9 &mdash; the gap between the full-game and '
             f'first-five prices is its bullpen opinion.</p>')
     return "".join(parts)
