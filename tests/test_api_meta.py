@@ -25,6 +25,16 @@ class GetMetaTests(unittest.TestCase):
         self.assertIn("version", data)
         self.assertIn("product", data)
         self.assertIn("disclaimer", data)
+        self.assertIn("brand", data)
+
+    def test_brand_is_the_working_brand_marked_temporary(self):
+        """Per Brey's 2026-09-01 decision: LINEHOUND is a working brand,
+        not a final legal/trademark name -- `temporary` must stay True
+        until trademark/domain clearance completes and Brey says
+        otherwise."""
+        from api.meta import get_meta
+        data = get_meta()
+        self.assertEqual(data["brand"], {"name": "Linehound", "temporary": True})
 
     def test_disclaimer_matches_the_shared_accessor(self):
         from api.meta import get_meta

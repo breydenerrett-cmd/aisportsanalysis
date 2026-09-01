@@ -1,8 +1,13 @@
 # Founding-user acquisition assets — DRAFT
 
-Content only, no visual design. Product has no chosen name; every mention
-uses **[WORKING TITLE]** per `docs/COMPETITIVE_INTELLIGENCE/NAMING.md`/
-`CHECKPOINT.md`. `[PRICE]` is a merge field standing in for the $19.99/mo
+Working brand: Linehound (temporary, pending trademark/domain clearance —
+Brey 2026-09-01).
+
+Content only, no visual design. The product has not cleared a final
+legal/trademark name; every mention uses **LINEHOUND** as the working
+brand per Brey's 2026-09-01 decision (supersedes the open finalist list in
+`docs/COMPETITIVE_INTELLIGENCE/NAMING.md`/`CHECKPOINT.md`). `[PRICE]` is a
+merge field standing in for the $19.99/mo
 beta price `docs/PRICING_OFFER_VALIDATION.md`'s BREY DECISION BLOCK
 recommends — **not yet approved by Brey** — so every price mention below
 uses the merge field, never a hardcoded number, and every dollar figure
@@ -48,7 +53,7 @@ described comparison-shopping between a paid picks app and free stats.*
 > same space, wanted to be upfront that I'm the one who made it, not a
 > random recommendation.
 >
-> It's [WORKING TITLE] — MLB only right now, private beta. It doesn't
+> It's LINEHOUND — MLB only right now, private beta. It doesn't
 > predict winners or give you a pick; it shows you the actual quoted price,
 > the market-implied consensus across books, and what changed since you
 > last looked, plus the honest case for and against a bet you're
@@ -69,7 +74,7 @@ family") -->
 LineMate.*
 
 > Hey — I noticed [tool] doesn't flag when a hit-rate stat is on a really
-> small sample. I'm building [WORKING TITLE] partly because of exactly
+> small sample. I'm building LINEHOUND partly because of exactly
 > that gap: every claim we show carries the sample size it's built on, and
 > a small sample gets labeled "we cannot tell" instead of a headline
 > number that looks confident but isn't.
@@ -89,7 +94,7 @@ Unabated, or getting limited by books.*
 
 > Hey — you clearly already think in terms of comparing prices across
 > books, so I'll be straight about what this is and isn't. I built
-> [WORKING TITLE]; it shows a price-improvement board (best quoted price
+> LINEHOUND; it shows a price-improvement board (best quoted price
 > vs. the de-vigged market consensus, across books) but it does NOT claim
 > an edge, doesn't do CLV framing, and isn't built for the volume/sharp
 > tooling you're probably already running (no API, no steam alerts). If
@@ -105,7 +110,7 @@ our two proposed consumer tiers") -->
 wanting citable, defensible numbers.*
 
 > Hey — following your [content type], and thought of you because of a
-> specific thing: I built [WORKING TITLE] to show its work — actual quoted
+> specific thing: I built LINEHOUND to show its work — actual quoted
 > prices, market-implied consensus, timestamped, plus a published record
 > of every research idea we tested and killed. If you ever want a
 > citable, checkable number instead of a vibe for something you're
@@ -121,7 +126,7 @@ own credibility") -->
 black-box picks apps.*
 
 > Hey — saw you asking about getting started. One honest note before
-> anything else: [WORKING TITLE] (which I built) doesn't teach betting
+> anything else: LINEHOUND (which I built) doesn't teach betting
 > strategy or give picks — it's a checking tool, not a coach. It shows you
 > the price, the consensus, and what changed for a bet you're already
 > considering, with no recommendation attached (that field is
@@ -161,7 +166,7 @@ comment or DM masquerading as organic discussion.
 dispersion result and its failure mode); docs/CONTENT_LANDING.md §3
 ("the honesty story") -->
 >
-> So [WORKING TITLE] doesn't predict winners or hand you a pick. What it
+> So LINEHOUND doesn't predict winners or hand you a pick. What it
 > does: shows the actual price you'd get, the de-vigged market-implied
 > consensus separately, what changed on a game since this morning, and —
 > for any bet you're checking — the honest case for and against that side,
@@ -201,7 +206,7 @@ below.
 
 ---
 
-**[WORKING TITLE] — Founding Member**
+**LINEHOUND — Founding Member**
 
 You're one of the first [N] paying beta subscribers. Here's exactly what
 that means:
@@ -275,7 +280,7 @@ for a thread format (short, numbered posts, one idea per post).
 5. That's the pattern across all 25/35 ideas: bullpen workload, platoon
    matchups, fading recent line moves, cross-book dispersion — tested the
    same rigorous way, none of them cleared the bar.
-6. So [WORKING TITLE] doesn't predict winners. There's a `recommendation`
+6. So LINEHOUND doesn't predict winners. There's a `recommendation`
    field in the product and it's permanently, deliberately empty — not a
    gap we're filling later, a rule, until something actually clears our
    own bar.
@@ -314,7 +319,7 @@ engagement, no coordinated reply-network boosting.
 
 ## Open items for Brey (not resolved by this doc)
 
-- Product name unresolved — every `[WORKING TITLE]` needs a global
+- Product name unresolved — every `LINEHOUND` needs a global
   find/replace once locked, same open item every content doc in this repo
   carries.
 - `[PRICE]` and `[N]` (founding-cohort size) are pending

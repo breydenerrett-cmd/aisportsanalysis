@@ -1,10 +1,15 @@
 # Landing-page & product content package — DRAFT
 
+Working brand: Linehound (temporary, pending trademark/domain clearance —
+Brey 2026-09-01).
+
 Content only, no HTML/visual design — a separate Claude Design session owns
 aesthetics. Every quantitative claim is cited inline as `<!-- source: FILE -->`.
-Product has no chosen name; every mention uses **[WORKING TITLE]** as a
-placeholder per `docs/COMPETITIVE_INTELLIGENCE/NAMING.md` / `CHECKPOINT.md`
-(three finalists — Ledgerline / Quiet Signal / Coverage Grid — none cleared).
+The product has not cleared a final legal/trademark name; every mention
+uses **LINEHOUND** as the working brand per Brey's 2026-09-01 decision
+(supersedes the open finalist list in
+`docs/COMPETITIVE_INTELLIGENCE/NAMING.md` / `CHECKPOINT.md` — none of those
+names is cleared, and none should be treated as decided).
 
 This draft avoids tout vocabulary entirely: no plus-sign EV framing, no
 claim of a "true" price, no guaranteed outcome, no invented win
@@ -27,7 +32,7 @@ know — not a promise of winning.
 
 ### Hero A — "Show your work"
 - **Headline:** Every claim, checkable.
-- **Subhead:** [WORKING TITLE] shows you the actual price, the actual market
+- **Subhead:** LINEHOUND shows you the actual price, the actual market
   consensus, and what changed since this morning — for one bet you're about
   to make. No hidden math, no promised outcome.
 - **Primary CTA:** Check a bet
@@ -42,7 +47,7 @@ know — not a promise of winning.
 
 ### Hero C — "Line shopping, made checkable"
 - **Headline:** Find the better price. See the arithmetic.
-- **Subhead:** [WORKING TITLE] compares the price you'd take against the
+- **Subhead:** LINEHOUND compares the price you'd take against the
   best one on the board right now, and shows you what that's actually worth
   — win or lose — before you place the bet.
 - **Primary CTA:** Try the price check
@@ -123,7 +128,7 @@ it, and we kept the record.
 - We don't ship a "prediction" because one candidate idea looked good in a
   backtest. Every idea here failed a pre-committed replication test before
   it could reach the product.
-- Nothing in [WORKING TITLE] claims a win probability, a predicted winner,
+- Nothing in LINEHOUND claims a win probability, a predicted winner,
   or a bet recommendation. That's not a feature we haven't built yet — it's
   a rule: the underlying model is uncalibrated, and no payload in the
   product emits a win-probability field.
@@ -182,7 +187,7 @@ bracketed values only):**
 > No prediction involved — this is the arithmetic of two prices on the same
 > bet. Prices are as quoted at the moment we observed them; whether a book
 > accepts your stake is up to the book. Finding the better number is what
-> [WORKING TITLE] does.
+> LINEHOUND does.
 <!-- source: docs/PRICING_CALCULATOR_REVIEW.md ("Approved specification" §3 output copy) -->
 
 **Small print (must render inline, never a tooltip or footnote link):**
@@ -202,7 +207,7 @@ name a book, or show the de-vigged market consensus as a bettable price.
 ## 5. FAQ — DRAFT
 
 **No guaranteed wins — is that really true?**
-Yes. Nothing in [WORKING TITLE] guarantees an outcome or a profit, for any
+Yes. Nothing in LINEHOUND guarantees an outcome or a profit, for any
 user or any bet. You are responsible for your own wagering decisions,
 including whether to bet at all.
 <!-- source: src/analysis/disclaimers.py (BETA_DISCLAIMER) -->
@@ -296,11 +301,11 @@ is different from, and reported differently from, a tested null.
 
 ### Beta invite email
 
-**Subject:** You're in — [WORKING TITLE] beta access
+**Subject:** You're in — LINEHOUND beta access
 
 Hi [first name],
 
-You're invited into the [WORKING TITLE] beta.
+You're invited into the LINEHOUND beta.
 
 Here's what that actually means: this is an early, free, invite-only
 product. It shows you today's game prices, the market-implied consensus
@@ -324,18 +329,18 @@ A few things worth knowing up front:
 Tell us what's confusing, what's missing, and what you don't trust. That
 feedback shapes what we build next.
 
-— The [WORKING TITLE] team
+— The LINEHOUND team
 
 ### Waitlist confirmation email
 
-**Subject:** You're on the list for [WORKING TITLE]
+**Subject:** You're on the list for LINEHOUND
 
 Hi [first name],
 
 You're on the waitlist. We'll email you the moment a beta spot opens up —
 no action needed from you right now.
 
-While you wait, here's what [WORKING TITLE] is, plainly: a tool that shows
+While you wait, here's what LINEHOUND is, plainly: a tool that shows
 you real prices, real market consensus, and what changed recently for a
 game or a bet you're checking. It does not predict outcomes, and it does
 not promise you'll win. What it gives you is checkable — the actual
@@ -343,7 +348,7 @@ numbers, not a black-box score.
 
 We'll be in touch as soon as there's a spot.
 
-— The [WORKING TITLE] team
+— The LINEHOUND team
 
 ---
 

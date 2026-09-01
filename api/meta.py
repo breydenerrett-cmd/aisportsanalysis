@@ -39,10 +39,18 @@ router = APIRouter()
 # code -- but it is still written to the same rule: no EV/edge/guarantee
 # language, because it is customer-facing the moment a staging URL exists.
 PRODUCT_ONE_LINER = (
-    "Sports-betting information and research -- price comparisons and "
-    "context to inform your own wagering decisions, not picks or "
-    "guarantees."
+    "Linehound -- sports-betting information and research -- price "
+    "comparisons and context to inform your own wagering decisions, not "
+    "picks or guarantees."
 )
+
+# Working brand only -- per Brey's 2026-09-01 decision: "Use LINEHOUND
+# anywhere a temporary customer-facing brand is required ... Do not
+# buy/register the final domain or make irreversible legal branding
+# decisions until trademark/domain clearance is completed." `temporary`
+# stays True until that clearance lands and a final name is chosen; do not
+# flip it without Brey saying so.
+BRAND = {"name": "Linehound", "temporary": True}
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 _FALLBACK_VERSION = "dev"
@@ -76,4 +84,5 @@ def get_meta() -> dict:
         "version": APP_VERSION,
         "product": PRODUCT_ONE_LINER,
         "disclaimer": get_disclaimer(),
+        "brand": BRAND,
     }

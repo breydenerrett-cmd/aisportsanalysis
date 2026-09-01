@@ -9,7 +9,7 @@ this file being ready.
 ## Step 0: the credential ask (blocks everything below)
 
 **What:** a Fly.io API deploy token, scoped to one app --
-`fly tokens create deploy -a aisportsanalysis-staging` (run from Brey's own
+`fly tokens create deploy -a linehound-staging` (run from Brey's own
 `fly auth login` session), or the app-scoped token Fly's dashboard issues
 per-app.
 **From where:** Brey's own Fly.io account. This task does not create that
@@ -33,10 +33,12 @@ cd /path/to/aisportsanalysis   # repo root -- fly.toml paths below are
 # no `fly auth login` browser flow needed for a token-based session.
 export FLY_API_TOKEN="<token from Step 0>"
 
-# 1b. Rename the placeholder app name in deploy/fly.staging.toml first --
-# Fly app names are globally unique and "CHANGE-ME-..." will not create.
-#   sed -i 's/CHANGE-ME-aisportsanalysis-staging/<real-app-name>/' \
-#       deploy/fly.staging.toml
+# 1b. deploy/fly.staging.toml ships with app = "linehound-staging" (the
+# working brand per Brey's 2026-09-01 decision -- still editable). Fly app
+# names are globally unique, so if that name is already taken, pick a
+# suffixed one (e.g. "linehound-staging-2") and update fly.staging.toml
+# first:
+#   sed -i 's/linehound-staging/<real-app-name>/' deploy/fly.staging.toml
 
 # 1c. Create the Fly app itself (does not deploy code yet).
 fly apps create <real-app-name>

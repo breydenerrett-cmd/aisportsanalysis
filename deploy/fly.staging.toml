@@ -13,10 +13,11 @@
 # file into the repo means that step is never missed and never redone by
 # hand a second time on the next fresh checkout.
 #
-# app name: placeholder. Fly app names are globally unique, so this must
-# be changed before `fly launch`/`fly deploy` -- e.g.
-# "aisportsanalysis-staging" if available, or append Brey's own suffix.
-app = "CHANGE-ME-aisportsanalysis-staging"
+# app name: working brand per Brey's 2026-09-01 decision (LINEHOUND
+# anywhere a temporary customer-facing brand is needed -- still editable.
+# Fly app names are globally unique, so "linehound-staging" may already be
+# taken -- append Brey's own suffix (e.g. "linehound-staging-2") if so.
+app = "linehound-staging"
 primary_region = "iad"  # US East -- change to whatever region the volume
                          # below is created in; they must match.
 

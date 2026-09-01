@@ -1,9 +1,14 @@
 # Retention email templates — DRAFT
 
+Working brand: Linehound (temporary, pending trademark/domain clearance —
+Brey 2026-09-01).
+
 Text only, no HTML/visual design — same split `docs/CONTENT_LANDING.md`
-makes (a separate Claude Design session owns aesthetics). Product has no
-chosen name; every mention uses **[WORKING TITLE]** per
-`docs/COMPETITIVE_INTELLIGENCE/NAMING.md`/`CHECKPOINT.md`. Every merge
+makes (a separate Claude Design session owns aesthetics). The product has
+not cleared a final legal/trademark name; every mention uses **LINEHOUND**
+as the working brand per Brey's 2026-09-01 decision (supersedes the open
+finalist list in `docs/COMPETITIVE_INTELLIGENCE/NAMING.md`/`CHECKPOINT.md`).
+Every merge
 field is bracketed and listed under each template. Every quantitative claim
 is cited inline as `<!-- source: FILE -->`, same convention as
 `CONTENT_LANDING.md`.
@@ -90,7 +95,7 @@ empty digest rather than send one) -->
   when it is not `None`; omitted entirely otherwise.
 - `[APP_LINK]`
 
-**Subject:** Your [WORKING TITLE] digest — [SLATE_HEADLINE]
+**Subject:** Your LINEHOUND digest — [SLATE_HEADLINE]
 
 Hi [FIRST_NAME],
 
@@ -118,9 +123,9 @@ if it loses, both cost the same." Two-branch framing required per
 docs/CONTENT_LANDING.md §4 / docs/PRICING_CALCULATOR_REVIEW.md — never a
 single unconditional dollar figure. -->
 
-[Open [WORKING TITLE] → APP_LINK]
+[Open LINEHOUND → APP_LINK]
 
-— The [WORKING TITLE] team
+— The LINEHOUND team
 
 **What this email will not do:**
 - Send on a day with nothing in any of the three sections — a digest that
@@ -153,7 +158,7 @@ the same user regardless of what they do afterward.
 - `[FIRST_NAME]`
 - `[APP_LINK]`
 
-**Subject:** Anything confusing about [WORKING TITLE] so far?
+**Subject:** Anything confusing about LINEHOUND so far?
 
 Hi [FIRST_NAME],
 
@@ -172,9 +177,9 @@ support team here yet, just Brey), and it shapes what gets built next.
 <!-- source: docs/ONBOARDING_SUPPORT_PLAYBOOK.md §3 ("No ticketing system...
 Brey reads GET /admin/support and works the queue") -->
 
-[Open [WORKING TITLE] → APP_LINK]
+[Open LINEHOUND → APP_LINK]
 
-— [WORKING TITLE]
+— LINEHOUND
 
 **What this email will not do:** push a feature tour, offer a discount, or
 imply the free trial/beta access is at risk of ending — none of those are
@@ -217,7 +222,7 @@ between the user and the cancellation they already completed.
 
 Hi [FIRST_NAME],
 
-Your [WORKING TITLE] subscription is cancelled. Your access continues
+Your LINEHOUND subscription is cancelled. Your access continues
 through [CANCEL_EFFECTIVE_DATE]; you won't be charged again after that.
 <!-- source: docs/PRICING_OFFER_VALIDATION.md §1 (refund/cancel policy
 draft, verbatim terms) -->
@@ -238,7 +243,7 @@ come back, then deleted. You can request deletion sooner by replying here.
 <!-- source: docs/PRICING_OFFER_VALIDATION.md §1 ("What happens to your
 data if you cancel") -->
 
-— [WORKING TITLE]
+— LINEHOUND
 
 **What this email will not do (explicit, no implementer discretion):**
 - Offer a discount, an extended trial, a downgrade, or any other retention
@@ -286,7 +291,7 @@ retention email content, not just product copy -->
   lands on a different figure.
 - `[APP_LINK]`
 
-**Subject:** What's changed at [WORKING TITLE] since you left
+**Subject:** What's changed at LINEHOUND since you left
 
 Hi [FIRST_NAME],
 
@@ -301,10 +306,10 @@ research record has changed by then), or "Founding-member pricing
 ([PRICE]/mo, locked for as long as you stay subscribed) closes to new
 subscribers on [DATE]." -->
 
-If you want back in: [Open [WORKING TITLE] → APP_LINK]. Same account,
+If you want back in: [Open LINEHOUND → APP_LINK]. Same account,
 same saved history if it's still within the 30-day retention window.
 
-— [WORKING TITLE]
+— LINEHOUND
 
 **What this email will not do:**
 - Manufacture a reason to send if none of the trigger conditions above are
@@ -327,7 +332,7 @@ eroding patterns CUSTOMER_PAIN.md documents competitors using") -->
 - **Sender/provider decision** (see the section above) — nothing sends
   until this is chosen; the templates are ready either way.
 - Product name unresolved (three finalists, none cleared) — every
-  `[WORKING TITLE]` placeholder needs a global find/replace once locked,
+  `LINEHOUND` placeholder needs a global find/replace once locked,
   same open item `CONTENT_LANDING.md` already carries.
 - `[PRICE]` in the win-back template is deliberately left unfilled pending
   `docs/PRICING_OFFER_VALIDATION.md`'s BREY DECISION BLOCK (price + N for

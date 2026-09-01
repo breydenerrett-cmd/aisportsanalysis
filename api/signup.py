@@ -46,6 +46,13 @@ if not) rather than either erroring or silently no-op'ing -- see
 alone entirely: signup is not a way to re-litigate an account a human
 process (the admin invite endpoint, or Stripe support) already put in a
 different state.
+
+NOTE FOR WHOEVER CREATES THE STRIPE PRICE (doc note only -- no Stripe
+calls happen in this module or this task): when Brey sets up the beta
+Price in the Stripe dashboard, the Product's display name should be
+"Linehound (beta)" -- the working brand per Brey's 2026-09-01 decision,
+not a final legal/trademark name. This module never reads or sets that
+display name; Stripe Checkout renders it from the Product itself.
 """
 
 from __future__ import annotations

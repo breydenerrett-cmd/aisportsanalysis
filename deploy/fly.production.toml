@@ -15,8 +15,10 @@
 # worth it yet), the promotion is "change four boundary lines below and
 # run DEPLOY_RUNBOOK.md's promotion checklist," not a from-scratch config.
 # It is not an endorsement of Fly over the VM path for the long run.
-app = "CHANGE-ME-aisportsanalysis-production"  # BOUNDARY 1: a SEPARATE
-    # Fly app from staging's, always -- never the same app with a
+app = "linehound-prod"  # Working brand per Brey's 2026-09-01 decision --
+    # still editable; Fly app names are globally unique, so append a
+    # suffix (e.g. "linehound-prod-2") if this is taken. BOUNDARY 1: a
+    # SEPARATE Fly app from staging's, always -- never the same app with a
     # different config, or a bad production deploy and a bad staging
     # deploy become the same incident.
 primary_region = "iad"

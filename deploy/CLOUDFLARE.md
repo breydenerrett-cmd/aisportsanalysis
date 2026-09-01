@@ -1,5 +1,10 @@
 # Cloudflare readiness: execute-later runbook
 
+Working brand: Linehound (temporary, pending trademark/domain clearance --
+Brey 2026-09-01). The eventual domain is `linehound.???` -- TBD pending
+that clearance. This file does not name, recommend, or suggest purchasing
+any specific domain; that stays blocked until clearance completes.
+
 Decision 4 in `docs/LAUNCH_DECISIONS.md` (naming/domain) blocks everything
 in this file -- there is no DNS to configure until a domain exists. This
 file is the exact, ready-to-run plan for the day both a domain and a

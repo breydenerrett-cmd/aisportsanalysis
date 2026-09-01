@@ -1,5 +1,8 @@
 # Onboarding & Support Playbook (private alpha)
 
+Working brand: Linehound (temporary, pending trademark/domain clearance —
+Brey 2026-09-01).
+
 Operational reference for Brey, the one person running support and
 onboarding for this product. Backing code: `src/appstate/support.py`,
 `api/support.py`, `src/appstate/onboarding.py`, `api/onboarding.py`.
