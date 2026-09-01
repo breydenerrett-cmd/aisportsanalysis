@@ -134,7 +134,7 @@ async function renderRoute(main, nav) {
   } else if (route === "support") {
     await renderSupport(main);
   } else if (route === "signup" && rest[0] === "complete") {
-    renderSignupComplete(main, query);
+    await renderSignupComplete(main, query);
   } else if (route === "signup") {
     await renderSignup(main);
   } else {

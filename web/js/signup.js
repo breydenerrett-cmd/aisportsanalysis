@@ -22,7 +22,7 @@
  * both read BETA_TIER so there is exactly one place a price is decided.
  */
 
-import { apiPost, trackFunnelEvent, ApiError } from "./api.js";
+import { apiGet, apiPost, trackFunnelEvent, ApiError } from "./api.js";
 import { el, clear, renderError } from "./dom.js";
 import { BETA_TIER } from "./pricing.js";
 
@@ -100,13 +100,35 @@ export async function renderSignup(main) {
   trackFunnelEvent("signup_started");
 }
 
-export function renderSignupComplete(main, query) {
+export async function renderSignupComplete(main, query) {
   clear(main);
   const section = el("section", {
     "data-view": "signup-complete", "aria-label": "signup complete",
   });
   section.appendChild(el("h1", { text: "You're in" }));
-  const token = (query && query.token) || "";
+  let token = (query && query.token) || "";
+  // Stripe's hosted Checkout redirects here with `session_id` (see
+  // src/appstate/billing.py's success_url), not a token -- there is no
+  // email sender yet, so GET /signup/complete is the ONE bridge a paying
+  // user has to their own access token (api/signup.py's
+  // "no-email-sender activation bridge"). Exchange it here.
+  //
+  // A failure is reported honestly rather than swallowed into the generic
+  // "no token was included in this link" branch below: the token is
+  // one-time, so a user who lands here after it was already taken needs to
+  // be told that, not left guessing at an empty page.
+  const sessionId = (query && query.session_id) || "";
+  if (!token && sessionId) {
+    try {
+      const body = await apiGet(
+        "/signup/complete?session_id=" + encodeURIComponent(sessionId));
+      token = (body && body.token) || "";
+    } catch (err) {
+      main.appendChild(section);
+      renderError(main, err);
+      return;
+    }
+  }
   if (token) {
     section.appendChild(el("p", {
       text: "Your one-time invite token -- copy it now, it will not be shown again:",

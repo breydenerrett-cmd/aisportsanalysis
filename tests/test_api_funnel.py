@@ -9,7 +9,7 @@ from __future__ import annotations
 import os
 import tempfile
 import unittest
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
@@ -209,11 +209,22 @@ class AdminFunnelTests(unittest.TestCase):
         steps = {s["kind"]: s for s in result["steps"]}
         self.assertEqual(steps["bet_check_run"]["count"], 0)
 
-    def test_default_window_is_trailing_thirty_days_ending_today(self):
+    def test_default_window_is_trailing_thirty_days_ending_today_in_utc(self):
+        """The default window ends on the UTC date, NOT the host's local one.
+
+        src.appstate.events stamps every event with
+        `datetime.now(timezone.utc)`, and api.funnel._step_counts compares
+        those stamps as UTC calendar dates. Asserting `date.today()` here
+        would pass only on a host at or east of UTC and silently encode the
+        bug it was meant to catch: on a UTC-7 machine every event recorded
+        after 17:00 local lands on the NEXT UTC day, outside a window that
+        ends on the local date, and the whole funnel renders zero.
+        """
         from api.funnel import FUNNEL_DEFAULT_WINDOW_DAYS, get_admin_funnel
+        utc_today = datetime.now(timezone.utc).date()
         result = get_admin_funnel(_admin=None)
-        self.assertEqual(result["end"], date.today().isoformat())
-        expected_start = (date.today() -
+        self.assertEqual(result["end"], utc_today.isoformat())
+        expected_start = (utc_today -
                          timedelta(days=FUNNEL_DEFAULT_WINDOW_DAYS - 1)).isoformat()
         self.assertEqual(result["start"], expected_start)
 

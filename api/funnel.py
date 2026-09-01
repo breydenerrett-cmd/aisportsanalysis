@@ -41,7 +41,7 @@ landing_view counts.
 
 from __future__ import annotations
 
-from datetime import date as date_cls, datetime, timedelta
+from datetime import date as date_cls, datetime, timedelta, timezone
 from typing import Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -114,7 +114,21 @@ FUNNEL_DEFAULT_WINDOW_DAYS = 30
 
 
 def _default_range(today: Optional[date_cls] = None) -> tuple:
-    end = today or date_cls.today()
+    """Default window: the trailing FUNNEL_DEFAULT_WINDOW_DAYS days ending
+    TODAY IN UTC -- deliberately not `date.today()`, which reads the host's
+    LOCAL date.
+
+    Every event this module counts is stamped by
+    src.appstate.events with `datetime.now(timezone.utc).isoformat()`, and
+    _step_counts compares those stamps as `event.at[:10]` -- a UTC calendar
+    date. A local `date.today()` on any host west of UTC (Brey's machine is
+    UTC-7) is BEHIND that date for the whole evening, so every event
+    recorded after 17:00 local landed on a UTC day strictly after the
+    window's `end` and was silently dropped: the funnel rendered all-zero
+    for exactly the hours the app was being used. Comparing a UTC-derived
+    window against UTC-stamped events keeps both sides in one frame.
+    """
+    end = today or datetime.now(timezone.utc).date()
     start = end - timedelta(days=FUNNEL_DEFAULT_WINDOW_DAYS - 1)
     return start.isoformat(), end.isoformat()
 

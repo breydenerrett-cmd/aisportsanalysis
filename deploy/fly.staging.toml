@@ -29,6 +29,12 @@ primary_region = "iad"  # US East -- change to whatever region the volume
 # since fly.toml is a file this repo tracks in git.
 [env]
   APP_DB_PATH = "/app/data/app/app.db"
+  # Origin Stripe hosted Checkout redirects the browser back to
+  # (src/appstate/billing.py's _public_base_url). Non-secret -- it is the
+  # public hostname of this very app -- so it belongs here rather than in
+  # `fly secrets`. Must match the deployed hostname exactly, or a paying
+  # user lands on a dead origin and never reaches their activation token.
+  PUBLIC_BASE_URL = "https://linehound-staging.fly.dev"
   # BILLING_PROVIDER left unset: src/appstate/billing.py's own default
   # (NullBillingProvider, dev/test-safe) applies until STRIPE_API_KEY is
   # set as a secret -- see docs/LAUNCH_DECISIONS.md Decisions 1-2.

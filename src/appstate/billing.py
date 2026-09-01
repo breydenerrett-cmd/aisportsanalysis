@@ -192,6 +192,23 @@ class NullBillingProvider:
 # ---------------------------------------------------------------------------
 
 STRIPE_API_BASE = "https://api.stripe.com"
+ENV_PUBLIC_BASE_URL = "PUBLIC_BASE_URL"
+
+# Where Stripe sends the browser back after hosted Checkout. This is a
+# DEPLOY-TIME fact (docs/LAUNCH_DECISIONS.md Decision 3) -- staging and a
+# future production domain are different origins -- so it is read from the
+# environment, never written into this module. Absent the env var the
+# placeholder below still applies, which keeps every existing unit test's
+# expectations intact and keeps this module honest about not guessing at a
+# hostname it was never told.
+DEFAULT_PUBLIC_BASE_URL = "https://example.invalid"
+
+
+def _public_base_url() -> str:
+    return ((os.environ.get(ENV_PUBLIC_BASE_URL) or "").strip().rstrip("/")
+            or DEFAULT_PUBLIC_BASE_URL)
+
+
 ENV_STRIPE_API_KEY = "STRIPE_API_KEY"
 ENV_STRIPE_WEBHOOK_SECRET = "STRIPE_WEBHOOK_SECRET"
 
@@ -454,11 +471,18 @@ class StripeBillingProvider:
             "client_reference_id": str(user_id),
             "line_items[0][price]": plan_id,
             "line_items[0][quantity]": "1",
-            # Placeholder redirect targets -- the real app URLs are a
-            # deploy-time concern (docs/LAUNCH_DECISIONS.md Decision 3),
-            # not this module's to guess at.
-            "success_url": "https://example.invalid/billing/success",
-            "cancel_url": "https://example.invalid/billing/cancel",
+            # Redirect targets, resolved from PUBLIC_BASE_URL at call time
+            # (see _public_base_url). `{CHECKOUT_SESSION_ID}` is Stripe's
+            # own literal placeholder -- Stripe substitutes the real session
+            # id into the redirect, and web/js/signup.js's SIGNUP COMPLETE
+            # view trades that id for the one-time activation token via
+            # GET /signup/complete. Without the placeholder the paying user
+            # lands on a page with no way to learn their own token, which
+            # is exactly the no-email-sender bridge api/signup.py describes.
+            "success_url": (_public_base_url()
+                            + "/web/index.html#/signup/complete"
+                              "?session_id={CHECKOUT_SESSION_ID}"),
+            "cancel_url": _public_base_url() + "/web/index.html#/signup",
         }
         if customer_id:
             form["customer"] = customer_id
