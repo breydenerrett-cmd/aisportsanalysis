@@ -95,7 +95,12 @@ bash scripts/monitor_remote.sh "https://<real-app-name>.fly.dev"
 ```
 
 See that script's own header and `scripts/monitor_remote.sh`'s section
-below for wiring this to a recurring check once the URL is live.
+below for wiring this to a recurring check once the URL is live. When it
+reports a nonzero exit, **`docs/OPERATIONS_RUNBOOK.md` is the decision
+tree** — it maps the failure class the script now prints (TLS_RESET,
+CONN_REFUSED, DNS, TIMEOUT, HTTP_5xx, ...) to the exact recovery command,
+including the token-less GitHub Actions redeploy fallback for a session
+with no Fly credential.
 
 ## Rollback procedure
 
