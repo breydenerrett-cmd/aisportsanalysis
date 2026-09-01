@@ -23,5 +23,5 @@ export const BETA_TIER = Object.freeze({
   price_cents: 1999,
   price_display: "$19.99/mo",
   billing_note:
-    "Founding-member beta price. Cancel anytime in one click; 7-day no-questions refund.",
+    "Founding-member beta price. Cancel your renewal anytime; access runs through the period you've already paid for.",
 });
