@@ -105,3 +105,25 @@ None of this creates an account, spends money, or stores a credential.
 - [Fly Managed Postgres docs](https://fly.io/docs/mpg/)
 - [Cloudflare Python Workers stdlib docs](https://developers.cloudflare.com/workers/languages/python/stdlib/)
 - [Cloudflare Python Workers advancements — Cloudflare Blog](https://blog.cloudflare.com/python-workers-advancements/)
+
+
+## DECIDED BY BREY — 2026-09-01
+
+1. AUTH: Clerk is the production direction. Invite-token auth stays as the
+   temporary fallback/dev path. Implication: get_current_user goes behind an
+   AuthProvider seam now; ClerkProvider lands key-less until credentials.
+2. BILLING: Stripe. Everything built/tested in test mode behind the existing
+   BillingProvider abstraction; Brey connects the account exactly when real
+   credentials are required (that moment goes to the Brey queue).
+3. HOSTING: do NOT wait on branding/domain. Prepare a temporary
+   preview/staging deploy on the recommended architecture; the deploy itself
+   still requires a hosting credential, which is the trigger to go back to
+   Brey. Secure secret requirements for APP_ADMIN_TOKEN/APP_DB_PATH are to be
+   generated/documented; secrets never committed. Real domain after naming.
+4. LEGAL: temporary, clearly-labeled beta disclaimer now (information/
+   research product, no outcome/profit guarantees, users responsible for
+   their own wagering decisions). FINAL customer-facing legal copy is flagged
+   for Brey/counsel review before paid/public launch.
+
+Return-to-Brey triggers only: actual account credentials, spend,
+irreversible decisions, final legal sign-off.
