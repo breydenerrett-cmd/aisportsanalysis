@@ -127,3 +127,14 @@
 {"category": "designated", "date": "2026-09-01", "first_seen_utc": "2026-09-01T16:16:49.666138+00:00", "player": "Kyler Fedko", "player_id": 693459, "team": "MIN", "transaction_id": 940381}
 {"category": "recalled", "date": "2026-09-01", "first_seen_utc": "2026-09-01T16:16:49.666138+00:00", "player": "Juan Brito", "player_id": 682877, "team": "CIN", "transaction_id": 940385}
 {"category": "il_activation", "date": "2026-09-01", "first_seen_utc": "2026-09-01T16:16:49.666138+00:00", "player": "Brandon Williamson", "player_id": 682227, "team": "CIN", "transaction_id": 940386}
+{"fetched_utc": "2026-09-01T17:16:13.064611+00:00", "game_date": "2026-09-01", "poll": true}
+{"category": "recalled", "date": "2026-09-01", "first_seen_utc": "2026-09-01T17:16:13.064611+00:00", "player": "Jhony Brito", "player_id": 666745, "team": "SD", "transaction_id": 940387}
+{"category": "other", "date": "2026-09-01", "first_seen_utc": "2026-09-01T17:16:13.064611+00:00", "player": "Ethan Salas", "player_id": 806956, "team": "SD", "transaction_id": 940388}
+{"category": "il_transfer", "date": "2026-09-01", "first_seen_utc": "2026-09-01T17:16:13.064611+00:00", "player": "Luis Rengifo", "player_id": 650859, "team": "SD", "transaction_id": 940389}
+{"category": "recalled", "date": "2026-09-01", "first_seen_utc": "2026-09-01T17:16:13.064611+00:00", "player": "Bradley Blalock", "player_id": 687134, "team": "MIA", "transaction_id": 940390}
+{"category": "recalled", "date": "2026-09-01", "first_seen_utc": "2026-09-01T17:16:13.064611+00:00", "player": "Graham Pauley", "player_id": 688363, "team": "MIA", "transaction_id": 940391}
+{"category": "il_activation", "date": "2026-09-01", "first_seen_utc": "2026-09-01T17:16:13.064611+00:00", "player": "Jedixson Paez", "player_id": 699151, "team": "BOS", "transaction_id": 940402}
+{"category": "traded", "date": "2026-09-01", "first_seen_utc": "2026-09-01T17:16:13.064611+00:00", "player": "Sebastian Rodriguez", "player_id": 842594, "team": "LAD", "transaction_id": 940411}
+{"category": "other", "date": "2026-09-01", "first_seen_utc": "2026-09-01T17:16:13.064611+00:00", "player": "Sebastian Rodriguez", "player_id": 842594, "team": "LAD", "transaction_id": 940413}
+{"category": "other", "date": "2026-09-01", "first_seen_utc": "2026-09-01T17:16:13.064611+00:00", "player": "Jos\u00e9 Rodr\u00edguez", "player_id": 692064, "team": "TOR", "transaction_id": 940416}
+{"category": "il_activation", "date": "2026-09-01", "first_seen_utc": "2026-09-01T17:16:13.064611+00:00", "player": "Ethan Salas", "player_id": 806956, "team": "SD", "transaction_id": 940419}
