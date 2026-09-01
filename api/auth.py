@@ -20,9 +20,10 @@ env var is worse than one that doesn't exist yet.
 from __future__ import annotations
 
 import os
+import secrets
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 
 from src.appstate import users as users_store
 
@@ -37,11 +38,18 @@ def _unauthorized(detail: str) -> HTTPException:
     return HTTPException(status_code=401, detail={"error": "unauthorized", "message": detail})
 
 
-def get_current_user(authorization: Optional[str] = Header(default=None)) -> users_store.User:
+def get_current_user(authorization: Optional[str] = Header(default=None),
+                      request: Request = None) -> users_store.User:
     """FastAPI dependency: resolve `Authorization: Bearer <token>` to a
     User, or raise a structured 401. Never logs the header value -- the
     raw token must not end up anywhere but this one comparison (see
     src/appstate/users.py's hashing rationale).
+
+    Stashes the resolved user's id (never the token, never the email) on
+    `request.state.user_id` purely so api/app.py's request-logging
+    middleware can hash it for the log line -- see src/appstate/reqlog.py.
+    `request` is unused otherwise; it is a FastAPI-injected parameter, not
+    part of this dependency's own logic.
     """
     if not authorization:
         raise _unauthorized("missing Authorization header")
@@ -53,6 +61,8 @@ def get_current_user(authorization: Optional[str] = Header(default=None)) -> use
         raise _unauthorized("invalid, expired, or revoked token")
     if user.status == "suspended":
         raise _unauthorized("account suspended")
+    if request is not None:
+        request.state.user_id = user.id
     return user
 
 
@@ -62,7 +72,14 @@ def _require_admin(x_admin_token: Optional[str] = Header(default=None)) -> None:
     configured = (os.environ.get(ENV_ADMIN_TOKEN) or "").strip()
     if not configured:
         raise HTTPException(status_code=404, detail="not found")
-    if not x_admin_token or x_admin_token != configured:
+    # compare_digest, not `!=`: a plain string comparison returns as soon as
+    # the first byte differs, so its runtime leaks how much of the admin
+    # token a guess got right. The user-token path never needed this (it is
+    # a hash lookup, not a comparison); this one does.
+    # (Both sides are encoded first: compare_digest refuses non-ASCII str,
+    # and a header can carry any byte.)
+    if not x_admin_token or not secrets.compare_digest(
+            x_admin_token.encode("utf-8"), configured.encode("utf-8")):
         raise _unauthorized("invalid admin token")
 
 
@@ -77,6 +94,19 @@ def create_invite(email: str, _admin: None = Depends(_require_admin)) -> dict:
     """
     user = users_store.get_user_by_email(email)
     if user is None:
-        user = users_store.create_user(email, status="invited", plan="none")
+        try:
+            user = users_store.create_user(email, status="invited", plan="none")
+        except ValueError as exc:
+            # Two ValueErrors reach here and they are not the same thing.
+            # (1) Another worker inserted this email between the SELECT above
+            #     and this INSERT (reproducible with two uvicorn workers, not
+            #     with one): the row it wrote is the row this request wanted,
+            #     so re-read it rather than turning a benign race into a 500
+            #     on the only endpoint that can onboard a beta user.
+            # (2) The email was unusable in the first place (empty) -- a bad
+            #     request, not a server fault.
+            user = users_store.get_user_by_email(email)
+            if user is None:
+                raise HTTPException(status_code=400, detail=str(exc))
     raw_token = users_store.issue_invite_token(user.id)
     return {"user_id": user.id, "email": user.email, "token": raw_token}
