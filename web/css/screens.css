@@ -1,0 +1,1238 @@
+/*
+ * LINEHOUND v1 SCREEN COMPOSITION -- Gameday, Bet Check and Game View,
+ * traced from the frozen artboards in
+ * design/linehound-v1/LINEHOUND Gameday.dc.html.
+ *
+ * The canvas is authored with inline styles; per its own build note
+ * ("port to your own class or token layer; the values in section 02 are
+ * the contract, not the delivery mechanism") the geometry, clamps,
+ * gradients, clip-paths and tracking below are transcribed from it into
+ * classes. Numbers here are READ FROM THE CANVAS, not re-derived.
+ *
+ * Team colors arrive as inline custom properties (--team-a / --team-b /
+ * --rule-a / --rule-b) from js/teamcolors.js -- the only inline styling
+ * in this client, because a club palette is per-game data, not a rule.
+ */
+
+/* =====================================================================
+   HERO -- team seam
+   Desktop: two clip-path halves either side of a skewed 3px seam.
+   Mobile:  the same two halves at -4.46deg, stacked.
+   ===================================================================== */
+.hero {
+  position: relative;
+  min-height: clamp(540px, 66vh, 700px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--ground);
+}
+.hero__half {
+  position: absolute;
+  inset: -40px 0;                 /* so parallax never reveals an edge */
+  will-change: transform;
+  transition: filter var(--dur-seam-side) ease;
+}
+.hero__half--a {
+  clip-path: polygon(0 0, 56% 0, 40% 100%, 0 100%);
+  background: var(--team-a);
+}
+.hero__half--b {
+  clip-path: polygon(56% 0, 100% 0, 100% 100%, 40% 100%);
+  background: var(--team-b);
+}
+.hero:hover .hero__half { filter: brightness(.84); }
+.hero .hero__half:hover { filter: brightness(1.24) saturate(1.16); }
+
+.hero__wash {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(120% 80% at 50% -10%, rgba(255, 255, 255, .10), rgba(255, 255, 255, 0) 62%);
+}
+.hero__seam {
+  position: absolute; left: 50%; top: 0; bottom: 0; width: 3px;
+  transform: skewX(-9deg);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, .55) 38%,
+                                      rgba(0, 224, 255, .5) 66%, rgba(255, 255, 255, 0));
+  box-shadow: 0 0 30px rgba(0, 224, 255, .4);
+  pointer-events: none;
+}
+.hero__sweep {
+  position: absolute; left: 50%; top: 0; bottom: 0; width: 26px; margin-left: -11px;
+  overflow: hidden; transform: skewX(-9deg); pointer-events: none;
+}
+.hero__sweep i {
+  position: absolute; left: 0; right: 0; height: 34%;
+  background: linear-gradient(180deg, rgba(0, 224, 255, 0), rgba(168, 244, 255, .85) 50%, rgba(0, 224, 255, 0));
+  filter: blur(5px);
+  animation: gseam var(--dur-gseam) var(--ease-seam) infinite;
+}
+.hero__scrim {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 330px; pointer-events: none;
+  background: linear-gradient(180deg, rgba(8, 10, 13, 0), rgba(8, 10, 13, .9) 46%, #080A0D);
+}
+
+.hero__eyebrow {
+  position: relative;
+  display: flex; align-items: center; gap: var(--sp-5);
+  padding: 26px var(--gutter-desktop) 0;
+}
+.hero__tick {
+  flex: none; width: 20px; height: 20px;
+  border-left: 2px solid rgba(0, 224, 255, .7);
+  border-top: 2px solid rgba(0, 224, 255, .7);
+}
+.hero__tick--right {
+  border-left: 0; border-top: 2px solid rgba(0, 224, 255, .45);
+  border-right: 2px solid rgba(0, 224, 255, .45);
+}
+.hero__kicker {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 13px; font-weight: 700; letter-spacing: .28em;
+  color: var(--live-label);
+  white-space: nowrap;
+}
+.hero__spacer { flex: 1; }
+.hero__venue--time { display: none; }
+.hero__venue {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 11px; letter-spacing: .2em;
+  color: rgba(255, 255, 255, .4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hero__matchup {
+  position: relative;
+  display: flex; align-items: center; gap: var(--sp-9);
+  padding: 34px var(--gutter-desktop) 0;
+}
+.hero__side { flex: 1; min-width: 0; }
+.hero__side--home { text-align: right; }
+.hero__wordmark {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(56px, 7.4vw, 112px);
+  font-weight: 800;
+  line-height: .84;
+  letter-spacing: -.01em;
+  color: #FFFFFF;
+  text-shadow: 0 10px 40px rgba(0, 0, 0, .55);
+}
+.hero__rule {
+  width: 100px; height: 6px; margin-top: 12px;
+  transform: skewX(-18deg);
+  background: linear-gradient(90deg, var(--rule-a, var(--text-mute)), transparent);
+}
+.hero__side--home .hero__rule {
+  margin: 12px 0 0 auto;
+  background: linear-gradient(270deg, var(--rule-b, var(--text-mute)), transparent);
+}
+.hero__line {
+  display: flex; align-items: baseline; gap: var(--sp-7);
+  margin-top: 16px;
+  white-space: nowrap;
+}
+.hero__side--home .hero__line { justify-content: flex-end; }
+.hero__record {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 24px; font-weight: 700; letter-spacing: .06em;
+  color: #EAF1FF;
+}
+.hero__probable {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 11.5px; letter-spacing: .14em;
+  color: rgba(234, 241, 255, .55);
+  overflow: hidden; text-overflow: ellipsis;
+}
+.hero__vs {
+  flex: none;
+  display: flex; flex-direction: column; align-items: center; gap: var(--sp-3);
+  padding: 0 4px;
+}
+.hero__vs-mark {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 28px; font-weight: 800; letter-spacing: .06em;
+  color: rgba(255, 255, 255, .34);
+}
+.hero__vs-time {
+  font-family: var(--font-mono);
+  font-size: 10.5px; letter-spacing: .16em;
+  color: rgba(255, 255, 255, .42);
+  white-space: nowrap;
+}
+.hero__gap { flex: 0 1 auto; height: 44px; max-height: 44px; }
+
+.hero__foot {
+  position: relative;
+  display: flex; flex-wrap: wrap; align-items: flex-end;
+  gap: 26px var(--sp-12);
+  padding: 0 var(--gutter-desktop) var(--gutter-desktop);
+}
+.hero__foot-spacer { flex: 1; min-width: 12px; }
+
+/* ---- price bug ------------------------------------------------------*/
+.pricebug {
+  position: relative;
+  flex: none;
+  padding: 24px 36px 22px 30px;
+  --r: var(--r-tile);
+  overflow: hidden;
+  background: linear-gradient(150deg, rgba(255, 61, 87, .22), rgba(255, 61, 87, .05) 58%, rgba(255, 255, 255, .02));
+  box-shadow: inset 0 0 0 1px rgba(255, 61, 87, .45), 0 30px 70px -24px rgba(255, 61, 87, .45);
+}
+.pricebug::after {
+  content: "";
+  position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+  background: linear-gradient(180deg, var(--money), var(--money-2));
+}
+.pricebug__sheen {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 100px; pointer-events: none;
+  background: linear-gradient(100deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, 0));
+  animation: gsheen var(--dur-gsheen) ease-in-out infinite;
+}
+.pricebug__head {
+  position: relative;
+  display: flex; align-items: center; gap: var(--sp-4);
+  margin-bottom: var(--sp-4);
+  white-space: nowrap;
+  flex-wrap: wrap;
+}
+.pricebug__dot {
+  flex: none; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--money-lit);
+  box-shadow: 0 0 14px rgba(255, 61, 87, .9);
+}
+.pricebug__label {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 13px; font-weight: 700; letter-spacing: .24em;
+  color: var(--money-label);
+}
+.pricebug__divider { flex: none; width: 1px; height: 12px; background: rgba(255, 255, 255, .2); }
+.pricebug__age {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 10px; letter-spacing: .14em;
+  color: rgba(255, 255, 255, .45);
+}
+.pricebug__figures { position: relative; display: flex; align-items: flex-end; gap: var(--sp-10); }
+.pricebug__price {
+  flex: none;
+  display: inline-block;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 800;
+  font-size: clamp(94px, 11.4vw, 166px);   /* the loudest element anywhere */
+  line-height: .76;
+  letter-spacing: -.025em;
+  color: #FFFFFF;
+  text-shadow: 0 10px 54px rgba(255, 61, 87, .5);
+}
+.pricebug__aside { flex: none; padding-bottom: 16px; }
+.pricebug__was {
+  font-family: var(--font-mono);
+  font-size: 28px; font-weight: 300; letter-spacing: -.03em;
+  color: rgba(255, 255, 255, .34);
+  text-decoration: line-through;
+}
+.pricebug__was-label {
+  margin-top: var(--sp-3);
+  font-family: var(--font-display);
+  font-size: 12px; font-weight: 700; letter-spacing: .2em;
+  color: rgba(255, 255, 255, .5);
+  white-space: nowrap;
+}
+.pricebug__none {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: clamp(26px, 3vw, 38px);
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--text-hi);
+  max-width: 22ch;
+}
+
+.hero__pill-col { flex: none; padding-bottom: 14px; }
+.hero__move {
+  margin-top: 14px;
+  font-family: var(--font-mono);
+  font-size: 11px; letter-spacing: .14em;
+  color: rgba(255, 255, 255, .42);
+  white-space: nowrap;
+}
+.hero__actions { flex: none; display: flex; align-items: center; gap: var(--sp-6); padding-bottom: 14px; }
+
+/* NO PLAY / empty-slate hero body: keeps the hero geometry, states the
+   position in plain language, quantifies the work. Never a row of zeros
+   (handoff section 10). */
+.noplay {
+  position: relative;
+  flex: none;
+  max-width: 640px;
+  display: flex; flex-direction: column; gap: var(--sp-6);
+}
+.noplay__eyebrow {
+  font-family: var(--font-display);
+  font-size: 13px; font-weight: 700; letter-spacing: .28em;
+  color: var(--money-label);
+}
+.noplay__title {
+  font-family: var(--font-display);
+  font-style: italic; font-weight: 800;
+  font-size: clamp(38px, 4.8vw, 68px);
+  line-height: .92;
+  color: var(--text-hi);
+}
+.noplay__body { font-size: 16.5px; line-height: 1.55; color: var(--text-2); max-width: 46ch; }
+.noplay__meta {
+  font-family: var(--font-mono);
+  font-size: 10.5px; letter-spacing: .16em; color: var(--text-faint);
+}
+
+/* ---- hero at 390px: horizontal seam, halves stacked -----------------*/
+@media (max-width: 899px) {
+  .hero { min-height: 0; padding-bottom: 0; }
+  .hero__half { inset: 0; }
+  .hero__half--a { clip-path: polygon(0 0, 100% 0, 100% 42%, 0 50%); }
+  .hero__half--b { clip-path: polygon(0 50%, 100% 42%, 100% 100%, 0 100%); }
+  .hero__seam, .hero__sweep { display: none; }
+  .hero__eyebrow { padding: 18px var(--gutter-mobile) 0; gap: var(--sp-4); }
+  .hero__kicker { font-size: 11.5px; letter-spacing: .22em; }
+  .hero__venue { display: none; }
+  .hero__venue--time { display: block; font-size: 10.5px; letter-spacing: .16em; }
+  .hero__tick--right { display: none; }
+  .hero__matchup {
+    display: block;
+    padding: 12px var(--gutter-mobile) 0;
+  }
+  .hero__wordmark { font-size: 62px; line-height: .84; letter-spacing: -.012em; }
+  .hero__line { margin-top: 10px; }
+  .hero__rule { margin-top: 8px; }
+  .hero__side--home { margin-top: 22px; }
+  .hero__vs {
+    position: relative;
+    margin: 10px 0 0;
+    align-items: center;
+  }
+  .hero__vs-time { display: none; }
+  .hero__vs-mark {
+    padding: 6px 16px;
+    --r: var(--r-badge);
+    background: rgba(13, 14, 17, .72);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1);
+  }
+  .hero__gap { height: 10px; }
+  /* The price bug breaks the seam, but it must never land on top of the
+     home team's record line -- that line is data, the overlap is styling. */
+  .hero__side--home .hero__line { margin-bottom: 26px; }
+  .hero__foot { display: block; padding: 0 var(--gutter-mobile) 26px; }
+  .pricebug { margin-top: -18px; padding: 20px 20px 18px 18px; }
+  .pricebug__head { gap: var(--sp-3); white-space: normal; }
+  .pricebug__label { font-size: 11px; letter-spacing: .16em; white-space: normal; }
+  .pricebug__divider { display: none; }
+  .pricebug__was-label { font-size: 10px; letter-spacing: .14em; white-space: normal; }
+  .pricebug__aside { padding-bottom: 6px; }
+  .pricebug__price { font-size: 92px; letter-spacing: -.026em; }
+  .pricebug__figures { gap: var(--sp-7); }
+  .pricebug__was { font-size: 22px; }
+  .hero__pill-col, .hero__actions { padding: var(--sp-7) 0 0; }
+  .hero__actions { display: block; }
+  .hero__actions .btn { width: 100%; }
+}
+
+/* =====================================================================
+   TONIGHT'S SLATE -- angled tile rail
+   ===================================================================== */
+.slate { padding: 56px var(--gutter-desktop) 10px; }
+@media (max-width: 899px) { .slate { padding: 30px 0 6px; }
+  .slate > .sechead { padding: 0 var(--gutter-mobile); } }
+
+.slate__rail {
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  padding-bottom: 14px;
+  scroll-behavior: smooth;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+.slate__rail > * { scroll-snap-align: start; }
+@media (max-width: 899px) {
+  .slate__rail { gap: 12px; padding: 0 var(--gutter-mobile) 14px; }
+}
+
+.tile {
+  position: relative;
+  flex: none;
+  width: 298px;
+  height: 214px;
+  --r: var(--r-lg);
+  overflow: hidden;
+  background: var(--tile-base);
+  opacity: .9;
+  transition: transform var(--dur-tile-lift) var(--ease-rise), opacity var(--dur-tile-lift) ease;
+}
+.tile:hover { transform: translateY(-8px); opacity: 1; }
+@media (max-width: 899px) { .tile { width: 226px; height: 172px; --r: var(--r-panel); } }
+
+.tile__half {
+  position: absolute; inset: 0;
+}
+.tile__half--a { clip-path: polygon(0 0, 62% 0, 44% 100%, 0 100%); background: var(--team-a); }
+.tile__half--b { clip-path: polygon(62% 0, 100% 0, 100% 100%, 44% 100%); background: var(--team-b); }
+.tile__sheen {
+  position: absolute; left: 0; right: 0; top: 0; height: 70px; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, 0));
+}
+.tile__scrim {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 130px; pointer-events: none;
+  background: linear-gradient(180deg, rgba(8, 10, 13, 0), rgba(8, 10, 13, .9));
+}
+.tile__ring {
+  position: absolute; inset: 0; pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .09);
+}
+.tile__spec {
+  position: absolute; left: -40%; top: -60%; width: 80%; height: 220%;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, .16) 50%, rgba(255, 255, 255, 0));
+  opacity: 0;
+  transform: translateX(-30%) rotate(18deg);
+  transition: opacity .45s ease, transform var(--dur-tile-sweep) cubic-bezier(.2, .7, .2, 1);
+  pointer-events: none;
+}
+.tile:hover .tile__spec { opacity: 1; transform: translateX(60%) rotate(18deg); }
+.tile__corner {
+  position: absolute; width: 14px; height: 14px;
+}
+.tile__corner--tl { left: 16px; top: 14px;
+  border-left: 2px solid rgba(255, 255, 255, .35); border-top: 2px solid rgba(255, 255, 255, .35); }
+.tile__corner--br { right: 16px; bottom: 14px;
+  border-right: 2px solid rgba(255, 255, 255, .22); border-bottom: 2px solid rgba(255, 255, 255, .22); }
+.tile__flag { position: absolute; right: 14px; top: 14px; }
+.tile__teams {
+  position: absolute; left: 20px; top: 52px; right: 20px;
+  display: flex; align-items: baseline; gap: var(--sp-4);
+  white-space: nowrap;
+}
+.tile__abbr {
+  flex: none;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 40px; font-weight: 800; line-height: .9; letter-spacing: -.01em;
+}
+.tile__at {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 16px; font-weight: 600; letter-spacing: .14em;
+  color: rgba(255, 255, 255, .35);
+}
+.tile__prices {
+  position: absolute; left: 20px; bottom: 52px;
+  display: flex; align-items: baseline; gap: 18px;
+  white-space: nowrap;
+}
+.tile__price {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 26px; font-weight: 500; letter-spacing: -.04em;
+  color: var(--text);
+}
+.tile__price--muted { font-weight: 300; color: rgba(242, 244, 248, .55); }
+.tile__price-rule { flex: none; width: 1px; height: 18px; background: rgba(255, 255, 255, .16); }
+.tile__noprice {
+  position: absolute; left: 20px; right: 20px; bottom: 48px;
+  font-family: var(--font-display);
+  font-size: 15px; font-weight: 600; letter-spacing: .04em;
+  color: var(--text-3);
+  line-height: 1.2;
+}
+.tile__foot {
+  position: absolute; left: 20px; right: 20px; bottom: 20px;
+  display: flex; align-items: baseline; gap: var(--sp-5);
+  white-space: nowrap;
+}
+.tile__time {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 11.5px; letter-spacing: .1em;
+  color: var(--live);
+}
+.tile__venue {
+  flex: 1; overflow: hidden; text-overflow: ellipsis;
+  font-family: var(--font-display);
+  font-size: 12px; font-weight: 600; letter-spacing: .16em;
+  color: rgba(255, 255, 255, .34);
+}
+.tile--feature { opacity: 1; transform: translateY(-6px); }
+.tile--feature .tile__ring { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .34); }
+@media (max-width: 899px) {
+  .tile__teams { top: 40px; }
+  .tile__abbr { font-size: 32px; }
+  .tile__prices { bottom: 44px; }
+  .tile__price { font-size: 22px; }
+}
+
+/* =====================================================================
+   WHAT CHANGED
+   ===================================================================== */
+.changed {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 44px;
+  padding: 46px var(--gutter-desktop) 20px;
+}
+@media (max-width: 899px) {
+  .changed { grid-template-columns: minmax(0, 1fr); gap: var(--sp-9);
+    padding: 30px var(--gutter-mobile) 12px; }
+}
+.changed__lead {
+  position: relative;
+  padding: 26px 30px;
+  --r: var(--r-tile);
+  background: linear-gradient(150deg, rgba(0, 224, 255, .09), rgba(255, 255, 255, .02) 62%, rgba(255, 255, 255, .012));
+  box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .2);
+}
+.changed__lead::after {
+  content: "";
+  position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: linear-gradient(180deg, var(--live), rgba(0, 224, 255, 0));
+}
+.changed__meta {
+  display: flex; align-items: baseline; gap: var(--sp-6);
+  margin-bottom: var(--sp-5);
+  white-space: nowrap; flex-wrap: wrap;
+}
+.changed__time {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 13px; font-weight: 500; letter-spacing: .1em;
+  color: var(--live);
+}
+.changed__cat {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 12.5px; font-weight: 700; letter-spacing: .22em;
+  color: var(--text-mute);
+}
+.changed__cat--risk { color: var(--money-lit); }
+.changed__headline {
+  font-family: var(--font-display);
+  font-style: italic; font-weight: 800;
+  font-size: clamp(26px, 3vw, 40px);
+  line-height: 1.02;
+  letter-spacing: .005em;
+  color: var(--text-hi);
+  margin-bottom: var(--sp-1);
+}
+.changed__sub { font-size: 15px; color: var(--text-mute); margin-top: var(--sp-3); }
+.changed__stream { display: flex; flex-direction: column; gap: var(--sp-6); }
+.changed__row {
+  position: relative;
+  padding: 20px 24px;
+  --r: var(--r-panel);
+  background: linear-gradient(150deg, rgba(255, 255, 255, .055), rgba(255, 255, 255, .015));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08);
+  transition: box-shadow var(--dur-hover-lift) ease;
+}
+.changed__row::after {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--live);
+}
+.changed__row:hover { box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .3); }
+.changed__row-headline {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: .01em;
+  color: var(--text);
+}
+.changed__reaction {
+  display: flex; align-items: baseline; gap: var(--sp-5);
+  margin-top: var(--sp-4);
+  font-family: var(--font-mono);
+  font-size: 18px; letter-spacing: -.02em;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+.changed__reaction b { color: var(--text); font-weight: 500; }
+.changed__more {
+  font-family: var(--font-mono);
+  font-size: 10.5px; letter-spacing: .16em;
+  color: var(--text-faint);
+}
+
+/* =====================================================================
+   BET CHECK ENTRY BAND (on Gameday)
+   ===================================================================== */
+.checkband {
+  position: relative;
+  margin: 46px var(--gutter-desktop) 0;
+  padding: 44px 48px;
+  --r: var(--r-xl);
+  overflow: hidden;
+  background: linear-gradient(112deg, #141922 0%, #0F131A 52%, #0C0F14 100%);
+}
+.checkband__glow {
+  position: absolute; right: -120px; top: -120px; width: 520px; height: 420px; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(0, 224, 255, .14), rgba(0, 224, 255, 0) 72%);
+}
+.checkband__eyebrow {
+  position: relative;
+  display: flex; align-items: center; gap: var(--sp-5);
+  margin-bottom: var(--sp-9);
+  white-space: nowrap;
+}
+.checkband__tick {
+  flex: none; width: 20px; height: 20px;
+  border-left: 2px solid rgba(0, 224, 255, .6);
+  border-top: 2px solid rgba(0, 224, 255, .6);
+}
+.checkband__label {
+  font-family: var(--font-display);
+  font-size: 14px; font-weight: 700; letter-spacing: .26em;
+  color: var(--live);
+}
+.checkband__row { position: relative; display: flex; align-items: center; gap: var(--sp-9); }
+.checkband__field {
+  flex: 1; min-width: 0;
+  display: flex; align-items: center; gap: var(--sp-7);
+  height: 74px; padding: 0 26px;
+  --r: var(--r-panel);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .025));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .11);
+  transition: box-shadow var(--dur-ring-bloom) ease;
+}
+.checkband__field:hover {
+  box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .75), 0 0 40px -8px rgba(0, 224, 255, .35);
+}
+.checkband__bullet { flex: none; width: 15px; height: 15px; border: 2px solid var(--text-faint); border-radius: 50%; }
+.checkband__prompt {
+  flex: 1; min-width: 0;
+  font-family: var(--font-display);
+  font-size: 26px; font-weight: 600; letter-spacing: .03em;
+  color: var(--text-dim);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.checkband__note {
+  position: relative;
+  margin-top: var(--sp-8);
+  font-size: 14.5px;
+  color: var(--text-dim);
+}
+@media (max-width: 899px) {
+  /* Section 07: at 390px the Bet Check band stops being an inline
+     section and becomes a sticky 58px field above the tab bar -- always
+     one tap away, never covering the slate. The eyebrow, the note and
+     the glow drop out; what is left is the field and a compact CHECK. */
+  .checkband {
+    position: fixed;
+    left: 0; right: 0; bottom: var(--tabbar-height);
+    z-index: 55;
+    margin: 0;
+    padding: 8px var(--gutter-mobile);
+    --r: 0px;
+    background: rgba(13, 14, 17, .94);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
+  }
+  .checkband__eyebrow, .checkband__note, .checkband__glow { display: none; }
+  .checkband__row { gap: var(--sp-5); }
+  .checkband__field { height: 58px; padding: 0 16px; gap: var(--sp-5); }
+  .checkband__prompt { font-size: 18px; }
+  .checkband .btn { padding: 0 18px; height: 58px; font-size: 15px; }
+}
+
+/* =====================================================================
+   CLOSING BAND
+   ===================================================================== */
+.closer {
+  position: relative;
+  margin-top: 44px;
+  padding: 76px var(--gutter-desktop) 84px;
+  overflow: hidden;
+  background: linear-gradient(112deg, #1A0E13 0%, #120A0E 46%, #0B0C0E 100%);
+}
+.closer__wash {
+  position: absolute; inset: 0; pointer-events: none;
+  clip-path: polygon(0 0, 42% 0, 26% 100%, 0 100%);
+  background: linear-gradient(140deg, rgba(255, 61, 87, .22), rgba(255, 61, 87, .04) 70%, rgba(255, 61, 87, 0));
+}
+.closer__row {
+  position: relative;
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 36px 60px;
+}
+.closer__copy { flex: 1 1 420px; min-width: 320px; }
+.closer__eyebrow {
+  font-family: var(--font-display);
+  font-size: 13px; font-weight: 700; letter-spacing: .3em;
+  color: var(--money-lit);
+  margin-bottom: var(--sp-8);
+}
+.closer__headline {
+  font-family: var(--font-display);
+  font-style: italic; font-weight: 800;
+  font-size: clamp(48px, 5.4vw, 80px);
+  line-height: .92;
+  letter-spacing: -.005em;
+  color: var(--text-hi);
+}
+.closer__sub { margin-top: var(--sp-10); font-size: 17px; color: var(--text-mute); }
+.closer__meta {
+  margin-top: var(--sp-6);
+  font-family: var(--font-mono);
+  font-size: 10.5px; letter-spacing: .16em; color: var(--text-faint);
+}
+.closer__actions { flex: none; display: flex; align-items: center; gap: var(--sp-8); }
+@media (max-width: 899px) {
+  .closer { padding: 44px var(--gutter-mobile) 52px; }
+  .closer__headline { font-size: 42px; }
+  .closer__actions { width: 100%; flex-direction: column; align-items: stretch; gap: var(--sp-5); }
+  .closer__actions .btn { width: 100%; }
+}
+
+/* =====================================================================
+   BET CHECK SCREEN
+   ===================================================================== */
+.bc-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 40px var(--gutter-desktop) 44px;
+  background: linear-gradient(112deg, #10252C 0%, #0E1A24 54%, #0B0F16 100%);
+}
+.bc-hero__seam {
+  position: absolute; left: 44%; top: -10%; bottom: -10%; width: 3px;
+  transform: skewX(-9deg);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(168, 244, 255, .7) 40%, rgba(0, 224, 255, 0));
+  box-shadow: 0 0 40px rgba(0, 224, 255, .45);
+  pointer-events: none;
+}
+.bc-hero__eyebrow {
+  position: relative;
+  display: flex; align-items: center; gap: var(--sp-5);
+  margin-bottom: var(--sp-8);
+}
+.bc-hero__label {
+  font-family: var(--font-display);
+  font-size: 13px; font-weight: 700; letter-spacing: .28em;
+  color: var(--live);
+  white-space: nowrap;
+}
+.bc-hero__headline {
+  position: relative;
+  font-family: var(--font-display);
+  font-style: italic; font-weight: 800;
+  font-size: clamp(40px, 4.6vw, 62px);
+  line-height: .94;
+  letter-spacing: -.008em;
+  color: var(--text-hi);
+}
+.bc-hero__sub {
+  position: relative;
+  margin-top: var(--sp-6);
+  font-size: 16.5px;
+  color: var(--text-mute);
+  max-width: 60ch;
+}
+
+/* The composed seam input panel: the API takes a structured bet
+   (date/away/home/side/price -- "team-name resolution is the client's
+   job", docs/API_CONTRACTS.md), so the canvas's single field is composed
+   here from the real fields rather than faked behind a parser that does
+   not exist. */
+.bc-form {
+  position: relative;
+  margin-top: var(--sp-11);
+  display: flex; align-items: stretch; gap: var(--sp-9);
+  flex-wrap: wrap;
+}
+.bc-form__field {
+  flex: 1 1 520px; min-width: 0;
+  display: flex; align-items: center; gap: var(--sp-7);
+  min-height: 74px; padding: 12px 26px;
+  --r: var(--r-panel);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .025));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .11);
+  transition: box-shadow var(--dur-ring-bloom) ease;
+  flex-wrap: wrap;
+}
+.bc-form__field:hover, .bc-form__field:focus-within {
+  box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .75), 0 0 40px -8px rgba(0, 224, 255, .35);
+}
+.bc-form__bullet { flex: none; width: 15px; height: 15px; border: 2px solid var(--live); border-radius: 50%; }
+.bc-form__part { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.bc-form__part label {
+  font-family: var(--font-display);
+  font-size: 9.5px; font-weight: 700; letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.bc-form__part input, .bc-form__part select {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: var(--text-hi);
+  min-width: 0;
+}
+.bc-form__part select option { background: var(--rail); }
+.bc-form__part--team input { width: 4.5ch; text-transform: uppercase; }
+.bc-form__part--price input { width: 6ch; font-family: var(--font-mono); font-size: 20px; }
+.bc-form__part--date input { width: 15ch; font-family: var(--font-mono); font-size: 15px; }
+.bc-form__part--side select { width: 8ch; }
+.bc-form__submit { flex: none; align-self: stretch; }
+.bc-form__submit .btn { height: 100%; padding: 22px 34px; font-size: 18px; letter-spacing: .16em; --r: var(--r-btn); }
+.bc-hero__hint {
+  position: relative;
+  margin-top: var(--sp-7);
+  font-family: var(--font-mono);
+  font-size: 11px; letter-spacing: .12em;
+  color: var(--text-faint);
+}
+@media (max-width: 899px) {
+  .bc-hero { padding: 26px var(--gutter-mobile) 30px; }
+  .bc-hero__headline { font-size: 40px; }
+  .bc-form { flex-direction: column; gap: var(--sp-6); }
+  .bc-form__field { flex: none; }
+  .bc-form__submit .btn { width: 100%; height: 56px; padding: 0; }
+}
+
+.bc-skeleton { padding: 40px var(--gutter-desktop) var(--sp-16); display: flex;
+  flex-direction: column; gap: var(--sp-7); }
+@media (max-width: 899px) { .bc-skeleton { padding: 26px var(--gutter-mobile) var(--sp-13); } }
+
+.bc-block {
+  position: relative;
+  padding: 22px 26px;
+  --r: var(--r-panel);
+  background: linear-gradient(150deg, rgba(255, 255, 255, .045), rgba(255, 255, 255, .012));
+  box-shadow: inset 0 0 0 1px var(--edge-1);
+}
+.bc-block__head {
+  display: flex; align-items: baseline; gap: var(--sp-5);
+  margin-bottom: var(--sp-7);
+  white-space: nowrap;
+}
+.bc-block__no {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 10.5px; letter-spacing: .1em;
+  color: var(--text-ghost);
+}
+.bc-block__title {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 12.5px; font-weight: 700; letter-spacing: .24em;
+  color: var(--text-mute);
+}
+.bc-block__title--live { color: var(--live); }
+.bc-block__title--risk { color: var(--money-lit); }
+.bc-block__hair { flex: 1; height: 1px; background: linear-gradient(90deg, rgba(255, 255, 255, .09), transparent); }
+.bc-block__meta {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 10.5px; letter-spacing: .12em; color: var(--text-ghost);
+}
+/* A meta line that follows a panel rather than sitting in the head row
+   needs its own air; without it the last line crowds the block edge. */
+.bc-block > .bc-block__meta { display: block; margin-top: var(--sp-6); }
+.bc-block > .bc-block__meta + .bc-block__meta { margin-top: var(--sp-3); }
+.bc-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-7); }
+@media (max-width: 899px) { .bc-pair { grid-template-columns: minmax(0, 1fr); } }
+
+.bc-block--case { box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .22); }
+.bc-block--case::after,
+.bc-block--counter::after {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+}
+.bc-block--case::after { background: var(--live); }
+.bc-block--counter { box-shadow: inset 0 0 0 1px rgba(255, 61, 87, .22); }
+.bc-block--counter::after { background: var(--money); }
+
+.bc-lines { display: flex; flex-direction: column; }
+.bc-line {
+  display: flex; align-items: flex-start; gap: var(--sp-5);
+  padding: 10px 0;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .05);
+  font-size: 15.5px;
+  line-height: 1.45;
+  color: var(--text-2);
+}
+.bc-line:last-child { box-shadow: none; }
+.bc-line__mark {
+  flex: none; margin-top: 3px;
+  width: 16px; height: 16px;
+  --r: var(--r-marker);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: 11px; font-weight: 800;
+}
+.bc-line__mark--yes { background: rgba(0, 224, 255, .18); box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .6); color: var(--live-lit); }
+.bc-line__mark--no { background: rgba(255, 61, 87, .16); box-shadow: inset 0 0 0 1px rgba(255, 61, 87, .55); color: var(--money-soft); }
+.bc-line__n {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 11px; letter-spacing: .1em;
+  color: var(--text-faint);
+  align-self: center;
+}
+
+/* 01 YOUR BET */
+.bc-yourbet__figure {
+  font-family: var(--font-display);
+  font-style: italic; font-weight: 800;
+  font-size: clamp(44px, 5vw, 68px);
+  line-height: .86;
+  letter-spacing: -.012em;
+  color: var(--text-hi);
+}
+.bc-yourbet__row {
+  display: flex; align-items: center; gap: var(--sp-7);
+  margin-top: var(--sp-7); flex-wrap: wrap;
+}
+.bc-yourbet__price {
+  font-family: var(--font-mono);
+  font-size: 34px; font-weight: 400; letter-spacing: -.03em;
+  color: var(--text);
+}
+.bc-yourbet__meta {
+  margin-top: var(--sp-6);
+  font-family: var(--font-mono);
+  font-size: 11.5px; letter-spacing: .14em; color: var(--text-faint);
+}
+
+/* 04 PRICE CHECK -- the money moment, one per screen */
+.bc-price {
+  position: relative;
+  overflow: hidden;
+  padding: 24px 30px;
+  --r: var(--r-lg);
+  background: linear-gradient(112deg, rgba(255, 61, 87, .3) 0%, rgba(255, 61, 87, .07) 46%, rgba(255, 255, 255, .02) 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 61, 87, .4);
+}
+.bc-price::after {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+  background: linear-gradient(180deg, var(--money), var(--money-2));
+}
+.bc-price__row {
+  position: relative;
+  display: flex; align-items: flex-end; flex-wrap: wrap; gap: var(--sp-9) var(--sp-12);
+}
+.bc-price__figure {
+  flex: none;
+  font-family: var(--font-display);
+  font-style: italic; font-weight: 800;
+  font-size: clamp(86px, 10.4vw, 150px);
+  line-height: .76;
+  letter-spacing: -.025em;
+  color: #FFFFFF;
+  text-shadow: 0 10px 54px rgba(255, 61, 87, .5);
+}
+.bc-price__cell { flex: none; padding-bottom: 14px; }
+.bc-price__cell-label {
+  font-family: var(--font-display);
+  font-size: 11px; font-weight: 700; letter-spacing: .2em;
+  color: rgba(255, 255, 255, .55);
+  margin-bottom: var(--sp-3);
+  white-space: nowrap;
+}
+.bc-price__cell-value {
+  font-family: var(--font-mono);
+  font-size: 26px; font-weight: 300; letter-spacing: -.03em;
+  color: var(--text-2);
+}
+.bc-price__cell-value--struck { text-decoration: line-through; color: rgba(255, 255, 255, .38); }
+.bc-price__spacer { flex: 1; min-width: 12px; }
+.bc-price__aside { flex: none; padding-bottom: 14px; text-align: right; }
+.bc-price__aside-meta {
+  margin-top: var(--sp-4);
+  font-family: var(--font-mono);
+  font-size: 10.5px; letter-spacing: .14em; color: rgba(255, 255, 255, .45);
+}
+/* The API's own explanation of what the price figures mean is prose, so
+   it sits BELOW the money panel in body type -- never inside it as low-
+   contrast mono, where the thing that keeps the number honest becomes
+   the least readable text on the screen. */
+.price-note {
+  margin-top: var(--sp-6);
+  padding: var(--sp-7) var(--sp-8);
+  --r: var(--r-badge);
+  background: rgba(255, 255, 255, .03);
+  box-shadow: inset 0 0 0 1px var(--edge-1);
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--text-mute);
+  max-width: 900px;
+}
+.price-note__label {
+  display: block;
+  margin-bottom: var(--sp-3);
+  font-family: var(--font-display);
+  font-size: 10.5px; font-weight: 700; letter-spacing: .2em;
+  color: var(--text-faint);
+}
+
+/* 05/06 strongest + weakest */
+.bc-quote {
+  font-family: var(--font-display);
+  font-style: italic; font-weight: 800;
+  font-size: clamp(24px, 2.6vw, 34px);
+  line-height: 1.02;
+  color: var(--text-hi);
+}
+.bc-quote + p { margin-top: var(--sp-5); font-size: 15.5px; color: var(--text-mute); }
+
+/* 08 historical support meter */
+.meter { display: flex; gap: var(--sp-3); }
+.meter__seg {
+  --r: var(--r-badge);
+  height: 8px; flex: 1;
+  background: rgba(255, 255, 255, .1);
+}
+.meter__seg--on { background: linear-gradient(120deg, var(--live), var(--live-2)); }
+.meter__value {
+  margin-top: var(--sp-6);
+  display: flex; align-items: baseline; gap: var(--sp-7); flex-wrap: wrap;
+}
+.meter__label {
+  font-family: var(--font-display);
+  font-style: italic; font-weight: 800; font-size: 30px;
+  color: var(--text-hi);
+}
+.meter__scale {
+  font-family: var(--font-mono);
+  font-size: 10.5px; letter-spacing: .16em; color: var(--text-faint);
+}
+
+/* 09 evidence ladder */
+.ladder { display: flex; flex-direction: column; gap: var(--sp-4); }
+.ladder__rung { display: flex; align-items: center; gap: var(--sp-5); }
+.ladder__bar { flex: none; width: 26px; height: 5px; background: rgba(255, 255, 255, .14); --r: 2px; }
+.ladder__name {
+  font-family: var(--font-display);
+  font-size: 12.5px; font-weight: 700; letter-spacing: .2em;
+  color: var(--text-faint);
+}
+.ladder__rung--on .ladder__bar { background: linear-gradient(120deg, var(--live), var(--live-2)); }
+.ladder__rung--on .ladder__name { color: var(--text); }
+.ladder__current {
+  font-family: var(--font-mono);
+  font-size: 10.5px; letter-spacing: .14em; color: var(--live);
+}
+
+/* 10 bottom line */
+.bc-bottom__text {
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--text-hi);
+}
+.bc-bottom__actions { display: flex; align-items: center; gap: var(--sp-7);
+  margin-top: var(--sp-10); flex-wrap: wrap; }
+.bc-bottom__note {
+  font-family: var(--font-mono);
+  font-size: 10.5px; letter-spacing: .14em; color: var(--text-faint);
+}
+/* The recommendation line is the LAST thing in the skeleton and it is
+   permanently null on purpose (Ranker Engine 2 is gated). It gets its
+   own air rather than being crushed against the block edge -- a field
+   that says "we do not do that" still has to be readable. */
+.bc-block > .bc-bottom__note { display: block; margin-top: var(--sp-7); }
+@media (max-width: 899px) {
+  .bc-bottom__actions .btn { width: 100%; }
+}
+
+/* =====================================================================
+   GAME VIEW -- Quick, with Advanced APPENDED beneath (never replacing)
+   ===================================================================== */
+.gv-head {
+  position: relative;
+  overflow: hidden;
+  min-height: 210px;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 22px var(--gutter-desktop);
+}
+.gv-head__half { position: absolute; inset: 0; }
+.gv-head__half--a { clip-path: polygon(0 0, 56% 0, 40% 100%, 0 100%); background: var(--team-a); }
+.gv-head__half--b { clip-path: polygon(56% 0, 100% 0, 100% 100%, 40% 100%); background: var(--team-b); }
+.gv-head__row { position: relative; display: flex; align-items: center; gap: var(--sp-9); }
+.gv-head__side { flex: 1; min-width: 0; }
+.gv-head__side--home { text-align: right; }
+.gv-head__wordmark {
+  font-family: var(--font-display);
+  font-style: italic; font-weight: 800;
+  font-size: clamp(40px, 5.2vw, 64px);
+  line-height: .86;
+  letter-spacing: -.012em;
+  color: #FFFFFF;
+}
+.gv-head__rule {
+  width: 92px; height: 6px; margin-top: 10px; transform: skewX(-18deg);
+  background: linear-gradient(90deg, var(--rule-a, var(--text-mute)), transparent);
+}
+.gv-head__side--home .gv-head__rule {
+  margin: 10px 0 0 auto;
+  background: linear-gradient(270deg, var(--rule-b, var(--text-mute)), transparent);
+}
+.gv-head__line {
+  display: flex; align-items: baseline; gap: var(--sp-6);
+  margin-top: 12px; white-space: nowrap;
+}
+.gv-head__side--home .gv-head__line { justify-content: flex-end; }
+.gv-head__record { font-family: var(--font-display); font-size: 18px; font-weight: 700;
+  letter-spacing: .06em; color: #EAF1FF; }
+.gv-head__probable { font-family: var(--font-mono); font-size: 11px; letter-spacing: .14em;
+  color: rgba(234, 241, 255, .55); overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 899px) {
+  .gv-head { min-height: 150px; padding: 16px var(--gutter-mobile); }
+  .gv-head .hero__eyebrow { padding: 0 0 10px; }
+  .gv-head .hero__kicker { font-size: 10.5px; letter-spacing: .16em;
+    overflow: hidden; text-overflow: ellipsis; }
+  .gv-head__half--a { clip-path: polygon(0 0, 100% 0, 100% 62%, 0 74%); }
+  .gv-head__half--b { clip-path: polygon(0 74%, 100% 62%, 100% 100%, 0 100%); }
+  .gv-head__row { gap: var(--sp-5); }
+  .gv-head__wordmark { font-size: 34px; letter-spacing: -.012em; }
+  .gv-head__rule { display: none; }
+  .gv-head__record { font-size: 13px; }
+  .gv-head__probable { font-size: 10px; }
+}
+
+.gv-back { margin-bottom: var(--sp-3); }
+.gv-body { padding: 26px var(--gutter-desktop) var(--sp-16); display: flex;
+  flex-direction: column; gap: var(--sp-7); }
+@media (max-width: 899px) { .gv-body { padding: 20px var(--gutter-mobile) var(--sp-13); } }
+
+.gv-panel {
+  position: relative;
+  padding: 22px 26px;
+  --r: var(--r-panel);
+  background: linear-gradient(150deg, rgba(255, 255, 255, .045), rgba(255, 255, 255, .012));
+  box-shadow: inset 0 0 0 1px var(--edge-1);
+}
+.gv-panel__title {
+  font-family: var(--font-display);
+  font-size: 12.5px; font-weight: 700; letter-spacing: .24em;
+  color: var(--live);
+  margin-bottom: var(--sp-7);
+}
+.gv-panel__title--risk { color: var(--money-lit); }
+.gv-panel__title--mute { color: var(--text-mute); }
+.gv-panel--risk { box-shadow: inset 0 0 0 1px rgba(255, 61, 87, .24); }
+.gv-panel--risk::after {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: linear-gradient(180deg, var(--money), transparent);
+}
+.gv-panel--case { box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .22); }
+.gv-panel__body { font-size: 16px; line-height: 1.5; color: var(--text-2); }
+.gv-panel__meta {
+  margin-top: var(--sp-6);
+  font-family: var(--font-mono);
+  font-size: 10.5px; letter-spacing: .14em; color: var(--text-faint);
+}
+.gv-trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+@media (max-width: 899px) { .gv-trio { grid-template-columns: minmax(0, 1fr); } }
+
+.gv-toggle {
+  width: 100%;
+  padding: 20px;
+  --r: var(--r-panel);
+  background: linear-gradient(112deg, rgba(0, 224, 255, .14), rgba(0, 224, 255, .03));
+  box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .3);
+  font-family: var(--font-display);
+  font-size: 18px; font-weight: 700; letter-spacing: .18em;
+  color: var(--live-lit);
+  transition: filter var(--dur-hover-lift) ease, transform var(--dur-hover-lift) ease;
+}
+.gv-toggle:hover { filter: brightness(1.12); transform: translateY(-2px); }
+.gv-toggle__note {
+  margin-top: var(--sp-4);
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 10.5px; letter-spacing: .16em; color: var(--text-ghost);
+}
+
+.gv-adv { display: flex; flex-direction: column; gap: var(--sp-7); margin-top: var(--sp-6); }
+.gv-adv__block {
+  --r: var(--r-panel);
+  background: linear-gradient(150deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .01));
+  box-shadow: inset 0 0 0 1px var(--edge-1);
+  padding: 20px 24px;
+}
+.gv-adv__head {
+  display: flex; align-items: baseline; gap: var(--sp-5);
+  margin-bottom: var(--sp-7);
+}
+.gv-adv__no { font-family: var(--font-mono); font-size: 10px; color: var(--text-ghost); }
+.gv-adv__title {
+  font-family: var(--font-display);
+  font-size: 12.5px; font-weight: 700; letter-spacing: .24em; color: var(--text-3);
+}
+.gv-adv__hair { flex: 1; height: 1px; background: linear-gradient(90deg, rgba(255, 255, 255, .09), transparent); }
+.gv-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+.gv-stat {
+  padding: 12px 14px;
+  --r: var(--r-badge);
+  background: rgba(255, 255, 255, .03);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .05);
+}
+.gv-stat__label {
+  font-family: var(--font-display);
+  font-size: 10px; font-weight: 700; letter-spacing: .16em;
+  color: var(--text-faint);
+  margin-bottom: var(--sp-2);
+}
+.gv-stat__value { font-family: var(--font-mono); font-size: 20px; color: var(--text); }
+.gv-stat__n {
+  margin-top: var(--sp-1);
+  font-family: var(--font-mono);
+  font-size: 10px; letter-spacing: .08em; color: var(--text-ghost);
+}
+.gv-subhead {
+  font-family: var(--font-display);
+  font-size: 11.5px; font-weight: 700; letter-spacing: .22em;
+  color: var(--text-mute);
+  margin-bottom: var(--sp-5);
+}
+.gv-adv__note { margin-top: var(--sp-6); font-size: 13.5px; color: var(--text-dim); }
+.gv-appendix > summary {
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 11px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--text-faint);
+}
+.gv-appendix__body { margin-top: var(--sp-6); }
+
+/* ---- games slate list (Track-1 GAMES destination; no artboard exists
+   for the list itself, so it reuses the Gameday tile as a grid) -------*/
+.games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(298px, 1fr));
+  gap: 18px;
+  padding: 0 var(--gutter-desktop) var(--sp-16);
+}
+.games-grid .tile { width: auto; }
+@media (max-width: 899px) {
+  .games-grid { grid-template-columns: minmax(0, 1fr); gap: 12px;
+    padding: 0 var(--gutter-mobile) var(--sp-13); }
+  .games-grid .tile { width: auto; height: 172px; }
+}
+.games-toolbar { display: flex; align-items: center; gap: var(--sp-7); flex-wrap: wrap;
+  padding: 0 var(--gutter-desktop) var(--sp-9); }
+@media (max-width: 899px) { .games-toolbar { padding: 0 var(--gutter-mobile) var(--sp-7); } }
+
+.odds-game__back, .gv-back {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 11px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--text-mute);
+}

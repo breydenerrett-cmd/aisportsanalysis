@@ -42,8 +42,10 @@ button { cursor: pointer; background: none; border: 0; padding: 0; }
 
 [hidden] { display: none !important; }
 
-/* Minimum interactive target (section 09's keyboard contract). */
-button, a.btn, .tab-bar__item, .icon-rail__item {
+/* Minimum interactive target (section 09's keyboard contract). The nav
+   items are 52px in the rail and 56px in the tab bar; this is the floor
+   for everything else. */
+button, a.btn, .nav-item {
   min-height: 44px;
 }
 
@@ -322,3 +324,7 @@ button, a.btn, .tab-bar__item, .icon-rail__item {
   }
   .live-dot { animation: none; }
 }
+
+/* NOT YET AVAILABLE, second label: the short machine-ish tag on the
+   right of the head row ("NOT INGESTED", "NOT POSTED"). */
+.not-yet-available__label--tag { margin-left: auto; color: var(--text-ghost); }

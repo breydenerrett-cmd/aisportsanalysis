@@ -1,185 +1,445 @@
 /*
- * LINEHOUND v1 app-shell + view layer -- phase 2. Builds on tokens.css,
- * base.css, components.css, nav.css (all phase 1, unchanged). Nothing in
- * this file re-declares a token; it only lays out the app shell and the
- * five app views (Today/Gameday, Games, Bet Check, Odds, My Bets) on top
- * of the shared component classes.
+ * LINEHOUND v1 app shell -- the chrome every routed screen sits inside:
+ * the wrapper the rail is absolutely positioned in, the 62px top strip,
+ * the outlet, the footer, and the shared state panels (loading / empty /
+ * error / sign-in / billing).
+ *
+ * Per-screen composition (Gameday, Bet Check, Game View) lives in
+ * screens.css. Nothing here re-declares a token.
  */
 
-/* ---- app shell -------------------------------------------------------*/
-.app-shell {
-  position: relative;
+/* ---- wrapper --------------------------------------------------------*/
+.shell {
+  position: relative;      /* the rail is absolute INSIDE this, never fixed */
   min-height: 100vh;
   background: var(--ground);
 }
-
-.app-content {
+.shell__column {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 @media (min-width: 900px) {
-  .app-content { margin-left: var(--rail-width); }
+  .shell__column { margin-left: var(--rail-width); }
 }
 @media (max-width: 899px) {
-  .app-content { padding-bottom: var(--tabbar-height); }
+  /* Room for the tab bar plus the sticky Bet Check field that sits on
+     top of it (screens.css) -- neither may ever cover page content. */
+  .shell__column { padding-bottom: calc(var(--tabbar-height) + 74px); }
 }
 
-.app-topbar {
+/* ---- top strip (62px, canvas: sticky, blurred, hairline underline) --*/
+.topstrip {
   position: sticky;
   top: 0;
   z-index: 50;
+  height: 62px;
   display: flex;
   align-items: center;
   gap: var(--sp-9);
-  height: var(--topbar-height);
-  padding: 0 var(--gutter-desktop);
-  background: rgba(13, 14, 17, .84);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  padding: 0 var(--sp-12);
+  overflow: hidden;
+  background: rgba(13, 14, 17, .82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .07);
 }
-@media (max-width: 899px) {
-  .app-topbar { padding: 0 var(--gutter-mobile); gap: var(--sp-5); }
+.topstrip__home { flex: none; display: none; }
+.topstrip__wordmark {
+  flex: none;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: .03em;
+  color: var(--text);
 }
-.app-topbar__brand {
-  margin: 0;
+.topstrip__rule { flex: none; width: 1px; height: 20px; background: rgba(255, 255, 255, .12); }
+.topstrip__section {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  color: var(--text);
+}
+.topstrip__spacer { flex: 1; }
+.topstrip__status {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .18em;
+  color: var(--live);
+}
+.topstrip__status[data-stale="true"] { color: var(--money-soft); }
+.topstrip__clock {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .14em;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+@media (max-width: 899px) {
+  /* No rail below 900px, so the monogram moves into the strip. The strip
+     itself never scrolls or wraps: the status readout truncates before
+     the clock is pushed off, because a time nobody can read is worse
+     than a shortened freshness label. */
+  .topstrip { gap: var(--sp-4); padding: 0 var(--gutter-mobile); }
+  .topstrip__home { display: block; }
+  .topstrip__rule--wide, .topstrip__section { display: none; }
+  .topstrip__wordmark { font-size: 18px; }
+  .topstrip__status { letter-spacing: .08em; font-size: 9.5px; }
+  .topstrip__status > span:last-child {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+  }
+  .topstrip__clock { flex: none; font-size: 9.5px; letter-spacing: .08em; }
+}
+
+/* ---- outlet ---------------------------------------------------------*/
+.outlet { flex: 1; min-width: 0; }
+
+/* Sections inside a screen align to the 40px desktop page gutter. */
+.gutter { padding-left: var(--gutter-desktop); padding-right: var(--gutter-desktop); }
+@media (max-width: 899px) {
+  .gutter { padding-left: var(--gutter-mobile); padding-right: var(--gutter-mobile); }
+}
+
+/* ---- section eyebrow row (canvas: label, hairline, right-side meta) -*/
+.sechead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-7);
+  margin-bottom: var(--sp-10);
+}
+.sechead__label {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: .26em;
+  color: var(--text-mute);
+  white-space: nowrap;
+}
+.sechead__label--live { color: var(--live); }
+.sechead__hair {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, 0));
+}
+.sechead__meta {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .14em;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+.sechead__dot { flex: none; }
+@media (max-width: 899px) {
+  .sechead { gap: var(--sp-5); }
+  .sechead__label { font-size: 13px; letter-spacing: .2em; }
+  /* At 390px the right-hand meta is the first thing to go: it is
+     supporting detail, and truncating it beats pushing the label off. */
+  .sechead__meta { display: none; }
+}
+
+/* ---- footer (canvas: wordmark, hairline, legal meta; the full beta
+   disclaimer stays reachable in a disclosure -- never deleted) --------*/
+.footer-host { margin-top: auto; }
+.sitefoot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  padding: 26px var(--gutter-desktop) 40px;
+}
+.sitefoot__row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  white-space: nowrap;
+}
+.sitefoot__mark {
+  flex: none;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: .03em;
+  color: var(--text-faint);
+}
+.sitefoot__hair { flex: 1; height: 1px; background: rgba(255, 255, 255, .07); }
+.sitefoot__legal {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .14em;
+  color: var(--text-ghost);
+}
+.sitefoot__summary {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-faint);
+  max-width: 900px;
+}
+.sitefoot__disclosure { max-width: 900px; }
+/* The same disclosure component is reused on Gameday for the raw board
+   freshness fields; it needs its own vertical rhythm there. */
+[data-hook="board-freshness"] { padding-top: var(--sp-11); padding-bottom: var(--sp-9); }
+.sitefoot__disclosure > summary {
+  display: inline-block;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+}
+.sitefoot__disclosure > summary:hover { color: var(--text-3); }
+.sitefoot__full {
+  margin-top: var(--sp-5);
+  padding: var(--sp-7) var(--sp-8);
+  --r: var(--r-badge);
+  background: rgba(255, 255, 255, .028);
+  box-shadow: inset 0 0 0 1px var(--edge-1);
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--text-faint);
+}
+.sitefoot__version {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .12em;
+  color: var(--text-ghost);
+}
+@media (max-width: 899px) {
+  .sitefoot { padding: 22px var(--gutter-mobile) 32px; }
+  .sitefoot__row { flex-wrap: wrap; white-space: normal; }
+}
+
+/* ---- reduced-motion note (canvas keeps this visible on Gameday) -----*/
+.motion-note {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-5);
+  flex-wrap: wrap;
+  margin: var(--sp-10) var(--gutter-desktop) 0;
+  padding: 12px 18px;
+  --r: var(--r-badge);
+  background: rgba(0, 224, 255, .05);
+  box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .16);
+}
+.motion-note__label {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 11px; font-weight: 700; letter-spacing: .22em;
+  color: var(--live);
+}
+.motion-note__body {
+  flex: 1; min-width: 260px;
+  font-family: var(--font-mono);
+  font-size: 10.5px; line-height: 1.6; color: var(--text-mute);
+}
+@media (max-width: 899px) { .motion-note { margin: var(--sp-9) var(--gutter-mobile) 0; } }
+
+/* ---- shared screen-state panels -------------------------------------*/
+.screen-state { padding: var(--sp-15) var(--gutter-desktop); }
+@media (max-width: 899px) { .screen-state { padding: var(--sp-13) var(--gutter-mobile); } }
+
+.state-loading {
+  padding: var(--sp-9) var(--sp-11);
+  --r: var(--r-panel);
+}
+.state-loading__figure {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: .12em;
+  color: var(--text-faint);
+}
+
+.view-error { --r: var(--r-panel); }
+.view-error__status {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .14em;
+  color: var(--text-faint);
+}
+.view-error__detail {
+  margin-top: var(--sp-5);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-dim);
+  word-break: break-word;
+}
+
+/* Sign-in required / subscription expired: money-tinted panel, 3px money
+   left rule, headline in Barlow italic 800, one sentence on what
+   happened and one on what happens next (handoff section 10's error
+   treatment). The technical detail sits in a collapsed disclosure -- a
+   raw API string never leads a customer surface. */
+.gate {
+  position: relative;
+  max-width: 620px;
+  padding: var(--sp-11) var(--sp-12);
+  --r: var(--r-lg);
+  background: linear-gradient(150deg, rgba(255, 61, 87, .12), rgba(255, 255, 255, .014));
+  box-shadow: inset 0 0 0 1px rgba(255, 61, 87, .24);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+.gate::before {
+  content: "";
+  position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: linear-gradient(180deg, var(--money), transparent);
+}
+.gate__eyebrow {
+  font-family: var(--font-display);
+  font-size: 12.5px; font-weight: 700; letter-spacing: .24em;
+  color: var(--money-label);
+}
+.gate__title {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: 800;
-  font-size: 19px;
+  font-size: clamp(30px, 3.6vw, 44px);
+  line-height: .94;
   color: var(--text-hi);
-  white-space: nowrap;
-  /* The wordmark doubles as the home link (back to the landing page):
-     same look as the static mark, plus the affordances a link owes --
-     pointer, visible keyboard focus, no underline noise. */
-  text-decoration: none;
+}
+.gate__body { font-size: 15.5px; line-height: 1.55; color: var(--text-2); }
+.gate__actions { display: flex; gap: var(--sp-6); flex-wrap: wrap; }
+.gate__detail > summary {
   cursor: pointer;
-}
-.app-topbar__brand:focus-visible {
-  outline: 2px solid var(--live, #00e0ff);
-  outline-offset: 3px;
-}
-.app-topbar__token { flex: 1; min-width: 0; }
-.app-topbar__support {
-  font-size: 13px;
-  color: var(--text-mute);
-  white-space: nowrap;
-}
-.app-topbar__support:hover { color: var(--text); }
-
-.app-main {
-  flex: 1;
-  padding: var(--sp-11) var(--gutter-desktop) var(--sp-16);
-  max-width: 1180px;
-  width: 100%;
-  margin: 0 auto;
-}
-@media (max-width: 899px) {
-  .app-main { padding: var(--sp-9) var(--gutter-mobile) var(--sp-13); }
-}
-
-.app-disclaimer-host { padding: 0 var(--gutter-desktop) var(--sp-11); }
-@media (max-width: 899px) {
-  .app-disclaimer-host { padding: 0 var(--gutter-mobile) var(--sp-13); }
-}
-.app-disclaimer {
-  padding: var(--sp-7) 0 0;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
-  font-size: 12px;
+  font-family: var(--font-display);
+  font-size: 10.5px; font-weight: 700; letter-spacing: .18em;
+  text-transform: uppercase;
   color: var(--text-faint);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
+}
+.gate__detail-body {
+  margin-top: var(--sp-4);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--text-dim);
+  word-break: break-word;
 }
 
-/* ---- nav glyphs (icon-rail + tab-bar share these shapes) -------------*/
-.nav-glyph { display: block; }
-.nav-glyph--square {
-  width: 15px; height: 15px;
-  box-shadow: inset 0 0 0 2px currentColor;
-  --r: 3px;
-}
-.nav-glyph--stack {
-  width: 15px; height: 15px;
-  box-shadow: inset 0 0 0 2px currentColor;
-  --r: 3px;
-  position: relative;
-}
-.nav-glyph--stack::after {
-  content: "";
-  position: absolute; left: -4px; top: -4px; right: 4px; bottom: 4px;
-  box-shadow: inset 0 0 0 2px currentColor;
-  --r: 3px;
-  background: var(--rail);
-}
-.nav-glyph--circle {
-  width: 15px; height: 15px; border-radius: 50%;
-  box-shadow: inset 0 0 0 2px currentColor;
-}
-.nav-glyph--line {
-  width: 16px; height: 12px;
-  background: linear-gradient(115deg, transparent 46%, currentColor 46% 54%, transparent 54%);
-}
-.nav-glyph--ticket {
-  width: 17px; height: 12px;
-  box-shadow: inset 0 0 0 2px currentColor;
-  --r: 3px;
-  background-image: radial-gradient(circle at 0 50%, var(--rail) 3px, transparent 3px),
-                     radial-gradient(circle at 100% 50%, var(--rail) 3px, transparent 3px);
-}
-
-/* ---- generic view scaffolding ----------------------------------------*/
-.view {
+/* ---- interim sign-in panel (web/js/signin.js) -----------------------*/
+.signin { display: flex; justify-content: center; padding: var(--sp-16) var(--gutter-desktop); }
+@media (max-width: 899px) { .signin { padding: var(--sp-13) var(--gutter-mobile); } }
+.signin__panel {
+  width: 100%;
+  max-width: 520px;
+  padding: var(--sp-12);
+  --r: var(--r-lg);
   display: flex;
   flex-direction: column;
-  gap: var(--sp-11);
+  gap: var(--sp-7);
 }
-.view__title {
+.signin__title {
   font-family: var(--font-display);
   font-style: italic;
-  font-size: clamp(30px, 4vw, 44px);
+  font-weight: 800;
+  font-size: clamp(32px, 4vw, 46px);
+  line-height: .94;
   color: var(--text-hi);
 }
-.view__eyebrow-row {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-6);
-  flex-wrap: wrap;
-}
-
-.section-block { display: flex; flex-direction: column; gap: var(--sp-5); }
-.section-block__heading {
-  display: flex; align-items: baseline; gap: var(--sp-5);
-}
-.section-block__heading h2, .section-block__heading h3 {
+.signin__body { font-size: 15.5px; line-height: 1.55; color: var(--text-mute); }
+.signin__field { display: flex; flex-direction: column; gap: var(--sp-3); }
+.signin__field label {
   font-family: var(--font-display);
-  font-size: 17px;
-  color: var(--text-hi);
-}
-
-/* ---- form fields -------------------------------------------------------*/
-.field-form {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  gap: var(--sp-7);
-  padding: var(--sp-8);
-  --r: var(--r-panel);
-}
-.field-row {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-  min-width: 140px;
-}
-.field-row label {
-  font-family: var(--font-display);
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: .16em;
+  font-size: 10.5px; font-weight: 700; letter-spacing: .18em;
   text-transform: uppercase;
   color: var(--text-mute);
+}
+.signin__field input {
+  --r: var(--r-badge);
+  padding: 14px 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .025));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .11);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  color: var(--text-hi);
+  transition: box-shadow var(--dur-ring-bloom) ease;
+}
+.signin__field input:hover,
+.signin__field input:focus {
+  box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .75), 0 0 40px -8px rgba(0, 224, 255, .35);
+}
+.signin__actions { display: flex; gap: var(--sp-6); flex-wrap: wrap; align-items: center; }
+.signin__status { font-size: 13.5px; color: var(--text-mute); }
+.signin__note {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .12em;
+  line-height: 1.7;
+  color: var(--text-ghost);
+}
+
+/* ---- raw JSON fallback rendering (dom.renderUnknown) ----------------*/
+.raw-fields {
+  display: grid; grid-template-columns: max-content 1fr;
+  gap: var(--sp-2) var(--sp-6);
+  font-size: 13px; margin: 0;
+}
+.raw-fields__key { color: var(--text-faint); font-family: var(--font-display);
+  font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; }
+.raw-fields__value { margin: 0; color: var(--text-2); }
+.raw-list { display: flex; flex-direction: column; gap: var(--sp-2); margin: 0; }
+.raw-list__item { padding: var(--sp-2) 0; box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .05); }
+.value-absent { color: var(--text-ghost); font-family: var(--font-mono); }
+
+/* ---- staleness readout (shared by Today and Games) ------------------*/
+.staleness {
+  display: flex; flex-wrap: wrap; gap: var(--sp-3) var(--sp-7);
+  margin: 0; font-family: var(--font-mono); font-size: 11.5px;
+}
+.staleness dt {
+  color: var(--text-ghost);
+  font-family: var(--font-display);
+  font-size: 10px; letter-spacing: .16em; font-weight: 700;
+  text-transform: uppercase;
+}
+.staleness dd { margin: 0; color: var(--text-3); }
+
+/* ---- boards (tables) ------------------------------------------------*/
+.board-scroll { overflow-x: auto; --r: var(--r-panel); }
+.board-table { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 13.5px; }
+.board-table caption {
+  text-align: left; padding: var(--sp-6) var(--sp-8) 0;
+  font-family: var(--font-display); font-size: 12px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--text-mute);
+}
+.board-table th, .board-table td {
+  padding: var(--sp-5) var(--sp-6); text-align: left;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .06);
+}
+.board-table th {
+  font-family: var(--font-display); font-size: 10px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--text-mute); font-weight: 700;
+}
+.board-table td { color: var(--text-3); font-family: var(--font-mono); font-size: 13px; }
+.board-table tbody tr:hover { background: rgba(255, 255, 255, .03); }
+.board-table a { color: var(--live); font-weight: 600; font-family: var(--font-display); }
+
+/* ---- simple field form (Games date picker, My Bets, Support) --------*/
+.field-form {
+  display: flex; flex-wrap: wrap; align-items: end; gap: var(--sp-7);
+  padding: var(--sp-8); --r: var(--r-panel);
+}
+.field-row { display: flex; flex-direction: column; gap: var(--sp-2); min-width: 140px; }
+.field-row label {
+  font-family: var(--font-display); font-size: 10.5px; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--text-mute);
 }
 .field-row input, .field-row select {
   background: rgba(255, 255, 255, .05);
@@ -196,136 +456,24 @@
 }
 .field-form__status[data-hook] { font-size: 13px; color: var(--text-mute); }
 
-/* ---- staleness readout -------------------------------------------------*/
-.staleness {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-3) var(--sp-7);
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: 12px;
+/* ---- generic view scaffolding (undesigned Track-2 screens: Odds, My
+   Bets, Support, Signup, Billing keep serving their current views) ----*/
+.view { display: flex; flex-direction: column; gap: var(--sp-11);
+  padding: var(--sp-11) var(--gutter-desktop) var(--sp-16); }
+@media (max-width: 899px) { .view { padding: var(--sp-9) var(--gutter-mobile) var(--sp-13); } }
+.view__title {
+  font-family: var(--font-display); font-style: italic; font-weight: 800;
+  font-size: clamp(30px, 4vw, 44px); color: var(--text-hi);
 }
-.staleness dt {
-  color: var(--text-faint);
-  font-family: var(--font-display);
-  font-size: 10px;
-  letter-spacing: .14em;
-  text-transform: uppercase;
+.view__eyebrow-row { display: flex; align-items: center; gap: var(--sp-6); flex-wrap: wrap; }
+.section-block { display: flex; flex-direction: column; gap: var(--sp-5); }
+.section-block__heading { display: flex; align-items: baseline; gap: var(--sp-5); }
+.section-block__heading h2, .section-block__heading h3 {
+  font-family: var(--font-display); font-size: 17px; color: var(--text-hi);
 }
-.staleness dd { margin: 0; color: var(--text-2); }
-
-/* ---- boards (tables) -----------------------------------------------*/
-.board-scroll {
-  overflow-x: auto;
-  --r: var(--r-panel);
-}
-.board-table {
-  width: 100%;
-  min-width: 640px;
-  border-collapse: collapse;
-  font-size: 13.5px;
-}
-.board-table caption { text-align: left; padding: var(--sp-6) var(--sp-8) 0;
-  font-family: var(--font-display); font-size: 12px; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--text-mute); }
-.board-table th, .board-table td { padding: var(--sp-5) var(--sp-6); text-align: left;
-  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .06); }
-.board-table th { font-family: var(--font-display); font-size: 10.5px; letter-spacing: .12em;
-  text-transform: uppercase; color: var(--text-mute); font-weight: 700; }
-.board-table td { color: var(--text-2); }
-.board-table tbody tr:hover { background: rgba(255, 255, 255, .03); }
-.board-table a { color: var(--live); font-weight: 600; }
-
-/* ---- slate entry (Today's per-game cards) -----------------------------*/
-.slate-entry {
-  padding: var(--sp-9);
-  --r: var(--r-tile);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-5);
-}
-.slate-entry__header {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--sp-6);
-}
-.slate-entry__matchup {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-weight: 800;
-  font-size: clamp(20px, 2.4vw, 26px);
-  color: var(--text-hi);
-  margin: 0;
-}
-.slate-entry__start {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  color: var(--text-3);
-  margin: calc(-1 * var(--sp-3)) 0 0;
-}
-.slate-entry__venue {
-  font-size: 12.5px;
-  color: var(--text-faint);
-  margin: 0;
-}
-.slate-entry__fields { display: grid; grid-template-columns: max-content 1fr; gap: var(--sp-3) var(--sp-7); }
-.slate-entry__fields dt { font-family: var(--font-display); font-size: 10.5px; letter-spacing: .14em;
-  color: var(--text-mute); text-transform: uppercase; }
-.slate-entry__fields dd { margin: 0; color: var(--text-2); }
-.slate-entry__findings h3, .slate-entry__dossier summary { font-family: var(--font-display); font-size: 13px;
-  letter-spacing: .08em; text-transform: uppercase; color: var(--text-mute); cursor: pointer; }
-
-/* ---- raw JSON fallback rendering (renderUnknown) ---------------------*/
-.raw-fields { display: grid; grid-template-columns: max-content 1fr; gap: var(--sp-2) var(--sp-6);
-  font-size: 13px; margin: 0; }
-.raw-fields__key { color: var(--text-faint); font-family: var(--font-mono); }
-.raw-fields__value { margin: 0; color: var(--text-2); }
-.raw-list { display: flex; flex-direction: column; gap: var(--sp-2); margin: 0; }
-.raw-list__item { padding: var(--sp-2) 0; box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .05); }
-.value-absent { color: var(--text-ghost); font-family: var(--font-mono); }
-
-/* ---- bet check: fixed skeleton, structural parity between blocks -----*/
-.bet-check-view, .bet-check-result { display: flex; flex-direction: column; gap: var(--sp-9); }
-.bet-check-your-bet, .bet-check-support, .bet-check-counterargument,
-.bet-check-prices, .bet-check-bottom-line {
-  padding: var(--sp-9);
-  --r: var(--r-panel);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-5);
-}
-.bet-check-your-bet h2, .bet-check-support h2, .bet-check-counterargument h2,
-.bet-check-prices h2, .bet-check-bottom-line h2 {
-  font-family: var(--font-display);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: .2em;
-  text-transform: uppercase;
-  color: var(--live);
-}
-.bet-check-counterargument h2 { color: var(--money-lit); }
-.bet-check-your-bet__fields, .bet-check-prices__fields, .bet-check-bottom-line__fields {
-  display: grid; grid-template-columns: max-content 1fr; gap: var(--sp-3) var(--sp-7); margin: 0;
-}
-.bet-check-your-bet__fields dt, .bet-check-prices__fields dt, .bet-check-bottom-line__fields dt {
-  font-family: var(--font-display); font-size: 10.5px; letter-spacing: .14em; color: var(--text-mute);
-  text-transform: uppercase;
-}
-.bet-check-your-bet__fields dd, .bet-check-prices__fields dd, .bet-check-bottom-line__fields dd { margin: 0; color: var(--text-2); }
-.claim-list, .counterargument-lines { display: flex; flex-direction: column; gap: var(--sp-3); }
-.claim-list__item, .counterargument-lines li {
-  padding: var(--sp-4) var(--sp-5);
-  background: rgba(255, 255, 255, .03);
-  box-shadow: inset 0 0 0 1px var(--edge-1);
-  --r: var(--r-chip);
-  font-size: 14px;
-  color: var(--text-2);
-}
-.counterargument-lines li { box-shadow: inset 0 0 0 1px rgba(255, 61, 87, .18); }
-.bet-check-recommendation { font-size: 13.5px; color: var(--text-mute); font-style: italic; }
-.bet-check-bottom-line__text { font-size: 16px; color: var(--text-hi); line-height: 1.5; }
-.bet-check-result__note, .odds-game__note {
+.odds-summary { padding: var(--sp-7); --r: var(--r-panel); }
+.odds-game__body { padding: var(--sp-7); --r: var(--r-panel); overflow-x: auto; }
+.odds-game__note, .bet-check-result__note {
   padding: var(--sp-5) var(--sp-7);
   background: rgba(0, 224, 255, .08);
   box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .3);
@@ -333,101 +481,17 @@
   font-size: 13.5px;
   color: var(--live-label);
 }
-
-/* ---- game detail (quick + advanced APPENDED beneath) -------------------*/
-.game-detail { display: flex; flex-direction: column; gap: var(--sp-9); }
-.game-detail__back { font-size: 13px; color: var(--text-mute); }
-.game-quick, .game-advanced { padding: var(--sp-9); --r: var(--r-panel); display: flex;
-  flex-direction: column; gap: var(--sp-6); }
-.game-quick__header { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-6); }
-.game-quick__matchup {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-size: clamp(22px, 2.6vw, 30px);
-  color: var(--text-hi);
-}
-.game-quick__fields { display: grid; grid-template-columns: max-content 1fr; gap: var(--sp-3) var(--sp-7); margin: 0; }
-.game-quick__fields dt { font-family: var(--font-display); font-size: 10.5px; letter-spacing: .14em;
-  color: var(--text-mute); text-transform: uppercase; }
-.game-quick__fields dd { margin: 0; color: var(--text-2); }
-.game-advanced > summary {
-  cursor: pointer;
-  font-family: var(--font-display);
-  font-size: 12px;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  color: var(--live);
-}
-.game-detail__bet-check-link { align-self: flex-start; }
-
-/* ---- odds board ---------------------------------------------------------*/
-.odds-summary { padding: var(--sp-7); --r: var(--r-panel); }
-.odds-game__body { padding: var(--sp-7); --r: var(--r-panel); overflow-x: auto; }
-
-/* ---- my bets --------------------------------------------------------*/
 .my-bets-form { display: flex; flex-wrap: wrap; gap: var(--sp-7); align-items: end;
   padding: var(--sp-8); --r: var(--r-panel); }
-
-/* ---- app-level error/auth/subscription states -------------------------*/
-.state-loading {
-  padding: var(--sp-9);
-  --r: var(--r-panel);
-}
-.state-loading__figure {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  letter-spacing: .08em;
-}
-.auth-required, .subscription-expired {
-  position: relative;
-  padding: var(--sp-9) var(--sp-11);
-  background: linear-gradient(150deg, rgba(255, 61, 87, .10), rgba(255, 255, 255, .014));
-  box-shadow: inset 0 0 0 1px rgba(255, 61, 87, .24);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-5);
-}
-.auth-required::before, .subscription-expired::before {
-  content: "";
-  position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-  background: linear-gradient(180deg, var(--money), transparent);
-}
-.auth-required__title, .subscription-expired__title {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-weight: 800;
-  font-size: 21px;
-  color: var(--text-hi);
-}
-.auth-required__body, .subscription-expired__body {
-  font-size: 14.5px; color: var(--text-2); line-height: 1.5;
-}
-.subscription-expired__link { align-self: flex-start; }
-
-/* ---- watchout / findings ------------------------------------------------*/
-.what-changed, .today-notes { padding: var(--sp-7); --r: var(--r-panel); }
-.what-changed__item { display: flex; flex-direction: column; gap: var(--sp-2);
-  padding: var(--sp-5) 0; box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .06); }
-.what-changed__game { font-family: var(--font-display); font-weight: 700; color: var(--text-hi); }
-.what-changed__tier { font-size: 10.5px; letter-spacing: .12em; color: var(--live-label); text-transform: uppercase; }
-.what-changed__headline { font-size: 13.5px; color: var(--text-3); }
-.what-changed__seen { font-size: 11px; color: var(--text-faint); font-family: var(--font-mono); }
-
-/* ---- freshness banner (surfaces server stale-served-with-flag data,
-   OPERATIONS_RUNBOOK.md sect 7's gap: this is display-side only, the
-   fetch wrapper itself is unchanged) --------------------------------- */
+.data-quality { display: grid; grid-template-columns: max-content 1fr;
+  gap: var(--sp-2) var(--sp-5); font-size: 12px; margin: 0; }
+.data-quality dt { color: var(--text-faint); text-transform: uppercase;
+  letter-spacing: .12em; font-size: 10px; font-family: var(--font-display); }
+.data-quality dd { margin: 0; color: var(--text-2); }
 .freshness-banner {
   display: flex; align-items: center; gap: var(--sp-4);
-  padding: var(--sp-5) var(--sp-7);
-  --r: var(--r-badge);
+  padding: var(--sp-5) var(--sp-7); --r: var(--r-badge);
   background: rgba(255, 179, 189, .1);
   box-shadow: inset 0 0 0 1px rgba(255, 179, 189, .35);
-  font-size: 12.5px;
-  color: var(--money-soft);
+  font-size: 12.5px; color: var(--money-soft);
 }
-
-/* ---- data quality / not-yet-available inline dl ------------------------*/
-.data-quality { display: grid; grid-template-columns: max-content 1fr; gap: var(--sp-2) var(--sp-5);
-  font-size: 12px; margin: 0; }
-.data-quality dt { color: var(--text-faint); text-transform: uppercase; letter-spacing: .1em; font-size: 10px; }
-.data-quality dd { margin: 0; color: var(--text-2); }

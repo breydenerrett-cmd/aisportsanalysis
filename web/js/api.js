@@ -46,6 +46,37 @@ export function clearToken() {
 }
 
 /**
+ * THE FREE-CHECK IDENTITY -- a different credential with a different job.
+ *
+ * `POST /betcheck/free` is open (no bearer token) and caps an anonymous
+ * visitor at three introductory Bet Checks FOR LIFE
+ * (src/appstate/freechecks.py). The server mints an identity on the first
+ * successful check and expects it back in `X-Free-Check-Token`; it never
+ * sets a cookie, so storing it is the client's job. It is NOT an invite
+ * token and is never sent as an Authorization bearer -- kept under its
+ * own key so the two can never be confused for one another.
+ */
+export const FREE_CHECK_TOKEN_STORAGE_KEY = "aisportsanalysis.free_check_token";
+
+export function getFreeCheckToken() {
+  try {
+    return window.localStorage.getItem(FREE_CHECK_TOKEN_STORAGE_KEY) || "";
+  } catch (err) {
+    return "";
+  }
+}
+
+export function setFreeCheckToken(token) {
+  if (!token) return;
+  try {
+    window.localStorage.setItem(FREE_CHECK_TOKEN_STORAGE_KEY, token);
+  } catch (err) {
+    // Storage unavailable: the visitor is treated as a first-time caller
+    // on the next check. The server, not this client, owns the budget.
+  }
+}
+
+/**
  * A structured API error, distinct from a network failure -- callers need
  * to tell "the server said no, here is why" (status + whatever `detail`
  * the API sent, per its documented structured-error shape) apart from

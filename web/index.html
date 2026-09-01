@@ -4,36 +4,56 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LINEHOUND</title>
+<!-- Typefaces are self-hosted (css/fonts.css): the design's identity must
+     not depend on a third-party CDN being reachable, and this page has to
+     render identically from file:// with no network at all. -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230B0C0E'/%3E%3Cpath d='M6 6l8 0 0 9-8 4z' fill='%23FF3D57'/%3E%3Cpath d='M18 6l8 0 0 13-8-4z' fill='%23FF7A45'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/nav.css">
 <link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/screens.css">
 <!-- Belt-and-braces: [hidden] is already display:none per the HTML spec
      and is redeclared with !important in base.css -- this inline rule is
      the last-resort fallback if neither stylesheet loads. -->
 <style>[hidden]{display:none}</style>
 </head>
 <body>
-<div class="app-shell">
-  <nav class="icon-rail" aria-label="primary" data-hook="primary-nav"></nav>
+<!-- APP SHELL, per design/linehound-v1 section 06 ("5 destinations, two
+     shells"): a 76px left icon rail ABSOLUTE inside this wrapper (never
+     fixed to the viewport -- handoff section 12's rail-scoping note), a
+     compact 62px top strip, the routed view, and the footer. Below 900px
+     the rail is replaced by the bottom tab bar at the end of this file.
 
-  <div class="app-content">
-    <header class="app-topbar">
-      <!-- The wordmark is the standard home link: back to the public
-           landing page from any app screen. A real <a> so mouse, Enter,
-           and focus behavior come from the platform, not a handler. -->
-      <a class="app-topbar__brand" data-hook="product-name" href="landing.html">LINEHOUND</a>
-      <div class="app-topbar__token" data-hook="token-form-host" aria-label="invite token entry"></div>
-      <a class="app-topbar__support" href="#/support">Support</a>
+     There is deliberately NO invite-token bar in the chrome: token entry
+     lives on the interim #/signin route (web/js/signin.js), so an
+     unauthenticated reader meets one customer-language screen instead of
+     a credential form bolted to every page. -->
+<div class="shell">
+  <nav class="rail" aria-label="primary" data-hook="primary-nav"></nav>
+
+  <div class="shell__column">
+    <header class="topstrip" data-hook="topstrip">
+      <a class="topstrip__home" href="landing.html" aria-label="LINEHOUND home">
+        <span class="hound" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      </a>
+      <span class="topstrip__wordmark" data-hook="product-name">LINEHOUND</span>
+      <span class="topstrip__rule" aria-hidden="true"></span>
+      <span class="topstrip__section" data-hook="section-label"></span>
+      <span class="topstrip__spacer"></span>
+      <span class="topstrip__status" data-hook="board-status" role="status"></span>
+      <span class="topstrip__rule topstrip__rule--wide" aria-hidden="true"></span>
+      <time class="topstrip__clock" data-hook="shell-clock"></time>
     </header>
 
-    <main class="app-main" data-hook="app-outlet" aria-label="page content"></main>
+    <main class="outlet" data-hook="app-outlet" aria-label="page content"></main>
 
-    <div class="app-disclaimer-host" data-hook="disclaimer-host" aria-label="disclaimer"></div>
+    <div class="footer-host" data-hook="disclaimer-host" aria-label="disclaimer"></div>
   </div>
 
-  <nav class="tab-bar" aria-label="primary mobile" data-hook="primary-nav-mobile"></nav>
+  <nav class="tabbar" aria-label="primary mobile" data-hook="primary-nav-mobile"></nav>
 </div>
 
 <script type="module" src="js/main.js"></script>

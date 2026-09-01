@@ -1,19 +1,45 @@
 /**
- * The app-shell disclaimer footer, sourced from GET /meta (no auth --
- * api/meta.py). Mounted once by main.js and left in the DOM across every
- * view swap, so the disclaimer is always rendered regardless of which
- * view is active -- never something an individual view module can forget
- * to include.
+ * The app-shell footer, sourced from GET /meta (no auth -- api/meta.py).
+ * Mounted once by main.js and left in the DOM across every view swap, so
+ * the disclaimer is always rendered regardless of which view is active --
+ * never something an individual view module can forget to include.
+ *
+ * FOOTER TREATMENT (canvas: wordmark, hairline, legal meta on one row)
+ * -------------------------------------------------------------------
+ * The artboards' footer is one compact row. The beta disclaimer is long,
+ * and it is NOT optional -- so the row carries a one-line summary that is
+ * always visible, and the FULL disclaimer text stays reachable, verbatim
+ * and unabridged, inside an expandable disclosure directly beneath it.
+ * Summarised in the fold, never deleted, never truncated in the source.
  */
 
 import { apiGet } from "./api.js";
 import { el, clear, renderUnknown, humanizeKey } from "./dom.js";
+import { BRAND_NAME } from "./brand.js";
+
+/** The always-visible one-liner above the fold. Deliberately short and
+ * deliberately NOT a paraphrase of the legal text -- it says what the
+ * product is and points at the full wording, which sits one click away
+ * and unedited. */
+const SUMMARY =
+  "Beta. We show what supports a bet, what argues against it, and where the "
+  + "price is better -- never what to bet. Read the full disclaimer below.";
 
 export async function renderDisclaimerFooter(container) {
   clear(container);
-  const region = el("section", {
-    class: "app-disclaimer", "aria-label": "disclaimer", "data-hook": "disclaimer",
+  const region = el("footer", {
+    class: "sitefoot", "aria-label": "disclaimer", "data-hook": "disclaimer",
   });
+
+  const row = el("div", { class: "sitefoot__row" });
+  row.appendChild(el("span", { class: "sitefoot__mark", text: BRAND_NAME }));
+  row.appendChild(el("span", { class: "sitefoot__hair", "aria-hidden": "true" }));
+  row.appendChild(el("span", { class: "sitefoot__legal", text: "ALL TIMES ET · 21+ · PLAY RESPONSIBLY" }));
+  region.appendChild(row);
+
+  region.appendChild(el("p", { class: "sitefoot__summary", "data-hook": "disclaimer-summary",
+    text: SUMMARY }));
+
   try {
     const meta = await apiGet("/meta");
     // meta.disclaimer is documented as an object ({id, temporary,
@@ -24,24 +50,22 @@ export async function renderDisclaimerFooter(container) {
     const disclaimerText = meta.disclaimer && typeof meta.disclaimer === "object"
       ? meta.disclaimer.text
       : meta.disclaimer;
-    region.appendChild(el("p", {
-      class: "app-disclaimer__product", "data-hook": "product-one-liner",
-      text: meta.product,
-    }));
-    region.appendChild(el("p", {
-      class: "app-disclaimer__text", "data-hook": "disclaimer-text",
-      text: disclaimerText,
-    }));
-    region.appendChild(el("p", {
-      class: "app-disclaimer__version", "data-hook": "app-version",
-      text: `Build ${meta.version}`,
-    }));
+
+    const disclosure = el("details", { class: "sitefoot__disclosure" });
+    disclosure.appendChild(el("summary", { text: "Full beta disclaimer" }));
+    const body = el("div", { class: "sitefoot__full chamfer" });
+    body.appendChild(el("p", { class: "sitefoot__product", "data-hook": "product-one-liner",
+      text: meta.product }));
+    body.appendChild(el("p", { "data-hook": "disclaimer-text", text: disclaimerText }));
+    body.appendChild(el("p", { class: "sitefoot__version", "data-hook": "app-version",
+      text: `BUILD ${meta.version}` }));
+    disclosure.appendChild(body);
+    region.appendChild(disclosure);
   } catch (err) {
-    region.appendChild(el("p", {
-      class: "app-disclaimer__text", "data-hook": "disclaimer-unavailable",
-      text: "Disclaimer unavailable: " + (err && err.message ? err.message : "request failed"),
-    }));
+    region.appendChild(el("p", { class: "sitefoot__summary", "data-hook": "disclaimer-unavailable",
+      text: "Disclaimer unavailable: " + (err && err.message ? err.message : "request failed") }));
   }
+
   container.appendChild(region);
 }
 

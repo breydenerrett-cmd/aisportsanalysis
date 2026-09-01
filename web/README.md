@@ -10,23 +10,36 @@ placeholder waiting for someone else to attach a stylesheet.
 
 **Purpose.** Consume the API (`docs/API_CONTRACTS.md`) end-to-end and
 present it as the LINEHOUND v1 design system specifies. `web/landing.html`
-(phase 1, done) implements the Landing canvas; `index.html`'s app screens
-(Gameday, Bet Check, Games, Odds, Bets — phase 2) still use the
-structural-only markup built during the zero-aesthetic phase and will be
-restyled against the same token layer next.
+implements the Landing canvas. `index.html`'s app screens are built to the
+frozen Gameday canvas: **Gameday, Bet Check and the two Game View depths
+are composed from their artboards** (not the old structural markup
+restyled — the composition was replaced). **Odds and My Bets have no
+artboard yet** and deliberately keep serving their current structural
+views on the same token layer until Claude Design ships those screens;
+they are Track 2 and must not be restyled ad hoc.
+
+`#/signin` is an **interim** screen, not a designed one — see
+`js/signin.js`'s docstring. It holds the invite-token mechanics that used
+to live in a token bar bolted to the app chrome, so the chrome can be the
+compact top strip the artboards actually show.
 
 ## What's here
 
 ```
 web/
-  index.html        app shell: nav landmark, token-entry form, <main> outlet, disclaimer footer
+  index.html        app shell: 76px icon rail, 62px top strip, <main> outlet, footer
   landing.html       public marketing page -- built to design/linehound-v1's Landing canvas
   css/
+    fonts.css         the three typefaces, SELF-HOSTED as base64 woff2 (api/web.py's extension
+                       allowlist has no .woff2, and the design must not depend on a CDN)
     tokens.css        design tokens -- color, type ramp, spacing, chamfer radii, motion durations/easings
     base.css          reset, base type, chamfer/panel/badge utilities, loading/empty/error/NOT YET
                        AVAILABLE state primitives, entrance-motion classes, mandatory reduced-motion block
     components.css     buttons, monogram chip, price display, advantage pill, event line, segmented control
-    nav.css            site nav (public pages) + icon-rail / tab-bar (phase 2 app-shell foundation)
+    nav.css            site nav (public pages) + the app's two nav shells: 76px icon rail, 74px tab bar
+    app.css            app chrome -- shell wrapper, top strip, footer, shared state panels, sign-in gate
+    screens.css        per-screen composition traced from the artboards: hero seam, price bug, slate
+                       tile, What Changed, Bet Check ten-block skeleton, Game Quick + Advanced
     landing.css         Landing-page-specific layout, responsive at the one real breakpoint (900px)
   js/
     api.js          fetch wrapper: attaches Authorization: Bearer <token> from localStorage
@@ -34,15 +47,19 @@ web/
     meta.js         GET /meta disclaimer footer + shared staleness renderer
     brand.js         single source of truth for the working brand name (LINEHOUND, pending trademark clearance)
     motion.js         shared entrance/parallax/chart-draw engine (handoff section 08), reduced-motion aware
-    today.js        TODAY view       -- GET /today, GET /changed/{date}
+    shell.js          top-strip board-freshness readout, written by whichever view is mounted
+    teamcolors.js     static 30-club MLB identity palette + the seam gradients derived from it
+    tiles.js          the angled slate tile, shared by the Gameday rail and the Games grid
+    signin.js         INTERIM invite-token screen (see its docstring -- not a designed screen)
+    today.js        GAMEDAY view     -- GET /today + /games + /odds + /changed for the date
     games.js        GAMES view       -- GET /games/{date}, GET /game/{date}/{away}/{home}
-    betcheck.js     BET CHECK view   -- POST /betcheck (the fixed skeleton, see below)
+    betcheck.js     BET CHECK view   -- POST /betcheck, or POST /betcheck/free when signed out
     odds.js         ODDS view        -- GET /odds/{date}, GET /odds/{date}/{away}/{home}
     mybets.js       MY BETS view     -- GET/POST/DELETE /my-bets
     landing.js        boots landing.html: disclaimer footer, BETA_TIER pricing render, brand mark, motion, funnel beacon
     pricing.js         BETA_TIER -- the one source of truth for the subscription price
     signup.js          SIGNUP + SIGNUP COMPLETE views
-    main.js         hash router + nav + token form wiring
+    main.js         hash router + both nav shells + top-strip wiring
   README.md         this file
 ```
 
@@ -66,9 +83,13 @@ IntersectionObserver-driven entrance-motion classes (`[data-rise]`,
 visible by default and only goes transparent once armed, so a script
 failure or `prefers-reduced-motion` yields a complete, static page (see
 `base.css`'s mandatory reduced-motion block and `motion.js`'s docstring).
-`css/nav.css` builds the public `.site-nav` Landing actually uses, plus
-`.icon-rail`/`.tab-bar` as the phase-2 app-shell foundation the handoff's
-nav section (06) describes — not yet consumed by `index.html`.
+`css/nav.css` builds the public `.site-nav` Landing uses plus the two app
+nav shells the handoff's nav section (06) describes — `.rail` (76px,
+`position: absolute` inside the page wrapper, never fixed to the viewport)
+and `.tabbar` (74px, below 900px). `css/screens.css` carries the per-screen
+composition traced from the artboards; team colours reach it as inline
+custom properties from `js/teamcolors.js`, the only inline styling in this
+client, because a club palette is per-game data rather than a rule.
 `js/brand.js` is the one place "LINEHOUND" the working brand name lives
 as a constant; `landing.js` reads it to mount every visible wordmark.
 

@@ -37,14 +37,26 @@ customer-ready controls/copy.
 
 | Screen | Viewport | Impl shot | Ref shot | Dims failing | VERDICT |
 |---|---|---|---|---|---|
-| App chrome | 1440 | — | — | — | pending |
-| Gameday | 1440 | — | — | — | pending |
-| Gameday | 390 | — | — | — | pending |
-| Bet Check | 1440 | — | — | — | pending |
-| Bet Check | 390 | — | — | — | pending |
-| Game Quick | 1440 | — | — | — | pending |
-| Game Advanced | 1440 | — | — | — | pending |
-| Game | 390 | — | — | — | pending |
+| App chrome | 1440 | (all impl shots) | canvas artboards | none | **VISUAL PASS** |
+| Gameday | 1440 | gameday_desktop_impl | gameday_desktop_ref | none | **VISUAL PASS** |
+| Gameday | 390 | gameday_mobile_impl | gameday_mobile_ref | none | **VISUAL PASS** |
+| Bet Check | 1440 | betcheck_desktop_impl | betcheck_desktop_ref | none | **VISUAL PASS** |
+| Bet Check | 390 | betcheck_mobile_impl | betcheck_mobile_ref | none | **VISUAL PASS** |
+| Game Quick | 1440 | game_quick_desktop_impl | game_quick_desktop_ref | none | **VISUAL PASS** |
+| Game Advanced | 1440 | game_advanced_desktop_impl | game_advanced_desktop_ref | none | **VISUAL PASS** |
+| Game | 390 | game_mobile_impl | game_mobile_ref | none | **VISUAL PASS** |
+
+Graded 2026-09-01 by the orchestrator from side-by-side pairs under
+scratchpad/rebuild/ (real 15-game slate, authenticated). Watch items,
+none blocking: (1) the game-view price panel keeps the canvas's money
+treatment even when no side beats consensus -- canvas-consistent;
+flagged to the Design session for an explicit ruling; (2) the Games
+slate list has NO artboard and reuses the Gameday tile grid -- an
+extension, honest but ungraded as reproduction; (3) fonts self-hosted
+(web/css/fonts.css, 525 KB) after CDN flakiness -- size flagged. The
+DEMO DATA / SAMPLE SLATE chips are correctly ABSENT (live data). Free
+Bet Check wired for anonymous visitors ("N OF 3 FREE CHECKS LEFT",
+402 signup wall).
 
 Out of scope (Track 2, BLOCKED until the dedicated Design session
 returns approved artboards): Odds, My Bets, Signup, Auth/sign-in visual

@@ -161,20 +161,130 @@ export function renderUnknown(value) {
   return document.createTextNode(String(value));
 }
 
-/** A missing/invalid invite token -- distinct from a generic server error
- * so the reader knows exactly what to do (BOUNDARIES: this client never
- * decides *why* the token is wrong, it only names the state). */
+
+/* ---------------------------------------------------------------------
+ * Display formatting shared by the designed screens.
+ *
+ * Every helper below either reformats a value the API supplied or
+ * returns null. None of them derives a new claim, and none of them
+ * invents a figure when the source field is missing -- a caller that
+ * gets null renders NOT YET AVAILABLE or omits the line entirely.
+ * ------------------------------------------------------------------- */
+
+/** "THU SEP 1" in ET -- the shell clock's date half. */
+export function formatEasternDate(isoUtc) {
+  if (!isoUtc) return null;
+  const date = new Date(isoUtc);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric",
+  }).format(date).toUpperCase().replace(/,/g, "");
+}
+
+/** "7:40pm" in ET, without the trailing " ET" -- for places the canvas
+ * prints the meridiem time beside a separate ET marker. Times are always
+ * ET with the meridiem (handoff section 11's Times rule). */
+export function formatEasternClock(isoUtc) {
+  if (!isoUtc) return null;
+  const date = new Date(isoUtc);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York", hour: "numeric", minute: "2-digit", hour12: true,
+  }).format(date).replace(/\s/g, "").toLowerCase();
+}
+
+/** "32 SEC AGO" / "13 MIN AGO" / "2 HR AGO" from the API's own
+ * `age_seconds`. Null in, null out -- never a fabricated 0. */
+export function formatAge(ageSeconds) {
+  if (ageSeconds === null || ageSeconds === undefined) return null;
+  const seconds = Number(ageSeconds);
+  if (!Number.isFinite(seconds) || seconds < 0) return null;
+  if (seconds < 90) return `${Math.round(seconds)} SEC AGO`;
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 90) return `${minutes} MIN AGO`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 36) return `${hours} HR AGO`;
+  return `${Math.round(hours / 24)} DAY AGO`;
+}
+
+/** American prices print with an explicit sign: -132, +122. */
+export function formatAmerican(price) {
+  if (price === null || price === undefined) return null;
+  const n = Number(price);
+  if (!Number.isFinite(n)) return null;
+  return n > 0 ? `+${n}` : String(n);
+}
+
+/** A market-implied consensus fraction as a percentage string. NOT a win
+ * probability: this is the de-vigged MARKET-IMPLIED CONSENSUS, the
+ * market's own implied share with the book margin removed (docs/
+ * API_CONTRACTS.md's vocabulary rules), and it is always labelled that
+ * way at the call site. */
+export function formatConsensusShare(fraction) {
+  if (fraction === null || fraction === undefined) return null;
+  const n = Number(fraction);
+  if (!Number.isFinite(n)) return null;
+  return `${(n * 100).toFixed(1)}%`;
+}
+
+/** Book slugs arrive machine-shaped (`williamhill_us`) -- this only
+ * reformats the same string for reading, it never renames a book. */
+export function formatBook(book) {
+  if (!book) return null;
+  return String(book).replace(/_/g, " ").toUpperCase();
+}
+
+/* ---------------------------------------------------------------------
+ * Screen states
+ * ------------------------------------------------------------------- */
+
+/** The canonical NOT YET AVAILABLE panel (handoff section 10): a labelled
+ * hatch panel naming exactly what is missing and why. Mandatory wherever
+ * a metric is absent -- empty space is not an acceptable substitute, and
+ * an estimate is never one either. */
+export function notYetAvailable(reason, label = "NOT INGESTED") {
+  const panel = el("div", { class: "not-yet-available chamfer", "data-hook": "not-yet-available" });
+  const head = el("div", { class: "not-yet-available__head" });
+  head.appendChild(el("span", { class: "not-yet-available__marker chamfer" }));
+  head.appendChild(el("span", { class: "not-yet-available__label", text: "NOT YET AVAILABLE" }));
+  head.appendChild(el("span", { class: "not-yet-available__label not-yet-available__label--tag", text: label }));
+  panel.appendChild(head);
+  panel.appendChild(el("p", { class: "not-yet-available__body", text: reason }));
+  return panel;
+}
+
+/** Loading: the chamfered shell IS the skeleton -- panel geometry at
+ * final size, figures replaced by a mono placeholder. No spinners. */
+export function renderLoading(text) {
+  return el("div", { class: "state-loading panel chamfer", "data-hook": "view-loading" },
+    [el("p", { class: "state-loading__figure", text })]);
+}
+
+/** A missing/invalid invite token. Customer language on the primary
+ * surface, with the API's own words kept -- verbatim, never paraphrased
+ * -- inside a collapsed disclosure. This client never decides WHY the
+ * token is wrong, it only names the state and offers the one next step:
+ * the interim #/signin route. */
 function renderAuthRequired(container, err) {
   const detail = err && err.detail !== undefined ? err.detail : null;
   const section = el("section", {
-    class: "auth-required", role: "alert", "data-hook": "auth-required",
+    class: "gate chamfer", role: "alert", "data-hook": "auth-required",
   });
-  section.appendChild(el("p", { class: "auth-required__title", text: "Sign-in required" }));
-  section.appendChild(el("p", { class: "auth-required__body",
-    text: "Your invite token is missing or no longer valid. Enter it above to continue." }));
+  section.appendChild(el("p", { class: "gate__eyebrow", text: "SIGN IN REQUIRED" }));
+  section.appendChild(el("p", { class: "gate__title", text: "Sign in to view tonight's board." }));
+  section.appendChild(el("p", { class: "gate__body",
+    text: "This board is part of the private beta, so it needs your invite token. "
+        + "Add it once and it stays on this device." }));
+  const actions = el("div", { class: "gate__actions" });
+  actions.appendChild(el("a", { href: "#/signin", class: "btn btn--primary chamfer chamfer--btn",
+    "data-hook": "signin-link", text: "Sign in" }));
+  section.appendChild(actions);
   if (detail) {
-    section.appendChild(el("div", { class: "auth-required__detail", "data-hook": "auth-required-detail" },
+    const disclosure = el("details", { class: "gate__detail", "data-hook": "auth-required-detail" });
+    disclosure.appendChild(el("summary", { text: "Technical detail" }));
+    disclosure.appendChild(el("div", { class: "gate__detail-body" },
       [typeof detail === "string" ? document.createTextNode(detail) : renderUnknown(detail)]));
+    section.appendChild(disclosure);
   }
   container.appendChild(section);
 }
@@ -184,25 +294,29 @@ function renderAuthRequired(container, err) {
  * a link to the billing route (never a client-composed upsell). */
 function renderSubscriptionExpired(container) {
   const section = el("section", {
-    class: "subscription-expired", role: "alert", "data-hook": "subscription-expired",
+    class: "gate chamfer", role: "alert", "data-hook": "subscription-expired",
   });
-  section.appendChild(el("p", { class: "subscription-expired__title", text: "Subscription expired" }));
-  section.appendChild(el("p", { class: "subscription-expired__body",
-    text: "Your subscription has expired, so this page is not available right now." }));
-  section.appendChild(el("a", { href: "#/billing", class: "btn btn--ghost subscription-expired__link",
+  section.appendChild(el("p", { class: "gate__eyebrow", text: "SUBSCRIPTION ENDED" }));
+  section.appendChild(el("p", { class: "gate__title", text: "Your subscription has ended." }));
+  section.appendChild(el("p", { class: "gate__body",
+    text: "This page is not available right now. Billing has the details and the way back in." }));
+  const actions = el("div", { class: "gate__actions" });
+  actions.appendChild(el("a", { href: "#/billing", class: "btn btn--ghost chamfer chamfer--btn",
     "data-hook": "billing-link", text: "Go to billing" }));
+  section.appendChild(actions);
   container.appendChild(section);
 }
 
 /** Render a fetch/API failure as a semantic status region rather than a
- * blank pane -- BOUNDARIES: never fabricate a message; render the API's
- * own detail verbatim when there is one. 401 and 402-subscription-expired
- * get their own distinct treatment (see above) rather than reading as a
- * generic "request failed" -- and a `null` status (the fetch itself never
- * completed) is worded as "could not be reached" rather than implying the
- * server answered and said no, since those are different failures for the
- * reader even though this client cannot tell local network trouble from a
- * real service outage (docs/OPERATIONS_RUNBOOK.md sect 7). */
+ * blank pane -- BOUNDARIES: never fabricate a message; the API's own
+ * detail is kept verbatim, but it sits in a disclosure rather than
+ * leading a customer surface. 401 and 402-subscription-expired get their
+ * own distinct treatment (see above) -- and a `null` status (the fetch
+ * itself never completed) is worded as "could not be reached" rather
+ * than implying the server answered and said no, since those are
+ * different failures for the reader even though this client cannot tell
+ * local network trouble from a real service outage
+ * (docs/OPERATIONS_RUNBOOK.md sect 7). */
 export function renderError(container, err) {
   clear(container);
   const status = err && err.status != null ? String(err.status) : "network";
@@ -218,18 +332,23 @@ export function renderError(container, err) {
   const detail = err && err.detail !== undefined ? err.detail
     : (err && err.message) || "request failed";
   const section = el("section", {
-    class: "view-error state-error", role: "alert", "data-hook": "view-error",
+    class: "gate view-error chamfer state-error", role: "alert", "data-hook": "view-error",
     "data-status": status,
   });
-  section.appendChild(el("p", { class: "state-error__title", text: "Request failed" }));
+  section.appendChild(el("p", { class: "gate__eyebrow", text: "REQUEST FAILED" }));
   if (status === "network") {
-    section.appendChild(el("p", { class: "state-error__body", text:
-      "This page could not reach the server. That could be your own connection or "
-      + "a service outage -- it is not the same as the server answering \"no games\"." }));
+    section.appendChild(el("p", { class: "gate__title", text: "We could not reach the board." }));
+    section.appendChild(el("p", { class: "gate__body", text:
+      "That could be your own connection or a service outage -- it is not the same as "
+      + "the server answering \"no games\"." }));
   } else {
-    section.appendChild(el("p", { class: "view-error__status state-error__body", text: `Status: ${status}` }));
+    section.appendChild(el("p", { class: "gate__title", text: "That request did not go through." }));
+    section.appendChild(el("p", { class: "view-error__status gate__body", text: `Status: ${status}` }));
   }
-  section.appendChild(el("div", { class: "view-error__detail" },
+  const disclosure = el("details", { class: "gate__detail" });
+  disclosure.appendChild(el("summary", { text: "Technical detail" }));
+  disclosure.appendChild(el("div", { class: "gate__detail-body view-error__detail" },
     [typeof detail === "string" ? document.createTextNode(detail) : renderUnknown(detail)]));
+  section.appendChild(disclosure);
   container.appendChild(section);
 }

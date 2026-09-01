@@ -1,6 +1,6 @@
 /**
- * App shell wiring: nav landmark, the invite-token entry form, and a
- * minimal hash router that mounts one view module into <main> at a time.
+ * App shell wiring: the two nav shells, the top strip, and a minimal hash
+ * router that mounts one view module into the outlet at a time.
  *
  * WHY HASH ROUTING, NOT History API PUSHSTATE
  * -------------------------------------------------------------------
@@ -11,102 +11,104 @@
  *
  * ROUTES
  * -------------------------------------------------------------------
- *   #/today                                  TODAY
- *   #/games[/YYYY-MM-DD]                     GAMES (slate list)
- *   #/game/YYYY-MM-DD/AWAY/HOME               GAMES (one game, quick+advanced)
- *   #/betcheck[?date=&away=&home=]            BET CHECK
- *   #/odds[/YYYY-MM-DD]                       ODDS (board)
- *   #/odds/YYYY-MM-DD/AWAY/HOME                ODDS (one game)
- *   #/mybets                                  MY BETS
- *   #/support                                 SUPPORT
- *   #/signup                                  SIGNUP (public CTA target from
- *                                              web/landing.html)
- *   #/signup/complete[?token=...]             SIGNUP COMPLETE
- *   #/billing                                 BILLING (402 subscription-
- *                                              expired landing target)
+ *   #/today                                  GAMEDAY
+ *   #/games[/YYYY-MM-DD]                     GAMES (slate)
+ *   #/game/YYYY-MM-DD/AWAY/HOME              GAMES (one game, quick+advanced)
+ *   #/betcheck[?date=&away=&home=]           BET CHECK
+ *   #/odds[/YYYY-MM-DD]                      ODDS (board)
+ *   #/odds/YYYY-MM-DD/AWAY/HOME              ODDS (one game)
+ *   #/mybets                                 BETS
+ *   #/signin                                 SIGN IN (interim -- see signin.js)
+ *   #/support                                SUPPORT
+ *   #/signup                                 SIGNUP (public CTA target from
+ *                                             web/landing.html)
+ *   #/signup/complete[?token=...]            SIGNUP COMPLETE
+ *   #/billing                                BILLING (402 subscription-
+ *                                             expired landing target)
  */
 
-import { getToken, setToken, clearToken } from "./api.js";
-import { el, clear } from "./dom.js";
+import { el, clear, formatEasternDate, formatEasternClock } from "./dom.js";
+import { setShellStatus } from "./shell.js";
 import { renderDisclaimerFooter } from "./meta.js";
 import { renderToday } from "./today.js";
 import { renderGamesList, renderGameDetail } from "./games.js";
 import { renderBetCheck } from "./betcheck.js";
+import { renderSignin } from "./signin.js";
 import { renderOdds, renderOddsGame } from "./odds.js";
 import { renderMyBets } from "./mybets.js";
 import { renderSupport } from "./support.js";
 import { renderSignup, renderSignupComplete } from "./signup.js";
 import { renderBilling } from "./billing.js";
+import { BRAND_NAME } from "./brand.js";
 
-// The five app destinations (handoff section 06, "5 destinations, two
-// shells") -- Support is a utility link in the app-topbar, not one of
-// these five, per that section's destination table.
+// The five app destinations and their glyphs, verbatim from handoff
+// section 06's destination table. Support/Signin are utility routes, not
+// destinations -- they never appear in either nav shell.
 const NAV_ITEMS = [
-  { hash: "#/today", label: "Today", glyph: "square" },
-  { hash: "#/games", label: "Games", glyph: "stack" },
-  { hash: "#/betcheck", label: "Check", glyph: "circle" },
-  { hash: "#/odds", label: "Odds", glyph: "line" },
-  { hash: "#/mybets", label: "Bets", glyph: "ticket" },
+  { hash: "#/today", label: "TODAY", glyph: "" },
+  { hash: "#/games", label: "GAMES", glyph: "" },
+  { hash: "#/betcheck", label: "CHECK", glyph: "glyph--circle" },
+  { hash: "#/odds", label: "ODDS", glyph: "glyph--line" },
+  { hash: "#/mybets", label: "BETS", glyph: "glyph--ticket" },
 ];
 
-function buildNavItem(item, itemClass, labelClass) {
-  const a = el("a", { href: item.hash, "data-hook": "nav-link",
-    "data-nav-hash": item.hash, class: itemClass });
-  a.appendChild(el("span", { class: `nav-glyph nav-glyph--${item.glyph} chamfer chamfer--marker` }));
-  a.appendChild(el("span", { class: labelClass, text: item.label }));
+// Route root -> the section label printed beside the wordmark.
+const SECTION_LABELS = {
+  today: "GAMEDAY",
+  games: "GAMES",
+  game: "GAMES",
+  betcheck: "BET CHECK",
+  odds: "ODDS",
+  mybets: "BETS",
+  signin: "SIGN IN",
+  support: "SUPPORT",
+  signup: "SIGN UP",
+  billing: "BILLING",
+};
+
+function navItem(item, activeHash) {
+  const a = el("a", { href: item.hash, class: "nav-item chamfer chamfer--badge",
+    "data-hook": "nav-link", "data-nav-hash": item.hash });
+  a.appendChild(el("span", { class: `glyph ${item.glyph}`.trim(), "aria-hidden": "true" }));
+  a.appendChild(el("span", { class: "nav-item__label", text: item.label }));
+  if (activeHash.indexOf(item.hash) === 0) a.setAttribute("aria-current", "page");
   return a;
 }
 
-function mountNav(rail, tabbar) {
+function houndMark() {
+  const mark = el("span", { class: "hound", "aria-hidden": "true" });
+  for (let i = 0; i < 4; i += 1) mark.appendChild(el("i"));
+  return mark;
+}
+
+function mountNav(rail, tabbar, activeHash) {
   clear(rail);
   clear(tabbar);
+  // The rail carries the hound monogram at its head (canvas: rail head,
+  // 30x26); on mobile the same mark sits in the top strip, where there
+  // is no rail to carry it.
+  const head = el("a", { class: "rail__mark", href: "landing.html", "aria-label": `${BRAND_NAME} home` });
+  head.appendChild(houndMark());
+  rail.appendChild(head);
+  const items = el("div", { class: "rail__items" });
   for (const item of NAV_ITEMS) {
-    rail.appendChild(buildNavItem(item, "icon-rail__item", "icon-rail__label"));
-    tabbar.appendChild(buildNavItem(item, "tab-bar__item", "tab-bar__label"));
+    items.appendChild(navItem(item, activeHash));
+    tabbar.appendChild(navItem(item, activeHash));
   }
+  rail.appendChild(items);
 }
 
-function updateNavCurrent(activeHash) {
-  for (const link of document.querySelectorAll("[data-nav-hash]")) {
-    if (activeHash.indexOf(link.getAttribute("data-nav-hash")) === 0) {
-      link.setAttribute("aria-current", "page");
-    } else {
-      link.removeAttribute("aria-current");
-    }
-  }
+function setSectionLabel(route) {
+  const host = document.querySelector("[data-hook='section-label']");
+  if (host) host.textContent = SECTION_LABELS[route] || "";
 }
 
-function mountTokenForm(host) {
-  clear(host);
-  const form = el("form", { class: "token-form field-form", "data-hook": "token-form" });
-  const row = el("p", { class: "field-row" });
-  row.appendChild(el("label", { for: "invite-token-input", text: "Invite token" }));
-  const input = el("input", { type: "password", id: "invite-token-input", name: "token",
-    autocomplete: "off", value: getToken(), "data-hook": "invite-token-input" });
-  row.appendChild(input);
-  form.appendChild(row);
-  const saveButton = el("button", { type: "submit", class: "btn btn--ghost", text: "Save token" });
-  const clearButton = el("button", { type: "button", class: "btn btn--ghost",
-    "data-hook": "clear-token", text: "Clear token" });
-  const status = el("span", { class: "token-form__status field-form__status", role: "status",
-    "data-hook": "token-form-status" });
-
-  form.appendChild(saveButton);
-  form.appendChild(clearButton);
-  form.appendChild(status);
-
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    setToken(input.value.trim());
-    status.textContent = "Token saved.";
-  });
-  clearButton.addEventListener("click", () => {
-    clearToken();
-    input.value = "";
-    status.textContent = "Token cleared.";
-  });
-
-  host.appendChild(form);
+function setClock() {
+  const host = document.querySelector("[data-hook='shell-clock']");
+  if (!host) return;
+  const now = new Date().toISOString();
+  const parts = [formatEasternDate(now), `${formatEasternClock(now)} ET`].filter(Boolean);
+  host.textContent = parts.join(" · ");
 }
 
 function parseHash() {
@@ -125,15 +127,19 @@ function parseHash() {
 
 async function renderRoute(main) {
   const { segments, query } = parseHash();
-  updateNavCurrent("#/" + segments.join("/"));
   const [route, ...rest] = segments;
+  const rail = document.querySelector("[data-hook='primary-nav']");
+  const tabbar = document.querySelector("[data-hook='primary-nav-mobile']");
+  mountNav(rail, tabbar, "#/" + segments.join("/"));
+  setSectionLabel(route || "today");
+  setShellStatus(null);
+  setClock();
 
   clear(main);
+  window.scrollTo(0, 0);
   if (route === "billing") {
     await renderBilling(main);
-  } else if (route === "games" && rest.length >= 3) {
-    await renderGameDetail(main, rest[0], rest[1], rest[2]);
-  } else if (route === "game" && rest.length >= 3) {
+  } else if ((route === "games" || route === "game") && rest.length >= 3) {
     await renderGameDetail(main, rest[0], rest[1], rest[2]);
   } else if (route === "games") {
     await renderGamesList(main, rest[0]);
@@ -145,6 +151,8 @@ async function renderRoute(main) {
     await renderBetCheck(main, query);
   } else if (route === "mybets") {
     await renderMyBets(main);
+  } else if (route === "signin") {
+    await renderSignin(main, query);
   } else if (route === "support") {
     await renderSupport(main);
   } else if (route === "signup" && rest[0] === "complete") {
@@ -157,14 +165,11 @@ async function renderRoute(main) {
 }
 
 function boot() {
-  const rail = document.querySelector("[data-hook='primary-nav']");
-  const tabbar = document.querySelector("[data-hook='primary-nav-mobile']");
-  const tokenHost = document.querySelector("[data-hook='token-form-host']");
   const main = document.querySelector("[data-hook='app-outlet']");
   const disclaimerHost = document.querySelector("[data-hook='disclaimer-host']");
 
-  mountNav(rail, tabbar);
-  mountTokenForm(tokenHost);
+  // Mounted once, outside renderRoute() -- the disclaimer is never
+  // cleared or skipped by a view swap.
   renderDisclaimerFooter(disclaimerHost);
 
   window.addEventListener("hashchange", () => renderRoute(main));
