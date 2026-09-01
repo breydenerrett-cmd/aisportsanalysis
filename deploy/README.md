@@ -52,6 +52,19 @@ None of these are secrets this task is authorized to generate or store
 anywhere but a `.env`-style local file (see `.gitignore`'s "Secrets" block
 -- `.env` is never committed).
 
+## Beta disclaimer
+
+`GET /meta` (api/meta.py) serves the temporary beta legal disclaimer
+alongside the app version and a vocabulary-safe product one-liner, no
+auth required. The disclaimer text itself lives in one place --
+`src/analysis/disclaimers.py` -- so every surface that needs to show it
+(this endpoint today, a future UI banner) reads the same wording. It is
+explicitly labeled temporary (`"temporary": true`,
+`"requires_final_legal_review": true` in the response) per
+`docs/LAUNCH_DECISIONS.md`'s DECIDED BY BREY 2026-09-01 item 4 -- final
+customer-facing legal copy is Brey/counsel's call before paid/public
+launch, not this task's.
+
 ## Checking it's alive
 
 ```bash

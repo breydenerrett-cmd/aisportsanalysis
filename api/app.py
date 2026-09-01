@@ -25,6 +25,8 @@ from src.providers import mlb
 from api.auth import router as auth_router
 from api.betcheck import router as betcheck_router
 from api.games import router as games_router
+from api.meta import router as meta_router
+from api.odds import router as odds_router
 from api.health import router as health_router
 from api.mybets import router as mybets_router
 from api.today import get_today_payload_cached
@@ -42,6 +44,8 @@ app.include_router(health_router)
 # the same separation /today keeps between app.py (network) and today.py
 # (payload assembly).
 app.include_router(games_router)
+app.include_router(meta_router)
+app.include_router(odds_router)
 
 # auth_router carries the admin invite endpoint (disabled unless
 # APP_ADMIN_TOKEN is set -- see api/auth.py); mybets_router requires a
