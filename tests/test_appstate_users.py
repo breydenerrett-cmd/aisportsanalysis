@@ -7,11 +7,13 @@ data/app/app.db and never interfere with each other.
 
 from __future__ import annotations
 
+import os
 import sqlite3
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from unittest import mock
 
 from src.appstate import users
 
@@ -185,7 +187,17 @@ class UserStoreTests(unittest.TestCase):
     def test_db_path_defaults_to_data_app_app_db_under_repo_root(self):
         from src import paths
         expected = paths.repo_root() / "data" / "app" / "app.db"
-        self.assertEqual(users.db_path(), expected)
+        # tests/__init__.py points APP_DB_PATH at a tmp file for the whole
+        # suite, so that no test can write to the real app db. This test is
+        # about the OTHER branch -- what db_path() answers when nobody has
+        # set the variable -- so clear it here, explicitly and only here.
+        with mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop(users.ENV_DB_PATH, None)
+            self.assertEqual(users.db_path(), expected)
+
+    def test_db_path_honours_the_env_override(self):
+        with mock.patch.dict(os.environ, {users.ENV_DB_PATH: "/tmp/elsewhere/app.db"}):
+            self.assertEqual(users.db_path(), Path("/tmp/elsewhere/app.db"))
 
 
 if __name__ == "__main__":
