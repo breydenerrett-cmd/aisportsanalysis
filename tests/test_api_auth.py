@@ -153,5 +153,41 @@ class AdminInviteEndpointTests(unittest.TestCase):
         self.assertNotEqual(first["token"], second["token"])
 
 
+@unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
+class ProviderSeamTests(unittest.TestCase):
+    """get_current_user resolves through src.appstate.authproviders now --
+    these pin that the seam itself is wired, on top of
+    GetCurrentUserTests above pinning that invite-token behavior (the
+    default provider) is unchanged."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.db = Path(self._tmp.name) / "app.db"
+        self._patcher = mock.patch.object(users_store, "db_path", lambda: self.db)
+        self._patcher.start()
+        self._env_patcher = mock.patch.dict(os.environ, {}, clear=False)
+        self._env_patcher.start()
+
+    def tearDown(self):
+        self._env_patcher.stop()
+        self._patcher.stop()
+        self._tmp.cleanup()
+
+    def test_unconfigured_clerk_provider_is_503_not_401(self):
+        from api.auth import get_current_user
+        from src.appstate import authproviders
+        os.environ[authproviders.ENV_AUTH_PROVIDER] = "clerk"
+        with self.assertRaises(HTTPException) as ctx:
+            get_current_user(authorization="Bearer whatever")
+        self.assertEqual(ctx.exception.status_code, 503)
+
+    def test_unknown_auth_provider_env_is_a_hard_error(self):
+        from api.auth import get_current_user
+        from src.appstate import authproviders
+        os.environ[authproviders.ENV_AUTH_PROVIDER] = "some_typo"
+        with self.assertRaises(RuntimeError):
+            get_current_user(authorization="Bearer whatever")
+
+
 if __name__ == "__main__":
     unittest.main()

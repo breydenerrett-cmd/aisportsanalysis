@@ -1,15 +1,17 @@
 """Bearer-token auth for the api/ layer, built on src.appstate.users.
 
 Same api/<->src/ boundary as api/today.py: this module imports FROM
-src.appstate.users, never the reverse, and nothing in src/ knows FastAPI
-exists (tests/test_api_boundary.py enforces the stdlib-only import for all
-of src/).
+src.appstate.users (and src.appstate.authproviders), never the reverse,
+and nothing in src/ knows FastAPI exists (tests/test_api_boundary.py
+enforces the stdlib-only import for all of src/).
 
-No password auth, no session cookies -- invite tokens only (see
-src/appstate/users.py's module docstring for why). `get_current_user` is a
-FastAPI dependency: attach it to any endpoint that needs an authed user
-and a missing/invalid/expired/revoked token becomes a structured 401
-before the endpoint body ever runs.
+PROVIDER SEAM: get_current_user resolves through src.appstate.authproviders
+rather than calling users_store.authenticate directly. Today that seam
+always selects InviteTokenProvider (AUTH_PROVIDER defaults to
+"invite_token") with byte-for-byte the same header parsing and lookup this
+module used to do inline -- see authproviders.InviteTokenProvider's
+docstring. Clerk (docs/LAUNCH_DECISIONS.md Decision 1) becomes the active
+provider later via AUTH_PROVIDER=clerk, with no change to this file.
 
 ADMIN INVITE ENDPOINT: gated by APP_ADMIN_TOKEN. Absent env var means the
 endpoint is DISABLED (404), not "open with no check" -- an admin surface
@@ -25,6 +27,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 
+from src.appstate import authproviders
 from src.appstate import users as users_store
 
 ENV_ADMIN_TOKEN = "APP_ADMIN_TOKEN"
@@ -41,8 +44,9 @@ def _unauthorized(detail: str) -> HTTPException:
 def get_current_user(authorization: Optional[str] = Header(default=None),
                       request: Request = None) -> users_store.User:
     """FastAPI dependency: resolve `Authorization: Bearer <token>` to a
-    User, or raise a structured 401. Never logs the header value -- the
-    raw token must not end up anywhere but this one comparison (see
+    User via the active AuthProvider (src.appstate.authproviders), or
+    raise a structured 401/503. Never logs the header value -- the raw
+    token must not end up anywhere but this one comparison (see
     src/appstate/users.py's hashing rationale).
 
     Stashes the resolved user's id (never the token, never the email) on
@@ -51,14 +55,18 @@ def get_current_user(authorization: Optional[str] = Header(default=None),
     `request` is unused otherwise; it is a FastAPI-injected parameter, not
     part of this dependency's own logic.
     """
-    if not authorization:
-        raise _unauthorized("missing Authorization header")
-    scheme, _, raw_token = authorization.partition(" ")
-    if scheme.lower() != "bearer" or not raw_token:
-        raise _unauthorized("expected 'Authorization: Bearer <token>'")
-    user = users_store.authenticate(raw_token)
+    provider = authproviders.get_provider()
+    try:
+        user = provider.resolve(authorization)
+    except authproviders.AuthProviderNotConfigured as exc:
+        # The selected provider cannot verify anything right now (e.g.
+        # AUTH_PROVIDER=clerk before Brey has configured it) -- a 503,
+        # not a 401, because this is not the caller's credential that is
+        # wrong, it is the server's auth backend that is not live yet.
+        raise HTTPException(status_code=503, detail={
+            "error": "auth_provider_not_configured", "message": str(exc)})
     if user is None:
-        raise _unauthorized("invalid, expired, or revoked token")
+        raise _unauthorized("missing, invalid, expired, or revoked token")
     if user.status == "suspended":
         raise _unauthorized("account suspended")
     if request is not None:

@@ -1,30 +1,43 @@
-"""Billing ABSTRACTION only -- no real provider wired in.
+"""Billing ABSTRACTION, plus a real (test-mode-ready) Stripe implementation.
 
-docs/LAUNCH_DECISIONS.md (Decision 2) recommends Stripe but that requires
-Brey's own Stripe account (business/bank/ID verification) and his explicit
-sign-off before any code talks to a real payment API. This module exists
-so the rest of the app (rate-limit-per-tier gating, the one-click-cancel
-affordance named in the implementation plan §9) can be written against a
-stable BillingProvider interface *today*, with a real provider slotting in
-later behind the same interface -- no caller-side rewrite when that
-happens.
+docs/LAUNCH_DECISIONS.md ("DECIDED BY BREY -- 2026-09-01", Decision 2):
+Stripe is the billing provider. Everything here is built and tested in
+test mode behind the BillingProvider abstraction below; Brey connects the
+real account (business/bank/ID verification -- a step that is his alone)
+exactly when live credentials are needed. Until then, StripeBillingProvider
+with no STRIPE_API_KEY behaves exactly like NullBillingProvider: an honest
+refusal, never a fake success.
 
-NullBillingProvider is the only implementation here. It:
+NullBillingProvider is the always-available fallback. It:
   - records every call it receives (for tests/inspection), and
   - always reports "not configured" -- it never pretends a subscription is
     active, never invents a checkout URL, never fabricates status.
 
+StripeBillingProvider talks to https://api.stripe.com via stdlib urllib
+(no `stripe` SDK -- src/ is stdlib-only, tests/test_api_boundary.py and
+this task's grep-test enforce it). Every test exercises it through an
+injected `transport` callable; nothing in tests/ reaches a real network
+socket. See its class docstring for the exact Brey credential trigger.
+
 NO CARD DATA, EVER. Nothing in this module accepts, stores, or forwards a
-card number, CVV, or any other payment instrument. A real provider (once
-chosen) handles that entirely on its own hosted checkout/portal -- this
-app only ever sees a subscription id and a status string.
+card number, CVV, or any other payment instrument. Stripe's own hosted
+Checkout/Customer Portal handles that entirely -- this app only ever sees
+a checkout URL, a subscription id, and a status string.
 """
 
 from __future__ import annotations
 
+import hashlib
+import hmac
+import json
+import os
+import urllib.error
+import urllib.parse
+import urllib.request
+import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import List, Optional, Protocol
+from datetime import datetime, timedelta, timezone
+from typing import Callable, Dict, List, Optional, Protocol
 
 
 @dataclass(frozen=True)
@@ -56,10 +69,15 @@ class BillingProvider(Protocol):
     swapping NullBillingProvider for a real Stripe-backed implementation
     later is a one-line wiring change, not a rewrite of every call site."""
 
-    def create_checkout(self, user_id: int, plan_id: str) -> str:
+    def create_checkout(self, user_id: int, plan_id: str, *,
+                         idempotency_key: Optional[str] = None) -> str:
         """Return a URL (or opaque reference) the user is sent to in order
         to start paying for plan_id. Real implementations call out to the
-        provider; NullBillingProvider never does."""
+        provider; NullBillingProvider never does. `idempotency_key` lets a
+        caller retry a failed network attempt without risking a duplicate
+        checkout session -- optional because NullBillingProvider (and any
+        provider not yet wired to a real payment API) has nothing for it
+        to dedupe against."""
         ...
 
     def subscription_status(self, user_id: int) -> Subscription:
@@ -105,7 +123,8 @@ class NullBillingProvider:
             method=method, user_id=user_id, plan_id=plan_id,
             at=datetime.now(timezone.utc).isoformat()))
 
-    def create_checkout(self, user_id: int, plan_id: str) -> str:
+    def create_checkout(self, user_id: int, plan_id: str, *,
+                         idempotency_key: Optional[str] = None) -> str:
         self._record("create_checkout", user_id, plan_id)
         # No real checkout exists. The empty string (not a URL) is the
         # honest answer -- a caller that treats this as a redirect target
@@ -130,3 +149,251 @@ class NullBillingProvider:
         for tests to assert against; not part of the BillingProvider
         protocol itself."""
         return list(self._intents)
+
+
+# ---------------------------------------------------------------------------
+# Stripe -- test-mode-ready, stdlib-only, never a live call in tests.
+# ---------------------------------------------------------------------------
+
+STRIPE_API_BASE = "https://api.stripe.com"
+ENV_STRIPE_API_KEY = "STRIPE_API_KEY"
+ENV_STRIPE_WEBHOOK_SECRET = "STRIPE_WEBHOOK_SECRET"
+
+# Stripe recommends rejecting a webhook whose timestamp has drifted too far
+# from "now" -- it is the only defense a signature check alone doesn't give
+# you against a captured-and-replayed request. 5 minutes matches Stripe's
+# own documented default tolerance.
+DEFAULT_WEBHOOK_TOLERANCE = timedelta(minutes=5)
+
+
+class BillingProviderNotConfigured(RuntimeError):
+    """Raised by a real BillingProvider (StripeBillingProvider) when it
+    lacks what it needs to make an honest call -- no STRIPE_API_KEY, or no
+    local record yet linking a user to a Stripe customer. Mirrors
+    src.appstate.authproviders.AuthProviderNotConfigured: never a fake
+    success, just a typed refusal the api layer turns into a structured
+    'not configured' response instead of a fabricated one."""
+
+
+@dataclass(frozen=True)
+class _TransportResponse:
+    """What a transport call returns -- just enough for this module to
+    parse Stripe's JSON and check the status code. Kept minimal so a test
+    fake only has to construct this, not a real HTTP response object."""
+    status_code: int
+    body: bytes
+
+
+def _urllib_transport(method: str, url: str, headers: Dict[str, str],
+                       data: Optional[bytes]) -> _TransportResponse:
+    """The only function in this module that touches a real socket.
+    Never called by a test -- every StripeBillingProvider test injects its
+    own `transport` callable (see class docstring), which is what keeps
+    "test-mode-ready" honest rather than aspirational.
+    """
+    request = urllib.request.Request(url, data=data, headers=headers, method=method)
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:  # noqa: S310 -- fixed https host
+            return _TransportResponse(status_code=response.status, body=response.read())
+    except urllib.error.HTTPError as exc:
+        # Stripe puts a useful JSON error body on 4xx/5xx responses;
+        # urlopen raises instead of returning them, so this reshapes an
+        # HTTPError back into the same _TransportResponse shape the 2xx
+        # path returns -- one code path downstream handles both.
+        return _TransportResponse(status_code=exc.code, body=exc.read())
+
+
+class StripeBillingProvider:
+    """Stripe-backed BillingProvider, built stdlib-only against
+    api.stripe.com. Test-mode-ready per docs/LAUNCH_DECISIONS.md Decision
+    2: build and test everything against Stripe's sandbox shape now, so
+    the moment Brey provides a real STRIPE_API_KEY (test or live), this
+    starts making real calls with no code change.
+
+    EXACT BREY CREDENTIAL TRIGGER: STRIPE_API_KEY unset (or the account
+    behind it not yet created -- business/bank/ID verification, which is
+    Brey's step alone per Decision 2) is what keeps this provider refusing
+    via BillingProviderNotConfigured. Setting a test-mode key unblocks
+    sandbox testing without any account activation; a live key requires
+    the account to actually exist.
+
+    `customer_ref_lookup(user_id) -> Optional[str]` resolves a local user
+    id to a Stripe customer id. It defaults to "no mapping exists," which
+    is honest: this repo has no users<->Stripe-customer table yet (that is
+    a future persistence layer, out of this task's scope), so
+    subscription_status/cancel report "not_configured" for any user until
+    one is wired in and a lookup is injected here.
+    """
+
+    name = "stripe"
+
+    def __init__(self, *, api_key: Optional[str] = None,
+                 transport: Optional[Callable[[str, str, Dict[str, str], Optional[bytes]],
+                                               _TransportResponse]] = None,
+                 api_base: str = STRIPE_API_BASE,
+                 customer_ref_lookup: Optional[Callable[[int], Optional[str]]] = None) -> None:
+        self._api_key = api_key if api_key is not None else (
+            os.environ.get(ENV_STRIPE_API_KEY) or "").strip()
+        self._transport = transport or _urllib_transport
+        self._api_base = api_base
+        self._customer_ref_lookup = customer_ref_lookup or (lambda user_id: None)
+
+    def _require_configured(self) -> None:
+        if not self._api_key:
+            raise BillingProviderNotConfigured(
+                f"{ENV_STRIPE_API_KEY} not set -- Stripe billing stays "
+                "inactive until Brey connects a Stripe account and "
+                "provides an API key (docs/LAUNCH_DECISIONS.md Decision "
+                "2). This is the exact Brey credential trigger for "
+                "billing.")
+
+    def _call(self, method: str, path: str, *, form: Optional[Dict[str, str]] = None,
+               idempotency_key: Optional[str] = None) -> dict:
+        self._require_configured()
+        headers = {"Authorization": f"Bearer {self._api_key}"}
+        data = None
+        if form is not None:
+            headers["Content-Type"] = "application/x-www-form-urlencoded"
+            data = urllib.parse.urlencode(form).encode("utf-8")
+        if idempotency_key:
+            headers["Idempotency-Key"] = idempotency_key
+        response = self._transport(method, self._api_base + path, headers, data)
+        body = json.loads(response.body.decode("utf-8")) if response.body else {}
+        if response.status_code >= 400:
+            raise RuntimeError(f"Stripe API error {response.status_code}: {body}")
+        return body
+
+    def create_checkout(self, user_id: int, plan_id: str, *,
+                         idempotency_key: Optional[str] = None) -> str:
+        """POST /v1/checkout/sessions for a subscription to plan_id,
+        return its hosted URL. Idempotency-Key defaults to a fresh
+        uuid4 per call -- a caller that needs to safely retry a specific
+        attempt (e.g. after a network timeout) should generate its own key
+        once and pass it on every retry of that same attempt; this default
+        only protects against this module retrying internally, which it
+        does not do today.
+        """
+        self._require_configured()
+        key = idempotency_key or f"checkout:{user_id}:{plan_id}:{uuid.uuid4().hex}"
+        body = self._call("POST", "/v1/checkout/sessions", form={
+            "mode": "subscription",
+            "client_reference_id": str(user_id),
+            "line_items[0][price]": plan_id,
+            "line_items[0][quantity]": "1",
+            # Placeholder redirect targets -- the real app URLs are a
+            # deploy-time concern (docs/LAUNCH_DECISIONS.md Decision 3),
+            # not this module's to guess at.
+            "success_url": "https://example.invalid/billing/success",
+            "cancel_url": "https://example.invalid/billing/cancel",
+        }, idempotency_key=key)
+        return body.get("url", "") or ""
+
+    def subscription_status(self, user_id: int) -> Subscription:
+        self._require_configured()
+        customer_ref = self._customer_ref_lookup(user_id)
+        if not customer_ref:
+            # No local record yet linking this user to a Stripe customer --
+            # the honest answer is the same "not_configured" an
+            # unconfigured provider gives, not a fabricated "no
+            # subscription" that implies we actually checked with Stripe.
+            return Subscription(user_id=user_id, plan_id="none", status="not_configured")
+        body = self._call("GET", f"/v1/customers/{customer_ref}/subscriptions")
+        subs = body.get("data") or []
+        if not subs:
+            return Subscription(user_id=user_id, plan_id="none", status="not_configured")
+        sub = subs[0]
+        items = ((sub.get("items") or {}).get("data")) or [{}]
+        plan_id = (items[0].get("price") or {}).get("id", "none")
+        status = "active" if sub.get("status") == "active" else "canceled"
+        return Subscription(user_id=user_id, plan_id=plan_id, status=status,
+                             provider_ref=sub.get("id"), created_at=None)
+
+    def cancel(self, user_id: int) -> Subscription:
+        """Idempotent, same contract as NullBillingProvider.cancel: calling
+        this on an already-canceled or never-started subscription returns
+        the resulting state rather than erroring."""
+        self._require_configured()
+        current = self.subscription_status(user_id)
+        if current.status != "active" or not current.provider_ref:
+            return current
+        body = self._call("DELETE", f"/v1/subscriptions/{current.provider_ref}")
+        return Subscription(user_id=user_id, plan_id=current.plan_id,
+                             status="canceled" if body.get("status") != "active" else "active",
+                             provider_ref=current.provider_ref, created_at=current.created_at)
+
+
+def verify_stripe_webhook_signature(payload: bytes, sig_header: Optional[str], secret: str, *,
+                                     tolerance: timedelta = DEFAULT_WEBHOOK_TOLERANCE,
+                                     now: Optional[datetime] = None) -> bool:
+    """Verify a Stripe webhook per Stripe's documented scheme: the
+    `Stripe-Signature` header is `t=<unix ts>,v1=<hex hmac>[,v1=<hex
+    hmac>...]` (multiple v1 values appear during secret rotation), and the
+    signed payload is the literal byte string f"{t}.{raw body}" -- byte-
+    exact, so a re-serialized/re-encoded body will never match. Returns
+    False (never raises) for any malformed header, missing v1 value,
+    stale timestamp, or mismatched signature: a webhook endpoint is an
+    unauthenticated URL a hostile actor can freely hit and retry, so it
+    must fail closed on ambiguity rather than throw a 500 that might leak
+    which part of the check failed.
+
+    Comparison is `hmac.compare_digest` (constant-time) against every v1
+    value present -- not `==`, which would leak, via timing, how many
+    leading hex characters of a forged signature happened to match.
+
+    `now` is injectable for deterministic tests, the same pattern
+    src.appstate.users.authenticate uses for token expiry.
+    """
+    if not sig_header or not secret:
+        return False
+    timestamp_str: Optional[str] = None
+    v1_values: List[str] = []
+    for item in sig_header.split(","):
+        key, _, value = item.partition("=")
+        key = key.strip()
+        value = value.strip()
+        if key == "t":
+            timestamp_str = value
+        elif key == "v1":
+            v1_values.append(value)
+    if not timestamp_str or not v1_values:
+        return False
+    try:
+        event_epoch = int(timestamp_str)
+    except ValueError:
+        return False
+    now = now or datetime.now(timezone.utc)
+    event_time = datetime.fromtimestamp(event_epoch, tz=timezone.utc)
+    if abs(now - event_time) > tolerance:
+        return False
+    signed_payload = f"{timestamp_str}.".encode("utf-8") + payload
+    expected = hmac.new(secret.encode("utf-8"), signed_payload, hashlib.sha256).hexdigest()
+    return any(hmac.compare_digest(expected, candidate) for candidate in v1_values)
+
+
+ENV_BILLING_PROVIDER = "BILLING_PROVIDER"
+DEFAULT_BILLING_PROVIDER = "null"
+
+_BILLING_PROVIDERS: Dict[str, Callable[[], "BillingProvider"]] = {
+    DEFAULT_BILLING_PROVIDER: NullBillingProvider,
+    StripeBillingProvider.name: StripeBillingProvider,
+}
+
+
+def get_billing_provider(name: Optional[str] = None) -> "BillingProvider":
+    """Construct the active BillingProvider. `name` overrides
+    BILLING_PROVIDER for tests; production code omits it. Unset env ->
+    NullBillingProvider (today's honest default -- no billing exists
+    yet). An unrecognized value is a hard error, matching
+    src.appstate.authproviders.get_provider's never-silently-fall-back
+    rule: a typo here should not quietly keep billing turned off while
+    looking configured.
+    """
+    selected = (name if name is not None else
+                os.environ.get(ENV_BILLING_PROVIDER)) or DEFAULT_BILLING_PROVIDER
+    selected = selected.strip()
+    cls = _BILLING_PROVIDERS.get(selected)
+    if cls is None:
+        raise RuntimeError(
+            f"unknown {ENV_BILLING_PROVIDER}: {selected!r}; valid values: "
+            f"{sorted(_BILLING_PROVIDERS)}")
+    return cls()

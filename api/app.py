@@ -23,6 +23,7 @@ from src.pipeline import history
 from src.providers import mlb
 
 from api.auth import router as auth_router
+from api.billing import router as billing_router
 from api.betcheck import router as betcheck_router
 from api.games import router as games_router
 from api.meta import router as meta_router
@@ -51,6 +52,7 @@ app.include_router(odds_router)
 # APP_ADMIN_TOKEN is set -- see api/auth.py); mybets_router requires a
 # valid bearer token on every route (api.auth.get_current_user).
 app.include_router(auth_router)
+app.include_router(billing_router)
 app.include_router(mybets_router)
 
 # POST /betcheck -- the paid-beta core loop; api/betcheck.py owns the
