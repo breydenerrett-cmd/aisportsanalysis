@@ -106,3 +106,8 @@
 {"fetched_utc": "2026-09-01T12:55:14.704062+00:00", "game_date": "2026-09-01", "poll": true}
 {"fetched_utc": "2026-09-01T13:28:08.897069+00:00", "game_date": "2026-09-01", "poll": true}
 {"fetched_utc": "2026-09-01T14:20:19.491363+00:00", "game_date": "2026-09-01", "poll": true}
+{"fetched_utc": "2026-09-01T15:18:41.132846+00:00", "game_date": "2026-09-01", "poll": true}
+{"category": "rehab", "date": "2026-09-01", "first_seen_utc": "2026-09-01T15:18:41.132846+00:00", "player": "Richard Lovelady", "player_id": 663992, "team": "WSH", "transaction_id": 940340}
+{"category": "recalled", "date": "2026-09-01", "first_seen_utc": "2026-09-01T15:18:41.132846+00:00", "player": "Leo Bernal", "player_id": 699024, "team": "STL", "transaction_id": 940349}
+{"category": "other", "date": "2026-09-01", "first_seen_utc": "2026-09-01T15:18:41.132846+00:00", "player": "Hancel Rincon", "player_id": 684516, "team": "STL", "transaction_id": 940350}
+{"category": "recalled", "date": "2026-09-01", "first_seen_utc": "2026-09-01T15:18:41.132846+00:00", "player": "Victor Scott II", "player_id": 687363, "team": "STL", "transaction_id": 940351}
