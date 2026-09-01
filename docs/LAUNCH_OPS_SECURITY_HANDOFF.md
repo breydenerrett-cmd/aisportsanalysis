@@ -59,3 +59,17 @@ endpoint refuses any kind outside `{landing_view, signup_started}`; the API key
 appears only in the outbound `Authorization` header to Stripe, never in a
 response, log line, or exception; rate-limit keys cannot be set by a request
 header.
+
+
+## UPDATE 2026-09-01 04:2x — all review findings fixed in code
+
+Every finding is now fixed on the launch branch (commits b03064f, 6489bfa)
+and green; they reach staging on the next deploy. **F1 was BLOCKING for
+`BILLING_PROVIDER=stripe`: `/billing/checkout` had let the client name its own
+Stripe price — now locked to the server-side beta price (400 otherwise).
+Confirm staging is on a build at or after commit 6489bfa before enabling the
+Stripe provider.** Also fixed: checkout/signup/cancel return a structured
+error (not a 500 or a raw Stripe body) on a live Stripe failure; checkout and
+cancel are rate-limited 20/min/user; the funnel event `properties` field is
+capped at 2 KB; stale unretrieved activation tokens are scrubbed past the token
+TTL. The config checks earlier in this doc still stand.
