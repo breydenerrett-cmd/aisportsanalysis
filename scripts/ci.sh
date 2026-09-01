@@ -19,6 +19,14 @@
 # 3. scripts/smoke_api.sh: a real uvicorn process taking a real HTTP
 #    request over a real socket -- the one check in this whole sequence that
 #    exercises the actual server process, not a function call in-process.
+# 4. scripts/funnel_smoke.sh: the same real-uvicorn approach as step 3, but
+#    with BILLING_PROVIDER=stripe and the guard-locked synthetic-key fake
+#    transport (src.appstate.billing's STRIPE_FAKE_TRANSPORT hook), proving
+#    the ENTIRE paid funnel -- signup, checkout, signed webhook, activation,
+#    the authed core loop, cancel, and /admin/funnel's counts -- end to end
+#    with no real Stripe account. Run after smoke_api.sh, not instead of
+#    it: smoke_api.sh is what Brey runs before every deploy today and must
+#    stay green with no billing credential at all.
 #
 # set -e (not just -u) is what makes this fail-fast: the first non-zero exit
 # stops the script right there, rather than running every remaining step
@@ -26,20 +34,24 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-echo "== [1/4] full unit suite (python3 -m unittest discover) =="
+echo "== [1/5] full unit suite (python3 -m unittest discover) =="
 python3 -m unittest discover -s tests -q
 
 echo
-echo "== [2/4] src/-stdlib boundary gate (tests/test_api_boundary.py) =="
+echo "== [2/5] src/-stdlib boundary gate (tests/test_api_boundary.py) =="
 python3 -m unittest tests.test_api_boundary -q
 
 echo
-echo "== [3/4] banned-vocabulary tripwire (tests/test_customer_language.py) =="
+echo "== [3/5] banned-vocabulary tripwire (tests/test_customer_language.py) =="
 python3 -m unittest tests.test_customer_language -q
 
 echo
-echo "== [4/4] live smoke test against a real uvicorn process =="
+echo "== [4/5] live smoke test against a real uvicorn process =="
 bash scripts/smoke_api.sh
+
+echo
+echo "== [5/5] full paid-funnel smoke (fake-transport Stripe, real uvicorn) =="
+bash scripts/funnel_smoke.sh
 
 echo
 echo "== scripts/ci.sh: all checks passed =="

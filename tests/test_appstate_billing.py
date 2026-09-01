@@ -555,5 +555,82 @@ class StripeWebhookSignatureTests(unittest.TestCase):
             billing.verify_stripe_webhook_signature(payload, header, self.SECRET, now=now))
 
 
+class FakeTransportGuardTests(unittest.TestCase):
+    """scripts/funnel_smoke.sh's fake-transport hook (billing._maybe_fake_
+    transport / billing._fake_stripe_transport). The one thing that must be
+    provable, not just documented: this hook can NEVER activate against
+    anything shaped like a real Stripe key, even with the env var set."""
+
+    def setUp(self):
+        self._env_patch = mock.patch.dict(os.environ, {}, clear=False)
+        self._env_patch.start()
+        os.environ.pop(billing.ENV_STRIPE_FAKE_TRANSPORT, None)
+        self.addCleanup(self._env_patch.stop)
+
+    def test_disabled_by_default_even_with_a_synthetic_key(self):
+        # No STRIPE_FAKE_TRANSPORT at all -- the common case (every other
+        # test in this file, and every real deploy) must never light this
+        # up just because a key happens to look synthetic.
+        provider = billing.StripeBillingProvider(api_key="sk_test_synthetic_x")
+        self.assertIs(provider._transport, billing._urllib_transport)
+
+    def test_refuses_to_activate_under_a_real_looking_test_key(self):
+        os.environ[billing.ENV_STRIPE_FAKE_TRANSPORT] = "1"
+        provider = billing.StripeBillingProvider(api_key="sk_test_51ABCreal")
+        self.assertIs(provider._transport, billing._urllib_transport)
+
+    def test_refuses_to_activate_under_a_live_key(self):
+        os.environ[billing.ENV_STRIPE_FAKE_TRANSPORT] = "1"
+        provider = billing.StripeBillingProvider(api_key="sk_live_realmoney")
+        self.assertIs(provider._transport, billing._urllib_transport)
+
+    def test_activates_only_under_the_synthetic_prefix_with_the_env_var_set(self):
+        os.environ[billing.ENV_STRIPE_FAKE_TRANSPORT] = "1"
+        provider = billing.StripeBillingProvider(
+            api_key=f"{billing.FAKE_TRANSPORT_KEY_PREFIX}_anything")
+        self.assertIs(provider._transport, billing._fake_stripe_transport)
+
+    def test_an_explicitly_injected_transport_always_wins(self):
+        # Every other test in this file relies on this: injecting a fake
+        # for a unit test must never be shadowed by this hook, even if the
+        # env var and a synthetic-looking key are both set.
+        os.environ[billing.ENV_STRIPE_FAKE_TRANSPORT] = "1"
+        sentinel = lambda *a, **k: None  # noqa: E731
+        provider = billing.StripeBillingProvider(
+            api_key=f"{billing.FAKE_TRANSPORT_KEY_PREFIX}_x", transport=sentinel)
+        self.assertIs(provider._transport, sentinel)
+
+    def test_fake_transport_answers_the_four_calls_the_funnel_smoke_flow_makes(self):
+        create_customer = billing._fake_stripe_transport(
+            "POST", "https://api.stripe.com/v1/customers", {}, b"")
+        self.assertEqual(
+            json.loads(create_customer.body)["id"], billing.FAKE_TRANSPORT_CUSTOMER_ID)
+
+        checkout = billing._fake_stripe_transport(
+            "POST", "https://api.stripe.com/v1/checkout/sessions", {}, b"")
+        checkout_body = json.loads(checkout.body)
+        self.assertEqual(checkout_body["id"], billing.FAKE_TRANSPORT_SESSION_ID)
+        self.assertEqual(checkout_body["url"], billing.FAKE_TRANSPORT_CHECKOUT_URL)
+
+        subs = billing._fake_stripe_transport(
+            "GET",
+            f"https://api.stripe.com/v1/customers/{billing.FAKE_TRANSPORT_CUSTOMER_ID}/subscriptions",
+            {}, None)
+        sub = json.loads(subs.body)["data"][0]
+        self.assertEqual(sub["id"], billing.FAKE_TRANSPORT_SUBSCRIPTION_ID)
+        self.assertEqual(sub["status"], "active")
+
+        cancel = billing._fake_stripe_transport(
+            "DELETE",
+            f"https://api.stripe.com/v1/subscriptions/{billing.FAKE_TRANSPORT_SUBSCRIPTION_ID}",
+            {}, None)
+        self.assertEqual(json.loads(cancel.body)["status"], "canceled")
+
+    def test_fake_transport_raises_on_an_unexpected_call(self):
+        with self.assertRaises(RuntimeError):
+            billing._fake_stripe_transport(
+                "GET", "https://api.stripe.com/v1/balance", {}, None)
+
+
 if __name__ == "__main__":
     unittest.main()

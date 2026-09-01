@@ -31,6 +31,7 @@ import hashlib
 import hmac
 import json
 import os
+import sys
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -238,6 +239,105 @@ def _urllib_transport(method: str, url: str, headers: Dict[str, str],
         return _TransportResponse(status_code=exc.code, body=exc.read())
 
 
+# ---------------------------------------------------------------------------
+# FUNNEL-SMOKE FAKE TRANSPORT -- scripts/funnel_smoke.sh's hook, nothing else.
+#
+# The server process scripts/funnel_smoke.sh drives is a real `uvicorn`
+# subprocess -- there is no way for a script outside that process to inject
+# a `transport` callable the way every unit test in this file does. This is
+# the one env-gated substitute: a deterministic in-process fake that plays
+# Stripe's part just well enough for the real signup->checkout->webhook-
+# >activation->cancel path to run end to end with no network call and no
+# real Stripe account, so the day Brey's real keys land the path underneath
+# them is already proven, not merely unit-tested in isolation.
+#
+# GUARDED, NOT JUST DOCUMENTED, AGAINST EVER MASKING A REAL KEY: activation
+# requires BOTH STRIPE_FAKE_TRANSPORT set AND STRIPE_API_KEY starting with
+# FAKE_TRANSPORT_KEY_PREFIX -- a prefix no real Stripe key (test or live)
+# can ever start with (`sk_test_...` / `sk_live_...` are Stripe's own
+# formats). tests/test_appstate_billing.py's FakeTransportGuardTests pins
+# that a real-shaped key falls straight through to _urllib_transport even
+# with the env var set, and prints a loud stderr warning when it does, so a
+# forgotten `STRIPE_FAKE_TRANSPORT=1` in a real environment is silently
+# inert rather than a way to fabricate billing success.
+# ---------------------------------------------------------------------------
+
+ENV_STRIPE_FAKE_TRANSPORT = "STRIPE_FAKE_TRANSPORT"
+
+FAKE_TRANSPORT_KEY_PREFIX = "sk_test_synthetic"
+
+# Stable, deterministic ids/urls the fake transport always returns --
+# exported so scripts/funnel_smoke.sh can construct a byte-exact
+# checkout.session.completed webhook body that actually matches what
+# create_checkout just "returned" from the SAME process run, without
+# scraping stdout or a log file for it.
+FAKE_TRANSPORT_CUSTOMER_ID = "cus_funnelsmoke_synthetic"
+FAKE_TRANSPORT_SESSION_ID = "cs_funnelsmoke_synthetic"
+FAKE_TRANSPORT_SUBSCRIPTION_ID = "sub_funnelsmoke_synthetic"
+FAKE_TRANSPORT_PRICE_ID = "price_synthetic"
+FAKE_TRANSPORT_CHECKOUT_URL = "https://checkout.stripe.example/funnelsmoke_synthetic"
+
+
+def _fake_stripe_transport(method: str, url: str, headers: Dict[str, str],
+                            data: Optional[bytes]) -> _TransportResponse:
+    """Deterministic stand-in for _urllib_transport. Only ever installed by
+    _maybe_fake_transport below (never reachable any other way), and only
+    answers the exact four calls StripeBillingProvider makes along
+    scripts/funnel_smoke.sh's path -- create a customer, open a checkout
+    session, read that customer's subscriptions (POST /billing/cancel's
+    pre-cancel status check), and delete a subscription. Anything else
+    raises rather than fabricating a shape this hook was never designed to
+    answer, since a silently-wrong canned response would be a worse bug
+    than a loud one.
+    """
+    path = urllib.parse.urlparse(url).path
+    if method == "POST" and path == "/v1/customers":
+        body = {"id": FAKE_TRANSPORT_CUSTOMER_ID}
+    elif method == "POST" and path == "/v1/checkout/sessions":
+        body = {"id": FAKE_TRANSPORT_SESSION_ID, "url": FAKE_TRANSPORT_CHECKOUT_URL}
+    elif method == "GET" and path == f"/v1/customers/{FAKE_TRANSPORT_CUSTOMER_ID}/subscriptions":
+        body = {"data": [{
+            "id": FAKE_TRANSPORT_SUBSCRIPTION_ID,
+            "status": "active",
+            "items": {"data": [{"price": {"id": FAKE_TRANSPORT_PRICE_ID}}]},
+        }]}
+    elif method == "DELETE" and path == f"/v1/subscriptions/{FAKE_TRANSPORT_SUBSCRIPTION_ID}":
+        body = {"status": "canceled"}
+    else:
+        raise RuntimeError(
+            f"funnel-smoke fake transport has no canned response for "
+            f"{method} {path} -- it only plays the exact calls "
+            "scripts/funnel_smoke.sh's flow makes")
+    return _TransportResponse(status_code=200, body=json.dumps(body).encode("utf-8"))
+
+
+def _maybe_fake_transport(api_key: str) -> Optional[
+        Callable[[str, str, Dict[str, str], Optional[bytes]], _TransportResponse]]:
+    """None unless BOTH STRIPE_FAKE_TRANSPORT is set AND api_key starts with
+    FAKE_TRANSPORT_KEY_PREFIX -- see the section docstring above for why
+    both, always. Logs loudly either way a real key is in play: activation
+    prints that the fake is live (so a stray real request never looks like
+    a silent hang), and a set-but-refused env var prints why, so a
+    forgotten flag against a real key is visible, not a mystery.
+    """
+    if not (os.environ.get(ENV_STRIPE_FAKE_TRANSPORT) or "").strip():
+        return None
+    if not api_key.startswith(FAKE_TRANSPORT_KEY_PREFIX):
+        print(
+            f"billing: {ENV_STRIPE_FAKE_TRANSPORT} is set but "
+            f"{ENV_STRIPE_API_KEY} does not start with "
+            f"{FAKE_TRANSPORT_KEY_PREFIX!r} -- refusing to fake Stripe; "
+            "using the real Stripe API instead.", file=sys.stderr, flush=True)
+        return None
+    print(
+        "billing: STRIPE FAKE TRANSPORT ACTIVE -- scripts/funnel_smoke.sh's "
+        f"in-process Stripe stand-in is live because {ENV_STRIPE_API_KEY} "
+        f"starts with {FAKE_TRANSPORT_KEY_PREFIX!r} (a synthetic key that "
+        "can never be a real Stripe credential). This must NEVER print in "
+        "a real deploy.", file=sys.stderr, flush=True)
+    return _fake_stripe_transport
+
+
 class StripeBillingProvider:
     """Stripe-backed BillingProvider, built stdlib-only against
     api.stripe.com. Test-mode-ready per docs/LAUNCH_DECISIONS.md Decision
@@ -289,7 +389,11 @@ class StripeBillingProvider:
                      Callable[[int, str, Callable[[], str]], str]] = None) -> None:
         self._api_key = api_key if api_key is not None else (
             os.environ.get(ENV_STRIPE_API_KEY) or "").strip()
-        self._transport = transport or _urllib_transport
+        # An explicitly injected `transport` (every unit test in
+        # test_appstate_billing.py) always wins; the fake only ever
+        # substitutes for the real default, never for a caller's own.
+        self._transport = (transport or _maybe_fake_transport(self._api_key)
+                            or _urllib_transport)
         self._api_base = api_base
         self._customer_ref_lookup = customer_ref_lookup or (lambda user_id: None)
         self._on_customer_created = on_customer_created

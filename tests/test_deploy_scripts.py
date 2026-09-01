@@ -51,6 +51,7 @@ SHELL_SCRIPTS = [
     "scripts/monitor_remote.sh",
     "scripts/smoke_api.sh",
     "scripts/load_smoke.sh",
+    "scripts/funnel_smoke.sh",
     "scripts/ci.sh",
 ]
 
