@@ -127,3 +127,26 @@ None of this creates an account, spends money, or stores a credential.
 
 Return-to-Brey triggers only: actual account credentials, spend,
 irreversible decisions, final legal sign-off.
+
+## Decision (2026-09-01, Brey, final): cancellation = stop future renewal
+
+A customer who cancels KEEPS paid access through the end of the billing
+period they already paid for. At `current_period_end`, paid entitlement is
+revoked unless the subscription was renewed/reactivated. Cancel is never an
+immediate lockout -- they paid for the month, they get the month.
+
+Implementation notes for the engineering lane (Parent):
+- Today `api/auth.py` checks only token validity -- a canceled subscriber
+  keeps access FOREVER, not just to period end (verified live on staging
+  2026-09-01: post-cancel `/billing/status` = canceled, `/today` still 200).
+  The gap to close is the "after period end" half, and only that half.
+- Stripe's `customer.subscription.updated`/`deleted` webhooks carry
+  `current_period_end`; persist it on the local subscription record
+  (src/appstate/customers.py) and gate paid routes on
+  `status == active OR now < current_period_end`.
+- Needs regression tests pinning BOTH halves: canceled-but-inside-period
+  keeps access; canceled-and-past-period is refused with an honest
+  "subscription ended" response, never a generic 401.
+
+This removes the item from the decision queue -- it is now ordinary
+engineering work.
