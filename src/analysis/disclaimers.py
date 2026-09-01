@@ -36,8 +36,16 @@ BETA_DISCLAIMER = (
     "You are solely responsible for your own wagering decisions, including "
     "whether to bet at all. Nothing here is a betting edge, a locked-in "
     "result, or a guarantee of any outcome -- it is information to inform "
-    "a decision you make and own."
+    "a decision you make and own. This product is not a sportsbook and not "
+    "a gambling operator: it accepts no wagers and places no bets. It is "
+    "intended for users of legal wagering age in their jurisdiction (21+ "
+    "in most U.S. states). If gambling is causing you problems, help is "
+    "available from your state and national problem-gambling resources."
 )
+# The specific helpline number is deliberately NOT hard-coded here:
+# docs/LEGAL_COMPLIANCE_RESEARCH.md (2026-09-01) records that the national
+# helpline number is in transition; confirm the current number with counsel
+# on the day the final legal copy ships and add it then.
 
 
 def get_disclaimer() -> dict:
