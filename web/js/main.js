@@ -18,6 +18,7 @@
  *   #/odds[/YYYY-MM-DD]                       ODDS (board)
  *   #/odds/YYYY-MM-DD/AWAY/HOME                ODDS (one game)
  *   #/mybets                                  MY BETS
+ *   #/support                                 SUPPORT
  */
 
 import { getToken, setToken, clearToken } from "./api.js";
@@ -28,6 +29,7 @@ import { renderGamesList, renderGameDetail } from "./games.js";
 import { renderBetCheck } from "./betcheck.js";
 import { renderOdds, renderOddsGame } from "./odds.js";
 import { renderMyBets } from "./mybets.js";
+import { renderSupport } from "./support.js";
 
 const NAV_ITEMS = [
   { hash: "#/today", label: "Today" },
@@ -35,6 +37,7 @@ const NAV_ITEMS = [
   { hash: "#/betcheck", label: "Bet Check" },
   { hash: "#/odds", label: "Odds" },
   { hash: "#/mybets", label: "My Bets" },
+  { hash: "#/support", label: "Support" },
 ];
 
 function mountNav(nav) {
@@ -124,6 +127,8 @@ async function renderRoute(main, nav) {
     await renderBetCheck(main, query);
   } else if (route === "mybets") {
     await renderMyBets(main);
+  } else if (route === "support") {
+    await renderSupport(main);
   } else {
     await renderToday(main);
   }

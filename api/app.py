@@ -26,6 +26,8 @@ from api.admin import router as admin_router
 from api.auth import get_current_user, router as auth_router
 from fastapi import Depends
 from api.billing import router as billing_router
+from api.onboarding import router as onboarding_router
+from api.support import router as support_router
 from api.betcheck import router as betcheck_router
 from api.games import router as games_router
 from api.meta import router as meta_router
@@ -61,6 +63,10 @@ app.include_router(odds_router, dependencies=_authed)
 app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(billing_router)
+# support mounts WITHOUT the authed dependency: POST /support accepts
+# anonymous-with-email by design; its /admin routes carry their own guard.
+app.include_router(support_router)
+app.include_router(onboarding_router, dependencies=_authed)
 app.include_router(mybets_router)
 
 # POST /betcheck -- the paid-beta core loop; api/betcheck.py owns the
