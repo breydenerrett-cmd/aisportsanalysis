@@ -237,3 +237,8 @@
 {"category": "signed", "date": "2026-09-01", "first_seen_utc": "2026-09-01T22:31:51.860261+00:00", "player": "Orlando Arcia", "player_id": 606115, "team": "CIN", "transaction_id": 940709}
 {"fetched_utc": "2026-09-01T22:46:56.000881+00:00", "game_date": "2026-09-01", "poll": true}
 {"fetched_utc": "2026-09-01T23:01:58.605233+00:00", "game_date": "2026-09-01", "poll": true}
+{"fetched_utc": "2026-09-01T23:19:32.046123+00:00", "game_date": "2026-09-01", "poll": true}
+{"category": "rehab", "date": "2026-09-01", "first_seen_utc": "2026-09-01T23:19:32.046123+00:00", "player": "Kris Bubic", "player_id": 663460, "team": "LAD", "transaction_id": 940729}
+{"fetched_utc": "2026-09-01T23:19:34.235371+00:00", "game_date": "2026-09-01", "poll": true}
+{"fetched_utc": "2026-09-01T23:34:36.333239+00:00", "game_date": "2026-09-01", "poll": true}
+{"fetched_utc": "2026-09-01T23:49:39.346257+00:00", "game_date": "2026-09-01", "poll": true}
