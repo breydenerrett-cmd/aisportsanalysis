@@ -22,7 +22,8 @@ from src.appstate import reqlog
 from src.pipeline import history
 from src.providers import mlb
 
-from api.auth import router as auth_router
+from api.auth import get_current_user, router as auth_router
+from fastapi import Depends
 from api.billing import router as billing_router
 from api.betcheck import router as betcheck_router
 from api.games import router as games_router
@@ -44,9 +45,12 @@ app.include_router(health_router)
 # owns the fetch-and-build wiring for those three; this file only mounts it,
 # the same separation /today keeps between app.py (network) and today.py
 # (payload assembly).
-app.include_router(games_router)
+# Private alpha: the whole game surface requires auth (red-team finding 2,
+# 2026-09-01). /health and /meta stay open; revisit if a free tier is decided.
+_authed = [Depends(get_current_user)]
+app.include_router(games_router, dependencies=_authed)
 app.include_router(meta_router)
-app.include_router(odds_router)
+app.include_router(odds_router, dependencies=_authed)
 
 # auth_router carries the admin invite endpoint (disabled unless
 # APP_ADMIN_TOKEN is set -- see api/auth.py); mybets_router requires a
@@ -57,7 +61,7 @@ app.include_router(mybets_router)
 
 # POST /betcheck -- the paid-beta core loop; api/betcheck.py owns the
 # fetch-and-build wiring, same separation as the routers above.
-app.include_router(betcheck_router)
+app.include_router(betcheck_router, dependencies=_authed)
 
 
 # -- request logging + structured 500s -------------------------------------
@@ -116,7 +120,7 @@ def _route_template(request: Request) -> str:
     return route.path if route is not None else request.url.path
 
 
-@app.get("/today")
+@app.get("/today", dependencies=_authed)
 def get_today() -> dict:
     """Today's slate, as JSON, from the real domain path.
 

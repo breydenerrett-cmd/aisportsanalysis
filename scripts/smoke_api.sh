@@ -28,6 +28,8 @@ PORT="${SMOKE_API_PORT:-8931}"
 BASE="http://127.0.0.1:${PORT}"
 TMP_DB_DIR="$(mktemp -d)"
 export APP_DB_PATH="${TMP_DB_DIR}/app.db"
+# throwaway admin token so the smoke run can mint its own invite
+export APP_ADMIN_TOKEN="smoke-$(openssl rand -hex 16 2>/dev/null || echo fallback$$)"
 LOG_FILE="${TMP_DB_DIR}/uvicorn.log"
 
 FAILURES=0
@@ -92,13 +94,29 @@ else
     fail "/health body shape check failed: $(cat /tmp/health_shape_err)"
 fi
 
-echo "== GET /today/<recent date> (offline-tolerant: 200 or a structured 502) =="
+echo "== game surface is auth-gated (private alpha): unauthenticated -> 401 =="
 RECENT_DATE="$(python3 -c "from datetime import date, timedelta; print((date.today()-timedelta(days=2)).isoformat())")"
-TODAY_STATUS="$(curl -s -o /tmp/today_body -w '%{http_code}' "${BASE}/games/${RECENT_DATE}")"
-if [ "$TODAY_STATUS" = "200" ] || [ "$TODAY_STATUS" = "502" ]; then
-    pass "/games/${RECENT_DATE} responded ${TODAY_STATUS}"
+UNAUTH_STATUS="$(curl -s -o /dev/null -w '%{http_code}' "${BASE}/games/${RECENT_DATE}")"
+if [ "$UNAUTH_STATUS" = "401" ]; then
+    pass "/games without a token returned 401"
 else
-    fail "/games/${RECENT_DATE} returned unexpected status ${TODAY_STATUS}"
+    fail "/games without a token returned ${UNAUTH_STATUS}, expected 401"
+fi
+
+echo "== mint an invite token via the admin endpoint, then GET /games authed =="
+TOKEN="$(curl -s -X POST "${BASE}/admin/invites?email=smoke@example.com" \
+    -H "X-Admin-Token: ${APP_ADMIN_TOKEN}" | python3 -c "import json,sys; print(json.load(sys.stdin)['token'])")"
+if [ -n "$TOKEN" ]; then
+    pass "admin invite minted a token"
+else
+    fail "admin invite did not return a token"
+fi
+TODAY_STATUS="$(curl -s -o /tmp/today_body -w '%{http_code}' \
+    -H "Authorization: Bearer ${TOKEN}" "${BASE}/games/${RECENT_DATE}")"
+if [ "$TODAY_STATUS" = "200" ] || [ "$TODAY_STATUS" = "502" ]; then
+    pass "/games/${RECENT_DATE} (authed) responded ${TODAY_STATUS}"
+else
+    fail "/games/${RECENT_DATE} (authed) returned unexpected status ${TODAY_STATUS}"
 fi
 if python3 -c "
 import json
@@ -122,6 +140,7 @@ fi
 echo "== POST /betcheck happy-or-clean-404 =="
 BETCHECK_STATUS="$(curl -s -o /tmp/betcheck_body -w '%{http_code}' \
     -X POST "${BASE}/betcheck" \
+    -H "Authorization: Bearer ${TOKEN}" \
     -H 'Content-Type: application/json' \
     -d "{\"date\": \"${RECENT_DATE}\", \"away\": \"ZZZ\", \"home\": \"YYY\", \"side\": \"home\", \"american_price\": -110}")"
 # ZZZ@YYY is not a real matchup on any date -- the honest outcomes are a
