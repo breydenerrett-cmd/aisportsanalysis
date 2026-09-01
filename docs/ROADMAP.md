@@ -241,6 +241,9 @@ unification · relevance layer + What-changed section · V4 reproducibility
 audit (exact) · permalinks + season archive.
 
 ### FUTURE BACKLOG
+Referral loop (post-beta, first post-launch iteration — full spec frozen
+in docs/REFERRAL_LOOP_SPEC.md; +7d/+7d after referred customer's clean
+first paid month; do NOT build before launch blockers are green) ·
 V3 falsification battery pass · F5 / F5-totals research families · player-
 prop feasibility · pitcher-K market research · public projection benchmark
 · any-matchup mode · automated research summaries · event relevance scoring
