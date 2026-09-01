@@ -16,6 +16,19 @@ directly here -- no live HTTP server and no TestClient needed. The one
 network call each one makes (mlb.fetch_games) is patched to a fixed,
 offline schedule; the historical store is the real repo store, read
 offline, exactly like tests/test_api_today.py already does for /today.
+
+CACHE ISOLATION BETWEEN TESTS
+------------------------------
+api/games.py now caches `_build_entries` per date (src/appstate/freshness.py)
+so repeated requests for the same date share one rebuild -- the whole
+point of this task's caching work. Several test methods below reuse the
+same "2026-08-31" date on purpose (to exercise the same fixed offline
+schedule), which would otherwise mean whichever test runs first "wins" the
+cache and every later test in the run observes its result instead of
+exercising its own patched `mlb.fetch_games`. `_ResetEntriesCache.setUp`
+gives every test a fresh, empty cache so each one still observes its own
+patch as if caching did not exist -- caching itself is exercised
+separately, in tests/test_appstate_freshness.py.
 """
 
 from __future__ import annotations
@@ -32,7 +45,17 @@ except ImportError:
 
 if _HAVE_FASTAPI:
     from api import games as games_mod
+    from src.appstate import freshness
     from src.providers import mlb
+
+
+class _ResetEntriesCache(unittest.TestCase):
+    """Shared setUp: see the module docstring's CACHE ISOLATION note."""
+
+    def setUp(self):
+        if _HAVE_FASTAPI:
+            games_mod._entries_cache = freshness.SingleFlightTTLCache(
+                ttl_s=games_mod.ENTRIES_CACHE_TTL_S)
 
 
 def _schedule(date="2026-08-31"):
@@ -43,7 +66,7 @@ def _schedule(date="2026-08-31"):
 
 
 @unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")
-class GetGamesTests(unittest.TestCase):
+class GetGamesTests(_ResetEntriesCache):
 
     def test_returns_the_real_slate_list_shape(self):
         with patch.object(mlb, "fetch_games", return_value=_schedule()):
@@ -70,7 +93,7 @@ class GetGamesTests(unittest.TestCase):
 
 
 @unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")
-class GetGameTests(unittest.TestCase):
+class GetGameTests(_ResetEntriesCache):
 
     def test_returns_quick_and_advanced_together(self):
         with patch.object(mlb, "fetch_games", return_value=_schedule()):
@@ -97,7 +120,7 @@ class GetGameTests(unittest.TestCase):
 
 
 @unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")
-class GetChangedTests(unittest.TestCase):
+class GetChangedTests(_ResetEntriesCache):
 
     def test_returns_the_what_changed_band_shape(self):
         with patch.object(mlb, "fetch_games", return_value=_schedule()):

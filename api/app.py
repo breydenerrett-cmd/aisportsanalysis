@@ -27,7 +27,7 @@ from api.betcheck import router as betcheck_router
 from api.games import router as games_router
 from api.health import router as health_router
 from api.mybets import router as mybets_router
-from api.today import build_today_payload
+from api.today import get_today_payload_cached
 
 app = FastAPI(title="aisportsanalysis api", description=(
     "Read-only. JSON only -- no HTML, no styling. The design gate covers "
@@ -114,15 +114,15 @@ def _route_template(request: Request) -> str:
 def get_today() -> dict:
     """Today's slate, as JSON, from the real domain path.
 
-    Odds-age metadata rides along on every entry (see api/today.py). This
-    endpoint does not compute anything the domain layer does not already
-    compute -- it only fetches today's games, loads the historical store,
-    and hands both to build_today_payload.
+    Odds-age metadata rides along on every entry (see api/today.py). Served
+    through the freshness cache (120s TTL): a cold-cache provider failure is
+    still a 502, but once a good build exists a later failure is absorbed
+    into a stale-flagged 200 rather than an outage -- the flag, never a
+    silent replay, is the contract.
     """
     today = date_cls.today().isoformat()
     try:
-        games = mlb.fetch_games(today)
+        return get_today_payload_cached(today, fetch_games=mlb.fetch_games,
+                                        read_store=history.read_results)
     except mlb.MLBError as exc:
         raise HTTPException(status_code=502, detail=f"schedule unavailable: {exc}")
-    store = history.read_results()
-    return build_today_payload(games, store, date=today)
