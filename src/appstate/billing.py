@@ -37,7 +37,10 @@ import urllib.request
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Callable, Dict, List, Optional, Protocol
+
+from src.appstate import customers
 
 
 @dataclass(frozen=True)
@@ -218,11 +221,28 @@ class StripeBillingProvider:
     the account to actually exist.
 
     `customer_ref_lookup(user_id) -> Optional[str]` resolves a local user
-    id to a Stripe customer id. It defaults to "no mapping exists," which
-    is honest: this repo has no users<->Stripe-customer table yet (that is
-    a future persistence layer, out of this task's scope), so
-    subscription_status/cancel report "not_configured" for any user until
-    one is wired in and a lookup is injected here.
+    id to a Stripe customer id. It defaults to "no mapping exists" when
+    not supplied -- the honest answer for a bare, unwired instance (every
+    unit test in this file that constructs StripeBillingProvider directly
+    gets this). get_billing_provider() below is what wires the real
+    src.appstate.customers-backed lookup (plus `on_customer_created` and
+    `idempotency_key_resolver`, same rationale) for actual requests, so
+    direct construction stays a pure, storage-free unit under test while
+    production wiring gets real persistence.
+
+    `on_customer_created(user_id, stripe_customer_id)` is called once
+    create_checkout creates a new Stripe customer for a user with no
+    existing mapping -- None (the default) means "don't persist," which
+    keeps create_checkout's older single-call behavior (no `/v1/customers`
+    call, no `customer` field on the checkout session) for callers that
+    never supply it.
+
+    `idempotency_key_resolver(user_id, plan_id, generator) -> str` lets a
+    caller reuse one Idempotency-Key across retried checkout attempts for
+    the same (user_id, plan_id) instead of minting a fresh uuid4 every
+    call -- see src.appstate.customers.get_or_create_idempotency_key,
+    which is exactly this callable's shape. None (the default) always
+    calls `generator()`, matching the old always-fresh-key behavior.
     """
 
     name = "stripe"
@@ -231,12 +251,17 @@ class StripeBillingProvider:
                  transport: Optional[Callable[[str, str, Dict[str, str], Optional[bytes]],
                                                _TransportResponse]] = None,
                  api_base: str = STRIPE_API_BASE,
-                 customer_ref_lookup: Optional[Callable[[int], Optional[str]]] = None) -> None:
+                 customer_ref_lookup: Optional[Callable[[int], Optional[str]]] = None,
+                 on_customer_created: Optional[Callable[[int, str], None]] = None,
+                 idempotency_key_resolver: Optional[
+                     Callable[[int, str, Callable[[], str]], str]] = None) -> None:
         self._api_key = api_key if api_key is not None else (
             os.environ.get(ENV_STRIPE_API_KEY) or "").strip()
         self._transport = transport or _urllib_transport
         self._api_base = api_base
         self._customer_ref_lookup = customer_ref_lookup or (lambda user_id: None)
+        self._on_customer_created = on_customer_created
+        self._idempotency_key_resolver = idempotency_key_resolver
 
     def _require_configured(self) -> None:
         if not self._api_key:
@@ -266,16 +291,29 @@ class StripeBillingProvider:
     def create_checkout(self, user_id: int, plan_id: str, *,
                          idempotency_key: Optional[str] = None) -> str:
         """POST /v1/checkout/sessions for a subscription to plan_id,
-        return its hosted URL. Idempotency-Key defaults to a fresh
-        uuid4 per call -- a caller that needs to safely retry a specific
-        attempt (e.g. after a network timeout) should generate its own key
-        once and pass it on every retry of that same attempt; this default
-        only protects against this module retrying internally, which it
-        does not do today.
+        return its hosted URL.
+
+        Idempotency-Key: an explicit `idempotency_key` argument always
+        wins (a caller that needs to safely retry one specific attempt
+        should generate its own key once and pass it every retry). Absent
+        that, `idempotency_key_resolver` (see __init__ docstring) gets a
+        chance to reuse a previously-stored key for this (user_id,
+        plan_id); with no resolver wired, a fresh uuid4 is minted every
+        call -- the original behavior, still what every direct-construction
+        unit test in this file exercises.
+
+        Customer: reuses an existing Stripe customer for user_id via
+        `customer_ref_lookup` when one exists; otherwise, if
+        `on_customer_created` is wired, creates one via POST /v1/customers
+        and persists the mapping through that callback before continuing.
+        With neither wired, the session carries no `customer` field and
+        relies on `client_reference_id` alone, matching this method's
+        behavior before src.appstate.customers existed.
         """
         self._require_configured()
-        key = idempotency_key or f"checkout:{user_id}:{plan_id}:{uuid.uuid4().hex}"
-        body = self._call("POST", "/v1/checkout/sessions", form={
+        key = idempotency_key or self._resolve_idempotency_key(user_id, plan_id)
+        customer_id = self._ensure_customer(user_id)
+        form = {
             "mode": "subscription",
             "client_reference_id": str(user_id),
             "line_items[0][price]": plan_id,
@@ -285,8 +323,34 @@ class StripeBillingProvider:
             # not this module's to guess at.
             "success_url": "https://example.invalid/billing/success",
             "cancel_url": "https://example.invalid/billing/cancel",
-        }, idempotency_key=key)
+        }
+        if customer_id:
+            form["customer"] = customer_id
+        body = self._call("POST", "/v1/checkout/sessions", form=form, idempotency_key=key)
         return body.get("url", "") or ""
+
+    def _resolve_idempotency_key(self, user_id: int, plan_id: str) -> str:
+        generator = lambda: f"checkout:{user_id}:{plan_id}:{uuid.uuid4().hex}"  # noqa: E731
+        if self._idempotency_key_resolver is None:
+            return generator()
+        return self._idempotency_key_resolver(user_id, plan_id, generator)
+
+    def _ensure_customer(self, user_id: int) -> Optional[str]:
+        existing = self._customer_ref_lookup(user_id)
+        if existing:
+            return existing
+        if self._on_customer_created is None:
+            # No persistence wired -- creating a customer we then have no
+            # way to remember would just leave an orphaned Stripe customer
+            # behind on every single checkout call. Better to not create
+            # one at all and fall back to client_reference_id only.
+            return None
+        body = self._call("POST", "/v1/customers",
+                           form={"metadata[app_user_id]": str(user_id)})
+        customer_id = body.get("id")
+        if customer_id:
+            self._on_customer_created(user_id, customer_id)
+        return customer_id
 
     def subscription_status(self, user_id: int) -> Subscription:
         self._require_configured()
@@ -370,6 +434,64 @@ def verify_stripe_webhook_signature(payload: bytes, sig_header: Optional[str], s
     return any(hmac.compare_digest(expected, candidate) for candidate in v1_values)
 
 
+def _int_or_none(value: object) -> Optional[int]:
+    try:
+        return int(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return None
+
+
+def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> None:
+    """Persist the effect of one verified Stripe webhook event onto
+    src.appstate.customers' tables. MUST be called only after
+    api/billing.py has verified the event's signature -- this function
+    trusts its input completely, the same way
+    src.appstate.users.authenticate trusts a token only after its own
+    hash check passes; it has no signature of its own to check.
+
+    Handles the three events this app's billing model needs:
+      - checkout.session.completed: links user_id (client_reference_id)
+        to the Stripe customer id, and records the new subscription as
+        active if one was created (subscription mode).
+      - customer.subscription.updated / customer.subscription.deleted:
+        looks the event's customer id back up to a local user_id (the
+        event itself never carries one) and overwrites that user's
+        recorded status. `.deleted` is always recorded as "canceled"
+        regardless of the object's own `status` field, since a deleted
+        subscription is canceled by definition even if Stripe's payload
+        still shows its last pre-deletion status.
+
+    Any other event type, or one of these missing the fields it needs
+    (e.g. no local mapping yet for a subscription.updated whose
+    checkout.session.completed hasn't been processed -- Stripe does not
+    guarantee webhook delivery order), is silently ignored rather than
+    raised: a webhook endpoint that 500s on a legitimate-but-unhandled
+    event looks like an outage to Stripe's retry logic.
+    """
+    event_type = event.get("type")
+    obj = ((event.get("data") or {}).get("object")) or {}
+    if event_type == "checkout.session.completed":
+        user_id = _int_or_none(obj.get("client_reference_id"))
+        customer_id = obj.get("customer")
+        subscription_id = obj.get("subscription")
+        if user_id is None or not customer_id:
+            return
+        customers.upsert_customer(user_id, customer_id, db=db)
+        if subscription_id:
+            customers.upsert_subscription(user_id, subscription_id, "active", db=db)
+    elif event_type in ("customer.subscription.updated", "customer.subscription.deleted"):
+        customer_id = obj.get("customer")
+        subscription_id = obj.get("id")
+        if not customer_id or not subscription_id:
+            return
+        user_id = customers.get_user_id_by_customer_ref(customer_id, db=db)
+        if user_id is None:
+            return
+        status = ("canceled" if event_type == "customer.subscription.deleted"
+                  else ("active" if obj.get("status") == "active" else "canceled"))
+        customers.upsert_subscription(user_id, subscription_id, status, db=db)
+
+
 ENV_BILLING_PROVIDER = "BILLING_PROVIDER"
 DEFAULT_BILLING_PROVIDER = "null"
 
@@ -379,7 +501,8 @@ _BILLING_PROVIDERS: Dict[str, Callable[[], "BillingProvider"]] = {
 }
 
 
-def get_billing_provider(name: Optional[str] = None) -> "BillingProvider":
+def get_billing_provider(name: Optional[str] = None, *,
+                          db: Optional[Path] = None) -> "BillingProvider":
     """Construct the active BillingProvider. `name` overrides
     BILLING_PROVIDER for tests; production code omits it. Unset env ->
     NullBillingProvider (today's honest default -- no billing exists
@@ -387,6 +510,17 @@ def get_billing_provider(name: Optional[str] = None) -> "BillingProvider":
     src.appstate.authproviders.get_provider's never-silently-fall-back
     rule: a typo here should not quietly keep billing turned off while
     looking configured.
+
+    A StripeBillingProvider built here (as opposed to constructed
+    directly, which every unit test in test_appstate_billing.py does) is
+    wired to real src.appstate.customers persistence for
+    customer_ref_lookup / on_customer_created / idempotency_key_resolver
+    -- this is the one place production code gets a provider backed by
+    the actual mapping table rather than the bare, storage-free defaults.
+    `db` overrides the db file for tests that need an isolated one (see
+    tests/test_api_billing.py's db_path monkeypatch, which this also
+    respects since customers.py resolves db_path at call time, not
+    import time).
     """
     selected = (name if name is not None else
                 os.environ.get(ENV_BILLING_PROVIDER)) or DEFAULT_BILLING_PROVIDER
@@ -396,4 +530,12 @@ def get_billing_provider(name: Optional[str] = None) -> "BillingProvider":
         raise RuntimeError(
             f"unknown {ENV_BILLING_PROVIDER}: {selected!r}; valid values: "
             f"{sorted(_BILLING_PROVIDERS)}")
+    if cls is StripeBillingProvider:
+        return StripeBillingProvider(
+            customer_ref_lookup=lambda user_id: customers.get_customer_ref(user_id, db=db),
+            on_customer_created=lambda user_id, cust_id: customers.upsert_customer(
+                user_id, cust_id, db=db),
+            idempotency_key_resolver=lambda user_id, plan_id, generator: (
+                customers.get_or_create_idempotency_key(user_id, plan_id, generator, db=db)),
+        )
     return cls()

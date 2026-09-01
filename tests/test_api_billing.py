@@ -12,6 +12,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import hmac
+import json
 import os
 import tempfile
 import unittest
@@ -26,6 +27,7 @@ except ImportError:
     HAS_FASTAPI = False
 
 from src.appstate import billing
+from src.appstate import customers
 from src.appstate import users as users_store
 
 
@@ -80,6 +82,41 @@ class CheckoutEndpointTests(unittest.TestCase):
 
 
 @unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
+class BillingStatusEndpointTests(unittest.TestCase):
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.db = Path(self._tmp.name) / "app.db"
+        self._db_patcher = mock.patch.object(users_store, "db_path", lambda: self.db)
+        self._db_patcher.start()
+        self.user = users_store.create_user(
+            "status@example.com", status="active", db=self.db)
+
+    def tearDown(self):
+        self._db_patcher.stop()
+        self._tmp.cleanup()
+
+    def test_no_subscription_record_is_not_configured(self):
+        from api.billing import billing_status
+        result = billing_status(current_user=self.user)
+        self.assertEqual(result, {"status": "not_configured"})
+
+    def test_reports_status_from_the_table_not_a_live_call(self):
+        customers.upsert_subscription(self.user.id, "sub_1", "active", db=self.db)
+        from api.billing import billing_status
+        result = billing_status(current_user=self.user)
+        self.assertEqual(result["status"], "active")
+        self.assertEqual(result["stripe_subscription_id"], "sub_1")
+
+    def test_reflects_a_later_cancellation(self):
+        customers.upsert_subscription(self.user.id, "sub_1", "active", db=self.db)
+        customers.upsert_subscription(self.user.id, "sub_1", "canceled", db=self.db)
+        from api.billing import billing_status
+        result = billing_status(current_user=self.user)
+        self.assertEqual(result["status"], "canceled")
+
+
+@unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
 class WebhookEndpointTests(unittest.TestCase):
 
     SECRET = "whsec_synthetic_test_secret"
@@ -128,6 +165,74 @@ class WebhookEndpointTests(unittest.TestCase):
         with self.assertRaises(HTTPException) as ctx:
             asyncio.run(stripe_webhook(request))
         self.assertEqual(ctx.exception.status_code, 400)
+
+
+@unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
+class WebhookPersistenceTests(unittest.TestCase):
+    """A verified webhook must actually persist into
+    src.appstate.customers, end to end through the route -- not just
+    return {"received": True} -- and GET /billing/status must then see
+    it, all against an isolated temp db."""
+
+    SECRET = "whsec_synthetic_test_secret"
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.db = Path(self._tmp.name) / "app.db"
+        self._db_patcher = mock.patch.object(users_store, "db_path", lambda: self.db)
+        self._db_patcher.start()
+        self._env_patcher = mock.patch.dict(os.environ, {}, clear=False)
+        self._env_patcher.start()
+        os.environ[billing.ENV_STRIPE_WEBHOOK_SECRET] = self.SECRET
+        self.user = users_store.create_user(
+            "webhook@example.com", status="active", db=self.db)
+
+    def tearDown(self):
+        self._env_patcher.stop()
+        self._db_patcher.stop()
+        self._tmp.cleanup()
+
+    def _signed_request(self, event: dict) -> _FakeRequest:
+        payload = json.dumps(event).encode("utf-8")
+        ts = int(datetime.now(timezone.utc).timestamp())
+        signed_payload = f"{ts}.".encode("utf-8") + payload
+        sig = hmac.new(self.SECRET.encode("utf-8"), signed_payload, hashlib.sha256).hexdigest()
+        return _FakeRequest(payload, {"stripe-signature": f"t={ts},v1={sig}"})
+
+    def test_checkout_completed_persists_and_status_endpoint_reflects_it(self):
+        from api.billing import billing_status, stripe_webhook
+        event = {
+            "type": "checkout.session.completed",
+            "data": {"object": {
+                "client_reference_id": str(self.user.id),
+                "customer": "cus_wh_1",
+                "subscription": "sub_wh_1",
+            }},
+        }
+        result = asyncio.run(stripe_webhook(self._signed_request(event)))
+        self.assertEqual(result, {"received": True})
+        status = billing_status(current_user=self.user)
+        self.assertEqual(status["status"], "active")
+        self.assertEqual(status["stripe_subscription_id"], "sub_wh_1")
+
+    def test_subsequent_cancellation_webhook_updates_status(self):
+        from api.billing import billing_status, stripe_webhook
+        completed = {
+            "type": "checkout.session.completed",
+            "data": {"object": {
+                "client_reference_id": str(self.user.id),
+                "customer": "cus_wh_2",
+                "subscription": "sub_wh_2",
+            }},
+        }
+        asyncio.run(stripe_webhook(self._signed_request(completed)))
+        deleted = {
+            "type": "customer.subscription.deleted",
+            "data": {"object": {"id": "sub_wh_2", "customer": "cus_wh_2", "status": "canceled"}},
+        }
+        asyncio.run(stripe_webhook(self._signed_request(deleted)))
+        status = billing_status(current_user=self.user)
+        self.assertEqual(status["status"], "canceled")
 
 
 if __name__ == "__main__":

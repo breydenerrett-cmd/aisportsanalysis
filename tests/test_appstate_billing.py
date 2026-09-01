@@ -15,11 +15,14 @@ import hashlib
 import hmac
 import json
 import os
+import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from unittest import mock
 
 from src.appstate import billing
+from src.appstate import customers
 
 
 class NullBillingProviderTests(unittest.TestCase):
@@ -187,6 +190,136 @@ class StripeBillingProviderConfiguredTests(unittest.TestCase):
         self.assertEqual(self.transport.calls[-1]["method"], "DELETE")
 
 
+class StripeCheckoutPersistenceWiringTests(unittest.TestCase):
+    """create_checkout wired to real src.appstate.customers persistence
+    (the shape get_billing_provider() uses in production) -- pins customer
+    create-or-reuse and idempotency-key reuse against a real temp db,
+    still through the fake transport."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.db = Path(self._tmp.name) / "app.db"
+        self.transport = _FakeTransport()
+        self.provider = billing.StripeBillingProvider(
+            api_key="sk_test_synthetic", transport=self.transport,
+            customer_ref_lookup=lambda uid: customers.get_customer_ref(uid, db=self.db),
+            on_customer_created=lambda uid, cid: customers.upsert_customer(uid, cid, db=self.db),
+            idempotency_key_resolver=lambda uid, plan, gen: (
+                customers.get_or_create_idempotency_key(uid, plan, gen, db=self.db)),
+        )
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def test_first_checkout_creates_and_persists_a_customer(self):
+        self.transport.queue(200, {"id": "cus_new_1"})
+        self.transport.queue(200, {"id": "cs_1", "url": "https://checkout.stripe.com/1"})
+        self.provider.create_checkout(1, "price_beta")
+        self.assertEqual(customers.get_customer_ref(1, db=self.db), "cus_new_1")
+        self.assertEqual(self.transport.calls[0]["url"],
+                          billing.STRIPE_API_BASE + "/v1/customers")
+        self.assertIn("customer=cus_new_1", self.transport.calls[1]["data"].decode())
+
+    def test_second_checkout_reuses_customer_not_a_duplicate(self):
+        self.transport.queue(200, {"id": "cus_new_1"})
+        self.transport.queue(200, {"id": "cs_1", "url": "https://checkout.stripe.com/1"})
+        self.provider.create_checkout(1, "price_beta")
+        self.transport.queue(200, {"id": "cs_2", "url": "https://checkout.stripe.com/2"})
+        self.provider.create_checkout(1, "price_beta")
+        # Only one /v1/customers POST across both calls -- the second
+        # checkout must reuse the persisted customer, not mint another.
+        customer_calls = [c for c in self.transport.calls if c["url"].endswith("/v1/customers")]
+        self.assertEqual(len(customer_calls), 1)
+
+    def test_retried_checkout_for_same_user_and_plan_reuses_idempotency_key(self):
+        self.transport.queue(200, {"id": "cus_new_1"})
+        self.transport.queue(200, {"id": "cs_1", "url": "https://checkout.stripe.com/1"})
+        self.provider.create_checkout(1, "price_beta")
+        first_key = self.transport.calls[-1]["headers"]["Idempotency-Key"]
+        self.transport.queue(200, {"id": "cs_2", "url": "https://checkout.stripe.com/2"})
+        self.provider.create_checkout(1, "price_beta")
+        second_key = self.transport.calls[-1]["headers"]["Idempotency-Key"]
+        self.assertEqual(first_key, second_key)
+
+
+class StripeWebhookPersistenceTests(unittest.TestCase):
+    """apply_stripe_webhook_event: the verified-signature-only persistence
+    path from a Stripe event to src.appstate.customers' tables."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.db = Path(self._tmp.name) / "app.db"
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def test_checkout_completed_links_customer_and_activates_subscription(self):
+        event = {
+            "type": "checkout.session.completed",
+            "data": {"object": {
+                "client_reference_id": "42",
+                "customer": "cus_1",
+                "subscription": "sub_1",
+            }},
+        }
+        billing.apply_stripe_webhook_event(event, db=self.db)
+        self.assertEqual(customers.get_customer_ref(42, db=self.db), "cus_1")
+        record = customers.get_subscription_record(42, db=self.db)
+        self.assertEqual(record["status"], "active")
+        self.assertEqual(record["stripe_subscription_id"], "sub_1")
+
+    def test_checkout_completed_missing_client_reference_id_is_ignored(self):
+        event = {"type": "checkout.session.completed",
+                  "data": {"object": {"customer": "cus_1", "subscription": "sub_1"}}}
+        billing.apply_stripe_webhook_event(event, db=self.db)
+        self.assertIsNone(customers.get_customer_ref(1, db=self.db))
+
+    def test_subscription_updated_transitions_existing_user_to_active(self):
+        customers.upsert_customer(7, "cus_7", db=self.db)
+        event = {
+            "type": "customer.subscription.updated",
+            "data": {"object": {"id": "sub_7", "customer": "cus_7", "status": "active"}},
+        }
+        billing.apply_stripe_webhook_event(event, db=self.db)
+        record = customers.get_subscription_record(7, db=self.db)
+        self.assertEqual(record["status"], "active")
+
+    def test_subscription_updated_past_due_maps_to_canceled(self):
+        customers.upsert_customer(7, "cus_7", db=self.db)
+        event = {
+            "type": "customer.subscription.updated",
+            "data": {"object": {"id": "sub_7", "customer": "cus_7", "status": "past_due"}},
+        }
+        billing.apply_stripe_webhook_event(event, db=self.db)
+        record = customers.get_subscription_record(7, db=self.db)
+        self.assertEqual(record["status"], "canceled")
+
+    def test_subscription_deleted_marks_canceled_regardless_of_status_field(self):
+        customers.upsert_customer(7, "cus_7", db=self.db)
+        customers.upsert_subscription(7, "sub_7", "active", db=self.db)
+        event = {
+            "type": "customer.subscription.deleted",
+            "data": {"object": {"id": "sub_7", "customer": "cus_7", "status": "active"}},
+        }
+        billing.apply_stripe_webhook_event(event, db=self.db)
+        record = customers.get_subscription_record(7, db=self.db)
+        self.assertEqual(record["status"], "canceled")
+
+    def test_subscription_event_for_unmapped_customer_is_ignored(self):
+        event = {
+            "type": "customer.subscription.updated",
+            "data": {"object": {"id": "sub_x", "customer": "cus_unmapped", "status": "active"}},
+        }
+        billing.apply_stripe_webhook_event(event, db=self.db)  # must not raise
+        self.assertIsNone(customers.get_subscription_record(999, db=self.db))
+
+    def test_unknown_event_type_is_ignored(self):
+        billing.apply_stripe_webhook_event({"type": "invoice.paid", "data": {}}, db=self.db)
+
+    def test_empty_event_is_ignored(self):
+        billing.apply_stripe_webhook_event({}, db=self.db)
+
+
 class BillingProviderFactoryTests(unittest.TestCase):
 
     def test_default_is_null(self):
@@ -202,6 +335,17 @@ class BillingProviderFactoryTests(unittest.TestCase):
     def test_unknown_provider_is_a_hard_error(self):
         with self.assertRaises(RuntimeError):
             billing.get_billing_provider("some_typo")
+
+    def test_stripe_provider_is_wired_to_customers_persistence(self):
+        """get_billing_provider("stripe") must not return the bare,
+        storage-free StripeBillingProvider every other test in this file
+        constructs directly -- it should already have a working
+        customer_ref_lookup wired to src.appstate.customers."""
+        with tempfile.TemporaryDirectory() as tmp:
+            db = Path(tmp) / "app.db"
+            customers.upsert_customer(5, "cus_wired", db=db)
+            provider = billing.get_billing_provider("stripe", db=db)
+            self.assertEqual(provider._customer_ref_lookup(5), "cus_wired")
 
 
 class StripeWebhookSignatureTests(unittest.TestCase):
