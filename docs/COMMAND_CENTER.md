@@ -45,6 +45,19 @@ personalization, full alerts, SEO/content build.
 
 ## PHASE LOG
 
+- 2026-09-01 ~03:45: Wave 5 + branding COMPLETE. Full funnel built and
+  ci.sh-green: landing -> signup -> Stripe TEST checkout -> one-time
+  activation token -> app -> bet check -> saved bet -> digest, every
+  step instrumented, /admin/funnel reports conversions. LINEHOUND
+  applied as working brand (legal copy name-neutral pending clearance;
+  nothing registered). Integration caught 2 client/server contract
+  mismatches + a Free-label-vs-paid-checkout inconsistency - fixed.
+  LAUNCH STATE: code-complete to the credential line. Running: full-
+  funnel local smoke (fake-transport, guard-locked to synthetic keys).
+  BLOCKERS = BREY ONLY: Fly deploy token; Stripe test key + $19.99
+  Price (display name 'Linehound (beta)') + webhook secret; email
+  provider; domain/Cloudflare post-clearance. Suite 2,869.
+
 - 2026-09-01 ~03:00: FIRST-PAID-CUSTOMER push (Brey). Approved visual
   direction: sports-broadcast (Madden/2K-familiar, no protected assets);
   design finishing separately, web/ stays the structural attach point.
