@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>aisportsanalysis</title>
+<!-- HARD RULE: no CSS beyond this one line. `[hidden]` is display:none by
+     default per the HTML spec already; this is belt-and-braces for any
+     older engine this reference client happens to be opened in. No other
+     rule, selector, color, font, or layout property belongs in this file
+     or any file under web/. -->
+<style>[hidden]{display:none}</style>
+</head>
+<body>
+<header>
+  <p data-hook="product-name">aisportsanalysis</p>
+  <div data-hook="token-form-host" aria-label="invite token entry"></div>
+  <nav aria-label="primary" data-hook="primary-nav"></nav>
+</header>
+
+<main data-hook="app-outlet" aria-label="page content"></main>
+
+<footer data-hook="disclaimer-host" aria-label="disclaimer"></footer>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

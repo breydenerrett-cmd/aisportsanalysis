@@ -29,6 +29,7 @@ from api.billing import router as billing_router
 from api.betcheck import router as betcheck_router
 from api.games import router as games_router
 from api.meta import router as meta_router
+from api.web import router as web_router
 from api.odds import router as odds_router
 from api.health import router as health_router
 from api.mybets import router as mybets_router
@@ -51,6 +52,7 @@ app.include_router(health_router)
 _authed = [Depends(get_current_user)]
 app.include_router(games_router, dependencies=_authed)
 app.include_router(meta_router)
+app.include_router(web_router)
 app.include_router(odds_router, dependencies=_authed)
 
 # auth_router carries the admin invite endpoint (disabled unless
