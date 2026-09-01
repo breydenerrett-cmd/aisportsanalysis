@@ -268,16 +268,39 @@ def take_activation_token(stripe_session_id: str, *,
     see has_activation_token's docstring for why the row's continued
     existence is load-bearing for webhook-redelivery idempotency, not just
     an incidental audit trail.
+
+    ATOMIC CLAIM, NOT SELECT-THEN-UPDATE: the retrieval is a single guarded
+    UPDATE (WHERE retrieved_at IS NULL) so that two concurrent
+    GET /signup/complete calls for the same session id -- a double-click, or
+    an attacker racing the legitimate browser for a session id visible in
+    the success-page URL -- can never both come away with the raw token.
+    A prior SELECT-then-UPDATE let both callers read an unretrieved row
+    before either wrote the retrieved_at marker, handing the same one-time
+    bearer token out twice. Only the ONE caller whose UPDATE actually
+    matches the still-unretrieved row (RETURNING gives it the token before
+    the follow-up wipe) gets a result; every racing caller matches zero
+    rows and gets None, the same as a replay.
     """
     with _connect(db) as conn:
+        # Claim the row first (sets retrieved_at, still holding raw_token so
+        # RETURNING can hand it back). The WHERE guard is the whole race
+        # defense: at most one connection's UPDATE can match the
+        # retrieved_at IS NULL row, since the write lock serializes them and
+        # the loser re-reads a now-non-NULL retrieved_at.
         row = conn.execute(
-            "SELECT user_id, raw_token, retrieved_at FROM signup_activation_tokens "
-            "WHERE stripe_session_id = ?", (stripe_session_id,)).fetchone()
-        if row is None or row["retrieved_at"] is not None:
+            "UPDATE signup_activation_tokens SET retrieved_at = ? "
+            "WHERE stripe_session_id = ? AND retrieved_at IS NULL "
+            "RETURNING user_id, raw_token",
+            (_now_iso(), stripe_session_id)).fetchone()
+        if row is None:
             return None
+        # Won the claim -- now wipe the raw secret (kept out of the claim
+        # UPDATE only so RETURNING above could carry it back). Same
+        # connection/transaction, so the wipe commits atomically with the
+        # claim.
         conn.execute(
-            "UPDATE signup_activation_tokens SET raw_token = NULL, retrieved_at = ? "
-            "WHERE stripe_session_id = ?", (_now_iso(), stripe_session_id))
+            "UPDATE signup_activation_tokens SET raw_token = NULL "
+            "WHERE stripe_session_id = ?", (stripe_session_id,))
         return {"user_id": row["user_id"], "raw_token": row["raw_token"]}
 
 

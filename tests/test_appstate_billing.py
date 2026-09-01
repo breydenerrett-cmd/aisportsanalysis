@@ -554,6 +554,19 @@ class StripeWebhookSignatureTests(unittest.TestCase):
         self.assertTrue(
             billing.verify_stripe_webhook_signature(payload, header, self.SECRET, now=now))
 
+    def test_out_of_range_timestamp_fails_closed_never_raises(self):
+        # A forged header can carry a syntactically-valid int that is far
+        # outside the range datetime.fromtimestamp can represent. The
+        # verifier's contract is "return False, never raise" -- an
+        # unauthenticated caller must not be able to turn a crafted
+        # Stripe-Signature into a 500 on POST /billing/webhook.
+        for ts in ("99999999999999999999", "-99999999999999999999"):
+            header = f"t={ts},v1=deadbeef"
+            # Must not raise, and must fail closed.
+            self.assertFalse(
+                billing.verify_stripe_webhook_signature(b"{}", header, self.SECRET),
+                f"out-of-range t={ts} must verify False, not raise")
+
 
 class FakeTransportGuardTests(unittest.TestCase):
     """scripts/funnel_smoke.sh's fake-transport hook (billing._maybe_fake_

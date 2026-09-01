@@ -9,6 +9,7 @@ tests/test_appstate_users.py uses.
 from __future__ import annotations
 
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 
@@ -120,6 +121,74 @@ class IdempotencyKeyTests(unittest.TestCase):
         user1_key = customers.get_or_create_idempotency_key(1, "beta", self._generator, db=self.db)
         user2_key = customers.get_or_create_idempotency_key(2, "beta", self._generator, db=self.db)
         self.assertNotEqual(user1_key, user2_key)
+
+
+class ActivationTokenOneTimeTests(unittest.TestCase):
+    """The one-time-retrieval contract of the activation-token bridge --
+    GET /signup/complete hands the raw bearer token back exactly once, even
+    when two requests for the same (URL-visible) session id arrive at the
+    same instant. Regression for the SELECT-then-UPDATE race that let two
+    concurrent callers each come away with the same one-time token."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.db = Path(self._tmp.name) / "app.db"
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def test_sequential_retrieval_is_one_time(self):
+        customers.record_activation_token("cs_seq", 7, "raw-secret", db=self.db)
+        first = customers.take_activation_token("cs_seq", db=self.db)
+        self.assertEqual(first, {"user_id": 7, "raw_token": "raw-secret"})
+        self.assertIsNone(customers.take_activation_token("cs_seq", db=self.db))
+
+    def test_concurrent_retrieval_yields_exactly_one_winner(self):
+        # Two browsers/attempts racing for the same session id (which is
+        # visible in the success-page URL) must never both receive the
+        # token. Repeated across trials because a race that "usually" holds
+        # is not a fix -- the buggy SELECT-then-UPDATE handed the token to
+        # both callers in the large majority of trials.
+        trials = 60
+        workers = 2
+        for t in range(trials):
+            session_id = f"cs_race_{t}"
+            customers.record_activation_token(session_id, 42, "raw-secret", db=self.db)
+            barrier = threading.Barrier(workers)
+            results: list = []
+            lock = threading.Lock()
+
+            def worker():
+                barrier.wait()
+                got = customers.take_activation_token(session_id, db=self.db)
+                with lock:
+                    results.append(got)
+
+            threads = [threading.Thread(target=worker) for _ in range(workers)]
+            for th in threads:
+                th.start()
+            for th in threads:
+                th.join()
+
+            winners = [r for r in results if r is not None]
+            self.assertEqual(
+                len(winners), 1,
+                f"trial {t}: expected exactly one successful retrieval, "
+                f"got {len(winners)} -- the one-time token leaked under a race")
+            self.assertEqual(winners[0], {"user_id": 42, "raw_token": "raw-secret"})
+
+    def test_raw_token_is_wiped_after_retrieval_but_row_kept(self):
+        customers.record_activation_token("cs_wipe", 3, "raw-secret", db=self.db)
+        customers.take_activation_token("cs_wipe", db=self.db)
+        # has_activation_token stays True (row kept for webhook-redelivery
+        # idempotency) but the raw secret is gone.
+        self.assertTrue(customers.has_activation_token("cs_wipe", db=self.db))
+        with customers._connect(self.db) as conn:
+            row = conn.execute(
+                "SELECT raw_token, retrieved_at FROM signup_activation_tokens "
+                "WHERE stripe_session_id = ?", ("cs_wipe",)).fetchone()
+        self.assertIsNone(row["raw_token"])
+        self.assertIsNotNone(row["retrieved_at"])
 
 
 if __name__ == "__main__":

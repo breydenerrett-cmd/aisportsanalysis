@@ -586,7 +586,15 @@ def verify_stripe_webhook_signature(payload: bytes, sig_header: Optional[str], s
     except ValueError:
         return False
     now = now or datetime.now(timezone.utc)
-    event_time = datetime.fromtimestamp(event_epoch, tz=timezone.utc)
+    try:
+        event_time = datetime.fromtimestamp(event_epoch, tz=timezone.utc)
+    except (OverflowError, OSError, ValueError):
+        # A syntactically-valid but out-of-range unix timestamp (e.g. a
+        # forged header carrying t=99999999999999999999) must fail the
+        # verification, not raise: this is an unauthenticated endpoint, and
+        # the documented contract is "return False, never raise" so a
+        # crafted header can never turn into a 500 on the webhook route.
+        return False
     if abs(now - event_time) > tolerance:
         return False
     signed_payload = f"{timestamp_str}.".encode("utf-8") + payload

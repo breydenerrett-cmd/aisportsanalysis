@@ -266,6 +266,20 @@ class WebhookEndpointTests(unittest.TestCase):
             asyncio.run(stripe_webhook(request))
         self.assertEqual(ctx.exception.status_code, 400)
 
+    def test_out_of_range_timestamp_header_is_400_not_500(self):
+        # A forged Stripe-Signature carrying a wildly out-of-range unix
+        # timestamp must be rejected as an invalid signature (400), never
+        # crash the route into an unhandled 500. Regression: the verifier
+        # used to raise OverflowError on such a header, which this
+        # unauthenticated route did not catch.
+        os.environ[billing.ENV_STRIPE_WEBHOOK_SECRET] = self.SECRET
+        from api.billing import stripe_webhook
+        request = _FakeRequest(
+            b"{}", {"stripe-signature": "t=99999999999999999999,v1=deadbeef"})
+        with self.assertRaises(HTTPException) as ctx:
+            asyncio.run(stripe_webhook(request))
+        self.assertEqual(ctx.exception.status_code, 400)
+
 
 @unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
 class WebhookPersistenceTests(unittest.TestCase):
