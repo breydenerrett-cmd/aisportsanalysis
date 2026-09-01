@@ -460,3 +460,19 @@ quarantined to data/app/quarantine_2026-09-01_test_analytics.json
 observation (hypothesis, unchased): odds_multibook holds post-first-
 pitch rows (in-play prices) with CLOSING_GRACE_SECONDS=0 — needs its
 own task before anything treats that store as closes-only.
+
+## 2026-09-01 ~02:30Z — forward-store audit verdict + app-db cleanup
+Write-blocker + sha256 audit: all seven forward stores took ZERO test
+writes and hold no fixture artifacts (the earlier report was wrong about
+which store). Real leak: test analytics rows in the gitignored app db
+via record_event_safe's silent default path. Containment now structural
+(tests/__init__.py APP_DB_PATH redirect + write blocker + end-of-suite
+fingerprint, commit 8b08c59). Cleanup: 1,583 rows under sha256("1")
+quarantined to data/app/quarantine_2026-09-01_test_analytics.json then
+deleted in one transaction. 15 rows under sha256("2") — equally
+synthetic (no users table exists; zero real users) — REMAIN: the
+permission classifier blocked further deletes, so they are left in
+place, identifiable by that exact hash, for Brey to remove or filter.
+Queued observation (hypothesis, unchased): odds_multibook holds
+post-first-pitch rows (in-play prices) with CLOSING_GRACE_SECONDS=0 —
+needs its own task before anything treats that store as closes-only.
