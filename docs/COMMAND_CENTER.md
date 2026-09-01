@@ -45,6 +45,15 @@ personalization, full alerts, SEO/content build.
 
 ## PHASE LOG
 
+- 2026-09-01 ~00:45: Backend wave 2 fully landed and integrated (odds,
+  caching/freshness, contract tests+analytics scaffold, Clerk seam +
+  Stripe test-mode provider, disclaimer+staging prep, hardening batch,
+  game surface AUTH-GATED for alpha; smoke green end-to-end incl. authed
+  flow; suite ~2,569). Wave 3 ACTIVE (3): Stripe customer mapping +
+  checkout wiring; analytics wiring + admin ops endpoints; My Bets
+  settlement + scripts/ci.sh. Brey queue unchanged: Fly deploy token,
+  Clerk org + JWT dep approval, Stripe test key, final legal copy.
+
 - 2026-09-01 00:xx: Backend wave 1 all landed (Bet Check API, Games/What
   Changed API, auth+user-state, outcome ceiling; suite 2,335). ACTIVE (5):
   red-team of auth/API surface (opus), deploy+monitoring groundwork,
