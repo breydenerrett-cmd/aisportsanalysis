@@ -1,0 +1,324 @@
+/*
+ * LINEHOUND v1 base layer -- reset, type defaults, the chamfer/texture
+ * utilities every component builds on, and the generic loading/empty/
+ * error/not-yet-available state primitives (handoff section 10).
+ * Depends on tokens.css being loaded first.
+ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { color-scheme: dark; }
+
+/* Safety net: every section that legitimately scrolls horizontally
+   (the slate rail, a market table) owns its own overflow-x: auto: the
+   page itself must never gain a horizontal scrollbar. */
+html, body { overflow-x: hidden; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+img, svg { max-width: 100%; display: block; }
+
+a { color: var(--live); text-decoration: none; }
+a:hover { color: var(--live-lit); }
+
+h1, h2, h3, h4 { margin: 0; font-family: var(--font-display); font-weight: 800; }
+
+p { margin: 0; }
+
+ul, ol { margin: 0; padding: 0; list-style: none; }
+
+button, input, textarea, select { font-family: inherit; color: inherit; }
+
+button { cursor: pointer; background: none; border: 0; padding: 0; }
+
+[hidden] { display: none !important; }
+
+/* Minimum interactive target (section 09's keyboard contract). */
+button, a.btn, .tab-bar__item, .icon-rail__item {
+  min-height: 44px;
+}
+
+/* ---- focus-visible ring: replaces any removed outline (mandatory) --- */
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid var(--live);
+  outline-offset: 2px;
+}
+/* On a cyan fill, a cyan ring has no contrast -- swap to white. */
+.on-live:focus-visible { outline-color: #FFFFFF; }
+
+/* ---- chamfers: clip-path replaces border-radius everywhere except
+   the mobile device frame. Set --r on the element (or use an -r-* class)
+   before applying .chamfer. --------------------------------------- */
+.chamfer {
+  --r: var(--r-panel);
+  clip-path: polygon(
+    var(--r) 0, 100% 0, 100% calc(100% - var(--r)),
+    calc(100% - var(--r)) 100%, 0 100%, 0 var(--r)
+  );
+}
+.chamfer--marker { --r: var(--r-marker); }
+.chamfer--chip { --r: var(--r-chip); }
+.chamfer--badge { --r: var(--r-badge); }
+.chamfer--btn { --r: var(--r-btn); }
+.chamfer--panel { --r: var(--r-panel); }
+.chamfer--tile { --r: var(--r-tile); }
+.chamfer--lg { --r: var(--r-lg); }
+.chamfer--xl { --r: var(--r-xl); }
+
+/* ---- standard HUD panel fill + edge ring ------------------------- */
+.panel {
+  position: relative;
+  background: linear-gradient(150deg, var(--surface-1-a), var(--surface-1-b));
+  box-shadow: inset 0 0 0 1px var(--edge-1);
+  overflow: hidden;
+}
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, var(--scanline) 0 1px, transparent 1px 3px);
+  pointer-events: none;
+}
+.panel > * { position: relative; }
+
+/* Carbon-weave overlay, layered onto heroes / price bugs / tiles. */
+.tex-carbon {
+  position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(112deg, var(--carbon) 0 2px, transparent 2px 5px);
+}
+.tex-scanline {
+  position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg, var(--scanline) 0 1px, transparent 1px 3px);
+}
+
+/* ---- eyebrow / label type ----------------------------------------*/
+.eyebrow {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: .22em;
+  font-size: 11.5px;
+  color: var(--live);
+  text-transform: uppercase;
+}
+.eyebrow--muted { color: var(--text-mute); }
+.eyebrow--money { color: var(--money-lit); }
+
+/* ---- badges / chips -----------------------------------------------*/
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 5px 11px;
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .16em;
+  white-space: nowrap;
+  --r: var(--r-chip);
+}
+.badge--outline {
+  background: rgba(255, 255, 255, .09);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16);
+  color: var(--text-3);
+}
+.badge--money {
+  background: linear-gradient(120deg, var(--money), var(--money-2));
+  color: var(--money-ink);
+}
+.badge--live {
+  background: linear-gradient(120deg, var(--live), var(--live-2));
+  color: var(--live-ink);
+}
+.badge--neutral {
+  background: rgba(255, 255, 255, .85);
+  color: var(--ground);
+}
+
+/* Sample/demo labelling -- mandatory wherever hardcoded data ships
+   (handoff section 12: "labelling obligation, non-negotiable"). */
+.badge--sample {
+  background: rgba(255, 61, 87, .14);
+  box-shadow: inset 0 0 0 1px rgba(255, 61, 87, .42);
+  color: var(--money-soft);
+}
+
+/* ---- live dot ------------------------------------------------------*/
+.live-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--live);
+  animation: gbreathe var(--dur-gbreathe) ease-in-out infinite;
+}
+.live-dot--stale {
+  animation: none;
+  opacity: .35;
+  background: var(--text-faint);
+}
+
+/* ---- generic screen-state primitives (handoff section 10) ---------*/
+.state-loading .state-loading__figure {
+  color: transparent;
+  position: relative;
+}
+.state-loading__figure::after {
+  content: "\2014"; /* em dash placeholder, per spec: a rule + dash, never a spinner */
+  position: absolute; inset: 0;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+}
+
+.state-empty {
+  padding: var(--sp-9) 0;
+}
+.state-empty__title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 800;
+  font-size: 22px;
+  color: var(--text-hi);
+  margin-bottom: var(--sp-4);
+}
+.state-empty__body {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-mute);
+}
+
+.state-error {
+  position: relative;
+  padding: var(--sp-9) var(--sp-11);
+  background: linear-gradient(150deg, rgba(255, 61, 87, .10), rgba(255, 255, 255, .014));
+  box-shadow: inset 0 0 0 1px rgba(255, 61, 87, .24);
+}
+.state-error::before {
+  content: "";
+  position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: linear-gradient(180deg, var(--money), transparent);
+}
+.state-error__title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 800;
+  font-size: 22px;
+  color: var(--text-hi);
+  margin-bottom: var(--sp-3);
+}
+.state-error__body { font-size: 14.5px; color: var(--money-soft); margin-bottom: var(--sp-7); }
+
+/* NOT YET AVAILABLE -- canonical treatment, mandatory wherever a metric
+   is not ingested (handoff section 10). Never estimated, never blank. */
+.not-yet-available {
+  position: relative;
+  padding: var(--sp-7) var(--sp-8);
+  background: repeating-linear-gradient(112deg, rgba(255, 255, 255, .03) 0 6px, rgba(255, 255, 255, .008) 6px 12px);
+  box-shadow: inset 0 0 0 1px var(--edge-1);
+  --r: var(--r-badge);
+}
+.not-yet-available__head {
+  display: flex; align-items: center; gap: var(--sp-4);
+  margin-bottom: var(--sp-3);
+}
+.not-yet-available__marker {
+  width: 7px; height: 7px; background: var(--text-faint);
+  --r: 2px;
+}
+.not-yet-available__label {
+  font-family: var(--font-display);
+  font-size: 11px; font-weight: 800; letter-spacing: .2em;
+  color: var(--text-mute);
+  white-space: nowrap;
+}
+.not-yet-available__body {
+  font-size: 13.5px; line-height: 1.5; color: var(--text-dim);
+}
+
+/* WATCH OUT / never-manufacture-a-concern empty state (Integrity Rule 1):
+   the block still renders its heading and red edge rule even when there
+   is nothing to warn about -- only the body copy changes. */
+.watchout {
+  position: relative;
+  padding: var(--sp-9) var(--sp-11);
+  background: linear-gradient(150deg, rgba(255, 61, 87, .10), rgba(255, 255, 255, .014));
+  box-shadow: inset 0 0 0 1px rgba(255, 61, 87, .24);
+}
+.watchout::before {
+  content: "";
+  position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: linear-gradient(180deg, var(--money), transparent);
+}
+.watchout__body { font-size: 15.5px; line-height: 1.55; color: var(--text-2); }
+
+/* ---- entrance motion (data-rise / data-tile / data-price hooks,
+   wired by js/motion.js). Content is visible-by-default -- the script
+   adds .g-armed before observing, so a script failure yields a static
+   but complete page (fail-safe reveal, handoff section 08). ---------*/
+[data-rise], [data-tile], [data-price] { opacity: 1; }
+.g-armed[data-rise] { opacity: 0; transform: translateY(26px); }
+.g-armed[data-rise].g-in {
+  opacity: 1; transform: translateY(0);
+  transition: opacity var(--dur-grise) var(--ease-rise), transform var(--dur-grise) var(--ease-rise);
+}
+.g-armed[data-tile] { opacity: 0; transform: translateY(30px) scale(.97); }
+.g-armed[data-tile].g-in {
+  opacity: 1; transform: translateY(0) scale(1);
+  transition: opacity var(--dur-gtile) var(--ease-rise), transform var(--dur-gtile) var(--ease-rise);
+}
+.g-armed[data-price] { opacity: 0; transform: translateY(30px) scale(.95); filter: brightness(.45); }
+.g-armed[data-price].g-in {
+  opacity: 1; transform: translateY(0) scale(1); filter: brightness(1);
+  transition: opacity var(--dur-gprice) var(--ease-rise) var(--dur-gprice-delay),
+              transform var(--dur-gprice) var(--ease-rise) var(--dur-gprice-delay),
+              filter var(--dur-gprice) var(--ease-rise) var(--dur-gprice-delay);
+}
+
+[data-beat].g-beat {
+  animation: gbeat var(--dur-gbeat) var(--ease-beat);
+}
+
+@keyframes gbreathe {
+  0%, 100% { opacity: .35; transform: scale(.86); }
+  50% { opacity: 1; transform: scale(1.14); }
+}
+@keyframes gbeat {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.055); }
+  100% { transform: scale(1); }
+}
+@keyframes gseam {
+  0%, 45% { transform: translateY(-140%); }
+  100% { transform: translateY(240%); }
+}
+@keyframes gsheen {
+  0%, 100% { transform: translateX(-120%); }
+  50% { transform: translateX(220%); }
+}
+@keyframes gping {
+  0% { transform: scale(1); opacity: .6; }
+  100% { transform: scale(3.6); opacity: 0; }
+}
+@keyframes gcaret {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+/* ---- prefers-reduced-motion: mandatory, no loss of information ----*/
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+  .g-armed[data-rise], .g-armed[data-tile], .g-armed[data-price] {
+    opacity: 1 !important; transform: none !important; filter: none !important;
+  }
+  .live-dot { animation: none; }
+}

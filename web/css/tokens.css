@@ -1,0 +1,130 @@
+/*
+ * LINEHOUND v1 design tokens -- values transcribed verbatim from
+ * design/linehound-v1/LINEHOUND Design System Handoff.dc.html section 02
+ * (color), 03 (type), 04 (spacing/geometry/radii), 08 (motion). This file
+ * is the contract; nothing here is invented. Amendments belong in that
+ * handoff document, not silently in this file (see its closing section).
+ *
+ * Chamfers replace border-radius everywhere except the 42px mobile
+ * device-frame radius: components set `--r` and apply the `.chamfer`
+ * utility from base.css rather than `border-radius`.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* ---- ground and surface -------------------------------------- */
+  --ground: #0B0C0E;
+  --rail: #0D0E11;
+  --rail-top: #14161A;
+  --tile-base: #0E1013;
+  --surface-1-a: rgba(255, 255, 255, .045);
+  --surface-1-b: rgba(255, 255, 255, .012);
+  --edge-1: rgba(255, 255, 255, .07);
+  --scanline: rgba(255, 255, 255, .03);
+  --carbon: rgba(255, 255, 255, .026);
+
+  /* ---- hot red: the money moment (reserved -- price advantage only) */
+  --money: #FF3D57;
+  --money-2: #FF7A45;
+  --money-lit: #FF6274;
+  --money-soft: #FF9AA6;
+  --money-label: #FFB3BD;
+  --money-ink: #22060A;
+
+  /* ---- ice cyan: live, changed, analytical (reserved) ------------ */
+  --live: #00E0FF;
+  --live-2: #0090C8;
+  --live-lit: #A8F4FF;
+  --live-label: #9FE9F5;
+  --live-badge: #8FE9FA;
+  --live-ink: #03222B;
+
+  /* ---- text -------------------------------------------------------*/
+  --text-hi: #F6F7FA;
+  --text: #F2F4F8;
+  --text-2: #D6DBE4;
+  --text-3: #B9C0CC;
+  --text-mute: #8A919E;
+  --text-dim: #6F7682;
+  --text-faint: #5E6674;
+  --text-ghost: #4E555F;
+
+  /* ---- team accents (identity only -- never a status color) ------ */
+  --team-pit: #FDB827;
+  --team-mil: #FFC52F;
+  --team-block-a: #12284B;
+  --team-block-b: #1A4A57;
+
+  /* ---- typography -------------------------------------------------*/
+  --font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --font-body: 'Instrument Sans', -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+
+  /* ---- spacing scale ------------------------------------------- */
+  --sp-1: 2px;
+  --sp-2: 6px;
+  --sp-3: 8px;
+  --sp-4: 10px;
+  --sp-5: 12px;
+  --sp-6: 14px;
+  --sp-7: 16px;
+  --sp-8: 18px;
+  --sp-9: 20px;
+  --sp-10: 22px;
+  --sp-11: 26px;
+  --sp-12: 32px;
+  --sp-13: 40px;
+  --sp-14: 44px;
+  --sp-15: 56px;
+  --sp-16: 74px;
+  --sp-17: 84px;
+
+  /* ---- chamfer radii ("R" values, section 04) -------------------- */
+  --r-marker: 4px;
+  --r-chip: 6px;
+  --r-badge: 8px;
+  --r-btn: 12px;
+  --r-panel: 16px;
+  --r-tile: 18px;
+  --r-lg: 20px;
+  --r-xl: 24px;
+  --r-frame: 42px; /* the one true border-radius in the system */
+
+  /* ---- motion: durations and easings (section 08) ---------------- */
+  --ease-rise: cubic-bezier(.16, .84, .3, 1);
+  --ease-draw: cubic-bezier(.22, .72, .2, 1);
+  --ease-beat: cubic-bezier(.34, 1.4, .5, 1);
+  --ease-seam: cubic-bezier(.4, 0, .5, 1);
+  --ease-ping: cubic-bezier(0, 0, .2, 1);
+
+  --dur-grise: 720ms;
+  --dur-gtile: 660ms;
+  --dur-gprice: 1050ms;
+  --dur-gprice-delay: 340ms;
+  --dur-gbeat: 620ms;
+  --dur-gdraw: 1500ms;
+  --dur-gdraw-delay: 120ms;
+  --dur-chart-fill: 800ms;
+  --dur-chart-fill-delay: 700ms;
+  --dur-gseam: 11000ms;
+  --dur-gsheen: 5500ms;
+  --dur-gbreathe: 2600ms;
+  --dur-gping: 2800ms;
+  --dur-gcaret: 1100ms;
+  --dur-gtype: 2600ms;
+  --dur-hover-lift: 200ms;
+  --dur-tile-lift: 340ms;
+  --dur-tile-sweep: 1100ms;
+  --dur-seam-side: 500ms;
+  --dur-ring-bloom: 300ms;
+  --dur-segment: 250ms;
+
+  /* ---- layout constants ------------------------------------------*/
+  --rail-width: 76px;
+  --gutter-desktop: 40px;
+  --gutter-mobile: 14px;
+  --topbar-height: 64px;
+  --tabbar-height: 74px;
+  --mobile-breakpoint: 900px;
+}

@@ -19,6 +19,8 @@ import { trackFunnelEvent } from "./api.js";
 import { el, clear } from "./dom.js";
 import { renderDisclaimerFooter } from "./meta.js";
 import { BETA_TIER } from "./pricing.js";
+import { renderWordmark } from "./brand.js";
+import { armEntrances, armParallax, armCharts } from "./motion.js";
 
 function renderPricing(host) {
   clear(host);
@@ -40,7 +42,17 @@ function boot() {
   const pricingHost = document.querySelector("[data-hook='pricing-host']");
   if (disclaimerHost) renderDisclaimerFooter(disclaimerHost);
   if (pricingHost) renderPricing(pricingHost);
+  // Wordmarks are markup-authored today (see brand.js's docstring on why
+  // <title> and the static text stay literal), but every mark carries the
+  // hook so a future rename only has to touch BRAND_NAME plus these two
+  // literal strings, not hunt through the design-system CSS.
+  document.querySelectorAll("[data-hook='brand-mark']").forEach((host) => renderWordmark(host));
   trackFunnelEvent("landing_view");
+  // Design-system motion (handoff section 08) -- content renders complete
+  // and static if this never runs; see motion.js's fail-safe-reveal note.
+  armEntrances(document);
+  armParallax(document);
+  armCharts(document);
 }
 
 document.addEventListener("DOMContentLoaded", boot);

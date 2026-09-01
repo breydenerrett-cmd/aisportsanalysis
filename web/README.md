@@ -1,26 +1,47 @@
-# web/ — structural reference client
+# web/ — the customer client
 
-**Purpose.** Prove the API (`docs/API_CONTRACTS.md`) is consumable
-end-to-end with semantic HTML and minimal vanilla JS, and give the
-approved design system a ready structure to attach to. This client makes
-**zero aesthetic decisions** — no colors, no fonts, no layout CSS beyond
-the single `[hidden]{display:none}` rule in `index.html`'s `<head>`. If
-something here looks plain, that is the point, not an oversight.
+**HISTORY.** Until 2026-09-01 this client made **zero aesthetic
+decisions** by design — no colors, no fonts, no layout CSS beyond one
+`[hidden]{display:none}` rule. That phase is over: the frozen LINEHOUND
+v1 design (`design/linehound-v1/`) has landed, `tests/test_web_structure.py`
+was rewritten to drop the zero-aesthetic rules on purpose (see that file's
+own docstring), and `css/` below is now real, permanent styling — not a
+placeholder waiting for someone else to attach a stylesheet.
+
+**Purpose.** Consume the API (`docs/API_CONTRACTS.md`) end-to-end and
+present it as the LINEHOUND v1 design system specifies. `web/landing.html`
+(phase 1, done) implements the Landing canvas; `index.html`'s app screens
+(Gameday, Bet Check, Games, Odds, Bets — phase 2) still use the
+structural-only markup built during the zero-aesthetic phase and will be
+restyled against the same token layer next.
 
 ## What's here
 
 ```
 web/
   index.html        app shell: nav landmark, token-entry form, <main> outlet, disclaimer footer
+  landing.html       public marketing page -- built to design/linehound-v1's Landing canvas
+  css/
+    tokens.css        design tokens -- color, type ramp, spacing, chamfer radii, motion durations/easings
+    base.css          reset, base type, chamfer/panel/badge utilities, loading/empty/error/NOT YET
+                       AVAILABLE state primitives, entrance-motion classes, mandatory reduced-motion block
+    components.css     buttons, monogram chip, price display, advantage pill, event line, segmented control
+    nav.css            site nav (public pages) + icon-rail / tab-bar (phase 2 app-shell foundation)
+    landing.css         Landing-page-specific layout, responsive at the one real breakpoint (900px)
   js/
     api.js          fetch wrapper: attaches Authorization: Bearer <token> from localStorage
     dom.js          element-builder + generic JSON-to-<dl>/<ul> renderer for opaque fields
     meta.js         GET /meta disclaimer footer + shared staleness renderer
+    brand.js         single source of truth for the working brand name (LINEHOUND, pending trademark clearance)
+    motion.js         shared entrance/parallax/chart-draw engine (handoff section 08), reduced-motion aware
     today.js        TODAY view       -- GET /today, GET /changed/{date}
     games.js        GAMES view       -- GET /games/{date}, GET /game/{date}/{away}/{home}
     betcheck.js     BET CHECK view   -- POST /betcheck (the fixed skeleton, see below)
     odds.js         ODDS view        -- GET /odds/{date}, GET /odds/{date}/{away}/{home}
     mybets.js       MY BETS view     -- GET/POST/DELETE /my-bets
+    landing.js        boots landing.html: disclaimer footer, BETA_TIER pricing render, brand mark, motion, funnel beacon
+    pricing.js         BETA_TIER -- the one source of truth for the subscription price
+    signup.js          SIGNUP + SIGNUP COMPLETE views
     main.js         hash router + nav + token form wiring
   README.md         this file
 ```
@@ -28,6 +49,28 @@ web/
 Served by `api/web.py` (a router, not wired into `api/app.py` — see that
 file's module docstring for the one line its owner adds) or by any static
 file server pointed at this directory; see "Running it" below.
+
+## Design system (phase 1: foundation + Landing)
+
+`css/tokens.css` is the contract, transcribed verbatim from
+`design/linehound-v1/LINEHOUND Design System Handoff.dc.html` section 02
+(color), 03 (type), 04 (spacing/chamfer radii), 08 (motion durations and
+easings) — as CSS custom properties, not re-derived or approximated.
+Chamfers (the frozen design's one true geometric signature) are done with
+`clip-path`, never `border-radius`, via the `.chamfer` utility in
+`base.css` — the 42px mobile device-frame radius is the only exception,
+per the handoff's own rule. `css/base.css` also carries the generic
+loading/empty/error/`NOT YET AVAILABLE` state primitives and the
+IntersectionObserver-driven entrance-motion classes (`[data-rise]`,
+`[data-tile]`, `[data-price]`) that `js/motion.js` arms — content is
+visible by default and only goes transparent once armed, so a script
+failure or `prefers-reduced-motion` yields a complete, static page (see
+`base.css`'s mandatory reduced-motion block and `motion.js`'s docstring).
+`css/nav.css` builds the public `.site-nav` Landing actually uses, plus
+`.icon-rail`/`.tab-bar` as the phase-2 app-shell foundation the handoff's
+nav section (06) describes — not yet consumed by `index.html`.
+`js/brand.js` is the one place "LINEHOUND" the working brand name lives
+as a constant; `landing.js` reads it to mount every visible wordmark.
 
 ## How the design system attaches later
 

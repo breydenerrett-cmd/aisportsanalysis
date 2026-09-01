@@ -2,322 +2,515 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>LINEHOUND — beta</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LINEHOUND — check your bet before you fire</title>
+<meta name="description" content="See the actual price, the market-implied consensus, and what changed — for one bet you're about to make. MLB only. No predictions, no guarantees.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;1,600;1,700;1,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/nav.css">
+<link rel="stylesheet" href="css/landing.css">
 </head>
-<body>
-<header data-hook="landing-header">
-<p data-hook="product-name">LINEHOUND</p>
-</header>
+<body class="landing">
+
+<nav class="site-nav" aria-label="primary" data-hook="landing-header">
+  <span class="wordmark" data-hook="brand-mark">
+    <span class="wordmark__mark"><span></span></span>
+    <span class="wordmark__text" data-hook="product-name">LINEHOUND</span>
+  </span>
+  <div class="site-nav__links">
+    <a href="#bet-check">Bet Check</a>
+    <a href="#better-numbers">Better numbers</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#faq">FAQ</a>
+  </div>
+  <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-primary">Try 3 Bet Checks free</a>
+</nav>
 
 <main>
 
-<!-- Hero variant A ("Show your work") -- the one variant rendered today.
-     Copy verbatim from docs/CONTENT_LANDING.md section 1. Working brand:
-     LINEHOUND (temporary, pending trademark/domain clearance -- Brey
-     2026-09-01) -- every mention here uses that name until a final
-     brand locks. -->
-<section data-view="hero" aria-label="hero" data-hook="hero">
-<h1 data-hook="hero-headline">Every claim, checkable.</h1>
+<!-- HERO -->
+<section class="hero" aria-label="hero" data-hook="hero">
+  <div class="hero__side hero__side--a" data-parallax=".07"></div>
+  <div class="hero__side hero__side--b" data-parallax=".07"></div>
+  <div class="hero__glow" aria-hidden="true"></div>
+  <div class="hero__seam" aria-hidden="true"></div>
+  <div class="hero__seam-sweep" aria-hidden="true"><span></span></div>
 
-<p data-hook="hero-subhead">LINEHOUND shows you the actual price, the
-actual market consensus, and what changed since this morning — for one bet
-you're about to make. No hidden math, no promised outcome.</p>
+  <div class="hero__scanner" data-rise data-delay="60">
+    <span class="hero__scanner-bracket" aria-hidden="true"></span>
+    <span class="hero__scanner-text">Tonight · 15 games · 11 books scanned</span>
+    <span class="badge badge--outline chamfer chamfer--chip" data-hook="sample-slate-badge">Sample slate · demo data</span>
+  </div>
 
-<a href="index.html#/signup" data-hook="cta-primary">Check a bet</a>
+  <div class="hero__matchup" data-rise data-delay="170">
+    <div class="hero__team hero__team--away">
+      <div class="hero__team-name">Pirates</div>
+      <div class="hero__team-rule" style="background:linear-gradient(90deg, var(--team-pit), transparent)"></div>
+      <div class="hero__team-meta">
+        <span class="hero__team-record">68-66</span>
+        <span class="hero__team-pitcher">Skenes RHP</span>
+      </div>
+    </div>
+    <div class="hero__vs">
+      <span class="hero__vs-text">vs</span>
+      <span class="hero__vs-time">7:40pm ET</span>
+    </div>
+    <div class="hero__team hero__team--home">
+      <div class="hero__team-name">Brewers</div>
+      <div class="hero__team-rule" style="background:linear-gradient(270deg, var(--team-mil), transparent)"></div>
+      <div class="hero__team-meta">
+        <span class="hero__team-pitcher">Peralta RHP</span>
+        <span class="hero__team-record">82-52</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero__spacer"></div>
+  <div class="hero__scrim" aria-hidden="true"></div>
+
+  <div class="hero__footer">
+    <div class="hero__price chamfer" data-price data-delay="340">
+      <div class="hero__price-sheen" aria-hidden="true"></div>
+      <div class="hero__price-eyebrow">
+        <span class="hero__price-dot"></span>
+        <span class="hero__price-label">Best of 11 books · BetRivers</span>
+      </div>
+      <div class="hero__price-row">
+        <span class="price-figure price-figure--hero" data-beat>-110</span>
+        <div>
+          <div class="price-was">-118</div>
+          <div class="price-was-label">Everywhere else</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero__cta-group" data-rise data-delay="520">
+      <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup-hero">Try 3 Bet Checks free</a>
+      <p class="hero__cta-note">Your first 3 Bet Checks are free — three total, not per day. No card required. MLB only.</p>
+    </div>
+  </div>
 </section>
 
-<!--
-Hero variants B and C (docs/CONTENT_LANDING.md section 1) -- HYPOTHESES,
-not shown today, kept here per this task's brief for the design session
-and for whoever locks the final hero choice.
-
-Hero B -- "What we don't know, out loud"
-Headline: We publish our losses too.
-Subhead: Four pre-registered research families, dozens of tested ideas,
-zero that beat the market. We'll tell you exactly which ones we ruled out
-— and why that's the point.
-Primary CTA: See the research record
-
-Hero C -- "Line shopping, made checkable"
-Headline: Find the better price. See the arithmetic.
-Subhead: LINEHOUND compares the price you'd take against the best
-one on the board right now, and shows you what that's actually worth —
-win or lose — before you place the bet.
-Primary CTA: Try the price check
--->
-
-<!-- How it works -- docs/CONTENT_LANDING.md section 2, verbatim. -->
-<section data-view="how-it-works" aria-label="how it works" data-hook="how-it-works">
-<h2>How it works</h2>
-
-<article data-hook="how-it-works-today">
-<h3>Today</h3>
-
-<p>Open the app and see today's slate — one entry per game, pulled fresh
-for the current date. Each game shows whether a market is currently priced
-for it and how old that price is; if there's no board yet, we say so
-instead of guessing.</p>
-</article>
-
-<article data-hook="how-it-works-game">
-<h3>Game</h3>
-
-<p>Tap into any game for a quick view and a full dossier: team and venue
-identity, the market-implied consensus for each side (a fraction derived
-from de-vigged prices, not a prediction we're making), and the supporting
-detail behind it. When there isn't enough market to form a consensus,
-that's shown as "unavailable," not silently dropped.</p>
-</article>
-
-<article data-hook="how-it-works-bet-check">
-<h3>Bet Check</h3>
-
-<p>Tell us the game, the side, and the price you'd take. We check it
-against the best price currently quoted, show the market-implied consensus
-separately, and lay out the supporting case and the honest counterargument
-for that side — including a line that says plainly when we found no
-significant counterargument. We never fill in a recommendation: that field
-is permanently empty until a validated prediction engine exists, which it
-does not today.</p>
-</article>
-
-<article data-hook="how-it-works-odds">
-<h3>Odds</h3>
-
-<p>Browse the full market board for the slate — every game's quoted prices
-across books, the widest spread on the board, and how often books disagree
-on who's favored. Every price is timestamped with when we last observed
-it.</p>
-</article>
-
-<article data-hook="how-it-works-what-changed">
-<h3>What Changed</h3>
-
-<p>A running note of what moved since a stated point in time (e.g. "since
-this morning") for the whole slate — lineup posts, scratches, roster moves
-— so you're not re-reading a stale page.</p>
-</article>
+<!-- EVERY BETTOR HAS THIS STORY -->
+<section class="section" aria-label="the problem" data-hook="pain-points">
+  <div class="section__head" data-rise>
+    <span class="eyebrow eyebrow--money">Every bettor has this story</span>
+  </div>
+  <h2 class="section__title" data-rise data-delay="60">The bet was already dead and you didn't know it.</h2>
+  <div class="story-grid" style="margin-top:32px">
+    <div class="story-card panel chamfer" data-rise data-delay="80">
+      <div class="story-card__kicker">The number</div>
+      <div class="story-card__title">Took −125.<br>Another book had −110.</div>
+      <p class="story-card__body">Same bet, worse price, no way to have known without checking every book yourself.</p>
+    </div>
+    <div class="story-card panel chamfer" data-rise data-delay="140">
+      <div class="story-card__kicker">The last leg</div>
+      <div class="story-card__title">Fired it anyway.<br>The lineup posted 20 minutes later.</div>
+      <p class="story-card__body">The starter was already scratched. The price hadn't caught up yet.</p>
+    </div>
+    <div class="story-card panel chamfer" data-rise data-delay="200">
+      <div class="story-card__kicker">The scratch</div>
+      <div class="story-card__title">Nine of eleven books moved.<br>You never saw it move.</div>
+      <p class="story-card__body">By the time you refreshed the page, the number you wanted was gone.</p>
+    </div>
+    <div class="story-card panel chamfer" data-rise data-delay="260">
+      <div class="story-card__kicker">The move</div>
+      <div class="story-card__title">A 17c move in the seventh.<br>Nobody told you why.</div>
+      <p class="story-card__body">Every price change has a reason. Most apps just show you the new number.</p>
+    </div>
+  </div>
 </section>
 
-<!-- The honesty story -- docs/CONTENT_LANDING.md section 3, verbatim. -->
-<section data-view="honesty-story" aria-label="the honesty story" data-hook="honesty-story">
-<h2 data-hook="honesty-story-headline">We ran the numbers. Most ideas don't
-survive contact with real games. We tell you which ones didn't, instead of
-quietly shelving them.</h2>
-
-<p>Between 2023 and 2024, we pre-registered four separate research families
-against MLB moneyline betting — a total of 25 distinct ideas at the
-detector/mechanism level (35 counting every registered detector-by-market
-combination) — everything from bullpen workload and platoon matchups to
-market-structure effects like fading recent price moves and cross-book
-price dispersion.</p>
-
-<p data-hook="honesty-story-zero-survivors"><strong>Zero of them survived
-our own falsification tests.</strong></p>
-
-<p>One idea — betting against a book that sat far off the pack — looked
-like a real signal at first: a positive, statistically significant effect
-over 249 selections. Then we ran the checks we'd committed to in advance:
-the effect came almost entirely from one sportsbook, didn't hold up season
-over season, and reversed direction just below the threshold that defined
-it. We killed it, and we kept the record.</p>
-
-<h3>What that means for you:</h3>
-<ul>
-<li>We don't ship a "prediction" because one candidate idea looked good in
-a backtest. Every idea here failed a pre-committed replication test before
-it could reach the product.</li>
-<li>Nothing in LINEHOUND claims a win probability, a predicted
-winner, or a bet recommendation. That's not a feature we haven't built yet
-— it's a rule: the underlying model is uncalibrated, and no payload in the
-product emits a win-probability field.</li>
-<li>What we do give you — the actual quoted prices, the market-implied
-consensus, and what changed recently — is real, checkable, and never
-dressed up as more than it is.</li>
-</ul>
-
-<p><strong>What this product will not do:</strong> tell you who is going
-to win, promise a result, or dress up a quoted price as more than a price.
-We will never call that price an edge, and we will not promise an outcome.
-If that is what you are looking for, we are not the right tool — we have
-not found anything that clears our own bar yet, and we are not going to
-pretend otherwise to sell a subscription.</p>
+<!-- WHY WE BUILT THIS -->
+<section class="section section--tight" aria-label="why we built this" data-hook="honesty-story">
+  <div class="section__head" data-rise>
+    <span class="eyebrow">Why we built this</span>
+  </div>
+  <h2 class="section__title" data-hook="honesty-story-headline" data-rise data-delay="60">We bet too. Most ideas don't survive contact with real games.</h2>
+  <div class="prose" style="margin-top:24px" data-rise data-delay="100">
+    <p>Between 2023 and 2024 we pre-registered four separate research families against
+    MLB moneyline betting — 25 distinct ideas at the detector level (35 counting every
+    registered variant), from bullpen workload and platoon matchups to market-structure
+    effects like fading recent price moves and cross-book price dispersion.</p>
+    <p data-hook="honesty-story-zero-survivors"><strong>Zero of them survived our own
+    falsification tests.</strong> One idea looked like a real signal at first — a
+    positive, statistically significant effect over 249 selections — until the
+    pre-committed checks showed it came almost entirely from one sportsbook and
+    reversed direction just below the threshold that defined it. We killed it and
+    kept the record.</p>
+  </div>
+  <ul class="callout-list">
+    <li class="panel chamfer" data-rise data-delay="60">We don't ship a pick because one candidate idea looked good in a backtest —
+      every idea here failed a pre-committed replication test before it could reach the product.</li>
+    <li class="panel chamfer" data-rise data-delay="120">Nothing here states a win probability or a predicted winner. That's not a feature we
+      haven't built yet — it's a rule, and no field in the product emits one.</li>
+    <li class="panel chamfer" data-rise data-delay="180">What we do give you — the quoted prices, the market-implied consensus, and what changed
+      recently — is real, checkable, and never dressed up as more than it is.</li>
+  </ul>
 </section>
 
-<!-- Price-improvement explainer -- docs/CONTENT_LANDING.md section 4,
-     verbatim, including the fixed calculator callout copy (must not be
-     paraphrased per that doc). Bracketed values are the approved spec's
-     own placeholders, not filled in here -- no component wiring is in
-     this task's scope. -->
-<section data-view="price-improvement" aria-label="what line shopping is actually worth" data-hook="price-improvement">
-<h2>What line shopping is actually worth</h2>
-
-<p>The same bet is often quoted at different prices by different books.
-Taking the better one costs you nothing if the bet loses, and pays you
-more if it wins. That's the entire idea — no prediction, no probability,
-just the arithmetic of two prices on the same bet.</p>
-
-<ul data-hook="price-improvement-two-branch">
-<li data-hook="price-improvement-branch-win">If the bet wins: the better
-price pays more.</li>
-<li data-hook="price-improvement-branch-loss">If the bet loses: both
-prices lose the same stake. The difference is $0.</li>
-</ul>
-
-<p>A better price also lowers the win rate you need to break even — e.g.
-at −110 you need 52.4% of these bets to win to break even; at −105 you
-need only 51.2%. This is pure price arithmetic; no assumed win rate goes
-into it.</p>
-
-<blockquote data-hook="price-improvement-calculator-callout">
-<p>If a bet at [odds_b] wins, it pays [$delta_per_win] more than the same
-bet at [odds_a]. If it loses, both lose the same [stake]. Over [bets]
-winning bets, that's [$delta_per_month] — paid only on the bets that
-win.</p>
-
-<p>The better price also lowers your bar: at [odds_a] you break even
-winning [breakeven_a_pct]% of the time; at [odds_b], [breakeven_b_pct]%.</p>
-
-<p>No prediction involved — this is the arithmetic of two prices on the
-same bet. Prices are as quoted at the moment we observed them; whether a
-book accepts your stake is up to the book. Finding the better number is
-what LINEHOUND does.</p>
-</blockquote>
-
-<p data-hook="price-improvement-small-print">We never name which book had
-the best price on this page — on 63–79% of observed instants, more than
-one book was tied for it, so naming one would be arbitrary. And a quoted
-price is what we observed, not a guarantee that book will take your exact
-bet at your exact size.</p>
+<!-- EVIDENCE LADDER -->
+<section class="section section--tight" aria-label="where our research actually sits" data-hook="evidence-ladder-section">
+  <div class="section__head" data-rise>
+    <span class="eyebrow">How we actually work</span>
+  </div>
+  <h2 class="section__title" data-rise data-delay="60">Where our research actually sits.</h2>
+  <p class="section__lede" data-rise data-delay="100">Five rungs, this order. Only the rung we've actually reached is lit. Today
+    every claim in the product sits at Observation — a description of what the data shows, nothing more.</p>
+  <div class="evidence-ladder" data-hook="evidence-ladder" data-rise data-delay="140">
+    <div class="evidence-ladder__rung evidence-ladder__rung--current">
+      <span class="evidence-ladder__bar"></span>
+      <span class="evidence-ladder__name">Observation</span>
+      <span class="evidence-ladder__flag">◄ current</span>
+    </div>
+    <div class="evidence-ladder__rung"><span class="evidence-ladder__bar"></span><span class="evidence-ladder__name">Exploratory</span></div>
+    <div class="evidence-ladder__rung"><span class="evidence-ladder__bar"></span><span class="evidence-ladder__name">Historical support</span></div>
+    <div class="evidence-ladder__rung"><span class="evidence-ladder__bar"></span><span class="evidence-ladder__name">Forward testing</span></div>
+    <div class="evidence-ladder__rung"><span class="evidence-ladder__bar"></span><span class="evidence-ladder__name">Validated</span></div>
+  </div>
+  <p class="section__lede">Reserved. Nothing reaches Validated without documented forward results — and no rung here is
+    ever converted into a percentage or presented as confidence in an outcome.</p>
 </section>
 
-<!-- Pricing -- single beta tier. Filled at runtime by landing.js from
-     web/js/pricing.js's BETA_TIER, the one source the signup view
-     (web/js/signup.js) also reads -- see both modules' docstrings for why
-     the number lives in JS, not written twice in markup. -->
-<section data-view="pricing" aria-label="pricing" data-hook="pricing">
-<h2>Pricing</h2>
-<div data-hook="pricing-host"></div>
+<!-- THE SLATE -->
+<section class="section" aria-label="tonight's slate" data-hook="slate-preview">
+  <div class="section__head" data-rise>
+    <span class="eyebrow">Sample slate</span>
+  </div>
+  <h2 class="section__title" data-rise data-delay="60">Fifteen games. Every price checked across books.</h2>
+  <div class="slate-rail" style="margin-top:28px">
+    <article class="tile tile--selected chamfer" data-tile data-delay="0">
+      <div class="tile__blocking">
+        <div class="tile__half tile__half--away" style="background:linear-gradient(160deg,#3A2A0E,#1A1408)"></div>
+        <div class="tile__half tile__half--home" style="background:linear-gradient(200deg,var(--team-block-a),#0A1730)"></div>
+      </div>
+      <div class="tile__scrim"></div>
+      <span class="badge badge--money chamfer chamfer--chip tile__flag">Best price</span>
+      <div class="tile__matchup">PIT @ MIL</div>
+      <div class="tile__prices"><span class="stat-figure">-110</span></div>
+      <div class="tile__meta"><div class="tile__venue">American Family Field</div><div class="tile__first-pitch">7:40pm ET</div></div>
+    </article>
+    <article class="tile chamfer" data-tile data-delay="90">
+      <div class="tile__blocking">
+        <div class="tile__half tile__half--away" style="background:linear-gradient(160deg,#0E2038,#081420)"></div>
+        <div class="tile__half tile__half--home" style="background:linear-gradient(200deg,#1D3E70,#0A1730)"></div>
+      </div>
+      <div class="tile__scrim"></div>
+      <span class="badge badge--live chamfer chamfer--chip tile__flag">Changed</span>
+      <div class="tile__matchup">TB @ DET</div>
+      <div class="tile__prices"><span class="stat-figure">+124</span></div>
+      <div class="tile__meta"><div class="tile__venue">Comerica Park</div><div class="tile__first-pitch">6:40pm ET</div></div>
+    </article>
+    <article class="tile chamfer" data-tile data-delay="180">
+      <div class="tile__blocking">
+        <div class="tile__half tile__half--away" style="background:linear-gradient(160deg,#2A1420,#150A10)"></div>
+        <div class="tile__half tile__half--home" style="background:linear-gradient(200deg,#1A4A57,#08171D)"></div>
+      </div>
+      <div class="tile__scrim"></div>
+      <span class="badge badge--outline chamfer chamfer--chip tile__flag">Bullpen</span>
+      <div class="tile__matchup">CHC @ ??</div>
+      <div class="tile__prices"><span class="stat-figure">-105</span></div>
+      <div class="tile__meta"><div class="tile__venue">Wrigley Field</div><div class="tile__first-pitch">8:05pm ET</div></div>
+    </article>
+  </div>
+  <p class="section__lede" style="max-width:none">Sample slate, not a live feed — the structure is final; every value here is the Aug 28 demo set.</p>
 </section>
 
-<!-- FAQ -- docs/CONTENT_LANDING.md section 5, verbatim, as native
-     details/summary elements per this task's brief. -->
-<section data-view="faq" aria-label="frequently asked questions" data-hook="faq">
-<h2>FAQ</h2>
-
-<details data-hook="faq-no-guarantee">
-<summary>No guaranteed wins — is that really true?</summary>
-<p>Yes. Nothing in LINEHOUND guarantees an outcome or a profit, for
-any user or any bet. You are responsible for your own wagering decisions,
-including whether to bet at all.</p>
-</details>
-
-<details data-hook="faq-gambling-advice">
-<summary>Is this gambling advice?</summary>
-<p>No. We show you prices, market-implied consensus, and what changed —
-not a recommendation. The product's own "recommendation" field is
-intentionally and permanently empty; it isn't a coming-soon feature, it's
-a rule until a prediction engine actually clears our own validation
-bar.</p>
-</details>
-
-<details data-hook="faq-predict-winners">
-<summary>Do you predict who wins?</summary>
-<p>No. We do not publish a win probability or a predicted winner anywhere
-in the product. The model behind our research is uncalibrated, and that is
-a permanent rule, not a gap we are planning to fill.</p>
-</details>
-
-<details data-hook="faq-price-improvement">
-<summary>What's a "price improvement," then?</summary>
-<p>It's the better of two quoted prices for the same bet — line shopping,
-not a prediction. See "What line shopping is actually worth" above.</p>
-</details>
-
-<details data-hook="faq-no-edge">
-<summary>No edge found yet — what does that mean?</summary>
-<p>Exactly what it says: we have not found a betting edge, and we say so
-directly. We've pre-registered and tested 25 distinct research ideas (35
-counting every registered variant) against real MLB games from 2023–2024.
-None of them survived our falsification tests. We publish the losers,
-including the one that looked promising until we checked it properly.</p>
-</details>
-
-<details data-hook="faq-data-freshness">
-<summary>How fresh is the data?</summary>
-<p>Every price and consensus figure carries the timestamp of when we last
-observed it, and we show its age rather than hiding it. If there's no
-market currently priced for a game, we say that plainly instead of showing
-a stale or fabricated number.</p>
-</details>
-
-<details data-hook="faq-books-covered">
-<summary>Which sportsbooks do you cover?</summary>
-<p>Coverage varies by market: our head-to-head moneyline board draws from
-multiple books (we don't name a fixed count publicly, since it varies by
-game and moment), and we tell you how many books contributed to a given
-consensus figure rather than asserting a blanket number.</p>
-</details>
-
-<details data-hook="faq-sports-covered">
-<summary>Which sports do you cover?</summary>
-<p>MLB only, today. That's where our research and data pipeline are built
-out; other sports are not currently supported.</p>
-</details>
-
-<details data-hook="faq-beta-status">
-<summary>Is this in beta?</summary>
-<p>Yes. The product carries a visible beta notice: it's an information and
-research product, and it does not guarantee outcomes; the notice itself is
-pending final legal review before any public paid launch.</p>
-</details>
-
-<details data-hook="faq-cancel">
-<summary>Can I cancel anytime?</summary>
-<p>Yes — cancellation is designed to be one click, with no retention flow
-or dark patterns, and the policy will be written and shown to you before
-you ever pay.</p>
-</details>
-
-<details data-hook="faq-charged-after-cancel">
-<summary>Will I be charged after I cancel?</summary>
-<p>No — that is treated as a stop-ship-severity failure internally, never
-as an acceptable exception.</p>
-</details>
-
-<details data-hook="faq-cost">
-<summary>What does it cost?</summary>
-<p>Pricing is being finalized before paid launch; today's product is free,
-invite-based beta. When pricing locks, we'll show you a page that leads
-with exactly what you get for the price, not a comparison to what you
-might win.</p>
-</details>
-
-<details data-hook="faq-hit-rate">
-<summary>Why don't you show a "hit rate" or win percentage like other apps
-do?</summary>
-<p>Because we do not have one we can stand behind. Our own research found
-zero surviving betting ideas against real games. We will not publish a win
-probability that has never been validated — doing so would be exactly the
-kind of unearned confidence this product is built to avoid.</p>
-</details>
-
-<details data-hook="faq-failed-idea">
-<summary>What happens to an idea that doesn't work?</summary>
-<p>It gets a permanent, published record — including the sample size, the
-effect, and why it failed — rather than quietly disappearing. A small
-sample that can't support a conclusion is labeled "we cannot tell," which
-is different from, and reported differently from, a tested null.</p>
-</details>
+<!-- BEFORE YOU FIRE -->
+<section class="section" id="bet-check" aria-label="check a bet before you fire it" data-hook="bet-check-demo">
+  <div class="section__head" data-rise>
+    <span class="eyebrow eyebrow--money">Before you fire, run it through LINEHOUND</span>
+  </div>
+  <h2 class="section__title" data-rise data-delay="60">The case, the counterargument, and the actual price — before you place it.</h2>
+  <div class="demo-panel panel chamfer" style="margin-top:28px" data-rise data-delay="100">
+    <div class="demo-panel__grid">
+      <div>
+        <div class="demo-block" data-hook="how-it-works-bet-check">
+          <div class="demo-block__label">The case</div>
+          <p class="demo-block__body">Skenes has a 2.31 ERA over his last 9 starts (n = 54.1 IP) and the Brewers are 3-for-their-last-14
+            against right-handed starters posting a sub-3.00 ERA (n = 14 games).</p>
+        </div>
+        <div class="demo-block watchout chamfer" data-hook="how-it-works-watch-out">
+          <div class="demo-block__label" style="color:var(--money-label)">Watch out</div>
+          <p class="watchout__body">Nothing here worries us. The number is the number (n = 54.1 IP, n = 14 games — see above).</p>
+        </div>
+        <div class="demo-block">
+          <div class="demo-block__label">Bottom line</div>
+          <p class="demo-block__body" data-hook="bottom-line">We show what supports this bet, what argues against it, and where the price is better.
+            We never say bet it — the recommendation field stays permanently empty until a validated
+            engine exists, which it does not today.</p>
+        </div>
+      </div>
+      <div class="demo-block" style="border-left:0">
+        <div class="demo-block__label">Price check</div>
+        <p class="demo-block__body" style="margin-bottom:14px">You were taking −125 at your book. FanDuel has it at:</p>
+        <div class="hero__price-row"><span class="price-figure price-figure--panel">-110</span></div>
+        <p class="demo-block__body" style="margin-top:14px">Same bet, better number — checkable at the book right now.</p>
+        <a class="btn btn--cyan on-live" href="index.html#/signup" style="margin-top:18px">Check it</a>
+      </div>
+    </div>
+  </div>
 </section>
 
-<section data-view="cta" aria-label="call to action" data-hook="cta-bottom">
-<a href="index.html#/signup" data-hook="cta-signup">Check a bet</a>
+<!-- FIND THE BETTER NUMBER -->
+<section class="section" id="better-numbers" aria-label="what line shopping is actually worth" data-hook="price-improvement">
+  <div class="section__head" data-rise>
+    <span class="eyebrow">Find the better number</span>
+  </div>
+  <h2 class="section__title" data-rise data-delay="60">What line shopping is actually worth.</h2>
+  <div class="prose" style="margin-top:20px" data-rise data-delay="80">
+    <p>The same bet is often quoted at different prices by different books. Taking the better one
+    costs you nothing if the bet loses, and pays you more if it wins — no prediction, no probability,
+    just the arithmetic of two prices on the same bet.</p>
+  </div>
+  <ul class="callout-list" data-hook="price-improvement-two-branch" style="grid-template-columns:1fr 1fr">
+    <li class="panel chamfer" data-hook="price-improvement-branch-win" data-rise data-delay="60">
+      <strong style="color:var(--text-hi)">If the bet wins:</strong> the better price pays more.</li>
+    <li class="panel chamfer" data-hook="price-improvement-branch-loss" data-rise data-delay="120">
+      <strong style="color:var(--text-hi)">If the bet loses:</strong> both prices lose the same stake — the difference is $0.</li>
+  </ul>
+  <p class="section__lede" data-rise data-delay="160">A better price also lowers the win rate you need to break even — at −110 you need 52.4% of
+    these bets to win to break even; at −105 you need only 51.2%. Pure price arithmetic; no assumed
+    win rate goes into it.</p>
+  <p class="section__lede" data-hook="price-improvement-small-print">We never name which book had the best price on this page — on 63–79% of observed instants,
+    more than one book was tied for it, so naming one would be arbitrary. A quoted price is what we
+    observed, not a guarantee that book will take your exact bet at your exact size.</p>
+</section>
+
+<!-- MOVEMENT -->
+<section class="section" aria-label="what moved and when" data-hook="movement-demo">
+  <div class="section__head" data-rise>
+    <span class="eyebrow eyebrow--money">In the seventh inning</span>
+  </div>
+  <h2 class="section__title" data-rise data-delay="60">Judge is out. Everybody moved. Here's exactly what happened.</h2>
+  <div class="demo-panel panel chamfer" style="margin-top:28px" data-rise data-delay="100">
+    <div class="event-line">
+      <div class="event-line__meta"><span>7:52pm ET</span><span class="event-line__category event-line__category--risk">Lineup</span></div>
+      <div class="event-line__headline">Confirmed: Judge is out of the lineup.</div>
+    </div>
+    <div class="event-line">
+      <div class="event-line__meta"><span>7:54pm ET</span><span class="event-line__category">Market reaction</span></div>
+      <div class="event-line__headline">9 of 11 books moved · 17c move on the moneyline.</div>
+    </div>
+    <div class="chart-wrap" data-chart>
+      <svg viewBox="0 0 620 150" preserveAspectRatio="none" width="100%" height="100%" role="img" aria-label="Price movement chart, sample data">
+        <path class="chart-stroke chart-fill" d="M0,110 C120,104 220,100 300,96 C420,88 520,60 620,40 L620,150 L0,150 Z" fill="var(--live)"></path>
+        <path class="chart-stroke" d="M0,110 C120,104 220,100 300,96 C420,88 520,60 620,40"></path>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- QUICK / ADVANCED (Advanced appends beneath Quick, never replaces it) -->
+<section class="section" aria-label="thirty seconds or thirty minutes" data-hook="quick-advanced-demo">
+  <div class="section__head" data-rise>
+    <span class="eyebrow">Thirty seconds, or thirty minutes</span>
+  </div>
+  <h2 class="section__title" data-rise data-delay="60">Plain English first. The full detail is one tap away.</h2>
+  <div class="demo-panel panel chamfer" style="margin-top:28px" data-rise data-delay="100">
+    <div class="demo-block" data-hook="quick-view">
+      <div class="demo-block__label">Quick view</div>
+      <p class="demo-block__body">Best of 11 books at −110. Moderate historical support (n = 249 selections). First five
+        innings priced separately from the full game.</p>
+    </div>
+    <details class="demo-block" data-hook="advanced-view">
+      <summary class="demo-block__label" style="cursor:pointer;list-style:none">Advanced ▸ book spread, de-vig, and pitcher detail</summary>
+      <div style="margin-top:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px">
+        <div><div class="stat-label">IP / start</div><div class="stat-figure">6.1</div></div>
+        <div><div class="stat-label">Book spread</div><div class="stat-figure">8c</div></div>
+        <div><div class="stat-label">Books moved</div><div class="stat-figure">9 / 11</div></div>
+        <div><div class="stat-label">First five (Pit)</div><div class="stat-figure">-135</div></div>
+        <div><div class="stat-label">De-vig (Pit)</div><div class="stat-figure">54.2%</div></div>
+        <div class="not-yet-available chamfer" style="grid-column:1/-1">
+          <div class="not-yet-available__head"><span class="not-yet-available__marker chamfer"></span><span class="not-yet-available__label">Not yet available</span></div>
+          <div class="not-yet-available__body">Pitch mix and velocity trend — not ingested from a verified source yet, so nothing is
+            shown rather than estimated.</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- PAPER TRAIL -->
+<section class="section" aria-label="it gets better the more you use it" data-hook="paper-trail">
+  <div class="section__head" data-rise>
+    <span class="eyebrow">It gets better the more you use it</span>
+  </div>
+  <h2 class="section__title" data-rise data-delay="60">Every check leaves a paper trail.</h2>
+  <div class="story-grid" style="margin-top:28px">
+    <div class="story-card panel chamfer" data-rise data-delay="60">
+      <div class="story-card__kicker">Your number vs the best</div>
+      <p class="story-card__body">Every price you checked, next to the best one available at that moment — so you can see
+        your own pattern, not just one bet.</p>
+    </div>
+    <div class="story-card panel chamfer" data-rise data-delay="120">
+      <div class="story-card__kicker">What moved after you fired</div>
+      <p class="story-card__body">A record of what happened to the market after you placed a bet — informational, never a
+        performance claim.</p>
+    </div>
+    <div class="story-card panel chamfer" data-rise data-delay="180">
+      <div class="story-card__kicker">Your repeat weak spot</div>
+      <p class="story-card__body">If you're consistently taking a worse number at the same book, that's worth knowing about
+        yourself, checkably.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOUNDING ACCESS PRICING -->
+<section class="section" id="pricing" aria-label="pricing" data-view="pricing" data-hook="pricing">
+  <div class="section__head" data-rise>
+    <span class="eyebrow eyebrow--money">Founding access</span>
+  </div>
+  <h2 class="section__title" data-rise data-delay="60">Run three bets on us first.</h2>
+  <div class="pricing-grid" style="margin-top:28px">
+    <div class="pricing-card pricing-card--intro panel chamfer" data-rise data-delay="80">
+      <span class="badge badge--outline chamfer chamfer--chip pricing-card__badge">On the house</span>
+      <div class="pricing-card__name">3 Bet Checks, free</div>
+      <p class="pricing-card__note">Three introductory checks total — not per day, not renewing. No card required. MLB only.</p>
+      <a class="btn btn--ghost" href="index.html#/signup" data-hook="cta-primary-secondary">Try 3 Bet Checks free</a>
+    </div>
+    <div class="pricing-card pricing-card--founding panel chamfer" data-rise data-delay="140">
+      <span class="badge badge--money chamfer chamfer--chip pricing-card__badge">Founding beta</span>
+      <div data-hook="pricing-host"></div>
+      <ul class="pricing-card__list">
+        <li>Cancel anytime, one click, no retention flow</li>
+        <li>No annual plan, no countdown, no percent-off badge</li>
+        <li>Confirmation emailed instantly</li>
+      </ul>
+      <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup">Get founding access</a>
+    </div>
+  </div>
+</section>
+
+<!-- HOW WE ACTUALLY WORK -->
+<section class="section section--tight" aria-label="how it works" data-hook="how-it-works">
+  <div class="section__head" data-rise>
+    <span class="eyebrow">What you can check yourself</span>
+  </div>
+  <h2 class="section__title" data-rise data-delay="60">How it works.</h2>
+  <div style="display:grid;gap:20px;margin-top:24px">
+    <div class="demo-block" data-hook="how-it-works-today">
+      <div class="demo-block__label">Today</div>
+      <p class="demo-block__body">One entry per game, pulled fresh for the current date. Each game shows whether a market
+        is currently priced for it and how old that price is — if there's no board yet, we say so.</p>
+    </div>
+    <div class="demo-block" data-hook="how-it-works-game">
+      <div class="demo-block__label">Game</div>
+      <p class="demo-block__body">Team and venue identity, the market-implied consensus for each side (derived from
+        de-vigged prices, not a prediction), and the supporting detail behind it.</p>
+    </div>
+    <div class="demo-block" data-hook="how-it-works-odds">
+      <div class="demo-block__label">Odds</div>
+      <p class="demo-block__body">The full market board for the slate — every game's quoted prices across books, the
+        widest spread on the board, timestamped with when we last observed it.</p>
+    </div>
+    <div class="demo-block" data-hook="how-it-works-what-changed">
+      <div class="demo-block__label">What changed</div>
+      <p class="demo-block__body">A running note of what moved since a stated point in time — lineup posts, scratches,
+        roster moves — so you're never re-reading a stale page.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section section--tight" id="faq" aria-label="frequently asked questions" data-view="faq" data-hook="faq">
+  <div class="section__head" data-rise>
+    <span class="eyebrow">Fair questions</span>
+  </div>
+  <h2 class="section__title" data-rise data-delay="60">Frequently asked questions.</h2>
+  <div class="faq-list" style="margin-top:24px">
+    <details class="faq-item panel chamfer" data-hook="faq-no-guarantee">
+      <summary>No guaranteed wins — is that really true?</summary>
+      <p class="faq-item__body">Yes. Nothing here guarantees an outcome or a profit, for any user or any bet. You are
+        responsible for your own wagering decisions, including whether to bet at all.</p>
+    </details>
+    <details class="faq-item panel chamfer" data-hook="faq-gambling-advice">
+      <summary>Is this gambling advice?</summary>
+      <p class="faq-item__body">No. We show prices, market-implied consensus, and what changed — not a recommendation.
+        The product's own recommendation field is intentionally and permanently empty until a validated
+        prediction engine clears our own bar.</p>
+    </details>
+    <details class="faq-item panel chamfer" data-hook="faq-predict-winners">
+      <summary>Do you predict who wins?</summary>
+      <p class="faq-item__body">No. We do not publish a win probability or a predicted winner anywhere in the product.
+        That is a permanent rule, not a gap we are planning to fill.</p>
+    </details>
+    <details class="faq-item panel chamfer" data-hook="faq-price-improvement">
+      <summary>What's a "price improvement," then?</summary>
+      <p class="faq-item__body">The better of two quoted prices for the same bet — line shopping, not a prediction. See
+        "Find the better number" above.</p>
+    </details>
+    <details class="faq-item panel chamfer" data-hook="faq-no-edge">
+      <summary>No betting edge found yet — what does that mean?</summary>
+      <p class="faq-item__body">Exactly what it says. We've pre-registered and tested 25 distinct research ideas (35
+        counting every variant) against real MLB games from 2023–2024, and none survived our falsification
+        tests. We publish the losers, including the one that looked promising until we checked it properly.</p>
+    </details>
+    <details class="faq-item panel chamfer" data-hook="faq-data-freshness">
+      <summary>How fresh is the data?</summary>
+      <p class="faq-item__body">Every price and consensus figure carries the timestamp of when we last observed it, and
+        we show its age rather than hiding it. If there's no market currently priced for a game, we say
+        that plainly instead of showing a stale or fabricated number.</p>
+    </details>
+    <details class="faq-item panel chamfer" data-hook="faq-sports-covered">
+      <summary>Which sports do you cover?</summary>
+      <p class="faq-item__body">MLB only, today. That's where our research and data pipeline are built out; other sports
+        are not currently supported.</p>
+    </details>
+    <details class="faq-item panel chamfer" data-hook="faq-cancel">
+      <summary>Can I cancel anytime?</summary>
+      <p class="faq-item__body">Yes — cancellation is designed to be one click, with no retention flow, and the policy is
+        shown to you before you ever pay.</p>
+    </details>
+    <details class="faq-item panel chamfer" data-hook="faq-free-checks">
+      <summary>How many free Bet Checks do I get?</summary>
+      <p class="faq-item__body">Three, total, for the lifetime of your account — not three per day. No card required to
+        use them.</p>
+    </details>
+    <details class="faq-item panel chamfer" data-hook="faq-hit-rate">
+      <summary>Why don't you show a win percentage like other apps do?</summary>
+      <p class="faq-item__body">Because we do not have one we can stand behind. Our own research found zero surviving
+        betting ideas against real games. We will not publish a win probability that has never been
+        validated.</p>
+    </details>
+  </div>
+</section>
+
+<!-- CLOSING CTA -->
+<section class="closing-band" aria-label="call to action" data-view="cta" data-hook="cta-bottom">
+  <div class="closing-band__title">Before you fire,<br>run it through.</div>
+  <div class="closing-band__cta">
+    <a class="btn btn--primary btn--lg" href="index.html#/signup" data-hook="cta-signup-bottom">Try 3 Bet Checks free</a>
+  </div>
 </section>
 
 </main>
 
-<footer data-hook="disclaimer-host" aria-label="disclaimer"></footer>
+<footer class="site-footer" aria-label="footer">
+  <div class="site-footer__top">
+    <span class="wordmark" data-hook="brand-mark">
+      <span class="wordmark__mark"><span></span></span>
+      <span class="wordmark__text">LINEHOUND</span>
+    </span>
+    <div class="site-nav__links" style="display:flex">
+      <a href="#bet-check">Bet Check</a>
+      <a href="#better-numbers">Better numbers</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+    </div>
+  </div>
+  <div class="site-footer__data-note">
+    <h3>About the data on this page</h3>
+    <p>Every matchup, price, and chart on this page is a sample slate for demonstration — not a live
+      feed. The Pirates/Brewers example, the movement chart, and the tile rail are fixed demo data, not
+      today's actual board. Once you sign in, the app shows the current, live-timestamped market
+      instead.</p>
+  </div>
+  <div data-hook="disclaimer-host" aria-label="disclaimer"></div>
+</footer>
 
 <script type="module" src="js/landing.js"></script>
 </body>

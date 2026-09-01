@@ -1,0 +1,179 @@
+/*
+ * LINEHOUND v1 shared components -- buttons, price display, advantage
+ * pill, monogram chip, event line. Anatomy/variants/states transcribed
+ * from handoff section 05. Depends on tokens.css + base.css.
+ */
+
+/* ---- buttons -------------------------------------------------------*/
+.btn {
+  --r: var(--r-btn);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: 13px 24px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: transform var(--dur-hover-lift) ease, filter var(--dur-hover-lift) ease;
+}
+.btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+.btn:active { transform: translateY(1px) scale(.99); }
+.btn:disabled { opacity: .4; pointer-events: none; }
+
+.btn--primary {
+  background: linear-gradient(120deg, var(--money), var(--money-2));
+  color: var(--money-ink);
+  box-shadow: 0 18px 42px -16px rgba(255, 61, 87, .8);
+}
+.btn--secondary {
+  background: linear-gradient(160deg, var(--text-hi), var(--text-3));
+  color: var(--ground);
+}
+.btn--ghost {
+  background: transparent;
+  color: var(--text-3);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2);
+}
+.btn--ghost:hover { background: rgba(255, 255, 255, .06); }
+.btn--cyan {
+  background: linear-gradient(120deg, var(--live), var(--live-2));
+  color: var(--live-ink);
+}
+.btn--cyan:focus-visible { outline-color: #FFFFFF; }
+.btn--full { width: 100%; }
+.btn--lg { padding: 16px 28px; font-size: 16px; }
+
+/* ---- monogram chip ---------------------------------------------------*/
+.monogram {
+  --r: var(--r-badge);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px; height: 34px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ---- price display -----------------------------------------------*/
+.price-figure {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 800;
+  line-height: .76;
+  letter-spacing: -.025em;
+  color: #FFFFFF;
+  text-shadow: 0 10px 54px rgba(255, 61, 87, .5);
+}
+.price-figure--hero { font-size: clamp(86px, 10.4vw, 152px); }
+.price-figure--feature { font-size: clamp(48px, 6vw, 80px); }
+.price-figure--panel { font-size: clamp(32px, 4vw, 52px); }
+.price-figure--tile { font-size: 24px; font-style: normal; text-shadow: none; }
+
+.price-was {
+  font-family: var(--font-mono);
+  font-weight: 300;
+  letter-spacing: -.03em;
+  color: rgba(255, 255, 255, .34);
+  text-decoration: line-through;
+}
+.price-was-label {
+  margin-top: var(--sp-3);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .2em;
+  color: rgba(255, 255, 255, .5);
+  white-space: nowrap;
+}
+
+/* ---- price-advantage pill (one per screen region, static) ---------*/
+.advantage-pill {
+  --r: var(--r-badge);
+  display: inline-flex;
+  padding: 9px 16px;
+  background: linear-gradient(120deg, var(--money), var(--money-2));
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .18em;
+  color: var(--money-ink);
+  white-space: nowrap;
+  box-shadow: 0 14px 32px -12px rgba(255, 61, 87, .8);
+}
+.advantage-pill--cyan {
+  background: linear-gradient(120deg, var(--live), var(--live-2));
+  color: var(--live-ink);
+  box-shadow: none;
+}
+
+/* ---- event line -------------------------------------------------- */
+.event-line {
+  padding: var(--sp-6) 0;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .06);
+}
+.event-line__meta {
+  display: flex; align-items: baseline; gap: var(--sp-5);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--live);
+  margin-bottom: var(--sp-2);
+}
+.event-line__category {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: .2em;
+  font-size: 11px;
+}
+.event-line__category--risk { color: var(--money-lit); }
+.event-line__headline {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--text-hi);
+}
+
+/* ---- fair-value / de-vig style figure table (compact) --------------*/
+.stat-figure {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  color: var(--text);
+}
+.stat-label {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  color: var(--text-faint);
+}
+
+/* ---- segmented control (Quick / Advanced) --------------------------*/
+.segset {
+  display: inline-flex;
+  --r: var(--r-btn);
+  background: rgba(255, 255, 255, .05);
+  box-shadow: inset 0 0 0 1px var(--edge-1);
+  padding: 4px;
+  gap: 4px;
+}
+.segset__opt {
+  --r: var(--r-badge);
+  padding: 9px 20px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: .1em;
+  color: var(--text-mute);
+  transition: background var(--dur-segment) ease, color var(--dur-segment) ease, box-shadow var(--dur-segment) ease;
+}
+.segset__opt[aria-selected="true"] {
+  background: rgba(0, 224, 255, .16);
+  color: var(--live-lit);
+  box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .45);
+}
+.segset__opt:hover { background: rgba(0, 224, 255, .08); }
