@@ -2,6 +2,24 @@
 
 **Started 2026-08-28.** Chat stays short; this is the detail.
 
+## 2026-09-01 update — staging outage (Launch Ops owns) + F5 store audit
+
+~13:35 UTC the staging app stopped answering (TLS reset at the Fly edge;
+proxy/egress verified fine — fly.io and github.com reachable through the
+same path). This cloud session's Fly token did not survive the container
+recycle, so per Brey's direction LAUNCH OPS OWNS the restoration,
+root-cause, and self-recovery verification; this session does not touch
+Fly and does not redeploy. Data plane unaffected throughout — hourly
+captures green all day.
+
+F5 close store structural audit (rows-not-errors rule): 94 rows, 11 games
+over 2 days, one close capture per game, 8-9 books/game, zero duplicate
+(book, observed) rows, every observation pregame, market
+h2h_1st_5_innings only. The 8-game daily budget cap is binding as
+designed on 15-game slates. No defect; the ~2-week accumulation toward
+the lane F review is safe. Structure only — no prices or movement were
+analysed (that stays behind the pre-registration gate).
+
 ## 2026-09-01 update — season-end credit gate on the daily snapshot
 
 Closed the one non-zero off-season cost `docs/SEASON_END_PLAN.md` §2 found:

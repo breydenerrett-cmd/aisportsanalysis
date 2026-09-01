@@ -209,7 +209,10 @@ together.
 3. F5 forward-series review once ~2 weeks of F5 closes exist in
    data/processed/f5_close.jsonl (lane F: measure coverage/books before
    designing any F5 family; historical F5 backfill is a HARD GATE item).
-   BLOCKED until the close pass is confirmed writing rows.
+   Close pass CONFIRMED writing rows (structural audit 2026-09-01: 94 rows,
+   11 games over 2 days, 8-9 books/game, no duplicates, all pregame,
+   correct market; daily cap behaving as designed). Now purely
+   time-gated on ~2 weeks of accumulation — first review window ~09-14.
 4. Season-end handling (late September): daily loop and capture behavior
    when the MLB slate empties; plan the off-season posture (lane E).
    PLANNED (docs/SEASON_END_PLAN.md). Credit-gate fix DONE 2026-09-01: the
