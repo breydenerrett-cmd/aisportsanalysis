@@ -13,6 +13,13 @@ src.appstate.billing.get_billing_provider() on every request (not cached
 at import time) so a BILLING_PROVIDER/STRIPE_API_KEY env change takes
 effect on the next request, the same freshness api/auth.py's
 authproviders.get_provider() gives AUTH_PROVIDER.
+
+STRIPE TEST MODE: everything here (checkout, webhook, cancel) works
+identically in test mode with a `sk_test_...` STRIPE_API_KEY and Stripe's
+published test card numbers -- Stripe does not distinguish test/live at the
+API-shape level, only by which key is used and which dashboard the
+resulting objects show up in. See POST /billing/cancel's own docstring for
+the one behavioral wrinkle test mode raises (webhook delivery timing).
 """
 
 from __future__ import annotations
@@ -25,6 +32,7 @@ from pydantic import BaseModel
 
 from src.appstate import billing
 from src.appstate import customers
+from src.appstate import events
 from src.appstate.users import User
 
 from api.auth import get_current_user
@@ -57,6 +65,10 @@ def create_checkout(body: CheckoutRequest,
         # caller checks one field regardless of which provider is active.
         return {"status": "not_configured",
                 "message": "billing is not configured yet"}
+    # A real checkout URL was actually handed back -- record the event
+    # here, not the honest "not_configured" branches above, since those
+    # never started a checkout.
+    events.record_event_safe(current_user.id, events.CHECKOUT_STARTED)
     return {"status": "redirect", "checkout_url": url}
 
 
@@ -80,7 +92,48 @@ def billing_status(current_user: User = Depends(get_current_user)) -> dict:
         return {"status": "not_configured"}
     return {"status": record["status"],
             "stripe_subscription_id": record["stripe_subscription_id"],
+            # Stripe's "scheduled to cancel at period end" timestamp, when
+            # the last webhook carried one (src.appstate.billing's
+            # apply_stripe_webhook_event) -- None for a subscription with
+            # no cancellation scheduled, same honest-absence shape as
+            # everything else this endpoint reports.
+            "cancel_at": record.get("cancel_at"),
             "updated_at": record["updated_at"]}
+
+
+@router.post("/billing/cancel")
+def cancel_subscription(current_user: User = Depends(get_current_user)) -> dict:
+    """Cancel the authed user's subscription. Requires a local subscription
+    record to already exist (same "not_configured" gate billing_status
+    reads) -- there is nothing honest to cancel for a user billing has
+    never reported a subscription for, real or test-mode.
+
+    Calls `provider.cancel()` (idempotent per its own protocol docstring --
+    a double-click is safe) and then writes the result straight into
+    src.appstate.customers itself, rather than waiting on Stripe's own
+    `customer.subscription.deleted` webhook to arrive: in Stripe TEST MODE
+    especially, a webhook endpoint not yet configured with a live
+    `STRIPE_WEBHOOK_SECRET` (or a dashboard-registered endpoint pointed at
+    this deploy) means that webhook may never arrive at all, which would
+    leave GET /billing/status reporting a stale "active" subscription the
+    user just canceled. Proactively updating here means the cancel button
+    is correct immediately regardless of webhook delivery; a webhook that
+    does arrive later just confirms (upserts) the same state again.
+    """
+    record = customers.get_subscription_record(current_user.id)
+    if record is None:
+        return {"status": "not_configured"}
+    provider = billing.get_billing_provider()
+    try:
+        subscription = provider.cancel(current_user.id)
+    except billing.BillingProviderNotConfigured as exc:
+        return {"status": "not_configured", "message": str(exc)}
+    if subscription.provider_ref:
+        customers.upsert_subscription(
+            current_user.id, subscription.provider_ref, subscription.status)
+    events.record_event_safe(current_user.id, events.SUBSCRIPTION_CANCELLED)
+    return {"status": subscription.status,
+            "stripe_subscription_id": subscription.provider_ref}
 
 
 @router.post("/billing/webhook")

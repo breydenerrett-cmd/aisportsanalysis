@@ -41,6 +41,8 @@ from pathlib import Path
 from typing import Callable, Dict, List, Optional, Protocol
 
 from src.appstate import customers
+from src.appstate import events
+from src.appstate import users as users_store
 
 
 @dataclass(frozen=True)
@@ -64,6 +66,36 @@ class Subscription:
     status: str  # "active" | "canceled" | "not_configured"
     provider_ref: Optional[str] = None
     created_at: Optional[str] = None
+
+
+# ---------------------------------------------------------------------------
+# The beta plan -- docs/PRICING_OFFER_VALIDATION.md's single-tier $19.99/mo
+# beta recommendation. That doc's own header is explicit that nothing in it
+# is customer-facing until Brey approves it; keeping the price as a named
+# constant (not a hardcoded literal at each call site) is what makes it a
+# one-line change instead of a hunt-and-replace once he does, or if he picks
+# a different number.
+# ---------------------------------------------------------------------------
+BETA_PLAN_ID = "beta"
+BETA_PLAN_PRICE_CENTS = 1999  # $19.99/mo -- PRICING_OFFER_VALIDATION.md, pending Brey sign-off
+BETA_PLAN = Plan(id=BETA_PLAN_ID, name="Beta", price_cents=BETA_PLAN_PRICE_CENTS)
+
+# Stripe checkout needs a real Stripe Price id (e.g. "price_..."), which is
+# a different thing from BETA_PLAN_ID above -- BETA_PLAN_ID is this app's
+# own name for the plan; this env var is Stripe's id for the Price object
+# Brey creates in the Stripe dashboard/API once the account exists. Kept
+# separate from ENV_STRIPE_API_KEY: a valid test-mode key with no price id
+# still can't open a real checkout session (Stripe would reject "beta" as a
+# price id), so api/signup.py treats either being unset as the same honest
+# "billing not ready" state.
+ENV_STRIPE_BETA_PRICE_ID = "STRIPE_BETA_PRICE_ID"
+
+
+def beta_plan_stripe_price_id() -> Optional[str]:
+    """The Stripe Price id for BETA_PLAN, or None if Brey has not created
+    one yet and set STRIPE_BETA_PRICE_ID. See the env var's own comment
+    above for why this is checked separately from STRIPE_API_KEY."""
+    return (os.environ.get(ENV_STRIPE_BETA_PRICE_ID) or "").strip() or None
 
 
 class BillingProvider(Protocol):
@@ -451,15 +483,22 @@ def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> Non
 
     Handles the three events this app's billing model needs:
       - checkout.session.completed: links user_id (client_reference_id)
-        to the Stripe customer id, and records the new subscription as
-        active if one was created (subscription mode).
+        to the Stripe customer id, records the new subscription as active
+        if one was created (subscription mode), and activates a
+        self-serve signup (see _activate_signup below) -- the
+        pending_payment -> active transition and the one-time GET
+        /signup/complete token both happen here, since this is the one
+        place this app knows a real Stripe payment was verified.
       - customer.subscription.updated / customer.subscription.deleted:
         looks the event's customer id back up to a local user_id (the
         event itself never carries one) and overwrites that user's
         recorded status. `.deleted` is always recorded as "canceled"
         regardless of the object's own `status` field, since a deleted
         subscription is canceled by definition even if Stripe's payload
-        still shows its last pre-deletion status.
+        still shows its last pre-deletion status. `cancel_at` (Stripe's
+        "scheduled to cancel at period end" unix timestamp) rides along
+        when present, so GET /billing/status can show it without a live
+        Stripe call.
 
     Any other event type, or one of these missing the fields it needs
     (e.g. no local mapping yet for a subscription.updated whose
@@ -479,6 +518,7 @@ def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> Non
         customers.upsert_customer(user_id, customer_id, db=db)
         if subscription_id:
             customers.upsert_subscription(user_id, subscription_id, "active", db=db)
+        _activate_signup(user_id, obj.get("id"), db=db)
     elif event_type in ("customer.subscription.updated", "customer.subscription.deleted"):
         customer_id = obj.get("customer")
         subscription_id = obj.get("id")
@@ -489,7 +529,51 @@ def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> Non
             return
         status = ("canceled" if event_type == "customer.subscription.deleted"
                   else ("active" if obj.get("status") == "active" else "canceled"))
-        customers.upsert_subscription(user_id, subscription_id, status, db=db)
+        customers.upsert_subscription(
+            user_id, subscription_id, status,
+            cancel_at=_epoch_to_iso(obj.get("cancel_at")), db=db)
+
+
+def _epoch_to_iso(epoch: object) -> Optional[str]:
+    """Stripe's unix-epoch timestamps (e.g. `cancel_at`) as an ISO-8601 UTC
+    string, or None for anything absent/malformed -- never raises, since a
+    webhook payload is untrusted shape even after signature verification
+    (the signature proves Stripe sent it, not that every field matches this
+    app's assumptions)."""
+    if epoch is None:
+        return None
+    try:
+        return datetime.fromtimestamp(int(epoch), tz=timezone.utc).isoformat()
+    except (TypeError, ValueError, OverflowError, OSError):
+        return None
+
+
+def _activate_signup(user_id: int, stripe_session_id: Optional[str], *,
+                      db: Optional[Path] = None) -> None:
+    """Transition a pending_payment self-serve signup to active and mint
+    the one-time activation token GET /signup/complete hands back -- see
+    src/appstate/customers.py's signup_activation_tokens docstring for why
+    a token bridge exists here instead of an email sender (there isn't one
+    yet; api/signup.py's module docstring documents that an email sender
+    replaces this).
+
+    Gated on customers.has_activation_token so a retried webhook delivery
+    (Stripe does not guarantee exactly-once delivery) never mints a second
+    token for the same checkout session, and a no-op for a user this
+    session's client_reference_id doesn't resolve to (defensive; should
+    never happen for an event this app itself generated the
+    client_reference_id for).
+    """
+    user = users_store.get_user(user_id, db=db)
+    if user is None:
+        return
+    if user.status == "pending_payment":
+        users_store.set_user_status(user_id, "active", db=db)
+    if not stripe_session_id or customers.has_activation_token(stripe_session_id, db=db):
+        return
+    raw_token = users_store.issue_invite_token(user_id, db=db)
+    customers.record_activation_token(stripe_session_id, user_id, raw_token, db=db)
+    events.record_event_safe(user_id, events.CHECKOUT_COMPLETED, db=db)
 
 
 ENV_BILLING_PROVIDER = "BILLING_PROVIDER"

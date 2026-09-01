@@ -61,7 +61,17 @@ ENV_DB_PATH = "APP_DB_PATH"
 # live indefinitely. Callers may pass an explicit ttl to override.
 DEFAULT_TOKEN_TTL = timedelta(days=14)
 
-VALID_STATUSES = ("invited", "active", "suspended")
+VALID_STATUSES = ("invited", "active", "suspended",
+                  # Self-serve signup states (api/signup.py), added
+                  # alongside the invite-only states above -- no ALTER
+                  # needed, since status is a validated Python tuple, not
+                  # a SQL CHECK constraint (see _ensure_schema).
+                  # pending_payment: a signup that has a real Stripe
+                  # checkout session open (or about to). waitlisted: a
+                  # signup taken while billing wasn't configured (no
+                  # STRIPE_API_KEY / no beta price id yet) -- honest
+                  # non-answer, not a silently-dropped signup.
+                  "pending_payment", "waitlisted")
 VALID_PLANS = ("none", "beta")
 
 

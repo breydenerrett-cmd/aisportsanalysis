@@ -23,6 +23,8 @@ from unittest import mock
 
 from src.appstate import billing
 from src.appstate import customers
+from src.appstate import events
+from src.appstate import users as users_store
 
 
 class NullBillingProviderTests(unittest.TestCase):
@@ -318,6 +320,153 @@ class StripeWebhookPersistenceTests(unittest.TestCase):
 
     def test_empty_event_is_ignored(self):
         billing.apply_stripe_webhook_event({}, db=self.db)
+
+    def test_subscription_updated_carries_cancel_at_through(self):
+        customers.upsert_customer(7, "cus_7", db=self.db)
+        cancel_epoch = int(datetime(2026, 10, 1, tzinfo=timezone.utc).timestamp())
+        event = {
+            "type": "customer.subscription.updated",
+            "data": {"object": {"id": "sub_7", "customer": "cus_7",
+                                "status": "active", "cancel_at": cancel_epoch}},
+        }
+        billing.apply_stripe_webhook_event(event, db=self.db)
+        record = customers.get_subscription_record(7, db=self.db)
+        self.assertEqual(record["cancel_at"], "2026-10-01T00:00:00+00:00")
+
+    def test_subscription_updated_without_cancel_at_clears_a_stale_value(self):
+        customers.upsert_customer(7, "cus_7", db=self.db)
+        customers.upsert_subscription(7, "sub_7", "active", cancel_at="2026-10-01T00:00:00+00:00",
+                                      db=self.db)
+        event = {
+            "type": "customer.subscription.updated",
+            "data": {"object": {"id": "sub_7", "customer": "cus_7", "status": "active"}},
+        }
+        billing.apply_stripe_webhook_event(event, db=self.db)
+        record = customers.get_subscription_record(7, db=self.db)
+        self.assertIsNone(record["cancel_at"])
+
+
+class SignupActivationTests(unittest.TestCase):
+    """checkout.session.completed's second job -- activating a self-serve
+    signup (api/signup.py) -- lives in apply_stripe_webhook_event, not
+    api/signup.py itself, since only the webhook path has a
+    Stripe-verified payment to act on. See src/appstate/customers.py's
+    signup_activation_tokens docstring for the one-time-retrieval contract
+    pinned here."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.db = Path(self._tmp.name) / "app.db"
+        self.user = users_store.create_user(
+            "signup-activate@example.com", status="pending_payment", db=self.db)
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def _completed_event(self, session_id: str = "cs_test_1") -> dict:
+        return {
+            "type": "checkout.session.completed",
+            "data": {"object": {
+                "id": session_id,
+                "client_reference_id": str(self.user.id),
+                "customer": "cus_activate_1",
+                "subscription": "sub_activate_1",
+            }},
+        }
+
+    def test_activates_a_pending_payment_user(self):
+        billing.apply_stripe_webhook_event(self._completed_event(), db=self.db)
+        activated = users_store.get_user(self.user.id, db=self.db)
+        self.assertEqual(activated.status, "active")
+
+    def test_mints_a_one_time_token_the_activated_user_can_authenticate_with(self):
+        billing.apply_stripe_webhook_event(self._completed_event(), db=self.db)
+        result = customers.take_activation_token("cs_test_1", db=self.db)
+        self.assertEqual(result["user_id"], self.user.id)
+        resolved = users_store.authenticate(result["raw_token"], db=self.db)
+        self.assertEqual(resolved.id, self.user.id)
+
+    def test_token_retrieval_is_one_time_only(self):
+        billing.apply_stripe_webhook_event(self._completed_event(), db=self.db)
+        first = customers.take_activation_token("cs_test_1", db=self.db)
+        self.assertIsNotNone(first)
+        second = customers.take_activation_token("cs_test_1", db=self.db)
+        self.assertIsNone(second)
+
+    def test_unknown_session_id_never_yields_a_token(self):
+        self.assertIsNone(customers.take_activation_token("cs_never_happened", db=self.db))
+
+    def test_retried_webhook_delivery_does_not_mint_a_second_token(self):
+        """Stripe does not guarantee exactly-once webhook delivery -- a
+        second delivery of the same event must not invalidate whichever
+        token the browser already fetched, or hand out a second, different
+        one for the same signup."""
+        billing.apply_stripe_webhook_event(self._completed_event(), db=self.db)
+        first = customers.take_activation_token("cs_test_1", db=self.db)
+        # Redeliver the same event (already-active user, same session id).
+        billing.apply_stripe_webhook_event(self._completed_event(), db=self.db)
+        second = customers.take_activation_token("cs_test_1", db=self.db)
+        self.assertIsNotNone(first)
+        self.assertIsNone(second, "a retried webhook must not mint a new token")
+
+    def test_records_checkout_completed_event(self):
+        with mock.patch.object(events, "record_event_safe") as safe:
+            billing.apply_stripe_webhook_event(self._completed_event(), db=self.db)
+        safe.assert_called_once_with(self.user.id, events.CHECKOUT_COMPLETED, db=self.db)
+
+    def test_does_not_activate_an_already_active_user(self):
+        active_user = users_store.create_user(
+            "already-active@example.com", status="active", db=self.db)
+        event = {
+            "type": "checkout.session.completed",
+            "data": {"object": {
+                "id": "cs_test_active", "client_reference_id": str(active_user.id),
+                "customer": "cus_x", "subscription": "sub_x",
+            }},
+        }
+        billing.apply_stripe_webhook_event(event, db=self.db)
+        still = users_store.get_user(active_user.id, db=self.db)
+        self.assertEqual(still.status, "active")
+
+    def test_unknown_user_id_in_event_is_a_harmless_no_op(self):
+        event = {
+            "type": "checkout.session.completed",
+            "data": {"object": {
+                "id": "cs_test_ghost", "client_reference_id": "999999",
+                "customer": "cus_ghost", "subscription": "sub_ghost",
+            }},
+        }
+        billing.apply_stripe_webhook_event(event, db=self.db)  # must not raise
+        self.assertIsNone(customers.take_activation_token("cs_test_ghost", db=self.db))
+
+
+class BetaPlanConfigTests(unittest.TestCase):
+    """docs/PRICING_OFFER_VALIDATION.md's single-tier beta plan, expressed
+    as overridable config -- see billing.beta_plan_stripe_price_id's own
+    docstring for why STRIPE_BETA_PRICE_ID is checked separately from
+    STRIPE_API_KEY."""
+
+    def setUp(self):
+        self._env_patcher = mock.patch.dict(os.environ, {}, clear=False)
+        self._env_patcher.start()
+        os.environ.pop(billing.ENV_STRIPE_BETA_PRICE_ID, None)
+
+    def tearDown(self):
+        self._env_patcher.stop()
+
+    def test_no_price_id_configured_is_none(self):
+        self.assertIsNone(billing.beta_plan_stripe_price_id())
+
+    def test_reads_price_id_from_env(self):
+        os.environ[billing.ENV_STRIPE_BETA_PRICE_ID] = "price_test_beta_1"
+        self.assertEqual(billing.beta_plan_stripe_price_id(), "price_test_beta_1")
+
+    def test_beta_plan_price_matches_the_pricing_doc_recommendation(self):
+        # $19.99/mo, docs/PRICING_OFFER_VALIDATION.md section 1 -- pinned
+        # here so a change to that number is a deliberate edit to this
+        # constant, not a silent drift between the doc and the code.
+        self.assertEqual(billing.BETA_PLAN_PRICE_CENTS, 1999)
+        self.assertEqual(billing.BETA_PLAN.id, billing.BETA_PLAN_ID)
 
 
 class BillingProviderFactoryTests(unittest.TestCase):

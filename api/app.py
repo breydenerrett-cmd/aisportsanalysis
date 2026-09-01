@@ -27,6 +27,7 @@ from api.auth import get_current_user, router as auth_router
 from fastapi import Depends
 from api.billing import router as billing_router
 from api.onboarding import router as onboarding_router
+from api.signup import router as signup_router
 from api.support import router as support_router
 from api.betcheck import router as betcheck_router
 from api.games import router as games_router
@@ -67,6 +68,8 @@ app.include_router(billing_router)
 # support mounts WITHOUT the authed dependency: POST /support accepts
 # anonymous-with-email by design; its /admin routes carry their own guard.
 app.include_router(support_router)
+# signup is public by design (pre-account); its own rate limits apply.
+app.include_router(signup_router)
 app.include_router(onboarding_router, dependencies=_authed)
 app.include_router(mybets_router)
 # GET /digest -- authed, same as the game surface (private alpha, red-team

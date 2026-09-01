@@ -28,6 +28,7 @@ except ImportError:
 
 from src.appstate import billing
 from src.appstate import customers
+from src.appstate import events
 from src.appstate import users as users_store
 
 
@@ -80,6 +81,23 @@ class CheckoutEndpointTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             create_checkout(CheckoutRequest(plan_id="beta"), current_user=self.user)
 
+    def test_successful_checkout_records_checkout_started(self):
+        with mock.patch.object(billing, "get_billing_provider") as get_provider:
+            stub = mock.Mock()
+            stub.create_checkout.return_value = "https://checkout.stripe.com/test123"
+            get_provider.return_value = stub
+            from api.billing import CheckoutRequest, create_checkout
+            with mock.patch.object(events, "record_event_safe") as safe:
+                result = create_checkout(CheckoutRequest(plan_id="beta"), current_user=self.user)
+        self.assertEqual(result["status"], "redirect")
+        safe.assert_called_once_with(self.user.id, events.CHECKOUT_STARTED)
+
+    def test_not_configured_checkout_never_records_checkout_started(self):
+        from api.billing import CheckoutRequest, create_checkout
+        with mock.patch.object(events, "record_event_safe") as safe:
+            create_checkout(CheckoutRequest(plan_id="beta"), current_user=self.user)
+        safe.assert_not_called()
+
 
 @unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
 class BillingStatusEndpointTests(unittest.TestCase):
@@ -114,6 +132,88 @@ class BillingStatusEndpointTests(unittest.TestCase):
         from api.billing import billing_status
         result = billing_status(current_user=self.user)
         self.assertEqual(result["status"], "canceled")
+
+    def test_reports_cancel_at_when_the_webhook_carried_one(self):
+        customers.upsert_subscription(self.user.id, "sub_1", "active",
+                                      cancel_at="2026-10-01T00:00:00+00:00", db=self.db)
+        from api.billing import billing_status
+        result = billing_status(current_user=self.user)
+        self.assertEqual(result["cancel_at"], "2026-10-01T00:00:00+00:00")
+
+    def test_cancel_at_is_none_when_the_webhook_never_carried_one(self):
+        customers.upsert_subscription(self.user.id, "sub_1", "active", db=self.db)
+        from api.billing import billing_status
+        result = billing_status(current_user=self.user)
+        self.assertIsNone(result["cancel_at"])
+
+
+@unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
+class CancelEndpointTests(unittest.TestCase):
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.db = Path(self._tmp.name) / "app.db"
+        self._db_patcher = mock.patch.object(users_store, "db_path", lambda: self.db)
+        self._db_patcher.start()
+        self._env_patcher = mock.patch.dict(os.environ, {}, clear=False)
+        self._env_patcher.start()
+        os.environ.pop(billing.ENV_BILLING_PROVIDER, None)
+        os.environ.pop(billing.ENV_STRIPE_API_KEY, None)
+        self.user = users_store.create_user(
+            "cancel@example.com", status="active", db=self.db)
+
+    def tearDown(self):
+        self._env_patcher.stop()
+        self._db_patcher.stop()
+        self._tmp.cleanup()
+
+    def test_no_subscription_record_is_not_configured(self):
+        from api.billing import cancel_subscription
+        result = cancel_subscription(current_user=self.user)
+        self.assertEqual(result, {"status": "not_configured"})
+
+    def test_stripe_without_api_key_is_not_configured_even_with_a_local_record(self):
+        # A local record can exist (e.g. from an earlier webhook) even if
+        # STRIPE_API_KEY has since been unset -- cancel must still refuse
+        # honestly rather than pretend it reached Stripe.
+        customers.upsert_subscription(self.user.id, "sub_1", "active", db=self.db)
+        os.environ[billing.ENV_BILLING_PROVIDER] = "stripe"
+        from api.billing import cancel_subscription
+        result = cancel_subscription(current_user=self.user)
+        self.assertEqual(result["status"], "not_configured")
+
+    def test_cancel_updates_local_state_and_records_the_event(self):
+        customers.upsert_subscription(self.user.id, "sub_1", "active", db=self.db)
+        # NullBillingProvider.cancel() never returns a provider_ref, so
+        # exercise the persistence branch with a Stripe-shaped stand-in
+        # instead (get_billing_provider mocked below).
+        canceled = billing.Subscription(user_id=self.user.id, plan_id="beta",
+                                        status="canceled", provider_ref="sub_1")
+        with mock.patch.object(billing, "get_billing_provider") as get_provider:
+            stub = mock.Mock()
+            stub.cancel.return_value = canceled
+            get_provider.return_value = stub
+            from api.billing import cancel_subscription
+            with mock.patch.object(events, "record_event_safe") as safe:
+                result = cancel_subscription(current_user=self.user)
+        self.assertEqual(result["status"], "canceled")
+        record = customers.get_subscription_record(self.user.id, db=self.db)
+        self.assertEqual(record["status"], "canceled")
+        safe.assert_called_once_with(self.user.id, events.SUBSCRIPTION_CANCELLED)
+
+    def test_cancel_is_safe_to_call_twice(self):
+        customers.upsert_subscription(self.user.id, "sub_1", "active", db=self.db)
+        canceled = billing.Subscription(user_id=self.user.id, plan_id="beta",
+                                        status="canceled", provider_ref="sub_1")
+        with mock.patch.object(billing, "get_billing_provider") as get_provider:
+            stub = mock.Mock()
+            stub.cancel.return_value = canceled
+            get_provider.return_value = stub
+            from api.billing import cancel_subscription
+            first = cancel_subscription(current_user=self.user)
+            second = cancel_subscription(current_user=self.user)
+        self.assertEqual(first["status"], "canceled")
+        self.assertEqual(second["status"], "canceled")
 
 
 @unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
