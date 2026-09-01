@@ -430,3 +430,19 @@ as errata with the original left standing), P4 reclassified out of the placebo
 ceiling as a dispersion diagnostic, evolab statistics validated both ways.
 F5 close pass shipped with coverage 3-of-15 to 15-of-15; two reproduced
 defects in its miss-detector and credit cap are being fixed now.
+
+## 2026-09-01 00:00-01:30Z — paid-beta backend waves (build loop live)
+Design moved to a separate Claude Design session (directions-v1 archived).
+Waves 1-3 landed and pushed, each unit tested before commit: Bet Check /
+Games / What Changed / Odds APIs; auth (invite tokens, hashed at rest) +
+My Bets; deploy (Dockerfile, /health, redacting request log, smoke);
+red-team round (fixed INVERTED price direction in Bet Check bottom line,
+invite race, overflow 500s; then gated the whole game surface behind
+auth); caching/freshness (stale-served-with-flag); contract tests +
+analytics (hashed users only); Clerk seam + Stripe test-mode provider +
+billing persistence; My Bets settlement in the daily loop; scripts/ci.sh
+green end to end. Brey decisions recorded (Clerk/Stripe/staging/temp
+disclaimer). Wave 4 in flight: provider timeout/retry + load smoke;
+structural reference client. Suite 2,655. V3: 0 measurable events, floor
+30 - accumulating. Hourly captures on schedule (00:02Z committed;
+00:16Z run still polling close windows).
