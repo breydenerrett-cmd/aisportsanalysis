@@ -45,6 +45,16 @@ personalization, full alerts, SEO/content build.
 
 ## PHASE LOG
 
+- 2026-09-01 03:50: STAGING LIVE at https://linehound-staging.fly.dev
+  (Actions deploy after Brey added FLY_API_TOKEN; remote smoke all-PASS;
+  hourly health monitor armed; capture pushes now auto-refresh staging
+  data). LINEHOUND Launch Ops (separate session) OWNS Stripe dashboard/
+  webhook/Fly-secrets/checkout-test - this session does NOT touch those
+  and asks Brey for no dashboard steps; staging is the integration
+  target; repo-level blockers come back as exact questions. This session
+  continues engineering/research: read-only security review of the new
+  commerce surface dispatched; research on triggers.
+
 - 2026-09-01 ~04:30: LAUNCH LANE STEADY STATE. Everything buildable
   without credentials is BUILT, TESTED, PUSHED: full paid funnel proven
   by 14-step funnel_smoke (in ci.sh), admin dashboard, first-customer

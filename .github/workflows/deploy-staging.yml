@@ -18,6 +18,11 @@ on:
       - "web/**"
       - "deploy/**"
       - ".github/workflows/deploy-staging.yml"
+      # forward-capture commits refresh the stores baked into the image, so
+      # staging's Today/Odds data follows the hourly captures automatically
+      # (concurrency group serializes; volume-backed app db is unaffected).
+      - "data/processed/**"
+      - "data/watch/**"
   workflow_dispatch: {}
 
 concurrency:
