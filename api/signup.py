@@ -58,6 +58,7 @@ display name; Stripe Checkout renders it from the Product itself.
 from __future__ import annotations
 
 import re
+import sys
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -115,12 +116,35 @@ class SignupRequest(BaseModel):
     email: str = Field(max_length=MAX_EMAIL_LENGTH)
 
 
+class _CheckoutProviderError(Exception):
+    """Raised by _attempt_checkout (never lets `str(exc)` travel further --
+    see _respond_for) when a CONFIGURED billing provider's create_checkout
+    call itself failed -- e.g. a real Stripe API error
+    (StripeBillingProvider._call's RuntimeError, which embeds Stripe's raw
+    response body: see that class's docstring). Distinct from
+    billing.BillingProviderNotConfigured (the honest "billing not set up
+    yet" case, which _attempt_checkout still returns None for, unchanged):
+    this is "billing IS configured and the provider itself refused or
+    failed," which must not be silently folded into "waitlisted" -- a
+    signup that could not check out belongs in an honest error state, not
+    a queue it was never actually placed in.
+    """
+
+
 def _attempt_checkout(user_id: int) -> Optional[str]:
     """A real Stripe checkout URL for user_id, or None -- the honest
     "billing not ready" state -- whenever either half of billing
     (STRIPE_API_KEY, or the beta plan's own STRIPE_BETA_PRICE_ID) is
     missing. See src.appstate.billing.beta_plan_stripe_price_id's
-    docstring for why both are checked rather than just the API key."""
+    docstring for why both are checked rather than just the API key.
+
+    Raises _CheckoutProviderError (never billing.BillingProviderNotConfigured
+    itself, and never lets a provider's raw RuntimeError propagate) when
+    billing IS configured but the provider call failed -- defensive review
+    finding F3: without this, a real Stripe RuntimeError (which embeds
+    Stripe's raw response body) surfaced all the way up as this route's
+    unhandled 500, body and all.
+    """
     price_id = billing.beta_plan_stripe_price_id()
     if not price_id:
         return None
@@ -129,6 +153,13 @@ def _attempt_checkout(user_id: int) -> Optional[str]:
         url = provider.create_checkout(user_id, price_id)
     except billing.BillingProviderNotConfigured:
         return None
+    except RuntimeError as exc:
+        # Never relay Stripe's raw error body -- log it server-side only,
+        # the same swallow-and-log shape events.record_event_safe uses for
+        # a failure that must not become the caller's problem.
+        print(f"signup: checkout provider call failed for user_id={user_id}: "
+              f"{exc!r}", file=sys.stderr, flush=True)
+        raise _CheckoutProviderError() from None
     return url or None
 
 
@@ -140,7 +171,14 @@ def _respond_for(user: users_store.User) -> dict:
         # Not this endpoint's business to move a user out of a state a
         # human process put them in -- report it plainly instead.
         return {"user_id": user.id, "status": user.status}
-    checkout_url = _attempt_checkout(user.id)
+    try:
+        checkout_url = _attempt_checkout(user.id)
+    except _CheckoutProviderError:
+        # Structured, generic response -- never the raw provider error
+        # (see _attempt_checkout's docstring) and never a 500 out of the
+        # one endpoint the public actually hits.
+        return {"user_id": user.id, "status": "error",
+                "message": "checkout could not be started; try again shortly"}
     if checkout_url:
         if user.status != "pending_payment":
             users_store.set_user_status(user.id, "pending_payment")

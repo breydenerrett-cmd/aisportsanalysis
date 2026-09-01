@@ -79,6 +79,26 @@ class PostFunnelEventTests(unittest.TestCase):
         expected_hash = events.hash_user_id(ANONYMOUS_FUNNEL_USER_ID)
         self.assertEqual(events.list_events(db=self.db)[0].user_hash, expected_hash)
 
+    def test_oversized_properties_is_400(self):
+        """F4: this route has no auth behind it, so an unbounded
+        `properties` dict is a free way to push an arbitrarily large blob
+        into analytics_events -- must be refused, and refused before
+        anything is recorded."""
+        from api.funnel import FunnelEventRequest, MAX_PROPERTIES_JSON_BYTES, post_funnel_event
+        oversized = {"blob": "x" * (MAX_PROPERTIES_JSON_BYTES + 100)}
+        with self.assertRaises(HTTPException) as ctx:
+            post_funnel_event(FunnelEventRequest(kind="landing_view", properties=oversized))
+        self.assertEqual(ctx.exception.status_code, 400)
+        self.assertEqual(events.list_events(db=self.db), [])
+
+    def test_properties_within_the_bound_is_accepted(self):
+        from api.funnel import FunnelEventRequest, post_funnel_event
+        result = post_funnel_event(
+            FunnelEventRequest(kind="landing_view", properties={"utm_source": "test"}))
+        self.assertEqual(result, {"recorded": True})
+        self.assertEqual(events.list_events(db=self.db)[0].properties,
+                         {"utm_source": "test"})
+
 
 @unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
 class FunnelRateLimitTests(unittest.TestCase):

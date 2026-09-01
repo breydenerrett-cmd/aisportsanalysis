@@ -149,6 +149,47 @@ class SignupRateLimitTests(unittest.TestCase):
 
 
 @unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
+class SignupProviderErrorTests(unittest.TestCase):
+    """F3: a real Stripe RuntimeError out of provider.create_checkout must
+    become a structured {"status": "error", ...} response, never an
+    unhandled 500 -- and Stripe's raw error body must never reach the
+    caller. STRIPE_BETA_PRICE_ID must be set here (unlike
+    SignupUnconfiguredBillingTests) so _attempt_checkout actually reaches
+    the (mocked) provider instead of short-circuiting to "waitlisted"."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.db = Path(self._tmp.name) / "app.db"
+        self._db_patcher = mock.patch.object(users_store, "db_path", lambda: self.db)
+        self._db_patcher.start()
+        self._env_patcher = mock.patch.dict(os.environ, {}, clear=False)
+        self._env_patcher.start()
+        os.environ[billing.ENV_STRIPE_BETA_PRICE_ID] = "price_test_beta_signup_error"
+
+    def tearDown(self):
+        self._env_patcher.stop()
+        self._db_patcher.stop()
+        self._tmp.cleanup()
+
+    def test_provider_runtime_error_is_a_structured_response_not_a_500(self):
+        from api.signup import SignupRequest, signup
+        with mock.patch.object(billing, "get_billing_provider") as get_provider:
+            stub = mock.Mock()
+            stub.create_checkout.side_effect = RuntimeError(
+                "Stripe API error 402: {'error': {'message': 'card declined', "
+                "'raw_body_marker': 'should-never-reach-the-caller'}}")
+            get_provider.return_value = stub
+            result = signup(SignupRequest(email="provider-error@example.com"),
+                            _rate_limit=None)
+        self.assertEqual(result["status"], "error")
+        self.assertNotIn("should-never-reach-the-caller", str(result))
+        # A failed checkout attempt is not "waitlisted" -- that would claim
+        # a state the user was never actually placed in.
+        user = users_store.get_user_by_email("provider-error@example.com", db=self.db)
+        self.assertNotEqual(user.status, "waitlisted")
+
+
+@unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
 class SignupFullFlowTests(unittest.TestCase):
     """signup -> fake Stripe checkout -> signed webhook completes it ->
     user active -> minted token authenticates on a real authed route.

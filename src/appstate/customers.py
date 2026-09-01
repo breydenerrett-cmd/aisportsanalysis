@@ -213,6 +213,57 @@ def get_subscription_record(user_id: int, *, db: Optional[Path] = None) -> Optio
                 "updated_at": row["updated_at"]}
 
 
+def _scrub_if_expired(conn: sqlite3.Connection, stripe_session_id: str) -> None:
+    """Treat an unretrieved activation-token row as expired once it has
+    outlived users_store.DEFAULT_TOKEN_TTL -- the same TTL
+    issue_invite_token uses for every other bearer token this app mints
+    (src/appstate/users.py). Defensive review finding F5: without this, a
+    paying user who never opens the success tab (or opens it long after
+    paying) leaves a raw bearer token sitting in this table in the clear
+    indefinitely -- this module's own docstring calls that table's
+    raw-token window "temporary", which an unbounded wait does not honor.
+
+    Marks the row exactly as a genuine retrieval would --
+    `raw_token = NULL`, `retrieved_at` set -- so an expired row is
+    indistinguishable from an already-used one to every caller (GET
+    /signup/complete's own docstring already promises "already used" and
+    "never happened" look the same from outside; "expired" folds into that
+    same honest non-answer rather than adding a fourth, distinguishable
+    case). `has_activation_token` stays True afterward, the same
+    idempotency guarantee an actually-retrieved row gives against a
+    redelivered webhook.
+
+    Called at the top of has_activation_token/take_activation_token
+    (never on its own), scoped to the ONE row being touched -- this table
+    is small and read on exactly those two call sites, so a targeted
+    UPDATE on the row already being queried costs nothing extra and needs
+    no separate background sweep job. Deliberately leaves
+    take_activation_token's own atomic claim UPDATE untouched (BOUNDARIES)
+    -- this only ever runs BEFORE it, on a row that UPDATE has not yet
+    seen.
+    """
+    row = conn.execute(
+        "SELECT created_at FROM signup_activation_tokens WHERE "
+        "stripe_session_id = ? AND raw_token IS NOT NULL AND retrieved_at IS NULL",
+        (stripe_session_id,)).fetchone()
+    if row is None:
+        return
+    try:
+        created_at = datetime.fromisoformat(row["created_at"])
+    except (TypeError, ValueError):
+        # An unparsable created_at is not this function's problem to
+        # raise on -- every row this module itself writes uses _now_iso(),
+        # so this should never happen; if it somehow does, leaving the row
+        # alone is the safe default, not a crash on a public-ish read path.
+        return
+    if datetime.now(timezone.utc) - created_at <= users_store.DEFAULT_TOKEN_TTL:
+        return
+    conn.execute(
+        "UPDATE signup_activation_tokens SET raw_token = NULL, retrieved_at = ? "
+        "WHERE stripe_session_id = ?",
+        (_now_iso(), stripe_session_id))
+
+
 def has_activation_token(stripe_session_id: str, *, db: Optional[Path] = None) -> bool:
     """Whether a signup activation token has EVER been minted for this
     Stripe checkout session -- the idempotency gate
@@ -228,6 +279,7 @@ def has_activation_token(stripe_session_id: str, *, db: Optional[Path] = None) -
     silently invalidate the already-issued) a second one.
     """
     with _connect(db) as conn:
+        _scrub_if_expired(conn, stripe_session_id)
         row = conn.execute(
             "SELECT 1 FROM signup_activation_tokens WHERE stripe_session_id = ?",
             (stripe_session_id,)).fetchone()
@@ -282,6 +334,13 @@ def take_activation_token(stripe_session_id: str, *,
     rows and gets None, the same as a replay.
     """
     with _connect(db) as conn:
+        # F5's TTL scrub runs first, on this same row -- if it fires (row
+        # older than users_store.DEFAULT_TOKEN_TTL and never retrieved), it
+        # sets retrieved_at itself, so the claim UPDATE just below finds no
+        # unretrieved row to match and this function returns None, same as
+        # any other already-used session id. See _scrub_if_expired's
+        # docstring.
+        _scrub_if_expired(conn, stripe_session_id)
         # Claim the row first (sets retrieved_at, still holding raw_token so
         # RETURNING can hand it back). The WHERE guard is the whole race
         # defense: at most one connection's UPDATE can match the

@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
@@ -33,11 +34,24 @@ from pydantic import BaseModel
 from src.appstate import billing
 from src.appstate import customers
 from src.appstate import events
+from src.appstate import ratelimit
 from src.appstate.users import User
 
 from api.auth import get_current_user
 
 router = APIRouter()
+
+# Both routes below already require get_current_user, so there is always a
+# stable identity to key on -- same authed-user-keyed shape
+# api/mybets.py's own limiter uses. 20/min is generous for a real user
+# opening checkout or hitting cancel and tight enough to blunt a script
+# hammering either route once a bearer token is compromised (defensive
+# review finding F6).
+BILLING_RATE_LIMIT_PER_MIN = 20
+_billing_limiter = ratelimit.FixedWindowLimiter(
+    limit=BILLING_RATE_LIMIT_PER_MIN, window_s=60.0)
+_rate_limited_billing = ratelimit.limiter_dependency(
+    _billing_limiter, user_dependency=get_current_user)
 
 
 class CheckoutRequest(BaseModel):
@@ -46,19 +60,55 @@ class CheckoutRequest(BaseModel):
 
 @router.post("/billing/checkout")
 def create_checkout(body: CheckoutRequest,
-                     current_user: User = Depends(get_current_user)) -> dict:
+                     current_user: User = Depends(get_current_user),
+                     _rate_limit: None = Depends(_rate_limited_billing)) -> dict:
     """Start a checkout for the authed user. Returns a structured
     "not configured" body today (NullBillingProvider is the default, and
     StripeBillingProvider refuses without STRIPE_API_KEY) -- this is not
     an error response, it is the honest current state of billing per
     docs/LAUNCH_DECISIONS.md Decision 2, so it is a 200 with a status
     field rather than a 5xx a caller would need to specially handle.
+
+    SERVER-SIDE PLAN ALLOWLIST (defensive review finding F1): body.plan_id
+    is a client-supplied string and must never reach
+    provider.create_checkout as the literal Stripe price -- a caller could
+    otherwise name an arbitrary price id (someone else's plan, or a probe
+    of Stripe's id namespace) and this app would unknowingly open a real
+    checkout session against it. Only billing.BETA_PLAN_ID is accepted; it
+    is resolved server-side to billing.beta_plan_stripe_price_id(), the
+    exact same allowlist-then-resolve api/signup.py::_attempt_checkout
+    already applies for the self-serve path, so calling this endpoint
+    directly gets the identical guarantee.
     """
+    if body.plan_id != billing.BETA_PLAN_ID:
+        raise HTTPException(status_code=400, detail={
+            "error": "unknown_plan",
+            "message": f"{body.plan_id!r} is not a recognized plan id; "
+                       f"expected {billing.BETA_PLAN_ID!r}"})
+    price_id = billing.beta_plan_stripe_price_id()
+    if not price_id:
+        # Same honest "not configured" shape as every other billing gap --
+        # the plan itself is real, Brey just hasn't created its Stripe
+        # Price yet (see billing.ENV_STRIPE_BETA_PRICE_ID's own comment).
+        return {"status": "not_configured",
+                "message": "billing is not configured yet"}
     provider = billing.get_billing_provider()
     try:
-        url = provider.create_checkout(current_user.id, body.plan_id)
+        url = provider.create_checkout(current_user.id, price_id)
     except billing.BillingProviderNotConfigured as exc:
         return {"status": "not_configured", "message": str(exc)}
+    except RuntimeError as exc:
+        # Defensive review finding F3: StripeBillingProvider._call raises a
+        # plain RuntimeError embedding Stripe's raw response body -- that
+        # must never reach the caller verbatim (account-identifying detail
+        # this endpoint has no business relaying), and must never surface
+        # as an unhandled 500 either. Logged server-side only, the same
+        # swallow-and-log shape events.record_event_safe uses, so the
+        # failure is still visible to whoever reads stderr/logs.
+        print(f"billing: checkout provider call failed for "
+              f"user_id={current_user.id}: {exc!r}", file=sys.stderr, flush=True)
+        return {"status": "error",
+                "message": "checkout could not be started; try again shortly"}
     if not url:
         # NullBillingProvider's honest non-answer (see its docstring) --
         # same "not configured" shape as the exception path above, so a
@@ -102,7 +152,8 @@ def billing_status(current_user: User = Depends(get_current_user)) -> dict:
 
 
 @router.post("/billing/cancel")
-def cancel_subscription(current_user: User = Depends(get_current_user)) -> dict:
+def cancel_subscription(current_user: User = Depends(get_current_user),
+                         _rate_limit: None = Depends(_rate_limited_billing)) -> dict:
     """Cancel the authed user's subscription. Requires a local subscription
     record to already exist (same "not_configured" gate billing_status
     reads) -- there is nothing honest to cancel for a user billing has
@@ -128,6 +179,14 @@ def cancel_subscription(current_user: User = Depends(get_current_user)) -> dict:
         subscription = provider.cancel(current_user.id)
     except billing.BillingProviderNotConfigured as exc:
         return {"status": "not_configured", "message": str(exc)}
+    except RuntimeError as exc:
+        # Same F3 shape as checkout above: a live Stripe error must not reach
+        # the caller verbatim or surface as an unhandled 500. Logged
+        # server-side only.
+        print(f"billing: cancel provider call failed for "
+              f"user_id={current_user.id}: {exc!r}", file=sys.stderr, flush=True)
+        return {"status": "error",
+                "message": "cancellation could not be completed; try again shortly"}
     if subscription.provider_ref:
         customers.upsert_subscription(
             current_user.id, subscription.provider_ref, subscription.status)

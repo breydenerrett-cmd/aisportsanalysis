@@ -2,9 +2,10 @@
 acquisition funnel from an anonymous landing-page view through to a
 saved bet, per this task's brief.
 
-REPORT BACK includes this file's own `from api.funnel import router as
-funnel_router` / `app.include_router(funnel_router)` lines for whoever owns
-api/app.py to add -- this module is never wired into app.py here (BOUNDARIES).
+This module IS wired into app.py: `from api.funnel import router as
+funnel_router` / `app.include_router(funnel_router)` both already live
+there (corrected 2026-09-01 -- this docstring previously claimed the
+opposite, left over from before that wiring landed).
 
 WHY THE PUBLIC ENDPOINT ONLY ACCEPTS TWO KINDS
 ------------------------------------------------
@@ -41,6 +42,7 @@ landing_view counts.
 
 from __future__ import annotations
 
+import json
 from datetime import date as date_cls, datetime, timedelta, timezone
 from typing import Dict, List, Optional
 
@@ -64,6 +66,38 @@ FUNNEL_RATE_LIMIT_PER_HOUR = 60
 _funnel_limiter = FixedWindowLimiter(limit=FUNNEL_RATE_LIMIT_PER_HOUR, window_s=3600.0)
 _rate_limit_funnel = limiter_dependency(_funnel_limiter)
 
+# Defensive review finding F4: this route has no auth behind it at all (see
+# module docstring), so an unbounded `properties` dict would be a free way
+# to push an arbitrarily large blob into analytics_events.properties_json --
+# src/appstate/events.py enforces no size bound of its own, by design (it
+# trusts every wired-in call site to already be event-shaped). 2KB is
+# generous over any real landing_view/signup_started property shape (a UTM
+# tag, a referrer) while still bounding this public input.
+MAX_PROPERTIES_JSON_BYTES = 2048
+
+
+def _validated_properties(properties: Optional[dict]) -> Optional[dict]:
+    """`properties`, or a 400 if it is not JSON-serializable at all (a
+    client-controlled dict can hold shapes pydantic's bare `dict` type
+    does not reject, e.g. a non-finite float) or serializes past
+    MAX_PROPERTIES_JSON_BYTES. Raises rather than truncating -- silently
+    dropping part of a caller's payload would record a different event
+    than the one they sent, which is worse than refusing it outright."""
+    if properties is None:
+        return None
+    try:
+        serialized = json.dumps(properties)
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail={
+            "error": "properties_not_serializable",
+            "message": f"properties must be JSON-serializable: {exc}"})
+    if len(serialized.encode("utf-8")) > MAX_PROPERTIES_JSON_BYTES:
+        raise HTTPException(status_code=400, detail={
+            "error": "properties_too_large",
+            "message": f"properties must serialize to at most "
+                       f"{MAX_PROPERTIES_JSON_BYTES} bytes"})
+    return properties
+
 
 class FunnelEventRequest(BaseModel):
     kind: str
@@ -75,14 +109,17 @@ def post_funnel_event(body: FunnelEventRequest) -> dict:
     """Record one anonymous funnel event. 400s on any kind outside
     PUBLIC_FUNNEL_KINDS -- a public caller does not get to decide it
     completed a bet check or redeemed an invite; those are recorded from
-    the server-side action itself, never from a client's say-so."""
+    the server-side action itself, never from a client's say-so. Also
+    400s on an oversized/unserializable `properties` -- see
+    _validated_properties (defensive review finding F4)."""
     if body.kind not in PUBLIC_FUNNEL_KINDS:
         raise HTTPException(status_code=400, detail={
             "error": "kind_not_public",
             "message": (f"{body.kind!r} is not a public funnel event kind; "
                        f"allowed: {sorted(PUBLIC_FUNNEL_KINDS)}"),
         })
-    events.record_event_safe(ANONYMOUS_FUNNEL_USER_ID, body.kind, body.properties)
+    properties = _validated_properties(body.properties)
+    events.record_event_safe(ANONYMOUS_FUNNEL_USER_ID, body.kind, properties)
     return {"recorded": True}
 
 

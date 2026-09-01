@@ -29,6 +29,7 @@ except ImportError:
 from src.appstate import billing
 from src.appstate import customers
 from src.appstate import events
+from src.appstate import ratelimit
 from src.appstate import users as users_store
 
 
@@ -56,6 +57,12 @@ class CheckoutEndpointTests(unittest.TestCase):
         self._env_patcher.start()
         os.environ.pop(billing.ENV_BILLING_PROVIDER, None)
         os.environ.pop(billing.ENV_STRIPE_API_KEY, None)
+        # The CONFIGURED price the server-side allowlist (F1) must resolve
+        # "beta" to -- deliberately different from BETA_PLAN_ID itself, so
+        # a test asserting the provider saw THIS value (not "beta", and
+        # not whatever a caller sent) actually proves the resolution ran.
+        self.beta_price_id = "price_test_beta_checkout"
+        os.environ[billing.ENV_STRIPE_BETA_PRICE_ID] = self.beta_price_id
         self.user = users_store.create_user(
             "checkout@example.com", status="active", db=self.db)
 
@@ -97,6 +104,46 @@ class CheckoutEndpointTests(unittest.TestCase):
         with mock.patch.object(events, "record_event_safe") as safe:
             create_checkout(CheckoutRequest(plan_id="beta"), current_user=self.user)
         safe.assert_not_called()
+
+    def test_disallowed_plan_id_is_400(self):
+        """F1: a client-supplied plan_id outside the server-side allowlist
+        must never reach the provider -- refused before any provider is
+        even constructed."""
+        from api.billing import CheckoutRequest, create_checkout
+        with self.assertRaises(HTTPException) as ctx:
+            create_checkout(CheckoutRequest(plan_id="price_someone_elses"),
+                             current_user=self.user)
+        self.assertEqual(ctx.exception.status_code, 400)
+
+    def test_beta_plan_resolves_to_the_configured_price_not_the_raw_input(self):
+        """F1's exact regression: plan_id="beta" must reach the provider as
+        the CONFIGURED STRIPE_BETA_PRICE_ID, never the literal string
+        "beta" (and never anything else a caller could have sent)."""
+        with mock.patch.object(billing, "get_billing_provider") as get_provider:
+            stub = mock.Mock()
+            stub.create_checkout.return_value = "https://checkout.stripe.com/test123"
+            get_provider.return_value = stub
+            from api.billing import CheckoutRequest, create_checkout
+            create_checkout(CheckoutRequest(plan_id=billing.BETA_PLAN_ID),
+                             current_user=self.user)
+        stub.create_checkout.assert_called_once_with(self.user.id, self.beta_price_id)
+
+    def test_provider_runtime_error_is_a_structured_response_not_a_500(self):
+        """F3: a real Stripe RuntimeError (StripeBillingProvider._call
+        raises one embedding Stripe's raw response body) must become a
+        structured error response, never an unhandled 500 -- and that raw
+        body must never reach the caller."""
+        from api.billing import CheckoutRequest, create_checkout
+        with mock.patch.object(billing, "get_billing_provider") as get_provider:
+            stub = mock.Mock()
+            stub.create_checkout.side_effect = RuntimeError(
+                "Stripe API error 402: {'error': {'message': 'card declined', "
+                "'raw_body_marker': 'should-never-reach-the-caller'}}")
+            get_provider.return_value = stub
+            result = create_checkout(CheckoutRequest(plan_id=billing.BETA_PLAN_ID),
+                                      current_user=self.user)
+        self.assertEqual(result["status"], "error")
+        self.assertNotIn("should-never-reach-the-caller", str(result))
 
 
 @unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
@@ -347,6 +394,60 @@ class WebhookPersistenceTests(unittest.TestCase):
         asyncio.run(stripe_webhook(self._signed_request(deleted)))
         status = billing_status(current_user=self.user)
         self.assertEqual(status["status"], "canceled")
+
+
+@unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
+class BillingRateLimitTests(unittest.TestCase):
+    """F6: POST /billing/checkout and POST /billing/cancel are authed but
+    were not rate-limited. FixedWindowLimiter itself is exhaustively
+    unit-tested in tests/test_appstate_ratelimit.py; this pins that both
+    routes' shared dependency actually trips -- same shape
+    tests/test_api_mybets.py's own rate-limit test uses (calling the
+    dependency function directly, since this module's tests never go
+    through a real FastAPI request cycle -- see this file's docstring)."""
+
+    def setUp(self):
+        import api.billing as billing_mod
+        self._tmp = tempfile.TemporaryDirectory()
+        self.db = Path(self._tmp.name) / "app.db"
+        self._db_patcher = mock.patch.object(users_store, "db_path", lambda: self.db)
+        self._db_patcher.start()
+        self.user = users_store.create_user("ratelimit@example.com", db=self.db)
+        self._billing_mod = billing_mod
+        self._original_limiter = billing_mod._billing_limiter
+        self._original_dep = billing_mod._rate_limited_billing
+        # A tiny limit so the test does not need twenty real calls.
+        billing_mod._billing_limiter = ratelimit.FixedWindowLimiter(
+            limit=2, window_s=60.0)
+        billing_mod._rate_limited_billing = ratelimit.limiter_dependency(
+            billing_mod._billing_limiter, user_dependency=billing_mod.get_current_user)
+
+    def tearDown(self):
+        self._billing_mod._billing_limiter = self._original_limiter
+        self._billing_mod._rate_limited_billing = self._original_dep
+        self._db_patcher.stop()
+        self._tmp.cleanup()
+
+    def test_documented_limit_is_twenty_per_minute(self):
+        self.assertEqual(self._billing_mod.BILLING_RATE_LIMIT_PER_MIN, 20)
+
+    def test_trips_after_the_configured_count(self):
+        dep = self._billing_mod._rate_limited_billing
+        request = mock.Mock(client=None)
+        dep(request=request, current_user=self.user)
+        dep(request=request, current_user=self.user)
+        with self.assertRaises(HTTPException) as ctx:
+            dep(request=request, current_user=self.user)
+        self.assertEqual(ctx.exception.status_code, 429)
+        self.assertIn("retry_after", ctx.exception.detail)
+
+    def test_a_different_user_gets_their_own_counter(self):
+        other = users_store.create_user("ratelimit2@example.com", db=self.db)
+        dep = self._billing_mod._rate_limited_billing
+        request = mock.Mock(client=None)
+        dep(request=request, current_user=self.user)
+        dep(request=request, current_user=self.user)
+        dep(request=request, current_user=other)  # a fresh counter, not shared
 
 
 if __name__ == "__main__":
