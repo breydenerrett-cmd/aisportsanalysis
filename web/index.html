@@ -20,7 +20,10 @@
 
   <div class="app-content">
     <header class="app-topbar">
-      <p class="app-topbar__brand" data-hook="product-name">LINEHOUND</p>
+      <!-- The wordmark is the standard home link: back to the public
+           landing page from any app screen. A real <a> so mouse, Enter,
+           and focus behavior come from the platform, not a handler. -->
+      <a class="app-topbar__brand" data-hook="product-name" href="landing.html">LINEHOUND</a>
       <div class="app-topbar__token" data-hook="token-form-host" aria-label="invite token entry"></div>
       <a class="app-topbar__support" href="#/support">Support</a>
     </header>

@@ -50,6 +50,15 @@
   font-size: 19px;
   color: var(--text-hi);
   white-space: nowrap;
+  /* The wordmark doubles as the home link (back to the landing page):
+     same look as the static mark, plus the affordances a link owes --
+     pointer, visible keyboard focus, no underline noise. */
+  text-decoration: none;
+  cursor: pointer;
+}
+.app-topbar__brand:focus-visible {
+  outline: 2px solid var(--live, #00e0ff);
+  outline-offset: 3px;
 }
 .app-topbar__token { flex: 1; min-width: 0; }
 .app-topbar__support {
