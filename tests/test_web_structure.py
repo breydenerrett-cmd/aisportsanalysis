@@ -51,10 +51,11 @@ class FilesExistAndParse(unittest.TestCase):
     def test_expected_files_present(self):
         self.assertTrue((WEB_DIR / "index.html").is_file())
         self.assertTrue((WEB_DIR / "landing.html").is_file())
+        self.assertTrue((WEB_DIR / "admin.html").is_file())
         self.assertTrue((WEB_DIR / "README.md").is_file())
         for name in ("api.js", "dom.js", "meta.js", "today.js", "games.js",
                      "betcheck.js", "odds.js", "mybets.js", "main.js",
-                     "signup.js", "landing.js", "pricing.js"):
+                     "signup.js", "landing.js", "pricing.js", "admin.js"):
             self.assertTrue((WEB_DIR / "js" / name).is_file(), name)
 
     def test_html_files_parse(self):
@@ -422,6 +423,69 @@ class SignupRouteWiredIntoMainTests(unittest.TestCase):
         self.assertIn("renderSignup(main)", self.main_js)
         self.assertIn("renderSignupComplete(main, query)", self.main_js)
         self.assertIn('route === "signup"', self.main_js)
+
+
+class AdminViewStructureTests(unittest.TestCase):
+    """web/admin.html + web/js/admin.js: the structural ops dashboard over
+    api/admin.py, api/funnel.py, api/support.py -- ACCEPTANCE's admin-token
+    handling rules, on top of the generic checks every web/ file already
+    gets from the classes above (no style attrs, no banned class words, no
+    banned vocabulary -- ALL_TEXT_FILES already includes these two files
+    via the top-level glob)."""
+
+    def setUp(self):
+        self.html = (WEB_DIR / "admin.html").read_text(encoding="utf-8")
+        self.js = (WEB_DIR / "js" / "admin.js").read_text(encoding="utf-8")
+
+    def test_token_kept_in_sessionstorage_never_localstorage(self):
+        # The admin token is the one credential in this client that can
+        # read every user's email and change support state -- it must use
+        # the shorter-lived store, and this file must never actually READ
+        # OR WRITE it via localStorage (mentioning the word in a docstring,
+        # to explain the choice, is fine -- an actual `window.localStorage`
+        # call is not).
+        self.assertIn("window.sessionStorage", self.js)
+        self.assertNotIn("window.localStorage", self.js)
+
+    def test_token_sent_as_header_never_built_into_a_url(self):
+        self.assertIn("X-Admin-Token", self.js)
+        # No fetch/URL construction concatenates the token into a path or
+        # querystring anywhere in this file (e.g. `?token=`, or a template
+        # literal splicing the token itself, or the function that reads
+        # it, into a request path/URL).
+        self.assertNotRegex(self.js, r"[?&]token=")
+        self.assertNotRegex(self.js, r"\$\{[^}]*[Tt]oken[^}]*\}")
+        # And it is never sent as an Authorization bearer -- that header is
+        # web/js/api.js's separate invite-token contract, not this one
+        # (mentioning the word in a comment, to say so, is fine; setting
+        # the header itself is not).
+        self.assertNotIn('headers["Authorization"]', self.js)
+        self.assertNotIn("headers['Authorization']", self.js)
+
+    def test_distinguishes_401_and_404_as_separate_states(self):
+        self.assertIn('"admin-auth-invalid"', self.js)
+        self.assertIn('"admin-auth-disabled"', self.js)
+        self.assertIn("err.status === 404", self.js)
+        self.assertIn("err.status === 401", self.js)
+
+    def test_store_health_reasons_rendered_verbatim(self):
+        # No template literal wraps/paraphrases `reason` -- it is appended
+        # as its own list item text, unmodified.
+        self.assertIn("list.appendChild(el(\"li\", { text: reason }))", self.js)
+
+    def test_support_status_change_posts_to_documented_route(self):
+        self.assertIn("/admin/support/${id}/status", self.js)
+
+    def test_admin_sections_present_and_default_hidden(self):
+        for hook in ("admin-token-section", "admin-overview-section",
+                     "admin-funnel-section", "admin-support-section",
+                     "admin-users-section"):
+            self.assertIn(f'data-hook="{hook}"', self.html)
+        for hook in ("admin-overview-section", "admin-funnel-section",
+                     "admin-support-section", "admin-users-section"):
+            section = re.search(
+                rf'<section[^>]*data-hook="{hook}"[^>]*>', self.html).group(0)
+            self.assertIn("hidden", section)
 
 
 class LandingVocabularyScan(unittest.TestCase):

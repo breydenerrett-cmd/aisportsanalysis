@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LINEHOUND — admin</title>
+</head>
+<body>
+<header data-hook="admin-header">
+<p data-hook="product-name">LINEHOUND admin</p>
+</header>
+
+<main>
+
+<!-- Token entry -- the admin token lives in sessionStorage, never
+     localStorage (web/js/admin.js explains why: a tab close ends the
+     blast radius instead of a token surviving indefinitely on disk). -->
+<section data-view="admin-token" aria-label="admin token entry" data-hook="admin-token-section">
+<h1>Admin</h1>
+<div data-hook="admin-token-form-host"></div>
+<div data-hook="admin-auth-state-host"></div>
+</section>
+
+<!-- Everything below is populated only after a token is accepted; see
+     admin.js's loadAdmin(). Each section stays present in the DOM (never
+     removed) so a design pass has a stable attachment point, but starts
+     [hidden] until data actually loads. -->
+<section data-view="admin-overview" aria-label="overview" data-hook="admin-overview-section" hidden>
+<h2>Overview</h2>
+<div data-hook="admin-overview-host"></div>
+</section>
+
+<section data-view="admin-funnel" aria-label="funnel" data-hook="admin-funnel-section" hidden>
+<h2>Funnel</h2>
+<div data-hook="admin-funnel-host"></div>
+</section>
+
+<section data-view="admin-support" aria-label="support inbox" data-hook="admin-support-section" hidden>
+<h2>Support</h2>
+<div data-hook="admin-support-host"></div>
+</section>
+
+<section data-view="admin-users" aria-label="users" data-hook="admin-users-section" hidden>
+<h2>Users</h2>
+<div data-hook="admin-users-host"></div>
+</section>
+
+</main>
+
+<script type="module" src="js/admin.js"></script>
+</body>
+</html>
