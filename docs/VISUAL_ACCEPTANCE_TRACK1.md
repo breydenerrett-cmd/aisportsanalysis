@@ -90,3 +90,17 @@ version which reads "dev"):
 Verdicts and evidence get recorded IN THIS FILE as rows fill in; the
 frontend lane is not "complete" until every in-scope row is VISUAL PASS
 *on staging*.
+
+## Staging verification record (2026-09-01, post-deploy)
+
+Done from the orchestration container: every web/ asset served by
+staging byte-diffed IDENTICAL to the VISUAL-PASS build; / -> 307 ->
+/web/landing.html live; anonymous POST /betcheck/free returns the real
+check on live staging (counterargument present, recommendation null,
+token minted, 2 of 3 remaining after one QA spend); /today unauth ->
+honest 401. NOT possible from this container: rendering staging in a
+browser -- the egress proxy resets Chromium's CONNECT tunnels to
+fly.dev (relay log confirms; curl unaffected). Since the served bytes
+equal the graded build, rendering is byte-equivalent to the reviewed
+screenshots; the final human eyes-on-staging pass in a real Chrome
+remains OPEN and is the last box before the lane is called complete.
