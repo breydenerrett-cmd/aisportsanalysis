@@ -447,3 +447,58 @@ class TestRecommendationPriceReason(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestPregameFilter(unittest.TestCase):
+    """The store keeps in-play rows; `is_pregame` is the one place that says so.
+
+    Quantified on the live store 2026-08-31/09-01: 592 of 5,803 rows observed
+    after their own commence_time, across 10 of 26 events, up to 2h50m late.
+    Capture writes them because a capture is one bulk call for the whole board
+    and the feed keeps listing a started game; they are append-only evidence
+    and stay. Only consumers that mean "the pre-game market" filter.
+    """
+
+    def row(self, observed, commence="2026-08-31T23:10:00Z"):
+        return {"observed_utc": observed, "commence_time": commence,
+                "book": "fanduel", "home_price": -110, "away_price": -110}
+
+    def test_before_first_pitch_is_pregame(self):
+        self.assertTrue(snapshots.is_pregame(self.row("2026-08-31T23:09:59Z")))
+
+    def test_at_and_after_first_pitch_is_not(self):
+        self.assertFalse(snapshots.is_pregame(self.row("2026-08-31T23:10:00Z")))
+        self.assertFalse(snapshots.is_pregame(self.row("2026-09-01T01:00:00Z")))
+
+    def test_a_row_that_cannot_be_shown_pregame_is_not_served_as_one(self):
+        for row in ({"observed_utc": "2026-08-31T22:00:00Z"},
+                    {"commence_time": "2026-08-31T23:10:00Z"},
+                    self.row("not-a-timestamp"),
+                    self.row("2026-08-31T22:00:00Z", commence="soon")):
+            self.assertFalse(snapshots.is_pregame(row), row)
+
+    def test_the_rule_is_the_closing_lines_rule(self):
+        """Same constant, so the two definitions cannot drift apart."""
+        series = [self.row("2026-08-31T22:00:00Z"),
+                  self.row("2026-08-31T23:47:00Z")]
+        close = snapshots.closing_observation(series)
+        kept = snapshots.pregame_rows(series)
+        self.assertEqual(len(kept), 1)
+        self.assertEqual(close["observed_utc"], kept[-1]["observed_utc"])
+
+    def test_pregame_rows_filters_and_never_rewrites(self):
+        series = [self.row("2026-08-31T22:00:00Z"),
+                  self.row("2026-09-01T01:00:00Z")]
+        kept = snapshots.pregame_rows(series)
+        self.assertEqual(kept, [series[0]])
+        self.assertIs(kept[0], series[0])
+        self.assertEqual(len(series), 2)
+
+    def test_quotes_are_raw_by_default_and_pregame_on_request(self):
+        rows = [dict(self.row("2026-08-31T22:00:00Z"), event_id="e1"),
+                dict(self.row("2026-08-31T23:47:00Z"), event_id="e1")]
+        self.assertEqual(
+            len(snapshots.multibook_quotes(event_id="e1", rows=rows)), 2)
+        pregame = snapshots.multibook_quotes(event_id="e1", rows=rows,
+                                             pregame_only=True)
+        self.assertEqual([q["ts"] for q in pregame], ["2026-08-31T22:00:00Z"])

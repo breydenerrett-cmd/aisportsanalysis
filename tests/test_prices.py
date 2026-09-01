@@ -232,3 +232,61 @@ class BriefingBoardTests(unittest.TestCase):
         dossier = slate["games"][0]["dossier"]
         self.assertIsNone(dossier.get("multibook_board"))
         self.assertIn("multibook_board", dossier.gaps)
+
+
+class InPlayRowsTests(unittest.TestCase):
+    """The multi-book store holds post-first-pitch rows; a board must not.
+
+    A capture is one bulk call and the feed keeps listing a game after it
+    starts, so every capture moment past a first pitch appends in-play rows
+    (592 of 5,803 on 2026-08-31/09-01, up to 2h50m late, prices to -10000).
+    A board is a price to shop, so it is the last PRE-GAME instant.
+    """
+
+    KEY = ("CIN", "NYM", "2026-08-31")
+    COMMENCE = "2026-08-31T23:10:00Z"
+
+    def rows(self, observed, books=6, home=-110, away=-110):
+        return [{"observed_utc": observed, "event_id": "e1",
+                 "commence_time": self.COMMENCE,
+                 "home_team": "New York Mets", "away_team": "Cincinnati Reds",
+                 "book": f"b{i}", "book_last_update": "x",
+                 "home_price": home, "away_price": away}
+                for i in range(books)]
+
+    def test_the_board_is_the_last_pregame_instant_not_the_newest_row(self):
+        rows = (self.rows("2026-08-31T23:00:00Z")
+                + self.rows("2026-08-31T23:47:00Z", home=-10000, away=900))
+        board = prices.boards_by_matchup(rows)[self.KEY]
+        self.assertEqual(board["observed_utc"], "2026-08-31T23:00:00Z")
+        self.assertTrue(all(q["home_price"] == -110 for q in board["quotes"]))
+
+    def test_a_started_game_keeps_its_board_rather_than_vanishing(self):
+        """Dropping the game entirely would read as 'nothing was captured'."""
+        rows = (self.rows("2026-08-31T23:00:00Z")
+                + self.rows("2026-09-01T01:00:00Z", home=-10000, away=900))
+        self.assertIn(self.KEY, prices.boards_by_matchup(rows))
+
+    def test_a_row_at_first_pitch_is_not_pregame(self):
+        board = prices.boards_by_matchup(
+            self.rows("2026-08-31T23:00:00Z")
+            + self.rows(self.COMMENCE, books=3))[self.KEY]
+        self.assertEqual(board["observed_utc"], "2026-08-31T23:00:00Z")
+        self.assertEqual(len(board["quotes"]), 6)
+
+    def test_only_in_play_rows_means_no_board_at_all(self):
+        self.assertEqual(
+            prices.boards_by_matchup(self.rows("2026-09-01T01:00:00Z")), {})
+
+    def test_price_improvement_for_one_game_ignores_in_play_quotes(self):
+        rows = (self.rows("2026-08-31T23:00:00Z")
+                + self.rows("2026-08-31T23:47:00Z", home=-10000, away=900))
+        result = prices.for_game(away_team="Cincinnati Reds",
+                                 home_team="New York Mets", rows=rows)
+        self.assertEqual(result["observed_utc"], "2026-08-31T23:00:00Z")
+
+    def test_the_summary_index_inherits_the_pregame_board(self):
+        rows = (self.rows("2026-08-31T23:00:00Z")
+                + self.rows("2026-08-31T23:47:00Z", home=-10000, away=900))
+        self.assertEqual(prices.by_matchup(rows)[self.KEY]["observed_utc"],
+                         "2026-08-31T23:00:00Z")

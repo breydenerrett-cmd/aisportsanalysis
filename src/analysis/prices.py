@@ -163,6 +163,12 @@ def latest_instant(quotes) -> list:
     Multibook rows accumulate across captures; the board a reader should see
     is the newest complete one. Rows share an instant when they share an
     observed timestamp; per book, the newest row wins.
+
+    NEWEST OF WHAT. This function has no notion of first pitch -- it takes the
+    newest instant in whatever it is handed. The multi-book store keeps in-play
+    rows (snapshots.is_pregame explains why), so every caller here filters to
+    pre-game rows BEFORE calling this; handed the raw store, "newest" would be
+    the last in-play board of a game already three innings old.
     """
     if not quotes:
         return []
@@ -175,12 +181,16 @@ def latest_instant(quotes) -> list:
 
 
 def for_game(away_team=None, home_team=None, date=None, rows=None) -> dict:
-    """The price-improvement section for one game, from the multibook store."""
+    """The price-improvement section for one game, from the multibook store.
+
+    PRE-GAME ROWS ONLY. Price improvement is a claim about a price a reader
+    could still take, so an in-play quote cannot be in it (snapshots.is_pregame).
+    """
     from src.pipeline import snapshots
 
     quotes = snapshots.multibook_quotes(away_team=away_team,
                                         home_team=home_team, date=date,
-                                        rows=rows)
+                                        rows=rows, pregame_only=True)
     if not quotes:
         return {"skipped": "no multi-book observations recorded for this game"}
     board = latest_instant(quotes)
@@ -213,6 +223,17 @@ def boards_by_matchup(rows=None) -> dict:
     A board is {"quotes": [...], "observed_utc": ts, "source": SOURCE}: ONE
     capture instant, one row per book, exactly the list `snapshot` summarises.
 
+    THE INSTANT IS ALWAYS PRE-GAME. The store also holds in-play rows -- a
+    capture is one bulk call and the feed keeps listing a game after it starts
+    (snapshots.is_pregame) -- and without this filter a started game's board
+    was the newest IN-PLAY instant: on 2026-08-31 the 23:47Z capture of a 22:41Z
+    first pitch quoted -10000/+900, which every surface reading this function
+    (the briefing, the stale_book detector, /odds/{date}, the ranker) would
+    have shown as a price to shop. Filtered here, once, so a started game's
+    board is its last pre-game one instead -- the same instant the closing
+    line comes from -- rather than disappearing, which would read to the
+    detector as "no board was captured", a different and false statement.
+
     THIS FUNCTION IS THE POINT. A game card used to describe its board twice
     from two different stores -- the stale_book detector counted the per-game
     snapshot's `all_books`, the price table counted this store -- so the same
@@ -239,7 +260,8 @@ def boards_by_matchup(rows=None) -> dict:
     from src.pipeline import slate as slate_mod
     from src.pipeline import snapshots
 
-    source = snapshots.read_multibook() if rows is None else rows
+    source = snapshots.pregame_rows(
+        snapshots.read_multibook() if rows is None else rows)
     grouped = {}
     for row in source:
         away = slate_mod.team_abbrev_from_name(row.get("away_team") or "")

@@ -309,8 +309,47 @@ def read_multibook(path=DEFAULT_MULTIBOOK_PATH, skip_corrupt: bool = True) -> li
     return read(path=path, skip_corrupt=skip_corrupt)
 
 
+def is_pregame(row) -> bool:
+    """True when this observation was taken BEFORE its game's first pitch.
+
+    THE STORE IS NOT PRE-GAME ONLY. A capture is one bulk call for the whole
+    board, and the feed keeps listing a game after it starts, so every capture
+    moment that falls after a first pitch appends in-play rows for that game --
+    on 2026-08-31/09-01, 592 of 5,803 rows, up to 2h50m past first pitch, with
+    in-play prices as extreme as -10000/+900. Those rows are honest evidence of
+    what the feed said and are kept (the store is append-only), but they are a
+    DIFFERENT PRODUCT from the pre-game market, and anything that presents a
+    board as a price to shop must exclude them.
+
+    The rule is the same one `closing_observation` uses, and deliberately reads
+    the same constant, so the "is this a pre-game observation" question can
+    never be answered two different ways in this file.
+
+    A row whose stamps are missing or unparseable is NOT pre-game here. It
+    cannot be shown to be, and a board is exactly the place where an
+    unverifiable row must not be served as a verified one.
+    """
+    stamp, start = row.get("observed_utc"), row.get("commence_time")
+    if not stamp or not start:
+        return False
+    try:
+        return (_parse(start) - _parse(stamp)).total_seconds() > CLOSING_GRACE_SECONDS
+    except SnapshotError:
+        return False
+
+
+def pregame_rows(rows) -> list:
+    """`rows` keeping only the observations taken before first pitch.
+
+    Filtering, never rewriting: the store keeps every row it was written, and
+    consumers that mean "the pre-game market" say so here.
+    """
+    return [row for row in rows or [] if is_pregame(row)]
+
+
 def multibook_quotes(event_id=None, away_team=None, home_team=None, date=None,
-                     path=DEFAULT_MULTIBOOK_PATH, rows=None) -> list:
+                     path=DEFAULT_MULTIBOOK_PATH, rows=None,
+                     pregame_only: bool = False) -> list:
     """Quotes for one event, shaped for src/research/eventstudy.measure.
 
     Filters by event_id when given, otherwise by team names and/or the
@@ -318,10 +357,17 @@ def multibook_quotes(event_id=None, away_team=None, home_team=None, date=None,
     sorted oldest first, where ts is OUR observed_utc -- the eventstudy module
     measures market latency against when WE saw the price, and the book's own
     last_update stays in the store for anyone who needs it.
+
+    `pregame_only` drops in-play observations (see `is_pregame`). It defaults
+    to False because this is the raw accessor and eventstudy caps post-start
+    quotes itself with the game's start time; every caller that presents a
+    BOARD passes True.
     """
     if event_id is None and away_team is None and home_team is None and date is None:
         raise SnapshotError("multibook_quotes needs an event_id, team, or date filter")
     source = read_multibook(path) if rows is None else rows
+    if pregame_only:
+        source = pregame_rows(source)
     quotes = []
     for row in source:
         if event_id is not None and row.get("event_id") != event_id:

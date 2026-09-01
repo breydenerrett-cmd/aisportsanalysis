@@ -119,3 +119,38 @@ per game (15-16 on a 15-game card), and the ceiling only binds when starts
 cluster. Theoretical worst case 32/night remains inside the 15-40/day band
 this policy already approves for the layer, so the change needed sign-off but
 not new budget. Drops are now reported by game rather than silently absorbed.
+
+## What odds_multibook.jsonl actually contains (2026-09-01)
+
+`data/processed/odds_multibook.jsonl` is a log of WHAT THE FEED SAID AT EACH
+CAPTURE MOMENT. It is not a pre-game-only store, and it never was: a capture is
+one bulk call for the whole board, the feed keeps listing a game after first
+pitch, and so every capture moment past a start appends that game's IN-PLAY
+prices. Measured on the store as it stood 2026-09-01: **592 of 5,803 rows
+(10 of 26 events) carry an observed_utc after their own commence_time**, from
+12 seconds to 2h50m late, 104 of them at |price| > 1000 (e.g. Padres/Reds,
+first pitch 22:41Z, observed 23:47Z, -10000/+900).
+
+This is a side effect of the bulk call, not a purchase: those rows cost zero
+extra credits, and `dense.games_in_window` already refuses to let an in-play
+game trigger a capture ("its price is in-play, which is a different product").
+Capture is therefore left exactly as it is. The rows are append-only forward
+evidence -- a real record of how a book prices a game it has moved on from,
+which is the raw material for any later staleness or suspension work -- and
+deleting or filtering them at write time would destroy evidence to fix a
+reading error.
+
+**The reading rule.** A pre-game claim filters explicitly, at read:
+
+- `snapshots.is_pregame` / `snapshots.pregame_rows` is the ONE definition, and
+  it reads the same `CLOSING_GRACE_SECONDS` as `closing_observation`, so "is
+  this the pre-game market" cannot be answered two ways.
+- Every price BOARD goes through `analysis/prices.boards_by_matchup` or
+  `for_game`, which filter there. A started game's board is its last pre-game
+  instant -- the same instant the close comes from -- not a missing board.
+- `snapshots.multibook_quotes` stays raw by default (`pregame_only=False`):
+  the V3 timing work measures against the whole series and caps post-start
+  quotes itself with the game's start time (`eventstudy.measure(game_start=)`).
+- Liveness and coverage checks in `pipeline/health.py` read the store WHOLE on
+  purpose: "when did we last see the market" is a question about captures, not
+  about pre-game prices.
