@@ -211,3 +211,14 @@
 {"category": "il_activation", "date": "2026-09-01", "first_seen_utc": "2026-09-01T21:01:35.416012+00:00", "player": "John Schreiber", "player_id": 670167, "team": "NYY", "transaction_id": 940587}
 {"category": "recalled", "date": "2026-09-01", "first_seen_utc": "2026-09-01T21:01:35.416012+00:00", "player": "Kyren Paris", "player_id": 677347, "team": "LAA", "transaction_id": 940601}
 {"category": "il_activation", "date": "2026-09-01", "first_seen_utc": "2026-09-01T21:01:35.416012+00:00", "player": "Samy Natera Jr.", "player_id": 696519, "team": "LAA", "transaction_id": 940603}
+{"fetched_utc": "2026-09-01T21:15:57.908639+00:00", "game_date": "2026-09-01", "poll": true}
+{"fetched_utc": "2026-09-01T21:15:59.842236+00:00", "game_date": "2026-09-01", "poll": true}
+{"fetched_utc": "2026-09-01T21:31:02.555741+00:00", "game_date": "2026-09-01", "poll": true}
+{"category": "other", "date": "2026-09-01", "first_seen_utc": "2026-09-01T21:31:02.555741+00:00", "player": "Ian Francis", "player_id": 832212, "team": "CIN", "transaction_id": 940636}
+{"fetched_utc": "2026-09-01T21:46:04.899094+00:00", "game_date": "2026-09-01", "poll": true}
+{"category": "il_activation", "date": "2026-09-01", "first_seen_utc": "2026-09-01T21:46:04.899094+00:00", "player": "Lourdes Gurriel Jr.", "player_id": 666971, "team": "ARI", "transaction_id": 940646}
+{"category": "il_activation", "date": "2026-09-01", "first_seen_utc": "2026-09-01T21:46:04.899094+00:00", "player": "Blake Walston", "player_id": 686796, "team": "ARI", "transaction_id": 940648}
+{"category": "il_transfer", "date": "2026-09-01", "first_seen_utc": "2026-09-01T21:46:04.899094+00:00", "player": "Ryan Thompson", "player_id": 657044, "team": "ARI", "transaction_id": 940649}
+{"category": "signed", "date": "2026-09-01", "first_seen_utc": "2026-09-01T21:46:04.899094+00:00", "player": "Austin Slater", "player_id": 596103, "team": "TB", "transaction_id": 940651}
+{"category": "rehab", "date": "2026-09-01", "first_seen_utc": "2026-09-01T21:46:04.899094+00:00", "player": "Konnor Griffin", "player_id": 804606, "team": "PIT", "transaction_id": 940662}
+{"category": "rehab", "date": "2026-09-01", "first_seen_utc": "2026-09-01T21:46:04.899094+00:00", "player": "Konnor Griffin", "player_id": 804606, "team": "PIT", "transaction_id": 940663}
