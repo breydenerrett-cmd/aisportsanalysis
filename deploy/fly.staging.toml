@@ -1,0 +1,76 @@
+# deploy/fly.staging.toml -- Fly.io app config for the temporary alpha
+# staging deploy (deploy/STAGING.md). Ready to use as-is except the one
+# placeholder below; nothing here requires an account or token to write,
+# only to apply (`fly deploy --config deploy/fly.staging.toml`).
+#
+# WHY THIS FILE EXISTS SEPARATELY FROM WHAT `fly launch` GENERATES
+# --------------------------------------------------------------------
+# `fly launch --dockerfile deploy/Dockerfile --no-deploy` (deploy/STAGING.md's
+# first command) writes a fly.toml with the app skeleton but NOT the
+# [mounts] block -- that has to be added by hand or the persistent volume
+# exists and is never attached (deploy/STAGING.md's "persistent-volume
+# requirement" section explains the failure mode). Checking a complete
+# file into the repo means that step is never missed and never redone by
+# hand a second time on the next fresh checkout.
+#
+# app name: placeholder. Fly app names are globally unique, so this must
+# be changed before `fly launch`/`fly deploy` -- e.g.
+# "aisportsanalysis-staging" if available, or append Brey's own suffix.
+app = "CHANGE-ME-aisportsanalysis-staging"
+primary_region = "iad"  # US East -- change to whatever region the volume
+                         # below is created in; they must match.
+
+[build]
+  dockerfile = "deploy/Dockerfile"
+
+# Non-secret runtime config. APP_ADMIN_TOKEN and STRIPE_* are secrets --
+# they go through `fly secrets set` (deploy/DEPLOY_RUNBOOK.md), never here,
+# since fly.toml is a file this repo tracks in git.
+[env]
+  APP_DB_PATH = "/app/data/app/app.db"
+  # BILLING_PROVIDER left unset: src/appstate/billing.py's own default
+  # (NullBillingProvider, dev/test-safe) applies until STRIPE_API_KEY is
+  # set as a secret -- see docs/LAUNCH_DECISIONS.md Decisions 1-2.
+
+# The one piece of state a machine replacement would otherwise destroy
+# (deploy/STAGING.md's "persistent-volume requirement, explicitly").
+# `source` must match the name given to `fly volumes create` in
+# DEPLOY_RUNBOOK.md; `destination`'s parent directory is what APP_DB_PATH
+# above points into.
+[mounts]
+  source = "app_data"
+  destination = "/app/data/app"
+
+# ALPHA SIZING: single small machine, no autoscaling. A five-day alpha
+# window with a handful of testers does not need horizontal scale, and
+# more than one machine would mean more than one process ever writing the
+# sqlite store at APP_DB_PATH -- sqlite is not built for concurrent
+# writers across processes, so single-process is a correctness constraint
+# here, not just a cost one.
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = false   # keep it warm; alpha testers should not
+                                # eat a cold-start on the first request of
+                                # the day
+  auto_start_machines = true
+  min_machines_running = 1
+  max_machines_running = 1     # see the sqlite single-writer note above --
+                                # this is not a knob to raise casually.
+
+  # Fly's own health check, independent of and in addition to the
+  # container HEALTHCHECK in deploy/Dockerfile -- this one gates whether
+  # Fly's proxy routes traffic to the machine at all.
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "15s"
+    method = "GET"
+    timeout = "5s"
+    path = "/health"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512   # api/app.py + src/ imports comfortably under this at
+                     # alpha scale; raise only if /health or smoke starts
+                     # showing memory pressure.

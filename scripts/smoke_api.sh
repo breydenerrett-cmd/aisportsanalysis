@@ -21,15 +21,41 @@
 # proving the server is up, routed, and mistake-tolerant, not that a
 # specific game exists today. Assert response SHAPE (a JSON body with a
 # `detail` on failure, or a games array on success), never specific DATA.
+#
+# REMOTE MODE (BASE set): deploy/DEPLOY_RUNBOOK.md's Step 2 runs this same
+# battery of request checks against an already-deployed Fly machine
+# instead of a local uvicorn this script starts itself -- the point is
+# proving the checks that gate a local deploy (scripts/ci.sh) also pass
+# once the request has gone through Fly's proxy and TLS termination, with
+# no new assertions to keep in sync between "local" and "remote" modes.
+# When BASE is set: skip starting/stopping a local process, skip the
+# uvicorn-log-based checks (there is no local log file for a remote
+# process), and require APP_ADMIN_TOKEN to already be set by the caller
+# to the value the remote deploy's admin endpoint actually expects (this
+# script cannot know that value -- it never generates or reads a remote
+# secret on its own).
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-PORT="${SMOKE_API_PORT:-8931}"
-BASE="http://127.0.0.1:${PORT}"
-TMP_DB_DIR="$(mktemp -d)"
-export APP_DB_PATH="${TMP_DB_DIR}/app.db"
-# throwaway admin token so the smoke run can mint its own invite
-export APP_ADMIN_TOKEN="smoke-$(openssl rand -hex 16 2>/dev/null || echo fallback$$)"
+REMOTE_MODE=0
+if [ -n "${BASE:-}" ]; then
+    REMOTE_MODE=1
+    BASE="${BASE%/}"
+    if [ -z "${APP_ADMIN_TOKEN:-}" ]; then
+        echo "smoke_api.sh: BASE is set but APP_ADMIN_TOKEN is not -- the" >&2
+        echo "admin-invite check below needs the token the remote deploy" >&2
+        echo "was actually configured with (deploy/DEPLOY_RUNBOOK.md Step 1e)." >&2
+        exit 1
+    fi
+    TMP_DB_DIR="$(mktemp -d)"  # still used for scratch response bodies below
+else
+    PORT="${SMOKE_API_PORT:-8931}"
+    BASE="http://127.0.0.1:${PORT}"
+    TMP_DB_DIR="$(mktemp -d)"
+    export APP_DB_PATH="${TMP_DB_DIR}/app.db"
+    # throwaway admin token so the smoke run can mint its own invite
+    export APP_ADMIN_TOKEN="smoke-$(openssl rand -hex 16 2>/dev/null || echo fallback$$)"
+fi
 LOG_FILE="${TMP_DB_DIR}/uvicorn.log"
 
 FAILURES=0
@@ -45,32 +71,49 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "== starting uvicorn on :${PORT} (APP_DB_PATH=${APP_DB_PATH}) =="
-python3 -m uvicorn api.app:app --host 127.0.0.1 --port "$PORT" \
-    >"$LOG_FILE" 2>&1 &
-SERVER_PID=$!
-
-# Poll /health rather than a fixed sleep -- the server's actual readiness
-# time varies with import cost (src.pipeline, src.providers) far more than
-# any guessed constant would tolerate.
-READY=0
-for _ in $(seq 1 50); do
-    if curl -sf -o /dev/null "${BASE}/health"; then
-        READY=1
-        break
+if [ "$REMOTE_MODE" -eq 1 ]; then
+    echo "== BASE set: checking existing deployment at ${BASE} (no local server started) =="
+    READY=0
+    for _ in $(seq 1 50); do
+        if curl -sf -o /dev/null --max-time 5 "${BASE}/health"; then
+            READY=1
+            break
+        fi
+        sleep 0.2
+    done
+    if [ "$READY" -ne 1 ]; then
+        fail "remote server never became reachable on ${BASE}/health"
+        echo "== smoke_api.sh: ${FAILURES} failure(s) =="
+        exit 1
     fi
-    if ! kill -0 "$SERVER_PID" 2>/dev/null; then
-        break  # the process died -- no point polling further
-    fi
-    sleep 0.2
-done
+else
+    echo "== starting uvicorn on :${PORT} (APP_DB_PATH=${APP_DB_PATH}) =="
+    python3 -m uvicorn api.app:app --host 127.0.0.1 --port "$PORT" \
+        >"$LOG_FILE" 2>&1 &
+    SERVER_PID=$!
 
-if [ "$READY" -ne 1 ]; then
-    fail "server never became reachable on ${BASE}/health"
-    echo "---- uvicorn log ----"
-    cat "$LOG_FILE"
-    echo "== smoke_api.sh: ${FAILURES} failure(s) =="
-    exit 1
+    # Poll /health rather than a fixed sleep -- the server's actual readiness
+    # time varies with import cost (src.pipeline, src.providers) far more than
+    # any guessed constant would tolerate.
+    READY=0
+    for _ in $(seq 1 50); do
+        if curl -sf -o /dev/null "${BASE}/health"; then
+            READY=1
+            break
+        fi
+        if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+            break  # the process died -- no point polling further
+        fi
+        sleep 0.2
+    done
+
+    if [ "$READY" -ne 1 ]; then
+        fail "server never became reachable on ${BASE}/health"
+        echo "---- uvicorn log ----"
+        cat "$LOG_FILE"
+        echo "== smoke_api.sh: ${FAILURES} failure(s) =="
+        exit 1
+    fi
 fi
 
 echo "== GET /health =="
@@ -153,16 +196,20 @@ else
     fail "/betcheck for an unknown matchup returned ${BETCHECK_STATUS}, expected 404 or 502"
 fi
 
-echo "== stderr carries a structured request log line, with no secrets =="
-if grep -q "method=GET path=/health" "$LOG_FILE"; then
-    pass "request log line for /health is present in uvicorn's stderr"
+if [ "$REMOTE_MODE" -eq 1 ]; then
+    echo "== skipping uvicorn-log checks: no local log file for a remote deployment =="
 else
-    fail "no request log line found for /health in uvicorn's stderr"
-fi
-if grep -qi "bearer \|authorization:" "$LOG_FILE"; then
-    fail "a bearer token or Authorization header value leaked into the log"
-else
-    pass "no bearer token or Authorization header value in the log"
+    echo "== stderr carries a structured request log line, with no secrets =="
+    if grep -q "method=GET path=/health" "$LOG_FILE"; then
+        pass "request log line for /health is present in uvicorn's stderr"
+    else
+        fail "no request log line found for /health in uvicorn's stderr"
+    fi
+    if grep -qi "bearer \|authorization:" "$LOG_FILE"; then
+        fail "a bearer token or Authorization header value leaked into the log"
+    else
+        pass "no bearer token or Authorization header value in the log"
+    fi
 fi
 
 echo
@@ -171,7 +218,9 @@ if [ "$FAILURES" -eq 0 ]; then
     exit 0
 else
     echo "== smoke_api.sh: ${FAILURES} failure(s) =="
-    echo "---- uvicorn log ----"
-    cat "$LOG_FILE"
+    if [ "$REMOTE_MODE" -eq 0 ]; then
+        echo "---- uvicorn log ----"
+        cat "$LOG_FILE"
+    fi
     exit 1
 fi

@@ -1,0 +1,74 @@
+# deploy/fly.production.toml -- Fly.io app config for the eventual
+# production deploy. Same shape as deploy/fly.staging.toml deliberately --
+# see that file's header for why each block exists; this file's comments
+# cover only what differs and why the difference is a boundary, not a
+# stylistic choice.
+#
+# THIS IS NOT WHAT deploy/README.md/STAGING.md's Decision 3 RECOMMENDS
+# FOR REAL PRODUCTION
+# ------------------------------------------------------------------------
+# docs/LAUNCH_DECISIONS.md Decision 3's long-term recommendation is a
+# Hetzner-class VM + Cloudflare, once ops control and cost matter more
+# than time-to-URL (deploy/STAGING.md explains the tradeoff). This file
+# exists so that IF Fly is what Brey actually promotes to for production
+# (e.g. staging worked well enough that standing up a separate VM isn't
+# worth it yet), the promotion is "change four boundary lines below and
+# run DEPLOY_RUNBOOK.md's promotion checklist," not a from-scratch config.
+# It is not an endorsement of Fly over the VM path for the long run.
+app = "CHANGE-ME-aisportsanalysis-production"  # BOUNDARY 1: a SEPARATE
+    # Fly app from staging's, always -- never the same app with a
+    # different config, or a bad production deploy and a bad staging
+    # deploy become the same incident.
+primary_region = "iad"
+
+[build]
+  dockerfile = "deploy/Dockerfile"
+
+[env]
+  APP_DB_PATH = "/app/data/app/app.db"
+  # BILLING_PROVIDER / STRIPE_API_KEY: production secrets, set via
+  # `fly secrets set` against THIS app only (BOUNDARY 3 below) -- never
+  # copied from staging's secrets store, since a staging Stripe key is
+  # test-mode and a leaked/rotated production key must never have lived
+  # in a place staging's operators could read it.
+
+[mounts]
+  source = "app_data_production"  # BOUNDARY 2: a SEPARATE volume from
+      # staging's `app_data` -- sharing a volume between two apps is not
+      # something Fly supports safely, and would mean a staging deploy
+      # could corrupt production's user/token store.
+  destination = "/app/data/app"
+
+# Same single-writer sqlite constraint as staging (see
+# fly.staging.toml's comment) -- this is a correctness limit on
+# APP_DB_PATH, not a sizing choice, and does not change until the app db
+# moves off sqlite.
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+  max_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "15s"
+    method = "GET"
+    timeout = "5s"
+    path = "/health"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512   # revisit once real production traffic (not alpha
+                     # testers) gives an actual load number to size against.
+
+# BOUNDARY 4: deploy only from a tagged release, never a working branch --
+# `fly deploy` for THIS app should be run only against a commit tagged
+# e.g. `vX.Y.Z` (`git tag` + `git push --tags`), so a production rollback
+# is always "redeploy the previous tag," a known-good commit, rather than
+# "figure out what HEAD was before." Nothing in this file enforces that
+# mechanically (no CI is wired to this app on purpose -- see
+# DEPLOY_RUNBOOK.md's promotion checklist); it is a discipline boundary
+# until a release pipeline exists to make it a mechanical one.
