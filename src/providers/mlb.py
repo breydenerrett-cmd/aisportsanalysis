@@ -29,6 +29,8 @@ and never touch the network.
 from __future__ import annotations
 
 import json
+import os
+import socket
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -37,7 +39,53 @@ from datetime import date, timedelta
 API_HOST = "https://statsapi.mlb.com/api/v1"
 SPORT_ID = 1  # MLB
 USER_AGENT = "aisportsanalysis/0.1 (stdlib urllib)"
-DEFAULT_TIMEOUT = 20
+
+
+def _env_float(name: str, fallback: float) -> float:
+    """Env override for a timing constant, falling back on a bad or absent value.
+
+    Never raises: an operator typo in the environment should not take the
+    provider down, it should just be ignored in favour of the constant that
+    already works.
+    """
+    raw = os.environ.get(name)
+    if raw is None or not raw.strip():
+        return fallback
+    try:
+        return float(raw)
+    except ValueError:
+        return fallback
+
+
+# TIMEOUT SHAPE (red-team round: a stalled MLB API response used to pin one
+# request-handling worker for DEFAULT_TIMEOUT's old value of 20 SECONDS --
+# fire enough concurrent requests against a stalled endpoint and every worker
+# in the pool is parked waiting on a socket that will never answer. That is a
+# DoS knob handed to anyone who can make an HTTP request, private alpha or not.
+#
+# `urllib.request.urlopen`'s single `timeout` bounds one whole blocking call
+# (connect through to a completed read) -- stdlib urllib has no separate
+# connect-phase timeout the way `requests`' (host, connect_timeout,
+# read_timeout) tuple does, and hand-rolling one via raw sockets is not worth
+# the complexity for a stdlib client. MLB_CONNECT_TIMEOUT_S approximates it
+# instead: it is always the FIRST attempt's timeout, so a connection that
+# will not even open fails fast regardless of what the caller asked for.
+# MLB_TOTAL_TIMEOUT_S (or whatever timeout the caller passed) governs the one
+# retry, giving a server that is merely slow -- not dead -- a real chance to
+# answer. Worst case per _get_json call is therefore MLB_CONNECT_TIMEOUT_S +
+# the caller's timeout, not the caller's timeout doubled and never the old
+# unbounded-feeling 20s pin.
+MLB_CONNECT_TIMEOUT_S = _env_float("MLB_CONNECT_TIMEOUT_S", 3.0)
+MLB_TOTAL_TIMEOUT_S = _env_float("MLB_TOTAL_TIMEOUT_S", 8.0)
+
+# What every fetch_* function below defaults `timeout=` to when a caller does
+# not specify one -- this is the value the live request-serving path
+# (api/today.py, api/games.py, api/betcheck.py all call mlb.fetch_games/
+# fetch_schedule with no explicit timeout) actually gets. Batch/research
+# callers (src/pipeline/*.py) pass their own literal timeout and are
+# unaffected by this constant; verified by grep across src/pipeline before
+# this change landed -- none of them reads DEFAULT_TIMEOUT.
+DEFAULT_TIMEOUT = MLB_TOTAL_TIMEOUT_S
 
 # Coded game states that mean "this game is over and the result is official".
 # Checked against codedGameState, not detailedState -- the latter is a display
@@ -90,8 +138,28 @@ class MLBError(RuntimeError):
 # Transport
 # ---------------------------------------------------------------------------
 
-def _get_json(path: str, params: dict | None = None, timeout: int = DEFAULT_TIMEOUT):
+# A stall (timeout) or a reset mid-transfer means the request never really
+# landed -- retrying is the right instinct. An HTTP error status means the
+# provider DID answer, just with a status we don't like; retrying that just
+# re-asks a question it already declined to answer, so it is deliberately
+# excluded (see the `except urllib.error.HTTPError` branch below, which
+# raises immediately and never reaches the retry loop).
+_RETRYABLE_REASON_TYPES = (socket.timeout, TimeoutError, ConnectionResetError)
+
+
+def _is_retryable_transport_error(exc: urllib.error.URLError) -> bool:
+    return isinstance(getattr(exc, "reason", None), _RETRYABLE_REASON_TYPES)
+
+
+def _get_json(path: str, params: dict | None = None, timeout: float | None = None):
     """Single network seam. Tests patch this and nothing else.
+
+    `timeout=None` (the default) uses the two-attempt shape described above
+    `MLB_CONNECT_TIMEOUT_S`: quick first attempt, more patient retry, and
+    only on a timeout/reset. Passing an explicit `timeout` (as every
+    src/pipeline/*.py batch caller does) keeps that value on both the first
+    attempt and the one retry -- the retry is new behaviour for those
+    callers, the timeout duration itself is not.
 
     Raises MLBError on any transport or decode failure rather than letting a
     urllib exception escape, so callers have one exception type to handle.
@@ -101,15 +169,23 @@ def _get_json(path: str, params: dict | None = None, timeout: int = DEFAULT_TIME
     if query:
         url = f"{url}?{query}"
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
-            return json.loads(response.read().decode("utf-8"))
-    except urllib.error.HTTPError as exc:
-        raise MLBError(f"MLB API returned HTTP {exc.code} for {path}") from exc
-    except urllib.error.URLError as exc:
-        raise MLBError(f"could not reach MLB API: {exc.reason}") from exc
-    except json.JSONDecodeError as exc:
-        raise MLBError(f"MLB API returned invalid JSON for {path}") from exc
+
+    retry_timeout = MLB_TOTAL_TIMEOUT_S if timeout is None else timeout
+    attempt_timeouts = (MLB_CONNECT_TIMEOUT_S, retry_timeout)
+
+    for attempt, attempt_timeout in enumerate(attempt_timeouts):
+        try:
+            with urllib.request.urlopen(request, timeout=attempt_timeout) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            raise MLBError(f"MLB API returned HTTP {exc.code} for {path}") from exc
+        except urllib.error.URLError as exc:
+            is_last_attempt = attempt == len(attempt_timeouts) - 1
+            if is_last_attempt or not _is_retryable_transport_error(exc):
+                raise MLBError(f"could not reach MLB API: {exc.reason}") from exc
+            continue  # one quick retry on a timeout/reset only
+        except json.JSONDecodeError as exc:
+            raise MLBError(f"MLB API returned invalid JSON for {path}") from exc
 
 
 # ---------------------------------------------------------------------------
@@ -152,7 +228,7 @@ def game_state(game: dict) -> str:
 # Schedule and results
 # ---------------------------------------------------------------------------
 
-def fetch_schedule(game_date, timeout: int = DEFAULT_TIMEOUT) -> list:
+def fetch_schedule(game_date, timeout: float = DEFAULT_TIMEOUT) -> list:
     """Raw game records for one date, with pitchers and linescore hydrated."""
     day = _validate_date(game_date)
     payload = _get_json(
@@ -316,12 +392,12 @@ def first_five(game: dict) -> dict:
     return result
 
 
-def fetch_games(game_date, timeout: int = DEFAULT_TIMEOUT) -> list:
+def fetch_games(game_date, timeout: float = DEFAULT_TIMEOUT) -> list:
     """Parsed games for one date, in schedule order."""
     return [parse_game(g) for g in fetch_schedule(game_date, timeout=timeout)]
 
 
-def fetch_results(game_date, timeout: int = DEFAULT_TIMEOUT) -> dict:
+def fetch_results(game_date, timeout: float = DEFAULT_TIMEOUT) -> dict:
     """Games for one date, split by state, with counts.
 
     Returns a dict with `final`, `pending`, `cancelled`, and a `summary`. The
@@ -344,7 +420,7 @@ def fetch_results(game_date, timeout: int = DEFAULT_TIMEOUT) -> dict:
     }
 
 
-def fetch_pitcher_game_log(person_id, season, timeout: int = DEFAULT_TIMEOUT) -> list:
+def fetch_pitcher_game_log(person_id, season, timeout: float = DEFAULT_TIMEOUT) -> list:
     """Every pitching appearance for one player in one season, oldest first.
 
     This is the raw material for point-in-time pitcher stats. Season-to-date figures
@@ -443,7 +519,7 @@ def iter_dates(start, end):
         current += timedelta(days=1)
 
 
-def backfill_results(start, end, timeout: int = DEFAULT_TIMEOUT,
+def backfill_results(start, end, timeout: float = DEFAULT_TIMEOUT,
                      on_date=None) -> dict:
     """Collect every FINAL game across a date range.
 

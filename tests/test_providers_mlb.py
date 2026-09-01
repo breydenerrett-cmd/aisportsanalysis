@@ -5,7 +5,9 @@ in-progress game carries a partial score in the same field a final game uses,
 so a loose check ingests garbage that is nearly impossible to spot later.
 """
 
+import json
 import unittest
+import urllib.error
 from unittest import mock
 
 from src.providers import mlb
@@ -294,6 +296,110 @@ class TestTransportErrors(unittest.TestCase):
                         side_effect=urllib.error.URLError("offline")):
             with self.assertRaises(MLBError):
                 mlb._get_json("schedule")
+
+
+class FakeResponse:
+    """Minimal stand-in for the context-manager urlopen returns."""
+
+    def __init__(self, payload: bytes):
+        self._payload = payload
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        return False
+
+    def read(self):
+        return self._payload
+
+
+class TestBoundedTimeoutAndRetry(unittest.TestCase):
+    """The red-team finding this closes: a stalled MLB response used to pin
+    a worker for DEFAULT_TIMEOUT's old value of 20 seconds. These tests pin
+    the fix -- bounded per-attempt timeouts, one retry on a stall/reset only,
+    never on an HTTP error status -- with a fake transport so no real socket
+    is ever opened.
+    """
+
+    def test_default_timeout_is_no_longer_twenty_seconds(self):
+        # The whole point: a bounded value, not the old 20s worker-pinning one.
+        self.assertLess(mlb.DEFAULT_TIMEOUT, 20)
+        self.assertEqual(mlb.DEFAULT_TIMEOUT, mlb.MLB_TOTAL_TIMEOUT_S)
+
+    def test_retries_once_on_timeout_then_succeeds(self):
+        import socket as socket_mod
+        good = FakeResponse(json.dumps({"dates": []}).encode("utf-8"))
+        with mock.patch("urllib.request.urlopen",
+                        side_effect=[urllib.error.URLError(socket_mod.timeout("stalled")), good]) as fake:
+            result = mlb._get_json("schedule")
+        self.assertEqual(result, {"dates": []})
+        self.assertEqual(fake.call_count, 2)
+
+    def test_retries_once_on_connection_reset_then_succeeds(self):
+        good = FakeResponse(json.dumps({"dates": []}).encode("utf-8"))
+        with mock.patch("urllib.request.urlopen",
+                        side_effect=[urllib.error.URLError(ConnectionResetError("reset")), good]) as fake:
+            result = mlb._get_json("schedule")
+        self.assertEqual(result, {"dates": []})
+        self.assertEqual(fake.call_count, 2)
+
+    def test_second_timeout_in_a_row_still_raises_mlb_error(self):
+        import socket as socket_mod
+        with mock.patch("urllib.request.urlopen",
+                        side_effect=[urllib.error.URLError(socket_mod.timeout("stalled")),
+                                     urllib.error.URLError(socket_mod.timeout("stalled again"))]) as fake:
+            with self.assertRaises(MLBError):
+                mlb._get_json("schedule")
+        self.assertEqual(fake.call_count, 2)
+
+    def test_never_retries_a_404(self):
+        # An HTTP error status means the provider DID answer. Retrying that
+        # re-asks a question it already declined to answer -- the exact
+        # behaviour the retry loop must never do.
+        import urllib.error
+        with mock.patch("urllib.request.urlopen",
+                        side_effect=urllib.error.HTTPError(
+                            "u", 404, "not found", None, None)) as fake:
+            with self.assertRaises(MLBError):
+                mlb._get_json("schedule")
+        self.assertEqual(fake.call_count, 1)
+
+    def test_first_attempt_uses_the_bounded_connect_timeout(self):
+        good = FakeResponse(json.dumps({}).encode("utf-8"))
+        with mock.patch("urllib.request.urlopen", return_value=good) as fake:
+            mlb._get_json("schedule")
+        self.assertEqual(fake.call_args.kwargs["timeout"], mlb.MLB_CONNECT_TIMEOUT_S)
+
+    def test_retry_attempt_uses_the_caller_supplied_timeout(self):
+        import socket as socket_mod
+        good = FakeResponse(json.dumps({}).encode("utf-8"))
+        with mock.patch("urllib.request.urlopen",
+                        side_effect=[urllib.error.URLError(socket_mod.timeout("stalled")), good]) as fake:
+            mlb._get_json("schedule", timeout=30)
+        first_call, second_call = fake.call_args_list
+        self.assertEqual(first_call.kwargs["timeout"], mlb.MLB_CONNECT_TIMEOUT_S)
+        self.assertEqual(second_call.kwargs["timeout"], 30)
+
+    def test_env_override_is_read_by_env_float(self):
+        # The module constants themselves are computed once at import time
+        # (`importlib.reload` here would swap in a second MLBError class and
+        # break every other test's assertRaises in this file, since they
+        # hold a reference to the class from the first import) -- so this
+        # pins the override behaviour at the level that actually varies:
+        # `_env_float`, the function every timing constant is built from.
+        with mock.patch.dict("os.environ", {"MLB_CONNECT_TIMEOUT_S": "1.5"}):
+            self.assertEqual(mlb._env_float("MLB_CONNECT_TIMEOUT_S", 3.0), 1.5)
+
+    def test_bad_env_value_falls_back_to_the_constant_not_a_crash(self):
+        with mock.patch.dict("os.environ", {"MLB_CONNECT_TIMEOUT_S": "not-a-number"}):
+            self.assertEqual(mlb._env_float("MLB_CONNECT_TIMEOUT_S", 3.0), 3.0)
+
+    def test_missing_env_value_falls_back_to_the_constant(self):
+        with mock.patch.dict("os.environ", {}, clear=False):
+            import os as os_mod
+            os_mod.environ.pop("MLB_CONNECT_TIMEOUT_S", None)
+            self.assertEqual(mlb._env_float("MLB_CONNECT_TIMEOUT_S", 3.0), 3.0)
 
 
 if __name__ == "__main__":
