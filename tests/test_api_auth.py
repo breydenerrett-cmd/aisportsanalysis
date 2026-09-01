@@ -24,6 +24,7 @@ try:
 except ImportError:
     HAS_FASTAPI = False
 
+from src.appstate import events
 from src.appstate import users as users_store
 
 
@@ -84,6 +85,71 @@ class GetCurrentUserTests(unittest.TestCase):
         with self.assertRaises(HTTPException) as ctx:
             get_current_user(authorization=f"Bearer {raw_token}")
         self.assertEqual(ctx.exception.status_code, 401)
+
+
+@unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
+class InviteRedeemedEventTests(unittest.TestCase):
+    """get_current_user marks a token's first use and emits
+    events.INVITE_REDEEMED exactly once per token -- see api/auth.py's
+    _record_invite_redeemed_once and src/appstate/users.py's
+    mark_token_first_used docstrings for the design."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.db = Path(self._tmp.name) / "app.db"
+        self._patcher = mock.patch.object(users_store, "db_path", lambda: self.db)
+        self._patcher.start()
+        self.user = users_store.create_user("redeem@example.com",
+                                            status="active", db=self.db)
+        self.raw_token = users_store.issue_invite_token(self.user.id, db=self.db)
+
+    def tearDown(self):
+        self._patcher.stop()
+        self._tmp.cleanup()
+
+    def test_first_use_emits_invite_redeemed_and_marks_the_token(self):
+        from api.auth import get_current_user
+        with mock.patch.object(events, "record_event_safe") as safe:
+            get_current_user(authorization=f"Bearer {self.raw_token}")
+        safe.assert_called_once_with(self.user.id, events.INVITE_REDEEMED)
+        # The marker itself is set, independent of the mocked emission.
+        self.assertFalse(
+            users_store.mark_token_first_used(self.raw_token, db=self.db))
+
+    def test_second_use_does_not_emit_again(self):
+        from api.auth import get_current_user
+        get_current_user(authorization=f"Bearer {self.raw_token}")  # first use
+        with mock.patch.object(events, "record_event_safe") as safe:
+            get_current_user(authorization=f"Bearer {self.raw_token}")
+        safe.assert_not_called()
+
+    def test_a_fresh_token_for_a_different_user_emits_independently(self):
+        from api.auth import get_current_user
+        other = users_store.create_user("other@example.com", status="active",
+                                        db=self.db)
+        other_token = users_store.issue_invite_token(other.id, db=self.db)
+        with mock.patch.object(events, "record_event_safe") as safe:
+            get_current_user(authorization=f"Bearer {self.raw_token}")
+            get_current_user(authorization=f"Bearer {other_token}")
+        self.assertEqual(safe.call_count, 2)
+
+    def test_marker_or_event_failure_never_breaks_authentication(self):
+        """A broken analytics path must never turn a good token into a 401
+        -- the response the caller is waiting on already succeeded by the
+        time this call site runs."""
+        from api.auth import get_current_user
+        with mock.patch.object(
+                users_store, "mark_token_first_used",
+                side_effect=RuntimeError("db is locked")):
+            resolved = get_current_user(authorization=f"Bearer {self.raw_token}")
+        self.assertEqual(resolved.id, self.user.id)
+
+    def test_failed_auth_never_marks_or_emits(self):
+        from api.auth import get_current_user
+        with mock.patch.object(events, "record_event_safe") as safe:
+            with self.assertRaises(HTTPException):
+                get_current_user(authorization="Bearer not-a-real-token")
+        safe.assert_not_called()
 
 
 @unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")

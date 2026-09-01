@@ -30,9 +30,22 @@ doc alongside it.
 
 ---
 
-## `GET /today/{date}`
+## Auth per route
 
-The whole slate for one date, one entry per game (`api/today.py`).
+| Surface | Requirement |
+|---|---|
+| Game surface (`/today`, `/games/{date}`, `/game/{date}/{away}/{home}`, `/changed/{date}`, `/odds/{date}`, `/odds/{date}/{away}/{home}`, `/betcheck`, `/my-bets*`) | `Authorization: Bearer <invite token>` (`api/auth.py`'s `get_current_user`) |
+| `/health`, `/meta`, `/web/*` | open, no token |
+| `/admin/*` | `X-Admin-Token`, a separate admin credential (`api/auth.py`'s `_require_admin`) -- disabled (404) entirely unless `APP_ADMIN_TOKEN` is set |
+| `/billing/*` | `/billing/checkout` and `/billing/status` require a Bearer token (same as the game surface); `/billing/webhook` is called by Stripe, not a browser, and is verified by Stripe's own webhook signature instead |
+
+## `GET /today`
+
+Today's slate (the SERVER's date -- `date.today()`, never a client-supplied
+one), one entry per game (`api/today.py`, `api/app.py`). There is no
+`{date}` path parameter; a past or future slate is `GET /games/{date}` /
+`GET /game/{date}/{away}/{home}` instead, which cover the whole schedule
+this endpoint does not.
 
 | Field | Type | Notes |
 |---|---|---|
@@ -142,6 +155,56 @@ Each item in `items[]`:
 | `seen_utc` | string \| null (ISO-8601 UTC) | |
 | `inadmissible` | boolean | |
 
+## `GET /odds/{date}`
+
+The Odds tab's whole slate: every game's market board(s) plus a slate-level
+summary (`api/odds.py`, `src/analysis/oddspayload.build_odds_payload`). A
+date with no games scheduled is not an error — an honest empty payload,
+`summary.games_count: 0`, same rule `/games/{date}` uses.
+
+| Field | Type | Notes |
+|---|---|---|
+| `date` | string \| null | |
+| `generated_at` | string (ISO-8601 UTC) | |
+| `games` | array of per-game objects | see below |
+| `summary.games_count` | integer ≥ 0 | |
+| `summary.widest_spread_game` | object \| null | `{game_id, side, spread_cents}` — the single largest h2h spread on the slate, `null` when nothing on the slate has a priceable spread |
+| `summary.books_disagree_on_favorite_count` | integer ≥ 0 | how many games' books do not unanimously agree which side is favored |
+
+Each entry in `games[]`:
+
+| Field | Type | Notes |
+|---|---|---|
+| `game_id` | string | |
+| `away_team` / `home_team` | string | |
+| `date` | string \| null | |
+| `first_pitch_utc` | string \| null (ISO-8601 UTC) | |
+| `venue` | string \| null | |
+| `markets` | object | keyed by market name; only `"h2h"` exists today — a future market (spreads, totals) is an additional key, not a reshape |
+
+`markets.h2h`:
+
+| Field | Type | Notes |
+|---|---|---|
+| `board_available` | boolean | |
+| `reason` | string \| null | present when `board_available` is `false` |
+| `board` | array of `{book, away_price, home_price, captured_at}` | the raw per-book quotes, unfiltered; empty when `board_available` is `false` |
+| `best.{away,home}` | object \| null | `{price, books}` — the best (highest-payout) American price on that side and EVERY book quoting it, `null` with no priceable quote |
+| `consensus.{away,home}` | object \| null | `{implied_probability, implied_price}` — `implied_probability` is a fraction in [0, 1]; `null` below the book floor (see `consensus_unavailable_reason`) or with no board at all |
+| `consensus.books` | integer \| null | present inside `consensus` when not `null` |
+| `consensus_unavailable_reason` | string \| null | present when `consensus` is `null` but a board exists (thin board, below `prices.MIN_BOOKS`) |
+| `spread_cents.{away,home}` | number \| null | plain arithmetic gap between the best and worst quoted American price on that side; `null` below two priced quotes — see `src/analysis/oddspayload.py`'s SPREAD-IN-CENTS note (not comparable across the -100/+100 sign boundary) |
+| `staleness.{observed_utc,age_seconds,has_board}` | see vocabulary rules | same shape as `/games/{date}`'s `board_summary` / `/game/.../advanced`'s `staleness` |
+
+## `GET /odds/{date}/{away}/{home}`
+
+One game's odds payload — the same per-game object `GET /odds/{date}`
+nests under `games[]` (`game_id`, team/venue identity, `markets`), served
+standalone. Unknown date/game is a structured `404`, naming what was
+searched for. A doubleheader adds a `note` (string) explaining that the
+URL scheme cannot disambiguate the second game and this payload is the
+earlier-listed one — `note` is absent otherwise, never a fabricated `null`.
+
 ## `POST /betcheck`
 
 Checks one stated bet against the real domain path for its game
@@ -197,6 +260,93 @@ read or delete another's rows, even by guessing an id.
 
 `DELETE /my-bets/{bet_id}` returns `{"deleted": true, "id": <int>}` or a
 structured `404` if the bet doesn't exist or belongs to another user.
+
+## `POST /billing/checkout`, `GET /billing/status`, `POST /billing/webhook`
+
+Billing (`api/billing.py`, `src/appstate/billing.py`/`customers.py`).
+`/billing/checkout` and `/billing/status` require a Bearer token, same as
+the game surface; `/billing/webhook` is Stripe calling this app, verified
+by `Stripe-Signature` instead of a bearer token — no browser calls it.
+
+`POST /billing/checkout` (body `{"plan_id": string}`) and `GET
+/billing/status` both answer honestly rather than erroring when billing
+isn't configured yet (`docs/LAUNCH_DECISIONS.md` Decision 2):
+
+| Field | Type | Notes |
+|---|---|---|
+| `status` | string | `"not_configured"` \| `"redirect"` (checkout only) \| a Stripe subscription status (status only) |
+| `checkout_url` | string | present only when `status` is `"redirect"` |
+| `message` | string | present only when `status` is `"not_configured"` |
+| `stripe_subscription_id` / `updated_at` | string | present only on status, only when a webhook has ever reported a subscription for this user |
+
+`POST /billing/webhook`: `501` when `STRIPE_WEBHOOK_SECRET` is unset (no
+provider live to have honestly sent this); otherwise verifies the
+signature and applies the event. Never a stable JSON contract for a
+design/client to consume — Stripe is the only caller.
+
+## `GET /meta`
+
+App version, the beta disclaimer, and the product one-liner (`api/meta.py`).
+No auth.
+
+| Field | Type | Notes |
+|---|---|---|
+| `version` | string | `git describe --tags --always --dirty`, or `"dev"` when git isn't available (a built container) |
+| `product` | string | the one-line product description, EV/edge/guarantee-language-free |
+| `disclaimer` | string | the beta disclaimer (`src/analysis/disclaimers.py`) |
+
+## `GET /health`
+
+Process + store liveness (`api/health.py`, `src/appstate/apphealth.py`). No
+auth — an uptime checker or load balancer must reach this with no token.
+HTTP status mirrors `status` (`200` when `"ok"`, `503` when `"degraded"`);
+this endpoint is built to never itself 500.
+
+| Field | Type | Notes |
+|---|---|---|
+| `status` | string | `"ok"` \| `"degraded"` |
+| `generated_at` | string (ISO-8601 UTC) | |
+| `process.status` | string | |
+| `app_db` | object | reachability of the sqlite app db |
+| `odds` | object | keyed by the named odds store | 
+| `forward_captures` | object | keyed by forward-evidence store name |
+| `reasons` | array of strings | every reason `status` is not `"ok"`; empty when healthy |
+
+Never carries a token, email, or row body (see module docstring) — this is
+the one endpoint safe to paste into a support ticket unredacted.
+
+## `GET /admin/overview`, `GET /admin/users` (admin-only)
+
+Read-only ops surface for Brey (`api/admin.py`), gated by `X-Admin-Token`
+(`api.auth._require_admin` — 404 when `APP_ADMIN_TOKEN` is unset, meaning
+the endpoint does not exist at all; 401 on a wrong token). No mutation
+routes here.
+
+`GET /admin/overview`:
+
+| Field | Type | Notes |
+|---|---|---|
+| `users` | object | counts by status and by plan, plus a total — never the users themselves |
+| `invites_outstanding` | integer | not-revoked, not-expired invite tokens |
+| `events.daily_counts_by_kind` | object | 14-day analytics rollup, date → kind → count |
+| `store_health` | object | same shape as `GET /health`'s payload |
+| `version` | string | same as `GET /meta`'s `version` |
+
+`GET /admin/users`: `{"users": [{id, email, status, plan, created_at}, ...]}`
+— the ONE place in this API an email appears (see module docstring's
+rationale); every other response is scoped to sha256 hashes or the
+caller's own data.
+
+## `GET /web`, `GET /web/{path}` (static mount)
+
+Serves `web/` (the structural reference client) as static files
+(`api/web.py`) — HTML/JS/CSS/JSON/MD only, an allowlisted extension set,
+with a directory-traversal guard on every path. No auth: these are static
+assets, not game data — the client stores its own invite token in
+`localStorage` and sends it on each API call, so the page/JS themselves
+must be reachable with no token or the token-entry form could never load.
+An unrecognized or disallowed path is a structured `404` naming what was
+searched for. Not a JSON endpoint — no response-shape contract here.
 
 ---
 

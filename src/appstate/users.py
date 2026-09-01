@@ -30,10 +30,13 @@ SCHEMA
 users(id, email, created_at, status, plan)
     status: invited | active | suspended
     plan:   none | beta
-tokens(token_hash, user_id, created_at, expires_at, revoked_at)
+tokens(token_hash, user_id, created_at, expires_at, revoked_at, first_used_at)
     opaque secrets.token_urlsafe() value, sha256-hashed before storage.
     expires_at is a required ISO-8601 UTC string (invite tokens are not
     forever-lived); revoked_at is NULL until revoke_token() is called.
+    first_used_at is NULL until mark_token_first_used() writes it exactly
+    once -- see that function's docstring for why it exists (the
+    invite_redeemed analytics event, api/auth.py).
 """
 
 from __future__ import annotations
@@ -119,6 +122,16 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
     """)
+    # MIGRATION-SAFE ALTER, not a table rebuild -- same reasoning and same
+    # pattern src/appstate/savedbets.py uses for its settlement columns: an
+    # existing app.db already has real invite tokens in it, so the new
+    # column is added to the table that is already there, guarded by
+    # PRAGMA table_info so re-running the ALTER on a db that already has it
+    # doesn't raise OperationalError and break every future _connect().
+    existing_token_cols = {row["name"] for row in
+                           conn.execute("PRAGMA table_info(tokens)")}
+    if "first_used_at" not in existing_token_cols:
+        conn.execute("ALTER TABLE tokens ADD COLUMN first_used_at TEXT")
 
 
 @dataclass(frozen=True)
@@ -242,6 +255,42 @@ def issue_invite_token(user_id: int, *, ttl: timedelta = DEFAULT_TOKEN_TTL,
             (_hash_token(raw_token), user_id, created_at.isoformat(),
              expires_at.isoformat()))
     return raw_token
+
+
+def mark_token_first_used(raw_token: str, *, at: Optional[str] = None,
+                          db: Optional[Path] = None) -> bool:
+    """Write-once first-use marker for a token: sets `first_used_at` and
+    returns True on the ONE call that transitions it from NULL, False on
+    every call after (including calls on an unknown, revoked, or expired
+    token hash -- rowcount 0 there too).
+
+    WHY THIS IS SEPARATE FROM `authenticate`
+    ------------------------------------------
+    `authenticate` answers "is this token currently good" and is called on
+    every single authed request; this answers a narrower, one-time
+    question ("has this token EVER been used before"), for
+    api/auth.py's `get_current_user` to emit `events.INVITE_REDEEMED`
+    exactly once per token -- the actual invite-redemption moment, not
+    every page load after it. Folding this into `authenticate` would mean
+    every caller of `authenticate` (including tests that don't care about
+    analytics) pays for and has to reason about the write; kept separate,
+    `authenticate` stays a pure read and this stays the one write path.
+
+    Deliberately does NOT re-check revocation/expiry itself -- the caller
+    (get_current_user) only reaches this after `authenticate` has already
+    said the token is currently good, so a second check here would just be
+    dead code paying for another query. Calling this with a token that
+    never authenticates (unknown hash, or a hash from a different auth
+    provider such as a future Clerk JWT) is harmless: the UPDATE simply
+    matches zero rows and returns False.
+    """
+    at = at or _now_iso()
+    with _connect(db) as conn:
+        cur = conn.execute(
+            "UPDATE tokens SET first_used_at = ? "
+            "WHERE token_hash = ? AND first_used_at IS NULL",
+            (at, _hash_token(raw_token)))
+        return cur.rowcount > 0
 
 
 def revoke_token(raw_token: str, *, db: Optional[Path] = None) -> bool:

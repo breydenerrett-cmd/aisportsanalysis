@@ -17,17 +17,30 @@ ADMIN INVITE ENDPOINT: gated by APP_ADMIN_TOKEN. Absent env var means the
 endpoint is DISABLED (404), not "open with no check" -- an admin surface
 that silently accepts every request the moment someone forgets to set an
 env var is worse than one that doesn't exist yet.
+
+INVITE_REDEEMED: get_current_user marks a token's first use
+(users_store.mark_token_first_used) and emits `events.INVITE_REDEEMED`
+exactly once per token -- on the request that transitions a fresh token
+from never-used to used, never on any request after. This lives here
+(after the provider has already said the token is currently good) rather
+than inside `authenticate` itself -- see mark_token_first_used's own
+docstring for why the write is kept separate from the read. Both the
+marking call and the event emission are best-effort: neither can ever turn
+a successful authentication into a failed request (see the try/except
+below and events.record_event_safe's own "never raise" contract).
 """
 
 from __future__ import annotations
 
 import os
 import secrets
+import sys
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 
 from src.appstate import authproviders
+from src.appstate import events
 from src.appstate import users as users_store
 
 ENV_ADMIN_TOKEN = "APP_ADMIN_TOKEN"
@@ -71,7 +84,39 @@ def get_current_user(authorization: Optional[str] = Header(default=None),
         raise _unauthorized("account suspended")
     if request is not None:
         request.state.user_id = user.id
+    _record_invite_redeemed_once(authorization, user)
     return user
+
+
+def _record_invite_redeemed_once(authorization: Optional[str],
+                                 user: users_store.User) -> None:
+    """Emit `events.INVITE_REDEEMED` on the first successful use of the
+    token that just authenticated `user`, never on any request after.
+
+    Parses `authorization` itself (rather than threading a raw token back
+    out of the provider seam) because the marker is a property of the
+    invite-token table specifically, not of "however this request
+    authenticated" -- a Clerk JWT parses fine here (Bearer scheme) but its
+    hash will never match a row in `tokens`, so `mark_token_first_used`
+    harmlessly returns False for it (see that function's docstring) rather
+    than needing this call site to know which provider is active.
+
+    Wrapped in one try/except so neither the marker write nor the event
+    emission can ever turn an already-successful authentication into a
+    failed request -- a full disk or a locked sqlite file here costs one
+    missing analytics event, never the response the caller is waiting on.
+    `record_event_safe` already swallows its own exceptions; this also
+    guards the `mark_token_first_used` call, which does not.
+    """
+    try:
+        scheme, _, raw_token = (authorization or "").partition(" ")
+        if scheme.lower() != "bearer" or not raw_token:
+            return
+        if users_store.mark_token_first_used(raw_token):
+            events.record_event_safe(user.id, events.INVITE_REDEEMED)
+    except Exception as exc:  # noqa: BLE001 -- see docstring: must never raise
+        print(f"auth: invite_redeemed marker/event failed: {exc!r}",
+              file=sys.stderr, flush=True)
 
 
 def _require_admin(x_admin_token: Optional[str] = Header(default=None)) -> None:

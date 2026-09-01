@@ -120,6 +120,68 @@ class UserStoreTests(unittest.TestCase):
         self.assertIsNone(users.authenticate(token_a, db=self.db))
         self.assertIsNotNone(users.authenticate(token_b, db=self.db))
 
+    def test_mark_token_first_used_true_on_first_call_false_after(self):
+        user = users.create_user("firstuse@example.com", db=self.db)
+        raw_token = users.issue_invite_token(user.id, db=self.db)
+        self.assertTrue(users.mark_token_first_used(raw_token, db=self.db))
+        # Second call on the same token: already marked, no transition to
+        # report, and no overwrite of the timestamp that was already set.
+        self.assertFalse(users.mark_token_first_used(raw_token, db=self.db))
+
+    def test_mark_token_first_used_persists_the_timestamp(self):
+        user = users.create_user("persist@example.com", db=self.db)
+        raw_token = users.issue_invite_token(user.id, db=self.db)
+        users.mark_token_first_used(raw_token, at="2026-08-31T12:00:00+00:00",
+                                    db=self.db)
+        conn = sqlite3.connect(str(self.db))
+        row = conn.execute(
+            "SELECT first_used_at FROM tokens WHERE token_hash = ?",
+            (users._hash_token(raw_token),)).fetchone()
+        conn.close()
+        self.assertEqual(row[0], "2026-08-31T12:00:00+00:00")
+
+    def test_mark_token_first_used_is_a_harmless_no_op_on_unknown_token(self):
+        """A token that never authenticated (unknown hash, or a hash from a
+        different auth provider) must not raise or fabricate a match."""
+        self.assertFalse(
+            users.mark_token_first_used("not-a-real-token", db=self.db))
+
+    def test_first_used_at_column_is_added_to_a_pre_existing_db(self):
+        """MIGRATION SAFETY: a tokens table that predates first_used_at (no
+        column at all) must gain it on the next connect, exactly the
+        upgrade path a real deployed app.db goes through -- see
+        src/appstate/savedbets.py's identical settlement-columns test for
+        the pattern this mirrors."""
+        conn = sqlite3.connect(str(self.db))
+        conn.execute("""
+            CREATE TABLE tokens (
+                token_hash TEXT PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                created_at TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                revoked_at TEXT
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT NOT NULL UNIQUE,
+                created_at TEXT NOT NULL,
+                status TEXT NOT NULL,
+                plan TEXT NOT NULL
+            )
+        """)
+        conn.commit()
+        conn.close()
+
+        user = users.create_user("old-db@example.com", db=self.db)
+        raw_token = users.issue_invite_token(user.id, db=self.db)
+        # The pre-existing row (issued before the migration ran, in a real
+        # upgrade) has no first_used_at value -- a fresh connect must not
+        # error out, and the column must now exist and be usable.
+        self.assertTrue(users.mark_token_first_used(raw_token, db=self.db))
+        self.assertFalse(users.mark_token_first_used(raw_token, db=self.db))
+
     def test_db_path_defaults_to_data_app_app_db_under_repo_root(self):
         from src import paths
         expected = paths.repo_root() / "data" / "app" / "app.db"

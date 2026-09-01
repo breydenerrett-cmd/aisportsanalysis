@@ -88,6 +88,44 @@ use `scripts/smoke_api.sh`:
 bash scripts/smoke_api.sh
 ```
 
+## Backing up the app db
+
+`APP_DB_PATH` (default `data/app/app.db`) is the only state a redeploy or
+container replacement does not otherwise preserve (see `deploy/STAGING.md`'s
+persistent-volume section for why that matters on a real deploy) -- users,
+invite tokens, saved bets, and analytics events all live in this one
+sqlite file. Two ways to copy it out, both safe for a live sqlite file:
+
+**Stopped-process file copy** (simplest; use when a maintenance window is
+available):
+
+```bash
+# Stop the process/container first -- sqlite's own file locking makes a
+# plain `cp` of a WRITING db a real corruption risk (a half-written page
+# mid-copy); a copy taken while nothing holds the file open has no such
+# risk.
+cp data/app/app.db data/app/app.db.bak-$(date +%Y%m%d)
+```
+
+**Live backup via the sqlite3 CLI's `.backup`** (use when the process
+cannot be stopped -- this is the API sqlite3 itself provides for exactly
+this case, safe against concurrent writers):
+
+```bash
+sqlite3 data/app/app.db ".backup data/app/app.db.bak-$(date +%Y%m%d)"
+```
+
+Restoring either kind of backup is a plain file copy back to `APP_DB_PATH`
+with the process stopped, then a restart.
+
+**On a staging deploy** (Fly, or whichever host `deploy/STAGING.md`
+targets): the file lives on the mounted volume, not on this laptop, so
+neither command above reaches it directly without first shelling into the
+running machine (`fly ssh console`, or the host's equivalent) to run one
+of them against the volume's copy of the path. For a whole-volume
+snapshot instead of a single-file copy, see `deploy/STAGING.md`'s
+"Backing up the staging volume" section.
+
 ## What remains blocked on Brey
 
 Nothing in this file requires a decision -- it is all runnable today with

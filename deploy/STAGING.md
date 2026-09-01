@@ -97,6 +97,32 @@ trigger to come back to Brey (see `docs/LAUNCH_DECISIONS.md`'s
 "Return-to-Brey triggers" line); this file is what makes that a five
 minute job once it lands, not a research task.
 
+## Backing up the staging volume
+
+`deploy/README.md`'s "Backing up the app db" section covers a plain file
+copy or `.backup`, run against `APP_DB_PATH` -- on this staging deploy
+that path lives on the `app_data` Fly volume, not on any machine this
+task has direct filesystem access to. Two ways to get a backup off it:
+
+- **Run the CLI backup on the volume itself**: `fly ssh console -a
+  <app-name>`, then run `deploy/README.md`'s `.backup` command inside
+  that shell against the in-container path (`/app/data/app/app.db`) --
+  no downtime, works while the app is serving traffic.
+- **Whole-volume snapshot**: `fly volumes snapshots create <volume-id>`
+  takes a point-in-time snapshot of the entire `app_data` volume at the
+  block level (everything under `APP_DB_PATH`, not just the one file);
+  `fly volumes snapshots list <volume-id>` lists what exists to restore
+  from. This is the lower-effort option when the goal is "a restore point
+  before a risky deploy," not "a portable file to inspect locally" -- for
+  the latter, the CLI `.backup` above produces an actual `.db` file that
+  can be copied off the machine.
+
+Same credential boundary as the rest of this file: both commands need the
+Fly deploy token already covered above, and neither is run by anything in
+this repo automatically -- a backup here is a deliberate, manual action
+before a deploy Brey (or whoever holds the token) judges risky enough to
+want a restore point for.
+
 ## What this does NOT cover
 
 - Real domain / custom DNS (Decision 4 -- waits on naming; Fly's own

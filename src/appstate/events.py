@@ -10,16 +10,17 @@ WIRED-IN CALL SITES
                            not a completed check)
   - api/mybets.py       -> kind=BET_SAVED, on a successful POST /my-bets
                            (never on the 400 validation-error path)
+  - api/auth.py         -> kind=INVITE_REDEEMED, from get_current_user, on
+                           the request that transitions a token's
+                           first_used_at from NULL to set (src/appstate/
+                           users.py's mark_token_first_used) -- exactly once
+                           per token, never on a later request with the same
+                           already-used token.
 `api/today.py`'s `get_today_payload_cached` accepts an optional `user_id`
 and records PAGE_VIEW when given one, but `GET /today` itself is wired
 directly in api/app.py, which this task's BOUNDARIES forbid touching beyond
 one admin include_router line -- so that one call site stays inert until a
-future one-line app.py change passes `user_id=` through. INVITE_REDEEMED
-has no call site yet either: src/appstate/users.py's token table has no
-"first use" marker, so "first successful use of a fresh token" is not
-cheaply detectable from api/auth.py's dependency without adding one -- out
-of scope here, per this task's own instruction to skip and note rather than
-grow users.py's schema for it.
+future one-line app.py change passes `user_id=` through.
 `user_hash` at each call site is `hash_user_id(current_user.id)` (or
 whatever raw id the caller has -- `request.state.user_id` for the router-
 level-authed GET routes) -- never the raw id, and never anything from the
