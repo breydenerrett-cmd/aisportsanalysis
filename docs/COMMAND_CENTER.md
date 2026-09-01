@@ -45,6 +45,18 @@ personalization, full alerts, SEO/content build.
 
 ## PHASE LOG
 
+- 2026-09-01 ~04:30: LAUNCH LANE STEADY STATE. Everything buildable
+  without credentials is BUILT, TESTED, PUSHED: full paid funnel proven
+  by 14-step funnel_smoke (in ci.sh), admin dashboard, first-customer
+  playbook, brand screen (no KILL; 3 CAUTIONs for clearance), deploy one
+  command from staging. Suite 2,882; ci.sh green incl. both smokes;
+  evolab determinism green on clean tree. WAITING ON BREY ONLY:
+  (1) Fly deploy token, (2) Stripe test key + $19.99 Price + webhook
+  secret, (3) price/cohort sign-off in PRICING_OFFER_VALIDATION,
+  (4) email provider (optional pre-first-customer), (5) design handback,
+  (6) trademark clearance before domain. Research/capture autonomous on
+  triggers; V3 accumulating below floor.
+
 - 2026-09-01 ~03:45: Wave 5 + branding COMPLETE. Full funnel built and
   ci.sh-green: landing -> signup -> Stripe TEST checkout -> one-time
   activation token -> app -> bet check -> saved bet -> digest, every
