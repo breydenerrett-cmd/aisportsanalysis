@@ -22,7 +22,7 @@ primary_region = "iad"  # US East -- change to whatever region the volume
                          # below is created in; they must match.
 
 [build]
-  dockerfile = "deploy/Dockerfile"
+  dockerfile = "Dockerfile"  # relative to this config file's directory
 
 # Non-secret runtime config. APP_ADMIN_TOKEN and STRIPE_* are secrets --
 # they go through `fly secrets set` (deploy/DEPLOY_RUNBOOK.md), never here,

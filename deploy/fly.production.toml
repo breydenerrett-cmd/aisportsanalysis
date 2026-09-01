@@ -24,7 +24,7 @@ app = "linehound-prod"  # Working brand per Brey's 2026-09-01 decision --
 primary_region = "iad"
 
 [build]
-  dockerfile = "deploy/Dockerfile"
+  dockerfile = "Dockerfile"  # relative to this config file's directory
 
 [env]
   APP_DB_PATH = "/app/data/app/app.db"
