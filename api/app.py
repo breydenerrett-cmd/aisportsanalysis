@@ -22,6 +22,7 @@ from src.appstate import reqlog
 from src.pipeline import history
 from src.providers import mlb
 
+from api.admin import router as admin_router
 from api.auth import get_current_user, router as auth_router
 from fastapi import Depends
 from api.billing import router as billing_router
@@ -56,6 +57,7 @@ app.include_router(odds_router, dependencies=_authed)
 # APP_ADMIN_TOKEN is set -- see api/auth.py); mybets_router requires a
 # valid bearer token on every route (api.auth.get_current_user).
 app.include_router(auth_router)
+app.include_router(admin_router)
 app.include_router(billing_router)
 app.include_router(mybets_router)
 
@@ -121,7 +123,7 @@ def _route_template(request: Request) -> str:
 
 
 @app.get("/today", dependencies=_authed)
-def get_today() -> dict:
+def get_today(request: Request) -> dict:
     """Today's slate, as JSON, from the real domain path.
 
     Odds-age metadata rides along on every entry (see api/today.py). Served
@@ -133,6 +135,7 @@ def get_today() -> dict:
     today = date_cls.today().isoformat()
     try:
         return get_today_payload_cached(today, fetch_games=mlb.fetch_games,
-                                        read_store=history.read_results)
+                                        read_store=history.read_results,
+                                        user_id=getattr(request.state, "user_id", None))
     except mlb.MLBError as exc:
         raise HTTPException(status_code=502, detail=f"schedule unavailable: {exc}")

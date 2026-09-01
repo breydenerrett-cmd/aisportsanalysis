@@ -19,6 +19,7 @@ try:
 except ImportError:
     HAS_FASTAPI = False
 
+from src.appstate import events
 from src.appstate import savedbets as savedbets_store
 from src.appstate import users as users_store
 
@@ -87,6 +88,28 @@ class MyBetsRouteTests(unittest.TestCase):
         create_my_bet(SaveBetRequest(game="BOS@NYY", side="BOS ML"),
                        current_user=self.user)
         self.assertEqual(list_my_bets(current_user=other)["bets"], [])
+
+    def test_get_rows_carry_settlement_fields_before_and_after_settling(self):
+        """GET /my-bets rows must include the three settlement fields even
+        before src.appstate.settlement ever runs (null, never omitted --
+        a client should not have to special-case a missing key), and must
+        reflect a verdict once one is written."""
+        from src.appstate import savedbets as savedbets_mod
+        from api.mybets import SaveBetRequest, create_my_bet, list_my_bets
+
+        created = create_my_bet(
+            SaveBetRequest(game="BOS@NYY", side="BOS ML"), current_user=self.user)
+        for field in ("settlement_status", "settlement_reason", "settled_at"):
+            self.assertIn(field, created)
+            self.assertIsNone(created[field])
+
+        before = list_my_bets(current_user=self.user)["bets"][0]
+        self.assertIsNone(before["settlement_status"])
+
+        savedbets_mod.mark_settled(created["id"], "won", db=self.db)
+        after = list_my_bets(current_user=self.user)["bets"][0]
+        self.assertEqual(after["settlement_status"], "won")
+        self.assertIsNotNone(after["settled_at"])
 
 
 @unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
@@ -189,6 +212,69 @@ class MyBetsRateLimitTests(unittest.TestCase):
         dep(request=request, current_user=self.user)
         dep(request=request, current_user=self.user)
         dep(request=request, current_user=other)  # a fresh counter, not shared
+
+
+@unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
+class BetSavedEventTests(unittest.TestCase):
+    """bet_saved wiring: recorded on a successful save, never on the 400
+    validation-error path, and never breaks the response if the events db
+    itself is broken."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.db = Path(self._tmp.name) / "app.db"
+        self._patcher = mock.patch.object(savedbets_store, "db_path", lambda: self.db)
+        self._patcher.start()
+        self.user = users_store.create_user("betsaved@example.com", db=self.db)
+
+    def tearDown(self):
+        self._patcher.stop()
+        self._tmp.cleanup()
+
+    def test_success_records_bet_saved_for_the_authed_user(self):
+        from api.mybets import SaveBetRequest, create_my_bet
+        with mock.patch.object(events, "record_event_safe") as safe:
+            create_my_bet(SaveBetRequest(game="BOS@NYY", side="BOS ML"),
+                          current_user=self.user)
+        safe.assert_called_once_with(self.user.id, events.BET_SAVED)
+
+    def test_a_rejected_save_records_nothing(self):
+        """save_bet's own ValueError (e.g. an unparseable game/side) surfaces
+        as this route's 400 -- that is not a bet saved, so it must not
+        inflate the count."""
+        from fastapi import HTTPException
+        from api.mybets import SaveBetRequest, create_my_bet
+        with mock.patch("src.appstate.savedbets.save_bet",
+                        side_effect=ValueError("bad bet")), \
+             mock.patch.object(events, "record_event_safe") as safe:
+            with self.assertRaises(HTTPException) as ctx:
+                create_my_bet(SaveBetRequest(game="BOS@NYY", side="BOS ML"),
+                              current_user=self.user)
+        self.assertEqual(ctx.exception.status_code, 400)
+        safe.assert_not_called()
+
+    def test_a_broken_events_db_never_breaks_the_save(self):
+        from api.mybets import SaveBetRequest, create_my_bet
+        with mock.patch.object(events, "record_event",
+                               side_effect=RuntimeError("disk full")):
+            created = create_my_bet(SaveBetRequest(game="BOS@NYY", side="BOS ML"),
+                                    current_user=self.user)
+        self.assertEqual(created["game"], "BOS@NYY")
+
+    def test_no_email_in_the_recorded_event_and_the_hash_really_is_there(self):
+        """The load-bearing privacy guarantee at this call site: scan the
+        events db's raw bytes for the user's email (a raw int id like "1"
+        is too short to check this way -- it would coincidentally appear
+        inside almost any hex hash; src/appstate/events.py's own test uses a
+        large id for exactly that reason)."""
+        from api.mybets import SaveBetRequest, create_my_bet
+        events_db = Path(self._tmp.name) / "events.db"
+        with mock.patch.object(events, "db_path", lambda: events_db):
+            create_my_bet(SaveBetRequest(game="BOS@NYY", side="BOS ML"),
+                          current_user=self.user)
+        blob = events_db.read_bytes()
+        self.assertNotIn(self.user.email.encode("utf-8"), blob)
+        self.assertIn(events.hash_user_id(self.user.id).encode("utf-8"), blob)
 
 
 if __name__ == "__main__":

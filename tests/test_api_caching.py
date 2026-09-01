@@ -20,7 +20,7 @@ import unittest
 from datetime import date, datetime, timezone
 from unittest.mock import patch
 
-from src.appstate import freshness
+from src.appstate import events, freshness
 from src.pipeline import history
 
 from api.today import get_today_payload_cached
@@ -193,6 +193,47 @@ class GamesEntriesCacheTests(unittest.TestCase):
         self.assertTrue(stale["freshness"]["stale"])
         self.assertIn("rebuild failed", stale["freshness"]["stale_reason"])
         self.assertEqual(stale["games"], good["games"])
+
+
+class TodayPageViewEventTests(unittest.TestCase):
+    """api/today.py's `user_id` parameter -- see events.py's WIRED-IN CALL
+    SITES docstring section for why `GET /today` itself does not pass this
+    yet (a BOUNDARIES conflict with api/app.py, not a gap in this
+    function)."""
+
+    def _cache(self):
+        return freshness.SingleFlightTTLCache(ttl_s=120.0)
+
+    def test_no_user_id_records_nothing(self):
+        store = history.read_results()
+        games = [_today_game()]
+        with patch.object(events, "record_event_safe") as safe:
+            get_today_payload_cached(
+                games[0]["date"], fetch_games=lambda _d: games,
+                read_store=lambda: store, cache=self._cache())
+        safe.assert_not_called()
+
+    def test_a_given_user_id_records_a_page_view(self):
+        store = history.read_results()
+        games = [_today_game()]
+        date = games[0]["date"]
+        with patch.object(events, "record_event_safe") as safe:
+            get_today_payload_cached(
+                date, fetch_games=lambda _d: games, read_store=lambda: store,
+                cache=self._cache(), user_id=11)
+        safe.assert_called_once_with(
+            11, events.PAGE_VIEW, {"route": "/today", "date": date})
+
+    def test_a_broken_events_db_never_breaks_the_payload(self):
+        store = history.read_results()
+        games = [_today_game()]
+        date = games[0]["date"]
+        with patch.object(events, "record_event",
+                          side_effect=RuntimeError("disk full")):
+            payload = get_today_payload_cached(
+                date, fetch_games=lambda _d: games, read_store=lambda: store,
+                cache=self._cache(), user_id=11)
+        self.assertEqual(payload["date"], date)
 
 
 if __name__ == "__main__":

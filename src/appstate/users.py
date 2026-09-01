@@ -46,7 +46,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Iterator, Optional
+from typing import Iterator, List, Optional
 
 from src import paths
 
@@ -173,6 +173,41 @@ def get_user_by_email(email: str, *, db: Optional[Path] = None) -> Optional[User
             "SELECT * FROM users WHERE email = ?",
             (email.strip().lower(),)).fetchone()
         return _row_to_user(row) if row else None
+
+
+def list_users(*, db: Optional[Path] = None) -> List[User]:
+    """Every user, oldest-created first -- the admin listing's one query.
+
+    No pagination: a private beta's whole user table is small enough that
+    a plain SELECT * is the honest scope for now, the same "not optimising
+    for a scale this product does not have yet" call
+    src/appstate/events.py's daily_counts_by_kind makes for the identical
+    reason.
+    """
+    with _connect(db) as conn:
+        rows = conn.execute("SELECT * FROM users ORDER BY id ASC").fetchall()
+        return [_row_to_user(r) for r in rows]
+
+
+def count_outstanding_invites(*, db: Optional[Path] = None,
+                              now: Optional[datetime] = None) -> int:
+    """How many invite tokens are still redeemable right now: not revoked,
+    not expired. A token that already expired or was revoked is not
+    something Brey is waiting on anyone to redeem, so it does not count as
+    "outstanding" for the admin overview.
+    """
+    now = now or datetime.now(timezone.utc)
+    with _connect(db) as conn:
+        rows = conn.execute(
+            "SELECT expires_at FROM tokens WHERE revoked_at IS NULL").fetchall()
+    count = 0
+    for row in rows:
+        expires_at = datetime.fromisoformat(row["expires_at"])
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        if now.astimezone(timezone.utc) < expires_at:
+            count += 1
+    return count
 
 
 def set_user_status(user_id: int, status: str, *, db: Optional[Path] = None) -> None:

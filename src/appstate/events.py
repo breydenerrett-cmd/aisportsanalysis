@@ -1,25 +1,29 @@
 """Product-analytics event scaffold, stdlib-only (sqlite3, hashlib).
 
-ADDITIVE ONLY -- NOT WIRED IN YET
------------------------------------
-This module is deliberately not called from any endpoint yet. Two other
-concurrent agents own src/appstate/{reqlog,freshness}.py and api/odds.py;
-threading `record_event()` calls into api/today.py, api/games.py,
-api/betcheck.py or api/mybets.py right now would touch files those agents
-are actively editing for an unrelated reason and risk a merge collision
-neither side asked for. The integration point is a follow-up task: call
-`record_event()` from
-  - api/today.py / api/games.py     -> kind=PAGE_VIEW, on a successful GET
-  - api/betcheck.py                 -> kind=BET_CHECK_RUN, on a successful
-                                        POST /betcheck (never on the 400/404
-                                        error paths -- those are not a
-                                        completed check)
-  - api/mybets.py                   -> kind=BET_SAVED, on a successful
-                                        POST /my-bets
-  - wherever invite redemption ends up living (src/appstate/users.py's
-    token-consuming call, once one exists) -> kind=INVITE_REDEEMED
-`user_hash` at each call site is `hash_user_id(current_user.id)` -- never
-the raw id, and never anything from the request body.
+WIRED-IN CALL SITES
+--------------------
+`record_event()` (via `record_event_safe()`, see below) is called from:
+  - api/games.py       -> kind=PAGE_VIEW, on a successful GET /games/{date},
+                           GET /game/{date}/{away}/{home}, GET /changed/{date}
+  - api/betcheck.py     -> kind=BET_CHECK_RUN, on a successful POST /betcheck
+                           (never on the 400/404/502 error paths -- those are
+                           not a completed check)
+  - api/mybets.py       -> kind=BET_SAVED, on a successful POST /my-bets
+                           (never on the 400 validation-error path)
+`api/today.py`'s `get_today_payload_cached` accepts an optional `user_id`
+and records PAGE_VIEW when given one, but `GET /today` itself is wired
+directly in api/app.py, which this task's BOUNDARIES forbid touching beyond
+one admin include_router line -- so that one call site stays inert until a
+future one-line app.py change passes `user_id=` through. INVITE_REDEEMED
+has no call site yet either: src/appstate/users.py's token table has no
+"first use" marker, so "first successful use of a fresh token" is not
+cheaply detectable from api/auth.py's dependency without adding one -- out
+of scope here, per this task's own instruction to skip and note rather than
+grow users.py's schema for it.
+`user_hash` at each call site is `hash_user_id(current_user.id)` (or
+whatever raw id the caller has -- `request.state.user_id` for the router-
+level-authed GET routes) -- never the raw id, and never anything from the
+request body.
 
 WHY THE USER ID IS HASHED, NEVER STORED RAW
 ----------------------------------------------
@@ -57,6 +61,7 @@ import hashlib
 import json
 import os
 import sqlite3
+import sys
 from collections import defaultdict
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -180,6 +185,29 @@ def record_event(user_hash: str, kind: str, properties: Optional[dict] = None,
             (user_hash, kind, properties_json, at))
         return AnalyticsEvent(id=cur.lastrowid, user_hash=user_hash, kind=kind,
                               properties=properties or {}, at=at)
+
+
+def record_event_safe(user_id, kind: str, properties: Optional[dict] = None, *,
+                      at: Optional[str] = None, db: Optional[Path] = None) -> None:
+    """`record_event`, but analytics can never fail or slow down the request
+    that triggered it.
+
+    Every caller wired into api/ (games.py, betcheck.py, mybets.py) calls
+    this, not `record_event` directly: by the time a caller is ready to
+    record a page_view or a completed bet check, it has already fetched the
+    game, run the domain path, and built a good response for the client. A
+    full disk, a locked sqlite file, or a bug in this module must cost one
+    missing data point, never that response -- so every exception is
+    swallowed here and printed to stderr (the same channel
+    src/appstate/reqlog.py's request-log line uses) instead of raised.
+    Takes the RAW user id (hashes it internally) so every call site stays a
+    one-line, un-try/except-wrapped call.
+    """
+    try:
+        record_event(hash_user_id(user_id), kind, properties, at=at, db=db)
+    except Exception as exc:  # noqa: BLE001 -- see docstring: must never raise
+        print(f"analytics: record_event_safe failed for kind={kind!r}: {exc!r}",
+              file=sys.stderr, flush=True)
 
 
 def list_events(*, db: Optional[Path] = None) -> List[AnalyticsEvent]:

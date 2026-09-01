@@ -24,7 +24,6 @@ its job to own.
 from __future__ import annotations
 
 import ast
-import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -40,7 +39,7 @@ MODULE_PATH = Path(__file__).resolve().parent.parent / "src" / "appstate" / "eve
 # rather than only catching the third-party packages someone happened to
 # think of.
 _ALLOWED_STDLIB = {
-    "__future__", "hashlib", "json", "os", "sqlite3", "collections",
+    "__future__", "hashlib", "json", "os", "sqlite3", "sys", "collections",
     "contextlib", "dataclasses", "datetime", "pathlib", "typing", "src",
 }
 
@@ -199,29 +198,40 @@ class DailyCountsTests(unittest.TestCase):
                          {"2026-08-31": {events.PAGE_VIEW: 3}})
 
 
-class NoWiredCallSitesTests(unittest.TestCase):
-    """BOUNDARIES: analytics is additive-only and must not be wired into any
-    endpoint yet -- pinned here so a later, unrelated PR that adds a
-    `from src.appstate import events` import to api/ notices it just
-    crossed a deliberate line, not an oversight."""
+class RecordEventSafeTests(unittest.TestCase):
+    """Same file, new obligation: this is the wrapper api/games.py,
+    api/betcheck.py and api/mybets.py actually call -- see events.py's
+    WIRED-IN CALL SITES docstring section. Superseded here is the old
+    `NoWiredCallSitesTests` pin (analytics was additive-only until this
+    task); that guarantee no longer holds on purpose."""
 
-    def test_no_api_module_imports_events_yet(self):
-        api_dir = Path(__file__).resolve().parent.parent / "api"
-        pattern = re.compile(
-            r"^\s*(?:import\s+src\.appstate\.events\b"
-            r"|from\s+src\.appstate\s+import\s+.*\bevents\b"
-            r"|from\s+src\.appstate\.events\s+import\b)")
-        hits = []
-        for path in sorted(api_dir.glob("*.py")):
-            for lineno, line in enumerate(
-                    path.read_text(encoding="utf-8").splitlines(), start=1):
-                if pattern.match(line):
-                    hits.append(f"{path.name}:{lineno}")
-        self.assertEqual(
-            hits, [],
-            "analytics is additive-only for this task -- record_event() "
-            "must not be wired into api/ yet (see events.py's module "
-            f"docstring for the integration note). Offending line(s): {hits}")
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.db = Path(self._tmp.name) / "app.db"
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def test_records_normally_when_nothing_goes_wrong(self):
+        events.record_event_safe(42, events.PAGE_VIEW, {"date": "2026-08-31"},
+                                 db=self.db)
+        rows = events.list_events(db=self.db)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0].kind, events.PAGE_VIEW)
+        self.assertEqual(rows[0].user_hash, events.hash_user_id(42))
+
+    def test_never_raises_even_when_record_event_blows_up(self):
+        """The load-bearing guarantee: a broken events db must cost a
+        missing row, never the caller's request."""
+        from unittest.mock import patch
+        with patch.object(events, "record_event",
+                          side_effect=RuntimeError("disk full")):
+            events.record_event_safe(1, events.PAGE_VIEW, db=self.db)  # no raise
+        self.assertEqual(events.list_events(db=self.db), [])
+
+    def test_swallows_a_bad_kind_too(self):
+        events.record_event_safe(1, "not-a-real-kind", db=self.db)  # no raise
+        self.assertEqual(events.list_events(db=self.db), [])
 
 
 if __name__ == "__main__":

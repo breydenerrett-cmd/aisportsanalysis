@@ -18,7 +18,7 @@ from fastapi.routing import APIRoute
 from pydantic import BaseModel, Field, field_validator
 from starlette.responses import JSONResponse, Response
 
-from src.appstate import ratelimit
+from src.appstate import events, ratelimit
 from src.appstate import savedbets
 from src.appstate.users import User
 
@@ -147,6 +147,14 @@ def _serialize(bet: savedbets.SavedBet) -> dict:
         "price": bet.price,
         "saved_at": bet.saved_at,
         "snapshot_digest": bet.snapshot_digest,
+        # Populated once src.appstate.settlement grades this bet against a
+        # final result (the daily loop's hook); all three stay null until
+        # then, same as a bet that never resolves cleanly (an unparseable
+        # game/side, a doubleheader the free-text game field can't
+        # disambiguate) -- never a guessed outcome. See settlement.py.
+        "settlement_status": bet.settlement_status,
+        "settlement_reason": bet.settlement_reason,
+        "settled_at": bet.settled_at,
     }
 
 
@@ -166,6 +174,11 @@ def create_my_bet(body: SaveBetRequest,
             price=body.price, snapshot_digest=body.snapshot_digest)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    # Success only -- a rejected save (bad price, unparseable game/side) is
+    # not a bet saved, so it must not inflate this count. No stake or game
+    # name rides along in `properties` -- see events.py's WHAT NEVER GOES IN
+    # `properties_json` section.
+    events.record_event_safe(current_user.id, events.BET_SAVED)
     return _serialize(bet)
 
 

@@ -41,7 +41,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Callable, Optional
 
-from src.appstate import freshness
+from src.appstate import events, freshness
 from src.detect import dossier as dossier_mod
 from src.pipeline import briefing
 
@@ -162,10 +162,21 @@ def get_today_payload_cached(date: str, *, fetch_games: Callable[[str], list],
                              read_store: Callable[[], dict],
                              now: Optional[datetime] = None,
                              cache: Optional[freshness.SingleFlightTTLCache] = None,
+                             user_id: Optional[object] = None,
                              **build_slate_kwargs) -> dict:
     """The cached, freshness-flagged /today payload -- what `GET /today`
     should call instead of fetching the schedule and building the slate on
     every single request (see the PATCH NOTE for api/app.py).
+
+    `user_id` (optional, the RAW id -- this function hashes it) records a
+    page_view analytics event on every call that reaches this function,
+    cache hit or rebuild alike, since a cache hit is still a real page view
+    from this caller's perspective. Left as None today: `GET /today` is
+    wired directly in api/app.py, and this task's BOUNDARIES forbid editing
+    that file beyond one admin include_router line, so nothing yet passes
+    `request.state.user_id` through -- see events.py's WIRED-IN CALL SITES
+    docstring section. The parameter exists so that one-line app.py change
+    is all a future task needs.
 
     `fetch_games`/`read_store` are injected callables (in production,
     src.providers.mlb.fetch_games and src.pipeline.history.read_results)
@@ -197,4 +208,7 @@ def get_today_payload_cached(date: str, *, fetch_games: Callable[[str], list],
                             odds_observed_extractor=_newest_odds_observed_utc)
     payload = dict(value)
     payload["freshness"] = meta
+    if user_id is not None:
+        events.record_event_safe(user_id, events.PAGE_VIEW,
+                                 {"route": "/today", "date": date})
     return payload

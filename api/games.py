@@ -28,10 +28,10 @@ import re
 from datetime import datetime, timezone
 from typing import Optional, Tuple
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from src.analysis import gamepayload
-from src.appstate import freshness
+from src.appstate import events, freshness
 from src.pipeline import briefing, history
 from src.providers import mlb
 
@@ -125,8 +125,33 @@ def _build_entries(date: str, **build_slate_kwargs) -> list:
     return entries, notes, meta
 
 
+def _record_page_view(request: Optional[Request], route: str, date: str) -> None:
+    """Analytics page_view on a successful GET, keyed to the caller
+    api.auth.get_current_user already resolved and stashed on
+    `request.state.user_id` -- the router-level auth dependency
+    (api/app.py's `dependencies=_authed`) has always run by the time a
+    route function's own body executes, so that attribute is set on any
+    real, authenticated HTTP request that reaches here.
+
+    `request` defaults to None (like api/auth.py's own `request` parameter)
+    so every existing direct-call test in tests/test_api_games.py -- which
+    calls these functions with positional args and no Request -- keeps
+    working exactly as before, just unauthenticated-and-uninstrumented; only
+    traffic through the real ASGI app carries a populated Request. Delegates
+    to events.record_event_safe, so a broken events db costs a missing data
+    point here too, never this response.
+    """
+    if request is None:
+        return
+    user_id = getattr(request.state, "user_id", None)
+    if user_id is None:
+        return
+    events.record_event_safe(user_id, events.PAGE_VIEW,
+                             {"route": route, "date": date})
+
+
 @router.get("/games/{date}")
-def get_games(date: str) -> dict:
+def get_games(date: str, request: Request = None) -> dict:
     """The slate list for one date: identity, first pitch, market-implied
     consensus, board summary and data-quality flags per game.
 
@@ -138,11 +163,12 @@ def get_games(date: str) -> dict:
     entries, notes, meta = _build_entries(date)
     payload = gamepayload.build_slate_list(entries, date=date, notes=notes)
     payload["freshness"] = meta
+    _record_page_view(request, "/games/{date}", date)
     return payload
 
 
 @router.get("/game/{date}/{away}/{home}")
-def get_game(date: str, away: str, home: str) -> dict:
+def get_game(date: str, away: str, home: str, request: Request = None) -> dict:
     """One game's quick view (top findings, price) and advanced view (every
     dossier section, verbatim) together.
 
@@ -171,13 +197,15 @@ def get_game(date: str, away: str, home: str) -> dict:
             f"{len(matches)} games matched {away}@{home} on {date} (a "
             "doubleheader) -- this payload is the earlier-listed game; the "
             "URL scheme has no way to name the second one")
+    _record_page_view(request, "/game/{date}/{away}/{home}", date)
     return payload
 
 
 @router.get("/changed/{date}")
-def get_changed(date: str) -> dict:
+def get_changed(date: str, request: Request = None) -> dict:
     """The What Changed band for one date's whole slate."""
     entries, _, meta = _build_entries(date)
     payload = gamepayload.build_changed_items(entries, date=date)
     payload["freshness"] = meta
+    _record_page_view(request, "/changed/{date}", date)
     return payload

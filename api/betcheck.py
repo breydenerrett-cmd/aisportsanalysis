@@ -26,12 +26,12 @@ import re
 from typing import Literal
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field, field_validator
 
 from src.analysis import betcheck as betcheck_mod
 from src.analysis import gamepayload
-from src.appstate import ratelimit
+from src.appstate import events, ratelimit
 from src.pipeline import briefing, history
 from src.providers import mlb
 
@@ -132,7 +132,7 @@ def _fetch_entries(date: str) -> list:
 
 
 @router.post("/betcheck")
-def post_betcheck(body: BetCheckRequest,
+def post_betcheck(body: BetCheckRequest, request: Request = None,
                   _rate_limit: None = Depends(_rate_limited)) -> dict:
     """Check one stated bet against the real domain path for its game.
 
@@ -140,6 +140,15 @@ def post_betcheck(body: BetCheckRequest,
     A doubleheader -- the one case a date+club pair cannot disambiguate --
     checks the earlier-listed game and says so in a `note`, matching
     GET /game/{date}/{away}/{home}'s identical rule.
+
+    Records a bet_check_run analytics event on success only (never on the
+    404/400/502 paths above and below -- those are not a completed check),
+    keyed to `request.state.user_id` the same way api/games.py's
+    `_record_page_view` reads it: the router-level auth dependency
+    (api/app.py's `dependencies=_authed`) has already resolved and stashed
+    it by the time this function's body runs on a real request.
+    `request` defaults to None so tests/test_api_betcheck.py's direct,
+    positional-only calls keep working exactly as before.
     """
     entries = _fetch_entries(body.date)
     matches = gamepayload.find_entries(entries, body.away, body.home)
@@ -169,4 +178,9 @@ def post_betcheck(body: BetCheckRequest,
             f"{body.date} (a doubleheader) -- this result checks the "
             "earlier-listed game; the request has no way to name the "
             "second one")
+    if request is not None:
+        user_id = getattr(request.state, "user_id", None)
+        if user_id is not None:
+            events.record_event_safe(user_id, events.BET_CHECK_RUN,
+                                     {"date": body.date})
     return payload

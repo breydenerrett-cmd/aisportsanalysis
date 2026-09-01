@@ -31,7 +31,21 @@ except ImportError:
 
 if _HAVE_FASTAPI:
     from api import betcheck as betcheck_api
+    from src.appstate import events
     from src.providers import mlb
+
+
+class _FakeState:
+    def __init__(self, user_id):
+        self.user_id = user_id
+
+
+class _FakeRequest:
+    """Stands in for the Request object api/betcheck.py reads
+    `request.state.user_id` off of -- see api/auth.py's get_current_user."""
+
+    def __init__(self, user_id=None):
+        self.state = _FakeState(user_id)
 
 
 def _schedule(date="2026-08-31"):
@@ -152,6 +166,71 @@ class PostBetcheckTests(unittest.TestCase):
         blob = json.dumps(payload).lower()
         for forbidden in ("win_probability", "win_prob", "true_probability"):
             self.assertNotIn(forbidden, blob)
+
+
+@unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")
+class BetCheckRunEventTests(unittest.TestCase):
+    """bet_check_run wiring: recorded on a successful check with an authed
+    caller, never without one and never on the 400/404/502 paths."""
+
+    def _body(self, **overrides):
+        defaults = dict(date="2026-08-31", away="BOS", home="NYY", side="home",
+                        american_price=-125)
+        defaults.update(overrides)
+        return betcheck_api.BetCheckRequest(**defaults)
+
+    def test_no_request_records_nothing(self):
+        """Every existing direct-call test above calls post_betcheck with no
+        Request -- must keep behaving exactly as before, just
+        uninstrumented."""
+        with patch.object(mlb, "fetch_games", return_value=_schedule()), \
+             patch.object(events, "record_event_safe") as safe:
+            betcheck_api.post_betcheck(self._body())
+        safe.assert_not_called()
+
+    def test_success_records_bet_check_run_for_the_authed_caller(self):
+        with patch.object(mlb, "fetch_games", return_value=_schedule()), \
+             patch.object(events, "record_event_safe") as safe:
+            betcheck_api.post_betcheck(self._body(), request=_FakeRequest(9))
+        safe.assert_called_once_with(
+            9, events.BET_CHECK_RUN, {"date": "2026-08-31"})
+
+    def test_unknown_game_404_records_nothing(self):
+        with patch.object(mlb, "fetch_games", return_value=_schedule()), \
+             patch.object(events, "record_event_safe") as safe:
+            with self.assertRaises(fastapi.HTTPException):
+                betcheck_api.post_betcheck(
+                    self._body(away="SEA", home="TEX"), request=_FakeRequest(9))
+        safe.assert_not_called()
+
+    def test_schedule_failure_502_records_nothing(self):
+        with patch.object(mlb, "fetch_games", side_effect=mlb.MLBError("boom")), \
+             patch.object(events, "record_event_safe") as safe:
+            with self.assertRaises(fastapi.HTTPException):
+                betcheck_api.post_betcheck(self._body(), request=_FakeRequest(9))
+        safe.assert_not_called()
+
+    def test_malformed_date_400_records_nothing(self):
+        with patch.object(mlb, "fetch_games") as fetch, \
+             patch.object(events, "record_event_safe") as safe:
+            with self.assertRaises(fastapi.HTTPException):
+                betcheck_api.post_betcheck(
+                    self._body(date="not-a-date"), request=_FakeRequest(9))
+        fetch.assert_not_called()
+        safe.assert_not_called()
+
+    def test_no_user_id_on_the_request_records_nothing(self):
+        with patch.object(mlb, "fetch_games", return_value=_schedule()), \
+             patch.object(events, "record_event_safe") as safe:
+            betcheck_api.post_betcheck(self._body(), request=_FakeRequest(None))
+        safe.assert_not_called()
+
+    def test_a_broken_events_db_never_breaks_the_response(self):
+        with patch.object(mlb, "fetch_games", return_value=_schedule()), \
+             patch.object(events, "record_event",
+                          side_effect=RuntimeError("disk full")):
+            payload = betcheck_api.post_betcheck(self._body(), request=_FakeRequest(9))
+        self.assertIn("query", payload)
 
 
 if __name__ == "__main__":

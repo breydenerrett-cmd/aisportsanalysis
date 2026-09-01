@@ -45,8 +45,22 @@ except ImportError:
 
 if _HAVE_FASTAPI:
     from api import games as games_mod
-    from src.appstate import freshness
+    from src.appstate import events, freshness
     from src.providers import mlb
+
+
+class _FakeState:
+    def __init__(self, user_id):
+        self.user_id = user_id
+
+
+class _FakeRequest:
+    """Stands in for the FastAPI Request object api/games.py reads
+    `request.state.user_id` off of -- see api/auth.py's get_current_user,
+    which is what actually populates that attribute on a real request."""
+
+    def __init__(self, user_id=None):
+        self.state = _FakeState(user_id)
 
 
 class _ResetEntriesCache(unittest.TestCase):
@@ -153,6 +167,75 @@ class GetChangedTests(_ResetEntriesCache):
             with self.assertRaises(fastapi.HTTPException) as ctx:
                 games_mod.get_changed("2026-08-31")
         self.assertEqual(ctx.exception.status_code, 502)
+
+
+@unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")
+class PageViewEventTests(_ResetEntriesCache):
+    """page_view wiring: recorded on a successful GET with a real Request
+    carrying a user id, never without one, and never on a 4xx/502."""
+
+    def setUp(self):
+        super().setUp()
+        import tempfile
+        self._tmp = tempfile.TemporaryDirectory()
+        from pathlib import Path
+        self.db = Path(self._tmp.name) / "app.db"
+        self.addCleanup(self._tmp.cleanup)
+
+    def test_no_request_records_nothing(self):
+        """Every existing direct-call test in this file calls these
+        functions with no Request -- must keep behaving exactly as before,
+        just uninstrumented."""
+        with patch.object(mlb, "fetch_games", return_value=_schedule()), \
+             patch.object(events, "record_event_safe") as safe:
+            games_mod.get_games("2026-08-31")
+        safe.assert_not_called()
+
+    def test_get_games_records_page_view_for_the_authed_caller(self):
+        with patch.object(mlb, "fetch_games", return_value=_schedule()), \
+             patch.object(events, "record_event_safe") as safe:
+            games_mod.get_games("2026-08-31", request=_FakeRequest(user_id=7))
+        safe.assert_called_once_with(
+            7, events.PAGE_VIEW, {"route": "/games/{date}", "date": "2026-08-31"})
+
+    def test_get_game_records_page_view_only_on_the_match(self):
+        with patch.object(mlb, "fetch_games", return_value=_schedule()), \
+             patch.object(events, "record_event_safe") as safe:
+            games_mod.get_game("2026-08-31", "BOS", "NYY", request=_FakeRequest(7))
+        safe.assert_called_once_with(
+            7, events.PAGE_VIEW,
+            {"route": "/game/{date}/{away}/{home}", "date": "2026-08-31"})
+
+    def test_get_game_records_nothing_on_a_404(self):
+        with patch.object(mlb, "fetch_games", return_value=_schedule()), \
+             patch.object(events, "record_event_safe") as safe:
+            with self.assertRaises(fastapi.HTTPException):
+                games_mod.get_game("2026-08-31", "SEA", "TEX", request=_FakeRequest(7))
+        safe.assert_not_called()
+
+    def test_get_changed_records_page_view(self):
+        with patch.object(mlb, "fetch_games", return_value=_schedule()), \
+             patch.object(events, "record_event_safe") as safe:
+            games_mod.get_changed("2026-08-31", request=_FakeRequest(7))
+        safe.assert_called_once_with(
+            7, events.PAGE_VIEW, {"route": "/changed/{date}", "date": "2026-08-31"})
+
+    def test_a_request_with_no_user_id_records_nothing(self):
+        """A Request whose state.user_id was never set (should never happen
+        on a real authed request, but this must not crash if it does)."""
+        with patch.object(mlb, "fetch_games", return_value=_schedule()), \
+             patch.object(events, "record_event_safe") as safe:
+            games_mod.get_games("2026-08-31", request=_FakeRequest(user_id=None))
+        safe.assert_not_called()
+
+    def test_a_broken_events_db_never_breaks_the_response(self):
+        """End-to-end through the real record_event_safe (not mocked) --
+        proves the whole chain, not just that games.py calls the wrapper."""
+        with patch.object(mlb, "fetch_games", return_value=_schedule()), \
+             patch.object(events, "record_event",
+                          side_effect=RuntimeError("disk full")):
+            payload = games_mod.get_games("2026-08-31", request=_FakeRequest(7))
+        self.assertEqual(payload["checked_games"], 1)
 
 
 if __name__ == "__main__":
