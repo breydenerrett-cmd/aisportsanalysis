@@ -23,7 +23,7 @@ from src.pipeline import history
 from src.providers import mlb
 
 from api.admin import router as admin_router
-from api.auth import get_current_user, router as auth_router
+from api.auth import get_current_user, require_paid_access, router as auth_router
 from fastapi import Depends
 from api.billing import router as billing_router
 from api.onboarding import router as onboarding_router
@@ -55,10 +55,17 @@ app.include_router(health_router)
 # Private alpha: the whole game surface requires auth (red-team finding 2,
 # 2026-09-01). /health and /meta stay open; revisit if a free tier is decided.
 _authed = [Depends(get_current_user)]
-app.include_router(games_router, dependencies=_authed)
+# The paid surface carries a SECOND gate on top of auth: a subscription
+# customer whose paid period has ended gets a 402 here, while an
+# invite-token beta user (no subscription record at all) is untouched --
+# see api/auth.py's require_paid_access. Deliberately narrow: /billing/*,
+# /support, signup and the funnel beacon stay reachable so an expired
+# customer can actually reactivate or re-subscribe.
+_authed_paid = [Depends(require_paid_access)]
+app.include_router(games_router, dependencies=_authed_paid)
 app.include_router(meta_router)
 app.include_router(web_router)
-app.include_router(odds_router, dependencies=_authed)
+app.include_router(odds_router, dependencies=_authed_paid)
 
 # auth_router carries the admin invite endpoint (disabled unless
 # APP_ADMIN_TOKEN is set -- see api/auth.py); mybets_router requires a
@@ -81,7 +88,7 @@ app.include_router(digest_router, dependencies=_authed)
 
 # POST /betcheck -- the paid-beta core loop; api/betcheck.py owns the
 # fetch-and-build wiring, same separation as the routers above.
-app.include_router(betcheck_router, dependencies=_authed)
+app.include_router(betcheck_router, dependencies=_authed_paid)
 
 
 # -- request logging + structured 500s -------------------------------------
@@ -140,7 +147,7 @@ def _route_template(request: Request) -> str:
     return route.path if route is not None else request.url.path
 
 
-@app.get("/today", dependencies=_authed)
+@app.get("/today", dependencies=_authed_paid)
 def get_today(request: Request) -> dict:
     """Today's slate, as JSON, from the real domain path.
 

@@ -18,12 +18,15 @@ SCHEMA
 billing_customers(user_id PK, stripe_customer_id UNIQUE, created_at)
     One Stripe customer per local user, created once (in
     StripeBillingProvider._ensure_customer) and reused forever after.
-billing_subscriptions(user_id PK, stripe_subscription_id, status, updated_at)
+billing_subscriptions(user_id PK, stripe_subscription_id, status, cancel_at,
+                      current_period_end, updated_at)
     The last subscription status this app has SEEN via a *verified*
     webhook (src.appstate.billing.apply_stripe_webhook_event) -- never a
     live Stripe API call. This is what lets api/billing.py's GET
     /billing/status answer instantly from local state instead of calling
-    out to Stripe on every page load.
+    out to Stripe on every page load, and what has_paid_access() decides
+    entitlement from (`current_period_end` is the paid-through timestamp
+    the cancellation policy turns on).
 billing_checkout_idempotency(user_id, plan_id PK, idempotency_key, created_at)
     Keyed on (user_id, plan_id): a client retrying a failed/timed-out
     checkout attempt for the same plan reuses the same Idempotency-Key
@@ -110,6 +113,13 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
                         conn.execute("PRAGMA table_info(billing_subscriptions)")}
     if "cancel_at" not in existing_sub_cols:
         conn.execute("ALTER TABLE billing_subscriptions ADD COLUMN cancel_at TEXT")
+    if "current_period_end" not in existing_sub_cols:
+        # Added for the cancellation policy (docs/LAUNCH_DECISIONS.md: cancel
+        # stops renewal, paid access runs to the end of the period already
+        # paid for). Without this column there is no honest way to answer
+        # "is this canceled customer still entitled?" without a live Stripe
+        # call on every request -- see has_paid_access below.
+        conn.execute("ALTER TABLE billing_subscriptions ADD COLUMN current_period_end TEXT")
     conn.execute("""
         CREATE TABLE IF NOT EXISTS billing_checkout_idempotency (
             user_id INTEGER NOT NULL,
@@ -166,6 +176,7 @@ def get_user_id_by_customer_ref(stripe_customer_id: str, *, db: Optional[Path] =
 
 def upsert_subscription(user_id: int, stripe_subscription_id: str, status: str, *,
                          cancel_at: Optional[str] = None,
+                         current_period_end: Optional[str] = None,
                          db: Optional[Path] = None) -> None:
     """Overwrite the locally-recorded subscription state for user_id.
     Called only from a verified webhook event -- see
@@ -182,18 +193,31 @@ def upsert_subscription(user_id: int, stripe_subscription_id: str, status: str, 
     epoch by the caller) -- None whenever the webhook/cancel call carried
     none, which also means ON CONFLICT correctly clears a stale value once
     a subscription is no longer scheduled to cancel.
+
+    `current_period_end` is Stripe's end of the period the customer has
+    ALREADY PAID FOR -- the single fact the cancellation policy turns on
+    (cancel stops renewal; access runs to that timestamp). Same
+    ISO-8601-or-None contract as `cancel_at`, and the same
+    clear-on-None ON CONFLICT behavior: a caller that does not know the
+    period end must not leave a stale one behind pretending it does.
+    Callers that merely re-confirm an existing subscription (a redelivered
+    checkout.session.completed) pass the value they already have on record
+    rather than None -- see src.appstate.billing.apply_stripe_webhook_event.
     """
     with _connect(db) as conn:
         conn.execute("""
             INSERT INTO billing_subscriptions
-                (user_id, stripe_subscription_id, status, cancel_at, updated_at)
-            VALUES (?, ?, ?, ?, ?)
+                (user_id, stripe_subscription_id, status, cancel_at,
+                 current_period_end, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT(user_id) DO UPDATE SET
                 stripe_subscription_id = excluded.stripe_subscription_id,
                 status = excluded.status,
                 cancel_at = excluded.cancel_at,
+                current_period_end = excluded.current_period_end,
                 updated_at = excluded.updated_at
-        """, (user_id, stripe_subscription_id, status, cancel_at, _now_iso()))
+        """, (user_id, stripe_subscription_id, status, cancel_at,
+              current_period_end, _now_iso()))
 
 
 def get_subscription_record(user_id: int, *, db: Optional[Path] = None) -> Optional[dict]:
@@ -203,14 +227,81 @@ def get_subscription_record(user_id: int, *, db: Optional[Path] = None) -> Optio
     storage-shaped read, not a provider-protocol call."""
     with _connect(db) as conn:
         row = conn.execute(
-            "SELECT stripe_subscription_id, status, cancel_at, updated_at "
+            "SELECT stripe_subscription_id, status, cancel_at, "
+            "current_period_end, updated_at "
             "FROM billing_subscriptions WHERE user_id = ?",
             (user_id,)).fetchone()
         if not row:
             return None
         return {"stripe_subscription_id": row["stripe_subscription_id"],
                 "status": row["status"], "cancel_at": row["cancel_at"],
+                "current_period_end": row["current_period_end"],
                 "updated_at": row["updated_at"]}
+
+
+# The subscription statuses that mean "this customer is currently paying"
+# -- Stripe's own vocabulary. A subscription SCHEDULED to cancel at period
+# end is still "active" to Stripe (only `cancel_at_period_end` flips), which
+# is exactly the state the cancellation policy has to keep serving.
+PAID_STATUSES = frozenset({"active", "trialing"})
+
+
+def has_paid_access(user_id: int, now: Optional[datetime] = None, *,
+                     db: Optional[Path] = None) -> bool:
+    """Whether user_id is entitled to the PAID surface right now.
+
+    THE POLICY, IN ONE FUNCTION (docs/LAUNCH_DECISIONS.md, LINEHOUND paid
+    beta): cancelling stops renewal, it does not revoke what was already
+    paid for. So a customer keeps access through `current_period_end` and
+    loses it after that timestamp unless they reactivate before it.
+
+    Callers that need "is this even a subscription customer?" ask
+    get_subscription_record first: THIS function answers False for a user
+    with no subscription row at all, which is the right answer for
+    entitlement but NOT the right answer for gating -- invite-token beta
+    users have no billing rows and must keep their access (see
+    api/auth.py's require_paid_access).
+
+    Purely a local-table read, never a live Stripe call: the same reason
+    api/billing.py's GET /billing/status reads locally (it is hit on every
+    page load, and Stripe's rate limits are real). The table is at most as
+    fresh as the last verified webhook, which is an honest lag rather than
+    a fabricated up-to-the-second answer.
+
+    A canceled subscription with NO recorded `current_period_end` is False,
+    never a guess: absent data is absent, and guessing here would mean
+    either serving a lapsed customer forever or cutting a paid one off
+    early. `now` is injectable for deterministic tests, the same pattern
+    src.appstate.users.authenticate uses for token expiry.
+    """
+    record = get_subscription_record(user_id, db=db)
+    if record is None:
+        return False
+    now = now or datetime.now(timezone.utc)
+    period_end = _parse_iso(record.get("current_period_end"))
+    if record["status"] in PAID_STATUSES:
+        # Scheduled-cancel case: Stripe still says "active", so the only
+        # thing that can end entitlement is the period end actually passing
+        # before the `customer.subscription.deleted` webhook lands. With no
+        # cancellation scheduled there is nothing to expire.
+        if record.get("cancel_at") and period_end is not None and now > period_end:
+            return False
+        return True
+    return period_end is not None and now <= period_end
+
+
+def _parse_iso(value: Optional[str]) -> Optional[datetime]:
+    """An ISO-8601 UTC string from this module's own tables as an aware
+    datetime, or None for anything absent/unparsable. Never raises: an
+    unreadable timestamp must degrade to "unknown" (which has_paid_access
+    treats as not-entitled for a canceled sub), not crash a request."""
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value)
+    except (TypeError, ValueError):
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
 
 
 def _scrub_if_expired(conn: sqlite3.Connection, stripe_session_id: str) -> None:

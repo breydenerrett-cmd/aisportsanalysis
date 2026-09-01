@@ -37,7 +37,8 @@
 # session/customer ids -> POST /billing/webhook -> GET /signup/complete
 # (one-time token, second retrieval refused) -> the token exercises the
 # authed core loop (today/onboarding/betcheck/my-bets/digest) -> billing
-# status flips active -> cancel -> status reflects canceled -> GET
+# status flips active -> cancel (scheduled at period end, access continues)
+# -> reactivate -> GET
 # /admin/funnel shows the funnel counts actually moved. Same offline-
 # tolerant rules as scripts/smoke_api.sh (a 502 from the live MLB schedule
 # fetch is a pass, not a failure) -- and the one rule stricter than that
@@ -283,20 +284,41 @@ else
     fail "GET /billing/status reported ${STATUS_VALUE:-<none>}, expected active: ${STATUS_BODY}"
 fi
 
-echo "== step 12: POST /billing/cancel, then GET /billing/status reflects canceled =="
+echo "== step 12: POST /billing/cancel schedules at period end (access continues), then reactivate =="
+# THE POLICY THIS STEP EXISTS TO PROVE: cancelling stops RENEWAL and
+# nothing else. The customer keeps what they paid for through
+# current_period_end, so the honest post-cancel report is still
+# status=active with cancel_at_period_end=true -- a "canceled" here would
+# mean the old immediate-DELETE bug came back and took away access someone
+# already paid for.
 CANCEL_BODY="$(curl -s -X POST "${BASE}/billing/cancel" "${AUTH_HEADER[@]}")"
-CANCEL_STATUS_VALUE="$(echo "$CANCEL_BODY" | python3 -c "import json,sys; print(json.load(sys.stdin).get('status',''))" 2>/dev/null)"
-if [ "$CANCEL_STATUS_VALUE" = "canceled" ]; then
-    pass "POST /billing/cancel reports canceled"
+CANCEL_SCHEDULED="$(echo "$CANCEL_BODY" | python3 -c "import json,sys; d=json.load(sys.stdin); print(bool(d.get('cancel_at_period_end')) and bool(d.get('current_period_end')))" 2>/dev/null)"
+if [ "$CANCEL_SCHEDULED" = "True" ]; then
+    pass "POST /billing/cancel schedules cancel_at_period_end with a period end"
 else
-    fail "POST /billing/cancel reported ${CANCEL_STATUS_VALUE:-<none>}, expected canceled: ${CANCEL_BODY}"
+    fail "POST /billing/cancel did not report a scheduled cancel: ${CANCEL_BODY}"
 fi
 POST_CANCEL_STATUS_BODY="$(curl -s "${AUTH_HEADER[@]}" "${BASE}/billing/status")"
-POST_CANCEL_STATUS_VALUE="$(echo "$POST_CANCEL_STATUS_BODY" | python3 -c "import json,sys; print(json.load(sys.stdin).get('status',''))" 2>/dev/null)"
-if [ "$POST_CANCEL_STATUS_VALUE" = "canceled" ]; then
-    pass "GET /billing/status reflects canceled after cancel"
+POST_CANCEL_STATUS_VALUE="$(echo "$POST_CANCEL_STATUS_BODY" | python3 -c "import json,sys; print(json.load(sys.stdin).get('current_period_end') or '')" 2>/dev/null)"
+if [ -n "$POST_CANCEL_STATUS_VALUE" ]; then
+    pass "GET /billing/status reports the paid-through period end after cancel"
 else
-    fail "GET /billing/status reported ${POST_CANCEL_STATUS_VALUE:-<none>} after cancel, expected canceled"
+    fail "GET /billing/status carried no current_period_end after cancel: ${POST_CANCEL_STATUS_BODY}"
+fi
+# Access must NOT have been revoked by the cancel -- the gate is on the
+# game surface, so /betcheck answering anything but 402 is the proof.
+POST_CANCEL_BETCHECK="$(curl -s -o /dev/null -w '%{http_code}' -X POST "${BASE}/betcheck" "${AUTH_HEADER[@]}" -H 'Content-Type: application/json' -d '{}')"
+if [ "$POST_CANCEL_BETCHECK" != "402" ]; then
+    pass "the game surface still serves a canceled-but-paid-through customer (${POST_CANCEL_BETCHECK})"
+else
+    fail "POST /betcheck returned 402 to a customer still inside the period they paid for"
+fi
+REACTIVATE_BODY="$(curl -s -X POST "${BASE}/billing/reactivate" "${AUTH_HEADER[@]}")"
+REACTIVATE_SCHEDULED="$(echo "$REACTIVATE_BODY" | python3 -c "import json,sys; print(bool(json.load(sys.stdin).get('cancel_at_period_end')))" 2>/dev/null)"
+if [ "$REACTIVATE_SCHEDULED" = "False" ]; then
+    pass "POST /billing/reactivate clears the scheduled cancel"
+else
+    fail "POST /billing/reactivate did not resume renewal: ${REACTIVATE_BODY}"
 fi
 
 echo "== step 13: GET /admin/funnel shows the funnel counts actually moved =="

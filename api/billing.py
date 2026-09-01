@@ -14,7 +14,15 @@ at import time) so a BILLING_PROVIDER/STRIPE_API_KEY env change takes
 effect on the next request, the same freshness api/auth.py's
 authproviders.get_provider() gives AUTH_PROVIDER.
 
-STRIPE TEST MODE: everything here (checkout, webhook, cancel) works
+CANCELLATION POLICY (LINEHOUND paid beta): cancelling stops renewal and
+nothing else -- the customer keeps paid access through the period they
+already paid for (`current_period_end`), and POST /billing/reactivate
+resumes renewal with no gap as long as it is called before then. The
+entitlement decision itself lives in one place,
+src.appstate.customers.has_paid_access, which api/auth.py's
+require_paid_access gates the game surface on.
+
+STRIPE TEST MODE: everything here (checkout, webhook, cancel, reactivate) works
 identically in test mode with a `sk_test_...` STRIPE_API_KEY and Stripe's
 published test card numbers -- Stripe does not distinguish test/live at the
 API-shape level, only by which key is used and which dashboard the
@@ -148,16 +156,31 @@ def billing_status(current_user: User = Depends(get_current_user)) -> dict:
             # no cancellation scheduled, same honest-absence shape as
             # everything else this endpoint reports.
             "cancel_at": record.get("cancel_at"),
+            # The paid-through timestamp: what the customer keeps access
+            # until after cancelling, and what the paid-surface gate
+            # measures "expired" against (src.appstate.customers
+            # .has_paid_access). None when no webhook/cancel response has
+            # carried one -- absent stays absent, never a guessed date.
+            "current_period_end": record.get("current_period_end"),
             "updated_at": record["updated_at"]}
 
 
 @router.post("/billing/cancel")
 def cancel_subscription(current_user: User = Depends(get_current_user),
                          _rate_limit: None = Depends(_rate_limited_billing)) -> dict:
-    """Cancel the authed user's subscription. Requires a local subscription
-    record to already exist (same "not_configured" gate billing_status
-    reads) -- there is nothing honest to cancel for a user billing has
-    never reported a subscription for, real or test-mode.
+    """Stop the authed user's subscription from renewing. Requires a local
+    subscription record to already exist (same "not_configured" gate
+    billing_status reads) -- there is nothing honest to cancel for a user
+    billing has never reported a subscription for, real or test-mode.
+
+    ACCESS IS NOT REVOKED HERE. Per the LINEHOUND paid-beta policy this is
+    a SCHEDULED cancel: the customer keeps everything they already paid for
+    through `current_period_end`, and only stops being entitled after that
+    timestamp (src.appstate.customers.has_paid_access). That is why the
+    response's `status` is usually still "active" with
+    `cancel_at_period_end: true` -- Stripe's own model, reported straight
+    rather than flattened into a "canceled" that would misdescribe a
+    customer who still has three weeks of access left.
 
     Calls `provider.cancel()` (idempotent per its own protocol docstring --
     a double-click is safe) and then writes the result straight into
@@ -187,12 +210,70 @@ def cancel_subscription(current_user: User = Depends(get_current_user),
               f"user_id={current_user.id}: {exc!r}", file=sys.stderr, flush=True)
         return {"status": "error",
                 "message": "cancellation could not be completed; try again shortly"}
-    if subscription.provider_ref:
-        customers.upsert_subscription(
-            current_user.id, subscription.provider_ref, subscription.status)
+    _persist(current_user.id, subscription)
     events.record_event_safe(current_user.id, events.SUBSCRIPTION_CANCELLED)
+    return _subscription_body(subscription)
+
+
+@router.post("/billing/reactivate")
+def reactivate_subscription(current_user: User = Depends(get_current_user),
+                             _rate_limit: None = Depends(_rate_limited_billing)) -> dict:
+    """Undo a scheduled cancellation: renewal resumes, with no gap in
+    access (cancel never took any away -- see its docstring). Mirrors
+    POST /billing/cancel exactly, including the same "not_configured" gate,
+    the same never-a-raw-500 error shaping, and the same
+    write-the-result-locally-rather-than-wait-for-a-webhook rationale.
+
+    Reachable by a customer whose paid period has ALREADY lapsed -- the
+    paid-surface gate deliberately does not cover /billing/* -- but a
+    subscription Stripe has actually ended cannot be resumed: the provider
+    reports the canceled state back unchanged and this returns it, so the
+    caller learns a new checkout is required instead of being told a
+    reactivation happened that did not.
+    """
+    record = customers.get_subscription_record(current_user.id)
+    if record is None:
+        return {"status": "not_configured"}
+    provider = billing.get_billing_provider()
+    try:
+        subscription = provider.reactivate(current_user.id)
+    except billing.BillingProviderNotConfigured as exc:
+        return {"status": "not_configured", "message": str(exc)}
+    except RuntimeError as exc:
+        # Same F3 shape as checkout/cancel above: a live Stripe error must
+        # not reach the caller verbatim or surface as an unhandled 500.
+        print(f"billing: reactivate provider call failed for "
+              f"user_id={current_user.id}: {exc!r}", file=sys.stderr, flush=True)
+        return {"status": "error",
+                "message": "reactivation could not be completed; try again shortly"}
+    _persist(current_user.id, subscription)
+    return _subscription_body(subscription)
+
+
+def _persist(user_id: int, subscription: billing.Subscription) -> None:
+    """Write a provider response straight into the local table, rather than
+    waiting on Stripe's own webhook -- see cancel_subscription's docstring
+    for why (test mode especially may never deliver one). No provider_ref
+    means no real provider subscription was touched (NullBillingProvider's
+    honest non-answer), and there is nothing to record."""
+    if not subscription.provider_ref:
+        return
+    customers.upsert_subscription(
+        user_id, subscription.provider_ref, subscription.status,
+        cancel_at=subscription.cancel_at,
+        current_period_end=subscription.current_period_end)
+
+
+def _subscription_body(subscription: billing.Subscription) -> dict:
+    """One response shape for cancel and reactivate, so a client parses a
+    single structure for both. `cancel_at_period_end` is the field that
+    actually says whether renewal is stopped -- `status` stays "active"
+    for a scheduled cancel, because the customer really is still active."""
     return {"status": subscription.status,
-            "stripe_subscription_id": subscription.provider_ref}
+            "stripe_subscription_id": subscription.provider_ref,
+            "cancel_at_period_end": subscription.cancel_at_period_end,
+            "cancel_at": subscription.cancel_at,
+            "current_period_end": subscription.current_period_end}
 
 
 @router.post("/billing/webhook")

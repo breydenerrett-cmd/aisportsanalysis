@@ -178,18 +178,66 @@ class StripeBillingProviderConfiguredTests(unittest.TestCase):
         self.assertEqual(second.status, "not_configured")
         self.assertEqual(self.transport.calls, [])
 
-    def test_cancel_deletes_an_active_subscription(self):
+    def test_cancel_schedules_at_period_end_instead_of_deleting(self):
+        """The policy in one test: cancel must NOT be an immediate
+        DELETE -- it is a POST setting cancel_at_period_end=true, and the
+        subscription Stripe hands back is still "active" with the paid-
+        through timestamp intact."""
         provider = billing.StripeBillingProvider(
             api_key="sk_test_synthetic", transport=self.transport,
             customer_ref_lookup=lambda user_id: "cus_test_1")
+        period_end = int(datetime(2026, 10, 1, tzinfo=timezone.utc).timestamp())
         self.transport.queue(200, {"data": [{
             "id": "sub_test_1", "status": "active",
+            "current_period_end": period_end,
             "items": {"data": [{"price": {"id": "price_beta"}}]},
         }]})
-        self.transport.queue(200, {"id": "sub_test_1", "status": "canceled"})
+        self.transport.queue(200, {"id": "sub_test_1", "status": "active",
+                                   "cancel_at_period_end": True,
+                                   "cancel_at": period_end,
+                                   "current_period_end": period_end})
         result = provider.cancel(7)
-        self.assertEqual(result.status, "canceled")
-        self.assertEqual(self.transport.calls[-1]["method"], "DELETE")
+        self.assertEqual(result.status, "active")
+        self.assertTrue(result.cancel_at_period_end)
+        self.assertEqual(result.current_period_end, "2026-10-01T00:00:00+00:00")
+        last = self.transport.calls[-1]
+        self.assertEqual(last["method"], "POST")
+        self.assertIn("/v1/subscriptions/sub_test_1", last["url"])
+        self.assertIn("cancel_at_period_end=true", last["data"].decode("utf-8"))
+
+    def test_reactivate_clears_the_scheduled_cancel(self):
+        provider = billing.StripeBillingProvider(
+            api_key="sk_test_synthetic", transport=self.transport,
+            customer_ref_lookup=lambda user_id: "cus_test_1")
+        period_end = int(datetime(2026, 10, 1, tzinfo=timezone.utc).timestamp())
+        self.transport.queue(200, {"data": [{
+            "id": "sub_test_1", "status": "active", "cancel_at_period_end": True,
+            "cancel_at": period_end, "current_period_end": period_end,
+            "items": {"data": [{"price": {"id": "price_beta"}}]},
+        }]})
+        self.transport.queue(200, {"id": "sub_test_1", "status": "active",
+                                   "cancel_at_period_end": False,
+                                   "cancel_at": None,
+                                   "current_period_end": period_end})
+        result = provider.reactivate(7)
+        self.assertEqual(result.status, "active")
+        self.assertFalse(result.cancel_at_period_end)
+        self.assertIsNone(result.cancel_at)
+        self.assertIn("cancel_at_period_end=false",
+                      self.transport.calls[-1]["data"].decode("utf-8"))
+
+    def test_reactivate_is_idempotent_when_nothing_active(self):
+        """A subscription Stripe has actually ended cannot be resumed --
+        the honest answer is the state as it stands, not a fabricated
+        reactivation, and no write call is made at all."""
+        provider = billing.StripeBillingProvider(
+            api_key="sk_test_synthetic", transport=self.transport,
+            customer_ref_lookup=lambda user_id: None)
+        first = provider.reactivate(7)
+        second = provider.reactivate(7)
+        self.assertEqual(first.status, "not_configured")
+        self.assertEqual(second.status, "not_configured")
+        self.assertEqual(self.transport.calls, [])
 
 
 class StripeCheckoutPersistenceWiringTests(unittest.TestCase):
@@ -632,12 +680,27 @@ class FakeTransportGuardTests(unittest.TestCase):
         sub = json.loads(subs.body)["data"][0]
         self.assertEqual(sub["id"], billing.FAKE_TRANSPORT_SUBSCRIPTION_ID)
         self.assertEqual(sub["status"], "active")
+        self.assertEqual(sub["current_period_end"],
+                         billing.FAKE_TRANSPORT_CURRENT_PERIOD_END)
 
+        # The scheduled cancel: still "active", flag set, period end intact.
         cancel = billing._fake_stripe_transport(
-            "DELETE",
+            "POST",
             f"https://api.stripe.com/v1/subscriptions/{billing.FAKE_TRANSPORT_SUBSCRIPTION_ID}",
-            {}, None)
-        self.assertEqual(json.loads(cancel.body)["status"], "canceled")
+            {}, b"cancel_at_period_end=true")
+        cancel_body = json.loads(cancel.body)
+        self.assertEqual(cancel_body["status"], "active")
+        self.assertTrue(cancel_body["cancel_at_period_end"])
+        self.assertEqual(cancel_body["current_period_end"],
+                         billing.FAKE_TRANSPORT_CURRENT_PERIOD_END)
+
+        # ...and its undo, which the fake reads from the request body
+        # rather than assuming, so reactivate is exercised too.
+        reactivate = billing._fake_stripe_transport(
+            "POST",
+            f"https://api.stripe.com/v1/subscriptions/{billing.FAKE_TRANSPORT_SUBSCRIPTION_ID}",
+            {}, b"cancel_at_period_end=false")
+        self.assertFalse(json.loads(reactivate.body)["cancel_at_period_end"])
 
     def test_fake_transport_raises_on_an_unexpected_call(self):
         with self.assertRaises(RuntimeError):

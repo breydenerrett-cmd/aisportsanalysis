@@ -61,12 +61,25 @@ class Subscription:
     """A user's subscription state as this app understands it. `status`
     values mirror what a real provider (Stripe) would report: active,
     canceled, not_configured. `provider_ref` is the provider's own id for
-    this subscription once one exists; None under NullBillingProvider."""
+    this subscription once one exists; None under NullBillingProvider.
+
+    `cancel_at_period_end` / `cancel_at` / `current_period_end` carry the
+    cancellation policy's three load-bearing facts (see
+    StripeBillingProvider.cancel): a SCHEDULED cancel leaves `status`
+    "active" -- that is Stripe's own model, not a fudge -- so the boolean
+    is what distinguishes "renewing" from "runs out at period end", and
+    `current_period_end` is the timestamp entitlement actually expires at
+    (src.appstate.customers.has_paid_access). All three are None/False
+    whenever the provider response did not carry them: absent stays absent.
+    """
     user_id: int
     plan_id: str
     status: str  # "active" | "canceled" | "not_configured"
     provider_ref: Optional[str] = None
     created_at: Optional[str] = None
+    cancel_at_period_end: bool = False
+    cancel_at: Optional[str] = None
+    current_period_end: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------
@@ -121,11 +134,25 @@ class BillingProvider(Protocol):
         ...
 
     def cancel(self, user_id: int) -> Subscription:
-        """Cancel user_id's subscription. Must be idempotent -- calling it
-        on an already-canceled (or never-started) subscription is not an
-        error, it just returns the resulting (already-)canceled state.
-        This is what makes one-click cancel safe to wire to a button that
-        might get double-clicked."""
+        """Stop user_id's subscription from RENEWING. Per the LINEHOUND
+        paid-beta policy this is a scheduled cancel, not an immediate one:
+        the customer keeps what they already paid for through
+        `current_period_end`, and only stops being entitled after it.
+
+        Must be idempotent -- calling it on an already-scheduled,
+        already-canceled, or never-started subscription is not an error, it
+        just returns the resulting state. This is what makes one-click
+        cancel safe to wire to a button that might get double-clicked."""
+        ...
+
+    def reactivate(self, user_id: int) -> Subscription:
+        """Undo a scheduled cancel: renewal resumes, with no gap in access
+        (the customer never lost any -- see cancel above). Only meaningful
+        BEFORE `current_period_end` passes; once the subscription has
+        actually ended, Stripe has nothing left to resume and a new
+        checkout is the honest path, so implementations return the
+        (canceled) state rather than pretending. Idempotent, same
+        double-click rationale as cancel."""
         ...
 
 
@@ -178,6 +205,15 @@ class NullBillingProvider:
         self._record("cancel", user_id)
         self._canceled.add(user_id)
         return Subscription(user_id=user_id, plan_id="beta", status="canceled",
+                             provider_ref=None, created_at=None)
+
+    def reactivate(self, user_id: int) -> Subscription:
+        """The honest counterpart to cancel above: with no billing provider
+        wired there is no scheduled cancel to undo, so this records the
+        intent and answers "not configured" rather than reporting a
+        resumed subscription that does not exist anywhere."""
+        self._record("reactivate", user_id)
+        return Subscription(user_id=user_id, plan_id="none", status="not_configured",
                              provider_ref=None, created_at=None)
 
     def recorded_intents(self) -> List[_RecordedIntent]:
@@ -294,6 +330,14 @@ FAKE_TRANSPORT_SUBSCRIPTION_ID = "sub_funnelsmoke_synthetic"
 FAKE_TRANSPORT_PRICE_ID = "price_synthetic"
 FAKE_TRANSPORT_CHECKOUT_URL = "https://checkout.stripe.example/funnelsmoke_synthetic"
 
+# The paid-through timestamp the fake's subscription reports. Far future and
+# FIXED (not now+30d) so every run of scripts/funnel_smoke.sh sees byte-
+# identical Stripe responses -- the whole point of this stand-in -- while
+# still being on the entitled side of src.appstate.customers.has_paid_access,
+# which is what makes the script's post-cancel "access continues" assertion
+# meaningful rather than accidental. 2099-01-01T00:00:00Z.
+FAKE_TRANSPORT_CURRENT_PERIOD_END = 4070908800
+
 
 def _fake_stripe_transport(method: str, url: str, headers: Dict[str, str],
                             data: Optional[bytes]) -> _TransportResponse:
@@ -302,7 +346,8 @@ def _fake_stripe_transport(method: str, url: str, headers: Dict[str, str],
     answers the exact four calls StripeBillingProvider makes along
     scripts/funnel_smoke.sh's path -- create a customer, open a checkout
     session, read that customer's subscriptions (POST /billing/cancel's
-    pre-cancel status check), and delete a subscription. Anything else
+    pre-cancel status check), and update a subscription's
+    `cancel_at_period_end` (both cancel and reactivate). Anything else
     raises rather than fabricating a shape this hook was never designed to
     answer, since a silently-wrong canned response would be a worse bug
     than a loud one.
@@ -316,10 +361,25 @@ def _fake_stripe_transport(method: str, url: str, headers: Dict[str, str],
         body = {"data": [{
             "id": FAKE_TRANSPORT_SUBSCRIPTION_ID,
             "status": "active",
+            "cancel_at_period_end": False,
+            "current_period_end": FAKE_TRANSPORT_CURRENT_PERIOD_END,
             "items": {"data": [{"price": {"id": FAKE_TRANSPORT_PRICE_ID}}]},
         }]}
-    elif method == "DELETE" and path == f"/v1/subscriptions/{FAKE_TRANSPORT_SUBSCRIPTION_ID}":
-        body = {"status": "canceled"}
+    elif method == "POST" and path == f"/v1/subscriptions/{FAKE_TRANSPORT_SUBSCRIPTION_ID}":
+        # A scheduled cancel (or its undo) -- Stripe echoes the whole
+        # subscription back, still "active", with the flag as sent. The
+        # request body is the only thing that distinguishes the two, so it
+        # is parsed rather than assumed; `cancel_at` mirrors the period end
+        # exactly as Stripe does for a cancel_at_period_end subscription.
+        form = urllib.parse.parse_qs((data or b"").decode("utf-8"))
+        scheduled = form.get("cancel_at_period_end", ["false"])[0] == "true"
+        body = {
+            "id": FAKE_TRANSPORT_SUBSCRIPTION_ID,
+            "status": "active",
+            "cancel_at_period_end": scheduled,
+            "cancel_at": FAKE_TRANSPORT_CURRENT_PERIOD_END if scheduled else None,
+            "current_period_end": FAKE_TRANSPORT_CURRENT_PERIOD_END,
+        }
     else:
         raise RuntimeError(
             f"funnel-smoke fake transport has no canned response for "
@@ -530,20 +590,74 @@ class StripeBillingProvider:
         plan_id = (items[0].get("price") or {}).get("id", "none")
         status = "active" if sub.get("status") == "active" else "canceled"
         return Subscription(user_id=user_id, plan_id=plan_id, status=status,
-                             provider_ref=sub.get("id"), created_at=None)
+                             provider_ref=sub.get("id"), created_at=None,
+                             cancel_at_period_end=bool(sub.get("cancel_at_period_end")),
+                             cancel_at=_epoch_to_iso(sub.get("cancel_at")),
+                             current_period_end=_epoch_to_iso(sub.get("current_period_end")))
 
     def cancel(self, user_id: int) -> Subscription:
-        """Idempotent, same contract as NullBillingProvider.cancel: calling
-        this on an already-canceled or never-started subscription returns
-        the resulting state rather than erroring."""
+        """SCHEDULED cancel -- `POST /v1/subscriptions/{id}` with
+        `cancel_at_period_end=true`, which is Stripe's documented way to
+        stop renewal without clawing back the period the customer already
+        paid for. Deliberately NOT `DELETE /v1/subscriptions/{id}` (what
+        this used to do): that ends the subscription immediately, which
+        would take away access that was already bought and paid for. See
+        the policy in src.appstate.customers.has_paid_access.
+
+        The subscription Stripe hands back is still `status: "active"` --
+        only `cancel_at_period_end` flips -- and that is what gets recorded
+        locally, because it is the truth. Entitlement is decided from
+        status + cancel_at + current_period_end together, never from the
+        status string alone.
+
+        Idempotent, same contract as NullBillingProvider.cancel: an
+        already-scheduled subscription just gets the same flag set again,
+        and an already-canceled or never-started one returns its current
+        state without a write call at all.
+        """
         self._require_configured()
         current = self.subscription_status(user_id)
         if current.status != "active" or not current.provider_ref:
             return current
-        body = self._call("DELETE", f"/v1/subscriptions/{current.provider_ref}")
-        return Subscription(user_id=user_id, plan_id=current.plan_id,
-                             status="canceled" if body.get("status") != "active" else "active",
-                             provider_ref=current.provider_ref, created_at=current.created_at)
+        return self._set_cancel_at_period_end(user_id, current, True)
+
+    def reactivate(self, user_id: int) -> Subscription:
+        """Resume renewal on a subscription scheduled to cancel: the same
+        `POST /v1/subscriptions/{id}` with `cancel_at_period_end=false`.
+
+        There is no access gap to repair -- cancel never took access away
+        in the first place -- so this only has to clear the flag. A
+        subscription that has already ENDED reports "canceled" from
+        subscription_status and is returned unchanged: Stripe cannot resume
+        a finished subscription, and inventing a success here would be the
+        exact fabrication this module refuses everywhere else. Idempotent
+        on an already-renewing subscription.
+        """
+        self._require_configured()
+        current = self.subscription_status(user_id)
+        if current.status != "active" or not current.provider_ref:
+            return current
+        return self._set_cancel_at_period_end(user_id, current, False)
+
+    def _set_cancel_at_period_end(self, user_id: int, current: Subscription,
+                                   value: bool) -> Subscription:
+        """The one Stripe write both cancel and reactivate make -- they
+        differ only in the flag, so the response-shaping (which is where the
+        policy's three load-bearing fields come from) lives once."""
+        body = self._call("POST", f"/v1/subscriptions/{current.provider_ref}",
+                           form={"cancel_at_period_end": "true" if value else "false"})
+        return Subscription(
+            user_id=user_id, plan_id=current.plan_id,
+            status="active" if body.get("status") == "active" else "canceled",
+            provider_ref=current.provider_ref, created_at=current.created_at,
+            cancel_at_period_end=bool(body.get("cancel_at_period_end")),
+            cancel_at=_epoch_to_iso(body.get("cancel_at")),
+            # Fall back to what subscription_status already read rather than
+            # None: the update response always carries this, but a period end
+            # this app already knows must never be downgraded to "unknown"
+            # (which has_paid_access reads as not-entitled).
+            current_period_end=(_epoch_to_iso(body.get("current_period_end"))
+                                or current.current_period_end))
 
 
 def verify_stripe_webhook_signature(payload: bytes, sig_header: Optional[str], secret: str, *,
@@ -632,9 +746,13 @@ def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> Non
         regardless of the object's own `status` field, since a deleted
         subscription is canceled by definition even if Stripe's payload
         still shows its last pre-deletion status. `cancel_at` (Stripe's
-        "scheduled to cancel at period end" unix timestamp) rides along
-        when present, so GET /billing/status can show it without a live
-        Stripe call.
+        "scheduled to cancel at period end" unix timestamp) and
+        `current_period_end` (the paid-through timestamp entitlement
+        expires at -- src.appstate.customers.has_paid_access) ride along
+        when present, so GET /billing/status and the paid-surface gate can
+        both answer without a live Stripe call. A SCHEDULED cancel arrives
+        as `updated` with status still "active" and is recorded that way,
+        which is why entitlement never reads the status string alone.
 
     Any other event type, or one of these missing the fields it needs
     (e.g. no local mapping yet for a subscription.updated whose
@@ -653,7 +771,23 @@ def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> Non
             return
         customers.upsert_customer(user_id, customer_id, db=db)
         if subscription_id:
-            customers.upsert_subscription(user_id, subscription_id, "active", db=db)
+            # A checkout session carries no period end or cancellation
+            # state of its own, and upsert_subscription clears what it is
+            # not given -- so anything already on record is carried
+            # through. Without this, a REDELIVERED checkout.session
+            # .completed (Stripe retries for days) would wipe the
+            # current_period_end a later subscription event established and
+            # silently un-schedule a cancel the customer actually made.
+            # Only ever carried through for the SAME subscription id: a
+            # customer who resubscribed has a brand-new subscription, and
+            # the old one's period end says nothing about it.
+            known = customers.get_subscription_record(user_id, db=db) or {}
+            if known.get("stripe_subscription_id") != subscription_id:
+                known = {}
+            customers.upsert_subscription(
+                user_id, subscription_id, "active",
+                cancel_at=known.get("cancel_at"),
+                current_period_end=known.get("current_period_end"), db=db)
         _activate_signup(user_id, obj.get("id"), db=db)
     elif event_type in ("customer.subscription.updated", "customer.subscription.deleted"):
         customer_id = obj.get("customer")
@@ -667,7 +801,8 @@ def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> Non
                   else ("active" if obj.get("status") == "active" else "canceled"))
         customers.upsert_subscription(
             user_id, subscription_id, status,
-            cancel_at=_epoch_to_iso(obj.get("cancel_at")), db=db)
+            cancel_at=_epoch_to_iso(obj.get("cancel_at")),
+            current_period_end=_epoch_to_iso(obj.get("current_period_end")), db=db)
 
 
 def _epoch_to_iso(epoch: object) -> Optional[str]:

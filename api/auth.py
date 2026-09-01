@@ -13,6 +13,11 @@ module used to do inline -- see authproviders.InviteTokenProvider's
 docstring. Clerk (docs/LAUNCH_DECISIONS.md Decision 1) becomes the active
 provider later via AUTH_PROVIDER=clerk, with no change to this file.
 
+PAID SURFACE: get_current_user answers "who is this?", never "have they
+paid?" -- `require_paid_access` below is the second, separate gate the game
+surface carries, and it is a no-op for any user with no subscription record
+(the invite-token beta). See its docstring.
+
 ADMIN INVITE ENDPOINT: gated by APP_ADMIN_TOKEN. Absent env var means the
 endpoint is DISABLED (404), not "open with no check" -- an admin surface
 that silently accepts every request the moment someone forgets to set an
@@ -40,6 +45,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 
 from src.appstate import authproviders
+from src.appstate import customers
 from src.appstate import events
 from src.appstate import users as users_store
 
@@ -86,6 +92,39 @@ def get_current_user(authorization: Optional[str] = Header(default=None),
         request.state.user_id = user.id
     _record_invite_redeemed_once(authorization, user)
     return user
+
+
+def require_paid_access(
+        current_user: users_store.User = Depends(get_current_user)) -> users_store.User:
+    """FastAPI dependency for the PAID surface (/today, /games, /odds,
+    /betcheck): authenticate, then refuse a SUBSCRIPTION customer whose
+    paid period has run out.
+
+    TWO KINDS OF USER, ON PURPOSE. An invite-token beta user has no billing
+    row at all (nobody ever charged them), and this dependency must leave
+    them exactly as they were -- gating them would revoke the private
+    alpha's whole user base the day billing shipped. Only a user this app
+    has an actual subscription record for is entitled-checked, and only
+    against local state (src.appstate.customers.has_paid_access -- never a
+    live Stripe call on a page-load path).
+
+    402, not 401/403: the credential is fine and the account is fine, the
+    subscription lapsed -- and the caller's fix is to pay again, which is
+    exactly what 402 Payment Required says. Same structured
+    {"error", "message"} detail shape as this module's 401s, so a client
+    parses one thing. /billing/*, /support and the signup/funnel routes
+    deliberately do NOT carry this dependency: an expired customer must
+    still be able to reach POST /billing/reactivate or start a new
+    checkout, which a fully-locked account could not.
+    """
+    if customers.get_subscription_record(current_user.id) is None:
+        return current_user
+    if customers.has_paid_access(current_user.id):
+        return current_user
+    raise HTTPException(status_code=402, detail={
+        "error": "subscription_expired",
+        "message": "your paid access ended at the end of the period you paid "
+                   "for; reactivate or start a new subscription to continue"})
 
 
 def _record_invite_redeemed_once(authorization: Optional[str],
