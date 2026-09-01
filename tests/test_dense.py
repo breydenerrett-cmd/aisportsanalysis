@@ -217,6 +217,38 @@ class ScheduleHorizonTests(unittest.TestCase):
         self.assertTrue(all(r["home_team"] is None for r in rows))
 
 
+class AnyGameScheduledTests(unittest.TestCase):
+    """The free-schedule gate the daily snapshot spends against.
+
+    snapshots.capture() bills the whole-sport odds request whether the slate
+    has fifteen games or zero, so a slate-less off-season day would cost ~3
+    credits every day for nothing. any_game_scheduled() is the free question
+    that stops that -- and it is three-valued so that a schedule OUTAGE (None)
+    never masquerades as an empty season, which would drop irreplaceable
+    movement on a live day.
+    """
+
+    def setUp(self):
+        self.real_upcoming = dense._upcoming
+
+    def tearDown(self):
+        dense._upcoming = self.real_upcoming
+
+    def test_true_when_the_schedule_lists_games(self):
+        dense._upcoming = lambda now=None, timeout=20: _rows(
+            "2026-09-01T22:40:00Z")
+        self.assertIs(dense.any_game_scheduled(now=NOW), True)
+
+    def test_false_only_when_the_schedule_is_reachable_and_empty(self):
+        dense._upcoming = lambda now=None, timeout=20: []
+        self.assertIs(dense.any_game_scheduled(now=NOW), False)
+
+    def test_none_when_the_schedule_is_unreachable(self):
+        # Unknown, never False -- the caller must spend rather than skip.
+        dense._upcoming = lambda now=None, timeout=20: None
+        self.assertIsNone(dense.any_game_scheduled(now=NOW))
+
+
 class HourlyCadenceClosePassTests(unittest.TestCase):
     """The F5 close pass under the REAL schedule, not a convenient one.
 

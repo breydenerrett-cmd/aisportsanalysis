@@ -1283,7 +1283,18 @@ def cmd_daily(args) -> int:
 
     # 1. Snapshot first. This is the only irreplaceable step.
     def do_snapshot():
-        from src.pipeline import snapshots
+        from src.pipeline import dense, snapshots
+        # Free-schedule gate before the one paid call in the daily loop.
+        # snapshots.capture() bills the whole-sport odds request the same
+        # whether the slate has 15 games or zero, so a slate-less off-season
+        # day would otherwise cost ~3 credits every day for nothing. dense's
+        # hourly loop already gates on this same free check; the daily loop
+        # did not. None (schedule unreachable) is NOT a skip -- missed
+        # movement on a live day cannot be recovered, so unknown means spend.
+        if dense.any_game_scheduled() is False:
+            print("      skipped: no MLB games scheduled -- no paid capture "
+                  "(off-season / dead day)")
+            return
         result = snapshots.capture()
         if not result["configured"]:
             print(f"      skipped: {result['message']}")
@@ -1442,7 +1453,16 @@ def cmd_snapshot(args) -> int:
     depends entirely on having started early. Every run that does not happen is market data
     that can never be recovered.
     """
-    from src.pipeline import snapshots
+    from src.pipeline import dense, snapshots
+
+    # Same free-schedule gate the daily loop uses: never spend the paid
+    # whole-sport capture on a day with zero games on the board. Unknown
+    # (schedule endpoint down) still captures -- irreplaceable movement is
+    # worth the credit; a confirmed empty slate is not.
+    if dense.any_game_scheduled() is False:
+        print("skipped: no MLB games scheduled -- no paid capture "
+              "(off-season / dead day)")
+        return EXIT_OK
 
     result = snapshots.capture()
     if not result["configured"]:

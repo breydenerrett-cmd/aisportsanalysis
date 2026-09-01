@@ -209,6 +209,18 @@ schedule, not assumed:
     `do_snapshot()` on the same free-schedule check `dense.py` already uses,
     so a slate-less day costs the same zero credits the hourly loop already
     achieves.
+  - **DONE 2026-09-01.** `dense.any_game_scheduled()` (the same free
+    yesterday/today/tomorrow schedule check `dense._upcoming` powers)
+    now gates both the daily-loop snapshot step (`do_snapshot`) and the
+    standalone `cmd_snapshot`: a slate confirmed empty skips the paid
+    capture; a schedule OUTAGE (`None`) still captures, because missed
+    movement on a live day is unrecoverable and an outage is not evidence
+    the season is over. Regression tests: `tests/test_dense.py`
+    (`AnyGameScheduledTests`) and `tests/test_cli_snapshot_gate.py`. The
+    off-season daily cost is now the same ~zero the hourly loop already
+    had. The `x-requests-used`-delta verification below is still the honest
+    next step — the gate removes the spend on a confirmed-empty slate, but
+    the true-off-season billing question it names is unchanged.
 - Git behavior: `daily_loop.sh` stages `data`, `docs/OVERNIGHT_RUN.md`,
   `artifacts`, resets the always-regenerated `demo_latest.html`, and commits
   only `if ! git diff --cached --quiet`. On a day where `snapshot` wrote one

@@ -2,6 +2,22 @@
 
 **Started 2026-08-28.** Chat stays short; this is the detail.
 
+## 2026-09-01 update — season-end credit gate on the daily snapshot
+
+Closed the one non-zero off-season cost `docs/SEASON_END_PLAN.md` §2 found:
+the daily loop's `do_snapshot` (and the standalone `snapshot` command) billed
+the whole-sport odds call every day regardless of whether MLB had any games,
+so a slate-less off-season day cost ~3 credits for nothing. Both now gate on
+`dense.any_game_scheduled()` — the same FREE yesterday/today/tomorrow schedule
+check the hourly `dense` loop already uses. A confirmed-empty slate skips the
+paid capture; a schedule OUTAGE (`None`) still captures, because missed
+movement on a live day is unrecoverable and an outage is not proof the season
+is over. Regression tests in `tests/test_dense.py` (`AnyGameScheduledTests`)
+and new `tests/test_cli_snapshot_gate.py`. Full suite green. No behavior
+change in-season (there is always a game today); the effect is entirely at the
+season boundary and through the winter. Staging unaffected. Launch Ops (Stripe)
+and the design session untouched.
+
 ## 2026-08-29 update
 
 Stage 1 (point-in-time rebuild) and Stage 2 (full 2023-24 discovery rerun)

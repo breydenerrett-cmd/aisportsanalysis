@@ -208,6 +208,29 @@ def _upcoming(now=None, timeout=20):
     return rows
 
 
+def any_game_scheduled(now=None, timeout=20):
+    """Is MLB playing anywhere in the yesterday/today/tomorrow window?
+
+    A FREE-schedule question, for callers that spend a paid credit only when
+    a game is actually on the board (the daily snapshot). Reuses `_upcoming`
+    so the same West-Coast/Eastern-date correctness lives in one place.
+
+    Three-valued on purpose:
+      True  -- the schedule was reachable and lists at least one game.
+      False -- the schedule was reachable and lists ZERO games (the off-season
+               / a true dead day). This is the only signal that justifies
+               skipping a paid capture.
+      None  -- the free schedule endpoint was unreachable. The caller must NOT
+               skip on this: a schedule outage is not evidence the season is
+               over, and line movement missed on a live day cannot be
+               recovered. Unknown means spend, the safe direction.
+    """
+    events = _upcoming(now=now, timeout=timeout)
+    if events is None:
+        return None
+    return len(events) > 0
+
+
 def _start_of(game):
     return (game.get("gameDate") or (game.get("gameData") or {})
             .get("datetime", {}).get("dateTime"))
