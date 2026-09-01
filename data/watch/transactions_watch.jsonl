@@ -168,3 +168,40 @@
 {"category": "il_transfer", "date": "2026-09-01", "first_seen_utc": "2026-09-01T19:16:34.132451+00:00", "player": "Drew Millas", "player_id": 686452, "team": "WSH", "transaction_id": 940477}
 {"category": "other", "date": "2026-09-01", "first_seen_utc": "2026-09-01T19:16:34.132451+00:00", "player": "Yohandy Morales", "player_id": 691002, "team": "WSH", "transaction_id": 940478}
 {"category": "other", "date": "2026-09-01", "first_seen_utc": "2026-09-01T19:16:34.132451+00:00", "player": "Jared Simpson", "player_id": 688692, "team": "WSH", "transaction_id": 940479}
+{"fetched_utc": "2026-09-01T20:16:25.064275+00:00", "game_date": "2026-09-01", "poll": true}
+{"category": "il_placement", "date": "2026-08-31", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Christian Franklin", "player_id": 681047, "team": "BAL", "transaction_id": 940510}
+{"category": "recalled", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Nolan Hoffman", "player_id": 676510, "team": "KC", "transaction_id": 940483}
+{"category": "recalled", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Easton McGee", "player_id": 668834, "team": "KC", "transaction_id": 940484}
+{"category": "other", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Drew Waters", "player_id": 671221, "team": "KC", "transaction_id": 940485}
+{"category": "il_transfer", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Joshua Kuroda-Grauer", "player_id": 811965, "team": "OAK", "transaction_id": 940486}
+{"category": "il_activation", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Denzel Clarke", "player_id": 672016, "team": "OAK", "transaction_id": 940488}
+{"category": "recalled", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Yunior Tur", "player_id": 814305, "team": "OAK", "transaction_id": 940489}
+{"category": "il_activation", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Josh Smith", "player_id": 669701, "team": "TOR", "transaction_id": 940498}
+{"category": "recalled", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Sean Keys", "player_id": 815873, "team": "TOR", "transaction_id": 940499}
+{"category": "recalled", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Ricky Tiedemann", "player_id": 694357, "team": "TOR", "transaction_id": 940500}
+{"category": "designated", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Daz Cameron", "player_id": 663662, "team": "TOR", "transaction_id": 940501}
+{"category": "il_activation", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Joe Mantiply", "player_id": 573009, "team": "TOR", "transaction_id": 940503}
+{"category": "il_activation", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Luis Robert Jr.", "player_id": 673357, "team": "BAL", "transaction_id": 940506}
+{"category": "other", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Luis De Le\u00f3n", "player_id": 801725, "team": "BAL", "transaction_id": 940507}
+{"category": "other", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Albert Su\u00e1rez", "player_id": 544150, "team": "BAL", "transaction_id": 940508}
+{"category": "recalled", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Heston Kjerstad", "player_id": 677008, "team": "BAL", "transaction_id": 940509}
+{"category": "optioned", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Cade Povich", "player_id": 700249, "team": "BAL", "transaction_id": 940511}
+{"category": "designated", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Cameron Weston", "player_id": 687721, "team": "BAL", "transaction_id": 940512}
+{"category": "designated", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Nick Raquet", "player_id": 675919, "team": "BAL", "transaction_id": 940514}
+{"category": "recalled", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Dylan Ross", "player_id": 697811, "team": "NYM", "transaction_id": 940515}
+{"category": "recalled", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Nick Morabito", "player_id": 703492, "team": "NYM", "transaction_id": 940516}
+{"category": "il_activation", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Drew Waters", "player_id": 671221, "team": "KC", "transaction_id": 940517}
+{"category": "recalled", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Tyler Ferguson", "player_id": 621053, "team": "CHC", "transaction_id": 940518}
+{"category": "other", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "BJ Murray Jr.", "player_id": 681230, "team": "CHC", "transaction_id": 940519}
+{"category": "recalled", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Bo Naylor", "player_id": 666310, "team": "MIL", "transaction_id": 940529}
+{"category": "il_activation", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "JoJo Romero", "player_id": 668941, "team": "MIL", "transaction_id": 940531}
+{"category": "signed", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Justin Topa", "player_id": 623437, "team": "NYY", "transaction_id": 940537}
+{"category": "recalled", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Adael Amador", "player_id": 691182, "team": "COL", "transaction_id": 940543}
+{"category": "recalled", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:16:25.064275+00:00", "player": "Blas Casta\u00f1o", "player_id": 680604, "team": "COL", "transaction_id": 940544}
+{"fetched_utc": "2026-09-01T20:16:27.946243+00:00", "game_date": "2026-09-01", "poll": true}
+{"fetched_utc": "2026-09-01T20:31:30.017873+00:00", "game_date": "2026-09-01", "poll": true}
+{"category": "recalled", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:31:30.017873+00:00", "player": "Beau Brieske", "player_id": 689225, "team": "DET", "transaction_id": 940557}
+{"category": "il_activation", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:31:30.017873+00:00", "player": "Riley Greene", "player_id": 682985, "team": "DET", "transaction_id": 940558}
+{"fetched_utc": "2026-09-01T20:46:32.683376+00:00", "game_date": "2026-09-01", "poll": true}
+{"category": "recalled", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:46:32.683376+00:00", "player": "Ronel Blanco", "player_id": 669854, "team": "HOU", "transaction_id": 940561}
+{"category": "recalled", "date": "2026-09-01", "first_seen_utc": "2026-09-01T20:46:32.683376+00:00", "player": "Jake Meyers", "player_id": 676694, "team": "HOU", "transaction_id": 940562}
