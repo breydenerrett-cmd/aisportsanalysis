@@ -45,6 +45,16 @@ personalization, full alerts, SEO/content build.
 
 ## PHASE LOG
 
+- 2026-09-01 ~01:50: Wave 4 landed (bounded provider fetches + one-retry
+  policy, 50-concurrent load smoke zero-5xx, structural reference client
+  at /web with traversal-guarded static router, live-verified). Suite
+  2,682; ci.sh green. Consolidation lane running (API_CONTRACTS
+  reconciliation incl. /today mismatch + odds rows, invite_redeemed
+  first-use marker, db backup notes). BACKEND IS FEATURE-COMPLETE FOR
+  PRIVATE ALPHA pending: Fly deploy token, Clerk org + JWT dep, Stripe
+  test key, final legal copy, and the approved design system attaching
+  to web/'s documented hooks.
+
 - 2026-09-01 ~01:20: Wave 3 fully landed (billing persistence, analytics
   + admin ops, My Bets settlement, scripts/ci.sh) - ci.sh green end to
   end (suite 2,655 + boundary/vocab gates + live authed smoke). V3 still
