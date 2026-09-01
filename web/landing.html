@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>[WORKING TITLE] — beta</title>
+</head>
+<body>
+<header data-hook="landing-header">
+<p data-hook="product-name">[WORKING TITLE]</p>
+</header>
+
+<main>
+
+<!-- Hero variant A ("Show your work") -- the one variant rendered today.
+     Copy verbatim from docs/CONTENT_LANDING.md section 1; the product name
+     is unresolved (three finalists, none cleared per that doc), so every
+     mention here stays [WORKING TITLE] until it locks. -->
+<section data-view="hero" aria-label="hero" data-hook="hero">
+<h1 data-hook="hero-headline">Every claim, checkable.</h1>
+
+<p data-hook="hero-subhead">[WORKING TITLE] shows you the actual price, the
+actual market consensus, and what changed since this morning — for one bet
+you're about to make. No hidden math, no promised outcome.</p>
+
+<a href="index.html#/signup" data-hook="cta-primary">Check a bet</a>
+</section>
+
+<!--
+Hero variants B and C (docs/CONTENT_LANDING.md section 1) -- HYPOTHESES,
+not shown today, kept here per this task's brief for the design session
+and for whoever locks the final hero choice.
+
+Hero B -- "What we don't know, out loud"
+Headline: We publish our losses too.
+Subhead: Four pre-registered research families, dozens of tested ideas,
+zero that beat the market. We'll tell you exactly which ones we ruled out
+— and why that's the point.
+Primary CTA: See the research record
+
+Hero C -- "Line shopping, made checkable"
+Headline: Find the better price. See the arithmetic.
+Subhead: [WORKING TITLE] compares the price you'd take against the best
+one on the board right now, and shows you what that's actually worth —
+win or lose — before you place the bet.
+Primary CTA: Try the price check
+-->
+
+<!-- How it works -- docs/CONTENT_LANDING.md section 2, verbatim. -->
+<section data-view="how-it-works" aria-label="how it works" data-hook="how-it-works">
+<h2>How it works</h2>
+
+<article data-hook="how-it-works-today">
+<h3>Today</h3>
+
+<p>Open the app and see today's slate — one entry per game, pulled fresh
+for the current date. Each game shows whether a market is currently priced
+for it and how old that price is; if there's no board yet, we say so
+instead of guessing.</p>
+</article>
+
+<article data-hook="how-it-works-game">
+<h3>Game</h3>
+
+<p>Tap into any game for a quick view and a full dossier: team and venue
+identity, the market-implied consensus for each side (a fraction derived
+from de-vigged prices, not a prediction we're making), and the supporting
+detail behind it. When there isn't enough market to form a consensus,
+that's shown as "unavailable," not silently dropped.</p>
+</article>
+
+<article data-hook="how-it-works-bet-check">
+<h3>Bet Check</h3>
+
+<p>Tell us the game, the side, and the price you'd take. We check it
+against the best price currently quoted, show the market-implied consensus
+separately, and lay out the supporting case and the honest counterargument
+for that side — including a line that says plainly when we found no
+significant counterargument. We never fill in a recommendation: that field
+is permanently empty until a validated prediction engine exists, which it
+does not today.</p>
+</article>
+
+<article data-hook="how-it-works-odds">
+<h3>Odds</h3>
+
+<p>Browse the full market board for the slate — every game's quoted prices
+across books, the widest spread on the board, and how often books disagree
+on who's favored. Every price is timestamped with when we last observed
+it.</p>
+</article>
+
+<article data-hook="how-it-works-what-changed">
+<h3>What Changed</h3>
+
+<p>A running note of what moved since a stated point in time (e.g. "since
+this morning") for the whole slate — lineup posts, scratches, roster moves
+— so you're not re-reading a stale page.</p>
+</article>
+</section>
+
+<!-- The honesty story -- docs/CONTENT_LANDING.md section 3, verbatim. -->
+<section data-view="honesty-story" aria-label="the honesty story" data-hook="honesty-story">
+<h2 data-hook="honesty-story-headline">We ran the numbers. Most ideas don't
+survive contact with real games. We tell you which ones didn't, instead of
+quietly shelving them.</h2>
+
+<p>Between 2023 and 2024, we pre-registered four separate research families
+against MLB moneyline betting — a total of 25 distinct ideas at the
+detector/mechanism level (35 counting every registered detector-by-market
+combination) — everything from bullpen workload and platoon matchups to
+market-structure effects like fading recent price moves and cross-book
+price dispersion.</p>
+
+<p data-hook="honesty-story-zero-survivors"><strong>Zero of them survived
+our own falsification tests.</strong></p>
+
+<p>One idea — betting against a book that sat far off the pack — looked
+like a real signal at first: a positive, statistically significant effect
+over 249 selections. Then we ran the checks we'd committed to in advance:
+the effect came almost entirely from one sportsbook, didn't hold up season
+over season, and reversed direction just below the threshold that defined
+it. We killed it, and we kept the record.</p>
+
+<h3>What that means for you:</h3>
+<ul>
+<li>We don't ship a "prediction" because one candidate idea looked good in
+a backtest. Every idea here failed a pre-committed replication test before
+it could reach the product.</li>
+<li>Nothing in [WORKING TITLE] claims a win probability, a predicted
+winner, or a bet recommendation. That's not a feature we haven't built yet
+— it's a rule: the underlying model is uncalibrated, and no payload in the
+product emits a win-probability field.</li>
+<li>What we do give you — the actual quoted prices, the market-implied
+consensus, and what changed recently — is real, checkable, and never
+dressed up as more than it is.</li>
+</ul>
+
+<p><strong>What this product will not do:</strong> tell you who is going
+to win, promise a result, or dress up a quoted price as more than a price.
+We will never call that price an edge, and we will not promise an outcome.
+If that is what you are looking for, we are not the right tool — we have
+not found anything that clears our own bar yet, and we are not going to
+pretend otherwise to sell a subscription.</p>
+</section>
+
+<!-- Price-improvement explainer -- docs/CONTENT_LANDING.md section 4,
+     verbatim, including the fixed calculator callout copy (must not be
+     paraphrased per that doc). Bracketed values are the approved spec's
+     own placeholders, not filled in here -- no component wiring is in
+     this task's scope. -->
+<section data-view="price-improvement" aria-label="what line shopping is actually worth" data-hook="price-improvement">
+<h2>What line shopping is actually worth</h2>
+
+<p>The same bet is often quoted at different prices by different books.
+Taking the better one costs you nothing if the bet loses, and pays you
+more if it wins. That's the entire idea — no prediction, no probability,
+just the arithmetic of two prices on the same bet.</p>
+
+<ul data-hook="price-improvement-two-branch">
+<li data-hook="price-improvement-branch-win">If the bet wins: the better
+price pays more.</li>
+<li data-hook="price-improvement-branch-loss">If the bet loses: both
+prices lose the same stake. The difference is $0.</li>
+</ul>
+
+<p>A better price also lowers the win rate you need to break even — e.g.
+at −110 you need 52.4% of these bets to win to break even; at −105 you
+need only 51.2%. This is pure price arithmetic; no assumed win rate goes
+into it.</p>
+
+<blockquote data-hook="price-improvement-calculator-callout">
+<p>If a bet at [odds_b] wins, it pays [$delta_per_win] more than the same
+bet at [odds_a]. If it loses, both lose the same [stake]. Over [bets]
+winning bets, that's [$delta_per_month] — paid only on the bets that
+win.</p>
+
+<p>The better price also lowers your bar: at [odds_a] you break even
+winning [breakeven_a_pct]% of the time; at [odds_b], [breakeven_b_pct]%.</p>
+
+<p>No prediction involved — this is the arithmetic of two prices on the
+same bet. Prices are as quoted at the moment we observed them; whether a
+book accepts your stake is up to the book. Finding the better number is
+what [WORKING TITLE] does.</p>
+</blockquote>
+
+<p data-hook="price-improvement-small-print">We never name which book had
+the best price on this page — on 63–79% of observed instants, more than
+one book was tied for it, so naming one would be arbitrary. And a quoted
+price is what we observed, not a guarantee that book will take your exact
+bet at your exact size.</p>
+</section>
+
+<!-- Pricing -- single beta tier. Filled at runtime by landing.js from
+     web/js/pricing.js's BETA_TIER, the one source the signup view
+     (web/js/signup.js) also reads -- see both modules' docstrings for why
+     the number lives in JS, not written twice in markup. -->
+<section data-view="pricing" aria-label="pricing" data-hook="pricing">
+<h2>Pricing</h2>
+<div data-hook="pricing-host"></div>
+</section>
+
+<!-- FAQ -- docs/CONTENT_LANDING.md section 5, verbatim, as native
+     details/summary elements per this task's brief. -->
+<section data-view="faq" aria-label="frequently asked questions" data-hook="faq">
+<h2>FAQ</h2>
+
+<details data-hook="faq-no-guarantee">
+<summary>No guaranteed wins — is that really true?</summary>
+<p>Yes. Nothing in [WORKING TITLE] guarantees an outcome or a profit, for
+any user or any bet. You are responsible for your own wagering decisions,
+including whether to bet at all.</p>
+</details>
+
+<details data-hook="faq-gambling-advice">
+<summary>Is this gambling advice?</summary>
+<p>No. We show you prices, market-implied consensus, and what changed —
+not a recommendation. The product's own "recommendation" field is
+intentionally and permanently empty; it isn't a coming-soon feature, it's
+a rule until a prediction engine actually clears our own validation
+bar.</p>
+</details>
+
+<details data-hook="faq-predict-winners">
+<summary>Do you predict who wins?</summary>
+<p>No. We do not publish a win probability or a predicted winner anywhere
+in the product. The model behind our research is uncalibrated, and that is
+a permanent rule, not a gap we are planning to fill.</p>
+</details>
+
+<details data-hook="faq-price-improvement">
+<summary>What's a "price improvement," then?</summary>
+<p>It's the better of two quoted prices for the same bet — line shopping,
+not a prediction. See "What line shopping is actually worth" above.</p>
+</details>
+
+<details data-hook="faq-no-edge">
+<summary>No edge found yet — what does that mean?</summary>
+<p>Exactly what it says: we have not found a betting edge, and we say so
+directly. We've pre-registered and tested 25 distinct research ideas (35
+counting every registered variant) against real MLB games from 2023–2024.
+None of them survived our falsification tests. We publish the losers,
+including the one that looked promising until we checked it properly.</p>
+</details>
+
+<details data-hook="faq-data-freshness">
+<summary>How fresh is the data?</summary>
+<p>Every price and consensus figure carries the timestamp of when we last
+observed it, and we show its age rather than hiding it. If there's no
+market currently priced for a game, we say that plainly instead of showing
+a stale or fabricated number.</p>
+</details>
+
+<details data-hook="faq-books-covered">
+<summary>Which sportsbooks do you cover?</summary>
+<p>Coverage varies by market: our head-to-head moneyline board draws from
+multiple books (we don't name a fixed count publicly, since it varies by
+game and moment), and we tell you how many books contributed to a given
+consensus figure rather than asserting a blanket number.</p>
+</details>
+
+<details data-hook="faq-sports-covered">
+<summary>Which sports do you cover?</summary>
+<p>MLB only, today. That's where our research and data pipeline are built
+out; other sports are not currently supported.</p>
+</details>
+
+<details data-hook="faq-beta-status">
+<summary>Is this in beta?</summary>
+<p>Yes. The product carries a visible beta notice: it's an information and
+research product, and it does not guarantee outcomes; the notice itself is
+pending final legal review before any public paid launch.</p>
+</details>
+
+<details data-hook="faq-cancel">
+<summary>Can I cancel anytime?</summary>
+<p>Yes — cancellation is designed to be one click, with no retention flow
+or dark patterns, and the policy will be written and shown to you before
+you ever pay.</p>
+</details>
+
+<details data-hook="faq-charged-after-cancel">
+<summary>Will I be charged after I cancel?</summary>
+<p>No — that is treated as a stop-ship-severity failure internally, never
+as an acceptable exception.</p>
+</details>
+
+<details data-hook="faq-cost">
+<summary>What does it cost?</summary>
+<p>Pricing is being finalized before paid launch; today's product is free,
+invite-based beta. When pricing locks, we'll show you a page that leads
+with exactly what you get for the price, not a comparison to what you
+might win.</p>
+</details>
+
+<details data-hook="faq-hit-rate">
+<summary>Why don't you show a "hit rate" or win percentage like other apps
+do?</summary>
+<p>Because we do not have one we can stand behind. Our own research found
+zero surviving betting ideas against real games. We will not publish a win
+probability that has never been validated — doing so would be exactly the
+kind of unearned confidence this product is built to avoid.</p>
+</details>
+
+<details data-hook="faq-failed-idea">
+<summary>What happens to an idea that doesn't work?</summary>
+<p>It gets a permanent, published record — including the sample size, the
+effect, and why it failed — rather than quietly disappearing. A small
+sample that can't support a conclusion is labeled "we cannot tell," which
+is different from, and reported differently from, a tested null.</p>
+</details>
+</section>
+
+<section data-view="cta" aria-label="call to action" data-hook="cta-bottom">
+<a href="index.html#/signup" data-hook="cta-signup">Check a bet</a>
+</section>
+
+</main>
+
+<footer data-hook="disclaimer-host" aria-label="disclaimer"></footer>
+
+<script type="module" src="js/landing.js"></script>
+</body>
+</html>

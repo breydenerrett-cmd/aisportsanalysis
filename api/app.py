@@ -37,6 +37,7 @@ from api.odds import router as odds_router
 from api.health import router as health_router
 from api.mybets import router as mybets_router
 from api.digest import router as digest_router
+from api.funnel import router as funnel_router
 from api.today import get_today_payload_cached
 
 app = FastAPI(title="aisportsanalysis api", description=(
@@ -70,6 +71,7 @@ app.include_router(billing_router)
 app.include_router(support_router)
 # signup is public by design (pre-account); its own rate limits apply.
 app.include_router(signup_router)
+app.include_router(funnel_router)
 app.include_router(onboarding_router, dependencies=_authed)
 app.include_router(mybets_router)
 # GET /digest -- authed, same as the game surface (private alpha, red-team

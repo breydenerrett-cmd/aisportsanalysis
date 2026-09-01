@@ -27,6 +27,8 @@ import unittest
 from html.parser import HTMLParser
 from pathlib import Path
 
+from tests.test_customer_language import HARD_BANNED, NEGATION_ONLY, NEGATORS
+
 ROOT = Path(__file__).resolve().parent.parent
 WEB_DIR = ROOT / "web"
 
@@ -48,9 +50,11 @@ class _ParseOnlyHTMLParser(HTMLParser):
 class FilesExistAndParse(unittest.TestCase):
     def test_expected_files_present(self):
         self.assertTrue((WEB_DIR / "index.html").is_file())
+        self.assertTrue((WEB_DIR / "landing.html").is_file())
         self.assertTrue((WEB_DIR / "README.md").is_file())
         for name in ("api.js", "dom.js", "meta.js", "today.js", "games.js",
-                     "betcheck.js", "odds.js", "mybets.js", "main.js"):
+                     "betcheck.js", "odds.js", "mybets.js", "main.js",
+                     "signup.js", "landing.js", "pricing.js"):
             self.assertTrue((WEB_DIR / "js" / name).is_file(), name)
 
     def test_html_files_parse(self):
@@ -243,9 +247,21 @@ class NoBannedCustomerVocabulary(unittest.TestCase):
         (r"market'?s\s+true\s+read", "market's true read"),
         (r"\bfree\s+money\b", "free money"),
         (r"\ba\s+lock\b", "a lock"),
-        (r"\bguaranteed?\s+win", "guaranteed win"),
         (r"\bsure\s+thing\b", "sure thing"),
         (r"\bcan'?t\s+lose\b", "can't lose"),
+    )
+
+    # "guaranteed win" and "win probability" moved out of HARD_BANNED (added
+    # by this task, for web/landing.html): docs/CONTENT_LANDING.md's
+    # approved copy legitimately SAYS these phrases -- negated -- to state
+    # the product's own honesty rule ("No guaranteed wins", "we do not
+    # publish a win probability"). A blanket ban with no negation exception
+    # would forbid the client from ever stating the rule it exists to
+    # enforce. Checked the same way tests/test_customer_language.py checks
+    # NEGATION_ONLY phrases: banned unless a negator appears in the
+    # preceding text.
+    NEGATION_ONLY_WEB = (
+        (r"\bguaranteed?\s+win", "guaranteed win"),
         (r"\bwin[- ]probabilit\w*", "win probability"),
     )
 
@@ -258,6 +274,19 @@ class NoBannedCustomerVocabulary(unittest.TestCase):
                     violations.append(f"{path.relative_to(ROOT)}: {label!r}")
         self.assertEqual(violations, [], "\n".join(violations))
 
+    def test_no_unnegated_guaranteed_win_or_win_probability(self):
+        violations = []
+        for path in ALL_TEXT_FILES:
+            text = path.read_text(encoding="utf-8")
+            for pattern, label in self.NEGATION_ONLY_WEB:
+                for m in re.finditer(pattern, text, re.IGNORECASE):
+                    window = text[max(0, m.start() - 90):m.start()]
+                    if not NEGATORS.search(window):
+                        violations.append(
+                            f"{path.relative_to(ROOT)}: {label!r} affirmed "
+                            f"(no negation in the preceding window)")
+        self.assertEqual(violations, [], "\n".join(violations))
+
     def test_no_inline_event_handler_attributes(self):
         # CSP-friendliness (task brief) as well as a vocabulary-adjacent
         # check: an inline `onclick="doSomething()"` string is exactly the
@@ -268,6 +297,159 @@ class NoBannedCustomerVocabulary(unittest.TestCase):
             text = path.read_text(encoding="utf-8")
             self.assertIsNone(pattern.search(text),
                               f"{path.name} has an inline event handler attribute")
+
+
+class LandingPageStructureTests(unittest.TestCase):
+    """web/landing.html: the public, standalone marketing page. Structural
+    checks only -- copy correctness against docs/CONTENT_LANDING.md is the
+    job of LandingVocabularyScan below and of a human diff review, not this
+    class."""
+
+    def setUp(self):
+        self.html = (WEB_DIR / "landing.html").read_text(encoding="utf-8")
+        self.landing_js = (WEB_DIR / "js" / "landing.js").read_text(encoding="utf-8")
+        self.signup_js = (WEB_DIR / "js" / "signup.js").read_text(encoding="utf-8")
+        self.pricing_js = (WEB_DIR / "js" / "pricing.js").read_text(encoding="utf-8")
+
+    def test_hero_variant_one_is_rendered_others_are_comments(self):
+        self.assertIn('data-hook="hero"', self.html)
+        self.assertIn("Every claim, checkable.", self.html)
+        # The other two hypothesis headlines must be present (per this
+        # task's brief) but only inside an HTML comment, never rendered.
+        for other_headline in ("We publish our losses too.",
+                               "Find the better price. See the arithmetic."):
+            self.assertIn(other_headline, self.html)
+            pos = self.html.find(other_headline)
+            comment_open = self.html.rfind("<!--", 0, pos)
+            comment_close = self.html.rfind("-->", 0, pos)
+            self.assertGreater(comment_open, comment_close,
+                               f"{other_headline!r} is not inside an open HTML comment")
+
+    def test_how_it_works_covers_every_documented_surface(self):
+        for hook in ("how-it-works-today", "how-it-works-game",
+                     "how-it-works-bet-check", "how-it-works-odds",
+                     "how-it-works-what-changed"):
+            self.assertIn(f'data-hook="{hook}"', self.html)
+
+    def test_bet_check_never_gets_a_composed_recommendation(self):
+        # Ranker Engine 2 stays gated -- the landing page must never imply
+        # a pick exists, even in marketing copy.
+        self.assertIn("permanently empty", self.html)
+        self.assertNotIn("we recommend", self.html.lower())
+
+    def test_price_improvement_two_branch_framing_present_and_equal_weight(self):
+        self.assertIn('data-hook="price-improvement-branch-win"', self.html)
+        self.assertIn('data-hook="price-improvement-branch-loss"', self.html)
+        # Same list, same element shape -- not one a heading and the other
+        # a footnote (docs/CONTENT_LANDING.md section 4's hard constraint).
+        branch_list = re.search(
+            r'<ul data-hook="price-improvement-two-branch">.*?</ul>',
+            self.html, re.DOTALL)
+        self.assertIsNotNone(branch_list)
+        self.assertEqual(branch_list.group(0).count("<li"), 2)
+
+    def test_price_improvement_never_names_a_book_or_shows_self_funding_math(self):
+        text = self.html.lower()
+        for banned in ("draftkings", "fanduel", "betmgm", "caesars",
+                       "pointsbet", "expected value", "roi",
+                       "pays for itself", "beat the books"):
+            self.assertNotIn(banned, text)
+
+    def test_faq_uses_native_details_summary_elements(self):
+        faq_section = re.search(
+            r'<section data-view="faq".*?</section>', self.html, re.DOTALL).group(0)
+        self.assertGreaterEqual(faq_section.count("<details"), 10)
+        self.assertEqual(faq_section.count("<details"), faq_section.count("<summary"))
+
+    def test_pricing_section_has_a_single_source_host_no_hardcoded_number(self):
+        pricing_section = re.search(
+            r'<section data-view="pricing".*?</section>', self.html, re.DOTALL).group(0)
+        self.assertIn('data-hook="pricing-host"', pricing_section)
+        # The number lives in pricing.js's BETA_TIER, not typed into markup
+        # a second time -- see that module's docstring.
+        self.assertNotRegex(pricing_section, r"\$\s*\d")
+
+    def test_landing_and_signup_share_the_one_pricing_source(self):
+        for source in (self.landing_js, self.signup_js):
+            self.assertIn('from "./pricing.js"', source)
+            self.assertIn("BETA_TIER", source)
+            self.assertIn('"data-price"', source)
+
+    def test_pricing_module_price_is_a_single_constant(self):
+        self.assertIn("price_cents", self.pricing_js)
+        self.assertIn("price_display", self.pricing_js)
+
+    def test_cta_links_into_the_signup_view(self):
+        self.assertIn('href="index.html#/signup"', self.html)
+        self.assertIn('data-hook="cta-primary"', self.html)
+        self.assertIn('data-hook="cta-signup"', self.html)
+
+    def test_disclaimer_footer_present_and_reuses_the_shared_renderer(self):
+        self.assertIn('data-hook="disclaimer-host"', self.html)
+        self.assertIn("renderDisclaimerFooter", self.landing_js)
+        self.assertIn('from "./meta.js"', self.landing_js)
+
+    def test_landing_view_tracked_via_the_public_funnel_endpoint(self):
+        self.assertIn("trackFunnelEvent", self.landing_js)
+        self.assertIn("landing_view", self.landing_js)
+
+    def test_signup_started_tracked_when_the_signup_view_mounts(self):
+        self.assertIn("trackFunnelEvent", self.signup_js)
+        self.assertIn("signup_started", self.signup_js)
+
+    def test_signup_flow_codes_against_the_documented_contract(self):
+        # {user_id, checkout|waitlisted} -- both branches handled, plus the
+        # honest "not yet open" state for a 404 (api/signup.py may not be
+        # live in every environment this client runs against).
+        self.assertIn("result.checkout.checkout_url", self.signup_js)
+        self.assertIn('result.status === "waitlisted"', self.signup_js)
+        self.assertIn("signup is not yet open", self.signup_js.lower())
+
+    def test_signup_complete_shows_token_with_copy_instructions_and_app_link(self):
+        self.assertIn("renderSignupComplete", self.signup_js)
+        # JS builds this attribute via dom.js's el() object-literal shape
+        # ("data-hook": "...") rather than an HTML attribute string.
+        self.assertIn('"data-hook": "signup-token"', self.signup_js)
+        self.assertIn("index.html#/today", self.signup_js)
+
+
+class SignupRouteWiredIntoMainTests(unittest.TestCase):
+    def setUp(self):
+        self.main_js = (WEB_DIR / "js" / "main.js").read_text(encoding="utf-8")
+
+    def test_signup_routes_imported_and_dispatched(self):
+        self.assertIn('from "./signup.js"', self.main_js)
+        self.assertIn("renderSignup(main)", self.main_js)
+        self.assertIn("renderSignupComplete(main, query)", self.main_js)
+        self.assertIn('route === "signup"', self.main_js)
+
+
+class LandingVocabularyScan(unittest.TestCase):
+    """The fuller scan tests/test_content_language.py runs over
+    docs/CONTENT_LANDING.md (HARD_BANNED outright, NEGATION_ONLY unless
+    negated nearby) -- applied here to web/landing.html itself, since this
+    task's ACCEPTANCE asks that the rendered page be checked too, not just
+    its source markdown. NoBannedCustomerVocabulary above already covers
+    the narrower web/-wide HARD_BANNED-only list; this adds the
+    NEGATION_ONLY half (edge/guaranteed/win-probability/etc.) that class
+    does not check."""
+
+    def test_no_banned_language_in_landing_html(self):
+        text = (WEB_DIR / "landing.html").read_text(encoding="utf-8")
+        paragraphs = re.split(r"\n\s*\n", text)
+        violations = []
+        for idx, para in enumerate(paragraphs, start=1):
+            for pattern, label in HARD_BANNED:
+                if re.search(pattern, para, re.IGNORECASE):
+                    violations.append(f"landing.html block {idx}: hard-banned {label!r}")
+            for pattern, label in NEGATION_ONLY:
+                for m in re.finditer(pattern, para, re.IGNORECASE):
+                    window = para[max(0, m.start() - 90):m.start()]
+                    if not NEGATORS.search(window):
+                        violations.append(
+                            f"landing.html block {idx}: {label!r} affirmed "
+                            f"(no negation nearby) in {para[:120]!r}")
+        self.assertEqual(violations, [], "\n".join(violations))
 
 
 if __name__ == "__main__":

@@ -19,6 +19,9 @@
  *   #/odds/YYYY-MM-DD/AWAY/HOME                ODDS (one game)
  *   #/mybets                                  MY BETS
  *   #/support                                 SUPPORT
+ *   #/signup                                  SIGNUP (public CTA target from
+ *                                              web/landing.html)
+ *   #/signup/complete[?token=...]             SIGNUP COMPLETE
  */
 
 import { getToken, setToken, clearToken } from "./api.js";
@@ -30,6 +33,7 @@ import { renderBetCheck } from "./betcheck.js";
 import { renderOdds, renderOddsGame } from "./odds.js";
 import { renderMyBets } from "./mybets.js";
 import { renderSupport } from "./support.js";
+import { renderSignup, renderSignupComplete } from "./signup.js";
 
 const NAV_ITEMS = [
   { hash: "#/today", label: "Today" },
@@ -129,6 +133,10 @@ async function renderRoute(main, nav) {
     await renderMyBets(main);
   } else if (route === "support") {
     await renderSupport(main);
+  } else if (route === "signup" && rest[0] === "complete") {
+    renderSignupComplete(main, query);
+  } else if (route === "signup") {
+    await renderSignup(main);
   } else {
     await renderToday(main);
   }

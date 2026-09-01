@@ -106,3 +106,15 @@ export function apiPost(path, body) {
 export function apiDelete(path) {
   return apiFetch(path, { method: "DELETE" });
 }
+
+/**
+ * Fire-and-forget funnel-event beacon (POST /funnel/event, api/funnel.py --
+ * public, allowlisted to `landing_view`/`signup_started`). Deliberately
+ * NOT awaited by anything that cares about the result: a dropped analytics
+ * beacon must never block or surface an error on the page it is measuring,
+ * the same "never fail the request it rides along with" contract
+ * src/appstate/events.py's record_event_safe gives server-side.
+ */
+export function trackFunnelEvent(kind, properties) {
+  apiPost("/funnel/event", { kind, properties }).catch(() => {});
+}
