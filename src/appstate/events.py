@@ -16,6 +16,46 @@ WIRED-IN CALL SITES
                            users.py's mark_token_first_used) -- exactly once
                            per token, never on a later request with the same
                            already-used token.
+  - api/digest.py       -> kind=DIGEST_VIEWED, on a successful GET /digest,
+                           `properties={"date": <slate date>}`. Also read
+                           back (via `latest_event`, below) BEFORE recording
+                           the new one, to find the timestamp of the user's
+                           previous digest -- see src/analysis/digest.py's
+                           "SINCE LAST DIGEST" section for why that read has
+                           to happen first.
+  - api/signup.py        -> kind=SIGNUP_STARTED, on every new self-serve
+                           signup (POST /signup creating a fresh user row);
+                           kind=CHECKOUT_STARTED, whenever a real Stripe
+                           checkout URL was actually handed back (never on
+                           the honest "waitlisted" branch, since no checkout
+                           started).
+  - api/funnel.py       -> kind=LANDING_VIEW, from the PUBLIC POST
+                           /funnel/event beacon -- the one funnel kind an
+                           unauthenticated visitor may record before
+                           anything else in the funnel has happened (see
+                           that module's PUBLIC_FUNNEL_KINDS). SIGNUP_STARTED
+                           is also in that allowlist, recorded on the same
+                           beacon when the visitor is not yet a real user
+                           row (api/signup.py's own SIGNUP_STARTED call site
+                           covers the authenticated/self-serve case above;
+                           the two are the same kind, recorded from whichever
+                           side of the signup form the visitor is on).
+                           Recorded under a fixed anonymous sentinel id
+                           (ANONYMOUS_FUNNEL_USER_ID in api/funnel.py), never
+                           a real user id, since there is no authenticated
+                           identity at that point in the funnel.
+  - src/appstate/billing.py -> kind=CHECKOUT_COMPLETED, from
+                           apply_stripe_webhook_event on the checkout.session
+                           .completed event that activates a pending_payment
+                           signup -- the one place this app knows a real
+                           Stripe payment happened, since it can only be
+                           called after api/billing.py verifies the webhook
+                           signature.
+  - api/billing.py       -> kind=SUBSCRIPTION_CANCELLED, from POST
+                           /billing/cancel, on an explicit user-initiated
+                           cancellation only (never from a webhook-only
+                           cancellation, to avoid double-counting the same
+                           cancellation from two sources).
 `api/today.py`'s `get_today_payload_cached` accepts an optional `user_id`
 and records PAGE_VIEW when given one, but `GET /today` itself is wired
 directly in api/app.py, which this task's BOUNDARIES forbid touching beyond
@@ -52,7 +92,9 @@ documents its append-only contract in prose rather than code.
 SCHEMA
 ------
 analytics_events(id, user_hash, kind, properties_json, at)
-    kind: page_view | bet_check_run | bet_saved | invite_redeemed
+    kind: page_view | bet_check_run | bet_saved | invite_redeemed |
+          landing_view | signup_started | checkout_started |
+          checkout_completed | subscription_cancelled | digest_viewed
     at:   required ISO-8601 UTC string, the instant the event happened.
 """
 
@@ -82,8 +124,20 @@ PAGE_VIEW = "page_view"
 BET_CHECK_RUN = "bet_check_run"
 BET_SAVED = "bet_saved"
 INVITE_REDEEMED = "invite_redeemed"
+SIGNUP_STARTED = "signup_started"
+CHECKOUT_STARTED = "checkout_started"
+CHECKOUT_COMPLETED = "checkout_completed"
+SUBSCRIPTION_CANCELLED = "subscription_cancelled"
+DIGEST_VIEWED = "digest_viewed"
+# The one funnel kind with no authenticated identity behind it at all --
+# see api/funnel.py's PUBLIC_FUNNEL_KINDS and module docstring above.
+LANDING_VIEW = "landing_view"
 
-EVENT_KINDS = frozenset({PAGE_VIEW, BET_CHECK_RUN, BET_SAVED, INVITE_REDEEMED})
+EVENT_KINDS = frozenset({
+    PAGE_VIEW, BET_CHECK_RUN, BET_SAVED, INVITE_REDEEMED,
+    SIGNUP_STARTED, CHECKOUT_STARTED, CHECKOUT_COMPLETED, SUBSCRIPTION_CANCELLED,
+    DIGEST_VIEWED, LANDING_VIEW,
+})
 
 
 def db_path() -> Path:
@@ -218,6 +272,28 @@ def list_events(*, db: Optional[Path] = None) -> List[AnalyticsEvent]:
         rows = conn.execute(
             "SELECT * FROM analytics_events ORDER BY at ASC").fetchall()
         return [_row_to_event(r) for r in rows]
+
+
+def latest_event(user_hash: str, kind: str, *,
+                 db: Optional[Path] = None) -> Optional[AnalyticsEvent]:
+    """The single most recent event of `kind` for `user_hash`, or None if
+    that user has none yet.
+
+    A real SQL WHERE/ORDER BY/LIMIT query, unlike `daily_counts_by_kind`'s
+    Python aggregation over the whole table -- this one is looked up on
+    every request to a per-user route (api/digest.py, once per GET /digest,
+    to find a user's PREVIOUS digest before recording their new one), not
+    once for an admin view, so it earns an index-friendly query the way a
+    small, occasional admin report does not need to.
+    """
+    if kind not in EVENT_KINDS:
+        raise ValueError(
+            f"unknown event kind {kind!r}; must be one of {sorted(EVENT_KINDS)}")
+    with _connect(db) as conn:
+        row = conn.execute(
+            "SELECT * FROM analytics_events WHERE user_hash = ? AND kind = ? "
+            "ORDER BY at DESC LIMIT 1", (user_hash, kind)).fetchone()
+        return _row_to_event(row) if row else None
 
 
 def daily_counts_by_kind(*, db: Optional[Path] = None) -> Dict[str, Dict[str, int]]:

@@ -1,8 +1,10 @@
-"""Banned-vocabulary tripwire for docs/CONTENT_LANDING.md.
+"""Banned-vocabulary tripwire for the customer-facing content docs:
+docs/CONTENT_LANDING.md, docs/RETENTION_EMAILS.md, docs/ACQUISITION_ASSETS.md.
 
 Applies the same scan `tests/test_customer_language.py` runs over
-src/analysis and src/report to the draft landing-page content, so tout
-vocabulary and fabricated-confidence language cannot ship in copy either.
+src/analysis and src/report to every draft content package, so tout
+vocabulary and fabricated-confidence language cannot ship in copy of any
+kind -- landing page, retention email, or outreach script alike.
 """
 
 import pathlib
@@ -13,6 +15,8 @@ from tests.test_customer_language import HARD_BANNED, NEGATION_ONLY, NEGATORS
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 CONTENT_FILE = ROOT / "docs" / "CONTENT_LANDING.md"
+RETENTION_EMAILS_FILE = ROOT / "docs" / "RETENTION_EMAILS.md"
+ACQUISITION_ASSETS_FILE = ROOT / "docs" / "ACQUISITION_ASSETS.md"
 
 
 def _violations_in(text, where):
@@ -72,6 +76,60 @@ class ContentLandingLanguageScan(unittest.TestCase):
                 NEGATORS.search(between),
                 f"late_move linked to CLV with no negator in between: "
                 f"{window[:120]!r}")
+
+
+class RetentionAndAcquisitionLanguageScan(unittest.TestCase):
+    """The same tripwire, extended to the retention-email and
+    founding-user-acquisition drafts (this task's own deliverables) --
+    outreach scripts and email copy are exactly as customer-facing as the
+    landing page, and get no vocabulary exemption for being shorter or
+    less formal.
+    """
+
+    def test_files_exist(self):
+        for path in (RETENTION_EMAILS_FILE, ACQUISITION_ASSETS_FILE):
+            self.assertTrue(path.exists(), f"{path} not found")
+
+    def test_no_banned_language(self):
+        violations = []
+        for path in (RETENTION_EMAILS_FILE, ACQUISITION_ASSETS_FILE):
+            text = path.read_text(encoding="utf-8")
+            # Same paragraph-scoped scan as ContentLandingLanguageScan --
+            # see that class's comment for why paragraph, not line or file.
+            paragraphs = re.split(r"\n\s*\n", text)
+            for idx, para in enumerate(paragraphs, start=1):
+                violations.extend(
+                    _violations_in(para, f"{path.name} paragraph {idx}"))
+        self.assertEqual(violations, [],
+                         "banned customer language in retention/acquisition "
+                         "content:\n" + "\n".join(violations))
+
+    def test_never_calls_price_improvement_ev(self):
+        for path in (RETENTION_EMAILS_FILE, ACQUISITION_ASSETS_FILE):
+            text = path.read_text(encoding="utf-8").lower()
+            for banned in ("expected value", "roi", "pays for itself",
+                           "beat the books"):
+                self.assertNotIn(banned, text,
+                                 f"{banned!r} must never appear in "
+                                 f"{path.name}")
+
+    def test_late_move_never_called_clv(self):
+        # Same rule as ContentLandingLanguageScan.test_late_move_never_called_clv,
+        # applied to both new docs -- neither currently mentions late_move,
+        # but the check stays live so a future edit that adds one is caught
+        # the same way it would be in CONTENT_LANDING.md.
+        for path in (RETENTION_EMAILS_FILE, ACQUISITION_ASSETS_FILE):
+            text = path.read_text(encoding="utf-8")
+            for m in re.finditer(r"late[_ ]move", text, re.IGNORECASE):
+                window = text[m.start():m.start() + 200]
+                clv_pos = window.upper().find("CLV")
+                if clv_pos == -1:
+                    continue
+                between = window[:clv_pos]
+                self.assertTrue(
+                    NEGATORS.search(between),
+                    f"{path.name}: late_move linked to CLV with no negator "
+                    f"in between: {window[:120]!r}")
 
 
 if __name__ == "__main__":
