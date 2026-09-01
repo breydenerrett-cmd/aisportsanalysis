@@ -600,12 +600,18 @@ def _bottom_line_text(support_n, counter_n, market) -> str:
             price_clause = (" The stated price sits against a de-vigged "
                             "consensus below -- line-shopping value, not a "
                             "prediction.")
+        # DIRECTION, stated once so it cannot be re-derived wrong: for two
+        # same-sign American prices on the same side, a HIGHER number is the
+        # better price for the bettor (-105 risks less than -110 to win the
+        # same; +150 pays more than +140). `cents_delta` is stated minus
+        # best, so cents > 0 means the stated price BEATS the best number on
+        # our board -- it does not mean it is worse than it.
         elif cents > 0:
-            price_clause = (f" The stated price is {cents} cents worse than "
+            price_clause = (f" The stated price is {cents} cents better than "
                            f"the best available {_fmt_price(best.american_price)} "
                            "-- line-shopping value, not a prediction.")
         elif cents < 0:
-            price_clause = (f" The stated price is {abs(cents)} cents better "
+            price_clause = (f" The stated price is {abs(cents)} cents worse "
                            f"than the best available "
                            f"{_fmt_price(best.american_price)} -- "
                            "line-shopping value, not a prediction.")

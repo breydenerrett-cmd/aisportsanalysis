@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Path
 from pydantic import BaseModel
 
 from src.appstate import savedbets
@@ -20,6 +20,12 @@ from src.appstate.users import User
 from api.auth import get_current_user
 
 router = APIRouter()
+
+# sqlite stores a 64-bit signed INTEGER; a larger id reaches sqlite3 as a
+# Python int it cannot bind and raises OverflowError -- a 500 out of a path
+# whose only honest answer is "no such bet". Bounding the id at the route
+# turns that into the 422 it always was.
+_MAX_SQLITE_INT = 2 ** 63 - 1
 
 
 class SaveBetRequest(BaseModel):
@@ -59,7 +65,7 @@ def create_my_bet(body: SaveBetRequest,
 
 
 @router.delete("/my-bets/{bet_id}")
-def delete_my_bet(bet_id: int,
+def delete_my_bet(bet_id: int = Path(ge=1, le=_MAX_SQLITE_INT),
                    current_user: User = Depends(get_current_user)) -> dict:
     deleted = savedbets.delete_bet(bet_id, current_user.id)
     if not deleted:
