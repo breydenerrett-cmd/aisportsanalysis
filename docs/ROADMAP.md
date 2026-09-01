@@ -212,6 +212,11 @@ together.
    BLOCKED until the close pass is confirmed writing rows.
 4. Season-end handling (late September): daily loop and capture behavior
    when the MLB slate empties; plan the off-season posture (lane E).
+   PLANNED (docs/SEASON_END_PLAN.md). Credit-gate fix DONE 2026-09-01: the
+   daily/standalone snapshot now skips the paid capture on a confirmed-empty
+   slate (dense.any_game_scheduled). REMAINING: the postseason/spring-training
+   V3+F5+prop admissibility decisions (§3.1) are Brey's, needed before
+   2026-09-29 (first Wild Card) or the code's silent-admit default takes over.
 5. Forward prop-listing audit -- DESIGNED, AWAITING BREY
    (docs/PROBE_PROP_LISTING.md: 18 credits/day, ~340 total, hard cap 400).
    COLLECTION_POLICY.md forbids prop collection without a registered
