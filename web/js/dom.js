@@ -38,6 +38,94 @@ export function clear(container) {
   while (container.firstChild) container.removeChild(container.firstChild);
 }
 
+/** Known machine field names get a hand-written human label; anything
+ * else falls back to a mechanical "snake_case -> Title Case" reformat
+ * (spaces in, words capitalized) -- never a summary or interpretation of
+ * the field, just its own name made readable. Content rule: "No raw
+ * snake_case field names visible anywhere on a primary surface"
+ * (design/linehound-v1 handoff, section 11). */
+const FIELD_LABELS = {
+  observed_utc: "Updated",
+  age_seconds: "Age (seconds)",
+  has_market: "Has market",
+  has_board: "Has board",
+  has_lineups: "Has lineups",
+  has_starters: "Has starters",
+  has_price_board: "Has price board",
+  books: "Books",
+  game_pk: "Game ID",
+  game_id: "Game ID",
+  start_time_utc: "Start time",
+  first_pitch_utc: "First pitch",
+  away_team: "Away",
+  home_team: "Home",
+  away_probable: "Away starter",
+  home_probable: "Home starter",
+  double_header: "Doubleheader",
+  game_number: "Game number",
+  detailed_state: "Status",
+  generated_at: "Generated",
+  checked_games: "Games checked",
+  sample_n: "Sample size (n)",
+  evidence_label: "Evidence status",
+  best_price: "Best price",
+  best_book: "Best book",
+  consensus_probability: "Consensus probability",
+  improvement_probability_points: "Improvement (points)",
+  improvement_return_pct: "Improvement (%)",
+};
+
+export function humanizeKey(key) {
+  if (Object.prototype.hasOwnProperty.call(FIELD_LABELS, key)) return FIELD_LABELS[key];
+  return String(key)
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/** verdict is a small fixed enum (docs/API_CONTRACTS.md: no_play |
+ * candidate | flagged | market_unavailable) -- this only reformats the
+ * same string for reading (spaces, capitals), it never changes or
+ * interprets which verdict was given. A future enum value not in this
+ * table still gets the mechanical fallback rather than showing raw
+ * snake_case. */
+const VERDICT_LABELS = {
+  no_play: "NO PLAY",
+  candidate: "CANDIDATE",
+  flagged: "FLAGGED",
+  market_unavailable: "MARKET UNAVAILABLE",
+};
+export function verdictLabel(verdict) {
+  if (!verdict) return null;
+  return VERDICT_LABELS[verdict] || verdict.replace(/_/g, " ").toUpperCase();
+}
+
+/** Verdict -> chip color per the design system's reserved-color rule
+ * (tokens.css: money is reserved for a price advantage, live/cyan is for
+ * "live, changed, analytical"). `no_play` is the ordinary, expected
+ * outcome on most games -- it is not a downside, so it gets the neutral
+ * outline treatment, not the money-red one. `candidate`/`flagged` are the
+ * analytically-noteworthy verdicts, so they get the cyan analytical
+ * treatment. `market_unavailable` is a data gap, not a finding. */
+export function verdictChipClass(verdict) {
+  if (verdict === "candidate" || verdict === "flagged") return "badge--live";
+  return "badge--outline";
+}
+
+/** ET, always with the meridiem -- never a bare UTC timestamp or a
+ * 24-hour clock (design/linehound-v1 handoff, section 11's "Times" rule).
+ * `Intl` resolves America/New_York against the real IANA database, so
+ * this is correct across the DST boundary without a bundled tz table.
+ * Returns null (never a guess) when `isoUtc` is missing or unparsable. */
+export function formatEasternTime(isoUtc) {
+  if (!isoUtc) return null;
+  const date = new Date(isoUtc);
+  if (Number.isNaN(date.getTime())) return null;
+  const time = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York", hour: "numeric", minute: "2-digit", hour12: true,
+  }).format(date);
+  return `${time} ET`;
+}
+
 /** A single "value not present" marker. Not a composed claim -- a
  * placeholder for JSON `null`/`undefined`, distinct from any API-supplied
  * unavailability string, which is always rendered verbatim instead. */
@@ -65,7 +153,7 @@ export function renderUnknown(value) {
     if (keys.length === 0) return renderAbsent();
     const dl = el("dl", { class: "raw-fields" });
     for (const key of keys) {
-      dl.appendChild(el("dt", { class: "raw-fields__key", text: key }));
+      dl.appendChild(el("dt", { class: "raw-fields__key", "data-raw-key": key, text: humanizeKey(key) }));
       dl.appendChild(el("dd", { class: "raw-fields__value" }, [renderUnknown(value[key])]));
     }
     return dl;

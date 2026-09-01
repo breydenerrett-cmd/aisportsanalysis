@@ -7,7 +7,8 @@
  */
 
 import { apiGet } from "./api.js";
-import { el, clear, renderUnknown, renderError } from "./dom.js";
+import { el, clear, renderUnknown, renderError, humanizeKey, verdictLabel,
+  verdictChipClass, formatEasternTime } from "./dom.js";
 import { renderStaleness } from "./meta.js";
 
 function todayIso() {
@@ -22,10 +23,10 @@ function renderDataQuality(dq) {
     return dl;
   }
   for (const key of ["has_market", "has_lineups", "has_starters", "has_price_board"]) {
-    dl.appendChild(el("dt", { text: key }));
+    dl.appendChild(el("dt", { "data-raw-key": key, text: humanizeKey(key) }));
     dl.appendChild(el("dd", {}, [renderUnknown(dq[key])]));
   }
-  dl.appendChild(el("dt", { text: "gaps" }));
+  dl.appendChild(el("dt", { text: "Gaps" }));
   dl.appendChild(el("dd", { "data-hook": "data-quality-gaps" }, [renderUnknown(dq.gaps)]));
   return dl;
 }
@@ -112,9 +113,15 @@ export async function renderGamesList(container, date) {
     });
     matchupCell.appendChild(link);
     tr.appendChild(matchupCell);
-    tr.appendChild(el("td", {}, [row.first_pitch_utc || renderUnknown(null)]));
+    const firstPitchEt = formatEasternTime(row.first_pitch_utc);
+    tr.appendChild(el("td", {}, [firstPitchEt || renderUnknown(null)]));
     tr.appendChild(el("td", {}, [row.venue || renderUnknown(null)]));
-    tr.appendChild(el("td", { "data-hook": "verdict", text: row.verdict }));
+    const verdictCell = el("td", { "data-verdict-raw": row.verdict || "" });
+    const verdictChip = el("span", { class: `badge chamfer chamfer--chip ${verdictChipClass(row.verdict)}`,
+      "data-hook": "verdict" });
+    verdictChip.appendChild(row.verdict ? document.createTextNode(verdictLabel(row.verdict)) : renderUnknown(null));
+    verdictCell.appendChild(verdictChip);
+    tr.appendChild(verdictCell);
     tr.appendChild(el("td", {}, [renderUnknown(row.market_implied_consensus)]));
     tr.appendChild(el("td", {}, [renderStaleness(row.board_summary)]));
     tr.appendChild(el("td", {}, [renderDataQuality(row.data_quality)]));
@@ -126,12 +133,23 @@ export async function renderGamesList(container, date) {
 }
 
 function renderQuick(quick) {
+  // Lead with the matchup and the verdict as a styled chip -- machine
+  // fields (game_id etc.) never appear here (handoff section 11's
+  // content-hierarchy rule: what a card shows first, biggest, and at all).
   const section = el("section", { class: "game-quick panel chamfer", "data-hook": "game-quick" });
   section.appendChild(el("h2", { text: "Quick view" }));
-  section.appendChild(el("h3", { text: `${quick.away_team} @ ${quick.home_team}` }));
+  const header = el("div", { class: "game-quick__header" });
+  header.appendChild(el("h3", { class: "game-quick__matchup",
+    text: `${quick.away_team} @ ${quick.home_team}` }));
+  const chip = el("span", { class: `badge chamfer chamfer--chip ${verdictChipClass(quick.verdict)}`,
+    "data-hook": "verdict" });
+  chip.appendChild(quick.verdict ? document.createTextNode(verdictLabel(quick.verdict)) : renderUnknown(null));
+  header.appendChild(chip);
+  section.appendChild(header);
+
   const dl = el("dl", { class: "game-quick__fields" });
   for (const [label, value] of [
-    ["Verdict", quick.verdict], ["Side", quick.side], ["Market", quick.market],
+    ["Side", quick.side], ["Market", quick.market],
     ["Summary", quick.summary], ["Headline", quick.headline],
   ]) {
     dl.appendChild(el("dt", { text: label }));
@@ -162,7 +180,7 @@ function renderAdvanced(advanced) {
   dl.appendChild(el("dt", { text: "Information time" }));
   dl.appendChild(el("dd", { "data-hook": "information-time" }, [advanced.information_time || renderUnknown(null)]));
   dl.appendChild(el("dt", { text: "Verdict" }));
-  dl.appendChild(el("dd", {}, [advanced.verdict || renderUnknown(null)]));
+  dl.appendChild(el("dd", {}, [advanced.verdict ? verdictLabel(advanced.verdict) : renderUnknown(null)]));
   details.appendChild(dl);
 
   const sections = el("section", { class: "game-advanced__sections", "data-hook": "advanced-sections" });

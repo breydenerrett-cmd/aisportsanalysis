@@ -233,14 +233,31 @@
   --r: var(--r-tile);
   display: flex;
   flex-direction: column;
+  gap: var(--sp-5);
+}
+.slate-entry__header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
   gap: var(--sp-6);
 }
-.slate-entry__verdict {
+.slate-entry__matchup {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: 800;
-  font-size: 20px;
+  font-size: clamp(20px, 2.4vw, 26px);
   color: var(--text-hi);
+  margin: 0;
+}
+.slate-entry__start {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-3);
+  margin: calc(-1 * var(--sp-3)) 0 0;
+}
+.slate-entry__venue {
+  font-size: 12.5px;
+  color: var(--text-faint);
   margin: 0;
 }
 .slate-entry__fields { display: grid; grid-template-columns: max-content 1fr; gap: var(--sp-3) var(--sp-7); }
@@ -313,6 +330,13 @@
 .game-detail__back { font-size: 13px; color: var(--text-mute); }
 .game-quick, .game-advanced { padding: var(--sp-9); --r: var(--r-panel); display: flex;
   flex-direction: column; gap: var(--sp-6); }
+.game-quick__header { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-6); }
+.game-quick__matchup {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(22px, 2.6vw, 30px);
+  color: var(--text-hi);
+}
 .game-quick__fields { display: grid; grid-template-columns: max-content 1fr; gap: var(--sp-3) var(--sp-7); margin: 0; }
 .game-quick__fields dt { font-family: var(--font-display); font-size: 10.5px; letter-spacing: .14em;
   color: var(--text-mute); text-transform: uppercase; }

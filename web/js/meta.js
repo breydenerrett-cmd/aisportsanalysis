@@ -7,7 +7,7 @@
  */
 
 import { apiGet } from "./api.js";
-import { el, clear, renderUnknown } from "./dom.js";
+import { el, clear, renderUnknown, humanizeKey } from "./dom.js";
 
 export async function renderDisclaimerFooter(container) {
   clear(container);
@@ -57,7 +57,8 @@ export function renderStaleness(staleness) {
     return section;
   }
   for (const key of Object.keys(staleness)) {
-    section.appendChild(el("dt", { class: `staleness__key staleness__key--${key}`, text: key }));
+    section.appendChild(el("dt", { class: `staleness__key staleness__key--${key}`,
+      "data-raw-key": key, text: humanizeKey(key) }));
     section.appendChild(el("dd", { class: "staleness__value" }, [renderUnknown(staleness[key])]));
   }
   return section;

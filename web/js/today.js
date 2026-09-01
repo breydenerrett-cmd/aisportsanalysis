@@ -11,7 +11,8 @@
  */
 
 import { apiGet, ApiError } from "./api.js";
-import { el, clear, renderUnknown, renderError } from "./dom.js";
+import { el, clear, renderUnknown, renderError, verdictLabel, verdictChipClass,
+  formatEasternTime } from "./dom.js";
 import { renderStaleness } from "./meta.js";
 
 function renderNotes(notes) {
@@ -65,13 +66,47 @@ function renderWhatChanged(payload) {
   return section;
 }
 
+/** /today's `dossier` is documented opaque (module docstring), but its
+ * `game` sub-object is where the team identity and start time actually
+ * live -- there is no other source for them on this endpoint. Read
+ * defensively (never assume the shape holds) so a future dossier reshape
+ * degrades to the NOT-YET-AVAILABLE marker on the card face rather than
+ * throwing; the full raw dossier is still rendered verbatim, unread and
+ * unchanged, in the collapsed disclosure below. */
+function readDossierGame(entry) {
+  const dossier = entry && typeof entry.dossier === "object" ? entry.dossier : null;
+  const game = dossier && typeof dossier.game === "object" ? dossier.game : null;
+  return game || null;
+}
+
 function renderGameEntry(entry) {
   const article = el("article", {
     class: "slate-entry panel chamfer", "data-hook": "slate-entry", "data-verdict": entry.verdict || "",
   });
-  const verdictP = el("p", { class: "slate-entry__verdict", "data-hook": "verdict" });
-  verdictP.appendChild(entry.verdict ? document.createTextNode(entry.verdict) : renderUnknown(null));
-  article.appendChild(verdictP);
+
+  // Lead with the matchup and the verdict as a styled chip, exactly like
+  // the Gameday canvas's card anatomy -- machine fields (game_pk,
+  // observed_utc, has_market, the raw dossier) never lead the card face;
+  // they stay reachable in the collapsed "Full dossier" disclosure below
+  // (handoff section 11's content-hierarchy rule).
+  const game = readDossierGame(entry);
+  const header = el("div", { class: "slate-entry__header" });
+  const matchup = el("h3", { class: "slate-entry__matchup" });
+  matchup.appendChild(game ? document.createTextNode(`${game.away_team} @ ${game.home_team}`) : renderUnknown(null));
+  header.appendChild(matchup);
+
+  const chip = el("span", { class: `badge chamfer chamfer--chip ${verdictChipClass(entry.verdict)}`,
+    "data-hook": "verdict", "data-verdict-raw": entry.verdict || "" });
+  chip.appendChild(entry.verdict ? document.createTextNode(verdictLabel(entry.verdict)) : renderUnknown(null));
+  header.appendChild(chip);
+  article.appendChild(header);
+
+  const startTime = game ? formatEasternTime(game.start_time_utc) : null;
+  article.appendChild(el("p", { class: "slate-entry__start", "data-hook": "start-time" },
+    [startTime || renderUnknown(null)]));
+  if (game && game.venue) {
+    article.appendChild(el("p", { class: "slate-entry__venue", text: game.venue }));
+  }
 
   const dl = el("dl", { class: "slate-entry__fields" });
   dl.appendChild(el("dt", { text: "Side" }));
@@ -82,6 +117,8 @@ function renderGameEntry(entry) {
   dl.appendChild(el("dd", { "data-hook": "summary" }, [entry.summary || renderUnknown(null)]));
   article.appendChild(dl);
 
+  // Board/price freshness -- demoted beneath the human-readable fields,
+  // never leading the card, but still present (never suppressed).
   article.appendChild(renderStaleness(entry.odds_meta));
 
   const findingsSection = el("section", { class: "slate-entry__findings", "data-hook": "findings" });
