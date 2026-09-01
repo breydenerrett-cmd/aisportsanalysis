@@ -12,6 +12,13 @@ root-cause, and self-recovery verification; this session does not touch
 Fly and does not redeploy. Data plane unaffected throughout — hourly
 captures green all day.
 
+ROOT CAUSE (Brey, ~18:30 UTC): Fly BILLING — no card on the account, so
+Fly suspended the app; that is why the edge accepted TCP but reset TLS.
+Card now added; Launch Ops is restoring linehound-staging. Note for the
+record: the Fly dashboard also shows an obsolete `aisportsanalysis`
+deployment path tracking the old Cowork branch — Launch Ops is ignoring
+it; nothing in this repo references it, and it should not be used.
+
 F5 close store structural audit (rows-not-errors rule): 94 rows, 11 games
 over 2 days, one close capture per game, 8-9 books/game, zero duplicate
 (book, observed) rows, every observation pregame, market
