@@ -85,6 +85,22 @@ class GetGamesTests(_ResetEntriesCache):
         self.assertEqual(ctx.exception.status_code, 502)
         self.assertIn("2026-08-31", ctx.exception.detail)
 
+    def test_malformed_date_is_a_400_not_a_502(self):
+        """Red-team round: a malformed {date} used to reach mlb.fetch_games
+        unchecked, where src.providers.mlb's own validation raised
+        MLBError -- surfacing as this module's 502, a schedule-provider
+        failure that was actually the caller's bad input. fetch_games is
+        never even called: the malformed date is refused before any
+        network path is reached."""
+        with patch.object(mlb, "fetch_games") as fetch:
+            for bad in ("not-a-date", "2026-13-45", "08/31/2026", "",
+                       "2026-08-31T00:00:00Z", "2026-8-31"):
+                with self.subTest(bad=bad):
+                    with self.assertRaises(fastapi.HTTPException) as ctx:
+                        games_mod.get_games(bad)
+                    self.assertEqual(ctx.exception.status_code, 400)
+            fetch.assert_not_called()
+
     def test_no_games_scheduled_is_an_honest_empty_slate(self):
         with patch.object(mlb, "fetch_games", return_value=[]):
             payload = games_mod.get_games("2026-12-25")

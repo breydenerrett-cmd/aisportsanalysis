@@ -169,7 +169,7 @@ Response:
 | `best_available_price` | object \| null | `QuotedPrice`: `{book, american_price, observed_utc}` |
 | `market_consensus` | object \| null | `MarketImpliedConsensus`: `{implied_probability, books, observed_utc}` — a fraction in [0, 1], distinct from `best_available_price` |
 | `price_improvement` | object \| null | line-shopping value only — never EV, never an edge |
-| `your_price_below_market` | boolean \| null | |
+| `your_price_beats_consensus` | boolean \| null | `true` when the stated price pays a better decimal payout than `market_consensus`; renamed from `your_price_below_market`, which read as "worse" and was backwards |
 | `what_changed` | array | |
 | `recommendation` | null, always | Ranker Engine 2 gate — see vocabulary rules above |
 | `strongest_reason` / `weakest_reason` / `historical_support` / `evidence_status` / `bottom_line` | string \| null | |

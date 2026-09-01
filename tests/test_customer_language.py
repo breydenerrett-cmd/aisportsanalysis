@@ -146,7 +146,7 @@ class BannedLanguageScan(unittest.TestCase):
                 query=c.BetQuery(raw="Yankees ML -125", parsed=True),
                 game=None, thesis_support=(), counterargument=(),
                 best_available_price=q, market_consensus=cons,
-                your_price_below_market=True, what_changed=()),
+                your_price_beats_consensus=True, what_changed=()),
             c.WhatChangedContract(since_label="since this morning",
                                   events=()),
         ]

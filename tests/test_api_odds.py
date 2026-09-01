@@ -84,6 +84,17 @@ class GetOddsTests(unittest.TestCase):
         self.assertEqual(ctx.exception.status_code, 502)
         self.assertIn("2026-08-31", ctx.exception.detail)
 
+    def test_malformed_date_is_a_400_not_a_502(self):
+        """Same fix as api/games.py: a malformed date is refused before it
+        ever reaches mlb.fetch_games, not surfaced as a provider 502."""
+        with patch.object(mlb, "fetch_games") as fetch:
+            for bad in ("not-a-date", "2026-13-45", "08/31/2026", ""):
+                with self.subTest(bad=bad):
+                    with self.assertRaises(fastapi.HTTPException) as ctx:
+                        odds_mod.get_odds(bad)
+                    self.assertEqual(ctx.exception.status_code, 400)
+            fetch.assert_not_called()
+
 
 @unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")
 class GetOddsGameTests(unittest.TestCase):
@@ -117,6 +128,13 @@ class GetOddsGameTests(unittest.TestCase):
             with self.assertRaises(fastapi.HTTPException) as ctx:
                 odds_mod.get_odds_game("2026-08-31", "BOS", "NYY")
         self.assertEqual(ctx.exception.status_code, 502)
+
+    def test_malformed_date_is_a_400_not_a_502(self):
+        with patch.object(mlb, "fetch_games") as fetch:
+            with self.assertRaises(fastapi.HTTPException) as ctx:
+                odds_mod.get_odds_game("not-a-date", "BOS", "NYY")
+            self.assertEqual(ctx.exception.status_code, 400)
+            fetch.assert_not_called()
 
 
 if __name__ == "__main__":

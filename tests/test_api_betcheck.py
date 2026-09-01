@@ -110,6 +110,38 @@ class PostBetcheckTests(unittest.TestCase):
                 betcheck_api.post_betcheck(body)
         self.assertEqual(ctx.exception.status_code, 502)
 
+    def test_malformed_date_is_a_400_not_a_502(self):
+        """Same fix as api/games.py and api/odds.py: a malformed date is
+        refused before it ever reaches mlb.fetch_games."""
+        with patch.object(mlb, "fetch_games") as fetch:
+            for bad in ("not-a-date", "2026-13-45", "08/31/2026", ""):
+                with self.subTest(bad=bad):
+                    body = betcheck_api.BetCheckRequest(
+                        date=bad, away="BOS", home="NYY", side="home",
+                        american_price=-125)
+                    with self.assertRaises(fastapi.HTTPException) as ctx:
+                        betcheck_api.post_betcheck(body)
+                    self.assertEqual(ctx.exception.status_code, 400)
+            fetch.assert_not_called()
+
+    def test_away_home_are_bounded_and_reflected_only_up_to_the_bound(self):
+        """Bet Check's 404 names what it searched for, including the
+        club fields verbatim -- an unbounded club field would let a client
+        grow that detail message arbitrarily. max_length on the request
+        model bounds it before it is ever reflected."""
+        with self.assertRaises(ValidationError):
+            betcheck_api.BetCheckRequest(
+                date="2026-08-31", away="X" * 41, home="NYY", side="home",
+                american_price=-125)
+        with patch.object(mlb, "fetch_games", return_value=_schedule()):
+            body = betcheck_api.BetCheckRequest(
+                date="2026-08-31", away="X" * 40, home="NYY", side="home",
+                american_price=-125)
+            with self.assertRaises(fastapi.HTTPException) as ctx:
+                betcheck_api.post_betcheck(body)
+        self.assertEqual(ctx.exception.status_code, 404)
+        self.assertIn("X" * 40, ctx.exception.detail)
+
     def test_no_win_probability_or_ev_language_at_the_wire(self):
         import json
         with patch.object(mlb, "fetch_games", return_value=_schedule()):

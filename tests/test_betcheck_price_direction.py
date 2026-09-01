@@ -85,7 +85,7 @@ class BottomLineDirectionTests(unittest.TestCase):
         # -105 against a board best of -106: the customer found a number our
         # board does not have.
         line = bottom_line("home", -105, -106)
-        self.assertIn("1 cents better than the best available -106", line)
+        self.assertIn("1 cent better than the best available -106", line)
         self.assertNotIn("cents worse", line)
 
     def test_underdog_direction_reads_the_same_way(self):
@@ -107,6 +107,53 @@ class BottomLineDirectionTests(unittest.TestCase):
                 line = bottom_line("home", stated, best)
                 self.assertIn("line-shopping value, not a prediction", line)
                 self.assertIn("No predictive edge is claimed", line)
+
+    def test_a_one_cent_delta_is_singular_in_both_directions(self):
+        """Red-team round: "1 cents better/worse" -- the plural nit. A
+        one-cent delta is the only magnitude where English cares."""
+        better = bottom_line("home", -105, -106)
+        self.assertIn("1 cent better than the best available -106", better)
+        self.assertNotIn("1 cents better", better)
+        worse = bottom_line("home", -111, -110)
+        self.assertIn("1 cent worse than the best available -110", worse)
+        self.assertNotIn("1 cents worse", worse)
+
+    def test_a_multi_cent_delta_stays_plural(self):
+        line = bottom_line("home", -130, -106)
+        self.assertIn("24 cents worse", line)
+        self.assertNotIn("24 cent worse", line)
+
+
+class YourPriceBeatsConsensusTests(unittest.TestCase):
+    """The renamed field (`your_price_beats_consensus`, formerly the
+    ambiguous `your_price_below_market`) verified against american_to_decimal
+    arithmetic directly -- not against the sentence copy above, so a future
+    rewrite of either cannot quietly re-invert the other."""
+
+    def _beats_consensus(self, side, stated, consensus_side_price):
+        result = betcheck.build_contract(
+            "2026-08-31", "BOS", "NYY", side, stated,
+            board=board(**{f"{side}_price": consensus_side_price,
+                          ("home_price" if side == "away" else "away_price"):
+                              consensus_side_price}),
+            findings=[])
+        return result.your_price_beats_consensus
+
+    def test_a_higher_decimal_payout_than_consensus_beats_it(self):
+        # +150 pays a higher decimal than a -110/-110 (~1.909) consensus.
+        self.assertTrue(self._beats_consensus("home", 150, -110))
+        self.assertGreater(odds_math.american_to_decimal(150),
+                           odds_math.american_to_decimal(-110))
+
+    def test_a_lower_decimal_payout_than_consensus_does_not_beat_it(self):
+        self.assertFalse(self._beats_consensus("home", -500, -110))
+        self.assertLess(odds_math.american_to_decimal(-500),
+                        odds_math.american_to_decimal(-110))
+
+    def test_no_board_leaves_it_none_not_a_guess(self):
+        result = betcheck.build_contract(
+            "2026-08-31", "BOS", "NYY", "home", -125, findings=[])
+        self.assertIsNone(result.your_price_beats_consensus)
 
 
 if __name__ == "__main__":

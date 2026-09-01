@@ -22,17 +22,31 @@ enforces the one-way boundary for all of src/).
 from __future__ import annotations
 
 import json
+import re
 from typing import Literal
+from datetime import datetime
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, field_validator
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field, field_validator
 
 from src.analysis import betcheck as betcheck_mod
 from src.analysis import gamepayload
+from src.appstate import ratelimit
 from src.pipeline import briefing, history
 from src.providers import mlb
 
 router = APIRouter()
+
+# No auth dependency guards this route (Bet Check is the unauthenticated
+# paid-beta core loop today -- see the module docstring), so there is no
+# user id to key on; the limiter falls back to the caller's IP.
+# Thirty a minute is generous for one real customer typing bets one at a
+# time and tight enough to blunt a scripted hammering of the one endpoint
+# that runs the full domain path on every call.
+BETCHECK_RATE_LIMIT_PER_MIN = 30
+_betcheck_limiter = ratelimit.FixedWindowLimiter(
+    limit=BETCHECK_RATE_LIMIT_PER_MIN, window_s=60.0)
+_rate_limited = ratelimit.limiter_dependency(_betcheck_limiter)
 
 # American odds below this magnitude are not a plausible moneyline price --
 # a two- or one-digit number is almost certainly a mis-typed line or total,
@@ -41,6 +55,35 @@ router = APIRouter()
 # direction (an extra digit).
 MIN_PLAUSIBLE_PRICE_MAGNITUDE = 100
 MAX_PLAUSIBLE_PRICE_MAGNITUDE = 100000
+
+# Club abbreviations/names are short by construction (three-letter codes up
+# through a full club name); 40 is generous headroom over the longest real
+# one while still refusing a client trying to stuff an arbitrary blob into
+# a field that only ever needs to name a team. Reflected verbatim into a 404
+# detail below, so bounding it here also bounds what that detail can grow to.
+MAX_CLUB_NAME_LENGTH = 40
+
+# Same shape check as api/games.py's _validate_date, kept as its own copy
+# for the reason that module's docstring gives for the identical pattern in
+# api/today.py: each api/ module owns its own tiny wiring rather than
+# importing it from a sibling. A malformed date used to reach mlb.fetch_games
+# unchecked and surface as an opaque 502 from the schedule provider's own
+# validation; checked here, before any network call, it is the 400 it always
+# was for a client input problem.
+_ISO_DATE_RE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+
+
+def _validate_date(date: str) -> None:
+    if not isinstance(date, str) or not _ISO_DATE_RE.match(date):
+        raise HTTPException(
+            status_code=400,
+            detail=f"date must be ISO format YYYY-MM-DD, got {date!r}")
+    try:
+        datetime.strptime(date, "%Y-%m-%d")
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"date must be ISO format YYYY-MM-DD, got {date!r}") from exc
 
 
 class BetCheckRequest(BaseModel):
@@ -52,8 +95,8 @@ class BetCheckRequest(BaseModel):
     src.analysis.betcheck refuses to guess a team.
     """
     date: str
-    away: str
-    home: str
+    away: str = Field(max_length=MAX_CLUB_NAME_LENGTH)
+    home: str = Field(max_length=MAX_CLUB_NAME_LENGTH)
     side: Literal["away", "home"]
     american_price: int
 
@@ -77,6 +120,7 @@ def _fetch_entries(date: str) -> list:
     pattern in api/today.py: each api/ module owns its own tiny
     fetch-and-build wiring rather than importing it from a sibling.
     """
+    _validate_date(date)
     try:
         games = mlb.fetch_games(date)
     except mlb.MLBError as exc:
@@ -88,7 +132,8 @@ def _fetch_entries(date: str) -> list:
 
 
 @router.post("/betcheck")
-def post_betcheck(body: BetCheckRequest) -> dict:
+def post_betcheck(body: BetCheckRequest,
+                  _rate_limit: None = Depends(_rate_limited)) -> dict:
     """Check one stated bet against the real domain path for its game.
 
     Unknown game is a structured 404 naming exactly what was searched for.

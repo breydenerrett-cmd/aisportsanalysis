@@ -50,7 +50,7 @@ def betcheck(**kw):
         counterargument=(),
         best_available_price=quote(),
         market_consensus=consensus(),
-        your_price_below_market=True,
+        your_price_beats_consensus=True,
         what_changed=(),
     )
     base.update(kw)

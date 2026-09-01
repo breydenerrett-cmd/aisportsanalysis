@@ -435,7 +435,7 @@ class BetCheckContractTests(unittest.TestCase):
         "counterargument_lines": _Checked(list, lambda v: len(v) >= 1),
         "best_available_price": (dict, type(None)),
         "market_consensus": (dict, type(None)),
-        "your_price_below_market": (bool, type(None)),
+        "your_price_beats_consensus": (bool, type(None)),
         "what_changed": list,
         "recommendation": type(None),  # Ranker Engine 2 stays gated
         "price_improvement": (dict, type(None)),

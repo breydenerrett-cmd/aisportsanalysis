@@ -226,7 +226,7 @@ class MarketTests(unittest.TestCase):
             "2026-08-31", "BOS", "NYY", "home", -125, findings=[])
         self.assertIsNone(result.best_available_price)
         self.assertIsNone(result.market_consensus)
-        self.assertIsNone(result.your_price_below_market)
+        self.assertIsNone(result.your_price_beats_consensus)
         self.assertIsNone(result.price_improvement)
         self.assertIn("unavailable", result.bottom_line.lower())
 
@@ -254,19 +254,19 @@ class MarketTests(unittest.TestCase):
         self.assertEqual(result.market_consensus.books, 9)
         self.assertIsInstance(result.price_improvement, c.PriceImprovement)
 
-    def test_better_stated_price_reads_below_market(self):
-        # -110/-110 consensus implies ~0.5; a stated +150 on the home side
-        # implies a much lower probability -- a better price.
+    def test_better_stated_price_beats_consensus(self):
+        # -110/-110 consensus pays ~1.909 decimal; a stated +150 on the
+        # home side pays a higher decimal -- a better price.
         result = betcheck.build_contract(
             "2026-08-31", "BOS", "NYY", "home", 150,
             board=board(), findings=[])
-        self.assertTrue(result.your_price_below_market)
+        self.assertTrue(result.your_price_beats_consensus)
 
-    def test_worse_stated_price_reads_not_below_market(self):
+    def test_worse_stated_price_does_not_beat_consensus(self):
         result = betcheck.build_contract(
             "2026-08-31", "BOS", "NYY", "home", -500,
             board=board(), findings=[])
-        self.assertFalse(result.your_price_below_market)
+        self.assertFalse(result.your_price_beats_consensus)
 
 
 # ---------------------------------------------------------------------------

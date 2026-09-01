@@ -89,5 +89,107 @@ class MyBetsRouteTests(unittest.TestCase):
         self.assertEqual(list_my_bets(current_user=other)["bets"], [])
 
 
+@unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
+class SaveBetRequestBoundsTests(unittest.TestCase):
+    """Red-team round: input bounds on POST /my-bets. Every case here is a
+    pydantic-level 422 (ValidationError), which is what an ASGI request
+    would come back as -- the direct-call style just sees the exception
+    the framework would otherwise translate."""
+
+    def test_an_oversized_game_is_refused(self):
+        from pydantic import ValidationError
+        from api.mybets import SaveBetRequest, MAX_GAME_LENGTH
+        SaveBetRequest(game="X" * MAX_GAME_LENGTH, side="home")  # at the bound: fine
+        with self.assertRaises(ValidationError):
+            SaveBetRequest(game="X" * (MAX_GAME_LENGTH + 1), side="home")
+
+    def test_an_oversized_side_is_refused(self):
+        from pydantic import ValidationError
+        from api.mybets import SaveBetRequest, MAX_SIDE_LENGTH
+        SaveBetRequest(game="BOS@NYY", side="X" * MAX_SIDE_LENGTH)  # fine
+        with self.assertRaises(ValidationError):
+            SaveBetRequest(game="BOS@NYY", side="X" * (MAX_SIDE_LENGTH + 1))
+
+    def test_an_oversized_snapshot_digest_is_refused(self):
+        from pydantic import ValidationError
+        from api.mybets import SaveBetRequest, MAX_SNAPSHOT_DIGEST_LENGTH
+        SaveBetRequest(game="BOS@NYY", side="home",
+                       snapshot_digest="a" * MAX_SNAPSHOT_DIGEST_LENGTH)
+        with self.assertRaises(ValidationError):
+            SaveBetRequest(game="BOS@NYY", side="home",
+                           snapshot_digest="a" * (MAX_SNAPSHOT_DIGEST_LENGTH + 1))
+
+    def test_a_price_outside_the_plausible_magnitude_is_refused(self):
+        """Same bound POST /betcheck enforces (roughly 100-100000)."""
+        from pydantic import ValidationError
+        from api.mybets import SaveBetRequest
+        SaveBetRequest(game="BOS@NYY", side="home", price=-125)  # fine
+        with self.assertRaises(ValidationError):
+            SaveBetRequest(game="BOS@NYY", side="home", price=5)
+        with self.assertRaises(ValidationError):
+            SaveBetRequest(game="BOS@NYY", side="home", price=10_000_000)
+
+    def test_a_non_finite_price_is_a_422_never_a_silent_null(self):
+        """The bug this bound exists for: NaN/Infinity is valid IEEE-754
+        float input that used to reach sqlite as `price` and come back out
+        as a silent NULL on the next read, instead of being refused as the
+        unusable input it always was."""
+        from pydantic import ValidationError
+        for bad in (float("nan"), float("inf"), float("-inf")):
+            with self.subTest(bad=bad):
+                with self.assertRaises(ValidationError):
+                    from api.mybets import SaveBetRequest
+                    SaveBetRequest(game="BOS@NYY", side="home", price=bad)
+
+
+@unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
+class MyBetsRateLimitTests(unittest.TestCase):
+    """POST /my-bets is rate-limited per user (src/appstate/ratelimit.py).
+    This exercises the dependency function directly -- the ASGI-level
+    429 (through a real request) is covered in test_api_adversarial.py."""
+
+    def setUp(self):
+        import api.mybets as mybets_mod
+        from src.appstate import ratelimit
+        self._tmp = tempfile.TemporaryDirectory()
+        self.db = Path(self._tmp.name) / "app.db"
+        self._patcher = mock.patch.object(savedbets_store, "db_path", lambda: self.db)
+        self._patcher.start()
+        self.user = users_store.create_user("limiter1@example.com", db=self.db)
+        self._mybets_mod = mybets_mod
+        self._original_limiter = mybets_mod._mybets_limiter
+        self._original_dep = mybets_mod._rate_limited
+        # A tiny limit so the test does not need 60 real requests.
+        mybets_mod._mybets_limiter = ratelimit.FixedWindowLimiter(
+            limit=2, window_s=60.0)
+        mybets_mod._rate_limited = ratelimit.limiter_dependency(
+            mybets_mod._mybets_limiter, user_dependency=mybets_mod.get_current_user)
+
+    def tearDown(self):
+        self._mybets_mod._mybets_limiter = self._original_limiter
+        self._mybets_mod._rate_limited = self._original_dep
+        self._patcher.stop()
+        self._tmp.cleanup()
+
+    def test_the_limit_trips_after_the_configured_count(self):
+        from fastapi import HTTPException
+        dep = self._mybets_mod._rate_limited
+        request = mock.Mock(client=None)
+        dep(request=request, current_user=self.user)
+        dep(request=request, current_user=self.user)
+        with self.assertRaises(HTTPException) as ctx:
+            dep(request=request, current_user=self.user)
+        self.assertEqual(ctx.exception.status_code, 429)
+        self.assertIn("retry_after", ctx.exception.detail)
+
+    def test_a_different_user_gets_their_own_counter(self):
+        other = users_store.create_user("limiter2@example.com", db=self.db)
+        dep = self._mybets_mod._rate_limited
+        request = mock.Mock(client=None)
+        dep(request=request, current_user=self.user)
+        dep(request=request, current_user=self.user)
+        dep(request=request, current_user=other)  # a fresh counter, not shared
+
+
 if __name__ == "__main__":
     unittest.main()

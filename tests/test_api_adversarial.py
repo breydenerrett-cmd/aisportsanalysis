@@ -76,8 +76,9 @@ def _request(app, method, path, headers=None, body=None):
 class AuthedSurfaceTests(unittest.TestCase):
 
     def setUp(self):
+        import api.mybets as mybets_mod
         from api.auth import router as auth_router
-        from api.mybets import router as mybets_router
+        self._mybets_mod = mybets_mod
         self._tmp = tempfile.TemporaryDirectory()
         self.db = Path(self._tmp.name) / "app.db"
         # Both stores resolve their path lazily, and neither route passes a
@@ -91,9 +92,15 @@ class AuthedSurfaceTests(unittest.TestCase):
             patcher.start()
         self._admin_before = os.environ.get("APP_ADMIN_TOKEN")
         os.environ["APP_ADMIN_TOKEN"] = "admin-secret"
+        # The rate limiter is module-level (one process, one counter) and
+        # the route's Depends(...) captured this exact object at import
+        # time, so a fresh instance would never actually be wired to the
+        # route below. Clearing its internal window dict is what actually
+        # isolates one test's request count from the next.
+        mybets_mod._mybets_limiter._windows.clear()
         self.app = FastAPI()
         self.app.include_router(auth_router)
-        self.app.include_router(mybets_router)
+        self.app.include_router(mybets_mod.router)
 
     def tearDown(self):
         if self._admin_before is None:
@@ -102,6 +109,7 @@ class AuthedSurfaceTests(unittest.TestCase):
             os.environ["APP_ADMIN_TOKEN"] = self._admin_before
         for patcher in self._patchers:
             patcher.stop()
+        self._mybets_mod._mybets_limiter._windows.clear()
         self._tmp.cleanup()
 
     # -- helpers ----------------------------------------------------------
@@ -200,6 +208,95 @@ class AuthedSurfaceTests(unittest.TestCase):
                     self.app, "POST", "/admin/invites?email=no@e.com",
                     headers={"X-Admin-Token": wrong})
                 self.assertEqual(status, 401)
+
+    # -- POST /my-bets input bounds -----------------------------------------
+
+    def test_an_oversized_game_field_is_a_422_through_the_wire(self):
+        _, token = self._invite("bounds1@example.com")
+        status, _ = _request(
+            self.app, "POST", "/my-bets",
+            headers=self._auth(token), body={"game": "X" * 200, "side": "home"})
+        self.assertEqual(status, 422)
+
+    def test_a_non_finite_price_is_a_422_never_a_silent_null(self):
+        """The bug this bound exists for: a NaN/Infinity price used to
+        reach sqlite and come back out as a silent NULL on the next read.
+        json.dumps in `_request` cannot even encode float('nan') as valid
+        JSON per the spec, but Python's json module emits the literal
+        token `NaN` by default (allow_nan=True) -- exactly the loophole a
+        client sends raw bytes through, so the body is built by hand here
+        rather than through _request's json.dumps(body)."""
+        _, token = self._invite("bounds2@example.com")
+        for raw in (b'{"game": "BOS@NYY", "side": "home", "price": NaN}',
+                   b'{"game": "BOS@NYY", "side": "home", "price": Infinity}'):
+            with self.subTest(raw=raw):
+                headers = {**self._auth(token), "content-type": "application/json"}
+                raw_headers = [(k.lower().encode(), v.encode())
+                              for k, v in headers.items()]
+                scope = {"type": "http", "asgi": {"version": "3.0"},
+                        "http_version": "1.1", "method": "POST",
+                        "path": "/my-bets", "raw_path": b"/my-bets",
+                        "root_path": "", "scheme": "http", "query_string": b"",
+                        "headers": raw_headers, "client": ("127.0.0.1", 5000),
+                        "server": ("testserver", 80)}
+                captured, chunks = {}, []
+
+                async def receive():
+                    return {"type": "http.request", "body": raw, "more_body": False}
+
+                async def send(message):
+                    if message["type"] == "http.response.start":
+                        captured["status"] = message["status"]
+                    elif message["type"] == "http.response.body":
+                        chunks.append(message.get("body", b""))
+
+                asyncio.run(self.app(scope, receive, send))
+                self.assertEqual(captured.get("status"), 422)
+
+    def test_a_price_outside_the_plausible_magnitude_is_a_422(self):
+        _, token = self._invite("bounds3@example.com")
+        status, _ = _request(
+            self.app, "POST", "/my-bets",
+            headers=self._auth(token),
+            body={"game": "BOS@NYY", "side": "home", "price": 7})
+        self.assertEqual(status, 422)
+
+    # -- POST /my-bets rate limiting -----------------------------------------
+
+    def test_a_burst_past_the_per_minute_limit_gets_429(self):
+        """src/appstate/ratelimit.py, wired to POST /my-bets at 60/min --
+        the request count here comes from api.mybets.MYBETS_RATE_LIMIT_PER_MIN
+        itself so this test tracks the real configured limit rather than a
+        hard-coded copy of it."""
+        _, token = self._invite("ratelimited@example.com")
+        limit = self._mybets_mod.MYBETS_RATE_LIMIT_PER_MIN
+        statuses = []
+        for i in range(limit + 1):
+            status, _ = _request(
+                self.app, "POST", "/my-bets", headers=self._auth(token),
+                body={"game": "BOS@NYY", "side": "home"})
+            statuses.append(status)
+        self.assertEqual(statuses[:limit], [200] * limit)
+        self.assertEqual(statuses[limit], 429)
+
+    def test_two_different_users_do_not_share_a_counter(self):
+        limit = self._mybets_mod.MYBETS_RATE_LIMIT_PER_MIN
+        _, token_a = self._invite("usera@example.com")
+        for _ in range(limit):
+            status, _ = _request(
+                self.app, "POST", "/my-bets", headers=self._auth(token_a),
+                body={"game": "BOS@NYY", "side": "home"})
+            self.assertEqual(status, 200)
+        status, _ = _request(
+            self.app, "POST", "/my-bets", headers=self._auth(token_a),
+            body={"game": "BOS@NYY", "side": "home"})
+        self.assertEqual(status, 429)
+
+        _, token_b = self._invite("userb@example.com")
+        status, _ = _request(
+            self.app, "POST", "/my-bets", headers=self._auth(token_b),
+            body={"game": "BOS@NYY", "side": "home"})
+        self.assertEqual(status, 200)
 
     # -- revocation and expiry, through the wire this time -----------------
 

@@ -24,6 +24,7 @@ change to pick up caching; only their response shapes gained the additive
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 from typing import Optional, Tuple
 
@@ -46,6 +47,28 @@ ENTRIES_CACHE_TTL_S = 120.0
 # get_games, get_game, and get_changed together rather than each keeping
 # its own copy.
 _entries_cache = freshness.SingleFlightTTLCache(ttl_s=ENTRIES_CACHE_TTL_S)
+
+# Red-team round: a malformed {date} path segment used to reach
+# mlb.fetch_games unchecked, where src.providers.mlb's own _validate_date
+# raised MLBError -- caught below as a 502, telling the client the SCHEDULE
+# PROVIDER failed when the client's own input was the problem. Checking the
+# shape here, before any network call, turns that into the 400 it always
+# was; a well-formed date that the provider genuinely cannot serve still
+# reaches the `except mlb.MLBError` below unchanged.
+_ISO_DATE_RE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+
+
+def _validate_date(date: str) -> None:
+    if not isinstance(date, str) or not _ISO_DATE_RE.match(date):
+        raise HTTPException(
+            status_code=400,
+            detail=f"date must be ISO format YYYY-MM-DD, got {date!r}")
+    try:
+        datetime.strptime(date, "%Y-%m-%d")
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"date must be ISO format YYYY-MM-DD, got {date!r}") from exc
 
 
 def _newest_entries_odds_observed_utc(entries_and_notes: Tuple[list, list]
@@ -83,6 +106,7 @@ def _build_entries(date: str, **build_slate_kwargs) -> list:
     stale-flagged replay instead of a 502 -- see get_games/get_game/
     get_changed for how the `freshness` metadata surfaces that to callers.
     """
+    _validate_date(date)
     key = ("games_entries", date)
 
     def _rebuild():

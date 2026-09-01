@@ -14,6 +14,7 @@ access.
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException
@@ -24,11 +25,34 @@ from src.providers import mlb
 
 router = APIRouter()
 
+# Same shape check as api/games.py's _validate_date, kept as its own copy
+# per that module's rationale for the identical duplication in
+# api/today.py: each api/ module owns its own tiny wiring. A malformed date
+# used to reach mlb.fetch_games unchecked and surface as this module's own
+# 502 -- a client-input problem told as a provider outage. Checked here,
+# before any network call, it is the 400 it always was.
+_ISO_DATE_RE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+
+
+def _validate_date(date: str) -> None:
+    if not isinstance(date, str) or not _ISO_DATE_RE.match(date):
+        raise HTTPException(
+            status_code=400,
+            detail=f"date must be ISO format YYYY-MM-DD, got {date!r}")
+    try:
+        datetime.strptime(date, "%Y-%m-%d")
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"date must be ISO format YYYY-MM-DD, got {date!r}") from exc
+
 
 def _fetch_schedule(date: str) -> list:
     """One date's schedule, or a structured 502 on an unreachable provider --
     the same error contract api/games.py and api/today.py already use for the
-    identical failure."""
+    identical failure. A malformed date is refused as a 400 before this ever
+    reaches the provider -- see _validate_date."""
+    _validate_date(date)
     try:
         return mlb.fetch_games(date)
     except mlb.MLBError as exc:

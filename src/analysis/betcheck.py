@@ -495,7 +495,7 @@ def _cents_delta(stated_price, market_price):
 
 def _market_facts(side, american_price, board) -> dict:
     """Best available price, market-implied consensus, price improvement and
-    whether the stated price sits below the market -- or an explicit
+    whether the stated price BEATS the consensus -- or an explicit
     unavailable reason. Never a default: a missing board, a thin board, or a
     side with no priceable quote all come back with every price field None
     and a stated reason, exactly the "never fabricate" rule §4.11 states for
@@ -504,7 +504,7 @@ def _market_facts(side, american_price, board) -> dict:
     quotes = _board_quotes(board)
     observed_utc = board.get("observed_utc") if isinstance(board, dict) else None
     unavailable = dict(best_available_price=None, market_consensus=None,
-                       your_price_below_market=None, price_improvement=None,
+                       your_price_beats_consensus=None, price_improvement=None,
                        cents_delta=None)
 
     if not quotes:
@@ -535,15 +535,24 @@ def _market_facts(side, american_price, board) -> dict:
         improvement_points=detail.get("improvement_points"),
         improvement_return_pct=detail.get("improvement_return_pct"))
 
+    # "Beats" is decided in DECIMAL odds, the same arithmetic _cents_delta
+    # and the price-direction regression (test_betcheck_price_direction.py)
+    # already anchor on: the higher of two decimal payouts is the better
+    # price. The consensus is stated as an implied probability, so its
+    # equivalent decimal payout is 1 / implied_probability -- consensus
+    # probability is validated in (0, 1) by MarketImpliedConsensus before
+    # this ever runs, so the division is safe.
     try:
-        stated_implied = odds_math.american_to_probability(american_price)
+        stated_decimal = odds_math.american_to_decimal(american_price)
+        consensus_decimal = 1.0 / consensus_probability
     except odds_math.OddsError:
-        stated_implied = None
-    your_price_below_market = (stated_implied < consensus_probability
-                               if stated_implied is not None else None)
+        stated_decimal = None
+    your_price_beats_consensus = (
+        stated_decimal > consensus_decimal if stated_decimal is not None
+        else None)
 
     return dict(best_available_price=best_price, market_consensus=consensus,
-               your_price_below_market=your_price_below_market,
+               your_price_beats_consensus=your_price_beats_consensus,
                price_improvement=improvement,
                cents_delta=_cents_delta(american_price, detail.get("best_price")),
                reason=None)
@@ -607,11 +616,13 @@ def _bottom_line_text(support_n, counter_n, market) -> str:
         # best, so cents > 0 means the stated price BEATS the best number on
         # our board -- it does not mean it is worse than it.
         elif cents > 0:
-            price_clause = (f" The stated price is {cents} cents better than "
+            unit = "cent" if cents == 1 else "cents"
+            price_clause = (f" The stated price is {cents} {unit} better than "
                            f"the best available {_fmt_price(best.american_price)} "
                            "-- line-shopping value, not a prediction.")
         elif cents < 0:
-            price_clause = (f" The stated price is {abs(cents)} cents worse "
+            unit = "cent" if abs(cents) == 1 else "cents"
+            price_clause = (f" The stated price is {abs(cents)} {unit} worse "
                            f"than the best available "
                            f"{_fmt_price(best.american_price)} -- "
                            "line-shopping value, not a prediction.")
@@ -732,7 +743,7 @@ def build_contract(date, away_club, home_club, side, american_price, *,
         counterargument=tuple(counter_claims),
         best_available_price=market["best_available_price"],
         market_consensus=market["market_consensus"],
-        your_price_below_market=market["your_price_below_market"],
+        your_price_beats_consensus=market["your_price_beats_consensus"],
         what_changed=changes,
         strongest_reason=strongest_claim,
         weakest_reason=weakest_claim,

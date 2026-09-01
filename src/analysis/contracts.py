@@ -471,7 +471,13 @@ class BetCheckContract:
         metadata=_cap(REAL_TODAY))
     market_consensus: Optional[MarketImpliedConsensus] = field(
         metadata=_cap(REAL_TODAY))
-    your_price_below_market: Optional[bool] = field(
+    # Renamed from `your_price_below_market` (red-team round, see commit
+    # c75b8d6's deferred list): "below market" read as "below the market's
+    # implied probability", i.e. a WORSE price, exactly backwards from what
+    # the field actually carries (True = the customer's price beats the
+    # consensus -- docs/PRODUCT_DESIGN_HANDOFF.md:1191 already displays it
+    # that way). No compatibility alias: no consumer of the old name exists.
+    your_price_beats_consensus: Optional[bool] = field(
         metadata=_cap(REAL_TODAY))
     what_changed: Tuple[ChangeItem, ...] = field(metadata=_cap(REAL_TODAY))
     strongest_reason: Optional[str] = field(
