@@ -45,6 +45,7 @@ except ImportError:
 
 from src.appstate import billing
 from src.appstate import customers
+from src.appstate import events
 from src.appstate import users as users_store
 
 
@@ -559,6 +560,30 @@ class ReactivateEndpointTests(unittest.TestCase):
         record = customers.get_subscription_record(self.user.id, db=self.db)
         self.assertIsNone(record["cancel_at"])
         self.assertEqual(record["current_period_end"], "2026-10-01T00:00:00+00:00")
+
+    def test_successful_reactivation_records_its_own_event(self):
+        """A cancel that was undone is its own moment in the funnel, not
+        something an analyst has to infer from a churn that never arrived
+        -- the same explicit-user-action-only rule POST /billing/cancel's
+        SUBSCRIPTION_CANCELLED already follows."""
+        customers.upsert_subscription(self.user.id, "sub_1", "active", db=self.db)
+        resumed = billing.Subscription(
+            user_id=self.user.id, plan_id="price_beta", status="active",
+            provider_ref="sub_1", cancel_at_period_end=False)
+        with mock.patch.object(billing, "get_billing_provider") as get_provider:
+            stub = mock.Mock()
+            stub.reactivate.return_value = resumed
+            get_provider.return_value = stub
+            from api.billing import reactivate_subscription
+            with mock.patch.object(events, "record_event_safe") as safe:
+                reactivate_subscription(current_user=self.user)
+        safe.assert_called_once_with(self.user.id, events.SUBSCRIPTION_REACTIVATED)
+
+    def test_a_not_configured_reactivation_records_nothing(self):
+        from api.billing import reactivate_subscription
+        with mock.patch.object(events, "record_event_safe") as safe:
+            reactivate_subscription(current_user=self.user)
+        safe.assert_not_called()
 
 
 @unittest.skipUnless(HAVE_FASTAPI, "fastapi not installed")

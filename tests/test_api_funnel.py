@@ -49,6 +49,36 @@ class PostFunnelEventTests(unittest.TestCase):
         rows = events.list_events(db=self.db)
         self.assertEqual(rows[0].kind, "signup_started")
 
+    def test_account_created_is_rejected_from_the_public_endpoint(self):
+        """The point of splitting the kind: `signup_started` stays public
+        (a visitor really did reach the form, and only the client knows
+        that), but "an account was created" is a server-side fact and a
+        caller does not get to assert it -- otherwise the split would move
+        the conflation instead of removing it."""
+        from api.funnel import FunnelEventRequest, PUBLIC_FUNNEL_KINDS, post_funnel_event
+        self.assertNotIn(events.ACCOUNT_CREATED, PUBLIC_FUNNEL_KINDS)
+        with self.assertRaises(HTTPException) as ctx:
+            post_funnel_event(FunnelEventRequest(kind=events.ACCOUNT_CREATED))
+        self.assertEqual(ctx.exception.status_code, 400)
+        self.assertEqual(events.list_events(db=self.db), [])
+
+    def test_the_public_allowlist_is_unchanged_by_the_split(self):
+        """The existing web/ client keeps posting {landing_view,
+        signup_started} and must keep working -- the split is a server-side
+        fix, never a client-visible contract change."""
+        from api.funnel import PUBLIC_FUNNEL_KINDS
+        self.assertEqual(PUBLIC_FUNNEL_KINDS,
+                         frozenset({"landing_view", "signup_started"}))
+
+    def test_free_bet_check_is_rejected_from_the_public_endpoint(self):
+        """A free check is recorded by POST /betcheck/free actually
+        running one -- never from a client's say-so, or the free tier's own
+        funnel step would be inflatable by anyone with curl."""
+        from api.funnel import FunnelEventRequest, post_funnel_event
+        with self.assertRaises(HTTPException) as ctx:
+            post_funnel_event(FunnelEventRequest(kind=events.FREE_BET_CHECK))
+        self.assertEqual(ctx.exception.status_code, 400)
+
     def test_bet_saved_is_rejected_from_the_public_endpoint(self):
         """The exact ACCEPTANCE check this task names: a public caller
         cannot claim a bet was saved -- that kind is only ever recorded
@@ -156,7 +186,7 @@ class AdminFunnelTests(unittest.TestCase):
     def test_honest_zeros_with_no_events_at_all(self):
         from api.funnel import get_admin_funnel
         result = get_admin_funnel(_admin=None)
-        self.assertEqual(len(result["steps"]), 7)
+        self.assertEqual(len(result["steps"]), 9)
         for step in result["steps"]:
             self.assertEqual(step["count"], 0)
             self.assertIsNone(step["conversion_pct_from_previous"])
@@ -166,9 +196,9 @@ class AdminFunnelTests(unittest.TestCase):
         result = get_admin_funnel(_admin=None)
         kinds = [s["kind"] for s in result["steps"]]
         self.assertEqual(kinds, [
-            "landing_view", "signup_started", "checkout_started",
-            "checkout_completed", "invite_redeemed", "bet_check_run",
-            "bet_saved",
+            "landing_view", "free_bet_check", "signup_started",
+            "account_created", "checkout_started", "checkout_completed",
+            "invite_redeemed", "bet_check_run", "bet_saved",
         ])
 
     def test_counts_and_conversion_within_range(self):
@@ -185,13 +215,65 @@ class AdminFunnelTests(unittest.TestCase):
         self.assertIsNone(steps["landing_view"]["conversion_pct_from_previous"])
         self.assertEqual(steps["signup_started"]["count"], 1)
         self.assertEqual(steps["signup_started"]["conversion_pct_from_previous"], 50.0)
-        self.assertEqual(steps["checkout_started"]["count"], 0)
-        # previous step (signup_started) is nonzero, so 0/1 is an honest
+        self.assertEqual(steps["account_created"]["count"], 0)
+        # the baseline step (signup_started) is nonzero, so 0/1 is an honest
         # 0.0%, not a fabricated "no data" None -- None is reserved for
-        # when the previous step itself is 0 (see checkout_completed below,
-        # whose previous step -- checkout_started -- is 0).
-        self.assertEqual(steps["checkout_started"]["conversion_pct_from_previous"], 0.0)
-        self.assertIsNone(steps["checkout_completed"]["conversion_pct_from_previous"])
+        # when the baseline itself is 0 (see checkout_started below, whose
+        # baseline -- account_created -- is 0).
+        self.assertEqual(steps["account_created"]["conversion_pct_from_previous"], 0.0)
+        self.assertIsNone(steps["checkout_started"]["conversion_pct_from_previous"])
+
+    def test_the_two_signup_moments_are_counted_separately(self):
+        """The regression this whole split exists for: form-views and real
+        account creations used to land on one kind, so the
+        landing -> signup number was a mixture of the two. Recording three
+        form-views and one account creation must now read as exactly that,
+        not as four of anything."""
+        from api.funnel import get_admin_funnel
+        today = date.today().isoformat()
+        anon = events.hash_user_id("anonymous-funnel-visitor")
+        for minute in ("00", "01", "02"):
+            events.record_event(anon, events.SIGNUP_STARTED,
+                                at=f"{today}T00:{minute}:00+00:00", db=self.db)
+        events.record_event(events.hash_user_id(77), events.ACCOUNT_CREATED,
+                            at=f"{today}T00:03:00+00:00", db=self.db)
+
+        steps = {s["kind"]: s
+                 for s in get_admin_funnel(start=today, end=today,
+                                           _admin=None)["steps"]}
+        self.assertEqual(steps["signup_started"]["count"], 3)
+        self.assertEqual(steps["account_created"]["count"], 1)
+        self.assertEqual(steps["account_created"]["conversion_from"],
+                         "signup_started")
+        self.assertEqual(
+            steps["account_created"]["conversion_pct_from_previous"], 33.3)
+
+    def test_free_bet_check_is_a_branch_off_landing_not_a_gate_before_signup(self):
+        """Visitors who sign up without ever trying a free check are not a
+        conversion loss, so signup_started measures off landing_view -- and
+        the response says which baseline it used rather than leaving a
+        reader to assume the neighbouring row."""
+        from api.funnel import get_admin_funnel
+        today = date.today().isoformat()
+        anon = events.hash_user_id("anonymous-funnel-visitor")
+        events.record_event(anon, events.LANDING_VIEW,
+                            at=f"{today}T00:00:00+00:00", db=self.db)
+        events.record_event(events.hash_user_id("free-check:abc"),
+                            events.FREE_BET_CHECK,
+                            at=f"{today}T00:01:00+00:00", db=self.db)
+        events.record_event(anon, events.SIGNUP_STARTED,
+                            at=f"{today}T00:02:00+00:00", db=self.db)
+
+        steps = {s["kind"]: s
+                 for s in get_admin_funnel(start=today, end=today,
+                                           _admin=None)["steps"]}
+        self.assertEqual(steps["free_bet_check"]["count"], 1)
+        self.assertEqual(steps["free_bet_check"]["conversion_from"],
+                         "landing_view")
+        self.assertEqual(steps["signup_started"]["conversion_from"],
+                         "landing_view")
+        self.assertEqual(
+            steps["signup_started"]["conversion_pct_from_previous"], 100.0)
 
     def test_events_outside_the_date_range_are_excluded(self):
         from api.funnel import get_admin_funnel

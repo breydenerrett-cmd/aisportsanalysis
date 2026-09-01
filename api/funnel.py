@@ -17,8 +17,17 @@ anonymous POST claim any of those would let anyone inflate "bet_saved" or
 "checkout_completed" counts with events that never happened.
 `PUBLIC_FUNNEL_KINDS` is the narrow allowlist of the two kinds that
 genuinely have no authenticated identity yet: a page view of the landing
-page, and a visitor beginning the signup form. Every other kind stays
+page, and a visitor REACHING the signup form. Every other kind stays
 server-recorded only, exactly as it already was before this file existed.
+
+That allowlist is deliberately UNCHANGED by the 2026-09-01 signup split:
+`signup_started` is still exactly what an anonymous client may post, and
+still means "a visitor reached the form". What changed is that it no longer
+ALSO means "an account was created" -- that moment is `account_created`,
+recorded server-side in api/signup.py and, like every other server-side
+kind, refused from this endpoint. Keeping the public contract fixed is what
+lets the existing web/ client keep beaconing while the funnel becomes
+honest behind it.
 
 WHY A FIXED SENTINEL id, NOT THE CALLER'S IP
 ------------------------------------------------
@@ -123,19 +132,37 @@ def post_funnel_event(body: FunnelEventRequest) -> dict:
     return {"recorded": True}
 
 
-# The ordered acquisition funnel this task's brief names, stage by stage.
-# CHECKOUT_STARTED/CHECKOUT_COMPLETED have no call site in this codebase yet
-# (api/signup.py / api/billing.py, a concurrent lane's files) -- until they
-# are wired, those two steps are an honest zero, never omitted or faked.
+# The ordered acquisition funnel, stage by stage. FREE_BET_CHECK sits where
+# the product puts it -- a visitor tries the thing before deciding to sign
+# up -- and SIGNUP_STARTED/ACCOUNT_CREATED are two rows, not one, since
+# 2026-09-01 (see events.ACCOUNT_CREATED's own comment for why the merged
+# version was actively wrong rather than merely coarse).
 FUNNEL_STEPS: List[str] = [
     events.LANDING_VIEW,
+    events.FREE_BET_CHECK,
     events.SIGNUP_STARTED,
+    events.ACCOUNT_CREATED,
     events.CHECKOUT_STARTED,
     events.CHECKOUT_COMPLETED,
     events.INVITE_REDEEMED,
     events.BET_CHECK_RUN,
     events.BET_SAVED,
 ]
+
+# Which step each step's conversion percentage is measured FROM. Defaults to
+# the one immediately before it; this map is the exception list.
+#
+# Trying the free tier is a BRANCH off the landing page, not a gate in front
+# of signup -- plenty of visitors will read the page and sign up without
+# ever running a free check. Chaining signup_started off free_bet_check
+# (which is what a plain neighbour-to-neighbour walk does once free_bet_check
+# is inserted) would report those visitors as a conversion loss and could
+# even read over 100%. Both steps therefore measure off landing_view, and
+# the response says so in `conversion_from` rather than leaving a reader to
+# assume the neighbour.
+CONVERSION_BASELINE: Dict[str, str] = {
+    events.SIGNUP_STARTED: events.LANDING_VIEW,
+}
 
 # BET_CHECK_RUN and BET_SAVED can fire many times for the same user; the
 # funnel step this task names is "first bet_check_run" / "first bet_saved",
@@ -145,6 +172,12 @@ FUNNEL_STEPS: List[str] = [
 # hash, so "distinct users" would collapse them to one no matter how many
 # visitors there really were, and INVITE_REDEEMED/CHECKOUT_* already fire at
 # most once per token/session by construction (see their own call sites).
+# FREE_BET_CHECK is counted raw as well, and that is the useful number here:
+# each free identity may run up to three, and "how much of the free budget
+# is actually being spent" is what says whether the offer is landing. Its
+# user_hash IS per-identity (unlike the landing sentinel), so the
+# distinct-visitor version stays recoverable from the same rows if it is
+# ever wanted -- it is just not the launch question.
 FIRST_OCCURRENCE_STEPS = frozenset({events.BET_CHECK_RUN, events.BET_SAVED})
 
 FUNNEL_DEFAULT_WINDOW_DAYS = 30
@@ -222,8 +255,12 @@ def get_admin_funnel(start: Optional[str] = None, end: Optional[str] = None,
     A step with zero events renders as count 0, never omitted -- "nobody
     reached checkout_started yet" is real information for a beta this
     early, not a hole in the data. `conversion_pct_from_previous` is `None`
-    (never a fabricated 0 or 100) whenever the previous step's count is
-    itself 0 -- there is no honest percentage of zero.
+    (never a fabricated 0 or 100) whenever the baseline step's count is
+    itself 0 -- there is no honest percentage of zero. Each step also names
+    the step its percentage is measured from in `conversion_from` (`None`
+    for the first step, which has nothing to convert from): usually the
+    step immediately before, except where CONVERSION_BASELINE says
+    otherwise, and a reader should not have to guess which.
     """
     default_start, default_end = _default_range()
     start = start or default_start
@@ -235,16 +272,19 @@ def get_admin_funnel(start: Optional[str] = None, end: Optional[str] = None,
 
     counts = _step_counts(start, end)
     steps_out = []
-    previous_count: Optional[int] = None
-    for kind in FUNNEL_STEPS:
+    for index, kind in enumerate(FUNNEL_STEPS):
         count = counts[kind]
+        baseline_kind = CONVERSION_BASELINE.get(kind)
+        if baseline_kind is None and index > 0:
+            baseline_kind = FUNNEL_STEPS[index - 1]
+        baseline_count = counts.get(baseline_kind) if baseline_kind else None
         conversion_pct_from_previous = None
-        if previous_count:
-            conversion_pct_from_previous = round(100.0 * count / previous_count, 1)
+        if baseline_count:
+            conversion_pct_from_previous = round(100.0 * count / baseline_count, 1)
         steps_out.append({
             "kind": kind,
             "count": count,
+            "conversion_from": baseline_kind,
             "conversion_pct_from_previous": conversion_pct_from_previous,
         })
-        previous_count = count
     return {"start": start, "end": end, "steps": steps_out}

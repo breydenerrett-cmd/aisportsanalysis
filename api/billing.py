@@ -247,6 +247,12 @@ def reactivate_subscription(current_user: User = Depends(get_current_user),
         return {"status": "error",
                 "message": "reactivation could not be completed; try again shortly"}
     _persist(current_user.id, subscription)
+    # Mirrors POST /billing/cancel's own event exactly, including the
+    # explicit-user-action-only rule: a webhook-driven change never records
+    # this, so the two kinds stay comparable and a cancel that was undone
+    # is a visible moment rather than something inferred from a churn that
+    # never arrived.
+    events.record_event_safe(current_user.id, events.SUBSCRIPTION_REACTIVATED)
     return _subscription_body(subscription)
 
 

@@ -240,6 +240,23 @@ else
     fail "POST /betcheck for an unknown matchup returned ${BETCHECK_STATUS}, expected 404 or 502"
 fi
 
+echo "== step 8b: POST /betcheck/free is reachable with NO credential at all =="
+# The landing page's "3 Bet Checks, no card required" offer. This asserts
+# only that the route is genuinely open -- an unknown matchup answers the
+# same 404/502 the authed route does. A 401/403 here would mean the free
+# tier silently went back behind the login wall; a 200 is impossible for a
+# matchup that does not exist, and the lifetime counter is unit-tested
+# (tests/test_api_betcheck_free.py) rather than burned through here.
+FREE_BETCHECK_STATUS="$(curl -s -o /dev/null -w '%{http_code}' \
+    -X POST "${BASE}/betcheck/free" \
+    -H 'Content-Type: application/json' \
+    -d "{\"date\": \"${RECENT_DATE}\", \"away\": \"ZZZ\", \"home\": \"YYY\", \"side\": \"home\", \"american_price\": -110}")"
+if [ "$FREE_BETCHECK_STATUS" = "404" ] || [ "$FREE_BETCHECK_STATUS" = "502" ]; then
+    pass "POST /betcheck/free (no token) returned a clean ${FREE_BETCHECK_STATUS}"
+else
+    fail "POST /betcheck/free (no token) returned ${FREE_BETCHECK_STATUS}, expected 404 or 502"
+fi
+
 echo "== step 9: POST /my-bets + GET /my-bets (settlement fields present, unresolved) =="
 SAVE_BODY="$(curl -s -X POST "${BASE}/my-bets" "${AUTH_HEADER[@]}" \
     -H 'Content-Type: application/json' \
@@ -329,10 +346,10 @@ with open('/tmp/funnel_admin_body') as f:
     data = json.load(f)
 counts = {step['kind']: step['count'] for step in data['steps']}
 assert counts.get('landing_view', 0) >= 1, f\"landing_view={counts.get('landing_view')}\"
-assert counts.get('signup_started', 0) >= 1, f\"signup_started={counts.get('signup_started')}\"
+assert counts.get('account_created', 0) >= 1, f\"account_created={counts.get('account_created')}\"
 assert counts.get('checkout_completed', 0) >= 1, f\"checkout_completed={counts.get('checkout_completed')}\"
 " 2>/tmp/funnel_admin_err; then
-    pass "GET /admin/funnel shows landing_view/signup_started/checkout_completed all >= 1"
+    pass "GET /admin/funnel shows landing_view/account_created/checkout_completed all >= 1"
 else
     fail "GET /admin/funnel counts check failed: $(cat /tmp/funnel_admin_err 2>/dev/null) -- body: $(cat /tmp/funnel_admin_body)"
 fi

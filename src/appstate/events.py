@@ -23,7 +23,17 @@ WIRED-IN CALL SITES
                            previous digest -- see src/analysis/digest.py's
                            "SINCE LAST DIGEST" section for why that read has
                            to happen first.
-  - api/signup.py        -> kind=SIGNUP_STARTED, on every new self-serve
+  - api/betcheck.py     -> kind=FREE_BET_CHECK, on a successful POST
+                           /betcheck/free -- the anonymous, lifetime-capped
+                           free tier (src/appstate/freechecks.py). Recorded
+                           under `"free-check:" + <grant token hash>` as the
+                           raw id (api/betcheck.py's
+                           FREE_CHECK_EVENT_IDENTITY_PREFIX), never a user
+                           id and never the raw token: there IS a real,
+                           server-minted identity here, so unlike the
+                           landing beacon this one is honestly
+                           per-visitor-distinguishable, but it is not a user.
+  - api/signup.py        -> kind=ACCOUNT_CREATED, on every new self-serve
                            signup (POST /signup creating a fresh user row);
                            kind=CHECKOUT_STARTED, whenever a real Stripe
                            checkout URL was actually handed back (never on
@@ -34,12 +44,14 @@ WIRED-IN CALL SITES
                            unauthenticated visitor may record before
                            anything else in the funnel has happened (see
                            that module's PUBLIC_FUNNEL_KINDS). SIGNUP_STARTED
-                           is also in that allowlist, recorded on the same
-                           beacon when the visitor is not yet a real user
-                           row (api/signup.py's own SIGNUP_STARTED call site
-                           covers the authenticated/self-serve case above;
-                           the two are the same kind, recorded from whichever
-                           side of the signup form the visitor is on).
+                           is also in that allowlist and is now recorded
+                           ONLY there: it means "a visitor reached the
+                           signup form", nothing more. The moment an account
+                           actually gets created is a DIFFERENT kind,
+                           ACCOUNT_CREATED (api/signup.py) -- the two shared
+                           one kind until 2026-09-01, which made
+                           landing_view -> signup_started conversion measure
+                           a mixture of page-loads and real signups.
                            Recorded under a fixed anonymous sentinel id
                            (ANONYMOUS_FUNNEL_USER_ID in api/funnel.py), never
                            a real user id, since there is no authenticated
@@ -55,12 +67,17 @@ WIRED-IN CALL SITES
                            /billing/cancel, on an explicit user-initiated
                            cancellation only (never from a webhook-only
                            cancellation, to avoid double-counting the same
-                           cancellation from two sources).
+                           cancellation from two sources);
+                           kind=SUBSCRIPTION_REACTIVATED, from POST
+                           /billing/reactivate, under the identical
+                           explicit-user-action-only rule, so a cancel that
+                           was undone is visible as its own moment rather
+                           than inferred from the absence of a later churn.
 `api/today.py`'s `get_today_payload_cached` accepts an optional `user_id`
-and records PAGE_VIEW when given one, but `GET /today` itself is wired
-directly in api/app.py, which this task's BOUNDARIES forbid touching beyond
-one admin include_router line -- so that one call site stays inert until a
-future one-line app.py change passes `user_id=` through.
+and records PAGE_VIEW when given one. That call site is LIVE: `GET /today`
+in api/app.py passes `user_id=getattr(request.state, "user_id", None)`
+through to it (this docstring claimed the opposite until 2026-09-01, left
+over from before that one-line wiring landed).
 `user_hash` at each call site is `hash_user_id(current_user.id)` (or
 whatever raw id the caller has -- `request.state.user_id` for the router-
 level-authed GET routes) -- never the raw id, and never anything from the
@@ -92,9 +109,10 @@ documents its append-only contract in prose rather than code.
 SCHEMA
 ------
 analytics_events(id, user_hash, kind, properties_json, at)
-    kind: page_view | bet_check_run | bet_saved | invite_redeemed |
-          landing_view | signup_started | checkout_started |
-          checkout_completed | subscription_cancelled | digest_viewed
+    kind: page_view | bet_check_run | free_bet_check | bet_saved |
+          invite_redeemed | landing_view | signup_started |
+          account_created | checkout_started | checkout_completed |
+          subscription_cancelled | subscription_reactivated | digest_viewed
     at:   required ISO-8601 UTC string, the instant the event happened.
 """
 
@@ -124,18 +142,34 @@ PAGE_VIEW = "page_view"
 BET_CHECK_RUN = "bet_check_run"
 BET_SAVED = "bet_saved"
 INVITE_REDEEMED = "invite_redeemed"
-SIGNUP_STARTED = "signup_started"
 CHECKOUT_STARTED = "checkout_started"
 CHECKOUT_COMPLETED = "checkout_completed"
 SUBSCRIPTION_CANCELLED = "subscription_cancelled"
+SUBSCRIPTION_REACTIVATED = "subscription_reactivated"
 DIGEST_VIEWED = "digest_viewed"
+# A completed Bet Check on the ANONYMOUS free tier (POST /betcheck/free) --
+# deliberately a different kind from BET_CHECK_RUN, which is a paid/authed
+# user's check: mixing them would make "first check by a real customer"
+# uncountable, and that is the activation number the funnel exists for.
+FREE_BET_CHECK = "free_bet_check"
+# A visitor REACHED the signup form (the public beacon in api/funnel.py) --
+# not that they submitted it. ACCOUNT_CREATED below is the submission.
+SIGNUP_STARTED = "signup_started"
+# A real user row was created by POST /signup. Split out of SIGNUP_STARTED
+# on 2026-09-01: one kind recorded from both the client-side form-view
+# beacon and the server-side row creation meant landing_view ->
+# signup_started conversion was a mixture of two different moments, so the
+# single most decision-relevant launch number was wrong rather than merely
+# missing (docs/CONVERSION_INSTRUMENTATION_AUDIT.md, gap 1).
+ACCOUNT_CREATED = "account_created"
 # The one funnel kind with no authenticated identity behind it at all --
 # see api/funnel.py's PUBLIC_FUNNEL_KINDS and module docstring above.
 LANDING_VIEW = "landing_view"
 
 EVENT_KINDS = frozenset({
-    PAGE_VIEW, BET_CHECK_RUN, BET_SAVED, INVITE_REDEEMED,
-    SIGNUP_STARTED, CHECKOUT_STARTED, CHECKOUT_COMPLETED, SUBSCRIPTION_CANCELLED,
+    PAGE_VIEW, BET_CHECK_RUN, FREE_BET_CHECK, BET_SAVED, INVITE_REDEEMED,
+    SIGNUP_STARTED, ACCOUNT_CREATED, CHECKOUT_STARTED, CHECKOUT_COMPLETED,
+    SUBSCRIPTION_CANCELLED, SUBSCRIPTION_REACTIVATED,
     DIGEST_VIEWED, LANDING_VIEW,
 })
 

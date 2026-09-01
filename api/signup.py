@@ -209,7 +209,13 @@ def signup(body: SignupRequest, _rate_limit: None = Depends(_rate_limit_signup))
             if user is None:
                 raise HTTPException(status_code=400, detail=str(exc))
             return _respond_for(user)
-        events.record_event_safe(user.id, events.SIGNUP_STARTED)
+        # ACCOUNT_CREATED, not SIGNUP_STARTED: this is the moment a real
+        # user row came into existence. SIGNUP_STARTED now belongs solely
+        # to the client-side beacon that fires when a visitor REACHES the
+        # form (api/funnel.py's PUBLIC_FUNNEL_KINDS) -- the two shared one
+        # kind until 2026-09-01, which made the landing -> signup
+        # conversion number a mixture of page-loads and real signups.
+        events.record_event_safe(user.id, events.ACCOUNT_CREATED)
     return _respond_for(user)
 
 

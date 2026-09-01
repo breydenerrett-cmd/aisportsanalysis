@@ -84,11 +84,18 @@ class SignupUnconfiguredBillingTests(unittest.TestCase):
         self.assertIsNotNone(user)
         self.assertEqual(user.status, "waitlisted")
 
-    def test_signup_records_signup_started_once(self):
+    def test_signup_records_account_created_once(self):
+        """The kind is ACCOUNT_CREATED, never SIGNUP_STARTED: the latter now
+        belongs solely to the client-side "reached the form" beacon
+        (api/funnel.py's PUBLIC_FUNNEL_KINDS). Recording both from here is
+        what made landing -> signup conversion a mixture of page-loads and
+        real signups until 2026-09-01."""
         from api.signup import SignupRequest, signup
         with mock.patch.object(events, "record_event_safe") as safe:
             signup(SignupRequest(email="once@example.com"), _rate_limit=None)
-        safe.assert_any_call(mock.ANY, events.SIGNUP_STARTED)
+        safe.assert_any_call(mock.ANY, events.ACCOUNT_CREATED)
+        for call in safe.call_args_list:
+            self.assertNotEqual(call.args[1], events.SIGNUP_STARTED)
 
     def test_repeat_signup_is_idempotent_no_duplicate_user(self):
         from api.signup import SignupRequest, signup
@@ -97,13 +104,13 @@ class SignupUnconfiguredBillingTests(unittest.TestCase):
         self.assertEqual(first["user_id"], second["user_id"])
         self.assertEqual(second["status"], "waitlisted")
 
-    def test_repeat_signup_does_not_re_emit_signup_started(self):
+    def test_repeat_signup_does_not_re_emit_account_created(self):
         from api.signup import SignupRequest, signup
         signup(SignupRequest(email="onceonly@example.com"), _rate_limit=None)
         with mock.patch.object(events, "record_event_safe") as safe:
             signup(SignupRequest(email="onceonly@example.com"), _rate_limit=None)
         for call in safe.call_args_list:
-            self.assertNotEqual(call.args[1], events.SIGNUP_STARTED)
+            self.assertNotEqual(call.args[1], events.ACCOUNT_CREATED)
 
     def test_invalid_email_is_400(self):
         from api.signup import SignupRequest, signup

@@ -35,7 +35,8 @@ doc alongside it.
 | Surface | Requirement |
 |---|---|
 | Game surface (`/today`, `/games/{date}`, `/game/{date}/{away}/{home}`, `/changed/{date}`, `/odds/{date}`, `/odds/{date}/{away}/{home}`, `/betcheck`, `/my-bets*`) | `Authorization: Bearer <invite token>` (`api/auth.py`'s `get_current_user`) |
-| `/health`, `/meta`, `/web/*` | open, no token |
+| `/betcheck/free` | open, no token — the landing page's three introductory Bet Checks. Not an exception to the rule above: it serves one game per call, is capped at 3 per anonymous identity **for life** (`src/appstate/freechecks.py`), and carries its own 10/hour-per-IP limiter |
+| `/health`, `/meta`, `/web/*`, `POST /funnel/event` | open, no token |
 | `/admin/*` | `X-Admin-Token`, a separate admin credential (`api/auth.py`'s `_require_admin`) -- disabled (404) entirely unless `APP_ADMIN_TOKEN` is set |
 | `/billing/*` | `/billing/checkout` and `/billing/status` require a Bearer token (same as the game surface); `/billing/webhook` is called by Stripe, not a browser, and is verified by Stripe's own webhook signature instead |
 
@@ -240,6 +241,38 @@ Response:
 Unknown game: structured `404`. Implausible price: `422` (pydantic
 validation), not a `500`.
 
+## `POST /betcheck/free`
+
+The same Bet Check, for an anonymous visitor, three times in their life
+(`api/betcheck.py`, `src/appstate/freechecks.py`). Identical request body
+and identical response shape to `POST /betcheck` — the same mandatory
+`counterargument_lines`, the same permanently-`null` `recommendation`, the
+same `400`/`404`/`502` contracts, the same honest unavailability when the
+stores are empty. It is not a preview or a teaser; the only difference is
+the extra `free_check` block and the budget.
+
+Request: identical to `POST /betcheck`, plus an optional
+`X-Free-Check-Token` header — the value the server minted on this
+visitor's first successful free check. Absent, unknown, or tampered: the
+caller is treated as a first-time visitor and (on success) gets a **new**
+identity with a fresh budget — never someone else's remaining checks, and
+never extra checks for the token they presented.
+
+Response: the `POST /betcheck` payload plus:
+
+| Field | Type | Notes |
+|---|---|---|
+| `free_check.token` | string | the identity to send back in `X-Free-Check-Token` on the next call — the client must store it, the server never sets a cookie |
+| `free_check.limit` | integer | `3` |
+| `free_check.used` | integer | including this check |
+| `free_check.remaining` | integer | never negative |
+
+A fourth check is `402` with `{"error": "free_checks_exhausted",
+"remaining": 0, "limit": 3, "free_check_token": <same token back>,
+"message": ...}` under `detail`, and no analysis is run. A `400`/`404`/`502`
+costs nothing — the budget is only spent on a check the visitor actually
+received. Rate limit: `429` past 10 requests/hour/IP.
+
 ## `GET /my-bets`, `POST /my-bets`, `DELETE /my-bets/{bet_id}`
 
 The authed user's saved bets (`api/mybets.py`, `src/appstate/savedbets`).
@@ -278,6 +311,27 @@ isn't configured yet (`docs/LAUNCH_DECISIONS.md` Decision 2):
 | `checkout_url` | string | present only when `status` is `"redirect"` |
 | `message` | string | present only when `status` is `"not_configured"` |
 | `stripe_subscription_id` / `updated_at` | string | present only on status, only when a webhook has ever reported a subscription for this user |
+| `cancel_at` | string (ISO-8601 UTC) \| null | status only — Stripe's scheduled-cancellation timestamp, `null` when no cancellation is scheduled |
+| `current_period_end` | string (ISO-8601 UTC) \| null | status only — the paid-through timestamp: what a cancelled customer keeps access until, and what the paid-surface gate measures "expired" against. `null` when no webhook has carried one — absent stays absent, never a guessed date |
+
+## `POST /billing/cancel`, `POST /billing/reactivate`
+
+Both require a Bearer token and both answer with one shape, so a client
+parses a single structure either way. Cancel is **scheduled**, never
+immediate: it stops renewal and takes nothing away, so the honest post-cancel
+report is usually still `status: "active"` with `cancel_at_period_end: true`.
+Reactivate undoes a scheduled cancel, with no gap. Both are reachable by a
+customer whose paid period has already lapsed (the paid-surface `402` gate
+deliberately does not cover `/billing/*`), but a subscription Stripe has
+actually ended cannot be resumed — the provider's canceled state is reported
+back unchanged rather than a reactivation that did not happen.
+
+| Field | Type | Notes |
+|---|---|---|
+| `status` | string | a Stripe subscription status, or `"not_configured"` / `"error"` |
+| `stripe_subscription_id` | string \| null | |
+| `cancel_at_period_end` | boolean | the field that actually says whether renewal is stopped — not `status` |
+| `cancel_at` / `current_period_end` | string (ISO-8601 UTC) \| null | |
 
 `POST /billing/webhook`: `501` when `STRIPE_WEBHOOK_SECRET` is unset (no
 provider live to have honestly sent this); otherwise verifies the
@@ -336,6 +390,46 @@ routes here.
 — the ONE place in this API an email appears (see module docstring's
 rationale); every other response is scoped to sha256 hashes or the
 caller's own data.
+
+## `POST /funnel/event` (public), `GET /admin/funnel` (admin-only)
+
+`POST /funnel/event` takes `{"kind": string, "properties": object|null}` and
+returns `{"recorded": true}`. The allowlist an anonymous caller may post is
+exactly **`landing_view`** and **`signup_started`** — every other kind is a
+`400` (`{"error": "kind_not_public"}`), because every other kind records a
+thing the server itself witnessed. `properties` over 2KB or unserializable
+is a `400`. Rate limit: 60/hour/IP.
+
+`GET /admin/funnel?start=&end=` returns `{start, end, steps: [{kind, count,
+conversion_from, conversion_pct_from_previous}]}`. A step with no events is
+`count: 0`, never omitted; `conversion_pct_from_previous` is `null` (never a
+fabricated `0` or `100`) whenever the baseline step's own count is `0`.
+`conversion_from` names which step the percentage is measured against —
+usually the preceding one, and `null` for the first step.
+
+### Event kinds
+
+| Kind | Recorded when | By |
+|---|---|---|
+| `landing_view` | landing page loaded | public beacon |
+| `free_bet_check` | a `POST /betcheck/free` succeeded | server |
+| `signup_started` | a visitor **reached** the signup form | public beacon |
+| `account_created` | `POST /signup` created a real user row | server |
+| `checkout_started` | a real Stripe checkout URL was handed back | server |
+| `checkout_completed` | a signature-verified `checkout.session.completed` webhook | server |
+| `invite_redeemed` | a token's first authenticated use | server |
+| `bet_check_run` | a `POST /betcheck` succeeded (authed/paid) | server |
+| `bet_saved` | a `POST /my-bets` succeeded | server |
+| `page_view`, `digest_viewed` | a successful game-surface / digest read | server |
+| `subscription_cancelled` | `POST /billing/cancel` (explicit user action only) | server |
+| `subscription_reactivated` | `POST /billing/reactivate` (explicit user action only) | server |
+
+`signup_started` and `account_created` were ONE kind until 2026-09-01,
+recorded from both the client beacon and the server's row creation — which
+made landing→signup conversion a mixture of page-loads and real signups
+(`docs/CONVERSION_INSTRUMENTATION_AUDIT.md`, gap 1). Historical rows
+recorded before the split carry the old, merged meaning under
+`signup_started`; nothing was rewritten.
 
 ## `GET /web`, `GET /web/{path}` (static mount)
 

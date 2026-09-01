@@ -16,7 +16,7 @@ import uuid
 from datetime import date as date_cls
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 
 from src.appstate import reqlog
 from src.pipeline import history
@@ -29,7 +29,7 @@ from api.billing import router as billing_router
 from api.onboarding import router as onboarding_router
 from api.signup import router as signup_router
 from api.support import router as support_router
-from api.betcheck import router as betcheck_router
+from api.betcheck import free_router as free_betcheck_router, router as betcheck_router
 from api.games import router as games_router
 from api.meta import router as meta_router
 from api.web import router as web_router
@@ -90,6 +90,16 @@ app.include_router(digest_router, dependencies=_authed)
 # fetch-and-build wiring, same separation as the routers above.
 app.include_router(betcheck_router, dependencies=_authed_paid)
 
+# POST /betcheck/free -- deliberately mounted with NO auth dependency: it is
+# the landing page's "3 Bet Checks, no card required" offer, which cannot be
+# honoured behind the login wall the rest of the game surface sits behind.
+# It is not a hole in red-team finding 2's decision: the free route serves
+# one game's check per call, is capped at three per server-minted anonymous
+# identity for life (src/appstate/freechecks.py), and carries its own tight
+# per-IP hourly limiter -- none of which lets it become the bulk slate/odds
+# surface that finding was about.
+app.include_router(free_betcheck_router)
+
 
 # -- request logging + structured 500s -------------------------------------
 #
@@ -145,6 +155,36 @@ def _route_template(request: Request) -> str:
     """
     route = request.scope.get("route")
     return route.path if route is not None else request.url.path
+
+
+# -- customer entry points -------------------------------------------------
+#
+# api/web.py serves the client under the /web prefix, which is a deployment
+# detail no visitor can be expected to type: the bare origin answered with
+# the default JSON 404 (found on linehound-staging, 2026-09-01). These two
+# routes are the human-facing doors onto that mount.
+#
+# REDIRECT, NEVER A FileResponse AT "/". web/landing.html references its
+# css/js by RELATIVE path, so serving its bytes at the root would resolve
+# every asset URL against "/" instead of "/web/" and silently break the
+# whole page. A redirect moves the browser's base URL, which is the thing
+# those relative paths actually depend on. 307 (not 301/302) so the method
+# is preserved and nothing is cached permanently while these paths are
+# still moving.
+@app.get("/", include_in_schema=False)
+def root_redirect() -> RedirectResponse:
+    """The bare origin -> the marketing landing page. No auth: this is the
+    first thing a prospective customer ever hits."""
+    return RedirectResponse(url="/web/landing.html", status_code=307)
+
+
+@app.get("/app", include_in_schema=False)
+def app_shell_redirect() -> RedirectResponse:
+    """The signed-in shell -> api/web.py's directory entry point, which
+    serves web/index.html. Same no-auth reasoning api/web.py's own module
+    docstring gives: the token-entry form has to be reachable without a
+    token, or nobody could ever enter one."""
+    return RedirectResponse(url="/web", status_code=307)
 
 
 @app.get("/today", dependencies=_authed_paid)
