@@ -140,12 +140,20 @@ AWAITING BREY on the 2024 holdout question before Phase 2.
 - PATH D (any real edge survives everything): decision-policy freeze →
   sealed-2026 one-shot request to Brey (HARD GATE, one evaluation, ever).
 
-### CURRENT TASK
-Repairing forward evidence. The 2026-08-31 resume audit found the capture
-lane quietly broken in three places at once (see FORWARD EVIDENCE AUDIT
-below): the F5 close store had never been written, every accumulated V3
-event was unmappable, and the odds captures were gitignored. Nothing about
-"accumulating nicely" was true. Repair before any new research direction.
+### CURRENT TASK (2026-09-01)
+PAID-BETA LAUNCH is the active program. Staging is LIVE at
+https://linehound-staging.fly.dev (GitHub Actions deploy; hourly health
+monitor; auto-redeploys on code + capture commits). LINEHOUND Launch Ops
+(separate session) owns Stripe/webhook/Fly-secrets and the checkout dry
+run; the visual design system is being finished in a separate Claude
+Design session; both hand back here. This session: engineering/research
+that does not collide with those — commerce/auth hardening (done, all
+review findings fixed pre-Stripe), monitoring, tests, and research on
+triggers. One gate recorded for Launch Ops: staging must be on a build
+>= 6489bfa before BILLING_PROVIDER=stripe (docs/LAUNCH_OPS_SECURITY_
+HANDOFF.md). The forward-evidence repair below is COMPLETE (kept as the
+standing lesson); the two-tools work order is COMPLETE. V3 still below
+its 30-event measurement floor, accumulating on the hourly captures.
 
 ### FORWARD EVIDENCE AUDIT (2026-08-31, the lesson)
 A monitor that reports health is not the same as health. Three failures ran
