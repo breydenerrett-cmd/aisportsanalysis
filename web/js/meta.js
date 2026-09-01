@@ -16,13 +16,21 @@ export async function renderDisclaimerFooter(container) {
   });
   try {
     const meta = await apiGet("/meta");
+    // meta.disclaimer is documented as an object ({id, temporary,
+    // requires_final_legal_review, text} -- api/meta.py) rather than a
+    // bare string; a legal disclaimer must never render as
+    // "[object Object]" (the el() text-node path would do exactly that
+    // if handed the object itself).
+    const disclaimerText = meta.disclaimer && typeof meta.disclaimer === "object"
+      ? meta.disclaimer.text
+      : meta.disclaimer;
     region.appendChild(el("p", {
       class: "app-disclaimer__product", "data-hook": "product-one-liner",
       text: meta.product,
     }));
     region.appendChild(el("p", {
       class: "app-disclaimer__text", "data-hook": "disclaimer-text",
-      text: meta.disclaimer,
+      text: disclaimerText,
     }));
     region.appendChild(el("p", {
       class: "app-disclaimer__version", "data-hook": "app-version",

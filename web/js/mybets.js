@@ -8,7 +8,7 @@ import { apiGet, apiPost, apiDelete } from "./api.js";
 import { el, clear, renderUnknown, renderError } from "./dom.js";
 
 function renderSaveForm(container, onSaved) {
-  const form = el("form", { class: "my-bets-form", "data-hook": "my-bets-form" });
+  const form = el("form", { class: "my-bets-form panel chamfer", "data-hook": "my-bets-form" });
 
   const gameLabel = el("label", { for: "mb-game", text: "Game" });
   const gameInput = el("input", { type: "text", id: "mb-game", name: "game", required: "required" });
@@ -20,12 +20,12 @@ function renderSaveForm(container, onSaved) {
   const priceInput = el("input", { type: "number", id: "mb-price", name: "price", step: "1" });
 
   for (const [labelEl, inputEl] of [[gameLabel, gameInput], [sideLabel, sideInput], [priceLabel, priceInput]]) {
-    const row = el("p", { class: "my-bets-form__row" });
+    const row = el("p", { class: "my-bets-form__row field-row" });
     row.appendChild(labelEl);
     row.appendChild(inputEl);
     form.appendChild(row);
   }
-  form.appendChild(el("button", { type: "submit", text: "Save bet" }));
+  form.appendChild(el("button", { type: "submit", class: "btn btn--cyan", text: "Save bet" }));
 
   const statusRegion = el("p", { class: "my-bets-form__status", role: "status",
     "data-hook": "my-bets-form-status" });
@@ -50,7 +50,8 @@ function renderSaveForm(container, onSaved) {
 
 function renderBetsTable(container, bets, onDeleted) {
   clear(container);
-  const table = el("table", { class: "my-bets-board", "data-hook": "my-bets-board" });
+  const scroll = el("div", { class: "board-scroll panel chamfer" });
+  const table = el("table", { class: "my-bets-board board-table", "data-hook": "my-bets-board" });
   table.appendChild(el("caption", { text: "Saved bets" }));
   const thead = el("thead");
   const headRow = el("tr");
@@ -63,7 +64,11 @@ function renderBetsTable(container, bets, onDeleted) {
   const tbody = el("tbody");
   if (!bets || bets.length === 0) {
     const tr = el("tr");
-    tr.appendChild(el("td", { colspan: "6", text: "No saved bets yet." }));
+    tr.appendChild(el("td", { colspan: "6" },
+      [el("div", { class: "state-empty", "data-hook": "my-bets-empty" }, [
+        el("p", { class: "state-empty__title", text: "No saved bets yet." }),
+        el("p", { class: "state-empty__body", text: "Save a bet from Bet Check to track it here." }),
+      ])]));
     tbody.appendChild(tr);
   }
   for (const bet of bets || []) {
@@ -94,13 +99,14 @@ function renderBetsTable(container, bets, onDeleted) {
     tbody.appendChild(tr);
   }
   table.appendChild(tbody);
-  container.appendChild(table);
+  scroll.appendChild(table);
+  container.appendChild(scroll);
 }
 
 export async function renderMyBets(container) {
   clear(container);
-  const section = el("section", { class: "my-bets-view", "data-view": "mybets" });
-  section.appendChild(el("h1", { text: "My Bets" }));
+  const section = el("section", { class: "my-bets-view view", "data-view": "mybets" });
+  section.appendChild(el("h1", { class: "view__title", text: "My Bets" }));
 
   const formHost = el("div", { class: "my-bets-form-host" });
   const boardHost = el("div", { class: "my-bets-board-host", "data-hook": "my-bets-board-host" });
@@ -109,6 +115,9 @@ export async function renderMyBets(container) {
   container.appendChild(section);
 
   async function reload() {
+    clear(boardHost);
+    boardHost.appendChild(el("div", { class: "state-loading panel chamfer", "data-hook": "view-loading" },
+      [el("p", { class: "state-loading__figure", text: "Loading your bets…" })]));
     let payload;
     try {
       payload = await apiGet("/my-bets");

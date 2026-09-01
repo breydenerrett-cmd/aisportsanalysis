@@ -2,24 +2,36 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LINEHOUND</title>
-<!-- HARD RULE: no CSS beyond this one line. `[hidden]` is display:none by
-     default per the HTML spec already; this is belt-and-braces for any
-     older engine this reference client happens to be opened in. No other
-     rule, selector, color, font, or layout property belongs in this file
-     or any file under web/. -->
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/nav.css">
+<link rel="stylesheet" href="css/app.css">
+<!-- Belt-and-braces: [hidden] is already display:none per the HTML spec
+     and is redeclared with !important in base.css -- this inline rule is
+     the last-resort fallback if neither stylesheet loads. -->
 <style>[hidden]{display:none}</style>
 </head>
 <body>
-<header>
-  <p data-hook="product-name">LINEHOUND</p>
-  <div data-hook="token-form-host" aria-label="invite token entry"></div>
-  <nav aria-label="primary" data-hook="primary-nav"></nav>
-</header>
+<div class="app-shell">
+  <nav class="icon-rail" aria-label="primary" data-hook="primary-nav"></nav>
 
-<main data-hook="app-outlet" aria-label="page content"></main>
+  <div class="app-content">
+    <header class="app-topbar">
+      <p class="app-topbar__brand" data-hook="product-name">LINEHOUND</p>
+      <div class="app-topbar__token" data-hook="token-form-host" aria-label="invite token entry"></div>
+      <a class="app-topbar__support" href="#/support">Support</a>
+    </header>
 
-<footer data-hook="disclaimer-host" aria-label="disclaimer"></footer>
+    <main class="app-main" data-hook="app-outlet" aria-label="page content"></main>
+
+    <div class="app-disclaimer-host" data-hook="disclaimer-host" aria-label="disclaimer"></div>
+  </div>
+
+  <nav class="tab-bar" aria-label="primary mobile" data-hook="primary-nav-mobile"></nav>
+</div>
 
 <script type="module" src="js/main.js"></script>
 </body>

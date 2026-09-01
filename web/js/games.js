@@ -33,16 +33,17 @@ function renderDataQuality(dq) {
 export async function renderGamesList(container, date) {
   clear(container);
   const useDate = date || todayIso();
-  const section = el("section", { class: "games-view", "data-view": "games" });
-  section.appendChild(el("h1", { text: "Games" }));
+  const section = el("section", { class: "games-view view", "data-view": "games" });
+  section.appendChild(el("h1", { class: "view__title", text: "Games" }));
 
-  const form = el("form", { class: "games-date-form", "data-hook": "games-date-form" });
-  const label = el("label", { for: "games-date-input", text: "Date" });
+  const form = el("form", { class: "games-date-form field-form panel chamfer", "data-hook": "games-date-form" });
+  const row0 = el("p", { class: "field-row" });
+  row0.appendChild(el("label", { for: "games-date-input", text: "Date" }));
   const input = el("input", { type: "date", id: "games-date-input", value: useDate,
     name: "date", "data-hook": "games-date-input" });
-  form.appendChild(label);
-  form.appendChild(input);
-  form.appendChild(el("button", { type: "submit", text: "Load slate" }));
+  row0.appendChild(input);
+  form.appendChild(row0);
+  form.appendChild(el("button", { type: "submit", class: "btn btn--cyan", text: "Load slate" }));
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     window.location.hash = `#/games/${input.value}`;
@@ -50,25 +51,34 @@ export async function renderGamesList(container, date) {
   section.appendChild(form);
   container.appendChild(section);
 
+  const loading = el("div", { class: "state-loading panel chamfer", "data-hook": "view-loading" },
+    [el("p", { class: "state-loading__figure", text: "Loading slate…" })]);
+  section.appendChild(loading);
+
   let payload;
   try {
     payload = await apiGet(`/games/${encodeURIComponent(useDate)}`);
   } catch (err) {
-    renderError(container, err);
+    renderError(loading, err);
     return;
   }
+  clear(loading);
+  loading.remove();
 
-  section.appendChild(el("p", { class: "games-view__date", "data-hook": "games-date",
+  const meta = el("div", { class: "view__eyebrow-row" });
+  meta.appendChild(el("p", { class: "eyebrow", "data-hook": "games-date",
     text: `Date: ${payload.date}` }));
-  section.appendChild(el("p", { class: "games-view__checked", "data-hook": "checked-games",
+  meta.appendChild(el("p", { class: "eyebrow eyebrow--muted", "data-hook": "checked-games",
     text: `Checked games: ${payload.checked_games}` }));
+  section.appendChild(meta);
 
   const notesList = el("ul", { class: "games-view__notes", "data-hook": "games-notes" });
   for (const note of payload.notes || []) notesList.appendChild(el("li", { text: note }));
   section.appendChild(notesList);
 
   const rows = payload.games || [];
-  const table = el("table", { class: "games-board", "data-hook": "games-board" });
+  const scroll = el("div", { class: "board-scroll panel chamfer" });
+  const table = el("table", { class: "games-board board-table", "data-hook": "games-board" });
   const caption = el("caption", { text: `Slate for ${payload.date}` });
   table.appendChild(caption);
   const thead = el("thead");
@@ -83,7 +93,12 @@ export async function renderGamesList(container, date) {
   const tbody = el("tbody");
   if (rows.length === 0) {
     const emptyRow = el("tr");
-    emptyRow.appendChild(el("td", { colspan: "7", text: "No games on this slate." }));
+    emptyRow.appendChild(el("td", { colspan: "7" },
+      [el("div", { class: "state-empty", "data-hook": "games-empty" }, [
+        el("p", { class: "state-empty__title", text: "Nothing on this slate yet." }),
+        el("p", { class: "state-empty__body",
+          text: `${payload.checked_games} games checked. No games on this slate.` }),
+      ])]));
     tbody.appendChild(emptyRow);
   }
   for (const row of rows) {
@@ -106,11 +121,12 @@ export async function renderGamesList(container, date) {
     tbody.appendChild(tr);
   }
   table.appendChild(tbody);
-  section.appendChild(table);
+  scroll.appendChild(table);
+  section.appendChild(scroll);
 }
 
 function renderQuick(quick) {
-  const section = el("section", { class: "game-quick", "data-hook": "game-quick" });
+  const section = el("section", { class: "game-quick panel chamfer", "data-hook": "game-quick" });
   section.appendChild(el("h2", { text: "Quick view" }));
   section.appendChild(el("h3", { text: `${quick.away_team} @ ${quick.home_team}` }));
   const dl = el("dl", { class: "game-quick__fields" });
@@ -137,7 +153,10 @@ function renderQuick(quick) {
 }
 
 function renderAdvanced(advanced) {
-  const details = el("details", { class: "game-advanced", "data-hook": "game-advanced" });
+  // APPENDS beneath Quick -- never replaces it (docs/HANDOFF_README.md).
+  // <details> renders collapsed by default, expanding in place, but Quick
+  // View always stays rendered above regardless of this block's state.
+  const details = el("details", { class: "game-advanced panel chamfer", "data-hook": "game-advanced" });
   details.appendChild(el("summary", { text: "Show advanced analysis" }));
   const dl = el("dl", { class: "game-advanced__fields" });
   dl.appendChild(el("dt", { text: "Information time" }));
@@ -167,27 +186,33 @@ function renderAdvanced(advanced) {
 
 export async function renderGameDetail(container, date, away, home) {
   clear(container);
-  const section = el("section", { class: "game-detail", "data-view": "game" });
-  section.appendChild(el("h1", { text: `${away} @ ${home}` }));
+  const section = el("section", { class: "game-detail view", "data-view": "game" });
+  section.appendChild(el("h1", { class: "view__title", text: `${away} @ ${home}` }));
   section.appendChild(el("a", { href: `#/games/${encodeURIComponent(date)}`,
     class: "game-detail__back", text: "Back to slate" }));
   container.appendChild(section);
+
+  const loading = el("div", { class: "state-loading panel chamfer", "data-hook": "view-loading" },
+    [el("p", { class: "state-loading__figure", text: "Loading game…" })]);
+  section.appendChild(loading);
 
   let payload;
   try {
     payload = await apiGet(
       `/game/${encodeURIComponent(date)}/${encodeURIComponent(away)}/${encodeURIComponent(home)}`);
   } catch (err) {
-    renderError(container, err);
+    renderError(loading, err);
     return;
   }
+  clear(loading);
+  loading.remove();
 
   section.appendChild(renderQuick(payload.quick));
   section.appendChild(renderAdvanced(payload.advanced));
 
   const betCheckLink = el("a", {
     href: `#/betcheck?date=${encodeURIComponent(date)}&away=${encodeURIComponent(away)}&home=${encodeURIComponent(home)}`,
-    class: "game-detail__bet-check-link", "data-hook": "go-to-bet-check",
+    class: "game-detail__bet-check-link btn btn--primary", "data-hook": "go-to-bet-check",
     text: "Check a bet on this game",
   });
   section.appendChild(betCheckLink);

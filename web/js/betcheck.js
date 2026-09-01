@@ -33,7 +33,7 @@ function todayIso() {
 }
 
 function renderForm(container, prefill, onSubmit) {
-  const form = el("form", { class: "bet-check-form", "data-hook": "bet-check-form" });
+  const form = el("form", { class: "bet-check-form field-form panel chamfer", "data-hook": "bet-check-form" });
 
   const dateLabel = el("label", { for: "bc-date", text: "Date" });
   const dateInput = el("input", { type: "date", id: "bc-date", name: "date",
@@ -60,12 +60,12 @@ function renderForm(container, prefill, onSubmit) {
     [dateLabel, dateInput], [awayLabel, awayInput], [homeLabel, homeInput],
     [sideLabel, sideSelect], [priceLabel, priceInput],
   ]) {
-    const row = el("p", { class: "bet-check-form__row" });
+    const row = el("p", { class: "bet-check-form__row field-row" });
     row.appendChild(labelEl);
     row.appendChild(inputEl);
     form.appendChild(row);
   }
-  form.appendChild(el("button", { type: "submit", text: "Check this bet" }));
+  form.appendChild(el("button", { type: "submit", class: "btn btn--cyan", text: "Check this bet" }));
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -82,7 +82,7 @@ function renderForm(container, prefill, onSubmit) {
 }
 
 function renderYourBet(result, submitted) {
-  const section = el("section", { class: "bet-check-your-bet", "data-hook": "bet-check-your-bet" });
+  const section = el("section", { class: "bet-check-your-bet panel chamfer", "data-hook": "bet-check-your-bet" });
   section.appendChild(el("h2", { text: "Your bet" }));
   const dl = el("dl", { class: "bet-check-your-bet__fields" });
   dl.appendChild(el("dt", { text: "As typed" }));
@@ -107,7 +107,7 @@ function renderClaimList(claims) {
 }
 
 function renderSupport(result) {
-  const section = el("section", { class: "bet-check-support", "data-hook": "bet-check-support" });
+  const section = el("section", { class: "bet-check-support panel chamfer", "data-hook": "bet-check-support" });
   section.appendChild(el("h2", { text: "Support" }));
   const support = result.thesis_support || [];
   section.appendChild(support.length ? renderClaimList(support) : renderUnknown(null));
@@ -116,7 +116,7 @@ function renderSupport(result) {
 
 function renderCounterargument(result) {
   const section = el("section", {
-    class: "bet-check-counterargument", "data-hook": "bet-check-counterargument",
+    class: "bet-check-counterargument panel chamfer", "data-hook": "bet-check-counterargument",
   });
   section.appendChild(el("h2", { text: "Counterargument" }));
   // counterargument_lines is contractually never empty -- rendered as-is,
@@ -129,7 +129,7 @@ function renderCounterargument(result) {
 }
 
 function renderPrices(result) {
-  const section = el("section", { class: "bet-check-prices", "data-hook": "bet-check-prices" });
+  const section = el("section", { class: "bet-check-prices panel chamfer", "data-hook": "bet-check-prices" });
   section.appendChild(el("h2", { text: "Prices" }));
   const dl = el("dl", { class: "bet-check-prices__fields" });
   dl.appendChild(el("dt", { text: "Best available price" }));
@@ -146,7 +146,7 @@ function renderPrices(result) {
 }
 
 function renderBottomLine(result) {
-  const section = el("section", { class: "bet-check-bottom-line", "data-hook": "bet-check-bottom-line" });
+  const section = el("section", { class: "bet-check-bottom-line panel chamfer", "data-hook": "bet-check-bottom-line" });
   section.appendChild(el("h2", { text: "Bottom line" }));
 
   const dl = el("dl", { class: "bet-check-bottom-line__fields" });
@@ -196,17 +196,26 @@ function renderResult(container, result, submitted) {
 
 export async function renderBetCheck(container, prefill = {}) {
   clear(container);
-  const section = el("section", { class: "bet-check-view", "data-view": "betcheck" });
-  section.appendChild(el("h1", { text: "Bet Check" }));
+  const section = el("section", { class: "bet-check-view view", "data-view": "betcheck" });
+  section.appendChild(el("h1", { class: "view__title", text: "Bet Check" }));
   container.appendChild(section);
 
   const formHost = el("div", { class: "bet-check-form-host" });
   section.appendChild(formHost);
   const resultHost = el("div", { class: "bet-check-result-host", "data-hook": "bet-check-result-host" });
+  // Empty state: the ten-block skeleton is not drawn until a bet exists
+  // (handoff section 10) -- a plain sentence, not a blank pane.
+  resultHost.appendChild(el("div", { class: "state-empty", "data-hook": "bet-check-empty" }, [
+    el("p", { class: "state-empty__title", text: "Paste a bet to begin." }),
+    el("p", { class: "state-empty__body",
+      text: "Fill in the game, side and price above and check it." }),
+  ]));
   section.appendChild(resultHost);
 
   renderForm(formHost, prefill, async (submitted) => {
     clear(resultHost);
+    resultHost.appendChild(el("div", { class: "state-loading panel chamfer", "data-hook": "view-loading" },
+      [el("p", { class: "state-loading__figure", text: "Checking this bet…" })]));
     let result;
     try {
       result = await apiPost("/betcheck", {

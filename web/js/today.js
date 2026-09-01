@@ -15,7 +15,7 @@ import { el, clear, renderUnknown, renderError } from "./dom.js";
 import { renderStaleness } from "./meta.js";
 
 function renderNotes(notes) {
-  const section = el("section", { class: "today-notes", "data-hook": "today-notes" });
+  const section = el("section", { class: "today-notes panel chamfer section-block", "data-hook": "today-notes" });
   section.appendChild(el("h2", { text: "Notes" }));
   if (!notes || notes.length === 0) {
     section.appendChild(renderUnknown(null));
@@ -30,7 +30,7 @@ function renderNotes(notes) {
 }
 
 function renderWhatChanged(payload) {
-  const section = el("section", { class: "what-changed", "data-hook": "what-changed" });
+  const section = el("section", { class: "what-changed panel chamfer section-block", "data-hook": "what-changed" });
   section.appendChild(el("h2", { text: "What Changed" }));
   if (!payload) {
     section.appendChild(el("p", { class: "what-changed__unavailable" },
@@ -67,7 +67,7 @@ function renderWhatChanged(payload) {
 
 function renderGameEntry(entry) {
   const article = el("article", {
-    class: "slate-entry", "data-hook": "slate-entry", "data-verdict": entry.verdict || "",
+    class: "slate-entry panel chamfer", "data-hook": "slate-entry", "data-verdict": entry.verdict || "",
   });
   const verdictP = el("p", { class: "slate-entry__verdict", "data-hook": "verdict" });
   verdictP.appendChild(entry.verdict ? document.createTextNode(entry.verdict) : renderUnknown(null));
@@ -99,22 +99,38 @@ function renderGameEntry(entry) {
 
 export async function renderToday(container) {
   clear(container);
-  const section = el("section", { class: "today-view", "data-view": "today" });
-  section.appendChild(el("h1", { text: "Today" }));
+  const section = el("section", { class: "today-view view", "data-view": "today" });
+  section.appendChild(el("h1", { class: "view__title", text: "Today" }));
   container.appendChild(section);
+
+  const loading = el("div", { class: "state-loading panel chamfer", "data-hook": "view-loading" },
+    [el("p", { class: "state-loading__figure", text: "Loading today's slate…" })]);
+  section.appendChild(loading);
 
   let payload;
   try {
     payload = await apiGet("/today");
   } catch (err) {
-    renderError(container, err);
+    // Header stays -- an error clears only the loading placeholder, not
+    // the page title (handoff section 10, "Header retained").
+    renderError(loading, err);
     return;
   }
+  clear(loading);
+  loading.remove();
 
-  section.appendChild(el("p", { class: "today-view__date", "data-hook": "today-date",
+  const meta = el("div", { class: "view__eyebrow-row" });
+  meta.appendChild(el("p", { class: "eyebrow", "data-hook": "today-date",
     text: `Date: ${payload.date}` }));
-  section.appendChild(el("time", { class: "today-view__generated", "data-hook": "today-generated-at",
+  meta.appendChild(el("time", { class: "eyebrow eyebrow--muted", "data-hook": "today-generated-at",
     text: payload.generated_at }));
+  section.appendChild(meta);
+
+  if (payload.freshness) {
+    section.appendChild(el("p", { class: "freshness-banner", "data-hook": "today-freshness" },
+      [renderUnknown(payload.freshness)]));
+  }
+
   section.appendChild(renderNotes(payload.notes));
 
   let changed = null;
@@ -125,12 +141,20 @@ export async function renderToday(container) {
   }
   section.appendChild(renderWhatChanged(changed));
 
-  const gamesSection = el("section", { class: "today-games", "data-hook": "today-games" });
+  const gamesSection = el("section", { class: "today-games section-block", "data-hook": "today-games" });
   gamesSection.appendChild(el("h2", { text: "Games" }));
   const games = payload.games || [];
   if (games.length === 0) {
-    gamesSection.appendChild(el("p", { class: "today-games__empty",
-      text: "No games on this slate." }));
+    // NO PLAY state (handoff section 10): plain language, never a blank
+    // page or a manufactured pick -- and quantify the work if the
+    // /changed payload gave us a checked-games count to cite honestly.
+    const empty = el("div", { class: "state-empty", "data-hook": "today-no-play" });
+    empty.appendChild(el("p", { class: "state-empty__title", text: "Nothing on this slate yet." }));
+    const checked = changed && typeof changed.checked_games === "number" ? changed.checked_games : null;
+    empty.appendChild(el("p", { class: "state-empty__body", text: checked !== null
+      ? `${checked} games checked. None have a slate entry yet.`
+      : "No games on this slate." }));
+    gamesSection.appendChild(empty);
   } else {
     for (const entry of games) {
       gamesSection.appendChild(renderGameEntry(entry));

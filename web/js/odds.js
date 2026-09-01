@@ -18,16 +18,17 @@ function todayIso() {
 export async function renderOdds(container, date) {
   clear(container);
   const useDate = date || todayIso();
-  const section = el("section", { class: "odds-view", "data-view": "odds" });
-  section.appendChild(el("h1", { text: "Odds" }));
+  const section = el("section", { class: "odds-view view", "data-view": "odds" });
+  section.appendChild(el("h1", { class: "view__title", text: "Odds" }));
 
-  const form = el("form", { class: "odds-date-form", "data-hook": "odds-date-form" });
-  const label = el("label", { for: "odds-date-input", text: "Date" });
+  const form = el("form", { class: "odds-date-form field-form panel chamfer", "data-hook": "odds-date-form" });
+  const row0 = el("p", { class: "field-row" });
+  row0.appendChild(el("label", { for: "odds-date-input", text: "Date" }));
   const input = el("input", { type: "date", id: "odds-date-input", value: useDate,
     name: "date", "data-hook": "odds-date-input" });
-  form.appendChild(label);
-  form.appendChild(input);
-  form.appendChild(el("button", { type: "submit", text: "Load board" }));
+  row0.appendChild(input);
+  form.appendChild(row0);
+  form.appendChild(el("button", { type: "submit", class: "btn btn--cyan", text: "Load board" }));
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     window.location.hash = `#/odds/${input.value}`;
@@ -35,25 +36,39 @@ export async function renderOdds(container, date) {
   section.appendChild(form);
   container.appendChild(section);
 
+  const loading = el("div", { class: "state-loading panel chamfer", "data-hook": "view-loading" },
+    [el("p", { class: "state-loading__figure", text: "Loading board…" })]);
+  section.appendChild(loading);
+
   let payload;
   try {
     payload = await apiGet(`/odds/${encodeURIComponent(useDate)}`);
   } catch (err) {
-    renderError(container, err);
+    renderError(loading, err);
     return;
   }
+  clear(loading);
+  loading.remove();
 
-  section.appendChild(el("p", { class: "odds-view__date", "data-hook": "odds-date",
+  const meta = el("div", { class: "view__eyebrow-row" });
+  meta.appendChild(el("p", { class: "eyebrow", "data-hook": "odds-date",
     text: `Date: ${payload.date}` }));
-  section.appendChild(el("time", { class: "odds-view__generated", "data-hook": "odds-generated-at",
+  meta.appendChild(el("time", { class: "eyebrow eyebrow--muted", "data-hook": "odds-generated-at",
     text: payload.generated_at }));
+  section.appendChild(meta);
 
-  const summary = el("section", { class: "odds-summary", "data-hook": "odds-summary" });
+  if (payload.freshness) {
+    section.appendChild(el("p", { class: "freshness-banner", "data-hook": "odds-freshness" },
+      [renderUnknown(payload.freshness)]));
+  }
+
+  const summary = el("section", { class: "odds-summary panel chamfer", "data-hook": "odds-summary" });
   summary.appendChild(el("h2", { text: "Slate summary" }));
   summary.appendChild(renderUnknown(payload.summary));
   section.appendChild(summary);
 
-  const table = el("table", { class: "odds-board", "data-hook": "odds-board" });
+  const scroll = el("div", { class: "board-scroll panel chamfer" });
+  const table = el("table", { class: "odds-board board-table", "data-hook": "odds-board" });
   table.appendChild(el("caption", { text: `Market board for ${payload.date}` }));
   const thead = el("thead");
   const headRow = el("tr");
@@ -65,7 +80,11 @@ export async function renderOdds(container, date) {
   const rows = payload.games || [];
   if (rows.length === 0) {
     const tr = el("tr");
-    tr.appendChild(el("td", { colspan: "2", text: "No games on this slate." }));
+    tr.appendChild(el("td", { colspan: "2" },
+      [el("div", { class: "state-empty", "data-hook": "odds-empty" }, [
+        el("p", { class: "state-empty__title", text: "No board to show yet." }),
+        el("p", { class: "state-empty__body", text: "No games on this slate." }),
+      ])]));
     tbody.appendChild(tr);
   }
   for (const row of rows) {
@@ -82,25 +101,32 @@ export async function renderOdds(container, date) {
     tbody.appendChild(tr);
   }
   table.appendChild(tbody);
-  section.appendChild(table);
+  scroll.appendChild(table);
+  section.appendChild(scroll);
 }
 
 export async function renderOddsGame(container, date, away, home) {
   clear(container);
-  const section = el("section", { class: "odds-game", "data-view": "odds-game" });
-  section.appendChild(el("h1", { text: `${away} @ ${home} -- odds` }));
+  const section = el("section", { class: "odds-game view", "data-view": "odds-game" });
+  section.appendChild(el("h1", { class: "view__title", text: `${away} @ ${home} -- odds` }));
   section.appendChild(el("a", { href: `#/odds/${encodeURIComponent(date)}`,
     class: "odds-game__back", text: "Back to odds board" }));
   container.appendChild(section);
+
+  const loading = el("div", { class: "state-loading panel chamfer", "data-hook": "view-loading" },
+    [el("p", { class: "state-loading__figure", text: "Loading odds…" })]);
+  section.appendChild(loading);
 
   let payload;
   try {
     payload = await apiGet(
       `/odds/${encodeURIComponent(date)}/${encodeURIComponent(away)}/${encodeURIComponent(home)}`);
   } catch (err) {
-    renderError(container, err);
+    renderError(loading, err);
     return;
   }
+  clear(loading);
+  loading.remove();
 
   if (payload.note) {
     section.appendChild(el("p", { class: "odds-game__note", "data-hook": "doubleheader-note",

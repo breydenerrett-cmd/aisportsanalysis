@@ -73,20 +73,74 @@ export function renderUnknown(value) {
   return document.createTextNode(String(value));
 }
 
+/** A missing/invalid invite token -- distinct from a generic server error
+ * so the reader knows exactly what to do (BOUNDARIES: this client never
+ * decides *why* the token is wrong, it only names the state). */
+function renderAuthRequired(container, err) {
+  const detail = err && err.detail !== undefined ? err.detail : null;
+  const section = el("section", {
+    class: "auth-required", role: "alert", "data-hook": "auth-required",
+  });
+  section.appendChild(el("p", { class: "auth-required__title", text: "Sign-in required" }));
+  section.appendChild(el("p", { class: "auth-required__body",
+    text: "Your invite token is missing or no longer valid. Enter it above to continue." }));
+  if (detail) {
+    section.appendChild(el("div", { class: "auth-required__detail", "data-hook": "auth-required-detail" },
+      [typeof detail === "string" ? document.createTextNode(detail) : renderUnknown(detail)]));
+  }
+  container.appendChild(section);
+}
+
+/** A lapsed subscription (402 {"error":"subscription_expired"}) -- a
+ * distinct state from a missing token, with the one honest next step:
+ * a link to the billing route (never a client-composed upsell). */
+function renderSubscriptionExpired(container) {
+  const section = el("section", {
+    class: "subscription-expired", role: "alert", "data-hook": "subscription-expired",
+  });
+  section.appendChild(el("p", { class: "subscription-expired__title", text: "Subscription expired" }));
+  section.appendChild(el("p", { class: "subscription-expired__body",
+    text: "Your subscription has expired, so this page is not available right now." }));
+  section.appendChild(el("a", { href: "#/billing", class: "btn btn--ghost subscription-expired__link",
+    "data-hook": "billing-link", text: "Go to billing" }));
+  container.appendChild(section);
+}
+
 /** Render a fetch/API failure as a semantic status region rather than a
  * blank pane -- BOUNDARIES: never fabricate a message; render the API's
- * own detail verbatim when there is one. */
+ * own detail verbatim when there is one. 401 and 402-subscription-expired
+ * get their own distinct treatment (see above) rather than reading as a
+ * generic "request failed" -- and a `null` status (the fetch itself never
+ * completed) is worded as "could not be reached" rather than implying the
+ * server answered and said no, since those are different failures for the
+ * reader even though this client cannot tell local network trouble from a
+ * real service outage (docs/OPERATIONS_RUNBOOK.md sect 7). */
 export function renderError(container, err) {
   clear(container);
   const status = err && err.status != null ? String(err.status) : "network";
+  if (status === "401") {
+    renderAuthRequired(container, err);
+    return;
+  }
+  if (status === "402" && err && err.detail && typeof err.detail === "object"
+      && err.detail.error === "subscription_expired") {
+    renderSubscriptionExpired(container);
+    return;
+  }
   const detail = err && err.detail !== undefined ? err.detail
     : (err && err.message) || "request failed";
   const section = el("section", {
-    class: "view-error", role: "alert", "data-hook": "view-error",
+    class: "view-error state-error", role: "alert", "data-hook": "view-error",
     "data-status": status,
   });
-  section.appendChild(el("h2", { text: "Request failed" }));
-  section.appendChild(el("p", { class: "view-error__status", text: `Status: ${status}` }));
+  section.appendChild(el("p", { class: "state-error__title", text: "Request failed" }));
+  if (status === "network") {
+    section.appendChild(el("p", { class: "state-error__body", text:
+      "This page could not reach the server. That could be your own connection or "
+      + "a service outage -- it is not the same as the server answering \"no games\"." }));
+  } else {
+    section.appendChild(el("p", { class: "view-error__status state-error__body", text: `Status: ${status}` }));
+  }
   section.appendChild(el("div", { class: "view-error__detail" },
     [typeof detail === "string" ? document.createTextNode(detail) : renderUnknown(detail)]));
   container.appendChild(section);

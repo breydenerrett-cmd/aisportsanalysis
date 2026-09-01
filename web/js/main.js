@@ -22,6 +22,8 @@
  *   #/signup                                  SIGNUP (public CTA target from
  *                                              web/landing.html)
  *   #/signup/complete[?token=...]             SIGNUP COMPLETE
+ *   #/billing                                 BILLING (402 subscription-
+ *                                              expired landing target)
  */
 
 import { getToken, setToken, clearToken } from "./api.js";
@@ -34,30 +36,38 @@ import { renderOdds, renderOddsGame } from "./odds.js";
 import { renderMyBets } from "./mybets.js";
 import { renderSupport } from "./support.js";
 import { renderSignup, renderSignupComplete } from "./signup.js";
+import { renderBilling } from "./billing.js";
 
+// The five app destinations (handoff section 06, "5 destinations, two
+// shells") -- Support is a utility link in the app-topbar, not one of
+// these five, per that section's destination table.
 const NAV_ITEMS = [
-  { hash: "#/today", label: "Today" },
-  { hash: "#/games", label: "Games" },
-  { hash: "#/betcheck", label: "Bet Check" },
-  { hash: "#/odds", label: "Odds" },
-  { hash: "#/mybets", label: "My Bets" },
-  { hash: "#/support", label: "Support" },
+  { hash: "#/today", label: "Today", glyph: "square" },
+  { hash: "#/games", label: "Games", glyph: "stack" },
+  { hash: "#/betcheck", label: "Check", glyph: "circle" },
+  { hash: "#/odds", label: "Odds", glyph: "line" },
+  { hash: "#/mybets", label: "Bets", glyph: "ticket" },
 ];
 
-function mountNav(nav) {
-  clear(nav);
-  const list = el("ul", { class: "primary-nav__list" });
-  for (const item of NAV_ITEMS) {
-    const li = el("li", { class: "primary-nav__item" });
-    li.appendChild(el("a", { href: item.hash, "data-hook": "nav-link",
-      "data-nav-hash": item.hash, text: item.label }));
-    list.appendChild(li);
-  }
-  nav.appendChild(list);
+function buildNavItem(item, itemClass, labelClass) {
+  const a = el("a", { href: item.hash, "data-hook": "nav-link",
+    "data-nav-hash": item.hash, class: itemClass });
+  a.appendChild(el("span", { class: `nav-glyph nav-glyph--${item.glyph} chamfer chamfer--marker` }));
+  a.appendChild(el("span", { class: labelClass, text: item.label }));
+  return a;
 }
 
-function updateNavCurrent(nav, activeHash) {
-  for (const link of nav.querySelectorAll("[data-nav-hash]")) {
+function mountNav(rail, tabbar) {
+  clear(rail);
+  clear(tabbar);
+  for (const item of NAV_ITEMS) {
+    rail.appendChild(buildNavItem(item, "icon-rail__item", "icon-rail__label"));
+    tabbar.appendChild(buildNavItem(item, "tab-bar__item", "tab-bar__label"));
+  }
+}
+
+function updateNavCurrent(activeHash) {
+  for (const link of document.querySelectorAll("[data-nav-hash]")) {
     if (activeHash.indexOf(link.getAttribute("data-nav-hash")) === 0) {
       link.setAttribute("aria-current", "page");
     } else {
@@ -68,17 +78,19 @@ function updateNavCurrent(nav, activeHash) {
 
 function mountTokenForm(host) {
   clear(host);
-  const form = el("form", { class: "token-form", "data-hook": "token-form" });
-  const label = el("label", { for: "invite-token-input", text: "Invite token" });
+  const form = el("form", { class: "token-form field-form", "data-hook": "token-form" });
+  const row = el("p", { class: "field-row" });
+  row.appendChild(el("label", { for: "invite-token-input", text: "Invite token" }));
   const input = el("input", { type: "password", id: "invite-token-input", name: "token",
     autocomplete: "off", value: getToken(), "data-hook": "invite-token-input" });
-  const saveButton = el("button", { type: "submit", text: "Save token" });
-  const clearButton = el("button", { type: "button", "data-hook": "clear-token", text: "Clear token" });
-  const status = el("span", { class: "token-form__status", role: "status",
+  row.appendChild(input);
+  form.appendChild(row);
+  const saveButton = el("button", { type: "submit", class: "btn btn--ghost", text: "Save token" });
+  const clearButton = el("button", { type: "button", class: "btn btn--ghost",
+    "data-hook": "clear-token", text: "Clear token" });
+  const status = el("span", { class: "token-form__status field-form__status", role: "status",
     "data-hook": "token-form-status" });
 
-  form.appendChild(label);
-  form.appendChild(input);
   form.appendChild(saveButton);
   form.appendChild(clearButton);
   form.appendChild(status);
@@ -111,13 +123,15 @@ function parseHash() {
   return { segments, query };
 }
 
-async function renderRoute(main, nav) {
+async function renderRoute(main) {
   const { segments, query } = parseHash();
-  updateNavCurrent(nav, "#/" + segments.join("/"));
+  updateNavCurrent("#/" + segments.join("/"));
   const [route, ...rest] = segments;
 
   clear(main);
-  if (route === "games" && rest.length >= 3) {
+  if (route === "billing") {
+    await renderBilling(main);
+  } else if (route === "games" && rest.length >= 3) {
     await renderGameDetail(main, rest[0], rest[1], rest[2]);
   } else if (route === "game" && rest.length >= 3) {
     await renderGameDetail(main, rest[0], rest[1], rest[2]);
@@ -143,17 +157,18 @@ async function renderRoute(main, nav) {
 }
 
 function boot() {
-  const nav = document.querySelector("[data-hook='primary-nav']");
+  const rail = document.querySelector("[data-hook='primary-nav']");
+  const tabbar = document.querySelector("[data-hook='primary-nav-mobile']");
   const tokenHost = document.querySelector("[data-hook='token-form-host']");
   const main = document.querySelector("[data-hook='app-outlet']");
   const disclaimerHost = document.querySelector("[data-hook='disclaimer-host']");
 
-  mountNav(nav);
+  mountNav(rail, tabbar);
   mountTokenForm(tokenHost);
   renderDisclaimerFooter(disclaimerHost);
 
-  window.addEventListener("hashchange", () => renderRoute(main, nav));
-  renderRoute(main, nav);
+  window.addEventListener("hashchange", () => renderRoute(main));
+  renderRoute(main);
 }
 
 document.addEventListener("DOMContentLoaded", boot);
