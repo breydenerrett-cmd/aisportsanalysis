@@ -66,6 +66,85 @@ class SavedBetsTests(unittest.TestCase):
     def test_delete_unknown_bet_returns_false(self):
         self.assertFalse(savedbets.delete_bet(999999, 1, db=self.db))
 
+    def test_new_bet_has_null_settlement_fields(self):
+        bet = savedbets.save_bet(1, "BOS@NYY", "BOS ML", db=self.db)
+        self.assertIsNone(bet.settlement_status)
+        self.assertFalse(bet.is_settled)
+        rows = savedbets.list_bets(1, db=self.db)
+        self.assertIsNone(rows[0].settlement_status)
+
+    def test_existing_db_without_settlement_columns_still_opens(self):
+        """The migration-safe ALTER: a db written before settlement existed
+        (no settlement_status/reason/settled_at columns) must not break on
+        the next connect -- it gets the columns added in place, not a
+        rebuilt table, so pre-existing rows survive untouched."""
+        import sqlite3
+        conn = sqlite3.connect(str(self.db))
+        conn.execute("""
+            CREATE TABLE saved_bets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                game TEXT NOT NULL,
+                side TEXT NOT NULL,
+                price REAL,
+                saved_at TEXT NOT NULL,
+                snapshot_digest TEXT,
+                deleted_at TEXT
+            )
+        """)
+        conn.execute(
+            "INSERT INTO saved_bets (user_id, game, side, saved_at) "
+            "VALUES (1, 'BOS@NYY', 'BOS ML', '2026-04-01T00:00:00+00:00')")
+        conn.commit()
+        conn.close()
+
+        rows = savedbets.list_bets(1, db=self.db)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0].game, "BOS@NYY")
+        self.assertIsNone(rows[0].settlement_status)
+
+        # And the migration is safe to run again on the same (now-upgraded) db.
+        savedbets.save_bet(1, "LAD@SF", "SF ML", db=self.db)
+        self.assertEqual(len(savedbets.list_bets(1, db=self.db)), 2)
+
+    def test_mark_settled_and_list_unsettled(self):
+        bet = savedbets.save_bet(1, "BOS@NYY", "BOS ML", db=self.db)
+        savedbets.save_bet(2, "LAD@SF", "SF ML", db=self.db)
+        self.assertEqual(len(savedbets.list_unsettled_bets(db=self.db)), 2)
+
+        marked = savedbets.mark_settled(bet.id, "won", reason=None,
+                                        settled_at="2026-04-02T00:00:00+00:00",
+                                        db=self.db)
+        self.assertTrue(marked)
+        remaining = savedbets.list_unsettled_bets(db=self.db)
+        self.assertEqual(len(remaining), 1)
+        self.assertEqual(remaining[0].game, "LAD@SF")
+
+        settled_row = savedbets.list_bets(1, db=self.db)[0]
+        self.assertEqual(settled_row.settlement_status, "won")
+        self.assertEqual(settled_row.settled_at, "2026-04-02T00:00:00+00:00")
+
+    def test_mark_settled_never_overwrites_an_existing_verdict(self):
+        """Append-only rule extended to settlement: a bet already settled
+        stays exactly as first settled -- mark_settled's WHERE clause makes
+        a second call a no-op, not a silent overwrite."""
+        bet = savedbets.save_bet(1, "BOS@NYY", "BOS ML", db=self.db)
+        savedbets.mark_settled(bet.id, "won", db=self.db)
+        second = savedbets.mark_settled(bet.id, "lost", db=self.db)
+        self.assertFalse(second)
+        self.assertEqual(
+            savedbets.list_bets(1, db=self.db)[0].settlement_status, "won")
+
+    def test_mark_settled_rejects_unknown_status(self):
+        bet = savedbets.save_bet(1, "BOS@NYY", "BOS ML", db=self.db)
+        with self.assertRaises(ValueError):
+            savedbets.mark_settled(bet.id, "cancelled", db=self.db)
+
+    def test_soft_deleted_bet_excluded_from_unsettled_sweep(self):
+        bet = savedbets.save_bet(1, "BOS@NYY", "BOS ML", db=self.db)
+        savedbets.delete_bet(bet.id, 1, db=self.db)
+        self.assertEqual(savedbets.list_unsettled_bets(db=self.db), [])
+
     def test_no_update_function_exists(self):
         """Pinning the append-only design: there is no update_bet in this
         module. If someone adds one, this test names the decision it

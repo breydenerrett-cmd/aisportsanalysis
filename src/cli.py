@@ -1254,6 +1254,11 @@ def cmd_daily(args) -> int:
       6. settle whatever has finished, against results that were unknowable when
          the recommendation was written.
       7. grade the older prediction and flag logs.
+      8. settle My Bets (the product's saved-bet outcomes) against the same
+         results store -- a clean no-op if there is no app db on this
+         machine, since this research loop must never bring the product
+         database into existence just by running (see
+         src.appstate.settlement.settle_saved_bets_if_app_db_exists).
 
     Every step is independent. One failing does not abort the rest, because a
     missed grading run is recoverable and a missed snapshot is not.
@@ -1268,7 +1273,7 @@ def cmd_daily(args) -> int:
     failures = []
 
     def step(number, name, fn):
-        print(f"[{number}/7] {name}")
+        print(f"[{number}/8] {name}")
         try:
             fn()
         except Exception as exc:  # a step failing must not kill the loop
@@ -1331,6 +1336,16 @@ def cmd_daily(args) -> int:
         print()
         cmd_scan_grade(argparse.Namespace(verbose=False))
 
+    def do_settle_my_bets():
+        from src.appstate import settlement
+        from src.pipeline import history
+        report = settlement.settle_saved_bets_if_app_db_exists(history.read_results)
+        if report.get("skipped"):
+            print(f"      skipped: {report['reason']}")
+        else:
+            print(f"      settled {report['settled']} bet(s) {report['counts']}, "
+                  f"{report['unsettled']} still unsettled")
+
     step(1, "capture odds snapshot (irreplaceable -- runs first)", do_snapshot)
     step(2, f"ingest results for {yesterday}", do_ingest)
     step(3, f"refresh pitcher logs for {today[:4]}", do_pitchers)
@@ -1338,6 +1353,7 @@ def cmd_daily(args) -> int:
     step(5, f"brief {today} and append to the forward ledger", do_brief)
     step(6, "settle finished games", do_settle)
     step(7, "grade settled predictions and flags", do_grade)
+    step(8, "settle My Bets (product db, no-op if absent)", do_settle_my_bets)
 
     if failures:
         print(f"loop finished with {len(failures)} failed step(s):")

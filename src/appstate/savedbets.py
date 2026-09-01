@@ -62,6 +62,15 @@ def _connect(path: Optional[Path] = None) -> Iterator[sqlite3.Connection]:
         conn.close()
 
 
+#  outcome of grading a bet's SIDE against a final result. `push` exists for
+# the rare tied/suspended final (MLB's own tie games are uncommon but real);
+# `void-unmatchable` is a game that finished but whose saved `side` text this
+# module could not confidently pin to either club -- distinct from a bet that
+# is simply not settled yet (see src/appstate/settlement.py, which never
+# writes one of these unless it actually reached a verdict).
+SETTLEMENT_STATUSES = ("won", "lost", "push", "void-unmatchable")
+
+
 def _ensure_schema(conn: sqlite3.Connection) -> None:
     conn.execute("""
         CREATE TABLE IF NOT EXISTS saved_bets (
@@ -75,6 +84,22 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
             deleted_at TEXT
         )
     """)
+    # MIGRATION-SAFE ALTER, not a table rebuild: an existing app.db already
+    # has rows a customer saved, so the settlement columns are added to the
+    # table that is already there rather than this module ever dropping or
+    # recreating it. `CREATE TABLE IF NOT EXISTS` above already handles a
+    # brand-new db; this handles the upgrade of one that predates settlement.
+    # sqlite has no "ADD COLUMN IF NOT EXISTS", so PRAGMA table_info is
+    # consulted first -- re-running ALTER on a column that already exists
+    # raises OperationalError and would make every future _connect() fail.
+    existing = {row["name"] for row in conn.execute("PRAGMA table_info(saved_bets)")}
+    for column, ddl in (
+        ("settlement_status", "TEXT"),
+        ("settlement_reason", "TEXT"),
+        ("settled_at", "TEXT"),
+    ):
+        if column not in existing:
+            conn.execute(f"ALTER TABLE saved_bets ADD COLUMN {column} {ddl}")
 
 
 @dataclass(frozen=True)
@@ -87,16 +112,31 @@ class SavedBet:
     saved_at: str
     snapshot_digest: Optional[str]
     deleted_at: Optional[str]
+    # Appended after the original fields, all defaulted, so every existing
+    # positional-free call site (save_bet's own return, every test that
+    # builds one directly) keeps working unchanged -- see the module's
+    # append-only philosophy: adding a fact about a bet must never mean
+    # touching how every previous fact about it is constructed.
+    settlement_status: Optional[str] = None
+    settlement_reason: Optional[str] = None
+    settled_at: Optional[str] = None
 
     @property
     def is_deleted(self) -> bool:
         return self.deleted_at is not None
 
+    @property
+    def is_settled(self) -> bool:
+        return self.settlement_status is not None
+
 
 def _row_to_bet(row: sqlite3.Row) -> SavedBet:
     return SavedBet(id=row["id"], user_id=row["user_id"], game=row["game"],
                      side=row["side"], price=row["price"], saved_at=row["saved_at"],
-                     snapshot_digest=row["snapshot_digest"], deleted_at=row["deleted_at"])
+                     snapshot_digest=row["snapshot_digest"], deleted_at=row["deleted_at"],
+                     settlement_status=row["settlement_status"],
+                     settlement_reason=row["settlement_reason"],
+                     settled_at=row["settled_at"])
 
 
 def save_bet(user_id: int, game: str, side: str, *, price: Optional[float] = None,
@@ -137,4 +177,43 @@ def delete_bet(bet_id: int, user_id: int, *, db: Optional[Path] = None) -> bool:
             "UPDATE saved_bets SET deleted_at = ? "
             "WHERE id = ? AND user_id = ? AND deleted_at IS NULL",
             (_now_iso(), bet_id, user_id))
+        return cur.rowcount > 0
+
+
+def list_unsettled_bets(*, db: Optional[Path] = None) -> List[SavedBet]:
+    """Every live (not soft-deleted), not-yet-settled bet across ALL users.
+
+    Unlike list_bets, this is not scoped to one user -- it exists for
+    src.appstate.settlement's daily sweep, an internal batch job, not an
+    API-reachable read. api/mybets.py must keep scoping every route to
+    current_user.id; this function is deliberately not exported through it.
+    """
+    with _connect(db) as conn:
+        rows = conn.execute(
+            "SELECT * FROM saved_bets WHERE deleted_at IS NULL "
+            "AND settlement_status IS NULL ORDER BY saved_at").fetchall()
+        return [_row_to_bet(r) for r in rows]
+
+
+def mark_settled(bet_id: int, status: str, *, reason: Optional[str] = None,
+                 settled_at: Optional[str] = None,
+                 db: Optional[Path] = None) -> bool:
+    """Record a settlement verdict on one bet. Only ever moves a row from
+    unsettled to settled -- there is no re-settle, matching this module's
+    append-only rule: once a verdict is written it is not the caller's to
+    quietly revise (a graded bet that later needs correction is a new
+    finding, not an edit to what My Bets already showed the user).
+
+    Raises ValueError for an unknown status rather than writing a value
+    src.appstate.settlement or a future caller might have typo'd -- this is
+    the one write path into settlement_status, so it is the one place that
+    can catch that mistake.
+    """
+    if status not in SETTLEMENT_STATUSES:
+        raise ValueError(f"unknown settlement status: {status!r}")
+    with _connect(db) as conn:
+        cur = conn.execute(
+            "UPDATE saved_bets SET settlement_status = ?, settlement_reason = ?, "
+            "settled_at = ? WHERE id = ? AND settlement_status IS NULL",
+            (status, reason, settled_at or _now_iso(), bet_id))
         return cur.rowcount > 0
