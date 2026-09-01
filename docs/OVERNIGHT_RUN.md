@@ -446,3 +446,17 @@ disclaimer). Wave 4 in flight: provider timeout/retry + load smoke;
 structural reference client. Suite 2,655. V3: 0 measurable events, floor
 30 - accumulating. Hourly captures on schedule (00:02Z committed;
 00:16Z run still polling close windows).
+
+## 2026-09-01 ~02:30Z — forward-store audit verdict + app-db cleanup
+Write-blocker + sha256 audit: all seven forward stores took ZERO test
+writes and hold no fixture artifacts (earlier report wrong about which
+store). Real leak: 1,593 test analytics rows in the gitignored app db
+via record_event_safe's silent default path. Containment now structural
+(tests/__init__.py redirect + write blocker + end-of-suite fingerprint,
+commit 8b08c59). Cleanup executed: rows under sha256("1") — a synthetic
+hash no DB-assigned user id can produce, zero real users exist —
+quarantined to data/app/quarantine_2026-09-01_test_analytics.json
+(kept, gitignored dir) then deleted in one transaction. Queued
+observation (hypothesis, unchased): odds_multibook holds post-first-
+pitch rows (in-play prices) with CLOSING_GRACE_SECONDS=0 — needs its
+own task before anything treats that store as closes-only.
