@@ -45,6 +45,22 @@ personalization, full alerts, SEO/content build.
 
 ## PHASE LOG
 
+- 2026-09-01 ~03:00: FIRST-PAID-CUSTOMER push (Brey). Approved visual
+  direction: sports-broadcast (Madden/2K-familiar, no protected assets);
+  design finishing separately, web/ stays the structural attach point.
+  Wave 5 ACTIVE (4 + in-play investigation + capture): self-serve
+  signup->Stripe TEST checkout->activation->cancellation; landing page +
+  pricing route + full funnel instrumentation + /admin/funnel; deploy
+  boundary (fly staging/prod tomls, runbook, Cloudflare readiness,
+  backups/monitoring scripts, remote smoke); retention digest + emails +
+  founding-user acquisition assets. FUNNEL: landing -> CTA -> signup ->
+  plan -> checkout -> account -> onboarding -> gameday -> bet check ->
+  saved bet -> digest return trigger, each step instrumented.
+  BREY CREDENTIAL ASKS (only blockers): (1) Fly.io deploy token,
+  (2) Stripe TEST secret key + webhook secret, (3) transactional email
+  provider choice+key (digest/invite sending), (4) domain+Cloudflare
+  when named. Clerk can follow later - invite/signup tokens carry beta.
+
 - 2026-09-01 ~01:50: Wave 4 landed (bounded provider fetches + one-retry
   policy, 50-concurrent load smoke zero-5xx, structural reference client
   at /web with traversal-guarded static router, live-verified). Suite
