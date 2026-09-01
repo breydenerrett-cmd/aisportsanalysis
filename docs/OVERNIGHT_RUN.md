@@ -476,3 +476,13 @@ place, identifiable by that exact hash, for Brey to remove or filter.
 Queued observation (hypothesis, unchased): odds_multibook holds
 post-first-pitch rows (in-play prices) with CLOSING_GRACE_SECONDS=0 —
 needs its own task before anything treats that store as closes-only.
+
+## 2026-09-01 03:48Z — STAGING IS LIVE
+https://linehound-staging.fly.dev deployed via the GitHub Actions
+workflow (Brey added FLY_API_TOKEN; manual dispatch). /health ok with
+all stores present; full remote smoke PASS end to end (auth gating,
+invite mint, authed slate 200, clean 404). Volume app_data (iad),
+APP_ADMIN_TOKEN set. Session-container CLI deploys remain blocked
+(depot TLS via proxy; classic builder unauthorized for app tokens) —
+Actions is the deploy path. Next: Stripe test keys -> webhook at
+https://linehound-staging.fly.dev/billing/webhook -> dry-run purchase.
