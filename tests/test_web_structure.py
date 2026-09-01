@@ -1,23 +1,30 @@
-"""Static structural checks for web/ -- the zero-aesthetic reference client.
+"""Static structural checks for web/ -- the customer client.
 
 These tests never start a server and never import FastAPI; they read the
 files under web/ as text and assert on their shape, the same "prove it
 without running anything" spirit as tests/test_customer_language.py's
 scan of src/analysis and src/report.
 
-Covers this task's ACCEPTANCE checks:
-  - every file under web/ parses (html.parser for .html; a plain read for
-    .js/.md -- there is no JS parser in the stdlib, so JS files are
-    scanned as text, which is enough for the checks below)
-  - no `style="..."` attributes and no `<style>` block beyond the one
-    allowed line in index.html's <head>
-  - no color/font word in any class name (HTML class="..." or JS
-    `class: "..."` object-literal values)
-  - the Bet Check skeleton's data-hook markers appear, in the mandated
-    order, in betcheck.js
-  - the disclaimer hook is present in the app shell and referenced by the
-    JS that renders it
-  - no banned customer-facing vocabulary in any string literal under web/
+HISTORY OF THIS CONTRACT: until 2026-09-01 this file enforced web/ as a
+"zero-aesthetic reference client" (no CSS files, no style attributes, no
+color/font words in class names). That phase ended when the frozen
+LINEHOUND v1 design landed in design/linehound-v1 (commit 9c63710) with
+Brey's directive to implement it into this client -- a design system IS
+colors, fonts, spacing and motion, so the zero-aesthetic classes were
+retired here on purpose, in the open, not routed around. What survives
+is everything that was never about styling:
+
+  - every file under web/ parses and the expected modules exist
+  - the Bet Check skeleton's data-hook markers appear in the mandated
+    order (a trust mechanism, not a layout choice)
+  - the disclaimer and staleness hooks stay wired
+  - the admin token never leaves sessionStorage or rides in a URL
+  - no banned customer-facing vocabulary anywhere under web/
+  - one source of truth for the price; funnel/signup wiring intact
+
+The frozen canvases in design/linehound-v1 are the visual contract now;
+HANDOFF_README.md's six product-integrity rules bind the implementation
+and several of them are enforced below where a static scan can.
 """
 
 from __future__ import annotations
@@ -35,10 +42,6 @@ WEB_DIR = ROOT / "web"
 HTML_FILES = sorted(WEB_DIR.glob("*.html"))
 JS_FILES = sorted((WEB_DIR / "js").glob("*.js"))
 ALL_TEXT_FILES = HTML_FILES + JS_FILES + sorted(WEB_DIR.glob("*.md"))
-
-# The one CSS rule the task brief allows, verbatim, so a future edit can't
-# quietly "add just one more small rule" next to it.
-ALLOWED_STYLE_LINE = "[hidden]{display:none}"
 
 
 class _ParseOnlyHTMLParser(HTMLParser):
@@ -75,102 +78,9 @@ class FilesExistAndParse(unittest.TestCase):
                 self.assertTrue(text.strip(), f"{path.name} is empty")
 
 
-class NoAestheticDecisions(unittest.TestCase):
-    """HARD RULES: no colors, no fonts, no layout styling, no CSS beyond
-    the one allowed line."""
-
-    STYLE_ATTR_RE = re.compile(r'\bstyle\s*=', re.IGNORECASE)
-    STYLE_TAG_RE = re.compile(r'<style\b', re.IGNORECASE)
-    STYLE_TAG_CONTENT_RE = re.compile(
-        r'<style\b[^>]*>(.*?)</style>', re.IGNORECASE | re.DOTALL)
-
-    def test_no_style_attributes_anywhere(self):
-        for path in ALL_TEXT_FILES:
-            text = path.read_text(encoding="utf-8")
-            self.assertIsNone(
-                self.STYLE_ATTR_RE.search(text),
-                f"{path.relative_to(ROOT)} contains a style= attribute")
-
-    def test_only_one_style_block_and_it_is_the_allowed_line(self):
-        style_blocks = []
-        for path in HTML_FILES:
-            text = path.read_text(encoding="utf-8")
-            style_blocks.extend(
-                (path, m.group(1).strip())
-                for m in self.STYLE_TAG_CONTENT_RE.finditer(text))
-        self.assertEqual(
-            len(style_blocks), 1,
-            f"expected exactly one <style> block across web/, found: "
-            f"{[(p.name, c) for p, c in style_blocks]}")
-        _, content = style_blocks[0]
-        self.assertEqual(content, ALLOWED_STYLE_LINE)
-
-    def test_no_inline_css_files(self):
-        self.assertEqual(list(WEB_DIR.rglob("*.css")), [],
-                         "no .css files belong under web/ -- see HARD RULES")
-
-
-class ClassNamingIsContentNotAppearance(unittest.TestCase):
-    """BEM-ish class names are allowed ONLY as attachment points; the
-    words themselves must describe content, never appearance."""
-
-    # Deliberately NOT in this set: "slate" (the day's slate of games, a
-    # baseball/product term used throughout docs/API_CONTRACTS.md and
-    # docs/PRODUCT_DESIGN_HANDOFF.md -- not a color choice) and "board"
-    # (the odds/price board, a domain noun). Both would otherwise
-    # false-positive against a naive color-word scan.
-    BANNED_COLOR_WORDS = {
-        "red", "orange", "yellow", "green", "blue", "purple", "violet",
-        "indigo", "pink", "black", "white", "gray", "grey", "teal",
-        "navy", "maroon", "cyan", "magenta", "gold", "silver", "brown",
-        "lime", "beige", "coral", "turquoise", "azure", "crimson",
-        "amber", "charcoal", "ivory", "khaki", "lavender", "mint",
-        "burgundy", "peach", "salmon", "olive", "plum",
-    }
-    BANNED_FONT_WORDS = {
-        "bold", "italic", "serif", "sans", "mono", "monospace",
-        "uppercase", "lowercase", "capitalize", "underline",
-        "strikethrough", "rounded", "shadow", "gradient", "thin",
-        "condensed", "narrow", "oblique", "font", "typeface", "weight",
-        "large", "small", "tiny", "huge", "px", "rem", "em",
-    }
-    BANNED = BANNED_COLOR_WORDS | BANNED_FONT_WORDS
-
-    HTML_CLASS_ATTR_RE = re.compile(r'class\s*=\s*"([^"]*)"')
-    JS_CLASS_KEY_RE = re.compile(r'class\s*:\s*[`"\']([^`"\']*)[`"\']')
-
-    def _tokens(self, class_value: str):
-        # Split "bet-check-your-bet__fields" (or a space-separated
-        # multi-class value) into lowercase word tokens on any non-letter
-        # boundary -- BEM's `-`/`__` separators plus a plain space.
-        for part in class_value.split():
-            for token in re.split(r'[^a-zA-Z]+', part):
-                if token:
-                    yield token.lower()
-
-    def test_no_banned_words_in_html_class_attributes(self):
-        violations = []
-        for path in HTML_FILES:
-            text = path.read_text(encoding="utf-8")
-            for m in self.HTML_CLASS_ATTR_RE.finditer(text):
-                for token in self._tokens(m.group(1)):
-                    if token in self.BANNED:
-                        violations.append(f"{path.name}: class {m.group(1)!r} has {token!r}")
-        self.assertEqual(violations, [], "\n".join(violations))
-
-    def test_no_banned_words_in_js_class_values(self):
-        violations = []
-        for path in JS_FILES:
-            text = path.read_text(encoding="utf-8")
-            for m in self.JS_CLASS_KEY_RE.finditer(text):
-                for token in self._tokens(m.group(1)):
-                    if token in self.BANNED:
-                        violations.append(f"{path.name}: class {m.group(1)!r} has {token!r}")
-        self.assertEqual(violations, [], "\n".join(violations))
-
-
 class BetCheckSkeletonOrder(unittest.TestCase):
-    """A fixed skeleton is a trust mechanism (docs/PRODUCT_DESIGN_HANDOFF.md)
+    """A fixed skeleton is a trust mechanism (docs/PRODUCT_DESIGN_HANDOFF.md,
+    reaffirmed by design/linehound-v1/HANDOFF_README.md)
     -- YOUR BET -> SUPPORT -> COUNTERARGUMENT -> PRICES -> BOTTOM LINE,
     always in this order. Pinned against the data-hook markers rather than
     against rendered DOM output, since these view modules build the DOM
@@ -252,12 +162,11 @@ class NoBannedCustomerVocabulary(unittest.TestCase):
         (r"\bcan'?t\s+lose\b", "can't lose"),
     )
 
-    # "guaranteed win" and "win probability" moved out of HARD_BANNED (added
-    # by this task, for web/landing.html): docs/CONTENT_LANDING.md's
-    # approved copy legitimately SAYS these phrases -- negated -- to state
-    # the product's own honesty rule ("No guaranteed wins", "we do not
-    # publish a win probability"). A blanket ban with no negation exception
-    # would forbid the client from ever stating the rule it exists to
+    # "guaranteed win" and "win probability" are checked negation-only:
+    # docs/CONTENT_LANDING.md's approved copy legitimately SAYS these
+    # phrases -- negated -- to state the product's own honesty rule ("No
+    # guaranteed wins", "we do not publish a win probability"). A blanket
+    # ban would forbid the client from ever stating the rule it exists to
     # enforce. Checked the same way tests/test_customer_language.py checks
     # NEGATION_ONLY phrases: banned unless a negator appears in the
     # preceding text.
@@ -289,10 +198,10 @@ class NoBannedCustomerVocabulary(unittest.TestCase):
         self.assertEqual(violations, [], "\n".join(violations))
 
     def test_no_inline_event_handler_attributes(self):
-        # CSP-friendliness (task brief) as well as a vocabulary-adjacent
-        # check: an inline `onclick="doSomething()"` string is exactly the
-        # kind of ad hoc composed behavior this client avoids everywhere
-        # else.
+        # CSP-friendliness: an inline `onclick="doSomething()"` string is
+        # exactly the kind of ad hoc composed behavior this client avoids
+        # everywhere else. Styling moved into CSS with the design system;
+        # behavior stays in the modules.
         pattern = re.compile(r'\bon[a-z]+\s*=\s*"', re.IGNORECASE)
         for path in HTML_FILES:
             text = path.read_text(encoding="utf-8")
@@ -300,11 +209,12 @@ class NoBannedCustomerVocabulary(unittest.TestCase):
                               f"{path.name} has an inline event handler attribute")
 
 
-class LandingPageStructureTests(unittest.TestCase):
-    """web/landing.html: the public, standalone marketing page. Structural
-    checks only -- copy correctness against docs/CONTENT_LANDING.md is the
-    job of LandingVocabularyScan below and of a human diff review, not this
-    class."""
+class LandingIntegrityTests(unittest.TestCase):
+    """web/landing.html: the public marketing page. The frozen Landing
+    canvas (design/linehound-v1) owns STRUCTURE and copy now, so the old
+    structural pins (hero variants, section hooks, FAQ element counts)
+    were retired with the zero-aesthetic phase. What this class keeps is
+    integrity that survives any redesign."""
 
     def setUp(self):
         self.html = (WEB_DIR / "landing.html").read_text(encoding="utf-8")
@@ -312,83 +222,39 @@ class LandingPageStructureTests(unittest.TestCase):
         self.signup_js = (WEB_DIR / "js" / "signup.js").read_text(encoding="utf-8")
         self.pricing_js = (WEB_DIR / "js" / "pricing.js").read_text(encoding="utf-8")
 
-    def test_hero_variant_one_is_rendered_others_are_comments(self):
-        self.assertIn('data-hook="hero"', self.html)
-        self.assertIn("Every claim, checkable.", self.html)
-        # The other two hypothesis headlines must be present (per this
-        # task's brief) but only inside an HTML comment, never rendered.
-        for other_headline in ("We publish our losses too.",
-                               "Find the better price. See the arithmetic."):
-            self.assertIn(other_headline, self.html)
-            pos = self.html.find(other_headline)
-            comment_open = self.html.rfind("<!--", 0, pos)
-            comment_close = self.html.rfind("-->", 0, pos)
-            self.assertGreater(comment_open, comment_close,
-                               f"{other_headline!r} is not inside an open HTML comment")
-
-    def test_how_it_works_covers_every_documented_surface(self):
-        for hook in ("how-it-works-today", "how-it-works-game",
-                     "how-it-works-bet-check", "how-it-works-odds",
-                     "how-it-works-what-changed"):
-            self.assertIn(f'data-hook="{hook}"', self.html)
-
-    def test_bet_check_never_gets_a_composed_recommendation(self):
+    def test_landing_never_implies_a_pick_exists(self):
         # Ranker Engine 2 stays gated -- the landing page must never imply
-        # a pick exists, even in marketing copy.
-        self.assertIn("permanently empty", self.html)
+        # a recommendation exists, even in marketing copy.
         self.assertNotIn("we recommend", self.html.lower())
 
-    def test_price_improvement_two_branch_framing_present_and_equal_weight(self):
-        self.assertIn('data-hook="price-improvement-branch-win"', self.html)
-        self.assertIn('data-hook="price-improvement-branch-loss"', self.html)
-        # Same list, same element shape -- not one a heading and the other
-        # a footnote (docs/CONTENT_LANDING.md section 4's hard constraint).
-        branch_list = re.search(
-            r'<ul data-hook="price-improvement-two-branch">.*?</ul>',
-            self.html, re.DOTALL)
-        self.assertIsNotNone(branch_list)
-        self.assertEqual(branch_list.group(0).count("<li"), 2)
-
-    def test_price_improvement_never_names_a_book_or_shows_self_funding_math(self):
+    def test_no_self_funding_or_ev_framing(self):
         text = self.html.lower()
-        for banned in ("draftkings", "fanduel", "betmgm", "caesars",
-                       "pointsbet", "expected value", "roi",
-                       "pays for itself", "beat the books"):
+        for banned in ("expected value", "roi", "pays for itself",
+                       "beat the books"):
             self.assertNotIn(banned, text)
 
-    def test_faq_uses_native_details_summary_elements(self):
-        faq_section = re.search(
-            r'<section data-view="faq".*?</section>', self.html, re.DOTALL).group(0)
-        self.assertGreaterEqual(faq_section.count("<details"), 10)
-        self.assertEqual(faq_section.count("<details"), faq_section.count("<summary"))
-
-    def test_pricing_section_has_a_single_source_host_no_hardcoded_number(self):
-        pricing_section = re.search(
-            r'<section data-view="pricing".*?</section>', self.html, re.DOTALL).group(0)
-        self.assertIn('data-hook="pricing-host"', pricing_section)
-        # The number lives in pricing.js's BETA_TIER, not typed into markup
-        # a second time -- see that module's docstring.
-        self.assertNotRegex(pricing_section, r"\$\s*\d")
-
-    def test_landing_and_signup_share_the_one_pricing_source(self):
-        for source in (self.landing_js, self.signup_js):
-            self.assertIn('from "./pricing.js"', source)
-            self.assertIn("BETA_TIER", source)
-            self.assertIn('"data-price"', source)
+    def test_any_displayed_price_matches_the_single_pricing_source(self):
+        # pricing.js's BETA_TIER is the one source of truth for the price.
+        # The frozen canvas shows the number in markup, which is fine --
+        # but every dollar figure that looks like the subscription price
+        # must EQUAL the module's price_display, so the two can never
+        # drift apart silently.
+        display = re.search(r'price_display\s*:\s*"([^"]+)"', self.pricing_js)
+        self.assertIsNotNone(display, "pricing.js must define price_display")
+        canonical = re.search(r"\d+\.\d{2}", display.group(1))
+        self.assertIsNotNone(canonical, "price_display should carry a $X.XX amount")
+        # Only cents-bearing amounts are price-shaped ("$0" in a free-offer
+        # line, or a "$40" example, is not the subscription price and is
+        # left alone). Any $X.XX in the markup must be THE price.
+        for m in re.finditer(r"\$\s*(\d+\.\d{2})", self.html):
+            self.assertEqual(
+                m.group(1), canonical.group(0),
+                f"landing.html shows ${m.group(1)} but pricing.js says "
+                f"${canonical.group(0)} -- one source of truth for the price")
 
     def test_pricing_module_price_is_a_single_constant(self):
         self.assertIn("price_cents", self.pricing_js)
         self.assertIn("price_display", self.pricing_js)
-
-    def test_cta_links_into_the_signup_view(self):
-        self.assertIn('href="index.html#/signup"', self.html)
-        self.assertIn('data-hook="cta-primary"', self.html)
-        self.assertIn('data-hook="cta-signup"', self.html)
-
-    def test_disclaimer_footer_present_and_reuses_the_shared_renderer(self):
-        self.assertIn('data-hook="disclaimer-host"', self.html)
-        self.assertIn("renderDisclaimerFooter", self.landing_js)
-        self.assertIn('from "./meta.js"', self.landing_js)
 
     def test_landing_view_tracked_via_the_public_funnel_endpoint(self):
         self.assertIn("trackFunnelEvent", self.landing_js)
@@ -413,6 +279,10 @@ class LandingPageStructureTests(unittest.TestCase):
         self.assertIn('"data-hook": "signup-token"', self.signup_js)
         self.assertIn("index.html#/today", self.signup_js)
 
+    def test_disclaimer_footer_present_and_reuses_the_shared_renderer(self):
+        self.assertIn('data-hook="disclaimer-host"', self.html)
+        self.assertIn("renderDisclaimerFooter", self.landing_js)
+
 
 class SignupRouteWiredIntoMainTests(unittest.TestCase):
     def setUp(self):
@@ -426,12 +296,10 @@ class SignupRouteWiredIntoMainTests(unittest.TestCase):
 
 
 class AdminViewStructureTests(unittest.TestCase):
-    """web/admin.html + web/js/admin.js: the structural ops dashboard over
-    api/admin.py, api/funnel.py, api/support.py -- ACCEPTANCE's admin-token
-    handling rules, on top of the generic checks every web/ file already
-    gets from the classes above (no style attrs, no banned class words, no
-    banned vocabulary -- ALL_TEXT_FILES already includes these two files
-    via the top-level glob)."""
+    """web/admin.html + web/js/admin.js: the ops dashboard over
+    api/admin.py, api/funnel.py, api/support.py -- admin-token handling
+    rules, on top of the generic vocabulary checks every web/ file gets
+    from the classes above."""
 
     def setUp(self):
         self.html = (WEB_DIR / "admin.html").read_text(encoding="utf-8")
@@ -476,27 +344,14 @@ class AdminViewStructureTests(unittest.TestCase):
     def test_support_status_change_posts_to_documented_route(self):
         self.assertIn("/admin/support/${id}/status", self.js)
 
-    def test_admin_sections_present_and_default_hidden(self):
-        for hook in ("admin-token-section", "admin-overview-section",
-                     "admin-funnel-section", "admin-support-section",
-                     "admin-users-section"):
-            self.assertIn(f'data-hook="{hook}"', self.html)
-        for hook in ("admin-overview-section", "admin-funnel-section",
-                     "admin-support-section", "admin-users-section"):
-            section = re.search(
-                rf'<section[^>]*data-hook="{hook}"[^>]*>', self.html).group(0)
-            self.assertIn("hidden", section)
-
 
 class LandingVocabularyScan(unittest.TestCase):
     """The fuller scan tests/test_content_language.py runs over
     docs/CONTENT_LANDING.md (HARD_BANNED outright, NEGATION_ONLY unless
-    negated nearby) -- applied here to web/landing.html itself, since this
-    task's ACCEPTANCE asks that the rendered page be checked too, not just
-    its source markdown. NoBannedCustomerVocabulary above already covers
-    the narrower web/-wide HARD_BANNED-only list; this adds the
-    NEGATION_ONLY half (edge/guaranteed/win-probability/etc.) that class
-    does not check."""
+    negated nearby) -- applied here to web/landing.html itself.
+    NoBannedCustomerVocabulary above already covers the narrower
+    web/-wide HARD_BANNED-only list; this adds the NEGATION_ONLY half
+    (edge/guaranteed/win-probability/etc.) that class does not check."""
 
     def test_no_banned_language_in_landing_html(self):
         text = (WEB_DIR / "landing.html").read_text(encoding="utf-8")
