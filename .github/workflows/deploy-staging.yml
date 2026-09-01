@@ -1,0 +1,51 @@
+# Deploys linehound-staging on every push to the launch branch, and on
+# manual dispatch. Requires ONE repository secret: FLY_API_TOKEN (the
+# app-scoped deploy token for linehound-staging). Without the secret the
+# job fails fast at the guard step -- it never half-deploys.
+#
+# Why Actions and not the session container: the container's egress proxy
+# breaks the depot builder's TLS handshake, and app-scoped tokens are not
+# authorized for the classic remote builder. GitHub's runners have clean
+# egress, so this is the repeatable path.
+name: deploy-staging
+
+on:
+  push:
+    branches: [claude/sports-betting-analysis-review-g1o0co]
+    paths:
+      - "api/**"
+      - "src/**"
+      - "web/**"
+      - "deploy/**"
+      - ".github/workflows/deploy-staging.yml"
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Guard - secret present
+        run: |
+          if [ -z "${{ secrets.FLY_API_TOKEN }}" ]; then
+            echo "FLY_API_TOKEN repository secret is not set (Settings -> Secrets and variables -> Actions)."
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Deploy
+        run: flyctl deploy -c deploy/fly.staging.toml -a linehound-staging --remote-only --yes
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      - name: Health check
+        run: |
+          for i in $(seq 1 12); do
+            if curl -sf https://linehound-staging.fly.dev/health >/dev/null; then
+              echo "healthy"; exit 0
+            fi
+            sleep 10
+          done
+          echo "health check did not pass within 2 minutes"; exit 1
