@@ -44,6 +44,17 @@ RUN apt-get update \
 
 COPY api/ api/
 COPY src/ src/
+# WHY web/ IS COPIED TOO
+# ------------------------
+# api/web.py serves the browser client off disk from REPO_ROOT/"web"
+# (its WEB_DIR). Without this line the image has an api/web.py router
+# mounted at /web whose directory does not exist, so every asset 404s
+# with "no such asset: 'index.html'" -- the whole UI is missing while
+# /health still reports ok, because health never touches web/. That is
+# also the page Stripe's checkout success_url redirects a PAYING customer
+# to (src/appstate/billing.py), so the 404 lands on exactly the person who
+# just paid.
+COPY web/ web/
 COPY data/processed/ data/processed/
 COPY data/watch/ data/watch/
 COPY data/app/.gitkeep data/app/.gitkeep
