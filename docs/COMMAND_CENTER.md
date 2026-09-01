@@ -45,6 +45,24 @@ personalization, full alerts, SEO/content build.
 
 ## PHASE LOG
 
+- 2026-09-01 00:xx: Backend wave 1 all landed (Bet Check API, Games/What
+  Changed API, auth+user-state, outcome ceiling; suite 2,335). ACTIVE (5):
+  red-team of auth/API surface (opus), deploy+monitoring groundwork,
+  Odds endpoint, caching/freshness layer, contract tests + analytics
+  events. NEXT 5: integrate+push the five; wire analytics events into
+  endpoints; rate limiting on authed routes; admin/ops view (invite mgmt,
+  event aggregates, store health); settle/grade surfacing for My Bets
+  (bet outcomes vs saved bet-check snapshots); mobile payload audit vs
+  API_CONTRACTS.md. LOOKAHEAD adds: TestClient-based HTTP tests once
+  httpx pinning decided; provider fetch timeout/retry policy; backup
+  policy for data/app db; What Changed push/digest job; pricing copy
+  quant re-check against contracts; support contact endpoint; CI script
+  (scripts/ci.sh: suite + smoke + grep gates); legal disclaimer text
+  needs Brey/counsel (queued); load smoke (50 concurrent) before invites.
+  BREY QUEUE (blocking only their own items): auth provider, Stripe,
+  hosting+domain+secrets, legal disclaimer sign-off. V3 still time-gated;
+  capture on triggers.
+
 - 2026-08-31 night: Brey archived the design exploration (moved to a Claude
   Design web session) and ordered full speed on paid-beta foundations. Lanes
   dispatched: Bet Check API, Today/Game API slice, auth/user-state
