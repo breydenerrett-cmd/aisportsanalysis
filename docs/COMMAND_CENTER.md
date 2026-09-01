@@ -45,6 +45,15 @@ personalization, full alerts, SEO/content build.
 
 ## PHASE LOG
 
+- 2026-09-01 ~01:20: Wave 3 fully landed (billing persistence, analytics
+  + admin ops, My Bets settlement, scripts/ci.sh) - ci.sh green end to
+  end (suite 2,655 + boundary/vocab gates + live authed smoke). V3 still
+  below the 30-event floor (0 measurable; accumulating). Wave 4 ACTIVE
+  (2): provider timeout/retry + 50-concurrent load smoke; structural
+  (zero-aesthetics) reference client in web/ with design-attachment
+  contract. NEXT: invite_redeemed first-use marker; What Changed digest
+  job; TestClient/httpx decision; backup policy for data/app db.
+
 - 2026-09-01 ~00:45: Backend wave 2 fully landed and integrated (odds,
   caching/freshness, contract tests+analytics scaffold, Clerk seam +
   Stripe test-mode provider, disclaimer+staging prep, hardening batch,
