@@ -48,6 +48,60 @@ onboarding for this product. Backing code: `src/appstate/support.py`,
    counts, and `GET /onboarding` (once a UI exists) per-user for where
    someone is stuck.
 
+## 1b. Self-serve signup flow (paying beta customers)
+
+Section 1 covers the admin-minted invite path (personal invites, closed
+beta). Paid beta also has a second, self-serve entry point that does not
+go through Brey at all until something breaks: `POST /signup` and `GET
+/signup/complete` (`api/signup.py`, `src/appstate/customers.py`). This is
+the path `docs/FIRST_CUSTOMER_PLAYBOOK.md` §1's Day-0 dry run walks and the
+one a real stranger uses, end to end:
+
+1. **Landing → signup.** User submits their email (`POST /signup`, public,
+   rate-limited 10/hour/IP). A first-time email either gets a Stripe
+   Checkout URL back (`status: "redirect"`, `checkout_url`) if billing is
+   configured, or a waitlisted/`not_configured` response if it isn't yet.
+   Repeat signups for a `pending_payment`/`waitlisted` email re-check
+   today's billing config rather than erroring (`api/signup.py`'s own
+   docstring, "IDEMPOTENT PER EMAIL") — an `active`, `suspended`, or admin-
+   `invited` account is left alone; signup never re-litigates a state a
+   human process already set.
+2. **Checkout.** Stripe-hosted, $19.99/mo Founding Access (or the $239/yr
+   annual) — `design/linehound-v1/HANDOFF_README.md`'s frozen commercial
+   facts. A real card at this step is the actual moment of "did a stranger
+   pay," not the dry-run test card.
+3. **Webhook → activation token.** Stripe's webhook confirms payment;
+   `src/appstate/billing.apply_stripe_webhook_event` mints a **one-time**
+   activation token server-side. The browser lands back on `GET
+   /signup/complete?session_id=<stripe session id>` (the success-page
+   redirect), which hands that token back exactly once — a second call for
+   the same session returns nothing new (`src/appstate/customers.py`'s
+   `take_activation_token` docstring: "already used," "unknown," and
+   "never completed payment" are deliberately indistinguishable from
+   outside, for the same reason a login form doesn't say which part was
+   wrong).
+4. **Token → app.** Same paste-into-token-field mechanic as the invite
+   path (`web/index.html`'s token-entry form). From here the flow rejoins
+   section 2's first-session checklist exactly — `token_redeemed` fires the
+   same way regardless of which door the user came through.
+
+**Where this can fail, and what to say:**
+
+| Failure point | What the user sees / reports | What to say |
+|---|---|---|
+| Signup submitted, no checkout link | `status: "not_configured"` or `"waitlisted"` response | "Billing isn't live for your signup yet — I'll follow up personally the moment it is." (Should not happen once Stripe is configured for real; if it does post-launch, that's P0 — see section 4.) |
+| Paid, closed the success tab before copying the token | User has a Stripe receipt but no token | `GET /signup/complete?session_id=...` is safe to hit again from the *same* browser tab/session if they haven't left it — if they have, there is no automated resend (no email sender exists yet, `docs/RETENTION_EMAILS.md`'s flagged gap). Brey looks up the session in Stripe, confirms payment, and mints a fresh admin invite (`POST /admin/invites`) by hand as the practical fallback, same as any lost-token case in section 5's canned response. |
+| Paid twice / signed up twice with the same email | Confusion about which token is live | `POST /signup`'s idempotency means a second signup for an already-`active` email is a no-op on the account, not a second charge — check `GET /admin/users` and Stripe directly if a duplicate charge is reported (that's P1 billing, section 3). |
+| Token pasted, app doesn't load Today | `first_today_view` never completes | Confirm `token_redeemed` fired (`GET /onboarding` for that user) before assuming the token itself is bad — a redeemed-but-stuck user is a product bug, not an access problem; escalate per section 4. |
+
+**Founder-side checklist per new paying customer** (this is the same
+personal-touch checklist `docs/FIRST_CUSTOMER_PLAYBOOK.md` §6 defines —
+referenced here, not restated twice, so the two docs cannot drift):
+watch `GET /onboarding` for the four steps below over the next few days;
+send the day-3 email by hand if `first_bet_check`/`first_saved_bet` are
+still incomplete (`docs/RETENTION_EMAILS.md` §2's exact trigger); do not
+manually nudge before day 3 unless they reach out first.
+
 ## 2. First-session checklist
 
 The four steps `GET /onboarding` reports, in the order a new user
@@ -162,7 +216,73 @@ fixed-skeleton trust framing for why).
 > the support and the counterargument for a bet you're already looking at,
 > so you can decide with the full picture. The decision's always yours.
 
-## 6. Known v1 scope cut — users cannot read their own support messages
+## 7. Bug-report intake
+
+There is no separate bug-report form — a bug report **is** a support
+message (`POST /support`), triaged the same way as any other ticket. The
+only thing this section adds is what to ask for so a report is actionable.
+
+**Minimal template** — paste this into the reply if a report is missing
+the essentials (do not block the report on it; ask once, in the reply):
+
+> - **What happened** (what you expected vs. what you saw)
+> - **Where** (which page/screen — Today, a specific game's Bet Check,
+>   Odds, My Bets — and if it's about a specific game, which one and which
+>   date)
+> - **When** (roughly what time you saw it — helps line it up with a
+>   specific price snapshot or a specific server response)
+> - **Screenshot**, if it's a visual/data issue (a described mismatch
+>   without one is much slower to confirm)
+
+**Where reports land:** `POST /support` (authed or anonymous-with-email,
+`api/support.py`) → `GET /admin/support?status=open`, the same queue every
+other support message lands in. A bug report is not a separate table or a
+separate inbox — this is deliberate for a queue this small (section 9's
+own "no ticketing system" framing applies equally here).
+
+**Triage into fixes:**
+1. Classify by section 3's P0/P1/P2 table first — most bug reports that
+   involve a wrong price, wrong result, or wrong verdict are P0 by that
+   table's own definition, not because they're "bugs" but because they're
+   data-wrong.
+2. Reproduce against `GET /health` and, for a specific game, that game's
+   own advanced/odds payload before replying — section 4's escalation
+   rule.
+3. If it's confirmed and fixable same-day: fix it, reply per the "Data
+   genuinely looks wrong" canned response (section 5), and note the fix in
+   the commit/PR that closes it — no separate bug-tracker doc exists for a
+   team this size, and inventing one now would be process the queue
+   doesn't need yet.
+4. If it's confirmed but NOT fixable same-day: reply with the honest
+   "P0 that can't be resolved same day" framing (section 4) and add one
+   line to **Known open issues** below so it isn't lost between sessions.
+5. If it's not reproducible or turns out to be user confusion rather than
+   a real bug: say so plainly in the reply (never a silent close) and mark
+   `answered`/`closed` per section 3's mechanics.
+
+**Known open issues** (Brey appends here; delete a line once shipped —
+this list exists so a confirmed-but-not-yet-fixed bug survives between
+sessions, not as a public changelog):
+
+- *(none logged yet)*
+
+## 8. Escalation quick-reference — immediate vs. batched
+
+Full reasoning is section 4; this is the fast-scan version for triage.
+
+| Escalates to Brey **immediately** (same session, before anything else) | Handled in the normal queue (batched, per section 3's SLA table) |
+|---|---|
+| Billing error: wrong charge, charged after cancel, checkout broken for a paying attempt | Feature requests / "how do I..." (P2) |
+| Wrong data shown: a price, result, or verdict that is actually incorrect (not just stale) | A stale-but-honest freshness gap (`age_seconds`, `has_market: false`) already surfaced correctly by the product |
+| Security-shaped report: someone else's data visible, a token that shouldn't work, anything suggesting an auth bypass | A lost/expired invite token (P0/P1 but routine — section 5's canned response resolves it without escalation) |
+| Anything that could be, or could look like, a guaranteed-outcome or edge claim reaching a customer (support script, canned response, or product copy) | General product feedback / survey responses (§8 loop below) |
+
+"Immediately" means: stop and handle it (or get Brey directly) before
+working anything else in the queue — these are exactly the categories
+section 3 already ranks ahead of arrival order, restated here as a
+yes/no gate rather than a priority label.
+
+## 9. Known v1 scope cut — users cannot read their own support messages
 
 `POST /support` is the only user-facing route; there is no `GET
 /my-support` or equivalent. A user who files a ticket gets the created
