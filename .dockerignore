@@ -21,9 +21,10 @@ venv/
 # Everything under data/ except what deploy/Dockerfile explicitly COPYs
 # (data/processed/, data/watch/, data/app/.gitkeep) -- no reason to send
 # data/raw or data/historical into the build context at all.
-data/raw/
-data/historical/
-data/research/
+data/*
+!data/processed/
+!data/watch/
+!data/app/
 data/app/*
 !data/app/.gitkeep
 
