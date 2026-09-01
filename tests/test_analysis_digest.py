@@ -47,9 +47,15 @@ def _priced_game_entries(**kwargs):
         }
     }
     store = history.read_results()
+    # roster_events_by_pk={} keeps this fixture hermetic: without it,
+    # build_slate derives What Changed from the REAL data/watch stores,
+    # and this game uses a real matchup/date (BOS@NYY, 2026-08-31) -- the
+    # hourly capture appending real roster events eventually flipped the
+    # "quiet slate" tests red (first seen 2026-09-01). Tests that want
+    # events add them to the dossier explicitly.
     slate = briefing.build_slate(
         [game], store, prices_by_matchup=prices_by_matchup,
-        price_boards_by_key=price_boards_by_key)
+        price_boards_by_key=price_boards_by_key, roster_events_by_pk={})
     return slate["games"], slate.get("notes", [])
 
 
