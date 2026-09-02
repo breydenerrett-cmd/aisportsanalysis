@@ -13,6 +13,21 @@ registers a route and returns the same function), so they are exercised
 directly here -- no live HTTP server needed. Both the schedule fetch
 (mlb.fetch_games) and the multi-book board read (prices.boards_by_matchup)
 are patched to fixed, offline data.
+
+CACHE ISOLATION BETWEEN TESTS
+------------------------------
+api/odds.py now caches `_build_odds_inputs` per date (src/appstate/
+freshness.py), mirroring api/games.py's `_build_entries`. Several test
+methods below reuse "2026-08-31" on purpose (the same fixed offline
+schedule/board fixtures), which would otherwise mean whichever test runs
+first "wins" the cache and every later same-date test -- including the two
+`..._schedule_provider_failure_is_a_structured_502` tests, which need
+`mlb.fetch_games` to actually be CALLED to raise -- observes a cached
+result instead of its own patch. `_ResetOddsCache.setUp` gives every test a
+fresh, empty cache so each one still observes its own patch as if caching
+did not exist -- caching itself is exercised separately, in
+tests/test_api_odds_cache.py (same split tests/test_api_games.py and
+tests/test_api_caching.py already use for the identical games.py pattern).
 """
 
 from __future__ import annotations
@@ -30,7 +45,17 @@ except ImportError:
 if _HAVE_FASTAPI:
     from api import odds as odds_mod
     from src.analysis import prices as prices_mod
+    from src.appstate import freshness
     from src.providers import mlb
+
+
+class _ResetOddsCache(unittest.TestCase):
+    """Shared setUp: see the module docstring's CACHE ISOLATION note."""
+
+    def setUp(self):
+        if _HAVE_FASTAPI:
+            odds_mod._odds_cache = freshness.SingleFlightTTLCache(
+                ttl_s=odds_mod.ODDS_CACHE_TTL_S)
 
 TS = "2026-08-31T19:55:00Z"
 
@@ -55,7 +80,7 @@ def _boards(date="2026-08-31"):
 
 
 @unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")
-class GetOddsTests(unittest.TestCase):
+class GetOddsTests(_ResetOddsCache):
 
     def test_returns_the_slate_odds_shape(self):
         with patch.object(mlb, "fetch_games", return_value=_schedule()), \
@@ -97,7 +122,7 @@ class GetOddsTests(unittest.TestCase):
 
 
 @unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")
-class GetOddsGameTests(unittest.TestCase):
+class GetOddsGameTests(_ResetOddsCache):
 
     def test_returns_one_game_odds_payload(self):
         with patch.object(mlb, "fetch_games", return_value=_schedule()), \

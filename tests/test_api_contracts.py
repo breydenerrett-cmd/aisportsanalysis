@@ -63,6 +63,7 @@ if _HAVE_FASTAPI:
     from api import odds as odds_api
     from api.today import build_today_payload
     from src.analysis import prices as prices_mod
+    from src.appstate import freshness
     from src.appstate import savedbets as savedbets_store
     from src.appstate import users as users_store
     from src.providers import mlb
@@ -450,8 +451,25 @@ def _odds_boards(date="2026-08-31"):
     return {key: {"quotes": quotes, "observed_utc": _ODDS_TS, "source": "test"}}
 
 
+class _ResetOddsCache(unittest.TestCase):
+    """Same cache-isolation shape as test_api_games.py's
+    _ResetEntriesCache: api/odds.py now caches its schedule+board fetch per
+    date (src/appstate/freshness.py), and OddsSlateContractTests
+    deliberately reuses "2026-08-31" across methods with DIFFERENT board
+    fixtures (a priced six-book board vs an empty one) -- without a fresh
+    cache per test, whichever same-date test happens to run first would
+    leave its board fixture cached for every test that runs after it,
+    including ones that mock `boards_by_matchup` to return something else
+    entirely."""
+
+    def setUp(self):
+        if _HAVE_FASTAPI:
+            odds_api._odds_cache = freshness.SingleFlightTTLCache(
+                ttl_s=odds_api.ODDS_CACHE_TTL_S)
+
+
 @unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")
-class OddsSlateContractTests(unittest.TestCase):
+class OddsSlateContractTests(_ResetOddsCache):
 
     SLATE_SPEC = {
         "date": (str, type(None)),
@@ -551,7 +569,7 @@ class OddsSlateContractTests(unittest.TestCase):
 
 
 @unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")
-class OddsGameContractTests(unittest.TestCase):
+class OddsGameContractTests(_ResetOddsCache):
 
     def _payload(self, date="2026-08-31"):
         with patch.object(mlb, "fetch_games", return_value=_schedule(date)), \

@@ -56,6 +56,7 @@ from __future__ import annotations
 import hashlib
 import secrets
 import sqlite3
+import time
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -63,6 +64,11 @@ from pathlib import Path
 from typing import Iterator, Optional, Tuple
 
 from src.appstate import users as users_store
+
+# Same two constants, same values, same rationale as
+# src.appstate.users._WAL_MODE_RETRY_ATTEMPTS/_WAL_MODE_RETRY_DELAY_S.
+_WAL_MODE_RETRY_ATTEMPTS = 10
+_WAL_MODE_RETRY_DELAY_S = 0.02
 
 # The offer the landing page makes, in one place. LIFETIME per free
 # identity -- not per day, not per session: three checks, then the signup
@@ -112,6 +118,26 @@ def hash_token(raw_token: str) -> str:
     return hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
 
 
+def _set_wal_mode(conn: sqlite3.Connection) -> None:
+    """PRAGMA journal_mode=WAL, with a small manual retry -- same helper,
+    same reasoning as src.appstate.users._set_wal_mode: busy_timeout does
+    not cover the special exclusive lock a brand-new db file's FIRST-EVER
+    transition into WAL mode takes, so two connections racing to be first
+    to open this module's own db file need this narrower retry on top of
+    it. See that function's docstring for the full explanation."""
+    last_exc: Optional[sqlite3.OperationalError] = None
+    for _ in range(_WAL_MODE_RETRY_ATTEMPTS):
+        try:
+            conn.execute("PRAGMA journal_mode=WAL")
+            return
+        except sqlite3.OperationalError as exc:
+            if "database is locked" not in str(exc):
+                raise
+            last_exc = exc
+            time.sleep(_WAL_MODE_RETRY_DELAY_S)
+    raise last_exc
+
+
 @contextmanager
 def _connect(path: Optional[Path] = None) -> Iterator[sqlite3.Connection]:
     """One connection per call, schema ensured, closed on exit -- the same
@@ -122,6 +148,14 @@ def _connect(path: Optional[Path] = None) -> Iterator[sqlite3.Connection]:
     resolved.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(resolved))
     conn.row_factory = sqlite3.Row
+    # busy_timeout BEFORE journal_mode -- same two pragmas, same order,
+    # same rationale as src.appstate.users._connect (this module shares
+    # that db file and must behave identically under concurrent access).
+    # The order is load-bearing, not stylistic -- see that module's
+    # comment for why setting journal_mode first can itself raise
+    # "database is locked" with no retry.
+    conn.execute("PRAGMA busy_timeout=5000")
+    _set_wal_mode(conn)
     try:
         _ensure_schema(conn)
         yield conn

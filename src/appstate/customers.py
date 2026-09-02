@@ -57,6 +57,7 @@ module's writes too, into the same temp db.
 from __future__ import annotations
 
 import sqlite3
+import time
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -64,9 +65,34 @@ from typing import Callable, Iterator, Optional
 
 from src.appstate import users as users_store
 
+# Same two constants, same values, same rationale as
+# src.appstate.users._WAL_MODE_RETRY_ATTEMPTS/_WAL_MODE_RETRY_DELAY_S.
+_WAL_MODE_RETRY_ATTEMPTS = 10
+_WAL_MODE_RETRY_DELAY_S = 0.02
+
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _set_wal_mode(conn: sqlite3.Connection) -> None:
+    """PRAGMA journal_mode=WAL, with a small manual retry -- same helper,
+    same reasoning as src.appstate.users._set_wal_mode: busy_timeout does
+    not cover the special exclusive lock a brand-new db file's FIRST-EVER
+    transition into WAL mode takes, so two connections racing to be first
+    to open this module's own db file need this narrower retry on top of
+    it. See that function's docstring for the full explanation."""
+    last_exc: Optional[sqlite3.OperationalError] = None
+    for _ in range(_WAL_MODE_RETRY_ATTEMPTS):
+        try:
+            conn.execute("PRAGMA journal_mode=WAL")
+            return
+        except sqlite3.OperationalError as exc:
+            if "database is locked" not in str(exc):
+                raise
+            last_exc = exc
+            time.sleep(_WAL_MODE_RETRY_DELAY_S)
+    raise last_exc
 
 
 @contextmanager
@@ -79,12 +105,50 @@ def _connect(path: Optional[Path] = None) -> Iterator[sqlite3.Connection]:
     resolved.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(resolved))
     conn.row_factory = sqlite3.Row
+    # busy_timeout BEFORE journal_mode -- same two pragmas, same order,
+    # same rationale as src.appstate.users._connect (this module shares
+    # that db file and must behave identically under concurrent access).
+    # The order is load-bearing, not stylistic -- see that module's
+    # comment for why setting journal_mode first can itself raise
+    # "database is locked" with no retry.
+    conn.execute("PRAGMA busy_timeout=5000")
+    _set_wal_mode(conn)
     try:
         _ensure_schema(conn)
         yield conn
         conn.commit()
     finally:
         conn.close()
+
+
+def _add_column_if_missing(conn: sqlite3.Connection, table: str, column: str,
+                            ddl: str) -> None:
+    """ALTER TABLE ADD COLUMN, guarded twice over: PRAGMA table_info first
+    (so re-running on a db that already has the column is a no-op, not an
+    OperationalError), and a duplicate-column race guard on the ALTER
+    itself.
+
+    The two-part guard exists because the check-then-ALTER is NOT one
+    atomic operation -- PRAGMA table_info is a plain read needing no write
+    lock, so two connections opening a brand-new db at the same instant
+    (tests/test_appstate_sqlite_pragmas.py's concurrent-writer smoke test
+    caught exactly this, once WAL made the race easy to hit) can both read
+    "column absent" before either's ALTER commits; the loser's own ALTER
+    then fails with "duplicate column name" once it finally gets the write
+    lock, because the winner already added it. That is not a real failure
+    -- the column exists either way, which is all this function ever
+    promised -- so it is swallowed; any other OperationalError (a
+    genuinely broken db, a permissions issue) is a different shape and
+    still raises.
+    """
+    existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+    if column in existing:
+        return
+    try:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
+    except sqlite3.OperationalError as exc:
+        if "duplicate column name" not in str(exc):
+            raise
 
 
 def _ensure_schema(conn: sqlite3.Connection) -> None:
@@ -106,20 +170,17 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
     # MIGRATION-SAFE ALTER, not a table rebuild -- same pattern
     # src/appstate/users.py uses for tokens.first_used_at: an existing
     # app.db already has real subscription rows, so the new column is
-    # added to the table that is already there, guarded by PRAGMA
-    # table_info so re-running this on a db that already has it doesn't
-    # raise OperationalError.
-    existing_sub_cols = {row["name"] for row in
-                        conn.execute("PRAGMA table_info(billing_subscriptions)")}
-    if "cancel_at" not in existing_sub_cols:
-        conn.execute("ALTER TABLE billing_subscriptions ADD COLUMN cancel_at TEXT")
-    if "current_period_end" not in existing_sub_cols:
-        # Added for the cancellation policy (docs/LAUNCH_DECISIONS.md: cancel
-        # stops renewal, paid access runs to the end of the period already
-        # paid for). Without this column there is no honest way to answer
-        # "is this canceled customer still entitled?" without a live Stripe
-        # call on every request -- see has_paid_access below.
-        conn.execute("ALTER TABLE billing_subscriptions ADD COLUMN current_period_end TEXT")
+    # added to the table that is already there. See _add_column_if_missing
+    # for why the guard is two-part (PRAGMA table_info AND a race guard on
+    # the ALTER itself), not just the PRAGMA check.
+    _add_column_if_missing(conn, "billing_subscriptions", "cancel_at", "TEXT")
+    # current_period_end: added for the cancellation policy
+    # (docs/LAUNCH_DECISIONS.md: cancel stops renewal, paid access runs to
+    # the end of the period already paid for). Without this column there
+    # is no honest way to answer "is this canceled customer still
+    # entitled?" without a live Stripe call on every request -- see
+    # has_paid_access below.
+    _add_column_if_missing(conn, "billing_subscriptions", "current_period_end", "TEXT")
     conn.execute("""
         CREATE TABLE IF NOT EXISTS billing_checkout_idempotency (
             user_id INTEGER NOT NULL,

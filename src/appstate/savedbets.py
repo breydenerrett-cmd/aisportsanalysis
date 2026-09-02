@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import os
 import sqlite3
+import time
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -35,6 +36,11 @@ from typing import Iterator, List, Optional
 from src import paths
 
 ENV_DB_PATH = "APP_DB_PATH"  # shared with src.appstate.users -- one app db
+
+# Same two constants, same values, same rationale as
+# src.appstate.users._WAL_MODE_RETRY_ATTEMPTS/_WAL_MODE_RETRY_DELAY_S.
+_WAL_MODE_RETRY_ATTEMPTS = 10
+_WAL_MODE_RETRY_DELAY_S = 0.02
 
 
 def db_path() -> Path:
@@ -48,12 +54,40 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _set_wal_mode(conn: sqlite3.Connection) -> None:
+    """PRAGMA journal_mode=WAL, with a small manual retry -- same helper,
+    same reasoning as src.appstate.users._set_wal_mode: busy_timeout does
+    not cover the special exclusive lock a brand-new db file's FIRST-EVER
+    transition into WAL mode takes, so two connections racing to be first
+    to open this module's own db file need this narrower retry on top of
+    it. See that function's docstring for the full explanation."""
+    last_exc: Optional[sqlite3.OperationalError] = None
+    for _ in range(_WAL_MODE_RETRY_ATTEMPTS):
+        try:
+            conn.execute("PRAGMA journal_mode=WAL")
+            return
+        except sqlite3.OperationalError as exc:
+            if "database is locked" not in str(exc):
+                raise
+            last_exc = exc
+            time.sleep(_WAL_MODE_RETRY_DELAY_S)
+    raise last_exc
+
+
 @contextmanager
 def _connect(path: Optional[Path] = None) -> Iterator[sqlite3.Connection]:
     resolved = path or db_path()
     resolved.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(resolved))
     conn.row_factory = sqlite3.Row
+    # busy_timeout BEFORE journal_mode -- same two pragmas, same order,
+    # same rationale as src.appstate.users._connect (this module shares
+    # that db file and must behave identically under concurrent access).
+    # The order is load-bearing, not stylistic -- see that module's
+    # comment for why setting journal_mode first can itself raise
+    # "database is locked" with no retry.
+    conn.execute("PRAGMA busy_timeout=5000")
+    _set_wal_mode(conn)
     try:
         _ensure_schema(conn)
         yield conn
@@ -92,6 +126,21 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
     # sqlite has no "ADD COLUMN IF NOT EXISTS", so PRAGMA table_info is
     # consulted first -- re-running ALTER on a column that already exists
     # raises OperationalError and would make every future _connect() fail.
+    #
+    # THE CHECK-THEN-ALTER ITSELF STILL RACES ACROSS CONNECTIONS. PRAGMA
+    # table_info is a plain read (no write lock needed), so two threads
+    # opening a brand-new db at the same instant (tests/
+    # test_appstate_sqlite_pragmas.py's concurrent-writer smoke test) can
+    # both read "column absent" before either's ALTER commits; the loser's
+    # own ALTER then fails with "duplicate column name" once it finally
+    # gets the write lock, because the winner already added it. WAL made
+    # this race easy to hit (before it, the old rollback journal's
+    # exclusive per-write lock happened to serialize these two connections
+    # enough that the window rarely opened) -- but the fix is not to weaken
+    # WAL, it is to make the migration itself idempotent under a race, not
+    # just under repeat single-threaded runs. A duplicate-column failure
+    # here is not a real problem: the column exists either way, which is
+    # all this loop ever promised.
     existing = {row["name"] for row in conn.execute("PRAGMA table_info(saved_bets)")}
     for column, ddl in (
         ("settlement_status", "TEXT"),
@@ -115,7 +164,11 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
         ("closing_computed_at", "TEXT"),
     ):
         if column not in existing:
-            conn.execute(f"ALTER TABLE saved_bets ADD COLUMN {column} {ddl}")
+            try:
+                conn.execute(f"ALTER TABLE saved_bets ADD COLUMN {column} {ddl}")
+            except sqlite3.OperationalError as exc:
+                if "duplicate column name" not in str(exc):
+                    raise  # a different failure (disk full, corrupt db, ...) must still surface
 
 
 @dataclass(frozen=True)
