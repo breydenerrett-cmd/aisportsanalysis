@@ -1630,6 +1630,22 @@ def cmd_timing(args) -> int:
             import json as json_mod
             print(f"\n{name} response table:")
             print(json_mod.dumps(table, indent=2))
+
+    if getattr(args, "test", False):
+        import json as json_mod
+
+        from src.research import timingtest
+
+        print("\nprimary test (src/research/timingtest.py):")
+        verdicts = timingtest.test_all(report_result=result)
+        for name, verdict in verdicts.items():
+            if verdict.get("status") == "below floor":
+                print(f"\n{name}: below floor "
+                      f"({verdict['measurable_events']}/{verdict['floor']} "
+                      "measurable; not read)")
+                continue
+            print(f"\n{name}:")
+            print(json_mod.dumps(verdict, indent=2, default=str))
     return EXIT_OK
 
 
@@ -1827,8 +1843,14 @@ def build_parser() -> argparse.ArgumentParser:
                           help="print derived graded events as JSONL "
                                "instead of polling")
 
-    sub.add_parser("timing", help="V3 event accumulation status; tables "
-                                  "appear only past the 30-event class floor")
+    timing_cmd = sub.add_parser(
+        "timing", help="V3 event accumulation status; tables "
+                       "appear only past the 30-event class floor")
+    timing_cmd.add_argument(
+        "--test", action="store_true",
+        help="run the pre-registered primary test (src/research/timingtest.py) "
+             "for every class at/above the measurable-event floor; classes "
+             "below it print 'below floor' and are never read")
 
     health_cmd = sub.add_parser("health", help="slate data-quality health "
                                                "report (read-only; non-zero "
