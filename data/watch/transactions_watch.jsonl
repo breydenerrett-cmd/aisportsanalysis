@@ -336,3 +336,8 @@
 {"category": "designated", "date": "2026-09-02", "first_seen_utc": "2026-09-02T21:58:57.496769+00:00", "player": "Joel Kuhnel", "player_id": 669270, "team": "MIL", "transaction_id": 940910}
 {"fetched_utc": "2026-09-02T22:16:14.666155+00:00", "game_date": "2026-09-02", "poll": true}
 {"fetched_utc": "2026-09-02T22:16:18.570804+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-02T22:19:19.811128+00:00", "game_date": "2026-09-02", "poll": true}
+{"category": "other", "date": "2026-09-02", "first_seen_utc": "2026-09-02T22:19:19.811128+00:00", "player": "Tanner Rainey", "player_id": 663432, "team": "DET", "transaction_id": 940915}
+{"category": "other", "date": "2026-09-02", "first_seen_utc": "2026-09-02T22:19:19.811128+00:00", "player": "Shaun Anderson", "player_id": 641312, "team": "LAA", "transaction_id": 940916}
+{"category": "rehab", "date": "2026-09-02", "first_seen_utc": "2026-09-02T22:19:19.811128+00:00", "player": "Josiah Gray", "player_id": 680686, "team": "WSH", "transaction_id": 940922}
+{"fetched_utc": "2026-09-02T22:19:23.057014+00:00", "game_date": "2026-09-02", "poll": true}
