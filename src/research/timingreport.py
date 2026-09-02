@@ -44,7 +44,7 @@ import csv
 
 from pathlib import Path
 
-from src.pipeline import news, rosterwatch, snapshots
+from src.pipeline import news, rosterwatch, snapshots, umpirewatch
 from src.research import eventstudy, leadlag
 
 RESULTS_PATH = Path("data/historical/mlb_results.csv")
@@ -93,9 +93,23 @@ def _multibook_rows():
 
 def report(store_dir=None, multibook_rows=None, games=None,
            transactions=None) -> dict:
-    """Accumulation status per class; pre-registered tables past the floor."""
+    """Accumulation status per class; pre-registered tables past the floor.
+
+    THE CLASS LIST IS DATA-DRIVEN, NOT HARD-CODED HERE
+    ---------------------------------------------------
+    `classes` below is built purely from whatever `event["class"]` values
+    show up in `all_events` -- there is no fixed roster of class names in
+    this function. Admitting `docs/RESEARCH_V3_UMPIRE_CLASS.md`'s
+    `umpire_crew_revealed` class (the amendment adding a 5th class to the
+    family docs/RESEARCH_V3_TIMING.md froze at 4) is therefore just a second
+    events source folded into the same stream, on the same terms as
+    rosterwatch's four: a class with zero events today reports 0/30,
+    accumulating, exactly like every other class did on its first day.
+    """
     all_events = (rosterwatch.events() if store_dir is None
                   else rosterwatch.events(store_dir))
+    all_events = all_events + (
+        umpirewatch.events() if store_dir is None else umpirewatch.events(store_dir))
     rows = _multibook_rows() if multibook_rows is None else multibook_rows
     by_pk = _games_by_pk() if games is None else games
     tx_rows = news.read() if transactions is None else transactions

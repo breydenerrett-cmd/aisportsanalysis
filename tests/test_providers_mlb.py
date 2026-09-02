@@ -8,10 +8,13 @@ so a loose check ingests garbage that is nearly impossible to spot later.
 import json
 import unittest
 import urllib.error
+from pathlib import Path
 from unittest import mock
 
 from src.providers import mlb
 from src.providers.mlb import MLBError
+
+FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 
 def make_game(coded_state="F", away_score=1, home_score=2,
@@ -484,3 +487,89 @@ class TestFirstFive(unittest.TestCase):
         self.assertEqual(parsed["first_five"]["away_runs"], 1)
         # The full-game score is untouched by the first-five calculation.
         self.assertEqual(parsed["away_score"], 3)
+
+
+class TestOfficialsHydrateIsOptOut(unittest.TestCase):
+    """The whole point of the flag: silence for every caller that ignores it."""
+
+    def test_default_hydrate_never_mentions_officials(self):
+        with mock.patch.object(mlb, "_get_json",
+                               return_value=schedule_payload([])) as fake:
+            mlb.fetch_schedule("2026-09-02")
+        self.assertNotIn("officials", fake.call_args[0][1]["hydrate"])
+
+    def test_hydrate_officials_true_adds_it_without_removing_the_rest(self):
+        with mock.patch.object(mlb, "_get_json",
+                               return_value=schedule_payload([])) as fake:
+            mlb.fetch_schedule("2026-09-02", hydrate_officials=True)
+        hydrate = fake.call_args[0][1]["hydrate"]
+        self.assertIn("officials", hydrate)
+        self.assertIn("probablePitcher", hydrate)
+        self.assertIn("linescore", hydrate)
+
+    def test_fetch_officials_requests_the_hydrate(self):
+        with mock.patch.object(mlb, "_get_json",
+                               return_value=schedule_payload([])) as fake:
+            mlb.fetch_officials("2026-09-02")
+        self.assertIn("officials", fake.call_args[0][1]["hydrate"])
+
+
+class TestParseOfficialsOnRecordedFixture(unittest.TestCase):
+    """A real response, captured live 2026-09-02, trimmed to three games:
+    one still 'Scheduled' (officials not yet revealed) and two past
+    'Pre-Game' (a full four-person crew). No field inside a kept game was
+    edited -- only the game list was trimmed for size.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        with open(FIXTURES / "mlb_schedule_officials_2026-09-02.json",
+                  encoding="utf-8") as handle:
+            payload = json.load(handle)
+        cls.games = {g["gamePk"]: g for g in payload["dates"][0]["games"]}
+
+    def test_a_scheduled_game_has_not_revealed_its_crew(self):
+        game = self.games[823660]
+        self.assertEqual(game["status"]["detailedState"], "Scheduled")
+        record = mlb.parse_officials(game)
+        self.assertEqual(record["game_pk"], 823660)
+        self.assertEqual(record["officials"], [])
+        self.assertEqual(record["game_state"], "Scheduled")
+        self.assertEqual(record["first_pitch_utc"], "2026-09-02T23:40:00Z")
+        self.assertIsNone(mlb.home_plate_umpire(record["officials"]))
+
+    def test_a_pre_game_slate_has_a_four_person_crew(self):
+        game = self.games[824717]
+        self.assertEqual(game["status"]["detailedState"], "Pre-Game")
+        record = mlb.parse_officials(game)
+        self.assertEqual(len(record["officials"]), 4)
+        types = {o["officialType"] for o in record["officials"]}
+        self.assertEqual(types, {"Home Plate", "First Base",
+                                 "Second Base", "Third Base"})
+        for official in record["officials"]:
+            self.assertIsInstance(official["id"], int)
+            self.assertTrue(official["name"])
+
+    def test_home_plate_umpire_is_pulled_out_by_type_not_position(self):
+        record = mlb.parse_officials(self.games[824717])
+        plate = mlb.home_plate_umpire(record["officials"])
+        self.assertIsNotNone(plate)
+        expected = next(o["name"] for o in record["officials"]
+                        if o["officialType"] == "Home Plate")
+        self.assertEqual(plate, expected)
+
+    def test_an_in_progress_game_also_carries_its_crew(self):
+        record = mlb.parse_officials(self.games[824470])
+        self.assertEqual(record["game_state"], "In Progress")
+        self.assertEqual(len(record["officials"]), 4)
+
+    def test_fetch_officials_end_to_end_on_the_fixture(self):
+        with open(FIXTURES / "mlb_schedule_officials_2026-09-02.json",
+                  encoding="utf-8") as handle:
+            payload = json.load(handle)
+        with mock.patch.object(mlb, "_get_json", return_value=payload):
+            records = mlb.fetch_officials("2026-09-02")
+        by_pk = {r["game_pk"]: r for r in records}
+        self.assertEqual(len(records), 3)
+        self.assertEqual(by_pk[823660]["officials"], [])
+        self.assertEqual(len(by_pk[824717]["officials"]), 4)

@@ -30,8 +30,15 @@ def _mb_row(book, away="Cincinnati Reds", home="New York Mets",
 
 
 def _report(events, rows=None):
+    # umpirewatch.events is mocked here too, for the same reason
+    # rosterwatch.events is: every call in this file must be hermetic
+    # against the real data/watch stores, umpirewatch's included now that
+    # timingreport folds it into the same event stream (see
+    # src/research/timingreport.py's "THE CLASS LIST IS DATA-DRIVEN" note).
     with mock.patch.object(timingreport.rosterwatch, "events",
-                           return_value=events):
+                           return_value=events), \
+         mock.patch.object(timingreport.umpirewatch, "events",
+                           return_value=[]):
         return timingreport.report(multibook_rows=rows or [], games=GAMES,
                                    transactions=[])
 
@@ -104,7 +111,9 @@ class MappabilityTests(unittest.TestCase):
         with mock.patch.object(timingreport.rosterwatch, "events",
                                return_value=[_event(
                                    game_pk="999",
-                                   end="2026-09-02T20:00:00+00:00")]):
+                                   end="2026-09-02T20:00:00+00:00")]), \
+             mock.patch.object(timingreport.umpirewatch, "events",
+                               return_value=[]):
             result = timingreport.report(multibook_rows=[], games=games,
                                          transactions=[])
         entry = result["classes"]["starter_scratch"]
@@ -167,6 +176,80 @@ class FormatTests(unittest.TestCase):
     def test_an_empty_watch_says_young_not_broken(self):
         text = timingreport.format_report(_report([]))
         self.assertIn("young", text)
+
+
+class UmpireClassHookTests(unittest.TestCase):
+    """docs/RESEARCH_V3_UMPIRE_CLASS.md's 5th class, folded in through the
+    same data-driven mechanism as rosterwatch's four: `report()` has no
+    hard-coded roster of class names to update, so admitting the class is
+    just a second events source merged into the same stream.
+    """
+
+    @staticmethod
+    def _umpire_event(inadmissible, end="2026-08-31T20:00:00+00:00",
+                      game_pk="100"):
+        return {"class": "umpire_crew_revealed", "game_pk": game_pk,
+                "interval": (None if inadmissible else
+                            "2026-08-31T19:45:00+00:00", end),
+                "inadmissible": inadmissible,
+                "detail": {"home_plate_umpire": "Ump1", "crew_size": 4}}
+
+    def test_zero_events_means_the_class_is_not_in_the_report_yet(self):
+        # Exactly like any of the other four classes on their first day:
+        # a class with no events at all does not occupy a slot -- there is
+        # no roster for it to occupy one in.
+        self.assertNotIn("umpire_crew_revealed", _report([])["classes"])
+
+    def test_an_inadmissible_first_sighting_reports_accumulating_0_of_30(self):
+        with mock.patch.object(timingreport.rosterwatch, "events",
+                               return_value=[]), \
+             mock.patch.object(timingreport.umpirewatch, "events",
+                               return_value=[self._umpire_event(True)]):
+            result = timingreport.report(multibook_rows=[], games=GAMES,
+                                         transactions=[])
+        entry = result["classes"]["umpire_crew_revealed"]
+        self.assertEqual(entry["events"], 1)
+        self.assertEqual(entry["admissible"], 0)
+        self.assertIn("accumulating", entry["status"])
+        self.assertIn("0 of 30", entry["status"])
+        self.assertNotIn("response_table", entry)
+
+    def test_admissible_umpire_events_accumulate_toward_the_same_30_floor(self):
+        events = [self._umpire_event(False) for _ in range(29)]
+        with mock.patch.object(timingreport.rosterwatch, "events",
+                               return_value=[]), \
+             mock.patch.object(timingreport.umpirewatch, "events",
+                               return_value=events):
+            result = timingreport.report(multibook_rows=[], games=GAMES,
+                                         transactions=[])
+        entry = result["classes"]["umpire_crew_revealed"]
+        self.assertEqual(entry["admissible"], 29)
+        self.assertIn("accumulating", entry["status"])
+        self.assertNotIn("response_table", entry)
+
+    def test_reaching_the_floor_produces_the_pre_registered_tables(self):
+        rows = [_mb_row(f"b{i}") for i in range(8)]
+        events = [self._umpire_event(False) for _ in range(30)]
+        with mock.patch.object(timingreport.rosterwatch, "events",
+                               return_value=[]), \
+             mock.patch.object(timingreport.umpirewatch, "events",
+                               return_value=events):
+            result = timingreport.report(multibook_rows=rows, games=GAMES,
+                                         transactions=[])
+        entry = result["classes"]["umpire_crew_revealed"]
+        self.assertEqual(entry["status"],
+                         "at floor: pre-registered tables follow")
+        self.assertIn("response_table", entry)
+
+    def test_it_coexists_with_rosterwatch_classes_in_the_same_report(self):
+        with mock.patch.object(timingreport.rosterwatch, "events",
+                               return_value=[_event()]), \
+             mock.patch.object(timingreport.umpirewatch, "events",
+                               return_value=[self._umpire_event(True)]):
+            result = timingreport.report(multibook_rows=[], games=GAMES,
+                                         transactions=[])
+        self.assertIn("starter_scratch", result["classes"])
+        self.assertIn("umpire_crew_revealed", result["classes"])
 
 
 if __name__ == "__main__":
