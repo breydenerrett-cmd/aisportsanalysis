@@ -104,6 +104,31 @@ class SpotlightNeverInventsASide(unittest.TestCase):
         self.assertIn("parsed: true,", text)
 
 
+class SpotlightHeaderSurvivesNoSide(unittest.TestCase):
+    """L23 fix: featuredbet.js's SIDE fallback is now null-safe (only
+    reads s.game.home/away when s.query.side is literally "home"/"away"),
+    so this mapper no longer needs to withhold `game` to keep the SIDE
+    pill honest -- the matchup header should render for every game."""
+
+    def test_game_is_no_longer_withheld_as_a_workaround(self):
+        text = _read(GAMES_PATH)
+        self.assertNotIn("game: side ?", text)
+        self.assertNotIn("game: null", text)
+
+    FEATUREDBET_PATH = WEB_JS / "featuredbet.js"
+
+    def test_featuredbet_side_fallback_has_a_null_safe_branch(self):
+        text = _read(self.FEATUREDBET_PATH)
+        # Must not resolve to away for anything other than the literal
+        # "home" -- the old bug's shape (a bare else with no explicit
+        # "away" check).
+        self.assertNotRegex(
+            text,
+            r's\.query\.side === "home" \? \(s\.game && s\.game\.home\) : \(s\.game && s\.game\.away\)',
+        )
+        self.assertIn('s.query.side === "away" ? (s.game && s.game.away)', text)
+
+
 class CoverageLedgerIsDynamic(unittest.TestCase):
     """The artboard's own gap-name list (starter_stat_lines, xwoba, xfip,
     platoon_splits, team_news...) is stale versus the real API
