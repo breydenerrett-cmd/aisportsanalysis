@@ -49,6 +49,7 @@ web/
     motion.js         shared entrance/parallax/chart-draw engine (handoff section 08), reduced-motion aware
     shell.js          top-strip board-freshness readout, written by whichever view is mounted
     teamcolors.js     static 30-club MLB identity palette + the seam gradients derived from it
+    labels.js         static club display names + sportsbook customer labels (src/data/labels.py's JS twin)
     tiles.js          the angled slate tile, shared by the Gameday rail and the Games grid
     signin.js         INTERIM invite-token screen (see its docstring -- not a designed screen)
     today.js        GAMEDAY view     -- GET /today + /games + /odds + /changed for the date
