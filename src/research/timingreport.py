@@ -137,6 +137,14 @@ def report(store_dir=None, multibook_rows=None, games=None,
         measured = eventstudy.measure(
             {"interval": event["interval"]}, quotes,
             game_start=game.get("start_time_utc"))
+        # Carried through for src/research/timingtest.py, which needs the
+        # mapped game's start time to place each event relative to the dense
+        # capture window (docs/RESEARCH_V3_TIMING.md lines ~163-166) and to
+        # compute a censoring time for events that never reach 50%-moved
+        # before first pitch. eventstudy.measure() cannot know this itself --
+        # the join to a game lives entirely in this module.
+        measured["game_pk"] = game_pk
+        measured["game_start_utc"] = game.get("start_time_utc")
         if measured.get("excluded") is None:
             bucket["measurable"] += 1
         else:
@@ -163,6 +171,12 @@ def report(store_dir=None, multibook_rows=None, games=None,
                 bucket["measured"])
             entry["leadership_stability"] = leadlag.leadership_stability(
                 bucket["measured"])
+            # Only past the SAME admissible floor the tables above already
+            # require -- never below it. src/research/timingtest.py applies
+            # its own, stricter gate on top of this (the MEASURABLE count,
+            # which is what the pre-registered hypothesis test actually
+            # needs rows for) before it ever reads inside this list.
+            entry["measured"] = bucket["measured"]
         out["classes"][name] = entry
     return out
 

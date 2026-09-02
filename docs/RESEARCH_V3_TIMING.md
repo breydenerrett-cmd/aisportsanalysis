@@ -164,3 +164,131 @@ derivation.
 brackets), 15-minute brackets inside dense windows; the reaction ladder's
 resolution floor is therefore the poll spacing in force at each event, and
 the primary hypothesis is stated against exactly that floor.
+
+## ADDENDUM 2026-09-02 — FIRST CLASS READ — transaction_first_seen
+
+The primary hypothesis test (`src/research/timingtest.py`, wired as
+`python3 -m src.cli timing --test`) ran for the first time. One class has
+crossed the read floor; the other three have not, and were not read.
+
+**Naming note:** the freeze record above names this admitted class
+`il_roster_move`; the capture code (`src/pipeline/rosterwatch.py`) and
+every report below name the identical class `transaction_first_seen` (its
+mechanism: "transaction id first seen between polls"). Same class, two
+names — nothing else in the family denominator changes.
+
+### Floor status of all four admitted classes (measurable-event count)
+
+| class | measurable | floor | read? |
+|-------|-----------:|------:|-------|
+| transaction_first_seen (il_roster_move) | 56 | 30 | **yes — this addendum** |
+| lineup_posted | 29 | 30 | no — 1 event short |
+| hitter_scratch | 3 | 30 | no |
+| starter_scratch | 0 | 30 | no |
+
+### What was tested
+
+Per-event paired formulation (lines 102-105 state the hypothesis per
+class; lines 163-166 make the floor itself per-event, which is why the
+paired form — not a pooled median-vs-median — is what was run): for each
+usable event, `diff = (minutes to 50%-of-books reaction) - (that event's
+own capture-spacing floor)`. H1: `median(diff) > 0`. This is exactly
+equivalent to `S(0) > 0.5`, where S is diff's survival function
+(S(t) = P(true diff > t)) — a non-increasing step function crosses below
+0.5 at a positive time iff its value at 0 already exceeds 0.5 — so the
+test bootstraps `S_hat(0)` directly rather than a KM median that can come
+back "not reached." Reaction time is the Kaplan-Meier reaction-time ladder
+value already computed by `eventstudy.measure()` (`ladder_minutes["50%"]`);
+an event where that is `None` — under 50% of books ever moved before its
+mapped game's first pitch — is right-censored at
+`(minutes from event to first pitch) - floor`, never dropped and never
+imputed. Floor is 15 minutes when the event falls inside the dense
+capture window (`src/pipeline/dense.py`, 180 minutes before first pitch),
+60 minutes (the hourly baseline loop) otherwise. Clustering, for the
+bootstrap and the family's own correlation structure, is by the event's
+own mapped `game_pk` — 2,000 resamples, seed 20260901.
+
+### Exact numbers
+
+- 166 events observed, 165 admissible, **56 measurable** (matches
+  `python3 -m src.cli timing` and `leadlag.response_table`'s own ladder,
+  `50%` rung 178.85 min).
+- All 56 measurable events produced a usable row (0 excluded for
+  unparseable or missing game-start times).
+- Floor regime: 36 events under the 15-minute dense floor, 20 under the
+  60-minute hourly floor (median floor across the sample: 15 min).
+- **39 of 56 (69.6%) censored** — under 50% of books had moved by first
+  pitch. 17 observed.
+- Complete-case (censored events dropped; biased **downward**, toward
+  *less* measured latency — the conservative direction for this
+  hypothesis) median reaction: **178.85 min**; median diff: **118.85 min**.
+- Kaplan-Meier (censoring-aware) median reaction: **224.87 min** (~3h45m);
+  median diff: **164.87 min** (~2h45m). Both above their complete-case
+  counterparts, as the downward-bias direction predicts.
+- **Point estimate S_hat(0) = 1.000** (every one of the 17 observed
+  reactions, and every one of the 39 censored lower bounds, is consistent
+  with diff > 0 — see caveat below). **95% bootstrap CI [1.000, 1.000].
+  One-sided bootstrap p = 0.000** (2,000/2,000 resamples, clustered by
+  `game_pk`, 20 clusters).
+- **Split-half replication: REPLICATED.** First half (n=28) S(0) = 1.000;
+  second half (n=28) S(0) = 1.000 — same direction, magnitude fully held.
+
+### FDR denominator, and what has NOT been decided
+
+The family denominator recorded at freeze is **4** admitted classes
+(`lineup_posted`, `starter_scratch`, `hitter_scratch`,
+`transaction_first_seen`/`il_roster_move`). BH-FDR at q = 0.10 is a
+correction over the full family's p-values, with an early-death p = 1.0
+for any class that never reaches its floor — it cannot be computed
+honestly from one p-value out of four. **No promotion decision is made
+here.** `lineup_posted` is one event from its own floor and is the
+natural next read; `hitter_scratch` and `starter_scratch` remain far
+below it. `src/research/timingtest.bh_fdr` is written and unit-tested for
+when all four have a p-value (or a frozen early-death 1.0).
+
+### Honest interpretation
+
+If it holds up under the family correction and the other three classes'
+reads, this is a **measurable ~2.75-3.75 hour median latency** (KM
+estimate) between an MLB transaction becoming visible in our feed and
+half the quoting sportsbooks repricing its next-affected game by at least
+one de-vigged probability point. Per this family's own frozen scope, that
+is a **latency structure finding, not an edge claim**: necessary, never
+sufficient, for any timing edge — executability, limits, and price-vs-fair
+are separate questions this data does not address, and none is claimed.
+
+### For methodology review — where to look hardest
+
+1. **S(0) = 1.000 / CI [1.000, 1.000] is a boundary result, not a
+   certainty claim.** It holds because the smallest *observed* diff in
+   the whole sample is +59.4 minutes (well clear of both the 15- and
+   60-minute floors) — a percentile bootstrap can only redraw from the
+   clusters actually observed, so it structurally cannot produce a value
+   below the sample's own minimum. Zero of 56 events showed reaction at
+   or faster than their own floor; with a larger sample the true
+   population S(0) could plausibly sit measurably below 1. Read "p =
+   0.000" as "no counterexample anywhere in this sample, in any
+   resampling of it" — not as a formal probability of a false positive
+   under an alternative.
+2. **69.6% censoring** means most of the evidence is lower-bound-only.
+   One censored event has a *negative* lower bound (`censor_time - floor
+   = -6.9 min`, an event captured very close to its mapped game's first
+   pitch) — legitimate (it simply leaves the KM risk set before time 0
+   and asserts nothing), but worth an independent eyeball.
+3. **20 distinct `game_pk` clusters carry 56 events** — some clusters
+   contribute multiple transactions for the same game. The effective
+   cluster count for the bootstrap is 20, not 56; this is the number that
+   should be compared against any intuition about statistical power here.
+4. **The replication check also saturates at the S(0) boundary in both
+   halves** (1.000 and 1.000), so "replicated" is correct by the
+   pre-registered rule but is not a discriminating check in this
+   instance — it could not have shown a magnitude shortfall even if the
+   true effect were smaller in the second half, only a sign flip.
+5. **The "next game" join for a transaction event** (a transaction names
+   no game; it is mapped to the affected club's next stored game after
+   the event) means an event's censoring time can span from minutes to
+   over a day (observed lower bounds ranged up to ~1,404 minutes before
+   subtracting the floor) — a transaction about a team that does not play
+   again for a while gets a very long observation window, which the KM
+   estimator uses correctly but is worth confirming reads as intended for
+   a "reaction to THIS game" claim rather than "reaction, eventually."
