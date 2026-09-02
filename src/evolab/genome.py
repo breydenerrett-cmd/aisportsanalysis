@@ -74,6 +74,11 @@ FORBIDDEN_KEYS = frozenset({
 # Markets the lab may name. Tuples, not free strings, so adding one is a
 # visible edit here rather than a stringly-typed drive-by -- the same
 # discipline funnel.MARKETS uses.
+# SCOPE NOTE (2026-09-02 audit): the F5 slot is schema-only so far --
+# src/evolab/feed.py sources h2h prices only, so every sweep to date
+# (including Phase 2B's 8,811 genomes) searched the full-game moneyline
+# alone. Wiring an F5 feed is Evolab v2 work; until then a genome that
+# names h2h_1st_5_innings validates but has no prices behind it.
 MARKETS = ("h2h", "h2h_1st_5_innings")
 F5_MARKET = "h2h_1st_5_innings"
 

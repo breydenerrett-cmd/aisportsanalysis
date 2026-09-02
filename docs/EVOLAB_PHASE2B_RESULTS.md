@@ -330,3 +330,12 @@ What survives, per §15:
 Research shifts to: **F5**, **props feasibility**, and **V3 timing and forward
 evidence**. Any future look at the board drift of §3 enters through one of
 those lanes, pre-registered, or not at all.
+
+## Scope footnote (added 2026-09-02, orchestrator audit)
+
+The genome schema names two markets (`h2h`, `h2h_1st_5_innings`), but
+`src/evolab/feed.py` sources full-game h2h prices only; no F5 price ever
+reached a Phase 2B genome. The 8,811-strategy headline is therefore an
+**h2h-only** search of the 2023–24 board. This does not change the
+verdict (BELOW_PLACEBO_CEILING) — it bounds what the verdict covers.
+F5 enters the sweep only when Evolab v2 wires an F5 feed.
