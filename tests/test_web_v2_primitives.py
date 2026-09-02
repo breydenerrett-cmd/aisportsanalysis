@@ -41,7 +41,11 @@ WEB_JS = ROOT / "web" / "js"
 STATES_PATH = WEB_JS / "states.js"
 FEATUREDBET_PATH = WEB_JS / "featuredbet.js"
 
-WAVE1_SCREEN_FILES = ("today.js", "betcheck.js", "games.js", "odds.js", "mybets.js", "main.js")
+WAVE1_SCREEN_FILES = ("today.js", "betcheck.js", "odds.js", "mybets.js", "main.js")
+# games.js was removed from this list by LANE L21 (design/linehound-v2/
+# IMPLEMENTATION_PLAN.md's Group Game), which wired featuredbet.js's
+# renderFeaturedBet into the V2-34 Game spotlight -- see
+# tests/test_web_v2_game.py for that wiring's own assertions.
 
 
 def _read(path: Path) -> str:
