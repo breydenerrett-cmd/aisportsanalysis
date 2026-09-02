@@ -77,6 +77,23 @@ the findings that most change what gets built:
 
 ---
 
+## Artboard count reconciled: 38, not 35
+
+`LINEHOUND V2 Full Product.dc.html`'s own footer (line 7896) states "38
+ARTBOARDS · 10 FAMILIES · 2 VIEWPORTS"; the freeze commit's "35" undercounts
+by 3. Both numbers are internally consistent once you know why: 35 is the
+count of numbered artboard SLOTS (V2-01 through V2-35), but slot V2-01
+(Gameday) alone contains FOUR physical canvas frames instead of one — the
+carousel artboard (V2-01, line 1126) plus three dedicated verdict-state
+artboards under its own "V2-01a · b · c · THE VERDICT FAMILY" heading (line
+2090): V2-01a NO_PLAY · 93.0% (line 1674), V2-01b FLAGGED · 2.3% (line
+1881), V2-01c MARKET_UNAVAILABLE · 4.7% (line 1982). No other numbered slot
+carries a lettered variant. 35 slots + 3 extra lettered artboards under
+slot 01 = 38 physical artboards, matching the canvas's own count exactly.
+Full per-artboard detail (title, line range, viewport, fields, tier) is in
+`IMPLEMENTATION_MANIFEST.json`; build order and file ownership is in
+`IMPLEMENTATION_PLAN.md`.
+
 ## V2 design work continuing WITHOUT waiting on reconciliation
 Valid regardless of the disputed capabilities: the visual system and tokens, navigation
 and motion language, layout and composition, the zero-findings / no-play experience,
