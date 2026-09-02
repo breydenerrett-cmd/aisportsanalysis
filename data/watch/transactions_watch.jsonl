@@ -284,3 +284,10 @@
 {"fetched_utc": "2026-09-02T15:34:37.976652+00:00", "game_date": "2026-09-02", "poll": true}
 {"fetched_utc": "2026-09-02T15:49:41.337754+00:00", "game_date": "2026-09-02", "poll": true}
 {"fetched_utc": "2026-09-02T16:04:44.007863+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-02T16:16:19.789344+00:00", "game_date": "2026-09-02", "poll": true}
+{"category": "other", "date": "2026-09-02", "first_seen_utc": "2026-09-02T16:16:19.789344+00:00", "player": "Geoff Hartlieb", "player_id": 664129, "team": "OAK", "transaction_id": 940771}
+{"category": "designated", "date": "2026-09-02", "first_seen_utc": "2026-09-02T16:16:19.789344+00:00", "player": "Jos\u00e9 Suarez", "player_id": 660761, "team": "OAK", "transaction_id": 940772}
+{"fetched_utc": "2026-09-02T16:16:22.533584+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-02T16:31:25.245579+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-02T16:46:29.242702+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-02T17:01:31.856749+00:00", "game_date": "2026-09-02", "poll": true}
