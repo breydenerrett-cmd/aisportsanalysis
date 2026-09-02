@@ -100,3 +100,35 @@ Companion files: `CAPABILITY_LEDGER.md` (the contract), `LINEHOUND_V2_DESIGN_PLA
 - `design/linehound-v1/DESIGN_REQUEST_TRACK2.md:15-18` — `book_last_update`, a `stale`
   flag on `/odds`, and multi-book spreads/totals **do not exist**. Range is 2–11, not 8–11.
 - `docs/VISUAL_ACCEPTANCE_TRACK1.md:52` asserts a `#/signin` screen. It does not exist.
+
+---
+
+## 6. NUMERIC PROVENANCE AUDIT — every displayed figure must trace to a field
+
+**Governing rule:** a number appears in an artboard only if an implementer can trace it to
+a real field, or to a deterministic client-side calculation over fields actually received
+*on that screen*. Every figure in the V2 artboards is **REPRESENTATIVE ARTBOARD CONTENT**,
+bound at implementation time. **No figure ships as a literal.**
+
+### The "what we checked" counter panel — audited at current HEAD
+
+| Shown | Verdict | Source / action |
+|---|---|---|
+| **15 GAMES** | ✅ **REAL, date-dependent** | `games_count = len(game_odds)` (`src/analysis/oddspayload.py:311`); slate list length on the games feed. Bind at runtime — never literal 15. |
+| **11 BOOKS** | ⚠️ **NOT a slate-level field** | The only real field is `board_summary.books`, which is **per game**, derived from the price-improvement dispersion (`src/analysis/gamepayload.py:150`). No slate-wide book count exists on any endpoint. Median 11, **min observed 5**. Either render per-game where that game's board is held, or relabel as a derived distinct-book count across tonight's boards and say so. If not derivable on the screen, **remove**. |
+| **164 QUOTES** | ❌ **REMOVED from Gameday** | No slate-level quote total exists. Quotes are board rows inside each game's board on the **Odds** payload only (`src/analysis/betcheck.py:258-260`). The Gameday feed gives only `board_summary.books` per game, so a slate-wide quote total is **not derivable there** — printing it would invent a number. Legitimately derivable on the Odds screen as a client-side sum of rows actually received; label it as such. |
+| **27 HYPOTHESES** | ⚠️ **Real number, wrong context** | Verified: V1 13 · V2 5 · V4 6 · V5 3 = 27 (`docs/RESUME.md:16`, `docs/OVERNIGHT_RUN.md:365`). But it is a **cumulative research-programme constant**, not tonight's work. Beside "15 games" it reads as a nightly count and misleads. Move to an evidence/methodology context, labelled a static constant kept in sync with the research docs — or drop. |
+
+### Timestamps
+**`PRICES CAPTURED 10:31pm ET`** — pattern is correct and honest, but the value is
+**representative only**. Bind to the real `observed_utc` from
+`best_available_price.observed_utc` (constructor-required,
+`src/analysis/contracts.py:153,158`) or the board's `observed_utc`
+(`contracts.py:555,561`), formatted client-side to the viewer's timezone.
+**Never a static timestamp.** Sub-minute liveness claims remain prohibited — capture
+cadence is 15–60 min and a live board measured ~81 minutes old.
+
+### Everything else with a number
+Same rule, per figure: prices, records, win pct, runs/game, sample `n`, book counts,
+first pitch, free-checks remaining. Each binds to a named field. Anything whose source
+cannot be named must come out of the design.
