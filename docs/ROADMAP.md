@@ -201,11 +201,16 @@ written elsewhere) and docs/SAAS_APPLICATION_ARCHITECTURE.md can be reviewed
 together.
 
 ### READY QUEUE (refill to ≥3 whenever an item completes)
+NOTE 2026-09-02: an orchestration day is running (docs/MASTER_PLAN.md
+Phase 1 + audit-surfaced fixes) with all work dispatched as isolated
+worker lanes by the orchestrator; the autonomous loop does not
+self-select from this queue until the end-of-day synthesis is posted.
 1. Protect/run due forward capture (standing, lane A — always first).
-2. V3 first class-floor analysis when any class reaches 30 admitted
-   events AND those events are measurable (lane B; run
-   `python3 -m src.cli timing`; do not read early). Mappability is now a
-   precondition, not an assumption.
+2. V3 first class-floor analysis — PRECONDITION MET 2026-09-02:
+   transaction_first_seen is at 56 measurable events (floor 30); the
+   pre-registered primary test is being coded and run as an orchestrated
+   lane today (docs/RESEARCH_V3_TIMING.md addendum will carry the read).
+   lineup_posted is at 29/30 — do not read it early.
 3. F5 forward-series review once ~2 weeks of F5 closes exist in
    data/processed/f5_close.jsonl (lane F: measure coverage/books before
    designing any F5 family; historical F5 backfill is a HARD GATE item).
@@ -220,12 +225,13 @@ together.
    slate (dense.any_game_scheduled). REMAINING: the postseason/spring-training
    V3+F5+prop admissibility decisions (§3.1) are Brey's, needed before
    2026-09-29 (first Wild Card) or the code's silent-admit default takes over.
-5. Forward prop-listing audit -- DESIGNED, AWAITING BREY
-   (docs/PROBE_PROP_LISTING.md: 18 credits/day, ~340 total, hard cap 400).
-   COLLECTION_POLICY.md forbids prop collection without a registered
-   hypothesis; C1 is deliberately unregistered, so starting the probe
-   needs Brey's one-line policy amendment (draft in the doc's section 6).
-   Do NOT start it autonomously.
+5. Forward prop-listing audit -- RUNNING since 2026-08-31 (approved
+   narrowly; scripts/forward_capture.sh PROP_LISTING_AUDIT=on; 418 rows,
+   34 fetches ≈ 34 credits of the 400 hard cap as of 2026-09-02). A
+   bounded prop PRICE layer (≤18 credits/day, hard cap, env-gated) is
+   being added 2026-09-02 under the owner-approved master-plan
+   capture-now principle (docs/COLLECTION_POLICY.md amendment); the
+   historical prop purchase remains a HARD APPROVAL GATE.
 
 DONE this cycle: timestamp audit · V3 freeze · market probe · collection
 policy · lead/lag + eventstudy cores · multibook store · rosterwatch ·
