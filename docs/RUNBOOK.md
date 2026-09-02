@@ -56,6 +56,29 @@ capture window, settlement gap, crash).
 - Ledger settle: `python3 -m src.cli ledger`
 - Manual capture (after downtime): `bash scripts/forward_capture.sh`
 
+## Forward-ledger row kinds
+
+`evidence/forward_ledger.jsonl` is append-only; every row has a `kind`:
+
+- `recommendation` — what the system knew before first pitch (`ledger.record_slate`).
+- `settlement` — the final result and closing price, written once
+  (`ledger.settle`). A null `closing` on an old row is permanent — the
+  original line is never rewritten — but see the next kind.
+- `closing_backfill` — added 2026-09 to repair settlements whose `closing`
+  was wrongly null because of the club-abbreviation/full-name join bug
+  fixed in commit 65f499a (`src.pipeline.snapshots.game_key`). Never
+  edits the settlement it corrects; it is a separate row carrying `ref`
+  (the settlement's `game_pk`), `closing_price`, `closing_observed_utc`,
+  `closing_source`, `derived_utc`, `clv`, and `reason`. A settlement that
+  already had a non-null closing is never touched. Produced by
+  `python3 -m src.cli closing-backfill` (`--dry-run` to preview; see
+  `closing-audit` for a read-only count of what is derivable). Readers
+  should call `grading.effective_closing`/`grading.read_backfills` rather
+  than reading a settlement's `closing` field directly, so the preference
+  rule (prefer the backfill only when the original is null) lives in one
+  place. CLV on a backfill row is h2h-only — spreads/totals/first-five
+  closing identification is a separate, not-yet-built lane.
+
 ## Failure playbook
 
 - **"skipped: credit floor"** — spending stopped by design. Decide whether
