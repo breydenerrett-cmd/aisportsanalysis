@@ -501,6 +501,29 @@ def _binom_sf(k, n, p=0.5) -> float:
                for i in range(k, n + 1))
 
 
+def _row_sign(row):
+    """+1 / -1 / None (uninformative) for one row's contribution to its
+    cluster's H1-favoring sign.
+
+    An OBSERVED diff has a real sign either way: positive is "+", zero or
+    negative is "-". A CENSORED row only knows a LOWER BOUND on the true
+    diff (the event had not yet reacted when observation stopped) -- a
+    lower bound that is itself positive DOES prove the true diff is
+    positive too (+1), but a lower bound at or below zero proves nothing
+    about the true diff's sign: the true value could still turn out to be
+    positive, given more follow-up. Coding that case as "-" (the pre-review
+    behaviour) was conservative for THIS read only by accident, not by
+    construction, and could mis-sign a future read the other way -- so it
+    is dropped (None) here rather than counted either direction (post-review
+    code note, docs/RESEARCH_V3_TIMING.md, appended after the second
+    adversarial review passed).
+    """
+    if row["censored"]:
+        bound = row["censor_time_minutes"] - row["floor_minutes"]
+        return 1 if bound > 0 else None
+    return 1 if row["diff_minutes"] > 0 else -1
+
+
 def cluster_sign_test(rows) -> dict:
     """Cluster-level exact one-sided sign test for H1: diff > 0.
 
@@ -508,11 +531,17 @@ def cluster_sign_test(rows) -> dict:
     otherwise a cluster contributing many events (docs/RESEARCH_V3_TIMING.md
     ADDENDUM 2's concentration finding: a handful of clusters carry most of
     the observed reactions) would inflate the test's effective n by
-    counting the same game's correlated events as independent evidence. A
-    cluster is "+" if every one of its events' values (the observed diff,
-    or a censored event's lower bound) is on the H1 side (> 0); "-" if every
-    one is <= 0; a cluster whose events disagree in sign is a TIE and
-    dropped -- neither classification would be honest.
+    counting the same game's correlated events as independent evidence.
+    Each row's contribution is `_row_sign` (+1 / -1 / None -- see that
+    function for why a censored row with a non-positive lower bound is
+    uninformative, not "-"). Rows that come back None are dropped before a
+    cluster is classified. A cluster is "+" if every one of its remaining
+    (informative) rows is +1; "-" if every one is -1; a cluster whose
+    informative rows disagree in sign is a TIE and dropped; a cluster with
+    NO informative rows at all (every row uninformative) is dropped
+    silently, the same as a tie, since classifying it either way -- or even
+    counting it as a tie -- would assert something the data does not
+    support.
 
     Under the null that a classifiable cluster is equally likely to land on
     either side, the number of "+" clusters is Binomial(n, 0.5); the
@@ -526,15 +555,16 @@ def cluster_sign_test(rows) -> dict:
         by_cluster.setdefault(row["cluster"], []).append(row)
     plus = minus = ties = 0
     for crows in by_cluster.values():
-        values = [(r["censor_time_minutes"] - r["floor_minutes"])
-                  if r["censored"] else r["diff_minutes"] for r in crows]
-        positive = sum(1 for v in values if v > 0)
-        negative = sum(1 for v in values if v <= 0)
+        signs = [s for s in (_row_sign(r) for r in crows) if s is not None]
+        if not signs:
+            continue  # wholly uninformative cluster: not a tie, not a vote
+        positive = any(s > 0 for s in signs)
+        negative = any(s < 0 for s in signs)
         if positive and negative:
             ties += 1
         elif positive:
             plus += 1
-        elif negative:
+        else:
             minus += 1
     n = plus + minus
     result = {"unit": "game_pk cluster (one vote per cluster, never per event)",

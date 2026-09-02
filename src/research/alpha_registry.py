@@ -35,7 +35,8 @@ Two row shapes, one JSONL file, one row per event, never rewritten:
      status: "registered", source_doc, code_hash}
 
     {kind: "verdict", id, read_utc, result: "null" | "false_positive" |
-     "candidate" | "survivor" | "audit", p, effect, ci, battery_version,
+     "candidate" | "survivor" | "audit" | "withdrawn" | "below_floor",
+     p, effect, ci, battery_version,
      within_sweep: {spa_p, pbo, placebo_pct} (sweep verdicts only),
      forward_window: {start, n, pending: true|false}}
 
@@ -57,10 +58,40 @@ APPEND-ONLY (enforced, not just documented)
 hypothesis/sweep/audit row. `record_verdict()` refuses a second verdict for
 an `id` that already has one, and refuses a verdict for an `id` with no
 registered row at all. Neither function can rewrite or delete a line. A
-correction to an already-verdicted unit (see V2's M4 CI correction,
-`docs/RESULTS_V2.md`) is a NEW id (e.g. `<id>-correction-<date>`), never an
-edit of the old row -- exactly the discipline `docs/RESULTS_V2.md` itself
-follows by leaving the superseded number in place rather than overwriting it.
+correction to an already-verdicted unit's NUMBERS (see V2's M4 CI
+correction, `docs/RESULTS_V2.md`) is a NEW id (e.g.
+`<id>-correction-<date>`), never an edit of the old row -- exactly the
+discipline `docs/RESULTS_V2.md` itself follows by leaving the superseded
+number in place rather than overwriting it.
+
+WITHDRAWING A VERDICT (result: "withdrawn" / "below_floor")
+-------------------------------------------------------------
+A correction to a verdict's numbers is a new id, per the paragraph above.
+But sometimes the earlier verdict itself should never have been recorded at
+all -- e.g. V3:transaction_first_seen's migrated first-read "candidate"
+verdict was computed against a broader class than the one actually frozen
+(docs/RESEARCH_V3_TIMING.md ADDENDUM 2); the correctly-scoped (game-relevant)
+subset never reached its 30-event floor, so no result was ever really read.
+That is not "a different number for the same test" -- it is "this row
+should not have existed" -- and forcing it through the `-correction-<date>`
+id convention would misrepresent the ledger by minting a second registered
+hypothesis for a family that only ever pre-registered one class.
+
+For exactly this case, `record_verdict()` allows ONE additional verdict for
+an `id` that already carries one, if and only if the new row's `result` is
+`"withdrawn"`: it is appended (never replacing or deleting the original,
+now-superseded row -- both stay on the ledger forever, and a reader must
+take the id's LATEST verdict as the current status) and no second
+`"withdrawn"` may follow it (that would silently re-open the loophole this
+narrow exception exists to avoid). `"below_floor"` is the sibling result
+value for a verdict recorded directly (no prior verdict to retract) stating
+plainly "checked at read_utc, still below the pre-registered floor, no
+result read" -- an explicit, dated non-event, as opposed to no verdict row
+at all meaning "never checked". `total_searched()` counts a unit whose
+LATEST verdict is `"withdrawn"` or `"below_floor"` as NOT read (`read`/
+`not_read` in its return value) -- exactly like a unit with no verdict at
+all, since both states mean the same thing: nothing has actually been read
+yet, and the unit is still accumulating.
 
 SEMANTIC HASH v0 (D3)
 ----------------------
@@ -141,7 +172,14 @@ DEFAULT_PATH = REPO_ROOT / "data" / "research" / "alpha_registry.jsonl"
 # their own verdict rows); "verdict" is the second row shape (D2).
 REGISTRATION_KINDS = ("hypothesis", "sweep", "audit")
 _REGISTRATION_KIND_SET = set(REGISTRATION_KINDS)
-VALID_RESULTS = ("null", "false_positive", "candidate", "survivor", "audit")
+VALID_RESULTS = ("null", "false_positive", "candidate", "survivor", "audit",
+                 "withdrawn", "below_floor")
+
+# A unit whose LATEST verdict carries one of these results is treated as
+# NOT read by total_searched() -- see the module docstring's "WITHDRAWING A
+# VERDICT" section. Both mean "nothing was actually read here yet", exactly
+# like having no verdict row at all.
+NOT_READ_RESULTS = frozenset({"withdrawn", "below_floor"})
 
 REQUIRED_REGISTRATION_FIELDS = (
     "kind", "id", "family", "market", "sport", "registered_utc",
@@ -281,9 +319,21 @@ class AlphaRegistry:
         self._append(row)
         return row
 
+    def _verdict_results_for(self, row_id: str) -> List[Optional[str]]:
+        return [row.get("result") for row in self._iter_raw()
+                if row.get("kind") == "verdict" and row.get("id") == row_id]
+
     def record_verdict(self, row: Dict[str, Any]) -> Dict[str, Any]:
         """Append one verdict row for an id already registered. Refuses a
-        duplicate verdict and a verdict with no matching registered row."""
+        duplicate verdict and a verdict with no matching registered row.
+
+        The one narrow exception (see the module docstring's "WITHDRAWING A
+        VERDICT" section): a `result: "withdrawn"` row IS allowed for an id
+        that already carries a verdict, exactly once, to retract an earlier
+        verdict discovered to be invalid without editing or deleting it. A
+        second `"withdrawn"` for the same id is refused, as is any ordinary
+        (non-withdrawn) second verdict.
+        """
         row = dict(row)
         if row.get("kind") != "verdict":
             raise ValueError("record_verdict() row['kind'] must be 'verdict'")
@@ -300,12 +350,23 @@ class AlphaRegistry:
                 f"id {row_id!r} has no registered hypothesis/sweep/audit row -- "
                 "a verdict requires prior registration"
             )
-        if row_id in self._verdict_ids():
-            raise AppendOnlyError(
-                f"id {row_id!r} already has a verdict -- the ledger is append-only; "
-                f"a correction is a NEW id (e.g. {row_id!r} + '-correction-<date>'), "
-                "never a rewrite of the existing verdict"
-            )
+        existing_results = self._verdict_results_for(row_id)
+        if existing_results:
+            if row.get("result") != "withdrawn":
+                raise AppendOnlyError(
+                    f"id {row_id!r} already has a verdict -- the ledger is "
+                    f"append-only; a correction to its NUMBERS is a NEW id "
+                    f"(e.g. {row_id!r} + '-correction-<date>'), never a "
+                    "rewrite of the existing verdict. To retract the "
+                    "existing verdict outright (it should never have been "
+                    "recorded), append one with result='withdrawn' instead."
+                )
+            if "withdrawn" in existing_results:
+                raise AppendOnlyError(
+                    f"id {row_id!r} has already been withdrawn once -- a "
+                    "second withdrawal of the same id is refused; the "
+                    "ledger is append-only"
+                )
         row.setdefault("migrated_utc", None)
         self._append(row)
         return row
@@ -318,21 +379,44 @@ class AlphaRegistry:
 
     # -- reading, aggregated --------------------------------------------------
 
+    def _latest_verdict_results(self) -> Dict[str, Optional[str]]:
+        """Each id's most recent verdict `result`, in file order (a later
+        row wins) -- absent entirely for an id with no verdict row at all.
+        Used only to decide `read` vs `not_read` below; the registration
+        counts above never depend on this."""
+        latest: Dict[str, Optional[str]] = {}
+        for row in self._iter_raw():
+            if row.get("kind") == "verdict":
+                latest[row.get("id")] = row.get("result")
+        return latest
+
     def total_searched(self, market: Optional[str] = None,
                         data_window: Optional[str] = None) -> Dict[str, Any]:
         """D4's accounting read: how much has already been searched.
 
         Returns
         {"hypotheses": int, "sweeps": int, "sweep_candidates": int,
-         "audits": int, "by_family": {family: {"hypotheses", "sweeps", "audits"}}}
+         "audits": int, "read": int, "not_read": int,
+         "by_family": {family: {"hypotheses", "sweeps", "audits"}}}
         counting only registration rows (hypothesis/sweep/audit), never
-        verdict rows, and never double-counting a sweep's internal
-        `candidates_evaluated` into the `hypotheses` bucket (D1).
+        verdict rows themselves, and never double-counting a sweep's
+        internal `candidates_evaluated` into the `hypotheses` bucket (D1).
+
+        `read`/`not_read` classify each counted registration row by its
+        id's LATEST verdict (see `_latest_verdict_results`): `not_read`
+        covers both "no verdict at all yet" (still accumulating, or never
+        checked) and a latest verdict whose result is `"withdrawn"` or
+        `"below_floor"` (checked and explicitly found not-yet-readable, or
+        an earlier read retracted) -- see the module docstring's
+        "WITHDRAWING A VERDICT" section for why those two count the same
+        way here. Everything else counted (`"null"`, `"false_positive"`,
+        `"candidate"`, `"survivor"`, `"audit"`) is `read`.
         """
         counts: Dict[str, Any] = {
             "hypotheses": 0, "sweeps": 0, "sweep_candidates": 0, "audits": 0,
-            "by_family": {},
+            "read": 0, "not_read": 0, "by_family": {},
         }
+        latest_verdicts = self._latest_verdict_results()
         for row in self._iter_raw():
             kind = row.get("kind")
             if kind not in _REGISTRATION_KIND_SET:
@@ -357,6 +441,11 @@ class AlphaRegistry:
             elif kind == "audit":
                 counts["audits"] += 1
                 bucket["audits"] += 1
+            latest_result = latest_verdicts.get(row.get("id"))
+            if latest_result is not None and latest_result not in NOT_READ_RESULTS:
+                counts["read"] += 1
+            else:
+                counts["not_read"] += 1
         return counts
 
 

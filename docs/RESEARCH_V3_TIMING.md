@@ -703,3 +703,76 @@ check's halves are calendar days, not a temporal replication. First half =
 2026-09-01 plus 2 on 2026-08-31 (6 observed). The printed
 `"verdict": "replicated"` is therefore a same-window split, and is to be
 read as exactly that. Nothing above changes.
+
+### Post-review code note (2026-09-02, lane L22)
+
+The second review (docs/REVIEW_V3_FIRST_READ_2026-09-02.md, "Second review
+— PASS") listed six non-blocking items for the next append. This note
+records what changed in code and clarifies two wordings above; **nothing
+above this line is rewritten, and every pinned number in ADDENDUM 2 (56
+measurable / 19 relevant / 37 not, sign test 19/0/1, p = 1.9e-6, KM median
+diff 209.82, etc.) remains the historical record of that read, unchanged.**
+
+1. **CLI leading-block wording.** `timingreport.py`'s per-class status line
+   used to say "at floor: pre-registered tables follow" for
+   `transaction_first_seen` from the unfiltered measurable count alone
+   (56), which reads as a result being ready when the pre-registered
+   primary (the game-relevant subset) is not. The status line now prints
+   both counts and the relevant subset's own floor status for any class
+   with a relevance rule — on this read's data: "56 measurable (19
+   game-relevant of 30 floor) — below floor after relevance filter;
+   descriptive tables follow, no result is read." Every other class's line
+   is unchanged.
+
+2. **Cluster sign test: a censored row's negative lower bound is
+   uninformative, not "minus".** `cluster_sign_test` previously classified
+   a censored row by comparing its lower bound (`censor_time - floor`)
+   to zero the same way it compares an observed diff — but a censored
+   lower bound at or below zero proves nothing about the true (unobserved)
+   diff's sign, which could still be positive given more follow-up, unlike
+   an observed value which really is what it is. Such a row is now dropped
+   at the row level (`timingtest._row_sign`) rather than counted as "minus,"
+   so it can no longer drag its cluster into "mixed." This does **not**
+   change the 19/0/1 sign-test numbers pinned above — those describe what
+   the OLD rule produced on that read's data, and stay exactly as recorded.
+   Under the CORRECTED rule, the one cluster ADDENDUM 2 reported as mixed
+   (824472: a censored +53.91-minute lower bound and a censored −6.91-minute
+   lower bound) reclassifies as "+" (the −6.91 row is dropped as
+   uninformative, leaving the +53.91 row standing alone) — so the next time
+   this class is read on the same underlying rows, `cluster_sign_test`
+   prints **20 classifiable clusters, 20 plus, 0 minus, 0 mixed, p =
+   0.5\*\*20 ≈ 9.54e-7**, not 19/0/1. `tests/test_timingtest.py` asserts the
+   new rule directly on a synthetic fixture reproducing the 824472 case.
+
+3. **Unconsumed `game_date` field removed.** `timingreport.report()` was
+   attaching `measured["game_date"] = game.get("date")` to every measured
+   event, but nothing downstream ever read that key (the date any consumer
+   needs is available from `game_start_utc`, or from the game record itself
+   via `game_pk`). Removed rather than wired into the concentration block,
+   since it duplicated information already available and had no reader to
+   justify keeping it.
+
+4. **Two wording clarifications on the text above** (the text itself is
+   unchanged; these are read alongside it):
+
+   - Finding 1's "relaxing it now (e.g., folding in `other`, `null`, or
+     `signed` to reach 30)" is loose: only `null` reaches the floor on its
+     own (19 relevant + 14 `null` = 33 ≥ 30); `other` alone does not
+     (19 + 8 = 27 < 30) and neither does `signed` alone (19 + 4 = 23 < 30).
+     The parenthetical was illustrating "any single-category relaxation
+     would be outcome-directed rule-writing," not claiming all three
+     individually clear the floor — but as written it reads that way.
+   - Finding 2's "ADDENDUM 1's own headline sentence ('36 under 15-min / 20
+     under 60-min') is **exactly reproduced** by this corrected 56-event
+     sample, and is retracted as a FALSE claim" states two different things
+     back to back and reads as self-contradictory. "Exactly reproduced"
+     refers to the NUMBERS: re-running the old, now-removed
+     distance-to-first-pitch heuristic on this read's own 56-event sample
+     yields the identical 36/20 split ADDENDUM 1 reported, confirming that
+     split was not a fluke or a different sample. "Retracted as FALSE"
+     refers to the CLAIM those numbers implied — that 20 of the 56 events'
+     actual poll spacing was 60 minutes. That claim is false: every one of
+     the 56 events' literally recorded brackets (`event_interval`) is
+     14.28–17.56 minutes wide, so the true regime is uniformly dense: the
+     old heuristic's 60-minute floor for 20 of them was an inference from
+     distance to first pitch, never a reading of an actual bracket.

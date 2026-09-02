@@ -172,6 +172,79 @@ class MappabilityTests(unittest.TestCase):
         self.assertEqual(sum(entry["excluded"].values()), 1)
 
 
+class FloorStatusRelevanceTests(unittest.TestCase):
+    """Post-review non-blocking item (docs/RESEARCH_V3_TIMING.md): the
+    leading block must not say "at floor" for `transaction_first_seen` from
+    the unfiltered measurable count when the game-relevant subset
+    (`timingtest.game_relevant`) is itself still below floor. Every other
+    class carries no "category" field and keeps the old wording unchanged.
+    """
+
+    def test_relevant_subset_below_floor_reports_both_counts(self):
+        # The exact shape of ADDENDUM 2's own first read: 56 measurable,
+        # 19 game-relevant, 37 not.
+        measured = (
+            [{"category": "recalled", "excluded": None} for _ in range(19)]
+            + [{"category": "optioned", "excluded": None} for _ in range(37)]
+        )
+        status = timingreport._floor_status({"measured": measured})
+        self.assertEqual(
+            status,
+            "56 measurable (19 game-relevant of 30 floor) -- below floor "
+            "after relevance filter; descriptive tables follow, no result "
+            "is read")
+
+    def test_relevant_subset_at_floor_says_so(self):
+        measured = [{"category": "recalled", "excluded": None}
+                   for _ in range(30)]
+        status = timingreport._floor_status({"measured": measured})
+        self.assertIn("30 measurable (30 game-relevant of 30 floor)", status)
+        self.assertIn("at floor after relevance filter", status)
+        self.assertNotIn("below floor", status)
+
+    def test_a_class_without_category_is_unchanged(self):
+        measured = [{"excluded": None} for _ in range(30)]
+        status = timingreport._floor_status({"measured": measured})
+        self.assertEqual(status, "at floor: pre-registered tables follow")
+
+    def test_excluded_events_never_count_toward_measurable_or_relevant(self):
+        measured = (
+            [{"category": "recalled", "excluded": None} for _ in range(30)]
+            + [{"category": "recalled", "excluded": "only 3 books quoted"}
+               for _ in range(50)]
+        )
+        status = timingreport._floor_status({"measured": measured})
+        self.assertIn("30 measurable (30 game-relevant of 30 floor)", status)
+
+    def test_transaction_first_seen_below_relevance_floor_end_to_end(self):
+        """Through the real join: `report()` attaches "category" straight
+        from the raw event, and the resulting status carries both counts."""
+        def _tx_event(transaction_id, category,
+                      end="2026-08-31T20:00:00+00:00"):
+            return {"class": "transaction_first_seen",
+                    "transaction_id": transaction_id, "team": "CIN",
+                    "team_recorded": True, "category": category,
+                    "interval": ("2026-08-31T19:45:00+00:00", end),
+                    "inadmissible": False, "detail": None}
+
+        rows = [_mb_row(f"b{i}") for i in range(8)]
+        events = ([_tx_event(i, "recalled") for i in range(19)]
+                 + [_tx_event(100 + i, "optioned") for i in range(37)])
+        entry = _report(events, rows)["classes"]["transaction_first_seen"]
+        self.assertEqual(entry["measurable"], 56)
+        self.assertEqual(
+            entry["status"],
+            "56 measurable (19 game-relevant of 30 floor) -- below floor "
+            "after relevance filter; descriptive tables follow, no result "
+            "is read")
+        # Descriptive tables are still computed over the FULL (unfiltered)
+        # reading, exactly as before this fix -- only the status wording
+        # changed, never what gets computed.
+        self.assertIn("response_table", entry)
+        self.assertIn("measured", entry)
+        self.assertEqual(len(entry["measured"]), 56)
+
+
 class FormatTests(unittest.TestCase):
     def test_an_empty_watch_says_young_not_broken(self):
         text = timingreport.format_report(_report([]))
