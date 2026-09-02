@@ -307,3 +307,12 @@
 {"category": "optioned", "date": "2026-09-02", "first_seen_utc": "2026-09-02T18:31:48.061760+00:00", "player": "Alex Cook", "player_id": 702047, "team": "TB", "transaction_id": 940857}
 {"fetched_utc": "2026-09-02T18:46:51.284656+00:00", "game_date": "2026-09-02", "poll": true}
 {"fetched_utc": "2026-09-02T19:01:53.754820+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-02T19:16:09.616694+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-02T19:16:12.561654+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-02T19:31:15.042607+00:00", "game_date": "2026-09-02", "poll": true}
+{"category": "designated", "date": "2026-09-02", "first_seen_utc": "2026-09-02T19:31:15.042607+00:00", "player": "Drew Waters", "player_id": 671221, "team": "KC", "transaction_id": 940866}
+{"category": "il_activation", "date": "2026-09-02", "first_seen_utc": "2026-09-02T19:31:15.042607+00:00", "player": "Michael Massey", "player_id": 686681, "team": "KC", "transaction_id": 940867}
+{"fetched_utc": "2026-09-02T19:46:17.687351+00:00", "game_date": "2026-09-02", "poll": true}
+{"category": "il_activation", "date": "2026-09-02", "first_seen_utc": "2026-09-02T19:46:17.687351+00:00", "player": "Justin Hagenman", "player_id": 663795, "team": "NYM", "transaction_id": 940872}
+{"category": "optioned", "date": "2026-09-02", "first_seen_utc": "2026-09-02T19:46:17.687351+00:00", "player": "Dylan Ross", "player_id": 697811, "team": "NYM", "transaction_id": 940873}
+{"fetched_utc": "2026-09-02T20:01:20.269668+00:00", "game_date": "2026-09-02", "poll": true}
