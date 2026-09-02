@@ -1,0 +1,314 @@
+{
+  "copyright": "Copyright 2026 MLB Advanced Media, L.P.  Use of any content on this page acknowledges agreement to the terms posted here http://gdx.mlb.com/components/copyright.txt",
+  "dates": [
+    {
+      "date": "2026-09-02",
+      "events": [],
+      "games": [
+        {
+          "calendarEventID": "14-823660-2026-09-02",
+          "content": {
+            "link": "/api/v1/game/823660/content"
+          },
+          "dayNight": "night",
+          "doubleHeader": "N",
+          "gameDate": "2026-09-02T23:40:00Z",
+          "gameGuid": "f6b5d9ea-1913-486d-9900-de739331a209",
+          "gameNumber": 1,
+          "gamePk": 823660,
+          "gameType": "R",
+          "gamedayType": "P",
+          "gamesInSeries": 3,
+          "ifNecessary": "N",
+          "ifNecessaryDescription": "Normal Game",
+          "inningBreakLength": 120,
+          "link": "/api/v1.1/game/823660/feed/live",
+          "officialDate": "2026-09-02",
+          "officials": [],
+          "publicFacing": true,
+          "recordSource": "S",
+          "reverseHomeAwayStatus": false,
+          "scheduledInnings": 9,
+          "season": "2026",
+          "seasonDisplay": "2026",
+          "seriesDescription": "Regular Season",
+          "seriesGameNumber": 3,
+          "status": {
+            "abstractGameCode": "P",
+            "abstractGameState": "Preview",
+            "codedGameState": "S",
+            "detailedState": "Scheduled",
+            "startTimeTBD": false,
+            "statusCode": "S"
+          },
+          "teams": {
+            "away": {
+              "leagueRecord": {
+                "losses": 75,
+                "pct": ".457",
+                "ties": 0,
+                "wins": 63
+              },
+              "seriesNumber": 45,
+              "splitSquad": false,
+              "team": {
+                "id": 116,
+                "link": "/api/v1/teams/116",
+                "name": "Detroit Tigers"
+              }
+            },
+            "home": {
+              "leagueRecord": {
+                "losses": 72,
+                "pct": ".482",
+                "ties": 0,
+                "wins": 67
+              },
+              "seriesNumber": 45,
+              "splitSquad": false,
+              "team": {
+                "id": 142,
+                "link": "/api/v1/teams/142",
+                "name": "Minnesota Twins"
+              }
+            }
+          },
+          "tiebreaker": "N",
+          "venue": {
+            "id": 3312,
+            "link": "/api/v1/venues/3312",
+            "name": "Target Field"
+          }
+        },
+        {
+          "calendarEventID": "14-824717-2026-09-02",
+          "content": {
+            "link": "/api/v1/game/824717/content"
+          },
+          "dayNight": "day",
+          "doubleHeader": "N",
+          "gameDate": "2026-09-02T20:10:00Z",
+          "gameGuid": "502beade-171b-407c-9844-bc62795cc599",
+          "gameNumber": 1,
+          "gamePk": 824717,
+          "gameType": "R",
+          "gamedayType": "P",
+          "gamesInSeries": 3,
+          "ifNecessary": "N",
+          "ifNecessaryDescription": "Normal Game",
+          "inningBreakLength": 120,
+          "link": "/api/v1.1/game/824717/feed/live",
+          "officialDate": "2026-09-02",
+          "officials": [
+            {
+              "official": {
+                "fullName": "Derek Thomas",
+                "id": 658292,
+                "link": "/api/v1/people/658292"
+              },
+              "officialType": "Home Plate"
+            },
+            {
+              "official": {
+                "fullName": "Lance Barksdale",
+                "id": 427013,
+                "link": "/api/v1/people/427013"
+              },
+              "officialType": "First Base"
+            },
+            {
+              "official": {
+                "fullName": "Ryan Wills",
+                "id": 605674,
+                "link": "/api/v1/people/605674"
+              },
+              "officialType": "Second Base"
+            },
+            {
+              "official": {
+                "fullName": "Will Little",
+                "id": 504381,
+                "link": "/api/v1/people/504381"
+              },
+              "officialType": "Third Base"
+            }
+          ],
+          "publicFacing": true,
+          "recordSource": "S",
+          "reverseHomeAwayStatus": false,
+          "scheduledInnings": 9,
+          "season": "2026",
+          "seasonDisplay": "2026",
+          "seriesDescription": "Regular Season",
+          "seriesGameNumber": 3,
+          "status": {
+            "abstractGameCode": "P",
+            "abstractGameState": "Preview",
+            "codedGameState": "P",
+            "detailedState": "Pre-Game",
+            "startTimeTBD": false,
+            "statusCode": "P"
+          },
+          "teams": {
+            "away": {
+              "leagueRecord": {
+                "losses": 74,
+                "pct": ".468",
+                "ties": 0,
+                "wins": 65
+              },
+              "score": 0,
+              "seriesNumber": 45,
+              "splitSquad": false,
+              "team": {
+                "id": 136,
+                "link": "/api/v1/teams/136",
+                "name": "Seattle Mariners"
+              }
+            },
+            "home": {
+              "leagueRecord": {
+                "losses": 64,
+                "pct": ".540",
+                "ties": 0,
+                "wins": 75
+              },
+              "score": 0,
+              "seriesNumber": 45,
+              "splitSquad": false,
+              "team": {
+                "id": 111,
+                "link": "/api/v1/teams/111",
+                "name": "Boston Red Sox"
+              }
+            }
+          },
+          "tiebreaker": "N",
+          "venue": {
+            "id": 3,
+            "link": "/api/v1/venues/3",
+            "name": "Fenway Park"
+          }
+        },
+        {
+          "calendarEventID": "14-824470-2026-09-02",
+          "content": {
+            "link": "/api/v1/game/824470/content"
+          },
+          "dayNight": "day",
+          "doubleHeader": "N",
+          "gameDate": "2026-09-02T16:40:00Z",
+          "gameGuid": "a51547cd-31df-4c30-a889-0ab2c1159f59",
+          "gameNumber": 1,
+          "gamePk": 824470,
+          "gameType": "R",
+          "gamedayType": "P",
+          "gamesInSeries": 3,
+          "ifNecessary": "N",
+          "ifNecessaryDescription": "Normal Game",
+          "inningBreakLength": 120,
+          "link": "/api/v1.1/game/824470/feed/live",
+          "officialDate": "2026-09-02",
+          "officials": [
+            {
+              "official": {
+                "fullName": "Jacob Metz",
+                "id": 658082,
+                "link": "/api/v1/people/658082"
+              },
+              "officialType": "Home Plate"
+            },
+            {
+              "official": {
+                "fullName": "Tom Hanahan",
+                "id": 665297,
+                "link": "/api/v1/people/665297"
+              },
+              "officialType": "First Base"
+            },
+            {
+              "official": {
+                "fullName": "D.J. Reyburn",
+                "id": 482666,
+                "link": "/api/v1/people/482666"
+              },
+              "officialType": "Second Base"
+            },
+            {
+              "official": {
+                "fullName": "Ron Kulpa",
+                "id": 427292,
+                "link": "/api/v1/people/427292"
+              },
+              "officialType": "Third Base"
+            }
+          ],
+          "publicFacing": true,
+          "recordSource": "S",
+          "reverseHomeAwayStatus": false,
+          "scheduledInnings": 9,
+          "season": "2026",
+          "seasonDisplay": "2026",
+          "seriesDescription": "Regular Season",
+          "seriesGameNumber": 3,
+          "status": {
+            "abstractGameCode": "L",
+            "abstractGameState": "Live",
+            "codedGameState": "I",
+            "detailedState": "In Progress",
+            "startTimeTBD": false,
+            "statusCode": "I"
+          },
+          "teams": {
+            "away": {
+              "leagueRecord": {
+                "losses": 66,
+                "pct": ".525",
+                "ties": 0,
+                "wins": 73
+              },
+              "score": 3,
+              "seriesNumber": 45,
+              "splitSquad": false,
+              "team": {
+                "id": 135,
+                "link": "/api/v1/teams/135",
+                "name": "San Diego Padres"
+              }
+            },
+            "home": {
+              "leagueRecord": {
+                "losses": 73,
+                "pct": ".475",
+                "ties": 0,
+                "wins": 66
+              },
+              "score": 7,
+              "seriesNumber": 45,
+              "splitSquad": false,
+              "team": {
+                "id": 113,
+                "link": "/api/v1/teams/113",
+                "name": "Cincinnati Reds"
+              }
+            }
+          },
+          "tiebreaker": "N",
+          "venue": {
+            "id": 2602,
+            "link": "/api/v1/venues/2602",
+            "name": "Great American Ball Park"
+          }
+        }
+      ],
+      "totalEvents": 0,
+      "totalGames": 3,
+      "totalGamesInProgress": 1,
+      "totalItems": 3
+    }
+  ],
+  "totalEvents": 0,
+  "totalGames": 3,
+  "totalGamesInProgress": 1,
+  "totalItems": 3
+}

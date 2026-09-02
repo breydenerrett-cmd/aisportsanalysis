@@ -45,6 +45,7 @@ FORWARD_EVIDENCE = (
     "data/watch/probables_watch.jsonl",
     "data/watch/lineups_watch.jsonl",
     "data/watch/transactions_watch.jsonl",
+    "data/watch/umpires_watch.jsonl",
 )
 
 

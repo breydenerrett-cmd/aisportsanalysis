@@ -228,15 +228,29 @@ def game_state(game: dict) -> str:
 # Schedule and results
 # ---------------------------------------------------------------------------
 
-def fetch_schedule(game_date, timeout: float = DEFAULT_TIMEOUT) -> list:
-    """Raw game records for one date, with pitchers and linescore hydrated."""
+def fetch_schedule(game_date, timeout: float = DEFAULT_TIMEOUT,
+                    hydrate_officials: bool = False) -> list:
+    """Raw game records for one date, with pitchers and linescore hydrated.
+
+    `hydrate_officials=True` additionally asks the API for the umpire crew
+    (`hydrate=officials`) -- see `fetch_officials`/`parse_officials` below.
+    It defaults False and every caller that does not pass it gets the exact
+    same `hydrate` string, and therefore the exact same payload, as before
+    this flag existed: additive and opt-in, on purpose, because
+    api/today.py, api/games.py and api/betcheck.py all call this with no
+    `hydrate` argument of their own and must never see their response shape
+    change under them.
+    """
     day = _validate_date(game_date)
+    hydrate = "probablePitcher,team,linescore"
+    if hydrate_officials:
+        hydrate = f"{hydrate},officials"
     payload = _get_json(
         "schedule",
         {
             "sportId": SPORT_ID,
             "date": day,
-            "hydrate": "probablePitcher,team,linescore",
+            "hydrate": hydrate,
         },
         timeout=timeout,
     )
@@ -244,6 +258,71 @@ def fetch_schedule(game_date, timeout: float = DEFAULT_TIMEOUT) -> list:
     for entry in payload.get("dates") or []:
         games.extend(entry.get("games") or [])
     return games
+
+
+# ---------------------------------------------------------------------------
+# Umpire crews (officials)
+# ---------------------------------------------------------------------------
+
+# The officialType MLB uses for the umpire who calls balls and strikes -- the
+# one crew slot every downstream user of this data actually wants named
+# explicitly, rather than everyone re-deriving it from the raw list.
+HOME_PLATE_OFFICIAL_TYPE = "Home Plate"
+
+
+def parse_officials(game: dict) -> dict:
+    """Flatten one API game record's umpire crew.
+
+    ON THE REVEAL WINDOW (verified live against this same host, 2026-09-02)
+    -------------------------------------------------------------------
+    The `officials` hydrate is EMPTY while a game's `detailedState` is
+    'Scheduled', and becomes a populated 4-person crew by 'Pre-Game' or
+    'Warmup' -- observed 3.6-4.6 hours before first pitch on that date's
+    slate. `officials: []` for a still-`Scheduled` game is therefore the
+    honest, expected answer, not a fetch failure and not a reason to retry:
+    it says the API was asked and it has not revealed the crew yet. Historical
+    availability back to 2015 is asserted by the same audit but not exercised
+    here -- this function is forward-only, called from `fetch_officials`.
+
+    Nothing is invented: a missing crew stays an empty list, never padded or
+    guessed at.
+    """
+    officials = []
+    for entry in game.get("officials") or []:
+        official = entry.get("official") or {}
+        officials.append({
+            "id": official.get("id"),
+            "name": official.get("fullName"),
+            "officialType": entry.get("officialType"),
+        })
+    return {
+        "game_pk": game.get("gamePk"),
+        "officials": officials,
+        "game_state": (game.get("status") or {}).get("detailedState"),
+        "first_pitch_utc": game.get("gameDate"),
+    }
+
+
+def home_plate_umpire(officials: list):
+    """The Home Plate crew member's name from a `parse_officials` list, or None."""
+    for official in officials or []:
+        if official.get("officialType") == HOME_PLATE_OFFICIAL_TYPE:
+            return official.get("name")
+    return None
+
+
+def fetch_officials(game_date, timeout: float = DEFAULT_TIMEOUT) -> list:
+    """Umpire crews for one date's slate, one record per game.
+
+    Additive and opt-in: this is the only caller in this module that passes
+    `hydrate_officials=True`, so every other `fetch_schedule` caller is
+    completely unaffected by this function's existence. Returns
+    `parse_officials` records; a game that has not reached 'Pre-Game' yet
+    comes back with `officials: []`, which `src.pipeline.umpirewatch` uses to
+    bracket the reveal between the last empty poll and the first non-empty one.
+    """
+    games = fetch_schedule(game_date, timeout=timeout, hydrate_officials=True)
+    return [parse_officials(game) for game in games]
 
 
 def parse_game(game: dict) -> dict:
