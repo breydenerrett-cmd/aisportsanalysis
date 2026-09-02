@@ -127,4 +127,70 @@
   --topbar-height: 64px;
   --tabbar-height: 74px;
   --mobile-breakpoint: 900px;
+
+  /* =================================================================
+   * LINEHOUND V2 TOKENS -- ADDITIVE ONLY. Nothing above this point is
+   * touched, removed, or renamed by this block.
+   *
+   * Transcribed verbatim from design/linehound-v2/'LINEHOUND V2 Full
+   * Product.dc.html' section 01 (Design Tokens). Used by the V2 Odds /
+   * Market Board reproduction (web/js/odds.js, screens.css's "ODDS V2"
+   * section) so that screen can be graded against its own artboard
+   * without touching any other screen's colors.
+   *
+   * Amber (--v-warn-*) is the one genuinely NEW signal color V2 adds --
+   * V1 has no caution/pending/unavailable color and used hot red for
+   * that job, which the V2 canvas calls a correction, not a restyle:
+   * "Stale quotes, projected-not-confirmed lineups, awaiting settlement,
+   * and NOT YET AVAILABLE all read amber. It means know this, not
+   * danger -- red stays for risk to the bet itself." The money/live
+   * hex values are unchanged from V1's --money/--live families; they
+   * are repeated here under --v- names only so a V2 screen's stylesheet
+   * never has to reach across to V1 tokens to draw its own reserved
+   * colors.
+   * ================================================================= */
+
+  /* ---- ground and surface ---------------------------------------- */
+  --v-ground: #0A0A0B;
+  --v-s1: #121214;
+  --v-s2: #17171A;
+  --v-s3: #1D1D21;
+  --v-fill-a: rgba(255, 255, 255, .045);
+  --v-fill-b: rgba(255, 255, 255, .012);
+  --v-edge: rgba(255, 255, 255, .07);
+  --v-scan: rgba(255, 255, 255, .028);
+  --v-carbon: rgba(255, 255, 255, .024);
+
+  /* ---- hot red: a genuinely better price, or the one primary action
+     per region (reserved -- unchanged from V1's --money family) ------ */
+  --v-money: #FF3D57;
+  --v-money-2: #FF7A45;
+  --v-money-lit: #FF6274;
+  --v-money-soft: #FF9AA6;
+  --v-money-label: #FFB3BD;
+  --v-money-ink: #22060A;
+
+  /* ---- ice cyan: measurement, movement, live (reserved) ------------ */
+  --v-live: #00E0FF;
+  --v-live-2: #0090C8;
+  --v-live-lit: #A8F4FF;
+  --v-live-label: #9FE9F5;
+  --v-live-ink: #03222B;
+
+  /* ---- amber: caution, pending, unavailable (new in V2) ------------ */
+  --v-warn: #FFB020;
+  --v-warn-2: #E08A00;
+  --v-warn-lit: #FFD98A;
+  --v-warn-label: #FFCF6B;
+  --v-warn-ink: #2A1A00;
+
+  /* ---- type ---------------------------------------------------------*/
+  --v-t0: #F7F7F9;
+  --v-t1: #F0F1F4;
+  --v-t2: #D5D7DE;
+  --v-t3: #B7BAC4;
+  --v-t4: #888C96;
+  --v-t5: #6C707A;
+  --v-t6: #5A5E67;
+  --v-t7: #494D55;
 }

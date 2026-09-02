@@ -1236,3 +1236,409 @@
   font-size: 11px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase;
   color: var(--text-mute);
 }
+
+/* =====================================================================
+   ODDS V2 -- MARKET BOARD
+   Traced from design/linehound-v2/'LINEHOUND V2 Full Product.dc.html'
+   section 06 ("ODDS BOARD -- THE CENTREPIECE", V2-02 desktop 1280x1460
+   and V2-23 mobile 390x844). Scoped entirely to the `ov2-` prefix and
+   web/js/odds.js's markup -- nothing here touches another screen's
+   classes, and every color reads from the --v-* tokens added to
+   tokens.css rather than V1's unprefixed ones, so this section can be
+   graded against its own artboard in isolation.
+
+   THREE BOARD VARIANTS, one modifier class each on .ov2-game:
+     .ov2-game--full      consensus present -- cyan-tinted consensus panel
+     .ov2-game--thin      consensus null, reason given -- amber accent rail
+     .ov2-game--no-board  board_available:false -- neutral, no accent
+   ===================================================================== */
+
+.ov2-datebar {
+  display: flex; align-items: center; gap: var(--sp-5); flex-wrap: wrap;
+  padding: 0 var(--gutter-desktop) var(--sp-9);
+}
+.ov2-datebar__label {
+  font-family: var(--font-display);
+  font-size: 10px; font-weight: 700; letter-spacing: .16em;
+  color: var(--v-t5);
+}
+.ov2-datebar input[type="date"] {
+  background: var(--v-s1);
+  box-shadow: inset 0 0 0 1px var(--v-edge);
+  color: var(--v-t1);
+  padding: 9px 12px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  --r: var(--r-chip);
+}
+@media (max-width: 899px) { .ov2-datebar { padding: 0 var(--gutter-mobile) var(--sp-7); } }
+
+/* ---- slate summary ---------------------------------------------------*/
+.ov2-summary { margin-bottom: var(--sp-11); padding: var(--sp-10) var(--sp-11); }
+.ov2-summary__headline {
+  margin-top: var(--sp-6);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 800;
+  font-size: clamp(28px, 3.6vw, 44px);
+  line-height: 1.04;
+  letter-spacing: -.006em;
+  color: var(--v-t0);
+}
+.ov2-summary__body {
+  margin-top: var(--sp-6);
+  font-size: 15.5px; line-height: 1.55; color: var(--v-t4);
+  max-width: 640px;
+}
+.ov2-summary__stats {
+  display: flex; flex-wrap: wrap; gap: var(--sp-7);
+  margin-top: var(--sp-10);
+}
+.ov2-stat {
+  flex: 1 1 190px; min-width: 170px;
+  position: relative;
+  padding: 13px 15px;
+  --r: var(--r-badge);
+  background: rgba(255, 255, 255, .04);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08);
+}
+.ov2-stat--accent {
+  background: linear-gradient(150deg, rgba(0, 224, 255, .11), rgba(255, 255, 255, .014));
+  box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .3);
+}
+.ov2-stat__label {
+  font-family: var(--font-display);
+  font-size: 9px; font-weight: 700; letter-spacing: .15em;
+  color: var(--v-live-label);
+  margin-bottom: var(--sp-3);
+}
+.ov2-stat--accent .ov2-stat__label { color: var(--v-live-label); }
+.ov2-stat:not(.ov2-stat--accent) .ov2-stat__label { color: var(--v-t6); }
+.ov2-stat__row { display: flex; align-items: baseline; gap: var(--sp-4); flex-wrap: wrap; }
+.ov2-stat__figure {
+  font-family: var(--font-mono);
+  font-size: 26px; color: var(--v-live-lit);
+  line-height: 1;
+}
+.ov2-stat:not(.ov2-stat--accent) .ov2-stat__figure { color: var(--v-t1); }
+.ov2-stat__figure--text {
+  font-family: var(--font-display); font-style: italic; font-weight: 800;
+  font-size: 21px; letter-spacing: -.006em;
+}
+.ov2-stat__sample { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .05em; color: var(--v-t7); }
+
+.ov2-legend {
+  display: flex; align-items: center; gap: var(--sp-6); flex-wrap: wrap;
+  margin-top: var(--sp-9);
+}
+.ov2-legend__item { display: flex; align-items: center; gap: var(--sp-2);
+  font-family: var(--font-display); font-size: 10.5px; font-weight: 700; letter-spacing: .12em;
+  color: var(--v-t4); }
+.ov2-legend__swatch { width: 11px; height: 11px; --r: 3px; clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px); }
+.ov2-legend__swatch--money { background: linear-gradient(120deg, var(--v-money), var(--v-money-2)); }
+.ov2-legend__swatch--warn { background: rgba(255, 176, 32, .4); box-shadow: inset 0 0 0 1px rgba(255, 176, 32, .6); }
+
+.ov2-freshness {
+  display: flex; align-items: center; gap: var(--sp-3);
+  margin-top: var(--sp-8);
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .09em; color: var(--v-live-label);
+}
+.ov2-freshness__dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--v-live);
+  animation: gbreathe var(--dur-gbreathe) ease-in-out infinite;
+}
+
+/* ---- game list / cards ------------------------------------------------*/
+.ov2-list { display: flex; flex-direction: column; gap: var(--sp-9); padding-bottom: var(--sp-13); }
+
+.ov2-game { padding: 0; }
+.ov2-game--thin {
+  background: linear-gradient(180deg, rgba(255, 176, 32, .05), rgba(255, 255, 255, .01));
+  box-shadow: inset 0 0 0 1px rgba(255, 176, 32, .22);
+}
+.ov2-game--thin::after {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: linear-gradient(180deg, var(--v-warn), var(--v-warn-2));
+}
+.ov2-game--no-board {
+  background: linear-gradient(150deg, rgba(255, 255, 255, .03), rgba(255, 255, 255, .008));
+}
+
+.ov2-game__head {
+  position: relative;
+  display: flex; align-items: center; gap: var(--sp-6); flex-wrap: wrap;
+  padding: var(--sp-8) var(--sp-10) var(--sp-7);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .08);
+}
+.ov2-badge {
+  flex: none;
+  display: flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px;
+  --r: var(--r-chip);
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14);
+  font-family: var(--font-display); font-size: 12px; font-weight: 800; letter-spacing: .04em;
+}
+.ov2-matchup {
+  flex: none;
+  display: flex; align-items: center; gap: var(--sp-4);
+  font-family: var(--font-display); font-style: italic; font-size: 24px; font-weight: 800;
+  color: var(--v-t0); white-space: nowrap;
+}
+.ov2-matchup__at { color: rgba(255, 255, 255, .32); font-size: 18px; }
+.ov2-clock { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .09em; color: var(--v-live); white-space: nowrap; }
+.ov2-spacer { flex: 1; min-width: 8px; }
+.ov2-bookcount {
+  flex: none;
+  padding: 5px 11px;
+  --r: var(--r-chip);
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
+  background: rgba(255, 255, 255, .08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16);
+  font-family: var(--font-display); font-size: 9.5px; font-weight: 800; letter-spacing: .13em;
+  color: var(--v-t2); white-space: nowrap;
+}
+.ov2-captured {
+  flex: none;
+  display: inline-flex; align-items: center; gap: var(--sp-3);
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .1em; color: var(--v-live);
+  white-space: nowrap;
+}
+.ov2-captured__dot {
+  width: 5px; height: 5px; border-radius: 50%; background: var(--v-live);
+  animation: gbreathe var(--dur-gbreathe) ease-in-out infinite;
+}
+
+.ov2-body { position: relative; padding: var(--sp-9) var(--sp-10) var(--sp-8); }
+
+/* ---- alert (thin board) and no-board statement ------------------------*/
+.ov2-alert {
+  padding: var(--sp-8) var(--sp-9);
+  --r: var(--r-tile);
+  background: rgba(255, 176, 32, .07);
+  box-shadow: inset 0 0 0 1px rgba(255, 176, 32, .26);
+  margin-bottom: var(--sp-8);
+}
+.ov2-alert__head { display: flex; align-items: flex-start; gap: var(--sp-5); }
+.ov2-alert__mark {
+  flex: none; margin-top: 2px; width: 19px; height: 19px;
+  --r: var(--r-marker);
+  background: rgba(255, 176, 32, .2);
+  box-shadow: inset 0 0 0 1px rgba(255, 176, 32, .55);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: 12px; font-weight: 800; color: var(--v-warn); line-height: 1;
+}
+.ov2-alert__copy { flex: 1; min-width: 220px; }
+.ov2-alert__title { font-family: var(--font-display); font-size: 10.5px; font-weight: 800; letter-spacing: .18em;
+  color: var(--v-warn-label); margin-bottom: var(--sp-3); }
+/* The artboard's own verbatim line ("Three books is not a market. We
+   won't average it.") -- the primary headline of this block, sized like
+   its V2-02 source (23px/700/1.24). Our own longer explanation (below)
+   is the secondary line underneath it. */
+.ov2-alert__headline {
+  font-family: var(--font-display); font-size: 23px; font-weight: 700; line-height: 1.24;
+  color: var(--v-t1); margin-bottom: var(--sp-3);
+}
+.ov2-alert__body { font-size: 13.5px; line-height: 1.5; color: var(--v-t3); margin-bottom: var(--sp-3); max-width: 520px; }
+.ov2-alert__reason { font-family: var(--font-mono); font-size: 12px; line-height: 1.6; color: var(--v-warn-lit); }
+
+.ov2-noboard__title {
+  font-family: var(--font-display); font-size: 23px; font-weight: 700; line-height: 1.24;
+  color: var(--v-t1); margin-bottom: var(--sp-3);
+}
+.ov2-noboard__body { font-size: 14.5px; line-height: 1.55; color: var(--v-t4); max-width: 620px; margin-bottom: var(--sp-8); }
+.ov2-noboard__fields {
+  display: grid; grid-template-columns: auto 1fr; gap: var(--sp-3) var(--sp-6);
+  max-width: 420px;
+}
+.ov2-noboard__key { font-family: var(--font-mono); font-size: 11px; color: var(--v-t6); }
+.ov2-noboard__val { font-family: var(--font-mono); font-size: 12.5px; color: var(--v-t3); word-break: break-word; }
+.ov2-noboard__note {
+  margin-top: var(--sp-8);
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; line-height: 1.7; color: var(--v-t7);
+}
+
+/* ---- best-price / consensus panels ------------------------------------*/
+.ov2-panels { display: flex; gap: var(--sp-7); flex-wrap: wrap; margin-bottom: var(--sp-8); }
+.ov2-panel {
+  flex: 1 1 240px; min-width: 220px;
+  position: relative;
+  padding: var(--sp-8) var(--sp-9);
+  --r: var(--r-tile);
+}
+.ov2-panel--best {
+  background: linear-gradient(150deg, rgba(255, 61, 87, .13), rgba(255, 255, 255, .014));
+  box-shadow: inset 0 0 0 1px rgba(255, 61, 87, .3);
+}
+.ov2-panel--best::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: linear-gradient(180deg, var(--v-money), var(--v-money-2));
+}
+.ov2-panel--consensus {
+  background: linear-gradient(150deg, rgba(0, 224, 255, .09), rgba(255, 255, 255, .014));
+  box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .26);
+  flex-basis: 100%;
+}
+.ov2-panel--consensus::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: linear-gradient(180deg, var(--v-live), transparent);
+}
+.ov2-panel__label {
+  font-family: var(--font-display); font-size: 9.5px; font-weight: 800; letter-spacing: .16em;
+  margin-bottom: var(--sp-6); white-space: nowrap;
+}
+.ov2-panel--best .ov2-panel__label { color: var(--v-money-label); }
+.ov2-panel--consensus .ov2-panel__label { color: var(--v-live-label); }
+.ov2-panel__price {
+  font-family: var(--font-display); font-style: italic; font-size: clamp(34px, 4vw, 48px); font-weight: 800;
+  line-height: .8; letter-spacing: -.022em; color: #FFF; margin-bottom: var(--sp-6);
+}
+.ov2-panel__books { display: flex; flex-direction: column; gap: var(--sp-2); }
+.ov2-panel__book { font-family: var(--font-mono); font-size: 12px; letter-spacing: .02em; color: var(--v-money-label); }
+.ov2-panel__empty { font-size: 13.5px; color: var(--v-t4); }
+.ov2-panel__sample { margin-top: var(--sp-6); font-family: var(--font-mono); font-size: 11px; letter-spacing: .04em; color: var(--v-live-label); }
+
+.ov2-consensus-cols { display: flex; gap: var(--sp-9); flex-wrap: wrap; }
+.ov2-consensus-col { flex: 1 1 180px; min-width: 160px; }
+.ov2-consensus-col__side {
+  font-family: var(--font-display); font-size: 10px; font-weight: 800; letter-spacing: .14em;
+  color: var(--v-t3); margin-bottom: var(--sp-3);
+}
+.ov2-consensus-col__price {
+  font-family: var(--font-display); font-style: italic; font-size: 34px; font-weight: 800; line-height: .84;
+  letter-spacing: -.018em; color: #FFF; margin-bottom: var(--sp-3);
+}
+.ov2-consensus-col__meta { font-family: var(--font-mono); font-size: 11.5px; color: var(--v-t2); margin-top: 2px; }
+
+.ov2-spreadline {
+  font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .04em; color: var(--v-t3);
+  margin-bottom: var(--sp-8);
+}
+
+/* ---- raw board table ---------------------------------------------------*/
+.ov2-table-wrap { overflow-x: auto; }
+/* Desktop always shows every row (no truncation, no toggle) -- the
+   tap-to-expand line only exists at <=899px; see the mobile block below. */
+.ov2-more { display: none; border: 0; cursor: pointer; }
+.ov2-table { width: 100%; border-collapse: collapse; min-width: 460px; }
+.ov2-table caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.ov2-table thead th {
+  padding: 9px 12px;
+  background: rgba(255, 255, 255, .035);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .11);
+  font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: .16em;
+  color: var(--v-t6); text-align: left;
+}
+.ov2-table thead th:not(:first-child) { text-align: center; }
+.ov2-table thead th:last-child { text-align: right; color: var(--v-t7); }
+.ov2-table tbody tr { box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .045); }
+/* Row height matches the artboard's own board row exactly: padding:10px
+   (V2-02's `data-row`) around a 34px price cell = 54px, not the ~60px a
+   plain `<td>` + this project's global 44px button min-height produced
+   (base.css: "button, a.btn, .nav-item { min-height: 44px }" -- .ov2-cell
+   overrides that below since a dense data-table price cell isn't that
+   44px-minimum primary tap target). */
+.ov2-table tbody td { padding: 10px 12px; vertical-align: middle; }
+.ov2-bookcell { display: flex; align-items: center; gap: var(--sp-4); }
+.ov2-bookname { font-family: var(--font-mono); font-size: 12.5px; letter-spacing: .02em; color: var(--v-t3); }
+.ov2-bookname--stale { color: var(--v-warn-label); }
+.ov2-rowflag {
+  padding: 3px 8px;
+  --r: var(--r-marker);
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
+  background: rgba(255, 176, 32, .13);
+  box-shadow: inset 0 0 0 1px rgba(255, 176, 32, .4);
+  font-family: var(--font-display); font-size: 8.5px; font-weight: 800; letter-spacing: .12em;
+  color: var(--v-warn-label); white-space: nowrap;
+}
+.ov2-pricecell { text-align: center; }
+.ov2-cell {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 68px; height: 34px; min-height: 34px; padding: 0 10px;
+  --r: var(--r-marker);
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
+  background: transparent;
+  font-family: var(--font-mono); font-size: 15px; font-weight: 400; color: var(--v-t1);
+  transition: box-shadow .18s ease, background .18s ease, color .18s ease;
+}
+.ov2-cell:hover, .ov2-cell:focus-visible {
+  background: rgba(0, 224, 255, .1); box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .45); color: #FFF;
+}
+.ov2-pricecell--best .ov2-cell {
+  background: linear-gradient(120deg, var(--v-money), var(--v-money-2));
+  box-shadow: 0 12px 26px -12px rgba(255, 61, 87, .7);
+  font-weight: 700; color: var(--v-money-ink);
+}
+.ov2-pricecell--best .ov2-cell:hover, .ov2-pricecell--best .ov2-cell:focus-visible {
+  background: linear-gradient(120deg, var(--v-money), var(--v-money-2)); color: var(--v-money-ink);
+  box-shadow: 0 12px 26px -12px rgba(255, 61, 87, .7), inset 0 0 0 1px rgba(255, 255, 255, .5);
+}
+/* Stale row, non-best price -- dimmed to the same muted token the
+   artboard's own stale row uses (V2-02's mybookieag row: color #5A5E67,
+   i.e. --v-t6) rather than the full-weight --v-t1 every other cell reads
+   at. A stale row that also happens to tie for best keeps the money
+   treatment above -- staleness is a caveat on the number, not a reason
+   to hide a price that is still genuinely the best on the board. */
+.ov2-pricecell--stale:not(.ov2-pricecell--best) .ov2-cell { color: var(--v-t6); }
+.ov2-capturedcell { text-align: right; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .04em; color: var(--v-t6); white-space: nowrap; }
+.ov2-capturedcell--stale { color: var(--v-warn-label); }
+
+/* ---- footer actions ----------------------------------------------------*/
+.ov2-actions {
+  display: flex; align-items: center; gap: var(--sp-6); flex-wrap: wrap;
+  padding: var(--sp-8) var(--sp-10);
+  background: rgba(255, 255, 255, .022);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
+}
+.ov2-disclaimer {
+  padding: 0 var(--sp-10) var(--sp-8);
+  font-size: 12.5px; line-height: 1.5; color: var(--v-t6);
+}
+.ov2-footnote {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; line-height: 1.7; color: var(--v-t7);
+  max-width: 900px;
+}
+
+/* ---- 899px and below: the V2-23 mobile spec ---------------------------*/
+@media (max-width: 899px) {
+  .ov2-summary { padding: var(--sp-8); margin-bottom: var(--sp-9); }
+  .ov2-summary__stats { gap: var(--sp-5); }
+  .ov2-stat { flex: 1 1 140px; }
+  .ov2-game__head { padding: var(--sp-7) var(--sp-8) var(--sp-6); gap: var(--sp-4); }
+  .ov2-badge { width: 24px; height: 24px; font-size: 9px; }
+  .ov2-matchup { font-size: 18px; gap: var(--sp-3); }
+  .ov2-matchup__at { font-size: 14px; }
+  .ov2-body { padding: var(--sp-7) var(--sp-8) var(--sp-6); }
+  .ov2-panels { gap: var(--sp-5); }
+  .ov2-panel { padding: var(--sp-6) var(--sp-7); flex: 1 1 100%; }
+  .ov2-panel__price { font-size: 32px; }
+  .ov2-consensus-cols { gap: var(--sp-6); }
+  /* V2-23 mobile spec: "book key left, two prices right at 56px each" --
+     the captured-at column is dropped here (the header's own CAPTURED
+     chip and the per-row stale flag still carry that information) rather
+     than left to a horizontal scroll a static screenshot can't show. */
+  .ov2-table { min-width: 0; width: 100%; table-layout: fixed; }
+  .ov2-table th:nth-child(4), .ov2-table td:nth-child(4) { display: none; }
+  .ov2-table th:nth-child(2), .ov2-table th:nth-child(3),
+  .ov2-table td:nth-child(2), .ov2-table td:nth-child(3) { width: 56px; }
+  .ov2-table thead th, .ov2-table tbody td { padding: 7px 6px; }
+  .ov2-bookcell { flex-wrap: wrap; row-gap: 4px; }
+  .ov2-bookname { font-size: 11px; }
+  .ov2-cell { min-width: 56px; width: 100%; height: 32px; min-height: 32px; font-size: 14px; padding: 0 4px; }
+  .ov2-actions { padding: var(--sp-6) var(--sp-8); }
+  .ov2-actions .btn { flex: 1 1 auto; }
+  .ov2-disclaimer { padding: 0 var(--sp-8) var(--sp-6); }
+
+  /* V2-23: the raw board truncates to its first 5 rows with a
+     tap-to-expand line below it -- desktop (outside this media query)
+     always shows every row, per .ov2-table-wrap's base (unset) state. */
+  .ov2-table tbody tr.ov2-row--extra { display: none; }
+  .ov2-table-wrap.ov2-table-wrap--expanded tbody tr.ov2-row--extra { display: table-row; }
+  .ov2-more {
+    display: block; width: 100%; margin-top: var(--sp-4);
+    padding: var(--sp-5) 6px; background: none; text-align: left;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; color: var(--v-t5);
+    box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .045);
+  }
+  .ov2-table-wrap--expanded .ov2-more { display: none; }
+}
