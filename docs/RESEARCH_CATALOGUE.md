@@ -333,3 +333,16 @@ explicitly rather than repeating a number.
 None of this changes any verdict — every family's FDR ran against its own frozen
 denominator (V1: 21 registered / 8 corrected; V2: 5; V4: 6; V5: 3) — but the
 public "27" should not be repeated without this note.
+
+**The registered-hypothesis-level denominator now has one machine-readable
+ledger.** `data/research/alpha_registry.jsonl` (schema and rationale in
+`docs/ALPHA_REGISTRY_DESIGN.md`, migration and every disagreement it found in
+`docs/ALPHA_REGISTRY_MIGRATION_REPORT.md`) is the append-only registry of
+every registered hypothesis, sweep and audit across V1/V2/V3/V4/V5 and
+Evolab Phase 2B, queryable per market and data window via
+`python3 scripts/alpha_registry_migrate.py report`. It adopts this section's
+own 35 (21+5+6+3) as the canonical registered-hypothesis count for V1/V2/V4/V5,
+plus V3's five admitted classes (four at freeze, a fifth by the 2026-09-02
+umpire-class amendment) for 40 hypothesis rows total, the Phase 2B sweep as
+one entry carrying its 8,811-candidate internal multiplicity, and the Elo
+benchmark as one audit entry.
