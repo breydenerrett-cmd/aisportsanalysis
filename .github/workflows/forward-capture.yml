@@ -1,0 +1,88 @@
+# Runs scripts/capture_slot.sh (one forward-capture slot: watch, umpires,
+# one dense odds capture, prop listing, extras, commit+push) on a schedule
+# independent of any interactive Claude session/container. See
+# docs/CAPTURE_EXTERNALIZATION.md for the reliability/cost/credential-safety
+# comparison this workflow implements (Option A).
+#
+# Requires ONE repository secret: ODDS_API_KEY (same variable name as
+# .env / .env.example -- src/providers/odds.py's ENV_KEY). Without it,
+# dense/prop_listing/prop_prices all report "not configured" and no-op --
+# this workflow still runs, commits nothing new for the odds side, and
+# never fails just because the key is missing (mirrors odds_provider.status()
+# never failing on an absent key).
+#
+# GITHUB_TOKEN pushes do not themselves trigger other workflows (GitHub's
+# loop-prevention rule), so deploy-staging.yml would NOT redeploy on this
+# workflow's data pushes even though its own `paths:` filter watches
+# data/watch and data/processed. The explicit workflow_dispatch call below
+# reproduces that "staging follows captures" behavior without a second
+# credential.
+name: forward-capture
+
+on:
+  schedule:
+    # Every 15 minutes, matching forward_capture.sh's internal 4x15-minute
+    # dense cadence -- run four times an hour instead of one 45-minute
+    # process. GitHub disables a public repo's scheduled workflow after 60
+    # days with no repository activity; this repo has multiple pushes a
+    # day (deploy-staging.yml, this workflow's own commits), so that guard
+    # should never trip here, but a stalled schedule is worth checking for
+    # if data/watch stops growing.
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: forward-capture
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      # Scheduled workflows only run from the repository's DEFAULT branch,
+      # and this repo's default branch is an orphan that shares no history
+      # with the working line. The working line is therefore named
+      # explicitly here so the job captures into and pushes to it wherever
+      # the workflow file happens to live (docs/CAPTURE_EXTERNALIZATION.md,
+      # "Default-branch constraint").
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/sports-betting-analysis-review-g1o0co
+          fetch-depth: 0
+
+      - name: Configure git identity for the commit this run may make
+        run: |
+          git config user.name "forward-capture-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+      - name: Capture one slot
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: bash scripts/capture_slot.sh
+
+      - name: Dispatch staging redeploy if data changed (at most hourly)
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          BRANCH="claude/sports-betting-analysis-review-g1o0co"
+          # Four slots an hour would mean four staging restarts an hour;
+          # only the first slot of each hour (minute 00-14) redeploys, which
+          # keeps staging's baked-in stores at most an hour behind -- the
+          # same cadence the in-session hourly run gave it.
+          MINUTE=$(date -u +%M)
+          if [ "${MINUTE#0}" -ge 15 ]; then
+            echo "minute ${MINUTE}: not the first slot of the hour -- no redeploy this run"
+          elif git log -1 --pretty=%s | grep -q "^Forward capture slot"; then
+            curl -sS -X POST \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/deploy-staging.yml/dispatches" \
+              -d "{\"ref\":\"${BRANCH}\"}" || echo "deploy dispatch failed (non-fatal, staging just stays on its last image until the next real code push)"
+          else
+            echo "no new capture commit this run -- nothing to redeploy for"
+          fi

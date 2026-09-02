@@ -55,6 +55,7 @@ SHELL_SCRIPTS = [
     "scripts/ci.sh",
     "scripts/forward_capture.sh",
     "scripts/daily_loop.sh",
+    "scripts/capture_slot.sh",
 ]
 
 
@@ -209,7 +210,8 @@ class DataPlaneGitRaceTest(unittest.TestCase):
     contention, network call, or git state to fake.
     """
 
-    DATA_PLANE_SCRIPTS = ("scripts/forward_capture.sh", "scripts/daily_loop.sh")
+    DATA_PLANE_SCRIPTS = ("scripts/forward_capture.sh", "scripts/daily_loop.sh",
+                          "scripts/capture_slot.sh")
 
     def _text(self, rel):
         return (REPO / rel).read_text()
