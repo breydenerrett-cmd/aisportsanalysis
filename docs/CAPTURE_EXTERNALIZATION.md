@@ -194,3 +194,40 @@ never modified, so this is a same-day, zero-code-change rollback.
 - Live behavior of the `workflow_dispatch` API call in
   `forward-capture.yml` (untested against a real GitHub Actions run — the
   workflow could not be executed from this worktree).
+
+
+## Default-branch constraint (added at orchestrator review)
+
+GitHub runs `schedule:` workflows only from the repository's DEFAULT
+branch, and this repository's default branch is
+`claude/cowork-session-migration-tn3sx2`, an orphan import that shares no
+history with the working line `claude/sports-betting-analysis-review-g1o0co`
+(GitHub also refuses a pull request between them for that reason). So the
+workflow file merged into the working line will not be scheduled until one
+of these happens:
+
+1. **Recommended:** the owner repoints the repository's default branch to
+   `claude/sports-betting-analysis-review-g1o0co` (Settings → General →
+   Default branch). This also unblocks pull requests and the Claude
+   Approvals surface. Nothing else changes.
+2. Alternative: the workflow file (only) is pushed to the current default
+   branch. The job already checks out the working line explicitly
+   (`ref:` in `actions/checkout`) and dispatches deploys for it, so it
+   works from either branch. Pushing to that branch needs the owner's
+   go-ahead; the orchestrator does not push to branches other than the
+   working line without it.
+
+Until one of the two is done, `workflow_dispatch` runs are also only
+available from a branch that carries the file; after (1) they are
+available from the working line directly.
+
+## Known follow-up: the daily loop as a second writer
+
+`scripts/daily_loop.sh` still runs in the interactive session and appends
+to the same JSONL stores. Two writers appending to the same file end can
+produce a rebase conflict on whichever side pushes second; the daily loop
+already fetches and rebases before pushing and prints `ESCALATE:` on a
+conflict rather than corrupting anything, and the window is a few minutes
+once a day. Moving the daily loop to a 10:00Z Actions job is the next
+step once the capture job has run for a day; it needs the results ingest
+(free MLB endpoint) to rebuild its git-ignored inputs in a fresh checkout.

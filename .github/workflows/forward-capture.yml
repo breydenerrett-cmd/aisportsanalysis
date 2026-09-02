@@ -43,8 +43,15 @@ jobs:
   capture:
     runs-on: ubuntu-latest
     steps:
+      # Scheduled workflows only run from the repository's DEFAULT branch,
+      # and this repo's default branch is an orphan that shares no history
+      # with the working line. The working line is therefore named
+      # explicitly here so the job captures into and pushes to it wherever
+      # the workflow file happens to live (docs/CAPTURE_EXTERNALIZATION.md,
+      # "Default-branch constraint").
       - uses: actions/checkout@v4
         with:
+          ref: claude/sports-betting-analysis-review-g1o0co
           fetch-depth: 0
 
       - name: Configure git identity for the commit this run may make
@@ -57,13 +64,20 @@ jobs:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
         run: bash scripts/capture_slot.sh
 
-      - name: Dispatch staging redeploy if data changed
+      - name: Dispatch staging redeploy if data changed (at most hourly)
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          BRANCH="${GITHUB_REF_NAME}"
-          if git log -1 --pretty=%s | grep -q "^Forward capture slot"; then
+          BRANCH="claude/sports-betting-analysis-review-g1o0co"
+          # Four slots an hour would mean four staging restarts an hour;
+          # only the first slot of each hour (minute 00-14) redeploys, which
+          # keeps staging's baked-in stores at most an hour behind -- the
+          # same cadence the in-session hourly run gave it.
+          MINUTE=$(date -u +%M)
+          if [ "${MINUTE#0}" -ge 15 ]; then
+            echo "minute ${MINUTE}: not the first slot of the hour -- no redeploy this run"
+          elif git log -1 --pretty=%s | grep -q "^Forward capture slot"; then
             curl -sS -X POST \
               -H "Authorization: Bearer ${GH_TOKEN}" \
               -H "Accept: application/vnd.github+json" \
