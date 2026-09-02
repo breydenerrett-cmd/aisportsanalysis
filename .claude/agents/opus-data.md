@@ -20,5 +20,7 @@ Hard rules:
 - The API key lives only in gitignored .env — never print or commit it.
 
 Every ingest must be resumable and verifiable (row counts, manifests, parity
-checks). Run the full test suite before declaring done. Do not commit or push
+checks). Run `bash scripts/test_fast.sh` while iterating and
+`python3 scripts/test_parallel.py` (full suite) before declaring done — never
+the raw `python3 -m unittest discover -s tests -q`. Do not commit or push
 unless the task says to.

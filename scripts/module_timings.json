@@ -1,0 +1,1316 @@
+{
+  "generated_by": "scripts/time_tests.py",
+  "wall_seconds": 39.97,
+  "modules": [
+    {
+      "module": "tests.test_evolab_sweep",
+      "seconds": 24.932,
+      "returncode": 0,
+      "tests": 27,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_evolab_sweep_outcome",
+      "seconds": 23.489,
+      "returncode": 0,
+      "tests": 10,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_api_betcheck_free",
+      "seconds": 18.441,
+      "returncode": 0,
+      "tests": 19,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_evolab_stats",
+      "seconds": 12.046,
+      "returncode": 0,
+      "tests": 111,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_evolab_baseline",
+      "seconds": 9.911,
+      "returncode": 0,
+      "tests": 49,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_model_discovery",
+      "seconds": 9.909,
+      "returncode": 0,
+      "tests": 9,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_api_contracts",
+      "seconds": 8.888,
+      "returncode": 0,
+      "tests": 33,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_api_games",
+      "seconds": 8.496,
+      "returncode": 0,
+      "tests": 16,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_api_betcheck",
+      "seconds": 7.972,
+      "returncode": 0,
+      "tests": 17,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_api_caching",
+      "seconds": 7.653,
+      "returncode": 0,
+      "tests": 10,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_api_adversarial",
+      "seconds": 5.348,
+      "returncode": 0,
+      "tests": 13,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_analyze_cmd",
+      "seconds": 4.949,
+      "returncode": 0,
+      "tests": 13,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_api_digest",
+      "seconds": 4.894,
+      "returncode": 0,
+      "tests": 5,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_battery_generality",
+      "seconds": 3.943,
+      "returncode": 0,
+      "tests": 12,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_api_today",
+      "seconds": 3.721,
+      "returncode": 0,
+      "tests": 5,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_model",
+      "seconds": 3.257,
+      "returncode": 0,
+      "tests": 54,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_billing_cancellation_policy",
+      "seconds": 2.729,
+      "returncode": 0,
+      "tests": 28,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_evolab_core",
+      "seconds": 2.636,
+      "returncode": 0,
+      "tests": 73,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_battery",
+      "seconds": 2.398,
+      "returncode": 0,
+      "tests": 15,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_api_funnel",
+      "seconds": 2.219,
+      "returncode": 0,
+      "tests": 25,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_api_signup",
+      "seconds": 2.048,
+      "returncode": 0,
+      "tests": 9,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_appstate_customers",
+      "seconds": 1.912,
+      "returncode": 0,
+      "tests": 23,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_api_billing",
+      "seconds": 1.886,
+      "returncode": 0,
+      "tests": 27,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_api_surface_auth",
+      "seconds": 1.879,
+      "returncode": 0,
+      "tests": 9,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_api_onboarding",
+      "seconds": 1.84,
+      "returncode": 0,
+      "tests": 4,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_api_auth",
+      "seconds": 1.687,
+      "returncode": 0,
+      "tests": 17,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_api_admin",
+      "seconds": 1.611,
+      "returncode": 0,
+      "tests": 7,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_api_meta",
+      "seconds": 1.607,
+      "returncode": 0,
+      "tests": 8,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_api_health",
+      "seconds": 1.564,
+      "returncode": 0,
+      "tests": 4,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_evolab_replay",
+      "seconds": 1.554,
+      "returncode": 0,
+      "tests": 85,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 3
+    },
+    {
+      "module": "tests.test_api_middleware",
+      "seconds": 1.501,
+      "returncode": 0,
+      "tests": 7,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_matchup_depth",
+      "seconds": 1.408,
+      "returncode": 0,
+      "tests": 30,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_api_odds",
+      "seconds": 1.372,
+      "returncode": 0,
+      "tests": 9,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_dense",
+      "seconds": 1.335,
+      "returncode": 0,
+      "tests": 34,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_api_support",
+      "seconds": 1.327,
+      "returncode": 0,
+      "tests": 12,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_api_mybets",
+      "seconds": 1.264,
+      "returncode": 0,
+      "tests": 18,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_appstate_billing",
+      "seconds": 1.032,
+      "returncode": 0,
+      "tests": 62,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_appstate_ratelimit",
+      "seconds": 1.032,
+      "returncode": 0,
+      "tests": 14,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_appstate_freshness",
+      "seconds": 0.914,
+      "returncode": 0,
+      "tests": 11,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_validation_planted",
+      "seconds": 0.911,
+      "returncode": 0,
+      "tests": 9,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_validation_immutability",
+      "seconds": 0.833,
+      "returncode": 0,
+      "tests": 5,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_funnel",
+      "seconds": 0.828,
+      "returncode": 0,
+      "tests": 23,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_gamepayload",
+      "seconds": 0.828,
+      "returncode": 0,
+      "tests": 22,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_appstate_users",
+      "seconds": 0.754,
+      "returncode": 0,
+      "tests": 19,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_customer_language",
+      "seconds": 0.744,
+      "returncode": 0,
+      "tests": 4,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_evolab_feed",
+      "seconds": 0.704,
+      "returncode": 0,
+      "tests": 17,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    },
+    {
+      "module": "tests.test_appstate_settlement",
+      "seconds": 0.659,
+      "returncode": 0,
+      "tests": 18,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_analysis_digest",
+      "seconds": 0.622,
+      "returncode": 0,
+      "tests": 15,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_deploy_scripts",
+      "seconds": 0.619,
+      "returncode": 0,
+      "tests": 6,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_appstate_onboarding",
+      "seconds": 0.615,
+      "returncode": 0,
+      "tests": 9,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_content_language",
+      "seconds": 0.596,
+      "returncode": 0,
+      "tests": 8,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_relevance",
+      "seconds": 0.586,
+      "returncode": 0,
+      "tests": 47,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_pipeline_rebuilt",
+      "seconds": 0.582,
+      "returncode": 0,
+      "tests": 17,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_analysis_oddspayload",
+      "seconds": 0.556,
+      "returncode": 0,
+      "tests": 11,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_matrix_v5_features",
+      "seconds": 0.556,
+      "returncode": 0,
+      "tests": 25,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_api_boundary",
+      "seconds": 0.555,
+      "returncode": 0,
+      "tests": 2,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_health",
+      "seconds": 0.548,
+      "returncode": 0,
+      "tests": 34,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_coverage_scoreboard",
+      "seconds": 0.54,
+      "returncode": 0,
+      "tests": 20,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_betcheck_logic",
+      "seconds": 0.537,
+      "returncode": 0,
+      "tests": 40,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_betcheck",
+      "seconds": 0.526,
+      "returncode": 0,
+      "tests": 45,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_appstate_events",
+      "seconds": 0.511,
+      "returncode": 0,
+      "tests": 17,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_web_structure",
+      "seconds": 0.495,
+      "returncode": 0,
+      "tests": 29,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_funnel_interactions",
+      "seconds": 0.476,
+      "returncode": 0,
+      "tests": 9,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_contracts",
+      "seconds": 0.469,
+      "returncode": 0,
+      "tests": 34,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_appstate_support",
+      "seconds": 0.432,
+      "returncode": 0,
+      "tests": 20,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_appstate_savedbets",
+      "seconds": 0.429,
+      "returncode": 0,
+      "tests": 14,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_deploy_secrets_hygiene",
+      "seconds": 0.424,
+      "returncode": 0,
+      "tests": 2,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_pipeline_snapshots",
+      "seconds": 0.42,
+      "returncode": 0,
+      "tests": 53,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_multibook",
+      "seconds": 0.417,
+      "returncode": 0,
+      "tests": 37,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_pipeline_history",
+      "seconds": 0.413,
+      "returncode": 0,
+      "tests": 40,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_pipeline_pitchers",
+      "seconds": 0.411,
+      "returncode": 0,
+      "tests": 56,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_ledger_resilience",
+      "seconds": 0.376,
+      "returncode": 0,
+      "tests": 7,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_research_v2",
+      "seconds": 0.367,
+      "returncode": 0,
+      "tests": 27,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_pipeline_ledger",
+      "seconds": 0.36,
+      "returncode": 0,
+      "tests": 22,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_matrix",
+      "seconds": 0.355,
+      "returncode": 0,
+      "tests": 16,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_cli_snapshot_gate",
+      "seconds": 0.35,
+      "returncode": 0,
+      "tests": 3,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_appstate_freechecks",
+      "seconds": 0.349,
+      "returncode": 0,
+      "tests": 7,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_core_odds",
+      "seconds": 0.347,
+      "returncode": 0,
+      "tests": 38,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_pipeline_scanlog",
+      "seconds": 0.343,
+      "returncode": 0,
+      "tests": 27,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_elobench",
+      "seconds": 0.337,
+      "returncode": 0,
+      "tests": 8,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_prices",
+      "seconds": 0.334,
+      "returncode": 0,
+      "tests": 25,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_providers_mlb",
+      "seconds": 0.332,
+      "returncode": 0,
+      "tests": 55,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_model_pointintime",
+      "seconds": 0.331,
+      "returncode": 0,
+      "tests": 18,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_betcheck_price_direction",
+      "seconds": 0.329,
+      "returncode": 0,
+      "tests": 13,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_rosterwatch",
+      "seconds": 0.328,
+      "returncode": 0,
+      "tests": 40,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_pipeline_predict",
+      "seconds": 0.327,
+      "returncode": 0,
+      "tests": 32,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_leadlag",
+      "seconds": 0.324,
+      "returncode": 0,
+      "tests": 10,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_pipeline_backfill",
+      "seconds": 0.324,
+      "returncode": 0,
+      "tests": 33,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_f5_close",
+      "seconds": 0.321,
+      "returncode": 0,
+      "tests": 20,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_detect_detectors",
+      "seconds": 0.31,
+      "returncode": 0,
+      "tests": 51,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_analysis_disclaimers",
+      "seconds": 0.308,
+      "returncode": 0,
+      "tests": 10,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_appstate_authproviders",
+      "seconds": 0.3,
+      "returncode": 0,
+      "tests": 12,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_pipeline_slate",
+      "seconds": 0.297,
+      "returncode": 0,
+      "tests": 24,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_pipeline_bullpen",
+      "seconds": 0.292,
+      "returncode": 0,
+      "tests": 24,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_report_dashboard",
+      "seconds": 0.291,
+      "returncode": 0,
+      "tests": 45,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_providers_odds",
+      "seconds": 0.288,
+      "returncode": 0,
+      "tests": 78,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_validation_pit",
+      "seconds": 0.287,
+      "returncode": 0,
+      "tests": 5,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_forward_evidence_tracked",
+      "seconds": 0.279,
+      "returncode": 0,
+      "tests": 3,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_pipeline_grading",
+      "seconds": 0.276,
+      "returncode": 0,
+      "tests": 29,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_report_archive",
+      "seconds": 0.275,
+      "returncode": 0,
+      "tests": 17,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_pipeline_features",
+      "seconds": 0.272,
+      "returncode": 0,
+      "tests": 51,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_validation_equivalence",
+      "seconds": 0.269,
+      "returncode": 0,
+      "tests": 5,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_data_parks",
+      "seconds": 0.264,
+      "returncode": 0,
+      "tests": 40,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_pipeline_mismatch",
+      "seconds": 0.256,
+      "returncode": 0,
+      "tests": 53,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_appstate_gitignore",
+      "seconds": 0.254,
+      "returncode": 0,
+      "tests": 2,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_validation_m3",
+      "seconds": 0.252,
+      "returncode": 0,
+      "tests": 5,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 5
+    },
+    {
+      "module": "tests.test_news",
+      "seconds": 0.248,
+      "returncode": 0,
+      "tests": 23,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_providers_statcast_pitches",
+      "seconds": 0.248,
+      "returncode": 0,
+      "tests": 5,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_core_calibration",
+      "seconds": 0.241,
+      "returncode": 0,
+      "tests": 36,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_pipeline_lineup_store",
+      "seconds": 0.239,
+      "returncode": 0,
+      "tests": 6,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_model_selections",
+      "seconds": 0.238,
+      "returncode": 0,
+      "tests": 24,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_providers_weather",
+      "seconds": 0.233,
+      "returncode": 0,
+      "tests": 34,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_paths",
+      "seconds": 0.228,
+      "returncode": 0,
+      "tests": 13,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_core_staking",
+      "seconds": 0.224,
+      "returncode": 0,
+      "tests": 26,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_pipeline_lineups",
+      "seconds": 0.219,
+      "returncode": 0,
+      "tests": 24,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_eventstudy",
+      "seconds": 0.213,
+      "returncode": 0,
+      "tests": 13,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_evidence_honesty",
+      "seconds": 0.208,
+      "returncode": 0,
+      "tests": 8,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_ranker",
+      "seconds": 0.205,
+      "returncode": 0,
+      "tests": 15,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_evidence_labels_unified",
+      "seconds": 0.198,
+      "returncode": 0,
+      "tests": 4,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_brand_linehound",
+      "seconds": 0.196,
+      "returncode": 0,
+      "tests": 4,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_zz_forward_store_guard",
+      "seconds": 0.195,
+      "returncode": 0,
+      "tests": 8,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_model_seal",
+      "seconds": 0.194,
+      "returncode": 0,
+      "tests": 17,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_model_family",
+      "seconds": 0.192,
+      "returncode": 0,
+      "tests": 22,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_prop_listing",
+      "seconds": 0.192,
+      "returncode": 0,
+      "tests": 36,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_pipeline_travel",
+      "seconds": 0.18,
+      "returncode": 0,
+      "tests": 11,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_timingreport",
+      "seconds": 0.176,
+      "returncode": 0,
+      "tests": 15,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_what_changed",
+      "seconds": 0.142,
+      "returncode": 0,
+      "tests": 21,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_appstate_apphealth",
+      "seconds": 0.141,
+      "returncode": 0,
+      "tests": 15,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_synthesis",
+      "seconds": 0.118,
+      "returncode": 0,
+      "tests": 49,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_appstate_reqlog",
+      "seconds": 0.11,
+      "returncode": 0,
+      "tests": 13,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tests.test_detect_base",
+      "seconds": 0.094,
+      "returncode": 0,
+      "tests": 22,
+      "ok": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ]
+}
