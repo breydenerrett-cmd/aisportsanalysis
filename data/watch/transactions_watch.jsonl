@@ -249,3 +249,9 @@
 {"fetched_utc": "2026-09-02T00:31:25.603827+00:00", "game_date": "2026-09-01", "poll": true}
 {"fetched_utc": "2026-09-02T00:46:29.181818+00:00", "game_date": "2026-09-01", "poll": true}
 {"fetched_utc": "2026-09-02T01:01:31.759413+00:00", "game_date": "2026-09-01", "poll": true}
+{"fetched_utc": "2026-09-02T01:15:52.157072+00:00", "game_date": "2026-09-01", "poll": true}
+{"category": "signed", "date": "2026-09-01", "first_seen_utc": "2026-09-02T01:15:52.157072+00:00", "player": "Darren Baker", "player_id": 671117, "team": "SF", "transaction_id": 940748}
+{"fetched_utc": "2026-09-02T01:15:55.456638+00:00", "game_date": "2026-09-01", "poll": true}
+{"fetched_utc": "2026-09-02T01:30:57.557591+00:00", "game_date": "2026-09-01", "poll": true}
+{"fetched_utc": "2026-09-02T01:46:01.328221+00:00", "game_date": "2026-09-01", "poll": true}
+{"fetched_utc": "2026-09-02T02:01:03.552843+00:00", "game_date": "2026-09-01", "poll": true}
