@@ -693,3 +693,13 @@ does not resolve whether ADDENDUM 1's confident boundary numbers would
 have looked different on a correctly-scoped, floor-clearing sample — that
 requires more forward capture, not a re-analysis of what exists today. No
 promotion decision is made here, on either reading.
+
+### Post-review note (2026-09-02, appended after the second review)
+
+The second adversarial review (recorded in docs/REVIEW_V3_FIRST_READ_2026-09-02.md,
+verdict PASS) asked for one disclosure the correction omitted: the split-half
+check's halves are calendar days, not a temporal replication. First half =
+28 events, all on 2026-08-31 (11 observed); second half = 26 events on
+2026-09-01 plus 2 on 2026-08-31 (6 observed). The printed
+`"verdict": "replicated"` is therefore a same-window split, and is to be
+read as exactly that. Nothing above changes.

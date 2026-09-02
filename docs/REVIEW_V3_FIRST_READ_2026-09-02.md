@@ -131,3 +131,38 @@ ladder; name the umpire mechanism; record the stale-window block.
 
 Correction packet: lane L16 (same day). Second review: required, Opus
 tier, before any status doc calls this class "read".
+
+## Second review — 2026-09-02 — PASS
+
+Independent Opus-tier re-review of ADDENDUM 2 (commits 24bf74d + dd2b2c5,
+reproduced in the pinned worktree; suite 3,159 tests green there).
+
+Required findings: 1, 2, 3, 4, 5, 7, 8, 9 FIXED; 6 PARTIALLY FIXED (the
+concentration check is published and reproduces; the split-half caveat was
+missing and is now appended to ADDENDUM 2 as a post-review note).
+Recommended 10–16: all FIXED.
+
+Independent checks by the reviewer: all nine store hashes byte-identical;
+every ADDENDUM 2 number reproduced by `timing --test` (56/19/37, floors
+14.28–17.56 min, 39/56 censored, KM median diff 209.82 with CI [163.8, not
+reached] and 445/2000 not-reached draws, sign test 19/0 with one mixed
+cluster dropped, p = 1.9e-6, concentration 2 days / 20 clusters / 14
+matchups / DET@MIN 8); the old floor logic on the same sample reproduces
+ADDENDUM 1's 164.87 exactly; the 42-vs-56 root cause reproduced by
+removing the historical transactions store (relevant subset unchanged at
+19). Relevance rule judged outcome-blind and a verbatim transcription of
+the frozen line-43 list; no single-category relaxation except the
+type-less `null` bucket reaches the floor. Denominator consistent at 5
+with the monotone rule at all five sites. No new post-hoc choice, no
+edge language, no leakage.
+
+Non-blocking items for the next append (not a gate): CLI leading block
+still labels the class "at floor" from the unfiltered count
+(timingreport.py); a censored row with a negative lower bound is coded
+"minus" rather than uninformative in the cluster sign test (conservative
+here, could mis-sign later); loose wording at ADDENDUM 2 on which
+categories would reach 30; an unconsumed `game_date` field; one
+self-contradictory-sounding sentence about the 36/20 regime.
+
+Overall: PASS. The record is a below-floor pre-registered primary (19 of
+30; no result read) with a disclosed, never-promoted secondary.
