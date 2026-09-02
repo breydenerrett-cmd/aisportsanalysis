@@ -382,6 +382,99 @@ function matchupContextPanel(row) {
 }
 
 /* ---------------------------------------------------------------------
+ * V2-22 MOBILE-ONLY composition pieces -- a distinct composition, not a
+ * reflow of desktop. All three are always rendered into the DOM and
+ * toggled by screens.css's GAMEDAY V2 mobile block (<=899px); see that
+ * section for why (keeps this file's render path single, no separate
+ * mobile branch to drift from desktop).
+ * ------------------------------------------------------------------- */
+
+/** Five day tiles (weekday + day number) around the loaded date, today
+ * highlighted. GET /today has no {date} path parameter by design
+ * (docs/API_CONTRACTS.md: "a past or future slate is GET /games/{date}
+ * instead") -- so, per this lane's instruction to reuse an existing date
+ * mechanism rather than invent a new route, every non-today tile
+ * navigates to the Games screen for that date (`#/games/{date}`), the
+ * screen that already accepts an arbitrary date; today's own tile stays
+ * on this screen. Whether an adjacent date has any games is not known
+ * here (that would mean fetching five more schedules) -- those tiles are
+ * rendered dimmed/plain rather than claiming a count this screen never
+ * fetched, per this lane's own "disabled/dimmed tiles are fine" note. */
+function dateStrip(dateIso) {
+  const strip = el("div", { class: "gv2-datestrip", "data-hook": "gameday-date-strip" });
+  const base = dateIso ? new Date(`${dateIso}T12:00:00Z`) : null;
+  for (let offset = -2; offset <= 2; offset += 1) {
+    const isToday = offset === 0;
+    let weekday = "--";
+    let day = "--";
+    let iso = null;
+    if (base && !Number.isNaN(base.getTime())) {
+      const d = new Date(base);
+      d.setUTCDate(d.getUTCDate() + offset);
+      iso = d.toISOString().slice(0, 10);
+      weekday = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", weekday: "short" }).format(d).toUpperCase();
+      day = String(d.getUTCDate());
+    }
+    const tile = el("a", {
+      class: `gv2-datestrip__tile${isToday ? " gv2-datestrip__tile--today" : ""}`,
+      href: isToday ? "#/today" : `#/games/${encodeURIComponent(iso || "")}`,
+      "data-hook": isToday ? "gameday-date-today" : "gameday-date-tile",
+    });
+    tile.appendChild(el("span", { class: "gv2-datestrip__weekday", text: weekday }));
+    tile.appendChild(el("span", { class: "gv2-datestrip__day", text: day }));
+    strip.appendChild(tile);
+  }
+  return strip;
+}
+
+/** The hero's three inline stat chips, computed from board_summary exactly
+ * like `checkedTonightPanel` -- on mobile these REPLACE that tall panel
+ * (screens.css hides one and shows the other per viewport; both read the
+ * same `aggregates` object, so they can never disagree). */
+function heroStatChips(aggregates) {
+  const row = el("div", { class: "gv2-hero__chips", "data-hook": "gameday-hero-chips" });
+  const chip = (value, label) => row.appendChild(el("span", { class: "gv2-hero__chip" }, [
+    el("span", { class: "gv2-hero__chip-value", text: String(value) }),
+    el("span", { class: "gv2-hero__chip-label", text: label }),
+  ]));
+  chip(aggregates.gamesCount, "GAMES");
+  chip(aggregates.boardsReceived, "BOARDS");
+  chip(aggregates.noBoard, "NO BOARD");
+  return row;
+}
+
+/** V2-22's matchup poster: away club (full name + colour band), a
+ * centred first-pitch/VS pill, home club (full name + colour band).
+ * Team records and probable starters are NOT on this endpoint set (see
+ * the module docstring's "what this screen does not print" note) --
+ * omitted entirely, never a placeholder line. Mobile-only; desktop's
+ * hero does not carry this poster (not part of this lane's V2-01
+ * grading). */
+function matchupPoster(row) {
+  const poster = el("div", { class: "gv2-poster", "data-hook": "gameday-matchup-poster" });
+  const awayColors = teamColors(row.away_team);
+  const homeColors = teamColors(row.home_team);
+  const side = (abbr, colors, align) => {
+    const block = el("div", { class: `gv2-poster__side gv2-poster__side--${align}` });
+    block.appendChild(el("div", { class: "gv2-poster__name", text: teamName(abbr, "full") || abbr }));
+    const band = el("div", { class: "gv2-poster__band" });
+    band.style.background = colors.known
+      ? `linear-gradient(90deg, ${colors.primary}, ${colors.accent})` : "rgba(255,255,255,.14)";
+    block.appendChild(band);
+    return block;
+  };
+  poster.appendChild(side(row.away_team, awayColors, "away"));
+  const pill = el("div", { class: "gv2-poster__pill" });
+  const first = et(row.first_pitch_utc);
+  pill.appendChild(el("span", { class: "gv2-poster__time", text: first || "TIME TBD" }));
+  pill.appendChild(el("span", { class: "gv2-poster__sep" }));
+  pill.appendChild(el("span", { class: "gv2-poster__vs", text: "VS" }));
+  poster.appendChild(pill);
+  poster.appendChild(side(row.home_team, homeColors, "home"));
+  return poster;
+}
+
+/* ---------------------------------------------------------------------
  * Hero -- the three verdict states (V2-01a / b / c)
  * ------------------------------------------------------------------- */
 
@@ -416,18 +509,22 @@ function heroNoPlay(row, h2h, aggregates, sameVerdictCount, totalGames) {
     text: `${sameVerdictCount} OF ${totalGames} GAMES TONIGHT · SAME VERDICT` }));
   hero.appendChild(top);
 
-  hero.appendChild(el("div", { class: "gv2-hero__headline",
+  // ---- row 1 (>=1280px: side by side, hero ~2/3 : checked-tonight ~1/3;
+  //      below that, and always on mobile, stacked) ----
+  const row1 = el("div", { class: "gv2-hero__row" });
+  const main = el("div", { class: "gv2-hero__main" });
+  main.appendChild(el("div", { class: "gv2-hero__headline",
     text: "WE CHECKED THE SLATE. NOTHING CLEARS THE BAR." }));
-  hero.appendChild(el("p", { class: "gv2-hero__body",
+  main.appendChild(el("p", { class: "gv2-hero__body",
     text: "That is the honest answer most nights, and it is the answer this product is built to give. "
         + "The market and the matchup below are still real -- we just will not invent a reason to act on "
         + "them." }));
-  hero.appendChild(heroActions());
-
-  const grid = el("div", { class: "gv2-hero__grid" });
-  grid.appendChild(checkedTonightPanel(aggregates));
-  grid.appendChild(matchupContextPanel(row));
-  hero.appendChild(grid);
+  // Mobile-only: replaces the WHAT WE CHECKED TONIGHT panel below (V2-22).
+  main.appendChild(heroStatChips(aggregates));
+  main.appendChild(heroActions());
+  row1.appendChild(main);
+  row1.appendChild(checkedTonightPanel(aggregates));
+  hero.appendChild(row1);
 
   const still = el("div", { class: "gv2-hero__still" });
   still.appendChild(el("span", { class: "gv2-hero__still-tag", text: "STILL WORTH YOUR TIME" }));
@@ -440,7 +537,11 @@ function heroNoPlay(row, h2h, aggregates, sameVerdictCount, totalGames) {
   }
   hero.appendChild(still);
 
-  hero.appendChild(priceContextPanel(row, "away", h2h, null));
+  // ---- row 2 (>=1280px: price context beside matchup context) ----
+  const row2 = el("div", { class: "gv2-hero__row2" });
+  row2.appendChild(priceContextPanel(row, "away", h2h, null));
+  row2.appendChild(matchupContextPanel(row));
+  hero.appendChild(row2);
   return hero;
 }
 
@@ -785,8 +886,15 @@ export async function renderToday(container) {
   const featured = gapCandidate || { row: fallbackRow, side: null, gap: null, h2h: null, best: null };
   const aggregates = boardAggregates(rows);
 
+  // Mobile-only (V2-22); hidden on desktop by screens.css.
+  host.appendChild(dateStrip(date));
+
   renderHero(host, featured, aggregates, rows, date);
   setShellStatus(aggregates.freshest ? `PRICES AS OF ${et(aggregates.freshest)}` : null);
+
+  // Mobile-only matchup poster (V2-22) -- the featured game's identity,
+  // no records or starters (see matchupPoster's own docstring).
+  host.appendChild(matchupPoster(featured.row));
 
   const slot = renderFeaturedSection(host, gapCandidate, rows.length);
   slot.appendChild(el("div", { class: "gv2-featured__loading",

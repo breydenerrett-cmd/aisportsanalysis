@@ -1973,8 +1973,68 @@
 
 .gv2-hero__actions { position: relative; display: flex; align-items: center; gap: var(--sp-6); flex-wrap: wrap; margin-top: var(--sp-9); }
 
-.gv2-hero__grid { position: relative; display: flex; gap: var(--sp-8); flex-wrap: wrap; margin-top: var(--sp-12); align-items: flex-start; }
-.gv2-hero__grid > * { flex: 1 1 380px; min-width: 320px; }
+/* ---- row 1: hero copy + WHAT WE CHECKED TONIGHT, side by side >=1280px
+   (V2-01a); stacked below that and always on mobile. ---------------------*/
+.gv2-hero__row { position: relative; display: flex; flex-direction: column; gap: var(--sp-8); margin-top: var(--sp-9); align-items: flex-start; }
+.gv2-hero__main { flex: 1 1 auto; min-width: 0; width: 100%; }
+.gv2-hero__row > .gv2-checked { width: 100%; }
+@media (min-width: 1280px) {
+  .gv2-hero__row { flex-direction: row; flex-wrap: nowrap; }
+  .gv2-hero__main { flex: 2 1 0; }
+  .gv2-hero__row > .gv2-checked { flex: 1 1 0; width: auto; min-width: 300px; }
+}
+
+/* ---- row 2: price context beside matchup context, side by side
+   >=1280px; stacked below that and on mobile. -----------------------------*/
+.gv2-hero__row2 { position: relative; display: flex; flex-direction: column; gap: var(--sp-8); }
+.gv2-hero__row2 > * { width: 100%; margin-top: 0; }
+@media (min-width: 1280px) {
+  .gv2-hero__row2 { flex-direction: row; flex-wrap: nowrap; }
+  .gv2-hero__row2 > * { flex: 1 1 0; width: auto; min-width: 0; }
+}
+
+/* ---- hero stat chips (V2-22 mobile only -- replaces the WHAT WE CHECKED
+   TONIGHT panel below 899px; see screens.css's mobile block) ------------*/
+.gv2-hero__chips { display: none; gap: var(--sp-6); margin-top: var(--sp-8); flex-wrap: wrap; }
+.gv2-hero__chip { display: flex; align-items: baseline; gap: var(--sp-3); padding: 8px 13px; --r: var(--r-chip);
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
+  background: rgba(255, 255, 255, .045); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .09); }
+.gv2-hero__chip-value { font-family: var(--font-mono); font-size: 16px; font-weight: 700; color: var(--v-t1); }
+.gv2-hero__chip-label { font-family: var(--font-display); font-size: 9px; font-weight: 700; letter-spacing: .13em; color: var(--v-t6); }
+
+/* ---- date strip (V2-22 mobile only) -----------------------------------*/
+.gv2-datestrip { display: none; gap: var(--sp-4); padding: 0 var(--gutter-mobile) var(--sp-7); overflow-x: auto; }
+.gv2-datestrip__tile {
+  flex: none; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  width: 52px; padding: 8px 0; --r: var(--r-chip);
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
+  background: rgba(255, 255, 255, .03); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .07);
+  text-decoration: none;
+}
+.gv2-datestrip__tile--today { background: rgba(255, 255, 255, .075); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2); }
+.gv2-datestrip__weekday { font-family: var(--font-display); font-size: 8.5px; font-weight: 700; letter-spacing: .13em; color: var(--v-t6); }
+.gv2-datestrip__tile--today .gv2-datestrip__weekday { color: var(--v-t2); }
+.gv2-datestrip__day { font-family: var(--font-display); font-style: italic; font-size: 19px; font-weight: 800; color: var(--v-t5); }
+.gv2-datestrip__tile--today .gv2-datestrip__day { color: #FFF; }
+
+/* ---- matchup poster (V2-22 mobile only) -------------------------------*/
+.gv2-poster { display: none; align-items: center; gap: var(--sp-6); padding: var(--sp-9) var(--gutter-mobile); }
+.gv2-poster__side { flex: 1 1 0; min-width: 0; }
+.gv2-poster__side--home { text-align: right; }
+.gv2-poster__name {
+  font-family: var(--font-display); font-style: italic; font-weight: 800; font-size: 20px; line-height: 1.05;
+  color: var(--v-t0); overflow-wrap: break-word;
+}
+.gv2-poster__band { margin-top: var(--sp-4); height: 4px; width: 56px; }
+.gv2-poster__side--home .gv2-poster__band { margin-left: auto; }
+.gv2-poster__pill {
+  flex: none; display: flex; align-items: center; gap: var(--sp-3); padding: 7px 12px; --r: var(--r-chip);
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
+  background: rgba(13, 13, 15, .8); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16);
+}
+.gv2-poster__time { font-family: var(--font-mono); font-size: 10.5px; color: var(--v-live); white-space: nowrap; }
+.gv2-poster__sep { width: 1px; height: 11px; background: rgba(255, 255, 255, .2); }
+.gv2-poster__vs { font-family: var(--font-display); font-style: italic; font-size: 13px; font-weight: 800; color: var(--v-t0); }
 
 .gv2-hero__still {
   position: relative; display: flex; align-items: center; gap: var(--sp-6); flex-wrap: wrap;
@@ -2058,11 +2118,17 @@
 
 /* ---- 899px and below: the V2-22 mobile spec (same markup, reflowed) ----*/
 @media (max-width: 899px) {
+  /* V2-22 is a DISTINCT composition, not a reflow: the date strip and
+     matchup poster appear (both hidden on desktop), the hero's stat
+     chips replace the WHAT WE CHECKED TONIGHT panel, and everything
+     else below keeps its existing order. */
+  .gv2-datestrip, .gv2-poster { display: flex; }
+  .gv2-hero__chips { display: flex; }
+  .gv2-hero__row > .gv2-checked { display: none; }
+
   .gv2-hero { margin: 0 var(--gutter-mobile) var(--sp-9); padding: 22px var(--gutter-mobile) 26px; }
   .gv2-hero__headline { font-size: 34px; }
   .gv2-hero__body { font-size: 15px; }
-  .gv2-hero__grid { flex-direction: column; gap: var(--sp-7); margin-top: var(--sp-9); }
-  .gv2-hero__grid > * { min-width: 0; }
   .gv2-hero__actions { flex-direction: column; align-items: stretch; }
   .gv2-hero__actions .btn { width: 100%; }
   .gv2-hero__still { flex-direction: column; align-items: flex-start; gap: var(--sp-3); }
