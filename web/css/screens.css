@@ -2214,4 +2214,258 @@
   .bc2-connector { padding-left: 12px; }
   .bc2-wall { padding: var(--sp-8); gap: var(--sp-7); }
   .bc2-wall__still { max-width: 100%; flex-basis: 100%; }
+/* =====================================================================
+   GAME QUICK V2
+   Traced from design/linehound-v2/'LINEHOUND V2 Full Product.dc.html'
+   V2-13 (GAME QUICK · DESKTOP, 1280x1000, lines 4398-4592), V2-14 (GAME
+   QUICK · MOBILE, 390x844, lines 4593-4695) and V2-15 (GAME QUICK ·
+   UNANNOUNCED STARTER / NO BOARD, 1280x420, lines 4696-4824). Backs
+   web/js/games.js's `gqv*` render functions and the V2-34 spotlight
+   placement (`.gqv-spotlight` wraps web/js/featuredbet.js's
+   `renderFeaturedBet` output -- that component's own `.fb-*` rules
+   above are untouched). Scoped entirely to the `gqv-` prefix and
+   --v-* tokens, so this section never reaches into the V1 "GAME VIEW"
+   section above (still read by web/js/betcheck.js and web/js/today.js's
+   shared gv-*/bc-* classes) or into ODDS V2 / FEATURED BET above it.
+   ===================================================================== */
+
+.gqv-body { max-width: 900px; margin: 0 auto; padding: 0 var(--gutter-desktop) var(--sp-15); }
+.gqv-back {
+  display: inline-block; margin: var(--sp-9) 0 var(--sp-7);
+  font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: .12em;
+  color: var(--v-t4); text-decoration: none;
+}
+.gqv-back:hover { color: var(--v-t1); }
+
+/* ---- top strip: eyebrow + captured-time chip -------------------------*/
+.gqv-topstrip { display: flex; align-items: center; gap: var(--sp-6); flex-wrap: wrap; margin-bottom: var(--sp-9); }
+.gqv-topstrip__eyebrow {
+  font-family: var(--font-display); font-size: 11.5px; font-weight: 800; letter-spacing: .22em;
+  color: var(--v-t3); white-space: nowrap;
+}
+.gqv-topstrip__rule { flex: 1; min-width: 20px; height: 1px; background: linear-gradient(90deg, var(--v-edge), transparent); }
+.gqv-topstrip__chip {
+  flex: none; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .1em; color: var(--v-t5);
+  white-space: nowrap;
+}
+
+/* ---- identity: team badges, records, probables, VS -------------------*/
+.gqv-identity { padding: var(--sp-10) var(--sp-11); margin-bottom: var(--sp-8); }
+.gqv-identity__row { display: flex; align-items: center; gap: var(--sp-9); }
+.gqv-team { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-3); min-width: 0; }
+.gqv-team--home { align-items: flex-end; text-align: right; }
+.gqv-badge {
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; --r: var(--r-badge);
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
+  font-family: var(--font-display); font-size: 14px; font-weight: 800; letter-spacing: .04em;
+}
+.gqv-team__name {
+  font-family: var(--font-display); font-style: italic; font-size: 19px; font-weight: 800;
+  color: var(--v-t0); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+}
+.gqv-team__record { display: flex; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap; }
+.gqv-team--home .gqv-team__record { justify-content: flex-end; }
+.gqv-team__record-figure { font-family: var(--font-mono); font-size: 15px; color: var(--v-t1); }
+.gqv-team__n { font-family: var(--font-mono); font-size: 9.5px; color: var(--v-t7); }
+.gqv-team__probable { font-family: var(--font-display); font-size: 10.5px; font-weight: 700; letter-spacing: .1em; color: var(--v-t4); }
+.gqv-team__probable--absent { color: var(--v-warn-label); }
+.gqv-vs {
+  flex: none; font-family: var(--font-display); font-style: italic; font-size: 15px; font-weight: 800;
+  letter-spacing: .1em; color: var(--v-t6);
+}
+.gqv-identity__meta {
+  margin-top: var(--sp-8); padding-top: var(--sp-7); text-align: center;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .09em; color: var(--v-live-label);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07);
+}
+
+/* ---- verdict: big word + headline + FINDINGS/EVIDENCE mini tiles -----*/
+.gqv-verdict { padding: var(--sp-10) var(--sp-11); margin-bottom: var(--sp-8); }
+.gqv-verdict__word {
+  font-family: var(--font-display); font-style: italic; font-weight: 800;
+  font-size: clamp(24px, 3.4vw, 40px); line-height: 1; letter-spacing: -.01em; color: var(--v-t0);
+  margin-bottom: var(--sp-6);
+}
+.gqv-verdict__body { font-size: 15.5px; line-height: 1.5; color: var(--v-t2); max-width: 640px; }
+.gqv-verdict__note { margin-top: var(--sp-4); font-size: 12.5px; line-height: 1.5; color: var(--v-t5); max-width: 640px; }
+.gqv-mini-row { display: flex; gap: var(--sp-8); margin-top: var(--sp-9); flex-wrap: wrap; }
+.gqv-mini { flex: none; }
+.gqv-mini__label { font-family: var(--font-display); font-size: 9px; font-weight: 800; letter-spacing: .18em; color: var(--v-t6); margin-bottom: var(--sp-2); }
+.gqv-mini__value { font-family: var(--font-mono); font-size: 18px; color: var(--v-live-lit); }
+
+/* ---- price: BOTH sides, best/consensus/improvement --------------------*/
+.gqv-price { padding: var(--sp-10) var(--sp-11); margin-bottom: var(--sp-8); }
+.gqv-price__eyebrow { font-family: var(--font-display); font-size: 10.5px; font-weight: 800; letter-spacing: .2em; color: var(--v-t5); margin-bottom: var(--sp-8); }
+.gqv-price__cols { display: flex; gap: var(--sp-9); flex-wrap: wrap; }
+.gqv-price__col { flex: 1 1 240px; min-width: 220px; }
+.gqv-price__label { font-family: var(--font-display); font-size: 9.5px; font-weight: 800; letter-spacing: .16em; color: var(--v-t5); margin-bottom: var(--sp-3); }
+.gqv-price__figure { font-family: var(--font-mono); font-size: 30px; color: var(--v-t0); line-height: 1; }
+.gqv-price__book { margin-top: var(--sp-2); font-family: var(--font-mono); font-size: 10.5px; color: var(--v-t6); }
+.gqv-price__consensus { margin-top: var(--sp-6); display: flex; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap; }
+.gqv-price__consensus-label { font-family: var(--font-display); font-size: 8.5px; font-weight: 800; letter-spacing: .14em; color: var(--v-t6); }
+.gqv-price__consensus-figure { font-family: var(--font-mono); font-size: 14px; color: var(--v-t2); }
+.gqv-price__pill {
+  display: inline-flex; margin-top: var(--sp-5); padding: 5px 12px; --r: var(--r-chip);
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
+  background: linear-gradient(120deg, var(--v-money), var(--v-money-2));
+  font-family: var(--font-display); font-size: 11px; font-weight: 800; letter-spacing: .08em; color: var(--v-money-ink);
+}
+.gqv-price__none { margin-top: var(--sp-5); font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; color: var(--v-t6); }
+.gqv-price__meta { margin-top: var(--sp-8); font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .07em; color: var(--v-t6); }
+.gqv-price__labeltext { margin-top: var(--sp-4); font-family: var(--font-mono); font-size: 10px; letter-spacing: .04em; color: var(--v-t6); }
+.gqv-price__note { margin-top: var(--sp-6); font-size: 13px; line-height: 1.55; color: var(--v-t4); max-width: 640px; }
+.gqv-price__disclaimer { margin-top: var(--sp-7); font-size: 11.5px; line-height: 1.5; color: var(--v-t7); }
+.gqv-price__footnote { margin-top: var(--sp-6); font-size: 12.5px; line-height: 1.5; color: var(--v-t5); }
+
+/* ---- V2-34 spotlight placement -----------------------------------------
+   The Featured Bet primitive is mounted verbatim (featuredbet.js's own
+   `.fb-*` rules style it); this file only styles the wrapper it sits in. */
+.gqv-spotlight { margin-bottom: var(--sp-8); }
+.gqv-spotlight__eyebrow { font-family: var(--font-display); font-size: 11px; font-weight: 800; letter-spacing: .2em; color: var(--v-t3); margin-bottom: var(--sp-4); }
+.gqv-spotlight__lede { font-size: 14px; line-height: 1.5; color: var(--v-t5); max-width: 640px; margin-bottom: var(--sp-7); }
+
+/* ---- teams panel -------------------------------------------------------*/
+.gqv-teams { padding: var(--sp-10) var(--sp-11); margin-bottom: var(--sp-8); }
+.gqv-teams__title { font-family: var(--font-display); font-size: 12px; font-weight: 800; letter-spacing: .18em; color: var(--v-t4); margin-bottom: var(--sp-8); }
+.gqv-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--sp-6); }
+.gqv-stat { padding: 12px 14px; background: rgba(255, 255, 255, .035); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08); --r: var(--r-badge); }
+.gqv-stat__label { font-family: var(--font-display); font-size: 8.5px; font-weight: 800; letter-spacing: .13em; color: var(--v-t6); margin-bottom: var(--sp-3); }
+.gqv-stat__value { font-family: var(--font-mono); font-size: 16px; color: var(--v-t1); }
+.gqv-stat__n { margin-top: var(--sp-2); font-family: var(--font-mono); font-size: 9px; color: var(--v-t7); }
+
+/* ---- actions + advanced toggle -----------------------------------------*/
+.gqv-actions { display: flex; gap: var(--sp-6); flex-wrap: wrap; margin-bottom: var(--sp-9); }
+.gqv-toggle {
+  display: flex; width: 100%; justify-content: center; padding: 14px; --r: var(--r-btn);
+  background: rgba(255, 255, 255, .04); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12);
+  font-family: var(--font-display); font-size: 12px; font-weight: 800; letter-spacing: .14em; color: var(--v-t2);
+  cursor: pointer;
+}
+.gqv-toggle:hover { background: rgba(255, 255, 255, .07); }
+.gqv-toggle__note { margin: var(--sp-4) 0 var(--sp-9); text-align: center; font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .08em; color: var(--v-t7); }
+
+@media (max-width: 899px) {
+  .gqv-body { padding: 0 var(--gutter-mobile) var(--sp-13); }
+  .gqv-identity, .gqv-verdict, .gqv-price, .gqv-teams { padding: var(--sp-8); }
+  .gqv-identity__row { gap: var(--sp-5); }
+  .gqv-badge { width: 32px; height: 32px; font-size: 12px; }
+  .gqv-team__name { font-size: 15px; }
+  .gqv-verdict__word { font-size: 26px; }
+  .gqv-price__cols { flex-direction: column; gap: var(--sp-7); }
+  .gqv-price__figure { font-size: 26px; }
+  .gqv-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* =====================================================================
+   GAME ADVANCED V2
+   Traced from design/linehound-v2/'LINEHOUND V2 Full Product.dc.html'
+   V2-03 (GAME · COVERAGE LEDGER, 1280x1180, lines 2625-3016) and V2-31
+   (GAME ADVANCED · MOBILE, 390x844, lines 6450-6560). Backs
+   web/js/games.js's `gav*` render functions -- the block APPENDED
+   beneath GAME QUICK V2 above when "SHOW ADVANCED ANALYSIS" is pressed,
+   never a replacement for it. Scoped to the `gav-` prefix and --v-*
+   tokens; the `.gav-gap` rows use the native `<details>` element for
+   "tap for its reason string" rather than a custom disclosure widget.
+   ===================================================================== */
+
+.gav { padding: var(--sp-9) 0 0; }
+.gav > * + * { margin-top: var(--sp-10); }
+
+/* ---- mobile-only "Quick View · still here" recap ----------------------*/
+.gav-recap {
+  display: none; align-items: center; gap: var(--sp-5); flex-wrap: wrap;
+  padding: var(--sp-6) var(--sp-7); --r: var(--r-badge);
+  background: rgba(0, 224, 255, .05); box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .18);
+}
+.gav-recap__label { font-family: var(--font-display); font-size: 9px; font-weight: 800; letter-spacing: .14em; color: var(--v-live-label); }
+.gav-recap__matchup { font-family: var(--font-display); font-style: italic; font-size: 14px; font-weight: 800; color: var(--v-t0); }
+.gav-recap__verdict { margin-left: auto; font-family: var(--font-mono); font-size: 10px; letter-spacing: .06em; color: var(--v-t4); }
+
+/* ---- intro: headline + three stat tiles --------------------------------*/
+.gav-intro__eyebrow { font-family: var(--font-display); font-size: 11px; font-weight: 800; letter-spacing: .2em; color: var(--v-t3); margin-bottom: var(--sp-5); }
+.gav-intro__headline {
+  font-family: var(--font-display); font-style: italic; font-weight: 800;
+  font-size: clamp(24px, 3.2vw, 36px); line-height: 1.05; color: var(--v-t0); margin-bottom: var(--sp-6);
+}
+.gav-intro__body { font-size: 14.5px; line-height: 1.55; color: var(--v-t4); max-width: 680px; }
+.gav-tiles { display: flex; gap: var(--sp-7); flex-wrap: wrap; margin-top: var(--sp-9); }
+.gav-tile {
+  flex: 1 1 180px; min-width: 160px; padding: 13px 15px; --r: var(--r-badge);
+  background: rgba(255, 255, 255, .04); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08);
+}
+.gav-tile--live { background: linear-gradient(150deg, rgba(0, 224, 255, .1), rgba(255, 255, 255, .012)); box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .28); }
+.gav-tile--warn { background: linear-gradient(150deg, rgba(255, 176, 32, .09), rgba(255, 255, 255, .012)); box-shadow: inset 0 0 0 1px rgba(255, 176, 32, .28); }
+.gav-tile__label { font-family: var(--font-display); font-size: 9px; font-weight: 700; letter-spacing: .14em; color: var(--v-t6); margin-bottom: var(--sp-3); }
+.gav-tile__value { font-family: var(--font-mono); font-size: 26px; color: var(--v-t1); line-height: 1; }
+.gav-tile--live .gav-tile__value { color: var(--v-live-lit); }
+.gav-tile--warn .gav-tile__value { color: var(--v-warn-lit); }
+.gav-tile__sample { margin-top: var(--sp-3); font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .05em; color: var(--v-t7); }
+
+/* ---- shared subhead -----------------------------------------------------*/
+.gav-subhead { font-family: var(--font-display); font-size: 11px; font-weight: 800; letter-spacing: .16em; color: var(--v-t3); margin-bottom: var(--sp-5); }
+.gav-subhead--warn { color: var(--v-warn-label); }
+
+/* ---- WHAT WE ACTUALLY HAVE ----------------------------------------------*/
+.gav-have__list { display: flex; flex-direction: column; }
+.gav-have__row {
+  display: flex; align-items: baseline; gap: var(--sp-6); padding: 10px 0; flex-wrap: wrap;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .05);
+}
+.gav-have__mark {
+  flex: none; align-self: center; width: 9px; height: 9px; --r: 2px;
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
+  background: var(--v-live);
+}
+.gav-have__key {
+  flex: none; width: 150px; font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+  letter-spacing: .04em; color: var(--v-t2);
+}
+.gav-have__desc { flex: 1 1 260px; min-width: 200px; font-size: 12.5px; line-height: 1.5; color: var(--v-t5); }
+.gav-have__fact { flex: none; font-family: var(--font-mono); font-size: 10.5px; color: var(--v-live-label); }
+
+/* ---- THE GAPS -- named, reasons printed as given -------------------------*/
+.gav-gaps__lede { font-size: 13px; line-height: 1.5; color: var(--v-t5); max-width: 680px; margin-bottom: var(--sp-6); }
+.gav-gaps__list { display: flex; flex-direction: column; gap: var(--sp-3); }
+.gav-gap {
+  padding: 10px 13px; --r: var(--r-badge);
+  background: rgba(255, 176, 32, .04); box-shadow: inset 0 0 0 1px rgba(255, 176, 32, .16);
+}
+.gav-gap__summary {
+  display: flex; align-items: center; gap: var(--sp-5); cursor: pointer; list-style: none;
+}
+.gav-gap__summary::-webkit-details-marker { display: none; }
+.gav-gap__mark {
+  flex: none; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;
+  --r: 4px; clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
+  background: rgba(255, 176, 32, .16); color: var(--v-warn-lit); font-size: 10px; font-weight: 800;
+}
+.gav-gap__key { font-family: var(--font-mono); font-size: 11.5px; color: var(--v-t2); }
+.gav-gap__chip { margin-left: auto; font-family: var(--font-display); font-size: 8.5px; font-weight: 800; letter-spacing: .12em; color: var(--v-warn-label); }
+.gav-gap__reason { margin: var(--sp-4) 0 var(--sp-2) 26px; font-size: 12px; line-height: 1.5; color: var(--v-t4); }
+
+/* ---- BOOK VERSUS BOOK -----------------------------------------------------*/
+.gav-board__lede { font-size: 13px; line-height: 1.5; color: var(--v-t5); margin-bottom: var(--sp-6); }
+.gav-board__scroll { overflow-x: auto; }
+.gav-board__table { width: 100%; border-collapse: collapse; min-width: 360px; }
+.gav-board__table th {
+  text-align: left; padding: 8px 12px; font-family: var(--font-display); font-size: 9.5px; font-weight: 800;
+  letter-spacing: .12em; color: var(--v-t6); box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .1);
+}
+.gav-board__table td {
+  padding: 9px 12px; font-family: var(--font-mono); font-size: 12.5px; color: var(--v-t2);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .05);
+}
+.gav-board__price { font-variant-numeric: tabular-nums; }
+.gav-board__note { margin-top: var(--sp-6); font-size: 11.5px; line-height: 1.5; color: var(--v-t6); }
+
+/* ---- MARKET REFUSAL --------------------------------------------------------*/
+.gav-refusal__body { font-size: 12.5px; line-height: 1.55; color: var(--v-t5); max-width: 680px; }
+
+@media (max-width: 899px) {
+  .gav-recap { display: flex; }
+  .gav-have__key { width: 120px; font-size: 10px; }
+  .gav-have__row { flex-direction: column; gap: var(--sp-2); }
+  .gav-have__fact { margin-left: 0; }
+  .gav-tiles { gap: var(--sp-5); }
 }
