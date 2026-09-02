@@ -267,3 +267,15 @@
 {"fetched_utc": "2026-09-02T11:19:37.918819+00:00", "game_date": "2026-09-02", "poll": true}
 {"fetched_utc": "2026-09-02T12:25:53.219282+00:00", "game_date": "2026-09-02", "poll": true}
 {"fetched_utc": "2026-09-02T13:24:24.337425+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-02T14:20:36.081111+00:00", "game_date": "2026-09-02", "poll": true}
+{"category": "designated", "date": "2026-09-02", "first_seen_utc": "2026-09-02T14:20:36.081111+00:00", "player": "Hayden Harris", "player_id": 802686, "team": "ATL", "transaction_id": 940753}
+{"category": "other", "date": "2026-09-02", "first_seen_utc": "2026-09-02T14:20:36.081111+00:00", "player": "Elieser Hern\u00e1ndez", "player_id": 622694, "team": "ATL", "transaction_id": 940754}
+{"category": "optioned", "date": "2026-09-02", "first_seen_utc": "2026-09-02T14:20:36.081111+00:00", "player": "Blake Burkhalter", "player_id": 686628, "team": "ATL", "transaction_id": 940755}
+{"fetched_utc": "2026-09-02T14:20:38.989552+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-02T14:35:41.348968+00:00", "game_date": "2026-09-02", "poll": true}
+{"category": "il_activation", "date": "2026-09-02", "first_seen_utc": "2026-09-02T14:35:41.348968+00:00", "player": "James Wood", "player_id": 695578, "team": "WSH", "transaction_id": 940759}
+{"category": "recalled", "date": "2026-09-02", "first_seen_utc": "2026-09-02T14:35:41.348968+00:00", "player": "Riley Cornelio", "player_id": 683000, "team": "WSH", "transaction_id": 940761}
+{"category": "designated", "date": "2026-09-02", "first_seen_utc": "2026-09-02T14:35:41.348968+00:00", "player": "Tom Cosgrove", "player_id": 676680, "team": "WSH", "transaction_id": 940762}
+{"category": "optioned", "date": "2026-09-02", "first_seen_utc": "2026-09-02T14:35:41.348968+00:00", "player": "Andrew Pinckney", "player_id": 687605, "team": "WSH", "transaction_id": 940764}
+{"fetched_utc": "2026-09-02T14:50:43.916038+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-02T15:05:46.258265+00:00", "game_date": "2026-09-02", "poll": true}
