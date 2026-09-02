@@ -22,6 +22,11 @@ export PROP_LISTING_AUDIT="on"
 
 echo "== watch =="
 python3 -m src.cli watch 2>&1 | sed 's/^/  /'
+# Home-plate umpire reveals (free MLB Stats API, hydrate=officials): the fifth
+# admitted V3 timing class (docs/RESEARCH_V3_UMPIRE_CLASS.md). Writes
+# data/watch/umpires_watch.jsonl, staged with the rest of data/watch below.
+echo "== umpires =="
+python3 -m src.pipeline.umpirewatch 2>&1 | sed 's/^/  /'
 echo "== dense =="
 F5_STORE=data/processed/f5_close.jsonl
 f5_rows() { if [ -f "$F5_STORE" ]; then wc -l < "$F5_STORE" | tr -d ' '; else echo 0; fi; }
@@ -46,6 +51,15 @@ echo "== f5 closes: ${F5_AFTER} row(s) total, +$((F5_AFTER - F5_BEFORE)) this ru
 echo "== prop listing =="
 PROP_OUT=$(python3 -m src.pipeline.prop_listing 2>&1)
 echo "$PROP_OUT" | sed 's/^/  /'
+
+# Extras: weather forecast (0 credits), credit-log echo, and pitcher-K prop
+# PRICES behind PROP_PRICES=1 (docs/COLLECTION_POLICY.md amendment 2026-09-02;
+# the module enforces its own hard daily credit cap). The script does no git
+# of its own -- its stores live under data/processed and are staged below.
+# ESCALATE lines are held back here and re-emitted unindented further down.
+echo "== capture extras =="
+EXTRAS_OUT=$(PROP_PRICES=1 bash scripts/capture_extras.sh 2>&1)
+echo "$EXTRAS_OUT" | grep -v "^ESCALATE:" | sed 's/^/  /'
 
 # Concurrent runs of this script and daily_loop.sh on the same shared
 # checkout raced each other into stranded/mismerged commits four times in
@@ -112,6 +126,7 @@ fi
 # and they are passed through verbatim rather than re-worded, so the shell and a
 # human reading the log react to the same text the module wrote.
 echo "$PROP_OUT" | grep "^ESCALATE:" || true
+echo "$EXTRAS_OUT" | grep "^ESCALATE:" || true
 if echo "$PROP_OUT" | grep -q "skipped: credit floor"; then
     echo "ESCALATE: credit floor reached -- stop spending, tell Brey"
 fi
