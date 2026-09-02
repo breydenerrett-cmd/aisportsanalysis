@@ -19,5 +19,7 @@ Hard evidence rules (violating any of these is a failed task, not a judgment cal
 - Line-shopping value is PRICE IMPROVEMENT, never EV or "edge".
 - Zero survivors is a valid result. Do not manufacture an edge.
 
-Run the full test suite before declaring done. Do not commit or push unless
-the task says to. Do not touch files outside the task's stated area.
+Run `bash scripts/test_fast.sh` while iterating and
+`python3 scripts/test_parallel.py` (full suite) before declaring done — never
+the raw `python3 -m unittest discover -s tests -q`. Do not commit or push
+unless the task says to. Do not touch files outside the task's stated area.

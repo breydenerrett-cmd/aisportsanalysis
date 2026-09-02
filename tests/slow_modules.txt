@@ -1,0 +1,38 @@
+# The FAST tier's exclude list: modules measured (scripts/time_tests.py) at
+# >= 4 seconds wall time in isolation. scripts/test_fast.sh runs every other
+# tests/test_*.py module through scripts/test_parallel.py.
+#
+# These 13 modules account for ~147s of the ~231s total individually-summed
+# runtime (~64%, in ~10% of the modules) -- almost all of it real work
+# (odds-history parameter sweeps, a full odds-history replay, or a real
+# in-process HTTP app under test), not something to "fix", just something to
+# skip while iterating and run in the full tier before declaring done.
+#
+# Regenerate this list after a real change to these modules' fixtures/scope:
+#   python3 scripts/time_tests.py
+#   awk '$1+0 >= 4.0 {print $2}' from its table (or read scripts/module_timings.json)
+#
+# NOT on this list, on purpose: tests/test_validation_m3.py and the
+# TestAgainstTheRealStore classes in tests/test_evolab_replay.py. Both read
+# data/historical/odds_history/mlb_*.jsonl, which is gitignored local data
+# (`data/historical/*` in .gitignore, no exception) -- present in a
+# long-lived checkout, absent from every fresh git worktree. Here they skip
+# in ~0s, so they don't measure as slow; in a checkout that DOES have that
+# archive they run for real against 40-135MB of multi-season data and are
+# almost certainly the biggest single reason a full discover run elsewhere
+# was measured at ~20 minutes against this same suite's ~89s here. If you're
+# running from a checkout with that archive present, re-time before trusting
+# this list, and expect to add both modules to it.
+test_evolab_sweep
+test_evolab_sweep_outcome
+test_api_betcheck_free
+test_evolab_stats
+test_evolab_baseline
+test_model_discovery
+test_api_contracts
+test_api_games
+test_api_betcheck
+test_api_caching
+test_api_adversarial
+test_analyze_cmd
+test_api_digest

@@ -21,5 +21,7 @@ Product principles:
 - The Ranker publishes no recommendations while Engine 2 is None (test-gated).
 - Pages open from file://, no script tags, artifacts/demo_latest.html untouched.
 
-Run the full test suite before declaring done. Do not commit or push unless
-the task says to.
+Run `bash scripts/test_fast.sh` while iterating and
+`python3 scripts/test_parallel.py` (full suite) before declaring done — never
+the raw `python3 -m unittest discover -s tests -q`. Do not commit or push
+unless the task says to.

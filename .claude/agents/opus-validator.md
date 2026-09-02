@@ -14,7 +14,11 @@ Method:
   sealed-data access (2026-01-01..2026-08-27), 2025 used beyond tuning,
   credit-spending paths, bet-placement capability, terminology drift
   (price improvement described as EV/edge, late_move called CLV).
-- Run the full test suite; a red suite is an automatic fail.
+- Run the full test suite with `python3 scripts/test_parallel.py` (never the
+  raw `python3 -m unittest discover -s tests -q`, and never
+  `scripts/test_fast.sh` alone — that tier skips known-slow modules on
+  purpose, so it can't be the basis for a PASS); a red suite is an automatic
+  fail.
 - Check honesty: losers published, misses recorded, Nones not papered over.
 
 Report back: PASS or FAIL, the specific evidence for each acceptance item,

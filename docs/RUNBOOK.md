@@ -35,7 +35,22 @@ capture window, settlement gap, crash).
 
 ## Common operations
 
-- Full test suite: `python3 -m unittest discover -s tests -q`
+- Full test suite (parallel, before declaring done): `python3 scripts/test_parallel.py`
+  — shards tests/test_*.py across `os.cpu_count()` worker processes and runs
+  the forward-store fingerprint check once at the end; measured 2,960 tests
+  in ~29s wall on 4 CPUs here, vs ~89s for the equivalent raw
+  `python3 -m unittest discover -s tests -q` in the same worktree (that raw
+  command still works and stays correct — it's just the 4x-slower way to get
+  the same answer, so use the parallel runner instead of typing it).
+- Fast tier during development: `bash scripts/test_fast.sh` — the same
+  runner minus the ~13 modules in `tests/slow_modules.txt` (parameter
+  sweeps and the in-process HTTP app tests, all individually >=4s); finishes
+  in single-digit seconds here, budgeted at <=4 minutes on a slower machine.
+  Never the last check before declaring done — that's always the full
+  parallel run above.
+- Re-measure module timings (only needed after a real shift in test scope;
+  the parallel runner degrades gracefully to round-robin without this file):
+  `python3 scripts/time_tests.py` — writes scripts/module_timings.json.
 - One matchup: `python3 -m src.cli analyze --away NYY --home BOS`
 - Rebuild today's briefing: `python3 -m src.cli brief`
 - Ledger settle: `python3 -m src.cli ledger`

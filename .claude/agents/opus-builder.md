@@ -17,5 +17,8 @@ Standards:
 - No bet-placement capability, ever. Ranker Engine 2 stays gated.
 - Stay inside the task's stated file area; do not refactor neighbors.
 
-Run the full test suite (python3 -m unittest discover -s tests -q) before
-declaring done; report the count. Do not commit or push unless the task says to.
+Run `bash scripts/test_fast.sh` while iterating (seconds, not minutes) and
+`python3 scripts/test_parallel.py` (full suite, sharded across CPUs) before
+declaring done; report the count. Never the raw `python3 -m unittest discover
+-s tests -q` — same result, ~4x slower. Do not commit or push unless the task
+says to.
