@@ -41,7 +41,12 @@ WEB_JS = ROOT / "web" / "js"
 STATES_PATH = WEB_JS / "states.js"
 FEATUREDBET_PATH = WEB_JS / "featuredbet.js"
 
-WAVE1_SCREEN_FILES = ("today.js", "betcheck.js", "games.js", "odds.js", "mybets.js", "main.js")
+WAVE1_SCREEN_FILES = ("betcheck.js", "games.js", "odds.js", "mybets.js", "main.js")
+# today.js was wired in by LANE L19 (V2-01/01a/b/c/22/33, the Gameday
+# family) -- see tests/test_web_v2_gameday.py for its own coverage of
+# that wiring. Removed from this "not yet wired" list per this file's
+# own docstring instruction to update it in the same change that adds
+# the real import, not route around it.
 
 
 def _read(path: Path) -> str:
