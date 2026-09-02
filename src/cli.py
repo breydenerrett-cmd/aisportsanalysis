@@ -521,63 +521,49 @@ def _settlement_closing(rec, snapshot_series):
 
 
 def cmd_closing_audit(args) -> int:
-    """Read-only: how many null-closing settlements can be explained today.
+    """Read-only: per-market closing coverage over every settled game.
 
-    A settlement's `closing` field is written once and never rewritten --
-    settlements are evidence, see `ledger.settle`. So when the join that
-    computes it was broken (see `snapshots._canonical_club`), the fix cannot
-    repair a single row already on disk; it can only be MEASURED by
-    re-running the same read-only lookup against the same immutable snapshot
-    store and reporting what it finds now.
+    Extends past an h2h-only check that used to IGNORE L14's
+    `closing_backfill` rows entirely (re-deriving an h2h close from scratch
+    every time regardless of whether one was already backfilled) into
+    `grading.ledger_closing_coverage`'s four markets -- h2h, spreads,
+    totals, first_five -- each checked against the store that actually
+    captures it (h2h/spreads/totals share odds_snapshots.jsonl; first_five
+    lives in the far sparser f5_close.jsonl). A backfilled close counts as
+    RECORDED, not as freshly derivable, so the table reads honestly: what is
+    already evidence on the ledger versus what a read-only lookup could
+    still find.
 
-    Every null-closing settlement is re-checked and sorted into:
-      * derivable   -- the snapshot store DOES hold a usable close for this
-        game; the row's null was the join bug, not a data gap.
-      * absent, by reason -- `_settlement_closing`'s own reason string, e.g.
-        "no snapshots recorded for this game" (nothing was ever captured
-        for it) vs "no snapshot observed before first pitch" (something was
-        captured, but not early enough to count as a close).
-      * no matching recommendation row -- the settlement's game_pk has no
-        recommendation on record, so there is no away/home/commence_time to
-        look up with. Reported rather than silently skipped.
-
-    Nothing here writes to the ledger. Re-settling old rows with a corrected
-    close is a separate, deliberate decision -- this command only tells you
-    how many would be worth it.
+    Nothing here writes to the ledger for any market. h2h is the only
+    market with a backfill mechanism at all (`closing-backfill`); spreads,
+    totals, and first_five stay dry-run numbers forever under this command
+    -- see grading.ledger_closing_coverage's module note.
     """
-    from src.pipeline import ledger, snapshots
+    from src.pipeline import grading, ledger
 
     entries = ledger.read()
     settled = ledger.settlements(entries)
-    recs_by_pk = {r.get("game_pk"): r for r in ledger.recommendations(entries)}
-    snapshot_series = snapshots.group_by_game(snapshots.read())
-
-    null_rows = [(pk, s) for pk, s in settled.items() if s.get("closing") is None]
-    if not null_rows:
-        print("no null-closing settlements on record.")
+    if not settled:
+        print("no settled games on record.")
         return EXIT_OK
 
-    derivable = 0
-    no_rec = 0
-    absent_reasons: dict = {}
-    for pk, _settlement in null_rows:
-        rec = recs_by_pk.get(pk)
-        if rec is None:
-            no_rec += 1
-            continue
-        closing, reason = _settlement_closing(rec, snapshot_series)
-        if closing is not None:
-            derivable += 1
-        else:
-            absent_reasons[reason] = absent_reasons.get(reason, 0) + 1
+    coverage = grading.ledger_closing_coverage(entries)
 
-    print(f"closing audit: {len(null_rows)} settlement(s) with closing=null")
-    print(f"  now derivable from the snapshot store : {derivable}")
-    print("  genuinely absent, by reason:")
-    for reason, count in sorted(absent_reasons.items(), key=lambda kv: -kv[1]):
-        print(f"    {count:>5}  {reason}")
-    if no_rec:
-        print(f"  no matching recommendation row found  : {no_rec}")
+    print(f"closing audit -- per-market coverage over {len(settled)} settled game(s)")
+    print(f"  {'market':<12}{'settled':>9}{'recorded':>10}{'derivable':>11}"
+          f"{'not derivable':>15}")
+    for market, c in coverage.items():
+        not_derivable = sum(c["not_derivable"].values())
+        print(f"  {market:<12}{c['settled']:>9}{c['with_closing']:>10}"
+              f"{c['derivable_not_recorded']:>11}{not_derivable:>15}")
+
+    print("\n  not derivable, by reason:")
+    for market, c in coverage.items():
+        if not c["not_derivable"]:
+            continue
+        print(f"    {market} (source: {c['source']}):")
+        for reason, count in sorted(c["not_derivable"].items(), key=lambda kv: -kv[1]):
+            print(f"      {count:>5}  {reason}")
     return EXIT_OK
 
 
@@ -1826,8 +1812,9 @@ def build_parser() -> argparse.ArgumentParser:
                             help="report what the ledger holds without settling")
 
     sub.add_parser("closing-audit",
-        help="read-only: how many null-closing settlements the snapshot "
-             "store can now explain (does not rewrite any ledger row)")
+        help="read-only: per-market closing coverage (h2h, spreads, "
+             "totals, first_five) over every settled game, backfill-aware "
+             "(does not rewrite any ledger row)")
 
     backfill_cmd = sub.add_parser("closing-backfill",
         help="append closing_backfill rows for null-closing settlements "

@@ -516,6 +516,100 @@ def _with_staleness(row) -> dict:
     return closing
 
 
+# ---------------------------------------------------------------------------
+# Market-aware close identification
+# ---------------------------------------------------------------------------
+#
+# WHY THIS EXTENDS closing_observation RATHER THAN CHANGING IT
+# --------------------------------------------------------------
+# closing_observation and group_by_game were ALREADY market-agnostic: neither
+# function reads anything but observed_utc, commence_time, and (for
+# staleness) book_last_update, and group_by_game's `market` parameter already
+# filters on whatever literal string a row's own `market` field carries. So
+# spreads and totals -- both captured into odds_snapshots.jsonl alongside
+# h2h by the exact same `capture()` call, same shape, same timing -- already
+# worked here with zero changes (see tests/test_pipeline_snapshots.py's
+# TestGrouping.test_filters_to_the_requested_market, unmodified by this
+# lane). What was missing was a name for "the market a caller means" versus
+# the literal key the store or the odds feed happens to use for it, and a
+# place to look up first-five closes at all: those live in an entirely
+# different store (f5_close.jsonl, see pipeline.dense._f5_close_pass) with a
+# different row shape (home_price/away_price are top-level fields, not
+# nested under `prices` -- see `_with_staleness`'s note that it never reads
+# `prices` at all, which is exactly why closing_observation already works on
+# either shape unmodified) and the ODDS FEED's own key for the market
+# (h2h_1st_5_innings) rather than this project's name for it (first_five,
+# matching pipeline.mismatch.MARKET_F5).
+#
+# closing_observation's and group_by_game's signatures and behaviour are
+# UNCHANGED by this section -- see tests/test_closing_markets.py's explicit
+# regression test -- so every existing caller (grading._closing_line_value,
+# grading._ledger_closing, cli._settlement_closing, cli._settlement_closing's
+# regression suite in tests/test_settlement_closing_join.py) keeps working
+# exactly as before, byte for byte.
+
+# data/processed/f5_close.jsonl's own path, duplicated from (rather than
+# imported from) pipeline.dense.F5_CLOSE_STORE: dense.py imports THIS module
+# for `_ends_ragged`, so importing back would be a real cycle, not just an
+# inconvenient one. Both name the same literal path; nothing here writes to
+# either store, only reads.
+DEFAULT_F5_CLOSE_PATH = processed_path("f5_close.jsonl")
+
+# This project's own market names -> the literal string each row's `market`
+# field carries in the store that captures it. h2h/spreads/totals all live
+# in odds_snapshots.jsonl under their own name already; first_five (this
+# project's name for it, matching pipeline.mismatch.MARKET_F5) lives in
+# f5_close.jsonl under the odds feed's own key for the same market.
+MARKET_STORE_KEY = {
+    "h2h": "h2h",
+    "spreads": "spreads",
+    "totals": "totals",
+    "first_five": "h2h_1st_5_innings",
+}
+
+
+def market_series_index(rows, market: str = "h2h") -> dict:
+    """`group_by_game`, keyed by this project's market name instead of
+    whatever literal string the store or the odds feed uses for it.
+
+    Raises on an unrecognized market rather than silently returning an
+    empty index -- an empty index looks identical to "this store holds
+    nothing for this market", and a caller's typo must not read as a real
+    coverage gap.
+    """
+    if market not in MARKET_STORE_KEY:
+        raise SnapshotError(
+            f"unknown market {market!r}; expected one of {sorted(MARKET_STORE_KEY)}")
+    return group_by_game(rows, market=MARKET_STORE_KEY[market])
+
+
+def market_closing_observation(series_index, away_team, home_team, commence_time):
+    """(observation, reason) for one game against an index `market_series_index`
+    already built. Same PIT rule `closing_observation` always uses -- the
+    last observation strictly before the scheduled first pitch -- applied to
+    whichever market that index was built for.
+
+    `reason` is set only when `observation` is None, and distinguishes two
+    different kinds of gap that a single null would otherwise collapse
+    together: `"not_captured"` means this market's store holds not one
+    observation of this game (the game was never on a board this store
+    watched -- often because the store was not yet running for its date, as
+    with f5_close.jsonl's first few weeks); `"no snapshot observed before
+    first pitch"` means it holds observations, but every one of them arrived
+    at or after the scheduled start, same as `closing_observation` reports
+    for h2h. A missed window stays missing either way -- this never
+    substitutes a nearby price for either kind of gap.
+    """
+    key = game_key(away_team, home_team, commence_time)
+    series = series_index.get(key)
+    if not series:
+        return None, "not_captured"
+    observation = closing_observation(series, commence_time)
+    if observation is None:
+        return None, "no snapshot observed before first pitch"
+    return observation, None
+
+
 def movement(series, side: str = "home_price") -> dict:
     """Opening price, closing price, and the drift between them for one side.
 

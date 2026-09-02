@@ -344,30 +344,90 @@ class TestIdempotenceAndNoMutation(unittest.TestCase):
 
 class TestMarketCoverage(unittest.TestCase):
     """Coverage is reported honestly, per market, never blended into one
-    number that would hide an uncovered market behind a covered one."""
+    number that would hide an uncovered market behind a covered one.
 
-    def test_coverage_grouped_by_recommendation_market(self):
+    L17 re-shaped this from "grouped by whatever the recommendation
+    happened to flag" (mostly None, since this system has so far only ever
+    flagged full-game or first-five bets) to the four markets a settlement
+    structurally supports grading against -- h2h, spreads, totals,
+    first_five -- each checked against every settled game regardless of
+    what was actually recommended for it. See grading.ledger_closing_coverage's
+    module note for why."""
+
+    def test_h2h_counts_original_and_backfill_as_recorded(self):
         real_closing = {"market": "h2h", "prices": {"home_price": -150, "away_price": 130}}
         entries = [
             recommendation(30, market=None), settlement(30, closing=real_closing),
             recommendation(31, market=None), settlement(31, closing=None),
-            recommendation(32, market="first_five"), settlement(32, closing=None),
         ]
         rows = [snapshot_row("2026-08-27T20:00:00+00:00")]
         backfilled = entries + grading.find_backfillable_closings(entries, rows)["to_append"]
 
-        coverage = grading.ledger_closing_coverage(backfilled)
+        coverage = grading.ledger_closing_coverage(backfilled, snapshot_rows=rows, f5_rows=[])
 
-        none_bucket = coverage["unspecified (no_play/market_unavailable)"]
-        self.assertEqual(none_bucket["settled"], 2)
-        self.assertEqual(none_bucket["with_closing"], 2)
-        self.assertEqual(none_bucket["from_original"], 1)
-        self.assertEqual(none_bucket["from_backfill"], 1)
+        h2h = coverage["h2h"]
+        self.assertEqual(h2h["settled"], 2)
+        self.assertEqual(h2h["with_closing"], 2)
+        self.assertEqual(h2h["from_original"], 1)
+        self.assertEqual(h2h["from_backfill"], 1)
+        self.assertEqual(h2h["derivable_not_recorded"], 0)
+        self.assertEqual(h2h["source"], "odds_snapshots")
 
-        f5_bucket = coverage["first_five"]
-        self.assertEqual(f5_bucket["settled"], 1)
-        self.assertEqual(f5_bucket["with_closing"], 1)
-        self.assertEqual(f5_bucket["from_backfill"], 1)
+    def test_spreads_and_totals_are_derivable_but_never_recorded(self):
+        # Same store, same timing as h2h -- but nothing has ever written a
+        # spreads or totals close to the ledger, so recorded stays 0 even
+        # though the close is right there in the store.
+        entries = [recommendation(33, market=None), settlement(33, closing=None)]
+        spreads_row = snapshot_row("2026-08-27T20:00:00+00:00")
+        spreads_row["market"] = "spreads"
+        spreads_row["prices"] = {"home_line": -1.5, "home_price": 120,
+                                 "away_line": 1.5, "away_price": -140}
+        totals_row = snapshot_row("2026-08-27T20:00:00+00:00")
+        totals_row["market"] = "totals"
+        totals_row["prices"] = {"total": 8.5, "over_price": -110, "under_price": -110}
+        rows = [snapshot_row("2026-08-27T20:00:00+00:00"), spreads_row, totals_row]
+
+        coverage = grading.ledger_closing_coverage(entries, snapshot_rows=rows, f5_rows=[])
+
+        for market in ("spreads", "totals"):
+            bucket = coverage[market]
+            self.assertEqual(bucket["settled"], 1)
+            self.assertEqual(bucket["with_closing"], 0)
+            self.assertEqual(bucket["from_original"], 0)
+            self.assertEqual(bucket["from_backfill"], 0)
+            self.assertEqual(bucket["derivable_not_recorded"], 1)
+            self.assertEqual(bucket["not_derivable"], {})
+            self.assertEqual(bucket["source"], "odds_snapshots")
+
+    def test_first_five_is_never_recorded_and_uses_the_f5_store(self):
+        entries = [recommendation(34, market="first_five"), settlement(34, closing=None)]
+        f5_row = {
+            "observed_utc": "2026-08-27T22:50:00Z", "commence_time": "2026-08-27T23:10:00Z",
+            "away_team": recommendation(34)["away_team"], "home_team": recommendation(34)["home_team"],
+            "market": "h2h_1st_5_innings", "book": "fanduel",
+            "book_last_update": "2026-08-27T22:49:00Z",
+            "home_price": -140, "away_price": 120,
+        }
+
+        coverage = grading.ledger_closing_coverage(entries, snapshot_rows=[], f5_rows=[f5_row])
+
+        f5 = coverage["first_five"]
+        self.assertEqual(f5["settled"], 1)
+        self.assertEqual(f5["with_closing"], 0)
+        self.assertEqual(f5["derivable_not_recorded"], 1)
+        self.assertEqual(f5["source"], "f5_close")
+
+    def test_not_captured_is_its_own_reason_bucket(self):
+        # No snapshot rows anywhere: every market for this settled game is
+        # genuinely uncaptured, not merely "captured too late".
+        entries = [recommendation(35, market=None), settlement(35, closing=None)]
+
+        coverage = grading.ledger_closing_coverage(entries, snapshot_rows=[], f5_rows=[])
+
+        for market in ("h2h", "spreads", "totals", "first_five"):
+            bucket = coverage[market]
+            self.assertEqual(bucket["derivable_not_recorded"], 0)
+            self.assertEqual(bucket["not_derivable"], {"not_captured": 1})
 
 
 if __name__ == "__main__":

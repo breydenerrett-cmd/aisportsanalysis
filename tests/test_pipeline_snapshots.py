@@ -525,5 +525,39 @@ class TestOfficialDateIdentity(unittest.TestCase):
         self.assertEqual(snapshots.official_date(None), "")
 
 
+class TestMarketAwareCloseUnchangedForH2H(unittest.TestCase):
+    """L17 added market_series_index/market_closing_observation for
+    spreads/totals/first_five (see tests/test_closing_markets.py for those).
+    This class proves the addition changed NOTHING about h2h: the same
+    fixture, run through the OLD path (group_by_game + closing_observation)
+    and the NEW path (market_series_index + market_closing_observation),
+    must agree exactly."""
+
+    def _series(self):
+        return [
+            observation("2026-08-27T12:00:00+00:00", home_price=-130),
+            observation("2026-08-27T22:00:00+00:00", home_price=-145),
+            observation("2026-08-27T22:55:00+00:00", home_price=-150),
+        ]
+
+    def test_market_series_index_h2h_equals_group_by_game_default(self):
+        rows = self._series()
+        self.assertEqual(snapshots.market_series_index(rows, market="h2h"),
+                         snapshots.group_by_game(rows))
+
+    def test_market_closing_observation_h2h_equals_closing_observation(self):
+        rows = self._series()
+        old = snapshots.closing_observation(snapshots.group_by_game(rows)[
+            snapshots.game_key("Houston Astros", "New York Yankees",
+                               "2026-08-27T23:05:00Z")])
+
+        index = snapshots.market_series_index(rows, market="h2h")
+        new, reason = snapshots.market_closing_observation(
+            index, "Houston Astros", "New York Yankees", "2026-08-27T23:05:00Z")
+
+        self.assertIsNone(reason)
+        self.assertEqual(new, old)
+
+
 if __name__ == "__main__":
     unittest.main()
