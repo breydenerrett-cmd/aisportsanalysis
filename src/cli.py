@@ -581,6 +581,57 @@ def cmd_closing_audit(args) -> int:
     return EXIT_OK
 
 
+def cmd_closing_backfill(args) -> int:
+    """Append `closing_backfill` rows for null-closing settlements the
+    fixed join (commit 65f499a) can now explain -- see
+    grading.find_backfillable_closings for the derivation rule (identical
+    to closing-audit's) and grading.read_backfills/effective_closing for
+    the append/idempotence and reader-preference rules.
+
+    Never rewrites or deletes a ledger row: --dry-run and a real run share
+    the exact same computation, so a dry run cannot claim something the
+    real run then fails to append, and a repeat real run appends 0 rows
+    (a settlement already covered by a valid backfill is skipped, not
+    re-derived).
+    """
+    from src.pipeline import grading, ledger, snapshots
+
+    entries = ledger.read()
+    result = grading.find_backfillable_closings(entries, snapshots.read())
+    checked = (len(result["derivable"]) + len(result["not_derivable"])
+              + len(result["no_recommendation"]))
+
+    print(f"closing backfill: {checked} null-closing settlement(s) checked "
+          f"({len(result['already_backfilled'])} already backfilled)")
+    print(f"  derivable      : {len(result['derivable'])}")
+    for row in result["derivable"]:
+        prices = (row["closing"].get("prices") or {})
+        print(f"    {row['game_pk']:>7}  {row['away_team']}@{row['home_team']} "
+              f"{row['date']}  away={prices.get('away_price')} "
+              f"home={prices.get('home_price')}")
+    print(f"  not derivable  : {len(result['not_derivable'])}")
+    for row in result["not_derivable"]:
+        print(f"    {row['game_pk']:>7}  {row['away_team']}@{row['home_team']} "
+              f"{row['date']}  reason={row['reason']}")
+    if result["no_recommendation"]:
+        print(f"  no matching recommendation row found  : "
+              f"{len(result['no_recommendation'])}")
+
+    if getattr(args, "dry_run", False):
+        print(f"\ndry run -- 0 appended (would append {len(result['to_append'])})")
+        return EXIT_OK
+
+    grading.append_ledger_rows(result["to_append"], ledger.DEFAULT_LEDGER)
+    print(f"\n{len(result['to_append'])} appended")
+
+    coverage = grading.ledger_closing_coverage(ledger.read())
+    print("\nclosing coverage by market (original + backfill / settled):")
+    for market, c in sorted(coverage.items(), key=lambda kv: str(kv[0])):
+        print(f"  {market:<40} {c['with_closing']:>4}/{c['settled']:<4}"
+              f"  (original {c['from_original']}, backfill {c['from_backfill']})")
+    return EXIT_OK
+
+
 def cmd_brief(args) -> int:
     """Build the slate briefing and write the dashboard."""
     from src.detect import detectors as detector_defs
@@ -1778,6 +1829,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="read-only: how many null-closing settlements the snapshot "
              "store can now explain (does not rewrite any ledger row)")
 
+    backfill_cmd = sub.add_parser("closing-backfill",
+        help="append closing_backfill rows for null-closing settlements "
+             "now derivable from the snapshot store (never rewrites a "
+             "ledger row; see closing-audit to preview without appending)")
+    backfill_cmd.add_argument("--dry-run", action="store_true",
+        help="list what would be appended without writing anything")
+
     brief_cmd = sub.add_parser("brief",
         help="build the slate briefing dashboard (static HTML, no server)")
     brief_cmd.add_argument("--date",
@@ -1908,6 +1966,7 @@ COMMANDS = {
     "archive": cmd_archive,
     "ledger": cmd_ledger,
     "closing-audit": cmd_closing_audit,
+    "closing-backfill": cmd_closing_backfill,
     "scan": cmd_scan,
     "scan-grade": cmd_scan_grade,
     "predict": cmd_predict,
