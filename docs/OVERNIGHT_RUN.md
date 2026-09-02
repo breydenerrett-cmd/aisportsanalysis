@@ -527,3 +527,12 @@ APP_ADMIN_TOKEN set. Session-container CLI deploys remain blocked
 (depot TLS via proxy; classic builder unauthorized for app tokens) —
 Actions is the deploy path. Next: Stripe test keys -> webhook at
 https://linehound-staging.fly.dev/billing/webhook -> dry-run purchase.
+
+## 2026-09-02 00:57Z build-loop tick
+- V2 capability reconciliation delivered and pushed (design/linehound-v2/
+  RECONCILED_CONTRACT_CURRENT_HEAD.md, d333a67); false commerce copy
+  (refund/one-click/instant-email) removed from pricing.js + landing.
+- V3 still gated: 28 measurable transaction events / 16 lineup vs the
+  30 floor. F5 review time-gated ~09-14. Queue items 4-5 await Brey.
+- Lane C started: adversarial functional QA worker attacking the rebuilt
+  frontend locally (routes, auth, free-check, contracts, honesty sweep).
