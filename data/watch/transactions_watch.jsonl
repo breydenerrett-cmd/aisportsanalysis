@@ -243,3 +243,9 @@
 {"fetched_utc": "2026-09-01T23:34:36.333239+00:00", "game_date": "2026-09-01", "poll": true}
 {"fetched_utc": "2026-09-01T23:49:39.346257+00:00", "game_date": "2026-09-01", "poll": true}
 {"fetched_utc": "2026-09-02T00:04:41.711169+00:00", "game_date": "2026-09-01", "poll": true}
+{"fetched_utc": "2026-09-02T00:16:20.682699+00:00", "game_date": "2026-09-01", "poll": true}
+{"category": "signed", "date": "2026-09-01", "first_seen_utc": "2026-09-02T00:16:20.682699+00:00", "player": "Charlie Muniz", "player_id": 689425, "team": "SF", "transaction_id": 940745}
+{"fetched_utc": "2026-09-02T00:16:23.154699+00:00", "game_date": "2026-09-01", "poll": true}
+{"fetched_utc": "2026-09-02T00:31:25.603827+00:00", "game_date": "2026-09-01", "poll": true}
+{"fetched_utc": "2026-09-02T00:46:29.181818+00:00", "game_date": "2026-09-01", "poll": true}
+{"fetched_utc": "2026-09-02T01:01:31.759413+00:00", "game_date": "2026-09-01", "poll": true}
