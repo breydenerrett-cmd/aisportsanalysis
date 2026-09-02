@@ -196,3 +196,15 @@ under `data/research/`/`evidence/`, and no `docs/ALPHA_REGISTRY_DESIGN.md`
 were edited by this migration — only read. `docs/RESEARCH_CATALOGUE.md`
 gained one pointer paragraph under "Counting the families"; nothing in that
 section's existing text was rewritten.
+
+## Post-migration note (2026-09-02, orchestrator)
+
+The V3 verdict row for `transaction_first_seen` records the FIRST read
+(ADDENDUM 1 in docs/RESEARCH_V3_TIMING.md). That read failed an
+adversarial methodology review the same day
+(docs/REVIEW_V3_FIRST_READ_2026-09-02.md): tested class broader than the
+registered class, primary statistic swapped for a boundary-pinned S(0),
+degenerate interval and p-value. The registry is append-only, so the row
+stays; a superseding verdict row is appended when the corrected read
+(ADDENDUM 2) passes a second review. Until then `total_searched` counts
+the V3 class as read, which is the conservative direction for spend.
