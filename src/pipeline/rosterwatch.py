@@ -392,6 +392,21 @@ def _transaction_events(path) -> list:
             # and the report must not report the two as the same failure.
             "team_recorded": "team" in row,
             "player": row.get("player"),
+            # The feed's own move-type bucket (mlb_news.classify: il_placement,
+            # il_activation, il_transfer, recalled, optioned, designated,
+            # traded, signed, rehab, other), copied through unchanged -- an
+            # additive field on the ephemeral event object, never a rewrite of
+            # the stored row. Consumed by
+            # src.research.timingtest.game_relevant, which the frozen
+            # `il_roster_move` class definition (RESEARCH_V3_TIMING.md:43,
+            # "IL placement/activation, trade, recall ... affecting the
+            # game") requires: this class as captured is "every transaction
+            # id first seen", a broader thing than what was frozen, and the
+            # category is what lets a reader narrow back to the frozen
+            # definition without touching a single stored row. None for the
+            # oldest rows written before `category` was captured (see
+            # TRANSACTION_FIELDS above) -- absence, not a guess.
+            "category": row.get("category"),
             "interval": (start, seen),
             # The first poll of a run sweeps up every transaction already
             # published, with no lower bound on when -- grade C, same as a

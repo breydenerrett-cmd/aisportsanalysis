@@ -84,10 +84,25 @@ to this class: event type (`umpire_crew_revealed`) · event timestamp
 interval (grade B) · source (`src.pipeline.umpirewatch`) · timestamp grade ·
 affected team · affected player (n/a for this class — an umpire crew has no
 "affected player" in the sense the roster classes do; recorded as null, not
-omitted) · pre-event relevance estimate (frozen rule, unchanged) · game
-start · books quoted immediately before the event · prices immediately
-before the event · all captured post-event prices with their capture
-timestamps.
+omitted) · pre-event relevance estimate · game start · books quoted
+immediately before the event · prices immediately before the event · all
+captured post-event prices with their capture timestamps.
+
+**Correction, 2026-09-02 (docs/RESEARCH_V3_TIMING.md ADDENDUM 2, recommended
+item 10):** "pre-event relevance estimate" was previously marked "(frozen
+rule, unchanged)" here, pointing at `docs/RESEARCH_V3_TIMING.md` line 56's
+identically-worded field. Neither document ever defined that rule, and no
+event in either class's store carries such a value — there is nothing to
+leave "unchanged." This is a stated gap in the per-event record, not a
+silently-dropped field.
+
+**The mechanism of interest, stated plainly:** this class measures the
+reveal of the full **4-person umpire crew** (`officials`, all four
+`officialType`s) becoming non-empty — not specifically the home-plate
+umpire. `home_plate_umpire` is recorded per event (extracted from the crew
+for readability) but is not itself the registered class, the timestamp
+source, or the mechanism this hypothesis tests; the event fires on the
+crew's reveal as a whole, whichever umpire ends up behind the plate.
 
 ## Primary hypothesis (same wording as every other class)
 
@@ -126,6 +141,18 @@ admitted `lineup_posted`, `starter_scratch`, `hitter_scratch`, and
 specifies; early deaths at p = 1.0; denominator recorded here at the moment
 of admission, per that document's own rule ("denominator = admitted class
 count recorded at freeze" — here, at amendment).
+
+**The rule, stated once (docs/RESEARCH_V3_TIMING.md ADDENDUM 2, correcting
+a prior 4-vs-5 disagreement between that document, this one, and the code):
+the denominator is monotone non-decreasing** — classes are admitted, never
+removed — **and any BH-FDR correction uses the denominator in force at the
+time that correction is actually computed**; a class admitted after an
+earlier read re-corrects the whole family, already-read p-values included,
+the next time the family-wide correction runs. `src/research/timingtest
+.FAMILY_ADMITTED_CLASSES` is the single place the code reads this number
+from (currently `5`, reflecting this amendment); this document and
+`docs/RESEARCH_V3_TIMING.md` must both read `5` and cite this same rule
+rather than each carrying their own copy of the number.
 
 ## The open question this class does NOT resolve
 

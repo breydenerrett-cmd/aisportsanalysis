@@ -303,6 +303,24 @@ class TestTransactions(WatchCase):
         self.assertEqual(by_id[703]["player"], "A Hitter")
         self.assertTrue(by_id[703]["team_recorded"])
 
+    def test_the_event_carries_the_stored_category_additively(self):
+        """docs/RESEARCH_V3_TIMING.md ADDENDUM 2's class-mismatch fix reads
+        this field (src.research.timingtest.game_relevant) -- it must reach
+        the ephemeral event object without any stored row being rewritten.
+        """
+        self.poll(transactions=[{"transaction_id": 704, "date": "2026-08-31",
+                                 "team": "CIN", "category": "il_placement"}])
+        event, = [e for e in rosterwatch.events(self.dir)
+                  if e["class"] == rosterwatch.TRANSACTION_SEEN]
+        self.assertEqual(event["category"], "il_placement")
+
+    def test_a_row_with_no_category_carries_none_not_a_guess(self):
+        self.poll(transactions=[{"transaction_id": 705, "date": "2026-08-31",
+                                 "team": "CIN"}])
+        event, = [e for e in rosterwatch.events(self.dir)
+                  if e["class"] == rosterwatch.TRANSACTION_SEEN]
+        self.assertIsNone(event["category"])
+
     def test_a_row_written_before_club_capture_is_not_silently_teamless(self):
         """Old rows are never rewritten; the event must confess, not pretend."""
         path = self.dir / rosterwatch.TRANSACTIONS_FILE
