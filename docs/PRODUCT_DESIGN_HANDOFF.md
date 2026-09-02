@@ -1,3 +1,5 @@
+> **SUPERSEDED (2026-09-02)** — see design/linehound-v2/LINEHOUND_V2_IMPLEMENTATION_HANDOFF.md §5
+
 # PRODUCT DESIGN HANDOFF
 
 **A customer-facing product, UX and brand specification for a sports-betting

@@ -63,6 +63,8 @@ returns approved artboards): Odds, My Bets, Signup, Auth/sign-in visual
 design. The interim #/signin is functional-only and is never graded
 PASS. Landing: accepted; only navigation/integration fixes allowed.
 
+> **SUPERSEDED (2026-09-02)** — see design/linehound-v2/LINEHOUND_V2_IMPLEMENTATION_HANDOFF.md §5
+
 ## Real-staging verification checklist (after visual PASS + deploy)
 
 In a real browser against https://linehound-staging.fly.dev, latest

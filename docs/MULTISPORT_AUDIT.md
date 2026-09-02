@@ -116,7 +116,7 @@ making them sport-aware is a template-selection problem, not a rewrite.
 
 ### `src/model/`
 
-`bullpen_grade.py` (STRUCTURAL — no non-baseball analogue), `dataset.py` and
+`bullpen_grade.py` (deleted 2026-09-02, zero importers), `dataset.py` and
 `selections.py` (PARAMETRIC — feature-name lists baked in but the row-shape
 and CV/selection machinery is generic), `rebuilt_sections.py` (STRUCTURAL —
 platoon/BvP point-in-time rebuild), `pointintime.py` (PARAMETRIC mechanism —

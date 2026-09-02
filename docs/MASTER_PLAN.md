@@ -134,7 +134,13 @@ adjudication — all exercised for real in Phase 2B.
 
 **Research results (the graveyard is an asset):** 4 families zero
 survivors; Elo-vs-close benchmark; M1–M5 market-structure nulls; V3
-timing OPEN_LIVE (28/30 events to first read); V6 ranking: zero
+timing OPEN_LIVE, per-class picture from `python3 -m src.cli timing`
+(2026-09-02, main checkout with all stores): transaction_first_seen past
+the 30-event floor at 56 measurable (165 admissible, first response table
+produced); lineup_posted below the floor at 29 measurable (69 admissible);
+hitter_scratch 3 of 30
+admitted, 0 measurable; starter_scratch 2 of 30 admitted, 0 measurable —
+no result is read below the floor on any class; V6 ranking: zero
 unconditional candidates, C1 (pitcher-K props priced before lineups)
 strongest conditional, C2 (F5 derivation error) second; 73 ideas
 classified in docs/RESEARCH_CATALOGUE.md so nothing dead returns as new.
@@ -729,16 +735,20 @@ requires the owner queue below. Weekly: a one-screen progress digest
 
 ## 33. MINIMAL OWNER DECISION QUEUE
 
-1. **Approve this master plan + authorize Phase 1** (foundations +
+1. **Activate live Stripe billing** (bank/identity info) so a first real
+   paying customer is possible — independent of every research gate.
+   Everything below is research-plane; this one blocks revenue by
+   itself.
+2. **Approve this master plan + authorize Phase 1** (foundations +
    capture expansion + learnability audit).
-2. **Set the monthly budget envelope**: proposed ceiling $100/mo
+3. **Set the monthly budget envelope**: proposed ceiling $100/mo
    infra+LLM until Phase 2 evidence, plus ~540 credits/mo props
    capture from the existing balance. One number to approve or change.
-3. **Sign the prop-collection policy amendment** (one line, already
+4. **Sign the prop-collection policy amendment** (one line, already
    drafted in docs/PROBE_PROP_LISTING.md §6 / COLLECTION_POLICY.md).
-4. **Postseason/spring admissibility ruling** (existing item, needed
+5. **Postseason/spring admissibility ruling** (existing item, needed
    before 2026-09-29).
-5. **(Later, flagged now)** Engage counsel before any Stage-3 public
+6. **(Later, flagged now)** Engage counsel before any Stage-3 public
    picks marketing. No action needed today.
 
 Everything else in this document is pre-delegated.
@@ -833,19 +843,30 @@ removed behind the §25 readiness gate).
 
 ### C.1 Exact scope (8 builds; research-plane only)
 
-1. **Research mirror** — DuckDB/Parquet mirror of all capture stores +
-   a decision-time index (game × instant × market × book × information
-   state). JSONL stays the append-only capture format; analysis reads
-   the mirror. Parity checks (row counts + checksums) pin mirror truth.
-2. **Entry-vs-close spine** — per-market close identification from our
-   own snapshot cadence (with an honest "close not identifiable"
-   verdict per market), entry-vs-close computation library, wired into
-   the forward ledger and available as ONE Evolab fitness dimension.
-3. **Global hypothesis registry** — every hypothesis/genome ever
-   evaluated, with alpha-spend accounting and semantic-similarity
-   hashing v0; migration of the four families, Phase 2B's 8,811
-   genomes, and the catalogue's 73 entries. Output: the first honest
-   answer to "how hard have we already searched."
+1. **Research mirror — DEFERRED past Phase 1.** DuckDB/Parquet mirror of
+   all capture stores + a decision-time index (game × instant × market ×
+   book × information state) was scoped here but is not justified yet:
+   `data/` is ≈284MB total (`du -sh data/`, 2026-09-02), and Phase 2B's
+   8,811-genome sweep ran directly against the JSONL stores with no
+   performance complaint.
+   Revisit only if a future sweep's wall-clock time actually becomes the
+   bottleneck.
+2. **Entry-vs-close spine** — extend the existing h2h close
+   identification already shipped in `src/pipeline/snapshots.py`
+   (`closing_observation` / `closing_line_value`) to spreads, totals and
+   F5, with an honest "close not identifiable" verdict per market where
+   coverage doesn't support one; add a per-market close-coverage-rate
+   metric (see C.4); wire into the forward ledger and make available as
+   ONE Evolab fitness dimension.
+3. **Global hypothesis registry (`src/research/alpha_registry.py`)** —
+   every hypothesis/genome ever evaluated, with alpha-spend accounting
+   and semantic-similarity hashing v0; migration of the four families,
+   Phase 2B's 8,811 genomes, and the catalogue's 73 entries. Output: the
+   first honest answer to "how hard have we already searched." Distinct
+   from `src/evolab/registry.py`, which is a per-feature SIGN
+   pre-registration store (freezes direction before a genome may use a
+   feature) — this new registry instead logs every hypothesis/genome
+   ever run, for alpha-spend accounting across the whole program.
 4. **Calibration harness** — reliability curves, Brier/log-loss vs the
    market's own price, rating-band monotonicity checks; runs against
    paper outputs only.
@@ -913,6 +934,10 @@ digest to Brey.
 - Mirror parity (counts + checksums) proven by test; ledger hash-chain
   verified by test; registry migration reconciled against the
   catalogue's documented denominators.
+- The entry-vs-close spine's close-coverage rate (share of events with an
+  identifiable close, versus an honest "close not identifiable" verdict)
+  is reported per market (h2h, spreads, totals, F5) — not as one pooled
+  number.
 - Zero customer-facing changes; zero new research families registered;
   credit burn within envelope.
 

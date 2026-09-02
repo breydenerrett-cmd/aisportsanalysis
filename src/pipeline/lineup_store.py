@@ -117,7 +117,8 @@ def read(path=DEFAULT_STORE) -> dict:
     Keys are str, not the int JSON preserved from the schedule: the results
     store round-trips game_pk through CSV, so its keys come back as str, and a
     join between the two stores must agree on type or it silently matches
-    nothing (the mismatch pattern that broke bullpen_grade).
+    nothing (this exact str/int mismatch once silently broke a since-deleted
+    bullpen-grading module -- it always found zero matches and nobody noticed).
     """
     return {str(row["game_pk"]): row for row in _read_rows(path)
             if not row.get("empty") and row.get("game_pk")}

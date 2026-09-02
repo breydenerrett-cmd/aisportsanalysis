@@ -1,3 +1,5 @@
+> **SUPERSEDED (2026-09-02)** — see design/linehound-v2/LINEHOUND_V2_IMPLEMENTATION_HANDOFF.md §5
+
 # Design request — Track 2 screens (for the Claude Design session)
 
 2026-09-01. The forensic audit of the frozen v1 handoff confirmed the

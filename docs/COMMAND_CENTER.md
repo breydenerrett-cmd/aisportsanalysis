@@ -1,7 +1,8 @@
 # COMMAND CENTER
 
 Operational snapshot. Updated by the orchestrator at every integration point.
-Last update: 2026-08-31 22:30Z. Suite: 2,201 green. Credits: ~52,990.
+Last update: 2026-09-02 19:16Z. Suite: 2,960 green (single-threaded, ~20 min
+full run). Credits: ~52,990.
 
 ## PAID BETA LAUNCH SCOREBOARD (day 0 = 2026-08-31)
 TARGET: private alpha ~4-7d · invited alpha ~7-12d · PAID BETA ~10-18d · public V1 ~3-5wk
@@ -13,21 +14,25 @@ dependency install through the egress proxy (unverified -- foundation worker
 probes it today, stdlib fallback documented).
 
 ### PAID_BETA_CRITICAL_PATH (canonical; nothing enters casually)
-DONE: A capability reconciliation · pricing-calculator review (calculator
-respecified honestly) · extraction (renderer derives nothing) · Bet Check
-domain skeleton.
-DONE 22:30Z: B contracts LOCKED (Milestone 1) · C implementation plan ·
-api/ foundation (FastAPI CONFIRMED through proxy -- slip risk 3 RETIRED) ·
-LAUNCH_DECISIONS.md packet ready for Brey · Y banned-language tripwire live
-(caught three wordings on day one, all fixed).
-IN PROGRESS: D /design first artboard pass (three Graphite Terminal
-directions) -- THE CRITICAL PATH IS NOW THE DESIGN GATE. Phase 2B real sweep
-computing (watcher armed).
-GATED ON DESIGN: D /design three directions -> E Brey approval -> F design
-system -> G-M customer screens.
-THEN: N auth · O user state · P billing · Q one-click cancel · R deploy ·
-S monitoring · T mobile · U stale/partial UX · V security review ·
-W accessibility · X billing QA · Z release check.
+DONE: capability reconciliation · contracts locked · api/ foundation ·
+Bet Check domain logic · V1 frontend implemented and canvas-first rebuilt
+(2947aa8 -- Gameday, Bet Check, Game views, shell -- VISUAL PASS at 1440
+and 390) · staging live since 2026-09-01
+(https://linehound-staging.fly.dev) · free checks (POST /betcheck/free,
+3 lifetime) + period-end subscription entitlement (073783d) + Stripe TEST
+signup/checkout/cancel/reactivate all confirmed live on staging
+(6348590) · V2 design frozen at 34f181d (35 artboards, Tier A/B rating,
+no-play as the primary designed state, grounded in
+design/linehound-v2/RECONCILED_CONTRACT_CURRENT_HEAD.md).
+IN PROGRESS: V2 implementation, started 2026-09-02 with the Odds screen
+(richest surface, contract-tested against docs/API_CONTRACTS.md).
+GATED ON: V2 implementation finishing per screen (Gameday, Game Quick/
+Advanced, Bet Check, My Bets, Signup/Access) -> Brey visual re-approval
+per screen -> release.
+THEN: live Stripe billing activation (owner decision independent of
+every research gate -- see docs/MASTER_PLAN.md §33 item 1) · mobile
+polish · monitoring hardening · accessibility pass · billing QA ·
+release check.
 NOT ON THE PATH (deferred to V1+): props UI, other sports, native app,
 community, sportsbook sync, Evolution Lab UI, public forward ledger, deep
 personalization, full alerts, SEO/content build.
@@ -44,6 +49,23 @@ personalization, full alerts, SEO/content build.
    moment contracts lock.
 
 ## PHASE LOG
+
+- 2026-09-02 19:16Z: Living-status docs trued up to HEAD (this pass).
+  `src/model/bullpen_grade.py` deleted (zero importers repo-wide);
+  `docs/CAPABILITY_RECONCILIATION.md`'s two false REAL-TODAY bullpen
+  claims fixed and the doc marked SUPERSEDED (see
+  design/linehound-v2/RECONCILED_CONTRACT_CURRENT_HEAD.md). SUPERSEDED
+  banners added to docs/PRODUCT_DESIGN_HANDOFF.md,
+  design/linehound-v1/DESIGN_REQUEST_TRACK2.md, and the sign-in line in
+  docs/VISUAL_ACCEPTANCE_TRACK1.md per
+  design/linehound-v2/LINEHOUND_V2_IMPLEMENTATION_HANDOFF.md §5. This
+  header/critical-path/NEEDS BREY rewrite reflects: staging live since
+  2026-09-01, V1 canvas-first rebuild VISUAL PASS (2947aa8), V2 design
+  frozen (34f181d), free checks + entitlement + Stripe TEST confirmed
+  live (6348590), V2 implementation started 2026-09-02 with the Odds
+  screen. docs/RESUME.md and docs/MASTER_PLAN.md also corrected in the
+  same pass (F5-close/forward-ledger counts, V3 per-class timing
+  picture, §33 owner queue, Appendix C.1 items 1-3).
 
 - 2026-09-01 03:50: STAGING LIVE at https://linehound-staging.fly.dev
   (Actions deploy after Brey added FLY_API_TOKEN; remote smoke all-PASS;
@@ -209,10 +231,9 @@ customer visual implementation; research and backend continue.
 - Forward ledger 300+ selections — months
 
 ## NEEDS BREY (decision queue)
-| decision | options | recommendation | continues without it |
-|---|---|---|---|
-| none currently open | — | — | everything |
-(Cleared today: 2024 sandbox ✓, prop audit ✓, F5 cap 8 ✓, news-speed rejection ✓.)
+Single owner-decision queue lives in docs/MASTER_PLAN.md §33 (MINIMAL OWNER
+DECISION QUEUE) — this file no longer keeps its own copy. Item 1 there
+(activate live Stripe billing) is the one on this critical path.
 
 ## SHIPPED TODAY (2026-08-31)
 Forward-evidence rescue (gitignored odds stores; tracked now) · F5 close pass

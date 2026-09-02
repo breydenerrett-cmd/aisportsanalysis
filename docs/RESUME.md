@@ -20,10 +20,13 @@ conditions plus Brey's sign-off; a test enforces the gate).
   log-loss/game (p=0.0003) — the yardstick for any data acquisition.
 - Live research lanes: **V3 information timing** (frozen prereg in
   docs/RESEARCH_V3_TIMING.md; grade-B events accumulating; class floor 30;
-  check `python3 -m src.cli timing`; as of 2026-08-31 events accumulate but
-  are NOT yet measurable — repair in flight) and **market depth** (F5 closes:
-  data/processed/f5_close.jsonl DOES NOT EXIST; the close pass has produced
-  nothing and is under repair — do not cite it as accumulating).
+  check `python3 -m src.cli timing`; see docs/MASTER_PLAN.md §3 for the
+  current per-class picture, one class past the measurable floor, the rest
+  still accumulating) and **market depth** (F5 closes:
+  data/processed/f5_close.jsonl exists and is accumulating, 264 rows as of
+  2026-09-02). Forward ledger: evidence/forward_ledger.jsonl has 217 rows as
+  of 2026-09-02 (144 recommendation + 73 settlement entries), append-only
+  since forward tracking began.
 - Falsification battery RULES_VERSION 2.0.0, frozen at the adjudicated
   validation gate (docs/VALIDATION_GATE.md).
 
