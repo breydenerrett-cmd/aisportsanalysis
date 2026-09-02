@@ -38,6 +38,23 @@ data/app/*
 !data/processed/f5_close.jsonl
 !data/processed/prop_listing.jsonl
 
+# PAID HISTORICAL ODDS ARCHIVE IS NOT GENERATED DATA -- tracked deliberately,
+# same reasoning as the forward-capture block above. data/historical/*
+# above ignores data/historical/odds_history/ and data/historical/
+# odds_first_five/ because on the day that rule was written everything
+# under data/historical/ was assumed reproducible. It is not: both are a
+# one-time PAID purchase from the odds provider, and this project runs on
+# ephemeral containers whose disks are reclaimed -- there is no "re-fetch
+# it tomorrow" for data that was bought, not pulled. scripts/
+# archive_historical.sh gzips that purchase (JSONL compresses ~18x) into
+# data/archive/historical/, and these negations keep that archive tracked
+# even if a future edit here adds a broader data/* or data/archive/* rule
+# without noticing what it would sweep up -- the exact way the forward
+# captures were lost the first time.
+!data/archive/
+!data/archive/historical/
+!data/archive/historical/**
+
 # Python
 __pycache__/
 *.py[cod]
