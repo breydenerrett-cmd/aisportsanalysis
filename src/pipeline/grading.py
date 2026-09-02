@@ -252,13 +252,18 @@ def _index_snapshots(snapshot_rows) -> dict:
 
     Deliberately NOT keyed by date, because the date is exactly what disagrees
     between the two sources.
+
+    `snapshots.game_key` (via `group_by_game`) already canonicalizes both team
+    fields to this project's abbreviations -- it has to, to bucket the odds
+    feed's full club names ('St. Louis Cardinals') together with anything
+    keyed by abbreviation. So the away/home slots of `key` below are already
+    resolved; this function no longer runs its own second pass over them.
     """
     index = {}
     if not snapshot_rows:
         return index
     for key, series in snapshots.group_by_game(snapshot_rows).items():
-        away_name, home_name, day = key
-        away, home = _abbrev(away_name), _abbrev(home_name)
+        away, home, day = key
         if away and home:
             index.setdefault((away, home), []).append((day, series))
     return index
@@ -292,16 +297,6 @@ def _find_series(index, away, home, game_date):
         if gap <= MAX_DATE_OFFSET_DAYS and (best_gap is None or gap < best_gap):
             best, best_gap = series, gap
     return best
-
-
-def _abbrev(club_name):
-    """Resolve an odds-feed club name to this project's canonical abbreviation.
-
-    Reuses the single resolver in slate rather than adding a second mapping. Two
-    mappings that agree today drift apart later, and the failure is silent.
-    """
-    from src.pipeline import slate
-    return slate.team_abbrev_from_name(club_name)
 
 
 # ---------------------------------------------------------------------------

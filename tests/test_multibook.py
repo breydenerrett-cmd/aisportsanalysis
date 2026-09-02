@@ -148,7 +148,11 @@ class TestLegacyStoreUntouched(unittest.TestCase):
             fixed = datetime(2026, 8, 30, 14, 30, tzinfo=timezone.utc)
             path, _ = _capture(tmp, payload(), now=fixed)
             grouped = snapshots.group_by_game(snapshots.read(path))
-        key = ("Houston Astros", "New York Yankees", "2026-08-30")
+        # group_by_game keys on the canonical abbreviation, not the odds
+        # feed's own club-name spelling ("Houston Astros") -- see
+        # snapshots.game_key. That canonicalization is what lets this same
+        # store join against the ledger's abbreviated recommendation rows.
+        key = ("HOU", "NYY", "2026-08-30")
         self.assertIn(key, grouped)
         self.assertIsNotNone(snapshots.closing_observation(grouped[key]))
 
@@ -323,13 +327,21 @@ class TestSettlementClosing(unittest.TestCase):
         self.dir.cleanup()
 
     def _rec(self):
-        return {"away_team": "Houston Astros", "home_team": "New York Yankees",
+        # Ledger recommendation rows carry this project's abbreviations, not
+        # the odds feed's club names -- see snapshots.game_key. Using the
+        # abbreviated shape here is what makes this class a regression test
+        # for the join, not just for closing-observation arithmetic.
+        return {"away_team": "HOU", "home_team": "NYY",
                 "commence_time": "2026-08-30T23:05:00Z"}
 
     def _series(self, observed="2026-08-30T22:50:00+00:00"):
-        return {("Houston Astros", "New York Yankees", "2026-08-30"): [{
+        # Keyed the way snapshots.group_by_game actually keys a real series:
+        # by canonical abbreviation, even though capture recorded the odds
+        # feed's full club names in the rows themselves.
+        return {("HOU", "NYY", "2026-08-30"): [{
             "observed_utc": observed, "market": "h2h", "book": "fanduel",
             "commence_time": "2026-08-30T23:05:00Z",
+            "away_team": "Houston Astros", "home_team": "New York Yankees",
             "book_last_update": observed,
             "prices": {"home_price": -170, "away_price": 145},
         }]}
@@ -347,7 +359,7 @@ class TestSettlementClosing(unittest.TestCase):
 
     def test_the_settlement_row_carries_how_stale_the_close_was(self):
         series = self._series()
-        key = ("Houston Astros", "New York Yankees", "2026-08-30")
+        key = ("HOU", "NYY", "2026-08-30")
         series[key][0]["book_last_update"] = "2026-08-30T21:40:00+00:00"
         closing, reason = cli._settlement_closing(self._rec(), series)
         self.assertTrue(closing["book_stale"])
@@ -359,7 +371,7 @@ class TestSettlementClosing(unittest.TestCase):
 
     def test_a_close_with_no_book_stamp_reports_unknown_staleness(self):
         series = self._series()
-        key = ("Houston Astros", "New York Yankees", "2026-08-30")
+        key = ("HOU", "NYY", "2026-08-30")
         series[key][0]["book_last_update"] = None
         closing, _ = cli._settlement_closing(self._rec(), series)
         self.assertIsNone(closing["book_stale_seconds"])

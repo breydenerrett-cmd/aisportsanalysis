@@ -266,8 +266,57 @@ def game_key(away_team, home_team, commence_time) -> tuple:
     itself was never snapshotted -- is Saturday's closing price for a different
     game, written onto the evidence row as though it were Sunday's close. This
     module's whole promise is that a missing close stays missing.
+
+    The team fields are canonicalized (see `_canonical_club`) because this
+    store and its callers do not agree on team-name SHAPE: `capture` writes
+    the odds feed's full club names ('St. Louis Cardinals'), while the
+    betting ledger's recommendation rows carry this project's abbreviations
+    ('STL'). Comparing those literally never matches, which is why every
+    settlement's `closing` field was coming back null even for games with
+    thousands of recorded snapshot rows -- the join was failing silently, not
+    the data being absent. Canonicalizing both sides here, once, is cheaper
+    than teaching every caller to pre-normalize its own team fields.
     """
-    return (away_team, home_team, official_date(commence_time))
+    return (_canonical_club(away_team), _canonical_club(home_team),
+            official_date(commence_time))
+
+
+def _canonical_club(name):
+    """One team field, resolved to this project's canonical abbreviation.
+
+    Two DIFFERENT shapes reach this function depending on the caller: the
+    odds feed's full club name ('St. Louis Cardinals'), or this project's own
+    abbreviation, sometimes in an alternate spelling ('AZ' for Arizona, 'ATH'
+    for the Athletics). Resolution is two-step and reuses the same pair of
+    resolvers `pipeline.grading` already relies on for this identical join
+    (see `grading._find_series`), rather than adding a second team-name
+    mapping that could drift out of sync with theirs:
+
+      1. `slate.team_abbrev_from_name` -- the only resolver that recognizes a
+         full club name. Returns None for anything else (already an
+         abbreviation, or unrecognized).
+      2. `parks.canonical_team` -- folds abbreviation spelling variants onto
+         one key. Applied to step 1's result when it matched, otherwise to
+         the input as given.
+
+    A name neither step recognizes is returned UPPERCASED rather than as
+    None: two different unrecognized inputs must stay distinguishable (a
+    shared None would silently fold two unrelated, unmatched games into the
+    same bucket), and an uppercased garbage string will never equal a real
+    team's abbreviation, so it simply never joins to anything. Unknown stays
+    unmatched, never mismatched -- this module's whole promise.
+
+    Imports are local: `slate` does not import `snapshots`, so this is not a
+    real cycle, but keeping the edge out of the module-level import list
+    keeps that true on purpose rather than by accident.
+    """
+    if not isinstance(name, str) or not name.strip():
+        return name
+    from src.data.parks import canonical_team
+    from src.pipeline import slate
+
+    abbrev = slate.team_abbrev_from_name(name)
+    return canonical_team(abbrev) if abbrev else canonical_team(name)
 
 
 def official_date(commence_time) -> str:

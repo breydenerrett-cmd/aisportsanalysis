@@ -509,6 +509,67 @@ def _settlement_closing(rec, snapshot_series):
     }, None
 
 
+def cmd_closing_audit(args) -> int:
+    """Read-only: how many null-closing settlements can be explained today.
+
+    A settlement's `closing` field is written once and never rewritten --
+    settlements are evidence, see `ledger.settle`. So when the join that
+    computes it was broken (see `snapshots._canonical_club`), the fix cannot
+    repair a single row already on disk; it can only be MEASURED by
+    re-running the same read-only lookup against the same immutable snapshot
+    store and reporting what it finds now.
+
+    Every null-closing settlement is re-checked and sorted into:
+      * derivable   -- the snapshot store DOES hold a usable close for this
+        game; the row's null was the join bug, not a data gap.
+      * absent, by reason -- `_settlement_closing`'s own reason string, e.g.
+        "no snapshots recorded for this game" (nothing was ever captured
+        for it) vs "no snapshot observed before first pitch" (something was
+        captured, but not early enough to count as a close).
+      * no matching recommendation row -- the settlement's game_pk has no
+        recommendation on record, so there is no away/home/commence_time to
+        look up with. Reported rather than silently skipped.
+
+    Nothing here writes to the ledger. Re-settling old rows with a corrected
+    close is a separate, deliberate decision -- this command only tells you
+    how many would be worth it.
+    """
+    from src.pipeline import ledger, snapshots
+
+    entries = ledger.read()
+    settled = ledger.settlements(entries)
+    recs_by_pk = {r.get("game_pk"): r for r in ledger.recommendations(entries)}
+    snapshot_series = snapshots.group_by_game(snapshots.read())
+
+    null_rows = [(pk, s) for pk, s in settled.items() if s.get("closing") is None]
+    if not null_rows:
+        print("no null-closing settlements on record.")
+        return EXIT_OK
+
+    derivable = 0
+    no_rec = 0
+    absent_reasons: dict = {}
+    for pk, _settlement in null_rows:
+        rec = recs_by_pk.get(pk)
+        if rec is None:
+            no_rec += 1
+            continue
+        closing, reason = _settlement_closing(rec, snapshot_series)
+        if closing is not None:
+            derivable += 1
+        else:
+            absent_reasons[reason] = absent_reasons.get(reason, 0) + 1
+
+    print(f"closing audit: {len(null_rows)} settlement(s) with closing=null")
+    print(f"  now derivable from the snapshot store : {derivable}")
+    print("  genuinely absent, by reason:")
+    for reason, count in sorted(absent_reasons.items(), key=lambda kv: -kv[1]):
+        print(f"    {count:>5}  {reason}")
+    if no_rec:
+        print(f"  no matching recommendation row found  : {no_rec}")
+    return EXIT_OK
+
+
 def cmd_brief(args) -> int:
     """Build the slate briefing and write the dashboard."""
     from src.detect import detectors as detector_defs
@@ -1658,6 +1719,10 @@ def build_parser() -> argparse.ArgumentParser:
     ledger_cmd.add_argument("--status", action="store_true",
                             help="report what the ledger holds without settling")
 
+    sub.add_parser("closing-audit",
+        help="read-only: how many null-closing settlements the snapshot "
+             "store can now explain (does not rewrite any ledger row)")
+
     brief_cmd = sub.add_parser("brief",
         help="build the slate briefing dashboard (static HTML, no server)")
     brief_cmd.add_argument("--date",
@@ -1776,6 +1841,7 @@ COMMANDS = {
     "analyze": cmd_analyze,
     "archive": cmd_archive,
     "ledger": cmd_ledger,
+    "closing-audit": cmd_closing_audit,
     "scan": cmd_scan,
     "scan-grade": cmd_scan_grade,
     "predict": cmd_predict,
