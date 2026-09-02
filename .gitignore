@@ -58,3 +58,6 @@ Thumbs.db
 # survive any later refactor. Dated briefings are regenerable and are not.
 artifacts/briefing.html
 artifacts/analyze_*.html
+
+# Agent worktrees created by the orchestration harness -- never repository content.
+.claude/worktrees/
