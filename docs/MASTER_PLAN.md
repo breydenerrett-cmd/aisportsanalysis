@@ -27,21 +27,28 @@ machinery at markets where the same tests do NOT return null, and our
 strongest conditional candidates (pitcher-prop timing, F5 derivation
 error, information timing) already point there.
 
-**2. The fastest honest currency of skill is beating the close, not
-winning bets.** A strategy's win/loss record needs 1,000+ bets to
-separate skill from luck; whether its entry prices systematically beat
-the closing price separates them in ~10x fewer observations, because
-price-vs-close variance is far smaller than outcome variance and the
-close is the sharpest public estimate of the truth (our Elo benchmark
-proved that yardstick works). Closing-price comparison becomes the
-primary promotion metric; profit is the final judge but never the first
-filter. This single change is the answer to "the machine must not reward
-luck": a 14-5 run with entries WORSE than close is luck by construction;
-an 8-11 run with entries consistently better than close is a candidate.
-(Terminology note: this is the standard closing-line-value concept. Our
+**2. Entry-vs-close is the fastest honest EARLY signal — one dimension
+of a multi-dimensional evidence standard, not the definition of skill.**
+A strategy's win/loss record needs 1,000+ bets to separate skill from
+luck; whether its entry prices systematically beat the closing price
+separates them in ~10x fewer observations, because price-vs-close
+variance is far smaller than outcome variance and (in MLB h2h, measured)
+the close is the sharpest public estimate of the truth. So entry-vs-
+close serves as a high-value EARLY FILTER and decay DIAGNOSTIC wherever
+reliable close capture exists — a 14-5 run with entries worse than close
+is presumptively luck; an 8-11 run with entries consistently better is
+a candidate worth the full evaluation. But the objective is better real
+betting outcomes, not predicting market movement: promotion is decided
+by the multi-dimensional standard in §27 (calibration, out-of-sample
+and forward predictive performance, realized returns at the captured
+entry price, stability, drawdown, sample strength, falsification
+survival — with per-market weights), and a strategy that beats the
+close without translating into predictive/betting performance does not
+become champion. Markets without reliable close capture remain fully
+researchable under the outcome-based dimensions. (Terminology note: our
 standing rule that the late_move detector must never be CALLED CLV is
-about a mislabeled detector and stands; the metric itself, computed
-properly as entry-price-vs-close, is legitimate and central.)
+about a mislabeled detector and stands; entry-vs-close computed
+properly is a legitimate diagnostic.)
 
 **3. The moat is time-stamped forward data that cannot be bought
 retroactively.** Nobody sells historically-honest "what was the prop
@@ -213,8 +220,9 @@ hypothesis generation.
 1. **Research mirror**: DuckDB/Parquet mirror of all stores + a
    decision-time index (every game × capture-instant × market ×
    information state). Millions-row joins in seconds on one box.
-2. **CLV spine**: entry-vs-close computation for every market we
-   capture, wired into ledger, Evolab fitness, and promotion rules.
+2. **Entry-vs-close spine**: close identification + entry-vs-close
+   computation for every market whose capture supports it, wired into
+   the ledger, Evolab fitness (one dimension), and the §27 standard.
 3. **Capture expansion**: pitcher-prop prices (~18 cr/day, gated on the
    drafted policy amendment), weather forecasts (free/cheap), listing
    times, alternate lines listing. All forward, all timestamped.
@@ -253,8 +261,6 @@ hypothesis generation.
   calibration and CLV accumulate toward the picks gates.
 - **Continuous monitors**: decay/demotion rules pre-declared at
   promotion; regime dashboards; auto-alerts.
-- **NBA data spike** (read-only research of feeds/costs) to price
-  expansion before building it.
 - **Compute**: one large VM + burst batch for sweeps; managed Postgres
   for app when customer load justifies.
 
@@ -337,6 +343,17 @@ which our four families and Phase 2B place at the bottom. The audit
 either confirms or embarrasses those priors; either way we learn where
 to dig. REQUIRES: prop price capture (policy amendment) for the prop
 rows; everything else runs on data in hand.
+
+**The full-game moneyline lane is CURRENTLY LOW RESEARCH PRIORITY /
+STRONG NULL EVIDENCE — not permanently dead.** It stays in the audit
+permanently as: the efficiency benchmark every other market is measured
+against; the calibration benchmark (the close's log-loss is the bar);
+the comparison market for cross-market claims; and the standing test
+bed whenever a GENUINELY NEW feature family lands (new data that did
+not exist in the four dead families re-opens the question at benchmark
+cost, automatically). Allocation is evidence-driven in both directions:
+the null moved resources away, and only new information moves them
+back.
 
 ## 13. STRATEGY DISCOVERY / EVOLUTION SYSTEM
 
@@ -548,12 +565,24 @@ billing. Packs (per sport): providers, feature builders, PIT rules,
 market list, models, domain detectors, vocabulary. The MULTISPORT_AUDIT
 already classifies src/ along exactly this line (STRUCTURAL vs
 PARAMETRIC vs INCIDENTAL) — the refactor happens opportunistically as
-the 10x work touches files, not as a big bang. Order: **MLB proves the
-full loop → NBA** (props-dense, data-rich, high volume, the classic
-soft-market complement; spike first) **→ NFL** (huge demand, tiny
-samples — enters with humility as a price/analysis product before a
-model product). Tennis/others priced later. Entry gate per sport: the
-capture cost model + a learnability pre-audit on purchasable data.
+the 10x work touches files, not as a big bang. **MLB is the laboratory
+until the platform-readiness gate passes; architect for multi-sport
+from the start, build sport 2 only after MLB proves the machine.**
+
+**Sport-expansion readiness gate (ALL required):** (1) global registry
++ alpha ledger operating; (2) PIT experiment framework proven on ≥2
+MLB markets beyond h2h; (3) learnability audit running as a standing
+process; (4) strategy-population infrastructure (Evolab v2) in
+continuous operation; (5) calibration harness live; (6) recommendation
+ledger exercised by ≥60 days of paper picks; (7) at least one MLB
+market has traversed the COMPLETE lifecycle (registration → validation
+→ forward monitoring → promotion or documented death); (8) a capture
+cost model + learnability pre-audit priced for the candidate sport.
+Only then: **NBA first** (props-dense, data-rich, the classic
+soft-market complement), **then NFL** (huge demand, tiny samples —
+enters as a price/analysis product before a model product).
+Tennis/others priced later. MLB-first is not MLB-forever; the gate,
+not the calendar, opens the door.
 
 ## 26. MASTER DEPENDENCY ROADMAP
 
@@ -569,7 +598,9 @@ capture cost model + a learnability pre-audit on purchasable data.
   markets; per-market model spikes for the top 2; paper-pick program
   begins; V3 first read at floor; F5 review at ~2wk data.
 - **Phase 3 — Ratings**: components P+E ship as designed surfaces
-  (labeled); M enters Stage 1/2 as candidates emerge; NBA spike.
+  (labeled); M enters Stage 1/2 as candidates emerge; sport-expansion
+  readiness reviewed against the §25 gate (no sport-2 work before it
+  passes).
 - **Phase 4 — Picks**: Stage-3 gates pass → official picks + public
   record + Pro tier. Date is evidence-determined, not calendar-set.
 Dependencies are strict: no rating composite before calibration
@@ -581,9 +612,17 @@ no sport 2 before sport 1 closes the loop.
 **Scientific (strategy → production)**: pre-registered in the global
 registry → discovery significance + effect floor on 2023–24 →
 replication → survives battery + placebo ceiling + adversarial critique
-→ positive price-vs-close over ≥300 forward paper entries with CI
-excluding zero → calibration in-band → Brey freeze sign-off. (The
-existing 4-condition Ranker unlock, made precise.)
+→ a ≥300-entry forward paper window judged against a MULTI-DIMENSIONAL
+standard with per-market weights declared at registration: probability
+calibration in-band; forward predictive performance vs the market's own
+price; realized returns at the captured entry price with CI excluding
+zero; stability through time/books/regimes; drawdown within declared
+bounds; sample strength; and — where reliable close capture exists —
+entry-vs-close as the early filter and decay diagnostic (advisory,
+never sufficient alone; a close-beater that does not convert to
+predictive/betting performance is not promoted, and a market without
+close capture is judged on the outcome dimensions) → Brey freeze
+sign-off. (The existing 4-condition Ranker unlock, made precise.)
 **Product**: a surface ships when its data tier is LIVE, its states
 are designed, visual acceptance passes, and its copy survives the
 banned-vocabulary tripwire. Picks additionally require the ledger
@@ -645,7 +684,9 @@ capped per cycle.
 
 - Hand-building one-off research families outside Evolab (after
   Phase-1 lands).
-- Any further detector work aimed at the full-game moneyline.
+- New full-game-moneyline strategy families built from the EXISTING
+  information set — that lane drops to benchmark status (§12) and
+  re-opens automatically when a genuinely new feature family lands.
 - Maintaining superseded static report surfaces.
 - Treating "no_play" as the end of the product sentence — the scanner
   reframe (§17) replaces it with "here is the best available, and
@@ -655,7 +696,8 @@ capped per cycle.
 
 ## 31. TOP 10 HIGHEST-LEVERAGE MOVES
 
-1. CLV spine (metric + storage + fitness integration).
+1. Entry-vs-close metric spine (early-filter diagnostic + storage +
+   one fitness dimension among several).
 2. Prop-price + weather + listing-time forward capture (the moat
    clock is running).
 3. Market Learnability Audit v1 (allocation by evidence).
@@ -781,3 +823,126 @@ marketing language, and Brey's Stage-3 sign-off.
   product is already real and marketable; we should not let the edge
   hunt starve the (live, honest) line-shopping value proposition that
   needs no research at all to be worth $19.99.
+
+## APPENDIX C — PHASE 1 RELEASE PACKET (for owner authorization)
+
+Revision date 2026-09-02, incorporating Brey's three corrections
+(entry-vs-close demoted to early filter within the §27 multi-dimensional
+standard; full-game ML kept as a benchmark lane, not dead; NBA spike
+removed behind the §25 readiness gate).
+
+### C.1 Exact scope (8 builds; research-plane only)
+
+1. **Research mirror** — DuckDB/Parquet mirror of all capture stores +
+   a decision-time index (game × instant × market × book × information
+   state). JSONL stays the append-only capture format; analysis reads
+   the mirror. Parity checks (row counts + checksums) pin mirror truth.
+2. **Entry-vs-close spine** — per-market close identification from our
+   own snapshot cadence (with an honest "close not identifiable"
+   verdict per market), entry-vs-close computation library, wired into
+   the forward ledger and available as ONE Evolab fitness dimension.
+3. **Global hypothesis registry** — every hypothesis/genome ever
+   evaluated, with alpha-spend accounting and semantic-similarity
+   hashing v0; migration of the four families, Phase 2B's 8,811
+   genomes, and the catalogue's 73 entries. Output: the first honest
+   answer to "how hard have we already searched."
+4. **Calibration harness** — reliability curves, Brier/log-loss vs the
+   market's own price, rating-band monotonicity checks; runs against
+   paper outputs only.
+5. **Recommendation-ledger schema** — hash-chained, append-only,
+   model-versioned (Appendix A design); exercised exclusively by
+   internal Stage-0/1 paper flow. Zero customer visibility.
+6. **Capture expansion** — (a) pitcher-K prop prices (~18 credits/day,
+   behind the policy amendment); (b) weather forecast capture
+   (free/cheap provider, forward-only); (c) listing/repricing
+   timestamps as metadata on captures we already make (0 credits).
+7. **Evolab v2 fitness** — per-market fitness functions (log-loss vs
+   de-vigged market price; entry-vs-close where supported; robustness
+   splits) + multi-market genome support. One SMOKE sweep only, to
+   validate wiring — including a regression rerun that must reproduce
+   Phase 2B's null verdict on identical inputs. No new search yet.
+8. **Market Learnability Audit v1** — pre-registered spec, then run on
+   data in hand (h2h, F5 h2h, totals, run line, F5 totals where
+   present): internal consistency, reaction speed (V3 machinery
+   generalized), close predictability, outcome structure. The prop row
+   fills as capture accrues (~4–6 weeks). Full-game h2h is included as
+   the permanent benchmark row.
+
+Parallel, unchanged: the product critical path (V2 design → implement →
+paid beta), Lane C QA (resumes), standing capture/monitors/daily loop,
+V3 first read at its floor, F5 review at ~09-14.
+
+### C.2 Questions Phase 1 answers
+
+1. Which MLB markets show the most exploitable structure, ranked, on
+   data we already hold? (The allocation table for Phase 2.)
+2. Does the pitcher-K prop board reprice after lineup posts (C1's
+   falsifier), and what are its listing windows and book coverage?
+3. Which markets support close-based diagnostics at all, given our
+   snapshot cadence?
+4. How much alpha has this project already spent (registry migration),
+   and what does that imply for Phase-2 thresholds?
+5. Does Evolab v2 reproduce the Phase 2B verdict exactly (machinery
+   regression) while producing sane fitness distributions on the other
+   markets?
+6. Is mirror-backed replay fast enough for Phase-2 scale (target: full
+   2023–24 multi-market replay of a genome population in minutes, not
+   hours — measured, reported)?
+
+### C.3 Concrete outputs
+
+docs/LEARNABILITY_AUDIT_V1.md (pre-registration + results) ·
+src/research/registry + migration report · close-identification +
+entry-vs-close modules · calibration module · ledger schema +
+docs/RECOMMENDATION_LEDGER.md · extended capture scripts + stores ·
+Evolab v2 fitness modules + smoke/regression report · mirror build
+tooling + parity report · tests for all of it · weekly one-screen
+digest to Brey.
+
+### C.4 Proof / acceptance gates
+
+- Full suite green at every commit; every new feature/metric ships
+  with a PIT injection test (the probable-pitcher audit is the
+  template); the close-spine gets an adversarial Opus review for
+  peek-ahead risk before anything consumes it.
+- The audit is pre-registered BEFORE results are read; its conclusions
+  cite only its own registered measurements.
+- Evolab v2 MUST reproduce Phase 2B's `BELOW_PLACEBO_CEILING` verdict
+  on identical inputs — a machinery change that alters a frozen verdict
+  is a bug by definition.
+- Mirror parity (counts + checksums) proven by test; ledger hash-chain
+  verified by test; registry migration reconciled against the
+  catalogue's documented denominators.
+- Zero customer-facing changes; zero new research families registered;
+  credit burn within envelope.
+
+### C.5 Cost ceiling
+
+~540 credits/mo (props) + ≤50 credits total for smoke/probe overhead,
+from the ~53,000 balance (floor 5,000 untouched); $0 new infrastructure
+(DuckDB is local); no new LLM spend beyond existing session budgets.
+HARD CEILING: any Phase-1 need exceeding $50/mo recurring, $200
+one-time, or 1,000 credits/mo goes back to Brey before it is incurred.
+
+### C.6 Explicitly NOT happening in Phase 1
+
+No large sweeps or new strategy families (Phase 2). No NBA or any
+sport-2 work (gated, §25). No customer-visible ratings, picks, or
+performance pages. No composite Bet Rating. No historical prop-data
+purchase. No real-money anything. No Stage-2/3 ladder activity. No new
+full-game-ML families (benchmark lane only). No changes to the frozen
+battery, the sealed 2026 holdout, or the product critical path.
+
+### C.7 Autonomous worker / orchestration plan
+
+Fable orchestrates; Sonnet executes; Opus only for the two high-risk
+reviews (close-spine PIT adversarial review; audit pre-registration
+review). Six sequenced worker packets with disjoint file ownership:
+W1 mirror+index → W2 close-spine + ledger schema → W3 registry +
+migration → W4 capture expansion → W5 Evolab v2 fitness → W6
+calibration harness; the audit runs last, on W1–W5's outputs, as a
+pre-registered measurement. Each packet gets an independent
+verification worker against its acceptance criteria; workers never run
+git; integration, tests, commits, and the weekly digest are the
+orchestrator's. Standing ops continue on their triggers throughout.
+Estimated wall-clock: 10–14 days alongside the product lane.
