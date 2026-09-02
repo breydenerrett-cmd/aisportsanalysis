@@ -72,6 +72,9 @@ class _FakeBet:
     settlement_status: Optional[str] = None
     settlement_reason: Optional[str] = None
     settled_at: Optional[str] = None
+    # Appended last, defaulted, so every existing positional call site above
+    # (built before saved-bet price alerts existed) keeps working unchanged.
+    price: Optional[float] = None
 
     @property
     def is_settled(self) -> bool:
@@ -228,6 +231,75 @@ class PriceImprovementObservationTests(unittest.TestCase):
         if obs is not None:
             self.assertEqual(obs["away_team"], "BOS")
             self.assertEqual(obs["home_team"], "NYY")
+
+
+class SavedBetPriceAlertsTests(unittest.TestCase):
+    """_saved_bet_price_alerts, exercised through build_user_digest against
+    the same injected board _priced_game_entries() builds for every other
+    test in this file: away books run 110..116 (best 116, book "g"), home
+    books run -130..-136 (best -130, book "a" -- least negative is the
+    highest decimal odds)."""
+
+    def test_unsettled_bet_with_a_worse_saved_price_surfaces_an_alert(self):
+        bets = [_FakeBet(1, "BOS@NYY", "BOS ML", price=110)]  # away, worse than 116
+        entries, notes = _priced_game_entries()
+        out = digest_mod.build_user_digest(
+            7, "2026-08-31", entries=entries, saved_bets=bets, notes=notes)
+        alerts = out["saved_bet_price_alerts"]
+        self.assertEqual(len(alerts), 1)
+        alert = alerts[0]
+        self.assertEqual(alert["bet_id"], 1)
+        self.assertEqual(alert["saved_price"], 110)
+        self.assertEqual(alert["best_price"], 116)
+        self.assertEqual(alert["best_book"], "g")
+        self.assertIsNotNone(alert["observed_utc"])
+        self.assertIn("better price", alert["note"])
+
+    def test_settled_bet_never_surfaces_even_with_a_worse_saved_price(self):
+        bets = [_FakeBet(1, "BOS@NYY", "BOS ML", "won", None,
+                         "2026-08-31T04:00:00+00:00", price=110)]
+        entries, notes = _priced_game_entries()
+        out = digest_mod.build_user_digest(
+            7, "2026-08-31", entries=entries, saved_bets=bets, notes=notes)
+        self.assertEqual(out["saved_bet_price_alerts"], [])
+
+    def test_bet_already_at_the_best_price_does_not_surface(self):
+        # -125 has BETTER (higher) decimal odds than the board's best -130.
+        bets = [_FakeBet(2, "BOS@NYY", "NYY ML", price=-125)]
+        entries, notes = _priced_game_entries()
+        out = digest_mod.build_user_digest(
+            7, "2026-08-31", entries=entries, saved_bets=bets, notes=notes)
+        self.assertEqual(out["saved_bet_price_alerts"], [])
+
+    def test_bet_with_no_recorded_price_is_left_out(self):
+        bets = [_FakeBet(3, "BOS@NYY", "BOS ML", price=None)]
+        entries, notes = _priced_game_entries()
+        out = digest_mod.build_user_digest(
+            7, "2026-08-31", entries=entries, saved_bets=bets, notes=notes)
+        self.assertEqual(out["saved_bet_price_alerts"], [])
+
+    def test_bet_for_a_game_not_on_tonights_board_is_left_out(self):
+        bets = [_FakeBet(4, "LAD@SF", "LAD ML", price=110)]
+        entries, notes = _priced_game_entries()
+        out = digest_mod.build_user_digest(
+            7, "2026-08-31", entries=entries, saved_bets=bets, notes=notes)
+        self.assertEqual(out["saved_bet_price_alerts"], [])
+
+    def test_unresolvable_side_is_left_out_not_guessed(self):
+        # "LAD ML" names neither club in BOS@NYY -- the same cannot-tell
+        # case src.appstate.settlement grades void-unmatchable rather than
+        # guess at.
+        bets = [_FakeBet(5, "BOS@NYY", "LAD ML", price=110)]
+        entries, notes = _priced_game_entries()
+        out = digest_mod.build_user_digest(
+            7, "2026-08-31", entries=entries, saved_bets=bets, notes=notes)
+        self.assertEqual(out["saved_bet_price_alerts"], [])
+
+    def test_empty_slate_yields_no_alerts(self):
+        bets = [_FakeBet(6, "BOS@NYY", "BOS ML", price=110)]
+        out = digest_mod.build_user_digest(
+            7, "2026-08-31", entries=[], saved_bets=bets, notes=[])
+        self.assertEqual(out["saved_bet_price_alerts"], [])
 
 
 class JsonSafeTests(unittest.TestCase):

@@ -155,6 +155,19 @@ def _serialize(bet: savedbets.SavedBet) -> dict:
         "settlement_status": bet.settlement_status,
         "settlement_reason": bet.settlement_reason,
         "settled_at": bet.settled_at,
+        # Populated in the same settlement pass, from the odds-snapshot
+        # store (src.appstate.settlement.compute_closing_price) -- the h2h
+        # price the market closed at, when that observation was taken, and
+        # how the saved price compares. All four stay null until settled,
+        # AND can still be null after settling (no snapshots were ever
+        # captured for this game, or the pick wasn't a plain moneyline
+        # side) -- `closing_reason` says why rather than this endpoint
+        # guessing or estimating a number. This is closing PRICE, never
+        # called CLV or an edge here or anywhere customer-facing.
+        "closing_price": bet.closing_price,
+        "closing_observed_utc": bet.closing_observed_utc,
+        "price_vs_close_cents": bet.price_vs_close_cents,
+        "closing_reason": bet.closing_reason,
     }
 
 
