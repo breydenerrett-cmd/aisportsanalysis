@@ -132,6 +132,22 @@ class RunTests(unittest.TestCase):
         self.assertIsNone(result["stopped_early"])
         self.assertEqual(len(self.calls), 4)
 
+    def test_a_single_slot_run_captures_once_and_never_sleeps(self):
+        """captures=1, interval_minutes=0 is the external-scheduler mode
+        (docs/CAPTURE_EXTERNALIZATION.md, scripts/capture_slot.sh): one
+        capture, no in-process sleep, so a 15-minute cron invocation can
+        each do exactly one slot and exit instead of owning a 45-minute
+        internal loop.
+        """
+        dense.odds_provider.quota = lambda env=None: {"remaining": 50000}
+        dense._upcoming = lambda now=None, timeout=20: _rows("2026-08-30T17:00:00Z")
+        slept = []
+        result = dense.run(captures=1, interval_minutes=0, now=NOW,
+                            sleep=slept.append)
+        self.assertEqual(result["captures"], 1)
+        self.assertEqual(len(self.calls), 1)
+        self.assertEqual(slept, [])
+
     def test_the_window_is_rechecked_before_every_capture(self):
         """A run that outlives its window stops, rather than buying in-play prices."""
         dense.odds_provider.quota = lambda env=None: {"remaining": 50000}
