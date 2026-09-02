@@ -201,10 +201,16 @@ written elsewhere) and docs/SAAS_APPLICATION_ARCHITECTURE.md can be reviewed
 together.
 
 ### READY QUEUE (refill to ≥3 whenever an item completes)
-NOTE 2026-09-02: an orchestration day is running (docs/MASTER_PLAN.md
-Phase 1 + audit-surfaced fixes) with all work dispatched as isolated
-worker lanes by the orchestrator; the autonomous loop does not
-self-select from this queue until the end-of-day synthesis is posted.
+NOTE 2026-09-02 (closed 22:10Z): the orchestration day is over; the
+end-of-day synthesis is docs/ORCHESTRATION_DAY_2026-09-02.md and the
+standing loop resumes from this queue. First item for the loop: a full
+`python3 scripts/test_parallel.py` on main (the last full run on main
+was 3,186 tests green at 20:10Z before Wave 1; the fast tier is green on
+the final head). Then the synthesis's TOP 5: staging browser
+verification of the four V2 screens (blocked from this environment by
+the proxy), the nightly entry-vs-close diagnostic over the backfilled
+ledger, the store-completeness helper + pinned-read template, and V3
+accumulation (relevant transactions ~2-3/day; lineup_posted at 29/30).
 1. Protect/run due forward capture (standing, lane A — always first).
 2. V3 first class-floor analysis — PRECONDITION MET 2026-09-02:
    transaction_first_seen is at 56 measurable events (floor 30); the
