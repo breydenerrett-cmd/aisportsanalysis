@@ -536,3 +536,5 @@ https://linehound-staging.fly.dev/billing/webhook -> dry-run purchase.
   30 floor. F5 review time-gated ~09-14. Queue items 4-5 await Brey.
 - Lane C started: adversarial functional QA worker attacking the rebuilt
   frontend locally (routes, auth, free-check, contracts, honesty sweep).
+
+- 2026-09-02 21:04Z–22:00Z: the session container restarted four times (21:04, ~21:25, ~21:43, ~21:55), each time killing the running hourly capture mid-dense. Captured rows on disk were committed by hand after each restart (commits 85782ef, bd5d65d and this one); the 21:15 trigger's message was dropped by the first restart and the run was started by hand. Some 15-minute dense slots in the 21:xx window were missed; nothing was reconstructed. Cause not identified (memory was 0.6 GB of 16 GB in use).

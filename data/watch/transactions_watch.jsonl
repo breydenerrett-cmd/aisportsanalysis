@@ -328,3 +328,9 @@
 {"fetched_utc": "2026-09-02T21:26:22.932882+00:00", "game_date": "2026-09-02", "poll": true}
 {"fetched_utc": "2026-09-02T21:41:25.129365+00:00", "game_date": "2026-09-02", "poll": true}
 {"category": "signed", "date": "2026-09-02", "first_seen_utc": "2026-09-02T21:41:25.129365+00:00", "player": "Simeon Woods Richardson", "player_id": 680573, "team": "SEA", "transaction_id": 940899}
+{"fetched_utc": "2026-09-02T21:43:51.882540+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-02T21:43:55.040083+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-02T21:58:57.496769+00:00", "game_date": "2026-09-02", "poll": true}
+{"category": "rehab", "date": "2026-09-02", "first_seen_utc": "2026-09-02T21:58:57.496769+00:00", "player": "Justin Steele", "player_id": 657006, "team": "CHC", "transaction_id": 940907}
+{"category": "rehab", "date": "2026-09-02", "first_seen_utc": "2026-09-02T21:58:57.496769+00:00", "player": "Huascar Brazob\u00e1n", "player_id": 623211, "team": "CWS", "transaction_id": 940908}
+{"category": "designated", "date": "2026-09-02", "first_seen_utc": "2026-09-02T21:58:57.496769+00:00", "player": "Joel Kuhnel", "player_id": 669270, "team": "MIL", "transaction_id": 940910}
