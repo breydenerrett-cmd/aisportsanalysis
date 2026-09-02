@@ -76,8 +76,34 @@ capture window, settlement gap, crash).
   should call `grading.effective_closing`/`grading.read_backfills` rather
   than reading a settlement's `closing` field directly, so the preference
   rule (prefer the backfill only when the original is null) lives in one
-  place. CLV on a backfill row is h2h-only — spreads/totals/first-five
-  closing identification is a separate, not-yet-built lane.
+  place. CLV on a backfill row is h2h-only — there is no backfill
+  mechanism for spreads, totals, or first-five closes, and this project
+  does not add one; see the coverage paragraph below for what IS measured
+  for those markets.
+
+**Per-market closing coverage (L17).** `python3 -m src.cli closing-audit`
+reports, for every settled game and each of four markets (h2h, spreads,
+totals, first_five), whether a closing observation can be identified —
+read-only, backfill-aware, and it never writes to the ledger. h2h/spreads/
+totals are all captured together in `odds_snapshots.jsonl` by the same
+bulk capture call, so their coverage tracks together; first_five is
+captured separately and far more sparsely into `f5_close.jsonl` (a
+single per-event snapshot near first pitch, not a running series), so its
+coverage is a different, usually much lower, number. The table's four
+columns read left to right: `settled` (every settled game, regardless of
+what was actually recommended for it — the question is what the CAPTURED
+STORES cover, not what was bet), `recorded` (already evidence on the
+ledger — today only ever nonzero for h2h, via the original `closing`
+field or a `closing_backfill` row), `derivable` (a close the store could
+supply right now but that is not recorded anywhere — always a dry-run
+number for spreads/totals/first_five, since no backfill path exists for
+them), and `not derivable`, broken down by reason: `not_captured` (this
+market's store holds no observation of the game at all — most of
+first_five's gap, since the store started running weeks after most
+settled games) versus `no snapshot observed before first pitch` (an
+observation exists but arrived too late to count as a close, same PIT
+rule `closing_observation` has always used). `recorded + derivable + not
+derivable` sums to `settled` for every market row.
 
 ## Failure playbook
 

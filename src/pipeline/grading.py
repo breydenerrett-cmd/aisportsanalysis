@@ -646,35 +646,118 @@ def effective_closing(settlement, backfills):
     return backfill["closing_price"] if backfill else None
 
 
-def ledger_closing_coverage(ledger_entries) -> dict:
-    """Rows with a closing price (original or backfill) over settled rows,
-    grouped by the recommendation's own `market` field.
+# ---------------------------------------------------------------------------
+# Per-market closing coverage (L17)
+# ---------------------------------------------------------------------------
+#
+# WHY THIS ASKS THE SAME QUESTION FOUR TIMES, NOT ONCE
+# ------------------------------------------------------
+# A settlement fixes the whole game -- who won it, what the final score
+# was, who was ahead after five. That is enough to grade an h2h bet, a
+# spread bet, a totals bet, or a first-five bet against it, whichever (if
+# any) was actually recommended. So "can a closing price be identified for
+# this settled game" is really four separate questions, one per market,
+# each against the store that actually captures it: h2h/spreads/totals
+# share odds_snapshots.jsonl; first_five lives in the far sparser
+# f5_close.jsonl (see snapshots.MARKET_STORE_KEY). Asking it once, grouped
+# by whatever the RECOMMENDATION happened to flag -- this function's
+# previous shape -- answers a different question ("was the bet actually
+# made gradeable") and hides three of the four markets' coverage entirely
+# behind a single "market=None" bucket, since this system has so far only
+# ever flagged full-game or first-five recommendations, never a spread or a
+# total.
+#
+# WHY ONLY H2H CAN EVER BE "recorded"
+# -------------------------------------
+# A settlement's own `closing` field, and every `closing_backfill` row on
+# the ledger, has only ever carried an h2h price (see the backfill section
+# above). Nothing has ever written a spreads, totals, or first-five close TO
+# THE LEDGER -- there is no backfill mechanism for them, and this lane does
+# not add one (cli.cmd_closing_audit stays read-only for every market). So
+# `from_original`/`from_backfill`/`with_closing` are honestly zero for every
+# market but h2h; what CAN be reported for the others is what the store
+# WOULD support if something chose to record it, under
+# `derivable_not_recorded` -- a dry-run number, never written anywhere.
 
-    The close itself is always h2h (see module note above); grouping by
-    the RECOMMENDATION's market and reporting each group separately is
-    what keeps this honest -- a single blended percentage would hide, for
-    example, every first_five settlement staying uncovered behind a large
-    no-play bucket that is fully covered.
+MARKET_SOURCE = {
+    "h2h": "odds_snapshots",
+    "spreads": "odds_snapshots",
+    "totals": "odds_snapshots",
+    "first_five": "f5_close",
+}
+
+
+def ledger_closing_coverage(ledger_entries, snapshot_rows=None, f5_rows=None) -> dict:
+    """Per-market closing coverage over every settled forward-ledger game.
+
+    Returns {market: {settled, with_closing, from_original, from_backfill,
+    derivable_not_recorded, not_derivable, source}} for each of
+    snapshots.MARKET_STORE_KEY's four markets, evaluated against EVERY
+    settled game -- not just the ones a recommendation happened to flag for
+    that market -- because the question this answers is about the CAPTURED
+    STORES' coverage, not about which bets were made.
+
+    `with_closing` (= `from_original` + `from_backfill`) is what is already
+    evidence on the ledger; only h2h is ever nonzero there (see module note
+    above). `derivable_not_recorded` is additional games whose close a
+    fresh, read-only lookup against the store can find right now but that
+    the ledger has never recorded -- true of every market but h2h today.
+    `not_derivable` is a reason histogram: `"not_captured"` (the store holds
+    nothing for this game in this market at all) versus `"no snapshot
+    observed before first pitch"` (it holds something, just not early
+    enough) versus `"no matching recommendation row"` (the settlement has
+    no recommendation to read away/home/commence_time from) -- the same
+    three-way split `snapshots.market_closing_observation` always draws,
+    plus the recommendation-lookup failure this function itself can hit.
+
+    `snapshot_rows`/`f5_rows` default to reading the live stores; pass small
+    fixtures directly in tests, the same convention `find_backfillable_closings`
+    already uses.
     """
-    from src.pipeline import ledger
+    from src.pipeline import ledger, snapshots
 
     recs_by_pk = {r.get("game_pk"): r for r in ledger.recommendations(ledger_entries)}
     settled = ledger.settlements(ledger_entries)
     backfills = read_backfills(ledger_entries)
 
+    if snapshot_rows is None:
+        snapshot_rows = snapshots.read()
+    if f5_rows is None:
+        f5_rows = snapshots.read(path=snapshots.DEFAULT_F5_CLOSE_PATH)
+
     by_market = {}
-    for pk, settlement in settled.items():
-        rec = recs_by_pk.get(pk)
-        market = (rec.get("market") if rec else None) or "unspecified (no_play/market_unavailable)"
-        bucket = by_market.setdefault(
-            market, {"settled": 0, "with_closing": 0, "from_original": 0, "from_backfill": 0})
-        bucket["settled"] += 1
-        if settlement.get("closing") is not None:
-            bucket["with_closing"] += 1
-            bucket["from_original"] += 1
-        elif pk in backfills:
-            bucket["with_closing"] += 1
-            bucket["from_backfill"] += 1
+    for market in snapshots.MARKET_STORE_KEY:
+        rows_for_market = f5_rows if market == "first_five" else snapshot_rows
+        index = snapshots.market_series_index(rows_for_market, market=market)
+        bucket = {
+            "settled": len(settled), "with_closing": 0, "from_original": 0,
+            "from_backfill": 0, "derivable_not_recorded": 0,
+            "not_derivable": {}, "source": MARKET_SOURCE[market],
+        }
+        for pk, settlement in settled.items():
+            if market == "h2h":
+                if settlement.get("closing") is not None:
+                    bucket["from_original"] += 1
+                    bucket["with_closing"] += 1
+                    continue
+                if pk in backfills:
+                    bucket["from_backfill"] += 1
+                    bucket["with_closing"] += 1
+                    continue
+
+            rec = recs_by_pk.get(pk)
+            if rec is None:
+                reason = "no matching recommendation row"
+                bucket["not_derivable"][reason] = bucket["not_derivable"].get(reason, 0) + 1
+                continue
+
+            observation, reason = snapshots.market_closing_observation(
+                index, rec.get("away_team"), rec.get("home_team"), rec.get("commence_time"))
+            if observation is not None:
+                bucket["derivable_not_recorded"] += 1
+            else:
+                bucket["not_derivable"][reason] = bucket["not_derivable"].get(reason, 0) + 1
+        by_market[market] = bucket
     return by_market
 
 
