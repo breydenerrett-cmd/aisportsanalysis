@@ -1237,6 +1237,33 @@ def cmd_grade(args) -> int:
     return EXIT_OK
 
 
+def cmd_mybets_closing_backfill(args) -> int:
+    """Fill closing-price fields on already-settled My Bets rows that
+    predate the closing-price feature. One-time catch-up; settling a bet
+    going forward already computes this at settle time
+    (src.appstate.settlement.settle_saved_bets) and never needs backfill.
+    A clean no-op when there is no app db, matching every other My-Bets
+    entry point's rule that the research CLI must never create the product
+    database just by running.
+    """
+    from src.appstate import savedbets, settlement
+    from src.pipeline import snapshots
+
+    db = savedbets.db_path()
+    if not db.exists():
+        print(f"no app db at {db}; nothing to backfill")
+        return EXIT_OK
+
+    report = settlement.backfill_closing_prices(snapshots.read(), db=db)
+    print(f"checked {report['checked']} settled bet(s) missing a closing price")
+    print(f"  filled  {report['filled']}")
+    if report["ungraded_reasons"]:
+        print("  could not compute a closing price for:")
+        for reason, count in sorted(report["ungraded_reasons"].items()):
+            print(f"    {count}x {reason}")
+    return EXIT_OK
+
+
 def cmd_daily(args) -> int:
     """The whole loop, in the order that keeps the evidence honest.
 
@@ -1349,8 +1376,9 @@ def cmd_daily(args) -> int:
 
     def do_settle_my_bets():
         from src.appstate import settlement
-        from src.pipeline import history
-        report = settlement.settle_saved_bets_if_app_db_exists(history.read_results)
+        from src.pipeline import history, snapshots
+        report = settlement.settle_saved_bets_if_app_db_exists(
+            history.read_results, snapshot_rows=snapshots.read())
         if report.get("skipped"):
             print(f"      skipped: {report['reason']}")
         else:
@@ -1722,6 +1750,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("grade", help="settle logged predictions and report CLV")
 
+    sub.add_parser("mybets-closing-backfill",
+                   help="fill closing-price fields on already-settled My "
+                        "Bets rows that predate the feature (one-time "
+                        "catch-up; new settlements compute it automatically)")
+
     daily_cmd = sub.add_parser("daily", help="run the full daily loop")
     daily_cmd.add_argument("--date", default=None,
                            help="YYYY-MM-DD (defaults to today, UTC)")
@@ -1780,6 +1813,7 @@ COMMANDS = {
     "scan-grade": cmd_scan_grade,
     "predict": cmd_predict,
     "grade": cmd_grade,
+    "mybets-closing-backfill": cmd_mybets_closing_backfill,
     "daily": cmd_daily,
     "health": cmd_health,
     "snapshot": cmd_snapshot,

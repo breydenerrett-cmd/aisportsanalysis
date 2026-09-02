@@ -97,6 +97,22 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
         ("settlement_status", "TEXT"),
         ("settlement_reason", "TEXT"),
         ("settled_at", "TEXT"),
+        # The closing-price facts (src.appstate.settlement.compute_closing_price):
+        # the h2h price the market closed at, when that observation was
+        # taken, and how the saved price compares -- or, when none of that
+        # could be computed, why not. `closing_computed_at` is a separate
+        # marker of ATTEMPT, not of success: a bet with no snapshots ever
+        # captured for its game still gets closing_computed_at stamped, so
+        # the backfill (src.appstate.settlement.backfill_closing_prices)
+        # knows not to retry it forever, and record_closing's own guard
+        # (WHERE closing_computed_at IS NULL) can tell "never attempted"
+        # apart from "attempted, found nothing" using one column instead of
+        # inferring it from which of four nullable fields happen to be set.
+        ("closing_price", "REAL"),
+        ("closing_observed_utc", "TEXT"),
+        ("price_vs_close_cents", "REAL"),
+        ("closing_reason", "TEXT"),
+        ("closing_computed_at", "TEXT"),
     ):
         if column not in existing:
             conn.execute(f"ALTER TABLE saved_bets ADD COLUMN {column} {ddl}")
@@ -120,6 +136,14 @@ class SavedBet:
     settlement_status: Optional[str] = None
     settlement_reason: Optional[str] = None
     settled_at: Optional[str] = None
+    # The closing-price facts, same append-after-the-fact rule -- see the
+    # schema comment in _ensure_schema for what each field means and why
+    # closing_computed_at exists alongside closing_reason.
+    closing_price: Optional[float] = None
+    closing_observed_utc: Optional[str] = None
+    price_vs_close_cents: Optional[float] = None
+    closing_reason: Optional[str] = None
+    closing_computed_at: Optional[str] = None
 
     @property
     def is_deleted(self) -> bool:
@@ -129,6 +153,10 @@ class SavedBet:
     def is_settled(self) -> bool:
         return self.settlement_status is not None
 
+    @property
+    def has_closing_price(self) -> bool:
+        return self.closing_computed_at is not None
+
 
 def _row_to_bet(row: sqlite3.Row) -> SavedBet:
     return SavedBet(id=row["id"], user_id=row["user_id"], game=row["game"],
@@ -136,7 +164,12 @@ def _row_to_bet(row: sqlite3.Row) -> SavedBet:
                      snapshot_digest=row["snapshot_digest"], deleted_at=row["deleted_at"],
                      settlement_status=row["settlement_status"],
                      settlement_reason=row["settlement_reason"],
-                     settled_at=row["settled_at"])
+                     settled_at=row["settled_at"],
+                     closing_price=row["closing_price"],
+                     closing_observed_utc=row["closing_observed_utc"],
+                     price_vs_close_cents=row["price_vs_close_cents"],
+                     closing_reason=row["closing_reason"],
+                     closing_computed_at=row["closing_computed_at"])
 
 
 def save_bet(user_id: int, game: str, side: str, *, price: Optional[float] = None,
@@ -216,4 +249,52 @@ def mark_settled(bet_id: int, status: str, *, reason: Optional[str] = None,
             "UPDATE saved_bets SET settlement_status = ?, settlement_reason = ?, "
             "settled_at = ? WHERE id = ? AND settlement_status IS NULL",
             (status, reason, settled_at or _now_iso(), bet_id))
+        return cur.rowcount > 0
+
+
+def list_settled_bets_missing_closing(*, db: Optional[Path] = None) -> List[SavedBet]:
+    """Every live, settled bet whose closing-price computation has never
+    been attempted -- the backfill's input (src.appstate.settlement.
+    backfill_closing_prices). Scoped to settlement_status IS NOT NULL: only
+    a graded bet was ever a real pick to price a close for, and to
+    closing_computed_at IS NULL, which src.appstate.settlement stamps
+    whether or not a close was actually found (see record_closing) -- so a
+    bet that was already tried and genuinely has no close (no snapshots
+    ever captured for its game) is not re-selected here forever.
+    """
+    with _connect(db) as conn:
+        rows = conn.execute(
+            "SELECT * FROM saved_bets WHERE deleted_at IS NULL "
+            "AND settlement_status IS NOT NULL AND closing_computed_at IS NULL "
+            "ORDER BY saved_at").fetchall()
+        return [_row_to_bet(r) for r in rows]
+
+
+def record_closing(bet_id: int, *, closing_price: Optional[float] = None,
+                   closing_observed_utc: Optional[str] = None,
+                   price_vs_close_cents: Optional[float] = None,
+                   closing_reason: Optional[str] = None,
+                   computed_at: Optional[str] = None,
+                   db: Optional[Path] = None) -> bool:
+    """Persist one bet's closing-price computation. Written exactly once
+    per bet, whether the computation succeeded (the three value fields
+    set, `closing_reason` left None) or could not be completed (the value
+    fields left None, `closing_reason` stating why) -- both are a real,
+    final answer, so both stamp `computed_at` and both are guarded by the
+    same WHERE clause below. This is what makes settle_saved_bets calling
+    it at settle time and backfill_closing_prices calling it later on an
+    already-settled row safe to run in either order, or more than once:
+    whichever call reaches a row first wins, and every later call is a
+    no-op (rowcount 0) rather than an overwrite of a fact already on
+    record. There is deliberately no re-close: a closing price, once
+    written, is not the caller's to quietly revise, the same rule
+    mark_settled already keeps for the settlement verdict itself.
+    """
+    with _connect(db) as conn:
+        cur = conn.execute(
+            "UPDATE saved_bets SET closing_price = ?, closing_observed_utc = ?, "
+            "price_vs_close_cents = ?, closing_reason = ?, closing_computed_at = ? "
+            "WHERE id = ? AND closing_computed_at IS NULL",
+            (closing_price, closing_observed_utc, price_vs_close_cents,
+             closing_reason, computed_at or _now_iso(), bet_id))
         return cur.rowcount > 0

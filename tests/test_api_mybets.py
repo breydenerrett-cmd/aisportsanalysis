@@ -111,6 +111,48 @@ class MyBetsRouteTests(unittest.TestCase):
         self.assertEqual(after["settlement_status"], "won")
         self.assertIsNotNone(after["settled_at"])
 
+    def test_get_rows_carry_closing_price_fields_before_and_after_recording(self):
+        """Same shape guarantee as the settlement fields above, for the
+        four closing-price fields: present and null on a fresh save, and
+        reflecting whatever src.appstate.savedbets.record_closing wrote
+        once the settlement pass computes them."""
+        from src.appstate import savedbets as savedbets_mod
+        from api.mybets import SaveBetRequest, create_my_bet, list_my_bets
+
+        created = create_my_bet(
+            SaveBetRequest(game="BOS@NYY", side="BOS ML", price=110),
+            current_user=self.user)
+        for field in ("closing_price", "closing_observed_utc",
+                     "price_vs_close_cents", "closing_reason"):
+            self.assertIn(field, created)
+            self.assertIsNone(created[field])
+
+        savedbets_mod.record_closing(
+            created["id"], closing_price=116,
+            closing_observed_utc="2026-04-01T23:00:00+00:00",
+            price_vs_close_cents=6, db=self.db)
+        after = list_my_bets(current_user=self.user)["bets"][0]
+        self.assertEqual(after["closing_price"], 116)
+        self.assertEqual(after["closing_observed_utc"], "2026-04-01T23:00:00+00:00")
+        self.assertEqual(after["price_vs_close_cents"], 6)
+        self.assertIsNone(after["closing_reason"])
+
+    def test_closing_reason_surfaces_when_no_close_was_found(self):
+        from src.appstate import savedbets as savedbets_mod
+        from api.mybets import SaveBetRequest, create_my_bet, list_my_bets
+
+        created = create_my_bet(
+            SaveBetRequest(game="BOS@NYY", side="BOS ML", price=110),
+            current_user=self.user)
+        savedbets_mod.record_closing(
+            created["id"],
+            closing_reason="no odds snapshots captured for this game",
+            db=self.db)
+        after = list_my_bets(current_user=self.user)["bets"][0]
+        self.assertIsNone(after["closing_price"])
+        self.assertEqual(after["closing_reason"],
+                         "no odds snapshots captured for this game")
+
 
 @unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
 class SaveBetRequestBoundsTests(unittest.TestCase):

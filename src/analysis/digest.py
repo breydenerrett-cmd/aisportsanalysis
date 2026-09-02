@@ -42,10 +42,12 @@ file the same way it already enforces the rest of src/analysis.
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 from typing import List, Optional
 
 from src.analysis import gamepayload
+from src.core import odds as odds_math
 
 # A digest is read in ten seconds, not browsed like the full /changed/{date}
 # band -- so only the tiers worth a reader's attention ride in the digest's
@@ -185,6 +187,127 @@ def _price_improvement_observation(entries: list) -> Optional[dict]:
     return best
 
 
+# A side naming a club is allowed one trailing "ML"/"moneyline" marker,
+# same convention src.appstate.settlement._resolve_side uses for grading --
+# duplicated here (not imported) because this module deliberately does not
+# import src.appstate (module docstring, "WHY THIS DOES NOT IMPORT
+# src.appstate"): both copies exist only to turn a saved bet's free-text
+# `game`/`side` into a club pair, and drift between them would only ever
+# show up as "this bet's alert didn't fire", never as a fabricated claim.
+_ML_SUFFIX_RE = re.compile(r"\s*(ML|MONEYLINE)\s*$", re.IGNORECASE)
+
+
+def _split_saved_bet_game(game: str) -> Optional[tuple]:
+    """A saved bet's "AWAY@HOME" `game` string -> (away, home), or None.
+
+    Mirrors src.appstate.settlement._split_game's shape exactly (every
+    saved game string this codebase writes follows it) -- see the note
+    above _ML_SUFFIX_RE on why this is a second copy, not an import.
+    """
+    if not game or game.count("@") != 1:
+        return None
+    away, home = (part.strip() for part in game.split("@", 1))
+    if not away or not home:
+        return None
+    return away, home
+
+
+def _resolve_saved_bet_side(side: str, away_abbrev: str,
+                            home_abbrev: str) -> Optional[str]:
+    """A saved bet's free-text `side` -> "away"/"home", or None when it
+    names neither club (a typo, a spread/total pick, an unrecognised
+    abbreviation) -- "cannot tell", never a guess. Mirrors
+    src.appstate.settlement._resolve_side."""
+    normalized = (side or "").strip().upper()
+    if normalized == "HOME":
+        return "home"
+    if normalized == "AWAY":
+        return "away"
+    club = _ML_SUFFIX_RE.sub("", normalized).strip()
+    if club == away_abbrev.upper():
+        return "away"
+    if club == home_abbrev.upper():
+        return "home"
+    return None
+
+
+def _saved_bet_price_alerts(entries: list, saved_bets: list) -> list:
+    """Unsettled saved bets whose side is priced better on tonight's board
+    right now than the price the user saved it at.
+
+    This is price improvement restated for one saved bet, not a second
+    metric: it reads the exact same per-game `price_improvement` section
+    (src.analysis.prices, already computed onto each entry's dossier) that
+    `_price_improvement_observation` reads above -- the board is read once,
+    by that module, and both observations describe the identical instant.
+    A bet is left out, never reported with a guessed reason, when: it is
+    already settled; it has no recorded price to compare against; its
+    `game`/`side` cannot be pinned to one club-vs-club h2h pick (the same
+    "cannot tell" cases src.appstate.settlement's grading refuses to guess
+    at); its game is not on tonight's board; or the board's price for that
+    side is below the book floor. Every included item states the book, the
+    saved price, the current best price, and when that price was observed
+    -- the same fields a reader would need to decide whether to act, and
+    nothing this module cannot show its work for.
+
+    Vocabulary: a better EXECUTION price being available now is not a
+    claim that the original bet was wrong, an edge, or worth chasing --
+    same rule src.analysis.prices's module docstring states for price
+    improvement generally.
+    """
+    boards = {}
+    for entry in entries:
+        dossier = entry.get("dossier")
+        if dossier is None:
+            continue
+        section = dossier.get("price_improvement")
+        if not section or section.get("skipped"):
+            continue
+        away, home = dossier.teams
+        away, home = (away or "").strip().upper(), (home or "").strip().upper()
+        if away and home:
+            boards[(away, home)] = section
+
+    alerts = []
+    for bet in saved_bets:
+        if bet.is_settled or bet.price is None:
+            continue
+        parsed = _split_saved_bet_game(bet.game)
+        if parsed is None:
+            continue
+        away_abbrev, home_abbrev = parsed
+        section = boards.get((away_abbrev.upper(), home_abbrev.upper()))
+        if section is None:
+            continue
+        side = _resolve_saved_bet_side(bet.side, away_abbrev, home_abbrev)
+        if side is None:
+            continue
+        detail = (section.get("sides") or {}).get(side)
+        if not detail or detail.get("skipped"):
+            continue
+        best_price, best_book = detail.get("best_price"), detail.get("best_book")
+        if best_price is None or best_book is None:
+            continue
+        try:
+            better = (odds_math.american_to_decimal(best_price)
+                     > odds_math.american_to_decimal(bet.price))
+        except odds_math.OddsError:
+            continue
+        if not better:
+            continue
+        alerts.append({
+            "bet_id": bet.id,
+            "game": bet.game,
+            "side": bet.side,
+            "saved_price": bet.price,
+            "best_price": best_price,
+            "best_book": best_book,
+            "observed_utc": section.get("observed_utc"),
+            "note": f"a better price than you saved is available now at {best_book}",
+        })
+    return alerts
+
+
 def build_user_digest(user_id, date: Optional[str], *, entries: list,
                       saved_bets: list, notes: Optional[list] = None,
                       since_last_digest: Optional[str] = None,
@@ -202,10 +325,12 @@ def build_user_digest(user_id, date: Optional[str], *, entries: list,
 
     Returns one JSON-safe dict: `settled_bets` (this user's outcomes since
     last time), `slate` (tonight's game count and a one-line summary),
-    `what_changed` (the notable subset of tonight's What Changed band), and
-    `price_improvement` (one observation, or None). Nothing here is a
-    recommendation or a prediction -- see the module docstring's vocabulary
-    rules.
+    `what_changed` (the notable subset of tonight's What Changed band),
+    `price_improvement` (the slate-wide observation, or None), and
+    `saved_bet_price_alerts` (this user's own unsettled saved bets that
+    could now be had at a better price, per _saved_bet_price_alerts --
+    possibly empty). Nothing here is a recommendation or a prediction --
+    see the module docstring's vocabulary rules.
     """
     now = now or datetime.now(timezone.utc)
     return {
@@ -216,5 +341,6 @@ def build_user_digest(user_id, date: Optional[str], *, entries: list,
         "settled_bets": _settlement_highlights(saved_bets, since_last_digest),
         "slate": _slate_summary(entries, notes, date=date, now=now),
         "what_changed": _changed_highlights(entries, date=date, now=now),
+        "saved_bet_price_alerts": _saved_bet_price_alerts(entries, saved_bets),
         "price_improvement": _price_improvement_observation(entries),
     }

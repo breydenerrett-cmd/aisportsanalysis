@@ -290,9 +290,23 @@ read or delete another's rows, even by guessing an id.
 | `price` | number \| null | |
 | `saved_at` | string (ISO-8601 UTC) | |
 | `snapshot_digest` | string \| null | fingerprint of the evidence shown at save time; opaque to this endpoint |
+| `settlement_status` | string \| null | one of `won`/`lost`/`push`/`void-unmatchable`; null until `src.appstate.settlement`'s daily sweep grades this bet against a final result |
+| `settlement_reason` | string \| null | set on `push`/`void-unmatchable`, or while unsettled for a reason visible elsewhere; not written for a plain `won`/`lost` |
+| `settled_at` | string (ISO-8601 UTC) \| null | when the settlement verdict was written; null until settled |
+| `closing_price` | number \| null | the h2h American price the market closed at, from captured odds snapshots; null until settled, and can still be null after settling (no snapshot captured, or `side` wasn't a plain moneyline pick) — see `closing_reason` |
+| `closing_observed_utc` | string (ISO-8601 UTC) \| null | when the closing snapshot above was captured; null exactly when `closing_price` is null |
+| `price_vs_close_cents` | number \| null | `closing_price` minus the saved `price`, in American-odds cents — a plain difference, never called CLV, an edge, or expected value; null exactly when `closing_price` is null |
+| `closing_reason` | string \| null | why no closing price exists (e.g. `"no odds snapshots captured for this game"`, `"market not captured"`) — present only when `closing_price` is null, and this endpoint never estimates a substitute number |
 
 `DELETE /my-bets/{bet_id}` returns `{"deleted": true, "id": <int>}` or a
 structured `404` if the bet doesn't exist or belongs to another user.
+
+Closing-price fields are computed once, in the same settlement pass that
+grades a bet's outcome (`src.appstate.settlement.settle_saved_bets`), and
+are never rewritten afterward. Bets settled before this field existed are
+filled in only by the explicit one-time backfill
+(`python3 -m src.cli mybets-closing-backfill`), never automatically —
+settling a bet again is not something this system does.
 
 ## `POST /billing/checkout`, `GET /billing/status`, `POST /billing/webhook`
 

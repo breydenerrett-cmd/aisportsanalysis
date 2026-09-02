@@ -5,7 +5,26 @@
  */
 
 import { apiGet, apiPost, apiDelete } from "./api.js";
-import { el, clear, renderUnknown, renderError } from "./dom.js";
+import { el, clear, renderUnknown, renderError, formatAmerican, formatEasternTime } from "./dom.js";
+
+/** One honest line for the closing-price fields (api/mybets.py's
+ * `_serialize`): "closed -118 (as of 7:40 PM ET) · you took -110" when a
+ * close was captured, or the plain fact that it was not -- never an
+ * estimate, and never the word CLV or edge (docs/API_CONTRACTS.md's
+ * vocabulary rules). This is deliberately plain text in the existing
+ * undesigned list, not a restyle -- V2 redesigns this screen. */
+function formatClosingLine(bet) {
+  if (bet.closing_price === null || bet.closing_price === undefined) {
+    return "closing price not captured";
+  }
+  const closed = formatAmerican(bet.closing_price);
+  const when = formatEasternTime(bet.closing_observed_utc);
+  const took = formatAmerican(bet.price);
+  let line = `closed ${closed}`;
+  if (when) line += ` (as of ${when})`;
+  if (took !== null) line += ` · you took ${took}`;
+  return line;
+}
 
 function renderSaveForm(container, onSaved) {
   const form = el("form", { class: "my-bets-form panel chamfer", "data-hook": "my-bets-form" });
@@ -55,7 +74,7 @@ function renderBetsTable(container, bets, onDeleted) {
   table.appendChild(el("caption", { text: "Saved bets" }));
   const thead = el("thead");
   const headRow = el("tr");
-  for (const label of ["Game", "Side", "Price", "Saved", "Settlement", ""]) {
+  for (const label of ["Game", "Side", "Price", "Saved", "Settlement", "Closing price", ""]) {
     headRow.appendChild(el("th", { scope: "col", text: label }));
   }
   thead.appendChild(headRow);
@@ -64,7 +83,7 @@ function renderBetsTable(container, bets, onDeleted) {
   const tbody = el("tbody");
   if (!bets || bets.length === 0) {
     const tr = el("tr");
-    tr.appendChild(el("td", { colspan: "6" },
+    tr.appendChild(el("td", { colspan: "7" },
       [el("div", { class: "state-empty", "data-hook": "my-bets-empty" }, [
         el("p", { class: "state-empty__title", text: "No saved bets yet." }),
         el("p", { class: "state-empty__body", text: "Save a bet from Bet Check to track it here." }),
@@ -83,6 +102,7 @@ function renderBetsTable(container, bets, onDeleted) {
       status: bet.settlement_status, reason: bet.settlement_reason, at: bet.settled_at,
     }));
     tr.appendChild(settlementCell);
+    tr.appendChild(el("td", { "data-hook": "closing-price", text: formatClosingLine(bet) }));
     const deleteCell = el("td");
     const deleteButton = el("button", { type: "button", "data-hook": "delete-bet",
       "data-bet-id": String(bet.id), text: "Delete" });
