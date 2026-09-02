@@ -430,6 +430,60 @@ class ClusterSignTestTests(unittest.TestCase):
         self.assertEqual(result["n"], 0)
         self.assertIsNone(result["p_one_sided"])
 
+    def test_an_observed_negative_diff_still_counts_as_minus(self):
+        rows = [{"cluster": "g1", "censored": False, "diff_minutes": -3.0}]
+        result = timingtest.cluster_sign_test(rows)
+        self.assertEqual(result["clusters_minus"], 1)
+        self.assertEqual(result["clusters_plus"], 0)
+        self.assertEqual(result["n"], 1)
+
+    def test_a_censored_row_with_a_negative_lower_bound_is_dropped_not_minus(self):
+        """Post-review code note (docs/RESEARCH_V3_TIMING.md, appended after
+        the second adversarial review): a censored row's lower bound being
+        negative says nothing about the true diff's sign -- it must be
+        dropped at the row level, never counted as "minus". A cluster
+        carrying that row plus a genuine positive row must read "+", not
+        "mixed"."""
+        rows = [
+            # bound = 10.0 - 60.0 = -50.0: uninformative, dropped.
+            {"cluster": "g1", "censored": True, "censor_time_minutes": 10.0,
+             "floor_minutes": 60.0},
+            {"cluster": "g1", "censored": False, "diff_minutes": 5.0},
+        ]
+        result = timingtest.cluster_sign_test(rows)
+        self.assertEqual(result["clusters_plus"], 1)
+        self.assertEqual(result["clusters_minus"], 0)
+        self.assertEqual(result["clusters_mixed_sign_dropped"], 0)
+        self.assertEqual(result["n"], 1)
+
+    def test_a_cluster_with_only_an_uninformative_censored_row_is_dropped_entirely(self):
+        """Not "minus", not "mixed" -- simply not classifiable at all."""
+        rows = [{"cluster": "g1", "censored": True, "censor_time_minutes": 10.0,
+                "floor_minutes": 60.0}]  # bound = -50.0
+        result = timingtest.cluster_sign_test(rows)
+        self.assertEqual(result["clusters_plus"], 0)
+        self.assertEqual(result["clusters_minus"], 0)
+        self.assertEqual(result["clusters_mixed_sign_dropped"], 0)
+        self.assertEqual(result["n"], 0)
+
+    def test_the_824472_style_mixed_cluster_becomes_a_clean_plus(self):
+        """The exact case the second review found (docs/RESEARCH_V3_TIMING.md
+        post-review code note): cluster 824472 carried a censored +53.91
+        lower bound and a censored -6.91 lower bound, and was reported as
+        "mixed" under the pre-review rule. Under the corrected rule the
+        -6.91 bound is uninformative and dropped, leaving a clean "+"."""
+        rows = [
+            {"cluster": "824472", "censored": True,
+             "censor_time_minutes": 113.91, "floor_minutes": 60.0},  # +53.91
+            {"cluster": "824472", "censored": True,
+             "censor_time_minutes": 53.09, "floor_minutes": 60.0},  # -6.91
+        ]
+        result = timingtest.cluster_sign_test(rows)
+        self.assertEqual(result["clusters_plus"], 1)
+        self.assertEqual(result["clusters_minus"], 0)
+        self.assertEqual(result["clusters_mixed_sign_dropped"], 0)
+        self.assertEqual(result["n"], 1)
+
 
 class ConcentrationCheckTests(unittest.TestCase):
     """RESEARCH_V3_TIMING.md lines 120-121's required, never-run-before

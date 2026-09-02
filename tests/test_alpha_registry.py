@@ -149,6 +149,93 @@ class TestAppendOnly(TempRegistryTestCase):
             )
 
 
+class TestWithdrawnVerdict(TempRegistryTestCase):
+    """result="withdrawn"/"below_floor" (added for V3:transaction_first_seen's
+    superseded first-read verdict, docs/RESEARCH_V3_TIMING.md ADDENDUM 2) and
+    the one narrow append-only exception that lets a withdrawal be appended
+    for an id that already has a verdict.
+    """
+
+    def test_withdrawn_and_below_floor_are_valid_results(self):
+        self.assertIn("withdrawn", reg.VALID_RESULTS)
+        self.assertIn("below_floor", reg.VALID_RESULTS)
+
+    def test_a_withdrawal_may_supersede_an_existing_verdict(self):
+        reg.register(self.make_hypothesis(id_="W1"), path=self.path)
+        reg.record_verdict({"kind": "verdict", "id": "W1",
+                            "read_utc": "2026-01-01", "result": "candidate"},
+                           path=self.path)
+        withdrawal = reg.record_verdict(
+            {"kind": "verdict", "id": "W1", "read_utc": "2026-01-02",
+             "result": "withdrawn"}, path=self.path)
+        self.assertEqual(withdrawal["result"], "withdrawn")
+        # both rows survive -- the original is never edited or deleted
+        verdicts = [r for r in reg.read_all(path=self.path)
+                   if r["kind"] == "verdict"]
+        self.assertEqual(len(verdicts), 2)
+        self.assertEqual(verdicts[0]["result"], "candidate")
+        self.assertEqual(verdicts[1]["result"], "withdrawn")
+
+    def test_a_second_withdrawal_of_the_same_id_is_refused(self):
+        reg.register(self.make_hypothesis(id_="W2"), path=self.path)
+        reg.record_verdict({"kind": "verdict", "id": "W2",
+                            "read_utc": "2026-01-01", "result": "candidate"},
+                           path=self.path)
+        reg.record_verdict({"kind": "verdict", "id": "W2",
+                            "read_utc": "2026-01-02", "result": "withdrawn"},
+                           path=self.path)
+        with self.assertRaises(reg.AppendOnlyError):
+            reg.record_verdict({"kind": "verdict", "id": "W2",
+                                "read_utc": "2026-01-03",
+                                "result": "withdrawn"}, path=self.path)
+
+    def test_a_second_ordinary_verdict_is_still_refused(self):
+        """The withdrawn exception is narrow: an ordinary (non-withdrawn)
+        second verdict for the same id is refused exactly as before."""
+        reg.register(self.make_hypothesis(id_="W3"), path=self.path)
+        reg.record_verdict({"kind": "verdict", "id": "W3",
+                            "read_utc": "2026-01-01", "result": "null"},
+                           path=self.path)
+        with self.assertRaises(reg.AppendOnlyError):
+            reg.record_verdict({"kind": "verdict", "id": "W3",
+                                "read_utc": "2026-01-02",
+                                "result": "candidate"}, path=self.path)
+
+    def test_total_searched_counts_a_withdrawn_latest_verdict_as_not_read(self):
+        reg.register(self.make_hypothesis(id_="W4"), path=self.path)
+        reg.record_verdict({"kind": "verdict", "id": "W4",
+                            "read_utc": "2026-01-01", "result": "candidate"},
+                           path=self.path)
+        before = reg.total_searched(path=self.path)
+        self.assertEqual(before["read"], 1)
+        self.assertEqual(before["not_read"], 0)
+
+        reg.record_verdict({"kind": "verdict", "id": "W4",
+                            "read_utc": "2026-01-02", "result": "withdrawn"},
+                           path=self.path)
+        after = reg.total_searched(path=self.path)
+        self.assertEqual(after["read"], 0)
+        self.assertEqual(after["not_read"], 1)
+        # withdrawing never changes how many units were ever registered
+        self.assertEqual(after["hypotheses"], before["hypotheses"])
+
+    def test_total_searched_counts_no_verdict_and_below_floor_the_same_way(self):
+        reg.register(self.make_hypothesis(id_="NEVER"), path=self.path)
+        reg.register(self.make_hypothesis(id_="BELOW"), path=self.path)
+        reg.record_verdict({"kind": "verdict", "id": "BELOW",
+                            "read_utc": "2026-01-01",
+                            "result": "below_floor"}, path=self.path)
+        totals = reg.total_searched(path=self.path)
+        self.assertEqual(totals["read"], 0)
+        self.assertEqual(totals["not_read"], 2)
+
+    def test_a_withdrawal_still_requires_prior_registration(self):
+        with self.assertRaises(ValueError):
+            reg.record_verdict({"kind": "verdict", "id": "NEVER_REGISTERED",
+                                "read_utc": "2026-01-01",
+                                "result": "withdrawn"}, path=self.path)
+
+
 class TestSemanticHashV0(unittest.TestCase):
     def test_order_invariance(self):
         atoms_a = [

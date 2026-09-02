@@ -159,7 +159,12 @@ def report(store_dir=None, multibook_rows=None, games=None,
         # the join to a game lives entirely in this module.
         measured["game_pk"] = game_pk
         measured["game_start_utc"] = game.get("start_time_utc")
-        measured["game_date"] = game.get("date")
+        # Deliberately NOT also carrying `game.get("date")` here: nothing
+        # downstream reads a "game_date" key off a measured event (the date
+        # any block needs is available from `game_start_utc`, or from the
+        # game record itself via `game_pk`), and an unconsumed field left in
+        # the measured shape is exactly the kind of thing that quietly rots
+        # (post-review non-blocking item, docs/RESEARCH_V3_TIMING.md).
         # The event's own recorded bracket, verbatim -- ADDENDUM 2's fix for
         # the floor (RESEARCH_V3_TIMING.md ADDENDUM 2): the capture-spacing
         # floor is interval[1]-interval[0], the LITERAL poll spacing in force
@@ -198,7 +203,7 @@ def report(store_dir=None, multibook_rows=None, games=None,
                                f"{CLASS_FLOOR} admitted events; no result "
                                "is read below the floor")
         else:
-            entry["status"] = "at floor: pre-registered tables follow"
+            entry["status"] = _floor_status(bucket)
             entry["response_table"] = leadlag.response_table(
                 bucket["measured"])
             entry["leadership_stability"] = leadlag.leadership_stability(
@@ -211,6 +216,53 @@ def report(store_dir=None, multibook_rows=None, games=None,
             entry["measured"] = bucket["measured"]
         out["classes"][name] = entry
     return out
+
+
+def _floor_status(bucket) -> str:
+    """The leading block's per-class status line once ADMISSIBLE has
+    cleared the floor.
+
+    For every class but `transaction_first_seen` this is unchanged: "at
+    floor: pre-registered tables follow" -- no relevance rule narrows the
+    class, so the admissible/measurable counts already computed above are
+    the whole story.
+
+    `transaction_first_seen` is different: `timingtest.game_relevant`
+    restricts the frozen `il_roster_move` definition to a subset of the
+    feed's own move-type vocabulary (see that function's docstring), and
+    it is entirely possible -- as it is on every read so far -- for the
+    UNFILTERED measurable count to clear this module's floor while the
+    game-relevant subset does not. Printing "at floor" in that case reads
+    as a result being ready when it is not (post-review non-blocking item,
+    docs/RESEARCH_V3_TIMING.md): this prints BOTH counts and the floor
+    status of the RELEVANT subset instead, e.g. "56 measurable (19
+    game-relevant of 30 floor) -- below floor after relevance filter;
+    descriptive tables follow, no result is read". The tables computed
+    alongside this status are still the full (relevance-unfiltered)
+    reading -- exactly as before -- so they are named "descriptive" here
+    rather than "pre-registered" whenever the relevant subset itself is
+    below floor, since only `timingtest.test_class`'s relevance-gated
+    primary reading is the pre-registered one.
+    """
+    usable = [m for m in bucket["measured"] if m and m.get("excluded") is None]
+    has_relevance_rule = any("category" in m for m in usable)
+    if not has_relevance_rule:
+        return "at floor: pre-registered tables follow"
+
+    from src.research import timingtest  # local: timingtest imports this
+                                          # module, so a top-level import
+                                          # here would be circular.
+    n_relevant = sum(1 for m in usable if timingtest.game_relevant(m))
+    measurable = len(usable)  # == bucket["measurable"]; recomputed locally
+                              # so this function only depends on its one
+                              # argument, not on the caller's own counters.
+    if n_relevant < CLASS_FLOOR:
+        return (f"{measurable} measurable ({n_relevant} game-relevant of "
+                f"{CLASS_FLOOR} floor) -- below floor after relevance "
+                "filter; descriptive tables follow, no result is read")
+    return (f"{measurable} measurable ({n_relevant} game-relevant of "
+            f"{CLASS_FLOOR} floor) -- at floor after relevance filter; "
+            "pre-registered tables follow")
 
 
 def _count(counter, reason) -> None:

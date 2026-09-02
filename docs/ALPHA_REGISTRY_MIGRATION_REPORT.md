@@ -208,3 +208,19 @@ degenerate interval and p-value. The registry is append-only, so the row
 stays; a superseding verdict row is appended when the corrected read
 (ADDENDUM 2) passes a second review. Until then `total_searched` counts
 the V3 class as read, which is the conservative direction for spend.
+
+**Update, 2026-09-02 (L22):** the second review passed
+(docs/REVIEW_V3_FIRST_READ_2026-09-02.md, "Second review — PASS") and the
+superseding row has been appended: `data/research/alpha_registry.jsonl`
+now carries a second verdict for `V3:transaction_first_seen`,
+`result: "withdrawn"`, `read_utc: "2026-09-02"`, retracting the migrated
+first-read "candidate" verdict above without editing or deleting it (the
+original row is unchanged). Per ADDENDUM 2, the frozen `il_roster_move`
+class restricted to game-relevant transactions
+(`src/research/timingtest.game_relevant`) holds 19 of its required 30
+events -- below floor, no result read. `total_searched()` now counts this
+id's latest verdict (`"withdrawn"`) as NOT read, so the V3 class returns to
+"still accumulating" for spend-accounting purposes; see
+`src/research/alpha_registry.py`'s module docstring ("WITHDRAWING A
+VERDICT") for the `"withdrawn"`/`"below_floor"` result values this
+required adding.
