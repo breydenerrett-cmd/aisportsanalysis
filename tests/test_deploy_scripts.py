@@ -53,6 +53,8 @@ SHELL_SCRIPTS = [
     "scripts/load_smoke.sh",
     "scripts/funnel_smoke.sh",
     "scripts/ci.sh",
+    "scripts/forward_capture.sh",
+    "scripts/daily_loop.sh",
 ]
 
 
@@ -195,6 +197,107 @@ class SmokeApiRemoteBranchTest(unittest.TestCase):
         )
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("APP_ADMIN_TOKEN", result.stderr + result.stdout)
+
+
+class DataPlaneGitRaceTest(unittest.TestCase):
+    """scripts/forward_capture.sh and scripts/daily_loop.sh commit and push
+    forward-evidence data from a shared checkout, hourly and daily
+    respectively, with no coordination between the two. Git history shows
+    four stranded/raced recoveries in 30h (87312f2, de8a582, b258fc1,
+    9d30526) before this test existed. These are pure text assertions on
+    the checked-in scripts -- no script is executed, so there is no lock
+    contention, network call, or git state to fake.
+    """
+
+    DATA_PLANE_SCRIPTS = ("scripts/forward_capture.sh", "scripts/daily_loop.sh")
+
+    def _text(self, rel):
+        return (REPO / rel).read_text()
+
+    def test_both_scripts_share_the_same_flock_lock_file(self):
+        for rel in self.DATA_PLANE_SCRIPTS:
+            with self.subTest(script=rel):
+                text = self._text(rel)
+                self.assertIn(
+                    "/tmp/linehound_git.lock", text,
+                    f"{rel} does not use the shared git lock file -- it can "
+                    "still race the other data-plane script's commit",
+                )
+                self.assertIn(
+                    "flock", text,
+                    f"{rel} references the lock file but never calls flock "
+                    "on it",
+                )
+
+    def test_both_scripts_rebase_onto_origin_before_pushing(self):
+        for rel in self.DATA_PLANE_SCRIPTS:
+            with self.subTest(script=rel):
+                text = self._text(rel)
+                self.assertIn(
+                    "git fetch", text,
+                    f"{rel} pushes without first fetching origin",
+                )
+                self.assertIn(
+                    "--rebase", text,
+                    f"{rel} does not rebase its own commit onto origin "
+                    "before pushing -- concurrent pushes can still race",
+                )
+                self.assertIn(
+                    "--autostash", text,
+                    f"{rel} rebases without --autostash",
+                )
+                # The rebase must run, textually, before the push it is
+                # meant to protect -- a rebase call added anywhere else in
+                # the file wouldn't actually order-before the push.
+                rebase_pos = text.index("--rebase")
+                push_pos = text.index("git push")
+                self.assertLess(
+                    rebase_pos, push_pos,
+                    f"{rel} calls git push before its rebase-onto-origin "
+                    "step, so the rebase does not protect that push",
+                )
+
+    def test_both_scripts_escalate_on_push_failure_instead_of_lying(self):
+        # The bug this closes: both scripts used to print '== committed =='
+        # unconditionally, never checking git commit's or git push's real
+        # exit status (set -uo pipefail with no -e lets both fail silently).
+        for rel in self.DATA_PLANE_SCRIPTS:
+            with self.subTest(script=rel):
+                text = self._text(rel)
+                self.assertRegex(
+                    text, r"ESCALATE:.*push failed",
+                    f"{rel} has no ESCALATE line for a failed push -- a "
+                    "failed push can still be reported as committed",
+                )
+                self.assertRegex(
+                    text, r"ESCALATE: git lock not acquired",
+                    f"{rel} does not escalate on a flock timeout",
+                )
+
+    def test_daily_loop_no_longer_stages_bare_data(self):
+        text = self._text("scripts/daily_loop.sh")
+        add_lines = [
+            line for line in text.splitlines()
+            if line.strip().startswith("git add ")
+        ]
+        self.assertTrue(add_lines, "daily_loop.sh has no git add line")
+        for line in add_lines:
+            tokens = line.split()
+            self.assertNotIn(
+                "data", tokens,
+                f"daily_loop.sh stages bare 'data' ({line!r}), which pulls "
+                "in data/app and data/raw -- it must name explicit paths "
+                "under data/ instead",
+            )
+            self.assertNotIn("data/app", tokens)
+            self.assertNotIn("data/raw", tokens)
+        # The narrowed set this task specified -- explicit, not inferred.
+        for expected in ("data/processed", "data/watch", "data/research",
+                          "evidence", "docs/OVERNIGHT_RUN.md", "artifacts"):
+            self.assertIn(
+                expected, text,
+                f"daily_loop.sh no longer stages {expected}",
+            )
 
 
 if __name__ == "__main__":

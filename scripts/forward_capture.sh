@@ -4,6 +4,12 @@
 # odds grid (with its close pass), then commits any changed data. Designed
 # so the model session that invokes it does one tool call and reads one
 # short transcript -- all logic lives here, not in model reasoning.
+#
+# This file may be mid-execution on a shared checkout when a merge lands a
+# new version of it. Deploy that change with a rename into place (`git
+# checkout` does this), never with an in-place edit -- bash reads a running
+# script incrementally off disk, so an in-place edit can hand a running
+# process half of the old body and half of the new one.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
@@ -41,11 +47,53 @@ echo "== prop listing =="
 PROP_OUT=$(python3 -m src.pipeline.prop_listing 2>&1)
 echo "$PROP_OUT" | sed 's/^/  /'
 
+# Concurrent runs of this script and daily_loop.sh on the same shared
+# checkout raced each other into stranded/mismerged commits four times in
+# 30h (87312f2, de8a582, b258fc1, 9d30526): both scripts trip hourly, and
+# neither ever checked whether the other was mid-commit. One shared lock
+# file serializes every data-plane commit-and-push across both scripts so
+# only one is ever in flight; flock releases automatically when this
+# script's fd 9 closes, so there is nothing to unlock explicitly.
+GIT_LOCK=/tmp/linehound_git.lock
+exec 9>"$GIT_LOCK"
+GIT_FAILED=0
+if ! flock -w 300 9; then
+    echo "ESCALATE: git lock not acquired"
+    exit 1
+fi
+
 git add data/watch data/processed docs/OVERNIGHT_RUN.md 2>/dev/null || true
 if ! git diff --cached --quiet; then
-    git commit -q -m "Forward capture $(date -u +%H:%MZ)"
-    git push -q || { sleep 2; git push -q; } || { sleep 4; git push -q; }
-    echo "== committed =="
+    BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    if ! git commit -q -m "Forward capture $(date -u +%H:%MZ)"; then
+        echo "ESCALATE: git commit failed"
+        GIT_FAILED=1
+    elif ! git fetch -q origin "$BRANCH"; then
+        echo "ESCALATE: git fetch failed -- commit is local only"
+        GIT_FAILED=1
+    elif ! git pull -q --rebase --autostash origin "$BRANCH"; then
+        # Our own just-made commit is what we're rebasing onto origin --
+        # abort rather than leave the working tree mid-rebase for the next
+        # hourly run to trip over.
+        git rebase --abort 2>/dev/null || true
+        echo "ESCALATE: rebase onto origin/$BRANCH failed -- commit is local only, needs manual resolution"
+        GIT_FAILED=1
+    else
+        PUSH_OK=0
+        for delay in 0 2 4; do
+            [ "$delay" -gt 0 ] && sleep "$delay"
+            if git push -q origin "$BRANCH"; then
+                PUSH_OK=1
+                break
+            fi
+        done
+        if [ "$PUSH_OK" -eq 1 ]; then
+            echo "== committed =="
+        else
+            echo "ESCALATE: push failed after retries -- commit is local only, needs manual push"
+            GIT_FAILED=1
+        fi
+    fi
 else
     echo "== no data changes =="
 fi
@@ -66,4 +114,11 @@ fi
 echo "$PROP_OUT" | grep "^ESCALATE:" || true
 if echo "$PROP_OUT" | grep -q "skipped: credit floor"; then
     echo "ESCALATE: credit floor reached -- stop spending, tell Brey"
+fi
+
+# Exit non-zero on a git failure, but only after every escalation above has
+# had its chance to print -- a lock timeout or failed push must never mask
+# a credit-floor or missed-window escalation from the passes that already ran.
+if [ "$GIT_FAILED" -eq 1 ]; then
+    exit 1
 fi
