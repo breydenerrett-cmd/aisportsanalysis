@@ -1,0 +1,2684 @@
+{
+ "snapshots": {
+  "2023-04-24:TEX@CIN": {
+   "unavailable_at_date": true
+  },
+  "2023-04-25:HOU@TB": {
+   "unavailable_at_date": true
+  },
+  "2023-04-26:CWS@TOR": {
+   "unavailable_at_date": true
+  },
+  "2023-04-26:MIA@ATL": {
+   "unavailable_at_date": true
+  },
+  "2023-04-26:SD@CHC": {
+   "unavailable_at_date": true
+  },
+  "2023-04-27:OAK@LAA": {
+   "unavailable_at_date": true
+  },
+  "2023-04-28:KC@MIN": {
+   "unavailable_at_date": true
+  },
+  "2023-04-28:NYY@TEX": {
+   "unavailable_at_date": true
+  },
+  "2023-04-29:CIN@OAK": {
+   "unavailable_at_date": true
+  },
+  "2023-04-30:CIN@OAK": {
+   "unavailable_at_date": true
+  },
+  "2023-04-30:KC@MIN": {
+   "unavailable_at_date": true
+  },
+  "2023-04-30:TB@CWS": {
+   "unavailable_at_date": true
+  },
+  "2023-05-01:ATL@NYM": {
+   "unavailable_at_date": true
+  },
+  "2023-05-02:LAA@STL": {
+   "unavailable_at_date": true
+  },
+  "2023-05-02:MIN@CWS": {
+   "unavailable_at_date": true
+  },
+  "2023-05-02:SF@HOU": {
+   "unavailable_at_date": true
+  },
+  "2023-05-03:BAL@KC": {
+   "event_id": "688359a99ec9164c86b77889dffce72d",
+   "snapshot_at": "2023-05-03T22:45:40Z"
+  },
+  "2023-05-03:LAA@STL": {
+   "event_id": "23f08047ff53266af369d9012c67dbbc",
+   "snapshot_at": "2023-05-03T22:45:40Z"
+  },
+  "2023-05-03:SEA@OAK": {
+   "event_id": "890b4e9cf0b8e12f1fad599f656c7646",
+   "snapshot_at": "2023-05-03T22:45:40Z"
+  },
+  "2023-05-04:BAL@KC": {
+   "event_id": "688359a99ec9164c86b77889dffce72d",
+   "snapshot_at": "2023-05-04T16:45:40Z"
+  },
+  "2023-05-05:BAL@ATL": {
+   "event_id": "98f5bf66ddfcac0d0bb672ada5714eea",
+   "snapshot_at": "2023-05-05T22:45:39Z"
+  },
+  "2023-05-05:CWS@CIN": {
+   "event_id": "e1f6cf236a307a37206b81dc92578714",
+   "snapshot_at": "2023-05-05T22:45:39Z"
+  },
+  "2023-05-05:MIA@CHC": {
+   "event_id": "f4d8096484847146f77aba6ffbdeb684",
+   "snapshot_at": "2023-05-05T22:45:39Z"
+  },
+  "2023-05-05:TEX@LAA": {
+   "event_id": "3679b548992b7364f3670a4713843dda",
+   "snapshot_at": "2023-05-05T22:45:39Z"
+  },
+  "2023-05-06:CWS@CIN": {
+   "event_id": "8d773e661110b4f18725de398f4a822a",
+   "snapshot_at": "2023-05-06T22:45:39Z"
+  },
+  "2023-05-06:LAD@SD": {
+   "event_id": "ec78a93246b2ab71c6bbae68add91805",
+   "snapshot_at": "2023-05-06T22:45:39Z"
+  },
+  "2023-05-06:NYY@TB": {
+   "event_id": "465cecc86c06978432d84327203bdc04",
+   "snapshot_at": "2023-05-06T22:45:39Z"
+  },
+  "2023-05-06:OAK@KC": {
+   "event_id": "41ec7810850530660ee75e4ee2e3fc03",
+   "snapshot_at": "2023-05-06T22:45:39Z"
+  },
+  "2023-05-06:TEX@LAA": {
+   "event_id": "058da08a3a0dc8a8fa5a13de6158471d",
+   "snapshot_at": "2023-05-06T22:45:39Z"
+  },
+  "2023-05-07:BOS@PHI": {
+   "event_id": "560ae4e6f0f26170d4165108d39bd180",
+   "snapshot_at": "2023-05-07T16:45:39Z"
+  },
+  "2023-05-07:CWS@CIN": {
+   "event_id": "8d773e661110b4f18725de398f4a822a",
+   "snapshot_at": "2023-05-07T22:45:39Z"
+  },
+  "2023-05-07:MIN@CLE": {
+   "event_id": "a0f94e20fc39fcf3169f891a600f54cc",
+   "snapshot_at": "2023-05-07T16:45:39Z"
+  },
+  "2023-05-07:TEX@LAA": {
+   "event_id": "058da08a3a0dc8a8fa5a13de6158471d",
+   "snapshot_at": "2023-05-07T22:45:39Z"
+  },
+  "2023-05-08:COL@PIT": {
+   "event_id": "b13d6c6a3d76b18e796e156a357662ff",
+   "snapshot_at": "2023-05-08T22:45:39Z"
+  },
+  "2023-05-08:STL@CHC": {
+   "event_id": "24726345818b7e4d642634ec04531184",
+   "snapshot_at": "2023-05-08T22:45:39Z"
+  },
+  "2023-05-08:TB@BAL": {
+   "event_id": "98bdafeb10455aaa8ceb84f600d3d152",
+   "snapshot_at": "2023-05-08T22:45:39Z"
+  },
+  "2023-05-09:TB@BAL": {
+   "event_id": "46ace83dbf4980842cc621c6f42059bf",
+   "snapshot_at": "2023-05-09T22:45:39Z"
+  },
+  "2023-05-11:TB@NYY": {
+   "event_id": "7b230c00b9f9539c2a182a223ce821e9",
+   "snapshot_at": "2023-05-11T22:48:35Z"
+  },
+  "2023-05-12:ATL@TOR": {
+   "event_id": "9e0e147f72c46c7b016507b5711ebb0a",
+   "snapshot_at": "2023-05-12T22:45:40Z"
+  },
+  "2023-05-12:SD@LAD": {
+   "event_id": "cb22a6ec7d94d397acd154c6a5e3c289",
+   "snapshot_at": "2023-05-12T22:45:40Z"
+  },
+  "2023-05-12:TEX@OAK": {
+   "event_id": "940a26eaf1d57e0e94a1981c0bd02271",
+   "snapshot_at": "2023-05-12T22:45:40Z"
+  },
+  "2023-05-13:STL@BOS": {
+   "event_id": "1d4c3310dc208f345d88c0e16f9bc06b",
+   "snapshot_at": "2023-05-13T22:45:40Z"
+  },
+  "2023-05-14:SEA@DET": {
+   "event_id": "d047d2026fab0e01748708bc042b465f",
+   "snapshot_at": "2023-05-14T16:45:39Z"
+  },
+  "2023-05-14:TB@NYY": {
+   "event_id": "bd66988b65e3954ba872bb6c2714da59",
+   "snapshot_at": "2023-05-14T16:45:39Z"
+  },
+  "2023-05-15:KC@SD": {
+   "event_id": "b5b62f762d3374257ce31c22df6f2741",
+   "snapshot_at": "2023-05-15T22:45:39Z"
+  },
+  "2023-05-16:CLE@CWS": {
+   "event_id": "b3812f84751371003c7260c0b8703bc9",
+   "snapshot_at": "2023-05-16T22:45:40Z"
+  },
+  "2023-05-20:MIL@TB": {
+   "event_id": "1842b608a5e738700b9ec806f5890abc",
+   "snapshot_at": "2023-05-20T22:45:39Z"
+  },
+  "2023-05-20:OAK@HOU": {
+   "event_id": "31a83b48595a9d5b3618651efcb2134c",
+   "snapshot_at": "2023-05-20T22:45:39Z"
+  },
+  "2023-05-21:CHC@PHI": {
+   "event_id": "9d497d5e68b47d236a8b4c485bae2597",
+   "snapshot_at": "2023-05-21T16:45:38Z"
+  },
+  "2023-05-21:OAK@HOU": {
+   "event_id": "31a83b48595a9d5b3618651efcb2134c",
+   "snapshot_at": "2023-05-21T16:45:38Z"
+  },
+  "2023-05-22:OAK@SEA": {
+   "event_id": "20474e3afa5aa4a34efaf410736337c4",
+   "snapshot_at": "2023-05-22T22:45:39Z"
+  },
+  "2023-05-23:TEX@PIT": {
+   "event_id": "0efa39de845679d5b9e9d27991e17379",
+   "snapshot_at": "2023-05-23T22:45:40Z"
+  },
+  "2023-05-23:TOR@TB": {
+   "event_id": "c8a57f4c604415aae663c3d6edafa189",
+   "snapshot_at": "2023-05-23T22:45:40Z"
+  },
+  "2023-05-24:OAK@SEA": {
+   "event_id": "4653d33f6f4540b27bf483b7925231b5",
+   "snapshot_at": "2023-05-24T22:45:39Z"
+  },
+  "2023-05-24:TOR@TB": {
+   "event_id": "c034f6fafac3f4ac64b9de45af77acf9",
+   "snapshot_at": "2023-05-24T22:45:39Z"
+  },
+  "2023-05-25:OAK@SEA": {
+   "event_id": "4653d33f6f4540b27bf483b7925231b5",
+   "snapshot_at": "2023-05-25T22:45:40Z"
+  },
+  "2023-05-25:STL@CIN": {
+   "event_id": "d9366f4e7bd7c990d8770eb3086fb123",
+   "snapshot_at": "2023-05-25T16:45:39Z"
+  },
+  "2023-05-25:TOR@TB": {
+   "event_id": "c034f6fafac3f4ac64b9de45af77acf9",
+   "snapshot_at": "2023-05-25T16:45:39Z"
+  },
+  "2023-05-26:CIN@CHC": {
+   "event_id": "6343290ccfe2d901a8a1331ef585ea62",
+   "snapshot_at": "2023-05-26T22:45:41Z"
+  },
+  "2023-05-26:HOU@OAK": {
+   "event_id": "ce81fc21e3df8d4af6e868b05223036f",
+   "snapshot_at": "2023-05-26T22:45:41Z"
+  },
+  "2023-05-27:MIA@LAA": {
+   "event_id": "9e0d6769230740eaa39023cde21d8260",
+   "snapshot_at": "2023-05-27T22:45:39Z"
+  },
+  "2023-05-28:HOU@OAK": {
+   "event_id": "3dd9943e60f765c1b520096aa2d6f5cd",
+   "snapshot_at": "2023-05-28T22:45:39Z"
+  },
+  "2023-05-29:TB@CHC": {
+   "event_id": "10eb1fccb837170c914f5306632ef289",
+   "snapshot_at": "2023-05-29T22:45:39Z"
+  },
+  "2023-05-29:TEX@DET": {
+   "event_id": "116ffd7664515f8dc02ed7c50db255a0",
+   "snapshot_at": "2023-05-29T22:45:39Z"
+  },
+  "2023-05-30:ATL@OAK": {
+   "event_id": "e59adf646635970afa854c2a66b749e1",
+   "snapshot_at": "2023-05-30T22:45:39Z"
+  },
+  "2023-05-31:TEX@DET": {
+   "event_id": "cf772143033e9e8517ac9e6e83553639",
+   "snapshot_at": "2023-05-31T16:45:39Z"
+  },
+  "2023-06-04:TB@BOS": {
+   "event_id": "8f6b767942a8a19aa10df5efef09cb98",
+   "snapshot_at": "2023-06-04T22:45:38Z"
+  },
+  "2023-06-05:TB@BOS": {
+   "event_id": "8f6b767942a8a19aa10df5efef09cb98",
+   "snapshot_at": "2023-06-05T22:45:38Z"
+  },
+  "2023-06-06:MIN@TB": {
+   "event_id": "30b0538856d16df168209b48feea7407",
+   "snapshot_at": "2023-06-06T22:45:39Z"
+  },
+  "2023-06-06:NYM@ATL": {
+   "event_id": "e953d2e8b37318941316c33addb2941b",
+   "snapshot_at": "2023-06-06T22:45:39Z"
+  },
+  "2023-06-06:OAK@PIT": {
+   "event_id": "fbace7b0ca860f02374d99a1a152eb65",
+   "snapshot_at": "2023-06-06T22:45:39Z"
+  },
+  "2023-06-07:SF@COL": {
+   "event_id": "4a205f47e55cffe0eaf4c620c40a2b9b",
+   "snapshot_at": "2023-06-07T22:45:38Z"
+  },
+  "2023-06-08:LAD@CIN": {
+   "event_id": "b41b8d87a11ffc8f659261955e77ead3",
+   "snapshot_at": "2023-06-08T16:45:38Z"
+  },
+  "2023-06-08:NYM@ATL": {
+   "event_id": "521ab665fd100cc276e8c3849d9d4413",
+   "snapshot_at": "2023-06-08T22:45:38Z"
+  },
+  "2023-06-08:SF@COL": {
+   "event_id": "4a205f47e55cffe0eaf4c620c40a2b9b",
+   "snapshot_at": "2023-06-08T16:45:38Z"
+  },
+  "2023-06-09:SD@COL": {
+   "event_id": "8121d48d2bdd6dbf331bc269ef824588",
+   "snapshot_at": "2023-06-09T22:45:38Z"
+  },
+  "2023-06-11:LAD@PHI": {
+   "event_id": "6856b1389be7f5e3d4331825cbc1ba50",
+   "snapshot_at": "2023-06-11T16:45:37Z"
+  },
+  "2023-06-11:WSH@ATL": {
+   "event_id": "de1aacf0a285887ad4d4d4d5ed8fbbf4",
+   "snapshot_at": "2023-06-11T16:45:37Z"
+  },
+  "2023-06-12:ATL@DET": {
+   "event_id": "c383f4789232ede0272a45c4fdfa68d9",
+   "snapshot_at": "2023-06-12T22:45:37Z"
+  },
+  "2023-06-12:COL@BOS": {
+   "event_id": "7532287fd6478706b19b03cf3cdc21db",
+   "snapshot_at": "2023-06-12T22:45:37Z"
+  },
+  "2023-06-12:LAA@TEX": {
+   "event_id": "3bb24b3892376e3099d6e692f157781f",
+   "snapshot_at": "2023-06-12T22:45:37Z"
+  },
+  "2023-06-12:TB@OAK": {
+   "event_id": "70e743af104045b684ca88c30b90c083",
+   "snapshot_at": "2023-06-12T22:45:37Z"
+  },
+  "2023-06-13:TB@OAK": {
+   "event_id": "3f9e4f3e2ebcc99a5e95f44eb44ebad5",
+   "snapshot_at": "2023-06-13T22:45:37Z"
+  },
+  "2023-06-13:WSH@HOU": {
+   "event_id": "7b5d85656f00a43dc453cdcf8c09caca",
+   "snapshot_at": "2023-06-13T22:45:37Z"
+  },
+  "2023-06-14:CWS@LAD": {
+   "event_id": "3f948477c2887d3b765964b9aab3681a",
+   "snapshot_at": "2023-06-14T22:45:37Z"
+  },
+  "2023-06-14:NYY@NYM": {
+   "event_id": "173a8f6cf7030b6211fa3d13a04df6e8",
+   "snapshot_at": "2023-06-14T22:45:37Z"
+  },
+  "2023-06-14:WSH@HOU": {
+   "event_id": "ae52570dfddc755143176e7b43312450",
+   "snapshot_at": "2023-06-14T22:45:37Z"
+  },
+  "2023-06-15:DET@MIN": {
+   "event_id": "4a5793d52b93c05d6ea8ec031766994d",
+   "snapshot_at": "2023-06-15T22:45:38Z"
+  },
+  "2023-06-15:LAA@TEX": {
+   "event_id": "ad088840e4fdc6c344286bd9ab68991f",
+   "snapshot_at": "2023-06-15T22:45:38Z"
+  },
+  "2023-06-17:TB@SD": {
+   "event_id": "47d0b1e00b8b44b7a98fc32d4da209ef",
+   "snapshot_at": "2023-06-17T22:45:38Z"
+  },
+  "2023-06-18:PHI@OAK": {
+   "event_id": "bcfc7354a840a213ffd125b6d55a9f4f",
+   "snapshot_at": "2023-06-18T22:45:38Z"
+  },
+  "2023-06-20:OAK@CLE": {
+   "event_id": "92c7168c945060bbbd7aa882434493da",
+   "snapshot_at": "2023-06-20T22:45:38Z"
+  },
+  "2023-06-20:TEX@CWS": {
+   "event_id": "30142c1c0ac005940aa64a700b6d99d6",
+   "snapshot_at": "2023-06-20T22:45:38Z"
+  },
+  "2023-06-21:BAL@TB": {
+   "event_id": "1f080c35fd8bcb0a93118db018cdde84",
+   "snapshot_at": "2023-06-21T16:45:38Z"
+  },
+  "2023-06-22:OAK@CLE": {
+   "event_id": "825eb688e8706ad9467a64ade43b6651",
+   "snapshot_at": "2023-06-22T16:45:38Z"
+  },
+  "2023-06-23:KC@TB": {
+   "event_id": "667c8b6b010a64e10255124d82833a98",
+   "snapshot_at": "2023-06-23T22:45:39Z"
+  },
+  "2023-06-24:BOS@CWS": {
+   "event_id": "acb410ddf82f9c43ebdd82564c8bda0f",
+   "snapshot_at": "2023-06-24T22:45:38Z"
+  },
+  "2023-06-24:KC@TB": {
+   "event_id": "4624d055b6f32e9e4a1e31110cdaa482",
+   "snapshot_at": "2023-06-24T22:45:38Z"
+  },
+  "2023-06-24:OAK@TOR": {
+   "event_id": "231569abddd85d06b29b9c3887793f26",
+   "snapshot_at": "2023-06-24T22:45:38Z"
+  },
+  "2023-06-24:TEX@NYY": {
+   "event_id": "704d40ba45254196dd7553627133fe7b",
+   "snapshot_at": "2023-06-24T22:45:38Z"
+  },
+  "2023-06-25:LAA@COL": {
+   "event_id": "fae1a5845686f0fb2a06429cd93fcc51",
+   "snapshot_at": "2023-06-25T16:45:39Z"
+  },
+  "2023-06-26:WSH@SEA": {
+   "event_id": "f97db489303edca881438d04b45fccf5",
+   "snapshot_at": "2023-06-26T22:45:39Z"
+  },
+  "2023-06-27:CWS@LAA": {
+   "event_id": "7f94b61b9bb8d809764bc06283e4d3cf",
+   "snapshot_at": "2023-06-27T22:45:39Z"
+  },
+  "2023-06-27:LAD@COL": {
+   "event_id": "2f0c2df48abcc1555bfe5e9840014d6c",
+   "snapshot_at": "2023-06-27T22:45:39Z"
+  },
+  "2023-06-28:DET@TEX": {
+   "event_id": "06391d9c53c897e744e0c0d458b610c1",
+   "snapshot_at": "2023-06-28T22:45:39Z"
+  },
+  "2023-06-28:WSH@SEA": {
+   "event_id": "bdbd6cf2f2f482776d305c173992a2ac",
+   "snapshot_at": "2023-06-28T22:45:39Z"
+  },
+  "2023-06-30:HOU@TEX": {
+   "event_id": "bbe812e1acb93a27c68e6c25b6e0026d",
+   "snapshot_at": "2023-06-30T22:45:40Z"
+  },
+  "2023-07-01:CWS@OAK": {
+   "event_id": "9b642587427c30e8996bf9073cfa5b2c",
+   "snapshot_at": "2023-07-01T22:45:40Z"
+  },
+  "2023-07-02:MIA@ATL": {
+   "event_id": "f045182644532cbfbbcfcc819417f5f9",
+   "snapshot_at": "2023-07-02T16:45:39Z"
+  },
+  "2023-07-02:WSH@PHI": {
+   "event_id": "b3c0c29d81c7839e78f345c4d322afc4",
+   "snapshot_at": "2023-07-02T16:45:39Z"
+  },
+  "2023-07-04:PHI@TB": {
+   "event_id": "3ca9e9a2f32f160436e64ccc941afbed",
+   "snapshot_at": "2023-07-04T16:45:40Z"
+  },
+  "2023-07-05:COL@HOU": {
+   "event_id": "c2bdada4366f4083b7c59849ed0df6c0",
+   "snapshot_at": "2023-07-05T16:45:39Z"
+  },
+  "2023-07-05:OAK@DET": {
+   "event_id": "f42add4246365c66fb898bebbdc9426f",
+   "snapshot_at": "2023-07-05T22:45:39Z"
+  },
+  "2023-07-06:KC@CLE": {
+   "event_id": "8fc54ad36c861e4ca726fc31a3a754e5",
+   "snapshot_at": "2023-07-06T22:45:40Z"
+  },
+  "2023-07-06:TEX@BOS": {
+   "event_id": "2ed2f818ce7008ba550f1f59d2e76d77",
+   "snapshot_at": "2023-07-06T22:45:40Z"
+  },
+  "2023-07-07:OAK@BOS": {
+   "event_id": "5013a5ba586b6b2bd592a8bad942e3db",
+   "snapshot_at": "2023-07-07T22:45:40Z"
+  },
+  "2023-07-07:TEX@WSH": {
+   "event_id": "c475dd52e9a16b13cb02156c1142e3ca",
+   "snapshot_at": "2023-07-07T22:45:40Z"
+  },
+  "2023-07-08:COL@SF": {
+   "event_id": "695dd39d060a50319acd7e81ad57a04b",
+   "snapshot_at": "2023-07-08T22:45:39Z"
+  },
+  "2023-07-08:OAK@BOS": {
+   "event_id": "5013a5ba586b6b2bd592a8bad942e3db",
+   "snapshot_at": "2023-07-08T22:45:39Z"
+  },
+  "2023-07-08:TOR@DET": {
+   "event_id": "5d686baf8128667a3b11c666966eb93f",
+   "snapshot_at": "2023-07-08T22:45:39Z"
+  },
+  "2023-07-09:COL@SF": {
+   "event_id": "695dd39d060a50319acd7e81ad57a04b",
+   "snapshot_at": "2023-07-09T16:45:39Z"
+  },
+  "2023-07-09:TEX@WSH": {
+   "event_id": "386d9cb912dce651beac8171144b3f7a",
+   "snapshot_at": "2023-07-09T16:45:39Z"
+  },
+  "2023-07-14:CWS@ATL": {
+   "event_id": "4c6cb11b7f1faf14cadb44b994cbf645",
+   "snapshot_at": "2023-07-14T22:45:41Z"
+  },
+  "2023-07-14:MIN@OAK": {
+   "event_id": "7a24295888004106e43b1c766416fb29",
+   "snapshot_at": "2023-07-14T22:45:41Z"
+  },
+  "2023-07-15:CWS@ATL": {
+   "event_id": "d84a5d89fba764dcb28c7bf80ee3d25a",
+   "snapshot_at": "2023-07-15T22:45:39Z"
+  },
+  "2023-07-15:MIN@OAK": {
+   "event_id": "688b26a5c9d2c94bf3aa577d888ed16d",
+   "snapshot_at": "2023-07-15T22:45:39Z"
+  },
+  "2023-07-15:NYY@COL": {
+   "event_id": "dba0638edda73dbd0745539f3d2f0e19",
+   "snapshot_at": "2023-07-15T22:45:39Z"
+  },
+  "2023-07-16:MIN@OAK": {
+   "event_id": "688b26a5c9d2c94bf3aa577d888ed16d",
+   "snapshot_at": "2023-07-16T22:45:39Z"
+  },
+  "2023-07-16:NYY@COL": {
+   "event_id": "dba0638edda73dbd0745539f3d2f0e19",
+   "snapshot_at": "2023-07-16T22:45:39Z"
+  },
+  "2023-07-16:TB@KC": {
+   "event_id": "d8c7cd7ecb4f857d2891da03ed51bd26",
+   "snapshot_at": "2023-07-16T16:45:39Z"
+  },
+  "2023-07-19:BOS@OAK": {
+   "event_id": "36657e148f503ee062ec7fc5a4bd08fa",
+   "snapshot_at": "2023-07-19T16:45:40Z"
+  },
+  "2023-07-19:WSH@CHC": {
+   "event_id": "0ec3e09f0e5e54fa417b9cf10b1a31b8",
+   "snapshot_at": "2023-07-19T22:45:40Z"
+  },
+  "2023-07-21:COL@MIA": {
+   "event_id": "10e907ff30032c1f519b588c0d6be210",
+   "snapshot_at": "2023-07-21T22:45:40Z"
+  },
+  "2023-07-21:CWS@MIN": {
+   "event_id": "3f5aabad3bd6fa024c28cf250fedafc2",
+   "snapshot_at": "2023-07-21T22:45:40Z"
+  },
+  "2023-07-21:HOU@OAK": {
+   "event_id": "a924a1d915a130f71e727a2e2080d6ad",
+   "snapshot_at": "2023-07-21T22:45:40Z"
+  },
+  "2023-07-22:KC@NYY": {
+   "event_id": "efeaab984731e53d2a6ce128bcb6ae5f",
+   "snapshot_at": "2023-07-22T22:45:40Z"
+  },
+  "2023-07-22:SF@WSH": {
+   "event_id": "24a6237d61267f969d56376632611c18",
+   "snapshot_at": "2023-07-22T22:45:40Z"
+  },
+  "2023-07-23:CWS@MIN": {
+   "event_id": "080ef67a6f77a997c6c2472b304d5b99",
+   "snapshot_at": "2023-07-23T16:45:39Z"
+  },
+  "2023-07-23:HOU@OAK": {
+   "event_id": "658de84a32abc66bd5c5dd92a3e02ed2",
+   "snapshot_at": "2023-07-23T22:45:39Z"
+  },
+  "2023-07-23:SD@DET": {
+   "event_id": "c2b0cd1cbf0b727dfc35f8af270c27f7",
+   "snapshot_at": "2023-07-23T16:45:39Z"
+  },
+  "2023-07-23:SF@WSH": {
+   "event_id": "9b15f2be4d6985f455f44b40f2a8a819",
+   "snapshot_at": "2023-07-23T16:45:39Z"
+  },
+  "2023-07-25:CHC@CWS": {
+   "event_id": "ce248a438e06273b050332289f7dae4d",
+   "snapshot_at": "2023-07-25T22:45:40Z"
+  },
+  "2023-07-25:KC@CLE": {
+   "event_id": "d84e8a2218b10737e16c22820555d118",
+   "snapshot_at": "2023-07-25T22:45:40Z"
+  },
+  "2023-07-25:MIA@TB": {
+   "event_id": "928d216ad34dc0eea0c54425d8bd5eea",
+   "snapshot_at": "2023-07-25T22:45:40Z"
+  },
+  "2023-07-26:CHC@CWS": {
+   "event_id": "ce248a438e06273b050332289f7dae4d",
+   "snapshot_at": "2023-07-26T22:45:40Z"
+  },
+  "2023-07-26:KC@CLE": {
+   "event_id": "d84e8a2218b10737e16c22820555d118",
+   "snapshot_at": "2023-07-26T16:45:41Z"
+  },
+  "2023-07-26:OAK@SF": {
+   "event_id": "33e0facf8836d3fdab287cd33319cee4",
+   "snapshot_at": "2023-07-26T22:45:40Z"
+  },
+  "2023-07-28:CIN@LAD": {
+   "event_id": "d7e0b2e172e35ea8e8e4533cc180221c",
+   "snapshot_at": "2023-07-28T22:45:40Z"
+  },
+  "2023-07-28:MIN@KC": {
+   "event_id": "5b21eeb36eed54efa947113cc2e2d8bc",
+   "snapshot_at": "2023-07-28T22:45:40Z"
+  },
+  "2023-07-29:MIN@KC": {
+   "event_id": "f57579303291fae0527ad37b646b1666",
+   "snapshot_at": "2023-07-29T22:45:40Z"
+  },
+  "2023-07-30:MIN@KC": {
+   "event_id": "f57579303291fae0527ad37b646b1666",
+   "snapshot_at": "2023-07-30T16:45:42Z"
+  },
+  "2023-07-31:LAA@ATL": {
+   "event_id": "f2e021d93a1cbe5ee5da0b21817e6683",
+   "snapshot_at": "2023-07-31T22:45:40Z"
+  },
+  "2023-07-31:SD@COL": {
+   "event_id": "7492c538bbc24b382e6cb17558718798",
+   "snapshot_at": "2023-07-31T22:45:40Z"
+  },
+  "2023-07-31:TB@NYY": {
+   "event_id": "fc2b48011c82d25d5eaf314c33bea290",
+   "snapshot_at": "2023-07-31T22:45:40Z"
+  },
+  "2023-08-01:LAA@ATL": {
+   "event_id": "efa483c52f406823a16b201f09e12249",
+   "snapshot_at": "2023-08-01T22:45:41Z"
+  },
+  "2023-08-01:OAK@LAD": {
+   "event_id": "4f58f4f343ef4ac81a3420cc0e87012b",
+   "snapshot_at": "2023-08-01T22:45:41Z"
+  },
+  "2023-08-01:TB@NYY": {
+   "event_id": "cdfe416edf52b1de7c178a1870154fbf",
+   "snapshot_at": "2023-08-01T22:45:41Z"
+  },
+  "2023-08-02:NYM@KC": {
+   "event_id": "ef6188872acabb58b78738c7bdf29fef",
+   "snapshot_at": "2023-08-02T22:45:41Z"
+  },
+  "2023-08-03:CWS@TEX": {
+   "event_id": "cc66d06248f55e17419b7e0978847615",
+   "snapshot_at": "2023-08-03T16:45:41Z"
+  },
+  "2023-08-04:COL@STL": {
+   "event_id": "2aecb9c8965407f63a7885f44bcbf3a4",
+   "snapshot_at": "2023-08-04T22:45:42Z"
+  },
+  "2023-08-04:KC@PHI": {
+   "event_id": "e2547e3e2c029212cf08fafe12fd71c5",
+   "snapshot_at": "2023-08-04T22:45:42Z"
+  },
+  "2023-08-05:KC@PHI": {
+   "event_id": "a02fb67382f05e2e1ca9ca24eb24508f",
+   "snapshot_at": "2023-08-05T22:45:41Z"
+  },
+  "2023-08-06:SF@OAK": {
+   "event_id": "b5e023252b27a3a418da088576c9301c",
+   "snapshot_at": "2023-08-06T22:45:40Z"
+  },
+  "2023-08-07:ATL@PIT": {
+   "event_id": "743d0524d095b50356c4fcca5667c124",
+   "snapshot_at": "2023-08-07T22:45:41Z"
+  },
+  "2023-08-07:MIN@DET": {
+   "event_id": "9165f4f8f1956ed6e7aefaa7d568df9a",
+   "snapshot_at": "2023-08-07T22:45:41Z"
+  },
+  "2023-08-07:TEX@OAK": {
+   "event_id": "c36cf7cac071c738f565afc13bf94c44",
+   "snapshot_at": "2023-08-07T22:45:41Z"
+  },
+  "2023-08-08:COL@MIL": {
+   "event_id": "2027e867d484bfcc5abbb74677425eeb",
+   "snapshot_at": "2023-08-08T22:45:41Z"
+  },
+  "2023-08-09:COL@MIL": {
+   "event_id": "2027e867d484bfcc5abbb74677425eeb",
+   "snapshot_at": "2023-08-09T16:45:40Z"
+  },
+  "2023-08-09:KC@BOS": {
+   "event_id": "1deb7c461a37354f3224f284ba2684fa",
+   "snapshot_at": "2023-08-09T22:45:41Z"
+  },
+  "2023-08-09:MIN@DET": {
+   "event_id": "6a29c810ec2d3c512793e6ef734a5579",
+   "snapshot_at": "2023-08-09T22:45:41Z"
+  },
+  "2023-08-10:COL@LAD": {
+   "event_id": "8325ed6a26d2dc45c64e3c38939b74d8",
+   "snapshot_at": "2023-08-10T22:45:43Z"
+  },
+  "2023-08-10:KC@BOS": {
+   "event_id": "1deb7c461a37354f3224f284ba2684fa",
+   "snapshot_at": "2023-08-10T22:45:43Z"
+  },
+  "2023-08-10:STL@TB": {
+   "event_id": "84af5ea1dbfc866e9561bb2b2d91c547",
+   "snapshot_at": "2023-08-10T22:45:43Z"
+  },
+  "2023-08-10:WSH@PHI": {
+   "event_id": "e879c3f1e4769e8c4eaf8e59f93ed9f2",
+   "snapshot_at": "2023-08-10T22:45:43Z"
+  },
+  "2023-08-11:ATL@NYM": {
+   "event_id": "d410fcb231a971748424cc763de30831",
+   "snapshot_at": "2023-08-11T22:45:43Z"
+  },
+  "2023-08-11:COL@LAD": {
+   "event_id": "d3896a8b0e80274bb762c7b2733ed93a",
+   "snapshot_at": "2023-08-11T22:45:43Z"
+  },
+  "2023-08-12:CLE@TB": {
+   "event_id": "67aa46dd7f2b57219d7258e8b039af12",
+   "snapshot_at": "2023-08-12T22:45:41Z"
+  },
+  "2023-08-14:LAA@TEX": {
+   "event_id": "2938aeec6fbf0c1f8139610788952cfc",
+   "snapshot_at": "2023-08-14T22:45:41Z"
+  },
+  "2023-08-14:NYY@ATL": {
+   "event_id": "930e53d6dabbff915b411fe2dcde4bfe",
+   "snapshot_at": "2023-08-14T22:45:41Z"
+  },
+  "2023-08-14:OAK@STL": {
+   "event_id": "61267bf7adf058eb4287b78f5f0de10f",
+   "snapshot_at": "2023-08-14T22:45:41Z"
+  },
+  "2023-08-15:DET@MIN": {
+   "event_id": "03ab70d192ef1b83af998d56ebca587b",
+   "snapshot_at": "2023-08-15T22:45:41Z"
+  },
+  "2023-08-15:NYY@ATL": {
+   "event_id": "930e53d6dabbff915b411fe2dcde4bfe",
+   "snapshot_at": "2023-08-15T22:45:41Z"
+  },
+  "2023-08-16:MIL@LAD": {
+   "event_id": "b87cf70f9ad407b8b4dde363d0e7bb1c",
+   "snapshot_at": "2023-08-16T22:45:42Z"
+  },
+  "2023-08-18:PIT@MIN": {
+   "event_id": "b13f345b52d86a7cd55baf6088b3dfac",
+   "snapshot_at": "2023-08-18T22:45:42Z"
+  },
+  "2023-08-18:SF@ATL": {
+   "event_id": "d8ce791cef77e4424d458557db042546",
+   "snapshot_at": "2023-08-18T22:45:42Z"
+  },
+  "2023-08-19:BAL@OAK": {
+   "event_id": "50151b4d134e2baf3595d3d4502934d0",
+   "snapshot_at": "2023-08-19T22:45:41Z"
+  },
+  "2023-08-19:MIA@LAD": {
+   "event_id": "7b9530e8855d981aaadbfe61c8ac64d9",
+   "snapshot_at": "2023-08-19T22:45:41Z"
+  },
+  "2023-08-19:TB@LAA": {
+   "event_id": "178cf16df439d47a9abea0a0259dde06",
+   "snapshot_at": "2023-08-19T22:45:41Z"
+  },
+  "2023-08-20:BAL@OAK": {
+   "event_id": "50151b4d134e2baf3595d3d4502934d0",
+   "snapshot_at": "2023-08-20T22:45:41Z"
+  },
+  "2023-08-20:KC@CHC": {
+   "event_id": "b75110cd4fd6fe4208a3091e00580194",
+   "snapshot_at": "2023-08-20T16:45:41Z"
+  },
+  "2023-08-20:MIL@TEX": {
+   "event_id": "06175452d378f0b3d64f60d0194d91b3",
+   "snapshot_at": "2023-08-20T16:45:41Z"
+  },
+  "2023-08-20:PHI@WSH": {
+   "event_id": "2d75c0b58a11253dd5dd8b9bfb0bf8ee",
+   "snapshot_at": "2023-08-20T22:45:41Z"
+  },
+  "2023-08-20:SF@ATL": {
+   "event_id": "95b12c34c29b4cab5694ee80932a13b0",
+   "snapshot_at": "2023-08-20T16:45:41Z"
+  },
+  "2023-08-21:SEA@CWS": {
+   "event_id": "9f0018538e8086604119e42f492bc49e",
+   "snapshot_at": "2023-08-21T22:45:42Z"
+  },
+  "2023-08-22:COL@TB": {
+   "event_id": "cc8c25a5ed2a9b79bd7a4256e63739d6",
+   "snapshot_at": "2023-08-22T22:45:43Z"
+  },
+  "2023-08-22:LAD@CLE": {
+   "event_id": "7bb736b77d1305880a3b99aee8503839",
+   "snapshot_at": "2023-08-22T22:45:43Z"
+  },
+  "2023-08-23:COL@TB": {
+   "event_id": "cc8c25a5ed2a9b79bd7a4256e63739d6",
+   "snapshot_at": "2023-08-23T22:45:42Z"
+  },
+  "2023-08-23:LAD@CLE": {
+   "event_id": "299a738ea18dfd4c59f448bb5ff57b94",
+   "snapshot_at": "2023-08-23T22:45:42Z"
+  },
+  "2023-08-23:SEA@CWS": {
+   "event_id": "35280fe007325f02847ae6602644a5ff",
+   "snapshot_at": "2023-08-23T16:45:42Z"
+  },
+  "2023-08-24:COL@TB": {
+   "event_id": "84a4ec511f82a8b9a5a1312427644a53",
+   "snapshot_at": "2023-08-24T16:45:42Z"
+  },
+  "2023-08-25:COL@BAL": {
+   "event_id": "82dfde671854e5d8dc29877a6abdeba1",
+   "snapshot_at": "2023-08-25T22:45:44Z"
+  },
+  "2023-08-25:HOU@DET": {
+   "event_id": "ded0fdf7233b862979dc65884bb230fb",
+   "snapshot_at": "2023-08-25T22:45:44Z"
+  },
+  "2023-08-26:COL@BAL": {
+   "event_id": "82dfde671854e5d8dc29877a6abdeba1",
+   "snapshot_at": "2023-08-26T22:45:42Z"
+  },
+  "2023-08-26:KC@SEA": {
+   "event_id": "bc10422a499995db61cc39b6c0673851",
+   "snapshot_at": "2023-08-26T22:45:42Z"
+  },
+  "2023-08-26:NYY@TB": {
+   "event_id": "336c5071677f4d718b6e2916c01833c4",
+   "snapshot_at": "2023-08-26T22:45:42Z"
+  },
+  "2023-08-27:HOU@DET": {
+   "event_id": "78b619ccd7f79d08c918ab22db48474d",
+   "snapshot_at": "2023-08-27T16:45:42Z"
+  },
+  "2023-08-27:KC@SEA": {
+   "event_id": "01016b32f776fa665f629fee4297dbbe",
+   "snapshot_at": "2023-08-27T16:45:42Z"
+  },
+  "2023-08-27:NYY@TB": {
+   "event_id": "336c5071677f4d718b6e2916c01833c4",
+   "snapshot_at": "2023-08-27T16:45:42Z"
+  },
+  "2023-08-28:ATL@COL": {
+   "event_id": "1f460c00777eb0712be2a154a5bca0fa",
+   "snapshot_at": "2023-08-28T22:45:44Z"
+  },
+  "2023-08-28:CWS@BAL": {
+   "event_id": "047965c8a997ace8f4d0ab240e376360",
+   "snapshot_at": "2023-08-28T22:45:44Z"
+  },
+  "2023-08-28:OAK@SEA": {
+   "event_id": "eb7193d4ebb12ed18308ce2986100220",
+   "snapshot_at": "2023-08-28T22:45:44Z"
+  },
+  "2023-08-28:TEX@NYM": {
+   "event_id": "4af21cecce5985e95590a9f2fb85d77a",
+   "snapshot_at": "2023-08-28T22:45:44Z"
+  },
+  "2023-08-28:WSH@TOR": {
+   "event_id": "501c5bd02fff36a452f742e14fe4276a",
+   "snapshot_at": "2023-08-28T22:45:44Z"
+  },
+  "2023-08-29:ATL@COL": {
+   "event_id": "1f460c00777eb0712be2a154a5bca0fa",
+   "snapshot_at": "2023-08-29T22:45:42Z"
+  },
+  "2023-09-01:BOS@KC": {
+   "event_id": "55422432d999d64ac2a8be79ad29e950",
+   "snapshot_at": "2023-09-01T22:45:43Z"
+  },
+  "2023-09-01:LAA@OAK": {
+   "event_id": "a45b883f443ce7e4d89cc3d4e2cc2cde",
+   "snapshot_at": "2023-09-01T22:45:43Z"
+  },
+  "2023-09-01:TB@CLE": {
+   "event_id": "8fba1e1a27a8007ccd8bf72534e6701e",
+   "snapshot_at": "2023-09-01T22:45:43Z"
+  },
+  "2023-09-01:TOR@COL": {
+   "event_id": "0bf6f1c6a814e166d5a61cffc2c20ee4",
+   "snapshot_at": "2023-09-01T22:45:43Z"
+  },
+  "2023-09-02:BOS@KC": {
+   "event_id": "04d1ec77cb42ea5860baa243b877cdb8",
+   "snapshot_at": "2023-09-02T22:45:41Z"
+  },
+  "2023-09-02:TOR@COL": {
+   "event_id": "0bf6f1c6a814e166d5a61cffc2c20ee4",
+   "snapshot_at": "2023-09-02T22:45:41Z"
+  },
+  "2023-09-03:BOS@KC": {
+   "event_id": "44dcb24a9e40f7264eeef363bef86d9d",
+   "snapshot_at": "2023-09-03T16:45:39Z"
+  },
+  "2023-09-03:LAA@OAK": {
+   "event_id": "67075eeda1bec3db1e6316b91c680d14",
+   "snapshot_at": "2023-09-03T22:45:39Z"
+  },
+  "2023-09-03:SEA@NYM": {
+   "event_id": "de29bb932ae9a7c724efecd8de46dcd7",
+   "snapshot_at": "2023-09-03T16:45:39Z"
+  },
+  "2023-09-03:TB@CLE": {
+   "event_id": "dfe408b8a4f61f2ee010ddc375ff94fd",
+   "snapshot_at": "2023-09-03T22:45:39Z"
+  },
+  "2023-09-03:TOR@COL": {
+   "event_id": "be27e38c3796502bcc647b20c30fdbe9",
+   "snapshot_at": "2023-09-03T22:45:39Z"
+  },
+  "2023-09-04:BOS@TB": {
+   "event_id": "d590c3ea37723cc68ba2d6819e99d680",
+   "snapshot_at": "2023-09-04T22:45:41Z"
+  },
+  "2023-09-06:BOS@TB": {
+   "event_id": "7a5e61152d40e1df30830832fb7701cf",
+   "snapshot_at": "2023-09-06T22:45:41Z"
+  },
+  "2023-09-06:STL@ATL": {
+   "event_id": "6538a56474de3d02522040b6b63fb38b",
+   "snapshot_at": "2023-09-06T22:45:41Z"
+  },
+  "2023-09-07:STL@ATL": {
+   "event_id": "6538a56474de3d02522040b6b63fb38b",
+   "snapshot_at": "2023-09-07T22:45:42Z"
+  },
+  "2023-09-09:COL@SF": {
+   "event_id": "5523a61f80e03328fcb56888c62c3752",
+   "snapshot_at": "2023-09-09T22:45:41Z"
+  },
+  "2023-09-09:LAD@WSH": {
+   "event_id": "bff1f0247c61c1ac5a969d608f235a61",
+   "snapshot_at": "2023-09-09T22:45:41Z"
+  },
+  "2023-09-10:LAD@WSH": {
+   "event_id": "f9a3e17486909a1f6e0c535c1b15770e",
+   "snapshot_at": "2023-09-10T16:45:42Z"
+  },
+  "2023-09-11:STL@BAL": {
+   "event_id": "cf0753db3afd56d6e5fab6feedfa3e50",
+   "snapshot_at": "2023-09-11T22:45:41Z"
+  },
+  "2023-09-12:CHC@COL": {
+   "event_id": "59b3e4e4a5ff044da91d442cfcc08c13",
+   "snapshot_at": "2023-09-12T22:45:42Z"
+  },
+  "2023-09-13:ATL@PHI": {
+   "event_id": "486ac6492051f4f429c4bc71105325ba",
+   "snapshot_at": "2023-09-13T22:45:42Z"
+  },
+  "2023-09-14:MIN@CWS": {
+   "event_id": "94a3dfc9299a4798659aadb1652139fb",
+   "snapshot_at": "2023-09-14T22:45:42Z"
+  },
+  "2023-09-15:ATL@MIA": {
+   "event_id": "972bb861db01274ae3f517d6b27c93da",
+   "snapshot_at": "2023-09-15T22:45:43Z"
+  },
+  "2023-09-15:MIN@CWS": {
+   "event_id": "103743e8dcf7dfda85556c3dc975e052",
+   "snapshot_at": "2023-09-15T22:45:43Z"
+  },
+  "2023-09-15:SF@COL": {
+   "event_id": "22e998449ee59806fe215b893de9db66",
+   "snapshot_at": "2023-09-15T22:45:43Z"
+  },
+  "2023-09-16:MIN@CWS": {
+   "event_id": "81166c5a8306f686f42d9310575c5df6",
+   "snapshot_at": "2023-09-16T22:45:42Z"
+  },
+  "2023-09-16:SF@COL": {
+   "event_id": "0d58921be6b7656c72be0d38b7111919",
+   "snapshot_at": "2023-09-16T22:45:42Z"
+  },
+  "2023-09-16:WSH@MIL": {
+   "event_id": "e7ea5c389a7999192189a8e827475996",
+   "snapshot_at": "2023-09-16T22:45:42Z"
+  },
+  "2023-09-17:HOU@KC": {
+   "event_id": "36ab728e542fa333bf17c2fdcf40a87d",
+   "snapshot_at": "2023-09-17T16:45:40Z"
+  },
+  "2023-09-17:SF@COL": {
+   "event_id": "0d58921be6b7656c72be0d38b7111919",
+   "snapshot_at": "2023-09-17T16:45:40Z"
+  },
+  "2023-09-17:WSH@MIL": {
+   "event_id": "e7ea5c389a7999192189a8e827475996",
+   "snapshot_at": "2023-09-17T16:45:40Z"
+  },
+  "2023-09-18:SEA@OAK": {
+   "event_id": "8da8b128d827d0c25283754908cc51ff",
+   "snapshot_at": "2023-09-18T22:45:43Z"
+  },
+  "2023-09-19:COL@SD": {
+   "event_id": "18c25fd4f2d5c81dabca80f9132d3dfe",
+   "snapshot_at": "2023-09-19T22:45:41Z"
+  },
+  "2023-09-19:LAA@TB": {
+   "event_id": "7ee5428d8d67b2b694206f83aaa0d533",
+   "snapshot_at": "2023-09-19T22:45:41Z"
+  },
+  "2023-09-20:COL@SD": {
+   "event_id": "18c25fd4f2d5c81dabca80f9132d3dfe",
+   "snapshot_at": "2023-09-20T22:45:43Z"
+  },
+  "2023-09-21:ATL@WSH": {
+   "event_id": "369c4da89ab81cbf86a8e297df95bfa9",
+   "snapshot_at": "2023-09-21T22:45:44Z"
+  },
+  "2023-09-21:DET@OAK": {
+   "event_id": "44f894793f2c53a8b7cdfe23e252014e",
+   "snapshot_at": "2023-09-21T22:45:44Z"
+  },
+  "2023-09-21:LAA@TB": {
+   "event_id": "8399ed5ea563d11a34a6b86f1c75f38b",
+   "snapshot_at": "2023-09-21T16:45:43Z"
+  },
+  "2023-09-22:ATL@WSH": {
+   "event_id": "e6e14f017c3f0e47aac03abc778d22a3",
+   "snapshot_at": "2023-09-22T22:45:43Z"
+  },
+  "2023-09-22:CWS@BOS": {
+   "event_id": "88a178f7d7c9ce9823825cf2b7baf01b",
+   "snapshot_at": "2023-09-22T22:45:43Z"
+  },
+  "2023-09-22:LAA@MIN": {
+   "event_id": "763720791221ec43874dc7164547a26e",
+   "snapshot_at": "2023-09-22T22:45:43Z"
+  },
+  "2023-09-23:COL@CHC": {
+   "event_id": "7605cafbb4e558af0ba94fae88bd8714",
+   "snapshot_at": "2023-09-23T22:45:42Z"
+  },
+  "2023-09-23:LAA@MIN": {
+   "event_id": "cac352adf1a8db1fb379b528b0b7e7c9",
+   "snapshot_at": "2023-09-23T22:45:42Z"
+  },
+  "2023-09-23:STL@SD": {
+   "event_id": "2f9c5e20632eaed97533e5257e34cb3d",
+   "snapshot_at": "2023-09-23T22:45:42Z"
+  },
+  "2023-09-24:ATL@WSH": {
+   "event_id": "f2d5207d0dc158c7e973acae0cfb6173",
+   "snapshot_at": "2023-09-24T22:45:40Z"
+  },
+  "2023-09-24:COL@CHC": {
+   "event_id": "7605cafbb4e558af0ba94fae88bd8714",
+   "snapshot_at": "2023-09-24T16:45:41Z"
+  },
+  "2023-09-24:DET@OAK": {
+   "event_id": "796713700601029408699011a4e9b2d4",
+   "snapshot_at": "2023-09-24T22:45:40Z"
+  },
+  "2023-09-24:LAA@MIN": {
+   "event_id": "cac352adf1a8db1fb379b528b0b7e7c9",
+   "snapshot_at": "2023-09-24T16:45:41Z"
+  },
+  "2023-09-24:STL@SD": {
+   "event_id": "2f9c5e20632eaed97533e5257e34cb3d",
+   "snapshot_at": "2023-09-24T22:45:40Z"
+  },
+  "2023-09-26:LAD@COL": {
+   "event_id": "9473b3fe6445088d83b342d83ea33440",
+   "snapshot_at": "2023-09-26T22:45:42Z"
+  },
+  "2023-09-26:TB@BOS": {
+   "event_id": "d5d5c21c1a2715e26d03bfbff7b48604",
+   "snapshot_at": "2023-09-26T22:45:42Z"
+  },
+  "2023-09-26:WSH@BAL": {
+   "event_id": "f9826bea9cda47034a1a2e3d1bca4649",
+   "snapshot_at": "2023-09-26T22:45:42Z"
+  },
+  "2023-09-27:TB@BOS": {
+   "event_id": "d5d5c21c1a2715e26d03bfbff7b48604",
+   "snapshot_at": "2023-09-27T22:45:42Z"
+  },
+  "2023-09-27:WSH@BAL": {
+   "event_id": "f9826bea9cda47034a1a2e3d1bca4649",
+   "snapshot_at": "2023-09-27T22:45:42Z"
+  },
+  "2023-09-28:LAD@COL": {
+   "event_id": "bfa2d9ab8cad2020e5edeb3568d131aa",
+   "snapshot_at": "2023-09-28T22:45:41Z"
+  },
+  "2023-09-28:OAK@MIN": {
+   "event_id": "badd80ccb1c389aa525bfc888b7e3574",
+   "snapshot_at": "2023-09-28T16:45:42Z"
+  },
+  "2023-09-28:PIT@PHI": {
+   "event_id": "be55fc714790e903fca33cfb6b4a23f1",
+   "snapshot_at": "2023-09-28T22:45:41Z"
+  },
+  "2023-09-28:STL@MIL": {
+   "event_id": "7dab8893c77917fe7b21ba2869fa2b03",
+   "snapshot_at": "2023-09-28T16:45:42Z"
+  },
+  "2023-09-29:MIN@COL": {
+   "event_id": "853244ab0e57e3a087a9ac7b4c692db1",
+   "snapshot_at": "2023-09-29T22:45:42Z"
+  },
+  "2023-09-29:WSH@ATL": {
+   "event_id": "3150f55e92b9ca003e065d721b8bed46",
+   "snapshot_at": "2023-09-29T22:45:42Z"
+  },
+  "2023-09-30:MIN@COL": {
+   "event_id": "3b636528f5d8227cf9dcc05707735292",
+   "snapshot_at": "2023-09-30T22:45:41Z"
+  },
+  "2023-09-30:WSH@ATL": {
+   "event_id": "3150f55e92b9ca003e065d721b8bed46",
+   "snapshot_at": "2023-09-30T22:45:41Z"
+  },
+  "2023-10-01:LAD@SF": {
+   "event_id": "cf60559447f7b19ca718f76aa6a7252d",
+   "snapshot_at": "2023-10-01T16:45:40Z"
+  },
+  "2023-10-01:NYY@KC": {
+   "event_id": "f183a587fa9068e89c8c421dccad1fd6",
+   "snapshot_at": "2023-10-01T16:45:40Z"
+  },
+  "2023-10-01:SD@CWS": {
+   "event_id": "e47b3f9dcd07926f571c0fb9803264bb",
+   "snapshot_at": "2023-10-01T16:45:40Z"
+  },
+  "2024-04-21:SEA@COL": {
+   "event_id": "ccbf2c9c4a3bd010e78958e6aacb76f6",
+   "snapshot_at": "2024-04-21T22:45:38Z"
+  },
+  "2024-04-22:SD@COL": {
+   "event_id": "a15c940b75fa8a25d1c96f7bfae8da81",
+   "snapshot_at": "2024-04-22T22:45:39Z"
+  },
+  "2024-04-23:CWS@MIN": {
+   "event_id": "a5770834c6b12d1b8b35f4a0ebca443e",
+   "snapshot_at": "2024-04-23T22:45:39Z"
+  },
+  "2024-04-24:CWS@MIN": {
+   "event_id": "027b268a3a8c39d655c9dfcce936035e",
+   "snapshot_at": "2024-04-24T22:45:39Z"
+  },
+  "2024-04-25:MIL@PIT": {
+   "event_id": "94bb3d077181eb09ec854677194c6385",
+   "snapshot_at": "2024-04-25T16:45:39Z"
+  },
+  "2024-04-25:OAK@NYY": {
+   "event_id": "9949953e7b96db373915f1d572f9fdb5",
+   "snapshot_at": "2024-04-25T22:45:39Z"
+  },
+  "2024-04-28:TB@CWS": {
+   "event_id": "1b2ec4ace33a165dc62ccc9a9d77a41f",
+   "snapshot_at": "2024-04-28T16:45:38Z"
+  },
+  "2024-04-29:MIN@CWS": {
+   "event_id": "444f009e102a9b39db8d44147109f370",
+   "snapshot_at": "2024-04-29T22:45:38Z"
+  },
+  "2024-04-29:PHI@LAA": {
+   "event_id": "d3794c14089d8a6076ab67c7e80a20d8",
+   "snapshot_at": "2024-04-29T22:45:38Z"
+  },
+  "2024-04-30:KC@TOR": {
+   "event_id": "7de6f01422e6d4e1a1d301e3323ed69e",
+   "snapshot_at": "2024-04-30T22:45:39Z"
+  },
+  "2024-04-30:PHI@LAA": {
+   "event_id": "63c5f72e82c28f6db03793af676ab45a",
+   "snapshot_at": "2024-04-30T22:45:39Z"
+  },
+  "2024-04-30:TB@MIL": {
+   "event_id": "285a12f1e60500ae8ae408ff9baa99e0",
+   "snapshot_at": "2024-04-30T22:45:39Z"
+  },
+  "2024-05-01:ATL@SEA": {
+   "event_id": "eea233ac24b203132e6f546d33af6673",
+   "snapshot_at": "2024-05-01T16:45:39Z"
+  },
+  "2024-05-01:KC@TOR": {
+   "event_id": "7de6f01422e6d4e1a1d301e3323ed69e",
+   "snapshot_at": "2024-05-01T16:45:39Z"
+  },
+  "2024-05-01:MIN@CWS": {
+   "event_id": "e471be3bb513d988778020a006ef9aa5",
+   "snapshot_at": "2024-05-01T16:45:39Z"
+  },
+  "2024-05-01:PHI@LAA": {
+   "event_id": "63c5f72e82c28f6db03793af676ab45a",
+   "snapshot_at": "2024-05-01T22:45:39Z"
+  },
+  "2024-05-03:COL@PIT": {
+   "event_id": "5d1efe579119418b94679459cf80c9b5",
+   "snapshot_at": "2024-05-03T22:45:39Z"
+  },
+  "2024-05-04:COL@PIT": {
+   "event_id": "2720785587220424dbd966d95a9dd097",
+   "snapshot_at": "2024-05-04T22:45:39Z"
+  },
+  "2024-05-04:SF@PHI": {
+   "event_id": "3e2f7b0bce0359919643f0197f242fdd",
+   "snapshot_at": "2024-05-04T22:45:39Z"
+  },
+  "2024-05-04:TEX@KC": {
+   "event_id": "e55df155ca95e56e735abc4def5d58e9",
+   "snapshot_at": "2024-05-04T22:45:39Z"
+  },
+  "2024-05-06:NYM@STL": {
+   "event_id": "80a40bad17e1a6dafa83496a15384421",
+   "snapshot_at": "2024-05-06T22:45:39Z"
+  },
+  "2024-05-07:BAL@WSH": {
+   "event_id": "272f2e6aebb5fc2633f929cfc6fa7dde",
+   "snapshot_at": "2024-05-07T22:45:39Z"
+  },
+  "2024-05-07:CWS@TB": {
+   "event_id": "6dcc03b8aa0973b27a798549683b18ac",
+   "snapshot_at": "2024-05-07T22:45:39Z"
+  },
+  "2024-05-07:DET@CLE": {
+   "event_id": "9eff56381d36d5997d266ce0be03028b",
+   "snapshot_at": "2024-05-07T22:45:39Z"
+  },
+  "2024-05-07:NYM@STL": {
+   "event_id": "e87c5b818f6ebfa9e5a3eabe0412fc63",
+   "snapshot_at": "2024-05-07T22:45:39Z"
+  },
+  "2024-05-07:SF@COL": {
+   "event_id": "f96f24b72dc3bbc928a084f1c4a53027",
+   "snapshot_at": "2024-05-07T22:45:39Z"
+  },
+  "2024-05-08:CWS@TB": {
+   "event_id": "6dcc03b8aa0973b27a798549683b18ac",
+   "snapshot_at": "2024-05-08T22:45:38Z"
+  },
+  "2024-05-09:CLE@CWS": {
+   "event_id": "fa72a34b3dd073d2b6a235a1d69a539c",
+   "snapshot_at": "2024-05-09T22:45:39Z"
+  },
+  "2024-05-09:SF@COL": {
+   "event_id": "523cacaa0dfd246d7b1e3960ec462953",
+   "snapshot_at": "2024-05-09T16:45:39Z"
+  },
+  "2024-05-10:KC@LAA": {
+   "event_id": "0d6860bfd8cdbdcc7f86167b2dc286a2",
+   "snapshot_at": "2024-05-10T22:45:39Z"
+  },
+  "2024-05-10:LAD@SD": {
+   "event_id": "2cf9370ce453f4545e41326c55f9f160",
+   "snapshot_at": "2024-05-10T22:45:39Z"
+  },
+  "2024-05-10:PHI@MIA": {
+   "event_id": "5f06cd2a99e403e32e037b3a9628e2b4",
+   "snapshot_at": "2024-05-10T22:45:39Z"
+  },
+  "2024-05-10:TEX@COL": {
+   "event_id": "963c5b9ca0f5b05f3f8582580b33323d",
+   "snapshot_at": "2024-05-10T22:45:39Z"
+  },
+  "2024-05-10:WSH@BOS": {
+   "event_id": "9c58471efc1453d87845c75159906cdf",
+   "snapshot_at": "2024-05-10T22:45:39Z"
+  },
+  "2024-05-11:KC@LAA": {
+   "event_id": "e432fcd8780852fa4bce3714fa2397e6",
+   "snapshot_at": "2024-05-11T22:45:38Z"
+  },
+  "2024-05-11:MIN@TOR": {
+   "event_id": "05ce997a5ed7cc7d0c85b467c9e98739",
+   "snapshot_at": "2024-05-11T22:45:38Z"
+  },
+  "2024-05-11:STL@MIL": {
+   "event_id": "3cf3582a72a4a9511e7057101db73a74",
+   "snapshot_at": "2024-05-11T22:45:38Z"
+  },
+  "2024-05-12:CLE@CWS": {
+   "event_id": "227c65e5076cd4db78ef82c09da18bfc",
+   "snapshot_at": "2024-05-12T16:45:38Z"
+  },
+  "2024-05-12:HOU@DET": {
+   "event_id": "c53e8cbb730ebeb87f67229ddaaf23a9",
+   "snapshot_at": "2024-05-12T16:45:38Z"
+  },
+  "2024-05-14:COL@SD": {
+   "event_id": "f80c43dbdae03c1dcf0dce3af2386da3",
+   "snapshot_at": "2024-05-14T22:45:38Z"
+  },
+  "2024-05-14:MIA@DET": {
+   "event_id": "e938089ca8fbe527ea444412c06a7617",
+   "snapshot_at": "2024-05-14T22:45:38Z"
+  },
+  "2024-05-14:PIT@MIL": {
+   "event_id": "859d9e6b325f31556966f682a1447dc5",
+   "snapshot_at": "2024-05-14T22:45:38Z"
+  },
+  "2024-05-14:WSH@CWS": {
+   "event_id": "04a571a15d1651c10568a53479c50664",
+   "snapshot_at": "2024-05-14T22:45:38Z"
+  },
+  "2024-05-15:MIA@DET": {
+   "event_id": "e938089ca8fbe527ea444412c06a7617",
+   "snapshot_at": "2024-05-15T16:45:39Z"
+  },
+  "2024-05-16:CIN@LAD": {
+   "event_id": "55e29177ca44b85ca24f18ded0a9dff3",
+   "snapshot_at": "2024-05-16T22:45:39Z"
+  },
+  "2024-05-17:MIL@HOU": {
+   "event_id": "94215e6f4adc6f463f702ff77d85c454",
+   "snapshot_at": "2024-05-17T22:45:39Z"
+  },
+  "2024-05-18:BOS@STL": {
+   "event_id": "2812b41da12da5cc14b7f806c9a27f29",
+   "snapshot_at": "2024-05-18T22:45:38Z"
+  },
+  "2024-05-19:NYM@MIA": {
+   "event_id": "285b7b4ecf8d212a83b6a299107f488e",
+   "snapshot_at": "2024-05-19T16:45:37Z"
+  },
+  "2024-05-19:OAK@KC": {
+   "event_id": "945febff00384fdfbfdee04f742841ce",
+   "snapshot_at": "2024-05-19T16:45:37Z"
+  },
+  "2024-05-23:TEX@PHI": {
+   "event_id": "53930caa56f46e20afef99196c5331d1",
+   "snapshot_at": "2024-05-23T16:45:38Z"
+  },
+  "2024-05-24:BAL@CWS": {
+   "event_id": "b639256ddfcf8a972eeef03d4dc0ff2c",
+   "snapshot_at": "2024-05-24T22:45:39Z"
+  },
+  "2024-05-25:BAL@CWS": {
+   "event_id": "79fbf094cf2395cf3b19a293ee796183",
+   "snapshot_at": "2024-05-25T22:45:38Z"
+  },
+  "2024-05-25:KC@TB": {
+   "event_id": "ae1268a1df5cd24fe8071a774d31874e",
+   "snapshot_at": "2024-05-25T22:45:38Z"
+  },
+  "2024-05-25:PHI@COL": {
+   "event_id": "516bacf74df0fd5ef87c04bd86c05543",
+   "snapshot_at": "2024-05-25T22:45:38Z"
+  },
+  "2024-05-26:ATL@PIT": {
+   "event_id": "f1cefcfc3faa493ef4333cac6f7c14f6",
+   "snapshot_at": "2024-05-26T16:45:38Z"
+  },
+  "2024-05-26:LAD@CIN": {
+   "event_id": "02b57d190285843184cadfd0b63c50cb",
+   "snapshot_at": "2024-05-26T16:45:38Z"
+  },
+  "2024-05-26:NYY@SD": {
+   "event_id": "4d33c8c4bd650a288186d822f43f3216",
+   "snapshot_at": "2024-05-26T22:45:38Z"
+  },
+  "2024-05-26:PHI@COL": {
+   "event_id": "516bacf74df0fd5ef87c04bd86c05543",
+   "snapshot_at": "2024-05-26T16:45:38Z"
+  },
+  "2024-05-28:NYY@LAA": {
+   "event_id": "a6505bccd18d4fba8f82f7d88cd57f85",
+   "snapshot_at": "2024-05-28T22:45:38Z"
+  },
+  "2024-05-28:PHI@SF": {
+   "event_id": "d64abe00e8f46fe80dd426640ee374bd",
+   "snapshot_at": "2024-05-28T22:45:38Z"
+  },
+  "2024-05-29:NYY@LAA": {
+   "event_id": "a19df815fe99cb6b22e9ad8e43a7c30f",
+   "snapshot_at": "2024-05-29T22:45:38Z"
+  },
+  "2024-05-29:PHI@SF": {
+   "event_id": "d64abe00e8f46fe80dd426640ee374bd",
+   "snapshot_at": "2024-05-29T16:45:38Z"
+  },
+  "2024-05-31:OAK@ATL": {
+   "event_id": "2c9c95ea571b857b88f3c40931fae6fe",
+   "snapshot_at": "2024-05-31T22:45:38Z"
+  },
+  "2024-05-31:TB@BAL": {
+   "event_id": "136599d46ee114b0f8ef78075196a004",
+   "snapshot_at": "2024-05-31T22:45:38Z"
+  },
+  "2024-05-31:WSH@CLE": {
+   "event_id": "168b990b775e39ade5fb1e855bd7607a",
+   "snapshot_at": "2024-05-31T22:45:38Z"
+  },
+  "2024-06-01:COL@LAD": {
+   "event_id": "75bed3ac0b4915ec1fe5e5851d4eadbe",
+   "snapshot_at": "2024-06-01T22:45:37Z"
+  },
+  "2024-06-01:SD@KC": {
+   "event_id": "77c2c4bc4f37651d04705762a8ed80d5",
+   "snapshot_at": "2024-06-01T22:45:37Z"
+  },
+  "2024-06-02:COL@LAD": {
+   "event_id": "75bed3ac0b4915ec1fe5e5851d4eadbe",
+   "snapshot_at": "2024-06-02T22:45:37Z"
+  },
+  "2024-06-02:SD@KC": {
+   "event_id": "1e45d1ea0186ca4c0dd0e7b90012b891",
+   "snapshot_at": "2024-06-02T16:45:37Z"
+  },
+  "2024-06-03:SD@LAA": {
+   "event_id": "873dd2632bda55688aabcd2f9dd02d10",
+   "snapshot_at": "2024-06-03T22:45:38Z"
+  },
+  "2024-06-04:BAL@TOR": {
+   "event_id": "9ef393b4d6d73baa38d03c33cf1edca5",
+   "snapshot_at": "2024-06-04T22:45:37Z"
+  },
+  "2024-06-04:CWS@CHC": {
+   "event_id": "66d799a68dcf109552315342fbb606b9",
+   "snapshot_at": "2024-06-04T22:45:37Z"
+  },
+  "2024-06-04:LAD@PIT": {
+   "event_id": "792e7434718782de67c56aacfba28c1d",
+   "snapshot_at": "2024-06-04T22:45:37Z"
+  },
+  "2024-06-04:MIN@NYY": {
+   "event_id": "f49a8ff37ba73f47bbf4d4c64cc1df0e",
+   "snapshot_at": "2024-06-04T22:45:37Z"
+  },
+  "2024-06-05:BAL@TOR": {
+   "event_id": "c1f99ee8cb2aa9218b7bc28bb0f6499e",
+   "snapshot_at": "2024-06-05T22:45:37Z"
+  },
+  "2024-06-06:SEA@OAK": {
+   "event_id": "716d9ccf5ee8b70110185d385bd07029",
+   "snapshot_at": "2024-06-06T16:45:37Z"
+  },
+  "2024-06-08:BAL@TB": {
+   "event_id": "0fb01805f1fc37cf4b785861138c802f",
+   "snapshot_at": "2024-06-08T22:45:37Z"
+  },
+  "2024-06-08:BOS@CWS": {
+   "event_id": "cbc06631d54d965345e4b5c03006d352",
+   "snapshot_at": "2024-06-08T22:45:37Z"
+  },
+  "2024-06-08:MIL@DET": {
+   "event_id": "2525d8e0dfc07f08081e5ae9bdea1e14",
+   "snapshot_at": "2024-06-08T22:45:37Z"
+  },
+  "2024-06-10:COL@MIN": {
+   "event_id": "7ddd732cd2a17180150ad9ee738fa4c1",
+   "snapshot_at": "2024-06-10T22:45:37Z"
+  },
+  "2024-06-12:COL@MIN": {
+   "event_id": "bca1104cf860ccfc7b870420c8d5f714",
+   "snapshot_at": "2024-06-12T16:45:38Z"
+  },
+  "2024-06-13:TEX@LAD": {
+   "event_id": "adc43306bd6f7da50da4d7639a6ed7ab",
+   "snapshot_at": "2024-06-13T22:45:38Z"
+  },
+  "2024-06-14:NYY@BOS": {
+   "event_id": "e9db6afe4a0137c64de528b24c3afcb5",
+   "snapshot_at": "2024-06-14T22:45:38Z"
+  },
+  "2024-06-15:PIT@COL": {
+   "event_id": "4256c51abcd105bd0d73a4686a174feb",
+   "snapshot_at": "2024-06-15T22:45:37Z"
+  },
+  "2024-06-17:SD@PHI": {
+   "event_id": "e73a3b2716a4a3e273ad9326ceafa9ec",
+   "snapshot_at": "2024-06-17T22:45:37Z"
+  },
+  "2024-06-18:BOS@TOR": {
+   "event_id": "b913db5e28f3deddd06b5f24b596b8f4",
+   "snapshot_at": "2024-06-18T22:45:37Z"
+  },
+  "2024-06-18:STL@MIA": {
+   "event_id": "caf27238f17b738a1a5685334afe7a37",
+   "snapshot_at": "2024-06-18T22:45:37Z"
+  },
+  "2024-06-19:MIL@LAA": {
+   "event_id": "94252860b754b41d109115127629ce63",
+   "snapshot_at": "2024-06-19T22:45:38Z"
+  },
+  "2024-06-21:CWS@DET": {
+   "event_id": "a8edf2b25c8594f2ae2e2774cf258a22",
+   "snapshot_at": "2024-06-21T22:45:38Z"
+  },
+  "2024-06-21:SEA@MIA": {
+   "event_id": "1555594817b59259e888e050fa155577",
+   "snapshot_at": "2024-06-21T22:45:38Z"
+  },
+  "2024-06-24:MIA@KC": {
+   "event_id": "60fa279872652fdd6b859f8a888ad2c6",
+   "snapshot_at": "2024-06-24T22:45:38Z"
+  },
+  "2024-06-24:SEA@TB": {
+   "event_id": "9986035a3b350873fb141f5edc633336",
+   "snapshot_at": "2024-06-24T22:45:38Z"
+  },
+  "2024-06-24:TOR@BOS": {
+   "event_id": "f829101b648b2d015f86c7c2a5f6dba3",
+   "snapshot_at": "2024-06-24T22:45:38Z"
+  },
+  "2024-06-26:ATL@STL": {
+   "event_id": "e6c1a7354480526afa5efce5994f0822",
+   "snapshot_at": "2024-06-26T22:45:38Z"
+  },
+  "2024-06-27:MIA@PHI": {
+   "event_id": "8e2844e781618f9b9b8ff4fdc34d8a13",
+   "snapshot_at": "2024-06-27T22:45:38Z"
+  },
+  "2024-06-29:LAD@SF": {
+   "event_id": "48aaf9582878013f36142d0bba3a1e12",
+   "snapshot_at": "2024-06-29T22:45:38Z"
+  },
+  "2024-06-29:MIA@PHI": {
+   "event_id": "3650e07130cb8dfe73a566ff201e105f",
+   "snapshot_at": "2024-06-29T22:45:38Z"
+  },
+  "2024-06-30:CHC@MIL": {
+   "event_id": "8c615cf2961b00ec61ec13765056f8f4",
+   "snapshot_at": "2024-06-30T16:45:38Z"
+  },
+  "2024-06-30:PIT@ATL": {
+   "event_id": "9147dbc7a337ee2e38e5c65e59c599d4",
+   "snapshot_at": "2024-06-30T16:45:38Z"
+  },
+  "2024-07-02:CIN@NYY": {
+   "event_id": "fe416a28f488525ddbaed3c3cfa9b425",
+   "snapshot_at": "2024-07-02T22:45:37Z"
+  },
+  "2024-07-04:CWS@CLE": {
+   "event_id": "39f9fd66ceec3c143c75486a6976ebfa",
+   "snapshot_at": "2024-07-04T16:45:37Z"
+  },
+  "2024-07-04:PHI@CHC": {
+   "event_id": "311cdc8706ff087ccc094c08ec7985dd",
+   "snapshot_at": "2024-07-04T16:45:37Z"
+  },
+  "2024-07-05:BAL@OAK": {
+   "event_id": "b746f3e90d286cb80f538d9307507b1f",
+   "snapshot_at": "2024-07-05T22:45:37Z"
+  },
+  "2024-07-05:KC@COL": {
+   "event_id": "7dcb9df3e254952e391222dfaedf8516",
+   "snapshot_at": "2024-07-05T22:45:37Z"
+  },
+  "2024-07-05:SF@CLE": {
+   "event_id": "0aaea21ac748b2ed69c66957dc9c76d4",
+   "snapshot_at": "2024-07-05T22:45:37Z"
+  },
+  "2024-07-06:KC@COL": {
+   "event_id": "901ab844532737b29853058ce586ef8f",
+   "snapshot_at": "2024-07-06T22:45:37Z"
+  },
+  "2024-07-09:CLE@DET": {
+   "event_id": "d36c64e0b8d3b7e2d1fc236d42b1f00e",
+   "snapshot_at": "2024-07-09T22:45:37Z"
+  },
+  "2024-07-09:COL@CIN": {
+   "event_id": "42141bcb20b978af7406b7802168c2da",
+   "snapshot_at": "2024-07-09T22:45:37Z"
+  },
+  "2024-07-10:MIN@CWS": {
+   "event_id": "5573cb7101964d15aef2ae3a9482bd57",
+   "snapshot_at": "2024-07-10T22:45:37Z"
+  },
+  "2024-07-10:OAK@BOS": {
+   "event_id": "cbcf7e74192f4ae43d3315b5ae002975",
+   "snapshot_at": "2024-07-10T22:45:37Z"
+  },
+  "2024-07-11:COL@CIN": {
+   "event_id": "ded3f1e857ee4890697e7cddfe9e1351",
+   "snapshot_at": "2024-07-11T16:45:37Z"
+  },
+  "2024-07-11:OAK@BOS": {
+   "event_id": "cbcf7e74192f4ae43d3315b5ae002975",
+   "snapshot_at": "2024-07-11T22:45:37Z"
+  },
+  "2024-07-12:OAK@PHI": {
+   "event_id": "1e0128dd95457fcf584274d3281d0dc4",
+   "snapshot_at": "2024-07-12T22:45:37Z"
+  },
+  "2024-07-12:SEA@LAA": {
+   "event_id": "0afc0a4da78eaa786ee0951b5785513c",
+   "snapshot_at": "2024-07-12T22:45:37Z"
+  },
+  "2024-07-13:PIT@CWS": {
+   "event_id": "ddadfe10f1656f4155a392706f2e1a1a",
+   "snapshot_at": "2024-07-13T22:45:37Z"
+  },
+  "2024-07-13:SEA@LAA": {
+   "event_id": "89f82e472b5f40caace2a553ee8f28df",
+   "snapshot_at": "2024-07-13T22:45:37Z"
+  },
+  "2024-07-14:MIA@CIN": {
+   "event_id": "8cfa9a56b511fce3229dcfdb5bfcf2cd",
+   "snapshot_at": "2024-07-14T16:45:37Z"
+  },
+  "2024-07-14:OAK@PHI": {
+   "event_id": "70c831ffbb46fa66223033293f37c15b",
+   "snapshot_at": "2024-07-14T16:45:37Z"
+  },
+  "2024-07-14:PIT@CWS": {
+   "event_id": "ddadfe10f1656f4155a392706f2e1a1a",
+   "snapshot_at": "2024-07-14T16:45:37Z"
+  },
+  "2024-07-19:CWS@KC": {
+   "event_id": "f535fcab0f85abcce21ce1545d6f029b",
+   "snapshot_at": "2024-07-19T22:45:38Z"
+  },
+  "2024-07-19:NYM@MIA": {
+   "event_id": "b2488436e7fc9bc10deef9d4ac747d7f",
+   "snapshot_at": "2024-07-19T22:45:38Z"
+  },
+  "2024-07-20:NYM@MIA": {
+   "event_id": "e282a2728ed07e430160248983fc180b",
+   "snapshot_at": "2024-07-20T22:45:37Z"
+  },
+  "2024-07-20:SF@COL": {
+   "event_id": "3b3fe62d1f0d7cdccd00a5c3c5ac6109",
+   "snapshot_at": "2024-07-20T22:45:37Z"
+  },
+  "2024-07-21:CWS@KC": {
+   "event_id": "017641c316c415ec6fac19328d20b13c",
+   "snapshot_at": "2024-07-21T16:45:37Z"
+  },
+  "2024-07-22:BOS@COL": {
+   "event_id": "38677598de06cf3f04b381452198638a",
+   "snapshot_at": "2024-07-22T22:45:37Z"
+  },
+  "2024-07-23:BOS@COL": {
+   "event_id": "600597af106b5f4f748dc16a65e44b16",
+   "snapshot_at": "2024-07-23T22:45:37Z"
+  },
+  "2024-07-24:BOS@COL": {
+   "event_id": "600597af106b5f4f748dc16a65e44b16",
+   "snapshot_at": "2024-07-24T16:45:37Z"
+  },
+  "2024-07-24:CWS@TEX": {
+   "event_id": "71c6a4db36e5704012e62a26f758216a",
+   "snapshot_at": "2024-07-24T22:45:37Z"
+  },
+  "2024-07-24:LAA@SEA": {
+   "event_id": "47a202bd17dbfbb45bbe44158ff2fd5f",
+   "snapshot_at": "2024-07-24T16:45:37Z"
+  },
+  "2024-07-25:BAL@MIA": {
+   "event_id": "289a7e72cb61d9e9f9bffcb21aa27024",
+   "snapshot_at": "2024-07-25T16:45:38Z"
+  },
+  "2024-07-26:MIA@MIL": {
+   "event_id": "ac3680e2deb644d5a0252ce9e2fa35c5",
+   "snapshot_at": "2024-07-26T22:45:37Z"
+  },
+  "2024-07-26:SEA@CWS": {
+   "event_id": "f9a3729e6336de1b516f033932252d59",
+   "snapshot_at": "2024-07-26T22:45:37Z"
+  },
+  "2024-07-31:KC@CWS": {
+   "event_id": "33fba3324463625ba76677949e61301b",
+   "snapshot_at": "2024-07-31T16:45:39Z"
+  },
+  "2024-08-03:LAD@OAK": {
+   "event_id": "bb130cafc3820fed1d08cf126e01d04e",
+   "snapshot_at": "2024-08-03T22:45:37Z"
+  },
+  "2024-08-03:MIA@ATL": {
+   "event_id": "9eeb0b0dbc7df62a3b9193b204fd1fcc",
+   "snapshot_at": "2024-08-03T22:45:37Z"
+  },
+  "2024-08-04:CWS@MIN": {
+   "event_id": "2ae65202d7f6025f01e6ee5ca53a91e0",
+   "snapshot_at": "2024-08-04T16:45:37Z"
+  },
+  "2024-08-04:MIA@ATL": {
+   "event_id": "9eeb0b0dbc7df62a3b9193b204fd1fcc",
+   "snapshot_at": "2024-08-04T16:45:37Z"
+  },
+  "2024-08-05:CIN@MIA": {
+   "event_id": "e8b4b5a2d5f94322e4c7b7a44b223fcf",
+   "snapshot_at": "2024-08-05T22:45:38Z"
+  },
+  "2024-08-06:CIN@MIA": {
+   "event_id": "11e045eac757ebfbced2fb625120ab24",
+   "snapshot_at": "2024-08-06T22:45:38Z"
+  },
+  "2024-08-07:BAL@TOR": {
+   "event_id": "984a58950b8af7bc89fd486170529a15",
+   "snapshot_at": "2024-08-07T22:45:38Z"
+  },
+  "2024-08-08:CIN@MIA": {
+   "event_id": "83ac54218073f88123f9e70c2c45229e",
+   "snapshot_at": "2024-08-08T22:45:38Z"
+  },
+  "2024-08-09:ATL@COL": {
+   "event_id": "829a6502da3af66cb8b3ff29e129863d",
+   "snapshot_at": "2024-08-09T22:45:38Z"
+  },
+  "2024-08-10:ATL@COL": {
+   "event_id": "b4bac3cef0382509f676f8cec7136cc5",
+   "snapshot_at": "2024-08-10T22:45:38Z"
+  },
+  "2024-08-10:CHC@CWS": {
+   "event_id": "074e3cc65f8f8a79c496e8e237a8b9b6",
+   "snapshot_at": "2024-08-10T22:45:38Z"
+  },
+  "2024-08-10:SD@MIA": {
+   "event_id": "809966d79e1624bfbbbc5a1f2ad0a30f",
+   "snapshot_at": "2024-08-10T22:45:38Z"
+  },
+  "2024-08-11:SD@MIA": {
+   "event_id": "809966d79e1624bfbbbc5a1f2ad0a30f",
+   "snapshot_at": "2024-08-11T16:45:38Z"
+  },
+  "2024-08-16:ATL@LAA": {
+   "event_id": "25ced5fa4d490073b0c2595554e26939",
+   "snapshot_at": "2024-08-16T22:45:38Z"
+  },
+  "2024-08-16:MIA@NYM": {
+   "event_id": "84e85c56420af580a5b6ba5c8fa9641f",
+   "snapshot_at": "2024-08-16T22:45:38Z"
+  },
+  "2024-08-17:ATL@LAA": {
+   "event_id": "6c54a9b840b6ed019809616170d230c2",
+   "snapshot_at": "2024-08-17T22:45:38Z"
+  },
+  "2024-08-17:CWS@HOU": {
+   "event_id": "f6f06da81dbc6eef5950de7b75331b41",
+   "snapshot_at": "2024-08-17T22:45:38Z"
+  },
+  "2024-08-17:SD@COL": {
+   "event_id": "1a4162993fb2eff2a89614afe4284090",
+   "snapshot_at": "2024-08-17T22:45:38Z"
+  },
+  "2024-08-19:LAA@KC": {
+   "event_id": "0747fe8d3149dfe82c05524dfbf3480f",
+   "snapshot_at": "2024-08-19T22:45:38Z"
+  },
+  "2024-08-20:LAA@KC": {
+   "event_id": "c50abd6867f2bef7353b6ae3e16ec7ee",
+   "snapshot_at": "2024-08-20T22:45:39Z"
+  },
+  "2024-08-23:STL@MIN": {
+   "event_id": "8f7841095ff87aa5d956d62d65c071ed",
+   "snapshot_at": "2024-08-23T22:45:39Z"
+  },
+  "2024-08-24:TB@LAD": {
+   "event_id": "ddcfa3a93de53cdb5e46f32d5183c5f5",
+   "snapshot_at": "2024-08-24T22:45:38Z"
+  },
+  "2024-08-25:DET@CWS": {
+   "event_id": "f6b7aec6bc5740732f125e8e5f142e26",
+   "snapshot_at": "2024-08-25T22:45:38Z"
+  },
+  "2024-08-27:TEX@CWS": {
+   "event_id": "88ee9e829eb8a6ec79a030ca963b3c85",
+   "snapshot_at": "2024-08-27T22:45:39Z"
+  },
+  "2024-08-29:LAA@DET": {
+   "event_id": "243778dbdcfe82ad35e6f3b3d4874160",
+   "snapshot_at": "2024-08-29T16:45:39Z"
+  },
+  "2024-08-29:TEX@CWS": {
+   "event_id": "0fe74948ab843283a45aa5d184ad5e27",
+   "snapshot_at": "2024-08-29T16:45:39Z"
+  },
+  "2024-08-30:BAL@COL": {
+   "event_id": "ea3fb24710b020d014e03a67ae39be31",
+   "snapshot_at": "2024-08-30T22:45:39Z"
+  },
+  "2024-08-31:SEA@LAA": {
+   "event_id": "f7db5da3c8aed59e8c535463d5dd3627",
+   "snapshot_at": "2024-08-31T22:45:37Z"
+  },
+  "2024-09-01:BAL@COL": {
+   "event_id": "5095b08146baf607ebdfc6c5c8234084",
+   "snapshot_at": "2024-09-01T16:45:37Z"
+  },
+  "2024-09-02:CWS@BAL": {
+   "event_id": "d994405fbdd0d7775759e7b4814a6617",
+   "snapshot_at": "2024-09-02T22:45:37Z"
+  },
+  "2024-09-02:STL@MIL": {
+   "event_id": "ea8cd9c78dc3036606e5489ab6eee2b4",
+   "snapshot_at": "2024-09-02T22:45:37Z"
+  },
+  "2024-09-03:COL@ATL": {
+   "event_id": "a35b52e46d693223f2fb2ac7760bdb0a",
+   "snapshot_at": "2024-09-03T22:45:38Z"
+  },
+  "2024-09-03:CWS@BAL": {
+   "event_id": "203b42510112131082fba9c9c108ed36",
+   "snapshot_at": "2024-09-03T22:45:38Z"
+  },
+  "2024-09-04:COL@ATL": {
+   "event_id": "17cc271e2b390fbcbd045bf6ba93d1a6",
+   "snapshot_at": "2024-09-04T22:45:38Z"
+  },
+  "2024-09-04:CWS@BAL": {
+   "event_id": "203b42510112131082fba9c9c108ed36",
+   "snapshot_at": "2024-09-04T22:45:38Z"
+  },
+  "2024-09-04:PHI@TOR": {
+   "event_id": "47bcb853b6e4ab92ecf27af76b2417e6",
+   "snapshot_at": "2024-09-04T16:45:38Z"
+  },
+  "2024-09-05:COL@ATL": {
+   "event_id": "17cc271e2b390fbcbd045bf6ba93d1a6",
+   "snapshot_at": "2024-09-05T22:45:38Z"
+  },
+  "2024-09-06:CWS@BOS": {
+   "event_id": "fc34d012f9f1ade3f76ac56803e7759c",
+   "snapshot_at": "2024-09-06T22:45:38Z"
+  },
+  "2024-09-07:COL@MIL": {
+   "event_id": "02af9d70a0ada3861c8e26c952bd199c",
+   "snapshot_at": "2024-09-07T22:45:38Z"
+  },
+  "2024-09-10:COL@DET": {
+   "event_id": "3c30fb65078af7297b9e24648b7764d8",
+   "snapshot_at": "2024-09-10T22:45:39Z"
+  },
+  "2024-09-10:LAA@MIN": {
+   "event_id": "742ce72592bf65455db6cc0c88d2b1cd",
+   "snapshot_at": "2024-09-10T22:45:39Z"
+  },
+  "2024-09-10:MIA@PIT": {
+   "event_id": "5d84fc9b16b033ab36efe9379f3eedf8",
+   "snapshot_at": "2024-09-10T22:45:39Z"
+  },
+  "2024-09-10:TB@PHI": {
+   "event_id": "67e09e41ec92ec08f9cd58f63d2bedd4",
+   "snapshot_at": "2024-09-10T22:45:39Z"
+  },
+  "2024-09-11:COL@DET": {
+   "event_id": "a40e159f557e4978d40a97082598411a",
+   "snapshot_at": "2024-09-11T22:45:39Z"
+  },
+  "2024-09-11:LAA@MIN": {
+   "event_id": "742ce72592bf65455db6cc0c88d2b1cd",
+   "snapshot_at": "2024-09-11T22:45:39Z"
+  },
+  "2024-09-11:TB@PHI": {
+   "event_id": "67e09e41ec92ec08f9cd58f63d2bedd4",
+   "snapshot_at": "2024-09-11T22:45:39Z"
+  },
+  "2024-09-12:COL@DET": {
+   "event_id": "a40e159f557e4978d40a97082598411a",
+   "snapshot_at": "2024-09-12T16:45:39Z"
+  },
+  "2024-09-19:LAD@MIA": {
+   "event_id": "14de86afbba20807214f0b30bc3e56ac",
+   "snapshot_at": "2024-09-19T22:45:39Z"
+  },
+  "2024-09-20:ATL@MIA": {
+   "event_id": "1f86b0317f4bc577e9dd080d1faba832",
+   "snapshot_at": "2024-09-20T22:45:39Z"
+  },
+  "2024-09-21:ATL@MIA": {
+   "event_id": "15d40be7f766dedf32716b6728ba8485",
+   "snapshot_at": "2024-09-21T22:45:38Z"
+  },
+  "2024-09-22:ATL@MIA": {
+   "event_id": "15d40be7f766dedf32716b6728ba8485",
+   "snapshot_at": "2024-09-22T16:45:38Z"
+  },
+  "2024-09-25:STL@COL": {
+   "event_id": "9447dba7162058a6c294cfb1dad257cc",
+   "snapshot_at": "2024-09-25T22:45:39Z"
+  },
+  "2024-09-26:MIA@MIN": {
+   "event_id": "14548fa2e75bc4ae2448bc4735569761",
+   "snapshot_at": "2024-09-26T22:45:39Z"
+  },
+  "2024-09-27:LAD@COL": {
+   "event_id": "a088a373f5cdc8d136a4d156152eed95",
+   "snapshot_at": "2024-09-27T22:45:39Z"
+  },
+  "2024-09-29:OAK@SEA": {
+   "event_id": "24f08a94e8f6573e47882cfbddce14e7",
+   "snapshot_at": "2024-09-29T16:45:38Z"
+  },
+  "2025-04-20:KC@DET": {
+   "event_id": "fc62bdf84633f72531cb09a44615293e",
+   "snapshot_at": "2025-04-20T16:45:38Z"
+  },
+  "2025-04-25:HOU@KC": {
+   "event_id": "e8a0b748ee3951b463fd06065b61b0c3",
+   "snapshot_at": "2025-04-25T22:45:38Z"
+  },
+  "2025-04-25:NYM@WSH": {
+   "event_id": "f4e9790808fa1b764f50af1b0fcb6ac1",
+   "snapshot_at": "2025-04-25T22:45:38Z"
+  },
+  "2025-04-26:CIN@COL": {
+   "event_id": "082b30e5c0a644f5f1335d2851a7c53b",
+   "snapshot_at": "2025-04-26T22:45:39Z"
+  },
+  "2025-04-27:BAL@DET": {
+   "event_id": "74559e1e1db0c5dc484ed8b63bbd8fcd",
+   "snapshot_at": "2025-04-27T16:45:38Z"
+  },
+  "2025-04-27:NYM@WSH": {
+   "event_id": "14898c7062366c21fbd0797f60d35760",
+   "snapshot_at": "2025-04-27T22:45:38Z"
+  },
+  "2025-04-28:DET@HOU": {
+   "event_id": "888ad45f94280aac41cd3306b3c5eb97",
+   "snapshot_at": "2025-04-28T22:45:38Z"
+  },
+  "2025-04-28:NYY@BAL": {
+   "event_id": "b4d6ded622e74d7f7c56f55e043b635e",
+   "snapshot_at": "2025-04-28T22:45:38Z"
+  },
+  "2025-04-28:STL@CIN": {
+   "event_id": "9e3882801c941d2e49ecf1c590d63683",
+   "snapshot_at": "2025-04-28T22:45:38Z"
+  },
+  "2025-04-29:BOS@TOR": {
+   "event_id": "b5fda3df24372bdfebd19b4e73530544",
+   "snapshot_at": "2025-04-29T22:45:38Z"
+  },
+  "2025-04-29:LAA@SEA": {
+   "event_id": "dc3f67e826987761bdd14e056a91645e",
+   "snapshot_at": "2025-04-29T22:45:38Z"
+  },
+  "2025-04-29:MIN@CLE": {
+   "event_id": "a64d0f614f76fcb01a97ff8101320e77",
+   "snapshot_at": "2025-04-29T22:45:38Z"
+  },
+  "2025-04-30:MIN@CLE": {
+   "event_id": "2117272276e12d25ce9bba9dc2ca3f3f",
+   "snapshot_at": "2025-04-30T22:45:38Z"
+  },
+  "2025-05-01:MIL@CWS": {
+   "event_id": "f8da898c984a302d14dfd673ac99c562",
+   "snapshot_at": "2025-05-01T16:45:38Z"
+  },
+  "2025-05-02:DET@LAA": {
+   "event_id": "c8d968f0c132c42a63ba43978c6e0344",
+   "snapshot_at": "2025-05-02T22:45:38Z"
+  },
+  "2025-05-02:HOU@CWS": {
+   "event_id": "83efde763a459378115ee8e4e8a186a6",
+   "snapshot_at": "2025-05-02T22:45:38Z"
+  },
+  "2025-05-02:KC@BAL": {
+   "event_id": "22c44060b68328647249031d8f7e7bbb",
+   "snapshot_at": "2025-05-02T22:45:38Z"
+  },
+  "2025-05-02:NYM@STL": {
+   "event_id": "e2faccc05ee93ebe3010302f4323b556",
+   "snapshot_at": "2025-05-02T22:45:38Z"
+  },
+  "2025-05-02:TB@NYY": {
+   "event_id": "f0ca2744836db3be5afeffd552a68e69",
+   "snapshot_at": "2025-05-02T22:45:38Z"
+  },
+  "2025-05-02:WSH@CIN": {
+   "event_id": "ce3de986ef24e5b1e570bec85185b687",
+   "snapshot_at": "2025-05-02T22:45:38Z"
+  },
+  "2025-05-03:DET@LAA": {
+   "event_id": "b74572f284b000209546f033c6fb7eba",
+   "snapshot_at": "2025-05-03T22:45:37Z"
+  },
+  "2025-05-03:KC@BAL": {
+   "event_id": "4a5ce305fe0ac822bfacd8b2ae31ed30",
+   "snapshot_at": "2025-05-03T22:45:37Z"
+  },
+  "2025-05-04:COL@SF": {
+   "event_id": "2e6bdef51c1b21762e87922cd5374f0e",
+   "snapshot_at": "2025-05-04T22:45:37Z"
+  },
+  "2025-05-04:DET@LAA": {
+   "event_id": "b74572f284b000209546f033c6fb7eba",
+   "snapshot_at": "2025-05-04T22:45:37Z"
+  },
+  "2025-05-04:LAD@ATL": {
+   "event_id": "9b52b32380a94a1ced19f4b07381c054",
+   "snapshot_at": "2025-05-04T22:45:37Z"
+  },
+  "2025-05-04:NYM@STL": {
+   "event_id": "aab3512e2d74435a5c19c9ec4e6507dc",
+   "snapshot_at": "2025-05-04T22:45:37Z"
+  },
+  "2025-05-06:BAL@MIN": {
+   "event_id": "3a371ce64ca2be8604d742293bb9dbac",
+   "snapshot_at": "2025-05-06T22:45:38Z"
+  },
+  "2025-05-06:SF@CHC": {
+   "event_id": "b97f3f4d256910c3691a21e404777b4f",
+   "snapshot_at": "2025-05-06T22:45:38Z"
+  },
+  "2025-05-07:BAL@MIN": {
+   "event_id": "0728124429aae78a3a1920042e3fec7d",
+   "snapshot_at": "2025-05-07T22:45:38Z"
+  },
+  "2025-05-07:DET@COL": {
+   "event_id": "e02653ce73db2a837ad3a7e535f535e5",
+   "snapshot_at": "2025-05-07T22:45:38Z"
+  },
+  "2025-05-08:BAL@MIN": {
+   "event_id": "0728124429aae78a3a1920042e3fec7d",
+   "snapshot_at": "2025-05-08T16:45:38Z"
+  },
+  "2025-05-09:TEX@DET": {
+   "event_id": "475a31e8ebfe4b2f651f7dcf12434466",
+   "snapshot_at": "2025-05-09T22:45:38Z"
+  },
+  "2025-05-11:ATL@PIT": {
+   "event_id": "1cd938a2dab0aa5538d174d09db22109",
+   "snapshot_at": "2025-05-11T16:45:37Z"
+  },
+  "2025-05-11:SD@COL": {
+   "event_id": "d21fde519abb0f18c80c4ad16290e1bd",
+   "snapshot_at": "2025-05-11T16:45:37Z"
+  },
+  "2025-05-12:COL@TEX": {
+   "event_id": "1513241419ce2c190d022a931bf18c3e",
+   "snapshot_at": "2025-05-12T22:45:37Z"
+  },
+  "2025-05-12:LAA@SD": {
+   "event_id": "d114ce697e9198da37a8d7102180d87e",
+   "snapshot_at": "2025-05-12T22:45:37Z"
+  },
+  "2025-05-12:MIA@CHC": {
+   "event_id": "cd039b361ef1785e61de0221598cede7",
+   "snapshot_at": "2025-05-12T22:45:37Z"
+  },
+  "2025-05-13:CWS@CIN": {
+   "event_id": "d4cb3320b68b71ce7f16615f67fb5152",
+   "snapshot_at": "2025-05-13T22:45:38Z"
+  },
+  "2025-05-14:MIN@BAL": {
+   "event_id": "ac99dd72f8857c704c50e86ce5a73b39",
+   "snapshot_at": "2025-05-14T22:45:38Z"
+  },
+  "2025-05-14:PIT@NYM": {
+   "event_id": "e0c78c1e1d915b5b90074681eef87cf5",
+   "snapshot_at": "2025-05-14T22:45:38Z"
+  },
+  "2025-05-15:CWS@CIN": {
+   "event_id": "fc610efd895f2b94f2515bb47595f381",
+   "snapshot_at": "2025-05-15T16:45:38Z"
+  },
+  "2025-05-16:DET@TOR": {
+   "event_id": "fa006e465497f31e1d2e9182ca6cb1f0",
+   "snapshot_at": "2025-05-16T22:45:38Z"
+  },
+  "2025-05-16:LAA@LAD": {
+   "event_id": "2b2e09e841cf833f3aafca87179cd508",
+   "snapshot_at": "2025-05-16T22:45:38Z"
+  },
+  "2025-05-17:CWS@CHC": {
+   "event_id": "eb97096b95b7ea9f378ff407822776fe",
+   "snapshot_at": "2025-05-17T22:45:37Z"
+  },
+  "2025-05-17:PIT@PHI": {
+   "event_id": "eee472d14d84e84b6a00e3ac2a938822",
+   "snapshot_at": "2025-05-17T22:45:37Z"
+  },
+  "2025-05-17:TB@MIA": {
+   "event_id": "c8ab8d94fbb504240ce30a7d8f8382f9",
+   "snapshot_at": "2025-05-17T22:45:37Z"
+  },
+  "2025-05-18:TB@MIA": {
+   "event_id": "c8ab8d94fbb504240ce30a7d8f8382f9",
+   "snapshot_at": "2025-05-18T16:45:37Z"
+  },
+  "2025-05-19:CHC@MIA": {
+   "event_id": "0cdb6f2f057acfac943c6beaf93e8a97",
+   "snapshot_at": "2025-05-19T22:45:37Z"
+  },
+  "2025-05-20:CIN@PIT": {
+   "event_id": "e99ebd1b8707fcf9f7544146bbb34792",
+   "snapshot_at": "2025-05-20T22:45:37Z"
+  },
+  "2025-05-20:PHI@COL": {
+   "event_id": "1e4a5423482fb3c96730aafd2c3245a1",
+   "snapshot_at": "2025-05-20T22:45:37Z"
+  },
+  "2025-05-20:TEX@NYY": {
+   "event_id": "14745eee31cedb6b36a8f0e045f9677e",
+   "snapshot_at": "2025-05-20T22:45:37Z"
+  },
+  "2025-05-21:BAL@MIL": {
+   "event_id": "5da019aedcb1183b5daa0f9f0dc53964",
+   "snapshot_at": "2025-05-21T16:45:38Z"
+  },
+  "2025-05-22:CLE@DET": {
+   "event_id": "995933f85d4b24a029a28207c7e332a5",
+   "snapshot_at": "2025-05-22T22:45:38Z"
+  },
+  "2025-05-23:TEX@CWS": {
+   "event_id": "7f655404711ed11a5a5ba7a8df663a62",
+   "snapshot_at": "2025-05-23T22:45:38Z"
+  },
+  "2025-05-24:BAL@BOS": {
+   "event_id": "aa118aa431d029bd8699f0e8bf6ccb7b",
+   "snapshot_at": "2025-05-24T22:45:38Z"
+  },
+  "2025-05-25:CLE@DET": {
+   "event_id": "4d011e85989d2f8f4dc0f25de4ecdbb5",
+   "snapshot_at": "2025-05-25T16:45:38Z"
+  },
+  "2025-05-25:NYY@COL": {
+   "event_id": "d92c9b1a1f73f831680d79a9025bb32b",
+   "snapshot_at": "2025-05-25T22:45:37Z"
+  },
+  "2025-05-26:LAD@CLE": {
+   "event_id": "95b8ca0b6328d174cff9dfa305a91a12",
+   "snapshot_at": "2025-05-26T22:45:37Z"
+  },
+  "2025-05-26:NYY@LAA": {
+   "event_id": "e1a87244278aa01837f0019bd08c5a52",
+   "snapshot_at": "2025-05-26T22:45:37Z"
+  },
+  "2025-05-26:STL@BAL": {
+   "event_id": "3f6a919b9cd73679e73146a4caf463f5",
+   "snapshot_at": "2025-05-26T22:45:37Z"
+  },
+  "2025-05-27:CWS@NYM": {
+   "event_id": "a56f751bad043a623c0e3f1c6c683111",
+   "snapshot_at": "2025-05-27T22:45:37Z"
+  },
+  "2025-05-27:LAD@CLE": {
+   "event_id": "0ab300b3a5a801f4b89e4bf2a53ed51d",
+   "snapshot_at": "2025-05-27T22:45:37Z"
+  },
+  "2025-05-27:NYY@LAA": {
+   "event_id": "5328ae02e2880cd75649e3d871adaea9",
+   "snapshot_at": "2025-05-27T22:45:37Z"
+  },
+  "2025-05-30:STL@TEX": {
+   "event_id": "a9f6181f0bfedfb70f7eaf41bb5351fe",
+   "snapshot_at": "2025-05-30T22:45:38Z"
+  },
+  "2025-05-31:COL@NYM": {
+   "event_id": "ba41598ef2acee2434af32677e303dde",
+   "snapshot_at": "2025-05-31T22:45:37Z"
+  },
+  "2025-05-31:DET@KC": {
+   "event_id": "ca1f821a63b151be5b3583361466cf25",
+   "snapshot_at": "2025-05-31T22:45:37Z"
+  },
+  "2025-05-31:PIT@SD": {
+   "event_id": "f93ef30782025e6860b1162670ade789",
+   "snapshot_at": "2025-05-31T22:45:37Z"
+  },
+  "2025-06-02:COL@MIA": {
+   "event_id": "dfc80b6e99c9c3ab644d9d2ee8cd34cf",
+   "snapshot_at": "2025-06-02T22:45:37Z"
+  },
+  "2025-06-02:DET@CWS": {
+   "event_id": "0ae61d1233277840c2d817a3d874a44f",
+   "snapshot_at": "2025-06-02T22:45:37Z"
+  },
+  "2025-06-02:LAA@BOS": {
+   "event_id": "bc2449cf6e29ce705348fd5cfe5f15ab",
+   "snapshot_at": "2025-06-02T22:45:37Z"
+  },
+  "2025-06-03:CLE@NYY": {
+   "event_id": "f377301ea86e6896192186371c25b93f",
+   "snapshot_at": "2025-06-03T22:45:37Z"
+  },
+  "2025-06-05:BAL@SEA": {
+   "event_id": "299a11884a56df80d1a7692eff0bd245",
+   "snapshot_at": "2025-06-05T16:45:37Z"
+  },
+  "2025-06-05:DET@CWS": {
+   "event_id": "5c4c7610def29ca61e81f359935040e6",
+   "snapshot_at": "2025-06-05T16:45:37Z"
+  },
+  "2025-06-06:BOS@NYY": {
+   "event_id": "d986a775114c6ef549e524b3bc7a332b",
+   "snapshot_at": "2025-06-06T22:45:37Z"
+  },
+  "2025-06-07:PHI@PIT": {
+   "event_id": "311c2537eee5277433b179dad2cea421",
+   "snapshot_at": "2025-06-07T22:45:37Z"
+  },
+  "2025-06-08:NYM@COL": {
+   "event_id": "1983549c8bf3b2f72cda37084a592a42",
+   "snapshot_at": "2025-06-08T16:45:37Z"
+  },
+  "2025-06-10:DET@BAL": {
+   "event_id": "9cb00a4f3c635d58e13b001b39ce5a3f",
+   "snapshot_at": "2025-06-10T22:45:37Z"
+  },
+  "2025-06-10:NYY@KC": {
+   "event_id": "459aa45350b254e3e90de6278e8a7511",
+   "snapshot_at": "2025-06-10T22:45:37Z"
+  },
+  "2025-06-11:WSH@NYM": {
+   "event_id": "2a6c000a29f53eded5a97705bf5b2acb",
+   "snapshot_at": "2025-06-11T22:45:37Z"
+  },
+  "2025-06-12:CWS@HOU": {
+   "event_id": "eefd0c3f93d8f4c1e0c0933b22874807",
+   "snapshot_at": "2025-06-12T22:45:37Z"
+  },
+  "2025-06-12:DET@BAL": {
+   "event_id": "ccc1f22dc0d8695318d91c99af1e9ebb",
+   "snapshot_at": "2025-06-12T22:45:37Z"
+  },
+  "2025-06-12:NYY@KC": {
+   "event_id": "fe7a49062646408338f92c564c8c5266",
+   "snapshot_at": "2025-06-12T22:45:37Z"
+  },
+  "2025-06-12:SF@COL": {
+   "event_id": "cac1b60f88d1c27f215ee9e6bf5f37b7",
+   "snapshot_at": "2025-06-12T16:45:37Z"
+  },
+  "2025-06-14:COL@ATL": {
+   "event_id": "8d8a85525b8a4b01e136c9330b0d0d5e",
+   "snapshot_at": "2025-06-14T22:45:37Z"
+  },
+  "2025-06-14:CWS@TEX": {
+   "event_id": "ae12da0147e8e7ecc8502f470bca05e6",
+   "snapshot_at": "2025-06-14T22:45:37Z"
+  },
+  "2025-06-15:NYY@BOS": {
+   "event_id": "71a7a4d929485173a722157a08cf4a62",
+   "snapshot_at": "2025-06-15T16:45:37Z"
+  },
+  "2025-06-16:COL@WSH": {
+   "event_id": "1fc276d3059845b04732cef40a464398",
+   "snapshot_at": "2025-06-16T22:45:38Z"
+  },
+  "2025-06-17:COL@WSH": {
+   "event_id": "6f36a7f7dde65de5ee0967af56afe50a",
+   "snapshot_at": "2025-06-17T22:45:38Z"
+  },
+  "2025-06-17:LAA@NYY": {
+   "event_id": "dcefa479d98edef11bdecf1c95ee4995",
+   "snapshot_at": "2025-06-17T22:45:38Z"
+  },
+  "2025-06-17:PHI@MIA": {
+   "event_id": "bdeb2c91dd152e999957680f9b681050",
+   "snapshot_at": "2025-06-17T22:45:38Z"
+  },
+  "2025-06-18:LAA@NYY": {
+   "event_id": "37007422fd0fe2a63f836c4648068420",
+   "snapshot_at": "2025-06-18T22:45:37Z"
+  },
+  "2025-06-19:BAL@TB": {
+   "event_id": "6461c46d177ee34111313f7c4d8d44e3",
+   "snapshot_at": "2025-06-19T22:45:37Z"
+  },
+  "2025-06-19:COL@WSH": {
+   "event_id": "c3c95b8e2f8964cca22caea9c74b6411",
+   "snapshot_at": "2025-06-19T16:45:37Z"
+  },
+  "2025-06-19:LAA@NYY": {
+   "event_id": "37007422fd0fe2a63f836c4648068420",
+   "snapshot_at": "2025-06-19T16:45:37Z"
+  },
+  "2025-06-19:PIT@DET": {
+   "event_id": "f038955b8dd47b12355066a0d452c02b",
+   "snapshot_at": "2025-06-19T22:45:37Z"
+  },
+  "2025-06-20:BAL@NYY": {
+   "event_id": "e9b423719aabee0ab81f1d203f04e0ed",
+   "snapshot_at": "2025-06-20T22:45:37Z"
+  },
+  "2025-06-20:HOU@LAA": {
+   "event_id": "48b5cc44e2634bf12247d33bc3f07cc6",
+   "snapshot_at": "2025-06-20T22:45:37Z"
+  },
+  "2025-06-21:BAL@NYY": {
+   "event_id": "431cf00e5dd82eb78d43af1d299b487d",
+   "snapshot_at": "2025-06-21T22:45:37Z"
+  },
+  "2025-06-21:SEA@CHC": {
+   "event_id": "7d36844016aedc6c8e258b8e7ee1b7f9",
+   "snapshot_at": "2025-06-21T22:45:37Z"
+  },
+  "2025-06-22:BAL@NYY": {
+   "event_id": "431cf00e5dd82eb78d43af1d299b487d",
+   "snapshot_at": "2025-06-22T16:45:37Z"
+  },
+  "2025-06-24:LAD@COL": {
+   "event_id": "7455d1767bdb1adb2e2ad89c721ac0a6",
+   "snapshot_at": "2025-06-24T22:45:37Z"
+  },
+  "2025-06-25:LAD@COL": {
+   "event_id": "427b028c914f25449d08344f81a212d6",
+   "snapshot_at": "2025-06-25T22:45:37Z"
+  },
+  "2025-06-25:MIA@SF": {
+   "event_id": "a02552ead7c99e4112b963b7366315f2",
+   "snapshot_at": "2025-06-25T22:45:37Z"
+  },
+  "2025-06-27:SF@CWS": {
+   "event_id": "4e38d0652ffe1d123be379737815c6c2",
+   "snapshot_at": "2025-06-27T22:45:37Z"
+  },
+  "2025-06-29:MIN@DET": {
+   "event_id": "bdbde6d29dc2bf4b13d18171857697f8",
+   "snapshot_at": "2025-06-29T22:45:37Z"
+  },
+  "2025-07-01:CLE@CHC": {
+   "event_id": "677a39c4b069ffc645ca5c1223b847b7",
+   "snapshot_at": "2025-07-01T22:45:38Z"
+  },
+  "2025-07-01:HOU@COL": {
+   "event_id": "d8e1074c762d2fcad4598334f23c9f52",
+   "snapshot_at": "2025-07-01T22:45:38Z"
+  },
+  "2025-07-01:NYY@TOR": {
+   "event_id": "961ce339122ec222aba03b7b1d46a32f",
+   "snapshot_at": "2025-07-01T22:45:38Z"
+  },
+  "2025-07-02:BAL@TEX": {
+   "event_id": "c08acb68d5095c2e2ec777743a9d5ba1",
+   "snapshot_at": "2025-07-02T22:45:37Z"
+  },
+  "2025-07-02:NYY@TOR": {
+   "event_id": "6441558491b47251fcdcac0c7310d360",
+   "snapshot_at": "2025-07-02T22:45:37Z"
+  },
+  "2025-07-03:HOU@COL": {
+   "event_id": "22bf70dbb0981aa1ade730efb3137a16",
+   "snapshot_at": "2025-07-03T16:45:37Z"
+  },
+  "2025-07-04:CWS@COL": {
+   "event_id": "f08f96bf9f01a363e19c3f4009641edc",
+   "snapshot_at": "2025-07-04T22:45:37Z"
+  },
+  "2025-07-04:DET@CLE": {
+   "event_id": "a124407c558a21eea81379bc951a8221",
+   "snapshot_at": "2025-07-04T22:45:37Z"
+  },
+  "2025-07-05:BAL@ATL": {
+   "event_id": "26015f4f9bf1b4f7220b5834194fe57c",
+   "snapshot_at": "2025-07-05T22:45:37Z"
+  },
+  "2025-07-05:MIL@MIA": {
+   "event_id": "aeb408d0b2cbba33c858bcf0ec3a8b97",
+   "snapshot_at": "2025-07-05T22:45:37Z"
+  },
+  "2025-07-06:CWS@COL": {
+   "event_id": "a2a44ef6e1f6e8885c3bd1a83d30f5d5",
+   "snapshot_at": "2025-07-06T16:45:37Z"
+  },
+  "2025-07-06:DET@CLE": {
+   "event_id": "da06273ceac1392dad28ca2b2db298d7",
+   "snapshot_at": "2025-07-06T16:45:37Z"
+  },
+  "2025-07-06:STL@CHC": {
+   "event_id": "0228da0762968ce7fa21c469a5a2e8de",
+   "snapshot_at": "2025-07-06T22:45:37Z"
+  },
+  "2025-07-08:CLE@HOU": {
+   "event_id": "bbcc68448b3ad669f63226e1e6865748",
+   "snapshot_at": "2025-07-08T22:45:37Z"
+  },
+  "2025-07-08:TOR@CWS": {
+   "event_id": "76e82bd6fc5d226c78b590e6e73af37b",
+   "snapshot_at": "2025-07-08T22:45:37Z"
+  },
+  "2025-07-08:WSH@STL": {
+   "event_id": "38d7c250076e1eb82faebb840b020947",
+   "snapshot_at": "2025-07-08T22:45:37Z"
+  },
+  "2025-07-09:COL@BOS": {
+   "event_id": "483e477931131528267471eadeaae6dc",
+   "snapshot_at": "2025-07-09T22:45:37Z"
+  },
+  "2025-07-11:SEA@DET": {
+   "event_id": "ca8d38151651417a83cf7f73e1b6faed",
+   "snapshot_at": "2025-07-11T22:45:38Z"
+  },
+  "2025-07-13:COL@CIN": {
+   "event_id": "0fde4ccfe8eeffd6c2dd7af6f13bd49b",
+   "snapshot_at": "2025-07-13T16:45:37Z"
+  },
+  "2025-07-13:WSH@MIL": {
+   "event_id": "32383a717ea7e2534c1dd93f90f280d1",
+   "snapshot_at": "2025-07-13T16:45:37Z"
+  },
+  "2025-07-18:LAA@PHI": {
+   "event_id": "861313f79b4d8cb7f8c0f266e64a35e9",
+   "snapshot_at": "2025-07-18T22:45:38Z"
+  },
+  "2025-07-19:NYY@ATL": {
+   "event_id": "d41e4c5cde8d85ed36fcb233168fcade",
+   "snapshot_at": "2025-07-19T22:45:38Z"
+  },
+  "2025-07-20:MIN@COL": {
+   "event_id": "6e0747210b3280ea13d415fa1c95ce93",
+   "snapshot_at": "2025-07-20T16:45:38Z"
+  },
+  "2025-07-21:CIN@WSH": {
+   "event_id": "3a3b44134650ac62f5f358ccc4925b33",
+   "snapshot_at": "2025-07-21T22:45:38Z"
+  },
+  "2025-07-21:STL@COL": {
+   "event_id": "83b9f23cbf51e409f72330c6f65d6e9d",
+   "snapshot_at": "2025-07-21T22:45:38Z"
+  },
+  "2025-07-22:STL@COL": {
+   "event_id": "1823bfb8bc81961c3617666e22acab94",
+   "snapshot_at": "2025-07-22T22:45:38Z"
+  },
+  "2025-07-26:COL@BAL": {
+   "event_id": "23af46d6ba84bab011dddabd6517608b",
+   "snapshot_at": "2025-07-26T22:45:38Z"
+  },
+  "2025-07-26:WSH@MIN": {
+   "event_id": "8753dffa4210dc63162df07ab9f7108d",
+   "snapshot_at": "2025-07-26T22:45:38Z"
+  },
+  "2025-07-28:COL@CLE": {
+   "event_id": "14510bf1ee8adb014f37da7503ca263a",
+   "snapshot_at": "2025-07-28T22:45:38Z"
+  },
+  "2025-07-28:PHI@CWS": {
+   "event_id": "d7fe8ebc68bc3b1f1a4cc9ffe7f1bd60",
+   "snapshot_at": "2025-07-28T22:45:38Z"
+  },
+  "2025-07-28:TEX@LAA": {
+   "event_id": "52bf0fca49dd6a02ae851ce00501a87d",
+   "snapshot_at": "2025-07-28T22:45:38Z"
+  },
+  "2025-07-28:TOR@BAL": {
+   "event_id": "d6e3624209c0231efa2908a86d80c552",
+   "snapshot_at": "2025-07-28T22:45:38Z"
+  },
+  "2025-07-29:PHI@CWS": {
+   "event_id": "65598cac119ceedc2fd6760845171e55",
+   "snapshot_at": "2025-07-29T22:45:38Z"
+  },
+  "2025-07-29:TOR@BAL": {
+   "event_id": "3908f246ac75322ba52494aa2c6a6481",
+   "snapshot_at": "2025-07-29T22:45:38Z"
+  },
+  "2025-07-30:TEX@LAA": {
+   "event_id": "b24c7fa01a45215fe119d3fb019fe11a",
+   "snapshot_at": "2025-07-30T22:45:39Z"
+  },
+  "2025-08-02:BAL@CHC": {
+   "event_id": "a7d001fd4ef927b1c03ba92dd083ee36",
+   "snapshot_at": "2025-08-02T22:45:38Z"
+  },
+  "2025-08-02:MIL@WSH": {
+   "event_id": "13941bfcc8544147b04ea2b9161c8cc5",
+   "snapshot_at": "2025-08-02T22:45:38Z"
+  },
+  "2025-08-02:PIT@COL": {
+   "event_id": "d0d34ef4a4564d7ebc09a5181c186a25",
+   "snapshot_at": "2025-08-02T22:45:38Z"
+  },
+  "2025-08-03:MIL@WSH": {
+   "event_id": "13941bfcc8544147b04ea2b9161c8cc5",
+   "snapshot_at": "2025-08-03T16:45:38Z"
+  },
+  "2025-08-03:PIT@COL": {
+   "event_id": "d0d34ef4a4564d7ebc09a5181c186a25",
+   "snapshot_at": "2025-08-03T16:45:38Z"
+  },
+  "2025-08-04:BAL@PHI": {
+   "event_id": "bd6bf5a3f6172f5567b4d6d0c4adf3ad",
+   "snapshot_at": "2025-08-04T22:45:38Z"
+  },
+  "2025-08-04:MIL@ATL": {
+   "event_id": "445425d87a2d608338e6767f0acd4d2c",
+   "snapshot_at": "2025-08-04T22:45:38Z"
+  },
+  "2025-08-04:TOR@COL": {
+   "event_id": "0f322b3d3218b8ac5ab577fef26c0c40",
+   "snapshot_at": "2025-08-04T22:45:38Z"
+  },
+  "2025-08-08:LAA@DET": {
+   "event_id": "da6b80dd679f3d8a83462d27229ddbd2",
+   "snapshot_at": "2025-08-08T22:45:38Z"
+  },
+  "2025-08-10:LAA@DET": {
+   "event_id": "b11e1b0b48f1ccb33cc651e8db89cd43",
+   "snapshot_at": "2025-08-10T16:45:38Z"
+  },
+  "2025-08-11:COL@STL": {
+   "event_id": "9d781f884598173469aec000b6b87360",
+   "snapshot_at": "2025-08-11T22:45:38Z"
+  },
+  "2025-08-11:LAD@LAA": {
+   "event_id": "2d4aa7256eba76123a6d6e1bbc511e2a",
+   "snapshot_at": "2025-08-11T22:45:38Z"
+  },
+  "2025-08-12:WSH@KC": {
+   "event_id": "6cbfcee8e50412c836a05fa37a413c4d",
+   "snapshot_at": "2025-08-12T22:45:38Z"
+  },
+  "2025-08-13:COL@STL": {
+   "event_id": "570e3bf201a12267026c0d180906aaa6",
+   "snapshot_at": "2025-08-13T16:45:39Z"
+  },
+  "2025-08-13:PIT@MIL": {
+   "event_id": "1d5ae5d6b30daf6e02ff975104fc07b4",
+   "snapshot_at": "2025-08-13T16:45:39Z"
+  },
+  "2025-08-15:BAL@HOU": {
+   "event_id": "5df7b4c4539a0e98213d3805cfd9d85f",
+   "snapshot_at": "2025-08-15T22:45:38Z"
+  },
+  "2025-08-17:PHI@WSH": {
+   "event_id": "57ada182eefa02856b12313f002a0b34",
+   "snapshot_at": "2025-08-17T16:45:46Z"
+  },
+  "2025-08-18:LAD@COL": {
+   "event_id": "3c8245cf9ebf855ac370df33763badc1",
+   "snapshot_at": "2025-08-18T22:45:38Z"
+  },
+  "2025-08-19:CIN@LAA": {
+   "event_id": "b4d71bee4fa9a32adead4fe7a96d42e9",
+   "snapshot_at": "2025-08-19T22:45:39Z"
+  },
+  "2025-08-19:LAD@COL": {
+   "event_id": "ddd9328564d556d0b544681e2244d34d",
+   "snapshot_at": "2025-08-19T22:45:39Z"
+  },
+  "2025-08-19:NYM@WSH": {
+   "event_id": "8fc56aeb36f71412d124dbb6272003c4",
+   "snapshot_at": "2025-08-19T22:45:39Z"
+  },
+  "2025-08-20:LAD@COL": {
+   "event_id": "a49820fafc0f925b4725f91cbbc420f3",
+   "snapshot_at": "2025-08-20T22:45:39Z"
+  },
+  "2025-08-21:LAD@COL": {
+   "event_id": "a49820fafc0f925b4725f91cbbc420f3",
+   "snapshot_at": "2025-08-21T16:45:39Z"
+  },
+  "2025-08-22:COL@PIT": {
+   "event_id": "5f025d08d3c7c49c2538d139b46b7cf5",
+   "snapshot_at": "2025-08-22T22:45:39Z"
+  },
+  "2025-08-23:WSH@PHI": {
+   "event_id": "a5e2491bced61162f196117b35336990",
+   "snapshot_at": "2025-08-23T22:45:38Z"
+  },
+  "2025-08-24:WSH@PHI": {
+   "event_id": "a5e2491bced61162f196117b35336990",
+   "snapshot_at": "2025-08-24T16:45:38Z"
+  },
+  "2025-08-25:BOS@BAL": {
+   "event_id": "56f311a32f528648591316b2afcc6784",
+   "snapshot_at": "2025-08-25T22:45:38Z"
+  },
+  "2025-08-25:LAA@TEX": {
+   "event_id": "c69c021ef167fee70bbcbdecb750e063",
+   "snapshot_at": "2025-08-25T22:45:38Z"
+  },
+  "2025-08-26:COL@HOU": {
+   "event_id": "d05a4059db62b0b51cfd7d99ec295055",
+   "snapshot_at": "2025-08-26T22:45:39Z"
+  },
+  "2025-08-27:COL@HOU": {
+   "event_id": "84d73465b7a3e1b66271c5505133596c",
+   "snapshot_at": "2025-08-27T22:45:39Z"
+  },
+  "2025-08-27:LAA@TEX": {
+   "event_id": "e87da5b1462fe0fed7325a68d63f75f9",
+   "snapshot_at": "2025-08-27T22:45:39Z"
+  },
+  "2025-08-28:BOS@BAL": {
+   "event_id": "a90d928a4a17eb0cef36b3dc57d026aa",
+   "snapshot_at": "2025-08-28T16:45:39Z"
+  },
+  "2025-08-29:TB@WSH": {
+   "event_id": "af58fcd52164f958b637dec303ec5cb4",
+   "snapshot_at": "2025-08-29T22:45:39Z"
+  },
+  "2025-08-31:CHC@COL": {
+   "event_id": "330b3766a3412c0aa0373da0f63549a0",
+   "snapshot_at": "2025-08-31T16:45:37Z"
+  },
+  "2025-08-31:TB@WSH": {
+   "event_id": "eac05b0ab31f31a8b03e57fad94fbeb1",
+   "snapshot_at": "2025-08-31T16:45:37Z"
+  },
+  "2025-09-02:CLE@BOS": {
+   "event_id": "5eb9ddbe065f56e950307ab12033d73e",
+   "snapshot_at": "2025-09-02T22:45:38Z"
+  },
+  "2025-09-02:SF@COL": {
+   "event_id": "e91efb80e1498e3dc745665baeeb1754",
+   "snapshot_at": "2025-09-02T22:45:38Z"
+  },
+  "2025-09-03:ATL@CHC": {
+   "event_id": "736cef1c2354a1787f9ecc489a943c5b",
+   "snapshot_at": "2025-09-03T22:45:38Z"
+  },
+  "2025-09-05:LAD@BAL": {
+   "event_id": "be78e3b6549188f6519815dd4839b581",
+   "snapshot_at": "2025-09-05T22:45:38Z"
+  },
+  "2025-09-05:PHI@MIA": {
+   "event_id": "dc666735e9887d5481fe59f9c8136b73",
+   "snapshot_at": "2025-09-05T22:45:38Z"
+  },
+  "2025-09-05:SD@COL": {
+   "event_id": "2355c2d24c3f294f8239af359ba73ea7",
+   "snapshot_at": "2025-09-05T22:45:38Z"
+  },
+  "2025-09-05:WSH@CHC": {
+   "event_id": "1680b59237e28a87aa4de93896cedc41",
+   "snapshot_at": "2025-09-05T22:45:38Z"
+  },
+  "2025-09-06:MIL@PIT": {
+   "event_id": "c3fd569a918d1f427b54eda9fd4f67c1",
+   "snapshot_at": "2025-09-06T22:45:39Z"
+  },
+  "2025-09-06:PHI@MIA": {
+   "event_id": "dc666735e9887d5481fe59f9c8136b73",
+   "snapshot_at": "2025-09-06T22:45:39Z"
+  },
+  "2025-09-07:LAD@BAL": {
+   "event_id": "42cb7ed30ab4db58789fe3a59cf145c6",
+   "snapshot_at": "2025-09-07T16:45:39Z"
+  },
+  "2025-09-08:COL@LAD": {
+   "event_id": "4fc9ecc9f90c827e677ca27eb53ce16b",
+   "snapshot_at": "2025-09-08T22:45:38Z"
+  },
+  "2025-09-09:CHC@ATL": {
+   "event_id": "b007cf11ed53ca64967bd0a001982166",
+   "snapshot_at": "2025-09-09T22:45:39Z"
+  },
+  "2025-09-09:COL@LAD": {
+   "event_id": "74ae6700e792477a062fc150adcf0279",
+   "snapshot_at": "2025-09-09T22:45:39Z"
+  },
+  "2025-09-12:DET@MIA": {
+   "event_id": "4cdfff2c201e000a60d15c182cda47bb",
+   "snapshot_at": "2025-09-12T22:45:39Z"
+  },
+  "2025-09-13:COL@SD": {
+   "event_id": "adb60f0012ac566a382e7e73a1512ee4",
+   "snapshot_at": "2025-09-13T22:45:38Z"
+  },
+  "2025-09-14:LAA@SEA": {
+   "event_id": "44c42e7e4431d7db0035d84991d99f16",
+   "snapshot_at": "2025-09-14T22:45:38Z"
+  },
+  "2025-09-15:NYY@MIN": {
+   "event_id": "0e7fcd074542b0a9864c76731794d719",
+   "snapshot_at": "2025-09-15T22:45:39Z"
+  },
+  "2025-09-17:LAA@MIL": {
+   "event_id": "a7d484b72e80735be74cd368fc956f14",
+   "snapshot_at": "2025-09-17T22:45:39Z"
+  },
+  "2025-09-18:NYY@BAL": {
+   "event_id": "a54d0e5364154f5ae6ed9f8f2c59016f",
+   "snapshot_at": "2025-09-18T22:45:39Z"
+  },
+  "2025-09-20:MIL@STL": {
+   "event_id": "44561d9db7b3ce174230d26a1fb982bc",
+   "snapshot_at": "2025-09-20T22:45:39Z"
+  },
+  "2025-09-20:NYY@BAL": {
+   "event_id": "551761f7cca9fa9d71eea9089e324005",
+   "snapshot_at": "2025-09-20T22:45:39Z"
+  },
+  "2025-09-20:WSH@NYM": {
+   "event_id": "b84fa7bbfb53439b7018b80524b3fa0d",
+   "snapshot_at": "2025-09-20T22:45:39Z"
+  },
+  "2025-09-21:WSH@NYM": {
+   "event_id": "b84fa7bbfb53439b7018b80524b3fa0d",
+   "snapshot_at": "2025-09-21T16:45:39Z"
+  },
+  "2025-09-22:WSH@ATL": {
+   "event_id": "a1c7b9d63b4472a7d0c46668cb14eeae",
+   "snapshot_at": "2025-09-22T22:45:40Z"
+  },
+  "2025-09-24:MIN@TEX": {
+   "event_id": "9fcfd214b6be6a26272223326825ca8b",
+   "snapshot_at": "2025-09-24T22:45:40Z"
+  },
+  "2025-09-25:COL@SEA": {
+   "event_id": "cc1e63a29b6f9f12696423ca804e2e0c",
+   "snapshot_at": "2025-09-25T22:45:41Z"
+  },
+  "2025-09-25:MIN@TEX": {
+   "event_id": "ca4e34e8f631525535faa9b8bff31bc0",
+   "snapshot_at": "2025-09-25T16:45:40Z"
+  },
+  "2025-09-27:BAL@NYY": {
+   "event_id": "8322994402144fb9f796dc74be6dbdc2",
+   "snapshot_at": "2025-09-27T22:45:39Z"
+  },
+  "2025-09-27:HOU@LAA": {
+   "event_id": "18dc0067b918960347bb7463e67b50f4",
+   "snapshot_at": "2025-09-27T22:45:39Z"
+  },
+  "2025-09-27:MIN@PHI": {
+   "event_id": "c93a79cabe298eeb3ed2e27e1604fd34",
+   "snapshot_at": "2025-09-27T22:45:39Z"
+  },
+  "2025-09-28:COL@SF": {
+   "event_id": "afc058043465acffaea678ce7f96cc5d",
+   "snapshot_at": "2025-09-28T16:45:38Z"
+  },
+  "2025-09-28:MIN@PHI": {
+   "event_id": "c93a79cabe298eeb3ed2e27e1604fd34",
+   "snapshot_at": "2025-09-28T16:45:38Z"
+  }
+ }
+}
