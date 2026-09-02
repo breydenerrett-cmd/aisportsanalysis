@@ -64,46 +64,60 @@ capture window, settlement gap, crash).
 - `settlement` — the final result and closing price, written once
   (`ledger.settle`). A null `closing` on an old row is permanent — the
   original line is never rewritten — but see the next kind.
-- `closing_backfill` — added 2026-09 to repair settlements whose `closing`
-  was wrongly null because of the club-abbreviation/full-name join bug
-  fixed in commit 65f499a (`src.pipeline.snapshots.game_key`). Never
-  edits the settlement it corrects; it is a separate row carrying `ref`
-  (the settlement's `game_pk`), `closing_price`, `closing_observed_utc`,
-  `closing_source`, `derived_utc`, `clv`, and `reason`. A settlement that
-  already had a non-null closing is never touched. Produced by
-  `python3 -m src.cli closing-backfill` (`--dry-run` to preview; see
-  `closing-audit` for a read-only count of what is derivable). Readers
-  should call `grading.effective_closing`/`grading.read_backfills` rather
-  than reading a settlement's `closing` field directly, so the preference
-  rule (prefer the backfill only when the original is null) lives in one
-  place. CLV on a backfill row is h2h-only — there is no backfill
-  mechanism for spreads, totals, or first-five closes, and this project
-  does not add one; see the coverage paragraph below for what IS measured
-  for those markets.
+- `closing_backfill` — added 2026-09 (L14) to repair h2h settlements whose
+  `closing` was wrongly null because of the club-abbreviation/full-name
+  join bug fixed in commit 65f499a (`src.pipeline.snapshots.game_key`),
+  and extended 2026-09 (L18) to also record spreads and totals closes,
+  which `ledger.settle` has never had a writer for at all. Never edits
+  the settlement it corrects; it is a separate row carrying `ref` (the
+  settlement's `game_pk`), `market` (`h2h`/`spreads`/`totals` — absent on
+  every row written before L18, which readers must treat as `h2h`),
+  `closing_price` (both the line/point and the price per side, whatever
+  the store captured for that market), `closing_observed_utc`,
+  `closing_source`, `derived_utc`, `clv`, and `reason`. An h2h settlement
+  that already had a non-null closing is never touched; spreads and
+  totals have no such original field to protect, so every not-yet-backfilled
+  settled game is a candidate for them. Produced by
+  `python3 -m src.cli closing-backfill --market {h2h,spreads,totals,all}`
+  (default `h2h`, preserving pre-L18 behaviour; `--dry-run` to preview;
+  see `closing-audit` for a read-only count of what is derivable).
+  Readers should call `grading.effective_closing`/`grading.read_backfills`
+  (both now take a `market=` argument, defaulting to `h2h`) rather than
+  reading a settlement's `closing` field directly, so the preference rule
+  (prefer the backfill only when the original is null) lives in one
+  place. CLV is graded only for h2h — a spreads/totals backfill row always
+  carries `clv_graded: False` with a `clv_reason` naming the missing
+  fair-price model, because comparing prices across markets where the
+  line itself can move needs a model this project does not have, and
+  nothing here fabricates one. first_five still has no backfill mechanism
+  at all — see the coverage paragraph below for what IS measured for it.
 
-**Per-market closing coverage (L17).** `python3 -m src.cli closing-audit`
-reports, for every settled game and each of four markets (h2h, spreads,
-totals, first_five), whether a closing observation can be identified —
-read-only, backfill-aware, and it never writes to the ledger. h2h/spreads/
-totals are all captured together in `odds_snapshots.jsonl` by the same
-bulk capture call, so their coverage tracks together; first_five is
-captured separately and far more sparsely into `f5_close.jsonl` (a
-single per-event snapshot near first pitch, not a running series), so its
-coverage is a different, usually much lower, number. The table's four
-columns read left to right: `settled` (every settled game, regardless of
-what was actually recommended for it — the question is what the CAPTURED
-STORES cover, not what was bet), `recorded` (already evidence on the
-ledger — today only ever nonzero for h2h, via the original `closing`
-field or a `closing_backfill` row), `derivable` (a close the store could
-supply right now but that is not recorded anywhere — always a dry-run
-number for spreads/totals/first_five, since no backfill path exists for
-them), and `not derivable`, broken down by reason: `not_captured` (this
-market's store holds no observation of the game at all — most of
-first_five's gap, since the store started running weeks after most
-settled games) versus `no snapshot observed before first pitch` (an
-observation exists but arrived too late to count as a close, same PIT
-rule `closing_observation` has always used). `recorded + derivable + not
-derivable` sums to `settled` for every market row.
+**Per-market closing coverage (L17, backfill-aware for h2h/spreads/totals
+since L18).** `python3 -m src.cli closing-audit` reports, for every
+settled game and each of four markets (h2h, spreads, totals, first_five),
+whether a closing observation can be identified — read-only, and it
+never writes to the ledger itself. h2h/spreads/totals are all captured
+together in `odds_snapshots.jsonl` by the same bulk capture call, so
+their coverage tracks together; first_five is captured separately and
+far more sparsely into `f5_close.jsonl` (a single per-event snapshot near
+first pitch, not a running series), so its coverage is a different,
+usually much lower, number. The table's four columns read left to right:
+`settled` (every settled game, regardless of what was actually
+recommended for it — the question is what the CAPTURED STORES cover, not
+what was bet), `recorded` (already evidence on the ledger — h2h via the
+original `closing` field or a `closing_backfill` row; spreads and totals
+via a `closing_backfill` row only, since they have no original field;
+first_five never, with no backfill path for it), `derivable` (a close the
+store could supply right now but that is not recorded anywhere — zero for
+h2h/spreads/totals once `closing-backfill --market all` has run to
+completion; always a dry-run number for first_five), and `not derivable`,
+broken down by reason: `not_captured` (this market's store holds no
+observation of the game at all — most of first_five's gap, since the
+store started running weeks after most settled games) versus `no
+snapshot observed before first pitch` (an observation exists but arrived
+too late to count as a close, same PIT rule `closing_observation` has
+always used). `recorded + derivable + not derivable` sums to `settled`
+for every market row.
 
 ## Failure playbook
 
