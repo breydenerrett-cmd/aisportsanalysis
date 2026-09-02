@@ -62,6 +62,18 @@ Pricing below is date-stamped from web research done today; verify at signup sin
 
 **LATEST USEFUL DECISION TIME:** 2026-09-02 (need 1-2 days to provision, deploy, and smoke-test before alpha opens 2026-09-04).
 
+**RECONCILIATION (2026-09-02) — what actually shipped:** The RECOMMENDATION
+above is the Hetzner-class VM + Cloudflare path; this note does not revise
+that text, only records the outcome against it. What shipped for the alpha
+is **Fly.io** — the PaaS option this same Decision 3 already listed and
+assessed above, not the recommended one. See `deploy/fly.staging.toml` (the
+checked-in Fly app config — single machine, `max_machines_running = 1`,
+persistent volume for the sqlite store) and `docs/OPERATIONS_RUNBOOK.md`
+(day-to-day ops written against that live Fly deploy) for what is actually
+running. Reconciling this here means a future reader of Decision 3 is not
+left assuming the recommended VM path is what a real, reachable alpha URL
+runs on today.
+
 ---
 
 ## DECISION 4 — DOMAIN

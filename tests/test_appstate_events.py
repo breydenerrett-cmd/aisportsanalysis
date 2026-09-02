@@ -40,7 +40,7 @@ MODULE_PATH = Path(__file__).resolve().parent.parent / "src" / "appstate" / "eve
 # think of.
 _ALLOWED_STDLIB = {
     "__future__", "hashlib", "json", "os", "sqlite3", "sys", "collections",
-    "contextlib", "dataclasses", "datetime", "pathlib", "typing", "src",
+    "contextlib", "dataclasses", "datetime", "pathlib", "time", "typing", "src",
 }
 
 

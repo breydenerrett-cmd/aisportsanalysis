@@ -45,6 +45,7 @@ import hashlib
 import os
 import secrets
 import sqlite3
+import time
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -95,6 +96,61 @@ def _hash_token(raw_token: str) -> str:
     return hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
 
 
+# How many times _set_wal_mode retries a "database is locked" failure
+# before giving up, and how long it sleeps between tries. 10 x 20ms = 200ms
+# worst case -- generous next to how briefly the WAL-transition lock this
+# guards against is actually held (a few microseconds of another
+# connection's own PRAGMA journal_mode=WAL call), stingy next to
+# busy_timeout's own 5s window, since this is a fallback for a failure mode
+# busy_timeout does not cover at all (see _set_wal_mode's docstring) rather
+# than a normal lock wait.
+_WAL_MODE_RETRY_ATTEMPTS = 10
+_WAL_MODE_RETRY_DELAY_S = 0.02
+
+
+def _set_wal_mode(conn: sqlite3.Connection) -> None:
+    """PRAGMA journal_mode=WAL, with a small manual retry on top of
+    busy_timeout -- because busy_timeout alone does not cover this one.
+
+    WHY busy_timeout DOES NOT ALREADY HANDLE THIS
+    -------------------------------------------------
+    busy_timeout (set on this connection before this call -- see
+    _connect) makes an ordinary write-lock conflict retry instead of
+    raising immediately. The FIRST-EVER transition of a brand-new db file
+    into WAL mode is not an ordinary write-lock conflict: it briefly takes
+    a special, whole-file exclusive lock through a different internal path
+    that does not go through sqlite's normal busy-handler retry mechanism.
+    Two connections racing to be the first to open a fresh db file (this
+    module's own tokens table on a first-ever request, or
+    tests/test_appstate_sqlite_pragmas.py's concurrent-writer smoke test
+    starting from an empty temp db) can hit this: one wins, the other's
+    identical `PRAGMA journal_mode=WAL` call raises "database is locked"
+    INSTANTLY -- not after waiting out busy_timeout's 5s, because the
+    busy-handler backing busy_timeout is never invoked for this particular
+    lock at all. Reordering busy_timeout before journal_mode (this
+    module's other pragma comment) fixes every OTHER lock conflict on this
+    connection; it does not fix this one, which is why this function
+    exists as a second, narrower guard.
+
+    Retrying by hand here is standard practice for this specific,
+    documented sqlite behavior -- once WAL mode is actually established
+    (recorded in the db file itself), every future call to this pragma is
+    the ordinary, lock-respecting confirmation read the rest of this
+    module's comments describe, and returns on the very first try.
+    """
+    last_exc: Optional[sqlite3.OperationalError] = None
+    for _ in range(_WAL_MODE_RETRY_ATTEMPTS):
+        try:
+            conn.execute("PRAGMA journal_mode=WAL")
+            return
+        except sqlite3.OperationalError as exc:
+            if "database is locked" not in str(exc):
+                raise  # a different failure -- not the race this retries
+            last_exc = exc
+            time.sleep(_WAL_MODE_RETRY_DELAY_S)
+    raise last_exc
+
+
 @contextmanager
 def _connect(path: Optional[Path] = None) -> Iterator[sqlite3.Connection]:
     """One connection per call, schema ensured, closed on exit. sqlite3's
@@ -104,6 +160,23 @@ def _connect(path: Optional[Path] = None) -> Iterator[sqlite3.Connection]:
     resolved.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(resolved))
     conn.row_factory = sqlite3.Row
+    # busy_timeout FIRST, journal_mode SECOND -- THE ORDER IS LOAD-BEARING.
+    # busy_timeout is a per-CONNECTION setting (unlike journal_mode, it is
+    # NOT persisted in the file) and defaults to 0 (fail instantly, no
+    # retry) on a brand-new connection. Setting journal_mode=WAL first
+    # would run THAT pragma itself with the default zero timeout still in
+    # effect for every OTHER lock conflict it might hit. Reversed (as it
+    # is here), busy_timeout is in effect for every later statement this
+    # connection runs. (_set_wal_mode below covers the one lock conflict
+    # busy_timeout can't -- see its own docstring.)
+    conn.execute("PRAGMA busy_timeout=5000")
+    # WAL (write-ahead log) journal mode lets readers run concurrently with
+    # a writer instead of sqlite's default rollback journal, which locks
+    # the whole db file for every writer and blocks every reader until it
+    # commits. Idempotent: sqlite records the journal mode IN THE DB FILE
+    # ITSELF, so setting it on every connect is a cheap no-op after the
+    # first time, not a repeated migration.
+    _set_wal_mode(conn)
     try:
         _ensure_schema(conn)
         yield conn
@@ -138,10 +211,23 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
     # column is added to the table that is already there, guarded by
     # PRAGMA table_info so re-running the ALTER on a db that already has it
     # doesn't raise OperationalError and break every future _connect().
+    #
+    # The check-then-ALTER above is still two separate statements, not one
+    # atomic operation -- see src/appstate/savedbets.py's identical comment
+    # (tests/test_appstate_sqlite_pragmas.py's concurrent smoke test caught
+    # this exact race there first): two connections opening a brand-new db
+    # at once can both read "column absent," and the loser's own ALTER then
+    # fails with "duplicate column name" once the winner has already added
+    # it. Not a real failure -- the column exists either way -- so it is
+    # swallowed; anything else still raises.
     existing_token_cols = {row["name"] for row in
                            conn.execute("PRAGMA table_info(tokens)")}
     if "first_used_at" not in existing_token_cols:
-        conn.execute("ALTER TABLE tokens ADD COLUMN first_used_at TEXT")
+        try:
+            conn.execute("ALTER TABLE tokens ADD COLUMN first_used_at TEXT")
+        except sqlite3.OperationalError as exc:
+            if "duplicate column name" not in str(exc):
+                raise
 
 
 @dataclass(frozen=True)

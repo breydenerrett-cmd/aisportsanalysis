@@ -64,9 +64,10 @@ or a demo link with a red item unresolved.
       system exists (`docs/ONBOARDING_SUPPORT_PLAYBOOK.md` §3), so "watched"
       means a person checking the endpoint, not a notification firing on
       its own.
-- [ ] `scripts/monitor_remote.sh` wired against the staging URL so an outage
+- [x] `scripts/monitor_remote.sh` wired against the staging URL so an outage
       during outreach surfaces without refreshing a tab
-      (`docs/FIRST_CUSTOMER_PLAYBOOK.md` §1 step 5).
+      (`docs/FIRST_CUSTOMER_PLAYBOOK.md` §1 step 5). **WIRED**: running as
+      an hourly routine against staging, live since 2026-09-01.
 
 ## 5. Rollback path
 
