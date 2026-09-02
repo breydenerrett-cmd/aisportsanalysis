@@ -7,6 +7,8 @@ rebuilt from any provider at any price:
 
     data/processed/odds_snapshots.jsonl   data/processed/odds_multibook.jsonl
     data/processed/f5_close.jsonl         data/processed/prop_listing.jsonl
+    data/processed/weather_forecast.jsonl data/processed/prop_prices.jsonl
+    data/processed/credit_log.jsonl
     data/watch/{probables,lineups,transactions}_watch.jsonl
 
 and one is real user state (hashed auth tokens, saved bets, analytics):
@@ -63,6 +65,12 @@ PROTECTED_STORES = frozenset({
     _REAL_DATA / "processed" / "odds_multibook.jsonl",
     _REAL_DATA / "processed" / "f5_close.jsonl",
     _REAL_DATA / "processed" / "prop_listing.jsonl",
+    # Added with the weather/credit-log/prop-price capture streams: the same
+    # failure this file exists to prevent applies to any new forward-evidence
+    # store from day one, not just the ones that already learned the lesson.
+    _REAL_DATA / "processed" / "weather_forecast.jsonl",
+    _REAL_DATA / "processed" / "prop_prices.jsonl",
+    _REAL_DATA / "processed" / "credit_log.jsonl",
     _REAL_DATA / "watch" / "probables_watch.jsonl",
     _REAL_DATA / "watch" / "lineups_watch.jsonl",
     _REAL_DATA / "watch" / "transactions_watch.jsonl",

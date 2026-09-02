@@ -154,3 +154,43 @@ reading error.
 - Liveness and coverage checks in `pipeline/health.py` read the store WHOLE on
   purpose: "when did we last see the market" is a question about captures, not
   about pre-game prices.
+
+## Amendment 2026-09-02: prop PRICES switched on (capture-now), bounded
+
+Three capture streams were added under the owner-approved master-plan
+principle **CAPTURE NOW, RESEARCH LATER** (docs/MASTER_PLAN.md Sec.1 claim 3,
+Appendix C.1 item 6: timestamped forward data cannot be bought retroactively).
+Two are free and unconditional: weather forecasts for today's and tomorrow's
+slate (`src/pipeline/weather_capture.py`, 0 credits, Open-Meteo), and a
+credit-balance log written wherever the odds provider's quota is already read
+for free (`src/pipeline/creditlog.py`, 0 credits).
+
+The third is the one that needed this amendment. `src/pipeline/prop_prices.py`
+is the RESEARCH COLLECTION layer that the feasibility measurement above was
+explicitly kept separate from: it stores PRICE and POINT, not just listing
+coverage, for `pitcher_strikeouts` per book per pitcher.
+
+It is switched on now, bounded exactly as follows, and no more broadly than
+that:
+
+- Same shape as the listing audit: 3 games/day x 6 slots = 18 credits/day,
+  sampled and slotted by the SAME grid `prop_listing.py` uses (imported, not
+  re-derived), so the two layers observe the same games at the same instants.
+- Hard daily cap enforced from `prop_prices.jsonl`'s own marker rows, never
+  from an in-memory counter -- the same self-auditing pattern `prop_listing.py`
+  uses, for the same reason: a killed run must not lose track of its own
+  spend.
+- The absolute 5,000-credit floor and the 5,200 probe reserve apply
+  unchanged. This layer is skipped FIRST when a day approaches the ~132/day
+  envelope, below even the listing audit in priority, because it is the
+  newest and least-validated of the three softer-market layers.
+- Off unless `PROP_PRICES=1`. The switch lives in the environment, not in
+  this module, so turning it off is one edit and no code change -- the same
+  reasoning `PROP_LISTING_AUDIT` already uses.
+
+**This does not touch the hard approval gate.** A HISTORICAL prop purchase --
+buying past prop prices from the archive -- remains exactly what it was:
+forbidden without a registered hypothesis naming the window and Brey's
+explicit sign-off, per the roadmap's hard gates. This amendment authorizes
+FORWARD capture only, at the bounded rate above, starting from whenever the
+switch is turned on.

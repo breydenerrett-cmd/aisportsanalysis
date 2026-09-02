@@ -55,6 +55,14 @@ data/app/*
 !data/archive/historical/
 !data/archive/historical/**
 
+# Added 2026-09-02 with the weather/credit-log/prop-price capture streams
+# (docs/COLLECTION_POLICY.md amendment, same date): same reasoning as above --
+# a forecast, a credit balance, or a prop price observed at a moment cannot be
+# bought back later at any price.
+!data/processed/weather_forecast.jsonl
+!data/processed/prop_prices.jsonl
+!data/processed/credit_log.jsonl
+
 # Python
 __pycache__/
 *.py[cod]

@@ -98,12 +98,12 @@ def _get_json(url: str, params: dict, timeout: int = DEFAULT_TIMEOUT,
     raise WeatherError(f"Open-Meteo returned HTTP {last_status}")
 
 
-def _base_params(lat: float, lon: float) -> dict:
+def _base_params(lat: float, lon: float, hourly_fields: str = HOURLY_FIELDS) -> dict:
     _validate_coordinates(lat, lon)
     return {
         "latitude": lat,
         "longitude": lon,
-        "hourly": HOURLY_FIELDS,
+        "hourly": hourly_fields,
         "timezone": "UTC",
         "wind_speed_unit": "mph",
         "temperature_unit": "fahrenheit",
@@ -111,10 +111,23 @@ def _base_params(lat: float, lon: float) -> dict:
 
 
 def fetch_forecast(lat: float, lon: float, game_date,
-                   timeout: int = DEFAULT_TIMEOUT) -> dict:
-    """Hourly forecast for a park on a date. Near-future dates only."""
+                   timeout: int = DEFAULT_TIMEOUT,
+                   extra_hourly_fields=None) -> dict:
+    """Hourly forecast for a park on a date. Near-future dates only.
+
+    `extra_hourly_fields` appends additional Open-Meteo hourly variables
+    (e.g. precipitation_probability, surface_pressure) on top of the
+    baseline set, for callers that want more than the four core fields.
+    Deliberately NOT threaded onto `fetch_archive`/`fetch_many`: the archive
+    endpoint answers a different question (what actually happened, not what
+    is forecast) and does not carry a "probability" concept, so widening the
+    shared default would silently break every historical backfill call.
+    """
     day = _validate_date(game_date)
-    params = _base_params(lat, lon)
+    fields = HOURLY_FIELDS
+    if extra_hourly_fields:
+        fields = ",".join([HOURLY_FIELDS, *extra_hourly_fields])
+    params = _base_params(lat, lon, hourly_fields=fields)
     params.update({"start_date": day, "end_date": day})
     return _get_json(FORECAST_HOST, params, timeout=timeout)
 
@@ -167,6 +180,13 @@ def extract_hour(payload: dict, target_utc) -> dict:
         "humidity_pct": at("relative_humidity_2m"),
         "wind_mph": at("wind_speed_10m"),
         "wind_from_deg": at("wind_direction_10m"),
+        # Present only when the caller requested them via
+        # fetch_forecast(extra_hourly_fields=...); `at()` already returns
+        # None for a series the response does not carry, so an ordinary
+        # fetch_forecast/fetch_archive call (no extra fields asked for)
+        # yields None here rather than raising or fabricating a reading.
+        "precip_probability_pct": at("precipitation_probability"),
+        "pressure_hpa": at("surface_pressure"),
     }
 
 
