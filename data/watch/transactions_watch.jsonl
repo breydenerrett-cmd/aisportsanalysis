@@ -322,3 +322,9 @@
 {"fetched_utc": "2026-09-02T20:45:51.352369+00:00", "game_date": "2026-09-02", "poll": true}
 {"category": "rehab", "date": "2026-09-02", "first_seen_utc": "2026-09-02T20:45:51.352369+00:00", "player": "Clarke Schmidt", "player_id": 657376, "team": "NYY", "transaction_id": 940885}
 {"fetched_utc": "2026-09-02T21:00:53.488866+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-02T21:16:37.321201+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-02T21:16:40.441136+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-02T21:26:19.394501+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-02T21:26:22.932882+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-02T21:41:25.129365+00:00", "game_date": "2026-09-02", "poll": true}
+{"category": "signed", "date": "2026-09-02", "first_seen_utc": "2026-09-02T21:41:25.129365+00:00", "player": "Simeon Woods Richardson", "player_id": 680573, "team": "SEA", "transaction_id": 940899}
