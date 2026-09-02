@@ -267,7 +267,9 @@ export function renderFeaturedBet(container, standing, opts = {}) {
   // ---- head: team badge + matchup + first pitch -------------------
   const head = el("div", { class: "fb-head" });
   const sideAbbr = s.query.team
-    || (s.query.side === "home" ? (s.game && s.game.home) : (s.game && s.game.away))
+    || (s.query.side === "home" ? (s.game && s.game.home)
+      : s.query.side === "away" ? (s.game && s.game.away)
+      : null)
     || null;
   if (sideAbbr) {
     const colors = teamColors(sideAbbr);
@@ -291,7 +293,8 @@ export function renderFeaturedBet(container, standing, opts = {}) {
     ? el("span", { text: formatAmerican(s.query.price) }) : notAvailable()));
   const sideLabel = sideAbbr ? (teamName(sideAbbr, "full") || sideAbbr) : null;
   spec.appendChild(specCell("SIDE", sideLabel
-    ? el("span", { class: "fb-spec__pill", text: sideLabel.toUpperCase() }) : notAvailable()));
+    ? el("span", { class: "fb-spec__pill", text: sideLabel.toUpperCase() })
+    : notAvailable("no side singled out for this bet")));
   card.appendChild(spec);
 
   // ---- BET STANDING · TIER A --------------------------------------

@@ -518,26 +518,14 @@ function mapGameToStanding(quick, advanced) {
       side,
       team: teamAbbr,
     },
-    // `game` is DELIBERATELY omitted (null) when no real side exists.
-    // featuredbet.js's own head/spec-strip SIDE fallback
-    // (`s.query.side === "home" ? s.game.home : s.game.away`) has no
-    // null-safe branch -- it resolves to `s.game.away` whenever side is
-    // anything other than the literal string "home", INCLUDING `null`.
-    // For the dominant no_play case that would silently paint the away
-    // team's abbreviation into the SIDE pill as if it had been picked,
-    // which is exactly the fabricated-pick pattern this product forbids.
-    // This lane cannot edit featuredbet.js (out of ownership), so the
-    // one field this mapper controls that feeds that fallback (`game`)
-    // is withheld here instead -- the card's head loses the matchup/
-    // first-pitch line for a no-side game, but the identity is already
-    // shown in full above (gqvIdentity/gqvTeams), so nothing is actually
-    // lost from the page, only from inside this one card. Flagged
-    // verbatim in the L21 report as an upstream primitive bug, with a
-    // suggested one-line fix (`(s.query.side === "home") === true` is
-    // not enough either -- the real fix is a three-way branch that
-    // returns `null` when `s.query.side` is not one of "home"/"away").
-    game: side ? { away: quick.away_team, home: quick.home_team,
-      firstPitchUtc: (game && game.start_time_utc) || null } : null,
+    // `game` is always passed (matchup header shows regardless of side).
+    // featuredbet.js's SIDE fallback is now null-safe -- it only reads
+    // `s.game.home`/`s.game.away` when `s.query.side` is literally
+    // "home"/"away", so a no-side game keeps its "AWAY @ HOME" header
+    // while the SIDE pill correctly renders NOT AVAILABLE instead of
+    // inventing a pick. Fixed upstream in featuredbet.js (L23).
+    game: { away: quick.away_team, home: quick.home_team,
+      firstPitchUtc: (game && game.start_time_utc) || null },
     verdict: quick.verdict || null,
     priceStanding: null, // see docstring -- reserved as an engineering request, never inlined here
     yourPriceBeatsConsensus: improvementPoints === null ? null : improvementPoints > 0,
