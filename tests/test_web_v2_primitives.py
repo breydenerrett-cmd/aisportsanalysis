@@ -41,14 +41,14 @@ WEB_JS = ROOT / "web" / "js"
 STATES_PATH = WEB_JS / "states.js"
 FEATUREDBET_PATH = WEB_JS / "featuredbet.js"
 
-WAVE1_SCREEN_FILES = ("today.js", "odds.js", "mybets.js", "main.js")
-# betcheck.js and games.js are deliberately EXCLUDED here (not omitted by
-# oversight): the Bet Check lane wired renderFeaturedBet into V2-32's block 01
-# (tests/test_web_v2_betcheck.py asserts that wiring) and the Game lane wired
-# it into the V2-34 spotlight (tests/test_web_v2_game.py), each in the same
-# change that shipped its screens, per this class's own docstring note. The
-# remaining files above are still pending their own Wave-1 lanes (Gameday)
-# and stay guarded here.
+WAVE1_SCREEN_FILES = ("odds.js", "mybets.js", "main.js")
+# betcheck.js, games.js and today.js are deliberately EXCLUDED here (not
+# omitted by oversight): the Bet Check lane wired renderFeaturedBet into
+# V2-32's block 01 (tests/test_web_v2_betcheck.py), the Game lane into the
+# V2-34 spotlight (tests/test_web_v2_game.py), and the Gameday lane into the
+# V2-33 carousel head (tests/test_web_v2_gameday.py), each in the same change
+# that shipped its screens, per this class's own docstring note. The files
+# above are not Wave-1 placements and stay guarded here.
 
 
 def _read(path: Path) -> str:

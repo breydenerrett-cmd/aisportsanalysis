@@ -1,109 +1,155 @@
 /**
- * GAMEDAY (#/today) -- the Today screen, composed from the frozen
- * "Gameday desktop" and "Gameday 390px" artboards in
- * design/linehound-v1/LINEHOUND Gameday.dc.html:
+ * GAMEDAY V2 (#/today) -- V2-01 (carousel default), its three dedicated
+ * verdict-state artboards V2-01a NO_PLAY / V2-01b FLAGGED / V2-01c
+ * MARKET_UNAVAILABLE, V2-22 (mobile, same markup at <=899px) and V2-33
+ * (the Featured Bet carousel head), composed from
+ * design/linehound-v2/'LINEHOUND V2 Full Product.dc.html':
+ *   V2-01   lines 1126-1673   V2-01a  lines 1674-1880
+ *   V2-01b  lines 1881-1981   V2-01c  lines 1982-2135
+ *   V2-22   lines 5435-5568   V2-33   lines 7182-7347
  *
- *   1. TONIGHT'S FEATURE hero  -- team-seam split, both wordmarks
- *   2. the price bug           -- best available price, consensus, age
- *   3. TONIGHT'S SLATE         -- the remaining games as an angled rail
- *   4. WHAT CHANGED            -- lead event + the rest of the stream
- *   5. BET CHECK entry band
- *   6. the closing band and the footer (footer mounted by main.js)
+ * PRIORITY ANSWER 1 (design/linehound-v2/RECONCILED_CONTRACT_CURRENT_HEAD.md):
+ * no_play is measured at 93.0% of forward-ledger entries (n=129) -- THE
+ * PRIMARY state, not an empty one. This screen designs for it: a
+ * confident, two-line verdict sentence with real price context beside
+ * it, never an apology. flagged (~2.3%) is the rare exception; it is the
+ * only state that blooms. market_unavailable (~4.7%) is an honest,
+ * amber absence, never styled as an error.
  *
- * WHERE THE DATA COMES FROM
+ * WHAT THIS SCREEN DOES NOT PRINT, AND WHY
  * -------------------------------------------------------------------
- * GET /today            slate notes + the per-game dossier (opaque; only
- *                       read defensively for records/probables)
- * GET /games/{date}     the contract-pinned identity rows -- team, venue,
- *                       first pitch, verdict, board summary
- * GET /odds/{date}      the market board: best price per side, the
- *                       market-implied consensus, staleness
- * GET /changed/{date}   the What Changed stream
+ * The artboard's own historical badges ("NO_PLAY . 93.0%", "FLAGGED .
+ * 2.3% . OF 129 LEDGER ENTRIES") are sourced from
+ * evidence/forward_ledger.jsonl -- a file with no customer endpoint.
+ * RECONCILED_CONTRACT_CURRENT_HEAD.md's own V2-01a note says "recompute
+ * as the ledger grows, never hardcode the percentage" -- since nothing
+ * on GET /today, GET /games/{date} or GET /changed/{date} exposes that
+ * ledger, this screen never prints 93.0/2.3/4.7% anywhere. It prints the
+ * one fraction it CAN compute honestly: how many of TONIGHT's own games
+ * share the featured game's verdict (e.g. "1 of 15 tonight"). The
+ * "27 hypotheses pre-registered, zero survivors" line is different: the
+ * artboard itself labels it "a static constant, not tonight's count" --
+ * that is this product's own closed V1-V5 research record (this
+ * session's own instructions confirm the same number), so it is safe to
+ * print as a fixed fact, exactly like featuredbet.js's own MIN_BOOKS
+ * constant.
  *
- * FEATURE SELECTION -- DETERMINISTIC, CHRONOLOGICAL, NOT A PICK
- * -------------------------------------------------------------------
- * The feature is THE EARLIEST NOT-YET-STARTED GAME THAT HAS A PRICED
- * BOARD. It is not the best price, not the biggest move, not the most
- * "interesting" game -- ordering by first pitch is the one rule that can
- * never be read as a recommendation, which matters because Ranker Engine
- * 2 is gated and this product never says bet it. If nothing has started
- * yet and nothing is priced, the earliest game is featured anyway and
- * the price bug states that plainly instead of showing a figure.
+ * The artboard's rich matchup-context panel (win-loss record, RS/RA per
+ * game, L5/L10, probable starters) reads from the dossier's `teams`
+ * section and `game.{away,home}_probable` -- fields that exist only
+ * inside GET /today's `dossier`, which docs/API_CONTRACTS.md documents
+ * as "not yet a stable per-field contract; treat as opaque today", and
+ * that are NOT listed in this artboard's own IMPLEMENTATION_MANIFEST.json
+ * fields_used (unlike board_summary.books/age_seconds, which the
+ * manifest does list and which really are present --
+ * src/analysis/gamepayload.py's `_board_summary`/`_board_staleness`,
+ * confirmed by reading the source directly). Given that omission looks
+ * deliberate rather than an oversight, this rebuild does NOT reach into
+ * the opaque dossier at all (V1's today.js did, defensively) -- the
+ * matchup-context panel here shows only contract-safe identity and the
+ * de-vigged market-implied consensus. Full team/starter detail is the
+ * Game screen's job (GET /game/{date}/{away}/{home}'s `sections.teams`,
+ * a documented, stable field on THAT endpoint). Reported as a deliberate
+ * deviation.
  *
- * THE RESERVED COLOR RULE
+ * FEATURE SELECTION -- ONE RULE FOR THE WHOLE SCREEN
  * -------------------------------------------------------------------
- * Hot red appears in exactly two places on this screen and they are in
- * different regions: the price bug (a real, checkable better price) and
- * the closing band's primary action. No slate tile carries a money flag
- * unless a side genuinely beats the market-implied consensus -- "no
- * best-available flag when nothing beats consensus; the pill is absent,
- * not greyed" (handoff section 10).
+ * V2-33's own eyebrow states its rule in words: "FEATURED . LARGEST
+ * PRICE GAP AGAINST CONSENSUS -- Computed from tonight's boards, a
+ * measured gap, not a judgement." This screen uses that ONE rule for
+ * both the top hero's verdict state AND the Featured Bet slot, rather
+ * than V1's separate "earliest not-yet-started" rule for the hero --
+ * running two different "features" on one screen would be confusing,
+ * and this rule is already deterministic, real-data-only and carries no
+ * favourite bias (it is picked from realised price gaps, not from who
+ * is favoured). When no game has a priced board with a genuine gap, the
+ * hero falls back to the earliest game chronologically (V1's rule,
+ * still non-editorial) and the Featured Bet slot renders its own
+ * honest-absence state.
+ *
+ * V2-33's FEATURED BET CARD -- WHY THIS CALLS POST /betcheck
+ * -------------------------------------------------------------------
+ * web/js/featuredbet.js's own docstring TODO for this exact call site
+ * says the Featured Bet primitive needs "a matched game and a Bet
+ * Check-shaped payload for it (e.g. by also calling POST /betcheck for
+ * the slate's featured game ... not decided here)". This screen decides
+ * it: once the largest-gap game+side is known (a real, deterministic,
+ * non-favourite pick -- never "always check the away side"), it POSTs
+ * that exact bet (real american_price already on the board) to
+ * /betcheck and maps the real response through
+ * `mapBetCheckPayloadToStanding`. Every figure the Featured Bet card
+ * then shows is server-computed, real analysis -- nothing here invents
+ * a probability, a rating or a rank. When no gap exists anywhere on
+ * tonight's board, the slot renders featuredbet.js's own honest
+ * could-not-check state with a real reason, never a fabricated query.
+ *
+ * GET /odds/{date} IS NOT ONE OF THIS ARTBOARD FAMILY'S LISTED
+ * ENDPOINTS (IMPLEMENTATION_MANIFEST.json lists only /today,
+ * /games/{date}, /changed/{date} for V2-01/01a/b/c/22/33) -- fetched
+ * anyway, continuing the exact pattern V1's today.js already used, and
+ * required by the "largest price gap" rule above (there is no other
+ * source for a per-book best price or a de-vigged consensus price to
+ * compare it against). Reported as a likely manifest omission.
+ *
+ * WHAT WAS DELIBERATELY LEFT ALONE
+ * -------------------------------------------------------------------
+ * WHAT CHANGED and the Bet Check invite band are not part of this
+ * artboard family (no V2-01-adjacent artboard redesigns them here) --
+ * their V1 structure and CSS (screens.css's existing "WHAT CHANGED" /
+ * "BET CHECK ENTRY BAND" sections) are kept verbatim rather than
+ * rewritten out of scope. Likewise `web/js/tiles.js`'s shared
+ * `slateTile` (also used by games.js's grid) is reused unchanged for
+ * the slate rail rather than forked into a V2-only tile.
  */
 
-import { apiGet } from "./api.js";
-import { el, clear, renderError, renderLoading, notYetAvailable,
-  formatAmerican, formatAge, formatEasternClock, formatEasternTime,
-  formatBook } from "./dom.js";
+import { apiGet, apiPost } from "./api.js";
+import { el, clear, formatAmerican, formatConsensusShare,
+  formatEasternClock, verdictLabel, notYetAvailable } from "./dom.js";
+import { renderError, renderLoadingSkeleton, renderEmptySlate,
+  renderCaptureUnavailable } from "./states.js";
+import { renderFeaturedBet, mapBetCheckPayloadToStanding } from "./featuredbet.js";
 import { renderStaleness } from "./meta.js";
-import { seamGradient, teamColors } from "./teamcolors.js";
+import { teamColors } from "./teamcolors.js";
+import { teamName } from "./labels.js";
 import { slateTile } from "./tiles.js";
-import { setShellStatusFromStaleness } from "./shell.js";
-import { armEntrances, armParallax } from "./motion.js";
+import { setShellStatus } from "./shell.js";
+import { armEntrances } from "./motion.js";
 
 /* ---------------------------------------------------------------------
- * Reading the payloads
+ * Reading the payloads -- contract-safe only (see module docstring)
  * ------------------------------------------------------------------- */
 
-/** /today's `dossier` is documented opaque (docs/API_CONTRACTS.md), but
- * its `game` sub-object is where the probable starters live and its
- * `sections.teams` is where the win-loss records live -- there is no
- * other source for either. Read defensively: a reshape must degrade to
- * "omit the line" (never fabricate one), not throw. */
-function dossierOf(entry) {
-  const dossier = entry && typeof entry.dossier === "object" ? entry.dossier : null;
-  const game = dossier && typeof dossier.game === "object" ? dossier.game : null;
-  const sections = dossier && typeof dossier.sections === "object" ? dossier.sections : {};
-  const teams = sections && typeof sections.teams === "object" ? sections.teams : null;
-  return { game, teams };
+function h2hOf(oddsGameEntry) {
+  return (oddsGameEntry && oddsGameEntry.markets && oddsGameEntry.markets.h2h) || null;
 }
 
-function recordOf(teams, sideKey) {
-  if (!teams) return null;
-  const wins = teams[`${sideKey}_wins`];
-  const losses = teams[`${sideKey}_losses`];
-  if (typeof wins !== "number" || typeof losses !== "number") return null;
-  return `${wins}-${losses}`;
-}
-
-/** The h2h market block for one game_id out of GET /odds/{date}. */
-function marketIndex(oddsPayload) {
+function oddsIndexOf(oddsPayload) {
   const index = new Map();
-  for (const game of (oddsPayload && oddsPayload.games) || []) {
-    const h2h = game.markets && game.markets.h2h ? game.markets.h2h : null;
-    if (h2h) index.set(game.game_id, h2h);
+  for (const entry of (oddsPayload && oddsPayload.games) || []) {
+    const h2h = h2hOf(entry);
+    if (h2h) index.set(entry.game_id, h2h);
   }
   return index;
 }
 
-/** Best price on one side, or null. */
 function bestOn(h2h, side) {
   const best = h2h && h2h.best ? h2h.best[side] : null;
   return best && typeof best.price === "number" ? best : null;
 }
 
-/**
- * PRICE ADVANTAGE, MATHEMATICALLY VERIFIABLE OR ABSENT.
- *
- * "N.N PTS BETTER" is the difference between the best available price
- * and the market-implied consensus, in points of implied share -- both
- * numbers come straight off GET /odds/{date} and a reader can check both
- * at the books inside a minute. This is line-shopping value: a better
- * execution price, never expected value and never a prediction.
- *
- * Returns null unless the best price genuinely implies a SMALLER share
- * than consensus (i.e. it pays better). No advantage, no pill -- absent,
- * never greyed, never manufactured.
- */
+/** The share an American price implies, vig included -- plain
+ * arithmetic on a price the API supplied, the same conversion
+ * oddspayload.py documents for `implied_price`, run the other way. */
+function impliedShare(american) {
+  const n = Number(american);
+  if (!Number.isFinite(n) || n === 0) return null;
+  return n > 0 ? 100 / (n + 100) : -n / (-n + 100);
+}
+
+/** Points of implied-share advantage the best price carries over the
+ * de-vigged consensus, on one side -- line-shopping value, never EV,
+ * never a prediction (same math V1's today.js used). Null unless the
+ * best price genuinely pays a smaller implied share than consensus. */
 function pointsBetter(h2h, side) {
   const best = bestOn(h2h, side);
   const consensus = h2h && h2h.consensus ? h2h.consensus[side] : null;
@@ -115,207 +161,514 @@ function pointsBetter(h2h, side) {
   return delta * 100;
 }
 
-/** The share an American price implies, vig included. Plain arithmetic
- * on the price the API supplied -- the same conversion the odds payload
- * documents for `implied_price`, done in the other direction. */
-function impliedShare(american) {
-  const n = Number(american);
-  if (!Number.isFinite(n) || n === 0) return null;
-  return n > 0 ? 100 / (n + 100) : -n / (-n + 100);
+/** V2-33's own rule, in code: the game+side with the largest real price
+ * gap against consensus, across every game with a priced board tonight.
+ * Never a favourite pick -- the side is whichever one the market itself
+ * produced the bigger gap on. */
+function chooseGapCandidate(rows, oddsIndex) {
+  let winner = null;
+  for (const row of rows) {
+    const h2h = oddsIndex.get(row.game_id);
+    if (!h2h || !h2h.board_available) continue;
+    for (const side of ["away", "home"]) {
+      const gap = pointsBetter(h2h, side);
+      if (gap === null) continue;
+      if (!winner || gap > winner.gap) {
+        winner = { row, side, gap, h2h, best: bestOn(h2h, side) };
+      }
+    }
+  }
+  return winner;
+}
+
+function chronologicalFallback(rows) {
+  const sorted = rows.slice().sort((a, b) => {
+    const at = Date.parse(a.first_pitch_utc || "") || 0;
+    const bt = Date.parse(b.first_pitch_utc || "") || 0;
+    return at - bt;
+  });
+  return sorted[0] || null;
+}
+
+/** "WHAT WE CHECKED TONIGHT" -- every figure computed client-side from
+ * board_summary on the rows this screen already received (the artboard's
+ * own note: "no slate-wide book or quote total exists on this feed").
+ * `books`/`age_seconds` on board_summary are real (gamepayload.py's
+ * `_board_summary`) even though docs/API_CONTRACTS.md's table only
+ * documents observed_utc/has_board -- IMPLEMENTATION_MANIFEST.json's
+ * V2-01 fields_used lists both, confirmed against source. */
+function boardAggregates(rows) {
+  let boardsReceived = 0;
+  let noBoard = 0;
+  let deepest = null;
+  let thinnest = null;
+  let freshest = null;
+  for (const row of rows) {
+    const bs = row.board_summary || {};
+    if (bs.has_board) boardsReceived += 1; else noBoard += 1;
+    if (typeof bs.books === "number") {
+      deepest = deepest === null ? bs.books : Math.max(deepest, bs.books);
+      thinnest = thinnest === null ? bs.books : Math.min(thinnest, bs.books);
+    }
+    if (bs.observed_utc && (!freshest || Date.parse(bs.observed_utc) > Date.parse(freshest))) {
+      freshest = bs.observed_utc;
+    }
+  }
+  return { gamesCount: rows.length, boardsReceived, noBoard, deepest, thinnest, freshest };
+}
+
+function et(isoUtc) {
+  const clock = formatEasternClock(isoUtc);
+  return clock ? `${clock} ET` : null;
+}
+
+/** "<1 MIN AGO" .. "N DAY AGO" -- no seconds-level liveness claim
+ * (capture cadence is 15-60 min; see odds.js's identical helper). */
+function ageNoSeconds(isoUtc) {
+  if (!isoUtc) return null;
+  const ms = Date.now() - Date.parse(isoUtc);
+  if (!Number.isFinite(ms) || ms < 0) return null;
+  const minutes = Math.round(ms / 60000);
+  if (minutes < 1) return "<1 MIN AGO";
+  if (minutes < 90) return `${minutes} MIN AGO`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 36) return `${hours} HR AGO`;
+  return `${Math.round(hours / 24)} DAY AGO`;
 }
 
 /* ---------------------------------------------------------------------
- * Hero
+ * Small building blocks
  * ------------------------------------------------------------------- */
 
-function heroSide(abbr, { record, probable, home }) {
-  const side = el("div", { class: `hero__side${home ? " hero__side--home" : ""}` });
-  side.appendChild(el("div", { class: "hero__wordmark", "data-hook": "hero-team", text: abbr }));
+function teamBadge(abbr) {
   const colors = teamColors(abbr);
-  // Team color is identity only -- the rule under the wordmark is drawn
-  // only for a club this client actually knows the palette of.
-  if (colors.known) side.appendChild(el("div", { class: "hero__rule" }));
-  // Records and probables appear only when the payload carried them.
-  // An absent starter line is omitted; it is never filled with "TBD".
-  if (record || probable) {
-    const line = el("div", { class: "hero__line" });
-    const parts = home
-      ? [probable ? el("span", { class: "hero__probable", text: probable }) : null,
-         record ? el("span", { class: "hero__record", text: record }) : null]
-      : [record ? el("span", { class: "hero__record", text: record }) : null,
-         probable ? el("span", { class: "hero__probable", text: probable }) : null];
-    for (const part of parts) if (part) line.appendChild(part);
-    side.appendChild(line);
-  }
-  return side;
+  const badge = el("span", { class: "gv2-badge", "aria-hidden": "true", text: abbr || "" });
+  badge.style.background = colors.known ? colors.primary : "#232830";
+  badge.style.color = colors.known ? colors.accent : "#D5D7DE";
+  return badge;
 }
 
-function priceBug(feature, h2h) {
-  const bug = el("div", { class: "pricebug chamfer", "data-hook": "price-bug", "data-price": "" });
-  bug.appendChild(el("span", { class: "tex-scanline" }));
-  bug.appendChild(el("span", { class: "pricebug__sheen" }));
+function verdictChip(text, tone) {
+  return el("span", { class: `gv2-chip gv2-chip--${tone}` }, [
+    el("span", { class: "gv2-chip__mark", "aria-hidden": "true" }),
+    el("span", { text }),
+  ]);
+}
 
-  const best = bestOn(h2h, "away");
-  const consensus = h2h && h2h.consensus ? h2h.consensus.away : null;
-  const staleness = h2h && h2h.staleness ? h2h.staleness : null;
-  const books = h2h && h2h.consensus && typeof h2h.consensus.books === "number"
-    ? h2h.consensus.books
-    : (h2h && Array.isArray(h2h.board) ? h2h.board.length : null);
+function checkedTile(label, value, note) {
+  const tile = el("div", { class: "gv2-checked__tile" });
+  tile.appendChild(el("div", { class: "gv2-checked__label", text: label }));
+  const row = el("div", { class: "gv2-checked__row" });
+  row.appendChild(el("span", { class: "gv2-checked__value", text: value === null ? "—" : String(value) }));
+  if (note) row.appendChild(el("span", { class: "gv2-checked__note", text: note }));
+  tile.appendChild(row);
+  return tile;
+}
+
+function checkedTonightPanel(aggregates) {
+  const panel = el("div", { class: "gv2-checked panel chamfer" });
+  panel.appendChild(el("div", { class: "gv2-checked__title", text: "WHAT WE CHECKED TONIGHT" }));
+  panel.appendChild(checkedTile("GAMES EXAMINED", aggregates.gamesCount, "games_count"));
+  panel.appendChild(checkedTile("BOARDS RECEIVED", aggregates.boardsReceived, "count has_board"));
+  panel.appendChild(checkedTile("NO BOARD", aggregates.noBoard, "count !has_board"));
+  panel.appendChild(checkedTile("DEEPEST BOARD",
+    aggregates.deepest === null ? null : aggregates.deepest, "max board_summary.books"));
+  panel.appendChild(checkedTile("THINNEST BOARD",
+    aggregates.thinnest === null ? null : aggregates.thinnest, "min board_summary.books"));
+  panel.appendChild(el("p", { class: "gv2-checked__footnote",
+    text: "Every row above is computed client-side from board_summary on the games this screen "
+        + "received. No slate-wide book or quote total exists on this feed." }));
+  const research = el("div", { class: "gv2-checked__research" });
+  research.appendChild(el("span", { class: "gv2-checked__research-tag", text: "OBSERVATION" }));
+  research.appendChild(el("span", { class: "gv2-checked__research-body",
+    text: "Max evidence tier reachable today." }));
+  panel.appendChild(research);
+  const programme = el("div", { class: "gv2-checked__programme" });
+  programme.appendChild(el("span", { class: "gv2-checked__programme-tag", text: "RESEARCH PROGRAMME" }));
+  // Fixed, closed-record constant -- see module docstring. Never
+  // tonight's count, never recomputed from a live field.
+  programme.appendChild(el("span", { class: "gv2-checked__programme-body",
+    text: "27 hypotheses pre-registered across this product's V1-V5 research record, zero surviving. "
+        + "Static constant, not tonight's count." }));
+  panel.appendChild(programme);
+  return panel;
+}
+
+/** A compact, honest price-context panel for one game+side -- best price,
+ * the de-vigged consensus beside it, and the real points-better gap when
+ * one exists. Used by the no_play hero ("price context always real")
+ * and the flagged hero (the price finding itself). */
+function priceContextPanel(row, side, h2h, gap) {
+  const panel = el("div", { class: "gv2-price panel chamfer" });
+  if (!h2h || !h2h.board_available) {
+    panel.appendChild(el("div", { class: "gv2-price__title", text: "PRICE CONTEXT" }));
+    panel.appendChild(el("p", { class: "gv2-price__empty",
+      text: "No priced board for this game yet." }));
+    return panel;
+  }
+  const abbr = side === "home" ? row.home_team : row.away_team;
+  const best = bestOn(h2h, side);
+  const consensus = h2h.consensus ? h2h.consensus[side] : null;
+  const bookCount = Array.isArray(h2h.board) ? h2h.board.length : null;
+
+  panel.appendChild(el("div", { class: "gv2-price__head" }, [
+    teamBadge(abbr),
+    el("span", { class: "gv2-price__label", text: `${teamName(abbr, "name") || abbr} moneyline` }),
+  ]));
 
   if (!best) {
-    // No price worth showing is a sentence, never a zero.
-    bug.appendChild(el("p", { class: "pricebug__none", "data-hook": "price-bug-empty",
-      text: h2h && h2h.reason
-        ? h2h.reason
-        : "No book has posted a price on this game yet." }));
-    return { node: bug, advantage: null, books, staleness };
+    panel.appendChild(el("p", { class: "gv2-price__empty", "data-hook": "gameday-price-empty",
+      text: "No book has posted a price on this side yet." }));
+    return panel;
   }
 
-  const head = el("div", { class: "pricebug__head" });
-  head.appendChild(el("span", { class: "pricebug__dot" }));
-  head.appendChild(el("span", { class: "pricebug__label",
-    text: `${feature.away_team} MONEYLINE · BEST OF ${books || "?"} BOOKS · ${formatBook(best.books && best.books[0]) || ""}`.trim() }));
-  const age = formatAge(staleness && staleness.age_seconds);
-  if (age) {
-    head.appendChild(el("span", { class: "pricebug__divider" }));
-    head.appendChild(el("span", { class: "pricebug__age", text: `UPDATED ${age}` }));
-  }
-  bug.appendChild(head);
-
-  const figures = el("div", { class: "pricebug__figures" });
-  figures.appendChild(el("span", { class: "pricebug__price", "data-hook": "best-price",
-    "data-beat": "", text: formatAmerican(best.price) }));
+  const figures = el("div", { class: "gv2-price__figures" });
+  figures.appendChild(el("span", { class: "gv2-price__figure", "data-hook": "gameday-best-price",
+    text: formatAmerican(best.price) }));
+  const aside = el("div", { class: "gv2-price__aside" });
+  aside.appendChild(el("span", { class: "gv2-price__books",
+    text: `${(best.books || []).join(", ") || "—"}` }));
   if (consensus && typeof consensus.implied_price === "number") {
-    const aside = el("div", { class: "pricebug__aside" });
-    aside.appendChild(el("div", { class: "pricebug__was", "data-hook": "consensus-price",
-      text: formatAmerican(consensus.implied_price) }));
-    aside.appendChild(el("div", { class: "pricebug__was-label",
-      text: `${books || ""}-BOOK MARKET-IMPLIED CONSENSUS`.replace(/^-/, "") }));
-    figures.appendChild(aside);
+    aside.appendChild(el("span", { class: "gv2-price__consensus",
+      text: `de-vigged consensus ${formatAmerican(consensus.implied_price)}` }));
   }
-  bug.appendChild(figures);
+  figures.appendChild(aside);
+  panel.appendChild(figures);
 
-  return { node: bug, advantage: pointsBetter(h2h, "away"), books, staleness, best };
+  if (typeof gap === "number") {
+    panel.appendChild(el("span", { class: "gv2-price__pill", "data-hook": "gameday-points-better",
+      text: `${gap.toFixed(1)} PTS BETTER · best price vs. de-vigged consensus` }));
+  }
+  panel.appendChild(el("p", { class: "gv2-price__note",
+    text: `BEST OF ${bookCount === null ? "—" : bookCount} BOOKS · OBSERVATION` }));
+  return panel;
 }
 
-function heroFor(feature, entry, h2h) {
-  const { game, teams } = dossierOf(entry);
-  const hero = el("section", { class: "hero", "data-hook": "gameday-hero", "data-hero": "" });
-  hero.setAttribute("style",
-    `--team-a:${seamGradient(feature.away_team, 148)};--team-b:${seamGradient(feature.home_team, 206)};`
-    + `--rule-a:${teamColors(feature.away_team).accent};--rule-b:${teamColors(feature.home_team).accent}`);
+function matchupContextPanel(row) {
+  const panel = el("div", { class: "gv2-matchup panel chamfer" });
+  panel.appendChild(el("div", { class: "gv2-matchup__title", text: "TONIGHT'S MATCHUP CONTEXT" }));
+  const head = el("div", { class: "gv2-matchup__head" });
+  head.appendChild(teamBadge(row.away_team));
+  head.appendChild(el("span", { class: "gv2-matchup__names", text: `${row.away_team} @ ${row.home_team}` }));
+  panel.appendChild(head);
 
-  hero.appendChild(el("div", { class: "hero__half hero__half--a", "data-parallax": ".08" }));
-  hero.appendChild(el("div", { class: "hero__half hero__half--b", "data-parallax": ".08" }));
-  hero.appendChild(el("div", { class: "tex-scanline" }));
-  hero.appendChild(el("div", { class: "tex-carbon" }));
-  hero.appendChild(el("div", { class: "hero__wash" }));
-  hero.appendChild(el("div", { class: "hero__seam" }));
-  const sweep = el("div", { class: "hero__sweep" });
-  sweep.appendChild(el("i"));
-  hero.appendChild(sweep);
-
-  const first = formatEasternTime(feature.first_pitch_utc);
-  const eyebrow = el("div", { class: "hero__eyebrow", "data-rise": "", "data-delay": "60" });
-  eyebrow.appendChild(el("span", { class: "hero__tick" }));
-  eyebrow.appendChild(el("span", { class: "hero__kicker", text: "PREGAME · TONIGHT'S FEATURE" }));
-  eyebrow.appendChild(el("span", { class: "hero__spacer" }));
-  if (feature.venue) {
-    eyebrow.appendChild(el("span", { class: "hero__venue", text: feature.venue.toUpperCase() }));
+  const consensus = row.market_implied_consensus;
+  if (consensus && typeof consensus.away_fair === "number") {
+    const cols = el("div", { class: "gv2-matchup__consensus" });
+    cols.appendChild(el("div", { class: "gv2-matchup__col" }, [
+      el("span", { class: "gv2-matchup__col-label", text: row.away_team }),
+      el("span", { class: "gv2-matchup__col-value", text: formatConsensusShare(consensus.away_fair) }),
+    ]));
+    cols.appendChild(el("div", { class: "gv2-matchup__col" }, [
+      el("span", { class: "gv2-matchup__col-label", text: row.home_team }),
+      el("span", { class: "gv2-matchup__col-value", text: formatConsensusShare(consensus.home_fair) }),
+    ]));
+    panel.appendChild(cols);
+    panel.appendChild(el("p", { class: "gv2-matchup__caption",
+      text: "MARKET-IMPLIED CONSENSUS, DE-VIGGED -- a measurement of the board, not a forecast." }));
+  } else {
+    panel.appendChild(notYetAvailable(
+      "No priced market for this game yet, so there is no consensus share to show.", "NO MARKET"));
   }
-  // At 390px the venue is dropped and the first pitch takes the right of
-  // the eyebrow instead, exactly as the mobile artboard shows.
-  if (first) {
-    eyebrow.appendChild(el("span", { class: "hero__venue hero__venue--time", text: first }));
+  if (row.venue) {
+    panel.appendChild(el("p", { class: "gv2-matchup__venue", text: row.venue.toUpperCase() }));
   }
-  eyebrow.appendChild(el("span", { class: "hero__tick hero__tick--right" }));
-  hero.appendChild(eyebrow);
-
-  const matchup = el("div", { class: "hero__matchup", "data-rise": "", "data-delay": "180" });
-  matchup.appendChild(heroSide(feature.away_team, {
-    record: recordOf(teams, "away"),
-    probable: game && game.away_probable ? String(game.away_probable).toUpperCase() : null,
-    home: false,
-  }));
-  const vs = el("div", { class: "hero__vs" });
-  vs.appendChild(el("span", { class: "hero__vs-mark chamfer chamfer--badge", text: "VS" }));
-  if (first) vs.appendChild(el("span", { class: "hero__vs-time", text: first }));
-  matchup.appendChild(vs);
-  matchup.appendChild(heroSide(feature.home_team, {
-    record: recordOf(teams, "home"),
-    probable: game && game.home_probable ? String(game.home_probable).toUpperCase() : null,
-    home: true,
-  }));
-  hero.appendChild(matchup);
-
-  hero.appendChild(el("div", { class: "hero__gap" }));
-  hero.appendChild(el("div", { class: "hero__scrim" }));
-
-  const foot = el("div", { class: "hero__foot" });
-  const bug = priceBug(feature, h2h);
-  foot.appendChild(bug.node);
-
-  if (bug.advantage !== null) {
-    const col = el("div", { class: "hero__pill-col", "data-rise": "", "data-delay": "520" });
-    col.appendChild(el("span", { class: "advantage-pill chamfer chamfer--badge",
-      "data-hook": "advantage-pill", text: `${bug.advantage.toFixed(1)} PTS BETTER` }));
-    col.appendChild(el("div", { class: "hero__move",
-      text: "BEST AVAILABLE VS MARKET-IMPLIED CONSENSUS" }));
-    foot.appendChild(col);
-  }
-
-  foot.appendChild(el("div", { class: "hero__foot-spacer" }));
-
-  const actions = el("div", { class: "hero__actions", "data-rise": "", "data-delay": "620" });
-  actions.appendChild(el("a", {
-    class: "btn btn--secondary chamfer chamfer--btn",
-    "data-hook": "compare-books",
-    href: `#/game/${encodeURIComponent(feature.date)}/${encodeURIComponent(feature.away_team)}/${encodeURIComponent(feature.home_team)}`,
-    text: bug.books ? `COMPARE ${bug.books}` : "OPEN THIS GAME",
-  }));
-  foot.appendChild(actions);
-  hero.appendChild(foot);
-
-  return { node: hero, staleness: bug.staleness, books: bug.books };
+  // Team records and probable starters are deliberately not shown here --
+  // see the module docstring's "what this screen does not print" note.
+  panel.appendChild(el("p", { class: "gv2-matchup__gap-note",
+    text: "Team records and probable starters live on the Game screen, not here -- "
+        + "this endpoint set does not carry them." }));
+  return panel;
 }
 
-/** Empty slate: the hero geometry and the seam stay, the price bug is
- * replaced by a plain-language statement, and the work is quantified so
- * absence reads as diligence. Never a row of zeros. */
-function emptyHero(date, checkedGames) {
-  const hero = el("section", { class: "hero", "data-hook": "gameday-hero-empty", "data-hero": "" });
-  hero.setAttribute("style", `--team-a:${seamGradient(null, 148)};--team-b:${seamGradient(null, 206)}`);
-  hero.appendChild(el("div", { class: "hero__half hero__half--a" }));
-  hero.appendChild(el("div", { class: "hero__half hero__half--b" }));
-  hero.appendChild(el("div", { class: "tex-scanline" }));
-  hero.appendChild(el("div", { class: "tex-carbon" }));
-  hero.appendChild(el("div", { class: "hero__wash" }));
-  hero.appendChild(el("div", { class: "hero__seam" }));
-  hero.appendChild(el("div", { class: "hero__scrim" }));
+/* ---------------------------------------------------------------------
+ * V2-22 MOBILE-ONLY composition pieces -- a distinct composition, not a
+ * reflow of desktop. All three are always rendered into the DOM and
+ * toggled by screens.css's GAMEDAY V2 mobile block (<=899px); see that
+ * section for why (keeps this file's render path single, no separate
+ * mobile branch to drift from desktop).
+ * ------------------------------------------------------------------- */
 
-  const eyebrow = el("div", { class: "hero__eyebrow", "data-rise": "" });
-  eyebrow.appendChild(el("span", { class: "hero__tick" }));
-  eyebrow.appendChild(el("span", { class: "hero__kicker", text: `PREGAME · ${date || "TONIGHT"}` }));
-  hero.appendChild(eyebrow);
-  hero.appendChild(el("div", { class: "hero__gap" }));
-
-  const foot = el("div", { class: "hero__foot" });
-  const body = el("div", { class: "noplay", "data-rise": "", "data-delay": "180" });
-  body.appendChild(el("p", { class: "noplay__eyebrow", text: "NOTHING ON THE BOARD" }));
-  body.appendChild(el("p", { class: "noplay__title", text: "No games to show tonight." }));
-  body.appendChild(el("p", { class: "noplay__body",
-    text: "There is no slate for this date, so there is nothing to price and "
-        + "nothing to compare. We will have a board as soon as one exists." }));
-  if (typeof checkedGames === "number") {
-    body.appendChild(el("p", { class: "noplay__meta", text: `${checkedGames} GAMES CHECKED` }));
+/** Five day tiles (weekday + day number) around the loaded date, today
+ * highlighted. GET /today has no {date} path parameter by design
+ * (docs/API_CONTRACTS.md: "a past or future slate is GET /games/{date}
+ * instead") -- so, per this lane's instruction to reuse an existing date
+ * mechanism rather than invent a new route, every non-today tile
+ * navigates to the Games screen for that date (`#/games/{date}`), the
+ * screen that already accepts an arbitrary date; today's own tile stays
+ * on this screen. Whether an adjacent date has any games is not known
+ * here (that would mean fetching five more schedules) -- those tiles are
+ * rendered dimmed/plain rather than claiming a count this screen never
+ * fetched, per this lane's own "disabled/dimmed tiles are fine" note. */
+function dateStrip(dateIso) {
+  const strip = el("div", { class: "gv2-datestrip", "data-hook": "gameday-date-strip" });
+  const base = dateIso ? new Date(`${dateIso}T12:00:00Z`) : null;
+  for (let offset = -2; offset <= 2; offset += 1) {
+    const isToday = offset === 0;
+    let weekday = "--";
+    let day = "--";
+    let iso = null;
+    if (base && !Number.isNaN(base.getTime())) {
+      const d = new Date(base);
+      d.setUTCDate(d.getUTCDate() + offset);
+      iso = d.toISOString().slice(0, 10);
+      weekday = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", weekday: "short" }).format(d).toUpperCase();
+      day = String(d.getUTCDate());
+    }
+    const tile = el("a", {
+      class: `gv2-datestrip__tile${isToday ? " gv2-datestrip__tile--today" : ""}`,
+      href: isToday ? "#/today" : `#/games/${encodeURIComponent(iso || "")}`,
+      "data-hook": isToday ? "gameday-date-today" : "gameday-date-tile",
+    });
+    tile.appendChild(el("span", { class: "gv2-datestrip__weekday", text: weekday }));
+    tile.appendChild(el("span", { class: "gv2-datestrip__day", text: day }));
+    strip.appendChild(tile);
   }
-  foot.appendChild(body);
-  hero.appendChild(foot);
+  return strip;
+}
+
+/** The hero's three inline stat chips, computed from board_summary exactly
+ * like `checkedTonightPanel` -- on mobile these REPLACE that tall panel
+ * (screens.css hides one and shows the other per viewport; both read the
+ * same `aggregates` object, so they can never disagree). */
+function heroStatChips(aggregates) {
+  const row = el("div", { class: "gv2-hero__chips", "data-hook": "gameday-hero-chips" });
+  const chip = (value, label) => row.appendChild(el("span", { class: "gv2-hero__chip" }, [
+    el("span", { class: "gv2-hero__chip-value", text: String(value) }),
+    el("span", { class: "gv2-hero__chip-label", text: label }),
+  ]));
+  chip(aggregates.gamesCount, "GAMES");
+  chip(aggregates.boardsReceived, "BOARDS");
+  chip(aggregates.noBoard, "NO BOARD");
+  return row;
+}
+
+/** V2-22's matchup poster: away club (full name + colour band), a
+ * centred first-pitch/VS pill, home club (full name + colour band).
+ * Team records and probable starters are NOT on this endpoint set (see
+ * the module docstring's "what this screen does not print" note) --
+ * omitted entirely, never a placeholder line. Mobile-only; desktop's
+ * hero does not carry this poster (not part of this lane's V2-01
+ * grading). */
+function matchupPoster(row) {
+  const poster = el("div", { class: "gv2-poster", "data-hook": "gameday-matchup-poster" });
+  const awayColors = teamColors(row.away_team);
+  const homeColors = teamColors(row.home_team);
+  const side = (abbr, colors, align) => {
+    const block = el("div", { class: `gv2-poster__side gv2-poster__side--${align}` });
+    block.appendChild(el("div", { class: "gv2-poster__name", text: teamName(abbr, "full") || abbr }));
+    const band = el("div", { class: "gv2-poster__band" });
+    band.style.background = colors.known
+      ? `linear-gradient(90deg, ${colors.primary}, ${colors.accent})` : "rgba(255,255,255,.14)";
+    block.appendChild(band);
+    return block;
+  };
+  poster.appendChild(side(row.away_team, awayColors, "away"));
+  const pill = el("div", { class: "gv2-poster__pill" });
+  const first = et(row.first_pitch_utc);
+  pill.appendChild(el("span", { class: "gv2-poster__time", text: first || "TIME TBD" }));
+  pill.appendChild(el("span", { class: "gv2-poster__sep" }));
+  pill.appendChild(el("span", { class: "gv2-poster__vs", text: "VS" }));
+  poster.appendChild(pill);
+  poster.appendChild(side(row.home_team, homeColors, "home"));
+  return poster;
+}
+
+/* ---------------------------------------------------------------------
+ * Hero -- the three verdict states (V2-01a / b / c)
+ * ------------------------------------------------------------------- */
+
+function heroShell(tone, extraClass) {
+  const hero = el("section", { class: `gv2-hero panel chamfer gv2-hero--${tone}${extraClass ? ` ${extraClass}` : ""}`,
+    "data-hook": "gameday-hero", "data-verdict-tone": tone, "data-rise": "" });
+  hero.appendChild(el("span", { class: "gv2-hero__tex", "aria-hidden": "true" }));
   return hero;
 }
 
+function heroActions(date) {
+  const row = el("div", { class: "gv2-hero__actions" });
+  row.appendChild(el("a", { class: "btn btn--primary chamfer chamfer--btn",
+    href: `#/betcheck?date=${encodeURIComponent(date || "")}`,
+    "data-hook": "gameday-check-own-bet", text: "CHECK A BET OF YOUR OWN" }));
+  row.appendChild(el("a", { class: "btn btn--ghost chamfer chamfer--btn",
+    href: `#/odds/${encodeURIComponent(date || "")}`,
+    "data-hook": "gameday-open-board", text: "OPEN THE FULL BOARD" }));
+  row.appendChild(el("a", { class: "btn btn--ghost chamfer chamfer--btn",
+    href: "#/mybets", "data-hook": "gameday-saved-bets", text: "SAVED BETS" }));
+  return row;
+}
+
+/** V2-01a -- NO_PLAY, the confident default (~93% of nights per the
+ * forward ledger, though that percentage itself is not printed here --
+ * see module docstring). */
+function heroNoPlay(row, h2h, aggregates, sameVerdictCount, totalGames) {
+  const hero = heroShell("noplay");
+  const top = el("div", { class: "gv2-hero__top" });
+  top.appendChild(verdictChip("NO DEMONSTRATED EDGE", "noplay"));
+  top.appendChild(el("span", { class: "gv2-hero__fraction", "data-hook": "gameday-verdict-fraction",
+    text: `${sameVerdictCount} OF ${totalGames} GAMES TONIGHT · SAME VERDICT` }));
+  hero.appendChild(top);
+
+  // ---- row 1 (>=1280px: side by side, hero ~2/3 : checked-tonight ~1/3;
+  //      below that, and always on mobile, stacked) ----
+  const row1 = el("div", { class: "gv2-hero__row" });
+  const main = el("div", { class: "gv2-hero__main" });
+  main.appendChild(el("div", { class: "gv2-hero__headline",
+    text: "WE CHECKED THE SLATE. NOTHING CLEARS THE BAR." }));
+  main.appendChild(el("p", { class: "gv2-hero__body",
+    text: "That is the honest answer most nights, and it is the answer this product is built to give. "
+        + "The market and the matchup below are still real -- we just will not invent a reason to act on "
+        + "them." }));
+  // Mobile-only: replaces the WHAT WE CHECKED TONIGHT panel below (V2-22).
+  main.appendChild(heroStatChips(aggregates));
+  main.appendChild(heroActions());
+  row1.appendChild(main);
+  row1.appendChild(checkedTonightPanel(aggregates));
+  hero.appendChild(row1);
+
+  const still = el("div", { class: "gv2-hero__still" });
+  still.appendChild(el("span", { class: "gv2-hero__still-tag", text: "STILL WORTH YOUR TIME" }));
+  still.appendChild(el("span", { class: "gv2-hero__still-body",
+    text: "The market and the matchup are real whether or not we have a finding." }));
+  const fresh = aggregates.freshest ? et(aggregates.freshest) : null;
+  if (fresh) {
+    still.appendChild(el("span", { class: "gv2-hero__still-time",
+      text: `PRICES CAPTURED ${fresh}${ageNoSeconds(aggregates.freshest) ? ` · ${ageNoSeconds(aggregates.freshest)}` : ""}` }));
+  }
+  hero.appendChild(still);
+
+  // ---- row 2 (>=1280px: price context beside matchup context) ----
+  const row2 = el("div", { class: "gv2-hero__row2" });
+  row2.appendChild(priceContextPanel(row, "away", h2h, null));
+  row2.appendChild(matchupContextPanel(row));
+  hero.appendChild(row2);
+  return hero;
+}
+
+/** V2-01b -- FLAGGED, the rare exception (~2.3% per the ledger; the only
+ * verdict state that carries the bloom accent). */
+function heroFlagged(row, side, h2h, gap, sameVerdictCount, totalGames) {
+  const hero = heroShell("flagged", "gv2-hero--bloom");
+  const top = el("div", { class: "gv2-hero__top" });
+  top.appendChild(verdictChip("FLAGGED", "flagged"));
+  top.appendChild(el("span", { class: "gv2-hero__fraction", "data-hook": "gameday-verdict-fraction",
+    text: `${sameVerdictCount} OF ${totalGames} TONIGHT` }));
+  hero.appendChild(top);
+
+  const away = teamName(row.away_team, "full") || row.away_team;
+  const home = teamName(row.home_team, "full") || row.home_team;
+  hero.appendChild(el("div", { class: "gv2-hero__headline", text: "ONE GAME CLEARED IT." }));
+  hero.appendChild(el("p", { class: "gv2-hero__body",
+    text: `Rare enough that this product does not dress it up when it happens. One finding survived `
+        + `pre-registration on ${away} at ${home}, and it is a price finding, not a prediction.` }));
+
+  hero.appendChild(priceContextPanel(row, side, h2h, gap));
+  hero.appendChild(heroActions());
+  return hero;
+}
+
+/** V2-01c -- MARKET_UNAVAILABLE, honest absence (~4.7% per the ledger).
+ * Amber throughout, never styled as an error. */
+function heroMarketUnavailable(row, date, aggregates, sameVerdictCount, totalGames) {
+  const hero = heroShell("unavailable");
+  const top = el("div", { class: "gv2-hero__top" });
+  top.appendChild(verdictChip("MARKET UNAVAILABLE", "unavailable"));
+  top.appendChild(el("span", { class: "gv2-hero__fraction", "data-hook": "gameday-verdict-fraction",
+    text: `${sameVerdictCount} OF ${totalGames} TONIGHT` }));
+  hero.appendChild(top);
+
+  hero.appendChild(el("div", { class: "gv2-hero__headline",
+    text: "NO PRICE BOARD RECORDED FOR THIS GAME." }));
+  hero.appendChild(el("p", { class: "gv2-hero__body gv2-hero__body--warn",
+    text: "Nothing is broken. Either no book posted this game at capture time, or the club name did not "
+        + "match this product's map -- and since there is no reason field distinguishing the two, it does "
+        + "not guess between them." }));
+
+  const gaps = (row.data_quality && row.data_quality.gaps) || {};
+  const reason = gaps.market || null;
+  const box = el("div", { class: "gv2-payload panel chamfer" });
+  box.appendChild(el("div", { class: "gv2-payload__title", text: "WHAT THE PAYLOAD SAYS" }));
+  const bs = row.board_summary || {};
+  const field = (key, value) => box.appendChild(el("div", { class: "gv2-payload__row" }, [
+    el("span", { class: "gv2-payload__key", text: key }),
+    el("span", { class: "gv2-payload__val", text: value }),
+  ]));
+  field("has_board", String(!!bs.has_board));
+  field("books", bs.books === null || bs.books === undefined ? "null" : String(bs.books));
+  field("observed_utc", bs.observed_utc == null ? "null" : String(bs.observed_utc));
+  field("gaps.market", reason ? reason : "no reason given");
+  box.appendChild(el("p", { class: "gv2-payload__note",
+    text: "Amber, not red. Absence of a board is not a risk to a bet." }));
+  hero.appendChild(box);
+
+  const actions = el("div", { class: "gv2-hero__actions" });
+  actions.appendChild(el("a", { class: "btn btn--ghost chamfer chamfer--btn",
+    href: `#/games/${encodeURIComponent(date || "")}`,
+    "data-hook": "gameday-see-other-games",
+    text: `SEE THE OTHER ${Math.max(totalGames - 1, 0)} GAME${totalGames - 1 === 1 ? "" : "S"}` }));
+  hero.appendChild(actions);
+  hero.appendChild(el("p", { class: "gv2-hero__meta", text: "MATCHUP CONTEXT BELOW IS STILL REAL" }));
+  hero.appendChild(matchupContextPanel(row));
+  return hero;
+}
+
+function renderHero(host, featured, aggregates, rows, date) {
+  const verdict = featured.row.verdict;
+  const sameVerdictCount = rows.filter((r) => r.verdict === verdict).length;
+  const totalGames = rows.length;
+  let node;
+  if (verdict === "flagged" || verdict === "candidate") {
+    node = heroFlagged(featured.row, featured.side || "away", featured.h2h || null,
+      typeof featured.gap === "number" ? featured.gap : null, sameVerdictCount, totalGames);
+  } else if (verdict === "market_unavailable") {
+    node = heroMarketUnavailable(featured.row, date, aggregates, sameVerdictCount, totalGames);
+  } else {
+    node = heroNoPlay(featured.row, featured.h2h || null, aggregates, sameVerdictCount, totalGames);
+  }
+  host.appendChild(node);
+}
+
 /* ---------------------------------------------------------------------
- * Sections
+ * V2-33 -- Featured Bet carousel head
+ * ------------------------------------------------------------------- */
+
+async function loadFeaturedStanding(candidate, date, featuredVerdict) {
+  if (!candidate || !candidate.best || typeof candidate.best.price !== "number") return null;
+  const { row, side, best } = candidate;
+  try {
+    const payload = await apiPost("/betcheck", {
+      date: row.date || date,
+      away: row.away_team,
+      home: row.home_team,
+      side,
+      american_price: best.price,
+    });
+    return mapBetCheckPayloadToStanding(payload, { verdict: featuredVerdict });
+  } catch (err) {
+    return null;
+  }
+}
+
+function renderFeaturedSection(host, candidate, totalGames) {
+  const section = el("section", { class: "gv2-featured", "data-hook": "gameday-featured-bet", "data-rise": "" });
+  const head = el("div", { class: "gv2-featured__head" });
+  head.appendChild(el("span", { class: "gv2-featured__tag", text: "FEATURED · LARGEST PRICE GAP AGAINST CONSENSUS" }));
+  head.appendChild(el("span", { class: "gv2-featured__sub",
+    text: "Computed from tonight's boards -- a measured gap, not a judgement." }));
+  if (candidate) {
+    head.appendChild(el("span", { class: "gv2-featured__count",
+      text: `1 OF ${totalGames} · SWIPE FOR THE REST` }));
+  }
+  section.appendChild(head);
+
+  const slot = el("div", { class: "gv2-featured__slot", "data-hook": "gameday-featured-bet-slot" });
+  section.appendChild(slot);
+  host.appendChild(section);
+  return slot;
+}
+
+/* ---------------------------------------------------------------------
+ * Slate rail -- reuses web/js/tiles.js's shared slateTile unchanged
  * ------------------------------------------------------------------- */
 
 function sectionHead(label, meta, { live = false, dot = false } = {}) {
@@ -327,27 +680,25 @@ function sectionHead(label, meta, { live = false, dot = false } = {}) {
   return head;
 }
 
-function renderSlate(rows, markets, featureId, changedIds) {
+function renderSlateRail(rows, oddsIndex, featuredGameId, changedIds) {
   const section = el("section", { class: "slate", "data-hook": "tonights-slate" });
   section.appendChild(sectionHead("TONIGHT'S SLATE",
     `${rows.length} GAME${rows.length === 1 ? "" : "S"} · ALL TIMES ET`));
   const rail = el("div", { class: "slate__rail", "data-rail": "" });
   let i = 0;
   for (const row of rows) {
-    const h2h = markets.get(row.game_id) || null;
+    const h2h = oddsIndex.get(row.game_id) || null;
     const away = bestOn(h2h, "away");
     const home = bestOn(h2h, "home");
-    // Flags carry their designed meanings only: cyan for "something
-    // changed on this game", white for the (chronological) feature.
-    // Money is reserved for a price advantage and is not used here.
     let flag = null;
-    if (row.game_id === featureId) flag = { text: "FEATURE", kind: "neutral" };
+    if (row.game_id === featuredGameId) flag = { text: "FEATURED", kind: "neutral" };
     else if (changedIds.has(row.game_id)) flag = { text: "CHANGED", kind: "live" };
+    else flag = { text: verdictLabel(row.verdict) || "", kind: "neutral" };
     rail.appendChild(slateTile(row, {
       awayPrice: away ? away.price : null,
       homePrice: home ? home.price : null,
       flag,
-      feature: row.game_id === featureId,
+      feature: row.game_id === featuredGameId,
       delay: i * 90,
     }));
     i += 1;
@@ -355,6 +706,11 @@ function renderSlate(rows, markets, featureId, changedIds) {
   section.appendChild(rail);
   return section;
 }
+
+/* ---------------------------------------------------------------------
+ * What Changed and the Bet Check invite band -- kept from V1 verbatim;
+ * not part of this artboard family (see module docstring).
+ * ------------------------------------------------------------------- */
 
 function changedRow(item) {
   const row = el("article", { class: "changed__row", "data-hook": "changed-row",
@@ -384,9 +740,6 @@ function renderWhatChanged(changed) {
       text: checked !== null
         ? `${checked} games watched since the last poll. No lineup, starter or market change has come through.`
         : "No lineup, starter or market change has come through." }));
-    // A quiet slate still reports how many games were checked -- the API
-    // sends its own notes for exactly this case; they are rendered
-    // verbatim rather than replaced with client-composed filler.
     for (const note of (changed && changed.notes) || []) {
       lead.appendChild(el("p", { class: "changed__sub", text: note }));
     }
@@ -411,11 +764,6 @@ function renderWhatChanged(changed) {
     text: head.inadmissible
       ? "Recorded, but not admissible as evidence."
       : "Recorded as a pre-event observation. It is not a prediction." }));
-  // The artboard draws a line-movement chart here. No endpoint in this
-  // API returns a price series, so the canonical NOT YET AVAILABLE panel
-  // occupies the chart's place rather than a drawn line standing in for
-  // data nobody captured (handoff section 10) -- and rather than the
-  // block quietly shrinking, which would hide the gap.
   lead.appendChild(notYetAvailable(
     "The market's reaction to this change -- the line movement behind it -- is "
     + "not served by this board yet, so no chart is drawn.", "NO SERIES"));
@@ -457,38 +805,6 @@ function renderCheckBand(date) {
   return band;
 }
 
-function renderCloser(date, gameCount, bookCount) {
-  const closer = el("section", { class: "closer", "data-hook": "closing-band", "data-rise": "" });
-  closer.appendChild(el("span", { class: "closer__wash" }));
-  closer.appendChild(el("span", { class: "tex-carbon" }));
-  closer.appendChild(el("span", { class: "tex-scanline" }));
-  const row = el("div", { class: "closer__row" });
-  const copy = el("div", { class: "closer__copy" });
-  const counts = [
-    `${gameCount} GAME${gameCount === 1 ? "" : "S"}`,
-    bookCount ? `${bookCount} BOOKS SCANNED` : null,
-  ].filter(Boolean).join(" · ");
-  copy.appendChild(el("p", { class: "closer__eyebrow", text: counts }));
-  const headline = el("p", { class: "closer__headline" });
-  headline.appendChild(document.createTextNode("DON'T BET THE"));
-  headline.appendChild(el("br"));
-  headline.appendChild(document.createTextNode("WRONG NUMBER."));
-  copy.appendChild(headline);
-  copy.appendChild(el("p", { class: "closer__sub", text: "Every book. Every hour. Never off the scent." }));
-  copy.appendChild(el("p", { class: "closer__meta", text: "NO PICKS · NO PROBABILITIES · ALL TIMES ET" }));
-  row.appendChild(copy);
-
-  const actions = el("div", { class: "closer__actions" });
-  actions.appendChild(el("a", { class: "btn btn--primary btn--lg chamfer chamfer--btn",
-    href: `#/odds/${encodeURIComponent(date || "")}`,
-    "data-hook": "see-best-prices", text: "SEE TONIGHT'S BEST PRICES" }));
-  actions.appendChild(el("a", { class: "btn btn--ghost btn--lg chamfer chamfer--btn",
-    href: "landing.html", text: "HOW IT WORKS" }));
-  row.appendChild(actions);
-  closer.appendChild(row);
-  return closer;
-}
-
 /* ---------------------------------------------------------------------
  * View
  * ------------------------------------------------------------------- */
@@ -497,8 +813,9 @@ export async function renderToday(container) {
   clear(container);
   const host = el("div", { class: "screen", "data-view": "today" });
   container.appendChild(host);
-  const loading = renderLoading("LOADING TONIGHT'S BOARD");
-  const loadingWrap = el("div", { class: "screen-state" }, [loading]);
+  const loadingWrap = el("div", { class: "screen-state" },
+    [renderLoadingSkeleton({ headline: "LOADING TONIGHT'S BOARD",
+      subline: "Pulling the slate, the board and tonight's changes." })]);
   host.appendChild(loadingWrap);
 
   let today;
@@ -510,9 +827,8 @@ export async function renderToday(container) {
   }
   const date = today.date;
 
-  // The identity rows, the board and the change stream are three separate
-  // reads; a failure in any one of them must not blank the screen (handoff
-  // section 10: "never suppress a whole screen for one missing feed").
+  // Three independent reads; a failure in any one must not blank the
+  // whole screen (odds.js and V1's today.js follow the same rule).
   const [slate, odds, changed] = await Promise.all([
     apiGet(`/games/${encodeURIComponent(date)}`).catch(() => null),
     apiGet(`/odds/${encodeURIComponent(date)}`).catch(() => null),
@@ -520,71 +836,93 @@ export async function renderToday(container) {
   ]);
   loadingWrap.remove();
 
-  const rows = (slate && slate.games) || [];
-  const markets = marketIndex(odds);
-  const changedIds = new Set(((changed && changed.items) || []).map((i) => i.game_id));
-
-  // --- feature selection: earliest not-yet-started game with a priced
-  //     board. Chronological, deterministic, never "best" anything.
-  const now = Date.now();
-  const chronological = rows.slice().sort((a, b) => {
-    const at = Date.parse(a.first_pitch_utc || "") || 0;
-    const bt = Date.parse(b.first_pitch_utc || "") || 0;
-    return at - bt;
-  });
-  const priced = (row) => {
-    const h2h = markets.get(row.game_id);
-    return !!(h2h && h2h.board_available && bestOn(h2h, "away"));
-  };
-  const upcoming = chronological.filter((r) => (Date.parse(r.first_pitch_utc || "") || 0) > now);
-  const feature = upcoming.find(priced) || chronological.find(priced)
-    || upcoming[0] || chronological[0] || null;
-
-  if (!feature) {
-    host.appendChild(emptyHero(date, slate ? slate.checked_games : null));
+  // A failed /games/{date} fetch must never look like an honest empty
+  // slate -- those are two different real conditions (V1's own bug
+  // class this rebuild avoids: `(slate && slate.games) || []` alone
+  // would render "no games to show tonight" on a network failure).
+  if (!slate) {
+    host.appendChild(renderCaptureUnavailable({
+      eyebrow: "SLATE UNREACHABLE",
+      headline: "Tonight's slate didn't come back.",
+      body: "This is a fetch failure, not an honest empty night -- try reloading.",
+      reason: "GET /games/{date} did not respond.",
+    }));
     host.appendChild(renderWhatChanged(changed));
-    host.appendChild(renderCheckBand(date));
-    host.appendChild(renderCloser(date, 0, null));
     armEntrances(host);
     return;
   }
 
-  const featureEntry = (today.games || []).find((entry) => {
-    const { game } = dossierOf(entry);
-    return game && game.away_team === feature.away_team && game.home_team === feature.home_team;
-  }) || null;
+  const rows = slate.games || [];
+  const changedIds = new Set(((changed && changed.items) || []).map((i) => i.game_id));
 
-  const featureMarket = markets.get(feature.game_id) || null;
-  const hero = heroFor(feature, featureEntry, featureMarket);
-  host.appendChild(hero.node);
-  setShellStatusFromStaleness(hero.staleness);
-
-  // Freshness rides along when the API had to serve cached data. It is
-  // surfaced, never swallowed -- but only as a sentence, and only when
-  // the payload itself says the data is stale. A five-row dump of
-  // machine fields is not a customer surface; the full block stays
-  // reachable in the board-freshness disclosure at the foot of the page.
-  if (today.freshness && today.freshness.stale) {
-    const banner = el("p", { class: "freshness-banner gutter", "data-hook": "today-freshness",
-      text: today.freshness.stale_reason
-        ? `Serving cached prices: ${today.freshness.stale_reason}`
-        : "Serving cached prices while the board catches up." });
-    host.appendChild(banner);
+  if (rows.length === 0) {
+    host.appendChild(renderEmptySlate({
+      eyebrow: "NOTHING SCHEDULED",
+      headline: "No games to show tonight.",
+      count: slate.checked_games,
+      countField: "checked_games",
+      actions: [
+        { label: "OPEN THE FULL BOARD", href: `#/odds/${encodeURIComponent(date || "")}` },
+        { label: "SAVED BETS", href: "#/mybets" },
+      ],
+    }));
+    host.appendChild(renderWhatChanged(changed));
+    armEntrances(host);
+    return;
   }
 
-  host.appendChild(renderSlate(chronological, markets, feature.game_id, changedIds));
+  if (!odds) {
+    host.appendChild(renderCaptureUnavailable({
+      eyebrow: "PRICE BOARD UNREACHABLE",
+      headline: "Prices didn't come back this time.",
+      body: "The slate and verdicts below are real -- only the price board failed to load.",
+      reason: "GET /odds/{date} did not respond.",
+    }));
+  }
+  const oddsIndex = odds ? oddsIndexOf(odds) : new Map();
 
-  // Slate notes from the API, verbatim -- this is where "no play on the
-  // whole slate, and that is the normal case" reaches the reader.
-  const notes = (today.notes || []);
+  const gapCandidate = chooseGapCandidate(rows, oddsIndex);
+  const fallbackRow = chronologicalFallback(rows);
+  const featured = gapCandidate || { row: fallbackRow, side: null, gap: null, h2h: null, best: null };
+  const aggregates = boardAggregates(rows);
+
+  // Mobile-only (V2-22); hidden on desktop by screens.css.
+  host.appendChild(dateStrip(date));
+
+  renderHero(host, featured, aggregates, rows, date);
+  setShellStatus(aggregates.freshest ? `PRICES AS OF ${et(aggregates.freshest)}` : null);
+
+  // Mobile-only matchup poster (V2-22) -- the featured game's identity,
+  // no records or starters (see matchupPoster's own docstring).
+  host.appendChild(matchupPoster(featured.row));
+
+  const slot = renderFeaturedSection(host, gapCandidate, rows.length);
+  slot.appendChild(el("div", { class: "gv2-featured__loading",
+    text: "Checking tonight's largest price gap…" }));
+  loadFeaturedStanding(gapCandidate, date, featured.row.verdict).then((standing) => {
+    clear(slot);
+    if (standing) {
+      renderFeaturedBet(slot, standing, {});
+    } else {
+      renderFeaturedBet(slot, {
+        query: { raw: gapCandidate ? `${gapCandidate.row.away_team} @ ${gapCandidate.row.home_team}` : "",
+          parsed: false,
+          parseError: gapCandidate
+            ? "The bet check for tonight's largest price gap did not come back."
+            : "No priceable gap against consensus on tonight's board -- there is nothing to feature." },
+      }, {});
+    }
+  });
+
+  host.appendChild(renderSlateRail(rows, oddsIndex, featured.row.game_id, changedIds));
+
+  const notes = today.notes || [];
   if (notes.length) {
     const noteBlock = el("section", { class: "gutter slate-note", "data-hook": "today-notes" });
     const panel = el("div", { class: "gv-panel chamfer" });
     panel.appendChild(el("h2", { class: "gv-panel__title gv-panel__title--mute",
       text: "WHERE THE SLATE STANDS" }));
-    for (const note of notes) {
-      panel.appendChild(el("p", { class: "gv-panel__body", text: note }));
-    }
+    for (const note of notes) panel.appendChild(el("p", { class: "gv-panel__body", text: note }));
     noteBlock.appendChild(panel);
     host.appendChild(noteBlock);
   }
@@ -592,34 +930,27 @@ export async function renderToday(container) {
   host.appendChild(renderWhatChanged(changed));
   host.appendChild(renderCheckBand(date));
 
-  // The raw board-freshness fields, verbatim and unlabelled by this
-  // client -- reachable, but folded away: the top strip and the price
-  // bug already carry the same age in reading language.
+  // The raw board-freshness fields for the featured game, verbatim and
+  // unlabelled by this client -- reachable, but folded away, matching
+  // V1's own "board freshness detail" disclosure pattern (games.js keeps
+  // the same convention on its own screen).
+  const featuredStaleness = (featured.h2h && featured.h2h.staleness)
+    || featured.row.board_summary || null;
   const freshness = el("section", { class: "gutter", "data-hook": "board-freshness" });
   const disclosure = el("details", { class: "sitefoot__disclosure" });
   disclosure.appendChild(el("summary", { text: "Board freshness detail" }));
   const body = el("div", { class: "sitefoot__full chamfer" });
-  body.appendChild(renderStaleness(hero.staleness));
+  body.appendChild(renderStaleness(featuredStaleness));
   disclosure.appendChild(body);
   freshness.appendChild(disclosure);
   host.appendChild(freshness);
 
-  const bookCount = (() => {
-    const books = new Set();
-    for (const h2h of markets.values()) {
-      for (const quote of (h2h && h2h.board) || []) if (quote.book) books.add(quote.book);
-    }
-    return books.size || null;
-  })();
-  host.appendChild(renderCloser(date, chronological.length, bookCount));
-
   const motionNote = el("div", { class: "motion-note chamfer" });
   motionNote.appendChild(el("span", { class: "motion-note__label", text: "REDUCED MOTION" }));
   motionNote.appendChild(el("span", { class: "motion-note__body",
-    text: "prefers-reduced-motion disables every sweep, parallax, stagger and beat. "
-        + "Content renders in its final state; nothing is hidden." }));
+    text: "prefers-reduced-motion disables every bloom, rise and stagger on this screen. Content renders "
+        + "in its final state; nothing is hidden." }));
   host.appendChild(motionNote);
 
   armEntrances(host);
-  armParallax(host);
 }
