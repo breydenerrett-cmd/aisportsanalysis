@@ -1,5 +1,6 @@
 """The V3 primary test: KM correctness, planted effects, censoring, the floor."""
 
+import datetime as _dt
 import unittest
 from unittest import mock
 
@@ -7,13 +8,38 @@ from src.research import timingreport, timingtest
 from tests.test_timingreport import GAMES, _event, _mb_row
 
 
-def _measured(game_pk, event_iso, game_start_iso, reaction_50):
+_UNSET = object()
+
+
+def _measured(game_pk, event_iso, game_start_iso, reaction_50,
+             floor_minutes=60.0, category=_UNSET, matchup=None):
     """A synthetic eventstudy.measure() result, shaped exactly as
-    timingreport.report() now attaches game_pk/game_start_utc to it."""
-    return {"excluded": None, "event_time": event_iso, "game_pk": game_pk,
-            "game_start_utc": game_start_iso,
-            "ladder_minutes": {"25%": None, "50%": reaction_50,
-                               "75%": None, "100%": None}}
+    timingreport.report() now attaches game_pk/game_start_utc/event_interval
+    to it. `event_interval` is (event_iso - floor_minutes, event_iso) --
+    ADDENDUM 2's fix reads the floor as the LITERAL bracket width, never
+    inferred from distance to first pitch, so every synthetic event here
+    must carry an explicit bracket rather than relying on GAME_START being
+    "far enough away" the way the pre-correction tests did.
+
+    `category` is UNSET by default -- the "category" key is omitted
+    entirely, exactly like every non-transaction class's real measured
+    event, so `timingtest.game_relevant` sees no relevance rule to apply.
+    Pass a string (including None, for an unrecorded-category row) to
+    attach the key and exercise the relevance filter.
+    """
+    out = {"excluded": None, "event_time": event_iso, "game_pk": game_pk,
+           "game_start_utc": game_start_iso,
+           "event_interval": (
+               (_dt.datetime.fromisoformat(event_iso)
+                - _dt.timedelta(minutes=floor_minutes)).isoformat(),
+               event_iso),
+           "ladder_minutes": {"25%": None, "50%": reaction_50,
+                              "75%": None, "100%": None}}
+    if category is not _UNSET:
+        out["category"] = category
+    if matchup is not None:
+        out["matchup"] = matchup
+    return out
 
 
 def _report_result(name, measured_events, measurable=None):
@@ -22,12 +48,10 @@ def _report_result(name, measured_events, measurable=None):
                                "measured": measured_events}}}
 
 
-# Far outside the dense window (> dense.WINDOW_MINUTES before first pitch),
-# so every synthetic event below carries the 60-minute hourly floor.
 GAME_START = "2026-09-05T00:00:00+00:00"
 
 
-def _events(reactions, *, start=0):
+def _events(reactions, *, start=0, floor_minutes=60.0):
     """One event per reaction value, each its own game_pk (its own cluster),
     spaced an hour apart across as many days as needed so timestamps never
     collide -- `_rows_for_class` re-sorts by event_time, and a colliding
@@ -39,7 +63,8 @@ def _events(reactions, *, start=0):
         i = start + offset
         day, hour = 1 + i // 20, i % 20
         event_iso = f"2026-09-{day:02d}T{hour:02d}:00:00+00:00"
-        out.append(_measured(f"g{i}", event_iso, GAME_START, reaction))
+        out.append(_measured(f"g{i}", event_iso, GAME_START, reaction,
+                             floor_minutes=floor_minutes))
     return out
 
 
@@ -83,16 +108,30 @@ class PlantedEffectTests(unittest.TestCase):
 
     def test_planted_fast_reaction_is_a_null_result(self):
         # 5 minutes to 50%-moved against a 60-minute floor: diff = -55, every
-        # single event, no censoring.
+        # single event, no censoring, each its own cluster (35 clusters).
         measured = _events([5.0] * 35)
         result = timingtest.test_class(
             "cls", report_result=_report_result("cls", measured))
         self.assertEqual(result["status"], "tested")
         self.assertEqual(result["censored"], 0)
-        self.assertEqual(result["test"]["point_estimate_s0"], 0.0)
-        # No resample can show diff > 0 either -- the bootstrap can only
-        # redraw from the same uniformly-fast sample.
-        self.assertEqual(result["test"]["p_one_sided"], 1.0)
+        self.assertEqual(result["test"]["km_median_diff_minutes"], -55.0)
+        # Every one of the 35 clusters lands on the "-" side: the exact sign
+        # test is maximally uninformative for H1 (p=1.0), never a bootstrap
+        # artifact -- ADDENDUM 2 replaces "p = 0.000" with exactly this.
+        sign = result["test"]["sign_test"]
+        self.assertEqual(sign["clusters_plus"], 0)
+        self.assertEqual(sign["clusters_minus"], 35)
+        self.assertEqual(sign["p_one_sided"], 1.0)
+        # Zero clusters favored H1: the sign test alone is uninformative, so
+        # the rule-of-three bound is reported alongside it.
+        self.assertAlmostEqual(sign["rule_of_three_bound"], 3 / 35, places=4)
+        # S(0) is a supporting note now, not the primary statistic, and its
+        # own bootstrap is degenerate here (every resample redraws the same
+        # uniformly-fast sample) -- the flag says so rather than emitting a
+        # fake interval.
+        self.assertEqual(result["test"]["supporting_s0"]["point_estimate"], 0.0)
+        self.assertTrue(result["test"]["supporting_s0"]["degenerate"])
+        self.assertNotIn("bootstrap_ci95", result["test"]["supporting_s0"])
         self.assertLess(result["descriptive"]["complete_case_median_diff_minutes"], 0)
 
     def test_planted_slow_reaction_is_a_rejection(self):
@@ -100,24 +139,35 @@ class PlantedEffectTests(unittest.TestCase):
         measured = _events([300.0] * 35)
         result = timingtest.test_class(
             "cls", report_result=_report_result("cls", measured))
-        self.assertEqual(result["test"]["point_estimate_s0"], 1.0)
-        self.assertEqual(result["test"]["p_one_sided"], 0.0)
-        self.assertEqual(result["test"]["ci95_s0"], {"low": 1.0, "high": 1.0})
+        self.assertEqual(result["test"]["km_median_diff_minutes"], 240.0)
+        sign = result["test"]["sign_test"]
+        self.assertEqual(sign["clusters_plus"], 35)
+        self.assertEqual(sign["clusters_minus"], 0)
+        # ~0.5**35 (~2.9e-11) -- small because the evidence really is that
+        # one-sided, not because a percentile bootstrap could not
+        # extrapolate. The module rounds to 10 places, so check magnitude
+        # rather than exact equality against the unrounded value.
+        self.assertLess(sign["p_one_sided"], 1e-9)
+        self.assertEqual(result["test"]["supporting_s0"]["point_estimate"], 1.0)
+        self.assertTrue(result["test"]["supporting_s0"]["degenerate"])
+        self.assertNotIn("bootstrap_p_one_sided", result["test"]["supporting_s0"])
         self.assertGreater(
             result["descriptive"]["complete_case_median_diff_minutes"], 0)
 
     def test_a_genuinely_mixed_sample_lands_between_the_extremes(self):
-        # Half fast (diff -55), half slow (diff +240): S(0) should land near
-        # 0.5, not saturate at either boundary, and the CI should not be a
-        # single point the way the two pure cases above are.
+        # Half fast (diff -55), half slow (diff +240): S(0) should land
+        # strictly between the two pure cases' boundary values, and neither
+        # bootstrap should degenerate to a single point the way the two pure
+        # cases above do.
         measured = _events([5.0] * 18 + [300.0] * 18)
         result = timingtest.test_class(
             "cls", report_result=_report_result("cls", measured))
-        s0 = result["test"]["point_estimate_s0"]
+        s0 = result["test"]["supporting_s0"]["point_estimate"]
         self.assertGreater(s0, 0.0)
         self.assertLess(s0, 1.0)
-        self.assertNotEqual(result["test"]["ci95_s0"]["low"],
-                            result["test"]["ci95_s0"]["high"])
+        self.assertFalse(result["test"]["supporting_s0"]["degenerate"])
+        ci = result["test"]["km_median_diff_bootstrap_ci95"]
+        self.assertNotEqual(ci["low"], ci["high"])
 
 
 class CensoringTests(unittest.TestCase):
@@ -152,9 +202,18 @@ class CensoringTests(unittest.TestCase):
         self.assertEqual(result["observed"], 0)
         self.assertIsNone(result["descriptive"]["km_median_reaction_minutes"])
         self.assertIsNone(result["descriptive"]["complete_case_median_reaction_minutes"])
+        # The primary statistic itself must say "not reached" -- never a
+        # fabricated number -- when every event is censored.
+        self.assertEqual(result["test"]["km_median_diff_minutes"], "not reached")
+        self.assertEqual(result["test"]["km_median_diff_bootstrap_ci95"]["low"],
+                         "not reached")
+        self.assertEqual(result["test"]["km_median_diff_bootstrap_ci95"]["high"],
+                         "not reached")
         # S(0) is still well-defined (no death recorded anywhere, so no
-        # evidence AGAINST H1 either) -- reported as 1.0, not skipped.
-        self.assertEqual(result["test"]["point_estimate_s0"], 1.0)
+        # evidence AGAINST H1 either) -- reported as 1.0, and degenerate
+        # (every resample is also all-censored), never a fake interval.
+        self.assertEqual(result["test"]["supporting_s0"]["point_estimate"], 1.0)
+        self.assertTrue(result["test"]["supporting_s0"]["degenerate"])
 
 
 class FloorTests(unittest.TestCase):
@@ -235,6 +294,164 @@ class BHFDRTests(unittest.TestCase):
         result = timingtest.bh_fdr({})
         self.assertEqual(result, {"q": timingtest.FDR_Q, "m": 0,
                                   "significant": [], "ranked": []})
+
+
+class GameRelevantTests(unittest.TestCase):
+    """docs/RESEARCH_V3_TIMING.md ADDENDUM 2's class-mismatch fix: the
+    frozen il_roster_move definition is narrower than "every transaction id
+    first seen", and this is the function that restates it.
+    """
+
+    def test_a_class_with_no_category_field_is_always_relevant(self):
+        # Every non-transaction class's real measured events carry no
+        # "category" key at all -- this is what tells game_relevant "no
+        # relevance rule applies here" rather than "this event failed it".
+        self.assertTrue(timingtest.game_relevant({"class": "lineup_posted"}))
+
+    def test_each_relevant_category_passes(self):
+        for category in timingtest.GAME_RELEVANT_TRANSACTION_CATEGORIES:
+            with self.subTest(category=category):
+                self.assertTrue(
+                    timingtest.game_relevant({"category": category}))
+
+    def test_each_non_relevant_category_is_filtered(self):
+        for category in timingtest.NON_RELEVANT_TRANSACTION_CATEGORIES:
+            with self.subTest(category=category):
+                self.assertFalse(
+                    timingtest.game_relevant({"category": category}))
+
+    def test_a_missing_or_unrecorded_category_is_conservatively_excluded(self):
+        # Rows written before `category` was captured (or a feed row the
+        # classifier could not place) carry `category: None` -- excluded,
+        # never guessed into "relevant".
+        self.assertFalse(timingtest.game_relevant({"category": None}))
+        self.assertFalse(timingtest.game_relevant({"category": "other"}))
+        self.assertFalse(timingtest.game_relevant(
+            {"category": "some raw type this repo has never named"}))
+
+
+class RelevanceFilteredClassTests(unittest.TestCase):
+    """test_class's relevance-aware wrapping: a class whose events carry a
+    "category" field gets BOTH a primary_relevant_subset (gated) and a
+    secondary_all_transactions_exploratory (unfiltered) reading; a class
+    without one (every other class) is untouched -- same flat shape as
+    before ADDENDUM 2.
+    """
+
+    def _tx_events(self, relevant_n, non_relevant_n, *, reaction=300.0):
+        relevant = _events([reaction] * relevant_n,
+                           start=0)
+        for m in relevant:
+            m["category"] = "recalled"
+        non_relevant = _events([reaction] * non_relevant_n, start=relevant_n)
+        for m in non_relevant:
+            m["category"] = "optioned"
+        return relevant + non_relevant
+
+    def test_a_class_without_category_is_the_old_flat_shape(self):
+        measured = _events([300.0] * 35)
+        result = timingtest.test_class(
+            "cls", report_result=_report_result("cls", measured))
+        self.assertEqual(result["status"], "tested")
+        self.assertNotIn("relevance", result)
+        self.assertNotIn("primary_relevant_subset", result)
+        self.assertIn("test", result)  # flat, not nested under a reading
+
+    def test_relevant_subset_below_its_own_floor_reports_that_and_nothing_else(self):
+        # 42 all-transactions events (clears the 30 floor), only 19 of them
+        # category "recalled" (relevant) -- the actual shape ADDENDUM 2's
+        # correction produced on the real store.
+        measured = self._tx_events(19, 23)
+        result = timingtest.test_class(
+            "transaction_first_seen",
+            report_result=_report_result("transaction_first_seen", measured))
+        self.assertEqual(result["relevance"]["n_relevant"], 19)
+        self.assertEqual(result["relevance"]["n_all_transactions"], 42)
+        primary = result["primary_relevant_subset"]
+        self.assertEqual(primary["status"], "below floor after relevance filter")
+        self.assertNotIn("test", primary)  # no result read below the floor
+        # The secondary/exploratory reading is unfiltered and DOES clear the
+        # floor -- reported, but never as a promotable result.
+        secondary = result["secondary_all_transactions_exploratory"]
+        self.assertEqual(secondary["status"], "tested")
+        self.assertEqual(secondary["measurable_events"], 42)
+
+    def test_relevant_subset_at_floor_produces_its_own_primary_reading(self):
+        measured = self._tx_events(30, 10)
+        result = timingtest.test_class(
+            "transaction_first_seen",
+            report_result=_report_result("transaction_first_seen", measured))
+        primary = result["primary_relevant_subset"]
+        self.assertEqual(primary["status"], "tested")
+        self.assertEqual(primary["measurable_events"], 30)
+        self.assertEqual(result["secondary_all_transactions_exploratory"]
+                         ["measurable_events"], 40)
+
+
+class ClusterSignTestTests(unittest.TestCase):
+    """ADDENDUM 2's replacement for "p = 0.000": one vote per cluster, exact
+    binomial tail, plus a rule-of-three bound when the count on one side is
+    zero.
+    """
+
+    def test_all_clusters_agreeing_gives_the_exact_binomial_tail(self):
+        rows = [{"cluster": f"g{i}", "censored": False, "diff_minutes": 10.0}
+               for i in range(6)]
+        result = timingtest.cluster_sign_test(rows)
+        self.assertEqual(result["clusters_plus"], 6)
+        self.assertEqual(result["clusters_minus"], 0)
+        self.assertEqual(result["n"], 6)
+        self.assertAlmostEqual(result["p_one_sided"], 0.5 ** 6, places=8)
+
+    def test_a_mixed_sign_cluster_is_a_dropped_tie(self):
+        rows = [
+            {"cluster": "g1", "censored": False, "diff_minutes": 10.0},
+            {"cluster": "g1", "censored": False, "diff_minutes": -10.0},
+            {"cluster": "g2", "censored": False, "diff_minutes": 5.0},
+            {"cluster": "g3", "censored": False, "diff_minutes": -5.0},
+        ]
+        result = timingtest.cluster_sign_test(rows)
+        self.assertEqual(result["clusters_mixed_sign_dropped"], 1)
+        self.assertEqual(result["n"], 2)  # g1 dropped, g2 and g3 remain
+
+    def test_zero_favoring_clusters_reports_a_rule_of_three_bound(self):
+        rows = [{"cluster": f"g{i}", "censored": False, "diff_minutes": -10.0}
+               for i in range(10)]
+        result = timingtest.cluster_sign_test(rows)
+        self.assertEqual(result["p_one_sided"], 1.0)
+        self.assertAlmostEqual(result["rule_of_three_bound"], 0.3, places=4)
+
+    def test_no_classifiable_cluster_is_undefined_not_a_fabricated_p(self):
+        rows = [
+            {"cluster": "g1", "censored": False, "diff_minutes": 10.0},
+            {"cluster": "g1", "censored": False, "diff_minutes": -10.0},
+        ]
+        result = timingtest.cluster_sign_test(rows)
+        self.assertEqual(result["n"], 0)
+        self.assertIsNone(result["p_one_sided"])
+
+
+class ConcentrationCheckTests(unittest.TestCase):
+    """RESEARCH_V3_TIMING.md lines 120-121's required, never-run-before
+    concentration check."""
+
+    def test_a_single_dominant_cluster_and_matchup_are_named(self):
+        rows, _ = timingtest._rows_for_class([
+            _measured("g1", "2026-09-01T00:00:00+00:00", GAME_START, 100.0,
+                     matchup="DET@MIN"),
+            _measured("g1", "2026-09-01T01:00:00+00:00", GAME_START, 90.0,
+                     matchup="DET@MIN"),
+            _measured("g2", "2026-09-02T00:00:00+00:00", GAME_START, None,
+                     matchup="NYY@BOS"),
+        ])
+        result = timingtest._concentration(rows)
+        self.assertEqual(result["n_clusters"], 2)
+        self.assertEqual(result["n_calendar_dates"], 2)
+        self.assertEqual(result["top_matchup"], {"matchup": "DET@MIN",
+                                                 "events": 2})
+        self.assertEqual(result["n_observed_total"], 2)
+        self.assertEqual(result["clusters_with_any_observed_reaction"], 1)
+        self.assertEqual(result["share_of_observed_in_top3_clusters"], 1.0)
 
 
 class IntegrationWithTimingReportTests(unittest.TestCase):

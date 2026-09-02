@@ -107,6 +107,14 @@ def response_table(measured, *, min_events=MIN_EVENTS) -> dict:
         "ladder_medians_minutes": {
             rung: (round(_median(vals), 2) if vals else None)
             for rung, vals in ladder_rows.items()},
+        # Each rung's median comes from a DIFFERENT subset (only the events
+        # that actually reached that rung before first pitch), so rungs are
+        # not directly comparable without their own n -- a slower-looking
+        # rung can have a smaller n entirely because the faster-reacting
+        # majority already dropped out of it (docs/RESEARCH_V3_TIMING.md
+        # ADDENDUM 2: the raw medians alone produced an impossible-looking
+        # ordering, 100% faster than 50%, that this n makes legible).
+        "ladder_ns": {rung: len(vals) for rung, vals in ladder_rows.items()},
         "books": books,
         "stale": {
             "events_with_a_stale_book": stale_events,

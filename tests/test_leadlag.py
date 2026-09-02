@@ -61,6 +61,18 @@ class TableTests(unittest.TestCase):
         self.assertEqual(table["ladder_medians_minutes"]["50%"], 10.0)
         self.assertIsNone(table["ladder_medians_minutes"]["75%"])
 
+    def test_ladder_rungs_carry_their_own_n(self):
+        # Each rung's median is a DIFFERENT subset (docs/RESEARCH_V3_TIMING.md
+        # ADDENDUM 2, recommended item): the 25%/50% rungs are reached by
+        # every event in this fixture, but 75%/100% are reached by none --
+        # without ladder_ns, a reader cannot tell "10.0 minutes off 30
+        # events" from "10.0 minutes off 1".
+        table = leadlag.response_table(_fleet(30))
+        self.assertEqual(table["ladder_ns"]["25%"], 30)
+        self.assertEqual(table["ladder_ns"]["50%"], 30)
+        self.assertEqual(table["ladder_ns"]["75%"], 0)
+        self.assertEqual(table["ladder_ns"]["100%"], 0)
+
     def test_the_table_never_speaks_in_edges(self):
         table = leadlag.response_table(_fleet(30))
         self.assertIn("no entry here is an edge claim", table["note"])

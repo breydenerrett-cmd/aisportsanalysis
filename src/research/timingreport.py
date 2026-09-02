@@ -159,6 +159,24 @@ def report(store_dir=None, multibook_rows=None, games=None,
         # the join to a game lives entirely in this module.
         measured["game_pk"] = game_pk
         measured["game_start_utc"] = game.get("start_time_utc")
+        measured["game_date"] = game.get("date")
+        # The event's own recorded bracket, verbatim -- ADDENDUM 2's fix for
+        # the floor (RESEARCH_V3_TIMING.md ADDENDUM 2): the capture-spacing
+        # floor is interval[1]-interval[0], the LITERAL poll spacing in force
+        # at this one event, never inferred from distance-to-first-pitch.
+        measured["event_interval"] = event.get("interval")
+        # Additive, present only for classes that carry it (today: the
+        # transaction feed's own move-type bucket) -- absent entirely for
+        # every other class, which is how
+        # src.research.timingtest.game_relevant tells "this event has no
+        # relevance rule" from "this event failed the relevance rule".
+        if "category" in event:
+            measured["category"] = event.get("category")
+        if event.get("transaction_id") is not None:
+            measured["transaction_id"] = event.get("transaction_id")
+        away, home = game.get("away_team"), game.get("home_team")
+        if away or home:
+            measured["matchup"] = f"{away}@{home}"
         if measured.get("excluded") is None:
             bucket["measurable"] += 1
         else:
