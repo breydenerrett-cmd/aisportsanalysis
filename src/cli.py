@@ -568,52 +568,72 @@ def cmd_closing_audit(args) -> int:
 
 
 def cmd_closing_backfill(args) -> int:
-    """Append `closing_backfill` rows for null-closing settlements the
-    fixed join (commit 65f499a) can now explain -- see
-    grading.find_backfillable_closings for the derivation rule (identical
-    to closing-audit's) and grading.read_backfills/effective_closing for
-    the append/idempotence and reader-preference rules.
+    """Append `closing_backfill` rows for settlements a market close can
+    now be derived for -- see grading.find_backfillable_closings for the
+    derivation rule (identical to closing-audit's, per market) and
+    grading.read_backfills/effective_closing for the append/idempotence
+    and reader-preference rules.
+
+    `--market` (default h2h, unchanged from before L18) selects h2h,
+    spreads, totals, or `all` three in one pass. h2h's null closes trace
+    to the abbreviation join bug (commit 65f499a); spreads/totals have
+    simply never had a writer for their close at all until this lane, so
+    every one closing-audit calls derivable is a candidate the first time
+    this runs. first_five is not offered -- separate, sparser store, a
+    separate decision.
 
     Never rewrites or deletes a ledger row: --dry-run and a real run share
     the exact same computation, so a dry run cannot claim something the
     real run then fails to append, and a repeat real run appends 0 rows
-    (a settlement already covered by a valid backfill is skipped, not
-    re-derived).
+    for a market already fully covered (a settlement already covered by a
+    valid backfill for that market is skipped, not re-derived).
     """
     from src.pipeline import grading, ledger, snapshots
 
+    markets = ("h2h", "spreads", "totals") if args.market == "all" else (args.market,)
     entries = ledger.read()
-    result = grading.find_backfillable_closings(entries, snapshots.read())
-    checked = (len(result["derivable"]) + len(result["not_derivable"])
-              + len(result["no_recommendation"]))
+    snapshot_rows = snapshots.read()
 
-    print(f"closing backfill: {checked} null-closing settlement(s) checked "
-          f"({len(result['already_backfilled'])} already backfilled)")
-    print(f"  derivable      : {len(result['derivable'])}")
-    for row in result["derivable"]:
-        prices = (row["closing"].get("prices") or {})
-        print(f"    {row['game_pk']:>7}  {row['away_team']}@{row['home_team']} "
-              f"{row['date']}  away={prices.get('away_price')} "
-              f"home={prices.get('home_price')}")
-    print(f"  not derivable  : {len(result['not_derivable'])}")
-    for row in result["not_derivable"]:
-        print(f"    {row['game_pk']:>7}  {row['away_team']}@{row['home_team']} "
-              f"{row['date']}  reason={row['reason']}")
-    if result["no_recommendation"]:
-        print(f"  no matching recommendation row found  : "
-              f"{len(result['no_recommendation'])}")
+    to_append_all = []
+    for market in markets:
+        if len(markets) > 1:
+            print(f"\n== {market} ==")
+        result = grading.find_backfillable_closings(entries, snapshot_rows, market=market)
+        checked = (len(result["derivable"]) + len(result["not_derivable"])
+                  + len(result["no_recommendation"]))
+
+        print(f"closing backfill: {checked} settlement(s) checked "
+              f"({len(result['already_backfilled'])} already backfilled)")
+        print(f"  derivable      : {len(result['derivable'])}")
+        for row in result["derivable"]:
+            prices = (row["closing"].get("prices") or {})
+            if market == "h2h":
+                detail = (f"away={prices.get('away_price')} "
+                         f"home={prices.get('home_price')}")
+            else:
+                detail = f"prices={prices}"
+            print(f"    {row['game_pk']:>7}  {row['away_team']}@{row['home_team']} "
+                  f"{row['date']}  {detail}")
+        print(f"  not derivable  : {len(result['not_derivable'])}")
+        for row in result["not_derivable"]:
+            print(f"    {row['game_pk']:>7}  {row['away_team']}@{row['home_team']} "
+                  f"{row['date']}  reason={row['reason']}")
+        if result["no_recommendation"]:
+            print(f"  no matching recommendation row found  : "
+                  f"{len(result['no_recommendation'])}")
+        to_append_all.extend(result["to_append"])
 
     if getattr(args, "dry_run", False):
-        print(f"\ndry run -- 0 appended (would append {len(result['to_append'])})")
+        print(f"\ndry run -- 0 appended (would append {len(to_append_all)})")
         return EXIT_OK
 
-    grading.append_ledger_rows(result["to_append"], ledger.DEFAULT_LEDGER)
-    print(f"\n{len(result['to_append'])} appended")
+    grading.append_ledger_rows(to_append_all, ledger.DEFAULT_LEDGER)
+    print(f"\n{len(to_append_all)} appended")
 
     coverage = grading.ledger_closing_coverage(ledger.read())
     print("\nclosing coverage by market (original + backfill / settled):")
-    for market, c in sorted(coverage.items(), key=lambda kv: str(kv[0])):
-        print(f"  {market:<40} {c['with_closing']:>4}/{c['settled']:<4}"
+    for c_market, c in sorted(coverage.items(), key=lambda kv: str(kv[0])):
+        print(f"  {c_market:<40} {c['with_closing']:>4}/{c['settled']:<4}"
               f"  (original {c['from_original']}, backfill {c['from_backfill']})")
     return EXIT_OK
 
@@ -1822,6 +1842,11 @@ def build_parser() -> argparse.ArgumentParser:
              "ledger row; see closing-audit to preview without appending)")
     backfill_cmd.add_argument("--dry-run", action="store_true",
         help="list what would be appended without writing anything")
+    backfill_cmd.add_argument("--market", choices=["h2h", "spreads", "totals", "all"],
+        default="h2h",
+        help="which market's close to backfill (default h2h, preserving "
+             "pre-L18 behaviour); 'all' runs h2h, spreads, and totals in "
+             "one pass. first_five is not offered here -- see closing-audit")
 
     brief_cmd = sub.add_parser("brief",
         help="build the slate briefing dashboard (static HTML, no server)")

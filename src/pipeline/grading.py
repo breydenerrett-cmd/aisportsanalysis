@@ -421,50 +421,94 @@ def _timestamp(now=None) -> str:
 # silently attach a different game's price than closing-audit reported as
 # derivable, or backfill a row closing-audit calls genuinely absent.
 #
-# WHY CLV IS H2H-ONLY HERE
-# -------------------------
+# WHY CLV IS H2H-ONLY -- FOR H2H ROWS
+# -------------------------------------
 # A settlement's `closing` has only ever been an h2h observation --
 # `_settlement_closing` records it for every recommendation regardless of
 # which market (if any) was flagged, because h2h is the only market this
-# join identifies at all. So CLV here is computed only from the h2h price
-# recorded on the recommendation (`prices.h2h.<side>_price`, the board as
-# it stood when the recommendation was written) against the h2h close --
-# never against a first_five/spreads/totals pick price, which would
-# silently compare two different markets. Extending closing identification
-# itself to those markets is explicitly a separate lane; this backfill
-# does not start it.
+# join identifies at all. So CLV on an h2h backfill row is computed only
+# from the h2h price recorded on the recommendation
+# (`prices.h2h.<side>_price`, the board as it stood when the
+# recommendation was written) against the h2h close -- never against a
+# first_five/spreads/totals pick price, which would silently compare two
+# different markets.
+#
+# L18 EXTENDS THE BACKFILL TO SPREADS AND TOTALS -- CLV STAYS NULL THERE
+# ------------------------------------------------------------------------
+# `market=` below lets this same mechanism record a spreads or totals
+# close too (same store, same PIT rule, via `snapshots.market_closing_observation`
+# -- the identical lookup `grading.ledger_closing_coverage`/`closing-audit`
+# already use, so a spreads/totals backfill row can never disagree with
+# what closing-audit called derivable). A settlement has never had a
+# per-market `closing` field for anything but h2h, so there is no
+# non-null-original guard to apply for these two markets -- every
+# still-not-backfilled settled game is a candidate, exactly what
+# `closing-audit` counted as "derivable".
+#
+# CLV for a spreads/totals row stays deliberately ungraded. A line
+# market's price is only comparable to another price for THE SAME LINE;
+# `closing_line_value`'s cents/prob-edge diff assumes both prices quote
+# the same bet, which holds for h2h (there is only ever one number to
+# lay) but not for a spread or total, where the point itself can move
+# between the pick and the close. Nothing this project writes to the
+# ledger today records the POINT taken at recommendation time for these
+# markets (`ledger._prices` keeps only price/total fields, never
+# `home_line`/`away_line` -- and in any case no recommendation has ever
+# flagged an actual spread or total pick, only full-game h2h or
+# first-five). Computing a number anyway -- treating the close's price as
+# though it quoted the same line the pick did -- would be exactly the
+# fabrication CLAUDE.md forbids. So every spreads/totals backfill row
+# records the close (line AND price, whatever the store captured) and
+# reports `clv_graded: False` with a `clv_reason` naming the missing
+# fair-price model, honestly, rather than a number nobody could defend.
 
 BACKFILL = "closing_backfill"
 CLOSING_SOURCE = "odds_snapshots"
 BACKFILL_REASON = "abbreviation join bug 65f499a"
+# Why a DIFFERENT reason for spreads/totals rows: h2h's null was a bug --
+# a close existed in the store all along, hidden by the abbreviation join.
+# Spreads/totals nulls are not a bug at all -- `ledger.settle` has simply
+# never had a writer for anything but the h2h close, so every one of these
+# settlements was ALWAYS going to read closing=null for its market until
+# something like this backfill recorded one.
+LINE_MARKET_BACKFILL_REASON = "market close not recorded at settlement (h2h-only writer)"
+LINE_MARKET_CLV_REASON = "line-market CLV needs a fair-price model this system does not have"
 
 
-def find_backfillable_closings(ledger_entries, snapshot_rows, *, now=None) -> dict:
+def find_backfillable_closings(ledger_entries, snapshot_rows, *, market="h2h",
+                               now=None) -> dict:
     """What can be appended right now, without appending anything.
+
+    `market` selects which of h2h/spreads/totals this call backfills --
+    default "h2h" so every existing caller (and every existing test that
+    calls this without a `market=` argument) keeps its exact prior
+    behaviour, byte for byte. first_five is deliberately not offered here
+    -- see the module note above the per-market coverage section: it is a
+    separate, sparser store and a separate decision.
 
     Pure and side-effect free -- `closing-backfill --dry-run` and the real
     run share this exact computation, so a dry run can never claim
     something the real run then fails to produce, and calling it twice
     with the same inputs is safe (idempotent by construction: a settlement
-    already covered by a valid backfill is reported under
+    already covered by a valid backfill for THIS market is reported under
     `already_backfilled`, not re-added to `to_append`).
 
     Returns a dict:
       to_append           -- new `closing_backfill` row dicts, one per
                               newly-derivable settlement, ready to append.
       derivable           -- [{game_pk, away_team, home_team, date,
-                              closing}] for null-original settlements not
-                              yet backfilled whose close IS now findable.
+                              closing}] for settlements not yet backfilled
+                              for this market whose close IS now findable.
       not_derivable       -- [{game_pk, away_team, home_team, date,
-                              reason}] for null-original settlements not
-                              yet backfilled whose close still is not
-                              findable, with `_settlement_closing`'s own
-                              reason string (so this list's reasons read
-                              identically to `closing-audit`'s).
+                              reason}] for settlements not yet backfilled
+                              for this market whose close still is not
+                              findable (reason strings agree with
+                              `closing-audit`'s for this market).
       already_backfilled  -- game_pks that already carry a valid backfill
-                              row and are skipped.
-      no_recommendation   -- game_pks with a null-original settlement but
-                              no matching recommendation row to join with.
+                              row for this market and are skipped.
+      no_recommendation   -- game_pks with no closing recorded for this
+                              market yet but no matching recommendation
+                              row to join with.
     """
     from src.pipeline import ledger  # local: no cycle (ledger never imports
                                       # grading) -- kept local so this
@@ -475,15 +519,20 @@ def find_backfillable_closings(ledger_entries, snapshot_rows, *, now=None) -> di
 
     settled = ledger.settlements(ledger_entries)
     recs_by_pk = {r.get("game_pk"): r for r in ledger.recommendations(ledger_entries)}
-    already = read_backfills(ledger_entries)
-    snapshot_series = snapshots.group_by_game(snapshot_rows)
+    already = read_backfills(ledger_entries, market=market)
+    # h2h keeps its original join (group_by_game + game_key, byte-identical
+    # to before); spreads/totals reuse the SAME market-aware index
+    # closing-audit itself is built on, so the two can never disagree
+    # about what is derivable.
+    snapshot_series = (snapshots.group_by_game(snapshot_rows) if market == "h2h"
+                       else snapshots.market_series_index(snapshot_rows, market=market))
     stamp = _timestamp(now)
 
     to_append, derivable, not_derivable = [], [], []
     already_backfilled, no_recommendation = [], []
 
     for pk, settlement in settled.items():
-        if settlement.get("closing") is not None:
+        if market == "h2h" and settlement.get("closing") is not None:
             continue  # never touch a settlement that already has a close
         if pk in already:
             already_backfilled.append(pk)
@@ -493,7 +542,7 @@ def find_backfillable_closings(ledger_entries, snapshot_rows, *, now=None) -> di
             no_recommendation.append(pk)
             continue
 
-        closing, reason = _ledger_closing(rec, snapshot_series)
+        closing, reason = _ledger_closing(rec, snapshot_series, market=market)
         identity = {"game_pk": pk, "away_team": rec.get("away_team"),
                     "home_team": rec.get("home_team"), "date": rec.get("date")}
         if closing is None:
@@ -501,7 +550,7 @@ def find_backfillable_closings(ledger_entries, snapshot_rows, *, now=None) -> di
             continue
 
         derivable.append({**identity, "closing": closing})
-        to_append.append(_backfill_row(pk, rec, closing, stamp))
+        to_append.append(_backfill_row(pk, rec, closing, stamp, market=market))
 
     return {
         "to_append": to_append,
@@ -512,23 +561,38 @@ def find_backfillable_closings(ledger_entries, snapshot_rows, *, now=None) -> di
     }
 
 
-def _ledger_closing(rec, snapshot_series):
-    """(closing, reason) for one recommendation row -- the exact same
-    definition, and the exact same reason strings, as
-    `cli._settlement_closing`. Duplicated rather than imported: cli.py is
-    the entry point that calls into this pipeline layer, not the other way
-    around, so it must never be imported from here.
+def _ledger_closing(rec, snapshot_series, market="h2h"):
+    """(closing, reason) for one recommendation row.
+
+    market="h2h" is the exact same definition, and the exact same reason
+    strings, as `cli._settlement_closing` -- duplicated rather than
+    imported: cli.py is the entry point that calls into this pipeline
+    layer, not the other way around, so it must never be imported from
+    here. UNCHANGED by this lane; every h2h caller reads the identical
+    (closing, reason) it always has.
+
+    Any other market reuses `snapshots.market_closing_observation` --
+    the same PIT rule, over the market-aware index built above -- so its
+    reason strings ("not_captured" / "no snapshot observed before first
+    pitch") already agree with `closing-audit`'s.
     """
-    key = snapshots.game_key(rec.get("away_team"), rec.get("home_team"),
-                             rec.get("commence_time"))
-    series = snapshot_series.get(key)
-    if not series:
-        return None, "no snapshots recorded for this game"
-    observation = snapshots.closing_observation(series, rec.get("commence_time"))
-    if observation is None:
-        return None, "no snapshot observed before first pitch"
+    if market == "h2h":
+        key = snapshots.game_key(rec.get("away_team"), rec.get("home_team"),
+                                 rec.get("commence_time"))
+        series = snapshot_series.get(key)
+        if not series:
+            return None, "no snapshots recorded for this game"
+        observation = snapshots.closing_observation(series, rec.get("commence_time"))
+        if observation is None:
+            return None, "no snapshot observed before first pitch"
+    else:
+        observation, reason = snapshots.market_closing_observation(
+            snapshot_series, rec.get("away_team"), rec.get("home_team"),
+            rec.get("commence_time"))
+        if observation is None:
+            return None, reason
     return {
-        "market": "h2h",
+        "market": market,
         "book": observation.get("book"),
         "observed_utc": observation.get("observed_utc"),
         "book_last_update": observation.get("book_last_update"),
@@ -538,12 +602,22 @@ def _ledger_closing(rec, snapshot_series):
     }, None
 
 
-def _ledger_clv(rec, closing) -> dict:
-    """CLV for a backfilled settlement, off the h2h price only (see module
-    note above). Same shape and vocabulary as `_closing_line_value` so a
+def _ledger_clv(rec, closing, market="h2h") -> dict:
+    """CLV for a backfilled settlement.
+
+    market="h2h": off the h2h price only (see module note above), UNCHANGED
+    by this lane -- same body, same reason strings, as before L18.
+
+    Any other market: always ungraded (see `LINE_MARKET_CLV_REASON`'s note
+    above -- a spread/total's price is only comparable to another price
+    quoting the SAME line, and this project records neither the point
+    taken at pick time nor a fair-price model that could translate across
+    a line move). Same shape and vocabulary as `_closing_line_value` so a
     reader already familiar with `clv_graded`/`clv_reason` recognizes this
-    immediately as the same kind of fact.
+    immediately as the same kind of fact, never a silently-skipped field.
     """
+    if market != "h2h":
+        return {"clv_graded": False, "clv_reason": LINE_MARKET_CLV_REASON}
     side = rec.get("side")
     if side not in ("home", "away"):
         return {"clv_graded": False,
@@ -564,32 +638,43 @@ def _ledger_clv(rec, closing) -> dict:
     return {"clv_graded": True, "clv_side": side, **value}
 
 
-def _backfill_row(game_pk, rec, closing, stamp) -> dict:
+def _backfill_row(game_pk, rec, closing, stamp, market="h2h") -> dict:
     """One `closing_backfill` row: the derived close, its provenance, and
     the CLV it implies. `ref` is the settlement's `game_pk` -- its
     identifier in `ledger.settlements()`'s keying, and today also unique
     per settlement (see tests/test_pipeline_ledger.py; no game is settled
     twice in the live ledger) -- so it names exactly which immutable row
-    this corrects without touching it.
+    this corrects without touching it. `market` (new in L18) says which
+    market's close this row records, so `ref` + `market` together identify
+    one backfill target -- a game can carry at most one valid backfill
+    per market (`read_backfills` enforces that), never one overall.
     """
     return {
         "kind": BACKFILL,
         "ref": game_pk,
+        "market": market,
         "closing_price": closing,
         "closing_observed_utc": closing.get("observed_utc"),
         "closing_source": CLOSING_SOURCE,
         "derived_utc": stamp,
-        "clv": _ledger_clv(rec, closing),
-        "reason": BACKFILL_REASON,
+        "clv": _ledger_clv(rec, closing, market=market),
+        "reason": BACKFILL_REASON if market == "h2h" else LINE_MARKET_BACKFILL_REASON,
     }
 
 
-def read_backfills(ledger_entries) -> dict:
-    """Valid `closing_backfill` rows, keyed by the settlement `ref` (game_pk)
-    they correct. This is the one place that decides "prefer the backfill
-    when the original is null" -- every reader of a ledger closing should
-    call this (or `effective_closing`, below) rather than re-deriving the
-    rule, so the preference can never be implemented two different ways.
+def read_backfills(ledger_entries, market="h2h") -> dict:
+    """Valid `closing_backfill` rows FOR ONE MARKET, keyed by the
+    settlement `ref` (game_pk) they correct. This is the one place that
+    decides "prefer the backfill when the original is null" -- every
+    reader of a ledger closing should call this (or `effective_closing`,
+    below) rather than re-deriving the rule, so the preference can never
+    be implemented two different ways.
+
+    `market` defaults to "h2h" so every pre-L18 caller (and every existing
+    test that omits the argument) reads exactly what it always has. A row
+    with no `market` field at all -- every `closing_backfill` row written
+    before L18 -- is treated as `"h2h"`, since h2h was the only market
+    this ever wrote before now.
 
     First valid row per ref wins (same rule as `deduplicate`'s
     first-prediction-per-game, above: the earliest record is the one
@@ -598,17 +683,20 @@ def read_backfills(ledger_entries) -> dict:
     this function exists to refuse).
 
     A row is valid only if:
+      * its `market` (defaulting to "h2h") matches the one asked for;
       * `ref` names a settlement that actually exists in this same set of
-        entries, AND that settlement's own `closing` is still null (a
-        backfill can never override, or appear to correct, a settlement
-        that already has a real close -- a tampered or stale row claiming
-        otherwise is ignored outright, never trusted); and
+        entries; for market="h2h" specifically, that settlement's own
+        `closing` must also still be null (a backfill can never override,
+        or appear to correct, a settlement that already has a real close
+        -- a tampered or stale row claiming otherwise is ignored outright,
+        never trusted); spreads/totals have no such original field to
+        check, so existence of the settlement is the only gate; and
       * it carries a non-null `closing_price`.
 
     Anything else -- an orphaned `ref`, a row targeting an already-closed
-    settlement, a second row for a `ref` already covered -- is silently
-    excluded. It is not an error: the ledger is append-only, so a bad row
-    already on disk cannot be deleted, only out-voted by this rule.
+    h2h settlement, a second row for a `ref`+market already covered -- is
+    silently excluded. It is not an error: the ledger is append-only, so a
+    bad row already on disk cannot be deleted, only out-voted by this rule.
     """
     from src.pipeline import ledger
 
@@ -621,27 +709,36 @@ def read_backfills(ledger_entries) -> dict:
     for entry in ledger_entries:
         if entry.get("kind") != BACKFILL:
             continue
+        if entry.get("market", "h2h") != market:
+            continue
         ref = entry.get("ref")
         if ref in valid:
             continue  # first valid row per ref wins; later ones ignored
         if entry.get("closing_price") is None:
             continue
-        if ref not in settled_closing or settled_closing[ref] is not None:
-            continue  # no such settlement, or its original was never null
+        if ref not in settled_closing:
+            continue  # orphaned ref: no such settlement at all
+        if market == "h2h" and settled_closing[ref] is not None:
+            continue  # h2h original was never null; never override it
         valid[ref] = entry
     return valid
 
 
-def effective_closing(settlement, backfills):
-    """The closing dict a reader should use for one settlement row: its own
-    `closing` when that is not null, else a valid backfill's
-    `closing_price`, else None. `backfills` is `read_backfills`'s return
-    value -- already excludes anything that would try to override a
-    non-null original, so this function does not need to re-check that.
+def effective_closing(settlement, backfills, market="h2h"):
+    """The closing dict a reader should use for one settlement row, for one
+    market: its own `closing` when `market` is "h2h" and that field is not
+    null, else a valid backfill's `closing_price`, else None. `backfills`
+    is `read_backfills(..., market=market)`'s return value -- already
+    excludes anything that would try to override a non-null h2h original,
+    so this function does not need to re-check that. Spreads and totals
+    have no per-market field on the settlement itself to prefer over the
+    backfill -- the backfill IS the only place either is ever recorded --
+    so for those markets this goes straight to `backfills`.
     """
-    original = settlement.get("closing")
-    if original is not None:
-        return original
+    if market == "h2h":
+        original = settlement.get("closing")
+        if original is not None:
+            return original
     backfill = backfills.get(settlement.get("game_pk"))
     return backfill["closing_price"] if backfill else None
 
@@ -667,15 +764,18 @@ def effective_closing(settlement, backfills):
 # ever flagged full-game or first-five recommendations, never a spread or a
 # total.
 #
-# WHY ONLY H2H CAN EVER BE "recorded"
-# -------------------------------------
-# A settlement's own `closing` field, and every `closing_backfill` row on
-# the ledger, has only ever carried an h2h price (see the backfill section
-# above). Nothing has ever written a spreads, totals, or first-five close TO
-# THE LEDGER -- there is no backfill mechanism for them, and this lane does
-# not add one (cli.cmd_closing_audit stays read-only for every market). So
-# `from_original`/`from_backfill`/`with_closing` are honestly zero for every
-# market but h2h; what CAN be reported for the others is what the store
+# WHY H2H, SPREADS, AND TOTALS CAN ALL BE "recorded" NOW -- FIRST_FIVE STILL CANNOT
+# ------------------------------------------------------------------------------------
+# A settlement's own `closing` field has only ever carried an h2h price;
+# spreads and totals have no equivalent field on the settlement itself.
+# L18 gave spreads and totals a `closing_backfill` writer (`market=` on
+# `find_backfillable_closings`, above) alongside h2h's, so `from_backfill`
+# for those two markets is no longer always zero -- it counts valid
+# per-market backfill rows via `read_backfills(ledger_entries,
+# market=market)`. first_five still has no backfill mechanism at all --
+# that store is sparser and its own separate decision (see L18's task
+# boundary) -- so `from_original`/`from_backfill`/`with_closing` stay
+# honestly zero for it; what CAN be reported for it is what the store
 # WOULD support if something chose to record it, under
 # `derivable_not_recorded` -- a dry-run number, never written anywhere.
 
@@ -698,10 +798,14 @@ def ledger_closing_coverage(ledger_entries, snapshot_rows=None, f5_rows=None) ->
     STORES' coverage, not about which bets were made.
 
     `with_closing` (= `from_original` + `from_backfill`) is what is already
-    evidence on the ledger; only h2h is ever nonzero there (see module note
+    evidence on the ledger -- h2h, spreads, and totals via
+    `read_backfills(..., market=market)` (h2h alone also via its
+    settlement's own `closing` field), first_five never (see module note
     above). `derivable_not_recorded` is additional games whose close a
     fresh, read-only lookup against the store can find right now but that
-    the ledger has never recorded -- true of every market but h2h today.
+    the ledger has never recorded -- true only of first_five once h2h,
+    spreads, and totals are backfilled, since a run of `closing-backfill
+    --market all` clears the other three to zero.
     `not_derivable` is a reason histogram: `"not_captured"` (the store holds
     nothing for this game in this market at all) versus `"no snapshot
     observed before first pitch"` (it holds something, just not early
@@ -718,7 +822,6 @@ def ledger_closing_coverage(ledger_entries, snapshot_rows=None, f5_rows=None) ->
 
     recs_by_pk = {r.get("game_pk"): r for r in ledger.recommendations(ledger_entries)}
     settled = ledger.settlements(ledger_entries)
-    backfills = read_backfills(ledger_entries)
 
     if snapshot_rows is None:
         snapshot_rows = snapshots.read()
@@ -729,21 +832,24 @@ def ledger_closing_coverage(ledger_entries, snapshot_rows=None, f5_rows=None) ->
     for market in snapshots.MARKET_STORE_KEY:
         rows_for_market = f5_rows if market == "first_five" else snapshot_rows
         index = snapshots.market_series_index(rows_for_market, market=market)
+        # first_five has no backfill writer at all (out of this lane's
+        # scope), so this always comes back {} for it -- no special case
+        # needed to keep it at zero.
+        backfills = read_backfills(ledger_entries, market=market)
         bucket = {
             "settled": len(settled), "with_closing": 0, "from_original": 0,
             "from_backfill": 0, "derivable_not_recorded": 0,
             "not_derivable": {}, "source": MARKET_SOURCE[market],
         }
         for pk, settlement in settled.items():
-            if market == "h2h":
-                if settlement.get("closing") is not None:
-                    bucket["from_original"] += 1
-                    bucket["with_closing"] += 1
-                    continue
-                if pk in backfills:
-                    bucket["from_backfill"] += 1
-                    bucket["with_closing"] += 1
-                    continue
+            if market == "h2h" and settlement.get("closing") is not None:
+                bucket["from_original"] += 1
+                bucket["with_closing"] += 1
+                continue
+            if pk in backfills:
+                bucket["from_backfill"] += 1
+                bucket["with_closing"] += 1
+                continue
 
             rec = recs_by_pk.get(pk)
             if rec is None:
