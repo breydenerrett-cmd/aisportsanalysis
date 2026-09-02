@@ -1642,3 +1642,249 @@
   }
   .ov2-table-wrap--expanded .ov2-more { display: none; }
 }
+
+/* =====================================================================
+   SHARED STATES
+   Traced from design/linehound-v2/'LINEHOUND V2 Full Product.dc.html'
+   lines 6084-6437 (V2-27 LOADING, V2-28 EMPTY, V2-29 UNAVAILABLE,
+   V2-30 ERROR). Backs web/js/states.js -- every V2 screen mounts one of
+   these into its own host rather than inventing its own skeleton/empty/
+   unavailable/error markup. Scoped to the `vst-` prefix; every color
+   reads from --v-* tokens, never a V1 unprefixed one. Amber (--v-warn-*)
+   throughout for the caution/unavailable states, per the V2 token
+   bridge's rule that red stays reserved for a genuinely better price or
+   the one primary action per region.
+   ===================================================================== */
+
+.vst-panel {
+  padding: 30px 34px 28px;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+}
+
+.vst-eyebrow { display: flex; align-items: center; gap: var(--sp-5); margin-bottom: var(--sp-8); white-space: nowrap; }
+.vst-eyebrow__dot { flex: none; width: 7px; height: 7px; border-radius: 50%; }
+.vst-dot--live { background: var(--v-live); animation: gbreathe var(--dur-gbreathe) ease-in-out infinite; }
+.vst-dot--warn { background: var(--v-warn); }
+.vst-eyebrow__text {
+  flex: none; font-family: var(--font-display); font-size: 11.5px; font-weight: 700; letter-spacing: .22em;
+  color: var(--v-live-label);
+}
+.vst-panel--unavailable .vst-eyebrow__text, .vst-panel--error .vst-eyebrow__text { color: var(--v-warn-label); }
+.vst-eyebrow__rule { flex: 1; min-width: 20px; height: 1px; background: linear-gradient(90deg, rgba(255, 255, 255, .1), transparent); }
+
+.vst-headline {
+  font-family: var(--font-display); font-style: italic; font-weight: 800;
+  font-size: clamp(26px, 3.2vw, 42px); line-height: .95; letter-spacing: -.006em;
+  color: var(--v-t0); max-width: 640px;
+}
+.vst-headline--warn { color: var(--v-t0); }
+.vst-body { margin-top: var(--sp-6); font-size: 15.5px; line-height: 1.55; color: var(--v-t4); max-width: 620px; }
+.vst-body--warn { color: var(--v-warn-lit); }
+
+/* ---- loading skeleton rows ------------------------------------------*/
+.vst-skel-rows { margin-top: var(--sp-9); max-width: 820px; }
+.vst-skel-row {
+  display: flex; align-items: center; gap: var(--sp-6); padding: 11px 0;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .045);
+  animation: vst-skelpulse 1.5s ease-in-out infinite;
+}
+.vst-skel-bar { display: block; background: rgba(255, 255, 255, .09); --r: 2px;
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r)); }
+.vst-skel-bar--label { width: 120px; height: 11px; flex: none; }
+.vst-skel-bar--figure { width: 64px; height: 26px; flex: none; }
+.vst-spacer { flex: 1; }
+@keyframes vst-skelpulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+
+.vst-spinner-row { display: flex; align-items: center; gap: var(--sp-6); margin-top: var(--sp-9); flex-wrap: wrap; }
+.vst-spinner {
+  flex: none; width: 16px; height: 16px; border-radius: 50%;
+  box-shadow: inset 0 0 0 2px rgba(0, 224, 255, .2);
+  border-top: 2px solid var(--v-live);
+  animation: vst-spin .9s linear infinite;
+}
+@keyframes vst-spin { to { transform: rotate(360deg); } }
+.vst-footnote { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .12em; color: var(--v-t7); }
+
+/* ---- empty-state tiles -----------------------------------------------*/
+.vst-tiles { display: flex; gap: var(--sp-6); flex-wrap: wrap; margin-top: var(--sp-9); max-width: 620px; }
+.vst-tile {
+  flex: 1 1 170px; padding: 14px 16px; background: rgba(255, 255, 255, .04);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08); --r: var(--r-badge);
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
+}
+.vst-tile__label { font-family: var(--font-display); font-size: 9px; font-weight: 700; letter-spacing: .15em; color: var(--v-t5); margin-bottom: var(--sp-3); }
+.vst-tile__value { font-family: var(--font-mono); font-size: 24px; color: var(--v-t1); line-height: 1; }
+
+/* ---- unavailable's "last good capture" box ----------------------------*/
+.vst-reasonbox {
+  margin-top: var(--sp-9); padding: 16px 19px; max-width: 620px;
+  background: rgba(255, 176, 32, .07);
+  box-shadow: inset 0 0 0 1px rgba(255, 176, 32, .26), inset 3px 0 0 var(--v-warn);
+  --r: var(--r-badge);
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
+}
+.vst-reasonbox__label { font-family: var(--font-display); font-size: 10.5px; font-weight: 800; letter-spacing: .18em; color: var(--v-warn-label); margin-bottom: var(--sp-4); }
+.vst-reasonbox__body { font-size: 14.5px; line-height: 1.5; color: var(--v-warn-lit); }
+
+/* ---- write-error's support reference box ------------------------------*/
+.vst-refbox {
+  margin-top: var(--sp-9); padding: 13px 16px; max-width: 620px;
+  display: flex; align-items: center; gap: var(--sp-6); flex-wrap: wrap;
+  background: rgba(255, 255, 255, .035);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08);
+  --r: var(--r-badge);
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
+}
+.vst-refbox__label { font-family: var(--font-display); font-size: 9.5px; font-weight: 700; letter-spacing: .16em; color: var(--v-t5); }
+.vst-refbox__value { font-family: var(--font-mono); font-size: 14px; letter-spacing: .08em; color: var(--v-t3); }
+
+/* ---- shared action row -------------------------------------------------*/
+.vst-actions { display: flex; align-items: center; gap: var(--sp-6); margin-top: var(--sp-10); flex-wrap: wrap; }
+.vst-actions__note { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .12em; color: var(--v-t7); }
+
+@media (max-width: 899px) {
+  .vst-panel { padding: 24px var(--gutter-mobile) 22px; }
+  .vst-headline { font-size: 30px; }
+  .vst-actions { flex-direction: column; align-items: stretch; }
+  .vst-actions .btn { width: 100%; }
+}
+
+/* =====================================================================
+   FEATURED BET -- primitive
+   Traced from design/linehound-v2/'LINEHOUND V2 Full Product.dc.html'
+   lines 6999-7132 (V2-32's body: "01 THE BET" header chip + the price
+   hero card). Backs web/js/featuredbet.js's `renderFeaturedBet` --
+   scoped to the `fb-` prefix, --v-* tokens only. See that module's
+   docstring for the two deliberate deviations from the artboard's pixels
+   (no per-segment favourability marks / no reserved-red verdict accent)
+   and the fields the API does not have.
+   ===================================================================== */
+
+.fb-card {
+  position: relative;
+  padding: 26px 30px 24px 58px;
+  overflow: hidden;
+}
+.fb-card--live { box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .34); background: linear-gradient(150deg, rgba(0, 224, 255, .1), rgba(255, 255, 255, .012)); }
+.fb-card--warn { box-shadow: inset 0 0 0 1px rgba(255, 176, 32, .32); background: linear-gradient(150deg, rgba(255, 176, 32, .09), rgba(255, 255, 255, .012)); }
+.fb-card--neutral { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12); }
+.fb-card--na { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .09); }
+
+/* ---- spine: rotated label down the left edge -------------------------*/
+.fb-spine {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 40px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(180deg, var(--v-live), var(--v-live-2));
+}
+.fb-card--warn .fb-spine { background: linear-gradient(180deg, var(--v-warn), var(--v-warn-2)); }
+.fb-card--neutral .fb-spine, .fb-card--na .fb-spine { background: rgba(255, 255, 255, .14); }
+.fb-spine span {
+  font-family: var(--font-display); font-size: 12px; font-weight: 800; letter-spacing: .3em;
+  color: var(--v-ground); writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg);
+  white-space: nowrap;
+}
+
+/* ---- head: badge + matchup + first pitch ------------------------------*/
+.fb-head { display: flex; align-items: center; gap: var(--sp-6); flex-wrap: wrap; margin-bottom: var(--sp-8); }
+.fb-badge {
+  flex: none; display: flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; --r: var(--r-badge);
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
+  font-family: var(--font-display); font-size: 12px; font-weight: 800; letter-spacing: .04em;
+}
+.fb-matchup { font-family: var(--font-display); font-style: italic; font-size: 24px; font-weight: 800; color: var(--v-t0); white-space: nowrap; }
+.fb-clock { font-family: var(--font-mono); font-size: 11px; letter-spacing: .09em; color: var(--v-live-label); white-space: nowrap; }
+
+/* ---- spec strip: MARKET | LINE | SIDE ---------------------------------*/
+.fb-spec {
+  display: flex; align-items: stretch; flex-wrap: wrap;
+  background: rgba(10, 10, 11, .32); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .09);
+  margin-bottom: var(--sp-9); --r: var(--r-badge);
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
+}
+.fb-spec__cell { flex: 1 1 140px; padding: 12px 15px; box-shadow: inset 1px 0 0 rgba(255, 255, 255, .08); }
+.fb-spec__cell:first-child { box-shadow: none; }
+.fb-spec__label { font-family: var(--font-display); font-size: 8.5px; font-weight: 800; letter-spacing: .18em; color: var(--v-t6); margin-bottom: var(--sp-3); }
+.fb-spec__value { font-family: var(--font-mono); font-size: 15px; color: var(--v-t1); }
+.fb-spec__pill {
+  display: inline-flex; padding: 4px 11px; --r: var(--r-chip);
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
+  background: linear-gradient(120deg, var(--v-live), var(--v-live-2));
+  font-family: var(--font-display); font-size: 12px; font-weight: 800; letter-spacing: .08em; color: var(--v-live-ink);
+}
+
+/* ---- BET STANDING head: axis label + oversized verdict word ----------*/
+.fb-standinghead { display: flex; align-items: flex-end; gap: var(--sp-8); flex-wrap: wrap; margin-bottom: var(--sp-7); }
+.fb-axis { flex: 1 1 180px; min-width: 160px; }
+.fb-axis__label { font-family: var(--font-display); font-size: 9.5px; font-weight: 800; letter-spacing: .2em; color: var(--v-t5); margin-bottom: var(--sp-3); }
+.fb-axis__scale { font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: .13em; color: var(--v-t6); }
+.fb-verdict { flex: none; text-align: right; }
+.fb-verdict__word {
+  font-family: var(--font-display); font-style: italic; font-weight: 800;
+  font-size: clamp(22px, 4vw, 48px); line-height: .95; letter-spacing: -.016em;
+  color: var(--v-live-lit);
+}
+.fb-card--warn .fb-verdict__word { color: var(--v-warn-lit); }
+.fb-card--neutral .fb-verdict__word { color: var(--v-t2); }
+
+/* ---- five named segments -----------------------------------------------*/
+.fb-segments { display: flex; flex-direction: column; }
+.fb-row {
+  display: flex; align-items: flex-start; gap: var(--sp-6); padding: 9px 0;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .05);
+}
+.fb-row__mark {
+  flex: none; margin-top: 3px; width: 11px; height: 11px; --r: 3px;
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
+  background: rgba(255, 255, 255, .09); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16);
+}
+.fb-row--present .fb-row__mark { background: var(--v-live); box-shadow: none; }
+.fb-card--warn .fb-row--present .fb-row__mark { background: var(--v-warn); }
+.fb-card--neutral .fb-row--present .fb-row__mark, .fb-card--na .fb-row--present .fb-row__mark { background: var(--v-t3); }
+.fb-row__label {
+  flex: none; width: 154px; font-family: var(--font-display); font-size: 11.5px; font-weight: 700; letter-spacing: .13em;
+  color: var(--v-t2); white-space: nowrap;
+}
+.fb-row--absent .fb-row__label { color: var(--v-t6); }
+.fb-row__detail { flex: 1; min-width: 120px; font-family: var(--font-mono); font-size: 11.5px; line-height: 1.5; color: var(--v-t3); }
+
+.fb-na { display: inline-flex; align-items: baseline; gap: var(--sp-4); flex-wrap: wrap; }
+.fb-na__chip {
+  font-family: var(--font-display); font-size: 9.5px; font-weight: 800; letter-spacing: .14em; color: var(--v-warn-label);
+}
+.fb-na__reason { font-family: var(--font-mono); font-size: 10.5px; color: var(--v-t6); }
+
+.fb-improvement-label { margin-top: var(--sp-6); font-size: 12px; line-height: 1.5; color: var(--v-t5); max-width: 640px; }
+
+/* ---- trust strip -----------------------------------------------------*/
+.fb-trust {
+  margin-top: var(--sp-9); padding-top: var(--sp-8);
+  display: flex; gap: var(--sp-9); flex-wrap: wrap;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+.fb-trust__item { flex: 1 1 170px; min-width: 150px; display: flex; flex-direction: column; gap: var(--sp-3); }
+.fb-trust__label { font-family: var(--font-display); font-size: 10.5px; font-weight: 800; letter-spacing: .12em; color: var(--v-t3); }
+.fb-trust__sub { font-family: var(--font-mono); font-size: 9.5px; color: var(--v-t6); line-height: 1.5; }
+
+/* ---- could-not-parse honest-absence panel -----------------------------*/
+.fb-parsefail { padding: 4px 0; }
+.fb-parsefail__label { font-family: var(--font-display); font-size: 11px; font-weight: 800; letter-spacing: .18em; color: var(--v-warn-label); }
+.fb-parsefail__raw { margin-top: var(--sp-6); font-family: var(--font-mono); font-size: 15px; color: var(--v-t1); }
+.fb-parsefail__reason { margin-top: var(--sp-4); font-size: 13.5px; line-height: 1.5; color: var(--v-t5); }
+
+@media (max-width: 899px) {
+  .fb-card { padding: 20px 18px 18px 46px; }
+  .fb-spine { width: 32px; }
+  .fb-matchup { font-size: 19px; }
+  .fb-verdict__word { font-size: 28px; line-height: 1.02; }
+  .fb-standinghead { align-items: flex-start; flex-direction: column; gap: var(--sp-4); }
+  .fb-axis, .fb-verdict { flex: none; width: 100%; }
+  .fb-verdict { text-align: left; }
+  .fb-row { flex-direction: column; gap: var(--sp-2); }
+  .fb-row__label { width: auto; white-space: normal; }
+  .fb-row__mark { display: none; }
+  .fb-spec__cell { flex: 1 1 100%; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08); }
+  .fb-spec__cell:first-child { box-shadow: none; }
+}
