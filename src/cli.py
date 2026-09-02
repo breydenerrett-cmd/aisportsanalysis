@@ -16,6 +16,7 @@ from pathlib import Path
 from src.core import calibration
 from src.data import parks
 from src.paths import processed_path, raw_path
+from src.pipeline import creditlog
 from src.pipeline import slate as slate_pipeline
 from src.providers import mlb
 from src.providers import odds as odds_provider
@@ -93,6 +94,16 @@ def cmd_credits(args) -> int:
     print("  A 15-minute snapshot schedule exhausts the free tier in under two")
     print("  days. Line-movement capture needs either a paid tier or a much")
     print("  sparser schedule -- open, midpoint, and close.")
+
+    row = creditlog.latest()
+    print()
+    if row is None:
+        print("  credit log               : no rows yet (written by dense/"
+              "prop_listing/prop_prices as they read the quota)")
+    else:
+        print(f"  latest logged balance    : {row.get('credits_remaining')} "
+              f"remaining (used {row.get('credits_used_last')} last, via "
+              f"{row.get('caller')}, at {row.get('utc')})")
     return EXIT_OK
 
 

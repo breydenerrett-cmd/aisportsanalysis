@@ -40,6 +40,7 @@ from pathlib import Path
 import json
 
 from src.paths import processed_path
+from src.pipeline import creditlog
 from src.pipeline import snapshots
 from src.providers import mlb
 from src.providers import odds as odds_provider
@@ -295,9 +296,11 @@ def run(env=None, captures=CAPTURES_PER_RUN, interval_minutes=INTERVAL_MINUTES,
     # floor actually holds. Reading the balance from a metered response would
     # mean discovering you are broke by going broke.
     try:
-        remaining = odds_provider.quota(env).get("remaining")
+        quota_now = odds_provider.quota(env)
     except odds_provider.OddsProviderError as exc:
         return {"captures": 0, "skipped": "quota unreadable", "message": str(exc)}
+    remaining = quota_now.get("remaining")
+    creditlog.log(remaining, quota_now.get("last"), "dense.run")
     if remaining is not None and remaining <= credit_floor:
         return {"captures": 0, "skipped": "credit floor",
                 "credits_remaining": remaining, "floor": credit_floor}
@@ -364,11 +367,13 @@ def run(env=None, captures=CAPTURES_PER_RUN, interval_minutes=INTERVAL_MINUTES,
     if events_now is not None and games_in_window(
             events_now, run_end, CLOSE_WINDOW_MINUTES) > 0:
         try:
-            remaining_now = odds_provider.quota(env).get("remaining")
+            quota_close = odds_provider.quota(env)
         except odds_provider.OddsProviderError as exc:
             close_capture = {"skipped": "quota unreadable", "message": str(exc)}
             remaining_now = None
         else:
+            remaining_now = quota_close.get("remaining")
+            creditlog.log(remaining_now, quota_close.get("last"), "dense.close_capture")
             if remaining_now is not None and remaining_now <= credit_floor:
                 close_capture = {"skipped": "credit floor",
                                  "credits_remaining": remaining_now}

@@ -53,6 +53,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from src.paths import processed_path
+from src.pipeline import creditlog
 from src.pipeline import snapshots
 from src.providers import odds as odds_provider
 
@@ -154,11 +155,13 @@ def run(env=None, now=None, store=DEFAULT_STORE, provider=odds_provider,
     # The floor is checked BEFORE spending anything, against the free sports
     # endpoint. Discovering you are broke by going broke is not a floor.
     try:
-        remaining = provider.quota(env).get("remaining")
+        quota_now = provider.quota(env)
     except provider.OddsProviderError as exc:
         report["skipped"] = "quota unreadable"
         report["errors"].append(str(exc))
         return report
+    remaining = quota_now.get("remaining")
+    creditlog.log(remaining, quota_now.get("last"), "prop_listing.run")
     report["credits_remaining"] = remaining
     if remaining is not None and remaining <= credit_floor:
         report["skipped"] = "credit floor"

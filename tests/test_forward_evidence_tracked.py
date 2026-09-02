@@ -42,6 +42,13 @@ FORWARD_EVIDENCE = (
     "data/processed/odds_multibook.jsonl",
     "data/processed/f5_close.jsonl",
     "data/processed/prop_listing.jsonl",
+    # Added with the weather/credit-log/prop-price capture streams
+    # (docs/COLLECTION_POLICY.md's capture-now amendment): a forecast, a
+    # credit balance, or a prop price observed at a moment is exactly as
+    # unbackfillable as an odds snapshot, for the same reason.
+    "data/processed/weather_forecast.jsonl",
+    "data/processed/prop_prices.jsonl",
+    "data/processed/credit_log.jsonl",
     "data/watch/probables_watch.jsonl",
     "data/watch/lineups_watch.jsonl",
     "data/watch/transactions_watch.jsonl",

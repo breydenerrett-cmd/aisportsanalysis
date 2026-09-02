@@ -76,6 +76,56 @@ class TestExtractHour(unittest.TestCase):
             weather.extract_hour(payload, "2025-07-09T18:00:00Z")
 
 
+class TestExtraHourlyFields(unittest.TestCase):
+    """precip_probability_pct / pressure_hpa, added for weather_capture.py.
+
+    Never threaded onto fetch_archive: the archive endpoint reports what
+    actually happened, not a forecast, and has no "probability" concept.
+    """
+
+    def test_extract_hour_reports_precip_and_pressure_when_present(self):
+        payload = hourly_payload()
+        payload["hourly"]["precipitation_probability"] = [10, 20, 30]
+        payload["hourly"]["surface_pressure"] = [1013.0, 1012.5, 1012.0]
+        reading = weather.extract_hour(payload, "2025-07-09T18:10:00Z")
+        self.assertEqual(reading["precip_probability_pct"], 20)
+        self.assertAlmostEqual(reading["pressure_hpa"], 1012.5)
+
+    def test_extract_hour_is_none_for_precip_and_pressure_when_absent(self):
+        # An ordinary fetch_forecast/fetch_archive call (no extra fields
+        # requested) must not raise or fabricate a reading for fields it
+        # never asked for.
+        reading = weather.extract_hour(hourly_payload(), "2025-07-09T18:10:00Z")
+        self.assertIsNone(reading["precip_probability_pct"])
+        self.assertIsNone(reading["pressure_hpa"])
+
+    def test_fetch_forecast_appends_extra_hourly_fields_to_the_request(self):
+        with mock.patch.object(weather, "_get_json",
+                               return_value=hourly_payload()) as fake:
+            weather.fetch_forecast(41.83, -87.63, "2025-07-09",
+                                   extra_hourly_fields=("precipitation_probability",
+                                                        "surface_pressure"))
+        hourly = fake.call_args[0][1]["hourly"]
+        for field in ("temperature_2m", "relative_humidity_2m", "wind_speed_10m",
+                      "wind_direction_10m", "precipitation_probability",
+                      "surface_pressure"):
+            self.assertIn(field, hourly.split(","))
+
+    def test_fetch_forecast_without_extra_fields_is_unchanged(self):
+        with mock.patch.object(weather, "_get_json",
+                               return_value=hourly_payload()) as fake:
+            weather.fetch_forecast(41.83, -87.63, "2025-07-09")
+        self.assertEqual(fake.call_args[0][1]["hourly"], weather.HOURLY_FIELDS)
+
+    def test_extra_fields_never_reach_fetch_archive(self):
+        # fetch_archive has no extra_hourly_fields parameter at all -- the
+        # archive path cannot accidentally widen past the baseline fields.
+        with mock.patch.object(weather, "_get_json",
+                               return_value=hourly_payload()) as fake:
+            weather.fetch_archive(41.83, -87.63, "2025-07-09")
+        self.assertEqual(fake.call_args[0][1]["hourly"], weather.HOURLY_FIELDS)
+
+
 class TestEndpointSelection(unittest.TestCase):
     def test_old_game_uses_the_archive_endpoint(self):
         old = (datetime.now(timezone.utc) - timedelta(days=90)).isoformat()
