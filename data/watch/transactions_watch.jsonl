@@ -291,3 +291,12 @@
 {"fetched_utc": "2026-09-02T16:31:25.245579+00:00", "game_date": "2026-09-02", "poll": true}
 {"fetched_utc": "2026-09-02T16:46:29.242702+00:00", "game_date": "2026-09-02", "poll": true}
 {"fetched_utc": "2026-09-02T17:01:31.856749+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-02T17:16:28.098958+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-02T17:16:30.407054+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-02T17:31:33.101082+00:00", "game_date": "2026-09-02", "poll": true}
+{"category": "recalled", "date": "2026-09-02", "first_seen_utc": "2026-09-02T17:31:33.101082+00:00", "player": "Raymond Burgos", "player_id": 670103, "team": "BOS", "transaction_id": 940806}
+{"category": "optioned", "date": "2026-09-02", "first_seen_utc": "2026-09-02T17:31:33.101082+00:00", "player": "Jedixson Paez", "player_id": 699151, "team": "BOS", "transaction_id": 940807}
+{"category": "il_activation", "date": "2026-09-02", "first_seen_utc": "2026-09-02T17:31:33.101082+00:00", "player": "Davis Martin", "player_id": 663436, "team": "CWS", "transaction_id": 940814}
+{"category": "optioned", "date": "2026-09-02", "first_seen_utc": "2026-09-02T17:31:33.101082+00:00", "player": "Tanner McDougal", "player_id": 701780, "team": "CWS", "transaction_id": 940815}
+{"fetched_utc": "2026-09-02T17:46:36.024360+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-02T18:01:38.449440+00:00", "game_date": "2026-09-02", "poll": true}
