@@ -26,3 +26,6 @@
 {"caller": "prop_prices.run", "credits_remaining": 99597, "credits_used_last": 0, "utc": "2026-09-03T04:14:48.354658Z"}
 {"caller": "batter_props.run", "credits_remaining": 99597, "credits_used_last": 0, "utc": "2026-09-03T04:14:49.230262Z"}
 {"caller": "dense.run", "credits_remaining": 99567, "credits_used_last": 0, "utc": "2026-09-03T04:32:26.307953Z"}
+{"caller": "budget.probe_family:team_totals", "credits_remaining": 99566, "credits_used_last": 1, "utc": "2026-09-03T05:08:00.645770Z"}
+{"caller": "budget.probe_family:alternates", "credits_remaining": 99564, "credits_used_last": 2, "utc": "2026-09-03T05:08:01.352246Z"}
+{"caller": "budget.probe_family:f5_trio", "credits_remaining": 99561, "credits_used_last": 3, "utc": "2026-09-03T05:08:02.164931Z"}

@@ -9,22 +9,47 @@
       "source": "src/pipeline/dense.py module docstring (\"Three markets in one region is 3 credits per capture\"); docs/COLLECTION_POLICY.md F13 cites this as the one already-measured figure."
     },
     "f5_trio": {
-      "measured": false,
-      "credits_per_event": null,
-      "measured_utc": null,
-      "source": "docs/COLLECTION_POLICY.md measures f5 h2h alone (5 books, 1 credit/event/snapshot) via dense.py's h2h_1st_5_innings piggyback, not the full h2h+spreads+totals trio this family names. Not the same measurement; do not reuse the h2h number here."
+      "measured": true,
+      "credits_per_event": 3,
+      "measured_utc": "2026-09-03T05:08:01.514474Z",
+      "source": "budget.probe_family: live f5_trio probe against event f857ea6771bf681398b05379f108f0c5 (3 market(s), 1 region); billed=3, remaining_before=99564, remaining_after=99561",
+      "degenerate": false,
+      "payload_shape": {
+        "books": 3,
+        "markets_returned": 3,
+        "outcomes": 18,
+        "commence_time": "2026-09-03T16:35:00Z",
+        "degenerate": false
+      }
     },
     "alternates": {
       "measured": true,
-      "credits_per_event": 1,
-      "measured_utc": "2026-08-31T00:00:00Z",
-      "source": "docs/COLLECTION_POLICY.md 24-credit probe (\"Alternate spreads/totals: 7 books, 130-160 outcome rows per event at 1 credit\")."
+      "credits_per_event": 2,
+      "measured_utc": "2026-09-03T05:08:00.760719Z",
+      "source": "budget.probe_family: live alternates probe against event f857ea6771bf681398b05379f108f0c5 (2 market(s), 1 region); billed=2, remaining_before=99566, remaining_after=99564",
+      "degenerate": false,
+      "payload_shape": {
+        "books": 7,
+        "markets_returned": 2,
+        "outcomes": 284,
+        "commence_time": "2026-09-03T16:35:00Z",
+        "degenerate": false
+      }
     },
     "team_totals": {
-      "measured": false,
-      "credits_per_event": null,
-      "measured_utc": null,
-      "source": "Not part of the 2026-08-31 probe; no measurement exists."
+      "measured": true,
+      "credits_per_event": 1,
+      "measured_utc": "2026-09-03T05:07:59.748255Z",
+      "source": "budget.probe_family: live team_totals probe against event f857ea6771bf681398b05379f108f0c5 (1 market(s), 1 region); billed=1, remaining_before=99567, remaining_after=99566; DEGENERATE PAYLOAD (books=3, markets_returned=1, outcomes=36, does not satisfy PROBE_REQUIRED, does not block a same-day re-probe)",
+      "degenerate": false,
+      "payload_shape": {
+        "books": 3,
+        "markets_returned": 1,
+        "outcomes": 36,
+        "commence_time": "2026-09-03T16:35:00Z",
+        "degenerate": true
+      },
+      "correction": "2026-09-03: single-market family; 3 books, 36 outcomes is a real payload"
     },
     "pitcher_props": {
       "measured": false,

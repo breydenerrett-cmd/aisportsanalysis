@@ -40,7 +40,7 @@ PROP_OUT=$(python3 -m src.pipeline.prop_listing 2>&1)
 echo "$PROP_OUT" | sed 's/^/  /'
 
 echo "== capture extras =="
-EXTRAS_OUT=$(PROP_PRICES=1 BATTER_PROPS=1 bash scripts/capture_extras.sh 2>&1)
+EXTRAS_OUT=$(PROP_PRICES=1 BATTER_PROPS=1 DERIVATIVES=1 bash scripts/capture_extras.sh 2>&1)
 echo "$EXTRAS_OUT" | grep -v "^ESCALATE:" | sed 's/^/  /'
 
 GIT_LOCK=/tmp/linehound_git.lock

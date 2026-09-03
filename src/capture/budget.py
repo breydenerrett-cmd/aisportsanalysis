@@ -449,7 +449,12 @@ def _payload_shape(payload: dict, requested_markets, commence_time=None) -> dict
                 markets_seen.add(key)
             outcomes += len(market.get("outcomes") or [])
     markets_returned = len(markets_seen & requested) if requested else len(markets_seen)
-    degenerate = books < 2 or markets_returned < 2
+    # A single-market family (team_totals) can never return two markets, so
+    # the market leg is "fewer than min(2, requested)" -- otherwise a real
+    # 36-outcome payload would be marked thin forever (found on the first
+    # live team_totals probe, 2026-09-03 05:07Z).
+    needed = min(2, len(requested)) if requested else 2
+    degenerate = books < 2 or markets_returned < needed
     return {
         "books": books,
         "markets_returned": markets_returned,
