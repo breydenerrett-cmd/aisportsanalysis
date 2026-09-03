@@ -65,15 +65,23 @@ rather than a fresher one, because reproducing the frozen discovery-era
 artifact is the job on this branch.
 
 Live: there is no frozen artifact to reproduce, so the cutoff is the
-FRESHEST safe one the primitive's own resolution allows: the calendar date
-of `t` itself (`rebuilt.accumulate` treats `game_date < cutoff` as strictly
-excluded, so `t`'s own day -- and everything after -- never contributes).
-The pitch store carries no intraday timestamp (`statcast_pitches.KEEP` has
-`game_date` only, no clock time), so calendar-day is the finest truncation
-this primitive can honestly support; excluding the whole of `t`'s own day
-is therefore the correct, and only available, reading of "a pitch thrown at
-or after `t` must never contribute" -- as strict as the rule asks for, never
-looser.
+FRESHEST safe one the primitive's own resolution allows: t's own calendar
+date IN MLB'S OWN FILING TIMEZONE, Eastern (`_eastern_date`; B5 fix,
+2026-09-03 -- an earlier revision used t's bare UTC date, which for any t
+between 00:00Z and ~04:00Z is the day AFTER the Eastern day t actually
+falls in, so `game_date < cutoff` wrongly admitted every pitch of t's own
+Eastern day, including games still in progress at t and, on a backfilled
+run, the subject game itself; 19 of 69 published decisions sat on this
+condition). `rebuilt.accumulate` treats `game_date < cutoff` as strictly
+excluded, so t's own Eastern day -- and everything after -- never
+contributes. The pitch store carries no intraday timestamp
+(`statcast_pitches.KEEP` has `game_date` only, no clock time), so
+calendar-day is the finest truncation this primitive can honestly support;
+excluding the whole of t's own Eastern day is therefore the correct, and
+only available, reading of "a pitch thrown at or after `t` must never
+contribute" -- as strict as the rule asks for, never looser, and consistent
+with the SAME Eastern day slate membership itself keys on
+(`src.pipeline.snapshots.official_date`).
 
 FRESHNESS IS REPORTED HONESTLY, NOT ASSUMED CURRENT
 ------------------------------------------------------
@@ -408,6 +416,45 @@ def _parse_utc(value: str | datetime) -> datetime:
     return d.astimezone(timezone.utc)
 
 
+def _eastern():
+    """MLB's official timezone, with a fallback for tzdata-less containers
+    (mirrors `src.pipeline.snapshots._eastern` / `official_date`, which is
+    what slate membership -- `official_date(commence)` -- keys games on;
+    duplicated locally rather than imported, matching this project's own
+    per-module convention, e.g. `src.pipeline.{umpirewatch,prop_listing,
+    rosterwatch}`). Every regular-season/postseason first pitch falls
+    inside daylight time, and the only instants a fixed -04:00 fallback
+    gets wrong are 04:00-05:00 UTC (11pm-midnight Eastern), which baseball
+    does not schedule -- exact for the games this project sees."""
+    try:
+        from zoneinfo import ZoneInfo
+
+        return ZoneInfo("America/New_York")
+    except Exception:  # noqa: BLE001 -- no tzdata is a deployment fact, not a bug
+        return timezone(timedelta(hours=-4))
+
+
+_EASTERN = _eastern()
+
+
+def _eastern_date(t_dt: datetime) -> str:
+    """`t_dt`'s calendar date in MLB's own filing timezone (Eastern), as
+    YYYY-MM-DD. B5 fix (2026-09-03): the live pitch store's `game_date`
+    (and every other store `_build_live` reads) files a game under its
+    Eastern official date (`src.pipeline.snapshots.official_date`), but a
+    decision instant `t` is captured in UTC. For any `t` between 00:00Z and
+    ~04:00Z (the previous Eastern evening, e.g. `t=2026-09-01T00:02:08Z` is
+    `2026-08-31T20:02:08` Eastern), `t_dt.date()` -- the bare UTC date -- is
+    the day AFTER the Eastern day `t` actually falls in. Using that UTC
+    date as the pitch-accumulator cutoff (`game_date < cutoff`, strict)
+    then admits every pitch of `t`'s own Eastern day: games still in
+    progress at `t`, and on a backfilled run, the subject game itself --
+    reproduced on 19 of 69 published 2026-08-31/09-01 decisions. Converting
+    to Eastern FIRST, then taking the date, is the fix: it matches the
+    calendar day slate membership (`official_date`) already keys on."""
+    return t_dt.astimezone(_EASTERN).date().isoformat()
+
+
 def _load_handedness(path) -> dict:
     target = Path(path)
     if not target.exists():
@@ -597,11 +644,13 @@ def _build_live(game_pk: str, t: str, sources: FeatureSources) -> dict:
         handedness = _load_handedness(sources.handedness_path)
 
     t_dt = _parse_utc(t)
-    cutoff_date = t_dt.date().isoformat()  # t's own day, and everything
-                                            # after, is excluded entirely --
-                                            # the finest safe truncation this
-                                            # primitive's day-only
-                                            # `game_date` resolution allows.
+    # B5 fix: cutoff must be t's own EASTERN day (`_eastern_date`), not its
+    # bare UTC day -- the pitch store files `game_date` by MLB's Eastern
+    # convention, the same one slate membership keys on
+    # (`src.pipeline.snapshots.official_date`). t's own Eastern day, and
+    # everything after, is excluded entirely -- the finest safe truncation
+    # this primitive's day-only `game_date` resolution allows.
+    cutoff_date = _eastern_date(t_dt)
     day_before_cutoff = _day_before(cutoff_date)
     covered_through = _pitch_coverage_end(sources.statcast_store)
 

@@ -408,15 +408,28 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
         # actually settled something new -- idempotency covers the
         # Scorecard chain too, not only decisions/wagers: a re-run that
         # settled nothing new writes no new (system_id, window) row.
-        all_bets = _reconstruct_settled_bets(system_id, account_ledger_path_fn)
+        all_bets = _reconstruct_settled_bets(
+            system_id, account_ledger_path_fn, as_of_day=date_str)
         system_decisions = tuple(d for d in decisions if d.system_id == system_id)
-        all_reviews = load_reviews(review_path)
+        # B4 fix: `load_reviews` returns the WHOLE shared review chain --
+        # every system's reviews, not just this one's. `decision_key_for`
+        # now embeds `system_id` at index 1 (see scorecard.py), so filter
+        # here too rather than relying on the join alone: a review whose
+        # `decision_key` does not name THIS system can never belong to it.
+        # (A review written before this fix carries a 4-tuple key --
+        # `decision_key[1]` is that key's `market_key`, e.g. "h2h", which
+        # cannot equal a system_id, so it is excluded here too, never
+        # mismatched to this system by accident.)
+        system_reviews = tuple(
+            r for r in load_reviews(review_path)
+            if len(r.decision_key) > 1 and r.decision_key[1] == system_id
+        )
         scorecard, absent = build_scorecard(
             system_id=system_id, world="real", window=date_str,
             point_class="LATE_BOARD", market_key="h2h",
-            bets=all_bets, decisions=system_decisions, reviews=all_reviews,
+            bets=all_bets, decisions=system_decisions, reviews=system_reviews,
         )
-        fitness = _fitness_for(system_id, all_bets, system_decisions, all_reviews)
+        fitness = _fitness_for(system_id, all_bets, system_decisions, system_reviews)
         verdict = promotion_verdict(fitness)
         if newly_settled:
             if scorecard_path is not None:
@@ -472,14 +485,33 @@ def _fitness_for(system_id, bets, decisions, reviews):
     return build_fitness(system_id, bets, decisions, reviews).fitness
 
 
-def _reconstruct_settled_bets(system_id: str, account_ledger_path_fn=None) -> tuple:
+def _reconstruct_settled_bets(system_id: str, account_ledger_path_fn=None,
+                               *, as_of_day: str | None = None) -> tuple:
     """Every `SettledBet` this system's OWN hash-chained ledger has ever
     recorded, in append order -- the source of truth `build_fitness`/
     `build_scorecard` replay, independent of what this particular
-    `run_settle` call newly settled."""
+    `run_settle` call newly settled.
+
+    `as_of_day`, when given, keeps only rows with `row["day"] <= as_of_day`
+    -- the SAME point-in-time cut `src.report.eod.account_day_from_ledger_rows`
+    applies (`row_day is None or row_day > day` -> skip). N5/N6 fix
+    (2026-09-03): without this, a Scorecard's `account` mixed in whatever
+    the ledger happened to hold at CALL time, so a system settled out of
+    calendar order (2026-09-02 settled before 2026-08-31, as this vertical
+    slice's backfill genuinely did) published a `window=2026-08-31`
+    Scorecard whose bankroll/roi/drawdown already included 2026-09-02's
+    settlements -- disagreeing with the EOD report's own as-of-2026-08-31
+    account, and making the 08-31 -> 09-02 fitness "delta" run backwards.
+    Passing `as_of_day=date_str` from `run_settle` makes a Scorecard's
+    account genuinely a snapshot of `date_str`, agreeing with EOD by
+    construction, and restores window order as true chronological order.
+    """
     out = []
     path = _account_ledger_path(system_id, account_ledger_path_fn)
     for row in HashChainLedger(path).read():
+        row_day = row.get("day")
+        if as_of_day is not None and (row_day is None or row_day > as_of_day):
+            continue
         bet = PaperBet(
             bet_id=row["bet_id"], system_id=row["system_id"],
             market_key=row["market_key"], selection_id=row["selection_id"],

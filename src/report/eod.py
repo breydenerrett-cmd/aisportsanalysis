@@ -302,14 +302,28 @@ def build_review(
         ))
     price_vs_close = tuple(sorted(price_vs_close, key=lambda p: p.event_id))
 
+    # N5/N6 fix: an EOD report FOR `date` must never treat a scorecard
+    # window AFTER `date` as "current" (this project's real settle history
+    # ran 2026-09-02 before 2026-08-31, so the naive "sort rows by window,
+    # take the last" published a 2026-08-31 report whose delta read
+    # "2026-08-31 -> 2026-09-02", pulling in a LATER date's numbers as if
+    # they were this date's), and a correction row appended for a window
+    # that already has one (B4's per-system fix, applied without rewriting
+    # ledger history) must supersede the earlier row for that SAME window,
+    # never be averaged or duplicated with it. `scorecards` arrives in the
+    # chain's own append order, so "last row seen for a window" IS "most
+    # recently corrected" by construction.
     by_system: dict = {}
     for sc in scorecards:
-        by_system.setdefault(sc.system_id, []).append(sc)
+        if sc.window > date:
+            continue
+        by_system.setdefault(sc.system_id, {})[sc.window] = sc
     deltas: list = []
-    for system_id, rows in by_system.items():
-        rows_sorted = sorted(rows, key=lambda s: s.window)
-        current = rows_sorted[-1]
-        previous = rows_sorted[-2] if len(rows_sorted) >= 2 else None
+    for system_id, by_window in by_system.items():
+        windows_sorted = sorted(by_window)  # distinct windows, chronological
+        current = by_window[windows_sorted[-1]]
+        previous = (by_window[windows_sorted[-2]]
+                   if len(windows_sorted) >= 2 else None)
         field_deltas = {}
         if previous is not None:
             for field_name in _SCORECARD_DELTA_FIELDS:

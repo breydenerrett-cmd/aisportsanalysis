@@ -237,9 +237,12 @@ def analyze(snapshot: PriceBlindSnapshot, board: PricedBoard, *,
             ))
 
     # 3. ATTACK -- adversaries may veto with a registered cause. FATAL
-    # removes the candidate from RATE/RANK and the counterargument is kept
-    # on the record (never silently dropped).
+    # removes the candidate from RATE/RANK (it can never be staked), but
+    # the veto and its cause are NOT silently dropped: a FATAL-vetoed
+    # candidate is recorded below (verdict=_veto_verdict(cand)) so losers
+    # and refusals are always published, never just survivors.
     survivors: list[Candidate] = []
+    vetoed: list[Candidate] = []
     for cand in candidates:
         cargs: list[Counterargument] = []
         for adversary in adversaries:
@@ -247,7 +250,8 @@ def analyze(snapshot: PriceBlindSnapshot, board: PricedBoard, *,
                 cargs.append(cause)
         cand = replace(cand, counterarguments=tuple(cargs))
         if any(c.severity == FATAL for c in cargs):
-            continue  # vetoed: recorded below as verdict=no_play
+            vetoed.append(cand)
+            continue
         survivors.append(cand)
 
     # 4. RATE -- Bet Rating: probability quality AND price quality, kept as
@@ -279,8 +283,9 @@ def analyze(snapshot: PriceBlindSnapshot, board: PricedBoard, *,
         return (-edge, c.selection_id, c.proposal.system_id)
 
     rated.sort(key=_rank_key)
+    vetoed.sort(key=_rank_key)
 
-    records = tuple(
+    play_records = tuple(
         _to_decision_record(
             cand, snapshot=snapshot, board=board,
             registry_fingerprint=registry_fingerprint,
@@ -289,7 +294,44 @@ def analyze(snapshot: PriceBlindSnapshot, board: PricedBoard, *,
                      else "market_unavailable"))
         for cand in rated
     )
+    # Refusals are always published too (never just survivors/losers): a
+    # FATAL-vetoed candidate becomes its own DecisionRecord, verdict mapped
+    # from its cause (`_veto_verdict`), `refusal_reason` naming the cause,
+    # and the FATAL counterargument(s) still attached.
+    refusal_records = tuple(
+        _to_decision_record(
+            cand, snapshot=snapshot, board=board,
+            registry_fingerprint=registry_fingerprint,
+            frame_fingerprint=frame_fingerprint,
+            verdict=_veto_verdict(cand))
+        for cand in vetoed
+    )
+    records = play_records + refusal_records
     return Analysis(game_pk=snapshot.game_pk, t=snapshot.t, records=records)
+
+
+# FATAL adversary_id -> the specific refused_* verdict registered for it in
+# `src.ledger.records.VERDICTS`. An adversary_id with no entry here still
+# gets published -- as the generic "no_play" -- rather than dropped; this
+# map only sharpens the verdict when a specific one is registered.
+FATAL_VERDICT_BY_ADVERSARY_ID = {
+    "stale_book": "refused_stale",
+    "thin_board": "refused_thin",
+}
+
+
+def _veto_verdict(cand: Candidate) -> str:
+    """The verdict for a FATAL-vetoed candidate: the first FATAL cause's
+    adversary_id, mapped to its registered `refused_*` verdict when one
+    exists, else the generic "no_play". Never `None`, never a candidate
+    silently unrecorded -- this is what makes B/N1's fix real: a refusal
+    is a DecisionRecord like any other, distinguishable from a play only by
+    `verdict`/`refusal_reason`, not by absence from the ledger."""
+    for c in cand.counterarguments:
+        if c.severity == FATAL:
+            return FATAL_VERDICT_BY_ADVERSARY_ID.get(c.adversary_id, "no_play")
+    return "no_play"  # unreachable in practice: vetoed candidates always
+                       # carry >=1 FATAL counterargument by construction
 
 
 def _probability_quality(cand: Candidate) -> float | None:
@@ -390,6 +432,13 @@ def _to_decision_record(cand: Candidate, *, snapshot: PriceBlindSnapshot,
         # unsupported.
         evidence = [proposal.thesis or f"system:{proposal.system_id}"]
 
+    refusal_reason = None
+    if verdict != "play":
+        fatal_causes = [c["cause"] for c in counterarguments
+                        if c["severity"] == FATAL]
+        if fatal_causes:
+            refusal_reason = "; ".join(fatal_causes)
+
     return DecisionRecord(
         engine_version=ENGINE_VERSION,
         system_id=proposal.system_id,
@@ -423,7 +472,7 @@ def _to_decision_record(cand: Candidate, *, snapshot: PriceBlindSnapshot,
         evidence=evidence,
         counterarguments=counterarguments,
         supporting_systems=[proposal.system_id],
-        refusal_reason=None,
+        refusal_reason=refusal_reason,
         assumption_exposure=dict(snapshot.assumption_exposure),
         stake_units=0.0,
         known_at_grade=grade,

@@ -18,6 +18,8 @@ from src.factory.scorecard import (
     NEUTRAL_BRIER,
     NEUTRAL_LOGLOSS,
     ScorecardError,
+    _calibration,
+    _decision_review_pairs,
     build_fitness,
     build_scorecard,
     compute_clv_stats,
@@ -50,9 +52,9 @@ def _loss_bet(bet_id, price_american=-110, stake=1.0):
 
 def _decision(day, *, event_id="evt-x", edge_bps=200, p_model=0.6,
               verdict="play", price_american=-110, known_at_grade="A",
-              point_class="LATE_BOARD"):
+              point_class="LATE_BOARD", system_id="sys-1"):
     return DecisionRecord(
-        engine_version="v1", system_id="sys-1", system_version="1.0.0",
+        engine_version="v1", system_id=system_id, system_version="1.0.0",
         registry_fingerprint="fp1", frame_fingerprint=None,
         snapshot_fingerprint="snap1", game_pk=1, event_id=event_id,
         decision_utc=f"{day}T18:00:00Z", point_class=point_class,
@@ -456,6 +458,85 @@ class BuildScorecardTests(unittest.TestCase):
             "sys-1", "real", "2026-09-03", "LATE_BOARD", "h2h",
             [], [], [], None)
         self.assertLessEqual(scorecard.effective_tests, scorecard.raw_tests)
+
+
+class CrossSystemCalibrationContaminationTests(unittest.TestCase):
+    """B4 regression: two systems that decide the SAME (event_id,
+    market_key, selection_id, decision_utc) -- routine when several genomes
+    evaluate the same board at the same capture instant -- must never share
+    a review. Before the fix, `decision_key_for` omitted `system_id`, so
+    `_decision_review_pairs`/`_calibration` paired one system's decision
+    with the OTHER system's review of that identical key; reproduced on
+    2026-09-03 as `trivial_always_home` (27 settled bets) picking up n=41
+    calibration pairs -- exactly what the published `window=2026-08-31`
+    scorecard carried, and `logloss_vs_market` IS `objective()`.
+    """
+
+    def _same_instant_pair(self, *, outcome_a="win", outcome_b="loss"):
+        # Same event/market/selection/decision_utc -- ONLY system_id
+        # differs, exactly the collision the review describes.
+        decision_a = _decision("2026-08-31", event_id="evt-shared",
+                                system_id="sys-a", p_model=0.6)
+        decision_b = _decision("2026-08-31", event_id="evt-shared",
+                                system_id="sys-b", p_model=0.9)
+        review_a = _review(decision_a, settled=outcome_a)
+        review_b = _review(decision_b, settled=outcome_b)
+        return decision_a, decision_b, review_a, review_b
+
+    def test_decision_key_for_includes_system_id(self):
+        decision_a, decision_b, _, _ = self._same_instant_pair()
+        key_a = decision_key_for(decision_a)
+        key_b = decision_key_for(decision_b)
+        self.assertIn("sys-a", key_a)
+        self.assertIn("sys-b", key_b)
+        self.assertNotEqual(key_a, key_b)
+
+    def test_pairing_never_crosses_systems_at_the_same_instant(self):
+        decision_a, decision_b, review_a, review_b = self._same_instant_pair()
+        # Handing sys-a's decision BOTH systems' reviews (the exact bug:
+        # settle_slate.py handed build_scorecard every system's reviews) --
+        # sys-a must only ever pair with its OWN review.
+        pairs = list(_decision_review_pairs([decision_a], [review_a, review_b]))
+        self.assertEqual(len(pairs), 1)
+        paired_decision, paired_review = pairs[0]
+        self.assertIs(paired_decision, decision_a)
+        self.assertIs(paired_review, review_a)
+
+    def test_calibration_is_not_contaminated_by_the_other_system(self):
+        decision_a, decision_b, review_a, review_b = self._same_instant_pair(
+            outcome_a="win", outcome_b="loss")
+        # sys-a alone: exactly one real pair (its own win).
+        logloss_alone, brier_alone, n_alone = _calibration(
+            [decision_a], [review_a])
+        # sys-a handed BOTH reviews (the bug's exact input shape): must
+        # compute IDENTICALLY -- the other system's (contradictory) loss
+        # must never leak in.
+        logloss_mixed, brier_mixed, n_mixed = _calibration(
+            [decision_a], [review_a, review_b])
+        self.assertEqual(n_alone, 1)
+        self.assertEqual(n_mixed, 1)
+        self.assertEqual(logloss_alone, logloss_mixed)
+        self.assertEqual(brier_alone, brier_mixed)
+
+    def test_build_scorecard_per_system_reviews_never_contaminate(self):
+        decision_a, decision_b, review_a, review_b = self._same_instant_pair(
+            outcome_a="win", outcome_b="loss")
+        bets_a = [_win_bet("wa1")]
+        # sys-a's own scorecard, built from JUST its own review.
+        scorecard_isolated, _ = build_scorecard(
+            "sys-a", "real", "2026-08-31", "LATE_BOARD", "h2h",
+            bets_a, [decision_a], [review_a])
+        # sys-a's scorecard built from the WHOLE shared review chain (both
+        # systems' reviews) -- the exact call shape `run_settle` made
+        # before the fix. Must agree with the isolated computation.
+        scorecard_shared_chain, _ = build_scorecard(
+            "sys-a", "real", "2026-08-31", "LATE_BOARD", "h2h",
+            bets_a, [decision_a], [review_a, review_b])
+        self.assertEqual(scorecard_isolated.logloss_vs_market,
+                         scorecard_shared_chain.logloss_vs_market)
+        self.assertEqual(scorecard_isolated.brier, scorecard_shared_chain.brier)
+        self.assertNotEqual(scorecard_shared_chain.logloss_vs_market,
+                            NEUTRAL_LOGLOSS)
 
 
 if __name__ == "__main__":
