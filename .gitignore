@@ -119,6 +119,17 @@ data/app/*
 # forward-capture stores above.
 !data/processed/gate_results.jsonl
 
+# S1 event_id <-> game_pk map (docs/CHECKPOINT_PHASE0_2026-09-03.md,
+# src/board/gamekey.py): deterministically re-derivable in principle from
+# the odds stores above plus the free MLB schedule endpoint, same as
+# l1_observations.jsonl -- but each row also records the EVIDENCE a
+# resolution decision was made on (which schedule games were candidates, why
+# an event could not be resolved, which pick was ambiguous) at the moment it
+# was computed, which a later schedule correction or alias-table fix could
+# change. Tracked append-only like the forward-capture stores above rather
+# than left to a re-run that would silently lose that evidence.
+!data/processed/event_game_map.jsonl
+
 # Python
 __pycache__/
 *.py[cod]

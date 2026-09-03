@@ -74,6 +74,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
+from src.board import gamekey
 from src.board.project import project_h2h_row, project_line_market_row
 from src.board.record import RecordValidationError, price_observation_from_dict
 from src.capture.cadence import grade_from_gap
@@ -81,6 +82,12 @@ from src.paths import processed_path, raw_path
 
 OUTPUT_PATH = processed_path("l1_observations.jsonl")
 RAW_ROOT = raw_path("oddsapi")
+# S1 (docs/CHECKPOINT_PHASE0_2026-09-03.md): the event_id -> game_pk map
+# `python3 -m src.cli gamekey --date DATE` builds. L1 READS this store; it
+# never resolves against the schedule itself (see gamekey.py's own module
+# docstring on why resolution is a separate, network-touching step kept out
+# of the backfill's own code path).
+EVENT_GAME_MAP_PATH = gamekey.DEFAULT_MAP_PATH
 
 # How close a raw capture's own `captured_utc` must land to a processed row's
 # `observed_utc` to be considered the SAME capture. The raw write happens
@@ -376,6 +383,7 @@ def run(
     sport: str = _DEFAULT_SPORT,
     region: str = _DEFAULT_REGION,
     sources: list[dict] | None = None,
+    game_map_path: Path | str | None = EVENT_GAME_MAP_PATH,
 ) -> dict:
     """Project every source store into `output_path`, appending only rows
     whose `observation_id` is not already present. Returns a report: counts
@@ -385,10 +393,21 @@ def run(
     `sources` overrides SOURCE_STORES (plus the closing_* glob) -- used by
     tests to point at fixture files instead of the real data directory; the
     default (None) is production behavior.
+
+    `game_map_path` points at the event_id -> game_pk store `gamekey.py`
+    builds (S1); pass `None` to skip the lookup entirely (e.g. a caller that
+    deliberately wants every row's game_pk left null). A row's own
+    `observation_id` never depends on its resolved game_pk (see
+    `_observation_id`'s field list) -- game_pk is a join fact about the
+    event, not part of what makes one price observation the observation it
+    is -- so a map built AFTER some rows are already on disk does not
+    retroactively update them; a full backfill re-run (fresh `output_path`)
+    is how an already-written store picks up a newer map.
     """
     output_path = Path(output_path)
     raw_root = Path(raw_root)
     existing_ids = _existing_ids(output_path)
+    game_map = gamekey.load_map(game_map_path) if game_map_path else {}
 
     stores = (list(sources) if sources is not None
               else list(SOURCE_STORES) + _discover_closing_stores(output_path.parent))
@@ -403,6 +422,15 @@ def run(
         "refused": 0,
         "refusals": {},
         "raw_matched": 0,
+        # S1: how many written observations got a real game_pk. "ambiguous"
+        # rows DO carry a game_pk (the nearest-commence_time best guess --
+        # see gamekey.resolve_event) but are counted separately so this
+        # report never hides the uncertainty. "not_in_map" means
+        # `gamekey --date` was never run for this event's date; "map_null"
+        # means it was run and genuinely could not resolve the event
+        # (gamekey.py's own `reason` field on that row says why).
+        "game_pk": {"resolved": 0, "ambiguous": 0, "not_in_map": 0,
+                    "map_null": 0},
     }
     refusals = RefusalReport()
 
@@ -447,6 +475,20 @@ def run(
                 obs["venue_kind"] = "sportsbook"
                 obs["is_close"] = bool(source["is_close"])
                 obs["limit_observed"] = None
+
+                map_entry = game_map.get(str(obs.get("event_id")))
+                if map_entry is None:
+                    obs["game_pk"] = None
+                    report["game_pk"]["not_in_map"] += 1
+                elif map_entry.get("game_pk") is None:
+                    obs["game_pk"] = None
+                    report["game_pk"]["map_null"] += 1
+                else:
+                    obs["game_pk"] = map_entry["game_pk"]
+                    if map_entry.get("ambiguous"):
+                        report["game_pk"]["ambiguous"] += 1
+                    else:
+                        report["game_pk"]["resolved"] += 1
 
                 l0_available, raw_capture_id = _match_raw(obs, raw_root)
                 obs["l0_available"] = l0_available

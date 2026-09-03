@@ -259,5 +259,98 @@ class TestSampleTruncationInputsAndGate(GlueTestBase):
                              for a in sample.arrivals))
 
 
+class TestGamePkMapWiring(GlueTestBase):
+    """S1 (docs/CHECKPOINT_PHASE0_2026-09-03.md): a bare event_id resolves
+    a real game_pk through the event_id -> game_pk map, so `build_snapshot`
+    does a real `as_of` read for a game only ever known by event_id, and
+    `commence_time_for` prefers the schedule's own timing when the map has
+    recorded one. An explicit `game_pk_map` (including `{}`) never touches
+    the real store -- see glue.py's `_load_game_pk_map`."""
+
+    def _map_entry(self, event_id, game_pk, *, ambiguous=False,
+                    schedule_commence_time=None):
+        return {
+            "event_id": event_id, "game_pk": game_pk, "resolved": True,
+            "ambiguous": ambiguous, "schedule_commence_time":
+                schedule_commence_time,
+        }
+
+    def test_build_snapshot_resolves_game_pk_from_an_explicit_map(self):
+        watch_path = Path(self._tmp.name) / "umpires_watch.jsonl"
+        _write_jsonl(watch_path, [
+            {"game_pk": 999, "observed_utc": "2026-09-02T18:00:00Z",
+             "home_plate_umpire": "Jane Doe"},
+        ])
+        stores = [asof_module.StoreSpec(
+            name="umpires_watch", path=watch_path,
+            game_key_of=lambda r: str(r.get("game_pk")) if r.get("game_pk") is not None else None,
+            time_of=lambda r: r.get("observed_utc"),
+            fields={"home_plate_umpire": lambda r: r.get("home_plate_umpire")},
+        )]
+        game_pk_map = {GAME_A: self._map_entry(GAME_A, 999)}
+        # A bare event_id (no explicit game_pk on the ref) resolves through
+        # the map, exactly as a live L1 row (event_id only) would.
+        snapshot = glue.build_snapshot(
+            GAME_A, "2026-09-02T20:00:00Z", as_of_stores=stores,
+            game_pk_map=game_pk_map)
+        self.assertIn("A:home_plate_umpire", snapshot.assumption_exposure)
+
+    def test_build_snapshot_stays_feature_sparse_when_map_has_no_entry(self):
+        snapshot = glue.build_snapshot(
+            GAME_A, "2026-09-02T20:00:00Z", game_pk_map={})
+        self.assertEqual(snapshot.assumption_exposure, {})
+
+    def test_an_explicit_game_pk_on_the_ref_is_never_overridden_by_the_map(self):
+        # The map claims a different game_pk (555); the caller's own
+        # explicit game_pk on the GameRef must win -- the map only fills a
+        # gap, it never second-guesses an already-known id.
+        watch_path = Path(self._tmp.name) / "umpires_watch.jsonl"
+        _write_jsonl(watch_path, [
+            {"game_pk": 999, "observed_utc": "2026-09-02T18:00:00Z",
+             "home_plate_umpire": "Jane Doe"},
+        ])
+        stores = [asof_module.StoreSpec(
+            name="umpires_watch", path=watch_path,
+            game_key_of=lambda r: str(r.get("game_pk")) if r.get("game_pk") is not None else None,
+            time_of=lambda r: r.get("observed_utc"),
+            fields={"home_plate_umpire": lambda r: r.get("home_plate_umpire")},
+        )]
+        ref = glue.GameRef(event_id=GAME_A, game_pk="999")
+        game_pk_map = {GAME_A: self._map_entry(GAME_A, 555)}
+        snapshot = glue.build_snapshot(
+            ref, "2026-09-02T20:00:00Z", as_of_stores=stores,
+            game_pk_map=game_pk_map)
+        self.assertIn("A:home_plate_umpire", snapshot.assumption_exposure)
+
+    def test_commence_time_for_prefers_the_schedule_row_over_the_odds_store(self):
+        _write_jsonl(self.commence_path, [
+            _commence_row(GAME_A, "2026-09-02T23:00:00Z"),
+        ])
+        game_pk_map = {GAME_A: self._map_entry(
+            GAME_A, 999, schedule_commence_time="2026-09-02T23:10:00Z")}
+        commence = glue.commence_time_for(
+            GAME_A, path=self.commence_path, game_pk_map=game_pk_map)
+        self.assertEqual(commence, "2026-09-02T23:10:00Z")
+
+    def test_commence_time_for_falls_back_to_odds_store_without_a_schedule_time(self):
+        _write_jsonl(self.commence_path, [
+            _commence_row(GAME_A, "2026-09-02T23:00:00Z"),
+        ])
+        # Map has resolved the event but recorded no schedule_commence_time
+        # (e.g. a resolution written before that field existed).
+        game_pk_map = {GAME_A: self._map_entry(GAME_A, 999)}
+        commence = glue.commence_time_for(
+            GAME_A, path=self.commence_path, game_pk_map=game_pk_map)
+        self.assertEqual(commence, "2026-09-02T23:00:00Z")
+
+    def test_commence_time_for_with_no_map_entry_uses_odds_store(self):
+        _write_jsonl(self.commence_path, [
+            _commence_row(GAME_A, "2026-09-02T23:00:00Z"),
+        ])
+        commence = glue.commence_time_for(
+            GAME_A, path=self.commence_path, game_pk_map={})
+        self.assertEqual(commence, "2026-09-02T23:00:00Z")
+
+
 if __name__ == "__main__":
     unittest.main()
