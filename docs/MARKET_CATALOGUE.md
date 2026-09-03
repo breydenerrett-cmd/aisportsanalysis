@@ -13,10 +13,13 @@ today), **PROBE** (captured for evidence, not yet priced by any system),
 (named on purpose so it can never be silently added — see
 `ARCHITECTURE_BETTING_ENGINE.md` guard 8, the product data-path guard).
 
-Settlement rules live in `src/board/settle.py` for game-level markets;
+Settlement rules live in `src/board/settle.py` for game-level markets, and in
+`src/board/settle_props.py` for pitcher/batter props; the latter plugs its
+rules into `settle.SETTLEMENT_RULES` via `settle.register_rule`, invoked by
+`settle_props.register_all()` (called automatically on `import src.board`).
 `collection_blocked` means the market is catalogued but has no settlement
-path yet (props await `src/board/settle_props.py`, a different lane's
-deliverable, which plugs in via `settle.register_rule`).
+path at all yet -- today that is only `same_game_parlay`, named on purpose so
+it can never be silently priced.
 
 | Market key | Scope | Subject | Sides | Has line | Settlement rule | Status | Correlation group |
 |---|---|---|---|---|---|---|---|
@@ -32,20 +35,20 @@ deliverable, which plugs in via `settle.register_rule`).
 | `first_inning_run` | first_inning | — | yes/no | no | `first_inning_run` | DECLARED | first_inning |
 | `first_inning_score_home` | first_inning | — | yes/no | no | `first_inning_score_home` | DECLARED | first_inning |
 | `first_inning_score_away` | first_inning | — | yes/no | no | `first_inning_score_away` | DECLARED | first_inning |
-| `pitcher_strikeouts` | game | pitcher | over/under | yes | `collection_blocked` | DECLARED | pitcher_line |
-| `pitcher_outs` | game | pitcher | over/under | yes | `collection_blocked` | DECLARED | pitcher_line |
-| `pitcher_hits_allowed` | game | pitcher | over/under | yes | `collection_blocked` | DECLARED | pitcher_line |
-| `pitcher_earned_runs` | game | pitcher | over/under | yes | `collection_blocked` | DECLARED | pitcher_line |
-| `pitcher_walks` | game | pitcher | over/under | yes | `collection_blocked` | DECLARED | pitcher_line |
-| `batter_hits` | game | batter | over/under | yes | `collection_blocked` | DECLARED | batter_line |
-| `batter_total_bases` | game | batter | over/under | yes | `collection_blocked` | DECLARED | batter_line |
-| `batter_home_runs` | game | batter | over/under | yes | `collection_blocked` | DECLARED | batter_line |
-| `batter_rbis` | game | batter | over/under | yes | `collection_blocked` | DECLARED | batter_line |
-| `batter_runs` | game | batter | over/under | yes | `collection_blocked` | DECLARED | batter_line |
-| `batter_walks` | game | batter | over/under | yes | `collection_blocked` | DECLARED | batter_line |
-| `batter_strikeouts` | game | batter | over/under | yes | `collection_blocked` | DECLARED | batter_line |
-| `batter_stolen_bases` | game | batter | over/under | yes | `collection_blocked` | DECLARED | batter_line |
-| `batter_hits_runs_rbis` | game | batter | over/under | yes | `collection_blocked` | DECLARED | batter_line |
+| `pitcher_strikeouts` | game | pitcher | over/under | yes | `pitcher_strikeouts` | DECLARED | pitcher_line |
+| `pitcher_outs` | game | pitcher | over/under | yes | `pitcher_outs` | DECLARED | pitcher_line |
+| `pitcher_hits_allowed` | game | pitcher | over/under | yes | `pitcher_hits_allowed` | DECLARED | pitcher_line |
+| `pitcher_earned_runs` | game | pitcher | over/under | yes | `pitcher_earned_runs` | DECLARED | pitcher_line |
+| `pitcher_walks` | game | pitcher | over/under | yes | `pitcher_walks` | DECLARED | pitcher_line |
+| `batter_hits` | game | batter | over/under | yes | `batter_hits` | DECLARED | batter_line |
+| `batter_total_bases` | game | batter | over/under | yes | `batter_total_bases` | DECLARED | batter_line |
+| `batter_home_runs` | game | batter | over/under | yes | `batter_home_runs` | DECLARED | batter_line |
+| `batter_rbis` | game | batter | over/under | yes | `batter_rbis` | DECLARED | batter_line |
+| `batter_runs` | game | batter | over/under | yes | `batter_runs` | DECLARED | batter_line |
+| `batter_walks` | game | batter | over/under | yes | `batter_walks` | DECLARED | batter_line |
+| `batter_strikeouts` | game | batter | over/under | yes | `batter_strikeouts` | DECLARED | batter_line |
+| `batter_stolen_bases` | game | batter | over/under | yes | `batter_stolen_bases` | DECLARED | batter_line |
+| `batter_hits_runs_rbis` | game | batter | over/under | yes | `batter_hits_runs_rbis` | DECLARED | batter_line |
 | `same_game_parlay` | game | — | (none) | no | `collection_blocked` | **BLOCKED** | sgp |
 
 ## Gradeable-from source (today)
@@ -57,5 +60,9 @@ deliverable, which plugs in via `settle.register_rule`).
   is the projector another lane's capture code will call once its row shape
   lands (it accepts either a `point` or a `line` field for the line value).
 - `first_inning_*`: settlement rule exists; no capture path.
-- Pitcher/batter props and `same_game_parlay`: no settlement rule in this
-  package by design — see `settle.py` module docstring.
+- Pitcher/batter props: settlement rule exists (`src/board/settle_props.py`,
+  registered into `src.board.settle.SETTLEMENT_RULES` via
+  `settle_props.register_all()`, invoked at import time by
+  `src/board/__init__.py`); no capture path yet, hence still DECLARED.
+- `same_game_parlay`: no settlement rule in this package by design — see
+  `settle.py` module docstring.

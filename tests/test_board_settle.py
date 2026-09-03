@@ -142,11 +142,10 @@ class CollectionBlockedTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             settle(COLLECTION_BLOCKED, "over", result, line="1.5")
 
-    def test_pitcher_strikeouts_is_currently_blocked(self):
-        # Props settle in settle_props.py (a different lane); until that
-        # lane registers a rule, this catalogue entry must be blocked, not
-        # silently pointing at a nonexistent callable.
-        spec = MARKET_CATALOGUE["pitcher_strikeouts"]
+    def test_same_game_parlay_is_currently_blocked(self):
+        # SGP pricing is out of scope by design (guard 8) -- it must stay
+        # blocked, not silently pointing at a nonexistent callable.
+        spec = MARKET_CATALOGUE["same_game_parlay"]
         self.assertEqual(spec.settlement_rule, COLLECTION_BLOCKED)
 
 

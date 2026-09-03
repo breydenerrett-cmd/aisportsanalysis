@@ -119,6 +119,72 @@ def _settle_boolean_stat(row: dict, stat: str, selection: dict) -> str:
     return "loss" if happened else "win"
 
 
+# Catalogue settlement_rule name -> the box-row stat it grades. Every key
+# here matches a MARKET_CATALOGUE market key exactly (props are named the
+# same as their settlement rule -- there is no indirection to keep track
+# of), and every value is a key in PITCHER_STATS or BATTER_STATS above.
+PROP_STAT_RULES: dict[str, str] = {
+    "pitcher_strikeouts": "k",
+    "pitcher_outs": "outs",
+    "pitcher_hits_allowed": "h",
+    "pitcher_earned_runs": "er",
+    "pitcher_walks": "bb",
+    "batter_hits": "h",
+    "batter_total_bases": "total_bases",
+    "batter_home_runs": "hr",
+    "batter_rbis": "rbi",
+    "batter_runs": "r",
+    "batter_walks": "bb",
+    "batter_strikeouts": "k",
+    "batter_stolen_bases": "sb",
+    "batter_hits_runs_rbis": "hits_runs_rbi",
+}
+
+
+def _make_stat_rule(stat: str):
+    """Bind `settle` to one fixed stat, giving a callable(row, selection)
+    that ignores whatever `stat` the caller's selection carries and grades
+    the stat this catalogue entry actually names -- the registry key is the
+    stat, the selection only needs to carry subject_id/line/side."""
+
+    def rule(row, selection):
+        bound_selection = dict(selection, stat=stat)
+        return settle(row, bound_selection)
+
+    rule.__name__ = f"settle_props_{stat}"
+    return rule
+
+
+# The callables registered into src.board.settle.SETTLEMENT_RULES. Built once
+# at import time; register_all() below is what actually plugs them in, kept
+# separate so importing this module never has the side effect of mutating a
+# different module's shared registry.
+PROP_SETTLEMENT_RULES: dict[str, object] = {
+    key: _make_stat_rule(stat) for key, stat in PROP_STAT_RULES.items()
+}
+
+_registered = False
+
+
+def register_all() -> None:
+    """Plug every prop settlement rule into src.board.settle's registry.
+
+    Idempotent: calling this more than once (e.g. because both
+    src.board.__init__ and a direct importer call it) is safe -- register_rule
+    itself already refuses to silently overwrite a *different* callable, and
+    the module-level flag here just avoids the redundant work, not a
+    correctness requirement.
+    """
+    global _registered
+    if _registered:
+        return
+    from src.board import settle as settle_module
+
+    for key, fn in PROP_SETTLEMENT_RULES.items():
+        settle_module.register_rule(key, fn)
+    _registered = True
+
+
 def _parse_line(raw) -> float:
     if not isinstance(raw, str):
         raise SettleError(f"line must be a decimal string, got {raw!r}")
