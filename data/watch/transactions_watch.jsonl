@@ -394,3 +394,29 @@
 {"fetched_utc": "2026-09-03T17:46:21.209470+00:00", "game_date": "2026-09-03", "poll": true}
 {"fetched_utc": "2026-09-03T18:01:24.009838+00:00", "game_date": "2026-09-03", "poll": true}
 {"fetched_utc": "2026-09-03T18:16:31.191875+00:00", "game_date": "2026-09-03", "poll": true}
+{"fetched_utc": "2026-09-03T22:44:35.111082+00:00", "game_date": "2026-09-03", "poll": true}
+{"category": "other", "date": "2026-09-03", "first_seen_utc": "2026-09-03T22:44:35.111082+00:00", "player": "Luis V\u00e1zquez", "player_id": 676679, "team": "BAL", "transaction_id": 941047}
+{"category": "other", "date": "2026-09-03", "first_seen_utc": "2026-09-03T22:44:35.111082+00:00", "player": "Cameron Weston", "player_id": 687721, "team": "NYM", "transaction_id": 941048}
+{"category": "optioned", "date": "2026-09-03", "first_seen_utc": "2026-09-03T22:44:35.111082+00:00", "player": "Cameron Weston", "player_id": 687721, "team": "NYM", "transaction_id": 941051}
+{"category": "designated", "date": "2026-09-03", "first_seen_utc": "2026-09-03T22:44:35.111082+00:00", "player": "Shawn Ross", "player_id": 676566, "team": "NYM", "transaction_id": 941054}
+{"category": "other", "date": "2026-09-03", "first_seen_utc": "2026-09-03T22:44:35.111082+00:00", "player": "Connor Joe", "player_id": 656582, "team": "SEA", "transaction_id": 941056}
+{"category": "other", "date": "2026-09-03", "first_seen_utc": "2026-09-03T22:44:35.111082+00:00", "player": "Nolan Kingham", "player_id": 663884, "team": "SEA", "transaction_id": 941057}
+{"category": "recalled", "date": "2026-09-03", "first_seen_utc": "2026-09-03T22:44:35.111082+00:00", "player": "Deyvison De Los Santos", "player_id": 691277, "team": "MIA", "transaction_id": 941060}
+{"category": "designated", "date": "2026-09-03", "first_seen_utc": "2026-09-03T22:44:35.111082+00:00", "player": "Leo Jim\u00e9nez", "player_id": 677870, "team": "MIA", "transaction_id": 941061}
+{"category": "rehab", "date": "2026-09-03", "first_seen_utc": "2026-09-03T22:44:35.111082+00:00", "player": "Luis Ur\u00edas", "player_id": 649966, "team": "TOR", "transaction_id": 941062}
+{"category": "il_transfer", "date": "2026-09-03", "first_seen_utc": "2026-09-03T22:44:35.111082+00:00", "player": "Keaton Winn", "player_id": 676775, "team": "SF", "transaction_id": 941102}
+{"category": "other", "date": "2026-09-03", "first_seen_utc": "2026-09-03T22:44:35.111082+00:00", "player": "Brett Harris", "player_id": 695391, "team": "SF", "transaction_id": 941103}
+{"category": "rehab", "date": "2026-09-03", "first_seen_utc": "2026-09-03T22:44:35.111082+00:00", "player": "Kyle Karros", "player_id": 691720, "team": "COL", "transaction_id": 941112}
+{"category": "rehab", "date": "2026-09-03", "first_seen_utc": "2026-09-03T22:44:35.111082+00:00", "player": "Richard Lovelady", "player_id": 663992, "team": "WSH", "transaction_id": 941130}
+{"category": "signed", "date": "2026-09-03", "first_seen_utc": "2026-09-03T22:44:35.111082+00:00", "player": "Dominic Fletcher", "player_id": 666150, "team": "CIN", "transaction_id": 941141}
+{"category": "other", "date": "2026-09-03", "first_seen_utc": "2026-09-03T22:44:35.111082+00:00", "player": "Victor Robles", "player_id": 645302, "team": "SEA", "transaction_id": 941148}
+{"category": "optioned", "date": "2026-09-04", "first_seen_utc": "2026-09-03T22:44:35.111082+00:00", "player": "Brett Harris", "player_id": 695391, "team": "SF", "transaction_id": 941104}
+{"fetched_utc": "2026-09-03T22:44:38.141974+00:00", "game_date": "2026-09-03", "poll": true}
+{"fetched_utc": "2026-09-03T22:59:40.929482+00:00", "game_date": "2026-09-03", "poll": true}
+{"category": "other", "date": "2026-09-03", "first_seen_utc": "2026-09-03T22:59:40.929482+00:00", "player": "Stuart Fairchild", "player_id": 656413, "team": "SEA", "transaction_id": 941149}
+{"category": "recalled", "date": "2026-09-03", "first_seen_utc": "2026-09-03T22:59:40.929482+00:00", "player": "Brennen Davis", "player_id": 680695, "team": "SEA", "transaction_id": 941150}
+{"category": "il_placement", "date": "2026-09-03", "first_seen_utc": "2026-09-03T22:59:40.929482+00:00", "player": "Brennen Davis", "player_id": 680695, "team": "SEA", "transaction_id": 941151}
+{"fetched_utc": "2026-09-03T23:14:43.759862+00:00", "game_date": "2026-09-03", "poll": true}
+{"category": "other", "date": "2026-09-03", "first_seen_utc": "2026-09-03T23:14:43.759862+00:00", "player": "Tyler Gilbert", "player_id": 656457, "team": "CWS", "transaction_id": 941160}
+{"category": "other", "date": "2026-09-03", "first_seen_utc": "2026-09-03T23:14:43.759862+00:00", "player": "Ben Rortvedt", "player_id": 666163, "team": "LAD", "transaction_id": 941161}
+{"fetched_utc": "2026-09-03T23:29:46.426330+00:00", "game_date": "2026-09-03", "poll": true}
