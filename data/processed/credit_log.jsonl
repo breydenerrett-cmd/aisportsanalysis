@@ -34,3 +34,8 @@
 {"caller": "prop_prices.run", "credits_remaining": 99557, "credits_used_last": 0, "utc": "2026-09-03T05:44:20.139150Z"}
 {"caller": "batter_props.run", "credits_remaining": 99556, "credits_used_last": 0, "utc": "2026-09-03T05:44:20.842623Z"}
 {"caller": "derivative_markets.run", "credits_remaining": 99541, "credits_used_last": 0, "utc": "2026-09-03T05:44:22.040411Z"}
+{"caller": "dense.run", "credits_remaining": 99517, "credits_used_last": 0, "utc": "2026-09-03T06:22:05.959915Z"}
+{"caller": "prop_listing.run", "credits_remaining": 99517, "credits_used_last": 0, "utc": "2026-09-03T06:22:07.872293Z"}
+{"caller": "prop_prices.run", "credits_remaining": 99517, "credits_used_last": 0, "utc": "2026-09-03T06:22:58.636142Z"}
+{"caller": "batter_props.run", "credits_remaining": 99517, "credits_used_last": 0, "utc": "2026-09-03T06:22:59.105092Z"}
+{"caller": "derivative_markets.run", "credits_remaining": 99517, "credits_used_last": 0, "utc": "2026-09-03T06:22:59.601929Z"}
