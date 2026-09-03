@@ -278,15 +278,16 @@ class _FakeOddsProvider:
     PROP_MARKETS = ("pitcher_strikeouts",)
 
     def __init__(self, remaining_before=53000, billed=6, remaining_after=None,
-                 events=None, fail_fetch=None, configured=True):
+                 events=None, fail_fetch=None, configured=True, payload=None):
         self.remaining_before = remaining_before
         self.billed = billed
         self.remaining_after = (remaining_after if remaining_after is not None
                                  else remaining_before - billed)
         self.events = events if events is not None else [
-            {"id": "g1", "commence_time": "2026-09-03T23:00:00Z"}]
+            {"id": "g1", "commence_time": "2026-09-10T23:00:00Z"}]
         self.fail_fetch = fail_fetch
         self.configured = configured
+        self.payload = payload  # None => build a healthy default per call
         self.calls = []
 
     def status(self, env=None):
@@ -302,7 +303,18 @@ class _FakeOddsProvider:
         self.calls.append((event_id, tuple(markets or ())))
         if self.fail_fetch:
             raise self.OddsProviderError(self.fail_fetch)
-        return ({"id": event_id, "bookmakers": []},
+        if self.payload is not None:
+            payload = self.payload
+        else:
+            # Healthy default: 2 books, each offering every requested
+            # market with one outcome -- non-degenerate unless a test
+            # explicitly asks for a thin `payload` instead.
+            market_list = list(markets or ())
+            book = {"markets": [{"key": m, "outcomes": [{"name": "x", "price": 100}]}
+                                 for m in market_list]}
+            payload = {"id": event_id, "bookmakers": [dict(book, key="book_a"),
+                                                       dict(book, key="book_b")]}
+        return (payload,
                 {"remaining": self.remaining_after, "used": 1, "last": self.billed})
 
 
@@ -397,6 +409,90 @@ class ProbeFamilyTests(unittest.TestCase):
             self.assertIn("probe fetch failed", result["error"])
             recorded = json.loads(path.read_text(encoding="utf-8"))
             self.assertFalse(recorded["families"]["batter_props_floor"]["measured"])
+
+    def test_the_earliest_future_event_past_the_lead_time_is_chosen(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = self._families(folder)
+            events = [
+                {"id": "too_soon", "commence_time": "2026-09-03T12:30:00Z"},  # 30min out
+                {"id": "later", "commence_time": "2026-09-04T01:00:00Z"},
+                {"id": "earliest_eligible", "commence_time": "2026-09-03T13:00:00Z"},
+            ]
+            provider = _FakeOddsProvider(events=events)
+            result = budget.probe_family(
+                "batter_props_floor", provider=provider, now=NOW, families_path=path)
+        self.assertTrue(result["probed"])
+        self.assertEqual(result["event_id"], "earliest_eligible")
+
+    def test_refuses_and_spends_nothing_when_no_event_has_enough_lead_time(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = self._families(folder)
+            events = [{"id": "already_started", "commence_time": "2026-09-03T11:59:00Z"},
+                      {"id": "too_soon", "commence_time": "2026-09-03T12:10:00Z"}]
+            provider = _FakeOddsProvider(events=events)
+            result = budget.probe_family(
+                "batter_props_floor", provider=provider, now=NOW, families_path=path)
+            recorded = json.loads(path.read_text(encoding="utf-8"))
+        self.assertFalse(result["probed"])
+        self.assertIn("commence_time", result["error"])
+        self.assertEqual(provider.calls, [])  # no paid fetch happened
+        self.assertFalse(recorded["families"]["batter_props_floor"]["measured"])
+
+    def test_a_thin_payload_is_recorded_degenerate_and_does_not_satisfy_probe_required(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = self._families(folder)
+            thin_payload = {"id": "g1", "bookmakers": [
+                {"key": "book_a", "markets": [
+                    {"key": "batter_home_runs", "outcomes": [{"name": "x", "price": 100}]}]}]}
+            provider = _FakeOddsProvider(payload=thin_payload)
+            result = budget.probe_family(
+                "batter_props_floor", provider=provider, now=NOW, families_path=path)
+            recorded = json.loads(path.read_text(encoding="utf-8"))
+            cost = budget.family_cost("batter_props_floor", path=path)
+        self.assertTrue(result["probed"])
+        self.assertTrue(result["degenerate"])
+        entry = recorded["families"]["batter_props_floor"]
+        self.assertTrue(entry["degenerate"])
+        self.assertIsNone(cost)
+
+    def test_a_degenerate_probe_does_not_block_a_same_day_reprobe(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = self._families(folder)
+            thin_payload = {"id": "g1", "bookmakers": [
+                {"key": "book_a", "markets": [
+                    {"key": "batter_home_runs", "outcomes": [{"name": "x", "price": 100}]}]}]}
+            provider = _FakeOddsProvider(payload=thin_payload)
+            budget.probe_family("batter_props_floor", provider=provider,
+                                 now=NOW, families_path=path)
+            second = budget.probe_family(
+                "batter_props_floor", provider=provider,
+                now=NOW + dt.timedelta(hours=1), families_path=path)
+        self.assertTrue(second["probed"])
+        self.assertEqual(len(provider.calls), 2)
+
+    def test_a_good_probe_blocks_a_same_day_reprobe_even_after_a_prior_degenerate_one(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = self._families(folder)
+            thin_payload = {"id": "g1", "bookmakers": [
+                {"key": "book_a", "markets": [
+                    {"key": "batter_home_runs", "outcomes": [{"name": "x", "price": 100}]}]}]}
+            provider = _FakeOddsProvider(payload=thin_payload)
+            budget.probe_family("batter_props_floor", provider=provider,
+                                 now=NOW, families_path=path)
+            provider.payload = None  # next call gets the healthy default
+            good = budget.probe_family(
+                "batter_props_floor", provider=provider,
+                now=NOW + dt.timedelta(hours=1), families_path=path)
+            self.assertTrue(good["probed"])
+            self.assertFalse(good["degenerate"])
+            blocked = budget.probe_family(
+                "batter_props_floor", provider=provider,
+                now=NOW + dt.timedelta(hours=2), families_path=path)
+            cost = budget.family_cost("batter_props_floor", path=path)
+        self.assertFalse(blocked["probed"])
+        self.assertIn("already probed today", blocked["error"])
+        self.assertEqual(len(provider.calls), 2)  # no third fetch
+        self.assertIsNotNone(cost)
 
 
 class StatusTests(unittest.TestCase):

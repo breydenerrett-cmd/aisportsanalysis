@@ -203,9 +203,16 @@ def load_families(path=None) -> dict:
 
 
 def family_cost(family: str, path=None) -> Optional[int]:
-    """Measured `credits_per_event` for `family`, or None if unmeasured/unknown."""
+    """Measured `credits_per_event` for `family`, or None if unmeasured/unknown.
+
+    A row recorded from a degenerate probe (see `_payload_shape`) does not
+    count as a measurement: it was priced off a payload too thin to trust
+    (fewer than 2 books, or fewer than 2 of the requested markets actually
+    returned), so `family` stays PROBE_REQUIRED until a real probe replaces
+    it.
+    """
     entry = load_families(path).get(family)
-    if not entry or not entry.get("measured"):
+    if not entry or not entry.get("measured") or entry.get("degenerate"):
         return None
     return entry.get("credits_per_event")
 
@@ -361,10 +368,15 @@ def status(now=None, store=None, families_path=None) -> dict:
     families = load_families(families_path)
     per_family = {}
     for name, entry in families.items():
+        degenerate = bool(entry.get("degenerate"))
+        measured = bool(entry.get("measured")) and not degenerate
         per_family[name] = {
-            "measured": bool(entry.get("measured")),
+            "measured": measured,
             "credits_per_event": entry.get("credits_per_event"),
             "measured_utc": entry.get("measured_utc"),
+            "degenerate": degenerate,
+            "state": ("provisional (degenerate probe)" if degenerate
+                      else ("measured" if measured else "PROBE_REQUIRED")),
         }
     return {
         "monthly_allotment": MONTHLY_ALLOTMENT,
@@ -400,8 +412,48 @@ def _probe_markets(family: str, provider) -> Optional[tuple]:
     return None
 
 
+# Minimum lead time an event must have over "now" to be probe-eligible. A
+# probe against an event whose commence_time has already passed (or is about
+# to) returns a payload thinned by books/markets pulling their lines as the
+# game starts -- exactly the bug this constant fixes: a 03:26Z probe against
+# an event that had gone final at 23:41Z the day before measured 1
+# credit/event off a 1-book, 1-outcome payload. 45 minutes is a conservative
+# floor, not a measured fact; configurable per call for a caller that needs
+# a different margin.
+PROBE_MIN_LEAD_MINUTES = 45
+
+
+def _payload_shape(payload: dict, requested_markets, commence_time=None) -> dict:
+    """Books/markets/outcomes actually returned by a probe fetch, plus the
+    `degenerate` verdict (S17 bugfix): fewer than 2 books, or fewer than 2 of
+    the requested markets actually present, means the payload is too thin to
+    trust as a per-event cost measurement -- most likely an event whose
+    market had already closed or thinned near/after commence_time.
+    """
+    bookmakers = payload.get("bookmakers") or []
+    books = len(bookmakers)
+    requested = set(requested_markets or ())
+    markets_seen = set()
+    outcomes = 0
+    for book in bookmakers:
+        for market in (book.get("markets") or []):
+            key = market.get("key")
+            if key is not None:
+                markets_seen.add(key)
+            outcomes += len(market.get("outcomes") or [])
+    markets_returned = len(markets_seen & requested) if requested else len(markets_seen)
+    degenerate = books < 2 or markets_returned < 2
+    return {
+        "books": books,
+        "markets_returned": markets_returned,
+        "outcomes": outcomes,
+        "commence_time": commence_time or payload.get("commence_time"),
+        "degenerate": degenerate,
+    }
+
+
 def probe_family(family: str, env=None, provider=None, now=None,
-                  families_path=None) -> dict:
+                  families_path=None, min_lead_minutes=PROBE_MIN_LEAD_MINUTES) -> dict:
     """Spend exactly ONE bounded fetch measuring `family`'s real per-event cost.
 
     A real API call: one event, one region, `family`'s market list, via
@@ -409,12 +461,25 @@ def probe_family(family: str, env=None, provider=None, now=None,
     from the provider's own usage headers (never guessed), recorded into
     `config/capture_families.json` as `measured: true`, and printed.
 
+    The event probed is the EARLIEST listed event with `commence_time >= now
+    + min_lead_minutes` -- never an event that has already started or is
+    about to, whose book/outcome count is thinning as lines pull. If no such
+    event exists, this refuses and spends nothing (`list_events` is free;
+    the paid fetch is never reached).
+
+    The payload's shape (books, markets actually returned, outcome count) is
+    recorded on the measured row alongside the cost. A payload with fewer
+    than 2 books or fewer than 2 of the requested markets is `degenerate`:
+    it is recorded for visibility but does NOT satisfy PROBE_REQUIRED (see
+    `family_cost`) and does NOT block a same-day re-probe -- only a
+    non-degenerate measurement does.
+
     Refuses to run twice per family per day (a stored `measured_utc` whose
-    UTC date matches today's is a repeat request, not a re-measurement --
-    re-probing daily would spend real credits on a number that does not
-    change run to run) and respects `CREDIT_FLOOR` (checked before spending,
-    against the free quota read, same ordering every other paid-capture
-    module in this repo uses).
+    UTC date matches today's, from a NON-degenerate measurement, is a
+    repeat request, not a re-measurement -- re-probing daily would spend
+    real credits on a number that does not change run to run) and respects
+    `CREDIT_FLOOR` (checked before spending, against the free quota read,
+    same ordering every other paid-capture module in this repo uses).
     """
     if provider is None:
         from src.providers import odds as provider  # local import: keep this
@@ -430,7 +495,7 @@ def probe_family(family: str, env=None, provider=None, now=None,
     moment = _now(now)
     today = moment.date().isoformat()
     already_measured_utc = entry.get("measured_utc")
-    if entry.get("measured") and already_measured_utc \
+    if entry.get("measured") and not entry.get("degenerate") and already_measured_utc \
             and str(already_measured_utc)[:10] == today:
         return {"family": family, "probed": False,
                 "error": f"already probed today ({already_measured_utc}); "
@@ -467,9 +532,32 @@ def probe_family(family: str, env=None, provider=None, now=None,
     if not listed:
         return {"family": family, "probed": False,
                 "error": "no events available to probe against"}
-    event = sorted(listed, key=lambda e: (e.get("commence_time") or "",
-                                          e.get("id") or ""))[0]
+
+    earliest_start = moment + timedelta(minutes=min_lead_minutes)
+    eligible = []
+    for e in listed:
+        commence = e.get("commence_time")
+        if not commence:
+            continue
+        try:
+            when = datetime.fromisoformat(str(commence).replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        if when.tzinfo is None:
+            when = when.replace(tzinfo=timezone.utc)
+        if when >= earliest_start:
+            eligible.append((when, e))
+    if not eligible:
+        return {"family": family, "probed": False,
+                "error": f"no event with commence_time at least "
+                         f"{min_lead_minutes} minute(s) in the future "
+                         f"({len(listed)} event(s) listed, all too close to "
+                         f"or past commence -- refusing to probe against a "
+                         f"stale/live event); spent nothing"}
+    eligible.sort(key=lambda pair: (pair[0], pair[1].get("id") or ""))
+    event = eligible[0][1]
     event_id = event.get("id")
+    event_commence = event.get("commence_time")
 
     measured_utc = _utc_iso(moment)
     result = {"family": family, "probed": False, "measured_utc": measured_utc,
@@ -494,27 +582,44 @@ def probe_family(family: str, env=None, provider=None, now=None,
 
     creditlog.log(remaining_after_call, billed, f"budget.probe_family:{family}")
 
+    shape = _payload_shape(payload, markets, commence_time=event_commence)
+    degenerate = shape["degenerate"]
+
     recorded = _record_measurement(
         family, credits_per_event,
         source=f"budget.probe_family: live {family} probe against event "
                f"{event_id} ({len(markets)} market(s), 1 region); "
                f"billed={billed!r}, remaining_before={remaining_before!r}, "
-               f"remaining_after={remaining_after_call!r}",
-        measured_utc=measured_utc, families_path=families_path)
+               f"remaining_after={remaining_after_call!r}"
+               + (f"; DEGENERATE PAYLOAD (books={shape['books']}, "
+                  f"markets_returned={shape['markets_returned']}, "
+                  f"outcomes={shape['outcomes']}, does not satisfy "
+                  f"PROBE_REQUIRED, does not block a same-day re-probe)"
+                  if degenerate else ""),
+        measured_utc=measured_utc, families_path=families_path,
+        payload_shape=shape, degenerate=degenerate)
 
     result["probed"] = True
     result["credits_per_event"] = credits_per_event
     result["credits_remaining_after"] = remaining_after_call
+    result["payload_shape"] = shape
+    result["degenerate"] = degenerate
     result["recorded"] = recorded
     return result
 
 
 def _record_measurement(family: str, credits_per_event: int, source: str,
-                          measured_utc: str, families_path=None) -> bool:
+                          measured_utc: str, families_path=None,
+                          payload_shape: Optional[dict] = None,
+                          degenerate: bool = False) -> bool:
     """Persist a real measurement into config/capture_families.json.
 
     Never called by anything except a completed `probe_family` fetch --
-    this is the only path that may set `measured: true`.
+    this is the only path that may set `measured: true`. `measured` is set
+    True regardless of `degenerate` (the fetch DID happen and DID cost a
+    credit -- that fact is real); `degenerate` is a separate flag that
+    `family_cost`/`can_spend` check to decide whether this row may satisfy
+    PROBE_REQUIRED.
     """
     target = Path(families_path if families_path is not None else FAMILIES_CONFIG_PATH)
     try:
@@ -525,6 +630,8 @@ def _record_measurement(family: str, credits_per_event: int, source: str,
             "credits_per_event": credits_per_event,
             "measured_utc": measured_utc,
             "source": source,
+            "degenerate": degenerate,
+            "payload_shape": payload_shape,
         }
         target.write_text(json.dumps(data, indent=2, sort_keys=False) + "\n",
                            encoding="utf-8")
