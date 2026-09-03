@@ -163,31 +163,31 @@ MARKET_CATALOGUE: dict[str, MarketSpec] = {
         scope="game", shape="line_two_way", subject_kind="batter",
         sides=("over", "under"), has_line=True,
         settlement_rule="batter_hits", correlation_group="batter_line",
-        status="DECLARED",
+        status="PROBE",
     ),
     "batter_total_bases": MarketSpec(
         scope="game", shape="line_two_way", subject_kind="batter",
         sides=("over", "under"), has_line=True,
         settlement_rule="batter_total_bases", correlation_group="batter_line",
-        status="DECLARED",
+        status="PROBE",
     ),
     "batter_home_runs": MarketSpec(
         scope="game", shape="line_two_way", subject_kind="batter",
         sides=("over", "under"), has_line=True,
         settlement_rule="batter_home_runs", correlation_group="batter_line",
-        status="DECLARED",
+        status="PROBE",
     ),
     "batter_rbis": MarketSpec(
         scope="game", shape="line_two_way", subject_kind="batter",
         sides=("over", "under"), has_line=True,
         settlement_rule="batter_rbis", correlation_group="batter_line",
-        status="DECLARED",
+        status="PROBE",
     ),
     "batter_runs": MarketSpec(
         scope="game", shape="line_two_way", subject_kind="batter",
         sides=("over", "under"), has_line=True,
         settlement_rule="batter_runs", correlation_group="batter_line",
-        status="DECLARED",
+        status="PROBE",  # provider key: batter_runs_scored (src.pipeline.batter_props)
     ),
     "batter_walks": MarketSpec(
         scope="game", shape="line_two_way", subject_kind="batter",
@@ -211,7 +211,7 @@ MARKET_CATALOGUE: dict[str, MarketSpec] = {
         scope="game", shape="line_two_way", subject_kind="batter",
         sides=("over", "under"), has_line=True,
         settlement_rule="batter_hits_runs_rbis", correlation_group="batter_line",
-        status="DECLARED",
+        status="PROBE",
     ),
     # --- Correlated-parlay products: named so they can never be silently
     # added by a future contributor who finds the provider sends them. SGP

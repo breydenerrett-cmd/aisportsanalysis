@@ -64,7 +64,12 @@ class CatalogueResolvesToCallableTests(unittest.TestCase):
         for key in prop_keys:
             spec = MARKET_CATALOGUE[key]
             self.assertNotEqual(spec.settlement_rule, COLLECTION_BLOCKED)
-            self.assertEqual(spec.status, "DECLARED")
+            # DECLARED: settlement-mapped, capture not yet wired. PROBE: the
+            # six batter markets src.pipeline.batter_props now captures
+            # (owner decision 3, 2026-09-03) graduate past DECLARED without
+            # losing settlement wiring, which is what this test actually
+            # checks.
+            self.assertIn(spec.status, ("DECLARED", "PROBE"))
             self.assertTrue(callable(SETTLEMENT_RULES[spec.settlement_rule]))
 
 
