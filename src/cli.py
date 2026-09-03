@@ -1952,6 +1952,81 @@ def cmd_health(args) -> int:
     return EXIT_OK if result["healthy"] else EXIT_ERROR
 
 
+def _load_system_import(spec: str):
+    """`spec` is `"module.path:attr"`. `attr` may be an `AnalysisSystem`
+    instance directly, or a zero-argument callable that returns one --
+    tried in that order so a plain module-level instance needs no factory
+    wrapper. Returns `(system, factory_spec_or_None)`: `factory_spec` is
+    `spec` itself when `attr` was callable (so the determinism check can
+    reconstruct it in a fresh process), else `None`."""
+    import importlib
+    if ":" not in spec:
+        raise SystemExit(f"SYSTEM must be 'module.path:attr', got {spec!r}")
+    module_name, attr_name = spec.split(":", 1)
+    module = importlib.import_module(module_name)
+    try:
+        attr = getattr(module, attr_name)
+    except AttributeError as exc:
+        raise SystemExit(f"{module_name!r} has no attribute {attr_name!r}: "
+                          f"{exc}") from None
+    if callable(attr) and not hasattr(attr, "propose"):
+        return attr(), spec
+    return attr, None
+
+
+def _synthetic_conformance_snapshots(system):
+    """A small, self-contained sample of `PriceBlindSnapshot`s covering
+    `system.declared_inputs`/`declared_markets` with plain synthetic values.
+    Conformance checks purity/blindness/schema/declared-inputs shape, not
+    a specific model output, so a fixed synthetic sample is sufficient and
+    reproducible -- it never touches disk or the network."""
+    from src.engine.snapshot import PriceBlindSnapshot
+
+    declared_inputs = tuple(getattr(system, "declared_inputs", ()) or ())
+    declared_markets = tuple(getattr(system, "declared_markets", ()) or ("h2h",))
+    books_by_market = {m: 3 for m in declared_markets}
+    snapshots = []
+    for i, value in enumerate((0.0, 0.5, 1.0)):
+        features = {name: value + 0.01 * i for name in declared_inputs}
+        snapshots.append(PriceBlindSnapshot(
+            game_pk=str(1000 + i), t=f"2026-04-{11 + i:02d}T20:00:00Z",
+            point_class="LATE_BOARD", features=features,
+            available_markets=declared_markets,
+            books_by_market=books_by_market,
+            lineup_posted=True,
+        ))
+    return snapshots
+
+
+def cmd_engine(args) -> int:
+    if args.engine_command == "conform":
+        from src.engine.conformance import run_conformance
+
+        system, factory_spec = _load_system_import(args.system)
+        snapshots = _synthetic_conformance_snapshots(system)
+        result = run_conformance(system, snapshots, system_factory=factory_spec)
+        print(f"conformance: {result.system_id} "
+              f"{'PASS' if result.passed else 'FAIL'}")
+        for check in result.checks:
+            status = "PASS" if check.passed else "FAIL"
+            print(f"  [{status}] {check.name}")
+            for reason in check.reasons:
+                print(f"      {reason}")
+        return EXIT_OK if result.passed else EXIT_ERROR
+
+    if args.engine_command == "truncation":
+        print(f"engine truncation --date {args.date} --sample {args.sample}")
+        print("  no forward capture store in this environment carries "
+              "point-in-time snapshots at both T and T-2h for a sampled "
+              "corpus on this date -- refusing to fabricate a sample. "
+              "Build TruncationSample objects from real as_of()/board reads "
+              "and call src.engine.truncation.truncation_differential(...) "
+              "directly, or wire a data source here, once one exists.")
+        return EXIT_ERROR
+
+    raise SystemExit(f"unknown engine subcommand {args.engine_command!r}")
+
+
 def cmd_calibration_demo(args) -> int:
     """Show the calibration metrics working on synthetic data.
 
@@ -2210,6 +2285,23 @@ def build_parser() -> argparse.ArgumentParser:
                         help="only project rows observed on/after this "
                              "YYYY-MM-DD (UTC official date)")
 
+    engine_cmd = sub.add_parser(
+        "engine", help="engine conformance and truncation-differential checks")
+    engine_sub = engine_cmd.add_subparsers(dest="engine_command", required=True)
+
+    engine_conform = engine_sub.add_parser(
+        "conform", help="run the conformance suite against a system")
+    engine_conform.add_argument(
+        "system", metavar="SYSTEM",
+        help="'module.path:attr' -- an AnalysisSystem instance, or a "
+             "zero-argument callable that returns one")
+
+    engine_truncation = engine_sub.add_parser(
+        "truncation", help="run the truncation-differential leakage gate (G4)")
+    engine_truncation.add_argument("--date", required=True, help="YYYY-MM-DD")
+    engine_truncation.add_argument("--sample", type=int, default=10,
+                                   help="number of games to sample")
+
     return parser
 
 
@@ -2246,6 +2338,7 @@ COMMANDS = {
     "budget": cmd_budget,
     "cadence": cmd_cadence,
     "l1": cmd_l1,
+    "engine": cmd_engine,
 }
 
 
