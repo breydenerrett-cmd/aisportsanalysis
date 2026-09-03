@@ -113,10 +113,10 @@ def cmd_budget(args) -> int:
     """Credit envelope status, or (--probe) a single measured probe."""
     if getattr(args, "probe", None):
         family = args.probe
-        print(f"budget --probe {family}: NOT executing a live probe from "
-              f"this command path in this build -- src.capture.budget."
-              f"probe_family exists but its per-family fetch is unwired "
-              f"(see that function's docstring). No credit spent.")
+        print(f"budget --probe {family}: one bounded, real, 1-event fetch "
+              f"against the odds provider -- src.capture.budget.probe_family. "
+              f"Refuses to run twice per family per day and respects "
+              f"CREDIT_FLOOR before spending anything.")
         result = budget_module.probe_family(family)
         print(f"  {result}")
         return EXIT_ERROR if not result.get("probed") else EXIT_OK

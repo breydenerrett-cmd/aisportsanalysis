@@ -51,6 +51,12 @@ FORWARD_EVIDENCE = (
     "data/processed/weather_forecast.jsonl",
     "data/processed/prop_prices.jsonl",
     "data/processed/credit_log.jsonl",
+    # Batter-prop capture (owner decision 3, 2026-09-03): the raw/marker
+    # store and the projected price store are exactly as unbackfillable as
+    # every other forward store above -- a batter prop observed at a moment
+    # cannot be refetched after the fact either.
+    "data/processed/batter_props_raw.jsonl",
+    "data/processed/batter_props.jsonl",
     "data/watch/probables_watch.jsonl",
     "data/watch/lineups_watch.jsonl",
     "data/watch/transactions_watch.jsonl",

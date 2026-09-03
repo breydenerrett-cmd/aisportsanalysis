@@ -444,10 +444,17 @@ class ProviderSupportTests(unittest.TestCase):
             self.assertNotIn(market, odds.EVENT_MARKETS)
 
     def test_the_rest_of_the_prop_catalogue_is_still_rejected(self):
-        # Support was extended by exactly one key, for exactly one audit.
-        for market in ("batter_home_runs", "pitcher_outs", "player_props"):
+        # Support was extended by exactly the listing audit's one key plus
+        # the batter-prop capture's six keys (src.pipeline.batter_props,
+        # owner decision 3, 2026-09-03) -- everything else stays rejected.
+        for market in ("pitcher_outs", "player_props"):
             with self.assertRaises(odds.OddsProviderError):
                 odds._validate_markets([market], allow_event_markets=True)
+
+    def test_batter_prop_markets_are_now_supported_for_batter_props_py(self):
+        # odds.BATTER_MARKETS is validated for src.pipeline.batter_props;
+        # not this audit's own market, but must not be silently rejected.
+        odds._validate_markets(["batter_home_runs"], allow_event_markets=True)
 
     def test_a_prop_fetch_costs_one_credit_per_event(self):
         est = odds.estimate_event_credits(3, markets=["pitcher_strikeouts"])

@@ -267,6 +267,138 @@ class RotatedFloorGamesTests(unittest.TestCase):
         self.assertEqual(budget.rotated_floor_games([], "2026-09-03"), [])
 
 
+class _FakeOddsProvider:
+    """Minimal odds_provider stand-in for probe_family: no network, ever."""
+
+    class OddsProviderError(RuntimeError):
+        pass
+
+    BATTER_MARKETS = ("batter_hits", "batter_total_bases", "batter_home_runs",
+                       "batter_rbis", "batter_runs_scored", "batter_hits_runs_rbis")
+    PROP_MARKETS = ("pitcher_strikeouts",)
+
+    def __init__(self, remaining_before=53000, billed=6, remaining_after=None,
+                 events=None, fail_fetch=None, configured=True):
+        self.remaining_before = remaining_before
+        self.billed = billed
+        self.remaining_after = (remaining_after if remaining_after is not None
+                                 else remaining_before - billed)
+        self.events = events if events is not None else [
+            {"id": "g1", "commence_time": "2026-09-03T23:00:00Z"}]
+        self.fail_fetch = fail_fetch
+        self.configured = configured
+        self.calls = []
+
+    def status(self, env=None):
+        return {"configured": self.configured}
+
+    def quota(self, env=None):
+        return {"remaining": self.remaining_before, "last": 1}
+
+    def list_events(self, env=None):
+        return self.events
+
+    def fetch_event_odds_with_usage(self, event_id, markets=None, env=None):
+        self.calls.append((event_id, tuple(markets or ())))
+        if self.fail_fetch:
+            raise self.OddsProviderError(self.fail_fetch)
+        return ({"id": event_id, "bookmakers": []},
+                {"remaining": self.remaining_after, "used": 1, "last": self.billed})
+
+
+class ProbeFamilyTests(unittest.TestCase):
+    def _families(self, folder, extra=None):
+        families = {"batter_props_floor": {"measured": False,
+                                            "credits_per_event": None,
+                                            "measured_utc": None}}
+        if extra:
+            families.update(extra)
+        return _write_families(folder, families)
+
+    def test_a_real_probe_measures_and_records_the_credit_delta(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = self._families(folder)
+            provider = _FakeOddsProvider(remaining_before=53000, billed=6)
+            result = budget.probe_family(
+                "batter_props_floor", provider=provider, now=NOW, families_path=path)
+            self.assertTrue(result["probed"])
+            self.assertEqual(result["credits_per_event"], 6)
+            self.assertEqual(len(provider.calls), 1)
+            self.assertEqual(provider.calls[0][0], "g1")
+            self.assertEqual(set(provider.calls[0][1]), set(provider.BATTER_MARKETS))
+            recorded = json.loads(path.read_text(encoding="utf-8"))
+            entry = recorded["families"]["batter_props_floor"]
+            self.assertTrue(entry["measured"])
+            self.assertEqual(entry["credits_per_event"], 6)
+
+    def test_a_second_probe_the_same_utc_day_is_refused_without_spending(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = self._families(folder)
+            provider = _FakeOddsProvider()
+            budget.probe_family("batter_props_floor", provider=provider,
+                                 now=NOW, families_path=path)
+            second = budget.probe_family(
+                "batter_props_floor", provider=provider,
+                now=NOW + dt.timedelta(hours=2), families_path=path)
+        self.assertFalse(second["probed"])
+        self.assertIn("already probed today", second["error"])
+        self.assertEqual(len(provider.calls), 1)  # no second fetch
+
+    def test_a_probe_the_next_utc_day_is_allowed(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = self._families(folder)
+            provider = _FakeOddsProvider()
+            budget.probe_family("batter_props_floor", provider=provider,
+                                 now=NOW, families_path=path)
+            second = budget.probe_family(
+                "batter_props_floor", provider=provider,
+                now=NOW + dt.timedelta(days=1), families_path=path)
+        self.assertTrue(second["probed"])
+        self.assertEqual(len(provider.calls), 2)
+
+    def test_the_credit_floor_refuses_the_probe_before_any_spend(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = self._families(folder)
+            provider = _FakeOddsProvider(remaining_before=budget.CREDIT_FLOOR)
+            result = budget.probe_family(
+                "batter_props_floor", provider=provider, now=NOW, families_path=path)
+        self.assertFalse(result["probed"])
+        self.assertEqual(result["error"], "credit floor")
+        self.assertEqual(provider.calls, [])
+
+    def test_an_unknown_family_is_refused(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = self._families(folder)
+            provider = _FakeOddsProvider()
+            result = budget.probe_family(
+                "not_a_real_family", provider=provider, now=NOW, families_path=path)
+        self.assertFalse(result["probed"])
+        self.assertIn("unknown family", result["error"])
+
+    def test_a_family_with_no_known_market_list_is_refused_not_guessed(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = self._families(folder, extra={
+                "team_totals": {"measured": False, "credits_per_event": None,
+                                 "measured_utc": None}})
+            provider = _FakeOddsProvider()
+            result = budget.probe_family(
+                "team_totals", provider=provider, now=NOW, families_path=path)
+        self.assertFalse(result["probed"])
+        self.assertIn("not wired", result["error"])
+        self.assertEqual(provider.calls, [])
+
+    def test_a_failed_fetch_is_reported_not_recorded(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = self._families(folder)
+            provider = _FakeOddsProvider(fail_fetch="boom")
+            result = budget.probe_family(
+                "batter_props_floor", provider=provider, now=NOW, families_path=path)
+            self.assertFalse(result["probed"])
+            self.assertIn("probe fetch failed", result["error"])
+            recorded = json.loads(path.read_text(encoding="utf-8"))
+            self.assertFalse(recorded["families"]["batter_props_floor"]["measured"])
+
+
 class StatusTests(unittest.TestCase):
     def test_status_never_raises_with_a_missing_config_or_log(self):
         with tempfile.TemporaryDirectory() as folder:

@@ -388,17 +388,34 @@ def status(now=None, store=None, families_path=None) -> dict:
 # The probe (implemented, never invoked by this change)
 # ---------------------------------------------------------------------------
 
+# Which markets a probe of `family` fetches, and where those keys live.
+# Only families with a real per-event, per-market odds_provider entry point
+# are probeable this way -- a family with no market list (parlay_sgp,
+# team_totals, f5_trio) is not wired here and returns an explicit error
+# rather than guessing a market to call.
+def _probe_markets(family: str, provider) -> Optional[tuple]:
+    if family in ("batter_props_floor", "batter_props_extra", "batter_props"):
+        return provider.BATTER_MARKETS
+    if family == "pitcher_props":
+        return provider.PROP_MARKETS
+    return None
+
+
 def probe_family(family: str, env=None, provider=None, now=None,
                   families_path=None) -> dict:
-    """Spend exactly ONE credit measuring `family`'s real per-event cost.
+    """Spend exactly ONE bounded fetch measuring `family`'s real per-event cost.
 
-    A real API call. Only runs when explicitly invoked via
-    `python3 -m src.cli budget --probe <family>` -- never as a side effect
-    of `can_spend`, `status`, or anything on a scheduled path. Records the
-    measured cost into config/capture_families.json with a UTC timestamp and
-    the caller's own accounting of what it cost (never a guessed number).
+    A real API call: one event, one region, `family`'s market list, via
+    `odds_provider.fetch_event_odds_with_usage`. The credit delta is read
+    from the provider's own usage headers (never guessed), recorded into
+    `config/capture_families.json` as `measured: true`, and printed.
 
-    NOT RUN in this change (zero live credits in this lane).
+    Refuses to run twice per family per day (a stored `measured_utc` whose
+    UTC date matches today's is a repeat request, not a re-measurement --
+    re-probing daily would spend real credits on a number that does not
+    change run to run) and respects `CREDIT_FLOOR` (checked before spending,
+    against the free quota read, same ordering every other paid-capture
+    module in this repo uses).
     """
     if provider is None:
         from src.providers import odds as provider  # local import: keep this
@@ -410,6 +427,23 @@ def probe_family(family: str, env=None, provider=None, now=None,
         return {"family": family, "probed": False,
                 "error": f"unknown family {family!r}; add it to "
                          f"config/capture_families.json first"}
+
+    moment = _now(now)
+    today = moment.date().isoformat()
+    already_measured_utc = entry.get("measured_utc")
+    if entry.get("measured") and already_measured_utc \
+            and str(already_measured_utc)[:10] == today:
+        return {"family": family, "probed": False,
+                "error": f"already probed today ({already_measured_utc}); "
+                         f"refusing to run a second probe for {family!r} "
+                         f"on the same UTC day",
+                "credits_per_event": entry.get("credits_per_event")}
+
+    markets = _probe_markets(family, provider)
+    if markets is None:
+        return {"family": family, "probed": False,
+                "error": f"probe fetch not wired for family {family!r} -- "
+                         f"no known odds_provider market list for it"}
 
     status_now = provider.status(env)
     if not status_now.get("configured"):
@@ -426,19 +460,53 @@ def probe_family(family: str, env=None, provider=None, now=None,
         return {"family": family, "probed": False,
                 "error": "credit floor", "credits_remaining": remaining_before}
 
-    measured_utc = _utc_iso(_now(now))
-    result = {"family": family, "probed": True, "measured_utc": measured_utc,
+    try:
+        listed = provider.list_events(env)  # free
+    except provider.OddsProviderError as exc:
+        return {"family": family, "probed": False,
+                "error": "events unreadable", "message": str(exc)}
+    if not listed:
+        return {"family": family, "probed": False,
+                "error": "no events available to probe against"}
+    event = sorted(listed, key=lambda e: (e.get("commence_time") or "",
+                                          e.get("id") or ""))[0]
+    event_id = event.get("id")
+
+    measured_utc = _utc_iso(moment)
+    result = {"family": family, "probed": False, "measured_utc": measured_utc,
+              "event_id": event_id, "markets": list(markets),
               "credits_remaining_before": remaining_before}
 
-    # The exact one-event, one-credit fetch is family-specific (different
-    # families hit different odds_provider entry points with different
-    # market keys) and is intentionally NOT implemented here: this lane
-    # ships the gate and the recording path, not a live spend. A caller
-    # wiring this up for real fills in the per-family fetch, then calls
-    # `_record_measurement` below with what the API actually billed.
-    result["error"] = ("probe fetch not wired for this family in this build; "
-                        "no credit was spent")
-    result["probed"] = False
+    try:
+        payload, usage = provider.fetch_event_odds_with_usage(
+            event_id, markets=markets, env=env)
+    except provider.OddsProviderError as exc:
+        result["error"] = f"probe fetch failed: {exc}"
+        return result
+
+    billed = (usage or {}).get("last")
+    remaining_after_call = (usage or {}).get("remaining")
+    if billed is not None:
+        credits_per_event = billed
+    elif remaining_before is not None and remaining_after_call is not None:
+        credits_per_event = max(remaining_before - remaining_after_call, 0)
+    else:
+        credits_per_event = len(markets)  # last-resort, conservative estimate
+
+    creditlog.log(remaining_after_call, billed, f"budget.probe_family:{family}")
+
+    recorded = _record_measurement(
+        family, credits_per_event,
+        source=f"budget.probe_family: live {family} probe against event "
+               f"{event_id} ({len(markets)} market(s), 1 region); "
+               f"billed={billed!r}, remaining_before={remaining_before!r}, "
+               f"remaining_after={remaining_after_call!r}",
+        measured_utc=measured_utc, families_path=families_path)
+
+    result["probed"] = True
+    result["credits_per_event"] = credits_per_event
+    result["credits_remaining_after"] = remaining_after_call
+    result["recorded"] = recorded
     return result
 
 

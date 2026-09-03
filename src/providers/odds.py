@@ -89,9 +89,20 @@ EVENT_MARKETS = ("h2h_1st_5_innings", "spreads_1st_5_innings", "totals_1st_5_inn
 # when a registered need names them, not in anticipation.
 PROP_MARKETS = ("pitcher_strikeouts",)
 
+# Batter-prop markets. Per-event only, same billing shape as PROP_MARKETS
+# (markets x regions PER EVENT). Named here for src/pipeline/batter_props.py,
+# the bounded capture approved by owner decision 3 (2026-09-03): a
+# non-droppable floor of 2 rotated games/night plus a droppable "extra"
+# family, both gated through src.capture.budget. Six keys, matching
+# docs/planning/attack.md S17 and the batter_* entries already DECLARED in
+# src.board.ids.MARKET_CATALOGUE.
+BATTER_MARKETS = ("batter_hits", "batter_total_bases", "batter_home_runs",
+                   "batter_rbis", "batter_runs_scored", "batter_hits_runs_rbis")
+
 # Markets the featured /odds endpoint does NOT serve, whatever the caller
-# intends. Both families 422 there, and both bill per event on /events/{id}/odds.
-EVENT_ONLY_MARKETS = EVENT_MARKETS + PROP_MARKETS
+# intends. All three families 422 there, and all bill per event on
+# /events/{id}/odds.
+EVENT_ONLY_MARKETS = EVENT_MARKETS + PROP_MARKETS + BATTER_MARKETS
 
 # Everything a caller may legitimately name. Kept separate from DEFAULT_MARKETS,
 # which is what gets requested when nothing is configured -- conflating "allowed"

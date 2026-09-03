@@ -336,3 +336,38 @@ calls this project already makes (`normalize_event`'s `all_books` section is
 market-agnostic and was already computing this in memory; `_get_json`/
 `_get_json_with_usage` already decode the full response body). No new
 endpoint, market, region, or call frequency was added.
+
+**Batter props (owner decision 3, 2026-09-03).** Approved to capture now,
+inside the existing ~900/day envelope, with hard guards. `src/pipeline/batter_props.py`
+fetches `src.providers.odds.BATTER_MARKETS` (`batter_hits`, `batter_total_bases`,
+`batter_home_runs`, `batter_rbis`, `batter_runs_scored`, `batter_hits_runs_rbis`
+-- six keys, one call per event, 6 credits/event at the default single
+region) for two families, both gated through `src.capture.budget.can_spend`:
+
+- `batter_props_floor` -- `budget.NON_DROPPABLE_FAMILY`, a deterministically
+  rotated slice of 2 games/night (`budget.rotated_floor_games`), never
+  dropped under a squeeze (S17), bypassing the floor/envelope check by
+  `can_spend`'s existing design but still refusing to spend unmeasured.
+- `batter_props_extra` -- up to 4 more games/night, fully gated by the
+  credit floor and the daily envelope, and the family DROP_ORDER sheds
+  first among the batter surfaces (rank 7).
+
+Both families are `PROBE_REQUIRED` until `python3 -m src.cli budget --probe
+batter_props_floor` (or `--probe batter_props_extra`) records a real,
+one-event measured cost into `config/capture_families.json` -- see
+`src.capture.budget.probe_family`, which now performs that one bounded
+fetch for real, refuses to run twice per family per day, and respects
+`CREDIT_FLOOR`. A `PROBE_REQUIRED` condition never fails the capture; it
+prints one status line (`scripts/capture_extras.sh`, `BATTER_PROPS=1`) and
+the run continues under the same "capped, self-auditing layer with its own
+approval" convention `prop_prices.py` already established.
+
+Raw responses land in `data/raw/oddsapi/...` (L0, via
+`fetch_event_odds_with_usage`'s existing `_write_raw_capture`) before this
+module's own marker (L1, one per billed fetch) and projection (L2,
+`data/processed/batter_props.jsonl`: one row per event/market/book/selection/
+line/last_update, keyed for idempotency on exactly that tuple) touch it.
+`src.board.ids.MARKET_CATALOGUE`'s six batter-prop entries this path
+captures move from `DECLARED` to `PROBE`; the remaining batter markets
+(`batter_walks`, `batter_strikeouts`, `batter_stolen_bases`) stay
+`DECLARED` -- named and settlement-mapped, capture not yet wired.
