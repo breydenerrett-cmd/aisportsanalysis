@@ -168,7 +168,13 @@ class TestAdversaries(unittest.TestCase):
         system = _RecordingSystem((Proposal(
             system_id="s1", system_version="1", market_key="h2h",
             side="home", p_model=0.7),))
-        analysis = analyze(_snapshot(), _board(), systems=(system,),
+        # assumption_exposure set (grade A on its own terms) so this test's
+        # counterargument count isolates the adversary's own MINOR note from
+        # the separate "no as_of read" counterargument analyze() adds when a
+        # snapshot's grade is downgraded for having no read at all (see
+        # TestProvenance below).
+        snap = _snapshot(assumption_exposure={"A:x": 1})
+        analysis = analyze(snap, _board(), systems=(system,),
                            adversaries=(_MinorAdversary(),))
         self.assertEqual(len(analysis.records), 1)
         self.assertEqual(len(analysis.records[0].counterarguments), 1)
@@ -209,6 +215,38 @@ class TestProvenance(unittest.TestCase):
         analysis = analyze(snap, _board(), systems=(system,))
         self.assertEqual(
             analysis.records[0].assumption_exposure, {"D:home_lineup": 1})
+
+    def test_no_asof_read_grades_d_not_a(self):
+        """Regression for bug #1: an empty `assumption_exposure` with no
+        as_of read (`asof_read=False`, the dataclass default) must NOT fail
+        open to grade A -- there is zero evidence anything was graded at
+        all. It must grade D and the record must carry a counterargument
+        naming the missing read."""
+        system = _RecordingSystem((Proposal(
+            system_id="s1", system_version="1", market_key="h2h",
+            side="home", p_model=0.6),))
+        snap = _snapshot(assumption_exposure={})  # asof_read defaults False
+        analysis = analyze(snap, _board(), systems=(system,))
+        record = analysis.records[0]
+        self.assertEqual(record.known_at_grade, "D")
+        self.assertTrue(any(
+            c["cause"].startswith("no_asof_read")
+            for c in record.counterarguments))
+
+    def test_asof_read_with_nothing_degraded_grades_a(self):
+        """The other half of bug #1's fix: a REAL as_of read that happened
+        to find zero degraded fields is grade A -- earned, not assumed --
+        and distinct from the no-read case above (asof_read=True here)."""
+        system = _RecordingSystem((Proposal(
+            system_id="s1", system_version="1", market_key="h2h",
+            side="home", p_model=0.6),))
+        snap = _snapshot(assumption_exposure={}, asof_read=True)
+        analysis = analyze(snap, _board(), systems=(system,))
+        record = analysis.records[0]
+        self.assertEqual(record.known_at_grade, "A")
+        self.assertFalse(any(
+            c["cause"].startswith("no_asof_read")
+            for c in record.counterarguments))
 
 
 class TestDeterministicOrdering(unittest.TestCase):

@@ -86,8 +86,21 @@ game at the same instant. It is handed **only** to PROJECT, inside
    `subject_id`/`line` when the proposal names them). For each match, the
    engine reads `board.consensus(selection_id)` (the de-vigged average fair
    probability across every book quoting both sides), `board.best(...)` (the
-   most favorable observed price) and `board.friction(...)` (vig, book
-   count, staleness, dispersion). `edge_bps` is
+   most favorable price among each book's OWN LATEST quote at `t`) and
+   `board.friction(...)` (vig, book count, staleness, dispersion). `best()`,
+   `book_count` and `dispersion` all describe the SAME one-row-per-book,
+   staleness-bounded set (`src.engine.snapshot._fresh_latest_per_book`):
+   one row per book — that book's own most recent quote at or before `t` —
+   excluding any book whose latest quote is already older than
+   `STALE_QUOTE_SECONDS` (1800s, matching `StaleBook`'s own
+   `max_staleness_seconds` default) relative to `t`. A board's full quote
+   history through `t` (every reprice a book ever posted, not just its
+   current one) is never mixed into any of the three — that mixing was a
+   confirmed bug (`book_count` counting quote ROWS instead of distinct
+   books; `dispersion` spanning up to 26h of repricing; `best()` returning
+   the best price ever seen instead of the price actually available at
+   `t`), fixed on the same one-row-per-book set so the three numbers can
+   never disagree about which books are "quoting" at `t`. `edge_bps` is
    `round((p_model - consensus_fair) * 10_000) - friction_bps`
    — a **PROJECT-phase field on `DecisionRecord`**, distinct in name and
    meaning from `price_improvement_bps`, and never surfaced in a
@@ -211,4 +224,27 @@ scale actually executed and its result.
 `DecisionRecord`'s `assumption_exposure` and `friction` fields unchanged —
 `analyze()` never recomputes or discards a provenance fact it was handed.
 `known_at_grade` on the record is the coarsest grade among the snapshot's
-exposed fields (worse grade wins), never silently rounded up to A.
+exposed fields (worse grade wins), never silently rounded up to A. An empty
+`assumption_exposure` is graded from `PriceBlindSnapshot.asof_read`, NOT
+assumed A: `asof_read=True` (a real `src.core.asof` read happened and found
+zero degraded fields) grades A -- earned, not assumed; `asof_read=False`
+(no read ever happened, e.g. no `game_pk` to key one on -- see
+`src.engine.glue`'s game_pk/event_id gap) grades D and the record's
+`counterarguments` carries an entry naming the missing read
+(`cause="no_asof_read:known_at_grade_downgraded"`). `assumption_exposure`
+alone cannot distinguish these two cases; `asof_read` is what lets
+`analyze()` tell them apart.
+
+## 8. First-pitch guard
+
+`src.engine.glue.build_board` refuses (`GlueError`) to build a board at or
+after a game's `commence_time` when `commence_time` is supplied — an
+in-play board is not the pre-game board this engine's decision path is
+contracted to price. `commence_time` comes from
+`src.engine.glue.commence_time_for`, read from `odds_snapshots.jsonl`
+(keyed by `event_id`; `l1_observations.jsonl` rows carry no `commence_time`
+field at all). `sample_truncation_inputs` (the seam `engine truncation`
+uses) enforces this per game: each game's own `t` is
+`min(latest L1 capture that day, commence_time - pre_game_margin_minutes)`,
+never the latest capture alone, and a game whose `commence_time` cannot be
+found (cannot verify pre-game) is SKIPPED, never assumed pre-game.

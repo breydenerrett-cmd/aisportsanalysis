@@ -2023,23 +2023,26 @@ def cmd_engine(args) -> int:
 def _cmd_engine_truncation(args) -> int:
     """`engine truncation --date DATE --sample N --t-offset MINUTES`, wired
     to real data (packet W11): sample games from `DATE`'s L1 captures, run
-    the truncation differential (`t` = each game's own latest capture that
-    day, `t-2h` = `t - t_offset` minutes) with the registered trivial
+    the truncation differential (`t` = `min(each game's own latest capture
+    that day, commence_time - margin)`, per the first-pitch guard --
+    bug #2 -- `t-2h` = `t - t_offset` minutes) with the registered trivial
     fallback system (see `src.engine.glue.TrivialAlwaysHomeSystem` -- no
     evolab-adapter genome can be wired honestly against odds-provider
     event_ids in this environment; see glue.py's module docstring) and the
     adversary roster, append a G4 `GateResult` record to
     `data/processed/gate_results.jsonl`, and print the differential report.
     Refuses honestly (non-zero exit, no record written) when the date has
-    no captures at all.
+    no captures at all, or when every captured game is in-play/unverifiable
+    and therefore skipped.
     """
     from src.engine import glue as glue_module
     from src.engine.adversaries import DEFAULT_ADVERSARIES
     from src.engine.truncation import truncation_differential
 
     try:
-        samples = glue_module.sample_truncation_inputs(
-            args.date, args.sample, t_offset_minutes=args.t_offset)
+        samples, skipped = glue_module.sample_truncation_inputs(
+            args.date, args.sample, t_offset_minutes=args.t_offset,
+            return_skipped=True)
     except glue_module.GlueError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return EXIT_ERROR
@@ -2053,6 +2056,10 @@ def _cmd_engine_truncation(args) -> int:
     print(f"  games sampled       : {report.sample_size} "
           f"(of {len(glue_module.games_captured_on(args.date))} captured "
           f"that day)")
+    print(f"  games skipped       : {len(skipped)} (first-pitch guard: "
+          "in-play or commence_time unverifiable)")
+    for s in skipped:
+        print(f"    skipped game={s.game}: {s.reason}")
     print(f"  diffs found         : {len(report.diffs)}")
     print(f"  leakage failures    : {len(report.leakage_failures)}")
     print(f"  gate                : {report.gate_result.gate} "
@@ -2070,6 +2077,8 @@ def _cmd_engine_truncation(args) -> int:
         "date": args.date,
         "sample_size": report.sample_size,
         "games": sorted(s.game_pk for s in samples),
+        "games_skipped": [{"game": s.game, "reason": s.reason}
+                           for s in skipped],
         "t_offset_minutes": args.t_offset,
         "systems": [s.id for s in systems],
         "adversaries": [a.id for a in DEFAULT_ADVERSARIES],
@@ -2079,6 +2088,14 @@ def _cmd_engine_truncation(args) -> int:
         "inputs_hash": report.gate_result.inputs_hash,
         "diff_count": len(report.diffs),
         "leakage_count": len(report.leakage_failures),
+        "note": "first-pitch guard (bug #2) enforced: t = min(latest "
+                "capture, commence_time - margin) per game, in-play games "
+                "skipped. Earlier gate_results.jsonl rows for this same "
+                "date/sample_size predate this guard and were computed "
+                "in-play (t = latest capture with no commence_time check) "
+                "-- they are left as-is, not rewritten, and should not be "
+                "compared against this row as if they measured the same "
+                "thing.",
     }
     out_path = processed_path("gate_results.jsonl")
     out_path.parent.mkdir(parents=True, exist_ok=True)

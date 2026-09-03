@@ -33,11 +33,16 @@ def _write_jsonl(path: Path, rows) -> None:
             fh.write(json.dumps(row) + "\n")
 
 
+def _commence_row(event_id, commence_time):
+    return {"event_id": event_id, "commence_time": commence_time}
+
+
 class GlueTestBase(unittest.TestCase):
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self._tmp.cleanup)
         self.l1_path = Path(self._tmp.name) / "l1_observations.jsonl"
+        self.commence_path = Path(self._tmp.name) / "odds_snapshots.jsonl"
 
 
 class TestBuildBoard(GlueTestBase):
@@ -161,7 +166,11 @@ class TestGamesCapturedOnAndRefusal(GlueTestBase):
 
 
 class TestSampleTruncationInputsAndGate(GlueTestBase):
-    def _seed(self):
+    # First pitch well after every capture in `_seed` (latest is 19:30Z) so
+    # these games are legitimately pre-game under the first-pitch guard.
+    COMMENCE = "2026-09-02T23:00:00Z"
+
+    def _seed(self, commence=COMMENCE):
         rows = []
         for game in (GAME_A, GAME_B):
             rows.append(_l1_row(game, "h2h", f"{game}_home", "home", -150,
@@ -174,11 +183,17 @@ class TestSampleTruncationInputsAndGate(GlueTestBase):
             rows.append(_l1_row(game, "h2h", f"{game}_away", "away", 140,
                                  "a", "2026-09-02T19:30:00Z"))
         _write_jsonl(self.l1_path, rows)
+        if commence is not None:
+            _write_jsonl(self.commence_path, [
+                _commence_row(GAME_A, commence),
+                _commence_row(GAME_B, commence),
+            ])
 
     def test_sample_size_and_stop_at_t_are_respected(self):
         self._seed()
         samples = glue.sample_truncation_inputs(
-            "2026-09-02", 1, t_offset_minutes=120, path=self.l1_path)
+            "2026-09-02", 1, t_offset_minutes=120, path=self.l1_path,
+            commence_path=self.commence_path)
         self.assertEqual(len(samples), 1)
         sample = samples[0]
         self.assertTrue(sample.t2h < sample.t)
@@ -191,7 +206,8 @@ class TestSampleTruncationInputsAndGate(GlueTestBase):
     def test_gate_record_schema_from_a_real_differential(self):
         self._seed()
         samples = glue.sample_truncation_inputs(
-            "2026-09-02", 2, t_offset_minutes=120, path=self.l1_path)
+            "2026-09-02", 2, t_offset_minutes=120, path=self.l1_path,
+            commence_path=self.commence_path)
         report = truncation_differential(
             samples, systems=(glue.TrivialAlwaysHomeSystem(),))
         gr = report.gate_result
@@ -203,6 +219,36 @@ class TestSampleTruncationInputsAndGate(GlueTestBase):
         # The price move is explained by a books_by_market arrival -> PASS.
         self.assertTrue(gr.passed, gr.reasons)
         self.assertEqual(report.leakage_failures, ())
+
+    def test_unknown_commence_time_skips_the_game(self):
+        # Regression for bug #2: with no commence_path entry, a game must
+        # never be silently assumed pre-game.
+        self._seed(commence=None)
+        with self.assertRaises(glue.GlueError) as ctx:
+            glue.sample_truncation_inputs(
+                "2026-09-02", 2, t_offset_minutes=120, path=self.l1_path,
+                commence_path=self.commence_path)
+        self.assertIn("commence_time unknown", str(ctx.exception))
+
+    def test_in_play_latest_capture_is_never_sampled(self):
+        # Regression for bug #2: commence_time sits BEFORE the latest
+        # capture (game is in-play by the time of that capture); the
+        # guard must pick a pre-game t instead of the in-play latest one,
+        # and never hand analyze() an in-play board.
+        self._seed(commence="2026-09-02T19:00:00Z")  # before the 19:30 row
+        samples = glue.sample_truncation_inputs(
+            "2026-09-02", 2, t_offset_minutes=60, path=self.l1_path,
+            commence_path=self.commence_path)
+        for sample in samples:
+            self.assertLess(sample.t, "2026-09-02T19:00:00Z")
+            t_prices = {q.price_american for q in sample.board_t.quotes}
+            self.assertNotIn(-160, t_prices)  # the in-play 19:30 price move
+
+    def test_build_board_refuses_an_in_play_board(self):
+        self._seed()
+        with self.assertRaises(glue.GlueError):
+            glue.build_board(GAME_A, "2026-09-02T23:30:00Z",
+                              path=self.l1_path, commence_time=self.COMMENCE)
 
     def test_price_arrivals_explain_the_move_leakage_free(self):
         self._seed()

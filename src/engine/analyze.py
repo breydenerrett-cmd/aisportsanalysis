@@ -306,6 +306,7 @@ def _to_decision_record(cand: Candidate, *, snapshot: PriceBlindSnapshot,
         _canonical_json({"game_pk": snapshot.game_pk, "t": snapshot.t,
                          "features": snapshot.features}).encode()
     ).hexdigest()
+    no_asof_read = False
     grade = "D"
     if snapshot.assumption_exposure:
         grades = {k.split(":", 1)[0] for k in snapshot.assumption_exposure}
@@ -315,8 +316,17 @@ def _to_decision_record(cand: Candidate, *, snapshot: PriceBlindSnapshot,
                 break
         else:
             grade = sorted(grades)[-1] if grades else "D"
-    else:
+    elif getattr(snapshot, "asof_read", False):
+        # A real as_of read happened and found zero degraded fields --
+        # nothing here was time-sensitive, so A is earned, not assumed.
         grade = "A"
+    else:
+        # No as_of read ever happened (no game_pk to key one on -- see
+        # src.engine.glue's game_pk/event_id gap). Grading this A would
+        # assert perfect information provenance for a snapshot that has
+        # NONE: fail closed to D instead.
+        grade = "D"
+        no_asof_read = True
 
     row = board.rows_for(cand.selection_id)
     market_key = row[0].market_key if row else proposal.market_key
@@ -328,6 +338,15 @@ def _to_decision_record(cand: Candidate, *, snapshot: PriceBlindSnapshot,
          "severity": c.severity, "detail": c.detail}
         for c in cand.counterarguments
     ]
+    if no_asof_read:
+        counterarguments.append({
+            "adversary_id": "engine",
+            "cause": "no_asof_read:known_at_grade_downgraded",
+            "severity": MAJOR,
+            "detail": "no as_of read occurred for this snapshot (no game_pk "
+                       "to key one on); known_at_grade forced to D rather "
+                       "than assumed A",
+        })
     if verdict == "play" and not evidence and not counterarguments:
         # DecisionRecord requires one of the two non-empty on a play
         # (synthesis-judge 4.2); a system that proposed with no evidence at
