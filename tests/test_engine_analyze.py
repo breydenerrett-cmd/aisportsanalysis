@@ -156,13 +156,46 @@ class _MinorAdversary:
 
 
 class TestAdversaries(unittest.TestCase):
-    def test_fatal_counterargument_removes_candidate(self):
+    def test_fatal_counterargument_removes_candidate_from_staking_but_publishes_it(self):
+        """A FATAL veto must never make a candidate unreachable for
+        staking, but it must ALSO never make the candidate vanish from
+        `analysis.records` entirely (src/engine/analyze.py:250's old bug --
+        the comment claimed 'recorded below as verdict=no_play' while the
+        code silently dropped it). The refusal is published: verdict is a
+        REFUSAL_VERDICTS member (never "play"), refusal_reason names the
+        FATAL cause, and the FATAL counterargument is still attached."""
         system = _RecordingSystem((Proposal(
             system_id="s1", system_version="1", market_key="h2h",
             side="home", p_model=0.7),))
         analysis = analyze(_snapshot(), _board(), systems=(system,),
                            adversaries=(_VetoAdversary(),))
-        self.assertEqual(analysis.records, ())
+        self.assertEqual(len(analysis.records), 1)
+        record = analysis.records[0]
+        self.assertNotEqual(record.verdict, "play")
+        self.assertEqual(record.verdict, "no_play")  # no refused_* is
+        # registered for the test-only "veto_all" adversary id
+        self.assertEqual(record.refusal_reason, "TEST_VETO")
+        fatal = [c for c in record.counterarguments if c["severity"] == FATAL]
+        self.assertEqual(len(fatal), 1)
+        self.assertEqual(fatal[0]["cause"], "TEST_VETO")
+
+    def test_fatal_veto_by_a_registered_adversary_gets_its_own_verdict(self):
+        """`stale_book`/`thin_board` FATAL vetoes get their specific
+        `refused_stale`/`refused_thin` verdicts (src.ledger.records.VERDICTS)
+        rather than the generic fallback -- so the EOD veto section can
+        group and name them precisely."""
+        from src.engine.adversaries import ThinBoard
+
+        system = _RecordingSystem((Proposal(
+            system_id="s1", system_version="1", market_key="h2h",
+            side="home", p_model=0.7),))
+        # `_board()` quotes each selection from 2 books; ThinBoard(min_books=3)
+        # FATAL-vetoes everything at that depth.
+        analysis = analyze(_snapshot(), _board(), systems=(system,),
+                           adversaries=(ThinBoard(min_books=3),))
+        self.assertEqual(len(analysis.records), 1)
+        self.assertEqual(analysis.records[0].verdict, "refused_thin")
+        self.assertIn("thin_board", analysis.records[0].refusal_reason)
 
     def test_minor_counterargument_survives_and_is_recorded(self):
         system = _RecordingSystem((Proposal(

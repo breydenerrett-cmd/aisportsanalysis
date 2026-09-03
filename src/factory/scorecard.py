@@ -200,14 +200,31 @@ def compute_realized_stats(bets: Sequence[SettledBet],
 
 def decision_key_for(decision: DecisionRecord) -> tuple:
     """The join key from a `DecisionRecord` to the `ReviewRecord` that reviews
-    it. No canonical builder is registered anywhere else in the repository
-    yet (`decision_key` is documented only as "joins DecisionRecord exactly"
-    in docs/planning/design-data-first.md:414, with no concrete shape
-    pinned) -- this is that shape, used consistently by this module and by
-    src/report/eod.py, until a slate runner registers a different one.
+    it. MUST include `system_id` (B4 fix, 2026-09-03): two systems that
+    decide the same (event, market, selection) at the exact same instant --
+    routine when several genomes evaluate the same board -- are two
+    DISTINCT decisions and must never share a review. Before this fix the
+    key omitted `system_id` entirely, so `_decision_review_pairs` paired
+    one system's decision with every OTHER system's review of the same
+    (event_id, market_key, selection_id, decision_utc); reproduced on
+    2026-09-03: `trivial_always_home` (27 settled bets) picked up n=41
+    calibration pairs, the exact contaminated numbers the published
+    `window=2026-08-31` scorecard carried. `logloss_vs_market` IS
+    `objective()` -- the one scalar the factory ranks systems on -- so a
+    contaminated join here is not cosmetic.
+
+    Mirrors `src.engine.slate.decision_key`'s five-field shape exactly
+    (that function's own docstring already named `decision_key_for`'s old
+    four fields "plus system_id" -- this brings the two into agreement).
+    Any `ReviewRecord.decision_key` already on disk from BEFORE this fix is
+    a 4-tuple lacking `system_id`; it can never equal one of these 5-tuples
+    again, so it simply stops joining to anything post-fix rather than
+    joining to the wrong system -- conservative by construction, never a
+    fabricated match. See src/engine/settle_slate.py's `run_settle` for the
+    matching per-system filter on the `reviews` handed to `build_scorecard`.
     """
-    return (decision.event_id, decision.market_key, decision.selection_id,
-            decision.decision_utc)
+    return (decision.event_id, decision.system_id, decision.market_key,
+            decision.selection_id, decision.decision_utc)
 
 
 def _worst_point_class(decisions: Sequence[DecisionRecord]) -> str:

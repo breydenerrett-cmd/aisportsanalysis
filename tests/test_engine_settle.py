@@ -238,5 +238,77 @@ class TestF5FromBoxscoreLinescore(SettleTestBase):
         self.assertEqual(settled.profit_units, 0.0)
 
 
+GAME_EARLY = 900003  # 2026-08-31's game, bet wins
+GAME_LATE = 900004   # 2026-09-02's game, bet loses
+
+
+class TestScorecardBankrollAgreesWithEod(SettleTestBase):
+    """N5/N6 regression: settling dates OUT OF CALENDAR ORDER (this
+    vertical slice's real backfill settled 2026-09-02 before 2026-08-31)
+    must not corrupt a Scorecard's published `account`. Before the fix,
+    `build_scorecard`'s `bets` was "whatever the ledger holds right now",
+    so the `window=2026-08-31` Scorecard -- settled SECOND, after 09-02 was
+    already in the ledger -- would have wrongly folded 09-02's settlement
+    into its 08-31 bankroll: exactly the published `bankroll=995.0169`
+    (cumulative-through-09-02) vs the EOD report's `bankroll=1000.9470`
+    (genuinely as-of-08-31) disagreement the review measured, with the
+    fitness "delta" section consequently reading backwards."""
+
+    def test_out_of_order_settlement_still_publishes_the_true_as_of_date_bankroll(self):
+        _write_jsonl(self.wagers_path, [
+            _wager_row("bet-early", GAME_EARLY, 150,
+                       date_str="2026-08-31", selection_id="early_sel"),
+            _wager_row("bet-late", GAME_LATE, -150,
+                       date_str="2026-09-02", selection_id="late_sel"),
+        ])
+        _write_results_csv(self.results_path, [
+            # bet-early (home, +150) WINS: home 5, away 2.
+            {"game_pk": GAME_EARLY, "date": "2026-08-31",
+             "home_score": 5, "away_score": 2},
+            # bet-late (home, -150) LOSES: home 2, away 5.
+            {"game_pk": GAME_LATE, "date": "2026-09-02",
+             "home_score": 2, "away_score": 5},
+        ])
+
+        # Settle OUT OF CALENDAR ORDER: 2026-09-02 (the later date) first,
+        # exactly as this project's real backfill did.
+        self.run_settle("2026-09-02")
+        self.run_settle("2026-08-31")
+
+        scorecard_rows = HashChainLedger(str(self.scorecard_path)).read()
+        by_window = {row["window"]: row for row in scorecard_rows
+                    if row.get("kind") != "genesis"}
+        sc_early = by_window["2026-08-31"]
+        sc_late = by_window["2026-09-02"]
+
+        # The window=2026-08-31 Scorecard must NEVER include 09-02's loss,
+        # even though 09-02 was settled first and is already in the
+        # ledger by the time 08-31 is settled.
+        self.assertAlmostEqual(sc_early["account"]["bankroll"], 1001.5)
+
+        # EOD's own as-of-2026-08-31 replay (the SAME point-in-time cut,
+        # applied independently) must agree exactly.
+        from src.report.eod import account_day_from_ledger_rows
+        account_rows = HashChainLedger(
+            self.account_ledger_path_fn(SYSTEM)).read()
+        eod_account = account_day_from_ledger_rows(
+            SYSTEM, account_rows, "2026-08-31")
+        self.assertAlmostEqual(eod_account.bankroll,
+                               sc_early["account"]["bankroll"])
+        self.assertAlmostEqual(eod_account.roi_units,
+                               sc_early["account"]["roi_units"])
+        self.assertAlmostEqual(eod_account.drawdown_max,
+                               sc_early["account"]["drawdown"])
+
+        # window=2026-09-02 is unaffected (bet-late alone: 1000 - 1.0).
+        self.assertAlmostEqual(sc_late["account"]["bankroll"], 999.0)
+
+        # The delta across windows, read in chronological (not settle) order,
+        # is the TRUE forward difference -- not an artifact of settle order.
+        self.assertAlmostEqual(
+            sc_late["account"]["bankroll"] - sc_early["account"]["bankroll"],
+            -1.0 - 1.5)
+
+
 if __name__ == "__main__":
     unittest.main()

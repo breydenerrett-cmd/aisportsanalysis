@@ -395,6 +395,60 @@ class TestNoLeakage(LiveFeatureTestBase):
                          round(30 / 55, 4))
 
 
+class TestEasternCutoffB5(LiveFeatureTestBase):
+    """B5 regression: the cutoff must be `t`'s own EASTERN calendar day
+    (matching `src.pipeline.snapshots.official_date`, what slate membership
+    keys on), never its bare UTC day. `t=2026-09-01T00:02:08Z` -- a real
+    shape from the published ledger's own decisions -- is `2026-08-31
+    20:02:08` Eastern: the game's own official date is `2026-08-31`, one
+    calendar day EARLIER than `t`'s UTC date. Before the fix, `cutoff_date
+    = t_dt.date().isoformat()` produced `2026-09-01`, so `game_date <
+    cutoff` admitted every pitch dated `2026-08-31` -- the game's own
+    official date, including a game still in progress at `t` or, on a
+    backfilled run, the subject game itself."""
+
+    def test_eastern_date_of_a_00_to_04z_instant_is_the_prior_calendar_day(self):
+        # Direct unit proof of the helper the fix introduces.
+        t_dt = F._parse_utc("2026-09-01T00:02:08+00:00")
+        self.assertEqual(F._eastern_date(t_dt), "2026-08-31")
+
+    def test_no_pitch_from_ts_own_official_eastern_date_reaches_features(self):
+        t = "2026-09-01T00:02:08+00:00"  # Eastern: 2026-08-31T20:02:08
+        clean_rows = _rich_pitcher_500_rows(game_date="2026-08-29")
+        # Dated on t's own OFFICIAL (Eastern) date, 2026-08-31 -- under the
+        # bare-UTC bug this is STRICTLY BEFORE the wrong cutoff
+        # (2026-09-01) and would leak straight in.
+        leaking_rows = [
+            _pitch(PITCHER_500, bb_type="ground_ball", game_date="2026-08-31")
+            for _ in range(50)
+        ]
+        self._seed_lineups_and_probables(observed="2026-08-31T18:00:00+00:00")
+
+        store_clean = _write_statcast_store(
+            self.tmp / "clean", clean_rows, "2026-08-28..2026-08-30")
+        clean = F.build_features("999", t, sources=self._sources(store_clean))
+
+        store_with_leak = _write_statcast_store(
+            self.tmp / "leak", clean_rows + leaking_rows, "2026-08-28..2026-08-31")
+        leaked = F.build_features("999", t, sources=self._sources(store_with_leak))
+
+        # No leak: identical output with or without the game's-own-date rows.
+        self.assertEqual(
+            clean["away_starter_groundball_share"].value,
+            leaked["away_starter_groundball_share"].value)
+        self.assertEqual(clean["away_starter_groundball_share"].value,
+                         round(30 / 55, 4))
+
+        # The grade must not assert knowledge of 2026-08-31 (t's own
+        # official date, not yet finished at t) -- known_at is the day
+        # BEFORE the correct Eastern cutoff, 2026-08-30, never 2026-08-31
+        # (what the UTC-day bug's day_before_cutoff would have been).
+        fv = leaked["away_starter_groundball_share"]
+        self.assertEqual(fv.known_at_grade, asof_module.GRADE_A)
+        self.assertEqual(fv.known_at, "2026-08-30")
+        self.assertNotEqual(fv.known_at, "2026-08-31")
+
+
 class TestPriceBlindness(unittest.TestCase):
     """No odds/price store path is ever opened while building features --
     on either the live or the replay branch, including the new pitch-store

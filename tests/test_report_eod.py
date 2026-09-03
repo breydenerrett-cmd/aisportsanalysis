@@ -194,6 +194,44 @@ class BuildReviewContentTests(unittest.TestCase):
         self.assertAlmostEqual(curr_v, 0.03)
         self.assertAlmostEqual(d, 0.02)
 
+    def test_scorecard_delta_never_uses_a_window_after_the_report_date(self):
+        """N6 regression: this project's real settle history ran
+        2026-09-02 BEFORE 2026-08-31 (a later date settled first), so an
+        EOD report for 2026-08-31 must never pull in the 2026-09-02
+        scorecard as "current" -- that published a delta reading
+        "2026-08-31 -> 2026-09-02" inside the 2026-08-31 report itself,
+        backwards from what the report's own date claims."""
+        earlier = _scorecard(window="2026-08-31", realized_return=0.02)
+        later = _scorecard(window="2026-09-02", realized_return=0.09)
+        review = build_review("2026-08-31", [], self.decisions, [],
+                              [later, earlier])  # settled/appended in this
+                                                  # exact real-world order
+        self.assertEqual(len(review.scorecard_deltas), 1)
+        delta = review.scorecard_deltas[0]
+        self.assertEqual(delta.current_window, "2026-08-31")
+        self.assertIsNone(delta.previous_window)
+        self.assertEqual(delta.deltas, {})
+
+    def test_a_later_correction_row_for_the_same_window_supersedes_it(self):
+        """B4 fix, applied without rewriting ledger history: a correction
+        Scorecard appended LATER for a window that already has one must be
+        the one an EOD report uses for that window -- never averaged with,
+        and never shadowed by, the earlier (contaminated) row."""
+        previous = _scorecard(window="2026-08-30", realized_return=0.01)
+        original = _scorecard(window="2026-08-31", realized_return=0.5)
+        correction = _scorecard(window="2026-08-31", realized_return=0.0)
+        review = build_review(
+            "2026-08-31", [], self.decisions, [],
+            [previous, original, correction])  # correction appended LAST
+        self.assertEqual(len(review.scorecard_deltas), 1)
+        delta = review.scorecard_deltas[0]
+        self.assertEqual(delta.current_window, "2026-08-31")
+        self.assertEqual(delta.previous_window, "2026-08-30")
+        prev_v, curr_v, _ = delta.deltas["realized_return"]
+        self.assertAlmostEqual(prev_v, 0.01)
+        self.assertAlmostEqual(curr_v, 0.0)  # the CORRECTION's value, not
+                                              # the original 0.5
+
 
 class AccountDayReplayTests(unittest.TestCase):
     def test_replays_bankroll_and_isolates_the_days_settlements(self):
