@@ -625,6 +625,16 @@ class DecisionRecord:
     #                                      pre-registered rule for how this
     #                                      record became (or did not
     #                                      become) a paper wager
+    #   record_provenance: str | None  -- (B1, slice-review-2026-09-03) WHEN
+    #                                      this record was written relative
+    #                                      to the game it decides, distinct
+    #                                      from decision_utc/recorded_utc:
+    #                                      live_pre_commencement |
+    #                                      live_post_commencement | replay
+    #                                      (src/ledger/records.py's
+    #                                      RECORD_PROVENANCE_VALUES). None
+    #                                      on any record written before this
+    #                                      field existed.
 
 @dataclass(frozen=True, slots=True)
 class ReviewRecord:

@@ -2183,7 +2183,9 @@ def _cmd_engine_slate(args) -> int:
                   f"{record.market_key}/{record.selection_id} "
                   f"verdict={record.verdict} price={record.price_american} "
                   f"p_model={record.p_model} value_basis={record.value_basis} "
-                  f"grade={record.known_at_grade}{staked}")
+                  f"grade={record.known_at_grade} "
+                  f"recorded_utc={record.recorded_utc} "
+                  f"record_provenance={record.record_provenance}{staked}")
     print(f"  selection_rule      : {engine_slate.SELECTION_RULE}")
     return EXIT_OK
 

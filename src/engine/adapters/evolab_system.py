@@ -34,6 +34,7 @@ from src.engine.snapshot import PriceBlindSnapshot, PricedBoard
 from src.evolab.decide import BoardMeta, WorldView, decide_with_reason
 from src.evolab.genome import Genome, enumerate_genomes
 from src.evolab.registry import DEFAULT_REGISTRY
+from src.ledger.records import RECORD_PROVENANCE_REPLAY
 
 
 def _rebuild_worldview(genome: Genome, snapshot: PriceBlindSnapshot) -> WorldView:
@@ -263,10 +264,17 @@ def replay_decision(genome_or_system, game, T: str, *,
     engine-side addition with no evolab counterpart) -- pass
     `src.engine.adversaries.DEFAULT_ADVERSARIES` explicitly to exercise the
     roster instead. Returns the `Analysis`.
+
+    Every record this produces carries
+    `record_provenance="replay"` (B1, slice-review-2026-09-03) -- this
+    driver only ever decides an already-past, already-known `T` (`world_view`
+    refuses to interpolate one), and its output is a demonstration, never
+    written to any ledger.
     """
     snapshot, board = historical_snapshot_and_board(game, T, point_class=point_class)
     if isinstance(genome_or_system, Genome):
         system = EvolabGenomeSystem(genome=genome_or_system, registry=registry)
     else:
         system = genome_or_system
-    return _analyze(snapshot, board, systems=(system,), adversaries=adversaries)
+    return _analyze(snapshot, board, systems=(system,), adversaries=adversaries,
+                    record_provenance=RECORD_PROVENANCE_REPLAY)

@@ -313,6 +313,49 @@ class TestProvenance(unittest.TestCase):
             for c in record.counterarguments))
 
 
+class TestRecordedUtcPassthrough(unittest.TestCase):
+    """B1 (slice-review-2026-09-03): `analyze()` stays PURE -- no clock
+    read -- so `recorded_utc`/`record_provenance` are pass-through
+    arguments, never computed here. Defaulting to `snapshot.t` (the old,
+    unfalsifiable behavior) is only correct for a caller with no real write
+    instant to report (a test, a demonstration); a caller that actually
+    writes to a ledger (`src.engine.slate.run_slate`) always supplies
+    both."""
+
+    def test_omitted_recorded_utc_falls_back_to_snapshot_t(self):
+        system = _RecordingSystem((Proposal(
+            system_id="s1", system_version="1", market_key="h2h",
+            side="home", p_model=0.6),))
+        analysis = analyze(_snapshot(), _board(), systems=(system,))
+        record = analysis.records[0]
+        self.assertEqual(record.recorded_utc, record.decision_utc)
+        self.assertIsNone(record.record_provenance)
+
+    def test_explicit_recorded_utc_and_provenance_pass_through_untouched(self):
+        system = _RecordingSystem((Proposal(
+            system_id="s1", system_version="1", market_key="h2h",
+            side="home", p_model=0.6),))
+        analysis = analyze(
+            _snapshot(), _board(), systems=(system,),
+            recorded_utc="2026-09-03T20:39:31+00:00",
+            record_provenance="live_pre_commencement")
+        record = analysis.records[0]
+        self.assertEqual(record.recorded_utc, "2026-09-03T20:39:31+00:00")
+        self.assertNotEqual(record.recorded_utc, record.decision_utc)
+        self.assertEqual(record.record_provenance, "live_pre_commencement")
+
+    def test_analyze_still_reads_no_clock(self):
+        """`analyze` itself must never call a clock -- the AST-level purity
+        guarantee this module's docstring promises -- even though it now
+        accepts a `recorded_utc` argument. Mirrors
+        `src.engine.conformance`'s own clock-name blocklist."""
+        import inspect
+        from src.engine import analyze as analyze_module
+        src = inspect.getsource(analyze_module.analyze)
+        self.assertNotIn("datetime.now", src)
+        self.assertNotIn("utcnow", src)
+
+
 class TestDeterministicOrdering(unittest.TestCase):
     def test_higher_edge_ranks_first(self):
         system = _RecordingSystem((

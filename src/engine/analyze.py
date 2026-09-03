@@ -152,7 +152,9 @@ def analyze(snapshot: PriceBlindSnapshot, board: PricedBoard, *,
             systems: Iterable, adversaries: Iterable | None = None,
             config: EngineConfig = DEFAULT_CONFIG,
             registry_fingerprint: str = "",
-            frame_fingerprint: str | None = None) -> Analysis:
+            frame_fingerprint: str | None = None,
+            recorded_utc: str | None = None,
+            record_provenance: str | None = None) -> Analysis:
     """PROPOSE -> PROJECT -> ATTACK -> RATE -> RANK. See module docstring.
 
     `adversaries` omitted (the default, `None`) resolves to
@@ -163,6 +165,19 @@ def analyze(snapshot: PriceBlindSnapshot, board: PricedBoard, *,
     circular). A caller that wants NO adversaries at all still has that
     explicit-argument path: pass `adversaries=()` and the roster is never
     consulted.
+
+    `recorded_utc`/`record_provenance` (B1, slice-review-2026-09-03): this
+    module stays PURE -- it never reads a clock -- so it cannot itself know
+    the real wall-clock instant a record is written or whether the caller
+    is live or replaying. A caller that actually writes to the ledger
+    passes both explicitly, computed from its own clock read
+    (`src.engine.slate.run_slate` is the one production caller that does).
+    Omitted (the default, `None`), `recorded_utc` falls back to
+    `snapshot.t` -- the historical, still-unfalsifiable behavior -- for any
+    caller (a test, the S3 replay driver, the truncation gate) that has no
+    write instant of its own to report; `record_provenance` stays `None`
+    in that case, honestly recording that this record carries no
+    write-time evidence either way.
     """
     if adversaries is None:
         from src.engine.adversaries import (
@@ -290,6 +305,7 @@ def analyze(snapshot: PriceBlindSnapshot, board: PricedBoard, *,
             cand, snapshot=snapshot, board=board,
             registry_fingerprint=registry_fingerprint,
             frame_fingerprint=frame_fingerprint,
+            recorded_utc=recorded_utc, record_provenance=record_provenance,
             verdict=("play" if cand.price_american is not None
                      else "market_unavailable"))
         for cand in rated
@@ -362,7 +378,10 @@ def _canonical_json(payload) -> str:
 def _to_decision_record(cand: Candidate, *, snapshot: PriceBlindSnapshot,
                          board: PricedBoard, registry_fingerprint: str,
                          frame_fingerprint: str | None,
-                         verdict: str) -> DecisionRecord:
+                         verdict: str,
+                         recorded_utc: str | None = None,
+                         record_provenance: str | None = None
+                         ) -> DecisionRecord:
     proposal = cand.proposal
     snap_fp = snapshot.fingerprint or hashlib.sha256(
         _canonical_json({"game_pk": snapshot.game_pk, "t": snapshot.t,
@@ -452,7 +471,12 @@ def _to_decision_record(cand: Candidate, *, snapshot: PriceBlindSnapshot,
         decision_utc=snapshot.t,
         point_class=snapshot.point_class,
         information_time=snapshot.t,
-        recorded_utc=snapshot.t,
+        # B1 (slice-review-2026-09-03): the real write instant, when the
+        # caller has one to give (see analyze()'s docstring above); falls
+        # back to snapshot.t only for a caller with no clock read to report.
+        recorded_utc=(recorded_utc if recorded_utc is not None
+                     else snapshot.t),
+        record_provenance=record_provenance,
         verdict=verdict,
         selection_id=cand.selection_id,
         market_key=market_key,

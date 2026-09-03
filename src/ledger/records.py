@@ -34,6 +34,41 @@ VERDICTS = frozenset({
     "refused_sample", "refused_regime", "refused_friction",
 })
 
+# B1 (slice-review-2026-09-03): `DecisionRecord.record_provenance` names WHEN
+# a record was written relative to the game it decides -- the thing
+# `recorded_utc` alone cannot say on its own, since a caller could set
+# `recorded_utc` honestly to the write instant and STILL leave a reader
+# unable to tell "written before first pitch on a live slate" apart from
+# "written after first pitch" apart from "written in a deliberate
+# replay/backfill of an already-past date". Three values, one per case:
+#   live_pre_commencement  -- a live slate wrote this before the game's own
+#                              first pitch (the genuinely pre-commitment
+#                              case).
+#   live_post_commencement -- a live slate wrote this AFTER the game's own
+#                              first pitch had already passed at write time.
+#                              `src.engine.slate.run_slate` refuses to stake
+#                              a game in this state going forward (B2) --
+#                              this value exists so an already-published row
+#                              from before that guard existed (or a
+#                              corrective row appended to explain one) can
+#                              still be labelled honestly rather than
+#                              erased.
+#   replay                 -- a deliberate replay/backfill of an
+#                              already-past date (`run_slate --date` for a
+#                              date strictly before the wall-clock date it
+#                              was run on). The game has necessarily already
+#                              been played; that is expected and honest for
+#                              a replay, unlike the live case above.
+RECORD_PROVENANCE_LIVE_PRE_COMMENCEMENT = "live_pre_commencement"
+RECORD_PROVENANCE_LIVE_POST_COMMENCEMENT = "live_post_commencement"
+RECORD_PROVENANCE_REPLAY = "replay"
+
+RECORD_PROVENANCE_VALUES = frozenset({
+    RECORD_PROVENANCE_LIVE_PRE_COMMENCEMENT,
+    RECORD_PROVENANCE_LIVE_POST_COMMENCEMENT,
+    RECORD_PROVENANCE_REPLAY,
+})
+
 # F9 / the Two-Ledger Rule: these names may never appear on anything
 # `objective()` is allowed to read. Kept here (not only in the AST test) so
 # ObjectiveView and the test import the SAME list rather than two lists that
@@ -142,8 +177,28 @@ class DecisionRecord:
     #                      wager (or chose not to) -- set by the slate
     #                      runner, never by analyze() itself, which knows
     #                      nothing about staking.
+    #
+    # B1 (slice-review-2026-09-03) addition, same convention -- optional,
+    # default None so every pre-existing construction site keeps working:
+    #   record_provenance -- WHEN this record was written relative to the
+    #                      game it decides, distinct from `decision_utc`
+    #                      (the information instant) and `recorded_utc` (the
+    #                      wall-clock write instant): one of
+    #                      RECORD_PROVENANCE_VALUES below. `analyze()` is
+    #                      pure and never sets this on its own (it has no
+    #                      clock and no notion of live-vs-replay); a caller
+    #                      may pass one in explicitly (still pure -- it is
+    #                      an argument, not a clock read), and the caller
+    #                      that actually writes to the ledger
+    #                      (`src.engine.slate.run_slate`) always does. A
+    #                      record with `record_provenance is None` predates
+    #                      this field (every one of the 69 rows published
+    #                      before this fix) and carries no evidence either
+    #                      way -- it must never be read as "pre-commitment
+    #                      confirmed".
     value_basis: str | None = None
     selection_rule: str | None = None
+    record_provenance: str | None = None
     prev_hash: str = ""
     row_hash: str = ""
 
@@ -153,6 +208,12 @@ class DecisionRecord:
         _require(self.known_at_grade in KNOWN_AT_GRADES,
                   f"known_at_grade={self.known_at_grade!r} must be one of "
                   f"{sorted(KNOWN_AT_GRADES)}")
+        _require(
+            self.record_provenance is None
+            or self.record_provenance in RECORD_PROVENANCE_VALUES,
+            f"record_provenance={self.record_provenance!r} must be None or "
+            f"one of {sorted(RECORD_PROVENANCE_VALUES)}"
+        )
         if self.verdict == "play":
             _require(self.price_american is not None,
                       "price_american is REQUIRED on a play (synthesis 4.2)")

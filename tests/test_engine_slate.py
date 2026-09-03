@@ -10,6 +10,7 @@ import json
 import tempfile
 import unittest
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 
 from src.board.ids import selection_id
@@ -17,6 +18,10 @@ from src.engine import glue as glue_module
 from src.engine import slate
 from src.engine.analyze import Proposal
 from src.ledger.chain import HashChainLedger
+from src.ledger.records import (
+    RECORD_PROVENANCE_LIVE_PRE_COMMENCEMENT,
+    RECORD_PROVENANCE_REPLAY,
+)
 
 GAME_A = "aaaa1111aaaa1111aaaa1111aaaa1111"
 GAME_B = "bbbb2222bbbb2222bbbb2222bbbb2222"
@@ -382,6 +387,180 @@ class TestL1RefreshBeforeSlate(SlateTestBase):
         self.run_slate("2026-09-02", systems=(glue_module.TrivialAlwaysHomeSystem(),))
         after = self.l1_path.read_text()
         self.assertEqual(before, after)
+
+
+class TestRecordedUtcIsWriteInstant(SlateTestBase):
+    """B1 (slice-review-2026-09-03): `recorded_utc` must be the real
+    wall-clock write instant, not a copy of `decision_utc`/
+    `information_time` -- this pins the PRODUCTION value `run_slate`
+    actually writes, not just a hand-built fixture's assumption."""
+
+    def test_live_mode_recorded_utc_is_now_not_the_decision_instant(self):
+        _write_jsonl(self.l1_path, [
+            *_two_book_rows(GAME_A, "2026-09-02T18:00:00Z"),
+        ])
+        self._commence_rows(GAME_A, "2026-09-02T20:00:00Z")
+        now = datetime(2026, 9, 2, 19, 0, tzinfo=timezone.utc)
+
+        report = self.run_slate(
+            "2026-09-02", systems=(glue_module.TrivialAlwaysHomeSystem(),),
+            now=now)
+
+        game = report.games[0]
+        self.assertTrue(game.records)
+        record = game.records[0]
+        self.assertEqual(record.decision_utc, slate._iso(slate._parse_utc("2026-09-02T18:00:00Z")))
+        self.assertEqual(record.information_time, slate._iso(slate._parse_utc("2026-09-02T18:00:00Z")))
+        # The write instant, NOT the decision instant -- the whole point of
+        # B1: a record must carry independent evidence of when it was
+        # written.
+        self.assertEqual(record.recorded_utc, slate._iso(now))
+        self.assertNotEqual(record.recorded_utc, record.decision_utc)
+        self.assertEqual(record.record_provenance,
+                         RECORD_PROVENANCE_LIVE_PRE_COMMENCEMENT)
+
+        # And the ledger row on disk carries the same, not just the
+        # in-memory dataclass.
+        rows = [r for r in HashChainLedger(self.decisions_path).read()
+               if r.get("kind") != "genesis"]
+        self.assertEqual(rows[0]["recorded_utc"], slate._iso(now))
+        self.assertEqual(rows[0]["record_provenance"],
+                         RECORD_PROVENANCE_LIVE_PRE_COMMENCEMENT)
+
+    def test_replay_mode_recorded_utc_is_still_the_write_instant(self):
+        # A deliberate backfill of an already-past date: the decision
+        # instant and commence_time are both in the past relative to `now`,
+        # which is expected and honest for REPLAY -- but recorded_utc must
+        # still be the actual write instant, labelled `replay`, never
+        # silently reusing decision_utc either.
+        _write_jsonl(self.l1_path, [
+            *_two_book_rows(GAME_A, "2026-08-31T18:00:00Z"),
+        ])
+        self._commence_rows(GAME_A, "2026-08-31T20:00:00Z")
+        now = datetime(2026, 9, 2, 12, 0, tzinfo=timezone.utc)
+
+        report = self.run_slate(
+            "2026-08-31", systems=(glue_module.TrivialAlwaysHomeSystem(),),
+            now=now)
+
+        game = report.games[0]
+        self.assertTrue(game.records)
+        record = game.records[0]
+        self.assertEqual(record.decision_utc, slate._iso(slate._parse_utc("2026-08-31T18:00:00Z")))
+        self.assertEqual(record.recorded_utc, slate._iso(now))
+        self.assertNotEqual(record.recorded_utc, record.decision_utc)
+        self.assertEqual(record.record_provenance, RECORD_PROVENANCE_REPLAY)
+
+    def test_default_now_reads_the_real_wall_clock(self):
+        # No `now=` override: run_slate must read a REAL clock, not fall
+        # back to the decision instant the way analyze() alone would.
+        _write_jsonl(self.l1_path, [
+            *_two_book_rows(GAME_A, "2026-09-02T18:00:00Z"),
+        ])
+        self._commence_rows(GAME_A, "2026-09-02T20:00:00Z")
+
+        before = datetime.now(timezone.utc)
+        report = self.run_slate(
+            "2026-09-02", systems=(glue_module.TrivialAlwaysHomeSystem(),))
+        after = datetime.now(timezone.utc)
+
+        record = report.games[0].records[0]
+        self.assertNotEqual(record.recorded_utc, record.decision_utc)
+        recorded_dt = slate._parse_utc(record.recorded_utc)
+        self.assertGreaterEqual(recorded_dt, before)
+        self.assertLessEqual(recorded_dt, after)
+
+
+class TestAlreadyCommencedGuard(SlateTestBase):
+    """B2 (slice-review-2026-09-03): a live slate must refuse to stake a
+    game whose first pitch has already passed at the ACTUAL write instant,
+    even when the decision instant `t` it picked was honestly pre-game --
+    exactly the flagship 2026-09-03 slate's bug (a run hours after the
+    captures it used, for games that had since started)."""
+
+    def test_live_mode_refuses_a_game_already_commenced_at_write_time(self):
+        # The decision instant itself is honestly pre-game (18:00 < 18:30
+        # commence) -- decision_time_for_game's own guard has nothing to
+        # object to. But the run doesn't actually happen until 20:00, well
+        # after that same 18:30 first pitch.
+        _write_jsonl(self.l1_path, [
+            *_two_book_rows(GAME_A, "2026-09-02T18:00:00Z"),
+        ])
+        self._commence_rows(GAME_A, "2026-09-02T18:30:00Z")
+        now = datetime(2026, 9, 2, 20, 0, tzinfo=timezone.utc)
+
+        report = self.run_slate(
+            "2026-09-02", systems=(glue_module.TrivialAlwaysHomeSystem(),),
+            now=now)
+
+        self.assertEqual(report.n_games_considered, 1)
+        self.assertEqual(report.n_games_skipped, 1)
+        self.assertEqual(report.n_new_decisions, 0)
+        self.assertEqual(report.n_new_wagers, 0)
+        game = report.games[0]
+        self.assertIsNotNone(game.t)  # decision_time_for_game found a t
+        self.assertIn("already commenced", game.skipped_reason)
+        self.assertEqual(game.records, ())
+
+    def test_exactly_at_commence_time_is_refused_too(self):
+        _write_jsonl(self.l1_path, [
+            *_two_book_rows(GAME_A, "2026-09-02T18:00:00Z"),
+        ])
+        self._commence_rows(GAME_A, "2026-09-02T18:30:00Z")
+        now = datetime(2026, 9, 2, 18, 30, tzinfo=timezone.utc)
+
+        report = self.run_slate(
+            "2026-09-02", systems=(glue_module.TrivialAlwaysHomeSystem(),),
+            now=now)
+
+        self.assertEqual(report.n_games_skipped, 1)
+        self.assertIn("already commenced", report.games[0].skipped_reason)
+
+    def test_live_mode_still_stakes_a_game_not_yet_commenced(self):
+        _write_jsonl(self.l1_path, [
+            *_two_book_rows(GAME_A, "2026-09-02T18:00:00Z"),
+        ])
+        self._commence_rows(GAME_A, "2026-09-02T20:00:00Z")
+        now = datetime(2026, 9, 2, 19, 0, tzinfo=timezone.utc)
+
+        report = self.run_slate(
+            "2026-09-02", systems=(glue_module.TrivialAlwaysHomeSystem(),),
+            now=now)
+
+        self.assertEqual(report.n_games_skipped, 0)
+        self.assertEqual(report.n_new_wagers, 1)
+        self.assertEqual(report.games[0].records[0].record_provenance,
+                         RECORD_PROVENANCE_LIVE_PRE_COMMENCEMENT)
+
+    def test_replay_mode_is_exempt_from_the_already_commenced_guard(self):
+        # A deliberate backfill of an already-past date: the game is long
+        # over relative to `now` -- that is expected for replay, not a
+        # reason to refuse.
+        _write_jsonl(self.l1_path, [
+            *_two_book_rows(GAME_A, "2026-08-31T18:00:00Z"),
+        ])
+        self._commence_rows(GAME_A, "2026-08-31T18:30:00Z")
+        now = datetime(2026, 9, 2, 12, 0, tzinfo=timezone.utc)
+
+        report = self.run_slate(
+            "2026-08-31", systems=(glue_module.TrivialAlwaysHomeSystem(),),
+            now=now)
+
+        self.assertEqual(report.n_games_skipped, 0)
+        self.assertEqual(report.n_new_decisions, 1)
+        self.assertEqual(report.n_new_wagers, 1)
+        self.assertEqual(report.games[0].records[0].record_provenance,
+                         RECORD_PROVENANCE_REPLAY)
+
+    def test_naive_now_is_rejected(self):
+        _write_jsonl(self.l1_path, [
+            *_two_book_rows(GAME_A, "2026-09-02T18:00:00Z"),
+        ])
+        self._commence_rows(GAME_A, "2026-09-02T20:00:00Z")
+        with self.assertRaises(slate.SlateError):
+            self.run_slate(
+                "2026-09-02", systems=(glue_module.TrivialAlwaysHomeSystem(),),
+                now=datetime(2026, 9, 2, 19, 0))
 
 
 if __name__ == "__main__":
