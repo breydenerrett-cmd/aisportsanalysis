@@ -94,6 +94,16 @@ class PriceBlindSnapshot:
     lineup_posted: bool = False
     assumption_exposure: Mapping[str, int] = field(default_factory=dict)
     fingerprint: str = ""
+    # Whether `from_asof` was ever handed a real `src.core.asof.Snapshot`
+    # (True) versus never having a `game_pk` to read one with at all
+    # (False). `assumption_exposure` alone cannot distinguish these: an
+    # as_of read that found zero degraded fields also leaves
+    # `assumption_exposure` empty. `known_at_grade` (src/engine/analyze.py)
+    # must not treat "no read happened" as "read happened, nothing
+    # degraded" -- the former used to fail open to grade A with zero
+    # evidence for it; this field is what lets analyze() tell the two
+    # apart and grade the no-read case D instead.
+    asof_read: bool = False
 
     def __getattr__(self, name):
         # Reached only when normal slot lookup fails -- cannot shadow a real
@@ -158,6 +168,7 @@ class PriceBlindSnapshot:
             lineup_posted=lineup_posted,
             assumption_exposure=exposure,
             fingerprint=fingerprint,
+            asof_read=as_of_snapshot is not None,
         )
 
 
@@ -173,6 +184,57 @@ class Friction:
     book_count: int
     staleness_seconds: int
     dispersion: float  # max - min implied probability across quoting books
+
+
+# A book's latest quote for a selection counts toward `best()`,
+# `Friction.book_count` and `Friction.dispersion` only while it is no older
+# than this many seconds relative to the board's own `t`. Matches
+# `src.engine.adversaries.StaleBook`'s default `max_staleness_seconds`
+# deliberately: a book excluded here by staleness is exactly the book that
+# adversary would separately veto as no longer a live tradeable price, so
+# the two thresholds must agree rather than silently disagree on what
+# "stale" means.
+STALE_QUOTE_SECONDS = 1800
+
+
+def _latest_per_book(rows: Iterable[PriceObservation]) -> tuple:
+    """One row per book: the row with the latest `observed_utc`. `rows`
+    must already be stop-at-T truncated (`PricedBoard`'s own contract), so
+    this is genuinely "this book's latest quote at t", never a future
+    quote leaking in."""
+    latest: dict[str, PriceObservation] = {}
+    for r in rows:
+        cur = latest.get(r.book)
+        if cur is None or _parse_iso(r.observed_utc) > _parse_iso(cur.observed_utc):
+            latest[r.book] = r
+    return tuple(sorted(latest.values(), key=lambda q: q.book))
+
+
+def _fresh_latest_per_book(rows: Iterable[PriceObservation], t: str, *,
+                            max_staleness_seconds: int = STALE_QUOTE_SECONDS
+                            ) -> tuple:
+    """Each book's latest quote at t (`_latest_per_book`), minus any book
+    whose latest quote has already gone stale by `t` -- a book that quoted
+    once, hours before `t`, and never again is not "quoting the selection
+    at t" in any sense `best()`/`book_count`/`dispersion` should honor.
+    When `t` (or a quote's own `observed_utc`) is not a parseable
+    timestamp, that quote is kept rather than guessed away -- best-effort,
+    matching `friction()`'s own pre-existing staleness handling."""
+    per_book = _latest_per_book(rows)
+    try:
+        t_dt = _parse_iso(t)
+    except Exception:  # pragma: no cover -- defensive, mirrors friction()
+        return per_book
+    fresh = []
+    for r in per_book:
+        try:
+            age = (t_dt - _parse_iso(r.observed_utc)).total_seconds()
+        except Exception:  # pragma: no cover -- defensive, mirrors friction()
+            fresh.append(r)
+            continue
+        if age <= max_staleness_seconds:
+            fresh.append(r)
+    return tuple(fresh)
 
 
 @dataclass(frozen=True, slots=True)
@@ -192,15 +254,21 @@ class PricedBoard:
             key=lambda q: q.book))
 
     def best(self, selection_id: str) -> PriceObservation | None:
-        """The most bettor-favorable price observed for this selection --
-        the highest American price when positive, the least negative when
-        negative -- i.e. the greatest decimal payout, ties broken by book
-        name for determinism."""
+        """The most bettor-favorable price among each quoting book's LATEST
+        quote at `t` -- the highest American price when positive, the
+        least negative when negative -- i.e. the greatest decimal payout,
+        ties broken by book name for determinism. A book's own stale or
+        superseded quote from earlier in `t`'s history is never a
+        candidate: only `_fresh_latest_per_book`'s one-row-per-book,
+        staleness-bounded set is considered."""
         rows = self.rows_for(selection_id)
         if not rows:
             return None
+        fresh = _fresh_latest_per_book(rows, self.t)
+        if not fresh:
+            return None
         return max(
-            rows,
+            fresh,
             key=lambda q: (odds_math.american_to_decimal(q.price_american),
                            q.book))
 
@@ -252,23 +320,32 @@ class PricedBoard:
 
     def friction(self, selection_id: str, *, as_of_utc: str | None = None
                  ) -> Friction:
+        """`book_count`/`dispersion` describe the board at `as_of_utc`
+        (falling back to `self.t`): one row per book -- its own latest
+        quote -- excluding any book whose latest quote has already gone
+        stale by that instant (`_fresh_latest_per_book`, shared with
+        `best()` so the two never disagree about which books are
+        "quoting"). `vig` still devigs off each book's own latest quote,
+        not a mix of every historical row that book ever posted."""
         rows = self.rows_for(selection_id)
         if not rows:
             return Friction(vig=0.0, book_count=0, staleness_seconds=0,
                             dispersion=0.0)
+        fresh = _fresh_latest_per_book(rows, as_of_utc or self.t)
         opp_id = self._opposite_selection_id(selection_id)
         vig = 0.0
         if opp_id is not None:
-            mine = {q.book: q.price_american for q in rows}
-            theirs = {q.book: q.price_american
-                      for q in self.rows_for(opp_id)}
+            opp_rows = self.rows_for(opp_id)
+            opp_fresh = _fresh_latest_per_book(opp_rows, as_of_utc or self.t)
+            mine = {q.book: q.price_american for q in fresh}
+            theirs = {q.book: q.price_american for q in opp_fresh}
             common = sorted(set(mine) & set(theirs))
             if common:
                 vigs = [odds_math.margin([mine[b], theirs[b]])
                         for b in common]
                 vig = sum(vigs) / len(vigs)
         implied = [odds_math.american_to_probability(q.price_american)
-                   for q in rows]
+                   for q in fresh]
         dispersion = (max(implied) - min(implied)) if implied else 0.0
         staleness = 0
         if as_of_utc is not None:
@@ -278,7 +355,7 @@ class PricedBoard:
                     (_parse_iso(as_of_utc) - latest).total_seconds())
             except Exception:  # pragma: no cover -- best-effort only
                 staleness = 0
-        return Friction(vig=vig, book_count=len(rows),
+        return Friction(vig=vig, book_count=len(fresh),
                         staleness_seconds=max(staleness, 0),
                         dispersion=dispersion)
 

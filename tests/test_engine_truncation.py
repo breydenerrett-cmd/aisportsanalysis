@@ -12,24 +12,31 @@ HOME = "aaaaaaaaaaaaaaaa"
 AWAY = "bbbbbbbbbbbbbbbb"
 
 
-def _po(selection_id, side, price, book="fanduel"):
+def _po(selection_id, side, price, book="fanduel",
+        observed_utc="2026-04-11T18:00:00Z"):
     return PriceObservation(
         sport="mlb", event_id="e1", game_pk=1, market_key="h2h",
         selection_id=selection_id, side=side, subject_kind=None,
         subject_id=None, line=None, book=book, price_american=price,
-        observed_utc="2026-04-11T18:00:00Z", book_last_update=None,
-        known_at="2026-04-11T18:00:00Z", known_at_grade="A",
+        observed_utc=observed_utc, book_last_update=None,
+        known_at=observed_utc, known_at_grade="A",
         capture_id="c1", source="test", region="us",
         provider_market_key="h2h",
     )
 
 
-def _board(t):
+def _board(t, observed_utc=None):
+    # Quotes fresh AS OF `t` by default -- these tests exercise the
+    # truncation differential's feature-arrival logic, not
+    # PricedBoard.best/friction's own staleness bound (src/engine/snapshot
+    # .py's STALE_QUOTE_SECONDS), so a board's quotes should not go stale
+    # purely because `t` is hours after `t2h` in a fixture.
+    observed_utc = observed_utc or t
     return PricedBoard.from_price_observations("1", t, (
-        _po(HOME, "home", -150, book="a"),
-        _po(AWAY, "away", 130, book="a"),
-        _po(HOME, "home", -140, book="b"),
-        _po(AWAY, "away", 120, book="b"),
+        _po(HOME, "home", -150, book="a", observed_utc=observed_utc),
+        _po(AWAY, "away", 130, book="a", observed_utc=observed_utc),
+        _po(HOME, "home", -140, book="b", observed_utc=observed_utc),
+        _po(AWAY, "away", 120, book="b", observed_utc=observed_utc),
     ))
 
 

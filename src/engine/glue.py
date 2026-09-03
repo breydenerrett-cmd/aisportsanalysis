@@ -55,6 +55,17 @@ from src.engine.truncation import ArrivalRecord, TruncationSample
 from src.paths import processed_path
 
 L1_PATH = processed_path("l1_observations.jsonl")
+# `l1_observations.jsonl` rows (PriceObservation) carry no `commence_time`
+# field at all (src/board/record.py); the odds provider's own pre-projection
+# store does, one value per event_id (verified against the real backfilled
+# store in this worktree). This is the first-pitch guard's only source for
+# "when does this game actually start" -- see `commence_time_for` below.
+ODDS_SNAPSHOTS_PATH = processed_path("odds_snapshots.jsonl")
+# How far before commence_time a sampled decision instant `t` must sit.
+# `engine truncation` picks t = min(latest capture, commence_time - margin)
+# per game specifically so a game whose latest capture landed a minute
+# before first pitch does not get sampled right at the wire.
+DEFAULT_PRE_GAME_MARGIN_MINUTES = 5
 
 
 class GlueError(ValueError):
@@ -159,6 +170,23 @@ def read_l1_observations(game: "GameRef | str | int", *,
     return tuple(out)
 
 
+def commence_time_for(game: "GameRef | str | int", *,
+                       path: Path | str = ODDS_SNAPSHOTS_PATH
+                       ) -> str | None:
+    """The event's own `commence_time`, read from `odds_snapshots.jsonl`
+    rows keyed by `event_id` (see `ODDS_SNAPSHOTS_PATH` module note).
+    `None` when no row for this game carries one -- either the store is
+    missing, or this game is unknown to it -- so a caller with a
+    first-pitch guard to enforce can tell "verified pre-game" apart from
+    "cannot verify" and refuse rather than assume pre-game."""
+    ref = GameRef.of(game)
+    key = ref.board_key
+    for raw in _iter_l1_raw(Path(path)):
+        if str(raw.get("event_id")) == key and raw.get("commence_time"):
+            return raw["commence_time"]
+    return None
+
+
 def games_captured_on(date_str: str, *, path: Path | str = L1_PATH
                        ) -> tuple[str, ...]:
     """Every `board_key` (see `GameRef`) with at least one L1 observation
@@ -193,16 +221,33 @@ def latest_capture_time(game: "GameRef | str | int", date_str: str, *,
 
 def build_board(game: "GameRef | str | int", t: str | datetime, *,
                  path: Path | str = L1_PATH,
-                 observations: Iterable[PriceObservation] | None = None
+                 observations: Iterable[PriceObservation] | None = None,
+                 commence_time: str | datetime | None = None
                  ) -> PricedBoard:
     """The stop-at-T `PricedBoard` for one game from L1 `PriceObservation`
     rows: every row with `observed_utc <= t`, nothing observed after `t`
     ever reaches the result (mirrors `src.core.asof.as_of`'s own stop-at-T
     discipline). Deterministic and pure once `observations` is supplied
     (the default reads the L1 store, which is itself a deterministic
-    function of what is on disk)."""
+    function of what is on disk).
+
+    First-pitch guard: when `commence_time` is given, `t` must be strictly
+    before it -- a board built at or after first pitch is an in-play board,
+    not the pre-game board this engine's decision path is contracted to
+    price (docs/planning bug #2). `commence_time=None` means "the caller
+    did not or could not verify" and is NOT treated as "verified pre-game";
+    it simply skips the guard, so a caller that needs the guarantee must
+    supply `commence_time` (see `commence_time_for`).
+    """
     ref = GameRef.of(game)
     t_dt = _parse_utc(t)
+    if commence_time is not None:
+        commence_dt = _parse_utc(commence_time)
+        if t_dt >= commence_dt:
+            raise GlueError(
+                f"refusing to build an in-play board for {ref.board_key}: "
+                f"t={_iso(t)} is not strictly before commence_time="
+                f"{_iso(commence_time)}")
     rows = (tuple(observations) if observations is not None
             else read_l1_observations(ref, path=path))
     truncated = tuple(r for r in rows if _parse_utc(r.observed_utc) <= t_dt)
@@ -318,14 +363,20 @@ def build_truncation_sample(game: "GameRef | str | int", t2h: str, t: str, *,
                              point_class: str = "LATE_BOARD",
                              features_t2h: Mapping[str, float] | None = None,
                              features_t: Mapping[str, float] | None = None,
-                             as_of_stores=None) -> TruncationSample:
+                             as_of_stores=None,
+                             commence_time: str | None = None
+                             ) -> TruncationSample:
     """One game's `TruncationSample`, built entirely from `build_board`,
     `build_snapshot` and the two arrival helpers above -- the whole seam
-    `engine truncation` needs, in one call."""
+    `engine truncation` needs, in one call. `commence_time`, when given, is
+    passed to both `build_board` calls so an in-play `t` OR `t2h` is
+    refused (bug #2's first-pitch guard) rather than silently sampled."""
     ref = GameRef.of(game)
     rows = read_l1_observations(ref, path=path)
-    board_t2h = build_board(ref, t2h, observations=rows)
-    board_t = build_board(ref, t, observations=rows)
+    board_t2h = build_board(ref, t2h, observations=rows,
+                             commence_time=commence_time)
+    board_t = build_board(ref, t, observations=rows,
+                           commence_time=commence_time)
     snapshot_t2h = build_snapshot(
         ref, t2h, point_class=point_class, features=features_t2h,
         board=board_t2h, as_of_stores=as_of_stores)
@@ -341,18 +392,47 @@ def build_truncation_sample(game: "GameRef | str | int", t2h: str, t: str, *,
     )
 
 
+@dataclass(frozen=True, slots=True)
+class SkippedGame:
+    """One game `sample_truncation_inputs` declined to sample, and why --
+    surfaced so a caller (the `engine truncation` CLI) can report the
+    first-pitch guard's effect honestly instead of a silent shrink."""
+
+    game: str
+    reason: str
+
+
 def sample_truncation_inputs(date_str: str, sample_size: int, *,
                               t_offset_minutes: int = 120,
                               path: Path | str = L1_PATH,
-                              as_of_stores=None
-                              ) -> tuple[TruncationSample, ...]:
+                              as_of_stores=None,
+                              commence_path: Path | str = ODDS_SNAPSHOTS_PATH,
+                              pre_game_margin_minutes: int =
+                                  DEFAULT_PRE_GAME_MARGIN_MINUTES,
+                              return_skipped: bool = False,
+                              ) -> "tuple[TruncationSample, ...]":
     """Up to `sample_size` `TruncationSample`s for games captured on
-    `date_str`: each game's own `t` is its latest L1 capture that day
-    (`latest_capture_time`), `t2h` is `t - t_offset_minutes`. Games are
-    chosen by sorted `board_key`, so the same date and sample size always
-    picks the same games. Refuses (`GlueError`) when the date has no
-    captures at all, rather than returning an empty tuple a caller might
-    mistake for a vacuously passing gate."""
+    `date_str`, chosen by sorted `board_key` so the same date and sample
+    size always consider the same games in the same order.
+
+    First-pitch guard (bug #2): each game's own `t` is
+    `min(latest L1 capture that day, commence_time - pre_game_margin_minutes)`,
+    never the latest capture alone -- a game whose latest capture that day
+    landed in-play would otherwise hand `analyze()` a board built after
+    first pitch. `t2h` is `t - t_offset_minutes`. A game is SKIPPED
+    (excluded, not erred on) when its `commence_time` cannot be found in
+    `commence_path` (cannot verify pre-game, so it is never assumed
+    pre-game) or when it has no L1 capture on `date_str` at all; skipping
+    continues past sample_size candidates until either `sample_size`
+    eligible games are found or the day's games are exhausted, so a date
+    with some in-play games can still fill the sample from others. Pass
+    `return_skipped=True` to additionally get back the list of
+    `SkippedGame` this run declined and why.
+
+    Refuses (`GlueError`) when the date has no captures at all, or when
+    EVERY captured game was skipped, rather than returning an empty tuple a
+    caller might mistake for a vacuously passing gate.
+    """
     if sample_size <= 0:
         raise GlueError(f"sample_size must be positive, got {sample_size}")
     games = games_captured_on(date_str, path=path)
@@ -363,11 +443,40 @@ def sample_truncation_inputs(date_str: str, sample_size: int, *,
             "--backfill` if new forward captures exist but L1 has not been "
             "reprojected yet.")
     samples = []
-    for key in games[:sample_size]:
-        t = latest_capture_time(key, date_str, path=path)
-        t2h = (_parse_utc(t) - timedelta(minutes=t_offset_minutes)).isoformat()
-        samples.append(build_truncation_sample(key, t2h, t, path=path,
-                                                as_of_stores=as_of_stores))
+    skipped: list[SkippedGame] = []
+    for key in games:
+        if len(samples) >= sample_size:
+            break
+        latest = latest_capture_time(key, date_str, path=path)
+        if latest is None:
+            skipped.append(SkippedGame(key, "no L1 capture on this date"))
+            continue
+        commence = commence_time_for(key, path=commence_path)
+        if commence is None:
+            skipped.append(SkippedGame(
+                key, "commence_time unknown in commence_path -- cannot "
+                     "verify pre-game, refusing to assume it"))
+            continue
+        commence_dt = _parse_utc(commence)
+        margin_cutoff = commence_dt - timedelta(minutes=pre_game_margin_minutes)
+        t_dt = min(_parse_utc(latest), margin_cutoff)
+        t2h_dt = t_dt - timedelta(minutes=t_offset_minutes)
+        if t_dt >= commence_dt:
+            skipped.append(SkippedGame(
+                key, f"latest capture {latest} is at/after commence_time "
+                     f"{commence} -- in-play, refusing"))
+            continue
+        t, t2h = _iso(t_dt), _iso(t2h_dt)
+        samples.append(build_truncation_sample(
+            key, t2h, t, path=path, as_of_stores=as_of_stores,
+            commence_time=commence))
+    if not samples:
+        raise GlueError(
+            f"no eligible PRE-GAME truncation samples for {date_str}: all "
+            f"{len(skipped)} captured game(s) were skipped (in-play or "
+            f"commence_time unknown) -- {[(s.game, s.reason) for s in skipped]}")
+    if return_skipped:
+        return tuple(samples), tuple(skipped)
     return tuple(samples)
 
 
