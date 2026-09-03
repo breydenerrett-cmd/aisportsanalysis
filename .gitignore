@@ -142,3 +142,4 @@ artifacts/analyze_*.html
 
 # Agent worktrees created by the orchestration harness -- never repository content.
 .claude/worktrees/
+data/processed/l1_observations.jsonl
