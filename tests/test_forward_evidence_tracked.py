@@ -76,6 +76,13 @@ FORWARD_EVIDENCE = (
     # projection's own ids and dedup state are append-only evidence of what
     # was captured and when, same as everything else in this list.
     "data/processed/information_events.jsonl",
+    # S1 event_id -> game_pk map (docs/CHECKPOINT_PHASE0_2026-09-03.md,
+    # src/board/gamekey.py): re-derivable in principle from the odds stores
+    # above plus the free MLB schedule, but each row also records the
+    # evidence a resolution decision was made on at the moment it was
+    # computed (candidates considered, why an event could not be resolved) --
+    # same "captured now, not reconstructable later at any cost" reasoning.
+    "data/processed/event_game_map.jsonl",
 )
 
 

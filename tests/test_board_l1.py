@@ -90,6 +90,10 @@ class L1BackfillTests(unittest.TestCase):
         ]
 
     def _run(self, **kwargs):
+        # game_map_path defaults to a nonexistent file in this test's own
+        # tmpdir -- never the real data/processed/event_game_map.jsonl --
+        # so every test here is hermetic unless it explicitly builds a map.
+        kwargs.setdefault("game_map_path", self.root / "event_game_map.jsonl")
         return l1.run(output_path=self.output, raw_root=self.raw_root,
                       sources=self._sources(), **kwargs)
 
@@ -246,6 +250,71 @@ class L1BackfillTests(unittest.TestCase):
         for row in rows:
             self.assertFalse(row["l0_available"])
             self.assertTrue(row["capture_id"].startswith("backfill:"))
+
+    # -- S1: game_pk from the event_id -> game_pk map ----------------------
+
+    def test_no_map_leaves_game_pk_null_and_counts_not_in_map(self):
+        _write_jsonl(self.multibook, [MULTIBOOK_ROW])
+        report = self._run()  # default helper points at a nonexistent map
+        rows = [json.loads(l) for l in self.output.read_text().splitlines()]
+        self.assertTrue(all(r["game_pk"] is None for r in rows))
+        self.assertEqual(report["game_pk"]["not_in_map"], 2)
+        self.assertEqual(report["game_pk"]["resolved"], 0)
+        for row in rows:
+            price_observation_from_dict(row)  # game_pk=None is still valid
+
+    def test_resolved_map_entry_populates_game_pk(self):
+        _write_jsonl(self.multibook, [MULTIBOOK_ROW])
+        map_path = self.root / "event_game_map.jsonl"
+        _write_jsonl(map_path, [{
+            "event_id": MULTIBOOK_ROW["event_id"], "game_pk": 777123,
+            "resolved": True, "ambiguous": False,
+        }])
+        report = self._run(game_map_path=map_path)
+        rows = [json.loads(l) for l in self.output.read_text().splitlines()]
+        self.assertTrue(all(r["game_pk"] == 777123 for r in rows))
+        self.assertEqual(report["game_pk"]["resolved"], 2)
+        self.assertEqual(report["game_pk"]["ambiguous"], 0)
+
+    def test_ambiguous_map_entry_still_carries_its_best_guess_game_pk(self):
+        _write_jsonl(self.multibook, [MULTIBOOK_ROW])
+        map_path = self.root / "event_game_map.jsonl"
+        _write_jsonl(map_path, [{
+            "event_id": MULTIBOOK_ROW["event_id"], "game_pk": 777123,
+            "resolved": True, "ambiguous": True,
+        }])
+        report = self._run(game_map_path=map_path)
+        rows = [json.loads(l) for l in self.output.read_text().splitlines()]
+        self.assertTrue(all(r["game_pk"] == 777123 for r in rows))
+        self.assertEqual(report["game_pk"]["ambiguous"], 2)
+        self.assertEqual(report["game_pk"]["resolved"], 0)
+
+    def test_genuinely_unresolvable_map_entry_leaves_game_pk_null(self):
+        _write_jsonl(self.multibook, [MULTIBOOK_ROW])
+        map_path = self.root / "event_game_map.jsonl"
+        _write_jsonl(map_path, [{
+            "event_id": MULTIBOOK_ROW["event_id"], "game_pk": None,
+            "resolved": False, "ambiguous": False,
+            "reason": "no schedule game matched",
+        }])
+        report = self._run(game_map_path=map_path)
+        rows = [json.loads(l) for l in self.output.read_text().splitlines()]
+        self.assertTrue(all(r["game_pk"] is None for r in rows))
+        self.assertEqual(report["game_pk"]["map_null"], 2)
+
+    def test_game_map_path_none_skips_lookup_entirely(self):
+        _write_jsonl(self.multibook, [MULTIBOOK_ROW])
+        map_path = self.root / "event_game_map.jsonl"
+        _write_jsonl(map_path, [{
+            "event_id": MULTIBOOK_ROW["event_id"], "game_pk": 777123,
+            "resolved": True, "ambiguous": False,
+        }])
+        # A caller that explicitly asks for no game_pk lookup at all -- the
+        # map exists but game_map_path=None must never read it.
+        report = self._run(game_map_path=None)
+        rows = [json.loads(l) for l in self.output.read_text().splitlines()]
+        self.assertTrue(all(r["game_pk"] is None for r in rows))
+        self.assertEqual(report["game_pk"]["not_in_map"], 2)
 
 
 if __name__ == "__main__":

@@ -11,30 +11,34 @@ for the price side and `src.core.asof.as_of` for the point-in-time-feature
 side, and does nothing else that could make its output depend on when it was
 run rather than on the stores it read plus the `t` it was asked for.
 
-THE game_pk / event_id GAP (read before touching any test or CLI wiring)
+THE game_pk / event_id GAP (S1, docs/CHECKPOINT_PHASE0_2026-09-03.md)
 --------------------------------------------------------------------------
 `src.board.l1`'s three source stores (`odds_multibook.jsonl`,
 `odds_snapshots.jsonl`, `f5_close.jsonl`) key every row on the odds
-provider's own `event_id` -- an opaque hash -- and stamp `game_pk: null` on
-every PriceObservation it emits (verified against the real backfilled store
-in this worktree: zero of 56,680 rows carry a non-null `game_pk`). The
-forward stores `src.core.asof.as_of` reads (`data/watch/*.jsonl`,
+provider's own `event_id` -- an opaque hash. The forward stores
+`src.core.asof.as_of` reads (`data/watch/*.jsonl`,
 `data/processed/information_events.jsonl`, `weather_forecast.jsonl`,
-`boxscores_2026.jsonl`) key on the MLB numeric `game_pk` instead, and no
-store tracked in this worktree pairs the two ids for a game that has not
-yet had a final boxscore written (the one join key `src.board.events` uses,
-`(team_name, date)` against `boxscores_2026.jsonl`, only exists for
-*finished* games -- see that module's docstring). For an in-progress or
-future slate there is therefore no honest way to resolve an odds `event_id`
-to its MLB `game_pk` from data already on disk, and this module does not
-invent one: `GameRef` carries both ids as *optional*, independent fields,
-`build_board` uses only `event_id` (or `game_pk`, if that is all a future L1
-row carries), and `build_snapshot`'s `as_of` read is skipped -- honestly,
-not silently -- whenever no `game_pk` is known for the game being built.
-That yields a real but feature-sparse `PriceBlindSnapshot` for today's odds
-captures; a future packet that adds the id join populates `assumption_exposure`
-and non-price features on the same call graph without a signature change
-here.
+`boxscores_2026.jsonl`) key on the MLB numeric `game_pk` instead. Before S1
+nothing tracked in this worktree paired the two ids for a game that had not
+yet had a final boxscore written, so every L1 row carried `game_pk: null`
+and every `as_of` read here was skipped.
+
+`src.board.gamekey` closes that gap with a schedule-backed resolver and a
+cached store (`data/processed/event_game_map.jsonl`, built/refreshed by
+`python3 -m src.cli gamekey --date DATE`); `src.board.l1` reads that store
+to populate `game_pk` on every PriceObservation it can resolve. This module
+reads the SAME map (see `_load_game_pk_map` / the `game_pk_map` parameter
+threaded through `build_board`/`build_snapshot`/the arrival helpers below)
+so a `GameRef` built from a bare `event_id` -- what every current L1 row and
+every caller of this module still passes -- gets its `game_pk` filled in
+when the map has resolved it, and `as_of` runs for real instead of being
+skipped. `game_pk_map=None` (the default) means "load the real map from
+disk, which may be empty"; an explicit mapping (`{}` included) is what a
+test passes to opt out of touching the real store. A game the map has not
+resolved (not yet run through `gamekey --date`, or genuinely unresolvable)
+still gets the same honest, feature-sparse `PriceBlindSnapshot` this module
+always produced for an unmapped event -- no guessing, only what the map
+and the price store actually know.
 """
 
 from __future__ import annotations
@@ -45,6 +49,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Iterable, Mapping
 
+from src.board import gamekey as gamekey_module
 from src.board.record import (
     PriceObservation, RecordValidationError, price_observation_from_dict,
 )
@@ -124,6 +129,35 @@ class GameRef:
         return GameRef(event_id=str(game))
 
 
+def _load_game_pk_map(game_pk_map: Mapping[str, dict] | None
+                       ) -> Mapping[str, dict]:
+    """`None` means "load the real S1 map from disk" (`gamekey.py`'s
+    `data/processed/event_game_map.jsonl`, empty when it does not exist
+    yet). An explicit mapping -- `{}` included -- is used as given: how a
+    caller (a test, or a future one that already has the map in hand) opts
+    out of ever touching the real store."""
+    if game_pk_map is not None:
+        return game_pk_map
+    return gamekey_module.load_map()
+
+
+def _resolve_ref(game: "GameRef | str | int",
+                  game_pk_map: Mapping[str, dict] | None) -> GameRef:
+    """`GameRef.of(game)`, enriched with a `game_pk` resolved from the S1
+    map when `game` carried only an `event_id` and the map has resolved it
+    (`gamekey.game_pk_for_event`). A `GameRef` that already carries an
+    explicit `game_pk` -- from the caller, or a future L1 row that carries
+    one itself -- is never second-guessed by the map."""
+    ref = GameRef.of(game)
+    if ref.game_pk is not None or ref.event_id is None:
+        return ref
+    pk = gamekey_module.game_pk_for_event(
+        ref.event_id, _load_game_pk_map(game_pk_map))
+    if pk is None:
+        return ref
+    return GameRef(event_id=ref.event_id, game_pk=str(pk))
+
+
 # ---------------------------------------------------------------------------
 # L1 reads
 # ---------------------------------------------------------------------------
@@ -171,16 +205,29 @@ def read_l1_observations(game: "GameRef | str | int", *,
 
 
 def commence_time_for(game: "GameRef | str | int", *,
-                       path: Path | str = ODDS_SNAPSHOTS_PATH
+                       path: Path | str = ODDS_SNAPSHOTS_PATH,
+                       game_pk_map: Mapping[str, dict] | None = None
                        ) -> str | None:
-    """The event's own `commence_time`, read from `odds_snapshots.jsonl`
-    rows keyed by `event_id` (see `ODDS_SNAPSHOTS_PATH` module note).
-    `None` when no row for this game carries one -- either the store is
-    missing, or this game is unknown to it -- so a caller with a
-    first-pitch guard to enforce can tell "verified pre-game" apart from
-    "cannot verify" and refuse rather than assume pre-game."""
+    """The game's first pitch, preferring the MLB SCHEDULE's own timing
+    over the odds store when both exist (S1): the S1 map
+    (`gamekey.resolve_event`) records `schedule_commence_time` -- the
+    matched schedule game's actual `start_time_utc` -- alongside the odds
+    event's own `commence_time`, and the schedule is the more authoritative
+    of the two (a postponement or a doubleheader retime moves the real
+    first pitch without the odds feed's `commence_time` necessarily
+    following). Falls back to `odds_snapshots.jsonl`'s `commence_time` (the
+    pre-S1 behavior) when the map has no schedule-side answer for this
+    event -- not yet run through `gamekey --date`, or genuinely
+    unresolvable. `None` only when NEITHER source has an answer, so a
+    caller with a first-pitch guard to enforce can tell "verified pre-game"
+    apart from "cannot verify" and refuse rather than assume pre-game."""
     ref = GameRef.of(game)
     key = ref.board_key
+    if ref.event_id is not None:
+        index = _load_game_pk_map(game_pk_map)
+        entry = index.get(str(ref.event_id)) if index else None
+        if entry and entry.get("schedule_commence_time"):
+            return entry["schedule_commence_time"]
     for raw in _iter_l1_raw(Path(path)):
         if str(raw.get("event_id")) == key and raw.get("commence_time"):
             return raw["commence_time"]
@@ -222,7 +269,8 @@ def latest_capture_time(game: "GameRef | str | int", date_str: str, *,
 def build_board(game: "GameRef | str | int", t: str | datetime, *,
                  path: Path | str = L1_PATH,
                  observations: Iterable[PriceObservation] | None = None,
-                 commence_time: str | datetime | None = None
+                 commence_time: str | datetime | None = None,
+                 game_pk_map: Mapping[str, dict] | None = None,
                  ) -> PricedBoard:
     """The stop-at-T `PricedBoard` for one game from L1 `PriceObservation`
     rows: every row with `observed_utc <= t`, nothing observed after `t`
@@ -238,8 +286,15 @@ def build_board(game: "GameRef | str | int", t: str | datetime, *,
     did not or could not verify" and is NOT treated as "verified pre-game";
     it simply skips the guard, so a caller that needs the guarantee must
     supply `commence_time` (see `commence_time_for`).
+
+    `game_pk_map` (see `_resolve_ref`): when `game` is a bare `event_id`,
+    enriches the returned board's `PriceObservation`s' own board_key lookup
+    with nothing extra -- `board_key` stays `event_id` -- but the resulting
+    `ref` is what `build_snapshot`/`build_truncation_sample` reuse for
+    their own `as_of` reads, so passing the same map through here keeps one
+    resolution per game rather than a second lookup downstream.
     """
-    ref = GameRef.of(game)
+    ref = _resolve_ref(game, game_pk_map)
     t_dt = _parse_utc(t)
     if commence_time is not None:
         commence_dt = _parse_utc(commence_time)
@@ -273,19 +328,24 @@ def build_snapshot(game: "GameRef | str | int", t: str | datetime, *,
                     features: Mapping[str, float] | None = None,
                     board: PricedBoard | None = None,
                     lineup_posted: bool = False,
-                    as_of_stores=None) -> PriceBlindSnapshot:
+                    as_of_stores=None,
+                    game_pk_map: Mapping[str, dict] | None = None,
+                    ) -> PriceBlindSnapshot:
     """The stop-at-T `PriceBlindSnapshot` for one game.
 
     Non-price features (point-in-time `as_of` reads) are pulled in only
-    when `game` carries a `game_pk` -- see the module docstring's
-    `game_pk`/`event_id` gap note; a game known only by `event_id` gets an
-    honestly feature-sparse snapshot rather than a guessed one.
+    when `game` resolves to a `game_pk` -- explicitly, on the `GameRef`
+    itself, or via the S1 `event_id -> game_pk` map (`game_pk_map`; `None`
+    loads the real store, see `_resolve_ref`/module docstring). A game the
+    map has not resolved still gets an honestly feature-sparse snapshot
+    rather than a guessed one -- this is a REAL `as_of` read for a live
+    game once `gamekey --date` has run for it, not a permanent skip.
     `available_markets`/`books_by_market` are derived from `board` (this
     call's own `PricedBoard`, or the caller's) via `board_facts` when given
     -- board-shaped, never price-shaped, facts a PROPOSE-side system may
     see (ENGINE_CONTRACT.md section 3).
     """
-    ref = GameRef.of(game)
+    ref = _resolve_ref(game, game_pk_map)
     as_of_snapshot = None
     if ref.asof_key is not None:
         as_of_snapshot = asof_module.as_of(ref.asof_key, t, stores=as_of_stores)
@@ -304,13 +364,15 @@ def build_snapshot(game: "GameRef | str | int", t: str | datetime, *,
 # ---------------------------------------------------------------------------
 
 def field_arrivals(game: "GameRef | str | int", t2h: str, t: str, *,
-                    as_of_stores=None) -> tuple[ArrivalRecord, ...]:
+                    as_of_stores=None,
+                    game_pk_map: Mapping[str, dict] | None = None
+                    ) -> tuple[ArrivalRecord, ...]:
     """`ArrivalRecord`s for `as_of` fields that became knowable strictly
     inside `(t2h, t]` for `game` -- a lineup posting, a probable-pitcher
-    change, an umpire assignment. Empty when `game` carries no `game_pk`
-    (`as_of` has nothing to key on there) -- honestly absent, not
-    fabricated."""
-    ref = GameRef.of(game)
+    change, an umpire assignment. Empty when `game` resolves to no
+    `game_pk` (see `_resolve_ref`/`game_pk_map`) -- `as_of` has nothing to
+    key on there -- honestly absent, not fabricated."""
+    ref = _resolve_ref(game, game_pk_map)
     if ref.asof_key is None:
         return ()
     before = asof_module.as_of(ref.asof_key, t2h, stores=as_of_stores)
@@ -364,14 +426,18 @@ def build_truncation_sample(game: "GameRef | str | int", t2h: str, t: str, *,
                              features_t2h: Mapping[str, float] | None = None,
                              features_t: Mapping[str, float] | None = None,
                              as_of_stores=None,
-                             commence_time: str | None = None
+                             commence_time: str | None = None,
+                             game_pk_map: Mapping[str, dict] | None = None,
                              ) -> TruncationSample:
     """One game's `TruncationSample`, built entirely from `build_board`,
     `build_snapshot` and the two arrival helpers above -- the whole seam
     `engine truncation` needs, in one call. `commence_time`, when given, is
     passed to both `build_board` calls so an in-play `t` OR `t2h` is
-    refused (bug #2's first-pitch guard) rather than silently sampled."""
-    ref = GameRef.of(game)
+    refused (bug #2's first-pitch guard) rather than silently sampled.
+    `game_pk_map` (S1) is resolved once here and handed to every downstream
+    call as an already-resolved `ref`, so a game with no explicit `game_pk`
+    is looked up in the map exactly once per sample."""
+    ref = _resolve_ref(game, game_pk_map)
     rows = read_l1_observations(ref, path=path)
     board_t2h = build_board(ref, t2h, observations=rows,
                              commence_time=commence_time)
@@ -410,6 +476,7 @@ def sample_truncation_inputs(date_str: str, sample_size: int, *,
                               pre_game_margin_minutes: int =
                                   DEFAULT_PRE_GAME_MARGIN_MINUTES,
                               return_skipped: bool = False,
+                              game_pk_map: Mapping[str, dict] | None = None,
                               ) -> "tuple[TruncationSample, ...]":
     """Up to `sample_size` `TruncationSample`s for games captured on
     `date_str`, chosen by sorted `board_key` so the same date and sample
@@ -451,7 +518,8 @@ def sample_truncation_inputs(date_str: str, sample_size: int, *,
         if latest is None:
             skipped.append(SkippedGame(key, "no L1 capture on this date"))
             continue
-        commence = commence_time_for(key, path=commence_path)
+        commence = commence_time_for(key, path=commence_path,
+                                      game_pk_map=game_pk_map)
         if commence is None:
             skipped.append(SkippedGame(
                 key, "commence_time unknown in commence_path -- cannot "
@@ -469,7 +537,7 @@ def sample_truncation_inputs(date_str: str, sample_size: int, *,
         t, t2h = _iso(t_dt), _iso(t2h_dt)
         samples.append(build_truncation_sample(
             key, t2h, t, path=path, as_of_stores=as_of_stores,
-            commence_time=commence))
+            commence_time=commence, game_pk_map=game_pk_map))
     if not samples:
         raise GlueError(
             f"no eligible PRE-GAME truncation samples for {date_str}: all "
@@ -490,12 +558,14 @@ class TrivialAlwaysHomeSystem:
     when no evolab-adapter genome can be wired honestly.
 
     `src.engine.adapters.EvolabGenomeSystem` decides off signal features
-    (`era_diff`, `whip_diff`, ...) that this project's point-in-time
-    feature pipeline has never populated for an odds-provider `event_id` --
-    no `game_pk` mapping exists in this worktree's tracked data for an
-    in-progress slate (module docstring), so a real genome would honestly
-    see empty `features` and never propose, making the differential
-    trivially and uninterestingly empty. This system instead proposes
+    (`era_diff`, `whip_diff`, ...) that come from `src.research.matrix`, not
+    from `src.core.asof` -- S1 (module docstring) resolves the `game_pk`
+    join so `as_of` fields (lineups, umpires, probables) reach a live
+    snapshot, but nothing yet calls the matrix feature builder for a live
+    `event_id` and passes its output as this call's `features` (that join
+    is S2, still open). A real genome would honestly see empty `features`
+    and never propose, making the differential trivially and
+    uninterestingly empty. This system instead proposes
     deterministically -- a fixed `p_model`, never derived from price or a
     clock -- so PROJECT/ATTACK/RATE still run against the real L1 price
     data end to end: whatever changes between its `t-2h` and `t`

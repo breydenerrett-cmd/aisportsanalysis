@@ -171,6 +171,7 @@ def cmd_l1(args) -> int:
     writes zero new rows. Never drops a row silently -- anything declined is
     counted and reported with its reason.
     """
+    from src.board import gamekey as gamekey_module
     from src.board import l1 as l1_module
 
     result = l1_module.run(since=args.since)
@@ -197,6 +198,44 @@ def cmd_l1(args) -> int:
         for reason, count in sorted(result["refusals"].items()):
             print(f"    {count:6d}  {reason}")
 
+    gp = result.get("game_pk") or {}
+    print(f"\n  game_pk (S1, from {gamekey_module.DEFAULT_MAP_PATH})")
+    print(f"    resolved={gp.get('resolved', 0):6d}  "
+          f"ambiguous={gp.get('ambiguous', 0):6d}  "
+          f"not_in_map={gp.get('not_in_map', 0):6d}  "
+          f"map_null={gp.get('map_null', 0):6d}")
+
+    return EXIT_OK
+
+
+def cmd_gamekey(args) -> int:
+    """Build/refresh data/processed/event_game_map.jsonl for a date range.
+
+    `--date D` alone resolves just D. `--date START --end END` resolves
+    every calendar date from START to END inclusive. Prints
+    resolved/ambiguous/unresolved counts; never touches L1 itself (`l1
+    --backfill` reads whatever this command has already written).
+    """
+    from src.board import gamekey as gamekey_module
+
+    end = args.end or args.date
+    report = gamekey_module.build_map_for_range(
+        args.date, end, force=args.force)
+    print(f"gamekey --date {args.date}"
+          + (f" --end {end}" if end != args.date else "") + "\n")
+    print(f"  map: {report['map_path']}")
+    print(f"  candidates={report['candidates']:6d}  "
+          f"resolved={report['resolved']:6d}  "
+          f"ambiguous={report['ambiguous']:6d}  "
+          f"unresolved={report['unresolved']:6d}  "
+          f"skipped_already_mapped={report['skipped_already_mapped']:6d}  "
+          f"rows_written={report['rows_written']:6d}")
+    print("\n  per date")
+    for day, day_report in sorted(report["by_date"].items()):
+        print(f"    {day}  candidates={day_report['candidates']:4d}  "
+              f"resolved={day_report['resolved']:4d}  "
+              f"ambiguous={day_report['ambiguous']:4d}  "
+              f"unresolved={day_report['unresolved']:4d}")
     return EXIT_OK
 
 
@@ -2365,6 +2404,19 @@ def build_parser() -> argparse.ArgumentParser:
                         help="only project rows observed on/after this "
                              "YYYY-MM-DD (UTC official date)")
 
+    gamekey_cmd = sub.add_parser(
+        "gamekey", help="build/refresh data/processed/event_game_map.jsonl "
+                        "(event_id -> game_pk, S1)")
+    gamekey_cmd.add_argument("--date", required=True, metavar="DATE",
+                             help="YYYY-MM-DD (or the start of a range "
+                                  "with --end)")
+    gamekey_cmd.add_argument("--end", default=None, metavar="DATE",
+                             help="YYYY-MM-DD, inclusive end of the range "
+                                  "(defaults to --date, i.e. a single day)")
+    gamekey_cmd.add_argument("--force", action="store_true",
+                             help="re-resolve events already in the map "
+                                  "instead of skipping them")
+
     engine_cmd = sub.add_parser(
         "engine", help="engine conformance and truncation-differential checks")
     engine_sub = engine_cmd.add_subparsers(dest="engine_command", required=True)
@@ -2423,6 +2475,7 @@ COMMANDS = {
     "budget": cmd_budget,
     "cadence": cmd_cadence,
     "l1": cmd_l1,
+    "gamekey": cmd_gamekey,
     "engine": cmd_engine,
 }
 
