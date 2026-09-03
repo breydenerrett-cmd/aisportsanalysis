@@ -201,6 +201,16 @@ written elsewhere) and docs/SAAS_APPLICATION_ARCHITECTURE.md can be reviewed
 together.
 
 ### READY QUEUE (refill to ≥3 whenever an item completes)
+NOTE 2026-09-03 18:30Z: owner said GO on the checkpoint's vertical slice
+(docs/CHECKPOINT_PHASE0_2026-09-03.md §5). The slice is the only build work
+until it is proven end to end on a real slate: S1 game_pk join, S2 shared
+feature builder, S3 replay through analyze(), S5 slate runner, S6 settle +
+fitness, S7 EOD self-review, S8 daily-loop wiring. Four markets only
+(moneyline, run line, game totals, F5 moneyline) -- no new market families,
+no factory population growth, no product surfaces until the loop works and
+is demonstrated on one historical slate, one current slate, one paper
+account and one EOD review. Capture keeps running but does not consume the
+roadmap.
 NOTE 2026-09-03 09:00Z: proof-of-function checkpoint posted
 (docs/CHECKPOINT_PHASE0_2026-09-03.md, evidence under
 docs/planning/checkpoint-2026-09-03/): ~30% of the end-to-end milestone;
