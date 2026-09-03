@@ -58,7 +58,7 @@ echo "$PROP_OUT" | sed 's/^/  /'
 # of its own -- its stores live under data/processed and are staged below.
 # ESCALATE lines are held back here and re-emitted unindented further down.
 echo "== capture extras =="
-EXTRAS_OUT=$(PROP_PRICES=1 bash scripts/capture_extras.sh 2>&1)
+EXTRAS_OUT=$(PROP_PRICES=1 BATTER_PROPS=1 bash scripts/capture_extras.sh 2>&1)
 echo "$EXTRAS_OUT" | grep -v "^ESCALATE:" | sed 's/^/  /'
 
 # Concurrent runs of this script and daily_loop.sh on the same shared
