@@ -65,6 +65,11 @@ FORWARD_EVIDENCE = (
     # non-strikeout pitcher prop is ever settled. One store per season;
     # 2026 is the year this lane's smoke test writes into.
     "data/processed/boxscores_2026.jsonl",
+    # InformationEvent store (packet W6, src/board/events.py): a projected
+    # event is deterministically re-derivable from the stores above, but the
+    # projection's own ids and dedup state are append-only evidence of what
+    # was captured and when, same as everything else in this list.
+    "data/processed/information_events.jsonl",
 )
 
 

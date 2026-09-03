@@ -1889,6 +1889,25 @@ def cmd_watch(args) -> int:
     return EXIT_ERROR if len(report["errors"]) == 3 else EXIT_OK
 
 
+def cmd_events(args) -> int:
+    """Project InformationEvents from the free-environment watch/processed
+    stores into data/processed/information_events.jsonl (packet W6). Pure
+    diff over existing stores -- no new network calls -- and safe to run
+    from scripts/capture_extras.sh: it never raises past this wrapper.
+    """
+    from src.board import events as board_events
+
+    try:
+        result = board_events.run(since=args.since)
+    except Exception as exc:  # never fail the capture script
+        print(f"  events: FAILED (skipped): {exc}", file=sys.stderr)
+        return EXIT_OK
+    print(f"  events: seen={result['seen']} written={result['written']}")
+    for kind, count in sorted(result["by_kind"].items()):
+        print(f"    {kind}: {count}")
+    return EXIT_OK
+
+
 def cmd_timing(args) -> int:
     """The V3 accumulation status; pre-registered tables only past the floor."""
     from src.research import timingreport
@@ -2145,6 +2164,13 @@ def build_parser() -> argparse.ArgumentParser:
                           help="print derived graded events as JSONL "
                                "instead of polling")
 
+    events_cmd = sub.add_parser(
+        "events", help="project InformationEvents from the free-environment "
+                       "watch/processed stores (packet W6; no network calls)")
+    events_cmd.add_argument("--since", default=None, metavar="DATE",
+                           help="only project rows observed on/after this "
+                                "YYYY-MM-DD (UTC)")
+
     timing_cmd = sub.add_parser(
         "timing", help="V3 event accumulation status; tables "
                        "appear only past the 30-event class floor")
@@ -2214,6 +2240,7 @@ COMMANDS = {
     "dense": cmd_dense,
     "movement": cmd_movement,
     "watch": cmd_watch,
+    "events": cmd_events,
     "timing": cmd_timing,
     "calibration-demo": cmd_calibration_demo,
     "budget": cmd_budget,
