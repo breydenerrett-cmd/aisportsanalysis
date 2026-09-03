@@ -159,6 +159,42 @@ def cmd_cadence(args) -> int:
     return EXIT_OK
 
 
+def cmd_l1(args) -> int:
+    """Backfill data/processed/l1_observations.jsonl from every price store.
+
+    Deterministic and idempotent: a re-run over unchanged source stores
+    writes zero new rows. Never drops a row silently -- anything declined is
+    counted and reported with its reason.
+    """
+    from src.board import l1 as l1_module
+
+    result = l1_module.run(since=args.since)
+    print(f"L1 backfill -> {result['output_path']}\n")
+    print("  per source store")
+    for name, stats in result["by_source"].items():
+        present = "present" if stats["present"] else "MISSING"
+        print(f"    {name:16s} {present:8s} rows_seen={stats['rows_seen']:6d}  "
+              f"observations={stats['observations_seen']:6d}  "
+              f"written={stats['written']:6d}  "
+              f"skipped_existing={stats['skipped_existing']:6d}  "
+              f"refused={stats['refused']:4d}  raw_matched={stats['raw_matched']:4d}")
+
+    print("\n  per market_key")
+    for market_key, stats in sorted(result["by_market_key"].items()):
+        print(f"    {market_key:24s} written={stats['written']:6d}")
+
+    print(f"\n  totals: written={result['written']}  "
+          f"skipped_existing={result['skipped_existing']}  "
+          f"refused={result['refused']}  raw_matched={result['raw_matched']}")
+
+    if result["refusals"]:
+        print("\n  refusal reasons (never a silent drop)")
+        for reason, count in sorted(result["refusals"].items()):
+            print(f"    {count:6d}  {reason}")
+
+    return EXIT_OK
+
+
 def cmd_slate(args) -> int:
     """Build a slate for one date and write it to CSV."""
     try:
@@ -2114,6 +2150,16 @@ def build_parser() -> argparse.ArgumentParser:
     health_cmd.add_argument("--date", default=None,
                             help="YYYY-MM-DD (defaults to today, UTC)")
 
+    l1_cmd = sub.add_parser(
+        "l1", help="backfill data/processed/l1_observations.jsonl "
+                   "(PriceObservation rows) from every price store")
+    l1_cmd.add_argument("--backfill", action="store_true",
+                        help="project every row in every store (default "
+                             "behavior; flag exists for explicitness)")
+    l1_cmd.add_argument("--since", default=None, metavar="DATE",
+                        help="only project rows observed on/after this "
+                             "YYYY-MM-DD (UTC official date)")
+
     return parser
 
 
@@ -2148,6 +2194,7 @@ COMMANDS = {
     "calibration-demo": cmd_calibration_demo,
     "budget": cmd_budget,
     "cadence": cmd_cadence,
+    "l1": cmd_l1,
 }
 
 

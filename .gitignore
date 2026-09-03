@@ -38,6 +38,14 @@ data/app/*
 !data/processed/f5_close.jsonl
 !data/processed/prop_listing.jsonl
 
+# L1 canonical PriceObservation backfill (packet W3): deterministically
+# reprojected from the forward-evidence stores above, so it is rebuildable in
+# principle -- but it is also the shape the rest of the engine reads, and a
+# store this cheap to keep in sync should not depend on every clone re-running
+# the backfill before anything downstream works. Tracked like its sources
+# unless it exceeds the size where that stops being reasonable.
+!data/processed/l1_observations.jsonl
+
 # PAID HISTORICAL ODDS ARCHIVE IS NOT GENERATED DATA -- tracked deliberately,
 # same reasoning as the forward-capture block above. data/historical/*
 # above ignores data/historical/odds_history/ and data/historical/
