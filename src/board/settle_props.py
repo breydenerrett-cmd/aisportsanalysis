@@ -181,7 +181,7 @@ def register_all() -> None:
     from src.board import settle as settle_module
 
     for key, fn in PROP_SETTLEMENT_RULES.items():
-        settle_module.register_rule(key, fn)
+        settle_module.register_rule(key, fn, kind="prop")
     _registered = True
 
 

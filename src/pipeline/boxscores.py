@@ -198,3 +198,59 @@ def ingest_range(start, end, path=None, resume=True, timeout=20,
 def read(path) -> list:
     """All rows in a store, in file order."""
     return _read_rows(path)
+
+
+def find_player_row(rows_or_path, game_pk, subject_id, subject_kind) -> dict | None:
+    """The one (game_pk, subject, type) row a prop settlement needs, or None.
+
+    `rows_or_path` is either an already-loaded list of rows (pass this when
+    settling many bets against the same store -- read it once, look up many
+    times) or a path/str, in which case this reads it via `read()` each
+    call. `subject_kind` must be `"pitcher"` or `"batter"` -- a linescore row
+    never matches, this function only resolves player-level props.
+
+    Matches on `player_id` when `subject_id` is (or parses as) an int --
+    that is what this store keys players by. Falls back to a
+    case-insensitive `player_name` match when `subject_id` is a non-numeric
+    string, because `src.pipeline.batter_props._project` writes the player's
+    display name as the selection subject whenever the odds provider sends
+    no numeric `participant_id` -- today's real captured prop rows are named
+    this way, not by player_id. Returns None (never guesses, never picks a
+    "closest" row) when no row matches -- the caller (settle()'s
+    box_row_resolver contract) passes that through as `row=None`, which
+    grades VOID, not an error.
+    """
+    if game_pk is None or subject_id is None:
+        return None
+    rows = rows_or_path if isinstance(rows_or_path, list) else read(rows_or_path)
+    try:
+        game_pk = int(game_pk)
+    except (TypeError, ValueError):
+        return None
+    subject_id_int = None
+    try:
+        subject_id_int = int(subject_id)
+    except (TypeError, ValueError):
+        pass
+    subject_name = subject_id.strip().lower() if isinstance(subject_id, str) else None
+    for row in rows:
+        if row.get("type") != subject_kind or row.get("game_pk") != game_pk:
+            continue
+        if subject_id_int is not None and row.get("player_id") == subject_id_int:
+            return row
+        if subject_name is not None and (row.get("player_name") or "").lower() == subject_name:
+            return row
+    return None
+
+
+def box_row_resolver(rows_or_path):
+    """Build a `settle.settle(box_row_resolver=...)` callable bound to one
+    already-loaded store (or path). Reads the store once if given a path;
+    pass the loaded list yourself if you are settling many bets so this
+    does not re-read the file per bet."""
+    rows = rows_or_path if isinstance(rows_or_path, list) else read(rows_or_path)
+
+    def resolver(*, game_pk, subject_id, subject_kind):
+        return find_player_row(rows, game_pk, subject_id, subject_kind)
+
+    return resolver

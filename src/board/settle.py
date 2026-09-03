@@ -15,6 +15,26 @@ built, or the SGP entry that must never be silently priced); a test in this
 file enforces that every catalogue entry resolves to a real callable or to
 that literal sentinel string, so a market cannot go live without a
 settlement path.
+
+DISPATCHING PROP RULES (box-row resolution)
+---------------------------------------------
+Game-level rules take `(side, [line,] GameResult)`. Prop rules registered by
+`settle_props.py` take `(row, selection)` instead -- a per-player box row
+plus a selection dict -- because a prop cannot be graded from team run
+totals at all. `register_rule` tags each key's `kind` ("game" or "prop") in
+`RULE_KIND` so `settle()` can tell which calling convention a key needs
+without guessing from its name. For a prop key, `settle()` never touches a
+store itself (this module stays I/O-free); the caller injects either an
+already-resolved `box_row`, or a `box_row_resolver(game_pk, subject_id,
+subject_kind) -> dict | None` callable that `settle()` calls once. Either
+way, a box row that cannot be found is not an error -- it is passed through
+as `row=None` and the prop rule's own contract (`settle_props.settle`)
+returns the named outcome VOID. The only thing `settle()` itself refuses is
+a caller mistake (a prop key invoked with no `selection` at all, or a game
+key invoked with no `result`) -- that raises `SettleDispatchError`, never a
+bare `TypeError` from a mismatched positional-argument count (see bug #2,
+checkpoint 2026-09-03 review: the previous dispatcher called every prop rule
+as `fn(side, line, result)`, which is not that rule's signature).
 """
 
 from __future__ import annotations
@@ -25,6 +45,13 @@ from typing import Callable, Optional
 # Sentinel: a catalogue entry may point at this string instead of a callable
 # to declare "named on purpose, not settleable yet" -- see module docstring.
 COLLECTION_BLOCKED = "collection_blocked"
+
+
+class SettleDispatchError(RuntimeError):
+    """`settle()` could not route this call -- a caller mistake (missing
+    `selection` for a prop key, or missing `result` for a game key), never a
+    data-absence case. Absence of the box row itself is not an error: it is
+    the VOID outcome, produced by handing the prop rule `row=None`."""
 
 
 @dataclass(frozen=True)
@@ -249,13 +276,23 @@ SETTLEMENT_RULES: dict[str, object] = {
     COLLECTION_BLOCKED: COLLECTION_BLOCKED,
 }
 
+# settlement_rule key -> "game" | "prop". Every key defined in this module is
+# "game" by construction; register_rule tags anything plugged in from
+# outside (settle_props.py's seam) as "prop" by default so settle() can pick
+# the right calling convention without inspecting the callable itself.
+RULE_KIND: dict[str, str] = {key: "game" for key in SETTLEMENT_RULES}
 
-def register_rule(key: str, fn: Callable) -> None:
+
+def register_rule(key: str, fn: Callable, *, kind: str = "prop") -> None:
     """Plug a settlement rule into the shared registry (the settle_props.py seam).
 
     Raises if `key` is already registered to something other than the exact
     same callable -- this registry is process-global and a silent overwrite
     would let two lanes' rules shadow each other without either noticing.
+    `kind` records which calling convention `settle()` must use for this key
+    ("prop" -> `fn(row, selection)`, "game" -> the GameResult-based path);
+    default is "prop" because every current external caller of this seam is
+    settle_props.py.
     """
     existing = SETTLEMENT_RULES.get(key)
     if existing is not None and existing is not fn:
@@ -264,19 +301,44 @@ def register_rule(key: str, fn: Callable) -> None:
             "callable -- register_rule refuses to silently overwrite it"
         )
     SETTLEMENT_RULES[key] = fn
+    RULE_KIND[key] = kind
 
 
 def settle(
     settlement_rule: str,
     side: str,
-    result: GameResult,
+    result: Optional[GameResult] = None,
     line: Optional[str] = None,
+    *,
+    selection: Optional[dict] = None,
+    box_row: Optional[dict] = None,
+    box_row_resolver: Optional[Callable[..., Optional[dict]]] = None,
+    game_pk=None,
+    subject_kind: Optional[str] = None,
     **kwargs,
 ) -> str:
     """Dispatch to the registered rule for `settlement_rule` and return one of
     WIN/LOSS/PUSH/VOID. Raises KeyError for an unregistered key and ValueError
     if `settlement_rule` resolves to COLLECTION_BLOCKED -- a blocked market
-    can be named and catalogued but never actually settled."""
+    can be named and catalogued but never actually settled.
+
+    Two calling conventions, chosen via `RULE_KIND`:
+
+    - GAME rules (h2h, spreads, totals, ...): pass `result` (a GameResult),
+      and `line` for the ones that need one. Unchanged from before.
+    - PROP rules (pitcher/batter stat lines): pass `selection` (the dict
+      `settle_props.settle` expects: subject_id/line/side) plus either
+      `box_row` directly, or `box_row_resolver` -- called as
+      `box_row_resolver(game_pk=game_pk, subject_id=selection.get(
+      "subject_id"), subject_kind=subject_kind)` -- and `settle()` looks the
+      row up itself. A row that cannot be found (resolver returns None, or
+      none was supplied) is passed through as `row=None`, which the prop
+      rule's own contract grades VOID -- never an error.
+
+    A prop key called without `selection`, or a game key called without
+    `result`, raises `SettleDispatchError` -- a caller mistake, not a data
+    gap.
+    """
     fn = SETTLEMENT_RULES.get(settlement_rule)
     if fn is None:
         raise KeyError(f"no settlement rule registered for {settlement_rule!r}")
@@ -284,6 +346,28 @@ def settle(
         raise ValueError(
             f"settlement_rule {settlement_rule!r} is collection_blocked and "
             "cannot be settled"
+        )
+
+    if RULE_KIND.get(settlement_rule) == "prop":
+        if selection is None:
+            raise SettleDispatchError(
+                f"prop settlement_rule {settlement_rule!r} requires "
+                "selection=<dict with subject_id/line/side> -- settle() "
+                "cannot grade a prop from a GameResult"
+            )
+        row = box_row
+        if row is None and box_row_resolver is not None:
+            row = box_row_resolver(
+                game_pk=game_pk,
+                subject_id=selection.get("subject_id"),
+                subject_kind=subject_kind,
+            )
+        return fn(row, selection)
+
+    if result is None:
+        raise SettleDispatchError(
+            f"game settlement_rule {settlement_rule!r} requires "
+            "result=<GameResult>"
         )
     if settlement_rule in _NO_LINE_RULES:
         return fn(side, result)

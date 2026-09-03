@@ -236,5 +236,138 @@ class PaperAccountBookTests(unittest.TestCase):
         self.assertTrue(all(s["label"] == PAPER_LABEL for s in summaries))
 
 
+class PropSettlementEndToEndTests(unittest.TestCase):
+    """Bug #2 (checkpoint 2026-09-03 review): every prop PaperBet used to
+    raise TypeError the moment settle_bet reached src.board.settle.settle.
+    This settles a real batter-prop PaperBet end to end through
+    PaperAccount.settle_and_record -- the exact path a real caller uses --
+    against a REAL row from data/processed/boxscores_2026.jsonl, and shows
+    all four outcomes (win/loss/push/void).
+
+    HONESTY NOTE on the selection: data/processed/batter_props.jsonl (the
+    real captured batter-prop store) is entirely dated 2026-09-03, while
+    data/processed/boxscores_2026.jsonl only covers 2026-08-30..09-01 --
+    verified below to have zero overlapping game_date -- so there is no
+    single real prop row whose game has a real box score yet. Per the task
+    instructions this test therefore builds the PaperBet selections itself
+    (a fixture: subject_id/line/side picked by this test) but settles them
+    against REAL rows read from the real boxscore store on disk -- the box
+    line, the game_pk, the player_id and the stat values are all real MLB
+    data, only the (line, side) pairing on top of them is synthesized here
+    to exercise all four outcomes deliberately.
+    """
+
+    STORE_PATH = "data/processed/boxscores_2026.jsonl"
+    BATTER_PROPS_PATH = "data/processed/batter_props.jsonl"
+
+    @classmethod
+    def setUpClass(cls):
+        from src.pipeline import boxscores
+
+        cls.rows = boxscores.read(cls.STORE_PATH)
+        assert cls.rows, (
+            f"{cls.STORE_PATH} is empty on disk -- this test needs the real "
+            "store checked into the repo, it does not fabricate box lines"
+        )
+        # staticmethod() wrapping matters here: a plain function assigned as
+        # a class attribute is bound as a method on instance access (self
+        # gets injected as its first positional argument), which is exactly
+        # wrong for a resolver whose contract is keyword-only
+        # (game_pk=/subject_id=/subject_kind=) -- staticmethod keeps it a
+        # plain callable through `self.resolver`.
+        cls.resolver = staticmethod(boxscores.box_row_resolver(cls.rows))
+
+        # The no-overlap claim above, checked against the actual files
+        # rather than just asserted in prose.
+        import json
+        with open(cls.BATTER_PROPS_PATH, encoding="utf-8") as fh:
+            prop_dates = {json.loads(line)["game_date"] for line in fh if line.strip()}
+        box_dates = {r["date"] for r in cls.rows}
+        assert not (prop_dates & box_dates), (
+            "batter_props.jsonl now overlaps boxscores_2026.jsonl by date -- "
+            "this test's honesty note is stale, rewrite it to use the real "
+            "overlapping row instead of a fixture selection"
+        )
+
+        # Real rows, real game_pk, real player_id, real stat values --
+        # pulled straight out of the 2026-08-30 slate (game_pk 822688).
+        cls.game_pk = 822688
+        cls.win_row = next(  # Agustín Ramírez, h=2 that night
+            r for r in cls.rows
+            if r["type"] == "batter" and r["player_id"] == 682663
+            and r["game_pk"] == cls.game_pk
+        )
+        cls.loss_row = next(  # Griffin Conine, h=0 that night
+            r for r in cls.rows
+            if r["type"] == "batter" and r["player_id"] == 665052
+            and r["game_pk"] == cls.game_pk
+        )
+        cls.push_row = next(  # Esteury Ruiz, h=1 that night
+            r for r in cls.rows
+            if r["type"] == "batter" and r["player_id"] == 665923
+            and r["game_pk"] == cls.game_pk
+        )
+        assert cls.win_row["h"] == 2 and cls.loss_row["h"] == 0 and cls.push_row["h"] == 1
+
+    def setUp(self):
+        self._tmpdir = tempfile.TemporaryDirectory()
+        patcher = mock.patch.object(
+            paper, "default_ledger_path",
+            side_effect=lambda system_id: Path(self._tmpdir.name) / f"{system_id}.jsonl")
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.addCleanup(self._tmpdir.cleanup)
+
+    def _prop_bet(self, bet_id, subject_id, line):
+        return PaperBet(
+            bet_id=bet_id, system_id="sys-props", market_key="batter_hits",
+            selection_id=f"batter_hits:{subject_id}:{line}", side="over",
+            line=line, price_american=-115, settlement_rule="batter_hits",
+            game_pk=self.game_pk, subject_id=subject_id, subject_kind="batter",
+        )
+
+    def test_settles_win_loss_push_and_void_through_the_dispatcher(self):
+        account = PaperAccount(system_id="sys-props", starting_bankroll=1000.0)
+
+        win_settled = account.settle_and_record(
+            self._prop_bet("p-win", 682663, "1.5"),  # h=2 > 1.5
+            None, day="2026-08-31", box_row_resolver=self.resolver,
+        )
+        loss_settled = account.settle_and_record(
+            self._prop_bet("p-loss", 665052, "0.5"),  # h=0 < 0.5
+            None, day="2026-08-31", box_row_resolver=self.resolver,
+        )
+        push_settled = account.settle_and_record(
+            self._prop_bet("p-push", 665923, "1"),  # h=1 == 1
+            None, day="2026-08-31", box_row_resolver=self.resolver,
+        )
+        void_settled = account.settle_and_record(
+            # No box row anywhere for this player/game -- resolver returns
+            # None; this must VOID, never raise.
+            self._prop_bet("p-void", 999999999, "1.5"),
+            None, day="2026-08-31", box_row_resolver=self.resolver,
+        )
+
+        self.assertEqual(win_settled.outcome, "win")
+        self.assertGreater(win_settled.profit_units, 0.0)
+        self.assertEqual(loss_settled.outcome, "loss")
+        self.assertEqual(loss_settled.profit_units, -FLAT_1U)
+        self.assertEqual(push_settled.outcome, "push")
+        self.assertEqual(push_settled.profit_units, 0.0)
+        self.assertEqual(void_settled.outcome, "void")
+        self.assertEqual(void_settled.profit_units, 0.0)
+
+        # PUSH and VOID never count toward exposure; only win/loss stake.
+        self.assertAlmostEqual(account.total_staked_units, 2.0)
+        self.assertEqual(account.n_wins, 1)
+        self.assertEqual(account.n_losses, 1)
+        self.assertEqual(account.n_pushes, 1)
+        self.assertEqual(account.n_voids, 1)
+
+        verify = account.verify_ledger()
+        self.assertTrue(verify.ok)
+        self.assertEqual(verify.rows_checked, 4)
+
+
 if __name__ == "__main__":
     unittest.main()

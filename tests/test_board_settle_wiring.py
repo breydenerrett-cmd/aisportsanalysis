@@ -1,6 +1,7 @@
-"""Wiring test: settle_props' rules actually live in settle's registry.
+"""Wiring test: settle_props' rules actually live in settle's registry AND
+are reachable through settle.settle() itself.
 
-Two things this file exists to catch:
+Three things this file exists to catch:
 
 1. Importing src.board (the package, not either submodule directly) must
    register every prop and first-inning settlement rule so that any code
@@ -10,6 +11,17 @@ Two things this file exists to catch:
 2. Going through that registry has to produce the exact same grade as
    calling src.board.settle_props.settle directly -- registration must not
    be a second, silently-diverging implementation of the same rule.
+3. Going through `settle.settle()` -- the actual dispatcher every caller
+   (src.accounts.paper) uses, not the registry dict directly -- has to
+   produce that same grade too. This is the regression test for bug #2
+   (checkpoint 2026-09-03 review): the old dispatcher called every prop rule
+   as `fn(side, line, result)` and raised TypeError on all fourteen of them,
+   and this file's earlier version called `SETTLEMENT_RULES[rule](row,
+   selection)` directly, which bypasses `settle()` entirely and would never
+   have caught that. `TenGradedExamplesThroughTheRegistryTests` below now
+   asserts `settle.settle(...)` too, via both the `box_row=` path (row
+   already in hand) and the `box_row_resolver=` path (settle() looks the row
+   up itself, exercising `src.pipeline.boxscores.box_row_resolver`).
 """
 
 import json
@@ -19,7 +31,9 @@ from pathlib import Path
 import src.board  # noqa: F401  (import-time side effect: registers prop rules)
 from src.board.ids import MARKET_CATALOGUE
 from src.board.settle import COLLECTION_BLOCKED, SETTLEMENT_RULES
+from src.board.settle import settle as settle_dispatch
 from src.board.settle_props import settle as settle_props_settle
+from src.pipeline.boxscores import box_row_resolver
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
@@ -94,6 +108,24 @@ class TenGradedExamplesThroughTheRegistryTests(unittest.TestCase):
         direct = settle_props_settle(row, selection)
         via_registry = registry_fn(row, selection)
         self.assertEqual(via_registry, direct)
+
+        # THE DISPATCHER ITSELF, not the registry dict -- this is the path
+        # src.accounts.paper.settle_bet actually calls. box_row= (row
+        # already in hand) and box_row_resolver= (settle() looks it up
+        # itself via the boxscore store) must both reach the same grade.
+        via_dispatch_direct_row = settle_dispatch(
+            spec.settlement_rule, selection["side"],
+            selection=selection, box_row=row,
+        )
+        self.assertEqual(via_dispatch_direct_row, direct)
+
+        resolver = box_row_resolver([row])
+        via_dispatch_resolver = settle_dispatch(
+            spec.settlement_rule, selection["side"],
+            selection=selection, game_pk=row.get("game_pk"),
+            subject_kind=row.get("type"), box_row_resolver=resolver,
+        )
+        self.assertEqual(via_dispatch_resolver, direct)
         return via_registry
 
     # 1-2: pitcher strikeouts (win, then push)
@@ -173,6 +205,64 @@ class TenGradedExamplesThroughTheRegistryTests(unittest.TestCase):
         sel = {"subject_id": None, "stat": "first_inning_scored",
                "line": "0", "side": "over"}
         self.assertEqual(settle_props_settle(line_688, sel), "loss")
+
+
+class DispatcherPropRegressionTests(unittest.TestCase):
+    """Bug #2, checkpoint 2026-09-03 review: settle.settle() used to call
+    every prop rule as fn(side, line, result) and raise TypeError. These
+    tests exercise settle() directly (never SETTLEMENT_RULES[...] bypass)
+    against that exact failure mode."""
+
+    @classmethod
+    def setUpClass(cls):
+        from src.providers import mlb
+        box_688 = mlb.parse_boxscore(822688, _load("mlb_boxscore_822688.json"))
+        cls.alvarez = dict(_find(box_688["pitchers"], 674841), type="pitcher")
+
+    def test_prop_key_no_longer_raises_typeerror_via_dispatcher(self):
+        """The literal bug: settle('pitcher_strikeouts', 'over',
+        GameResult(...), line='6.5') used to raise TypeError. It must not,
+        and must not silently produce a wrong grade either -- a caller
+        without a selection is a caller mistake, so this now raises the
+        named SettleDispatchError instead."""
+        from src.board.settle import GameResult, SettleDispatchError
+
+        with self.assertRaises(SettleDispatchError):
+            settle_dispatch(
+                "pitcher_strikeouts", "over",
+                GameResult(home_runs=5, away_runs=3), line="6.5",
+            )
+
+    def test_prop_settles_correctly_through_dispatcher_with_selection(self):
+        sel = {"subject_id": 674841, "line": "5.5", "side": "over"}
+        outcome = settle_dispatch(
+            "pitcher_strikeouts", "over",
+            selection=sel, box_row=self.alvarez,
+        )
+        self.assertEqual(outcome, "win")
+
+    def test_missing_box_row_voids_never_raises(self):
+        """A resolver that finds nothing (wrong game_pk, no boxscore filed
+        yet, etc.) must grade VOID through the dispatcher, not raise."""
+        sel = {"subject_id": 674841, "line": "5.5", "side": "over"}
+        resolver = box_row_resolver([self.alvarez])
+        outcome = settle_dispatch(
+            "pitcher_strikeouts", "over",
+            selection=sel, game_pk=999999999, subject_kind="pitcher",
+            box_row_resolver=resolver,
+        )
+        self.assertEqual(outcome, "void")
+
+    def test_no_resolver_and_no_box_row_also_voids(self):
+        sel = {"subject_id": 674841, "line": "5.5", "side": "over"}
+        outcome = settle_dispatch("pitcher_strikeouts", "over", selection=sel)
+        self.assertEqual(outcome, "void")
+
+    def test_game_key_without_result_raises_named_error_not_attributeerror(self):
+        from src.board.settle import SettleDispatchError
+
+        with self.assertRaises(SettleDispatchError):
+            settle_dispatch("h2h", "home")
 
 
 if __name__ == "__main__":
