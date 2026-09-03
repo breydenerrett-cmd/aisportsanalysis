@@ -7,3 +7,7 @@
 {"caller": "dense.run", "credits_remaining": 99667, "credits_used_last": 0, "utc": "2026-09-02T21:43:53.212599Z"}
 {"caller": "dense.run", "credits_remaining": 99661, "credits_used_last": 0, "utc": "2026-09-02T22:16:15.895571Z"}
 {"caller": "dense.run", "credits_remaining": 99658, "credits_used_last": 0, "utc": "2026-09-02T22:19:21.247744Z"}
+{"caller": "dense.run", "credits_remaining": 99655, "credits_used_last": 0, "utc": "2026-09-02T23:16:40.325048Z"}
+{"caller": "dense.close_capture", "credits_remaining": 99639, "credits_used_last": 0, "utc": "2026-09-03T00:01:51.234296Z"}
+{"caller": "prop_listing.run", "credits_remaining": 99636, "credits_used_last": 0, "utc": "2026-09-03T00:01:52.184994Z"}
+{"caller": "prop_prices.run", "credits_remaining": 99635, "credits_used_last": 0, "utc": "2026-09-03T00:03:17.369229Z"}
