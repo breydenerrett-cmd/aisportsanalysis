@@ -239,6 +239,43 @@ def cmd_gamekey(args) -> int:
     return EXIT_OK
 
 
+def cmd_statcast(args) -> int:
+    """`statcast --catchup [--through DATE]`: extend the pitch-level store
+    (`data/historical/statcast/`) from its manifest's last covered date
+    through `--through` (default: yesterday, UTC). See
+    `src.providers.statcast_pitches.catchup` for the full contract -- this
+    is the forward cadence that keeps the six pitch-accumulator matchup
+    features (`src.engine.features`) grading fresh instead of stale."""
+    if not args.catchup:
+        print("ERROR: statcast currently only supports --catchup",
+              file=sys.stderr)
+        return EXIT_ERROR
+
+    from src.providers import statcast_pitches as sp
+
+    def _on_window(info):
+        if "error" in info:
+            print(f"  FAILED  {info['window']}: {info['error']}")
+        else:
+            print(f"  fetched {info['window']}: {info['rows']:6d} rows")
+
+    try:
+        report = sp.catchup(through=args.through, on_window=_on_window)
+    except sp.StatcastPitchError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+
+    print(f"statcast catchup -- last covered before: "
+          f"{report['last_covered_before']}, through: {report['through']}")
+    print(f"  windows fetched : {report['windows']}")
+    print(f"  windows skipped : {report['skipped']} (already in manifest)")
+    print(f"  windows failed  : {report['failed']}")
+    print(f"  rows fetched    : {report['rows']}")
+    if report["windows"] == 0 and report["failed"] == 0:
+        print("  store already current through the target date")
+    return EXIT_OK if report["failed"] == 0 else EXIT_ERROR
+
+
 def cmd_slate(args) -> int:
     """Build a slate for one date and write it to CSV."""
     try:
@@ -2692,6 +2729,17 @@ def build_parser() -> argparse.ArgumentParser:
                              help="re-resolve events already in the map "
                                   "instead of skipping them")
 
+    statcast_cmd = sub.add_parser(
+        "statcast", help="pitch-level Statcast store maintenance "
+                         "(data/historical/statcast/)")
+    statcast_cmd.add_argument("--catchup", action="store_true",
+                              help="extend the store from the manifest's "
+                                   "last covered date through --through "
+                                   "(default: yesterday, UTC)")
+    statcast_cmd.add_argument("--through", default=None, metavar="DATE",
+                              help="YYYY-MM-DD, inclusive (default: "
+                                   "yesterday, UTC)")
+
     engine_cmd = sub.add_parser(
         "engine", help="engine conformance and truncation-differential checks")
     engine_sub = engine_cmd.add_subparsers(dest="engine_command", required=True)
@@ -2793,6 +2841,7 @@ COMMANDS = {
     "cadence": cmd_cadence,
     "l1": cmd_l1,
     "gamekey": cmd_gamekey,
+    "statcast": cmd_statcast,
     "engine": cmd_engine,
     "eod": cmd_eod,
 }
