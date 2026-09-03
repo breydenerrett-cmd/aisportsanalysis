@@ -41,6 +41,17 @@ def _l1_row(event_id, side, price, book, observed_utc):
     }
 
 
+def _historical_l1_row(event_id, side, price, book, observed_utc):
+    """A row shaped exactly like `src.board.l1_historical`'s projector would
+    write it (source, capture_id prefix, grade D -- see that module's
+    module docstring on why 2023-25 archive rows measure out to D)."""
+    row = _l1_row(event_id, side, price, book, observed_utc)
+    row["source"] = "odds_api_historical_archive"
+    row["known_at_grade"] = "D"
+    row["capture_id"] = f"historical_archive:odds_history_archive_2023:{observed_utc}"
+    return row
+
+
 def _write_jsonl(path: Path, rows) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as fh:
@@ -382,6 +393,70 @@ class TestL1RefreshBeforeSlate(SlateTestBase):
         self.run_slate("2026-09-02", systems=(glue_module.TrivialAlwaysHomeSystem(),))
         after = self.l1_path.read_text()
         self.assertEqual(before, after)
+
+
+class TestHistoricalSlateResolvesBoard(SlateTestBase):
+    """A 2023 archive-shaped slate: L1 rows carry
+    `source="odds_api_historical_archive"` / grade D (the shape
+    `src.board.l1_historical` actually writes), NOTHING is written to
+    `self.commence_path` (the live `odds_snapshots.jsonl` stand-in --
+    proving commence-time resolution does NOT depend on it here), and
+    `game_pk_map` is populated the way `l1_historical.
+    ensure_historical_event_map` populates the real `event_game_map.jsonl`
+    (`schedule_commence_time` from `mlb_results.csv`, not a live schedule
+    call). This is the exact mechanism that makes `engine slate --date
+    DATE` resolvable for a historical date at all: without a
+    `schedule_commence_time` entry, `commence_time_for` returns `None` for
+    every archive event and `games_for_slate_date` would silently exclude
+    every historical game from every slate, forever."""
+
+    def _historical_game_pk_map(self, event_id, game_pk, schedule_commence_time):
+        return {event_id: {
+            "event_id": event_id, "game_pk": game_pk, "resolved": True,
+            "ambiguous": False, "source": "mlb_results_csv",
+            "schedule_commence_time": schedule_commence_time,
+        }}
+
+    def test_2023_archive_slate_builds_a_board_and_writes_a_decision(self):
+        _write_jsonl(self.l1_path, [
+            _historical_l1_row(GAME_A, "home", -150, "book_a", "2023-04-05T16:00:00Z"),
+            _historical_l1_row(GAME_A, "away", 130, "book_a", "2023-04-05T16:00:00Z"),
+            _historical_l1_row(GAME_A, "home", -150, "book_b", "2023-04-05T16:00:00Z"),
+            _historical_l1_row(GAME_A, "away", 130, "book_b", "2023-04-05T16:00:00Z"),
+        ])
+        # self.commence_path is left untouched -- no live odds_snapshots.jsonl
+        # entry exists for this event at all.
+        self.assertFalse(self.commence_path.exists())
+        game_pk_map = self._historical_game_pk_map(
+            GAME_A, "660123", "2023-04-05T23:05:00Z")
+
+        report = self.run_slate(
+            "2023-04-05", systems=(glue_module.TrivialAlwaysHomeSystem(),),
+            game_pk_map=game_pk_map)
+
+        self.assertEqual(report.n_games_considered, 1)
+        self.assertEqual(report.n_games_skipped, 0)
+        game = report.games[0]
+        self.assertIsNone(game.skipped_reason)
+        self.assertEqual(game.commence_time, "2023-04-05T23:05:00Z")
+        self.assertEqual(report.n_new_decisions, 1)
+        self.assertEqual(report.n_new_wagers, 1)
+        self.assertTrue(any(r.price_american == -150 for r in game.records))
+
+    def test_without_a_map_entry_the_historical_game_is_skipped_not_guessed(self):
+        """The negative case, proving the map entry above is load-bearing:
+        the exact same L1 rows, with NO game_pk_map entry at all, must be
+        skipped (commence_time unknown) rather than silently priced off an
+        assumed time."""
+        _write_jsonl(self.l1_path, [
+            _historical_l1_row(GAME_A, "home", -150, "book_a", "2023-04-05T16:00:00Z"),
+            _historical_l1_row(GAME_A, "away", 130, "book_a", "2023-04-05T16:00:00Z"),
+        ])
+        report = self.run_slate(
+            "2023-04-05", systems=(glue_module.TrivialAlwaysHomeSystem(),),
+            game_pk_map={})
+        self.assertEqual(report.n_games_considered, 0)
+        self.assertEqual(report.n_new_decisions, 0)
 
 
 if __name__ == "__main__":

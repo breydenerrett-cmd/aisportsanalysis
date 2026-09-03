@@ -14,6 +14,7 @@ import unittest
 from pathlib import Path
 
 from src.board import l1
+from src.board import l1_historical
 from src.board.record import price_observation_from_dict
 
 MULTIBOOK_ROW = {
@@ -61,6 +62,63 @@ F5_CLOSE_ROW = {
     "event_id": "07d39d9ad653030c4c89d9a08c4071f5", "home_price": -166,
     "home_team": "Atlanta Braves", "market": "h2h_1st_5_innings",
     "observed_utc": "2026-08-31T22:01:44.931694Z",
+}
+
+
+# Real rows copied verbatim (one event/one bookmaker each, trimmed only by
+# array length) from data/historical/odds_history/mlb_2023.jsonl and
+# data/historical/odds_first_five/mlb_2023.jsonl -- the archive shapes
+# l1_historical.py projects, not invented ones.
+HISTORICAL_ODDS_HISTORY_ROW = {
+    "events": [{
+        "away_team": "Detroit Tigers",
+        "bookmakers": [{
+            "key": "mybookieag", "last_update": "2023-02-27T23:45:15Z",
+            "markets": [
+                {"key": "h2h", "last_update": "2023-02-27T23:45:15Z",
+                 "outcomes": [{"name": "Detroit Tigers", "price": 127},
+                              {"name": "New York Yankees", "price": -156}]},
+                {"key": "totals", "last_update": "2023-02-27T23:45:15Z",
+                 "outcomes": [{"name": "Over", "point": 9.0, "price": -112},
+                              {"name": "Under", "point": 9.0, "price": -108}]},
+            ],
+            "title": "MyBookie.ag",
+        }],
+        "commence_time": "2023-02-27T23:35:00Z",
+        "home_team": "New York Yankees",
+        "id": "be9f3156757fe9dd5d6532e8b6e75bf8",
+        "sport_key": "baseball_mlb", "sport_title": "MLB",
+    }],
+    "markets": ["h2h", "totals"],
+    "requested_at": "2023-03-20T16:50Z",
+    "snapshot_at": "2023-02-27T23:45:38Z",
+}
+
+HISTORICAL_ODDS_FIRST_FIVE_ROW = {
+    "away_team": "SEA", "commence_time": "2023-05-04T19:37:00Z",
+    "data": {
+        "away_team": "Seattle Mariners",
+        "bookmakers": [{
+            "key": "pointsbetus", "last_update": "2023-05-03T22:44:50Z",
+            "markets": [
+                {"key": "h2h_1st_5_innings", "last_update": "2023-05-03T22:41:00Z",
+                 "outcomes": [{"name": "Oakland Athletics", "price": 160},
+                              {"name": "Seattle Mariners", "price": -210}]},
+                {"key": "totals_1st_5_innings", "last_update": "2023-05-03T22:41:00Z",
+                 "outcomes": [{"name": "Over", "point": 4.5, "price": -105},
+                              {"name": "Under", "point": 4.5, "price": -125}]},
+            ],
+            "title": "PointsBet (US)",
+        }],
+        "commence_time": "2023-05-04T19:37:00Z",
+        "home_team": "Oakland Athletics",
+        "id": "890b4e9cf0b8e12f1fad599f656c7646",
+        "sport_key": "baseball_mlb", "sport_title": "MLB",
+    },
+    "date": "2023-05-03", "event_id": "890b4e9cf0b8e12f1fad599f656c7646",
+    "game_pk": "718319", "home_team": "OAK",
+    "markets": ["h2h_1st_5_innings", "totals_1st_5_innings"],
+    "snapshot_at": "2023-05-03T22:45:40Z",
 }
 
 
@@ -315,6 +373,320 @@ class L1BackfillTests(unittest.TestCase):
         rows = [json.loads(l) for l in self.output.read_text().splitlines()]
         self.assertTrue(all(r["game_pk"] is None for r in rows))
         self.assertEqual(report["game_pk"]["not_in_map"], 2)
+
+
+class HistoricalArchiveIntegrationTests(unittest.TestCase):
+    """`l1.run()`'s dispatch to `l1_historical` for the two archive `kind`s,
+    exercised through the SAME `sources=` override every other test in this
+    file uses -- the historical stores never need `historical_seasons` here
+    since `sources` names them directly, exactly like a fixture live store."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.history_archive = self.root / "odds_history_2023.jsonl"
+        self.f5_archive = self.root / "odds_first_five_2023.jsonl"
+        self.output = self.root / "l1_observations.jsonl"
+
+    def _sources(self):
+        return [
+            {"name": "odds_history_archive_2023", "path": self.history_archive,
+             "kind": l1_historical.KIND_ODDS_HISTORY, "is_close": False,
+             "source_label": l1_historical.HISTORICAL_SOURCE,
+             "timestamp_field": "snapshot_at"},
+            {"name": "odds_first_five_archive_2023", "path": self.f5_archive,
+             "kind": l1_historical.KIND_ODDS_FIRST_FIVE, "is_close": False,
+             "source_label": l1_historical.HISTORICAL_SOURCE,
+             "timestamp_field": "snapshot_at"},
+        ]
+
+    def _run(self, **kwargs):
+        kwargs.setdefault("game_map_path", self.root / "event_game_map.jsonl")
+        return l1.run(output_path=self.output, raw_root=self.root / "raw",
+                      sources=self._sources(), **kwargs)
+
+    def _rows(self):
+        return [json.loads(l) for l in self.output.read_text().splitlines()]
+
+    # -- schema: every archive-projected row is a valid PriceObservation ---
+
+    def test_odds_history_row_yields_valid_h2h_and_totals_observations(self):
+        _write_jsonl(self.history_archive, [HISTORICAL_ODDS_HISTORY_ROW])
+        report = self._run()
+        self.assertEqual(report["written"], 4)  # h2h x2 + totals x2
+        rows = self._rows()
+        for row in rows:
+            price_observation_from_dict(row)  # raises on an invalid record
+        self.assertEqual({r["market_key"] for r in rows}, {"h2h", "totals"})
+        h2h = {r["side"]: r for r in rows if r["market_key"] == "h2h"}
+        self.assertEqual(h2h["home"]["price_american"], -156)  # Yankees (home)
+        self.assertEqual(h2h["away"]["price_american"], 127)  # Tigers (away)
+        totals = {r["side"]: r for r in rows if r["market_key"] == "totals"}
+        self.assertEqual(totals["over"]["line"], "9.0")
+        self.assertEqual(totals["under"]["line"], "9.0")
+
+    def test_odds_first_five_row_yields_valid_observations(self):
+        _write_jsonl(self.f5_archive, [HISTORICAL_ODDS_FIRST_FIVE_ROW])
+        report = self._run()
+        self.assertEqual(report["written"], 4)
+        rows = self._rows()
+        for row in rows:
+            price_observation_from_dict(row)
+        self.assertEqual({r["market_key"] for r in rows},
+                         {"h2h_1st_5_innings", "totals_1st_5_innings"})
+
+    # -- observed_utc is snapshot_at, never requested_at --------------------
+
+    def test_observed_utc_is_snapshot_at_not_requested_at(self):
+        _write_jsonl(self.history_archive, [HISTORICAL_ODDS_HISTORY_ROW])
+        self._run()
+        rows = self._rows()
+        self.assertTrue(rows)
+        for row in rows:
+            self.assertEqual(row["observed_utc"], "2023-02-27T23:45:38Z")
+            self.assertNotEqual(row["observed_utc"], "2023-03-20T16:50Z")
+
+    # -- idempotence: repeated snapshot_at across many requested_at collapse -
+
+    def test_repeated_snapshot_at_across_requested_at_collapses_to_one_set(self):
+        # Same underlying snapshot, three different requested_at values --
+        # measured on the real archive (module docstring): a far-future
+        # game's price is re-served under many polls before it ever moves.
+        copies = []
+        for requested_at in ("2023-03-20T16:50Z", "2023-03-20T22:50Z",
+                             "2023-03-21T01:50Z"):
+            copy = dict(HISTORICAL_ODDS_HISTORY_ROW)
+            copy["requested_at"] = requested_at
+            copies.append(copy)
+        _write_jsonl(self.history_archive, copies)
+        report = self._run()
+        self.assertEqual(report["written"], 4)
+        self.assertEqual(report["skipped_existing"], 8)  # 3x - 1x, deduped
+        self.assertEqual(len(self._rows()), 4)
+
+    def test_rerun_over_unchanged_archive_writes_zero_new_rows(self):
+        _write_jsonl(self.history_archive, [HISTORICAL_ODDS_HISTORY_ROW])
+        first = self._run()
+        self.assertEqual(first["written"], 4)
+        second = self._run()
+        self.assertEqual(second["written"], 0)
+        self.assertEqual(second["skipped_existing"], 4)
+
+    # -- source distinguishability: never mistakable for a live capture -----
+
+    def test_archive_rows_carry_a_distinct_source_and_capture_id(self):
+        _write_jsonl(self.history_archive, [HISTORICAL_ODDS_HISTORY_ROW])
+        self._run()
+        for row in self._rows():
+            self.assertEqual(row["source"], l1_historical.HISTORICAL_SOURCE)
+            self.assertNotEqual(row["source"], "odds_api")
+            self.assertTrue(row["capture_id"].startswith(
+                f"{l1_historical.HISTORICAL_CAPTURE_PREFIX}:"))
+            self.assertFalse(row["capture_id"].startswith("backfill:"))
+            self.assertFalse(row["l0_available"])
+            self.assertFalse(row["is_close"])
+
+    def test_live_and_historical_rows_for_the_same_store_are_never_confused(self):
+        # A live multibook row and a historical archive row projected in
+        # the SAME run must remain distinguishable purely by `source` --
+        # nothing about the shared output schema may blur that line.
+        multibook = self.root / "odds_multibook.jsonl"
+        _write_jsonl(multibook, [{
+            "observed_utc": "2026-08-31T10:08:30.424365+00:00",
+            "event_id": "07d39d9ad653030c4c89d9a08c4071f5",
+            "commence_time": "2026-08-31T22:05:00Z",
+            "home_team": "Atlanta Braves", "away_team": "San Francisco Giants",
+            "book": "fanduel", "book_last_update": "2026-08-31T10:08:23Z",
+            "home_price": -158, "away_price": 146,
+        }])
+        _write_jsonl(self.history_archive, [HISTORICAL_ODDS_HISTORY_ROW])
+        sources = self._sources() + [
+            {"name": "odds_multibook", "path": multibook, "kind": "multibook",
+             "is_close": False, "source_label": "odds_api"},
+        ]
+        report = l1.run(output_path=self.output, raw_root=self.root / "raw",
+                        sources=sources,
+                        game_map_path=self.root / "event_game_map.jsonl")
+        self.assertEqual(report["written"], 6)  # 2 live + 4 historical
+        rows = self._rows()
+        live = [r for r in rows if r["source"] == "odds_api"]
+        historical = [r for r in rows if r["source"] == l1_historical.HISTORICAL_SOURCE]
+        self.assertEqual(len(live), 2)
+        self.assertEqual(len(historical), 4)
+        self.assertEqual(set(r["observation_id"] for r in live)
+                         & set(r["observation_id"] for r in historical), set())
+
+    # -- refusal on missing timestamp, never a guess -------------------------
+
+    def test_odds_history_row_with_no_snapshot_at_is_refused_not_guessed(self):
+        broken = dict(HISTORICAL_ODDS_HISTORY_ROW)
+        del broken["snapshot_at"]
+        _write_jsonl(self.history_archive, [broken])
+        report = self._run()
+        self.assertEqual(report["written"], 0)
+        self.assertGreaterEqual(report["refused"], 1)
+        self.assertTrue(any(r.startswith("historical_no_usable_timestamp")
+                            for r in report["refusals"]))
+
+    def test_odds_first_five_row_with_no_snapshot_at_is_refused_not_guessed(self):
+        broken = dict(HISTORICAL_ODDS_FIRST_FIVE_ROW)
+        del broken["snapshot_at"]
+        _write_jsonl(self.f5_archive, [broken])
+        report = self._run()
+        self.assertEqual(report["written"], 0)
+        self.assertTrue(any(r.startswith("historical_no_usable_timestamp")
+                            for r in report["refusals"]))
+
+    def test_market_outside_scope_is_refused_by_name(self):
+        mutated = json.loads(json.dumps(HISTORICAL_ODDS_HISTORY_ROW))
+        mutated["events"][0]["bookmakers"][0]["markets"][0]["key"] = "spreads"
+        _write_jsonl(self.history_archive, [mutated])
+        report = self._run()
+        # totals market on the same line still succeeds -- one bad market
+        # never hides a good one on the same archive line.
+        self.assertEqual(report["written"], 2)
+        self.assertTrue(any(r.startswith("historical_market_not_in_scope:spreads")
+                            for r in report["refusals"]))
+
+    def test_h2h_outcome_name_mismatch_is_refused_not_silently_dropped(self):
+        mutated = json.loads(json.dumps(HISTORICAL_ODDS_HISTORY_ROW))
+        mutated["events"][0]["bookmakers"][0]["markets"][0]["outcomes"][0]["name"] = "Some Other Team"
+        _write_jsonl(self.history_archive, [mutated])
+        report = self._run()
+        self.assertEqual(report["written"], 2)  # totals still projects
+        self.assertTrue(any(r.startswith("historical_h2h_outcome_mismatch")
+                            for r in report["refusals"]))
+
+    # -- grading: measured off snapshot_at, not silently defaulted ----------
+
+    def test_known_at_grade_is_measured_off_snapshot_at_gap(self):
+        early = dict(HISTORICAL_ODDS_HISTORY_ROW)
+        early["snapshot_at"] = "2023-02-27T10:00:00Z"
+        late = dict(HISTORICAL_ODDS_HISTORY_ROW)
+        late["snapshot_at"] = "2023-02-27T10:05:00Z"  # 5 minutes later -> B
+        _write_jsonl(self.history_archive, [early, late])
+        report = self._run()
+        rows = self._rows()
+        by_stamp = {r["observed_utc"]: r["known_at_grade"] for r in rows}
+        self.assertEqual(by_stamp["2023-02-27T10:00:00Z"], "D")  # first instant
+        self.assertEqual(by_stamp["2023-02-27T10:05:00Z"], "B")  # 5min gap
+
+    # -- game_pk resolves through the SAME map a live row would use --------
+
+    def test_game_pk_resolves_through_the_same_event_game_map(self):
+        _write_jsonl(self.history_archive, [HISTORICAL_ODDS_HISTORY_ROW])
+        map_path = self.root / "event_game_map.jsonl"
+        _write_jsonl(map_path, [{
+            "event_id": HISTORICAL_ODDS_HISTORY_ROW["events"][0]["id"],
+            "game_pk": 660123, "resolved": True, "ambiguous": False,
+            "source": "mlb_results_csv",
+            "schedule_commence_time": "2023-02-27T23:35:00Z",
+        }])
+        report = self._run(game_map_path=map_path)
+        rows = self._rows()
+        self.assertTrue(all(r["game_pk"] == 660123 for r in rows))
+        self.assertEqual(report["game_pk"]["resolved"], 4)
+
+
+class HistoricalEventMapTests(unittest.TestCase):
+    """`l1_historical.ensure_historical_event_map`: resolves archive events
+    against `mlb_results.csv` (no network) into the SAME `event_game_map.jsonl`
+    shape `gamekey.py` owns."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.history_dir = self.root / "odds_history"
+        self.f5_dir = self.root / "odds_first_five"
+        self.history_dir.mkdir()
+        self.f5_dir.mkdir()
+        self.results_csv = self.root / "mlb_results.csv"
+        self.map_path = self.root / "event_game_map.jsonl"
+
+    def _write_results_csv(self, rows):
+        header = ("game_pk,date,start_time_utc,venue,game_type,away_team,"
+                  "home_team,away_team_id,home_team_id,away_probable,"
+                  "home_probable,away_probable_id,home_probable_id,"
+                  "away_score,home_score,winner,home_won,total_runs,"
+                  "run_differential,double_header,game_number")
+        lines = [header]
+        for row in rows:
+            lines.append(",".join(str(v) for v in row))
+        self.results_csv.write_text("\n".join(lines) + "\n")
+
+    def _patch_dirs(self):
+        self._orig = (l1_historical.ODDS_HISTORY_DIR,
+                     l1_historical.ODDS_FIRST_FIVE_DIR)
+        l1_historical.ODDS_HISTORY_DIR = self.history_dir
+        l1_historical.ODDS_FIRST_FIVE_DIR = self.f5_dir
+        self.addCleanup(self._unpatch_dirs)
+
+    def _unpatch_dirs(self):
+        l1_historical.ODDS_HISTORY_DIR, l1_historical.ODDS_FIRST_FIVE_DIR = self._orig
+
+    def test_odds_history_event_resolves_by_team_and_date(self):
+        self._patch_dirs()
+        _write_jsonl(self.history_dir / "mlb_2023.jsonl", [HISTORICAL_ODDS_HISTORY_ROW])
+        self._write_results_csv([
+            (660123, "2023-02-27", "2023-02-27T23:35:00Z", "Yankee Stadium",
+             "R", "DET", "NYY", 116, 147, "", "", "", "", 3, 5, "NYY", 1, 8, 2,
+             "N", 1),
+        ])
+        report = l1_historical.ensure_historical_event_map(
+            [2023], map_path=self.map_path, results_csv=self.results_csv)
+        self.assertEqual(report["resolved"], 1)
+        self.assertEqual(report["unresolved"], 0)
+        loaded = l1_historical.gamekey_module.load_map(self.map_path)
+        entry = loaded["be9f3156757fe9dd5d6532e8b6e75bf8"]
+        self.assertEqual(entry["game_pk"], "660123")
+        self.assertEqual(entry["schedule_commence_time"], "2023-02-27T23:35:00Z")
+        self.assertEqual(entry["source"], l1_historical.HISTORICAL_MAP_SOURCE)
+
+    def test_odds_first_five_event_resolves_by_embedded_game_pk(self):
+        self._patch_dirs()
+        _write_jsonl(self.f5_dir / "mlb_2023.jsonl", [HISTORICAL_ODDS_FIRST_FIVE_ROW])
+        self._write_results_csv([
+            (718319, "2023-05-03", "2023-05-04T19:37:00Z", "Oakland Coliseum",
+             "R", "SEA", "OAK", 136, 133, "", "", "", "", 2, 4, "OAK", 1, 6, 2,
+             "N", 1),
+        ])
+        report = l1_historical.ensure_historical_event_map(
+            [2023], map_path=self.map_path, results_csv=self.results_csv)
+        self.assertEqual(report["resolved"], 1)
+        loaded = l1_historical.gamekey_module.load_map(self.map_path)
+        entry = loaded["890b4e9cf0b8e12f1fad599f656c7646"]
+        self.assertEqual(entry["game_pk"], "718319")
+
+    def test_unresolvable_event_is_recorded_null_not_guessed(self):
+        self._patch_dirs()
+        _write_jsonl(self.history_dir / "mlb_2023.jsonl", [HISTORICAL_ODDS_HISTORY_ROW])
+        self._write_results_csv([])  # no games at all -- nothing can match
+        report = l1_historical.ensure_historical_event_map(
+            [2023], map_path=self.map_path, results_csv=self.results_csv)
+        self.assertEqual(report["unresolved"], 1)
+        loaded = l1_historical.gamekey_module.load_map(self.map_path)
+        entry = loaded["be9f3156757fe9dd5d6532e8b6e75bf8"]
+        self.assertIsNone(entry["game_pk"])
+        self.assertFalse(entry["resolved"])
+        self.assertIsNotNone(entry["reason"])
+
+    def test_rerun_skips_already_mapped_events(self):
+        self._patch_dirs()
+        _write_jsonl(self.history_dir / "mlb_2023.jsonl", [HISTORICAL_ODDS_HISTORY_ROW])
+        self._write_results_csv([
+            (660123, "2023-02-27", "2023-02-27T23:35:00Z", "Yankee Stadium",
+             "R", "DET", "NYY", 116, 147, "", "", "", "", 3, 5, "NYY", 1, 8, 2,
+             "N", 1),
+        ])
+        first = l1_historical.ensure_historical_event_map(
+            [2023], map_path=self.map_path, results_csv=self.results_csv)
+        self.assertEqual(first["rows_written"], 1)
+        second = l1_historical.ensure_historical_event_map(
+            [2023], map_path=self.map_path, results_csv=self.results_csv)
+        self.assertEqual(second["rows_written"], 0)
+        self.assertEqual(second["skipped_already_mapped"], 1)
 
 
 if __name__ == "__main__":
