@@ -2056,7 +2056,206 @@ def cmd_engine(args) -> int:
     if args.engine_command == "truncation":
         return _cmd_engine_truncation(args)
 
+    if args.engine_command == "slate":
+        return _cmd_engine_slate(args)
+
+    if args.engine_command == "settle":
+        return _cmd_engine_settle(args)
+
+    if args.engine_command == "replay-one":
+        return _cmd_engine_replay_one(args)
+
     raise SystemExit(f"unknown engine subcommand {args.engine_command!r}")
+
+
+def _cmd_engine_slate(args) -> int:
+    """S5: `engine slate --date DATE [--asof ISO8601] [--systems a,b,c]
+    [--dry-run]`. See `src.engine.slate.run_slate`."""
+    from src.engine import slate as engine_slate
+    from src.engine.adapters.evolab_system import REGISTERED_SYSTEMS
+
+    systems = REGISTERED_SYSTEMS
+    if args.systems:
+        wanted = set(args.systems.split(","))
+        systems = tuple(s for s in REGISTERED_SYSTEMS if s.id in wanted)
+        missing = wanted - {s.id for s in systems}
+        if missing:
+            print(f"ERROR: unknown system id(s) {sorted(missing)} -- "
+                  f"registered ids: {[s.id for s in REGISTERED_SYSTEMS]}",
+                  file=sys.stderr)
+            return EXIT_ERROR
+
+    try:
+        report = engine_slate.run_slate(
+            args.date, systems=systems, asof=args.asof, dry_run=args.dry_run)
+    except engine_slate.SlateError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+
+    label = "PAPER" if not args.dry_run else "PAPER (dry-run, nothing written)"
+    print(f"[{label}] engine slate --date {args.date}"
+          + (f" --asof {args.asof}" if args.asof else "")
+          + f" --systems {','.join(report.systems)}")
+    print(f"  games considered    : {report.n_games_considered}")
+    print(f"  games skipped       : {report.n_games_skipped}")
+    for g in report.games:
+        if g.skipped_reason:
+            print(f"    skipped game={g.game_key}: {g.skipped_reason}")
+    print(f"  decisions written   : {report.n_new_decisions} new, "
+          f"{report.n_duplicate_decisions} already recorded")
+    print(f"  adversary activity  : {report.n_vetoed} surviving record(s) "
+          "carry a counterargument")
+    print(f"  [PAPER] wagers placed: {report.n_new_wagers} new, "
+          f"{report.n_duplicate_wagers} already placed")
+    for g in report.games:
+        for record in g.records:
+            staked = " STAKED" if record.stake_units else ""
+            print(f"    [{record.system_id}] {g.game_key} "
+                  f"{record.market_key}/{record.selection_id} "
+                  f"verdict={record.verdict} price={record.price_american} "
+                  f"p_model={record.p_model} value_basis={record.value_basis} "
+                  f"grade={record.known_at_grade}{staked}")
+    print(f"  selection_rule      : {engine_slate.SELECTION_RULE}")
+    return EXIT_OK
+
+
+def _cmd_engine_settle(args) -> int:
+    """S6a: `engine settle --date DATE`. See
+    `src.engine.settle_slate.run_settle`."""
+    from src.engine import settle_slate
+
+    try:
+        report = settle_slate.run_settle(args.date)
+    except settle_slate.SettleError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+
+    print(f"[PAPER] engine settle --date {args.date}")
+    print(f"  wagers considered   : {report.n_wagers_considered} "
+          f"across {report.n_games} game(s)")
+    for s in report.systems:
+        print(f"  [{s.system_id}] settled {len(s.settled)} new "
+              f"({s.duplicate} already settled)")
+        for settled in s.settled:
+            print(f"    [PAPER] {settled.bet.bet_id} "
+                  f"{settled.bet.market_key}/{settled.bet.selection_id} "
+                  f"price={settled.bet.price_american} "
+                  f"outcome={settled.outcome} "
+                  f"profit_units={settled.profit_units:+.4f}")
+        print(f"    [PAPER] bankroll={s.bankroll:.2f} "
+              f"roi_units={s.roi_units:.4f} "
+              f"drawdown_max={s.drawdown_max:.2f}")
+        v = s.scorecard_verdict
+        print(f"    scorecard verdict   : "
+              f"{'PROMOTE' if v.promote else 'REFUSE'} -- {'; '.join(v.reasons)}")
+        if s.scorecard_absent:
+            print(f"    scorecard absent    : "
+                  f"{[a.field for a in s.scorecard_absent]}")
+    return EXIT_OK
+
+
+def _cmd_engine_replay_one(args) -> int:
+    """S3 demonstration: `engine replay-one --season YEAR --game-pk PK
+    [--point-class LATE_BOARD|EARLY_BOARD] [--system SYSTEM_ID]`. Runs ONE
+    2023-24 replay decision through `analyze()` via the S3 replay driver
+    (`src.engine.adapters.evolab_system.replay_decision`) and settles it
+    against the ALREADY-KNOWN historical result -- this is a demonstration
+    of the unified path, not the live slate runner (S5), which only ever
+    operates on captured 2026 L1 prices."""
+    from src.engine import glue as glue_module
+    from src.engine.adapters.evolab_system import REGISTERED_SYSTEMS, replay_decision
+    from src.engine.adversaries import DEFAULT_ADVERSARIES
+    from src.evolab import replay as replay_module
+    from src.accounts.paper import PaperBet, settle_bet
+    from src.board.ids import MARKET_CATALOGUE
+    from src.engine.settle_slate import load_mlb_results, load_first_five_results, \
+        build_game_result
+
+    universe = replay_module.load_universe([args.season])
+    try:
+        game = universe.get(args.game_pk)
+    except replay_module.ReplayError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+
+    points = [p for p in replay_module.decision_points([args.season], universe=universe)
+              if p.game_pk == str(args.game_pk)]
+    if args.point_class:
+        points = [p for p in points if p.point_class == args.point_class]
+    if not points:
+        print(f"ERROR: no decision point for game_pk={args.game_pk} "
+              f"season={args.season} point_class={args.point_class!r}",
+              file=sys.stderr)
+        return EXIT_ERROR
+    point = points[-1]
+
+    system = REGISTERED_SYSTEMS[0]
+    if args.system:
+        matches = [s for s in REGISTERED_SYSTEMS if s.id == args.system]
+        if not matches:
+            print(f"ERROR: unknown system id {args.system!r} -- registered: "
+                  f"{[s.id for s in REGISTERED_SYSTEMS]}", file=sys.stderr)
+            return EXIT_ERROR
+        system = matches[0]
+
+    adversaries = DEFAULT_ADVERSARIES if args.adversaries else ()
+    analysis = replay_decision(system, game, point.T,
+                               point_class=point.point_class,
+                               adversaries=adversaries)
+
+    print(f"engine replay-one --season {args.season} --game-pk {args.game_pk} "
+          f"--point-class {point.point_class} --system {system.id}"
+          + (" --adversaries" if args.adversaries else ""))
+    print(f"  game                : {game.away_team} @ {game.home_team}, "
+          f"official_date={game.official_date}, commence={game.commence_time}")
+    print(f"  decision T          : {point.T} (gap_minutes={point.gap_minutes:.1f}, "
+          f"books={point.books})")
+    print(f"  records             : {len(analysis.records)}")
+
+    results = load_mlb_results()
+    f5_historical = load_first_five_results()
+    result = build_game_result(game.game_pk, results, f5_historical, {})
+
+    for record in analysis.records:
+        print(f"  [{record.system_id}] verdict={record.verdict} "
+              f"market={record.market_key} selection={record.selection_id} "
+              f"price={record.price_american} p_model={record.p_model} "
+              f"value_basis={record.value_basis} rating={record.rating} "
+              f"known_at_grade={record.known_at_grade}")
+        for c in record.counterarguments:
+            print(f"    counterargument: {c}")
+        if record.verdict != "play":
+            continue
+        if result is None:
+            print(f"    [PAPER] no settlement -- no result found for "
+                  f"game_pk={game.game_pk} in {load_mlb_results.__module__}'s "
+                  "results store")
+            continue
+        settlement_rule = MARKET_CATALOGUE[record.market_key].settlement_rule
+        side = _side_for_decision_record(record)
+        bet = PaperBet(
+            bet_id=f"replay-{game.game_pk}-{record.system_id}",
+            system_id=record.system_id, market_key=record.market_key,
+            selection_id=record.selection_id, side=side, line=record.line,
+            price_american=record.price_american,
+            settlement_rule=settlement_rule, game_pk=int(game.game_pk),
+        )
+        settled = settle_bet(bet, result)
+        print(f"    [PAPER] settlement result={result} outcome={settled.outcome} "
+              f"profit_units={settled.profit_units:+.4f} "
+              "(replay demonstration only -- this bet is NOT written to any "
+              "paper account ledger)")
+    return EXIT_OK
+
+
+def _side_for_decision_record(record) -> str:
+    from src.board.ids import MARKET_CATALOGUE, selection_id as _sel_id
+    spec = MARKET_CATALOGUE[record.market_key]
+    for side in spec.sides:
+        if _sel_id(sport="mlb", market_key=record.market_key, side=side,
+                  line=record.line) == record.selection_id:
+            return side
+    raise ValueError(f"could not recover side for {record.selection_id!r}")
 
 
 def _cmd_engine_truncation(args) -> int:
@@ -2514,6 +2713,44 @@ def build_parser() -> argparse.ArgumentParser:
         help="minutes between t-2h and t (default 120, i.e. a true 2h "
              "window; the flag exists so other windows can be registered "
              "without renaming the concept)")
+
+    engine_slate = engine_sub.add_parser(
+        "slate", help="S5: analyze a date's slate through the registered "
+                      "systems and place FLAT_1U paper wagers")
+    engine_slate.add_argument("--date", required=True, help="YYYY-MM-DD")
+    engine_slate.add_argument(
+        "--asof", default=None, metavar="ISO8601",
+        help="use this exact decision instant for every game instead of "
+             "each game's own latest-capture-before-first-pitch default "
+             "(still refused per-game if at/after commence_time)")
+    engine_slate.add_argument(
+        "--systems", default=None, metavar="a,b,c",
+        help="comma-separated registered system ids to run (default: all "
+             "of src.engine.adapters.evolab_system.REGISTERED_SYSTEMS)")
+    engine_slate.add_argument(
+        "--dry-run", action="store_true",
+        help="run the full pipeline and print what WOULD be written, "
+             "without writing any decision or wager")
+
+    engine_settle = engine_sub.add_parser(
+        "settle", help="S6a: settle a date's paper wagers from real "
+                      "results and append Scorecards")
+    engine_settle.add_argument("--date", required=True, help="YYYY-MM-DD")
+
+    engine_replay_one = engine_sub.add_parser(
+        "replay-one", help="S3 demonstration: one 2023-24 replay decision "
+                           "through analyze(), settled against the known "
+                           "historical result")
+    engine_replay_one.add_argument("--season", type=int, required=True)
+    engine_replay_one.add_argument("--game-pk", required=True, dest="game_pk")
+    engine_replay_one.add_argument(
+        "--point-class", default=None, choices=["EARLY_BOARD", "LATE_BOARD"])
+    engine_replay_one.add_argument(
+        "--system", default=None, metavar="SYSTEM_ID",
+        help="registered system id (default: the trivial control)")
+    engine_replay_one.add_argument(
+        "--adversaries", action="store_true",
+        help="run the registered DEFAULT_ADVERSARIES roster instead of none")
 
     eod_cmd = sub.add_parser(
         "eod", help="build and write the end-of-day self-review (S7)")

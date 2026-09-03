@@ -193,6 +193,42 @@ the roster. NonSimultaneous, Grade, CorrelatedEvidence, MarketDisagreement,
 Sample, Regime and Friction remain unimplemented — left to the packet that
 registers each one's specific cause.
 
+## 5a. Honest probabilities (vertical-slice S5 addition)
+
+An evolab genome (`EvolabGenomeSystem`) makes a directional pick with NO
+calibrated probability: `decide_with_reason`'s `Decision.score` is
+explicitly not one, and the adapter reports `p_model=None`
+(`src/engine/adapters/evolab_system.py`). RATE reads this directly:
+`analyze()` never fabricates a Bet Rating for a candidate whose proposal
+carries no `p_model` -- `Candidate.rating` stays structurally `None` (never
+a dict of `None`-valued keys) for that candidate, and its `edge_bps`,
+computed in PROJECT, was already `None` (`edge_bps` requires both
+`consensus_fair` AND `p_model`). Its `DecisionRecord.value_basis` names
+what the selection rested on instead:
+`src.engine.analyze.VALUE_BASIS_PRICE_STANDING_ONLY`
+("price_standing_only:no_calibrated_p_model") -- the ONLY value this module
+ever assigns to that field; a record whose proposal DID carry a `p_model`
+gets `value_basis=None` (its value basis is already the edge_bps/p_model
+pair on the record). No code path anywhere fills a null `p_model` with a
+default value; `tests/test_honest_probabilities.py` proves this both by
+exercising `analyze()` directly and by a static scan for the textual shapes
+such a default would take.
+
+## 5b. The slate runner's selection rule (S5)
+
+`src.engine.slate` is the seam between `analyze()`'s output and a paper
+wager: PROJECT may match one proposal against several selections on the
+board (docs section 4), so `SELECTION_RULE`
+(`TOP_RANKED_PLAY_PER_SYSTEM_PER_GAME_V1`) is the named, pre-registered rule
+for which of a system's own RANK-ordered `verdict=="play"` records for one
+game actually gets staked: the single highest-ranked one, per (system,
+game), never every board line a proposal happened to match. It reads
+nothing from any account or outcome (§ its own rationale string, carried on
+every written `DecisionRecord.selection_rule`, in the module itself). S6a
+(`src.engine.settle_slate`) settles those wagers and refuses the whole date
+rather than partially settling when any wagered game's result is not yet
+confirmed.
+
 ## 6. The equivalence obligation
 
 The waist must answer identically to `src.evolab.decide.decide_with_reason`

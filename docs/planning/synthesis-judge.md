@@ -611,6 +611,20 @@ class DecisionRecord:
     assumption_exposure: dict
     stake_units: float                                # 0.0 while the gate is closed
     prev_hash: str; row_hash: str
+    # Task additions layered onto this frozen shape since it was written,
+    # kept here rather than silently drifting the doc from the code
+    # (src/ledger/records.py's own comment on each explains why):
+    #   known_at_grade: str            -- knowability grade alongside the
+    #                                      PriceObservation identity fields
+    #   value_basis: str | None        -- REQUIRED-in-spirit whenever
+    #                                      p_model is None: names what a
+    #                                      price-standing-only candidate's
+    #                                      selection rested on instead of a
+    #                                      calibrated probability
+    #   selection_rule: str | None     -- the slate runner's own named,
+    #                                      pre-registered rule for how this
+    #                                      record became (or did not
+    #                                      become) a paper wager
 
 @dataclass(frozen=True, slots=True)
 class ReviewRecord:

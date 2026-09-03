@@ -28,68 +28,31 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.board.ids import selection_id as _selection_id
-from src.board.record import PriceObservation
-from src.engine.adapters.evolab_system import EvolabGenomeSystem
+from src.engine.adapters.evolab_system import (
+    EvolabGenomeSystem, historical_snapshot_and_board,
+)
+from src.engine.adversaries import DEFAULT_ADVERSARIES
 from src.engine.analyze import analyze
-from src.engine.snapshot import PointMeta, PriceBlindSnapshot, PricedBoard
 from src.evolab import replay
 from src.evolab.decide import decide_with_reason
 from src.evolab.genome import enumerate_genomes
 from src.evolab.registry import DEFAULT_REGISTRY
 
 
-def snapshot_and_board_from_worldview(view) -> tuple:
-    """The one place a WorldView is split into the waist's two halves, for
-    this proof only -- production code builds PriceBlindSnapshot/PricedBoard
-    from as_of()/PriceObservation directly (src/engine/snapshot.py), never
-    from a WorldView. This function exists so the SAME real decision points
-    evolab's own replay loader already produces can drive both paths without
-    a second, parallel data-loading path that could disagree with the first
-    about what a game's board looked like at T.
-
-    The REAL h2h quotes on `view.board` (the only market this replay store
-    carries) are copied into PriceObservation rows for the PricedBoard half
-    -- this is legitimate here because PricedBoard is the PROJECT-only,
-    price-carrying half of the waist; only PriceBlindSnapshot (built without
-    ever reading view.board's prices) must never see them.
+def run(seasons, max_genomes, max_points, seconds_budget,
+        *, adversaries: tuple = ()) -> dict:
+    """The equivalence proof itself: `analyze()` (fed by S3's
+    `historical_snapshot_and_board` -- the SAME `glue.build_board`/
+    `build_snapshot` the live path calls) vs. `decide_with_reason()`
+    directly, over the SAME (genome, game, T). `adversaries` defaults to
+    `()`, matching `docs/ENGINE_CONTRACT.md` section 6 and `analyze()`'s own
+    equivalence-proof default: the roster is an engine-side addition with no
+    evolab counterpart, so running it here would report engine-only vetoes
+    as "divergences" from a primitive that has no notion of a veto at all.
+    Pass `adversaries=DEFAULT_ADVERSARIES` to `exercise_default_roster`
+    below to see the roster's effect reported separately, never blended
+    into this proof's own divergence count.
     """
-    books_by_market = {m: len(view.board.get(m) or {}) for m in view.available}
-    snapshot = PriceBlindSnapshot.from_asof(
-        game_pk=view.game_id, t=view.commence_time, point_class=view.point_class,
-        features=view.features, available_markets=view.available,
-        books_by_market=books_by_market,
-        point_meta=PointMeta(observed_utc=view.board_meta.observed_utc,
-                             simultaneous=view.board_meta.simultaneous,
-                             staleness_seconds=view.board_meta.staleness_seconds),
-        lineup_posted=view.lineup_posted,
-    )
-
-    rows = []
-    for market, books in view.board.items():
-        for book, sides in books.items():
-            for side, price_key in (("home", "home_price"), ("away", "away_price")):
-                price = sides.get(price_key)
-                if price is None:
-                    continue
-                sel = _selection_id(sport="mlb", market_key=market, side=side)
-                rows.append(PriceObservation(
-                    sport="mlb", event_id=view.game_id, game_pk=None,
-                    market_key=market, selection_id=sel, side=side,
-                    subject_kind=None, subject_id=None, line=None,
-                    book=book, price_american=int(price),
-                    observed_utc=view.board_meta.observed_utc,
-                    book_last_update=None,
-                    known_at=view.board_meta.observed_utc, known_at_grade="A",
-                    capture_id="equivalence-proof", source="evolab_replay",
-                    region="us", provider_market_key=market,
-                    l0_available=False,
-                ))
-    board = PricedBoard.from_price_observations(
-        view.game_id, view.commence_time, tuple(rows))
-    return snapshot, board
-
-
-def run(seasons, max_genomes, max_points, seconds_budget) -> dict:
     t_start = time.time()
     universe = replay.load_universe(list(seasons))
     points = list(replay.decision_points(list(seasons), universe=universe))
@@ -126,14 +89,13 @@ def run(seasons, max_genomes, max_points, seconds_budget) -> dict:
 
             evolab_decision, _reason = decide_with_reason(
                 genome, view, registry=DEFAULT_REGISTRY)
-            snapshot, board = snapshot_and_board_from_worldview(view)
-            # Adversaries are an engine-side addition with no evolab
-            # counterpart; the proof is about the decision primitive, so the
-            # roster is disabled here explicitly (the default roster vetoes
-            # every quote on this harness's board.t == commence_time boards
-            # as stale, which is engine behaviour, not a divergence).
+            try:
+                snapshot, board = historical_snapshot_and_board(
+                    game, point.T, point_class=point.point_class)
+            except Exception:
+                continue
             analysis = analyze(snapshot, board, systems=(system,),
-                               adversaries=())
+                               adversaries=adversaries)
 
             n_compared += 1
             engine_played = bool(analysis.records)
@@ -164,6 +126,7 @@ def run(seasons, max_genomes, max_points, seconds_budget) -> dict:
     elapsed = time.time() - t_start
     return {
         "seasons": list(seasons),
+        "adversaries": [a.id for a in adversaries],
         "genomes_available": len(enumerate_genomes()) if not max_genomes else None,
         "genomes_run": genomes_run,
         "decision_points_available": len(points) if not max_points else None,
@@ -176,6 +139,94 @@ def run(seasons, max_genomes, max_points, seconds_budget) -> dict:
     }
 
 
+def exercise_default_roster(seasons, max_genomes, max_points, seconds_budget) -> dict:
+    """Exercise `src.engine.adversaries.DEFAULT_ADVERSARIES` (the registered
+    v1 roster) over the SAME (genome, game, T) space, SEPARATELY from the
+    equivalence proof above -- never asserted for agreement with
+    `decide_with_reason` (which has no adversaries at all), only reported:
+    how many of the candidates `analyze()` would have played WITHOUT any
+    adversary get vetoed once the roster runs, and by which cause.
+    """
+    t_start = time.time()
+    universe = replay.load_universe(list(seasons))
+    points = list(replay.decision_points(list(seasons), universe=universe))
+    if max_points:
+        points = points[:max_points]
+    genomes = enumerate_genomes()
+    if max_genomes:
+        genomes = genomes[:max_genomes]
+    games_by_pk = {g.game_pk: g for g in universe.games}
+
+    n_points_examined = 0
+    n_played_no_adversaries = 0
+    n_played_with_roster = 0
+    veto_causes: dict = {}
+
+    for genome in genomes:
+        if time.time() - t_start > seconds_budget:
+            break
+        system = EvolabGenomeSystem(genome=genome, registry=DEFAULT_REGISTRY)
+        for point in points:
+            if time.time() - t_start > seconds_budget:
+                break
+            game = games_by_pk.get(point.game_pk)
+            if game is None:
+                continue
+            try:
+                snapshot, board = historical_snapshot_and_board(
+                    game, point.T, point_class=point.point_class)
+            except Exception:
+                continue
+            n_points_examined += 1
+            bare = analyze(snapshot, board, systems=(system,), adversaries=())
+            if not bare.records:
+                continue
+            n_played_no_adversaries += 1
+            roster = analyze(snapshot, board, systems=(system,),
+                             adversaries=DEFAULT_ADVERSARIES)
+            if roster.records:
+                n_played_with_roster += 1
+            else:
+                # Vetoed by the roster: find the cause(s) recorded on the
+                # bare candidate's own would-be record (ATTACK still runs
+                # inside `roster`'s own `analyze()` call, but a FATAL veto
+                # drops the candidate before a record is built -- so the
+                # cause has to come from re-running ATTACK's adversaries
+                # directly against the bare candidate instead).
+                for adversary in DEFAULT_ADVERSARIES:
+                    for counterargument in adversary.attack(
+                            _bare_candidate(bare), snapshot, board):
+                        veto_causes[counterargument.cause] = (
+                            veto_causes.get(counterargument.cause, 0) + 1)
+
+    return {
+        "seasons": list(seasons),
+        "n_decision_points_examined": n_points_examined,
+        "n_played_with_no_adversaries": n_played_no_adversaries,
+        "n_played_with_default_roster": n_played_with_roster,
+        "n_vetoed_by_roster": n_played_no_adversaries - n_played_with_roster,
+        "veto_causes": veto_causes,
+        "elapsed_seconds": round(time.time() - t_start, 1),
+    }
+
+
+def _bare_candidate(bare_analysis):
+    """Rebuild the `Candidate` `analyze()`'s own ATTACK phase would have
+    attacked, from the one `DecisionRecord` a no-adversary `analyze()` call
+    already produced -- so `exercise_default_roster` can name a veto's
+    cause without re-deriving PROJECT's own math a second time."""
+    from src.engine.analyze import Candidate, Proposal
+
+    rec = bare_analysis.records[0]
+    return Candidate(
+        proposal=Proposal(system_id=rec.system_id, system_version=rec.system_version,
+                          market_key=rec.market_key, side="", p_model=rec.p_model),
+        selection_id=rec.selection_id, consensus_fair=rec.consensus_fair,
+        books_at_decision=rec.books_at_decision or 0, friction=rec.friction or {},
+        price_american=rec.price_american, edge_bps=rec.edge_bps,
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--seconds", type=float, default=540.0,
@@ -185,11 +236,23 @@ def main() -> int:
     parser.add_argument("--max-points", type=int, default=200,
                         help="decision points to use (0 = all)")
     parser.add_argument("--seasons", type=int, nargs="+", default=[2023])
+    parser.add_argument("--skip-roster-exercise", action="store_true",
+                        help="skip the separate (non-assertive) default-"
+                             "adversary-roster exercise")
     args = parser.parse_args()
 
-    result = run(args.seasons, args.max_genomes,
-                args.max_points if args.max_points else None, args.seconds)
-    print(json.dumps(result, indent=2, default=str))
+    max_points = args.max_points if args.max_points else None
+    result = run(args.seasons, args.max_genomes, max_points, args.seconds,
+                adversaries=())
+    print(json.dumps({"equivalence_proof": result}, indent=2, default=str))
+
+    if not args.skip_roster_exercise:
+        roster_result = exercise_default_roster(
+            args.seasons, args.max_genomes, max_points,
+            seconds_budget=max(60.0, args.seconds / 4))
+        print(json.dumps({"default_roster_exercise": roster_result},
+                         indent=2, default=str))
+
     return 0 if result["n_divergences"] == 0 else 1
 
 
