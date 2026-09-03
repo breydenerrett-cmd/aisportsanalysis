@@ -29,6 +29,8 @@ means no bet on that market, which is the correct outcome.
 
 from __future__ import annotations
 
+import gzip
+import hashlib
 import http.client
 import json
 import os
@@ -36,6 +38,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
+
+from src.paths import raw_path
 
 API_HOST = "https://api.the-odds-api.com/v4"
 SPORT = "baseball_mlb"
@@ -412,6 +416,64 @@ def _get_json_with_usage(path: str, params: dict, timeout: int = DEFAULT_TIMEOUT
     }
 
 
+# ---------------------------------------------------------------------------
+# Raw layer (L0) -- verbatim provider payload, before any projection
+# ---------------------------------------------------------------------------
+#
+# WHY THIS EXISTS
+# ----------------
+# `normalize_event` is a projection: it picks outcome shapes it knows about
+# and drops the rest. A bug in that projection -- a missed market key, a
+# misparsed point -- has, until now, been a permanent hole: the only copy of
+# the provider's response was the in-memory dict `fetch_odds`/`fetch_event_odds`
+# returned, and nothing kept it once normalization ran. This writes the
+# response to disk BEFORE it is touched by any projection, so a projection bug
+# found later can be replayed against what the provider actually said instead
+# of against nothing.
+#
+# One file per API call, named by capture time and a short hash of the body
+# so two calls in the same second never collide and the id alone proves
+# nothing was renamed. Never edited after being written.
+
+RAW_ODDS_SUBDIR = "oddsapi"
+
+
+def _raw_capture_target(moment, body: bytes):
+    stamp = moment.strftime("%Y%m%dT%H%M%SZ")
+    digest = hashlib.sha1(body).hexdigest()[:8]
+    capture_id = f"{stamp}-{digest}"
+    return raw_path(RAW_ODDS_SUBDIR, f"{moment:%Y}", f"{moment:%m}", f"{moment:%d}",
+                     f"{capture_id}.jsonl.gz"), capture_id
+
+
+def _write_raw_capture(payload, kind: str, env=None, now=None) -> str:
+    """Persist the verbatim provider payload for one API call.
+
+    `payload` is written exactly as the provider returned it (already JSON-
+    decoded by `_get_json`/`_get_json_with_usage`, which is the only lossy
+    step -- there is no raw-bytes seam in this module to preserve below that).
+    One JSON line: {captured_utc, kind, payload}. Gzip, because a slate's
+    featured response measures kilobytes decompressed and a fraction of that
+    compressed -- see docs/COLLECTION_POLICY.md for the measured footprint.
+
+    Returns the path written. Raises OSError on a genuine disk failure rather
+    than swallowing it -- a raw-capture write that silently fails defeats the
+    entire point of this layer.
+    """
+    moment = now or datetime.now(timezone.utc)
+    record = json.dumps(
+        {"captured_utc": moment.isoformat(), "kind": kind, "payload": payload},
+        separators=(",", ":"),
+    )
+    body = record.encode("utf-8")
+    target, _capture_id = _raw_capture_target(moment, body)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with gzip.open(target, "wb") as handle:
+        handle.write(body)
+        handle.write(b"\n")
+    return str(target)
+
+
 def quota(env=None, timeout: int = DEFAULT_TIMEOUT) -> dict:
     """Credits remaining, read from the sports list, which is not itself metered.
 
@@ -512,7 +574,9 @@ def fetch_event_odds(event_id, markets=None, region=None, env=None,
     in a day and a half. See EVENT_MARKETS for the measured numbers.
     """
     params = _event_odds_params(event_id, markets, region, env)
-    return _get_json(f"sports/{SPORT}/events/{event_id}/odds", params, timeout=timeout)
+    payload = _get_json(f"sports/{SPORT}/events/{event_id}/odds", params, timeout=timeout)
+    _write_raw_capture(payload, "event", env=env)
+    return payload
 
 
 def fetch_event_odds_with_usage(event_id, markets=None, region=None, env=None,
@@ -532,8 +596,10 @@ def fetch_event_odds_with_usage(event_id, markets=None, region=None, env=None,
     so the store audits its own spend.
     """
     params = _event_odds_params(event_id, markets, region, env)
-    return _get_json_with_usage(f"sports/{SPORT}/events/{event_id}/odds", params,
-                                timeout=timeout)
+    payload, usage = _get_json_with_usage(
+        f"sports/{SPORT}/events/{event_id}/odds", params, timeout=timeout)
+    _write_raw_capture(payload, "event", env=env)
+    return payload, usage
 
 
 def _event_odds_params(event_id, markets, region, env):
@@ -739,6 +805,10 @@ def fetch_normalized(markets=None, region=None, env=None,
     source = os.environ if env is None else env
     book = preferred_book or (source.get(ENV_BOOK) or "").strip() or None
     events = fetch_odds(markets=markets, region=region, env=source, timeout=timeout)
+    # Raw-first: the verbatim featured-endpoint response is on disk before
+    # `normalize` (a projection) ever sees it, so a normalizer bug leaves a
+    # replayable record instead of a permanent hole.
+    _write_raw_capture(events, "featured", env=source)
     normalized = normalize(events, preferred_book=book)
     return {
         "fetched_utc": datetime.now(timezone.utc).isoformat(),

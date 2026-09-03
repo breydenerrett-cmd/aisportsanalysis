@@ -76,6 +76,19 @@ PROTECTED_STORES = frozenset({
     _REAL_DATA / "watch" / "transactions_watch.jsonl",
 })
 
+#: Forward-evidence stores whose filenames are not fixed -- one file per
+#: capture, named by timestamp -- so they are protected by directory prefix
+#: rather than by exact path. Added with the raw (L0) odds-payload capture
+#: layer (docs/COLLECTION_POLICY.md, "Raw layer and all-books persistence"):
+#: a test that exercises `fetch_normalized`/`fetch_event_odds` without
+#: redirecting `AISPORTS_DATA_DIR` would otherwise write a real, permanent
+#: raw-capture file into the real repo on every run -- the exact failure
+#: mode this file exists to prevent, just with a dynamic filename instead of
+#: a fixed one.
+PROTECTED_DIRS = frozenset({
+    _REAL_DATA / "raw" / "oddsapi",
+})
+
 
 class ForwardStoreWriteAttempt(RuntimeError):
     """A test tried to write to an append-only forward-evidence store.
@@ -133,7 +146,15 @@ def _protected(path):
         resolved = Path(path).resolve()
     except (TypeError, ValueError, OSError):
         return None  # fds, buffers, unresolvable names: not our business
-    return resolved if resolved in PROTECTED_STORES else None
+    if resolved in PROTECTED_STORES:
+        return resolved
+    for directory in PROTECTED_DIRS:
+        try:
+            resolved.relative_to(directory)
+        except ValueError:
+            continue
+        return resolved
+    return None
 
 
 def _refuse(path, mode):

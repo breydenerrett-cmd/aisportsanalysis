@@ -363,6 +363,14 @@ class TestNormalization(unittest.TestCase):
 
 
 class TestCoverage(unittest.TestCase):
+    def setUp(self):
+        # These tests exercise fetch_normalized's coverage math, not the raw
+        # (L0) capture layer -- patch that write out so a real run of this
+        # suite never touches the real data/raw/oddsapi directory.
+        patcher = mock.patch.object(odds, "_write_raw_capture")
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def test_coverage_counts_present_markets(self):
         with mock.patch.object(odds, "_get_json", return_value=[event(), event()]):
             result = odds.fetch_normalized(env={"ODDS_API_KEY": FAKE_KEY})

@@ -63,6 +63,17 @@ data/app/*
 !data/processed/prop_prices.jsonl
 !data/processed/credit_log.jsonl
 
+# RAW ODDS-API PAYLOADS (L0) -- added 2026-09-03 with the raw-first capture
+# layer (docs/COLLECTION_POLICY.md, "Raw layer and all-books persistence").
+# Same reasoning as the forward-capture block above: the verbatim provider
+# response for a call made tonight cannot be re-fetched tomorrow. One gzip
+# file per API call under data/raw/oddsapi/<yyyy>/<mm>/<dd>/, never edited
+# after being written; the tree negation (not a fixed filename, since capture
+# ids are timestamps) is what keeps every future day of it tracked without a
+# new .gitignore edit each day.
+!data/raw/oddsapi/
+!data/raw/oddsapi/**
+
 # Python
 __pycache__/
 *.py[cod]

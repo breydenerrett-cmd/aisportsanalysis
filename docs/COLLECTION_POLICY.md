@@ -194,3 +194,68 @@ forbidden without a registered hypothesis naming the window and Brey's
 explicit sign-off, per the roadmap's hard gates. This amendment authorizes
 FORWARD capture only, at the bounded rate above, starting from whenever the
 switch is turned on.
+
+## Raw layer and all-books persistence, 2026-09-03
+
+Found by `docs/planning/map-odds-provider-markets.md`: every capture already
+normalized all-books boards for six market keys in memory (h2h, spreads,
+totals, and their three first-five counterparts), and only h2h was ever
+written anywhere. Spreads, totals, and F5 depth were computed and discarded,
+every capture, forever, at zero marginal API cost. Separately, nothing kept
+the provider's own response -- a normalizer bug was a permanent hole, not a
+fixable one.
+
+**Raw layer (L0).** Every odds API call this project makes through
+`src/providers/odds.py` -- the featured-endpoint fetch behind
+`fetch_normalized` (baseline/dense captures) and the per-event fetch behind
+`fetch_event_odds`/`fetch_event_odds_with_usage` (F5 close pass, prop
+listing, prop prices) -- now writes its verbatim decoded response to
+`data/raw/oddsapi/<yyyy>/<mm>/<dd>/<capture_id>.jsonl.gz` BEFORE
+`normalize_event` or any other projection touches it. `capture_id` is a UTC
+timestamp plus an 8-hex-char hash of the payload body, so two calls in the
+same second never collide. One gzip file per call, one JSON line inside,
+never edited after being written. `.gitignore` carries a tree negation
+(`!data/raw/oddsapi/` + `!data/raw/oddsapi/**`) modelled on the existing
+`data/archive/historical/**` rule, so these files are tracked like every
+other piece of forward evidence.
+
+Measured footprint (synthetic 15-game slate, 10 books, 3 markets, gzip
+level 6 -- the shape a real MLB slate's featured response takes): **~1.2 KB
+gzipped per call**. At ~44 baseline captures/day plus up to 8 F5 event
+calls/day, that is **well under 100 KB/day** -- three orders of magnitude
+below the 5 MB/day threshold this task set as a concern. No retention split
+is needed.
+
+**KNOWN GAP, NOT FIXED HERE:** `scripts/forward_capture.sh` (out of this
+change's ownership) stages only `data/watch` and `data/processed` --
+`git add data/watch data/processed docs/OVERNIGHT_RUN.md`. It does not yet
+stage `data/raw`, so raw captures accumulate on disk but are NOT committed
+by the existing hourly job. The store is ready and tracked (`git add` on a
+raw-capture path succeeds, proven in `tests/test_forward_evidence_tracked.py`);
+wiring the capture script to actually commit it is a follow-up outside this
+packet's file ownership.
+
+**All-books persistence.** `src/pipeline/snapshots.multibook_rows` now
+iterates every market key `all_books` carries (not just `h2h`), writing one
+row per book per market per game per capture to the existing
+`odds_multibook.jsonl` store:
+
+- h2h rows are BYTE-IDENTICAL to before -- same keys, same order, no new
+  field -- so grading, `closing_observation`, `market_closing_observation`,
+  and `oddspayload` see nothing different.
+- Every other market's rows are additive and carry a `market` key (`spreads`,
+  `totals`, `h2h_1st_5_innings`, `spreads_1st_5_innings`,
+  `totals_1st_5_innings`) so a reader that wants h2h-only can filter for it.
+- Spreads/totals lines (`home_line`, `away_line`, `total`) are stored as
+  decimal STRINGS, never floats, so a downstream `==` comparison never trips
+  on JSON float round-tripping.
+- F5 spreads/totals rows will appear only once something actually requests
+  those markets per-event -- today only `h2h_1st_5_innings` is fetched
+  (`dense.py`'s F5 close pass); the store is ready for the other two the
+  moment a caller asks for them, at zero code change.
+
+**Measured credit delta: zero.** Both changes read data already returned by
+calls this project already makes (`normalize_event`'s `all_books` section is
+market-agnostic and was already computing this in memory; `_get_json`/
+`_get_json_with_usage` already decode the full response body). No new
+endpoint, market, region, or call frequency was added.

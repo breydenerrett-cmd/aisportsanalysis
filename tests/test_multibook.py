@@ -123,6 +123,110 @@ class TestMultibookWrite(unittest.TestCase):
         self.assertEqual(fetch.call_count, 1)
 
 
+def payload_all_markets():
+    """A normalized payload carrying all six market keys' all_books data.
+
+    Mirrors what odds.normalize_event actually produces from a fixture-style
+    provider event carrying h2h/spreads/totals and their F5 counterparts for
+    two books.
+    """
+    event = {
+        "event_id": "e2", "commence_time": "2026-08-30T23:05:00Z",
+        "away_team": "Houston Astros", "home_team": "New York Yankees",
+        "markets": {
+            "h2h": {"book": "fanduel", "away_price": 136, "home_price": -162,
+                    "last_update": "2026-08-30T14:58:00Z"},
+        },
+        "all_books": {
+            "h2h": [
+                {"book": "fanduel", "last_update": "2026-08-30T14:58:00Z",
+                 "away_price": 136, "home_price": -162},
+                {"book": "draftkings", "last_update": "2026-08-30T14:57:00Z",
+                 "away_price": 140, "home_price": -165},
+            ],
+            "spreads": [
+                {"book": "fanduel", "last_update": "2026-08-30T14:58:00Z",
+                 "home_line": -1.5, "home_price": 150,
+                 "away_line": 1.5, "away_price": -175},
+                {"book": "draftkings", "last_update": "2026-08-30T14:57:00Z",
+                 "home_line": -1.5, "home_price": 145,
+                 "away_line": 1.5, "away_price": -170},
+            ],
+            "totals": [
+                {"book": "fanduel", "last_update": "2026-08-30T14:58:00Z",
+                 "total": 8.5, "over_price": -110, "under_price": -110},
+            ],
+            "h2h_1st_5_innings": [
+                {"book": "fanduel", "last_update": "2026-08-30T14:58:00Z",
+                 "away_price": 150, "home_price": -170},
+            ],
+            "spreads_1st_5_innings": [
+                {"book": "fanduel", "last_update": "2026-08-30T14:58:00Z",
+                 "home_line": -0.5, "home_price": 105,
+                 "away_line": 0.5, "away_price": -125},
+            ],
+            "totals_1st_5_innings": [
+                {"book": "fanduel", "last_update": "2026-08-30T14:58:00Z",
+                 "total": 1.5, "over_price": 105, "under_price": -125},
+            ],
+        },
+    }
+    return {"event_count": 1, "events": [event]}
+
+
+class TestMultibookAllMarkets(unittest.TestCase):
+    """Spreads, totals, and the F5 trio are persisted alongside h2h -- the
+    single largest zero-marginal-cost gap the odds-provider-markets map found
+    (docs/planning/map-odds-provider-markets.md, section 1)."""
+
+    def test_every_market_the_payload_carries_gets_rows(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _capture(tmp, payload_all_markets())
+            mb = snapshots.read_multibook(Path(tmp) / "odds_multibook.jsonl")
+        seen = {(r.get("market") or "h2h") for r in mb}
+        self.assertEqual(seen, {
+            "h2h", "spreads", "totals",
+            "h2h_1st_5_innings", "spreads_1st_5_innings", "totals_1st_5_innings",
+        })
+        # 2 h2h + 2 spreads + 1 totals + 1 + 1 + 1 F5 rows = 8
+        self.assertEqual(len(mb), 8)
+
+    def test_line_markets_carry_point_as_a_decimal_string(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _capture(tmp, payload_all_markets())
+            mb = snapshots.read_multibook(Path(tmp) / "odds_multibook.jsonl")
+        spreads_row = next(r for r in mb
+                            if r.get("market") == "spreads" and r["book"] == "fanduel")
+        self.assertEqual(spreads_row["home_line"], "-1.5")
+        self.assertEqual(spreads_row["away_line"], "1.5")
+        self.assertIsInstance(spreads_row["home_line"], str)
+        totals_row = next(r for r in mb if r.get("market") == "totals")
+        self.assertEqual(totals_row["total"], "8.5")
+        f5_totals_row = next(r for r in mb if r.get("market") == "totals_1st_5_innings")
+        self.assertEqual(f5_totals_row["total"], "1.5")
+
+    def test_non_h2h_rows_carry_a_market_key_h2h_does_not(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _capture(tmp, payload_all_markets())
+            mb = snapshots.read_multibook(Path(tmp) / "odds_multibook.jsonl")
+        h2h_rows = [r for r in mb
+                    if r.get("away_price") in (136, 140) and "market" not in r]
+        self.assertEqual(len(h2h_rows), 2)
+        for row in h2h_rows:
+            self.assertNotIn("market", row)
+
+    def test_a_book_missing_half_a_line_market_is_skipped(self):
+        fetched = payload_all_markets()
+        fetched["events"][0]["all_books"]["spreads"].append(
+            {"book": "lame", "last_update": "2026-08-30T14:00:00Z",
+             "home_line": None, "home_price": 100,
+             "away_line": 1.0, "away_price": -120})
+        with tempfile.TemporaryDirectory() as tmp:
+            _capture(tmp, fetched)
+            mb = snapshots.read_multibook(Path(tmp) / "odds_multibook.jsonl")
+        self.assertNotIn("lame", [r.get("book") for r in mb])
+
+
 class TestLegacyStoreUntouched(unittest.TestCase):
     def test_legacy_rows_are_byte_identical_with_and_without_all_books(self):
         # The exact serialized line an old reader sees must not change when the
@@ -155,6 +259,37 @@ class TestLegacyStoreUntouched(unittest.TestCase):
         key = ("HOU", "NYY", "2026-08-30")
         self.assertIn(key, grouped)
         self.assertIsNotNone(snapshots.closing_observation(grouped[key]))
+
+
+class TestMultibookH2hByteIdentical(unittest.TestCase):
+    """The multi-book store's h2h rows -- read by grading, timingreport,
+    oddspayload, and health.py -- must be byte-identical whether or not the
+    same capture also carries spreads/totals/F5 rows."""
+
+    def test_h2h_multibook_rows_unchanged_by_other_markets(self):
+        fixed = datetime(2026, 8, 30, 14, 30, tzinfo=timezone.utc)
+        h2h_only = payload()
+        with_others = payload_all_markets()
+        # Align identity so the two payloads describe the same game/books.
+        with_others["events"][0]["event_id"] = h2h_only["events"][0]["event_id"]
+        with tempfile.TemporaryDirectory() as only_dir, \
+                tempfile.TemporaryDirectory() as mixed_dir:
+            _capture(only_dir, h2h_only, now=fixed)
+            _capture(mixed_dir, with_others, now=fixed)
+            only_rows = snapshots.read_multibook(
+                Path(only_dir) / "odds_multibook.jsonl")
+            mixed_rows = snapshots.read_multibook(
+                Path(mixed_dir) / "odds_multibook.jsonl")
+        mixed_h2h = [r for r in mixed_rows if "market" not in r]
+        common_books = {"fanduel", "draftkings"}
+        only_common = [r for r in only_rows if r["book"] in common_books]
+        self.assertEqual(only_common, mixed_h2h)
+        for row in mixed_h2h:
+            self.assertEqual(list(row), [
+                "observed_utc", "event_id", "commence_time", "home_team",
+                "away_team", "book", "book_last_update",
+                "home_price", "away_price",
+            ])
 
 
 class TestEventstudyReader(unittest.TestCase):
