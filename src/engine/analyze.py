@@ -136,11 +136,26 @@ DEFAULT_ADVERSARIES: tuple = ()
 # ---------------------------------------------------------------------------
 
 def analyze(snapshot: PriceBlindSnapshot, board: PricedBoard, *,
-            systems: Iterable, adversaries: Iterable = DEFAULT_ADVERSARIES,
+            systems: Iterable, adversaries: Iterable | None = None,
             config: EngineConfig = DEFAULT_CONFIG,
             registry_fingerprint: str = "",
             frame_fingerprint: str | None = None) -> Analysis:
-    """PROPOSE -> PROJECT -> ATTACK -> RATE -> RANK. See module docstring."""
+    """PROPOSE -> PROJECT -> ATTACK -> RATE -> RANK. See module docstring.
+
+    `adversaries` omitted (the default, `None`) resolves to
+    `src.engine.adversaries.DEFAULT_ADVERSARIES` -- the registered v1
+    roster (docs/ENGINE_CONTRACT.md section 5) -- via a lazy import (this
+    module's own `DEFAULT_ADVERSARIES` stays `()`; `adversaries.py` imports
+    FROM `analyze.py`, so importing it back at module scope here would be
+    circular). A caller that wants NO adversaries at all still has that
+    explicit-argument path: pass `adversaries=()` and the roster is never
+    consulted.
+    """
+    if adversaries is None:
+        from src.engine.adversaries import (
+            DEFAULT_ADVERSARIES as _registered_default_adversaries,
+        )
+        adversaries = _registered_default_adversaries
 
     if snapshot.game_pk != board.game_pk:
         raise ValueError(

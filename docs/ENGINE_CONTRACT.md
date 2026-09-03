@@ -164,12 +164,20 @@ registered, not invented ad hoc at veto time:
   to.
 
 `adversaries.DEFAULT_ADVERSARIES` is the tuple of all four with their
-default thresholds — a caller (the factory, a CLI command, a test) passes
-it to `analyze(..., adversaries=adversaries.DEFAULT_ADVERSARIES)` explicitly
-rather than `analyze()` importing it itself, keeping the waist's only
-`DEFAULT_ADVERSARIES` the empty one the frozen contract already names.
-NonSimultaneous, Grade, CorrelatedEvidence, MarketDisagreement, Sample,
-Regime and Friction remain unimplemented — left to the packet that
+default thresholds. As of packet W11, `analyze()`'s own `adversaries`
+parameter defaults to it: a call that omits `adversaries` entirely runs the
+registered roster, resolved via a lazy import inside `analyze()`'s body
+(`adversaries.py` imports FROM `analyze.py` for `FATAL`/`MAJOR`/
+`Counterargument`, so importing the roster back at `analyze.py` module scope
+would be circular). `analyze.py`'s own module-level `DEFAULT_ADVERSARIES`
+constant is unchanged and stays `()` — it is the value used only when a
+caller passes `adversaries=()` explicitly to run with none. This supersedes
+this section's earlier statement that "`analyze()`'s own `DEFAULT_ADVERSARIES`
+stays `()`" in the sense of the waist's *default behavior*; the constant's
+own value is exactly as frozen. The explicit-argument path is unaffected:
+`analyze(..., adversaries=custom_tuple)` or `adversaries=()` always wins over
+the roster. NonSimultaneous, Grade, CorrelatedEvidence, MarketDisagreement,
+Sample, Regime and Friction remain unimplemented — left to the packet that
 registers each one's specific cause.
 
 ## 6. The equivalence obligation
