@@ -55,6 +55,20 @@ capture window, settlement gap, crash).
 - Rebuild today's briefing: `python3 -m src.cli brief`
 - Ledger settle: `python3 -m src.cli ledger`
 - Manual capture (after downtime): `bash scripts/forward_capture.sh`
+- Per-game box lines (props settlement substrate): `python3 -m src.cli
+  boxscores --date YYYY-MM-DD` for one date, or `python3 -m src.cli
+  boxscores --backfill 2023-03-30..2023-11-01` for a resumable historical
+  range. Free, keyless MLB Stats API (`src.providers.mlb.fetch_boxscore` /
+  `fetch_linescore`); idempotent by game_pk, so a rerun over the same range
+  costs one extra `fetch_results` call per date and no wasted box fetches.
+  Writes `data/processed/boxscores_<yyyy>.jsonl` (one pitcher row, one
+  batter row per player who recorded a stat, one linescore row per game) --
+  tracked forward evidence, same as the odds/weather/credit-log stores.
+  `src.board.settle_props.settle` grades one box row against one prop
+  selection (win/loss/push/void) but is not wired into the CLI or the daily
+  loop yet. The daily loop's step 9 fetches yesterday's box lines
+  automatically and never fails the loop on a miss (box lines don't expire,
+  so a missed day is retried for free the next run).
 
 ## Forward-ledger row kinds
 

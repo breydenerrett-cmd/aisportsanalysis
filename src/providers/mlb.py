@@ -542,6 +542,151 @@ def fetch_pitcher_game_log(person_id, season, timeout: float = DEFAULT_TIMEOUT) 
     return appearances
 
 
+# ---------------------------------------------------------------------------
+# Boxscores and linescores (per-game, per-player lines)
+# ---------------------------------------------------------------------------
+#
+# WHY THIS EXISTS: no batter prop and no pitcher prop beyond strikeouts can
+# ever be settled, backtested, or self-reviewed without per-game, per-player
+# box lines -- a moneyline/spread grade needs only the final score, but "did
+# this batter get 2+ hits" needs the batter's own line. The MLB Stats API
+# serves it free and keyless, backfillable to 2023, on the same host and the
+# same `_get_json` seam as everything else in this module.
+#
+# `fetch_boxscore` and `fetch_linescore` return the RAW API payload, parsed
+# by `parse_boxscore`/`parse_linescore` below -- kept separate the same way
+# `fetch_officials`/`parse_officials` are, so a caller that wants the raw
+# shape (or a test with a raw fixture) is not forced through the flattener.
+
+def fetch_boxscore(game_pk, timeout: float = DEFAULT_TIMEOUT) -> dict:
+    """Raw boxscore payload for one game: full batting/pitching lines by team."""
+    return _get_json(f"game/{game_pk}/boxscore", timeout=timeout)
+
+
+def fetch_linescore(game_pk, timeout: float = DEFAULT_TIMEOUT) -> dict:
+    """Raw linescore payload for one game: runs/hits/errors by inning."""
+    return _get_json(f"game/{game_pk}/linescore", timeout=timeout)
+
+
+def parse_boxscore(game_pk, boxscore: dict) -> dict:
+    """Flatten one game's boxscore into pitcher rows and batter rows.
+
+    Only players with a non-empty `stats.batting` or `stats.pitching` block
+    are included -- the API lists the whole active roster (bench, bullpen
+    arms who never entered) with empty stat blocks, and those never-played
+    players are not a game line, they are a roster note. A player can appear
+    in both lists (a position player who pitched, or a pitcher who batted in
+    an NL park); that is not a bug, it is two real lines for one game.
+
+    Computed fields (`total_bases`, `hits_runs_rbi`) are derived here, once,
+    from the same box, so every downstream reader (grading, features) agrees
+    on the arithmetic instead of re-deriving it slightly differently each time.
+    """
+    pitchers, batters = [], []
+    teams = boxscore.get("teams") or {}
+    for side in ("away", "home"):
+        team = teams.get(side) or {}
+        team_info = team.get("team") or {}
+        team_id = team_info.get("id")
+        team_name = team_info.get("name")
+        for player in (team.get("players") or {}).values():
+            person = player.get("person") or {}
+            player_id = person.get("id")
+            player_name = person.get("fullName")
+            stats = player.get("stats") or {}
+            batting = stats.get("batting") or {}
+            pitching = stats.get("pitching") or {}
+            if pitching:
+                pitchers.append({
+                    "game_pk": _as_int(game_pk),
+                    "side": side,
+                    "team_id": team_id,
+                    "team_name": team_name,
+                    "player_id": player_id,
+                    "player_name": player_name,
+                    "outs": _as_int(pitching.get("outs")),
+                    "ip": _innings_to_float(pitching.get("inningsPitched")),
+                    "h": _as_int(pitching.get("hits")),
+                    "er": _as_int(pitching.get("earnedRuns")),
+                    "r": _as_int(pitching.get("runs")),
+                    "bb": _as_int(pitching.get("baseOnBalls")),
+                    "k": _as_int(pitching.get("strikeOuts")),
+                    "pitches": _as_int(pitching.get("numberOfPitches")),
+                    "batters_faced": _as_int(pitching.get("battersFaced")),
+                })
+            if batting:
+                hits = _as_int(batting.get("hits")) or 0
+                doubles = _as_int(batting.get("doubles")) or 0
+                triples = _as_int(batting.get("triples")) or 0
+                home_runs = _as_int(batting.get("homeRuns")) or 0
+                runs = _as_int(batting.get("runs")) or 0
+                rbi = _as_int(batting.get("rbi")) or 0
+                singles = hits - doubles - triples - home_runs
+                total_bases = (singles + 2 * doubles + 3 * triples
+                               + 4 * home_runs)
+                batters.append({
+                    "game_pk": _as_int(game_pk),
+                    "side": side,
+                    "team_id": team_id,
+                    "team_name": team_name,
+                    "player_id": player_id,
+                    "player_name": player_name,
+                    "pa": _as_int(batting.get("plateAppearances")),
+                    "ab": _as_int(batting.get("atBats")),
+                    "h": hits,
+                    "doubles": doubles,
+                    "triples": triples,
+                    "hr": home_runs,
+                    "r": runs,
+                    "rbi": rbi,
+                    "bb": _as_int(batting.get("baseOnBalls")),
+                    "k": _as_int(batting.get("strikeOuts")),
+                    "sb": _as_int(batting.get("stolenBases")),
+                    "total_bases": total_bases,
+                    "hits_runs_rbi": hits + runs + rbi,
+                })
+    return {"game_pk": _as_int(game_pk), "pitchers": pitchers, "batters": batters}
+
+
+def parse_linescore(game_pk, linescore: dict) -> dict:
+    """Flatten one game's linescore: runs by inning plus first-scoring facts.
+
+    `first_team_to_score` walks innings in order (away bats the top half,
+    home the bottom) and returns the side of the first half-inning with any
+    runs -- `None` for a game that never scored, which is a real, recordable
+    outcome, not a miss. First-inning scoring is broken out explicitly
+    because it is its own settleable prop family ("first inning: yes/no").
+    """
+    innings = []
+    first_scoring_side = None
+    for inning in linescore.get("innings") or []:
+        away_runs = _as_int((inning.get("away") or {}).get("runs")) or 0
+        home_runs = _as_int((inning.get("home") or {}).get("runs")) or 0
+        innings.append({
+            "num": inning.get("num"),
+            "away_runs": away_runs,
+            "home_runs": home_runs,
+        })
+        if first_scoring_side is None:
+            if away_runs > 0:
+                first_scoring_side = "away"
+            elif home_runs > 0:
+                first_scoring_side = "home"
+
+    first = innings[0] if innings else {"away_runs": 0, "home_runs": 0}
+    first_inning_away_runs = first["away_runs"]
+    first_inning_home_runs = first["home_runs"]
+    return {
+        "game_pk": _as_int(game_pk),
+        "innings": innings,
+        "first_inning_away_runs": first_inning_away_runs,
+        "first_inning_home_runs": first_inning_home_runs,
+        "first_inning_scored": bool(first_inning_away_runs
+                                     or first_inning_home_runs),
+        "first_team_to_score": first_scoring_side,
+    }
+
+
 def _innings_to_float(value):
     """Convert baseball's innings notation to a real number.
 

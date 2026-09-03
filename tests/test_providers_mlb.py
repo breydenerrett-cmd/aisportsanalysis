@@ -573,3 +573,108 @@ class TestParseOfficialsOnRecordedFixture(unittest.TestCase):
         self.assertEqual(len(records), 3)
         self.assertEqual(by_pk[823660]["officials"], [])
         self.assertEqual(len(by_pk[824717]["officials"]), 4)
+
+
+class TestFetchBoxscoreAndLinescore(unittest.TestCase):
+    """fetch_boxscore/fetch_linescore hit the right path; no network (patched)."""
+
+    def test_fetch_boxscore_requests_the_right_path(self):
+        with mock.patch.object(mlb, "_get_json", return_value={}) as fake:
+            mlb.fetch_boxscore(822688)
+        self.assertEqual(fake.call_args[0][0], "game/822688/boxscore")
+
+    def test_fetch_linescore_requests_the_right_path(self):
+        with mock.patch.object(mlb, "_get_json", return_value={}) as fake:
+            mlb.fetch_linescore(822688)
+        self.assertEqual(fake.call_args[0][0], "game/822688/linescore")
+
+
+class TestParseBoxscoreOnRecordedFixture(unittest.TestCase):
+    """Real boxscore/linescore payloads, MIA @ WSH 2026-08-30 (game_pk
+    822688), trimmed to only players who actually recorded a batting or
+    pitching stat -- bench/bullpen players who never entered were dropped,
+    every remaining field is untouched.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        with open(FIXTURES / "mlb_boxscore_822688.json", encoding="utf-8") as h:
+            cls.box = json.load(h)
+        with open(FIXTURES / "mlb_linescore_822688.json", encoding="utf-8") as h:
+            cls.linescore = json.load(h)
+
+    def test_only_players_with_a_stat_line_are_included(self):
+        parsed = mlb.parse_boxscore(822688, self.box)
+        self.assertEqual(len(parsed["pitchers"]), 9)
+        self.assertEqual(len(parsed["batters"]), 24)
+
+    def test_a_pitcher_row_carries_the_settlement_fields(self):
+        parsed = mlb.parse_boxscore(822688, self.box)
+        vodnik = next(p for p in parsed["pitchers"] if p["player_id"] == 680767)
+        self.assertEqual(vodnik["player_name"], "Victor Vodnik")
+        self.assertEqual(vodnik["side"], "away")
+        self.assertEqual(vodnik["outs"], 3)
+        self.assertEqual(vodnik["ip"], 1.0)
+        self.assertEqual(vodnik["k"], 1)
+        self.assertEqual(vodnik["bb"], 2)
+        self.assertEqual(vodnik["h"], 0)
+        self.assertEqual(vodnik["er"], 0)
+        self.assertEqual(vodnik["pitches"], 24)
+        self.assertEqual(vodnik["batters_faced"], 5)
+
+    def test_a_batter_row_computes_total_bases_and_hits_runs_rbi(self):
+        parsed = mlb.parse_boxscore(822688, self.box)
+        ruiz = next(b for b in parsed["batters"] if b["player_id"] == 665923)
+        self.assertEqual(ruiz["player_name"], "Esteury Ruiz")
+        self.assertEqual(ruiz["h"], 1)
+        self.assertEqual(ruiz["doubles"], 0)
+        self.assertEqual(ruiz["total_bases"], 1)  # a single
+        self.assertEqual(ruiz["r"], 1)
+        self.assertEqual(ruiz["rbi"], 0)
+        self.assertEqual(ruiz["hits_runs_rbi"], 2)  # 1 h + 1 r + 0 rbi
+
+    def test_linescore_parses_innings_and_first_scoring_facts(self):
+        parsed = mlb.parse_linescore(822688, self.linescore)
+        self.assertEqual(len(parsed["innings"]), 9)
+        self.assertEqual(parsed["innings"][8]["away_runs"], 6)  # 9th inning
+        self.assertFalse(parsed["first_inning_scored"])
+        self.assertEqual(parsed["first_inning_away_runs"], 0)
+        self.assertEqual(parsed["first_inning_home_runs"], 0)
+        # home scored first, in the 5th (the first inning either side scored)
+        self.assertEqual(parsed["first_team_to_score"], "home")
+
+    def test_fetch_boxscore_end_to_end_on_the_fixture(self):
+        with mock.patch.object(mlb, "_get_json", return_value=self.box):
+            box = mlb.fetch_boxscore(822688)
+        parsed = mlb.parse_boxscore(822688, box)
+        self.assertEqual(len(parsed["pitchers"]), 9)
+
+
+class TestParseLinescoreSecondFixtureFirstInningScored(unittest.TestCase):
+    """SEA @ TOR 2026-08-30 (game_pk 822766): the home team scored 2 in the
+    first, giving a real "first inning: yes" / batter-with-hits example the
+    first fixture (a scoreless first) cannot.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        with open(FIXTURES / "mlb_boxscore_822766.json", encoding="utf-8") as h:
+            cls.box = json.load(h)
+        with open(FIXTURES / "mlb_linescore_822766.json", encoding="utf-8") as h:
+            cls.linescore = json.load(h)
+
+    def test_first_inning_scored_true_with_home_scoring_first(self):
+        parsed = mlb.parse_linescore(822766, self.linescore)
+        self.assertTrue(parsed["first_inning_scored"])
+        self.assertEqual(parsed["first_inning_away_runs"], 0)
+        self.assertEqual(parsed["first_inning_home_runs"], 2)
+        self.assertEqual(parsed["first_team_to_score"], "home")
+
+    def test_springer_batting_line(self):
+        parsed = mlb.parse_boxscore(822766, self.box)
+        springer = next(b for b in parsed["batters"] if b["player_id"] == 543807)
+        self.assertEqual(springer["player_name"], "George Springer")
+        self.assertEqual(springer["h"], 2)
+        self.assertEqual(springer["doubles"], 1)
+        self.assertEqual(springer["total_bases"], 3)  # 1 single + 1 double
+        self.assertEqual(springer["hits_runs_rbi"], 3)  # 2h + 1r + 0rbi

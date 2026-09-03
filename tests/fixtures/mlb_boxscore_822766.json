@@ -1,0 +1,3700 @@
+{
+ "copyright": "Copyright 2026 MLB Advanced Media, L.P.  Use of any content on this page acknowledges agreement to the terms posted here http://gdx.mlb.com/components/copyright.txt",
+ "teams": {
+  "away": {
+   "team": {
+    "springLeague": {
+     "id": 114,
+     "name": "Cactus League",
+     "link": "/api/v1/league/114",
+     "abbreviation": "CL"
+    },
+    "allStarStatus": "N",
+    "id": 136,
+    "name": "Seattle Mariners",
+    "link": "/api/v1/teams/136",
+    "season": 2026,
+    "venue": {
+     "id": 680,
+     "name": "T-Mobile Park",
+     "link": "/api/v1/venues/680"
+    },
+    "springVenue": {
+     "id": 2530,
+     "link": "/api/v1/venues/2530"
+    },
+    "teamCode": "sea",
+    "fileCode": "sea",
+    "abbreviation": "SEA",
+    "teamName": "Mariners",
+    "locationName": "Seattle",
+    "firstYearOfPlay": "1977",
+    "league": {
+     "id": 103,
+     "name": "American League",
+     "link": "/api/v1/league/103"
+    },
+    "division": {
+     "id": 200,
+     "name": "American League West",
+     "link": "/api/v1/divisions/200"
+    },
+    "sport": {
+     "id": 1,
+     "link": "/api/v1/sports/1",
+     "name": "Major League Baseball"
+    },
+    "shortName": "Seattle",
+    "record": {
+     "gamesPlayed": 137,
+     "wildCardGamesBack": "-",
+     "leagueGamesBack": "-",
+     "springLeagueGamesBack": "-",
+     "sportGamesBack": "-",
+     "divisionGamesBack": "-",
+     "conferenceGamesBack": "-",
+     "leagueRecord": {
+      "wins": 64,
+      "losses": 73,
+      "ties": 0,
+      "pct": ".467"
+     },
+     "records": {},
+     "divisionLeader": false,
+     "wins": 64,
+     "losses": 73,
+     "winningPercentage": ".467"
+    },
+    "franchiseName": "Seattle",
+    "clubName": "Mariners",
+    "active": true
+   },
+   "teamStats": {
+    "batting": {
+     "flyOuts": 6,
+     "groundOuts": 3,
+     "airOuts": 9,
+     "runs": 0,
+     "doubles": 1,
+     "triples": 0,
+     "homeRuns": 0,
+     "strikeOuts": 15,
+     "baseOnBalls": 2,
+     "intentionalWalks": 0,
+     "hits": 1,
+     "hitByPitch": 0,
+     "avg": ".227",
+     "atBats": 28,
+     "obp": ".307",
+     "slg": ".372",
+     "ops": ".679",
+     "caughtStealing": 0,
+     "stolenBases": 0,
+     "stolenBasePercentage": ".---",
+     "groundIntoDoublePlay": 0,
+     "groundIntoTriplePlay": 0,
+     "plateAppearances": 30,
+     "totalBases": 2,
+     "rbi": 0,
+     "leftOnBase": 4,
+     "sacBunts": 0,
+     "sacFlies": 0,
+     "catchersInterference": 0,
+     "pickoffs": 0,
+     "atBatsPerHomeRun": "-.--",
+     "popOuts": 2,
+     "lineOuts": 1
+    },
+    "pitching": {
+     "flyOuts": 7,
+     "groundOuts": 8,
+     "airOuts": 10,
+     "runs": 7,
+     "doubles": 2,
+     "triples": 0,
+     "homeRuns": 2,
+     "strikeOuts": 5,
+     "baseOnBalls": 4,
+     "intentionalWalks": 0,
+     "hits": 10,
+     "hitByPitch": 1,
+     "atBats": 32,
+     "obp": ".405",
+     "caughtStealing": 0,
+     "stolenBases": 1,
+     "stolenBasePercentage": "1.000",
+     "caughtStealingPercentage": ".000",
+     "numberOfPitches": 145,
+     "era": "4.16",
+     "inningsPitched": "8.0",
+     "saveOpportunities": 0,
+     "earnedRuns": 7,
+     "whip": "1.24",
+     "battersFaced": 38,
+     "outs": 24,
+     "completeGames": 0,
+     "shutouts": 0,
+     "pitchesThrown": 145,
+     "balls": 53,
+     "strikes": 92,
+     "strikePercentage": ".630",
+     "hitBatsmen": 1,
+     "balks": 0,
+     "wildPitches": 0,
+     "pickoffs": 0,
+     "groundOutsToAirouts": "0.80",
+     "rbi": 7,
+     "pitchesPerInning": "18.13",
+     "runsScoredPer9": "7.88",
+     "homeRunsPer9": "2.25",
+     "inheritedRunners": 0,
+     "inheritedRunnersScored": 0,
+     "catchersInterference": 0,
+     "sacBunts": 1,
+     "sacFlies": 0,
+     "passedBall": 0,
+     "popOuts": 3,
+     "lineOuts": 0
+    },
+    "fielding": {
+     "caughtStealing": 0,
+     "stolenBases": 1,
+     "stolenBasePercentage": "1.000",
+     "caughtStealingPercentage": ".---",
+     "assists": 8,
+     "putOuts": 24,
+     "errors": 0,
+     "chances": 32,
+     "passedBall": 0,
+     "pickoffs": 0
+    }
+   },
+   "players": {
+    "ID647304": {
+     "person": {
+      "id": 647304,
+      "fullName": "Josh Naylor",
+      "link": "/api/v1/people/647304",
+      "boxscoreName": "Naylor, J"
+     },
+     "jerseyNumber": "12",
+     "position": {
+      "code": "3",
+      "name": "First Base",
+      "type": "Infielder",
+      "abbreviation": "1B"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 136,
+     "battingOrder": "500",
+     "stats": {
+      "batting": {
+       "summary": "0-3 | 2 K",
+       "gamesPlayed": 1,
+       "flyOuts": 0,
+       "groundOuts": 1,
+       "airOuts": 0,
+       "runs": 0,
+       "doubles": 0,
+       "triples": 0,
+       "homeRuns": 0,
+       "strikeOuts": 2,
+       "baseOnBalls": 0,
+       "intentionalWalks": 0,
+       "hits": 0,
+       "hitByPitch": 0,
+       "atBats": 3,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "groundIntoDoublePlay": 0,
+       "groundIntoTriplePlay": 0,
+       "plateAppearances": 3,
+       "totalBases": 0,
+       "rbi": 0,
+       "leftOnBase": 1,
+       "sacBunts": 0,
+       "sacFlies": 0,
+       "catchersInterference": 0,
+       "pickoffs": 0,
+       "atBatsPerHomeRun": "-.--",
+       "popOuts": 0,
+       "lineOuts": 0
+      },
+      "pitching": {},
+      "fielding": {
+       "gamesStarted": 1,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 0,
+       "putOuts": 9,
+       "errors": 0,
+       "chances": 9,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": false
+     },
+     "allPositions": [
+      {
+       "code": "3",
+       "name": "First Base",
+       "type": "Infielder",
+       "abbreviation": "1B"
+      }
+     ]
+    },
+    "ID702284": {
+     "person": {
+      "id": 702284,
+      "fullName": "Cole Young",
+      "link": "/api/v1/people/702284",
+      "boxscoreName": "Young"
+     },
+     "jerseyNumber": "2",
+     "position": {
+      "code": "4",
+      "name": "Second Base",
+      "type": "Infielder",
+      "abbreviation": "2B"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 136,
+     "battingOrder": "700",
+     "stats": {
+      "batting": {
+       "summary": "0-2 | BB, K",
+       "gamesPlayed": 1,
+       "flyOuts": 0,
+       "groundOuts": 0,
+       "airOuts": 1,
+       "runs": 0,
+       "doubles": 0,
+       "triples": 0,
+       "homeRuns": 0,
+       "strikeOuts": 1,
+       "baseOnBalls": 1,
+       "intentionalWalks": 0,
+       "hits": 0,
+       "hitByPitch": 0,
+       "atBats": 2,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "groundIntoDoublePlay": 0,
+       "groundIntoTriplePlay": 0,
+       "plateAppearances": 3,
+       "totalBases": 0,
+       "rbi": 0,
+       "leftOnBase": 1,
+       "sacBunts": 0,
+       "sacFlies": 0,
+       "catchersInterference": 0,
+       "pickoffs": 0,
+       "atBatsPerHomeRun": "-.--",
+       "popOuts": 1,
+       "lineOuts": 0
+      },
+      "pitching": {},
+      "fielding": {
+       "gamesStarted": 1,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 2,
+       "putOuts": 3,
+       "errors": 0,
+       "chances": 5,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": false
+     },
+     "allPositions": [
+      {
+       "code": "4",
+       "name": "Second Base",
+       "type": "Infielder",
+       "abbreviation": "2B"
+      }
+     ]
+    },
+    "ID689546": {
+     "person": {
+      "id": 689546,
+      "fullName": "Nick Davila",
+      "link": "/api/v1/people/689546",
+      "boxscoreName": "Davila"
+     },
+     "jerseyNumber": "82",
+     "position": {
+      "code": "1",
+      "name": "Pitcher",
+      "type": "Pitcher",
+      "abbreviation": "P"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 136,
+     "stats": {
+      "batting": {},
+      "pitching": {
+       "summary": "1.0 IP, 3 ER, 0 K, 2 BB",
+       "gamesPlayed": 1,
+       "gamesStarted": 0,
+       "flyOuts": 0,
+       "groundOuts": 1,
+       "airOuts": 1,
+       "runs": 3,
+       "doubles": 2,
+       "triples": 0,
+       "homeRuns": 0,
+       "strikeOuts": 0,
+       "baseOnBalls": 2,
+       "intentionalWalks": 0,
+       "hits": 3,
+       "hitByPitch": 1,
+       "atBats": 5,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "numberOfPitches": 28,
+       "inningsPitched": "1.0",
+       "wins": 0,
+       "losses": 0,
+       "saves": 0,
+       "saveOpportunities": 0,
+       "holds": 0,
+       "blownSaves": 0,
+       "earnedRuns": 3,
+       "battersFaced": 8,
+       "outs": 3,
+       "gamesPitched": 1,
+       "completeGames": 0,
+       "shutouts": 0,
+       "pitchesThrown": 28,
+       "balls": 16,
+       "strikes": 12,
+       "strikePercentage": ".430",
+       "hitBatsmen": 1,
+       "balks": 0,
+       "wildPitches": 0,
+       "pickoffs": 0,
+       "rbi": 3,
+       "gamesFinished": 1,
+       "runsScoredPer9": "27.00",
+       "homeRunsPer9": "0.00",
+       "inheritedRunners": 0,
+       "inheritedRunnersScored": 0,
+       "catchersInterference": 0,
+       "sacBunts": 0,
+       "sacFlies": 0,
+       "passedBall": 0,
+       "popOuts": 1,
+       "lineOuts": 0
+      },
+      "fielding": {
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 0,
+       "putOuts": 0,
+       "errors": 0,
+       "chances": 0,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": false
+     },
+     "allPositions": [
+      {
+       "code": "1",
+       "name": "Pitcher",
+       "type": "Pitcher",
+       "abbreviation": "P"
+      }
+     ]
+    },
+    "ID668227": {
+     "person": {
+      "id": 668227,
+      "fullName": "Randy Arozarena",
+      "link": "/api/v1/people/668227",
+      "boxscoreName": "Arozarena"
+     },
+     "jerseyNumber": "56",
+     "position": {
+      "code": "7",
+      "name": "Outfielder",
+      "type": "Outfielder",
+      "abbreviation": "LF"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 136,
+     "battingOrder": "100",
+     "stats": {
+      "batting": {
+       "summary": "0-4 | 3 K",
+       "gamesPlayed": 1,
+       "flyOuts": 1,
+       "groundOuts": 0,
+       "airOuts": 1,
+       "runs": 0,
+       "doubles": 0,
+       "triples": 0,
+       "homeRuns": 0,
+       "strikeOuts": 3,
+       "baseOnBalls": 0,
+       "intentionalWalks": 0,
+       "hits": 0,
+       "hitByPitch": 0,
+       "atBats": 4,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "groundIntoDoublePlay": 0,
+       "groundIntoTriplePlay": 0,
+       "plateAppearances": 4,
+       "totalBases": 0,
+       "rbi": 0,
+       "leftOnBase": 0,
+       "sacBunts": 0,
+       "sacFlies": 0,
+       "catchersInterference": 0,
+       "pickoffs": 0,
+       "atBatsPerHomeRun": "-.--",
+       "popOuts": 0,
+       "lineOuts": 0
+      },
+      "pitching": {},
+      "fielding": {
+       "gamesStarted": 1,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 0,
+       "putOuts": 3,
+       "errors": 0,
+       "chances": 3,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": false
+     },
+     "allPositions": [
+      {
+       "code": "7",
+       "name": "Outfielder",
+       "type": "Outfielder",
+       "abbreviation": "LF"
+      }
+     ]
+    },
+    "ID641487": {
+     "person": {
+      "id": 641487,
+      "fullName": "J.P. Crawford",
+      "link": "/api/v1/people/641487",
+      "boxscoreName": "Crawford, J"
+     },
+     "jerseyNumber": "3",
+     "position": {
+      "code": "6",
+      "name": "Shortstop",
+      "type": "Infielder",
+      "abbreviation": "SS"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 136,
+     "battingOrder": "800",
+     "stats": {
+      "batting": {
+       "summary": "0-3 | K",
+       "gamesPlayed": 1,
+       "flyOuts": 1,
+       "groundOuts": 1,
+       "airOuts": 1,
+       "runs": 0,
+       "doubles": 0,
+       "triples": 0,
+       "homeRuns": 0,
+       "strikeOuts": 1,
+       "baseOnBalls": 0,
+       "intentionalWalks": 0,
+       "hits": 0,
+       "hitByPitch": 0,
+       "atBats": 3,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "groundIntoDoublePlay": 0,
+       "groundIntoTriplePlay": 0,
+       "plateAppearances": 3,
+       "totalBases": 0,
+       "rbi": 0,
+       "leftOnBase": 1,
+       "sacBunts": 0,
+       "sacFlies": 0,
+       "catchersInterference": 0,
+       "pickoffs": 0,
+       "atBatsPerHomeRun": "-.--",
+       "popOuts": 0,
+       "lineOuts": 0
+      },
+      "pitching": {},
+      "fielding": {
+       "gamesStarted": 1,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 1,
+       "putOuts": 0,
+       "errors": 0,
+       "chances": 1,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": false
+     },
+     "allPositions": [
+      {
+       "code": "6",
+       "name": "Shortstop",
+       "type": "Infielder",
+       "abbreviation": "SS"
+      }
+     ]
+    },
+    "ID621550": {
+     "person": {
+      "id": 621550,
+      "fullName": "Patrick Wisdom",
+      "link": "/api/v1/people/621550",
+      "boxscoreName": "Wisdom"
+     },
+     "jerseyNumber": "35",
+     "position": {
+      "code": "5",
+      "name": "Third Base",
+      "type": "Infielder",
+      "abbreviation": "3B"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 136,
+     "battingOrder": "901",
+     "stats": {
+      "batting": {
+       "note": "a-",
+       "summary": "0-1 | K",
+       "gamesPlayed": 1,
+       "flyOuts": 0,
+       "groundOuts": 0,
+       "airOuts": 0,
+       "runs": 0,
+       "doubles": 0,
+       "triples": 0,
+       "homeRuns": 0,
+       "strikeOuts": 1,
+       "baseOnBalls": 0,
+       "intentionalWalks": 0,
+       "hits": 0,
+       "hitByPitch": 0,
+       "atBats": 1,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "groundIntoDoublePlay": 0,
+       "groundIntoTriplePlay": 0,
+       "plateAppearances": 1,
+       "totalBases": 0,
+       "rbi": 0,
+       "leftOnBase": 1,
+       "sacBunts": 0,
+       "sacFlies": 0,
+       "catchersInterference": 0,
+       "pickoffs": 0,
+       "atBatsPerHomeRun": "-.--",
+       "popOuts": 0,
+       "lineOuts": 0
+      },
+      "pitching": {},
+      "fielding": {
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 0,
+       "putOuts": 0,
+       "errors": 0,
+       "chances": 0,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": true
+     },
+     "allPositions": [
+      {
+       "code": "11",
+       "name": "Pinch Hitter",
+       "type": "Hitter",
+       "abbreviation": "PH"
+      },
+      {
+       "code": "5",
+       "name": "Third Base",
+       "type": "Infielder",
+       "abbreviation": "3B"
+      }
+     ]
+    },
+    "ID621493": {
+     "person": {
+      "id": 621493,
+      "fullName": "Taylor Ward",
+      "link": "/api/v1/people/621493",
+      "boxscoreName": "Ward, T"
+     },
+     "jerseyNumber": "27",
+     "position": {
+      "code": "9",
+      "name": "Outfielder",
+      "type": "Outfielder",
+      "abbreviation": "RF"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 136,
+     "battingOrder": "600",
+     "stats": {
+      "batting": {
+       "summary": "0-2 | BB, K",
+       "gamesPlayed": 1,
+       "flyOuts": 0,
+       "groundOuts": 0,
+       "airOuts": 1,
+       "runs": 0,
+       "doubles": 0,
+       "triples": 0,
+       "homeRuns": 0,
+       "strikeOuts": 1,
+       "baseOnBalls": 1,
+       "intentionalWalks": 0,
+       "hits": 0,
+       "hitByPitch": 0,
+       "atBats": 2,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "groundIntoDoublePlay": 0,
+       "groundIntoTriplePlay": 0,
+       "plateAppearances": 3,
+       "totalBases": 0,
+       "rbi": 0,
+       "leftOnBase": 0,
+       "sacBunts": 0,
+       "sacFlies": 0,
+       "catchersInterference": 0,
+       "pickoffs": 0,
+       "atBatsPerHomeRun": "-.--",
+       "popOuts": 0,
+       "lineOuts": 1
+      },
+      "pitching": {},
+      "fielding": {
+       "gamesStarted": 1,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 0,
+       "putOuts": 2,
+       "errors": 0,
+       "chances": 2,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": false
+     },
+     "allPositions": [
+      {
+       "code": "9",
+       "name": "Outfielder",
+       "type": "Outfielder",
+       "abbreviation": "RF"
+      }
+     ]
+    },
+    "ID686527": {
+     "person": {
+      "id": 686527,
+      "fullName": "Dominic Canzone",
+      "link": "/api/v1/people/686527",
+      "boxscoreName": "Canzone"
+     },
+     "jerseyNumber": "8",
+     "position": {
+      "code": "10",
+      "name": "Designated Hitter",
+      "type": "Hitter",
+      "abbreviation": "DH"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 136,
+     "battingOrder": "200",
+     "stats": {
+      "batting": {
+       "summary": "0-4 | 3 K",
+       "gamesPlayed": 1,
+       "flyOuts": 0,
+       "groundOuts": 0,
+       "airOuts": 1,
+       "runs": 0,
+       "doubles": 0,
+       "triples": 0,
+       "homeRuns": 0,
+       "strikeOuts": 3,
+       "baseOnBalls": 0,
+       "intentionalWalks": 0,
+       "hits": 0,
+       "hitByPitch": 0,
+       "atBats": 4,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "groundIntoDoublePlay": 0,
+       "groundIntoTriplePlay": 0,
+       "plateAppearances": 4,
+       "totalBases": 0,
+       "rbi": 0,
+       "leftOnBase": 0,
+       "sacBunts": 0,
+       "sacFlies": 0,
+       "catchersInterference": 0,
+       "pickoffs": 0,
+       "atBatsPerHomeRun": "-.--",
+       "popOuts": 1,
+       "lineOuts": 0
+      },
+      "pitching": {},
+      "fielding": {
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 0,
+       "putOuts": 0,
+       "errors": 0,
+       "chances": 0,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": false
+     },
+     "allPositions": [
+      {
+       "code": "10",
+       "name": "Designated Hitter",
+       "type": "Hitter",
+       "abbreviation": "DH"
+      }
+     ]
+    },
+    "ID663728": {
+     "person": {
+      "id": 663728,
+      "fullName": "Cal Raleigh",
+      "link": "/api/v1/people/663728",
+      "boxscoreName": "Raleigh"
+     },
+     "jerseyNumber": "29",
+     "position": {
+      "code": "2",
+      "name": "Catcher",
+      "type": "Catcher",
+      "abbreviation": "C"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 136,
+     "battingOrder": "400",
+     "stats": {
+      "batting": {
+       "summary": "1-3 | 2B, K",
+       "gamesPlayed": 1,
+       "flyOuts": 1,
+       "groundOuts": 0,
+       "airOuts": 1,
+       "runs": 0,
+       "doubles": 1,
+       "triples": 0,
+       "homeRuns": 0,
+       "strikeOuts": 1,
+       "baseOnBalls": 0,
+       "intentionalWalks": 0,
+       "hits": 1,
+       "hitByPitch": 0,
+       "atBats": 3,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "groundIntoDoublePlay": 0,
+       "groundIntoTriplePlay": 0,
+       "plateAppearances": 3,
+       "totalBases": 2,
+       "rbi": 0,
+       "leftOnBase": 0,
+       "sacBunts": 0,
+       "sacFlies": 0,
+       "catchersInterference": 0,
+       "pickoffs": 0,
+       "atBatsPerHomeRun": "-.--",
+       "popOuts": 0,
+       "lineOuts": 0
+      },
+      "pitching": {},
+      "fielding": {
+       "gamesStarted": 1,
+       "caughtStealing": 0,
+       "stolenBases": 1,
+       "stolenBasePercentage": "1.000",
+       "caughtStealingPercentage": ".---",
+       "assists": 0,
+       "putOuts": 5,
+       "errors": 0,
+       "chances": 5,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": false
+     },
+     "allPositions": [
+      {
+       "code": "2",
+       "name": "Catcher",
+       "type": "Catcher",
+       "abbreviation": "C"
+      }
+     ]
+    },
+    "ID801126": {
+     "person": {
+      "id": 801126,
+      "fullName": "Brock Rodden",
+      "link": "/api/v1/people/801126",
+      "boxscoreName": "Rodden"
+     },
+     "jerseyNumber": "90",
+     "position": {
+      "code": "5",
+      "name": "Third Base",
+      "type": "Infielder",
+      "abbreviation": "3B"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 136,
+     "battingOrder": "900",
+     "stats": {
+      "batting": {
+       "summary": "0-2",
+       "gamesPlayed": 1,
+       "flyOuts": 2,
+       "groundOuts": 0,
+       "airOuts": 2,
+       "runs": 0,
+       "doubles": 0,
+       "triples": 0,
+       "homeRuns": 0,
+       "strikeOuts": 0,
+       "baseOnBalls": 0,
+       "intentionalWalks": 0,
+       "hits": 0,
+       "hitByPitch": 0,
+       "atBats": 2,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "groundIntoDoublePlay": 0,
+       "groundIntoTriplePlay": 0,
+       "plateAppearances": 2,
+       "totalBases": 0,
+       "rbi": 0,
+       "leftOnBase": 0,
+       "sacBunts": 0,
+       "sacFlies": 0,
+       "catchersInterference": 0,
+       "pickoffs": 0,
+       "atBatsPerHomeRun": "-.--",
+       "popOuts": 0,
+       "lineOuts": 0
+      },
+      "pitching": {},
+      "fielding": {
+       "gamesStarted": 1,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 4,
+       "putOuts": 0,
+       "errors": 0,
+       "chances": 4,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": false
+     },
+     "allPositions": [
+      {
+       "code": "5",
+       "name": "Third Base",
+       "type": "Infielder",
+       "abbreviation": "3B"
+      }
+     ]
+    },
+    "ID669302": {
+     "person": {
+      "id": 669302,
+      "fullName": "Logan Gilbert",
+      "link": "/api/v1/people/669302",
+      "boxscoreName": "Gilbert, L"
+     },
+     "jerseyNumber": "36",
+     "position": {
+      "code": "1",
+      "name": "Pitcher",
+      "type": "Pitcher",
+      "abbreviation": "P"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 136,
+     "stats": {
+      "batting": {},
+      "pitching": {
+       "note": "(L, 11-8)",
+       "summary": "5.0 IP, 3 ER, 4 K, BB",
+       "gamesPlayed": 1,
+       "gamesStarted": 1,
+       "flyOuts": 3,
+       "groundOuts": 6,
+       "airOuts": 5,
+       "runs": 3,
+       "doubles": 0,
+       "triples": 0,
+       "homeRuns": 1,
+       "strikeOuts": 4,
+       "baseOnBalls": 1,
+       "intentionalWalks": 0,
+       "hits": 6,
+       "hitByPitch": 0,
+       "atBats": 20,
+       "caughtStealing": 0,
+       "stolenBases": 1,
+       "stolenBasePercentage": "1.000",
+       "numberOfPitches": 87,
+       "inningsPitched": "5.0",
+       "wins": 0,
+       "losses": 1,
+       "saves": 0,
+       "saveOpportunities": 0,
+       "holds": 0,
+       "blownSaves": 0,
+       "earnedRuns": 3,
+       "battersFaced": 22,
+       "outs": 15,
+       "gamesPitched": 1,
+       "completeGames": 0,
+       "shutouts": 0,
+       "pitchesThrown": 87,
+       "balls": 28,
+       "strikes": 59,
+       "strikePercentage": ".680",
+       "hitBatsmen": 0,
+       "balks": 0,
+       "wildPitches": 0,
+       "pickoffs": 0,
+       "rbi": 3,
+       "gamesFinished": 0,
+       "runsScoredPer9": "5.40",
+       "homeRunsPer9": "1.80",
+       "inheritedRunners": 0,
+       "inheritedRunnersScored": 0,
+       "catchersInterference": 0,
+       "sacBunts": 1,
+       "sacFlies": 0,
+       "passedBall": 0,
+       "popOuts": 2,
+       "lineOuts": 0
+      },
+      "fielding": {
+       "gamesStarted": 1,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 1,
+       "putOuts": 0,
+       "errors": 0,
+       "chances": 1,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": false
+     },
+     "allPositions": [
+      {
+       "code": "1",
+       "name": "Pitcher",
+       "type": "Pitcher",
+       "abbreviation": "P"
+      }
+     ]
+    },
+    "ID622554": {
+     "person": {
+      "id": 622554,
+      "fullName": "Seranthony Dom\u00ednguez",
+      "link": "/api/v1/people/622554",
+      "boxscoreName": "Dom\u00ednguez"
+     },
+     "jerseyNumber": "58",
+     "position": {
+      "code": "1",
+      "name": "Pitcher",
+      "type": "Pitcher",
+      "abbreviation": "P"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 136,
+     "stats": {
+      "batting": {},
+      "pitching": {
+       "summary": "1.0 IP, 0 ER, 0 K, BB",
+       "gamesPlayed": 1,
+       "gamesStarted": 0,
+       "flyOuts": 2,
+       "groundOuts": 1,
+       "airOuts": 2,
+       "runs": 0,
+       "doubles": 0,
+       "triples": 0,
+       "homeRuns": 0,
+       "strikeOuts": 0,
+       "baseOnBalls": 1,
+       "intentionalWalks": 0,
+       "hits": 0,
+       "hitByPitch": 0,
+       "atBats": 3,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "numberOfPitches": 16,
+       "inningsPitched": "1.0",
+       "wins": 0,
+       "losses": 0,
+       "saves": 0,
+       "saveOpportunities": 0,
+       "holds": 0,
+       "blownSaves": 0,
+       "earnedRuns": 0,
+       "battersFaced": 4,
+       "outs": 3,
+       "gamesPitched": 1,
+       "completeGames": 0,
+       "shutouts": 0,
+       "pitchesThrown": 16,
+       "balls": 7,
+       "strikes": 9,
+       "strikePercentage": ".560",
+       "hitBatsmen": 0,
+       "balks": 0,
+       "wildPitches": 0,
+       "pickoffs": 0,
+       "rbi": 0,
+       "gamesFinished": 0,
+       "runsScoredPer9": "0.00",
+       "homeRunsPer9": "0.00",
+       "inheritedRunners": 0,
+       "inheritedRunnersScored": 0,
+       "catchersInterference": 0,
+       "sacBunts": 0,
+       "sacFlies": 0,
+       "passedBall": 0,
+       "popOuts": 0,
+       "lineOuts": 0
+      },
+      "fielding": {
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 0,
+       "putOuts": 0,
+       "errors": 0,
+       "chances": 0,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": false
+     },
+     "allPositions": [
+      {
+       "code": "1",
+       "name": "Pitcher",
+       "type": "Pitcher",
+       "abbreviation": "P"
+      }
+     ]
+    },
+    "ID642100": {
+     "person": {
+      "id": 642100,
+      "fullName": "Gabe Speier",
+      "link": "/api/v1/people/642100",
+      "boxscoreName": "Speier"
+     },
+     "jerseyNumber": "55",
+     "position": {
+      "code": "1",
+      "name": "Pitcher",
+      "type": "Pitcher",
+      "abbreviation": "P"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 136,
+     "stats": {
+      "batting": {},
+      "pitching": {
+       "summary": "1.0 IP, ER, K, 0 BB",
+       "gamesPlayed": 1,
+       "gamesStarted": 0,
+       "flyOuts": 2,
+       "groundOuts": 0,
+       "airOuts": 2,
+       "runs": 1,
+       "doubles": 0,
+       "triples": 0,
+       "homeRuns": 1,
+       "strikeOuts": 1,
+       "baseOnBalls": 0,
+       "intentionalWalks": 0,
+       "hits": 1,
+       "hitByPitch": 0,
+       "atBats": 4,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "numberOfPitches": 14,
+       "inningsPitched": "1.0",
+       "wins": 0,
+       "losses": 0,
+       "saves": 0,
+       "saveOpportunities": 0,
+       "holds": 0,
+       "blownSaves": 0,
+       "earnedRuns": 1,
+       "battersFaced": 4,
+       "outs": 3,
+       "gamesPitched": 1,
+       "completeGames": 0,
+       "shutouts": 0,
+       "pitchesThrown": 14,
+       "balls": 2,
+       "strikes": 12,
+       "strikePercentage": ".860",
+       "hitBatsmen": 0,
+       "balks": 0,
+       "wildPitches": 0,
+       "pickoffs": 0,
+       "rbi": 1,
+       "gamesFinished": 0,
+       "runsScoredPer9": "9.00",
+       "homeRunsPer9": "9.00",
+       "inheritedRunners": 0,
+       "inheritedRunnersScored": 0,
+       "catchersInterference": 0,
+       "sacBunts": 0,
+       "sacFlies": 0,
+       "passedBall": 0,
+       "popOuts": 0,
+       "lineOuts": 0
+      },
+      "fielding": {
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 0,
+       "putOuts": 0,
+       "errors": 0,
+       "chances": 0,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": false
+     },
+     "allPositions": [
+      {
+       "code": "1",
+       "name": "Pitcher",
+       "type": "Pitcher",
+       "abbreviation": "P"
+      }
+     ]
+    },
+    "ID677594": {
+     "person": {
+      "id": 677594,
+      "fullName": "Julio Rodr\u00edguez",
+      "link": "/api/v1/people/677594",
+      "boxscoreName": "Rodr\u00edguez, J"
+     },
+     "jerseyNumber": "44",
+     "position": {
+      "code": "8",
+      "name": "Outfielder",
+      "type": "Outfielder",
+      "abbreviation": "CF"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 136,
+     "battingOrder": "300",
+     "stats": {
+      "batting": {
+       "summary": "0-4 | 2 K",
+       "gamesPlayed": 1,
+       "flyOuts": 1,
+       "groundOuts": 1,
+       "airOuts": 1,
+       "runs": 0,
+       "doubles": 0,
+       "triples": 0,
+       "homeRuns": 0,
+       "strikeOuts": 2,
+       "baseOnBalls": 0,
+       "intentionalWalks": 0,
+       "hits": 0,
+       "hitByPitch": 0,
+       "atBats": 4,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "groundIntoDoublePlay": 0,
+       "groundIntoTriplePlay": 0,
+       "plateAppearances": 4,
+       "totalBases": 0,
+       "rbi": 0,
+       "leftOnBase": 0,
+       "sacBunts": 0,
+       "sacFlies": 0,
+       "catchersInterference": 0,
+       "pickoffs": 0,
+       "atBatsPerHomeRun": "-.--",
+       "popOuts": 0,
+       "lineOuts": 0
+      },
+      "pitching": {},
+      "fielding": {
+       "gamesStarted": 1,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 0,
+       "putOuts": 2,
+       "errors": 0,
+       "chances": 2,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": true,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": false
+     },
+     "allPositions": [
+      {
+       "code": "8",
+       "name": "Outfielder",
+       "type": "Outfielder",
+       "abbreviation": "CF"
+      }
+     ]
+    }
+   },
+   "batters": [
+    668227,
+    686527,
+    677594,
+    663728,
+    647304,
+    621493,
+    702284,
+    641487,
+    801126,
+    621550,
+    669302,
+    642100,
+    622554,
+    689546
+   ],
+   "pitchers": [
+    669302,
+    642100,
+    622554,
+    689546
+   ],
+   "battingOrder": [
+    668227,
+    686527,
+    677594,
+    663728,
+    647304,
+    621493,
+    702284,
+    641487,
+    621550
+   ],
+   "info": [
+    {
+     "title": "BATTING",
+     "fieldList": [
+      {
+       "label": "2B",
+       "value": "Raleigh (9, Scherzer)."
+      },
+      {
+       "label": "TB",
+       "value": "Raleigh 2."
+      },
+      {
+       "label": "Runners left in scoring position, 2 out",
+       "value": "Naylor, J; Young."
+      },
+      {
+       "label": "Team RISP",
+       "value": "0-for-2."
+      },
+      {
+       "label": "Team LOB",
+       "value": "3."
+      }
+     ]
+    },
+    {
+     "title": "FIELDING",
+     "fieldList": [
+      {
+       "label": "DP",
+       "value": "(Young-Naylor, J)."
+      }
+     ]
+    }
+   ],
+   "note": [
+    {
+     "label": "a",
+     "value": "Struck out for Rodden in the 8th."
+    }
+   ]
+  },
+  "home": {
+   "team": {
+    "springLeague": {
+     "id": 115,
+     "name": "Grapefruit League",
+     "link": "/api/v1/league/115",
+     "abbreviation": "GL"
+    },
+    "allStarStatus": "N",
+    "id": 141,
+    "name": "Toronto Blue Jays",
+    "link": "/api/v1/teams/141",
+    "season": 2026,
+    "venue": {
+     "id": 14,
+     "name": "Rogers Centre",
+     "link": "/api/v1/venues/14"
+    },
+    "springVenue": {
+     "id": 2536,
+     "link": "/api/v1/venues/2536"
+    },
+    "teamCode": "tor",
+    "fileCode": "tor",
+    "abbreviation": "TOR",
+    "teamName": "Blue Jays",
+    "locationName": "Toronto",
+    "firstYearOfPlay": "1977",
+    "league": {
+     "id": 103,
+     "name": "American League",
+     "link": "/api/v1/league/103"
+    },
+    "division": {
+     "id": 201,
+     "name": "American League East",
+     "link": "/api/v1/divisions/201"
+    },
+    "sport": {
+     "id": 1,
+     "link": "/api/v1/sports/1",
+     "name": "Major League Baseball"
+    },
+    "shortName": "Toronto",
+    "record": {
+     "gamesPlayed": 138,
+     "wildCardGamesBack": "-",
+     "leagueGamesBack": "-",
+     "springLeagueGamesBack": "-",
+     "sportGamesBack": "-",
+     "divisionGamesBack": "-",
+     "conferenceGamesBack": "-",
+     "leagueRecord": {
+      "wins": 68,
+      "losses": 70,
+      "ties": 0,
+      "pct": ".493"
+     },
+     "records": {},
+     "divisionLeader": false,
+     "wins": 68,
+     "losses": 70,
+     "winningPercentage": ".493"
+    },
+    "franchiseName": "Toronto",
+    "clubName": "Blue Jays",
+    "active": true
+   },
+   "teamStats": {
+    "batting": {
+     "flyOuts": 7,
+     "groundOuts": 8,
+     "airOuts": 10,
+     "runs": 7,
+     "doubles": 2,
+     "triples": 0,
+     "homeRuns": 2,
+     "strikeOuts": 5,
+     "baseOnBalls": 4,
+     "intentionalWalks": 0,
+     "hits": 10,
+     "hitByPitch": 1,
+     "avg": ".246",
+     "atBats": 32,
+     "obp": ".308",
+     "slg": ".382",
+     "ops": ".690",
+     "caughtStealing": 0,
+     "stolenBases": 1,
+     "stolenBasePercentage": "1.000",
+     "groundIntoDoublePlay": 1,
+     "groundIntoTriplePlay": 0,
+     "plateAppearances": 38,
+     "totalBases": 18,
+     "rbi": 7,
+     "leftOnBase": 12,
+     "sacBunts": 1,
+     "sacFlies": 0,
+     "catchersInterference": 0,
+     "pickoffs": 0,
+     "atBatsPerHomeRun": "16.00",
+     "popOuts": 3,
+     "lineOuts": 0
+    },
+    "pitching": {
+     "flyOuts": 6,
+     "groundOuts": 3,
+     "airOuts": 9,
+     "runs": 0,
+     "doubles": 1,
+     "triples": 0,
+     "homeRuns": 0,
+     "strikeOuts": 15,
+     "baseOnBalls": 2,
+     "intentionalWalks": 0,
+     "hits": 1,
+     "hitByPitch": 0,
+     "atBats": 28,
+     "obp": ".100",
+     "caughtStealing": 0,
+     "stolenBases": 0,
+     "stolenBasePercentage": ".---",
+     "caughtStealingPercentage": ".---",
+     "numberOfPitches": 124,
+     "era": "3.94",
+     "inningsPitched": "9.0",
+     "saveOpportunities": 0,
+     "earnedRuns": 0,
+     "whip": "1.31",
+     "battersFaced": 30,
+     "outs": 27,
+     "completeGames": 0,
+     "shutouts": 1,
+     "pitchesThrown": 124,
+     "balls": 38,
+     "strikes": 86,
+     "strikePercentage": ".690",
+     "hitBatsmen": 0,
+     "balks": 0,
+     "wildPitches": 1,
+     "pickoffs": 0,
+     "groundOutsToAirouts": "0.33",
+     "rbi": 0,
+     "pitchesPerInning": "13.78",
+     "runsScoredPer9": "0.00",
+     "homeRunsPer9": "0.00",
+     "inheritedRunners": 0,
+     "inheritedRunnersScored": 0,
+     "catchersInterference": 0,
+     "sacBunts": 0,
+     "sacFlies": 0,
+     "passedBall": 0,
+     "popOuts": 2,
+     "lineOuts": 1
+    },
+    "fielding": {
+     "caughtStealing": 0,
+     "stolenBases": 0,
+     "stolenBasePercentage": ".---",
+     "caughtStealingPercentage": ".---",
+     "assists": 3,
+     "putOuts": 27,
+     "errors": 0,
+     "chances": 30,
+     "passedBall": 0,
+     "pickoffs": 0
+    }
+   },
+   "players": {
+    "ID693686": {
+     "person": {
+      "id": 693686,
+      "fullName": "Spencer Miles",
+      "link": "/api/v1/people/693686",
+      "boxscoreName": "Miles"
+     },
+     "jerseyNumber": "62",
+     "position": {
+      "code": "1",
+      "name": "Pitcher",
+      "type": "Pitcher",
+      "abbreviation": "P"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 141,
+     "stats": {
+      "batting": {},
+      "pitching": {
+       "summary": "1.0 IP, 0 ER, 3 K, BB",
+       "gamesPlayed": 1,
+       "gamesStarted": 0,
+       "flyOuts": 0,
+       "groundOuts": 0,
+       "airOuts": 0,
+       "runs": 0,
+       "doubles": 0,
+       "triples": 0,
+       "homeRuns": 0,
+       "strikeOuts": 3,
+       "baseOnBalls": 1,
+       "intentionalWalks": 0,
+       "hits": 0,
+       "hitByPitch": 0,
+       "atBats": 3,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "numberOfPitches": 17,
+       "inningsPitched": "1.0",
+       "wins": 0,
+       "losses": 0,
+       "saves": 0,
+       "saveOpportunities": 0,
+       "holds": 0,
+       "blownSaves": 0,
+       "earnedRuns": 0,
+       "battersFaced": 4,
+       "outs": 3,
+       "gamesPitched": 1,
+       "completeGames": 0,
+       "shutouts": 0,
+       "pitchesThrown": 17,
+       "balls": 6,
+       "strikes": 11,
+       "strikePercentage": ".650",
+       "hitBatsmen": 0,
+       "balks": 0,
+       "wildPitches": 0,
+       "pickoffs": 0,
+       "rbi": 0,
+       "gamesFinished": 0,
+       "runsScoredPer9": "0.00",
+       "homeRunsPer9": "0.00",
+       "inheritedRunners": 0,
+       "inheritedRunnersScored": 0,
+       "catchersInterference": 0,
+       "sacBunts": 0,
+       "sacFlies": 0,
+       "passedBall": 0,
+       "popOuts": 0,
+       "lineOuts": 0
+      },
+      "fielding": {
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 0,
+       "putOuts": 0,
+       "errors": 0,
+       "chances": 0,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": false
+     },
+     "allPositions": [
+      {
+       "code": "1",
+       "name": "Pitcher",
+       "type": "Pitcher",
+       "abbreviation": "P"
+      }
+     ]
+    },
+    "ID676391": {
+     "person": {
+      "id": 676391,
+      "fullName": "Ernie Clement",
+      "link": "/api/v1/people/676391",
+      "boxscoreName": "Clement"
+     },
+     "jerseyNumber": "22",
+     "position": {
+      "code": "4",
+      "name": "Second Base",
+      "type": "Infielder",
+      "abbreviation": "2B"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 141,
+     "battingOrder": "801",
+     "stats": {
+      "batting": {
+       "summary": "0-1",
+       "gamesPlayed": 1,
+       "flyOuts": 0,
+       "groundOuts": 1,
+       "airOuts": 0,
+       "runs": 0,
+       "doubles": 0,
+       "triples": 0,
+       "homeRuns": 0,
+       "strikeOuts": 0,
+       "baseOnBalls": 0,
+       "intentionalWalks": 0,
+       "hits": 0,
+       "hitByPitch": 0,
+       "atBats": 1,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "groundIntoDoublePlay": 1,
+       "groundIntoTriplePlay": 0,
+       "plateAppearances": 1,
+       "totalBases": 0,
+       "rbi": 0,
+       "leftOnBase": 2,
+       "sacBunts": 0,
+       "sacFlies": 0,
+       "catchersInterference": 0,
+       "pickoffs": 0,
+       "atBatsPerHomeRun": "-.--",
+       "popOuts": 0,
+       "lineOuts": 0
+      },
+      "pitching": {},
+      "fielding": {
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 1,
+       "putOuts": 0,
+       "errors": 0,
+       "chances": 1,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": true
+     },
+     "allPositions": [
+      {
+       "code": "4",
+       "name": "Second Base",
+       "type": "Infielder",
+       "abbreviation": "2B"
+      }
+     ]
+    },
+    "ID807727": {
+     "person": {
+      "id": 807727,
+      "fullName": "Charles McAdoo",
+      "link": "/api/v1/people/807727",
+      "boxscoreName": "McAdoo"
+     },
+     "jerseyNumber": "26",
+     "position": {
+      "code": "4",
+      "name": "Second Base",
+      "type": "Infielder",
+      "abbreviation": "2B"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 141,
+     "battingOrder": "800",
+     "stats": {
+      "batting": {
+       "summary": "0-3",
+       "gamesPlayed": 1,
+       "flyOuts": 2,
+       "groundOuts": 1,
+       "airOuts": 2,
+       "runs": 0,
+       "doubles": 0,
+       "triples": 0,
+       "homeRuns": 0,
+       "strikeOuts": 0,
+       "baseOnBalls": 0,
+       "intentionalWalks": 0,
+       "hits": 0,
+       "hitByPitch": 0,
+       "atBats": 3,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "groundIntoDoublePlay": 0,
+       "groundIntoTriplePlay": 0,
+       "plateAppearances": 3,
+       "totalBases": 0,
+       "rbi": 0,
+       "leftOnBase": 0,
+       "sacBunts": 0,
+       "sacFlies": 0,
+       "catchersInterference": 0,
+       "pickoffs": 0,
+       "atBatsPerHomeRun": "-.--",
+       "popOuts": 0,
+       "lineOuts": 0
+      },
+      "pitching": {},
+      "fielding": {
+       "gamesStarted": 1,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 0,
+       "putOuts": 0,
+       "errors": 0,
+       "chances": 0,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": false
+     },
+     "allPositions": [
+      {
+       "code": "4",
+       "name": "Second Base",
+       "type": "Infielder",
+       "abbreviation": "2B"
+      }
+     ]
+    },
+    "ID665926": {
+     "person": {
+      "id": 665926,
+      "fullName": "Andr\u00e9s Gim\u00e9nez",
+      "link": "/api/v1/people/665926",
+      "boxscoreName": "Gim\u00e9nez"
+     },
+     "jerseyNumber": "0",
+     "position": {
+      "code": "6",
+      "name": "Shortstop",
+      "type": "Infielder",
+      "abbreviation": "SS"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 141,
+     "battingOrder": "700",
+     "stats": {
+      "batting": {
+       "summary": "1-4 | K, 2 RBI",
+       "gamesPlayed": 1,
+       "flyOuts": 1,
+       "groundOuts": 1,
+       "airOuts": 1,
+       "runs": 0,
+       "doubles": 0,
+       "triples": 0,
+       "homeRuns": 0,
+       "strikeOuts": 1,
+       "baseOnBalls": 0,
+       "intentionalWalks": 0,
+       "hits": 1,
+       "hitByPitch": 0,
+       "atBats": 4,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "groundIntoDoublePlay": 0,
+       "groundIntoTriplePlay": 0,
+       "plateAppearances": 4,
+       "totalBases": 1,
+       "rbi": 2,
+       "leftOnBase": 0,
+       "sacBunts": 0,
+       "sacFlies": 0,
+       "catchersInterference": 0,
+       "pickoffs": 0,
+       "atBatsPerHomeRun": "-.--",
+       "popOuts": 0,
+       "lineOuts": 0
+      },
+      "pitching": {},
+      "fielding": {
+       "gamesStarted": 1,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 2,
+       "putOuts": 0,
+       "errors": 0,
+       "chances": 2,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": false
+     },
+     "allPositions": [
+      {
+       "code": "6",
+       "name": "Shortstop",
+       "type": "Infielder",
+       "abbreviation": "SS"
+      }
+     ]
+    },
+    "ID703520": {
+     "person": {
+      "id": 703520,
+      "fullName": "Brett Bateman",
+      "link": "/api/v1/people/703520",
+      "boxscoreName": "Bateman"
+     },
+     "jerseyNumber": "21",
+     "position": {
+      "code": "8",
+      "name": "Outfielder",
+      "type": "Outfielder",
+      "abbreviation": "CF"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 141,
+     "battingOrder": "100",
+     "stats": {
+      "batting": {
+       "summary": "1-2 | 2B, 2 BB, K",
+       "gamesPlayed": 1,
+       "flyOuts": 0,
+       "groundOuts": 1,
+       "airOuts": 0,
+       "runs": 1,
+       "doubles": 1,
+       "triples": 0,
+       "homeRuns": 0,
+       "strikeOuts": 1,
+       "baseOnBalls": 2,
+       "intentionalWalks": 0,
+       "hits": 1,
+       "hitByPitch": 0,
+       "atBats": 2,
+       "caughtStealing": 0,
+       "stolenBases": 1,
+       "stolenBasePercentage": "1.000",
+       "groundIntoDoublePlay": 0,
+       "groundIntoTriplePlay": 0,
+       "plateAppearances": 5,
+       "totalBases": 2,
+       "rbi": 1,
+       "leftOnBase": 0,
+       "sacBunts": 1,
+       "sacFlies": 0,
+       "catchersInterference": 0,
+       "pickoffs": 0,
+       "atBatsPerHomeRun": "-.--",
+       "popOuts": 0,
+       "lineOuts": 0
+      },
+      "pitching": {},
+      "fielding": {
+       "gamesStarted": 1,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 0,
+       "putOuts": 2,
+       "errors": 0,
+       "chances": 2,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": false
+     },
+     "allPositions": [
+      {
+       "code": "8",
+       "name": "Outfielder",
+       "type": "Outfielder",
+       "abbreviation": "CF"
+      }
+     ]
+    },
+    "ID664770": {
+     "person": {
+      "id": 664770,
+      "fullName": "Nathan Lukes",
+      "link": "/api/v1/people/664770",
+      "boxscoreName": "Lukes"
+     },
+     "jerseyNumber": "38",
+     "position": {
+      "code": "9",
+      "name": "Outfielder",
+      "type": "Outfielder",
+      "abbreviation": "RF"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 141,
+     "battingOrder": "500",
+     "stats": {
+      "batting": {
+       "summary": "1-3 | HBP, K, R",
+       "gamesPlayed": 1,
+       "flyOuts": 0,
+       "groundOuts": 1,
+       "airOuts": 0,
+       "runs": 1,
+       "doubles": 0,
+       "triples": 0,
+       "homeRuns": 0,
+       "strikeOuts": 1,
+       "baseOnBalls": 0,
+       "intentionalWalks": 0,
+       "hits": 1,
+       "hitByPitch": 1,
+       "atBats": 3,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "groundIntoDoublePlay": 0,
+       "groundIntoTriplePlay": 0,
+       "plateAppearances": 4,
+       "totalBases": 1,
+       "rbi": 0,
+       "leftOnBase": 2,
+       "sacBunts": 0,
+       "sacFlies": 0,
+       "catchersInterference": 0,
+       "pickoffs": 0,
+       "atBatsPerHomeRun": "-.--",
+       "popOuts": 0,
+       "lineOuts": 0
+      },
+      "pitching": {},
+      "fielding": {
+       "gamesStarted": 1,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 0,
+       "putOuts": 3,
+       "errors": 0,
+       "chances": 3,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": false
+     },
+     "allPositions": [
+      {
+       "code": "9",
+       "name": "Outfielder",
+       "type": "Outfielder",
+       "abbreviation": "RF"
+      }
+     ]
+    },
+    "ID543807": {
+     "person": {
+      "id": 543807,
+      "fullName": "George Springer",
+      "link": "/api/v1/people/543807",
+      "boxscoreName": "Springer"
+     },
+     "jerseyNumber": "4",
+     "position": {
+      "code": "10",
+      "name": "Designated Hitter",
+      "type": "Hitter",
+      "abbreviation": "DH"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 141,
+     "battingOrder": "400",
+     "stats": {
+      "batting": {
+       "summary": "2-4 | 2B, 2 K, R",
+       "gamesPlayed": 1,
+       "flyOuts": 0,
+       "groundOuts": 0,
+       "airOuts": 0,
+       "runs": 1,
+       "doubles": 1,
+       "triples": 0,
+       "homeRuns": 0,
+       "strikeOuts": 2,
+       "baseOnBalls": 0,
+       "intentionalWalks": 0,
+       "hits": 2,
+       "hitByPitch": 0,
+       "atBats": 4,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "groundIntoDoublePlay": 0,
+       "groundIntoTriplePlay": 0,
+       "plateAppearances": 4,
+       "totalBases": 3,
+       "rbi": 0,
+       "leftOnBase": 1,
+       "sacBunts": 0,
+       "sacFlies": 0,
+       "catchersInterference": 0,
+       "pickoffs": 0,
+       "atBatsPerHomeRun": "-.--",
+       "popOuts": 0,
+       "lineOuts": 0
+      },
+      "pitching": {},
+      "fielding": {
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 0,
+       "putOuts": 0,
+       "errors": 0,
+       "chances": 0,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": false
+     },
+     "allPositions": [
+      {
+       "code": "10",
+       "name": "Designated Hitter",
+       "type": "Hitter",
+       "abbreviation": "DH"
+      }
+     ]
+    },
+    "ID453286": {
+     "person": {
+      "id": 453286,
+      "fullName": "Max Scherzer",
+      "link": "/api/v1/people/453286",
+      "boxscoreName": "Scherzer"
+     },
+     "jerseyNumber": "31",
+     "position": {
+      "code": "1",
+      "name": "Pitcher",
+      "type": "Pitcher",
+      "abbreviation": "P"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 141,
+     "stats": {
+      "batting": {},
+      "pitching": {
+       "note": "(W, 2-7)",
+       "summary": "7.0 IP, 0 ER, 10 K, BB",
+       "gamesPlayed": 1,
+       "gamesStarted": 1,
+       "flyOuts": 6,
+       "groundOuts": 2,
+       "airOuts": 9,
+       "runs": 0,
+       "doubles": 1,
+       "triples": 0,
+       "homeRuns": 0,
+       "strikeOuts": 10,
+       "baseOnBalls": 1,
+       "intentionalWalks": 0,
+       "hits": 1,
+       "hitByPitch": 0,
+       "atBats": 22,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "numberOfPitches": 97,
+       "inningsPitched": "7.0",
+       "wins": 1,
+       "losses": 0,
+       "saves": 0,
+       "saveOpportunities": 0,
+       "holds": 0,
+       "blownSaves": 0,
+       "earnedRuns": 0,
+       "battersFaced": 23,
+       "outs": 21,
+       "gamesPitched": 1,
+       "completeGames": 0,
+       "shutouts": 0,
+       "pitchesThrown": 97,
+       "balls": 30,
+       "strikes": 67,
+       "strikePercentage": ".690",
+       "hitBatsmen": 0,
+       "balks": 0,
+       "wildPitches": 1,
+       "pickoffs": 0,
+       "rbi": 0,
+       "gamesFinished": 0,
+       "runsScoredPer9": "0.00",
+       "homeRunsPer9": "0.00",
+       "inheritedRunners": 0,
+       "inheritedRunnersScored": 0,
+       "catchersInterference": 0,
+       "sacBunts": 0,
+       "sacFlies": 0,
+       "passedBall": 0,
+       "popOuts": 2,
+       "lineOuts": 1
+      },
+      "fielding": {
+       "gamesStarted": 1,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 0,
+       "putOuts": 0,
+       "errors": 0,
+       "chances": 0,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": false
+     },
+     "allPositions": [
+      {
+       "code": "1",
+       "name": "Pitcher",
+       "type": "Pitcher",
+       "abbreviation": "P"
+      }
+     ]
+    },
+    "ID680755": {
+     "person": {
+      "id": 680755,
+      "fullName": "Braydon Fisher",
+      "link": "/api/v1/people/680755",
+      "boxscoreName": "Fisher"
+     },
+     "jerseyNumber": "63",
+     "position": {
+      "code": "1",
+      "name": "Pitcher",
+      "type": "Pitcher",
+      "abbreviation": "P"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 141,
+     "stats": {
+      "batting": {},
+      "pitching": {
+       "summary": "1.0 IP, 0 ER, 2 K, 0 BB",
+       "gamesPlayed": 1,
+       "gamesStarted": 0,
+       "flyOuts": 0,
+       "groundOuts": 1,
+       "airOuts": 0,
+       "runs": 0,
+       "doubles": 0,
+       "triples": 0,
+       "homeRuns": 0,
+       "strikeOuts": 2,
+       "baseOnBalls": 0,
+       "intentionalWalks": 0,
+       "hits": 0,
+       "hitByPitch": 0,
+       "atBats": 3,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "numberOfPitches": 10,
+       "inningsPitched": "1.0",
+       "wins": 0,
+       "losses": 0,
+       "saves": 0,
+       "saveOpportunities": 0,
+       "holds": 0,
+       "blownSaves": 0,
+       "earnedRuns": 0,
+       "battersFaced": 3,
+       "outs": 3,
+       "gamesPitched": 1,
+       "completeGames": 0,
+       "shutouts": 0,
+       "pitchesThrown": 10,
+       "balls": 2,
+       "strikes": 8,
+       "strikePercentage": ".800",
+       "hitBatsmen": 0,
+       "balks": 0,
+       "wildPitches": 0,
+       "pickoffs": 0,
+       "rbi": 0,
+       "gamesFinished": 1,
+       "runsScoredPer9": "0.00",
+       "homeRunsPer9": "0.00",
+       "inheritedRunners": 0,
+       "inheritedRunnersScored": 0,
+       "catchersInterference": 0,
+       "sacBunts": 0,
+       "sacFlies": 0,
+       "passedBall": 0,
+       "popOuts": 0,
+       "lineOuts": 0
+      },
+      "fielding": {
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 0,
+       "putOuts": 0,
+       "errors": 0,
+       "chances": 0,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": true,
+      "isOnBench": false,
+      "isSubstitute": false
+     },
+     "allPositions": [
+      {
+       "code": "1",
+       "name": "Pitcher",
+       "type": "Pitcher",
+       "abbreviation": "P"
+      }
+     ]
+    },
+    "ID665489": {
+     "person": {
+      "id": 665489,
+      "fullName": "Vladimir Guerrero Jr.",
+      "link": "/api/v1/people/665489",
+      "boxscoreName": "Guerrero Jr."
+     },
+     "jerseyNumber": "27",
+     "position": {
+      "code": "3",
+      "name": "First Base",
+      "type": "Infielder",
+      "abbreviation": "1B"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 141,
+     "battingOrder": "200",
+     "stats": {
+      "batting": {
+       "summary": "1-5 | RBI",
+       "gamesPlayed": 1,
+       "flyOuts": 0,
+       "groundOuts": 1,
+       "airOuts": 3,
+       "runs": 0,
+       "doubles": 0,
+       "triples": 0,
+       "homeRuns": 0,
+       "strikeOuts": 0,
+       "baseOnBalls": 0,
+       "intentionalWalks": 0,
+       "hits": 1,
+       "hitByPitch": 0,
+       "atBats": 5,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "groundIntoDoublePlay": 0,
+       "groundIntoTriplePlay": 0,
+       "plateAppearances": 5,
+       "totalBases": 1,
+       "rbi": 1,
+       "leftOnBase": 4,
+       "sacBunts": 0,
+       "sacFlies": 0,
+       "catchersInterference": 0,
+       "pickoffs": 0,
+       "atBatsPerHomeRun": "-.--",
+       "popOuts": 3,
+       "lineOuts": 0
+      },
+      "pitching": {},
+      "fielding": {
+       "gamesStarted": 1,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 0,
+       "putOuts": 4,
+       "errors": 0,
+       "chances": 4,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": false
+     },
+     "allPositions": [
+      {
+       "code": "3",
+       "name": "First Base",
+       "type": "Infielder",
+       "abbreviation": "1B"
+      }
+     ]
+    },
+    "ID664702": {
+     "person": {
+      "id": 664702,
+      "fullName": "Myles Straw",
+      "link": "/api/v1/people/664702",
+      "boxscoreName": "Straw"
+     },
+     "jerseyNumber": "3",
+     "position": {
+      "code": "7",
+      "name": "Outfielder",
+      "type": "Outfielder",
+      "abbreviation": "LF"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 141,
+     "battingOrder": "900",
+     "stats": {
+      "batting": {
+       "summary": "1-3 | BB, R",
+       "gamesPlayed": 1,
+       "flyOuts": 2,
+       "groundOuts": 0,
+       "airOuts": 2,
+       "runs": 1,
+       "doubles": 0,
+       "triples": 0,
+       "homeRuns": 0,
+       "strikeOuts": 0,
+       "baseOnBalls": 1,
+       "intentionalWalks": 0,
+       "hits": 1,
+       "hitByPitch": 0,
+       "atBats": 3,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "groundIntoDoublePlay": 0,
+       "groundIntoTriplePlay": 0,
+       "plateAppearances": 4,
+       "totalBases": 1,
+       "rbi": 0,
+       "leftOnBase": 0,
+       "sacBunts": 0,
+       "sacFlies": 0,
+       "catchersInterference": 0,
+       "pickoffs": 0,
+       "atBatsPerHomeRun": "-.--",
+       "popOuts": 0,
+       "lineOuts": 0
+      },
+      "pitching": {},
+      "fielding": {
+       "gamesStarted": 1,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 0,
+       "putOuts": 1,
+       "errors": 0,
+       "chances": 1,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": false
+     },
+     "allPositions": [
+      {
+       "code": "7",
+       "name": "Outfielder",
+       "type": "Outfielder",
+       "abbreviation": "LF"
+      }
+     ]
+    },
+    "ID672386": {
+     "person": {
+      "id": 672386,
+      "fullName": "Alejandro Kirk",
+      "link": "/api/v1/people/672386",
+      "boxscoreName": "Kirk"
+     },
+     "jerseyNumber": "30",
+     "position": {
+      "code": "2",
+      "name": "Catcher",
+      "type": "Catcher",
+      "abbreviation": "C"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 141,
+     "battingOrder": "300",
+     "stats": {
+      "batting": {
+       "summary": "2-4 | HR, 2 RBI, R",
+       "gamesPlayed": 1,
+       "flyOuts": 2,
+       "groundOuts": 0,
+       "airOuts": 2,
+       "runs": 1,
+       "doubles": 0,
+       "triples": 0,
+       "homeRuns": 1,
+       "strikeOuts": 0,
+       "baseOnBalls": 0,
+       "intentionalWalks": 0,
+       "hits": 2,
+       "hitByPitch": 0,
+       "atBats": 4,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "groundIntoDoublePlay": 0,
+       "groundIntoTriplePlay": 0,
+       "plateAppearances": 4,
+       "totalBases": 5,
+       "rbi": 2,
+       "leftOnBase": 2,
+       "sacBunts": 0,
+       "sacFlies": 0,
+       "catchersInterference": 0,
+       "pickoffs": 0,
+       "atBatsPerHomeRun": "4.00",
+       "popOuts": 0,
+       "lineOuts": 0
+      },
+      "pitching": {},
+      "fielding": {
+       "gamesStarted": 1,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 0,
+       "putOuts": 15,
+       "errors": 0,
+       "chances": 15,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": false
+     },
+     "allPositions": [
+      {
+       "code": "2",
+       "name": "Catcher",
+       "type": "Catcher",
+       "abbreviation": "C"
+      }
+     ]
+    },
+    "ID672960": {
+     "person": {
+      "id": 672960,
+      "fullName": "Kazuma Okamoto",
+      "link": "/api/v1/people/672960",
+      "boxscoreName": "Okamoto"
+     },
+     "jerseyNumber": "7",
+     "position": {
+      "code": "5",
+      "name": "Third Base",
+      "type": "Infielder",
+      "abbreviation": "3B"
+     },
+     "status": {
+      "code": "A",
+      "description": "Active"
+     },
+     "parentTeamId": 141,
+     "battingOrder": "600",
+     "stats": {
+      "batting": {
+       "summary": "1-3 | HR, BB, RBI",
+       "gamesPlayed": 1,
+       "flyOuts": 0,
+       "groundOuts": 2,
+       "airOuts": 0,
+       "runs": 2,
+       "doubles": 0,
+       "triples": 0,
+       "homeRuns": 1,
+       "strikeOuts": 0,
+       "baseOnBalls": 1,
+       "intentionalWalks": 0,
+       "hits": 1,
+       "hitByPitch": 0,
+       "atBats": 3,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "groundIntoDoublePlay": 0,
+       "groundIntoTriplePlay": 0,
+       "plateAppearances": 4,
+       "totalBases": 4,
+       "rbi": 1,
+       "leftOnBase": 1,
+       "sacBunts": 0,
+       "sacFlies": 0,
+       "catchersInterference": 0,
+       "pickoffs": 0,
+       "atBatsPerHomeRun": "3.00",
+       "popOuts": 0,
+       "lineOuts": 0
+      },
+      "pitching": {},
+      "fielding": {
+       "gamesStarted": 1,
+       "caughtStealing": 0,
+       "stolenBases": 0,
+       "stolenBasePercentage": ".---",
+       "caughtStealingPercentage": ".---",
+       "assists": 0,
+       "putOuts": 2,
+       "errors": 0,
+       "chances": 2,
+       "fielding": ".000",
+       "passedBall": 0,
+       "pickoffs": 0
+      }
+     },
+     "gameStatus": {
+      "isCurrentBatter": false,
+      "isCurrentPitcher": false,
+      "isOnBench": false,
+      "isSubstitute": false
+     },
+     "allPositions": [
+      {
+       "code": "5",
+       "name": "Third Base",
+       "type": "Infielder",
+       "abbreviation": "3B"
+      }
+     ]
+    }
+   },
+   "batters": [
+    703520,
+    665489,
+    672386,
+    543807,
+    664770,
+    672960,
+    665926,
+    807727,
+    676391,
+    664702,
+    453286,
+    693686,
+    680755
+   ],
+   "pitchers": [
+    453286,
+    693686,
+    680755
+   ],
+   "battingOrder": [
+    703520,
+    665489,
+    672386,
+    543807,
+    664770,
+    672960,
+    665926,
+    676391,
+    664702
+   ],
+   "info": [
+    {
+     "title": "BATTING",
+     "fieldList": [
+      {
+       "label": "2B",
+       "value": "Springer (19, Davila); Bateman (4, Davila)."
+      },
+      {
+       "label": "HR",
+       "value": "Kirk (8, 1st inning off Gilbert, L, 1 on, 1 out); Okamoto (28, 6th inning off Speier, 0 on, 1 out)."
+      },
+      {
+       "label": "TB",
+       "value": "Bateman 2; Gim\u00e9nez; Guerrero Jr.; Kirk 5; Lukes; Okamoto 4; Springer 3; Straw."
+      },
+      {
+       "label": "RBI",
+       "value": "Bateman (7); Gim\u00e9nez 2 (52); Guerrero Jr. (48); Kirk 2 (32); Okamoto (78)."
+      },
+      {
+       "label": "2-out RBI",
+       "value": "Bateman."
+      },
+      {
+       "label": "Runners left in scoring position, 2 out",
+       "value": "Springer; Lukes; Kirk; Guerrero Jr. 2."
+      },
+      {
+       "label": "SAC",
+       "value": "Bateman."
+      },
+      {
+       "label": "GIDP",
+       "value": "Clement."
+      },
+      {
+       "label": "Team RISP",
+       "value": "4-for-10."
+      },
+      {
+       "label": "Team LOB",
+       "value": "7."
+      }
+     ]
+    },
+    {
+     "title": "BASERUNNING",
+     "fieldList": [
+      {
+       "label": "SB",
+       "value": "Bateman (3, 2nd base off Gilbert, L/Raleigh)."
+      }
+     ]
+    }
+   ],
+   "note": []
+  }
+ },
+ "officials": [
+  {
+   "official": {
+    "id": 676580,
+    "fullName": "Steven Jaschinski",
+    "link": "/api/v1/people/676580"
+   },
+   "officialType": "Home Plate"
+  },
+  {
+   "official": {
+    "id": 483630,
+    "fullName": "John Tumpane",
+    "link": "/api/v1/people/483630"
+   },
+   "officialType": "First Base"
+  },
+  {
+   "official": {
+    "id": 503077,
+    "fullName": "Adam Hamari",
+    "link": "/api/v1/people/503077"
+   },
+   "officialType": "Second Base"
+  },
+  {
+   "official": {
+    "id": 623949,
+    "fullName": "Clint Vondrak",
+    "link": "/api/v1/people/623949"
+   },
+   "officialType": "Third Base"
+  }
+ ],
+ "info": [
+  {
+   "label": "WP",
+   "value": "Scherzer."
+  },
+  {
+   "label": "HBP",
+   "value": "Lukes (by Davila)."
+  },
+  {
+   "label": "Pitch timer violations",
+   "value": "Davila (pitcher)."
+  },
+  {
+   "label": "ABS Challenge",
+   "value": "Kirk (Strike-Confirmed); Canzone (Strike-Confirmed)."
+  },
+  {
+   "label": "Pitches-strikes",
+   "value": "Gilbert, L 87-59; Speier 14-12; Dom\u00ednguez 16-9; Davila 28-12; Scherzer 97-67; Miles 17-11; Fisher 10-8."
+  },
+  {
+   "label": "Groundouts-flyouts",
+   "value": "Gilbert, L 6-3; Speier 0-2; Dom\u00ednguez 1-2; Davila 1-0; Scherzer 2-6; Miles 0-0; Fisher 1-0."
+  },
+  {
+   "label": "Batters faced",
+   "value": "Gilbert, L 22; Speier 4; Dom\u00ednguez 4; Davila 8; Scherzer 23; Miles 4; Fisher 3."
+  },
+  {
+   "label": "Umpires",
+   "value": "HP: Steven Jaschinski. 1B: John Tumpane. 2B: Adam Hamari. 3B: Clint Vondrak. "
+  },
+  {
+   "label": "Weather",
+   "value": "65 degrees, Cloudy."
+  },
+  {
+   "label": "Wind",
+   "value": "2 mph, Out To LF."
+  },
+  {
+   "label": "First pitch",
+   "value": "1:37 PM."
+  },
+  {
+   "label": "T",
+   "value": "2:27."
+  },
+  {
+   "label": "Att",
+   "value": "42,039."
+  },
+  {
+   "label": "Venue",
+   "value": "Rogers Centre."
+  },
+  {
+   "label": "August 30, 2026"
+  }
+ ],
+ "pitchingNotes": [],
+ "topPerformers": [
+  {
+   "player": {
+    "person": {
+     "id": 453286,
+     "fullName": "Max Scherzer",
+     "link": "/api/v1/people/453286",
+     "boxscoreName": "Scherzer"
+    },
+    "jerseyNumber": "31",
+    "position": {
+     "code": "1",
+     "name": "Pitcher",
+     "type": "Pitcher",
+     "abbreviation": "P"
+    },
+    "status": {
+     "code": "A",
+     "description": "Active"
+    },
+    "parentTeamId": 141,
+    "stats": {
+     "batting": {},
+     "pitching": {
+      "note": "(W, 2-7)",
+      "summary": "7.0 IP, 0 ER, 10 K, BB",
+      "gamesPlayed": 1,
+      "gamesStarted": 1,
+      "flyOuts": 6,
+      "groundOuts": 2,
+      "airOuts": 9,
+      "runs": 0,
+      "doubles": 1,
+      "triples": 0,
+      "homeRuns": 0,
+      "strikeOuts": 10,
+      "baseOnBalls": 1,
+      "intentionalWalks": 0,
+      "hits": 1,
+      "hitByPitch": 0,
+      "atBats": 22,
+      "caughtStealing": 0,
+      "stolenBases": 0,
+      "stolenBasePercentage": ".---",
+      "numberOfPitches": 97,
+      "inningsPitched": "7.0",
+      "wins": 1,
+      "losses": 0,
+      "saves": 0,
+      "saveOpportunities": 0,
+      "holds": 0,
+      "blownSaves": 0,
+      "earnedRuns": 0,
+      "battersFaced": 23,
+      "outs": 21,
+      "gamesPitched": 1,
+      "completeGames": 0,
+      "shutouts": 0,
+      "pitchesThrown": 97,
+      "balls": 30,
+      "strikes": 67,
+      "strikePercentage": ".690",
+      "hitBatsmen": 0,
+      "balks": 0,
+      "wildPitches": 1,
+      "pickoffs": 0,
+      "rbi": 0,
+      "gamesFinished": 0,
+      "runsScoredPer9": "0.00",
+      "homeRunsPer9": "0.00",
+      "inheritedRunners": 0,
+      "inheritedRunnersScored": 0,
+      "catchersInterference": 0,
+      "sacBunts": 0,
+      "sacFlies": 0,
+      "passedBall": 0,
+      "popOuts": 2,
+      "lineOuts": 1
+     },
+     "fielding": {
+      "gamesStarted": 1,
+      "caughtStealing": 0,
+      "stolenBases": 0,
+      "stolenBasePercentage": ".---",
+      "caughtStealingPercentage": ".---",
+      "assists": 0,
+      "putOuts": 0,
+      "errors": 0,
+      "chances": 0,
+      "fielding": ".000",
+      "passedBall": 0,
+      "pickoffs": 0
+     }
+    },
+    "seasonStats": {
+     "batting": {
+      "gamesPlayed": 0,
+      "flyOuts": 0,
+      "groundOuts": 0,
+      "airOuts": 0,
+      "runs": 0,
+      "doubles": 0,
+      "triples": 0,
+      "homeRuns": 0,
+      "strikeOuts": 0,
+      "baseOnBalls": 0,
+      "intentionalWalks": 0,
+      "hits": 0,
+      "hitByPitch": 0,
+      "avg": ".000",
+      "atBats": 0,
+      "obp": ".000",
+      "slg": ".000",
+      "ops": ".000",
+      "caughtStealing": 0,
+      "stolenBases": 0,
+      "stolenBasePercentage": ".---",
+      "caughtStealingPercentage": ".---",
+      "groundIntoDoublePlay": 0,
+      "groundIntoTriplePlay": 0,
+      "plateAppearances": 0,
+      "totalBases": 0,
+      "rbi": 0,
+      "leftOnBase": 0,
+      "sacBunts": 0,
+      "sacFlies": 0,
+      "babip": ".---",
+      "groundOutsToAirouts": "-.--",
+      "catchersInterference": 0,
+      "pickoffs": 0,
+      "atBatsPerHomeRun": "-.--",
+      "popOuts": 0,
+      "lineOuts": 0
+     },
+     "pitching": {
+      "gamesPlayed": 13,
+      "gamesStarted": 13,
+      "flyOuts": 41,
+      "groundOuts": 45,
+      "airOuts": 77,
+      "runs": 39,
+      "doubles": 8,
+      "triples": 0,
+      "homeRuns": 12,
+      "strikeOuts": 46,
+      "baseOnBalls": 26,
+      "intentionalWalks": 0,
+      "hits": 53,
+      "hitByPitch": 1,
+      "atBats": 219,
+      "obp": ".324",
+      "caughtStealing": 0,
+      "stolenBases": 6,
+      "stolenBasePercentage": "1.000",
+      "caughtStealingPercentage": ".000",
+      "numberOfPitches": 1022,
+      "era": "6.16",
+      "inningsPitched": "57.0",
+      "wins": 2,
+      "losses": 7,
+      "saves": 0,
+      "saveOpportunities": 0,
+      "holds": 0,
+      "blownSaves": 0,
+      "earnedRuns": 39,
+      "whip": "1.39",
+      "battersFaced": 248,
+      "outs": 171,
+      "gamesPitched": 13,
+      "completeGames": 0,
+      "shutouts": 0,
+      "pitchesThrown": 1022,
+      "balls": 368,
+      "strikes": 654,
+      "strikePercentage": ".640",
+      "hitBatsmen": 1,
+      "balks": 0,
+      "wildPitches": 3,
+      "pickoffs": 0,
+      "groundOutsToAirouts": "0.58",
+      "rbi": 0,
+      "winPercentage": ".222",
+      "pitchesPerInning": "17.93",
+      "gamesFinished": 0,
+      "strikeoutWalkRatio": "1.77",
+      "strikeoutsPer9Inn": "7.26",
+      "walksPer9Inn": "4.11",
+      "hitsPer9Inn": "8.37",
+      "runsScoredPer9": "6.16",
+      "homeRunsPer9": "1.89",
+      "inheritedRunners": 0,
+      "inheritedRunnersScored": 0,
+      "catchersInterference": 0,
+      "sacBunts": 1,
+      "sacFlies": 1,
+      "passedBall": 0,
+      "popOuts": 22,
+      "lineOuts": 14
+     },
+     "fielding": {
+      "gamesStarted": 1,
+      "caughtStealing": 0,
+      "stolenBases": 0,
+      "stolenBasePercentage": ".---",
+      "caughtStealingPercentage": ".---",
+      "assists": 5,
+      "putOuts": 2,
+      "errors": 0,
+      "chances": 7,
+      "fielding": "1.000",
+      "passedBall": 0,
+      "pickoffs": 0
+     }
+    },
+    "gameStatus": {
+     "isCurrentBatter": false,
+     "isCurrentPitcher": false,
+     "isOnBench": false,
+     "isSubstitute": false
+    },
+    "allPositions": [
+     {
+      "code": "1",
+      "name": "Pitcher",
+      "type": "Pitcher",
+      "abbreviation": "P"
+     }
+    ]
+   },
+   "type": "starter",
+   "gameScore": 88,
+   "pitchingGameScore": 88
+  },
+  {
+   "player": {
+    "person": {
+     "id": 672386,
+     "fullName": "Alejandro Kirk",
+     "link": "/api/v1/people/672386",
+     "boxscoreName": "Kirk"
+    },
+    "jerseyNumber": "30",
+    "position": {
+     "code": "2",
+     "name": "Catcher",
+     "type": "Catcher",
+     "abbreviation": "C"
+    },
+    "status": {
+     "code": "A",
+     "description": "Active"
+    },
+    "parentTeamId": 141,
+    "battingOrder": "300",
+    "stats": {
+     "batting": {
+      "summary": "2-4 | HR, 2 RBI, R",
+      "gamesPlayed": 1,
+      "flyOuts": 2,
+      "groundOuts": 0,
+      "airOuts": 2,
+      "runs": 1,
+      "doubles": 0,
+      "triples": 0,
+      "homeRuns": 1,
+      "strikeOuts": 0,
+      "baseOnBalls": 0,
+      "intentionalWalks": 0,
+      "hits": 2,
+      "hitByPitch": 0,
+      "atBats": 4,
+      "caughtStealing": 0,
+      "stolenBases": 0,
+      "stolenBasePercentage": ".---",
+      "groundIntoDoublePlay": 0,
+      "groundIntoTriplePlay": 0,
+      "plateAppearances": 4,
+      "totalBases": 5,
+      "rbi": 2,
+      "leftOnBase": 2,
+      "sacBunts": 0,
+      "sacFlies": 0,
+      "catchersInterference": 0,
+      "pickoffs": 0,
+      "atBatsPerHomeRun": "4.00",
+      "popOuts": 0,
+      "lineOuts": 0
+     },
+     "pitching": {},
+     "fielding": {
+      "gamesStarted": 1,
+      "caughtStealing": 0,
+      "stolenBases": 0,
+      "stolenBasePercentage": ".---",
+      "caughtStealingPercentage": ".---",
+      "assists": 0,
+      "putOuts": 15,
+      "errors": 0,
+      "chances": 15,
+      "fielding": ".000",
+      "passedBall": 0,
+      "pickoffs": 0
+     }
+    },
+    "seasonStats": {
+     "batting": {
+      "gamesPlayed": 61,
+      "flyOuts": 29,
+      "groundOuts": 69,
+      "airOuts": 58,
+      "runs": 18,
+      "doubles": 6,
+      "triples": 0,
+      "homeRuns": 8,
+      "strikeOuts": 27,
+      "baseOnBalls": 26,
+      "intentionalWalks": 5,
+      "hits": 58,
+      "hitByPitch": 0,
+      "avg": ".278",
+      "atBats": 209,
+      "obp": ".353",
+      "slg": ".421",
+      "ops": ".774",
+      "caughtStealing": 0,
+      "stolenBases": 1,
+      "stolenBasePercentage": "1.000",
+      "caughtStealingPercentage": ".000",
+      "groundIntoDoublePlay": 6,
+      "groundIntoTriplePlay": 0,
+      "plateAppearances": 238,
+      "totalBases": 88,
+      "rbi": 32,
+      "leftOnBase": 74,
+      "sacBunts": 0,
+      "sacFlies": 3,
+      "babip": ".282",
+      "groundOutsToAirouts": "1.19",
+      "catchersInterference": 0,
+      "pickoffs": 0,
+      "atBatsPerHomeRun": "26.12",
+      "popOuts": 12,
+      "lineOuts": 17
+     },
+     "pitching": {
+      "gamesPlayed": 0,
+      "gamesStarted": 0,
+      "flyOuts": 0,
+      "groundOuts": 0,
+      "airOuts": 0,
+      "runs": 0,
+      "doubles": 0,
+      "triples": 0,
+      "homeRuns": 0,
+      "strikeOuts": 0,
+      "baseOnBalls": 0,
+      "intentionalWalks": 0,
+      "hits": 0,
+      "hitByPitch": 0,
+      "atBats": 0,
+      "obp": ".000",
+      "caughtStealing": 0,
+      "stolenBases": 0,
+      "stolenBasePercentage": ".---",
+      "caughtStealingPercentage": ".---",
+      "numberOfPitches": 0,
+      "era": "-.--",
+      "inningsPitched": "0.0",
+      "wins": 0,
+      "losses": 0,
+      "saves": 0,
+      "saveOpportunities": 0,
+      "holds": 0,
+      "blownSaves": 0,
+      "earnedRuns": 0,
+      "whip": "-",
+      "battersFaced": 0,
+      "outs": 0,
+      "gamesPitched": 0,
+      "completeGames": 0,
+      "shutouts": 0,
+      "balls": 0,
+      "strikes": 0,
+      "strikePercentage": "-.--",
+      "hitBatsmen": 0,
+      "balks": 0,
+      "wildPitches": 0,
+      "pickoffs": 0,
+      "groundOutsToAirouts": "-.--",
+      "rbi": 0,
+      "winPercentage": ".---",
+      "pitchesPerInning": "-.--",
+      "gamesFinished": 0,
+      "strikeoutWalkRatio": "-.--",
+      "strikeoutsPer9Inn": "-.--",
+      "walksPer9Inn": "-.--",
+      "hitsPer9Inn": "-.--",
+      "runsScoredPer9": "-.--",
+      "homeRunsPer9": "-.--",
+      "inheritedRunners": 0,
+      "inheritedRunnersScored": 0,
+      "catchersInterference": 0,
+      "sacBunts": 0,
+      "sacFlies": 0,
+      "passedBall": 0,
+      "popOuts": 0,
+      "lineOuts": 0
+     },
+     "fielding": {
+      "gamesStarted": 1,
+      "caughtStealing": 12,
+      "stolenBases": 66,
+      "stolenBasePercentage": ".846",
+      "caughtStealingPercentage": ".154",
+      "assists": 30,
+      "putOuts": 490,
+      "errors": 2,
+      "chances": 522,
+      "fielding": ".996",
+      "passedBall": 2,
+      "pickoffs": 0
+     }
+    },
+    "gameStatus": {
+     "isCurrentBatter": false,
+     "isCurrentPitcher": false,
+     "isOnBench": false,
+     "isSubstitute": false
+    },
+    "allPositions": [
+     {
+      "code": "2",
+      "name": "Catcher",
+      "type": "Catcher",
+      "abbreviation": "C"
+     }
+    ]
+   },
+   "type": "hitter",
+   "gameScore": 58,
+   "hittingGameScore": 58
+  },
+  {
+   "player": {
+    "person": {
+     "id": 703520,
+     "fullName": "Brett Bateman",
+     "link": "/api/v1/people/703520",
+     "boxscoreName": "Bateman"
+    },
+    "jerseyNumber": "21",
+    "position": {
+     "code": "8",
+     "name": "Outfielder",
+     "type": "Outfielder",
+     "abbreviation": "CF"
+    },
+    "status": {
+     "code": "A",
+     "description": "Active"
+    },
+    "parentTeamId": 141,
+    "battingOrder": "100",
+    "stats": {
+     "batting": {
+      "summary": "1-2 | 2B, 2 BB, K",
+      "gamesPlayed": 1,
+      "flyOuts": 0,
+      "groundOuts": 1,
+      "airOuts": 0,
+      "runs": 1,
+      "doubles": 1,
+      "triples": 0,
+      "homeRuns": 0,
+      "strikeOuts": 1,
+      "baseOnBalls": 2,
+      "intentionalWalks": 0,
+      "hits": 1,
+      "hitByPitch": 0,
+      "atBats": 2,
+      "caughtStealing": 0,
+      "stolenBases": 1,
+      "stolenBasePercentage": "1.000",
+      "groundIntoDoublePlay": 0,
+      "groundIntoTriplePlay": 0,
+      "plateAppearances": 5,
+      "totalBases": 2,
+      "rbi": 1,
+      "leftOnBase": 0,
+      "sacBunts": 1,
+      "sacFlies": 0,
+      "catchersInterference": 0,
+      "pickoffs": 0,
+      "atBatsPerHomeRun": "-.--",
+      "popOuts": 0,
+      "lineOuts": 0
+     },
+     "pitching": {},
+     "fielding": {
+      "gamesStarted": 1,
+      "caughtStealing": 0,
+      "stolenBases": 0,
+      "stolenBasePercentage": ".---",
+      "caughtStealingPercentage": ".---",
+      "assists": 0,
+      "putOuts": 2,
+      "errors": 0,
+      "chances": 2,
+      "fielding": ".000",
+      "passedBall": 0,
+      "pickoffs": 0
+     }
+    },
+    "seasonStats": {
+     "batting": {
+      "gamesPlayed": 19,
+      "flyOuts": 4,
+      "groundOuts": 25,
+      "airOuts": 11,
+      "runs": 10,
+      "doubles": 4,
+      "triples": 1,
+      "homeRuns": 0,
+      "strikeOuts": 19,
+      "baseOnBalls": 7,
+      "intentionalWalks": 0,
+      "hits": 26,
+      "hitByPitch": 0,
+      "avg": ".333",
+      "atBats": 78,
+      "obp": ".384",
+      "slg": ".410",
+      "ops": ".794",
+      "caughtStealing": 0,
+      "stolenBases": 3,
+      "stolenBasePercentage": "1.000",
+      "caughtStealingPercentage": ".000",
+      "groundIntoDoublePlay": 0,
+      "groundIntoTriplePlay": 0,
+      "plateAppearances": 88,
+      "totalBases": 32,
+      "rbi": 7,
+      "leftOnBase": 25,
+      "sacBunts": 2,
+      "sacFlies": 1,
+      "babip": ".433",
+      "groundOutsToAirouts": "2.27",
+      "catchersInterference": 0,
+      "pickoffs": 0,
+      "atBatsPerHomeRun": "-.--",
+      "popOuts": 1,
+      "lineOuts": 6
+     },
+     "pitching": {
+      "gamesPlayed": 0,
+      "gamesStarted": 0,
+      "flyOuts": 0,
+      "groundOuts": 0,
+      "airOuts": 0,
+      "runs": 0,
+      "doubles": 0,
+      "triples": 0,
+      "homeRuns": 0,
+      "strikeOuts": 0,
+      "baseOnBalls": 0,
+      "intentionalWalks": 0,
+      "hits": 0,
+      "hitByPitch": 0,
+      "atBats": 0,
+      "obp": ".000",
+      "caughtStealing": 0,
+      "stolenBases": 0,
+      "stolenBasePercentage": ".---",
+      "caughtStealingPercentage": ".---",
+      "numberOfPitches": 0,
+      "era": "-.--",
+      "inningsPitched": "0.0",
+      "wins": 0,
+      "losses": 0,
+      "saves": 0,
+      "saveOpportunities": 0,
+      "holds": 0,
+      "blownSaves": 0,
+      "earnedRuns": 0,
+      "whip": "-",
+      "battersFaced": 0,
+      "outs": 0,
+      "gamesPitched": 0,
+      "completeGames": 0,
+      "shutouts": 0,
+      "balls": 0,
+      "strikes": 0,
+      "strikePercentage": "-.--",
+      "hitBatsmen": 0,
+      "balks": 0,
+      "wildPitches": 0,
+      "pickoffs": 0,
+      "groundOutsToAirouts": "-.--",
+      "rbi": 0,
+      "winPercentage": ".---",
+      "pitchesPerInning": "-.--",
+      "gamesFinished": 0,
+      "strikeoutWalkRatio": "-.--",
+      "strikeoutsPer9Inn": "-.--",
+      "walksPer9Inn": "-.--",
+      "hitsPer9Inn": "-.--",
+      "runsScoredPer9": "-.--",
+      "homeRunsPer9": "-.--",
+      "inheritedRunners": 0,
+      "inheritedRunnersScored": 0,
+      "catchersInterference": 0,
+      "sacBunts": 0,
+      "sacFlies": 0,
+      "passedBall": 0,
+      "popOuts": 0,
+      "lineOuts": 0
+     },
+     "fielding": {
+      "gamesStarted": 1,
+      "caughtStealing": 0,
+      "stolenBases": 0,
+      "stolenBasePercentage": ".---",
+      "caughtStealingPercentage": ".---",
+      "assists": 1,
+      "putOuts": 64,
+      "errors": 0,
+      "chances": 65,
+      "fielding": "1.000",
+      "passedBall": 0,
+      "pickoffs": 0
+     }
+    },
+    "gameStatus": {
+     "isCurrentBatter": false,
+     "isCurrentPitcher": false,
+     "isOnBench": false,
+     "isSubstitute": false
+    },
+    "allPositions": [
+     {
+      "code": "8",
+      "name": "Outfielder",
+      "type": "Outfielder",
+      "abbreviation": "CF"
+     }
+    ]
+   },
+   "type": "hitter",
+   "gameScore": 58,
+   "hittingGameScore": 58
+  }
+ ]
+}

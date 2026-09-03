@@ -53,6 +53,10 @@ FORWARD_EVIDENCE = (
     "data/watch/lineups_watch.jsonl",
     "data/watch/transactions_watch.jsonl",
     "data/watch/umpires_watch.jsonl",
+    # Per-game, per-player box lines (P0-B): the only way a batter prop or a
+    # non-strikeout pitcher prop is ever settled. One store per season;
+    # 2026 is the year this lane's smoke test writes into.
+    "data/processed/boxscores_2026.jsonl",
 )
 
 
