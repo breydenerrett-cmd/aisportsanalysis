@@ -141,6 +141,11 @@ def cmd_budget(args) -> int:
         if info["measured"]:
             print(f"    {name:26s} measured  {info['credits_per_event']} "
                   f"credit(s)/event  (as of {info['measured_utc']})")
+        elif info.get("degenerate"):
+            print(f"    {name:26s} provisional (degenerate probe) -- "
+                  f"{info['credits_per_event']} credit(s)/event measured "
+                  f"{info['measured_utc']}, but the payload was too thin to "
+                  f"trust; still PROBE_REQUIRED, re-probe allowed today")
         else:
             print(f"    {name:26s} PROBE_REQUIRED -- unmeasured")
     return EXIT_OK
