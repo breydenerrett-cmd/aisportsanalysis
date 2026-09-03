@@ -1,13 +1,90 @@
 # Targeted collection policy
 
-Goal: maximize future research options per API credit. Balance 53,083
-credits (2026-08-31); floor 5,000, absolute; approved envelope ~132
-credits/day. Actual spend has run far below the envelope (dense no-ops on
-quiet hours), which is headroom this policy uses deliberately — total
-daily spend stays inside the already-approved 132, enforced in code order:
-if a day would exceed it, added markets are skipped first, then the grid
-thins. Nothing here changes the floor rule: "skipped: credit floor" stops
-everything and reports.
+Goal: maximize future research options per API credit. Floor 5,000,
+absolute; approved envelope ~132 credits/day (superseded below). Actual
+spend has run far below the envelope (dense no-ops on quiet hours), which is
+headroom this policy uses deliberately — total daily spend stays inside the
+already-approved figure, enforced in code order: if a day would exceed it,
+added markets are skipped first, then the grid thins. Nothing here changes
+the floor rule: "skipped: credit floor" stops everything and reports.
+
+## Corrected 2026-09-03 (packet W7, owner decision 2; docs/planning/attack.md
+F13/S17): balance semantics, the ~900/day envelope, the drop order
+
+**The "53,083 credits (2026-08-31)" figure above, and its predecessor
+"~99,621 ... measured balance", were both wrong in kind, not just out of
+date.** `PRICING_TIERS` in `src/providers/odds.py:237-243` shows the account
+is on the "100K" tier: **100,000 credits/month, $59/mo, resetting every
+billing cycle**. `credits_remaining` from `quota()` is a MONTHLY QUOTA on a
+FLOW that refills at each reset, never a bank balance that only ever runs
+down. Reading it as a balance with "headroom" understates how much room
+there is (a reset restores it to 100,000 regardless of what stood the day
+before) and, worse, invites a plan that silently assumes a multi-week
+purchase can spend against a number that resets mid-plan. See
+`src/capture/budget.py` for the corrected model: `MONTHLY_ALLOTMENT`,
+`quota_reset_utc()` (assumed first-of-UTC-month; the account's real billing
+anchor day is not knowable from anything this repo can read), `spent_today()`
+and `remaining_today()` (both computed read-only from
+`data/processed/credit_log.jsonl`).
+
+**The envelope is now ~900 credits/day, APPROVED (owner decision 2, packet
+W7)**, provided it stays inside the existing paid monthly allotment and
+carries hard spend guards — both true here: `DAILY_ENVELOPE = round(100,000
+x 0.27 / 30) = 900`, well inside one month's 100,000-credit allotment even
+run flat out every day (900 x 30 = 27,000, 27% of the allotment), and
+`src/capture/budget.can_spend()` enforces the floor and the envelope in code,
+not by policy alone. This supersedes the "~132/day" figure above, which was
+priced only against dense's baseline layer before F13 required every family
+to carry a measured per-event cost before entering the envelope.
+
+**Per-family measured-cost probe rule (F13's fix):** no family may enter the
+envelope's arithmetic on an assumed cost. `config/capture_families.json`
+carries `measured: true|false` per family; `can_spend()` returns
+`PROBE_REQUIRED` for anything still `false`, and the only way a family
+becomes `true` is a real, explicit, 1-credit measured probe
+(`python3 -m src.cli budget --probe <family>`; never run as a side effect of
+anything else). As of this writing, measured: `featured` (3 credits/event,
+flat, unchanged from the original probe), `alternates` (1 credit/event, 7
+books, 130–160 outcome rows), `prop_listing_feasibility` (1 credit/event/slot,
+unchanged), `weather` (0, free by construction). Unmeasured, PROBE_REQUIRED:
+`f5_trio` (the full h2h+spreads+totals first-five bundle — note this is
+DIFFERENT from the already-measured f5 h2h-only figure below), `team_totals`,
+`pitcher_props`, `batter_props`, `parlay_sgp` (endpoint existence not even
+confirmed).
+
+**Drop order corrected (S17's fix):** the prior coded order dropped batter
+props first — the largest surface with zero history and no retroactive
+purchase path (owner decision 9) — which destroys the most perishable
+evidence first under any squeeze. `src/capture/budget.DROP_ORDER` (versioned,
+v1) reorders by irrecoverability x marginal information, first-dropped to
+last-dropped: `parlay_sgp` → `prop_listing_feasibility` → `team_totals` →
+`alternates` → `pitcher_props` → `f5_trio` → `batter_props_extra` →
+`featured` (Tier A, last, always — flat 3 credits/event, the response
+variable itself, never the thing that breaks a budget). A **non-droppable
+floor**, `batter_props_floor` — full batter props on 2 games/night, chosen
+deterministically per night by `budget.rotated_floor_games()` — never appears
+in the drop order and is never touched by any allocator, so the surface is
+never zero for a whole month regardless of how hard a day is squeezed.
+
+**Cadence SLO (F10's fix):** `known_at_grade` is computed from the measured
+gap between polls, never asserted from a schedule — `grade_from_gap(seconds)`
+in `src/capture/cadence.py` returns B (≤20min), C (≤2h), or D (otherwise).
+`python3 -m src.cli cadence --date YYYY-MM-DD` computes attempted/succeeded/
+longest-gap/p95-gap per source (odds_multibook capture instants, rosterwatch
+lineup-watch poll markers, umpirewatch poll markers) and appends one row per
+source per day to `data/processed/cadence_slo.jsonl` (tracked, append-only).
+A schedule that claims 15-minute cadence but leaves a six-hour hole grades D
+on that hole, not B on the schedule's own claim.
+
+**The stale "3–4 books, listing-dependent" pitcher-strikeouts figure below
+(from the original 24-credit probe) is corrected: the running
+`prop_listing.py` audit's own store (`data/processed/prop_listing.jsonl`, 454
+markers as of this writing) measures `books_listing` at 7 on 20 of the 38
+markers that saw any coverage at all (mode 7; the rest are 6, one 4, one 2) —
+7 books, not 3–4, is the figure to use going forward. See
+`docs/PROBE_PROP_LISTING.md` for the audit design; the "3–4 books" line
+further down this document is the earlier, superseded reading, left in place
+below only as the dated record of what the original probe first reported.
 
 ## What the probe established (24 credits, 2026-08-31)
 

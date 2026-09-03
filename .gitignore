@@ -71,6 +71,12 @@ data/app/*
 # unreachable once far enough in the past falls out of convenient reach --
 # same "capture now" reasoning as the rest of this block. One file per season.
 !data/processed/boxscores_*.jsonl
+# Added 2026-09-03 (packet W7, docs/planning/attack.md F10): the cadence SLO
+# is computed from the OTHER stores' own poll timestamps, but the SLO row
+# itself -- what gap was actually measured, on which day -- is the record
+# that a scheduler's claimed cadence was checked at all. Same "cannot be
+# reconstructed later" reasoning as the forward captures above.
+!data/processed/cadence_slo.jsonl
 
 # Python
 __pycache__/
