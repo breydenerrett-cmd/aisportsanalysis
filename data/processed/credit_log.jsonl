@@ -29,3 +29,8 @@
 {"caller": "budget.probe_family:team_totals", "credits_remaining": 99566, "credits_used_last": 1, "utc": "2026-09-03T05:08:00.645770Z"}
 {"caller": "budget.probe_family:alternates", "credits_remaining": 99564, "credits_used_last": 2, "utc": "2026-09-03T05:08:01.352246Z"}
 {"caller": "budget.probe_family:f5_trio", "credits_remaining": 99561, "credits_used_last": 3, "utc": "2026-09-03T05:08:02.164931Z"}
+{"caller": "dense.run", "credits_remaining": 99558, "credits_used_last": 0, "utc": "2026-09-03T05:44:00.819617Z"}
+{"caller": "prop_listing.run", "credits_remaining": 99558, "credits_used_last": 0, "utc": "2026-09-03T05:44:03.045864Z"}
+{"caller": "prop_prices.run", "credits_remaining": 99557, "credits_used_last": 0, "utc": "2026-09-03T05:44:20.139150Z"}
+{"caller": "batter_props.run", "credits_remaining": 99556, "credits_used_last": 0, "utc": "2026-09-03T05:44:20.842623Z"}
+{"caller": "derivative_markets.run", "credits_remaining": 99541, "credits_used_last": 0, "utc": "2026-09-03T05:44:22.040411Z"}
