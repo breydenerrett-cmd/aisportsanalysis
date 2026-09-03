@@ -45,7 +45,7 @@ fi
 # data/raw (reproducible provider pulls, deliberately gitignored) must never
 # be staged by an automated loop. Anything unbackfillable this pass writes
 # lives under one of the paths named here.
-git add data/processed data/watch data/research evidence docs/OVERNIGHT_RUN.md artifacts 2>/dev/null || true
+git add data/processed data/watch data/research data/raw/oddsapi evidence docs/OVERNIGHT_RUN.md artifacts 2>/dev/null || true
 git reset -q artifacts/demo_latest.html 2>/dev/null || true
 if ! git diff --cached --quiet; then
     BRANCH=$(git rev-parse --abbrev-ref HEAD)
