@@ -32,6 +32,8 @@ import subprocess
 import unittest
 from pathlib import Path
 
+import tests as tests_pkg
+
 REPO = Path(__file__).resolve().parent.parent
 
 # Every path here holds evidence that cannot be reconstructed after the fact.
@@ -82,6 +84,13 @@ def _is_ignored(path: str) -> bool:
     return result.returncode == 0
 
 
+# The raw L0 capture store (docs/COLLECTION_POLICY.md, "Raw layer and
+# all-books persistence") is not a fixed filename -- one gzip file per API
+# call, named by capture time -- so it cannot join FORWARD_EVIDENCE above.
+# It is exercised separately below against a representative dated path.
+RAW_ODDS_SAMPLE = "data/raw/oddsapi/2026/09/03/20260903T010203Z-abcd1234.jsonl.gz"
+
+
 class ForwardEvidenceIsTrackedTests(unittest.TestCase):
 
     def test_no_forward_evidence_store_is_gitignored(self):
@@ -111,6 +120,54 @@ class ForwardEvidenceIsTrackedTests(unittest.TestCase):
             untracked, [],
             "These forward-evidence stores exist on disk but are not tracked "
             "by git, so they are not backed up: " + ", ".join(untracked))
+
+    def test_a_raw_odds_capture_would_be_stageable(self):
+        """A dated raw-capture path is not swallowed by `data/raw/*`.
+
+        NOTE ON METHOD: `git check-ignore --no-index` gives a false positive
+        here -- it reports a fresh file under a directory-tree negation
+        (`!data/raw/oddsapi/**`) as ignored when none of the intermediate
+        directories exist on disk yet, even though `git add` on the same
+        path succeeds (verified by hand against both this rule and the
+        pre-existing `!data/archive/historical/**` rule it is modelled on).
+        `git add --dry-run` asks the real question -- would this path
+        actually be staged -- so that is what this test uses.
+
+        Written through the suite's own unwrapped `open` (`tests._real_open`),
+        not the guarded one: `data/raw/oddsapi/` is itself a protected
+        directory (tests/__init__.py's `PROTECTED_DIRS`) precisely so a test
+        that exercises the real capture code cannot leave a permanent file
+        there by accident. This test's file is deliberate, disposable, and
+        removed in `finally` below -- the guard exists for the accidental
+        case, not this one.
+        """
+        target = REPO / RAW_ODDS_SAMPLE
+        created_dirs = []
+        try:
+            parent = target.parent
+            for candidate in list(parent.parents) + [parent]:
+                if not candidate.exists() and candidate != REPO:
+                    created_dirs.append(candidate)
+            parent.mkdir(parents=True, exist_ok=True)
+            with tests_pkg._real_open(target, "wb") as handle:
+                handle.write(b"\x1f\x8b")  # gzip magic bytes; content is irrelevant
+            result = subprocess.run(
+                ["git", "add", "--dry-run", RAW_ODDS_SAMPLE],
+                cwd=REPO, capture_output=True, text=True, check=False)
+            self.assertEqual(
+                result.returncode, 0,
+                "a raw odds capture at a realistic dated path could not be "
+                f"staged: {result.stderr}")
+            self.assertIn("add", result.stdout,
+                          f"expected 'add', got: {result.stdout!r} / {result.stderr!r}")
+        finally:
+            if target.exists():
+                target.unlink()
+            for directory in sorted(created_dirs, key=lambda p: -len(str(p))):
+                try:
+                    directory.rmdir()
+                except OSError:
+                    pass
 
     def test_the_capture_script_commits_the_store_directories(self):
         """The hourly script is what actually persists the evidence.

@@ -77,6 +77,16 @@ data/app/*
 # that a scheduler's claimed cadence was checked at all. Same "cannot be
 # reconstructed later" reasoning as the forward captures above.
 !data/processed/cadence_slo.jsonl
+# RAW ODDS-API PAYLOADS (L0) -- added 2026-09-03 with the raw-first capture
+# layer (docs/COLLECTION_POLICY.md, "Raw layer and all-books persistence").
+# Same reasoning as the forward-capture block above: the verbatim provider
+# response for a call made tonight cannot be re-fetched tomorrow. One gzip
+# file per API call under data/raw/oddsapi/<yyyy>/<mm>/<dd>/, never edited
+# after being written; the tree negation (not a fixed filename, since capture
+# ids are timestamps) is what keeps every future day of it tracked without a
+# new .gitignore edit each day.
+!data/raw/oddsapi/
+!data/raw/oddsapi/**
 
 # Python
 __pycache__/

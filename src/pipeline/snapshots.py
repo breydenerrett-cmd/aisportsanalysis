@@ -98,9 +98,11 @@ def capture(env=None, path=DEFAULT_SNAPSHOT_PATH, timeout: int = 20,
     that and writes nothing, so this is safe to put on a schedule before setup is finished.
 
     Alongside the legacy one-book rows, every capture ALSO persists the full
-    multi-book h2h board to `multibook_path` (default: odds_multibook.jsonl next
-    to the snapshot store). Both stores are written from the SAME already-fetched
-    API response -- normalize_event keeps every book under `all_books` -- so the
+    multi-book board -- h2h, spreads, totals, and whatever first-five markets
+    the payload carries -- to `multibook_path` (default: odds_multibook.jsonl
+    next to the snapshot store). Both stores are written from the SAME
+    already-fetched API response -- normalize_event keeps every book under
+    `all_books` for every market it parses -- so the
     multi-book store costs ZERO extra API credits; no additional request is made.
     """
     status = odds_provider.status(env)
@@ -165,31 +167,99 @@ def _resolve_multibook_path(snapshot_path, multibook_path):
     return snapshot_path.parent / "odds_multibook.jsonl"
 
 
+# Market families the multi-book store knows how to shape a row for. h2h and its
+# F5 counterpart carry two prices; spreads/totals (and their F5 counterparts)
+# also carry a line. Anything else `all_books` might one day contain is skipped,
+# never guessed at.
+_H2H_SHAPED_MARKETS = ("h2h", "h2h_1st_5_innings")
+_LINE_SHAPED_MARKETS = ("spreads", "spreads_1st_5_innings")
+_TOTAL_SHAPED_MARKETS = ("totals", "totals_1st_5_innings")
+
+
+def _decimal_str(value) -> str:
+    """A line/point/total as a decimal STRING, never a float.
+
+    Floats round-trip lossily through JSON for values like 1.5 often enough
+    that a downstream reader comparing lines with `==` is one bad game away
+    from a false mismatch. A string is copied verbatim, forever.
+    """
+    return value if isinstance(value, str) else str(value)
+
+
 def multibook_rows(observed, events) -> list:
-    """One row per (event, book) for the h2h market, from a normalized payload.
+    """One row per (event, book, market) from a normalized payload.
 
     Reads the `all_books` section that odds.normalize_event already carries, so
     this consumes data the capture has ALREADY paid for -- zero extra credits.
-    A book quoting only half the market is skipped, never half-recorded.
+    A book quoting only half a market is skipped, never half-recorded.
+
+    h2h rows keep the EXACT legacy shape (no `market` key) for byte-identical
+    compatibility with every existing reader (grading, snapshots'
+    closing_observation, market_closing_observation, oddspayload). Every other
+    market's rows are new and additive, carrying a `market` key so a reader
+    that wants to stay h2h-only can filter for it; new rows do not replace or
+    reshape anything the legacy readers already see.
     """
     rows = []
     for event in events or []:
-        quotes = (event.get("all_books") or {}).get("h2h") or []
-        for quote in quotes:
-            if quote.get("home_price") is None or quote.get("away_price") is None:
-                continue
-            rows.append({
-                "observed_utc": observed,
-                "event_id": event.get("event_id"),
-                "commence_time": event.get("commence_time"),
-                "home_team": event.get("home_team"),
-                "away_team": event.get("away_team"),
-                "book": quote.get("book"),
-                "book_last_update": quote.get("last_update"),
-                "home_price": quote.get("home_price"),
-                "away_price": quote.get("away_price"),
-            })
+        all_books = event.get("all_books") or {}
+        for market_key, quotes in all_books.items():
+            for quote in quotes or []:
+                row = _multibook_row(observed, event, market_key, quote)
+                if row is not None:
+                    rows.append(row)
     return rows
+
+
+def _multibook_row(observed, event, market_key, quote):
+    base = {
+        "observed_utc": observed,
+        "event_id": event.get("event_id"),
+        "commence_time": event.get("commence_time"),
+        "home_team": event.get("home_team"),
+        "away_team": event.get("away_team"),
+    }
+
+    if market_key in _H2H_SHAPED_MARKETS:
+        home_price, away_price = quote.get("home_price"), quote.get("away_price")
+        if home_price is None or away_price is None:
+            return None
+        if market_key != "h2h":
+            base["market"] = market_key
+        base["book"] = quote.get("book")
+        base["book_last_update"] = quote.get("last_update")
+        base["home_price"] = home_price
+        base["away_price"] = away_price
+        return base
+
+    if market_key in _LINE_SHAPED_MARKETS:
+        home_line, home_price = quote.get("home_line"), quote.get("home_price")
+        away_line, away_price = quote.get("away_line"), quote.get("away_price")
+        if None in (home_line, home_price, away_line, away_price):
+            return None
+        base["market"] = market_key
+        base["book"] = quote.get("book")
+        base["book_last_update"] = quote.get("last_update")
+        base["home_line"] = _decimal_str(home_line)
+        base["home_price"] = home_price
+        base["away_line"] = _decimal_str(away_line)
+        base["away_price"] = away_price
+        return base
+
+    if market_key in _TOTAL_SHAPED_MARKETS:
+        total = quote.get("total")
+        over_price, under_price = quote.get("over_price"), quote.get("under_price")
+        if None in (total, over_price, under_price):
+            return None
+        base["market"] = market_key
+        base["book"] = quote.get("book")
+        base["book_last_update"] = quote.get("last_update")
+        base["total"] = _decimal_str(total)
+        base["over_price"] = over_price
+        base["under_price"] = under_price
+        return base
+
+    return None
 
 
 def append(rows, path=DEFAULT_SNAPSHOT_PATH) -> int:
