@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # DATA PLANE: the extra capture streams added under CAPTURE NOW, RESEARCH
 # LATER (docs/MASTER_PLAN.md Sec.1 claim 3, Appendix C.1 item 6): weather
-# forecasts, the credit-balance log, and (env-gated) prop prices and batter
-# props.
+# forecasts, the credit-balance log, and (env-gated) prop prices, batter
+# props, and derivative markets (team totals, alternates, the f5 trio).
 #
 # Called from scripts/forward_capture.sh after the prop-listing pass; also
 # runnable by hand. Deterministic end to end like forward_capture.sh is.
@@ -18,6 +18,12 @@ export PROP_PRICES="${PROP_PRICES:-}"
 # by default. Flip to "1" to turn it on; anything else, or leaving it unset,
 # keeps it off with no code change.
 export BATTER_PROPS="${BATTER_PROPS:-}"
+
+# THE SWITCH for the derivative-markets layer (team_totals/alternates/f5_trio,
+# docs/SGP_PARLAY_CAPTURE.md's proposed next families). Off by default. Flip
+# to "1" to turn it on; anything else, or leaving it unset, keeps it off with
+# no code change.
+export DERIVATIVES="${DERIVATIVES:-}"
 
 echo "== weather forecast (0 credits) =="
 python3 -m src.pipeline.weather_capture 2>&1 | sed 's/^/  /'
@@ -48,6 +54,14 @@ echo "$BATTER_OUT" | sed 's/^/  /'
 # without the shell's ESCALATE grep below reacting to it.
 echo "$BATTER_OUT" | grep "^batter props: PROBE_REQUIRED" || true
 
+echo "== derivative markets: team_totals/alternates/f5_trio (bounded, DERIVATIVES=1 required) =="
+DERIVATIVE_OUT=$(python3 -m src.pipeline.derivative_markets 2>&1)
+echo "$DERIVATIVE_OUT" | sed 's/^/  /'
+# A PROBE_REQUIRED status is a single informational line, never a capture
+# failure -- printed once here (ESCALATE-free) so an operator sees it
+# without the shell's ESCALATE grep below reacting to it.
+echo "$DERIVATIVE_OUT" | grep "^derivative markets: PROBE_REQUIRED" || true
+
 # No git here on purpose. The stores this writes live under data/processed,
 # which forward_capture.sh already stages and commits under the shared
 # /tmp/linehound_git.lock; a second commit-and-push path would reintroduce
@@ -62,5 +76,9 @@ if echo "$PROP_OUT" | grep -q "skipped: credit floor"; then
 fi
 echo "$BATTER_OUT" | grep -E "^ESCALATE:|^batter_props: .* stopped" || true
 if echo "$BATTER_OUT" | grep -q "skipped: credit floor"; then
+    echo "ESCALATE: credit floor reached -- stop spending, tell Brey"
+fi
+echo "$DERIVATIVE_OUT" | grep -E "^ESCALATE:|^derivative_markets: .* stopped" || true
+if echo "$DERIVATIVE_OUT" | grep -q "skipped: credit floor"; then
     echo "ESCALATE: credit floor reached -- stop spending, tell Brey"
 fi

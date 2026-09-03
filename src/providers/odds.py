@@ -99,10 +99,25 @@ PROP_MARKETS = ("pitcher_strikeouts",)
 BATTER_MARKETS = ("batter_hits", "batter_total_bases", "batter_home_runs",
                    "batter_rbis", "batter_runs_scored", "batter_hits_runs_rbis")
 
+# Team-totals market. Per-event only, same billing shape as the other
+# EVENT_ONLY_MARKETS groups. One key, named here for
+# `budget.probe_family("team_totals")` and
+# src/pipeline/derivative_markets.py, matching the single `team_totals`
+# entry in src.board.ids.MARKET_CATALOGUE.
+TEAM_TOTALS_MARKETS = ("team_totals",)
+
+# Alternate-line markets: the wider ladder around the featured spread/total.
+# Per-event only. Two keys, matching docs/COLLECTION_POLICY.md's measured
+# `alternates` figure (1 credit/event, 7 books, 130-160 outcome rows) and the
+# `alternate_spreads`/`alternate_totals` entries in
+# src.board.ids.MARKET_CATALOGUE.
+ALTERNATE_MARKETS = ("alternate_spreads", "alternate_totals")
+
 # Markets the featured /odds endpoint does NOT serve, whatever the caller
-# intends. All three families 422 there, and all bill per event on
+# intends. All families here 422 there, and all bill per event on
 # /events/{id}/odds.
-EVENT_ONLY_MARKETS = EVENT_MARKETS + PROP_MARKETS + BATTER_MARKETS
+EVENT_ONLY_MARKETS = (EVENT_MARKETS + PROP_MARKETS + BATTER_MARKETS
+                       + TEAM_TOTALS_MARKETS + ALTERNATE_MARKETS)
 
 # Everything a caller may legitimately name. Kept separate from DEFAULT_MARKETS,
 # which is what gets requested when nothing is configured -- conflating "allowed"

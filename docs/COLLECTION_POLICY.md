@@ -372,6 +372,53 @@ captures move from `DECLARED` to `PROBE`; the remaining batter markets
 (`batter_walks`, `batter_strikeouts`, `batter_stolen_bases`) stay
 `DECLARED` -- named and settlement-mapped, capture not yet wired.
 
+**Derivative markets: team totals, alternates, the f5 trio (2026-09-03).**
+`src/pipeline/derivative_markets.py` captures three of `docs/SGP_PARLAY_CAPTURE.md`'s
+proposed next families, one call per event per family, per-event endpoint
+only:
+
+- `team_totals` -- `odds_provider.TEAM_TOTALS_MARKETS` (`team_totals`, 1 key).
+- `alternates` -- `odds_provider.ALTERNATE_MARKETS` (`alternate_spreads`,
+  `alternate_totals`, 2 keys; already measured at 1 credit/event, 7 books,
+  130-160 outcome rows).
+- `f5_trio` -- `odds_provider.EVENT_MARKETS` (`h2h_1st_5_innings`,
+  `spreads_1st_5_innings`, `totals_1st_5_innings`, 3 keys; the full
+  h2h+spreads+totals bundle, distinct from the already-measured f5-h2h-only
+  figure dense.py's piggyback measures).
+
+Each family is gated through `src.capture.budget.can_spend`, same order as
+every other family (floor, then envelope, then measured cost), and each is
+`_probe_markets`-wired so `python3 -m src.cli budget --probe team_totals` /
+`--probe alternates` / `--probe f5_trio` performs the same one bounded,
+pre-game, real fetch `probe_family` already performs for batter props --
+one event at least `PROBE_MIN_LEAD_MINUTES` out, payload shape and the
+degenerate flag recorded alongside the cost. `team_totals` and `f5_trio` are
+`PROBE_REQUIRED` until probed (no live probe was run by the change that
+added this capture); `alternates` was already measured 2026-08-31 and can
+spend once wired in. A `PROBE_REQUIRED` condition never fails the capture;
+it prints one status line (`scripts/capture_extras.sh`, `DERIVATIVES=1`) and
+the run continues, same convention as `batter_props.py`. Bounded to
+`MAX_EVENTS_PER_FAMILY_PER_RUN` (4) events per family per run -- not a
+full-slate sweep.
+
+Raw responses land in `data/raw/oddsapi/...` (L0, via
+`fetch_event_odds_with_usage`'s existing `_write_raw_capture`) before this
+module's own marker (L1, one per billed fetch,
+`data/processed/derivative_markets_raw.jsonl`) and projection (L2,
+`data/processed/derivative_markets.jsonl`: one row per event/family/market/
+book/selection/line/last_update, keyed for idempotency on exactly that
+tuple, SELECTION built as `{team}:{side}` when the outcome carries a team
+and `side` alone otherwise) touch it. `src.board.ids.MARKET_CATALOGUE`'s six
+entries these three families capture (`team_totals`, `alternate_spreads`,
+`alternate_totals`, `h2h_1st_5_innings`, `spreads_1st_5_innings`,
+`totals_1st_5_innings`) were already `PROBE`, not `DECLARED` -- no catalogue
+status change was needed for this change; a market this path does not
+capture (e.g. any future alternate/derivative key) is left exactly where it
+was. `DERIVATIVES=1` is not turned on in `scripts/forward_capture.sh`'s
+default invocation of `capture_extras.sh` -- these three families remain
+opt-in, same as `PROP_PRICES`/`BATTER_PROPS` were before their own owner
+decisions approved always-on capture.
+
 ## InformationEvent free-environment layer (packet W6, `src/board/events.py`)
 
 Zero new network calls, zero credits. `python3 -m src.cli events [--since

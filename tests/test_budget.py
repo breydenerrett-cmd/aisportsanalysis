@@ -276,6 +276,10 @@ class _FakeOddsProvider:
     BATTER_MARKETS = ("batter_hits", "batter_total_bases", "batter_home_runs",
                        "batter_rbis", "batter_runs_scored", "batter_hits_runs_rbis")
     PROP_MARKETS = ("pitcher_strikeouts",)
+    TEAM_TOTALS_MARKETS = ("team_totals",)
+    ALTERNATE_MARKETS = ("alternate_spreads", "alternate_totals")
+    EVENT_MARKETS = ("h2h_1st_5_innings", "spreads_1st_5_innings",
+                      "totals_1st_5_innings")
 
     def __init__(self, remaining_before=53000, billed=6, remaining_after=None,
                  events=None, fail_fetch=None, configured=True, payload=None):
@@ -388,16 +392,40 @@ class ProbeFamilyTests(unittest.TestCase):
         self.assertIn("unknown family", result["error"])
 
     def test_a_family_with_no_known_market_list_is_refused_not_guessed(self):
+        # parlay_sgp has no odds_provider endpoint at all (confirmed
+        # 2026-09-03, docs/SGP_PARLAY_CAPTURE.md) -- unlike team_totals,
+        # alternates and f5_trio, which are wired below.
         with tempfile.TemporaryDirectory() as folder:
             path = self._families(folder, extra={
-                "team_totals": {"measured": False, "credits_per_event": None,
-                                 "measured_utc": None}})
+                "parlay_sgp": {"measured": False, "credits_per_event": None,
+                                "measured_utc": None}})
             provider = _FakeOddsProvider()
             result = budget.probe_family(
-                "team_totals", provider=provider, now=NOW, families_path=path)
+                "parlay_sgp", provider=provider, now=NOW, families_path=path)
         self.assertFalse(result["probed"])
         self.assertIn("not wired", result["error"])
         self.assertEqual(provider.calls, [])
+
+    def test_team_totals_alternates_and_f5_trio_are_wired_to_the_right_markets(self):
+        cases = (
+            ("team_totals", ("team_totals",)),
+            ("alternates", ("alternate_spreads", "alternate_totals")),
+            ("f5_trio", ("h2h_1st_5_innings", "spreads_1st_5_innings",
+                         "totals_1st_5_innings")),
+        )
+        for family, expected_markets in cases:
+            with self.subTest(family=family), tempfile.TemporaryDirectory() as folder:
+                path = self._families(folder, extra={
+                    family: {"measured": False, "credits_per_event": None,
+                             "measured_utc": None}})
+                provider = _FakeOddsProvider()
+                result = budget.probe_family(
+                    family, provider=provider, now=NOW, families_path=path)
+                self.assertTrue(result["probed"], result)
+                self.assertEqual(len(provider.calls), 1)
+                self.assertEqual(set(provider.calls[0][1]), set(expected_markets))
+                self.assertIn("payload_shape", result)
+                self.assertIn("degenerate", result)
 
     def test_a_failed_fetch_is_reported_not_recorded(self):
         with tempfile.TemporaryDirectory() as folder:

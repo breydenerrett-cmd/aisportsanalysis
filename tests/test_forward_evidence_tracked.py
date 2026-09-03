@@ -57,6 +57,12 @@ FORWARD_EVIDENCE = (
     # cannot be refetched after the fact either.
     "data/processed/batter_props_raw.jsonl",
     "data/processed/batter_props.jsonl",
+    # Derivative-markets capture (team_totals/alternates/f5_trio,
+    # docs/SGP_PARLAY_CAPTURE.md's proposed next families): the raw/marker
+    # store and the projected price store are exactly as unbackfillable as
+    # every other forward store above.
+    "data/processed/derivative_markets_raw.jsonl",
+    "data/processed/derivative_markets.jsonl",
     "data/watch/probables_watch.jsonl",
     "data/watch/lineups_watch.jsonl",
     "data/watch/transactions_watch.jsonl",
