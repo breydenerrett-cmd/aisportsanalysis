@@ -729,10 +729,16 @@ class ReplayUniverse:
         return {game.game_pk: game for game in self.games}
 
     def get(self, game_pk):
-        for game in self.games:
-            if game.game_pk == str(game_pk):
-                return game
-        raise ReplayError(f"game {game_pk!r} is not in the replay universe")
+        # Was a linear scan over self.games sitting beside an unused by_id()
+        # (map-compute-scale.md section 2b) -- O(n) per call, harmless only
+        # because nothing today calls it in a per-game loop. Routed through
+        # by_id() instead: behaviour-identical (same lookup key, same
+        # ReplayError on a miss), verified by
+        # tests/test_replay_universe_get.py on a fixture universe.
+        try:
+            return self.by_id()[str(game_pk)]
+        except KeyError:
+            raise ReplayError(f"game {game_pk!r} is not in the replay universe")
 
     def __len__(self) -> int:
         return len(self.games)
@@ -744,7 +750,7 @@ class ReplayUniverse:
 def load_universe(seasons=REPLAY_SEASONS, *, paths_by_season=None,
                   matrix_rows_by_season=None, out_dir=None, store=None,
                   registry=DEFAULT_REGISTRY, code_commit=None,
-                  source_label=None) -> ReplayUniverse:
+                  source_label=None, timings=None) -> ReplayUniverse:
     """The replay universe: games with a matrix row AND usable pre-game odds.
 
     That join is Phase 0 section 5's definition and its 4,819-game answer. Both
@@ -754,7 +760,32 @@ def load_universe(seasons=REPLAY_SEASONS, *, paths_by_season=None,
 
     Nothing about an outcome is read. `pricepath.build` returns `home_won` and
     `total_runs` on every path and this function copies neither.
+
+    `timings`, if a `src.core.timing.TimingCollector`, gets one
+    "universe_build" stage recording this call's wall/CPU/RSS -- purely
+    additive: omitted (the default), nothing about the returned
+    `ReplayUniverse` changes (map-compute-scale.md section 1).
     """
+    from src.core.timing import stage as _stage
+    from contextlib import nullcontext as _null
+    with (_stage("universe_build", collector=timings) if timings is not None
+         else _null()):
+        return _load_universe(
+            seasons, paths_by_season=paths_by_season,
+            matrix_rows_by_season=matrix_rows_by_season, out_dir=out_dir,
+            store=store, registry=registry, code_commit=code_commit,
+            source_label=source_label)
+
+
+def _load_universe(seasons, *, paths_by_season, matrix_rows_by_season,
+                   out_dir, store, registry, code_commit,
+                   source_label) -> ReplayUniverse:
+    """The actual universe build -- see load_universe's docstring. Split out
+    so the timing wrapper above has a single call to measure without an
+    early `return` inside the `with` block skipping the stage's own
+    bookkeeping (a `return` inside a `with` still runs `__exit__`, but
+    keeping the timed region to exactly "call this function" is simpler to
+    reason about than auditing every early exit here for that property)."""
     seasons = _validated_seasons(seasons)
     injected = paths_by_season is not None or matrix_rows_by_season is not None
 
@@ -942,7 +973,7 @@ def decision_points(seasons=REPLAY_SEASONS, *, universe=None, **kwargs):
 # WorldView assembly
 # ---------------------------------------------------------------------------
 
-def world_view(game, T, *, point_class=None) -> WorldView:
+def world_view(game, T, *, point_class=None, timings=None) -> WorldView:
     """Everything visible at T for this game, and structurally nothing else.
 
     `T` must be one of this game's observed instants: the engine serves
@@ -954,7 +985,23 @@ def world_view(game, T, *, point_class=None) -> WorldView:
     within LINEUP_POSTING's assumed posting window. No lineup posting
     timestamp exists for 2023-24, so this flag is a parameter's output and is
     stamped as one on every artifact.
+
+    `timings`, if given a `src.core.timing.TimingCollector`, records one
+    "world_view" stage per call -- additive only; callers that never pass it
+    (every existing caller) see no behavior change. Not the default choice
+    for a per-decision hot path (a caller iterating thousands of decision
+    points should pass its OWN outer stage instead, per sweep.py's pattern,
+    to avoid per-call collector overhead dominating the measurement), but
+    available for a caller that wants exactly this granularity.
     """
+    from src.core.timing import stage as _stage
+    from contextlib import nullcontext as _null
+    with (_stage("world_view", collector=timings) if timings is not None
+         else _null()):
+        return _world_view(game, T, point_class=point_class)
+
+
+def _world_view(game, T, *, point_class=None) -> WorldView:
     moment = _parse_utc(T)
     if moment is None:
         raise ReplayError(f"T {T!r} is not a readable instant")

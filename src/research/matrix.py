@@ -61,9 +61,11 @@ mean "never built", never "built and found nothing".
 from __future__ import annotations
 
 import json
+from contextlib import nullcontext as _null_stage
 from datetime import date as date_type
 from pathlib import Path
 
+from src.core.timing import TimingCollector, stage
 from src.pipeline import history
 from src.pipeline import lineup_store
 from src.pipeline import lineups as lineup_mod
@@ -87,7 +89,8 @@ class MatrixError(RuntimeError):
 # ---------------------------------------------------------------------------
 
 def build(season, *, out_dir=DEFAULT_OUT_DIR, dates=None, force=False,
-          store=None, results=None, lineups_by_pk=None, handedness=None) -> Path:
+          store=None, results=None, lineups_by_pk=None, handedness=None,
+          timings=None) -> Path:
     """Write matchup_matrix_{season}.jsonl for every lineup game, resumably.
 
     Idempotent: dates already in the file are skipped, so a rerun with the
@@ -99,6 +102,13 @@ def build(season, *, out_dir=DEFAULT_OUT_DIR, dates=None, force=False,
 
     `store`, `results`, `lineups_by_pk` and `handedness` are injectable so
     tests run on synthetic fixtures; defaults read the real stores.
+
+    `timings`, if given a `src.core.timing.TimingCollector`, gets `load`
+    (reading results/lineups/handedness) and `build` (the snapshot walk plus
+    per-game row construction) stages appended -- map-compute-scale.md
+    section 2b's measured-but-unrecorded "7-11s/season" claim, now capturable
+    on any real invocation without changing what gets written: `timings` is
+    purely additive bookkeeping, never read by the build logic itself.
     """
     if season not in ALLOWED_SEASONS:
         raise MatrixError(f"season {season} is outside the discovery set "
@@ -107,63 +117,69 @@ def build(season, *, out_dir=DEFAULT_OUT_DIR, dates=None, force=False,
     if force and target.exists():
         target.unlink()
 
-    if results is None:
-        results = history.read_results()
-    games = [row for row in results.values()
-             if (row.get("date") or "").startswith(str(season))]
+    load_ctx = stage("load", collector=timings) if timings is not None \
+        else _null_stage()
+    with load_ctx:
+        if results is None:
+            results = history.read_results()
+        games = [row for row in results.values()
+                 if (row.get("date") or "").startswith(str(season))]
 
-    wanted = sorted({g["date"] for g in games if g.get("date")})
-    if dates is not None:
-        requested = {value.isoformat() if isinstance(value, date_type)
-                     else str(value).strip() for value in dates}
-        wanted = [d for d in wanted if d in requested]
-    covered = _covered_dates(target)
-    missing = [d for d in wanted if d not in covered]
-    if not missing:
-        return target  # everything requested is already built
+        wanted = sorted({g["date"] for g in games if g.get("date")})
+        if dates is not None:
+            requested = {value.isoformat() if isinstance(value, date_type)
+                        else str(value).strip() for value in dates}
+            wanted = [d for d in wanted if d in requested]
+        covered = _covered_dates(target)
+        missing = [d for d in wanted if d not in covered]
+        if not missing:
+            return target  # everything requested is already built
 
-    if lineups_by_pk is None:
-        lineups_by_pk = lineup_store.read()
-    if handedness is None:
-        handedness = _load_handedness()
+        if lineups_by_pk is None:
+            lineups_by_pk = lineup_store.read()
+        if handedness is None:
+            handedness = _load_handedness()
 
-    # ONE date-ordered walk of the pitch store for every cutoff at once --
-    # the build_snapshots contract, and the whole reason a season build is
-    # minutes, not hours. Snapshot count stays at ~7/season (monthly), which
-    # is the memory footprint the stage2 runner already proved out.
-    cutoffs = sorted({_cutoff_for(d) for d in missing})
-    snapshots = rebuilt.build_snapshots(
-        cutoffs, store=store if store is not None else sp.DEFAULT_STORE)
-    totals_by_cutoff = {}  # per-batter all-pitch aggregation, once per cutoff
+    build_ctx = stage("build", collector=timings, rows=len(missing)) \
+        if timings is not None else _null_stage()
+    with build_ctx:
+        # ONE date-ordered walk of the pitch store for every cutoff at once --
+        # the build_snapshots contract, and the whole reason a season build is
+        # minutes, not hours. Snapshot count stays at ~7/season (monthly), which
+        # is the memory footprint the stage2 runner already proved out.
+        cutoffs = sorted({_cutoff_for(d) for d in missing})
+        snapshots = rebuilt.build_snapshots(
+            cutoffs, store=store if store is not None else sp.DEFAULT_STORE)
+        totals_by_cutoff = {}  # per-batter all-pitch aggregation, once per cutoff
 
-    by_date = {}
-    for game in games:
-        by_date.setdefault(game.get("date"), []).append(game)
+        by_date = {}
+        for game in games:
+            by_date.setdefault(game.get("date"), []).append(game)
 
-    target.parent.mkdir(parents=True, exist_ok=True)
-    with target.open("a", encoding="utf-8") as handle:
-        for day in missing:
-            cutoff = _cutoff_for(day)
-            acc = snapshots[cutoff]
-            if cutoff not in totals_by_cutoff:
-                totals_by_cutoff[cutoff] = _batter_totals(acc)
-            written = 0
-            for game in sorted(by_date.get(day, []),
-                               key=lambda g: str(g.get("game_pk"))):
-                posted = lineups_by_pk.get(str(game.get("game_pk")))
-                if not posted or not (posted.get("away") or posted.get("home")):
-                    continue  # no posted lineup -> no row, by definition
-                row = row_for_game(acc, game, posted, handedness,
-                                   batter_totals=totals_by_cutoff[cutoff])
-                handle.write(json.dumps(row, sort_keys=True) + "\n")
-                written += 1
-            if not written:
-                # Coverage marker: this date was BUILT and had no lineup
-                # games. Without it, a rerun could not tell an off-day from a
-                # date the build never reached.
-                handle.write(json.dumps({"date": day, "empty": True}) + "\n")
-            # Flush per date so a crash costs one date, not the whole run.
-            handle.flush()
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with target.open("a", encoding="utf-8") as handle:
+            for day in missing:
+                cutoff = _cutoff_for(day)
+                acc = snapshots[cutoff]
+                if cutoff not in totals_by_cutoff:
+                    totals_by_cutoff[cutoff] = _batter_totals(acc)
+                written = 0
+                for game in sorted(by_date.get(day, []),
+                                   key=lambda g: str(g.get("game_pk"))):
+                    posted = lineups_by_pk.get(str(game.get("game_pk")))
+                    if not posted or not (posted.get("away") or posted.get("home")):
+                        continue  # no posted lineup -> no row, by definition
+                    row = row_for_game(acc, game, posted, handedness,
+                                       batter_totals=totals_by_cutoff[cutoff])
+                    handle.write(json.dumps(row, sort_keys=True) + "\n")
+                    written += 1
+                if not written:
+                    # Coverage marker: this date was BUILT and had no lineup
+                    # games. Without it, a rerun could not tell an off-day from a
+                    # date the build never reached.
+                    handle.write(json.dumps({"date": day, "empty": True}) + "\n")
+                # Flush per date so a crash costs one date, not the whole run.
+                handle.flush()
     return target
 
 

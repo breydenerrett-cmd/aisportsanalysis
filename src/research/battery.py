@@ -466,7 +466,7 @@ def rules_fingerprint() -> str:
 
 
 def run(rows, *, effect_floor=0.01, dose_key=None, dose_bands=None,
-        dose_rows=None) -> dict:
+        dose_rows=None, timings=None) -> dict:
     """Run every falsification check and return the verdict.
 
     rows: graded selections (see module docstring for keys). dose_key names
@@ -478,7 +478,21 @@ def run(rows, *, effect_floor=0.01, dose_key=None, dose_bands=None,
 
     Returns {"survives": bool, "fatal": [check names], "report": {checks}}.
     survives means not falsified, never confirmed.
+
+    `timings`, if a `src.core.timing.TimingCollector`, records one "run"
+    stage spanning the whole battery -- additive bookkeeping only
+    (map-compute-scale.md section 1); omitted, the returned dict is
+    unchanged.
     """
+    from contextlib import nullcontext as _null_stage
+    from src.core.timing import stage as _stage
+    with (_stage("run", collector=timings, rows=len(rows))
+         if timings is not None else _null_stage()):
+        return _run(rows, effect_floor=effect_floor, dose_key=dose_key,
+                   dose_bands=dose_bands, dose_rows=dose_rows)
+
+
+def _run(rows, *, effect_floor, dose_key, dose_bands, dose_rows) -> dict:
     prepared = _prepared(rows)
     report = {"baseline": _baseline(prepared)}
     if "skipped" in report["baseline"]:

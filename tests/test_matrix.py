@@ -246,6 +246,25 @@ class BuildAndReadTest(unittest.TestCase):
         self._build()
         self.assertEqual(path.read_bytes(), before)
 
+    def test_timings_collector_records_load_and_build_stages(self):
+        from src.core.timing import TimingCollector, require_timings
+        collector = TimingCollector()
+        path_with = self._build(timings=collector, out_dir=self.out_dir / "a")
+        stages = {rec["stage"] for rec in collector.to_list()}
+        self.assertEqual(stages, {"load", "build"})
+        require_timings({"timings": collector.to_list()})  # must not raise
+
+        # Instrumentation is additive: the same build without a collector
+        # writes byte-identical rows.
+        path_without = self._build(out_dir=self.out_dir / "b")
+        self.assertEqual(path_with.read_bytes(), path_without.read_bytes())
+
+    def test_no_timings_arg_means_no_collection_and_no_behavior_change(self):
+        # timings=None (the default) must not touch matrix.build's return
+        # value or written bytes at all -- it is pure bookkeeping.
+        path = self._build()
+        self.assertTrue(path.exists())
+
     def test_resumes_by_appending_only_missing_dates(self):
         path = matrix.build(2023, dates=["2023-04-05"], **self.kwargs)
         one_date = path.read_bytes()

@@ -925,13 +925,23 @@ def test_class(name, *, report_result=None, **report_kwargs) -> dict:
     }
 
 
-def test_all(*, report_result=None, **report_kwargs) -> dict:
+def test_all(*, report_result=None, timings=None, **report_kwargs) -> dict:
     """test_class for every class the report has seen; below-floor classes
-    come back as the same refusal test_class would give, never touched."""
-    result = (report_result if report_result is not None
-              else timingreport.report(**report_kwargs))
-    return {name: test_class(name, report_result=result)
-            for name in sorted((result.get("classes") or {}))}
+    come back as the same refusal test_class would give, never touched.
+
+    `timings`, if a `src.core.timing.TimingCollector`, records one "run"
+    stage spanning the report load plus every class's test -- additive
+    bookkeeping only (map-compute-scale.md section 1); omitted, the returned
+    dict is unchanged.
+    """
+    from contextlib import nullcontext as _null_stage
+    from src.core.timing import stage as _stage
+    with (_stage("run", collector=timings) if timings is not None
+         else _null_stage()):
+        result = (report_result if report_result is not None
+                 else timingreport.report(**report_kwargs))
+        return {name: test_class(name, report_result=result)
+                for name in sorted((result.get("classes") or {}))}
 
 
 # ---------------------------------------------------------------------------
