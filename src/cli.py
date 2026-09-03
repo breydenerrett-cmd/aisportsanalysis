@@ -2146,6 +2146,82 @@ def _cmd_engine_truncation(args) -> int:
     return EXIT_OK if report.gate_result.passed else EXIT_ERROR
 
 
+def _record_from_row(cls, row):
+    """Reconstruct a frozen ledger dataclass from a JSON-decoded row,
+    dropping any key the dataclass does not declare (e.g. a genesis row's
+    `kind`, or a chain's own `prev_hash`/`row_hash` where the type has no
+    such field)."""
+    import dataclasses
+    valid = {f.name for f in dataclasses.fields(cls)}
+    return cls(**{k: v for k, v in row.items() if k in valid})
+
+
+def cmd_eod(args) -> int:
+    """`eod --date DATE`: build and write the end-of-day self-review from
+    whatever stores exist (S7). No slate runner writes these stores yet
+    (S5/S6, docs/CHECKPOINT_PHASE0_2026-09-03.md §5) -- this command reads
+    them honestly, empty or not, and refuses rather than emitting an empty
+    happy report when `DATE` has no recorded decisions.
+    """
+    from src.ledger.chain import HashChainLedger
+    from src.ledger.records import AccountSummary, DecisionRecord, ReviewRecord, Scorecard
+    from src.ledger.writer import REVIEW_LEDGER_PATH, SCORECARD_LEDGER_PATH
+    from src.ledger.bridge import V2_LEDGER_PATH
+    from src.paths import data_path
+    from src.report import eod as eod_module
+
+    date_str = args.date
+
+    decision_rows = HashChainLedger(V2_LEDGER_PATH).read()
+    decisions = [
+        _record_from_row(DecisionRecord, row) for row in decision_rows
+        if row.get("kind") != "genesis"
+        and row.get("decision_utc", "").startswith(date_str)
+    ]
+
+    review_rows = HashChainLedger(str(REVIEW_LEDGER_PATH)).read()
+    reviews = [
+        _record_from_row(ReviewRecord,
+                        dict(row, decision_key=tuple(row["decision_key"])))
+        for row in review_rows
+    ]
+
+    scorecard_rows = HashChainLedger(str(SCORECARD_LEDGER_PATH)).read()
+    scorecards = []
+    for row in scorecard_rows:
+        account = AccountSummary(**row["account"])
+        scorecards.append(_record_from_row(Scorecard, dict(row, account=account)))
+
+    accounts_dir = data_path("paper_accounts")
+    accounts = []
+    if accounts_dir.exists():
+        for path in sorted(accounts_dir.glob("*.jsonl")):
+            system_id = path.stem
+            rows = HashChainLedger(path).read()
+            accounts.append(eod_module.account_day_from_ledger_rows(
+                system_id, rows, date_str))
+
+    try:
+        result = eod_module.write_review(date_str, accounts, decisions,
+                                         reviews, scorecards)
+    except eod_module.EodReviewError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+
+    review = result["review"]
+    print(f"eod --date {date_str}")
+    print(f"  decisions           : {review.n_decisions} "
+          f"({len(review.decisions_made)} play)")
+    print(f"  vetoes              : {sum(v.count for v in review.vetoes)}")
+    print(f"  settlements         : {len(review.settlements)} "
+          f"({len(review.losing_settlements)} losses)")
+    print(f"  price-vs-close      : {len(review.price_vs_close)} of "
+          f"{review.n_reviewed} reviewed")
+    print(f"  accounts            : {len(review.accounts)}")
+    print(f"  report              : {result['path']}")
+    return EXIT_OK
+
+
 def cmd_calibration_demo(args) -> int:
     """Show the calibration metrics working on synthetic data.
 
@@ -2439,6 +2515,10 @@ def build_parser() -> argparse.ArgumentParser:
              "window; the flag exists so other windows can be registered "
              "without renaming the concept)")
 
+    eod_cmd = sub.add_parser(
+        "eod", help="build and write the end-of-day self-review (S7)")
+    eod_cmd.add_argument("--date", required=True, help="YYYY-MM-DD")
+
     return parser
 
 
@@ -2477,6 +2557,7 @@ COMMANDS = {
     "l1": cmd_l1,
     "gamekey": cmd_gamekey,
     "engine": cmd_engine,
+    "eod": cmd_eod,
 }
 
 
