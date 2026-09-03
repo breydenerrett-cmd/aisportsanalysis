@@ -141,7 +141,9 @@ class PriceBlindSnapshot:
                   books_by_market: Mapping[str, int] | None = None,
                   point_meta: PointMeta | None = None,
                   lineup_posted: bool = False,
-                  fingerprint: str = "") -> "PriceBlindSnapshot":
+                  fingerprint: str = "",
+                  extra_exposure: Mapping[str, int] | None = None
+                  ) -> "PriceBlindSnapshot":
         """Build from a `src.core.asof.Snapshot` plus point-in-time features.
 
         `as_of_snapshot`'s `fields` mapping (lineups, probables, umpires,
@@ -151,12 +153,23 @@ class PriceBlindSnapshot:
         of D-graded (unreconstructable-timing) fields -- the same
         "assumption_exposure" vocabulary synthesis-judge.md 4.2 names on
         `Snapshot`.
+
+        `extra_exposure`, when given, is merged in on top of the as_of
+        provenance -- this is how `src.engine.glue.build_snapshot` folds
+        each `src.engine.features.FeatureValue`'s own `known_at_grade` in
+        too, so a 2023-24 game's `features` (grade D by construction, per
+        `src.engine.features`) is never mistaken for "an as_of read found
+        nothing degraded" just because its (nonexistent, for that era)
+        forward stores happened to read back empty.
         """
         exposure: dict[str, int] = {}
         if as_of_snapshot is not None:
             for name, obs in as_of_snapshot.fields.items():
                 key = f"{obs.known_at_grade}:{name}"
                 exposure[key] = exposure.get(key, 0) + 1
+        if extra_exposure is not None:
+            for key, count in extra_exposure.items():
+                exposure[key] = exposure.get(key, 0) + count
         return PriceBlindSnapshot(
             game_pk=str(game_pk),
             t=t,
