@@ -201,6 +201,13 @@ written elsewhere) and docs/SAAS_APPLICATION_ARCHITECTURE.md can be reviewed
 together.
 
 ### READY QUEUE (refill to ≥3 whenever an item completes)
+NOTE 2026-09-03 09:00Z: proof-of-function checkpoint posted
+(docs/CHECKPOINT_PHASE0_2026-09-03.md, evidence under
+docs/planning/checkpoint-2026-09-03/): ~30% of the end-to-end milestone;
+six blocking bugs on the engine decision path confirmed by review. The
+standing loop's next items are those bug fixes (lanes dispatched 09:00Z),
+then nothing from the checkpoint's §5 vertical slice until the owner says
+go. No new market families, no factory work, no product work meanwhile.
 NOTE 2026-09-03 02:30Z: the betting-engine plan
 (docs/ARCHITECTURE_BETTING_ENGINE.md) is APPROVED WITH AMENDMENTS (section
 9.1 there). Phase 0 has started: P0-A/B/C/D/E/H lanes dispatched. The
