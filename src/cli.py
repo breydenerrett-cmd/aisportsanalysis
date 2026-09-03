@@ -2015,16 +2015,79 @@ def cmd_engine(args) -> int:
         return EXIT_OK if result.passed else EXIT_ERROR
 
     if args.engine_command == "truncation":
-        print(f"engine truncation --date {args.date} --sample {args.sample}")
-        print("  no forward capture store in this environment carries "
-              "point-in-time snapshots at both T and T-2h for a sampled "
-              "corpus on this date -- refusing to fabricate a sample. "
-              "Build TruncationSample objects from real as_of()/board reads "
-              "and call src.engine.truncation.truncation_differential(...) "
-              "directly, or wire a data source here, once one exists.")
-        return EXIT_ERROR
+        return _cmd_engine_truncation(args)
 
     raise SystemExit(f"unknown engine subcommand {args.engine_command!r}")
+
+
+def _cmd_engine_truncation(args) -> int:
+    """`engine truncation --date DATE --sample N --t-offset MINUTES`, wired
+    to real data (packet W11): sample games from `DATE`'s L1 captures, run
+    the truncation differential (`t` = each game's own latest capture that
+    day, `t-2h` = `t - t_offset` minutes) with the registered trivial
+    fallback system (see `src.engine.glue.TrivialAlwaysHomeSystem` -- no
+    evolab-adapter genome can be wired honestly against odds-provider
+    event_ids in this environment; see glue.py's module docstring) and the
+    adversary roster, append a G4 `GateResult` record to
+    `data/processed/gate_results.jsonl`, and print the differential report.
+    Refuses honestly (non-zero exit, no record written) when the date has
+    no captures at all.
+    """
+    from src.engine import glue as glue_module
+    from src.engine.adversaries import DEFAULT_ADVERSARIES
+    from src.engine.truncation import truncation_differential
+
+    try:
+        samples = glue_module.sample_truncation_inputs(
+            args.date, args.sample, t_offset_minutes=args.t_offset)
+    except glue_module.GlueError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+
+    systems = (glue_module.TrivialAlwaysHomeSystem(),)
+    report = truncation_differential(
+        samples, systems=systems, adversaries=DEFAULT_ADVERSARIES)
+
+    print(f"engine truncation --date {args.date} --sample {args.sample} "
+          f"--t-offset {args.t_offset}")
+    print(f"  games sampled       : {report.sample_size} "
+          f"(of {len(glue_module.games_captured_on(args.date))} captured "
+          f"that day)")
+    print(f"  diffs found         : {len(report.diffs)}")
+    print(f"  leakage failures    : {len(report.leakage_failures)}")
+    print(f"  gate                : {report.gate_result.gate} "
+          f"{'PASS' if report.gate_result.passed else 'FAIL'}")
+    for reason in report.gate_result.reasons:
+        print(f"    {reason}")
+    if report.leakage_failures:
+        print("\n  leakage detail (never suppressed):")
+        for d in report.leakage_failures:
+            print(f"    game={d.game_pk} selection={d.selection_id} "
+                  f"system={d.system_id} changed={list(d.changed_fields)}")
+
+    record = {
+        "written_utc": datetime.now(timezone.utc).isoformat(),
+        "date": args.date,
+        "sample_size": report.sample_size,
+        "games": sorted(s.game_pk for s in samples),
+        "t_offset_minutes": args.t_offset,
+        "systems": [s.id for s in systems],
+        "adversaries": [a.id for a in DEFAULT_ADVERSARIES],
+        "gate": report.gate_result.gate,
+        "passed": report.gate_result.passed,
+        "reasons": list(report.gate_result.reasons),
+        "inputs_hash": report.gate_result.inputs_hash,
+        "diff_count": len(report.diffs),
+        "leakage_count": len(report.leakage_failures),
+    }
+    out_path = processed_path("gate_results.jsonl")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    import json as json_module
+    with out_path.open("a", encoding="utf-8") as fh:
+        fh.write(json_module.dumps(record, sort_keys=True) + "\n")
+    print(f"\n  G4 gate record appended to {out_path}")
+
+    return EXIT_OK if report.gate_result.passed else EXIT_ERROR
 
 
 def cmd_calibration_demo(args) -> int:
@@ -2301,6 +2364,11 @@ def build_parser() -> argparse.ArgumentParser:
     engine_truncation.add_argument("--date", required=True, help="YYYY-MM-DD")
     engine_truncation.add_argument("--sample", type=int, default=10,
                                    help="number of games to sample")
+    engine_truncation.add_argument(
+        "--t-offset", type=int, default=120, dest="t_offset", metavar="MINUTES",
+        help="minutes between t-2h and t (default 120, i.e. a true 2h "
+             "window; the flag exists so other windows can be registered "
+             "without renaming the concept)")
 
     return parser
 

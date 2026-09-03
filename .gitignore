@@ -107,6 +107,13 @@ data/app/*
 !data/raw/oddsapi/
 !data/raw/oddsapi/**
 
+# G4 gate results (packet W11, src/factory/gates.py, `engine truncation`
+# CLI wiring): each run of the truncation-differential leakage gate against
+# real captures appends one record -- a real gate evaluation against real
+# data, not a regenerable artifact, so it is tracked append-only like the
+# forward-capture stores above.
+!data/processed/gate_results.jsonl
+
 # Python
 __pycache__/
 *.py[cod]

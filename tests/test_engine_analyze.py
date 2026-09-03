@@ -124,7 +124,13 @@ class TestProjection(unittest.TestCase):
         system = _RecordingSystem((Proposal(
             system_id="s1", system_version="1", market_key="totals",
             side="over", p_model=0.55),))
-        analysis = analyze(_snapshot(), board, systems=(system,))
+        # adversaries=() explicitly: this test is about PROJECT fanning one
+        # proposal out onto every matching selection, not about ATTACK, and
+        # each selection here is quoted by only one book -- ThinBoard (part
+        # of analyze()'s now-default adversary roster) would FATAL-veto both
+        # candidates otherwise, which is a different thing than what this
+        # test checks.
+        analysis = analyze(_snapshot(), board, systems=(system,), adversaries=())
         selections = {r.selection_id for r in analysis.records}
         self.assertEqual(selections, {"s_over_1", "s_over_2"})
 
