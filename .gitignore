@@ -96,6 +96,12 @@ data/app/*
 # themselves append-only evidence of what was known when -- same reasoning
 # as the forward-capture block above.
 !data/processed/information_events.jsonl
+# Added 2026-09-03 with derivative-markets capture (team_totals/alternates/
+# f5_trio, docs/SGP_PARLAY_CAPTURE.md's proposed next families): the raw/
+# marker store and the projected derivative-market price store. Same
+# "cannot be bought back later" reasoning as the batter-prop block above.
+!data/processed/derivative_markets_raw.jsonl
+!data/processed/derivative_markets.jsonl
 # RAW ODDS-API PAYLOADS (L0) -- added 2026-09-03 with the raw-first capture
 # layer (docs/COLLECTION_POLICY.md, "Raw layer and all-books persistence").
 # Same reasoning as the forward-capture block above: the verbatim provider

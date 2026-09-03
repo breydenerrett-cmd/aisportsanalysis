@@ -401,14 +401,21 @@ def status(now=None, store=None, families_path=None) -> dict:
 
 # Which markets a probe of `family` fetches, and where those keys live.
 # Only families with a real per-event, per-market odds_provider entry point
-# are probeable this way -- a family with no market list (parlay_sgp,
-# team_totals, f5_trio) is not wired here and returns an explicit error
-# rather than guessing a market to call.
+# are probeable this way -- a family with no market list at all (parlay_sgp:
+# no endpoint exists, confirmed 2026-09-03 against the vendor's own markets
+# page -- see docs/SGP_PARLAY_CAPTURE.md) is not wired here and returns an
+# explicit error rather than guessing a market to call.
 def _probe_markets(family: str, provider) -> Optional[tuple]:
     if family in ("batter_props_floor", "batter_props_extra", "batter_props"):
         return provider.BATTER_MARKETS
     if family == "pitcher_props":
         return provider.PROP_MARKETS
+    if family == "team_totals":
+        return provider.TEAM_TOTALS_MARKETS
+    if family == "alternates":
+        return provider.ALTERNATE_MARKETS
+    if family == "f5_trio":
+        return provider.EVENT_MARKETS
     return None
 
 
