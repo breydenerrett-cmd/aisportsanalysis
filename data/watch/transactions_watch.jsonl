@@ -347,3 +347,11 @@
 {"category": "rehab", "date": "2026-09-02", "first_seen_utc": "2026-09-02T23:31:43.992807+00:00", "player": "Jake Cousins", "player_id": 664776, "team": "LAD", "transaction_id": 940937}
 {"fetched_utc": "2026-09-02T23:46:47.412471+00:00", "game_date": "2026-09-02", "poll": true}
 {"fetched_utc": "2026-09-03T00:01:49.790287+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-03T00:15:45.320185+00:00", "game_date": "2026-09-02", "poll": true}
+{"category": "il_activation", "date": "2026-09-02", "first_seen_utc": "2026-09-03T00:15:45.320185+00:00", "player": "Blake Treinen", "player_id": 595014, "team": "LAD", "transaction_id": 940940}
+{"category": "il_transfer", "date": "2026-09-02", "first_seen_utc": "2026-09-03T00:15:45.320185+00:00", "player": "Will Klein", "player_id": 694361, "team": "LAD", "transaction_id": 940941}
+{"category": "il_placement", "date": "2026-09-02", "first_seen_utc": "2026-09-03T00:15:45.320185+00:00", "player": "Eric Lauer", "player_id": 641778, "team": "LAD", "transaction_id": 940942}
+{"fetched_utc": "2026-09-03T00:15:48.382003+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-03T00:30:51.074917+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-03T00:45:53.224450+00:00", "game_date": "2026-09-02", "poll": true}
+{"fetched_utc": "2026-09-03T01:00:55.338807+00:00", "game_date": "2026-09-02", "poll": true}
