@@ -201,6 +201,13 @@ written elsewhere) and docs/SAAS_APPLICATION_ARCHITECTURE.md can be reviewed
 together.
 
 ### READY QUEUE (refill to ≥3 whenever an item completes)
+NOTE 2026-09-03 01:40Z: docs/ARCHITECTURE_BETTING_ENGINE.md (the betting-engine
+plan, with its evidence under docs/planning/) is AWAITING OWNER REVIEW. Until
+the owner approves it, the standing loop does NO engine, factory, board or
+record work from that plan. Allowed meanwhile: capture recovery after
+restarts, the full suite, docs-truth corrections listed in the plan's owner
+decision 10, and nothing that spends credits. Capture completeness outranks
+every other item for 60 days.
 NOTE 2026-09-02 (closed 22:10Z): the orchestration day is over; the
 end-of-day synthesis is docs/ORCHESTRATION_DAY_2026-09-02.md and the
 standing loop resumes from this queue. First item for the loop: a full
