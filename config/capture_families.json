@@ -40,29 +40,31 @@
     },
     "batter_props_floor": {
       "measured": true,
-      "credits_per_event": 1,
-      "measured_utc": "2026-09-03T03:25:59.389461Z",
-      "source": "budget.probe_family: live batter_props_floor probe against event af7b25a4d0428e7f04b74c6c3a75c59d (6 market(s), 1 region); billed=1, remaining_before=99609, remaining_after=99608",
-      "degenerate": true,
-      "corrections": [
-        {
-          "corrected_utc": "2026-09-03T12:00:00Z",
-          "note": "Retro-marked degenerate, not deleted: probe_family (pre-fix) picked event af7b25a4d0428e7f04b74c6c3a75c59d whose commence_time (2026-09-02T23:41Z) had already passed at probe time (03:26Z); the payload had 1 book and 1 of 6 requested markets (batter_home_runs only), so the measured 1 credit/event is priced off a degenerate payload, not a representative one. This row no longer satisfies PROBE_REQUIRED (see src/capture/budget.py family_cost) and no longer blocks a same-day re-probe. Fix: probe_family now refuses any event with commence_time < now + 45min (PROBE_MIN_LEAD_MINUTES) and records payload shape (books/markets_returned/outcomes/commence_time) on every measurement."
-        }
-      ]
+      "credits_per_event": 5,
+      "measured_utc": "2026-09-03T04:09:12.905204Z",
+      "source": "budget.probe_family: live batter_props_floor probe against event f857ea6771bf681398b05379f108f0c5 (6 market(s), 1 region); billed=5, remaining_before=99607, remaining_after=99602",
+      "degenerate": false,
+      "payload_shape": {
+        "books": 4,
+        "markets_returned": 5,
+        "outcomes": 79,
+        "commence_time": "2026-09-03T16:35:00Z",
+        "degenerate": false
+      }
     },
     "batter_props_extra": {
       "measured": true,
-      "credits_per_event": 1,
-      "measured_utc": "2026-09-03T03:26:13.312786Z",
-      "source": "budget.probe_family: live batter_props_extra probe against event af7b25a4d0428e7f04b74c6c3a75c59d (6 market(s), 1 region); billed=1, remaining_before=99608, remaining_after=99607",
-      "degenerate": true,
-      "corrections": [
-        {
-          "corrected_utc": "2026-09-03T12:00:00Z",
-          "note": "Retro-marked degenerate, not deleted: same af7b25a4d0428e7f04b74c6c3a75c59d probe as batter_props_floor above -- event already past commence_time at probe time, 1 book / 1 of 6 requested markets returned. This row no longer satisfies PROBE_REQUIRED and no longer blocks a same-day re-probe. See src/capture/budget.py PROBE_MIN_LEAD_MINUTES and _payload_shape for the fix."
-        }
-      ]
+      "credits_per_event": 5,
+      "measured_utc": "2026-09-03T04:09:14.970399Z",
+      "source": "budget.probe_family: live batter_props_extra probe against event f857ea6771bf681398b05379f108f0c5 (6 market(s), 1 region); billed=5, remaining_before=99602, remaining_after=99597",
+      "degenerate": false,
+      "payload_shape": {
+        "books": 4,
+        "markets_returned": 5,
+        "outcomes": 79,
+        "commence_time": "2026-09-03T16:35:00Z",
+        "degenerate": false
+      }
     },
     "prop_listing_feasibility": {
       "measured": true,

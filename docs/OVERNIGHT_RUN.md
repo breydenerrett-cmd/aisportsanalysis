@@ -539,3 +539,28 @@ https://linehound-staging.fly.dev/billing/webhook -> dry-run purchase.
 
 - 2026-09-02 21:04Z–22:00Z: the session container restarted four times (21:04, ~21:25, ~21:43, ~21:55), each time killing the running hourly capture mid-dense. Captured rows on disk were committed by hand after each restart (commits 85782ef, bd5d65d and this one); the 21:15 trigger's message was dropped by the first restart and the run was started by hand. Some 15-minute dense slots in the 21:xx window were missed; nothing was reconstructed. Cause not identified (memory was 0.6 GB of 16 GB in use).
 - 2026-09-02 22:18Z–22:49Z: a capture launched detached (setsid nohup) as a survival test also died before its commit step; restarts continue roughly every 15–30 minutes. Rows on disk were committed by hand again. From here the hourly trigger runs capture as usual and any rows an interrupted run leaves on disk are committed at the next check; the missed dense slots are real gaps.
+
+- 2026-09-03 02:30Z–04:15Z: Phase 0 started under the owner's approval with
+  amendments (docs/ARCHITECTURE_BETTING_ENGINE.md §9.1). Sixteen lanes
+  integrated on the branch in one pass (39 commits, ~26K lines): L0 raw-first
+  odds capture + all-books persistence; GUMBO boxscores + prop settlement
+  rules; budget guards, drop order and cadence SLO; timing instrumentation
+  (the "51 ms" claim struck); universal market record + catalogue + L1
+  projection (56,680 observations backfilled, store ~36 MB, gitignored until
+  partitioned); as_of stop-at-T reader with the degraded-information replay
+  label; hash-chained ledger v2 (v1 untouched, hash recorded); paper accounts,
+  gates G-cadence..G7 and the pinned LOCK criteria; the engine waist
+  (price-blind PROPOSE → PROJECT → ATTACK → RATE → RANK) with an equivalence
+  run against evolab.decide on 7,742 genomes × 200 decision points, 0
+  divergences; conformance + truncation differential library and a first
+  adversary roster; free information-events layer (305 events from existing
+  stores); SGP/parlay assessment (vendor has no SGP endpoint; team totals
+  proposed next); vendor prop-history packet (no purchase). Batter-prop capture
+  switched on behind the budget guards. The first two probes hit an
+  already-started game (1 book, 1 outcome) and were retro-marked degenerate;
+  the probe now requires a 45-minute lead. Full suite green at every merge
+  (last: 3,710 OK before W6/W11). Capture ran throughout; no restart this
+  window.
+  04:09Z pre-game re-probe (first pitch 16:35Z): both batter families
+  measured 5 credits/event, 4 books, 5 of 6 requested markets, 79 outcomes;
+  PROBE_REQUIRED cleared for both. Credits 99,597 remaining.
