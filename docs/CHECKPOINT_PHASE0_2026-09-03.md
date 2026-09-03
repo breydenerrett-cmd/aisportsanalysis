@@ -223,3 +223,15 @@ until the owner's two actions and S8. Overall roughly one third. The Opus
 review's independent estimate is ~30%, weighting the eight milestone clauses
 evenly (every matchup ~40%, every market ~15%, select ~35%, accounts ~10%,
 freeze/settle ~70%, fitness ~5%, EOD review ~10%).
+
+## 9. Post-checkpoint fixes (2026-09-03 09:00Z–09:50Z)
+
+All six blocking bugs in §7 and the review are fixed and merged (head
+954bb86, full suite 3,792 OK): grade no longer fails open (UNREAD → D with a
+counterargument), first-pitch guard in glue (G4 re-run on pre-game boards,
+8/8 PASS), book_count/dispersion/best computed from each book's latest fresh
+quote, prop dispatcher resolves per-player box rows (a real batter-prop paper
+bet settled win/loss/push/void end to end), equivalence proof re-run with
+the adversary roster disabled: 0 divergences. Statements in §2 about the
+dispatcher and the grade describe the pre-fix head. The seam in §4 and the
+slice in §5 are unchanged and await the owner's go.
