@@ -76,7 +76,7 @@ if ! flock -w 300 9; then
     exit 1
 fi
 
-git add data/watch data/processed docs/OVERNIGHT_RUN.md 2>/dev/null || true
+git add data/watch data/processed data/raw/oddsapi docs/OVERNIGHT_RUN.md 2>/dev/null || true
 if ! git diff --cached --quiet; then
     BRANCH=$(git rev-parse --abbrev-ref HEAD)
     if ! git commit -q -m "Forward capture $(date -u +%H:%MZ)"; then
