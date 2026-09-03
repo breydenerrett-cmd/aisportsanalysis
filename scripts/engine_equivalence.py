@@ -127,7 +127,13 @@ def run(seasons, max_genomes, max_points, seconds_budget) -> dict:
             evolab_decision, _reason = decide_with_reason(
                 genome, view, registry=DEFAULT_REGISTRY)
             snapshot, board = snapshot_and_board_from_worldview(view)
-            analysis = analyze(snapshot, board, systems=(system,))
+            # Adversaries are an engine-side addition with no evolab
+            # counterpart; the proof is about the decision primitive, so the
+            # roster is disabled here explicitly (the default roster vetoes
+            # every quote on this harness's board.t == commence_time boards
+            # as stale, which is engine behaviour, not a divergence).
+            analysis = analyze(snapshot, board, systems=(system,),
+                               adversaries=())
 
             n_compared += 1
             engine_played = bool(analysis.records)
