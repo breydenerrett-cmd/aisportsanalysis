@@ -91,6 +91,12 @@ class PaperBet:
     `stake_units` is always FLAT_1U here -- the field exists (rather than a
     bare constant) so a settled row's ledger entry is self-describing
     without a reader needing to import FLAT_1U to know what was risked.
+
+    `game_pk`, `subject_id` and `subject_kind` are None for every game-level
+    bet (h2h/spreads/totals/...) and are the only extra facts a PROP bet
+    needs: `settle_bet` uses their presence (`subject_kind is not None`) to
+    decide which of `src.board.settle.settle`'s two calling conventions
+    applies -- never a second settlement authority, just routing.
     """
 
     bet_id: str
@@ -102,6 +108,9 @@ class PaperBet:
     price_american: int
     settlement_rule: str
     stake_units: float = FLAT_1U
+    game_pk: Optional[int] = None
+    subject_id: object = None
+    subject_kind: Optional[str] = None
 
     def __post_init__(self) -> None:
         if self.stake_units != FLAT_1U:
@@ -136,10 +145,36 @@ class SettledBet:
         }
 
 
-def settle_bet(bet: PaperBet, result: GameResult) -> SettledBet:
-    """Settle one PaperBet against `result` via src.board.settle.settle --
-    never a second settlement authority."""
-    outcome = settle(bet.settlement_rule, bet.side, result, line=bet.line)
+def settle_bet(
+    bet: PaperBet,
+    result: Optional[GameResult] = None,
+    *,
+    box_row_resolver=None,
+) -> SettledBet:
+    """Settle one PaperBet via src.board.settle.settle -- never a second
+    settlement authority.
+
+    A game-level bet (`bet.subject_kind is None`) settles against `result`
+    exactly as before. A PROP bet (`bet.subject_kind` set) has no
+    GameResult to settle against at all -- it settles against a per-player
+    box row, found by `box_row_resolver` (e.g.
+    `src.pipeline.boxscores.box_row_resolver(rows)`) for
+    `(bet.game_pk, bet.subject_id, bet.subject_kind)`. A resolver that finds
+    no row is not an error: `settle()` passes `row=None` through to the prop
+    rule, which grades VOID.
+    """
+    if bet.subject_kind is not None:
+        selection = {"subject_id": bet.subject_id, "line": bet.line, "side": bet.side}
+        outcome = settle(
+            bet.settlement_rule,
+            bet.side,
+            selection=selection,
+            game_pk=bet.game_pk,
+            subject_kind=bet.subject_kind,
+            box_row_resolver=box_row_resolver,
+        )
+    else:
+        outcome = settle(bet.settlement_rule, bet.side, result, line=bet.line)
     if outcome == WIN:
         profit = american_to_profit(bet.stake_units, bet.price_american)
     elif outcome == LOSS:
@@ -215,10 +250,14 @@ class PaperAccount:
         })
         self.ledger.append(row)
 
-    def settle_and_record(self, bet: PaperBet, result: GameResult,
-                           day: str) -> SettledBet:
-        """Settle one bet and append it to this account's ledger."""
-        settled = settle_bet(bet, result)
+    def settle_and_record(self, bet: PaperBet, result: Optional[GameResult],
+                           day: str, *, box_row_resolver=None) -> SettledBet:
+        """Settle one bet and append it to this account's ledger.
+
+        `result` is a GameResult for game-level bets; pass None (with
+        `box_row_resolver` set) for a PROP bet -- see `settle_bet`.
+        """
+        settled = settle_bet(bet, result, box_row_resolver=box_row_resolver)
         self._record_settlement(settled, day)
         return settled
 
@@ -294,14 +333,16 @@ class PaperAccountBook:
         return self.accounts[system_id]
 
     def settle_and_record(self, system_id: str, bet: PaperBet,
-                           result: GameResult, day: str) -> SettledBet:
+                           result: Optional[GameResult], day: str,
+                           *, box_row_resolver=None) -> SettledBet:
         if bet.system_id != system_id:
             raise PaperAccountError(
                 f"bet.system_id={bet.system_id!r} does not match the "
                 f"account it was routed to ({system_id!r})"
             )
         account = self.account_for(system_id)
-        return account.settle_and_record(bet, result, day)
+        return account.settle_and_record(
+            bet, result, day, box_row_resolver=box_row_resolver)
 
     def close_day(self, day: str) -> list:
         return [account.close_day(day) for account in self.accounts.values()]
