@@ -1,0 +1,60 @@
+{
+  "_schema": "capture_families.v1",
+  "_note": "One entry per credit-spending family named in docs/planning/attack.md F13. measured=false means credits_per_event is NOT a known fact -- src.capture.budget.can_spend refuses to spend against it (PROBE_REQUIRED) until `python3 -m src.cli budget --probe <family>` records a real 1-credit measurement here. Never hand-edit credits_per_event to a guessed number; that is exactly the unmeasured-cost failure F13 names.",
+  "families": {
+    "featured": {
+      "measured": true,
+      "credits_per_event": 3,
+      "measured_utc": "2026-08-31T00:00:00Z",
+      "source": "src/pipeline/dense.py module docstring (\"Three markets in one region is 3 credits per capture\"); docs/COLLECTION_POLICY.md F13 cites this as the one already-measured figure."
+    },
+    "f5_trio": {
+      "measured": false,
+      "credits_per_event": null,
+      "measured_utc": null,
+      "source": "docs/COLLECTION_POLICY.md measures f5 h2h alone (5 books, 1 credit/event/snapshot) via dense.py's h2h_1st_5_innings piggyback, not the full h2h+spreads+totals trio this family names. Not the same measurement; do not reuse the h2h number here."
+    },
+    "alternates": {
+      "measured": true,
+      "credits_per_event": 1,
+      "measured_utc": "2026-08-31T00:00:00Z",
+      "source": "docs/COLLECTION_POLICY.md 24-credit probe (\"Alternate spreads/totals: 7 books, 130-160 outcome rows per event at 1 credit\")."
+    },
+    "team_totals": {
+      "measured": false,
+      "credits_per_event": null,
+      "measured_utc": null,
+      "source": "Not part of the 2026-08-31 probe; no measurement exists."
+    },
+    "pitcher_props": {
+      "measured": false,
+      "credits_per_event": null,
+      "measured_utc": null,
+      "source": "prop_listing.py measures LISTING feasibility (1 credit/event/slot, docs/PROBE_PROP_LISTING.md), not the price. prop_prices.py's own credits_last markers record actual fetch cost per run but have not been reduced to a single per-event figure here; treat as unmeasured until probed."
+    },
+    "batter_props": {
+      "measured": false,
+      "credits_per_event": null,
+      "measured_utc": null,
+      "source": "docs/planning/attack.md S17: zero history, no retroactive purchase path, never measured."
+    },
+    "prop_listing_feasibility": {
+      "measured": true,
+      "credits_per_event": 1,
+      "measured_utc": "2026-08-31T00:00:00Z",
+      "source": "docs/PROBE_PROP_LISTING.md / prop_listing.py: one billed fetch per slot, 1 credit each."
+    },
+    "weather": {
+      "measured": true,
+      "credits_per_event": 0,
+      "measured_utc": "2026-08-31T00:00:00Z",
+      "source": "src/pipeline/weather_capture.py: Open-Meteo and the MLB Stats API are both free, keyless endpoints -- 0 credits, always, by construction, not by measurement of a paid call."
+    },
+    "parlay_sgp": {
+      "measured": false,
+      "credits_per_event": null,
+      "measured_utc": null,
+      "source": "No parlay/SGP endpoint has been probed; existence on this provider is not even confirmed."
+    }
+  }
+}

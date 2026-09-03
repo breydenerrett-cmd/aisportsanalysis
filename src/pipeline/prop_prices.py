@@ -52,6 +52,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from src.paths import processed_path
+from src.capture import budget as budget_module
 from src.pipeline import creditlog
 from src.pipeline import prop_listing
 from src.pipeline import snapshots
@@ -129,6 +130,26 @@ def run(env=None, now=None, store=DEFAULT_STORE, provider=odds_provider,
         # or the listing audit gives up anything.
         report["skipped"] = "probe reserve"
         return report
+
+    # Budget guard (docs/planning/attack.md F13/S17). "pitcher_props" has no
+    # measured per-event cost in config/capture_families.json -- this layer
+    # predates the family cost table and already carries its own bounded
+    # caps (18/day, 400 total, both enforced above from the store's own
+    # marker rows), approved on 2026-08-31 under docs/COLLECTION_POLICY.md
+    # before F13 existed. PROBE_REQUIRED is therefore surfaced (printed,
+    # and recorded on the report) rather than treated as a hard stop here:
+    # this pre-existing, separately-capped layer keeps running under its
+    # own approval until a real probe measures it and the family enters the
+    # ~900/day envelope for real. A floor or envelope refusal, unlike
+    # PROBE_REQUIRED, DOES stop this run -- those are absolute, regardless
+    # of which layer is asking.
+    decision = budget_module.can_spend("pitcher_props", DAILY_CREDIT_CAP, remaining=remaining)
+    if not decision.allowed:
+        print(f"prop_prices.run: {decision.reason}")
+        report["budget_reason"] = decision.reason
+        if not decision.reason.startswith("PROBE_REQUIRED"):
+            report["skipped"] = decision.reason
+            return report
 
     try:
         listed = provider.list_events(env)  # free

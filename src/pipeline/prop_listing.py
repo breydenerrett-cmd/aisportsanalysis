@@ -53,6 +53,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from src.paths import processed_path
+from src.capture import budget as budget_module
 from src.pipeline import creditlog
 from src.pipeline import snapshots
 from src.providers import odds as odds_provider
@@ -170,6 +171,16 @@ def run(env=None, now=None, store=DEFAULT_STORE, provider=odds_provider,
         # Not the floor itself: the audit yields first, before any market is
         # dropped from baseline or the grid thins.
         report["skipped"] = "probe reserve"
+        return report
+
+    # Budget guard (docs/planning/attack.md F13/S17): "prop_listing_feasibility"
+    # is a measured family (1 credit/event/slot). Passes the `remaining` this
+    # call already read rather than re-reading credit_log.jsonl -- see
+    # dense.run's identical comment on why.
+    decision = budget_module.can_spend("prop_listing_feasibility", 1, remaining=remaining)
+    if not decision.allowed:
+        print(f"prop_listing.run: {decision.reason}")
+        report["skipped"] = decision.reason
         return report
 
     try:

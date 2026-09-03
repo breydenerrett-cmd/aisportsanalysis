@@ -40,6 +40,7 @@ from pathlib import Path
 import json
 
 from src.paths import processed_path
+from src.capture import budget as budget_module
 from src.pipeline import creditlog
 from src.pipeline import snapshots
 from src.providers import mlb
@@ -304,6 +305,17 @@ def run(env=None, captures=CAPTURES_PER_RUN, interval_minutes=INTERVAL_MINUTES,
     if remaining is not None and remaining <= credit_floor:
         return {"captures": 0, "skipped": "credit floor",
                 "credits_remaining": remaining, "floor": credit_floor}
+
+    # Budget guard (docs/planning/attack.md F13/S17): "featured" is the one
+    # already-measured family (3 credits/capture, all markets, one region).
+    # Passes the `remaining` this call already read rather than re-reading
+    # credit_log.jsonl, so a test's forward-store guard (creditlog writes
+    # fail silently under it) can never make this guard see stale data.
+    decision = budget_module.can_spend("featured", 3, remaining=remaining)
+    if not decision.allowed:
+        print(f"dense.run: {decision.reason}")
+        return {"captures": 0, "skipped": decision.reason,
+                "credits_remaining": remaining}
 
     clock = _clock(now)
     run_start = clock()

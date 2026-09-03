@@ -16,6 +16,8 @@ from pathlib import Path
 from src.core import calibration
 from src.data import parks
 from src.paths import processed_path, raw_path
+from src.capture import budget as budget_module
+from src.capture import cadence as cadence_module
 from src.pipeline import creditlog
 from src.pipeline import slate as slate_pipeline
 from src.providers import mlb
@@ -104,6 +106,56 @@ def cmd_credits(args) -> int:
         print(f"  latest logged balance    : {row.get('credits_remaining')} "
               f"remaining (used {row.get('credits_used_last')} last, via "
               f"{row.get('caller')}, at {row.get('utc')})")
+    return EXIT_OK
+
+
+def cmd_budget(args) -> int:
+    """Credit envelope status, or (--probe) a single measured probe."""
+    if getattr(args, "probe", None):
+        family = args.probe
+        print(f"budget --probe {family}: NOT executing a live probe from "
+              f"this command path in this build -- src.capture.budget."
+              f"probe_family exists but its per-family fetch is unwired "
+              f"(see that function's docstring). No credit spent.")
+        result = budget_module.probe_family(family)
+        print(f"  {result}")
+        return EXIT_ERROR if not result.get("probed") else EXIT_OK
+
+    status = budget_module.status()
+    print("credit budget\n")
+    print(f"  monthly allotment        : {status['monthly_allotment']} "
+          f"(tier fact, src/providers/odds.py PRICING_TIERS)")
+    print(f"  assumed reset            : {status['quota_reset_utc']} "
+          f"({status['days_until_reset']} days; {status['reset_cycle_days']}-day "
+          f"cycle assumption, not a verified billing date)")
+    print(f"  daily envelope           : {status['daily_envelope']}")
+    print(f"  credit floor             : {status['credit_floor']}")
+    print(f"  remaining today          : {status['remaining_today']}")
+    print(f"  spent today              : {status['spent_today']}")
+    print(f"  envelope remaining today : {status['envelope_remaining_today']}")
+    print(f"  drop order (v{status['drop_order_version']}, first-dropped -> "
+          f"last-dropped): {', '.join(status['drop_order'])}")
+    print(f"  non-droppable floor      : {status['non_droppable_family']}")
+    print("\n  per-family measured cost")
+    for name, info in sorted(status["families"].items()):
+        if info["measured"]:
+            print(f"    {name:26s} measured  {info['credits_per_event']} "
+                  f"credit(s)/event  (as of {info['measured_utc']})")
+        else:
+            print(f"    {name:26s} PROBE_REQUIRED -- unmeasured")
+    return EXIT_OK
+
+
+def cmd_cadence(args) -> int:
+    """Cadence SLO: attempted/succeeded/longest gap/p95 gap per source."""
+    date_str = args.date or datetime.now(timezone.utc).date().isoformat()
+    result = cadence_module.write(date_str)
+    print(f"cadence SLO for {date_str} ({result['written']} rows written to "
+          f"{cadence_module.DEFAULT_SLO_STORE})\n")
+    for name, slo in result["sources"].items():
+        print(f"  {name:22s} attempted={slo['attempted']:3d}  "
+              f"longest_gap_s={slo['longest_gap_seconds']}  "
+              f"p95_gap_s={slo['p95_gap_seconds']}  grade={slo['grade']}")
     return EXIT_OK
 
 
@@ -1955,6 +2007,20 @@ def build_parser() -> argparse.ArgumentParser:
              "for every class at/above the measurable-event floor; classes "
              "below it print 'below floor' and are never read")
 
+    budget_cmd = sub.add_parser(
+        "budget", help="credit envelope status (allotment, reset, spend, "
+                       "per-family measured cost, drop order)")
+    budget_cmd.add_argument(
+        "--probe", default=None, metavar="FAMILY",
+        help="perform exactly ONE 1-credit measured probe of FAMILY (real "
+             "API call; only runs when explicitly invoked)")
+
+    cadence_cmd = sub.add_parser(
+        "cadence", help="cadence SLO from the stores' own poll timestamps "
+                        "(attempted/succeeded/longest gap/p95 gap per day)")
+    cadence_cmd.add_argument("--date", default=None,
+                             help="YYYY-MM-DD (defaults to today, UTC)")
+
     health_cmd = sub.add_parser("health", help="slate data-quality health "
                                                "report (read-only; non-zero "
                                                "exit on anomalies)")
@@ -1992,6 +2058,8 @@ COMMANDS = {
     "watch": cmd_watch,
     "timing": cmd_timing,
     "calibration-demo": cmd_calibration_demo,
+    "budget": cmd_budget,
+    "cadence": cmd_cadence,
 }
 
 

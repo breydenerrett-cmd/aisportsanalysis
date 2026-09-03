@@ -55,6 +55,7 @@ import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from src.capture import budget as budget_module
 from src.data import parks as parks_provider
 from src.paths import processed_path
 from src.pipeline import snapshots
@@ -90,6 +91,18 @@ def run(env=None, now=None, store=DEFAULT_STORE, mlb=mlb_provider,
     clock_now = _now(now)
     report = {"observed_utc": _utc_iso(clock_now), "games": 0, "rows": 0,
               "errors": []}
+
+    # Budget guard (docs/planning/attack.md F13), for signature symmetry
+    # with dense/prop_listing/prop_prices only: this call spends 0 credits,
+    # so `can_spend` never gates it on the floor or the envelope -- see that
+    # function's zero-credit short-circuit. It exists here purely so
+    # "weather" stays a family this module is honest about, not because
+    # this capture can ever actually be refused.
+    decision = budget_module.can_spend("weather", 0)
+    if not decision.allowed:
+        print(f"weather_capture.run: {decision.reason}")
+        report["skipped"] = decision.reason
+        return report
 
     games = []
     for offset in (0, 1):
