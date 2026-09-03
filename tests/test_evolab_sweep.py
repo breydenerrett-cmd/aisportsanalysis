@@ -428,6 +428,24 @@ class TestArtifactStamping(unittest.TestCase):
             # every world id is unique -- no seed collision across replicates
             self.assertEqual(len(set(d["placebo_world_ids"][gid])), 5)
 
+    def test_report_carries_timings_for_every_stage(self):
+        stages = {rec["stage"] for rec in self.report.to_dict()["timings"]}
+        self.assertEqual(
+            stages, {"load", "masks", "evaluate", "placebo_worlds", "ceiling"})
+
+    def test_write_refuses_an_artifact_with_no_timings(self):
+        import dataclasses
+        from src.core.timing import TimingError
+        stripped = dataclasses.replace(self.report, timings=())
+        with tempfile.TemporaryDirectory() as tmp:
+            cwd = os.getcwd()
+            os.chdir(tmp)
+            try:
+                with self.assertRaises(TimingError):
+                    stripped.write()
+            finally:
+                os.chdir(cwd)
+
     def test_manifest_object_with_to_dict_is_normalised(self):
         class FakeManifest:
             def to_dict(self):
@@ -469,7 +487,18 @@ class TestArtifactStamping(unittest.TestCase):
                     os.path.join(tmp, "data", "research", "evolab")))
                 with open(path, encoding="utf-8") as fh:
                     on_disk = json.load(fh)
-                self.assertEqual(on_disk, json.loads(self.report.canonical_json()))
+                # canonical_json() deliberately excludes 'timings' (varies
+                # run to run, not decision content -- see its docstring);
+                # the on-disk artifact carries it (require_timings enforces
+                # that at write() time), so compare everything else and check
+                # timings separately.
+                on_disk_content = dict(on_disk)
+                on_disk_timings = on_disk_content.pop("timings")
+                self.assertEqual(on_disk_content,
+                                 json.loads(self.report.canonical_json()))
+                self.assertTrue(on_disk_timings,
+                                "write() must not persist an artifact with "
+                                "no timing stages")
                 # re-running and re-writing is idempotent: same bytes, same path
                 second_path = self.report.write()
                 self.assertEqual(path, second_path)

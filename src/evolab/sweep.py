@@ -88,6 +88,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Callable, Mapping, Sequence
 
 from src.core import odds as odds_math
+from src.core.timing import TimingCollector, require_timings, stage
 from src.evolab import ceiling, cscv, genome as genome_mod, placebo, spa
 from src.evolab.bitsets import build_signal_mask_table, count_bits, \
     iter_set_bits, universe_mask
@@ -501,6 +502,12 @@ class SweepReport:
     spa_cross_check_explanation: str
     config: dict
     warnings: tuple = field(default_factory=tuple)
+    # Per-stage wall/CPU/RSS, map-compute-scale.md section 1: the "51 ms"
+    # design estimate was never measured because nothing recorded it.
+    # Default () rather than None so a report built by old test code that
+    # forgot to pass timings fails loudly at write() (require_timings),
+    # instead of writing a schema-valid artifact with a null hole in it.
+    timings: tuple = field(default_factory=tuple)
 
     @property
     def is_kill(self) -> bool:
@@ -534,14 +541,27 @@ class SweepReport:
                                 "explanation": self.spa_cross_check_explanation},
             "config": self.config,
             "warnings": list(self.warnings),
+            "timings": list(self.timings),
         }
 
     def canonical_json(self) -> str:
         """Sorted-key, no-whitespace-slack JSON -- what determinism is hashed
         against. `default=str` handles the rare non-JSON-native value (e.g. an
         infinite placebo maximum for a world where nothing cleared the gate)
-        without ever silently coercing it to a number."""
-        return json.dumps(self.to_dict(), sort_keys=True,
+        without ever silently coercing it to a number.
+
+        `timings` is excluded from what gets hashed: wall/CPU seconds and
+        peak RSS vary run to run on identical inputs (machine load, GC
+        timing) by construction -- they are not part of the search result,
+        and hashing them would make `content_hash()` fail to recognize two
+        runs of the identical sweep as identical, defeating the exact
+        property this method exists to check (see the determinism tests in
+        tests/test_evolab_sweep.py). Timings still ship in the written
+        artifact (`to_dict()`/`write()`); they are just not decision content.
+        """
+        payload = self.to_dict()
+        payload.pop("timings", None)
+        return json.dumps(payload, sort_keys=True,
                           separators=(",", ":"), default=str)
 
     def content_hash(self) -> str:
@@ -555,7 +575,19 @@ class SweepReport:
         The filename is content-addressed (spec hash, real world id), never a
         timestamp, so a re-run with identical inputs overwrites the same path
         with identical bytes rather than accumulating copies.
+
+        `require_timings` runs before any byte reaches disk (map-compute-
+        scale.md section 1: the Phase 2B artifact that shipped with no
+        timing field at all is exactly what this guard now prevents from
+        happening again).
         """
+        payload = self.to_dict()
+        # Validated BEFORE the 'write' stage below is appended: this must
+        # fail on a report that never measured its own computation, not be
+        # rescued by the write() call's own timing of itself -- the whole
+        # point is that upstream stages were measured, not merely that
+        # SOME timing record exists on disk.
+        require_timings(payload)
         root = os.path.normpath(os.path.join(os.getcwd(), ARTIFACT_ROOT))
         resolved = os.path.normpath(os.path.join(os.getcwd(), out_dir))
         if resolved != root and not resolved.startswith(root + os.sep):
@@ -566,9 +598,24 @@ class SweepReport:
         os.makedirs(resolved, exist_ok=True)
         name = f"sweep-{self.enumeration_spec_hash[:16]}-{self.real_world_id}.json"
         path = os.path.join(resolved, name)
+        # The "write" stage covers JSON serialization (the dominant cost for
+        # a multi-hundred-KB report) -- the namespace checks above are
+        # validation, not the write this stage measures. Appended into the
+        # payload's own 'timings' list, so the artifact ships a record of its
+        # own write cost (necessarily approximate: the record itself cannot
+        # time the one extra bytes-on-the-wire re-serialization needed to
+        # embed the record).
+        write_timings = TimingCollector()
+        with stage("write", collector=write_timings, rows=1):
+            body = json.dumps(payload, sort_keys=True, indent=2, default=str) + "\n"
+        payload["timings"] = list(payload["timings"]) + write_timings.to_list()
+        # Re-serialize once more so the on-disk artifact's own 'timings' list
+        # includes the 'write' stage just measured -- the file byte count
+        # therefore reflects one extra stage record versus `body` above, an
+        # accepted, tiny (one JSON object) discrepancy rather than under- or
+        # over-reporting the write stage's own cost.
         with open(path, "w", encoding="utf-8") as fh:
-            fh.write(json.dumps(self.to_dict(), sort_keys=True, indent=2,
-                                default=str))
+            fh.write(json.dumps(payload, sort_keys=True, indent=2, default=str))
             fh.write("\n")
         return path
 
@@ -644,26 +691,35 @@ def run_sweep(replay_provider: ReplayProvider, *,
     if min_worlds is None:
         min_worlds = replicates
 
-    feed = replay_provider()
-    if not isinstance(feed, ReplayFeed):
-        raise SweepError(
-            f"replay_provider() must return a sweep.ReplayFeed, got "
-            f"{type(feed).__name__}")
-    real_world = feed.world
-    manifest = _manifest_to_dict(feed.manifest)
+    # map-compute-scale.md section 1: this collector is the sweep's own
+    # wall/CPU/RSS harness -- the thing that turns "51 ms" from a design
+    # estimate into a persisted, per-stage measurement on every real run.
+    timings = TimingCollector()
 
-    genomes = genome_mod.enumerate_genomes(
-        registry, eligibility=eligibility, routings=routings,
-        execution=execution, max_signals=max_signals,
-        weight_vectors=weight_vectors)
-    spec = genome_mod.enumeration_spec(
-        registry, eligibility=eligibility, routings=routings,
-        execution=execution, max_signals=max_signals,
-        weight_vectors=weight_vectors)
-    spec_hash = genome_mod.spec_hash(spec)
+    with stage("load", collector=timings):
+        feed = replay_provider()
+        if not isinstance(feed, ReplayFeed):
+            raise SweepError(
+                f"replay_provider() must return a sweep.ReplayFeed, got "
+                f"{type(feed).__name__}")
+        real_world = feed.world
+        manifest = _manifest_to_dict(feed.manifest)
 
-    real_fitness = sweep_world(real_world, genomes, registry,
-                               n_blocks=n_blocks, min_selections=min_selections)
+    with stage("masks", collector=timings, rows=real_world.n_games):
+        genomes = genome_mod.enumerate_genomes(
+            registry, eligibility=eligibility, routings=routings,
+            execution=execution, max_signals=max_signals,
+            weight_vectors=weight_vectors)
+        spec = genome_mod.enumeration_spec(
+            registry, eligibility=eligibility, routings=routings,
+            execution=execution, max_signals=max_signals,
+            weight_vectors=weight_vectors)
+        spec_hash = genome_mod.spec_hash(spec)
+
+    with stage("evaluate", collector=timings, rows=real_world.n_games,
+              decisions=len(genomes) * real_world.n_games):
+        real_fitness = sweep_world(real_world, genomes, registry,
+                                   n_blocks=n_blocks, min_selections=min_selections)
     real_totals = real_fitness.totals(primary_fitness)
     if not real_totals:
         raise SweepError(
@@ -675,89 +731,93 @@ def run_sweep(replay_provider: ReplayProvider, *,
     warnings: list = []
     placebo_world_ids, placebo_seeds = {}, {}
     placebo_maxima, placebo_n_strategies = {}, {}
+    n_placebo_worlds = len(generator_ids) * replicates
 
-    for gid in generator_ids:
-        ids, seeds, maxima, n_strats = [], [], [], []
-        for world in placebo.placebo_suite(
-                real_world, replicates=replicates, base_seed=base_seed,
-                generator_ids=(gid,)):
-            fit = sweep_world(world, genomes, registry, n_blocks=n_blocks,
-                              min_selections=min_selections)
-            ids.append(world.world_id)
-            seeds.append(world.seed)
-            n_strats.append(fit.n_strategies)
-            fit_totals = fit.totals(primary_fitness)
-            if fit_totals:
-                _, pmax = ceiling.search_maximum(fit_totals)
-            else:
-                pmax = float("-inf")
+    with stage("placebo_worlds", collector=timings, rows=n_placebo_worlds,
+              decisions=len(genomes) * n_placebo_worlds):
+        for gid in generator_ids:
+            ids, seeds, maxima, n_strats = [], [], [], []
+            for world in placebo.placebo_suite(
+                    real_world, replicates=replicates, base_seed=base_seed,
+                    generator_ids=(gid,)):
+                fit = sweep_world(world, genomes, registry, n_blocks=n_blocks,
+                                  min_selections=min_selections)
+                ids.append(world.world_id)
+                seeds.append(world.seed)
+                n_strats.append(fit.n_strategies)
+                fit_totals = fit.totals(primary_fitness)
+                if fit_totals:
+                    _, pmax = ceiling.search_maximum(fit_totals)
+                else:
+                    pmax = float("-inf")
+                    warnings.append(
+                        f"{world.world_id}: no strategy cleared min_selections on "
+                        "this placebo world; recorded as -inf, which can only "
+                        "make the ceiling easier to clear, never harder, and is "
+                        "reported rather than silently dropped")
+                maxima.append(pmax)
+                if fit.n_strategies != real_fitness.n_strategies:
+                    warnings.append(
+                        f"{world.world_id}: {fit.n_strategies} strategies cleared "
+                        f"the gate here vs {real_fitness.n_strategies} on the real "
+                        "world; the ceiling is only a ceiling when the same "
+                        "search ran on both sides")
+            placebo_world_ids[gid] = tuple(ids)
+            placebo_seeds[gid] = tuple(seeds)
+            placebo_maxima[gid] = tuple(maxima)
+            placebo_n_strategies[gid] = tuple(n_strats)
+            if maxima and all(v == real_max for v in maxima):
+                # A generator whose EVERY replicate reproduces the real maximum
+                # exactly cannot be a null for whatever fitness the search
+                # maximised -- it changed nothing that fitness depends on. This is
+                # a real, measured property: under `primary_fitness='movement'`,
+                # P1 and P5 permute only `home_won`, and market-relative movement
+                # (design section 6) is computed from `home_fair`/
+                # `home_fair_close`/features alone, none of which either
+                # generator touches. It is reported rather than hidden or
+                # silently excluded -- see docs/EVOLAB_DESIGN.md section 7 and
+                # the sweep module docstring's discussion of which generators
+                # discriminate which fitness.
                 warnings.append(
-                    f"{world.world_id}: no strategy cleared min_selections on "
-                    "this placebo world; recorded as -inf, which can only "
-                    "make the ceiling easier to clear, never harder, and is "
-                    "reported rather than silently dropped")
-            maxima.append(pmax)
-            if fit.n_strategies != real_fitness.n_strategies:
-                warnings.append(
-                    f"{world.world_id}: {fit.n_strategies} strategies cleared "
-                    f"the gate here vs {real_fitness.n_strategies} on the real "
-                    "world; the ceiling is only a ceiling when the same "
-                    "search ran on both sides")
-        placebo_world_ids[gid] = tuple(ids)
-        placebo_seeds[gid] = tuple(seeds)
-        placebo_maxima[gid] = tuple(maxima)
-        placebo_n_strategies[gid] = tuple(n_strats)
-        if maxima and all(v == real_max for v in maxima):
-            # A generator whose EVERY replicate reproduces the real maximum
-            # exactly cannot be a null for whatever fitness the search
-            # maximised -- it changed nothing that fitness depends on. This is
-            # a real, measured property: under `primary_fitness='movement'`,
-            # P1 and P5 permute only `home_won`, and market-relative movement
-            # (design section 6) is computed from `home_fair`/
-            # `home_fair_close`/features alone, none of which either
-            # generator touches. It is reported rather than hidden or
-            # silently excluded -- see docs/EVOLAB_DESIGN.md section 7 and
-            # the sweep module docstring's discussion of which generators
-            # discriminate which fitness.
-            warnings.append(
-                f"{gid}: every placebo maximum under this generator exactly "
-                f"equals the real {primary_fitness} maximum; {gid} changed "
-                f"nothing the {primary_fitness} fitness depends on and is "
-                "structurally uninformative here -- its 'does not clear' "
-                "verdict is a tie, not evidence of a ceiling")
+                    f"{gid}: every placebo maximum under this generator exactly "
+                    f"equals the real {primary_fitness} maximum; {gid} changed "
+                    f"nothing the {primary_fitness} fitness depends on and is "
+                    "structurally uninformative here -- its 'does not clear' "
+                    "verdict is a tie, not evidence of a ceiling")
 
-    ceiling_maxima = {gid: placebo_maxima[gid] for gid in ceiling_generator_ids}
-    report_ceiling = ceiling.ceiling_report(
-        real_max, ceiling_maxima, real_champion=real_champion,
-        threshold_pct=threshold_pct, min_worlds=min_worlds,
-        min_generators=min_generators)
+    with stage("ceiling", collector=timings):
+        ceiling_maxima = {gid: placebo_maxima[gid] for gid in ceiling_generator_ids}
+        report_ceiling = ceiling.ceiling_report(
+            real_max, ceiling_maxima, real_champion=real_champion,
+            threshold_pct=threshold_pct, min_worlds=min_worlds,
+            min_generators=min_generators)
 
-    p4_dispersion = None
-    for excluded in CEILING_EXCLUDED_GENERATORS:
-        if excluded not in placebo_maxima:
-            continue
-        finite = [v for v in placebo_maxima[excluded] if v != float("-inf")]
-        if not finite:
-            continue
-        p4_dispersion = {
-            "generator": excluded,
-            "n_worlds": len(finite),
-            "min": min(finite), "median": _median(finite), "max": max(finite),
-            "real_max": real_max,
-            "note": (f"{excluded} is a dispersion diagnostic, not a null "
-                    "(design section 7); excluded from the ceiling and the "
-                    "kill criterion."),
-        }
+        p4_dispersion = None
+        for excluded in CEILING_EXCLUDED_GENERATORS:
+            if excluded not in placebo_maxima:
+                continue
+            finite = [v for v in placebo_maxima[excluded] if v != float("-inf")]
+            if not finite:
+                continue
+            p4_dispersion = {
+                "generator": excluded,
+                "n_worlds": len(finite),
+                "min": min(finite), "median": _median(finite), "max": max(finite),
+                "real_max": real_max,
+                "note": (f"{excluded} is a dispersion diagnostic, not a null "
+                        "(design section 7); excluded from the ceiling and the "
+                        "kill criterion."),
+            }
 
-    cscv_result = cscv.cscv(real_fitness.movement_table)
+        cscv_result = cscv.cscv(real_fitness.movement_table)
 
-    day_series = _movement_series_by_day(real_world, real_fitness.masks)
-    spa_result = spa.spa_test(day_series, seed=spa_seed,
-                              block_length=spa_block_length,
-                              n_bootstrap=spa_n_bootstrap)
-    spa_status, spa_explanation = spa.cross_check(
-        spa_result,
-        clears_ceiling=(report_ceiling.verdict == ceiling.CLEARS_PLACEBO_CEILING))
+        day_series = _movement_series_by_day(real_world, real_fitness.masks)
+        spa_result = spa.spa_test(day_series, seed=spa_seed,
+                                  block_length=spa_block_length,
+                                  n_bootstrap=spa_n_bootstrap)
+        spa_status, spa_explanation = spa.cross_check(
+            spa_result,
+            clears_ceiling=(report_ceiling.verdict == ceiling.CLEARS_PLACEBO_CEILING))
 
     config = {
         "n_blocks": n_blocks, "min_selections": min_selections,
@@ -797,4 +857,5 @@ def run_sweep(replay_provider: ReplayProvider, *,
         spa_cross_check_explanation=spa_explanation,
         config=config,
         warnings=tuple(warnings),
+        timings=tuple(timings.to_list()),
     )

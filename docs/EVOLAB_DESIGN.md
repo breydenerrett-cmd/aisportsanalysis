@@ -470,8 +470,26 @@ rationalisations of a sunk plan:
    how much apparent edge our search manufactures from nothing is a permanent
    instrument that every future family gets measured against, whatever it says
    about this one.
-3. It is nearly free. 11,088 genomes sweep in 51 ms; fifty placebo worlds cost
-   minutes. There is no scenario where the compute is the reason not to look.
+3. It is nearly free. ~~11,088 genomes sweep in 51 ms; fifty placebo worlds
+   cost minutes.~~ **CORRECTION (2026-09-03):** that figure was a design-time
+   estimate, never measured, and no run before this date recorded a
+   wall-clock at all (`docs/planning/map-compute-scale.md` section 1) --
+   including the Phase 2B run that shipped the project's headline verdict,
+   whose actual timing is now permanently unrecoverable. `src/core/timing.py`
+   now instruments every stage of every sweep; a REDUCED sweep run this
+   session against the real 2023 matchup matrix and odds history (2,406
+   games, 1,336 strategies cleared the gate, `max_signals=2`, 3 placebo
+   replicates/generator) measured: load 0.05ms, masks 61ms, evaluate 317ms
+   (3.29M decisions, ~10.4M decisions/s), 18 placebo worlds 5.92s, ceiling
+   1.23s -- **real-world sweep ~0.38s, full run (real + 18 placebo worlds)
+   ~7.5s wall-clock**, universe build (replay.py, a separate one-time cost
+   not counted in the sweep itself) 3.19s. The general claim survives --
+   compute is not the bottleneck at this scale -- but "51 ms" specifically
+   was never true of any run that produced evidence; the placebo-world loop,
+   not the bitset arithmetic, dominates wall-clock (map-compute-scale.md
+   section 2a's bitset engine is exactly as fast as claimed; what was never
+   separately measured was the *number of worlds* run through it). There is
+   no scenario where the compute is the reason not to look.
 
 **What would change my mind mid-flight:** if the real sweep's maximum sits far
 inside the placebo distribution AND the per-block fitness table shows no

@@ -64,9 +64,11 @@ correction downstream.
 from __future__ import annotations
 
 import json
+from contextlib import nullcontext as _null_stage
 from datetime import datetime, timezone
 from pathlib import Path
 
+from src.core.timing import stage
 from src.data import parks
 from src.model import discovery
 from src.model import family
@@ -436,7 +438,8 @@ def _measure(rows):
 
 def run(specs, seasons=DISCOVERY_SEASONS, *, family_path=None,
         matrix_rows=None, price_pairs=None, results=None, started="",
-        finished="", notes="", scoreboard_path=scoreboard.DEFAULT_STORE) -> list:
+        finished="", notes="", scoreboard_path=scoreboard.DEFAULT_STORE,
+        timings=None) -> list:
     """Run every spec through the funnel; one result row per spec, spec order.
 
     seasons is (screen, replication) and must be the discovery pair -- the
@@ -448,6 +451,11 @@ def run(specs, seasons=DISCOVERY_SEASONS, *, family_path=None,
     module never invents one (the scoreboard docstring owns that rule).
     `scoreboard_path=None` skips recording.
 
+    `timings`, if a `src.core.timing.TimingCollector`, records a "run" stage
+    spanning this whole call (store loads plus the per-spec funnel) --
+    additive bookkeeping only, per map-compute-scale.md section 1; omitted,
+    nothing about the returned rows changes.
+
     Row: {name, status, level_reached, n_2023, effect_2023, n_pooled,
     effect_pooled, p_pooled, q_pass, battery_fatal, notes} plus the FDR
     bookkeeping (p_fdr, fdr_family_size, fdr_threshold) and per-level extras.
@@ -455,6 +463,17 @@ def run(specs, seasons=DISCOVERY_SEASONS, *, family_path=None,
     spec can carry q_pass=True and stay dead, because the battery and the
     correction answer different questions.
     """
+    run_ctx = stage("run", collector=timings) if timings is not None \
+        else _null_stage()
+    with run_ctx:
+        return _run(specs, seasons, family_path=family_path,
+                   matrix_rows=matrix_rows, price_pairs=price_pairs,
+                   results=results, started=started, finished=finished,
+                   notes=notes, scoreboard_path=scoreboard_path)
+
+
+def _run(specs, seasons, *, family_path, matrix_rows, price_pairs, results,
+         started, finished, notes, scoreboard_path) -> list:
     validated = _validated_family(specs)
 
     # Pre-registration is enforced at run time, not merely offered: the specs
