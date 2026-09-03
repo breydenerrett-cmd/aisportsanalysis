@@ -1,0 +1,462 @@
+"""Tests for src.factory.scorecard: build_fitness / build_scorecard.
+
+The central claim under test, per the task: assembling a real Fitness from
+genuine inputs must (a) never let bankroll alone promote a system -- even a
+system with a great ROI and literally nothing else measured -- and (b) mark
+every component it cannot compute as explicitly ABSENT with a reason, never
+silently defaulted to a passing value.
+"""
+
+from __future__ import annotations
+
+import unittest
+
+from src.accounts.paper import PaperBet, settle_bet
+from src.board.settle import GameResult
+from src.factory.fitness import promotion_verdict
+from src.factory.scorecard import (
+    NEUTRAL_BRIER,
+    NEUTRAL_LOGLOSS,
+    ScorecardError,
+    build_fitness,
+    build_scorecard,
+    compute_clv_stats,
+    compute_realized_stats,
+    decision_key_for,
+    falsification_from_battery,
+    multiplicity_from_funnel_family,
+)
+from src.ledger.records import DecisionRecord, ReviewRecord
+from src.research import battery as battery_module
+
+
+# ---------------------------------------------------------------------------
+# Fixture builders
+# ---------------------------------------------------------------------------
+
+def _win_bet(bet_id, price_american=-110, stake=1.0):
+    bet = PaperBet(bet_id=bet_id, system_id="sys-1", market_key="h2h",
+                    selection_id="home", side="home", line=None,
+                    price_american=price_american, settlement_rule="h2h")
+    return settle_bet(bet, GameResult(home_runs=5, away_runs=2))
+
+
+def _loss_bet(bet_id, price_american=-110, stake=1.0):
+    bet = PaperBet(bet_id=bet_id, system_id="sys-1", market_key="h2h",
+                    selection_id="home", side="home", line=None,
+                    price_american=price_american, settlement_rule="h2h")
+    return settle_bet(bet, GameResult(home_runs=1, away_runs=6))
+
+
+def _decision(day, *, event_id="evt-x", edge_bps=200, p_model=0.6,
+              verdict="play", price_american=-110, known_at_grade="A",
+              point_class="LATE_BOARD"):
+    return DecisionRecord(
+        engine_version="v1", system_id="sys-1", system_version="1.0.0",
+        registry_fingerprint="fp1", frame_fingerprint=None,
+        snapshot_fingerprint="snap1", game_pk=1, event_id=event_id,
+        decision_utc=f"{day}T18:00:00Z", point_class=point_class,
+        information_time=f"{day}T17:55:00Z",
+        recorded_utc=f"{day}T18:00:01Z", verdict=verdict,
+        selection_id="home" if verdict == "play" else None,
+        market_key="h2h" if verdict == "play" else None,
+        line=None, book="book_a" if verdict == "play" else None,
+        price_american=price_american if verdict == "play" else None,
+        consensus_fair=0.5, books_at_decision=5, friction=None,
+        p_model=p_model, p_model_interval=None, edge_bps=edge_bps,
+        price_improvement_bps=None, rating=None, thesis="thesis note",
+        evidence=["evidence note"], counterarguments=[],
+        supporting_systems=[], refusal_reason=None
+        if verdict == "play" else "refused_thin",
+        assumption_exposure={}, stake_units=1.0 if verdict == "play" else 0.0,
+        known_at_grade=known_at_grade,
+    )
+
+
+def _review(decision, *, settled="win", close_price=None):
+    return ReviewRecord(
+        decision_key=decision_key_for(decision),
+        review_utc=decision.decision_utc, settled=settled,
+        thesis_outcome="UNTESTED", mechanism_checks=(),
+        market_path={} if close_price is None else {"close_price": close_price},
+        late_information=(), missed_information=(), lineup_delta={},
+        bullpen_delta={}, counterargument_realized=(), variance_flag=False,
+        system_action="none", new_hypothesis=None,
+    )
+
+
+FAVORABLE_RESEARCH = {
+    "robustness": {"cscv_pbo": 0.2, "spa_p": 0.3, "placebo_percentile": 95.0,
+                   "stable_across_splits": True},
+    "forward_survival": {"out_of_sample": True, "within_sealed_epochs": True},
+    "price_resilience": {"survives_worst_book": True, "survives_shrink": True,
+                          "shrink_fraction": 0.25},
+    "multiplicity": {"effective_tests": 5, "raw_tests": 20,
+                      "total_searched_at_verdict": 30,
+                      "multiplicity_charge": 0.01},
+}
+
+
+def _real_passing_battery():
+    """A genuine call into src.research.battery.run() -- not a stub -- with a
+    minimal, clearly-positive, unclustered sample so every optional check is
+    skipped (no team/season/book/price keys) and only the baseline runs."""
+    rows = [{"date": f"2026-{(i % 12) + 1:02d}-{(i % 27) + 1:02d}",
+             "won": i % 5 != 0, "implied": 0.5} for i in range(40)]
+    return battery_module.run(rows, effect_floor=0.01)
+
+
+# ---------------------------------------------------------------------------
+# compute_realized_stats
+# ---------------------------------------------------------------------------
+
+class RealizedStatsTests(unittest.TestCase):
+    def test_empty_bets_are_real_zeros_not_fabricated(self):
+        stats = compute_realized_stats([])
+        self.assertEqual(stats.n_settled, 0)
+        self.assertEqual(stats.roi_units, 0.0)
+        self.assertEqual(stats.drawdown_max, 0.0)
+        self.assertIsNone(stats.hit_rate)
+        self.assertIsNone(stats.avg_odds_decimal)
+        self.assertIsNone(stats.volatility)
+
+    def test_known_bets_produce_exact_bankroll_arithmetic(self):
+        win = _win_bet("b1", price_american=-110)  # profit +0.90909...
+        loss = _loss_bet("b2", price_american=-110)  # profit -1.0
+        stats = compute_realized_stats([win, loss], starting_bankroll=1000.0)
+        self.assertEqual(stats.n_wins, 1)
+        self.assertEqual(stats.n_losses, 1)
+        self.assertAlmostEqual(stats.hit_rate, 0.5)
+        self.assertAlmostEqual(stats.total_staked_units, 2.0)
+        self.assertAlmostEqual(
+            stats.total_profit_units,
+            win.profit_units + loss.profit_units)
+        self.assertAlmostEqual(stats.bankroll,
+                               1000.0 + win.profit_units + loss.profit_units)
+        # peak after the win, drawdown is peak - bankroll after the loss
+        expected_peak = 1000.0 + win.profit_units
+        expected_drawdown = expected_peak - stats.bankroll
+        self.assertAlmostEqual(stats.peak, expected_peak)
+        self.assertAlmostEqual(stats.drawdown_max, expected_drawdown)
+
+    def test_volatility_is_stdev_of_per_bet_returns(self):
+        import statistics
+        win = _win_bet("b1", price_american=-110)
+        loss = _loss_bet("b2", price_american=-110)
+        stats = compute_realized_stats([win, loss])
+        returns = [win.profit_units / 1.0, loss.profit_units / 1.0]
+        self.assertAlmostEqual(stats.volatility, statistics.stdev(returns))
+
+    def test_single_bet_has_no_volatility(self):
+        stats = compute_realized_stats([_win_bet("b1")])
+        self.assertIsNone(stats.volatility)
+
+    def test_push_and_void_excluded_from_stake_exposure_and_returns(self):
+        bet = PaperBet(bet_id="b3", system_id="sys-1", market_key="totals",
+                        selection_id="over", side="over", line="8.5",
+                        price_american=-110, settlement_rule="totals")
+        # A push settlement rule/result combination -- reuse GameResult with
+        # an exact total match is settlement-rule specific; instead assert
+        # directly on the accounting path via a hand-built SettledBet-shaped
+        # win instead, and separately confirm PUSH/VOID never enters
+        # total_staked_units through the public accounting reused from
+        # PaperAccount._record_settlement's own documented behavior.
+        from src.accounts.paper import SettledBet
+        from src.board.settle import PUSH
+        pushed = SettledBet(bet=bet, outcome=PUSH, profit_units=0.0)
+        stats = compute_realized_stats([pushed])
+        self.assertEqual(stats.total_staked_units, 0.0)
+        self.assertEqual(stats.per_bet_returns, ())
+        self.assertEqual(stats.n_pushes, 1)
+
+
+# ---------------------------------------------------------------------------
+# build_fitness -- the bankroll-only refusal (the task's required test)
+# ---------------------------------------------------------------------------
+
+class BankrollOnlyRefusalTests(unittest.TestCase):
+    def test_great_roi_and_nothing_else_is_refused(self):
+        """A system with excellent bankroll performance and NO decisions,
+        NO reviews, and NO research artifact must still be refused --
+        promotion_verdict's bankroll-only rule must hold even when every
+        other component is genuinely absent, not merely unfavorable."""
+        wins = [_win_bet(f"w{i}") for i in range(20)]
+        assembly = build_fitness("sys-1", wins, [], [], None)
+
+        self.assertGreater(assembly.fitness.bankroll.realized_roi, 0.0)
+        self.assertTrue(assembly.fitness.bankroll.bankroll_positive)
+
+        verdict = promotion_verdict(assembly.fitness)
+        self.assertFalse(verdict.promote)
+        self.assertEqual(verdict.positive_components, ("bankroll",))
+        self.assertTrue(any("bankroll alone" in r for r in verdict.reasons))
+
+    def test_every_non_bankroll_component_is_recorded_absent(self):
+        wins = [_win_bet(f"w{i}") for i in range(5)]
+        assembly = build_fitness("sys-1", wins, [], [], None)
+        reasons = assembly.absent_reasons()
+        for expected in ("robustness", "falsification", "multiplicity",
+                         "forward_survival.out_of_sample/within_sealed_epochs",
+                         "price_resilience"):
+            self.assertIn(expected, reasons)
+            self.assertTrue(reasons[expected])  # never an empty reason
+
+
+# ---------------------------------------------------------------------------
+# build_fitness -- absent-component honesty in general
+# ---------------------------------------------------------------------------
+
+class AbsentComponentHonestyTests(unittest.TestCase):
+    def test_absent_robustness_reads_negative_not_neutral(self):
+        assembly = build_fitness("sys-1", [], [], [], None)
+        self.assertFalse(assembly.fitness.robustness.stable_across_splits)
+
+    def test_absent_forward_survival_reads_negative(self):
+        assembly = build_fitness("sys-1", [], [], [], None)
+        self.assertFalse(assembly.fitness.forward_survival.survived)
+
+    def test_absent_falsification_is_not_run_not_pass(self):
+        assembly = build_fitness("sys-1", [], [], [], None)
+        self.assertEqual(assembly.fitness.falsification.battery_verdict,
+                         "NOT_RUN")
+        self.assertFalse(assembly.fitness.falsification.survived)
+
+    def test_absent_price_resilience_reads_negative(self):
+        assembly = build_fitness("sys-1", [], [], [], None)
+        self.assertFalse(assembly.fitness.price_resilience.resilient)
+
+    def test_absent_economic_reads_negative(self):
+        assembly = build_fitness("sys-1", [], [], [], None)
+        self.assertFalse(assembly.fitness.economic.economically_meaningful)
+        self.assertEqual(assembly.fitness.economic.logloss_vs_market,
+                         NEUTRAL_LOGLOSS)
+
+    def test_sample_sufficiency_is_never_absent_even_at_zero(self):
+        assembly = build_fitness("sys-1", [], [], [], None)
+        names = [a.field for a in assembly.absent]
+        self.assertFalse(any(n.startswith("sample_sufficiency") for n in names))
+        self.assertEqual(assembly.fitness.sample_sufficiency.n_decisions, 0)
+        self.assertFalse(assembly.fitness.sample_sufficiency.sufficient)
+
+    def test_bankroll_is_never_absent_even_with_zero_bets(self):
+        assembly = build_fitness("sys-1", [], [], [], None)
+        names = [a.field for a in assembly.absent]
+        self.assertFalse(any(n.startswith("bankroll") for n in names))
+
+
+# ---------------------------------------------------------------------------
+# build_fitness -- genuinely computed economic component
+# ---------------------------------------------------------------------------
+
+class EconomicComponentTests(unittest.TestCase):
+    def _decisions_and_reviews(self, n_days=8, edge_bps=200, p_model=0.65):
+        decisions, reviews = [], []
+        for i in range(n_days):
+            day = f"2026-08-{i + 1:02d}"
+            d = _decision(day, event_id=f"evt-{i}", edge_bps=edge_bps,
+                          p_model=p_model)
+            decisions.append(d)
+            reviews.append(self._review_for(d))
+        return decisions, reviews
+
+    def _review_for(self, decision, close_price=-130):
+        return _review(decision, settled="win", close_price=close_price)
+
+    def test_edge_and_calibration_computed_when_present(self):
+        decisions, reviews = self._decisions_and_reviews()
+        assembly = build_fitness("sys-1", [], decisions, reviews, None,
+                                 required_clusters=1)
+        self.assertTrue(assembly.fitness.economic.economically_meaningful)
+        self.assertLess(assembly.fitness.economic.logloss_vs_market,
+                        NEUTRAL_LOGLOSS)
+        self.assertGreater(assembly.fitness.economic.realized_return, 0.0)
+        names = [a.field for a in assembly.absent]
+        self.assertNotIn("economic.realized_return", names)
+        self.assertNotIn("economic.logloss_vs_market", names)
+
+    def test_edge_present_but_no_settlement_still_absent_and_negative(self):
+        decisions = [_decision("2026-08-01", edge_bps=200)]
+        assembly = build_fitness("sys-1", [], decisions, [], None)
+        self.assertFalse(assembly.fitness.economic.economically_meaningful)
+        names = [a.field for a in assembly.absent]
+        self.assertIn("economic.logloss_vs_market", names)
+        self.assertNotIn("economic.realized_return", names)  # edge WAS present
+
+    def test_bad_calibration_does_not_read_economically_meaningful(self):
+        # p_model confidently WRONG every time -- logloss must be worse than
+        # the neutral baseline, and economically_meaningful must be False.
+        decisions, reviews = [], []
+        for i in range(8):
+            day = f"2026-08-{i + 1:02d}"
+            d = _decision(day, event_id=f"evt-{i}", edge_bps=200, p_model=0.95)
+            decisions.append(d)
+            reviews.append(_review(d, settled="loss"))
+        assembly = build_fitness("sys-1", [], decisions, reviews, None,
+                                 required_clusters=1)
+        self.assertGreater(assembly.fitness.economic.logloss_vs_market,
+                           NEUTRAL_LOGLOSS)
+        self.assertFalse(assembly.fitness.economic.economically_meaningful)
+
+
+# ---------------------------------------------------------------------------
+# CLV -- advisory only, never gates promotion
+# ---------------------------------------------------------------------------
+
+class ClvTests(unittest.TestCase):
+    def test_clv_absent_without_close_price(self):
+        decision = _decision("2026-08-01")
+        review = _review(decision, settled="win", close_price=None)
+        clv = compute_clv_stats([decision], [review])
+        self.assertEqual(clv.n_graded, 0)
+        self.assertEqual(clv.n_total_reviewed, 1)
+        self.assertIsNone(clv.mean_cents)
+
+    def test_clv_computed_when_close_present(self):
+        decision = _decision("2026-08-01", price_american=-110)
+        review = _review(decision, settled="win", close_price=-130)
+        clv = compute_clv_stats([decision], [review])
+        self.assertEqual(clv.n_graded, 1)
+        self.assertGreater(clv.mean_prob_edge, 0.0)  # took a better price than close
+        self.assertEqual(clv.beat_rate, 1.0)
+
+    def test_clv_never_appears_on_fitness(self):
+        # Structural: Fitness has no CLV-named field anywhere.
+        from dataclasses import fields
+        from src.factory.fitness import Fitness
+        names = {f.name for f in fields(Fitness)}
+        for comp_name in Fitness.component_names(
+                build_fitness("sys-1", [], [], [], None).fitness):
+            pass  # component_names is an instance method; smoke only
+        self.assertNotIn("clv", names)
+        self.assertNotIn("clv_bps_mean", names)
+
+
+# ---------------------------------------------------------------------------
+# battery.py / funnel.py real translation
+# ---------------------------------------------------------------------------
+
+class BatteryTranslationTests(unittest.TestCase):
+    def test_real_battery_run_translates_to_pass(self):
+        result = _real_passing_battery()
+        self.assertTrue(result["survives"])
+        self.assertTrue(result["ran"])
+        component = falsification_from_battery(result)
+        self.assertEqual(component.battery_verdict, "PASS")
+        self.assertEqual(component.fatal_rules_triggered, 0)
+        self.assertTrue(component.survived)
+
+    def test_vacuous_survival_is_not_run_never_pass(self):
+        # Under the battery's own MIN_N floor -- survives=True is vacuous.
+        rows = [{"date": "2026-01-01", "won": True, "implied": 0.5}] * 5
+        result = battery_module.run(rows)
+        self.assertTrue(result["survives"])
+        self.assertFalse(result["ran"])
+        component = falsification_from_battery(result)
+        self.assertEqual(component.battery_verdict, "NOT_RUN")
+        self.assertFalse(component.survived)
+
+    def test_fatal_battery_translates_to_failed(self):
+        result = {"survives": False, "ran": True, "fatal": ["season_split"],
+                  "report": {}, "rules": {"version": "2.0.0"}}
+        component = falsification_from_battery(result)
+        self.assertEqual(component.battery_verdict, "FAILED")
+        self.assertEqual(component.fatal_rules_triggered, 1)
+        self.assertFalse(component.survived)
+
+
+class MultiplicityTranslationTests(unittest.TestCase):
+    def test_translates_a_funnel_family(self):
+        family = [
+            {"name": "sys-1", "q_pass": True, "fdr_threshold": 0.01},
+            {"name": "sys-2", "q_pass": False, "fdr_threshold": 0.005},
+            {"name": "sys-3", "q_pass": True, "fdr_threshold": 0.015},
+        ]
+        out = multiplicity_from_funnel_family(family, "sys-1")
+        self.assertEqual(out["raw_tests"], 3)
+        self.assertEqual(out["effective_tests"], 2)
+        self.assertEqual(out["multiplicity_charge"], 0.01)
+        self.assertEqual(out["total_searched_at_verdict"], 3)
+
+    def test_unknown_system_name_raises(self):
+        with self.assertRaises(ScorecardError):
+            multiplicity_from_funnel_family(
+                [{"name": "other", "q_pass": True, "fdr_threshold": 0.01}],
+                "sys-1")
+
+
+# ---------------------------------------------------------------------------
+# Full assembly -- every component genuinely positive promotes
+# ---------------------------------------------------------------------------
+
+class FullPositiveAssemblyTests(unittest.TestCase):
+    def test_all_components_positive_promotes(self):
+        decisions, reviews = [], []
+        for i in range(8):
+            day = f"2026-08-{i + 1:02d}"
+            d = _decision(day, event_id=f"evt-{i}", edge_bps=200, p_model=0.65)
+            decisions.append(d)
+            reviews.append(_review(d, settled="win", close_price=-130))
+        bets = [_win_bet(f"w{i}") for i in range(5)]
+        research = dict(FAVORABLE_RESEARCH)
+        research["battery"] = _real_passing_battery()
+
+        assembly = build_fitness("sys-1", bets, decisions, reviews, research,
+                                 required_clusters=1)
+        self.assertEqual(assembly.absent, ())
+        verdict = promotion_verdict(assembly.fitness)
+        self.assertTrue(verdict.promote)
+        self.assertEqual(set(verdict.positive_components),
+                         {"economic", "robustness", "forward_survival",
+                          "sample_sufficiency", "price_resilience",
+                          "falsification", "multiplicity", "bankroll"})
+
+
+# ---------------------------------------------------------------------------
+# build_scorecard -- ObjectiveView split
+# ---------------------------------------------------------------------------
+
+class BuildScorecardTests(unittest.TestCase):
+    def test_scorecard_objective_view_carries_no_money(self):
+        from dataclasses import fields
+        bets = [_win_bet("w1")]
+        scorecard, absent = build_scorecard(
+            "sys-1", "real", "2026-09-03", "LATE_BOARD", "h2h",
+            bets, [], [], None)
+        view = scorecard.objective_view()
+        self.assertNotIn("account", [f.name for f in fields(view)])
+        dumped = view.to_dict()
+        for forbidden in ("account", "bankroll", "units", "drawdown",
+                          "roi_units", "profit_units"):
+            self.assertNotIn(forbidden, dumped)
+
+    def test_scorecard_account_carries_the_money(self):
+        bets = [_win_bet("w1"), _loss_bet("w2")]
+        scorecard, absent = build_scorecard(
+            "sys-1", "real", "2026-09-03", "LATE_BOARD", "h2h",
+            bets, [], [], None)
+        self.assertEqual(scorecard.account.roi_units,
+                         compute_realized_stats(bets).roi_units)
+
+    def test_scorecard_absent_fields_documented(self):
+        scorecard, absent = build_scorecard(
+            "sys-1", "real", "2026-09-03", "LATE_BOARD", "h2h",
+            [], [], [], None)
+        names = [a.field for a in absent]
+        self.assertIn("reliability_bins", names)
+        self.assertIn("realized_return_ci", names)
+        self.assertIn("stability.season_month_stability", names)
+        self.assertEqual(scorecard.reliability_bins, ())
+        self.assertEqual(scorecard.realized_return_ci, ())
+        self.assertIsNone(scorecard.stability["season_month_stability"])
+
+    def test_scorecard_never_exceeds_raw_tests_invariant(self):
+        # Reuses Scorecard's own __post_init__ guard -- proves this module
+        # never hands it an inconsistent multiplicity pair.
+        scorecard, _ = build_scorecard(
+            "sys-1", "real", "2026-09-03", "LATE_BOARD", "h2h",
+            [], [], [], None)
+        self.assertLessEqual(scorecard.effective_tests, scorecard.raw_tests)
+
+
+if __name__ == "__main__":
+    unittest.main()
