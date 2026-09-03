@@ -66,8 +66,10 @@ Factory loop: enumeration exists, mutation, retirement and replacement do not.
   registered prop rules with the wrong signature and raises TypeError (B
   truth 2). Rules exist and pass their own tests; the dispatcher does not.
 - Paper loop steps 11–12: ReviewRecord (second verdict after new
-  information) is constructed only in tests; price-vs-close comparison has
-  no 2026 closing store (B truths 9–10).
+  information) is constructed only in tests; price-vs-close comparison
+  exists in code (`closing_observation`, CLV in grading.py) and a 2026 F5
+  close store exists, but no live game carries a game_pk, so every forward
+  ledger row's closing field is null (B truth 9, corrected by F).
 - Fitness: units, ROI, bankroll, drawdown, hit counts exist in
   `accounts/paper.py`; CLV, calibration, FDR, battery survival exist in other
   modules; NOTHING assembles them into a `Fitness` object, so
@@ -114,7 +116,7 @@ DEGRADED_INFORMATION.
 Paper loop (B §Q3): PaperAccount(1000) → wagers from real h2h/totals rows →
 settled from real results → bankroll/ROI/drawdown → chain verified → tamper
 detected by line number. Stops at step 11 (no ReviewRecord producer) and
-step 12 (no 2026 close store).
+step 12 (close comparison unreachable without a game_pk on live rows).
 
 None of the three is one shared engine yet. The seam is exactly:
 `glue.build_snapshot` needs a matrix-backed feature builder plus an
