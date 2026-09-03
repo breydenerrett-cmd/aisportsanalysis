@@ -475,8 +475,8 @@ readout; parlay recommendation code; Tier C without owner sign-off.
    changes a standing refusal.
 4. Primary fitness for the re-run: outcome-calibrated log-loss against the
    de-vigged market, fresh registration, Phase 2B verdict unamended.
-5. The LOCK definition in section 5, pre-registered now, expected empty for a
-   season.
+5. The LOCK definition in section 5, pre-registered now. The criteria decide
+   how many LOCKs appear; no artificial zero-LOCK season is imposed.
 6. Prediction versus money when they conflict (amendment 6), and whether the
    labelled execution ledger runs alongside.
 7. Batter props at ~270 credits/day (irrecoverable; declining is not
@@ -493,6 +493,40 @@ Decided by the orchestrator without owner action: the Two-Ledger Rule;
 multiplicity; sport-neutral engine contract from day one; role roster
 correction (Sonnet implementers, Fable orchestrator file, dispatcher); the
 sequencing above.
+
+### 9.1 Owner ruling, 2026-09-03 (approved with amendments)
+
+Approved. Phase 0 starts now. "Capture-first" does not pause engine or
+factory work: durable unattended capture is P0 infrastructure that runs
+independently while engine/factory work proceeds in parallel, and
+infrastructure work must not consume the roadmap.
+
+1. Proceed with the default-branch fix plus the `ODDS_API_KEY` repository
+   secret path for exactly-one-writer external capture.
+2. ~900 credits/day approved inside the existing paid allotment, with hard
+   spend guards.
+3. Capture batter props now.
+4. Capture SGP/parlay-relevant markets now where available and economical.
+   Parlays are not assumed negative before testing.
+5. LOCK is pre-registered as the highest evidence/confidence tier, never a
+   guarantee. No artificial zero-LOCK season; the criteria decide.
+6. Prediction quality and betting value are separate. Official picks require
+   price/value; the product may expose prediction confidence separately.
+7. The 2023-24 replay is labelled "degraded-information replay" wherever
+   inputs cannot be reconstructed faithfully.
+8. No historical prop-data purchase yet. Return vendor, exact fields/markets/
+   years, coverage, price, and the capabilities unlocked
+   (docs/VENDOR_HISTORICAL_DATA_PACKET.md).
+9. Profitability, ROI, bankroll and drawdown are measured, but bankroll alone
+   never decides promotion. Fitness = economically meaningful performance plus
+   robustness, OOS/forward survival, sample sufficiency, price resilience,
+   falsification survival and multiple-testing controls.
+10. Build toward the full product: one engine in replay and live; persistent
+    factory; daily slate analysis; market search; paper recommendations;
+    settlement; self-review; evolution.
+
+Roles: Fable orchestrates, Sonnet implements, Opus handles hard methodology
+and review, deterministic code runs the large simulations.
 
 ---
 

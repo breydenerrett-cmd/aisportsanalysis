@@ -201,13 +201,15 @@ written elsewhere) and docs/SAAS_APPLICATION_ARCHITECTURE.md can be reviewed
 together.
 
 ### READY QUEUE (refill to ≥3 whenever an item completes)
-NOTE 2026-09-03 01:40Z: docs/ARCHITECTURE_BETTING_ENGINE.md (the betting-engine
-plan, with its evidence under docs/planning/) is AWAITING OWNER REVIEW. Until
-the owner approves it, the standing loop does NO engine, factory, board or
-record work from that plan. Allowed meanwhile: capture recovery after
-restarts, the full suite, docs-truth corrections listed in the plan's owner
-decision 10, and nothing that spends credits. Capture completeness outranks
-every other item for 60 days.
+NOTE 2026-09-03 02:30Z: the betting-engine plan
+(docs/ARCHITECTURE_BETTING_ENGINE.md) is APPROVED WITH AMENDMENTS (section
+9.1 there). Phase 0 has started: P0-A/B/C/D/E/H lanes dispatched. The
+standing loop may work Phase 0 packets from the plan's section 8 in the
+stated order (W1, W13-forward, W7, W5, W2, W3, then W4, W10, W6). Capture
+completeness still outranks every other item, but engine/factory work
+proceeds in parallel; infrastructure must not consume the roadmap. Credit
+spend follows the ~900/day envelope with the P0-C guards; no new tier
+switches on without its measured probe.
 NOTE 2026-09-02 (closed 22:10Z): the orchestration day is over; the
 end-of-day synthesis is docs/ORCHESTRATION_DAY_2026-09-02.md and the
 standing loop resumes from this queue. First item for the loop: a full
