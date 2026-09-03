@@ -176,6 +176,24 @@ class DecisionRecordTests(unittest.TestCase):
         d = _decision(line="6.5")
         self.assertEqual(d.line, "6.5")
 
+    def test_record_provenance_defaults_to_none(self):
+        # B1: every pre-existing construction site (including this fixture)
+        # keeps working with no record_provenance at all -- None, never a
+        # fabricated default, is what a record that predates the field (or
+        # a caller that genuinely has no write-time evidence) carries.
+        d = _decision()
+        self.assertIsNone(d.record_provenance)
+
+    def test_record_provenance_accepts_each_registered_value(self):
+        from src.ledger.records import RECORD_PROVENANCE_VALUES
+        for value in RECORD_PROVENANCE_VALUES:
+            d = _decision(record_provenance=value)
+            self.assertEqual(d.record_provenance, value)
+
+    def test_unknown_record_provenance_rejected(self):
+        with self.assertRaises(RecordContractError):
+            _decision(record_provenance="written_by_vibes")
+
 
 class ReviewRecordTests(unittest.TestCase):
     def _checks(self, verdict):

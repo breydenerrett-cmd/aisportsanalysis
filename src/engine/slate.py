@@ -35,13 +35,35 @@ selection_id, decision_utc)`, checked against every row already in
 `evidence/decisions_v2.jsonl` before appending; a wager's identity is a
 `bet_id` derived deterministically from that same tuple (`bet_id_for`),
 checked against every row already in `evidence/paper_wagers_v2.jsonl`.
+
+FROZEN MEANS WRITTEN BEFORE FIRST PITCH, NOT JUST DECIDED BEFORE IT
+---------------------------------------------------------------------
+(B1/B2, slice-review-2026-09-03.) "Before any outcome exists" above is a
+claim about the WRITE, not just the decision instant `t` the board was
+built at -- `t` being honestly pre-game (the existing first-pitch guard on
+`decision_time_for_game`) says nothing about how much wall-clock time has
+passed by the time this function actually runs and appends to the ledger.
+Two things close that gap, both in `run_slate`:
+
+  * every DecisionRecord written here now carries `recorded_utc` set to
+    the REAL write instant (a wall-clock read taken once per call, `now`
+    below -- overridable for tests only) instead of a copy of
+    `decision_utc`, plus `record_provenance` naming whether this was a
+    live pre-commitment write or a deliberate replay/backfill of an
+    already-past date (`src.ledger.records.RECORD_PROVENANCE_VALUES`);
+  * a LIVE-mode run (`_slate_mode` below) additionally refuses -- skips,
+    same as any other named skip reason, never writes a decision at all --
+    any game whose `commence_time` is at or before that same write
+    instant, even when `t` was honestly pre-game. REPLAY mode (a
+    deliberate backfill of an already-past `date_str`) is exempt: every
+    game in a real backfill has necessarily already been played.
 """
 
 from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass, replace
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Mapping, Sequence
 
@@ -55,7 +77,11 @@ from src.engine.adversaries import DEFAULT_ADVERSARIES
 from src.engine.analyze import DEFAULT_CONFIG, EngineConfig, analyze
 from src.ledger.bridge import V2_LEDGER_PATH
 from src.ledger.chain import HashChainLedger
-from src.ledger.records import DecisionRecord
+from src.ledger.records import (
+    RECORD_PROVENANCE_LIVE_PRE_COMMENCEMENT,
+    RECORD_PROVENANCE_REPLAY,
+    DecisionRecord,
+)
 from src.ledger.writer import append_decision
 from src.paths import evidence_path
 
@@ -97,6 +123,19 @@ def _parse_utc(value: str) -> datetime:
 
 def _iso(value: datetime) -> str:
     return value.astimezone(timezone.utc).isoformat()
+
+
+def _slate_mode(date_str: str, now: datetime) -> str:
+    """"LIVE" when `date_str` names `now`'s own UTC calendar date or a
+    future one, "REPLAY" when it names a date strictly before it -- the
+    same split `src.engine.preflight._mode_and_references` uses, applied
+    here for the SAME reason: a deliberate backfill of an already-past date
+    necessarily concerns games that have already been played, and must not
+    be judged by the live "has first pitch already happened" guard below
+    (B2, slice-review-2026-09-03) -- only a slate being decided for today
+    (or later) can write a record whose provenance honestly claims
+    pre-commitment."""
+    return "LIVE" if date.fromisoformat(date_str) >= now.date() else "REPLAY"
 
 
 def _l1_source_mtimes_newer_than_output(output_path, source_paths) -> bool:
@@ -323,10 +362,50 @@ def run_slate(
     refresh_l1: bool = True,
     l1_sources: Sequence | None = None,
     l1_raw_root=None,
+    now: datetime | None = None,
 ) -> SlateReport:
     """Run the slate for `date_str` and (unless `dry_run`) write frozen
     DecisionRecords + FLAT_1U paper wagers. Idempotent across re-runs (see
     module docstring).
+
+    ALREADY-COMMENCED GUARD + RECORD PROVENANCE (B1/B2,
+    slice-review-2026-09-03). `now` (defaults to a real wall-clock read,
+    `datetime.now(timezone.utc)`; overridable -- tests only, the same
+    convention as `src.engine.preflight.check`) is the actual write
+    instant, read ONCE per `run_slate` call and used for two things:
+
+      1. `decision_time_for_game`'s existing guard only ever compares the
+         DECISION instant `t` (the latest L1 capture before commence) to
+         that game's own `commence_time` -- it says nothing about how much
+         wall-clock time has passed between `t` and the moment this
+         function actually runs and writes. A slate invoked hours late (a
+         missed cron, a manual re-run at end of day) could pick a genuinely
+         pre-game `t` for a game whose first pitch has, by the time the
+         write happens, already come and gone -- exactly the flagship
+         2026-09-03 slate's bug (three of its nine staked games, not the
+         two the original review caught: `f857ea67…`, `e956df5f…`, and
+         `e3f232af…`, had already started by the observed write instant).
+         So in LIVE mode (`_slate_mode` above -- `date_str` is today or a
+         future date) this function ALSO refuses any game whose
+         `commence_time` is at or before `now`, skipping it with an
+         "already commenced" reason exactly like every other skip reason
+         here, rather than writing a decision for it at all. REPLAY mode
+         (a deliberate backfill of an already-past `date_str`) is exempt on
+         purpose: every game in a real backfill has necessarily already
+         been played, and that is the honest, intended use of replay -- see
+         `_slate_mode`'s own docstring.
+      2. Every DecisionRecord this call writes carries `recorded_utc=now`
+         (the real write instant, not `decision_utc`/`information_time`,
+         which stay the decision instant `t`) and
+         `record_provenance="live_pre_commencement"` in LIVE mode or
+         `"replay"` in REPLAY mode -- so a reader can always tell a
+         genuinely pre-commitment record from a deliberate backfill,
+         without having to infer it from git history the way B1 originally
+         required. (`"live_post_commencement"` -- the case where a live
+         write happened after commence -- is reserved vocabulary for
+         labelling records that predate this guard; this function itself
+         never produces it going forward, because it refuses the game
+         instead.)
 
     L1 REFRESH (fixes: a slate run seeing hours-stale prices while fresher
     ones already sat captured on disk). `data/processed/l1_observations.jsonl`
@@ -367,6 +446,16 @@ def run_slate(
     systems = tuple(systems) if systems is not None else REGISTERED_SYSTEMS
     if not systems:
         raise SlateError("run_slate needs at least one system")
+
+    if now is None:
+        now = datetime.now(timezone.utc)
+    elif now.tzinfo is None:
+        raise SlateError(f"now={now!r} is not timezone-aware")
+
+    mode = _slate_mode(date_str, now)
+    recorded_utc = _iso(now)
+    record_provenance = (RECORD_PROVENANCE_LIVE_PRE_COMMENCEMENT
+                         if mode == "LIVE" else RECORD_PROVENANCE_REPLAY)
 
     decisions_path = str(decisions_path or V2_LEDGER_PATH)
     wagers_path = str(wagers_path or PAPER_WAGERS_PATH)
@@ -417,6 +506,29 @@ def run_slate(
                 duplicate_decisions=0, staked_bet_ids=(), duplicate_wagers=0))
             continue
 
+        # B2 (slice-review-2026-09-03): `t` being honestly pre-game says
+        # nothing about whether THIS RUN, writing right now, is happening
+        # before or after that same game's first pitch -- a slate invoked
+        # late (a missed cadence, a manual re-run hours after the captures
+        # it used) can pick a genuinely pre-game `t` for a game that has,
+        # by the time of this actual write, already started. REPLAY mode is
+        # exempt on purpose (see `_slate_mode`): every game in a deliberate
+        # backfill of an already-past date has necessarily already been
+        # played.
+        commence_dt = _parse_utc(commence)
+        if mode == "LIVE" and now >= commence_dt:
+            already_minutes = (now - commence_dt).total_seconds() / 60.0
+            game_outcomes.append(GameOutcome(
+                game_key=game_key, game_pk=None, t=t, commence_time=commence,
+                skipped_reason=(
+                    f"already commenced -- first pitch {commence} was "
+                    f"{already_minutes:.1f} min before the write instant "
+                    f"{recorded_utc}; refusing to stake a game already "
+                    "underway"),
+                records=(), new_decisions=0, duplicate_decisions=0,
+                staked_bet_ids=(), duplicate_wagers=0))
+            continue
+
         board = glue_module.build_board(
             game_key, t, path=l1_path, commence_time=commence,
             game_pk_map=game_pk_map)
@@ -434,7 +546,9 @@ def run_slate(
         snapshot = glue_module.build_snapshot(
             game_key, t, board=board, game_pk_map=game_pk_map)
         analysis = analyze(snapshot, board, systems=systems,
-                           adversaries=adversaries, config=config)
+                           adversaries=adversaries, config=config,
+                           recorded_utc=recorded_utc,
+                           record_provenance=record_provenance)
 
         # Scope: four markets only, and only the games/records this board
         # actually priced -- a record naming a market outside SCOPE_MARKETS
