@@ -220,6 +220,62 @@ def cmd_ingest(args) -> int:
     return EXIT_OK
 
 
+def cmd_boxscores(args) -> int:
+    """Fetch per-game, per-player box lines into data/processed/boxscores_<yyyy>.jsonl.
+
+    Idempotent and resumable by game_pk (see src.pipeline.boxscores). A
+    single date (--date) or an inclusive range (--backfill START..END) --
+    the range mode is meant for a resumable, rate-limited historical fill,
+    not for routine daily use.
+    """
+    from src.pipeline import boxscores
+
+    if args.backfill:
+        try:
+            start, end = args.backfill.split("..", 1)
+        except ValueError:
+            print("--backfill must be START..END, e.g. 2023-03-30..2023-11-01")
+            return EXIT_ERROR
+
+        def progress(report):
+            print(f"  {report['date']}  games={report['games_written']:>2} "
+                  f"written  skipped={report['games_skipped']:>2}  "
+                  f"pitchers={report['pitcher_rows']:>3}  "
+                  f"batters={report['batter_rows']:>3}"
+                  + (f"  ERRORS={len(report['errors'])}" if report["errors"] else ""))
+
+        totals = boxscores.ingest_range(start.strip(), end.strip(),
+                                         on_date=progress)
+        print(f"\n  dates          : {totals['dates']}")
+        print(f"  games written  : {totals['games_written']}")
+        print(f"  games skipped  : {totals['games_skipped']} (already stored)")
+        print(f"  pitcher rows   : {totals['pitcher_rows']}")
+        print(f"  batter rows    : {totals['batter_rows']}")
+        print(f"  linescore rows : {totals['linescore_rows']}")
+        if totals["errors"]:
+            print(f"  {len(totals['errors'])} game(s) failed and will be "
+                  "retried on resume:")
+            for error in totals["errors"][:5]:
+                print(f"    {error['date']} game_pk={error['game_pk']}: "
+                      f"{error['error']}")
+        return EXIT_OK
+
+    day = args.date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    report = boxscores.ingest_date(day)
+    print(f"{report['date']}: {report['games_seen']} final game(s) seen, "
+          f"{report['games_written']} written, "
+          f"{report['games_skipped']} already stored")
+    print(f"  pitcher rows: {report['pitcher_rows']}  "
+          f"batter rows: {report['batter_rows']}  "
+          f"linescore rows: {report['linescore_rows']}")
+    print(f"  store: {report['path']}")
+    if report["errors"]:
+        print(f"  {len(report['errors'])} game(s) failed:")
+        for error in report["errors"]:
+            print(f"    game_pk={error['game_pk']}: {error['error']}")
+    return EXIT_OK
+
+
 def cmd_history(args) -> int:
     """Report coverage and integrity of the historical store."""
     from src.pipeline import history
@@ -1415,6 +1471,11 @@ def cmd_daily(args) -> int:
          machine, since this research loop must never bring the product
          database into existence just by running (see
          src.appstate.settlement.settle_saved_bets_if_app_db_exists).
+      9. fetch yesterday's per-game, per-player box lines (free MLB Stats API,
+         no odds credit) -- the substrate every batter and non-strikeout
+         pitcher prop needs to ever be settled. Runs last and never fails the
+         loop: box lines do not expire, so a missed fetch is picked up on the
+         next day's run.
 
     Every step is independent. One failing does not abort the rest, because a
     missed grading run is recoverable and a missed snapshot is not.
@@ -1429,7 +1490,7 @@ def cmd_daily(args) -> int:
     failures = []
 
     def step(number, name, fn):
-        print(f"[{number}/8] {name}")
+        print(f"[{number}/9] {name}")
         try:
             fn()
         except Exception as exc:  # a step failing must not kill the loop
@@ -1514,6 +1575,21 @@ def cmd_daily(args) -> int:
             print(f"      settled {report['settled']} bet(s) {report['counts']}, "
                   f"{report['unsettled']} still unsettled")
 
+    def do_boxscores():
+        # Free (keyless) MLB Stats API call, same host as every other
+        # fetch_* in src.providers.mlb -- no odds credit involved. A fetch
+        # failure here is exactly the shape "a missed grading run is
+        # recoverable": box lines do not expire, so this is retried
+        # automatically on tomorrow's run without any of them being lost --
+        # it must never fail the daily loop over a slate that has no props
+        # graded against it yet.
+        from src.pipeline import boxscores
+        report = boxscores.ingest_date(yesterday)
+        print(f"      {yesterday}: {report['games_written']} game(s) written, "
+              f"{report['games_skipped']} already stored, "
+              f"{report['pitcher_rows']} pitcher / {report['batter_rows']} "
+              f"batter rows")
+
     step(1, "capture odds snapshot (irreplaceable -- runs first)", do_snapshot)
     step(2, f"ingest results for {yesterday}", do_ingest)
     step(3, f"refresh pitcher logs for {today[:4]}", do_pitchers)
@@ -1522,6 +1598,8 @@ def cmd_daily(args) -> int:
     step(6, "settle finished games", do_settle)
     step(7, "grade settled predictions and flags", do_grade)
     step(8, "settle My Bets (product db, no-op if absent)", do_settle_my_bets)
+    step(9, f"fetch box lines for {yesterday} (free, props substrate)",
+         do_boxscores)
 
     if failures:
         print(f"loop finished with {len(failures)} failed step(s):")
@@ -1811,6 +1889,15 @@ def build_parser() -> argparse.ArgumentParser:
     ingest_cmd.add_argument("--verbose", "-v", action="store_true")
     ingest_cmd.set_defaults(resume=True)
 
+    boxscores_cmd = sub.add_parser(
+        "boxscores", help="fetch per-game, per-player box lines (props "
+                          "settlement substrate)")
+    boxscores_cmd.add_argument("--date", default=None,
+                               help="YYYY-MM-DD (defaults to today, UTC)")
+    boxscores_cmd.add_argument("--backfill", default=None,
+                               help="START..END, e.g. 2023-03-30..2023-11-01 "
+                                    "(resumable; ignores --date)")
+
     sub.add_parser("history", help="coverage and integrity of the historical store")
 
     features_cmd = sub.add_parser("features",
@@ -1970,6 +2057,7 @@ COMMANDS = {
     "slate": cmd_slate,
     "results": cmd_results,
     "ingest": cmd_ingest,
+    "boxscores": cmd_boxscores,
     "history": cmd_history,
     "features": cmd_features,
     "train": cmd_train,

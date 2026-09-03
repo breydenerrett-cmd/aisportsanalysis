@@ -63,6 +63,15 @@ data/app/*
 !data/processed/prop_prices.jsonl
 !data/processed/credit_log.jsonl
 
+# Added with the boxscore/linescore store (P0-B): per-game, per-player box
+# lines are the only way any batter or non-strikeout pitcher prop can ever be
+# settled or backtested. They are pulled from a free provider so a single
+# game could in principle be refetched, but the point of capturing them
+# forward (rather than only in a backfill) is that a day's games become
+# unreachable once far enough in the past falls out of convenient reach --
+# same "capture now" reasoning as the rest of this block. One file per season.
+!data/processed/boxscores_*.jsonl
+
 # Python
 __pycache__/
 *.py[cod]
