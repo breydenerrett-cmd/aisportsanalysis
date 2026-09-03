@@ -17,3 +17,5 @@
 {"caller": "dense.run", "credits_remaining": 99620, "credits_used_last": 0, "utc": "2026-09-03T01:36:54.948124Z"}
 {"caller": "prop_listing.run", "credits_remaining": 99609, "credits_used_last": 0, "utc": "2026-09-03T02:22:04.600258Z"}
 {"caller": "prop_prices.run", "credits_remaining": 99609, "credits_used_last": 0, "utc": "2026-09-03T02:25:29.843911Z"}
+{"caller": "budget.probe_family:batter_props_floor", "credits_remaining": 99608, "credits_used_last": 1, "utc": "2026-09-03T03:26:00.679078Z"}
+{"caller": "budget.probe_family:batter_props_extra", "credits_remaining": 99607, "credits_used_last": 1, "utc": "2026-09-03T03:26:14.138111Z"}

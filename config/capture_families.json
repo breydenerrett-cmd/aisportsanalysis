@@ -39,16 +39,16 @@
       "source": "docs/planning/attack.md S17: zero history, no retroactive purchase path, never measured. Superseded as an actual spending family by batter_props_floor/batter_props_extra below (owner decision 3, 2026-09-03) -- kept here unmeasured so nothing accidentally reads this name as budgeted."
     },
     "batter_props_floor": {
-      "measured": false,
-      "credits_per_event": null,
-      "measured_utc": null,
-      "source": "src/pipeline/batter_props.py, owner decision 3 (2026-09-03): the non-droppable 2-games/night rotated floor. Unmeasured until `python3 -m src.cli budget --probe batter_props_floor` records a real one-event fetch."
+      "measured": true,
+      "credits_per_event": 1,
+      "measured_utc": "2026-09-03T03:25:59.389461Z",
+      "source": "budget.probe_family: live batter_props_floor probe against event af7b25a4d0428e7f04b74c6c3a75c59d (6 market(s), 1 region); billed=1, remaining_before=99609, remaining_after=99608"
     },
     "batter_props_extra": {
-      "measured": false,
-      "credits_per_event": null,
-      "measured_utc": null,
-      "source": "src/pipeline/batter_props.py, owner decision 3 (2026-09-03): up to 4 additional games/night beyond the floor, fully gated by the credit floor and daily envelope. Unmeasured until `python3 -m src.cli budget --probe batter_props_extra` records a real one-event fetch."
+      "measured": true,
+      "credits_per_event": 1,
+      "measured_utc": "2026-09-03T03:26:13.312786Z",
+      "source": "budget.probe_family: live batter_props_extra probe against event af7b25a4d0428e7f04b74c6c3a75c59d (6 market(s), 1 region); billed=1, remaining_before=99608, remaining_after=99607"
     },
     "prop_listing_feasibility": {
       "measured": true,
