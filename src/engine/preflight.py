@@ -28,12 +28,50 @@ TWO CHECKS, TWO NAMED THRESHOLDS
 
 Both checks are read-only over already-captured stores; neither one
 fetches anything or writes anything on a pass or a refusal.
+
+LIVE vs REPLAY: WHAT "NOW" MEANS FOR A PAST DATE
+--------------------------------------------------
+Both thresholds ask the same underlying question -- "was this input fresh
+enough AT THE SLATE'S OWN DECISION TIME" -- and for a slate being decided
+today, decision time IS wall-clock now. But `check()` is also the one thing
+standing between `engine slate --date DATE` and a replay of an ALREADY-PAST
+date (a demonstration, an audit, a re-run of a date whose games are long
+over): measured against TODAY's wall clock, a past date's own last capture
+is always hours-to-years "stale" and its own era's pitch coverage is always
+some fixed distance from "now" -- neither fact says anything about whether
+that slate was decidable at the time, and refusing on it makes replay of any
+non-today date structurally impossible (the bug this section fixes: `engine
+slate --date 2026-09-01`, two calendar days in the past, refused with
+"price capture is 44.8h stale" purely from comparing a two-day-old capture
+against today's clock).
+
+The fix: `check()` picks its reference instant from `date_str` itself, not
+from `now`, whenever `date_str` names a date strictly before `now`'s own
+UTC calendar date --
+
+  - LIVE mode (`date_str >= now`'s date -- today, or, defensively, a future
+    date): reference instant = `now` itself, exactly as before. A live
+    slate on stale inputs must still refuse -- this mode is unchanged.
+  - REPLAY mode (`date_str < now`'s date): reference instant = the END of
+    `date_str` (`date_str`'s next calendar midnight, UTC) for the price
+    check, and `date_str`'s own calendar date for the matchup-coverage lag
+    check. This is "was the board kept fresh all the way through that
+    slate's own day, and did the pitch store's coverage already reach that
+    day" -- the honest, decidable-at-the-time question -- rather than "is a
+    finished day's data fresh by today's clock", which no past date could
+    ever pass.
+
+`PreflightResult.mode` ("LIVE" or "REPLAY") is always populated so a
+refusal's printed output states plainly which rule was applied, never
+leaving a reader to guess whether a stale-looking number came from a live
+guard or a replay one.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
+from datetime import time as dtime
 
 from src.engine import glue as glue_module
 from src.providers import statcast_pitches
@@ -70,6 +108,7 @@ class PreflightResult:
     price_capture_age_hours: float | None
     matchup_coverage_end: str | None
     matchup_coverage_lag_days: int | None
+    mode: str  # "LIVE" or "REPLAY" -- see `check()`'s docstring
 
 
 def _parse_utc(value: str) -> datetime:
@@ -114,6 +153,26 @@ def _matchup_coverage_end(store=None) -> str | None:
     return max(ends) if ends else None
 
 
+def _mode_and_references(date_str: str, now: datetime) -> tuple[str, datetime, date]:
+    """`(mode, price_reference_instant, coverage_reference_date)` for
+    `date_str` given `now` -- see the module docstring's "LIVE vs REPLAY"
+    section. LIVE (`date_str >= now`'s own UTC date) uses `now` itself for
+    both references, unchanged from the guard's original behavior. REPLAY
+    (`date_str` strictly before `now`'s date) uses `date_str`'s own close
+    (its next calendar midnight, UTC) as the price-capture reference instant,
+    and `date_str`'s own calendar date -- not today's -- as the reference
+    for the matchup-coverage lag, since the honest question for a past slate
+    is whether the pitch store's coverage had already reached that slate's
+    own day, not how far it sits from today.
+    """
+    slate_date = date.fromisoformat(date_str)
+    if slate_date >= now.date():
+        return "LIVE", now, now.date()
+    end_of_slate_day = datetime.combine(
+        slate_date + timedelta(days=1), dtime.min, tzinfo=timezone.utc)
+    return "REPLAY", end_of_slate_day, slate_date
+
+
 def check(date_str: str, *, now: datetime | None = None,
           l1_path=None, statcast_store=None) -> PreflightResult:
     """Run both freshness checks for the slate being built for `date_str`.
@@ -125,37 +184,53 @@ def check(date_str: str, *, now: datetime | None = None,
     explained in the printed output rather than requiring a second look.
     `l1_path`/`statcast_store` override the real stores -- tests only;
     `_cmd_engine_slate` always calls this with the defaults.
+
+    LIVE vs REPLAY (module docstring): `result.mode` names which rule ran.
+    A date at or after `now`'s own UTC date runs LIVE (reference instant =
+    `now`, exactly the original behavior); a strictly past date runs REPLAY
+    (reference instant = that date's own close, so a genuinely fresh-at-the-
+    time capture is never refused merely for having happened days ago).
     """
     if now is None:
         now = datetime.now(timezone.utc)
     elif now.tzinfo is None:
         raise PreflightError(f"now={now!r} is not timezone-aware")
 
+    mode, price_reference, coverage_reference_date = _mode_and_references(date_str, now)
+
     reasons: list[str] = []
 
-    price_age = _price_capture_age_hours(date_str, now, l1_path=l1_path)
+    price_age = _price_capture_age_hours(date_str, price_reference, l1_path=l1_path)
     if price_age is None:
         reasons.append(
-            f"no price capture observed for {date_str} at all -- refusing "
-            "to slate on zero data")
+            f"[{mode}] no price capture observed for {date_str} at all -- "
+            "refusing to slate on zero data")
     elif price_age > PRICE_CAPTURE_STALE_HOURS:
+        reference_note = (
+            "wall-clock now" if mode == "LIVE"
+            else f"the close of {date_str} ({price_reference.isoformat()}), "
+                 "this being a REPLAY of a past date -- not today's clock")
         reasons.append(
-            f"price capture for {date_str} is {price_age:.1f}h stale, past "
-            f"the {PRICE_CAPTURE_STALE_HOURS}h threshold "
-            "(PRICE_CAPTURE_STALE_HOURS)")
+            f"[{mode}] price capture for {date_str} is {price_age:.1f}h "
+            f"stale relative to {reference_note}, past the "
+            f"{PRICE_CAPTURE_STALE_HOURS}h threshold (PRICE_CAPTURE_STALE_HOURS)")
 
     coverage_end = _matchup_coverage_end(store=statcast_store)
     lag_days = None
     if coverage_end is None:
         reasons.append(
-            "the matchup feature store (Statcast pitch backfill) has no "
-            "coverage recorded at all")
+            f"[{mode}] the matchup feature store (Statcast pitch backfill) "
+            "has no coverage recorded at all")
     else:
-        lag_days = (now.date() - date.fromisoformat(coverage_end)).days
+        lag_days = (coverage_reference_date - date.fromisoformat(coverage_end)).days
         if lag_days > MATCHUP_COVERAGE_MAX_LAG_DAYS:
+            reference_note = (
+                f"before {coverage_reference_date.isoformat()}" if mode == "LIVE"
+                else f"before {date_str} (this slate's own date, this being "
+                     "a REPLAY of a past date -- not today's date)")
             reasons.append(
-                f"the matchup feature store's coverage ends {coverage_end} "
-                f"({lag_days}d before {now.date().isoformat()}), past the "
+                f"[{mode}] the matchup feature store's coverage ends "
+                f"{coverage_end} ({lag_days}d {reference_note}), past the "
                 f"{MATCHUP_COVERAGE_MAX_LAG_DAYS}d threshold "
                 "(MATCHUP_COVERAGE_MAX_LAG_DAYS)")
 
@@ -164,4 +239,5 @@ def check(date_str: str, *, now: datetime | None = None,
         price_capture_age_hours=price_age,
         matchup_coverage_end=coverage_end,
         matchup_coverage_lag_days=lag_days,
+        mode=mode,
     )

@@ -290,5 +290,99 @@ class TestDryRun(SlateTestBase):
         self.assertFalse(self.wagers_path.exists())
 
 
+def _raw_snapshot_h2h_row(event_id, observed_utc, commence_time, book,
+                          home_price, away_price):
+    """A raw `odds_snapshots.jsonl`-shaped row (kind='snapshot', l1.py's own
+    projector) -- NOT an L1-shaped row. Mirrors `test_board_l1.py`'s
+    `SNAPSHOT_H2H_ROW` fixture, which is itself copied verbatim from a real
+    captured row's field shape."""
+    return {
+        "observed_utc": observed_utc, "event_id": event_id,
+        "commence_time": commence_time,
+        "away_team": "New York Yankees", "home_team": "Boston Red Sox",
+        "market": "h2h", "book": book,
+        "prices": {"home_price": home_price, "away_price": away_price},
+        "book_last_update": observed_utc,
+    }
+
+
+class TestL1RefreshBeforeSlate(SlateTestBase):
+    """Defect #2: `data/processed/l1_observations.jsonl` is a PROJECTION of
+    the real price stores, and nothing re-projected it after a capture, so
+    `engine slate` could see prices hours older than what was already
+    captured on disk until someone ran `l1 --backfill` by hand. Proves
+    `run_slate` closes that gap itself: a "fresh capture" landing only in
+    the RAW source store (never touching `l1_path` directly) is picked up
+    and projected into L1 by `run_slate`'s own refresh step, with zero
+    manual step between the capture and the slate run."""
+
+    def test_fresh_capture_is_seen_with_no_manual_l1_backfill_step(self):
+        # The "capture": two books' worth of a real raw odds_snapshots-shaped
+        # row, written straight to the raw source path -- `self.l1_path`
+        # (the L1 store `run_slate` actually reads to build boards) is never
+        # touched here at all; it does not even exist yet.
+        self.assertFalse(self.l1_path.exists())
+        _write_jsonl(self.commence_path, [
+            _raw_snapshot_h2h_row(GAME_A, "2026-09-02T22:00:00Z",
+                                  "2026-09-02T23:00:00Z", "book_a", -150, 130),
+            _raw_snapshot_h2h_row(GAME_A, "2026-09-02T22:00:00Z",
+                                  "2026-09-02T23:00:00Z", "book_b", -150, 130),
+        ])
+
+        report = self.run_slate(
+            "2026-09-02", systems=(glue_module.TrivialAlwaysHomeSystem(),),
+            l1_sources=[{"name": "odds_snapshots", "path": self.commence_path,
+                        "kind": "snapshot", "is_close": False}])
+
+        # The refresh actually wrote L1 rows for the fresh capture...
+        self.assertTrue(self.l1_path.exists())
+        l1_rows = [json.loads(line) for line in
+                  self.l1_path.read_text().splitlines() if line.strip()]
+        self.assertTrue(any(r["event_id"] == GAME_A for r in l1_rows))
+
+        # ...and the SAME run priced the game off of it -- no second,
+        # separate `l1 --backfill` invocation was needed in between.
+        self.assertEqual(report.n_games_considered, 1)
+        self.assertEqual(report.n_games_skipped, 0)
+        game = report.games[0]
+        self.assertIsNone(game.skipped_reason)
+        self.assertTrue(any(r.price_american == -150 for r in game.records))
+
+    def test_refresh_is_idempotent_and_incremental(self):
+        """A second run over the same, unchanged raw source writes zero new
+        L1 rows -- refreshing is safe to run on every slate invocation."""
+        _write_jsonl(self.commence_path, [
+            _raw_snapshot_h2h_row(GAME_A, "2026-09-02T22:00:00Z",
+                                  "2026-09-02T23:00:00Z", "book_a", -150, 130),
+            _raw_snapshot_h2h_row(GAME_A, "2026-09-02T22:00:00Z",
+                                  "2026-09-02T23:00:00Z", "book_b", -150, 130),
+        ])
+        kwargs = dict(
+            systems=(glue_module.TrivialAlwaysHomeSystem(),),
+            l1_sources=[{"name": "odds_snapshots", "path": self.commence_path,
+                        "kind": "snapshot", "is_close": False}])
+        self.run_slate("2026-09-02", **kwargs)
+        rows_after_first = self.l1_path.read_text().splitlines()
+        self.run_slate("2026-09-02", **kwargs)
+        rows_after_second = self.l1_path.read_text().splitlines()
+        self.assertEqual(rows_after_first, rows_after_second)
+
+    def test_refresh_is_skipped_for_an_isolated_l1_path_with_no_sources_named(self):
+        """The safety rail: a caller handing `run_slate` a synthetic
+        `l1_path` (every OTHER test in this module) without naming
+        `l1_sources`/`l1_raw_root` must never have real production price
+        stores silently projected into its fixture -- refresh only fires
+        when it is told exactly what to refresh from, or when `l1_path` is
+        the real production store."""
+        _write_jsonl(self.l1_path, [
+            *_two_book_rows(GAME_A, "2026-09-02T18:00:00Z"),
+        ])
+        self._commence_rows(GAME_A, "2026-09-02T20:00:00Z")
+        before = self.l1_path.read_text()
+        self.run_slate("2026-09-02", systems=(glue_module.TrivialAlwaysHomeSystem(),))
+        after = self.l1_path.read_text()
+        self.assertEqual(before, after)
+
+
 if __name__ == "__main__":
     unittest.main()
