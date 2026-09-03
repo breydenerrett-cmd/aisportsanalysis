@@ -26,6 +26,53 @@ print('unsettled_past_dates:', status.get('unsettled_past_dates'))
 " 2>&1)
 echo "$STATUS_OUT" | sed 's/^/  /'
 
+# S8 (docs/CHECKPOINT_PHASE0_2026-09-03.md): slate -> settle -> eod, in that
+# order, on the existing 10:00 UTC daily cadence -- well before the earliest
+# MLB first pitch (~16:00Z), so `engine slate` sees the bulk of today's slate
+# still pre-game (its own first-pitch guard skips any game already
+# commenced; docs/RUNBOOK.md). Settle runs on YESTERDAY so a game has had a
+# full day to post a result, and eod runs on yesterday only after settle so
+# the self-review never reads a partially-settled day. Each step is guarded
+# the same way as every other step in this script: its exit status is
+# captured explicitly (this script has no `-e`, so a failure here already
+# cannot abort the loop on its own, but a guard that never SAYS SO is not a
+# guard) and turned into one ESCALATE line rather than allowed to pass
+# silently; the loop always continues to the next step and to the commit
+# below regardless. Output goes to this script's own log (stdout, same as
+# every step above) and to docs/OVERNIGHT_RUN.md (the run note) as a short
+# one-line entry per step, so a step's outcome survives past the ephemeral
+# session transcript that ran this script.
+TODAY=$(date -u +%Y-%m-%d)
+YESTERDAY=$(date -u -d 'yesterday' +%Y-%m-%d)
+RUN_NOTE=docs/OVERNIGHT_RUN.md
+
+echo "== engine slate (today, $TODAY) =="
+SLATE_OUT=$(python3 -m src.cli engine slate --date "$TODAY" 2>&1)
+SLATE_STATUS=$?
+echo "$SLATE_OUT" | sed 's/^/  /'
+if [ "$SLATE_STATUS" -ne 0 ]; then
+    echo "ESCALATE: engine slate refused or failed for $TODAY (exit $SLATE_STATUS) -- see output above; the pre-slate freshness guard (src/engine/preflight.py) refuses loudly rather than staking on stale inputs"
+fi
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: engine slate --date $TODAY exit=$SLATE_STATUS" >> "$RUN_NOTE"
+
+echo "== engine settle (yesterday, $YESTERDAY) =="
+SETTLE_OUT=$(python3 -m src.cli engine settle --date "$YESTERDAY" 2>&1)
+SETTLE_STATUS=$?
+echo "$SETTLE_OUT" | sed 's/^/  /'
+if [ "$SETTLE_STATUS" -ne 0 ]; then
+    echo "ESCALATE: engine settle failed for $YESTERDAY (exit $SETTLE_STATUS) -- see output above"
+fi
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: engine settle --date $YESTERDAY exit=$SETTLE_STATUS" >> "$RUN_NOTE"
+
+echo "== eod (yesterday, $YESTERDAY) =="
+EOD_OUT=$(python3 -m src.cli eod --date "$YESTERDAY" 2>&1)
+EOD_STATUS=$?
+echo "$EOD_OUT" | sed 's/^/  /'
+if [ "$EOD_STATUS" -ne 0 ]; then
+    echo "ESCALATE: eod self-review failed or refused for $YESTERDAY (exit $EOD_STATUS) -- see output above; eod refuses rather than writing an empty report when a date has no recorded decisions"
+fi
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: eod --date $YESTERDAY exit=$EOD_STATUS" >> "$RUN_NOTE"
+
 # Concurrent runs of this script and forward_capture.sh on the same shared
 # checkout raced each other into stranded/mismerged commits four times in
 # 30h (87312f2, de8a582, b258fc1, 9d30526): both scripts trip on their own
@@ -44,8 +91,10 @@ fi
 # Explicit paths, not bare `data` -- data/app (customer/auth state) and
 # data/raw (reproducible provider pulls, deliberately gitignored) must never
 # be staged by an automated loop. Anything unbackfillable this pass writes
-# lives under one of the paths named here.
-git add data/processed data/watch data/research data/raw/oddsapi evidence docs/OVERNIGHT_RUN.md artifacts 2>/dev/null || true
+# lives under one of the paths named here. data/paper_accounts (one ledger
+# per registered system, S5/S6a) and docs/eod (the S7 self-review, one file
+# per date) were added for S8.
+git add data/processed data/watch data/research data/raw/oddsapi evidence data/paper_accounts docs/eod docs/OVERNIGHT_RUN.md artifacts 2>/dev/null || true
 git reset -q artifacts/demo_latest.html 2>/dev/null || true
 if ! git diff --cached --quiet; then
     BRANCH=$(git rev-parse --abbrev-ref HEAD)

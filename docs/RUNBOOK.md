@@ -5,12 +5,68 @@
 | cadence | what | how |
 |---|---|---|
 | hourly | roster/lineup/transaction watch + dense odds grid + F5 close pass | trigger runs `bash scripts/forward_capture.sh` |
-| daily 10:00 UTC | snapshot, ingest, briefing, settle, grade | trigger runs `bash scripts/daily_loop.sh` |
+| daily 10:00 UTC | snapshot, ingest, briefing, **engine slate → engine settle → eod**, ledger settle/grade | trigger runs `bash scripts/daily_loop.sh` |
 | 4-hourly | autonomous build loop (roadmap queue) | model session, works docs/ROADMAP.md |
 
 Both scripts commit and push data changes themselves and print `ESCALATE:`
 lines for the only conditions needing attention (credit floor, missed
 capture window, settlement gap, crash).
+
+### The unattended engine loop (S8, added to `scripts/daily_loop.sh`)
+
+Three steps, always in this order, on the existing 10:00 UTC cadence (well
+before the earliest MLB first pitch, ~16:00Z, so `engine slate` sees the
+bulk of the day's slate still pre-game):
+
+1. **`engine slate --date TODAY`** — analyzes today's slate through the
+   registered systems and places FLAT_1U paper wagers (S5). Skips any game
+   already commenced (the existing first-pitch guard in the board/snapshot
+   builder) rather than deciding on an in-play board.
+2. **`engine settle --date YESTERDAY`** — settles yesterday's paper wagers
+   from real results and appends Scorecards (S6a). Runs on yesterday, not
+   today, so a game has had a full day to post a final result.
+3. **`eod --date YESTERDAY`** — writes the end-of-day self-review to
+   `docs/eod/YESTERDAY.md` and the review chain (S7). Runs last, after
+   settlement, so it never reads a partially-settled day.
+
+Each step's exit status is captured explicitly and turned into its own
+`ESCALATE:` line on failure; a bad step never aborts the other two or the
+loop's own commit (same guard style as every other step in this script —
+`set -uo pipefail`, no `-e`). Each step's output goes to the loop's own log
+(stdout) and a one-line summary is appended to `docs/OVERNIGHT_RUN.md` (the
+run note) so the outcome survives past the session transcript that ran it.
+`data/paper_accounts/` (one ledger per registered system) and `docs/eod/`
+(one report per date) are staged for commit alongside the other data-plane
+paths.
+
+**Pre-slate freshness guard (`src/engine/preflight.py`), what step 1
+refuses on.** `engine slate` refuses — no board built, nothing staked —
+before doing anything else, whenever either of these fails, both checked
+every run and both reported together if both fail:
+
+- *Price capture staleness* (`PRICE_CAPTURE_STALE_HOURS = 3`): the newest
+  L1 price observation captured for the date being sliced is more than 3
+  hours old, or there is none at all. Capture runs hourly
+  (`scripts/forward_capture.sh`); 3 hours tolerates two missed cycles
+  before treating the board as too old to price a slate off of.
+- *Matchup feature coverage* (`MATCHUP_COVERAGE_MAX_LAG_DAYS = 3`): the
+  Statcast pitch store's actual ingested coverage (read from its manifest,
+  not its declared target) ends more than 3 days before today, or the
+  store has no coverage recorded at all.
+
+**Named gap this guard exposes rather than papering over:** the Statcast
+pitch store that feeds six of the seven matchup features
+(`src/providers/statcast_pitches.py`, `src/pipeline/rebuilt.py`,
+`src/research/matrix.py`) is a **manual backfill with no forward-ingest
+cadence**. Its coverage currently ends **2026-08-27** — already past the
+3-day threshold above — so live matchup features keep aging every day this
+gap stays open, and `engine slate` will keep honestly refusing on it until
+either the threshold is deliberately widened or a forward pitch-ingest
+cadence is built to keep the store's coverage current. That forward-ingest
+cadence is itself the follow-up work — **not built here** — that this
+guard is standing in for: it stops the engine from quietly betting on
+stale matchup inputs in the meantime, at the cost of refusing to slate at
+all until the real gap closes.
 
 ## Daily health check (30 seconds)
 

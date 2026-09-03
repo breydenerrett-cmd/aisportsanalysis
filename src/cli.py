@@ -2070,7 +2070,25 @@ def cmd_engine(args) -> int:
 
 def _cmd_engine_slate(args) -> int:
     """S5: `engine slate --date DATE [--asof ISO8601] [--systems a,b,c]
-    [--dry-run]`. See `src.engine.slate.run_slate`."""
+    [--dry-run]`. See `src.engine.slate.run_slate`.
+
+    S8: refuses before touching `run_slate` at all -- no board built, no
+    decision written, no wager staked -- when `src.engine.preflight.check`
+    finds either input too stale (docs/CHECKPOINT_PHASE0_2026-09-03.md S8
+    point 2). This is the guard against the daily loop's unattended slate
+    step quietly betting on a stale board or stale matchup features.
+    """
+    from src.engine import preflight
+
+    freshness = preflight.check(args.date)
+    if not freshness.ok:
+        print(f"ERROR: engine slate --date {args.date} refused by the "
+              "pre-slate freshness guard -- no board built, nothing staked",
+              file=sys.stderr)
+        for reason in freshness.reasons:
+            print(f"  ERROR: {reason}", file=sys.stderr)
+        return EXIT_ERROR
+
     from src.engine import slate as engine_slate
     from src.engine.adapters.evolab_system import REGISTERED_SYSTEMS
 
