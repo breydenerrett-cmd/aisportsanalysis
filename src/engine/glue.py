@@ -55,6 +55,7 @@ from src.board.record import (
 )
 from src.core import asof as asof_module
 from src.engine.analyze import Proposal
+from src.engine.features import FeatureSources, build_features
 from src.engine.snapshot import PriceBlindSnapshot, PricedBoard
 from src.engine.truncation import ArrivalRecord, TruncationSample
 from src.paths import processed_path
@@ -326,6 +327,7 @@ def board_facts(board: PricedBoard) -> tuple[tuple, dict]:
 def build_snapshot(game: "GameRef | str | int", t: str | datetime, *,
                     point_class: str = "LATE_BOARD",
                     features: Mapping[str, float] | None = None,
+                    feature_sources: FeatureSources | None = None,
                     board: PricedBoard | None = None,
                     lineup_posted: bool = False,
                     as_of_stores=None,
@@ -333,13 +335,18 @@ def build_snapshot(game: "GameRef | str | int", t: str | datetime, *,
                     ) -> PriceBlindSnapshot:
     """The stop-at-T `PriceBlindSnapshot` for one game.
 
-    Non-price features (point-in-time `as_of` reads) are pulled in only
-    when `game` resolves to a `game_pk` -- explicitly, on the `GameRef`
-    itself, or via the S1 `event_id -> game_pk` map (`game_pk_map`; `None`
-    loads the real store, see `_resolve_ref`/module docstring). A game the
-    map has not resolved still gets an honestly feature-sparse snapshot
-    rather than a guessed one -- this is a REAL `as_of` read for a live
-    game once `gamekey --date` has run for it, not a permanent skip.
+    Non-price features come from `src.engine.features.build_features`
+    (the one feature builder the live and replay engine paths share) unless
+    the caller passes `features=` explicitly, in which case that mapping
+    wins verbatim -- the pre-existing test-fixture path
+    (`build_truncation_sample`'s `features_t2h`/`features_t`) keeps working
+    unchanged. Both the feature read and the point-in-time `as_of` read need
+    a `game_pk`, taken from the `GameRef` itself or from the S1
+    `event_id -> game_pk` map (`game_pk_map`; `None` loads the real store,
+    see `_resolve_ref`). A game the map has not resolved yet gets an
+    honestly feature-sparse snapshot rather than a guessed one, on the price
+    side and the feature side alike; once `gamekey --date` has run for it,
+    this is a real read, not a permanent skip.
     `available_markets`/`books_by_market` are derived from `board` (this
     call's own `PricedBoard`, or the caller's) via `board_facts` when given
     -- board-shaped, never price-shaped, facts a PROPOSE-side system may
@@ -351,11 +358,25 @@ def build_snapshot(game: "GameRef | str | int", t: str | datetime, *,
         as_of_snapshot = asof_module.as_of(ref.asof_key, t, stores=as_of_stores)
     available_markets, books_by_market = (
         board_facts(board) if board is not None else ((), {}))
+
+    feature_values = {}
+    resolved_features = features
+    if resolved_features is None and ref.asof_key is not None:
+        sources = feature_sources or FeatureSources(
+            as_of_stores=as_of_stores, as_of_snapshot=as_of_snapshot)
+        feature_values = build_features(ref, t, sources=sources)
+        resolved_features = {name: fv.value for name, fv in feature_values.items()}
+
+    feature_exposure = {}
+    for name, fv in feature_values.items():
+        key = f"{fv.known_at_grade}:{name}"
+        feature_exposure[key] = feature_exposure.get(key, 0) + 1
+
     return PriceBlindSnapshot.from_asof(
         game_pk=ref.board_key, t=_iso(t), point_class=point_class,
-        features=features or {}, as_of_snapshot=as_of_snapshot,
+        features=resolved_features or {}, as_of_snapshot=as_of_snapshot,
         available_markets=available_markets, books_by_market=books_by_market,
-        lineup_posted=lineup_posted,
+        lineup_posted=lineup_posted, extra_exposure=feature_exposure,
     )
 
 

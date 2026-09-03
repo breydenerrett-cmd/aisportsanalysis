@@ -233,14 +233,45 @@ class TestProvenance(unittest.TestCase):
             c["cause"].startswith("no_asof_read")
             for c in record.counterarguments))
 
-    def test_asof_read_with_nothing_degraded_grades_a(self):
-        """The other half of bug #1's fix: a REAL as_of read that happened
-        to find zero degraded fields is grade A -- earned, not assumed --
-        and distinct from the no-read case above (asof_read=True here)."""
+    def test_asof_read_that_finds_nothing_still_grades_d(self):
+        """Correction: `PriceBlindSnapshot.from_asof` folds EVERY observed
+        as_of field into assumption_exposure regardless of its own grade
+        (src/engine/snapshot.py), so an empty assumption_exposure can never
+        mean "read some real fields, all grade A" -- it can only mean
+        nothing was read at all. `asof_read=True` with an empty exposure is
+        exactly that second case (a real as_of call happened but matched
+        zero rows for this game_pk at this t, e.g. a 2023-24 game_pk against
+        forward stores that did not exist yet) and must grade D, with the
+        same counterargument family as the no-read case, not A. An earlier
+        revision of this test asserted the opposite (grade A here) on the
+        mistaken premise that empty exposure could mean "found zero
+        degraded fields"; it cannot, for the reason above."""
         system = _RecordingSystem((Proposal(
             system_id="s1", system_version="1", market_key="h2h",
             side="home", p_model=0.6),))
         snap = _snapshot(assumption_exposure={}, asof_read=True)
+        analysis = analyze(snap, _board(), systems=(system,))
+        record = analysis.records[0]
+        self.assertEqual(record.known_at_grade, "D")
+        self.assertTrue(any(
+            c["cause"].startswith("no_asof_read")
+            for c in record.counterarguments))
+        # The detail distinguishes "a read happened but found nothing" from
+        # "no read happened at all" -- both grade D, for different reasons.
+        detail = next(c["detail"] for c in record.counterarguments
+                     if c["cause"].startswith("no_asof_read"))
+        self.assertIn("matched zero fields", detail)
+
+    def test_asof_read_with_real_grade_a_fields_earns_a(self):
+        """The genuinely earned case: assumption_exposure carries real,
+        grade-A field provenance (as `PriceBlindSnapshot.from_asof` produces
+        when an as_of read actually found a field, at any grade) -- only
+        this, never an empty exposure, is evidence enough for grade A."""
+        system = _RecordingSystem((Proposal(
+            system_id="s1", system_version="1", market_key="h2h",
+            side="home", p_model=0.6),))
+        snap = _snapshot(assumption_exposure={"A:home_plate_umpire": 1},
+                         asof_read=True)
         analysis = analyze(snap, _board(), systems=(system,))
         record = analysis.records[0]
         self.assertEqual(record.known_at_grade, "A")

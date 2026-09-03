@@ -224,16 +224,20 @@ scale actually executed and its result.
 `DecisionRecord`'s `assumption_exposure` and `friction` fields unchanged —
 `analyze()` never recomputes or discards a provenance fact it was handed.
 `known_at_grade` on the record is the coarsest grade among the snapshot's
-exposed fields (worse grade wins), never silently rounded up to A. An empty
-`assumption_exposure` is graded from `PriceBlindSnapshot.asof_read`, NOT
-assumed A: `asof_read=True` (a real `src.core.asof` read happened and found
-zero degraded fields) grades A -- earned, not assumed; `asof_read=False`
-(no read ever happened, e.g. no `game_pk` to key one on -- see
-`src.engine.glue`'s game_pk/event_id gap) grades D and the record's
-`counterarguments` carries an entry naming the missing read
-(`cause="no_asof_read:known_at_grade_downgraded"`). `assumption_exposure`
-alone cannot distinguish these two cases; `asof_read` is what lets
-`analyze()` tell them apart.
+exposed fields (worse grade wins), never silently rounded up to A. `.from_asof`
+folds EVERY observed as_of field into `assumption_exposure` regardless of its
+own grade (not only the degraded ones), so an empty `assumption_exposure`
+can never mean "read some real fields, all grade A" -- it can only mean
+nothing was read at all, and grades D unconditionally in that case, with a
+`counterarguments` entry naming which of the two "nothing" cases it was
+(`cause="no_asof_read:known_at_grade_downgraded"`): `asof_read=False` (no
+`src.core.asof` read ever happened, e.g. no `game_pk` to key one on -- see
+`src.engine.glue`'s game_pk/event_id gap), or `asof_read=True` (a read
+happened but matched zero rows for this game_pk at this t, and
+`src.engine.features.build_features` found no reproducible value either).
+Grade A is earned only by a non-empty `assumption_exposure` whose fields are
+all themselves grade A -- never assumed from the mere fact that a read was
+attempted.
 
 ## 8. First-pitch guard
 
