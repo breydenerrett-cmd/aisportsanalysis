@@ -306,7 +306,7 @@ def _to_decision_record(cand: Candidate, *, snapshot: PriceBlindSnapshot,
         _canonical_json({"game_pk": snapshot.game_pk, "t": snapshot.t,
                          "features": snapshot.features}).encode()
     ).hexdigest()
-    no_asof_read = False
+    no_real_read = False
     grade = "D"
     if snapshot.assumption_exposure:
         grades = {k.split(":", 1)[0] for k in snapshot.assumption_exposure}
@@ -316,17 +316,21 @@ def _to_decision_record(cand: Candidate, *, snapshot: PriceBlindSnapshot,
                 break
         else:
             grade = sorted(grades)[-1] if grades else "D"
-    elif getattr(snapshot, "asof_read", False):
-        # A real as_of read happened and found zero degraded fields --
-        # nothing here was time-sensitive, so A is earned, not assumed.
-        grade = "A"
     else:
-        # No as_of read ever happened (no game_pk to key one on -- see
-        # src.engine.glue's game_pk/event_id gap). Grading this A would
-        # assert perfect information provenance for a snapshot that has
-        # NONE: fail closed to D instead.
+        # assumption_exposure is empty. `PriceBlindSnapshot.from_asof` folds
+        # EVERY observed as_of field into assumption_exposure regardless of
+        # its own grade (src/engine/snapshot.py), so an empty exposure never
+        # means "read some real fields, all grade A" -- it can only mean
+        # nothing was read at all: either no as_of call ever happened (no
+        # game_pk to key one on -- src.engine.glue's game_pk/event_id gap),
+        # or one DID happen and found zero matching rows for this game_pk at
+        # this t (e.g. a 2023-24 game_pk against forward stores that did not
+        # exist yet, with no reproducible src.engine.features value either).
+        # Neither case is evidence of anything; grading either A would
+        # assert a provenance this snapshot does not have. Fail closed to D
+        # in both, and say which one happened in the counterargument detail.
         grade = "D"
-        no_asof_read = True
+        no_real_read = True
 
     row = board.rows_for(cand.selection_id)
     market_key = row[0].market_key if row else proposal.market_key
@@ -338,14 +342,22 @@ def _to_decision_record(cand: Candidate, *, snapshot: PriceBlindSnapshot,
          "severity": c.severity, "detail": c.detail}
         for c in cand.counterarguments
     ]
-    if no_asof_read:
+    if no_real_read:
+        if getattr(snapshot, "asof_read", False):
+            detail = ("an as_of read occurred for this snapshot but matched "
+                       "zero fields (no forward-store row for this game_pk "
+                       "at t, and no reproducible src.engine.features value "
+                       "either); known_at_grade forced to D rather than "
+                       "assumed A")
+        else:
+            detail = ("no as_of read occurred for this snapshot (no game_pk "
+                       "to key one on); known_at_grade forced to D rather "
+                       "than assumed A")
         counterarguments.append({
             "adversary_id": "engine",
             "cause": "no_asof_read:known_at_grade_downgraded",
             "severity": MAJOR,
-            "detail": "no as_of read occurred for this snapshot (no game_pk "
-                       "to key one on); known_at_grade forced to D rather "
-                       "than assumed A",
+            "detail": detail,
         })
     if verdict == "play" and not evidence and not counterarguments:
         # DecisionRecord requires one of the two non-empty on a play

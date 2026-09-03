@@ -99,8 +99,18 @@ class TestBuildSnapshot(GlueTestBase):
         )]
         # 2026+ is inside the live-capture era, so this field grades A.
         ref = glue.GameRef(event_id=GAME_A, game_pk="999")
+        # feature_sources points the pitch-accumulator half of build_features
+        # at a nonexistent store: this test is about as_of/umpire provenance
+        # wiring, not the (separately, exhaustively tested in
+        # tests/test_engine_features.py) six pitch-accumulator features, and
+        # a real default store would otherwise turn this into a real,
+        # multi-second-to-minutes pitch-history walk for no reason this
+        # test needs.
         snapshot = glue.build_snapshot(
-            ref, "2026-09-02T20:00:00Z", as_of_stores=stores)
+            ref, "2026-09-02T20:00:00Z", as_of_stores=stores,
+            feature_sources=glue.FeatureSources(
+                as_of_stores=stores,
+                statcast_store=Path(self._tmp.name) / "no_such_statcast"))
         self.assertIn("A:home_plate_umpire", snapshot.assumption_exposure)
         self.assertEqual(snapshot.game_pk, GAME_A)  # board_key wins on the field
 
@@ -123,8 +133,14 @@ class TestBuildSnapshot(GlueTestBase):
         )]
         ref = glue.GameRef(event_id=GAME_A, game_pk="999")
         # t is BEFORE the umpire observation -- it must not appear.
+        # (feature_sources: see test_uses_as_of_when_game_pk_present's note
+        # -- keeps this test to the as_of/umpire wiring it is actually
+        # about, not a real pitch-store walk.)
         snapshot = glue.build_snapshot(
-            ref, "2026-09-02T20:00:00Z", as_of_stores=stores)
+            ref, "2026-09-02T20:00:00Z", as_of_stores=stores,
+            feature_sources=glue.FeatureSources(
+                as_of_stores=stores,
+                statcast_store=Path(self._tmp.name) / "no_such_statcast"))
         self.assertEqual(snapshot.assumption_exposure, {})
 
     def test_available_markets_come_from_the_board(self):
