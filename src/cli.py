@@ -642,8 +642,18 @@ def cmd_ledger(args) -> int:
     if getattr(args, "action", None) == "verify":
         from src.ledger import bridge
         report = bridge.verify()
-        print(f"v1 ledger ({report['v1_path']}): "
-              f"{'untouched' if report['v1_untouched'] else 'CHANGED'}")
+        status = report["v1_status"]
+        if status == bridge.V1_UNTOUCHED:
+            label = f"untouched ({report['v1_rows_current']} row(s))"
+        elif status == bridge.V1_GREW:
+            label = (f"GREW, OK ({report['v1_rows_recorded']} -> "
+                     f"{report['v1_rows_current']} rows by pure append, "
+                     "prefix byte-identical)")
+        else:
+            label = (f"TAMPERED ({report['v1_rows_current']} row(s) now; "
+                     "no prefix of this file matches the hash recorded at "
+                     "genesis -- the recorded region itself changed)")
+        print(f"v1 ledger ({report['v1_path']}): {label}")
         print(f"  sha256 recorded={report['v1_sha256_recorded']}")
         print(f"  sha256 current ={report['v1_sha256_current']}")
         print(f"v2 chain ({report['v2_path']}): "
@@ -2120,8 +2130,8 @@ def _cmd_engine_slate(args) -> int:
     freshness = preflight.check(args.date)
     if not freshness.ok:
         print(f"ERROR: engine slate --date {args.date} refused by the "
-              "pre-slate freshness guard -- no board built, nothing staked",
-              file=sys.stderr)
+              f"pre-slate freshness guard ({freshness.mode} mode) -- no "
+              "board built, nothing staked", file=sys.stderr)
         for reason in freshness.reasons:
             print(f"  ERROR: {reason}", file=sys.stderr)
         return EXIT_ERROR
@@ -2151,6 +2161,10 @@ def _cmd_engine_slate(args) -> int:
     print(f"[{label}] engine slate --date {args.date}"
           + (f" --asof {args.asof}" if args.asof else "")
           + f" --systems {','.join(report.systems)}")
+    print(f"  freshness guard mode: {freshness.mode}"
+          + (" (today -- wall-clock now)" if freshness.mode == "LIVE"
+             else " (past date -- measured against that date's own decision"
+                  " time, not today's clock)"))
     print(f"  games considered    : {report.n_games_considered}")
     print(f"  games skipped       : {report.n_games_skipped}")
     for g in report.games:

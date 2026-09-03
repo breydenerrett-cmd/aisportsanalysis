@@ -42,6 +42,7 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Mapping, Sequence
 
 from src.accounts.paper import FLAT_1U, PAPER_LABEL, PaperBet
@@ -96,6 +97,23 @@ def _parse_utc(value: str) -> datetime:
 
 def _iso(value: datetime) -> str:
     return value.astimezone(timezone.utc).isoformat()
+
+
+def _l1_source_mtimes_newer_than_output(output_path, source_paths) -> bool:
+    """`True` when `output_path` (the L1 store) does not exist yet, or any
+    path in `source_paths` has a newer mtime than it -- the cheap (`stat()`
+    only, no JSONL parsing) signal that `output_path` might now be missing
+    rows a source store already has. A source path that does not exist is
+    simply not a reason to refresh (nothing to project from it yet)."""
+    output = Path(output_path)
+    if not output.exists():
+        return True
+    output_mtime = output.stat().st_mtime
+    for source in source_paths:
+        source = Path(source)
+        if source.exists() and source.stat().st_mtime > output_mtime:
+            return True
+    return False
 
 
 def decision_key(record: DecisionRecord) -> tuple:
@@ -302,16 +320,72 @@ def run_slate(
     decisions_path=None,
     wagers_path=None,
     game_pk_map: Mapping[str, dict] | None = None,
+    refresh_l1: bool = True,
+    l1_sources: Sequence | None = None,
+    l1_raw_root=None,
 ) -> SlateReport:
     """Run the slate for `date_str` and (unless `dry_run`) write frozen
     DecisionRecords + FLAT_1U paper wagers. Idempotent across re-runs (see
-    module docstring)."""
+    module docstring).
+
+    L1 REFRESH (fixes: a slate run seeing hours-stale prices while fresher
+    ones already sat captured on disk). `data/processed/l1_observations.jsonl`
+    is a PROJECTION `src.board.l1.run()` builds from the real price stores
+    (odds_multibook/odds_snapshots/f5_close) -- nothing else re-projects it
+    after a capture, so without this a capture landing between two slate
+    runs is invisible to `engine slate` until someone remembers to run
+    `l1 --backfill` by hand. `run_slate` is the ONE path every real
+    invocation of `engine slate` goes through (the CLI, the daily loop,
+    replay demonstrations) and it reads L1 through `l1_path` immediately
+    below via `games_for_slate_date`/`build_board` -- so refreshing HERE,
+    before either is called, is the placement a caller cannot forget by
+    omitting a separate step; `refresh_l1=True` is the default for exactly
+    that reason.
+
+    The refresh only ever fires when it is safe to: either `l1_path` is the
+    real production L1 store (the default -- refreshed from the real
+    production source stores), or the caller has explicitly named
+    `l1_sources`/`l1_raw_root` to refresh FROM. A test handing `run_slate` a
+    synthetic `l1_path` with neither is left untouched -- otherwise every
+    existing test using a clean L1 fixture would silently get real
+    production price rows projected into it. Idempotent: `src.board.l1.run`
+    only ever WRITES rows not already present by `observation_id`, so a
+    repeated call writes zero new rows.
+
+    NO FULL RE-WALK WHEN UNNECESSARY: `l1.run()` itself still re-reads every
+    source row on each call it makes (needed for its own grading pass), so
+    calling it unconditionally on every `engine slate` invocation would pay
+    that same walk again even when nothing on disk has changed since the
+    last one. `_l1_source_mtimes_newer_than_output` below is the cheap guard
+    in front of it: a handful of `stat()` calls, not a JSONL parse, decide
+    whether ANY source file `l1_path` would be projected from has changed
+    since `l1_path` was last written; `l1.run()` itself is only invoked when
+    that is true (or `l1_path` does not exist yet at all). A slate re-run
+    between two captures -- the daily loop's actual cadence -- skips the
+    walk entirely instead of re-scanning a store that has not moved.
+    """
     systems = tuple(systems) if systems is not None else REGISTERED_SYSTEMS
     if not systems:
         raise SlateError("run_slate needs at least one system")
 
     decisions_path = str(decisions_path or V2_LEDGER_PATH)
     wagers_path = str(wagers_path or PAPER_WAGERS_PATH)
+
+    if refresh_l1 and (l1_sources is not None or l1_raw_root is not None
+                        or Path(l1_path) == Path(glue_module.L1_PATH)):
+        from src.board import l1 as l1_module
+        source_paths = (
+            [s["path"] for s in l1_sources] if l1_sources is not None
+            else [s["path"] for s in l1_module.SOURCE_STORES]
+                + [s["path"] for s in
+                   l1_module._discover_closing_stores(Path(l1_path).parent)])
+        if _l1_source_mtimes_newer_than_output(l1_path, source_paths):
+            l1_kwargs: dict = {}
+            if l1_sources is not None:
+                l1_kwargs["sources"] = list(l1_sources)
+            if l1_raw_root is not None:
+                l1_kwargs["raw_root"] = l1_raw_root
+            l1_module.run(since=date_str, output_path=l1_path, **l1_kwargs)
 
     existing_decisions = _load_existing_decision_keys(decisions_path)
     existing_bet_ids = _load_existing_bet_ids(wagers_path)

@@ -46,6 +46,14 @@ TODAY=$(date -u +%Y-%m-%d)
 YESTERDAY=$(date -u -d 'yesterday' +%Y-%m-%d)
 RUN_NOTE=docs/OVERNIGHT_RUN.md
 
+# No separate "refresh L1" step belongs here: `engine slate` (via
+# `src.engine.slate.run_slate`) refreshes `data/processed/
+# l1_observations.jsonl` itself, immediately before reading it, on every
+# invocation -- CLI, this loop, or a replay demonstration alike -- so a
+# capture landing between two runs of this script is never stale by the
+# time this step reads it (see `run_slate`'s own "L1 REFRESH" docstring
+# section for why that placement, not a step here, is the one that cannot
+# be forgotten).
 echo "== engine slate (today, $TODAY) =="
 SLATE_OUT=$(python3 -m src.cli engine slate --date "$TODAY" 2>&1)
 SLATE_STATUS=$?
