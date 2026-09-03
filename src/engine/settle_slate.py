@@ -39,6 +39,7 @@ from typing import Mapping
 
 from src.accounts.paper import PaperAccount, PaperBet, SettledBet
 from src.board.settle import GameResult
+from src.core.asof import game_pk_key
 from src.factory.fitness import promotion_verdict
 from src.factory.scorecard import build_scorecard, decision_key_for
 from src.ledger.bridge import V2_LEDGER_PATH
@@ -98,7 +99,7 @@ def load_mlb_results(path=MLB_RESULTS_CSV) -> dict:
                 away_runs = int(row["away_score"])
             except (KeyError, ValueError, TypeError):
                 continue
-            out[str(game_pk)] = {
+            out[game_pk_key(game_pk)] = {
                 "home_runs": home_runs, "away_runs": away_runs,
                 "date": row.get("date"),
             }
@@ -119,7 +120,7 @@ def load_first_five_results(path=FIRST_FIVE_RESULTS_PATH) -> dict:
         away = row.get("away_runs")
         if home is None or away is None:
             continue
-        out[str(game_pk)] = (home, away)
+        out[game_pk_key(game_pk)] = (home, away)
     return out
 
 
@@ -145,7 +146,7 @@ def load_boxscore_first_five(pattern: str = BOXSCORES_GLOB) -> dict:
                 continue
             home = sum(i.get("home_runs", 0) or 0 for i in innings if i.get("num", 0) <= 5)
             away = sum(i.get("away_runs", 0) or 0 for i in innings if i.get("num", 0) <= 5)
-            out[str(game_pk)] = (home, away)
+            out[game_pk_key(game_pk)] = (home, away)
     return out
 
 
@@ -157,10 +158,11 @@ def build_game_result(game_pk: str, results: Mapping, f5_historical: Mapping,
     linescore) and default to `None` (VOID on settlement, per
     `src.board.settle`'s own contract) when neither source has them --
     F5 unavailability never blocks settling the full-game markets."""
-    row = results.get(str(game_pk))
+    row = results.get(game_pk_key(game_pk))
     if row is None:
         return None
-    f5 = f5_historical.get(str(game_pk)) or f5_boxscore.get(str(game_pk))
+    f5 = (f5_historical.get(game_pk_key(game_pk))
+          or f5_boxscore.get(game_pk_key(game_pk)))
     home5, away5 = f5 if f5 is not None else (None, None)
     return GameResult(
         home_runs=row["home_runs"], away_runs=row["away_runs"],
@@ -228,11 +230,12 @@ def late_information_for(game_pk, decision_utc: str, settle_utc: str,
     arrived AFTER the decision was frozen, which is exactly what a "second
     verdict" is computed against (ReviewRecord's own `late_information`
     field)."""
-    if game_pk is None:
+    canonical_game_pk = game_pk_key(game_pk)
+    if canonical_game_pk is None:
         return ()
     out = []
     for row in _read_jsonl(path):
-        if str(row.get("game_pk")) != str(game_pk):
+        if game_pk_key(row.get("game_pk")) != canonical_game_pk:
             continue
         observed = row.get("observed_utc") or row.get("known_at")
         if not observed:
@@ -316,7 +319,8 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
             f"--date {date_str}` first")
 
     results = load_mlb_results(results_path)
-    game_pks = sorted({str(w.get("game_pk")) for w in wagers if w.get("game_pk") is not None})
+    game_pks = sorted({game_pk_key(w.get("game_pk")) for w in wagers
+                       if w.get("game_pk") is not None})
     missing = [pk for pk in game_pks if pk not in results]
     unresolved_events = sorted({w.get("event_id") for w in wagers if w.get("game_pk") is None})
     if missing or unresolved_events:

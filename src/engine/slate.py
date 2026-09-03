@@ -47,6 +47,7 @@ from typing import Mapping, Sequence
 from src.accounts.paper import FLAT_1U, PAPER_LABEL, PaperBet
 from src.board import gamekey as gamekey_module
 from src.board.ids import MARKET_CATALOGUE
+from src.core.asof import game_pk_key
 from src.engine import glue as glue_module
 from src.engine.adapters.evolab_system import REGISTERED_SYSTEMS
 from src.engine.adversaries import DEFAULT_ADVERSARIES
@@ -397,8 +398,21 @@ def run_slate(
                     continue
                 settlement_rule = (MARKET_CATALOGUE[record.market_key]
                                   .settlement_rule)
-                resolved_game_pk = record.game_pk or gamekey_module.game_pk_for_event(
-                    record.event_id, resolved_game_pk_map)
+                # `record.game_pk` (int|None, src.engine.analyze) and
+                # `game_pk_for_event` (the canonical join-key STRING,
+                # src.core.asof.game_pk_key) are two different types for
+                # the same fact -- `PaperBet.game_pk` is `int | None`
+                # (matching boxscores_*.jsonl/mlb_results.csv's own leaf
+                # convention), so both branches are canonicalized through
+                # the same helper before being cast back to int, rather
+                # than an `or` that could hand PaperBet either type
+                # depending on which branch happened to answer.
+                resolved_game_pk_str = game_pk_key(record.game_pk) or (
+                    gamekey_module.game_pk_for_event(
+                        record.event_id, resolved_game_pk_map))
+                resolved_game_pk = (
+                    int(resolved_game_pk_str)
+                    if resolved_game_pk_str is not None else None)
                 bet = PaperBet(
                     bet_id=bet_id, system_id=record.system_id,
                     market_key=record.market_key,

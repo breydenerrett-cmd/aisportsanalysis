@@ -74,7 +74,12 @@ class ResolveEventTests(unittest.TestCase):
             ATL_SF_COMMENCE, schedule_fn=schedule_fn)
         self.assertTrue(entry["resolved"])
         self.assertFalse(entry["ambiguous"])
-        self.assertEqual(entry["game_pk"], 12345)
+        # Canonical string form (src.core.asof.game_pk_key), not the raw int
+        # `schedule_fn` handed back -- the ONE point this store's game_pk
+        # column is produced (module docstring), so every downstream reader
+        # gets the join-key type without a second coercion of its own.
+        self.assertEqual(entry["game_pk"], "12345")
+        self.assertIsInstance(entry["game_pk"], str)
         self.assertEqual(entry["schedule_commence_time"], ATL_SF_COMMENCE)
         self.assertIsNone(entry["reason"])
         self.assertEqual(entry["candidates"], [])
@@ -98,9 +103,9 @@ class ResolveEventTests(unittest.TestCase):
             "2026-08-31T22:00:00Z", schedule_fn=schedule_fn)
         self.assertTrue(entry["resolved"])
         self.assertTrue(entry["ambiguous"])
-        self.assertEqual(entry["game_pk"], 222)  # nearest to 22:00Z
+        self.assertEqual(entry["game_pk"], "222")  # nearest to 22:00Z, canonical string
         candidate_pks = {c["game_pk"] for c in entry["candidates"]}
-        self.assertEqual(candidate_pks, {111, 222})
+        self.assertEqual(candidate_pks, {"111", "222"})
         self.assertIn("doubleheader", entry["reason"])
 
     def test_unresolvable_team_names_refuses_without_calling_schedule(self):
@@ -171,7 +176,10 @@ class BuildMapTests(unittest.TestCase):
 
         rows = {json.loads(l)["event_id"]: json.loads(l)
                 for l in self.map_path.read_text().splitlines()}
-        self.assertEqual(rows["evt-resolved"]["game_pk"], 999)
+        # On-disk row carries the canonical STRING game_pk (not the raw int
+        # `schedule_fn` returned) -- this store is the one place that type
+        # is produced, so it must never write the un-normalized form.
+        self.assertEqual(rows["evt-resolved"]["game_pk"], "999")
         self.assertIsNone(rows["evt-unresolved"]["game_pk"])
 
     def test_rerun_over_the_same_date_is_idempotent(self):
@@ -210,7 +218,7 @@ class BuildMapTests(unittest.TestCase):
             "2026-08-31", map_path=self.map_path, event_sources=self._sources(),
             schedule_fn=schedule_fn, force=True)
         index = gk.load_map(self.map_path)
-        self.assertEqual(index["evt-a"]["game_pk"], 999)
+        self.assertEqual(index["evt-a"]["game_pk"], "999")
         # Append-only: both rows are still on disk, last write wins on read.
         lines = self.map_path.read_text().splitlines()
         self.assertEqual(len(lines), 2)

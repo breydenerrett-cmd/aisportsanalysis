@@ -44,6 +44,7 @@ from datetime import date as _date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Callable, Iterable, Mapping
 
+from src.core.asof import game_pk_key
 from src.data import parks
 from src.paths import processed_path
 from src.pipeline import slate as slate_mod
@@ -244,7 +245,11 @@ def resolve_event(event_id: str, home_team: str, away_team: str,
     # A genuine doubleheader is two schedule games matching on THIS SAME
     # date, which is exactly what this single-date query captures.
     candidates = _matching_games(center_date)
-    seen_pks = {g["game_pk"] for g in candidates}
+    # Canonical form (see `src.core.asof.game_pk_key`) even though every
+    # candidate here comes from the SAME `schedule_fn` call and so could
+    # never actually disagree on type -- de-dup membership tests must never
+    # be the one comparison in this module that skips the coercion.
+    seen_pks = {game_pk_key(g["game_pk"]) for g in candidates}
 
     # Only widen to the calendar day either side when the exact date found
     # NOTHING -- a commence_time within a few hours of midnight ET can round
@@ -255,9 +260,10 @@ def resolve_event(event_id: str, home_team: str, away_team: str,
         for day in ((center_dt - timedelta(days=1)).isoformat(),
                     (center_dt + timedelta(days=1)).isoformat()):
             for game in _matching_games(day):
-                if game["game_pk"] in seen_pks:
+                pk = game_pk_key(game["game_pk"])
+                if pk in seen_pks:
                     continue
-                seen_pks.add(game["game_pk"])
+                seen_pks.add(pk)
                 candidates.append(game)
 
     if not candidates:
@@ -290,11 +296,16 @@ def resolve_event(event_id: str, home_team: str, away_team: str,
 
     return {
         **base,
-        "game_pk": best.get("game_pk"),
+        # Canonical string form (see `src.core.asof.game_pk_key`) -- the
+        # ONE point this store's `game_pk` column is ever produced, so
+        # every downstream reader (`game_pk_for_event`, `src.board.l1`,
+        # `src.engine.glue`) receives the same type without having to
+        # coerce a second time.
+        "game_pk": game_pk_key(best.get("game_pk")),
         "resolved": True,
         "ambiguous": ambiguous,
         "candidates": (
-            [{"game_pk": c.get("game_pk"),
+            [{"game_pk": game_pk_key(c.get("game_pk")),
               "start_time_utc": c.get("start_time_utc")} for c in candidates]
             if ambiguous else []),
         "schedule_commence_time": best.get("start_time_utc"),
@@ -320,18 +331,27 @@ def load_map(path: Path | str = DEFAULT_MAP_PATH) -> dict[str, dict]:
 
 
 def game_pk_for_event(event_id: str | int | None,
-                       index: Mapping[str, dict] | None) -> object:
-    """The best-known `game_pk` for `event_id` from an already-loaded map
-    `index` (see `load_map`), or None when the event is absent from the map
-    or was resolved as unresolvable. An ambiguous row still returns its
+                       index: Mapping[str, dict] | None) -> str | None:
+    """The best-known `game_pk` for `event_id`, in the canonical string form
+    (`src.core.asof.game_pk_key`), from an already-loaded map `index` (see
+    `load_map`), or None when the event is absent from the map or was
+    resolved as unresolvable. An ambiguous row still returns its
     nearest-commence_time best guess -- ambiguity is recorded on the row for
-    a caller that cares, not withheld from the one that just wants a pk."""
+    a caller that cares, not withheld from the one that just wants a pk.
+
+    Coerces on READ, not just on write: `resolve_event` has written the
+    canonical string since S1's game-key normalization, but this store is
+    append-only (module docstring), so a row written before that change
+    still holds a native JSON int on disk. Normalizing here means every
+    caller gets the same type regardless of which of the two eras wrote the
+    row it happens to read.
+    """
     if not index or event_id is None:
         return None
     entry = index.get(str(event_id))
     if not entry:
         return None
-    return entry.get("game_pk")
+    return game_pk_key(entry.get("game_pk"))
 
 
 def _append_rows(path: Path, rows: list[dict]) -> None:
