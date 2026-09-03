@@ -54,6 +54,7 @@ from src.board.record import (
     PriceObservation, RecordValidationError, price_observation_from_dict,
 )
 from src.core import asof as asof_module
+from src.core.asof import game_pk_key
 from src.engine.analyze import Proposal
 from src.engine.features import FeatureSources, build_features
 from src.engine.snapshot import PriceBlindSnapshot, PricedBoard
@@ -114,6 +115,14 @@ class GameRef:
     def __post_init__(self) -> None:
         if not self.event_id and not self.game_pk:
             raise GlueError("GameRef needs event_id and/or game_pk")
+        if self.game_pk is not None:
+            # Canonical string form (`src.core.asof.game_pk_key`) enforced
+            # AT CONSTRUCTION -- a `GameRef` can never be built holding the
+            # raw int a caller (or a mis-typed on-disk row) handed it, so no
+            # downstream comparison against it can ever be a mixed-type one.
+            canonical = game_pk_key(self.game_pk)
+            if canonical != self.game_pk:
+                object.__setattr__(self, "game_pk", canonical)
 
     @property
     def board_key(self) -> str:
@@ -156,7 +165,11 @@ def _resolve_ref(game: "GameRef | str | int",
         ref.event_id, _load_game_pk_map(game_pk_map))
     if pk is None:
         return ref
-    return GameRef(event_id=ref.event_id, game_pk=str(pk))
+    # `game_pk_for_event` already returns the canonical string
+    # (`src.core.asof.game_pk_key`); `GameRef.__post_init__` re-canonicalizes
+    # regardless, so this can never construct a mixed-type ref even if a
+    # future caller of this function stops going through that helper.
+    return GameRef(event_id=ref.event_id, game_pk=pk)
 
 
 # ---------------------------------------------------------------------------
@@ -181,7 +194,7 @@ def _row_key(raw: Mapping) -> str | None:
     if raw.get("event_id"):
         return str(raw["event_id"])
     if raw.get("game_pk") is not None:
-        return str(raw["game_pk"])
+        return game_pk_key(raw["game_pk"])
     return None
 
 
@@ -329,7 +342,7 @@ def build_snapshot(game: "GameRef | str | int", t: str | datetime, *,
                     features: Mapping[str, float] | None = None,
                     feature_sources: FeatureSources | None = None,
                     board: PricedBoard | None = None,
-                    lineup_posted: bool = False,
+                    lineup_posted: bool | None = None,
                     as_of_stores=None,
                     game_pk_map: Mapping[str, dict] | None = None,
                     ) -> PriceBlindSnapshot:
@@ -351,11 +364,31 @@ def build_snapshot(game: "GameRef | str | int", t: str | datetime, *,
     call's own `PricedBoard`, or the caller's) via `board_facts` when given
     -- board-shaped, never price-shaped, facts a PROPOSE-side system may
     see (ENGINE_CONTRACT.md section 3).
+
+    `lineup_posted`: `None` (the default) means "derive it from the `as_of`
+    read this call already performs" -- both `home_lineup` and `away_lineup`
+    present as of `t` (`lineups_watch`, the same store `src.evolab.decide`'s
+    `require_lineup` eligibility gate exists to check). This was previously
+    a bare `bool = False` that no live caller (`src.engine.slate.run_slate`)
+    ever overrode, so every genome with `require_lineup=True` declined on
+    every real, live decision regardless of whether a lineup had actually
+    posted -- an as_of read that found the lineup, thrown away one line
+    later. A caller that already knows the answer some other way (the
+    2023-24 replay path, `src.engine.adapters.evolab_system.replay_decision`,
+    which has no `lineups_watch` capture to read at all and instead uses a
+    minutes-to-first-pitch heuristic -- see `src.evolab.replay`'s
+    `LINEUP_ASSUMED_POST_MINUTES`) still passes an explicit `True`/`False`
+    and that always wins verbatim, exactly as before.
     """
     ref = _resolve_ref(game, game_pk_map)
     as_of_snapshot = None
     if ref.asof_key is not None:
         as_of_snapshot = asof_module.as_of(ref.asof_key, t, stores=as_of_stores)
+    if lineup_posted is None:
+        lineup_posted = bool(
+            as_of_snapshot is not None
+            and as_of_snapshot.get("home_lineup") is not None
+            and as_of_snapshot.get("away_lineup") is not None)
     available_markets, books_by_market = (
         board_facts(board) if board is not None else ((), {}))
 

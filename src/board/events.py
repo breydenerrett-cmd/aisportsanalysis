@@ -44,6 +44,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
+from src.core.asof import game_pk_key
 from src.data.labels import team_name as _team_full_name
 from src.paths import data_path, processed_path
 
@@ -177,12 +178,16 @@ def write_events(events: Iterable[InformationEvent],
 
 
 # ---------------------------------------------------------------------------
-# Watch-store readers (mirrors src/core/asof.py's _pk / _obs_utc helpers)
+# Watch-store readers
 # ---------------------------------------------------------------------------
 
 def _pk(row: dict) -> str | None:
-    v = row.get("game_pk")
-    return str(v) if v is not None else None
+    """`src.core.asof.game_pk_key` -- the ONE canonical-coercion function,
+    reused here rather than this module keeping its own second copy of the
+    same `str(v) if v is not None else None` logic (which is exactly the
+    kind of duplicated, easy-to-forget-one-of coercion the S1 game-key
+    normalization closed out)."""
+    return game_pk_key(row.get("game_pk"))
 
 
 def _obs(row: dict) -> str | None:

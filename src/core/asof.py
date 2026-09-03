@@ -155,9 +155,74 @@ class StoreSpec:
     fields: Mapping[str, FieldExtractor]
 
 
+def game_pk_key(value: "str | int | float | None") -> str | None:
+    """THE one canonical form of a `game_pk`, used for every comparison and
+    every dict lookup keyed on one, anywhere in this project.
+
+    CANONICAL TYPE: a decimal digit STRING (e.g. `"824717"`), never an
+    `int`. Justification: `game_pk` is a join key, not a quantity anyone
+    ever adds or subtracts -- exactly like `event_id`, which is already a
+    string throughout this codebase (an opaque provider hash could never be
+    an int in the first place). `src.core.asof.as_of`, `src.engine.glue`'s
+    `GameRef`/`PriceBlindSnapshot`, and `src.engine.settle_slate`'s result
+    dicts all already key on strings; the MLB Stats API, `boxscores_*.jsonl`
+    and `data/watch/*.jsonl` all happen to write the SAME id as a native
+    JSON int instead. Two on-disk stores of the same fact in two different
+    JSON types is exactly the shape of bug this project has hit before (a
+    join silently matching nothing): every reader normalizes through this
+    one function instead of an ad hoc `str(x)` scattered at each call site,
+    so a call site can no longer skip the coercion by omission.
+
+    A LEAF record whose type has always been `int` (`PriceObservation.game_pk`,
+    `PaperBet.game_pk` -- matching `boxscores_*.jsonl`'s and
+    `mlb_results.csv`'s own on-disk convention) is unaffected: those fields
+    still store a native int, converted back from this canonical string
+    with a plain `int(...)` at their own construction boundary (safe,
+    because this function's output is always either `None` or all digits).
+    Only the JOIN layer -- reading a store, resolving a `GameRef`, looking a
+    game up in a dict -- must go through this function.
+
+    Handles, and folds onto the same string, every shape this project's
+    stores are known to actually produce: a native `int`; a whole `float`
+    (defensive -- no store has ever written one, but `824717.0` must never
+    silently fail to match `"824717"`); a numeric string, with or without
+    incidental leading/trailing whitespace. `None` (or an empty/
+    whitespace-only string) stays `None` -- honestly "no key", never the
+    literal string `"None"` a bare `str(None)` would produce and that could
+    never legitimately equal a real game_pk anyway, but which a raw
+    `str(x)` call site could still accidentally construct. A non-numeric
+    string (should never occur for a real MLB `game_pk`) is returned
+    stripped, as given, rather than raising -- an honest non-match against
+    every numeric key is still the correct, non-crashing outcome for a
+    value that is not this project's to invent.
+    """
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        raise AsOfError(
+            f"game_pk_key({value!r}): a bool is never a valid game_pk")
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, float):
+        if value.is_integer():
+            return str(int(value))
+        raise AsOfError(
+            f"game_pk_key({value!r}): a non-integer float is never a "
+            "valid game_pk")
+    if isinstance(value, str):
+        s = value.strip()
+        if not s:
+            return None
+        try:
+            return str(int(s))
+        except ValueError:
+            return s
+    raise AsOfError(
+        f"game_pk_key({value!r}): unsupported type {type(value).__name__}")
+
+
 def _pk(row: dict) -> str | None:
-    v = row.get("game_pk")
-    return str(v) if v is not None else None
+    return game_pk_key(row.get("game_pk"))
 
 
 def _obs_utc(row: dict) -> str | None:
@@ -308,7 +373,10 @@ def as_of(game_key: str | int, t: str | datetime, *,
     Among rows at or before `t` for a given field, the LATEST one wins (the
     most recent fact known by T), ties broken by store iteration order.
     """
-    game_key = str(game_key)
+    canonical_key = game_pk_key(game_key)
+    if canonical_key is None:
+        raise AsOfError(f"game_key {game_key!r} is not a usable game_pk")
+    game_key = canonical_key
     t_dt = t if isinstance(t, datetime) else _parse_utc(t)
     if t_dt.tzinfo is None:
         raise AsOfError("t must be timezone-aware")

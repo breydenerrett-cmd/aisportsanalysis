@@ -78,6 +78,7 @@ from src.board import gamekey
 from src.board.project import project_h2h_row, project_line_market_row
 from src.board.record import RecordValidationError, price_observation_from_dict
 from src.capture.cadence import grade_from_gap
+from src.core.asof import game_pk_key
 from src.paths import processed_path, raw_path
 
 OUTPUT_PATH = processed_path("l1_observations.jsonl")
@@ -484,7 +485,20 @@ def run(
                     obs["game_pk"] = None
                     report["game_pk"]["map_null"] += 1
                 else:
-                    obs["game_pk"] = map_entry["game_pk"]
+                    # `PriceObservation.game_pk` is `int | None` by its own
+                    # contract (matching `boxscores_*.jsonl`/
+                    # `mlb_results.csv`'s on-disk convention) -- a LEAF
+                    # field, not a join key, so it stores a native int here
+                    # rather than the canonical join-key string
+                    # (`src.core.asof.game_pk_key`) every comparison against
+                    # `event_game_map.jsonl`'s `game_pk` column goes through.
+                    # Routing the raw map value through that same helper
+                    # first (then back to int) means an old row on disk
+                    # written before S1's string normalization and a new one
+                    # written after it both land here identically, instead
+                    # of this being the one write site that has to remember
+                    # its own ad hoc coercion.
+                    obs["game_pk"] = int(game_pk_key(map_entry["game_pk"]))
                     if map_entry.get("ambiguous"):
                         report["game_pk"]["ambiguous"] += 1
                     else:
