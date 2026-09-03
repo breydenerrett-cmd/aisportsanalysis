@@ -64,3 +64,5 @@
 {"game_date": "2026-09-03", "observed_utc": "2026-09-03T15:37:04.079105+00:00", "poll": true}
 {"commence_time": "2026-09-03T18:10:00Z", "crew": [{"id": 483564, "name": "Dan Bellino", "officialType": "Home Plate"}, {"id": 483919, "name": "Mark Ripperger", "officialType": "First Base"}, {"id": 575629, "name": "Shane Livensparger", "officialType": "Second Base"}, {"id": 605670, "name": "Dan Merzel", "officialType": "Third Base"}], "game_date": "2026-09-03", "game_pk": 824144, "game_state": "Pre-Game", "home_plate_umpire": "Dan Bellino", "observed_utc": "2026-09-03T15:37:04.079105+00:00", "prev_poll_utc": "2026-09-03T14:50:46.350194+00:00", "revealed": true}
 {"game_date": "2026-09-04", "observed_utc": "2026-09-03T15:37:04.476684+00:00", "poll": true}
+{"game_date": "2026-09-03", "observed_utc": "2026-09-03T16:25:11.868679+00:00", "poll": true}
+{"game_date": "2026-09-04", "observed_utc": "2026-09-03T16:25:12.239515+00:00", "poll": true}

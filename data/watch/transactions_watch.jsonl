@@ -381,3 +381,10 @@
 {"fetched_utc": "2026-09-03T15:52:09.039462+00:00", "game_date": "2026-09-03", "poll": true}
 {"fetched_utc": "2026-09-03T16:07:11.195810+00:00", "game_date": "2026-09-03", "poll": true}
 {"fetched_utc": "2026-09-03T16:22:13.333162+00:00", "game_date": "2026-09-03", "poll": true}
+{"fetched_utc": "2026-09-03T16:25:11.482308+00:00", "game_date": "2026-09-03", "poll": true}
+{"fetched_utc": "2026-09-03T16:25:15.236655+00:00", "game_date": "2026-09-03", "poll": true}
+{"fetched_utc": "2026-09-03T16:40:18.069941+00:00", "game_date": "2026-09-03", "poll": true}
+{"category": "il_placement", "date": "2026-08-31", "first_seen_utc": "2026-09-03T16:40:18.069941+00:00", "player": "Kirby Yates", "player_id": 489446, "team": "PIT", "transaction_id": 941012}
+{"category": "recalled", "date": "2026-09-03", "first_seen_utc": "2026-09-03T16:40:18.069941+00:00", "player": "Khristian Curtis", "player_id": 694753, "team": "PIT", "transaction_id": 941013}
+{"fetched_utc": "2026-09-03T16:55:20.988038+00:00", "game_date": "2026-09-03", "poll": true}
+{"fetched_utc": "2026-09-03T17:10:24.448398+00:00", "game_date": "2026-09-03", "poll": true}
