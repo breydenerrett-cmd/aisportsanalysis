@@ -139,11 +139,38 @@ Adversaries run in ATTACK, after PROJECT — they see the priced candidate
 "this board is too thin" is inherently a price-shaped judgment; PROPOSE-side
 systems never get this view. `docs/ARCHITECTURE_BETTING_ENGINE.md` names
 the intended roster (StaleBook, ThinBoard, NonSimultaneous, Grade,
-CorrelatedEvidence, MarketDisagreement, Sample, Regime, Friction); none is
-implemented as a default in this packet (`DEFAULT_ADVERSARIES = ()`) —
-wiring the named adversaries is left to the packet that registers each
-one's specific, documented cause, per the guard that a cause must be
-registered, not invented ad hoc at veto time.
+CorrelatedEvidence, MarketDisagreement, Sample, Regime, Friction).
+`analyze()`'s own `DEFAULT_ADVERSARIES` stays `()` — the waist itself never
+hardcodes an opinion about which adversaries a caller runs — but packet W11
+registers the roster's first four in `src/engine/adversaries.py`, each with
+its own registered `CAUSE` string, per the guard that a cause must be
+registered, not invented ad hoc at veto time:
+
+- **StaleBook** (`FATAL`) — the candidate's `friction.staleness_seconds`
+  exceeds `max_staleness_seconds`: a quote this old is not a live tradeable
+  price.
+- **ThinBoard** (`FATAL`) — `books_at_decision` is below `min_books`: a
+  consensus that formed off too few books is untrustworthy even though
+  `board.consensus()` did not return `None` outright (guard M7).
+- **PriceMovedAgainst** (`MAJOR`) — the candidate's price is worse (lower
+  decimal payout) than a caller-supplied `reference_prices[selection_id]`;
+  no I/O, no clock — the reference is data handed in by the caller, never
+  fetched.
+- **DegradedInformation** (`MAJOR`) — the snapshot's own
+  `assumption_exposure` shows one of `src.core.asof.DEGRADED_SENTINEL_FIELDS`
+  missing or below grade A, restating `src.core.asof.information_grade`'s
+  rule against the coarser exposure counts ATTACK has to work with; the
+  veto detail names the `ReplayLabel.DEGRADED_INFORMATION` it corresponds
+  to.
+
+`adversaries.DEFAULT_ADVERSARIES` is the tuple of all four with their
+default thresholds — a caller (the factory, a CLI command, a test) passes
+it to `analyze(..., adversaries=adversaries.DEFAULT_ADVERSARIES)` explicitly
+rather than `analyze()` importing it itself, keeping the waist's only
+`DEFAULT_ADVERSARIES` the empty one the frozen contract already names.
+NonSimultaneous, Grade, CorrelatedEvidence, MarketDisagreement, Sample,
+Regime and Friction remain unimplemented — left to the packet that
+registers each one's specific cause.
 
 ## 6. The equivalence obligation
 
