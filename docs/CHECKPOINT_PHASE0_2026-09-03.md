@@ -203,10 +203,14 @@ p_model always None.
 Corrections to the reader reports: a 2026 closing store does exist
 (`data/processed/f5_close.jsonl`, 335 rows, plus 7,626 2026 snapshot rows and
 the wired `closing_observation`/CLV code); the paper demo missed it because
-`backfill.closing_prices` defaults to the historical store. The forward
-ledger's closing fields are null because nothing pairs a live game with a
-game_pk. A resolver is a small job: `src/providers/mlb.py:231 fetch_schedule`
-already returns teams + first pitch. The GitHub Actions capture workflow is
+`backfill.closing_prices` defaults to the historical store. Under-claim by
+the readers: `evidence/forward_ledger.jsonl` already pairs game_pk (217 of
+427 rows) with live pre-game prices and runs a real freeze→settle loop (144
+recommendations, 73 settlements, 3 flagged F5 plays: won, pushed, won). Its
+closing fields are null on all 73 ("no snapshots recorded"), so CLV there is
+0-for-73. The L1/engine path has no game_pk at all; a resolver is a small
+job since `src/providers/mlb.py:231 fetch_schedule` already returns teams and
+first pitch. The GitHub Actions capture workflow is
 not registered with GitHub at all (API 404): it has never run once.
 
 ## 8. Completion estimate
