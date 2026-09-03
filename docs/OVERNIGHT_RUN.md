@@ -564,3 +564,10 @@ https://linehound-staging.fly.dev/billing/webhook -> dry-run purchase.
   04:09Z pre-game re-probe (first pitch 16:35Z): both batter families
   measured 5 credits/event, 4 books, 5 of 6 requested markets, 79 outcomes;
   PROBE_REQUIRED cleared for both. Credits 99,597 remaining.
+- 2026-09-03 05:21:23Z: one real featured-odds provider call (10 events, 11
+  books) wrote a raw L0 file but left no credit_log row, so the budget view
+  under-counts today's spend by about 3 credits. Origin not traced (the
+  checkpoint readers were told zero credits; the likeliest path is a
+  fetch_normalized caller that bypasses creditlog). Follow-up: the raw writer
+  should record the calling module, and every provider call should pass
+  through creditlog. Raw file committed as real data.
