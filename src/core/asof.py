@@ -203,6 +203,42 @@ def _default_stores() -> list[StoreSpec]:
             time_of=_obs_utc,
             fields={},
         ),
+        # Transactions become reachable per game through this store instead:
+        # src.board.events projects transactions_watch rows onto a game_pk
+        # via (team, date) against the boxscore store (packet W6). Every
+        # InformationEvent kind is exposed as its own field name so a
+        # transaction, a lineup post, or an umpire assignment can each be
+        # asked for independently without one kind's absence masking
+        # another's presence.
+        StoreSpec(
+            name="information_events",
+            path=processed_path("information_events.jsonl"),
+            game_key_of=_pk,
+            time_of=_obs_utc,
+            fields={
+                "transaction_relevant": lambda r: (
+                    r.get("payload") if r.get("event_kind") ==
+                    "transaction_relevant" else None),
+                "lineup_posted_event": lambda r: (
+                    r.get("payload") if r.get("event_kind") ==
+                    "lineup_posted" else None),
+                "lineup_changed_event": lambda r: (
+                    r.get("payload") if r.get("event_kind") ==
+                    "lineup_changed" else None),
+                "probable_changed_event": lambda r: (
+                    r.get("payload") if r.get("event_kind") ==
+                    "probable_changed" else None),
+                "umpire_assigned_event": lambda r: (
+                    r.get("payload") if r.get("event_kind") ==
+                    "umpire_assigned" else None),
+                "weather_forecast_updated_event": lambda r: (
+                    r.get("payload") if r.get("event_kind") ==
+                    "weather_forecast_updated" else None),
+                "boxscore_final_event": lambda r: (
+                    r.get("payload") if r.get("event_kind") ==
+                    "boxscore_final" else None),
+            },
+        ),
         StoreSpec(
             name="weather_forecast",
             path=processed_path("weather_forecast.jsonl"),

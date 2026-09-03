@@ -371,3 +371,22 @@ line/last_update, keyed for idempotency on exactly that tuple) touch it.
 captures move from `DECLARED` to `PROBE`; the remaining batter markets
 (`batter_walks`, `batter_strikeouts`, `batter_stolen_bases`) stay
 `DECLARED` -- named and settlement-mapped, capture not yet wired.
+
+## InformationEvent free-environment layer (packet W6, `src/board/events.py`)
+
+Zero new network calls, zero credits. `python3 -m src.cli events [--since
+DATE]` (wired into `scripts/capture_extras.sh`, never fails the capture) is
+a pure diff over stores this project already captures for free --
+`data/watch/{lineups,probables,umpires,transactions}_watch.jsonl` and
+`data/processed/{weather_forecast,boxscores_2026}.jsonl` -- projected into
+one append-only, idempotent store, `data/processed/information_events.jsonl`,
+keyed by `game_pk` with an honest `observed_utc`: `lineup_posted`,
+`lineup_changed`, `probable_changed`, `umpire_assigned`,
+`weather_forecast_updated` (only past a material per-field threshold),
+`transaction_relevant`, `boxscore_final`. The one new capability this adds:
+a roster transaction, which carries only a team abbreviation and a date in
+its own store, is mapped onto the game it affects via `(team, date)` against
+the boxscore store, so `src.core.asof` can finally read a transaction
+per-game instead of not at all (its `transactions_watch` StoreSpec's
+long-standing `game_key_of=lambda r: None` comment). A move whose team+date
+has no boxscore row yet is skipped, never guessed.

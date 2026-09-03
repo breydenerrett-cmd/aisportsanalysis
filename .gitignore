@@ -90,6 +90,12 @@ data/app/*
 # bought back later" reasoning as the prop-price block above.
 !data/processed/batter_props_raw.jsonl
 !data/processed/batter_props.jsonl
+# Added with packet W6 (InformationEvent free-environment layer,
+# src/board/events.py): a projected event is a deterministic re-derivation
+# of rows already tracked above, but the ids/dedup state it accumulates are
+# themselves append-only evidence of what was known when -- same reasoning
+# as the forward-capture block above.
+!data/processed/information_events.jsonl
 # RAW ODDS-API PAYLOADS (L0) -- added 2026-09-03 with the raw-first capture
 # layer (docs/COLLECTION_POLICY.md, "Raw layer and all-books persistence").
 # Same reasoning as the forward-capture block above: the verbatim provider

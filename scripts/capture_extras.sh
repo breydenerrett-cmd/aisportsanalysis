@@ -22,6 +22,13 @@ export BATTER_PROPS="${BATTER_PROPS:-}"
 echo "== weather forecast (0 credits) =="
 python3 -m src.pipeline.weather_capture 2>&1 | sed 's/^/  /'
 
+# InformationEvents (packet W6, "free environment" layer): a pure diff over
+# the watch/processed stores above, keyed by game_pk. `|| true` so a bad
+# projection never fails this script -- cmd_events already fails safe on
+# its own, this is belt-and-suspenders.
+echo "== information events (0 credits) =="
+python3 -m src.cli events 2>&1 | sed 's/^/  /' || true
+
 # Credit-log rows are written as a side effect of dense/prop_listing/prop_prices
 # reading the odds quota, not by a pass of their own -- this line only shows
 # the latest one so an operator watching this script's output can see the
