@@ -42,6 +42,26 @@ seen in the SAME source store, run through `cadence.grade_from_gap`. A
 store's very first observed instant has no prior gap to measure, so it is
 stamped grade D rather than assumed.
 
+THE HISTORICAL ARCHIVE (2023-25) -- A SIBLING PROJECTOR, NOT A SECOND STORE
+------------------------------------------------------------------------------
+Everything above projects the LIVE forward-capture stores. `src.board.
+l1_historical` is the sibling projector for the closed 2023-25 archive
+(`data/historical/odds_history/mlb_20{23,24,25}.jsonl`,
+`data/historical/odds_first_five/mlb_20{23,24,25}.jsonl`) -- a completely
+different row shape, read by no other engine code path (only
+`src.evolab.replay`'s sandboxed universe touched it before this). Passing
+`historical_seasons` to `run()` (or `--season` on `l1 --backfill`) merges
+that projector's per-season "source stores" into the SAME loop below, so
+every dedup/grading/game_pk/report mechanism in this file already applies
+uniformly to both -- see `l1_historical`'s own module docstring for the
+archive's row shape, its `snapshot_at`-vs-`requested_at` timestamp trap,
+the measured cadence that grades every historical row D, and how its
+`game_pk`/`commence_time` resolve through the SAME `event_game_map.jsonl`
+store `src.board.gamekey` owns, without any network call (mlb_results.csv,
+not the live schedule API). Historical rows are stamped a distinct
+`source` (`l1_historical.HISTORICAL_SOURCE`) and a distinct `capture_id`
+prefix so no downstream reader can mistake one for a live capture.
+
 WHAT THIS MODULE VALIDATED AGAINST THE REAL STORES (not left an assumption)
 ----------------------------------------------------------------------------
 `src/board/project.py`'s `project_line_market_row` docstring flagged its
@@ -75,6 +95,7 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 from src.board import gamekey
+from src.board import l1_historical
 from src.board.project import project_h2h_row, project_line_market_row
 from src.board.record import RecordValidationError, price_observation_from_dict
 from src.capture.cadence import grade_from_gap
@@ -111,18 +132,21 @@ SOURCE_STORES = (
         "path": processed_path("odds_multibook.jsonl"),
         "kind": "multibook",
         "is_close": False,
+        "source_label": _DEFAULT_SOURCE,
     },
     {
         "name": "odds_snapshots",
         "path": processed_path("odds_snapshots.jsonl"),
         "kind": "snapshot",
         "is_close": False,
+        "source_label": _DEFAULT_SOURCE,
     },
     {
         "name": "f5_close",
         "path": processed_path("f5_close.jsonl"),
         "kind": "h2h_flat",
         "is_close": True,
+        "source_label": _DEFAULT_SOURCE,
     },
     # closing_*.jsonl stores are named in the task brief but do not exist yet
     # in any tracked data directory this backfill can see; they are
@@ -130,6 +154,12 @@ SOURCE_STORES = (
     # without a code change, rather than hardcoded here as a store that
     # cannot currently be read.
 )
+
+# The two historical-archive `kind`s l1_historical.py's projector handles --
+# named here (not just there) so `run()` can tell a historical source from
+# a live one without a second lookup (per-source `source_label`/
+# `timestamp_field` already carry everything else that differs).
+HISTORICAL_KINDS = l1_historical.HISTORICAL_KINDS
 
 
 class RefusalReport:
@@ -210,33 +240,48 @@ def _observation_id(source_name: str, obs: Mapping[str, Any]) -> str:
     return digest[:20]
 
 
-def _project_source_row(source: dict, row: dict) -> tuple[list[dict], str | None]:
-    """One raw source-store row -> (observations, refusal_reason_or_None)."""
+def _project_source_row(source: dict, row: dict) -> tuple[list[dict], list[tuple[str, dict]]]:
+    """One raw source-store row -> (observations, refusals).
+
+    `refusals` is a list of `(reason, small_example_dict)` pairs, plural
+    because ONE historical-archive line (`l1_historical.KIND_ODDS_HISTORY`/
+    `KIND_ODDS_FIRST_FIVE`) covers many (event, book, market) combinations
+    at once, and one bad combination must never hide -- or discard -- every
+    good one on the same line. The live-store kinds below still only ever
+    produce a single-element list (a KeyError/TypeError there really does
+    mean the whole row is unusable), so their own callers see the same
+    all-or-nothing behavior this function has always had."""
     kind = source["kind"]
     try:
         if kind == "multibook":
             if row.get("market") in (None, "h2h"):
-                return list(project_h2h_row(row, market_key="h2h")), None
+                return list(project_h2h_row(row, market_key="h2h")), []
             flat = dict(row)
             flat["market_key"] = row["market"]
-            return project_line_market_row(flat), None
+            return project_line_market_row(flat), []
 
         if kind == "snapshot":
             market = row.get("market", "h2h")
             flat = _flatten_snapshot_row(row)
             if market == "h2h":
-                return list(project_h2h_row(flat, market_key="h2h")), None
-            return project_line_market_row(flat), None
+                return list(project_h2h_row(flat, market_key="h2h")), []
+            return project_line_market_row(flat), []
 
         if kind == "h2h_flat":
             market = row.get("market", "h2h")
-            return list(project_h2h_row(row, market_key=market)), None
+            return list(project_h2h_row(row, market_key=market)), []
 
-        return [], f"unknown_source_kind:{kind}"
+        if kind == l1_historical.KIND_ODDS_HISTORY:
+            return l1_historical.project_odds_history_row(row)
+
+        if kind == l1_historical.KIND_ODDS_FIRST_FIVE:
+            return l1_historical.project_odds_first_five_row(row)
+
+        return [], [(f"unknown_source_kind:{kind}", row)]
     except KeyError as exc:
-        return [], f"missing_field:{exc.args[0]}"
+        return [], [(f"missing_field:{exc.args[0]}", row)]
     except (TypeError, ValueError) as exc:
-        return [], f"malformed_row:{type(exc).__name__}"
+        return [], [(f"malformed_row:{type(exc).__name__}", row)]
 
 
 def _row_date(row: Mapping[str, Any]) -> str | None:
@@ -250,23 +295,40 @@ def _parse_iso(stamp: str) -> datetime:
     return datetime.fromisoformat(stamp.replace("Z", "+00:00"))
 
 
-def _grades_for_store(rows: Iterable[dict]) -> dict[str, str]:
+def _grades_for_store(rows: Iterable[dict],
+                       field: str = "observed_utc") -> tuple[dict[str, str], list[float]]:
     """Per guard 1 (F10): grade is computed from the MEASURED gap between an
-    observation's own `observed_utc` and the previous distinct `observed_utc`
-    seen in the same store -- never asserted from an assumed schedule. The
-    very first instant in a store has no prior gap to measure and is graded D
-    rather than guessed."""
-    stamps = sorted({r["observed_utc"] for r in rows if r.get("observed_utc")})
+    observation's own timestamp and the previous distinct timestamp seen in
+    the same store -- never asserted from an assumed schedule. The very
+    first instant in a store has no prior gap to measure and is graded D
+    rather than guessed.
+
+    `field` names which key on the RAW row carries that timestamp: live
+    stores' raw rows already say `observed_utc`; the historical archive's
+    raw rows say `snapshot_at` instead (see `l1_historical`'s module
+    docstring on why that -- never `requested_at` -- is the honest
+    observation instant), and `run()` passes the right field per source so
+    grading is measured off the field that is ACTUALLY the observation
+    clock for that store, not silently defaulted to grade D by a field-name
+    mismatch nobody noticed.
+
+    Returns `(grade_by_stamp, gaps_seconds)` -- the gap list is the raw
+    evidence `run()`'s per-source `cadence` report is built from, so a
+    caller can see exactly how coarse a store's own cadence measured out to
+    rather than only the grade letter it rounds to."""
+    stamps = sorted({r[field] for r in rows if r.get(field)})
     grade_by_stamp: dict[str, str] = {}
+    gaps: list[float] = []
     previous = None
     for stamp in stamps:
         if previous is None:
             grade_by_stamp[stamp] = "D"
         else:
-            gap = (_parse_iso(stamp) - _parse_iso(previous)).total_seconds()
-            grade_by_stamp[stamp] = grade_from_gap(max(gap, 0.0))
+            gap = max((_parse_iso(stamp) - _parse_iso(previous)).total_seconds(), 0.0)
+            gaps.append(gap)
+            grade_by_stamp[stamp] = grade_from_gap(gap)
         previous = stamp
-    return grade_by_stamp
+    return grade_by_stamp, gaps
 
 
 # ---------------------------------------------------------------------------
@@ -385,6 +447,7 @@ def run(
     region: str = _DEFAULT_REGION,
     sources: list[dict] | None = None,
     game_map_path: Path | str | None = EVENT_GAME_MAP_PATH,
+    historical_seasons: Iterable[int] | None = None,
 ) -> dict:
     """Project every source store into `output_path`, appending only rows
     whose `observation_id` is not already present. Returns a report: counts
@@ -404,14 +467,33 @@ def run(
     is -- so a map built AFTER some rows are already on disk does not
     retroactively update them; a full backfill re-run (fresh `output_path`)
     is how an already-written store picks up a newer map.
+
+    `historical_seasons` (e.g. `[2023]`) additionally projects the 2023-25
+    archive for those seasons -- see `l1_historical`'s module docstring.
+    When given, and `game_map_path` is not `None`, this ALSO runs
+    `l1_historical.ensure_historical_event_map` first (against
+    `game_map_path`, so a test pointed at a fixture map never touches the
+    real `event_game_map.jsonl`), so every historical row's `game_pk`/
+    `commence_time` resolve through the exact same map lookup below as a
+    live row's does. `sources`, when given, is never extended with
+    historical stores -- an explicit `sources` list is a caller (tests)
+    opting OUT of the real store discovery entirely, historical included.
     """
     output_path = Path(output_path)
     raw_root = Path(raw_root)
     existing_ids = _existing_ids(output_path)
-    game_map = gamekey.load_map(game_map_path) if game_map_path else {}
 
     stores = (list(sources) if sources is not None
               else list(SOURCE_STORES) + _discover_closing_stores(output_path.parent))
+
+    historical_map_report = None
+    if sources is None and historical_seasons is not None:
+        stores += l1_historical.historical_source_stores(historical_seasons)
+        if game_map_path is not None:
+            historical_map_report = l1_historical.ensure_historical_event_map(
+                historical_seasons, map_path=game_map_path)
+
+    game_map = gamekey.load_map(game_map_path) if game_map_path else {}
 
     report: dict[str, Any] = {
         "since": since,
@@ -433,6 +515,8 @@ def run(
         "game_pk": {"resolved": 0, "ambiguous": 0, "not_in_map": 0,
                     "map_null": 0},
     }
+    if historical_map_report is not None:
+        report["historical_event_map"] = historical_map_report
     refusals = RefusalReport()
 
     new_lines: list[str] = []
@@ -449,7 +533,26 @@ def run(
             continue
 
         all_rows = _read_jsonl(path)
-        grade_by_stamp = _grades_for_store(all_rows)
+        # Live stores' raw rows carry `observed_utc`; the historical
+        # archive's raw rows carry `snapshot_at` instead (see
+        # `l1_historical`'s module docstring) -- grading off the wrong field
+        # name would silently see zero timestamps and default every row to
+        # D by omission rather than by measurement, so each source's own
+        # `timestamp_field` (absent -> "observed_utc", live's own field)
+        # says which key `_grades_for_store` measures gaps against.
+        stamp_field = source.get("timestamp_field", "observed_utc")
+        grade_by_stamp, gaps_seconds = _grades_for_store(all_rows, field=stamp_field)
+        if gaps_seconds:
+            sorted_gaps = sorted(gaps_seconds)
+            mid = len(sorted_gaps) // 2
+            median_gap = (sorted_gaps[mid] if len(sorted_gaps) % 2
+                          else (sorted_gaps[mid - 1] + sorted_gaps[mid]) / 2)
+            source_stats["cadence"] = {
+                "distinct_timestamps": len(grade_by_stamp),
+                "min_gap_seconds": sorted_gaps[0],
+                "median_gap_seconds": median_gap,
+                "max_gap_seconds": sorted_gaps[-1],
+            }
 
         for row in all_rows:
             source_stats["rows_seen"] += 1
@@ -457,11 +560,12 @@ def run(
             if since is not None and (day is None or day < since):
                 continue
 
-            observations, reason = _project_source_row(source, row)
-            if reason is not None:
-                refusals.add(reason, row)
+            observations, refusal_details = _project_source_row(source, row)
+            for reason, example in refusal_details:
+                refusals.add(reason, example)
                 source_stats["refused"] += 1
                 report["refused"] += 1
+            if not observations:
                 continue
 
             for obs in observations:
@@ -472,10 +576,20 @@ def run(
                 obs["known_at"] = observed_utc
                 obs["known_at_grade"] = grade_by_stamp.get(observed_utc, "D")
                 obs["region"] = region
-                obs["source"] = _DEFAULT_SOURCE
+                # Per-store `source_label` (see SOURCE_STORES /
+                # l1_historical.historical_source_stores) -- never one
+                # constant for every row this module writes -- is what makes
+                # a historical-archive row structurally undistinguishable
+                # from a live capture impossible: the two carry different
+                # `source` values by construction, not by a caller
+                # remembering to set one.
+                obs["source"] = source.get("source_label", _DEFAULT_SOURCE)
                 obs["venue_kind"] = "sportsbook"
                 obs["is_close"] = bool(source["is_close"])
                 obs["limit_observed"] = None
+                source_stats.setdefault("grade_distribution", {})
+                source_stats["grade_distribution"][obs["known_at_grade"]] = (
+                    source_stats["grade_distribution"].get(obs["known_at_grade"], 0) + 1)
 
                 map_entry = game_map.get(str(obs.get("event_id")))
                 if map_entry is None:
@@ -510,6 +624,16 @@ def run(
                     obs["capture_id"] = raw_capture_id
                     source_stats["raw_matched"] += 1
                     report["raw_matched"] += 1
+                elif source["kind"] in HISTORICAL_KINDS:
+                    # Distinct prefix from a live-store backfill's
+                    # `backfill:` capture_id -- both mean "no raw L0 payload
+                    # matched", but this one additionally means "no raw
+                    # payload could EVER exist" (the 2023-25 archive was
+                    # never captured through this project's own raw-write
+                    # path), which is worth being able to tell apart.
+                    obs["capture_id"] = (
+                        f"{l1_historical.HISTORICAL_CAPTURE_PREFIX}:"
+                        f"{source_name}:{observed_utc}")
                 else:
                     obs["capture_id"] = f"backfill:{source_name}:{observed_utc}"
 
@@ -535,6 +659,14 @@ def run(
                     market_key, {"written": 0, "skipped_existing": 0, "refused": 0}
                 )
                 report["by_market_key"][market_key]["written"] += 1
+                # Per-source market breakdown -- the cross-tab
+                # `report["by_market_key"]` alone cannot answer ("how many
+                # h2h rows came from THIS store"), which point 2 of the
+                # historical-backfill task needs (per market AND per
+                # source, not just each marginal separately).
+                source_stats.setdefault("by_market_key", {})
+                source_stats["by_market_key"][market_key] = (
+                    source_stats["by_market_key"].get(market_key, 0) + 1)
 
                 existing_ids.add(obs_id)
                 new_lines.append(json.dumps(obs, separators=(",", ":"), sort_keys=True))
@@ -549,4 +681,26 @@ def run(
 
     report["refusals"] = dict(refusals.by_reason)
     report["refusal_examples"] = refusals.examples
+
+    if historical_seasons is not None:
+        # Explicit, MEASURED coverage note for the four in-scope markets
+        # (h2h, spreads, totals, F5 h2h): `spreads` legitimately has zero
+        # rows here because the archive never carries that market at all
+        # (verified against every season file -- l1_historical's module
+        # docstring), which must never be silently indistinguishable from a
+        # bug that dropped real spreads rows.
+        historical_source_names = {
+            s["name"] for s in stores if s.get("kind") in HISTORICAL_KINDS
+        }
+        seen_markets: set[str] = set()
+        for name in historical_source_names:
+            seen_markets |= set(report["by_source"].get(name, {})
+                                .get("by_market_key", {}))
+        report["historical_in_scope_markets"] = {
+            market: ("present" if market in seen_markets
+                     else "absent_from_archive (verified: no season file "
+                          "carries this market key at all)")
+            for market in l1_historical.IN_SCOPE_MARKETS
+        }
+
     return report

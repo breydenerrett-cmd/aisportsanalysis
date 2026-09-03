@@ -170,22 +170,43 @@ def cmd_l1(args) -> int:
     Deterministic and idempotent: a re-run over unchanged source stores
     writes zero new rows. Never drops a row silently -- anything declined is
     counted and reported with its reason.
+
+    `--season YEAR` (repeatable) additionally projects the 2023-25 archive
+    (`src.board.l1_historical`) for those seasons into the SAME store, and
+    first resolves that season's events against `mlb_results.csv` into
+    `event_game_map.jsonl` (no network) so `engine slate`/`engine settle`
+    can find a historical game's `game_pk`/`commence_time` the same way
+    they find a live one's.
     """
     from src.board import gamekey as gamekey_module
     from src.board import l1 as l1_module
 
-    result = l1_module.run(since=args.since)
+    result = l1_module.run(since=args.since, historical_seasons=args.season)
     print(f"L1 backfill -> {result['output_path']}\n")
     print("  per source store")
     for name, stats in result["by_source"].items():
         present = "present" if stats["present"] else "MISSING"
-        print(f"    {name:16s} {present:8s} rows_seen={stats['rows_seen']:6d}  "
+        print(f"    {name:28s} {present:8s} rows_seen={stats['rows_seen']:6d}  "
               f"observations={stats['observations_seen']:6d}  "
               f"written={stats['written']:6d}  "
               f"skipped_existing={stats['skipped_existing']:6d}  "
               f"refused={stats['refused']:4d}  raw_matched={stats['raw_matched']:4d}")
+        by_market = stats.get("by_market_key") or {}
+        if by_market:
+            print("        by market_key: " + ", ".join(
+                f"{k}={v}" for k, v in sorted(by_market.items())))
+        cadence = stats.get("cadence")
+        if cadence:
+            print(f"        cadence: distinct_timestamps={cadence['distinct_timestamps']}  "
+                  f"min_gap={cadence['min_gap_seconds']/60:.1f}min  "
+                  f"median_gap={cadence['median_gap_seconds']/3600:.2f}h  "
+                  f"max_gap={cadence['max_gap_seconds']/3600:.2f}h")
+        grades = stats.get("grade_distribution")
+        if grades:
+            print("        known_at_grade distribution: " + ", ".join(
+                f"{g}={n}" for g, n in sorted(grades.items())))
 
-    print("\n  per market_key")
+    print("\n  per market_key (all sources)")
     for market_key, stats in sorted(result["by_market_key"].items()):
         print(f"    {market_key:24s} written={stats['written']:6d}")
 
@@ -197,6 +218,22 @@ def cmd_l1(args) -> int:
         print("\n  refusal reasons (never a silent drop)")
         for reason, count in sorted(result["refusals"].items()):
             print(f"    {count:6d}  {reason}")
+
+    if args.season:
+        emap = result.get("historical_event_map")
+        if emap:
+            print(f"\n  historical event_game_map ({emap['map_path']})")
+            print(f"    candidates={emap['candidates']:6d}  "
+                  f"resolved={emap['resolved']:6d}  "
+                  f"ambiguous={emap['ambiguous']:6d}  "
+                  f"unresolved={emap['unresolved']:6d}  "
+                  f"skipped_already_mapped={emap['skipped_already_mapped']:6d}")
+        scope = result.get("historical_in_scope_markets") or {}
+        if scope:
+            print("\n  historical in-scope market coverage (h2h, spreads, "
+                  "totals, F5 h2h)")
+            for market, status in scope.items():
+                print(f"    {market:20s} {status}")
 
     gp = result.get("game_pk") or {}
     print(f"\n  game_pk (S1, from {gamekey_module.DEFAULT_MAP_PATH})")
@@ -2749,6 +2786,12 @@ def build_parser() -> argparse.ArgumentParser:
     l1_cmd.add_argument("--since", default=None, metavar="DATE",
                         help="only project rows observed on/after this "
                              "YYYY-MM-DD (UTC official date)")
+    l1_cmd.add_argument("--season", type=int, action="append", default=None,
+                        metavar="YEAR",
+                        help="also project the historical odds archive "
+                             "(data/historical/odds_history, "
+                             "odds_first_five) for this season into L1 -- "
+                             "repeatable, e.g. --season 2023 --season 2024")
 
     gamekey_cmd = sub.add_parser(
         "gamekey", help="build/refresh data/processed/event_game_map.jsonl "
