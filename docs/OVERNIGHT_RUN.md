@@ -571,3 +571,12 @@ https://linehound-staging.fly.dev/billing/webhook -> dry-run purchase.
   fetch_normalized caller that bypasses creditlog). Follow-up: the raw writer
   should record the calling module, and every provider call should pass
   through creditlog. Raw file committed as real data.
+
+- 2026-09-03 19:15Z and 20:15Z: both hourly forward-capture slots were MISSED.
+  The session was integrating the vertical-slice lanes and did not run the
+  script when the triggers fired; the windows are gone and are not
+  reconstructible. Captures resumed at 22:44Z (late, in-window for the late
+  games). Staging stayed healthy throughout. The slice work is exactly the
+  kind of thing the owner warned must not consume capture: the daily loop now
+  runs slate/settle/EOD unattended, but capture itself is still a Claude
+  Routine, and this is the second time in-session work has cost live windows.
