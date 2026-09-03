@@ -32,7 +32,7 @@ from src.engine.analyze import Proposal
 from src.engine.analyze import analyze as _analyze
 from src.engine.snapshot import PriceBlindSnapshot, PricedBoard
 from src.evolab.decide import BoardMeta, WorldView, decide_with_reason
-from src.evolab.genome import Genome, enumerate_genomes
+from src.evolab.genome import F5_MARKET, Genome, enumerate_genomes
 from src.evolab.registry import DEFAULT_REGISTRY
 from src.ledger.records import RECORD_PROVENANCE_REPLAY
 
@@ -116,6 +116,87 @@ class EvolabGenomeSystem:
 
 
 # ---------------------------------------------------------------------------
+# Two more trivial null controls (B6 fix): siblings of
+# `src.engine.glue.TrivialAlwaysHomeSystem` for the two markets a genome
+# structurally cannot name (`src.evolab.genome.MARKETS` is h2h and the F5
+# h2h mirror only -- see the note above `REGISTERED_F5_GENOME_COUNT`).
+#
+# Each is a NULL CONTROL, not a strategy: a fixed, pre-registered direction
+# never derived from price, a clock, or a search process, exactly the same
+# posture `TrivialAlwaysHomeSystem` already takes for h2h. The one
+# deliberate difference: `p_model` here is `None`, never a fabricated
+# number like that system's own hardcoded 0.52 (flagged N2 in
+# docs/planning/slice-review-2026-09-03/REVIEW.md) -- these two markets get
+# no calibrated probability from anywhere in this project, so PROJECT's
+# `edge_bps` stays honestly `None` and `value_basis` records
+# `price_standing_only` for every decision either one produces
+# (src.engine.analyze.analyze), same as every evolab-origin proposal.
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True, slots=True)
+class TrivialAlwaysHomeSpreadSystem:
+    """Null control for the spreads (run line) market: always proposes the
+    HOME side, unconditionally. The direction is frozen here, at
+    construction, mirroring `TrivialAlwaysHomeSystem`'s own frozen home-side
+    convention for h2h rather than inventing a second, unrelated one for
+    this market -- there is no claim about the run-line NUMBER, only about
+    which team's side of it this control always takes."""
+
+    id: str = "trivial_always_home_spread"
+    version: str = "trivial-1"
+    spec_hash: str = "trivial_always_home_spread:1"
+    declared_markets: tuple = ("spreads",)
+    declared_inputs: tuple = ()
+    min_grade: str = "D"
+    expected_selection_rate: float = 1.0
+
+    def propose(self, view: PriceBlindSnapshot) -> tuple:
+        if "spreads" not in view.available_markets:
+            return ()
+        return (Proposal(
+            system_id=self.id, system_version=self.version,
+            market_key="spreads", side="home", p_model=None,
+            thesis="trivial null control for spreads: always proposes home "
+                   "on the run line, a fixed direction never derived from "
+                   "price or a clock; p_model is None, so no calibrated "
+                   "probability is claimed for this market -- "
+                   "src.engine.adapters.evolab_system",
+            evidence=("trivial_fallback_spreads",),
+        ),)
+
+
+@dataclass(frozen=True, slots=True)
+class TrivialUnderTotalSystem:
+    """Null control for the totals market: always proposes UNDER,
+    unconditionally. The direction is frozen at construction, never derived
+    from price, a clock, or a search process -- the same posture
+    `TrivialAlwaysHomeSystem` takes for h2h, applied to the one side pair
+    (over/under) this market actually has."""
+
+    id: str = "trivial_under_total"
+    version: str = "trivial-1"
+    spec_hash: str = "trivial_under_total:1"
+    declared_markets: tuple = ("totals",)
+    declared_inputs: tuple = ()
+    min_grade: str = "D"
+    expected_selection_rate: float = 1.0
+
+    def propose(self, view: PriceBlindSnapshot) -> tuple:
+        if "totals" not in view.available_markets:
+            return ()
+        return (Proposal(
+            system_id=self.id, system_version=self.version,
+            market_key="totals", side="under", p_model=None,
+            thesis="trivial null control for totals: always proposes "
+                   "under, a fixed direction never derived from price or a "
+                   "clock; p_model is None, so no calibrated probability is "
+                   "claimed for this market -- "
+                   "src.engine.adapters.evolab_system",
+            evidence=("trivial_fallback_totals",),
+        ),)
+
+
+# ---------------------------------------------------------------------------
 # Registered systems for the vertical slice (checkpoint doc S5, item 5): the
 # trivial always-home null control plus a small, DETERMINISTICALLY chosen
 # set of enumerated genomes, each with a stable id so accounts and
@@ -129,20 +210,67 @@ class EvolabGenomeSystem:
 # note).
 REGISTERED_GENOME_COUNT = 12
 
+# B6 fix (slice-review-2026-09-03): SCOPE_MARKETS (src/engine/slate.py) names
+# four markets, but until this module registered ANY system whose eligibility
+# and routing actually named a market other than plain h2h, the scope filter
+# was a no-op -- every registered genome enumerated with
+# `enumerate_genomes()`'s own h2h-only defaults, and F5_MARKET
+# ("h2h_1st_5_innings") sat in `genome.MARKETS` fully validated but never
+# selected by any caller. The routing GENE is real (`Routing.market_preference`,
+# `Routing.f5_condition`) and every registered feature's mechanism is scoped
+# FIRST_FIVE (src/evolab/registry.py), so `f5_condition="if_all_signals_first_five"`
+# is satisfiable by construction for every genome this registry can produce --
+# nothing here invents a probability or a mechanism that was not already
+# frozen in the registry; it only exercises a genome axis that was reachable
+# in code but never called with non-default arguments.
+#
+# `genome.MARKETS` itself only names ("h2h", "h2h_1st_5_innings") -- spreads
+# and totals are not, and were never meant to be, expressible as a genome:
+# the registry's mechanisms are moneyline-direction claims (which SIDE the
+# matchup favours), not point-margin or total-runs claims, and inventing a
+# spread/total direction for them would be exactly the unjustified-sign
+# problem registry.py's own docstring refuses. Spreads and totals are
+# instead covered below by explicitly named, pre-registered NON-genome null
+# controls, siblings of `src.engine.glue.TrivialAlwaysHomeSystem`, each with
+# a frozen direction and p_model=None (no calibrated probability is claimed,
+# so PROJECT's edge_bps and RATE's rating stay honestly None/absent for them,
+# exactly like every evolab-origin proposal already does).
+REGISTERED_F5_GENOME_COUNT = 4
+
+# The F5 eligibility/routing pair: eligible for the F5 market only, and
+# routed to it unconditionally once `if_all_signals_first_five` is checked
+# (true for every genome this registry enumerates -- see note above).
+# `min_books=3` matches the h2h default; L1's own h2h_1st_5_innings rows
+# carry 8-9 quoting books at every observed decision instant to date, so the
+# bar is not doing any real narrowing here, only staying consistent with the
+# rest of the population.
+F5_ELIGIBILITY: dict = {
+    "markets": (F5_MARKET,), "min_books": 3, "require_lineup": True,
+}
+F5_ROUTINGS: tuple = (
+    {"market_preference": (F5_MARKET,),
+     "f5_condition": "if_all_signals_first_five"},
+)
+
 
 def _select_registered_genomes(n: int = REGISTERED_GENOME_COUNT,
-                                registry=DEFAULT_REGISTRY) -> tuple:
+                                registry=DEFAULT_REGISTRY, *,
+                                eligibility=None, routings=None) -> tuple:
     """`n` genomes spread evenly across `enumerate_genomes()`'s own
     deterministic order (docs/EVOLAB_DESIGN.md / genome.py: "ENUMERATION
     ORDER IS PART OF THE SPEC"), rather than the first `n` -- an even spread
     samples across signal counts/feature combinations/entry thresholds
     instead of clustering on the single-signal end of the space. Purely a
-    function of `enumerate_genomes()`'s own fixed order and `n`: the same
-    call always returns the same genomes, in the same order, forever (until
-    `n` or the registry itself changes, both of which are visible edits
-    here, not a silent drift).
+    function of `enumerate_genomes()`'s own fixed order, `eligibility`,
+    `routings` and `n`: the same call always returns the same genomes, in
+    the same order, forever (until one of those or the registry itself
+    changes, all of which are visible edits here, not a silent drift).
+    `eligibility`/`routings` default to `None`, which is
+    `enumerate_genomes()`'s own h2h-only default -- unchanged from before
+    this function grew the two parameters.
     """
-    genomes = enumerate_genomes(registry=registry)
+    genomes = enumerate_genomes(registry=registry, eligibility=eligibility,
+                                routings=routings)
     if not genomes:
         return ()
     if n >= len(genomes):
@@ -153,8 +281,12 @@ def _select_registered_genomes(n: int = REGISTERED_GENOME_COUNT,
 
 
 REGISTERED_GENOMES: tuple = _select_registered_genomes()
+REGISTERED_F5_GENOMES: tuple = _select_registered_genomes(
+    REGISTERED_F5_GENOME_COUNT, eligibility=F5_ELIGIBILITY,
+    routings=F5_ROUTINGS)
 REGISTERED_EVOLAB_SYSTEMS: tuple = tuple(
-    EvolabGenomeSystem(genome=g) for g in REGISTERED_GENOMES)
+    EvolabGenomeSystem(genome=g) for g in REGISTERED_GENOMES) + tuple(
+    EvolabGenomeSystem(genome=g) for g in REGISTERED_F5_GENOMES)
 
 
 def _trivial_system():
@@ -167,16 +299,21 @@ def _trivial_system():
     return TrivialAlwaysHomeSystem()
 
 
-# The trivial always-home null control, first, then the registered genomes
-# in their own deterministic order -- REGISTERED_SYSTEMS's own ORDER is not
-# meaningful (callers key on `.id`), but it is fixed so printed reports are
-# stable across runs.
-REGISTERED_SYSTEMS: tuple = (_trivial_system(),) + REGISTERED_EVOLAB_SYSTEMS
+# The trivial always-home null control, then its two sibling null controls
+# for the other two markets a genome cannot honestly name (spreads, totals),
+# then the registered genomes (h2h, then F5) in their own deterministic
+# order -- REGISTERED_SYSTEMS's own ORDER is not meaningful (callers key on
+# `.id`), but it is fixed so printed reports are stable across runs.
+REGISTERED_SYSTEMS: tuple = (
+    (_trivial_system(), TrivialAlwaysHomeSpreadSystem(),
+     TrivialUnderTotalSystem())
+    + REGISTERED_EVOLAB_SYSTEMS
+)
 
 # Recorded (task item 5: "chosen deterministically and recorded") -- the
-# exact strategy_ids REGISTERED_GENOMES resolved to, at the time this module
-# was written, for a human to cross-check enumerate_genomes() has not
-# silently reordered:
+# exact strategy_ids REGISTERED_GENOMES/REGISTERED_F5_GENOMES resolved to, at
+# the time this module was written, for a human to cross-check
+# enumerate_genomes() has not silently reordered:
 #   see `python3 -c "from src.engine.adapters.evolab_system import
 #   REGISTERED_SYSTEMS; print([s.id for s in REGISTERED_SYSTEMS])"`
 
