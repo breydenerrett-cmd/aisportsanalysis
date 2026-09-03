@@ -6,10 +6,15 @@ pick, and no edge language -- and a change to any of that fails here until
 someone deliberately updates BOTH the evidence and this file.
 """
 
+import ast
 import unittest
+from pathlib import Path
 
 import src.analysis as analysis
 from src.report import ranker
+
+ROOT = Path(__file__).resolve().parent.parent
+GUARDED_WRITER_MODULES = ("src.ledger.writer",)
 
 FULL_SECTION = {
     "sides": {
@@ -34,6 +39,49 @@ class GateTests(unittest.TestCase):
         predictive engine, and this constant saying otherwise must be a
         deliberate, evidence-carrying diff."""
         self.assertIsNone(ranker.ENGINE2)
+
+    def test_product_data_path_guard_no_api_or_web_module_imports_the_v2_ledger_writer(self):
+        """W10 product guard: while ENGINE2 is None, nothing under api/ or
+        web/ may import src.ledger.writer (the only place a DecisionRecord
+        is appended). Importing it would let a route or page create the
+        appearance of a live decision feed with no engine behind it -- the
+        same failure mode this class's other tests block for the ranker
+        page's copy, extended to the ledger's write path.
+
+        Static AST scan, not a runtime import check: a module that imports
+        the writer only inside a function body still fails this, because the
+        capability existing in the source is the thing being forbidden, not
+        merely whether today's code path happens to call it.
+        """
+        violations = []
+        for base in (ROOT / "api", ROOT / "web"):
+            if not base.exists():
+                continue
+            for path in base.rglob("*.py"):
+                tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+                for node in ast.walk(tree):
+                    if isinstance(node, ast.Import):
+                        names = [alias.name for alias in node.names]
+                    elif isinstance(node, ast.ImportFrom) and node.module:
+                        names = [node.module] + [
+                            f"{node.module}.{alias.name}" for alias in node.names
+                        ]
+                    else:
+                        continue
+                    for guarded in GUARDED_WRITER_MODULES:
+                        if any(n == guarded or n.startswith(guarded + ".")
+                               for n in names):
+                            violations.append(
+                                f"{path.relative_to(ROOT)} imports {guarded!r}")
+        self.assertEqual(violations, [], "\n".join(violations))
+
+    def test_the_ledger_writer_itself_still_exists_and_is_reachable_directly(self):
+        # Guards the guard: if src.ledger.writer stopped existing or stopped
+        # importing, the test above would trivially "pass" for the wrong
+        # reason (nothing to violate). Import it directly here, OUTSIDE
+        # api/web, which is exactly where it is allowed to be imported from.
+        from src.ledger import writer as ledger_writer
+        self.assertTrue(hasattr(ledger_writer, "append_decision"))
 
     def test_the_page_never_recommends_while_the_engine_is_empty(self):
         page = ranker.render(INDEX).lower()

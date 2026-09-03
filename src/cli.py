@@ -522,6 +522,21 @@ def cmd_ledger(args) -> int:
     from src.pipeline import ledger
     from src.providers import mlb as mlb_provider
 
+    if getattr(args, "action", None) == "verify":
+        from src.ledger import bridge
+        report = bridge.verify()
+        print(f"v1 ledger ({report['v1_path']}): "
+              f"{'untouched' if report['v1_untouched'] else 'CHANGED'}")
+        print(f"  sha256 recorded={report['v1_sha256_recorded']}")
+        print(f"  sha256 current ={report['v1_sha256_current']}")
+        print(f"v2 chain ({report['v2_path']}): "
+              f"{'ok' if report['v2_chain_ok'] else 'BROKEN'} "
+              f"({report['v2_rows_checked']} row(s) checked)")
+        if not report["v2_chain_ok"]:
+            print(f"  broken at line {report['v2_broken_at_line']}: "
+                  f"{report['v2_reason']}")
+        return EXIT_OK if report["ok"] else EXIT_ERROR
+
     if args.status:
         report = ledger.status()
         print(f"forward ledger: {report['games_recorded']} game(s) across "
@@ -1969,6 +1984,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="settle forward-ledger entries against results")
     ledger_cmd.add_argument("--status", action="store_true",
                             help="report what the ledger holds without settling")
+    ledger_cmd.add_argument("action", nargs="?", choices=["verify"],
+                            help="'verify': check the v1 ledger is untouched "
+                                 "and the v2 hash chain is intact, then exit "
+                                 "(does not settle anything)")
 
     sub.add_parser("closing-audit",
         help="read-only: per-market closing coverage (h2h, spreads, "
