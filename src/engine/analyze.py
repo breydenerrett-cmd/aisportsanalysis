@@ -130,6 +130,19 @@ class EngineConfig:
 DEFAULT_CONFIG = EngineConfig()
 DEFAULT_ADVERSARIES: tuple = ()
 
+# Honest probabilities: an evolab genome (or any other system) makes a
+# directional pick with NO calibrated probability -- `Proposal.p_model` is
+# `None`, not a value analyze() may invent a default for. A candidate built
+# from such a proposal is a PRICE-STANDING-ONLY candidate: RATE never
+# fabricates a Bet Rating for it (there is nothing calibrated to rate), and
+# its DecisionRecord names, in `value_basis`, exactly what its selection
+# rested on instead of a probability -- here, the board's own consensus/
+# price standing at decision time. This is the ONLY value_basis this module
+# assigns; a record whose proposal DID carry a p_model gets `value_basis =
+# None` (its value basis is already the edge_bps/p_model pair -- "the
+# existing value projection" the task distinguishes this from).
+VALUE_BASIS_PRICE_STANDING_ONLY = "price_standing_only:no_calibrated_p_model"
+
 
 # ---------------------------------------------------------------------------
 # The waist
@@ -244,6 +257,13 @@ def analyze(snapshot: PriceBlindSnapshot, board: PricedBoard, *,
     # on `rating`.
     rated: list[Candidate] = []
     for cand in survivors:
+        if cand.proposal.p_model is None:
+            # Honest probabilities: no calibrated probability means nothing
+            # for RATE to rate. `rating` stays None (not a dict with
+            # None-valued keys) -- "no Bet Rating" is a structural absence,
+            # never a rating dict that merely LOOKS empty.
+            rated.append(replace(cand, rating=None))
+            continue
         prob_quality = _probability_quality(cand)
         price_quality = _price_quality(cand)
         rating = {
@@ -347,6 +367,10 @@ def _to_decision_record(cand: Candidate, *, snapshot: PriceBlindSnapshot,
                        "to key one on); known_at_grade forced to D rather "
                        "than assumed A",
         })
+    value_basis = None
+    if proposal.p_model is None:
+        value_basis = VALUE_BASIS_PRICE_STANDING_ONLY
+
     if verdict == "play" and not evidence and not counterarguments:
         # DecisionRecord requires one of the two non-empty on a play
         # (synthesis-judge 4.2); a system that proposed with no evidence at
@@ -391,4 +415,5 @@ def _to_decision_record(cand: Candidate, *, snapshot: PriceBlindSnapshot,
         assumption_exposure=dict(snapshot.assumption_exposure),
         stake_units=0.0,
         known_at_grade=grade,
+        value_basis=value_basis,
     )

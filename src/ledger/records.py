@@ -125,6 +125,25 @@ class DecisionRecord:
     assumption_exposure: dict
     stake_units: float
     known_at_grade: str  # task requirement: carried alongside the identity fields
+    # vertical-slice S5/honest-probabilities task additions (both optional,
+    # default None so every pre-existing construction site keeps working):
+    #   value_basis    -- REQUIRED non-None on any record whose proposal
+    #                      carried no p_model: names what the selection
+    #                      rested on when there is no calibrated probability
+    #                      to project a value against (src.engine.analyze's
+    #                      VALUE_BASIS_PRICE_STANDING_ONLY). None for a
+    #                      record whose p_model IS set -- that record's
+    #                      value basis is already the edge_bps/p_model pair,
+    #                      which is the "existing value projection" the task
+    #                      distinguishes this from.
+    #   selection_rule -- the named, pre-registered constant
+    #                      (src.engine.slate.SELECTION_RULE) recording HOW a
+    #                      slate runner turned this record into a paper
+    #                      wager (or chose not to) -- set by the slate
+    #                      runner, never by analyze() itself, which knows
+    #                      nothing about staking.
+    value_basis: str | None = None
+    selection_rule: str | None = None
     prev_hash: str = ""
     row_hash: str = ""
 
