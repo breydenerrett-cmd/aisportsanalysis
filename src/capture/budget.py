@@ -46,7 +46,6 @@ from typing import Optional
 
 from src.paths import processed_path, repo_root
 from src.pipeline import creditlog
-from src.pipeline import prop_listing as _prop_listing
 
 LOG = logging.getLogger(__name__)
 
@@ -86,12 +85,12 @@ UTILIZATION_TARGET = 0.27
 #   100,000 allotment x 0.27 target / 30-day cycle = 900/day.
 DAILY_ENVELOPE = round(MONTHLY_ALLOTMENT * UTILIZATION_TARGET / RESET_CYCLE_DAYS)
 
-# The absolute floor. Re-exported, not re-typed: prop_listing.py already
-# carries the canonical 5,000 (dense.py and prop_prices.py both source or
-# duplicate it too). Odds.py itself does not define a floor constant -- the
-# floor is a program policy, not a provider fact -- so this points at the
-# existing canonical value instead of inventing a second copy of "5000".
-CREDIT_FLOOR = _prop_listing.CREDIT_FLOOR
+# The absolute floor. This module is the canonical owner of the 5,000
+# figure; prop_listing.py re-exports it (it imports this module, so the
+# import must not run the other way -- that was a circular import).
+# Odds.py itself does not define a floor constant -- the floor is a program
+# policy, not a provider fact.
+CREDIT_FLOOR = 5000
 
 CREDIT_LOG_PATH = creditlog.DEFAULT_STORE
 FAMILIES_CONFIG_PATH = repo_root() / "config" / "capture_families.json"

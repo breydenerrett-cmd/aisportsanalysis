@@ -96,7 +96,7 @@ DAILY_CREDIT_CAP = GAMES_PER_DAY * len(SLOTS)
 HARD_CAP = 400
 
 # The absolute floor, identical to dense's. Never worked around.
-CREDIT_FLOOR = 5000
+CREDIT_FLOOR = budget_module.CREDIT_FLOOR
 
 # The design's reserve: the floor plus a round day of headroom. Below this the
 # audit skips itself rather than spend the margin that pays for baseline
