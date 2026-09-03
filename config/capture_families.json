@@ -54,7 +54,7 @@
       "measured": false,
       "credits_per_event": null,
       "measured_utc": null,
-      "source": "No parlay/SGP endpoint has been probed; existence on this provider is not even confirmed."
+      "source": "Confirmed 2026-09-03 via vendor markets page (https://the-odds-api.com/sports-odds-data/betting-markets.html): no SGP/parlay endpoint or market key exists on The Odds API. See docs/SGP_PARLAY_CAPTURE.md. Cost stays PROBE_REQUIRED because there is nothing to probe -- not because it is unmeasured."
     }
   }
 }
