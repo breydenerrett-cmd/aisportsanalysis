@@ -99,6 +99,7 @@ from pathlib import Path
 
 from src.analysis import prices as prices_mod
 from src.core import odds as odds_math
+from src.core.asof import seasons_replay_label
 from src.data import parks
 from src.evolab.decide import FORBIDDEN_ATTRIBUTES, BoardMeta, WorldView
 from src.evolab.registry import DEFAULT_REGISTRY
@@ -1373,6 +1374,13 @@ class ReplayManifest:
     phase0_expected_universe: int
     universe_reconciliation: str
     evidence: str
+    # Owner decision 7: any 2023-24 replay must be labelled "degraded-
+    # information replay" wherever inputs cannot be reconstructed faithfully.
+    # Computed from `seasons` alone (src/core/asof.seasons_replay_label) --
+    # every 2023-24 season is DEGRADED_INFORMATION by construction, since the
+    # watch/poll stores src/core/asof.as_of reads from did not exist yet.
+    replay_label: dict = field(default_factory=lambda: {
+        "label": "FAITHFUL", "reasons": []})
 
     @classmethod
     def build(cls, *, seasons, games, games_by_season, exclusions,
@@ -1406,6 +1414,7 @@ class ReplayManifest:
             phase0_expected_universe=PHASE0_UNIVERSE,
             universe_reconciliation=UNIVERSE_RECONCILIATION,
             evidence=EVIDENCE_LABEL,
+            replay_label=seasons_replay_label(seasons),
         )
 
     def to_dict(self) -> dict:
@@ -1428,6 +1437,7 @@ class ReplayManifest:
             "phase0_expected_universe": self.phase0_expected_universe,
             "universe_reconciliation": self.universe_reconciliation,
             "evidence": self.evidence,
+            "replay_label": self.replay_label,
         }
 
     def fingerprint(self) -> str:
