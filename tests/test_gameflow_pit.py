@@ -174,6 +174,13 @@ class TestDecisionPathDoesNotImportGameflow(unittest.TestCase):
         "src/core/asof.py", "src/board/record.py", "src/board/project.py",
         "src/model/dataset.py", "src/model/pointintime.py",
         "src/research/matrix.py",
+        # The mechanism-check lane's two decision-path additions. These are
+        # the modules that WRITE the post-game predicates, at decision time,
+        # and they are the likeliest place for someone to reach for the
+        # answer while authoring the question: a predicate that consulted the
+        # game it predicts would be the most complete leak available.
+        "src/engine/mechanism_predicates.py",
+        "src/engine/adapters/evolab_system.py",
     )
 
     def test_no_decision_path_module_imports_gameflow(self):
@@ -187,6 +194,37 @@ class TestDecisionPathDoesNotImportGameflow(unittest.TestCase):
                 self.assertFalse(
                     [n for n in imported if "gameflow" in n],
                     f"{relative} imports the post-game gameflow store")
+
+    def test_the_settlement_side_evaluator_is_not_on_the_decision_path(self):
+        """`src/review/mechanism_eval.py` reads play-by-play and therefore
+        belongs to settlement alone. Nothing the engine decides through may
+        import it -- the predicates it evaluates are the decision path's
+        half, and that module (mechanism_predicates) must not import it back.
+        """
+        root = Path(__file__).resolve().parent.parent
+        for relative in self.DECISION_PATH:
+            path = root / relative
+            if not path.exists():
+                continue
+            with self.subTest(module=relative):
+                imported = _imported_modules(path)
+                self.assertFalse(
+                    [n for n in imported if "mechanism_eval" in n],
+                    f"{relative} imports the settlement-side evaluator")
+
+    def test_the_predicate_author_reads_no_result_store_of_any_kind(self):
+        """Belt and braces on the same boundary: the module that freezes a
+        prediction must not import gameflow, the boxscore pipeline, the
+        results history, or the settlement runner."""
+        root = Path(__file__).resolve().parent.parent
+        imported = _imported_modules(
+            root / "src/engine/mechanism_predicates.py")
+        forbidden = [n for n in imported
+                     if any(bad in n for bad in
+                            ("gameflow", "boxscore", "settle", "history",
+                             "mechanism_eval", "postmortem"))]
+        self.assertFalse(forbidden,
+                          f"the predicate author imports {forbidden}")
 
     def test_gameflow_itself_does_not_import_the_decision_path(self):
         root = Path(__file__).resolve().parent.parent

@@ -224,6 +224,21 @@ class FeatureValue:
     observed_utc: str | None
     known_at: str | None
     known_at_grade: str
+    # HOW MUCH THIS ONE VALUE RESTS ON, and in what units. Threaded out of
+    # the same cutoff-gated accumulation the value itself comes from -- the
+    # count is a count of observations strictly before the same cutoff, so it
+    # is exactly as point-in-time-safe as the number it describes, and no
+    # additional store is read to obtain it.
+    #
+    # WHY IT EXISTS. A published thesis could quote the THRESHOLD's derivation
+    # sample ("4,048 games with both sides measured") but could not say what
+    # tonight's own number rests on -- 214 plate appearances against that
+    # pitch or 11. Those are different claims and read identically without
+    # this. `None` where the primitive genuinely has no count to report,
+    # never a 0 standing in for "unknown": absence over guess, the same rule
+    # the value itself obeys.
+    sample: int | None = None
+    sample_unit: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -511,32 +526,78 @@ def _accumulate_cached(store: str, cutoff: str) -> dict:
     return rebuilt_mod.accumulate(cutoff, store=store)
 
 
-def _starter_features_for_side(acc, batter_totals, slots, pitcher_id) -> dict:
-    """The six pitch-accumulator-derived features for one side, exactly as
-    `src.research.matrix.row_for_game` computes them (matrix.py:270-370) --
-    same `rebuilt` functions, same floors, same rounding, imported rather
+# The unit each feature's own sample count is expressed in. Named here
+# rather than inlined so a thesis and a mechanism predicate cannot disagree
+# about what "214" was 214 of.
+SAMPLE_UNITS = {
+    "starter_platoon_gap": "batters faced",
+    "starter_velocity_gap": "measured fastballs",
+    "starter_groundball_share": "batted balls",
+    "primary_pitch_share": "pitches",
+    "lineup_vs_primary_pitch": "plate appearances",
+    "top_minus_bottom": "plate-appearance denominators",
+    "lineup_platoon_share": "lineup slots",
+}
+
+
+def _pooled_denominator(slots, batter_totals) -> int:
+    """The denominator behind `matrix._pooled_woba` for a group of slots --
+    the count that pooled rate actually rests on. Re-summed here rather than
+    returned from matrix.py so that module's own signature (and every caller
+    of it) is untouched by this lane; it is the same arithmetic over the same
+    dict, and `tests/test_engine_features.py`'s matrix-equivalence test still
+    pins the VALUE against the real 2023 rows."""
+    denom = 0
+    for slot in slots:
+        entry = batter_totals.get(str(slot.get("person_id")))
+        if entry:
+            denom += entry[1]
+    return denom
+
+
+def _starter_features_for_side(acc, batter_totals, slots, pitcher_id) -> tuple:
+    """`({feature: value}, {feature: sample})` for one side, exactly as
+    `src.research.matrix.row_for_game` computes the values (matrix.py:270-370)
+    -- same `rebuilt` functions, same floors, same rounding, imported rather
     than re-derived. Returns only the features whose sample floor was met;
     absence, never a default, on every gate `rebuilt`/`matrix` itself
-    already enforces."""
+    already enforces.
+
+    The SAMPLE half is new and is read off the same `rebuilt` return dicts the
+    value comes from -- `platoon_split`'s batters-faced counts,
+    `fastball_velocity`'s measured-fastball count, `groundball_share`'s
+    batted-ball count, `pitch_mix`'s pitch counts, the pooled plate-appearance
+    denominators. Nothing extra is accumulated, no store is opened twice, and
+    a count is emitted only alongside a value that was itself emitted."""
     out: dict[str, float] = {}
+    samples: dict[str, int] = {}
     if pitcher_id:
         split = rebuilt_mod.platoon_split(acc, pitcher_id)
         if split.get("usable"):
             out["starter_platoon_gap"] = split["gap"]
+            samples["starter_platoon_gap"] = (
+                int(split["vs_left_faced"]) + int(split["vs_right_faced"]))
 
         velo = rebuilt_mod.fastball_velocity(acc, pitcher_id)
         league_velo = rebuilt_mod.league_fastball_velocity(acc)
         if velo.get("usable") and league_velo is not None:
             out["starter_velocity_gap"] = round(velo["avg"] - league_velo, 4)
+            samples["starter_velocity_gap"] = int(velo["fastballs"])
 
         gb = rebuilt_mod.groundball_share(acc, pitcher_id)
         if gb.get("usable"):
             out["starter_groundball_share"] = gb["share"]
+            samples["starter_groundball_share"] = int(gb["batted_balls"])
 
         mix = rebuilt_mod.pitch_mix(acc, pitcher_id)
         if mix:
             primary = mix[0]  # pitch_mix sorts by usage, most-used first
             out["primary_pitch_share"] = round(primary["usage_pct"] / 100.0, 4)
+            # The SHARE's denominator is the whole arsenal, not the primary
+            # pitch's own count: "62% of 3,140 pitches" is the claim, and
+            # quoting 1,947 there would describe the numerator.
+            samples["primary_pitch_share"] = int(
+                sum(entry["pitches"] for entry in mix))
             if slots:
                 weighted, pa_total = 0.0, 0
                 for slot in slots:
@@ -547,6 +608,7 @@ def _starter_features_for_side(acc, batter_totals, slots, pitcher_id) -> dict:
                         pa_total += line["pa"]
                 if pa_total:
                     out["lineup_vs_primary_pitch"] = round(weighted / pa_total, 4)
+                    samples["lineup_vs_primary_pitch"] = int(pa_total)
 
     if slots:
         top = [s for s in slots if matrix_module._order(s) is not None
@@ -557,8 +619,14 @@ def _starter_features_for_side(acc, batter_totals, slots, pitcher_id) -> dict:
         bottom_woba = matrix_module._pooled_woba(bottom, batter_totals)
         if top_woba is not None and bottom_woba is not None:
             out["top_minus_bottom"] = round(top_woba - bottom_woba, 4)
+            # A difference rests on both halves, so the honest count is the
+            # SMALLER one: reporting the sum would let four thin slots hide
+            # behind five thick ones.
+            samples["top_minus_bottom"] = min(
+                _pooled_denominator(top, batter_totals),
+                _pooled_denominator(bottom, batter_totals))
 
-    return out
+    return out, samples
 
 
 # ---------------------------------------------------------------------------
@@ -611,16 +679,21 @@ def _build_replay(game_pk: str, sources: FeatureSources) -> dict:
                     source="historical:lineup_store+mlb_results+handedness_cache",
                     observed_utc=game_date, known_at=None,
                     known_at_grade=asof_module.GRADE_D,
+                    sample=len(slots),
+                    sample_unit=SAMPLE_UNITS["lineup_platoon_share"],
                 )
 
         if acc is not None:
-            sub = _starter_features_for_side(acc, batter_totals, slots, pitcher_id)
+            sub, samples = _starter_features_for_side(
+                acc, batter_totals, slots, pitcher_id)
             for name, value in sub.items():
                 out[f"{side}_{name}"] = FeatureValue(
                     value=float(value),
                     source="historical:rebuilt(statcast)+lineup_store+mlb_results",
                     observed_utc=game_date, known_at=None,
                     known_at_grade=asof_module.GRADE_D,
+                    sample=samples.get(name),
+                    sample_unit=SAMPLE_UNITS.get(name),
                 )
     return out
 
@@ -695,10 +768,13 @@ def _build_live(game_pk: str, t: str, sources: FeatureSources) -> dict:
                     source="asof:lineups_watch+probables_watch+handedness_cache",
                     observed_utc=observed_utc, known_at=known_at,
                     known_at_grade=grade,
+                    sample=len(slots),
+                    sample_unit=SAMPLE_UNITS["lineup_platoon_share"],
                 )
 
         if acc is not None:
-            sub = _starter_features_for_side(acc, batter_totals, slots, pitcher_id)
+            sub, samples = _starter_features_for_side(
+                acc, batter_totals, slots, pitcher_id)
             for name, value in sub.items():
                 # top_minus_bottom needs only this side's own posted lineup;
                 # every other pitch-accumulator feature needs the opposing
@@ -725,6 +801,8 @@ def _build_live(game_pk: str, t: str, sources: FeatureSources) -> dict:
                             "+rebuilt(statcast)+handedness_cache"),
                     observed_utc=observed_utc, known_at=known_at,
                     known_at_grade=grade,
+                    sample=samples.get(name),
+                    sample_unit=SAMPLE_UNITS.get(name),
                 )
     return out
 

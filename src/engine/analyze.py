@@ -48,6 +48,12 @@ class Proposal:
     p_model: float | None = None
     thesis: str = ""
     evidence: tuple = ()
+    # The post-game predicates this proposal's reasoning promises, built at
+    # PROPOSE time by `src.engine.mechanism_predicates.predicates_for` and
+    # carried through onto the frozen DecisionRecord. `()` for a system that
+    # makes no falsifiable mechanism claim -- a null control, the
+    # market-derived republisher -- which is the honest report, not a gap.
+    mechanism_predicates: tuple = ()
 
     def __post_init__(self) -> None:
         if self.p_model_provenance not in PROBABILITY_PROVENANCE_VALUES:
@@ -568,4 +574,5 @@ def _to_decision_record(cand: Candidate, *, snapshot: PriceBlindSnapshot,
         stake_units=0.0,
         known_at_grade=grade,
         value_basis=value_basis,
+        mechanism_predicates=tuple(proposal.mechanism_predicates or ()),
     )

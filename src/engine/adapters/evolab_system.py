@@ -31,6 +31,7 @@ from src.board.record import PriceObservation
 from src.engine.analyze import Proposal
 from src.engine.analyze import analyze as _analyze
 from src.engine.explain import evolab_thesis
+from src.engine.mechanism_predicates import predicates_for
 from src.engine.snapshot import PriceBlindSnapshot, PricedBoard
 from src.evolab.decide import BoardMeta, WorldView, decide_with_reason
 from src.evolab.genome import F5_MARKET, Genome, enumerate_genomes
@@ -131,7 +132,21 @@ class EvolabGenomeSystem:
             thesis=evolab_thesis(
                 self.genome.strategy_id, decision.market, decision.side,
                 decision.signals_fired, dict(view.features),
-                registry=self.registry),
+                registry=self.registry,
+                samples=dict(getattr(view, "feature_samples", {}) or {})),
+            # AND THE THESIS IS NOW CHECKABLE. Each fired signal's frozen
+            # mechanism gets its post-game predicate attached here, at
+            # decision time, from decision-time data only -- the subject is a
+            # ROLE ("the starter the backed lineup faced"), the measure and
+            # the PASS/FAIL/UNDETERMINED rule are copied onto the row, and
+            # settlement evaluates exactly what it finds. Before this, every
+            # ReviewRecord carried `mechanism_checks=()`, so no loss in this
+            # project's history could have been classified REASONING_WRONG by
+            # any game ever played (src.engine.mechanism_predicates).
+            mechanism_predicates=predicates_for(
+                decision.signals_fired, decision.side, dict(view.features),
+                registry=self.registry,
+                samples=dict(getattr(view, "feature_samples", {}) or {})),
             evidence=(f"score={decision.score!r}",
                       f"execution_mode={decision.execution_mode}"),
         ),)

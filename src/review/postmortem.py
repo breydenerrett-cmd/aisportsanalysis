@@ -73,7 +73,17 @@ VERDICTS = (VERDICT_REASONING_WRONG, VERDICT_INFORMATION_MISSING,
 #                               information about the reasoning. This is a
 #                               statement about the thesis, not an
 #                               exoneration of it.
+#   mechanism_undetermined   -- the decision named checkable claims and the
+#                               game could not decide them: a starter pulled
+#                               in the third, no play-by-play stored, a
+#                               sample below the frozen floor. Distinct from
+#                               BOTH of the above -- the claim exists (unlike
+#                               no_falsifiable_mechanism) and was not upheld
+#                               (unlike mechanism_confirmed). Collapsing it
+#                               into either one would be a lie in a different
+#                               direction each time.
 QUALIFIER_MECHANISM_CONFIRMED = "mechanism_confirmed"
+QUALIFIER_MECHANISM_UNDETERMINED = "mechanism_undetermined"
 QUALIFIER_NO_FALSIFIABLE_MECHANISM = "no_falsifiable_mechanism"
 
 PIVOT_METRIC_WIN_PROBABILITY = "win_probability"
@@ -175,6 +185,11 @@ class PostMortem:
     shape: Optional[GameShape]
     pivot: Optional[Pivot]
     half_inning_pivot: Optional[HalfInningPivot]
+    # The frozen mechanism checks settlement evaluated, carried through
+    # verbatim so the report can print the promise the pick made next to what
+    # the game actually did. Empty for a decision that promised nothing --
+    # which is a finding about the pick, not a missing field.
+    mechanism_checks: tuple
     verdict: Optional[str]
     verdict_qualifier: Optional[str]
     verdict_basis: tuple  # the facts the rule fired on, in order
@@ -497,8 +512,21 @@ def classify(decision, review, game_row: Optional[Mapping],
         return VERDICT_REASONING_WRONG, None, tuple(basis)
 
     if checks:
-        basis.append(f"{len(checks)} mechanism check(s) recorded, none refuted")
-        qualifier = QUALIFIER_MECHANISM_CONFIRMED
+        verdicts = [c.get("verdict") for c in checks
+                    if isinstance(c, Mapping)]
+        undecided = [c.get("name") for c in checks
+                     if isinstance(c, Mapping)
+                     and c.get("verdict") not in ("confirmed", "refuted")]
+        if undecided:
+            basis.append(
+                f"{len(checks)} mechanism check(s) recorded, none refuted, "
+                f"but {len(undecided)} could not be decided by this game: "
+                f"{undecided}")
+            qualifier = QUALIFIER_MECHANISM_UNDETERMINED
+        else:
+            basis.append(f"{len(checks)} mechanism check(s) recorded, "
+                         f"all {len(verdicts)} confirmed")
+            qualifier = QUALIFIER_MECHANISM_CONFIRMED
     else:
         basis.append("no mechanism checks were recorded on this decision, so "
                      "no part of its thesis could be refuted by any game")
@@ -639,6 +667,12 @@ def build_postmortem(decision, review, wager: Mapping,
             "cannot distinguish 'the reasoning held' from 'the reasoning was "
             "never testable' -- the VARIANCE verdict here is a statement "
             "about the thesis, not a defence of it")
+    if qualifier == QUALIFIER_MECHANISM_UNDETERMINED:
+        limitations.append(
+            "this decision's frozen mechanism check(s) could not be decided "
+            "by this game -- too few plate appearances against the starter, "
+            "or no play-by-play stored. The claim was made and stands "
+            "unchecked; that is not the same as it holding")
 
     return PostMortem(
         decision_key=decision_key,
@@ -651,6 +685,7 @@ def build_postmortem(decision, review, wager: Mapping,
         thesis_outcome=getattr(review, "thesis_outcome", "UNTESTED"),
         flow_available=flow is not None,
         shape=shape, pivot=pivot, half_inning_pivot=half_pivot,
+        mechanism_checks=tuple(getattr(review, "mechanism_checks", ()) or ()),
         verdict=verdict, verdict_qualifier=qualifier, verdict_basis=basis,
         limitations=tuple(limitations),
         signatures=_signatures(verdict, qualifier, shape, pivot,
@@ -917,6 +952,20 @@ def render_postmortem(pm: PostMortem) -> str:
         else:
             lines.append(f"When it stopped being in doubt could not be read off "
                          f"the record ({s.decided_basis}).")
+    lines.append("")
+
+    lines.append("**What the pick promised, and what the game did.**")
+    if not pm.mechanism_checks:
+        lines.append("Nothing -- this decision froze no mechanism check, so "
+                     "no part of its thesis could be refuted by any game.")
+    for check in pm.mechanism_checks:
+        if not isinstance(check, Mapping):
+            continue
+        lines.append(
+            f"- {check.get('verdict', '?').upper()} `{check.get('name')}`: "
+            f"promised {check.get('claim') or check.get('expected')} "
+            f"(rule: {check.get('expected')}); measured "
+            f"{check.get('observed')}.")
     lines.append("")
 
     lines.append("**The pivot.**")

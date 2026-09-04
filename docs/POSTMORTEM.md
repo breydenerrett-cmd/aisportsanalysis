@@ -171,6 +171,36 @@ time, not in any parameter. Until a thesis records a mechanism check, this
 classifier cannot tell "the reasoning held" from "the reasoning was never
 testable".
 
+### Update (2026-09-04): the checks now exist
+
+`settle_slate.build_review_for` no longer writes `mechanism_checks=()`. It
+EVALUATES the post-game predicates a decision froze at decision time
+(`src.engine.mechanism_predicates`, pre-registered in
+docs/PREREG_MECHANISM_CHECKS.md) against the game's own play-by-play, via
+`src.review.mechanism_eval`. A third VARIANCE qualifier,
+`mechanism_undetermined`, distinguishes "the claim was made and the game
+could not decide it" from both "it held" and "there was no claim".
+
+The numbers above **do not change**, and that is correct rather than a
+failure: every DecisionRecord in the ledger is frozen inside a hash chain and
+carries no predicate, so those 114 decisions genuinely made no claim a game
+could refute. Separation begins with the first slate decided after the change.
+Applying the re-derived predicate to the 31 of those decisions whose frozen
+thesis names its fired signal -- a BACKFILL, explicitly not a
+pre-commitment -- moves the same corpus to 5 REASONING_WRONG / 3
+`mechanism_confirmed` / 28 `no_falsifiable_mechanism` among losses against 14
+/ 6 / 32 among the won control, which is what the classifier separating looks
+like. That REASONING_WRONG is commoner among WINS there is the point: a
+mechanism check is scored on the mechanism, never on the bet.
+
+Independently of any pick, the check machinery was measured on all 284 real
+games in the play-by-play store, all six predicates, both sides -- 3,408
+evaluations: 1,601 confirmed, 1,588 refuted, 219 undetermined. The layer
+decides most games and says so honestly when it cannot. The near-even
+confirmed/refuted split is a property of a baseline derived near the league
+median (docs/PREREG_MECHANISM_CHECKS.md says so in advance) and is not a
+finding about any mechanism.
+
 44 further settled reviews could not be examined: they carry pre-B4 4-field
 `decision_key`s (no `system_id`, see `factory.scorecard.decision_key_for`)
 that match several systems' wagers at the same instant. They are skipped with

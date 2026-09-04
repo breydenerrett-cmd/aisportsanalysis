@@ -162,6 +162,56 @@ class TestLosingIsNotItselfEvidence(unittest.TestCase):
         self.assertEqual(loss.verdict, win.verdict)
         self.assertEqual(loss.verdict_qualifier, win.verdict_qualifier)
 
+    def test_a_real_mechanism_check_is_scored_on_the_game_not_the_bet(self):
+        """The same frozen predicate, the same real game, settled WIN in one
+        run and LOSS in the other, evaluated through the real settlement
+        evaluator -- identical checks, identical verdict.
+
+        This is the extension of the test above, not a replacement for it:
+        that one proved the CLASSIFIER ignores the outcome when there are no
+        checks; this one proves the CHECKS themselves do, now that there are
+        some. If a mechanism check could ever come back different because the
+        bet won, this whole layer would be a machine for writing 'the
+        reasoning was wrong' on every loss.
+        """
+        from src.engine import mechanism_predicates as mech
+        from src.review import mechanism_eval
+
+        predicates = mech.predicates_for(
+            (("lineup_vs_primary_pitch", 0),), "home",
+            {"away_lineup_vs_primary_pitch": 0.27,
+             "home_lineup_vs_primary_pitch": 0.33})
+        flow = make_flow()
+        checks = mechanism_eval.evaluate(predicates, flow)
+        self.assertTrue(checks, "sanity: the predicate must actually evaluate")
+
+        built = {}
+        for settled in ("win", "loss"):
+            built[settled] = pm.build_postmortem(
+                make_decision(), make_review(settled, mechanism_checks=checks),
+                make_wager(), flow)
+        self.assertEqual(built["win"].mechanism_checks,
+                          built["loss"].mechanism_checks)
+        self.assertEqual(built["win"].verdict, built["loss"].verdict)
+        self.assertEqual(built["win"].verdict_qualifier,
+                          built["loss"].verdict_qualifier)
+        self.assertNotEqual(built["loss"].verdict_qualifier,
+                            pm.QUALIFIER_NO_FALSIFIABLE_MECHANISM,
+                            "sanity: the checks must have reached the "
+                            "classifier, or this proves nothing")
+
+    def test_settlement_never_hands_the_evaluator_the_outcome(self):
+        """The structural half of the same guarantee: `build_review_for`
+        computes the checks BEFORE and independently of the outcome, so the
+        two runs above cannot diverge by construction rather than by luck."""
+        import inspect
+
+        from src.engine import settle_slate
+        source = inspect.getsource(settle_slate.evaluate_mechanism_checks)
+        for forbidden in ("outcome", "settled.outcome", "won"):
+            self.assertNotIn(forbidden, source,
+                              "the mechanism evaluator can see the bet result")
+
 
 class TestPivot(unittest.TestCase):
 

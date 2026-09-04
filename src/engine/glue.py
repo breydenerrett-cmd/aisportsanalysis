@@ -402,15 +402,22 @@ def build_snapshot(game: "GameRef | str | int", t: str | datetime, *,
         resolved_features = {name: fv.value for name, fv in feature_values.items()}
 
     feature_exposure = {}
+    feature_samples = {}
     for name, fv in feature_values.items():
         key = f"{fv.known_at_grade}:{name}"
         feature_exposure[key] = feature_exposure.get(key, 0) + 1
+        # Only when the primitive actually reported one: a missing count is
+        # reported by ABSENCE here, never as a zero a reader could quote.
+        if fv.sample is not None:
+            feature_samples[name] = {"n": int(fv.sample),
+                                     "unit": fv.sample_unit}
 
     return PriceBlindSnapshot.from_asof(
         game_pk=ref.board_key, t=_iso(t), point_class=point_class,
         features=resolved_features or {}, as_of_snapshot=as_of_snapshot,
         available_markets=available_markets, books_by_market=books_by_market,
         lineup_posted=lineup_posted, extra_exposure=feature_exposure,
+        feature_samples=feature_samples,
     )
 
 

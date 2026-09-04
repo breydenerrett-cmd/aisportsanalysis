@@ -251,6 +251,24 @@ class DecisionRecord:
     value_basis: str | None = None
     selection_rule: str | None = None
     record_provenance: str | None = None
+    # The mechanism-check lane's addition, same optional convention:
+    #   mechanism_predicates -- the machine-checkable POST-GAME PREDICATES
+    #                      this decision's fired signals promise, frozen HERE
+    #                      with the pick (`src.engine.mechanism_predicates`).
+    #                      Settlement evaluates what it finds on the record
+    #                      and may never invent one for a record that carries
+    #                      none, which is the entire reason this lives on the
+    #                      decision and not in the review: a predicate
+    #                      authored after the outcome is known is worth
+    #                      nothing. `()` on a record from a system that makes
+    #                      no falsifiable mechanism claim (every null control,
+    #                      the market-derived republisher) and on every record
+    #                      published before this field existed -- in both
+    #                      cases the honest reading is "no claim a game could
+    #                      refute", which `src.review.postmortem` reports as
+    #                      the `no_falsifiable_mechanism` qualifier rather
+    #                      than as an exoneration.
+    mechanism_predicates: tuple = ()
     prev_hash: str = ""
     row_hash: str = ""
 
