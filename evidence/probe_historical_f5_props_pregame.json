@@ -1,0 +1,728 @@
+{
+  "caller": "probe_historical_f5_props",
+  "credits_spent_measured": 213,
+  "events_lookups": [
+    {
+      "billed": 1,
+      "chosen_commence": "2023-07-18T23:05:00Z",
+      "chosen_event": "a36f0138570d5bd380114bc31949436e",
+      "chosen_pregame": true,
+      "events_returned": 23,
+      "instant": "2023-07-18T22:50:00Z",
+      "pregame_events": 22,
+      "remaining_after": 99306,
+      "season": 2023,
+      "served_timestamp": "2023-07-18T22:45:40Z"
+    },
+    {
+      "billed": 1,
+      "chosen_commence": "2024-07-10T22:51:00Z",
+      "chosen_event": "c666105e14d197ecb795e910049bc678",
+      "chosen_pregame": true,
+      "events_returned": 27,
+      "instant": "2024-07-10T22:50:00Z",
+      "pregame_events": 23,
+      "remaining_after": 99235,
+      "season": 2024,
+      "served_timestamp": "2024-07-10T22:45:37Z"
+    },
+    {
+      "billed": 1,
+      "chosen_commence": "2025-07-09T23:06:00Z",
+      "chosen_event": "f510d7b78708682658521e00fee18efa",
+      "chosen_pregame": true,
+      "events_returned": 20,
+      "instant": "2025-07-09T22:50:00Z",
+      "pregame_events": 18,
+      "remaining_after": 99164,
+      "season": 2025,
+      "served_timestamp": "2025-07-09T22:45:37Z"
+    }
+  ],
+  "probes": [
+    {
+      "assumed_billed": 10,
+      "away_team": "Los Angeles Dodgers",
+      "billed": 10,
+      "book_count": 13,
+      "book_last_update_samples": [
+        "2023-07-18T22:42:29Z",
+        "2023-07-18T22:42:50Z",
+        "2023-07-18T22:43:09Z",
+        "2023-07-18T22:44:08Z"
+      ],
+      "books": [
+        "barstool",
+        "betmgm",
+        "betonlineag",
+        "betrivers",
+        "betus",
+        "bovada",
+        "draftkings",
+        "fanduel",
+        "lowvig",
+        "mybookieag",
+        "pointsbetus",
+        "unibet_us",
+        "williamhill_us"
+      ],
+      "commence_time": "2023-07-18T23:05:00Z",
+      "distinct_players": [],
+      "event_id": "a36f0138570d5bd380114bc31949436e",
+      "group": "f5_h2h",
+      "home_team": "Baltimore Orioles",
+      "markets_returned": {
+        "h2h_1st_5_innings": {
+          "books": 13,
+          "outcomes": 26
+        }
+      },
+      "next_timestamp": "2023-07-18T22:50:40Z",
+      "outcome_rows": 26,
+      "player_count": 0,
+      "previous_timestamp": "2023-07-18T22:40:40Z",
+      "remaining_after": 99296,
+      "requested_instant": "2023-07-18T22:50:00Z",
+      "requested_markets": [
+        "h2h_1st_5_innings"
+      ],
+      "season": 2023,
+      "served_timestamp": "2023-07-18T22:45:40Z"
+    },
+    {
+      "assumed_billed": 20,
+      "away_team": "Los Angeles Dodgers",
+      "billed": 20,
+      "book_count": 13,
+      "book_last_update_samples": [
+        "2023-07-18T22:42:29Z",
+        "2023-07-18T22:42:50Z",
+        "2023-07-18T22:43:09Z",
+        "2023-07-18T22:44:08Z"
+      ],
+      "books": [
+        "barstool",
+        "betmgm",
+        "betonlineag",
+        "betrivers",
+        "betus",
+        "bovada",
+        "draftkings",
+        "fanduel",
+        "lowvig",
+        "mybookieag",
+        "pointsbetus",
+        "unibet_us",
+        "williamhill_us"
+      ],
+      "commence_time": "2023-07-18T23:05:00Z",
+      "distinct_players": [],
+      "event_id": "a36f0138570d5bd380114bc31949436e",
+      "group": "f5_pair",
+      "home_team": "Baltimore Orioles",
+      "markets_returned": {
+        "h2h_1st_5_innings": {
+          "books": 13,
+          "outcomes": 26
+        },
+        "totals_1st_5_innings": {
+          "books": 12,
+          "outcomes": 24
+        }
+      },
+      "next_timestamp": "2023-07-18T22:50:40Z",
+      "outcome_rows": 50,
+      "player_count": 0,
+      "previous_timestamp": "2023-07-18T22:40:40Z",
+      "remaining_after": 99276,
+      "requested_instant": "2023-07-18T22:50:00Z",
+      "requested_markets": [
+        "h2h_1st_5_innings",
+        "totals_1st_5_innings"
+      ],
+      "season": 2023,
+      "served_timestamp": "2023-07-18T22:45:40Z"
+    },
+    {
+      "assumed_billed": 10,
+      "away_team": "Los Angeles Dodgers",
+      "billed": 10,
+      "book_count": 10,
+      "book_last_update_samples": [
+        "2023-07-18T22:42:29Z",
+        "2023-07-18T22:42:50Z",
+        "2023-07-18T22:43:09Z",
+        "2023-07-18T22:44:08Z"
+      ],
+      "books": [
+        "barstool",
+        "betmgm",
+        "betonlineag",
+        "betrivers",
+        "draftkings",
+        "fanduel",
+        "mybookieag",
+        "pointsbetus",
+        "unibet_us",
+        "williamhill_us"
+      ],
+      "commence_time": "2023-07-18T23:05:00Z",
+      "distinct_players": [
+        "Michael Grove",
+        "Tyler Wells"
+      ],
+      "event_id": "a36f0138570d5bd380114bc31949436e",
+      "group": "pitcher_props",
+      "home_team": "Baltimore Orioles",
+      "markets_returned": {
+        "pitcher_strikeouts": {
+          "books": 10,
+          "outcomes": 78
+        }
+      },
+      "next_timestamp": "2023-07-18T22:50:40Z",
+      "outcome_rows": 78,
+      "player_count": 2,
+      "previous_timestamp": "2023-07-18T22:40:40Z",
+      "remaining_after": 99266,
+      "requested_instant": "2023-07-18T22:50:00Z",
+      "requested_markets": [
+        "pitcher_strikeouts"
+      ],
+      "season": 2023,
+      "served_timestamp": "2023-07-18T22:45:40Z"
+    },
+    {
+      "assumed_billed": 30,
+      "away_team": "Los Angeles Dodgers",
+      "billed": 30,
+      "book_count": 11,
+      "book_last_update_samples": [
+        "2023-07-18T22:42:29Z",
+        "2023-07-18T22:42:50Z",
+        "2023-07-18T22:43:09Z",
+        "2023-07-18T22:44:08Z"
+      ],
+      "books": [
+        "barstool",
+        "betmgm",
+        "betonlineag",
+        "betrivers",
+        "bovada",
+        "draftkings",
+        "fanduel",
+        "mybookieag",
+        "pointsbetus",
+        "unibet_us",
+        "williamhill_us"
+      ],
+      "commence_time": "2023-07-18T23:05:00Z",
+      "distinct_players": [
+        "Aaron Hicks",
+        "Adam Frazier",
+        "Adley Rutschman",
+        "Anthony Santander",
+        "Austin Hays",
+        "Boyce Mullins",
+        "Chris Taylor",
+        "Christopher Taylor",
+        "Colton Cowser",
+        "David Peralta",
+        "Freddie Freeman",
+        "Frederick Freeman",
+        "Gunnar Henderson",
+        "J.D. Martinez",
+        "JD Martinez",
+        "James Outman",
+        "Jason Heyward",
+        "Jordan Westburg",
+        "Julio Martinez",
+        "Markus Betts",
+        "Max Muncy",
+        "Maxwell Muncy",
+        "Miguel Rojas",
+        "Mookie Betts",
+        "No Home Run",
+        "Ryan Mountcastle",
+        "Ryan O'Hearn",
+        "Senger Peralta",
+        "Will (LAD) Smith",
+        "Will Smith",
+        "William Smith"
+      ],
+      "event_id": "a36f0138570d5bd380114bc31949436e",
+      "group": "batter_props",
+      "home_team": "Baltimore Orioles",
+      "markets_returned": {
+        "batter_hits": {
+          "books": 11,
+          "outcomes": 435
+        },
+        "batter_home_runs": {
+          "books": 10,
+          "outcomes": 288
+        },
+        "batter_total_bases": {
+          "books": 9,
+          "outcomes": 508
+        }
+      },
+      "next_timestamp": "2023-07-18T22:50:40Z",
+      "outcome_rows": 1231,
+      "player_count": 31,
+      "previous_timestamp": "2023-07-18T22:40:40Z",
+      "remaining_after": 99236,
+      "requested_instant": "2023-07-18T22:50:00Z",
+      "requested_markets": [
+        "batter_hits",
+        "batter_total_bases",
+        "batter_home_runs"
+      ],
+      "season": 2023,
+      "served_timestamp": "2023-07-18T22:45:40Z"
+    },
+    {
+      "assumed_billed": 10,
+      "away_team": "New York Yankees",
+      "billed": 10,
+      "book_count": 12,
+      "book_last_update_samples": [
+        "2024-07-10T22:43:49Z",
+        "2024-07-10T22:44:16Z",
+        "2024-07-10T22:44:44Z",
+        "2024-07-10T22:44:51Z"
+      ],
+      "books": [
+        "betmgm",
+        "betonlineag",
+        "betrivers",
+        "betus",
+        "bovada",
+        "draftkings",
+        "fanduel",
+        "lowvig",
+        "mybookieag",
+        "superbook",
+        "williamhill_us",
+        "wynnbet"
+      ],
+      "commence_time": "2024-07-10T22:51:00Z",
+      "distinct_players": [],
+      "event_id": "c666105e14d197ecb795e910049bc678",
+      "group": "f5_h2h",
+      "home_team": "Tampa Bay Rays",
+      "markets_returned": {
+        "h2h_1st_5_innings": {
+          "books": 12,
+          "outcomes": 24
+        }
+      },
+      "next_timestamp": "2024-07-10T22:50:37Z",
+      "outcome_rows": 24,
+      "player_count": 0,
+      "previous_timestamp": "2024-07-10T22:40:37Z",
+      "remaining_after": 99225,
+      "requested_instant": "2024-07-10T22:50:00Z",
+      "requested_markets": [
+        "h2h_1st_5_innings"
+      ],
+      "season": 2024,
+      "served_timestamp": "2024-07-10T22:45:37Z"
+    },
+    {
+      "assumed_billed": 20,
+      "away_team": "New York Yankees",
+      "billed": 20,
+      "book_count": 12,
+      "book_last_update_samples": [
+        "2024-07-10T22:43:49Z",
+        "2024-07-10T22:44:16Z",
+        "2024-07-10T22:44:44Z",
+        "2024-07-10T22:44:51Z"
+      ],
+      "books": [
+        "betmgm",
+        "betonlineag",
+        "betrivers",
+        "betus",
+        "bovada",
+        "draftkings",
+        "fanduel",
+        "lowvig",
+        "mybookieag",
+        "superbook",
+        "williamhill_us",
+        "wynnbet"
+      ],
+      "commence_time": "2024-07-10T22:51:00Z",
+      "distinct_players": [],
+      "event_id": "c666105e14d197ecb795e910049bc678",
+      "group": "f5_pair",
+      "home_team": "Tampa Bay Rays",
+      "markets_returned": {
+        "h2h_1st_5_innings": {
+          "books": 12,
+          "outcomes": 24
+        },
+        "totals_1st_5_innings": {
+          "books": 10,
+          "outcomes": 20
+        }
+      },
+      "next_timestamp": "2024-07-10T22:50:37Z",
+      "outcome_rows": 44,
+      "player_count": 0,
+      "previous_timestamp": "2024-07-10T22:40:37Z",
+      "remaining_after": 99205,
+      "requested_instant": "2024-07-10T22:50:00Z",
+      "requested_markets": [
+        "h2h_1st_5_innings",
+        "totals_1st_5_innings"
+      ],
+      "season": 2024,
+      "served_timestamp": "2024-07-10T22:45:37Z"
+    },
+    {
+      "assumed_billed": 10,
+      "away_team": "New York Yankees",
+      "billed": 10,
+      "book_count": 8,
+      "book_last_update_samples": [
+        "2024-07-10T22:43:49Z",
+        "2024-07-10T22:44:16Z",
+        "2024-07-10T22:44:44Z",
+        "2024-07-10T22:44:52Z"
+      ],
+      "books": [
+        "betmgm",
+        "betonlineag",
+        "betrivers",
+        "bovada",
+        "draftkings",
+        "fanduel",
+        "mybookieag",
+        "williamhill_us"
+      ],
+      "commence_time": "2024-07-10T22:51:00Z",
+      "distinct_players": [
+        "Marcus Stroman",
+        "Zach Eflin"
+      ],
+      "event_id": "c666105e14d197ecb795e910049bc678",
+      "group": "pitcher_props",
+      "home_team": "Tampa Bay Rays",
+      "markets_returned": {
+        "pitcher_strikeouts": {
+          "books": 8,
+          "outcomes": 40
+        }
+      },
+      "next_timestamp": "2024-07-10T22:50:37Z",
+      "outcome_rows": 40,
+      "player_count": 2,
+      "previous_timestamp": "2024-07-10T22:40:37Z",
+      "remaining_after": 99195,
+      "requested_instant": "2024-07-10T22:50:00Z",
+      "requested_markets": [
+        "pitcher_strikeouts"
+      ],
+      "season": 2024,
+      "served_timestamp": "2024-07-10T22:45:37Z"
+    },
+    {
+      "assumed_billed": 30,
+      "away_team": "New York Yankees",
+      "billed": 30,
+      "book_count": 9,
+      "book_last_update_samples": [
+        "2024-07-10T22:43:49Z",
+        "2024-07-10T22:44:16Z",
+        "2024-07-10T22:44:44Z",
+        "2024-07-10T22:44:52Z"
+      ],
+      "books": [
+        "betmgm",
+        "betonlineag",
+        "betrivers",
+        "bovada",
+        "draftkings",
+        "fanduel",
+        "mybookieag",
+        "superbook",
+        "williamhill_us"
+      ],
+      "commence_time": "2024-07-10T22:51:00Z",
+      "distinct_players": [
+        "Aaron Judge",
+        "Alex Verdugo",
+        "Amed Rosario",
+        "Anthony Volpe",
+        "Ben Rice",
+        "Ben Rortvedt",
+        "Brandon Lowe",
+        "DJ LeMahieu",
+        "Gleyber Torres",
+        "Isaac Paredes",
+        "Jonny Deluca",
+        "Jose Siri",
+        "Jose Trevino",
+        "Josh Lowe",
+        "Juan Soto",
+        "Oswaldo Cabrera",
+        "Randy Arozarena",
+        "Richie Palacios",
+        "Taylor Walls",
+        "Trent Grisham",
+        "Yandy Diaz"
+      ],
+      "event_id": "c666105e14d197ecb795e910049bc678",
+      "group": "batter_props",
+      "home_team": "Tampa Bay Rays",
+      "markets_returned": {
+        "batter_hits": {
+          "books": 8,
+          "outcomes": 430
+        },
+        "batter_home_runs": {
+          "books": 8,
+          "outcomes": 312
+        },
+        "batter_total_bases": {
+          "books": 9,
+          "outcomes": 488
+        }
+      },
+      "next_timestamp": "2024-07-10T22:50:37Z",
+      "outcome_rows": 1230,
+      "player_count": 21,
+      "previous_timestamp": "2024-07-10T22:40:37Z",
+      "remaining_after": 99165,
+      "requested_instant": "2024-07-10T22:50:00Z",
+      "requested_markets": [
+        "batter_hits",
+        "batter_total_bases",
+        "batter_home_runs"
+      ],
+      "season": 2024,
+      "served_timestamp": "2024-07-10T22:45:37Z"
+    },
+    {
+      "assumed_billed": 10,
+      "away_team": "Seattle Mariners",
+      "billed": 10,
+      "book_count": 8,
+      "book_last_update_samples": [
+        "2025-07-09T22:39:26Z",
+        "2025-07-09T22:42:10Z",
+        "2025-07-09T22:44:29Z",
+        "2025-07-09T22:44:39Z"
+      ],
+      "books": [
+        "betmgm",
+        "betonlineag",
+        "betrivers",
+        "betus",
+        "bovada",
+        "draftkings",
+        "fanduel",
+        "mybookieag"
+      ],
+      "commence_time": "2025-07-09T23:06:00Z",
+      "distinct_players": [],
+      "event_id": "f510d7b78708682658521e00fee18efa",
+      "group": "f5_h2h",
+      "home_team": "New York Yankees",
+      "markets_returned": {
+        "h2h_1st_5_innings": {
+          "books": 8,
+          "outcomes": 16
+        }
+      },
+      "next_timestamp": "2025-07-09T22:50:37Z",
+      "outcome_rows": 16,
+      "player_count": 0,
+      "previous_timestamp": "2025-07-09T22:40:38Z",
+      "remaining_after": 99154,
+      "requested_instant": "2025-07-09T22:50:00Z",
+      "requested_markets": [
+        "h2h_1st_5_innings"
+      ],
+      "season": 2025,
+      "served_timestamp": "2025-07-09T22:45:37Z"
+    },
+    {
+      "assumed_billed": 20,
+      "away_team": "Seattle Mariners",
+      "billed": 20,
+      "book_count": 8,
+      "book_last_update_samples": [
+        "2025-07-09T22:39:26Z",
+        "2025-07-09T22:42:10Z",
+        "2025-07-09T22:44:29Z",
+        "2025-07-09T22:44:39Z"
+      ],
+      "books": [
+        "betmgm",
+        "betonlineag",
+        "betrivers",
+        "betus",
+        "bovada",
+        "draftkings",
+        "fanduel",
+        "mybookieag"
+      ],
+      "commence_time": "2025-07-09T23:06:00Z",
+      "distinct_players": [],
+      "event_id": "f510d7b78708682658521e00fee18efa",
+      "group": "f5_pair",
+      "home_team": "New York Yankees",
+      "markets_returned": {
+        "h2h_1st_5_innings": {
+          "books": 8,
+          "outcomes": 16
+        },
+        "totals_1st_5_innings": {
+          "books": 6,
+          "outcomes": 12
+        }
+      },
+      "next_timestamp": "2025-07-09T22:50:37Z",
+      "outcome_rows": 28,
+      "player_count": 0,
+      "previous_timestamp": "2025-07-09T22:40:38Z",
+      "remaining_after": 99134,
+      "requested_instant": "2025-07-09T22:50:00Z",
+      "requested_markets": [
+        "h2h_1st_5_innings",
+        "totals_1st_5_innings"
+      ],
+      "season": 2025,
+      "served_timestamp": "2025-07-09T22:45:37Z"
+    },
+    {
+      "assumed_billed": 10,
+      "away_team": "Seattle Mariners",
+      "billed": 10,
+      "book_count": 8,
+      "book_last_update_samples": [
+        "2025-07-09T22:39:26Z",
+        "2025-07-09T22:42:10Z",
+        "2025-07-09T22:44:29Z",
+        "2025-07-09T22:44:39Z"
+      ],
+      "books": [
+        "betmgm",
+        "betonlineag",
+        "betrivers",
+        "bovada",
+        "draftkings",
+        "fanatics",
+        "fanduel",
+        "mybookieag"
+      ],
+      "commence_time": "2025-07-09T23:06:00Z",
+      "distinct_players": [
+        "Cam Schlittler",
+        "Logan Evans"
+      ],
+      "event_id": "f510d7b78708682658521e00fee18efa",
+      "group": "pitcher_props",
+      "home_team": "New York Yankees",
+      "markets_returned": {
+        "pitcher_strikeouts": {
+          "books": 8,
+          "outcomes": 42
+        }
+      },
+      "next_timestamp": "2025-07-09T22:50:37Z",
+      "outcome_rows": 42,
+      "player_count": 2,
+      "previous_timestamp": "2025-07-09T22:40:38Z",
+      "remaining_after": 99124,
+      "requested_instant": "2025-07-09T22:50:00Z",
+      "requested_markets": [
+        "pitcher_strikeouts"
+      ],
+      "season": 2025,
+      "served_timestamp": "2025-07-09T22:45:37Z"
+    },
+    {
+      "assumed_billed": 30,
+      "away_team": "Seattle Mariners",
+      "billed": 30,
+      "book_count": 9,
+      "book_last_update_samples": [
+        "2025-07-09T22:39:26Z",
+        "2025-07-09T22:42:07Z",
+        "2025-07-09T22:42:10Z",
+        "2025-07-09T22:44:29Z"
+      ],
+      "books": [
+        "betmgm",
+        "betonlineag",
+        "betrivers",
+        "bovada",
+        "draftkings",
+        "fanatics",
+        "fanduel",
+        "mybookieag",
+        "williamhill_us"
+      ],
+      "commence_time": "2025-07-09T23:06:00Z",
+      "distinct_players": [
+        "Aaron Judge",
+        "Anthony Volpe",
+        "Austin Wells",
+        "Ben Williamson",
+        "Cal Raleigh",
+        "Cody Bellinger",
+        "Cole Young",
+        "Dominic Canzone",
+        "Giancarlo Stanton",
+        "J.P. Crawford",
+        "Jasson Dom\u00ednguez",
+        "Jazz Chisholm Jr.",
+        "Jorge Polanco",
+        "Julio Rodriguez",
+        "Luke Raley",
+        "Oswald Peraza",
+        "Paul Goldschmidt",
+        "Randy Arozarena",
+        "Trent Grisham"
+      ],
+      "event_id": "f510d7b78708682658521e00fee18efa",
+      "group": "batter_props",
+      "home_team": "New York Yankees",
+      "markets_returned": {
+        "batter_hits": {
+          "books": 7,
+          "outcomes": 338
+        },
+        "batter_home_runs": {
+          "books": 5,
+          "outcomes": 180
+        },
+        "batter_total_bases": {
+          "books": 9,
+          "outcomes": 420
+        }
+      },
+      "next_timestamp": "2025-07-09T22:50:37Z",
+      "outcome_rows": 938,
+      "player_count": 19,
+      "previous_timestamp": "2025-07-09T22:40:38Z",
+      "remaining_after": 99094,
+      "requested_instant": "2025-07-09T22:50:00Z",
+      "requested_markets": [
+        "batter_hits",
+        "batter_total_bases",
+        "batter_home_runs"
+      ],
+      "season": 2025,
+      "served_timestamp": "2025-07-09T22:45:37Z"
+    }
+  ],
+  "remaining_after": 99094,
+  "remaining_before": 99307,
+  "worst_case_credits": 213
+}

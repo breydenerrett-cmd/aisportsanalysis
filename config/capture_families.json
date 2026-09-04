@@ -52,10 +52,18 @@
       "correction": "2026-09-03: single-market family; 3 books, 36 outcomes is a real payload"
     },
     "pitcher_props": {
-      "measured": false,
-      "credits_per_event": null,
-      "measured_utc": null,
-      "source": "prop_listing.py measures LISTING feasibility (1 credit/event/slot, docs/PROBE_PROP_LISTING.md), not the price. prop_prices.py's own credits_last markers record actual fetch cost per run but have not been reduced to a single per-event figure here; treat as unmeasured until probed."
+      "measured": true,
+      "credits_per_event": 1,
+      "measured_utc": "2026-09-04T04:08:22.852488Z",
+      "source": "budget.probe_family: live pitcher_props probe against event 062e69d482e7d6bf3c2d654eca93bd44 (1 market(s), 1 region); billed=1, remaining_before=98937, remaining_after=98936",
+      "degenerate": false,
+      "payload_shape": {
+        "books": 3,
+        "markets_returned": 1,
+        "outcomes": 12,
+        "commence_time": "2026-09-04T18:11:00Z",
+        "degenerate": false
+      }
     },
     "batter_props": {
       "measured": false,
