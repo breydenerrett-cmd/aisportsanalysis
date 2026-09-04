@@ -93,6 +93,16 @@ class PriceBlindSnapshot:
     point_meta: PointMeta | None = None
     lineup_posted: bool = False
     assumption_exposure: Mapping[str, int] = field(default_factory=dict)
+    # `{feature_name: {"n": int, "unit": str}}` -- how much each entry of
+    # `features` rests on, threaded out of `src.engine.features.FeatureValue`.
+    # A COUNT of observations before the same cutoff the value itself was
+    # accumulated under, so it is exactly as point-in-time-safe as the value
+    # and carries no price and no outcome. Absent for a feature whose
+    # primitive has no count to report -- never a 0 standing in for unknown.
+    # Read by `src.engine.explain` so a thesis can say what tonight's own
+    # number rests on rather than only quoting the threshold's derivation
+    # sample.
+    feature_samples: Mapping[str, Mapping] = field(default_factory=dict)
     fingerprint: str = ""
     # Whether `from_asof` was ever handed a real `src.core.asof.Snapshot`
     # (True) versus never having a `game_pk` to read one with at all
@@ -142,7 +152,8 @@ class PriceBlindSnapshot:
                   point_meta: PointMeta | None = None,
                   lineup_posted: bool = False,
                   fingerprint: str = "",
-                  extra_exposure: Mapping[str, int] | None = None
+                  extra_exposure: Mapping[str, int] | None = None,
+                  feature_samples: Mapping[str, Mapping] | None = None
                   ) -> "PriceBlindSnapshot":
         """Build from a `src.core.asof.Snapshot` plus point-in-time features.
 
@@ -180,6 +191,7 @@ class PriceBlindSnapshot:
             point_meta=point_meta,
             lineup_posted=lineup_posted,
             assumption_exposure=exposure,
+            feature_samples=dict(feature_samples or {}),
             fingerprint=fingerprint,
             asof_read=as_of_snapshot is not None,
         )

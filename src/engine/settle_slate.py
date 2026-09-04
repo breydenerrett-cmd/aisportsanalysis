@@ -249,17 +249,66 @@ def late_information_for(game_pk, decision_utc: str, settle_utc: str,
     return tuple(sorted(out, key=lambda e: e["observed_utc"]))
 
 
+def evaluate_mechanism_checks(decision: DecisionRecord | None, game_pk,
+                              flow_rows=None) -> tuple:
+    """The frozen predicates on `decision`, measured against the real game.
+
+    SETTLEMENT SIDE ONLY. `src.pipeline.gameflow` is imported inside this
+    function, not at module scope, so the post-game store is reached from
+    exactly one call site and a reader grepping the import block of a module
+    the engine settles through sees it named where it is used
+    (tests/test_gameflow_pit.py guards the decision path, which this is not
+    on).
+
+    `flow_rows` lets a caller pass an already-read store (the settle runner
+    reads one per run rather than once per bet); `None` reads the season
+    store keyed by the game's own year via `gameflow.load_store`.
+    """
+    predicates = tuple(getattr(decision, "mechanism_predicates", ()) or ())
+    if not predicates:
+        return ()
+    from src.pipeline import gameflow
+    from src.review.mechanism_eval import evaluate
+
+    rows = flow_rows if flow_rows is not None else gameflow.load_store()
+    return evaluate(predicates, gameflow.load_game(rows, game_pk))
+
+
 def build_review_for(decision: DecisionRecord | None, settled: SettledBet,
                       settle_utc: str,
-                      information_events_path=INFORMATION_EVENTS_PATH) -> ReviewRecord:
-    """One `ReviewRecord` for a settled bet. `mechanism_checks` stays empty
-    (this vertical slice records no per-thesis mechanism check yet), which
-    `compute_thesis_outcome` reads honestly as UNTESTED rather than a
-    fabricated CONFIRMED/REFUTED. `late_information` is the REAL signal for
-    "an InformationEvent arrived after the frozen decision" -- when
-    non-empty, the review names a distinct verdict path: `system_action`
-    becomes "watch" rather than "none", flagging that this settlement's
-    thesis was evaluated on a board that later information moved past.
+                      information_events_path=INFORMATION_EVENTS_PATH,
+                      flow_rows=None) -> ReviewRecord:
+    """One `ReviewRecord` for a settled bet.
+
+    `mechanism_checks` is EVALUATED, from the frozen predicates the decision
+    carries (`DecisionRecord.mechanism_predicates`, written at decision time
+    by `src.engine.mechanism_predicates`) against the game's own play-by-play
+    (`src.pipeline.gameflow`, settlement-side only). Three things this does
+    not do, each of them the reason the field sat empty until now:
+
+      - it never invents a predicate. A decision that froze none -- every
+        null control, the market-derived republisher, and every record
+        published before that field existed -- gets `()`, which
+        `compute_thesis_outcome` reads as UNTESTED and
+        `src.review.postmortem` reports as `no_falsifiable_mechanism`: a
+        statement about the thesis, not an exoneration of it.
+      - it never consults the settled outcome. `settled.outcome` reaches
+        `compute_thesis_outcome` (which needs to know whether a CONFIRMED
+        mechanism paired with a loss, i.e. real variance) and nothing else;
+        `src.review.mechanism_eval.evaluate` is not given it at any depth.
+        A winning pick and a losing pick on identical reasoning and an
+        identical game get identical checks, which
+        tests/test_review_postmortem.py pins.
+      - it never coerces an under-sampled measurement. UNDETERMINED is a
+        real verdict and a common one: a starter pulled in the third leaves
+        fewer plate appearances than any honest rate can be read off, and a
+        game with no play-by-play stored leaves none at all.
+
+    `late_information` is the REAL signal for "an InformationEvent arrived
+    after the frozen decision" -- when non-empty, the review names a distinct
+    verdict path: `system_action` becomes "watch" rather than "none",
+    flagging that this settlement's thesis was evaluated on a board that
+    later information moved past.
     """
     decision_key = (decision_key_for(decision) if decision is not None
                     else (settled.bet.selection_id, settled.bet.market_key,
@@ -269,7 +318,8 @@ def build_review_for(decision: DecisionRecord | None, settled: SettledBet,
         late_info = late_information_for(
             decision.game_pk, decision.decision_utc, settle_utc,
             path=information_events_path)
-    mechanism_checks: tuple = ()
+    mechanism_checks = evaluate_mechanism_checks(
+        decision, settled.bet.game_pk, flow_rows)
     thesis_outcome = compute_thesis_outcome(mechanism_checks, settled.outcome)
     return ReviewRecord(
         decision_key=decision_key, review_utc=settle_utc,
@@ -277,7 +327,7 @@ def build_review_for(decision: DecisionRecord | None, settled: SettledBet,
         mechanism_checks=mechanism_checks, market_path={},
         late_information=late_info, missed_information=(),
         lineup_delta={}, bullpen_delta={}, counterargument_realized=(),
-        variance_flag=False,
+        variance_flag=(thesis_outcome == "VARIANCE"),
         system_action=("watch" if late_info else "none"),
         new_hypothesis=None,
     )
@@ -342,6 +392,14 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
     f5_boxscore = load_boxscore_first_five(boxscores_glob)
 
     settle_utc = _iso(now or datetime.now(timezone.utc))
+    # Read the post-game play-by-play store ONCE for the whole run rather
+    # than once per settled bet: `build_review_for` measures each decision's
+    # frozen mechanism predicates against it, and a slate of 90 wagers would
+    # otherwise walk the same season file 90 times. `flow_rows` is `[]`, not
+    # None, when the store does not exist -- None would mean "read it
+    # yourself" to `build_review_for` and reintroduce the per-bet walk.
+    from src.pipeline import gameflow as _gameflow
+    flow_rows = _gameflow.load_store()
     decisions = load_decisions(decisions_path)
     decisions_by_key = {(d.event_id, d.system_id, d.market_key, d.selection_id,
                         d.decision_utc): d for d in decisions}
@@ -397,7 +455,8 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
                               w["selection_id"], w.get("decision_utc"))
             decision = decisions_by_key.get(decision_key_5)
             review = build_review_for(decision, settled, settle_utc,
-                                      information_events_path=information_events_path)
+                                      information_events_path=information_events_path,
+                                      flow_rows=flow_rows)
             if review_path is not None:
                 append_review(review, path=review_path)
             else:

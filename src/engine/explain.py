@@ -14,9 +14,14 @@ CONTENT was. This module is the content.
 
 WHAT AN HONEST THESIS MAY AND MAY NOT SAY
 -------------------------------------------
-May: the actual feature values that fired, with their units; the threshold
-they cleared and which rung of the three-rung ladder that is; the sample the
-ladder was derived over; the pre-registered mechanism prose (verbatim from
+May: the actual feature values that fired, with their units; HOW MUCH EACH
+OF THOSE TWO VALUES RESTS ON, in its own units (214 plate appearances, 730
+batters faced -- `src.engine.features.FeatureValue.sample`, threaded through
+`PriceBlindSnapshot.feature_samples`; a distinct fact from the next one and
+previously unavailable at all); the threshold they cleared and which rung of
+the three-rung ladder that is; the sample the ladder was derived over -- a
+statement about the RUNG, never about tonight's numbers; the pre-registered
+mechanism prose (verbatim from
 `src.evolab.registry`, never re-worded here -- re-wording a hypothesis
 after the fact quietly relaunders its date); which side the frozen
 direction therefore points to.
@@ -33,9 +38,10 @@ runs it over every registered system and over the whole published ledger).
 NOTHING IS INVENTED
 --------------------
 Every number in a sentence built here comes from an argument: the value
-from `PriceBlindSnapshot.features`, the threshold and the mechanism from
-the frozen registry spec, the sample size from that spec's own
-`provenance` string. A feature whose value is absent is REPORTED as absent
+from `PriceBlindSnapshot.features`, its own sample count from
+`PriceBlindSnapshot.feature_samples`, the threshold and the mechanism from
+the frozen registry spec, the ladder's derivation sample from that spec's
+own `provenance` string. A feature whose value is absent is REPORTED as absent
 -- "value unavailable" -- never defaulted, interpolated or rounded up from
 nothing, matching `src.engine.features`'s own none-over-guess rule.
 """
@@ -182,8 +188,36 @@ def _sample_phrase(provenance: str) -> str:
     return tail or provenance.strip()
 
 
+def _own_sample_phrase(feature: str, samples: dict | None) -> str:
+    """What TONIGHT'S two numbers rest on, in their own units.
+
+    The threshold's derivation sample ("4,048 games with both sides measured")
+    describes the RUNG; it says nothing about whether this lineup's 0.331 wOBA
+    against that pitch is 214 plate appearances or 11. Those are different
+    claims and read identically without this
+    (`src.engine.features.FeatureValue.sample`, threaded through
+    `PriceBlindSnapshot.feature_samples`).
+
+    Returns "" -- not a guess, not a zero -- when the primitive reported no
+    count, which is the same none-over-guess rule the value itself obeys.
+    """
+    if not samples:
+        return ""
+    parts = []
+    for side_name in ("away", "home"):
+        entry = samples.get(f"{side_name}_{feature}")
+        if not entry or entry.get("n") is None:
+            continue
+        unit = entry.get("unit") or "observations"
+        parts.append(f"{side_name} over {entry['n']:,} {unit}")
+    if not parts:
+        return ""
+    return f" (this game's own values rest on: {'; '.join(parts)})"
+
+
 def explain_signal(feature: str, threshold_index: int, side: str,
-                    features: dict, *, registry=DEFAULT_REGISTRY) -> str:
+                    features: dict, *, registry=DEFAULT_REGISTRY,
+                    samples: dict | None = None) -> str:
     """One fired signal as one sentence-group: the two side values, the gap,
     the rung it cleared, the sample behind the rung, and the frozen
     mechanism that says why any of it should matter.
@@ -205,7 +239,8 @@ def explain_signal(feature: str, threshold_index: int, side: str,
 
     return (
         f"{feature} -- {quantity} ({SIDE_CONVENTION}): away "
-        f"{format_value(away, unit)}, home {format_value(home, unit)}; a gap "
+        f"{format_value(away, unit)}, home {format_value(home, unit)}"
+        f"{_own_sample_phrase(feature, samples)}; a gap "
         f"of {format_gap(gap, unit)}, clearing the threshold of "
         f"{format_gap(threshold, unit)} ({_percentile_phrase(threshold_index)} "
         f"of that gap over the ladder's derivation sample, "
@@ -233,7 +268,8 @@ NO_EDGE_CLAIM = (
 
 def evolab_thesis(strategy_id: str, market_key: str, side: str,
                    signals_fired, features: dict, *,
-                   registry=DEFAULT_REGISTRY) -> str:
+                   registry=DEFAULT_REGISTRY,
+                   samples: dict | None = None) -> str:
     """The full thesis for one evolab genome decision.
 
     `strategy_id` is named as the genome's id ONLY at the end, as
@@ -251,7 +287,7 @@ def evolab_thesis(strategy_id: str, market_key: str, side: str,
                 "feature-level reason can be stated here")
     else:
         parts = [explain_signal(feature, index, side, features,
-                                registry=registry)
+                                registry=registry, samples=samples)
                  for feature, index in fired]
         body = " ".join(f"({i}) {p}" for i, p in enumerate(parts, start=1))
 
