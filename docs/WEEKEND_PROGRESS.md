@@ -17,3 +17,8 @@
 - W1: 309cc38 (16 tests; full parallel suite 4,269 green in the lane). Live: CAPTURE_HEALTH HEALTHY_IDLE age=12m artifacts_today=112 live 233/900 historical_today=73,576 (band separation visible).
 - W5: 515ed93 final registrable spec appended; 3 items open for adversarial review (family_id string, hash serialization format, n>=300 on middle tercile).
 - W6 eval path still RUNNING. Adversarial prereg review dispatched after W6 lands.
+
+## 2026-09-04 22:2xZ — W6 evaluation path DONE
+- db6eef8 cherry-picked; 37 lane tests pass here; tie audit reproduced (0 three-way books, gate min 5 intact); price-payload hash f2ff7b74… reproduced from manifest; dry_run 3,682 rows, 1,597/2,085, terciles fit on 2023 only, 2024 buckets 768/668/649. No outcome read.
+- Dispatched: adversarial preregistration review (Opus) over final spec + eval code. register_family only on a pass.
+- Capture: HEALTHY_IDLE.
