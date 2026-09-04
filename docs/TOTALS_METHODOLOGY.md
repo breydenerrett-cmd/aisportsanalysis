@@ -748,3 +748,128 @@ All of §6's prohibitions stand unchanged, plus:
 - Whether 12h is the right maximum-staleness bound (A7a) or should be
   derived from the actual staleness distribution once measured — proposed
   here as a starting value, not derived from data.
+
+## Methodology re-review — 2026-09-05
+
+Re-attack of "Revision 2" against the A1-A11 amendments and validation items
+7-13 it claims to incorporate, plus a decision on every entry in its "Open
+for re-review" list. No code was changed and no outcome was read.
+
+### Faithfulness of incorporation — checked one by one
+
+- **A1 (cross-join convention + both-sides-or-`None`)** — R1/R4. Faithful.
+  The label-invariance argument is stated correctly and the missingness rule
+  is required in code, not by convention. Accepted.
+- **A2 (population-shift gate)** — R1. Incorporated but with the WRONG
+  conditioning axes. See B2 below; the gate itself (pre-registered,
+  chi-square, fatal at p < 0.01, decided before any outcome) is faithful.
+- **A3 (per-line fair probability; modal line demoted)** — R2. Faithful,
+  including the >= 3-book floor, the book-composition table, and the
+  fixed-core-book-panel sensitivity. The prohibition on interpolated or
+  cross-line-averaged numbers survives intact. Accepted.
+- **A4 (three-convention sign-survival)** — R2. Faithful; applies to both
+  the per-line and modal computations, which is the correct scope.
+- **A5 (estimand split)** — R3. Faithful, and correctly identifies that the
+  settlement rule was never the defect — the pooling was. Accepted.
+- **A6 (pre-void frozen denominator)** — R5, R9 items 3 and 10. Faithful;
+  the void rate is a banded diagnostic and explicitly not a re-filter.
+- **A7 (staleness bound, published distribution, snapshot-sourced
+  `commence_time`)** — R5. Faithful in all three parts. The 12h value is
+  flagged by the revision itself as provisional; decided in B3 below.
+- **A8 (40/55 vs 55/45)** — R8. **Verified against source.** V7 §2.3 reads
+  "Under outcomes at 54.6-56.9% vs Over at 40.4-42.5%". R8's diagnosis is
+  correct: one measurement stated in two label orders, not two numbers. The
+  standing rule (always name the side with its percentage, never a bare
+  "X/Y") is the right fix. Accepted.
+- **A9 (selection-semantics equivalence)** — R7. Faithful; either branch
+  (reuse or equivalence test) closes the divergence risk.
+- **A10 / A11 (Over-Under split is an outcome read; freeze before measure)**
+  — R6, R5. Faithful, and the retraction of V7 §6's "market structure"
+  framing is explicit and correctly scoped. The "measure once, publish
+  whatever comes out" rule replaces the anomaly-resolving wording that was
+  the actual hazard. This was the most serious finding in the first review
+  and it is now properly closed. Accepted.
+- **Validation items 7-13** — R9. All present, correctly cross-referenced,
+  and item 12 reproduces F5's B3 (mechanised `verdict` + per-gate regression
+  tests), M1 (standalone immutable freeze record) and R2 (spec hash bounded
+  by the next `## ` heading) accurately. Accepted.
+
+No amendment was incorporated in name only, and none was weakened in
+transit. One was mis-specified in its detail (A2's axes); it is corrected
+below rather than treated as a failure of incorporation.
+
+### Decisions on the open items
+
+**B1 — Population-shift axes (corrects R1/A2).** The proposed axes (park,
+home/away, month, division) are a mis-analogy. `f5_eval.population_shift_test`
+conditions on **bucket occupancy** — the 2023-fit tercile edges applied
+frozen to 2024, chi-square on df=2, feature-side because membership comes
+from `p_fav` and never from `won`. It does not test park, month or division
+at all. The totals analogue is therefore: **chi-square on occupancy of the
+hypothesis's own pre-registered feature partition** (bucket edges or the
+threshold-firing partition, fit on the screen leg and applied frozen to the
+replication leg), df = k-1, fatal at p < 0.01. This is also the statistically
+right choice on the merits: an MLB schedule's park/month/division
+composition is near-constant across seasons by construction, so a test on
+those axes is close to powerless, whereas the Statcast-coverage selection
+that A2 actually worries about shows up directly in the feature
+distribution — which is exactly what occupancy measures. Park/month/division
+composition may be REPORTED as a diagnostic; it is not the gate. Alongside
+it, publish the both-sides coverage rate by season (the selection mechanism
+itself), which V7 §5.6 measured but which no item currently requires be
+carried into the run's own report. **R1 must be amended to this
+specification before registration.**
+
+**B2 — `combined_primary_pitch_share`: CUT. Frozen family of two.** V7 §5
+hard call 4 explicitly permits cutting on paper, pre-outcome, on
+feature-side judgment, and forbids only cutting after a run. The mechanism
+is genuinely two-hop (concentration -> exploitability -> contact quality ->
+runs) against one hop for groundball share and velocity, and it carries the
+same Statcast coverage penalty for no additional mechanistic warrant.
+Cutting also lowers the family's m, which raises power for the two
+defensible members under BH-FDR. Decided here, before any outcome, and
+recorded as decided-on-paper.
+
+**B3 — Bullpen combined workload: DEFER to a follow-up family.** It is not
+built, its per-side recombination has never been measured (V7 §3.2), and
+adding it would both delay registration and inflate m for a candidate whose
+coverage is unmeasured. Deferring costs nothing that a later family cannot
+recover; including it costs power now.
+
+**B4 — `commence_time` mutation-armed fixture (A7c).** Specifying the
+requirement without having written the fixture is correct at methodology
+stage. It is validation item 9 and must exist and pass before the first
+evaluation run; it is not a blocker to drafting hypotheses.
+
+**B5 — The 12h staleness bound: DERIVE, then freeze, in that order.** The
+snapshot-to-`commence_time` gap distribution contains no outcome — it is
+pure timing metadata — so measuring it first and setting the bound from it
+is not tuning by outcome, and it is strictly better than an arbitrary
+constant. Required order, which must be stated in R5: (1) measure and
+publish the gap distribution by season, outcome-untouched; (2) fix the bound
+by a rule declared before that measurement is read — propose *the smallest
+whole-hour bound covering >= 95% of events, floored at 6h and capped at
+24h*; (3) freeze the closing-line definition including that bound; (4) only
+then run the single push/split re-measurement of R5/R6. Choosing the bound
+after seeing the split, or re-choosing it, remains forbidden by A11.
+
+**B6 — New required item (not previously raised, counts-only).** R2's
+>= 3-book floor and R3's half-point-primary restriction jointly shrink the
+graded population, and their combined effect has never been counted. Before
+registration, extend `scripts/totals_coverage_audit.py` (counts only, no
+outcome joined) to report the surviving (event, line) population under
+R2+R3 together, by season, and confirm it clears the family's minimum-n
+floor. A family must not be registered against a population whose size is
+unknown. This is feature-side and cheap; it is binding before registration,
+not before drafting.
+
+### Verdict
+
+Every A1-A11 amendment is faithfully incorporated; validation items 7-13 are
+present and correctly specified; all five open items are decided above. B1
+and B6 are binding before registration, B2 and B3 are decided here on paper
+and pre-outcome, B5 fixes an ordering that R5 left implicit. None of them
+requires a further methodology pass, and none blocks hypothesis drafting —
+they constrain what may be registered, not what may be written down.
+
+TOTALS METHODOLOGY VERDICT: APPROVED TO DRAFT HYPOTHESES
