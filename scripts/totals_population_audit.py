@@ -14,7 +14,7 @@ archive shape documented and parsed by scripts/totals_coverage_audit.py.
 Definitions applied, per docs/TOTALS_METHODOLOGY.md "Revision 2":
 
   - Closing snapshot (R5/A7c): for each event, the latest snapshot with
-    `snapshot_at` in `[commence_time - 12h, commence_time)`, where
+    `snapshot_at` in `[commence_time - {MAX_STALENESS_HOURS}h, commence_time)`, where
     `commence_time` is read from THAT SAME snapshot's own event record
     (never a later/post-hoc schedule field) -- this is self-referential and
     leak-proof by construction. Events with no snapshot inside that window
@@ -47,7 +47,7 @@ REPO = Path(__file__).resolve().parents[1]
 DATA_ROOT = Path(os.environ.get("TOTALS_AUDIT_DATA_ROOT", str(REPO)))
 OUT = REPO / "docs" / "TOTALS_POPULATION_AUDIT.md"
 
-MAX_STALENESS_HOURS = 12
+MAX_STALENESS_HOURS = 6  # frozen per B5 (TOTALS_METHODOLOGY re-review); was 12 in the first audit run
 SEASONS = (2023, 2024, 2025)  # 2025 reported separately, labelled TUNING_ONLY; no 2026.
 
 LINE_BUCKET_EDGES = [5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5]  # deterministic, fixed in advance
@@ -116,7 +116,7 @@ def _load_event_snapshots(season: int) -> dict:
 def _pick_closing(records: list):
     """records sorted ascending by snapshot_at. Returns the chosen record
     (snapshot_at, commence_time, lines) or None if no snapshot falls inside
-    [commence_time - 12h, commence_time) using that record's own
+    [commence_time - {MAX_STALENESS_HOURS}h, commence_time) using that record's own
     commence_time."""
     for snap_at, commence_time, lines in reversed(records):
         window_start = commence_time - timedelta(hours=MAX_STALENESS_HOURS)
