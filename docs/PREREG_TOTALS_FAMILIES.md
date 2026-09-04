@@ -515,3 +515,360 @@ M2 is reported as `POPULATION_SHIFT_FAIL, not evaluated` — it is not
 reported with partial or hand-computed numbers.**
 
 VERDICT: READY FOR FINAL SPECIFICATION AS AMENDED
+
+## FINAL SPECIFICATION (post-review, 2026-09-05) — the text freeze_family hashes
+
+Self-contained. Where this section differs from the DRAFT above or from the
+"Methodology review — 2026-09-05" section, this section governs; no outcome
+field (`total_runs`, `won`, `winner`, any settlement value) was read to
+produce it.
+
+### Family denominator
+
+Regular-season only. Half-point-primary, per-line ≥3-book-floor, closing-
+snapshot-in-`[commence_time − 6h, commence_time)` population, `game_type ==
+"R"` in `mlb_results.csv`. Authoritative counts are the manifest's joined
+figures: **2023 n=1,296, 2024 n=1,288** (superseding the pre-join 1,316/
+1,313 estimates of `TOTALS_POPULATION_AUDIT.md` §1-4).
+
+Exclusion ledger (binding; must appear in every run report, even when
+nothing surprising is in it; no exclusion may be added after any outcome is
+read):
+
+| class | count | reason |
+|---|---|---|
+| postponed/replayed | 30 | priced event never played at the priced `commence_time` — point-in-time correctness, not a filter |
+| postseason (Wild Card/Division Series) | 14 | `mlb_results.csv` is `game_type == "R"` only; unjoinable, cannot be graded |
+| All-Star Game (2023) | 1 | exhibition, different scoring process and market — excluded on mechanism as well as availability |
+| doubleheader nightcap join collisions | 5 | now FIXED and therefore **INCLUDED**, not excluded — listed to document the fix |
+| no closing snapshot in `[−6h, commence)` | 95/2023, 74/2024 | reported as a diagnostic per `TOTALS_POPULATION_AUDIT.md` §1-4, never silently dropped |
+| not joint (fails half-point AND ≥3-book jointly) | remainder to reach 1,296/1,288 | joint population requirement (B2/R2) |
+
+Closing-line definition: latest snapshot in `[commence_time − 6h,
+commence_time)`, `commence_time` taken from that snapshot's own record
+(R5/A7c) — a self-referential anchor, never a post-hoc schedule field. 6h
+bound frozen per B5 from the timing distribution alone (no outcome read,
+`TOTALS_POPULATION_AUDIT.md` §5); it may not be re-derived, widened, or
+narrowed after any outcome is read. Consensus: per-line fair (de-vigged)
+probability, ≥3-book floor (R2), modal line diagnostic-only.
+Half-point-primary is the sole primary population (R3/A5); integer-line
+games are a separate, named `P(over | no push)` stratum, report-only
+forever (see below), never pooled into the primary estimate, and pushes
+are excluded from that stratum's numerator and denominator (R3).
+
+Coverage-shift admissibility rule (binding for this and every future
+totals family, not only M2): a feature or partition used as a
+CONFIRMATORY member is admissible only if, in a counts-only
+pre-registration audit run before freeze, (a) the both-sides join rate by
+season is published, (b) `|Δ join rate|` between screen and replication
+legs is ≤10pp, and (c) the occupancy chi-square on screen-fit-frozen edges
+applied to the replication leg is non-fatal (p ≥ 0.01). All three are
+reported whether they pass or fail; failing (b) or (c) demotes the member
+to exploratory and it does not enter `m`.
+
+| id | name |
+|---|---|
+| TOTALS-M1 | Full-population Over/Under closing-line calibration |
+| TOTALS-M2 | Combined-starter-groundball-share run-environment partition (exploratory, pre-determined POPULATION_SHIFT_FAIL) |
+
+### TOTALS-M1 — exact definition
+
+- **Feature/price:** per-line de-vigged Over probability, ≥3-book floor,
+  computed under the **primary convention `proportional`**
+  (`src.core.odds.devig_two_way`, per-book then averaged), half-point lines
+  only (primary population, R3/A5).
+- **Calibration statistic:** `mean(over_win) − mean(p_over)` over the full
+  half-point-primary population — a full-population OVER calibration read,
+  not a bucketed partition.
+- **Disclosed prior exposure (partial read, not a fresh test):**
+  `docs/RESEARCH_V7_TOTALS.md` §2.3's crude ~6h-stale-proxy measurement —
+  **Under 54.6-56.9% / Over 40.4-42.5%** across 2023-2025 (R8's reconciled
+  figure). This is the proxy measurement only; the frozen closing-snapshot
+  definition above has never been run. M1 is registered and reported as a
+  **disclosed partially-read member**: even a full SURVIVOR verdict is a
+  calibration MEASUREMENT with disclosed prior exposure, not a fresh
+  confirmatory discovery, and may not promote to any trading decision
+  without an independent forward out-of-sample leg (forward capture;
+  2026-01-01..2026-08-27 remains SEALED and is not that leg).
+- **Direction:** sign-agnostic at registration (per A11 — not chosen toward
+  the disclosed Under-favouring exposure), then fixed by the **2023 screen
+  leg's own point estimate**; the 2024 replication leg must agree with that
+  sign. No sign is imported from the V7 §2.3 proxy; no coin-flip or
+  orthogonal procedure is used, since nothing in the pass rule below is
+  one-sided.
+- **Effect floor: 3.0 percentage points**, both legs, chosen as the
+  smallest round value strictly above the larger per-leg MDE (2023
+  2.72pp, n=1,296; 2024 2.73pp, n=1,288; two-sided 95%, p≈0.5). Pooling
+  the legs (1.93pp at n=2,584) is forbidden — the two-leg
+  discovery/replication design is load-bearing and the replication CI is
+  computed on the 2024 leg alone. **The (0, 3.0pp) band is CANNOT_TELL,
+  never PASS**: the family cannot detect a true mispricing smaller than
+  ~2.7pp at either leg, and any true effect in that band is reported as
+  "cannot tell" — never as a PASS and never as a FAIL of the market's
+  calibration. A PASS means only "an effect ≥3.0pp was observed and
+  survived every gate," not "no smaller effect exists." The floor is
+  frozen numerically at registration and may not be lowered afterward for
+  any reason, including a near-miss.
+- **PIT anchor:** the closing snapshot's own `commence_time` (R5/A7c),
+  self-referential, never a post-hoc schedule field.
+- **De-vig sign-survival gate:** confirmatory, not diagnostic. The effect
+  must keep its sign under all three conventions — proportional (primary),
+  multiplicative (power), and Shin — mechanised as a boolean, not read off
+  a table.
+- **Population-shift kill gate:** chi-square on bucket occupancy using the
+  fixed edges from `TOTALS_POPULATION_AUDIT.md` §6 (line buckets
+  `[5.5,6.5,7.5,8.5,9.5,10.5,11.5]`, book-count buckets `1..5,6+`),
+  2023-vs-2024, fatal at p<0.01, feature-side only, decided before any
+  outcome (B1).
+
+### Screen-leg pass rule (2023)
+
+Sign + point estimate ≥ 3.0pp floor only. No CI, no FDR requirement on the
+screen leg (mirrors F5's binding amendment — at this n a two-sided-CI
+screen gate would be closer to a coin flip than a filter). This screen
+result also fixes M1's tested sign for the replication leg.
+
+### Replication pass rule (2024)
+
+Both, jointly, on the 2024 leg, for the screen-fixed sign:
+
+1. Point estimate ≥ 3.0pp floor, same sign as the 2023 screen.
+2. Two-sided 95% CI, date-clustered (`src.model.discovery`), excludes 0.
+
+Both requirements are in addition to, not instead of, the confirmatory
+family's BH-FDR gate below. All p-values and intervals are date-clustered
+(same-slate games share market conditions; row-independent inference is
+anticonservative, per F5's identical rule).
+
+### Multiplicity: confirmatory family = {M1}, m=1, FDR does no work
+
+M1 is the sole confirmatory member. TOTALS-M2's pre-registered
+population-shift gate is already resolved against it on feature-side
+counts legitimately readable now (see below), so it is excluded from the
+BH-FDR family entirely — carrying a member that cannot possibly survive
+would spend multiplicity budget for no informational gain. **`fdr_m = 1`**,
+`fdr_q = 0.10` (`src.model.family.benjamini_hochberg`), retained in the
+freeze record for mechanical uniformity only. With m=1, BH-FDR reduces to
+`p ≤ 0.10`, strictly weaker than the already-binding two-sided 95%
+date-clustered CI gate. **The FDR step does no work in this family and no
+multiplicity credit may be claimed from it** — results must state this in
+those terms rather than citing "survived FDR" as evidence.
+
+### TOTALS-M2 — exploratory, pre-determined POPULATION_SHIFT_FAIL
+
+- **Feature:** `combined_starter_groundball_share` = mean of the away/home
+  starter groundball shares from the frozen 2023/2024 matrix rows
+  (`src.research.matrix.row_for_game` / `src.engine.features`).
+  Missingness rule (A1/R4): computed only when BOTH per-side primitives are
+  present; a one-sided value never stands in for the mean; absence yields
+  `None`, excluded, never imputed.
+- **Bucketing:** terciles, edges fit on the 2023 screen leg only
+  (feature-side, no outcome), frozen and applied unchanged to 2024.
+- **Direction (fixed in advance):** back UNDER (higher combined groundball
+  share → fewer runs); mechanism stated before results — ground-ball
+  pairings suppress the extra-base/home-run contact that drives modern
+  scoring, and per-side pricing has no stated mechanism for pricing the
+  COMBINATION.
+- **Joint coverage (feature-present AND price-gradeable, computed
+  counts-only):** 2023 792/1,295; 2024 1,090/1,284 — join rates 61.2% and
+  84.9%, `|Δ join rate| = 23.7pp`, failing the ≤10pp admissibility rule
+  above. 2024 tercile occupancy under frozen 2023 edges: χ²=18.34, df=2,
+  **p=0.0001 < 0.01**, also failing the occupancy gate. Both failures are
+  legitimately known before freeze on feature-side data alone.
+- **Verdict pre-set:** `POPULATION_SHIFT_FAIL`. Excluded from the BH-FDR
+  family (does not enter `m`). Evaluated exploratory-only; its result is
+  labelled non-confirmatory and non-promotable in every report, alongside
+  M1's result in the same family record — never split into a separate
+  family_id, so the loser cannot disappear from the published record.
+  Replacement rejected: the only other coverage-eligible candidate,
+  `combined_starter_velocity_gap` (54.6%→75.1%, Δ=20.5pp), fails the same
+  admissibility gate for the identical Statcast-coverage selection
+  mechanism; every other candidate in `TOTALS_METHODOLOGY.md` §1.2 is
+  unbuilt, not PIT-available, or rejected for thinness.
+- **Draft 1pp floor withdrawn:** the true per-tercile MDE on the joint n is
+  5.3-6.0pp, not the draft's 3.75-4.44pp (which used un-intersected matrix
+  coverage); the provisional 1pp floor is unusable and is not carried
+  forward. No replacement floor is registered since M2 does not enter
+  confirmatory inference.
+- **Population-shift kill gate:** identical structure to M1 — chi-square on
+  bucket occupancy of the combined feature's own tercile partition, fit on
+  2023, applied to 2024, fatal at p<0.01 — already triggered, see above.
+- **De-vig sign-survival gate:** proportional/power/Shin, extreme-tercile
+  effect must keep sign under all three (reported, non-gating given the
+  pre-set verdict).
+- If M2's evaluation code (tercile assignment, both-sides-or-`None`
+  enforcement, per-tercile discovery calls) is not built, M2 is reported as
+  `POPULATION_SHIFT_FAIL, not evaluated` — never with partial or
+  hand-computed numbers.
+
+### Integer-line `P(over | no push)` stratum
+
+Report-only, forever. A second look at the same question on an adjacent
+population; it can never substitute for, rescue, or be promoted over a
+failed primary. The void rate within this stratum is a banded diagnostic
+against V7's measured ~2.7-3.1%, never a re-filter of the denominator (A6).
+
+### Falsification battery
+
+Frozen `src.research.battery`, `RULES_VERSION 2.0.0`, verbatim, no bespoke
+rule for either member: season/price-band/favorite-underdog-analogue
+concentration, leave-one-season-out instability, extreme-game dependence,
+threshold-sensitivity/spike-signature, dose-response (full population for
+M1; by tercile for M2, exploratory). Per-book sign replication (battery
+rule-3) is structurally unarmed the same way as F5's — one consensus row
+per game — and is recorded skipped, not silently omitted. `season_split` is
+likewise recorded skipped where the two-leg discovery/replication design
+already performs its function. Any fatal flag kills the member outright; no
+threshold/bucket redefinition afterward to rescue it.
+
+### Verdict codes and precedence
+
+Single mechanised `verdict` field per member, over the precedence
+`POPULATION_SHIFT_FAIL` → `SCREEN_FAIL` → `REPLICATION_FAIL` →
+`DEVIG_SIGN_FAIL` → `BATTERY_FAIL` → `CANNOT_TELL` → `SURVIVOR`, with a
+regression test per gate that flips only that gate's input and asserts the
+verdict changes. `CANNOT_TELL` applies specifically when the point estimate
+at either leg falls in the (0, 3.0pp) band despite the correct sign and no
+other gate having failed — it is a distinct, honest terminal state, never
+folded into `SURVIVOR` or into a generic `FAIL`.
+
+### No promotion without an independent forward leg
+
+Even a full `SURVIVOR` verdict for M1 does not promote to any trading
+decision. 2026-01-01..2026-08-27 is SEALED and is not, and may never
+retroactively become, the required independent forward out-of-sample leg;
+that leg must be captured going forward, point-in-time, after this family
+is registered.
+
+### Exclusion / exploratory hierarchy
+
+**Confirmatory (m=1):** TOTALS-M1 alone.
+
+**Exploratory / report-only, never entering `m`, never promotable:**
+TOTALS-M2 in full (pre-determined `POPULATION_SHIFT_FAIL`); integer-line
+`P(over|no push)` stratum for M1; de-vig sensitivity conventions beyond the
+sign-survival gate itself; book-composition/modal-line diagnostic;
+per-book sign replication (battery rule-3, recorded skipped); staleness
+distribution by season.
+
+### Failure criteria (written before any result exists)
+
+**TOTALS-M1 fails (published loser) if ANY of:** the 2023 screen point
+estimate does not clear 3.0pp with either sign (recorded `CANNOT_TELL` if
+in the (0,3.0pp) band, `SCREEN_FAIL` if it clears the floor but the family
+never proceeds — screen itself only requires sign+floor, so a screen
+"fail" here means below floor); 2024 disagrees in sign with the
+screen-fixed sign, or its point estimate is below 3.0pp (→ `CANNOT_TELL`
+if in-band, `REPLICATION_FAIL` otherwise), or its CI includes 0
+(`REPLICATION_FAIL`); the de-vig sign-survival gate fails
+(`DEVIG_SIGN_FAIL`); the population-shift chi-square is significant at
+p<0.01 (`POPULATION_SHIFT_FAIL`); the frozen battery flags any fatal rule
+(`BATTERY_FAIL`).
+
+**TOTALS-M2 is a published loser by pre-determination** —
+`POPULATION_SHIFT_FAIL` is its registered verdict before any outcome is
+read, per D3/D4 above. It is reported exploratory-only alongside M1 in the
+same family record.
+
+**Zero survivors is a valid, complete result for this family.** M1 alone
+carries confirmatory weight; nothing here is written to guarantee a
+promotion, and a `CANNOT_TELL` verdict for M1 is an honest, complete
+outcome, not a design failure.
+
+### Freeze record (all fields literal at registration; no `TBD`, no `PLACEHOLDER` field may survive into the call)
+
+```json
+{
+  "family_id": "TOTALS_FULLGAME_2026H1",
+  "members": [
+    {
+      "id": "TOTALS-M1",
+      "name": "Full-population Over/Under closing-line calibration",
+      "market": "totals",
+      "line_stratum": "half_point_primary",
+      "devig_primary": "per_line_proportional_ge_3books",
+      "devig_sensitivity": ["power", "shin"],
+      "devig_sensitivity_gates": true,
+      "disclosed_prior_exposure": "V7_2.3_proxy: Under 54.6-56.9pct / Over 40.4-42.5pct",
+      "direction": "fixed_by_2023_screen_point_estimate_sign",
+      "effect_floor_pp": 3.0,
+      "cannot_tell_band_pp": [0.0, 3.0],
+      "bucketing": null,
+      "population_shift_kill": {"test": "chi_square", "fatal_p_lt": 0.01, "edges": "TOTALS_POPULATION_AUDIT_sec6"},
+      "confirmatory": true
+    },
+    {
+      "id": "TOTALS-M2",
+      "name": "combined_starter_groundball_share partition",
+      "market": "totals",
+      "line_stratum": "half_point_primary",
+      "devig_primary": "per_line_proportional_ge_3books",
+      "devig_sensitivity": ["power", "shin"],
+      "devig_sensitivity_gates": false,
+      "direction": "back UNDER",
+      "effect_floor_pp": null,
+      "bucketing": "tercile",
+      "bucket_edges_fit_on": "2023_discovery_only",
+      "verdict": "POPULATION_SHIFT_FAIL",
+      "population_shift_kill": {"test": "chi_square_on_own_partition_occupancy", "fatal_p_lt": 0.01, "observed_chi2": 18.34, "observed_p": 0.0001},
+      "join_rate_delta_pp": 23.7,
+      "confirmatory": false
+    }
+  ],
+  "discovery": {"date_range": ["2023-season"], "n_M1": 1296},
+  "replication": {"date_range": ["2024-season"], "n_M1": 1288},
+  "exclusion_ledger": {
+    "postponed_replayed": 30,
+    "postseason": 14,
+    "all_star": 1,
+    "nightcap_join_collisions_included": 5,
+    "no_closing_snapshot": {"2023": 95, "2024": 74}
+  },
+  "screen_pass_rule": "sign_and_point_estimate_ge_3.0pp_only",
+  "replication_pass_rule": "point_estimate_ge_3.0pp_same_sign_AND_two_sided_95pct_CI_date_clustered_excludes_zero",
+  "fdr_q": 0.10,
+  "fdr_m": 1,
+  "fdr_does_no_work": true,
+  "clustering": "date",
+  "battery_rules_version": "2.0.0",
+  "battery_rules_recorded_skipped": ["rule_3_per_book_sign_replication", "season_split"],
+  "staleness_bound_h": 6,
+  "universe_identity_hash": "PLACEHOLDER_FILL_FROM_MANIFEST_AT_REGISTRATION",
+  "universe_price_payload_hash": "PLACEHOLDER_FILL_FROM_MANIFEST_AT_REGISTRATION",
+  "spec_sha256": "PLACEHOLDER_FILL_AT_REGISTRATION_OVER_THIS_DOCUMENT",
+  "excluded_members_permanent": ["combined_primary_pitch_share (B2)"],
+  "deferred_members": ["bullpen_combined_workload (B3)"],
+  "requires_independent_forward_leg_before_promotion": true,
+  "sealed_period_not_a_forward_leg": ["2026-01-01", "2026-08-27"]
+}
+```
+
+Only `universe_identity_hash`, `universe_price_payload_hash`, and
+`spec_sha256` remain placeholders — computed mechanically from real inputs
+at `freeze_family` time, never invented here. Every numeric gate above
+(3.0pp floor, fdr_m=1, chi-square thresholds, join-rate delta) is a literal
+number, not a TBD.
+
+### Open for adversarial review
+
+- Whether `CANNOT_TELL` should be a fully distinct code from `SCREEN_FAIL`
+  at the screen leg, since the screen rule as written (sign+floor only)
+  does not itself define an in-band screen outcome the way the replication
+  leg does — this specification treats an in-band screen point estimate as
+  `CANNOT_TELL` rather than `SCREEN_FAIL`, but the precedence order lists
+  `SCREEN_FAIL` before `CANNOT_TELL`; the reviewer should confirm this
+  ordering and the exact boundary condition (point estimate exactly at
+  3.0pp) are what's intended.
+- Whether M2's `devig_sensitivity_gates: false` correctly captures "reported
+  but non-gating given the pre-set verdict," or whether the field should be
+  omitted entirely for a pre-determined-failure member.
+- Whether the exclusion ledger's "not joint" remainder count (needed to
+  reconcile 1,316/1,313 pre-join against 1,296/1,288 post-join, net of the
+  four named classes) should be stated as an explicit literal number here
+  rather than "remainder to reach" — it was not separately computed in the
+  reviewed inputs and should be confirmed from the manifest at
+  registration.
+- Whether a future third totals hypothesis registered against this same
+  universe should trigger a union re-run of FDR the way F5 requires for a
+  third F5-moneyline hypothesis; this specification is silent on that case
+  and F5's union rule may need an explicit analogue here.
