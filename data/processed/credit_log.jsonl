@@ -262,3 +262,5 @@
 {"caller": "derivative_markets.run", "credits_remaining": 25707, "credits_used_last": 0, "utc": "2026-09-04T17:23:09.354384Z"}
 {"budget_band": "historical_backfill", "caller": "budget.recovery_baseline_2026-09-04", "credits_remaining": 25707, "credits_used_last": 0, "utc": "2026-09-04T17:49:27.619442Z"}
 {"budget_band": "live_capture", "caller": "dense.run", "credits_remaining": 25707, "credits_used_last": 0, "utc": "2026-09-04T17:56:21.540464Z"}
+{"budget_band": "live_capture", "caller": "dense.run", "credits_remaining": 25704, "credits_used_last": 0, "utc": "2026-09-04T18:03:32.158909Z"}
+{"budget_band": "live_capture", "caller": "prop_listing.run", "credits_remaining": 25701, "credits_used_last": 0, "utc": "2026-09-04T18:18:37.186979Z"}
