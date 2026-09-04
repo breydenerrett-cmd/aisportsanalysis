@@ -73,3 +73,6 @@
 
 ## 2026-09-05 05:0xZ — W20 unjoined audit landed; Opus review of totals prereg dispatched
 - 50 unjoined: 30 postponed, 14 postseason (mlb_results.csv regular-season only → denominator-definition question for the reviewer), 5 doubleheader nightcaps past pricepath's 3h bound (fixed locally in totals_rows, regression test), 1 All-Star. Joint 2,579→2,584. Manifest still NOT frozen pending review (postseason inclusion, M2 fate).
+
+## 2026-09-05 05:4xZ — totals prereg methodology review landed
+- Regular season only (1,296/1,288); M1 floor 3.0pp with the 0-3pp band explicitly "cannot tell"; M2 demoted to a pre-determined POPULATION_SHIFT_FAIL evaluated exploratory and excluded from m; confirmatory family = M1 alone, m=1, no multiplicity credit claimable; new admissibility rule |Δ join rate| <= 10pp for any partition member; even a SURVIVOR cannot promote without an independent forward leg. Nine code items bound. W22 (code) and W23 (final spec) dispatched. Capture healthy.
