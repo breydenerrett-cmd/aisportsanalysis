@@ -675,3 +675,310 @@ freeze `{F5-H1, F5-H2}`, and only after that may any outcome be read.
     (0 / 3,682 games within tolerance; median 81.4 min off T-2h).
 
 **VERDICT: READY TO REGISTER AS AMENDED**
+
+---
+
+## FINAL SPECIFICATION (post-review, 2026-09-04) — the text register_family freezes
+
+Self-contained. Amendments govern over §0-5 wherever they differ. No outcome
+data read to produce this section.
+
+### Family denominator
+
+Exactly two members, run against the frozen 3,682-game gradeable universe
+(`data/research/f5/universe_frozen.json`, identity hash
+`c67508603b14af2c494e13fadeb2a2f039f52df996ab6e12ff6164585e33cd1c`; a second
+price-payload hash is required before run, see Preconditions):
+
+| id | name |
+|---|---|
+| F5-H1 | Home-team calibration bias in the F5 moneyline |
+| F5-H2 | Favorite/longshot calibration bias in the F5 moneyline |
+
+B3 (bullpen gap) is **permanently excluded** from this family — not deferred,
+not scheduled inside it. A matched full-game T-2h acquisition, if the owner
+authorizes it separately, is registered as its own family with its own FDR
+correction; it is never folded into `{F5-H1, F5-H2}`. **Union re-run rule:**
+if any third F5-moneyline hypothesis is ever registered against this same
+frozen universe, the FDR correction is re-run over the union of every F5
+hypothesis ever registered against it — never over the new family alone.
+
+### F5-H1 — exact definition
+
+- **Feature:** `p_home` = de-vigged home implied probability from the F5
+  `h2h_1st_5_innings` market at the T-2h snapshot, primary convention
+  `method="proportional"` (`src.core.odds.devig_two_way`), averaged across
+  the game's book_count (≥5, median 12) de-vigged per-book probabilities.
+  Sensitivity: multiplicative/odds-ratio and Shin conventions are also
+  computed and **reported**, not gating (home/away split is close to
+  symmetric across price range, so convention effect largely cancels).
+- **Side:** home.
+- **Outcome:** `home_win` ∈ {0,1}, ties excluded by construction of the
+  gradeable set.
+- **Direction (fixed):** `mean(home_win) − mean(p_home) > 0`.
+- **Effect floor:** 2.0 percentage points.
+- **PIT anchor:** `scheduled_first_pitch` (`start_time_utc`), never
+  `actual_first_pitch`.
+
+### F5-H2 — exact definition
+
+- **Feature:** `p_fav` = de-vigged implied probability of the favorite
+  (`p_fav ≥ 0.5` by construction), same T-2h snapshot, primary convention
+  proportional.
+- **Bucketing (binding, tercile, not quintile):** terciles of `p_fav`, edges
+  = 33.3/66.7 percentiles **fit on the 2023 discovery set only**, frozen
+  before any 2024 row or outcome is touched, then applied unchanged to 2024.
+  **Bucket floor: each 2024 bucket must carry n ≥ 300**, or F5-H2's
+  replication leg is reported as blocked-coverage (a missing measurement),
+  not as a loser.
+- **Direction (fixed):** calibration error `mean(fav_win) − mean(p_fav)` is
+  positive in the top (strongest-favorite) tercile and negative in the
+  bottom (most longshot-like) tercile.
+- **Effect floor:** 4.0 percentage points per extreme tercile (raised from
+  the draft's 3.0pp, which the review found below the per-bucket MDE at
+  either leg; corrected MDEs: terciles 4.25pp (2023) / 3.72pp (2024) at
+  p=0.5, 4.05/3.55pp at p=0.65).
+- **De-vig sign-survival pass criterion (binding, not a diagnostic):** the
+  extreme-bucket effect must keep its sign under all three conventions —
+  proportional (primary), multiplicative/odds-ratio, and Shin. A sign that
+  does not survive all three kills F5-H2 (the sign would be a property of
+  the de-vig convention, not of the market).
+- **Population-shift kill (numeric):** chi-square test of 2024 bucket
+  occupancy against the 2023-fit expected thirds, **fatal at p < 0.01**,
+  computed on feature-side bucket counts only, before any 2024 outcome is
+  read.
+- F5-H2 is stated a priori as **underpowered on its discovery leg at any
+  granularity this universe supports** — an honest "cannot tell" is a
+  complete, acceptable outcome, not a design failure.
+
+### Discovery/replication split
+
+- Discovery: 2023-05-10..2023-12-31, all gradeable F5 moneylines in the
+  frozen universe, n = 1,597.
+- Replication: 2024-01-01..2024-10-07, all gradeable F5 moneylines in the
+  frozen universe, n = 2,085.
+- Split key: `season` (`str(date)[:4]`) as already carried on every row of
+  `universe_frozen.json`; not re-derived.
+- F5-H2's tercile edges are fit on the 2023 half only (feature-side, no
+  outcome), then applied frozen to 2024.
+
+### Screen-leg pass rule (2023, binding amendment)
+
+The 2023 screen passes on **sign + point estimate ≥ floor only**. No CI and
+no FDR requirement on the screen leg. (The draft's original "both legs must
+clear a two-sided 95% CI" was rejected: at n=1,597 the MDE is 2.45pp against
+a 2.0pp floor, making the screen a coin-flip filter that would discard true
+effects for being measured on half the data.) All inferential rigor is
+carried by the 2024 leg.
+
+### Replication pass rule (2024, binding)
+
+Both of the following, jointly, on the 2024 leg, for the pre-registered
+sign/floor:
+
+1. Two-sided 95% CI, **date-clustered** (`src/model/discovery.py`), excludes
+   0.
+2. Passes BH-FDR at **q = 0.10 over the full 2-member family (m=2)**
+   (`src.model.family.FDR_Q`, `benjamini_hochberg`, `register`) —
+   BH-FDR retained; Bonferroni rejected as a bespoke per-family stringency
+   choice. Note: F5-H1 and F5-H2 are two slices of the same 3,682 prices and
+   are positively dependent, so m=2 understates rather than overstates true
+   multiplicity — not a license to relax the floor, CI, or battery.
+
+All p-values and intervals, both legs, both hypotheses, are **date-clustered**
+— same-slate games share weather, schedule position, market conditions;
+row-independent inference here is anticonservative.
+
+### Falsification battery (RULES_VERSION 2.0.0, verbatim, applied to both hypotheses)
+
+Frozen `src/research/battery.py`, no bespoke rule for either hypothesis:
+concentration in a season/price-band/favorite-underdog split beyond frozen
+thresholds; leave-one-season-out instability; extreme-game dependence
+(`_extreme_removal`); discontinuous/un-physical threshold spike
+(`_threshold_sensitivity`, `_spike_signature`); `_favorite_underdog` run
+per-tercile and on the full split for F5-H2. Any fatal flag kills the
+hypothesis outright.
+
+- **Rule 3 (book concentration) is structurally unarmed** — both hypotheses
+  grade one consensus row per game, so rule 3 has no per-row `book` to act
+  on. It is **recorded as `{"skipped": ...}` with the reason**, never left
+  as a silently inert fatal check.
+- **Per-book sign diagnostic (report-only):** the run additionally reports
+  each book's own de-vigged-price replication of the effect's sign,
+  separately, as a concentration diagnostic — book composition is known to
+  churn across the window.
+
+### Preconditions (must all be true before any evaluation runs)
+
+1. **A1 tie/two-way audit passing.** Enumerate the distinct outcome-name
+   sets present under `h2h_1st_5_innings` across every book in
+   `f5_tminus2_primary.jsonl`; confirm all are two-way. Any three-way book
+   found is excluded from the consensus and the ≥5-book gate is re-checked
+   after exclusion. If this cannot be satisfied, the family does not run.
+2. **Price-payload content hash recorded and verified.** A second sha256
+   hash — over `game_pk` → `snapshot_at` and each book's key + both prices,
+   canonically ordered — is computed and recorded in
+   `docs/F5_UNIVERSE_FROZEN.md` before the first evaluation, and
+   re-verified at run time; the run aborts on mismatch. (The existing
+   identity hash `c675086…cd1c` covers game-set identity only, not prices.)
+3. **Validation items 1-6 (evaluation-path §(b)) green:** (1) synthetic
+   injected-effect recovery test, sign+magnitude, with date clustering
+   intact; (2) PIT test rejecting `actual_first_pitch`/settlement
+   timestamps/any 2025 or 2026-dated row, including a negative test on a
+   deliberately injected out-of-window row; (3) denominator test — row
+   count exactly 3,682, split 1,597/2,085 by season, both hashes verify;
+   (4) de-vig test — all three conventions implemented, agreeing on a
+   hand-checked two-way example, plus the A1 two-way audit passing on every
+   book; (5) battery-wiring test — frozen rules invoked, no bespoke rule, and
+   every skipped-for-want-of-key rule named in the run report; (6)
+   `bash scripts/test_fast.sh` green while building,
+   `python3 scripts/test_parallel.py` green before the first evaluation run.
+
+Evaluation path: a **standalone module**, not `src/research/funnel.py` (the
+funnel is a feature-threshold selection instrument requiring a
+`NUMERIC_FEATURES` feature, `back_advantaged` side rule, and `threshold > 0`
+— wrong shape for a whole-population/frozen-partition calibration grade).
+The standalone path reuses without reimplementing: `src/model/discovery.py`
+(date-clustered effects/p-values/intervals), `src/research/battery.py`
+(frozen RULES_VERSION 2.0.0, verbatim), `src/model/family.py` (`FDR_Q`,
+`benjamini_hochberg`, `register`). Its only new code is row construction:
+`{date, won, implied, season, side, price}` per game, `implied` = cross-book
+mean de-vigged probability of the graded side, `won` = that side's F5
+result. Only after preconditions 1-3 pass may `register_family()` /
+`family.register` be called to freeze `{F5-H1, F5-H2}`; only after that may
+any outcome be read.
+
+### Power / MDE statement
+
+- Family-wide (full 3,682, both legs pooled): MDE **1.62pp**.
+- Per-leg, family-wide feature: 2023 alone ≈ 2.46pp MDE; 2024 alone ≈ 2.15pp
+  MDE, at p≈0.5.
+- Per-tercile (F5-H2), at p=0.5: 2023 ≈ 4.25pp, 2024 ≈ 3.72pp. At a realistic
+  top-bucket p≈0.65: 2023 ≈ 4.05pp, 2024 ≈ 3.55pp.
+- **F5-H2 is stated a priori as underpowered on its discovery leg** at any
+  granularity this universe supports (its 4.0pp floor sits just at, not
+  comfortably above, the 2023-leg MDE) — recorded before any result exists,
+  not discovered afterward as an excuse.
+
+### Exclusion criteria
+
+The eligible set retains **17 `PRIMARY_SNAPSHOT_UNAVAILABLE` rows** rather
+than narrowing to games that happened to price. These 17 rows are **reported
+alongside any result**, since missingness is plausibly correlated with
+market thinness; they are not silently dropped from the denominator
+narrative even though they cannot be graded.
+
+### Confirmatory vs. exploratory hierarchy
+
+**Confirmatory (subject to the full pre-registered gate above):** F5-H1,
+F5-H2 (extreme-tercile pass criteria only; the mid-tercile and any full
+5-point or 3-point gradient shape are descriptive, never a promotion
+criterion).
+
+**Exploratory / report-only (no pass/fail status, never promoted on their
+own):**
+- Per-book sign replication diagnostic (battery rule 3 substitute, both
+  hypotheses).
+- De-vig sensitivity for F5-H1 (multiplicative and Shin conventions,
+  reported not gated — for F5-H2 the same sensitivity is confirmatory/gating,
+  see above).
+- Unavailable-row (`PRIMARY_SNAPSHOT_UNAVAILABLE`, n=17) analysis.
+- Full monotone-gradient shape across all terciles for F5-H2.
+
+### Stopping / failure rules
+
+**F5-H1 fails (published loser, not searched further) if ANY of:**
+- 2023 screen point estimate ≤0 or does not clear the 2.0pp floor.
+- 2024 sign disagrees with 2023, or its date-clustered 95% CI includes 0, or
+  it fails BH-FDR at q=0.10 (m=2).
+- The frozen battery flags any fatal rule.
+No threshold, bucket, or subgroup redefinition is tried afterward to rescue
+a failed hypothesis (T8).
+
+**F5-H2 fails under the identical structure** applied to the two extreme
+terciles, plus fails if:
+- Either 2024 extreme-tercile bucket has n < 300 (reported as
+  blocked-coverage, not loser).
+- The de-vig sign-survival criterion fails (sign does not hold under all
+  three conventions in the extreme bucket).
+- The chi-square population-shift test is significant at p < 0.01.
+
+**Both hypotheses fail together, reported as a two-loser family, if:** the
+frozen universe's MDE (1.62pp), on feature-side inspection only (never
+outcome), proves insufficient for either floor once real per-bucket/
+per-season n is confirmed — an honest "cannot tell" is preferred over a
+floor lowered to guarantee a numeric pass.
+
+**Zero survivors is a valid, complete result for this family.** Nothing in
+this specification is written to guarantee a promotion.
+
+### The family record `register_family()` freezes
+
+Hashes are placeholders — populated from `docs/F5_UNIVERSE_FROZEN.md` at
+registration time, never invented here.
+
+```json
+{
+  "family_id": "F5_MONEYLINE_CALIBRATION_2026H1",
+  "members": [
+    {
+      "id": "F5-H1",
+      "name": "Home-team calibration bias in the F5 moneyline",
+      "market": "h2h_1st_5_innings",
+      "snapshot": "F5_TMINUS2_PRIMARY",
+      "devig_primary": "proportional",
+      "devig_sensitivity": ["multiplicative_odds_ratio", "shin"],
+      "devig_sensitivity_gates": false,
+      "direction": "mean(home_win) - mean(p_home) > 0",
+      "effect_floor_pp": 2.0,
+      "bucketing": null,
+      "bucket_floor_n": null
+    },
+    {
+      "id": "F5-H2",
+      "name": "Favorite/longshot calibration bias in the F5 moneyline",
+      "market": "h2h_1st_5_innings",
+      "snapshot": "F5_TMINUS2_PRIMARY",
+      "devig_primary": "proportional",
+      "devig_sensitivity": ["multiplicative_odds_ratio", "shin"],
+      "devig_sensitivity_gates": true,
+      "direction": "top tercile positive, bottom tercile negative",
+      "effect_floor_pp": 4.0,
+      "bucketing": "tercile",
+      "bucket_edges_fit_on": "2023_discovery_only",
+      "bucket_floor_n": 300,
+      "population_shift_kill": {"test": "chi_square", "fatal_p_lt": 0.01}
+    }
+  ],
+  "discovery": {"date_range": ["2023-05-10", "2023-12-31"], "n": 1597},
+  "replication": {"date_range": ["2024-01-01", "2024-10-07"], "n": 2085},
+  "screen_pass_rule": "sign_and_point_estimate_ge_floor_only",
+  "replication_pass_rule": "two_sided_95pct_CI_date_clustered_excludes_zero_AND_bh_fdr",
+  "fdr_q": 0.10,
+  "fdr_m": 2,
+  "clustering": "date",
+  "battery_rules_version": "2.0.0",
+  "battery_rule3_status": "skipped_recorded_with_per_book_sign_diagnostic",
+  "universe_identity_hash": "c67508603b14af2c494e13fadeb2a2f039f52df996ab6e12ff6164585e33cd1c",
+  "universe_price_payload_hash": "PLACEHOLDER_FILL_FROM_MANIFEST_AT_REGISTRATION",
+  "excluded_members_permanent": ["B3"],
+  "union_rerun_on_future_member": true,
+  "unavailable_rows_reported": 17
+}
+```
+
+### Open for adversarial review
+
+- Whether `family_id: "F5_MONEYLINE_CALIBRATION_2026H1"` is the correct id
+  string/convention for `family.register` (not specified anywhere in the
+  draft or review; invented here for concreteness only — replace with the
+  project's actual naming convention before registration).
+- Whether the price-payload hash's exact canonical ordering (per `game_pk`:
+  `snapshot_at`, then each book key + both prices) needs a fully specified
+  serialization format (field order, separator, encoding) before two
+  independent runs are guaranteed to produce the same hash — the review
+  states the *inputs* to hash but not the exact serialization algorithm.
+- Whether "each 2024 bucket must carry n ≥ 300" (hard call 3) applies only
+  to the two extreme terciles gating F5-H2, or to the middle tercile too
+  (the middle is descriptive-only, but an underpopulated middle bucket could
+  still distort the frozen edges' population-shift chi-square test).
