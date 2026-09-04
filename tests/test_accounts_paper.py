@@ -244,21 +244,93 @@ class PropSettlementEndToEndTests(unittest.TestCase):
     against a REAL row from data/processed/boxscores_2026.jsonl, and shows
     all four outcomes (win/loss/push/void).
 
-    HONESTY NOTE on the selection: data/processed/batter_props.jsonl (the
-    real captured batter-prop store) is entirely dated 2026-09-03, while
-    data/processed/boxscores_2026.jsonl only covers 2026-08-30..09-01 --
-    verified below to have zero overlapping game_date -- so there is no
-    single real prop row whose game has a real box score yet. Per the task
-    instructions this test therefore builds the PaperBet selections itself
-    (a fixture: subject_id/line/side picked by this test) but settles them
-    against REAL rows read from the real boxscore store on disk -- the box
-    line, the game_pk, the player_id and the stat values are all real MLB
-    data, only the (line, side) pairing on top of them is synthesized here
-    to exercise all four outcomes deliberately.
+    HONESTY NOTE on the selection (rewritten 2026-09-04 -- see git history
+    for the note this replaces): batter_props.jsonl was entirely dated
+    2026-09-03 with zero overlapping game_date against boxscores_2026.jsonl
+    when this test was first written, so WIN/LOSS/PUSH all had to be built
+    as fixtures laid over real box rows. Real capture has since produced
+    batter_props rows dated 2026-09-03, which boxscores_2026.jsonl now also
+    covers -- so WIN and LOSS below are a REAL captured batter_hits "Over"
+    selection (real line, real side, real price) settled against the REAL
+    box row for that same player/game, selected by the STABLE QUERY in
+    `_real_win_and_loss` rather than a hardcoded row: capture appends more
+    rows to both stores continuously, so pinning today's specific
+    (player, game_pk) pair would make this test go red the day that exact
+    row scrolls out of either store. The query instead always resolves to
+    *some* real win row and *some* real loss row, whichever currently sorts
+    first -- which one it is may change as capture continues; that it
+    exists must not.
+
+    PUSH remains a fixture over a real box row, and that is a structural
+    fact about the market rather than a data gap: every batter-prop line
+    captured so far (checked below) is a half-integer, because sportsbooks
+    quote hits/TB/RBI/HR props on .5 lines specifically so they never push.
+    There is therefore no real captured prop row that COULD push against a
+    real (integer) box stat. If that ever stops being true -- a whole-line
+    market gets captured -- the assertion below fails loudly and names
+    exactly what to do about it, the same tripwire pattern as the WIN/LOSS
+    rewrite this note describes.
     """
 
     STORE_PATH = "data/processed/boxscores_2026.jsonl"
     BATTER_PROPS_PATH = "data/processed/batter_props.jsonl"
+
+    @staticmethod
+    def _real_win_and_loss(props: list, box_rows: list) -> tuple[dict, dict, dict, dict]:
+        """Stable query over the two real stores: pick a real batter_hits
+        "Over" prop row whose (game_date, player_name) also has a real
+        batter box row, for the WIN case and the LOSS case each.
+
+        "Stable" here means the SELECTION CRITERION is fixed (first by
+        (player, game_pk, line) among rows where the real box stat clears
+        the real line, and separately among rows where it doesn't) rather
+        than the ROW being fixed -- so today's capture run appending more
+        overlapping rows tomorrow changes *which* row sorts first without
+        ever making the query come up empty or need editing.
+
+        Returns (win_prop, win_box, loss_prop, loss_box). Raises
+        AssertionError naming the exact missing precondition if either
+        side of the overlap does not exist yet -- never a silent skip.
+        """
+        box_by_key: dict = {}
+        for row in box_rows:
+            if row["type"] == "batter":
+                box_by_key.setdefault((row["date"], row["player_name"]), []).append(row)
+
+        def sort_key(pair):
+            prop, box = pair
+            return (prop["player"], box["game_pk"], prop["line"])
+
+        wins, losses = [], []
+        for prop in props:
+            if prop["market"] != "batter_hits" or prop["side"] != "Over":
+                continue
+            for box in box_by_key.get((prop["game_date"], prop["player"]), ()):
+                h, line = box["h"], float(prop["line"])
+                if h > line:
+                    wins.append((prop, box))
+                elif h < line:
+                    losses.append((prop, box))
+                # h == line never happens for a half-integer line -- that's
+                # the PUSH honesty note above, not a bug in this query.
+
+        assert wins, (
+            "batter_props.jsonl no longer has any real batter_hits Over row "
+            "that WINS against its real boxscores_2026.jsonl box row -- "
+            "rewrite this test's WIN case back to a fixture, matching the "
+            "honesty note this replaced"
+        )
+        assert losses, (
+            "batter_props.jsonl no longer has any real batter_hits Over row "
+            "that LOSES against its real boxscores_2026.jsonl box row -- "
+            "rewrite this test's LOSS case back to a fixture, matching the "
+            "honesty note this replaced"
+        )
+        wins.sort(key=sort_key)
+        losses.sort(key=sort_key)
+        win_prop, win_box = wins[0]
+        loss_prop, loss_box = losses[0]
+        return win_prop, win_box, loss_prop, loss_box
 
     @classmethod
     def setUpClass(cls):
@@ -277,37 +349,38 @@ class PropSettlementEndToEndTests(unittest.TestCase):
         # plain callable through `self.resolver`.
         cls.resolver = staticmethod(boxscores.box_row_resolver(cls.rows))
 
-        # The no-overlap claim above, checked against the actual files
-        # rather than just asserted in prose.
         import json
         with open(cls.BATTER_PROPS_PATH, encoding="utf-8") as fh:
-            prop_dates = {json.loads(line)["game_date"] for line in fh if line.strip()}
-        box_dates = {r["date"] for r in cls.rows}
-        assert not (prop_dates & box_dates), (
-            "batter_props.jsonl now overlaps boxscores_2026.jsonl by date -- "
-            "this test's honesty note is stale, rewrite it to use the real "
-            "overlapping row instead of a fixture selection"
-        )
+            props = [json.loads(line) for line in fh if line.strip()]
 
-        # Real rows, real game_pk, real player_id, real stat values --
-        # pulled straight out of the 2026-08-30 slate (game_pk 822688).
-        cls.game_pk = 822688
-        cls.win_row = next(  # Agustín Ramírez, h=2 that night
-            r for r in cls.rows
-            if r["type"] == "batter" and r["player_id"] == 682663
-            and r["game_pk"] == cls.game_pk
+        # Copy the query's result into plain class attributes now (a
+        # hermetic fixture taken from the real stores) rather than having
+        # test methods re-run the query -- see tests/__init__.py's
+        # HERMETIC_CREDIT_LOG_STORE docstring for why re-reading a live,
+        # continuously-appended store from inside assertions is the wrong
+        # place to depend on it.
+        (cls.win_prop, cls.win_box,
+         cls.loss_prop, cls.loss_box) = cls._real_win_and_loss(props, cls.rows)
+
+        # The structural PUSH claim above, checked against the actual file
+        # rather than just asserted in prose.
+        all_lines = {p["line"] for p in props}
+        assert all(not float(line).is_integer() for line in all_lines), (
+            "a real captured batter-prop line is now a whole number -- a "
+            "real PUSH row may exist; rewrite this test's PUSH case to use "
+            "it instead of the synthetic push_row below, per the honesty "
+            "note"
         )
-        cls.loss_row = next(  # Griffin Conine, h=0 that night
-            r for r in cls.rows
-            if r["type"] == "batter" and r["player_id"] == 665052
-            and r["game_pk"] == cls.game_pk
+        # PUSH: a real box row (deterministically the batter with the
+        # lowest (game_pk, player_id) in the store, so this is a stable
+        # query too) with a synthetic line equal to its own real hit count
+        # -- see the PUSH honesty note above for why this stays synthetic.
+        batters = sorted(
+            (r for r in cls.rows if r["type"] == "batter"),
+            key=lambda r: (r["game_pk"], r["player_id"]),
         )
-        cls.push_row = next(  # Esteury Ruiz, h=1 that night
-            r for r in cls.rows
-            if r["type"] == "batter" and r["player_id"] == 665923
-            and r["game_pk"] == cls.game_pk
-        )
-        assert cls.win_row["h"] == 2 and cls.loss_row["h"] == 0 and cls.push_row["h"] == 1
+        assert batters, f"{cls.STORE_PATH} has no batter rows to build a PUSH fixture from"
+        cls.push_row = batters[0]
 
     def setUp(self):
         self._tmpdir = tempfile.TemporaryDirectory()
@@ -318,34 +391,48 @@ class PropSettlementEndToEndTests(unittest.TestCase):
         self.addCleanup(patcher.stop)
         self.addCleanup(self._tmpdir.cleanup)
 
-    def _prop_bet(self, bet_id, subject_id, line):
+    def _prop_bet(self, bet_id, *, subject_id, line, game_pk, price_american=-115, side="over"):
         return PaperBet(
             bet_id=bet_id, system_id="sys-props", market_key="batter_hits",
-            selection_id=f"batter_hits:{subject_id}:{line}", side="over",
-            line=line, price_american=-115, settlement_rule="batter_hits",
-            game_pk=self.game_pk, subject_id=subject_id, subject_kind="batter",
+            selection_id=f"batter_hits:{subject_id}:{line}", side=side,
+            line=line, price_american=price_american, settlement_rule="batter_hits",
+            game_pk=game_pk, subject_id=subject_id, subject_kind="batter",
         )
 
     def test_settles_win_loss_push_and_void_through_the_dispatcher(self):
         account = PaperAccount(system_id="sys-props", starting_bankroll=1000.0)
 
         win_settled = account.settle_and_record(
-            self._prop_bet("p-win", 682663, "1.5"),  # h=2 > 1.5
-            None, day="2026-08-31", box_row_resolver=self.resolver,
+            self._prop_bet(
+                "p-win", subject_id=self.win_box["player_id"], line=self.win_prop["line"],
+                game_pk=self.win_box["game_pk"], price_american=self.win_prop["price"],
+                side=self.win_prop["side"].lower(),
+            ),
+            None, day=self.win_box["date"], box_row_resolver=self.resolver,
         )
         loss_settled = account.settle_and_record(
-            self._prop_bet("p-loss", 665052, "0.5"),  # h=0 < 0.5
-            None, day="2026-08-31", box_row_resolver=self.resolver,
+            self._prop_bet(
+                "p-loss", subject_id=self.loss_box["player_id"], line=self.loss_prop["line"],
+                game_pk=self.loss_box["game_pk"], price_american=self.loss_prop["price"],
+                side=self.loss_prop["side"].lower(),
+            ),
+            None, day=self.loss_box["date"], box_row_resolver=self.resolver,
         )
         push_settled = account.settle_and_record(
-            self._prop_bet("p-push", 665923, "1"),  # h=1 == 1
-            None, day="2026-08-31", box_row_resolver=self.resolver,
+            self._prop_bet(
+                "p-push", subject_id=self.push_row["player_id"], line=str(self.push_row["h"]),
+                game_pk=self.push_row["game_pk"],
+            ),
+            None, day=self.push_row["date"], box_row_resolver=self.resolver,
         )
         void_settled = account.settle_and_record(
             # No box row anywhere for this player/game -- resolver returns
             # None; this must VOID, never raise.
-            self._prop_bet("p-void", 999999999, "1.5"),
-            None, day="2026-08-31", box_row_resolver=self.resolver,
+            self._prop_bet(
+                "p-void", subject_id=999999999, line="1.5",
+                game_pk=self.push_row["game_pk"],
+            ),
+            None, day=self.push_row["date"], box_row_resolver=self.resolver,
         )
 
         self.assertEqual(win_settled.outcome, "win")
