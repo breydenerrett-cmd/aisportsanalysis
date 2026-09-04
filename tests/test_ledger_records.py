@@ -16,6 +16,9 @@ from dataclasses import fields
 from src.ledger import records as records_module
 from src.ledger.records import (
     FORBIDDEN_OBJECTIVE_FIELDS,
+    PROBABILITY_PROVENANCE_MODEL_DERIVED,
+    PROBABILITY_PROVENANCE_NONE,
+    PROBABILITY_PROVENANCE_VALUES,
     AccountSummary,
     DecisionRecord,
     ObjectiveView,
@@ -135,6 +138,7 @@ def _decision(**overrides) -> DecisionRecord:
         price_improvement_bps=None, rating=None, thesis=None, evidence=[],
         counterarguments=[], supporting_systems=[], refusal_reason=None,
         assumption_exposure={}, stake_units=0.0, known_at_grade="A",
+        p_model_provenance=PROBABILITY_PROVENANCE_NONE,
     )
     base.update(overrides)
     return DecisionRecord(**base)
@@ -368,6 +372,75 @@ class ObjectiveFunctionASTTests(unittest.TestCase):
         names_used |= {n.value for n in ast.walk(tree)
                        if isinstance(n, ast.Constant) and isinstance(n.value, str)}
         self.assertTrue(names_used & FORBIDDEN_OBJECTIVE_FIELDS)
+
+
+class ProbabilityProvenanceTests(unittest.TestCase):
+    """N2/honesty fix (2026-09-04): `p_model_provenance` is REQUIRED on
+    `DecisionRecord`, and `edge_bps` is structurally impossible unless it is
+    `model_derived` -- raise, not warn."""
+
+    def test_p_model_provenance_is_required(self):
+        # dataclasses raise TypeError, not our RecordContractError, for a
+        # missing REQUIRED (no-default) constructor argument -- proving it
+        # really has no default (never silently omittable) is the point of
+        # this test, so it builds the kwargs directly rather than through
+        # `_decision()` (whose own base dict always supplies one).
+        base = dict(
+            engine_version="v1", system_id="sys1", system_version="1.0.0",
+            registry_fingerprint="fp1", frame_fingerprint=None,
+            snapshot_fingerprint="snap1", game_pk=12345, event_id="evt1",
+            decision_utc="2026-09-03T18:00:00Z", point_class="LATE_BOARD",
+            information_time="2026-09-03T17:55:00Z",
+            recorded_utc="2026-09-03T18:00:01Z", verdict="no_play",
+            selection_id=None, market_key=None, line=None, book=None,
+            price_american=None, consensus_fair=None, books_at_decision=None,
+            friction=None, p_model=None, p_model_interval=None, edge_bps=None,
+            price_improvement_bps=None, rating=None, thesis=None, evidence=[],
+            counterarguments=[], supporting_systems=[], refusal_reason=None,
+            assumption_exposure={}, stake_units=0.0, known_at_grade="A",
+            # p_model_provenance deliberately omitted
+        )
+        with self.assertRaises(TypeError):
+            DecisionRecord(**base)
+
+    def test_unknown_p_model_provenance_rejected(self):
+        with self.assertRaises(RecordContractError):
+            _decision(p_model_provenance="vibes_based")
+
+    def test_every_registered_provenance_value_constructs(self):
+        for value in PROBABILITY_PROVENANCE_VALUES:
+            d = _decision(p_model_provenance=value)
+            self.assertEqual(d.p_model_provenance, value)
+
+    def test_edge_bps_impossible_for_none_provenance(self):
+        with self.assertRaises(RecordContractError):
+            _decision(p_model_provenance="none", edge_bps=100,
+                     verdict="play", price_american=-110,
+                     evidence=["x"])
+
+    def test_edge_bps_impossible_for_placeholder_provenance(self):
+        with self.assertRaises(RecordContractError):
+            _decision(p_model_provenance="placeholder", p_model=0.52,
+                     edge_bps=100, verdict="play", price_american=-110,
+                     evidence=["x"])
+
+    def test_edge_bps_impossible_for_market_derived_provenance(self):
+        with self.assertRaises(RecordContractError):
+            _decision(p_model_provenance="market_derived", p_model=0.5,
+                     edge_bps=100, verdict="play", price_american=-110,
+                     evidence=["x"])
+
+    def test_edge_bps_allowed_for_model_derived_provenance(self):
+        d = _decision(p_model_provenance=PROBABILITY_PROVENANCE_MODEL_DERIVED,
+                      p_model=0.6, edge_bps=100, verdict="play",
+                      price_american=-110, evidence=["x"])
+        self.assertEqual(d.edge_bps, 100)
+
+    def test_null_edge_bps_is_fine_for_every_non_model_provenance(self):
+        for value in PROBABILITY_PROVENANCE_VALUES - {
+                PROBABILITY_PROVENANCE_MODEL_DERIVED}:
+            d = _decision(p_model_provenance=value, edge_bps=None)
+            self.assertIsNone(d.edge_bps)
 
 
 if __name__ == "__main__":

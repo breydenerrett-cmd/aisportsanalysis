@@ -69,6 +69,53 @@ RECORD_PROVENANCE_VALUES = frozenset({
     RECORD_PROVENANCE_REPLAY,
 })
 
+# N2/honesty fix (2026-09-04): `p_model_provenance` names WHERE a
+# `Proposal`/`DecisionRecord`'s `p_model` came from -- the thing that decides
+# whether comparing it against a price is even a meaningful operation.
+# `edge_bps = p_model - fair_probability` (src.engine.analyze) is only ever a
+# real measurement when `p_model` is independent of the price it is being
+# diffed against; a fixed constant, an absent probability, or a probability
+# itself derived from the same prices is NOT independent, and diffing it
+# against price produces a number that looks like a measured edge but is
+# purely an artifact of the arithmetic. Four values, one per honest origin:
+#   none            -- no probability at all (a directional-only proposal,
+#                      e.g. an evolab genome). Nothing to diff against price.
+#   placeholder     -- a fixed constant used as a null control (e.g.
+#                      `src.engine.glue.TrivialAlwaysHomeSystem`'s 0.52).
+#                      Deliberately never calibrated; diffing it against
+#                      price is exactly the N2 defect this field exists to
+#                      close off structurally.
+#   market_derived  -- any probability computed FROM the board's own prices
+#                      (including a recalibrated/de-vigged one). Comparing
+#                      it back against the same prices it was built from is
+#                      circular, not a measurement.
+#   model_derived   -- fitted on information independent of the price being
+#                      compared against (non-price features, a real model).
+#                      This is the ONLY provenance `edge_bps` may be
+#                      non-null for -- see the invariant enforced below.
+# Required (no default) on both `Proposal` and `DecisionRecord`: a system
+# cannot construct either without naming where its probability, if any,
+# actually came from.
+PROBABILITY_PROVENANCE_NONE = "none"
+PROBABILITY_PROVENANCE_PLACEHOLDER = "placeholder"
+PROBABILITY_PROVENANCE_MARKET_DERIVED = "market_derived"
+PROBABILITY_PROVENANCE_MODEL_DERIVED = "model_derived"
+
+PROBABILITY_PROVENANCE_VALUES = frozenset({
+    PROBABILITY_PROVENANCE_NONE,
+    PROBABILITY_PROVENANCE_PLACEHOLDER,
+    PROBABILITY_PROVENANCE_MARKET_DERIVED,
+    PROBABILITY_PROVENANCE_MODEL_DERIVED,
+})
+
+# The value_basis a record falls back to whenever its probability is not
+# independent of price (every provenance except model_derived) -- moved here
+# (from src.engine.analyze, which re-exports it for backward compatibility)
+# so this module's from_row() legacy backfill can use the same constant
+# without importing analyze.py (analyze.py imports FROM records.py; the
+# reverse would be circular).
+VALUE_BASIS_PRICE_STANDING_ONLY = "price_standing_only:no_calibrated_p_model"
+
 # F9 / the Two-Ledger Rule: these names may never appear on anything
 # `objective()` is allowed to read. Kept here (not only in the AST test) so
 # ObjectiveView and the test import the SAME list rather than two lists that
@@ -160,6 +207,11 @@ class DecisionRecord:
     assumption_exposure: dict
     stake_units: float
     known_at_grade: str  # task requirement: carried alongside the identity fields
+    # N2/honesty fix (2026-09-04): REQUIRED, no default -- see the constant
+    # block above. Placed here (before the optional fields below) so a
+    # dataclass constructor cannot silently omit it the way a defaulted
+    # field could be.
+    p_model_provenance: str
     # vertical-slice S5/honest-probabilities task additions (both optional,
     # default None so every pre-existing construction site keeps working):
     #   value_basis    -- REQUIRED non-None on any record whose proposal
@@ -214,6 +266,25 @@ class DecisionRecord:
             f"record_provenance={self.record_provenance!r} must be None or "
             f"one of {sorted(RECORD_PROVENANCE_VALUES)}"
         )
+        _require(
+            self.p_model_provenance in PROBABILITY_PROVENANCE_VALUES,
+            f"p_model_provenance={self.p_model_provenance!r} must be one of "
+            f"{sorted(PROBABILITY_PROVENANCE_VALUES)} -- required, never "
+            "omitted or defaulted"
+        )
+        # N2/honesty fix, THE invariant: edge is only ever a real measurement
+        # when p_model is independent of the price it is diffed against.
+        # Impossible to construct otherwise -- raise, not warn.
+        if self.p_model_provenance != PROBABILITY_PROVENANCE_MODEL_DERIVED:
+            _require(
+                self.edge_bps is None,
+                f"edge_bps={self.edge_bps!r} but p_model_provenance="
+                f"{self.p_model_provenance!r} -- edge_bps MUST be null "
+                "unless the probability is model_derived (independent of "
+                "the price it would be compared against); a placeholder, "
+                "market_derived, or absent probability produces no "
+                "measurable edge, only value_basis=price_standing_only"
+            )
         if self.verdict == "play":
             _require(self.price_american is not None,
                       "price_american is REQUIRED on a play (synthesis 4.2)")
@@ -235,6 +306,50 @@ class DecisionRecord:
 
     def to_dict(self) -> dict:
         return asdict(self)
+
+    @classmethod
+    def from_row(cls, row: Mapping[str, Any]) -> "DecisionRecord":
+        """Reconstruct a `DecisionRecord` from a JSON-decoded ledger row,
+        dropping any key the dataclass does not declare (a genesis row's
+        `kind`, the chain's own reserved fields already present, etc).
+
+        N2/honesty fix (2026-09-04): every row published before this field
+        existed predates `p_model_provenance` entirely -- the raw ledger
+        file is NOT rewritten (see the correction rows appended alongside
+        it instead), but this is the one sanctioned place a legacy row is
+        turned back into a `DecisionRecord`, so the honest backfill lives
+        here, once:
+          - `p_model_provenance` absent -> inferred from what IS already on
+            the row: `p_model is not None` can only mean
+            `src.engine.glue.TrivialAlwaysHomeSystem`'s fixed 0.52 (every
+            other pre-fix system reported `p_model=None`) -> `placeholder`;
+            otherwise -> `none`. This is a documented, deterministic
+            re-labelling of already-known facts, never an invented value.
+          - once provenance is known, the invariant this module enforces
+            (edge_bps null unless model_derived) is applied to the
+            IN-MEMORY object: a legacy `edge_bps`/`rating` computed from
+            that placeholder p_model is exactly the published artifact the
+            correction rows exist to withdraw, so it is nulled here rather
+            than raising -- the row still round-trips for report/scorecard
+            purposes, it just never again reads as a value claim.
+        """
+        import dataclasses
+        valid = {f.name for f in dataclasses.fields(cls)}
+        data = {k: v for k, v in row.items() if k in valid}
+        if data.get("p_model_provenance") is None:
+            data["p_model_provenance"] = (
+                PROBABILITY_PROVENANCE_PLACEHOLDER
+                if data.get("p_model") is not None
+                else PROBABILITY_PROVENANCE_NONE
+            )
+        if data["p_model_provenance"] != PROBABILITY_PROVENANCE_MODEL_DERIVED:
+            if data.get("edge_bps") is not None:
+                data["edge_bps"] = None
+            if data.get("rating") is not None:
+                data["rating"] = None
+            if not data.get("value_basis"):
+                data["value_basis"] = VALUE_BASIS_PRICE_STANDING_ONLY
+        return cls(**data)
 
 
 @dataclass(frozen=True, slots=True)

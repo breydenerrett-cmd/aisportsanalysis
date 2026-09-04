@@ -169,6 +169,12 @@ class DecisionSummary:
     edge_bps: Optional[int]
     known_at_grade: str
     thesis: Optional[str]
+    # N2/honesty fix (2026-09-04): every decision line names WHERE its
+    # p_model (or lack of one) came from -- `edge_bps` alone cannot say
+    # whether a null `edge_bps` means "model_derived but no edge found" or
+    # "structurally impossible to compute one for this provenance"; a
+    # reader must never have to guess which.
+    p_model_provenance: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -219,6 +225,11 @@ class EodReview:
     price_vs_close: tuple  # tuple[PriceVsClose, ...]
     scorecard_deltas: tuple  # tuple[ScorecardDelta, ...]
     assumption_exposure_items: tuple  # tuple[AssumptionExposureItem, ...]
+    # N2/honesty fix: {provenance: count} over EVERY decision recorded today
+    # (play and refusal alike), so a reader sees at a glance how many of
+    # today's decisions could ever have contributed an edge/calibration
+    # claim (model_derived) versus how many structurally could not.
+    provenance_counts: Mapping  # {p_model_provenance: count}
 
 
 _SCORECARD_DELTA_FIELDS = (
@@ -252,7 +263,7 @@ def build_review(
             event_id=d.event_id, market_key=d.market_key,
             selection_id=d.selection_id, price_american=d.price_american,
             edge_bps=d.edge_bps, known_at_grade=d.known_at_grade,
-            thesis=d.thesis,
+            thesis=d.thesis, p_model_provenance=d.p_model_provenance,
         ) for d in decisions if d.verdict == "play"),
         key=lambda s: s.event_id,
     ))
@@ -273,6 +284,11 @@ def build_review(
 
     n_cd = sum(1 for d in decisions if d.known_at_grade in ("C", "D"))
     grade_cd_share = n_cd / len(decisions)
+
+    provenance_counts: dict = {}
+    for d in decisions:
+        provenance_counts[d.p_model_provenance] = (
+            provenance_counts.get(d.p_model_provenance, 0) + 1)
 
     settlements = tuple(sorted(
         (s for account in accounts for s in account.settlements),
@@ -356,6 +372,7 @@ def build_review(
         n_reviewed=n_reviewed, price_vs_close=price_vs_close,
         scorecard_deltas=scorecard_deltas,
         assumption_exposure_items=assumption_items,
+        provenance_counts=provenance_counts,
     )
 
 
@@ -374,6 +391,14 @@ def render_markdown(review: EodReview) -> str:
 
     lines.append(f"Decisions recorded: {review.n_decisions}")
     lines.append(f"Share driven by grade C/D: {_fmt(review.grade_cd_share)}")
+    prov_str = ", ".join(
+        f"{k}={v}" for k, v in sorted(review.provenance_counts.items()))
+    lines.append(f"p_model_provenance breakdown: {prov_str or '(none)'}")
+    lines.append(
+        "  (only model_derived decisions can carry a non-null edge_bps or "
+        "feed a calibration/economic claim -- none, placeholder and "
+        "market_derived structurally cannot)"
+    )
     lines.append("")
 
     lines.append("## Decisions made, and why")
@@ -383,6 +408,7 @@ def render_markdown(review: EodReview) -> str:
         lines.append(
             f"- {d.event_id} {d.market_key}/{d.selection_id} "
             f"price={d.price_american} edge_bps={d.edge_bps} "
+            f"p_model_provenance={d.p_model_provenance} "
             f"grade={d.known_at_grade}: {d.thesis or '(no thesis recorded)'}"
         )
     lines.append("")
@@ -512,6 +538,7 @@ def write_review(
         "n_losses": len(review.losing_settlements),
         "n_accounts": len(review.accounts),
         "grade_cd_share": review.grade_cd_share,
+        "provenance_counts": dict(review.provenance_counts),
     })
 
     return {"review": review, "markdown": markdown, "path": str(out_path),

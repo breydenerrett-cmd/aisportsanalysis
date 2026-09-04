@@ -3,6 +3,7 @@ import inspect
 import unittest
 
 from src.board.record import PriceObservation
+from src.engine import analyze as analyze_module
 from src.engine.analyze import (
     Analysis, Candidate, Counterargument, FATAL, MINOR, Proposal, analyze,
 )
@@ -75,7 +76,7 @@ class TestPurity(unittest.TestCase):
     def test_deterministic_across_repeated_calls(self):
         system = _RecordingSystem((Proposal(
             system_id="s1", system_version="1", market_key="h2h",
-            side="home", p_model=0.62),))
+            side="home", p_model=0.62, p_model_provenance="model_derived"),))
         snap, board = _snapshot(), _board()
         a1 = analyze(snap, board, systems=(system,))
         a2 = analyze(snap, board, systems=(system,))
@@ -100,7 +101,7 @@ class TestProjection(unittest.TestCase):
     def test_proposal_projects_onto_matching_selection_and_computes_edge(self):
         system = _RecordingSystem((Proposal(
             system_id="s1", system_version="1", market_key="h2h",
-            side="home", p_model=0.70),))
+            side="home", p_model=0.70, p_model_provenance="model_derived"),))
         analysis = analyze(_snapshot(), _board(), systems=(system,))
         self.assertEqual(len(analysis.records), 1)
         rec = analysis.records[0]
@@ -123,7 +124,7 @@ class TestProjection(unittest.TestCase):
         # confirm one proposal is priced against BOTH.
         system = _RecordingSystem((Proposal(
             system_id="s1", system_version="1", market_key="totals",
-            side="over", p_model=0.55),))
+            side="over", p_model=0.55, p_model_provenance="model_derived"),))
         # adversaries=() explicitly: this test is about PROJECT fanning one
         # proposal out onto every matching selection, not about ATTACK, and
         # each selection here is quoted by only one book -- ThinBoard (part
@@ -166,7 +167,7 @@ class TestAdversaries(unittest.TestCase):
         FATAL cause, and the FATAL counterargument is still attached."""
         system = _RecordingSystem((Proposal(
             system_id="s1", system_version="1", market_key="h2h",
-            side="home", p_model=0.7),))
+            side="home", p_model=0.7, p_model_provenance="model_derived"),))
         analysis = analyze(_snapshot(), _board(), systems=(system,),
                            adversaries=(_VetoAdversary(),))
         self.assertEqual(len(analysis.records), 1)
@@ -188,7 +189,7 @@ class TestAdversaries(unittest.TestCase):
 
         system = _RecordingSystem((Proposal(
             system_id="s1", system_version="1", market_key="h2h",
-            side="home", p_model=0.7),))
+            side="home", p_model=0.7, p_model_provenance="model_derived"),))
         # `_board()` quotes each selection from 2 books; ThinBoard(min_books=3)
         # FATAL-vetoes everything at that depth.
         analysis = analyze(_snapshot(), _board(), systems=(system,),
@@ -200,7 +201,7 @@ class TestAdversaries(unittest.TestCase):
     def test_minor_counterargument_survives_and_is_recorded(self):
         system = _RecordingSystem((Proposal(
             system_id="s1", system_version="1", market_key="h2h",
-            side="home", p_model=0.7),))
+            side="home", p_model=0.7, p_model_provenance="model_derived"),))
         # assumption_exposure set (grade A on its own terms) so this test's
         # counterargument count isolates the adversary's own MINOR note from
         # the separate "no as_of read" counterargument analyze() adds when a
@@ -219,7 +220,7 @@ class TestTwoLedger(unittest.TestCase):
     def test_probability_and_price_quality_are_separate_numbers(self):
         system = _RecordingSystem((Proposal(
             system_id="s1", system_version="1", market_key="h2h",
-            side="home", p_model=0.9),))
+            side="home", p_model=0.9, p_model_provenance="model_derived"),))
         analysis = analyze(_snapshot(), _board(), systems=(system,))
         rating = analysis.records[0].rating
         self.assertIn("probability_quality", rating)
@@ -233,7 +234,7 @@ class TestTwoLedger(unittest.TestCase):
         field on DecisionRecord, not part of the Two-Ledger rating."""
         system = _RecordingSystem((Proposal(
             system_id="s1", system_version="1", market_key="h2h",
-            side="home", p_model=0.7),))
+            side="home", p_model=0.7, p_model_provenance="model_derived"),))
         analysis = analyze(_snapshot(), _board(), systems=(system,))
         for key in analysis.records[0].rating:
             self.assertNotIn("edge", key)
@@ -243,7 +244,7 @@ class TestProvenance(unittest.TestCase):
     def test_assumption_exposure_passes_through_to_record(self):
         system = _RecordingSystem((Proposal(
             system_id="s1", system_version="1", market_key="h2h",
-            side="home", p_model=0.6),))
+            side="home", p_model=0.6, p_model_provenance="model_derived"),))
         snap = _snapshot(assumption_exposure={"D:home_lineup": 1})
         analysis = analyze(snap, _board(), systems=(system,))
         self.assertEqual(
@@ -257,7 +258,7 @@ class TestProvenance(unittest.TestCase):
         naming the missing read."""
         system = _RecordingSystem((Proposal(
             system_id="s1", system_version="1", market_key="h2h",
-            side="home", p_model=0.6),))
+            side="home", p_model=0.6, p_model_provenance="model_derived"),))
         snap = _snapshot(assumption_exposure={})  # asof_read defaults False
         analysis = analyze(snap, _board(), systems=(system,))
         record = analysis.records[0]
@@ -281,7 +282,7 @@ class TestProvenance(unittest.TestCase):
         degraded fields"; it cannot, for the reason above."""
         system = _RecordingSystem((Proposal(
             system_id="s1", system_version="1", market_key="h2h",
-            side="home", p_model=0.6),))
+            side="home", p_model=0.6, p_model_provenance="model_derived"),))
         snap = _snapshot(assumption_exposure={}, asof_read=True)
         analysis = analyze(snap, _board(), systems=(system,))
         record = analysis.records[0]
@@ -302,7 +303,7 @@ class TestProvenance(unittest.TestCase):
         this, never an empty exposure, is evidence enough for grade A."""
         system = _RecordingSystem((Proposal(
             system_id="s1", system_version="1", market_key="h2h",
-            side="home", p_model=0.6),))
+            side="home", p_model=0.6, p_model_provenance="model_derived"),))
         snap = _snapshot(assumption_exposure={"A:home_plate_umpire": 1},
                          asof_read=True)
         analysis = analyze(snap, _board(), systems=(system,))
@@ -325,7 +326,7 @@ class TestRecordedUtcPassthrough(unittest.TestCase):
     def test_omitted_recorded_utc_falls_back_to_snapshot_t(self):
         system = _RecordingSystem((Proposal(
             system_id="s1", system_version="1", market_key="h2h",
-            side="home", p_model=0.6),))
+            side="home", p_model=0.6, p_model_provenance="model_derived"),))
         analysis = analyze(_snapshot(), _board(), systems=(system,))
         record = analysis.records[0]
         self.assertEqual(record.recorded_utc, record.decision_utc)
@@ -334,7 +335,7 @@ class TestRecordedUtcPassthrough(unittest.TestCase):
     def test_explicit_recorded_utc_and_provenance_pass_through_untouched(self):
         system = _RecordingSystem((Proposal(
             system_id="s1", system_version="1", market_key="h2h",
-            side="home", p_model=0.6),))
+            side="home", p_model=0.6, p_model_provenance="model_derived"),))
         analysis = analyze(
             _snapshot(), _board(), systems=(system,),
             recorded_utc="2026-09-03T20:39:31+00:00",
@@ -360,13 +361,90 @@ class TestDeterministicOrdering(unittest.TestCase):
     def test_higher_edge_ranks_first(self):
         system = _RecordingSystem((
             Proposal(system_id="lo", system_version="1", market_key="h2h",
-                    side="home", p_model=0.55),
+                    side="home", p_model=0.55, p_model_provenance="model_derived"),
             Proposal(system_id="hi", system_version="1", market_key="h2h",
-                    side="home", p_model=0.95),
+                    side="home", p_model=0.95, p_model_provenance="model_derived"),
         ))
         analysis = analyze(_snapshot(), _board(), systems=(system,))
         self.assertEqual(analysis.records[0].system_id, "hi")
         self.assertEqual(analysis.records[1].system_id, "lo")
+
+
+class TestProbabilityProvenance(unittest.TestCase):
+    """N2/honesty fix (2026-09-04): edge_bps is a real measurement only when
+    the probability is independent of the price it is diffed against --
+    `model_derived`, and nothing else. `analyze()` must never compute one
+    for `none`/`placeholder`/`market_derived`, on pain of
+    `DecisionRecord.__post_init__` raising (impossible, not discouraged)."""
+
+    def test_p_model_provenance_is_a_required_proposal_field(self):
+        with self.assertRaises(TypeError):
+            Proposal(system_id="s1", system_version="1", market_key="h2h",
+                    side="home", p_model=0.6)
+
+    def test_unknown_p_model_provenance_rejected_on_proposal(self):
+        with self.assertRaises(ValueError):
+            Proposal(system_id="s1", system_version="1", market_key="h2h",
+                    side="home", p_model=0.6, p_model_provenance="vibes")
+
+    def test_placeholder_provenance_never_emits_edge_even_with_p_model_set(self):
+        """The exact N2 defect: a fixed constant (like
+        TrivialAlwaysHomeSystem's 0.52) diffed against a real price used to
+        produce a published edge_bps. Now structurally impossible."""
+        system = _RecordingSystem((Proposal(
+            system_id="s1", system_version="1", market_key="h2h",
+            side="home", p_model=0.52, p_model_provenance="placeholder"),))
+        analysis = analyze(_snapshot(), _board(), systems=(system,))
+        record = analysis.records[0]
+        self.assertIsNone(record.edge_bps)
+        self.assertIsNone(record.rating)
+        self.assertEqual(record.p_model_provenance, "placeholder")
+        self.assertEqual(record.value_basis,
+                         analyze_module.VALUE_BASIS_PRICE_STANDING_ONLY)
+
+    def test_market_derived_provenance_never_emits_edge(self):
+        system = _RecordingSystem((Proposal(
+            system_id="s1", system_version="1", market_key="h2h",
+            side="home", p_model=0.6, p_model_provenance="market_derived"),))
+        analysis = analyze(_snapshot(), _board(), systems=(system,))
+        record = analysis.records[0]
+        self.assertIsNone(record.edge_bps)
+        self.assertIsNone(record.rating)
+        self.assertEqual(record.value_basis,
+                         analyze_module.VALUE_BASIS_PRICE_STANDING_ONLY)
+
+    def test_none_provenance_never_emits_edge(self):
+        system = _RecordingSystem((Proposal(
+            system_id="s1", system_version="1", market_key="h2h",
+            side="home", p_model_provenance="none"),))
+        analysis = analyze(_snapshot(), _board(), systems=(system,))
+        record = analysis.records[0]
+        self.assertIsNone(record.edge_bps)
+        self.assertIsNone(record.rating)
+        self.assertEqual(record.value_basis,
+                         analyze_module.VALUE_BASIS_PRICE_STANDING_ONLY)
+
+    def test_model_derived_provenance_still_emits_edge(self):
+        system = _RecordingSystem((Proposal(
+            system_id="s1", system_version="1", market_key="h2h",
+            side="home", p_model=0.7, p_model_provenance="model_derived"),))
+        analysis = analyze(_snapshot(), _board(), systems=(system,))
+        record = analysis.records[0]
+        self.assertIsNotNone(record.edge_bps)
+        self.assertIsNotNone(record.rating)
+        self.assertIsNone(record.value_basis)
+
+    def test_every_record_carries_a_p_model_provenance(self):
+        """Every DecisionRecord `analyze()` produces -- play or refusal --
+        must carry the provenance its proposal declared, never a blank."""
+        system = _RecordingSystem((Proposal(
+            system_id="s1", system_version="1", market_key="h2h",
+            side="home", p_model_provenance="none"),))
+        analysis = analyze(_snapshot(), _board(), systems=(system,),
+                           adversaries=(_VetoAdversary(),))
+        self.assertTrue(analysis.records)
+        for record in analysis.records:
+            self.assertEqual(record.p_model_provenance, "none")
 
 
 if __name__ == "__main__":

@@ -143,6 +143,7 @@ class TestAnalyzeNeverFabricatesAProbability(unittest.TestCase):
             def propose(self, view):
                 return (Proposal(system_id=self.id, system_version=self.version,
                                  market_key="h2h", side="home",
+                                 p_model_provenance="none",
                                  thesis="directional, no calibrated p"),)
 
         board = self._board()
@@ -170,6 +171,7 @@ class TestAnalyzeNeverFabricatesAProbability(unittest.TestCase):
             def propose(self, view):
                 return (Proposal(system_id=self.id, system_version=self.version,
                                  market_key="h2h", side="home", p_model=0.6,
+                                 p_model_provenance="model_derived",
                                  thesis="calibrated"),)
 
         board = self._board()

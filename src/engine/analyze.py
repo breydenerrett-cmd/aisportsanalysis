@@ -15,7 +15,12 @@ from dataclasses import dataclass, replace
 from typing import Iterable, Mapping, Protocol
 
 from src.engine.snapshot import PriceBlindSnapshot, PricedBoard
-from src.ledger.records import DecisionRecord
+from src.ledger.records import (
+    DecisionRecord,
+    PROBABILITY_PROVENANCE_MODEL_DERIVED,
+    PROBABILITY_PROVENANCE_VALUES,
+)
+from src.ledger.records import VALUE_BASIS_PRICE_STANDING_ONLY as _VALUE_BASIS_PRICE_STANDING_ONLY
 
 ENGINE_VERSION = "engine-1"
 
@@ -32,12 +37,23 @@ class Proposal:
     system_version: str
     market_key: str
     side: str
+    # N2/honesty fix (2026-09-04): REQUIRED, no default -- see
+    # src.ledger.records's PROBABILITY_PROVENANCE_* block. A system cannot
+    # propose without naming where its p_model (or its absence) came from.
+    p_model_provenance: str
     subject_kind: str | None = None
     subject_id: str | None = None
     line: str | None = None
     p_model: float | None = None
     thesis: str = ""
     evidence: tuple = ()
+
+    def __post_init__(self) -> None:
+        if self.p_model_provenance not in PROBABILITY_PROVENANCE_VALUES:
+            raise ValueError(
+                f"p_model_provenance={self.p_model_provenance!r} must be "
+                f"one of {sorted(PROBABILITY_PROVENANCE_VALUES)}"
+            )
 
 
 class AnalysisSystem(Protocol):
@@ -141,7 +157,16 @@ DEFAULT_ADVERSARIES: tuple = ()
 # assigns; a record whose proposal DID carry a p_model gets `value_basis =
 # None` (its value basis is already the edge_bps/p_model pair -- "the
 # existing value projection" the task distinguishes this from).
-VALUE_BASIS_PRICE_STANDING_ONLY = "price_standing_only:no_calibrated_p_model"
+#
+# N2/honesty fix (2026-09-04): the condition this basis applies under has
+# widened from "p_model is None" to "p_model_provenance != model_derived" --
+# a placeholder or market_derived p_model is no less price-standing-only
+# than no p_model at all, since none of the three is independent of the
+# price edge_bps would otherwise diff it against. The constant itself now
+# lives in src.ledger.records (DecisionRecord.from_row's legacy backfill
+# needs it too, and records.py cannot import analyze.py without a cycle);
+# re-exported here under its original name for every existing importer.
+VALUE_BASIS_PRICE_STANDING_ONLY = _VALUE_BASIS_PRICE_STANDING_ONLY
 
 
 # ---------------------------------------------------------------------------
@@ -229,8 +254,16 @@ def analyze(snapshot: PriceBlindSnapshot, board: PricedBoard, *,
             best = board.best(selection_id)
             friction = board.friction(selection_id, as_of_utc=board.t)
 
+            # N2/honesty fix: edge is only ever a real measurement when the
+            # probability is independent of the price it is diffed against
+            # -- model_derived, and nothing else. A placeholder constant, a
+            # probability computed FROM these same prices, or no
+            # probability at all must never produce an edge_bps, on pain of
+            # DecisionRecord.__post_init__ raising below (impossible, not
+            # merely discouraged).
             edge_bps = None
-            if consensus is not None and proposal.p_model is not None:
+            if (proposal.p_model_provenance == PROBABILITY_PROVENANCE_MODEL_DERIVED
+                    and consensus is not None and proposal.p_model is not None):
                 raw_edge = proposal.p_model - consensus.fair_probability
                 edge_bps = int(round(raw_edge * 10_000)) - config.friction_bps
 
@@ -276,7 +309,15 @@ def analyze(snapshot: PriceBlindSnapshot, board: PricedBoard, *,
     # on `rating`.
     rated: list[Candidate] = []
     for cand in survivors:
-        if cand.proposal.p_model is None:
+        # N2/honesty fix: a Bet Rating (even the model-only
+        # probability_quality half) is a value-adjacent claim about the
+        # calibrated probability being good -- not something RATE may
+        # publish for a provenance that never claimed a calibrated
+        # probability in the first place (placeholder, market_derived,
+        # none). Only model_derived earns one, same gate as edge_bps above.
+        if (cand.proposal.p_model is None
+                or cand.proposal.p_model_provenance
+                != PROBABILITY_PROVENANCE_MODEL_DERIVED):
             # Honest probabilities: no calibrated probability means nothing
             # for RATE to rate. `rating` stays None (not a dict with
             # None-valued keys) -- "no Bet Rating" is a structural absence,
@@ -441,7 +482,7 @@ def _to_decision_record(cand: Candidate, *, snapshot: PriceBlindSnapshot,
             "detail": detail,
         })
     value_basis = None
-    if proposal.p_model is None:
+    if proposal.p_model_provenance != PROBABILITY_PROVENANCE_MODEL_DERIVED:
         value_basis = VALUE_BASIS_PRICE_STANDING_ONLY
 
     if verdict == "play" and not evidence and not counterarguments:
@@ -488,6 +529,7 @@ def _to_decision_record(cand: Candidate, *, snapshot: PriceBlindSnapshot,
         books_at_decision=cand.books_at_decision,
         friction=cand.friction,
         p_model=proposal.p_model,
+        p_model_provenance=proposal.p_model_provenance,
         p_model_interval=None,
         edge_bps=cand.edge_bps,
         price_improvement_bps=None,

@@ -191,7 +191,10 @@ def load_decisions(path=None) -> tuple[DecisionRecord, ...]:
     for row in HashChainLedger(path).read():
         if row.get("kind") == "genesis" or "decision_utc" not in row:
             continue
-        out.append(_record_from_row(DecisionRecord, row))
+        # DecisionRecord.from_row(), not the generic _record_from_row() --
+        # it backfills p_model_provenance honestly for rows published
+        # before that field existed (N2/honesty fix, 2026-09-04).
+        out.append(DecisionRecord.from_row(row))
     return tuple(out)
 
 

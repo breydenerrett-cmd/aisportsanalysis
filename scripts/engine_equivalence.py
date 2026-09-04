@@ -220,7 +220,8 @@ def _bare_candidate(bare_analysis):
     rec = bare_analysis.records[0]
     return Candidate(
         proposal=Proposal(system_id=rec.system_id, system_version=rec.system_version,
-                          market_key=rec.market_key, side="", p_model=rec.p_model),
+                          market_key=rec.market_key, side="", p_model=rec.p_model,
+                          p_model_provenance=rec.p_model_provenance),
         selection_id=rec.selection_id, consensus_fair=rec.consensus_fair,
         books_at_decision=rec.books_at_decision or 0, friction=rec.friction or {},
         price_american=rec.price_american, edge_bps=rec.edge_bps,
