@@ -30,6 +30,7 @@ from src.board.ids import selection_id as _selection_id
 from src.board.record import PriceObservation
 from src.engine.analyze import Proposal
 from src.engine.analyze import analyze as _analyze
+from src.engine.explain import evolab_thesis
 from src.engine.snapshot import PriceBlindSnapshot, PricedBoard
 from src.evolab.decide import BoardMeta, WorldView, decide_with_reason
 from src.evolab.genome import F5_MARKET, Genome, enumerate_genomes
@@ -108,14 +109,29 @@ class EvolabGenomeSystem:
         # and the equivalence check below compares the SELECTION only
         # (market, side), which is the entire output surface `decide()`
         # actually promises.
+        # THE THESIS IS THE PRODUCT (owner directive, 2026-09-04). The
+        # genome's own `signals_fired` is a tuple of (feature, ladder rung)
+        # pairs -- publishing that tuple verbatim, prefixed by the strategy
+        # hash, is what the previous revision did, and it left every
+        # published pick unreadable to the person it was published for.
+        # `src.engine.explain` substitutes the ACTUAL feature values this
+        # snapshot carried into a per-feature English template, names the
+        # threshold each one cleared and the sample the threshold was
+        # derived over, and closes by stating plainly that no probability
+        # and no edge are being claimed. PROPOSE is price-blind, so the
+        # thesis names a SIDE, never a club or a price; the reader-facing
+        # pick line (`src.board.readable`) is what pairs that side with
+        # "Atlanta Braves (away) moneyline (+130, DraftKings)".
         return (Proposal(
             system_id=self.id,
             system_version=self.version,
             market_key=decision.market,
             side=decision.side,
             p_model_provenance=PROBABILITY_PROVENANCE_NONE,
-            thesis=f"evolab genome {self.genome.strategy_id}: "
-                   f"{decision.signals_fired}",
+            thesis=evolab_thesis(
+                self.genome.strategy_id, decision.market, decision.side,
+                decision.signals_fired, dict(view.features),
+                registry=self.registry),
             evidence=(f"score={decision.score!r}",
                       f"execution_mode={decision.execution_mode}"),
         ),)
@@ -172,12 +188,16 @@ class TrivialAlwaysHomeSpreadSystem:
             system_id=self.id, system_version=self.version,
             market_key="spreads", side="home", p_model=self.p_model,
             p_model_provenance=PROBABILITY_PROVENANCE_PLACEHOLDER,
-            thesis="null control for spreads: always proposes home on the "
-                   "run line, a fixed direction never derived from price "
-                   "or a clock; p_model is a declared coin-flip constant "
+            thesis="This is a DELIBERATE CONTROL, not a pick anyone "
+                   "should follow: it takes the home side of the run line "
+                   "in every game, always, on no information at all. The "
+                   "direction was fixed in code before any board was read "
+                   "and is never derived from price, a clock or a search. "
+                   "Its p_model is a declared coin flip "
                    "(provenance=placeholder), so no edge_bps can ever be "
-                   "computed for this market -- "
-                   "src.engine.adapters.evolab_system",
+                   "computed for it -- that is the point: it is the "
+                   "baseline every real system has to beat "
+                   "(src.engine.adapters.evolab_system).",
             evidence=("trivial_fallback_spreads",),
         ),)
 
@@ -206,12 +226,15 @@ class TrivialUnderTotalSystem:
             system_id=self.id, system_version=self.version,
             market_key="totals", side="under", p_model=self.p_model,
             p_model_provenance=PROBABILITY_PROVENANCE_PLACEHOLDER,
-            thesis="null control for totals: always proposes under, a "
-                   "fixed direction never derived from price or a clock; "
-                   "p_model is a declared coin-flip constant "
-                   "(provenance=placeholder), so no edge_bps can ever be "
-                   "computed for this market -- "
-                   "src.engine.adapters.evolab_system",
+            thesis="This is a DELIBERATE CONTROL, not a pick anyone "
+                   "should follow: it takes the under in every game, "
+                   "always, on no information at all. The direction was "
+                   "fixed in code before any board was read and is never "
+                   "derived from price, a clock or a search. Its p_model "
+                   "is a declared coin flip (provenance=placeholder), so "
+                   "no edge_bps can ever be computed for it -- that is "
+                   "the point: it is the baseline every real system has "
+                   "to beat (src.engine.adapters.evolab_system).",
             evidence=("trivial_fallback_totals",),
         ),)
 
@@ -272,13 +295,18 @@ class MarketDerivedConsensusSystem:
             market_key=self.market_key, side=self.side, p_model=None,
             p_model_provenance=PROBABILITY_PROVENANCE_MARKET_DERIVED,
             thesis=(
-                "MARKET_DERIVED, zero-parameter: p_model is the board's "
-                "own de-vigged consensus for this selection, republished "
-                "under the identity map by analyze()'s PROJECT phase -- no "
+                "This pick carries the market's own probability and no "
+                "edge, by construction. Its p_model is the board's own "
+                "de-vigged consensus for this exact selection, "
+                "republished unchanged by analyze()'s PROJECT phase under "
+                "the identity map -- zero fitted parameters, no "
                 "recalibration intercept, no Platt, no isotonic refit "
-                "(docs/PREREG_CALIBRATED_PROBABILITY.md §2). Not a "
-                "strategy: edge_bps is structurally None; this may be "
-                "published as prediction confidence only."
+                "(docs/PREREG_CALIBRATED_PROBABILITY.md §2). Because "
+                "the probability IS the price, diffing the two would "
+                "measure nothing: edge_bps is structurally None and no "
+                "edge is claimed. It is published as a calibration "
+                "reference -- how good the market's own number is -- "
+                "never as a reason to bet."
             ),
             evidence=("market_derived_identity_map",),
         ),)

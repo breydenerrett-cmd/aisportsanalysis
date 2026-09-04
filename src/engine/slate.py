@@ -27,6 +27,15 @@ P&L) and nothing from any outcome (a result, a close price) -- both would
 make "how a bet gets chosen" depend on facts that must never influence a
 FROZEN, pre-outcome decision.
 
+THE DAY-LEVEL RANKING
+-----------------------
+`SELECTION_RULE` stops at the game boundary. The owner directive of
+2026-09-04 asks for each system's best ten picks ACROSS the slate, so
+`DAY_RANKING_RULE`/`rank_day_by_system` below add a second, separately
+pre-registered order: top-N per system per day, ranked on price standing
+(execution quality), never on a fabricated edge. Its basis is named in
+`DAY_RANKING_BASIS` and printed alongside every rendered pick.
+
 IDEMPOTENCY
 ------------
 Re-running the same date writes zero duplicate decisions and zero duplicate
@@ -109,6 +118,134 @@ SELECTION_RULE_RATIONALE = (
     "an already-deterministic order stakes exactly one, chosen by a rule "
     "fixed before any board was ever read, not by a per-run judgment call."
 )
+
+
+# --- The day-level ranking rule --------------------------------------------
+#
+# `SELECTION_RULE` above answers "which of a system's records for ONE GAME
+# gets staked". The owner directive of 2026-09-04 asks a different question:
+# across the WHOLE SLATE, which are this system's best ten? A day-level
+# order is not derivable from the per-game rule -- that rule stops at the
+# game boundary -- so it is pre-registered here, in the open, with the basis
+# named in every rendered output.
+#
+# THE BASIS IS PRICE STANDING, AND PRICE STANDING IS NOT AN EDGE.
+# `price_standing_bps` below is (the board's own de-vigged consensus for the
+# selection) minus (the implied probability of the best price actually
+# available), in basis points. It measures ONE thing: how far the best
+# quote on the board stands from what the rest of the board, on the same
+# quotes, considers fair. It is emphatically NOT an edge: the consensus is
+# derived FROM these same prices, so the two are not independent and their
+# difference can never be evidence that the market is wrong. That is exactly
+# why `DecisionRecord.value_basis` on every record here already reads
+# `price_standing_only:no_calibrated_p_model`, and why ranking on it is
+# honest while ranking on a fabricated edge would not be: it ranks EXECUTION
+# QUALITY (am I taking the best number available for the thing I chose),
+# never predictive merit.
+#
+# A record with no consensus (fewer than `min_books` books quoting both
+# sides) or no price has NO basis value at all. It is not defaulted to zero
+# -- zero is a real, middling standing -- it is ranked last as a named,
+# visible "basis unavailable" group.
+DAY_RANKING_RULE = "TOP_N_PER_SYSTEM_PER_DAY_BY_PRICE_STANDING_V1"
+
+# The owner asked for "top 10 best bets for the projected day", with 10-15
+# named as the useful band. Ten is the default; the number is a parameter
+# because the right N is a product decision, not an engine fact.
+DEFAULT_TOP_N_PER_SYSTEM_PER_DAY = 10
+
+DAY_RANKING_BASIS = (
+    "price standing in bps (the board's own de-vigged consensus for the "
+    "selection minus the implied probability of the best available price), "
+    "then more books at the decision, then lower vig, then selection_id and "
+    "event_id for determinism. Price standing is execution quality, NOT an "
+    "edge: the consensus is computed from these same prices, so their "
+    "difference can never be evidence the market is wrong. It is normally "
+    "NEGATIVE -- a real quote's implied probability carries the book's "
+    "margin, which the de-vigged consensus has had removed -- so ranking "
+    "on it ranks how little of that margin the bettor pays, and a positive "
+    "value means one book is offering better than the board's own "
+    "consensus, not that a profit has been found."
+)
+
+
+@dataclass(frozen=True, slots=True)
+class RankedPick:
+    """One record in a system's day-level top-N, with the number it was
+    ranked on carried alongside it -- a rank whose basis a reader has to
+    take on faith is a rank they cannot check."""
+
+    rank: int
+    record: DecisionRecord
+    game_key: str
+    price_standing_bps: int | None
+    basis: str = DAY_RANKING_BASIS
+
+
+def price_standing_bps(record: DecisionRecord) -> int | None:
+    """How far this record's price stands from the board's own consensus,
+    in basis points -- or None when either input is genuinely absent.
+
+    NOT an edge (see DAY_RANKING_BASIS): consensus and price are the same
+    data seen two ways. None over guess: a missing consensus or price is
+    reported as absent, never as a standing of zero.
+    """
+    if record.consensus_fair is None or record.price_american is None:
+        return None
+    from src.core import odds as odds_math
+
+    implied = odds_math.american_to_probability(record.price_american)
+    return int(round((record.consensus_fair - implied) * 10_000))
+
+
+def _day_rank_key(entry) -> tuple:
+    """Deterministic total order; no tie is ever broken by chance or by
+    iteration order. Records with no basis value sort after every record
+    that has one (the leading 1/0), rather than being given a made-up
+    number that would let them outrank real ones."""
+    record, game_key = entry
+    standing = price_standing_bps(record)
+    vig = (record.friction or {}).get("vig")
+    return (
+        0 if standing is not None else 1,
+        -(standing if standing is not None else 0),
+        -int(record.books_at_decision or 0),
+        (0, vig) if isinstance(vig, (int, float)) else (1, 0.0),
+        record.selection_id or "",
+        record.event_id or "",
+        game_key,
+    )
+
+
+def rank_day_by_system(
+    games: Sequence,
+    *,
+    top_n: int = DEFAULT_TOP_N_PER_SYSTEM_PER_DAY,
+) -> dict:
+    """`{system_id: (RankedPick, ...)}` -- each system's best `top_n` plays
+    across the whole slate, under `DAY_RANKING_RULE`.
+
+    `games` is a sequence of `GameOutcome`. Only `verdict == "play"` records
+    are eligible: a refusal is not a pick, and publishing one in a "best
+    bets" list would misrepresent the engine standing down as the engine
+    choosing. Deterministic: same slate in, same order out, on any machine.
+    """
+    by_system: dict = {}
+    for game in games:
+        for record in game.records:
+            if record.verdict != "play":
+                continue
+            by_system.setdefault(record.system_id, []).append(
+                (record, game.game_key))
+    out: dict = {}
+    for system_id, entries in by_system.items():
+        entries.sort(key=_day_rank_key)
+        out[system_id] = tuple(
+            RankedPick(rank=i, record=record, game_key=game_key,
+                       price_standing_bps=price_standing_bps(record))
+            for i, (record, game_key) in enumerate(entries[:top_n], start=1)
+        )
+    return out
 
 
 class SlateError(ValueError):
@@ -222,6 +359,15 @@ class SlateReport:
     @property
     def n_duplicate_wagers(self) -> int:
         return sum(g.duplicate_wagers for g in self.games)
+
+    def top_picks_by_system(
+        self, top_n: int = DEFAULT_TOP_N_PER_SYSTEM_PER_DAY) -> dict:
+        """Each system's best `top_n` plays for this whole slate under
+        `DAY_RANKING_RULE`. Computed on demand rather than stored: the
+        ranking is a pure function of the records already in this report,
+        and a stored copy is a second version of the same fact that can
+        drift from the first."""
+        return rank_day_by_system(self.games, top_n=top_n)
 
     @property
     def n_vetoed(self) -> int:
@@ -647,13 +793,13 @@ def _side_for_record(record: DecisionRecord) -> str:
     market against the board's own selection_id hash until one matches.
     Never guesses: raises if none does, which would mean either the
     catalogue or `src.board.ids.selection_id` disagrees with itself."""
-    from src.board.ids import selection_id as _sel_id
+    from src.board.readable import side_for_selection
 
     spec = MARKET_CATALOGUE[record.market_key]
-    for side in spec.sides:
-        if _sel_id(sport="mlb", market_key=record.market_key, side=side,
-                   line=record.line) == record.selection_id:
-            return side
+    side = side_for_selection(record.market_key, record.selection_id,
+                              record.line)
+    if side is not None:
+        return side
     raise SlateError(
         f"could not recover side for selection_id={record.selection_id!r} "
         f"market_key={record.market_key!r} line={record.line!r} against "

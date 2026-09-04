@@ -44,6 +44,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping, Optional, Sequence
 
+from src.board.readable import GameTeams, render_record
 from src.board.settle import LOSS, PUSH, VOID, WIN
 from src.core import calibration as calibration_module
 from src.factory.scorecard import (
@@ -181,6 +182,14 @@ class DecisionSummary:
     # "structurally impossible to compute one for this provenance"; a
     # reader must never have to guess which.
     p_model_provenance: str
+    # Owner directive, 2026-09-04: a person reading this file must
+    # understand every pick without opening code. `selection_id` is a hash
+    # -- correct as identity, useless as prose -- so each decision also
+    # carries the rendered bet ("Atlanta Braves (away) moneyline (+130,
+    # DraftKings)", `src.board.readable`) and the system that made it.
+    # Defaulted so a caller with no event-name map still builds a review.
+    system_id: str = ""
+    selection_text: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -268,6 +277,7 @@ def build_review(
     *,
     calibration_decisions: Optional[Sequence[DecisionRecord]] = None,
     postmortem_section: str = "",
+    event_teams: Optional[Mapping[str, Mapping]] = None,
 ) -> EodReview:
     """Build the deterministic end-of-day self-review for `date`.
 
@@ -282,6 +292,12 @@ def build_review(
     `decisions` (today only) for a caller with no fuller history to offer,
     which will almost always report INSUFFICIENT SAMPLE -- an honest
     result, not a bug.
+
+    `event_teams` is `{event_id: {"home_team":.., "away_team":..}}` (the
+    shape `src.board.gamekey.events_for_date` returns), used only to render
+    each decision's bet in English. Omitted, every pick still renders --
+    "the home side moneyline" -- because a missing name must degrade the
+    prose, never restore the hash.
     """
     if not decisions:
         raise EodReviewError(
@@ -295,8 +311,12 @@ def build_review(
             selection_id=d.selection_id, price_american=d.price_american,
             edge_bps=d.edge_bps, known_at_grade=d.known_at_grade,
             thesis=d.thesis, p_model_provenance=d.p_model_provenance,
+            system_id=d.system_id,
+            selection_text=render_record(
+                d, GameTeams.from_event_meta(
+                    (event_teams or {}).get(str(d.event_id)))),
         ) for d in decisions if d.verdict == "play"),
-        key=lambda s: s.event_id,
+        key=lambda s: (s.event_id, s.system_id, s.selection_id or ""),
     ))
 
     veto_groups: dict = {}
@@ -449,11 +469,19 @@ def render_markdown(review: EodReview) -> str:
     if not review.decisions_made:
         lines.append("No `play` verdicts today.")
     for d in review.decisions_made:
+        # The bet in English first, the machine identity after it: a reader
+        # should never have to decode a hash to learn what was picked, and
+        # an auditor should never have to guess which row it was.
         lines.append(
-            f"- {d.event_id} {d.market_key}/{d.selection_id} "
-            f"price={d.price_american} edge_bps={d.edge_bps} "
+            f"- **{d.selection_text or d.market_key}** "
+            f"-- [{d.system_id or 'unknown system'}] "
+            f"event={d.event_id} selection_id={d.selection_id} "
+            f"edge_bps={d.edge_bps} "
             f"p_model_provenance={d.p_model_provenance} "
-            f"grade={d.known_at_grade}: {d.thesis or '(no thesis recorded)'}"
+            f"grade={d.known_at_grade}"
+        )
+        lines.append(
+            f"  - because: {d.thesis or '(no thesis recorded)'}"
         )
     lines.append("")
 
@@ -602,14 +630,19 @@ def write_review(
     chain_path: Optional[str] = None,
     calibration_decisions: Optional[Sequence[DecisionRecord]] = None,
     postmortem_section: str = "",
+    event_teams: Optional[Mapping[str, Mapping]] = None,
 ) -> dict:
     """Build, render, write `docs/eod/DATE.md`, and append a summary row to
     the EOD review chain. Raises `EodReviewError` (writes nothing) when
     `date` has no decisions -- the CLI is expected to let that propagate as
-    an honest refusal rather than catching it into an empty report."""
+    an honest refusal rather than catching it into an empty report.
+
+    `event_teams` is passed through to `build_review` verbatim (see its
+    docstring) so each written pick names the clubs, not a hash."""
     review = build_review(date, accounts, decisions, reviews, scorecards,
                           calibration_decisions=calibration_decisions,
-                          postmortem_section=postmortem_section)
+                          postmortem_section=postmortem_section,
+                          event_teams=event_teams)
     markdown = render_markdown(review)
 
     target_dir = Path(docs_dir) if docs_dir is not None else repo_root() / "docs" / "eod"
