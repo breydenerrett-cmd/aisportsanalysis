@@ -22,3 +22,8 @@
 - db6eef8 cherry-picked; 37 lane tests pass here; tie audit reproduced (0 three-way books, gate min 5 intact); price-payload hash f2ff7b74… reproduced from manifest; dry_run 3,682 rows, 1,597/2,085, terciles fit on 2023 only, 2024 buckets 768/668/649. No outcome read.
 - Dispatched: adversarial preregistration review (Opus) over final spec + eval code. register_family only on a pass.
 - Capture: HEALTHY_IDLE.
+
+## 2026-09-04 22:5xZ — adversarial prereg review: FAIL (bb6eaee)
+- Blocking: B1 H1 inferred on pooled universe / no 2023 screen leg; B2 FDR m=3 in code vs m=2 in record; B3 no gate mechanised. Must-fix: M1 family.register cannot freeze this record shape; M2 A5 chi-square already fatal on feature-side counts (p=0.00203) → H2 replication is a pre-determined POPULATION_SHIFT_FAIL, to be pre-registered as such (threshold NOT changed).
+- Clean: PIT/leakage, hashes, window guard (mutation-tested). Open items decided (family_id kept; hash serialization normative in code; n>=300 all terciles).
+- Dispatched Sonnet fix lane. Registration still not called. Capture: healthy (22:05Z commit landed).
