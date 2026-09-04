@@ -1,0 +1,22 @@
+# Weekend queue — source of truth
+
+Statuses: READY RUNNING VERIFYING DONE BLOCKED_HUMAN BLOCKED_EXTERNAL
+FAILED_RETRYABLE FAILED_TERMINAL DEFERRED. One task RUNNING per lane.
+
+| ID | Pri | Task | Depends | Runtime | Status | Evidence required | Files | SHA | Blocker |
+|---|---|---|---|---|---|---|---|---|---|
+| W0 | P0 | Verify F5 freeze independently from persisted data | – | bash/python (parent) | DONE | recount + hash match + test | docs/F5_UNIVERSE_FROZEN.md, tests/test_f5_universe.py | ed0373f (verified 21:20Z) | – |
+| W1 | P0 | Canonical capture-health helper: RUNNING/HEALTHY_IDLE/OVERDUE/FAILED/UNKNOWN from artifacts+heartbeat+lock, no self-matching pgrep; CLI + regression tests | – | Sonnet | READY | tests green; CLI output on live state | src/capture/health.py, tests/test_capture_health.py, scripts/capture_health.sh | – | – |
+| W2 | P0 | Capture externalization cutover (GitHub Actions) | repo side done 04d1e4f | owner | BLOCKED_HUMAN | one external commit lands | .github/workflows/forward-capture.yml, docs/CAPTURE_EXTERNALIZATION.md | 04d1e4f | needs ODDS_API_KEY Actions secret + default-branch reachability |
+| W3 | P0 | Opus methodology review: A/B/C family-scope decision + hard calls 1-6 | W0 | Opus (review only) | RUNNING | dated review section + VERDICT line | docs/PREREG_F5_FAMILIES.md | – | – |
+| W4 | P0 | If B: search owned data for T-2h full-game comparator; if purchase needed, frozen acquisition rule doc, then BLOCKED_HUMAN if outside approved scope | W3 | Sonnet + bash | DEFERRED | coverage report / rule doc | docs/PREREG_F5_COMPARATOR_RULE.md | – | – |
+| W5 | P0 | Finalize prereg per review; adversarial prereg review; then register_family | W3 (A/C) or W4 | Sonnet + Opus adversarial | DEFERRED | review pass + register_family record | docs/PREREG_F5_FAMILIES.md, data/research/f5/ | – | – |
+| W6 | P0 | Build + PIT-validate F5 calibration evaluation path (standalone per review) | W3 | Sonnet | DEFERRED | tests incl. leakage fixture | src/research/f5_eval.py, tests/ | – | – |
+| W7 | P0 | Preregistered discovery (2023) → replication (2024) → FDR → battery, all outcomes recorded | W5, W6 | bash/python | DEFERRED | results JSON + every hypothesis recorded | data/research/f5/, docs/F5_RESEARCH_RESULTS.md | – | – |
+| W8 | P0 | docs/F5_RESEARCH_RESULTS.md post-mortem (nulls first-class) | W7 | Sonnet | DEFERRED | doc complete per directive list | docs/F5_RESEARCH_RESULTS.md | – | – |
+| W9 | P1 | Totals feature-legitimacy audit: legit run-environment vs ML-pretending; methodology before search | W7 running or done | Sonnet (+Opus review) | DEFERRED | audit table + methodology doc | docs/TOTALS_METHODOLOGY.md | – | – |
+| W10 | P1 | Factory scale prep: canonical wager store, strategy→wager refs, unique-wager counts, correlation clustering, retire/mutate/replace framework | – | Sonnet | DEFERRED | design + tests | src/evolab/, docs/ | – | – |
+| W11 | P1 | Reasoning loop improvements (mechanism grading independent of W/L) | – | Sonnet | DEFERRED | tests | src/review/, src/engine/ | – | – |
+| W12 | P1 | Daily-loop unattended validation review (refusal of bankroll-only promotion) | daily trigger | bash | READY (daily) | ESCALATE-free run + ledger check | scripts/daily_loop.sh | – | – |
+| W13 | P0 | Weekend routine: hourly wake running the cycle procedure | – | trigger | READY | trigger updated | – | – | – |
+| W14 | P1 | docs/WEEKEND_HANDOFF.md before Monday | all | parent | DEFERRED | doc | docs/WEEKEND_HANDOFF.md | – | – |
