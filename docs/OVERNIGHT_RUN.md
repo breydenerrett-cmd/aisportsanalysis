@@ -583,3 +583,15 @@ https://linehound-staging.fly.dev/billing/webhook -> dry-run purchase.
 - 2026-09-04T10:09Z daily_loop: engine slate --date 2026-09-04 exit=2
 - 2026-09-04T10:09Z daily_loop: engine settle --date 2026-09-03 exit=0
 - 2026-09-04T10:09Z daily_loop: eod --date 2026-09-03 exit=0
+
+- **2026-09-04 15:16Z and 16:15Z forward-capture windows MISSED.** The
+  owner-approved T-2h normalization run (4,315 games, ~91 minutes, 16 resume
+  attempts against a throttling provider) held the interactive session, so
+  neither trigger fired. The 16:15Z window was recovered at 16:22Z; the
+  15:16Z window is gone and is not reconstructible. Earlier windows that day
+  (11:23Z, 12:29Z, 13:23Z, 14:23Z) committed with no odds rows -- those are
+  legitimate quiet-hour no-ops, not misses: the newest odds file before the
+  gap is 10:08Z because no game was inside the capture window. This is the
+  third time in-session work has cost live capture, and the standing note
+  applies: capture is still a Claude Routine, and externalizing it (task
+  L25) remains the fix.
