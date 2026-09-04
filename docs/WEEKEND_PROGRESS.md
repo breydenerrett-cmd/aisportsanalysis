@@ -33,3 +33,7 @@
 - Family frozen: F5_MONEYLINE_CALIBRATION_2026H1, m=3, spec sha f637dd17…, both universe hashes verified (commit after 5dc74e8).
 - Results 72c0c76: H1 2023 −0.58pp (SCREEN_FAIL; 2024 −0.88pp p=0.41). H2-bottom 2023 +4.06pp → 2024 −3.98pp p=0.021 (sign flip; POPULATION_SHIFT_FAIL, χ²=12.40 p=0.002 pre-registered). H2-top 2023 −1.66pp → 2024 +1.78pp p=0.33 (POPULATION_SHIFT_FAIL). No threshold touched. Per-book H1: 13 of 15 books negative, 2 positive (superbook, wynnbet), none significant — earlier line in this log overstated it.
 - W8 results doc dispatched (Sonnet). W9 totals audit now READY. Capture healthy through the run.
+
+## 2026-09-04 23:3xZ — W9 totals methodology landed (9b28c62)
+- Coverage audit re-run here reproduces docs/TOTALS_COVERAGE.md byte-identical (deterministic, counts only). 5/7 matrix features classed MONEYLINE_FEATURE_PRETENDING; weather/umpire NOT_PIT_AVAILABLE; standalone path recommended over widening funnel.
+- Dispatched: Opus methodology review of TOTALS_METHODOLOGY.md (targeted packet); W10 factory-scale prep design lane (Sonnet). Capture healthy.
