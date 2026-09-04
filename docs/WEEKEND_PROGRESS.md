@@ -82,3 +82,6 @@
 
 ## 2026-09-05 07:3xZ — W11 reasoning-loop audit landed
 - No outcome coupling found across five attack vectors; gap was test coverage only. Pinned: a WIN with a refuted mechanism grades REASONING_WRONG at settlement and classifier layers. docs/REASONING_LOOP_AUDIT.md. Totals adversarial review still running. Capture healthy.
+
+## 2026-09-05 08:1xZ — totals adversarial review: FAIL (35e0beb)
+- Blocking: B-A1 prereg_spec_sha256 unbounded (moves on append; starts in DRAFT text); B-A2 book-count bucket occupancy specified but not built. Must-fix: M-A1 freeze record omits numeric gates / floor not cross-checked at run; M-A2 three conflicting CANNOT_TELL precedence orders (implemented one absorbs a fatal battery flag); M-A3 run_full_evaluation happy path untested. Clean: pooled-rows, manifest, anchor, dry_run, freezes. Fix lane dispatched (Sonnet). Capture healthy.
