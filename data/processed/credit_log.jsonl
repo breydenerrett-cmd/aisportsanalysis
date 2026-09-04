@@ -208,3 +208,6 @@
 {"caller": "prop_prices.run", "credits_remaining": 73191, "credits_used_last": 0, "utc": "2026-09-04T07:21:30.855400Z"}
 {"caller": "batter_props.run", "credits_remaining": 73191, "credits_used_last": 0, "utc": "2026-09-04T07:21:31.159470Z"}
 {"caller": "derivative_markets.run", "credits_remaining": 73191, "credits_used_last": 0, "utc": "2026-09-04T07:21:31.736729Z"}
+{"caller": "f5_tminus2_sanity_tranche.preflight", "credits_remaining": 73191, "credits_used_last": 0, "utc": "2026-09-04T07:39:58.299080Z"}
+{"caller": "f5_tminus2_sanity_tranche.postflight", "credits_remaining": 72971, "credits_used_last": 0, "utc": "2026-09-04T07:40:24.430995Z"}
+{"caller": "f5_tminus2_negative_control.postflight", "credits_remaining": 72969, "credits_used_last": 0, "utc": "2026-09-04T07:47:58.410702Z"}
