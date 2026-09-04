@@ -656,10 +656,15 @@ class TrivialAlwaysHomeSystem:
             system_id=self.id, system_version=self.version,
             market_key="h2h", side="home", p_model=self.p_model,
             p_model_provenance=PROBABILITY_PROVENANCE_PLACEHOLDER,
-            thesis="null control: always proposes home at a fixed "
-                   "convention p_model, never price/clock-derived and "
-                   "never fit -- provenance=placeholder, so PROJECT can "
-                   "never compute an edge_bps for this system "
-                   "-- src.engine.glue",
+            thesis="This is a DELIBERATE CONTROL, not a pick anyone "
+                   "should follow: it takes the home side of the "
+                   "moneyline in every game, always, on no information at "
+                   "all. The direction and the p_model are fixed "
+                   "conventions written down in code before any board was "
+                   "read -- never fit, never derived from price or a "
+                   "clock -- and provenance=placeholder means no edge_bps "
+                   "can ever be computed for it. That is the point: it is "
+                   "the baseline every real system has to beat "
+                   "(src.engine.glue).",
             evidence=("trivial_fallback",),
         ),)

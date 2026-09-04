@@ -2213,17 +2213,60 @@ def _cmd_engine_slate(args) -> int:
           "carry a counterargument")
     print(f"  [PAPER] wagers placed: {report.n_new_wagers} new, "
           f"{report.n_duplicate_wagers} already placed")
+    # Team names are facts about the EVENT, not about a quote, so they are
+    # not on any record -- they are read here, at the rendering boundary,
+    # and handed to `src.board.readable`. A game with no event row still
+    # renders ("the home side moneyline"), never a hash.
+    from src.board import gamekey as _gamekey
+    from src.board.readable import GameTeams, render_record
+
+    event_meta = _gamekey.events_for_date(args.date)
+    teams_for = lambda event_id: GameTeams.from_event_meta(
+        event_meta.get(str(event_id)))
+
     for g in report.games:
         for record in g.records:
             staked = " STAKED" if record.stake_units else ""
             print(f"    [{record.system_id}] {g.game_key} "
-                  f"{record.market_key}/{record.selection_id} "
-                  f"verdict={record.verdict} price={record.price_american} "
+                  f"{render_record(record, teams_for(record.event_id))} "
+                  f"[selection_id={record.selection_id}] "
+                  f"verdict={record.verdict} "
                   f"p_model={record.p_model} value_basis={record.value_basis} "
                   f"grade={record.known_at_grade} "
                   f"recorded_utc={record.recorded_utc} "
                   f"record_provenance={record.record_provenance}{staked}")
     print(f"  selection_rule      : {engine_slate.SELECTION_RULE}")
+
+    # The owner-facing half of this command: each system's best N picks for
+    # the day, each one readable on its own -- what the bet is, at what
+    # price, at which book, and why -- without opening any code.
+    # `getattr` rather than `args.top_n`: callers that build an args
+    # namespace by hand (tests, the daily loop) predate this flag and
+    # must keep working at the documented default.
+    top_n = getattr(args, "top_n", None) or \
+        engine_slate.DEFAULT_TOP_N_PER_SYSTEM_PER_DAY
+    print("")
+    print(f"  TOP {top_n} PICKS PER SYSTEM FOR {args.date} "
+          f"[{'PAPER' if not args.dry_run else 'PAPER, dry-run'}]")
+    print(f"  ranking rule: {engine_slate.DAY_RANKING_RULE}")
+    print(f"  ranking basis: {engine_slate.DAY_RANKING_BASIS}")
+    ranked = report.top_picks_by_system(top_n=top_n)
+    if not ranked:
+        print("    no play verdicts on this slate -- nothing to rank")
+    for system_id in sorted(ranked):
+        print(f"\n  [{system_id}]")
+        for pick in ranked[system_id]:
+            record = pick.record
+            standing = (f"{pick.price_standing_bps:+d} bps vs the board's "
+                        f"own consensus across "
+                        f"{record.books_at_decision} book(s)"
+                        if pick.price_standing_bps is not None
+                        else "price standing unavailable (no consensus at "
+                             "this decision instant)")
+            print(f"    {pick.rank}. "
+                  f"{render_record(record, teams_for(record.event_id))}")
+            print(f"       price standing: {standing}")
+            print(f"       because: {record.thesis or '(no thesis recorded)'}")
     return EXIT_OK
 
 
@@ -2519,10 +2562,18 @@ def cmd_eod(args) -> int:
             accounts.append(eod_module.account_day_from_ledger_rows(
                 system_id, rows, date_str))
 
+    # Team names live on the event, not on any decision record, so the
+    # rendering boundary is where they join -- read here, best-effort: a
+    # date with no event rows still writes a full report, in which every
+    # pick reads "the home side moneyline" rather than a hash.
+    from src.board import gamekey as gamekey_module
+
+    event_teams = gamekey_module.events_for_date(date_str)
+
     try:
         result = eod_module.write_review(
             date_str, accounts, decisions, reviews, scorecards,
-            calibration_decisions=all_decisions)
+            calibration_decisions=all_decisions, event_teams=event_teams)
     except eod_module.EodReviewError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return EXIT_ERROR
@@ -2868,6 +2919,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--dry-run", action="store_true",
         help="run the full pipeline and print what WOULD be written, "
              "without writing any decision or wager")
+    engine_slate.add_argument(
+        "--top-n", type=int, default=None, metavar="N",
+        help="how many day-ranked picks to print per system (default "
+             "10; the ranking rule and its basis are printed with them)")
 
     engine_settle = engine_sub.add_parser(
         "settle", help="S6a: settle a date's paper wagers from real "
