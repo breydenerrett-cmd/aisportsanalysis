@@ -580,3 +580,6 @@ https://linehound-staging.fly.dev/billing/webhook -> dry-run purchase.
   kind of thing the owner warned must not consume capture: the daily loop now
   runs slate/settle/EOD unattended, but capture itself is still a Claude
   Routine, and this is the second time in-session work has cost live windows.
+- 2026-09-04T10:09Z daily_loop: engine slate --date 2026-09-04 exit=2
+- 2026-09-04T10:09Z daily_loop: engine settle --date 2026-09-03 exit=0
+- 2026-09-04T10:09Z daily_loop: eod --date 2026-09-03 exit=0
