@@ -877,3 +877,32 @@ class TestB1WiringInRunFullEvaluation(unittest.TestCase):
         self.assertTrue(seen_battery_seasons)
         for seasons in seen_battery_seasons:
             self.assertEqual(seasons, {"2024"}, seen_battery_seasons)
+
+
+class TestR1R2ReReviewFixes(unittest.TestCase):
+    """R1: single-season battery leg records season_split as skipped.
+    R2: spec_sha256 is bounded to the amendments section, so appending a
+    later top-level section does not move the hash."""
+
+    def test_r2_appending_section_does_not_move_spec_hash(self):
+        from src.research import f5_eval as e
+        base = (e._FINAL_SPEC_MARKER + "\nspec body\n"
+                + e._ADVERSARIAL_MARKER + "\nreview\n"
+                + e._AMENDMENTS_MARKER + "\namendments body\n")
+        appended = base + "\n## Adversarial re-review — later\nmore text\n"
+        self.assertEqual(e._extract_spec_text(base), e._extract_spec_text(appended))
+        self.assertNotIn("more text", e._extract_spec_text(appended))
+
+    def test_r1_single_season_leg_records_season_split_skipped(self):
+        from src.research import f5_eval as e
+        import random
+        rng = random.Random(7)
+        rows = []
+        for i in range(120):
+            rows.append({"date": "2024-%02d-%02d" % (4 + i // 28, 1 + i % 28),
+                         "season": "2024", "won": rng.random() < 0.55,
+                         "implied": 0.5, "side": "home", "price": 2.0,
+                         "game_pk": str(700000 + i), "book_count": 6})
+        result = e.run_battery(rows, effect_floor=0.02)
+        self.assertIn("season_split", result["skipped_checks"])
+        self.assertIn("single-season", result["skipped_checks"]["season_split"])

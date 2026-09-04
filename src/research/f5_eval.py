@@ -495,8 +495,14 @@ def _extract_spec_text(full_text: str) -> str:
     if _ADVERSARIAL_MARKER in spec_section:
         spec_section = spec_section.split(_ADVERSARIAL_MARKER, 1)[0]
     amendments_section = full_text.split(_AMENDMENTS_MARKER, 1)[1]
+    # R2: bound the amendments section to the next top-level heading so that
+    # appending later review sections to the document cannot move the hash
+    # the frozen record was taken against.
+    nxt = amendments_section.find("\n## ")
+    if nxt != -1:
+        amendments_section = amendments_section[:nxt]
     return (_FINAL_SPEC_MARKER + spec_section
-            + _AMENDMENTS_MARKER + amendments_section)
+            + _AMENDMENTS_MARKER + amendments_section.rstrip("\n") + "\n")
 
 
 def spec_sha256(spec_path=SPEC_DOC_PATH) -> str:
@@ -701,6 +707,19 @@ def run_battery(rows, *, effect_floor) -> dict:
     result = battery.run(rows, effect_floor=effect_floor)
     skipped = {name: check["skipped"] for name, check in result["report"].items()
                if isinstance(check, dict) and "skipped" in check}
+    # R1: the battery runs on the 2024 replication leg only, so its
+    # season_split rule (a FATAL_CHECK) is structurally unable to fire.
+    # battery.run returns a passing report for it rather than a skip; record
+    # the skip here so an inert fatal rule is never silently lost (A4).
+    seasons = {str(r.get("season") or str(r.get("date", ""))[:4]) for r in rows}
+    if len(seasons) <= 1 and "season_split" not in skipped:
+        reason = ("single-season leg (%s): season_split cannot fire; "
+                  "leave-one-season-out is not evaluable on the replication "
+                  "leg by design (B1)" % (",".join(sorted(seasons)) or "none"))
+        skipped["season_split"] = reason
+        rep = result["report"].get("season_split")
+        if isinstance(rep, dict):
+            rep["skipped"] = reason
     result["skipped_checks"] = skipped
     return result
 
