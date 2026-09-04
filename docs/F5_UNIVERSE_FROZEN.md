@@ -97,3 +97,31 @@ If a future acquisition or repair changes the eligible set on purpose,
 re-run the module deliberately, diff the new hash against this document,
 and update both together — never let the test start passing again by
 silently regenerating the manifest to match new data without recording why.
+
+## Amendment — 2026-09-04: price-payload hash (A3)
+
+`PREREG_F5_FAMILIES.md` flaw A3: the content hash above covers identity of
+the eligible set only (which `game_pk`s), not any book price. A re-fetch,
+repair, or normalisation pass could rewrite every price in
+`f5_tminus2_primary.jsonl` without moving that hash by a bit — which means
+this family could be pre-registered against a denominator whose PRICES it
+cannot prove did not move.
+
+`src.research.f5_universe.price_payload_hash(rows)` closes that gap: a
+sha256 over, per `game_pk`, `snapshot_at` and each book's `key` plus both
+`away_price`/`home_price`, canonically ordered (books sorted by `key`,
+`last_update` excluded so a harmless re-fetch that only refreshes provider
+timestamps does not look like a moved price). It is computed over every row
+of the primary view (both `OK` and `PRIMARY_SNAPSHOT_UNAVAILABLE`) and
+recorded in the manifest as `price_payload_hash`.
+
+**Price-payload hash (sha256):**
+
+```
+f2ff7b748b1b76f1702cfe2b29750f684e554ffe2c773887a04f132bf2275ec7
+```
+
+`src/research/f5_eval.py` re-verifies both this hash and the identity hash
+above at run time, before any statistic is computed, and aborts (raises)
+rather than proceeding on a moved universe. The original text of this
+document, above this amendment, is unchanged.

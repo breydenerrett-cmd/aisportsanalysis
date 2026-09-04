@@ -49,6 +49,21 @@ class TestFrozenManifestMatchesRecomputation(unittest.TestCase):
         again = universe.build_universe()
         self.assertEqual(self.recomputed["content_hash"], again["content_hash"])
 
+    def test_price_payload_hash_matches_recomputation(self):
+        # A3 amendment: the identity hash alone cannot prove a price did not
+        # move; this hash must also verify or the denominator's PRICES could
+        # have silently changed since the freeze.
+        self.assertEqual(
+            self.frozen["price_payload_hash"], self.recomputed["price_payload_hash"],
+            "the priced payload changed since the freeze -- a re-fetch or "
+            "repair moved a book price without moving the identity hash "
+            "(A3, PREREG_F5_FAMILIES.md); re-freeze deliberately if intended")
+
+    def test_price_payload_hash_is_deterministic(self):
+        again = universe.build_universe()
+        self.assertEqual(self.recomputed["price_payload_hash"],
+                         again["price_payload_hash"])
+
     def test_frozen_counts_match_recomputation(self):
         self.assertEqual(self.frozen["counts"], self.recomputed["counts"])
 
@@ -104,6 +119,58 @@ class TestManifestShapeAndInvariants(unittest.TestCase):
 
     def test_raw_attempts_fully_accounted_by_eligible_plus_excluded(self):
         self.assertTrue(self.m["exclusion_ledger"]["raw_attempts_accounted"])
+
+    def test_price_payload_hash_present_and_stable_under_key_reordering(self):
+        # Canonical ordering (books sorted by key) must make the hash
+        # independent of provider list order -- otherwise a harmless re-fetch
+        # that reordered bookmakers in the response would look like a moved
+        # denominator.
+        self.assertIn("price_payload_hash", self.m)
+        reordered = [dict(g) for g in self.m["games"]]
+        self.assertEqual(universe.price_payload_hash(self.m["games"]),
+                         universe.price_payload_hash(reordered))
+
+
+class TestPricePayloadHash(unittest.TestCase):
+    """Unit-level: no real data store required."""
+
+    def _row(self, game_pk, snapshot_at, books):
+        return {"game_pk": game_pk, "snapshot_at": snapshot_at,
+                "books": [{"key": k, "h2h_1st_5_innings":
+                          {"away_price": a, "home_price": h}}
+                         for k, a, h in books]}
+
+    def test_book_order_does_not_change_the_hash(self):
+        a = self._row("1", "2023-05-10T00:00:00Z",
+                      [("dk", 105, -135), ("fd", 110, -140)])
+        b = self._row("1", "2023-05-10T00:00:00Z",
+                      [("fd", 110, -140), ("dk", 105, -135)])
+        self.assertEqual(universe.price_payload_hash([a]),
+                         universe.price_payload_hash([b]))
+
+    def test_a_changed_price_changes_the_hash(self):
+        a = self._row("1", "2023-05-10T00:00:00Z", [("dk", 105, -135)])
+        b = self._row("1", "2023-05-10T00:00:00Z", [("dk", 106, -135)])
+        self.assertNotEqual(universe.price_payload_hash([a]),
+                            universe.price_payload_hash([b]))
+
+    def test_a_changed_snapshot_at_changes_the_hash(self):
+        a = self._row("1", "2023-05-10T00:00:00Z", [("dk", 105, -135)])
+        b = self._row("1", "2023-05-10T00:05:00Z", [("dk", 105, -135)])
+        self.assertNotEqual(universe.price_payload_hash([a]),
+                            universe.price_payload_hash([b]))
+
+    def test_last_update_drift_does_not_change_the_hash(self):
+        # last_update is intentionally not hashed -- a harmless re-fetch that
+        # only refreshes provider timestamps must not look like a moved price.
+        a = {"game_pk": "1", "snapshot_at": "t", "books": [
+            {"key": "dk", "h2h_1st_5_innings":
+             {"away_price": 105, "home_price": -135, "last_update": "X"}}]}
+        b = {"game_pk": "1", "snapshot_at": "t", "books": [
+            {"key": "dk", "h2h_1st_5_innings":
+             {"away_price": 105, "home_price": -135, "last_update": "Y"}}]}
+        self.assertEqual(universe.price_payload_hash([a]),
+                         universe.price_payload_hash([b]))
 
 
 if __name__ == "__main__":

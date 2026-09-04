@@ -47505,11 +47505,12 @@
       "tie": false
     }
   ],
+  "price_payload_hash": "f2ff7b748b1b76f1702cfe2b29750f684e554ffe2c773887a04f132bf2275ec7",
   "schema_version": 1,
   "snapshot_rule": "tminus2_v1",
   "source": {
-    "primary_view": "/home/user/aisportsanalysis/data/historical/odds_first_five/f5_tminus2_primary.jsonl",
-    "raw_store": "/home/user/aisportsanalysis/data/historical/odds_first_five",
-    "settlement": "/home/user/aisportsanalysis/data/historical/first_five_results.jsonl"
+    "primary_view": "/home/user/aisportsanalysis/.claude/worktrees/agent-a4b5471aecf1e1ea1/data/historical/odds_first_five/f5_tminus2_primary.jsonl",
+    "raw_store": "/home/user/aisportsanalysis/.claude/worktrees/agent-a4b5471aecf1e1ea1/data/historical/odds_first_five",
+    "settlement": "/home/user/aisportsanalysis/.claude/worktrees/agent-a4b5471aecf1e1ea1/data/historical/first_five_results.jsonl"
   }
 }

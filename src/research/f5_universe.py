@@ -89,6 +89,43 @@ def content_hash(games: list) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
+def price_payload_hash(rows: list) -> str:
+    """Deterministic sha256 over the PRICED PAYLOAD of the primary view --
+    per `game_pk`: `snapshot_at`, and each book's key plus both prices,
+    canonically ordered.
+
+    A3 (PREREG_F5_FAMILIES.md): the identity hash (`content_hash`) proves
+    which games are in the set, not what price each carries -- a re-fetch or
+    repair could rewrite every book price without moving that hash by a bit.
+    This hash answers the other half: is this the same set of PRICES. Books
+    are sorted by `key` (never trust provider ordering) and only `key` +
+    both prices are hashed (never `last_update`, which drifts on a harmless
+    re-fetch that changes nothing a hypothesis reads). Rows with no `books`
+    (an UNAVAILABLE row) still contribute their `game_pk` and `snapshot_at`
+    so the hash also proves the shape of the priced/unpriced split, not just
+    the OK rows.
+    """
+    entries = []
+    for row in rows:
+        books = []
+        for book in row.get("books") or []:
+            market = book.get("h2h_1st_5_innings") or {}
+            books.append({
+                "key": book.get("key"),
+                "away_price": market.get("away_price"),
+                "home_price": market.get("home_price"),
+            })
+        books.sort(key=lambda b: (b["key"] is None, b["key"]))
+        entries.append({
+            "game_pk": str(row.get("game_pk")),
+            "snapshot_at": row.get("snapshot_at"),
+            "books": books,
+        })
+    entries.sort(key=lambda e: int(e["game_pk"]))
+    payload = json.dumps(entries, separators=(",", ":"), sort_keys=True).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
 def build_universe(*, primary_path=PRIMARY_VIEW_PATH, settlement_path=SETTLEMENT_PATH,
                     raw_store=RAW_STORE) -> dict:
     """Recompute the frozen manifest from source data. Deterministic: same
@@ -230,6 +267,10 @@ def build_universe(*, primary_path=PRIMARY_VIEW_PATH, settlement_path=SETTLEMENT
         "games": games,
     }
     manifest["content_hash"] = content_hash(games)
+    # A3 amendment: the identity hash proves which games, not what prices --
+    # this proves the priced payload too, and is re-verified at run time by
+    # src/research/f5_eval.py before any statistic is computed.
+    manifest["price_payload_hash"] = price_payload_hash(primary_rows)
     return manifest
 
 
