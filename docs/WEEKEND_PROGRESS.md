@@ -60,3 +60,7 @@
 ## 2026-09-05 02:4xZ — W18 factory slice 2 landed (11dea8b, reclaimed)
 - Lane stalled waiting on a test monitor; I ran the fast suite in its worktree (4,051 green) and committed path-specifically. Headline: 8,811 sweep strategies → 6,050 unique wagers (dedup ratio 0.0006 of decisions), 1,062 Jaccard>=0.8 families. Direct answer to "why not 100,000 systems": most of the existing population is duplicates of ~1,000 distinct behaviours.
 - W16 totals eval path still running. Capture healthy.
+
+## 2026-09-05 03:2xZ — W16 totals eval path landed; audit reconciled at 6h
+- W16: totals_rows/totals_eval mirror f5_eval; 48 tests; full suite 4,441 green in lane. Real dry_run: joint 1,295/1,284 vs audit 1,321/1,320 — cause: audit hardcoded 12h while B5 froze 6h. Audit re-run at 6h (1bec5ae): 1,316/1,313. Manifest: 1,295+1,284 joint + 50 not-joined-to-settlement = 2,629 = audit 1,316+1,313. Reconciled exactly.
+- The 50 unjoined events must be characterised before freezing (F5 precedent: AZ/ARI join bug hid two seasons). W20 dispatched. W17 prereg draft dispatched in parallel (denominator placeholders). Manifest NOT frozen.
