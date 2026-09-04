@@ -28,13 +28,21 @@ cannot gate anything, which is the whole reason this file exists.
 THE FIX AND WHAT THIS GUARDS
 -----------------------------
 Each `run()` now takes a `credit_log_store` kwarg (default `None` == real
-disk, so production behavior is byte-identical) threaded into
-`can_spend(..., store=credit_log_store)` directly, or into a nested
-`spent_today(store=credit_log_store)` passed as `can_spend(..., spent=...)`
-(derivative_markets.run, batter_props.run -- the latter passes `spent=None`
-outright for the non-droppable floor family, which is correct: that family
-is EXEMPT from the envelope by `can_spend`'s own contract, see
-`budget.can_spend`'s docstring point 1, so it never needs a store at all).
+disk, so production behavior is byte-identical) threaded straight into
+`can_spend(..., store=credit_log_store)` -- every one of these five modules
+now follows dense.run/prop_listing.run/prop_prices.run's original pattern.
+
+(A second round of this bug, found and fixed separately on 2026-09-04,
+pinned by tests/test_budget_band_unbanded_spend_guard.py: derivative_
+markets.run and batter_props.run used to instead pass an explicit
+`spent=budget_module.spent_today(store=credit_log_store)` -- hermetic per
+THIS file's checks, since it did carry a `store=` kwarg, but band-WRONG,
+because `spent_today()` sums every budget_band while `can_spend`'s own
+default is the band-scoped `capture_spent_today()`. Hermeticity and
+band-correctness are different properties; this file only ever checked the
+former, which is why that regression shipped past it. Both call sites now
+omit `spent=` entirely and pass only `store=credit_log_store`, letting
+`can_spend`'s own default supply the band-correct total.)
 Every affected unit test now passes `tests.HERMETIC_CREDIT_LOG_STORE` -- a
 path guaranteed to never exist -- instead of leaving this seam at its
 real-disk default.
@@ -151,17 +159,20 @@ class EnvelopeCheckIsHermeticTests(unittest.TestCase):
                                         f"{BUDGET_ALIAS}.can_spend at all")
                 for call in calls:
                     kwargs = _kwarg_names(call)
-                    # Either the call passes its own `store=` straight
-                    # through (dense/prop_listing/prop_prices' pattern), or
-                    # it passes `spent=` explicitly -- a literal `None` (the
-                    # non-droppable floor family, exempt from the envelope
-                    # by `can_spend`'s own contract) or a nested,
-                    # store-scoped `spent_today(...)` call (derivative_
-                    # markets/batter_props' pattern, already checked by
-                    # `test_every_spent_today_call_passes_an_explicit_store`
-                    # above). What is NEVER acceptable is neither: that is
-                    # `can_spend` falling through to `spent_today(now=now,
-                    # store=store)` with `store=None`, i.e. real disk.
+                    # Every one of these five modules now passes its own
+                    # `store=` straight through and omits `spent=` entirely,
+                    # letting `can_spend`'s own default (band-scoped
+                    # `capture_spent_today(store=...)`) supply the total --
+                    # see this file's module docstring for the second-round
+                    # regression (an explicit, unbanded `spent=` override)
+                    # this used to also accept, and
+                    # tests/test_budget_band_unbanded_spend_guard.py for the
+                    # guard that now pins band-correctness specifically, a
+                    # property this test never checked. What is NEVER
+                    # acceptable is neither `store=` nor `spent=` present:
+                    # that is `can_spend` falling through to
+                    # `spent_today(now=now, store=store)` with `store=None`,
+                    # i.e. real disk.
                     self.assertTrue(
                         "store" in kwargs or "spent" in kwargs,
                         f"{filename}: a `{BUDGET_ALIAS}.can_spend(...)` call "

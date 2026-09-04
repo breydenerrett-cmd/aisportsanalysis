@@ -134,7 +134,9 @@ def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
     `processed_store` for the files -- the same contract batter_props.run()
     offers. `credit_log_store` is the envelope-check seam every other
     paid-capture `run()` in this package now carries: None (default) reads
-    the real credit_log.jsonl via `budget_module.spent_today()`'s own default.
+    the real credit_log.jsonl via `can_spend`'s own default, which is
+    `capture_spent_today()` -- the LIVE_CAPTURE-band total, never the
+    unbanded `spent_today()`.
     """
     clock_now = _now(now)
     report = {"observed_utc": _utc_iso(clock_now), "fetches": 0, "rows": 0,
@@ -211,7 +213,7 @@ def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
 
         decision = budget_module.can_spend(
             family, credits_per_event, remaining=remaining,
-            spent=budget_module.spent_today(store=credit_log_store))
+            store=credit_log_store)
         report["budget_reasons"].setdefault(family, {})[event_id] = decision.reason
         if not decision.allowed:
             print(f"derivative_markets.run: {family} {event_id}: {decision.reason}")

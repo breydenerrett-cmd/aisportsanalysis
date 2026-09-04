@@ -98,10 +98,11 @@ def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
     `provider` stands in for the odds module, `now` for the clock, `store`/
     `processed_store` for the files -- the same contract prop_prices.run()
     offers. `credit_log_store` is the EXTRA_FAMILY envelope check's own seam
-    (the floor family bypasses the envelope by contract -- see the
-    `spent=None` branch below -- so it never needs this): None (default)
-    reads the real credit_log.jsonl via `budget_module.spent_today()`'s own
-    default.
+    (the floor family bypasses the envelope by contract -- `can_spend` never
+    gates `NON_DROPPABLE_FAMILY` on the floor or the envelope -- so it never
+    needs this): None (default) reads the real credit_log.jsonl via
+    `can_spend`'s own default, which is `capture_spent_today()` -- the
+    LIVE_CAPTURE-band total, never the unbanded `spent_today()`.
     """
     clock_now = _now(now)
     report = {"observed_utc": _utc_iso(clock_now), "fetches": 0, "rows": 0,
@@ -180,8 +181,7 @@ def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
 
         decision = budget_module.can_spend(
             family, CREDITS_PER_EVENT, remaining=remaining,
-            spent=budget_module.spent_today(store=credit_log_store)
-            if family != FLOOR_FAMILY else None)
+            store=credit_log_store)
         report["budget_reasons"][event.get("id")] = decision.reason
         if not decision.allowed:
             print(f"batter_props.run: {family} {event.get('id')}: {decision.reason}")

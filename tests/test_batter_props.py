@@ -180,16 +180,21 @@ class FloorAndExtraTests(unittest.TestCase):
     def test_extra_family_envelope_reads_the_injected_store_not_real_disk(self):
         """Regression pin for the 2026-09-04 break (docs/planning/attack.md
         F13/S17 lineage): `can_spend`'s envelope half falls back to
-        `spent_today()` -- a read of `credit_log_store` -- whenever a
-        caller doesn't pass `spent` directly. `batter_props.run` passes
-        `spent=None` for the non-droppable floor family (exempt from the
-        envelope by contract) but, for `batter_props_extra`, must derive it
-        from `credit_log_store`, never from whatever
-        data/processed/credit_log.jsonl happens to hold today. Two runs
-        against the SAME fake provider (`remaining` fixed, so the floor
-        check never fires) differing only in the injected store's own
-        recorded spend must reach opposite envelope decisions for the extra
-        family -- proving the decision tracks the seam, not ambient state.
+        `capture_spent_today()` -- a band-scoped read of `credit_log_store`
+        -- whenever a caller doesn't pass `spent` directly. `batter_props.run`
+        passes no `spent=` at all for either family, relying on `can_spend`'s
+        own default: the non-droppable floor family is exempt from the
+        envelope by contract regardless, and `batter_props_extra` must derive
+        its spend from `credit_log_store`'s own LIVE_CAPTURE-band rows, never
+        from whatever data/processed/credit_log.jsonl happens to hold today
+        (nor, per the 2026-09-04 SECOND-round break this pin was updated for,
+        from that store's UNBANDED total either -- a same-day
+        historical_backfill/probe row in the same store must not count).
+        Two runs against the SAME fake provider (`remaining` fixed, so the
+        floor check never fires) differing only in the injected store's own
+        LIVE_CAPTURE-band spend must reach opposite envelope decisions for
+        the extra family -- proving the decision tracks the seam's own band,
+        not ambient state and not the store's unbanded total.
         """
         listed = [_event(f"g{i}") for i in range(1, 8)]  # more than one night's floor
         payloads = {e["id"]: _payload(e["id"], books=("draftkings",),
@@ -218,21 +223,27 @@ class FloorAndExtraTests(unittest.TestCase):
                              "extra family should fetch when the injected "
                              "store shows no spend today")
 
-            # A store whose own rows show today's spend already past
-            # DAILY_ENVELOPE (the exact shape of 2026-09-04's real log):
-            # the SAME provider, SAME `remaining`, must now refuse the
-            # extra family on "daily envelope".
+            # A store whose own rows show today's LIVE_CAPTURE-band spend
+            # already at DAILY_ENVELOPE (the exact shape of 2026-09-04's
+            # real log, once explicitly banded): the SAME provider, SAME
+            # `remaining`, must now refuse the extra family on "daily
+            # envelope". `budget_band` is explicit on both rows -- exactly
+            # how every live write site logs today, per
+            # `creditlog.log`'s `budget_band` contract -- so this cannot be
+            # satisfied by the unbanded total; only a LIVE_CAPTURE-scoped
+            # read blocks it.
             loud_store = Path(folder) / "loud_credit_log.jsonl"
             rows = [
                 {"utc": today_utc.replace(microsecond=0).isoformat()
                         .replace("+00:00", "Z"),
                  "credits_remaining": 100000, "credits_used_last": 0,
-                 "caller": "test"},
+                 "caller": "batter_props.run", "budget_band": "live_capture"},
                 {"utc": (today_utc + dt.timedelta(minutes=1))
                         .replace(microsecond=0).isoformat()
                         .replace("+00:00", "Z"),
-                 "credits_remaining": 100000 - budget.DAILY_ENVELOPE - 1,
-                 "credits_used_last": 0, "caller": "test"},
+                 "credits_remaining": 100000 - budget.DAILY_ENVELOPE,
+                 "credits_used_last": 0, "caller": "batter_props.run",
+                 "budget_band": "live_capture"},
             ]
             loud_store.write_text(
                 "\n".join(__import__("json").dumps(r) for r in rows) + "\n",
@@ -240,7 +251,37 @@ class FloorAndExtraTests(unittest.TestCase):
             self.assertEqual(
                 extra_fetch_ids(loud_store), set(),
                 "extra family must refuse to spend once the injected "
-                "store's own rows show the envelope already exceeded")
+                "store's own LIVE_CAPTURE-band rows show the envelope "
+                "already exhausted")
+
+            # The 2026-09-04 second-round regression itself: an UNBANDED
+            # total at the exact same magnitude, logged under a different
+            # band entirely (historical_backfill), must NOT block the
+            # extra family -- this is the case a bare, unbanded
+            # `spent_today()` read gets wrong.
+            historical_store = Path(folder) / "historical_credit_log.jsonl"
+            historical_rows = [
+                {"utc": today_utc.replace(microsecond=0).isoformat()
+                        .replace("+00:00", "Z"),
+                 "credits_remaining": 100000, "credits_used_last": 0,
+                 "caller": "backfill_script",
+                 "budget_band": "historical_backfill"},
+                {"utc": (today_utc + dt.timedelta(minutes=1))
+                        .replace(microsecond=0).isoformat()
+                        .replace("+00:00", "Z"),
+                 "credits_remaining": 100000 - budget.DAILY_ENVELOPE - 1,
+                 "credits_used_last": 0, "caller": "backfill_script",
+                 "budget_band": "historical_backfill"},
+            ]
+            historical_store.write_text(
+                "\n".join(__import__("json").dumps(r)
+                          for r in historical_rows) + "\n",
+                encoding="utf-8")
+            self.assertTrue(
+                extra_fetch_ids(historical_store),
+                "extra family must still fetch when the injected store's "
+                "only over-envelope spend is logged under a different "
+                "band (historical_backfill), not live_capture")
 
     def test_credit_floor_skips_the_whole_run(self):
         listed = [_event("g1")]
