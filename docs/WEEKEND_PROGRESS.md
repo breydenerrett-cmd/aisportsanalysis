@@ -27,3 +27,9 @@
 - Blocking: B1 H1 inferred on pooled universe / no 2023 screen leg; B2 FDR m=3 in code vs m=2 in record; B3 no gate mechanised. Must-fix: M1 family.register cannot freeze this record shape; M2 A5 chi-square already fatal on feature-side counts (p=0.00203) → H2 replication is a pre-determined POPULATION_SHIFT_FAIL, to be pre-registered as such (threshold NOT changed).
 - Clean: PIT/leakage, hashes, window guard (mutation-tested). Open items decided (family_id kept; hash serialization normative in code; n>=300 all terciles).
 - Dispatched Sonnet fix lane. Registration still not called. Capture: healthy (22:05Z commit landed).
+
+## 2026-09-04 23:0xZ — F5 family registered, discovery run complete: ZERO survivors
+- Re-review PASS (8371058) with R1/R2 must-fix → fixed 5dc74e8 (season_split recorded skipped on single-season leg; spec hash bounded). Fast suite 4,008 green.
+- Family frozen: F5_MONEYLINE_CALIBRATION_2026H1, m=3, spec sha f637dd17…, both universe hashes verified (commit after 5dc74e8).
+- Results 72c0c76: H1 2023 −0.58pp (SCREEN_FAIL; 2024 −0.88pp p=0.41). H2-bottom 2023 +4.06pp → 2024 −3.98pp p=0.021 (sign flip; POPULATION_SHIFT_FAIL, χ²=12.40 p=0.002 pre-registered). H2-top 2023 −1.66pp → 2024 +1.78pp p=0.33 (POPULATION_SHIFT_FAIL). No threshold touched. All 15 books negative for H1, none significant.
+- W8 results doc dispatched (Sonnet). W9 totals audit now READY. Capture healthy through the run.
