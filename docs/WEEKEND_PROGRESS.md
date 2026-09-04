@@ -67,3 +67,6 @@
 
 ## 2026-09-05 04:0xZ — W17 totals prereg DRAFT landed
 - Two members: M1 full-population OVER calibration (disclosed partially read), M2 combined-starter-groundball-share terciles. Gaps surfaced, not hidden: M1 proposed floor below its own 2.71pp MDE; M2 real n unknown (no feature∩price join yet); M2 has no evaluation code. W21 dispatched for the M2 join (counts only). Opus review of the draft waits on W20 (unjoined events) and W21. Capture healthy.
+
+## 2026-09-05 04:3xZ — W21 M2 coverage landed
+- Real M2 n (feature both sides ∩ price-gradeable): 2023 792/1,295 (61%), 2024 1,090/1,284 (85%) — 24pp coverage shift; 2024 tercile occupancy under 2023 edges fails uniformity (χ²=18.34, p=0.0001) on FEATURE-SIDE counts alone; per-tercile MDE 5-6pp. As drafted M2 is a pre-determined POPULATION_SHIFT_FAIL (F5-H2 precedent). Passed to the Opus review to decide (reframe vs drop) once W20 lands. Capture: 23:16Z run in flight.
