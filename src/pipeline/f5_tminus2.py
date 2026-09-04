@@ -508,11 +508,25 @@ def _books_projection(data: dict) -> list:
 def build_primary_view(seasons, store=STORE) -> list:
     """Rebuild F5_TMINUS2_PRIMARY by filtering raw history to `snapshot_rule
     == tminus2_v1`, one row per game_pk (latest occurrence wins, matching
-    the manifest's own never-buy-twice guarantee). Never hand-edited."""
+    the manifest's own never-buy-twice guarantee). Never hand-edited.
+
+    ELIGIBILITY BOUNDARY (see src/research/f5_eligibility.py): this is the
+    only place F5_TMINUS2_PRIMARY is assembled, so it is also the only place
+    that needs to enforce the 2025-tuning-only-forever / 2026-sealed /
+    approved-discovery-window rule. A row whose own `date` fails that check
+    is skipped here -- never entering the derived view -- regardless of
+    whether it otherwise priced under the T-2h rule. This does not touch
+    F5_RAW_HISTORY itself; the row stays exactly as acquired, just excluded
+    from the research universe built from it.
+    """
+    from src.research import f5_eligibility
+
     by_pk = {}
     for season in seasons:
         for row in read_raw_season(season, store):
             if row.get("snapshot_rule") != SNAPSHOT_RULE:
+                continue
+            if not f5_eligibility.is_eligible(row.get("date")):
                 continue
             data = row.get("data") or {}
             by_pk[row["game_pk"]] = {

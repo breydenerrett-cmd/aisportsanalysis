@@ -459,5 +459,85 @@ class TestPrimaryViewIsDerivedNotAcquired(unittest.TestCase):
         self.assertEqual(rows[0]["status"], "PRIMARY_SNAPSHOT_UNAVAILABLE")
 
 
+class TestTuningOnlyRowsAreExcludedFromThePrimaryView(unittest.TestCase):
+    """The regression test the owner asked for: a 2025 (or 2026, or
+    pre-window) raw observation can EXIST in F5_RAW_HISTORY, fully readable,
+    while being IMPOSSIBLE to enter the eligible research universe that
+    build_primary_view assembles. Both halves are asserted below -- see
+    test_present_in_raw_history_but_absent_from_primary_view.
+    """
+
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        self.store = Path(self.dir.name)
+
+    def tearDown(self):
+        self.dir.cleanup()
+
+    def _row(self, game_pk, date):
+        return {"game_pk": game_pk, "date": date,
+                "away_team": "SEA", "home_team": "OAK",
+                "scheduled_first_pitch": iso(SCHEDULED),
+                "actual_first_pitch": None, "query_instant": iso(TARGET),
+                "snapshot_at": iso(TARGET), "lead_time_hours": 2.0,
+                "book_count": 5,
+                "data": {"away_team": "Seattle Mariners",
+                         "home_team": "Oakland Athletics",
+                         "bookmakers": make_books(5)},
+                "status": "OK", "reason": None, "snapshot_rule": "tminus2_v1",
+                "markets": ["h2h_1st_5_innings"]}
+
+    def test_present_in_raw_history_but_absent_from_primary_view(self):
+        tuning_only_2025 = self._row("pk2025", "2025-08-13")
+        t2.append_raw_row(tuning_only_2025, self.store)
+
+        # HALF ONE: the row is present and fully readable in raw history --
+        # nothing about eligibility deleted or hid it there.
+        raw_2025 = t2.read_raw_season(2025, self.store)
+        self.assertEqual(len(raw_2025), 1)
+        self.assertEqual(raw_2025[0]["game_pk"], "pk2025")
+        self.assertEqual(raw_2025[0]["status"], "OK")  # untouched, not rewritten
+
+        # HALF TWO: it is nonetheless absent from every eligible-universe
+        # path -- here, the one and only function that assembles
+        # F5_TMINUS2_PRIMARY.
+        primary_2025 = t2.build_primary_view([2025], self.store)
+        self.assertEqual(primary_2025, [])
+
+    def test_2026_is_excluded_too(self):
+        t2.append_raw_row(self._row("pk2026", "2026-05-01"), self.store)
+        self.assertEqual(len(t2.read_raw_season(2026, self.store)), 1)
+        self.assertEqual(t2.build_primary_view([2026], self.store), [])
+
+    def test_pre_window_2023_rows_are_excluded_by_the_same_window_rule(self):
+        # 2023-03-30 and 2023-05-06 in the real sanity tranche: legitimate
+        # paid raw data, dated before the approved 2023-05-10 discovery
+        # window opens.
+        t2.append_raw_row(self._row("pk_pre1", "2023-03-30"), self.store)
+        t2.append_raw_row(self._row("pk_pre2", "2023-05-06"), self.store)
+        self.assertEqual(len(t2.read_raw_season(2023, self.store)), 2)
+        self.assertEqual(t2.build_primary_view([2023], self.store), [])
+
+    def test_in_window_2023_and_2024_rows_still_enter_the_view(self):
+        # The boundary must exclude only what it is supposed to -- it must
+        # not quietly swallow legitimate in-window rows too.
+        t2.append_raw_row(self._row("pk_in1", "2023-05-10"), self.store)  # start, inclusive
+        t2.append_raw_row(self._row("pk_in2", "2024-10-07"), self.store)  # end, inclusive
+        pks_2023 = {r["game_pk"] for r in t2.build_primary_view([2023], self.store)}
+        pks_2024 = {r["game_pk"] for r in t2.build_primary_view([2024], self.store)}
+        self.assertEqual(pks_2023, {"pk_in1"})
+        self.assertEqual(pks_2024, {"pk_in2"})
+
+    def test_a_mixed_season_file_only_yields_its_eligible_rows(self):
+        # 2025 contains both real tuning-only games and (hypothetically) an
+        # in-window make-up date would not occur since the year itself is
+        # tuning-only-forever -- assert every 2025 row is excluded even when
+        # several share the season file with an unrelated status.
+        t2.append_raw_row(self._row("a", "2025-04-28"), self.store)
+        t2.append_raw_row(self._row("b", "2025-09-22"), self.store)
+        self.assertEqual(len(t2.read_raw_season(2025, self.store)), 2)
+        self.assertEqual(t2.build_primary_view([2025], self.store), [])
+
+
 if __name__ == "__main__":
     unittest.main()
