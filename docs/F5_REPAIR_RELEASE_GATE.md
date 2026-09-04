@@ -125,3 +125,59 @@ multiple-testing procedure; the failure criteria.
 
 **No winner search, threshold tuning, or profitability ranking before those
 are locked.**
+
+## Sanity-tranche pass criteria (owner, 2026-09-04) — frozen BEFORE results
+
+The ~20-game / ~200-credit hard stop stands.
+
+**Correction on record.** An earlier note in this session claimed a 20/20
+tranche would itself be grounds for suspicion of time-sliding. That is wrong
+reasoning: clean data producing clean results is not evidence of misconduct.
+`PRIMARY_SNAPSHOT_UNAVAILABLE` does **not** need to occur naturally among the
+paid games for the tranche to pass, and games must never be selected to
+manufacture a failure.
+
+The unavailable path is proven **separately and deterministically** — a
+negative-control fixture, or a deliberately chosen known no-market/invalid
+historical case — shown terminal (never retried) and shown not to induce
+timing drift.
+
+**The tranche passes only if all twelve hold:**
+
+1. Every accepted snapshot is requested from the frozen scheduled-start
+   anchor at exactly T−2h.
+2. Returned provider timestamp deviation within ±5 minutes.
+3. No accepted snapshot is after scheduled first pitch.
+4. Every accepted primary snapshot has ≥5 **unique** books.
+5. Market is F5 **moneyline only**.
+6. No fallback/sliding to T−90m, T−60m, T−45m, or anything else.
+7. Existing compliant `(game_pk, target_timestamp)` observations are skipped
+   and not billed twice.
+8. Noncompliant old wall-clock observations stay immutable in
+   `F5_RAW_HISTORY` and do not count as primary.
+9. Accepted normalized observations land only in `F5_TMINUS2_PRIMARY`.
+10. `PRIMARY_SNAPSHOT_UNAVAILABLE` proven terminal/non-retried via the
+    negative control, with no timing drift.
+11. **No result, score, winner, profitability, strategy ranking, or any
+    outcome-derived field is accessed anywhere in the acquisition pass.**
+12. Actual credit spend matches the provider billing model within expected
+    rounding.
+
+**Per-game print format:**
+
+```
+game_pk | season | scheduled start | target T−2h | requested timestamp |
+returned timestamp | deviation min | unique books | existing compliant? |
+result | credits
+```
+
+**Tranche diversity** (for edge coverage, never for failure-hunting): both
+2023 and 2024; afternoon and evening starts; early and late UTC schedules;
+at least one doubleheader game; at least one AZ/ARI game (that pair was the
+join bug just fixed); one rescheduled/postponement-sensitive case if safely
+testable.
+
+**Hard stop after the tranche, pass or fail.** If any accepted row violates
+the frozen timing or book rule, the ~43k purchase does not proceed. If the
+tranche passes, the full normalization is released **without changing the
+rule based on what the tranche happened to show.**
