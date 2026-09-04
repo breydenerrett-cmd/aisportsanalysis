@@ -244,6 +244,12 @@ class EodReview:
     # gating anything, and never published with a real score below that
     # floor (CalibrationReport.sufficient is False; every score is None).
     calibration_reports: tuple  # tuple[CalibrationReport, ...]
+    # ADDITIVE (loss post-mortem, 2026-09-04): pre-rendered markdown from
+    # `src.review.postmortem.render_section`, appended verbatim as the report's
+    # last section. Defaults to "" so every existing caller and every stored
+    # report is byte-identical to before; nothing in this module computes it,
+    # and nothing else in the review depends on it.
+    postmortem_section: str = ""
 
 
 _SCORECARD_DELTA_FIELDS = (
@@ -261,6 +267,7 @@ def build_review(
     scorecards: Sequence[Scorecard],
     *,
     calibration_decisions: Optional[Sequence[DecisionRecord]] = None,
+    postmortem_section: str = "",
 ) -> EodReview:
     """Build the deterministic end-of-day self-review for `date`.
 
@@ -409,6 +416,7 @@ def build_review(
         assumption_exposure_items=assumption_items,
         provenance_counts=provenance_counts,
         calibration_reports=calibration_reports,
+        postmortem_section=postmortem_section or "",
     )
 
 
@@ -572,6 +580,10 @@ def render_markdown(review: EodReview) -> str:
             lines.append(f"    {key}: {item.assumption_exposure[key]}")
     lines.append("")
 
+    if review.postmortem_section:
+        lines.append(review.postmortem_section.rstrip("\n"))
+        lines.append("")
+
     return "\n".join(lines) + "\n"
 
 
@@ -589,13 +601,15 @@ def write_review(
     docs_dir: Optional[Path] = None,
     chain_path: Optional[str] = None,
     calibration_decisions: Optional[Sequence[DecisionRecord]] = None,
+    postmortem_section: str = "",
 ) -> dict:
     """Build, render, write `docs/eod/DATE.md`, and append a summary row to
     the EOD review chain. Raises `EodReviewError` (writes nothing) when
     `date` has no decisions -- the CLI is expected to let that propagate as
     an honest refusal rather than catching it into an empty report."""
     review = build_review(date, accounts, decisions, reviews, scorecards,
-                          calibration_decisions=calibration_decisions)
+                          calibration_decisions=calibration_decisions,
+                          postmortem_section=postmortem_section)
     markdown = render_markdown(review)
 
     target_dir = Path(docs_dir) if docs_dir is not None else repo_root() / "docs" / "eod"

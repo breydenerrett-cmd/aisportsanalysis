@@ -482,6 +482,113 @@ def cmd_boxscores(args) -> int:
     return EXIT_OK
 
 
+def cmd_gameflow(args) -> int:
+    """Fetch play-by-play + win probability into data/processed/gameflow_<yyyy>.jsonl.
+
+    SETTLEMENT-SIDE ONLY -- this is post-game data (see src.pipeline.gameflow's
+    module docstring) and nothing on the decision path may read it. Free,
+    keyless MLB Stats API: costs ZERO odds credits at any volume.
+
+    Idempotent and resumable by game_pk. A single date (--date), an inclusive
+    range (--backfill START..END), or just the games named by --games.
+    """
+    from src.pipeline import gameflow
+
+    if args.backfill:
+        try:
+            start, end = args.backfill.split("..", 1)
+        except ValueError:
+            print("--backfill must be START..END, e.g. 2026-08-01..2026-09-03")
+            return EXIT_ERROR
+
+        def progress(report):
+            print(f"  {report['date']}  games={report['games_written']:>2} "
+                  f"written  skipped={report['games_skipped']:>2}  "
+                  f"plays={report['play_rows']:>4}"
+                  + (f"  no-WP={report['games_without_wp']}"
+                     if report["games_without_wp"] else "")
+                  + (f"  ERRORS={len(report['errors'])}"
+                     if report["errors"] else ""))
+
+        totals = gameflow.ingest_range(start.strip(), end.strip(),
+                                       on_date=progress)
+        print(f"\n  dates            : {totals['dates']}")
+        print(f"  games written    : {totals['games_written']}")
+        print(f"  games skipped    : {totals['games_skipped']} (already stored)")
+        print(f"  play rows        : {totals['play_rows']}")
+        print(f"  games without WP : {totals['games_without_wp']}")
+        if totals["errors"]:
+            print(f"  {len(totals['errors'])} game(s) failed and will be "
+                  "retried on resume:")
+            for error in totals["errors"][:5]:
+                print(f"    {error['date']} game_pk={error['game_pk']}: "
+                      f"{error['error']}")
+        return EXIT_OK
+
+    day = args.date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    if args.games:
+        report = gameflow.ingest_games(
+            day, [g.strip() for g in args.games.split(",") if g.strip()])
+    else:
+        report = gameflow.ingest_date(day)
+    print(f"{report['date']}: {report['games_seen']} final game(s) seen, "
+          f"{report['games_written']} written, "
+          f"{report['games_skipped']} already stored")
+    print(f"  play rows: {report['play_rows']}  "
+          f"games without win probability: {report['games_without_wp']}")
+    print(f"  store: {report['path']}")
+    if report["errors"]:
+        print(f"  {len(report['errors'])} game(s) failed:")
+        for error in report["errors"]:
+            print(f"    game_pk={error['game_pk']}: {error['error']}")
+    return EXIT_OK
+
+
+def cmd_postmortem(args) -> int:
+    """Render the loss post-mortem (plus the won control) to stdout or a file.
+
+    A DESCRIPTION, never evidence for a strategy change -- see
+    src.review.postmortem's module docstring and docs/POSTMORTEM.md.
+    """
+    from src.engine import settle_slate
+    from src.ledger.chain import HashChainLedger
+    from src.pipeline import gameflow
+    from src.review import postmortem as postmortem_module
+    from src.engine.slate import PAPER_WAGERS_PATH
+
+    decisions = settle_slate.load_decisions()
+    reviews = settle_slate.load_reviews()
+    wagers = [row for row in HashChainLedger(str(PAPER_WAGERS_PATH)).read()
+              if row.get("bet_id")]
+    flow_rows = gameflow.load_store()
+
+    outcomes = ("loss",) if args.losses_only else ("loss", "win")
+    built = postmortem_module.build_postmortems(
+        decisions, reviews, wagers, flow_rows, outcomes=outcomes,
+        date=args.date)
+    postmortems = built["postmortems"]
+    if not postmortems:
+        print("no settled decisions matched -- nothing to post-mortem "
+              "(honest refusal, not an empty report)")
+        return EXIT_ERROR
+
+    markdown = postmortem_module.render_section(postmortems)
+    if args.out:
+        target = Path(args.out)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(markdown, encoding="utf-8")
+        print(f"wrote {target}")
+    else:
+        print(markdown)
+    if built["skipped"]:
+        print(f"({len(built['skipped'])} settled review(s) could not be "
+              "joined to a wager and were skipped; see --out report or the "
+              "reasons below)")
+        for row in built["skipped"][:5]:
+            print(f"  {row['reason']}")
+    return EXIT_OK
+
+
 def cmd_history(args) -> int:
     """Report coverage and integrity of the historical store."""
     from src.pipeline import history
@@ -2519,10 +2626,29 @@ def cmd_eod(args) -> int:
             accounts.append(eod_module.account_day_from_ledger_rows(
                 system_id, rows, date_str))
 
+    # ADDITIVE: the post-mortem section (src.review.postmortem), appended as
+    # the report's last section when --postmortem is passed. Off by default so
+    # `eod --date D` writes byte-identical reports to before this existed, and
+    # so a missing gameflow store can never turn an EOD run into a failure.
+    postmortem_section = ""
+    if getattr(args, "postmortem", False):
+        from src.engine.slate import PAPER_WAGERS_PATH
+        from src.pipeline import gameflow
+        from src.review import postmortem as postmortem_module
+        wagers = [row for row in HashChainLedger(str(PAPER_WAGERS_PATH)).read()
+                  if row.get("bet_id")]
+        built = postmortem_module.build_postmortems(
+            all_decisions, reviews, wagers, gameflow.load_store(),
+            date=date_str)
+        if built["postmortems"]:
+            postmortem_section = postmortem_module.render_section(
+                built["postmortems"])
+
     try:
         result = eod_module.write_review(
             date_str, accounts, decisions, reviews, scorecards,
-            calibration_decisions=all_decisions)
+            calibration_decisions=all_decisions,
+            postmortem_section=postmortem_section)
     except eod_module.EodReviewError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return EXIT_ERROR
@@ -2613,6 +2739,28 @@ def build_parser() -> argparse.ArgumentParser:
     boxscores_cmd.add_argument("--backfill", default=None,
                                help="START..END, e.g. 2023-03-30..2023-11-01 "
                                     "(resumable; ignores --date)")
+
+    gameflow_cmd = sub.add_parser(
+        "gameflow", help="fetch play-by-play + win probability (post-game "
+                         "only; settlement-side evidence, zero odds credits)")
+    gameflow_cmd.add_argument("--date", default=None,
+                              help="YYYY-MM-DD (defaults to today, UTC)")
+    gameflow_cmd.add_argument("--games", default=None,
+                              help="comma-separated game_pks on --date; "
+                                   "fetch only these")
+    gameflow_cmd.add_argument("--backfill", default=None,
+                              help="START..END (resumable; ignores --date)")
+
+    postmortem_cmd = sub.add_parser(
+        "postmortem", help="why the losses lost, with a won control "
+                           "(description only, never a strategy change)")
+    postmortem_cmd.add_argument("--date", default=None,
+                                help="limit to wagers placed on this date")
+    postmortem_cmd.add_argument("--out", default=None,
+                                help="write markdown here instead of stdout")
+    postmortem_cmd.add_argument("--losses-only", action="store_true",
+                                help="drop the won control (the summary then "
+                                     "refuses to publish patterns)")
 
     sub.add_parser("history", help="coverage and integrity of the historical store")
 
@@ -2892,6 +3040,9 @@ def build_parser() -> argparse.ArgumentParser:
     eod_cmd = sub.add_parser(
         "eod", help="build and write the end-of-day self-review (S7)")
     eod_cmd.add_argument("--date", required=True, help="YYYY-MM-DD")
+    eod_cmd.add_argument("--postmortem", action="store_true",
+                         help="append the loss post-mortem section (with its "
+                              "won control) -- needs the gameflow store")
 
     return parser
 
@@ -2903,6 +3054,8 @@ COMMANDS = {
     "results": cmd_results,
     "ingest": cmd_ingest,
     "boxscores": cmd_boxscores,
+    "gameflow": cmd_gameflow,
+    "postmortem": cmd_postmortem,
     "history": cmd_history,
     "features": cmd_features,
     "train": cmd_train,

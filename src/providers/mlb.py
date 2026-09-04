@@ -809,3 +809,186 @@ def _to_date(value) -> date:
         return date.fromisoformat(value.strip())
     except ValueError as exc:
         raise MLBError(f"date must be ISO format YYYY-MM-DD, got {value!r}") from exc
+
+
+# ---------------------------------------------------------------------------
+# Play-by-play and win probability -- SETTLEMENT-SIDE ONLY
+# ---------------------------------------------------------------------------
+#
+# WHY THESE ARE HERE AND WHERE THEY MAY BE USED
+# ----------------------------------------------
+# Nothing in this repo could say WHY a bet lost. `parse_boxscore` gives one
+# per-player game total -- no inning, no sequence, no leverage -- so a loss
+# post-mortem had no substrate to point at a decisive moment with.
+# `game/{pk}/playByPlay` and `game/{pk}/winProbability` are the two free,
+# keyless endpoints that carry it: every plate appearance with its inning,
+# outs, base state and result, and MLB's own win-probability series.
+#
+# THIS DATA IS POST-GAME ONLY. It exists at all only after (in fact, during)
+# the game it describes, so admitting it anywhere on the decision path would
+# be a future leak of the purest kind -- the outcome itself. The store built
+# on it (`src.pipeline.gameflow`) is deliberately NOT registered in
+# `src.core.asof._default_stores()`, and tests/test_gameflow_pit.py holds
+# that line by injection. Call these from settlement/review code only.
+#
+# ZERO ODDS CREDITS: statsapi.mlb.com is free and keyless. These two calls go
+# through the same `_get_json` seam as every other function in this module
+# and never touch `src.providers.odds`.
+
+# The only value `wp_source` ever takes for a real, served number. A row with
+# `wp_source=None` carries no win probability at all -- there is deliberately
+# no second source that could quietly stand in for MLB's own series.
+WP_SOURCE_MLB = "mlb_win_probability"
+
+# Base-state vocabulary, written once so every reader (and every rendered
+# post-mortem sentence) uses the same words for the same state.
+BASES_EMPTY = "empty"
+BASES_LOADED = "loaded"
+
+
+def fetch_play_by_play(game_pk, timeout: float = DEFAULT_TIMEOUT) -> dict:
+    """Raw play-by-play payload for one game: every plate appearance."""
+    return _get_json(f"game/{game_pk}/playByPlay", timeout=timeout)
+
+
+def fetch_win_probability(game_pk, timeout: float = DEFAULT_TIMEOUT) -> list:
+    """Raw win-probability payload: the play list with MLB's own WP series.
+
+    Returns a list (one entry per play). A game the API serves no WP for
+    yields an empty list; that is a real "no WP for this game" answer, and
+    callers must fall back to a labelled proxy rather than invent numbers.
+    """
+    payload = _get_json(f"game/{game_pk}/winProbability", timeout=timeout)
+    return payload if isinstance(payload, list) else []
+
+
+def _bases_label(on_first: bool, on_second: bool, on_third: bool) -> str:
+    if on_first and on_second and on_third:
+        return BASES_LOADED
+    occupied = [name for name, flag in
+                (("1B", on_first), ("2B", on_second), ("3B", on_third)) if flag]
+    return "+".join(occupied) if occupied else BASES_EMPTY
+
+
+def _post_bases(play: dict) -> tuple:
+    matchup = play.get("matchup") or {}
+    return (bool(matchup.get("postOnFirst")), bool(matchup.get("postOnSecond")),
+            bool(matchup.get("postOnThird")))
+
+
+def _as_probability(value):
+    """MLB serves win probability as a PERCENT (25.5), not a fraction.
+
+    Stored as a fraction (0.255) so nothing downstream has to remember which
+    scale a given field is on. `None` stays `None` -- never 0.0, which would
+    read as a real, certain-loss probability.
+    """
+    if value is None:
+        return None
+    try:
+        return float(value) / 100.0
+    except (TypeError, ValueError):
+        return None
+
+
+def parse_play_by_play(game_pk, play_by_play: dict,
+                        win_probability=None) -> dict:
+    """Flatten one game's play-by-play (+ WP when served) into play rows.
+
+    Pure, network-free, deterministic. One row per COMPLETE plate appearance
+    in `allPlays`, in API order.
+
+    OUTS AND BASES ARE PRE-PLAY, DERIVED, AND SAID SO
+    --------------------------------------------------
+    The API's `count.outs` and `matchup.postOn*` describe the state AFTER the
+    play (verified against a real game: the third out of a half-inning carries
+    outs=3). A post-mortem sentence needs the state the batter walked INTO
+    ("bases loaded, 2 out"), so `outs_before` and `bases_before` are carried
+    forward from the previous play of the SAME half-inning and reset to
+    0/empty at each half-inning boundary. `outs_after`/`bases_after` keep the
+    API's own values unmodified next to them.
+
+    WIN PROBABILITY IS JOINED, NEVER INVENTED
+    -------------------------------------------
+    `win_probability` entries are matched to plays by `about.atBatIndex`. A
+    play with no matching entry gets `home_win_prob=None` and
+    `wp_source=None` -- never a filled-in number. `wp_available` on the
+    result says whether ANY play got a real one, which is the flag callers
+    use to decide whether to fall back to a labelled proxy.
+    """
+    wp_by_index: dict = {}
+    for entry in (win_probability or []):
+        index = (entry.get("about") or {}).get("atBatIndex")
+        if index is None or entry.get("homeTeamWinProbability") is None:
+            continue
+        wp_by_index[index] = entry
+
+    plays = []
+    prev_half = None
+    prev_outs = 0
+    prev_bases = (False, False, False)
+    for play in (play_by_play.get("allPlays") or []):
+        about = play.get("about") or {}
+        if not about.get("isComplete"):
+            continue
+        inning = about.get("inning")
+        half = about.get("halfInning")
+        half_key = (inning, half)
+        if half_key != prev_half:
+            prev_outs = 0
+            prev_bases = (False, False, False)
+            prev_half = half_key
+
+        result = play.get("result") or {}
+        matchup = play.get("matchup") or {}
+        count = play.get("count") or {}
+        index = about.get("atBatIndex")
+        after_bases = _post_bases(play)
+        outs_after = _as_int(count.get("outs"))
+
+        wp_entry = wp_by_index.get(index)
+        home_wp = away_wp = home_wpa = leverage = None
+        wp_source = None
+        if wp_entry is not None:
+            home_wp = _as_probability(wp_entry.get("homeTeamWinProbability"))
+            away_wp = _as_probability(wp_entry.get("awayTeamWinProbability"))
+            home_wpa = _as_probability(
+                wp_entry.get("homeTeamWinProbabilityAdded"))
+            leverage = wp_entry.get("leverageIndex")
+            wp_source = WP_SOURCE_MLB
+
+        plays.append({
+            "game_pk": _as_int(game_pk),
+            "at_bat_index": index,
+            "inning": inning,
+            "half": half,
+            "outs_before": prev_outs,
+            "outs_after": outs_after,
+            "bases_before": _bases_label(*prev_bases),
+            "bases_after": _bases_label(*after_bases),
+            "batter_id": (matchup.get("batter") or {}).get("id"),
+            "batter_name": (matchup.get("batter") or {}).get("fullName"),
+            "pitcher_id": (matchup.get("pitcher") or {}).get("id"),
+            "pitcher_name": (matchup.get("pitcher") or {}).get("fullName"),
+            "event": result.get("event"),
+            "event_type": result.get("eventType"),
+            "description": result.get("description"),
+            "rbi": _as_int(result.get("rbi")),
+            "away_score_after": _as_int(result.get("awayScore")),
+            "home_score_after": _as_int(result.get("homeScore")),
+            "is_scoring_play": bool(about.get("isScoringPlay")),
+            "start_time_utc": about.get("startTime"),
+            "home_win_prob": home_wp,
+            "away_win_prob": away_wp,
+            "home_win_prob_added": home_wpa,
+            "leverage_index": leverage,
+            "wp_source": wp_source,
+        })
+        prev_outs = outs_after if outs_after is not None else prev_outs
+        prev_bases = after_bases
+
+    return {
+        "game_pk": _as_int(game_pk),
+        "plays": plays,
+        "wp_available": any(p["wp_source"] is not None for p in plays),
+    }
