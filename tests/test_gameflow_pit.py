@@ -47,6 +47,7 @@ from pathlib import Path
 from src.core import asof
 from src.pipeline import gameflow
 from src.providers import mlb
+from src.research import f5_store
 from tests.test_pipeline_gameflow import (SIMPLE_PLAYS, SIMPLE_WP_PCT,
                                           make_play_by_play,
                                           make_win_probability)
@@ -128,6 +129,16 @@ class TestGameflowIsUnreachableFromAsOf(unittest.TestCase):
         self.assertFalse([p for p in paths if "gameflow" in p],
                           f"as_of registers a gameflow store: {paths}")
 
+    def test_no_default_store_points_at_the_first_five_results_store(self):
+        """`data/historical/first_five_results.jsonl` (src/research/f5_store.py)
+        is the other free, keyless, post-game StatsAPI store -- a first-five
+        winner is exactly as much of a game's outcome as any play-by-play
+        row, so it must be just as unreachable from `as_of`."""
+        paths = [str(spec.path) for spec in asof._default_stores()]
+        self.assertFalse(
+            [p for p in paths if "first_five" in p],
+            f"as_of registers the first-five results store: {paths}")
+
     def test_injection_does_not_move_the_snapshot_at_any_t(self):
         with _RedirectedDataDir() as data:
             for t in (T_BEFORE_GAME, T_LONG_AFTER):
@@ -195,6 +206,22 @@ class TestDecisionPathDoesNotImportGameflow(unittest.TestCase):
                     [n for n in imported if "gameflow" in n],
                     f"{relative} imports the post-game gameflow store")
 
+    def test_no_decision_path_module_imports_f5_store(self):
+        """`src.research.f5_store` settles first-five winners from the same
+        free, keyless MLB endpoint gameflow uses -- it belongs to the same
+        settlement side of the boundary and no decision-path module may
+        import it."""
+        root = Path(__file__).resolve().parent.parent
+        for relative in self.DECISION_PATH:
+            path = root / relative
+            if not path.exists():
+                continue
+            with self.subTest(module=relative):
+                imported = _imported_modules(path)
+                self.assertFalse(
+                    [n for n in imported if "f5_store" in n],
+                    f"{relative} imports the post-game first-five results store")
+
     def test_the_settlement_side_evaluator_is_not_on_the_decision_path(self):
         """`src/review/mechanism_eval.py` reads play-by-play and therefore
         belongs to settlement alone. Nothing the engine decides through may
@@ -238,7 +265,8 @@ class TestGameflowCostsZeroOddsCredits(unittest.TestCase):
         """By IMPORT, not by substring -- both modules discuss the odds
         provider and the credit log in prose, which is the point."""
         root = Path(__file__).resolve().parent.parent
-        for relative in ("src/pipeline/gameflow.py", "src/review/postmortem.py"):
+        for relative in ("src/pipeline/gameflow.py", "src/review/postmortem.py",
+                         "src/research/f5_store.py"):
             with self.subTest(module=relative):
                 imported = _imported_modules(root / relative)
                 offenders = [n for n in imported
@@ -282,6 +310,36 @@ class TestGameflowCostsZeroOddsCredits(unittest.TestCase):
             self.assertEqual(report["games_written"], 1)
             self.assertFalse(credit_log.exists(),
                               "gameflow ingest wrote a credit-log row -- it "
+                              "must never touch the odds quota")
+            self.assertEqual(creditlog.read(credit_log), [])
+
+    def test_f5_store_ingest_writes_no_credit_log_row(self):
+        """Same proof as gameflow's, for the other free settlement-side
+        store: `f5_store.ingest` must never touch the odds quota either."""
+        from src.pipeline import creditlog
+        with _RedirectedDataDir() as data:
+            credit_log = data.root / "processed" / "credit_log.jsonl"
+            store = data.root / "historical" / "first_five_results_test.jsonl"
+
+            fixture_game = {
+                "gamePk": GAME_PK,
+                "status": {"codedGameState": "F"},
+                "teams": {"away": {"score": 2}, "home": {"score": 0}},
+                "linescore": {"innings": [
+                    {"num": n, "away": {"runs": 0}, "home": {"runs": 0}}
+                    for n in range(1, 6)
+                ]},
+            }
+            original_fetch_schedule = mlb.fetch_schedule
+            mlb.fetch_schedule = lambda day, **kw: [fixture_game]
+            try:
+                report = f5_store.ingest(["2026-09-02"], store=store, sleep=0)
+            finally:
+                mlb.fetch_schedule = original_fetch_schedule
+
+            self.assertEqual(report["records_written"], 1)
+            self.assertFalse(credit_log.exists(),
+                              "f5_store ingest wrote a credit-log row -- it "
                               "must never touch the odds quota")
             self.assertEqual(creditlog.read(credit_log), [])
 
