@@ -321,3 +321,197 @@ here is written to guarantee a promotion.
    family_id or two**, given M2's mechanism/build gap is materially larger
    than M1's — the reviewer may prefer registering M1 alone first and
    deferring M2 to a follow-up family, mirroring how F5 handled B3.
+
+## Methodology review — 2026-09-05
+
+Adversarial methodology review of the DRAFT above. No outcome field
+(`total_runs`, `won`, `winner`, any settlement value) was read, printed or
+computed from in producing this section; every number below is either a
+count, a timing quantile, a feature-side occupancy, or an MDE recomputed
+from an n. Where this section disagrees with the draft above, **this
+section governs.**
+
+### D1 — Denominator scope: REGULAR SEASON ONLY, exclusions itemised
+
+The denominator is the regular-season, half-point-primary, per-line
+≥3-book-floor, closing-snapshot-in-`[−6h, commence)` population, and the
+authoritative counts are the manifest's joined figures — **2023 n=1,296,
+2024 n=1,288** — not the pre-join 1,316/1,313 of `TOTALS_POPULATION_AUDIT.md`
+§1-4, which are superseded here as an estimate. Postseason is excluded not
+as a judgment call but because `mlb_results.csv` is `game_type == "R"` only
+(`TOTALS_UNJOINED_AUDIT.md` class (d)): the 14 Wild Card/Division Series
+events cannot be graded at all, and silently leaving them in the stated
+denominator while they are unjoinable would misstate power. The 2023
+All-Star Game (class (e)) is an exhibition, not a club game, with a
+different scoring process and a different market, and is excluded on
+mechanism as well as on availability. The 30 postponed/replayed events
+(class (a)) are excluded because the priced event was never played at the
+priced commence_time — excluding them is a point-in-time correctness
+requirement, not a filter. **Binding:** the exclusion ledger in the freeze
+record must carry these four lines with their counts (30 postponed, 14
+postseason, 5 doubleheader-nightcap join collisions now FIXED and therefore
+INCLUDED, 1 All-Star), plus the 95/2023 and 74/2024 no-closing-snapshot
+rows, and the run report must publish the ledger even when nothing surprising
+is in it. No exclusion may be added after any outcome is read.
+
+### D2 — M1 effect floor: 3.0pp, and the family is honestly underpowered below it
+
+At the corrected n the per-leg MDE (two-sided 95%, p≈0.5) is **2.72pp
+(2023, n=1,296)** and **2.73pp (2024, n=1,288)**; pooled 2,584 gives
+1.93pp, but pooling is forbidden here — the two-leg design is load-bearing
+(F5 B1 fix) and the replication CI is computed on the 2024 leg alone, so
+the pooled figure is not the operative power. The draft's 1.5pp floor is
+therefore not merely low, it is inside the noise band of the very leg that
+must clear it, and a member that "passes" a floor below its own MDE is
+passing on a statistic the design cannot distinguish from zero. **Binding:
+M1's effect floor is 3.0 percentage points**, on both the 2023 screen
+(point estimate ≥ floor with the screen-declared sign) and the 2024
+replication (point estimate ≥ floor in addition to the CI-excludes-zero and
+FDR gates), chosen as the smallest round value strictly above the larger
+per-leg MDE. This is a real cost and must be stated in the results: **the
+family cannot detect a true mispricing smaller than ~2.7pp at either leg,
+and any true effect in the 0-3.0pp band will be reported as "cannot tell",
+never as a PASS and never as a FAIL of the market's calibration.** A PASS
+under this floor therefore means only "an effect at least as large as 3.0pp
+was observed and survived every gate", not "no smaller effect exists". The
+floor is frozen numerically at registration; it may not be lowered
+afterward for any reason, including a near-miss.
+
+### D3 — M2's fate: NOT a confirmatory member; registered as a pre-determined POPULATION_SHIFT_FAIL, exploratory only, m unchanged
+
+M2's pre-registered fatal gate is already resolved against it on
+feature-side counts that are legitimately readable now: 2024 tercile
+occupancy under frozen 2023 edges gives χ²=18.34, df=2, **p=0.0001 < 0.01**
+(`TOTALS_M2_COVERAGE.md`). The F5-H2 precedent permits registering a
+determined `POPULATION_SHIFT_FAIL` and still evaluating it exploratorily —
+but F5-H2's chi-square outcome was *unknown at freeze time*, which is why
+it legitimately counted toward m=3. Here it is known before freeze, so
+carrying M2 as a confirmatory FDR member would spend multiplicity budget on
+a member that cannot possibly survive, weakening M1 for no informational
+gain. **Binding: M2 is registered with `verdict` pre-set to
+`POPULATION_SHIFT_FAIL`, excluded from the BH-FDR family, and evaluated
+exploratory-only, its result labelled non-confirmatory and non-promotable
+in every report.** Replacement was considered and rejected: the only other
+LEGITIMATE_TOTALS_FEATURE with 2023-24 PIT coverage is
+`combined_starter_velocity_gap`, whose coverage shift (54.6%→75.1%,
+Δ=20.5pp) is *worse* than groundball share's and arises from the identical
+Statcast-coverage selection mechanism, so it would fail the same gate for
+the same reason; every other row of `TOTALS_METHODOLOGY.md` §1.2 is unbuilt,
+not PIT-available, or rejected for thinness. **The confirmatory family is
+therefore TOTALS-M1 alone, m=1.** Consequence, stated plainly: BH-FDR at
+q=0.10 with m=1 reduces to p ≤ 0.10, which is strictly weaker than the
+already-binding two-sided 95% date-clustered CI gate, so **the FDR step
+does no work in this family and no multiplicity credit may be claimed from
+it.** It is retained in the freeze record (`fdr_m: 1`) for mechanical
+uniformity only, and the results must say this in those terms rather than
+citing "survived FDR" as evidence.
+
+### D4 — Admissibility of a family partitioning on a feature with a 24pp coverage shift
+
+A partition feature whose *availability* moves from 61.2% to 84.9% between
+the screen and replication legs is not a stable feature; the two legs
+condition on different subpopulations selected by a mechanism (Statcast
+pitch-store completeness) that is correlated with team, park and calendar,
+and the resulting occupancy shift is exactly what the pre-registered gate
+measures. **Binding rule, applying to this and every future totals family:
+a feature partition is admissible as a CONFIRMATORY member only if, in a
+counts-only pre-registration audit run before freeze, (a) the both-sides
+join rate by season is published, (b) |Δ join rate| between screen and
+replication legs is ≤ 10pp, and (c) the occupancy chi-square on
+screen-fit-frozen edges applied to the replication leg is non-fatal
+(p ≥ 0.01).** All three must be reported whether they pass or fail; failing
+(b) or (c) demotes the member to exploratory and it does not enter m. M2
+fails (b) at Δ=23.7pp and (c) at p=0.0001, which is precisely why D3
+demotes it. Note also that M2's per-tercile MDE on the true joint n is
+**5.3-6.0pp** (not the draft's 3.75-4.44pp, which used the un-intersected
+matrix counts) — even absent the shift, M2 would be underpowered against
+any plausible 1pp floor, and its draft "provisionally 1pp" floor is
+withdrawn as unusable.
+
+### D5 — Remaining hard calls
+
+**HC1 (M1 floor)** resolved in D2 at 3.0pp. **HC2 (M2 joint n)** resolved:
+the join has now been computed counts-only — 792/1,295 and 1,090/1,284 —
+and it is worse than the draft feared; see D3/D4. **HC3 (M1 direction)**:
+the sign-agnostic two-sided gate is accepted as the A11-compliant
+resolution, with one amendment — **the tested sign is fixed by the 2023
+screen leg's own point estimate and the 2024 leg must agree with it;** no
+sign is imported from the V7 §2.3 proxy, and no coin-flip or orthogonal
+procedure is needed because nothing in the pass rule is one-sided. But this
+does not make M1 a fresh test: it is a disclosed partially-read member on a
+population overlapping the proxy measurement, so **binding: even a full
+SURVIVOR verdict for M1 is reported as a calibration MEASUREMENT with
+disclosed prior exposure, is not a fresh confirmatory discovery, and may
+not promote to any trading decision without an independent forward
+out-of-sample leg** (forward capture; 2026-01-01..2026-08-27 remains
+SEALED and is not that leg). **HC4/HC5 (code)** — see D7. **HC6 (M2 bucket
+floor n)**: moot under D3, but recorded as n≥300 per extreme tercile for
+the exploratory read; the observed terciles (263-345) mean the 2023 low/mid/
+high and 2024 high buckets sit at or below that floor, a further reason M2
+is not confirmatory. **HC7 (one family_id or two)**: **one family_id,
+`TOTALS_FULLGAME_2026H1`, with M1 confirmatory (m=1) and M2 recorded inside
+it as a pre-determined exploratory failure.** Splitting them would let the
+M2 failure disappear from the family's published record; keeping them
+together forces the loser to be published alongside the survivor, which is
+the point.
+
+### D6 — Outcome-adjacent choices and rescue levers found in the draft
+
+Every `TBD` in the draft's freeze record is a rescue lever if it survives
+into registration: `direction`, `effect_floor_pp` (both members),
+`bucket_floor_n`. **Binding: no field of the freeze record may be `TBD`,
+`PLACEHOLDER`, or reviewer-deferred at the moment `freeze_family` is
+called; the hashes are computed from real inputs and the numeric gates are
+literal numbers.** Four further levers are closed explicitly: (i) the
+integer-line `P(over | no push)` stratum is a second look at the same
+question on an adjacent population and is **report-only forever** — it can
+never substitute for, rescue, or be promoted over a failed primary; (ii)
+the void-rate band against V7's ~2.7-3.1% is a diagnostic and must never
+become a re-filter of the denominator (A6); (iii) the 6h staleness bound is
+frozen by B5 from the timing distribution alone and may not be re-derived,
+widened or narrowed after any outcome is read; (iv) no re-bucketing,
+re-tercile, quintile, alternative edge fit, or alternative de-vig
+convention may be introduced after a result — the three conventions are
+gates fixed in advance, not a menu. Two draft phrasings are also corrected
+as outcome-adjacent: "reported as blocked-coverage, not a loser" must not
+be used to keep a member alive in the narrative (a blocked member is a
+published non-result, and it is *not* a partial pass), and the draft's
+"could be lower once both filters are applied" hedge is now a measured
+fact, not a hedge.
+
+### D7 — Evaluation code that must exist and pass validation before registration
+
+Required for M1 (confirmatory), all of it before `freeze_family` is called
+with real members: (1) `totals_rows.build_universe` producing the D1
+denominator with the exclusion ledger as a structured field, plus a test
+asserting the four exclusion classes and their counts; (2) per-line
+de-vigged Over probability at the ≥3-book floor under **all three**
+conventions (proportional primary, power, shin) with the sign-survival
+check mechanised as a boolean, not read off a table; (3) date-clustered CI
+via `src.model.discovery` on the 2024 leg alone, with a regression test
+that a row-independent CI is never what is returned; (4) the
+population-shift chi-square on the fixed `TOTALS_POPULATION_AUDIT.md` §6
+line and book-count edges, computed feature-side and before any outcome
+call in the code path; (5) the frozen `src.research.battery` at
+`RULES_VERSION 2.0.0` run on the 2024 leg; (6) a mechanised single
+`verdict` field per member over the F5 B3 precedence
+(`POPULATION_SHIFT_FAIL` → `SCREEN_FAIL` → `REPLICATION_FAIL` →
+`DEVIG_SIGN_FAIL` → `BATTERY_FAIL` → `SURVIVOR`), **with one regression
+test per gate that flips only that gate's input and asserts the verdict
+changes**; (7) `freeze_family` writing an immutable record with `spec_sha256`
+over this document, the universe identity and price-payload hashes, and
+`FDR_M = 1` cross-checked at run time against the count of p-values handed
+to `benjamini_hochberg`; (8) the B4/validation-item-9 `commence_time`
+mutation-armed fixture, which must fail when the anchor is swapped for a
+post-hoc schedule field; (9) push handling for the integer stratum
+implemented, or the stratum dropped from the report entirely — an
+unimplemented specified path is not permitted to appear as a reported
+number. For M2 (exploratory), additionally: tercile assignment from
+2023-fit frozen edges, the both-sides-or-`None` rule enforced in code with
+a test that a one-sided value never stands in for the mean, a dedicated PIT
+test for the MEAN recombination itself (`TOTALS_METHODOLOGY.md` §1.2 names
+this gap), and per-tercile evaluation calls. **If M2's code is not built,
+M2 is reported as `POPULATION_SHIFT_FAIL, not evaluated` — it is not
+reported with partial or hand-computed numbers.**
+
+VERDICT: READY FOR FINAL SPECIFICATION AS AMENDED
