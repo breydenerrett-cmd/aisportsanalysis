@@ -17,6 +17,7 @@ from typing import Iterable, Mapping, Protocol
 from src.engine.snapshot import PriceBlindSnapshot, PricedBoard
 from src.ledger.records import (
     DecisionRecord,
+    PROBABILITY_PROVENANCE_MARKET_DERIVED,
     PROBABILITY_PROVENANCE_MODEL_DERIVED,
     PROBABILITY_PROVENANCE_VALUES,
 )
@@ -254,6 +255,30 @@ def analyze(snapshot: PriceBlindSnapshot, board: PricedBoard, *,
             best = board.best(selection_id)
             friction = board.friction(selection_id, as_of_utc=board.t)
 
+            # The MARKET_DERIVED identity map (docs/PREREG_CALIBRATED_
+            # PROBABILITY.md §2-3): a `market_derived` proposal cannot know
+            # its own p_model at PROPOSE time -- PriceBlindSnapshot has no
+            # price field at all -- so it proposes with p_model=None and
+            # PROJECT fills it in here, per selection, as EXACTLY this same
+            # `consensus.fair_probability` object: zero fitted parameters,
+            # no recalibration intercept, nothing but the identity. Using
+            # the very same float PROJECT already computed for
+            # `consensus_fair` below (never a second de-vig call) is what
+            # makes the identity hold to full float precision by
+            # construction, not by coincidence -- see
+            # tests/test_engine_analyze.py's identity test and §6.5's named
+            # wiring-failure risk (a second de-vig implementation drifting
+            # apart from this one). Undefined consensus (fewer than
+            # `min_books` qualifying books) leaves p_model honestly None --
+            # never a 0.5 default, matching M7's consensus-undefined guard.
+            effective_proposal = proposal
+            if proposal.p_model_provenance == PROBABILITY_PROVENANCE_MARKET_DERIVED:
+                effective_proposal = replace(
+                    proposal,
+                    p_model=(consensus.fair_probability
+                             if consensus is not None else None),
+                )
+
             # N2/honesty fix: edge is only ever a real measurement when the
             # probability is independent of the price it is diffed against
             # -- model_derived, and nothing else. A placeholder constant, a
@@ -262,13 +287,13 @@ def analyze(snapshot: PriceBlindSnapshot, board: PricedBoard, *,
             # DecisionRecord.__post_init__ raising below (impossible, not
             # merely discouraged).
             edge_bps = None
-            if (proposal.p_model_provenance == PROBABILITY_PROVENANCE_MODEL_DERIVED
-                    and consensus is not None and proposal.p_model is not None):
-                raw_edge = proposal.p_model - consensus.fair_probability
+            if (effective_proposal.p_model_provenance == PROBABILITY_PROVENANCE_MODEL_DERIVED
+                    and consensus is not None and effective_proposal.p_model is not None):
+                raw_edge = effective_proposal.p_model - consensus.fair_probability
                 edge_bps = int(round(raw_edge * 10_000)) - config.friction_bps
 
             candidates.append(Candidate(
-                proposal=proposal,
+                proposal=effective_proposal,
                 selection_id=selection_id,
                 consensus_fair=(consensus.fair_probability
                                 if consensus is not None else None),

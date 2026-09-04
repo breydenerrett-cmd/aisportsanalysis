@@ -45,7 +45,13 @@ from pathlib import Path
 from typing import Mapping, Optional, Sequence
 
 from src.board.settle import LOSS, PUSH, VOID, WIN
-from src.factory.scorecard import decision_key_for
+from src.core import calibration as calibration_module
+from src.factory.scorecard import (
+    CalibrationReport,
+    _CALIBRATION_ELIGIBLE_PROVENANCE,
+    build_calibration_report,
+    decision_key_for,
+)
 from src.ledger.chain import HashChainLedger
 from src.ledger.records import DecisionRecord, ReviewRecord, Scorecard
 from src.paths import evidence_path, repo_root
@@ -230,6 +236,14 @@ class EodReview:
     # today's decisions could ever have contributed an edge/calibration
     # claim (model_derived) versus how many structurally could not.
     provenance_counts: Mapping  # {p_model_provenance: count}
+    # docs/PREREG_CALIBRATED_PROBABILITY.md §4/§6: one CalibrationReport per
+    # eligible p_model_provenance (model_derived, market_derived) with any
+    # decision/review pairs at all -- computed over the FULL decision
+    # history handed in as `calibration_decisions` (today's decision volume
+    # alone can never clear the >=500-pair, >=9-cluster floor), never
+    # gating anything, and never published with a real score below that
+    # floor (CalibrationReport.sufficient is False; every score is None).
+    calibration_reports: tuple  # tuple[CalibrationReport, ...]
 
 
 _SCORECARD_DELTA_FIELDS = (
@@ -245,12 +259,22 @@ def build_review(
     decisions: Sequence[DecisionRecord],
     reviews: Sequence[ReviewRecord],
     scorecards: Sequence[Scorecard],
+    *,
+    calibration_decisions: Optional[Sequence[DecisionRecord]] = None,
 ) -> EodReview:
     """Build the deterministic end-of-day self-review for `date`.
 
     Refuses (`EodReviewError`) when `decisions` is empty -- a day with zero
     recorded decisions has nothing to report, and a report that renders
     anyway would be an empty happy report standing in for an honest refusal.
+
+    `calibration_decisions` (docs/PREREG_CALIBRATED_PROBABILITY.md §4/§6),
+    when given, is the FULL decision history (not just `date`'s) the
+    calibration section is computed over -- one day's decision volume can
+    never clear the >=500-pair, >=9-cluster floor on its own. Defaults to
+    `decisions` (today only) for a caller with no fuller history to offer,
+    which will almost always report INSUFFICIENT SAMPLE -- an honest
+    result, not a bug.
     """
     if not decisions:
         raise EodReviewError(
@@ -364,6 +388,17 @@ def build_review(
         key=lambda a: a.event_id,
     ))
 
+    calibration_pool = (calibration_decisions if calibration_decisions
+                       is not None else decisions)
+    calibration_provenances = sorted(
+        {d.p_model_provenance for d in calibration_pool}
+        & _CALIBRATION_ELIGIBLE_PROVENANCE
+    )
+    calibration_reports = tuple(
+        build_calibration_report(calibration_pool, reviews, provenance=p)
+        for p in calibration_provenances
+    )
+
     return EodReview(
         date=date, n_decisions=len(decisions), decisions_made=decisions_made,
         vetoes=vetoes, grade_cd_share=grade_cd_share, settlements=settlements,
@@ -373,6 +408,7 @@ def build_review(
         scorecard_deltas=scorecard_deltas,
         assumption_exposure_items=assumption_items,
         provenance_counts=provenance_counts,
+        calibration_reports=calibration_reports,
     )
 
 
@@ -487,6 +523,46 @@ def render_markdown(review: EodReview) -> str:
             lines.append(f"    {field_name}: {_fmt(prev)} -> {_fmt(curr)} ({delta_str})")
     lines.append("")
 
+    lines.append("## Calibration (docs/PREREG_CALIBRATED_PROBABILITY.md §4)")
+    if not review.calibration_reports:
+        lines.append(
+            "No model_derived or market_derived decision exists yet -- "
+            "nothing to measure."
+        )
+    for cr in review.calibration_reports:
+        lines.append(f"### provenance={cr.provenance}")
+        if not cr.sufficient:
+            lines.append(
+                f"INSUFFICIENT SAMPLE: {cr.n_pairs} decision/review pair(s) "
+                f"(need >= {cr.required_pairs}) across {cr.n_clusters} "
+                f"independent 7-day cluster(s) (need >= "
+                f"{cr.required_clusters}). No calibration claim published."
+            )
+            continue
+        lines.append(
+            f"n_pairs={cr.n_pairs} n_clusters={cr.n_clusters} "
+            f"log_loss={_fmt(cr.log_loss)} brier={_fmt(cr.brier)} "
+            f"ece={_fmt(cr.ece)} max_ce={_fmt(cr.max_ce)} "
+            f"mean_predicted={_fmt(cr.mean_predicted)} "
+            f"observed_rate={_fmt(cr.observed_rate)}"
+        )
+        lines.append(
+            "Baselines -- de-vigged consensus on these games: delta="
+            f"{_fmt(cr.baseline_market_delta_log_loss)}; "
+            f"base_rate: log_loss={_fmt(cr.baseline_base_rate_log_loss)} "
+            f"brier={_fmt(cr.baseline_base_rate_brier)}; "
+            f"Phase 2A 2024 reference (context only, not a live comparison): "
+            f"log_loss={cr.baseline_phase2a_log_loss} "
+            f"brier={cr.baseline_phase2a_brier}"
+        )
+        lines.append("Reliability, fixed-width bins:")
+        lines.append(calibration_module.format_reliability_curve(
+            cr.reliability_fixed_width))
+        lines.append("Reliability, equal-count (decile) bins:")
+        lines.append(calibration_module.format_reliability_curve(
+            cr.reliability_equal_count))
+    lines.append("")
+
     lines.append("## What the engine did not know")
     if not review.assumption_exposure_items:
         lines.append("No decision today recorded a non-empty assumption_exposure.")
@@ -512,12 +588,14 @@ def write_review(
     *,
     docs_dir: Optional[Path] = None,
     chain_path: Optional[str] = None,
+    calibration_decisions: Optional[Sequence[DecisionRecord]] = None,
 ) -> dict:
     """Build, render, write `docs/eod/DATE.md`, and append a summary row to
     the EOD review chain. Raises `EodReviewError` (writes nothing) when
     `date` has no decisions -- the CLI is expected to let that propagate as
     an honest refusal rather than catching it into an empty report."""
-    review = build_review(date, accounts, decisions, reviews, scorecards)
+    review = build_review(date, accounts, decisions, reviews, scorecards,
+                          calibration_decisions=calibration_decisions)
     markdown = render_markdown(review)
 
     target_dir = Path(docs_dir) if docs_dir is not None else repo_root() / "docs" / "eod"
@@ -539,6 +617,9 @@ def write_review(
         "n_accounts": len(review.accounts),
         "grade_cd_share": review.grade_cd_share,
         "provenance_counts": dict(review.provenance_counts),
+        "calibration_sufficient": {
+            cr.provenance: cr.sufficient for cr in review.calibration_reports
+        },
     })
 
     return {"review": review, "markdown": markdown, "path": str(out_path),

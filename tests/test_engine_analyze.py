@@ -447,5 +447,70 @@ class TestProbabilityProvenance(unittest.TestCase):
             self.assertEqual(record.p_model_provenance, "none")
 
 
+class TestMarketDerivedIdentity(unittest.TestCase):
+    """docs/PREREG_CALIBRATED_PROBABILITY.md §2/§6.5: the wired
+    MARKET_DERIVED probability must equal the board's own de-vigged
+    consensus for the selection to FULL FLOAT PRECISION -- not
+    approximately, not "close enough". A `market_derived` proposal cannot
+    compute its own p_model at PROPOSE time (PriceBlindSnapshot has no
+    price field at all); `analyze()`'s PROJECT phase fills it in from
+    `board.consensus(...)`, and this test proves that fill-in is the
+    identity map, not a second de-vig computation that could quietly drift.
+    """
+
+    def _market_derived_system(self, market_key="h2h", side="home"):
+        from src.engine.adapters.evolab_system import MarketDerivedConsensusSystem
+        return MarketDerivedConsensusSystem(market_key=market_key, side=side)
+
+    def test_p_model_equals_board_consensus_to_full_precision(self):
+        board = _board()
+        snapshot = _snapshot(available_markets=("h2h",))
+        for side, selection_id in (("home", HOME), ("away", AWAY)):
+            system = self._market_derived_system(side=side)
+            analysis = analyze(snapshot, board, systems=(system,),
+                               adversaries=())
+            plays = [r for r in analysis.records if r.verdict == "play"]
+            self.assertEqual(len(plays), 1)
+            record = plays[0]
+            consensus = board.consensus(selection_id)
+            self.assertIsNotNone(consensus)
+            # Exact equality, not assertAlmostEqual: any drift between this
+            # system's p_model and the board's own consensus -- a second
+            # de-vig implementation, a rounding difference -- is a WIRING
+            # FAILURE (§6.5), and must fail this test loudly rather than
+            # surviving as a small "edge".
+            self.assertEqual(record.p_model, consensus.fair_probability)
+            self.assertEqual(record.p_model_provenance, "market_derived")
+
+    def test_edge_bps_and_rating_stay_none_even_though_p_model_is_set(self):
+        """The whole point: a real, non-null p_model that still can never
+        become an edge, because provenance gates edge_bps, not p_model's
+        presence."""
+        system = self._market_derived_system()
+        analysis = analyze(_snapshot(available_markets=("h2h",)), _board(),
+                           systems=(system,), adversaries=())
+        record = [r for r in analysis.records if r.verdict == "play"][0]
+        self.assertIsNotNone(record.p_model)
+        self.assertIsNone(record.edge_bps)
+        self.assertIsNone(record.rating)
+        self.assertEqual(record.value_basis,
+                         analyze_module.VALUE_BASIS_PRICE_STANDING_ONLY)
+
+    def test_undefined_consensus_leaves_p_model_none_not_a_default(self):
+        """Fewer than `min_books` qualifying books -> consensus is None
+        (M7's consensus-undefined guard) -> p_model must stay honestly
+        None, never fall back to 0.5 or any other invented value."""
+        one_sided_board = PricedBoard.from_price_observations(
+            "1", "2023-04-11T20:00:00Z",
+            (_po(HOME, "home", -150, book="a"),),  # no opposite side quoted
+        )
+        system = self._market_derived_system()
+        analysis = analyze(_snapshot(available_markets=("h2h",)),
+                           one_sided_board, systems=(system,), adversaries=())
+        record = [r for r in analysis.records if r.selection_id == HOME][0]
+        self.assertIsNone(record.p_model)
+        self.assertIsNone(record.edge_bps)
+
+
 if __name__ == "__main__":
     unittest.main()

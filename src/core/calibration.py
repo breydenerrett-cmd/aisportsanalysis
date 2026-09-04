@@ -153,6 +153,61 @@ def reliability_curve(predictions, outcomes, bins: int = 10):
     return curve
 
 
+def reliability_curve_equal_count(predictions, outcomes, bins: int = 10):
+    """Reliability curve with equal-COUNT (quantile) bins instead of
+    equal-WIDTH ones -- docs/PREREG_CALIBRATED_PROBABILITY.md §4's second
+    mandated scheme.
+
+    `reliability_curve` fixes the probability range each bin covers
+    ([0, 0.1), [0.1, 0.2), ...), so a market whose predictions concentrate
+    in a narrow band (MLB moneyline consensus sits mostly in 0.30-0.70)
+    leaves most fixed-width bins empty and crowds all the real signal into
+    a few. This scheme instead sorts predictions and splits them into
+    `bins` groups of as-equal-as-possible size, so every bin's boundaries
+    move with the sample instead of the sample being cut against fixed
+    boundaries. Reported ALONGSIDE `reliability_curve`, never instead of it
+    -- the two disagreeing is itself diagnostic (§4).
+
+    Returns the same per-bin shape `reliability_curve` does (`lower`,
+    `upper`, `count`, `mean_predicted`, `observed_rate`, `gap`), so
+    `format_reliability_curve` renders either. `lower`/`upper` here are the
+    bin's own observed prediction range, not a fixed fraction of [0, 1] --
+    ties at a bin boundary stay together in the lower-indexed bin (a stable
+    sort by prediction, sliced by count) rather than being split.
+    """
+    preds, obs = _validate_pair(predictions, outcomes)
+    if not isinstance(bins, int) or bins < 1:
+        raise CalibrationError(f"bins must be a positive integer, got {bins!r}")
+    n = len(preds)
+    if n < bins:
+        bins = n  # never split emptier than one prediction per bin
+
+    order = sorted(range(n), key=lambda i: preds[i])
+    # Distribute n items into `bins` groups whose sizes differ by at most
+    # one -- the standard "as equal as possible" quantile split, so an n not
+    # evenly divisible by bins never silently starves the last bin.
+    base, extra = divmod(n, bins)
+    curve = []
+    start = 0
+    for b in range(bins):
+        size = base + (1 if b < extra else 0)
+        idxs = order[start:start + size]
+        start += size
+        group_preds = [preds[i] for i in idxs]
+        group_obs = [obs[i] for i in idxs]
+        mean_pred = sum(group_preds) / len(group_preds)
+        observed = sum(group_obs) / len(group_obs)
+        curve.append({
+            "lower": min(group_preds),
+            "upper": max(group_preds),
+            "count": len(idxs),
+            "mean_predicted": mean_pred,
+            "observed_rate": observed,
+            "gap": observed - mean_pred,
+        })
+    return curve
+
+
 def format_reliability_curve(curve, width: int = 28) -> str:
     """Render a reliability curve as plain text for terminal reports."""
     lines = [

@@ -15,11 +15,13 @@ from src.accounts.paper import PaperBet, settle_bet
 from src.board.settle import GameResult
 from src.factory.fitness import promotion_verdict
 from src.factory.scorecard import (
+    MIN_CALIBRATION_PAIRS,
     NEUTRAL_BRIER,
     NEUTRAL_LOGLOSS,
     ScorecardError,
     _calibration,
     _decision_review_pairs,
+    build_calibration_report,
     build_fitness,
     build_scorecard,
     compute_clv_stats,
@@ -30,6 +32,7 @@ from src.factory.scorecard import (
 )
 from src.ledger.records import (
     DecisionRecord,
+    PROBABILITY_PROVENANCE_MARKET_DERIVED,
     PROBABILITY_PROVENANCE_MODEL_DERIVED,
     ReviewRecord,
 )
@@ -56,7 +59,14 @@ def _loss_bet(bet_id, price_american=-110, stake=1.0):
 
 def _decision(day, *, event_id="evt-x", edge_bps=200, p_model=0.6,
               verdict="play", price_american=-110, known_at_grade="A",
-              point_class="LATE_BOARD", system_id="sys-1"):
+              point_class="LATE_BOARD", system_id="sys-1",
+              p_model_provenance=PROBABILITY_PROVENANCE_MODEL_DERIVED):
+    # Mirror src.engine.analyze's real invariant here too: edge_bps is
+    # structurally None for anything but model_derived provenance -- a
+    # fixture that ignored this could construct a DecisionRecord the real
+    # engine never could.
+    if p_model_provenance != PROBABILITY_PROVENANCE_MODEL_DERIVED:
+        edge_bps = None
     return DecisionRecord(
         engine_version="v1", system_id=system_id, system_version="1.0.0",
         registry_fingerprint="fp1", frame_fingerprint=None,
@@ -76,7 +86,7 @@ def _decision(day, *, event_id="evt-x", edge_bps=200, p_model=0.6,
         if verdict == "play" else "refused_thin",
         assumption_exposure={}, stake_units=1.0 if verdict == "play" else 0.0,
         known_at_grade=known_at_grade,
-        p_model_provenance=PROBABILITY_PROVENANCE_MODEL_DERIVED,
+        p_model_provenance=p_model_provenance,
     )
 
 
@@ -303,6 +313,164 @@ class EconomicComponentTests(unittest.TestCase):
         self.assertGreater(assembly.fitness.economic.logloss_vs_market,
                            NEUTRAL_LOGLOSS)
         self.assertFalse(assembly.fitness.economic.economically_meaningful)
+
+
+# ---------------------------------------------------------------------------
+# The named regression test: docs/PREREG_CALIBRATED_PROBABILITY.md §5.
+#
+# "A market-derived probability can never satisfy the economic component
+# of promotion_verdict -- structurally, not by good intentions ... The
+# trap: 0.67275 < 0.693, so the log-loss half of that conjunction PASSES
+# on the market's own forecast. What holds it shut is n_edge ... That
+# chain is the guarantee and must carry a named regression test."
+# ---------------------------------------------------------------------------
+
+class MarketDerivedNeverEconomicallyMeaningfulTests(unittest.TestCase):
+    def _well_calibrated_market_derived_decisions(self, n_days=12):
+        """A market_derived system whose p_model genuinely tracks outcomes
+        (unlike EconomicComponentTests' overconfident-loser fixture) --
+        exactly the shape that makes the log-loss half of the economic
+        conjunction PASS, so the test proves the gate is held shut by
+        n_edge, not by logloss failing to compute or failing to beat the
+        neutral baseline."""
+        decisions, reviews = [], []
+        # 8 wins at p_model=0.65, 4 losses at p_model=0.65 -- a textbook
+        # well-calibrated forecast (65% win rate, 65% stated confidence),
+        # log-loss well under ln(2).
+        outcomes = (["win"] * 8) + (["loss"] * 4)
+        for i, outcome in enumerate(outcomes):
+            day = f"2026-08-{i + 1:02d}"
+            d = _decision(
+                day, event_id=f"evt-{i}", p_model=0.65,
+                p_model_provenance=PROBABILITY_PROVENANCE_MARKET_DERIVED,
+            )
+            decisions.append(d)
+            reviews.append(_review(d, settled=outcome))
+        return decisions, reviews
+
+    def test_logloss_half_of_the_conjunction_passes_on_its_own(self):
+        """The trap, isolated: fed straight into `_calibration`, this
+        market_derived sample's mean log-loss genuinely beats ln(2) --
+        confirming the log-loss half of `economically_meaningful` is not
+        what blocks promotion here."""
+        decisions, reviews = self._well_calibrated_market_derived_decisions()
+        logloss_mean, brier_mean, n_calibration = _calibration(decisions, reviews)
+        self.assertGreater(n_calibration, 0)
+        self.assertLess(logloss_mean, NEUTRAL_LOGLOSS)
+
+    def test_economically_meaningful_is_false_because_n_edge_is_zero(self):
+        """The guarantee itself: even though log-loss passes (previous
+        test), `economically_meaningful` is False, and specifically
+        because n_edge == 0 -- `edge_bps` is structurally None for
+        market_derived (src.engine.analyze / src.ledger.records'
+        invariant), never because calibration failed to compute or failed
+        to beat the neutral baseline."""
+        decisions, reviews = self._well_calibrated_market_derived_decisions()
+        assembly = build_fitness("sys-market-derived", [], decisions, reviews,
+                                 None, required_clusters=1)
+        economic = assembly.fitness.economic
+
+        # Every decision here structurally carries edge_bps=None.
+        self.assertTrue(all(d.edge_bps is None for d in decisions))
+
+        # The log-loss half of the conjunction passes -- restated on the
+        # actual Fitness object this test gates on, not just the helper.
+        self.assertLess(economic.logloss_vs_market, NEUTRAL_LOGLOSS)
+
+        # And yet: not economically meaningful, and not promotable.
+        self.assertFalse(economic.economically_meaningful)
+        verdict = promotion_verdict(assembly.fitness)
+        self.assertFalse(verdict.promote)
+
+        # Named cause, not a vague failure: n_edge == 0 is on record as an
+        # AbsentComponent for economic.realized_return, and realized_return
+        # itself reads as the negative 0.0 fallback, never a fabricated
+        # positive one.
+        reasons = assembly.absent_reasons()
+        self.assertIn("economic.realized_return", reasons)
+        self.assertIn("model_derived", reasons["economic.realized_return"])
+        self.assertEqual(economic.realized_return, 0.0)
+
+
+# ---------------------------------------------------------------------------
+# build_calibration_report -- docs/PREREG_CALIBRATED_PROBABILITY.md §4
+# ---------------------------------------------------------------------------
+
+class CalibrationReportTests(unittest.TestCase):
+    def _market_derived_pairs(self, n, *, clustered_days=True):
+        decisions, reviews = [], []
+        for i in range(n):
+            day = f"2026-{1 + (i // 28):02d}-{1 + (i % 28):02d}"
+            d = _decision(
+                day, event_id=f"evt-{i}", p_model=0.55 + (0.001 * (i % 20)),
+                p_model_provenance=PROBABILITY_PROVENANCE_MARKET_DERIVED,
+            )
+            decisions.append(d)
+            reviews.append(_review(d, settled="win" if i % 2 == 0 else "loss"))
+        return decisions, reviews
+
+    def test_below_minimum_pairs_reports_insufficient_sample(self):
+        decisions, reviews = self._market_derived_pairs(50)
+        report = build_calibration_report(decisions, reviews)
+        self.assertFalse(report.sufficient)
+        self.assertEqual(report.n_pairs, 50)
+        self.assertIsNone(report.log_loss)
+        self.assertEqual(report.reliability_fixed_width, ())
+        self.assertEqual(report.reliability_equal_count, ())
+
+    def test_below_minimum_clusters_reports_insufficient_sample_even_with_enough_pairs(self):
+        # >=500 pairs but all crammed into far fewer than 9 distinct
+        # 7-day game-day clusters (one decision per day, 60 days -> 8
+        # clusters at 7 days each).
+        decisions, reviews = [], []
+        for i in range(600):
+            day_index = i % 60
+            day = f"2026-01-{1 + day_index:02d}" if day_index < 28 else \
+                f"2026-02-{1 + (day_index - 28):02d}"
+            d = _decision(
+                day, event_id=f"evt-{i}", p_model=0.6,
+                p_model_provenance=PROBABILITY_PROVENANCE_MARKET_DERIVED,
+            )
+            decisions.append(d)
+            reviews.append(_review(d, settled="win" if i % 2 == 0 else "loss"))
+        report = build_calibration_report(decisions, reviews,
+                                          required_clusters=9)
+        self.assertGreaterEqual(report.n_pairs, MIN_CALIBRATION_PAIRS)
+        self.assertLess(report.n_clusters, 9)
+        self.assertFalse(report.sufficient)
+
+    def test_sufficient_sample_computes_real_scores_and_both_bin_schemes(self):
+        decisions, reviews = [], []
+        # 9 clusters worth of distinct game-days (9 * 7 = 63 days), several
+        # decisions per day so n_pairs clears 500 too.
+        n_per_day = 10
+        for day_index in range(63):
+            month, dom = divmod(day_index, 28)
+            day = f"2026-{1 + month:02d}-{1 + dom:02d}"
+            for j in range(n_per_day):
+                i = day_index * n_per_day + j
+                d = _decision(
+                    day, event_id=f"evt-{i}", p_model=0.6,
+                    p_model_provenance=PROBABILITY_PROVENANCE_MARKET_DERIVED,
+                )
+                decisions.append(d)
+                reviews.append(_review(d, settled="win" if i % 2 == 0 else "loss"))
+        report = build_calibration_report(decisions, reviews,
+                                          required_clusters=9)
+        self.assertTrue(report.sufficient)
+        self.assertGreaterEqual(report.n_pairs, MIN_CALIBRATION_PAIRS)
+        self.assertGreaterEqual(report.n_clusters, 9)
+        self.assertIsNotNone(report.log_loss)
+        self.assertIsNotNone(report.brier)
+        self.assertEqual(len(report.reliability_fixed_width), 10)
+        self.assertEqual(len(report.reliability_equal_count), 10)
+        # Baseline 1 (§4): the de-vigged consensus on the same games -- for
+        # market_derived this IS the same forecast, so the delta is exactly
+        # zero, published, never omitted.
+        self.assertEqual(report.baseline_market_delta_log_loss, 0.0)
+        self.assertIsNotNone(report.baseline_base_rate_log_loss)
+        self.assertEqual(report.baseline_phase2a_log_loss, 0.67275)
+        self.assertEqual(report.baseline_phase2a_brier, 0.23999)
 
 
 # ---------------------------------------------------------------------------

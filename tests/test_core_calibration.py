@@ -111,6 +111,58 @@ class TestReliabilityCurve(unittest.TestCase):
         self.assertEqual(len(text.splitlines()), 7)  # header + rule + 5 bins
 
 
+class TestReliabilityCurveEqualCount(unittest.TestCase):
+    """docs/PREREG_CALIBRATED_PROBABILITY.md §4's second mandated bin
+    scheme: equal-COUNT (quantile) bins, reported alongside the fixed-width
+    curve, never instead of it."""
+
+    def test_bins_hold_equal_or_near_equal_counts(self):
+        preds = [i / 100 for i in range(1, 101)]  # 100 distinct predictions
+        obs = [1 if i % 2 == 0 else 0 for i in range(100)]
+        curve = cal.reliability_curve_equal_count(preds, obs, bins=10)
+        self.assertEqual(len(curve), 10)
+        counts = [b["count"] for b in curve]
+        self.assertEqual(sum(counts), 100)
+        self.assertTrue(all(c == 10 for c in counts))
+
+    def test_uneven_n_splits_as_equal_as_possible(self):
+        preds = [i / 103 for i in range(1, 104)]  # 103 predictions, 10 bins
+        obs = [i % 2 for i in range(103)]
+        curve = cal.reliability_curve_equal_count(preds, obs, bins=10)
+        counts = sorted(b["count"] for b in curve)
+        self.assertEqual(sum(counts), 103)
+        self.assertLessEqual(max(counts) - min(counts), 1)
+
+    def test_no_bin_is_ever_empty_unlike_fixed_width(self):
+        # Every prediction crammed into [0.4, 0.6] -- fixed-width bins
+        # would leave most of [0, 1] empty; equal-count bins never do,
+        # because each bin's boundaries move with the sample.
+        preds = [0.4 + i * 0.002 for i in range(100)]
+        obs = [i % 3 == 0 for i in range(100)]
+        curve = cal.reliability_curve_equal_count(preds, obs, bins=10)
+        self.assertTrue(all(b["count"] > 0 for b in curve))
+
+    def test_perfectly_calibrated_data_has_no_gap(self):
+        preds = [0.6] * 100
+        obs = [1] * 60 + [0] * 40
+        curve = cal.reliability_curve_equal_count(preds, obs, bins=10)
+        for b in curve:
+            self.assertAlmostEqual(b["mean_predicted"], 0.6)
+            self.assertAlmostEqual(b["gap"], b["observed_rate"] - 0.6)
+
+    def test_invalid_bin_count_rejected(self):
+        for bad in (0, -1, 2.5, "ten"):
+            with self.subTest(bad=bad):
+                with self.assertRaises(cal.CalibrationError):
+                    cal.reliability_curve_equal_count([0.5], [1], bins=bad)
+
+    def test_fewer_predictions_than_bins_never_starves_a_bin_to_zero(self):
+        curve = cal.reliability_curve_equal_count([0.1, 0.5, 0.9], [0, 1, 1],
+                                                   bins=10)
+        self.assertTrue(all(b["count"] > 0 for b in curve))
+        self.assertEqual(sum(b["count"] for b in curve), 3)
+
+
 class TestCalibrationErrors(unittest.TestCase):
     def test_perfect_calibration_has_zero_ece(self):
         preds = [0.6] * 100

@@ -59,13 +59,34 @@ from src.factory.fitness import (
     RobustnessComponent,
     SampleSufficiencyComponent,
 )
+from src.core import calibration as calibration_module
 from src.ledger.records import (
     AccountSummary,
     DecisionRecord,
+    PROBABILITY_PROVENANCE_MARKET_DERIVED,
     PROBABILITY_PROVENANCE_MODEL_DERIVED,
     ReviewRecord,
     Scorecard,
 )
+
+# Provenances whose p_model is an honest attempt at a calibrated probability
+# -- `model_derived` (fitted, price-independent) and `market_derived` (the
+# board's own de-vigged consensus, republished via the identity map,
+# docs/PREREG_CALIBRATED_PROBABILITY.md §1-2: "already a well-calibrated
+# forecast"). `placeholder` (a fixed null-control constant) and `none` (no
+# probability at all) are excluded -- neither is a claim about calibration,
+# so folding either in would manufacture a calibration score out of nothing.
+_CALIBRATION_ELIGIBLE_PROVENANCE = frozenset({
+    PROBABILITY_PROVENANCE_MODEL_DERIVED,
+    PROBABILITY_PROVENANCE_MARKET_DERIVED,
+})
+
+# docs/PREREG_CALIBRATED_PROBABILITY.md §4: minimum sample before ANY
+# calibration claim is published -- >=500 decision/review pairs AND >=9
+# independent 7-day game-day clusters. Below either, report
+# "INSUFFICIENT SAMPLE" and publish no calibration claim; do not shrink
+# these to fit whatever sample happens to exist.
+MIN_CALIBRATION_PAIRS = 500
 
 # log-loss of an uninformative p=0.5 forecast -- the reference this module
 # uses when there is no genuine calibration evidence to average. Never a
@@ -266,18 +287,31 @@ def _calibration(decisions: Sequence[DecisionRecord],
     `p_model` and a win/loss settlement. `n == 0` means genuinely nothing
     was computable -- callers must not treat that as a passing 0.0 logloss.
 
-    N2/honesty fix (2026-09-04): a calibration claim ("this probability was
-    well-calibrated") is only meaningful for a probability that was actually
-    an attempt at calibration -- `model_derived`. A `placeholder` constant
-    (a null control's fixed convention) or a `market_derived` number folded
-    back into logloss/Brier would silently launder a non-claim into a
-    calibration score; both are excluded here exactly like `p_model is
+    N2/honesty fix (2026-09-04), REVISED under docs/PREREG_CALIBRATED_
+    PROBABILITY.md §5: a calibration claim ("this probability was
+    well-calibrated") is meaningful for any probability that was an honest
+    attempt at calibration -- `model_derived` (fitted, price-independent)
+    AND `market_derived` (the board's own de-vigged consensus, republished
+    verbatim; §1 calls it "already a well-calibrated forecast" by
+    construction). A `placeholder` constant (a null control's fixed
+    convention, e.g. 0.5) or `none` (no probability at all) is NOT an
+    attempt at calibration and stays excluded, exactly like `p_model is
     None` always was.
+
+    Widening this from model_derived-only to include market_derived is
+    deliberate, not an oversight: it is what makes §5's trap ("0.67275 <
+    ln 2, so the log-loss half of `economically_meaningful` PASSES on the
+    market's own forecast") a real, reachable code path rather than one
+    that could never fire because this function filtered market_derived
+    out before it ever reached `logloss_mean`. What still holds
+    `economically_meaningful` shut for a market_derived-only system is
+    `n_edge == 0` (`_mean_edge_return` below), never this function --
+    see the named regression test in tests/test_factory_scorecard.py.
     """
     losses, briers = [], []
     for decision, review in _decision_review_pairs(decisions, reviews):
         if (decision.p_model is None
-                or decision.p_model_provenance != PROBABILITY_PROVENANCE_MODEL_DERIVED
+                or decision.p_model_provenance not in _CALIBRATION_ELIGIBLE_PROVENANCE
                 or review.settled not in (WIN, LOSS)):
             continue
         y = 1.0 if review.settled == WIN else 0.0
@@ -288,6 +322,105 @@ def _calibration(decisions: Sequence[DecisionRecord],
     if n == 0:
         return None, None, 0
     return sum(losses) / n, sum(briers) / n, n
+
+
+@dataclass(frozen=True, slots=True)
+class CalibrationReport:
+    """docs/PREREG_CALIBRATED_PROBABILITY.md §4's calibration measurement
+    for one `p_model_provenance`'s decision/review pairs -- reporting only,
+    never a gate on `promotion_verdict` (that stays `_calibration`/
+    `_mean_edge_return`, above). Below the §4 minimum sample, `sufficient`
+    is False and every score field stays `None`/empty: no calibration claim
+    is published at any sample size below the floor, not even a
+    PROVISIONAL one -- §4/§8 ("Reports reliability bins on 40 games").
+    """
+
+    provenance: str
+    n_pairs: int
+    n_clusters: int
+    required_pairs: int
+    required_clusters: int
+    sufficient: bool
+    log_loss: Optional[float] = None
+    brier: Optional[float] = None
+    ece: Optional[float] = None
+    max_ce: Optional[float] = None
+    mean_predicted: Optional[float] = None
+    observed_rate: Optional[float] = None
+    reliability_fixed_width: tuple = ()
+    reliability_equal_count: tuple = ()
+    # Baseline 1 (§4): the de-vigged consensus on the same games. For a
+    # market_derived probability that IS this forecast (§1: "forecast and
+    # benchmark are the same object"), so the delta is exactly 0.0,
+    # published as zero, never omitted. None for any other provenance --
+    # this report does not attempt a separate consensus lookup for those.
+    baseline_market_delta_log_loss: Optional[float] = None
+    # Baseline 2 (§4): `calibration.baseline_base_rate` on the same outcomes.
+    baseline_base_rate_log_loss: Optional[float] = None
+    baseline_base_rate_brier: Optional[float] = None
+    # Baseline 3 (§4): the frozen 2024 reference points, context only, never
+    # a live cross-sample comparison (docs/EVOLAB_PHASE2A_BASELINE.md §9.2).
+    baseline_phase2a_log_loss: float = 0.67275
+    baseline_phase2a_brier: float = 0.23999
+
+
+def build_calibration_report(
+    decisions: Sequence[DecisionRecord],
+    reviews: Sequence[ReviewRecord],
+    *,
+    provenance: str = PROBABILITY_PROVENANCE_MARKET_DERIVED,
+    min_pairs: int = MIN_CALIBRATION_PAIRS,
+    required_clusters: int = DEFAULT_REQUIRED_CLUSTERS,
+    bins: int = 10,
+) -> CalibrationReport:
+    """docs/PREREG_CALIBRATED_PROBABILITY.md §4, implemented verbatim: both
+    bin schemes, log-loss/Brier/ECE/max-CE, the three named baselines,
+    gated by the minimum-sample rule (>=500 decision/review pairs AND >=9
+    independent 7-day game-day clusters). Calls
+    `src.core.calibration.reliability_curve`/`reliability_curve_equal_count`
+    -- there is exactly one reliability implementation in this codebase.
+    """
+    pairs = [
+        (d, r) for d, r in _decision_review_pairs(decisions, reviews)
+        if d.p_model is not None and d.p_model_provenance == provenance
+        and r.settled in (WIN, LOSS)
+    ]
+    n_pairs = len(pairs)
+    decision_days = {d.decision_utc[:10] for d, _ in pairs if d.decision_utc}
+    n_clusters = len(decision_days) // int(DEFAULT_SPA_BLOCK_LENGTH)
+    sufficient = n_pairs >= min_pairs and n_clusters >= required_clusters
+
+    if not sufficient:
+        return CalibrationReport(
+            provenance=provenance, n_pairs=n_pairs, n_clusters=n_clusters,
+            required_pairs=min_pairs, required_clusters=required_clusters,
+            sufficient=False,
+        )
+
+    preds = [d.p_model for d, _ in pairs]
+    outs = [1.0 if r.settled == WIN else 0.0 for _, r in pairs]
+    scores = calibration_module.score_all(preds, outs, bins=bins)
+    fixed = tuple(calibration_module.reliability_curve(preds, outs, bins=bins))
+    equal = tuple(calibration_module.reliability_curve_equal_count(
+        preds, outs, bins=bins))
+    base_rate = calibration_module.baseline_base_rate(outs)
+
+    market_delta = (0.0 if provenance == PROBABILITY_PROVENANCE_MARKET_DERIVED
+                    else None)
+
+    return CalibrationReport(
+        provenance=provenance, n_pairs=n_pairs, n_clusters=n_clusters,
+        required_pairs=min_pairs, required_clusters=required_clusters,
+        sufficient=True,
+        log_loss=scores["log_loss"], brier=scores["brier"],
+        ece=scores["ece"], max_ce=scores["max_ce"],
+        mean_predicted=scores["mean_predicted"],
+        observed_rate=scores["observed_rate"],
+        reliability_fixed_width=fixed, reliability_equal_count=equal,
+        baseline_market_delta_log_loss=market_delta,
+        baseline_base_rate_log_loss=base_rate["log_loss"],
+        baseline_base_rate_brier=base_rate["brier"],
+    )
 
 
 def _mean_edge_return(decisions: Sequence[DecisionRecord]) -> tuple:
@@ -674,8 +807,37 @@ def build_scorecard(
             "no decision/review pair carries a captured close_price"))
     if stats.avg_odds_decimal is None:
         absent.append(AbsentComponent("avg_odds_decimal", "no settled bets"))
-    absent.append(AbsentComponent(
-        "reliability_bins", "no calibration-bin implementation exists"))
+
+    # reliability_bins: docs/PREREG_CALIBRATED_PROBABILITY.md §4/§5 -- the
+    # implementation is `src.core.calibration.reliability_curve`, which has
+    # existed since before this fix; "no calibration-bin implementation
+    # exists" was never true. This system's own p_model_provenance (the one
+    # eligible provenance it actually emits, model_derived or
+    # market_derived -- a system emits exactly one) decides whether there is
+    # anything to bin at all; the §4 minimum-sample rule (>=500 pairs, >=9
+    # seven-day clusters) decides whether a claim is publishable yet.
+    provenances_present = {d.p_model_provenance for d in decisions}
+    eligible_provenances = sorted(
+        provenances_present & _CALIBRATION_ELIGIBLE_PROVENANCE)
+    calibration_report = None
+    if not eligible_provenances:
+        absent.append(AbsentComponent(
+            "reliability_bins",
+            "no model_derived or market_derived decision exists for this "
+            "system -- a placeholder or none-provenance p_model is not a "
+            "calibration attempt (docs/PREREG_CALIBRATED_PROBABILITY.md §4)"))
+    else:
+        calibration_report = build_calibration_report(
+            decisions, reviews, provenance=eligible_provenances[0])
+        if not calibration_report.sufficient:
+            absent.append(AbsentComponent(
+                "reliability_bins",
+                f"INSUFFICIENT SAMPLE: {calibration_report.n_pairs} "
+                f"decision/review pair(s) (need >= "
+                f"{calibration_report.required_pairs}) across "
+                f"{calibration_report.n_clusters} independent 7-day "
+                f"cluster(s) (need >= {calibration_report.required_clusters}) "
+                "-- docs/PREREG_CALIBRATED_PROBABILITY.md §4"))
     absent.append(AbsentComponent(
         "realized_return_ci", "no clustered-bootstrap CI implementation exists"))
     absent.append(AbsentComponent(
@@ -706,7 +868,9 @@ def build_scorecard(
         n_independent_clusters=fitness.sample_sufficiency.n_independent_clusters,
         logloss_vs_market=fitness.economic.logloss_vs_market,
         brier=calibration_brier if calibration_brier is not None else NEUTRAL_BRIER,
-        reliability_bins=(),
+        reliability_bins=(calibration_report.reliability_fixed_width
+                          if calibration_report is not None
+                          and calibration_report.sufficient else ()),
         realized_return=fitness.economic.realized_return,
         realized_return_ci=(),
         avg_odds_decimal=stats.avg_odds_decimal or 0.0,

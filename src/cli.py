@@ -2480,13 +2480,21 @@ def cmd_eod(args) -> int:
     date_str = args.date
 
     decision_rows = HashChainLedger(V2_LEDGER_PATH).read()
+    # ALL decisions ever recorded, not just `date_str`'s -- the pre-reg's
+    # own minimum-sample rule (>=500 pairs, >=9 seven-day clusters) can
+    # never be cleared by one day's decision volume; the calibration
+    # section (docs/PREREG_CALIBRATED_PROBABILITY.md §4/§6) is computed
+    # over this full pool, `decisions` (today only) over everything else.
+    all_decisions = [
+        DecisionRecord.from_row(row) for row in decision_rows
+        if row.get("kind") not in ("genesis", "correction")
+    ]
     decisions = [
         # DecisionRecord.from_row(), not the generic _record_from_row() --
         # it backfills p_model_provenance honestly for rows published
         # before that field existed (N2/honesty fix, 2026-09-04).
-        DecisionRecord.from_row(row) for row in decision_rows
-        if row.get("kind") != "genesis"
-        and row.get("decision_utc", "").startswith(date_str)
+        d for d in all_decisions
+        if (d.decision_utc or "").startswith(date_str)
     ]
 
     review_rows = HashChainLedger(str(REVIEW_LEDGER_PATH)).read()
@@ -2512,8 +2520,9 @@ def cmd_eod(args) -> int:
                 system_id, rows, date_str))
 
     try:
-        result = eod_module.write_review(date_str, accounts, decisions,
-                                         reviews, scorecards)
+        result = eod_module.write_review(
+            date_str, accounts, decisions, reviews, scorecards,
+            calibration_decisions=all_decisions)
     except eod_module.EodReviewError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return EXIT_ERROR

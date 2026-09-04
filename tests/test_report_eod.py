@@ -291,6 +291,51 @@ class RenderDeterminismTests(unittest.TestCase):
         self.assertIsInstance(first, str)
 
 
+class CalibrationSectionTests(unittest.TestCase):
+    """docs/PREREG_CALIBRATED_PROBABILITY.md §4/§6: the EOD report's
+    calibration section, gated by the same minimum-sample rule."""
+
+    def test_no_eligible_decisions_says_nothing_to_measure(self):
+        decisions = [_decision("evt-1", verdict="refused_thin",
+                               refusal_reason="thin")]
+        review = build_review("2026-09-03", [], decisions, [], [])
+        self.assertEqual(review.calibration_reports, ())
+        markdown = render_markdown(review)
+        self.assertIn("nothing to measure", markdown)
+
+    def test_insufficient_sample_is_reported_not_a_fabricated_score(self):
+        decisions = [_decision("evt-1", verdict="play")]
+        review = build_review("2026-09-03", [], decisions, [], [])
+        self.assertEqual(len(review.calibration_reports), 1)
+        report = review.calibration_reports[0]
+        self.assertFalse(report.sufficient)
+        self.assertIsNone(report.log_loss)
+        markdown = render_markdown(review)
+        self.assertIn("INSUFFICIENT SAMPLE", markdown)
+        self.assertIn("model_derived", markdown)
+
+    def test_calibration_decisions_overrides_todays_decisions_for_the_pool(self):
+        """The whole reason `calibration_decisions` exists: one day's
+        volume can never clear the floor, so a caller hands in the full
+        decision history separately from what the report is FOR."""
+        today_decision = _decision("evt-today", verdict="play", day="2026-09-03")
+        history = [_decision(f"evt-{i}", verdict="play", day="2026-08-01")
+                  for i in range(3)]
+        reviews = [_review(d, settled="win") for d in history]
+        reviews.append(_review(today_decision, settled="win"))
+
+        review_default = build_review("2026-09-03", [], [today_decision],
+                                      reviews, [])
+        review_with_history = build_review(
+            "2026-09-03", [], [today_decision], reviews, [],
+            calibration_decisions=history + [today_decision],
+        )
+        # Default pool is today's decisions only -- one pair.
+        self.assertEqual(review_default.calibration_reports[0].n_pairs, 1)
+        # With the full history handed in separately, the pool is bigger.
+        self.assertEqual(review_with_history.calibration_reports[0].n_pairs, 4)
+
+
 class WriteReviewTests(unittest.TestCase):
     def test_writes_markdown_file_and_chain_row(self):
         decisions = [_decision("evt-1", verdict="play")]

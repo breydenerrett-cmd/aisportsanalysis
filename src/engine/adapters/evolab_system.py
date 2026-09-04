@@ -35,6 +35,7 @@ from src.evolab.decide import BoardMeta, WorldView, decide_with_reason
 from src.evolab.genome import F5_MARKET, Genome, enumerate_genomes
 from src.evolab.registry import DEFAULT_REGISTRY
 from src.ledger.records import (
+    PROBABILITY_PROVENANCE_MARKET_DERIVED,
     PROBABILITY_PROVENANCE_NONE,
     PROBABILITY_PROVENANCE_PLACEHOLDER,
     RECORD_PROVENANCE_REPLAY,
@@ -216,6 +217,89 @@ class TrivialUnderTotalSystem:
 
 
 # ---------------------------------------------------------------------------
+# The MARKET_DERIVED probability, zero-parameter (docs/PREREG_CALIBRATED_
+# PROBABILITY.md §1-2): p_model is the board's own de-vigged consensus for
+# the selection, republished under the identity map -- no recalibration
+# intercept, no Platt, no isotonic refit. This is NOT a strategy: it makes
+# no directional claim, has no thesis beyond "the market's own price", and
+# is never staked on value grounds (`edge_bps` is structurally None for
+# every provenance but `model_derived` -- src.engine.analyze.analyze /
+# src.ledger.records.DecisionRecord).
+#
+# `propose()` runs at PROPOSE time, price-blind by construction
+# (PriceBlindSnapshot carries no price field), so it CANNOT compute its own
+# p_model here -- it proposes with `p_model=None` and names its provenance
+# as `market_derived`; `analyze()`'s PROJECT phase is where the identity map
+# actually happens, filling `p_model` in from `board.consensus(...)` per
+# selection (see analyze.py's PROJECT loop). This class exists only to name
+# the (market, side) pairs worth republishing a consensus for and to declare
+# the provenance -- it carries no pricing logic of its own, on purpose:
+# there must be exactly one de-vig implementation in this codebase for the
+# identity to hold by construction rather than by two independent
+# implementations happening to agree (§6.5's named wiring-failure risk).
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True, slots=True)
+class MarketDerivedConsensusSystem:
+    """Republishes the board's own de-vigged consensus for one (market,
+    side) as `p_model`, verbatim, via the identity map. Zero fitted
+    parameters; `p_model` is filled in by PROJECT, not here."""
+
+    market_key: str
+    side: str
+    version: str = "market-derived-1"
+    declared_markets: tuple = ()
+    declared_inputs: tuple = ()
+    min_grade: str = "D"
+    expected_selection_rate: float = 1.0
+    id: str = ""
+    spec_hash: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.id:
+            object.__setattr__(
+                self, "id", f"market_derived_consensus_{self.market_key}_{self.side}")
+        if not self.spec_hash:
+            object.__setattr__(self, "spec_hash", f"{self.id}:1")
+        if not self.declared_markets:
+            object.__setattr__(self, "declared_markets", (self.market_key,))
+
+    def propose(self, view: PriceBlindSnapshot) -> tuple:
+        if self.market_key not in view.available_markets:
+            return ()
+        return (Proposal(
+            system_id=self.id, system_version=self.version,
+            market_key=self.market_key, side=self.side, p_model=None,
+            p_model_provenance=PROBABILITY_PROVENANCE_MARKET_DERIVED,
+            thesis=(
+                "MARKET_DERIVED, zero-parameter: p_model is the board's "
+                "own de-vigged consensus for this selection, republished "
+                "under the identity map by analyze()'s PROJECT phase -- no "
+                "recalibration intercept, no Platt, no isotonic refit "
+                "(docs/PREREG_CALIBRATED_PROBABILITY.md §2). Not a "
+                "strategy: edge_bps is structurally None; this may be "
+                "published as prediction confidence only."
+            ),
+            evidence=("market_derived_identity_map",),
+        ),)
+
+
+# One instance per (market, side) pair across the four SCOPE_MARKETS
+# (src/engine/slate.py's own scope boundary) -- republishing the consensus
+# is meaningful for every side of every scoped market, not just h2h/home.
+MARKET_DERIVED_SYSTEMS: tuple = tuple(
+    MarketDerivedConsensusSystem(market_key=market, side=side)
+    for market, sides in (
+        ("h2h", ("home", "away")),
+        ("spreads", ("home", "away")),
+        ("totals", ("over", "under")),
+        (F5_MARKET, ("home", "away")),
+    )
+    for side in sides
+)
+
+
+# ---------------------------------------------------------------------------
 # Registered systems for the vertical slice (checkpoint doc S5, item 5): the
 # trivial always-home null control plus a small, DETERMINISTICALLY chosen
 # set of enumerated genomes, each with a stable id so accounts and
@@ -326,6 +410,7 @@ def _trivial_system():
 REGISTERED_SYSTEMS: tuple = (
     (_trivial_system(), TrivialAlwaysHomeSpreadSystem(),
      TrivialUnderTotalSystem())
+    + MARKET_DERIVED_SYSTEMS
     + REGISTERED_EVOLAB_SYSTEMS
 )
 
