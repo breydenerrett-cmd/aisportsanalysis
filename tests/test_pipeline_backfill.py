@@ -345,3 +345,37 @@ class TestFirstFiveBackfill(unittest.TestCase):
             fetch_events=self.events(), fetch_odds=self.odds())
         self.assertEqual(report["fetched"], 0)
         self.assertIn("would be exceeded", report["stopped_early"])
+
+    def test_a_diamondbacks_game_matches_despite_the_az_ari_spelling_split(self):
+        # mlb_results.csv spells the Diamondbacks "AZ"; team_abbrev_from_name
+        # resolves the odds feed's full name to "ARI". Without canonicalizing
+        # both sides, every Diamondbacks game silently unmatches forever --
+        # this cost 288 games in the actual F5 backfill.
+        game = [{"date": "2023-06-04", "away_team": "AZ", "home_team": "SD",
+                 "game_pk": 1}]
+        report = backfill.run_first_five(
+            game, store=self.store,
+            fetch_events=self.events(
+                (("Arizona Diamondbacks", "San Diego Padres"),)),
+            fetch_odds=self.odds())
+        self.assertEqual(report["fetched"], 1)
+        self.assertEqual(report["unmatched"], 0)
+
+    def test_a_doubleheaders_second_leg_is_not_skipped_as_already_cached(self):
+        # Both games of a doubleheader share (date, away_team, home_team); a
+        # manifest keyed on that pair alone believes the second leg is already
+        # stored once the first is fetched, and it is silently never bought.
+        date = "2023-06-04"
+        leg1 = {"date": date, "away_team": "TB", "home_team": "BOS", "game_pk": 1}
+        leg2 = {"date": date, "away_team": "TB", "home_team": "BOS", "game_pk": 2}
+        events = self.events()
+        odds = self.odds()
+        first = backfill.run_first_five([leg1], store=self.store,
+                                        fetch_events=events, fetch_odds=odds)
+        self.assertEqual(first["fetched"], 1)
+        second = backfill.run_first_five([leg2], store=self.store,
+                                         fetch_events=events, fetch_odds=odds)
+        self.assertEqual(second["fetched"], 1)
+        self.assertEqual(second["skipped_cached"], 0)
+        rows = backfill.read_season(2023, self.store)
+        self.assertEqual({r["game_pk"] for r in rows}, {1, 2})

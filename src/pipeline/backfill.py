@@ -428,8 +428,26 @@ def run_first_five(games, markets=FIRST_FIVE_MARKETS, budget=None,
     the two feeds do not share ids. An unmatched game is REPORTED rather than
     skipped -- an unmatched pair is nearly always a team-code mismatch, which has
     silently cost this project data twice before.
+
+    Team pairs are canonicalized on both sides (`parks.canonical_team`) before
+    matching. `mlb_results.csv` spells the Diamondbacks "AZ"; the odds feed's
+    full name resolves via `team_abbrev_from_name` to "ARI"; without this step
+    every Diamondbacks game in the window is permanently unmatched even though
+    the event is sitting right there in the index under a different spelling.
+
+    The manifest key includes `game_pk`, not just `date:away@home`, because a
+    doubleheader's two games share that team pair. A team-pair-only key means
+    the second leg is skipped on a resumed run believing it already stored --
+    it never gets fetched or reported as unmatched, just silently dropped.
     """
     from src.pipeline import slate as slate_mod
+    from src.data import parks
+
+    def _canon(abbrev):
+        try:
+            return parks.canonical_team(abbrev) if abbrev else abbrev
+        except parks.ParkError:
+            return abbrev
 
     events_for = fetch_events or _historical_events
     odds_for = fetch_odds or _historical_event_odds
@@ -448,9 +466,13 @@ def run_first_five(games, markets=FIRST_FIVE_MARKETS, budget=None,
     for game in games:
         by_date.setdefault(game.get("date"), []).append(game)
 
+    def manifest_key(game_date, away, home, game_pk):
+        return f"{game_date}:{away}@{home}:{game_pk}"
+
     for game_date in sorted(by_date):
         wanted = [g for g in by_date[game_date]
-                  if f"{game_date}:{g['away_team']}@{g['home_team']}"
+                  if manifest_key(game_date, g["away_team"], g["home_team"],
+                                   g.get("game_pk"))
                   not in manifest["snapshots"]]
         report["skipped_cached"] += len(by_date[game_date]) - len(wanted)
         if not wanted:
@@ -478,8 +500,8 @@ def run_first_five(games, markets=FIRST_FIVE_MARKETS, budget=None,
             if usage.get("remaining") is not None:
                 report["credits_remaining"] = usage["remaining"]
             for event in events:
-                away = slate_mod.team_abbrev_from_name(event.get("away_team"))
-                home = slate_mod.team_abbrev_from_name(event.get("home_team"))
+                away = _canon(slate_mod.team_abbrev_from_name(event.get("away_team")))
+                home = _canon(slate_mod.team_abbrev_from_name(event.get("home_team")))
                 # The LATER instant wins, since it is closer to first pitch for
                 # any game still on the board at that point.
                 if away and home:
@@ -491,7 +513,8 @@ def run_first_five(games, markets=FIRST_FIVE_MARKETS, budget=None,
             continue
 
         for game in wanted:
-            key = (game["away_team"], game["home_team"])
+            key = (_canon(game["away_team"]), _canon(game["home_team"]))
+            game_pk = game.get("game_pk")
             event = index.get(key)
             if not event:
                 report["unmatched"] += 1
@@ -516,7 +539,8 @@ def run_first_five(games, markets=FIRST_FIVE_MARKETS, budget=None,
                 # recorded in the manifest so a resumed run does not re-ask, and
                 # it costs zero credits either way.
                 report["unavailable_at_date"] += 1
-                manifest["snapshots"][f"{game_date}:{key[0]}@{key[1]}"] = {
+                manifest["snapshots"][
+                    manifest_key(game_date, key[0], key[1], game_pk)] = {
                     "unavailable_at_date": True}
                 write_manifest(manifest, store)
                 if on_game:
@@ -530,7 +554,7 @@ def run_first_five(games, markets=FIRST_FIVE_MARKETS, budget=None,
                 continue
 
             record = {"date": game_date, "away_team": key[0], "home_team": key[1],
-                      "game_pk": game.get("game_pk"), "event_id": event["id"],
+                      "game_pk": game_pk, "event_id": event["id"],
                       "commence_time": event.get("commence_time"),
                       "snapshot_at": payload.get("timestamp"),
                       "markets": sorted(markets),
@@ -539,7 +563,8 @@ def run_first_five(games, markets=FIRST_FIVE_MARKETS, budget=None,
             with path.open("a", encoding="utf-8") as handle:
                 handle.write(json.dumps(record, sort_keys=True) + "\n")
 
-            manifest["snapshots"][f"{game_date}:{key[0]}@{key[1]}"] = {
+            manifest["snapshots"][
+                manifest_key(game_date, key[0], key[1], game_pk)] = {
                 "event_id": event["id"], "snapshot_at": payload.get("timestamp")}
             write_manifest(manifest, store)
 
