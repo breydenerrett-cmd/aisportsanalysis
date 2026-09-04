@@ -16,7 +16,7 @@ FAILED_RETRYABLE FAILED_TERMINAL DEFERRED. One task RUNNING per lane.
 | W8 | P0 | docs/F5_RESEARCH_RESULTS.md post-mortem (nulls first-class) | W7 | Sonnet | DONE | doc complete per directive list | docs/F5_RESEARCH_RESULTS.md | 06b5a44 | – |
 | W9 | P1 | Totals feature-legitimacy audit: legit run-environment vs ML-pretending; methodology before search | W7 | Sonnet (+Opus review) | DONE — Revision 2 (8ed7244) re-reviewed APPROVED TO DRAFT HYPOTHESES (6fc4e4e) | audit table + methodology doc | docs/TOTALS_METHODOLOGY.md, docs/TOTALS_COVERAGE.md, scripts/totals_coverage_audit.py | 9b28c62 | – |
 | W10 | P1 | Factory scale prep: canonical wager store, strategy→wager refs, unique-wager counts, correlation clustering, retire/mutate/replace framework | – | Sonnet | DONE (design + slice 1) | design + tests | docs/FACTORY_SCALE_DESIGN.md, src/evolab/wagers.py, src/evolab/overlap.py, scripts/factory_overlap_report.py | b5d5f19 | – |
-| W11 | P1 | Reasoning loop improvements (mechanism grading independent of W/L) | – | Sonnet | DEFERRED | tests | src/review/, src/engine/ | – | – |
+| W11 | P1 | Reasoning loop improvements (mechanism grading independent of W/L) | – | Sonnet | RUNNING (audit + regression tests) | tests | src/review/, src/engine/ | – | – |
 | W12 | P1 | Daily-loop unattended validation review (refusal of bankroll-only promotion) | daily trigger | bash | READY (daily) | ESCALATE-free run + ledger check | scripts/daily_loop.sh | – | – |
 | W13 | P0 | Weekend routine: hourly wake running the cycle procedure | – | trigger | READY | trigger updated | – | – | – |
 | W14 | P1 | docs/WEEKEND_HANDOFF.md before Monday | all | parent | DEFERRED | doc | docs/WEEKEND_HANDOFF.md | – | – |
