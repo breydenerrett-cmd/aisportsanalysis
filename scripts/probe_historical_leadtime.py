@@ -58,7 +58,8 @@ def run(out_path, env_file) -> dict:
     _load_dotenv(env_file)
     quota = odds_provider.quota()
     remaining = quota.get("remaining")
-    creditlog.log(remaining, quota.get("last"), CALLER + ".preflight")
+    creditlog.log(remaining, quota.get("last"), CALLER + ".preflight",
+                  budget_band=budget_module.HISTORICAL_BACKFILL)
     if remaining is None:
         raise SystemExit("refusing to probe: could not read the credit balance")
     envelope_left = budget_module.status().get("envelope_remaining_today")
@@ -82,7 +83,8 @@ def run(out_path, env_file) -> dict:
             row["error"] = f"{type(exc).__name__}: {exc}"
             report["lead_times"].append(row)
             continue
-        creditlog.log(usage.get("remaining"), usage.get("last"), CALLER + "." + label)
+        creditlog.log(usage.get("remaining"), usage.get("last"), CALLER + "." + label,
+                      budget_band=budget_module.HISTORICAL_BACKFILL)
         shape = _shape(payload, instant, MARKETS)
         row["billed"] = usage.get("last")
         row.update({k: shape[k] for k in
@@ -93,7 +95,8 @@ def run(out_path, env_file) -> dict:
         report["lead_times"].append(row)
 
     after = odds_provider.quota()
-    creditlog.log(after.get("remaining"), after.get("last"), CALLER + ".postflight")
+    creditlog.log(after.get("remaining"), after.get("last"), CALLER + ".postflight",
+                  budget_band=budget_module.HISTORICAL_BACKFILL)
     report["remaining_after"] = after.get("remaining")
     report["credits_spent_measured"] = (
         remaining - after["remaining"] if after.get("remaining") is not None else None)

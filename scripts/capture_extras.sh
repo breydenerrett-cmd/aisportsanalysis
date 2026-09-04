@@ -74,11 +74,20 @@ echo "$PROP_OUT" | grep "^ESCALATE:" || true
 if echo "$PROP_OUT" | grep -q "skipped: credit floor"; then
     echo "ESCALATE: credit floor reached -- stop spending, tell Brey"
 fi
+if echo "$PROP_OUT" | grep -q "skipped: daily envelope"; then
+    echo "ESCALATE: live-capture envelope tripped -- stop spending, tell Brey"
+fi
 echo "$BATTER_OUT" | grep -E "^ESCALATE:|^batter_props: .* stopped" || true
 if echo "$BATTER_OUT" | grep -q "skipped: credit floor"; then
     echo "ESCALATE: credit floor reached -- stop spending, tell Brey"
 fi
+if echo "$BATTER_OUT" | grep -q "skipped: daily envelope"; then
+    echo "ESCALATE: live-capture envelope tripped -- stop spending, tell Brey"
+fi
 echo "$DERIVATIVE_OUT" | grep -E "^ESCALATE:|^derivative_markets: .* stopped" || true
 if echo "$DERIVATIVE_OUT" | grep -q "skipped: credit floor"; then
     echo "ESCALATE: credit floor reached -- stop spending, tell Brey"
+fi
+if echo "$DERIVATIVE_OUT" | grep -q "skipped: daily envelope"; then
+    echo "ESCALATE: live-capture envelope tripped -- stop spending, tell Brey"
 fi

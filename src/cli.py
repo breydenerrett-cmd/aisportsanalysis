@@ -131,7 +131,8 @@ def cmd_budget(args) -> int:
     print(f"  daily envelope           : {status['daily_envelope']}")
     print(f"  credit floor             : {status['credit_floor']}")
     print(f"  remaining today          : {status['remaining_today']}")
-    print(f"  spent today              : {status['spent_today']}")
+    print(f"  spent today (all bands)  : {status['spent_today']}")
+    print(f"  spent today (capture)    : {status['capture_spent_today']}")
     print(f"  envelope remaining today : {status['envelope_remaining_today']}")
     print(f"  drop order (v{status['drop_order_version']}, first-dropped -> "
           f"last-dropped): {', '.join(status['drop_order'])}")
@@ -1971,9 +1972,20 @@ def cmd_dense(args) -> int:
                        poll_hook=rosterwatch.poll)
     if result.get("skipped"):
         print(f"skipped: {result['skipped']}")
+        # Every skip reason (not configured, quota unreadable, credit floor,
+        # daily envelope, PROBE_REQUIRED) lands here -- but only the direct
+        # "credit floor" skip in dense.run itself also carries a "floor" key.
+        # The others (envelope, PROBE_REQUIRED, quota-unreadable-inside-
+        # can_spend) come from `budget.can_spend()`'s Decision and only ever
+        # set "credits_remaining", never "floor" -- `result['floor']` there
+        # raised KeyError and turned a clean skip into a traceback, which is
+        # exactly what hid the 2026-09-04 envelope outage from every
+        # ESCALATE grep. `.get(..., budget_module.CREDIT_FLOOR)` prints the
+        # real floor value in both cases without assuming the key exists.
         if result.get("credits_remaining") is not None:
+            floor = result.get("floor", budget_module.CREDIT_FLOOR)
             print(f"  {result['credits_remaining']} credits remaining, "
-                  f"floor is {result['floor']}")
+                  f"floor is {floor}")
         return EXIT_OK
 
     print(f"{result['captures']} capture(s), "

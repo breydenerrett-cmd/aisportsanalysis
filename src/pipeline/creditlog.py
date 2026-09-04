@@ -44,7 +44,8 @@ LOG = logging.getLogger(__name__)
 DEFAULT_STORE = processed_path("credit_log.jsonl")
 
 
-def log(remaining, used_last, caller, store=DEFAULT_STORE, now=None) -> bool:
+def log(remaining, used_last, caller, store=DEFAULT_STORE, now=None,
+        budget_band=None) -> bool:
     """Append one {utc, credits_remaining, credits_used_last, caller} row.
 
     `remaining`/`used_last` are passed straight through from the provider's
@@ -52,6 +53,16 @@ def log(remaining, used_last, caller, store=DEFAULT_STORE, now=None) -> bool:
     True on a successful write, False on ANY failure. Never raises: a caller
     on a paid-capture critical path must not go down because a log line
     could not be written.
+
+    `budget_band` (owner amendment, 2026-09-04 envelope outage): one of
+    `src.capture.budget.VALID_BANDS` ("live_capture", "historical_backfill",
+    "probe", "test"), written EXPLICITLY by the caller at write time --
+    never inferred here. Omit only from a call site that genuinely has no
+    band of its own to declare; every paid-capture and historical/probe
+    call site in this repo passes one. A row with no `budget_band` key
+    (every row logged before this field existed) is not rewritten -- the
+    log is append-only -- and is classified for old data by
+    `src.capture.budget`'s caller-name fallback, never by guessing here.
     """
     try:
         moment = _now(now)
@@ -61,6 +72,8 @@ def log(remaining, used_last, caller, store=DEFAULT_STORE, now=None) -> bool:
             "credits_used_last": used_last,
             "caller": caller,
         }
+        if budget_band is not None:
+            row["budget_band"] = budget_band
         target = Path(store)
         target.parent.mkdir(parents=True, exist_ok=True)
         with target.open("a", encoding="utf-8") as handle:

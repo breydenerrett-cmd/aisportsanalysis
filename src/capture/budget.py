@@ -95,6 +95,135 @@ CREDIT_FLOOR = 5000
 CREDIT_LOG_PATH = creditlog.DEFAULT_STORE
 FAMILIES_CONFIG_PATH = repo_root() / "config" / "capture_families.json"
 
+# ---------------------------------------------------------------------------
+# Band separation (2026-09-04 incident, amended same day)
+# ---------------------------------------------------------------------------
+#
+# docs/RESOURCE_POLICY.md defines the LIVE-CAPTURE reserve (the ~900/day
+# envelope below) as a band SEPARATE from historical backfill/new-market
+# research and ad hoc probes. `spent_today()` used to sum every
+# `credits_remaining` delta for the UTC day regardless of who logged it, so
+# an owner-approved ~47,000-credit historical purchase logged the same day
+# read as LIVE-CAPTURE spend and tripped the envelope on every
+# forward-capture fetch for hours -- the growth band starving the one
+# stream that cannot be bought back.
+#
+# THE FIX IS AN EXPLICIT, DURABLE FIELD, NOT INFERENCE. `creditlog.log()`
+# takes a `budget_band` kwarg (one of the four `VALID_BANDS` below) that
+# every writer sets AT WRITE TIME, describing itself -- not a label this
+# module derives after the fact from a caller string, and not a special
+# case naming today's runner. Every capture/historical/probe call site this
+# repo controls (the five paid-capture `run()`s, `probe_family`, and the
+# `scripts/probe_historical_*`/`probe_prop_name_join`/`run_f5_tminus2_
+# tranche` scripts) now passes its own band explicitly.
+#
+# LEGACY ROWS (logged before this field existed, or by any future call site
+# that forgets to set it) carry no `budget_band` key at all. Those are
+# classified by `_legacy_band()` below from the same `caller` string this
+# module has always read -- deterministic (same caller always yields the
+# same band) and conservative: only the six known live-capture callers
+# classify as `LIVE_CAPTURE`; every other caller, known or not, classifies
+# as `HISTORICAL_BACKFILL` so an unrecognized or missing caller can never
+# silently count against -- or evade -- the live-capture envelope.
+#
+# THE LIMIT NEITHER SCHEME CAN COVER: a call that spends credits WITHOUT
+# ever calling `creditlog.log()` leaves no row at all -- no caller, no band,
+# nothing to classify, because there is no row. Band separation, explicit
+# or inferred, can only ever classify spend that was actually logged; it
+# cannot recover or attribute spend that left no record. That is a separate,
+# real gap (see docs/OVERNIGHT_RUN.md's 2026-09-04 entries) in whichever
+# historical code path bypassed `creditlog` entirely, not something either
+# scheme here can paper over -- fixing it means making that call site log
+# through `creditlog` with its own band, not widening either set below.
+LIVE_CAPTURE = "live_capture"
+HISTORICAL_BACKFILL = "historical_backfill"
+PROBE = "probe"
+TEST = "test"
+VALID_BANDS = frozenset({LIVE_CAPTURE, HISTORICAL_BACKFILL, PROBE, TEST})
+
+# Every `caller` string the five paid-capture `run()` entry points log via
+# `pipeline.creditlog` (dense.py's own close-capture pass included -- it is
+# the same live-capture pass, just its closing window). Used ONLY by
+# `_legacy_band()` to classify rows logged before `budget_band` existed;
+# every live write site now sets `budget_band=LIVE_CAPTURE` explicitly and
+# does not depend on this set at read time.
+CAPTURE_CALLERS = frozenset({
+    "dense.run", "dense.close_capture",
+    "prop_listing.run", "prop_prices.run",
+    "batter_props.run", "derivative_markets.run",
+})
+
+
+def _legacy_band(caller) -> str:
+    """Best-effort band for a row logged before `budget_band` existed.
+
+    Deterministic (a given caller string always yields the same band) and
+    conservative toward the envelope: only `CAPTURE_CALLERS` reads as
+    `LIVE_CAPTURE`. A probe-family caller reads as `PROBE`. Every other
+    caller -- a recognized historical/backfill script, an unrecognized
+    future one, or a missing/empty caller field -- reads as
+    `HISTORICAL_BACKFILL`, so nothing outside the six known capture callers
+    can ever count against the live-capture envelope by default.
+    """
+    if caller in CAPTURE_CALLERS:
+        return LIVE_CAPTURE
+    if isinstance(caller, str) and caller.startswith("budget.probe_family:"):
+        return PROBE
+    return HISTORICAL_BACKFILL
+
+
+def row_band(row) -> str:
+    """The `budget_band` a credit-log row belongs to: explicit if present
+    and valid, else `_legacy_band()`'s deterministic fallback from `caller`.
+
+    Single-row classification only -- it has no delta to weigh, so it
+    cannot apply `_delta_band()`'s envelope-ceiling rule below. Used for
+    labeling one row in isolation (reporting); `spent_today()` uses
+    `_delta_band()` instead, because THAT is where a legacy row's real
+    ambiguity (see 2026-09-04's incident) actually lives.
+    """
+    band = row.get("budget_band")
+    if band in VALID_BANDS:
+        return band
+    return _legacy_band(row.get("caller"))
+
+
+def _delta_band(cur_row, delta: int) -> str:
+    """Band for ONE observed spend delta, ending at `cur_row`.
+
+    An explicit `budget_band` on `cur_row` is authoritative, exactly like
+    `row_band()`. For a LEGACY row (no explicit field, logged before this
+    field existed), this additionally applies an envelope-ceiling rule
+    `row_band()` cannot: `can_spend()` gates every live-capture call BEFORE
+    it happens and refuses anything that would push a day's live-capture
+    spend over `DAILY_ENVELOPE` -- so under this system's OWN invariant, a
+    single delta larger than `DAILY_ENVELOPE` could never have been
+    approved as live-capture spend, no matter which of the six capture
+    callers happens to be the row that revealed it. This is what actually
+    separates the two 2026-09-04 bands on the real log: neither of that
+    day's two large historical purchases ever called `creditlog.log()` of
+    its own, so the drop each one caused was only ever revealed by the next
+    capture-band checkpoint -- a legacy row with no `budget_band` of its
+    own. A caller-name-only fallback (`_legacy_band()`, used by `row_band()`
+    and by this function for anything at or under the ceiling) cannot tell
+    that apart from real capture spend; this can, using a fact the system
+    already enforces rather than a guessed threshold.
+
+    A delta at or under the ceiling still runs through the ordinary
+    `_legacy_band()` caller classification -- this rule only ever
+    RECLASSIFIES a legacy capture-caller row AWAY from live_capture, never
+    the reverse, so it can't be used to hide genuine capture overspend: a
+    real over-envelope capture bug would show up as `can_spend()` refusing
+    the NEXT call, exactly as intended.
+    """
+    band = cur_row.get("budget_band")
+    if band in VALID_BANDS:
+        return band
+    caller = cur_row.get("caller")
+    if delta > DAILY_ENVELOPE and caller in CAPTURE_CALLERS:
+        return HISTORICAL_BACKFILL
+    return _legacy_band(caller)
+
 
 def quota_reset_utc(now=None) -> datetime:
     """The next assumed reset instant: the first of the next UTC calendar month.
@@ -147,7 +276,7 @@ def remaining_today(now=None, store=None) -> Optional[int]:
     return rows[-1].get("credits_remaining")
 
 
-def spent_today(now=None, store=None) -> int:
+def spent_today(now=None, store=None, band=None) -> int:
     """Credits spent so far today (UTC), from consecutive `remaining` deltas.
 
     Sums `max(prev - cur, 0)` across consecutive log rows within today's UTC
@@ -160,18 +289,51 @@ def spent_today(now=None, store=None) -> int:
     Rows with `credits_remaining: None` (a quota-unreadable event) are
     skipped when computing a delta but do not themselves count as spend --
     an unreadable quota is not evidence of a purchase.
+
+    `band`, when given (one of `VALID_BANDS`, e.g. `LIVE_CAPTURE`),
+    restricts what counts to deltas whose LATER row (the one that observed
+    the drop) resolves to that band via `row_band()` -- explicit
+    `budget_band` field if the row has one, else `_delta_band()`'s
+    deterministic fallback (caller name, plus the envelope-ceiling rule for
+    a legacy capture-caller row -- see `_delta_band`'s docstring). This is
+    NOT "filter the rows to this band, then diff the filtered sequence" --
+    that would silently keep counting a same-day historical purchase
+    against capture, because the balance it drained is still what the NEXT
+    live-capture row reads, gap or no gap. Diffing the FULL chronological
+    sequence first and then bucketing each individual delta by the band of
+    the row that revealed it correctly excludes a historical/probe purchase
+    whether or not it logged its own checkpoint in between (see
+    `test_a_large_same_day_historical_spend_does_not_block_capture` and
+    `test_an_unlogged_historical_spend_is_still_excluded_via_the_envelope_ceiling`).
+    `None` (the default) keeps the old whole-day-regardless-of-band total,
+    which `status()` still reports so historical/probe spend stays visible.
     """
     today = _row_date({"utc": _utc_iso(_now(now))})
     todays_rows = [r for r in _rows(store) if _row_date(r) == today]
-    known = [r.get("credits_remaining") for r in todays_rows
-             if r.get("credits_remaining") is not None]
+    known = [r for r in todays_rows if r.get("credits_remaining") is not None]
     total = 0
     for prev, cur in zip(known, known[1:]):
-        if cur < prev:
-            total += prev - cur
+        prev_remaining, cur_remaining = prev["credits_remaining"], cur["credits_remaining"]
+        if cur_remaining < prev_remaining:
+            delta = prev_remaining - cur_remaining
+            if band is None or _delta_band(cur, delta) == band:
+                total += delta
         # cur >= prev: a reset (or a free, unmetered read) between the two
         # readings. Contributes nothing to today's spend either way.
     return total
+
+
+def capture_spent_today(now=None, store=None) -> int:
+    """`spent_today()` restricted to the LIVE-CAPTURE band.
+
+    This is what `can_spend()`'s DAILY_ENVELOPE check reads: the envelope
+    exists to bound live capture's own spend, not whatever a same-day
+    historical backfill or probe -- a different band entirely per
+    docs/RESOURCE_POLICY.md -- happened to spend and log under its own
+    band. See the band-separation docstring above `VALID_BANDS` for what
+    this can and cannot separate.
+    """
+    return spent_today(now=now, store=store, band=LIVE_CAPTURE)
 
 
 def remaining_after(est_credits: int, now=None, store=None) -> Optional[int]:
@@ -346,7 +508,7 @@ def can_spend(family: str, est_credits: int, now=None, store=None,
                                     f"floor={CREDIT_FLOOR}, requested={est_credits})")
 
         if spent is None:
-            spent = spent_today(now=now, store=store)
+            spent = capture_spent_today(now=now, store=store)
         if spent + est_credits > DAILY_ENVELOPE:
             return Decision(False, f"skipped: daily envelope (spent={spent}, "
                                     f"requested={est_credits}, envelope={DAILY_ENVELOPE})")
@@ -365,6 +527,7 @@ def status(now=None, store=None, families_path=None) -> dict:
     """Everything `python3 -m src.cli budget` prints, as a dict."""
     remaining = remaining_today(now=now, store=store)
     spent = spent_today(now=now, store=store)
+    capture_spent = capture_spent_today(now=now, store=store)
     families = load_families(families_path)
     per_family = {}
     for name, entry in families.items():
@@ -387,7 +550,9 @@ def status(now=None, store=None, families_path=None) -> dict:
         "credit_floor": CREDIT_FLOOR,
         "remaining_today": remaining,
         "spent_today": spent,
-        "envelope_remaining_today": (DAILY_ENVELOPE - spent) if spent is not None else None,
+        "capture_spent_today": capture_spent,
+        "envelope_remaining_today": (
+            (DAILY_ENVELOPE - capture_spent) if capture_spent is not None else None),
         "drop_order_version": DROP_ORDER_VERSION,
         "drop_order": [d["family"] for d in DROP_ORDER],
         "non_droppable_family": NON_DROPPABLE_FAMILY,
@@ -592,7 +757,8 @@ def probe_family(family: str, env=None, provider=None, now=None,
     else:
         credits_per_event = len(markets)  # last-resort, conservative estimate
 
-    creditlog.log(remaining_after_call, billed, f"budget.probe_family:{family}")
+    creditlog.log(remaining_after_call, billed, f"budget.probe_family:{family}",
+                  budget_band=PROBE)
 
     shape = _payload_shape(payload, markets, commence_time=event_commence)
     degenerate = shape["degenerate"]

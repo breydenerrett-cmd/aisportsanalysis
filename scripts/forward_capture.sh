@@ -116,6 +116,16 @@ fi
 if echo "$DENSE_OUT" | grep -q "skipped: credit floor"; then
     echo "ESCALATE: credit floor reached -- stop spending, tell Brey"
 fi
+# The 2026-09-04 outage: a same-day historical/probe purchase tripped the
+# live-capture envelope and the skip crashed cmd_dense before this line ever
+# ran, so nobody was ever told. src/capture/budget.py now counts only the
+# LIVE_CAPTURE band against DAILY_ENVELOPE and src/cli.py's skip path no
+# longer crashes on any skip reason -- but a REAL envelope block (capture's
+# own spend legitimately over budget) is still a live-capture outage and
+# must still say so here, not just print a clean line nobody is watching.
+if echo "$DENSE_OUT" | grep -q "skipped: daily envelope"; then
+    echo "ESCALATE: live-capture envelope tripped -- stop spending, tell Brey"
+fi
 if echo "$DENSE_OUT" | grep -q "MISSED WINDOW"; then
     echo "ESCALATE: missed capture window -- log in docs/OVERNIGHT_RUN.md"
 fi
@@ -129,6 +139,9 @@ echo "$PROP_OUT" | grep "^ESCALATE:" || true
 echo "$EXTRAS_OUT" | grep "^ESCALATE:" || true
 if echo "$PROP_OUT" | grep -q "skipped: credit floor"; then
     echo "ESCALATE: credit floor reached -- stop spending, tell Brey"
+fi
+if echo "$PROP_OUT" | grep -q "skipped: daily envelope"; then
+    echo "ESCALATE: live-capture envelope tripped -- stop spending, tell Brey"
 fi
 
 # Exit non-zero on a git failure, but only after every escalation above has

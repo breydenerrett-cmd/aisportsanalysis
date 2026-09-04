@@ -57,7 +57,8 @@ def run(out_path, env_file) -> dict:
     _load_dotenv(env_file)
     quota = odds_provider.quota()
     remaining = quota.get("remaining")
-    creditlog.log(remaining, quota.get("last"), CALLER + ".preflight")
+    creditlog.log(remaining, quota.get("last"), CALLER + ".preflight",
+                  budget_band=budget_module.HISTORICAL_BACKFILL)
     if remaining is None:
         raise SystemExit("refusing to probe: could not read the credit balance")
 
@@ -82,7 +83,8 @@ def run(out_path, env_file) -> dict:
             row["events_error"] = f"{type(exc).__name__}: {exc}"
             report["checks"].append(row)
             continue
-        creditlog.log(usage.get("remaining"), usage.get("last"), CALLER + "." + label)
+        creditlog.log(usage.get("remaining"), usage.get("last"), CALLER + "." + label,
+                      budget_band=budget_module.HISTORICAL_BACKFILL)
         events = (payload.get("data") if isinstance(payload, dict) else payload) or []
         served = payload.get("timestamp") if isinstance(payload, dict) else None
         row.update({"events_served_timestamp": served,
@@ -104,7 +106,8 @@ def run(out_path, env_file) -> dict:
             report["checks"].append(row)
             continue
         creditlog.log(odds_usage.get("remaining"), odds_usage.get("last"),
-                      CALLER + "." + label + ".odds")
+                      CALLER + "." + label + ".odds",
+                      budget_band=budget_module.HISTORICAL_BACKFILL)
         shape = _shape(odds_payload, instant, markets)
         row["billed"] = odds_usage.get("last")
         row["shape"] = {k: shape[k] for k in
@@ -114,7 +117,8 @@ def run(out_path, env_file) -> dict:
         report["checks"].append(row)
 
     after = odds_provider.quota()
-    creditlog.log(after.get("remaining"), after.get("last"), CALLER + ".postflight")
+    creditlog.log(after.get("remaining"), after.get("last"), CALLER + ".postflight",
+                  budget_band=budget_module.HISTORICAL_BACKFILL)
     report["remaining_after"] = after.get("remaining")
     report["credits_spent_measured"] = (
         remaining - after["remaining"] if after.get("remaining") is not None else None)

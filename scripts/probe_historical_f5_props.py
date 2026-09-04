@@ -146,7 +146,8 @@ def _shape(payload, requested_instant, markets):
 def run(seasons, groups, out_path, dry_run=False) -> dict:
     quota = odds_provider.quota()
     remaining = quota.get("remaining")
-    creditlog.log(remaining, quota.get("last"), CALLER + ".preflight")
+    creditlog.log(remaining, quota.get("last"), CALLER + ".preflight",
+                  budget_band=budget_module.HISTORICAL_BACKFILL)
     if remaining is None:
         raise SystemExit("refusing to probe: could not read the credit balance")
 
@@ -185,7 +186,8 @@ def run(seasons, groups, out_path, dry_run=False) -> dict:
                 {"season": season, "instant": instant, "error": f"{type(exc).__name__}: {exc}"})
             continue
         creditlog.log(usage.get("remaining"), usage.get("last"),
-                      CALLER + f".events.{season}")
+                      CALLER + f".events.{season}",
+                      budget_band=budget_module.HISTORICAL_BACKFILL)
         events = (payload.get("data") if isinstance(payload, dict) else payload) or []
         report["events_lookups"].append({
             "season": season, "instant": instant,
@@ -227,7 +229,8 @@ def run(seasons, groups, out_path, dry_run=False) -> dict:
                     "error": f"{type(exc).__name__}: {exc}"})
                 continue
             creditlog.log(odds_usage.get("remaining"), odds_usage.get("last"),
-                          CALLER + f".{name}.{season}")
+                          CALLER + f".{name}.{season}",
+                          budget_band=budget_module.HISTORICAL_BACKFILL)
             shape = _shape(odds_payload, instant, markets)
             shape.update({
                 "season": season, "group": name,
@@ -238,7 +241,8 @@ def run(seasons, groups, out_path, dry_run=False) -> dict:
             report["probes"].append(shape)
 
     after = odds_provider.quota()
-    creditlog.log(after.get("remaining"), after.get("last"), CALLER + ".postflight")
+    creditlog.log(after.get("remaining"), after.get("last"), CALLER + ".postflight",
+                  budget_band=budget_module.HISTORICAL_BACKFILL)
     report["remaining_after"] = after.get("remaining")
     report["credits_spent_measured"] = (
         remaining - after["remaining"] if after.get("remaining") is not None else None)

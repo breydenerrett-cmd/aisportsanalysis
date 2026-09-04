@@ -588,5 +588,74 @@ class DenseCommandOutputTests(unittest.TestCase):
         self.assertNotIn("F5 BUDGET DROP", out)
 
 
+class DenseCommandSkipOutputTests(unittest.TestCase):
+    """Regression guard for the 2026-09-04 outage: `cmd_dense` raised
+    `KeyError: 'floor'` printing an envelope skip, because only the direct
+    "credit floor" skip result carries a "floor" key -- every skip reason
+    `budget.can_spend()` can produce (envelope, PROBE_REQUIRED, quota
+    unreadable) sets only "credits_remaining". The crash turned a clean skip
+    into a traceback, so no ESCALATE line ever fired and the outage ran
+    silently for hours. Every skip reason `dense.run()` can actually return
+    must print cleanly here, with no exception, whether or not it carries a
+    "floor" key.
+    """
+
+    def _stdout(self, result):
+        import io
+        import contextlib
+        from src import cli
+
+        args = mock.Mock(estimate=False, captures=4, interval=15, window=180)
+        buffer = io.StringIO()
+        with mock.patch.object(dense, "run", return_value=result), \
+             contextlib.redirect_stdout(buffer):
+            exit_code = cli.cmd_dense(args)
+        return exit_code, buffer.getvalue()
+
+    def test_not_configured_prints_cleanly(self):
+        from src import cli
+        exit_code, out = self._stdout({"captures": 0, "skipped": "not configured",
+                                        "message": "ODDS_API_KEY missing"})
+        self.assertEqual(exit_code, cli.EXIT_OK)
+        self.assertIn("skipped: not configured", out)
+
+    def test_quota_unreadable_prints_cleanly(self):
+        from src import cli
+        exit_code, out = self._stdout({"captures": 0, "skipped": "quota unreadable",
+                                        "message": "timeout"})
+        self.assertEqual(exit_code, cli.EXIT_OK)
+        self.assertIn("skipped: quota unreadable", out)
+
+    def test_credit_floor_prints_the_real_floor(self):
+        from src import cli
+        exit_code, out = self._stdout({"captures": 0, "skipped": "credit floor",
+                                        "credits_remaining": 4800, "floor": 5000})
+        self.assertEqual(exit_code, cli.EXIT_OK)
+        self.assertIn("skipped: credit floor", out)
+        self.assertIn("4800 credits remaining, floor is 5000", out)
+
+    def test_daily_envelope_skip_prints_cleanly_with_no_floor_key(self):
+        # The exact 2026-09-04 shape: can_spend()'s Decision carries
+        # "credits_remaining" but never "floor" -- this used to raise
+        # KeyError: 'floor' right here.
+        from src import cli
+        skip_reason = ("skipped: daily envelope (spent=73658, requested=3, "
+                        "envelope=900)")
+        exit_code, out = self._stdout({"captures": 0, "skipped": skip_reason,
+                                        "credits_remaining": 25707})
+        self.assertEqual(exit_code, cli.EXIT_OK)
+        self.assertIn(skip_reason, out)
+        self.assertIn("25707 credits remaining, floor is", out)
+
+    def test_probe_required_skip_prints_cleanly_with_no_floor_key(self):
+        from src import cli
+        skip_reason = "PROBE_REQUIRED: featured has no measured credits_per_event"
+        exit_code, out = self._stdout({"captures": 0, "skipped": skip_reason,
+                                        "credits_remaining": 90000})
+        self.assertEqual(exit_code, cli.EXIT_OK)
+        self.assertIn(skip_reason, out)
+        self.assertIn("90000 credits remaining, floor is", out)
+
+
 if __name__ == "__main__":
     unittest.main()

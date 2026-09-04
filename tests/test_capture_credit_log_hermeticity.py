@@ -170,5 +170,53 @@ class EnvelopeCheckIsHermeticTests(unittest.TestCase):
                         "real, mutating credit_log.jsonl")
 
 
+CREDITLOG_ALIAS = "creditlog"  # the import alias every module above uses
+
+
+def _is_creditlog_log_call(node: ast.AST) -> bool:
+    if not isinstance(node, ast.Call):
+        return False
+    func = node.func
+    return (isinstance(func, ast.Attribute) and func.attr == "log"
+            and isinstance(func.value, ast.Name) and func.value.id == CREDITLOG_ALIAS)
+
+
+class BudgetBandIsExplicitAtEveryWriteTests(unittest.TestCase):
+    """Owner amendment (2026-09-04): band classification must be explicit
+    and durable, declared by the writer at write time via `budget_band=`,
+    never inferred later from a caller string. Every `creditlog.log(...)`
+    call inside one of these five modules' `run()` must pass `budget_band=`
+    -- and, since these ARE the live-capture entry points, it must be
+    `budget_module.LIVE_CAPTURE` specifically, not some other band."""
+
+    def test_every_creditlog_log_call_declares_live_capture(self):
+        for filename in CAPTURE_MODULES:
+            with self.subTest(module=filename):
+                run_fn = _find_run(_parse(filename))
+                calls = [n for n in ast.walk(run_fn)
+                         if _is_creditlog_log_call(n)]
+                self.assertTrue(calls, f"{filename}: run() no longer calls "
+                                        "creditlog.log at all")
+                for call in calls:
+                    band_kwargs = [kw for kw in call.keywords
+                                   if kw.arg == "budget_band"]
+                    self.assertTrue(
+                        band_kwargs,
+                        f"{filename}: a `creditlog.log(...)` call inside "
+                        "run() has no `budget_band=` kwarg -- this is the "
+                        "2026-09-04 amendment's regression: an unbanded row "
+                        "falls back to legacy caller-name classification "
+                        "instead of declaring its own band explicitly")
+                    value = band_kwargs[0].value
+                    self.assertTrue(
+                        isinstance(value, ast.Attribute)
+                        and value.attr == "LIVE_CAPTURE"
+                        and isinstance(value.value, ast.Name)
+                        and value.value.id == BUDGET_ALIAS,
+                        f"{filename}: `budget_band=` on a live-capture "
+                        f"module's own creditlog.log call must be "
+                        f"`{BUDGET_ALIAS}.LIVE_CAPTURE`")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -310,7 +310,8 @@ def run(env=None, captures=CAPTURES_PER_RUN, interval_minutes=INTERVAL_MINUTES,
     except odds_provider.OddsProviderError as exc:
         return {"captures": 0, "skipped": "quota unreadable", "message": str(exc)}
     remaining = quota_now.get("remaining")
-    creditlog.log(remaining, quota_now.get("last"), "dense.run")
+    creditlog.log(remaining, quota_now.get("last"), "dense.run",
+                  budget_band=budget_module.LIVE_CAPTURE)
     if remaining is not None and remaining <= credit_floor:
         return {"captures": 0, "skipped": "credit floor",
                 "credits_remaining": remaining, "floor": credit_floor}
@@ -399,7 +400,8 @@ def run(env=None, captures=CAPTURES_PER_RUN, interval_minutes=INTERVAL_MINUTES,
             remaining_now = None
         else:
             remaining_now = quota_close.get("remaining")
-            creditlog.log(remaining_now, quota_close.get("last"), "dense.close_capture")
+            creditlog.log(remaining_now, quota_close.get("last"), "dense.close_capture",
+                          budget_band=budget_module.LIVE_CAPTURE)
             if remaining_now is not None and remaining_now <= credit_floor:
                 close_capture = {"skipped": "credit floor",
                                  "credits_remaining": remaining_now}

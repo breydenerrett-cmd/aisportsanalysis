@@ -120,7 +120,8 @@ def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
         report["errors"].append(str(exc))
         return report
     remaining = quota_now.get("remaining")
-    creditlog.log(remaining, quota_now.get("last"), "batter_props.run")
+    creditlog.log(remaining, quota_now.get("last"), "batter_props.run",
+                  budget_band=budget_module.LIVE_CAPTURE)
     report["credits_remaining"] = remaining
     if remaining is not None and remaining <= credit_floor:
         report["skipped"] = "credit floor"

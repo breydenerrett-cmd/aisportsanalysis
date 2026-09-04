@@ -52,7 +52,8 @@ def run(out_path, env_file, handedness_path) -> dict:
     _load_dotenv(env_file)
     quota = odds_provider.quota()
     remaining = quota.get("remaining")
-    creditlog.log(remaining, quota.get("last"), CALLER + ".preflight")
+    creditlog.log(remaining, quota.get("last"), CALLER + ".preflight",
+                  budget_band=budget_module.HISTORICAL_BACKFILL)
     if remaining is None:
         raise SystemExit("refusing to probe: could not read the credit balance")
     envelope_left = budget_module.status().get("envelope_remaining_today")
@@ -70,7 +71,8 @@ def run(out_path, env_file, handedness_path) -> dict:
         index[norm(rec.get("name"))].append(pid)
 
     payload, usage = _events(INSTANT)
-    creditlog.log(usage.get("remaining"), usage.get("last"), CALLER + ".events")
+    creditlog.log(usage.get("remaining"), usage.get("last"), CALLER + ".events",
+                  budget_band=budget_module.HISTORICAL_BACKFILL)
     events = (payload.get("data") if isinstance(payload, dict) else payload) or []
     served = payload.get("timestamp") if isinstance(payload, dict) else None
     pregame = sorted((e for e in events if (e.get("commence_time") or "") > (served or INSTANT)),
@@ -80,7 +82,8 @@ def run(out_path, env_file, handedness_path) -> dict:
     chosen = pregame[0]
 
     odds_payload, odds_usage = _event_odds(INSTANT, chosen["id"], MARKETS)
-    creditlog.log(odds_usage.get("remaining"), odds_usage.get("last"), CALLER + ".odds")
+    creditlog.log(odds_usage.get("remaining"), odds_usage.get("last"), CALLER + ".odds",
+                  budget_band=budget_module.HISTORICAL_BACKFILL)
 
     data = (odds_payload or {}).get("data") or {}
     per_book = {}
@@ -110,7 +113,8 @@ def run(out_path, env_file, handedness_path) -> dict:
         "remaining_before": remaining,
     }
     after = odds_provider.quota()
-    creditlog.log(after.get("remaining"), after.get("last"), CALLER + ".postflight")
+    creditlog.log(after.get("remaining"), after.get("last"), CALLER + ".postflight",
+                  budget_band=budget_module.HISTORICAL_BACKFILL)
     report["remaining_after"] = after.get("remaining")
     report["credits_spent_measured"] = (
         remaining - after["remaining"] if after.get("remaining") is not None else None)

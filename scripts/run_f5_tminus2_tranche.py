@@ -92,7 +92,8 @@ def main() -> int:
 
     quota_before = odds_provider.quota()
     remaining = quota_before.get("remaining")
-    creditlog.log(remaining, quota_before.get("last"), CALLER + ".preflight")
+    creditlog.log(remaining, quota_before.get("last"), CALLER + ".preflight",
+                  budget_band=budget_module.HISTORICAL_BACKFILL)
     if remaining is None:
         raise SystemExit("refusing to run: could not read the credit balance")
 
@@ -121,7 +122,8 @@ def main() -> int:
 
     quota_after = odds_provider.quota()
     creditlog.log(quota_after.get("remaining"), quota_after.get("last"),
-                 CALLER + ".postflight")
+                 CALLER + ".postflight",
+                 budget_band=budget_module.HISTORICAL_BACKFILL)
 
     seasons_touched = sorted({row["date"][:4] for row in report["rows"]
                               if row.get("date")})
