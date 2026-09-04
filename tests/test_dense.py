@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest import mock
 
 from src.pipeline import dense
+from tests import HERMETIC_CREDIT_LOG_STORE
 
 
 NOW = datetime(2026, 8, 30, 15, 0, tzinfo=timezone.utc)
@@ -94,14 +95,14 @@ class RunTests(unittest.TestCase):
     def test_nothing_is_spent_below_the_credit_floor(self):
         dense.odds_provider.quota = lambda env=None: {"remaining": 100}
         dense._upcoming = lambda now=None, timeout=20: _rows("2026-08-30T17:00:00Z")
-        result = dense.run(credit_floor=5000, now=NOW, sleep=None)
+        result = dense.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, credit_floor=5000, now=NOW, sleep=None)
         self.assertEqual(result["skipped"], "credit floor")
         self.assertEqual(self.calls, [])
 
     def test_nothing_is_spent_when_no_game_is_approaching(self):
         dense.odds_provider.quota = lambda env=None: {"remaining": 50000}
         dense._upcoming = lambda now=None, timeout=20: _rows("2026-08-30T23:00:00Z")
-        result = dense.run(now=NOW, sleep=None)
+        result = dense.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, now=NOW, sleep=None)
         self.assertEqual(result["captures"], 0)
         self.assertEqual(result["stopped_early"], "no game inside the window")
         self.assertEqual(self.calls, [])
@@ -110,7 +111,7 @@ class RunTests(unittest.TestCase):
         # A schedule outage must not become a reason to spend blindly.
         dense.odds_provider.quota = lambda env=None: {"remaining": 50000}
         dense._upcoming = lambda now=None, timeout=20: None
-        result = dense.run(now=NOW, sleep=None)
+        result = dense.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, now=NOW, sleep=None)
         self.assertEqual(result["stopped_early"], "schedule unreachable")
         self.assertEqual(self.calls, [])
 
@@ -119,14 +120,14 @@ class RunTests(unittest.TestCase):
             raise dense.odds_provider.OddsProviderError("down")
         dense.odds_provider.quota = boom
         dense._upcoming = lambda now=None, timeout=20: _rows("2026-08-30T17:00:00Z")
-        result = dense.run(now=NOW, sleep=None)
+        result = dense.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, now=NOW, sleep=None)
         self.assertEqual(result["skipped"], "quota unreadable")
         self.assertEqual(self.calls, [])
 
     def test_a_full_run_captures_the_requested_number_of_times(self):
         dense.odds_provider.quota = lambda env=None: {"remaining": 50000}
         dense._upcoming = lambda now=None, timeout=20: _rows("2026-08-30T17:00:00Z")
-        result = dense.run(captures=4, now=NOW, sleep=None)
+        result = dense.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, captures=4, now=NOW, sleep=None)
         self.assertEqual(result["captures"], 4)
         self.assertEqual(result["observations"], 120)
         self.assertIsNone(result["stopped_early"])
@@ -142,7 +143,7 @@ class RunTests(unittest.TestCase):
         dense.odds_provider.quota = lambda env=None: {"remaining": 50000}
         dense._upcoming = lambda now=None, timeout=20: _rows("2026-08-30T17:00:00Z")
         slept = []
-        result = dense.run(captures=1, interval_minutes=0, now=NOW,
+        result = dense.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, captures=1, interval_minutes=0, now=NOW,
                             sleep=slept.append)
         self.assertEqual(result["captures"], 1)
         self.assertEqual(len(self.calls), 1)
@@ -160,7 +161,7 @@ class RunTests(unittest.TestCase):
                     else _rows("2026-08-30T14:00:00Z"))
 
         dense._upcoming = shrinking
-        result = dense.run(captures=4, now=NOW, sleep=None)
+        result = dense.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, captures=4, now=NOW, sleep=None)
         self.assertEqual(result["captures"], 2)
         self.assertEqual(result["stopped_early"], "no game inside the window")
 
@@ -355,7 +356,7 @@ class HourlyCadenceClosePassTests(unittest.TestCase):
                                                  "events": 15}), \
                  mock.patch.object(dense.snapshots, "read", return_value=[]), \
                  mock.patch.object(dense, "_upcoming", return_value=schedule):
-                reports.append(dense.run(
+                reports.append(dense.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, 
                     env={}, captures=captures, interval_minutes=interval,
                     now=lambda: clock["t"],
                     sleep=lambda s: clock.__setitem__(

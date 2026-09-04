@@ -127,11 +127,16 @@ class PropListingError(RuntimeError):
 # ---------------------------------------------------------------------------
 
 def run(env=None, now=None, store=DEFAULT_STORE, provider=odds_provider,
-        credit_floor=CREDIT_FLOOR, hard_cap=HARD_CAP) -> dict:
+        credit_floor=CREDIT_FLOOR, hard_cap=HARD_CAP,
+        credit_log_store=None) -> dict:
     """One scheduled pass. Returns a report; never raises for a network fault.
 
     Everything injectable is injectable so the tests spend nothing: `provider`
-    stands in for the odds module, `now` for the clock, `store` for the file.
+    stands in for the odds module, `now` for the clock, `store` for the
+    file. `credit_log_store` is a separate seam from `store` -- it is the
+    envelope check's own store (see `budget_module.can_spend`'s `store`
+    kwarg), not this audit's row file; `None` keeps reading the real
+    data/processed/credit_log.jsonl exactly as before this parameter existed.
     """
     clock_now = _now(now)
     report = {"observed_utc": _utc_iso(clock_now), "fetches": 0, "rows": 0,
@@ -176,8 +181,12 @@ def run(env=None, now=None, store=DEFAULT_STORE, provider=odds_provider,
     # Budget guard (docs/planning/attack.md F13/S17): "prop_listing_feasibility"
     # is a measured family (1 credit/event/slot). Passes the `remaining` this
     # call already read rather than re-reading credit_log.jsonl -- see
-    # dense.run's identical comment on why.
-    decision = budget_module.can_spend("prop_listing_feasibility", 1, remaining=remaining)
+    # dense.run's identical comment on why. `store=credit_log_store` gives the
+    # ENVELOPE half of this same decision the same hermetic seam (see
+    # `credit_log_store`'s docstring above); it is None (real disk) unless a
+    # caller overrides it.
+    decision = budget_module.can_spend("prop_listing_feasibility", 1,
+                                        remaining=remaining, store=credit_log_store)
     if not decision.allowed:
         print(f"prop_listing.run: {decision.reason}")
         report["skipped"] = decision.reason

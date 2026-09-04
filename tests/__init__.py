@@ -117,6 +117,41 @@ if not (os.environ.get(_APP_DB_ENV) or "").strip():
 
 
 # ---------------------------------------------------------------------------
+# 1b. A hermetic double for data/processed/credit_log.jsonl
+# ---------------------------------------------------------------------------
+#
+# dense.run/prop_listing.run/prop_prices.run/derivative_markets.run/
+# batter_props.run all gate a spend through `budget.can_spend`, whose
+# ENVELOPE half (unlike the floor half, which every one of those callers
+# already threads a freshly-read `remaining` through) falls back to
+# `budget.spent_today()` -- a read of the real, mutating
+# data/processed/credit_log.jsonl -- whenever a caller doesn't override
+# `store`. Blocking WRITES to that file (section 2 below) does nothing
+# about this: a read of whatever the log happens to hold today (a handful
+# of rows on a quiet day, tens of thousands after an owner-approved
+# historical purchase, as happened 2026-09-04) silently changes which
+# branch of `can_spend` a "spend $N credits" assertion exercises. That is
+# not a flaky test -- it is a test with an unpinned input, and it produced
+# exactly this: 5 modules' capture tests went from green to 54 failures
+# the moment a legitimate backfill purchase logged a day's spend north of
+# DAILY_ENVELOPE, with no code change at all.
+#
+# The fix is the same shape as the app-db redirect just above: every
+# affected `run()` now takes a `credit_log_store` kwarg (default None ==
+# real disk, unchanged production behavior) that is threaded straight into
+# `can_spend(..., store=...)`/`spent_today(store=...)`. Tests pass this
+# path instead. It is a file that is guaranteed never to exist -- a fresh
+# tempdir per process, never written to by anything -- so `spent_today()`
+# and `remaining_today()` against it always read as "no rows for today"
+# (0 spent, unknown remaining), which is why every affected test ALSO still
+# passes its own `remaining=...` through the provider's `quota()` stand-in:
+# this fixture only controls the half of the decision `remaining` doesn't.
+_tmp_creditlog_dir = tempfile.mkdtemp(prefix="aisports-test-creditlog-")
+HERMETIC_CREDIT_LOG_STORE = Path(_tmp_creditlog_dir) / "credit_log.jsonl"
+atexit.register(shutil.rmtree, _tmp_creditlog_dir, True)
+
+
+# ---------------------------------------------------------------------------
 # 2. Block writes to the forward stores
 # ---------------------------------------------------------------------------
 

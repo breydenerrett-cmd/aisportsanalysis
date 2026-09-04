@@ -279,13 +279,22 @@ def _team_key(home, away):
 
 def run(env=None, captures=CAPTURES_PER_RUN, interval_minutes=INTERVAL_MINUTES,
         window_minutes=WINDOW_MINUTES, credit_floor=CREDIT_FLOOR,
-        now=None, sleep=time.sleep, poll_hook=None) -> dict:
+        now=None, sleep=time.sleep, poll_hook=None,
+        credit_log_store=None) -> dict:
     """Take a spaced series of captures, but only while a game is approaching.
 
     The window is re-checked before every capture rather than once at the top.
     A run that starts with a game forty minutes out will stop on its own once
     that game begins, instead of spending the rest of its budget on in-play
     prices nobody asked for.
+
+    `credit_log_store` is the injection seam for the envelope check below:
+    `None` (the production default) means "read the real
+    data/processed/credit_log.jsonl", exactly as before this parameter
+    existed. A test that wants a hermetic envelope decision -- rather than
+    whatever `spent_today()` reads off the real, mutating log on the day the
+    suite happens to run -- passes a tmp path here instead of patching
+    `budget_module` globals.
     """
     status = odds_provider.status(env)
     if not status.get("configured"):
@@ -310,8 +319,13 @@ def run(env=None, captures=CAPTURES_PER_RUN, interval_minutes=INTERVAL_MINUTES,
     # already-measured family (3 credits/capture, all markets, one region).
     # Passes the `remaining` this call already read rather than re-reading
     # credit_log.jsonl, so a test's forward-store guard (creditlog writes
-    # fail silently under it) can never make this guard see stale data.
-    decision = budget_module.can_spend("featured", 3, remaining=remaining)
+    # fail silently under it) can never make this guard see stale data. The
+    # ENVELOPE side of the same decision still falls back to
+    # `spent_today()`'s own default store when `credit_log_store` is None,
+    # which is real disk in production and must be a caller-supplied tmp
+    # path in any hermetic test -- see the `credit_log_store` docstring above.
+    decision = budget_module.can_spend("featured", 3, remaining=remaining,
+                                        store=credit_log_store)
     if not decision.allowed:
         print(f"dense.run: {decision.reason}")
         return {"captures": 0, "skipped": decision.reason,

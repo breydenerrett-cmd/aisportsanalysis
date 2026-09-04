@@ -12,6 +12,7 @@ from pathlib import Path
 
 from src.pipeline import prop_listing
 from src.providers import odds
+from tests import HERMETIC_CREDIT_LOG_STORE
 
 NOW = dt.datetime(2026, 9, 2, 12, 0, tzinfo=dt.timezone.utc)
 
@@ -128,7 +129,7 @@ class SampleSelectionTests(unittest.TestCase):
         slate = [_event(str(i), _at(i)) for i in (2, 6, 11)]
         with tempfile.TemporaryDirectory() as folder:
             store = Path(folder) / "prop.jsonl"
-            prop_listing.run(env={}, now=NOW, store=store,
+            prop_listing.run(env={}, credit_log_store=HERMETIC_CREDIT_LOG_STORE, now=NOW, store=store,
                              provider=FakeProvider(slate))
             sample = [r for r in prop_listing.read(store) if r.get("sample")][0]
         self.assertEqual(sample["selected_at_slot"], "T-12h")
@@ -140,7 +141,7 @@ class SampleSelectionTests(unittest.TestCase):
         slate = [_event(str(i), _at(i)) for i in (1, 2, 3)]
         with tempfile.TemporaryDirectory() as folder:
             store = Path(folder) / "prop.jsonl"
-            prop_listing.run(env={}, now=NOW, store=store,
+            prop_listing.run(env={}, credit_log_store=HERMETIC_CREDIT_LOG_STORE, now=NOW, store=store,
                              provider=FakeProvider(slate))
             sample = [r for r in prop_listing.read(store) if r.get("sample")][0]
         self.assertEqual(sample["selected_at_slot"], "T-4h")
@@ -153,12 +154,12 @@ class SampleSelectionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             store = Path(folder) / "prop.jsonl"
             first = FakeProvider(slate)
-            prop_listing.run(env={}, now=NOW, store=store, provider=first)
+            prop_listing.run(env={}, credit_log_store=HERMETIC_CREDIT_LOG_STORE, now=NOW, store=store, provider=first)
             later = NOW + dt.timedelta(hours=3)
             survivors = [e for e in slate
                          if prop_listing._parse_iso(e["commence_time"]) > later]
             second = FakeProvider(survivors)
-            prop_listing.run(env={}, now=later, store=store, provider=second)
+            prop_listing.run(env={}, credit_log_store=HERMETIC_CREDIT_LOG_STORE, now=later, store=store, provider=second)
             samples = prop_listing._samples(prop_listing.read(store))
         self.assertEqual(list(samples.values())[0], ["1", "4", "7"])
         # Everything fetched on the later run is still inside the frozen sample.
@@ -170,7 +171,7 @@ class RecordingTests(unittest.TestCase):
     """What a row may contain, and what it may never contain."""
 
     def _run(self, provider, now=NOW, store=None):
-        return prop_listing.run(env={}, now=now, store=store, provider=provider)
+        return prop_listing.run(env={}, credit_log_store=HERMETIC_CREDIT_LOG_STORE, now=now, store=store, provider=provider)
 
     def test_a_listed_market_writes_one_row_per_book_per_pitcher(self):
         listed = [_event("g1", _at(6))]
@@ -271,9 +272,9 @@ class ResumabilityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             store = Path(folder) / "prop.jsonl"
             first = FakeProvider(listed, {"g1": _payload("g1")})
-            prop_listing.run(env={}, now=NOW, store=store, provider=first)
+            prop_listing.run(env={}, credit_log_store=HERMETIC_CREDIT_LOG_STORE, now=NOW, store=store, provider=first)
             second = FakeProvider(listed, {"g1": _payload("g1")})
-            report = prop_listing.run(env={}, now=NOW + dt.timedelta(minutes=30),
+            report = prop_listing.run(env={}, credit_log_store=HERMETIC_CREDIT_LOG_STORE, now=NOW + dt.timedelta(minutes=30),
                                       store=store, provider=second)
         self.assertEqual(second.fetched, [])
         self.assertEqual(report["credits_spent"], 0)
@@ -283,9 +284,9 @@ class ResumabilityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             store = Path(folder) / "prop.jsonl"
             first = FakeProvider(listed, {"g1": _payload("g1")})
-            prop_listing.run(env={}, now=NOW, store=store, provider=first)
+            prop_listing.run(env={}, credit_log_store=HERMETIC_CREDIT_LOG_STORE, now=NOW, store=store, provider=first)
             second = FakeProvider(listed, {"g1": _payload("g1")})
-            prop_listing.run(env={}, now=NOW + dt.timedelta(hours=3),
+            prop_listing.run(env={}, credit_log_store=HERMETIC_CREDIT_LOG_STORE, now=NOW + dt.timedelta(hours=3),
                              store=store, provider=second)
             rows = prop_listing.read(store)
         slots = [r["slot"] for r in rows if r.get("poll")]
@@ -297,7 +298,7 @@ class ResumabilityTests(unittest.TestCase):
             store = Path(folder) / "prop.jsonl"
             for minutes in (0, 10, 20, 30):
                 provider = FakeProvider(listed, fail={"g1": "boom"})
-                prop_listing.run(env={}, now=NOW + dt.timedelta(minutes=minutes),
+                prop_listing.run(env={}, credit_log_store=HERMETIC_CREDIT_LOG_STORE, now=NOW + dt.timedelta(minutes=minutes),
                                  store=store, provider=provider)
                 attempts = prop_listing._attempts(prop_listing.read(store))
             self.assertEqual(attempts[("g1", "T-6h")],
@@ -325,7 +326,7 @@ class BudgetTests(unittest.TestCase):
         provider = FakeProvider(listed, {"g1": _payload("g1")},
                                 remaining=prop_listing.CREDIT_FLOOR)
         with tempfile.TemporaryDirectory() as folder:
-            report = prop_listing.run(env={}, now=NOW,
+            report = prop_listing.run(env={}, credit_log_store=HERMETIC_CREDIT_LOG_STORE, now=NOW,
                                       store=Path(folder) / "prop.jsonl",
                                       provider=provider)
         self.assertEqual(report["skipped"], "credit floor")
@@ -338,7 +339,7 @@ class BudgetTests(unittest.TestCase):
         provider = FakeProvider(listed, {"g1": _payload("g1")},
                                 remaining=prop_listing.PROBE_RESERVE - 1)
         with tempfile.TemporaryDirectory() as folder:
-            report = prop_listing.run(env={}, now=NOW,
+            report = prop_listing.run(env={}, credit_log_store=HERMETIC_CREDIT_LOG_STORE, now=NOW,
                                       store=Path(folder) / "prop.jsonl",
                                       provider=provider)
         self.assertEqual(report["skipped"], "probe reserve")
@@ -352,7 +353,7 @@ class BudgetTests(unittest.TestCase):
             prop_listing.append(
                 [{"observed_utc": "x", "poll": True, "credits_last": 1,
                   "game_date": "2026-09-01"}] * prop_listing.HARD_CAP, store)
-            report = prop_listing.run(env={}, now=NOW, store=store,
+            report = prop_listing.run(env={}, credit_log_store=HERMETIC_CREDIT_LOG_STORE, now=NOW, store=store,
                                       provider=provider)
         self.assertEqual(report["skipped"], "hard cap")
         self.assertEqual(provider.fetched, [])
@@ -367,7 +368,7 @@ class BudgetTests(unittest.TestCase):
             prop_listing.append(
                 [{"observed_utc": "x", "poll": True, "credits_last": 1,
                   "game_date": game_date}] * prop_listing.DAILY_CREDIT_CAP, store)
-            report = prop_listing.run(env={}, now=NOW, store=store,
+            report = prop_listing.run(env={}, credit_log_store=HERMETIC_CREDIT_LOG_STORE, now=NOW, store=store,
                                       provider=provider)
         self.assertEqual(provider.fetched, [])
         self.assertTrue(any("ESCALATE" in line and game_date in line
@@ -377,7 +378,7 @@ class BudgetTests(unittest.TestCase):
         listed = [_event(f"g{i}", _at(6)) for i in range(12)]
         provider = FakeProvider(listed)
         with tempfile.TemporaryDirectory() as folder:
-            report = prop_listing.run(env={}, now=NOW,
+            report = prop_listing.run(env={}, credit_log_store=HERMETIC_CREDIT_LOG_STORE, now=NOW,
                                       store=Path(folder) / "prop.jsonl",
                                       provider=provider)
         self.assertLessEqual(report["fetches"], prop_listing.MAX_FETCHES_PER_RUN)
@@ -389,7 +390,7 @@ class BudgetTests(unittest.TestCase):
         provider = FakeProvider(listed, {"g1": _payload("g1")})
         with tempfile.TemporaryDirectory() as folder:
             store = Path(folder) / "prop.jsonl"
-            prop_listing.run(env={}, now=NOW, store=store, provider=provider)
+            prop_listing.run(env={}, credit_log_store=HERMETIC_CREDIT_LOG_STORE, now=NOW, store=store, provider=provider)
             rows = prop_listing.read(store)
         self.assertEqual(prop_listing.credits_spent(rows), 1)
 
@@ -398,7 +399,7 @@ class BudgetTests(unittest.TestCase):
         provider = FakeProvider(listed, {"g1": _payload("g1")}, billed=None)
         with tempfile.TemporaryDirectory() as folder:
             store = Path(folder) / "prop.jsonl"
-            report = prop_listing.run(env={}, now=NOW, store=store,
+            report = prop_listing.run(env={}, credit_log_store=HERMETIC_CREDIT_LOG_STORE, now=NOW, store=store,
                                       provider=provider)
             rows = prop_listing.read(store)
         marker = [r for r in rows if r.get("poll")][0]
@@ -410,7 +411,7 @@ class BudgetTests(unittest.TestCase):
         provider = FakeProvider([_event("g1", _at(6))])
         provider.status = lambda env=None: {"configured": False}
         with tempfile.TemporaryDirectory() as folder:
-            report = prop_listing.run(env={}, now=NOW,
+            report = prop_listing.run(env={}, credit_log_store=HERMETIC_CREDIT_LOG_STORE, now=NOW,
                                       store=Path(folder) / "prop.jsonl",
                                       provider=provider)
         self.assertEqual(report["skipped"], "not configured")

@@ -11,6 +11,7 @@ from pathlib import Path
 from src.capture import budget
 from src.pipeline import derivative_markets
 from src.providers import odds
+from tests import HERMETIC_CREDIT_LOG_STORE
 
 NOW = dt.datetime(2026, 9, 3, 12, 0, tzinfo=dt.timezone.utc)
 
@@ -211,7 +212,7 @@ class SchemaTests(unittest.TestCase):
             raw = Path(folder) / "raw.jsonl"
             processed = Path(folder) / "processed.jsonl"
             with _WithFamiliesPath(fam_path):
-                report = derivative_markets.run(env={}, now=NOW, store=raw,
+                report = derivative_markets.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=raw,
                                                   processed_store=processed,
                                                   provider=provider)
             rows = derivative_markets.read_processed(processed)
@@ -234,7 +235,7 @@ class SchemaTests(unittest.TestCase):
             raw = Path(folder) / "raw.jsonl"
             processed = Path(folder) / "processed.jsonl"
             with _WithFamiliesPath(fam_path):
-                derivative_markets.run(env={}, now=NOW, store=raw,
+                derivative_markets.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=raw,
                                         processed_store=processed, provider=provider)
             rows = derivative_markets.read_processed(processed)
         alt_rows = [r for r in rows if r["family"] == "alternates"]
@@ -257,7 +258,7 @@ class SchemaTests(unittest.TestCase):
             raw = Path(folder) / "raw.jsonl"
             processed = Path(folder) / "processed.jsonl"
             with _WithFamiliesPath(fam_path):
-                derivative_markets.run(env={}, now=NOW, store=raw,
+                derivative_markets.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=raw,
                                         processed_store=processed, provider=provider)
             rows = derivative_markets.read_processed(processed)
         f5_rows = [r for r in rows if r["family"] == "f5_trio"]
@@ -274,10 +275,10 @@ class SchemaTests(unittest.TestCase):
             raw = Path(folder) / "raw.jsonl"
             processed = Path(folder) / "processed.jsonl"
             with _WithFamiliesPath(fam_path):
-                derivative_markets.run(env={}, now=NOW, store=raw,
+                derivative_markets.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=raw,
                                         processed_store=processed, provider=provider)
                 first_count = len(derivative_markets.read_processed(processed))
-                derivative_markets.run(env={}, now=NOW, store=raw,
+                derivative_markets.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=raw,
                                         processed_store=processed, provider=provider)
                 second_count = len(derivative_markets.read_processed(processed))
         self.assertEqual(first_count, second_count)
@@ -308,7 +309,7 @@ class BudgetGuardTests(unittest.TestCase):
             raw = Path(folder) / "raw.jsonl"
             processed = Path(folder) / "processed.jsonl"
             with _WithFamiliesPath(fam_path):
-                report = derivative_markets.run(env={}, now=NOW, store=raw,
+                report = derivative_markets.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=raw,
                                                   processed_store=processed,
                                                   provider=provider)
         self.assertEqual(provider.fetched, [])
@@ -337,7 +338,7 @@ class BudgetGuardTests(unittest.TestCase):
             raw = Path(folder) / "raw.jsonl"
             processed = Path(folder) / "processed.jsonl"
             with _WithFamiliesPath(fam_path):
-                report = derivative_markets.run(env={}, now=NOW, store=raw,
+                report = derivative_markets.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=raw,
                                                   processed_store=processed,
                                                   provider=provider)
         fetched_families = {family for family, _, _ in provider.fetched}
@@ -356,7 +357,7 @@ class BudgetGuardTests(unittest.TestCase):
             raw = Path(folder) / "raw.jsonl"
             processed = Path(folder) / "processed.jsonl"
             with _WithFamiliesPath(fam_path):
-                report = derivative_markets.run(env={}, now=NOW, store=raw,
+                report = derivative_markets.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=raw,
                                                   processed_store=processed,
                                                   provider=provider)
         self.assertEqual(report["skipped"], "credit floor")
@@ -372,7 +373,7 @@ class BudgetGuardTests(unittest.TestCase):
             raw = Path(folder) / "raw.jsonl"
             processed = Path(folder) / "processed.jsonl"
             with _WithFamiliesPath(fam_path):
-                report = derivative_markets.run(env={}, now=NOW, store=raw,
+                report = derivative_markets.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=raw,
                                                   processed_store=processed,
                                                   provider=provider)
         self.assertEqual(report["skipped"], "not configured")
@@ -385,7 +386,7 @@ class BudgetGuardTests(unittest.TestCase):
             raw = Path(folder) / "raw.jsonl"
             processed = Path(folder) / "processed.jsonl"
             with _WithFamiliesPath(fam_path):
-                report = derivative_markets.run(env={}, now=NOW, store=raw,
+                report = derivative_markets.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=raw,
                                                   processed_store=processed,
                                                   provider=provider)
             rows = derivative_markets.read(raw)

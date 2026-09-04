@@ -125,13 +125,16 @@ class DerivativeMarketsError(RuntimeError):
 # ---------------------------------------------------------------------------
 
 def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
-        provider=odds_provider, credit_floor=CREDIT_FLOOR) -> dict:
+        provider=odds_provider, credit_floor=CREDIT_FLOOR,
+        credit_log_store=None) -> dict:
     """One scheduled pass. Returns a report; never raises for a network fault.
 
     Everything injectable is injectable so the tests spend nothing:
     `provider` stands in for the odds module, `now` for the clock, `store`/
     `processed_store` for the files -- the same contract batter_props.run()
-    offers.
+    offers. `credit_log_store` is the envelope-check seam every other
+    paid-capture `run()` in this package now carries: None (default) reads
+    the real credit_log.jsonl via `budget_module.spent_today()`'s own default.
     """
     clock_now = _now(now)
     report = {"observed_utc": _utc_iso(clock_now), "fetches": 0, "rows": 0,
@@ -207,7 +210,7 @@ def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
 
         decision = budget_module.can_spend(
             family, credits_per_event, remaining=remaining,
-            spent=budget_module.spent_today())
+            spent=budget_module.spent_today(store=credit_log_store))
         report["budget_reasons"].setdefault(family, {})[event_id] = decision.reason
         if not decision.allowed:
             print(f"derivative_markets.run: {family} {event_id}: {decision.reason}")

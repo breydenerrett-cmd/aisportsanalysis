@@ -94,12 +94,14 @@ class PropPricesError(RuntimeError):
 
 def run(env=None, now=None, store=DEFAULT_STORE, provider=odds_provider,
         credit_floor=CREDIT_FLOOR, probe_reserve=PROBE_RESERVE,
-        daily_cap=DAILY_CREDIT_CAP) -> dict:
+        daily_cap=DAILY_CREDIT_CAP, credit_log_store=None) -> dict:
     """One scheduled pass. Returns a report; never raises for a network fault.
 
     Everything injectable is injectable so the tests spend nothing:
     `provider` stands in for the odds module, `now` for the clock, `store`
     for the file -- the same contract prop_listing.run() offers.
+    `credit_log_store` is the same envelope-check seam prop_listing.run and
+    dense.run carry: None (default) reads the real credit_log.jsonl.
     """
     clock_now = _now(now)
     report = {"observed_utc": _utc_iso(clock_now), "fetches": 0, "rows": 0,
@@ -143,7 +145,8 @@ def run(env=None, now=None, store=DEFAULT_STORE, provider=odds_provider,
     # ~900/day envelope for real. A floor or envelope refusal, unlike
     # PROBE_REQUIRED, DOES stop this run -- those are absolute, regardless
     # of which layer is asking.
-    decision = budget_module.can_spend("pitcher_props", DAILY_CREDIT_CAP, remaining=remaining)
+    decision = budget_module.can_spend("pitcher_props", DAILY_CREDIT_CAP,
+                                        remaining=remaining, store=credit_log_store)
     if not decision.allowed:
         print(f"prop_prices.run: {decision.reason}")
         report["budget_reason"] = decision.reason

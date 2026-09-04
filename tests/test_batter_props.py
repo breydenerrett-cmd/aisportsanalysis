@@ -10,6 +10,7 @@ from pathlib import Path
 from src.capture import budget
 from src.pipeline import batter_props
 from src.providers import odds
+from tests import HERMETIC_CREDIT_LOG_STORE
 
 NOW = dt.datetime(2026, 9, 3, 12, 0, tzinfo=dt.timezone.utc)
 
@@ -108,7 +109,7 @@ class SchemaTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             raw = Path(folder) / "raw.jsonl"
             processed = Path(folder) / "processed.jsonl"
-            report = batter_props.run(env={}, now=NOW, store=raw,
+            report = batter_props.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=raw,
                                        processed_store=processed, provider=provider)
             rows = batter_props.read_processed(processed)
         # 6 markets x 2 books x 2 players x 2 sides (over/under selections)
@@ -128,12 +129,12 @@ class SchemaTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             raw = Path(folder) / "raw.jsonl"
             processed = Path(folder) / "processed.jsonl"
-            batter_props.run(env={}, now=NOW, store=raw,
+            batter_props.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=raw,
                               processed_store=processed, provider=provider)
             first_count = len(batter_props.read_processed(processed))
             # Second run: same slate, same event already marked done today ->
             # no new fetch, no new rows.
-            batter_props.run(env={}, now=NOW, store=raw,
+            batter_props.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=raw,
                               processed_store=processed, provider=provider)
             second_count = len(batter_props.read_processed(processed))
         self.assertEqual(first_count, second_count)
@@ -165,7 +166,7 @@ class FloorAndExtraTests(unittest.TestCase):
             original = budget_module.FAMILIES_CONFIG_PATH
             budget_module.FAMILIES_CONFIG_PATH = fam_path
             try:
-                report = batter_props.run(env={}, now=NOW, store=raw,
+                report = batter_props.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=raw,
                                            processed_store=processed, provider=provider)
             finally:
                 budget_module.FAMILIES_CONFIG_PATH = original
@@ -176,13 +177,78 @@ class FloorAndExtraTests(unittest.TestCase):
         for fid in floor_ids:
             self.assertIn(fid, fetched_ids)
 
+    def test_extra_family_envelope_reads_the_injected_store_not_real_disk(self):
+        """Regression pin for the 2026-09-04 break (docs/planning/attack.md
+        F13/S17 lineage): `can_spend`'s envelope half falls back to
+        `spent_today()` -- a read of `credit_log_store` -- whenever a
+        caller doesn't pass `spent` directly. `batter_props.run` passes
+        `spent=None` for the non-droppable floor family (exempt from the
+        envelope by contract) but, for `batter_props_extra`, must derive it
+        from `credit_log_store`, never from whatever
+        data/processed/credit_log.jsonl happens to hold today. Two runs
+        against the SAME fake provider (`remaining` fixed, so the floor
+        check never fires) differing only in the injected store's own
+        recorded spend must reach opposite envelope decisions for the extra
+        family -- proving the decision tracks the seam, not ambient state.
+        """
+        listed = [_event(f"g{i}") for i in range(1, 8)]  # more than one night's floor
+        payloads = {e["id"]: _payload(e["id"], books=("draftkings",),
+                                       players=(("p1", "Player One"),))
+                    for e in listed}
+        today_utc = dt.datetime.now(dt.timezone.utc)
+
+        def extra_fetch_ids(store):
+            provider = FakeProvider(listed, payloads, remaining=53000)
+            with tempfile.TemporaryDirectory() as folder:
+                raw = Path(folder) / "raw.jsonl"
+                processed = Path(folder) / "processed.jsonl"
+                batter_props.run(credit_log_store=store, env={}, now=NOW,
+                                  store=raw, processed_store=processed,
+                                  provider=provider)
+            floor_ids = set(budget.rotated_floor_games(
+                sorted(e["id"] for e in listed),
+                batter_props.prop_listing._slate_date(NOW)))
+            return {eid for eid, _ in provider.fetched if eid not in floor_ids}
+
+        with tempfile.TemporaryDirectory() as folder:
+            # A store with no rows for today: spent_today() reads 0, so the
+            # extra family clears the envelope and gets fetched.
+            quiet_store = Path(folder) / "quiet_credit_log.jsonl"
+            self.assertTrue(extra_fetch_ids(quiet_store),
+                             "extra family should fetch when the injected "
+                             "store shows no spend today")
+
+            # A store whose own rows show today's spend already past
+            # DAILY_ENVELOPE (the exact shape of 2026-09-04's real log):
+            # the SAME provider, SAME `remaining`, must now refuse the
+            # extra family on "daily envelope".
+            loud_store = Path(folder) / "loud_credit_log.jsonl"
+            rows = [
+                {"utc": today_utc.replace(microsecond=0).isoformat()
+                        .replace("+00:00", "Z"),
+                 "credits_remaining": 100000, "credits_used_last": 0,
+                 "caller": "test"},
+                {"utc": (today_utc + dt.timedelta(minutes=1))
+                        .replace(microsecond=0).isoformat()
+                        .replace("+00:00", "Z"),
+                 "credits_remaining": 100000 - budget.DAILY_ENVELOPE - 1,
+                 "credits_used_last": 0, "caller": "test"},
+            ]
+            loud_store.write_text(
+                "\n".join(__import__("json").dumps(r) for r in rows) + "\n",
+                encoding="utf-8")
+            self.assertEqual(
+                extra_fetch_ids(loud_store), set(),
+                "extra family must refuse to spend once the injected "
+                "store's own rows show the envelope already exceeded")
+
     def test_credit_floor_skips_the_whole_run(self):
         listed = [_event("g1")]
         provider = FakeProvider(listed, remaining=batter_props.CREDIT_FLOOR)
         with tempfile.TemporaryDirectory() as folder:
             raw = Path(folder) / "raw.jsonl"
             processed = Path(folder) / "processed.jsonl"
-            report = batter_props.run(env={}, now=NOW, store=raw,
+            report = batter_props.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=raw,
                                        processed_store=processed, provider=provider)
         self.assertEqual(report["skipped"], "credit floor")
         self.assertEqual(provider.fetched, [])
@@ -195,7 +261,7 @@ class FloorAndExtraTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             raw = Path(folder) / "raw.jsonl"
             processed = Path(folder) / "processed.jsonl"
-            report = batter_props.run(env={}, now=NOW, store=raw,
+            report = batter_props.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=raw,
                                        processed_store=processed, provider=provider)
         self.assertEqual(report["skipped"], "not configured")
 
@@ -205,7 +271,7 @@ class FloorAndExtraTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             raw = Path(folder) / "raw.jsonl"
             processed = Path(folder) / "processed.jsonl"
-            report = batter_props.run(env={}, now=NOW, store=raw,
+            report = batter_props.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=raw,
                                        processed_store=processed, provider=provider)
             rows = batter_props.read(raw)
         self.assertTrue(any(r.get("error") for r in rows))

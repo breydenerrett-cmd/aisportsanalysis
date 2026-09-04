@@ -9,6 +9,7 @@ from pathlib import Path
 
 from src.pipeline import prop_prices
 from src.providers import odds
+from tests import HERMETIC_CREDIT_LOG_STORE
 
 NOW = dt.datetime(2026, 9, 2, 12, 0, tzinfo=dt.timezone.utc)
 
@@ -99,7 +100,7 @@ class SchemaTests(unittest.TestCase):
         provider = FakeProvider(listed, {"g1": _payload("g1")})
         with tempfile.TemporaryDirectory() as folder:
             store = Path(folder) / "prices.jsonl"
-            report = prop_prices.run(env={}, now=NOW, store=store, provider=provider)
+            report = prop_prices.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=store, provider=provider)
             rows = prop_prices.read(store)
         priced = [r for r in rows if r.get("player")]
         self.assertEqual(len(priced), 4)  # two books x two pitchers
@@ -131,7 +132,7 @@ class SchemaTests(unittest.TestCase):
         provider = FakeProvider(listed, {"g1": payload})
         with tempfile.TemporaryDirectory() as folder:
             store = Path(folder) / "prices.jsonl"
-            prop_prices.run(env={}, now=NOW, store=store, provider=provider)
+            prop_prices.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=store, provider=provider)
             rows = [r for r in prop_prices.read(store) if r.get("player")]
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["over_price"], -120)
@@ -142,7 +143,7 @@ class SchemaTests(unittest.TestCase):
         provider = FakeProvider(listed, {"g1": _payload("g1")})
         with tempfile.TemporaryDirectory() as folder:
             store = Path(folder) / "prices.jsonl"
-            prop_prices.run(env={}, now=NOW, store=store, provider=provider)
+            prop_prices.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=store, provider=provider)
             markers = [r for r in prop_prices.read(store) if r.get("poll")]
         self.assertEqual(len(markers), 1)
         self.assertEqual(markers[0]["books_priced"], 2)
@@ -153,7 +154,7 @@ class SchemaTests(unittest.TestCase):
         provider = FakeProvider(listed, fail={"g1": "odds API returned HTTP 500"})
         with tempfile.TemporaryDirectory() as folder:
             store = Path(folder) / "prices.jsonl"
-            report = prop_prices.run(env={}, now=NOW, store=store, provider=provider)
+            report = prop_prices.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=store, provider=provider)
             rows = prop_prices.read(store)
         self.assertEqual([r for r in rows if r.get("poll")], [])
         self.assertEqual(len([r for r in rows if r.get("error")]), 1)
@@ -168,7 +169,7 @@ class BudgetTests(unittest.TestCase):
         provider = FakeProvider(listed, {"g1": _payload("g1")},
                                 remaining=prop_prices.CREDIT_FLOOR)
         with tempfile.TemporaryDirectory() as folder:
-            report = prop_prices.run(env={}, now=NOW,
+            report = prop_prices.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW,
                                      store=Path(folder) / "prices.jsonl",
                                      provider=provider)
         self.assertEqual(report["skipped"], "credit floor")
@@ -179,7 +180,7 @@ class BudgetTests(unittest.TestCase):
         provider = FakeProvider(listed, {"g1": _payload("g1")},
                                 remaining=prop_prices.PROBE_RESERVE - 1)
         with tempfile.TemporaryDirectory() as folder:
-            report = prop_prices.run(env={}, now=NOW,
+            report = prop_prices.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW,
                                      store=Path(folder) / "prices.jsonl",
                                      provider=provider)
         self.assertEqual(report["skipped"], "probe reserve")
@@ -197,7 +198,7 @@ class BudgetTests(unittest.TestCase):
             prop_prices.append(
                 [{"observed_utc": "x", "poll": True, "credits_last": 1,
                   "game_date": game_date}] * prop_prices.DAILY_CREDIT_CAP, store)
-            report = prop_prices.run(env={}, now=NOW, store=store, provider=provider)
+            report = prop_prices.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=store, provider=provider)
         self.assertEqual(provider.fetched, [])
         self.assertTrue(any("ESCALATE" in line and game_date in line
                             for line in report["escalate"]))
@@ -212,7 +213,7 @@ class BudgetTests(unittest.TestCase):
                 [{"observed_utc": "x", "poll": True, "credits_last": 1,
                   "game_date": game_date}] * (prop_prices.DAILY_CREDIT_CAP - 1),
                 store)
-            report = prop_prices.run(env={}, now=NOW, store=store, provider=provider)
+            report = prop_prices.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=store, provider=provider)
         self.assertEqual(report["fetches"], 1)
 
     def test_spend_is_counted_from_markers_not_from_price_rows(self):
@@ -220,7 +221,7 @@ class BudgetTests(unittest.TestCase):
         provider = FakeProvider(listed, {"g1": _payload("g1")})
         with tempfile.TemporaryDirectory() as folder:
             store = Path(folder) / "prices.jsonl"
-            prop_prices.run(env={}, now=NOW, store=store, provider=provider)
+            prop_prices.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=store, provider=provider)
             rows = prop_prices.read(store)
         self.assertEqual(prop_prices.credits_spent(rows), 1)
 
@@ -228,7 +229,7 @@ class BudgetTests(unittest.TestCase):
         provider = FakeProvider([_event("g1", _at(6))])
         provider.status = lambda env=None: {"configured": False}
         with tempfile.TemporaryDirectory() as folder:
-            report = prop_prices.run(env={}, now=NOW,
+            report = prop_prices.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW,
                                      store=Path(folder) / "prices.jsonl",
                                      provider=provider)
         self.assertEqual(report["skipped"], "not configured")
@@ -240,9 +241,9 @@ class ResumabilityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             store = Path(folder) / "prices.jsonl"
             first = FakeProvider(listed, {"g1": _payload("g1")})
-            prop_prices.run(env={}, now=NOW, store=store, provider=first)
+            prop_prices.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=store, provider=first)
             second = FakeProvider(listed, {"g1": _payload("g1")})
-            report = prop_prices.run(env={}, now=NOW + dt.timedelta(minutes=30),
+            report = prop_prices.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW + dt.timedelta(minutes=30),
                                      store=store, provider=second)
         self.assertEqual(second.fetched, [])
         self.assertEqual(report["credits_spent"], 0)

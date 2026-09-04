@@ -90,12 +90,18 @@ class BatterPropsError(RuntimeError):
 # ---------------------------------------------------------------------------
 
 def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
-        provider=odds_provider, credit_floor=CREDIT_FLOOR) -> dict:
+        provider=odds_provider, credit_floor=CREDIT_FLOOR,
+        credit_log_store=None) -> dict:
     """One scheduled pass. Returns a report; never raises for a network fault.
 
     Everything injectable is injectable so the tests spend nothing:
     `provider` stands in for the odds module, `now` for the clock, `store`/
-    `processed_store` for the files -- the same contract prop_prices.run() offers.
+    `processed_store` for the files -- the same contract prop_prices.run()
+    offers. `credit_log_store` is the EXTRA_FAMILY envelope check's own seam
+    (the floor family bypasses the envelope by contract -- see the
+    `spent=None` branch below -- so it never needs this): None (default)
+    reads the real credit_log.jsonl via `budget_module.spent_today()`'s own
+    default.
     """
     clock_now = _now(now)
     report = {"observed_utc": _utc_iso(clock_now), "fetches": 0, "rows": 0,
@@ -173,7 +179,8 @@ def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
 
         decision = budget_module.can_spend(
             family, CREDITS_PER_EVENT, remaining=remaining,
-            spent=budget_module.spent_today() if family != FLOOR_FAMILY else None)
+            spent=budget_module.spent_today(store=credit_log_store)
+            if family != FLOOR_FAMILY else None)
         report["budget_reasons"][event.get("id")] = decision.reason
         if not decision.allowed:
             print(f"batter_props.run: {family} {event.get('id')}: {decision.reason}")

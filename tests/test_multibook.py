@@ -24,6 +24,7 @@ from src.detect import dossier as dossier_mod
 from src.pipeline import dense, ledger, snapshots
 from src.providers import odds as odds_provider
 from src import cli
+from tests import HERMETIC_CREDIT_LOG_STORE
 
 FAKE_KEY = "sk-not-real"
 
@@ -379,7 +380,7 @@ class TestClosePassAndMissedWindows(unittest.TestCase):
     def test_close_pass_fires_when_a_game_is_inside_t_minus_25(self):
         dense._upcoming = (lambda now=None, timeout=20:
                            [{"commence_time": "2026-08-30T15:20:00Z"}])
-        result = dense.run(captures=1, now=NOW, sleep=None)
+        result = dense.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, captures=1, now=NOW, sleep=None)
         self.assertIsNotNone(result["close_capture"])
         self.assertEqual(result["close_capture"]["captured"], 30)
         # One loop capture plus the close pass.
@@ -390,7 +391,7 @@ class TestClosePassAndMissedWindows(unittest.TestCase):
         # loop thought; the close pass is its own check.
         dense._upcoming = (lambda now=None, timeout=20:
                            [{"commence_time": "2026-08-30T15:20:00Z"}])
-        result = dense.run(captures=1, window_minutes=10, now=NOW, sleep=None)
+        result = dense.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, captures=1, window_minutes=10, now=NOW, sleep=None)
         self.assertEqual(result["stopped_early"], "no game inside the window")
         self.assertIsNotNone(result["close_capture"])
         self.assertEqual(len(self.calls), 1)
@@ -398,7 +399,7 @@ class TestClosePassAndMissedWindows(unittest.TestCase):
     def test_no_close_pass_when_first_pitch_is_far_away(self):
         dense._upcoming = (lambda now=None, timeout=20:
                            [{"commence_time": "2026-08-30T17:00:00Z"}])
-        result = dense.run(captures=1, now=NOW, sleep=None)
+        result = dense.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, captures=1, now=NOW, sleep=None)
         self.assertIsNone(result["close_capture"])
         self.assertEqual(len(self.calls), 1)
 
@@ -407,7 +408,7 @@ class TestClosePassAndMissedWindows(unittest.TestCase):
         dense.odds_provider.quota = lambda env=None: {"remaining": 100}
         dense._upcoming = (lambda now=None, timeout=20:
                            [{"commence_time": "2026-08-30T15:20:00Z"}])
-        result = dense.run(captures=1, now=NOW, sleep=None)
+        result = dense.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, captures=1, now=NOW, sleep=None)
         self.assertEqual(result["skipped"], "credit floor")
         self.assertEqual(self.calls, [])
 
@@ -416,7 +417,7 @@ class TestClosePassAndMissedWindows(unittest.TestCase):
         dense.odds_provider.quota = lambda env=None: next(balances)
         dense._upcoming = (lambda now=None, timeout=20:
                            [{"commence_time": "2026-08-30T15:20:00Z"}])
-        result = dense.run(captures=1, now=NOW, sleep=None)
+        result = dense.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, captures=1, now=NOW, sleep=None)
         self.assertEqual(result["close_capture"]["skipped"], "credit floor")
         self.assertEqual(len(self.calls), 1)
 
@@ -427,7 +428,7 @@ class TestClosePassAndMissedWindows(unittest.TestCase):
         ticks = iter([NOW, NOW, NOW + timedelta(hours=1)])
         dense._upcoming = (lambda now=None, timeout=20:
                            [{"commence_time": "2026-08-30T15:45:00Z"}])
-        result = dense.run(captures=1, now=lambda: next(ticks), sleep=None)
+        result = dense.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, captures=1, now=lambda: next(ticks), sleep=None)
         self.assertEqual(len(result["missed_windows"]), 1)
         self.assertEqual(result["missed_windows"][0]["commence_time"],
                          "2026-08-30T15:45:00Z")
@@ -440,7 +441,7 @@ class TestClosePassAndMissedWindows(unittest.TestCase):
                       NOW + timedelta(hours=1)])
         dense._upcoming = (lambda now=None, timeout=20:
                            [{"commence_time": "2026-08-30T15:45:00Z"}])
-        result = dense.run(captures=1, now=lambda: next(ticks), sleep=None)
+        result = dense.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, captures=1, now=lambda: next(ticks), sleep=None)
         self.assertEqual(result["missed_windows"], [])
 
     def test_a_capture_from_an_earlier_run_counts_as_coverage(self):
@@ -449,7 +450,7 @@ class TestClosePassAndMissedWindows(unittest.TestCase):
             {"observed_utc": "2026-08-30T15:30:00+00:00"}]
         dense._upcoming = (lambda now=None, timeout=20:
                            [{"commence_time": "2026-08-30T15:45:00Z"}])
-        result = dense.run(captures=1, now=lambda: next(ticks), sleep=None)
+        result = dense.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, captures=1, now=lambda: next(ticks), sleep=None)
         self.assertEqual(result["missed_windows"], [])
 
 
