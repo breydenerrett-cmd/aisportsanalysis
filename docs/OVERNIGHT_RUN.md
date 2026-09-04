@@ -595,3 +595,23 @@ https://linehound-staging.fly.dev/billing/webhook -> dry-run purchase.
   third time in-session work has cost live capture, and the standing note
   applies: capture is still a Claude Routine, and externalizing it (task
   L25) remains the fix.
+- **2026-09-04: forward capture SILENTLY BLOCKED ~10:08Z-17:2xZ (~7 hours).**
+  Not quiet-hour no-ops, as an earlier note in this file guessed. The
+  owner-approved ~47,000-credit historical F5 normalization landed in
+  `data/processed/credit_log.jsonl` as today's spend, and
+  `src/capture/budget.py`'s `spent_today()` sums every delta for the UTC day
+  regardless of band, so `can_spend()` tripped its 900/day LIVE-CAPTURE
+  envelope on every fetch: `dense.run: skipped: daily envelope (spent=73658,
+  requested=3, envelope=900)`. The credit floor was never the issue --
+  balance ~25,700 against a 5,000 floor.
+  Two defects, both real: (1) `docs/RESOURCE_POLICY.md` defines the capture
+  reserve and the historical/backfill band as SEPARATE, and the envelope
+  check did not honour that separation, so a growth-band purchase starved
+  the one stream that cannot be bought back; (2) the skip path crashed with
+  `KeyError: 'floor'` at `src/cli.py:1976` because the envelope-skip result
+  carries no `floor` key, so the block surfaced as a traceback rather than a
+  clean `ESCALATE:` line -- which is why no trigger ever alerted and the
+  outage ran for hours unnoticed.
+  Compounding error on my side: I checked `remaining_today()` (the monthly
+  balance, healthy) and reported capture as fine. The envelope half is what
+  gates fetching, and I did not read it.
