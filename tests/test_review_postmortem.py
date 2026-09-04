@@ -99,6 +99,16 @@ class TestVerdictRuleReachesAllThreeClasses(unittest.TestCase):
         self.assertIsNone(qualifier)
         self.assertTrue(any("refuted" in b for b in built.verdict_basis))
 
+    def test_a_win_with_a_refuted_mechanism_is_reasoning_wrong_not_confirmed(self):
+        """A winning bet whose mechanism failed must still grade
+        REASONING_WRONG -- a win must never launder a refuted mechanism into
+        a good verdict just because the price cashed."""
+        verdict, qualifier, built = self._verdict(
+            make_review("win", mechanism_checks=REFUTED_CHECK))
+        self.assertEqual(verdict, pm.VERDICT_REASONING_WRONG)
+        self.assertIsNone(qualifier)
+        self.assertTrue(any("refuted" in b for b in built.verdict_basis))
+
     def test_realized_counterargument_is_also_reasoning_wrong(self):
         verdict, _q, _b = self._verdict(
             make_review(counterargument_realized=({"name": "bullpen"},)))

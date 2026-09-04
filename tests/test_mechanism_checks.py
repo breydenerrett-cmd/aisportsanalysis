@@ -257,6 +257,21 @@ class TestSettlementWiring(unittest.TestCase):
                           me.VERDICT_REFUTED)
         self.assertEqual(review.thesis_outcome, "REFUTED")
 
+    def test_a_win_with_a_refuted_mechanism_is_still_reasoning_wrong(self):
+        """The mechanism check is measured off the game alone, so a WIN
+        cannot launder a refuted mechanism into CONFIRMED -- REFUTED must
+        win regardless of which side of the ledger the bet landed on."""
+        from src.engine.settle_slate import build_review_for
+        predicates = mp.predicates_for((("lineup_vs_primary_pitch", 0),),
+                                       "away", {})
+        review = build_review_for(
+            self._decision(predicates), self._settled("win"),
+            "2026-09-03T04:00:00Z", information_events_path="/nonexistent",
+            flow_rows=self._flow_rows(away_lineup_game(2)))
+        self.assertEqual(review.mechanism_checks[0]["verdict"],
+                          me.VERDICT_REFUTED)
+        self.assertEqual(review.thesis_outcome, "REFUTED")
+
     def test_a_confirmed_check_on_a_loss_is_real_variance(self):
         from src.engine.settle_slate import build_review_for
         predicates = mp.predicates_for((("lineup_vs_primary_pitch", 0),),
