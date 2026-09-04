@@ -499,3 +499,15 @@
 {"fetched_utc": "2026-09-04T22:04:36.963012+00:00", "game_date": "2026-09-04", "poll": true}
 {"category": "optioned", "date": "2026-09-04", "first_seen_utc": "2026-09-04T22:04:36.963012+00:00", "player": "Ryan Fernandez", "player_id": 681676, "team": "STL", "transaction_id": 941318}
 {"category": "il_activation", "date": "2026-09-04", "first_seen_utc": "2026-09-04T22:04:36.963012+00:00", "player": "Andre Pallante", "player_id": 669467, "team": "STL", "transaction_id": 941319}
+{"fetched_utc": "2026-09-04T22:15:58.492039+00:00", "game_date": "2026-09-04", "poll": true}
+{"fetched_utc": "2026-09-04T22:16:01.606729+00:00", "game_date": "2026-09-04", "poll": true}
+{"fetched_utc": "2026-09-04T22:31:04.007056+00:00", "game_date": "2026-09-04", "poll": true}
+{"category": "signed", "date": "2026-09-04", "first_seen_utc": "2026-09-04T22:31:04.007056+00:00", "player": "Kyler Fedko", "player_id": 693459, "team": "PIT", "transaction_id": 941323}
+{"category": "optioned", "date": "2026-09-04", "first_seen_utc": "2026-09-04T22:31:04.007056+00:00", "player": "Logan Allen", "player_id": 671106, "team": "CLE", "transaction_id": 941329}
+{"fetched_utc": "2026-09-04T22:46:07.219275+00:00", "game_date": "2026-09-04", "poll": true}
+{"category": "recalled", "date": "2026-09-04", "first_seen_utc": "2026-09-04T22:46:07.219275+00:00", "player": "Daniel Espino", "player_id": 682982, "team": "CLE", "transaction_id": 941330}
+{"category": "other", "date": "2026-09-04", "first_seen_utc": "2026-09-04T22:46:07.219275+00:00", "player": "Daz Cameron", "player_id": 663662, "team": "TOR", "transaction_id": 941333}
+{"category": "other", "date": "2026-09-04", "first_seen_utc": "2026-09-04T22:46:07.219275+00:00", "player": "Hayden Harris", "player_id": 802686, "team": "COL", "transaction_id": 941334}
+{"category": "optioned", "date": "2026-09-04", "first_seen_utc": "2026-09-04T22:46:07.219275+00:00", "player": "Hayden Harris", "player_id": 802686, "team": "COL", "transaction_id": 941335}
+{"category": "other", "date": "2026-09-04", "first_seen_utc": "2026-09-04T22:46:07.219275+00:00", "player": "Tom Cosgrove", "player_id": 676680, "team": "WSH", "transaction_id": 941336}
+{"fetched_utc": "2026-09-04T23:01:10.501258+00:00", "game_date": "2026-09-04", "poll": true}
