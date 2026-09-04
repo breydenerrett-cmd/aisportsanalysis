@@ -465,3 +465,16 @@
 {"category": "il_activation", "date": "2026-09-04", "first_seen_utc": "2026-09-04T18:35:41.906655+00:00", "player": "Tommy Troy", "player_id": 694371, "team": "ARI", "transaction_id": 941280}
 {"category": "designated", "date": "2026-09-04", "first_seen_utc": "2026-09-04T18:35:41.906655+00:00", "player": "Jorge Barrosa", "player_id": 678489, "team": "ARI", "transaction_id": 941282}
 {"fetched_utc": "2026-09-04T18:47:37.480861+00:00", "game_date": "2026-09-04", "poll": true}
+{"fetched_utc": "2026-09-04T19:16:57.858615+00:00", "game_date": "2026-09-04", "poll": true}
+{"fetched_utc": "2026-09-04T19:17:01.074184+00:00", "game_date": "2026-09-04", "poll": true}
+{"fetched_utc": "2026-09-04T19:26:43.676119+00:00", "game_date": "2026-09-04", "poll": true}
+{"category": "recalled", "date": "2026-09-04", "first_seen_utc": "2026-09-04T19:26:43.676119+00:00", "player": "Troy Taylor", "player_id": 700187, "team": "SEA", "transaction_id": 941285}
+{"category": "other", "date": "2026-09-04", "first_seen_utc": "2026-09-04T19:26:43.676119+00:00", "player": "Hoby Milner", "player_id": 571948, "team": "SEA", "transaction_id": 941286}
+{"fetched_utc": "2026-09-04T19:26:46.834147+00:00", "game_date": "2026-09-04", "poll": true}
+{"fetched_utc": "2026-09-04T19:41:50.031181+00:00", "game_date": "2026-09-04", "poll": true}
+{"fetched_utc": "2026-09-04T19:56:52.625317+00:00", "game_date": "2026-09-04", "poll": true}
+{"category": "il_placement", "date": "2026-09-01", "first_seen_utc": "2026-09-04T19:56:52.625317+00:00", "player": "Steven Okert", "player_id": 595345, "team": "HOU", "transaction_id": 941290}
+{"category": "il_placement", "date": "2026-09-04", "first_seen_utc": "2026-09-04T19:56:52.625317+00:00", "player": "Jesus Rodriguez", "player_id": 683679, "team": "SF", "transaction_id": 941287}
+{"category": "other", "date": "2026-09-04", "first_seen_utc": "2026-09-04T19:56:52.625317+00:00", "player": "Joel Kuhnel", "player_id": 669270, "team": "SF", "transaction_id": 941288}
+{"category": "recalled", "date": "2026-09-04", "first_seen_utc": "2026-09-04T19:56:52.625317+00:00", "player": "Bryan King", "player_id": 687911, "team": "HOU", "transaction_id": 941289}
+{"fetched_utc": "2026-09-04T20:11:55.157298+00:00", "game_date": "2026-09-04", "poll": true}
