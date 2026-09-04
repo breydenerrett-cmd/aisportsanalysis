@@ -45,3 +45,7 @@
 ## 2026-09-05 00:4xZ — totals methodology APPROVED TO DRAFT HYPOTHESES (6fc4e4e)
 - Revision 2 faithful; 5 open items decided (population-shift on bucket occupancy; family of two; bullpen recombination deferred; staleness bound from gap distribution then frozen; B6 counts-only population audit required before registration).
 - Queue extended W15-W17. W15 dispatched (Sonnet). W10 factory prep still running. Capture healthy.
+
+## 2026-09-05 01:0xZ — W10 factory scale design + slice 1 landed (b5d5f19)
+- Canonical wager id (game_pk, market, side, line), append-only WagerStore, overlap/Jaccard/effective-N module; 4,387 tests green in lane. Overlap report honestly reports that sweep output does not yet persist per-strategy decision sets → W18 queued and dispatched.
+- W15 totals population audit running. Capture healthy.
