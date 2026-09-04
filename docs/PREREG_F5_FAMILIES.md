@@ -312,10 +312,78 @@ below is computable from prices, dates and universe metadata alone
 (`first_five_results.jsonl` is used only for the already-frozen
 decided/tie flag that defines gradeability).
 
+### Family-scope decision (A/B/C)
+
+Asked ahead of the hard calls, on research-design merit only; sunk cost on
+the F5 acquisition is not an argument for or against anything below.
+
+**First, the factual question: can a timing-matched full-game comparator be
+derived from data already owned? Measured answer: NO, and not close.** The
+existing archive (`data/historical/odds_history/mlb_2023.jsonl`,
+`mlb_2024.jsonl`) holds 1,172 distinct snapshot instants across the window,
+taken on the retired fixed wall-clock schedule. For each of the 3,682
+gradeable F5 games I took its own `start_time_utc` from
+`data/historical/mlb_results.csv`, computed its T-2h target, and found the
+nearest archive snapshot instant. Result: **0 games within the ±5-minute
+snapshot-rule tolerance, 302 (8.2%) within ±30 minutes, 3,380 (91.8%)
+further out; median deviation 81.4 minutes, and even the best-matched decile
+is 35.6 minutes off.** (Feature-side only: scheduled start times and snapshot
+timestamps; no price and no outcome was read.) A derived comparator is
+therefore impossible at the pre-registered tolerance, and the 8.2% that come
+within half an hour would reconstitute B3's exact failure — n≈302 (versus
+B3's 270), a mismatched and *game-varying* lead time, and an MDE around 8pp.
+Deriving it would not be a cheap version of B; it would be the discredited
+version.
+
+**DECISION: A — register F5-H1 and F5-H2 now, as amended below — and,
+separately and in parallel, recommend the owner authorize the comparator
+acquisition (B) as its own purchase, its own pre-registration and its own
+release gate.** These are not competing options and the framing that makes
+them compete is the error: A costs zero credits and reads only data already
+in hand, so nothing about doing A consumes anything B would need. C is
+rejected outright — 3,682 games at MDE 1.62pp is the best-powered F5 sample
+this project has ever assembled, roughly 13.6x B3's, and neither the market
+nor the question is broken; retiring it would discard a clean, paid-for
+measurement surface for no design reason.
+
+**Why A is not merely the cheap option but the correct *first* one.**
+F5-H1/H2 ask whether the F5 price is itself an unbiased forecast. The B3 gap
+statistic is `full_game_p − f5_p`, which *inherits* whatever calibration
+error the F5 leg carries: if the F5 price is systematically home-biased or
+favourite-biased, a gap finding is confounded by that bias and cannot be
+attributed to bullpen information at all. Running the calibration baseline
+first is a genuine methodological prerequisite for interpreting B3, not a
+consolation prize — and it is the kind of prerequisite that is worth much
+more before the comparator is bought than after, because a discovered F5
+calibration bias changes how the comparator family should be specified.
+
+**Why B deserves separate authorization on merit.** The acquisition is
+outcome-blind (keyed on `game_pk` and scheduled start only), so it carries no
+leakage risk and cannot be tuned toward a result. At roughly 1 credit per
+game-snapshot over the same ~4,315-game scope it is ~4-5k of the 25,555
+credits remaining this cycle — a real fraction, and it should be weighed as
+such, but it sits inside the historical_backfill band, credits expire
+worthless at reset, and it converts a question currently answerable only at
+MDE ~8.5pp into one answerable at MDE ~1.6pp. That is the largest power gain
+per credit currently identified anywhere in the F5 programme, and unlike a
+tuning purchase it buys a *new comparison axis* rather than more of an axis
+already owned. It is nonetheless the owner's spending decision, not this
+review's, and it must not become a precondition for A.
+
+**Binding conditions on B if authorized.** It is acquired under the same
+frozen T-2h rule as `PREREG_F5_SNAPSHOT_RULE.md` §2 (±5-minute tolerance,
+≥5 books, no re-query at another instant to manufacture a passing row, misses
+recorded as explicit `PRIMARY_SNAPSHOT_UNAVAILABLE` rows); it gets its own
+frozen universe document and its own content hash; B3 is registered as its
+own family with its own FDR correction; and the existing wall-clock full-game
+archive is never used to backfill a comparator gap, at any coverage level,
+including the 302 near-misses measured above.
+
 ### Hard call 1 — B3 / bullpen-gap exclusion
 
-**DECISION: exclusion CONFIRMED. B3 stays out, and is not scheduled by this
-pass.** The draft's reasoning is correct and is the stronger form of the
+**DECISION: exclusion from THIS FAMILY confirmed. Separate authorization of
+a comparator acquisition is RECOMMENDED — see the family-scope decision
+above, which supersedes the draft's "not scheduled" framing.** The draft's reasoning is correct and is the stronger form of the
 argument: the defect is not "we lack data," it is that the only full-game
 store covering this window was captured under the retired fixed-wall-clock
 rule, so any gap computed against it is a difference of two prices taken at
@@ -599,7 +667,11 @@ freeze `{F5-H1, F5-H2}`, and only after that may any outcome be read.
     a per-book sign replication reported as a diagnostic.
 11. Evaluation runs on a **standalone path**, not the funnel; validation
     items (b)1-6 must pass before registration.
-12. B3 permanently out; family stays at two members; any future third F5
-    hypothesis re-runs the correction over the union.
+12. B3 permanently out of THIS family; family stays at two members; any
+    future third F5 hypothesis re-runs the correction over the union.
+13. Family-scope decision: **A** (register H1/H2 now) — with the comparator
+    acquisition (B) recommended for separate owner authorization, and the
+    measured finding that no comparator is derivable from owned data
+    (0 / 3,682 games within tolerance; median 81.4 min off T-2h).
 
 **VERDICT: READY TO REGISTER AS AMENDED**
