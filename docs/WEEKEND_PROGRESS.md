@@ -37,3 +37,7 @@
 ## 2026-09-04 23:3xZ — W9 totals methodology landed (9b28c62)
 - Coverage audit re-run here reproduces docs/TOTALS_COVERAGE.md byte-identical (deterministic, counts only). 5/7 matrix features classed MONEYLINE_FEATURE_PRETENDING; weather/umpire NOT_PIT_AVAILABLE; standalone path recommended over widening funnel.
 - Dispatched: Opus methodology review of TOTALS_METHODOLOGY.md (targeted packet); W10 factory-scale prep design lane (Sonnet). Capture healthy.
+
+## 2026-09-05 00:0xZ — totals methodology review: NOT APPROVED (89ecfc3)
+- Worst: V7 §2.3 over/under split is a settlement read framed as market structure → must be registered as a partially-read member. De-vig at modal line selects on book attribute → per-line fair prob with >=3-book floor. Integer vs half-point lines are different estimands. Closing line PIT-computable with staleness bound + snapshot commence_time. Validation items 7-13 added (mirror F5 B3/M1/R2).
+- Dispatched Sonnet amendment lane (docs only); re-review follows. Capture healthy.
