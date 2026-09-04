@@ -442,3 +442,10 @@
 {"fetched_utc": "2026-09-04T12:26:03.850939+00:00", "game_date": "2026-09-04", "poll": true}
 {"fetched_utc": "2026-09-04T13:23:07.718383+00:00", "game_date": "2026-09-04", "poll": true}
 {"fetched_utc": "2026-09-04T14:19:13.082140+00:00", "game_date": "2026-09-04", "poll": true}
+{"fetched_utc": "2026-09-04T16:22:56.173928+00:00", "game_date": "2026-09-04", "poll": true}
+{"category": "optioned", "date": "2026-09-04", "first_seen_utc": "2026-09-04T16:22:56.173928+00:00", "player": "Drew Romo", "player_id": 691011, "team": "CWS", "transaction_id": 941175}
+{"category": "il_activation", "date": "2026-09-04", "first_seen_utc": "2026-09-04T16:22:56.173928+00:00", "player": "Kyle Teel", "player_id": 691019, "team": "CWS", "transaction_id": 941176}
+{"category": "il_activation", "date": "2026-09-04", "first_seen_utc": "2026-09-04T16:22:56.173928+00:00", "player": "Slade Cecconi", "player_id": 677944, "team": "CLE", "transaction_id": 941177}
+{"category": "il_placement", "date": "2026-09-04", "first_seen_utc": "2026-09-04T16:22:56.173928+00:00", "player": "Colin Holderman", "player_id": 670059, "team": "CLE", "transaction_id": 941178}
+{"category": "designated", "date": "2026-09-04", "first_seen_utc": "2026-09-04T16:22:56.173928+00:00", "player": "Carlos Hern\u00e1ndez", "player_id": 672578, "team": "CLE", "transaction_id": 941179}
+{"category": "recalled", "date": "2026-09-04", "first_seen_utc": "2026-09-04T16:22:56.173928+00:00", "player": "Austin Peterson", "player_id": 804926, "team": "CLE", "transaction_id": 941180}
