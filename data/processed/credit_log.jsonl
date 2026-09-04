@@ -293,3 +293,4 @@
 {"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 25584, "credits_used_last": 0, "utc": "2026-09-04T20:14:26.079947Z"}
 {"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 25582, "credits_used_last": 0, "utc": "2026-09-04T20:14:28.260493Z"}
 {"budget_band": "live_capture", "caller": "derivative_markets.run", "credits_remaining": 25582, "credits_used_last": 0, "utc": "2026-09-04T20:14:29.239881Z"}
+{"budget_band": "live_capture", "caller": "dense.run", "credits_remaining": 25558, "credits_used_last": 0, "utc": "2026-09-04T20:16:11.768610Z"}

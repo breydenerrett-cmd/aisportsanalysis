@@ -478,3 +478,5 @@
 {"category": "other", "date": "2026-09-04", "first_seen_utc": "2026-09-04T19:56:52.625317+00:00", "player": "Joel Kuhnel", "player_id": 669270, "team": "SF", "transaction_id": 941288}
 {"category": "recalled", "date": "2026-09-04", "first_seen_utc": "2026-09-04T19:56:52.625317+00:00", "player": "Bryan King", "player_id": 687911, "team": "HOU", "transaction_id": 941289}
 {"fetched_utc": "2026-09-04T20:11:55.157298+00:00", "game_date": "2026-09-04", "poll": true}
+{"fetched_utc": "2026-09-04T20:16:10.407926+00:00", "game_date": "2026-09-04", "poll": true}
+{"fetched_utc": "2026-09-04T20:16:14.200416+00:00", "game_date": "2026-09-04", "poll": true}
