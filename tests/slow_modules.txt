@@ -36,3 +36,11 @@ test_api_caching
 test_api_adversarial
 test_analyze_cmd
 test_api_digest
+# test_factory_overlap_report's TestMainExitsCleanly runs the real
+# scripts/factory_overlap_report.py main() against whatever is actually in
+# data/research/evolab/ -- since factory slice 2 backfilled the REAL sweep's
+# 8,811-strategy masks there, that run now does a real ~8,811-choose-2
+# pairwise Jaccard pass (~100s measured, popcount-based -- see the script's
+# module docstring for why that's fast enough to be a real report and still
+# too slow for the FAST tier's per-module budget here).
+test_factory_overlap_report

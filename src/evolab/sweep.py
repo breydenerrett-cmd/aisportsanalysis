@@ -80,6 +80,7 @@ same provider, same config, same bytes.
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import os
@@ -469,6 +470,71 @@ def _git_commit() -> str | None:
 
 
 # ---------------------------------------------------------------------------
+# mask serialization -- FACTORY_SCALE_DESIGN.md section 0's named gap: the
+# masks WorldFitness already computes but SweepReport.to_dict() never wrote.
+# ---------------------------------------------------------------------------
+
+MASKS_SCHEMA = "evolab.masks/1"
+
+
+def _pack_mask(mask: int, n_games: int) -> str:
+    """One decision mask -> base64 of packed little-endian bits.
+
+    Bit `i` (0-indexed, LSB first) is game index `i` in the world's own game
+    order -- the same order `sweep_world`'s `iter_set_bits` already walks, so
+    a consumer with that same `placebo.World` can zip bit position to game
+    without this module restating the game list a second time. Packed rather
+    than left as a decimal integer string because `n_games_real` is ~4-5
+    thousand: an unpacked bitmask is ~4-5x the byte count of both boolean
+    values as one bit each, and this field is written once per strategy for
+    every strategy that clears the gate (thousands per artifact).
+    """
+    n_bytes = (n_games + 7) // 8
+    return base64.b64encode(mask.to_bytes(n_bytes, "little")).decode("ascii")
+
+
+def _unpack_mask(encoded: str) -> int:
+    """Inverse of `_pack_mask`. Byte length is carried by the string itself
+    (base64 of a fixed-width `n_games`-bit field), so no separate length
+    argument is needed to round-trip the integer exactly."""
+    return int.from_bytes(base64.b64decode(encoded.encode("ascii")), "little")
+
+
+def encode_masks(masks: Mapping[str, tuple], n_games: int) -> dict:
+    """`{strategy_id: (away_mask, home_mask)}` -> the on-disk `decision_masks`
+    block. A pure function of its arguments (no report state) so
+    `scripts/factory_masks_from_sweep.py` can build the identical block from
+    a freshly-replayed `WorldFitness.masks` without importing `SweepReport`.
+    """
+    return {
+        "schema": MASKS_SCHEMA,
+        "encoding": "base64 of a little-endian packed bitfield; bit i is "
+                    "game index i in the world's game order (bit 0 = LSB "
+                    "of the first byte)",
+        "n_games": n_games,
+        "strategies": {
+            sid: {"away": _pack_mask(away, n_games),
+                  "home": _pack_mask(home, n_games)}
+            for sid, (away, home) in sorted(masks.items())
+        },
+    }
+
+
+def decode_masks(block: Mapping) -> dict[str, tuple]:
+    """Inverse of `encode_masks`: the on-disk block -> `{strategy_id:
+    (away_mask, home_mask)}`. Raises `SweepError` on an unrecognised schema
+    rather than guessing at a format this module did not write."""
+    if block.get("schema") != MASKS_SCHEMA:
+        raise SweepError(
+            f"unknown decision_masks schema {block.get('schema')!r}; known: "
+            f"{MASKS_SCHEMA!r}")
+    return {
+        sid: (_unpack_mask(pair["away"]), _unpack_mask(pair["home"]))
+        for sid, pair in block.get("strategies", {}).items()
+    }
+
+
+# ---------------------------------------------------------------------------
 # the full report
 # ---------------------------------------------------------------------------
 
@@ -501,6 +567,14 @@ class SweepReport:
     spa_cross_check_status: str
     spa_cross_check_explanation: str
     config: dict
+    # strategy_id -> (away_mask, home_mask) on the REAL world, the same
+    # mapping `sweep_world` already returns as `WorldFitness.masks` (design
+    # section 0's named gap: computed there, never serialized until now).
+    # Default {} so every report built by pre-existing test/caller code that
+    # never passed this still constructs and, per `to_dict`'s `include_masks`
+    # flag, emits nothing extra -- an empty mapping is indistinguishable on
+    # disk from "masks not carried here at all".
+    real_masks: Mapping[str, tuple] = field(default_factory=dict)
     warnings: tuple = field(default_factory=tuple)
     # Per-stage wall/CPU/RSS, map-compute-scale.md section 1: the "51 ms"
     # design estimate was never measured because nothing recorded it.
@@ -513,8 +587,20 @@ class SweepReport:
     def is_kill(self) -> bool:
         return self.ceiling.is_kill
 
-    def to_dict(self) -> dict:
-        return {
+    def to_dict(self, include_masks: bool = True) -> dict:
+        """The report as a plain dict -- what `write()` serializes.
+
+        `include_masks` defaults ON (FACTORY_SCALE_DESIGN.md section 0 asks
+        that the masks `WorldFitness` already computes stop being silently
+        dropped). With it False, or when this report carries no masks at
+        all (`real_masks` empty -- every report built before this slice),
+        the payload has NO `decision_masks` key, not a null one: a consumer
+        keyed on the key's presence, not its value, and a pre-existing
+        artifact's schema is reproduced byte-for-byte by `include_masks=False`
+        -- see `tests/test_evolab_sweep.py`'s
+        `test_masks_flag_off_matches_pre_mask_schema`.
+        """
+        payload = {
             "schema": "evolab.sweep/1",
             "enumeration_spec_hash": self.enumeration_spec_hash,
             "registry_fingerprint": self.registry_fingerprint,
@@ -543,6 +629,10 @@ class SweepReport:
             "warnings": list(self.warnings),
             "timings": list(self.timings),
         }
+        if include_masks and self.real_masks:
+            payload["decision_masks"] = encode_masks(
+                self.real_masks, self.n_games_real)
+        return payload
 
     def canonical_json(self) -> str:
         """Sorted-key, no-whitespace-slack JSON -- what determinism is hashed
@@ -567,7 +657,8 @@ class SweepReport:
     def content_hash(self) -> str:
         return hashlib.sha256(self.canonical_json().encode("utf-8")).hexdigest()
 
-    def write(self, out_dir: str = ARTIFACT_ROOT) -> str:
+    def write(self, out_dir: str = ARTIFACT_ROOT, *,
+             include_masks: bool = True) -> str:
         """Write this report as deterministic, indented JSON under `out_dir`.
 
         Namespace isolation (design section 11) is enforced here, not left to
@@ -576,12 +667,17 @@ class SweepReport:
         timestamp, so a re-run with identical inputs overwrites the same path
         with identical bytes rather than accumulating copies.
 
+        `include_masks` defaults ON, matching `to_dict()`; pass False to
+        write the pre-existing (pre-mask) artifact schema exactly, e.g. to
+        reproduce a byte-identical artifact for a diff against one written
+        before this slice.
+
         `require_timings` runs before any byte reaches disk (map-compute-
         scale.md section 1: the Phase 2B artifact that shipped with no
         timing field at all is exactly what this guard now prevents from
         happening again).
         """
-        payload = self.to_dict()
+        payload = self.to_dict(include_masks=include_masks)
         # Validated BEFORE the 'write' stage below is appended: this must
         # fail on a report that never measured its own computation, not be
         # rescued by the write() call's own timing of itself -- the whole
@@ -856,6 +952,7 @@ def run_sweep(replay_provider: ReplayProvider, *,
         spa_cross_check_status=spa_status,
         spa_cross_check_explanation=spa_explanation,
         config=config,
+        real_masks=dict(real_fitness.masks),
         warnings=tuple(warnings),
         timings=tuple(timings.to_list()),
     )

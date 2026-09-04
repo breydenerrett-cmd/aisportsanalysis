@@ -459,6 +459,45 @@ class TestArtifactStamping(unittest.TestCase):
                                  spa_n_bootstrap=200)
         self.assertEqual(report.replay_manifest, {"engine_version": "test-2"})
 
+    def test_masks_flag_off_matches_pre_mask_schema(self):
+        """`include_masks=False` reproduces exactly the schema this report
+        had before this slice: every pre-existing field byte-identical, and
+        no `decision_masks` key at all -- FACTORY_SCALE_DESIGN.md section 0's
+        gap is closed additively, never by touching an existing field or
+        fitness number."""
+        with_masks = self.report.to_dict(include_masks=True)
+        without_masks = self.report.to_dict(include_masks=False)
+        self.assertNotIn("decision_masks", without_masks)
+        self.assertIn("decision_masks", with_masks)
+        pre_existing_keys = set(without_masks)
+        self.assertEqual(pre_existing_keys, set(with_masks) - {"decision_masks"})
+        for key in pre_existing_keys:
+            self.assertEqual(with_masks[key], without_masks[key],
+                             msg=f"field {key!r} changed by include_masks")
+
+    def test_masks_round_trip_through_the_wire_encoding(self):
+        """`decision_masks` decodes back to the exact `WorldFitness.masks`
+        integers `sweep_world` computed -- the round-trip this slice's whole
+        point depends on."""
+        d = self.report.to_dict(include_masks=True)
+        decoded = sweep.decode_masks(d["decision_masks"])
+        self.assertTrue(decoded)  # the tiny synthetic world has survivors
+        self.assertEqual(set(decoded), set(self.report.real_masks))
+        for sid, (away, home) in self.report.real_masks.items():
+            self.assertEqual(decoded[sid], (away, home))
+
+    def test_write_with_masks_off_omits_the_field_on_disk(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cwd = os.getcwd()
+            os.chdir(tmp)
+            try:
+                path = self.report.write(include_masks=False)
+                with open(path, encoding="utf-8") as fh:
+                    payload = json.load(fh)
+                self.assertNotIn("decision_masks", payload)
+            finally:
+                os.chdir(cwd)
+
     def test_report_round_trips_through_json(self):
         payload = json.loads(self.report.canonical_json())
         self.assertEqual(payload["real_world_id"], self.world.world_id)

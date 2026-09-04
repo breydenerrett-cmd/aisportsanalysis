@@ -65,6 +65,87 @@ class TestLoadSweepReports(unittest.TestCase):
         self.assertEqual(reports, [])
 
 
+class TestOverlapFromCombinedMasks(unittest.TestCase):
+    """`_overlap_from_combined` against small, hand-built combined ints --
+    the popcount path documented in the module docstring as mathematically
+    identical to `overlap.jaccard`'s string-set method, exercised here
+    without needing a real sweep artifact or masks file."""
+
+    def test_identical_strategies_form_one_family_and_zero_dedup(self):
+        # 2 games, both strategies bet home on game 0 and away on game 1:
+        # away bits = 0b10 (game 1), home bits = 0b01 (game 0).
+        n_games = 2
+        combined = 0b01 | (0b10 << n_games)
+        strategies = {"a": combined, "b": combined, "c": combined}
+        dedup, families, eff = report_mod._overlap_from_combined(strategies)
+        self.assertEqual(dedup.unique_wagers, 2)
+        self.assertEqual(dedup.total_decisions, 6)
+        self.assertAlmostEqual(dedup.dedup_ratio, 2 / 6)
+        self.assertEqual(len(families), 1)
+        self.assertEqual(sorted(families[0]), ["a", "b", "c"])
+        self.assertEqual(eff.n_families, 1)
+
+    def test_disjoint_strategies_never_join_a_family(self):
+        n_games = 4
+        a = 0b0001 | (0b0000 << n_games)   # away game 0 only
+        b = 0b0000 | (0b1000 << n_games)   # home game 3 only
+        dedup, families, eff = report_mod._overlap_from_combined({"a": a, "b": b})
+        self.assertEqual(dedup.unique_wagers, 2)
+        self.assertEqual(dedup.total_decisions, 2)
+        self.assertEqual(dedup.dedup_ratio, 1.0)
+        self.assertEqual(len(families), 2)
+        self.assertEqual(eff.n_families, 2)
+
+    def test_matches_overlap_module_on_the_same_scenario(self):
+        """The popcount path and `overlap.py`'s own string-set path agree --
+        the performance rewrite changed representation, not the answer."""
+        from src.evolab import overlap as overlap_mod
+        n_games = 6
+        raw = {
+            "s1": (0b000011, 0b000000),
+            "s2": (0b000010, 0b000001),
+            "s3": (0b100000, 0b000000),
+        }
+        combined = {sid: away | (home << n_games)
+                   for sid, (away, home) in raw.items()}
+        dedup_fast, families_fast, eff_fast = report_mod._overlap_from_combined(combined)
+
+        def bits(mask, offset):
+            return {f"{offset}:{i}" for i in range(n_games) if mask & (1 << i)}
+
+        selections = {sid: frozenset(bits(away, "away") | bits(home, "home"))
+                     for sid, (away, home) in raw.items()}
+        dedup_slow = overlap_mod.dedup_stats(selections)
+        families_slow = overlap_mod.cluster_families(selections)
+        eff_slow = overlap_mod.effective_n(families_slow)
+
+        self.assertEqual(dedup_fast.unique_wagers, dedup_slow.unique_wagers)
+        self.assertEqual(dedup_fast.total_decisions, dedup_slow.total_decisions)
+        self.assertEqual([sorted(f) for f in families_fast],
+                         [sorted(f) for f in families_slow])
+        self.assertEqual(eff_fast.n_families, eff_slow.n_families)
+        self.assertAlmostEqual(eff_fast.credit, eff_slow.credit)
+
+
+class TestMasksPathsFor(unittest.TestCase):
+
+    def test_returns_none_when_files_absent(self):
+        self.assertIsNone(report_mod._masks_paths_for("0" * 64))
+
+    def test_finds_the_real_backfilled_masks_when_present(self):
+        # This is the actual artifact this slice backfilled; skip honestly
+        # if a checkout/CI environment doesn't carry the (untracked-size)
+        # masks files rather than failing a test on their absence.
+        spec_hash = "0014914df78666b9a024677b8fb02a27d8ae70432c5898944c8120c3d3b56823"
+        found = report_mod._masks_paths_for(spec_hash)
+        if found is None:
+            self.skipTest("backfilled masks-*.bin/.index.json not present "
+                          "in this checkout")
+        index_path, bin_path = found
+        self.assertTrue(index_path.endswith(".index.json"))
+        self.assertTrue(bin_path.endswith(".bin"))
+
+
 class TestMainExitsCleanly(unittest.TestCase):
 
     def test_main_returns_zero_and_writes_doc(self):
