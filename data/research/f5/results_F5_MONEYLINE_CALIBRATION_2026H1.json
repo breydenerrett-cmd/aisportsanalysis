@@ -1,0 +1,964 @@
+{
+ "devig_sensitivity": {
+  "multiplicative": {
+   "bottom_2024": {
+    "by_season": {
+     "2024": {
+      "effect": -0.03953,
+      "n": 771
+     }
+    },
+    "ci": {
+     "clusters": 181,
+     "high": -0.0062,
+     "low": -0.07185,
+     "reason": null,
+     "resamples": 2000
+    },
+    "decided": 771,
+    "detector": "F5-H2-multiplicative-bottom",
+    "economically_meaningful": {
+     "passes": true,
+     "threshold": 0.01,
+     "why": "an edge below one point of probability is smaller than the vig on a single bet, so it is not tradeable however certain it is"
+    },
+    "effect": -0.03953,
+    "hit_rate": 0.4825,
+    "late_move": null,
+    "late_move_n": 0,
+    "mean_implied": 0.522,
+    "p": 0.02079,
+    "pushes": 0,
+    "roi": -0.09601,
+    "roi_n": 771,
+    "selections": 771,
+    "verdict": "-4.0 points below what the price implied, interval excludes zero -- carry to the family correction"
+   },
+   "edges": [
+    0.5000009439068385,
+    0.5457461350276304,
+    0.6004318876346671,
+    0.7650175110519737
+   ],
+   "top_2024": {
+    "by_season": {
+     "2024": {
+      "effect": 0.01136,
+      "n": 640
+     }
+    },
+    "ci": {
+     "clusters": 179,
+     "high": 0.04757,
+     "low": -0.02484,
+     "reason": null,
+     "resamples": 2000
+    },
+    "decided": 640,
+    "detector": "F5-H2-multiplicative-top",
+    "economically_meaningful": {
+     "passes": true,
+     "threshold": 0.01,
+     "why": "an edge below one point of probability is smaller than the vig on a single bet, so it is not tradeable however certain it is"
+    },
+    "effect": 0.01136,
+    "hit_rate": 0.6562,
+    "late_move": null,
+    "late_move_n": 0,
+    "mean_implied": 0.6449,
+    "p": 0.539411,
+    "pushes": 0,
+    "roi": 0.01011,
+    "roi_n": 640,
+    "selections": 640,
+    "verdict": "the clustered interval includes zero: this is consistent with no effect at all"
+   }
+  },
+  "proportional": {
+   "bottom_2024": {
+    "by_season": {
+     "2024": {
+      "effect": -0.03976,
+      "n": 768
+     }
+    },
+    "ci": {
+     "clusters": 181,
+     "high": -0.00643,
+     "low": -0.07232,
+     "reason": null,
+     "resamples": 2000
+    },
+    "decided": 768,
+    "detector": "F5-H2-proportional-bottom",
+    "economically_meaningful": {
+     "passes": true,
+     "threshold": 0.01,
+     "why": "an edge below one point of probability is smaller than the vig on a single bet, so it is not tradeable however certain it is"
+    },
+    "effect": -0.03976,
+    "hit_rate": 0.4805,
+    "late_move": null,
+    "late_move_n": 0,
+    "mean_implied": 0.5202,
+    "p": 0.020763,
+    "pushes": 0,
+    "roi": -0.09957,
+    "roi_n": 768,
+    "selections": 768,
+    "verdict": "-4.0 points below what the price implied, interval excludes zero -- carry to the family correction"
+   },
+   "edges": [
+    0.5000040977189922,
+    0.5421684870550236,
+    0.5927486031119797,
+    0.7451020361091379
+   ],
+   "top_2024": {
+    "by_season": {
+     "2024": {
+      "effect": 0.01772,
+      "n": 649
+     }
+    },
+    "ci": {
+     "clusters": 179,
+     "high": 0.05401,
+     "low": -0.01684,
+     "reason": null,
+     "resamples": 2000
+    },
+    "decided": 649,
+    "detector": "F5-H2-proportional-top",
+    "economically_meaningful": {
+     "passes": true,
+     "threshold": 0.01,
+     "why": "an edge below one point of probability is smaller than the vig on a single bet, so it is not tradeable however certain it is"
+    },
+    "effect": 0.01772,
+    "hit_rate": 0.6518,
+    "late_move": null,
+    "late_move_n": 0,
+    "mean_implied": 0.634,
+    "p": 0.334257,
+    "pushes": 0,
+    "roi": 0.00368,
+    "roi_n": 649,
+    "selections": 649,
+    "verdict": "the clustered interval includes zero: this is consistent with no effect at all"
+   }
+  },
+  "shin": {
+   "bottom_2024": {
+    "by_season": {
+     "2024": {
+      "effect": -0.03958,
+      "n": 770
+     }
+    },
+    "ci": {
+     "clusters": 181,
+     "high": -0.00636,
+     "low": -0.0721,
+     "reason": null,
+     "resamples": 2000
+    },
+    "decided": 770,
+    "detector": "F5-H2-shin-bottom",
+    "economically_meaningful": {
+     "passes": true,
+     "threshold": 0.01,
+     "why": "an edge below one point of probability is smaller than the vig on a single bet, so it is not tradeable however certain it is"
+    },
+    "effect": -0.03958,
+    "hit_rate": 0.4818,
+    "late_move": null,
+    "late_move_n": 0,
+    "mean_implied": 0.5214,
+    "p": 0.02104,
+    "pushes": 0,
+    "roi": -0.09726,
+    "roi_n": 770,
+    "selections": 770,
+    "verdict": "-4.0 points below what the price implied, interval excludes zero -- carry to the family correction"
+   },
+   "edges": [
+    0.5000021141943662,
+    0.5444690902922183,
+    0.5978283420336578,
+    0.7578509413202277
+   ],
+   "top_2024": {
+    "by_season": {
+     "2024": {
+      "effect": 0.01578,
+      "n": 644
+     }
+    },
+    "ci": {
+     "clusters": 179,
+     "high": 0.0523,
+     "low": -0.01938,
+     "reason": null,
+     "resamples": 2000
+    },
+    "decided": 644,
+    "detector": "F5-H2-shin-top",
+    "economically_meaningful": {
+     "passes": true,
+     "threshold": 0.01,
+     "why": "an edge below one point of probability is smaller than the vig on a single bet, so it is not tradeable however certain it is"
+    },
+    "effect": 0.01578,
+    "hit_rate": 0.6568,
+    "late_move": null,
+    "late_move_n": 0,
+    "mean_implied": 0.641,
+    "p": 0.39338,
+    "pushes": 0,
+    "roi": 0.01148,
+    "roi_n": 644,
+    "selections": 644,
+    "verdict": "the clustered interval includes zero: this is consistent with no effect at all"
+   }
+  }
+ },
+ "dry_run": false,
+ "fdr_2024": [
+  {
+   "name": "F5-H2-bottom",
+   "p": 0.020763,
+   "rank": 1,
+   "survives_fdr": true,
+   "threshold": 0.033333
+  },
+  {
+   "name": "F5-H2-top",
+   "p": 0.334257,
+   "rank": 2,
+   "survives_fdr": false,
+   "threshold": 0.066667
+  },
+  {
+   "name": "F5-H1",
+   "p": 0.412609,
+   "rank": 3,
+   "survives_fdr": false,
+   "threshold": 0.1
+  }
+ ],
+ "h1": {
+  "battery": {
+   "fatal": [
+    "extreme_removal"
+   ],
+   "ran": true,
+   "report": {
+    "baseline": {
+     "ci": {
+      "clusters": 185,
+      "high": 0.01318,
+      "low": -0.02964,
+      "reason": null,
+      "resamples": 2000
+     },
+     "effect": -0.00884,
+     "n": 2085,
+     "note": "mean(won - implied), p and interval clustered by date",
+     "p": 0.412609
+    },
+    "book_concentration": {
+     "skipped": "no 'book' key present"
+    },
+    "dose_response": {
+     "skipped": "no dose_key configured"
+    },
+    "extreme_removal": {
+     "dropped_dates": [
+      "2024-04-06",
+      "2024-04-13",
+      "2024-05-30",
+      "2024-06-04",
+      "2024-07-20",
+      "2024-08-23",
+      "2024-08-24",
+      "2024-08-26",
+      "2024-08-30",
+      "2024-08-31"
+     ],
+     "effect": 0.00707,
+     "fatal": true,
+     "n": 1960,
+     "note": "dropped the 10 date(s) contributing most to the effect; FATAL when the remaining effect crosses zero",
+     "p": 0.487002
+    },
+    "favorite_underdog": {
+     "fatal": false,
+     "n": 2085,
+     "note": "report only -- favorite means implied > 0.5",
+     "splits": {
+      "favorite": {
+       "effect": -0.00869,
+       "n": 1347,
+       "p": 0.496989
+      },
+      "underdog": {
+       "effect": -0.0091,
+       "n": 738,
+       "p": 0.614246
+      }
+     }
+    },
+    "home_away": {
+     "fatal": false,
+     "n": 2085,
+     "note": "report only -- an asymmetry here is context, not a verdict",
+     "splits": {
+      "away": {
+       "effect": null,
+       "n": 0,
+       "note": "below the 30-row floor; reported, never judged",
+       "p": null
+      },
+      "home": {
+       "effect": -0.00884,
+       "n": 2085,
+       "p": 0.412609
+      }
+     }
+    },
+    "price_bands": {
+     "bands": [
+      {
+       "effect": -0.03013,
+       "hi": 0.4,
+       "lo": 0.0,
+       "n": 141,
+       "p": 0.441261
+      },
+      {
+       "effect": -0.00413,
+       "hi": 0.5,
+       "lo": 0.4,
+       "n": 597,
+       "p": 0.844665
+      },
+      {
+       "effect": -0.01405,
+       "hi": 0.6,
+       "lo": 0.5,
+       "n": 916,
+       "p": 0.358474
+      },
+      {
+       "effect": 0.0027,
+       "hi": 1.0,
+       "lo": 0.6,
+       "n": 431,
+       "p": 0.907636
+      }
+     ],
+     "fatal": false,
+     "n": 2085,
+     "note": "report only -- effect by implied-probability band"
+    },
+    "season_split": {
+     "fatal": false,
+     "n": 2085,
+     "note": "FATAL when two judgeable seasons disagree in sign beyond the floor -- a year, not an effect",
+     "seasons": {
+      "2024": {
+       "effect": -0.00884,
+       "n": 2085,
+       "p": 0.412609
+      }
+     },
+     "skipped": "single-season leg (2024): season_split cannot fire; leave-one-season-out is not evaluable on the replication leg by design (B1)"
+    },
+    "team_concentration": {
+     "skipped": "no 'team' key present"
+    },
+    "threshold_sensitivity": {
+     "skipped": "no dose_key configured"
+    }
+   },
+   "rules": {
+    "fingerprint": "ac74c7a7f715f9ec",
+    "version": "2.0.0"
+   },
+   "skipped_checks": {
+    "book_concentration": "no 'book' key present",
+    "dose_response": "no dose_key configured",
+    "season_split": "single-season leg (2024): season_split cannot fire; leave-one-season-out is not evaluable on the replication leg by design (B1)",
+    "team_concentration": "no 'team' key present",
+    "threshold_sensitivity": "no dose_key configured"
+   },
+   "survives": false
+  },
+  "replication_gate": {
+   "ci_excludes_zero": false,
+   "sign_agrees": false
+  },
+  "result_2024": {
+   "by_season": {
+    "2024": {
+     "effect": -0.00884,
+     "n": 2085
+    }
+   },
+   "ci": {
+    "clusters": 185,
+    "high": 0.01318,
+    "low": -0.02964,
+    "reason": null,
+    "resamples": 2000
+   },
+   "decided": 2085,
+   "detector": "F5-H1",
+   "economically_meaningful": {
+    "passes": false,
+    "threshold": 0.01,
+    "why": "an edge below one point of probability is smaller than the vig on a single bet, so it is not tradeable however certain it is"
+   },
+   "effect": -0.00884,
+   "hit_rate": 0.5209,
+   "late_move": null,
+   "late_move_n": 0,
+   "mean_implied": 0.5297,
+   "p": 0.412609,
+   "pushes": 0,
+   "roi": -0.04125,
+   "roi_n": 2085,
+   "selections": 2085,
+   "verdict": "the clustered interval includes zero: this is consistent with no effect at all"
+  },
+  "screen_2023": {
+   "effect": -0.00577,
+   "n": 1597,
+   "passes_screen": false
+  },
+  "survives_fdr": false,
+  "verdict": "SCREEN_FAIL"
+ },
+ "h2": {
+  "bottom": {
+   "battery": {
+    "fatal": [],
+    "ran": true,
+    "report": {
+     "baseline": {
+      "ci": {
+       "clusters": 181,
+       "high": -0.00643,
+       "low": -0.07232,
+       "reason": null,
+       "resamples": 2000
+      },
+      "effect": -0.03976,
+      "n": 768,
+      "note": "mean(won - implied), p and interval clustered by date",
+      "p": 0.020763
+     },
+     "book_concentration": {
+      "skipped": "no 'book' key present"
+     },
+     "dose_response": {
+      "skipped": "no dose_key configured"
+     },
+     "extreme_removal": {
+      "dropped_dates": [
+       "2024-03-31",
+       "2024-04-06",
+       "2024-05-05",
+       "2024-05-13",
+       "2024-06-01",
+       "2024-06-18",
+       "2024-07-02",
+       "2024-07-11",
+       "2024-08-26",
+       "2024-09-28"
+      ],
+      "effect": -0.01522,
+      "fatal": false,
+      "n": 715,
+      "note": "dropped the 10 date(s) contributing most to the effect; FATAL when the remaining effect crosses zero",
+      "p": 0.355814
+     },
+     "favorite_underdog": {
+      "fatal": false,
+      "n": 768,
+      "note": "report only -- favorite means implied > 0.5",
+      "splits": {
+       "favorite": {
+        "effect": -0.03976,
+        "n": 768,
+        "p": 0.020763
+       },
+       "underdog": {
+        "effect": null,
+        "n": 0,
+        "note": "below the 30-row floor; reported, never judged",
+        "p": null
+       }
+      }
+     },
+     "home_away": {
+      "fatal": false,
+      "n": 768,
+      "note": "report only -- an asymmetry here is context, not a verdict",
+      "splits": {
+       "away": {
+        "effect": 0.00176,
+        "n": 334,
+        "p": 0.944148
+       },
+       "home": {
+        "effect": -0.07171,
+        "n": 434,
+        "p": 0.002627
+       }
+      }
+     },
+     "price_bands": {
+      "bands": [
+       {
+        "effect": null,
+        "hi": 0.4,
+        "lo": 0.0,
+        "n": 0,
+        "note": "below the 30-row floor; reported, never judged",
+        "p": null
+       },
+       {
+        "effect": null,
+        "hi": 0.5,
+        "lo": 0.4,
+        "n": 0,
+        "note": "below the 30-row floor; reported, never judged",
+        "p": null
+       },
+       {
+        "effect": -0.03976,
+        "hi": 0.6,
+        "lo": 0.5,
+        "n": 768,
+        "p": 0.020763
+       },
+       {
+        "effect": null,
+        "hi": 1.0,
+        "lo": 0.6,
+        "n": 0,
+        "note": "below the 30-row floor; reported, never judged",
+        "p": null
+       }
+      ],
+      "fatal": false,
+      "n": 768,
+      "note": "report only -- effect by implied-probability band"
+     },
+     "season_split": {
+      "fatal": false,
+      "n": 768,
+      "note": "FATAL when two judgeable seasons disagree in sign beyond the floor -- a year, not an effect",
+      "seasons": {
+       "2024": {
+        "effect": -0.03976,
+        "n": 768,
+        "p": 0.020763
+       }
+      },
+      "skipped": "single-season leg (2024): season_split cannot fire; leave-one-season-out is not evaluable on the replication leg by design (B1)"
+     },
+     "team_concentration": {
+      "skipped": "no 'team' key present"
+     },
+     "threshold_sensitivity": {
+      "skipped": "no dose_key configured"
+     }
+    },
+    "rules": {
+     "fingerprint": "ac74c7a7f715f9ec",
+     "version": "2.0.0"
+    },
+    "skipped_checks": {
+     "book_concentration": "no 'book' key present",
+     "dose_response": "no dose_key configured",
+     "season_split": "single-season leg (2024): season_split cannot fire; leave-one-season-out is not evaluable on the replication leg by design (B1)",
+     "team_concentration": "no 'team' key present",
+     "threshold_sensitivity": "no dose_key configured"
+    },
+    "survives": true
+   },
+   "devig_sign_survives": true,
+   "replication_gate": {
+    "ci_excludes_zero": true,
+    "sign_agrees": true
+   },
+   "result_2024": {
+    "by_season": {
+     "2024": {
+      "effect": -0.03976,
+      "n": 768
+     }
+    },
+    "ci": {
+     "clusters": 181,
+     "high": -0.00643,
+     "low": -0.07232,
+     "reason": null,
+     "resamples": 2000
+    },
+    "decided": 768,
+    "detector": "F5-H2-bottom",
+    "economically_meaningful": {
+     "passes": true,
+     "threshold": 0.01,
+     "why": "an edge below one point of probability is smaller than the vig on a single bet, so it is not tradeable however certain it is"
+    },
+    "effect": -0.03976,
+    "hit_rate": 0.4805,
+    "late_move": null,
+    "late_move_n": 0,
+    "mean_implied": 0.5202,
+    "p": 0.020763,
+    "pushes": 0,
+    "roi": -0.09957,
+    "roi_n": 768,
+    "selections": 768,
+    "verdict": "-4.0 points below what the price implied, interval excludes zero -- carry to the family correction"
+   },
+   "screen_2023": {
+    "effect": 0.04055,
+    "n": 531,
+    "passes_screen": false
+   },
+   "survives_fdr": true,
+   "verdict": "POPULATION_SHIFT_FAIL"
+  },
+  "bottom_meets_2024_floor": true,
+  "bottom_n_2024": 768,
+  "edges_2023": [
+   0.5000040977189922,
+   0.5421684870550236,
+   0.5927486031119797,
+   0.7451020361091379
+  ],
+  "population_shift": {
+   "chi_square": 12.4029,
+   "expected_2024": [
+    693.2592360676268,
+    694.5648090169067,
+    697.1759549154665
+   ],
+   "expected_props_2023": [
+    0.33249843456480904,
+    0.33312460864120225,
+    0.3343769567939887
+   ],
+   "fatal": true,
+   "note": "FATAL when p < 0.01: the 2023-fit tercile edges are testing a materially different favourite/dog mix in 2024, not a replication of the same population (A5)",
+   "observed_2024": [
+    768,
+    668,
+    649
+   ],
+   "p": 0.002026
+  },
+  "top": {
+   "battery": {
+    "fatal": [
+     "extreme_removal"
+    ],
+    "ran": true,
+    "report": {
+     "baseline": {
+      "ci": {
+       "clusters": 179,
+       "high": 0.05401,
+       "low": -0.01684,
+       "reason": null,
+       "resamples": 2000
+      },
+      "effect": 0.01772,
+      "n": 649,
+      "note": "mean(won - implied), p and interval clustered by date",
+      "p": 0.334257
+     },
+     "book_concentration": {
+      "skipped": "no 'book' key present"
+     },
+     "dose_response": {
+      "skipped": "no dose_key configured"
+     },
+     "extreme_removal": {
+      "dropped_dates": [
+       "2024-03-28",
+       "2024-05-04",
+       "2024-06-02",
+       "2024-06-16",
+       "2024-07-11",
+       "2024-08-19",
+       "2024-08-30",
+       "2024-09-06",
+       "2024-09-12"
+      ],
+      "effect": -0.00654,
+      "fatal": true,
+      "n": 607,
+      "note": "dropped the 9 date(s) contributing most to the effect; FATAL when the remaining effect crosses zero",
+      "p": 0.710912
+     },
+     "favorite_underdog": {
+      "fatal": false,
+      "n": 649,
+      "note": "report only -- favorite means implied > 0.5",
+      "splits": {
+       "favorite": {
+        "effect": 0.01772,
+        "n": 649,
+        "p": 0.334257
+       },
+       "underdog": {
+        "effect": null,
+        "n": 0,
+        "note": "below the 30-row floor; reported, never judged",
+        "p": null
+       }
+      }
+     },
+     "home_away": {
+      "fatal": false,
+      "n": 649,
+      "note": "report only -- an asymmetry here is context, not a verdict",
+      "splits": {
+       "away": {
+        "effect": 0.05597,
+        "n": 163,
+        "p": 0.114693
+       },
+       "home": {
+        "effect": 0.0049,
+        "n": 486,
+        "p": 0.824664
+       }
+      }
+     },
+     "price_bands": {
+      "bands": [
+       {
+        "effect": null,
+        "hi": 0.4,
+        "lo": 0.0,
+        "n": 0,
+        "note": "below the 30-row floor; reported, never judged",
+        "p": null
+       },
+       {
+        "effect": null,
+        "hi": 0.5,
+        "lo": 0.4,
+        "n": 0,
+        "note": "below the 30-row floor; reported, never judged",
+        "p": null
+       },
+       {
+        "effect": 0.07911,
+        "hi": 0.6,
+        "lo": 0.5,
+        "n": 77,
+        "p": 0.135227
+       },
+       {
+        "effect": 0.00946,
+        "hi": 1.0,
+        "lo": 0.6,
+        "n": 572,
+        "p": 0.636892
+       }
+      ],
+      "fatal": false,
+      "n": 649,
+      "note": "report only -- effect by implied-probability band"
+     },
+     "season_split": {
+      "fatal": false,
+      "n": 649,
+      "note": "FATAL when two judgeable seasons disagree in sign beyond the floor -- a year, not an effect",
+      "seasons": {
+       "2024": {
+        "effect": 0.01772,
+        "n": 649,
+        "p": 0.334257
+       }
+      },
+      "skipped": "single-season leg (2024): season_split cannot fire; leave-one-season-out is not evaluable on the replication leg by design (B1)"
+     },
+     "team_concentration": {
+      "skipped": "no 'team' key present"
+     },
+     "threshold_sensitivity": {
+      "skipped": "no dose_key configured"
+     }
+    },
+    "rules": {
+     "fingerprint": "ac74c7a7f715f9ec",
+     "version": "2.0.0"
+    },
+    "skipped_checks": {
+     "book_concentration": "no 'book' key present",
+     "dose_response": "no dose_key configured",
+     "season_split": "single-season leg (2024): season_split cannot fire; leave-one-season-out is not evaluable on the replication leg by design (B1)",
+     "team_concentration": "no 'team' key present",
+     "threshold_sensitivity": "no dose_key configured"
+    },
+    "survives": false
+   },
+   "devig_sign_survives": true,
+   "replication_gate": {
+    "ci_excludes_zero": false,
+    "sign_agrees": true
+   },
+   "result_2024": {
+    "by_season": {
+     "2024": {
+      "effect": 0.01772,
+      "n": 649
+     }
+    },
+    "ci": {
+     "clusters": 179,
+     "high": 0.05401,
+     "low": -0.01684,
+     "reason": null,
+     "resamples": 2000
+    },
+    "decided": 649,
+    "detector": "F5-H2-top",
+    "economically_meaningful": {
+     "passes": true,
+     "threshold": 0.01,
+     "why": "an edge below one point of probability is smaller than the vig on a single bet, so it is not tradeable however certain it is"
+    },
+    "effect": 0.01772,
+    "hit_rate": 0.6518,
+    "late_move": null,
+    "late_move_n": 0,
+    "mean_implied": 0.634,
+    "p": 0.334257,
+    "pushes": 0,
+    "roi": 0.00368,
+    "roi_n": 649,
+    "selections": 649,
+    "verdict": "the clustered interval includes zero: this is consistent with no effect at all"
+   },
+   "screen_2023": {
+    "effect": -0.01663,
+    "n": 534,
+    "passes_screen": false
+   },
+   "survives_fdr": false,
+   "verdict": "POPULATION_SHIFT_FAIL"
+  },
+  "top_meets_2024_floor": true,
+  "top_n_2024": 649
+ },
+ "hashes": {
+  "content_hash": "c67508603b14af2c494e13fadeb2a2f039f52df996ab6e12ff6164585e33cd1c",
+  "price_payload_hash": "f2ff7b748b1b76f1702cfe2b29750f684e554ffe2c773887a04f132bf2275ec7",
+  "verified": true
+ },
+ "per_book_h1": {
+  "barstool": {
+   "effect": -0.00418,
+   "n": 1443,
+   "p": 0.716191,
+   "sign": "-"
+  },
+  "betmgm": {
+   "effect": -0.00714,
+   "n": 3609,
+   "p": 0.361223,
+   "sign": "-"
+  },
+  "betonlineag": {
+   "effect": -0.00643,
+   "n": 3654,
+   "p": 0.399467,
+   "sign": "-"
+  },
+  "betrivers": {
+   "effect": -0.00765,
+   "n": 3657,
+   "p": 0.319104,
+   "sign": "-"
+  },
+  "betus": {
+   "effect": -0.01022,
+   "n": 2988,
+   "p": 0.241464,
+   "sign": "-"
+  },
+  "bovada": {
+   "effect": -0.00696,
+   "n": 3677,
+   "p": 0.368363,
+   "sign": "-"
+  },
+  "draftkings": {
+   "effect": -0.0072,
+   "n": 3583,
+   "p": 0.35346,
+   "sign": "-"
+  },
+  "fanduel": {
+   "effect": -0.01155,
+   "n": 3240,
+   "p": 0.15589,
+   "sign": "-"
+  },
+  "lowvig": {
+   "effect": -0.01098,
+   "n": 2912,
+   "p": 0.209141,
+   "sign": "-"
+  },
+  "mybookieag": {
+   "effect": -0.00587,
+   "n": 3044,
+   "p": 0.475846,
+   "sign": "-"
+  },
+  "pointsbetus": {
+   "effect": -0.00756,
+   "n": 2048,
+   "p": 0.428936,
+   "sign": "-"
+  },
+  "superbook": {
+   "effect": 0.01134,
+   "n": 999,
+   "p": 0.469399,
+   "sign": "+"
+  },
+  "unibet_us": {
+   "effect": -0.00749,
+   "n": 2335,
+   "p": 0.406379,
+   "sign": "-"
+  },
+  "williamhill_us": {
+   "effect": -0.00665,
+   "n": 3584,
+   "p": 0.392722,
+   "sign": "-"
+  },
+  "wynnbet": {
+   "effect": 0.00136,
+   "n": 1155,
+   "p": 0.920779,
+   "sign": "+"
+  }
+ },
+ "run_at": "2026-09-04T22:27:19.797301+00:00"
+}
