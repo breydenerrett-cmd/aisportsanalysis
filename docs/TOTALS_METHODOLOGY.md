@@ -242,3 +242,227 @@ families and for `f5_eval.py`'s own guard rails:
 - **Do not call `funnel.register_family` or any equivalent registration
   call from this document or its supporting script.** Nothing here is
   registered; §5's items are the gate that must pass first.
+
+## Methodology review — 2026-09-05
+
+Adversarial review of §1-§6 above against `docs/RESEARCH_V7_TOTALS.md` §5,
+`docs/TOTALS_COVERAGE.md`, and the pattern `docs/PREREG_F5_FAMILIES.md`
+"(b) Required evaluation path" + "Post-adversarial amendments" sets. No
+outcome was read to produce this section. Numbered decisions are binding on
+any totals pre-registration drafted after this date; "AMENDMENT" items must
+be written into this document (or the pre-registration) before drafting.
+
+### D1 — Feature classification: sustained, with one correction and one gap
+
+The seven `FEATURE_SPECS` are all `away_X - home_X` (`funnel.py` `_signal`,
+lines 299-308), and the five MONEYLINE_FEATURE_PRETENDING calls in §1.1 for
+`lineup_platoon_share`, `starter_platoon_gap`, `lineup_vs_primary_pitch`,
+`top_minus_bottom`, and `lineup_vs_primary_pitch`-adjacent interactions are
+**correct**: each is a relative-advantage statement, and three of them are
+explicitly facing-lineup interactions (`funnel.py` lines 97-108), which
+cannot be symmetrised into a run-volume quantity at all. No false positives
+found in §1.1. No false negatives: nothing classified
+MONEYLINE_FEATURE_PRETENDING has a defensible run-volume reading as coded.
+
+**Correction (not an error, an omission that materially strengthens §1.2).**
+`funnel.py` states the matrix cross-join convention explicitly: "`away_*`
+features describe the away lineup against the HOME starter." So
+`away_starter_groundball_share` is the **home** starter's groundball share.
+The consequence is favourable and must be stated in §1.2: `mean(away_X,
+home_X)` for the three per-starter primitives is the mean over the two
+STARTERS and is **invariant to the side-labelling convention** — it is a
+genuine game-level run-environment quantity, not a re-badged diff. This is
+the strongest available defence of §1.2 rows 1-3 and it is currently absent.
+
+**Gap.** `_signal` returns `None` unless BOTH sides answer; a mean inherits
+that rule and must be coded the same way (both sides or `None` — never a
+one-sided mean, which silently changes the estimand). §1.2 does not say so.
+
+**AMENDMENT A1.** State the away/home cross-join convention and the
+label-invariance of the mean in §1.2; state the both-sides-or-`None`
+missingness rule for every combined feature.
+
+**AMENDMENT A2.** Coverage asymmetry (V7 §5.6: groundball 60.1%→84.6%,
+velocity 54.6%→75.1% from 2023 to 2024) means the graded population is
+**selected on Statcast coverage** and is a different population in each leg.
+This is the same hazard F5's post-adversarial amendments mechanised as a
+population-shift kill. Add a pre-registered chi-square on graded-population
+composition (screen leg vs replication leg), fatal at p < 0.01, decided
+before any outcome — mirroring F5's `population_shift_test` /
+`POPULATION_SHIFT_FAIL`.
+
+### D2 — De-vig: Decision A introduces real selection bias; Decision B's estimand also changes with the line
+
+Decision A's rejection of numeric averaging is right and stands. But
+"consensus price only from books at the modal line" is **not** neutral:
+which books sit on the modal line is an attribute of the book, not of the
+game. Books that hold an off-consensus line at the close are
+disproportionately the ones with independent pricing (and typically the
+lowest hold); books at the mode are disproportionately consensus-followers.
+The §2.2 rule therefore systematically drops the most informative prices,
+and does so at a rate that varies with how contested the number is — i.e.
+the selection is correlated with the very quantity a totals hypothesis
+would be trying to measure. §1.2's own "line dispersion" row is the
+diagnostic that this bias is non-constant across events.
+
+**Alternative (recommended, replaces Decision A as the primary
+convention).** Do not pick one consensus line per event at all. Define the
+fair probability **per quoted line**: for each distinct line value at the
+snapshot, de-vig Over/Under across the books quoting exactly that line, and
+admit a (event, line) pair into the population only if it clears a
+pre-registered minimum book count (propose n_books >= 3). Grading then
+happens at the line actually bet, the "no invented number" rule is
+preserved unchanged, and no book is excluded for holding a minority number.
+The modal line becomes a reported diagnostic, not a filter. Where a single
+consensus line per event is genuinely required (e.g. the push-rate
+re-measurement), keep the book-count mode, but publish the book-composition
+table at the mode versus off it, and require a fixed-core-book-panel
+sensitivity in which the result keeps its sign.
+
+**Decision B is correct in rejecting cross-line pooling** and in mirroring
+`_fair()`'s averaging discipline. Two additions are required:
+
+**AMENDMENT A3.** Adopt the per-line convention above (with the >= 3-book
+floor pre-registered) as primary; retain modal-line consensus only for
+event-level structural measurement, with the book-composition diagnostic
+and fixed-panel sensitivity attached.
+
+**AMENDMENT A4.** §2.2 names only proportional de-vig. F5 pre-registers a
+three-convention sensitivity (`proportional` / `power` (multiplicative) /
+`shin`, all present in `src.core.odds`) and requires the effect to keep its
+sign under all three. A totals family must carry the identical requirement;
+proportional-only is a weaker gate than the house standard.
+
+**AMENDMENT A5 (estimand, not a style point).** A two-way de-vig of
+Over/Under at an **integer** line assigns zero mass to the push, so the
+resulting `implied` is a probability *conditional on no push* — a different
+estimand from the same number computed at a half-point line, and it is not
+comparable across the ~25-29% integer / ~71-75% half-point mixture. Voiding
+pushes at settlement (§2.1) is consistent with that conditional reading, so
+§2.1 is not wrong — but a family that pools both line types is averaging
+two estimands. **Register half-point (non-pushable) lines as the primary
+population, and integer lines as a separate pre-registered stratum or
+sensitivity.** This also removes most of the push question from the
+critical path.
+
+### D3 — Push handling correct; closing-line definition PIT-computable but under-specified
+
+§2.1's void convention is right and the stated reason (either alternative
+manufactures a bias) is right. Two leakage-adjacent defects:
+
+**AMENDMENT A6.** The frozen manifest (§5 item 3) must be defined on
+**gradeable** rows — line and price present at the closing snapshot —
+computed *before* any settlement field is opened. A denominator that is
+"rows minus voids" is a post-outcome count and cannot serve as a pre-run
+guard. The void count is then a *reported diagnostic*, pre-registered to
+fall in V7's measured ~2.7-3.1% band, and a band miss is a falsification
+flag, never a re-filter.
+
+**AMENDMENT A7.** "Latest snapshot strictly before `commence_time`" is
+computable point-in-time from the archive and is not leakage — but with
+~3x/day polling and a median ~6h pre-game gap, the snapshot-to-first-pitch
+gap varies per event and is correlated with the polling schedule (late-slate
+games get staler lines). Pre-register (a) a **maximum staleness bound**
+(propose: latest snapshot within [commence - 12h, commence); events outside
+the bound excluded by a rule fixed in advance, and the exclusion count
+published), and (b) publication of the staleness distribution by season.
+Also (c): `commence_time` must be taken from the snapshot itself, not from
+a post-hoc schedule field, or a rescheduled/suspended game silently uses a
+revised start time — a genuine PIT hole. A dedicated negative test is
+required, in the style of F5's mutation-armed window guard.
+
+The §3 rationale for preferring "latest" over F5's fixed T-2h is
+self-declared as uncited. With A7's staleness bound attached, "latest before
+commence, within bound" is acceptable; without the bound it is not.
+
+**AMENDMENT A8 (factual reconciliation).** V7 §5 hard call 2 records a
+"40/55 over/under split"; §3 above records "55/45 Under/Over". These cannot
+both be right. Reconcile before either is cited again — but see D5 first.
+
+### D4 — Standalone path: recommendation upheld; one reuse requirement added
+
+§4's recommendation is correct, and its reasoning is the right reasoning:
+`funnel.MARKETS = ("h2h",)` is the smallest part of the problem; push
+handling, line-aware de-vig, and Over/Under settlement are new logic that
+would wear an old module's name. Reuse of `discovery`, `battery` at a
+frozen `RULES_VERSION`, and `benjamini_hochberg` is correct and matches
+`f5_eval.py`.
+
+One asymmetry §4 does not address. F5 went standalone because it *selects
+nothing*; a totals family **does** need threshold-fired selection — exactly
+the machinery `funnel.validate_spec` / `_signal` implements. A standalone
+totals module therefore reimplements the one thing the funnel does well,
+and the two can silently diverge.
+
+**AMENDMENT A9.** The totals module must either import funnel's
+market-agnostic spec-validation and threshold-firing helpers, or carry an
+equivalence test asserting identical selection behaviour against funnel on a
+shared h2h fixture. Divergent selection semantics between the two research
+paths is not acceptable.
+
+### D5 — Hidden outcome-adjacent choice (the most serious finding)
+
+V7 §6 asserts the §2.3 over/under split is a "market-STRUCTURE measurement,"
+and §3 above inherits that framing by treating the split as an anomaly to be
+"resolved" by re-measurement. **This is not structure. An Over/Under split
+requires `total_runs` compared against the line — it is a settlement read,
+and it is precisely the full-population, graded-against-its-own-price
+statistic that an F5-H1-shaped hypothesis tests.** The direction of that
+split is now known to whoever writes the totals hypotheses.
+
+Two consequences, both binding:
+
+**AMENDMENT A10.** Any full-population Over/Under bias hypothesis must be
+registered as such — a member of the pre-registered family, entering BH-FDR
+over the full family — and must be reported as **already partially read**
+(V7 §2.3's proxy measurement disclosed in the registration). It cannot be
+presented as a fresh test.
+
+**AMENDMENT A11.** No hypothesis side, threshold, or feature direction may
+be chosen in the direction of the observed split. The §3 closing-line
+definition must be **frozen before** the re-measurement is run, and the
+re-measurement must not be re-run under alternative closing-line definitions
+until one removes the anomaly — that is threshold-tuning by outcome. §5
+item 6 as written ("resolve the unexplained split") invites exactly this and
+must be rewritten to: fix the definition per §3 + A7, measure once, publish
+whatever comes out.
+
+### D6 — The six validation items are necessary but not sufficient
+
+Items 1-6 are all correct and none is droppable. Missing, by comparison
+with the F5 path and its post-adversarial amendments:
+
+7. **Three-convention de-vig sensitivity** with a sign-survival gate (A4) —
+   F5 requires it; §5 item 4 tests only order-stability of one convention.
+8. **Book-composition / selection-bias diagnostic** for the consensus
+   convention, plus the fixed-panel sensitivity (A3).
+9. **Closing-line staleness distribution, max-staleness rule, and a
+   `commence_time` PIT negative test** including a rescheduled-game case
+   (A7).
+10. **Pre-void frozen denominator** with the void rate as a banded
+    diagnostic (A6).
+11. **Population-shift chi-square** on graded-population composition across
+    the 2023/2024 coverage asymmetry, fatal at a pre-registered p (A2).
+12. **Mechanised verdict + freeze**: a single `verdict` field computed by
+    code from per-gate booleans, one regression test per gate flipping only
+    that gate's input, and a standalone freeze record whose spec hash is
+    bounded by the next `## ` heading so later appended review notes cannot
+    invalidate it. These are F5's B3 / M1 / R2 amendments; §5 mirrors none
+    of them and would otherwise repeat all three defects.
+13. **Half-point / integer stratification** registered before the run (A5).
+
+### D7 — §6 "what must NOT be done" — no defects found
+
+Every prohibition in §6 is sound and none is over-broad. Add one:
+**do not report the Over/Under split as a market-structure measurement**
+(D5).
+
+### Required before drafting hypotheses
+
+Amendments A1-A11 written into this document (or the pre-registration that
+supersedes it), and validation items 7-13 added to §5. A5, A6, A10 and A11
+are the load-bearing ones: the first two protect the estimand and the
+denominator, the last two are the difference between a pre-registered
+family and a family drafted after glancing at its own answer.
+
+TOTALS METHODOLOGY VERDICT: NOT APPROVED — A1-A11 and validation items 7-13
