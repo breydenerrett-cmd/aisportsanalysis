@@ -1029,5 +1029,123 @@ class TestIntegerStratumReport(unittest.TestCase):
             self.assertAlmostEqual(report["by_season"]["2023"]["p_over_given_no_push"], 0.5)
 
 
+# ---------------------------------------------------------------------------
+# 14. Adversarial pre-registration review -- 2026-09-05 (F5 re-review B1 gap)
+#
+# The F5 re-review found that B1 ("H1/M1 must never be evaluated on POOLED
+# rows") was fixed in code but never PINNED by a test, so a later refactor
+# could silently reintroduce it. These tests pin the totals analogue: the
+# two-leg split is load-bearing (the 3.0pp floor is set from the PER-LEG
+# MDE, and pooling would silently halve it), and the season-window guard
+# must REJECT an out-of-window row, never filter it.
+# ---------------------------------------------------------------------------
+
+class TestTwoLegSplitIsPinned(unittest.TestCase):
+    """`run_full_evaluation` must derive the screen and replication samples
+    by SEASON from the same row list; substituting the pooled rows for
+    either leg must be detectable."""
+
+    # `src.model.discovery` needs >=30 decided rows per leg before it will
+    # report an effect at all, so each leg carries 40.
+    ROWS = ([{"game_pk": "s%d" % i, "date": "2023-06-%02d" % (i % 28 + 1),
+              "season": "2023", "implied": 0.50, "won": True} for i in range(40)]
+            + [{"game_pk": "r%d" % i, "date": "2024-06-%02d" % (i % 28 + 1),
+                "season": "2024", "implied": 0.50, "won": False} for i in range(40)])
+
+    def _legs(self, rows, screen_season="2023", replication_season="2024"):
+        return ([r for r in rows if r["season"] == screen_season],
+                [r for r in rows if r["season"] == replication_season])
+
+    def test_leg_split_is_disjoint_and_covers_the_universe(self):
+        screen, repl = self._legs(self.ROWS)
+        self.assertEqual(len(screen), 40)
+        self.assertEqual(len(repl), 40)
+        self.assertEqual(len(screen) + len(repl), len(self.ROWS))
+        self.assertFalse({r["game_pk"] for r in screen}
+                         & {r["game_pk"] for r in repl})
+
+    def test_pooled_rows_change_the_screen_effect_and_so_the_tested_sign(self):
+        """If the pooled rows were substituted for the screen leg, the sign
+        M1's whole replication gate is keyed to would move. This is the
+        assertion that would have caught F5's B1."""
+        screen, _ = self._legs(self.ROWS)
+        per_leg = te.evaluate_screen(screen)
+        pooled = te.evaluate_screen(list(self.ROWS))
+        self.assertEqual(per_leg["expected_sign"], 1)      # screen leg: all Over
+        self.assertEqual(pooled["expected_sign"], 0)       # pooled: cancels out
+        self.assertNotEqual(pooled["expected_sign"], per_leg["expected_sign"])
+        self.assertEqual(per_leg["n"], 40)
+        self.assertEqual(pooled["n"], 80)
+
+    def test_pooled_rows_would_double_the_replication_n(self):
+        """The 3.0pp floor is set from the per-leg MDE (n=1,288), never the
+        pooled 1.93pp; a pooled replication leg is an n the floor was not
+        chosen for."""
+        _, repl = self._legs(self.ROWS)
+        self.assertEqual(len(repl), 40)
+        self.assertEqual(len(list(self.ROWS)), 2 * len(repl))
+
+    def test_run_full_evaluation_source_splits_by_season(self):
+        """Belt-and-braces on the wiring itself: the function must filter
+        `rows` by `season` for BOTH legs. A `= rows` / `= list(rows)`
+        substitution fails this."""
+        import inspect
+        src = inspect.getsource(te.run_full_evaluation)
+        self.assertIn('screen_rows = [r for r in rows if r["season"] == screen_season]', src)
+        self.assertIn('replication_rows = [r for r in rows if r["season"] == replication_season]', src)
+
+
+class TestSeasonWindowGuardRejects(unittest.TestCase):
+    """2025 is TUNING_ONLY and 2026 is SEALED: an out-of-window row must
+    RAISE, never be silently filtered out of the denominator."""
+
+    def _row(self, season):
+        return {"game_pk": "1", "date": "%s-06-01" % season, "season": season,
+                "implied": 0.5, "won": None}
+
+    def test_in_window_rows_pass(self):
+        te._verify_row_shape([self._row("2023"), self._row("2024")])
+
+    def test_2025_row_is_rejected_not_filtered(self):
+        with self.assertRaises(te.TotalsEvalError) as ctx:
+            te._verify_row_shape([self._row("2023"), self._row("2025")])
+        self.assertIn("2025", str(ctx.exception))
+
+    def test_2026_sealed_row_is_rejected(self):
+        with self.assertRaises(te.TotalsEvalError):
+            te._verify_row_shape([self._row("2026")])
+
+    def test_undated_row_is_rejected(self):
+        bad = self._row("2023")
+        bad["date"] = None
+        with self.assertRaises(te.TotalsEvalError):
+            te._verify_row_shape([bad])
+
+    def test_guard_returns_nothing_and_does_not_mutate(self):
+        rows = [self._row("2023")]
+        self.assertIsNone(te._verify_row_shape(rows))
+        self.assertEqual(len(rows), 1)
+
+
+class TestEffectFloorIsThreePointZero(unittest.TestCase):
+    """D2: frozen numerically, may never be lowered after a near-miss.
+    A commit that lowers the module constant must fail here."""
+
+    def test_floor_constant(self):
+        self.assertEqual(te.M1_EFFECT_FLOOR, 0.030)
+
+    def test_exactly_at_the_floor_passes_the_screen(self):
+        gate = te._replication_gate({"effect": 0.030, "ci": {"low": 0.001, "high": 0.05}},
+                                    expected_sign=1)
+        self.assertTrue(gate["floor_ok"])
+        self.assertFalse(gate["cannot_tell"])
+
+    def test_just_below_the_floor_is_cannot_tell_not_a_pass(self):
+        gate = te._replication_gate({"effect": 0.0299, "ci": {"low": 0.001, "high": 0.05}},
+                                    expected_sign=1)
+        self.assertFalse(gate["floor_ok"])
+        self.assertTrue(gate["cannot_tell"])
+
+
 if __name__ == "__main__":
     unittest.main()

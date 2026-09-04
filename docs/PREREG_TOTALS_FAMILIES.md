@@ -872,3 +872,276 @@ number, not a TBD.
   universe should trigger a union re-run of FDR the way F5 requires for a
   third F5-moneyline hypothesis; this specification is silent on that case
   and F5's union rule may need an explicit analogue here.
+
+## Adversarial pre-registration review — 2026-09-05
+
+Adversarial review of the "## FINAL SPECIFICATION (post-review, 2026-09-05)"
+section against the code that would run it. No outcome field (`total_runs`,
+`won`, `winner`, any settlement value) was read, printed, or computed from;
+`freeze_family`/`freeze_confirmatory_family` were never called on a real
+path (`data/research/totals/` still contains only `universe_frozen.json`).
+Every finding below is either REPRODUCED (input constructed, code run,
+wrong output shown) or labelled HYPOTHESIS.
+
+### What holds up
+
+- **Universe manifest verified, not rewritten.** `verify_universe()` passes
+  against `universe_frozen.json`; `run(dry_run=True)` recomputes
+  `content_hash=2f4f7fcf…d532e7d9` and `price_payload_hash=b2e6dbf9…ca6d8df2`
+  and returns 2023 n=1,296 / 2024 n=1,288 — exactly the FINAL SPECIFICATION's
+  authoritative counts. The exclusion ledger reconciles arithmetically and
+  exactly: per-season pre-join 1,316/1,313 (matching `TOTALS_POPULATION_
+  AUDIT.md` §1-4), minus 45 not-joined = 30 postponed + 14 postseason + 1
+  All-Star, gives 1,296/1,288; `no_closing_snapshot` 95+74=169;
+  `not_joint` 1,078+1,097=2,175. Nightcap collisions are INCLUDED, not
+  excluded. `dry_run=True` returns `won is None` on every row under an
+  assertion, and computes no statistic.
+- **No pooled-rows inference (the F5 B1 bug is NOT present).**
+  `run_full_evaluation` derives `screen_rows` and `replication_rows` by
+  `season` filter from one row list; `discovery.evaluate` and `battery.run`
+  are called on the 2024 leg alone. The pooled 1.93pp MDE is never used.
+- **Leakage.** The closing snapshot's anchor is `per_snapshot_commence_time`
+  and is mutation-armed by existing tests (`test_rescheduled_game_cannot_
+  leak_revised_commence_time`, `test_mutating_a_later_snapshots_commence_
+  time_cannot_move_the_pick`). `total_runs` is read only inside
+  `build_over_rows(dry_run=False)`; the population-shift χ² is line-side
+  only and runs before any `discovery` call. 2025/2026 rows are REJECTED by
+  `_verify_row_shape`, not filtered.
+- **Freeze/run guards.** Both `freeze_family` and
+  `freeze_confirmatory_family` refuse to overwrite an existing record
+  (tested). `run_full_evaluation` refuses without a frozen record, and
+  `_verify_confirmatory_family` re-checks `spec_sha256`, both universe
+  hashes, and cross-checks `fdr_m` against the module's `FDR_M`; a second
+  runtime check raises if the built p-value list is not length `FDR_M`.
+- **Spec-conformance spot checks that pass:** `M1_EFFECT_FLOOR = 0.030`;
+  screen rule is sign+point-estimate only; replication gate is sign + floor
+  + date-clustered CI-excludes-zero; `DEVIG_METHODS` is exactly
+  proportional/power/shin and `devig_sign_survives_check` returns a boolean
+  over all three (a `None` effect fails, never "survives"); battery
+  `RULES_VERSION == "2.0.0"` with `rule_3`/`season_split`/`book_concentration`
+  recorded as explicit skips with reasons; integer stratum is report-only
+  with `promotable: False` and pushes excluded from numerator and
+  denominator; M2 carries a pre-set `POPULATION_SHIFT_FAIL` and
+  `excluded_from_fdr: True`, and `FDR_M = 1`.
+- **No TBD/PLACEHOLDER rescue lever survives** except the three hashes,
+  which is what D6 permits.
+
+### BLOCKING
+
+**B-A1 — `spec_sha256` for the confirmatory family is UNBOUNDED at the end
+and starts in superseded DRAFT text. Appending this review moves the hash.
+REPRODUCED.**
+
+`totals_eval._PREREG_START_MARKER = "## Family denominator"` and
+`prereg_spec_sha256()` hashes from that marker to **end-of-file**. The
+module comment asserting that "'## Methodology review — 2026-09-05' is this
+document's LAST section … so there is no next-heading bound to apply" is
+stale: the FINAL SPECIFICATION section was appended after it. Repro:
+
+```
+before fc2363f7e30f8a20c3e6290c645a6c6e0594d0122cf50f057d48ff489fd7d821
+after  9369ea7ea85dc12e48ae846f05eb6225bc06532c4f8ac1f2b72e721d8b6ab92a
+MOVED
+```
+
+(hash of this file, then of this file with a `## Adversarial pre-registration
+review` section appended). This is precisely the F5 R2 failure the sibling
+`spec_sha256()` was fixed for — that function bounds its section with
+`rereview_onward.find("\n## ")` and is correctly stable. Two defects:
+
+1. **No end bound.** Any later-appended narrative — including this review —
+   silently moves what the pre-registration hash covers. A record frozen
+   today cannot be re-verified tomorrow, and `_verify_confirmatory_family`
+   will abort every future run with a spurious "the specification changed"
+   error.
+2. **Wrong start.** The hash covers the DRAFT sections that the FINAL
+   SPECIFICATION explicitly supersedes ("Where this section differs from the
+   DRAFT above … this section governs"), including the withdrawn 1.5pp
+   floor and the withdrawn 1pp M2 floor. The pre-registration hash must
+   cover the governing text, not the text it overrides.
+
+Required fix (in `src/`, outside this review's write boundary):
+`_PREREG_START_MARKER = "## FINAL SPECIFICATION (post-review, 2026-09-05)"`
+and bound the section at the next `"\n## "` heading, mirroring
+`_extract_spec_text` exactly; raise if the marker is absent. Then re-run
+this repro and assert `before == after`. **The family may not be registered
+until this is done** — freezing now bakes in a hash over superseded text
+that this very document has already invalidated.
+
+**B-A2 — the population-shift kill gate is only HALF implemented; the
+book-count half is specified but does not exist. REPRODUCED.**
+
+The FINAL SPECIFICATION's M1 kill gate reads: "chi-square on bucket
+occupancy using the fixed edges from `TOTALS_POPULATION_AUDIT.md` §6 (line
+buckets `[5.5,6.5,7.5,8.5,9.5,10.5,11.5]`, **book-count buckets `1..5,6+`**)".
+`totals_rows` defines `LINE_BUCKET_EDGES` and `line_bucket_occupancy()`;
+`grep -n 'def .*occupancy' src/research/totals_rows.py` returns exactly one
+function, and there is no book-count bucket constant or occupancy function
+anywhere in the module. `population_shift_test()` tests line-bucket
+occupancy only. The rows do carry `book_count`, so the gate is buildable —
+it simply was not built. D7 item 9's own rule applies verbatim: "an
+unimplemented specified path is not permitted to appear as a reported
+number." As things stand a run would report a passed population-shift gate
+having tested half of what was pre-registered, and a book-composition shift
+between 2023 and 2024 (plausible — book coverage grew over exactly this
+window, which is the same selection mechanism that killed M2) would pass
+undetected. Fix: implement `book_count_bucket_occupancy` on edges `1,2,3,4,5,6+`
+and make `population_shift_test` fatal if EITHER χ² has p<0.01; or, if the
+book-count half is to be dropped, delete it from the FINAL SPECIFICATION
+before freeze. It may not be left specified-but-unrun.
+
+### MUST-FIX-BEFORE-RUN
+
+**M-A1 — the frozen record does not carry the spec's numeric gates, so the
+gates are not actually frozen. REPRODUCED.**
+
+`freeze_confirmatory_family` writes: `family_id`, two thin member stubs,
+`fdr_q`, `fdr_m`, `battery_rules_version`, `max_staleness_hours`,
+`anchor_rule`, `book_floor`, the three hashes, the universe exclusion
+ledger, `frozen_at`. The FINAL SPECIFICATION's own freeze-record JSON
+additionally specifies `cannot_tell_band_pp`, `population_shift_kill`
+(both members), `screen_pass_rule`, `replication_pass_rule`, `clustering`,
+`fdr_does_no_work`, `battery_rules_recorded_skipped`,
+`excluded_members_permanent`, `deferred_members`,
+`requires_independent_forward_leg_before_promotion`, and
+`sealed_period_not_a_forward_leg`. None are written. Worse, the one gate
+that IS written — `effect_floor_pp: 3.0` — is never read back:
+`run_full_evaluation` uses the module constant `M1_EFFECT_FLOOR`, and
+`_verify_confirmatory_family` checks only `spec_sha256`, the two universe
+hashes, and `fdr_m`. So a later commit can lower `M1_EFFECT_FLOOR` to
+0.0001 and every freeze-record guard still passes; only the test suite
+objects (and only because this review added the constant assertion). "The
+record IS the pre-registration" is not currently true. Fix: write the full
+JSON block from the FINAL SPECIFICATION, and have
+`_verify_confirmatory_family` cross-check `effect_floor_pp`,
+`cannot_tell_band_pp`, `fdr_q`, `clustering`, and `battery_rules_version`
+against the live code the same way it already cross-checks `fdr_m`.
+
+**M-A2 — three different CANNOT_TELL precedence orders are in play, and the
+implemented one silently absorbs a fatal battery flag. REPRODUCED (by
+reading; the divergence is textual and unambiguous).**
+
+- FINAL SPECIFICATION precedence: `… → DEVIG_SIGN_FAIL → BATTERY_FAIL →
+  CANNOT_TELL → SURVIVOR`.
+- `totals_eval.VERDICTS` tuple order: `… BATTERY_FAIL, SURVIVOR,
+  CANNOT_TELL` (CANNOT_TELL last of all).
+- `compute_verdict` as implemented: CANNOT_TELL is checked **second**,
+  immediately after `POPULATION_SHIFT_FAIL` and before `SCREEN_FAIL`.
+
+The implemented order is the methodologically right one for SCREEN_FAIL /
+REPLICATION_FAIL (an underpowered read is not the claim "no effect exists"),
+and it correctly lets `POPULATION_SHIFT_FAIL` win. But it also means an
+in-band result that the frozen battery flags as FATAL is reported
+`CANNOT_TELL`, not `BATTERY_FAIL`. That is not a rescue — `CANNOT_TELL` is
+not a pass — but it does hide a battery failure from the published record,
+which the family's own "publish the losers" principle forbids. Fix before
+freeze: make `compute_verdict` evaluate `POPULATION_SHIFT_FAIL` →
+`BATTERY_FAIL` → `DEVIG_SIGN_FAIL` → `CANNOT_TELL` → `SCREEN_FAIL` →
+`REPLICATION_FAIL` → `SURVIVOR`, correct the `VERDICTS` tuple to that same
+order, and correct the FINAL SPECIFICATION's precedence line to match, so
+all three agree. See open-item decision O1.
+
+**M-A3 — `run_full_evaluation`'s happy path is never executed by any test.
+REPRODUCED.**
+
+`grep -n 'te\.' tests/test_totals_rows.py` shows `run_full_evaluation`
+appearing exactly twice, both inside `assertRaises`. Neither reaches the
+confirmatory path: `test_run_full_evaluation_refuses_without_confirmatory_
+freeze` never calls it at all (it calls `read_confirmatory_family`), and
+the other call raises inside `verify_universe` on a hash mismatch against
+the real default manifest, not inside `_verify_confirmatory_family` as its
+comment claims. So the D7-required "one regression test per gate that flips
+only that gate's input and asserts the verdict changes" is satisfied only
+at the level of `compute_verdict`'s pure boolean inputs — the WIRING from
+rows to those booleans is untested end to end. Fix: one synthetic-fixture
+test that freezes a confirmatory record into a temp dir and runs
+`run_full_evaluation` to a verdict, plus per-gate flips of that fixture.
+
+### NOTE
+
+- **N-A1.** This review's own boundary tests are now in place and were
+  verified by mutation testing `src/research/totals_eval.py` (src reverted
+  afterwards; `git diff --stat src/` clean): floor `0.030→0.0001` → 4
+  failures; `replication_rows = list(rows)` → 1 failure; season guard
+  `if row["season"] not in expected_seasons` → `if False` → 2 failures.
+  Before this review the pooled-rows and season-guard mutations both passed
+  the entire suite silently — the exact F5 re-review B1 gap, reproduced in
+  the totals module. New classes in `tests/test_totals_rows.py`:
+  `TestTwoLegSplitIsPinned`, `TestSeasonWindowGuardRejects`,
+  `TestEffectFloorIsThreePointZero`.
+- **N-A2.** The manifest's exclusion ledger reports `no_closing_snapshot:
+  169` and `not_joint: 2175` **aggregated across seasons**, while the FINAL
+  SPECIFICATION's ledger states them per season (95/2023, 74/2024). The
+  per-season figures are recomputable (`_gradeable_closings` returns them)
+  but the published ledger does not carry the split. The run report must
+  publish the per-season split, not the aggregate.
+- **N-A3.** `expected_sign = screen["expected_sign"] or 1` coerces a
+  genuinely zero screen effect to +1. It is inert (`screen_passes` is False
+  in that branch, so the verdict is decided before the sign is used), but
+  it is a live foot-gun for any future refactor that reorders the gates.
+  Prefer an explicit `None` and an assertion that no downstream gate is
+  consulted when the screen leg is null.
+- **N-A4.** `EXPECTED_MIN_JOINT_N = 300` is defined but I found no call
+  site enforcing it. HYPOTHESIS: it is dead. Harmless if so; delete or wire.
+
+### Open-item decisions
+
+- **O1 — `CANNOT_TELL` vs `SCREEN_FAIL`, and the exact-3.0pp boundary.**
+  DECIDED. `CANNOT_TELL` is a fully distinct terminal code and DOES apply at
+  the screen leg: an in-band screen point estimate (correct-signed,
+  0 < |effect| < 3.0pp) is `CANNOT_TELL`, and `SCREEN_FAIL` is reserved for
+  a genuinely null or unreadable screen (effect exactly 0, or the leg has no
+  decided rows). This is what `evaluate_screen` already implements. But the
+  precedence order in the FINAL SPECIFICATION is wrong and must be corrected
+  to `POPULATION_SHIFT_FAIL → BATTERY_FAIL → DEVIG_SIGN_FAIL → CANNOT_TELL →
+  SCREEN_FAIL → REPLICATION_FAIL → SURVIVOR` (see M-A2): a pre-outcome kill,
+  a fatal battery flag, and a de-vig sign failure are all statements about
+  the DESIGN that outrank a statement about POWER, while an underpowered read
+  outranks the two outcome-magnitude fails. **Boundary: the band is open at
+  the top — `|effect| == 3.0pp` exactly is a PASS, not `CANNOT_TELL`.** This
+  is what `abs(effect) >= effect_floor` implements and what
+  `cannot_tell_band_pp: [0.0, 3.0]` should be read as; it is now pinned by
+  `test_exactly_at_the_floor_passes_the_screen`.
+- **O2 — M2's `devig_sensitivity_gates: false`.** DECIDED: KEEP the field,
+  explicitly `false`. Omitting it would make "reported but non-gating"
+  unfalsifiable from the record alone, and a future reader could not tell
+  an intentionally non-gating sensitivity from one that was never run. A
+  pre-determined-failure member should carry MORE of its record, not less,
+  precisely because nobody will re-derive it later. Note that
+  `freeze_confirmatory_family` currently writes neither the field nor M2's
+  `devig_sensitivity` list at all — folded into M-A1.
+- **O3 — the "not joint" remainder as an explicit literal.** DECIDED: state
+  it as literals, per season, not as "remainder to reach". Confirmed from
+  the manifest: **not-joint 1,078 (2023) and 1,097 (2024), total 2,175**;
+  no-closing-snapshot 95/74 (169); not-joined-to-settlement 45 = 30
+  postponed + 14 postseason + 1 All-Star. These reconcile exactly to the
+  pre-join 1,316/1,313 and the post-join 1,296/1,288. Replace the
+  "remainder to reach 1,296/1,288" row of the exclusion-ledger table with
+  those literals before freeze — a remainder is a place where an
+  unaccounted-for exclusion can hide.
+- **O4 — union FDR re-run for a future third totals hypothesis.** DECIDED:
+  YES, adopt F5's union rule verbatim as an explicit clause. Any future
+  confirmatory totals member registered against THIS universe joins
+  `TOTALS_FULLGAME_2026H1`'s FDR family and forces a union re-run at the new
+  `m`; M1's earlier verdict is recomputed under that `m` and may be revoked.
+  Without this clause the m=1 registration is a standing invitation to
+  register hypothesis two, three and four as separate families and claim
+  m=1 each time — which is the multiplicity leak the whole FDR apparatus
+  exists to close. Being silent here is more dangerous than in F5, because
+  D3 has already told the reader that "the FDR step does no work in this
+  family."
+
+### Verdict
+
+The methodology is sound and the design is honest: the CANNOT_TELL band,
+the 3.0pp floor set above the per-leg MDE, M2's pre-determined published
+failure, the m=1 "FDR does no work" disclosure, the disclosed-prior-exposure
+framing of M1, and the refusal to treat the sealed period as a forward leg
+are all correct and are what a registerable family looks like. The blockers
+are mechanical, in `src/`, and are each a few lines: the pre-registration
+hash currently covers superseded draft text and moves whenever this document
+grows (B-A1), and half of a pre-registered kill gate does not exist (B-A2).
+Neither can be papered over at registration time, because freezing is the
+act that makes both permanent.
+
+ADVERSARIAL VERDICT: FAIL — B-A1 (prereg spec_sha256 unbounded at end, starts in superseded DRAFT text: appending this review moves it, REPRODUCED), B-A2 (population-shift kill gate's book-count-bucket half specified but not implemented, REPRODUCED), M-A1 (freeze record omits the spec's numeric gates; the 3.0pp floor is not cross-checked at run time), M-A2 (three conflicting CANNOT_TELL precedence orders; implemented order absorbs a fatal battery flag), M-A3 (run_full_evaluation's happy path never executed by any test). Re-submit for registration once these five are closed; O1-O4 decisions above must be folded into the FINAL SPECIFICATION in the same commit.
