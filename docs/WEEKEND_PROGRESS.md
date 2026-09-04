@@ -70,3 +70,6 @@
 
 ## 2026-09-05 04:3xZ — W21 M2 coverage landed
 - Real M2 n (feature both sides ∩ price-gradeable): 2023 792/1,295 (61%), 2024 1,090/1,284 (85%) — 24pp coverage shift; 2024 tercile occupancy under 2023 edges fails uniformity (χ²=18.34, p=0.0001) on FEATURE-SIDE counts alone; per-tercile MDE 5-6pp. As drafted M2 is a pre-determined POPULATION_SHIFT_FAIL (F5-H2 precedent). Passed to the Opus review to decide (reframe vs drop) once W20 lands. Capture: 23:16Z run in flight.
+
+## 2026-09-05 05:0xZ — W20 unjoined audit landed; Opus review of totals prereg dispatched
+- 50 unjoined: 30 postponed, 14 postseason (mlb_results.csv regular-season only → denominator-definition question for the reviewer), 5 doubleheader nightcaps past pricepath's 3h bound (fixed locally in totals_rows, regression test), 1 All-Star. Joint 2,579→2,584. Manifest still NOT frozen pending review (postseason inclusion, M2 fate).
