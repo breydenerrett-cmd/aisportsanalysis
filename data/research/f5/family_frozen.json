@@ -1,0 +1,34 @@
+{
+  "battery_rules_version": "2.0.0",
+  "discovery": {
+    "date_range": [
+      "2023-05-10",
+      "2023-12-31"
+    ],
+    "n": 1597
+  },
+  "effect_floor_pp": {
+    "F5-H1": 2.0,
+    "F5-H2-bottom": 4.0,
+    "F5-H2-top": 4.0
+  },
+  "family_id": "F5_MONEYLINE_CALIBRATION_2026H1",
+  "fdr_m": 3,
+  "fdr_q": 0.1,
+  "frozen_at": "2026-09-04T22:26:46.825662+00:00",
+  "members": [
+    "F5-H1",
+    "F5-H2-bottom",
+    "F5-H2-top"
+  ],
+  "replication": {
+    "date_range": [
+      "2024-01-01",
+      "2024-10-07"
+    ],
+    "n": 2085
+  },
+  "spec_sha256": "f637dd176266fa066d9a0cb8429a5c67f2bb6d31568e2b84df4d22e518ebca8b",
+  "universe_identity_hash": "c67508603b14af2c494e13fadeb2a2f039f52df996ab6e12ff6164585e33cd1c",
+  "universe_price_payload_hash": "f2ff7b748b1b76f1702cfe2b29750f684e554ffe2c773887a04f132bf2275ec7"
+}
