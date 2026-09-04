@@ -450,3 +450,4 @@
 {"category": "designated", "date": "2026-09-04", "first_seen_utc": "2026-09-04T16:22:56.173928+00:00", "player": "Carlos Hern\u00e1ndez", "player_id": 672578, "team": "CLE", "transaction_id": 941179}
 {"category": "recalled", "date": "2026-09-04", "first_seen_utc": "2026-09-04T16:22:56.173928+00:00", "player": "Austin Peterson", "player_id": 804926, "team": "CLE", "transaction_id": 941180}
 {"fetched_utc": "2026-09-04T17:16:14.746384+00:00", "game_date": "2026-09-04", "poll": true}
+{"fetched_utc": "2026-09-04T17:19:21.400254+00:00", "game_date": "2026-09-04", "poll": true}
