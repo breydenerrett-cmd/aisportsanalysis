@@ -1,5 +1,18 @@
 # Targeted collection policy
 
+> **SUPERSEDED IN POSTURE, 2026-09-04 — see `docs/RESOURCE_POLICY.md`.**
+> The owner's resource policy replaces this document's austerity framing.
+> Credits are RENEWABLE and unused credits at reset are worth ZERO, so the
+> goal is no longer "maximize research options per credit" but **maximum
+> trustworthy research value per monthly cycle**. Measured at the time of
+> that directive: the 900/day capture envelope is 27% of the allotment and
+> ~73,000 credits/month were expiring unused. The mechanics below (floor,
+> envelope, drop order, per-family measured costs) remain CORRECT and in
+> force for the live-capture reserve; the "spend as little as possible"
+> instinct does not. Historical backfill and new-market probes are now
+> funded from the ~40-50% growth band described in the resource policy,
+> which this document predates and does not cover.
+
 Goal: maximize future research options per API credit. Floor 5,000,
 absolute; approved envelope ~132 credits/day (superseded below). Actual
 spend has run far below the envelope (dense no-ops on quiet hours), which is
