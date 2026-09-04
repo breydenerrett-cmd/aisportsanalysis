@@ -31,6 +31,27 @@ from src.research import funnel
 
 REAL_MATRIX_2023 = Path("data/research/matchup_matrix_2023.jsonl")
 
+# The real 2023-24 historical primitives (mlb_results.csv, lineups.jsonl,
+# handedness.json, the statcast/ pitch store) are gitignored -- purchased/
+# rebuilt data, not something a fresh checkout carries (see .gitignore's
+# `data/historical/*` rule). REAL_MATRIX_2023 above IS tracked, so a fresh
+# checkout can always find the game row; it is build_features' own reads of
+# these four stores (F.FeatureSources()'s own defaults, checked here so this
+# can never drift from the real ones) that go missing. Tests that read them
+# via the replay branch must SKIP rather than fail when they are absent --
+# this is a missing precondition, not a broken assertion (see the task
+# report that added this guard: three worker lanes could not reproduce
+# these "failures" against the main checkout, where the stores exist).
+_HISTORICAL_SOURCES = F.FeatureSources()
+_HISTORICAL_STORES_PRESENT = (
+    Path(_HISTORICAL_SOURCES.statcast_store).exists()
+    and Path(_HISTORICAL_SOURCES.handedness_path).exists()
+    and Path(_HISTORICAL_SOURCES.results_path).exists()
+    and Path(_HISTORICAL_SOURCES.lineups_path).exists())
+_HISTORICAL_STORES_REASON = (
+    "requires the gitignored data/historical/{mlb_results.csv,lineups.jsonl,"
+    "handedness.json,statcast/} primitives")
+
 
 def _real_matrix_row(game_pk: str) -> dict:
     with REAL_MATRIX_2023.open("r", encoding="utf-8") as fh:
@@ -100,8 +121,12 @@ class TestFeatureAccounting(unittest.TestCase):
 class TestMatrixEquivalenceReal2023(unittest.TestCase):
     """build_features, on the real historical primitives (including the
     real pitch store), reproduces the real matchup-matrix row's values
-    exactly -- absences included."""
+    exactly -- absences included. Every method but the last reads those
+    real stores and is skipped (not failed) when they are absent;
+    test_unknown_game_pk_is_honestly_empty needs none of them and always
+    runs."""
 
+    @unittest.skipUnless(_HISTORICAL_STORES_PRESENT, _HISTORICAL_STORES_REASON)
     def test_game_718781_only_lineup_platoon_share_present(self):
         # Cutoff "2023-03-01" is before the store's first pitch: every
         # rebuilt-derived feature is genuinely absent (0 pre-cutoff data),
@@ -120,6 +145,7 @@ class TestMatrixEquivalenceReal2023(unittest.TestCase):
         self.assertEqual(values["away_lineup_platoon_share"].value, 0.667)
         self.assertEqual(values["home_lineup_platoon_share"].value, 0.222)
 
+    @unittest.skipUnless(_HISTORICAL_STORES_PRESENT, _HISTORICAL_STORES_REASON)
     def test_game_718339_all_seven_features_both_sides(self):
         # A game deep enough into the season that every away-side feature
         # clears its rebuilt sample floor, and home is a genuine mixed
@@ -150,6 +176,7 @@ class TestMatrixEquivalenceReal2023(unittest.TestCase):
              if f"away_{name}" in values},
             set(F.REPRODUCIBLE_FEATURES))
 
+    @unittest.skipUnless(_HISTORICAL_STORES_PRESENT, _HISTORICAL_STORES_REASON)
     def test_every_returned_value_is_grade_d_for_2023(self):
         row = _real_matrix_row("718339")
         values = F.build_features("718339", row["start_time_utc"])
@@ -473,6 +500,7 @@ class TestPriceBlindness(unittest.TestCase):
             Path.open = real_open
         return opened
 
+    @unittest.skipUnless(_HISTORICAL_STORES_PRESENT, _HISTORICAL_STORES_REASON)
     def test_replay_branch_never_opens_a_price_store(self):
         row = _real_matrix_row("718339")
         opened = self._opened_paths(
@@ -533,6 +561,7 @@ class TestGlueIntegration(unittest.TestCase):
     """build_snapshot populates PriceBlindSnapshot.features/assumption_exposure
     from build_features end to end, for a real 2023 game_pk."""
 
+    @unittest.skipUnless(_HISTORICAL_STORES_PRESENT, _HISTORICAL_STORES_REASON)
     def test_features_and_exposure_populated_for_a_real_2023_game(self):
         row = _real_matrix_row("718339")
         ref = glue.GameRef(event_id="evt-718339", game_pk="718339")

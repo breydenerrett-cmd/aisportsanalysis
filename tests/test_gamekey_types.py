@@ -38,6 +38,23 @@ from src.engine import glue
 # captured 2026 game with a posted lineup ~2h50m before first pitch.
 REAL_EVENT_ID = "0b0373954f04c35c2aaee9aed8171c17"
 
+# features_module.build_features's live branch needs the handedness cache
+# and statcast pitch store (both under the gitignored data/historical/,
+# per .gitignore's `data/historical/*` rule -- purchased/rebuilt data, not
+# something a fresh checkout carries) to compute *_lineup_platoon_share at
+# all; asof_module.as_of reads only the tracked forward-capture stores
+# (lineups_watch etc.), so a checkout missing data/historical/ makes the
+# two readers disagree for a reason that has nothing to do with the
+# game_pk join this test exists to prove -- a missing precondition, not a
+# broken assertion. Checked via FeatureSources()'s own defaults so this can
+# never drift from the real ones.
+_HANDEDNESS_AND_STATCAST_PRESENT = (
+    Path(features_module.FeatureSources().handedness_path).exists()
+    and Path(features_module.FeatureSources().statcast_store).exists())
+_HANDEDNESS_AND_STATCAST_REASON = (
+    "requires the gitignored data/historical/{handedness.json,statcast/} "
+    "stores that build_features' live branch reads")
+
 
 def _write_jsonl(path: Path, rows: list[dict]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -182,6 +199,8 @@ class TestRealDecisionPath(unittest.TestCase):
             "a real lineup is on disk well before first pitch for this "
             "game, but build_snapshot reported lineup_posted=False")
 
+    @unittest.skipUnless(_HANDEDNESS_AND_STATCAST_PRESENT,
+                        _HANDEDNESS_AND_STATCAST_REASON)
     def test_build_features_and_as_of_agree_on_lineup_presence(self):
         """Two independent readers of the SAME forward stores for the SAME
         game at the SAME instant must never disagree on whether a lineup
