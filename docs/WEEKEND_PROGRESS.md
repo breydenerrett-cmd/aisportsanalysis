@@ -56,3 +56,7 @@
 
 ## 2026-09-05 02:0xZ — W19 reschedule audit landed
 - Deltas are sub-15-min, both-signed, clustered at 5/10/15/60 min → provider jitter, not reschedules. No PIT schedule store exists to cross-check (reported unjoinable). Anchor stays the self-referential per-snapshot commence_time (leak-proof). W16 default anchor constant confirmed. W16, W18 still running.
+
+## 2026-09-05 02:4xZ — W18 factory slice 2 landed (11dea8b, reclaimed)
+- Lane stalled waiting on a test monitor; I ran the fast suite in its worktree (4,051 green) and committed path-specifically. Headline: 8,811 sweep strategies → 6,050 unique wagers (dedup ratio 0.0006 of decisions), 1,062 Jaccard>=0.8 families. Direct answer to "why not 100,000 systems": most of the existing population is duplicates of ~1,000 distinct behaviours.
+- W16 totals eval path still running. Capture healthy.
