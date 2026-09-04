@@ -222,3 +222,29 @@ No game has been re-queried under this rule yet. No book depth, price, or
 outcome from any T−2h observation has been looked at. The next step is
 acquisition (the paid repair, a separate authorization) strictly following
 §2–§5, then joining to settlement, then only after that — discovery.
+
+---
+
+# CLARIFICATION — 2026-09-04, appended after the sanity tranche
+
+**The frozen rule above is unchanged.** This is a record of observed provider
+behaviour, appended rather than edited, so the original pre-registration
+stands exactly as written when it was frozen.
+
+- The **intended target remains scheduled first pitch − 2h.**
+- The **accepted tolerance remains ±5 minutes.**
+- The provider serves a **five-minute historical grid.**
+- Observed behaviour: the grid **floors to the preceding grid point.**
+- Therefore returned observations **systematically land slightly earlier
+  than exact T−2h.** Measured across the 20 priced tranche games: deviation
+  min −4.38 min, median −4.35 min, max −1.37 min. Every observation early,
+  none late, all inside the ±5-minute tolerance.
+- This was discovered **during the pre-registered sanity tranche, before the
+  full acquisition** — not after seeing any result.
+- **No timing threshold, window, book-depth rule, or eligibility rule was
+  changed in response.** The offset is uniform across games, so it introduces
+  no relative bias between them; it is recorded here for accuracy, not
+  accommodated.
+
+A reader should therefore understand "T−2h ±5min" in this document as, in
+practice, *the grid point at or before T−2h, within five minutes of it.*
