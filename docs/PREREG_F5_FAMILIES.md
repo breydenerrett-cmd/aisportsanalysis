@@ -1279,3 +1279,96 @@ the run reads as a pre-registered fact and not a discovered excuse:
   shift), not for it — the anticonservative direction cannot manufacture a
   promotion; at worst it fires the kill slightly more readily than the
   fully-correct test would, which is the safe direction for a kill switch.
+
+---
+
+## Adversarial re-review — 2026-09-04
+
+Re-attack of B1, B2, B3, M1, M2 and NOTES N1-N3 against commit `0646c0e`
+(main checkout, not a worktree). No outcome value read; `freeze_family()`
+never called against the real `data/research/f5/family_frozen.json` (which
+does not exist); no `src/` edit kept — the two mutations below were reverted
+immediately (`git diff src/` clean). `python3 -m unittest tests.test_f5_eval -q`
+and `f5_eval.run(dry_run=True)` on the real store: 3,682 rows, 1,597/2,085,
+2024 tercile occupancy 768/668/649, both hashes verify.
+
+**B1 — FIXED.** `run_full_evaluation` now screens on 2023 (`evaluate_h1_screen`,
+`evaluate_h2_bucket_screen`, sign+floor only) and replicates on 2024
+(`evaluate_h1(h1_2024)`, CI + FDR); no pooled statistic is computed for
+inference. **But the fix was unpinned:** mutating `evaluate_h1(h1_2024)` back
+to `evaluate_h1(h1_rows)` — the exact reported defect — left all 63 tests
+green, because the B1 tests exercise the helpers and nothing asserted the
+wiring. Fixed here in tests only: `TestB1WiringInRunFullEvaluation` runs
+`run_full_evaluation` end-to-end on a synthetic two-season set (60 rows 2023 /
+90 rows 2024, data-shape and freeze guards patched out) and asserts the
+replication leg graded exactly 90 rows, the screen leg exactly 60, and no
+battery call ever received a 2023 row. Re-mutating both the H1 result and the
+H1 battery back to pooled now fails that test; reverted.
+
+**B2 — FIXED.** `FDR_M = 3`, `run_full_evaluation` raises if the p-list it
+builds is any other length, `_verify_frozen_family` refuses to run when the
+frozen record's `fdr_m` disagrees, and the amendment supersedes the m=2
+wording in the replication pass rule. Verified by mutation of `FDR_M` (tests
+fail) — the spec text and the code now agree.
+
+**B3 — FIXED.** `compute_verdict()` returns exactly one of
+`POPULATION_SHIFT_FAIL / SCREEN_FAIL / REPLICATION_FAIL / DEVIG_SIGN_FAIL /
+BATTERY_FAIL / SURVIVOR`, with the population-shift kill checked first, and
+one regression test per gate flipping only that gate's input. Floors, bucket-n,
+de-vig sign-survival and the chi-square kill are all consumed by code; no
+discretionary lever remains between the statistics and the verdict.
+
+**M1 — FIXED.** `freeze_family()` writes an immutable record (family_id,
+three members, floors, split, `fdr_q`/`fdr_m`, `battery_rules_version`, both
+universe hashes, `spec_sha256`, timestamp), refuses to overwrite, and
+`run_full_evaluation` aborts unless the record exists and still matches the
+live universe hashes, `FDR_M`, and the spec text.
+
+**M2 — FIXED.** The already-fatal chi-square (χ²=12.403, df=2, p=0.00203) is
+now pre-registered as F5-H2's confirmatory verdict at registration, the
+extreme-bucket statistics are still computed and published as report-only,
+and both buckets still count in the m=3 family. Reproduced unchanged on the
+current store.
+
+**N1/N2/N3 — FIXED** (nearest-rank convention documented as normative, H2 rows
+get `_verify_row_shape` in both entry points, df=2 approximation documented
+with its direction of error).
+
+### Remaining items — MUST-FIX-BEFORE-RUN (neither blocks registration)
+
+**R1 — the B1 fix silently unarms a FATAL battery rule, and the skip is not
+recorded. REPRODUCED.** The battery now runs on the 2024-only leg, so
+`_season_split` (rule 1, in `battery.FATAL_CHECKS`, the leave-one-season-out
+check the FINAL SPECIFICATION names) sees a single season and can never fire.
+On 400 synthetic 2024 rows it reports
+`{"seasons": {"2024": …}, "fatal": false}` — a full, passing report — and
+does **not** appear in `run_battery`'s `skipped_checks`, so A4's own rule
+("a fatal rule that is quietly inert is exactly the unremembered kill-test
+the battery exists to prevent") is violated for rule 1 exactly as it was for
+rule 3. Fix required in `src/` (not made here): record `season_split` as
+structurally unarmed on a single-season leg, and report the pooled
+two-season split as a named report-only diagnostic. An unarmed kill test can
+only fail to kill, so this cannot manufacture a promotion — but it must be
+recorded before the run, not discovered in it.
+
+**R2 — `spec_sha256` hashes to end-of-file, so any later append changes the
+registered spec. REPRODUCED.** `_extract_spec_text` takes everything after
+`## Post-adversarial amendments` to EOF; appending this very section moved
+the hash from `b65e0551…` to `b6d7adce…`. Nothing is frozen yet, so nothing
+broke — but the freeze must happen *after* this commit, and the extraction
+should be bounded by the next `## ` heading (or the frozen record should
+carry its own copy of the spec text) so the family record cannot be
+invalidated by unrelated appended review notes.
+
+**R3 — NOTE.** `_replication_gate` does `ci.get("low", 0) > 0`, which raises
+`TypeError` when `clustered_bootstrap` refuses (`low`/`high` are `None` with
+fewer than two distinct dates). Unreachable on the real 2024 legs; it fails
+loud rather than silently, so it is a robustness note only.
+
+**PIT / leakage / hash guards: clean, unchanged.** `dry_run` still sets
+`won=None` on every row and never calls `discovery.evaluate` or
+`battery.run`; tercile edges and bucket floors remain feature-side; no
+`actual_first_pitch`, settlement timestamp, or 2025/2026 row is read; the
+window guard is still mutation-armed.
+
+ADVERSARIAL VERDICT: PASS — register (with R1 and R2 fixed before the first evaluation run, and the freeze taken after this commit).

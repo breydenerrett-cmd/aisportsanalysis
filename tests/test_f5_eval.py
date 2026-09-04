@@ -816,3 +816,64 @@ class TestNotesFixes(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestB1WiringInRunFullEvaluation(unittest.TestCase):
+    """Adversarial re-review regression: the B1 tests above exercise the
+    HELPERS (`evaluate_h1_screen`, `_replication_gate`) but nothing pinned
+    the WIRING inside `run_full_evaluation`. Mutation check: reverting
+    `h1_result = evaluate_h1(h1_2024)` to `evaluate_h1(h1_rows)` -- the exact
+    pooled-universe defect B1 reported -- left all 63 tests green.
+
+    This test runs `run_full_evaluation` end to end on a synthetic two-season
+    set (its data-shape and freeze guards patched out, since neither is what
+    is under test here) and asserts the F5-H1 replication leg and its battery
+    saw the 2024 rows ONLY. It fails on the pooled mutation.
+    """
+
+    def _gradeable(self):
+        gradeable = []
+        for i in range(60):  # 2023 discovery leg
+            gradeable.append(_synthetic_game(
+                f"a{i}", f"2023-0{5 if i < 30 else 6}-{(i % 27) + 1:02d}",
+                home_price=-110 - 6 * i, away_price=100 + 6 * i,
+                winner="home"))
+        for i in range(90):  # 2024 replication leg, deliberately a different n
+            gradeable.append(_synthetic_game(
+                f"b{i}", f"2024-0{5 if i < 45 else 6}-{(i % 27) + 1:02d}",
+                home_price=-110 - 6 * (i % 60), away_price=100 + 6 * (i % 60),
+                winner="home" if i % 2 == 0 else "away"))
+        return gradeable
+
+    def test_h1_replication_leg_and_battery_see_2024_rows_only(self):
+        from unittest import mock
+
+        gradeable = self._gradeable()
+        seen_battery_seasons = []
+        real_run_battery = f5_eval.run_battery
+
+        def spy_run_battery(rows, *, effect_floor):
+            seen_battery_seasons.append({r["season"] for r in rows})
+            return real_run_battery(rows, effect_floor=effect_floor)
+
+        with mock.patch.object(f5_eval, "verify_universe",
+                               return_value={"content_hash": "x",
+                                             "price_payload_hash": "y"}), \
+             mock.patch.object(f5_eval, "_verify_frozen_family",
+                               return_value={}), \
+             mock.patch.object(f5_eval, "load_gradeable_primary_rows",
+                               return_value=gradeable), \
+             mock.patch.object(f5_eval, "_verify_row_shape",
+                               return_value=None), \
+             mock.patch.object(f5_eval, "run_battery", spy_run_battery):
+            result = f5_eval.run_full_evaluation()
+
+        # The replication leg graded exactly the 90 2024 games, never the
+        # pooled 150. `decided` is the row count discovery.evaluate used.
+        self.assertEqual(result["h1"]["result_2024"]["decided"], 90)
+        # And the screen leg saw exactly the 60 2023 games.
+        self.assertEqual(result["h1"]["screen_2023"]["n"], 60)
+        # No battery in this run may ever have been handed a 2023 row.
+        self.assertTrue(seen_battery_seasons)
+        for seasons in seen_battery_seasons:
+            self.assertEqual(seasons, {"2024"}, seen_battery_seasons)
