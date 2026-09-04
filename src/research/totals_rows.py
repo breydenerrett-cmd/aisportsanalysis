@@ -303,11 +303,43 @@ def load_settled_games(*, results_path=RESULTS_CSV) -> list:
     return pricepath.read_results(results_path)
 
 
+# docs/TOTALS_UNJOINED_AUDIT.md: 5 of the 50 originally-unjoined events are a
+# straight doubleheader's SECOND game running long enough (a slow game 1, or a
+# delayed turnaround) that its real start drifts past `pricepath`'s shared
+# 3-hour MAX_EVENT_GAP_SECONDS -- a cross-day disambiguation bound, not a
+# same-day one. Evidence (audit's "same_date" rows): every one of those 5 has
+# its nearest candidate SAME CALENDAR DATE at 3.27-5.77h, while every genuine
+# cross-day collision (the postponement/makeup pattern the 3h bound exists to
+# reject) sits at 15h+. 8h leaves comfortable room above the observed cluster
+# and well below the next real population, so this fallback -- SAME DATE
+# ONLY, never touching the previous-day fallback below -- cannot reach into a
+# different day's game the way widening `pricepath`'s own bound globally
+# could.
+DOUBLEHEADER_SAME_DAY_GAP_SECONDS = 8 * 3600
+
+
+def _join_doubleheader_same_day(away, home, commence_time, index):
+    """Same-date-only fallback for a straight doubleheader's nightcap running
+    past `pricepath.MAX_EVENT_GAP_SECONDS` (see constant docstring above).
+    Never consulted for the previous-day case -- that is exactly the
+    ambiguous-day territory the tight bound protects."""
+    candidates = index.get((away, home, commence_time.date().isoformat())) or []
+    best, best_gap = None, None
+    for game in candidates:
+        gap = abs((game["start_time_utc"] - commence_time).total_seconds())
+        if gap <= DOUBLEHEADER_SAME_DAY_GAP_SECONDS and (best_gap is None or gap < best_gap):
+            best, best_gap = game, gap
+    return best
+
+
 def _join_settlement(away_team_raw, home_team_raw, commence_time, index):
     """Team/date join to a settled game, reusing `pricepath`'s exact
     two-step resolution (same day, then the UTC-vs-local-date fallback for a
     night game) -- never re-derived here, so a totals join can never quietly
-    diverge from the F5/h2h join's behaviour on the same archive shape."""
+    diverge from the F5/h2h join's behaviour on the same archive shape. Only
+    if BOTH of those come back empty does a totals-local, same-day-only
+    doubleheader fallback run (see `_join_doubleheader_same_day`) -- it can
+    never override or shadow a `pricepath` match."""
     away = pricepath._abbrev(away_team_raw)
     home = pricepath._abbrev(home_team_raw)
     if away is None or home is None:
@@ -316,6 +348,8 @@ def _join_settlement(away_team_raw, home_team_raw, commence_time, index):
     if game is None:
         previous = (commence_time.date() - timedelta(days=1)).isoformat()
         game = pricepath._resolve(index.get((away, home, previous)), commence_time)
+    if game is None:
+        game = _join_doubleheader_same_day(away, home, commence_time, index)
     return game
 
 

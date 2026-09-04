@@ -356,6 +356,69 @@ class TestUniverseHashes(unittest.TestCase):
 # 4. De-vig agreement: book-order permutation stability, sums to 1.0
 # ---------------------------------------------------------------------------
 
+class TestDoubleheaderSameDayFallback(unittest.TestCase):
+    """docs/TOTALS_UNJOINED_AUDIT.md: a straight doubleheader's nightcap can
+    start more than `pricepath.MAX_EVENT_GAP_SECONDS` (3h) after its own
+    listed commence_time -- real audited case, Guardians @ Tigers
+    2023-04-18, game_pk 718541, actual start 17:15 UTC vs. the odds event's
+    20:40 UTC commence_time (3.42h gap). `_join_settlement` must still find
+    it via the same-day-only fallback once `pricepath`'s own two-step join
+    (same day within 3h, then previous day) has already come back empty."""
+
+    def _index(self):
+        from datetime import datetime
+        game = {
+            "game_pk": "718541", "date": "2023-04-18",
+            "start_time_utc": datetime.fromisoformat("2023-04-18T17:15:00+00:00"),
+            "away_team": "CLE", "home_team": "DET",
+            "home_won": True, "total_runs": 1,
+        }
+        return {("CLE", "DET", "2023-04-18"): [game]}
+
+    def test_same_day_nightcap_beyond_pricepath_gap_still_joins(self):
+        from datetime import datetime
+        commence_time = datetime.fromisoformat("2023-04-18T20:40:00+00:00")
+        game = tr._join_settlement("Cleveland Guardians", "Detroit Tigers",
+                                    commence_time, self._index())
+        self.assertIsNotNone(game)
+        self.assertEqual(game["game_pk"], "718541")
+
+    def test_fallback_never_reaches_a_different_calendar_date(self):
+        """The fallback is same-date-only: a candidate that exists only on
+        an adjacent date must stay unjoined, exactly like the genuine
+        postponement/makeup cases the audit found -- widening the bound
+        must never let a totals join reach across days the way `pricepath`'s
+        own previous-day step deliberately, narrowly does."""
+        from datetime import datetime
+        game = {
+            "game_pk": "999999", "date": "2023-04-19",
+            "start_time_utc": datetime.fromisoformat("2023-04-19T17:10:00+00:00"),
+            "away_team": "CLE", "home_team": "DET",
+            "home_won": True, "total_runs": 5,
+        }
+        index = {("CLE", "DET", "2023-04-19"): [game]}
+        commence_time = datetime.fromisoformat("2023-04-18T20:40:00+00:00")
+        self.assertIsNone(tr._join_settlement("Cleveland Guardians", "Detroit Tigers",
+                                               commence_time, index))
+
+    def test_beyond_widened_bound_still_unjoined(self):
+        """A same-day candidate more than 8h away is still a candidate for
+        collision (e.g. an early getaway-day game plus a much later postponed
+        makeup) -- not a slow doubleheader nightcap -- so it must stay
+        unjoined rather than being guessed at."""
+        from datetime import datetime
+        game = {
+            "game_pk": "718541", "date": "2023-04-18",
+            "start_time_utc": datetime.fromisoformat("2023-04-18T09:00:00+00:00"),
+            "away_team": "CLE", "home_team": "DET",
+            "home_won": True, "total_runs": 1,
+        }
+        index = {("CLE", "DET", "2023-04-18"): [game]}
+        commence_time = datetime.fromisoformat("2023-04-18T20:40:00+00:00")
+        self.assertIsNone(tr._join_settlement("Cleveland Guardians", "Detroit Tigers",
+                                               commence_time, index))
+
+
 class TestDevigAgreement(unittest.TestCase):
     def test_permutation_invariant(self):
         book_prices = {"dk": {"over": -110, "under": -110},
