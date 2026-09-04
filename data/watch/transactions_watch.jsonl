@@ -480,3 +480,22 @@
 {"fetched_utc": "2026-09-04T20:11:55.157298+00:00", "game_date": "2026-09-04", "poll": true}
 {"fetched_utc": "2026-09-04T20:16:10.407926+00:00", "game_date": "2026-09-04", "poll": true}
 {"fetched_utc": "2026-09-04T20:16:14.200416+00:00", "game_date": "2026-09-04", "poll": true}
+{"fetched_utc": "2026-09-04T21:19:25.391279+00:00", "game_date": "2026-09-04", "poll": true}
+{"category": "il_activation", "date": "2026-09-04", "first_seen_utc": "2026-09-04T21:19:25.391279+00:00", "player": "Konnor Griffin", "player_id": 804606, "team": "PIT", "transaction_id": 941296}
+{"category": "designated", "date": "2026-09-04", "first_seen_utc": "2026-09-04T21:19:25.391279+00:00", "player": "Christian Bethancourt", "player_id": 542194, "team": "PIT", "transaction_id": 941297}
+{"category": "recalled", "date": "2026-09-04", "first_seen_utc": "2026-09-04T21:19:25.391279+00:00", "player": "Isaac Mattson", "player_id": 676755, "team": "PIT", "transaction_id": 941298}
+{"category": "optioned", "date": "2026-09-04", "first_seen_utc": "2026-09-04T21:19:25.391279+00:00", "player": "Brandon Eisert", "player_id": 685126, "team": "PIT", "transaction_id": 941299}
+{"fetched_utc": "2026-09-04T21:19:28.910726+00:00", "game_date": "2026-09-04", "poll": true}
+{"fetched_utc": "2026-09-04T21:34:31.348977+00:00", "game_date": "2026-09-04", "poll": true}
+{"category": "designated", "date": "2026-09-04", "first_seen_utc": "2026-09-04T21:34:31.348977+00:00", "player": "Max Kranick", "player_id": 668820, "team": "WSH", "transaction_id": 941306}
+{"category": "other", "date": "2026-09-04", "first_seen_utc": "2026-09-04T21:34:31.348977+00:00", "player": "Jack Sinclair", "player_id": 695378, "team": "WSH", "transaction_id": 941307}
+{"fetched_utc": "2026-09-04T21:49:33.775557+00:00", "game_date": "2026-09-04", "poll": true}
+{"category": "il_activation", "date": "2026-09-04", "first_seen_utc": "2026-09-04T21:49:33.775557+00:00", "player": "Jameson Taillon", "player_id": 592791, "team": "TOR", "transaction_id": 941308}
+{"category": "optioned", "date": "2026-09-04", "first_seen_utc": "2026-09-04T21:49:33.775557+00:00", "player": "Ricky Tiedemann", "player_id": 694357, "team": "TOR", "transaction_id": 941309}
+{"category": "other", "date": "2026-09-04", "first_seen_utc": "2026-09-04T21:49:33.775557+00:00", "player": "Drew Waters", "player_id": 671221, "team": "KC", "transaction_id": 941314}
+{"category": "rehab", "date": "2026-09-04", "first_seen_utc": "2026-09-04T21:49:33.775557+00:00", "player": "Kyle Higashioka", "player_id": 543309, "team": "TEX", "transaction_id": 941315}
+{"category": "recalled", "date": "2026-09-04", "first_seen_utc": "2026-09-04T21:49:33.775557+00:00", "player": "Alex Cook", "player_id": 702047, "team": "TB", "transaction_id": 941316}
+{"category": "il_placement", "date": "2026-09-04", "first_seen_utc": "2026-09-04T21:49:33.775557+00:00", "player": "Shane McClanahan", "player_id": 663556, "team": "TB", "transaction_id": 941317}
+{"fetched_utc": "2026-09-04T22:04:36.963012+00:00", "game_date": "2026-09-04", "poll": true}
+{"category": "optioned", "date": "2026-09-04", "first_seen_utc": "2026-09-04T22:04:36.963012+00:00", "player": "Ryan Fernandez", "player_id": 681676, "team": "STL", "transaction_id": 941318}
+{"category": "il_activation", "date": "2026-09-04", "first_seen_utc": "2026-09-04T22:04:36.963012+00:00", "player": "Andre Pallante", "player_id": 669467, "team": "STL", "transaction_id": 941319}

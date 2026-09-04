@@ -982,3 +982,146 @@ registration time, never invented here.
   to the two extreme terciles gating F5-H2, or to the middle tercile too
   (the middle is descriptive-only, but an underpopulated middle bucket could
   still distort the frozen edges' population-shift chi-square test).
+
+---
+
+## Adversarial pre-registration review — 2026-09-04
+
+Independent adversarial pass over the FINAL SPECIFICATION above and the code
+that implements it (`src/research/f5_eval.py`, `src/research/f5_universe.py`,
+`src/model/family.py`, `src/research/battery.py`). **No outcome value was
+read**: every number below is feature-side (prices, dates, bucket
+occupancies) or produced from synthetic rows built inside the test helpers.
+`register_family()` was not called. No file under `src/` was modified —
+divergences there are reported, not fixed.
+
+Commands run: `python3 -m unittest tests.test_f5_eval tests.test_f5_universe -q`
+(49 tests, OK); `f5_eval.run(dry_run=True)` against the real stores (both
+hashes verify: identity `c675086…cd1c`, price payload `f2ff7b74…5ec7`;
+3,682 rows; 1,597/2,085 split; 2024 tercile occupancy 768/668/649).
+
+### BLOCKING
+
+**B1 — F5-H1 is evaluated on the POOLED 2023+2024 universe, and no 2023
+screen leg exists. REPRODUCED.** In `run_full_evaluation`, `evaluate_h1(h1_rows)`
+and `run_battery(h1_rows, …)` are handed all 3,682 rows; the p-value that
+then enters the FDR correction is a pooled-universe p, not the 2024
+replication p the spec makes the sole inferential claim. There is no
+2023-only evaluation anywhere in the module, so the binding screen-leg rule
+("sign + point estimate ≥ floor, 2023 only") is unimplemented for both
+hypotheses. Repro (synthetic outcomes, 400 rows per season: a 20pp home
+bias injected in 2023 only, 2024 exactly calibrated):
+
+```
+pooled effect/p:    0.2000  p=0.000326      <- what the code reports for F5-H1
+2024-only effect/p: 0.0000  p=1.0           <- what the spec requires
+```
+
+A discovery-only artefact therefore passes the replication gate. This alone
+prevents registration: the discovery/replication split, the central control
+in this family, is not in force for F5-H1. (F5-H2's extreme buckets *are*
+correctly restricted to 2024.)
+
+**B2 — the FDR correction runs over m=3, the frozen record says
+`"fdr_m": 2`. REPRODUCED** (`fdr_input` = `F5-H1`, `F5-H2-bottom`,
+`F5-H2-top`). Code and the text to be frozen disagree; one must move before
+freeze. **Recommendation: amend the SPEC to m=3, not the code to m=2** —
+F5-H2 genuinely contributes two tested extreme-bucket statistics, m=3 is the
+more conservative and more honest count, and hard call 4's own reasoning
+(positive dependence means a small m understates multiplicity) points the
+same way. The JSON record's `fdr_m` and the "2-member family (m=2)" wording
+in the replication pass rule must be updated in the same diff.
+
+**B3 — no gate is mechanised; every binding threshold is left to human
+judgement after the numbers exist.** `H1_EFFECT_FLOOR`/`H2_EFFECT_FLOOR` are
+defined and never compared to any effect; `bottom/top_meets_2024_floor` are
+reported as booleans and enforce nothing; `population_shift_test` returns
+`fatal: True/False` and nothing consumes it; `devig_sensitivity` returns
+three conventions' numbers with no sign-survival check. `run_full_evaluation`
+returns a bag of statistics and no verdict. That is precisely the
+discretionary surface T8 exists to remove — a rescue lever in every
+direction. **Required before the first real run: a single `verdict()` that
+applies floor, sign, clustered-CI, FDR, bucket-n, chi-square-fatal, de-vig
+sign-survival and battery-fatal deterministically, with a regression test
+per gate.**
+
+### MUST-FIX-BEFORE-RUN
+
+**M1 — `src.model.family.register` cannot freeze this family. REPRODUCED**
+(signature): `register(detectors, path=…)` enumerates detector×market from
+detector objects and writes `data/evidence/hypothesis_family.json`. It has
+no `family_id`, no member records, and nothing that accepts the JSON block
+above. The freeze mechanism named in the spec does not exist for a family of
+this shape. Either a small addition to `family.py` (reported, not made) or
+an explicitly named standalone freeze file is required; `benjamini_hochberg`
+/ `FDR_Q` are reused unchanged either way.
+
+**M2 — the A5 population-shift kill ALREADY FIRES, feature-side, before
+registration. REPRODUCED, no outcome read.** 2023 tercile occupancy
+531/532/534; 2024 occupancy under the frozen 2023 edges 768/668/649;
+chi-square = 12.403 on 2 df, **p = 0.00203 < 0.01 → FATAL**. F5-H2's
+replication leg is therefore a pre-determined kill: it cannot pass, and this
+was knowable before any outcome existed. Registering F5-H2 anyway is
+defensible and honest, but **the spec must state this now**, on the face of
+the pre-registration — otherwise the same number, produced after the run,
+reads as a discovered excuse rather than a pre-registered fact. The 2024
+favourite mix is materially shifted (bottom tercile over-populated by 11%),
+which is itself a reportable finding about the market, not a defect.
+
+### NOTE
+
+- **N1 — tercile edges are index quantiles, not exact 33.3/66.7
+  percentiles.** `fit_terciles_2023` takes `values[n//3-1]` /
+  `values[2n//3-1]` and `_assign_buckets` uses `< lo` / `>= hi`, giving
+  531/532/534 rather than an exact split. Deliberate (matches
+  `battery._quartile_edges`) and harmless, but the frozen text says
+  "33.3/66.7 percentiles"; the code's convention should be the frozen
+  wording.
+- **N2** — `_verify_row_shape` is applied to H1 rows only, never to the H2
+  rows (identical source today, so no live divergence).
+- **N3** — `chi_square_p_df2` treats the 2023 proportions as known rather
+  than estimated (df=2); mildly anticonservative, negligible at n=1,597, and
+  it fires against F5-H2 rather than for it.
+- **N4** — the A1 two-way audit is offline (`docs/F5_TIE_AUDIT.md`: zero
+  three-way books across 4,298 OK games, ≥5-book gate intact) and is **not**
+  re-checked at run time; the price-payload hash covers only `away_price`
+  and `home_price`, so a later-added draw price would move neither hash.
+  Satisfied today; the audit must be re-run if the store is ever re-fetched.
+- **N5 — leakage and PIT: clean.** Tercile edges and bucket floors depend on
+  `p_fav` only; `dry_run=True` sets `won=None` on every row and never calls
+  `discovery.evaluate` or `battery.run` (asserted in-module and confirmed on
+  the real stores). `winner` is read only to apply the already-frozen
+  decided/tie gradeability definition. No `actual_first_pitch`, no
+  settlement timestamp, no 2025/2026 row. Hash guards are real: both hashes
+  are re-verified before rows are built and raise, never filter.
+- **N6 — test quality: the PIT guards are genuinely armed.** Mutation check:
+  neutering `_verify_window`'s loop produced 3 test failures; reverted. The
+  `PoisonDict` helper makes an `actual_first_pitch` read an assertion
+  failure. However, **there is no test for any of B1-B3** — nothing fails if
+  the H1 leg is pooled, if the FDR m changes, or if a floor is ignored,
+  because none of those behaviours is implemented to test.
+
+### Decisions on the three open items
+
+1. **`family_id`.** Keep `F5_MONEYLINE_CALIBRATION_2026H1`. A repo-wide
+   search finds no competing convention — `family.py` has no family-id
+   concept at all (M1). The string is adopted as the convention; the record
+   is frozen at an explicitly named path, not by overloading
+   `data/evidence/hypothesis_family.json`, which belongs to the detector
+   family and must not be co-opted.
+2. **Price-payload hash serialization.** RESOLVED and already normative in
+   code: `src.research.f5_universe.price_payload_hash` — per row
+   `{game_pk (str), snapshot_at, books: [{key, away_price, home_price}]}`,
+   books sorted by `key` (`None` last), entries sorted by `int(game_pk)`,
+   serialized `json.dumps(…, separators=(",", ":"), sort_keys=True)`,
+   UTF-8, sha256. `last_update` deliberately excluded. That function, at its
+   current revision, IS the specification; recorded value
+   `f2ff7b748b1b76f1702cfe2b29750f684e554ffe2c773887a04f132bf2275ec7`.
+3. **n ≥ 300 on the middle tercile.** It **applies to all three terciles**.
+   The middle bucket is descriptive for the effect but is an *input* to the
+   A5 chi-square, which consumes all three occupancies; an under-populated
+   middle would distort the kill test. Consequence is unchanged in practice
+   (2024: 768/668/649, all clear), and a middle-bucket shortfall is reported
+   as blocked-coverage for F5-H2's replication leg, never as a loser.
+
+ADVERSARIAL VERDICT: FAIL — B1 (F5-H1 evaluated on the pooled universe; no 2023 screen leg implemented), B2 (FDR m=3 in code vs. m=2 in the frozen record), B3 (no gate mechanised — floors, bucket-n, chi-square-fatal and de-vig sign-survival are all advisory), with M1 (no working freeze mechanism) and M2 (A5 already fatal, must be pre-registered as such) required in the same pass.
