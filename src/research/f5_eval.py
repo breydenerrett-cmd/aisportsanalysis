@@ -54,12 +54,15 @@ run this mission does not authorise.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
+from datetime import datetime, timezone
 from pathlib import Path
 
 from src.core import odds as odds_math
 from src.model import discovery, family
+from src.paths import data_path, repo_root
 from src.research import battery, f5_eligibility, f5_universe
 
 MARKET_KEY = "h2h_1st_5_innings"
@@ -97,6 +100,32 @@ BOOK_DIAGNOSTIC_MIN_N = battery.MIN_N
 POPULATION_SHIFT_P_FATAL = 0.01
 
 MIN_BUCKET_N_2024 = 300  # amendment 1
+
+# B2 (post-adversarial amendment): the FDR family for this pre-registration
+# is {F5-H1, F5-H2-bottom, F5-H2-top} -- three tested statistics, not two.
+# The review recommended amending the frozen record's "fdr_m": 2 to match
+# this code, rather than the reverse, precisely because F5-H2's two extreme
+# terciles genuinely are two tests. `run_full_evaluation` asserts the p-list
+# it builds is exactly this length before handing it to
+# `family.benjamini_hochberg`, so a pooled/unpooled miscount cannot silently
+# reappear as a wrong m.
+FDR_M = 3
+
+# M1: the standalone freeze mechanism this family needs -- `family.register`
+# enumerates detector x market and cannot hold a family_id/member-record
+# shape (M1, reproduced in the adversarial review). `data/research/` is
+# tracked (unlike `data/historical/*`, `data/raw/*`), matching
+# `f5_universe.MANIFEST_PATH` living in the same directory.
+FROZEN_FAMILY_PATH = data_path("research", "f5", "family_frozen.json")
+
+# The document this family's spec_sha256 is computed over. `spec_sha256`
+# hashes the FINAL SPECIFICATION section plus the Post-adversarial
+# amendments section -- never the adversarial-review narrative in between,
+# which is analysis, not the registered text.
+SPEC_DOC_PATH = repo_root() / "docs" / "PREREG_F5_FAMILIES.md"
+_FINAL_SPEC_MARKER = "## FINAL SPECIFICATION"
+_ADVERSARIAL_MARKER = "## Adversarial pre-registration review"
+_AMENDMENTS_MARKER = "## Post-adversarial amendments"
 
 
 class F5EvalError(RuntimeError):
@@ -443,6 +472,223 @@ def population_shift_test(h2_rows_2023, h2_rows_2024) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# M1 -- standalone freeze mechanism (family.register cannot hold this shape)
+# ---------------------------------------------------------------------------
+
+def _extract_spec_text(full_text: str) -> str:
+    """The exact text `spec_sha256` hashes: the FINAL SPECIFICATION section
+    (up to, not including, the adversarial-review section) plus the
+    Post-adversarial amendments section (to end of file). Raises if either
+    marker is missing -- a family must not be frozen against a document that
+    has not yet been amended for the findings this freeze depends on.
+    """
+    if _FINAL_SPEC_MARKER not in full_text:
+        raise F5EvalError(
+            f"{_FINAL_SPEC_MARKER!r} not found in spec text -- cannot "
+            "compute spec_sha256 against a document that lacks it")
+    if _AMENDMENTS_MARKER not in full_text:
+        raise F5EvalError(
+            f"{_AMENDMENTS_MARKER!r} not found in spec text -- amend the "
+            "spec for the adversarial-review findings before freezing the "
+            "family")
+    spec_section = full_text.split(_FINAL_SPEC_MARKER, 1)[1]
+    if _ADVERSARIAL_MARKER in spec_section:
+        spec_section = spec_section.split(_ADVERSARIAL_MARKER, 1)[0]
+    amendments_section = full_text.split(_AMENDMENTS_MARKER, 1)[1]
+    return (_FINAL_SPEC_MARKER + spec_section
+            + _AMENDMENTS_MARKER + amendments_section)
+
+
+def spec_sha256(spec_path=SPEC_DOC_PATH) -> str:
+    """sha256 over the FINAL SPECIFICATION + Post-adversarial amendments
+    text, so a frozen family record can prove the spec has not moved
+    underneath it since registration (M1)."""
+    text = Path(spec_path).read_text(encoding="utf-8")
+    return hashlib.sha256(_extract_spec_text(text).encode("utf-8")).hexdigest()
+
+
+def freeze_family(path=FROZEN_FAMILY_PATH, *, spec_path=SPEC_DOC_PATH,
+                   manifest_path=f5_universe.MANIFEST_PATH, now=None) -> dict:
+    """M1: freeze `{F5-H1, F5-H2-bottom, F5-H2-top}` to an immutable JSON
+    record. Refuses to overwrite an existing record -- once frozen, the
+    record IS the pre-registration; silently changing it is exactly the
+    rescue lever T8 forbids. This function is never called against the real
+    `FROZEN_FAMILY_PATH` by anything in this module -- freezing the real
+    family is a deliberate, reviewed, separate act.
+    """
+    target = Path(path)
+    if target.exists():
+        raise F5EvalError(
+            f"a family record is already frozen at {target}. Refusing to "
+            "overwrite it -- re-registering the family is a reviewed "
+            "commit that deletes the old file first, deliberately.")
+
+    manifest = f5_universe.read_manifest(manifest_path)
+    record = {
+        "family_id": "F5_MONEYLINE_CALIBRATION_2026H1",
+        "members": ["F5-H1", "F5-H2-bottom", "F5-H2-top"],
+        "effect_floor_pp": {"F5-H1": 2.0, "F5-H2-bottom": 4.0, "F5-H2-top": 4.0},
+        "discovery": {"date_range": ["2023-05-10", "2023-12-31"], "n": 1597},
+        "replication": {"date_range": ["2024-01-01", "2024-10-07"], "n": 2085},
+        "fdr_q": family.FDR_Q,
+        "fdr_m": FDR_M,
+        "battery_rules_version": battery.RULES_VERSION,
+        "universe_identity_hash": manifest["content_hash"],
+        "universe_price_payload_hash": manifest["price_payload_hash"],
+        "spec_sha256": spec_sha256(spec_path),
+        "frozen_at": (now or datetime.now(timezone.utc)).astimezone(
+            timezone.utc).isoformat(),
+    }
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n",
+                      encoding="utf-8")
+    return record
+
+
+def read_frozen_family(path=FROZEN_FAMILY_PATH) -> dict:
+    target = Path(path)
+    if not target.exists():
+        raise F5EvalError(
+            f"no family record frozen at {target}. Call freeze_family() to "
+            "register {F5-H1, F5-H2-bottom, F5-H2-top} before running any "
+            "evaluation -- a correction and a set of gates computed against "
+            "an unregistered family is not a pre-registration.")
+    return json.loads(target.read_text(encoding="utf-8"))
+
+
+def _verify_frozen_family(hashes: dict, *, path=FROZEN_FAMILY_PATH,
+                          spec_path=SPEC_DOC_PATH) -> dict:
+    """M1: `run_full_evaluation`'s precondition. Raises unless the frozen
+    record exists AND its universe hashes and spec_sha256 still match what
+    is true right now -- a family frozen against yesterday's spec or a
+    since-moved universe is not evidence for today's run.
+    """
+    record = read_frozen_family(path)
+    current_spec_sha = spec_sha256(spec_path)
+    if record.get("spec_sha256") != current_spec_sha:
+        raise F5EvalError(
+            "the frozen family's spec_sha256 no longer matches "
+            f"{spec_path} -- the specification changed after the family "
+            "was frozen. Aborting rather than running against a moved "
+            "target.")
+    if record.get("universe_identity_hash") != hashes["content_hash"]:
+        raise F5EvalError(
+            "the frozen family's universe_identity_hash does not match the "
+            "just-reverified universe -- aborting.")
+    if record.get("universe_price_payload_hash") != hashes["price_payload_hash"]:
+        raise F5EvalError(
+            "the frozen family's universe_price_payload_hash does not "
+            "match the just-reverified universe -- aborting.")
+    if record.get("fdr_m") != FDR_M:
+        raise F5EvalError(
+            f"the frozen record's fdr_m ({record.get('fdr_m')!r}) disagrees "
+            f"with this module's FDR_M ({FDR_M!r}) -- B2 regression; the "
+            "record and the code must agree before any run.")
+    return record
+
+
+# ---------------------------------------------------------------------------
+# B1 -- two-leg screen/replication gates, and B3 -- mechanised verdicts
+# ---------------------------------------------------------------------------
+
+def evaluate_h1_screen(h1_rows_2023) -> dict:
+    """B1: the 2023 screen leg for F5-H1 -- sign + point estimate >= floor
+    ONLY (binding amendment above: no CI, no FDR on this leg). Reuses
+    `discovery.evaluate` for the point estimate but the pass decision below
+    reads only `effect`, never `p`/`ci` -- using them here would be exactly
+    the "both legs need a CI" rule the spec rejected as a coin-flip filter.
+    """
+    result = discovery.evaluate("F5-H1-screen", h1_rows_2023)
+    effect = result["effect"]
+    passes = effect is not None and effect > 0 and effect >= H1_EFFECT_FLOOR
+    return {"effect": effect, "n": result["decided"], "passes_screen": passes}
+
+
+def evaluate_h2_bucket_screen(bucket_rows_2023, bucket_label, expected_sign) -> dict:
+    """B1: the 2023 screen leg for one F5-H2 extreme tercile. `expected_sign`
+    is +1 (top) or -1 (bottom) -- the fixed direction the spec pre-registers
+    for that bucket."""
+    result = discovery.evaluate(f"F5-H2-{bucket_label}-screen", bucket_rows_2023)
+    effect = result["effect"]
+    if effect is None:
+        passes = False
+    elif expected_sign > 0:
+        passes = effect > 0 and effect >= H2_EFFECT_FLOOR
+    else:
+        passes = effect < 0 and abs(effect) >= H2_EFFECT_FLOOR
+    return {"effect": effect, "n": result["decided"], "passes_screen": passes}
+
+
+def _replication_gate(result_2024: dict, expected_sign: int) -> dict:
+    """B1: the 2024 replication leg's sign-agreement and CI-excludes-zero
+    checks, taken from a `discovery.evaluate` result already restricted to
+    2024-only rows by the caller."""
+    effect = result_2024.get("effect")
+    ci = result_2024.get("ci")
+    sign_agrees = effect is not None and (
+        effect > 0 if expected_sign > 0 else effect < 0)
+    ci_excludes_zero = bool(
+        ci and (ci.get("low", 0) > 0 or ci.get("high", 0) < 0))
+    return {"sign_agrees": sign_agrees, "ci_excludes_zero": ci_excludes_zero}
+
+
+def devig_sign_survives_check(sensitivity: dict, bucket_label: str,
+                               expected_sign: int) -> bool:
+    """F5-H2's binding de-vig sign-survival pass criterion: the extreme-
+    bucket 2024 effect must keep `expected_sign` under all three conventions
+    (`sensitivity`, from `devig_sensitivity`). A convention under which the
+    bucket has too few rows to produce an effect fails this check -- a
+    missing sign cannot be said to have survived.
+    """
+    key = f"{bucket_label}_2024"
+    for label in DEVIG_METHODS:
+        effect = sensitivity[label][key]["effect"]
+        if effect is None:
+            return False
+        if expected_sign > 0 and not (effect > 0):
+            return False
+        if expected_sign < 0 and not (effect < 0):
+            return False
+    return True
+
+
+def compute_verdict(*, screen_passes: bool, replication_sign_agrees: bool,
+                    replication_ci_excludes_zero: bool, survives_fdr: bool,
+                    battery_survives: bool, bucket_n_ok: bool = True,
+                    devig_sign_survives: bool = True,
+                    population_shift_fatal: bool = False) -> str:
+    """B3: mechanise the stopping/failure rules into ONE verdict, in this
+    fixed precedence -- never left for a reader to infer from the raw
+    statistics.
+
+    1. POPULATION_SHIFT_FAIL -- checked first: M2 pre-registers this as
+       decided before any outcome, so it must win over every
+       outcome-dependent gate below it, not merely tiebreak against them.
+    2. SCREEN_FAIL -- the 2023 leg fails sign/floor.
+    3. REPLICATION_FAIL -- the 2024 bucket-n floor is unmet (blocked-
+       coverage) or the 2024 sign/CI/FDR gate fails.
+    4. DEVIG_SIGN_FAIL -- the extreme-bucket sign does not survive all three
+       de-vig conventions.
+    5. BATTERY_FAIL -- the frozen battery flags a fatal rule.
+    6. SURVIVOR -- every gate above cleared.
+    """
+    if population_shift_fatal:
+        return "POPULATION_SHIFT_FAIL"
+    if not screen_passes:
+        return "SCREEN_FAIL"
+    if not bucket_n_ok:
+        return "REPLICATION_FAIL"
+    if not (replication_sign_agrees and replication_ci_excludes_zero
+           and survives_fdr):
+        return "REPLICATION_FAIL"
+    if not devig_sign_survives:
+        return "DEVIG_SIGN_FAIL"
+    if not battery_survives:
+        return "BATTERY_FAIL"
+    return "SURVIVOR"
+
+
+# ---------------------------------------------------------------------------
 # A4 -- battery wiring with explicit skip recording, and per-book diagnostic
 # ---------------------------------------------------------------------------
 
@@ -537,50 +783,143 @@ def run_full_evaluation(*, primary_path=f5_universe.PRIMARY_VIEW_PATH,
     the path exists and is tested against synthetic data (validation item
     1), gated behind an explicit call so it can never run by accident from
     `run(dry_run=True)`.
+
+    B1: F5-H1 and F5-H2's extreme terciles are each evaluated on a 2023
+    screen leg (sign + floor only) and a SEPARATE 2024 replication leg (CI +
+    FDR); nothing here evaluates F5-H1 against the pooled universe for any
+    inferential purpose. M1: refuses to run unless the family is frozen
+    (`freeze_family`) and its record still matches the live universe and
+    spec text.
     """
-    verify_universe(primary_path=primary_path, settlement_path=settlement_path)
+    hashes = verify_universe(primary_path=primary_path, settlement_path=settlement_path)
+    _verify_frozen_family(hashes)
     gradeable = load_gradeable_primary_rows(
         primary_path=primary_path, settlement_path=settlement_path)
 
+    # ------------------------------------------------------------- F5-H1 --
     h1_rows = build_h1_rows(gradeable)
     _verify_row_shape(h1_rows)
-    h1_result = evaluate_h1(h1_rows)
-    h1_battery = run_battery(h1_rows, effect_floor=H1_EFFECT_FLOOR)
+    h1_2023 = [r for r in h1_rows if r["season"] == "2023"]
+    h1_2024 = [r for r in h1_rows if r["season"] == "2024"]
 
+    h1_screen = evaluate_h1_screen(h1_2023)
+    h1_result = evaluate_h1(h1_2024)  # B1: 2024-only, never pooled
+    h1_replication = _replication_gate(h1_result, expected_sign=1)
+    h1_battery = run_battery(h1_2024, effect_floor=H1_EFFECT_FLOOR)  # 2024-leg only
+
+    # ------------------------------------------------------------- F5-H2 --
     h2_rows = build_h2_rows(gradeable)
+    _verify_row_shape(h2_rows)  # N2: H2 rows get the same shape guard as H1
     edges = fit_terciles_2023(h2_rows)
     _assign_buckets(h2_rows, edges)
     h2_2023 = [r for r in h2_rows if r["season"] == "2023"]
     h2_2024 = [r for r in h2_rows if r["season"] == "2024"]
+    bottom_2023 = [r for r in h2_2023 if r["bucket"] == 0]
+    top_2023 = [r for r in h2_2023 if r["bucket"] == 2]
     bottom_2024 = [r for r in h2_2024 if r["bucket"] == 0]
     top_2024 = [r for r in h2_2024 if r["bucket"] == 2]
 
+    # A5/M2: feature-side only, decided before any 2024 outcome is read.
     shift = population_shift_test(h2_2023, h2_2024)
 
+    bottom_screen = evaluate_h2_bucket_screen(bottom_2023, "bottom", expected_sign=-1)
+    top_screen = evaluate_h2_bucket_screen(top_2023, "top", expected_sign=1)
+    bottom_n_ok = len(bottom_2024) >= MIN_BUCKET_N_2024
+    top_n_ok = len(top_2024) >= MIN_BUCKET_N_2024
+
+    # M2: computed and published regardless of the population-shift kill --
+    # exploratory/report-only for F5-H2 once A5 has fired, never skipped.
     h2_bottom_result = evaluate_h2_bucket(bottom_2024, "bottom")
     h2_top_result = evaluate_h2_bucket(top_2024, "top")
+    bottom_replication = _replication_gate(h2_bottom_result, expected_sign=-1)
+    top_replication = _replication_gate(h2_top_result, expected_sign=1)
+
     h2_bottom_battery = run_battery(bottom_2024, effect_floor=H2_EFFECT_FLOOR)
     h2_top_battery = run_battery(top_2024, effect_floor=H2_EFFECT_FLOOR)
 
+    sensitivity = devig_sensitivity(gradeable)
+    bottom_devig_ok = devig_sign_survives_check(sensitivity, "bottom", expected_sign=-1)
+    top_devig_ok = devig_sign_survives_check(sensitivity, "top", expected_sign=1)
+
+    # --------------------------------------------------------------- FDR --
+    # B2: m=3 -- F5-H1 (2024 leg), F5-H2-bottom, F5-H2-top. H2's buckets
+    # count regardless of the population-shift kill (M2): the kill is a
+    # verdict override, not a reason to shrink the family.
     fdr_input = [
         {"name": "F5-H1", "p": h1_result["p"]},
         {"name": "F5-H2-bottom", "p": h2_bottom_result["p"]},
         {"name": "F5-H2-top", "p": h2_top_result["p"]},
     ]
+    if len(fdr_input) != FDR_M:
+        raise F5EvalError(
+            f"FDR family size drifted: expected FDR_M={FDR_M}, built "
+            f"{len(fdr_input)} p-values -- B2 regression.")
     corrected = family.benjamini_hochberg(fdr_input)
+    by_name = {c["name"]: c for c in corrected}
+
+    # ----------------------------------------------------------- verdicts --
+    h1_verdict = compute_verdict(
+        screen_passes=h1_screen["passes_screen"],
+        replication_sign_agrees=h1_replication["sign_agrees"],
+        replication_ci_excludes_zero=h1_replication["ci_excludes_zero"],
+        survives_fdr=by_name["F5-H1"]["survives_fdr"],
+        battery_survives=h1_battery["survives"])
+
+    h2_bottom_verdict = compute_verdict(
+        screen_passes=bottom_screen["passes_screen"],
+        bucket_n_ok=bottom_n_ok,
+        replication_sign_agrees=bottom_replication["sign_agrees"],
+        replication_ci_excludes_zero=bottom_replication["ci_excludes_zero"],
+        survives_fdr=by_name["F5-H2-bottom"]["survives_fdr"],
+        devig_sign_survives=bottom_devig_ok,
+        battery_survives=h2_bottom_battery["survives"],
+        population_shift_fatal=shift["fatal"])
+
+    h2_top_verdict = compute_verdict(
+        screen_passes=top_screen["passes_screen"],
+        bucket_n_ok=top_n_ok,
+        replication_sign_agrees=top_replication["sign_agrees"],
+        replication_ci_excludes_zero=top_replication["ci_excludes_zero"],
+        survives_fdr=by_name["F5-H2-top"]["survives_fdr"],
+        devig_sign_survives=top_devig_ok,
+        battery_survives=h2_top_battery["survives"],
+        population_shift_fatal=shift["fatal"])
 
     return {
-        "h1": {"result": h1_result, "battery": h1_battery},
+        "h1": {
+            "screen_2023": h1_screen,
+            "result_2024": h1_result,
+            "replication_gate": h1_replication,
+            "battery": h1_battery,
+            "survives_fdr": by_name["F5-H1"]["survives_fdr"],
+            "verdict": h1_verdict,
+        },
         "h2": {
             "edges_2023": edges,
             "bottom_n_2024": len(bottom_2024), "top_n_2024": len(top_2024),
-            "bottom_meets_2024_floor": len(bottom_2024) >= MIN_BUCKET_N_2024,
-            "top_meets_2024_floor": len(top_2024) >= MIN_BUCKET_N_2024,
+            "bottom_meets_2024_floor": bottom_n_ok,
+            "top_meets_2024_floor": top_n_ok,
             "population_shift": shift,
-            "bottom_result": h2_bottom_result, "top_result": h2_top_result,
-            "bottom_battery": h2_bottom_battery, "top_battery": h2_top_battery,
+            "bottom": {
+                "screen_2023": bottom_screen,
+                "result_2024": h2_bottom_result,
+                "replication_gate": bottom_replication,
+                "battery": h2_bottom_battery,
+                "devig_sign_survives": bottom_devig_ok,
+                "survives_fdr": by_name["F5-H2-bottom"]["survives_fdr"],
+                "verdict": h2_bottom_verdict,
+            },
+            "top": {
+                "screen_2023": top_screen,
+                "result_2024": h2_top_result,
+                "replication_gate": top_replication,
+                "battery": h2_top_battery,
+                "devig_sign_survives": top_devig_ok,
+                "survives_fdr": by_name["F5-H2-top"]["survives_fdr"],
+                "verdict": h2_top_verdict,
+            },
         },
-        "devig_sensitivity": devig_sensitivity(gradeable),
+        "devig_sensitivity": sensitivity,
         "per_book_h1": per_book_sign_replication(gradeable),
         "fdr_2024": corrected,
     }
@@ -618,6 +957,7 @@ def run(*, dry_run=True, primary_path=f5_universe.PRIMARY_VIEW_PATH,
     h2_rows = build_h2_rows(gradeable, dry_run=True)
     assert all(r["won"] is None for r in h2_rows), (
         "dry_run must never expose an outcome")
+    _verify_row_shape(h2_rows)  # N2: H2 gets the same shape guard as H1
     edges = fit_terciles_2023(h2_rows)  # feature-side: uses p_fav, not won
     _assign_buckets(h2_rows, edges)
     by_bucket = {b: sum(1 for r in h2_rows if r["season"] == "2024" and r["bucket"] == b)

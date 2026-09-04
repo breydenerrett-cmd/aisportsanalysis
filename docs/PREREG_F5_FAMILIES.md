@@ -1125,3 +1125,157 @@ which is itself a reportable finding about the market, not a defect.
    as blocked-coverage for F5-H2's replication leg, never as a loser.
 
 ADVERSARIAL VERDICT: FAIL — B1 (F5-H1 evaluated on the pooled universe; no 2023 screen leg implemented), B2 (FDR m=3 in code vs. m=2 in the frozen record), B3 (no gate mechanised — floors, bucket-n, chi-square-fatal and de-vig sign-survival are all advisory), with M1 (no working freeze mechanism) and M2 (A5 already fatal, must be pre-registered as such) required in the same pass.
+
+## Post-adversarial amendments — 2026-09-04
+
+Fixes to the five reproduced findings above (B1, B2, B3, M1, M2) plus the
+three NOTES items, made in `src/research/f5_eval.py` and its tests in the
+same pass. This section amends the FINAL SPECIFICATION above; where the two
+disagree, this section governs. Nothing here was written after any outcome
+was read — the underlying fixes are structural (row selection, gate
+mechanisation, a freeze file), not a threshold moved to rescue a result.
+
+**B1 fix — the two-leg design is now load-bearing, not aspirational.**
+`run_full_evaluation` builds `h1_rows`/`h2_rows` once, splits each by
+`season`, and from there on treats the two halves as genuinely different
+legs:
+- **Screen leg (2023 only):** `evaluate_h1_screen` (H1) and
+  `evaluate_h2_bucket_screen` (H2's two extreme terciles) check sign +
+  point estimate ≥ floor only — no CI, no FDR, per the binding screen-leg
+  rule above. Nothing from this leg ever enters the FDR correction.
+- **Replication leg (2024 only):** `evaluate_h1`/`evaluate_h2_bucket` are
+  now always called with 2024-only rows inside `run_full_evaluation` — the
+  pooled 3,682-row call the review reproduced is gone. The p that enters
+  BH-FDR, and the CI checked against zero, are both 2024-only.
+- **Battery on the 2024 leg only:** `run_battery` is called with the
+  2024-only rows for both hypotheses (H2 already did this; H1 did not).
+- F5-H1 is never evaluated against the pooled universe for any inferential
+  purpose again — pooled statistics are not computed for H1 at all in
+  `run_full_evaluation`.
+
+**B2 fix — the frozen record moves to m=3, not the code to m=2.** As the
+review recommended: F5-H2 genuinely contributes two tested extreme-bucket
+statistics (bottom and top), so the FDR family for this pre-registration is
+`{F5-H1, F5-H2-bottom, F5-H2-top}`, m=3. The **replication pass rule** above
+("`... over the full 2-member family (m=2)`") is superseded: read it as
+m=3. The frozen JSON record's `fdr_m` field is likewise `3`, not `2`.
+`src/research/f5_eval.py` defines `FDR_M = 3` and `run_full_evaluation`
+raises `F5EvalError` if the p-values it hands to `benjamini_hochberg` ever
+number something other than `FDR_M` — B2 cannot silently reappear as a
+pooled/unpooled miscount. `freeze_family()`'s record and `FDR_M` are
+cross-checked by `_verify_frozen_family` at run time and by a dedicated
+regression test (`test_fdr_m_matches_frozen_record`).
+
+**B3 fix — every gate is now a boolean computed by code, with a single
+`verdict` field per hypothesis.** `run_full_evaluation` computes, per
+hypothesis (F5-H1, F5-H2-bottom, F5-H2-top): `screen_passes`,
+`bucket_n_ok` (H2 only), `replication_sign_agrees`,
+`replication_ci_excludes_zero`, `survives_fdr`, `devig_sign_survives` (H2
+only, `True` by construction for H1 since that sensitivity is report-only),
+`population_shift_fatal` (H2 only, `False` by construction for H1), and
+`battery_survives`. `compute_verdict()` combines them, in this fixed
+precedence, into exactly one of:
+
+1. `POPULATION_SHIFT_FAIL` — the A5 chi-square is fatal (H2 only; checked
+   first because M2 pre-registers it as decided before any outcome).
+2. `SCREEN_FAIL` — the 2023 screen leg fails sign/floor.
+3. `REPLICATION_FAIL` — the 2024 bucket-n floor is unmet (H2,
+   blocked-coverage), or the 2024 sign disagrees / CI includes 0 / FDR
+   fails.
+4. `DEVIG_SIGN_FAIL` — the extreme-bucket effect does not keep its sign
+   under all three de-vig conventions (H2 only).
+5. `BATTERY_FAIL` — the frozen battery flags a fatal rule.
+6. `SURVIVOR` — every gate above cleared.
+
+No reader ever infers a verdict from the raw statistics again; `verdict` is
+the single field a downstream consumer reads. `tests/test_f5_eval.py`
+carries one regression test per gate, each flipping only that gate's input
+and asserting the verdict changes to the matching failure code (and back to
+`SURVIVOR` when every gate is satisfied).
+
+**M1 fix — a standalone freeze mechanism.** `src.model.family.register`
+cannot hold this family's shape (M1, reproduced: it enumerates
+detector×market and has no `family_id`/member-record concept, and its file
+belongs to the detector family, not this one). `f5_eval.freeze_family(path)`
+is the standalone mechanism named in the FINAL SPECIFICATION's "Preconditions"
+section:
+- Writes an immutable JSON record — `family_id`
+  (`F5_MONEYLINE_CALIBRATION_2026H1`), the three FDR members, both effect
+  floors, the discovery/replication split, `fdr_q`, `fdr_m` (3),
+  `battery_rules_version` (frozen `RULES_VERSION`), the universe identity
+  hash, the universe price-payload hash, `spec_sha256` (a sha256 over the
+  FINAL SPECIFICATION section plus this amendments section, computed by
+  `f5_eval.spec_sha256`), and a UTC timestamp — to
+  `data/research/f5/family_frozen.json` (tracked in git, alongside
+  `universe_frozen.json`; not gitignored under `data/`).
+- **Refuses to overwrite** an existing record (raises `F5EvalError`);
+  re-registering the family is a reviewed commit that deletes the old file
+  first, exactly like `family.register`'s own refusal.
+- `run_full_evaluation` calls `_verify_frozen_family` immediately after
+  `verify_universe` and **refuses to run** (raises `F5EvalError`) unless
+  the record exists, its universe hashes match the ones just re-verified,
+  its `spec_sha256` matches this document's current FINAL SPECIFICATION +
+  amendments text, and its `fdr_m` matches `FDR_M`. This module does not
+  call `freeze_family()` against the real path itself — that is a
+  deliberate, separate, reviewed act, not something an evaluation run
+  performs on its own behalf.
+- Tests cover: refuse-overwrite (freezing twice raises on the second call),
+  refuse-run-without-record (`run_full_evaluation` raises when no record
+  exists), and refuse-run-on-spec-drift (a frozen record whose
+  `spec_sha256` no longer matches the current document raises).
+
+**M2 — pre-registered: F5-H2's replication leg is a `POPULATION_SHIFT_FAIL`
+before any outcome exists.** The A5 chi-square kill (2023 tercile
+occupancy 531/532/534; 2024 occupancy under the frozen 2023 edges
+768/668/649; χ²=12.403, df=2, p=0.00203 < 0.01) already fires, feature-side,
+on today's frozen universe — this was true before this amendment was
+written and remains true at registration. This is stated here, on the face
+of the pre-registration, precisely so that the same number produced after
+the run reads as a pre-registered fact and not a discovered excuse:
+- F5-H2's confirmatory verdict is `POPULATION_SHIFT_FAIL` at registration,
+  determined by `compute_verdict`'s first gate, before `screen_passes`,
+  `replication_sign_agrees`, or any other 2024-outcome-dependent gate is
+  even consulted for promotion purposes.
+- The 2023 screen-leg and 2024 replication-leg statistics for F5-H2 (effect,
+  p, CI, per-book diagnostics) are still computed in full and published —
+  `run_full_evaluation` never skips computing them because the population
+  shift already killed promotion. They are exploratory/report-only for
+  F5-H2, exactly as the FINAL SPECIFICATION's confirmatory/exploratory
+  hierarchy already allows for non-extreme-tercile shape statistics; the
+  population-shift kill extends that same report-only status to the
+  extreme-tercile statistics themselves once A5 has fired.
+- **F5-H2-bottom and F5-H2-top still count in the FDR family, m=3,
+  regardless.** The population-shift kill is a verdict override, not a
+  reason to shrink the family — B2's m=3 stands whether or not either
+  bucket can be promoted. Removing a doomed-but-pre-registered hypothesis
+  from the denominator after learning it is doomed is exactly the kind of
+  count-shrinking this family's FDR correction exists to forbid.
+
+**NOTES fixes:**
+- **N1 (exact quantile method).** `fit_terciles_2023` uses the nearest-rank
+  method on the sorted 2023 `p_fav` values: for `n` values, the two interior
+  edges are `values[floor(n/3) - 1]` and `values[floor(2n/3) - 1]` (0-indexed,
+  clamped to `0`), i.e. the value at or below which the requested 33.3rd/
+  66.7th percentile of the sample falls — matching `battery._quartile_edges`'s
+  existing convention so a degenerate band collapses the same way whether it
+  is quartile- or tercile-shaped. The wording "33.3/66.7 percentiles" in the
+  FINAL SPECIFICATION above means this nearest-rank method specifically, not
+  a linear-interpolation percentile — recorded here so two independent
+  re-implementations agree on the exact split (531/532/534 on the real 2023
+  discovery set).
+- **N2 (H2 row-shape verification).** `run_full_evaluation` and `run(dry_run=True)`
+  now call `_verify_row_shape` on `h2_rows` as well as `h1_rows` — both must
+  independently prove the exact 3,682/1,597/2,085 denominator and window,
+  not inherit it by construction from H1's already-verified rows.
+- **N3 (df=2 approximation, documented).** `chi_square_p_df2` treats the
+  2023 bucket proportions as known constants (fixed from the frozen 2023
+  fit) rather than themselves estimated from a finite sample, so the test
+  statistic is compared to an exact chi-square(df=2) reference distribution
+  rather than to the technically-correct reference for a two-sample
+  goodness-of-fit test with estimated expected proportions. This is
+  mildly anticonservative (it understates the true p slightly), the
+  understatement is negligible at the frozen universe's n=1,597 2023
+  sample, and — because it fires *against* F5-H2 (as a fatal population
+  shift), not for it — the anticonservative direction cannot manufacture a
+  promotion; at worst it fires the kill slightly more readily than the
+  fully-correct test would, which is the safe direction for a kill switch.

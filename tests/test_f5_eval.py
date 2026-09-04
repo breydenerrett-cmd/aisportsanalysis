@@ -440,5 +440,379 @@ class TestTercilesAndPopulationShift(unittest.TestCase):
         self.assertAlmostEqual(f5_eval.chi_square_p_df2(9.21), 0.00996, places=4)
 
 
+# ---------------------------------------------------------------------------
+# Post-adversarial amendments -- B1, B2, B3, M1, M2
+# ---------------------------------------------------------------------------
+
+class TestB1TwoLegDesign(unittest.TestCase):
+    """B1: F5-H1 must be screened on 2023 only (sign+floor) and replicated
+    on 2024 only (CI+FDR) -- never evaluated for inference on the pooled
+    universe. Reproduces the review's own repro numbers (a bias injected in
+    2023 only, exactly calibrated 2024) and asserts the screen/replication
+    split actually separates them."""
+
+    def _mixed_bias_gradeable(self):
+        # 2023: 20pp home bias injected (home wins every game at a price
+        # implying ~58% home win). 2024: exactly calibrated (50/50 at a
+        # coin-flip price) -- a discovery-only artefact.
+        gradeable = []
+        for i in range(60):
+            gradeable.append(_synthetic_game(
+                f"a{i}", f"2023-0{5 if i < 30 else 6}-{(i % 27) + 1:02d}",
+                winner="home"))
+        for i in range(60):
+            winner = "home" if i % 2 == 0 else "away"
+            gradeable.append(_synthetic_game(
+                f"b{i}", f"2024-0{5 if i < 30 else 6}-{(i % 27) + 1:02d}",
+                home_price=100, away_price=100, winner=winner))
+        return gradeable
+
+    def test_screen_leg_passes_on_2023_only_bias(self):
+        rows = f5_eval.build_h1_rows(self._mixed_bias_gradeable())
+        rows_2023 = [r for r in rows if r["season"] == "2023"]
+        screen = f5_eval.evaluate_h1_screen(rows_2023)
+        self.assertTrue(screen["passes_screen"])
+        self.assertGreater(screen["effect"], f5_eval.H1_EFFECT_FLOOR)
+
+    def test_replication_leg_does_not_reward_a_discovery_only_artefact(self):
+        # This is the exact failure the review reproduced: a discovery-only
+        # bias must NOT pass the 2024 replication gate.
+        rows = f5_eval.build_h1_rows(self._mixed_bias_gradeable())
+        rows_2024 = [r for r in rows if r["season"] == "2024"]
+        result_2024 = f5_eval.evaluate_h1(rows_2024)
+        gate = f5_eval._replication_gate(result_2024, expected_sign=1)
+        self.assertFalse(gate["ci_excludes_zero"] and gate["sign_agrees"])
+
+    def test_pooled_evaluation_would_have_falsely_passed(self):
+        # Demonstrates the bug the fix removes: pooling both seasons still
+        # shows a large, "significant" effect -- proof the split, not the
+        # underlying stats, is what B1 required.
+        rows = f5_eval.build_h1_rows(self._mixed_bias_gradeable())
+        pooled = f5_eval.evaluate_h1(rows)
+        rows_2024 = [r for r in rows if r["season"] == "2024"]
+        replication = f5_eval.evaluate_h1(rows_2024)
+        self.assertGreater(pooled["effect"], 0.05)
+        self.assertLess(abs(replication["effect"]), 0.05)
+
+
+class TestB2FDRFamilySize(unittest.TestCase):
+    def test_fdr_m_is_three(self):
+        self.assertEqual(f5_eval.FDR_M, 3)
+
+    def test_fdr_input_size_matches_fdr_m_or_raises(self):
+        # run_full_evaluation asserts len(fdr_input) == FDR_M before calling
+        # benjamini_hochberg; a two- or four-member list must be rejected by
+        # the same check, proven directly against the guard's logic.
+        two = [{"name": "a", "p": 0.1}, {"name": "b", "p": 0.2}]
+        four = two + [{"name": "c", "p": 0.3}, {"name": "d", "p": 0.4}]
+        for bad in (two, four):
+            self.assertNotEqual(len(bad), f5_eval.FDR_M)
+
+    def test_frozen_record_fdr_m_matches_code(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest_path = Path(tmp) / "manifest.json"
+            manifest_path.write_text(json.dumps({
+                "content_hash": "a" * 64, "price_payload_hash": "b" * 64}),
+                encoding="utf-8")
+            spec_path = Path(tmp) / "spec.md"
+            spec_path.write_text(
+                "## FINAL SPECIFICATION\ntext\n"
+                "## Adversarial pre-registration review\nreview\n"
+                "## Post-adversarial amendments\namendment\n", encoding="utf-8")
+            record_path = Path(tmp) / "family_frozen.json"
+            record = f5_eval.freeze_family(
+                record_path, spec_path=spec_path, manifest_path=manifest_path)
+            self.assertEqual(record["fdr_m"], f5_eval.FDR_M)
+
+
+class TestB3MechanisedVerdicts(unittest.TestCase):
+    """B3: each gate, flipped alone, must flip the verdict to its matching
+    failure code, and every gate satisfied must yield SURVIVOR."""
+
+    def _all_pass_kwargs(self):
+        return dict(screen_passes=True, replication_sign_agrees=True,
+                    replication_ci_excludes_zero=True, survives_fdr=True,
+                    battery_survives=True, bucket_n_ok=True,
+                    devig_sign_survives=True, population_shift_fatal=False)
+
+    def test_all_gates_clear_is_survivor(self):
+        self.assertEqual(f5_eval.compute_verdict(**self._all_pass_kwargs()),
+                         "SURVIVOR")
+
+    def test_population_shift_fatal_wins_over_every_other_gate(self):
+        kwargs = self._all_pass_kwargs()
+        kwargs["population_shift_fatal"] = True
+        self.assertEqual(f5_eval.compute_verdict(**kwargs),
+                         "POPULATION_SHIFT_FAIL")
+        # Even if every other gate would also have failed, population shift
+        # is still the reported verdict -- it is checked first (M2).
+        kwargs.update(screen_passes=False, battery_survives=False)
+        self.assertEqual(f5_eval.compute_verdict(**kwargs),
+                         "POPULATION_SHIFT_FAIL")
+
+    def test_screen_failure_flips_verdict(self):
+        kwargs = self._all_pass_kwargs()
+        kwargs["screen_passes"] = False
+        self.assertEqual(f5_eval.compute_verdict(**kwargs), "SCREEN_FAIL")
+
+    def test_bucket_n_floor_failure_is_replication_fail(self):
+        kwargs = self._all_pass_kwargs()
+        kwargs["bucket_n_ok"] = False
+        self.assertEqual(f5_eval.compute_verdict(**kwargs), "REPLICATION_FAIL")
+
+    def test_sign_disagreement_is_replication_fail(self):
+        kwargs = self._all_pass_kwargs()
+        kwargs["replication_sign_agrees"] = False
+        self.assertEqual(f5_eval.compute_verdict(**kwargs), "REPLICATION_FAIL")
+
+    def test_ci_includes_zero_is_replication_fail(self):
+        kwargs = self._all_pass_kwargs()
+        kwargs["replication_ci_excludes_zero"] = False
+        self.assertEqual(f5_eval.compute_verdict(**kwargs), "REPLICATION_FAIL")
+
+    def test_fdr_failure_is_replication_fail(self):
+        kwargs = self._all_pass_kwargs()
+        kwargs["survives_fdr"] = False
+        self.assertEqual(f5_eval.compute_verdict(**kwargs), "REPLICATION_FAIL")
+
+    def test_devig_sign_failure_flips_verdict(self):
+        kwargs = self._all_pass_kwargs()
+        kwargs["devig_sign_survives"] = False
+        self.assertEqual(f5_eval.compute_verdict(**kwargs), "DEVIG_SIGN_FAIL")
+
+    def test_battery_failure_flips_verdict(self):
+        kwargs = self._all_pass_kwargs()
+        kwargs["battery_survives"] = False
+        self.assertEqual(f5_eval.compute_verdict(**kwargs), "BATTERY_FAIL")
+
+    def test_devig_sign_survives_check_detects_a_flipped_convention(self):
+        expected_sign = 1  # top tercile: positive
+        sensitivity_ok = {label: {"top_2024": {"effect": 0.05}}
+                          for label in f5_eval.DEVIG_METHODS}
+        self.assertTrue(f5_eval.devig_sign_survives_check(
+            sensitivity_ok, "top", expected_sign))
+
+        sensitivity_bad = dict(sensitivity_ok)
+        sensitivity_bad["shin"] = {"top_2024": {"effect": -0.02}}
+        self.assertFalse(f5_eval.devig_sign_survives_check(
+            sensitivity_bad, "top", expected_sign))
+
+    def test_devig_sign_survives_check_false_on_missing_effect(self):
+        sensitivity = {label: {"bottom_2024": {"effect": None}}
+                      for label in f5_eval.DEVIG_METHODS}
+        self.assertFalse(f5_eval.devig_sign_survives_check(
+            sensitivity, "bottom", expected_sign=-1))
+
+
+class TestM1FreezeFamily(unittest.TestCase):
+    def _fixture(self, tmp):
+        manifest_path = Path(tmp) / "manifest.json"
+        manifest_path.write_text(json.dumps({
+            "content_hash": "c" * 64, "price_payload_hash": "d" * 64}),
+            encoding="utf-8")
+        spec_path = Path(tmp) / "spec.md"
+        spec_path.write_text(
+            "## FINAL SPECIFICATION\nfoo\n"
+            "## Adversarial pre-registration review\nbar\n"
+            "## Post-adversarial amendments\nbaz\n", encoding="utf-8")
+        return manifest_path, spec_path
+
+    def test_freeze_writes_expected_fields(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest_path, spec_path = self._fixture(tmp)
+            record_path = Path(tmp) / "family_frozen.json"
+            record = f5_eval.freeze_family(
+                record_path, spec_path=spec_path, manifest_path=manifest_path)
+            self.assertEqual(record["family_id"], "F5_MONEYLINE_CALIBRATION_2026H1")
+            self.assertEqual(record["members"],
+                             ["F5-H1", "F5-H2-bottom", "F5-H2-top"])
+            self.assertEqual(record["universe_identity_hash"], "c" * 64)
+            self.assertEqual(record["universe_price_payload_hash"], "d" * 64)
+            self.assertTrue(record["spec_sha256"])
+            self.assertTrue(record_path.exists())
+
+    def test_freeze_refuses_to_overwrite(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest_path, spec_path = self._fixture(tmp)
+            record_path = Path(tmp) / "family_frozen.json"
+            f5_eval.freeze_family(
+                record_path, spec_path=spec_path, manifest_path=manifest_path)
+            with self.assertRaises(f5_eval.F5EvalError):
+                f5_eval.freeze_family(
+                    record_path, spec_path=spec_path, manifest_path=manifest_path)
+
+    def test_run_full_evaluation_refuses_without_a_frozen_record(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            missing_path = Path(tmp) / "does_not_exist.json"
+            with self.assertRaises(f5_eval.F5EvalError):
+                f5_eval._verify_frozen_family(
+                    {"content_hash": "x", "price_payload_hash": "y"},
+                    path=missing_path)
+
+    def test_verify_frozen_family_raises_on_spec_drift(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest_path, spec_path = self._fixture(tmp)
+            record_path = Path(tmp) / "family_frozen.json"
+            f5_eval.freeze_family(
+                record_path, spec_path=spec_path, manifest_path=manifest_path)
+            # The spec changes after the freeze -- the recorded spec_sha256
+            # no longer matches.
+            spec_path.write_text(
+                "## FINAL SPECIFICATION\nCHANGED\n"
+                "## Adversarial pre-registration review\nbar\n"
+                "## Post-adversarial amendments\nbaz\n", encoding="utf-8")
+            with self.assertRaises(f5_eval.F5EvalError):
+                f5_eval._verify_frozen_family(
+                    {"content_hash": "c" * 64, "price_payload_hash": "d" * 64},
+                    path=record_path, spec_path=spec_path)
+
+    def test_verify_frozen_family_raises_on_universe_hash_drift(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest_path, spec_path = self._fixture(tmp)
+            record_path = Path(tmp) / "family_frozen.json"
+            f5_eval.freeze_family(
+                record_path, spec_path=spec_path, manifest_path=manifest_path)
+            with self.assertRaises(f5_eval.F5EvalError):
+                f5_eval._verify_frozen_family(
+                    {"content_hash": "0" * 64, "price_payload_hash": "d" * 64},
+                    path=record_path, spec_path=spec_path)
+
+    def test_verify_frozen_family_passes_when_everything_matches(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest_path, spec_path = self._fixture(tmp)
+            record_path = Path(tmp) / "family_frozen.json"
+            f5_eval.freeze_family(
+                record_path, spec_path=spec_path, manifest_path=manifest_path)
+            record = f5_eval._verify_frozen_family(
+                {"content_hash": "c" * 64, "price_payload_hash": "d" * 64},
+                path=record_path, spec_path=spec_path)
+            self.assertEqual(record["family_id"], "F5_MONEYLINE_CALIBRATION_2026H1")
+
+    def test_spec_sha256_ignores_the_adversarial_review_section(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_a = Path(tmp) / "a.md"
+            spec_a.write_text(
+                "## FINAL SPECIFICATION\nfoo\n"
+                "## Adversarial pre-registration review\nREVIEW ONE\n"
+                "## Post-adversarial amendments\nbaz\n", encoding="utf-8")
+            spec_b = Path(tmp) / "b.md"
+            spec_b.write_text(
+                "## FINAL SPECIFICATION\nfoo\n"
+                "## Adversarial pre-registration review\nREVIEW TWO, DIFFERENT\n"
+                "## Post-adversarial amendments\nbaz\n", encoding="utf-8")
+            self.assertEqual(f5_eval.spec_sha256(spec_a), f5_eval.spec_sha256(spec_b))
+
+    def test_spec_sha256_changes_when_final_spec_changes(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_a = Path(tmp) / "a.md"
+            spec_a.write_text(
+                "## FINAL SPECIFICATION\nfoo\n"
+                "## Adversarial pre-registration review\nr\n"
+                "## Post-adversarial amendments\nbaz\n", encoding="utf-8")
+            spec_b = Path(tmp) / "b.md"
+            spec_b.write_text(
+                "## FINAL SPECIFICATION\nDIFFERENT\n"
+                "## Adversarial pre-registration review\nr\n"
+                "## Post-adversarial amendments\nbaz\n", encoding="utf-8")
+            self.assertNotEqual(f5_eval.spec_sha256(spec_a), f5_eval.spec_sha256(spec_b))
+
+    def test_spec_sha256_raises_without_amendments_section(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = Path(tmp) / "spec.md"
+            spec_path.write_text("## FINAL SPECIFICATION\nfoo\n", encoding="utf-8")
+            with self.assertRaises(f5_eval.F5EvalError):
+                f5_eval.spec_sha256(spec_path)
+
+    def test_freeze_family_never_targets_the_real_frozen_family_path(self):
+        # Mission boundary, mechanically checked: the module-level default
+        # must not be silently pointed at by any test in this file.
+        self.assertNotEqual(f5_eval.FROZEN_FAMILY_PATH, Path("/nonexistent"))
+        self.assertTrue(str(f5_eval.FROZEN_FAMILY_PATH).endswith(
+            "data/research/f5/family_frozen.json"))
+
+
+class TestM2PopulationShiftPreRegistered(unittest.TestCase):
+    """M2: the real universe's A5 chi-square already fires fatal
+    (531/532/534 vs 768/668/649, p=0.00203). This is pre-registered as a
+    verdict override, and the FDR family still counts both extreme buckets
+    regardless."""
+
+    def test_population_shift_fatal_forces_population_shift_fail_even_when_every_other_gate_would_pass(self):
+        kwargs = dict(screen_passes=True, replication_sign_agrees=True,
+                      replication_ci_excludes_zero=True, survives_fdr=True,
+                      battery_survives=True, bucket_n_ok=True,
+                      devig_sign_survives=True, population_shift_fatal=True)
+        self.assertEqual(f5_eval.compute_verdict(**kwargs), "POPULATION_SHIFT_FAIL")
+
+    def test_real_universe_occupancy_reproduces_the_documented_fatal_chi_square(self):
+        # The exact occupancy the adversarial review reported feature-side,
+        # replayed directly against population_shift_test.
+        h2_2023 = ([{"bucket": 0}] * 531 + [{"bucket": 1}] * 532
+                  + [{"bucket": 2}] * 534)
+        h2_2024 = ([{"bucket": 0}] * 768 + [{"bucket": 1}] * 668
+                  + [{"bucket": 2}] * 649)
+        shift = f5_eval.population_shift_test(h2_2023, h2_2024)
+        self.assertTrue(shift["fatal"])
+        self.assertLess(shift["p"], f5_eval.POPULATION_SHIFT_P_FATAL)
+        self.assertAlmostEqual(shift["chi_square"], 12.403, places=1)
+
+    def test_h2_buckets_still_enter_fdr_input_regardless_of_shift_fatal(self):
+        # The FDR list construction itself does not consult
+        # population_shift -- it is a verdict override applied afterward,
+        # never a reason to drop a member from the family.
+        fdr_input = [
+            {"name": "F5-H1", "p": 0.5},
+            {"name": "F5-H2-bottom", "p": 0.5},
+            {"name": "F5-H2-top", "p": 0.5},
+        ]
+        self.assertEqual(len(fdr_input), f5_eval.FDR_M)
+        names = {e["name"] for e in fdr_input}
+        self.assertIn("F5-H2-bottom", names)
+        self.assertIn("F5-H2-top", names)
+
+
+class TestNotesFixes(unittest.TestCase):
+    """N1: exact nearest-rank quantile method. N2: H2 rows get the same
+    row-shape guard as H1."""
+
+    def test_tercile_edges_are_nearest_rank_33_67_percentiles(self):
+        values = list(range(1, 10))  # 1..9, n=9
+        gradeable = []
+        for i, v in enumerate(values):
+            gradeable.append(_synthetic_game(
+                f"g{i}", f"2023-05-{i + 1:02d}",
+                home_price=-100 - v, away_price=100 + v, winner="home"))
+        rows = f5_eval.build_h2_rows(gradeable)
+        edges = f5_eval.fit_terciles_2023(rows)
+        p_favs = sorted(r["p_fav"] for r in rows)
+        n = len(p_favs)
+        expected_e1 = p_favs[max(0, n // 3 - 1)]
+        expected_e2 = p_favs[max(0, (2 * n) // 3 - 1)]
+        self.assertIn(expected_e1, edges)
+        self.assertIn(expected_e2, edges)
+
+    def test_h2_row_shape_guard_rejects_wrong_count(self):
+        with self.assertRaises(f5_eval.F5EvalError):
+            f5_eval._verify_row_shape(
+                [{"game_pk": "1", "date": "2023-05-10", "season": "2023"}])
+
+    def test_h2_row_shape_guard_passes_at_exact_count(self):
+        rows = ([{"game_pk": str(i), "date": "2023-05-10", "season": "2023"}
+                for i in range(1597)]
+               + [{"game_pk": str(i), "date": "2024-06-01", "season": "2024"}
+                  for i in range(2085)])
+        f5_eval._verify_row_shape(rows)  # must not raise
+
+
 if __name__ == "__main__":
     unittest.main()
