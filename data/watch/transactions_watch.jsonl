@@ -456,3 +456,7 @@
 {"fetched_utc": "2026-09-04T17:56:23.379167+00:00", "game_date": "2026-09-04", "poll": true}
 {"fetched_utc": "2026-09-04T18:03:31.139794+00:00", "game_date": "2026-09-04", "poll": true}
 {"fetched_utc": "2026-09-04T18:03:34.681045+00:00", "game_date": "2026-09-04", "poll": true}
+{"fetched_utc": "2026-09-04T18:20:31.446167+00:00", "game_date": "2026-09-04", "poll": true}
+{"category": "il_transfer", "date": "2026-09-04", "first_seen_utc": "2026-09-04T18:20:31.446167+00:00", "player": "Michael Toglia", "player_id": 669911, "team": "CIN", "transaction_id": 941273}
+{"category": "optioned", "date": "2026-09-04", "first_seen_utc": "2026-09-04T18:20:31.446167+00:00", "player": "Ivan Johnson", "player_id": 671155, "team": "CIN", "transaction_id": 941274}
+{"category": "other", "date": "2026-09-04", "first_seen_utc": "2026-09-04T18:20:31.446167+00:00", "player": "Carlos Jorge", "player_id": 699115, "team": "CIN", "transaction_id": 941275}
