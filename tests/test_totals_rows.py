@@ -750,5 +750,284 @@ class TestRealDataDryRunSmoke(unittest.TestCase):
         self.assertTrue(all(r["won"] is None for r in rows))
 
 
+# ---------------------------------------------------------------------------
+# docs/PREREG_TOTALS_FAMILIES.md "## Methodology review -- 2026-09-05"
+# (D1-D7): the nine code/validation items.
+# ---------------------------------------------------------------------------
+
+class TestExclusionLedger(unittest.TestCase):
+    """Item 1: regular-season-only denominator, itemised exclusion ledger."""
+
+    def test_classify_not_joined_splits_frozen_table(self):
+        ids = list(tr.NOT_JOINED_CLASSIFICATION["postponed"][:2]
+                  + tr.NOT_JOINED_CLASSIFICATION["all_star"]
+                  + tr.NOT_JOINED_CLASSIFICATION["postseason"][:1])
+        ledger = tr.classify_not_joined(ids)
+        self.assertEqual(len(ledger["postponed"]), 2)
+        self.assertEqual(len(ledger["all_star"]), 1)
+        self.assertEqual(len(ledger["postseason"]), 1)
+        self.assertEqual(ledger["unclassified"], [])
+
+    def test_classify_not_joined_flags_unrecognised_id(self):
+        ledger = tr.classify_not_joined(["not_a_real_event_id"])
+        self.assertEqual(ledger["unclassified"], ["not_a_real_event_id"])
+
+    def test_ledger_reconciles_to_raw_not_joined_count(self):
+        """A synthetic fixture that manufactures a not-joined event outside
+        the frozen classification table must raise -- `build_universe` must
+        never silently report a ledger that does not reconcile."""
+        with TemporaryDirectory() as td:
+            fx = _Fixture(td)
+            # A game with a price-gradeable closing line but NO matching
+            # settlement row at all -- not_joined, and not in the frozen
+            # audit table, so the ledger cannot reconcile it.
+            from datetime import datetime
+            fx.add_game(season="2023", event_id="unaudited1", game_pk="999",
+                       date="2023-06-01", away_full="Boston Red Sox",
+                       home_full="New York Yankees", away_abbrev="ZZZ",
+                       home_abbrev="ZZZ", commence_time="2023-06-01T23:05:00Z",
+                       line=8.5, books=DEFAULT_BOOKS, total_runs=9)
+            fx.write()
+            with self.assertRaises(tr.TotalsRowsError):
+                tr.build_universe(seasons=("2023",), archive_root=fx.archive_root,
+                                  results_path=fx.results_csv)
+
+    @unittest.skipUnless(_data_available(), "real gitignored totals stores not present")
+    def test_real_ledger_reconciles_and_matches_audit_counts(self):
+        """D1: the real archive's exclusion ledger must equal the audited
+        counts -- 30 postponed, 14 postseason, 1 All-Star -- exactly."""
+        manifest = tr.build_universe()
+        ledger = manifest["exclusion_ledger"]
+        self.assertEqual(ledger["postponed"], 30)
+        self.assertEqual(ledger["postseason"], 14)
+        self.assertEqual(ledger["all_star"], 1)
+        self.assertEqual(
+            ledger["postponed"] + ledger["postseason"] + ledger["all_star"],
+            manifest["counts"]["not_joined_to_settlement"])
+        self.assertEqual(manifest["counts"]["joint_by_season"],
+                         {"2023": 1296, "2024": 1288})
+
+
+class TestM1CannotTell(unittest.TestCase):
+    """Item 6: CANNOT_TELL for M1 effects in (0, 3.0pp) (D2)."""
+
+    BASE = dict(population_shift_fatal=False, screen_passes=True,
+               replication_sign_agrees=True, replication_ci_excludes_zero=True,
+               survives_fdr=True, devig_sign_survives=True, battery_survives=True)
+
+    def test_screen_cannot_tell_flips_verdict(self):
+        kwargs = dict(self.BASE, screen_cannot_tell=True)
+        self.assertEqual(te.compute_verdict(**kwargs), "CANNOT_TELL")
+
+    def test_replication_cannot_tell_flips_verdict(self):
+        kwargs = dict(self.BASE, replication_cannot_tell=True)
+        self.assertEqual(te.compute_verdict(**kwargs), "CANNOT_TELL")
+
+    def test_cannot_tell_wins_over_screen_and_replication_fail(self):
+        kwargs = dict(self.BASE, screen_cannot_tell=True, screen_passes=False,
+                     replication_sign_agrees=False)
+        self.assertEqual(te.compute_verdict(**kwargs), "CANNOT_TELL")
+
+    def test_population_shift_wins_over_cannot_tell(self):
+        kwargs = dict(self.BASE, screen_cannot_tell=True, population_shift_fatal=True)
+        self.assertEqual(te.compute_verdict(**kwargs), "POPULATION_SHIFT_FAIL")
+
+    def test_evaluate_screen_effect_below_floor_is_cannot_tell(self):
+        # Small, real, positive effect (1.5pp): 1,030 wins / 970 losses of
+        # 2,000 rows at implied 0.50 -> win rate 0.515, effect = 0.015 --
+        # inside the 0-3.0pp band.
+        rows = ([{"date": "2023-06-01", "won": True, "implied": 0.50}] * 1030
+               + [{"date": "2023-06-01", "won": False, "implied": 0.50}] * 970)
+        result = te.evaluate_screen(rows)
+        self.assertAlmostEqual(result["effect"], 0.015, places=6)
+        self.assertFalse(result["passes_screen"])
+        self.assertTrue(result["cannot_tell"])
+        self.assertEqual(result["expected_sign"], 1)
+
+    def test_evaluate_screen_effect_at_or_above_floor_passes(self):
+        # Effect = 0.03 exactly: 1,060 wins / 940 losses of 2,000 rows
+        # (win rate 0.53).
+        rows = ([{"date": "2023-06-01", "won": True, "implied": 0.50}] * 1060
+               + [{"date": "2023-06-01", "won": False, "implied": 0.50}] * 940)
+        result = te.evaluate_screen(rows)
+        self.assertAlmostEqual(result["effect"], 0.03, places=6)
+        self.assertTrue(result["passes_screen"])
+        self.assertFalse(result["cannot_tell"])
+
+    def test_evaluate_screen_null_effect_is_screen_fail_not_cannot_tell(self):
+        rows = [{"date": "2023-06-01", "won": (i % 2 == 0), "implied": 0.50}
+               for i in range(40)]
+        result = te.evaluate_screen(rows)
+        self.assertFalse(result["passes_screen"])
+        self.assertFalse(result["cannot_tell"])
+        self.assertEqual(result["expected_sign"], 0)
+
+    def test_replication_gate_cannot_tell_only_when_sign_agrees(self):
+        # Sign disagrees -> real fail, never cannot_tell.
+        gate = te._replication_gate({"effect": -0.01, "ci": {"low": -0.02, "high": 0.0}},
+                                    expected_sign=1)
+        self.assertFalse(gate["sign_agrees"])
+        self.assertFalse(gate["cannot_tell"])
+
+        # Sign agrees, magnitude below floor -> cannot_tell.
+        gate = te._replication_gate({"effect": 0.015, "ci": {"low": 0.001, "high": 0.03}},
+                                    expected_sign=1)
+        self.assertTrue(gate["sign_agrees"])
+        self.assertFalse(gate["floor_ok"])
+        self.assertTrue(gate["cannot_tell"])
+
+
+class TestConfirmatoryFreeze(unittest.TestCase):
+    """Item 7: freeze_confirmatory_family with FDR_M=1 cross-check, M1
+    confirmatory only, M2 exploratory pre-determined POPULATION_SHIFT_FAIL.
+    """
+
+    def _frozen_manifest(self, td):
+        fx = _Fixture(td)
+        _add_default_game(fx, season="2023", event_id="e1", game_pk="1",
+                          date="2023-06-01", total_runs=9, home_won=True)
+        fx.write()
+        manifest = tr.build_universe(seasons=("2023",), archive_root=fx.archive_root,
+                                     results_path=fx.results_csv)
+        manifest_path = Path(td) / "universe.json"
+        tr.write_manifest(manifest, manifest_path)
+        return manifest_path
+
+    def test_freeze_confirmatory_family_refuses_to_overwrite(self):
+        with TemporaryDirectory() as td:
+            manifest_path = self._frozen_manifest(td)
+            family_path = Path(td) / "family.json"
+            record = te.freeze_confirmatory_family(family_path, manifest_path=manifest_path)
+            self.assertEqual(record["family_id"], "TOTALS_FULLGAME_2026H1")
+            self.assertEqual(record["fdr_m"], 1)
+            ids = [m["id"] for m in record["members"]]
+            self.assertEqual(ids, ["TOTALS-M1", "TOTALS-M2"])
+            m2 = [m for m in record["members"] if m["id"] == "TOTALS-M2"][0]
+            self.assertEqual(m2["verdict"], "POPULATION_SHIFT_FAIL")
+            self.assertTrue(m2["excluded_from_fdr"])
+            m1 = [m for m in record["members"] if m["id"] == "TOTALS-M1"][0]
+            self.assertTrue(m1["confirmatory"])
+            self.assertFalse(m2["confirmatory"])
+            with self.assertRaises(te.TotalsEvalError):
+                te.freeze_confirmatory_family(family_path, manifest_path=manifest_path)
+
+    def test_run_full_evaluation_refuses_without_confirmatory_freeze(self):
+        with TemporaryDirectory() as td:
+            fx = _Fixture(td)
+            _add_default_game(fx, season="2023", event_id="e1", game_pk="1",
+                              date="2023-06-01", total_runs=9, home_won=True)
+            fx.write()
+            with self.assertRaises(te.TotalsEvalError):
+                te.read_confirmatory_family(Path(td) / "nope.json")
+
+    def test_verify_confirmatory_family_cross_checks_fdr_m(self):
+        with TemporaryDirectory() as td:
+            manifest_path = self._frozen_manifest(td)
+            family_path = Path(td) / "family.json"
+            te.freeze_confirmatory_family(family_path, manifest_path=manifest_path)
+            record = te.read_confirmatory_family(family_path)
+            record["fdr_m"] = 2  # simulate the record and the code disagreeing
+            family_path.write_text(json.dumps(record), encoding="utf-8")
+            manifest = tr.read_manifest(manifest_path)
+            hashes = {"content_hash": manifest["content_hash"],
+                     "price_payload_hash": manifest["price_payload_hash"]}
+            with self.assertRaises(te.TotalsEvalError):
+                te._verify_confirmatory_family(hashes, path=family_path)
+
+
+class TestM2Exploratory(unittest.TestCase):
+    """Item 7 (M2 side): D3's pre-determined POPULATION_SHIFT_FAIL, wired
+    via `scripts.totals_m2_coverage`'s terciles-fit-on-2023 and
+    both-sides-or-None rule."""
+
+    @unittest.skipUnless(_data_available(), "real gitignored totals stores not present")
+    def test_m2_exploratory_is_pre_determined_population_shift_fail(self):
+        result = te.evaluate_m2_exploratory()
+        self.assertEqual(result["verdict"], "POPULATION_SHIFT_FAIL")
+        self.assertFalse(result["confirmatory"])
+        self.assertTrue(result["excluded_from_fdr"])
+        # D3's own published figure: p=0.0001, well under the 0.01 fatal bound.
+        self.assertLess(result["population_shift"]["p"], 0.01)
+        self.assertTrue(result["population_shift"]["fatal"])
+
+
+class TestPrereqSpecHash(unittest.TestCase):
+    def test_prereg_spec_hash_is_stable_and_bounded(self):
+        h1 = te.prereg_spec_sha256()
+        h2 = te.prereg_spec_sha256()
+        self.assertEqual(h1, h2)
+        self.assertEqual(len(h1), 64)
+
+    def test_prereg_spec_hash_raises_without_marker(self):
+        with TemporaryDirectory() as td:
+            path = Path(td) / "a.md"
+            path.write_text("# doc\n\nno markers here\n", encoding="utf-8")
+            with self.assertRaises(te.TotalsEvalError):
+                te.prereg_spec_sha256(path)
+
+
+class TestCommenceTimeMutationFixture(unittest.TestCase):
+    """Item 8: a mutation-armed fixture proving the closing pick is anchored
+    to the SAME snapshot's own `commence_time`, never a later, post-hoc
+    schedule field -- the fixture must FAIL (assertion catches a real
+    regression) if `_pick_closing`/`compute_event_closing` were changed to
+    read a mutated/post-hoc anchor instead."""
+
+    def test_mutating_a_later_snapshots_commence_time_cannot_move_the_pick(self):
+        from datetime import datetime, timedelta
+        original_ct = datetime.fromisoformat("2023-06-01T23:05:00+00:00")
+        # A later snapshot's event carries a MUTATED (post-hoc-looking)
+        # commence_time far in the future -- simulating a corrupted/rescheduled
+        # schedule field arriving after the real closing snapshot.
+        mutated_ct = datetime.fromisoformat("2023-06-05T12:00:00+00:00")
+        good_snap_at = original_ct - timedelta(hours=2)
+        records = [
+            (good_snap_at, original_ct, "Boston Red Sox", "New York Yankees",
+             {8.5: {"dk": {"over": -110, "under": -110}}}),
+        ]
+        closing_before = tr.compute_event_closing(records)
+        self.assertIsNotNone(closing_before)
+        self.assertEqual(closing_before["commence_time"], original_ct)
+
+        # Arm the mutation: replace the record's OWN commence_time with the
+        # mutated value, exactly as a post-hoc-schedule-field bug would.
+        mutated_records = [(good_snap_at, mutated_ct, "Boston Red Sox",
+                           "New York Yankees", {8.5: {"dk": {"over": -110, "under": -110}}})]
+        closing_after = tr.compute_event_closing(mutated_records)
+        # A snapshot 2h before the ORIGINAL time is now ~87h before the
+        # MUTATED time -- outside the 6h staleness bound -- so the mutation
+        # must be REJECTED (None), never silently accepted with a moved
+        # anchor. This is the fixture's fail condition: if the anchor rule
+        # ever changed to read a different, later-arriving commence_time
+        # field instead of the record's own, this assertion would start
+        # passing on a picked-but-wrong closing instead of catching the
+        # staleness rejection here.
+        self.assertIsNone(closing_after)
+
+
+class TestIntegerStratumReport(unittest.TestCase):
+    """Item 9: push handling -- half-point primary has no pushes by
+    construction (guarded); the integer stratum is report-only P(over | no
+    push), never promotable."""
+
+    def test_report_only_and_never_promotable(self):
+        with TemporaryDirectory() as td:
+            fx = _Fixture(td)
+            _add_default_game(fx, season="2023", event_id="e1", game_pk="1",
+                              date="2023-06-01", total_runs=9, home_won=True, line=8.0)
+            _add_default_game(fx, season="2023", event_id="e2", game_pk="2",
+                              date="2023-06-02", total_runs=7, home_won=False, line=8.0)
+            _add_default_game(fx, season="2023", event_id="e3", game_pk="3",
+                              date="2023-06-03", total_runs=8, home_won=False, line=8.0)  # push
+            fx.write()
+            report = te.integer_stratum_report(
+                seasons=("2023",), archive_root=fx.archive_root, results_path=fx.results_csv)
+            self.assertTrue(report["report_only"])
+            self.assertFalse(report["promotable"])
+            self.assertEqual(report["by_season"]["2023"]["n_no_push"], 2)  # push excluded
+            self.assertEqual(report["by_season"]["2023"]["overs"], 1)
+            self.assertAlmostEqual(report["by_season"]["2023"]["p_over_given_no_push"], 0.5)
+
+
 if __name__ == "__main__":
     unittest.main()

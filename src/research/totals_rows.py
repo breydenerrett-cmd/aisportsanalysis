@@ -112,6 +112,75 @@ LINE_BUCKET_EDGES = (5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5)
 DEVIG_METHODS = {"proportional": "proportional", "multiplicative": "power", "shin": "shin"}
 PRIMARY_DEVIG_METHOD = "proportional"
 
+# D1 (docs/PREREG_TOTALS_FAMILIES.md "## Methodology review -- 2026-09-05"):
+# the FROZEN classification of every event id `build_universe` has ever
+# found not-joined-to-settlement, taken verbatim from
+# docs/TOTALS_UNJOINED_AUDIT.md's "Full listing" table (identity/date only --
+# NO score field was read to build that audit, and none is read here). This
+# table does not get recomputed on every run: the classification (a genuine
+# rainout/makeup vs. a Wild Card/Division-Series slot vs. the All-Star
+# exhibition) depends on facts -- WHY a game is missing from
+# `mlb_results.csv` -- that are not encoded anywhere in the odds archive or
+# the results CSV; they were established once, by the audit's manual
+# cross-referencing, and are recorded here so the exclusion ledger never has
+# to re-derive them from an outcome. `class (b)` (5 doubleheader-nightcap
+# join collisions) is DELIBERATELY ABSENT from this table: D1 states plainly
+# those 5 are now FIXED (joined, via `_join_doubleheader_same_day`) and
+# therefore INCLUDED in the joint denominator -- they must never reappear as
+# an exclusion class. `classify_not_joined`'s `unclassified` bucket exists so
+# a future archive change that alters the not-joined set is caught as a hard
+# failure (`build_universe` raises on it) rather than silently producing a
+# ledger that no longer reconciles.
+NOT_JOINED_CLASSIFICATION = {
+    "postponed": (
+        "0bf3309e2b70484d848b9d81c1f7c862", "136295e92bb9e259eaca4748d941a568",
+        "16816d9a7807b44dd8cfc0b1cb2a7e17", "2824681ff93df18fa55151dff0bc44d3",
+        "2a701e6fae2bd9423013b80ac343f77b", "2fd96e70eb5787df5efbf07b36340c60",
+        "32b3944fd9b873891b07d6cb9cf3be82", "408a4f27308668f3393ed128fcda8a09",
+        "466f5e785e70b4ab0d3af03ae5295a5a", "59663773d5f2ed65bb700098cb3bd7f8",
+        "649ad82dac37a64e347cdbb34c7d73e7", "6acdd27db6bb5c41faa08086a6b8618e",
+        "7015048add706580be5a518dd3e2a611", "7bb736b77d1305880a3b99aee8503839",
+        "7bda8cc176e4c517746e563979bbd2f9", "7f3b1a8ad87feb0dbb1acc9ff2c38a55",
+        "7ff64a7253fb4c3bd2c26af5c1da2603", "813a982760e7b87a94c287bd366c5b09",
+        "820d750c16b8dee48995bfac7ac17386", "85c4e285bb00d1e680c737694b109c25",
+        "979a1e9d0770ddf4ddc5c115a736c624", "9c8573b0b807fb97e4501e39aacfc9c7",
+        "9cbf87bba0ce6052ea37a12f36806423", "9ea64c9ecc7d7364f870d4eb929b844d",
+        "c383f4789232ede0272a45c4fdfa68d9", "c963b9af00e516bfb4c02c2a3e71d30b",
+        "d7bfc4242d9b4c8eb12bb3b6af4cafb5", "e75516c0e8e178a345913ab089287d7d",
+        "e87c5b818f6ebfa9e5a3eabe0412fc63", "f13302c948480e2a0d7e3c0931b93cbd",
+    ),
+    "all_star": (
+        "1e917abee85546968da7eeda899fb65a",
+    ),
+    "postseason": (
+        "1533823cdb69bc81c2874ef58f98be12", "5013b29a336f56c618dc02c05893bc4e",
+        "5f02286618321060e43f8e185750c3aa", "8f1a5d9345498b15a8330bca169bd02b",
+        "98d592ce811a32f64f0a2f4860544019", "ae60872ca814ec362764c06c880046b8",
+        "b86f8004e8cd0e1371e70bc8331dbe57", "bd5db14c1b7b06b3668aa93aa6b4834e",
+        "be0b93120d3af3b16fa7b4106a7f72ef", "bef91969a8db09009edc331b7dec5faf",
+        "e70aecb7479a5cb8243fe375cc8b491a", "ee785b78fc4a71045f4b849f69e4548f",
+        "f2f71df91a9eb0eeb8355d20e89bccdf", "f3e9f2867b5df4befafef6a150d90df0",
+    ),
+}
+
+
+def classify_not_joined(not_joined_event_ids: list) -> dict:
+    """D1: split `not_joined_event_ids` into the itemised exclusion classes
+    `NOT_JOINED_CLASSIFICATION` records (`postponed`, `all_star`,
+    `postseason`), plus `unclassified` for anything the frozen table does
+    not recognise. `build_universe` raises if `unclassified` is non-empty on
+    the real archive -- a ledger that cannot account for every excluded id
+    must never be reported as if it reconciled."""
+    lookup = {}
+    for cls, ids in NOT_JOINED_CLASSIFICATION.items():
+        for eid in ids:
+            lookup[eid] = cls
+    ledger = {cls: [] for cls in NOT_JOINED_CLASSIFICATION}
+    ledger["unclassified"] = []
+    for eid in not_joined_event_ids:
+        ledger.setdefault(lookup.get(eid, "unclassified"), []).append(eid)
+    return ledger
+
 
 class TotalsRowsError(RuntimeError):
     """Raised when totals row construction cannot proceed honestly."""
@@ -459,6 +528,46 @@ def build_universe(*, seasons=SEASONS, archive_root=ARCHIVE_ROOT,
 
     entries.sort(key=lambda e: str(e["event_id"]))
 
+    # D1: itemise the not-joined-to-settlement events against the frozen
+    # audit classification, and refuse to report a ledger that cannot
+    # account for every one of them (regular-season-only denominator scope,
+    # docs/PREREG_TOTALS_FAMILIES.md "## Methodology review -- 2026-09-05").
+    not_joined_ledger = classify_not_joined(not_joined)
+    if not_joined_ledger["unclassified"]:
+        raise TotalsRowsError(
+            "the not-joined-to-settlement set contains "
+            f"{len(not_joined_ledger['unclassified'])} event id(s) absent "
+            "from the frozen NOT_JOINED_CLASSIFICATION table "
+            f"({not_joined_ledger['unclassified'][:5]}...) -- the archive's "
+            "not-joined population has moved since docs/TOTALS_UNJOINED_"
+            "AUDIT.md was written. Aborting rather than reporting an "
+            "exclusion ledger that no longer reconciles; re-audit and "
+            "extend the frozen table before proceeding.")
+
+    exclusion_ledger = {
+        "postseason": len(not_joined_ledger["postseason"]),
+        "all_star": len(not_joined_ledger["all_star"]),
+        "postponed": len(not_joined_ledger["postponed"]),
+        "no_closing_snapshot": excluded_no_closing_total,
+        "not_joint": excluded_not_joint_total,
+    }
+    # Reconciliation (D1 binding: "the run report must publish the ledger
+    # even when nothing surprising is in it"): the itemised classes must sum
+    # to the raw exclusion counts they were split from. This can never
+    # silently drift -- `classify_not_joined`'s unclassified-raises guard
+    # above already forces the not-joined split to reconcile; this second
+    # check additionally guards the two independently-counted classes
+    # (no-closing-snapshot, not-joint) against a future refactor that moves
+    # where they are counted.
+    reconciled_not_joined = (exclusion_ledger["postseason"]
+                             + exclusion_ledger["all_star"]
+                             + exclusion_ledger["postponed"])
+    if reconciled_not_joined != len(not_joined):
+        raise TotalsRowsError(
+            f"exclusion ledger reconciliation failed: itemised classes sum "
+            f"to {reconciled_not_joined}, raw not-joined count is "
+            f"{len(not_joined)}")
+
     manifest = {
         "schema_version": 1,
         "seasons": list(seasons),
@@ -472,6 +581,7 @@ def build_universe(*, seasons=SEASONS, archive_root=ARCHIVE_ROOT,
             "excluded_not_joint": excluded_not_joint_total,
             "not_joined_to_settlement": len(not_joined),
         },
+        "exclusion_ledger": exclusion_ledger,
         "not_joined_event_ids": not_joined,
         "events": [
             {"event_id": str(e["event_id"]), "game_pk": e["game_pk"], "date": e["date"],
