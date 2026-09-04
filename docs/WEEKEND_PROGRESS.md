@@ -41,3 +41,7 @@
 ## 2026-09-05 00:0xZ — totals methodology review: NOT APPROVED (89ecfc3)
 - Worst: V7 §2.3 over/under split is a settlement read framed as market structure → must be registered as a partially-read member. De-vig at modal line selects on book attribute → per-line fair prob with >=3-book floor. Integer vs half-point lines are different estimands. Closing line PIT-computable with staleness bound + snapshot commence_time. Validation items 7-13 added (mirror F5 B3/M1/R2).
 - Dispatched Sonnet amendment lane (docs only); re-review follows. Capture healthy.
+
+## 2026-09-05 00:4xZ — totals methodology APPROVED TO DRAFT HYPOTHESES (6fc4e4e)
+- Revision 2 faithful; 5 open items decided (population-shift on bucket occupancy; family of two; bullpen recombination deferred; staleness bound from gap distribution then frozen; B6 counts-only population audit required before registration).
+- Queue extended W15-W17. W15 dispatched (Sonnet). W10 factory prep still running. Capture healthy.
