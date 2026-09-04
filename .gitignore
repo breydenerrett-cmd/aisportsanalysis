@@ -153,4 +153,8 @@ artifacts/analyze_*.html
 
 # Agent worktrees created by the orchestration harness -- never repository content.
 .claude/worktrees/
+
+# THE FOUNDRY heartbeat events -- runtime state emitted by scripts/foundry_beat.{sh,py},
+# never committed (see /home/user/thefoundry/PHASE4_HEARTBEAT_CONTRACT.md).
+.foundry/
 data/processed/l1_observations.jsonl

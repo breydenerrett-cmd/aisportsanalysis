@@ -12,6 +12,9 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
+[ -f "$(dirname "$0")/foundry_beat.sh" ] && . "$(dirname "$0")/foundry_beat.sh" || true
+type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop start ok || true
+
 echo "== daily =="
 DAILY_OUT=$(python3 -m src.cli daily 2>&1)
 echo "$DAILY_OUT" | sed 's/^/  /'
@@ -60,6 +63,7 @@ SLATE_STATUS=$?
 echo "$SLATE_OUT" | sed 's/^/  /'
 if [ "$SLATE_STATUS" -ne 0 ]; then
     echo "ESCALATE: engine slate refused or failed for $TODAY (exit $SLATE_STATUS) -- see output above; the pre-slate freshness guard (src/engine/preflight.py) refuses loudly rather than staking on stale inputs"
+    type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "engine slate refused or failed" || true
 fi
 echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: engine slate --date $TODAY exit=$SLATE_STATUS" >> "$RUN_NOTE"
 
@@ -69,6 +73,7 @@ SETTLE_STATUS=$?
 echo "$SETTLE_OUT" | sed 's/^/  /'
 if [ "$SETTLE_STATUS" -ne 0 ]; then
     echo "ESCALATE: engine settle failed for $YESTERDAY (exit $SETTLE_STATUS) -- see output above"
+    type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "engine settle failed" || true
 fi
 echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: engine settle --date $YESTERDAY exit=$SETTLE_STATUS" >> "$RUN_NOTE"
 
@@ -78,6 +83,7 @@ EOD_STATUS=$?
 echo "$EOD_OUT" | sed 's/^/  /'
 if [ "$EOD_STATUS" -ne 0 ]; then
     echo "ESCALATE: eod self-review failed or refused for $YESTERDAY (exit $EOD_STATUS) -- see output above; eod refuses rather than writing an empty report when a date has no recorded decisions"
+    type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "eod self-review failed or refused" || true
 fi
 echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: eod --date $YESTERDAY exit=$EOD_STATUS" >> "$RUN_NOTE"
 
@@ -93,6 +99,7 @@ exec 9>"$GIT_LOCK"
 GIT_FAILED=0
 if ! flock -w 300 9; then
     echo "ESCALATE: git lock not acquired"
+    type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "git lock not acquired" || true
     exit 1
 fi
 
@@ -108,9 +115,11 @@ if ! git diff --cached --quiet; then
     BRANCH=$(git rev-parse --abbrev-ref HEAD)
     if ! git commit -q -m "Daily loop $(date -u +%Y-%m-%d)"; then
         echo "ESCALATE: git commit failed"
+        type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "git commit failed" || true
         GIT_FAILED=1
     elif ! git fetch -q origin "$BRANCH"; then
         echo "ESCALATE: git fetch failed -- commit is local only"
+        type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "git fetch failed" || true
         GIT_FAILED=1
     elif ! git pull -q --rebase --autostash origin "$BRANCH"; then
         # Our own just-made commit is what we're rebasing onto origin --
@@ -118,6 +127,7 @@ if ! git diff --cached --quiet; then
         # run to trip over.
         git rebase --abort 2>/dev/null || true
         echo "ESCALATE: rebase onto origin/$BRANCH failed -- commit is local only, needs manual resolution"
+        type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "rebase failed" || true
         GIT_FAILED=1
     else
         PUSH_OK=0
@@ -132,6 +142,7 @@ if ! git diff --cached --quiet; then
             echo "== committed =="
         else
             echo "ESCALATE: push failed after retries -- commit is local only, needs manual push"
+            type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "push failed after retries" || true
             GIT_FAILED=1
         fi
     fi
@@ -142,12 +153,15 @@ fi
 # Escalation markers: the ONLY lines a model needs to react to.
 if echo "$DAILY_OUT" | grep -q "skipped: credit floor"; then
     echo "ESCALATE: credit floor reached -- stop spending, tell Brey"
+    type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "credit floor reached" || true
 fi
 if echo "$DAILY_OUT" | grep -qi "traceback"; then
     echo "ESCALATE: daily pass raised -- investigate before next run"
+    type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "daily pass raised" || true
 fi
 if echo "$STATUS_OUT" | grep -q "unsettled_past_dates: \[.\+\]"; then
     echo "ESCALATE: settlement gap -- past dates remain unsettled"
+    type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "settlement gap" || true
 fi
 
 # Exit non-zero on a git failure, but only after every escalation above has
@@ -156,3 +170,5 @@ fi
 if [ "$GIT_FAILED" -eq 1 ]; then
     exit 1
 fi
+
+type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop end ok || true
