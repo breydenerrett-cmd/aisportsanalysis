@@ -10,7 +10,8 @@ from src.engine.analyze import FATAL, MAJOR, Candidate, Proposal
 def _candidate(**kw):
     base = dict(
         proposal=Proposal(system_id="s", system_version="1",
-                           market_key="h2h", side="home", p_model=0.6),
+                           market_key="h2h", side="home", p_model=0.6,
+                           p_model_provenance="model_derived"),
         selection_id="sel1", consensus_fair=0.55, books_at_decision=3,
         friction={"vig": 0.02, "book_count": 3, "staleness_seconds": 60,
                   "dispersion": 0.01},

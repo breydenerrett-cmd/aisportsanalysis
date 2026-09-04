@@ -34,7 +34,11 @@ from src.engine.snapshot import PriceBlindSnapshot, PricedBoard
 from src.evolab.decide import BoardMeta, WorldView, decide_with_reason
 from src.evolab.genome import F5_MARKET, Genome, enumerate_genomes
 from src.evolab.registry import DEFAULT_REGISTRY
-from src.ledger.records import RECORD_PROVENANCE_REPLAY
+from src.ledger.records import (
+    PROBABILITY_PROVENANCE_NONE,
+    PROBABILITY_PROVENANCE_PLACEHOLDER,
+    RECORD_PROVENANCE_REPLAY,
+)
 
 
 def _rebuild_worldview(genome: Genome, snapshot: PriceBlindSnapshot) -> WorldView:
@@ -108,6 +112,7 @@ class EvolabGenomeSystem:
             system_version=self.version,
             market_key=decision.market,
             side=decision.side,
+            p_model_provenance=PROBABILITY_PROVENANCE_NONE,
             thesis=f"evolab genome {self.genome.strategy_id}: "
                    f"{decision.signals_fired}",
             evidence=(f"score={decision.score!r}",
@@ -123,14 +128,22 @@ class EvolabGenomeSystem:
 #
 # Each is a NULL CONTROL, not a strategy: a fixed, pre-registered direction
 # never derived from price, a clock, or a search process, exactly the same
-# posture `TrivialAlwaysHomeSystem` already takes for h2h. The one
-# deliberate difference: `p_model` here is `None`, never a fabricated
-# number like that system's own hardcoded 0.52 (flagged N2 in
-# docs/planning/slice-review-2026-09-03/REVIEW.md) -- these two markets get
-# no calibrated probability from anywhere in this project, so PROJECT's
-# `edge_bps` stays honestly `None` and `value_basis` records
-# `price_standing_only` for every decision either one produces
-# (src.engine.analyze.analyze), same as every evolab-origin proposal.
+# posture `TrivialAlwaysHomeSystem` already takes for h2h.
+#
+# N2/honesty fix (2026-09-04): both now carry the SAME fixed-convention
+# posture `TrivialAlwaysHomeSystem` does -- a `p_model` that is a declared
+# constant (0.5, a coin flip, chosen for having no informational content at
+# all), `p_model_provenance="placeholder"`. Before this fix these two used
+# `p_model=None` specifically to dodge fabricating an edge from a made-up
+# number (the flagged N2 defect was `TrivialAlwaysHomeSystem`'s 0.52 doing
+# exactly that) -- now that `analyze()`/`DecisionRecord` enforce the
+# edge-requires-model_derived invariant structurally (raise, not warn), that
+# workaround is no longer needed: naming the placeholder plainly is more
+# honest than hiding it behind an absent probability, and it is
+# structurally impossible for either control to produce a non-null
+# `edge_bps` regardless. `value_basis` still records `price_standing_only`
+# for every decision either one produces (src.engine.analyze.analyze), same
+# as every evolab-origin proposal.
 # ---------------------------------------------------------------------------
 
 @dataclass(frozen=True, slots=True)
@@ -149,17 +162,20 @@ class TrivialAlwaysHomeSpreadSystem:
     declared_inputs: tuple = ()
     min_grade: str = "D"
     expected_selection_rate: float = 1.0
+    p_model: float = 0.5
 
     def propose(self, view: PriceBlindSnapshot) -> tuple:
         if "spreads" not in view.available_markets:
             return ()
         return (Proposal(
             system_id=self.id, system_version=self.version,
-            market_key="spreads", side="home", p_model=None,
-            thesis="trivial null control for spreads: always proposes home "
-                   "on the run line, a fixed direction never derived from "
-                   "price or a clock; p_model is None, so no calibrated "
-                   "probability is claimed for this market -- "
+            market_key="spreads", side="home", p_model=self.p_model,
+            p_model_provenance=PROBABILITY_PROVENANCE_PLACEHOLDER,
+            thesis="null control for spreads: always proposes home on the "
+                   "run line, a fixed direction never derived from price "
+                   "or a clock; p_model is a declared coin-flip constant "
+                   "(provenance=placeholder), so no edge_bps can ever be "
+                   "computed for this market -- "
                    "src.engine.adapters.evolab_system",
             evidence=("trivial_fallback_spreads",),
         ),)
@@ -180,17 +196,20 @@ class TrivialUnderTotalSystem:
     declared_inputs: tuple = ()
     min_grade: str = "D"
     expected_selection_rate: float = 1.0
+    p_model: float = 0.5
 
     def propose(self, view: PriceBlindSnapshot) -> tuple:
         if "totals" not in view.available_markets:
             return ()
         return (Proposal(
             system_id=self.id, system_version=self.version,
-            market_key="totals", side="under", p_model=None,
-            thesis="trivial null control for totals: always proposes "
-                   "under, a fixed direction never derived from price or a "
-                   "clock; p_model is None, so no calibrated probability is "
-                   "claimed for this market -- "
+            market_key="totals", side="under", p_model=self.p_model,
+            p_model_provenance=PROBABILITY_PROVENANCE_PLACEHOLDER,
+            thesis="null control for totals: always proposes under, a "
+                   "fixed direction never derived from price or a clock; "
+                   "p_model is a declared coin-flip constant "
+                   "(provenance=placeholder), so no edge_bps can ever be "
+                   "computed for this market -- "
                    "src.engine.adapters.evolab_system",
             evidence=("trivial_fallback_totals",),
         ),)

@@ -2481,7 +2481,10 @@ def cmd_eod(args) -> int:
 
     decision_rows = HashChainLedger(V2_LEDGER_PATH).read()
     decisions = [
-        _record_from_row(DecisionRecord, row) for row in decision_rows
+        # DecisionRecord.from_row(), not the generic _record_from_row() --
+        # it backfills p_model_provenance honestly for rows published
+        # before that field existed (N2/honesty fix, 2026-09-04).
+        DecisionRecord.from_row(row) for row in decision_rows
         if row.get("kind") != "genesis"
         and row.get("decision_utc", "").startswith(date_str)
     ]

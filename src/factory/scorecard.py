@@ -59,7 +59,13 @@ from src.factory.fitness import (
     RobustnessComponent,
     SampleSufficiencyComponent,
 )
-from src.ledger.records import AccountSummary, DecisionRecord, ReviewRecord, Scorecard
+from src.ledger.records import (
+    AccountSummary,
+    DecisionRecord,
+    PROBABILITY_PROVENANCE_MODEL_DERIVED,
+    ReviewRecord,
+    Scorecard,
+)
 
 # log-loss of an uninformative p=0.5 forecast -- the reference this module
 # uses when there is no genuine calibration evidence to average. Never a
@@ -258,10 +264,21 @@ def _calibration(decisions: Sequence[DecisionRecord],
                   reviews: Sequence[ReviewRecord]) -> tuple:
     """(logloss_mean, brier_mean, n) over decision/review pairs with a
     `p_model` and a win/loss settlement. `n == 0` means genuinely nothing
-    was computable -- callers must not treat that as a passing 0.0 logloss."""
+    was computable -- callers must not treat that as a passing 0.0 logloss.
+
+    N2/honesty fix (2026-09-04): a calibration claim ("this probability was
+    well-calibrated") is only meaningful for a probability that was actually
+    an attempt at calibration -- `model_derived`. A `placeholder` constant
+    (a null control's fixed convention) or a `market_derived` number folded
+    back into logloss/Brier would silently launder a non-claim into a
+    calibration score; both are excluded here exactly like `p_model is
+    None` always was.
+    """
     losses, briers = [], []
     for decision, review in _decision_review_pairs(decisions, reviews):
-        if decision.p_model is None or review.settled not in (WIN, LOSS):
+        if (decision.p_model is None
+                or decision.p_model_provenance != PROBABILITY_PROVENANCE_MODEL_DERIVED
+                or review.settled not in (WIN, LOSS)):
             continue
         y = 1.0 if review.settled == WIN else 0.0
         p = min(max(decision.p_model, 1e-9), 1 - 1e-9)
@@ -277,9 +294,18 @@ def _mean_edge_return(decisions: Sequence[DecisionRecord]) -> tuple:
     """Mean of `edge_bps` (p_model - de-vigged fair, already computed on
     every play decision -- src/ledger/records.py's PRICE_OBSERVATION_IDENTITY
     docstring) over verdict=="play" decisions that carry one, as a fraction.
-    Returns (mean_or_None, n)."""
+    Returns (mean_or_None, n).
+
+    N2/honesty fix: `DecisionRecord.__post_init__` already makes `edge_bps`
+    structurally None for anything but `model_derived` provenance, so the
+    `d.edge_bps is not None` filter below can never admit a placeholder or
+    market_derived row -- the explicit provenance check is defense in
+    depth, and self-documents the same claim this module's other economic
+    aggregations make.
+    """
     edges = [d.edge_bps for d in decisions
-             if d.verdict == "play" and d.edge_bps is not None]
+             if d.verdict == "play" and d.edge_bps is not None
+             and d.p_model_provenance == PROBABILITY_PROVENANCE_MODEL_DERIVED]
     if not edges:
         return None, 0
     return (sum(edges) / len(edges)) / 10000.0, len(edges)
@@ -405,12 +431,15 @@ def build_fitness(
     if n_edge == 0:
         absent.append(AbsentComponent(
             "economic.realized_return",
-            "no verdict=='play' decision carries edge_bps"))
+            "no verdict=='play' decision carries a model_derived edge_bps "
+            "(edge_bps is structurally null for none/placeholder/"
+            "market_derived provenance -- see DecisionRecord's invariant)"))
     if n_calibration == 0:
         absent.append(AbsentComponent(
             "economic.logloss_vs_market",
-            "no decision/review pair carries both p_model and a win/loss "
-            "settlement"))
+            "no decision/review pair carries both a model_derived p_model "
+            "and a win/loss settlement (a placeholder or market_derived "
+            "p_model is never folded into a calibration claim)"))
     economically_meaningful = bool(
         n_edge > 0 and edge_return > 0.0
         and n_calibration > 0 and logloss_mean < NEUTRAL_LOGLOSS
@@ -661,6 +690,15 @@ def build_scorecard(
     )
 
     calibration_brier = _calibration(decisions, reviews)[1]
+    # N2/honesty fix: shown "beside every decision" in aggregate here --
+    # Scorecard is a per-(system, window) row, not per-decision, so a
+    # per-provenance breakdown is the aggregate-appropriate form of the same
+    # disclosure eod.py makes per-decision. Never itself folded into any
+    # scored field; purely a reporting-only count, exactly like clv_bps_mean.
+    provenance_counts: dict = {}
+    for d in decisions:
+        provenance_counts[d.p_model_provenance] = (
+            provenance_counts.get(d.p_model_provenance, 0) + 1)
     scorecard = Scorecard(
         system_id=system_id, world=world, window=window,
         point_class=point_class, market_key=market_key,
@@ -677,6 +715,7 @@ def build_scorecard(
             "volatility_stdev_of_returns": stats.volatility,
             "n_returns": len(stats.per_bet_returns),
             "season_month_stability": None,
+            "p_model_provenance_counts": provenance_counts,
         },
         price_sensitivity={
             "survives_worst_book": fitness.price_resilience.survives_worst_book,

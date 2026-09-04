@@ -7,7 +7,14 @@ import unittest
 from pathlib import Path
 
 from src.factory.scorecard import decision_key_for
-from src.ledger.records import AccountSummary, DecisionRecord, ReviewRecord, Scorecard
+from src.ledger.records import (
+    AccountSummary,
+    DecisionRecord,
+    PROBABILITY_PROVENANCE_MODEL_DERIVED,
+    PROBABILITY_PROVENANCE_NONE,
+    ReviewRecord,
+    Scorecard,
+)
 from src.report.eod import (
     AccountDay,
     EodReviewError,
@@ -44,6 +51,9 @@ def _decision(event_id, *, verdict="play", known_at_grade="A", price_american=-1
         assumption_exposure=assumption_exposure or {},
         stake_units=1.0 if verdict == "play" else 0.0,
         known_at_grade=known_at_grade,
+        p_model_provenance=(PROBABILITY_PROVENANCE_MODEL_DERIVED
+                             if verdict == "play"
+                             else PROBABILITY_PROVENANCE_NONE),
     )
 
 

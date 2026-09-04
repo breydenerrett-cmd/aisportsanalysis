@@ -66,7 +66,7 @@ class _EraSystem:
             return ()
         return (Proposal(
             system_id=self.id, system_version=self.version,
-            market_key="h2h", side="home", p_model=0.6,
+            market_key="h2h", side="home", p_model=0.6, p_model_provenance="model_derived",
             thesis="era_diff positive", evidence=("era_diff",),
         ),)
 

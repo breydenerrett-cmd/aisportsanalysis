@@ -30,7 +30,7 @@ class _HonestSystem:
             return ()
         return (Proposal(
             system_id=self.id, system_version=self.version,
-            market_key="h2h", side="home", p_model=0.6,
+            market_key="h2h", side="home", p_model=0.6, p_model_provenance="model_derived",
             thesis="era high",
         ),)
 
@@ -68,7 +68,8 @@ class _NondeterministicSystem(_HonestSystem):
         self._n += 1
         if self._n % 2 == 0:
             return (Proposal(system_id=self.id, system_version="1",
-                              market_key="h2h", side="home", p_model=0.6),)
+                              market_key="h2h", side="home", p_model=0.6,
+                              p_model_provenance="model_derived"),)
         return ()
 
 
@@ -79,7 +80,8 @@ class _BadSchemaSystem(_HonestSystem):
 
     def propose(self, view):
         return (Proposal(system_id="", system_version="1",
-                          market_key="h2h", side="sideways", p_model=1.5),)
+                          market_key="h2h", side="sideways", p_model=1.5,
+                          p_model_provenance="model_derived"),)
 
 
 class TestConformancePasses(unittest.TestCase):

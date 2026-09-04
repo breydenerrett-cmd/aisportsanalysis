@@ -56,6 +56,7 @@ from src.board.record import (
 from src.core import asof as asof_module
 from src.core.asof import game_pk_key
 from src.engine.analyze import Proposal
+from src.ledger.records import PROBABILITY_PROVENANCE_PLACEHOLDER
 from src.engine.features import FeatureSources, build_features
 from src.engine.snapshot import PriceBlindSnapshot, PricedBoard
 from src.engine.truncation import ArrivalRecord, TruncationSample
@@ -625,6 +626,18 @@ class TrivialAlwaysHomeSystem:
     data end to end: whatever changes between its `t-2h` and `t`
     `DecisionRecord`s changes for exactly one honest reason, the board's
     own price data moving.
+
+    N2/honesty fix (2026-09-04, docs/eod/2026-08-31.md flagged this by its
+    published `edge_bps`): this is a NULL CONTROL, not a probability
+    estimate. `p_model=0.52` is a fixed convention chosen once at
+    construction, never fit, never derived from price or a clock --
+    `p_model_provenance="placeholder"` names that plainly, and
+    `src.engine.analyze.analyze`/`src.ledger.records.DecisionRecord` now
+    make it structurally impossible for a placeholder-provenance proposal
+    to produce a non-null `edge_bps`: raise, not warn. This control keeps
+    staking (it is the control ARM of the experiment -- a system that never
+    plays produces nothing to compare a real model against) with no
+    fabricated value claim attached to what it stakes.
     """
 
     id: str = "trivial_always_home"
@@ -642,7 +655,11 @@ class TrivialAlwaysHomeSystem:
         return (Proposal(
             system_id=self.id, system_version=self.version,
             market_key="h2h", side="home", p_model=self.p_model,
-            thesis="trivial fallback: always proposes home at a fixed, "
-                   "never price/clock-derived p_model -- src.engine.glue",
+            p_model_provenance=PROBABILITY_PROVENANCE_PLACEHOLDER,
+            thesis="null control: always proposes home at a fixed "
+                   "convention p_model, never price/clock-derived and "
+                   "never fit -- provenance=placeholder, so PROJECT can "
+                   "never compute an edge_bps for this system "
+                   "-- src.engine.glue",
             evidence=("trivial_fallback",),
         ),)

@@ -28,7 +28,11 @@ from src.factory.scorecard import (
     falsification_from_battery,
     multiplicity_from_funnel_family,
 )
-from src.ledger.records import DecisionRecord, ReviewRecord
+from src.ledger.records import (
+    DecisionRecord,
+    PROBABILITY_PROVENANCE_MODEL_DERIVED,
+    ReviewRecord,
+)
 from src.research import battery as battery_module
 
 
@@ -72,6 +76,7 @@ def _decision(day, *, event_id="evt-x", edge_bps=200, p_model=0.6,
         if verdict == "play" else "refused_thin",
         assumption_exposure={}, stake_units=1.0 if verdict == "play" else 0.0,
         known_at_grade=known_at_grade,
+        p_model_provenance=PROBABILITY_PROVENANCE_MODEL_DERIVED,
     )
 
 

@@ -19,6 +19,7 @@ from src.engine import slate
 from src.engine.analyze import Proposal
 from src.ledger.chain import HashChainLedger
 from src.ledger.records import (
+    PROBABILITY_PROVENANCE_NONE,
     RECORD_PROVENANCE_LIVE_PRE_COMMENCEMENT,
     RECORD_PROVENANCE_REPLAY,
 )
@@ -96,6 +97,7 @@ class NullPModelSystem:
             return ()
         return (Proposal(system_id=self.id, system_version=self.version,
                          market_key="h2h", side="home",
+                         p_model_provenance=PROBABILITY_PROVENANCE_NONE,
                          thesis="always home, no probability"),)
 
 
