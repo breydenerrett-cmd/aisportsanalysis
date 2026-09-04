@@ -299,3 +299,307 @@ here is written to guarantee a promotion.
    cost of a real acquisition or design effort) so the family denominator
    isn't defined by what happened to be cheaply available, rather than by
    what F5 pricing actually deserves to be tested.
+
+---
+
+## Methodology review — 2026-09-04
+
+Adversarial methodology review of the draft above. **The draft text is
+unchanged.** Everything here is an amendment: where an amendment and the
+draft disagree, the amendment governs, and the disagreement stays visible.
+No outcome data was read to produce this section — every check required
+below is computable from prices, dates and universe metadata alone
+(`first_five_results.jsonl` is used only for the already-frozen
+decided/tie flag that defines gradeability).
+
+### Hard call 1 — B3 / bullpen-gap exclusion
+
+**DECISION: exclusion CONFIRMED. B3 stays out, and is not scheduled by this
+pass.** The draft's reasoning is correct and is the stronger form of the
+argument: the defect is not "we lack data," it is that the only full-game
+store covering this window was captured under the retired fixed-wall-clock
+rule, so any gap computed against it is a difference of two prices taken at
+uncontrolled and *differing* lead times. That difference is dominated by
+timing, not by bullpen information, and it is precisely the confound
+`PREREG_F5_SNAPSHOT_RULE.md` was written to close; admitting it would
+retroactively invalidate the snapshot rule rather than merely weaken B3.
+Scheduling a matched full-game T-2h acquisition inside this review would
+also couple a paid acquisition decision to a methodology sign-off, which is
+the wrong instrument — the F5 leg got its own purchase authorization and
+its own release gate, and the full-game leg must too. B3 therefore remains
+out of this family's denominator permanently: if a matched T-2h full-game
+store is later acquired, B3 is registered as its own family with its own
+correction, never folded into `{F5-H1, F5-H2}` after the fact.
+
+### Hard call 2 — effect floors above the project default
+
+**DECISION: the override is CORRECT in principle. F5-H1 floor stays at
+2.0pp. F5-H2's 3.0pp floor is REJECTED as internally incoherent and is
+RAISED to 4.0pp (with the granularity change in hard call 3).**
+
+A floor below the study's own MDE is not a floor: it admits results that
+cannot be distinguished from zero, which is exactly the failure the blanket
+`MIN_EFFECT = 0.010` would produce here (1.0pp against a 1.62pp family MDE).
+The draft is right to override it, and right that the override must be
+justified feature-side — literature magnitude plus own-measurement
+resolution — rather than from anything this data's outcomes say. 2.0pp on
+the full 3,682 clears 1.62pp with real margin and sits inside the 1-3pp band
+the microstructure literature reports, so F5-H1 needs no change.
+
+F5-H2's floor fails its own test. **The draft's per-quintile MDE figure
+("roughly 3.5-4pp") is arithmetically wrong and optimistic.** At n=319
+(2023) / n=417 (2024) per quintile, the two-sided 95% MDE is **5.49pp /
+4.80pp** at p=0.5, and 5.23pp / 4.58pp at p=0.65 (a realistic top-bucket
+favourite probability). A 3.0pp floor is therefore *below* the per-bucket
+measurement resolution at either leg — the identical defect the draft
+correctly refuses to accept from the project default. Under terciles (hard
+call 3) the per-bucket MDE is 4.25pp (2023) / 3.72pp (2024) at p=0.5 and
+4.05 / 3.55pp at p=0.65. **The floor is set at 4.0pp**, which clears the
+replication leg's own resolution and sits just at the discovery leg's. This
+raises the bar; it never lowers it, and no result may be rescued by moving
+it back down. It follows that **F5-H2 is a priori underpowered on its
+discovery leg at any granularity this universe supports.** That is stated
+here in advance, not discovered later as an excuse, and per §5 an honest
+"we cannot tell" is a complete and acceptable outcome for F5-H2.
+
+### Hard call 3 — F5-H2 bucket granularity
+
+**DECISION: TERCILES. Quintiles are rejected.** The choice is between
+resolution on the tails and the ability to measure anything at all, and at
+this n the quintile version cannot measure anything at all: its per-bucket
+MDE (4.8-5.5pp) exceeds any effect size the favourite-longshot literature
+would predict for a liquid, ≥5-book, de-vigged major-league sub-market, so
+a quintile design is pre-committed to a null it cannot distinguish from
+absence of power. Terciles recover roughly a fifth of the MDE and keep the
+top/bottom contrast the hypothesis is actually about; the loss is tail
+resolution, which the draft has already demoted to descriptive anyway by
+refusing to treat the gradient as a promotion criterion. Edges are the
+33.3/66.7 percentiles of `p_fav` **fit on 2023 only and frozen before any
+2024 row is touched**, exactly as the draft specifies for quintiles.
+Additional pre-registered requirement: each 2024 bucket must carry **n ≥
+300** or F5-H2's replication leg is reported as blocked-coverage, not as a
+loser — an under-populated bucket is a missing measurement, not evidence.
+
+### Hard call 4 — FDR at m=2
+
+**DECISION: KEEP BH-FDR at q = 0.10 over the 2-member family. Bonferroni is
+rejected.** The draft's own observation is correct — at m=2 this is barely a
+correction — but that is a reason to be clear-eyed about what protects this
+family, not a reason to swap in a stricter alpha. Switching to Bonferroni
+0.05/2 would be a bespoke, F5-specific stringency chosen by this reviewer
+for this family, which is structurally the same act as loosening one: a
+correction whose value is picked per-family stops being a pre-registered
+standard. `FDR_Q = 0.10` is the project standard (`src/model/family.py`,
+`src/research/timingtest.py`) and is reused here unchanged for that reason.
+What actually protects this family is the conjunction the draft already
+requires — correct pre-registered sign, an effect floor above the study's
+own MDE, independent-season replication, and the frozen battery — every one
+of which is stricter than the multiplicity correction. Two amendments make
+that explicit: (i) the 2024 leg must additionally clear a **two-sided 95%
+CI excluding zero**, stated as a standing requirement rather than left
+implicit in "post-FDR"; (ii) all p-values and intervals on both legs are
+**clustered by date** (`src/model/discovery.py`), never row-independent —
+same-slate games share weather, schedule position and market conditions, and
+unclustered inference here is the anticonservative n that manufactures
+significance. Note also that F5-H1 and F5-H2 are two slices of the *same*
+3,682 prices and are positively dependent; m=2 understates the true
+multiplicity rather than overstating it, so the small family is not a
+license to relax anything else.
+
+### Hard call 5 — discovery-leg role
+
+**DECISION: CONFIRMED, with one amendment.** 2023 as a screen and the
+correction applied only to the 2024 replication p-values is the correct and
+project-consistent semantics: the screen exists to stop a hypothesis, the
+replication carries the inferential claim, and correcting the screen too
+would double-penalise a design that already pays for its discovery pass by
+discarding half its data. **Amendment: the 2023 screen passes on sign plus
+point estimate ≥ floor only — no CI or FDR requirement is imposed on the
+screen leg.** As drafted ("both legs must individually clear a two-sided 95%
+CI test"), the screen demands a 2.0pp effect to be significant at n=1,597,
+where the MDE is 2.45pp; that gate is not conservative, it is a coin-flip
+filter that discards true effects for the crime of being measured on half
+the data, and it would make a two-loser family a near-foregone conclusion
+for reasons of arithmetic rather than of market efficiency. The rigour lives
+where it belongs: on 2024, at full floor, CI-excluding-zero, post-FDR, past
+the battery.
+
+### Hard call 6 — is a 2-hypothesis family too thin
+
+**DECISION: NO. Register two. Do not develop a third for this family.** A
+family's size is not a virtue metric, and padding it would be actively
+harmful in both directions the project already guards against: the §1
+doubleheader/short-rest candidate is honestly described as needing a
+threshold that could only come from inspecting this data's own rest-day
+distribution, which makes it outcome-adjacent by construction; line-movement
+is impossible on a one-snapshot-per-game store; F5 totals are excluded by
+standing rule; and B3 needs an acquisition. Adding any of them now would
+either enlarge the denominator with a hypothesis that cannot be tested
+(costing power in the correction for nothing) or import a tuned threshold.
+Two well-motivated, mechanism-backed, literature-anchored calibration tests
+against a frozen 3,682-game universe is a complete family. **Binding
+condition: if any third F5-moneyline hypothesis is ever registered against
+this same frozen universe, the FDR correction is re-run over the union of
+all F5 hypotheses ever registered against it, not over the new family
+alone** — otherwise "one family at a time" becomes an unlimited-tries budget.
+
+---
+
+### (a) Additional flaws found in the draft
+
+**A1 — the tie-settlement convention is never stated, and 14.3% of OK rows
+are ties. This is the most serious unresolved defect.** The gradeable set
+drops 614 ties from 4,298 OK rows and then compares outcomes against a
+**two-way** de-vigged `p_home`. That is only valid if every book's F5
+moneyline is genuinely a two-way, void-on-tie market — in which case the
+book's own price *is* a conditional-on-decided probability and dropping ties
+is exactly right. If any book in the ≥5-book consensus quotes a **three-way**
+F5 line (home / away / draw), its two-outcome de-vig silently renormalises
+away a real draw price, inflating both sides' implied probabilities, and the
+resulting calibration error is a measurement artefact of the de-vig, not of
+the market. Required before running, feature-side: enumerate the distinct
+outcome-name sets present under `h2h_1st_5_innings` across every book in
+`f5_tminus2_primary.jsonl` and confirm all are two-way. **Any three-way book
+found is excluded from the consensus (and the book-count ≥5 gate re-checked
+after exclusion), or the family does not run.**
+
+**A2 — `method="proportional"` de-vig has a favourite-longshot signature of
+its own, which directly confounds F5-H2.** Proportional de-vig distributes
+the overround in proportion to implied probability, which is known to
+overstate longshot probabilities relative to Shin or multiplicative
+conventions — i.e. the de-vig convention itself produces a bias with the
+same sign and in the same buckets as the effect F5-H2 is trying to detect,
+and the disagreement between conventions in extreme buckets can exceed the
+4.0pp floor. Using the project default is the right *primary* choice (it was
+not selected for this test), but it cannot stand alone here. **Amendment: a
+de-vig sensitivity is now part of F5-H2's pre-registered pass criteria, not
+a diagnostic. The extreme-bucket effect must keep its sign under all three
+of proportional (primary), multiplicative/odds-ratio, and Shin. A sign that
+does not survive all three is a property of the de-vig, not of the market,
+and kills F5-H2.** For F5-H1 the same three conventions are computed and
+**reported**, but do not gate: a home/away split is close to symmetric
+across the price range, so the convention's differential effect largely
+cancels.
+
+**A3 — the frozen hash covers game identity only, not prices.** The
+`c675086…cd1c` hash is explicitly "sha256 over the sorted eligible `game_pk`
+set … identity of the set only (which games), not any downstream
+classification." A re-fetch, repair, or normalisation change could alter
+every book price in `f5_tminus2_primary.jsonl` without moving that hash by a
+bit. **Amendment: a second content hash over the priced payload (per
+`game_pk`: `snapshot_at`, and each book's key + both prices, canonically
+ordered) must be computed and recorded in `docs/F5_UNIVERSE_FROZEN.md`
+before the first evaluation runs, and re-verified at run time.** Without it
+this family is pre-registered against a denominator it cannot prove did not
+move.
+
+**A4 — the battery's book-concentration rule will be silently unarmed.**
+`battery.py` rule 3 needs a per-row `book`; both hypotheses grade one
+consensus row per game, so rule 3 reports `{"skipped": …}` and can never be
+fatal. That is the battery behaving correctly, but a fatal rule that is
+quietly inert is exactly the kind of unremembered kill-test the battery
+exists to prevent. **Amendment: the run must record explicitly that rule 3
+was skipped and why, and must additionally report the per-book replication
+of the effect's sign (each book's own de-vigged prices, graded separately)
+as a report-only concentration diagnostic.** Book composition is known to
+churn across this window, so a sign that exists only in the books present in
+one season is information a reader needs.
+
+**A5 — the "population shift" kill in F5-H2 has no number.** "Do not carry a
+similar favorite/dog mix" is a discretionary judgment made after seeing 2024,
+which is a rescue lever in both directions. **Amendment: the kill is a
+chi-square test of 2024 bucket occupancy against the 2023-fit expected
+thirds, fatal at p < 0.01**, decided on feature-side counts before any 2024
+outcome is read.
+
+**A6 — no denominator padding, no floor set to guarantee a pass, and no
+leakage path found beyond the above.** Positively: the universe reconciles
+exactly (4,315 + 8 = 4,323; 614 + 2 + 3,682 = 4,298), the eligible set
+deliberately retains 17 `PRIMARY_SNAPSHOT_UNAVAILABLE` rows rather than
+narrowing to games that happened to price, the T-2h anchor is
+`scheduled_first_pitch` and never `actual_first_pitch`, and the grid-floor
+offset is uniform (−1.37 to −4.38 min, all early, inside tolerance) so it
+introduces no relative bias between games. The floors here are set *above*
+the study's own resolution, i.e. against the authors' interest, which is the
+correct direction. The 17 unavailable rows should nonetheless be reported
+alongside any result, since missingness is plausibly correlated with market
+thinness.
+
+### (b) Required evaluation path, and its validation
+
+**STANDALONE MEASUREMENT PATH. `src/research/funnel.py` must NOT be used,
+and must NOT be widened to accommodate this family.** The funnel is a
+feature-threshold *selection* instrument: `validate_spec` requires a
+`feature` drawn from the engine matrix's `NUMERIC_FEATURES`, a
+`side_rule` of `back_advantaged`, and a `threshold > 0` that fires a side.
+F5-H1 and F5-H2 select nothing — they grade the entire population (or a
+frozen feature-side partition of it) against its own price. Forcing them
+through the funnel would require inventing a fake feature and a fake
+threshold purely to satisfy validation, which corrupts the registered spec
+into something that does not describe the hypothesis. This is a different
+situation from `RESEARCH_V7_TOTALS.md` hard call 1, where a totals family
+genuinely needs the funnel's selection machinery rebuilt; here the funnel is
+the wrong shape, not a missing one. The required path is a small standalone
+module that **reuses, and does not reimplement**: `src/model/discovery.py`
+for date-clustered effects, p-values and intervals; `src/research/battery.py`
+at frozen `RULES_VERSION 2.0.0` applied verbatim; `src/model/family.py`
+(`FDR_Q`, `benjamini_hochberg`, `register`) for the family freeze and
+correction. Its only new code is row construction: `{date, won, implied,
+season, side, price}` per game, where `implied` is the cross-book mean
+de-vigged probability of the graded side and `won` is that side's F5 result.
+
+**Validation this path must pass before it is run on real data — all of it
+feature-side or synthetic, none of it requiring an outcome read:**
+
+1. A synthetic-injection test in the house style (cf.
+   `tests/test_engine_features.py`): construct rows with a known injected
+   calibration error and assert the path recovers it, sign and magnitude,
+   with date clustering intact.
+2. A PIT test asserting the path never reads `actual_first_pitch`, any
+   settlement timestamp, or any 2025/2026-dated row — including a negative
+   test that a deliberately injected 2025 or 2026 row is rejected, not
+   silently filtered.
+3. A denominator test: the path's row count equals exactly 3,682, splits
+   1,597 / 2,085 by `season`, and both the identity hash (A3, existing) and
+   the new price-payload hash (A3, to be added) verify at run time — the run
+   aborts on mismatch rather than proceeding on a moved universe.
+4. A de-vig test: all three conventions (proportional, multiplicative, Shin)
+   implemented and agreeing on a hand-checked two-way example, and the
+   two-way outcome-set audit of A1 passing on every book.
+5. A battery-wiring test: the battery is invoked with the frozen rules, no
+   bespoke rule is passed, and the run's report names every rule that was
+   skipped for want of a key (A4) rather than letting a skip pass unnoticed.
+6. `bash scripts/test_fast.sh` while building, `python3 scripts/test_parallel.py`
+   green before the first evaluation run.
+
+Only after 1-6 pass may `register_family()` / `family.register` be called to
+freeze `{F5-H1, F5-H2}`, and only after that may any outcome be read.
+
+### Summary of amendments (binding)
+
+1. F5-H2 granularity: quintiles → **terciles**; 2024 bucket floor n ≥ 300.
+2. F5-H2 effect floor: 3.0pp → **4.0pp** (per extreme tercile). F5-H1 floor
+   unchanged at 2.0pp. The draft's per-quintile MDE figure was understated;
+   corrected figures recorded above.
+3. F5-H2 population-shift kill made numeric: chi-square on bucket occupancy,
+   fatal at p < 0.01.
+4. Screen leg (2023) passes on **sign + point estimate ≥ floor only**; no CI
+   or FDR gate on the screen. Full inferential burden on 2024.
+5. 2024 leg must clear a two-sided 95% CI excluding zero **and** BH-FDR
+   q=0.10; BH-FDR retained, Bonferroni rejected.
+6. All inference **date-clustered**, both legs, both hypotheses.
+7. Three-way-book audit (A1) is a **precondition**; any three-way book is
+   excluded and the ≥5-book gate re-checked.
+8. De-vig sensitivity across proportional / multiplicative / Shin is a
+   **pass criterion for F5-H2** (sign must survive all three) and
+   report-only for F5-H1.
+9. A **price-payload content hash** is added to `F5_UNIVERSE_FROZEN.md` and
+   verified at run time; the run aborts on mismatch.
+10. Battery rule 3 (book concentration) is recorded as skipped-and-why, with
+    a per-book sign replication reported as a diagnostic.
+11. Evaluation runs on a **standalone path**, not the funnel; validation
+    items (b)1-6 must pass before registration.
+12. B3 permanently out; family stays at two members; any future third F5
+    hypothesis re-runs the correction over the union.
+
+**VERDICT: READY TO REGISTER AS AMENDED**
