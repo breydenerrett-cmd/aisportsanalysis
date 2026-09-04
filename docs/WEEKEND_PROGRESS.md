@@ -64,3 +64,6 @@
 ## 2026-09-05 03:2xZ — W16 totals eval path landed; audit reconciled at 6h
 - W16: totals_rows/totals_eval mirror f5_eval; 48 tests; full suite 4,441 green in lane. Real dry_run: joint 1,295/1,284 vs audit 1,321/1,320 — cause: audit hardcoded 12h while B5 froze 6h. Audit re-run at 6h (1bec5ae): 1,316/1,313. Manifest: 1,295+1,284 joint + 50 not-joined-to-settlement = 2,629 = audit 1,316+1,313. Reconciled exactly.
 - The 50 unjoined events must be characterised before freezing (F5 precedent: AZ/ARI join bug hid two seasons). W20 dispatched. W17 prereg draft dispatched in parallel (denominator placeholders). Manifest NOT frozen.
+
+## 2026-09-05 04:0xZ — W17 totals prereg DRAFT landed
+- Two members: M1 full-population OVER calibration (disclosed partially read), M2 combined-starter-groundball-share terciles. Gaps surfaced, not hidden: M1 proposed floor below its own 2.71pp MDE; M2 real n unknown (no feature∩price join yet); M2 has no evaluation code. W21 dispatched for the M2 join (counts only). Opus review of the draft waits on W20 (unjoined events) and W21. Capture healthy.
