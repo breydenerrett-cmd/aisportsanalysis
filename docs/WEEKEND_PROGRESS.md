@@ -49,3 +49,7 @@
 ## 2026-09-05 01:0xZ — W10 factory scale design + slice 1 landed (b5d5f19)
 - Canonical wager id (game_pk, market, side, line), append-only WagerStore, overlap/Jaccard/effective-N module; 4,387 tests green in lane. Overlap report honestly reports that sweep output does not yet persist per-strategy decision sets → W18 queued and dispatched.
 - W15 totals population audit running. Capture healthy.
+
+## 2026-09-05 01:3xZ — W15 totals population audit landed
+- Joint denominator (>=3-book per-line floor AND half-point modal line, at closing): 2023 1,321 / 2024 1,320 / 2025 1,280 (tuning-only). Half-point restriction halves the population (2,402 → 1,321). Closing gap p50 ~85 min, p90 ~325-350 min, proposed staleness bound 6h (quantile rule, frozen before any split re-measure).
+- Anomaly: 384/566/874 "rescheduled" games per season — implausible; W19 dispatched to characterise commence_time jitter before the closing definition is frozen. W16 eval path dispatched in parallel (closing definition parameterised). W18 running.
