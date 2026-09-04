@@ -1,0 +1,100 @@
+{
+  "billed": 30,
+  "caller": "probe_prop_name_join",
+  "commence_time": "2023-07-18T23:05:00Z",
+  "credits_spent_measured": 31,
+  "event_id": "a36f0138570d5bd380114bc31949436e",
+  "handedness_players": 1610,
+  "instant": "2023-07-18T22:50:00Z",
+  "markets": [
+    "batter_hits",
+    "batter_total_bases",
+    "batter_home_runs"
+  ],
+  "per_book": {
+    "barstool": {
+      "players": 18,
+      "resolve_rate": 1.0,
+      "resolved": 18,
+      "unresolved": []
+    },
+    "betmgm": {
+      "players": 18,
+      "resolve_rate": 1.0,
+      "resolved": 18,
+      "unresolved": []
+    },
+    "betonlineag": {
+      "players": 19,
+      "resolve_rate": 1.0,
+      "resolved": 19,
+      "unresolved": []
+    },
+    "betrivers": {
+      "players": 14,
+      "resolve_rate": 0.929,
+      "resolved": 13,
+      "unresolved": [
+        "Will (LAD) Smith"
+      ]
+    },
+    "bovada": {
+      "players": 18,
+      "resolve_rate": 0.944,
+      "resolved": 17,
+      "unresolved": [
+        "No Home Run"
+      ]
+    },
+    "draftkings": {
+      "players": 18,
+      "resolve_rate": 1.0,
+      "resolved": 18,
+      "unresolved": []
+    },
+    "fanduel": {
+      "players": 18,
+      "resolve_rate": 1.0,
+      "resolved": 18,
+      "unresolved": []
+    },
+    "mybookieag": {
+      "players": 27,
+      "resolve_rate": 0.704,
+      "resolved": 19,
+      "unresolved": [
+        "Boyce Mullins",
+        "Christopher Taylor",
+        "Frederick Freeman",
+        "Julio Martinez",
+        "Markus Betts",
+        "Maxwell Muncy",
+        "Senger Peralta",
+        "William Smith"
+      ]
+    },
+    "pointsbetus": {
+      "players": 15,
+      "resolve_rate": 1.0,
+      "resolved": 15,
+      "unresolved": []
+    },
+    "unibet_us": {
+      "players": 14,
+      "resolve_rate": 0.929,
+      "resolved": 13,
+      "unresolved": [
+        "Will (LAD) Smith"
+      ]
+    },
+    "williamhill_us": {
+      "players": 18,
+      "resolve_rate": 1.0,
+      "resolved": 18,
+      "unresolved": []
+    }
+  },
+  "remaining_after": 98905,
+  "remaining_before": 98936,
+  "served_timestamp": "2023-07-18T22:45:40Z"
+}

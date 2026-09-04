@@ -1,0 +1,383 @@
+{
+  "caller": "probe_historical_f5_props",
+  "credits_spent_measured": 33,
+  "events_lookups": [
+    {
+      "billed": 1,
+      "events_returned": 1,
+      "instant": "2023-07-12T22:50:00Z",
+      "remaining_after": 99339,
+      "season": 2023,
+      "served_timestamp": "2023-07-12T03:40:40Z"
+    },
+    {
+      "billed": 1,
+      "events_returned": 27,
+      "instant": "2024-07-10T22:50:00Z",
+      "remaining_after": 99338,
+      "season": 2024,
+      "served_timestamp": "2024-07-10T22:45:37Z"
+    },
+    {
+      "billed": 1,
+      "events_returned": 20,
+      "instant": "2025-07-09T22:50:00Z",
+      "remaining_after": 99307,
+      "season": 2025,
+      "served_timestamp": "2025-07-09T22:45:37Z"
+    }
+  ],
+  "probes": [
+    {
+      "assumed_billed": 10,
+      "away_team": "National League",
+      "billed": 0,
+      "book_count": 0,
+      "book_last_update_samples": [],
+      "books": [],
+      "commence_time": "2023-07-12T00:00:00Z",
+      "distinct_players": [],
+      "event_id": "1e917abee85546968da7eeda899fb65a",
+      "group": "f5_h2h",
+      "home_team": "American League",
+      "markets_returned": {},
+      "next_timestamp": "2023-07-13T09:15:40Z",
+      "outcome_rows": 0,
+      "player_count": 0,
+      "previous_timestamp": "2023-07-12T03:35:39Z",
+      "remaining_after": 99339,
+      "requested_instant": "2023-07-12T22:50:00Z",
+      "requested_markets": [
+        "h2h_1st_5_innings"
+      ],
+      "season": 2023,
+      "served_timestamp": "2023-07-12T03:40:40Z"
+    },
+    {
+      "assumed_billed": 20,
+      "away_team": "National League",
+      "billed": 0,
+      "book_count": 0,
+      "book_last_update_samples": [],
+      "books": [],
+      "commence_time": "2023-07-12T00:00:00Z",
+      "distinct_players": [],
+      "event_id": "1e917abee85546968da7eeda899fb65a",
+      "group": "f5_pair",
+      "home_team": "American League",
+      "markets_returned": {},
+      "next_timestamp": "2023-07-13T09:15:40Z",
+      "outcome_rows": 0,
+      "player_count": 0,
+      "previous_timestamp": "2023-07-12T03:35:39Z",
+      "remaining_after": 99339,
+      "requested_instant": "2023-07-12T22:50:00Z",
+      "requested_markets": [
+        "h2h_1st_5_innings",
+        "totals_1st_5_innings"
+      ],
+      "season": 2023,
+      "served_timestamp": "2023-07-12T03:40:40Z"
+    },
+    {
+      "assumed_billed": 10,
+      "away_team": "National League",
+      "billed": 0,
+      "book_count": 0,
+      "book_last_update_samples": [],
+      "books": [],
+      "commence_time": "2023-07-12T00:00:00Z",
+      "distinct_players": [],
+      "event_id": "1e917abee85546968da7eeda899fb65a",
+      "group": "pitcher_props",
+      "home_team": "American League",
+      "markets_returned": {},
+      "next_timestamp": "2023-07-13T09:15:40Z",
+      "outcome_rows": 0,
+      "player_count": 0,
+      "previous_timestamp": "2023-07-12T03:35:39Z",
+      "remaining_after": 99339,
+      "requested_instant": "2023-07-12T22:50:00Z",
+      "requested_markets": [
+        "pitcher_strikeouts"
+      ],
+      "season": 2023,
+      "served_timestamp": "2023-07-12T03:40:40Z"
+    },
+    {
+      "assumed_billed": 30,
+      "away_team": "National League",
+      "billed": 0,
+      "book_count": 0,
+      "book_last_update_samples": [],
+      "books": [],
+      "commence_time": "2023-07-12T00:00:00Z",
+      "distinct_players": [],
+      "event_id": "1e917abee85546968da7eeda899fb65a",
+      "group": "batter_props",
+      "home_team": "American League",
+      "markets_returned": {},
+      "next_timestamp": "2023-07-13T09:15:40Z",
+      "outcome_rows": 0,
+      "player_count": 0,
+      "previous_timestamp": "2023-07-12T03:35:39Z",
+      "remaining_after": 99339,
+      "requested_instant": "2023-07-12T22:50:00Z",
+      "requested_markets": [
+        "batter_hits",
+        "batter_total_bases",
+        "batter_home_runs"
+      ],
+      "season": 2023,
+      "served_timestamp": "2023-07-12T03:40:40Z"
+    },
+    {
+      "assumed_billed": 10,
+      "away_team": "Minnesota Twins",
+      "billed": 0,
+      "book_count": 0,
+      "book_last_update_samples": [],
+      "books": [],
+      "commence_time": "2024-07-10T21:31:00Z",
+      "distinct_players": [],
+      "event_id": "5573cb7101964d15aef2ae3a9482bd57",
+      "group": "f5_h2h",
+      "home_team": "Chicago White Sox",
+      "markets_returned": {},
+      "next_timestamp": "2024-07-10T22:50:37Z",
+      "outcome_rows": 0,
+      "player_count": 0,
+      "previous_timestamp": "2024-07-10T22:40:37Z",
+      "remaining_after": 99338,
+      "requested_instant": "2024-07-10T22:50:00Z",
+      "requested_markets": [
+        "h2h_1st_5_innings"
+      ],
+      "season": 2024,
+      "served_timestamp": "2024-07-10T22:45:37Z"
+    },
+    {
+      "assumed_billed": 20,
+      "away_team": "Minnesota Twins",
+      "billed": 0,
+      "book_count": 0,
+      "book_last_update_samples": [],
+      "books": [],
+      "commence_time": "2024-07-10T21:31:00Z",
+      "distinct_players": [],
+      "event_id": "5573cb7101964d15aef2ae3a9482bd57",
+      "group": "f5_pair",
+      "home_team": "Chicago White Sox",
+      "markets_returned": {},
+      "next_timestamp": "2024-07-10T22:50:37Z",
+      "outcome_rows": 0,
+      "player_count": 0,
+      "previous_timestamp": "2024-07-10T22:40:37Z",
+      "remaining_after": 99338,
+      "requested_instant": "2024-07-10T22:50:00Z",
+      "requested_markets": [
+        "h2h_1st_5_innings",
+        "totals_1st_5_innings"
+      ],
+      "season": 2024,
+      "served_timestamp": "2024-07-10T22:45:37Z"
+    },
+    {
+      "assumed_billed": 10,
+      "away_team": "Minnesota Twins",
+      "billed": 0,
+      "book_count": 0,
+      "book_last_update_samples": [],
+      "books": [],
+      "commence_time": "2024-07-10T21:31:00Z",
+      "distinct_players": [],
+      "event_id": "5573cb7101964d15aef2ae3a9482bd57",
+      "group": "pitcher_props",
+      "home_team": "Chicago White Sox",
+      "markets_returned": {},
+      "next_timestamp": "2024-07-10T22:50:37Z",
+      "outcome_rows": 0,
+      "player_count": 0,
+      "previous_timestamp": "2024-07-10T22:40:37Z",
+      "remaining_after": 99338,
+      "requested_instant": "2024-07-10T22:50:00Z",
+      "requested_markets": [
+        "pitcher_strikeouts"
+      ],
+      "season": 2024,
+      "served_timestamp": "2024-07-10T22:45:37Z"
+    },
+    {
+      "assumed_billed": 30,
+      "away_team": "Minnesota Twins",
+      "billed": 30,
+      "book_count": 3,
+      "book_last_update_samples": [
+        "2024-07-10T22:43:55Z",
+        "2024-07-10T22:44:16Z",
+        "2024-07-10T22:44:45Z",
+        "2024-07-10T22:44:52Z"
+      ],
+      "books": [
+        "bovada",
+        "draftkings",
+        "fanduel"
+      ],
+      "commence_time": "2024-07-10T21:31:00Z",
+      "distinct_players": [
+        "Andrew Benintendi",
+        "Andrew Vaughn",
+        "Brooks Lee",
+        "Byron Buxton",
+        "Carlos Correa",
+        "Danny Mendick",
+        "Jose Miranda",
+        "Kyle Farmer",
+        "Lenyn Sosa",
+        "Luis Robert Jr.",
+        "Martin Maldonado",
+        "Matt Wallner",
+        "Max Kepler",
+        "Paul DeJong",
+        "Ryan Jeffers",
+        "Tommy Pham"
+      ],
+      "event_id": "5573cb7101964d15aef2ae3a9482bd57",
+      "group": "batter_props",
+      "home_team": "Chicago White Sox",
+      "markets_returned": {
+        "batter_hits": {
+          "books": 3,
+          "outcomes": 74
+        },
+        "batter_home_runs": {
+          "books": 2,
+          "outcomes": 18
+        },
+        "batter_total_bases": {
+          "books": 3,
+          "outcomes": 78
+        }
+      },
+      "next_timestamp": "2024-07-10T22:50:37Z",
+      "outcome_rows": 170,
+      "player_count": 16,
+      "previous_timestamp": "2024-07-10T22:40:37Z",
+      "remaining_after": 99308,
+      "requested_instant": "2024-07-10T22:50:00Z",
+      "requested_markets": [
+        "batter_hits",
+        "batter_total_bases",
+        "batter_home_runs"
+      ],
+      "season": 2024,
+      "served_timestamp": "2024-07-10T22:45:37Z"
+    },
+    {
+      "assumed_billed": 10,
+      "away_team": "Philadelphia Phillies",
+      "billed": 0,
+      "book_count": 0,
+      "book_last_update_samples": [],
+      "books": [],
+      "commence_time": "2025-07-09T19:46:00Z",
+      "distinct_players": [],
+      "event_id": "c04d97448f861cd1a21308daffa51044",
+      "group": "f5_h2h",
+      "home_team": "San Francisco Giants",
+      "markets_returned": {},
+      "next_timestamp": "2025-07-09T22:50:37Z",
+      "outcome_rows": 0,
+      "player_count": 0,
+      "previous_timestamp": "2025-07-09T22:40:38Z",
+      "remaining_after": 99307,
+      "requested_instant": "2025-07-09T22:50:00Z",
+      "requested_markets": [
+        "h2h_1st_5_innings"
+      ],
+      "season": 2025,
+      "served_timestamp": "2025-07-09T22:45:37Z"
+    },
+    {
+      "assumed_billed": 20,
+      "away_team": "Philadelphia Phillies",
+      "billed": 0,
+      "book_count": 0,
+      "book_last_update_samples": [],
+      "books": [],
+      "commence_time": "2025-07-09T19:46:00Z",
+      "distinct_players": [],
+      "event_id": "c04d97448f861cd1a21308daffa51044",
+      "group": "f5_pair",
+      "home_team": "San Francisco Giants",
+      "markets_returned": {},
+      "next_timestamp": "2025-07-09T22:50:37Z",
+      "outcome_rows": 0,
+      "player_count": 0,
+      "previous_timestamp": "2025-07-09T22:40:38Z",
+      "remaining_after": 99307,
+      "requested_instant": "2025-07-09T22:50:00Z",
+      "requested_markets": [
+        "h2h_1st_5_innings",
+        "totals_1st_5_innings"
+      ],
+      "season": 2025,
+      "served_timestamp": "2025-07-09T22:45:37Z"
+    },
+    {
+      "assumed_billed": 10,
+      "away_team": "Philadelphia Phillies",
+      "billed": 0,
+      "book_count": 0,
+      "book_last_update_samples": [],
+      "books": [],
+      "commence_time": "2025-07-09T19:46:00Z",
+      "distinct_players": [],
+      "event_id": "c04d97448f861cd1a21308daffa51044",
+      "group": "pitcher_props",
+      "home_team": "San Francisco Giants",
+      "markets_returned": {},
+      "next_timestamp": "2025-07-09T22:50:37Z",
+      "outcome_rows": 0,
+      "player_count": 0,
+      "previous_timestamp": "2025-07-09T22:40:38Z",
+      "remaining_after": 99307,
+      "requested_instant": "2025-07-09T22:50:00Z",
+      "requested_markets": [
+        "pitcher_strikeouts"
+      ],
+      "season": 2025,
+      "served_timestamp": "2025-07-09T22:45:37Z"
+    },
+    {
+      "assumed_billed": 30,
+      "away_team": "Philadelphia Phillies",
+      "billed": 0,
+      "book_count": 0,
+      "book_last_update_samples": [],
+      "books": [],
+      "commence_time": "2025-07-09T19:46:00Z",
+      "distinct_players": [],
+      "event_id": "c04d97448f861cd1a21308daffa51044",
+      "group": "batter_props",
+      "home_team": "San Francisco Giants",
+      "markets_returned": {},
+      "next_timestamp": "2025-07-09T22:50:37Z",
+      "outcome_rows": 0,
+      "player_count": 0,
+      "previous_timestamp": "2025-07-09T22:40:38Z",
+      "remaining_after": 99307,
+      "requested_instant": "2025-07-09T22:50:00Z",
+      "requested_markets": [
+        "batter_hits",
+        "batter_total_bases",
+        "batter_home_runs"
+      ],
+      "season": 2025,
+      "served_timestamp": "2025-07-09T22:45:37Z"
+    }
+  ],
+  "remaining_after": 99307,
+  "remaining_before": 99340,
+  "worst_case_credits": 213
+}

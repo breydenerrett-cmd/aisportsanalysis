@@ -1,0 +1,250 @@
+{
+  "caller": "probe_historical_boundaries",
+  "checks": [
+    {
+      "chosen_commence": "2023-04-01T00:10:00Z",
+      "events_billed": 1,
+      "events_returned": 20,
+      "events_served_timestamp": "2023-03-31T22:45:40Z",
+      "instant": "2023-03-31T22:50:00Z",
+      "label": "back_2023_03_31",
+      "markets": [
+        "h2h_1st_5_innings"
+      ],
+      "odds_error": "MarketsUnavailableAtDate: these markets are not in the archive on that date",
+      "pregame_events": 19
+    },
+    {
+      "chosen_commence": "2023-04-20T23:40:00Z",
+      "events_billed": 1,
+      "events_returned": 21,
+      "events_served_timestamp": "2023-04-20T22:45:40Z",
+      "instant": "2023-04-20T22:50:00Z",
+      "label": "back_2023_04_20",
+      "markets": [
+        "h2h_1st_5_innings"
+      ],
+      "odds_error": "MarketsUnavailableAtDate: these markets are not in the archive on that date",
+      "pregame_events": 18
+    },
+    {
+      "billed": 10,
+      "chosen_commence": "2023-05-10T23:20:00Z",
+      "events_billed": 1,
+      "events_returned": 12,
+      "events_served_timestamp": "2023-05-10T22:45:40Z",
+      "instant": "2023-05-10T22:50:00Z",
+      "label": "back_2023_05_10",
+      "markets": [
+        "h2h_1st_5_innings"
+      ],
+      "pregame_events": 8,
+      "shape": {
+        "book_count": 8,
+        "book_last_update_samples": [
+          "2023-05-10T22:41:54Z",
+          "2023-05-10T22:41:56Z",
+          "2023-05-10T22:42:03Z",
+          "2023-05-10T22:42:04Z"
+        ],
+        "books": [
+          "barstool",
+          "betmgm",
+          "betonlineag",
+          "betrivers",
+          "bovada",
+          "pointsbetus",
+          "unibet_us",
+          "williamhill_us"
+        ],
+        "commence_time": "2023-05-10T23:20:00Z",
+        "markets_returned": {
+          "h2h_1st_5_innings": {
+            "books": 8,
+            "outcomes": 16
+          }
+        },
+        "next_timestamp": "2023-05-10T22:50:40Z",
+        "outcome_rows": 16,
+        "player_count": 0,
+        "previous_timestamp": "2023-05-10T22:40:40Z",
+        "served_timestamp": "2023-05-10T22:45:40Z"
+      }
+    },
+    {
+      "chosen_commence": "2023-04-20T23:40:00Z",
+      "events_billed": 1,
+      "events_returned": 21,
+      "events_served_timestamp": "2023-04-20T22:45:40Z",
+      "instant": "2023-04-20T22:50:00Z",
+      "label": "back_2023_04_20_props",
+      "markets": [
+        "pitcher_strikeouts"
+      ],
+      "odds_error": "MarketsUnavailableAtDate: these markets are not in the archive on that date",
+      "pregame_events": 18
+    },
+    {
+      "billed": 20,
+      "chosen_commence": "2024-07-09T23:10:00Z",
+      "events_billed": 1,
+      "events_returned": 26,
+      "events_served_timestamp": "2024-07-09T22:55:37Z",
+      "instant": "2024-07-09T23:00:00Z",
+      "label": "lead_2024_T24h",
+      "markets": [
+        "h2h_1st_5_innings",
+        "pitcher_strikeouts"
+      ],
+      "pregame_events": 22,
+      "shape": {
+        "book_count": 12,
+        "book_last_update_samples": [
+          "2024-07-09T22:54:23Z",
+          "2024-07-09T22:54:42Z",
+          "2024-07-09T22:54:47Z",
+          "2024-07-09T22:54:49Z"
+        ],
+        "books": [
+          "betmgm",
+          "betonlineag",
+          "betrivers",
+          "betus",
+          "bovada",
+          "draftkings",
+          "fanduel",
+          "lowvig",
+          "mybookieag",
+          "superbook",
+          "williamhill_us",
+          "wynnbet"
+        ],
+        "commence_time": "2024-07-09T23:10:00Z",
+        "markets_returned": {
+          "h2h_1st_5_innings": {
+            "books": 12,
+            "outcomes": 24
+          },
+          "pitcher_strikeouts": {
+            "books": 8,
+            "outcomes": 34
+          }
+        },
+        "next_timestamp": "2024-07-09T23:00:37Z",
+        "outcome_rows": 58,
+        "player_count": 2,
+        "previous_timestamp": "2024-07-09T22:50:37Z",
+        "served_timestamp": "2024-07-09T22:55:37Z"
+      }
+    },
+    {
+      "billed": 20,
+      "chosen_commence": "2024-07-10T17:46:00Z",
+      "events_billed": 1,
+      "events_returned": 20,
+      "events_served_timestamp": "2024-07-10T16:55:37Z",
+      "instant": "2024-07-10T17:00:00Z",
+      "label": "lead_2024_T6h",
+      "markets": [
+        "h2h_1st_5_innings",
+        "pitcher_strikeouts"
+      ],
+      "pregame_events": 20,
+      "shape": {
+        "book_count": 12,
+        "book_last_update_samples": [
+          "2024-07-10T16:54:45Z",
+          "2024-07-10T16:54:46Z",
+          "2024-07-10T16:54:50Z",
+          "2024-07-10T16:54:53Z"
+        ],
+        "books": [
+          "betmgm",
+          "betonlineag",
+          "betrivers",
+          "betus",
+          "bovada",
+          "draftkings",
+          "fanduel",
+          "lowvig",
+          "mybookieag",
+          "superbook",
+          "williamhill_us",
+          "wynnbet"
+        ],
+        "commence_time": "2024-07-10T17:46:00Z",
+        "markets_returned": {
+          "h2h_1st_5_innings": {
+            "books": 12,
+            "outcomes": 24
+          },
+          "pitcher_strikeouts": {
+            "books": 6,
+            "outcomes": 30
+          }
+        },
+        "next_timestamp": "2024-07-10T17:00:38Z",
+        "outcome_rows": 54,
+        "player_count": 2,
+        "previous_timestamp": "2024-07-10T16:50:37Z",
+        "served_timestamp": "2024-07-10T16:55:37Z"
+      }
+    },
+    {
+      "billed": 20,
+      "chosen_commence": "2024-07-10T22:36:00Z",
+      "events_billed": 1,
+      "events_returned": 27,
+      "events_served_timestamp": "2024-07-10T21:55:37Z",
+      "instant": "2024-07-10T22:00:00Z",
+      "label": "lead_2024_T1h",
+      "markets": [
+        "h2h_1st_5_innings",
+        "pitcher_strikeouts"
+      ],
+      "pregame_events": 26,
+      "shape": {
+        "book_count": 11,
+        "book_last_update_samples": [
+          "2024-07-10T21:54:20Z",
+          "2024-07-10T21:54:51Z",
+          "2024-07-10T21:54:57Z",
+          "2024-07-10T21:55:03Z"
+        ],
+        "books": [
+          "betmgm",
+          "betonlineag",
+          "betrivers",
+          "betus",
+          "bovada",
+          "draftkings",
+          "fanduel",
+          "lowvig",
+          "mybookieag",
+          "williamhill_us",
+          "wynnbet"
+        ],
+        "commence_time": "2024-07-10T22:36:00Z",
+        "markets_returned": {
+          "h2h_1st_5_innings": {
+            "books": 11,
+            "outcomes": 22
+          },
+          "pitcher_strikeouts": {
+            "books": 8,
+            "outcomes": 40
+          }
+        },
+        "next_timestamp": "2024-07-10T22:00:37Z",
+        "outcome_rows": 62,
+        "player_count": 2,
+        "previous_timestamp": "2024-07-10T21:50:37Z",
+        "served_timestamp": "2024-07-10T21:55:37Z"
+      }
+    }
+  ],
+  "credits_spent_measured": 77,
+  "remaining_after": 99017,
+  "remaining_before": 99094,
+  "worst_case_credits": 107
+}
