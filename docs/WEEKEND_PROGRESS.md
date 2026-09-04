@@ -76,3 +76,6 @@
 
 ## 2026-09-05 05:4xZ — totals prereg methodology review landed
 - Regular season only (1,296/1,288); M1 floor 3.0pp with the 0-3pp band explicitly "cannot tell"; M2 demoted to a pre-determined POPULATION_SHIFT_FAIL evaluated exploratory and excluded from m; confirmatory family = M1 alone, m=1, no multiplicity credit claimable; new admissibility rule |Δ join rate| <= 10pp for any partition member; even a SURVIVOR cannot promote without an independent forward leg. Nine code items bound. W22 (code) and W23 (final spec) dispatched. Capture healthy.
+
+## 2026-09-05 06:5xZ — W22 code + W23 spec landed; totals universe manifest frozen
+- W22: nine bound items implemented; lane suites 4,134 fast / 4,482 full green; here test_totals_rows OK. Universe manifest written (regular season, 1,296/1,288, ledger reconciles: 14 postseason, 1 All-Star, 30 postponed, 169 no-closing, 2,175 not-joint). Real dry_run passes both hash guards. Family NOT frozen. Adversarial review dispatched (Opus). Capture healthy.
