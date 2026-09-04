@@ -53,3 +53,6 @@
 ## 2026-09-05 01:3xZ — W15 totals population audit landed
 - Joint denominator (>=3-book per-line floor AND half-point modal line, at closing): 2023 1,321 / 2024 1,320 / 2025 1,280 (tuning-only). Half-point restriction halves the population (2,402 → 1,321). Closing gap p50 ~85 min, p90 ~325-350 min, proposed staleness bound 6h (quantile rule, frozen before any split re-measure).
 - Anomaly: 384/566/874 "rescheduled" games per season — implausible; W19 dispatched to characterise commence_time jitter before the closing definition is frozen. W16 eval path dispatched in parallel (closing definition parameterised). W18 running.
+
+## 2026-09-05 02:0xZ — W19 reschedule audit landed
+- Deltas are sub-15-min, both-signed, clustered at 5/10/15/60 min → provider jitter, not reschedules. No PIT schedule store exists to cross-check (reported unjoinable). Anchor stays the self-referential per-snapshot commence_time (leak-proof). W16 default anchor constant confirmed. W16, W18 still running.
