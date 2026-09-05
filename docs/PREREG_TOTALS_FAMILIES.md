@@ -1145,3 +1145,99 @@ Neither can be papered over at registration time, because freezing is the
 act that makes both permanent.
 
 ADVERSARIAL VERDICT: FAIL — B-A1 (prereg spec_sha256 unbounded at end, starts in superseded DRAFT text: appending this review moves it, REPRODUCED), B-A2 (population-shift kill gate's book-count-bucket half specified but not implemented, REPRODUCED), M-A1 (freeze record omits the spec's numeric gates; the 3.0pp floor is not cross-checked at run time), M-A2 (three conflicting CANNOT_TELL precedence orders; implemented order absorbs a fatal battery flag), M-A3 (run_full_evaluation's happy path never executed by any test). Re-submit for registration once these five are closed; O1-O4 decisions above must be folded into the FINAL SPECIFICATION in the same commit.
+
+## Post-adversarial amendments — 2026-09-05
+
+Amendments closing the five REPRODUCED findings of "## Adversarial
+pre-registration review — 2026-09-05" plus its O1-O4 decisions, per that
+review's own instruction to fold them into the FINAL SPECIFICATION in the
+same commit. The FINAL SPECIFICATION section above is left textually
+UNCHANGED (including its now-superseded verdict-precedence line and its
+"remainder to reach" ledger row) — this section is authoritative wherever
+it differs, exactly the same convention the FINAL SPECIFICATION itself used
+against the DRAFT above it.
+
+**B-A1 closed.** `src.research.totals_eval.prereg_spec_sha256` now hashes
+the "## FINAL SPECIFICATION (post-review, 2026-09-05)" section (up to, not
+including, the "## Adversarial pre-registration review" section) plus this
+"## Post-adversarial amendments" section, bounded at the next top-level
+heading — mirroring `src.research.f5_eval._extract_spec_text` exactly.
+Appending a further review section after this one does not move the hash;
+the hash no longer covers the superseded DRAFT text above "## FINAL
+SPECIFICATION". `tests/test_totals_rows.py::TestBoundedPreregSpecHash`
+pins both properties.
+
+**B-A2 closed.** `src.research.totals_rows.book_count_bucket_occupancy`
+implements the book-count half of the M1 population-shift kill gate on the
+named edges `1, 2, 3, 4, 5, 6+` (`BOOK_COUNT_BUCKET_EDGES`).
+`population_shift_test` now runs BOTH the line-bucket and book-count-bucket
+chi-squares (fit on the screen leg, applied to the replication leg) and is
+fatal if EITHER is significant at p<0.01 — a book-composition shift between
+2023 and 2024 can no longer pass undetected while only the line-bucket half
+is checked. `TestPopulationShift::test_book_count_bucket_shift_alone_is_fatal`
+pins a case where the line bucketing alone would have passed.
+
+**M-A1 closed.** `freeze_confirmatory_family` now writes every numeric gate
+the FINAL SPECIFICATION's freeze-record JSON names — `effect_floor_pp`,
+`cannot_tell_band_pp`, the population-shift kill gate's `fatal_p_lt` and
+both bucket-edge sets, `fdr_q`, `fdr_does_no_work`, `clustering`,
+`screen_pass_rule`, `replication_pass_rule`, `battery_rules_recorded_skipped`,
+`verdict_precedence` (see M-A2), `excluded_members_permanent`,
+`deferred_members`, `requires_independent_forward_leg_before_promotion`,
+`sealed_period_not_a_forward_leg` — and `_verify_confirmatory_family` now
+cross-checks `effect_floor_pp`, `cannot_tell_band_pp`, the population-shift
+kill gate's `fatal_p_lt` and both bucket-edge sets, `fdr_q`, `clustering`,
+`battery_rules_version`, `max_staleness_hours`, and `book_floor` against
+this module's live constants, in addition to the pre-existing
+`spec_sha256`/universe-hash/`fdr_m` checks. A commit that lowers any one of
+these gates now makes `run_full_evaluation` refuse rather than silently
+running under the weaker gate.
+
+**M-A2 closed.** One precedence order, implemented in exactly one place
+(`src.research.totals_eval.VERDICTS_PRECEDENCE`, consumed by both
+`VERDICTS` and `compute_verdict`) and cited here rather than restated:
+`POPULATION_SHIFT_FAIL → BATTERY_FAIL → DEVIG_SIGN_FAIL → CANNOT_TELL →
+SCREEN_FAIL → REPLICATION_FAIL → SURVIVOR`. This supersedes the FINAL
+SPECIFICATION's "Verdict codes and precedence" line above, which listed
+`SCREEN_FAIL`/`REPLICATION_FAIL` ahead of `CANNOT_TELL` and both
+`DEVIG_SIGN_FAIL`/`BATTERY_FAIL` — a fatal battery flag or a de-vig sign
+failure is a statement about the DESIGN and must never be reported as the
+strictly weaker `CANNOT_TELL` (a statement about POWER only); per O1,
+`CANNOT_TELL` is a fully distinct terminal code applying at both legs, and
+the (0, 3.0pp) band is open at the top — `|effect| == 3.0pp` exactly is a
+PASS, not `CANNOT_TELL`.
+
+**M-A3 closed.** `TestRunFullEvaluationHappyPath` in
+`tests/test_totals_rows.py` freezes a synthetic universe manifest and a
+confirmatory family record into a temp directory (both via `manifest_path`/
+`confirmatory_family_path` parameters `run_full_evaluation` now accepts,
+added for exactly this reason — previously it always re-verified against
+the real default manifest, which is WHY the one existing call site raised
+inside `verify_universe`, never inside the gate its comment claimed to
+test) and runs `run_full_evaluation` to completion, asserting the result
+shape (`m1`, `m2`, `integer_stratum_report_only`, `fdr_m1_only` keys) and a
+valid verdict code. Per-gate flip tests (`compute_verdict`) already existed
+and are unchanged; this closes the wiring gap between rows and those
+booleans.
+
+**O2 confirmed.** `devig_sensitivity_gates` is now written explicitly for
+both members — `true` for TOTALS-M1, `false` for TOTALS-M2 — never omitted.
+
+**O3 closed — exclusion-ledger literals.** Per the manifest: not-joint is
+**1,078 (2023) and 1,097 (2024), total 2,175**; no-closing-snapshot is
+95/2023, 74/2024 (169); not-joined-to-settlement is 45 = 30 postponed + 14
+postseason + 1 All-Star. These reconcile exactly to the pre-join 1,316/
+1,313 and the post-join 1,296/1,288. This replaces the FINAL
+SPECIFICATION's "remainder to reach 1,296/1,288" ledger row above with
+these literals; the "remainder" phrasing there is superseded, not deleted.
+
+**O4 adopted — union-FDR rule for a future third totals hypothesis.** Any
+future confirmatory totals member registered against the
+`TOTALS_FULLGAME_2026H1` universe joins this family's FDR family and forces
+a union re-run of Benjamini-Hochberg at the new `m`; TOTALS-M1's earlier
+verdict is recomputed under that `m` and may be revoked. This is F5's union
+rule adopted verbatim (see `docs/PREREG_F5_FAMILIES.md`'s identical clause)
+and closes the standing invitation D3's "FDR does no work in this family"
+disclosure would otherwise leave open — registering hypothesis two, three,
+and four as separate families to claim `m=1` each time is exactly the
+multiplicity leak the FDR apparatus exists to close.

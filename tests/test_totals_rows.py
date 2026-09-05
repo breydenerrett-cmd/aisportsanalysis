@@ -539,27 +539,52 @@ class TestPreVoidDenominator(unittest.TestCase):
 # 11. Population-shift chi-square
 # ---------------------------------------------------------------------------
 
+def _shift_rows(line, book_count, n):
+    return [{"line": line, "book_count": book_count} for _ in range(n)]
+
+
 class TestPopulationShift(unittest.TestCase):
     def test_identical_distributions_not_fatal(self):
-        screen = [{"line": 8.5} for _ in range(100)] + [{"line": 9.5} for _ in range(100)]
-        replication = [{"line": 8.5} for _ in range(100)] + [{"line": 9.5} for _ in range(100)]
+        screen = _shift_rows(8.5, 3, 100) + _shift_rows(9.5, 4, 100)
+        replication = _shift_rows(8.5, 3, 100) + _shift_rows(9.5, 4, 100)
         result = tr.population_shift_test(screen, replication)
         self.assertFalse(result["fatal"])
         self.assertGreater(result["p"], 0.01)
 
     def test_dramatic_shift_is_fatal(self):
-        screen = [{"line": 8.5} for _ in range(500)] + [{"line": 9.5} for _ in range(500)]
-        replication = [{"line": 8.5} for _ in range(950)] + [{"line": 9.5} for _ in range(50)]
+        screen = _shift_rows(8.5, 3, 500) + _shift_rows(9.5, 4, 500)
+        replication = _shift_rows(8.5, 3, 950) + _shift_rows(9.5, 4, 50)
         result = tr.population_shift_test(screen, replication)
         self.assertTrue(result["fatal"])
         self.assertLess(result["p"], 0.01)
 
     def test_never_reads_won(self):
-        screen = [{"line": 8.5} for _ in range(50)] + [{"line": 9.5} for _ in range(50)]
-        replication = [{"line": 8.5} for _ in range(50)] + [{"line": 9.5} for _ in range(50)]
+        screen = _shift_rows(8.5, 3, 50) + _shift_rows(9.5, 4, 50)
+        replication = _shift_rows(8.5, 3, 50) + _shift_rows(9.5, 4, 50)
         # No 'won' key present at all -- must not raise or need it.
         result = tr.population_shift_test(screen, replication)
         self.assertIn("p", result)
+
+    def test_book_count_bucket_shift_alone_is_fatal(self):
+        # Line occupancy has the SAME proportions across legs (50/50 split
+        # both legs); only book-count composition shifts dramatically --
+        # B-A2: this must be caught by the book-count bucketing even though
+        # the line bucketing sees nothing wrong.
+        screen = (_shift_rows(8.5, 3, 250) + _shift_rows(9.5, 3, 250)
+                 + _shift_rows(8.5, 4, 250) + _shift_rows(9.5, 4, 250))
+        replication = (_shift_rows(8.5, 3, 475) + _shift_rows(9.5, 3, 475)
+                      + _shift_rows(8.5, 4, 25) + _shift_rows(9.5, 4, 25))
+        result = tr.population_shift_test(screen, replication)
+        self.assertFalse(result["line"]["fatal"])
+        self.assertTrue(result["book_count"]["fatal"])
+        self.assertTrue(result["fatal"])  # OR of both bucketings (B-A2)
+
+    def test_book_count_bucket_occupancy_uses_named_edges(self):
+        rows = (_shift_rows(8.5, 1, 1) + _shift_rows(8.5, 2, 2)
+               + _shift_rows(8.5, 3, 3) + _shift_rows(8.5, 4, 4)
+               + _shift_rows(8.5, 5, 5) + _shift_rows(8.5, 9, 6))
+        occ = tr.book_count_bucket_occupancy(rows)
+        self.assertEqual(occ, {"1": 1, "2": 2, "3": 3, "4": 4, "5": 5, "6+": 6})
 
     def test_chi_square_even_df_matches_f5_df2_case(self):
         from src.research import f5_eval
@@ -1145,6 +1170,322 @@ class TestEffectFloorIsThreePointZero(unittest.TestCase):
                                     expected_sign=1)
         self.assertFalse(gate["floor_ok"])
         self.assertTrue(gate["cannot_tell"])
+
+
+# ---------------------------------------------------------------------------
+# 15. Adversarial pre-registration review -- 2026-09-05, closing the five
+# REPRODUCED findings (B-A1, B-A2 -- see class 12/TestPopulationShift above
+# -- M-A1, M-A2, M-A3).
+# ---------------------------------------------------------------------------
+
+class TestBoundedPreregSpecHash(unittest.TestCase):
+    """B-A1: `prereg_spec_sha256` must be bounded at BOTH ends -- start at
+    the FINAL SPECIFICATION (never the superseded DRAFT text above it), end
+    before the adversarial-review section (never unbounded to end-of-file).
+    Mirrors `TestBoundedSpecHash` for `spec_sha256`/`f5_eval` exactly."""
+
+    BASE = ("# doc\n\nDRAFT stuff that must never be hashed\n\n"
+           "## FINAL SPECIFICATION (post-review, 2026-09-05)\n\nspec body\n\n"
+           "## Adversarial pre-registration review -- 2026-09-05\n\n"
+           "review text that must never be hashed\n\n"
+           "## Post-adversarial amendments -- 2026-09-05\n\namendment body\n")
+
+    def test_hash_ignores_content_appended_after_amendments(self):
+        with TemporaryDirectory() as td:
+            path1 = Path(td) / "a.md"
+            path1.write_text(self.BASE, encoding="utf-8")
+            h1 = te.prereg_spec_sha256(path1)
+
+            appended = self.BASE + "\n## A later appended review\n\nnew stuff\n"
+            path2 = Path(td) / "b.md"
+            path2.write_text(appended, encoding="utf-8")
+            h2 = te.prereg_spec_sha256(path2)
+            self.assertEqual(h1, h2)
+
+    def test_hash_excludes_draft_text_above_final_specification(self):
+        with TemporaryDirectory() as td:
+            path1 = Path(td) / "a.md"
+            path1.write_text(self.BASE, encoding="utf-8")
+            h1 = te.prereg_spec_sha256(path1)
+
+            changed_draft = self.BASE.replace(
+                "DRAFT stuff that must never be hashed", "COMPLETELY DIFFERENT DRAFT TEXT")
+            path2 = Path(td) / "b.md"
+            path2.write_text(changed_draft, encoding="utf-8")
+            h2 = te.prereg_spec_sha256(path2)
+            self.assertEqual(h1, h2)  # DRAFT text is not part of what's hashed
+
+    def test_hash_excludes_the_adversarial_review_section_itself(self):
+        with TemporaryDirectory() as td:
+            path1 = Path(td) / "a.md"
+            path1.write_text(self.BASE, encoding="utf-8")
+            h1 = te.prereg_spec_sha256(path1)
+
+            changed_review = self.BASE.replace(
+                "review text that must never be hashed", "a totally different review")
+            path2 = Path(td) / "b.md"
+            path2.write_text(changed_review, encoding="utf-8")
+            h2 = te.prereg_spec_sha256(path2)
+            self.assertEqual(h1, h2)  # the review section itself is not part of the hash
+
+    def test_hash_changes_when_final_spec_or_amendments_change(self):
+        with TemporaryDirectory() as td:
+            path1 = Path(td) / "a.md"
+            path1.write_text(self.BASE, encoding="utf-8")
+            h1 = te.prereg_spec_sha256(path1)
+
+            changed = self.BASE.replace("amendment body", "REVISED amendment body")
+            path2 = Path(td) / "b.md"
+            path2.write_text(changed, encoding="utf-8")
+            h2 = te.prereg_spec_sha256(path2)
+            self.assertNotEqual(h1, h2)
+
+    def test_hash_raises_without_amendments_marker(self):
+        with TemporaryDirectory() as td:
+            path = Path(td) / "a.md"
+            path.write_text("## FINAL SPECIFICATION (post-review, 2026-09-05)\n\nbody\n",
+                            encoding="utf-8")
+            with self.assertRaises(te.TotalsEvalError):
+                te.prereg_spec_sha256(path)
+
+    def test_real_prereg_doc_hashes_cleanly(self):
+        h = te.prereg_spec_sha256()
+        self.assertEqual(len(h), 64)
+
+
+class TestFreezeRecordCarriesAllNumericGates(unittest.TestCase):
+    """M-A1: every numeric gate the FINAL SPECIFICATION's freeze-record JSON
+    names must be WRITTEN by `freeze_confirmatory_family` and CROSS-CHECKED
+    by `_verify_confirmatory_family` at run time -- not just the three
+    hashes and `fdr_m`."""
+
+    def _frozen_manifest(self, td):
+        fx = _Fixture(td)
+        _add_default_game(fx, season="2023", event_id="e1", game_pk="1",
+                          date="2023-06-01", total_runs=9, home_won=True)
+        fx.write()
+        manifest = tr.build_universe(seasons=("2023",), archive_root=fx.archive_root,
+                                     results_path=fx.results_csv)
+        manifest_path = Path(td) / "universe.json"
+        tr.write_manifest(manifest, manifest_path)
+        return manifest_path
+
+    def test_freeze_record_carries_every_named_gate(self):
+        with TemporaryDirectory() as td:
+            manifest_path = self._frozen_manifest(td)
+            family_path = Path(td) / "family.json"
+            record = te.freeze_confirmatory_family(family_path, manifest_path=manifest_path)
+            m1 = [m for m in record["members"] if m["id"] == "TOTALS-M1"][0]
+            self.assertEqual(m1["effect_floor_pp"], 3.0)
+            self.assertEqual(m1["cannot_tell_band_pp"], [0.0, 3.0])
+            self.assertEqual(m1["population_shift_kill"]["fatal_p_lt"], 0.01)
+            self.assertEqual(m1["population_shift_kill"]["line_bucket_edges"],
+                             list(tr.LINE_BUCKET_EDGES))
+            self.assertEqual(m1["population_shift_kill"]["book_count_bucket_edges"],
+                             list(tr.BOOK_COUNT_BUCKET_EDGES))
+            self.assertTrue(m1["devig_sensitivity_gates"])
+            m2 = [m for m in record["members"] if m["id"] == "TOTALS-M2"][0]
+            self.assertFalse(m2["devig_sensitivity_gates"])  # O2
+            self.assertEqual(record["fdr_q"], family.FDR_Q)
+            self.assertTrue(record["fdr_does_no_work"])
+            self.assertEqual(record["clustering"], "date")
+            self.assertEqual(record["verdict_precedence"], list(te.VERDICTS_PRECEDENCE))
+
+    def test_lowering_effect_floor_makes_run_refuse(self):
+        """The exact repro M-A1 names: mutate the frozen record's
+        effect_floor_pp downward and confirm the cross-check refuses, never
+        silently running under the weaker floor."""
+        with TemporaryDirectory() as td:
+            manifest_path = self._frozen_manifest(td)
+            family_path = Path(td) / "family.json"
+            te.freeze_confirmatory_family(family_path, manifest_path=manifest_path)
+            record = te.read_confirmatory_family(family_path)
+            for m in record["members"]:
+                if m["id"] == "TOTALS-M1":
+                    m["effect_floor_pp"] = 0.0001
+            family_path.write_text(json.dumps(record), encoding="utf-8")
+            manifest = tr.read_manifest(manifest_path)
+            hashes = {"content_hash": manifest["content_hash"],
+                     "price_payload_hash": manifest["price_payload_hash"]}
+            with self.assertRaises(te.TotalsEvalError):
+                te._verify_confirmatory_family(hashes, path=family_path)
+
+    def test_moving_cannot_tell_band_makes_run_refuse(self):
+        with TemporaryDirectory() as td:
+            manifest_path = self._frozen_manifest(td)
+            family_path = Path(td) / "family.json"
+            te.freeze_confirmatory_family(family_path, manifest_path=manifest_path)
+            record = te.read_confirmatory_family(family_path)
+            for m in record["members"]:
+                if m["id"] == "TOTALS-M1":
+                    m["cannot_tell_band_pp"] = [0.0, 1.5]
+            family_path.write_text(json.dumps(record), encoding="utf-8")
+            manifest = tr.read_manifest(manifest_path)
+            hashes = {"content_hash": manifest["content_hash"],
+                     "price_payload_hash": manifest["price_payload_hash"]}
+            with self.assertRaises(te.TotalsEvalError):
+                te._verify_confirmatory_family(hashes, path=family_path)
+
+    def test_moving_population_shift_book_count_edges_makes_run_refuse(self):
+        with TemporaryDirectory() as td:
+            manifest_path = self._frozen_manifest(td)
+            family_path = Path(td) / "family.json"
+            te.freeze_confirmatory_family(family_path, manifest_path=manifest_path)
+            record = te.read_confirmatory_family(family_path)
+            for m in record["members"]:
+                if m["id"] == "TOTALS-M1":
+                    m["population_shift_kill"]["book_count_bucket_edges"] = [1, 2, 3]
+            family_path.write_text(json.dumps(record), encoding="utf-8")
+            manifest = tr.read_manifest(manifest_path)
+            hashes = {"content_hash": manifest["content_hash"],
+                     "price_payload_hash": manifest["price_payload_hash"]}
+            with self.assertRaises(te.TotalsEvalError):
+                te._verify_confirmatory_family(hashes, path=family_path)
+
+    def test_valid_record_verifies_cleanly(self):
+        with TemporaryDirectory() as td:
+            manifest_path = self._frozen_manifest(td)
+            family_path = Path(td) / "family.json"
+            te.freeze_confirmatory_family(family_path, manifest_path=manifest_path)
+            manifest = tr.read_manifest(manifest_path)
+            hashes = {"content_hash": manifest["content_hash"],
+                     "price_payload_hash": manifest["price_payload_hash"]}
+            record = te._verify_confirmatory_family(hashes, path=family_path)
+            self.assertEqual(record["family_id"], "TOTALS_FULLGAME_2026H1")
+
+
+class TestVerdictPrecedenceOrder(unittest.TestCase):
+    """M-A2: one precedence order, `VERDICTS_PRECEDENCE`, and a fatal
+    battery flag or de-vig sign failure must never be absorbed by
+    CANNOT_TELL (the pre-M-A2 bug: CANNOT_TELL was checked second, right
+    after POPULATION_SHIFT_FAIL)."""
+
+    BASE = dict(population_shift_fatal=False, screen_passes=True,
+               replication_sign_agrees=True, replication_ci_excludes_zero=True,
+               survives_fdr=True, devig_sign_survives=True, battery_survives=True)
+
+    def test_verdicts_tuple_matches_precedence(self):
+        self.assertEqual(te.VERDICTS, te.VERDICTS_PRECEDENCE)
+        self.assertEqual(te.VERDICTS_PRECEDENCE,
+                         ("POPULATION_SHIFT_FAIL", "BATTERY_FAIL", "DEVIG_SIGN_FAIL",
+                          "CANNOT_TELL", "SCREEN_FAIL", "REPLICATION_FAIL", "SURVIVOR"))
+
+    def test_battery_fail_is_never_absorbed_by_cannot_tell(self):
+        """The exact M-A2 repro: an in-band (CANNOT_TELL-eligible) result
+        that the frozen battery ALSO flags as fatal must report
+        BATTERY_FAIL, never CANNOT_TELL -- a battery failure may not be
+        hidden from the published record."""
+        kwargs = dict(self.BASE, screen_cannot_tell=True, battery_survives=False)
+        self.assertEqual(te.compute_verdict(**kwargs), "BATTERY_FAIL")
+
+    def test_devig_sign_fail_is_never_absorbed_by_cannot_tell(self):
+        kwargs = dict(self.BASE, replication_cannot_tell=True, devig_sign_survives=False)
+        self.assertEqual(te.compute_verdict(**kwargs), "DEVIG_SIGN_FAIL")
+
+    def test_cannot_tell_still_wins_over_screen_and_replication_fail(self):
+        kwargs = dict(self.BASE, screen_cannot_tell=True, screen_passes=False,
+                     replication_sign_agrees=False)
+        self.assertEqual(te.compute_verdict(**kwargs), "CANNOT_TELL")
+
+    def test_population_shift_wins_over_battery_fail(self):
+        kwargs = dict(self.BASE, population_shift_fatal=True, battery_survives=False)
+        self.assertEqual(te.compute_verdict(**kwargs), "POPULATION_SHIFT_FAIL")
+
+
+class TestRunFullEvaluationHappyPath(unittest.TestCase):
+    """M-A3: `run_full_evaluation`'s happy path, executed end to end against
+    a synthetic universe + frozen confirmatory-family fixture in a temp
+    directory. Before this test, `run_full_evaluation` appeared in the
+    suite only inside `assertRaises` blocks and had no way to point at a
+    fixture instead of the real default manifest -- `manifest_path`/
+    `confirmatory_family_path`/`spec_path` parameters were added to make
+    this test possible at all."""
+
+    def _build_fixture(self, td):
+        fx = _Fixture(td)
+        books4 = DEFAULT_BOOKS + [("bet365", -110, -110)]
+        # 40 rows per leg (>= discovery's 30-decided-row minimum), split
+        # across two lines and two book counts each leg so the
+        # population-shift chi-square (both bucketings, B-A2) has spread to
+        # test without being fatal -- the two legs are built identically.
+        # Most games are decisive Overs, giving a large (~30pp), easily
+        # significant, correctly-signed effect on both legs.
+        for season in ("2023", "2024"):
+            for i in range(40):
+                won = (i % 5 != 0)
+                line = 8.5 if i % 2 == 0 else 9.5
+                books = DEFAULT_BOOKS if i % 2 == 0 else books4
+                total_runs = int(line) + 1 if won else int(line) - 1
+                date = "%s-%02d-%02d" % (season, 6 + i % 3, 1 + i % 28)
+                fx.add_game(
+                    season=season, event_id=f"{season}-{i}", game_pk=f"{season}-{i}",
+                    date=date,
+                    away_full="Boston Red Sox", home_full="New York Yankees",
+                    away_abbrev="BOS", home_abbrev="NYY",
+                    commence_time=f"{date}T23:05:00Z",
+                    line=line, books=books, total_runs=total_runs, home_won=True)
+        fx.write()
+        return fx
+
+    def test_happy_path_end_to_end_shape_and_verdicts(self):
+        with TemporaryDirectory() as td:
+            fx = self._build_fixture(td)
+            manifest = tr.build_universe(seasons=("2023", "2024"),
+                                         archive_root=fx.archive_root,
+                                         results_path=fx.results_csv)
+            manifest_path = Path(td) / "universe.json"
+            tr.write_manifest(manifest, manifest_path)
+
+            family_path = Path(td) / "family.json"
+            te.freeze_confirmatory_family(family_path, manifest_path=manifest_path)
+
+            m2_matrix_paths = {"2023": Path(td) / "m2023.jsonl",
+                               "2024": Path(td) / "m2024.jsonl"}  # absent -- M2 join is empty
+
+            result = te.run_full_evaluation(
+                seasons=("2023", "2024"), archive_root=fx.archive_root,
+                results_path=fx.results_csv, manifest_path=manifest_path,
+                confirmatory_family_path=family_path, m2_matrix_paths=m2_matrix_paths)
+
+            self.assertEqual(result["family_id"], "TOTALS_FULLGAME_2026H1")
+            for key in ("m1", "m2", "integer_stratum_report_only", "fdr_m1_only"):
+                self.assertIn(key, result)
+            self.assertIn(result["m1"]["verdict"], te.VERDICTS)
+            # Constructed to survive every gate: large correctly-signed
+            # effect on both legs, matched line/book-count occupancy across
+            # legs (population-shift non-fatal), no fatal battery rule.
+            self.assertEqual(result["m1"]["verdict"], "SURVIVOR")
+            self.assertFalse(result["m1"]["population_shift"]["fatal"])
+            self.assertTrue(result["m1"]["battery"]["survives"])
+            self.assertEqual(result["m2"]["verdict"], "POPULATION_SHIFT_FAIL")  # D3: always pre-set
+
+    def test_happy_path_refuses_on_effect_floor_mismatch(self):
+        """Belt-and-braces: the fixture above wired through
+        `_verify_confirmatory_family`, so a tampered `effect_floor_pp`
+        still refuses even on the full happy-path call, not just the
+        isolated cross-check test."""
+        with TemporaryDirectory() as td:
+            fx = self._build_fixture(td)
+            manifest = tr.build_universe(seasons=("2023", "2024"),
+                                         archive_root=fx.archive_root,
+                                         results_path=fx.results_csv)
+            manifest_path = Path(td) / "universe.json"
+            tr.write_manifest(manifest, manifest_path)
+            family_path = Path(td) / "family.json"
+            te.freeze_confirmatory_family(family_path, manifest_path=manifest_path)
+            record = te.read_confirmatory_family(family_path)
+            for m in record["members"]:
+                if m["id"] == "TOTALS-M1":
+                    m["effect_floor_pp"] = 0.0001
+            family_path.write_text(json.dumps(record), encoding="utf-8")
+
+            with self.assertRaises(te.TotalsEvalError):
+                te.run_full_evaluation(
+                    seasons=("2023", "2024"), archive_root=fx.archive_root,
+                    results_path=fx.results_csv, manifest_path=manifest_path,
+                    confirmatory_family_path=family_path,
+                    m2_matrix_paths={"2023": Path(td) / "m2023.jsonl",
+                                    "2024": Path(td) / "m2024.jsonl"})
 
 
 if __name__ == "__main__":

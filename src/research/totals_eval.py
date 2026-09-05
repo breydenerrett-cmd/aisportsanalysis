@@ -88,14 +88,35 @@ CONFIRMATORY_FROZEN_FAMILY_PATH = data_path("research", "totals", "m1_family_fro
 # floor. Frozen numerically; may never be lowered after a near-miss.
 M1_EFFECT_FLOOR = 0.030
 
+# M-A1 fix (docs/PREREG_TOTALS_FAMILIES.md "## Adversarial pre-registration
+# review -- 2026-09-05"): EVERY numeric gate the FINAL SPECIFICATION's
+# freeze-record JSON names, as named module constants, so
+# `freeze_confirmatory_family` can write them all (not just the three
+# hashes + fdr_m the ORIGINAL freeze wrote) and `_verify_confirmatory_family`
+# can cross-check ALL of them against this live module at run time -- not
+# only `fdr_m`. A record IS the pre-registration only if every gate it
+# claims to freeze is both written AND re-checked; writing one without the
+# other (the pre-M-A1 state) lets a later commit silently lower a gate with
+# every freeze-record guard still passing.
+M1_CANNOT_TELL_BAND_PP = (0.0, 3.0)  # D2/O1: open at the top -- 3.0pp exactly is a PASS
+POPULATION_SHIFT_LINE_BUCKET_EDGES = totals_rows.LINE_BUCKET_EDGES
+POPULATION_SHIFT_BOOK_COUNT_BUCKET_EDGES = totals_rows.BOOK_COUNT_BUCKET_EDGES
+
 PREREG_SPEC_DOC_PATH = repo_root() / "docs" / "PREREG_TOTALS_FAMILIES.md"
-# The bounded section this family's spec_sha256 hashes: "## Family
-# denominator" through end-of-file -- "## Methodology review -- 2026-09-05"
-# is this document's LAST section (VERDICT line, no heading follows it), so
-# there is no next-heading bound to apply; a bound is still enforced at the
-# START so a stray preamble edit above "## Family denominator" cannot move
-# what this hash covers.
-_PREREG_START_MARKER = "## Family denominator"
+# B-A1 fix (docs/PREREG_TOTALS_FAMILIES.md "## Adversarial pre-registration
+# review -- 2026-09-05"): the ORIGINAL `_PREREG_START_MARKER = "## Family
+# denominator"` hashed from the superseded DRAFT section to end-of-file --
+# unbounded at the end (a later-appended review note silently moved the
+# hash) AND wrong at the start (it covered withdrawn DRAFT numbers the FINAL
+# SPECIFICATION explicitly supersedes). Mirrors `f5_eval._extract_spec_text`
+# exactly (same review, same fix, same shape): hash the FINAL SPECIFICATION
+# section (up to, not including, the adversarial-review section) plus the
+# Post-adversarial amendments section, bounded at the next top-level
+# heading so a future review note appended after the amendments cannot move
+# what a frozen record was taken against.
+_PREREG_FINAL_SPEC_MARKER = "## FINAL SPECIFICATION (post-review, 2026-09-05)"
+_PREREG_ADVERSARIAL_MARKER = "## Adversarial pre-registration review"
+_PREREG_AMENDMENTS_MARKER = "## Post-adversarial amendments"
 
 
 class TotalsEvalError(RuntimeError):
@@ -208,19 +229,47 @@ def spec_sha256(spec_path=SPEC_DOC_PATH) -> str:
     return hashlib.sha256(_extract_spec_text(text).encode("utf-8")).hexdigest()
 
 
-def prereg_spec_sha256(spec_path=PREREG_SPEC_DOC_PATH) -> str:
-    """sha256 over `docs/PREREG_TOTALS_FAMILIES.md` from "## Family
-    denominator" to end-of-file -- the confirmatory TOTALS-M1 family's own
-    spec hash, kept entirely separate from `spec_sha256`'s
-    TOTALS_METHODOLOGY.md hash above (M1)."""
-    text = Path(spec_path).read_text(encoding="utf-8")
-    if _PREREG_START_MARKER not in text:
+def _extract_prereg_spec_text(full_text: str) -> str:
+    """The exact text `prereg_spec_sha256` hashes: the FINAL SPECIFICATION
+    section (up to, not including, the adversarial-review section) plus the
+    Post-adversarial amendments section, mirroring
+    `f5_eval._extract_spec_text` exactly (B-A1 fix). Raises if either marker
+    is missing -- a family must not be frozen against a document that has
+    not yet been amended for the adversarial-review findings this freeze
+    depends on."""
+    if _PREREG_FINAL_SPEC_MARKER not in full_text:
         raise TotalsEvalError(
-            f"{_PREREG_START_MARKER!r} not found in {spec_path} -- cannot "
-            "compute the confirmatory family's spec_sha256 against a "
-            "document that lacks it")
-    section = text[text.index(_PREREG_START_MARKER):].rstrip("\n") + "\n"
-    return hashlib.sha256(section.encode("utf-8")).hexdigest()
+            f"{_PREREG_FINAL_SPEC_MARKER!r} not found in spec text -- "
+            "cannot compute the confirmatory family's spec_sha256 against "
+            "a document that lacks it")
+    if _PREREG_AMENDMENTS_MARKER not in full_text:
+        raise TotalsEvalError(
+            f"{_PREREG_AMENDMENTS_MARKER!r} not found in spec text -- "
+            "amend the spec for the adversarial-review findings before "
+            "freezing the family")
+    spec_section = full_text.split(_PREREG_FINAL_SPEC_MARKER, 1)[1]
+    if _PREREG_ADVERSARIAL_MARKER in spec_section:
+        spec_section = spec_section.split(_PREREG_ADVERSARIAL_MARKER, 1)[0]
+    amendments_section = full_text.split(_PREREG_AMENDMENTS_MARKER, 1)[1]
+    # Bound the amendments section to the next top-level heading so that
+    # appending later review sections to the document cannot move the hash
+    # a frozen record was taken against.
+    nxt = amendments_section.find("\n## ")
+    if nxt != -1:
+        amendments_section = amendments_section[:nxt]
+    return (_PREREG_FINAL_SPEC_MARKER + spec_section
+            + _PREREG_AMENDMENTS_MARKER + amendments_section.rstrip("\n") + "\n")
+
+
+def prereg_spec_sha256(spec_path=PREREG_SPEC_DOC_PATH) -> str:
+    """sha256 over `docs/PREREG_TOTALS_FAMILIES.md`'s FINAL SPECIFICATION +
+    Post-adversarial amendments text only -- the confirmatory TOTALS-M1
+    family's own spec hash, kept entirely separate from `spec_sha256`'s
+    TOTALS_METHODOLOGY.md hash above (M1). B-A1: bounded at both ends so
+    neither superseded DRAFT text nor a later-appended review note can move
+    what this hash covers."""
+    text = Path(spec_path).read_text(encoding="utf-8")
+    return hashlib.sha256(_extract_prereg_spec_text(text).encode("utf-8")).hexdigest()
 
 
 def freeze_family(path=FROZEN_FAMILY_PATH, *, spec_path=SPEC_DOC_PATH,
@@ -334,12 +383,19 @@ def freeze_confirmatory_family(path=CONFIRMATORY_FROZEN_FAMILY_PATH, *,
                 "line_stratum": "half_point_primary",
                 "devig_primary": "per_line_proportional_ge_3books",
                 "devig_sensitivity": ["power", "shin"],
+                "devig_sensitivity_gates": True,
                 "effect_floor_pp": M1_EFFECT_FLOOR * 100,
+                "cannot_tell_band_pp": list(M1_CANNOT_TELL_BAND_PP),  # M-A1/O1
                 "direction": "fixed_by_2023_screen_leg_own_sign",  # D5 HC3
                 "disclosed_prior_exposure":
                     "V7_2.3_proxy: Under 54.6-56.9pct / Over 40.4-42.5pct -- "
                     "even a SURVIVOR verdict is a disclosed-exposure "
                     "calibration measurement, not a fresh discovery (D5 HC3)",
+                "population_shift_kill": {
+                    "test": "chi_square", "fatal_p_lt": POPULATION_SHIFT_P_FATAL,
+                    "line_bucket_edges": list(POPULATION_SHIFT_LINE_BUCKET_EDGES),
+                    "book_count_bucket_edges": list(POPULATION_SHIFT_BOOK_COUNT_BUCKET_EDGES),
+                },
             },
             {
                 "id": "TOTALS-M2",
@@ -347,16 +403,33 @@ def freeze_confirmatory_family(path=CONFIRMATORY_FROZEN_FAMILY_PATH, *,
                 "confirmatory": False,
                 "verdict": "POPULATION_SHIFT_FAIL",  # D3: pre-determined before freeze
                 "excluded_from_fdr": True,
+                "devig_sensitivity_gates": False,  # O2: kept explicit, never omitted
                 "bucketing": "tercile",
                 "bucket_edges_fit_on": "2023_discovery_only",
+                "population_shift_kill": {
+                    "test": "chi_square_on_own_partition_occupancy",
+                    "fatal_p_lt": POPULATION_SHIFT_P_FATAL,
+                },
             },
         ],
         "fdr_q": family.FDR_Q,
         "fdr_m": FDR_M,  # D3: m=1, TOTALS-M1 alone -- see class docstring above
+        "fdr_does_no_work": True,  # D3: m=1 reduces BH-FDR to p<=fdr_q, strictly weaker than the CI gate
+        "clustering": "date",
+        "screen_pass_rule": "sign_and_point_estimate_ge_3.0pp_only",
+        "replication_pass_rule": (
+            "point_estimate_ge_3.0pp_same_sign_AND_two_sided_95pct_CI_"
+            "date_clustered_excludes_zero"),
         "battery_rules_version": battery.RULES_VERSION,
+        "battery_rules_recorded_skipped": ["rule_3_per_book_sign_replication", "season_split"],
         "max_staleness_hours": totals_rows.MAX_STALENESS_HOURS,
         "anchor_rule": totals_rows.ANCHOR_RULE,
         "book_floor": totals_rows.BOOK_FLOOR,
+        "verdict_precedence": list(VERDICTS_PRECEDENCE),  # M-A2: one order, cited by the doc
+        "excluded_members_permanent": ["combined_primary_pitch_share (B2)"],
+        "deferred_members": ["bullpen_combined_workload (B3)"],
+        "requires_independent_forward_leg_before_promotion": True,
+        "sealed_period_not_a_forward_leg": ["2026-01-01", "2026-08-27"],
         "universe_identity_hash": manifest["content_hash"],
         "universe_price_payload_hash": manifest["price_payload_hash"],
         "universe_exclusion_ledger": manifest.get("exclusion_ledger"),
@@ -384,10 +457,13 @@ def _verify_confirmatory_family(hashes: dict, *, path=CONFIRMATORY_FROZEN_FAMILY
                                 spec_path=PREREG_SPEC_DOC_PATH) -> dict:
     """`run_full_evaluation`'s precondition for the confirmatory family:
     raises unless the frozen record exists, its universe hashes and spec
-    hash still match, and its `fdr_m` still equals this module's live
-    `FDR_M` -- D7(7)'s binding FDR_M=1 cross-check, mirroring
-    `f5_eval._verify_frozen_family`'s B2 guard against the code and the
-    record silently disagreeing about the family's own size."""
+    hash still match, and EVERY numeric gate the record claims to freeze
+    still agrees with this module's live constants -- M-A1 fix. Before
+    M-A1 only `fdr_m` was cross-checked (D7(7)), so a later commit could
+    silently lower `M1_EFFECT_FLOOR` (or any other gate) and every guard
+    here would still pass; "the record IS the pre-registration" is true
+    only once every gate the record writes is also re-checked here,
+    mirroring `f5_eval._verify_frozen_family`'s B2 guard."""
     record = read_confirmatory_family(path)
     current_spec_sha = prereg_spec_sha256(spec_path)
     if record.get("spec_sha256") != current_spec_sha:
@@ -409,6 +485,65 @@ def _verify_confirmatory_family(hashes: dict, *, path=CONFIRMATORY_FROZEN_FAMILY
             f"the frozen record's fdr_m ({record.get('fdr_m')!r}) disagrees "
             f"with this module's FDR_M ({FDR_M!r}) -- D7(7) cross-check "
             "failed; the record and the code must agree before any run.")
+    if record.get("fdr_q") != family.FDR_Q:
+        raise TotalsEvalError(
+            f"the frozen record's fdr_q ({record.get('fdr_q')!r}) disagrees "
+            f"with the live family.FDR_Q ({family.FDR_Q!r}) -- aborting.")
+    if record.get("clustering") != "date":
+        raise TotalsEvalError(
+            f"the frozen record's clustering ({record.get('clustering')!r}) "
+            "disagrees with the live date-clustered inference this module "
+            "runs -- aborting.")
+    if record.get("battery_rules_version") != battery.RULES_VERSION:
+        raise TotalsEvalError(
+            f"the frozen record's battery_rules_version "
+            f"({record.get('battery_rules_version')!r}) disagrees with the "
+            f"live battery ({battery.RULES_VERSION!r}) -- aborting.")
+    m1 = next((m for m in record.get("members", []) if m.get("id") == "TOTALS-M1"), None)
+    if m1 is None:
+        raise TotalsEvalError(
+            "the frozen confirmatory record carries no TOTALS-M1 member -- "
+            "aborting.")
+    if m1.get("effect_floor_pp") != M1_EFFECT_FLOOR * 100:
+        raise TotalsEvalError(
+            f"the frozen record's TOTALS-M1 effect_floor_pp "
+            f"({m1.get('effect_floor_pp')!r}) disagrees with the live "
+            f"M1_EFFECT_FLOOR ({M1_EFFECT_FLOOR * 100!r}) -- M-A1 cross-"
+            "check failed; a lowered floor must not silently run.")
+    if tuple(m1.get("cannot_tell_band_pp") or []) != M1_CANNOT_TELL_BAND_PP:
+        raise TotalsEvalError(
+            f"the frozen record's TOTALS-M1 cannot_tell_band_pp "
+            f"({m1.get('cannot_tell_band_pp')!r}) disagrees with the live "
+            f"M1_CANNOT_TELL_BAND_PP ({M1_CANNOT_TELL_BAND_PP!r}) -- aborting.")
+    shift = m1.get("population_shift_kill") or {}
+    if shift.get("fatal_p_lt") != POPULATION_SHIFT_P_FATAL:
+        raise TotalsEvalError(
+            "the frozen record's TOTALS-M1 population_shift_kill.fatal_p_lt "
+            f"({shift.get('fatal_p_lt')!r}) disagrees with the live "
+            f"POPULATION_SHIFT_P_FATAL ({POPULATION_SHIFT_P_FATAL!r}) -- "
+            "aborting.")
+    if tuple(shift.get("line_bucket_edges") or []) != POPULATION_SHIFT_LINE_BUCKET_EDGES:
+        raise TotalsEvalError(
+            "the frozen record's TOTALS-M1 population_shift_kill."
+            "line_bucket_edges disagrees with the live "
+            f"POPULATION_SHIFT_LINE_BUCKET_EDGES -- aborting.")
+    if (tuple(shift.get("book_count_bucket_edges") or [])
+       != POPULATION_SHIFT_BOOK_COUNT_BUCKET_EDGES):
+        raise TotalsEvalError(
+            "the frozen record's TOTALS-M1 population_shift_kill."
+            "book_count_bucket_edges disagrees with the live "
+            "POPULATION_SHIFT_BOOK_COUNT_BUCKET_EDGES (B-A2) -- aborting.")
+    if record.get("max_staleness_hours") != totals_rows.MAX_STALENESS_HOURS:
+        raise TotalsEvalError(
+            f"the frozen record's max_staleness_hours "
+            f"({record.get('max_staleness_hours')!r}) disagrees with the "
+            f"live totals_rows.MAX_STALENESS_HOURS "
+            f"({totals_rows.MAX_STALENESS_HOURS!r}) -- aborting.")
+    if record.get("book_floor") != totals_rows.BOOK_FLOOR:
+        raise TotalsEvalError(
+            f"the frozen record's book_floor ({record.get('book_floor')!r}) "
+            f"disagrees with the live totals_rows.BOOK_FLOOR "
+            f"({totals_rows.BOOK_FLOOR!r}) -- aborting.")
     return record
 
 
@@ -462,8 +597,23 @@ def evaluate_m2_exploratory(*, seasons=totals_m2_coverage.SEASONS,
 # B3 -- mechanised verdict (generic; not run against an unregistered member)
 # ---------------------------------------------------------------------------
 
-VERDICTS = ("POPULATION_SHIFT_FAIL", "SCREEN_FAIL", "REPLICATION_FAIL",
-           "DEVIG_SIGN_FAIL", "BATTERY_FAIL", "SURVIVOR", "CANNOT_TELL")
+# M-A2 fix (docs/PREREG_TOTALS_FAMILIES.md "## Adversarial pre-registration
+# review -- 2026-09-05", decided at open item O1): the ONE precedence order,
+# cited by the FINAL SPECIFICATION's amended "Verdict codes and precedence"
+# section and implemented ONLY here -- `VERDICTS`, `compute_verdict`, and the
+# doc must never again state three different orders. A pre-outcome kill
+# (POPULATION_SHIFT_FAIL), a fatal battery flag (BATTERY_FAIL), and a de-vig
+# sign failure (DEVIG_SIGN_FAIL) are all statements about the DESIGN and
+# outrank CANNOT_TELL, a statement about POWER; CANNOT_TELL in turn outranks
+# SCREEN_FAIL/REPLICATION_FAIL, which are statements about the observed
+# read. Before this fix CANNOT_TELL was checked second (right after
+# POPULATION_SHIFT_FAIL), so an in-band result the frozen battery flagged as
+# FATAL was reported CANNOT_TELL -- not a rescue (CANNOT_TELL is not a
+# pass), but it hid a battery failure from the published record, which the
+# family's own "publish the losers" principle forbids.
+VERDICTS_PRECEDENCE = ("POPULATION_SHIFT_FAIL", "BATTERY_FAIL", "DEVIG_SIGN_FAIL",
+                      "CANNOT_TELL", "SCREEN_FAIL", "REPLICATION_FAIL", "SURVIVOR")
+VERDICTS = VERDICTS_PRECEDENCE
 
 
 def compute_verdict(*, population_shift_fatal: bool, screen_passes: bool,
@@ -472,29 +622,35 @@ def compute_verdict(*, population_shift_fatal: bool, screen_passes: bool,
                     battery_survives: bool, screen_cannot_tell: bool = False,
                     replication_cannot_tell: bool = False,
                     replication_floor_ok: bool = True) -> str:
-    """Fixed precedence, extending `f5_eval.compute_verdict`'s shape with D2's
-    CANNOT_TELL verdict (item 6):
+    """Fixed precedence (M-A2/O1) -- extends `f5_eval.compute_verdict`'s
+    shape with D2's CANNOT_TELL verdict (item 6), in `VERDICTS_PRECEDENCE`
+    order:
 
     1. POPULATION_SHIFT_FAIL -- decided before any outcome (B1/D1), must win
        over every outcome-dependent gate below it.
-    2. CANNOT_TELL -- D2: a true effect of 0-3.0pp is inside the noise band
+    2. BATTERY_FAIL -- the frozen battery flags a fatal rule: a statement
+       about the DESIGN, and must never be absorbed by CANNOT_TELL below it.
+    3. DEVIG_SIGN_FAIL -- the effect's sign does not survive all three
+       de-vig conventions (A4): also a DESIGN statement, outranks CANNOT_TELL.
+    4. CANNOT_TELL -- D2: a true effect of 0-3.0pp is inside the noise band
        either leg's own MDE cannot distinguish from zero. Set by the caller
        when the screen or replication point estimate is non-zero but below
        `M1_EFFECT_FLOOR` WITH the pre-registered sign -- never a PASS, never
        a FAIL of the market's calibration, and it must win over SCREEN_FAIL/
        REPLICATION_FAIL (an underpowered read is not the same claim as "no
        effect exists" or "the effect disagrees").
-    3. SCREEN_FAIL -- the screen leg shows no detectable signal at all
+    5. SCREEN_FAIL -- the screen leg shows no detectable signal at all
        (effect is exactly zero or unreadable) -- distinct from CANNOT_TELL.
-    4. REPLICATION_FAIL -- the replication leg's sign/floor/CI/FDR gate
+    6. REPLICATION_FAIL -- the replication leg's sign/floor/CI/FDR gate
        fails (D2: the 3.0pp floor binds on BOTH legs, not just the screen).
-    5. DEVIG_SIGN_FAIL -- the effect's sign does not survive all three de-vig
-       conventions (A4).
-    6. BATTERY_FAIL -- the frozen battery flags a fatal rule.
     7. SURVIVOR -- every gate above cleared.
     """
     if population_shift_fatal:
         return "POPULATION_SHIFT_FAIL"
+    if not battery_survives:
+        return "BATTERY_FAIL"
+    if not devig_sign_survives:
+        return "DEVIG_SIGN_FAIL"
     if screen_cannot_tell or replication_cannot_tell:
         return "CANNOT_TELL"
     if not screen_passes:
@@ -502,10 +658,6 @@ def compute_verdict(*, population_shift_fatal: bool, screen_passes: bool,
     if not (replication_sign_agrees and replication_ci_excludes_zero
            and survives_fdr and replication_floor_ok):
         return "REPLICATION_FAIL"
-    if not devig_sign_survives:
-        return "DEVIG_SIGN_FAIL"
-    if not battery_survives:
-        return "BATTERY_FAIL"
     return "SURVIVOR"
 
 
@@ -676,18 +828,30 @@ def run_full_evaluation(*, screen_season="2023", replication_season="2024",
                         archive_root=totals_rows.ARCHIVE_ROOT,
                         results_path=totals_rows.RESULTS_CSV,
                         max_staleness_hours=totals_rows.MAX_STALENESS_HOURS,
+                        manifest_path=totals_rows.MANIFEST_PATH,
+                        confirmatory_family_path=CONFIRMATORY_FROZEN_FAMILY_PATH,
+                        spec_path=PREREG_SPEC_DOC_PATH,
                         m2_matrix_paths=None) -> dict:
     """D7: the complete, outcome-reading evaluation of the CONFIRMATORY
     `TOTALS_FULLGAME_2026H1` family -- TOTALS-M1 (confirmatory, m=1) plus
     TOTALS-M2 (exploratory, pre-determined POPULATION_SHIFT_FAIL, D3).
     Refuses to run unless the confirmatory family is frozen
     (`freeze_confirmatory_family`) and its record still matches the live
-    universe, spec text, and `FDR_M`.
+    universe, spec text, and every numeric gate (M-A1).
+
+    M-A3 fix: `manifest_path`/`confirmatory_family_path`/`spec_path` were
+    previously hardcoded to the real default paths with no way to point
+    this function at a synthetic fixture, which is WHY no test ever
+    exercised this happy path end to end (the one call site that reached
+    this far raised inside `verify_universe` against the real manifest, not
+    inside the gate it claimed to test). Defaults are unchanged, so no real
+    call site's behaviour changes.
     """
     hashes = verify_universe(seasons=seasons, archive_root=archive_root,
                              results_path=results_path,
-                             max_staleness_hours=max_staleness_hours)
-    _verify_confirmatory_family(hashes)
+                             max_staleness_hours=max_staleness_hours,
+                             manifest_path=manifest_path)
+    _verify_confirmatory_family(hashes, path=confirmatory_family_path, spec_path=spec_path)
 
     rows = totals_rows.build_over_rows(
         seasons=seasons, archive_root=archive_root, results_path=results_path,

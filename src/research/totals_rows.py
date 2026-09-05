@@ -106,6 +106,15 @@ SEASONS = ("2023", "2024")
 # published them.
 LINE_BUCKET_EDGES = (5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5)
 
+# docs/PREREG_TOTALS_FAMILIES.md FINAL SPECIFICATION's M1 population-shift
+# kill gate names TWO bucketings, not one: line buckets (above) AND
+# book-count buckets "1..5, 6+" (B-A2 fix -- the book-count half was
+# specified but never implemented; see "## Adversarial pre-registration
+# review -- 2026-09-05" B-A2). Exact integer buckets 1-5, one overflow
+# bucket "6+" -- never a `<edge` half-open bucket like `LINE_BUCKET_EDGES`,
+# because `book_count` is a count, not a continuous line.
+BOOK_COUNT_BUCKET_EDGES = (1, 2, 3, 4, 5)
+
 # R2/A4: the three sensitivity conventions, same names `src.research.f5_eval`
 # uses for the same reason -- "power" is `src.core.odds`'s spelling of the
 # convention the literature calls "multiplicative"/"odds-ratio".
@@ -800,32 +809,57 @@ def line_bucket_occupancy(rows: list) -> dict:
     return dict(counts)
 
 
-def population_shift_test(screen_rows: list, replication_rows: list) -> dict:
-    """B1: chi-square of the replication leg's line-bucket occupancy against
-    the screen leg's own occupancy (fit on the screen leg, applied frozen) --
-    feature-side only (`line`, never `won`), decided before any outcome is
-    read. Buckets with zero screen-leg expectation are folded into their
-    nearest non-empty neighbour so no category contributes a zero-division
-    expectation, and the tail is pooled until degrees of freedom is even
-    (`chi_square_p_even_df` needs it) -- both folding rules are fixed by the
-    SCREEN leg alone, decided before the replication leg's occupancy is read.
-    """
-    screen_counts = line_bucket_occupancy(screen_rows)
-    n_screen = len(screen_rows)
-    n_repl = len(replication_rows)
-    if not n_screen or not n_repl:
-        raise TotalsRowsError("population-shift test needs both a screen and "
-                              "a replication sample")
+def _book_count_bucket(book_count: int) -> str:
+    """Exact integer bucket for `1..5`, one overflow bucket `"6+"` -- B-A2's
+    named edges, never a half-open `<edge` bucket (that shape is for the
+    continuous `line`, not a book count)."""
+    if book_count in BOOK_COUNT_BUCKET_EDGES:
+        return str(book_count)
+    return "6+"
 
-    replication_counts = line_bucket_occupancy(replication_rows)
-    all_buckets = sorted(set(screen_counts) | set(replication_counts),
-                         key=lambda b: (0, float(b[1:])) if b.startswith("<") else (1, float(b[2:])))
+
+def book_count_bucket_occupancy(rows: list) -> dict:
+    """Bucket counts of `book_count` per `BOOK_COUNT_BUCKET_EDGES` (1..5,
+    6+) -- feature-side, never reads `won`. B-A2: the book-count half of the
+    M1 population-shift kill gate the FINAL SPECIFICATION requires alongside
+    `line_bucket_occupancy`."""
+    counts = defaultdict(int)
+    for row in rows:
+        counts[_book_count_bucket(row["book_count"])] += 1
+    return dict(counts)
+
+
+def _bucket_sort_key(bucket_kind):
+    """Returns the `key=` function `_chi_square_shift` sorts a bucket set
+    with, for either bucket kind this module defines."""
+    if bucket_kind == "line":
+        return lambda b: (0, float(b[1:])) if b.startswith("<") else (1, float(b[2:]))
+    if bucket_kind == "book_count":
+        return lambda b: (0, int(b)) if b != "6+" else (1, 0)
+    raise TotalsRowsError(f"unknown bucket kind {bucket_kind!r}")
+
+
+def _chi_square_shift(screen_counts: dict, replication_counts: dict, *,
+                      n_screen: int, n_repl: int, bucket_kind: str) -> dict:
+    """B1: chi-square of the replication leg's bucket occupancy against the
+    screen leg's own occupancy (fit on the screen leg, applied frozen) --
+    feature-side only, decided before any outcome is read. Buckets with zero
+    screen-leg expectation are folded into their nearest non-empty neighbour
+    so no category contributes a zero-division expectation, and the tail is
+    pooled until degrees of freedom is even (`chi_square_p_even_df` needs
+    it) -- both folding rules are fixed by the SCREEN leg alone, decided
+    before the replication leg's occupancy is read. Shared by both
+    `population_shift_test` bucketings (line and book-count, B-A2) so
+    neither can silently diverge in its folding/df logic."""
+    sort_key = _bucket_sort_key(bucket_kind)
+    all_buckets = sorted(set(screen_counts) | set(replication_counts), key=sort_key)
     expected_props = {b: screen_counts.get(b, 0) / n_screen for b in all_buckets}
 
     kept = [b for b in all_buckets if expected_props[b] > 0]
     if len(kept) < 2:
-        raise TotalsRowsError("screen leg's line-bucket occupancy has too "
-                              "little spread to test a population shift")
+        raise TotalsRowsError(
+            f"screen leg's {bucket_kind}-bucket occupancy has too little "
+            "spread to test a population shift")
 
     def _nearest_kept(bucket):
         idx = all_buckets.index(bucket)
@@ -851,6 +885,7 @@ def population_shift_test(screen_rows: list, replication_rows: list) -> dict:
     p = chi_square_survival(chi_square, df) if df >= 1 else None
     fatal = p is not None and p < 0.01
     return {
+        "bucket_kind": bucket_kind,
         "df": df,
         "chi_square": round(chi_square, 5),
         "p": round(p, 6) if p is not None else None,
@@ -858,9 +893,47 @@ def population_shift_test(screen_rows: list, replication_rows: list) -> dict:
         "screen_buckets": kept,
         "expected_props_screen": {b: round(folded_expected[b], 6) for b in kept},
         "observed_replication": folded_observed,
-        "note": ("FATAL when p < 0.01: replication-leg line-bucket occupancy "
-                 "differs materially from the screen-leg-fit distribution "
-                 "(B1)"),
+    }
+
+
+def population_shift_test(screen_rows: list, replication_rows: list) -> dict:
+    """B1/B-A2: the M1 population-shift kill gate on BOTH bucketings the
+    FINAL SPECIFICATION names -- line buckets (`LINE_BUCKET_EDGES`) AND
+    book-count buckets (`BOOK_COUNT_BUCKET_EDGES`, 1..5/6+) -- fatal if
+    EITHER chi-square is significant at p<0.01 (B-A2 fix: the book-count
+    half was specified but never run, so a book-composition shift between
+    2023 and 2024 could pass undetected). `fatal`/`p`/`chi_square`/`df` at
+    the top level mirror the line bucketing alone for backward-compatible
+    callers; `line` and `book_count` sub-dicts carry each bucketing's own
+    full result, and `fatal` is the OR of both.
+    """
+    n_screen = len(screen_rows)
+    n_repl = len(replication_rows)
+    if not n_screen or not n_repl:
+        raise TotalsRowsError("population-shift test needs both a screen and "
+                              "a replication sample")
+
+    line_result = _chi_square_shift(
+        line_bucket_occupancy(screen_rows), line_bucket_occupancy(replication_rows),
+        n_screen=n_screen, n_repl=n_repl, bucket_kind="line")
+    book_count_result = _chi_square_shift(
+        book_count_bucket_occupancy(screen_rows), book_count_bucket_occupancy(replication_rows),
+        n_screen=n_screen, n_repl=n_repl, bucket_kind="book_count")
+
+    fatal = line_result["fatal"] or book_count_result["fatal"]
+    return {
+        "df": line_result["df"],
+        "chi_square": line_result["chi_square"],
+        "p": line_result["p"],
+        "fatal": fatal,
+        "screen_buckets": line_result["screen_buckets"],
+        "expected_props_screen": line_result["expected_props_screen"],
+        "observed_replication": line_result["observed_replication"],
+        "line": line_result,
+        "book_count": book_count_result,
+        "note": ("FATAL when EITHER bucketing's p < 0.01: replication-leg "
+                 "line-bucket OR book-count-bucket occupancy differs "
+                 "materially from the screen-leg-fit distribution (B1/B-A2)"),
     }
 
 
