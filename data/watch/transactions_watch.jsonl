@@ -547,3 +547,35 @@
 {"fetched_utc": "2026-09-05T15:17:01.824806+00:00", "game_date": "2026-09-05", "poll": true}
 {"fetched_utc": "2026-09-05T16:16:35.766899+00:00", "game_date": "2026-09-05", "poll": true}
 {"category": "rehab", "date": "2026-09-05", "first_seen_utc": "2026-09-05T16:16:35.766899+00:00", "player": "Richard Lovelady", "player_id": 663992, "team": "WSH", "transaction_id": 941367}
+{"fetched_utc": "2026-09-05T17:16:09.865390+00:00", "game_date": "2026-09-05", "poll": true}
+{"category": "recalled", "date": "2026-09-05", "first_seen_utc": "2026-09-05T17:16:09.865390+00:00", "player": "Javier Assad", "player_id": 665871, "team": "CHC", "transaction_id": 941368}
+{"category": "optioned", "date": "2026-09-05", "first_seen_utc": "2026-09-05T17:16:09.865390+00:00", "player": "Tyler Ferguson", "player_id": 621053, "team": "CHC", "transaction_id": 941369}
+{"category": "il_activation", "date": "2026-09-05", "first_seen_utc": "2026-09-05T17:16:09.865390+00:00", "player": "Joel Kuhnel", "player_id": 669270, "team": "SF", "transaction_id": 941370}
+{"category": "optioned", "date": "2026-09-05", "first_seen_utc": "2026-09-05T17:16:09.865390+00:00", "player": "Ryan Walker", "player_id": 676254, "team": "SF", "transaction_id": 941371}
+{"fetched_utc": "2026-09-05T17:16:13.142998+00:00", "game_date": "2026-09-05", "poll": true}
+{"fetched_utc": "2026-09-05T18:16:18.829448+00:00", "game_date": "2026-09-05", "poll": true}
+{"fetched_utc": "2026-09-05T18:16:22.672088+00:00", "game_date": "2026-09-05", "poll": true}
+{"fetched_utc": "2026-09-05T19:16:49.127771+00:00", "game_date": "2026-09-05", "poll": true}
+{"category": "other", "date": "2026-09-05", "first_seen_utc": "2026-09-05T19:16:49.127771+00:00", "player": "Shawn Ross", "player_id": 676566, "team": "TOR", "transaction_id": 941378}
+{"category": "recalled", "date": "2026-09-05", "first_seen_utc": "2026-09-05T19:16:49.127771+00:00", "player": "Jasson Dom\u00ednguez", "player_id": 691176, "team": "NYY", "transaction_id": 941383}
+{"category": "il_placement", "date": "2026-09-05", "first_seen_utc": "2026-09-05T19:16:49.127771+00:00", "player": "Trent Grisham", "player_id": 663757, "team": "NYY", "transaction_id": 941384}
+{"category": "optioned", "date": "2026-09-06", "first_seen_utc": "2026-09-05T19:16:49.127771+00:00", "player": "Shawn Ross", "player_id": 676566, "team": "TOR", "transaction_id": 941379}
+{"fetched_utc": "2026-09-05T19:16:53.340777+00:00", "game_date": "2026-09-05", "poll": true}
+{"fetched_utc": "2026-09-05T20:16:25.155074+00:00", "game_date": "2026-09-05", "poll": true}
+{"category": "recalled", "date": "2026-09-05", "first_seen_utc": "2026-09-05T20:16:25.155074+00:00", "player": "Ricky Tiedemann", "player_id": 694357, "team": "TOR", "transaction_id": 941386}
+{"category": "il_placement", "date": "2026-09-05", "first_seen_utc": "2026-09-05T20:16:25.155074+00:00", "player": "Jameson Taillon", "player_id": 592791, "team": "TOR", "transaction_id": 941387}
+{"fetched_utc": "2026-09-05T20:16:29.276608+00:00", "game_date": "2026-09-05", "poll": true}
+{"fetched_utc": "2026-09-05T21:16:13.723005+00:00", "game_date": "2026-09-05", "poll": true}
+{"category": "other", "date": "2026-09-05", "first_seen_utc": "2026-09-05T21:16:13.723005+00:00", "player": "Ty Johnson", "player_id": 694494, "team": "TB", "transaction_id": 941398}
+{"category": "il_placement", "date": "2026-09-05", "first_seen_utc": "2026-09-05T21:16:13.723005+00:00", "player": "Garrett Cleavinger", "player_id": 664076, "team": "TB", "transaction_id": 941399}
+{"category": "designated", "date": "2026-09-05", "first_seen_utc": "2026-09-05T21:16:13.723005+00:00", "player": "Oliver Dunn", "player_id": 686554, "team": "TB", "transaction_id": 941400}
+{"fetched_utc": "2026-09-05T21:16:16.687374+00:00", "game_date": "2026-09-05", "poll": true}
+{"fetched_utc": "2026-09-05T22:17:02.522004+00:00", "game_date": "2026-09-05", "poll": true}
+{"category": "recalled", "date": "2026-09-05", "first_seen_utc": "2026-09-05T22:17:02.522004+00:00", "player": "Seth Johnson", "player_id": 686751, "team": "OAK", "transaction_id": 941408}
+{"category": "optioned", "date": "2026-09-05", "first_seen_utc": "2026-09-05T22:17:02.522004+00:00", "player": "Kade Morris", "player_id": 695034, "team": "OAK", "transaction_id": 941409}
+{"fetched_utc": "2026-09-05T22:17:05.972487+00:00", "game_date": "2026-09-05", "poll": true}
+{"fetched_utc": "2026-09-05T22:39:44.572008+00:00", "game_date": "2026-09-05", "poll": true}
+{"category": "il_placement", "date": "2026-09-02", "first_seen_utc": "2026-09-05T22:39:44.572008+00:00", "player": "Willi Castro", "player_id": 650489, "team": "COL", "transaction_id": 941417}
+{"category": "rehab", "date": "2026-09-05", "first_seen_utc": "2026-09-05T22:39:44.572008+00:00", "player": "Gavin Hollowell", "player_id": 668970, "team": "CHC", "transaction_id": 941415}
+{"category": "other", "date": "2026-09-05", "first_seen_utc": "2026-09-05T22:39:44.572008+00:00", "player": "Vimael Mach\u00edn", "player_id": 605353, "team": "COL", "transaction_id": 941416}
+{"category": "other", "date": "2026-09-05", "first_seen_utc": "2026-09-05T22:39:44.572008+00:00", "player": "Tyler Freeman", "player_id": 671289, "team": "COL", "transaction_id": 941418}
