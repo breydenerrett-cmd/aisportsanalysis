@@ -1,0 +1,103 @@
+{
+  "anchor_rule": "per_snapshot_commence_time",
+  "battery_rules_recorded_skipped": [
+    "rule_3_per_book_sign_replication",
+    "season_split"
+  ],
+  "battery_rules_version": "2.0.0",
+  "book_floor": 3,
+  "clustering": "date",
+  "deferred_members": [
+    "bullpen_combined_workload (B3)"
+  ],
+  "excluded_members_permanent": [
+    "combined_primary_pitch_share (B2)"
+  ],
+  "family_id": "TOTALS_FULLGAME_2026H1",
+  "fdr_does_no_work": true,
+  "fdr_m": 1,
+  "fdr_q": 0.1,
+  "frozen_at": "2026-09-05T00:30:49.605179+00:00",
+  "max_staleness_hours": 6,
+  "members": [
+    {
+      "cannot_tell_band_pp": [
+        0.0,
+        3.0
+      ],
+      "confirmatory": true,
+      "devig_primary": "per_line_proportional_ge_3books",
+      "devig_sensitivity": [
+        "power",
+        "shin"
+      ],
+      "devig_sensitivity_gates": true,
+      "direction": "fixed_by_2023_screen_leg_own_sign",
+      "disclosed_prior_exposure": "V7_2.3_proxy: Under 54.6-56.9pct / Over 40.4-42.5pct -- even a SURVIVOR verdict is a disclosed-exposure calibration measurement, not a fresh discovery (D5 HC3)",
+      "effect_floor_pp": 3.0,
+      "id": "TOTALS-M1",
+      "line_stratum": "half_point_primary",
+      "name": "Full-population Over/Under closing-line calibration",
+      "population_shift_kill": {
+        "book_count_bucket_edges": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "fatal_p_lt": 0.01,
+        "line_bucket_edges": [
+          5.5,
+          6.5,
+          7.5,
+          8.5,
+          9.5,
+          10.5,
+          11.5
+        ],
+        "test": "chi_square"
+      }
+    },
+    {
+      "bucket_edges_fit_on": "2023_discovery_only",
+      "bucketing": "tercile",
+      "confirmatory": false,
+      "devig_sensitivity_gates": false,
+      "excluded_from_fdr": true,
+      "id": "TOTALS-M2",
+      "name": "combined_starter_groundball_share partition",
+      "population_shift_kill": {
+        "fatal_p_lt": 0.01,
+        "test": "chi_square_on_own_partition_occupancy"
+      },
+      "verdict": "POPULATION_SHIFT_FAIL"
+    }
+  ],
+  "replication_pass_rule": "point_estimate_ge_3.0pp_same_sign_AND_two_sided_95pct_CI_date_clustered_excludes_zero",
+  "requires_independent_forward_leg_before_promotion": true,
+  "screen_pass_rule": "sign_and_point_estimate_ge_3.0pp_only",
+  "sealed_period_not_a_forward_leg": [
+    "2026-01-01",
+    "2026-08-27"
+  ],
+  "spec_sha256": "056e73522a2c6313cce4153627ed44c26f5d35105d84fa6869f5d3b55409c98c",
+  "universe_exclusion_ledger": {
+    "all_star": 1,
+    "no_closing_snapshot": 169,
+    "not_joint": 2175,
+    "postponed": 30,
+    "postseason": 14
+  },
+  "universe_identity_hash": "2f4f7fcf58654db1e2f18bcb49242cb9d0a95d971d78acb8649adc15d532e7d9",
+  "universe_price_payload_hash": "b2e6dbf9b12952bb8b29129a19d5a0475af9de37b7f8703797c83196ca6d8df2",
+  "verdict_precedence": [
+    "POPULATION_SHIFT_FAIL",
+    "BATTERY_FAIL",
+    "DEVIG_SIGN_FAIL",
+    "CANNOT_TELL",
+    "SCREEN_FAIL",
+    "REPLICATION_FAIL",
+    "SURVIVOR"
+  ]
+}
