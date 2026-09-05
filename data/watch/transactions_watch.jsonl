@@ -579,3 +579,15 @@
 {"category": "rehab", "date": "2026-09-05", "first_seen_utc": "2026-09-05T22:39:44.572008+00:00", "player": "Gavin Hollowell", "player_id": 668970, "team": "CHC", "transaction_id": 941415}
 {"category": "other", "date": "2026-09-05", "first_seen_utc": "2026-09-05T22:39:44.572008+00:00", "player": "Vimael Mach\u00edn", "player_id": 605353, "team": "COL", "transaction_id": 941416}
 {"category": "other", "date": "2026-09-05", "first_seen_utc": "2026-09-05T22:39:44.572008+00:00", "player": "Tyler Freeman", "player_id": 671289, "team": "COL", "transaction_id": 941418}
+{"fetched_utc": "2026-09-05T22:52:08.967026+00:00", "game_date": "2026-09-05", "poll": true}
+{"category": "rehab", "date": "2026-09-05", "first_seen_utc": "2026-09-05T22:52:08.967026+00:00", "player": "Robert Garcia", "player_id": 676395, "team": "TEX", "transaction_id": 941419}
+{"category": "other", "date": "2026-09-05", "first_seen_utc": "2026-09-05T22:52:08.967026+00:00", "player": "Leo Jim\u00e9nez", "player_id": 677870, "team": "MIA", "transaction_id": 941423}
+{"fetched_utc": "2026-09-05T22:52:11.781820+00:00", "game_date": "2026-09-05", "poll": true}
+{"fetched_utc": "2026-09-05T23:07:15.519780+00:00", "game_date": "2026-09-05", "poll": true}
+{"category": "optioned", "date": "2026-09-05", "first_seen_utc": "2026-09-05T23:07:15.519780+00:00", "player": "Kyle Hurt", "player_id": 669165, "team": "LAD", "transaction_id": 941425}
+{"category": "il_activation", "date": "2026-09-05", "first_seen_utc": "2026-09-05T23:07:15.519780+00:00", "player": "Bobby Miller", "player_id": 676272, "team": "LAD", "transaction_id": 941426}
+{"category": "designated", "date": "2026-09-05", "first_seen_utc": "2026-09-05T23:07:15.519780+00:00", "player": "Alek Thomas", "player_id": 677950, "team": "LAD", "transaction_id": 941427}
+{"category": "rehab", "date": "2026-09-05", "first_seen_utc": "2026-09-05T23:07:15.519780+00:00", "player": "Ryne Nelson", "player_id": 669194, "team": "ARI", "transaction_id": 941430}
+{"category": "rehab", "date": "2026-09-05", "first_seen_utc": "2026-09-05T23:07:15.519780+00:00", "player": "Ryne Nelson", "player_id": 669194, "team": "ARI", "transaction_id": 941431}
+{"fetched_utc": "2026-09-05T23:22:20.019368+00:00", "game_date": "2026-09-05", "poll": true}
+{"fetched_utc": "2026-09-05T23:37:22.528277+00:00", "game_date": "2026-09-05", "poll": true}
