@@ -545,3 +545,5 @@
 {"fetched_utc": "2026-09-05T13:17:02.797977+00:00", "game_date": "2026-09-05", "poll": true}
 {"fetched_utc": "2026-09-05T14:16:50.310020+00:00", "game_date": "2026-09-05", "poll": true}
 {"fetched_utc": "2026-09-05T15:17:01.824806+00:00", "game_date": "2026-09-05", "poll": true}
+{"fetched_utc": "2026-09-05T16:16:35.766899+00:00", "game_date": "2026-09-05", "poll": true}
+{"category": "rehab", "date": "2026-09-05", "first_seen_utc": "2026-09-05T16:16:35.766899+00:00", "player": "Richard Lovelady", "player_id": 663992, "team": "WSH", "transaction_id": 941367}
