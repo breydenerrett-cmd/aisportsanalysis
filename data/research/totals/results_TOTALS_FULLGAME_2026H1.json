@@ -1,0 +1,606 @@
+{
+ "dry_run": false,
+ "family_id": "TOTALS_FULLGAME_2026H1",
+ "fdr_m1_only": [
+  {
+   "name": "TOTALS-M1",
+   "p": 0.616662,
+   "rank": 1,
+   "survives_fdr": false,
+   "threshold": 0.1
+  }
+ ],
+ "hashes": {
+  "content_hash": "2f4f7fcf58654db1e2f18bcb49242cb9d0a95d971d78acb8649adc15d532e7d9",
+  "price_payload_hash": "b2e6dbf9b12952bb8b29129a19d5a0475af9de37b7f8703797c83196ca6d8df2",
+  "verified": true
+ },
+ "integer_stratum_report_only": {
+  "by_season": {
+   "2023": {
+    "n_no_push": 980,
+    "overs": 504,
+    "p_over_given_no_push": 0.5143
+   },
+   "2024": {
+    "n_no_push": 986,
+    "overs": 483,
+    "p_over_given_no_push": 0.4899
+   }
+  },
+  "note": "D6 lever (i): P(over | no push) on the integer-line stratum is a second look at the same question on an adjacent population and is report-only forever -- it can never substitute for, rescue, or be promoted over the half-point primary (item 9).",
+  "promotable": false,
+  "report_only": true
+ },
+ "m1": {
+  "battery": {
+   "fatal": [
+    "extreme_removal"
+   ],
+   "ran": true,
+   "report": {
+    "baseline": {
+     "ci": {
+      "clusters": 182,
+      "high": 0.03495,
+      "low": -0.02043,
+      "reason": null,
+      "resamples": 2000
+     },
+     "effect": 0.00722,
+     "n": 1288,
+     "note": "mean(won - implied), p and interval clustered by date",
+     "p": 0.616662
+    },
+    "book_concentration": {
+     "skipped": "no 'book' key present"
+    },
+    "dose_response": {
+     "skipped": "no dose_key configured"
+    },
+    "extreme_removal": {
+     "dropped_dates": [
+      "2024-03-28",
+      "2024-03-30",
+      "2024-06-05",
+      "2024-06-09",
+      "2024-06-25",
+      "2024-07-09",
+      "2024-07-27",
+      "2024-07-29",
+      "2024-08-11",
+      "2024-08-30"
+     ],
+     "effect": -0.01582,
+     "fatal": true,
+     "n": 1204,
+     "note": "dropped the 10 date(s) contributing most to the effect; FATAL when the remaining effect crosses zero",
+     "p": 0.236971
+    },
+    "favorite_underdog": {
+     "fatal": false,
+     "n": 1288,
+     "note": "report only -- favorite means implied > 0.5",
+     "splits": {
+      "favorite": {
+       "effect": -2e-05,
+       "n": 625,
+       "p": 0.999401
+      },
+      "underdog": {
+       "effect": 0.01403,
+       "n": 663,
+       "p": 0.488866
+      }
+     }
+    },
+    "home_away": {
+     "fatal": false,
+     "n": 1288,
+     "note": "report only -- an asymmetry here is context, not a verdict",
+     "splits": {
+      "away": {
+       "effect": null,
+       "n": 0,
+       "note": "below the 30-row floor; reported, never judged",
+       "p": null
+      },
+      "home": {
+       "effect": null,
+       "n": 0,
+       "note": "below the 30-row floor; reported, never judged",
+       "p": null
+      }
+     }
+    },
+    "price_bands": {
+     "bands": [
+      {
+       "effect": null,
+       "hi": 0.4,
+       "lo": 0.0,
+       "n": 0,
+       "note": "below the 30-row floor; reported, never judged",
+       "p": null
+      },
+      {
+       "effect": 0.01403,
+       "hi": 0.5,
+       "lo": 0.4,
+       "n": 663,
+       "p": 0.488866
+      },
+      {
+       "effect": -2e-05,
+       "hi": 0.6,
+       "lo": 0.5,
+       "n": 625,
+       "p": 0.999401
+      },
+      {
+       "effect": null,
+       "hi": 1.0,
+       "lo": 0.6,
+       "n": 0,
+       "note": "below the 30-row floor; reported, never judged",
+       "p": null
+      }
+     ],
+     "fatal": false,
+     "n": 1288,
+     "note": "report only -- effect by implied-probability band"
+    },
+    "season_split": {
+     "fatal": false,
+     "n": 1288,
+     "note": "FATAL when two judgeable seasons disagree in sign beyond the floor -- a year, not an effect",
+     "seasons": {
+      "2024": {
+       "effect": 0.00722,
+       "n": 1288,
+       "p": 0.616662
+      }
+     },
+     "skipped": "single-season leg (2024): season_split cannot fire; leave-one-season-out is not evaluable on the replication leg by design (B1/D2)"
+    },
+    "team_concentration": {
+     "skipped": "no 'team' key present"
+    },
+    "threshold_sensitivity": {
+     "skipped": "no dose_key configured"
+    }
+   },
+   "rules": {
+    "fingerprint": "ac74c7a7f715f9ec",
+    "version": "2.0.0"
+   },
+   "skipped_checks": {
+    "book_concentration": "no 'book' key present",
+    "dose_response": "no dose_key configured",
+    "season_split": "single-season leg (2024): season_split cannot fire; leave-one-season-out is not evaluable on the replication leg by design (B1/D2)",
+    "team_concentration": "no 'team' key present",
+    "threshold_sensitivity": "no dose_key configured"
+   },
+   "survives": false
+  },
+  "devig_sensitivity": {
+   "multiplicative": {
+    "replication": {
+     "by_season": {
+      "2024": {
+       "effect": 0.00728,
+       "n": 1288
+      }
+     },
+     "ci": {
+      "clusters": 182,
+      "high": 0.03506,
+      "low": -0.02037,
+      "reason": null,
+      "resamples": 2000
+     },
+     "decided": 1288,
+     "detector": "TOTALS-OVER-multiplicative-replication",
+     "economically_meaningful": {
+      "passes": false,
+      "threshold": 0.01,
+      "why": "an edge below one point of probability is smaller than the vig on a single bet, so it is not tradeable however certain it is"
+     },
+     "effect": 0.00728,
+     "hit_rate": 0.5062,
+     "late_move": null,
+     "late_move_n": 0,
+     "mean_implied": 0.4989,
+     "p": 0.613375,
+     "pushes": 0,
+     "roi": -0.00882,
+     "roi_n": 1288,
+     "selections": 1288,
+     "verdict": "the clustered interval includes zero: this is consistent with no effect at all"
+    },
+    "screen": {
+     "by_season": {
+      "2023": {
+       "effect": -0.01141,
+       "n": 1296
+      }
+     },
+     "ci": {
+      "clusters": 182,
+      "high": 0.01469,
+      "low": -0.03615,
+      "reason": null,
+      "resamples": 2000
+     },
+     "decided": 1296,
+     "detector": "TOTALS-OVER-multiplicative-screen",
+     "economically_meaningful": {
+      "passes": true,
+      "threshold": 0.01,
+      "why": "an edge below one point of probability is smaller than the vig on a single bet, so it is not tradeable however certain it is"
+     },
+     "effect": -0.01141,
+     "hit_rate": 0.4892,
+     "late_move": null,
+     "late_move_n": 0,
+     "mean_implied": 0.5006,
+     "p": 0.390962,
+     "pushes": 0,
+     "roi": -0.04351,
+     "roi_n": 1296,
+     "selections": 1296,
+     "verdict": "the clustered interval includes zero: this is consistent with no effect at all"
+    }
+   },
+   "proportional": {
+    "replication": {
+     "by_season": {
+      "2024": {
+       "effect": 0.00722,
+       "n": 1288
+      }
+     },
+     "ci": {
+      "clusters": 182,
+      "high": 0.03495,
+      "low": -0.02043,
+      "reason": null,
+      "resamples": 2000
+     },
+     "decided": 1288,
+     "detector": "TOTALS-OVER-proportional-replication",
+     "economically_meaningful": {
+      "passes": false,
+      "threshold": 0.01,
+      "why": "an edge below one point of probability is smaller than the vig on a single bet, so it is not tradeable however certain it is"
+     },
+     "effect": 0.00722,
+     "hit_rate": 0.5062,
+     "late_move": null,
+     "late_move_n": 0,
+     "mean_implied": 0.499,
+     "p": 0.616662,
+     "pushes": 0,
+     "roi": -0.00882,
+     "roi_n": 1288,
+     "selections": 1288,
+     "verdict": "the clustered interval includes zero: this is consistent with no effect at all"
+    },
+    "screen": {
+     "by_season": {
+      "2023": {
+       "effect": -0.01138,
+       "n": 1296
+      }
+     },
+     "ci": {
+      "clusters": 182,
+      "high": 0.01472,
+      "low": -0.03613,
+      "reason": null,
+      "resamples": 2000
+     },
+     "decided": 1296,
+     "detector": "TOTALS-OVER-proportional-screen",
+     "economically_meaningful": {
+      "passes": true,
+      "threshold": 0.01,
+      "why": "an edge below one point of probability is smaller than the vig on a single bet, so it is not tradeable however certain it is"
+     },
+     "effect": -0.01138,
+     "hit_rate": 0.4892,
+     "late_move": null,
+     "late_move_n": 0,
+     "mean_implied": 0.5006,
+     "p": 0.392598,
+     "pushes": 0,
+     "roi": -0.04351,
+     "roi_n": 1296,
+     "selections": 1296,
+     "verdict": "the clustered interval includes zero: this is consistent with no effect at all"
+    }
+   },
+   "shin": {
+    "replication": {
+     "by_season": {
+      "2024": {
+       "effect": 0.00726,
+       "n": 1288
+      }
+     },
+     "ci": {
+      "clusters": 182,
+      "high": 0.03502,
+      "low": -0.02039,
+      "reason": null,
+      "resamples": 2000
+     },
+     "decided": 1288,
+     "detector": "TOTALS-OVER-shin-replication",
+     "economically_meaningful": {
+      "passes": false,
+      "threshold": 0.01,
+      "why": "an edge below one point of probability is smaller than the vig on a single bet, so it is not tradeable however certain it is"
+     },
+     "effect": 0.00726,
+     "hit_rate": 0.5062,
+     "late_move": null,
+     "late_move_n": 0,
+     "mean_implied": 0.4989,
+     "p": 0.614481,
+     "pushes": 0,
+     "roi": -0.00882,
+     "roi_n": 1288,
+     "selections": 1288,
+     "verdict": "the clustered interval includes zero: this is consistent with no effect at all"
+    },
+    "screen": {
+     "by_season": {
+      "2023": {
+       "effect": -0.0114,
+       "n": 1296
+      }
+     },
+     "ci": {
+      "clusters": 182,
+      "high": 0.0147,
+      "low": -0.03614,
+      "reason": null,
+      "resamples": 2000
+     },
+     "decided": 1296,
+     "detector": "TOTALS-OVER-shin-screen",
+     "economically_meaningful": {
+      "passes": true,
+      "threshold": 0.01,
+      "why": "an edge below one point of probability is smaller than the vig on a single bet, so it is not tradeable however certain it is"
+     },
+     "effect": -0.0114,
+     "hit_rate": 0.4892,
+     "late_move": null,
+     "late_move_n": 0,
+     "mean_implied": 0.5006,
+     "p": 0.391511,
+     "pushes": 0,
+     "roi": -0.04351,
+     "roi_n": 1296,
+     "selections": 1296,
+     "verdict": "the clustered interval includes zero: this is consistent with no effect at all"
+    }
+   }
+  },
+  "devig_sign_survives": false,
+  "disclosed_prior_exposure_note": "even a SURVIVOR verdict here is reported as a calibration MEASUREMENT with disclosed prior exposure (V7 2.3), not a fresh confirmatory discovery, and may not promote to any trading decision without an independent forward out-of-sample leg (D5 HC3).",
+  "expected_sign": -1,
+  "population_shift": {
+   "book_count": {
+    "bucket_kind": "book_count",
+    "chi_square": 367.66684,
+    "df": 1,
+    "expected_props_screen": {
+     "5": 0.001543,
+     "6+": 0.998457
+    },
+    "fatal": true,
+    "observed_replication": {
+     "5": 29,
+     "6+": 1259
+    },
+    "p": 0.0,
+    "screen_buckets": [
+     "5",
+     "6+"
+    ]
+   },
+   "chi_square": 281.66842,
+   "df": 5,
+   "expected_props_screen": {
+    "<10.5": 0.222994,
+    "<11.5": 0.040895,
+    "<7.5": 0.007716,
+    "<8.5": 0.198302,
+    "<9.5": 0.497685,
+    ">=11.5": 0.032407
+   },
+   "fatal": true,
+   "line": {
+    "bucket_kind": "line",
+    "chi_square": 281.66842,
+    "df": 5,
+    "expected_props_screen": {
+     "<10.5": 0.222994,
+     "<11.5": 0.040895,
+     "<7.5": 0.007716,
+     "<8.5": 0.198302,
+     "<9.5": 0.497685,
+     ">=11.5": 0.032407
+    },
+    "fatal": true,
+    "observed_replication": {
+     "<10.5": 124,
+     "<11.5": 43,
+     "<7.5": 18,
+     "<8.5": 458,
+     "<9.5": 632,
+     ">=11.5": 13
+    },
+    "p": 0.0,
+    "screen_buckets": [
+     "<7.5",
+     "<8.5",
+     "<9.5",
+     "<10.5",
+     "<11.5",
+     ">=11.5"
+    ]
+   },
+   "note": "FATAL when EITHER bucketing's p < 0.01: replication-leg line-bucket OR book-count-bucket occupancy differs materially from the screen-leg-fit distribution (B1/B-A2)",
+   "observed_replication": {
+    "<10.5": 124,
+    "<11.5": 43,
+    "<7.5": 18,
+    "<8.5": 458,
+    "<9.5": 632,
+    ">=11.5": 13
+   },
+   "p": 0.0,
+   "screen_buckets": [
+    "<7.5",
+    "<8.5",
+    "<9.5",
+    "<10.5",
+    "<11.5",
+    ">=11.5"
+   ]
+  },
+  "replication": {
+   "by_season": {
+    "2024": {
+     "effect": 0.00722,
+     "n": 1288
+    }
+   },
+   "ci": {
+    "clusters": 182,
+    "high": 0.03495,
+    "low": -0.02043,
+    "reason": null,
+    "resamples": 2000
+   },
+   "decided": 1288,
+   "detector": "TOTALS-M1-replication",
+   "economically_meaningful": {
+    "passes": false,
+    "threshold": 0.01,
+    "why": "an edge below one point of probability is smaller than the vig on a single bet, so it is not tradeable however certain it is"
+   },
+   "effect": 0.00722,
+   "hit_rate": 0.5062,
+   "late_move": null,
+   "late_move_n": 0,
+   "mean_implied": 0.499,
+   "p": 0.616662,
+   "pushes": 0,
+   "roi": -0.00882,
+   "roi_n": 1288,
+   "selections": 1288,
+   "verdict": "the clustered interval includes zero: this is consistent with no effect at all"
+  },
+  "replication_gate": {
+   "cannot_tell": false,
+   "ci_excludes_zero": false,
+   "floor_ok": false,
+   "sign_agrees": false
+  },
+  "screen": {
+   "cannot_tell": true,
+   "effect": -0.01138,
+   "expected_sign": -1,
+   "n": 1296,
+   "passes_screen": false
+  },
+  "survives_fdr": false,
+  "verdict": "POPULATION_SHIFT_FAIL"
+ },
+ "m2": {
+  "confirmatory": false,
+  "coverage": {
+   "coverage_shift_note": "Coverage shift: 2023 join rate 61.1% vs 2024 join rate 84.9% (|\u0394|=23.8pp) -- material difference, flagged per task instructions.",
+   "per_season": {
+    "2023": {
+     "chi_square": {
+      "dof": 2,
+      "p_value": 0.9962,
+      "statistic": 0.0076
+     },
+     "dropped_both_sides_or_none_rule": 504,
+     "join_failures": {
+      "feature_missing_away_only": 131,
+      "feature_missing_both_sides": 245,
+      "feature_missing_home_only": 128,
+      "no_matrix_row_for_game_pk": 0
+     },
+     "join_rate_both_sides_present_pct": 61.1,
+     "joint_denominator_n": 1296,
+     "per_tercile_mde": {
+      "t0_low": 0.0602,
+      "t1_mid": 0.0603,
+      "t2_high": 0.0604
+     },
+     "rows_with_both_starters_feature_present": 792,
+     "tercile_occupancy": {
+      "t0_low": 265,
+      "t1_mid": 264,
+      "t2_high": 263
+     }
+    },
+    "2024": {
+     "chi_square": {
+      "dof": 2,
+      "p_value": 0.0001,
+      "statistic": 18.9076
+     },
+     "dropped_both_sides_or_none_rule": 195,
+     "join_failures": {
+      "feature_missing_away_only": 80,
+      "feature_missing_both_sides": 19,
+      "feature_missing_home_only": 96,
+      "no_matrix_row_for_game_pk": 0
+     },
+     "join_rate_both_sides_present_pct": 84.9,
+     "joint_denominator_n": 1288,
+     "per_tercile_mde": {
+      "t0_low": 0.0527,
+      "t1_mid": 0.0473,
+      "t2_high": 0.055
+     },
+     "rows_with_both_starters_feature_present": 1093,
+     "tercile_occupancy": {
+      "t0_low": 346,
+      "t1_mid": 430,
+      "t2_high": 317
+     }
+    }
+   },
+   "tercile_edges_fit_on_2023": {
+    "high_edge": 0.4502,
+    "low_edge": 0.40175
+   }
+  },
+  "excluded_from_fdr": true,
+  "member_id": "TOTALS-M2",
+  "name": "combined_starter_groundball_share partition",
+  "note": "D3: pre-registered POPULATION_SHIFT_FAIL before any outcome is read -- excluded from the confirmatory BH-FDR family (m=1, TOTALS-M1 alone) and reported exploratory-only, non-confirmatory, non-promotable.",
+  "population_shift": {
+   "chi_square": {
+    "dof": 2,
+    "p_value": 0.0001,
+    "statistic": 18.9076
+   },
+   "fatal": true,
+   "p": 0.0001
+  },
+  "verdict": "POPULATION_SHIFT_FAIL"
+ },
+ "run_at": "2026-09-05T00:31:26.870661+00:00"
+}
