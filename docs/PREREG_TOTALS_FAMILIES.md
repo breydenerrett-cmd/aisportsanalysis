@@ -1241,3 +1241,95 @@ and closes the standing invitation D3's "FDR does no work in this family"
 disclosure would otherwise leave open — registering hypothesis two, three,
 and four as separate families to claim `m=1` each time is exactly the
 multiplicity leak the FDR apparatus exists to close.
+
+## Adversarial re-review — 2026-09-05
+
+Re-attack of "## Post-adversarial amendments — 2026-09-05" against the code
+on the main working branch. No outcome field was read; no freeze was called
+on a real path (`data/research/totals/` still holds only
+`universe_frozen.json`). Fixes confined to `tests/`.
+
+### The five findings: all closed, all verified by mutation
+
+- **B-A1 CLOSED (verified).** `prereg_spec_sha256` now hashes the FINAL
+  SPECIFICATION section (bounded at the adversarial-review heading) plus the
+  Post-adversarial amendments section (bounded at the next `\n## `).
+  Measured on the live document: appending this re-review section does NOT
+  move the hash; editing the DRAFT's `## Family denominator` heading does
+  NOT move it; editing the FINAL SPECIFICATION's 3.0pp floor DOES; editing
+  the amendments' O4 clause DOES. Exactly the intended coverage.
+- **B-A2 CLOSED (verified).** `BOOK_COUNT_BUCKET_EDGES = (1,2,3,4,5)` (with
+  the `6+` tail bucket), `book_count_bucket_occupancy` implemented, and
+  `population_shift_test` returns `fatal = line_result["fatal"] or
+  book_count_result["fatal"]` with both sub-results carried in the payload.
+- **M-A1 CLOSED (verified).** `_verify_confirmatory_family` now cross-checks
+  `effect_floor_pp`, `cannot_tell_band_pp`, `fatal_p_lt`, both bucket-edge
+  sets, `fdr_q`, `clustering`, `battery_rules_version`, `max_staleness_hours`
+  and `book_floor` against the live constants, on top of the pre-existing
+  spec/universe/`fdr_m` checks.
+- **M-A2 CLOSED on behaviour (verified).** The executed order is
+  `POPULATION_SHIFT_FAIL → BATTERY_FAIL → DEVIG_SIGN_FAIL → CANNOT_TELL →
+  SCREEN_FAIL → REPLICATION_FAIL → SURVIVOR`; a fatal battery flag on an
+  in-band result now returns `BATTERY_FAIL`, not `CANNOT_TELL`. One residual
+  gap found and closed in tests — see N-B1.
+- **M-A3 CLOSED (verified).** `TestRunFullEvaluationHappyPath` runs
+  `run_full_evaluation` end to end against a synthetic frozen manifest and
+  frozen family record, via the new `manifest_path`/`confirmatory_family_path`
+  parameters.
+
+### N-B1 — `VERDICTS_PRECEDENCE` was declared but not executed (REPRODUCED; closed in tests)
+
+The amendments say the precedence is "implemented in exactly one place
+(`VERDICTS_PRECEDENCE`, consumed by both `VERDICTS` and `compute_verdict`)".
+`VERDICTS = VERDICTS_PRECEDENCE` holds, but `compute_verdict`'s if-chain is
+written out by hand and never reads the tuple. Reordering the tuple alone —
+putting `CANNOT_TELL` back ahead of `BATTERY_FAIL` — changed the value
+`freeze_confirmatory_family` writes into the frozen record as
+`verdict_precedence` while behaviour stayed byte-identical, and the whole
+suite passed. Two sources of truth again, one of them the pre-registration
+record. This could only ever produce *wrong documentation*, never a weaker
+gate (the executed order is the correct one and is itself pinned — swapping
+the if-chain fails 2 tests), so it is a NOTE, not a blocker. Closed in
+`tests/`: `TestVerdictPrecedenceTupleMatchesTheCode` derives the EXECUTED
+order from `compute_verdict` by tripping every pair of gates and ranking the
+winners, then asserts it equals `VERDICTS_PRECEDENCE`; the tuple-only
+mutation now fails 2 tests.
+
+### Mutation results (src reverted after each; `git diff --stat src/` clean)
+
+| mutation | before | now |
+|---|---|---|
+| `M1_EFFECT_FLOOR 0.030 → 0.0001` | 4 failures | **5 failures** |
+| delete the `effect_floor_pp` cross-check | (did not exist) | **2 failures** |
+| unbound the prereg hash at the end (`nxt = -1`) | (was the bug) | **1 failure** |
+| restart the prereg hash at `## Family denominator` | (was the bug) | **4 errors** |
+| `fatal = line_result["fatal"]` only | (was the bug) | **1 failure** |
+| `replication_rows = list(rows)` | passed silently | **1 failure** |
+| swap `CANNOT_TELL`/`BATTERY_FAIL` in the if-chain | (was the bug) | **2 failures** |
+| reorder `VERDICTS_PRECEDENCE` alone | passed silently | **2 failures** (N-B1 fix) |
+| season guard → `if False` | passed silently | **2 failures** |
+
+### Earlier clean areas: unchanged
+
+Real dry run in the main checkout re-verifies both hashes
+(`content_hash=2f4f7fcf…d532e7d9`, `price_payload_hash=b2e6dbf9…ca6d8df2` —
+identical to the pre-fix values, so the fix lane did not disturb the frozen
+universe) and returns 2023 n=1,296 / 2024 n=1,288, integer stratum
+1,064/1,085. Constants unchanged and correct: `FDR_M=1`,
+`M1_EFFECT_FLOOR=0.030`, `M1_CANNOT_TELL_BAND_PP=(0.0, 3.0)`,
+`POPULATION_SHIFT_P_FATAL=0.01`, three de-vig conventions
+(proportional/power/shin), `BOOK_FLOOR=3`, `MAX_STALENESS_HOURS=6`,
+`ANCHOR_RULE=per_snapshot_commence_time`, `SEASONS=('2023','2024')`,
+battery `2.0.0`, line edges `(5.5…11.5)`. `run_full_evaluation` and
+`devig_sensitivity` both still split by season — no pooled rows anywhere.
+`totals_eval.py` contains no reference to `total_runs` at all. No family
+record exists on either real freeze path, so `freeze_family` was not called.
+Suite green: 4,172 tests fast, full parallel suite green.
+
+Remaining known costs, unchanged and correctly disclosed: the family cannot
+detect a true effect below ~2.7pp at either leg; M1 is a disclosed
+partially-read calibration measurement, not a fresh discovery; `fdr_m=1`
+means the FDR step does no work; and no `SURVIVOR` verdict promotes without
+an independent forward leg that does not yet exist.
+
+ADVERSARIAL VERDICT: PASS — register

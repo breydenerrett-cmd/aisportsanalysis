@@ -1488,5 +1488,66 @@ class TestRunFullEvaluationHappyPath(unittest.TestCase):
                                     "2024": Path(td) / "m2024.jsonl"})
 
 
+class TestVerdictPrecedenceTupleMatchesTheCode(unittest.TestCase):
+    """Re-review gap: `VERDICTS_PRECEDENCE` is written into the frozen
+    record as the family's declared precedence, but `compute_verdict`'s
+    if-chain is written out by hand and does not read the tuple. Reordering
+    the tuple alone changed the frozen record while behaviour stayed
+    identical and nothing objected. This test derives the EXECUTED order
+    from `compute_verdict` itself and pins it to the declared tuple, so the
+    record can never document an order the code does not run."""
+
+    ALL_GATES_PASS = dict(
+        population_shift_fatal=False, screen_passes=True,
+        replication_sign_agrees=True, replication_ci_excludes_zero=True,
+        survives_fdr=True, devig_sign_survives=True, battery_survives=True,
+        screen_cannot_tell=False, replication_cannot_tell=False,
+        replication_floor_ok=True)
+
+    # One failing input per non-SURVIVOR verdict.
+    TRIP = {
+        "POPULATION_SHIFT_FAIL": {"population_shift_fatal": True},
+        "BATTERY_FAIL": {"battery_survives": False},
+        "DEVIG_SIGN_FAIL": {"devig_sign_survives": False},
+        "CANNOT_TELL": {"screen_cannot_tell": True},
+        "SCREEN_FAIL": {"screen_passes": False},
+        "REPLICATION_FAIL": {"replication_ci_excludes_zero": False},
+    }
+
+    def test_each_gate_alone_yields_its_own_verdict(self):
+        for verdict, trip in self.TRIP.items():
+            kwargs = dict(self.ALL_GATES_PASS, **trip)
+            self.assertEqual(te.compute_verdict(**kwargs), verdict)
+
+    def test_all_gates_passing_is_survivor(self):
+        self.assertEqual(te.compute_verdict(**self.ALL_GATES_PASS), "SURVIVOR")
+
+    def test_executed_order_equals_the_declared_tuple(self):
+        """Trip every pair of gates together: the verdict returned is the
+        earlier of the two in the EXECUTED order. Sorting the codes by how
+        often they win those pairings recovers the executed precedence."""
+        codes = list(self.TRIP)
+        wins = {c: 0 for c in codes}
+        for i, a in enumerate(codes):
+            for b in codes[i + 1:]:
+                kwargs = dict(self.ALL_GATES_PASS, **self.TRIP[a])
+                kwargs.update(self.TRIP[b])
+                winner = te.compute_verdict(**kwargs)
+                self.assertIn(winner, (a, b))
+                wins[winner] += 1
+        executed = sorted(codes, key=lambda c: -wins[c]) + ["SURVIVOR"]
+        self.assertEqual(tuple(executed), tuple(te.VERDICTS_PRECEDENCE))
+
+    def test_a_fatal_battery_flag_is_never_absorbed_by_cannot_tell(self):
+        """M-A2's substantive claim: a statement about the DESIGN outranks a
+        statement about POWER."""
+        kwargs = dict(self.ALL_GATES_PASS, battery_survives=False,
+                      screen_cannot_tell=True, screen_passes=False)
+        self.assertEqual(te.compute_verdict(**kwargs), "BATTERY_FAIL")
+        kwargs = dict(self.ALL_GATES_PASS, devig_sign_survives=False,
+                      replication_cannot_tell=True)
+        self.assertEqual(te.compute_verdict(**kwargs), "DEVIG_SIGN_FAIL")
+
+
 if __name__ == "__main__":
     unittest.main()
