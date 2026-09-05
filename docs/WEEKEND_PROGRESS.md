@@ -105,3 +105,6 @@
 
 ## 2026-09-05 11:0xZ — slate ordering + L1 projection marker fix landed (57e7a9a)
 - refresh_l1_if_stale() runs before preflight in the CLI; durable per-source (size, mtime) marker replaces the L1-mtime heuristic. Regression tests fail on old code. Lane suites 4,209 fast / 4,557 full green.
+
+## 2026-09-05 13:5xZ — cycle note
+- Capture healthy (heartbeat 17m; no games in window until ~14:00Z). Helper artifacts_today reads 105 on disk; the earlier 131 included the previous day dir in its two-day scan — counting quirk, no artifact loss (per-hour counts reconcile with run logs).
