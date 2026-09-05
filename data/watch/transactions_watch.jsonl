@@ -511,3 +511,13 @@
 {"category": "optioned", "date": "2026-09-04", "first_seen_utc": "2026-09-04T22:46:07.219275+00:00", "player": "Hayden Harris", "player_id": 802686, "team": "COL", "transaction_id": 941335}
 {"category": "other", "date": "2026-09-04", "first_seen_utc": "2026-09-04T22:46:07.219275+00:00", "player": "Tom Cosgrove", "player_id": 676680, "team": "WSH", "transaction_id": 941336}
 {"fetched_utc": "2026-09-04T23:01:10.501258+00:00", "game_date": "2026-09-04", "poll": true}
+{"fetched_utc": "2026-09-04T23:16:13.703284+00:00", "game_date": "2026-09-04", "poll": true}
+{"category": "signed", "date": "2026-09-04", "first_seen_utc": "2026-09-04T23:16:13.703284+00:00", "player": "Shaun Anderson", "player_id": 641312, "team": "LAA", "transaction_id": 941341}
+{"fetched_utc": "2026-09-04T23:16:18.942888+00:00", "game_date": "2026-09-04", "poll": true}
+{"fetched_utc": "2026-09-04T23:31:21.472869+00:00", "game_date": "2026-09-04", "poll": true}
+{"fetched_utc": "2026-09-04T23:46:25.046659+00:00", "game_date": "2026-09-04", "poll": true}
+{"category": "il_activation", "date": "2026-09-04", "first_seen_utc": "2026-09-04T23:46:25.046659+00:00", "player": "Cole Sulser", "player_id": 642121, "team": "TB", "transaction_id": 941351}
+{"fetched_utc": "2026-09-05T00:01:27.617294+00:00", "game_date": "2026-09-04", "poll": true}
+{"category": "il_placement", "date": "2026-09-03", "first_seen_utc": "2026-09-05T00:01:27.617294+00:00", "player": "Manuel Rodr\u00edguez", "player_id": 655889, "team": "TB", "transaction_id": 941352}
+{"category": "recalled", "date": "2026-09-04", "first_seen_utc": "2026-09-05T00:01:27.617294+00:00", "player": "Joey Estes", "player_id": 683155, "team": "OAK", "transaction_id": 941354}
+{"category": "optioned", "date": "2026-09-04", "first_seen_utc": "2026-09-05T00:01:27.617294+00:00", "player": "Jack Perkins", "player_id": 678022, "team": "OAK", "transaction_id": 941355}
