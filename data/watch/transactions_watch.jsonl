@@ -521,3 +521,8 @@
 {"category": "il_placement", "date": "2026-09-03", "first_seen_utc": "2026-09-05T00:01:27.617294+00:00", "player": "Manuel Rodr\u00edguez", "player_id": 655889, "team": "TB", "transaction_id": 941352}
 {"category": "recalled", "date": "2026-09-04", "first_seen_utc": "2026-09-05T00:01:27.617294+00:00", "player": "Joey Estes", "player_id": 683155, "team": "OAK", "transaction_id": 941354}
 {"category": "optioned", "date": "2026-09-04", "first_seen_utc": "2026-09-05T00:01:27.617294+00:00", "player": "Jack Perkins", "player_id": 678022, "team": "OAK", "transaction_id": 941355}
+{"fetched_utc": "2026-09-05T00:15:57.071779+00:00", "game_date": "2026-09-04", "poll": true}
+{"fetched_utc": "2026-09-05T00:16:00.294013+00:00", "game_date": "2026-09-04", "poll": true}
+{"fetched_utc": "2026-09-05T00:31:02.499361+00:00", "game_date": "2026-09-04", "poll": true}
+{"fetched_utc": "2026-09-05T00:46:05.237075+00:00", "game_date": "2026-09-04", "poll": true}
+{"fetched_utc": "2026-09-05T01:01:07.694755+00:00", "game_date": "2026-09-04", "poll": true}
