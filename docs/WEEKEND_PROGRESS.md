@@ -93,3 +93,6 @@
 
 ## 2026-09-05 10:0xZ — W25 factory lifecycle landed; W26 lesson landed
 - Lifecycle state machine (admit refuses near-duplicates of RETIRED families; promote structurally gated). Dry run on persisted evidence: all 1,062 families RETIRED — the historical ML genome population has no surviving evidence, consistent with the earlier noise-ceiling adjudication. Queue now drained except BLOCKED_HUMAN items (W2 secrets, W4 comparator) and the Monday handoff. Capture healthy.
+
+## 2026-09-05 03:3xZ — capture-health false OVERDUE (overnight, no games in window)
+- Helper reported OVERDUE age=93m while the runner executed and committed at 03:16Z with "stopped early: no game inside the window". Artifact age is the wrong liveness signal outside game windows; a heartbeat-based fix lane (Sonnet) dispatched. Capture itself is healthy; no ESCALATE; no research stopped because the evidence shows the runner alive.
