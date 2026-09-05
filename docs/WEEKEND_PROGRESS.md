@@ -96,3 +96,6 @@
 
 ## 2026-09-05 03:3xZ — capture-health false OVERDUE (overnight, no games in window)
 - Helper reported OVERDUE age=93m while the runner executed and committed at 03:16Z with "stopped early: no game inside the window". Artifact age is the wrong liveness signal outside game windows; a heartbeat-based fix lane (Sonnet) dispatched. Capture itself is healthy; no ESCALATE; no research stopped because the evidence shows the runner alive.
+
+## 2026-09-05 04:0xZ — capture-health heartbeat fix landed
+- Helper now uses the latest "Forward capture" commit as a heartbeat; live: HEALTHY_IDLE decided_by=heartbeat. 5 regression tests.
