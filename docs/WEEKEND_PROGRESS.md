@@ -90,3 +90,6 @@
 - Adversarial re-review PASS (0346858; N-B1 pinned in tests). Confirmatory family frozen (m=1, spec sha 056e7352…, both universe hashes). Evaluation run committed.
 - M1: 2023 screen −1.14pp (Under-favouring, below 3.0pp floor); 2024 +0.72pp p=0.617 CI [−2.04, +3.50] (sign flip, CANNOT_TELL band); pre-registered population-shift gate fatal on BOTH bucketings (line χ²=281.7; book-count χ²=367.7) → POPULATION_SHIFT_FAIL; battery extreme_removal fatal; integer stratum report-only 0.514/0.490. M2 POPULATION_SHIFT_FAIL as pre-determined.
 - Gate-design lesson for the NEXT family (not a rescue): line-bucket occupancy shift measures league scoring drift between seasons, not sample comparability. Results doc lane dispatched. No thresholds touched.
+
+## 2026-09-05 10:0xZ — W25 factory lifecycle landed; W26 lesson landed
+- Lifecycle state machine (admit refuses near-duplicates of RETIRED families; promote structurally gated). Dry run on persisted evidence: all 1,062 families RETIRED — the historical ML genome population has no surviving evidence, consistent with the earlier noise-ceiling adjudication. Queue now drained except BLOCKED_HUMAN items (W2 secrets, W4 comparator) and the Monday handoff. Capture healthy.
