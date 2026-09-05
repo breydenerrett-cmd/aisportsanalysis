@@ -71,6 +71,7 @@ Two things close that gap, both in `run_slate`:
 from __future__ import annotations
 
 import hashlib
+import json
 from dataclasses import dataclass, replace
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -275,21 +276,123 @@ def _slate_mode(date_str: str, now: datetime) -> str:
     return "LIVE" if date.fromisoformat(date_str) >= now.date() else "REPLAY"
 
 
-def _l1_source_mtimes_newer_than_output(output_path, source_paths) -> bool:
-    """`True` when `output_path` (the L1 store) does not exist yet, or any
-    path in `source_paths` has a newer mtime than it -- the cheap (`stat()`
-    only, no JSONL parsing) signal that `output_path` might now be missing
-    rows a source store already has. A source path that does not exist is
-    simply not a reason to refresh (nothing to project from it yet)."""
-    output = Path(output_path)
-    if not output.exists():
+L1_PROJECTION_STATE_FILENAME = "l1_projection_state.json"
+
+
+def _l1_state_path(l1_path) -> Path:
+    """The sidecar marker lives next to `l1_path` itself, so a caller that
+    points `run_slate`/`refresh_l1_if_stale` at a fixture L1 store (every
+    test but `TestL1RefreshBeforeSlate`) gets an isolated marker too --
+    never the real production marker bleeding into a test's temp dir, and
+    never a test's marker bleeding into production."""
+    return Path(l1_path).parent / L1_PROJECTION_STATE_FILENAME
+
+
+def _current_source_stat(path) -> dict | None:
+    """`{"size": ..., "mtime": ...}` for `path`, or `None` if it does not
+    exist. Both fields together (not mtime alone) are what actually changed
+    -- a capture append changes size unconditionally, and comparing the pair
+    means a source getting REPLACED with different content at the exact
+    same size still needs its mtime to move to look unchanged, which real
+    appends and rewrites both guarantee in practice."""
+    p = Path(path)
+    if not p.exists():
+        return None
+    st = p.stat()
+    return {"size": st.st_size, "mtime": st.st_mtime}
+
+
+def _load_l1_projection_state(state_path) -> dict:
+    try:
+        return json.loads(Path(state_path).read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _save_l1_projection_state(state_path, source_paths) -> None:
+    state = {str(Path(p)): _current_source_stat(p) for p in source_paths}
+    Path(state_path).parent.mkdir(parents=True, exist_ok=True)
+    Path(state_path).write_text(json.dumps(state), encoding="utf-8")
+
+
+def _l1_needs_refresh(l1_path, source_paths) -> bool:
+    """`True` when `l1_path` does not exist yet, the projection marker
+    (`_l1_state_path`) is absent, or ANY source path's current
+    `(size, mtime)` differs from what the marker last recorded for it.
+
+    Replaces an earlier heuristic that compared each source's mtime against
+    `l1_path`'s OWN mtime -- broken because `l1_path` is a shared
+    projection: anything else that appends to it (a historical/closing
+    backfill, a manual `cli l1` run) bumps ITS mtime forward without
+    touching the price sources at all, so every source looked "older than
+    the output" and the refresh silently stopped firing from then on (the
+    2026-09-04/05 incident: 52,380 multibook + 6,354 snapshot observations
+    sat unprojected until someone ran `l1.run` by hand). Comparing each
+    source's own recorded stat -- never `l1_path`'s -- means only an actual
+    change to a SOURCE can suppress or trigger a refresh."""
+    if not Path(l1_path).exists():
         return True
-    output_mtime = output.stat().st_mtime
+    recorded = _load_l1_projection_state(_l1_state_path(l1_path))
     for source in source_paths:
-        source = Path(source)
-        if source.exists() and source.stat().st_mtime > output_mtime:
+        if recorded.get(str(Path(source))) != _current_source_stat(source):
             return True
     return False
+
+
+def _l1_source_paths(l1_path, l1_sources) -> list:
+    """The source paths a refresh of `l1_path` would project from --
+    `l1_sources` verbatim when the caller named one, else the real
+    production source list plus whatever closing_* stores sit next to
+    `l1_path`. Shared by `refresh_l1_if_stale` and its tests so both agree
+    on exactly what "the sources" means."""
+    from src.board import l1 as l1_module
+    if l1_sources is not None:
+        return [s["path"] for s in l1_sources]
+    return ([s["path"] for s in l1_module.SOURCE_STORES]
+            + [s["path"] for s in
+               l1_module._discover_closing_stores(Path(l1_path).parent)])
+
+
+def refresh_l1_if_stale(date_str: str, *, l1_path=glue_module.L1_PATH,
+                        l1_sources: Sequence | None = None,
+                        l1_raw_root=None) -> bool:
+    """Project fresh price-source rows into `l1_path` if any source has
+    moved since the last projection recorded in its marker (`_l1_needs_
+    refresh`). Returns whether `l1.run()` actually fired.
+
+    Factored out of `run_slate` (S8 incident fix) so `src.cli._cmd_engine_
+    slate` can call this BEFORE `preflight.check` -- previously the guard
+    read L1 first and `run_slate`'s own refresh only ran (if it got there
+    at all) after the guard had already refused on stale data, which meant
+    a real capture outage was invisible to `engine slate` (refused, no
+    board built) even though sources on disk were current. `run_slate`
+    still calls this itself too (kept idempotent below by the marker, and
+    by `l1.run`'s own `observation_id` dedup) -- so a caller invoking
+    `run_slate` directly (not through the CLI) still gets a fresh L1.
+
+    Same safety rail `run_slate` always had: only fires when `l1_path` is
+    the real production store (the default) or the caller explicitly named
+    `l1_sources`/`l1_raw_root` to refresh FROM -- a synthetic `l1_path`
+    named alone is left untouched, so no test's isolated fixture silently
+    gets real production price rows projected into it.
+    """
+    if not (l1_sources is not None or l1_raw_root is not None
+            or Path(l1_path) == Path(glue_module.L1_PATH)):
+        return False
+
+    source_paths = _l1_source_paths(l1_path, l1_sources)
+    if not _l1_needs_refresh(l1_path, source_paths):
+        return False
+
+    from src.board import l1 as l1_module
+    l1_kwargs: dict = {}
+    if l1_sources is not None:
+        l1_kwargs["sources"] = list(l1_sources)
+    if l1_raw_root is not None:
+        l1_kwargs["raw_root"] = l1_raw_root
+    l1_module.run(since=date_str, output_path=l1_path, **l1_kwargs)
+    _save_l1_projection_state(_l1_state_path(l1_path), source_paths)
+    return True
 
 
 def decision_key(record: DecisionRecord) -> tuple:
@@ -554,18 +657,20 @@ def run_slate(
          instead.)
 
     L1 REFRESH (fixes: a slate run seeing hours-stale prices while fresher
-    ones already sat captured on disk). `data/processed/l1_observations.jsonl`
-    is a PROJECTION `src.board.l1.run()` builds from the real price stores
-    (odds_multibook/odds_snapshots/f5_close) -- nothing else re-projects it
-    after a capture, so without this a capture landing between two slate
-    runs is invisible to `engine slate` until someone remembers to run
-    `l1 --backfill` by hand. `run_slate` is the ONE path every real
-    invocation of `engine slate` goes through (the CLI, the daily loop,
-    replay demonstrations) and it reads L1 through `l1_path` immediately
-    below via `games_for_slate_date`/`build_board` -- so refreshing HERE,
-    before either is called, is the placement a caller cannot forget by
-    omitting a separate step; `refresh_l1=True` is the default for exactly
-    that reason.
+    ones already sat captured on disk -- see `refresh_l1_if_stale`'s own
+    docstring). `data/processed/l1_observations.jsonl` is a PROJECTION
+    `src.board.l1.run()` builds from the real price stores (odds_multibook/
+    odds_snapshots/f5_close) -- nothing else re-projects it after a
+    capture, so without this a capture landing between two slate runs is
+    invisible to `engine slate` until someone remembers to run
+    `l1 --backfill` by hand. `run_slate` calls `refresh_l1_if_stale` here
+    (`refresh_l1=True` is the default) so the refresh is never skippable by
+    omitting a separate step -- and `src.cli._cmd_engine_slate` ALSO calls
+    it directly, before `preflight.check`, so the S8 freshness guard never
+    reads L1 before a due refresh has had the chance to run (the
+    2026-09-04/05 incident this closes: the guard refused on stale L1 while
+    fresh source rows sat unprojected, because it ran first and this
+    refresh, reachable only from inside `run_slate`, never got called).
 
     The refresh only ever fires when it is safe to: either `l1_path` is the
     real production L1 store (the default -- refreshed from the real
@@ -581,13 +686,14 @@ def run_slate(
     source row on each call it makes (needed for its own grading pass), so
     calling it unconditionally on every `engine slate` invocation would pay
     that same walk again even when nothing on disk has changed since the
-    last one. `_l1_source_mtimes_newer_than_output` below is the cheap guard
-    in front of it: a handful of `stat()` calls, not a JSONL parse, decide
-    whether ANY source file `l1_path` would be projected from has changed
-    since `l1_path` was last written; `l1.run()` itself is only invoked when
-    that is true (or `l1_path` does not exist yet at all). A slate re-run
-    between two captures -- the daily loop's actual cadence -- skips the
-    walk entirely instead of re-scanning a store that has not moved.
+    last one. `_l1_needs_refresh` (see `refresh_l1_if_stale`) is the cheap
+    guard in front of it: a handful of `stat()` calls against a small JSON
+    marker, not a JSONL parse, decide whether ANY source file `l1_path`
+    would be projected from has changed since it was last projected --
+    `l1.run()` itself is only invoked when that is true (or `l1_path` does
+    not exist yet at all). A slate re-run between two captures -- the daily
+    loop's actual cadence -- skips the walk entirely instead of re-scanning
+    a store that has not moved.
     """
     systems = tuple(systems) if systems is not None else REGISTERED_SYSTEMS
     if not systems:
@@ -606,21 +712,9 @@ def run_slate(
     decisions_path = str(decisions_path or V2_LEDGER_PATH)
     wagers_path = str(wagers_path or PAPER_WAGERS_PATH)
 
-    if refresh_l1 and (l1_sources is not None or l1_raw_root is not None
-                        or Path(l1_path) == Path(glue_module.L1_PATH)):
-        from src.board import l1 as l1_module
-        source_paths = (
-            [s["path"] for s in l1_sources] if l1_sources is not None
-            else [s["path"] for s in l1_module.SOURCE_STORES]
-                + [s["path"] for s in
-                   l1_module._discover_closing_stores(Path(l1_path).parent)])
-        if _l1_source_mtimes_newer_than_output(l1_path, source_paths):
-            l1_kwargs: dict = {}
-            if l1_sources is not None:
-                l1_kwargs["sources"] = list(l1_sources)
-            if l1_raw_root is not None:
-                l1_kwargs["raw_root"] = l1_raw_root
-            l1_module.run(since=date_str, output_path=l1_path, **l1_kwargs)
+    if refresh_l1:
+        refresh_l1_if_stale(date_str, l1_path=l1_path, l1_sources=l1_sources,
+                            l1_raw_root=l1_raw_root)
 
     existing_decisions = _load_existing_decision_keys(decisions_path)
     existing_bet_ids = _load_existing_bet_ids(wagers_path)

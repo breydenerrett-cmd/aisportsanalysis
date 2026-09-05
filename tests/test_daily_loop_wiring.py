@@ -287,7 +287,55 @@ class EngineSlateCliRefusesOnStaleInputsTest(unittest.TestCase):
     refuses on "no data captured at all", and a shared checkout with the
     real Statcast backfill's known gap (ending 2026-08-27,
     docs/CHECKPOINT_PHASE0_2026-09-03.md) refuses on staleness instead --
-    either way `engine slate` must refuse rather than proceed."""
+    either way `engine slate` must refuse rather than proceed.
+
+    2026-09-04/05 INCIDENT FIX side effect this setUp works around:
+    `_cmd_engine_slate` now calls `engine_slate.refresh_l1_if_stale` (real
+    production paths, no override) BEFORE the guard, which is exactly the
+    fix -- but on a checkout carrying a real, months-deep capture backlog
+    with no L1 store or marker yet at all (this worktree's actual state:
+    `l1_observations.jsonl` is gitignored), that refresh is a genuine,
+    multi-minute first-time full projection of every row `l1.run()` has
+    never seen, not the fast no-op it is on every later call. That cost is
+    real and correctly paid once in production; it is not this test's job
+    to pay it on every run. So setUp seeds the projection marker to match
+    every real source store's CURRENT `(size, mtime)` (and creates an empty
+    L1 file if none exists) before invoking the CLI -- `refresh_l1_if_stale`
+    then sees nothing has changed and skips straight through, exactly as it
+    would on a second real invocation. This does not weaken what the test
+    proves: 2026-01-01 predates the season, so even a completed real
+    refresh leaves preflight refusing on "no price capture" for that date
+    -- seeding the marker only removes the multi-minute detour to the same
+    honest refusal."""
+
+    def setUp(self):
+        from src.engine import glue as glue_module
+        from src.engine import slate as engine_slate_module
+        self._engine_slate_module = engine_slate_module
+        self.l1_path = Path(glue_module.L1_PATH)
+        self.state_path = engine_slate_module._l1_state_path(self.l1_path)
+        self._l1_existed = self.l1_path.exists()
+        self._l1_backup = self.l1_path.read_bytes() if self._l1_existed else None
+        self._state_existed = self.state_path.exists()
+        self._state_backup = (self.state_path.read_bytes()
+                              if self._state_existed else None)
+        if not self._l1_existed:
+            self.l1_path.parent.mkdir(parents=True, exist_ok=True)
+            self.l1_path.write_bytes(b"")
+        source_paths = engine_slate_module._l1_source_paths(self.l1_path, None)
+        engine_slate_module._save_l1_projection_state(
+            self.state_path, source_paths)
+        self.addCleanup(self._restore)
+
+    def _restore(self):
+        if self._l1_existed:
+            self.l1_path.write_bytes(self._l1_backup)
+        else:
+            self.l1_path.unlink(missing_ok=True)
+        if self._state_existed:
+            self.state_path.write_bytes(self._state_backup)
+        else:
+            self.state_path.unlink(missing_ok=True)
 
     def test_engine_slate_refuses_without_writing_anything(self):
         result = subprocess.run(
@@ -296,6 +344,32 @@ class EngineSlateCliRefusesOnStaleInputsTest(unittest.TestCase):
             cwd=REPO, capture_output=True, text=True, timeout=60)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("pre-slate freshness guard", result.stderr)
+
+
+class CliCallsRefreshBeforeTheGuardTest(unittest.TestCase):
+    """S8 incident fix (cause 1): `preflight.check` used to run BEFORE
+    `run_slate` ever got a chance to refresh L1, so a real capture outage
+    at slate time was invisible to `engine slate` -- it refused on stale L1
+    while fresher rows already sat captured on disk. Pins that
+    `_cmd_engine_slate` now calls `engine_slate.refresh_l1_if_stale` ahead
+    of `preflight.check`, textually, the same style as
+    `PreflightConstantsWiringTest.test_cli_engine_slate_calls_the_guard_
+    before_run_slate` above -- this fails on the pre-fix source (no such
+    call existed at all)."""
+
+    def test_refresh_l1_if_stale_runs_before_preflight_check(self):
+        cli_source = (REPO / "src" / "cli.py").read_text()
+        fn_start = cli_source.index("def _cmd_engine_slate")
+        fn_source = cli_source[fn_start:cli_source.index("\ndef ", fn_start + 1)]
+        self.assertIn("refresh_l1_if_stale(", fn_source)
+        self.assertIn("preflight.check(", fn_source)
+        refresh_pos = fn_source.index("refresh_l1_if_stale(")
+        guard_pos = fn_source.index("preflight.check(")
+        self.assertLess(
+            refresh_pos, guard_pos,
+            "engine slate must refresh L1 before consulting the freshness "
+            "guard -- otherwise the guard can refuse on stale L1 while "
+            "fresher source rows already sit captured on disk")
 
 
 if __name__ == "__main__":

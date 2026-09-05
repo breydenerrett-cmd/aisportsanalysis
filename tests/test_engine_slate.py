@@ -7,14 +7,17 @@ data is read.
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 import unittest
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest import mock
 
 from src.board.ids import selection_id
 from src.engine import glue as glue_module
+from src.engine import preflight
 from src.engine import slate
 from src.engine.analyze import Proposal
 from src.ledger.chain import HashChainLedger
@@ -400,6 +403,108 @@ class TestL1RefreshBeforeSlate(SlateTestBase):
         self.run_slate("2026-09-02", systems=(glue_module.TrivialAlwaysHomeSystem(),))
         after = self.l1_path.read_text()
         self.assertEqual(before, after)
+
+
+def _write_manifest(store: Path, *end_dates) -> None:
+    """Mirrors `test_engine_preflight.py`'s own helper -- a minimal
+    Statcast manifest whose coverage ends at `end_dates`' latest date."""
+    store.mkdir(parents=True, exist_ok=True)
+    windows = {f"{end}..{end}": {"rows": 1, "file": f"pitches_{end}.jsonl.gz"}
+               for end in end_dates}
+    (store / "manifest.json").write_text(json.dumps({"windows": windows}),
+                                         encoding="utf-8")
+
+
+class TestL1ProjectionMarker(SlateTestBase):
+    """Cause 2 (2026-09-04/05 incident): the pre-fix refresh guard,
+    `_l1_source_mtimes_newer_than_output`, compared each source's mtime
+    against L1's OWN mtime -- so anything else that appended to L1 (a
+    historical/closing backfill, a manual `cli l1` run) moved L1's mtime
+    forward without touching any price source at all, and every source
+    then looked "older than the output" forever after -- refresh silently
+    stopped firing (52,380 multibook + 6,354 snapshot rows sat unprojected
+    until a manual `l1.run`). `_l1_needs_refresh`'s marker instead records
+    each source's OWN last-projected `(size, mtime)`, so only a real change
+    to a SOURCE can trigger or suppress a refresh -- L1's mtime never enters
+    the comparison at all."""
+
+    def setUp(self):
+        super().setUp()
+        self.statcast_store = Path(self._tmp.name) / "statcast"
+
+    def _sources(self):
+        return [{"name": "odds_snapshots", "path": self.commence_path,
+                 "kind": "snapshot", "is_close": False}]
+
+    def _write_fresh_capture(self):
+        _write_jsonl(self.commence_path, [
+            _raw_snapshot_h2h_row(GAME_A, "2026-09-02T22:00:00Z",
+                                  "2026-09-02T23:00:00Z", "book_a", -150, 130),
+            _raw_snapshot_h2h_row(GAME_A, "2026-09-02T22:00:00Z",
+                                  "2026-09-02T23:00:00Z", "book_b", -150, 130),
+        ])
+
+    def test_marker_absent_triggers_refresh_even_when_l1_mtime_is_newer(self):
+        self._write_fresh_capture()
+        _write_jsonl(self.l1_path, [])  # exists, but never projected GAME_A
+        # Give L1 a NEWER mtime than the source -- exactly the condition
+        # the old heuristic read as "source is stale relative to L1, skip".
+        source_mtime = self.commence_path.stat().st_mtime
+        os.utime(self.l1_path, (source_mtime + 3600, source_mtime + 3600))
+        self.assertGreater(self.l1_path.stat().st_mtime, source_mtime)
+
+        self.assertTrue(
+            slate._l1_needs_refresh(self.l1_path, [self.commence_path]),
+            "no marker exists yet -- a refresh must be considered due "
+            "regardless of L1's own mtime")
+        refreshed = slate.refresh_l1_if_stale(
+            "2026-09-02", l1_path=self.l1_path, l1_sources=self._sources())
+        self.assertTrue(refreshed)
+        rows = [json.loads(l) for l in self.l1_path.read_text().splitlines()
+               if l.strip()]
+        self.assertTrue(any(r["event_id"] == GAME_A for r in rows))
+
+    def test_marker_matching_current_source_stats_skips_l1_run(self):
+        self._write_fresh_capture()
+        kwargs = dict(l1_path=self.l1_path, l1_sources=self._sources())
+        self.assertTrue(slate.refresh_l1_if_stale("2026-09-02", **kwargs))
+
+        with mock.patch("src.board.l1.run") as mock_run:
+            refreshed_again = slate.refresh_l1_if_stale("2026-09-02", **kwargs)
+        self.assertFalse(
+            refreshed_again,
+            "sources unchanged since the marker was written -- no refresh "
+            "was due")
+        mock_run.assert_not_called()
+
+    def test_refresh_before_guard_passes_where_guard_first_would_refuse(self):
+        """The end-to-end shape of the S8 fix, at the function level (the
+        textual CLI-ordering check lives in
+        tests/test_daily_loop_wiring.py::CliCallsRefreshBeforeTheGuardTest):
+        a fresh capture sits in the source, never yet projected, with L1's
+        mtime newer than the source (Cause 2's trap). Calling
+        `preflight.check` FIRST (the pre-fix CLI order) refuses; calling
+        `refresh_l1_if_stale` first (the fixed order) makes the SAME
+        `preflight.check` call pass -- this must fail if either the
+        ordering fix or the marker fix is reverted."""
+        now = datetime(2026, 9, 2, 23, 30, tzinfo=timezone.utc)
+        self._write_fresh_capture()
+        _write_jsonl(self.l1_path, [])
+        source_mtime = self.commence_path.stat().st_mtime
+        os.utime(self.l1_path, (source_mtime + 3600, source_mtime + 3600))
+        _write_manifest(self.statcast_store, "2026-09-02")
+
+        stale_first = preflight.check(
+            "2026-09-02", now=now, l1_path=self.l1_path,
+            statcast_store=self.statcast_store)
+        self.assertFalse(stale_first.ok, stale_first.reasons)
+
+        slate.refresh_l1_if_stale(
+            "2026-09-02", l1_path=self.l1_path, l1_sources=self._sources())
+        after_refresh = preflight.check(
+            "2026-09-02", now=now, l1_path=self.l1_path,
+            statcast_store=self.statcast_store)
+        self.assertTrue(after_refresh.ok, after_refresh.reasons)
 
 
 class TestRecordedUtcIsWriteInstant(SlateTestBase):

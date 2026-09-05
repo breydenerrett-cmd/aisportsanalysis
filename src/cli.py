@@ -2280,9 +2280,26 @@ def _cmd_engine_slate(args) -> int:
     finds either input too stale (docs/CHECKPOINT_PHASE0_2026-09-03.md S8
     point 2). This is the guard against the daily loop's unattended slate
     step quietly betting on a stale board or stale matchup features.
+
+    2026-09-04/05 INCIDENT FIX: `preflight.check` reads L1
+    (`data/processed/l1_observations.jsonl`) directly, and the ONLY code
+    that refreshed L1 from the real price sources used to live inside
+    `run_slate` -- called AFTER this guard, so a due-but-not-yet-run
+    refresh left the guard reading stale L1 and refusing ("no price
+    capture observed ... at all") even while fresh captures sat on disk in
+    `odds_multibook.jsonl`/`odds_snapshots.jsonl`. Calling
+    `engine_slate.refresh_l1_if_stale` HERE, before `preflight.check`,
+    means the guard always sees whatever `run_slate` itself would have
+    projected -- the refusal reflects genuinely stale sources, never a
+    refresh that just hadn't run yet. `run_slate` still calls it again
+    (kept idempotent by `_l1_needs_refresh`'s marker, and by `l1.run`'s own
+    `observation_id` dedup), so this is not a second, different refresh --
+    it is the same one, just reachable early.
     """
     from src.engine import preflight
+    from src.engine import slate as engine_slate
 
+    engine_slate.refresh_l1_if_stale(args.date)
     freshness = preflight.check(args.date)
     if not freshness.ok:
         print(f"ERROR: engine slate --date {args.date} refused by the "
@@ -2292,7 +2309,6 @@ def _cmd_engine_slate(args) -> int:
             print(f"  ERROR: {reason}", file=sys.stderr)
         return EXIT_ERROR
 
-    from src.engine import slate as engine_slate
     from src.engine.adapters.evolab_system import REGISTERED_SYSTEMS
 
     systems = REGISTERED_SYSTEMS
