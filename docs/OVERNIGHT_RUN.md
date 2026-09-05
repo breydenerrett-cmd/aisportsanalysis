@@ -618,3 +618,4 @@ https://linehound-staging.fly.dev/billing/webhook -> dry-run purchase.
 - 2026-09-05T10:07Z daily_loop: engine slate --date 2026-09-05 exit=2
 - 2026-09-05T10:07Z daily_loop: engine settle --date 2026-09-04 exit=2
 - 2026-09-05T10:07Z daily_loop: eod --date 2026-09-04 exit=2
+- 2026-09-05T10:4xZ manual: engine slate --date 2026-09-05 exit=0 after L1 repair (cli preflight ran before run_slate's L1 refresh; L1 had no live rows since 2026-09-03 18Z — 52,380 multibook + 6,354 snapshot + 302 f5_close observations projected by a manual l1.run). 2026-09-04 has no decisions (slate refused that day) — settle/eod for 09-04 correctly refuse; that day's slate is a recorded gap, not reconstructed.

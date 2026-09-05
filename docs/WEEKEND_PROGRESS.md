@@ -99,3 +99,6 @@
 
 ## 2026-09-05 04:0xZ — capture-health heartbeat fix landed
 - Helper now uses the latest "Forward capture" commit as a heartbeat; live: HEALTHY_IDLE decided_by=heartbeat. 5 regression tests.
+
+## 2026-09-05 10:4xZ — daily loop ESCALATE ×3: root cause found, slate re-run
+- Slate refused 09-04 and 09-05: src/cli.py runs preflight.check on L1 BEFORE run_slate refreshes L1; and the mtime shortcut had disabled live projection since 09-03 18Z (all 58k live observations were unprojected). Repaired L1 by the production l1.run path (idempotent); today slate exit=0, decisions recorded. 09-04 stays a gap (no decisions → settle/eod refuse, correctly). Fix lane dispatched (refresh-before-preflight + durable projection marker + regression tests). Capture healthy; container restarted once at ~10:12Z (my L1 probe was killed), no data lost.
