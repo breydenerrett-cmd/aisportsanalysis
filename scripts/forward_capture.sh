@@ -13,6 +13,9 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
+[ -f "$(dirname "$0")/foundry_beat.sh" ] && . "$(dirname "$0")/foundry_beat.sh" || true
+type foundry_beat >/dev/null 2>&1 && foundry_beat forward_capture start ok || true
+
 # THE SWITCH for the prop-listing feasibility audit. Set it to anything other
 # than "on" to stop that pass: one edit, no code change, nothing else affected.
 # The audit is bounded and time-limited (docs/PROBE_PROP_LISTING.md, approved
@@ -73,6 +76,7 @@ exec 9>"$GIT_LOCK"
 GIT_FAILED=0
 if ! flock -w 300 9; then
     echo "ESCALATE: git lock not acquired"
+    type foundry_beat >/dev/null 2>&1 && foundry_beat forward_capture escalate escalate "" "git lock not acquired" || true
     exit 1
 fi
 
@@ -81,9 +85,11 @@ if ! git diff --cached --quiet; then
     BRANCH=$(git rev-parse --abbrev-ref HEAD)
     if ! git commit -q -m "Forward capture $(date -u +%H:%MZ)"; then
         echo "ESCALATE: git commit failed"
+        type foundry_beat >/dev/null 2>&1 && foundry_beat forward_capture escalate escalate "" "git commit failed" || true
         GIT_FAILED=1
     elif ! git fetch -q origin "$BRANCH"; then
         echo "ESCALATE: git fetch failed -- commit is local only"
+        type foundry_beat >/dev/null 2>&1 && foundry_beat forward_capture escalate escalate "" "git fetch failed" || true
         GIT_FAILED=1
     elif ! git pull -q --rebase --autostash origin "$BRANCH"; then
         # Our own just-made commit is what we're rebasing onto origin --
@@ -91,6 +97,7 @@ if ! git diff --cached --quiet; then
         # hourly run to trip over.
         git rebase --abort 2>/dev/null || true
         echo "ESCALATE: rebase onto origin/$BRANCH failed -- commit is local only, needs manual resolution"
+        type foundry_beat >/dev/null 2>&1 && foundry_beat forward_capture escalate escalate "" "rebase failed" || true
         GIT_FAILED=1
     else
         PUSH_OK=0
@@ -105,6 +112,7 @@ if ! git diff --cached --quiet; then
             echo "== committed =="
         else
             echo "ESCALATE: push failed after retries -- commit is local only, needs manual push"
+            type foundry_beat >/dev/null 2>&1 && foundry_beat forward_capture escalate escalate "" "push failed after retries" || true
             GIT_FAILED=1
         fi
     fi
@@ -115,6 +123,7 @@ fi
 # Escalation markers: the ONLY lines a model needs to react to.
 if echo "$DENSE_OUT" | grep -q "skipped: credit floor"; then
     echo "ESCALATE: credit floor reached -- stop spending, tell Brey"
+    type foundry_beat >/dev/null 2>&1 && foundry_beat forward_capture escalate escalate "" "credit floor reached" || true
 fi
 # The 2026-09-04 outage: a same-day historical/probe purchase tripped the
 # live-capture envelope and the skip crashed cmd_dense before this line ever
@@ -125,12 +134,15 @@ fi
 # must still say so here, not just print a clean line nobody is watching.
 if echo "$DENSE_OUT" | grep -q "skipped: daily envelope"; then
     echo "ESCALATE: live-capture envelope tripped -- stop spending, tell Brey"
+    type foundry_beat >/dev/null 2>&1 && foundry_beat forward_capture escalate escalate "" "live-capture envelope tripped" || true
 fi
 if echo "$DENSE_OUT" | grep -q "MISSED WINDOW"; then
     echo "ESCALATE: missed capture window -- log in docs/OVERNIGHT_RUN.md"
+    type foundry_beat >/dev/null 2>&1 && foundry_beat forward_capture escalate escalate "" "missed capture window" || true
 fi
 if [ "$F5_AFTER" -eq 0 ] && echo "$DENSE_OUT" | grep -qE "^[1-9][0-9]* capture"; then
     echo "ESCALATE: dense captured but no F5 close has ever been written -- the market-depth lane is collecting nothing"
+    type foundry_beat >/dev/null 2>&1 && foundry_beat forward_capture escalate escalate "" "F5 close never written" || true
 fi
 # The audit prints its own ESCALATE lines (budget cap, day cap, per-run ceiling)
 # and they are passed through verbatim rather than re-worded, so the shell and a
@@ -139,9 +151,11 @@ echo "$PROP_OUT" | grep "^ESCALATE:" || true
 echo "$EXTRAS_OUT" | grep "^ESCALATE:" || true
 if echo "$PROP_OUT" | grep -q "skipped: credit floor"; then
     echo "ESCALATE: credit floor reached -- stop spending, tell Brey"
+    type foundry_beat >/dev/null 2>&1 && foundry_beat forward_capture escalate escalate "" "credit floor reached" || true
 fi
 if echo "$PROP_OUT" | grep -q "skipped: daily envelope"; then
     echo "ESCALATE: live-capture envelope tripped -- stop spending, tell Brey"
+    type foundry_beat >/dev/null 2>&1 && foundry_beat forward_capture escalate escalate "" "live-capture envelope tripped" || true
 fi
 
 # Exit non-zero on a git failure, but only after every escalation above has
@@ -150,3 +164,5 @@ fi
 if [ "$GIT_FAILED" -eq 1 ]; then
     exit 1
 fi
+
+type foundry_beat >/dev/null 2>&1 && foundry_beat forward_capture end ok || true

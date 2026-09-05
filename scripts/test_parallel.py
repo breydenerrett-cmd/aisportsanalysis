@@ -85,6 +85,12 @@ sys.path.insert(0, str(REPO_ROOT))
 import tests as suite  # noqa: E402  (side effect: installs guard, sets baseline)
 from tests import test_zz_forward_store_guard as guard_mod  # noqa: E402
 
+try:
+    from scripts.foundry_beat import foundry_beat  # noqa: E402
+except Exception:  # pragma: no cover -- heartbeat is optional, never fatal
+    def foundry_beat(*args, **kwargs):  # type: ignore[no-redef]
+        pass
+
 _RAN_RE = re.compile(r"^Ran (\d+) tests? in ([\d.]+)s", re.MULTILINE)
 _STATUS_RE = re.compile(r"^(OK|FAILED)\b(?:\s*\(([^)]*)\))?", re.MULTILINE)
 
@@ -246,6 +252,8 @@ def main() -> int:
                               "default is every tests/test_*.py.")
     args = parser.parse_args()
 
+    foundry_beat("test_runner", "start", "ok")
+
     all_modules = args.modules or discover_modules()
     all_modules = sorted({m if m.startswith("tests.") else f"tests.{m}"
                            for m in all_modules})
@@ -307,6 +315,12 @@ def main() -> int:
             print(f"=== worker running {', '.join(r['modules'])} ===",
                   file=sys.stderr)
             print(r["output"], file=sys.stderr)
+
+    if overall_ok:
+        foundry_beat("test_runner", "end", "ok", f"{total_tests}/{total_tests} passed")
+    else:
+        failed = total_failures + total_errors + len(broken)
+        foundry_beat("test_runner", "end", "down", f"{failed} failed")
 
     return 0 if overall_ok else 1
 
