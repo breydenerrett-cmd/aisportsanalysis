@@ -28,12 +28,31 @@ and the newest artifact's age is the single most direct "is this still
 running" signal available: fresher than one hourly slot plus slack means
 something wrote very recently; a gap of hours means something stopped.
 
-There is no separate heartbeat file in this repo as of this writing
-(docs/CAPTURE_EXTERNALIZATION.md describes the externalized-slot design but
-no heartbeat convention beyond the artifacts themselves) -- the artifacts
-ARE the heartbeat. `heartbeat_path` is accepted as an optional second
-liveness signal for whenever one exists, not because production wiring
-passes one today.
+ARTIFACT AGE IS NOT A LIVENESS SIGNAL OUTSIDE GAME WINDOWS
+-------------------------------------------------------------
+The 2026-09-04/05 false alarm: capture_health.sh read OVERDUE at 03:35Z
+with the newest odds artifact 93 minutes old, while the runner itself was
+completely healthy -- its 02:15Z and 03:15Z hourly passes both ran,
+committed ("Forward capture 03:16Z", d7f5565), and printed "== dense ==  0
+capture(s) ... stopped early: no game inside the window" (src/cli.py's
+dense window logic, src/pipeline/dense.py) because no MLB game sits inside
+the pre-game capture window overnight. Zero artifacts is the CORRECT
+output of a working runner when there is nothing to capture; artifact age
+alone cannot tell "the runner died" apart from "the runner ran and
+correctly did nothing" during a scheduling gap.
+
+The fix is a runner heartbeat that is independent of whether any artifact
+got written: the timestamp of the runner's own most recent self-commit.
+Every forward_capture.sh pass ends with a `git commit -m "Forward capture
+HH:MMZ"` regardless of whether dense/prop/extras captured anything (see
+`_last_commit_ts`, which shells out to `git log -1 --format=%ct
+--grep=^Forward capture` on HEAD) -- so the commit lands, and this signal
+stays fresh, on a pass that (correctly) captured nothing. `heartbeat_path`
+remains accepted as an optional second, file-based signal for whenever a
+production heartbeat FILE exists (`_commit_ts_fn` and `heartbeat_path`
+are combined: whichever is fresher wins) -- but the commit-timestamp
+reader is the default and needs no new file or script change to be live
+today.
 
 LOCK PROBE, NOT A PROCESS SCAN
 --------------------------------
@@ -60,6 +79,7 @@ import fcntl
 import logging
 import os
 import re
+import subprocess
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -143,6 +163,9 @@ class HealthReport:
     state: str
     last_artifact_at: Optional[datetime] = None
     artifact_age_min: Optional[float] = None
+    heartbeat_at: Optional[datetime] = None
+    heartbeat_age_min: Optional[float] = None
+    decided_by: Optional[str] = None
     artifacts_today: int = 0
     lock_held: Optional[bool] = None
     live_band_spent_today: Optional[int] = None
@@ -155,10 +178,12 @@ class HealthReport:
     def summary(self) -> str:
         """One-line rendering, the same shape `scripts/capture_health.sh` prints."""
         age = "n/a" if self.artifact_age_min is None else f"{self.artifact_age_min:.0f}m"
+        hb_age = "n/a" if self.heartbeat_age_min is None else f"{self.heartbeat_age_min:.0f}m"
         lock = "n/a" if self.lock_held is None else ("held" if self.lock_held else "free")
         return (
             f"CAPTURE_HEALTH: {self.state} "
-            f"age={age} artifacts_today={self.artifacts_today} lock={lock} "
+            f"artifact_age={age} heartbeat_age={hb_age} decided_by={self.decided_by} "
+            f"artifacts_today={self.artifacts_today} lock={lock} "
             f"live_spent={self.live_band_spent_today} live_remaining={self.live_band_remaining} "
             f"monthly_remaining={self.monthly_remaining} historical_today={self.historical_spend_today}"
             + (f" | {self.reasons[0]}" if self.reasons else "")
@@ -218,6 +243,34 @@ def _flock_probe(lock_path) -> Optional[bool]:
             return False  # we could take it -> it was free
     finally:
         os.close(fd)
+
+
+def _last_commit_ts(repo_dir: Optional[Path] = None) -> Optional[datetime]:
+    """UTC timestamp of the newest commit on HEAD whose subject starts with
+    "Forward capture" (scripts/forward_capture.sh's own self-commit
+    message), or None if git can't answer (not a repo, no such commit, git
+    missing). This is the runner heartbeat: it lands every hourly pass
+    regardless of whether that pass captured any artifact -- see module
+    docstring for the 2026-09-04/05 false-OVERDUE this exists to fix.
+    Never raises: git/subprocess failures are a missing signal, not a fatal
+    error, matching every other read in this module.
+    """
+    try:
+        out = subprocess.run(
+            ["git", "log", "-1", "--format=%ct", "--grep=^Forward capture"],
+            cwd=str(repo_dir) if repo_dir is not None else str(repo_root()),
+            capture_output=True, text=True, timeout=5, check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        LOG.debug("health: git log heartbeat probe failed (%s)", exc)
+        return None
+    text = out.stdout.strip()
+    if out.returncode != 0 or not text:
+        return None
+    try:
+        return datetime.fromtimestamp(int(text), tz=timezone.utc)
+    except ValueError:
+        return None
 
 
 def _iter_artifact_days(raw_root: Path):
@@ -322,7 +375,8 @@ def _last_escalate_line(path: Optional[Path], now: datetime, window_min: int):
 
 
 def assess(now=None, raw_root=None, lock_path=None, heartbeat_path=None,
-           credit_log_store=None, escalate_log_path=None) -> HealthReport:
+           credit_log_store=None, escalate_log_path=None,
+           commit_ts_fn=None) -> HealthReport:
     """Assess forward-capture health from artifacts on disk, the shared git
     lock, and (informationally only) the credit budget. Never raises: every
     sub-read is best-effort, matching the rest of this program's
@@ -343,7 +397,9 @@ def assess(now=None, raw_root=None, lock_path=None, heartbeat_path=None,
     the last-ESCALATE-line check reads from; default docs/OVERNIGHT_RUN.md
     (a test should always pass its own tmp copy here -- the real file is a
     live, append-only operational log this module must never depend on for
-    a hermetic result).
+    a hermetic result). `commit_ts_fn`, if given, replaces `_last_commit_ts`
+    for the runner-heartbeat signal -- pass a stub in tests instead of
+    depending on this worktree's real git history/HEAD state.
     """
     moment = _now(now)
     reasons: List[str] = []
@@ -368,13 +424,27 @@ def assess(now=None, raw_root=None, lock_path=None, heartbeat_path=None,
         except OSError as exc:
             reasons.append(f"heartbeat unreadable: {exc}")
 
-    newest = last_at
-    if heartbeat_at is not None and (newest is None or heartbeat_at > newest):
-        newest = heartbeat_at
+    # Runner heartbeat: the newest "Forward capture HH:MMZ" self-commit on
+    # HEAD, independent of whether that pass wrote any artifact -- see
+    # module docstring for why artifact age alone false-alarms outside MLB
+    # game windows. `commit_ts_fn` lets tests stub this instead of reading
+    # this worktree's real git history. Whichever of the file-based
+    # heartbeat (if given) and the commit heartbeat is fresher wins.
+    commit_at = None
+    try:
+        commit_at = (commit_ts_fn or _last_commit_ts)()
+    except Exception as exc:  # noqa: BLE001 -- a heartbeat probe failure is a missing signal, never fatal
+        reasons.append(f"commit heartbeat read failed: {exc}")
+    if commit_at is not None and (heartbeat_at is None or commit_at > heartbeat_at):
+        heartbeat_at = commit_at
+
+    heartbeat_age_min = None
+    if heartbeat_at is not None:
+        heartbeat_age_min = max(0.0, (moment - heartbeat_at).total_seconds() / 60.0)
 
     age_min = None
-    if newest is not None:
-        age_min = max(0.0, (moment - newest).total_seconds() / 60.0)
+    if last_at is not None:
+        age_min = max(0.0, (moment - last_at).total_seconds() / 60.0)
 
     lock_held = _flock_probe(lock_path if lock_path is not None else DEFAULT_LOCK_PATH)
 
@@ -409,40 +479,91 @@ def assess(now=None, raw_root=None, lock_path=None, heartbeat_path=None,
         reasons.append("git lock held: a capture pass is in flight")
         return HealthReport(
             state=RUNNING, last_artifact_at=last_at, artifact_age_min=age_min,
+            heartbeat_at=heartbeat_at, heartbeat_age_min=heartbeat_age_min, decided_by="lock",
             artifacts_today=artifacts_today, lock_held=lock_held,
             live_band_spent_today=live_spent, live_band_remaining=live_remaining,
             monthly_remaining=monthly_remaining, historical_spend_today=historical_spend,
             last_escalate_line=escalate_line, reasons=reasons,
         )
 
-    if newest is None:
+    if age_min is None and heartbeat_age_min is None:
         reasons.append("no artifact or heartbeat ever observed")
         return HealthReport(
             state=FAILED, last_artifact_at=None, artifact_age_min=None,
+            heartbeat_at=None, heartbeat_age_min=None, decided_by=None,
             artifacts_today=artifacts_today, lock_held=lock_held,
             live_band_spent_today=live_spent, live_band_remaining=live_remaining,
             monthly_remaining=monthly_remaining, historical_spend_today=historical_spend,
             last_escalate_line=escalate_line, reasons=reasons,
         )
 
-    if age_min is not None and age_min > FAILED_AGE_MIN:
-        reasons.append(f"newest artifact is {age_min:.0f}m old (> {FAILED_AGE_MIN}m)")
     if escalate_line is not None:
         reasons.append(f"unresolved escalation within {ESCALATE_WINDOW_MIN}m: {escalate_line}")
     if envelope_exhausted:
         reasons.append("live-capture envelope exhausted for today")
 
-    if (age_min is not None and age_min > FAILED_AGE_MIN) or escalate_line is not None or envelope_exhausted:
-        state = FAILED
-    elif age_min is not None and age_min > HEALTHY_IDLE_MAX_AGE_MIN:
-        state = OVERDUE
-        reasons.append(f"newest artifact is {age_min:.0f}m old (> {HEALTHY_IDLE_MAX_AGE_MIN}m)")
+    fresh_artifact = age_min is not None and age_min <= HEALTHY_IDLE_MAX_AGE_MIN
+
+    if heartbeat_age_min is not None:
+        # Heartbeat signal available (a commit-timestamp read succeeded
+        # and/or a heartbeat file exists): this decides liveness during a
+        # scheduling gap where zero artifacts is the CORRECT output of a
+        # healthy runner (no MLB game in the capture window) -- see module
+        # docstring. Artifact freshness still short-circuits to
+        # HEALTHY_IDLE on its own so a live-artifact stream is never
+        # penalized by a stale/unreadable heartbeat.
+        fresh_heartbeat = heartbeat_age_min <= HEALTHY_IDLE_MAX_AGE_MIN
+        stale_heartbeat_failed = heartbeat_age_min > FAILED_AGE_MIN
+        if stale_heartbeat_failed:
+            reasons.append(f"heartbeat is {heartbeat_age_min:.0f}m old (> {FAILED_AGE_MIN}m)")
+        if escalate_line is not None or envelope_exhausted:
+            # Escalation/envelope facts are always fatal, even over a fresh
+            # artifact (test_envelope_exhausted_marks_failed_even_with_fresh_artifact).
+            state = FAILED
+            decided_by = "escalate" if escalate_line is not None else "envelope"
+        elif fresh_heartbeat or fresh_artifact:
+            # A fresh artifact proves the runner is producing data RIGHT
+            # NOW regardless of heartbeat staleness -- never let a stale or
+            # unreadable heartbeat drag down a live artifact stream.
+            state = HEALTHY_IDLE
+            decided_by = "heartbeat" if fresh_heartbeat else "artifact"
+            reasons.append(
+                f"heartbeat is {heartbeat_age_min:.0f}m old" if fresh_heartbeat
+                else f"newest artifact is {age_min:.0f}m old, lock free"
+            )
+        elif stale_heartbeat_failed:
+            state = FAILED
+            decided_by = "heartbeat"
+        else:
+            # Heartbeat missed one hourly slot (75-180m) and no fresh
+            # artifact either: worth flagging, not yet FAILED.
+            state = OVERDUE
+            decided_by = "heartbeat"
+            reasons.append(f"heartbeat is {heartbeat_age_min:.0f}m old (> {HEALTHY_IDLE_MAX_AGE_MIN}m), "
+                            f"no fresh artifact (artifact_age={age_min})")
     else:
-        state = HEALTHY_IDLE
-        reasons.append(f"newest artifact is {age_min:.0f}m old, lock free")
+        # No heartbeat signal at all (no qualifying commit found, e.g. a
+        # shallow clone or a repo with no forward-capture history, and no
+        # heartbeat file given): fall back to the original artifact-only
+        # behavior rather than guessing.
+        if age_min is not None and age_min > FAILED_AGE_MIN:
+            reasons.append(f"newest artifact is {age_min:.0f}m old (> {FAILED_AGE_MIN}m)")
+        if (age_min is not None and age_min > FAILED_AGE_MIN) or escalate_line is not None or envelope_exhausted:
+            state = FAILED
+            decided_by = "artifact" if (age_min is not None and age_min > FAILED_AGE_MIN) else (
+                "escalate" if escalate_line is not None else "envelope")
+        elif age_min is not None and age_min > HEALTHY_IDLE_MAX_AGE_MIN:
+            state = OVERDUE
+            decided_by = "artifact"
+            reasons.append(f"newest artifact is {age_min:.0f}m old (> {HEALTHY_IDLE_MAX_AGE_MIN}m)")
+        else:
+            state = HEALTHY_IDLE
+            decided_by = "artifact"
+            reasons.append(f"newest artifact is {age_min:.0f}m old, lock free")
 
     return HealthReport(
         state=state, last_artifact_at=last_at, artifact_age_min=age_min,
+        heartbeat_at=heartbeat_at, heartbeat_age_min=heartbeat_age_min, decided_by=decided_by,
         artifacts_today=artifacts_today, lock_held=lock_held,
         live_band_spent_today=live_spent, live_band_remaining=live_remaining,
         monthly_remaining=monthly_remaining, historical_spend_today=historical_spend,

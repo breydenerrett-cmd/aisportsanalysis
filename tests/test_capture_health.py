@@ -59,7 +59,7 @@ class CaptureHealthTest(unittest.TestCase):
     def test_missing_raw_root_is_unknown(self):
         report = health.assess(
             now=NOW, raw_root=self.raw_root / "does-not-exist",
-            lock_path=self.lock_path, credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate,
+            lock_path=self.lock_path, credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate, commit_ts_fn=lambda: None,
         )
         self.assertEqual(report.state, health.UNKNOWN)
         self.assertTrue(any("missing" in r for r in report.reasons))
@@ -75,7 +75,7 @@ class CaptureHealthTest(unittest.TestCase):
             self.skipTest("running as a user for whom chmod 000 is not enforced")
         report = health.assess(
             now=NOW, raw_root=self.raw_root, lock_path=self.lock_path,
-            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate,
+            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate, commit_ts_fn=lambda: None,
         )
         self.assertEqual(report.state, health.UNKNOWN)
 
@@ -104,7 +104,7 @@ class CaptureHealthTest(unittest.TestCase):
             time.sleep(0.1)
         report = health.assess(
             now=NOW, raw_root=self.raw_root, lock_path=self.lock_path,
-            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate,
+            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate, commit_ts_fn=lambda: None,
         )
         self.assertEqual(report.state, health.RUNNING)
         self.assertTrue(report.lock_held)
@@ -129,7 +129,7 @@ class CaptureHealthTest(unittest.TestCase):
         _write_artifact(self.raw_root, NOW - timedelta(minutes=20))
         report = health.assess(
             now=NOW, raw_root=self.raw_root, lock_path=self.lock_path,
-            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate,
+            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate, commit_ts_fn=lambda: None,
         )
         self.assertEqual(report.state, health.HEALTHY_IDLE)
         self.assertAlmostEqual(report.artifact_age_min, 20, delta=1)
@@ -139,7 +139,7 @@ class CaptureHealthTest(unittest.TestCase):
         _write_artifact(self.raw_root, NOW - timedelta(minutes=health.HEALTHY_IDLE_MAX_AGE_MIN))
         report = health.assess(
             now=NOW, raw_root=self.raw_root, lock_path=self.lock_path,
-            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate,
+            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate, commit_ts_fn=lambda: None,
         )
         self.assertEqual(report.state, health.HEALTHY_IDLE)
 
@@ -148,7 +148,7 @@ class CaptureHealthTest(unittest.TestCase):
         _write_artifact(self.raw_root, NOW - timedelta(minutes=health.HEALTHY_IDLE_MAX_AGE_MIN + 5))
         report = health.assess(
             now=NOW, raw_root=self.raw_root, lock_path=self.lock_path,
-            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate,
+            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate, commit_ts_fn=lambda: None,
         )
         self.assertEqual(report.state, health.OVERDUE)
 
@@ -157,7 +157,7 @@ class CaptureHealthTest(unittest.TestCase):
         _write_artifact(self.raw_root, NOW - timedelta(minutes=health.OVERDUE_MAX_AGE_MIN + 1))
         report = health.assess(
             now=NOW, raw_root=self.raw_root, lock_path=self.lock_path,
-            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate,
+            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate, commit_ts_fn=lambda: None,
         )
         self.assertEqual(report.state, health.FAILED)
 
@@ -166,7 +166,7 @@ class CaptureHealthTest(unittest.TestCase):
         (self.raw_root / "oddsapi").mkdir(parents=True, exist_ok=True)
         report = health.assess(
             now=NOW, raw_root=self.raw_root, lock_path=self.lock_path,
-            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate,
+            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate, commit_ts_fn=lambda: None,
         )
         self.assertEqual(report.state, health.FAILED)
 
@@ -177,7 +177,7 @@ class CaptureHealthTest(unittest.TestCase):
         _write_artifact(self.raw_root, NOW - timedelta(days=1), name_hash="cccc3333")
         report = health.assess(
             now=NOW, raw_root=self.raw_root, lock_path=self.lock_path,
-            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate,
+            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate, commit_ts_fn=lambda: None,
         )
         self.assertEqual(report.artifacts_today, 2)
 
@@ -196,7 +196,7 @@ class CaptureHealthTest(unittest.TestCase):
         )
         report = health.assess(
             now=NOW, raw_root=self.raw_root, lock_path=self.lock_path,
-            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate,
+            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate, commit_ts_fn=lambda: None,
         )
         # health._last_escalate_line reads the module-default path unless we
         # monkeypatch repo_root; exercise the helper directly for the
@@ -253,7 +253,7 @@ class CaptureHealthTest(unittest.TestCase):
 
         report = health.assess(
             now=NOW, raw_root=self.raw_root, lock_path=self.lock_path,
-            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate,
+            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate, commit_ts_fn=lambda: None,
         )
         self.assertEqual(report.live_band_spent_today, 200)
         self.assertEqual(report.historical_spend_today, 40_000)
@@ -276,17 +276,87 @@ class CaptureHealthTest(unittest.TestCase):
 
         report = health.assess(
             now=NOW, raw_root=self.raw_root, lock_path=self.lock_path,
-            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate,
+            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate, commit_ts_fn=lambda: None,
         )
         self.assertEqual(report.state, health.FAILED)
         self.assertTrue(any("envelope" in r for r in report.reasons))
+
+    # ------------------------------------------------------------------
+    # Runner heartbeat (commit-timestamp signal) -- regression coverage for
+    # the 2026-09-04/05 false OVERDUE: artifact age alone cannot tell "the
+    # runner died" apart from "the runner ran and correctly captured
+    # nothing because no MLB game is inside the capture window".
+    # ------------------------------------------------------------------
+
+    def test_stale_artifact_fresh_heartbeat_is_healthy_idle(self):
+        self.raw_root.mkdir(parents=True)
+        _write_artifact(self.raw_root, NOW - timedelta(minutes=93))  # stale, like the 03:35Z incident
+        report = health.assess(
+            now=NOW, raw_root=self.raw_root, lock_path=self.lock_path,
+            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate,
+            commit_ts_fn=lambda: NOW - timedelta(minutes=19),  # a self-commit from the last hourly pass
+        )
+        self.assertEqual(report.state, health.HEALTHY_IDLE)
+        self.assertEqual(report.decided_by, "heartbeat")
+        self.assertAlmostEqual(report.artifact_age_min, 93, delta=1)
+        self.assertAlmostEqual(report.heartbeat_age_min, 19, delta=1)
+
+    def test_stale_artifact_and_heartbeat_in_overdue_band_is_overdue(self):
+        self.raw_root.mkdir(parents=True)
+        _write_artifact(self.raw_root, NOW - timedelta(minutes=200))
+        report = health.assess(
+            now=NOW, raw_root=self.raw_root, lock_path=self.lock_path,
+            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate,
+            commit_ts_fn=lambda: NOW - timedelta(minutes=90),
+        )
+        self.assertEqual(report.state, health.OVERDUE)
+        self.assertEqual(report.decided_by, "heartbeat")
+
+    def test_stale_artifact_and_heartbeat_past_failed_threshold_is_failed(self):
+        self.raw_root.mkdir(parents=True)
+        _write_artifact(self.raw_root, NOW - timedelta(hours=5))
+        report = health.assess(
+            now=NOW, raw_root=self.raw_root, lock_path=self.lock_path,
+            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate,
+            commit_ts_fn=lambda: NOW - timedelta(minutes=health.FAILED_AGE_MIN + 1),
+        )
+        self.assertEqual(report.state, health.FAILED)
+        self.assertEqual(report.decided_by, "heartbeat")
+
+    def test_heartbeat_absent_falls_back_to_artifact_only_behavior(self):
+        """No commit-timestamp signal and no heartbeat file: assess() must
+        reproduce the exact pre-heartbeat behavior (artifact age alone)."""
+        self.raw_root.mkdir(parents=True)
+        _write_artifact(self.raw_root, NOW - timedelta(minutes=health.HEALTHY_IDLE_MAX_AGE_MIN + 5))
+        report = health.assess(
+            now=NOW, raw_root=self.raw_root, lock_path=self.lock_path,
+            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate,
+            commit_ts_fn=lambda: None,
+        )
+        self.assertEqual(report.state, health.OVERDUE)
+        self.assertEqual(report.decided_by, "artifact")
+        self.assertIsNone(report.heartbeat_age_min)
+
+    def test_fresh_artifact_beats_stale_heartbeat(self):
+        """A live artifact stream must never be penalized by a stale or
+        unreadable heartbeat signal -- artifact freshness alone still
+        proves the runner is producing data right now."""
+        self.raw_root.mkdir(parents=True)
+        _write_artifact(self.raw_root, NOW - timedelta(minutes=10))
+        report = health.assess(
+            now=NOW, raw_root=self.raw_root, lock_path=self.lock_path,
+            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate,
+            commit_ts_fn=lambda: NOW - timedelta(minutes=200),
+        )
+        self.assertEqual(report.state, health.HEALTHY_IDLE)
+        self.assertEqual(report.decided_by, "artifact")
 
     def test_summary_line_has_expected_shape(self):
         self.raw_root.mkdir(parents=True)
         _write_artifact(self.raw_root, NOW - timedelta(minutes=10))
         report = health.assess(
             now=NOW, raw_root=self.raw_root, lock_path=self.lock_path,
-            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate,
+            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate, commit_ts_fn=lambda: None,
         )
         line = report.summary()
         self.assertTrue(line.startswith("CAPTURE_HEALTH: "))
