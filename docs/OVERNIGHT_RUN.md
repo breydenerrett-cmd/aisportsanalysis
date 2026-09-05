@@ -615,3 +615,6 @@ https://linehound-staging.fly.dev/billing/webhook -> dry-run purchase.
   Compounding error on my side: I checked `remaining_today()` (the monthly
   balance, healthy) and reported capture as fine. The envelope half is what
   gates fetching, and I did not read it.
+- 2026-09-05T10:07Z daily_loop: engine slate --date 2026-09-05 exit=2
+- 2026-09-05T10:07Z daily_loop: engine settle --date 2026-09-04 exit=2
+- 2026-09-05T10:07Z daily_loop: eod --date 2026-09-04 exit=2
