@@ -85,3 +85,8 @@
 
 ## 2026-09-05 08:1xZ — totals adversarial review: FAIL (35e0beb)
 - Blocking: B-A1 prereg_spec_sha256 unbounded (moves on append; starts in DRAFT text); B-A2 book-count bucket occupancy specified but not built. Must-fix: M-A1 freeze record omits numeric gates / floor not cross-checked at run; M-A2 three conflicting CANNOT_TELL precedence orders (implemented one absorbs a fatal battery flag); M-A3 run_full_evaluation happy path untested. Clean: pooled-rows, manifest, anchor, dry_run, freezes. Fix lane dispatched (Sonnet). Capture healthy.
+
+## 2026-09-05 08:5xZ — totals family registered and evaluated: ZERO survivors
+- Adversarial re-review PASS (0346858; N-B1 pinned in tests). Confirmatory family frozen (m=1, spec sha 056e7352…, both universe hashes). Evaluation run committed.
+- M1: 2023 screen −1.14pp (Under-favouring, below 3.0pp floor); 2024 +0.72pp p=0.617 CI [−2.04, +3.50] (sign flip, CANNOT_TELL band); pre-registered population-shift gate fatal on BOTH bucketings (line χ²=281.7; book-count χ²=367.7) → POPULATION_SHIFT_FAIL; battery extreme_removal fatal; integer stratum report-only 0.514/0.490. M2 POPULATION_SHIFT_FAIL as pre-determined.
+- Gate-design lesson for the NEXT family (not a rescue): line-bucket occupancy shift measures league scoring drift between seasons, not sample comparability. Results doc lane dispatched. No thresholds touched.
