@@ -873,3 +873,67 @@ requires a further methodology pass, and none blocks hypothesis drafting —
 they constrain what may be registered, not what may be written down.
 
 TOTALS METHODOLOGY VERDICT: APPROVED TO DRAFT HYPOTHESES
+
+## Lesson — population-shift gate design (2026-09-05)
+
+M1 (totals) died to line-bucket chi2=281.7 and book-count chi2=367.7; M2
+(totals) died to feature occupancy; F5-H2 died to tercile occupancy
+chi2=12.4 (TOTALS_RESEARCH_RESULTS.md, F5_RESEARCH_RESULTS.md,
+TOTALS_POPULATION_AUDIT.md sec6). This section fixes, for the next
+pre-registration, how a population-shift test is chosen and what it may do.
+
+**1. Comparability axes vs league-drift axes.** A comparability axis asks
+whether the 2024 sample is drawn from the same *kind* of games the 2023
+edges/effects were fit on -- book depth, market liquidity, feature
+availability/occupancy, schedule composition. A shift here means the two
+seasons are not fair test beds for the same fitted object, regardless of
+what actually moved in baseball. A league-drift axis -- line level, run
+environment, favourite/dog mix -- legitimately moves year to year and is
+part of the phenomenon a full-population calibration hypothesis exists to
+measure. The line-bucket and book-count chi-squares that killed M1 are
+comparability tests (book coverage and market structure changed); a shift
+in modal total or favourite/dog split standing alone is a league-drift
+finding, not evidence the samples are incomparable.
+
+**2. Which test belongs to which hypothesis type, frozen before results.**
+A full-population calibration hypothesis (fits or evaluates over the whole
+season's population) is gated by comparability-axis tests only -- book
+depth, liquidity, feature/occupancy floors -- because drift in the thing
+being calibrated is the object of study, not a threat to validity. A
+feature-partition hypothesis (buckets games by a feature, e.g. tercile,
+line bucket) is additionally gated by occupancy chi-square on that same
+partition, because an uneven partition changes what population each bucket
+represents even when the overall season is comparable. The prereg spec
+must name, per hypothesis, which axis type each planned test is before any
+data is touched -- this determines whether a given chi-square is decorative
+or fatal.
+
+**3. Kill vs report-and-stratify.** A comparability-axis failure (fixed
+p<0.01, pre-registered threshold) must KILL: the fitted object and the
+evaluation population are not the same kind of thing, and no stratification
+rescues a comparison that was never apples-to-apples. A league-drift-axis
+finding, even a large one, should be pre-registered as report-and-stratify:
+publish the shift, split the analysis by the drifted variable if the
+prereg said so in advance, and let the calibration question be answered
+per-stratum rather than silently killed -- because the drift is the
+phenomenon, and killing on it would make full-population calibration
+hypotheses untestable by construction. The dividing line is axis type from
+item 1, decided before any test runs, never chosen after seeing a p-value.
+
+**4. Required pre-registration checklist item.** Every planned
+population-shift test must be run on feature-side counts (bucket
+occupancy, book-count occupancy, whatever the hypothesis touches) BEFORE
+the spec is frozen, and the outcome (chi-square value, pass/fail against
+the fixed threshold) recorded in the spec text itself. M2's kill was by
+design -- the spec anticipated it. M1's was not: the fatal chi-square was
+discoverable from feature-side counts alone but was only computed at run
+time, so a pre-determined kill was discovered rather than pre-declared.
+Going forward, "run the shift test pre-freeze and write the number into the
+spec" is a gate on registration, not an optional diagnostic -- a spec that
+omits this for any planned partition or comparability axis is not eligible
+for registration.
+
+**This does not reopen any frozen verdict.** Nothing here revisits or
+reweighs TOTALS_FULLGAME_2026H1 or F5_MONEYLINE_CALIBRATION_2026H1; both
+verdicts stand exactly as pre-registered and evaluated. This lesson governs
+only the design of the next pre-registration's population-shift gates.
