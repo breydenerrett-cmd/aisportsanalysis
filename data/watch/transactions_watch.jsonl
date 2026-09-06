@@ -663,3 +663,11 @@
 {"fetched_utc": "2026-09-06T17:31:31.461810+00:00", "game_date": "2026-09-06", "poll": true}
 {"fetched_utc": "2026-09-06T17:46:35.529282+00:00", "game_date": "2026-09-06", "poll": true}
 {"fetched_utc": "2026-09-06T18:01:38.043067+00:00", "game_date": "2026-09-06", "poll": true}
+{"fetched_utc": "2026-09-06T18:16:59.386281+00:00", "game_date": "2026-09-06", "poll": true}
+{"category": "il_transfer", "date": "2026-09-06", "first_seen_utc": "2026-09-06T18:16:59.386281+00:00", "player": "Nick Davila", "player_id": 689546, "team": "SEA", "transaction_id": 941488}
+{"category": "other", "date": "2026-09-06", "first_seen_utc": "2026-09-06T18:16:59.386281+00:00", "player": "Michael Arroyo", "player_id": 703197, "team": "SEA", "transaction_id": 941489}
+{"category": "optioned", "date": "2026-09-06", "first_seen_utc": "2026-09-06T18:16:59.386281+00:00", "player": "Patrick Wisdom", "player_id": 621550, "team": "SEA", "transaction_id": 941490}
+{"fetched_utc": "2026-09-06T18:17:02.665700+00:00", "game_date": "2026-09-06", "poll": true}
+{"fetched_utc": "2026-09-06T18:32:04.689574+00:00", "game_date": "2026-09-06", "poll": true}
+{"fetched_utc": "2026-09-06T18:47:07.296271+00:00", "game_date": "2026-09-06", "poll": true}
+{"fetched_utc": "2026-09-06T19:02:09.500908+00:00", "game_date": "2026-09-06", "poll": true}
