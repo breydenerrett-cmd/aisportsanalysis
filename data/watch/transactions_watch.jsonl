@@ -634,3 +634,11 @@
 {"fetched_utc": "2026-09-06T15:01:41.834769+00:00", "game_date": "2026-09-06", "poll": true}
 {"category": "recalled", "date": "2026-09-06", "first_seen_utc": "2026-09-06T15:01:41.834769+00:00", "player": "Rece Hinds", "player_id": 677956, "team": "BAL", "transaction_id": 941453}
 {"category": "designated", "date": "2026-09-06", "first_seen_utc": "2026-09-06T15:01:41.834769+00:00", "player": "Albert Su\u00e1rez", "player_id": 544150, "team": "BAL", "transaction_id": 941454}
+{"fetched_utc": "2026-09-06T15:16:28.329994+00:00", "game_date": "2026-09-06", "poll": true}
+{"category": "optioned", "date": "2026-09-06", "first_seen_utc": "2026-09-06T15:16:28.329994+00:00", "player": "Andrew Sears", "player_id": 808825, "team": "DET", "transaction_id": 941455}
+{"category": "il_activation", "date": "2026-09-06", "first_seen_utc": "2026-09-06T15:16:28.329994+00:00", "player": "Brant Hurter", "player_id": 676428, "team": "DET", "transaction_id": 941456}
+{"category": "il_transfer", "date": "2026-09-06", "first_seen_utc": "2026-09-06T15:16:28.329994+00:00", "player": "Matt Vierling", "player_id": 663837, "team": "DET", "transaction_id": 941457}
+{"fetched_utc": "2026-09-06T15:16:31.512983+00:00", "game_date": "2026-09-06", "poll": true}
+{"fetched_utc": "2026-09-06T15:31:33.870677+00:00", "game_date": "2026-09-06", "poll": true}
+{"fetched_utc": "2026-09-06T15:46:36.131864+00:00", "game_date": "2026-09-06", "poll": true}
+{"fetched_utc": "2026-09-06T16:01:38.753845+00:00", "game_date": "2026-09-06", "poll": true}
