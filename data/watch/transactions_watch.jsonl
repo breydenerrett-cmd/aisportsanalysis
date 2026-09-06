@@ -642,3 +642,19 @@
 {"fetched_utc": "2026-09-06T15:31:33.870677+00:00", "game_date": "2026-09-06", "poll": true}
 {"fetched_utc": "2026-09-06T15:46:36.131864+00:00", "game_date": "2026-09-06", "poll": true}
 {"fetched_utc": "2026-09-06T16:01:38.753845+00:00", "game_date": "2026-09-06", "poll": true}
+{"fetched_utc": "2026-09-06T16:17:16.522430+00:00", "game_date": "2026-09-06", "poll": true}
+{"fetched_utc": "2026-09-06T16:17:20.200781+00:00", "game_date": "2026-09-06", "poll": true}
+{"fetched_utc": "2026-09-06T16:32:22.475003+00:00", "game_date": "2026-09-06", "poll": true}
+{"category": "il_placement", "date": "2026-09-03", "first_seen_utc": "2026-09-06T16:32:22.475003+00:00", "player": "Tommy Pham", "player_id": 502054, "team": "CWS", "transaction_id": 941466}
+{"category": "il_placement", "date": "2026-09-05", "first_seen_utc": "2026-09-06T16:32:22.475003+00:00", "player": "Luis Robert Jr.", "player_id": 673357, "team": "BAL", "transaction_id": 941463}
+{"category": "recalled", "date": "2026-09-06", "first_seen_utc": "2026-09-06T16:32:22.475003+00:00", "player": "Anthony Nunez", "player_id": 689296, "team": "BAL", "transaction_id": 941464}
+{"category": "recalled", "date": "2026-09-06", "first_seen_utc": "2026-09-06T16:32:22.475003+00:00", "player": "Edgar Quero", "player_id": 700337, "team": "CWS", "transaction_id": 941465}
+{"fetched_utc": "2026-09-06T16:47:24.585600+00:00", "game_date": "2026-09-06", "poll": true}
+{"fetched_utc": "2026-09-06T17:02:27.437049+00:00", "game_date": "2026-09-06", "poll": true}
+{"category": "designated", "date": "2026-09-06", "first_seen_utc": "2026-09-06T17:02:27.437049+00:00", "player": "Max Kepler", "player_id": 596146, "team": "ARI", "transaction_id": 941469}
+{"category": "recalled", "date": "2026-09-06", "first_seen_utc": "2026-09-06T17:02:27.437049+00:00", "player": "Adrian Del Castillo", "player_id": 680728, "team": "ARI", "transaction_id": 941470}
+{"category": "recalled", "date": "2026-09-06", "first_seen_utc": "2026-09-06T17:02:27.437049+00:00", "player": "Cooper Hjerpe", "player_id": 687309, "team": "STL", "transaction_id": 941474}
+{"category": "optioned", "date": "2026-09-06", "first_seen_utc": "2026-09-06T17:02:27.437049+00:00", "player": "Hancel Rincon", "player_id": 684516, "team": "STL", "transaction_id": 941475}
+{"category": "rehab", "date": "2026-09-06", "first_seen_utc": "2026-09-06T17:02:27.437049+00:00", "player": "Edwin D\u00edaz", "player_id": 621242, "team": "LAD", "transaction_id": 941477}
+{"category": "recalled", "date": "2026-09-06", "first_seen_utc": "2026-09-06T17:02:27.437049+00:00", "player": "Miguel Ullola", "player_id": 699044, "team": "HOU", "transaction_id": 941478}
+{"category": "optioned", "date": "2026-09-06", "first_seen_utc": "2026-09-06T17:02:27.437049+00:00", "player": "Kai-Wei Teng", "player_id": 678906, "team": "HOU", "transaction_id": 941479}
