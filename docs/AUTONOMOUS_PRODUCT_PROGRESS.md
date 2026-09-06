@@ -1,0 +1,6 @@
+# Autonomous product progress (append-only)
+
+## 2026-09-06 23:1xZ — P0-1 first external capture run (Fable, bash; no workers)
+- Default branch `claude/cowork-session-migration-tn3sx2` is an orphan (README + docs only), so `schedule`/`workflow_dispatch` could not see `.github/workflows/forward-capture.yml` (dispatch returned 404). Added the file verbatim there (25816b8; Option 2 of docs/CAPTURE_EXTERNALIZATION.md). The job still checks out and pushes only the working line.
+- Dispatched run 34066005061: SUCCESS, 23:07:55–23:08:36Z, capture step 30s. Commit 16a2b97 by `forward-capture-bot`: 38 rows across data/watch (lineups, probables, transactions, umpires), weather_forecast, information_events, credit_log. Dense: 0 captures (no game inside the 180-min window at 23:08Z, correct), balance 24,889 before and after, band `live_capture`, no ESCALATE. Secret appears only as `***`. Staging redeploy dispatched (minute 08).
+- Tests: none changed. Deployment: staging redeploy dispatched by the job. Blocker: none. Next: wait for the first `schedule`-event run (cron */15) with no interactive command; then in-session capture becomes fallback-only (launch only when the external heartbeat is older than 45 min).
