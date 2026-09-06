@@ -658,3 +658,8 @@
 {"category": "rehab", "date": "2026-09-06", "first_seen_utc": "2026-09-06T17:02:27.437049+00:00", "player": "Edwin D\u00edaz", "player_id": 621242, "team": "LAD", "transaction_id": 941477}
 {"category": "recalled", "date": "2026-09-06", "first_seen_utc": "2026-09-06T17:02:27.437049+00:00", "player": "Miguel Ullola", "player_id": 699044, "team": "HOU", "transaction_id": 941478}
 {"category": "optioned", "date": "2026-09-06", "first_seen_utc": "2026-09-06T17:02:27.437049+00:00", "player": "Kai-Wei Teng", "player_id": 678906, "team": "HOU", "transaction_id": 941479}
+{"fetched_utc": "2026-09-06T17:16:25.539810+00:00", "game_date": "2026-09-06", "poll": true}
+{"fetched_utc": "2026-09-06T17:16:29.175754+00:00", "game_date": "2026-09-06", "poll": true}
+{"fetched_utc": "2026-09-06T17:31:31.461810+00:00", "game_date": "2026-09-06", "poll": true}
+{"fetched_utc": "2026-09-06T17:46:35.529282+00:00", "game_date": "2026-09-06", "poll": true}
+{"fetched_utc": "2026-09-06T18:01:38.043067+00:00", "game_date": "2026-09-06", "poll": true}
