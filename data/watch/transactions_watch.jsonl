@@ -591,3 +591,10 @@
 {"category": "rehab", "date": "2026-09-05", "first_seen_utc": "2026-09-05T23:07:15.519780+00:00", "player": "Ryne Nelson", "player_id": 669194, "team": "ARI", "transaction_id": 941431}
 {"fetched_utc": "2026-09-05T23:22:20.019368+00:00", "game_date": "2026-09-05", "poll": true}
 {"fetched_utc": "2026-09-05T23:37:22.528277+00:00", "game_date": "2026-09-05", "poll": true}
+{"fetched_utc": "2026-09-06T00:16:25.014832+00:00", "game_date": "2026-09-05", "poll": true}
+{"fetched_utc": "2026-09-06T00:16:28.187502+00:00", "game_date": "2026-09-05", "poll": true}
+{"fetched_utc": "2026-09-06T00:31:30.579324+00:00", "game_date": "2026-09-05", "poll": true}
+{"category": "recalled", "date": "2026-09-05", "first_seen_utc": "2026-09-06T00:31:30.579324+00:00", "player": "Jack Perkins", "player_id": 678022, "team": "OAK", "transaction_id": 941434}
+{"category": "il_placement", "date": "2026-09-05", "first_seen_utc": "2026-09-06T00:31:30.579324+00:00", "player": "J.T. Ginn", "player_id": 669372, "team": "OAK", "transaction_id": 941435}
+{"fetched_utc": "2026-09-06T00:46:33.347985+00:00", "game_date": "2026-09-05", "poll": true}
+{"fetched_utc": "2026-09-06T01:01:35.378061+00:00", "game_date": "2026-09-05", "poll": true}
