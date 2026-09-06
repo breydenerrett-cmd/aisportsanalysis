@@ -1,0 +1,142 @@
+# Runs the 10:00Z daily operational pass (scripts/daily_loop.sh: snapshot,
+# results/pitcher/bullpen ingest, briefing+ledger, settle, grade, my-bets
+# settle, box lines, then statcast catchup, gamekey map, engine slate,
+# engine settle, eod) on a schedule independent of any interactive Claude
+# session/container -- the same externalization
+# .github/workflows/forward-capture.yml already did for forward capture. See
+# docs/CAPTURE_EXTERNALIZATION.md, "Daily loop externalization", for the
+# reliability/cost/credential-safety reasoning this workflow implements.
+#
+# Requires ONE repository secret: ODDS_API_KEY (same variable name as
+# .env / .env.example -- src/providers/odds.py's ENV_KEY). Without it, the
+# odds-dependent step inside `daily` reports "not configured" and no-ops;
+# every other step (ingest, briefing minus prices, settle, grade, statcast,
+# gamekey, engine slate/settle, eod) still runs on free data.
+#
+# Shares forward-capture's concurrency group so a capture slot and this
+# loop never run at once: both scripts commit+push under the same
+# /tmp/linehound_git.lock on a shared checkout, and that lock is
+# process-local (flock), not distributed across two concurrent Actions
+# jobs on two different runners. Putting both workflows in ONE
+# concurrency group serializes them at the GitHub Actions level instead,
+# which is the only lock that actually reaches across runners.
+name: daily-loop
+
+on:
+  schedule:
+    # 10:00 UTC -- well before the earliest MLB first pitch (~16:00Z), the
+    # same cadence scripts/daily_loop.sh's own docstring assumes for
+    # `engine slate`'s pre-game guard. Evaluated in UTC by GitHub Actions.
+    - cron: "0 10 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: forward-capture
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  daily:
+    runs-on: ubuntu-latest
+    # Cold rebuild (cache miss) measured locally at ~9-10 minutes
+    # (scripts/daily_bootstrap.sh's header); the daily loop itself is a
+    # handful of free-endpoint calls plus one odds snapshot. 30 minutes
+    # leaves headroom without masking a genuinely stuck run.
+    timeout-minutes: 30
+    steps:
+      # Scheduled workflows only run from the repository's DEFAULT branch,
+      # and (docs/CAPTURE_EXTERNALIZATION.md, "Default-branch constraint")
+      # this repo's default branch is an orphan that shares no history with
+      # the working line. The working line is named explicitly here, same
+      # as forward-capture.yml, so the job checks out and pushes to it
+      # wherever the workflow file happens to live.
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/sports-betting-analysis-review-g1o0co
+          fetch-depth: 0
+
+      - name: Configure git identity for the commit this run may make
+        run: |
+          git config user.name "daily-loop-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+      # Restores the git-ignored inputs scripts/daily_bootstrap.sh checks
+      # for: the Statcast pitch store + manifest (must never be rebuilt
+      # from scratch here -- bootstrap refuses if this restore misses),
+      # and the results/pitcher/bullpen stores bootstrap can rebuild from
+      # free endpoints on a genuine miss. Keyed on a static key plus a
+      # run-scoped fallback so every run restores the MOST RECENT save
+      # regardless of exact key match (`restore-keys` prefix match), and
+      # every run saves forward under a run-unique key so today's rebuilt
+      # stores become tomorrow's cache hit. All four stores together are
+      # well under 200MB uncompressed in normal operation (statcast ~45MB
+      # + season-scoped CSV/JSONL logs, all measured far below the 1GB
+      # stop condition in the task that added this workflow).
+      - name: Restore historical + processed data cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/historical/statcast
+            data/historical/mlb_results.csv
+            data/historical/mlb_results.manifest.json
+            data/historical/pitcher_logs.jsonl
+            data/historical/bullpen_log.jsonl
+            data/historical/lineups.jsonl
+            data/historical/handedness.json
+          key: daily-loop-data-${{ github.run_id }}
+          restore-keys: |
+            daily-loop-data-
+
+      # Bootstrap's own hard stops (missing Statcast manifest, a failed
+      # results backfill) already exit non-zero and fail this step outright.
+      # A softer bootstrap escalation (e.g. the bullpen backfill failing)
+      # does NOT exit non-zero -- it is recoverable next run -- so its
+      # output is captured into the same combined log the ESCALATE check
+      # below reads, or that escalation would otherwise never be seen.
+      - name: Bootstrap git-ignored inputs (rebuild from free endpoints, or refuse)
+        run: |
+          set -o pipefail
+          bash scripts/daily_bootstrap.sh 2>&1 | tee /tmp/daily_run.out
+          exit "${PIPESTATUS[0]}"
+
+      - name: Run the daily loop
+        id: daily_loop
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: |
+          set -o pipefail
+          bash scripts/daily_loop.sh 2>&1 | tee -a /tmp/daily_run.out
+          exit "${PIPESTATUS[0]}"
+
+      - name: Fail the job on any ESCALATE line
+        if: always()
+        run: |
+          if grep -q "^ESCALATE:" /tmp/daily_run.out; then
+            echo "The daily loop escalated -- see the lines below."
+            grep "^ESCALATE:" /tmp/daily_run.out
+            exit 1
+          fi
+          echo "no ESCALATE lines -- clean run"
+
+      # actions/cache is immutable per key: a plain `save` action would
+      # silently no-op once `daily-loop-data-${{ github.run_id }}` (a run
+      # is unique, so this never collides, but the cache action still
+      # warns loudly and skips if a save ever repeats a key) already
+      # exists. `always()` so a partially-completed rebuild is still saved
+      # forward rather than repeating the same cold rebuild every day this
+      # workflow happens to fail after bootstrap.
+      - name: Save historical + processed data cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data/historical/statcast
+            data/historical/mlb_results.csv
+            data/historical/mlb_results.manifest.json
+            data/historical/pitcher_logs.jsonl
+            data/historical/bullpen_log.jsonl
+            data/historical/lineups.jsonl
+            data/historical/handedness.json
+          key: daily-loop-data-${{ github.run_id }}

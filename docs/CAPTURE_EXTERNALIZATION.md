@@ -231,3 +231,103 @@ conflict rather than corrupting anything, and the window is a few minutes
 once a day. Moving the daily loop to a 10:00Z Actions job is the next
 step once the capture job has run for a day; it needs the results ingest
 (free MLB endpoint) to rebuild its git-ignored inputs in a fresh checkout.
+
+## Daily loop externalization (P0-2)
+
+The daily loop's turn: `scripts/daily_loop.sh` (`src.cli daily`, ledger
+status, `statcast --catchup`, `gamekey`, `engine slate`, `engine settle`,
+`eod`, then the same lock/commit/rebase/push discipline as
+`capture_slot.sh`) now runs from GitHub Actions too
+(`.github/workflows/daily-loop.yml`, `cron: "0 10 * * *"` +
+`workflow_dispatch`), preceded by a new bootstrap step
+(`scripts/daily_bootstrap.sh`) that makes a fresh, cache-restored checkout
+usable without an interactive session ever having touched it.
+
+### Why a bootstrap step, unlike forward capture
+
+Forward capture's inputs are all TRACKED (the `!`-negated stores in
+`.gitignore`: `data/processed/odds_snapshots.jsonl` and its siblings), so
+`capture_slot.sh` needed nothing beyond a checkout. The daily loop's
+inputs are mostly the opposite: `data/historical/*` is bulk-ignored, and a
+fresh clone starts with none of it. Two of those inputs cannot be treated
+the same way:
+
+- **The Statcast pitch store** (`data/historical/statcast/`, ~45MB) has no
+  cheap incremental path from nothing -- `catchup()` only ever extends an
+  existing manifest, and the alternative, a full `build()`, is a ~45-window
+  season backfill against Baseball Savant that this loop must never
+  trigger on its own (see `scripts/daily_bootstrap.sh`'s own header and
+  `src/providers/statcast_pitches.catchup`'s docstring). A missing manifest
+  is therefore a **hard refusal** (`ESCALATE:`, exit 1), not a rebuild.
+- **The season-scoped results/pitcher/bullpen stores** ARE cheaply
+  rebuildable from MLB's free, keyless Stats API, and bootstrap does so on
+  a genuine cache miss.
+
+### Inputs table
+
+| Input | Path | Source on a cache MISS | Measured cost | On a cache HIT |
+|---|---|---|---|---|
+| Statcast pitch store + manifest | `data/historical/statcast/` | none -- **hard refusal**, `ESCALATE:`, exit 1 | n/a | `statcast --catchup` (inside `daily_loop.sh`) extends it, ~1 free HTTP call/day |
+| Season results | `data/historical/mlb_results.csv` + manifest | `src.pipeline.history.ingest_range(season_start, yesterday)`, free MLB endpoint | 0.31s/date measured locally -> ~51s for a ~165-day season | `daily_loop.sh`'s own ingest step adds just yesterday |
+| Pitcher logs | `data/historical/pitcher_logs.jsonl` | `src.pipeline.pitchers.build_log_store` over every probable pitcher in the rebuilt results store, free MLB endpoint, one call/pitcher | 236 pitchers fetched in well under a minute (measured, 2026 season to date) | `daily_loop.sh` refreshes just today's probables |
+| Bullpen log | `data/historical/bullpen_log.jsonl` | `src.pipeline.bullpen.build_log(season_start, yesterday)`, free MLB endpoint, one schedule + one boxscore call/game | 2.86s/date measured locally -> ~8 minutes for a ~165-day season (the slowest rebuild step) | `daily_loop.sh` refreshes just yesterday |
+| Lineups / handedness cache | `data/historical/lineups.jsonl`, `data/historical/handedness.json` | not pre-populated -- `cmd_brief` (inside `daily`) fetches today's lineups/handedness live and self-heals on a cold cache | a few extra free calls on the first post-miss run only | `daily_loop.sh`'s brief step keeps it warm |
+| `data/processed/l1_observations.jsonl` | tracked-store reprojection | not touched by bootstrap -- `engine slate`'s own `refresh_l1_if_stale` rebuilds it from the tracked odds stores immediately before reading it, every invocation | n/a | same |
+| `data/processed/matchup_matrix.jsonl` | research store | not read by the daily loop at all (grepped: only `src/research/matrix.py`, `src/engine/features.py` docstrings, `src/evolab/*`) | n/a | n/a |
+| `data/historical/odds_history/`, `odds_first_five/` | paid historical archive | not read by the daily loop at all (grepped: only backfill/replay/research call sites); the one near-exception, `first_five_results.jsonl`, is a frozen store settle already falls back away from for any season past 2024 | n/a | n/a |
+
+### Cache key strategy
+
+`.github/workflows/daily-loop.yml` uses `actions/cache` with:
+
+- `path`: the six rebuildable/restorable git-ignored stores above
+  (Statcast store, results CSV + manifest, pitcher logs, bullpen log,
+  lineups, handedness).
+- `key: daily-loop-data-${{ github.run_id }}` -- unique per run, so the
+  save step never collides with (and therefore never silently no-ops
+  against) a prior run's cache, since `actions/cache` keys are immutable.
+- `restore-keys: daily-loop-data-` -- a prefix match, so restore always
+  pulls the MOST RECENT prior run's save regardless of its exact run id.
+- A separate `actions/cache/save@v4` step, run `if: always()`, saves
+  forward under the same run-id key even if a later step (the loop itself,
+  or the ESCALATE check) fails -- a bootstrap that ran a real rebuild this
+  run should not be repeated tomorrow just because something unrelated
+  failed after it.
+
+Measured size: the Statcast store alone runs ~45MB; the CSV/JSONL logs
+this task actually produces (results, pitcher logs, one season of
+bullpen) are small text files, well under 50MB combined even at a full
+season. Total cache payload stays far under the 1GB stop condition named
+in the task that added this workflow.
+
+### Cold-start behaviour
+
+On the very first run (or after a cache eviction that drops the Statcast
+manifest specifically), `daily-loop.yml` fails fast at the bootstrap step
+with an `ESCALATE:` line rather than attempting a season-long Savant
+backfill unattended. Recovering from that state requires an operator (or
+a one-time manual `python3 -m src.cli statcast --build <season>` run, then
+letting the cache save it forward) -- this is a deliberate, documented gap,
+not an oversight: unattended infrastructure should not be the thing that
+decides to spend ~45 windows of Savant's free-but-rate-limited export on
+its own initiative.
+
+A cache eviction that drops only the results/pitcher/bullpen stores (the
+Statcast manifest survives) self-heals in one run: bootstrap rebuilds all
+three from free endpoints in on the order of 9-10 minutes total (dominated
+by the bullpen rebuild), well inside the job's 30-minute timeout, and the
+save step persists the rebuilt stores for every subsequent day.
+
+### What still cannot run in CI, and why
+
+Nothing in the daily loop's own step list is CI-incapable -- every step
+(`daily`, `ledger status`, `statcast --catchup`, `gamekey`, `engine
+slate`, `engine settle`, `eod`) already ran successfully from an
+interactive session's ephemeral container, which has no more filesystem
+persistence across restarts than a fresh Actions runner does. The one
+genuine CI limitation is the Statcast **initial** backfill described
+above: a multi-minute, rate-limited, resumable-but-not-designed-for-
+unattended-retry season fetch. It is not automated here on purpose, the
+same way `capture_slot.sh` deliberately never mints a new `ODDS_API_KEY`
+on its own -- both are "an operator does this once, infrastructure keeps
+it fresh forever after" boundaries, not gaps this task left unfinished.

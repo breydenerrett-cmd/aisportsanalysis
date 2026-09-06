@@ -56,6 +56,7 @@ SHELL_SCRIPTS = [
     "scripts/forward_capture.sh",
     "scripts/daily_loop.sh",
     "scripts/capture_slot.sh",
+    "scripts/daily_bootstrap.sh",
 ]
 
 
