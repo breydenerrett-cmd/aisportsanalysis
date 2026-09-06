@@ -681,3 +681,13 @@
 {"fetched_utc": "2026-09-06T20:31:46.147146+00:00", "game_date": "2026-09-06", "poll": true}
 {"fetched_utc": "2026-09-06T20:46:48.197392+00:00", "game_date": "2026-09-06", "poll": true}
 {"fetched_utc": "2026-09-06T21:01:50.216992+00:00", "game_date": "2026-09-06", "poll": true}
+{"fetched_utc": "2026-09-06T21:16:37.954573+00:00", "game_date": "2026-09-06", "poll": true}
+{"fetched_utc": "2026-09-06T21:16:41.313120+00:00", "game_date": "2026-09-06", "poll": true}
+{"fetched_utc": "2026-09-06T21:31:43.605727+00:00", "game_date": "2026-09-06", "poll": true}
+{"category": "rehab", "date": "2026-09-06", "first_seen_utc": "2026-09-06T21:31:43.605727+00:00", "player": "Jack Flaherty", "player_id": 656427, "team": "DET", "transaction_id": 941505}
+{"category": "other", "date": "2026-09-06", "first_seen_utc": "2026-09-06T21:31:43.605727+00:00", "player": "Carlos Hern\u00e1ndez", "player_id": 672578, "team": "CLE", "transaction_id": 941506}
+{"category": "il_placement", "date": "2026-09-06", "first_seen_utc": "2026-09-06T21:31:43.605727+00:00", "player": "Mike Burrows", "player_id": 681347, "team": "HOU", "transaction_id": 941507}
+{"category": "other", "date": "2026-09-06", "first_seen_utc": "2026-09-06T21:31:43.605727+00:00", "player": "Jorge Barrosa", "player_id": 678489, "team": "HOU", "transaction_id": 941508}
+{"category": "other", "date": "2026-09-06", "first_seen_utc": "2026-09-06T21:31:43.605727+00:00", "player": "Max Kranick", "player_id": 668820, "team": "WSH", "transaction_id": 941510}
+{"fetched_utc": "2026-09-06T21:46:45.839660+00:00", "game_date": "2026-09-06", "poll": true}
+{"fetched_utc": "2026-09-06T22:01:48.326801+00:00", "game_date": "2026-09-06", "poll": true}
