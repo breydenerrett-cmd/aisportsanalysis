@@ -617,3 +617,20 @@
 {"fetched_utc": "2026-09-06T13:32:17.957312+00:00", "game_date": "2026-09-06", "poll": true}
 {"fetched_utc": "2026-09-06T13:47:20.177195+00:00", "game_date": "2026-09-06", "poll": true}
 {"fetched_utc": "2026-09-06T14:02:23.343629+00:00", "game_date": "2026-09-06", "poll": true}
+{"fetched_utc": "2026-09-06T14:16:31.273413+00:00", "game_date": "2026-09-06", "poll": true}
+{"fetched_utc": "2026-09-06T14:16:34.383409+00:00", "game_date": "2026-09-06", "poll": true}
+{"fetched_utc": "2026-09-06T14:31:37.185689+00:00", "game_date": "2026-09-06", "poll": true}
+{"category": "il_activation", "date": "2026-09-06", "first_seen_utc": "2026-09-06T14:31:37.185689+00:00", "player": "Graham Ashcraft", "player_id": 668933, "team": "CIN", "transaction_id": 941443}
+{"category": "designated", "date": "2026-09-06", "first_seen_utc": "2026-09-06T14:31:37.185689+00:00", "player": "Sam Moll", "player_id": 594580, "team": "CIN", "transaction_id": 941444}
+{"category": "optioned", "date": "2026-09-06", "first_seen_utc": "2026-09-06T14:31:37.185689+00:00", "player": "Jefry Yan", "player_id": 642376, "team": "NYM", "transaction_id": 941445}
+{"category": "recalled", "date": "2026-09-06", "first_seen_utc": "2026-09-06T14:31:37.185689+00:00", "player": "Tobias Myers", "player_id": 668964, "team": "NYM", "transaction_id": 941446}
+{"category": "recalled", "date": "2026-09-06", "first_seen_utc": "2026-09-06T14:31:37.185689+00:00", "player": "Ronny Simon", "player_id": 682927, "team": "PIT", "transaction_id": 941447}
+{"category": "optioned", "date": "2026-09-06", "first_seen_utc": "2026-09-06T14:31:37.185689+00:00", "player": "Nick Yorke", "player_id": 694377, "team": "PIT", "transaction_id": 941448}
+{"fetched_utc": "2026-09-06T14:46:39.285360+00:00", "game_date": "2026-09-06", "poll": true}
+{"category": "il_placement", "date": "2026-09-03", "first_seen_utc": "2026-09-06T14:46:39.285360+00:00", "player": "Ceddanne Rafaela", "player_id": 678882, "team": "BOS", "transaction_id": 941452}
+{"category": "recalled", "date": "2026-09-06", "first_seen_utc": "2026-09-06T14:46:39.285360+00:00", "player": "Franco Aleman", "player_id": 680916, "team": "CLE", "transaction_id": 941449}
+{"category": "optioned", "date": "2026-09-06", "first_seen_utc": "2026-09-06T14:46:39.285360+00:00", "player": "Austin Peterson", "player_id": 804926, "team": "CLE", "transaction_id": 941450}
+{"category": "recalled", "date": "2026-09-06", "first_seen_utc": "2026-09-06T14:46:39.285360+00:00", "player": "Nate Eaton", "player_id": 681987, "team": "BOS", "transaction_id": 941451}
+{"fetched_utc": "2026-09-06T15:01:41.834769+00:00", "game_date": "2026-09-06", "poll": true}
+{"category": "recalled", "date": "2026-09-06", "first_seen_utc": "2026-09-06T15:01:41.834769+00:00", "player": "Rece Hinds", "player_id": 677956, "team": "BAL", "transaction_id": 941453}
+{"category": "designated", "date": "2026-09-06", "first_seen_utc": "2026-09-06T15:01:41.834769+00:00", "player": "Albert Su\u00e1rez", "player_id": 544150, "team": "BAL", "transaction_id": 941454}
