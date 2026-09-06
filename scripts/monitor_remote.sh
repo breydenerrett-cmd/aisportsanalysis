@@ -65,6 +65,8 @@
 # than `source` or a `grep`.
 set -uo pipefail
 
+[ -f "$(dirname "$0")/foundry_beat.sh" ] && . "$(dirname "$0")/foundry_beat.sh" || true
+
 BASE="${1:?usage: monitor_remote.sh <base-url> (e.g. https://app.fly.dev)}"
 # Trim a trailing slash so "https://x.fly.dev/" and "https://x.fly.dev"
 # both produce the same request path.
@@ -167,12 +169,14 @@ if [ "$CURL_EXIT" -ne 0 ]; then
     CLASS="$(classify_curl_failure "$CURL_EXIT")"
     echo "DEGRADED[${CLASS}]: ${BASE}/health unreachable (curl exit ${CURL_EXIT}, timeout ${TIMEOUT}s): $(cat "$ERR_FILE" 2>/dev/null)"
     update_state_and_escalate "$CLASS"
+    type foundry_beat >/dev/null 2>&1 && foundry_beat monitor_remote status down "$CLASS" || true
     exit 1
 fi
 
 if [ "$HTTP_STATUS" = "200" ]; then
     echo "OK: ${BASE}/health returned 200"
     update_state_and_escalate "OK"
+    type foundry_beat >/dev/null 2>&1 && foundry_beat monitor_remote status ok "$HTTP_STATUS" || true
     exit 0
 fi
 
@@ -194,6 +198,7 @@ except Exception as exc:
 " 2>/dev/null)"
     echo "DEGRADED[HTTP_503]: ${BASE}/health returned 503 -- ${REASONS}"
     update_state_and_escalate "HTTP_503"
+    type foundry_beat >/dev/null 2>&1 && foundry_beat monitor_remote status degraded "$HTTP_STATUS" || true
     exit 1
 fi
 
@@ -204,4 +209,5 @@ case "$HTTP_STATUS" in
 esac
 echo "DEGRADED[${CLASS}]: ${BASE}/health returned unexpected status ${HTTP_STATUS}"
 update_state_and_escalate "$CLASS"
+type foundry_beat >/dev/null 2>&1 && foundry_beat monitor_remote status degraded "$HTTP_STATUS" || true
 exit 1
