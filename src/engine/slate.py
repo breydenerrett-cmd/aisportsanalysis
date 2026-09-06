@@ -70,6 +70,8 @@ Two things close that gap, both in `run_slate`:
 
 from __future__ import annotations
 
+import sys
+
 import hashlib
 import json
 from dataclasses import dataclass, replace
@@ -595,6 +597,20 @@ def _decision_payload(record: DecisionRecord) -> dict:
     return payload
 
 
+def _refresh_game_pk_map_for_date(date_str: str) -> dict | None:
+    """Extend the event->game_pk map for `date_str` (idempotent; see the
+    GAMEKEY REFRESH note in `run_slate`). Returns the builder's report, or
+    None when the refresh could not run -- printed, never raised, so a
+    schedule outage degrades to "unresolved events are refused at settle"
+    rather than to "no slate at all"."""
+    try:
+        return gamekey_module.build_map_for_date(date_str)
+    except Exception as exc:  # noqa: BLE001 -- best-effort by design
+        print(f"  WARNING: gamekey refresh for {date_str} failed ({exc}); "
+              "using the map as already on disk", file=sys.stderr)
+        return None
+
+
 def run_slate(
     date_str: str,
     *,
@@ -609,6 +625,7 @@ def run_slate(
     wagers_path=None,
     game_pk_map: Mapping[str, dict] | None = None,
     refresh_l1: bool = True,
+    refresh_game_pk_map: bool = True,
     l1_sources: Sequence | None = None,
     l1_raw_root=None,
     now: datetime | None = None,
@@ -727,6 +744,19 @@ def run_slate(
     # S1 map (`src.board.gamekey`) already resolves exactly this, so the
     # wager row (not the frozen DecisionRecord itself, which is left
     # untouched) carries the resolved id.
+    # GAMEKEY REFRESH (2026-09-06). The map is append-only and is only ever
+    # extended by an explicit `gamekey --date` -- nothing on the daily
+    # cadence had been extending it, so the 2026-09-05 slate wrote all 99
+    # of its wagers with `game_pk=None` (every event unmapped) and `engine
+    # settle` then refused the whole date the next morning. Same shape as
+    # the L1 refresh above: the resolution is a pure identity join
+    # (event_id -> MLB game_pk via the schedule), reads no outcome, is
+    # idempotent (already-mapped events are skipped), and belongs at the
+    # one place that cannot be forgotten -- immediately before the map is
+    # read. Best-effort: a schedule fetch failure is reported, not fatal,
+    # because settle's own guard still refuses any wager left unresolved.
+    if game_pk_map is None and refresh_game_pk_map:
+        _refresh_game_pk_map_for_date(date_str)
     resolved_game_pk_map = (game_pk_map if game_pk_map is not None
                             else gamekey_module.load_map())
 

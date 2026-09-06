@@ -66,12 +66,15 @@ class SettleTestBase(unittest.TestCase):
         self.review_path = base / "reviews_v2.jsonl"
         self.scorecard_path = base / "scorecards_v2.jsonl"
         self.accounts_dir = base / "paper_accounts"
+        self.game_pk_map_path = base / "event_game_map.jsonl"
 
     def account_ledger_path_fn(self, system_id):
         safe = "".join(c if c.isalnum() or c in "-_." else "_" for c in system_id)
         return self.accounts_dir / f"{safe}.jsonl"
 
     def run_settle(self, date_str, **kwargs):
+        # Hermetic: never read the real event->game_pk map from a test.
+        kwargs.setdefault("game_pk_map_path", self.game_pk_map_path)
         kwargs.setdefault("wagers_path", self.wagers_path)
         kwargs.setdefault("results_path", self.results_path)
         kwargs.setdefault("f5_historical_path", self.f5_path)
@@ -111,6 +114,45 @@ class TestRefusalOnPartialResults(SettleTestBase):
         _write_jsonl(self.wagers_path, [row])
         with self.assertRaises(settle_slate.SettleError):
             self.run_settle("2026-09-02")
+
+    def test_resolves_a_none_game_pk_from_the_gamekey_map(self):
+        # Regression for 2026-09-05: the slate wrote every wager with
+        # game_pk=None (the map had no row for its event yet) and the
+        # hash-chained wager row can never be edited. A map row that exists
+        # BY SETTLE TIME must rescue the wager -- an identity join, not an
+        # outcome read -- and the settled bet must carry the resolved pk.
+        _write_jsonl(self.wagers_path, [_wager_row("bet-1", None, 150)])
+        _write_jsonl(self.game_pk_map_path, [{
+            "event_id": "evt-bet-1", "game_pk": str(GAME_WIN),
+            "resolved": True, "ambiguous": False,
+            "home_team": "H", "away_team": "A",
+            "commence_time": "2026-09-02T18:00:00Z",
+        }])
+        _write_results_csv(self.results_path, [
+            {"game_pk": GAME_WIN, "date": "2026-09-02",
+             "home_score": 5, "away_score": 2},
+        ])
+        report = self.run_settle("2026-09-02")
+        settled = report.systems[0].settled
+        self.assertEqual(len(settled), 1)
+        self.assertEqual(settled[0].bet.game_pk, GAME_WIN)
+        # The ledger row itself is untouched: still game_pk=None on disk.
+        on_disk = [r for r in HashChainLedger(self.wagers_path).read()
+                   if r.get("bet_id") == "bet-1"]
+        self.assertIsNone(on_disk[0]["game_pk"])
+
+    def test_map_never_overrides_a_game_pk_the_slate_resolved(self):
+        _write_jsonl(self.wagers_path, [_wager_row("bet-1", GAME_WIN, 150)])
+        _write_jsonl(self.game_pk_map_path, [{
+            "event_id": "evt-bet-1", "game_pk": str(GAME_LOSS),
+            "resolved": True, "ambiguous": False,
+        }])
+        _write_results_csv(self.results_path, [
+            {"game_pk": GAME_WIN, "date": "2026-09-02",
+             "home_score": 5, "away_score": 2},
+        ])
+        report = self.run_settle("2026-09-02")
+        self.assertEqual(report.systems[0].settled[0].bet.game_pk, GAME_WIN)
 
 
 class TestFlatOneUnitArithmetic(SettleTestBase):

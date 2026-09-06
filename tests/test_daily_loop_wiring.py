@@ -97,6 +97,21 @@ class DailyLoopScriptWiringTest(unittest.TestCase):
             settle_pos, eod_pos,
             "engine settle must run before eod (S7 reads settled data)")
 
+    def test_free_prerequisites_run_before_the_slate(self):
+        # 2026-09-06: the pitch store had stalled (slate guard refused on
+        # coverage lag) and the event->game_pk map had no rows for 09-05
+        # (settle refused). Both are 0-credit refreshes that must precede
+        # `engine slate`, each with its own exit capture and ESCALATE line.
+        slate_pos = self.text.index("python3 -m src.cli engine slate")
+        for var, cmd in (("STATCAST_STATUS", "python3 -m src.cli statcast --catchup"),
+                         ("GAMEKEY_STATUS",
+                          'python3 -m src.cli gamekey --date "$YESTERDAY" --end "$TODAY"')):
+            with self.subTest(step=cmd):
+                self.assertLess(self.text.index(cmd), slate_pos)
+                self.assertIn(f"{var}=$?", self.text)
+                self.assertIn(f'if [ "${var}" -ne 0 ]; then\n    echo "ESCALATE:',
+                              self.text)
+
     def test_slate_runs_for_today_settle_and_eod_for_yesterday(self):
         self.assertIn('TODAY=$(date -u +%Y-%m-%d)', self.text)
         self.assertIn("engine slate --date \"$TODAY\"", self.text)

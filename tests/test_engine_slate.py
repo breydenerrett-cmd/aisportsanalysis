@@ -745,3 +745,60 @@ class TestHistoricalSlateResolvesBoard(SlateTestBase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestGameKeyRefreshBeforeRead(SlateTestBase):
+    """Regression for 2026-09-05: nothing on the daily cadence extended the
+    event->game_pk map, so every wager that day was written with
+    game_pk=None. `run_slate` must extend the map for its own date, before
+    reading it, whenever it is left to load the map itself."""
+
+    def _stage_game(self):
+        _write_jsonl(self.l1_path, [
+            *_two_book_rows(GAME_A, "2026-09-02T18:00:00Z"),
+        ])
+        self._commence_rows(GAME_A, "2026-09-02T20:00:00Z")
+
+    def test_extends_the_map_for_the_slate_date_then_reads_it(self):
+        self._stage_game()
+        calls = []
+        resolved = {GAME_A: {"event_id": GAME_A, "game_pk": "777001",
+                             "resolved": True, "ambiguous": False}}
+
+        def fake_build(date_str, **kwargs):
+            calls.append(date_str)
+            return {"date": date_str, "resolved": 1}
+
+        with mock.patch.object(slate.gamekey_module, "build_map_for_date",
+                               side_effect=fake_build), \
+             mock.patch.object(slate.gamekey_module, "load_map",
+                               return_value=resolved):
+            report = self.run_slate(
+                "2026-09-02", game_pk_map=None,
+                systems=(glue_module.TrivialAlwaysHomeSystem(),))
+        self.assertEqual(calls, ["2026-09-02"])
+        self.assertEqual(report.n_new_wagers, 1)
+        wager = [r for r in HashChainLedger(self.wagers_path).read()
+                 if r.get("bet_id")][0]
+        self.assertEqual(wager["game_pk"], 777001)
+
+    def test_refresh_failure_degrades_to_the_map_on_disk_not_to_no_slate(self):
+        self._stage_game()
+        with mock.patch.object(slate.gamekey_module, "build_map_for_date",
+                               side_effect=RuntimeError("schedule down")), \
+             mock.patch.object(slate.gamekey_module, "load_map",
+                               return_value={}):
+            report = self.run_slate(
+                "2026-09-02", game_pk_map=None,
+                systems=(glue_module.TrivialAlwaysHomeSystem(),))
+        self.assertEqual(report.n_new_wagers, 1)
+        wager = [r for r in HashChainLedger(self.wagers_path).read()
+                 if r.get("bet_id")][0]
+        self.assertIsNone(wager["game_pk"])
+
+    def test_injected_map_skips_the_refresh(self):
+        self._stage_game()
+        with mock.patch.object(slate.gamekey_module, "build_map_for_date") as b:
+            self.run_slate("2026-09-02", game_pk_map={},
+                           systems=(glue_module.TrivialAlwaysHomeSystem(),))
+        b.assert_not_called()

@@ -39,6 +39,7 @@ from typing import Mapping
 
 from src.accounts.paper import PaperAccount, PaperBet, SettledBet
 from src.board.settle import GameResult
+from src.board import gamekey
 from src.core.asof import game_pk_key
 from src.factory.fitness import promotion_verdict
 from src.factory.scorecard import build_scorecard, decision_key_for
@@ -177,6 +178,19 @@ def build_game_result(game_pk: str, results: Mapping, f5_historical: Mapping,
 def wagers_for_date(date_str: str, path=PAPER_WAGERS_PATH) -> tuple[dict, ...]:
     return tuple(row for row in HashChainLedger(path).read()
                  if row.get("date") == date_str)
+
+
+def _with_resolved_game_pk(wager: Mapping, game_pk_index: Mapping[str, dict]) -> dict:
+    """`wager` as a plain dict with `game_pk` filled from `game_pk_index`
+    (see `src.board.gamekey.game_pk_for_event`) when the row itself carries
+    None. A row that already has one is returned unchanged in content -- the
+    map never overrides what the slate resolved at write time."""
+    row = dict(wager)
+    if row.get("game_pk") is None:
+        resolved = gamekey.game_pk_for_event(row.get("event_id"), game_pk_index)
+        if resolved is not None:
+            row["game_pk"] = int(resolved)
+    return row
 
 
 def _record_from_row(cls, row: Mapping):
@@ -363,13 +377,24 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
                information_events_path=INFORMATION_EVENTS_PATH,
                decisions_path=None, review_path=None, scorecard_path=None,
                account_ledger_path_fn=None,
+               game_pk_map_path=None,
                now: datetime | None = None) -> SettleReport:
+    game_pk_index = gamekey.load_map(
+        game_pk_map_path if game_pk_map_path is not None
+        else gamekey.DEFAULT_MAP_PATH)
     wagers = wagers_for_date(date_str, path=str(wagers_path or PAPER_WAGERS_PATH))
     if not wagers:
         raise SettleError(
             f"no paper wagers recorded for {date_str} in "
             f"{wagers_path or PAPER_WAGERS_PATH} -- run `engine slate "
             f"--date {date_str}` first")
+    # A wager row is hash-chained and never edited, so a `game_pk` the slate
+    # could not resolve at write time (the map had no row for its event --
+    # 2026-09-05, all 99 wagers) is resolved HERE, read-only, from the
+    # event->game_pk map as it stands now. Identity join only: which MLB game
+    # an odds event was, never how it ended. Anything still unresolved is
+    # refused below exactly as before.
+    wagers = tuple(_with_resolved_game_pk(w, game_pk_index) for w in wagers)
 
     results = load_mlb_results(results_path)
     game_pks = sorted({game_pk_key(w.get("game_pk")) for w in wagers

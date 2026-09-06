@@ -54,6 +54,32 @@ RUN_NOTE=docs/OVERNIGHT_RUN.md
 # time this step reads it (see `run_slate`'s own "L1 REFRESH" docstring
 # section for why that placement, not a step here, is the one that cannot
 # be forgotten).
+# Two free prerequisites the pre-slate guard and the settle guard depend on,
+# neither of which anything else on the daily cadence had been refreshing
+# (2026-09-06: the Statcast pitch store had stalled at 09-02 and refused the
+# slate on the 3-day coverage lag; the event->game_pk map had no rows for
+# 09-05, so every 09-05 wager was written unresolved and settle refused the
+# date). `engine slate` now also refreshes the map itself, immediately before
+# reading it; this step covers YESTERDAY too, so a map rebuilt here can
+# rescue a prior slate at settle time. Both are 0 odds-API credits.
+echo "== statcast catchup (pitch store through $YESTERDAY) =="
+STATCAST_OUT=$(python3 -m src.cli statcast --catchup 2>&1)
+STATCAST_STATUS=$?
+echo "$STATCAST_OUT" | sed 's/^/  /'
+if [ "$STATCAST_STATUS" -ne 0 ]; then
+    echo "ESCALATE: statcast catchup failed (exit $STATCAST_STATUS) -- the pre-slate coverage guard will refuse once the pitch store lags more than 3 days"
+fi
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: statcast --catchup exit=$STATCAST_STATUS" >> "$RUN_NOTE"
+
+echo "== gamekey map ($YESTERDAY..$TODAY) =="
+GAMEKEY_OUT=$(python3 -m src.cli gamekey --date "$YESTERDAY" --end "$TODAY" 2>&1)
+GAMEKEY_STATUS=$?
+echo "$GAMEKEY_OUT" | sed 's/^/  /'
+if [ "$GAMEKEY_STATUS" -ne 0 ]; then
+    echo "ESCALATE: gamekey map refresh failed (exit $GAMEKEY_STATUS) -- unresolved events are refused at settle, never settled partially"
+fi
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: gamekey --date $YESTERDAY --end $TODAY exit=$GAMEKEY_STATUS" >> "$RUN_NOTE"
+
 echo "== engine slate (today, $TODAY) =="
 SLATE_OUT=$(python3 -m src.cli engine slate --date "$TODAY" 2>&1)
 SLATE_STATUS=$?
