@@ -243,3 +243,6 @@
 {"game_date": "2026-09-07", "observed_utc": "2026-09-06T11:16:44.751500+00:00", "poll": true}
 {"game_date": "2026-09-06", "observed_utc": "2026-09-06T12:16:19.113802+00:00", "poll": true}
 {"game_date": "2026-09-07", "observed_utc": "2026-09-06T12:16:19.401779+00:00", "poll": true}
+{"game_date": "2026-09-06", "observed_utc": "2026-09-06T13:17:11.907994+00:00", "poll": true}
+{"commence_time": "2026-09-06T16:10:00Z", "crew": [{"id": 598411, "name": "Nestor Ceja", "officialType": "Home Plate"}, {"id": 427197, "name": "Chris Guccione", "officialType": "First Base"}, {"id": 676581, "name": "James Jean", "officialType": "Second Base"}, {"id": 605671, "name": "Charlie Ramos", "officialType": "Third Base"}], "game_date": "2026-09-06", "game_pk": 824469, "game_state": "Pre-Game", "home_plate_umpire": "Nestor Ceja", "observed_utc": "2026-09-06T13:17:11.907994+00:00", "prev_poll_utc": "2026-09-06T12:16:19.113802+00:00", "revealed": true}
+{"game_date": "2026-09-07", "observed_utc": "2026-09-06T13:17:12.199563+00:00", "poll": true}
