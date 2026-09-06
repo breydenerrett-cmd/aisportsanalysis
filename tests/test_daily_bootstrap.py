@@ -45,7 +45,17 @@ WORKFLOW = REPO / ".github" / "workflows" / "daily-loop.yml"
 
 
 def _run_bootstrap(data_dir, timeout=60):
-    env = {"AISPORTS_DATA_DIR": str(data_dir), "PATH": __import__("os").environ["PATH"]}
+    # These tests run against the REAL repo checkout, which now has a real,
+    # reachable `data-seed/statcast` branch on origin (the whole point of
+    # this task). Point the seed ref at a branch that does not exist so a
+    # missing manifest here still exercises the "no usable fallback"
+    # ESCALATE path these tests are about, rather than a real (and, on a
+    # network-restricted runner, slow/hanging) restore-then-rebuild run.
+    # DailyBootstrapStatcastSeedTest below covers the successful-restore
+    # path against a hermetic local fixture instead.
+    env = {"AISPORTS_DATA_DIR": str(data_dir),
+           "AISPORTS_STATCAST_SEED_REF": "data-seed/statcast-does-not-exist",
+           "PATH": __import__("os").environ["PATH"]}
     return subprocess.run(
         ["bash", str(BOOTSTRAP)],
         cwd=REPO, capture_output=True, text=True, env=env, timeout=timeout,
@@ -134,6 +144,150 @@ class DailyBootstrapProceedsWithStatcastManifestTest(unittest.TestCase):
             output = result.stdout
         self.assertIn("statcast manifest present", output)
         self.assertNotIn("ESCALATE: no Statcast manifest", output)
+
+
+class DailyBootstrapStatcastSeedTest(unittest.TestCase):
+    """Statcast seed-branch restore path (data-seed/statcast). Hermetic: the
+    'origin' remote used by these fixtures is a local bare repo on disk, not
+    GitHub -- no network involved. Each fixture is its own throwaway git repo
+    (scripts/daily_bootstrap.sh copied in, since the script cds to
+    dirname($0)/..), so none of this touches the real checkout's git state.
+    """
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.root = pathlib.Path(self._tmp.name)
+
+        # A bare "origin" repo, seeded (or not) with data-seed/statcast.
+        self.bare = self.root / "origin.git"
+        subprocess.run(["git", "init", "--quiet", "--bare", str(self.bare)],
+                        check=True)
+
+        # The work repo: just enough for `cd "$(dirname "$0")/.."` to land
+        # somewhere sane, plus a real 'origin' remote pointing at the bare repo.
+        self.work = self.root / "work"
+        (self.work / "scripts").mkdir(parents=True)
+        shutil.copy(BOOTSTRAP, self.work / "scripts" / "daily_bootstrap.sh")
+        subprocess.run(["git", "init", "--quiet"], cwd=self.work, check=True)
+        subprocess.run(["git", "remote", "add", "origin", str(self.bare)],
+                        cwd=self.work, check=True)
+
+        self.data_dir = self.work / "scratch_data"
+
+    def _seed_origin(self, n_windows=2):
+        """Push a data-seed/statcast orphan branch to self.bare from a
+        disposable source checkout."""
+        src = self.root / "seed_src"
+        src.mkdir()
+        subprocess.run(["git", "init", "--quiet"], cwd=src, check=True)
+        subprocess.run(["git", "checkout", "--quiet", "-b", "data-seed/statcast"],
+                        cwd=src, check=True)
+        statcast_dir = src / "data" / "historical" / "statcast"
+        statcast_dir.mkdir(parents=True)
+        windows = {}
+        for i in range(n_windows):
+            fname = f"pitches_2024-0{i+1}-01..2024-0{i+1}-04.jsonl.gz"
+            (statcast_dir / fname).write_bytes(b"\x1f\x8b\x00stub")
+            windows[f"2024-0{i+1}-01..2024-0{i+1}-04"] = {"rows": 1, "file": fname}
+        (statcast_dir / "manifest.json").write_text(json.dumps({"windows": windows}))
+        subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t",
+                        "add", "-f", "data/historical/statcast"], cwd=src, check=True)
+        subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t",
+                        "commit", "--quiet", "-m", "seed"], cwd=src, check=True)
+        subprocess.run(["git", "push", "--quiet", str(self.bare), "data-seed/statcast"],
+                        cwd=src, check=True)
+        return windows
+
+    def _prepopulate_other_stores(self):
+        # So the non-statcast steps skip their python rebuilds entirely
+        # (this fixture has no `src` package to import) and the run can
+        # reach "== daily_bootstrap: done ==" with exit 0.
+        hist = self.data_dir / "historical"
+        hist.mkdir(parents=True, exist_ok=True)
+        (hist / "mlb_results.manifest.json").write_text('{"dates": ["2024-01-01"]}')
+        (hist / "pitcher_logs.jsonl").write_text('{"pitcher": 1}\n')
+        (hist / "bullpen_log.jsonl").write_text('{"date": "2024-01-01"}\n')
+
+    def _run(self):
+        env = {"AISPORTS_DATA_DIR": str(self.data_dir),
+               "PATH": __import__("os").environ["PATH"]}
+        return subprocess.run(
+            ["bash", str(self.work / "scripts" / "daily_bootstrap.sh")],
+            cwd=self.work, capture_output=True, text=True, env=env, timeout=30,
+        )
+
+    def test_restores_from_seed_when_manifest_missing(self):
+        self._seed_origin(n_windows=2)
+        self._prepopulate_other_stores()
+        result = self._run()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("STATCAST_SEED=restored from data-seed/statcast", result.stdout)
+        self.assertIn("2 windows", result.stdout)
+        manifest = self.data_dir / "historical" / "statcast" / "manifest.json"
+        self.assertTrue(manifest.exists())
+        windows = json.loads(manifest.read_text())["windows"]
+        self.assertEqual(len(windows), 2)
+        gz_files = list((self.data_dir / "historical" / "statcast").glob("*.jsonl.gz"))
+        self.assertEqual(len(gz_files), 2)
+
+    def test_escalates_when_seed_fetch_fails(self):
+        # No branch pushed to self.bare -- the fetch will fail.
+        self._prepopulate_other_stores()
+        result = self._run()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("ESCALATE:", result.stdout)
+        self.assertIn("seed branch", result.stdout)
+        self.assertFalse((self.data_dir / "historical" / "statcast" / "manifest.json").exists())
+        # The escalation must still be a hard stop before other rebuilds.
+        self.assertFalse((self.data_dir / "historical" / "mlb_results.csv").exists())
+
+    def test_seed_fetch_not_attempted_when_manifest_present(self):
+        statcast_dir = self.data_dir / "historical" / "statcast"
+        statcast_dir.mkdir(parents=True)
+        (statcast_dir / "manifest.json").write_text(json.dumps(
+            {"windows": {"2020-01-01..2020-01-04": {"rows": 1, "file": "x.jsonl.gz"}}}
+        ))
+        self._prepopulate_other_stores()
+        # origin has no data-seed/statcast branch, so any fetch attempt would
+        # surface as a failure in the output if it were made.
+        result = self._run()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn("STATCAST_SEED", result.stdout)
+        self.assertNotIn("attempting to restore", result.stdout)
+        self.assertIn("statcast manifest present", result.stdout)
+
+    def test_seed_ref_env_var_is_honoured(self):
+        # Push the seed data to a differently-named branch and confirm the
+        # override env var, not the default ref, is what gets fetched.
+        src = self.root / "seed_src2"
+        src.mkdir()
+        subprocess.run(["git", "init", "--quiet"], cwd=src, check=True)
+        subprocess.run(["git", "checkout", "--quiet", "-b", "custom/seed-ref"],
+                        cwd=src, check=True)
+        statcast_dir = src / "data" / "historical" / "statcast"
+        statcast_dir.mkdir(parents=True)
+        (statcast_dir / "pitches_x.jsonl.gz").write_bytes(b"\x1f\x8b\x00stub")
+        (statcast_dir / "manifest.json").write_text(json.dumps(
+            {"windows": {"2024-01-01..2024-01-04": {"rows": 1, "file": "pitches_x.jsonl.gz"}}}
+        ))
+        subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t",
+                        "add", "-f", "data/historical/statcast"], cwd=src, check=True)
+        subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t",
+                        "commit", "--quiet", "-m", "seed"], cwd=src, check=True)
+        subprocess.run(["git", "push", "--quiet", str(self.bare), "custom/seed-ref"],
+                        cwd=src, check=True)
+        self._prepopulate_other_stores()
+
+        env = {"AISPORTS_DATA_DIR": str(self.data_dir),
+               "AISPORTS_STATCAST_SEED_REF": "custom/seed-ref",
+               "PATH": __import__("os").environ["PATH"]}
+        result = subprocess.run(
+            ["bash", str(self.work / "scripts" / "daily_bootstrap.sh")],
+            cwd=self.work, capture_output=True, text=True, env=env, timeout=30,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("STATCAST_SEED=restored from custom/seed-ref", result.stdout)
 
 
 class DailyLoopWorkflowWiringTest(unittest.TestCase):

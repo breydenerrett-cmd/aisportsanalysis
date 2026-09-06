@@ -300,6 +300,32 @@ bullpen) are small text files, well under 50MB combined even at a full
 season. Total cache payload stays far under the 1GB stop condition named
 in the task that added this workflow.
 
+### Statcast seed branch (`data-seed/statcast`)
+
+An `actions/cache` MISS on a truly cold repo (first run ever, or a cache
+eviction) used to leave `scripts/daily_bootstrap.sh` no option but the hard
+refusal above -- there was nothing else to restore from. There is now a
+second, git-native fallback: an orphan branch on origin,
+`data-seed/statcast` (ref name overridable via
+`AISPORTS_STATCAST_SEED_REF`), whose only content is a snapshot of
+`data/historical/statcast/` (manifest + `pitches_*.jsonl.gz` windows) plus
+a short README. When the manifest is missing, bootstrap now fetches this
+branch and materializes the store from it (`git fetch origin
+data-seed/statcast` + `git archive` into a temp dir, moved into place --
+never a `git checkout` against the working tree) before falling through to
+the same `ESCALATE`/exit 1 if that also fails. A successful restore prints
+`STATCAST_SEED=restored from <ref> (<n> windows, last window <date>)`.
+
+This branch is a **manual, out-of-band artifact** -- nothing in the daily
+loop, or any other workflow, ever pushes to it. To refresh it (e.g. once it
+has drifted far enough behind that a post-restore `statcast --catchup`
+would be catching up too many days in one run): from a checkout with a
+current `data/historical/statcast/`, in a separate temporary worktree,
+redo the same orphan-branch steps (`checkout --orphan data-seed/statcast`,
+remove everything, copy in the current store, commit) and force-push:
+`git push -u origin data-seed/statcast --force`. See the branch's own
+`README.md` for the full steps.
+
 ### Cold-start behaviour
 
 On the very first run (or after a cache eviction that drops the Statcast

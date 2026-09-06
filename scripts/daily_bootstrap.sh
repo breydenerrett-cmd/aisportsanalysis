@@ -28,13 +28,16 @@
 #        already refuses (`StatcastPitchError: ... no existing windows to
 #        extend -- run a full build() first`) rather than silently fetching
 #        a whole season -- confirmed by reading that function, not assumed.
-#        This script does not weaken that: a missing manifest here is a
-#        HARD STOP (ESCALATE, exit 1), never a `build()` call. A full-season
-#        `build()` is a deliberate one-time backfill an operator runs by
-#        hand (or via `actions/cache`'s own cross-run persistence), not
-#        something a daily bootstrap invents on its own. Measured cost of
-#        NOT having this: none applicable -- there is no automatic fallback,
-#        by design.
+#        This script does not weaken that: a missing manifest is never
+#        answered with a `build()` call. Instead, before escalating, it
+#        tries to RESTORE the store from the `data-seed/statcast` orphan
+#        branch (see docs/CAPTURE_EXTERNALIZATION.md, "Daily loop
+#        externalization") -- a manually-refreshed seed copy pushed to
+#        origin for exactly this cold-start case. Only if that fetch/
+#        materialize also fails does this remain a HARD STOP (ESCALATE,
+#        exit 1). A full-season `build()` is still a deliberate one-time
+#        backfill an operator runs by hand, never something this script
+#        invents on its own.
 #
 #   data/historical/mlb_results.csv (+ mlb_results.manifest.json)
 #     -> if the manifest is missing or empty, rebuilt for the CURRENT season
@@ -132,11 +135,46 @@ SEASON=${TODAY:0:4}
 
 echo "== daily_bootstrap: checking git-ignored inputs for $TODAY =="
 
-# --- 1. Statcast: hard refusal on a missing manifest -----------------------
+# --- 1. Statcast: restore from the seed branch, else hard refusal ----------
 STATCAST_STORE="$DATA_DIR/historical/statcast"
+STATCAST_SEED_REF="${AISPORTS_STATCAST_SEED_REF:-data-seed/statcast}"
 if [ ! -f "$STATCAST_STORE/manifest.json" ]; then
-    echo "ESCALATE: no Statcast manifest at $STATCAST_STORE/manifest.json -- refusing to run a full-season build() from a bootstrap script. Restore data/historical/statcast from the actions/cache (or an operator's backfill) before this workflow can proceed."
-    exit 1
+    echo "  no Statcast manifest at $STATCAST_STORE/manifest.json -- attempting to restore from seed branch '$STATCAST_SEED_REF'"
+    SEED_OK=1
+    if timeout -k 5 20 git fetch --depth 1 origin "$STATCAST_SEED_REF" 2>/tmp/statcast_seed_fetch.$$.log; then
+        SEED_TMPDIR=$(mktemp -d)
+        if git archive FETCH_HEAD data/historical/statcast 2>/tmp/statcast_seed_archive.$$.log \
+                | tar -x -C "$SEED_TMPDIR" \
+            && [ -d "$SEED_TMPDIR/data/historical/statcast" ]; then
+            mkdir -p "$DATA_DIR/historical"
+            rm -rf "$STATCAST_STORE"
+            mv "$SEED_TMPDIR/data/historical/statcast" "$STATCAST_STORE"
+            SEED_OK=0
+        else
+            cat /tmp/statcast_seed_archive.$$.log >&2 || true
+        fi
+        rm -rf "$SEED_TMPDIR"
+    else
+        cat /tmp/statcast_seed_fetch.$$.log >&2 || true
+    fi
+    rm -f /tmp/statcast_seed_fetch.$$.log /tmp/statcast_seed_archive.$$.log
+
+    if [ "$SEED_OK" -eq 0 ] && [ -f "$STATCAST_STORE/manifest.json" ]; then
+        SEED_INFO=$(python3 - "$STATCAST_STORE/manifest.json" <<'PYEOF'
+import json, sys
+with open(sys.argv[1]) as fh:
+    manifest = json.load(fh)
+windows = manifest.get("windows", {})
+last = sorted(windows)[-1] if windows else "none"
+last_date = last.split("..")[-1] if "." in last or ".." in last else last
+print(f"{len(windows)} windows, last window {last_date}")
+PYEOF
+)
+        echo "STATCAST_SEED=restored from $STATCAST_SEED_REF ($SEED_INFO)"
+    else
+        echo "ESCALATE: no Statcast manifest at $STATCAST_STORE/manifest.json and seed branch '$STATCAST_SEED_REF' could not be fetched/materialized -- refusing to run a full-season build() from a bootstrap script. Restore data/historical/statcast from the actions/cache, the seed branch, or an operator's backfill before this workflow can proceed."
+        exit 1
+    fi
 fi
 echo "  statcast manifest present ($STATCAST_STORE/manifest.json) -- catchup can extend it"
 
