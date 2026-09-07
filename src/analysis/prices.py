@@ -30,7 +30,7 @@ from src.core import odds as odds_math
 # Same floor as everywhere else in the system.
 MIN_BOOKS = 6
 
-LABEL = ("price improvement / line-shopping value -- a better execution "
+LABEL = ("price improvement / line-shopping value — a better execution "
          "price, not expected value and not a prediction")
 
 # Said whenever no side on a board beats the de-vigged consensus, which on a

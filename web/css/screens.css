@@ -2685,7 +2685,7 @@
 }
 .gv2-hero__still-tag { flex: none; font-family: var(--font-display); font-size: 11.5px; font-weight: 700; letter-spacing: .22em; color: var(--v-live); }
 .gv2-hero__still-body { flex: 1; min-width: 200px; font-size: 15px; line-height: 1.45; color: var(--v-t4); }
-.gv2-hero__still-time { flex: none; font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; color: var(--v-t7); white-space: nowrap; }
+.gv2-hero__still-time { flex: none; font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; color: var(--v-t6); white-space: nowrap; }
 
 /* ---- WHAT WE CHECKED TONIGHT tile panel --------------------------------*/
 .gv2-checked { position: relative; padding: var(--sp-8) var(--sp-9); --r: var(--r-lg); }
@@ -2744,7 +2744,11 @@
 .gv2-matchup__col { flex: 1 1 140px; }
 .gv2-matchup__col-label { display: block; font-family: var(--font-display); font-size: 9px; font-weight: 700; letter-spacing: .13em; color: var(--v-t5); margin-bottom: 4px; }
 .gv2-matchup__col-value { display: block; font-family: var(--font-mono); font-size: 22px; color: var(--v-t1); }
-.gv2-matchup__caption { margin-top: var(--sp-7); font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .1em; line-height: 1.6; color: var(--v-t7); }
+/* This is a sentence, not a tag: "market-implied consensus, de-vigged -- a
+   measurement of the board, not a forecast" is the one line that stops a
+   reader taking the two percentages for a prediction. It was 9.5px mono on
+   the quietest rung, which is how you hide something you meant to say. */
+.gv2-matchup__caption { margin-top: var(--sp-7); font-size: 12px; line-height: 1.55; color: var(--v-t5); }
 .gv2-matchup__venue { margin-top: var(--sp-6); font-family: var(--font-mono); font-size: 10px; letter-spacing: .11em; color: var(--v-t6); }
 .gv2-matchup__gap-note { margin-top: var(--sp-6); font-size: 12px; line-height: 1.5; color: var(--v-t6); }
 
@@ -2762,7 +2766,7 @@
 .gv2-featured__head { display: flex; align-items: center; gap: var(--sp-6); flex-wrap: wrap; margin-bottom: var(--sp-7); }
 .gv2-featured__tag { flex: none; font-family: var(--font-display); font-size: 11.5px; font-weight: 700; letter-spacing: .22em; color: var(--v-money-label); }
 .gv2-featured__sub { flex: 1; min-width: 200px; font-size: 15px; line-height: 1.45; color: var(--v-t4); }
-.gv2-featured__count { flex: none; font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; color: var(--v-t7); white-space: nowrap; }
+.gv2-featured__count { flex: none; font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; color: var(--v-t6); white-space: nowrap; }
 .gv2-featured__slot { position: relative; }
 .gv2-featured__loading { padding: 30px 0; font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; color: var(--v-t6); }
 

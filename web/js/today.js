@@ -367,17 +367,21 @@ function checkedTonightPanel(aggregates) {
   const panel = el("div", { class: "gv2-checked panel chamfer" });
   panel.appendChild(el("div", { class: "gv2-checked__title", text: "WHAT WE CHECKED TONIGHT" }));
   const tiles = el("div", { class: "gv2-checked__tiles" });
-  tiles.appendChild(checkedTile("GAMES EXAMINED", aggregates.gamesCount, "games_count"));
-  tiles.appendChild(checkedTile("BOARDS RECEIVED", aggregates.boardsReceived, "count has_board"));
-  tiles.appendChild(checkedTile("NO BOARD", aggregates.noBoard, "count !has_board"));
+  // The sub-labels used to be the expressions themselves -- "games_count",
+  // "count !has_board", "max board_summary.books". They said exactly where
+  // each number came from, which is the right instinct, but they said it in
+  // field names on a customer page. Same provenance, stated in words.
+  tiles.appendChild(checkedTile("GAMES EXAMINED", aggregates.gamesCount, "on tonight's slate"));
+  tiles.appendChild(checkedTile("BOARDS RECEIVED", aggregates.boardsReceived, "games with prices"));
+  tiles.appendChild(checkedTile("NO BOARD", aggregates.noBoard, "games with none"));
   tiles.appendChild(checkedTile("DEEPEST BOARD",
-    aggregates.deepest === null ? null : aggregates.deepest, "max board_summary.books"));
+    aggregates.deepest === null ? null : aggregates.deepest, "most books on one game"));
   tiles.appendChild(checkedTile("THINNEST BOARD",
-    aggregates.thinnest === null ? null : aggregates.thinnest, "min board_summary.books"));
+    aggregates.thinnest === null ? null : aggregates.thinnest, "fewest on one game"));
   panel.appendChild(tiles);
   panel.appendChild(el("p", { class: "gv2-checked__footnote",
-    text: "Every row above is computed client-side from board_summary on the games this screen "
-        + "received. No slate-wide book or quote total exists on this feed." }));
+    text: "Counted in your browser from the boards these games returned, not handed down as a "
+        + "slate total. No slate-wide book or quote total exists on this feed." }));
   const research = el("div", { class: "gv2-checked__research" });
   research.appendChild(el("span", { class: "gv2-checked__research-tag", text: "OBSERVATION" }));
   research.appendChild(el("span", { class: "gv2-checked__research-body",

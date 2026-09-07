@@ -47,8 +47,9 @@
   --text-3: #B9C0CC;
   --text-mute: #8A919E;
   --text-dim: #6F7682;
-  --text-faint: #5E6674;
-  --text-ghost: #4E555F;
+  /* same contrast lift as the --v-t5..t7 rungs below */
+  --text-faint: #7C8390;
+  --text-ghost: #6C737E;
 
   /* ---- team accents (identity only -- never a status color) ------ */
   --team-pit: #FDB827;
@@ -205,8 +206,14 @@
   --v-t1: #F0F1F4;
   --v-t2: #D5D7DE;
   --v-t3: #B7BAC4;
-  --v-t4: #888C96;
-  --v-t5: #6C707A;
-  --v-t6: #5A5E67;
-  --v-t7: #494D55;
+  /* The bottom three rungs were measured against the app background at
+     3.0:1, 2.6:1 and 2.3:1 -- below the 4.5:1 a body-size reader needs and
+     well below it at the 9.5-11px these rungs are usually set in. They are
+     lifted here rather than per-rule so every surface gains at once. The
+     ordering and the intent of the scale are unchanged: t5 is still the
+     quiet rung, t7 still the quietest. */
+  --v-t4: #949AA5;
+  --v-t5: #848A96;
+  --v-t6: #767C87;
+  --v-t7: #6A707B;
 }
