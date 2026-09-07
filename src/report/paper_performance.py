@@ -151,7 +151,23 @@ def _load_settled(accounts_dir=None) -> dict:
     order, one entry per account file under `accounts_dir` (default
     `data/paper_accounts/`). A row this module cannot reconstruct into a
     `SettledBet` (malformed/partial) is skipped rather than raising -- the
-    rest of that account's real history still gets reported."""
+    rest of that account's real history still gets reported.
+
+    DELIBERATE DIVERGENCE (flagged by the B3 verifier, 2026-09-07): this
+    re-implements the ledger-row -> SettledBet step that
+    `src.engine.settle_slate._reconstruct_settled_bets` also performs,
+    instead of delegating to it. Two reasons, both about a customer-facing
+    page: (1) that helper raises on a malformed row and this page must
+    render the rest of a system's real history instead of going dark;
+    (2) it takes a single system_id and its own ledger-path function,
+    while this reader walks whatever account files exist in an injected
+    directory (hermetic tests, containers with a partial data tree). The
+    numbers were reconciled exactly against `_reconstruct_settled_bets` +
+    `compute_realized_stats` and against the latest scorecards_v2 rows for
+    every class (verifier report, docs/DEMO_SHIP_CHECKLIST.md ledger). If
+    settle_slate's row parsing ever changes (e.g. a new stake policy),
+    `_settled_bet_from_row` must change with it -- that is the drift risk
+    this note exists to name."""
     out: dict = {}
     for f in _account_files(accounts_dir):
         system_id = f.stem

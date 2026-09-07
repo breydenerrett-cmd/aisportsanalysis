@@ -39,8 +39,43 @@ _(filled in at the end of the sprint — see the ledger in
 
 ## KNOWN LIMITATIONS
 
-_(filled in at the end)_
+- The board is only as fresh as the last deploy. GitHub's `*/15` cron is
+  best-effort (it fired at 01:00Z, skipped 01:15Z and 01:30Z); a watchdog in
+  the local session dispatches a capture when the newest run is over 45
+  minutes old. Every price shows its capture time; past 30 minutes the UI
+  says LAST UPDATED instead of LIVE.
+- Moneyline only on the odds board and in Bet Check. Spreads, totals and
+  first-five prices are captured into the store but not exposed on these
+  screens yet.
+- On 2026-09-07 four games had no usable board at capture time (AZ@KC,
+  MIN@DET, WSH@SD not quoted; LAA@BOS only 5 books, below the 6-book
+  consensus floor). They are listed as UNPRICED with the reason, never
+  scored.
+- No independent model probability exists. Every "model" reading is the
+  market-derived reference; every verdict is price versus the de-vigged
+  consensus (line-shopping value). A vigged board normally shows FAIR PRICE
+  and PASS; STRONG VALUE / VALUE will be rare and that is correct.
+- Engine decisions on the slate come from CONTROL and MARKET REFERENCE
+  systems (null baselines and calibration references); no forward-test
+  system staked a 2026-09-07 game. Performance therefore has real
+  forward-test history (64 settled bets) but no forward-test picks tonight.
+- The BET WON vs REASONING CORRECT split is all UNTESTED: control and
+  market-reference systems make no checkable mechanism claim, and the
+  forward-test systems' mechanism checks are recent. 70 legacy reviews
+  cannot be joined (pre-2026-09-03 key format).
+- Paper settlement runs at 10:00Z; 2026-09-06 and 2026-09-07 wagers show
+  PENDING until then. The daily-loop cron is also best-effort.
+- Saved bets (BETS) still require an invite token; it is hidden in demo mode.
+- Demo mode makes the read-only game surface public on the staging URL.
+  One env line reverses it.
 
 ## NEXT 3 IMPROVEMENTS
 
-_(filled in at the end)_
+1. A scheduler that is not GitHub's cron: a small external pinger (or the
+   cloud routine) that dispatches `forward-capture` every 15 minutes and
+   `daily-loop` at 10:00Z, so freshness never depends on a session.
+2. Expose spreads, totals and first-five on the odds board and Bet Check
+   (the store already has them; `oddspayload.MARKETS` and a builder each).
+3. Ship the forward-test systems' decisions onto the slate as tagged
+   FORWARD TEST · UNPROVEN interest, and settle 09-06/09-07 so Performance
+   shows this week's picks resolved.

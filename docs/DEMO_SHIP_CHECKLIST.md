@@ -113,6 +113,9 @@ A stale board can never carry the strongest words.
   research. Test-purity fix for `docs/FACTORY_OVERLAP_REPORT.md` (deferred,
   §11 of the takeover doc).
 - Filter/sort controls on the slate (ranking lives in Top Opportunities).
+- Refactor `paper_performance._load_settled` to delegate to
+  `settle_slate._reconstruct_settled_bets` (B3 verifier must-fix, maintainability
+  only; numbers reconcile exactly today; divergence documented in the docstring).
 
 ## Build order (one implementation stream, verifier after each)
 
@@ -168,3 +171,24 @@ A stale board can never carry the strongest words.
   11 checked, 7 priced, qualifying = TOR@ATH home +189 LEAN (+0.61), words
   {FAIR PRICE 7, PASS 6, LEAN 1}; TOR@ATH engine join 12 decisions / 9 staked.
   B3 started.
+- ~01:20Z the Claude Code process exited mid-B3 (workflow + monitors died;
+  no result journaled). 01:35Z resumed: B3's files were complete on disk;
+  33 tests green; in-process `/performance` returns real numbers (settled
+  through 2026-09-05; 283 settlements; FORWARD_TEST 41-20-3 +19.18u,
+  CONTROL 47-58-2 −14.06u, MARKET_REFERENCE 54-53-5 +4.19u, ALL +9.30u;
+  138 wagers pending 09-06/09-07; reasoning split all UNTESTED by design).
+  Committed B3; adversarial verifier + F1 front-end stream launched as
+  Agents (workflow not resumed -- it would have re-run B3 from scratch).
+- 01:37Z B3 pushed as 56831a6; deploy 34073572879 green; staging
+  `/performance` serves the real ledgers (label, disclaimer, 283 settled,
+  138 pending, 23 systems, 5-point series). Capture cron skipped the 01:15Z
+  and 01:30Z slots (GitHub */15 is best-effort); watchdog re-armed at :23/:53.
+- 01:46Z B3 PASSED adversarial verification: 49 tests; standings, class
+  rollups and reasoning-split counts reconciled EXACTLY against the raw
+  account ledgers and the latest scorecards_v2 rows for one system per
+  class; pending/settled boundary exact for all 421 wagers; 0 unresolved
+  matchups; limit validation and missing-file tolerance confirmed. One
+  must-fix (maintainability): `_load_settled` re-implements row -> SettledBet
+  instead of delegating to `settle_slate._reconstruct_settled_bets`;
+  documented as a deliberate divergence in the docstring (tolerant of
+  malformed rows, injectable directory) and listed under "Cut today".
