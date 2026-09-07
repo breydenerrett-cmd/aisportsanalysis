@@ -31,6 +31,7 @@ from api.onboarding import router as onboarding_router
 from api.signup import router as signup_router
 from api.support import router as support_router
 from api.betcheck import free_router as free_betcheck_router, router as betcheck_router
+from api.daily import router as daily_router
 from api.games import router as games_router
 from api.opportunities import router as opportunities_router
 from api.performance import router as performance_router
@@ -86,6 +87,9 @@ app.include_router(opportunities_router, dependencies=_authed_paid)
 # /performance -- Task B3's Paper / Research Performance surface, same
 # paid-demo gate as the rest of the read-only game surface.
 app.include_router(performance_router, dependencies=_authed_paid)
+# /daily, /daily/{date}, /record -- Task C1's Frozen Pregame Record surface,
+# same paid-demo gate as the rest of the read-only game surface.
+app.include_router(daily_router, dependencies=_authed_paid)
 app.include_router(meta_router)
 app.include_router(web_router)
 app.include_router(odds_router, dependencies=_authed_paid)
