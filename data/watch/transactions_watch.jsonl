@@ -744,3 +744,8 @@
 {"category": "il_activation", "date": "2026-09-07", "first_seen_utc": "2026-09-07T19:10:54.663239+00:00", "player": "Nick Pivetta", "player_id": 601713, "team": "SD", "transaction_id": 941531}
 {"category": "optioned", "date": "2026-09-07", "first_seen_utc": "2026-09-07T19:10:54.663239+00:00", "player": "Jhony Brito", "player_id": 666745, "team": "SD", "transaction_id": 941532}
 {"fetched_utc": "2026-09-07T19:10:56.975947+00:00", "game_date": "2026-09-07", "poll": true}
+{"fetched_utc": "2026-09-07T19:58:30.238071+00:00", "game_date": "2026-09-07", "poll": true}
+{"category": "il_activation", "date": "2026-09-07", "first_seen_utc": "2026-09-07T19:58:30.238071+00:00", "player": "Chris Murphy", "player_id": 669684, "team": "CWS", "transaction_id": 941533}
+{"category": "optioned", "date": "2026-09-07", "first_seen_utc": "2026-09-07T19:58:30.238071+00:00", "player": "Chris Murphy", "player_id": 669684, "team": "CWS", "transaction_id": 941534}
+{"category": "recalled", "date": "2026-09-07", "first_seen_utc": "2026-09-07T19:58:30.238071+00:00", "player": "Yovanny Cruz", "player_id": 672442, "team": "WSH", "transaction_id": 941540}
+{"fetched_utc": "2026-09-07T19:58:31.569291+00:00", "game_date": "2026-09-07", "poll": true}
