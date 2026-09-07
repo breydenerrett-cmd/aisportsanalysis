@@ -687,3 +687,4 @@ visible. A route-by-route review finds route-by-route bugs.
   settled (47-40-3, +1.50u, 0 pending) and 09-07 frozen with 123 staked
   positions pending. Worth remembering: after any daily loop the demo needs
   a deploy, or it will keep showing yesterday's record with no error.
+- 13:32Z watchdog dispatched forward-capture (newest run was 60 min old)
