@@ -739,3 +739,8 @@
 {"fetched_utc": "2026-09-07T17:28:35.634256+00:00", "game_date": "2026-09-07", "poll": true}
 {"fetched_utc": "2026-09-07T17:55:03.515980+00:00", "game_date": "2026-09-07", "poll": true}
 {"fetched_utc": "2026-09-07T17:55:05.699379+00:00", "game_date": "2026-09-07", "poll": true}
+{"fetched_utc": "2026-09-07T19:10:54.663239+00:00", "game_date": "2026-09-07", "poll": true}
+{"category": "designated", "date": "2026-09-07", "first_seen_utc": "2026-09-07T19:10:54.663239+00:00", "player": "Blake Hunt", "player_id": 675448, "team": "SD", "transaction_id": 941529}
+{"category": "il_activation", "date": "2026-09-07", "first_seen_utc": "2026-09-07T19:10:54.663239+00:00", "player": "Nick Pivetta", "player_id": 601713, "team": "SD", "transaction_id": 941531}
+{"category": "optioned", "date": "2026-09-07", "first_seen_utc": "2026-09-07T19:10:54.663239+00:00", "player": "Jhony Brito", "player_id": 666745, "team": "SD", "transaction_id": 941532}
+{"fetched_utc": "2026-09-07T19:10:56.975947+00:00", "game_date": "2026-09-07", "poll": true}
