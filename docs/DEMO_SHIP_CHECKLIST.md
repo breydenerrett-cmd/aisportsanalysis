@@ -662,3 +662,4 @@ visible. A route-by-route review finds route-by-route bugs.
   also means no dispatch was needed at 06:28Z. Two genuine firings at
   01:00:46Z and 06:06:21Z, about 5h apart, against a */15 cron: the
   scheduler works and fires roughly 1 time in 20. No dispatch this tick.
+- 06:58Z watchdog dispatched forward-capture (newest run was 52 min old)
