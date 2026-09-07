@@ -312,3 +312,6 @@
 {"game_date": "2026-09-08", "observed_utc": "2026-09-07T11:50:58.389161+00:00", "poll": true}
 {"game_date": "2026-09-07", "observed_utc": "2026-09-07T12:32:24.326168+00:00", "poll": true}
 {"game_date": "2026-09-08", "observed_utc": "2026-09-07T12:32:24.545251+00:00", "poll": true}
+{"game_date": "2026-09-07", "observed_utc": "2026-09-07T13:32:43.188042+00:00", "poll": true}
+{"commence_time": "2026-09-07T18:10:00Z", "crew": [{"id": 427013, "name": "Lance Barksdale", "officialType": "Home Plate"}, {"id": 605674, "name": "Ryan Wills", "officialType": "First Base"}, {"id": 504381, "name": "Will Little", "officialType": "Second Base"}, {"id": 658292, "name": "Derek Thomas", "officialType": "Third Base"}], "game_date": "2026-09-07", "game_pk": 824062, "game_state": "Pre-Game", "home_plate_umpire": "Lance Barksdale", "observed_utc": "2026-09-07T13:32:43.188042+00:00", "prev_poll_utc": "2026-09-07T12:32:24.326168+00:00", "revealed": true}
+{"game_date": "2026-09-08", "observed_utc": "2026-09-07T13:32:43.318120+00:00", "poll": true}
