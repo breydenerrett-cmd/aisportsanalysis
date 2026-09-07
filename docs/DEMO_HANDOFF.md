@@ -85,16 +85,22 @@ put the token wall back).
   market-derived reference; every verdict is price versus the de-vigged
   consensus (line-shopping value). A vigged board normally shows FAIR PRICE
   and PASS; STRONG VALUE / VALUE will be rare and that is correct.
-- **The forward-test systems have not frozen a decision since 2026-09-03**
-  (finding F-1 in `docs/DEMO_SHIP_CHECKLIST.md`). They are still registered
-  and still dispatched every day, but they now propose nothing while the
-  baselines keep writing rows, and the break lines up with the daily loop
-  moving to GitHub Actions. So every engine decision on the current slate
-  comes from a null baseline or a market reference, neither of which is a
-  pick to follow. Performance still shows their real history (64 settled
-  bets, +19.18 units) because that history is frozen and settled. Until
-  F-1 is fixed, the honest answer to "what does the system like today" is
-  "nothing with a thesis" and the product says exactly that.
+- **The forward-test systems have not frozen a decision since 2026-09-03,
+  and now we know why.** All sixteen require a posted lineup before they will
+  play. The daily slate freezes at 10:00Z, deliberately hours before first
+  pitch — but on 09-05 every one of the fifteen games posted its lineup
+  between 17:16Z and 22:39Z, seven to twelve hours later. So they refuse
+  "no lineup" on every game, every day, and until tonight they did it
+  silently. Proven by experiment, written up in
+  `docs/FINDING_F1_DIAGNOSIS.md`. Consequence: every engine decision on the
+  current slate is a null baseline or a market reference, neither of which is
+  a pick to follow, so the honest answer to "what does the system like today"
+  is "nothing with a thesis" — and the product says exactly that rather than
+  dressing a baseline up as a recommendation. Their real history still shows
+  on RESULTS (64 settled bets, +19.18 units) because it is frozen and settled.
+  **This one needs your call** — see the three options in
+  `docs/DEMO_SHIP_CHECKLIST.md` under "DECISION FOR BREY". The silent half is
+  already fixed: the next slate run logs why each system stood down.
 - The BET WON vs REASONING CORRECT split is all UNTESTED: control and
   market-reference systems make no checkable mechanism claim, and the
   forward-test systems' mechanism checks are recent. 70 legacy reviews

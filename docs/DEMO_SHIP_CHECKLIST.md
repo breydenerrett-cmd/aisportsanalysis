@@ -270,13 +270,37 @@ Evidence, in order:
   all 27 ids, then "decisions written: 96 new", none of them from a genome.
 - So the genomes are invoked and silently propose nothing for every game; the
   baselines in the same run do write rows (including `refused_thin` ones).
-- Timing lines up exactly with the daily loop moving to GitHub Actions
-  (P0-2, first Actions-run loop on 09-05). A fresh runner has no gitignored
-  research stores; `scripts/daily_bootstrap.sh` deliberately restores only the
-  Statcast, results, pitcher and bullpen stores and states that
-  `data/processed/matchup_matrix.jsonl` "is NOT read by the daily loop". If a
-  genome's feature path reads that (or another unrestored store) it would
-  return no proposal without raising -- the leading hypothesis, NOT yet proven.
+- ROOT CAUSE, PROVEN (diagnostic 02:35Z, full evidence in
+  `docs/FINDING_F1_DIAGNOSIS.md`). It is NOT a missing data store -- that
+  hypothesis was tested and disproved (book depth 5-11 vs the genomes'
+  `min_books=3`; every event resolved to a `game_pk`; the lineup watch files
+  are growing every 15 minutes). The genomes all set `require_lineup=True`,
+  and `decide_with_reason` checks that FIRST. The daily loop's cron is
+  `0 10 * * *`, deliberately "well before the earliest first pitch", and
+  `decision_time_for_game` pins the decision instant to the capture that
+  exists when the slate runs -- about 10:06Z. On the real 09-05 slate all 15
+  games posted their lineups between 17:16Z and 22:39Z, seven to twelve hours
+  LATER. So every genome refuses `NO_LINEUP` on every game, every day, since
+  the migration. Confirms itself in the history too: every genome decision
+  through 09-03 has a `decision_utc` between 16:25Z and 01:51Z, because the
+  old cloud session invoked the loop repeatedly through the day rather than
+  once in the morning.
+- Controlled proof (read-only, empty temp data dir, no writer called): real
+  genome `4a7700d36b3855ab`, 11 books, generous features, varying one input --
+  `lineup_posted=False` -> `(NO_PLAY, 'NO_LINEUP')` -> `propose()` returns `()`;
+  `lineup_posted=True` -> a real `Decision` -> `propose()` returns a proposal.
+- TWO SEPARATE DEFECTS. (a) The schedule genuinely excludes every
+  lineup-dependent system from playing. That is an owner decision, not a bug
+  to fix at 2am: moving or adding a slate run changes what "frozen pregame"
+  means and risks a second set of frozen decisions for the same date (the
+  duplicate-writer hazard in `docs/LOCAL_PARENT_TAKEOVER.md` section 9).
+  LEFT FOR BREY -- see the handoff. (b) The silence was a defect on its own
+  terms: `decide_with_reason` returns a NAMED refusal and the adapter threw
+  it away, so sixteen systems stood down for four days without one line
+  anywhere saying why. FIXED tonight: the adapter now logs
+  `[evolab] <id> stood down: reason=... game_pk=... t=...` to stderr, so the
+  next 10:00Z run says plainly what it did. Not an ESCALATE, because standing
+  down is correct behaviour; it just must never again be invisible.
 
 Why it matters for the product: the genomes are the only systems with a
 directional thesis. Their 64 settled bets are what the Performance page shows
@@ -286,11 +310,15 @@ market references, which the product must never present as picks to follow. So
 this is fixed. Every surface built tonight states that rather than dressing a
 baseline up as a recommendation.
 
-Next step (not done tonight, deliberately -- it is data-plane work that can only
-be validated by a real 10:00Z slate): run one genome's `propose()` on a fresh
-checkout with the runner's exact data tree, find the missing input, and either
-restore it in `daily_bootstrap.sh` or make the genome refuse loudly (an
-`ESCALATE` line) instead of silently proposing nothing. A system that vanishes
-without a refusal row is the real defect here, whatever the missing input is.
+DECISION FOR BREY (defect (a), deliberately not taken tonight): the systems
+with a thesis only play once lineups are posted, and the slate currently
+freezes at 10:00Z when no lineup exists. Options, in increasing order of
+consequence: (1) leave it -- the genomes never play, and the product says so;
+(2) add a SECOND slate run in the afternoon (say 21:30Z) that decides only the
+games whose lineups have posted, which means one date can carry two frozen
+decision sets and the ledger/settlement path must be checked for that;
+(3) move the single run later, which trades pre-game lead time for lineup
+coverage and changes every decision's point-in-time meaning. This is a
+methodology call, not an implementation detail.
 
 Ledger continues below.

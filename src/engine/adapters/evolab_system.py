@@ -24,6 +24,7 @@ either. `propose()` never reads `PricedBoard` at all.
 
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
 
 from src.board.ids import selection_id as _selection_id
@@ -101,6 +102,22 @@ class EvolabGenomeSystem:
         decision, reason = decide_with_reason(
             self.genome, worldview, registry=self.registry)
         if not decision:
+            # SAY WHY, ALWAYS (finding F-1, 2026-09-07). `decide_with_reason`
+            # returns a NAMED refusal (NO_LINEUP, NO_SIGNAL, ...) and this
+            # branch used to throw it away, so a genome that stood down left
+            # no trace anywhere: no proposal, no candidate, no DecisionRecord,
+            # not one line of log. Every one of the 16 registered genomes went
+            # silent on 2026-09-05 when the daily loop moved to a single
+            # 10:00Z Actions run -- hours before lineups post, so every game
+            # refused NO_LINEUP -- and nothing in the system said so. A
+            # refusal ROW cannot be written here (NO_LINEUP never reaches a
+            # market or selection, which DecisionRecord requires), so the
+            # reason goes to the run log instead. Not an ESCALATE: standing
+            # down is correct behaviour, it just must never again be invisible.
+            print(f"[evolab] {self.id} stood down: reason={reason} "
+                  f"game_pk={getattr(view, 'game_pk', None)} "
+                  f"t={getattr(view, 'information_time', None)}",
+                  file=sys.stderr, flush=True)
             return ()
         # A genome's `score` is explicitly NOT a probability or an edge
         # (decide.py's own docstring). It cannot be projected onto a price
