@@ -2973,6 +2973,47 @@
 .opp-unpriced__matchup { font-size: 13px; color: var(--v-t2); }
 .opp-unpriced__reason { font-size: 12.5px; color: var(--v-t5); }
 
+/* EVERY OTHER MARKET ON THE BOARD (web/js/opportunities.js's
+   derivativeTable) -- every priced non-moneyline contract, one flat table
+   ranked by value points across markets, same zebra/hover/right-align
+   treatment as EVERY PRICED SIDE above. The MARKET column is what keeps
+   first-five lines, totals, alternates and props distinguishable at a
+   glance since ranking mixes them together on purpose. */
+.opp-deriv { margin-bottom: var(--sp-9); }
+.opp-deriv__market { display: inline-block; padding: 3px 9px; font-family: var(--font-mono); font-size: 10px;
+  font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--v-t3);
+  background: rgba(255, 255, 255, .045); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08);
+  border-radius: 4px; white-space: nowrap; }
+.opp-deriv .ov2-table tbody tr:nth-child(even) { background: rgba(255, 255, 255, .022); }
+.opp-deriv .ov2-table tbody tr:hover { background: rgba(0, 224, 255, .05); }
+.opp-deriv .ov2-table td:nth-child(4),
+.opp-deriv .ov2-table td:nth-child(5),
+.opp-deriv .ov2-table td:nth-child(6),
+.opp-deriv .ov2-table td:nth-child(7) {
+  text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--v-t2);
+}
+.opp-deriv .ov2-table td:nth-child(5) { text-align: center; font-size: 11px; color: var(--v-t5); }
+.opp-deriv .ov2-table td:nth-child(8) { text-align: center; }
+.opp-deriv .ov2-table td:nth-child(9) { text-align: right; }
+.opp-deriv__wager { color: var(--v-t2); }
+
+/* THIN BOARD (web/js/opportunities.js's derivativeThinSummary) -- the
+   1,000+ contracts a strict floor kept from getting a verdict, stated as
+   counts per market plus the API's own reason sentence ONCE, never a word
+   or a value repeated per row. Amber matches tokens.css's reserved
+   caution/pending meaning -- this is exactly that: checked, not called. */
+.opp-thin { margin-bottom: var(--sp-9); padding: var(--sp-8) var(--sp-9); }
+.opp-thin__head { display: flex; align-items: baseline; gap: var(--sp-5); flex-wrap: wrap; margin-bottom: var(--sp-4); }
+.opp-thin__eyebrow { font-family: var(--font-display); font-size: 12px; font-weight: 800; letter-spacing: .1em;
+  color: var(--v-warn-label); }
+.opp-thin__count { font-family: var(--font-mono); font-size: 11px; letter-spacing: .04em; color: var(--v-t5); }
+.opp-thin__reason { margin: 0 0 var(--sp-5); font-size: 13px; line-height: 1.5; color: var(--v-t3); max-width: 640px; }
+.opp-thin__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
+.opp-thin__row { display: flex; align-items: baseline; gap: var(--sp-4); padding: var(--sp-3) 0;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .04); flex-wrap: wrap; }
+.opp-thin__ratio { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--v-t2); min-width: 60px; }
+.opp-thin__market { font-size: 12.5px; color: var(--v-t4); }
+
 /* ---- PAPER / RESEARCH PERFORMANCE (web/js/performance.js) ---------------*/
 .perf-screen { padding: var(--sp-9) var(--gutter-desktop) var(--sp-15); display: flex; flex-direction: column; gap: var(--sp-11); }
 .perf-head { display: flex; flex-direction: column; gap: var(--sp-4); }
@@ -3104,6 +3145,17 @@
   .opp-ranked .ov2-table td { padding-left: var(--sp-3); padding-right: var(--sp-3); }
   .opp-ranked .ov2-table td:nth-child(7),
   .opp-ranked .ov2-table td:nth-child(8) { white-space: nowrap; }
+
+  /* EVERY OTHER MARKET ON THE BOARD is nine columns -- same rail-scroll
+     treatment as EVERY PRICED SIDE just above, not column-dropping. */
+  .opp-deriv .ov2-table { min-width: 680px; }
+  .opp-deriv .ov2-table th,
+  .opp-deriv .ov2-table td { padding-left: var(--sp-3); padding-right: var(--sp-3); }
+  .opp-deriv .ov2-table td:nth-child(7),
+  .opp-deriv .ov2-table td:nth-child(8),
+  .opp-deriv .ov2-table td:nth-child(9) { white-space: nowrap; }
+
+  .opp-thin { padding: var(--sp-6) var(--sp-6); }
 }
 
 /* ---- PRICE VERDICT block (web/js/betcheck.js's renderPriceVerdict) -----*/

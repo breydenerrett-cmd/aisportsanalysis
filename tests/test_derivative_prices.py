@@ -141,9 +141,12 @@ class InstantTests(unittest.TestCase):
 
 class LabelTests(unittest.TestCase):
     def test_known_markets_are_phrased_as_bets(self):
+        # Clubs are said the way the rest of the product says them (CHC, not
+        # "Chicago Cubs") -- the odds feed's full names would otherwise sit
+        # next to abbreviated moneyline rows on the same screen.
         cases = {
             "totals_1st_5_innings": "First 5: Over 4.5",
-            "team_totals": "Chicago Cubs team total Over 4.5",
+            "team_totals": "CHC team total Over 4.5",
         }
         for market, expected in cases.items():
             team = "Chicago Cubs" if market == "team_totals" else None

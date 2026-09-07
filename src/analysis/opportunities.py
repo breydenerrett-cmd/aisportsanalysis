@@ -49,6 +49,7 @@ from src.analysis import derivative_prices
 from src.analysis import gamepayload
 from src.analysis import priceverdict
 from src.analysis import synthesis as synthesis_mod
+from src.pipeline import slate as slate_mod
 from src.report import engine_bridge
 
 MARKET = "h2h"
@@ -136,24 +137,34 @@ def _derivative_rows(date, now, entries, candidates=None) -> list:
     if candidates is None:
         candidates = derivative_prices.candidates_for_date(date)
 
-    # Derivative rows name their clubs, not this product's game ids. Joining
-    # on the two club names is what lets a first-five line sit on the same
-    # card as the game's moneyline; a contract whose clubs are not on this
-    # slate keeps a null game_id rather than being attached to a guess.
+    # The odds feed names clubs in full ("Atlanta Braves"); the slate names
+    # them by abbreviation ("ATL"). Joining the two raw strings matches
+    # nothing, so both sides go through `slate.team_abbrev_from_name`, which
+    # is the one place in this repo that resolves a club name. A contract
+    # whose clubs do not resolve, or are not on this slate, keeps a null
+    # game_id rather than being attached to a guess.
+    def _abbr(name):
+        return slate_mod.team_abbrev_from_name(name) or name
+
     by_clubs = {}
     for entry in entries:
         game = entry["dossier"].game
-        by_clubs[(game.get("away_team"), game.get("home_team"))] = (
-            gamepayload.game_id(game), game)
+        key = (_abbr(game.get("away_team")), _abbr(game.get("home_team")))
+        by_clubs[key] = (gamepayload.game_id(game), game)
 
     rows = []
     for cand in candidates:
-        joined = by_clubs.get((cand.get("away_team"), cand.get("home_team")))
+        away_abbr = _abbr(cand.get("away_team"))
+        home_abbr = _abbr(cand.get("home_team"))
+        joined = by_clubs.get((away_abbr, home_abbr))
         gid, game = joined if joined else (None, {})
         row = {
             "game_id": gid,
-            "away_team": cand.get("away_team"),
-            "home_team": cand.get("home_team"),
+            # The slate's own naming, so a derivative row reads the same way
+            # as the moneyline row it sits beside. Falls back to the feed's
+            # name when the club does not resolve -- never to a blank.
+            "away_team": game.get("away_team") or away_abbr,
+            "home_team": game.get("home_team") or home_abbr,
             "first_pitch_utc": game.get("start_time_utc") or cand.get("commence_time"),
             "venue": game.get("venue"),
             "side": cand.get("side"),

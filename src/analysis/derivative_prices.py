@@ -60,6 +60,7 @@ import os
 from typing import Optional
 
 from src.analysis import prices
+from src.pipeline import slate as slate_mod
 
 DERIVATIVE_STORE = os.path.join("data", "processed", "derivative_markets.jsonl")
 PROP_STORE = os.path.join("data", "processed", "prop_prices.jsonl")
@@ -125,10 +126,25 @@ def _line_text(line) -> Optional[str]:
     return str(int(value)) if value == int(value) else str(value)
 
 
+def _club(name):
+    """A club as the rest of the product names it. The odds feed says
+    "Atlanta Braves"; every other surface says ATL, and a row reading
+    "Atlanta Braves first 5 moneyline" next to one reading "ATL @ PHI" looks
+    like two different products. `slate.team_abbrev_from_name` is the one
+    resolver in this repo; an unrecognised club keeps its full name rather
+    than being truncated into a guess."""
+    if not name:
+        return name
+    return slate_mod.team_abbrev_from_name(name) or name
+
+
 def _wager_text(market, *, side, line, team=None, player=None) -> Optional[str]:
     """How the bet is said. Returns None when the pieces needed are absent
     -- the caller drops the contract rather than printing half a bet."""
     line_text = _line_text(line)
+    if market in MONEYLINE_MARKETS + SPREAD_MARKETS:
+        side = _club(side) if side else side
+    team = _club(team) if team else team
     if market in TOTALS_MARKETS:
         if not side or line_text is None:
             return None
