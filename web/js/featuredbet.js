@@ -102,9 +102,9 @@
  */
 
 import { el, clear, verdictLabel,
-  formatAmerican, formatConsensusShare, formatEasternClock, formatBook } from "./dom.js";
+  formatAmerican, formatConsensusShare, formatEasternClock } from "./dom.js";
 import { teamColors } from "./teamcolors.js";
-import { teamName } from "./labels.js";
+import { teamName, bookLabel } from "./labels.js";
 
 const MIN_BOOKS = 6; // src/analysis/prices.py's MIN_BOOKS -- the real consensus floor, repeated
                       // here only for the "above the N-book floor" caption, never re-derived as a check.
@@ -342,9 +342,13 @@ export function renderFeaturedBet(container, standing, opts = {}) {
       const wrap = el("span", {});
       const pts = typeof s.priceImprovement.improvementPoints === "number"
         ? `${s.priceImprovement.improvementPoints >= 0 ? "+" : ""}${(s.priceImprovement.improvementPoints * 100).toFixed(2)} pts` : null;
-      // formatBook turns the machine slug (`williamhill_us`) into the book's
-      // name -- the slug was reaching the page verbatim.
-      const book = formatBook(s.priceImprovement.book);
+      // bookLabel, not formatBook. formatBook only strips underscores and
+      // upper-cases, so `williamhill_us` became "WILLIAMHILL US" while the
+      // market panel directly below on the same page called the same book
+      // "Caesars" -- one book, two names, on one screen. bookLabel is the
+      // table of what each book actually goes by, and returns an unknown
+      // key unchanged rather than inventing a name.
+      const book = bookLabel(s.priceImprovement.book);
       const bookPrice = formatAmerican(s.priceImprovement.americanPrice);
       const consensusPct = formatConsensusShare(s.priceImprovement.consensusImpliedProbability);
       const bits = [];
