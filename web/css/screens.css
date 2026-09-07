@@ -2836,7 +2836,9 @@
 /* ---- VALUE METER (web/js/valuemeter.js) ---------------------------------*/
 .vmeter { display: flex; flex-direction: column; gap: var(--sp-4); margin: var(--sp-6) 0; }
 .vmeter-row { display: grid; grid-template-columns: 1fr 2fr auto; align-items: center; gap: var(--sp-5); }
-.vmeter-row__label { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .04em; color: var(--v-t4); }
+/* "MARKET-IMPLIED PROBABILITY (de-vigged consensus)" is the label that stops
+   the meter being read as a win probability. It earns a legible size. */
+.vmeter-row__label { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .04em; color: var(--v-t4); }
 .vmeter-row__track { position: relative; height: 8px; background: rgba(255, 255, 255, .08); --r: 3px;
   clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r)); }
 .vmeter-row__fill { display: block; height: 100%; border-radius: inherit; }
@@ -3325,7 +3327,9 @@
   clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r)); }
 .mx-card__matchup { flex: 1; font-family: var(--font-display); font-style: italic; font-size: 16px; font-weight: 800; color: var(--v-t0);
   text-align: center; }
-.mx-card__meta { margin: 0; font-family: var(--font-mono); font-size: 10.5px; color: var(--v-t5); text-align: center; }
+/* First pitch and venue: one of the most-read facts on a matchup card, and
+   it was set smaller than the fine print. Data, not a label. */
+.mx-card__meta { margin: 0; font-family: var(--font-mono); font-size: 12px; color: var(--v-t4); text-align: center; }
 .mx-card__probables { display: flex; justify-content: space-between; gap: var(--sp-5); font-size: 12px; color: var(--v-t4); }
 .mx-card__probable { display: flex; align-items: baseline; gap: var(--sp-2); }
 .mx-card__probable-abbr { font-family: var(--font-mono); font-size: 10px; color: var(--v-t6); }
@@ -3346,7 +3350,9 @@
    book and capture age drop to their own line beneath. */
 .mx-ml__side { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: var(--sp-4); row-gap: 3px; }
 .mx-ml__price { order: 1; font-family: var(--font-display); font-style: italic; font-size: 22px; font-weight: 800; color: #FFF; line-height: 1; }
-.mx-ml__consensus { order: 2; margin-left: auto; font-family: var(--font-mono); font-size: 10.5px; color: var(--v-live-label); white-space: nowrap; }
+/* Carries a percentage and a book count -- a figure a reader is meant to
+   compare against the price beside it, so it is sized like one. */
+.mx-ml__consensus { order: 2; margin-left: auto; font-family: var(--font-mono); font-size: 12px; color: var(--v-live-label); white-space: nowrap; }
 .mx-ml__book { order: 3; flex-basis: 100%; font-family: var(--font-mono); font-size: 10px; color: var(--v-t5); }
 .mx-ml__age { order: 4; flex-basis: 100%; font-family: var(--font-mono); font-size: 9.5px; color: var(--v-t6); }
 .mx-ml__none { margin: 0; font-size: 12px; color: var(--v-t6); }
