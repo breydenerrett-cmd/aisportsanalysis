@@ -721,3 +721,9 @@
 {"fetched_utc": "2026-09-07T11:50:58.013182+00:00", "game_date": "2026-09-07", "poll": true}
 {"fetched_utc": "2026-09-07T12:32:24.019765+00:00", "game_date": "2026-09-07", "poll": true}
 {"fetched_utc": "2026-09-07T13:32:42.968711+00:00", "game_date": "2026-09-07", "poll": true}
+{"fetched_utc": "2026-09-07T14:24:31.365319+00:00", "game_date": "2026-09-07", "poll": true}
+{"category": "il_activation", "date": "2026-09-07", "first_seen_utc": "2026-09-07T14:24:31.365319+00:00", "player": "Joe Ryan", "player_id": 657746, "team": "MIN", "transaction_id": 941516}
+{"category": "optioned", "date": "2026-09-07", "first_seen_utc": "2026-09-07T14:24:31.365319+00:00", "player": "Garrett Acton", "player_id": 670183, "team": "MIN", "transaction_id": 941517}
+{"category": "recalled", "date": "2026-09-07", "first_seen_utc": "2026-09-07T14:24:31.365319+00:00", "player": "Jonah Tong", "player_id": 804636, "team": "NYM", "transaction_id": 941518}
+{"category": "optioned", "date": "2026-09-07", "first_seen_utc": "2026-09-07T14:24:31.365319+00:00", "player": "Justin Hagenman", "player_id": 663795, "team": "NYM", "transaction_id": 941519}
+{"fetched_utc": "2026-09-07T14:24:33.374612+00:00", "game_date": "2026-09-07", "poll": true}
