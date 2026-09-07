@@ -312,7 +312,38 @@ market references, which the product must never present as picks to follow. So
 this is fixed. Every surface built tonight states that rather than dressing a
 baseline up as a recommendation.
 
-DECISION FOR BREY (defect (a), deliberately not taken tonight): the systems
+### F-1 UPDATE (05:10Z): the owner chose option 2; it is built and staged
+
+Brey authorised the afternoon slate run. Built and committed:
+- `scripts/afternoon_slate.sh` (8cb07c8) — runs `engine slate` for today and
+  nothing else. No settle, no eod (those read yesterday and running them
+  twice would rewrite a day's report), no odds spend: it decides against the
+  board forward capture already paid for. Prints the per-class decision count
+  for the date so the run log answers the question the pass exists to answer,
+  and says so plainly when the genomes refuse again. Mirrors the daily loop's
+  git-lock, rebase and ESCALATE conventions exactly.
+- `deploy/workflows/afternoon-slate.yml` — cron 21:10Z (5:10pm Eastern), late
+  enough that evening lineups are posted, early enough to be pre-game for the
+  7pm ET and later games; `run_slate`'s own first-pitch guard skips anything
+  already under way. Shares the `forward-capture` concurrency group, restores
+  the morning loop's cache, fails on any ESCALATE line.
+
+BLOCKED ON ONE PERMISSION, and only that. Registering a workflow file needs a
+credential with the `workflow` OAuth scope; both the git credential and the
+`gh` token here carry `'gist', 'read:org', 'repo'` and nothing else, so the
+server refuses the push. The finished workflow is therefore committed under
+`deploy/workflows/` with the exact registration steps (including the
+default-branch copy a `schedule` event requires) rather than left on one
+machine. See `deploy/workflows/README.md`.
+
+NOT YET VERIFIED END TO END, and cannot be from here: with no workflow
+registered there is nothing to dispatch, and a local run would refuse anyway
+because this machine has no `data/historical/` tree. The script passes
+`bash -n`, and every command in it is one the daily loop already runs
+successfully in Actions — but the first real run should be a manual dispatch
+that someone watches, not the cron.
+
+DECISION FOR BREY (defect (a), as originally recorded): the systems
 with a thesis only play once lineups are posted, and the slate currently
 freezes at 10:00Z when no lineup exists. Options, in increasing order of
 consequence: (1) leave it -- the genomes never play, and the product says so;
