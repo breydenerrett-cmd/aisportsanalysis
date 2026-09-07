@@ -14,7 +14,7 @@
  */
 
 import { apiGet } from "./api.js";
-import { el, clear, renderUnknown, humanizeKey } from "./dom.js";
+import { el, clear, renderUnknown, humanizeKey, formatEasternClock, formatAge } from "./dom.js";
 import { BRAND_NAME } from "./brand.js";
 
 /** The always-visible one-liner above the fold. Deliberately short and
@@ -70,9 +70,19 @@ export async function renderDisclaimerFooter(container) {
 }
 
 /** A game/board staleness readout shared by every view that carries a
- * `{observed_utc, age_seconds, has_market|has_board}`-shaped object --
- * renders the fields verbatim rather than composing a "fresh"/"stale"
- * label the API did not supply (no client-side threshold judgment). */
+ * `{observed_utc, age_seconds, has_market|has_board}`-shaped object.
+ *
+ * STILL NO CLIENT-SIDE THRESHOLD JUDGMENT. This used to enumerate the
+ * object's keys and print each value verbatim, which put
+ * `age_seconds 13070.244993` and `has_board true` on a customer page --
+ * raw field names, a raw ISO timestamp and a float of seconds, reading as
+ * debug output rather than as the freshness note it is. Every fact is
+ * still here and none is softened; the values are only formatted the way
+ * the rest of the product formats them (ET clock, `formatAge`), and
+ * `has_board` is restated in words. What is NOT added is a verdict: no
+ * "fresh", no "stale", no threshold the API did not supply. Unknown keys
+ * still fall through to the old key/value treatment, so a field the API
+ * adds later shows up rather than being silently dropped. */
 export function renderStaleness(staleness) {
   const section = el("dl", { class: "staleness", "data-hook": "staleness" });
   if (!staleness || typeof staleness !== "object") {
@@ -80,10 +90,44 @@ export function renderStaleness(staleness) {
     section.appendChild(el("dd", {}, [renderUnknown(null)]));
     return section;
   }
-  for (const key of Object.keys(staleness)) {
+
+  const pair = (key, label, node) => {
     section.appendChild(el("dt", { class: `staleness__key staleness__key--${key}`,
-      "data-raw-key": key, text: humanizeKey(key) }));
-    section.appendChild(el("dd", { class: "staleness__value" }, [renderUnknown(staleness[key])]));
+      "data-raw-key": key, text: label }));
+    section.appendChild(el("dd", { class: "staleness__value" }, [node]));
+  };
+
+  const known = new Set(["books", "observed_utc", "age_seconds", "has_board", "has_market"]);
+
+  if (typeof staleness.books === "number") {
+    pair("books", "Books", el("span", { text: `${staleness.books} compared` }));
+  } else if ("books" in staleness) {
+    pair("books", "Books", renderUnknown(staleness.books));
+  }
+
+  if ("observed_utc" in staleness || "age_seconds" in staleness) {
+    const clock = staleness.observed_utc == null ? null : formatEasternClock(staleness.observed_utc);
+    const age = typeof staleness.age_seconds === "number" ? formatAge(staleness.age_seconds) : null;
+    let text = null;
+    if (clock && age) text = `${clock} ET · ${age} ago`;
+    else if (clock) text = `${clock} ET`;
+    else if (age) text = `${age} ago`;
+    pair("observed_utc", "Prices captured",
+      text === null ? renderUnknown(staleness.observed_utc == null ? null : staleness.observed_utc)
+                    : el("span", { text }));
+  }
+
+  for (const key of ["has_board", "has_market"]) {
+    if (!(key in staleness)) continue;
+    const label = key === "has_board" ? "Board" : "Priced market";
+    pair(key, label, staleness[key] == null
+      ? renderUnknown(null)
+      : el("span", { text: staleness[key] ? "loaded" : "none on file" }));
+  }
+
+  for (const key of Object.keys(staleness)) {
+    if (known.has(key)) continue;
+    pair(key, humanizeKey(key), renderUnknown(staleness[key]));
   }
   return section;
 }

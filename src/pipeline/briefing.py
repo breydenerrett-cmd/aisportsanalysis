@@ -159,7 +159,7 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
                for e in entries) and entries:
         notes.append(
             "No play on the whole slate. That is the normal case, not a failure "
-            "of the scan -- two roughly major-league teams playing a close game "
+            "of the scan — two roughly major-league teams playing a close game "
             "is what most of a major-league day looks like.")
 
     return {

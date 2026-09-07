@@ -1227,7 +1227,32 @@
   .games-grid .tile { width: auto; height: 172px; }
 }
 .games-toolbar { display: flex; align-items: center; gap: var(--sp-7); flex-wrap: wrap;
-  padding: 0 var(--gutter-desktop) var(--sp-9); }
+  /* top padding is not decoration: with the panel chrome gone the "SLATE
+     DATE" label is the first ink on the screen and was clipped by the
+     shell's own top edge. */
+  padding: var(--sp-7) var(--gutter-desktop) var(--sp-9); }
+/* The slate picker was a bare browser date input in a boxed panel -- an OS
+   control sitting on a broadcast-styled board. Same treatment the Odds
+   date bar already uses: no panel chrome, label above, the control itself
+   carrying the product's surface and mono face. */
+.games-toolbar .field-form { padding: 0; background: none; box-shadow: none;
+  /* the element still carries .chamfer, whose clip-path cut the corner off
+     the "SLATE DATE" label once the panel padding that used to hold it
+     clear was gone -- no chrome left to chamfer, so drop the clip */
+  clip-path: none;
+  align-items: flex-end; gap: var(--sp-5); }
+.games-toolbar .field-row { min-width: 0; gap: var(--sp-3); }
+.games-toolbar .field-row label { font-family: var(--font-display); font-size: 10px;
+  font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--v-t5); }
+.games-toolbar .field-row input[type="date"] {
+  background: var(--v-s1); box-shadow: inset 0 0 0 1px var(--v-edge); color: var(--v-t1);
+  padding: 10px 13px; font-family: var(--font-mono); font-size: 13.5px; --r: var(--r-chip);
+}
+.games-toolbar .field-row input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1); opacity: .55; cursor: pointer;
+}
+.games-toolbar .field-row input[type="date"]:hover::-webkit-calendar-picker-indicator { opacity: 1; }
+
 @media (max-width: 899px) { .games-toolbar { padding: 0 var(--gutter-mobile) var(--sp-7); } }
 
 .odds-game__back, .gv-back {

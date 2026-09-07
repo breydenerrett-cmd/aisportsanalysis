@@ -164,7 +164,9 @@ function widestSpreadLabel(summary, games) {
   const sideAbbr = widest.side === "home" ? entry.home_team : entry.away_team;
   return {
     matchup: `${entry.away_team} @ ${entry.home_team}`,
-    detail: `spread_cents ${sideAbbr} ${widest.spread_cents}c`,
+    // "spread_cents" was the payload field name leaking onto the page.
+    // Same number, said the way a reader can use it.
+    detail: `${widest.spread_cents}c apart on ${sideAbbr}`,
   };
 }
 
@@ -518,7 +520,9 @@ function masthead(summary, games, freshLabel) {
   stats.appendChild(statTile("WIDEST SPREAD",
     widest ? widest.matchup : "—",
     widest ? widest.detail : "no priceable spread on this slate", { textFigure: true }));
-  stats.appendChild(statTile("GAMES ON THE SLATE", String(gamesCount), "games_count"));
+  // sample slot deliberately empty: it used to carry the literal payload
+  // field name `games_count`, which is a debug label, not a sample size.
+  stats.appendChild(statTile("GAMES ON THE SLATE", String(gamesCount), null));
   section.appendChild(stats);
 
   const legend = el("div", { class: "ov2-legend" });
