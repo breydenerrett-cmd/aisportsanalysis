@@ -688,3 +688,4 @@ visible. A route-by-route review finds route-by-route bugs.
   positions pending. Worth remembering: after any daily loop the demo needs
   a deploy, or it will keep showing yesterday's record with no error.
 - 13:32Z watchdog dispatched forward-capture (newest run was 60 min old)
+- 15:28Z watchdog dispatched forward-capture (newest run was 64 min old)
