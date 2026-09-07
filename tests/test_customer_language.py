@@ -65,6 +65,38 @@ BANNED_FIELD_NAME_PARTS = (
 # `ev` alone would false-positive on e.g. "evidence"; match as whole
 # underscore-delimited tokens instead.
 
+# Strings that legitimately name a field inside a sentence, checked one by
+# one. Each is either a developer-facing validation message, an internal
+# research report that no customer route serves, or a CSS class name inside
+# a stylesheet literal. Anything NOT on this list is a defect: the same
+# escape reached Today, Games, Odds, Bet Check and the daily record on
+# 2026-09-07 and had to be caught by eye. Add to this list only after
+# confirming the string cannot reach a customer page.
+PROSE_FIELD_NAME_ALLOWED = frozenset({
+    # ValueError text raised at the contract boundary -- developers only.
+    ("src/analysis/betcheck.py", "away_club"),
+    ("src/analysis/betcheck.py", "home_club"),
+    ("src/analysis/contracts.py", "evidence_status"),
+    # Store diagnostics: which file and key could not be joined. These are
+    # operator reasons in the audit trail, deliberately precise.
+    ("src/report/daily_record.py", "game_pk"),
+    ("src/report/daily_record.py", "boxscores_2026"),
+    ("src/report/daily_record.py", "event_game_map"),
+    # End-of-day research report; not served by any customer route.
+    ("src/report/eod.py", "model_derived"),
+    ("src/report/eod.py", "market_derived"),
+    ("src/report/eod.py", "edge_bps"),
+    ("src/report/eod.py", "assumption_exposure"),
+    ("src/report/eod.py", "log_loss"),
+    # CSS class names inside the dashboard's stylesheet literal.
+    ("src/report/dashboard.py", "forward_testing"),
+    ("src/report/dashboard.py", "tuning_evidence"),
+    ("src/report/dashboard.py", "historical_candidate"),
+    ("src/report/dashboard.py", "no_play"),
+    ("src/report/dashboard.py", "market_unavailable"),
+    ("src/report/dashboard.py", "tested_null"),
+})
+
 
 def _string_literals(path):
     """All string constants in a file, minus docstrings, with line numbers."""
@@ -112,6 +144,40 @@ class BannedLanguageScan(unittest.TestCase):
                         _violations_in(text, f"{rel}:{lineno}"))
         self.assertEqual(violations, [],
                          "banned customer language reintroduced:\n"
+                         + "\n".join(violations))
+
+    def test_no_payload_field_names_inside_customer_prose(self):
+        """A snake_case token in a SENTENCE is a field name that escaped.
+
+        Not the same rule as BANNED_FIELD_NAME_PARTS above, which is about
+        dishonest CONCEPTS (edge, EV, win probability). This one is about
+        register: `value_points`, `board_summary`, `age_seconds`,
+        `has_board`, `games_count`, `spread_cents` and `thesis_support` all
+        reached customer pages on 2026-09-07 inside otherwise plain English,
+        and every one had to be found by eye on a rendered page. They are
+        honest measures said in the wrong language.
+
+        A bare dict key like "away_team" is fine and is not matched -- the
+        rule needs a sentence around the token, which is what separates a
+        payload key from a line someone reads.
+        """
+        token = re.compile(r"\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b")
+        violations = []
+        for directory in SCAN_DIRS:
+            for path in sorted(directory.glob("*.py")):
+                rel = str(path.relative_to(ROOT)).replace("\\", "/")
+                for lineno, text in _string_literals(path):
+                    if len(text.split()) < 5:
+                        continue          # a key or a fragment, not prose
+                    for match in token.finditer(text):
+                        found = match.group(0)
+                        if (rel, found) in PROSE_FIELD_NAME_ALLOWED:
+                            continue
+                        violations.append(
+                            f"{rel}:{lineno} says {found!r} in prose: "
+                            f"{text.strip()[:90]!r}")
+        self.assertEqual(violations, [],
+                         "payload field names reached customer prose:\n"
                          + "\n".join(violations))
 
     def test_no_banned_field_names_on_contracts(self):

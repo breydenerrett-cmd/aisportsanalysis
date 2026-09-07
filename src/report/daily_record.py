@@ -93,8 +93,11 @@ BASIS = (
     "pitch; prices and confidence are as of that instant, never restated."
 )
 
+# "value_points" is the payload's field name, and it was reaching a customer
+# page inside an otherwise plain-English sentence. The measure it names is
+# the same one the price verdict already calls value points on screen.
 _STRONGEST_PREGAME_BASIS = (
-    "Highest value_points among staked plays, chosen with no knowledge of "
+    "The most value points of any staked play, chosen with no knowledge of "
     "the outcome."
 )
 
@@ -779,10 +782,14 @@ def day_index(limit=30, *, decisions=None, wagers=None, accounts_dir=None,
     return out
 
 
+# This note is served on GET /record and rendered under the record strip on
+# Today and Results, so it is prose a customer reads. It used to name three
+# payload fields (units_net, return_on_units, settled_through) inside an
+# otherwise plain-English sentence. Same meaning, said in words.
 _RECORD_STRIP_NOTE = (
-    "A window with zero settled bets reports null units_net and "
-    "return_on_units rather than a fabricated number; settled_through "
-    "names the latest date this record actually has a confirmed outcome for."
+    "A window with no settled bets reports no units and no return rather "
+    "than a fabricated number, and the settled-through date names the "
+    "latest day this record actually has a confirmed outcome for."
 )
 
 
