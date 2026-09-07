@@ -20,16 +20,16 @@ from typing import Optional
 
 from fastapi import APIRouter, Request
 
-from api.games import _build_entries, _record_page_view
+from api.games import (_build_entries, _record_page_view,
+                       engine_decisions_for_date)
 from src.analysis import opportunities as opportunities_mod
-from src.report import engine_bridge
 
 router = APIRouter()
 
 
 def _build_payload(date: str, request: Optional[Request], route: str) -> dict:
     entries, _notes, meta = _build_entries(date)
-    engine_by_key = engine_bridge.decisions_for_date(date)
+    engine_by_key = engine_decisions_for_date(date)
     payload = opportunities_mod.build_opportunities(
         entries, date=date, now=datetime.now(timezone.utc),
         engine_by_key=engine_by_key)

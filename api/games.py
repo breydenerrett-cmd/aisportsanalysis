@@ -127,6 +127,29 @@ def _build_entries(date: str, **build_slate_kwargs) -> list:
     return entries, notes, meta
 
 
+# The engine-bridge join reads the whole decisions ledger (~2.3 MB), the
+# wagers ledger and the multi-book event index on every call -- about 400 ms,
+# and it was being paid per request by BOTH `/opportunities/{date}` and every
+# `/game/...` view (measured 2026-09-07). The result only changes when the
+# slate runs, so it caches on the same terms as the entries above.
+_engine_cache = freshness.SingleFlightTTLCache(ttl_s=ENTRIES_CACHE_TTL_S)
+
+
+def engine_decisions_for_date(date: str) -> dict:
+    """`engine_bridge.decisions_for_date`, cached per date and shared by
+    every api/ caller. Returns an empty mapping rather than raising if the
+    ledgers are unreadable -- the bridge already degrades that way and a
+    missing engine join must never take a page down."""
+    def _rebuild():
+        return engine_bridge.decisions_for_date(date)
+
+    try:
+        value, _meta = _engine_cache.get(("engine_decisions", date), _rebuild)
+    except Exception:  # noqa: BLE001 -- see docstring
+        return {}
+    return value
+
+
 def _price_verdicts_for_entry(dossier, *, now: datetime) -> dict:
     """`{"away": PriceVerdict-dict, "home": PriceVerdict-dict}` from this
     game's own `price_improvement` board -- the same de-vigged-consensus-
@@ -169,7 +192,7 @@ def _engine_summary_for_entry(dossier, date: str) -> Optional[dict]:
     # odds feed spell those clubs differently -- see engine_bridge.game_key.
     key = engine_bridge.game_key(game.get("away_team"), game.get("home_team"),
                                  game.get("date") or date)
-    by_key = engine_bridge.decisions_for_date(date)
+    by_key = engine_decisions_for_date(date)
     summaries = by_key.get(key)
     return engine_bridge.summarize_game(summaries) if summaries else None
 
