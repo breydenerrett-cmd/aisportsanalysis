@@ -2214,6 +2214,14 @@
   .bc2-connector { padding-left: 12px; }
   .bc2-wall { padding: var(--sp-8); gap: var(--sp-7); }
   .bc2-wall__still { max-width: 100%; flex-basis: 100%; }
+}
+/* ^ This closing brace was missing (found 2026-09-07 on linehound-staging):
+   without it every section below -- GAME QUICK V2, GAME ADVANCED V2,
+   GAMEDAY V2, ODDS V2 -- was parsed INSIDE the 899px media query above and
+   only applied at phone widths. Desktop rendered Gameday and Game View as
+   unstyled text while the rail, top strip and buttons (earlier files)
+   looked normal. The sessions that shipped this only ever saw a narrow
+   viewport. */
 /* =====================================================================
    GAME QUICK V2
    Traced from design/linehound-v2/'LINEHOUND V2 Full Product.dc.html'
@@ -2468,6 +2476,11 @@
   .gav-have__row { flex-direction: column; gap: var(--sp-2); }
   .gav-have__fact { margin-left: 0; }
   .gav-tiles { gap: var(--sp-5); }
+}
+/* ^ Second missing closing brace (same 2026-09-07 finding as the one after
+   the Bet Check V2 mobile block): without it the whole GAMEDAY V2 section
+   below lived inside this 899px query and the desktop Gameday screen
+   rendered as bare text. */
 /* =====================================================================
    GAMEDAY V2
    Traced from design/linehound-v2/'LINEHOUND V2 Full Product.dc.html':
