@@ -180,13 +180,18 @@ a guarantee.
 
 ## NEXT 3 IMPROVEMENTS
 
-1. **Fix F-1** so the systems with an actual thesis start deciding again, and
-   make a system that cannot get its inputs refuse loudly instead of
-   vanishing. Everything else here is cosmetic next to this one.
-2. A scheduler that is not GitHub's cron: a small external pinger (or the
+1. **Fix F-1** so the systems with an actual thesis start deciding again.
+   Right now every position on the slate is a null baseline or a market
+   reference, which the product correctly refuses to dress up as a pick —
+   so the honest answer to "what does it like tonight" is "nothing". That
+   is the one change that turns this from a very good instrument into a
+   product with an opinion. Everything else here is cosmetic next to it.
+2. **Fix F-2** so the matchup page can tell a story. Publish the rebuilt
+   results, pitcher and bullpen stores the way the Statcast pitch store is
+   already published, copy them into the image, and thread them through
+   `_build_entries` the way the CLI already does. Starters, records, bullpen
+   and splits then light up on every game.
+3. A scheduler that is not GitHub's cron: a small external pinger (or the
    cloud routine) that dispatches `forward-capture` every 15 minutes and
-   `daily-loop` at 10:00Z, so freshness never depends on a session.
-3. Expose run line and total on the odds board and Bet Check. The store
-   already captures them (87 moneyline, 84 run-line and 87 totals rows in
-   the 02:05Z instant); the consensus just has to be computed per line, as
-   books do not always quote the same total.
+   `daily-loop` at 10:00Z, so freshness never depends on a session being
+   alive. Tonight the cron fired once in four hours.
