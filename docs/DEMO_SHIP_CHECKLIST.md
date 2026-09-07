@@ -755,3 +755,36 @@ visible. A route-by-route review finds route-by-route bugs.
 
   No dispatch this tick; newest capture was 42 min old at 21:50Z but rule
   (1) applies, and the task's own next tick will take it.
+
+---
+
+## F-2 SHIPPED — 2026-09-07, matchup detail enrichment
+
+The container never lacked code for records, starters, bullpen, lineups,
+travel or weather. It lacked two things: the stores (git-ignored, living
+only in the daily-loop actions/cache) and the wiring (`_build_entries`
+passed only the results store where the CLI briefing passes seven inputs).
+
+| Part | Change | Evidence |
+|---|---|---|
+| Wiring | `api/games._enrichment_inputs` loads pitcher logs, bullpen workload, posted lineups, handedness, travel and the newest captured forecast; nothing touches the network on the request path; every input absent-safe | 101 API tests incl. absent-safety, str/int lineup re-key, corrupt-log-is-a-gap |
+| Image | `.dockerignore` admits five files (~2.9 MB); Statcast (40 MB) stays out | `deploy/Dockerfile` COPY; runner `ls -la data/historical/` in run 34168712264 shows them restored |
+| Deploy | `deploy-staging` restores `daily-loop-data-` cache before build; miss is non-fatal | deploy 4a8c6b1 success |
+| Verified | staging `GET /game/2026-09-07/CIN/LAD`: 9 sections present -- teams 69-74 / 86-57 (n=143), starters ERA 2.79 vs 5.29, bullpen CIN 9 relievers / 25.3 IP and LAD 10 / 18.3 over 7 days, travel CIN 1,892 mi, weather 82.8°F at first pitch | browser probe, same-origin |
+
+Two contradictions this exposed on the page itself, both fixed in the
+follow-up commit: the consolidated gap panel still printed a fixed
+sentence claiming records/bullpen/lineups were "not in this build" under
+an identity panel showing 69-74; and the `matchup_depth` gap reason
+printed the pitch store's filesystem path plus "run the statcast build
+first". The panel now names the payload's own gap keys; the reason names
+no path and gives no orders. Both tests that pinned the old wording were
+repointed at the invariant their names already stated.
+
+Local verification path, for next time: `scratchpad/build_stores.py`
+rebuilt all five stores from the free MLB API in ~25 min (results 58s,
+pitcher logs 78s, lineups 11s, bullpen the rest), zero odds credits.
+
+Still absent and named as gaps: batter-vs-pitcher history, pitcher splits
+(both ~200 live calls per slate -- need a store), pitch arsenals (Statcast
+not in the image), roster news (store not in the cache list).

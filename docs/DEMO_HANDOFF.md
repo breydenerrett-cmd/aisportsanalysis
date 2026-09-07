@@ -210,12 +210,32 @@ per-game refusal reason is printed directly above it.
    `FORWARD_TEST` count comes back non-zero this remains a very good
    instrument rather than a product with an opinion. Everything else here
    is cosmetic next to it.
-2. **Fix F-2** so the matchup page can tell a story. Publish the rebuilt
-   results, pitcher and bullpen stores the way the Statcast pitch store is
-   already published, copy them into the image, and thread them through
-   `_build_entries` the way the CLI already does. Starters, records, bullpen
-   and splits then light up on every game.
-3. A scheduler that is not GitHub's cron: a small external pinger (or the
-   cloud routine) that dispatches `forward-capture` every 15 minutes and
-   `daily-loop` at 10:00Z, so freshness never depends on a session being
-   alive. Tonight the cron fired once in four hours.
+2. ~~**Fix F-2**~~ **SHIPPED 2026-09-07 (commit 4a8c6b1).** The matchup
+   page now carries team records with sample n, starter form (ERA, FIP,
+   WHIP, K/9, IP per start, days rest, recent vs season), bullpen workload
+   over a 7-day window with per-reliever availability, posted lineups with
+   handedness and platoon fields, travel load, and the forecast at first
+   pitch. `api/games._enrichment_inputs` loads the same stores the CLI
+   briefing always did; the deploy workflow restores them from the
+   daily-loop cache; the image carries the five small ones (~3 MB). What
+   is still honestly absent on a request path: batter-vs-pitcher history
+   and pitcher platoon splits (each is ~200 live MLB calls per slate and
+   needs a store, not a fetch) and pitch arsenals (the 40 MB Statcast store
+   stays out of the image until a route reads it). The page names each of
+   those as a gap with its reason.
+   **Next in this lane:** build the splits and batter-vs-pitcher stores in
+   the daily loop so they can ride the same cache -- that turns two more
+   gaps into sections with zero request-path network.
+3. ~~A scheduler that is not GitHub's cron~~ **SHIPPED 2026-09-07.** A
+   Windows Scheduled Task, `linehound-capture-tick`, runs
+   `scripts/capture_tick.ps1` every 15 minutes on Brey's PC: it dispatches
+   `forward-capture` only when nothing is in flight and the newest run is
+   40+ minutes old, and `daily-loop` once per UTC date after 10:00Z. Every
+   decision is logged to `data/logs/capture_tick.log`. Measured the same
+   day: GitHub's own cron fired 6 times against a `*/15` schedule that
+   should have produced ~96 -- about 6% -- so the task is what actually
+   keeps the board fresh. See `docs/LOCAL_SCHEDULER.md`.
+   **Known architecture gap, recorded deliberately:** it only runs while
+   the PC is awake. If the machine sleeps overnight, captures stop until it
+   wakes. The honest next step if that bites is an external scheduler
+   (a cloud cron hitting `workflow_dispatch`), not a bigger local one.
