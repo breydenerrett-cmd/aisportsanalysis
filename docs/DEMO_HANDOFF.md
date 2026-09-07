@@ -12,10 +12,40 @@ Opens straight into the product (no invite token: the staging config sets
 `APP_PUBLIC_DEMO=1`; remove that one line in `deploy/fly.staging.toml` to
 put the token wall back).
 
-## WHAT WORKS
+## WHAT WORKS (verified in the browser on staging, desktop and 375px)
 
-_(filled in at the end of the sprint — see the ledger in
-`docs/DEMO_SHIP_CHECKLIST.md` for the verified state as of each push)_
+- TODAY: the slate date badge (TONIGHT'S SLATE / NEXT SLATE), the honest
+  hero, WHAT WE CHECKED TONIGHT, then TOP OPPORTUNITIES: qualifying cards
+  (word chip, value points, market-implied vs price-implied probability
+  meter, NO INDEPENDENT MODEL YET, evidence tier, reasons, risks, capture
+  age) or the exact text NO QUALIFYING BEST BETS RIGHT NOW, always followed
+  by the ranked table of every priced side and the unpriced games with
+  reasons. Then the Featured Bet and the slate rail.
+- GAMES / GAME: schedule, probable starters, the NO PLAY / price panel,
+  and the new MODEL vs MARKET panel (both sides' verdicts and meters, the
+  market-derived reference with engine provenance, ENGINE DECISIONS with
+  counts, staked plays and fatal counterarguments as warnings).
+- CHECK (Bet Check): the ten-block check plus the PRICE VERDICT block
+  (STRONG VALUE … INSUFFICIENT DATA, fair price, your price, the meter,
+  evidence tier, books, capture age, reasons, risks). Prefilled from a
+  card's CHECK THIS PRICE link. Uses the open route in demo mode (no
+  three-check cap).
+- ODDS: the moneyline board, best price, de-vigged consensus, book count,
+  capture time and stale flag (unchanged, now actually priced again after
+  the board regression fix).
+- RESULTS (PAPER / RESEARCH PERFORMANCE): disclaimer, settled-through and
+  pending counts, summary tiles (forward-test systems and all systems),
+  per-class tables with one-line explanations, recent picks with
+  W/L/P/PENDING, BET WON vs REASONING CORRECT, cumulative-units sparkline.
+  Numbers reconcile exactly with the paper-account ledgers and the latest
+  scorecards (adversarially verified).
+- Freshness: every board shows its capture time and age; the shell strip
+  says LIVE within 15 minutes and LAST UPDATED after; verdicts drop to the
+  LOW tier past 2 hours and INSUFFICIENT DATA when there is no consensus.
+- The verdict rule and every honesty invariant are documented in
+  `docs/DEMO_SHIP_CHECKLIST.md` and pinned by tests (265 Bet Check /
+  contract / language tests, 36 opportunities/bridge tests, 33 performance
+  tests, 130 web tests, all green in CI on every push tonight).
 
 ## TOP 3 THINGS TO CLICK
 

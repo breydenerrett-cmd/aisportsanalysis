@@ -192,3 +192,30 @@ A stale board can never carry the strongest words.
   instead of delegating to `settle_slate._reconstruct_settled_bets`;
   documented as a deliberate divergence in the docstring (tolerant of
   malformed rows, injectable directory) and listed under "Cut today".
+- 01:58Z F1 (front end) delivered by the single Sonnet stream: 130 web /
+  language / auth tests green; braces balanced 1098/1098; pushed c3fbc95;
+  deploy green. Local QA at desktop: Today (slate banner, TOP OPPORTUNITIES
+  card + ranked table + unpriced list), Performance (tiles, class tables,
+  recent picks, reasoning 2x2, sparkline), Game (MODEL vs MARKET + ENGINE
+  DECISIONS), Bet Check (PRICE VERDICT block: ATH +189 LEAN, PHI −175
+  OVERPRICED). No console errors.
+- S10 found in QA: with no token the client used /betcheck/free (three
+  checks for life) -- the ticket read "2 OF 3 LEFT". Fixed: public_demo flag
+  shared via api.js; Bet Check uses the open /betcheck route in demo mode.
+  Pushed 1af1ef2; deploy green.
+- 02:00Z Mobile (375px) sanity locally: Today and Performance render, no
+  horizontal overflow, tab bar carries RESULTS.
+- 02:06Z FINAL STAGING SMOKE (https://linehound-staging.fly.dev/app):
+  lands on /web/ with no token; MON SEP 7 · NEXT SLATE; TOP OPPORTUNITIES
+  with the ATH +189 LEAN card and the 14-row ranked table; nav TODAY /
+  GAMES / CHECK / ODDS / RESULTS (BETS hidden); RESULTS renders the ledgers
+  (settled through 09-05, 138 pending, 77 table rows, 2x2, sparkline);
+  GAME TOR@ATH shows starters, MODEL vs MARKET (PASS / LEAN), 12 decisions ·
+  9 played · 9 staked, every panel revealed; Bet Check prefilled from the
+  query posts to /betcheck (not the capped free route) and renders PRICE
+  VERDICT LEAN, fair +184, tier MEDIUM · 9 books · captured 65 min ago;
+  no console errors on any page; /health and /meta carry no secret words;
+  deployed motion.js has the reveal fail-safe. Capture dispatched by hand
+  at 02:04Z (run 34075074865) because the cron skipped every slot after
+  01:00Z and the session watchdog cannot fire mid-turn.
+- SHIPPED. Handoff: docs/DEMO_HANDOFF.md.
