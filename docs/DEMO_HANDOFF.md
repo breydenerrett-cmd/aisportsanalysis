@@ -148,10 +148,17 @@ Two scheduled GitHub jobs keep the site alive with no session running:
 
 - **forward-capture** every 15 minutes: pulls the board, commits it, and on
   the first slot of each hour redeploys staging so the site's prices move.
-  GitHub's cron is best-effort and skipped most slots tonight (it fired at
-  01:00Z, then nothing until a manual dispatch at 02:04Z). If the board looks
-  hours old in the morning, that is why, and one click on
-  Actions → forward-capture → Run workflow fixes it.
+  Two things to know before you read a stale board as a failure:
+  - The odds pass only buys prices when a game starts within three hours
+    (`WINDOW_MINUTES` in the dense capture). Overnight, with the next first
+    pitch at 1:05pm ET, it correctly captures nothing — the 02:46Z run
+    logged "0 capture(s), 0 observations". Prices start moving again about
+    three hours before the first game, so a morning visit may show a board
+    ten hours old, correctly labelled, and then watch it refresh.
+  - GitHub's cron is best-effort and skipped most slots tonight (it fired
+    once at 01:00Z; the rest were manual dispatches). If nothing has run for
+    hours once games are close, one click on Actions → forward-capture →
+    Run workflow fixes it.
 - **daily-loop** at 10:00Z: settles the previous day, freezes the new slate,
   and writes the end-of-day review. This has never yet completed on a
   schedule (the one dispatched run failed by design, mid-evening, because
