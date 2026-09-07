@@ -858,3 +858,46 @@ enum `likely_unavailable`; unknown fields still fall through with
 underscores turned to spaces. Verified locally at 1440px and 390px: 21
 availability chips (1 warn), zero raw tokens, zero overflow. 126 web
 tests pass; gamestory.css braces 43/43.
+
+---
+
+## FINAL QA — 2026-09-07 ~23:30Z, live staging, build 2a51643
+
+Method: every route opened in the browser pane against
+https://linehound-staging.fly.dev, at 1440px and at 390px. Per route, a
+script walked every leaf text node and counted: contrast below 4.5:1
+against the page background, prose under 11px, snake_case tokens in the
+rendered text, and horizontal overflow (`scrollWidth > clientWidth`).
+Console errors read after each sweep.
+
+| Route | Contrast <4.5:1 | Prose <11px | Raw tokens | Overflow 1440 | Overflow 390 |
+|---|---|---|---|---|---|
+| Landing `/` | — | — | 0 (live slate, sample badge hidden) | no | no |
+| Today | 4 | 23 | 0 | no | no |
+| Games | 1 | 2 | 0 | no | no |
+| Bet Check | 2 | 3 | 0 | no | no |
+| Odds | 2 | 26 | 0 | no | no |
+| Performance | 1 | 11 | 7 (system ids, deliberate) | no | no |
+| Signup | 1 | 1 | 0 | no | no |
+| Daily record | 1 | 2 | 0 | no | no |
+| Matchup (CIN @ LAD) | 5 | 13 | 0 | no | no |
+
+Console errors across all routes, both widths: **0**.
+
+Where it started, same method, same routes: Today alone had 136 elements
+under 4.5:1 and 98 under 11px; Odds had 147 under 11px; raw payload field
+names reached prose on Today, Games, Odds, Bet Check, the daily record and
+the matchup page. The residual under-11px counts are display-face section
+labels and mono metadata tags, judged house style; the residual contrast
+items are 10px tags between 3.9:1 and 4.5:1.
+
+Verified on the matchup page in the same pass: the GAME STORY renders
+STARTERS / BULLPEN / TRAVEL & REST / CONDITIONS (LINEUPS is an honest
+cache-lag gap until the next loop), 19 reliever availability chips styled,
+and ENGINE DECISIONS agrees with the API -- 56 decisions · 29 played · 35
+staked -- with both genome plays listed.
+
+Scheduler, unattended, at 23:29Z: task state Ready, last result 0, five
+dispatches by the task today, the latest at 23:25:31Z on its own; the
+afternoon-slate rule correctly skipping ("already ran today after
+21:10Z").
