@@ -1,5 +1,12 @@
 # Workflows staged here, not yet registered
 
+> **afternoon-slate.yml is no longer staged.** It was registered on
+> 2026-09-07 once a `workflow`-scoped credential was available, and now lives
+> at `.github/workflows/afternoon-slate.yml` on both the working branch and
+> the default branch. The rest of this file is kept because the constraint it
+> describes is real and will apply again to the next workflow.
+
+
 A GitHub workflow file can only be created or changed by a credential
 carrying the `workflow` OAuth scope. The token this checkout pushes with, and
 the `gh` CLI token beside it, both carry `repo` but not `workflow`:
