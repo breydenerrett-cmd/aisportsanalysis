@@ -484,6 +484,13 @@ suite cannot see.
   already held. Measured on staging after deploy: the grid is complete
   2.5 s after navigation, 11 cards, no console errors.
 
+- 04:00Z watchdog dispatched forward-capture (newest run was 74 min old;
+  run 34081534234). Dispatched this time, unlike at 03:40Z, because the
+  cloud fallback's last capture was 22 minutes earlier rather than 2, and
+  the watch passes -- lineups, probables, transactions, umpires, weather --
+  do capture every slot and cannot be bought back later. The odds pass will
+  still return nothing until about 14:05Z, and costs no credits to try.
+
 ## PHASE 2 SCORECARD against the owner's priority list
 
 | # | Item | State |
