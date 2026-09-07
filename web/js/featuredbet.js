@@ -309,7 +309,7 @@ export function renderFeaturedBet(container, standing, opts = {}) {
     verdictBox.appendChild(el("div", { class: "fb-verdict__word", "data-hook": "fb-verdict",
       text: verdictLabel(s.verdict) }));
   } else {
-    verdictBox.appendChild(notAvailable("this endpoint does not carry a verdict for the checked bet"));
+    verdictBox.appendChild(notAvailable("this check does not carry a verdict for the bet you entered"));
   }
   standingHead.appendChild(verdictBox);
   card.appendChild(standingHead);

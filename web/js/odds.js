@@ -475,7 +475,7 @@ function gameCard(gameEntry, { date, referenceNow }) {
   }));
   card.appendChild(actions);
   card.appendChild(el("p", { class: "ov2-disclaimer",
-    text: "Comparison only. No sportsbook link and no bet-placement endpoint here — we show the number, "
+    text: "Comparison only. No sportsbook links and no way to place a bet here — we show the number, "
         + "not a way to it." }));
 
   return card;

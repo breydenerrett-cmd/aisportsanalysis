@@ -2700,11 +2700,15 @@
 .gv2-checked__tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 0 var(--sp-6); }
 .gv2-checked__tile { display: flex; flex-direction: column; gap: 2px; padding: 8px 0; box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .05); }
 .gv2-checked__tile:nth-last-child(-n+2) { box-shadow: none; }
-.gv2-checked__label { font-family: var(--font-display); font-size: 9px; font-weight: 700; letter-spacing: .12em; color: var(--v-t6); }
+/* This panel is the product's proof of work -- how many games were looked
+   at, how many boards came back, how deep the best and worst were. It was
+   set at 9px on the quietest rung and read as grey filler beside the
+   headline. The numbers are the point; let them be numbers. */
+.gv2-checked__label { font-family: var(--font-display); font-size: 10.5px; font-weight: 700; letter-spacing: .12em; color: var(--v-t5); }
 .gv2-checked__row { display: flex; align-items: baseline; gap: var(--sp-4); }
-.gv2-checked__value { font-family: var(--font-mono); font-size: 20px; color: var(--v-t1); line-height: 1; }
+.gv2-checked__value { font-family: var(--font-mono); font-size: 24px; color: var(--v-t0); line-height: 1; }
 .gv2-checked__note { display: none; }
-.gv2-checked__footnote { margin-top: var(--sp-6); font-size: 11px; line-height: 1.55; color: var(--v-t6); }
+.gv2-checked__footnote { margin-top: var(--sp-6); font-size: 11.5px; line-height: 1.55; color: var(--v-t5); }
 .gv2-checked__research, .gv2-checked__programme { display: flex; align-items: center; gap: var(--sp-6); flex-wrap: wrap; margin-top: var(--sp-6); padding-top: var(--sp-6); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08); }
 .gv2-checked__research-tag, .gv2-checked__programme-tag {
   flex: none; padding: 4px 10px; --r: var(--r-marker);
@@ -2751,8 +2755,11 @@
    reader taking the two percentages for a prediction. It was 9.5px mono on
    the quietest rung, which is how you hide something you meant to say. */
 .gv2-matchup__caption { margin-top: var(--sp-7); font-size: 12px; line-height: 1.55; color: var(--v-t5); }
-.gv2-matchup__venue { margin-top: var(--sp-6); font-family: var(--font-mono); font-size: 10px; letter-spacing: .11em; color: var(--v-t6); }
-.gv2-matchup__gap-note { margin-top: var(--sp-6); font-size: 12px; line-height: 1.5; color: var(--v-t6); }
+/* Venue is a fact a reader looks for, and the gap note is the sentence that
+   tells them where the missing data actually lives. Both were on the
+   quietest rung inside an already-quiet panel. */
+.gv2-matchup__venue { margin-top: var(--sp-6); font-family: var(--font-mono); font-size: 11px; letter-spacing: .11em; color: var(--v-t5); }
+.gv2-matchup__gap-note { margin-top: var(--sp-6); font-size: 12.5px; line-height: 1.55; color: var(--v-t5); }
 
 /* ---- V2-01c payload box --------------------------------------------------*/
 .gv2-payload { position: relative; padding: var(--sp-8) var(--sp-9); --r: var(--r-badge); margin-top: var(--sp-9); max-width: 460px;

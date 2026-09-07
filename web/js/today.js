@@ -483,8 +483,9 @@ function matchupContextPanel(row) {
   // Team records and probable starters are deliberately not shown here --
   // see the module docstring's "what this screen does not print" note.
   panel.appendChild(el("p", { class: "gv2-matchup__gap-note",
+    // "this endpoint set" is our word, not the reader's.
     text: "Team records and probable starters live on the Game screen, not here — "
-        + "this endpoint set does not carry them." }));
+        + "this view does not carry them." }));
   return panel;
 }
 

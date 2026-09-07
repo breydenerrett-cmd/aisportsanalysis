@@ -473,8 +473,8 @@ function renderWhatChanged(result) {
   const events = Array.isArray(result.what_changed) ? result.what_changed : [];
   if (events.length === 0) {
     return naBlock("05", "WHAT CHANGED",
-      "No capture-to-capture comparison on this bet. There is no time-series endpoint, so there is no "
-      + "movement chart either.");
+      "No capture-to-capture comparison on this bet. This check reads one "
+      + "capture instant, not a history, so there is no movement chart either.");
   }
   const section = block("05", "WHAT CHANGED", { meta: `${events.length} EVENT${events.length === 1 ? "" : "S"}` });
   const stream = el("div", { class: "bc2-changed" });
@@ -559,7 +559,7 @@ function renderSimilarBets() {
 
 function renderYourHistory() {
   return naBlock("09", "YOUR HISTORY",
-    "Requires settled outcomes on comparable saved bets, joined against My Bets. Not built on this endpoint.");
+    "Requires settled outcomes on comparable saved bets, joined against My Bets. Not built yet.");
 }
 
 /* ---------------------------------------------------------------------
