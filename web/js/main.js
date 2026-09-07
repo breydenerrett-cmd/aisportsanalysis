@@ -147,7 +147,31 @@ function parseHash() {
   return { segments, query };
 }
 
+// Re-entrancy guard (2026-09-07). A cold load of /app#/performance on
+// staging fired the route four times in half a second -- each entry
+// cleared the outlet and painted a fresh loading panel over the previous
+// entry's in-flight fetch, so the DAILY RECAP gallery never got to render
+// and a visitor opening a Results link saw a spinner forever. Locally,
+// where /meta resolves instantly, it dispatched once and worked, which is
+// why every hash-switch sweep passed. Whatever fires the duplicates (a
+// fragment-carrying redirect, /meta's finally, a hashchange), the rule is
+// the same: a second dispatch for the SAME hash while one is in flight is
+// noise and is dropped. A different hash still proceeds -- the superseded
+// render just writes into a detached tree, harmlessly.
+let _inflightHash = null;
+
 async function renderRoute(main) {
+  const hash = location.hash || "#/today";
+  if (_inflightHash === hash) return;
+  _inflightHash = hash;
+  try {
+    await _renderRouteInner(main);
+  } finally {
+    if (_inflightHash === hash) _inflightHash = null;
+  }
+}
+
+async function _renderRouteInner(main) {
   const { segments, query } = parseHash();
   const [route, ...rest] = segments;
   const rail = document.querySelector("[data-hook='primary-nav']");

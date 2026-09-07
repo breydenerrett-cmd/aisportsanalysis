@@ -901,3 +901,26 @@ Scheduler, unattended, at 23:29Z: task state Ready, last result 0, five
 dispatches by the task today, the latest at 23:25:31Z on its own; the
 afternoon-slate rule correctly skipping ("already ran today after
 21:10Z").
+
+### Found after the QA table: Results was unreachable by direct link on staging
+
+A cold load of `/app#/performance` on staging showed "LOADING THE DAILY
+RECAP" forever -- twice, 22 seconds each. `/daily` itself answered in
+121 ms with 7 days, cached. The network log showed the cause: the route
+dispatched four times in half a second and `recordstrip.js` loaded twice;
+each entry cleared the outlet and painted a fresh loading panel over the
+previous entry's in-flight fetch. Every hash-switch sweep had passed
+because a hash switch dispatches once. Cold-loading
+`/web/index.html#/performance` (no `/app` redirect) rendered 7 cards from
+a single request, so the fragment-carrying `/app` -> `/web/` 307 is the
+trigger. Locally `/meta` resolves instantly and it never reproduced.
+
+Fix: a same-hash re-entrancy guard in `main.js`'s router -- a second
+dispatch for the SAME hash while one is in flight is dropped; a different
+hash still proceeds and the superseded render writes into a detached tree.
+Serving `index.html` directly at `/app` was considered and rejected: its
+relative asset paths would 404, which is why the redirect exists (S1).
+
+This is the kind of bug a route-by-route sweep cannot see. It only shows
+when the page is the ENTRY URL, which is exactly how a shared Results link
+is opened.
