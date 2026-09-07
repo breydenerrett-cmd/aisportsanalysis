@@ -85,10 +85,16 @@ put the token wall back).
   market-derived reference; every verdict is price versus the de-vigged
   consensus (line-shopping value). A vigged board normally shows FAIR PRICE
   and PASS; STRONG VALUE / VALUE will be rare and that is correct.
-- Engine decisions on the slate come from CONTROL and MARKET REFERENCE
-  systems (null baselines and calibration references); no forward-test
-  system staked a 2026-09-07 game. Performance therefore has real
-  forward-test history (64 settled bets) but no forward-test picks tonight.
+- **The forward-test systems have not frozen a decision since 2026-09-03**
+  (finding F-1 in `docs/DEMO_SHIP_CHECKLIST.md`). They are still registered
+  and still dispatched every day, but they now propose nothing while the
+  baselines keep writing rows, and the break lines up with the daily loop
+  moving to GitHub Actions. So every engine decision on the current slate
+  comes from a null baseline or a market reference, neither of which is a
+  pick to follow. Performance still shows their real history (64 settled
+  bets, +19.18 units) because that history is frozen and settled. Until
+  F-1 is fixed, the honest answer to "what does the system like today" is
+  "nothing with a thesis" and the product says exactly that.
 - The BET WON vs REASONING CORRECT split is all UNTESTED: control and
   market-reference systems make no checkable mechanism claim, and the
   forward-test systems' mechanism checks are recent. 70 legacy reviews
@@ -99,13 +105,35 @@ put the token wall back).
 - Demo mode makes the read-only game surface public on the staging URL.
   One env line reverses it.
 
+## WHAT HAPPENS WHILE YOU SLEEP
+
+Two scheduled GitHub jobs keep the site alive with no session running:
+
+- **forward-capture** every 15 minutes: pulls the board, commits it, and on
+  the first slot of each hour redeploys staging so the site's prices move.
+  GitHub's cron is best-effort and skipped most slots tonight (it fired at
+  01:00Z, then nothing until a manual dispatch at 02:04Z). If the board looks
+  hours old in the morning, that is why, and one click on
+  Actions → forward-capture → Run workflow fixes it.
+- **daily-loop** at 10:00Z: settles the previous day, freezes the new slate,
+  and writes the end-of-day review. This has never yet completed on a
+  schedule (the one dispatched run failed by design, mid-evening, because
+  games were still in progress). If it runs, RESULTS gains 2026-09-06 and
+  2026-09-07 settled and the slate rolls to 2026-09-08. If it does not,
+  those days stay PENDING and the site still works, just frozen at
+  "settled through 2026-09-05".
+
+Neither job needs anything from you unless both stay red.
+
 ## NEXT 3 IMPROVEMENTS
 
-1. A scheduler that is not GitHub's cron: a small external pinger (or the
+1. **Fix F-1** so the systems with an actual thesis start deciding again, and
+   make a system that cannot get its inputs refuse loudly instead of
+   vanishing. Everything else here is cosmetic next to this one.
+2. A scheduler that is not GitHub's cron: a small external pinger (or the
    cloud routine) that dispatches `forward-capture` every 15 minutes and
    `daily-loop` at 10:00Z, so freshness never depends on a session.
-2. Expose spreads, totals and first-five on the odds board and Bet Check
-   (the store already has them; `oddspayload.MARKETS` and a builder each).
-3. Ship the forward-test systems' decisions onto the slate as tagged
-   FORWARD TEST · UNPROVEN interest, and settle 09-06/09-07 so Performance
-   shows this week's picks resolved.
+3. Expose run line and total on the odds board and Bet Check. The store
+   already captures them (87 moneyline, 84 run-line and 87 totals rows in
+   the 02:05Z instant); the consensus just has to be computed per line, as
+   books do not always quote the same total.
