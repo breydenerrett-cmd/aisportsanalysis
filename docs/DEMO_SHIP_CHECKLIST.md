@@ -689,3 +689,28 @@ visible. A route-by-route review finds route-by-route bugs.
   a deploy, or it will keep showing yesterday's record with no error.
 - 13:32Z watchdog dispatched forward-capture (newest run was 60 min old)
 - 15:28Z watchdog dispatched forward-capture (newest run was 64 min old)
+- 15:50Z Fourth genuine schedule firing, and the first one that is NOT
+  forward-capture: `event=schedule` total_count is 4 and the new run is
+  **daily-loop** 34137806549 at 15:20:34Z, success. It is scheduled for
+  10:00Z and fired at 15:20Z -- five hours late, but genuine. Genuine
+  firings today: 01:00:46Z, 06:06:21Z, 12:32:12Z (all forward-capture) and
+  15:20:34Z (daily-loop).
+
+  **The duplicate-writer hazard did not materialise, and now we know why.**
+  I had already dispatched the daily loop manually at 13:27Z, so this was
+  the second loop for 2026-09-07 -- exactly the case
+  docs/LOCAL_PARENT_TAKEOVER.md section 9 warns writes a second set of
+  frozen decisions and wagers. It did not. The scheduled run reported
+  `settled 0 new (15 already settled)` for every one of the six systems,
+  `games_recorded: 154 pending: 11 settled: 143` unchanged from the 13:27Z
+  run, `skipped_already_mapped=26 rows_written=0`, `windows skipped: 0
+  (already in manifest)`, and no ESCALATE. The loop is idempotent per date:
+  it recognises already-settled positions and writes nothing.
+
+  That does NOT make section 9's warning wrong to have followed -- it makes
+  it measured rather than assumed. The rule stands (do not dispatch when a
+  run already exists today); what changed is that an accidental double-run
+  is now known to be harmless rather than feared.
+
+  No dispatch this tick per the heartbeat rule; newest capture 34138474560
+  at 15:28:18Z was 22 min old regardless.
