@@ -58,6 +58,12 @@ COPY web/ web/
 COPY data/processed/ data/processed/
 COPY data/watch/ data/watch/
 COPY data/app/.gitkeep data/app/.gitkeep
+# PAPER / RESEARCH PERFORMANCE (2026-09-07): the product reads the engine
+# ledgers (evidence/*.jsonl, hash-chained, git-tracked) and the per-system
+# paper-account ledgers READ-ONLY for the Performance and Opportunities
+# surfaces. ~10 MB together. Nothing in api/ ever writes to either tree.
+COPY evidence/ evidence/
+COPY data/paper_accounts/ data/paper_accounts/
 
 # APP_DB_PATH defaults to data/app/app.db (src/appstate/users.py) when the
 # env var is unset -- fine for a quick local run, but on a real host this

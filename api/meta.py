@@ -25,6 +25,7 @@ turning an ops nicety into a reason GET /meta would 500.
 
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 
@@ -78,6 +79,15 @@ def _read_version() -> str:
 APP_VERSION = _read_version()
 
 
+def _public_demo() -> bool:
+    """Mirrors api/app.py's APP_PUBLIC_DEMO parse (read here directly rather
+    than imported, so this module never imports the app it is mounted on).
+    Read per request, not at import: the client uses it to decide whether
+    to show the sign-in wall, and a test may flip the variable."""
+    return (os.environ.get("APP_PUBLIC_DEMO") or "").strip().lower() in (
+        "1", "true", "yes")
+
+
 @router.get("/meta")
 def get_meta() -> dict:
     return {
@@ -85,4 +95,8 @@ def get_meta() -> dict:
         "product": PRODUCT_ONE_LINER,
         "disclaimer": get_disclaimer(),
         "brand": BRAND,
+        # True only when the deployment serves the read-only game surface
+        # without a token (hosted demo). The client hides the sign-in wall
+        # and the BETS destination when this is set; see api/app.py.
+        "public_demo": _public_demo(),
     }

@@ -35,6 +35,12 @@ primary_region = "iad"  # US East -- change to whatever region the volume
   # `fly secrets`. Must match the deployed hostname exactly, or a paying
   # user lands on a dead origin and never reaches their activation token.
   PUBLIC_BASE_URL = "https://linehound-staging.fly.dev"
+  # HOSTED DEMO (owner directive 2026-09-07): the read-only game surface and
+  # Bet Check are served without an invite token so the staging URL can be
+  # opened and shown to anyone. Personal routes (saved bets, digest, admin,
+  # billing) stay gated. Remove this line (or set "0") to restore the
+  # private-alpha token wall -- see api/app.py PUBLIC_DEMO. Not a secret.
+  APP_PUBLIC_DEMO = "1"
   # BILLING_PROVIDER left unset: src/appstate/billing.py's own default
   # (NullBillingProvider, dev/test-safe) applies until STRIPE_API_KEY is
   # set as a secret -- see docs/LAUNCH_DECISIONS.md Decisions 1-2.

@@ -30,7 +30,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 
 router = APIRouter()
 
@@ -62,12 +62,19 @@ def _safe_path(relative: str) -> Path:
     return candidate
 
 
-@router.get("/web")
+@router.get("/web", include_in_schema=False)
+def get_web_index_no_slash() -> RedirectResponse:
+    """`/web` (no slash) REDIRECTS to `/web/` rather than serving the
+    shell in place: index.html's css/js are relative paths, and served at
+    `/web` they resolve to `/css/...` and 404 -- a blank page with only the
+    wordmark (linehound-staging, 2026-09-07). The redirect moves the
+    browser's base URL, which is what those paths depend on."""
+    return RedirectResponse(url="/web/", status_code=307)
+
+
 @router.get("/web/")
 def get_web_index() -> FileResponse:
-    """The app shell -- GET /web or /web/ both serve web/index.html, the
-    same "no trailing slash matters" convenience a static host gives for
-    free."""
+    """The app shell -- GET /web/ serves web/index.html."""
     return FileResponse(_safe_path("index.html"))
 
 

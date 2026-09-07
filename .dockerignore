@@ -27,9 +27,12 @@ data/*
 !data/app/
 data/app/*
 !data/app/.gitkeep
+# Paper-account ledgers: read by the Performance surface (2026-09-07).
+!data/paper_accounts/
 
 design/
 docs/
 artifacts/
-evidence/
+# evidence/ is COPYd now (Performance + Opportunities surfaces read the
+# engine ledgers) -- see deploy/Dockerfile.
 .claude/

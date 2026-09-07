@@ -54,7 +54,14 @@ accepted rather than papered over with a cross-platform shim nobody asked for.
 
 from __future__ import annotations
 
-import resource
+try:
+    import resource
+except ImportError:  # Windows: no POSIX `resource` module (see STDLIB ONLY above).
+    # Only the local dev server on Brey's PC (2026-09-06) ever imports this
+    # module on Windows; production containers are Linux. Peak RSS reports
+    # 0.0 there rather than refusing to import every module that transitively
+    # reaches this one (src.analysis.matchup -> src.research.matrix -> here).
+    resource = None
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -113,6 +120,8 @@ def _peak_rss_mb() -> float:
     this codebase's containers are Linux (map-compute-scale.md section 3), so
     KiB is what is measured, and only ever adjusted if that stops being true.
     """
+    if resource is None:  # Windows dev box -- see the import guard above.
+        return 0.0
     return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0
 
 

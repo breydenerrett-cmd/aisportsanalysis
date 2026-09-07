@@ -10,6 +10,7 @@ tooling -- `uvicorn api.app:app` is a human/ops action, not a test fixture.
 
 from __future__ import annotations
 
+import os
 import sys
 import time
 import uuid
@@ -61,7 +62,21 @@ _authed = [Depends(get_current_user)]
 # see api/auth.py's require_paid_access. Deliberately narrow: /billing/*,
 # /support, signup and the funnel beacon stay reachable so an expired
 # customer can actually reactivate or re-subscribe.
-_authed_paid = [Depends(require_paid_access)]
+#
+# PUBLIC DEMO MODE (APP_PUBLIC_DEMO=1, owner decision 2026-09-07): the
+# READ-ONLY game surface (/today, /games, /game, /changed, /odds), Bet Check
+# and the performance/opportunities routes are served with NO bearer token
+# so the hosted demo can be opened by anyone holding the staging URL.
+# Default OFF -- unset or anything but 1/true/yes keeps red-team finding 2's
+# private-alpha gate exactly as it was, and every test that pins a 401 on
+# this surface runs with the variable unset. Personal routes (/my-bets,
+# /digest, /onboarding, admin, billing) never loosen: they carry `_authed`
+# or their own guards regardless of this flag. Flip it in
+# deploy/fly.staging.toml's [env]; it is not a secret.
+ENV_PUBLIC_DEMO = "APP_PUBLIC_DEMO"
+PUBLIC_DEMO = (os.environ.get(ENV_PUBLIC_DEMO) or "").strip().lower() in (
+    "1", "true", "yes")
+_authed_paid = [] if PUBLIC_DEMO else [Depends(require_paid_access)]
 app.include_router(games_router, dependencies=_authed_paid)
 app.include_router(meta_router)
 app.include_router(web_router)
@@ -183,8 +198,14 @@ def app_shell_redirect() -> RedirectResponse:
     """The signed-in shell -> api/web.py's directory entry point, which
     serves web/index.html. Same no-auth reasoning api/web.py's own module
     docstring gives: the token-entry form has to be reachable without a
-    token, or nobody could ever enter one."""
-    return RedirectResponse(url="/web", status_code=307)
+    token, or nobody could ever enter one.
+
+    TRAILING SLASH, ALWAYS. web/index.html loads css/js by RELATIVE path
+    (same as landing.html, see root_redirect above). At `/web` the browser
+    resolves those against `/`, every asset 404s and the page is a blank
+    wordmark -- found on linehound-staging 2026-09-07. At `/web/` they
+    resolve under `/web/` and the shell renders."""
+    return RedirectResponse(url="/web/", status_code=307)
 
 
 @app.get("/today", dependencies=_authed_paid)

@@ -106,9 +106,17 @@ class GameSurfaceRequiresAuth(unittest.TestCase):
         self.assertEqual(_location(self.app, "GET", "/"), "/web/landing.html")
 
     def test_app_redirects_to_the_client_shell_unauthenticated(self):
+        """`/web/` WITH the trailing slash: index.html's css/js are
+        relative paths, and at `/web` they resolve to `/css/...` and 404
+        (blank page on linehound-staging, 2026-09-07)."""
         status, _ = _request(self.app, "GET", "/app")
         self.assertEqual(status, 307)
-        self.assertEqual(_location(self.app, "GET", "/app"), "/web")
+        self.assertEqual(_location(self.app, "GET", "/app"), "/web/")
+
+    def test_web_without_slash_redirects_to_slash(self):
+        status, _ = _request(self.app, "GET", "/web")
+        self.assertEqual(status, 307)
+        self.assertEqual(_location(self.app, "GET", "/web"), "/web/")
 
     def test_health_stays_open(self):
         status, _ = _request(self.app, "GET", "/health")
