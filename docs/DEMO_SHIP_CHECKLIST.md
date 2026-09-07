@@ -250,8 +250,8 @@ Facts established before starting (verified 02:11–02:20Z, so no one re-derives
 
 | Step | Scope | Status |
 |---|---|---|
-| C1 | `src/report/daily_record.py` + `GET /daily`, `/daily/{date}`, `/record`: frozen pregame recommendations per game, settlement joined by bet_id, per-day rollups, day index for the gallery, today/7-day/30-day record strip | RUNNING |
-| F2 | Today = every matchup (starters, time, odds, freshness, analyzer status) with its frozen recommendations and GREEN/RED/GRAY settled states; TOP PLAYS strip; system record strip; daily recap gallery reading `/daily` | NEXT |
+| C1 | `src/report/daily_record.py` + `GET /daily`, `/daily/{date}`, `/record`: frozen pregame recommendations per game, settlement joined by bet_id, per-day rollups, day index for the gallery, today/7-day/30-day record strip | DONE (da57414) |
+| F2 | Today = every matchup (starters, time, odds, freshness, analyzer status) with its frozen positions and GREEN/RED/GRAY settled states; system record strip; daily recap gallery + per-day audit trail reading `/daily` | RUNNING |
 | C2 | Multi-market live board: extend `oddspayload.MARKETS` to run line and total with per-line consensus grouping, so matchup detail shows live best bets beyond moneyline | AFTER F2 |
 | F3 | Matchup detail story (pitchers, offence, bullpen, warnings, reasoning), performance cuts by market / tier / odds range, polish | AFTER C2 |
 
@@ -322,3 +322,15 @@ coverage and changes every decision's point-in-time meaning. This is a
 methodology call, not an implementation detail.
 
 Ledger continues below.
+
+- 02:35Z F-1 diagnosed (see the corrected finding above) and its silent half
+  fixed; 270 engine/evolab tests green; b88b48b.
+- 03:0xZ C1 delivered and committed as da57414. Orchestrator caught one
+  honesty defect on delivery before it shipped: the value comparison ignored
+  the six-book floor, so two-book run lines carried value points of +14.01
+  and `strongest_pregame` crowned one as the day's best-supported play. Now
+  suppressed with a stated reason below the floor (120 of 213 comparisons on
+  09-05), and the strongest pick moved to an eleven-book moneyline. Three
+  regression tests added. Real data verified end to end: 09-05 shows 15
+  games, all 15 final scores joined, 45-52-2 and -7.90 units; 09-07 shows 8
+  games with every position pending and no result claimed.
