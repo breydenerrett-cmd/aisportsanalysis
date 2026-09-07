@@ -647,3 +647,12 @@ V-12 is the one worth remembering. It is not a styling defect and no
 screenshot of a single page would show it: the page looked fine, the link
 looked fine, and only walking the path the way a customer walks it made it
 visible. A route-by-route review finds route-by-route bugs.
+- 06:04Z **GitHub's own cron finally fired.** `event=schedule` total_count is
+  1, not 0: run 34071611931, forward-capture, 01:00:46Z, success, on
+  `claude/cowork-session-migration-tn3sx2`. Every other capture all night was
+  a watchdog dispatch. So the scheduler is not dead, it is just extremely
+  unreliable: one genuine firing in the ~5h since registration against a
+  */15 cron, which is roughly 1 in 20. That is the evidence for the
+  external-pinger improvement, and it is now a measurement rather than a
+  suspicion. No dispatch this tick per the heartbeat rule. Newest
+  forward-capture run 34084792628 completed 04:53:56Z.
