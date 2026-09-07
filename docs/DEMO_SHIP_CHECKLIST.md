@@ -629,3 +629,21 @@ metadata tags rather than sentences.
 - The reveal animation still leaves a synthetic 1400px-plus viewport dim
   until the first scroll. At a real 1440x900 the page paints fully bright
   on first load, which was checked before shipping.
+
+### Second sweep, same method
+
+Continuing to open routes turned up five more, including the worst one:
+
+| # | Route | Defect | Fix |
+|---|-------|--------|-----|
+| V-12 | Bet Check | The main demo path was broken. "CHECK THIS PRICE" links carry date, teams, side and price; the form arrived filled in and the result pane said "Paste a bet to begin." The reader had to press CHECK IT to be told what they clicked to be told. | a link carrying every field runs on arrival; a partial link still gets the form |
+| V-13 | Bet Check | The proof rail printed the payload's field names: `your_price_beats_consensus = true`, `0 thesis_support / 0 counterargument`, `williamhill_us`, `POST /betcheck does not return one`, `NO age_seconds FIELD ON THIS PAYLOAD` | same facts, in words; book slugs through formatBook |
+| V-14 | Game | The price narrative read "the best number on BAL is +125 at williamhill_us" | `prices.book_label`, a server-side slug-to-name map with a title-case fallback and no invented book |
+| V-15 | #/day/{date} | 213 near-identical boxes, each printing a machine bet slug and repeating its class's meaning sentence and the whole thin-board explanation | phrases not slugs; both explanations once, in a legend; compact rows |
+| V-16 | #/day/{date} | Some records hold a 16-hex system id in `side`, printing "spread · ac8dfe0cf3aeecdb · +1.5" | the row shows the market and line it has plus "side not recorded (a system id was stored here)" -- no team guessed, the populated-but-wrong field not silently dropped |
+| V-17 | Results | The recap gallery still said "h2h AWAY" while the detail page one click away said "OAK moneyline" | same labeller, fed from the matchup string, same no-guess fallback |
+
+V-12 is the one worth remembering. It is not a styling defect and no
+screenshot of a single page would show it: the page looked fine, the link
+looked fine, and only walking the path the way a customer walks it made it
+visible. A route-by-route review finds route-by-route bugs.
