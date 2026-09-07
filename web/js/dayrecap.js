@@ -194,15 +194,35 @@ function dayRollupSummary(rollup) {
     wrap.appendChild(notYetAvailable("No rollup for this date.", "NO ROLLUP"));
     return wrap;
   }
+  // The headline for the whole day. It used to be two mono lines in a box,
+  // which is how the rest of this page's rows are set -- so the day's own
+  // result read no louder than one of the two hundred rows beneath it. The
+  // same figures, given the display treatment the Results gallery cards
+  // already use, with the counts kept as supporting meta.
   wrap.appendChild(el("div", { class: "day-detail__rollup-title", text: "DAY ROLLUP" }));
-  wrap.appendChild(el("p", { class: "day-detail__rollup-line",
-    text: `${rollup.n_games} games · ${rollup.n_staked} staked of ${rollup.n_recommendations} recommendations · `
-      + `${rollup.wins}-${rollup.losses}-${rollup.pushes}`
-      + `${rollup.pending ? ` · ${rollup.pending} pending` : ""}` }));
+
   const units = unitsFmt(rollup.units_net);
   const pct = pctFmt(rollup.return_on_units);
-  const figs = [units, pct].filter((v) => v !== null);
-  if (figs.length) wrap.appendChild(el("p", { class: "day-detail__rollup-figs", text: figs.join(" · ") }));
+  const headline = el("p", { class: "day-detail__rollup-headline" });
+  headline.appendChild(el("span", { class: "day-detail__rollup-record",
+    text: `${rollup.wins}-${rollup.losses}-${rollup.pushes}` }));
+  const tone = (value) => (typeof value === "number"
+    ? (value >= 0 ? " day-detail__rollup-fig--pos" : " day-detail__rollup-fig--neg") : "");
+  if (units !== null) {
+    headline.appendChild(el("span", { class: "day-detail__rollup-sep", text: "·" }));
+    headline.appendChild(el("span", {
+      class: `day-detail__rollup-fig${tone(rollup.units_net)}`, text: units }));
+  }
+  if (pct !== null) {
+    headline.appendChild(el("span", { class: "day-detail__rollup-sep", text: "·" }));
+    headline.appendChild(el("span", {
+      class: `day-detail__rollup-fig${tone(rollup.return_on_units)}`, text: pct }));
+  }
+  wrap.appendChild(headline);
+
+  wrap.appendChild(el("p", { class: "day-detail__rollup-line",
+    text: `${rollup.n_games} games · ${rollup.n_staked} staked of ${rollup.n_recommendations} recommendations`
+      + `${rollup.pending ? ` · ${rollup.pending} pending` : ""}` }));
   return wrap;
 }
 

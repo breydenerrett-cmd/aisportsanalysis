@@ -3484,8 +3484,18 @@
 .day-detail__rollup { padding: var(--sp-8); }
 .day-detail__rollup-title { margin: 0 0 var(--sp-4); font-family: var(--font-display); font-size: 12px; font-weight: 800;
   letter-spacing: .1em; color: var(--v-t3); }
-.day-detail__rollup-line { margin: 0 0 var(--sp-2); font-family: var(--font-mono); font-size: 12.5px; color: var(--v-t2); }
-.day-detail__rollup-figs { margin: 0; font-family: var(--font-mono); font-size: 13px; color: var(--v-t0); }
+/* The day's own result, in the same display treatment the Results gallery
+   cards use -- it was set in the same mono as the two hundred rows below
+   it, so the headline read no louder than a line item. */
+.day-detail__rollup-headline { margin: 0 0 var(--sp-4); display: flex; align-items: baseline;
+  gap: var(--sp-4); flex-wrap: wrap; font-family: var(--font-display); font-style: italic;
+  font-weight: 800; line-height: 1; }
+.day-detail__rollup-record { font-size: clamp(26px, 3vw, 34px); color: var(--v-t0); }
+.day-detail__rollup-fig { font-size: clamp(20px, 2.3vw, 26px); color: var(--v-t2); }
+.day-detail__rollup-fig--pos { color: var(--v-win-lit); }
+.day-detail__rollup-fig--neg { color: var(--v-money-lit); }
+.day-detail__rollup-sep { font-size: 18px; color: var(--v-t6); font-style: normal; }
+.day-detail__rollup-line { margin: 0; font-family: var(--font-mono); font-size: 12.5px; color: var(--v-t4); }
 .day-detail__games { display: flex; flex-direction: column; gap: var(--sp-7); }
 .day-detail__game { padding: var(--sp-7); display: flex; flex-direction: column; gap: var(--sp-4); }
 .day-detail__game-head { display: flex; align-items: center; gap: var(--sp-4); }
