@@ -439,6 +439,37 @@ Ledger continues below.
   runner to write nothing. The scheduled-run count stands at 1 (the 01:00Z
   run, already recorded).
 
+### FINDING F-3 (03:45Z, found by an independent peer QA session): one screen
+### said the board both existed and did not
+
+The Gameday matchup panel printed "No priced market for this game yet" four
+lines under a Featured Bet quoting the same game at -196 across nine books,
+same capture instant. Reproduced here and found to be true of EVERY game on
+EVERY slate this API has served -- 11 of 11 on 2026-09-07 -- not one card.
+
+Cause: `gamepayload._market_implied_consensus` and `api/today._odds_meta`
+both asked the dossier's `market` section, which exists only when a caller
+passes `prices_by_matchup` to `build_slate`. `src/cli.py`'s `cmd_brief`
+passes it; `api/games._build_entries` never has (the same omission behind
+F-2). The board section beside it, `price_improvement`, held the same
+de-vigged consensus -- and that is what the odds board, the opportunities
+table and the matchup grid read, which is why one screen contradicted itself.
+
+Fixed: the consensus falls back to the board's own `consensus_probability`
+and `has_market` answers the question its name asks. A fallback for the
+SOURCE of one number, never a second definition of it -- checked by
+reconciling against the other surface rather than by assertion: /games
+ATL@PHI `away_fair` 0.3924 is byte-equal to /opportunities'
+`market_implied_probability` for the same side, 9 of 11 games now report a
+consensus, and the two genuinely unpriced games still report null. Two
+regression tests pin the fallback and the honest-null case.
+
+Worth recording about the process: this was caught by a second session doing
+a read-only pass, not by the tests or by my own QA, which had checked each
+surface on its own terms and never asked whether two surfaces on one screen
+agreed. Cross-surface contradiction is a class of defect a per-surface test
+suite cannot see.
+
 ## PHASE 2 SCORECARD against the owner's priority list
 
 | # | Item | State |
