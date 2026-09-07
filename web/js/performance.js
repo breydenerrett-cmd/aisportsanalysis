@@ -207,6 +207,126 @@ function renderClassSections(classes, systems) {
 }
 
 /* ---------------------------------------------------------------------
+ * Analytical cuts (BY MARKET / BY ODDS RANGE / BY DECISION GRADE /
+ * BY CLASS + a ROLLING last-7/last-30 row) -- payload.cuts, computed by
+ * src/report/paper_performance.py's cuts(). Every bucket is read
+ * straight off the payload; this module computes nothing except a
+ * pos/neg colour class from an already-signed number. A THIN bucket
+ * (n_settled < 20) shows a THIN SAMPLE chip and is deliberately never
+ * given the pos/neg colour treatment -- see this file's own docstring on
+ * never conflating a tiny sample with established performance.
+ * ------------------------------------------------------------------- */
+
+const CUTS_TABLE_COLUMNS = ["BUCKET", "N", "W-L-P", "UNITS NET", "RETURN %", "HIT RATE", "AVG ODDS"];
+
+function thinSampleChip() {
+  return el("span", { class: "pv-chip pv-chip--warn perf-cuts__thin", "data-hook": "cuts-thin-chip", text: "THIN SAMPLE" });
+}
+
+/** A units-net or return-% figure, signed and coloured -- UNLESS the
+ * bucket is thin, in which case it renders the same figure with no
+ * colour class at all (never good/bad-coded a tiny sample). */
+function cutsSignedCell(value, thin, fmt) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return el("td", { text: "—" });
+  }
+  const text = fmt(value) || "—";
+  if (thin) return el("td", { text });
+  const cls = value > 0 ? "perf-cuts__figure--pos" : value < 0 ? "perf-cuts__figure--neg" : null;
+  return el("td", { class: cls, text });
+}
+
+function cutsTable(title, buckets) {
+  const block = el("div", { class: "perf-cuts__block", "data-hook": "performance-cuts-table" });
+  block.appendChild(el("h3", { class: "perf-cuts__title", text: title }));
+  const list = Array.isArray(buckets) ? buckets : [];
+  if (list.length === 0) {
+    block.appendChild(notYetAvailable("No buckets on this payload.", "NO CUT DATA"));
+    return block;
+  }
+  const wrap = el("div", { class: "ov2-table-wrap" });
+  const table = el("table", { class: "ov2-table" });
+  const thead = el("thead");
+  const hr = el("tr");
+  for (const label of CUTS_TABLE_COLUMNS) {
+    hr.appendChild(el("th", { scope: "col", text: label }));
+  }
+  thead.appendChild(hr);
+  table.appendChild(thead);
+  const tbody = el("tbody");
+  for (const b of list) {
+    const tr = el("tr");
+    const labelCell = el("td", { class: "perf-cuts__label" });
+    labelCell.appendChild(el("span", { text: b.label || b.key || "—" }));
+    if (b.thin) labelCell.appendChild(thinSampleChip());
+    tr.appendChild(labelCell);
+    tr.appendChild(el("td", { text: typeof b.n_settled === "number" ? String(b.n_settled) : "—" }));
+    tr.appendChild(el("td", { text: `${b.wins}-${b.losses}-${b.pushes}` }));
+    tr.appendChild(cutsSignedCell(b.units_net, b.thin, numFmt));
+    tr.appendChild(cutsSignedCell(b.return_on_units, b.thin, pctFmt));
+    tr.appendChild(el("td", { text: pctPlain(b.hit_rate) || "—" }));
+    tr.appendChild(el("td", { text: numPlain(b.avg_odds_decimal) || "—" }));
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  block.appendChild(wrap);
+  return block;
+}
+
+const ROLLING_LABEL = { last_7: "LAST 7 DAYS", last_30: "LAST 30 DAYS" };
+
+function rollingCell(bucket) {
+  const cell = el("div", { class: "perf-cuts__rolling-cell panel chamfer" });
+  const head = el("div", { class: "perf-cuts__rolling-head" });
+  head.appendChild(el("span", { class: "perf-cuts__rolling-label",
+    text: ROLLING_LABEL[bucket.key] || bucket.label || bucket.key }));
+  if (bucket.thin) head.appendChild(thinSampleChip());
+  cell.appendChild(head);
+  const figs = el("div", { class: "perf-cuts__rolling-figs" });
+  figs.appendChild(el("span", { text: `N ${typeof bucket.n_settled === "number" ? bucket.n_settled : "—"}` }));
+  figs.appendChild(el("span", { text: `${bucket.wins}-${bucket.losses}-${bucket.pushes}` }));
+  const netText = typeof bucket.units_net === "number" ? `${numFmt(bucket.units_net)} units` : "—";
+  const netCls = !bucket.thin && typeof bucket.units_net === "number"
+    ? (bucket.units_net > 0 ? "perf-cuts__figure--pos" : bucket.units_net < 0 ? "perf-cuts__figure--neg" : null)
+    : null;
+  figs.appendChild(el("span", { class: netCls, text: netText }));
+  figs.appendChild(el("span", { text: `${pctFmt(bucket.return_on_units) || "—"} return` }));
+  cell.appendChild(figs);
+  return cell;
+}
+
+function renderRolling(rolling) {
+  const wrap = el("div", { class: "perf-cuts__block", "data-hook": "performance-cuts-rolling" });
+  wrap.appendChild(el("h3", { class: "perf-cuts__title", text: "ROLLING" }));
+  const list = Array.isArray(rolling) ? rolling : [];
+  if (list.length === 0) {
+    wrap.appendChild(notYetAvailable("No rolling windows on this payload.", "NO ROLLING DATA"));
+    return wrap;
+  }
+  const row = el("div", { class: "perf-cuts__rolling-row" });
+  for (const bucket of list) row.appendChild(rollingCell(bucket));
+  wrap.appendChild(row);
+  return wrap;
+}
+
+function renderCuts(cuts, cutsNote) {
+  const section = el("section", { class: "perf-cuts", "data-hook": "performance-cuts" });
+  section.appendChild(sectionHead("ANALYTICAL CUTS"));
+  if (!cuts) {
+    section.appendChild(notYetAvailable("No cuts on this payload.", "NO CUTS"));
+    return section;
+  }
+  section.appendChild(cutsTable("BY MARKET", cuts.by_market));
+  section.appendChild(cutsTable("BY ODDS RANGE", cuts.by_odds_range));
+  section.appendChild(cutsTable("BY DECISION GRADE", cuts.by_grade));
+  section.appendChild(cutsTable("BY CLASS", cuts.by_class));
+  section.appendChild(renderRolling(cuts.rolling));
+  if (cutsNote) section.appendChild(el("p", { class: "perf-cuts__note", text: cutsNote }));
+  return section;
+}
+
+/* ---------------------------------------------------------------------
  * Recent picks
  * ------------------------------------------------------------------- */
 
@@ -403,6 +523,7 @@ export async function renderPerformance(container) {
   screen.appendChild(renderHead(payload));
   screen.appendChild(renderSummaryTiles(payload.classes));
   screen.appendChild(renderClassSections(payload.classes, payload.systems));
+  screen.appendChild(renderCuts(payload.cuts, payload.cuts_note));
   screen.appendChild(renderRecentPicks(payload.recent_picks));
   screen.appendChild(renderReasoningSplit(payload.reasoning_split));
   const series = payload.series || {};

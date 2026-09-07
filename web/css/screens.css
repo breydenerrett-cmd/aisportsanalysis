@@ -2910,6 +2910,37 @@
 .perf-spark__legend-item--forward::before { background: var(--v-live); }
 .perf-note { margin: 0; font-size: 12.5px; color: var(--v-t5); }
 
+/* ---- ANALYTICAL CUTS (web/js/performance.js's renderCuts, Task C3) ------
+   BY MARKET / BY ODDS RANGE / BY DECISION GRADE / BY CLASS tables plus a
+   ROLLING (last 7 / last 30) row -- reuses .ov2-table/.ov2-table-wrap for
+   every table and .sechead for the section head (both already declared
+   above/elsewhere); the only new primitives are this block's own
+   .perf-cuts__* layout rules and the two signed-figure colour classes,
+   which reuse the SAME --v-win-lit/--v-money-lit settlement-colour tokens
+   this file's own SETTLEMENT COLOR convention (see this file's later
+   comment above .rec-strip) already defines -- never a new colour. A THIN
+   bucket (n_settled < 20, performance.js's own guard) never gets either
+   colour class, only the shared .pv-chip--warn "THIN SAMPLE" chip
+   (caution amber, the same tone every other "not enough to trust yet"
+   state in this client already uses). */
+.perf-cuts { display: flex; flex-direction: column; gap: var(--sp-9); }
+.perf-cuts__block { display: flex; flex-direction: column; gap: var(--sp-4); }
+.perf-cuts__title { margin: 0; font-family: var(--font-display); font-size: 13px; font-weight: 800;
+  letter-spacing: .1em; color: var(--v-t2); }
+.perf-cuts__label { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+.perf-cuts__thin { flex: none; }
+.perf-cuts__figure--pos { color: var(--v-win-lit); }
+.perf-cuts__figure--neg { color: var(--v-money-lit); }
+.perf-cuts__rolling-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--sp-6); }
+.perf-cuts__rolling-cell { padding: var(--sp-6); display: flex; flex-direction: column; gap: var(--sp-3); }
+.perf-cuts__rolling-head { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+.perf-cuts__rolling-label { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; color: var(--v-t5); }
+.perf-cuts__rolling-figs { display: flex; gap: var(--sp-5); flex-wrap: wrap; font-family: var(--font-mono); font-size: 13px; color: var(--v-t1); }
+.perf-cuts__note { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--v-t5); }
+@media (max-width: 899px) {
+  .perf-cuts__rolling-row { grid-template-columns: 1fr; }
+}
+
 /* ---- PRICE VERDICT block (web/js/betcheck.js's renderPriceVerdict) -----*/
 .pv-block { padding: var(--sp-8); display: flex; flex-direction: column; gap: var(--sp-5); }
 .pv-block__head { display: flex; align-items: center; }

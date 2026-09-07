@@ -50,14 +50,17 @@ able to serve this endpoint.
 from __future__ import annotations
 
 import json
+from datetime import date as _date_cls, timedelta
 from pathlib import Path
 from typing import Optional
 
 from src.accounts.paper import PaperAccountError, PaperBet, SettledBet
 from src.board.settle import LOSS, PUSH, VOID, WIN
+from src.core import odds as odds_math
 from src.engine.settle_slate import PAPER_WAGERS_PATH, load_decisions, load_reviews
 from src.factory.scorecard import compute_realized_stats
 from src.ledger.chain import HashChainLedger
+from src.ledger.records import KNOWN_AT_GRADES
 from src.ledger.writer import SCORECARD_LEDGER_PATH
 from src.paths import data_path, processed_path
 from src.pipeline import slate as slate_mod
@@ -86,6 +89,50 @@ DEFAULT_EVENT_GAME_MAP_PATH = processed_path("event_game_map.jsonl")
 DEFAULT_BOXSCORES_PATH = processed_path("boxscores_2026.jsonl")
 
 _STARTING_BANKROLL = 1000.0
+
+# ---------------------------------------------------------------------------
+# `cuts()` -- analytical buckets over settled paper bets (Task C3).
+# ---------------------------------------------------------------------------
+
+THIN_THRESHOLD = 20  # fewer than this many settled bets in a bucket -> thin=True
+
+GRADE_UNKNOWN = "unknown"
+# Fixed order: known grades best-to-worst, then the honest "could not be
+# joined to a decision" bucket last -- never dropped, never guessed.
+_GRADE_ORDER = tuple(sorted(KNOWN_AT_GRADES)) + (GRADE_UNKNOWN,)
+_GRADE_LABEL = {grade: grade for grade in KNOWN_AT_GRADES}
+_GRADE_LABEL[GRADE_UNKNOWN] = "grade not recorded"
+
+# Fixed American-odds edges for `by_odds_range` -- see `cuts()`'s own
+# docstring for the exact boundary notation each label below implements.
+_ODDS_RANGE_ORDER = ("heavy_favorite", "favorite", "slight_favorite",
+                     "pickem_slight_dog", "dog", "longshot")
+_ODDS_RANGE_LABEL = {
+    "heavy_favorite": "heavy favourite",
+    "favorite": "favourite",
+    "slight_favorite": "slight favourite",
+    "pickem_slight_dog": "pick'em/slight dog",
+    "dog": "dog",
+    "longshot": "longshot",
+}
+
+# WHY THIS NOTE IS LONGER THAN A THIN-SAMPLE WARNING (2026-09-07). These
+# buckets are cut from settled results AFTER the fact -- nobody registered
+# "pick'em dogs win" as a hypothesis before the season and then tested it.
+# That is the exact move this project's research discipline exists to
+# resist (docs/RESEARCH_CATALOGUE.md: pre-registration before evaluation,
+# published losers, no rescue by threshold change), and every family that
+# WAS pre-registered closed null. A reader who sees +34% on one odds bucket
+# and reads it as a finding has been misled by the page, not by the data,
+# so the page says plainly what these cuts are and are not.
+CUTS_NOTE = (
+    "Descriptive cuts of settled paper bets at flat 1-unit stakes, sliced "
+    "after the results were known -- not pre-registered hypotheses, and not "
+    "findings. A bucket under 20 bets is marked thin, and even a few dozen "
+    "bets cannot establish a return: the spread between the best and worst "
+    "bucket here is roughly what noise looks like at this sample size. Every "
+    "hypothesis this project did pre-register and test closed null."
+)
 
 
 # ---------------------------------------------------------------------------
@@ -599,6 +646,273 @@ def freshness(accounts_dir=None, wagers_path=None, scorecard_path=None,
 
 
 # ---------------------------------------------------------------------------
+# `cuts()` helpers
+# ---------------------------------------------------------------------------
+
+def _all_settled(accounts_dir=None) -> list:
+    """`[(system_id, bet_id, day, SettledBet), ...]` across every account --
+    the one settled-bet pool every cut below groups a different way, loaded
+    once per `cuts()` call rather than once per cut."""
+    out = []
+    for system_id, rows in _load_settled(accounts_dir).items():
+        for day, bet_id, settled in rows:
+            out.append((system_id, bet_id, day, settled))
+    return out
+
+
+def _bucket_stats(key, label, bets) -> dict:
+    """One `cuts()` bucket: `{key, label, n_settled, wins, losses, pushes,
+    hit_rate, units_staked, units_net, return_on_units, avg_odds_decimal,
+    thin}` computed directly over `bets` (an iterable of `SettledBet`).
+
+    Deliberately NOT `compute_realized_stats`: that helper fills an empty
+    bucket's `roi_units` with a fabricated `0.0` (division-by-zero
+    fallback) rather than omitting it -- exactly the fabrication this
+    task's honesty rule forbids ("a bucket with zero settled bets ...
+    OMITS the units/return, never a zero"). A bucket with settled bets but
+    zero staked units (every one of them a push) still reports a REAL
+    `units_net` (their true, usually-zero, summed profit) but an honestly
+    `None` `return_on_units` (0/0 is undefined, not zero).
+    """
+    bets = list(bets)
+    n = len(bets)
+    wins = sum(1 for b in bets if b.outcome == WIN)
+    losses = sum(1 for b in bets if b.outcome == LOSS)
+    pushes = sum(1 for b in bets if b.outcome == PUSH)
+    decided = wins + losses
+    hit_rate = (wins / decided) if decided else None
+
+    if n == 0:
+        units_staked = units_net = return_on_units = avg_odds_decimal = None
+    else:
+        units_staked = sum(
+            b.bet.stake_units for b in bets if b.outcome not in (PUSH, VOID))
+        units_net = sum(b.profit_units for b in bets)
+        return_on_units = (units_net / units_staked) if units_staked else None
+        odds_decimals = []
+        for b in bets:
+            try:
+                odds_decimals.append(odds_math.american_to_decimal(b.bet.price_american))
+            except Exception:
+                continue
+        avg_odds_decimal = (
+            sum(odds_decimals) / len(odds_decimals)) if odds_decimals else None
+
+    return {
+        "key": key,
+        "label": label,
+        "n_settled": n,
+        "wins": wins,
+        "losses": losses,
+        "pushes": pushes,
+        "hit_rate": hit_rate,
+        "units_staked": units_staked,
+        "units_net": units_net,
+        "return_on_units": return_on_units,
+        "avg_odds_decimal": avg_odds_decimal,
+        "thin": n < THIN_THRESHOLD,
+    }
+
+
+def _odds_range_key(price_american) -> Optional[str]:
+    """American price -> one of `_ODDS_RANGE_ORDER`. Boundary prices land
+    exactly where their bucket's own bracket notation says (see `cuts()`'s
+    docstring): -200 is `heavy_favorite` (closed at -200), -130 is
+    `favorite` (closed at -130), 100 is `pickem_slight_dog` (closed at
+    100), 130 is `dog` (closed at 130), 200 is `longshot` (closed at 200)."""
+    if price_american is None:
+        return None
+    p = price_american
+    if p <= -200:
+        return "heavy_favorite"
+    if p <= -130:
+        return "favorite"
+    if p < 100:
+        return "slight_favorite"
+    if p < 130:
+        return "pickem_slight_dog"
+    if p < 200:
+        return "dog"
+    return "longshot"
+
+
+def _wager_index(wagers) -> dict:
+    """`{(system_id, bet_id): wager_row}` -- the settled-bet -> wager half
+    of `by_grade`'s join (a settled bet's own row carries no `event_id`/
+    `decision_utc`, only its account ledger's bet_id/system_id/market/side/
+    price; the wager row is what carries the rest of the 5-field decision
+    key)."""
+    return {(w.get("system_id"), w.get("bet_id")): w
+            for w in wagers or () if isinstance(w, dict)}
+
+
+def _decisions_index(decisions) -> dict:
+    """`{(event_id, system_id, market_key, selection_id, decision_utc):
+    decision}` -- the SAME 5-field join key `src.report.daily_record` and
+    `src.engine.settle_slate.run_settle` use (`decision_key_for`), reused
+    here rather than invented a second way. First row wins per key."""
+    out: dict = {}
+    for d in decisions or ():
+        key = (
+            engine_bridge._field(d, "event_id"),
+            engine_bridge._field(d, "system_id"),
+            engine_bridge._field(d, "market_key"),
+            engine_bridge._field(d, "selection_id"),
+            engine_bridge._field(d, "decision_utc"),
+        )
+        out.setdefault(key, d)
+    return out
+
+
+def _known_at_grade_for(system_id, bet_id, wager_idx, decisions_idx) -> Optional[str]:
+    """The `known_at_grade` of the `DecisionRecord` a settled bet's wager
+    joins to, or `None` if the wager itself is missing, the join key
+    cannot be matched to any decision, or the matched decision's grade is
+    not one of `KNOWN_AT_GRADES` -- every one of those is `by_grade`'s
+    `unknown` bucket, never a guess."""
+    wager = wager_idx.get((system_id, bet_id))
+    if wager is None:
+        return None
+    key = (wager.get("event_id"), system_id, wager.get("market_key"),
+           wager.get("selection_id"), wager.get("decision_utc"))
+    decision = decisions_idx.get(key)
+    if decision is None:
+        return None
+    grade = engine_bridge._field(decision, "known_at_grade")
+    return grade if grade in KNOWN_AT_GRADES else None
+
+
+def cuts(today=None, *, accounts_dir=None, wagers_path=None,
+        decisions_path=None) -> dict:
+    """Analytical cuts over every settled paper bet across every system:
+    `{by_market, by_odds_range, by_grade, by_class, rolling}`, each a list
+    of buckets shaped `{key, label, n_settled, wins, losses, pushes,
+    hit_rate, units_staked, units_net, return_on_units, avg_odds_decimal,
+    thin}` (see `_bucket_stats`'s own docstring for the honesty rule on
+    empty/all-push buckets).
+
+    BY_MARKET -- one bucket per `market_key` actually present in the
+    settled-bet pool (h2h, spreads, totals, and any first-five variant),
+    never a fixed enumeration -- a market this ledger has never staked
+    simply has no bucket at all.
+
+    BY_ODDS_RANGE -- six FIXED buckets, always present even at zero, over
+    the American price actually taken (`PaperBet.price_american`):
+        heavy favourite     (-inf, -200]
+        favourite           (-200, -130]
+        slight favourite    (-130, 100)
+        pick'em/slight dog  [100, 130)
+        dog                 [130, 200)
+        longshot            [200, +inf)
+    A price exactly on a boundary lands in the bucket whose bracket is
+    CLOSED at that value (see `_odds_range_key`).
+
+    BY_GRADE -- one bucket per `known_at_grade` (A/B/C/D), plus a fixed
+    `unknown` bucket ("grade not recorded") for any settled bet whose
+    wager cannot be joined to the `DecisionRecord` it came from -- joined
+    by the SAME 5-field key (`event_id`, `system_id`, `market_key`,
+    `selection_id`, `decision_utc`) `src.report.daily_record` and
+    `src.engine.settle_slate.run_settle` already use. Never dropped,
+    never guessed.
+
+    BY_CLASS -- CONTROL / MARKET_REFERENCE / FORWARD_TEST, always all
+    three, classified through `engine_bridge.system_class` (never
+    re-derived).
+
+    ROLLING -- exactly two buckets, `key` "last_7" and "last_30", over
+    settled days ending at `today` (an ISO date STRING the caller
+    supplies -- this module never reads a clock, see the module
+    docstring) or, when `today` is not given, at the LATEST settled day
+    found in the data -- a fallback that is itself computed from the
+    ledgers, never from `datetime.now()`.
+    """
+    flat = _all_settled(accounts_dir)  # [(system_id, bet_id, day, SettledBet), ...]
+
+    # -- by_market: dynamic, only markets actually present ------------------
+    market_groups: dict = {}
+    for _sid, _bid, _day, settled in flat:
+        market_groups.setdefault(settled.bet.market_key, []).append(settled)
+    by_market = [
+        _bucket_stats(market_key, market_key, bets)
+        for market_key, bets in sorted(
+            market_groups.items(), key=lambda kv: (kv[0] or ""))
+    ]
+
+    # -- by_odds_range: fixed six buckets, always present --------------------
+    odds_groups = {key: [] for key in _ODDS_RANGE_ORDER}
+    for _sid, _bid, _day, settled in flat:
+        range_key = _odds_range_key(settled.bet.price_american)
+        if range_key is not None:
+            odds_groups[range_key].append(settled)
+    by_odds_range = [
+        _bucket_stats(key, _ODDS_RANGE_LABEL[key], odds_groups[key])
+        for key in _ODDS_RANGE_ORDER
+    ]
+
+    # -- by_grade: join settled bet -> wager -> DecisionRecord ---------------
+    try:
+        wagers = tuple(HashChainLedger(wagers_path or PAPER_WAGERS_PATH).read())
+    except Exception:
+        wagers = ()
+    wager_idx = _wager_index(wagers)
+    try:
+        decisions = load_decisions(path=decisions_path)
+    except Exception:
+        decisions = ()
+    decisions_idx = _decisions_index(decisions)
+
+    grade_groups = {grade: [] for grade in _GRADE_ORDER}
+    for system_id, bet_id, _day, settled in flat:
+        grade = _known_at_grade_for(system_id, bet_id, wager_idx, decisions_idx)
+        grade_groups[grade or GRADE_UNKNOWN].append(settled)
+    by_grade = [
+        _bucket_stats(grade, _GRADE_LABEL[grade], grade_groups[grade])
+        for grade in _GRADE_ORDER
+    ]
+
+    # -- by_class: CONTROL / MARKET_REFERENCE / FORWARD_TEST, always all ----
+    class_groups = {CONTROL: [], MARKET_REFERENCE: [], FORWARD_TEST: []}
+    for system_id, _bid, _day, settled in flat:
+        class_groups[engine_bridge.system_class(system_id)].append(settled)
+    by_class = [
+        _bucket_stats(cls, cls, class_groups[cls])
+        for cls in (FORWARD_TEST, MARKET_REFERENCE, CONTROL)
+    ]
+
+    # -- rolling: last_7 / last_30, relative to `today` (or the latest
+    # settled day, computed from the data, never from a clock) -------------
+    all_days = [day for _sid, _bid, day, _settled in flat if day]
+    ref_day = today or (max(all_days) if all_days else None)
+    ref_d = None
+    if ref_day:
+        try:
+            ref_d = _date_cls.fromisoformat(str(ref_day))
+        except (ValueError, TypeError):
+            ref_d = None
+    if ref_d is None:
+        rolling = [_bucket_stats("last_7", "LAST 7 DAYS", ()),
+                  _bucket_stats("last_30", "LAST 30 DAYS", ())]
+    else:
+        ref_s = ref_d.isoformat()
+        from_7 = (ref_d - timedelta(days=6)).isoformat()
+        from_30 = (ref_d - timedelta(days=29)).isoformat()
+        bets_7 = [settled for _sid, _bid, day, settled in flat
+                 if day and from_7 <= day <= ref_s]
+        bets_30 = [settled for _sid, _bid, day, settled in flat
+                  if day and from_30 <= day <= ref_s]
+        rolling = [_bucket_stats("last_7", "LAST 7 DAYS", bets_7),
+                  _bucket_stats("last_30", "LAST 30 DAYS", bets_30)]
+
+    return {
+        "by_market": by_market,
+        "by_odds_range": by_odds_range,
+        "by_grade": by_grade,
+        "by_class": by_class,
+        "rolling": rolling,
+    }
+
+
+# ---------------------------------------------------------------------------
 # The whole payload
 # ---------------------------------------------------------------------------
 
@@ -623,12 +937,21 @@ def build_performance_payload(limit: int = 50, *, accounts_dir=None,
                               wagers_path=None, review_path=None,
                               decisions_path=None, scorecard_path=None,
                               event_game_map_path=None,
-                              boxscores_path=None, now=None) -> dict:
+                              boxscores_path=None, now=None,
+                              today=None) -> dict:
     """The whole `GET /performance` payload -- standings, class rollups,
-    a recent-picks feed, the reasoning-outcome split, and freshness, all
-    assembled from the read-only sources above. Never raises on missing
-    stores: an empty repo (no accounts, no wagers, no reviews yet) produces
-    a structurally complete, honestly-empty payload."""
+    a recent-picks feed, the reasoning-outcome split, freshness, and the
+    analytical `cuts`, all assembled from the read-only sources above.
+    Never raises on missing stores: an empty repo (no accounts, no wagers,
+    no reviews yet) produces a structurally complete, honestly-empty
+    payload.
+
+    `today`, like `record_strip`'s own parameter, is an ISO date STRING
+    the caller supplies -- this module never reads a clock itself (see the
+    module docstring); it only bounds `cuts()`'s rolling windows. Omitted,
+    `cuts()` falls back to the latest settled day found in the data, still
+    without touching a clock.
+    """
     from datetime import datetime, timezone
 
     standings = system_standings(accounts_dir)
@@ -660,5 +983,8 @@ def build_performance_payload(limit: int = 50, *, accounts_dir=None,
             FORWARD_TEST: cumulative_series(FORWARD_TEST, accounts_dir),
             ALL_SYSTEMS: cumulative_series(ALL_SYSTEMS, accounts_dir),
         },
+        "cuts": cuts(today, accounts_dir=accounts_dir, wagers_path=wagers_path,
+                    decisions_path=decisions_path),
+        "cuts_note": CUTS_NOTE,
         "notes": notes,
     }

@@ -15,6 +15,8 @@ api/today.py uses for its own rebuild.
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, HTTPException
 
 from src.appstate import freshness
@@ -36,8 +38,9 @@ MIN_LIMIT, MAX_LIMIT = 1, 200
 
 @router.get("/performance")
 def get_performance(limit: int = 50) -> dict:
-    """Paper-account standings, class rollups, recent picks and the
-    reasoning-outcome split -- `limit` bounds only `recent_picks`.
+    """Paper-account standings, class rollups, recent picks, the
+    reasoning-outcome split, and the analytical `cuts` -- `limit` bounds
+    only `recent_picks`.
 
     Validated here (a plain 400, same as api/games.py's malformed-date
     check) rather than left to FastAPI's `Query(ge=..., le=...)` alone:
@@ -46,14 +49,23 @@ def get_performance(limit: int = 50) -> dict:
     direct function call the way every other route in this codebase's
     test suite is exercised (tests/test_api_opportunities.py's own
     malformed-date test does the same manual check for the same reason).
+
+    `today` is read from the wall clock HERE, once, and passed straight
+    into `build_performance_payload` -- same discipline as api/daily.py's
+    `get_record_strip` (`src.report.paper_performance` never calls
+    `datetime.now()`/`date.today()` itself; see that module's docstring).
+    Folded into the cache key alongside `limit` so a cached payload from
+    yesterday's UTC date is never served past a date rollover.
     """
     if not (MIN_LIMIT <= limit <= MAX_LIMIT):
         raise HTTPException(
             status_code=400,
             detail=f"limit must be between {MIN_LIMIT} and {MAX_LIMIT} "
                    f"(got {limit!r})")
+    today = datetime.now(timezone.utc).date().isoformat()
     payload, _meta = _performance_cache.get(
-        ("performance", limit),
-        lambda: paper_performance.build_performance_payload(limit=limit),
+        ("performance", limit, today),
+        lambda: paper_performance.build_performance_payload(
+            limit=limit, today=today),
     )
     return payload

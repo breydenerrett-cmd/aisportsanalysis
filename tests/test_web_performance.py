@@ -184,5 +184,53 @@ class GamesModelVsMarketWiredHonestly(unittest.TestCase):
         self.assertIn("NO INDEPENDENT MODEL YET", self.text)
 
 
+class AnalyticalCutsRendered(unittest.TestCase):
+    """Task C3: the four cuts tables plus the ROLLING row and the THIN
+    SAMPLE chip, all rendered below the class sections and above recent
+    picks (see performance.js's own `renderPerformance` assembly order)."""
+
+    def setUp(self):
+        self.text = _read(PERFORMANCE_PATH)
+
+    def test_four_table_titles_present(self):
+        for title in ("BY MARKET", "BY ODDS RANGE", "BY DECISION GRADE", "BY CLASS"):
+            self.assertIn(title, self.text)
+
+    def test_rolling_row_present(self):
+        self.assertIn("ROLLING", self.text)
+        self.assertIn("LAST 7 DAYS", self.text)
+        self.assertIn("LAST 30 DAYS", self.text)
+
+    def test_thin_sample_literal_present(self):
+        self.assertIn("THIN SAMPLE", self.text)
+
+    def test_cuts_render_function_defined_and_called(self):
+        self.assertRegex(self.text, r"\bfunction renderCuts\s*\(")
+        self.assertIn("renderCuts(payload.cuts, payload.cuts_note)", self.text)
+
+    def test_cuts_rendered_between_class_sections_and_recent_picks(self):
+        classes_at = self.text.index("renderClassSections(payload.classes, payload.systems)")
+        cuts_at = self.text.index("renderCuts(payload.cuts, payload.cuts_note)")
+        picks_at = self.text.index("renderRecentPicks(payload.recent_picks)")
+        self.assertLess(classes_at, cuts_at)
+        self.assertLess(cuts_at, picks_at)
+
+    def test_thin_bucket_never_gets_a_pos_or_neg_colour_class(self):
+        # cutsSignedCell must early-return a plain, class-free <td> when
+        # the bucket is thin, before ever computing perf-cuts__figure--pos
+        # /--neg -- i.e. the thin guard reads BEFORE the colour ternary.
+        fn = self.text.split("function cutsSignedCell(")[1].split("\nfunction ")[0]
+        thin_check_at = fn.index("if (thin)")
+        colour_ternary_at = fn.index("perf-cuts__figure--pos")
+        self.assertLess(thin_check_at, colour_ternary_at)
+
+    def test_units_and_return_never_zero_filled_when_absent(self):
+        # cutsSignedCell must render "—" for a non-number, never coerce a
+        # missing units/return figure to 0.
+        fn = self.text.split("function cutsSignedCell(")[1].split("\nfunction ")[0]
+        self.assertIn('"—"', fn)
+        self.assertNotRegex(fn, r"\|\|\s*0\b")
+
+
 if __name__ == "__main__":
     unittest.main()

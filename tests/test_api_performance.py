@@ -63,6 +63,32 @@ class GetPerformanceShapeTests(_ResetPerformanceCache):
             self.assertNotIn("roi_units", row)
             self.assertIn("return_on_units", row)
 
+    def test_cuts_present_with_documented_keys(self):
+        payload = perf_api.get_performance(limit=5)
+        self.assertIn("cuts", payload)
+        self.assertIn("cuts_note", payload)
+        self.assertEqual(
+            set(payload["cuts"]),
+            {"by_market", "by_odds_range", "by_grade", "by_class", "rolling"})
+
+    def test_cuts_bucket_shape(self):
+        payload = perf_api.get_performance(limit=5)
+        expected = {"key", "label", "n_settled", "wins", "losses", "pushes",
+                   "hit_rate", "units_staked", "units_net",
+                   "return_on_units", "avg_odds_decimal", "thin"}
+        for cut_name, buckets in payload["cuts"].items():
+            for bucket in buckets:
+                self.assertEqual(set(bucket), expected, cut_name)
+
+    def test_rolling_has_exactly_last_7_and_last_30(self):
+        payload = perf_api.get_performance(limit=5)
+        keys = [b["key"] for b in payload["cuts"]["rolling"]]
+        self.assertEqual(keys, ["last_7", "last_30"])
+
+    def test_cuts_is_json_serialisable(self):
+        payload = perf_api.get_performance(limit=5)
+        json.dumps(payload["cuts"])  # must not raise
+
 
 @unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")
 class GetPerformanceLimitValidationTests(_ResetPerformanceCache):
