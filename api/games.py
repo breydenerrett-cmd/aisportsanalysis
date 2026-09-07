@@ -31,9 +31,11 @@ from typing import Optional, Tuple
 from fastapi import APIRouter, HTTPException, Request
 
 from src.analysis import gamepayload
+from src.analysis import priceverdict
 from src.appstate import events, freshness
 from src.pipeline import briefing, history
 from src.providers import mlb
+from src.report import engine_bridge
 
 router = APIRouter()
 
@@ -125,6 +127,53 @@ def _build_entries(date: str, **build_slate_kwargs) -> list:
     return entries, notes, meta
 
 
+def _price_verdicts_for_entry(dossier, *, now: datetime) -> dict:
+    """`{"away": PriceVerdict-dict, "home": PriceVerdict-dict}` from this
+    game's own `price_improvement` board -- the same de-vigged-consensus-
+    vs-best-price comparison `src.analysis.opportunities` builds for the
+    Top Opportunities surface, computed here per game rather than joined
+    from there. A side with no priceable quote (or a game with no board at
+    all) gets `build_price_verdict`'s own INSUFFICIENT DATA dict, never an
+    absent key.
+    """
+    section = dossier.get("price_improvement")
+    sides = (section or {}).get("sides") or {}
+    dispersion = (section or {}).get("dispersion") or {}
+    books = dispersion.get("books")
+    observed_utc = (section or {}).get("observed_utc")
+    out = {}
+    for side in ("away", "home"):
+        detail = sides.get(side) or {}
+        if (not section or section.get("skipped") or detail.get("skipped")
+                or detail.get("best_price") is None):
+            out[side] = priceverdict.build_price_verdict(
+                american_price=None, consensus_probability=None,
+                books=None, observed_utc=None, now=now)
+            continue
+        best_price = detail.get("best_price")
+        best_book = detail.get("best_book")
+        out[side] = priceverdict.build_price_verdict(
+            american_price=best_price,
+            consensus_probability=detail.get("consensus_probability"),
+            books=books, observed_utc=observed_utc, now=now,
+            best_price=best_price, best_book=best_book)
+    return out
+
+
+def _engine_summary_for_entry(dossier, date: str) -> Optional[dict]:
+    """This game's `engine_bridge.summarize_game` rollup, or `None` when no
+    engine decision joins to it -- never a zero-filled rollup standing in
+    for "no data joined"."""
+    game = dossier.game
+    # Canonical abbreviations (ATH -> OAK, AZ -> ARI): the schedule and the
+    # odds feed spell those clubs differently -- see engine_bridge.game_key.
+    key = engine_bridge.game_key(game.get("away_team"), game.get("home_team"),
+                                 game.get("date") or date)
+    by_key = engine_bridge.decisions_for_date(date)
+    summaries = by_key.get(key)
+    return engine_bridge.summarize_game(summaries) if summaries else None
+
+
 def _record_page_view(request: Optional[Request], route: str, date: str) -> None:
     """Analytics page_view on a successful GET, keyed to the caller
     api.auth.get_current_user already resolved and stashed on
@@ -191,6 +240,8 @@ def get_game(date: str, away: str, home: str, request: Request = None) -> dict:
         "quick": gamepayload.build_quick_view(entry, now=now),
         "advanced": gamepayload.build_advanced_view(entry, now=now),
         "freshness": meta,
+        "engine": _engine_summary_for_entry(entry["dossier"], date),
+        "price_verdicts": _price_verdicts_for_entry(entry["dossier"], now=now),
     }
     if len(matches) > 1:
         payload["note"] = (

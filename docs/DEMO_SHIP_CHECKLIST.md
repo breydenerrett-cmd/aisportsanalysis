@@ -35,9 +35,10 @@ Sprint clock: T+0 = 00:20Z. Deadline T+240 = 04:20Z.
 | S2 | `.dockerignore` excludes `evidence/`, and `data/paper_accounts/` is not copied → the image has no ledgers, so no performance data can ever reach the product | Dockerfile `COPY evidence/` + `COPY data/paper_accounts/`; dockerignore negation | DONE (local) |
 | S3 | Whole game surface needs an invite token; `APP_ADMIN_TOKEN` on staging unknown, no way to mint a token for Brey without a Fly login | `APP_PUBLIC_DEMO=1` env flag (default OFF): read-only game surface + Bet Check served without a token; personal routes stay authed; `/meta.public_demo` tells the client | DONE (local); set in `deploy/fly.staging.toml` at deploy |
 | S4 | `src/core/timing.py` imports POSIX `resource`; the app cannot start on the Windows dev box | guarded import, `peak_rss_mb` = 0.0 on Windows | DONE |
-| S5 | No capture scheduler is firing (cron never registered; cloud routines being paused) → board goes stale during the demo | dispatch `forward-capture` by hand ~hourly during the sprint; note in handoff | ONGOING |
+| S5 | No capture scheduler was firing (cron never fired; cloud routines being paused) → board goes stale during the demo | dispatched `forward-capture` by hand at 00:36Z; hourly watchdog in this session. RESOLVED 01:00:46Z: the first genuine GitHub `schedule` run (34071611931) fired and committed 0bc53ca; the cloud Parent switched its routine to fallback-only at 01:04Z (17fd31b). The watchdog now only dispatches if the cron stops again | RESOLVED |
 | S7 | `web/css/screens.css` had TWO unclosed `@media (max-width: 899px)` blocks (after the Bet Check V2 mobile rules, and after the Game Advanced V2 mobile rules). Everything below each one -- Game Quick V2, Game Advanced V2, Gameday V2, Odds V2 -- only applied at phone widths; on a desktop browser the Gameday and Game screens rendered as bare text. The sessions that shipped it only ever saw a narrow viewport | two closing braces; brace count now balanced (947/947) | DONE (local) |
 | S8 | Entrance animation hides content until an IntersectionObserver callback arrives; in an embedded/emulated viewport the callback never came for below-the-fold panels (Game view: price, spotlight, teams stayed at opacity 0 even after scrolling) | `web/js/motion.js` fail-safe: any armed element still hidden after 1.5 s is revealed | DONE (local) |
+| S9 | Engine-decision join keyed on raw abbreviations: the odds feed's "Athletics" resolves to OAK, the schedule says ATH, so TOR@ATH (the one LEAN on the board) came back with no engine decisions while every other game joined | `engine_bridge.game_key()` canonicalises via `parks.canonical_team` on both sides (same lesson as `prices.matchup_key`); regression test | DONE (local) |
 | S6 | REAL REGRESSION since 2026-09-03 10:07Z: the multibook store gained spreads/totals/first-five rows (they carry a `market` key; moneyline rows do not) and the board readers took "newest row per book" across all of them, so a book's totals row (null prices) or first-five row (wrong prices) replaced its moneyline. Every game on `/odds`, every card and every consensus read "9 books, no prices, no consensus" — the product has shown no consensus on any board for four days | `snapshots.moneyline_rows()` filter in `prices.boards_by_matchup` and `snapshots.multibook_quotes`; 2 regression tests; verified live: 8 of 11 boards on 09-07 now price with 6–9 books | DONE (local) |
 
 ## Frozen scope — the vertical slice
@@ -151,3 +152,10 @@ A stale board can never carry the strongest words.
   44 new tests, 265 tests green across the 11 named modules. B2 started.
 - 00:57Z S7 found (two unclosed media queries) and fixed; 8c70cab pushed;
   deploy 34071425456 green. Local desktop parse: 775 rules (was 567).
+- 01:00Z B1 committed as 37b47ce; deploy 34071588717 green. Real-data check
+  on the local server: ATH +189 → LEAN (+0.59 pts, HIGH, 9 books); PHI −175
+  → OVERPRICED (−3.48 pts). First genuine `schedule` capture run fired at
+  01:00:46Z (S5 resolved).
+- 01:06Z S8 (reveal fail-safe) + asset `Cache-Control: no-cache` pushed as
+  8bed0d5 after rebasing over the cloud Parent's 4fc98fc/17fd31b. Game view
+  verified end to end locally at 1280px (starters, verdict, price panel).
