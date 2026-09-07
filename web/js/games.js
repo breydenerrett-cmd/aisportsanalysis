@@ -303,10 +303,21 @@ function gqvIdentity(quick, advanced) {
       + "nothing rather than a placeholder name. Records and splits above are unaffected.",
       "UNANNOUNCED"));
   }
+  // F-2 (docs/DEMO_SHIP_CHECKLIST.md): this deployment ships without the
+  // historical feature stores, so `teams` is absent on every game, not
+  // just this one -- a real, structural gap, never a per-game failure.
+  // The bare per-field `notYetAvailable(gapReason(...))` used to print
+  // the store's own internal reason ("no historical results store")
+  // as the FIRST thing a visitor sees under the matchup identity, which
+  // reads as broken rather than designed. One calm, honest line in the
+  // same amber/absence slot instead -- it still says plainly what is
+  // missing, it just does not lead with an error string. The Advanced
+  // view's own consolidated `gavGapsConsolidated` panel is untouched.
   if (!teams) {
     wrap.appendChild(notYetAvailable(
-      gapReason(advanced, "teams") || "Team records are not available for this game.",
-      "NOT AVAILABLE"));
+      "Team records and form are not in this build. The board, the price read and the frozen "
+      + "engine record below are.",
+      "NOT IN THIS BUILD"));
   }
   return wrap;
 }
@@ -578,8 +589,47 @@ function gqvSpotlight(quick, advanced) {
  * signals side by side without either one masquerading as the other.
  * ===================================================================*/
 
-function gmvVerdictColumn(sideKey, abbr, verdict, priceSide) {
+/** The ranking eyebrow for one column -- "best" gets the labeled claim
+ * plus the honesty caption (ranked on price-vs-consensus only, never a
+ * pick), "other" gets the plain, unadorned label, and `null` (both
+ * sides unranked) renders nothing here -- the panel-level note in
+ * `gqvModelVsMarket` covers that case once, not per column. */
+function gmvRankBadge(rank) {
+  if (rank === "best") {
+    const wrap = el("div", { class: "gmv__rank-wrap" });
+    wrap.appendChild(el("div", { class: "gmv__rank gmv__rank--best", "data-hook": "gmv-best-side",
+      text: "BEST SUPPORTED PRICE ON THIS GAME" }));
+    wrap.appendChild(el("p", { class: "gmv__rank-caption",
+      text: "Ranked by price against the de-vigged consensus only -- not a prediction of who wins, "
+          + "and not advice to bet it." }));
+    return wrap;
+  }
+  if (rank === "other") {
+    return el("div", { class: "gmv__rank gmv__rank--other", "data-hook": "gmv-other-side", text: "OTHER SIDE" });
+  }
+  return null;
+}
+
+/** One side's `reasons`/`risks` array under a quiet heading, rendered
+ * VERBATIM -- never reworded, summarised or invented. An empty (or
+ * missing) array renders nothing at all, never an empty box or a
+ * padded filler line. */
+function gmvEvidenceList(label, items) {
+  if (!Array.isArray(items) || items.length === 0) return null;
+  const block = el("div", { class: "gmv__evidence" });
+  block.appendChild(el("div", { class: "gmv__evidence-label", text: label }));
+  const list = el("ul", { class: "gmv__evidence-list" });
+  for (const item of items) {
+    list.appendChild(el("li", { text: String(item) }));
+  }
+  block.appendChild(list);
+  return block;
+}
+
+function gmvVerdictColumn(sideKey, abbr, verdict, priceSide, rank) {
   const col = el("div", { class: "gmv__col" });
+  const badge = gmvRankBadge(rank);
+  if (badge) col.appendChild(badge);
   col.appendChild(gqvBadge(abbr));
   col.appendChild(el("div", { class: "gmv__col-name", text: `${teamName(abbr, "name") || abbr} moneyline` }));
 
@@ -606,6 +656,12 @@ function gmvVerdictColumn(sideKey, abbr, verdict, priceSide) {
   if (verdict.evidence_tier) {
     col.appendChild(el("p", { class: "gmv__tier", text: `EVIDENCE TIER ${verdict.evidence_tier}` }));
   }
+
+  const why = gmvEvidenceList("WHY", verdict.reasons);
+  if (why) col.appendChild(why);
+  const against = gmvEvidenceList("AGAINST", verdict.risks);
+  if (against) col.appendChild(against);
+
   return col;
 }
 
@@ -670,6 +726,28 @@ function engineDecisionsList(engine) {
   return wrap;
 }
 
+/** Orders away/home for the panel's ranking eyebrow, by `value_points`
+ * descending -- a null `value_points` (INSUFFICIENT DATA) always sorts
+ * last, so it never outranks a priced side. Returns two `{key, rank}`
+ * entries in display order; `rank` is "best"/"other", or `null` on BOTH
+ * entries when neither side has a priced `value_points` to rank on. */
+function gmvRankOrder(verdicts) {
+  const points = (key) => {
+    const v = verdicts[key];
+    return v && typeof v.value_points === "number" ? v.value_points : null;
+  };
+  const keys = ["away", "home"].sort((a, b) => {
+    const pa = points(a);
+    const pb = points(b);
+    if (pa === null && pb === null) return 0;
+    if (pa === null) return 1;
+    if (pb === null) return -1;
+    return pb - pa;
+  });
+  const unranked = points(keys[0]) === null && points(keys[1]) === null;
+  return keys.map((key, i) => ({ key, rank: unranked ? null : (i === 0 ? "best" : "other") }));
+}
+
 function gqvModelVsMarket(payload, quick) {
   const wrap = el("section", { class: "gmv panel chamfer", "data-hook": "model-vs-market",
     "data-rise": "" });
@@ -677,9 +755,18 @@ function gqvModelVsMarket(payload, quick) {
 
   const verdicts = (payload && typeof payload.price_verdicts === "object" && payload.price_verdicts) || {};
   const sides = (quick.price && quick.price.sides) || {};
+  const order = gmvRankOrder(verdicts);
+
+  if (order.every((o) => o.rank === null)) {
+    wrap.appendChild(el("p", { class: "gmv__unranked-note", "data-hook": "gmv-unranked",
+      text: "No priced side to rank on this game." }));
+  }
+
   const cols = el("div", { class: "gmv__cols" });
-  cols.appendChild(gmvVerdictColumn("away", quick.away_team, verdicts.away, sides.away));
-  cols.appendChild(gmvVerdictColumn("home", quick.home_team, verdicts.home, sides.home));
+  for (const { key, rank } of order) {
+    const abbr = key === "away" ? quick.away_team : quick.home_team;
+    cols.appendChild(gmvVerdictColumn(key, abbr, verdicts[key], sides[key], rank));
+  }
   wrap.appendChild(cols);
 
   const engine = payload && payload.engine ? payload.engine : null;

@@ -2977,11 +2977,23 @@
 .gmv { padding: var(--sp-9); margin: var(--sp-9) 0; }
 .gmv__eyebrow { font-family: var(--font-display); font-size: 13px; font-weight: 800; letter-spacing: .12em;
   color: var(--v-t1); margin-bottom: var(--sp-7); }
+.gmv__unranked-note { margin: 0 0 var(--sp-7); font-size: 11.5px; line-height: 1.4; color: var(--v-t5); }
 .gmv__cols { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-9); }
 .gmv__col { display: flex; flex-direction: column; gap: var(--sp-3); }
+.gmv__rank-wrap { display: flex; flex-direction: column; gap: var(--sp-1); }
+.gmv__rank { font-family: var(--font-display); font-size: 11px; font-weight: 800; letter-spacing: .1em; }
+.gmv__rank--best { color: var(--v-money-lit); }
+.gmv__rank--other { color: var(--v-t5); }
+.gmv__rank-caption { margin: 0; font-size: 10.5px; line-height: 1.4; color: var(--v-t5); }
 .gmv__col-name { font-family: var(--font-display); font-size: 13px; font-weight: 700; color: var(--v-t2); }
 .gmv__price-line { font-family: var(--font-mono); font-size: 13px; color: var(--v-t0); }
 .gmv__tier { margin: 0; font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; color: var(--v-t5); }
+.gmv__evidence { margin-top: var(--sp-3); }
+.gmv__evidence-label { margin: 0 0 var(--sp-2); font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+  letter-spacing: .1em; color: var(--v-t5); text-transform: uppercase; }
+.gmv__evidence-list { margin: 0; padding-left: 16px; font-size: 12px; line-height: 1.5; color: var(--v-t3); }
+.gmv__evidence-list li { margin-bottom: var(--sp-1); }
+.gmv__evidence-list li:last-child { margin-bottom: 0; }
 .gmv__model-line { margin: var(--sp-7) 0 0; font-family: var(--font-mono); font-size: 11px; color: var(--v-t5); }
 .gmv-engine { margin-top: var(--sp-6); padding-top: var(--sp-6); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06); }
 .gmv-engine__title { margin: 0 0 var(--sp-4); font-family: var(--font-display); font-size: 12px; font-weight: 800;
