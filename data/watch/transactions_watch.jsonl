@@ -727,3 +727,7 @@
 {"category": "recalled", "date": "2026-09-07", "first_seen_utc": "2026-09-07T14:24:31.365319+00:00", "player": "Jonah Tong", "player_id": 804636, "team": "NYM", "transaction_id": 941518}
 {"category": "optioned", "date": "2026-09-07", "first_seen_utc": "2026-09-07T14:24:31.365319+00:00", "player": "Justin Hagenman", "player_id": 663795, "team": "NYM", "transaction_id": 941519}
 {"fetched_utc": "2026-09-07T14:24:33.374612+00:00", "game_date": "2026-09-07", "poll": true}
+{"fetched_utc": "2026-09-07T15:28:31.506197+00:00", "game_date": "2026-09-07", "poll": true}
+{"category": "il_activation", "date": "2026-09-07", "first_seen_utc": "2026-09-07T15:28:31.506197+00:00", "player": "Kyle Karros", "player_id": 691720, "team": "COL", "transaction_id": 941520}
+{"category": "optioned", "date": "2026-09-07", "first_seen_utc": "2026-09-07T15:28:31.506197+00:00", "player": "Ryan Ritter", "player_id": 690022, "team": "COL", "transaction_id": 941521}
+{"fetched_utc": "2026-09-07T15:28:33.333203+00:00", "game_date": "2026-09-07", "poll": true}
