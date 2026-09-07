@@ -635,3 +635,8 @@ https://linehound-staging.fly.dev/billing/webhook -> dry-run purchase.
 - 2026-09-07T13:29Z daily_loop: engine slate --date 2026-09-07 exit=0
 - 2026-09-07T13:29Z daily_loop: engine settle --date 2026-09-06 exit=0
 - 2026-09-07T13:29Z daily_loop: eod --date 2026-09-06 exit=0
+- 2026-09-07T15:21Z daily_loop: statcast --catchup exit=0
+- 2026-09-07T15:21Z daily_loop: gamekey --date 2026-09-06 --end 2026-09-07 exit=0
+- 2026-09-07T15:22Z daily_loop: engine slate --date 2026-09-07 exit=0
+- 2026-09-07T15:22Z daily_loop: engine settle --date 2026-09-06 exit=0
+- 2026-09-07T15:22Z daily_loop: eod --date 2026-09-06 exit=0
