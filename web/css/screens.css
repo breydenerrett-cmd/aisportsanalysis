@@ -1950,21 +1950,37 @@
   --r: var(--r-badge);
   clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
 }
-.bc2-ticket__part { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.bc2-ticket__part { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .bc2-ticket__part label {
   font-family: var(--font-display); font-size: 8.5px; font-weight: 800; letter-spacing: .13em;
   color: var(--v-t6);
 }
+/* Real form-control geometry: a visible field with its own height and
+   padding (not just bare text on the panel background), plus a genuine
+   focus ring -- `outline: none` alone with nothing replacing it is an
+   accessibility and a "does this thing actually take input" regression. */
 .bc2-ticket__part input, .bc2-ticket__part select {
-  background: none; border: 0; padding: 0;
+  background: rgba(255, 255, 255, .05); border: 0; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14);
+  padding: 9px 10px; height: 38px; --r: 6px;
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
   font-family: var(--font-mono); font-size: 15px; color: var(--v-t1);
+  transition: box-shadow var(--dur-hover-lift, 150ms) ease;
 }
-.bc2-ticket__part input:focus, .bc2-ticket__part select:focus { outline: none; }
-.bc2-ticket__part--team input { width: 4.5ch; text-transform: uppercase; }
-.bc2-ticket__part--price input { width: 6ch; }
-.bc2-ticket__part--date input { width: 14ch; }
-.bc2-ticket__part--side select { width: 7ch; }
-.bc2-ticket__submit { width: 100%; height: 52px; font-size: 15px; letter-spacing: .15em; margin-bottom: var(--sp-8); }
+.bc2-ticket__part input::placeholder { color: var(--v-t6); }
+.bc2-ticket__part input:hover, .bc2-ticket__part select:hover { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .26); }
+.bc2-ticket__part input:focus, .bc2-ticket__part select:focus {
+  outline: none; box-shadow: inset 0 0 0 1px var(--v-live), 0 0 0 3px rgba(0, 224, 255, .22);
+  background: rgba(0, 224, 255, .06);
+}
+.bc2-ticket__part select { appearance: none; -webkit-appearance: none; cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, var(--v-t4) 50%), linear-gradient(135deg, var(--v-t4) 50%, transparent 50%);
+  background-position: right 9px top 16px, right 4px top 16px; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }
+.bc2-ticket__part--team input { width: 6ch; text-transform: uppercase; }
+.bc2-ticket__part--price input { width: 7.5ch; }
+.bc2-ticket__part--date input { width: 15ch; }
+.bc2-ticket__part--side select { width: 9ch; padding-right: 20px; }
+.bc2-ticket__submit { width: 100%; height: 54px; font-size: 15px; font-weight: 800; letter-spacing: .15em; margin-bottom: var(--sp-8);
+  box-shadow: 0 10px 30px -12px rgba(255, 61, 87, .55); }
 .bc2-ticket__foot {
   position: relative;
   margin-top: var(--sp-8); padding-top: var(--sp-7);
@@ -2308,7 +2324,8 @@
 .gqv-price__cols { display: flex; gap: var(--sp-9); flex-wrap: wrap; }
 .gqv-price__col { flex: 1 1 240px; min-width: 220px; }
 .gqv-price__label { font-family: var(--font-display); font-size: 9.5px; font-weight: 800; letter-spacing: .16em; color: var(--v-t5); margin-bottom: var(--sp-3); }
-.gqv-price__figure { font-family: var(--font-mono); font-size: 30px; color: var(--v-t0); line-height: 1; }
+.gqv-price__figure { font-family: var(--font-display); font-style: italic; font-size: clamp(32px, 3.6vw, 46px);
+  font-weight: 800; letter-spacing: -.01em; color: #FFF; line-height: .95; }
 .gqv-price__book { margin-top: var(--sp-2); font-family: var(--font-mono); font-size: 10.5px; color: var(--v-t6); }
 .gqv-price__consensus { margin-top: var(--sp-6); display: flex; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap; }
 .gqv-price__consensus-label { font-family: var(--font-display); font-size: 8.5px; font-weight: 800; letter-spacing: .14em; color: var(--v-t6); }
@@ -2646,22 +2663,29 @@
 .gv2-hero__still-time { flex: none; font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; color: var(--v-t7); white-space: nowrap; }
 
 /* ---- WHAT WE CHECKED TONIGHT tile panel --------------------------------*/
-.gv2-checked { position: relative; padding: var(--sp-9) var(--sp-10); --r: var(--r-lg); }
-.gv2-checked__title { font-family: var(--font-display); font-size: 10px; font-weight: 800; letter-spacing: .19em; color: var(--v-t5); margin-bottom: var(--sp-7); }
-.gv2-checked__tile { display: flex; align-items: baseline; gap: var(--sp-6); padding: 10px 0; box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .055); flex-wrap: wrap; }
-.gv2-checked__label { flex: none; width: 132px; font-family: var(--font-display); font-size: 9.5px; font-weight: 700; letter-spacing: .14em; color: var(--v-t6); }
-.gv2-checked__row { flex: 1; display: flex; align-items: baseline; gap: var(--sp-5); min-width: 100px; }
-.gv2-checked__value { font-family: var(--font-mono); font-size: 22px; color: var(--v-t1); line-height: 1; }
-.gv2-checked__note { flex: 1; text-align: right; font-family: var(--font-mono); font-size: 8.5px; letter-spacing: .03em; color: var(--v-t7); white-space: nowrap; }
-.gv2-checked__footnote { margin-top: var(--sp-7); font-family: var(--font-mono); font-size: 9px; letter-spacing: .09em; line-height: 1.6; color: var(--v-t7); }
-.gv2-checked__research, .gv2-checked__programme { display: flex; align-items: center; gap: var(--sp-6); flex-wrap: wrap; margin-top: var(--sp-8); padding-top: var(--sp-7); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08); }
+.gv2-checked { position: relative; padding: var(--sp-8) var(--sp-9); --r: var(--r-lg); }
+.gv2-checked__title { font-family: var(--font-display); font-size: 10px; font-weight: 800; letter-spacing: .19em; color: var(--v-t5); margin-bottom: var(--sp-6); }
+/* A 2-column grid rather than five stacked rows -- five tall rows left a
+   noticeably taller panel than the hero copy beside it on desktop
+   (visible dead air below the action buttons); a compact 2-up grid keeps
+   every figure legible while matching the copy column's height instead
+   of towering over it. */
+.gv2-checked__tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 0 var(--sp-6); }
+.gv2-checked__tile { display: flex; flex-direction: column; gap: 2px; padding: 8px 0; box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .05); }
+.gv2-checked__tile:nth-last-child(-n+2) { box-shadow: none; }
+.gv2-checked__label { font-family: var(--font-display); font-size: 9px; font-weight: 700; letter-spacing: .12em; color: var(--v-t6); }
+.gv2-checked__row { display: flex; align-items: baseline; gap: var(--sp-4); }
+.gv2-checked__value { font-family: var(--font-mono); font-size: 20px; color: var(--v-t1); line-height: 1; }
+.gv2-checked__note { display: none; }
+.gv2-checked__footnote { margin-top: var(--sp-6); font-size: 11px; line-height: 1.55; color: var(--v-t6); }
+.gv2-checked__research, .gv2-checked__programme { display: flex; align-items: center; gap: var(--sp-6); flex-wrap: wrap; margin-top: var(--sp-6); padding-top: var(--sp-6); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08); }
 .gv2-checked__research-tag, .gv2-checked__programme-tag {
   flex: none; padding: 4px 10px; --r: var(--r-marker);
   clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
   background: rgba(255, 255, 255, .055); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .15);
   font-family: var(--font-display); font-size: 9px; font-weight: 800; letter-spacing: .14em; color: var(--v-t3); white-space: nowrap;
 }
-.gv2-checked__research-body, .gv2-checked__programme-body { flex: 1; min-width: 160px; font-size: 12.5px; line-height: 1.5; color: var(--v-t6); }
+.gv2-checked__research-body, .gv2-checked__programme-body { flex: 1; min-width: 160px; font-size: 12px; line-height: 1.5; color: var(--v-t6); }
 
 /* ---- price context panel -----------------------------------------------*/
 .gv2-price { position: relative; padding: var(--sp-9) var(--sp-10); --r: var(--r-lg); margin-top: var(--sp-9); }
@@ -2765,15 +2789,18 @@
    expected outcome); warn = OVERPRICED/FADE ALERT/INSUFFICIENT DATA
    (caution/absence, amber, never red). */
 .pv-chip {
-  display: inline-flex; align-items: center; padding: 5px 11px;
-  font-family: var(--font-display); font-size: 10px; font-weight: 800;
-  letter-spacing: .14em; white-space: nowrap; --r: var(--r-chip);
+  display: inline-flex; align-items: center; padding: 7px 14px 7px 12px;
+  font-family: var(--font-display); font-size: 11px; font-weight: 800;
+  letter-spacing: .13em; white-space: nowrap; --r: var(--r-chip);
   clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
+  box-shadow: inset 3px 0 0 rgba(0, 0, 0, .18), 0 1px 2px rgba(0, 0, 0, .35);
 }
-.pv-chip--money { background: linear-gradient(120deg, var(--v-money), var(--v-money-2)); color: var(--v-money-ink); }
-.pv-chip--live { background: linear-gradient(120deg, var(--v-live), var(--v-live-2)); color: var(--v-live-ink); }
-.pv-chip--outline { background: rgba(255, 255, 255, .09); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16); color: var(--v-t3); }
-.pv-chip--warn { background: rgba(255, 176, 32, .16); box-shadow: inset 0 0 0 1px rgba(255, 176, 32, .4); color: var(--v-warn-label); }
+.pv-chip--money { background: linear-gradient(120deg, var(--v-money), var(--v-money-2)); color: var(--v-money-ink);
+  box-shadow: inset 3px 0 0 rgba(34, 6, 10, .3), 0 4px 14px -4px rgba(255, 61, 87, .55); }
+.pv-chip--live { background: linear-gradient(120deg, var(--v-live), var(--v-live-2)); color: var(--v-live-ink);
+  box-shadow: inset 3px 0 0 rgba(3, 34, 43, .3), 0 4px 14px -4px rgba(0, 224, 255, .4); }
+.pv-chip--outline { background: rgba(255, 255, 255, .07); box-shadow: inset 3px 0 0 rgba(255, 255, 255, .3), inset 0 0 0 1px rgba(255, 255, 255, .2); color: var(--v-t2); }
+.pv-chip--warn { background: rgba(255, 176, 32, .16); box-shadow: inset 3px 0 0 var(--v-warn), inset 0 0 0 1px rgba(255, 176, 32, .4); color: var(--v-warn-label); }
 
 /* ---- VALUE METER (web/js/valuemeter.js) ---------------------------------*/
 .vmeter { display: flex; flex-direction: column; gap: var(--sp-4); margin: var(--sp-6) 0; }
@@ -2814,24 +2841,53 @@
 
 .opp-section { padding: 0 var(--gutter-desktop) var(--sp-11); }
 .opp-label { margin: 0 0 var(--sp-6); font-size: 13px; color: var(--v-t4); }
-.opp-empty { padding: var(--sp-9) var(--sp-9); background: rgba(255, 176, 32, .06);
-  box-shadow: inset 0 0 0 1px rgba(255, 176, 32, .24), inset 3px 0 0 var(--v-warn); }
-.opp-empty__headline { margin: 0 0 var(--sp-4); font-family: var(--font-display); font-size: 20px; font-weight: 800;
-  letter-spacing: .04em; color: var(--v-warn-label); }
-.opp-empty__basis { margin: 0; font-size: 13px; line-height: 1.55; color: var(--v-warn-lit); }
+
+/* Empty state -- "we checked and nothing qualified" is the confident,
+   expected majority-nights answer (same honesty rule as the gv2-hero's
+   NO_PLAY treatment above), never an error box. A slim amber rule marks
+   the caution/absence tone without the whole panel reading as a warning:
+   a large italic display headline plus a real basis sentence, matching
+   this screen's other confident statements rather than a form-validation
+   alert. */
+.opp-empty { position: relative; overflow: hidden; padding: var(--sp-11) var(--sp-11);
+  background: linear-gradient(150deg, rgba(255, 255, 255, .045), rgba(255, 255, 255, .012));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .09); }
+.opp-empty::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+  background: linear-gradient(180deg, var(--v-warn), var(--v-warn-2)); }
+.opp-empty__eyebrow { display: block; margin: 0 0 var(--sp-6); font-family: var(--font-display); font-size: 11px;
+  font-weight: 800; letter-spacing: .2em; color: var(--v-warn-label); }
+.opp-empty__headline { margin: 0 0 var(--sp-6); font-family: var(--font-display); font-style: italic; font-size: clamp(22px, 2.6vw, 32px);
+  font-weight: 800; line-height: 1.08; letter-spacing: -.01em; color: var(--v-t0); max-width: 720px; }
+.opp-empty__basis { margin: 0; font-size: 14px; line-height: 1.55; color: var(--v-t3); max-width: 640px; }
 
 .opp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--sp-8); margin-bottom: var(--sp-11); }
-.opp-card { padding: var(--sp-8); display: flex; flex-direction: column; gap: var(--sp-4); }
-.opp-card__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-4); }
-.opp-card__matchup { font-family: var(--font-display); font-size: 18px; font-weight: 800; color: var(--v-t0); text-decoration: none; }
+
+/* The first card in a qualifying grid gets TOP PLAY hero treatment
+   (web/js/opportunities.js marks it `opp-card--hero` and adds the eyebrow
+   badge) -- spans the full row and everything in it reads bigger: this is
+   the one thing on the page this product stands behind tonight. */
+.opp-card--hero { grid-column: 1 / -1; }
+
+.opp-card {
+  position: relative; padding: var(--sp-9); display: flex; flex-direction: column; gap: var(--sp-5);
+  background: linear-gradient(150deg, rgba(255, 255, 255, .045), rgba(255, 255, 255, .01));
+}
+.opp-card__main { display: flex; flex-direction: column; gap: var(--sp-5); }
+.opp-card__side .vmeter { margin: 0; }
+.opp-card__eyebrow { display: inline-flex; align-self: flex-start; margin-bottom: calc(-1 * var(--sp-2)); padding: 5px 12px;
+  --r: var(--r-marker); clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
+  background: linear-gradient(120deg, var(--v-money), var(--v-money-2)); color: var(--v-money-ink);
+  font-family: var(--font-display); font-size: 10.5px; font-weight: 800; letter-spacing: .18em; }
+.opp-card__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-4); flex-wrap: wrap; }
+.opp-card__matchup { font-family: var(--font-display); font-style: italic; font-size: 19px; font-weight: 800; color: var(--v-t0); text-decoration: none; }
 .opp-card__matchup:hover { color: var(--v-live); }
 .opp-card__pitch { font-family: var(--font-mono); font-size: 11px; color: var(--v-t5); white-space: nowrap; }
-.opp-card__wager { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
-.opp-card__wager-text { font-size: 14px; color: var(--v-t2); }
-.opp-card__price { font-family: var(--font-mono); font-size: 15px; font-weight: 700; color: var(--v-t0); }
+.opp-card__wager { display: flex; align-items: baseline; gap: var(--sp-4); flex-wrap: wrap; }
+.opp-card__wager-text { font-size: 14.5px; color: var(--v-t2); }
+.opp-card__price { font-family: var(--font-display); font-style: italic; font-size: 24px; font-weight: 800; color: #FFF; }
 .opp-card__book { font-family: var(--font-mono); font-size: 10.5px; color: var(--v-t5); }
-.opp-card__chips { display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap; }
-.opp-card__vp { font-family: var(--font-mono); font-size: 12px; color: var(--v-money-lit); }
+.opp-card__chips { display: flex; align-items: center; gap: var(--sp-5); flex-wrap: wrap; }
+.opp-card__vp { font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--v-money-lit); }
 .opp-card__tier { font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; color: var(--v-t5); }
 .opp-card__figline { margin: 0; font-size: 12.5px; color: var(--v-t4); }
 .opp-card__model { margin: 0; font-family: var(--font-mono); font-size: 11px; color: var(--v-t5); }
@@ -2847,9 +2903,39 @@
 .opp-card__captured { margin: 0; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; color: var(--v-t6); }
 .opp-card__actions { display: flex; gap: var(--sp-4); flex-wrap: wrap; margin-top: var(--sp-2); }
 
+/* ---- hero-card scale-up: matchup/price/wager read like a headline ------*/
+.opp-card--hero { padding: var(--sp-11); }
+.opp-card--hero .opp-card__matchup { font-size: clamp(24px, 2.6vw, 34px); }
+.opp-card--hero .opp-card__price { font-size: clamp(34px, 4vw, 52px); line-height: .9; }
+.opp-card--hero .opp-card__wager-text { font-size: 16px; }
+.opp-card--hero .opp-card__vp { font-size: 15px; }
+.opp-card--hero .pv-chip { font-size: 12.5px; padding: 9px 16px 9px 14px; }
+@media (min-width: 900px) {
+  .opp-card--hero { display: flex; flex-direction: row; align-items: stretch; gap: var(--sp-11); }
+  .opp-card--hero .opp-card__main { flex: 1.3 1 0; min-width: 0; display: flex; flex-direction: column; gap: var(--sp-5); }
+  .opp-card--hero .opp-card__side { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; justify-content: center;
+    padding-left: var(--sp-11); box-shadow: inset 1px 0 0 rgba(255, 255, 255, .08); }
+}
+
 .opp-ranked { margin-bottom: var(--sp-9); }
 .opp-ranked__title { margin: 0 0 var(--sp-5); font-family: var(--font-display); font-size: 13px; font-weight: 700;
   letter-spacing: .12em; color: var(--v-t4); }
+/* Every priced side, as a real data table: numeric columns right-aligned
+   and tabular so figures actually line up in a column, zebra striping so
+   a 30-row table stays scannable at a glance rather than blurring into
+   one grey field. Scoped to this ranked table only -- .ov2-table's shared
+   rules (also used elsewhere) are left untouched. */
+.opp-ranked .ov2-table tbody tr:nth-child(even) { background: rgba(255, 255, 255, .022); }
+.opp-ranked .ov2-table tbody tr:hover { background: rgba(0, 224, 255, .05); }
+.opp-ranked .ov2-table td:nth-child(4),
+.opp-ranked .ov2-table td:nth-child(5),
+.opp-ranked .ov2-table td:nth-child(6) {
+  text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--v-t2);
+}
+.opp-ranked .ov2-table td:nth-child(2) { text-align: center; font-family: var(--font-mono); font-size: 11px; color: var(--v-t5); }
+.opp-ranked .ov2-table td:nth-child(3) { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.opp-ranked .ov2-table td:nth-child(7) { text-align: center; }
+.opp-ranked .ov2-table td:nth-child(8) { text-align: right; }
 .opp-unpriced__title { margin: 0 0 var(--sp-5); font-family: var(--font-display); font-size: 13px; font-weight: 700;
   letter-spacing: .12em; color: var(--v-t4); }
 .opp-unpriced__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
@@ -2866,14 +2952,20 @@
 .perf-freshness { margin: 0; font-family: var(--font-mono); font-size: 11.5px; color: var(--v-t5); }
 
 .perf-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--sp-8); }
-.perf-tile { padding: var(--sp-8); }
+.perf-tile { padding: var(--sp-9); background: linear-gradient(150deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .01)); }
 .perf-tile__label { font-family: var(--font-display); font-size: 13px; font-weight: 800; letter-spacing: .12em;
   color: var(--v-t1); margin-bottom: var(--sp-6); }
 .perf-tile__grid { display: flex; flex-direction: column; gap: var(--sp-3); }
 .perf-tile__row { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-4);
-  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .045); padding: 6px 0; }
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .045); padding: 7px 0; }
 .perf-tile__key { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; color: var(--v-t5); }
 .perf-tile__value { font-family: var(--font-mono); font-size: 14px; color: var(--v-t0); }
+/* UNITS NET / RETURN ON UNITS -- this tile's own headline figures, large
+   and win/loss coloured, matching the confident-summary treatment the
+   rest of this screen (RECORD STRIP, cut tables) already uses. */
+.perf-tile__value--big { font-family: var(--font-display); font-style: italic; font-size: 24px; font-weight: 800; }
+.perf-tile__value--pos { color: var(--v-win-lit); }
+.perf-tile__value--neg { color: var(--v-money-lit); }
 .perf-figure__na { color: var(--v-t6); }
 
 .perf-classes { display: flex; flex-direction: column; gap: var(--sp-11); }
@@ -2889,6 +2981,22 @@
    base rules (also used by odds.js's board) are left untouched. */
 .perf-classes .ov2-table td, .perf-picks .ov2-table td {
   overflow-wrap: anywhere; word-break: break-word; max-width: 200px;
+}
+
+/* Readable data tables everywhere on this screen: zebra rows plus
+   tabular, right-aligned figures so a column of numbers actually lines
+   up instead of ragging left. */
+.perf-classes .ov2-table tbody tr:nth-child(even),
+.perf-cuts .ov2-table tbody tr:nth-child(even),
+.perf-picks .ov2-table tbody tr:nth-child(even) { background: rgba(255, 255, 255, .022); }
+.perf-classes .ov2-table td:nth-child(n+2),
+.perf-cuts .ov2-table td:nth-child(n+2),
+.perf-picks .ov2-table td:nth-child(n+2) { font-variant-numeric: tabular-nums; }
+.perf-classes .ov2-table td:nth-child(2), .perf-classes .ov2-table td:nth-child(4),
+.perf-classes .ov2-table td:nth-child(5), .perf-classes .ov2-table td:nth-child(6), .perf-classes .ov2-table td:nth-child(7),
+.perf-cuts .ov2-table td:nth-child(2), .perf-cuts .ov2-table td:nth-child(4),
+.perf-cuts .ov2-table td:nth-child(5), .perf-cuts .ov2-table td:nth-child(6), .perf-cuts .ov2-table td:nth-child(7) {
+  text-align: right;
 }
 
 .perf-picks { display: flex; flex-direction: column; gap: var(--sp-5); }
@@ -2959,14 +3067,30 @@
 }
 
 /* ---- PRICE VERDICT block (web/js/betcheck.js's renderPriceVerdict) -----*/
-.pv-block { padding: var(--sp-8); display: flex; flex-direction: column; gap: var(--sp-5); }
+/* PRICE VERDICT -- the visually dominant block on Bet Check (spec: this
+   is the one thing a reader should not be able to miss). Bigger padding
+   than a peer bc2-block, a left rule and soft background wash keyed to
+   the same tone the word chip already uses (dom.js's priceVerdictTone --
+   money/live/outline/warn), and the two price figures scaled up to
+   headline size. */
+.pv-block { position: relative; overflow: hidden; padding: var(--sp-10); display: flex; flex-direction: column; gap: var(--sp-6);
+  background: linear-gradient(150deg, rgba(255, 255, 255, .045), rgba(255, 255, 255, .01));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .09); }
+.pv-block::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+.pv-block--money { box-shadow: inset 0 0 0 1px rgba(255, 61, 87, .32); background: linear-gradient(150deg, rgba(255, 61, 87, .1), rgba(255, 255, 255, .012)); }
+.pv-block--money::before { background: linear-gradient(180deg, var(--v-money), var(--v-money-2)); }
+.pv-block--live { box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .3); background: linear-gradient(150deg, rgba(0, 224, 255, .08), rgba(255, 255, 255, .012)); }
+.pv-block--live::before { background: linear-gradient(180deg, var(--v-live), var(--v-live-2)); }
+.pv-block--warn { box-shadow: inset 0 0 0 1px rgba(255, 176, 32, .3); background: linear-gradient(150deg, rgba(255, 176, 32, .08), rgba(255, 255, 255, .012)); }
+.pv-block--warn::before { background: linear-gradient(180deg, var(--v-warn), var(--v-warn-2)); }
+.pv-block--outline::before { background: rgba(255, 255, 255, .25); }
 .pv-block__head { display: flex; align-items: center; }
-.pv-block__eyebrow { font-family: var(--font-display); font-size: 11px; font-weight: 800; letter-spacing: .18em; color: var(--v-t4); }
+.pv-block__eyebrow { font-family: var(--font-display); font-size: 12px; font-weight: 800; letter-spacing: .2em; color: var(--v-t3); }
 .pv-block__reason { margin: 0; font-size: 13px; line-height: 1.5; color: var(--v-t3); }
 .pv-block__risk { margin: 0; font-size: 13px; line-height: 1.5; color: var(--v-warn-lit); }
-.pv-block__figs { display: flex; gap: var(--sp-9); flex-wrap: wrap; }
-.pv-block__fig-label { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .1em; color: var(--v-t5); margin-bottom: var(--sp-2); }
-.pv-block__fig-value { font-family: var(--font-display); font-size: 24px; font-weight: 800; color: var(--v-t0); }
+.pv-block__figs { display: flex; gap: var(--sp-11); flex-wrap: wrap; }
+.pv-block__fig-label { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .1em; color: var(--v-t5); margin-bottom: var(--sp-3); }
+.pv-block__fig-value { font-family: var(--font-display); font-style: italic; font-size: clamp(30px, 3.6vw, 44px); font-weight: 800; color: #FFF; line-height: .95; }
 .pv-block__meta { margin: 0; font-family: var(--font-mono); font-size: 11px; color: var(--v-t5); }
 .pv-block__list { margin: 0; padding-left: 18px; font-size: 12.5px; line-height: 1.5; }
 .pv-block__list--reasons { color: var(--v-t3); }
@@ -2978,17 +3102,35 @@
 .gmv__eyebrow { font-family: var(--font-display); font-size: 13px; font-weight: 800; letter-spacing: .12em;
   color: var(--v-t1); margin-bottom: var(--sp-7); }
 .gmv__unranked-note { margin: 0 0 var(--sp-7); font-size: 11.5px; line-height: 1.4; color: var(--v-t5); }
-.gmv__cols { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-9); }
-.gmv__col { display: flex; flex-direction: column; gap: var(--sp-3); }
+/* Two ranked-price cards side by side on desktop (BEST SUPPORTED PRICE
+   first) -- each .gmv__col is its own bordered, chamfered card rather
+   than a bare column of text, and the winning side gets a brighter edge
+   so "which side is better supported" reads at a glance before any text
+   is even parsed. */
+.gmv__cols { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-7); align-items: start; }
+.gmv__col { position: relative; display: flex; flex-direction: column; gap: var(--sp-4); padding: var(--sp-7);
+  background: rgba(255, 255, 255, .03); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .09); --r: var(--r-panel);
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r)); }
+.gmv__col:has(.gmv__rank--best) {
+  background: linear-gradient(150deg, rgba(255, 61, 87, .08), rgba(255, 255, 255, .012));
+  box-shadow: inset 0 0 0 1px rgba(255, 61, 87, .3);
+}
 .gmv__rank-wrap { display: flex; flex-direction: column; gap: var(--sp-1); }
 .gmv__rank { font-family: var(--font-display); font-size: 11px; font-weight: 800; letter-spacing: .1em; }
 .gmv__rank--best { color: var(--v-money-lit); }
 .gmv__rank--other { color: var(--v-t5); }
 .gmv__rank-caption { margin: 0; font-size: 10.5px; line-height: 1.4; color: var(--v-t5); }
-.gmv__col-name { font-family: var(--font-display); font-size: 13px; font-weight: 700; color: var(--v-t2); }
-.gmv__price-line { font-family: var(--font-mono); font-size: 13px; color: var(--v-t0); }
+.gmv__col-name { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--v-t2); }
+.gmv__price-line { font-family: var(--font-display); font-style: italic; font-size: 22px; font-weight: 800; color: #FFF; }
 .gmv__tier { margin: 0; font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; color: var(--v-t5); }
-.gmv__evidence { margin-top: var(--sp-3); }
+/* WHY / AGAINST as their own small cards, not a bare bulleted list --
+   cyan for support, amber-warm neutral for risk (never red -- red here
+   is reserved for the price-advantage rank badge above, not for a risk
+   line). */
+.gmv__evidence { margin-top: var(--sp-2); padding: var(--sp-5); --r: var(--r-badge);
+  background: rgba(255, 255, 255, .03); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08); }
+.gmv__evidence--why { box-shadow: inset 2px 0 0 var(--v-live), inset 0 0 0 1px rgba(0, 224, 255, .16); }
+.gmv__evidence--against { box-shadow: inset 2px 0 0 var(--v-warn), inset 0 0 0 1px rgba(255, 176, 32, .16); }
 .gmv__evidence-label { margin: 0 0 var(--sp-2); font-family: var(--font-mono); font-size: 10px; font-weight: 700;
   letter-spacing: .1em; color: var(--v-t5); text-transform: uppercase; }
 .gmv__evidence-list { margin: 0; padding-left: 16px; font-size: 12px; line-height: 1.5; color: var(--v-t3); }
@@ -3050,15 +3192,25 @@
  * in this client.
  * ========================================================================= */
 
-/* ---- RECORD STRIP ---------------------------------------------------- */
+/* ---- RECORD STRIP ------------------------------------------------------
+   The lead summary wherever it mounts (#/today above the hero, #/performance
+   above the recap gallery): W-L-P stays a neutral count, units net and
+   return % carry the win/loss colour and read as the big confident figure
+   -- this is the number a reader's eye should land on first. */
 .rec-strip { padding: 0 var(--gutter-desktop) var(--sp-9); }
 .rec-strip__cells { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-7); }
-.rec-cell { padding: var(--sp-7); display: flex; flex-direction: column; gap: var(--sp-3); }
-.rec-cell__label { font-family: var(--font-display); font-size: 11.5px; font-weight: 800; letter-spacing: .14em;
-  color: var(--v-t4); }
-.rec-cell__figure { font-family: var(--font-mono); font-size: 16px; color: var(--v-t0); }
-.rec-cell__figure--pos { color: var(--v-win-lit); }
-.rec-cell__figure--neg { color: var(--v-money-lit); }
+.rec-cell { padding: var(--sp-8) var(--sp-8); display: flex; flex-direction: column; gap: var(--sp-4);
+  background: linear-gradient(150deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .01)); }
+.rec-cell__label { font-family: var(--font-display); font-size: 11px; font-weight: 800; letter-spacing: .16em;
+  color: var(--v-t5); }
+.rec-cell__figure { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--sp-3); }
+.rec-cell__record { font-family: var(--font-mono); font-size: 17px; color: var(--v-t2); }
+.rec-cell__sep { color: var(--v-t7); font-size: 14px; }
+.rec-cell__units { font-family: var(--font-display); font-style: italic; font-size: clamp(24px, 2.4vw, 32px);
+  font-weight: 800; color: var(--v-t1); line-height: 1; }
+.rec-cell__pct { font-family: var(--font-mono); font-size: 15px; font-weight: 700; color: var(--v-t3); }
+.rec-cell__units--pos, .rec-cell__pct--pos { color: var(--v-win-lit); }
+.rec-cell__units--neg, .rec-cell__pct--neg { color: var(--v-money-lit); }
 .rec-cell__pending { margin: 0; font-size: 12px; color: var(--v-warn-label); }
 .rec-cell__empty { margin: 0; font-size: 12px; color: var(--v-t5); }
 .rec-strip__note { margin: var(--sp-5) 0 0; font-size: 12px; color: var(--v-t5); }
@@ -3066,47 +3218,68 @@
 /* ---- MATCHUP GRID ------------------------------------------------------ */
 .mx-section { padding: 0 var(--gutter-desktop) var(--sp-11); }
 .mx-body { display: flex; flex-direction: column; gap: var(--sp-9); }
-.mx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: var(--sp-8); }
-.mx-card { padding: var(--sp-8); display: flex; flex-direction: column; gap: var(--sp-5); }
-.mx-card--qualifies { box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .4); }
+.mx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: var(--sp-6); }
+/* Denser card: tighter padding/gap than a first pass, and every internal
+   section (.mx-ml/.mx-read/.mx-frozen) trims its own top padding to match
+   -- the goal is more games per screen without losing the two prices as
+   the card's visual anchor. */
+.mx-card { padding: var(--sp-6) var(--sp-7); display: flex; flex-direction: column; gap: var(--sp-4); }
+.mx-card--qualifies { box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .4), 0 0 0 1px rgba(0, 224, 255, .12); }
 .mx-card__header { display: flex; align-items: center; gap: var(--sp-4); }
-.mx-badge { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px;
-  font-family: var(--font-display); font-size: 11px; font-weight: 800; --r: 6px;
+.mx-badge { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px;
+  font-family: var(--font-display); font-size: 10.5px; font-weight: 800; --r: 6px;
   clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r)); }
-.mx-card__matchup { flex: 1; font-family: var(--font-display); font-size: 16px; font-weight: 800; color: var(--v-t0);
+.mx-card__matchup { flex: 1; font-family: var(--font-display); font-style: italic; font-size: 16px; font-weight: 800; color: var(--v-t0);
   text-align: center; }
-.mx-card__meta { margin: 0; font-family: var(--font-mono); font-size: 11px; color: var(--v-t5); }
-.mx-card__probables { display: flex; justify-content: space-between; gap: var(--sp-5); font-size: 12.5px; color: var(--v-t3); }
+.mx-card__meta { margin: 0; font-family: var(--font-mono); font-size: 10.5px; color: var(--v-t5); text-align: center; }
+.mx-card__probables { display: flex; justify-content: space-between; gap: var(--sp-5); font-size: 12px; color: var(--v-t4); }
 .mx-card__probable { display: flex; align-items: baseline; gap: var(--sp-2); }
-.mx-card__probable-abbr { font-family: var(--font-mono); font-size: 10.5px; color: var(--v-t5); }
+.mx-card__probable-abbr { font-family: var(--font-mono); font-size: 10px; color: var(--v-t6); }
 .mx-card__probable-none { color: var(--v-t6); font-style: italic; }
 
-.mx-ml, .mx-read, .mx-frozen { padding-top: var(--sp-5); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06); }
+.mx-ml, .mx-read, .mx-frozen { padding-top: var(--sp-4); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06); }
 .mx-ml__title, .mx-read__title, .mx-frozen__title {
-  margin: 0 0 var(--sp-4); font-family: var(--font-display); font-size: 11px; font-weight: 800;
-  letter-spacing: .12em; color: var(--v-t4); }
+  margin: 0 0 var(--sp-3); font-family: var(--font-display); font-size: 10px; font-weight: 800;
+  letter-spacing: .12em; color: var(--v-t5); }
+/* Two prices as the visual anchor: bigger and brighter than everything
+   else on the card, market-implied % printed beside each rather than
+   stacked below it. */
 .mx-ml__cols { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-6); }
-.mx-ml__col { display: flex; flex-direction: column; gap: var(--sp-2); }
-.mx-ml__abbr { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; color: var(--v-t5); }
-.mx-ml__side { display: flex; flex-direction: column; gap: var(--sp-1); }
-.mx-ml__price { font-family: var(--font-mono); font-size: 15px; font-weight: 700; color: var(--v-t0); }
-.mx-ml__book { font-family: var(--font-mono); font-size: 10.5px; color: var(--v-t5); }
-.mx-ml__consensus { font-size: 11.5px; color: var(--v-t4); }
-.mx-ml__age { font-family: var(--font-mono); font-size: 10px; color: var(--v-t6); }
+.mx-ml__col { display: flex; flex-direction: column; gap: 3px; padding: var(--sp-3) 0; }
+.mx-ml__abbr { font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; color: var(--v-t6); }
+/* Row-wrap with explicit order: price and its market-implied % sit on the
+   same baseline (the pair the spec calls the card's visual anchor), the
+   book and capture age drop to their own line beneath. */
+.mx-ml__side { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: var(--sp-4); row-gap: 3px; }
+.mx-ml__price { order: 1; font-family: var(--font-display); font-style: italic; font-size: 22px; font-weight: 800; color: #FFF; line-height: 1; }
+.mx-ml__consensus { order: 2; margin-left: auto; font-family: var(--font-mono); font-size: 10.5px; color: var(--v-live-label); white-space: nowrap; }
+.mx-ml__book { order: 3; flex-basis: 100%; font-family: var(--font-mono); font-size: 10px; color: var(--v-t5); }
+.mx-ml__age { order: 4; flex-basis: 100%; font-family: var(--font-mono); font-size: 9.5px; color: var(--v-t6); }
 .mx-ml__none { margin: 0; font-size: 12px; color: var(--v-t6); }
 
-.mx-read__side { display: flex; flex-direction: column; gap: var(--sp-2); margin-bottom: var(--sp-5); }
+.mx-read__side { display: flex; flex-direction: column; gap: var(--sp-2); margin-bottom: var(--sp-4); }
 .mx-read__side:last-child { margin-bottom: 0; }
-.mx-read__abbr { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; color: var(--v-t5); }
+.mx-read__abbr { font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; color: var(--v-t6); }
 .mx-read__vp { font-family: var(--font-mono); font-size: 12px; color: var(--v-money-lit); }
 .mx-read__reason { margin: 0; font-size: 12px; line-height: 1.5; color: var(--v-t5); }
 
-.mx-frozen__none-forward { margin: 0 0 var(--sp-4); font-size: 12px; color: var(--v-t5); }
+.mx-frozen__none-forward { margin: 0 0 var(--sp-3); font-size: 12px; color: var(--v-t5); }
 .mx-frozen__empty { margin: 0; font-size: 12px; color: var(--v-t5); }
 .mx-frozen__list { display: flex; flex-direction: column; gap: var(--sp-5); }
+/* The frozen-positions summary is a CONTROL (opens a disclosure of staked
+   paper positions), not a plain inline link -- a bordered, chamfered bar
+   with its own hover state so it reads as something to press. */
 .mx-frozen__details summary {
-  cursor: pointer; font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em;
+  display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4);
+  cursor: pointer; list-style: none; padding: 9px 13px; --r: var(--r-badge);
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
+  background: rgba(255, 255, 255, .045); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12);
+  font-family: var(--font-display); font-size: 10.5px; font-weight: 800; letter-spacing: .08em;
   color: var(--v-live-label); margin-bottom: var(--sp-4); }
+.mx-frozen__details summary::-webkit-details-marker { display: none; }
+.mx-frozen__details summary::after { content: "SHOW ▾"; flex: none; font-size: 9px; letter-spacing: .1em; color: var(--v-t6); }
+.mx-frozen__details[open] summary::after { content: "HIDE ▴"; }
+.mx-frozen__details summary:hover { background: rgba(255, 255, 255, .075); color: var(--v-live); }
 
 .mx-pos {
   padding: var(--sp-5); background: rgba(255, 255, 255, .035); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .07);
@@ -3164,13 +3337,16 @@
 /* ---- DAILY RECAP GALLERY + DETAIL --------------------------------------- */
 .day-gallery-section { padding: 0 var(--gutter-desktop) var(--sp-11); }
 .day-gallery-body { display: flex; flex-direction: column; gap: var(--sp-6); }
-.day-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--sp-7); }
-.day-card { padding: var(--sp-7); display: flex; flex-direction: column; gap: var(--sp-3); }
+.day-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--sp-7); align-items: stretch; }
+.day-card { padding: var(--sp-8); display: flex; flex-direction: column; gap: var(--sp-4);
+  background: linear-gradient(150deg, rgba(255, 255, 255, .035), rgba(255, 255, 255, .008)); }
 .day-card__head { display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap; }
-.day-card__date { font-family: var(--font-display); font-size: 15px; font-weight: 800; color: var(--v-t0);
+.day-card__date { font-family: var(--font-display); font-style: italic; font-size: 17px; font-weight: 800; color: var(--v-t0);
   text-decoration: none; }
 .day-card__date:hover { color: var(--v-live); }
-.day-card__record, .day-card__pending { margin: 0; font-family: var(--font-mono); font-size: 13px; color: var(--v-t2); }
+.day-card__record, .day-card__pending { margin: 0; font-family: var(--font-display); font-style: italic; font-size: 22px;
+  font-weight: 800; color: var(--v-t1); }
+.day-card__pending { font-size: 13px; font-family: var(--font-mono); font-style: normal; color: var(--v-warn-label); }
 .day-card__figure--pos { color: var(--v-win-lit); }
 .day-card__figure--neg { color: var(--v-money-lit); }
 .day-card__meta { margin: 0; font-size: 11.5px; color: var(--v-t5); }

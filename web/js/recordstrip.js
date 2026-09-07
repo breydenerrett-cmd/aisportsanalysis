@@ -41,12 +41,24 @@ function windowCell(window) {
   const units = unitsFmt(window.units_net);
   const pct = pctFmt(window.return_on_units);
   if (units !== null && pct !== null) {
-    const tone = window.units_net > 0 ? " rec-cell__figure--pos"
-      : window.units_net < 0 ? " rec-cell__figure--neg" : "";
-    cell.appendChild(el("div", { class: `rec-cell__figure${tone}`, "data-hook": "record-window-figure",
-      text: `${record} · ${units} · ${pct}` }));
+    const tone = window.units_net > 0 ? "--pos"
+      : window.units_net < 0 ? "--neg" : "";
+    // Kept as one data-hook="record-window-figure" text node (unchanged
+    // contract for anything reading its full text), but built from three
+    // child spans so units/return can carry the win/loss colour while the
+    // W-L-P record itself stays neutral -- the record is a count, not a
+    // gain or a loss.
+    const fig = el("div", { class: "rec-cell__figure", "data-hook": "record-window-figure" });
+    fig.appendChild(el("span", { class: "rec-cell__record", text: record }));
+    fig.appendChild(el("span", { class: "rec-cell__sep", "aria-hidden": "true", text: "·" }));
+    fig.appendChild(el("span", { class: `rec-cell__units${tone}`, text: units }));
+    fig.appendChild(el("span", { class: "rec-cell__sep", "aria-hidden": "true", text: "·" }));
+    fig.appendChild(el("span", { class: `rec-cell__pct${tone}`, text: pct }));
+    cell.appendChild(fig);
   } else {
-    cell.appendChild(el("div", { class: "rec-cell__figure", "data-hook": "record-window-figure", text: record }));
+    const fig = el("div", { class: "rec-cell__figure", "data-hook": "record-window-figure" });
+    fig.appendChild(el("span", { class: "rec-cell__record", text: record }));
+    cell.appendChild(fig);
     cell.appendChild(el("p", { class: "rec-cell__pending", "data-hook": "record-window-pending",
       text: `${window.pending} pending, nothing settled yet` }));
   }

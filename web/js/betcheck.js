@@ -101,7 +101,7 @@
 
 import { apiFetch, apiPost, getToken, getFreeCheckToken, setFreeCheckToken, isPublicDemo } from "./api.js";
 import { el, clear, renderUnknown, renderError, renderLoading, notYetAvailable,
-  formatAmerican, formatConsensusShare, formatEasternClock, formatAge, renderWordChip } from "./dom.js";
+  formatAmerican, formatConsensusShare, formatEasternClock, formatAge, renderWordChip, priceVerdictTone } from "./dom.js";
 import { bookLabel } from "./labels.js";
 import { setShellStatus } from "./shell.js";
 import { armEntrances } from "./motion.js";
@@ -387,7 +387,14 @@ function renderMarket(result) {
 
 function renderPriceVerdict(result) {
   const verdict = result.price_verdict || null;
-  const section = el("section", { class: "pv-block panel chamfer", "data-hook": "bet-check-price-verdict",
+  // Visually the dominant block on the screen (spec: "the result blocks
+  // as confident cards with the PRICE VERDICT block visually dominant") --
+  // a tone class matching the shared pv-chip colour map (dom.js's
+  // priceVerdictTone) tints the whole card's left rule and background, not
+  // just the small chip inside it, so the verdict reads before any text
+  // is parsed.
+  const tone = verdict ? priceVerdictTone(verdict.word) : "outline";
+  const section = el("section", { class: `pv-block pv-block--${tone} panel chamfer`, "data-hook": "bet-check-price-verdict",
     "data-rise": "" });
   const head = el("div", { class: "pv-block__head" });
   head.appendChild(el("span", { class: "pv-block__eyebrow", text: "PRICE VERDICT" }));

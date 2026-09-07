@@ -616,7 +616,8 @@ function gmvRankBadge(rank) {
  * padded filler line. */
 function gmvEvidenceList(label, items) {
   if (!Array.isArray(items) || items.length === 0) return null;
-  const block = el("div", { class: "gmv__evidence" });
+  const tone = label === "WHY" ? " gmv__evidence--why" : label === "AGAINST" ? " gmv__evidence--against" : "";
+  const block = el("div", { class: `gmv__evidence${tone}` });
   block.appendChild(el("div", { class: "gmv__evidence-label", text: label }));
   const list = el("ul", { class: "gmv__evidence-list" });
   for (const item of items) {

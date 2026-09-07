@@ -366,13 +366,15 @@ function checkedTile(label, value, note) {
 function checkedTonightPanel(aggregates) {
   const panel = el("div", { class: "gv2-checked panel chamfer" });
   panel.appendChild(el("div", { class: "gv2-checked__title", text: "WHAT WE CHECKED TONIGHT" }));
-  panel.appendChild(checkedTile("GAMES EXAMINED", aggregates.gamesCount, "games_count"));
-  panel.appendChild(checkedTile("BOARDS RECEIVED", aggregates.boardsReceived, "count has_board"));
-  panel.appendChild(checkedTile("NO BOARD", aggregates.noBoard, "count !has_board"));
-  panel.appendChild(checkedTile("DEEPEST BOARD",
+  const tiles = el("div", { class: "gv2-checked__tiles" });
+  tiles.appendChild(checkedTile("GAMES EXAMINED", aggregates.gamesCount, "games_count"));
+  tiles.appendChild(checkedTile("BOARDS RECEIVED", aggregates.boardsReceived, "count has_board"));
+  tiles.appendChild(checkedTile("NO BOARD", aggregates.noBoard, "count !has_board"));
+  tiles.appendChild(checkedTile("DEEPEST BOARD",
     aggregates.deepest === null ? null : aggregates.deepest, "max board_summary.books"));
-  panel.appendChild(checkedTile("THINNEST BOARD",
+  tiles.appendChild(checkedTile("THINNEST BOARD",
     aggregates.thinnest === null ? null : aggregates.thinnest, "min board_summary.books"));
+  panel.appendChild(tiles);
   panel.appendChild(el("p", { class: "gv2-checked__footnote",
     text: "Every row above is computed client-side from board_summary on the games this screen "
         + "received. No slate-wide book or quote total exists on this feed." }));

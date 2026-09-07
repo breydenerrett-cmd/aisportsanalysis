@@ -97,17 +97,29 @@ function engineInterest(engine) {
   return wrap;
 }
 
-function opportunityCard(date, row) {
+function opportunityCard(date, row, isHero) {
   const verdict = row.price_verdict || {};
-  const card = el("article", { class: "opp-card panel chamfer", "data-hook": "opportunity-card",
-    "data-rise": "" });
+  const card = el("article", { class: `opp-card panel chamfer${isHero ? " opp-card--hero" : ""}`,
+    "data-hook": "opportunity-card", "data-rise": "" });
+
+  // The hero (top-ranked) card gets a two-column layout on desktop --
+  // everything but the value meter sits in `main`, the meter sits in
+  // `side` (see screens.css's .opp-card--hero flex rule). A non-hero card
+  // still gets both wrapper elements so the two markup shapes never
+  // diverge -- CSS alone decides whether they lay out as one column or two.
+  const main = el("div", { class: "opp-card__main" });
+  card.appendChild(main);
+
+  if (isHero) {
+    main.appendChild(el("span", { class: "opp-card__eyebrow", text: "TOP PLAY" }));
+  }
 
   const head = el("div", { class: "opp-card__head" });
   head.appendChild(el("a", { class: "opp-card__matchup", href: gameHref(date, row),
     text: `${row.away_team} @ ${row.home_team}` }));
   const pitch = formatEasternTime(row.first_pitch_utc);
   if (pitch) head.appendChild(el("span", { class: "opp-card__pitch", text: pitch }));
-  card.appendChild(head);
+  main.appendChild(head);
 
   const wager = el("div", { class: "opp-card__wager" });
   wager.appendChild(el("span", { class: "opp-card__wager-text", text: row.wager_text || "" }));
@@ -115,7 +127,7 @@ function opportunityCard(date, row) {
   wager.appendChild(el("span", { class: "opp-card__price" },
     [priceText ? document.createTextNode(`at ${priceText}`) : document.createTextNode("")]));
   if (row.best_book) wager.appendChild(el("span", { class: "opp-card__book", text: bookLabel(row.best_book) }));
-  card.appendChild(wager);
+  main.appendChild(wager);
 
   const chipRow = el("div", { class: "opp-card__chips" });
   chipRow.appendChild(renderWordChip(verdict.word));
@@ -125,37 +137,39 @@ function opportunityCard(date, row) {
   if (verdict.evidence_tier) {
     chipRow.appendChild(el("span", { class: "opp-card__tier", text: `EVIDENCE ${verdict.evidence_tier}` }));
   }
-  card.appendChild(chipRow);
-
-  card.appendChild(renderValueMeter({
-    marketImplied: row.market_implied_probability,
-    priceImplied: row.stated_implied_probability,
-    valuePoints: row.value_points,
-    word: null,
-  }));
+  main.appendChild(chipRow);
 
   const booksN = typeof row.books === "number" ? row.books : null;
   const marketPct = formatConsensusShare(row.market_implied_probability);
   const pricePct = formatConsensusShare(row.stated_implied_probability);
-  card.appendChild(el("p", { class: "opp-card__figline" },
+  main.appendChild(el("p", { class: "opp-card__figline" },
     [document.createTextNode(
       `MARKET-IMPLIED (de-vigged, ${booksN === null ? "—" : booksN} books) ${marketPct || "—"} `
       + `· your price implies ${pricePct || "—"}`)]));
-  card.appendChild(el("p", { class: "opp-card__model", text: `INDEPENDENT MODEL: ${row.independent_model || "NO INDEPENDENT MODEL YET"}` }));
+  main.appendChild(el("p", { class: "opp-card__model", text: `INDEPENDENT MODEL: ${row.independent_model || "NO INDEPENDENT MODEL YET"}` }));
 
-  card.appendChild(reasonsRisksList(row.reasons, row.risks));
+  main.appendChild(reasonsRisksList(row.reasons, row.risks));
 
   const engineNode = engineInterest(row.engine);
-  if (engineNode) card.appendChild(engineNode);
+  if (engineNode) main.appendChild(engineNode);
 
-  card.appendChild(el("p", { class: "opp-card__captured", text: capturedLine(row) }));
+  main.appendChild(el("p", { class: "opp-card__captured", text: capturedLine(row) }));
 
   const actions = el("div", { class: "opp-card__actions" });
   actions.appendChild(el("a", { class: "btn btn--ghost chamfer chamfer--btn",
     href: gameHref(date, row), text: "OPEN THIS GAME" }));
   actions.appendChild(el("a", { class: "btn btn--cyan chamfer chamfer--btn on-live",
     href: betCheckHref(row), "data-hook": "opportunity-check-price", text: "CHECK THIS PRICE" }));
-  card.appendChild(actions);
+  main.appendChild(actions);
+
+  const side = el("div", { class: "opp-card__side" });
+  side.appendChild(renderValueMeter({
+    marketImplied: row.market_implied_probability,
+    priceImplied: row.stated_implied_probability,
+    valuePoints: row.value_points,
+    word: null,
+  }));
+  card.appendChild(side);
 
   return card;
 }
@@ -240,12 +254,13 @@ export async function renderOpportunities(container, date) {
   const qualifying = payload.qualifying || [];
   if (qualifying.length === 0) {
     const panel = el("div", { class: "opp-empty panel chamfer", "data-hook": "opportunities-empty" });
+    panel.appendChild(el("span", { class: "opp-empty__eyebrow", text: "TOP OPPORTUNITIES" }));
     panel.appendChild(el("p", { class: "opp-empty__headline", text: payload.empty_reason || EMPTY_LITERAL }));
     panel.appendChild(el("p", { class: "opp-empty__basis", text: payload.basis || "" }));
     body.appendChild(panel);
   } else {
     const grid = el("div", { class: "opp-grid" });
-    for (const row of qualifying) grid.appendChild(opportunityCard(date, row));
+    qualifying.forEach((row, i) => grid.appendChild(opportunityCard(date, row, i === 0)));
     body.appendChild(grid);
   }
 

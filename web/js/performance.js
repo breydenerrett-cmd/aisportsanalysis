@@ -123,16 +123,21 @@ function summaryTile(label, cls) {
   const rows = [
     ["N SETTLED", cls.n_settled],
     ["W-L-P", `${cls.wins}-${cls.losses}-${cls.pushes}`],
-    ["UNITS NET", numFmt(cls.units_net)],
-    ["RETURN ON UNITS", pctFmt(cls.return_on_units)],
+    ["UNITS NET", numFmt(cls.units_net), typeof cls.units_net === "number" ? cls.units_net : null],
+    ["RETURN ON UNITS", pctFmt(cls.return_on_units), typeof cls.return_on_units === "number" ? cls.return_on_units : null],
     ["HIT RATE", pctPlain(cls.hit_rate)],
     ["MAX DRAWDOWN", numPlain(cls.drawdown_max)],
   ];
   const grid = el("div", { class: "perf-tile__grid" });
-  for (const [k, v] of rows) {
+  for (const [k, v, signed] of rows) {
     const row = el("div", { class: "perf-tile__row" });
     row.appendChild(el("span", { class: "perf-tile__key", text: k }));
-    row.appendChild(el("span", { class: "perf-tile__value" },
+    // UNITS NET / RETURN ON UNITS are this tile's own headline figures --
+    // large and win/loss coloured (green up, red down), same convention
+    // the rest of this screen already uses for a settled outcome.
+    const big = signed !== undefined;
+    const tone = big && signed !== null ? (signed > 0 ? " perf-tile__value--pos" : signed < 0 ? " perf-tile__value--neg" : "") : "";
+    row.appendChild(el("span", { class: `perf-tile__value${big ? " perf-tile__value--big" : ""}${tone}` },
       [v === null || v === undefined ? notYetAvailable("Field not present on this class's rollup.", "N/A") : figure(v)]));
     grid.appendChild(row);
   }
