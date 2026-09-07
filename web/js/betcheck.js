@@ -824,7 +824,7 @@ export async function renderBetCheck(container, prefill = {}) {
     ticket.appendChild(freeMeterHost);
   }
 
-  const foot = el("p", { class: "bc2-ticket__foot", text: "NO FRESHNESS FIGURE ON THIS PAYLOAD · CAPTURE IS HOURLY" });
+  const foot = el("p", { class: "bc2-ticket__foot", text: "NO AGE ON THIS FEED · PRICES ARE CAPTURED HOURLY" });
   ticket.appendChild(foot);
   layout.appendChild(ticket);
 

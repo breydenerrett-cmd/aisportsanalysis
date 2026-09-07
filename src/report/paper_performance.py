@@ -127,7 +127,7 @@ _ODDS_RANGE_LABEL = {
 # so the page says plainly what these cuts are and are not.
 CUTS_NOTE = (
     "Descriptive cuts of settled paper bets at flat 1-unit stakes, sliced "
-    "after the results were known -- not pre-registered hypotheses, and not "
+    "after the results were known — not pre-registered hypotheses, and not "
     "findings. A bucket under 20 bets is marked thin, and even a few dozen "
     "bets cannot establish a return: the spread between the best and worst "
     "bucket here is roughly what noise looks like at this sample size. Every "
