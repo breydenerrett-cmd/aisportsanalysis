@@ -470,6 +470,20 @@ surface on its own terms and never asked whether two surfaces on one screen
 agreed. Cross-surface contradiction is a class of defect a per-surface test
 suite cannot see.
 
+- 03:57Z F-3 fixed (d38876c) and deployed. Verified live: 9 of 11 games now
+  carry a consensus and `has_market` is true for exactly those 9, the two
+  genuinely unpriced still report null, and the Gameday panel renders
+  "TOR 65.0% / ATH 35.0% -- MARKET-IMPLIED CONSENSUS, DE-VIGGED" where it
+  used to claim no priced market. Checked for the same class of bug
+  elsewhere: `data_quality.has_market` still reports the dossier section
+  faithfully, and the only surface reading it is the market_unavailable hero,
+  which reads `board_summary.has_board` -- always correct. No knock-on.
+- 03:58Z the peer's second point (the grid reading as a hang) also fixed
+  (ba0e4ae): it had awaited /today before starting /daily and /opportunities,
+  two sequential round trips, and the /today it fetched was the one Gameday
+  already held. Measured on staging after deploy: the grid is complete
+  2.5 s after navigation, 11 cards, no console errors.
+
 ## PHASE 2 SCORECARD against the owner's priority list
 
 | # | Item | State |
