@@ -1,0 +1,125 @@
+# A SECOND slate pass, late enough in the day that lineups exist.
+#
+# Finding F-1 (docs/DEMO_SHIP_CHECKLIST.md, 2026-09-07): all sixteen evolab
+# genome systems require a posted lineup, and the 10:00Z daily loop freezes
+# the slate seven to twelve hours before lineups post -- so every genome has
+# refused NO_LINEUP on every game since the loop moved to Actions on 09-05,
+# leaving only null baselines and market references deciding. This restores
+# the pre-09-05 behaviour (the old cloud session ran the loop repeatedly
+# through the day; every genome decision in the ledger carries a decision_utc
+# between 16:25Z and 01:51Z).
+#
+# Runs `engine slate` and NOTHING else -- see scripts/afternoon_slate.sh for
+# why settle and eod stay the 10:00Z loop's job, and why two frozen decision
+# sets for one date is the intended shape rather than a duplicate.
+#
+# Requires the same single repository secret as the other data-plane
+# workflows: ODDS_API_KEY. This pass buys no prices (it decides against the
+# board forward capture already paid for), but `engine slate`'s own L1
+# refresh reads the odds provider's status, and the key is passed for parity
+# with daily-loop.yml rather than left to fail differently here.
+name: afternoon-slate
+
+on:
+  schedule:
+    # 21:10 UTC = 5:10pm Eastern. Late enough that lineups are posted for the
+    # evening slate (on 2026-09-05 they landed 17:16Z-22:39Z), early enough
+    # to be pre-game for the 7pm ET and later games, which are the bulk of a
+    # normal card. Games already under way are skipped by run_slate's own
+    # first-pitch guard rather than decided late. Deliberately not on the
+    # hour: every repository on the platform asks for :00.
+    - cron: "10 21 * * *"
+  workflow_dispatch: {}
+
+# The same group forward-capture and daily-loop share. All three commit and
+# push to one branch under a lock that is process-local (flock) and therefore
+# useless across runners; the Actions-level group is the only lock that
+# actually reaches between them.
+concurrency:
+  group: forward-capture
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  slate:
+    runs-on: ubuntu-latest
+    # Slate-only, on a warm cache, is a couple of minutes. The ceiling covers
+    # a cold runner having to restore the Statcast seed first.
+    timeout-minutes: 25
+    steps:
+      # Scheduled workflows only run from the repository's DEFAULT branch,
+      # which here is an orphan sharing no history with the working line, so
+      # the working branch is named explicitly -- same as the other two
+      # data-plane workflows.
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/sports-betting-analysis-review-g1o0co
+          fetch-depth: 0
+
+      - name: Configure git identity for the commit this run may make
+        run: |
+          git config user.name "afternoon-slate-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+      # Restores whatever the morning daily-loop saved a few hours earlier
+      # (same `daily-loop-data-` prefix, restore-keys prefix match), so the
+      # Statcast pitch store the pre-slate guard checks is already on disk and
+      # bootstrap has nothing to rebuild. Saved forward under this run's own
+      # key so an afternoon run still primes tomorrow morning if the 10:00Z
+      # loop failed.
+      - name: Restore historical + processed data cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/historical/statcast
+            data/historical/mlb_results.csv
+            data/historical/mlb_results.manifest.json
+            data/historical/pitcher_logs.jsonl
+            data/historical/bullpen_log.jsonl
+            data/historical/lineups.jsonl
+            data/historical/handedness.json
+          key: daily-loop-data-${{ github.run_id }}
+          restore-keys: |
+            daily-loop-data-
+
+      # Same hard stops as the daily loop: a missing Statcast manifest that
+      # the seed branch cannot supply is a refusal, not a silent full build.
+      - name: Bootstrap git-ignored inputs (restore from seed, or refuse)
+        run: |
+          set -o pipefail
+          bash scripts/daily_bootstrap.sh 2>&1 | tee /tmp/afternoon_slate.out
+          exit "${PIPESTATUS[0]}"
+
+      - name: Run the afternoon slate pass
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: |
+          set -o pipefail
+          bash scripts/afternoon_slate.sh 2>&1 | tee -a /tmp/afternoon_slate.out
+          exit "${PIPESTATUS[0]}"
+
+      - name: Fail the job on any ESCALATE line
+        if: always()
+        run: |
+          if grep -q "^ESCALATE:" /tmp/afternoon_slate.out; then
+            echo "The afternoon slate escalated -- see the lines below."
+            grep "^ESCALATE:" /tmp/afternoon_slate.out
+            exit 1
+          fi
+          echo "no ESCALATE lines -- clean run"
+
+      - name: Save historical + processed data cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data/historical/statcast
+            data/historical/mlb_results.csv
+            data/historical/mlb_results.manifest.json
+            data/historical/pitcher_logs.jsonl
+            data/historical/bullpen_log.jsonl
+            data/historical/lineups.jsonl
+            data/historical/handedness.json
+          key: daily-loop-data-${{ github.run_id }}
