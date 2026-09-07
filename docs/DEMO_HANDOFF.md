@@ -71,10 +71,14 @@ what does it like, why, and how has it actually done.
 
 ## TOP 3 THINGS TO CLICK
 
-1. TODAY → the slate date, the board summary and TOP OPPORTUNITIES.
-2. A game card → GAME view: starters, NO PLAY / price panel, MODEL vs MARKET.
-3. CHECK → type a price for a side (try ATH +189 and PHI −175 on 2026-09-07)
-   and read the PRICE VERDICT block.
+1. **TODAY** — the record strip at the top, then scroll to the matchup grid.
+   Open any card's "PAPER POSITIONS FROZEN BEFORE FIRST PITCH".
+2. **RESULTS** — the DAILY RECAP gallery, then "OPEN THE FULL RECORD" on
+   Saturday Sep 5. That page is the audit trail: every position with the
+   price and book count as frozen, and what it settled to.
+3. **CHECK** — type a game, a side and a price, and read the PRICE VERDICT
+   block. Try the Athletics at +189 and Philadelphia at −175 on 2026-09-07
+   for a LEAN and an OVERPRICED.
 
 ## WHAT IS LIVE vs DEMO/REPLAY
 
@@ -167,7 +171,12 @@ Two scheduled GitHub jobs keep the site alive with no session running:
   those days stay PENDING and the site still works, just frozen at
   "settled through 2026-09-05".
 
-Neither job needs anything from you unless both stay red.
+Neither job needs anything from you unless both stay red. A watchdog in the
+overnight session will dispatch the daily loop at 10:27Z if — and only if —
+the cron produced no run for that date; it never dispatches over an existing
+run, because a second one would write a duplicate set of frozen decisions.
+That watchdog lives only as long as the session, so treat it as a bonus, not
+a guarantee.
 
 ## NEXT 3 IMPROVEMENTS
 

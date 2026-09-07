@@ -252,7 +252,8 @@ Facts established before starting (verified 02:11–02:20Z, so no one re-derives
 |---|---|---|
 | C1 | `src/report/daily_record.py` + `GET /daily`, `/daily/{date}`, `/record`: frozen pregame recommendations per game, settlement joined by bet_id, per-day rollups, day index for the gallery, today/7-day/30-day record strip | DONE (da57414) |
 | F2 | Today = every matchup (starters, time, odds, freshness, analyzer status) with its frozen positions and GREEN/RED/GRAY settled states; system record strip; daily recap gallery + per-day audit trail reading `/daily` | DONE (345f287) |
-| C3 | Performance cuts: by market, by odds range, by decision grade, by class, rolling 7/30, thin-sample flags | RUNNING |
+| C3 | Performance cuts: by market, by odds range, by decision grade, by class, rolling 7/30, thin-sample flags | DONE (a041e19) |
+| F3 | Public-demo entry on the landing page, one honest explanation for the empty game screen, last-night link on Today | DONE (8b8da3b) |
 | C2 | Multi-market live board: extend `oddspayload.MARKETS` to run line and total with per-line consensus grouping, so matchup detail shows live best bets beyond moneyline | AFTER F2 |
 | F3 | Matchup detail story (pitchers, offence, bullpen, warnings, reasoning), performance cuts by market / tier / odds range, polish | AFTER C2 |
 
@@ -386,3 +387,22 @@ Ledger continues below.
   holds at the 02:05Z instant and the UI says "59 MIN AGO". Expected
   behaviour, not a failure; captures resume as first pitch approaches.
 - 03:05Z performance cuts (C3) started.
+- 03:10Z F-2 recorded (the matchup story cannot be told from the container).
+- 03:20Z C3 delivered (154 tests) and committed as a041e19. Orchestrator
+  rewrote the note under the cuts before shipping: these buckets are sliced
+  from settled results AFTER the fact, which is the post-hoc move the
+  project's own discipline exists to resist, so the page now says they are
+  descriptive rather than findings, that a few dozen bets cannot establish a
+  return, and that every pre-registered family closed null. Without that, the
+  +34.2% pick'em/slight-dog bucket reads as a discovery.
+- 03:22Z capture behaviour understood and documented: the dense odds pass
+  only buys prices within three hours of a first pitch (WINDOW_MINUTES=180),
+  so the 02:46Z slot logged "0 capture(s), 0 observations" and the board
+  correctly holds overnight, resuming about 14:05Z before the 17:05Z first
+  pitch. A morning board reading ten hours old is the design, not a failure.
+- 03:25Z a session watchdog is set for 10:27Z to dispatch the daily loop only
+  if GitHub's 10:00Z cron produced no run for that date -- never if one
+  exists, because a second run would write a duplicate set of frozen
+  decisions and wagers (takeover doc section 9). Session-bound: if this
+  session is gone, the watchdog is gone with it.
+- 03:35Z F3 delivered (176 web tests) and committed as 8b8da3b.
