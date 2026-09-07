@@ -43,10 +43,17 @@ what does it like, why, and how has it actually done.
   age) or the exact text NO QUALIFYING BEST BETS RIGHT NOW, always followed
   by the ranked table of every priced side and the unpriced games with
   reasons. Then the Featured Bet and the slate rail.
-- GAMES / GAME: schedule, probable starters, the NO PLAY / price panel,
-  and the new MODEL vs MARKET panel (both sides' verdicts and meters, the
-  market-derived reference with engine provenance, ENGINE DECISIONS with
-  counts, staked plays and fatal counterarguments as warnings).
+- GAMES / GAME: schedule, records with sample n, both probables, the NO
+  PLAY / price panel, the GAME STORY block (starters with ERA/FIP/WHIP/K-9
+  and recent form, bullpen usage with per-reliever availability, lineups
+  with handedness, travel, conditions at first pitch), the MODEL vs MARKET
+  panel (both sides' verdicts and meters, the market-derived reference
+  with engine provenance), and ENGINE DECISIONS with counts, staked plays
+  and the systems' stand-down reasons said in words rather than as the
+  expression that decided them.
+- LANDING (`/`): the hero shows tonight's real featured matchup, game
+  count and best price, fetched live; on a feed failure it falls back to
+  a sample that is labelled as one and never captioned "Tonight".
 - CHECK (Bet Check): the ten-block check plus the PRICE VERDICT block
   (STRONG VALUE … INSUFFICIENT DATA, fair price, your price, the meter,
   evidence tier, books, capture age, reasons, risks). Prefilled from a
@@ -84,9 +91,14 @@ what does it like, why, and how has it actually done.
 
 - LIVE: the MLB schedule (fetched per request), the odds board
   (`data/processed/odds_multibook.jsonl`, baked into the image on every
-  deploy; GitHub's forward-capture cron now fires every 15 minutes and
-  redeploys staging on the first slot of each hour), the engine's frozen
-  decisions for the slate date, the paper-account ledgers.
+  deploy), the engine's frozen decisions for the slate date, the
+  paper-account ledgers, and since 2026-09-07 the per-game feature stores
+  (records, starter form, bullpen, lineups, travel, weather) restored from
+  the daily-loop cache at build time. The clock is the local Scheduled
+  Task `linehound-capture-tick` on Brey's PC, not GitHub's cron: measured
+  2026-09-07, the cron fired 6 of ~97 scheduled runs. The task dispatches
+  a capture when the board is 40+ minutes stale, and forward-capture
+  redeploys staging on the first slot of each hour.
 - NOT LIVE: the odds board is as fresh as the last deploy (at most ~1 hour
   behind during game hours); every board carries its capture time and the
   stale label past 30 minutes.
@@ -95,23 +107,30 @@ what does it like, why, and how has it actually done.
 
 ## KNOWN LIMITATIONS
 
-- The board is only as fresh as the last deploy. GitHub's `*/15` cron is
-  best-effort (it fired at 01:00Z, skipped 01:15Z and 01:30Z); a watchdog in
-  the local session dispatches a capture when the newest run is over 45
-  minutes old. Every price shows its capture time; past 30 minutes the UI
-  says LAST UPDATED instead of LIVE.
-- Moneyline only on the odds board and in Bet Check. Spreads, totals and
-  first-five prices are captured into the store but not exposed on these
-  screens yet. The engine does freeze run-line and totals positions, and
-  those DO show on the matchup cards and in the daily record.
-- **The game screen cannot tell the matchup story yet** (finding F-2). It
-  shows the park, the board and the price read, but team records, bullpen,
-  splits, handedness and lineups all come back as gaps, because the API
-  never assembles those inputs and the container ships without the
-  historical feature stores they need. Starter names are fine — they ride on
-  the schedule. Fixing it means publishing the rebuilt stores the way the
-  Statcast pitch store is already published, then threading them through;
-  that is a repo-size decision for you, written up in the checklist.
+- The board is only as fresh as the last deploy, and the clock is a local
+  Scheduled Task rather than GitHub's cron (which fired ~6% of the time on
+  2026-09-07). The task runs every 15 minutes while the PC is awake; if
+  the machine sleeps, captures stop until it wakes. Every price shows its
+  capture time; past 30 minutes the UI says LAST UPDATED instead of LIVE.
+  Details and the unregister command: `docs/LOCAL_SCHEDULER.md`.
+- Every captured market is now ranked on Today under EVERY OTHER MARKET
+  ON THE BOARD -- first-five totals and moneylines, team totals, alternate
+  lines and pitcher strikeout props -- on the same price-versus-consensus
+  measure as the moneyline, with the same six-book floor. Most of those
+  contracts are too thinly quoted to price on a given night (a THIN BOARD
+  block says how many, per market, and why); the Odds board and Bet Check
+  themselves are still moneyline-only. The engine's run-line and totals
+  positions show on the matchup cards and in the daily record.
+- **The game screen tells the matchup story now** (F-2, shipped
+  2026-09-07). Records with sample n, both starters' season and recent
+  form, bullpen usage and per-reliever availability over 7 days, posted
+  lineups with handedness, travel load and the forecast at first pitch,
+  as a GAME STORY block on every game. Still honestly absent and named
+  as gaps on the page: pitcher platoon splits and batter-vs-pitcher
+  history (each ~200 live MLB calls per slate -- they need a store, not
+  a fetch), pitch arsenals (the 40 MB Statcast store stays out of the
+  image), and roster news. Tonight's lineups can lag on staging until
+  the next daily loop refreshes the cache; the page says so per game.
 - On 2026-09-07 four games had no usable board at capture time (AZ@KC,
   MIN@DET, WSH@SD not quoted; LAA@BOS only 5 books, below the 6-book
   consensus floor). They are listed as UNPRICED with the reason, never
@@ -120,63 +139,71 @@ what does it like, why, and how has it actually done.
   market-derived reference; every verdict is price versus the de-vigged
   consensus (line-shopping value). A vigged board normally shows FAIR PRICE
   and PASS; STRONG VALUE / VALUE will be rare and that is correct.
-- **The forward-test systems have not frozen a decision since 2026-09-03,
-  and now we know why.** All sixteen require a posted lineup before they will
-  play. The daily slate freezes at 10:00Z, deliberately hours before first
-  pitch — but on 09-05 every one of the fifteen games posted its lineup
-  between 17:16Z and 22:39Z, seven to twelve hours later. So they refuse
-  "no lineup" on every game, every day, and until tonight they did it
-  silently. Proven by experiment, written up in
-  `docs/FINDING_F1_DIAGNOSIS.md`. Consequence: every engine decision on the
-  current slate is a null baseline or a market reference, neither of which is
-  a pick to follow, so the honest answer to "what does the system like today"
-  is "nothing with a thesis" — and the product says exactly that rather than
-  dressing a baseline up as a recommendation. Their real history still shows
-  on RESULTS (64 settled bets, +19.18 units) because it is frozen and settled.
-  **This one needs your call** — see the three options in
-  `docs/DEMO_SHIP_CHECKLIST.md` under "DECISION FOR BREY". The silent half is
-  already fixed: the next slate run logs why each system stood down.
+- **The forward-test systems decided on a live slate for the first time
+  tonight (2026-09-07 23:13Z).** The diagnosis held: all sixteen require a
+  posted lineup, and the 10:00Z freeze runs hours before lineups post
+  (`docs/FINDING_F1_DIAGNOSIS.md`). The fix is the registered
+  `afternoon-slate` workflow, a second pass at 21:10Z. Its first live run
+  recorded `FORWARD_TEST: 6` alongside 45 reasoned stand-downs (NO_LINEUP
+  16, NO_SIGNAL 19, BELOW_ENTRY 2, MARKET_UNAVAILABLE 8) -- the same
+  systems playing where they had a signal and saying no where they did
+  not. Each play is recorded with `p_model=None` and
+  `value_basis=price_standing_only`: it played on price standing and the
+  ledger says so. Caveat: the 21:10Z cron did not fire; the run was a
+  manual dispatch, and the local task now covers that slot. Those six show
+  on their matchup pages under ENGINE DECISIONS and in the frozen
+  positions; they settle at the next daily loop. The systems' earlier
+  history still shows on RESULTS (64 settled bets, +19.18 units) because
+  it is frozen and settled.
 - The BET WON vs REASONING CORRECT split is all UNTESTED: control and
   market-reference systems make no checkable mechanism claim, and the
   forward-test systems' mechanism checks are recent. 70 legacy reviews
   cannot be joined (pre-2026-09-03 key format).
-- Paper settlement runs at 10:00Z; 2026-09-06 and 2026-09-07 wagers show
-  PENDING until then. The daily-loop cron is also best-effort.
+- Paper settlement runs in the daily loop. 2026-09-06 is settled (47-40-3,
+  +1.50u); 2026-09-07's positions, including tonight's six FORWARD_TEST
+  plays, show PENDING until the next loop. The loop's own push does not
+  trigger a staging deploy, so RESULTS can lag a settlement by up to an
+  hour until forward-capture's hourly redeploy carries it.
 - Saved bets (BETS) still require an invite token; it is hidden in demo mode.
 - Demo mode makes the read-only game surface public on the staging URL.
   One env line reverses it.
 
 ## WHAT HAPPENS WHILE YOU SLEEP
 
-Two scheduled GitHub jobs keep the site alive with no session running:
+Three GitHub workflows do the work, and a Scheduled Task on this PC is the
+clock. Nothing here depends on a Claude session being alive.
 
-- **forward-capture** every 15 minutes: pulls the board, commits it, and on
-  the first slot of each hour redeploys staging so the site's prices move.
-  Two things to know before you read a stale board as a failure:
-  - The odds pass only buys prices when a game starts within three hours
-    (`WINDOW_MINUTES` in the dense capture). Overnight, with the next first
-    pitch at 1:05pm ET, it correctly captures nothing — the 02:46Z run
-    logged "0 capture(s), 0 observations". Prices start moving again about
-    three hours before the first game, so a morning visit may show a board
-    ten hours old, correctly labelled, and then watch it refresh.
-  - GitHub's cron is best-effort and skipped most slots tonight (it fired
-    once at 01:00Z; the rest were manual dispatches). If nothing has run for
-    hours once games are close, one click on Actions → forward-capture →
-    Run workflow fixes it.
-- **daily-loop** at 10:00Z: settles the previous day, freezes the new slate,
-  and writes the end-of-day review. This has never yet completed on a
-  schedule (the one dispatched run failed by design, mid-evening, because
-  games were still in progress). If it runs, RESULTS gains 2026-09-06 and
-  2026-09-07 settled and the slate rolls to 2026-09-08. If it does not,
-  those days stay PENDING and the site still works, just frozen at
-  "settled through 2026-09-05".
+- **forward-capture** (`*/15` cron, plus the task): pulls the board,
+  commits it, and on the first slot of each hour redeploys staging so the
+  site's prices move. The odds pass only buys prices when a game starts
+  within three hours (`WINDOW_MINUTES`), so overnight it correctly
+  captures nothing and a morning visit may show a board ten hours old,
+  correctly labelled, until about three hours before the first game.
+- **daily-loop** (10:00Z cron, plus the task): settles the previous day,
+  freezes the new slate, writes the end-of-day review. It completed twice
+  on 2026-09-07 -- once by hand at 13:27Z, once by cron at 15:20Z -- and
+  the second wrote nothing ("settled 0 new (15 already settled)"), which
+  proved the loop is idempotent per date. Its push does not trigger a
+  deploy; forward-capture's hourly redeploy carries the settlement.
+- **afternoon-slate** (21:10Z cron, plus the task): the second slate pass
+  so the thesis-carrying systems can decide once lineups have posted.
+  Spends no odds credits, never settles, never runs the end-of-day pass.
 
-Neither job needs anything from you unless both stay red. A watchdog in the
-overnight session will dispatch the daily loop at 10:27Z if — and only if —
-the cron produced no run for that date; it never dispatches over an existing
-run, because a second one would write a duplicate set of frozen decisions.
-That watchdog lives only as long as the session, so treat it as a bonus, not
-a guarantee.
+**The clock.** `linehound-capture-tick` runs `scripts/capture_tick.ps1`
+every 15 minutes: capture if nothing is in flight and the board is 40+
+minutes stale; daily-loop once per UTC date after 10:00Z; afternoon-slate
+once per UTC date after 21:10Z, counting only runs created at or after
+21:10Z. Every decision, including "do nothing", is logged to
+`data/logs/capture_tick.log`. Measured 2026-09-07: GitHub's own cron fired
+6 of ~97 scheduled runs; the task made every other dispatch. It never
+stacks a run and never double-dispatches a date.
+
+**What it cannot do:** run while the PC is asleep. If the machine sleeps
+overnight, captures stop until it wakes -- the site keeps serving the last
+board, correctly labelled. Watch it with
+`Get-Content data\logs\capture_tick.log -Tail 20 -Wait`; remove it with
+`Unregister-ScheduledTask -TaskName linehound-capture-tick -Confirm:$false`.
+Details in `docs/LOCAL_SCHEDULER.md`.
 
 ## F-1 IS REGISTERED (2026-09-07)
 
