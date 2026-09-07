@@ -36,6 +36,7 @@ Sprint clock: T+0 = 00:20Z. Deadline T+240 = 04:20Z.
 | S3 | Whole game surface needs an invite token; `APP_ADMIN_TOKEN` on staging unknown, no way to mint a token for Brey without a Fly login | `APP_PUBLIC_DEMO=1` env flag (default OFF): read-only game surface + Bet Check served without a token; personal routes stay authed; `/meta.public_demo` tells the client | DONE (local); set in `deploy/fly.staging.toml` at deploy |
 | S4 | `src/core/timing.py` imports POSIX `resource`; the app cannot start on the Windows dev box | guarded import, `peak_rss_mb` = 0.0 on Windows | DONE |
 | S5 | No capture scheduler is firing (cron never registered; cloud routines being paused) → board goes stale during the demo | dispatch `forward-capture` by hand ~hourly during the sprint; note in handoff | ONGOING |
+| S6 | REAL REGRESSION since 2026-09-03 10:07Z: the multibook store gained spreads/totals/first-five rows (they carry a `market` key; moneyline rows do not) and the board readers took "newest row per book" across all of them, so a book's totals row (null prices) or first-five row (wrong prices) replaced its moneyline. Every game on `/odds`, every card and every consensus read "9 books, no prices, no consensus" — the product has shown no consensus on any board for four days | `snapshots.moneyline_rows()` filter in `prices.boards_by_matchup` and `snapshots.multibook_quotes`; 2 regression tests; verified live: 8 of 11 boards on 09-07 now price with 6–9 books | DONE (local) |
 
 ## Frozen scope — the vertical slice
 
@@ -126,3 +127,15 @@ A stale board can never carry the strongest words.
 - 00:35Z S1–S4 patched locally; api deps installed (fastapi 0.141.1,
   uvicorn 0.52.4) on Python 3.14; local server up on :8000 in public-demo
   mode.
+- 00:36Z forward-capture dispatched by hand (run 34070311873, green, commit
+  2b2337b, 249 rows at 00:36Z).
+- 00:44Z 57d5ef8 pushed (S1–S4); deploy-staging 34070786458 green in 50 s;
+  staging `/app` → `/web/` renders `/today` 200 with no token; CI tests
+  34070786455 green (5m16s).
+- 00:45Z recon: B1–F1 implementation stream launched (Sonnet, verifier
+  after each step).
+- 00:50Z S6 found and fixed (board regression); 170 price/snapshot/contract
+  tests green. First real read of the 09-07 board: 8 priced games, one side
+  above fair (ATH +189 vs TOR, +0.59 pts → LEAN), everything else FAIR
+  PRICE/PASS as a vigged board normally is. NYM@MIA books disagree by 211
+  cents on the away side.

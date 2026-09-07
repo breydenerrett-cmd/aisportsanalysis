@@ -466,6 +466,29 @@ def pregame_rows(rows) -> list:
     return [row for row in rows or [] if is_pregame(row)]
 
 
+def is_full_game_moneyline(row) -> bool:
+    """True when this multibook row is a FULL-GAME MONEYLINE quote.
+
+    Since 2026-09-03 10:07Z the multi-book store also holds spreads, totals
+    and first-five rows (multibook_rows: every non-h2h market carries a
+    `market` key; h2h rows keep the legacy shape with NO key). A board
+    reader that takes "the newest row per book at the newest instant"
+    without asking which market a row belongs to ends up with a book's
+    totals row (no away/home price) or its first-five moneyline row (REAL
+    prices, for a different bet) sitting where the full-game moneyline
+    should be. Found 2026-09-07: every game on /odds showed 9 "books", null
+    prices and no consensus. Anything that presents a moneyline board must
+    filter through this predicate first.
+    """
+    return row.get("market") in (None, "h2h")
+
+
+def moneyline_rows(rows) -> list:
+    """`rows` keeping only full-game moneyline observations (see
+    `is_full_game_moneyline`). Filtering, never rewriting."""
+    return [row for row in rows or [] if is_full_game_moneyline(row)]
+
+
 def multibook_quotes(event_id=None, away_team=None, home_team=None, date=None,
                      path=DEFAULT_MULTIBOOK_PATH, rows=None,
                      pregame_only: bool = False) -> list:
@@ -487,6 +510,10 @@ def multibook_quotes(event_id=None, away_team=None, home_team=None, date=None,
     source = read_multibook(path) if rows is None else rows
     if pregame_only:
         source = pregame_rows(source)
+    # The {ts, book, away_price, home_price} shape below IS the full-game
+    # moneyline; a spreads/totals row has no such prices and a first-five
+    # moneyline row has the wrong ones (see is_full_game_moneyline).
+    source = moneyline_rows(source)
     quotes = []
     for row in source:
         if event_id is not None and row.get("event_id") != event_id:

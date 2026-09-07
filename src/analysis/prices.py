@@ -260,8 +260,15 @@ def boards_by_matchup(rows=None) -> dict:
     from src.pipeline import slate as slate_mod
     from src.pipeline import snapshots
 
-    source = snapshots.pregame_rows(
-        snapshots.read_multibook() if rows is None else rows)
+    # FULL-GAME MONEYLINE ROWS ONLY. The store has carried spreads, totals
+    # and first-five rows alongside h2h since 2026-09-03; without this
+    # filter `latest_instant`'s newest-row-per-book rule let a book's
+    # totals row (no away/home price) or first-five row (different prices)
+    # replace its moneyline row, and every board on /odds and every card
+    # read "9 books, no consensus" (2026-09-07). snapshots.moneyline_rows is
+    # the one place that decides which rows are a moneyline.
+    source = snapshots.moneyline_rows(snapshots.pregame_rows(
+        snapshots.read_multibook() if rows is None else rows))
     grouped = {}
     for row in source:
         away = slate_mod.team_abbrev_from_name(row.get("away_team") or "")

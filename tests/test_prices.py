@@ -100,6 +100,45 @@ class ForGameTests(unittest.TestCase):
         self.assertIn("sides", result)
         self.assertEqual(result["observed_utc"], "2026-08-31T21:00:00Z")
 
+    def _mixed_market_rows(self):
+        """A 6-book moneyline board plus, at the SAME instant and AFTER each
+        book's moneyline row, that book's totals row (no away/home price)
+        and first-five moneyline row (real prices for a different bet) --
+        exactly the shape the store has carried since 2026-09-03."""
+        base = {"observed_utc": "2026-09-07T00:36:04+00:00", "event_id": "e1",
+                "commence_time": "2026-09-07T17:05:00Z",
+                "home_team": "Philadelphia Phillies",
+                "away_team": "Atlanta Braves",
+                "book_last_update": "2026-09-07T00:34:00Z"}
+        rows = []
+        for i in range(6):
+            rows.append(dict(base, book=f"b{i}", away_price=-110, home_price=-110))
+            rows.append(dict(base, book=f"b{i}", market="totals", total="8.5",
+                             over_price=-105, under_price=-115))
+            rows.append(dict(base, book=f"b{i}", market="h2h_1st_5_innings",
+                             away_price=+150, home_price=-170))
+        return rows
+
+    def test_totals_and_first_five_rows_never_replace_the_moneyline_board(self):
+        """Regression, 2026-09-07: with spreads/totals/F5 rows in the same
+        store, the newest-row-per-book rule served a book's totals row (null
+        prices) or F5 row (wrong prices) as its moneyline, so every game on
+        /odds showed nine books, no prices and no consensus."""
+        result = prices.for_game(away_team="Atlanta Braves",
+                                 home_team="Philadelphia Phillies",
+                                 rows=self._mixed_market_rows())
+        self.assertIn("sides", result, result)
+        self.assertEqual(result["dispersion"]["books"], 6)
+        self.assertEqual(result["sides"]["away"]["best_price"], -110)
+        self.assertEqual(result["sides"]["home"]["best_price"], -110)
+
+    def test_boards_by_matchup_holds_only_moneyline_quotes(self):
+        boards = prices.boards_by_matchup(rows=self._mixed_market_rows())
+        board = boards[("ATL", "PHI", "2026-09-07")]
+        self.assertEqual(len(board["quotes"]), 6)
+        for quote in board["quotes"]:
+            self.assertEqual((quote["away_price"], quote["home_price"]), (-110, -110))
+
 
 if __name__ == "__main__":
     unittest.main()
