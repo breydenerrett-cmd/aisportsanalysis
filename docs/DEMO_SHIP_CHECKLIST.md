@@ -716,3 +716,22 @@ visible. A route-by-route review finds route-by-route bugs.
   at 15:28:18Z was 22 min old regardless.
 - 16:28Z watchdog dispatched forward-capture (newest run was 60 min old)
 - 17:28Z watchdog dispatched forward-capture (newest run was 60 min old)
+- 19:26Z Fifth genuine schedule firing: `event=schedule` total_count is 5.
+  The new one is forward-capture 34149523657 at 17:54:46Z, success. Genuine
+  firings today: 01:00:46Z, 06:06:21Z, 12:32:12Z, 17:54:46Z (forward-capture)
+  and 15:20:34Z (daily-loop) -- five, against a `*/15` cron that should have
+  produced roughly 96. No dispatch this tick per the heartbeat rule; the
+  newest capture 34154563759 at 19:10:38Z was 16 min old regardless.
+
+  **This manual watchdog is now redundant.** The Windows Scheduled Task
+  `linehound-capture-tick` was registered at 19:10Z (Brey authorised it) and
+  runs `scripts/capture_tick.ps1` every 15 minutes with the same rules this
+  heartbeat has been applying by hand all day: never dispatch while a run is
+  in flight, dispatch capture only past 45 minutes stale, dispatch the daily
+  loop only once per UTC date and only after 10:00Z. Its first tick made a
+  real decision on its own -- run 34154563759 above was dispatched by the
+  task, not by a session. Every decision, including the decision to do
+  nothing, lands in `data/logs/capture_tick.log`.
+
+  The remaining exposure is that the task only runs while the machine is on.
+  See docs/LOCAL_SCHEDULER.md.
