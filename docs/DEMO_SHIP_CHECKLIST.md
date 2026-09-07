@@ -714,3 +714,4 @@ visible. A route-by-route review finds route-by-route bugs.
 
   No dispatch this tick per the heartbeat rule; newest capture 34138474560
   at 15:28:18Z was 22 min old regardless.
+- 16:28Z watchdog dispatched forward-capture (newest run was 60 min old)
