@@ -896,19 +896,51 @@ function gavHave(advanced) {
   return block;
 }
 
+/** When a game carries a long list of gaps (four or more), naming each one
+ * individually reads as a wall of NOT YET AVAILABLE panels -- broken,
+ * rather than an honest, structural boundary. This ONE consolidated panel
+ * says the true, whole-build reason once: this deployment serves the
+ * schedule, the live board and the frozen engine record; the per-game
+ * feature layers do not ship in this build, so they are reported as named
+ * gaps below rather than guessed (docs/DEMO_SHIP_CHECKLIST.md FINDING
+ * F-2 -- api/games.py never assembles those feature inputs, and the
+ * container ships without the historical stores they would need). Reuses
+ * dom.js's own `notYetAvailable` panel rather than inventing new markup
+ * for an absence explanation -- see this file's RULES on that. */
+function gavGapsConsolidated(gapCount) {
+  return notYetAvailable(
+    "This deployment serves the schedule, the live board and the frozen engine record. The "
+    + "per-game feature layers -- team records, bullpen, splits, handedness, lineups -- are not "
+    + `in this build, so they are reported as ${gapCount} named gaps below rather than guessed.`,
+    "NOT IN THIS BUILD");
+}
+
 /** Every gap the payload actually names, dynamically -- see this file's
  * top docstring for why nothing here hardcodes the artboard's own
  * (stale) gap-name list. Collapsed `<details>` rows: "tap for its reason
- * string. Not links -- there is nowhere to go" (V2-31's own copy). */
+ * string. Not links -- there is nowhere to go" (V2-31's own copy).
+ *
+ * At four gaps or more, the per-gap list ALSO nests inside one outer
+ * `<details>` ("N SECTIONS NOT IN THIS BUILD -- SHOW REASONS"), collapsed
+ * by default, behind the consolidated explainer panel above it -- so a
+ * reader sees one honest sentence first, not twelve stacked panels, while
+ * every individual gap and its own verbatim reason string is still one
+ * tap away, never deleted. Below that count (the common case: one or two
+ * real gaps on an otherwise well-covered game) nothing changes -- the
+ * header, lede and per-gap rows render inline exactly as before. */
 function gavGaps(advanced) {
   const gaps = advanced && typeof advanced.gaps === "object" ? advanced.gaps : {};
   const keys = Object.keys(gaps);
   const block = el("div", { class: "gav-gaps" });
-  block.appendChild(el("h4", { class: "gav-subhead gav-subhead--warn",
-    text: `THE ${keys.length} GAP${keys.length === 1 ? "" : "S"} · REASONS PRINTED AS GIVEN` }));
-  block.appendChild(el("p", { class: "gav-gaps__lede",
+  const consolidate = keys.length >= 4;
+
+  if (consolidate) block.appendChild(gavGapsConsolidated(keys.length));
+
+  const header = el("h4", { class: "gav-subhead gav-subhead--warn",
+    text: `THE ${keys.length} GAP${keys.length === 1 ? "" : "S"} · REASONS PRINTED AS GIVEN` });
+  const lede = el("p", { class: "gav-gaps__lede",
     text: "Every one of these is a coverage finding, not an error -- knowing what is missing is "
-        + "worth more than a number we made up." }));
+        + "worth more than a number we made up." });
   const list = el("div", { class: "gav-gaps__list" });
   for (const key of keys) {
     const row = el("details", { class: "gav-gap", "data-hook": "coverage-gap", "data-gap-key": key });
@@ -921,7 +953,20 @@ function gavGaps(advanced) {
       text: String(gaps[key]) }));
     list.appendChild(row);
   }
-  block.appendChild(list);
+
+  if (consolidate) {
+    const outer = el("details", { class: "gav-gaps__collapse", "data-hook": "coverage-gaps-collapsed" });
+    outer.appendChild(el("summary", { class: "gav-gaps__collapse-summary",
+      text: `${keys.length} SECTIONS NOT IN THIS BUILD -- SHOW REASONS` }));
+    outer.appendChild(header);
+    outer.appendChild(lede);
+    outer.appendChild(list);
+    block.appendChild(outer);
+  } else {
+    block.appendChild(header);
+    block.appendChild(lede);
+    block.appendChild(list);
+  }
   return block;
 }
 

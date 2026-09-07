@@ -260,11 +260,25 @@ function currentEasternDateIso() {
  * in this client). */
 function renderSlateBanner(dateIso) {
   const label = slateDateLabel(dateIso);
-  const isNext = !!dateIso && dateIso > currentEasternDateIso();
+  const currentEastern = currentEasternDateIso();
+  const isNext = !!dateIso && dateIso > currentEastern;
   const banner = el("div", { class: "opp-slateband", "data-hook": "slate-date-banner" });
   banner.appendChild(el("span", { class: "opp-slateband__date", text: label || "SLATE DATE NOT AVAILABLE" }));
   banner.appendChild(el("span", { class: `opp-slateband__tag${isNext ? " opp-slateband__tag--next" : ""}`,
     "data-hook": "slate-date-context", text: isNext ? "NEXT SLATE" : "TONIGHT'S SLATE" }));
+  // The slate has already rolled to the next date (GET /today's date is
+  // UTC, so after ~8pm ET it is tomorrow's slate -- see
+  // currentEasternDateIso's own docstring). Last night's games are
+  // finished and their frozen record already lives at #/day/<today's own
+  // ET date> -- nothing else on this screen links to it, so this is the
+  // one path in. Reuses the Eastern-date helper's result (`currentEastern`,
+  // computed above) rather than a second date convention. Renders nothing
+  // when the slate date is today's own ET date.
+  if (isNext) {
+    banner.appendChild(el("a", { class: "opp-slateband__lastnight",
+      href: `#/day/${encodeURIComponent(currentEastern)}`,
+      "data-hook": "last-night-results-link", text: "LAST NIGHT'S RESULTS →" }));
+  }
   return banner;
 }
 

@@ -149,6 +149,9 @@
 .hero__price-row { display: flex; align-items: flex-end; gap: var(--sp-10); }
 .hero__cta-group { display: flex; flex-direction: column; gap: var(--sp-5); align-items: flex-start; }
 .hero__cta-note { font-size: 13px; color: var(--text-dim); max-width: 320px; }
+/* ---- public-demo front-door entry (hidden unless GET /meta says
+   public_demo -- see landing.js's revealPublicDemoEntry) --------------*/
+.hero__demo-entry { display: flex; flex-direction: column; gap: var(--sp-3); align-items: flex-start; }
 
 /* ---- pain-point vignette cards --------------------------------------*/
 .story-grid {

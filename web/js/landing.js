@@ -15,7 +15,7 @@
  * and BETA_TIER already state; this file wires DOM plumbing, not copy.
  */
 
-import { trackFunnelEvent } from "./api.js";
+import { apiGet, trackFunnelEvent } from "./api.js";
 import { el, clear } from "./dom.js";
 import { renderDisclaimerFooter } from "./meta.js";
 import { BETA_TIER } from "./pricing.js";
@@ -37,11 +37,37 @@ function renderPricing(host) {
   host.appendChild(tier);
 }
 
+/**
+ * PUBLIC DEMO ENTRY POINT (2026-09-07). GET /meta's `public_demo` flag
+ * (api.js's isPublicDemo docstring) tells this page whether the deployed
+ * server is serving the whole read-only product plus Bet Check with no
+ * token. When it is, a visitor who lands here has the working product one
+ * click away -- so this reveals a second, non-signup entry into it
+ * ("OPEN THE LIVE DEMO" -> index.html#/today) beside the existing primary
+ * CTA. Fetched once, fire-and-forget, exactly like trackFunnelEvent below:
+ * a slow or failed /meta must never block or alter the page a visitor
+ * already sees. When public_demo is false, or /meta cannot be reached at
+ * all, the entry stays hidden and nothing else about the page changes --
+ * every existing CTA, the pricing/FAQ copy and the sample-slate block are
+ * untouched either way.
+ */
+async function revealPublicDemoEntry() {
+  const host = document.querySelector("[data-hook='public-demo-entry']");
+  if (!host) return;
+  try {
+    const meta = await apiGet("/meta");
+    if (meta && meta.public_demo === true) host.hidden = false;
+  } catch (err) {
+    // /meta unreachable -- leave the entry hidden (see docstring above).
+  }
+}
+
 function boot() {
   const disclaimerHost = document.querySelector("[data-hook='disclaimer-host']");
   const pricingHost = document.querySelector("[data-hook='pricing-host']");
   if (disclaimerHost) renderDisclaimerFooter(disclaimerHost);
   if (pricingHost) renderPricing(pricingHost);
+  revealPublicDemoEntry();
   // Wordmarks are markup-authored today (see brand.js's docstring on why
   // <title> and the static text stay literal), but every mark carries the
   // hook so a future rename only has to touch BRAND_NAME plus these two

@@ -2452,6 +2452,15 @@
 .gav-gap__chip { margin-left: auto; font-family: var(--font-display); font-size: 8.5px; font-weight: 800; letter-spacing: .12em; color: var(--v-warn-label); }
 .gav-gap__reason { margin: var(--sp-4) 0 var(--sp-2) 26px; font-size: 12px; line-height: 1.5; color: var(--v-t4); }
 
+/* ---- outer collapse wrapping the whole gap list at 4+ gaps -------------*/
+.gav-gaps__collapse { margin-top: var(--sp-6); }
+.gav-gaps__collapse-summary {
+  cursor: pointer; list-style: none; font-family: var(--font-display); font-size: 11px; font-weight: 800;
+  letter-spacing: .14em; color: var(--v-warn-label); padding: var(--sp-4) 0;
+}
+.gav-gaps__collapse-summary::-webkit-details-marker { display: none; }
+.gav-gaps__collapse[open] > .gav-gaps__collapse-summary { color: var(--v-t2); }
+
 /* ---- BOOK VERSUS BOOK -----------------------------------------------------*/
 .gav-board__lede { font-size: 13px; line-height: 1.5; color: var(--v-t5); margin-bottom: var(--sp-6); }
 .gav-board__scroll { overflow-x: auto; }
@@ -2794,6 +2803,9 @@
   background: rgba(255, 255, 255, .08); color: var(--v-t3); --r: var(--r-chip);
   clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r)); }
 .opp-slateband__tag--next { background: rgba(255, 176, 32, .16); color: var(--v-warn-label); }
+.opp-slateband__lastnight { margin-left: auto; font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: .08em; color: var(--v-live-label); text-decoration: none; }
+.opp-slateband__lastnight:hover { color: var(--v-live); }
 
 .opp-section { padding: 0 var(--gutter-desktop) var(--sp-11); }
 .opp-label { margin: 0 0 var(--sp-6); font-size: 13px; color: var(--v-t4); }
