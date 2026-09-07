@@ -503,6 +503,10 @@ surface's own module tests.
   do capture every slot and cannot be bought back later. The odds pass will
   still return nothing until about 14:05Z, and costs no credits to try.
 
+- 04:53Z watchdog dispatched forward-capture (newest run was 53 min old;
+  run 34084792628). Scheduled-run count still 1 (the 01:00Z run). The odds
+  pass will capture nothing until ~14:05Z; the watch and weather passes are
+  what this keeps flowing.
 - 04:52Z FINAL: matchup-detail polish deployed (2145abc) and verified live.
   MODEL vs MARKET now ranks the two prices, marks the leader BEST SUPPORTED
   PRICE ON THIS GAME with the caption "Ranked by price against the de-vigged
