@@ -764,3 +764,5 @@
 {"category": "optioned", "date": "2026-09-07", "first_seen_utc": "2026-09-07T22:41:19.437149+00:00", "player": "Bobby Miller", "player_id": 676272, "team": "LAD", "transaction_id": 941550}
 {"category": "recalled", "date": "2026-09-07", "first_seen_utc": "2026-09-07T22:41:19.437149+00:00", "player": "Emmet Sheehan", "player_id": 686218, "team": "LAD", "transaction_id": 941551}
 {"fetched_utc": "2026-09-07T22:41:20.607707+00:00", "game_date": "2026-09-07", "poll": true}
+{"fetched_utc": "2026-09-07T23:25:44.172272+00:00", "game_date": "2026-09-07", "poll": true}
+{"fetched_utc": "2026-09-07T23:25:45.143568+00:00", "game_date": "2026-09-07", "poll": true}
