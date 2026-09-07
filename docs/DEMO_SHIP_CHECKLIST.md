@@ -656,3 +656,9 @@ visible. A route-by-route review finds route-by-route bugs.
   external-pinger improvement, and it is now a measurement rather than a
   suspicion. No dispatch this tick per the heartbeat rule. Newest
   forward-capture run 34084792628 completed 04:53:56Z.
+- 06:50Z Second genuine schedule firing: `event=schedule` total_count is now
+  2. Run 34089370194, forward-capture, 06:06:21Z, success. The 06:06Z
+  capture was therefore GitHub's own cron, not a watchdog dispatch, which
+  also means no dispatch was needed at 06:28Z. Two genuine firings at
+  01:00:46Z and 06:06:21Z, about 5h apart, against a */15 cron: the
+  scheduler works and fires roughly 1 time in 20. No dispatch this tick.
