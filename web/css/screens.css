@@ -2806,6 +2806,11 @@
 .opp-slateband__lastnight { margin-left: auto; font-family: var(--font-mono); font-size: 11px;
   letter-spacing: .08em; color: var(--v-live-label); text-decoration: none; }
 .opp-slateband__lastnight:hover { color: var(--v-live); }
+/* The "prices are bought from three hours before first pitch" line. Takes
+   the whole row under the date so it reads as a sentence, not a chip, and
+   stays quiet -- it explains an old board, it does not warn about one. */
+.opp-slateband__windownote { flex-basis: 100%; font-size: 12px; line-height: 1.5;
+  color: var(--v-t5); }
 
 .opp-section { padding: 0 var(--gutter-desktop) var(--sp-11); }
 .opp-label { margin: 0 0 var(--sp-6); font-size: 13px; color: var(--v-t4); }

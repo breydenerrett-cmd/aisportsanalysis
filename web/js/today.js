@@ -258,7 +258,40 @@ function currentEasternDateIso() {
  * (the payload's own `date`, and the reader's own current ET calendar
  * date computed the same way `formatEasternDate` already does elsewhere
  * in this client). */
-function renderSlateBanner(dateIso) {
+/** How long before first pitch the odds capture actually buys prices.
+ * Mirrors src/pipeline/dense.py's WINDOW_MINUTES (180); repeated here only
+ * to EXPLAIN an old board to a reader, never to gate anything -- the same
+ * one-way mirroring featuredbet.js does with the six-book floor. */
+const PRICE_WINDOW_MINUTES = 180;
+
+/** The one honest sentence that turns "these prices look stale" into
+ * "these prices are not bought yet".
+ *
+ * The capture only spends on a game once it is within three hours of first
+ * pitch, so overnight -- with the next game half a day away -- it correctly
+ * captures nothing and the newest board sits there ageing. Without a word of
+ * explanation a reader opening this in the morning sees "10 HR AGO" and
+ * reasonably concludes the feed is broken. Returns null (and renders
+ * nothing) whenever a game IS inside the window, because then an old board
+ * really would be a problem worth noticing rather than explaining away.
+ */
+function priceWindowNote(rows, freshestObservedUtc) {
+  if (!freshestObservedUtc || !Array.isArray(rows) || !rows.length) return null;
+  const ageMinutes = (Date.now() - Date.parse(freshestObservedUtc)) / 60000;
+  if (!Number.isFinite(ageMinutes) || ageMinutes <= PRICE_WINDOW_MINUTES) return null;
+  const starts = rows
+    .map((row) => Date.parse(row && row.first_pitch_utc))
+    .filter((ms) => Number.isFinite(ms) && ms > Date.now());
+  if (!starts.length) return null;
+  const nextStart = Math.min(...starts);
+  const minutesToFirstPitch = (nextStart - Date.now()) / 60000;
+  if (minutesToFirstPitch <= PRICE_WINDOW_MINUTES) return null;
+  const clock = et(new Date(nextStart).toISOString());
+  return `Prices are bought from three hours before first pitch, so the board `
+    + `above is the last one captured${clock ? `. First game ${clock}` : ""}.`;
+}
+
+function renderSlateBanner(dateIso, rows, freshestObservedUtc) {
   const label = slateDateLabel(dateIso);
   const currentEastern = currentEasternDateIso();
   const isNext = !!dateIso && dateIso > currentEastern;
@@ -278,6 +311,11 @@ function renderSlateBanner(dateIso) {
     banner.appendChild(el("a", { class: "opp-slateband__lastnight",
       href: `#/day/${encodeURIComponent(currentEastern)}`,
       "data-hook": "last-night-results-link", text: "LAST NIGHT'S RESULTS →" }));
+  }
+  const windowNote = priceWindowNote(rows, freshestObservedUtc);
+  if (windowNote) {
+    banner.appendChild(el("span", { class: "opp-slateband__windownote",
+      "data-hook": "price-window-note", text: windowNote }));
   }
   return banner;
 }
@@ -957,7 +995,7 @@ export async function renderToday(container) {
   // Mobile-only (V2-22); hidden on desktop by screens.css.
   host.appendChild(dateStrip(date));
 
-  host.appendChild(renderSlateBanner(date));
+  host.appendChild(renderSlateBanner(date, rows, aggregates.freshest));
   renderHero(host, featured, aggregates, rows, date);
   setShellStatus(aggregates.freshest ? `PRICES AS OF ${et(aggregates.freshest)}` : null);
 

@@ -161,6 +161,37 @@ class GamesConsolidatedGapPanelTests(unittest.TestCase):
         self.assertIn("} else {", body)
 
 
+class PriceWindowNoteTests(unittest.TestCase):
+    """The board correctly stops ageing forward overnight: the capture only
+    buys prices within three hours of a first pitch (dense.py's
+    WINDOW_MINUTES), so a morning visitor sees a ten-hour-old board. Without
+    a sentence saying why, that reads as a broken feed. It must say so ONLY
+    when no game is close -- a stale board with a game inside the window is a
+    real problem and must not be explained away."""
+
+    def setUp(self):
+        self.js = (WEB_JS / "today.js").read_text(encoding="utf-8")
+
+    def test_mirrors_the_server_window_and_says_so(self):
+        self.assertIn("PRICE_WINDOW_MINUTES = 180", self.js)
+        self.assertIn("WINDOW_MINUTES", self.js)  # names the server constant it mirrors
+
+    def test_requires_both_a_stale_board_and_a_distant_first_pitch(self):
+        body = re.search(r"function priceWindowNote\(([^)]*)\)\s*\{(.*?)\n\}",
+                         self.js, re.DOTALL)
+        self.assertIsNotNone(body, "priceWindowNote() not found")
+        text = body.group(2)
+        # returns nothing while the board is fresh...
+        self.assertIn("ageMinutes <= PRICE_WINDOW_MINUTES", text)
+        # ...and nothing once a game is inside the window, when an old board
+        # would be a genuine problem rather than the design.
+        self.assertIn("minutesToFirstPitch <= PRICE_WINDOW_MINUTES", text)
+        self.assertIn("first_pitch_utc", text)
+
+    def test_renders_through_its_own_hook(self):
+        self.assertIn('"data-hook": "price-window-note"', self.js)
+
+
 class TodayLastNightLinkTests(unittest.TestCase):
     """Job 3: reach last night's result from Today."""
 
@@ -181,7 +212,7 @@ class TodayLastNightLinkTests(unittest.TestCase):
         # And renderSlateBanner calls it (rather than reimplementing the
         # comparison against a differently-sourced date).
         fn_match = re.search(
-            r"function renderSlateBanner\(dateIso\)\s*\{(.*?)\n\}",
+            r"function renderSlateBanner\(dateIso[^)]*\)\s*\{(.*?)\n\}",
             self.js, re.DOTALL)
         self.assertIsNotNone(fn_match, "renderSlateBanner() not found")
         body = fn_match.group(1)
@@ -192,7 +223,7 @@ class TodayLastNightLinkTests(unittest.TestCase):
 
     def test_link_only_renders_when_slate_date_is_ahead_of_eastern_date(self):
         fn_match = re.search(
-            r"function renderSlateBanner\(dateIso\)\s*\{(.*?)\n\}",
+            r"function renderSlateBanner\(dateIso[^)]*\)\s*\{(.*?)\n\}",
             self.js, re.DOTALL)
         self.assertIsNotNone(fn_match)
         body = fn_match.group(1)
