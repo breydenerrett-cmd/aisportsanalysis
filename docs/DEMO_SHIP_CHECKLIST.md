@@ -251,7 +251,8 @@ Facts established before starting (verified 02:11–02:20Z, so no one re-derives
 | Step | Scope | Status |
 |---|---|---|
 | C1 | `src/report/daily_record.py` + `GET /daily`, `/daily/{date}`, `/record`: frozen pregame recommendations per game, settlement joined by bet_id, per-day rollups, day index for the gallery, today/7-day/30-day record strip | DONE (da57414) |
-| F2 | Today = every matchup (starters, time, odds, freshness, analyzer status) with its frozen positions and GREEN/RED/GRAY settled states; system record strip; daily recap gallery + per-day audit trail reading `/daily` | RUNNING |
+| F2 | Today = every matchup (starters, time, odds, freshness, analyzer status) with its frozen positions and GREEN/RED/GRAY settled states; system record strip; daily recap gallery + per-day audit trail reading `/daily` | DONE (345f287) |
+| C3 | Performance cuts: by market, by odds range, by decision grade, by class, rolling 7/30, thin-sample flags | RUNNING |
 | C2 | Multi-market live board: extend `oddspayload.MARKETS` to run line and total with per-line consensus grouping, so matchup detail shows live best bets beyond moneyline | AFTER F2 |
 | F3 | Matchup detail story (pitchers, offence, bullpen, warnings, reasoning), performance cuts by market / tier / odds range, polish | AFTER C2 |
 
@@ -334,3 +335,19 @@ Ledger continues below.
   regression tests added. Real data verified end to end: 09-05 shows 15
   games, all 15 final scores joined, 45-52-2 and -7.90 units; 09-07 shows 8
   games with every position pending and no result claimed.
+- 03:02Z F2 delivered (148 web tests, braces 1223/1223, node --check clean)
+  and deployed as 345f287. Browser-verified on staging and locally at 1280px:
+  the record strip reads "0-0-0 · 48 pending, nothing settled yet" for today
+  and "101-99-9 · +2.83u · +1.4%" for the last seven days; the matchup grid
+  carries starters, prices with book count and capture age, the live price
+  read, and the frozen positions, each labelled "fixed-direction null
+  baseline, not a pick" or "republishes the board's own consensus, a
+  calibration reference, not a pick", under the line "No system with a
+  directional thesis played this game". The recap gallery and the
+  #/day/2026-09-05 audit trail render the full frozen slate with WIN/LOSS
+  chips and the settled units. No console errors on any screen.
+- 03:04Z capture note: the 02:46Z run committed watch data but no odds rows.
+  With no game near first pitch the slot spends no credits, so the board
+  holds at the 02:05Z instant and the UI says "59 MIN AGO". Expected
+  behaviour, not a failure; captures resume as first pitch approaches.
+- 03:05Z performance cuts (C3) started.

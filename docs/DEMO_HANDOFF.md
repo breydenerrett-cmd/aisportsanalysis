@@ -12,6 +12,28 @@ Opens straight into the product (no invite token: the staging config sets
 `APP_PUBLIC_DEMO=1`; remove that one line in `deploy/fly.staging.toml` to
 put the token wall back).
 
+## WHAT THE SITE IS NOW
+
+A record of what the analyzer decided before each game and what happened
+after — not just a board of prices. Three questions, answered on the screen:
+what does it like, why, and how has it actually done.
+
+- **TODAY** opens with the record strip (today, last 7 days, last 30 days of
+  paper results), then the honest slate verdict, then TOP OPPORTUNITIES,
+  then a card for **every matchup**: teams, first pitch, venue, probable
+  starters, the moneyline with book count and capture age, the LIVE PRICE
+  READ (the price-versus-consensus verdict the product actually stands
+  behind), and PAPER POSITIONS FROZEN BEFORE FIRST PITCH. Once a game is
+  final the card carries the score and the game's own W-L-P.
+- **RESULTS** opens with the same strip, then the DAILY RECAP gallery — one
+  card per slate, newest first, with the day's record, units, best and worst
+  settled position and its strongest pregame pick — then the full paper
+  standings by system class, the reasoning split and the cumulative-units
+  chart.
+- **#/day/<date>** is the audit trail: the whole frozen slate for that day,
+  every position with the price and book count as recorded, and what it
+  settled to. Nothing there is restated after the fact.
+
 ## WHAT WORKS (verified in the browser on staging, desktop and 375px)
 
 - TODAY: the slate date badge (TONIGHT'S SLATE / NEXT SLATE), the honest
