@@ -36,7 +36,12 @@
 
 [CmdletBinding()]
 param(
-    [int]$StaleMinutes = 45,
+    # 40, not 45. The task ticks every 15 minutes, so worst-case staleness is
+    # this plus 15. At 45 the tick that lands exactly on the boundary decides
+    # nothing and the board sits another quarter hour, which is how captures
+    # kept reaching 60 minutes old on 2026-09-07 -- observed in this script's
+    # own log at 19:55:29Z ("newest run is 45 min old (threshold 45)").
+    [int]$StaleMinutes = 40,
     [switch]$WhatIf,
     [string]$Repo = "breydenerrett-cmd/aisportsanalysis",
     [string]$CaptureRef = "claude/cowork-session-migration-tn3sx2",
@@ -112,7 +117,9 @@ try {
     else {
         $newest = $runs | Sort-Object createdAt -Descending | Select-Object -First 1
         $age = [int]($now - (Get-Utc $newest.createdAt)).TotalMinutes
-        if ($age -gt $StaleMinutes) {
+        # -ge, not -gt: a tick landing exactly on the threshold should act,
+        # not wait another full interval.
+        if ($age -ge $StaleMinutes) {
             Invoke-Dispatch "forward-capture.yml" $CaptureRef "newest run was $age min old"
         }
         else {

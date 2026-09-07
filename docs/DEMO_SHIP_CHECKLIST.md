@@ -735,3 +735,4 @@ visible. A route-by-route review finds route-by-route bugs.
 
   The remaining exposure is that the task only runs while the machine is on.
   See docs/LOCAL_SCHEDULER.md.
+- 19:58Z watchdog dispatched forward-capture (newest run was 47 min old); scheduled task had skipped at 19:55:29Z because age was exactly 45 vs a strictly-greater-than threshold -- fixed in scripts/capture_tick.ps1 (now -ge, default 40)
