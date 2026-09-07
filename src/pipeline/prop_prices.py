@@ -95,8 +95,12 @@ SCHEDULE_VERSION = 1
 # GAME" docstring section) -- duplicated, not imported, so neither module
 # takes a dependency on the other; see this module's own docstring for why
 # prop_listing.SLOTS (six slots, three sampled games) is no longer reused.
+# Same three-slot grid as derivative_markets.SLOTS -- see that module's
+# "TWO SLOTS PER GAME" section, now three. Ordered longest-offset first
+# because `_due_slot` takes the last match.
 SLOTS = (
     ("T-3h", 180),
+    ("T-90m", 90),
     ("T-30m", 30),
 )
 

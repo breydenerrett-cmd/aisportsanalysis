@@ -138,8 +138,14 @@ FAMILIES = ("team_totals", "alternates", "f5_trio")
 # the offsets differ -- see the module docstring's "TWO SLOTS PER GAME"
 # section. T-3h mirrors dense.WINDOW_MINUTES (180); T-30m is the deepest
 # board this project ever samples.
+# Ordered longest-offset first: `_due_slot` takes the LAST match, so this
+# ordering is what makes "smallest offset whose moment has passed" correct.
+# T-90m added 2026-09-07: the gap between T-3h and T-30m is where first-five
+# and prop boards actually fill out, and the middle sample is what shows
+# whether a line moved rather than just where it ended up.
 SLOTS = (
     ("T-3h", 180),
+    ("T-90m", 90),
     ("T-30m", 30),
 )
 

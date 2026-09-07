@@ -85,11 +85,18 @@ class SlotGridTests(unittest.TestCase):
     """Own two-slot grid -- T-3h (dense.WINDOW_MINUTES) and T-30m -- the
     same design derivative_markets.py uses, not prop_listing's six slots."""
 
-    def test_the_slot_grid_is_two_slots_matching_the_dense_window_and_t30m(self):
-        self.assertEqual(prop_prices.SLOTS, (("T-3h", 180), ("T-30m", 30)))
+    def test_the_slot_grid_is_three_slots_from_the_dense_window_to_t30m(self):
+        # T-90m added 2026-09-07. The gap between T-3h and T-30m is where
+        # first-five and prop boards actually fill out, and a middle sample
+        # is what shows whether a line MOVED rather than only where it
+        # ended up. Ordered longest-offset first because `_due_slot` takes
+        # the last match.
+        self.assertEqual(prop_prices.SLOTS,
+                         (("T-3h", 180), ("T-90m", 90), ("T-30m", 30)))
 
     def test_credits_per_game_per_day_is_one_per_slot(self):
-        self.assertEqual(prop_prices.CREDITS_PER_GAME_PER_DAY, 2)
+        self.assertEqual(prop_prices.CREDITS_PER_GAME_PER_DAY, len(prop_prices.SLOTS))
+        self.assertEqual(prop_prices.CREDITS_PER_GAME_PER_DAY, 3)
 
 
 class SchemaTests(unittest.TestCase):
@@ -249,36 +256,44 @@ class ResumabilityTests(unittest.TestCase):
         self.assertEqual(second.fetched, [])
         self.assertEqual(report["credits_spent"], 0)
 
-    def test_a_pitcher_is_captured_at_both_slots_and_not_more_than_once_per_slot(self):
+    def test_a_pitcher_is_captured_once_in_each_of_the_three_slots(self):
+        """One fetch per slot, and never a second inside the same band.
+
+        The bands are open intervals, so "still inside T-3h" means anywhere
+        from 180 down to 91 minutes out. T-60m is NOT still T-3h any more --
+        it is the T-90m band, and it is meant to fetch. That is the whole
+        point of the middle slot.
+        """
         commence = _at(3)  # T-3h at now=NOW
         listed = [_event("g1", commence)]
         with tempfile.TemporaryDirectory() as folder:
             store = Path(folder) / "prices.jsonl"
             provider = FakeProvider(listed, {"g1": _payload("g1")})
-            r1 = prop_prices.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
-                                  now=NOW, store=store, provider=provider)
-            # Still inside the open T-3h band: already captured, no re-fetch.
-            r2 = prop_prices.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
-                                  now=commence - dt.timedelta(hours=1),
-                                  store=store, provider=provider)
-            # T-30m (25 minutes to first pitch): second, distinct fetch.
-            r3 = prop_prices.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
-                                  now=commence - dt.timedelta(minutes=25),
-                                  store=store, provider=provider)
-            # Still inside the open T-30m band: already captured, no re-fetch.
-            r4 = prop_prices.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
-                                  now=commence - dt.timedelta(minutes=10),
-                                  store=store, provider=provider)
+            runs = {}
+            # (label, minutes before first pitch, expected fetches)
+            plan = [
+                ("t3h", 180, 1),      # first sight of the T-3h band
+                ("t3h_again", 120, 0),  # still T-3h: already captured
+                ("t90m", 75, 1),      # T-90m band: a distinct slot
+                ("t90m_again", 60, 0),  # still T-90m
+                ("t30m", 25, 1),      # T-30m band
+                ("t30m_again", 10, 0),  # still T-30m
+            ]
+            for label, minutes, _expected in plan:
+                runs[label] = prop_prices.run(
+                    credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
+                    now=commence - dt.timedelta(minutes=minutes),
+                    store=store, provider=provider)
             markers = [r for r in prop_prices.read(store)
                        if r.get("poll") and r.get("event_id") == "g1"]
-        self.assertEqual(r1["fetches"], 1)
-        self.assertEqual(r2["fetches"], 0)
-        self.assertEqual(r3["fetches"], 1)
-        self.assertEqual(r4["fetches"], 0)
-        self.assertEqual(len(markers), 2)
-        self.assertEqual({m["slot"] for m in markers}, {"T-3h", "T-30m"})
-        self.assertEqual(provider.fetched, [("g1", (prop_prices.MARKET,)),
-                                             ("g1", (prop_prices.MARKET,))])
+        for label, minutes, expected in plan:
+            self.assertEqual(runs[label]["fetches"], expected,
+                             f"{label} ({minutes} min out)")
+        self.assertEqual(len(markers), 3)
+        self.assertEqual({m["slot"] for m in markers},
+                         {"T-3h", "T-90m", "T-30m"})
+        self.assertEqual(provider.fetched,
+                         [("g1", (prop_prices.MARKET,))] * 3)
 
     def test_full_slate_coverage_not_a_three_game_sample(self):
         # Five games due at once -- more than the old GAMES_PER_DAY=3 cap --

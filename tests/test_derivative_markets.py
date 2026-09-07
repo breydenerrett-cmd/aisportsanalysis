@@ -344,7 +344,7 @@ class SlotTests(unittest.TestCase):
         self.assertEqual(provider.fetched, [])
         self.assertEqual(report["games_due"], 0)
 
-    def test_a_contract_is_captured_at_both_slots_and_not_more_than_once_per_slot(self):
+    def test_a_contract_is_captured_once_in_each_of_the_three_slots(self):
         listed = [_event("g1", commence=T3H)]
         provider = FakeProvider(listed, {
             ("team_totals", "g1"): _team_totals_payload("g1", books=("draftkings",)),
@@ -369,34 +369,44 @@ class SlotTests(unittest.TestCase):
                     credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW,
                     store=raw, processed_store=processed, provider=provider)
                 # Still within the T-3h band (2h remaining): already captured,
-                # must NOT re-fetch.
+                # must NOT re-fetch. Note this is 2h, not 1h -- with the
+                # T-90m slot in place, 1h before first pitch is a DIFFERENT
+                # band and is supposed to fetch.
                 r2 = derivative_markets.run(
                     credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
-                    now=T3H - dt.timedelta(hours=1),
+                    now=T3H - dt.timedelta(hours=2),
                     store=raw, processed_store=processed, provider=provider)
-                # T-30m (25 minutes to first pitch): second, distinct fetch.
+                # T-90m (75 minutes out): a distinct slot, added 2026-09-07.
+                # This is the band where first-five and prop boards fill out.
                 r3 = derivative_markets.run(
+                    credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
+                    now=T3H - dt.timedelta(minutes=75),
+                    store=raw, processed_store=processed, provider=provider)
+                # T-30m (25 minutes to first pitch): third, distinct fetch.
+                r4 = derivative_markets.run(
                     credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
                     now=T3H - dt.timedelta(minutes=25),
                     store=raw, processed_store=processed, provider=provider)
                 # Still within the T-30m band (10 minutes to first pitch):
                 # already captured, must NOT re-fetch again.
-                r4 = derivative_markets.run(
+                r5 = derivative_markets.run(
                     credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
                     now=T3H - dt.timedelta(minutes=10),
                     store=raw, processed_store=processed, provider=provider)
             markers = [r for r in derivative_markets.read(raw)
                        if r.get("poll") and r.get("family") == "team_totals"
                        and r.get("event_id") == "g1"]
-        self.assertEqual(r1["fetches"], 1)
-        self.assertEqual(r2["fetches"], 0)
-        self.assertEqual(r3["fetches"], 1)
-        self.assertEqual(r4["fetches"], 0)
-        self.assertEqual(len(markers), 2)
-        self.assertEqual({m["slot"] for m in markers}, {"T-3h", "T-30m"})
+        self.assertEqual(r1["fetches"], 1, "T-3h")
+        self.assertEqual(r2["fetches"], 0, "still T-3h")
+        self.assertEqual(r3["fetches"], 1, "T-90m")
+        self.assertEqual(r4["fetches"], 1, "T-30m")
+        self.assertEqual(r5["fetches"], 0, "still T-30m")
+        self.assertEqual(len(markers), 3)
+        self.assertEqual({m["slot"] for m in markers},
+                         {"T-3h", "T-90m", "T-30m"})
         fetched_families_and_slots = [(f, e) for f, e, m in provider.fetched]
         self.assertEqual(fetched_families_and_slots,
-                          [("team_totals", "g1"), ("team_totals", "g1")])
+                          [("team_totals", "g1")] * 3)
 
 
 class BudgetGuardTests(unittest.TestCase):
