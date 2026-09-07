@@ -630,3 +630,8 @@ https://linehound-staging.fly.dev/billing/webhook -> dry-run purchase.
 - 2026-09-07 01:0xZ — CUTOVER: first genuine `schedule` run of forward-capture succeeded (run 34071611931, 01:00:46Z → bot commit 0bc53ca "slot 01:02Z"); earlier 00:36Z slot was a dispatch by the local Parent (run 34070311873 → 2b2337b). The cloud fallback capture launched at 00:15Z (heartbeat then 67 min stale, no cron run yet) ran its 4-capture grid to 01:02Z, so the 01:00 window was captured twice (≈20 credits duplicated; balance 24,847 after). Its commit conflicted on the append-only stores and was resolved by union-merge (upstream first, local-only rows appended; 119 snapshot rows kept) as 4fc98fc. The cloud hourly capture routine is now FALLBACK-ONLY: it fires only when no bot commit / successful run exists in the last 45 min.
 - 2026-09-07 03:3xZ — FALLBACK capture launched from the cloud session: external heartbeat 50 min stale (last bot commit c569bb3 at 02:46Z, a dispatch; no cron slot has fired since 01:00Z). No games inside the 180-min window at this hour, so expected paid spend ≈0; watch stores refreshed.
 - 2026-09-07T05:23Z afternoon_slate: engine slate --date 2026-09-07 exit=2
+- 2026-09-07T13:28Z daily_loop: statcast --catchup exit=0
+- 2026-09-07T13:28Z daily_loop: gamekey --date 2026-09-06 --end 2026-09-07 exit=0
+- 2026-09-07T13:29Z daily_loop: engine slate --date 2026-09-07 exit=0
+- 2026-09-07T13:29Z daily_loop: engine settle --date 2026-09-06 exit=0
+- 2026-09-07T13:29Z daily_loop: eod --date 2026-09-06 exit=0
