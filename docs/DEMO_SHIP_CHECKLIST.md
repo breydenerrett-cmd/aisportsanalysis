@@ -159,3 +159,12 @@ A stale board can never carry the strongest words.
 - 01:06Z S8 (reveal fail-safe) + asset `Cache-Control: no-cache` pushed as
   8bed0d5 after rebasing over the cloud Parent's 4fc98fc/17fd31b. Game view
   verified end to end locally at 1280px (starters, verdict, price panel).
+- 01:12Z B2 implementer done (99 tests green). S9 (ATH/OAK join) found by
+  checking the real payload and fixed. The dev server's --reload had gone
+  stale (served old code silently); restarted. In-process check: TOR@ATH
+  joins 12 decisions (9 staked, 3 FATAL counterarguments).
+- 01:17Z B2 + S9 pushed as c273055; B2 PASSED adversarial verification
+  (no must-fix). Deploy 34072432948 green; staging `/opportunities/2026-09-07`:
+  11 checked, 7 priced, qualifying = TOR@ATH home +189 LEAN (+0.61), words
+  {FAIR PRICE 7, PASS 6, LEAN 1}; TOR@ATH engine join 12 decisions / 9 staked.
+  B3 started.
