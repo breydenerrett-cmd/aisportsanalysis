@@ -42,29 +42,29 @@
 
   <div class="hero__scanner" data-rise data-delay="60">
     <span class="hero__scanner-bracket" aria-hidden="true"></span>
-    <span class="hero__scanner-text">Tonight · 15 games · 11 books scanned</span>
+    <span class="hero__scanner-text" data-hook="hero-scanner-text">Tonight · 15 games · 11 books scanned</span>
     <span class="badge badge--outline chamfer chamfer--chip" data-hook="sample-slate-badge">Sample slate · demo data</span>
   </div>
 
-  <div class="hero__matchup" data-rise data-delay="170">
+  <div class="hero__matchup" data-rise data-delay="170" data-hook="hero-matchup">
     <div class="hero__team hero__team--away">
-      <div class="hero__team-name">Pirates</div>
-      <div class="hero__team-rule" style="background:linear-gradient(90deg, var(--team-pit), transparent)"></div>
+      <div class="hero__team-name" data-hook="hero-away-name">Pirates</div>
+      <div class="hero__team-rule" data-hook="hero-away-rule" style="background:linear-gradient(90deg, var(--team-pit), transparent)"></div>
       <div class="hero__team-meta">
-        <span class="hero__team-record">68-66</span>
-        <span class="hero__team-pitcher">Skenes RHP</span>
+        <span class="hero__team-record" data-hook="hero-away-record">68-66</span>
+        <span class="hero__team-pitcher" data-hook="hero-away-pitcher">Skenes RHP</span>
       </div>
     </div>
     <div class="hero__vs">
       <span class="hero__vs-text">vs</span>
-      <span class="hero__vs-time">7:40pm ET</span>
+      <span class="hero__vs-time" data-hook="hero-vs-time">7:40pm ET</span>
     </div>
     <div class="hero__team hero__team--home">
-      <div class="hero__team-name">Brewers</div>
-      <div class="hero__team-rule" style="background:linear-gradient(270deg, var(--team-mil), transparent)"></div>
+      <div class="hero__team-name" data-hook="hero-home-name">Brewers</div>
+      <div class="hero__team-rule" data-hook="hero-home-rule" style="background:linear-gradient(270deg, var(--team-mil), transparent)"></div>
       <div class="hero__team-meta">
-        <span class="hero__team-pitcher">Peralta RHP</span>
-        <span class="hero__team-record">82-52</span>
+        <span class="hero__team-pitcher" data-hook="hero-home-pitcher">Peralta RHP</span>
+        <span class="hero__team-record" data-hook="hero-home-record">82-52</span>
       </div>
     </div>
   </div>
@@ -73,17 +73,17 @@
   <div class="hero__scrim" aria-hidden="true"></div>
 
   <div class="hero__footer">
-    <div class="hero__price chamfer" data-price data-delay="340">
+    <div class="hero__price chamfer" data-price data-delay="340" data-hook="hero-price-block">
       <div class="hero__price-sheen" aria-hidden="true"></div>
       <div class="hero__price-eyebrow">
         <span class="hero__price-dot"></span>
-        <span class="hero__price-label">Best of 11 books · BetRivers</span>
+        <span class="hero__price-label" data-hook="hero-price-label">Best of 11 books · BetRivers</span>
       </div>
       <div class="hero__price-row">
-        <span class="price-figure price-figure--hero" data-beat>-110</span>
-        <div>
-          <div class="price-was">-118</div>
-          <div class="price-was-label">Everywhere else</div>
+        <span class="price-figure price-figure--hero" data-beat data-hook="hero-price-figure">-110</span>
+        <div data-hook="hero-price-was-wrap">
+          <div class="price-was" data-hook="hero-price-was">-118</div>
+          <div class="price-was-label" data-hook="hero-price-was-label">Everywhere else</div>
         </div>
       </div>
     </div>

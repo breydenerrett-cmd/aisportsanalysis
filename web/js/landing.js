@@ -21,6 +21,7 @@ import { renderDisclaimerFooter } from "./meta.js";
 import { BETA_TIER } from "./pricing.js";
 import { renderWordmark } from "./brand.js";
 import { armEntrances, armParallax, armCharts } from "./motion.js";
+import { mountLiveHero } from "./landing-live.js";
 
 function renderPricing(host) {
   clear(host);
@@ -68,6 +69,11 @@ function boot() {
   if (disclaimerHost) renderDisclaimerFooter(disclaimerHost);
   if (pricingHost) renderPricing(pricingHost);
   revealPublicDemoEntry();
+  // Tonight's real slate replaces the hardcoded Aug 28 sample matchup, or
+  // degrades to an honest labelled-sample state on failure -- see
+  // landing-live.js's module docstring. Fire-and-forget, same rule as
+  // revealPublicDemoEntry: a slow/failed fetch never blocks the page.
+  mountLiveHero(document);
   // Wordmarks are markup-authored today (see brand.js's docstring on why
   // <title> and the static text stay literal), but every mark carries the
   // hook so a future rename only has to touch BRAND_NAME plus these two
