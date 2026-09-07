@@ -736,3 +736,22 @@ visible. A route-by-route review finds route-by-route bugs.
   The remaining exposure is that the task only runs while the machine is on.
   See docs/LOCAL_SCHEDULER.md.
 - 19:58Z watchdog dispatched forward-capture (newest run was 47 min old); scheduled task had skipped at 19:55:29Z because age was exactly 45 vs a strictly-greater-than threshold -- fixed in scripts/capture_tick.ps1 (now -ge, default 40)
+- 21:50Z Sixth genuine schedule firing: `event=schedule` total_count is 6.
+  The new one is forward-capture 34162026996 at 21:08:27Z, success.
+
+  **Correcting an attribution from the previous tick.** I reported that run
+  as the scheduled task keeping the board fresh on its own. It was not --
+  it was GitHub's own cron. The task's log shows what it actually did:
+  20:40:31Z it dispatched (42 min old, acting on the new 40-minute
+  threshold rather than waiting for 45, which is the boundary fix working),
+  then at 20:55, 21:10, 21:25 and 21:40 it correctly skipped because the
+  board was fresh. So the task IS working; the specific run I pointed at
+  just was not one of its dispatches.
+
+  Genuine firings today: 01:00:46Z, 06:06:21Z, 12:32:12Z, 17:54:46Z and
+  21:08:27Z (forward-capture) plus 15:20:34Z (daily-loop) -- six against a
+  `*/15` cron that should have produced roughly 96. The cron is real but
+  fires about 6% of the time, which is exactly why the local clock exists.
+
+  No dispatch this tick; newest capture was 42 min old at 21:50Z but rule
+  (1) applies, and the task's own next tick will take it.
