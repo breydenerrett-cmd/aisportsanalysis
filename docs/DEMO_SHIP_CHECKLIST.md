@@ -405,4 +405,31 @@ Ledger continues below.
   exists, because a second run would write a duplicate set of frozen
   decisions and wagers (takeover doc section 9). Session-bound: if this
   session is gone, the watchdog is gone with it.
-- 03:35Z F3 delivered (176 web tests) and committed as 8b8da3b.
+- 03:35Z F3 delivered (176 web tests) and committed as 8b8da3b. Verified on
+  staging: the landing page shows OPEN THE LIVE DEMO above the fold on a
+  900px viewport; the Game advanced view leads with one NOT IN THIS BUILD
+  panel and collapses "12 SECTIONS NOT IN THIS BUILD -- SHOW REASONS"; Today
+  offers LAST NIGHT'S RESULTS pointing at #/day/2026-09-06 while it is
+  showing the NEXT SLATE.
+- 03:37Z d9364ff: Today now explains an old board rather than leaving it to
+  be read as a dead feed -- one sentence, shown only when the board is older
+  than the three-hour capture window AND no game is inside it. Verified
+  against the served module across all four branches. 179 web tests.
+
+## PHASE 2 SCORECARD against the owner's priority list
+
+| # | Item | State |
+|---|---|---|
+| 1 | Finish what was in flight | done |
+| 2 | Performance API / settlement surfaces | done (B3, C1, C3) |
+| 3 | Today with every matchup | done (F2) |
+| 4 | Best bets per matchup | done -- live price read per side, plus the frozen positions across moneyline, run line and totals |
+| 5 | Frozen pregame recommendations | done (C1 + F2), never restated after the fact |
+| 6 | Settled GREEN/RED/PUSH results | done, with final score and per-game W-L-P |
+| 7 | Daily recap gallery | done, plus the #/day/<date> audit trail |
+| 8 | System record strip | done (today / last 7 / last 30) |
+| 9 | Performance page | done (C3 cuts by market, odds range, grade, class, rolling) |
+| 10 | Matchup detail story | BLOCKED by F-2 -- the data is not in the container. Mitigated with one honest explanation instead of twelve unexplained gaps |
+| 11 | Browser QA | done, desktop and 375px, no console errors |
+| 12 | Deploy / verify staging | done, every step deployed and re-verified live |
+| 13 | Polish | done (F3 + the freshness sentence) |
