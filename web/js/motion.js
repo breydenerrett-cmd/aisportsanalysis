@@ -26,6 +26,10 @@ const REDUCED_MOTION = typeof window !== "undefined" && window.matchMedia
   ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
   : false;
 
+/** Upper bound on how long an armed element may stay invisible waiting
+ * for its IntersectionObserver entrance -- see armEntrances. */
+const REVEAL_FAILSAFE_MS = 1500;
+
 /** Arms every [data-rise]/[data-tile]/[data-price] element in `root` for
  * IntersectionObserver-driven entrance, honoring each element's
  * `data-delay` (ms) as a transition-delay. No-ops entirely under reduced
@@ -50,6 +54,22 @@ export function armEntrances(root = document) {
     if (delay) el.style.transitionDelay = `${delay}ms`;
     observer.observe(el);
   }
+  // FAIL-SAFE REVEAL (2026-09-07). An armed element starts at opacity 0
+  // and only becomes visible when the observer says it intersected. In an
+  // embedded/emulated viewport (found on the Game view: price, spotlight
+  // and teams panels stayed invisible even after scrolling) that callback
+  // can simply never arrive, and a product that hides its own content on
+  // a quirk of the host is worse than one that skips an entrance. After
+  // REVEAL_FAILSAFE_MS every still-armed target is revealed regardless;
+  // anything the observer already revealed is untouched.
+  setTimeout(() => {
+    for (const el of targets) {
+      if (!el.classList.contains("g-in")) {
+        el.classList.add("g-in");
+        observer.unobserve(el);
+      }
+    }
+  }, REVEAL_FAILSAFE_MS);
   return observer;
 }
 

@@ -72,10 +72,19 @@ def get_web_index_no_slash() -> RedirectResponse:
     return RedirectResponse(url="/web/", status_code=307)
 
 
+# REVALIDATE EVERY TIME (2026-09-07). Without an explicit policy the browser
+# heuristically caches js/css off Last-Modified and served a stale
+# web/js/motion.js next to freshly deployed HTML. `no-cache` means "ask
+# before reusing", not "never store": FileResponse's ETag/Last-Modified
+# make that a cheap 304 on every unchanged asset, and a redeploy is picked
+# up on the next load instead of whenever the heuristic expires.
+_ASSET_HEADERS = {"Cache-Control": "no-cache"}
+
+
 @router.get("/web/")
 def get_web_index() -> FileResponse:
     """The app shell -- GET /web/ serves web/index.html."""
-    return FileResponse(_safe_path("index.html"))
+    return FileResponse(_safe_path("index.html"), headers=_ASSET_HEADERS)
 
 
 @router.get("/web/{path:path}")
@@ -83,4 +92,4 @@ def get_web_asset(path: str) -> FileResponse:
     """Any other file under web/ (web/js/*.js today; web/README.md is
     documentation, not fetched by the page itself, but stays reachable
     here too for a reviewer following a link)."""
-    return FileResponse(_safe_path(path))
+    return FileResponse(_safe_path(path), headers=_ASSET_HEADERS)
