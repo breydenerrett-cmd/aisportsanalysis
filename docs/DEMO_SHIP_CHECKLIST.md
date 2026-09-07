@@ -924,3 +924,85 @@ relative asset paths would 404, which is why the redirect exists (S1).
 This is the kind of bug a route-by-route sweep cannot see. It only shows
 when the page is the ENTRY URL, which is exactly how a shared Results link
 is opened.
+
+---
+
+## DEFECT E-1 — the slate re-stakes on every run, and I said it did not
+
+**Severity: high. Not fixed. Needs a product decision, not just a patch.**
+
+### What I got wrong
+
+Earlier tonight I checked whether running the daily loop twice for one date
+was harmful, saw the 15:20Z cron run report `settled 0 new (15 already
+settled)`, and told Brey the loop is "idempotent per date" and an
+accidental double-run is "harmless, not dangerous".
+
+That is true of the SETTLE step and false of the SLATE step. I verified one
+half and generalised to both.
+
+### What is actually true
+
+`evidence/paper_wagers_v2.jsonl`, dated 2026-09-07:
+
+    101 distinct (system_id, event_id, selection_id) keys
+    251 rows
+    copies per key: 24 keys x1, 33 x2, 28 x3, 3 x4, 13 x5
+
+Every other date is clean -- 08-31, 09-02, 09-03, 09-05, 09-06 all show
+zero duplicates. Those dates had ONE slate run each. Today had five:
+daily-loop at 00:03Z, 13:27Z and 15:20Z, afternoon-slate at 23:13Z and
+23:29Z.
+
+### Why the design did not catch it
+
+`src/engine/slate.py`'s module docstring states: "Re-running the same date
+writes zero duplicate wagers: a wager's identity is a `bet_id` derived
+deterministically from that same tuple (`bet_id_for`)". `bet_id_for` is:
+
+    (date_str, system_id, event_id, market_key, selection_id, decision_utc)
+
+The last component is the problem. `decision_utc` is the instant the board
+was decided at, and every run builds a fresh board at a new instant -- so
+the same position gets a NEW bet_id on every run, collides with nothing,
+and appends. The idempotency claim holds only if re-running reproduces the
+same decision instant, which it never does.
+
+Confirmed downstream: `src/engine/settle_slate.py`'s
+`already_settled_bet_ids()` dedupes on `bet_id`, and 77 of the 101 keys
+carry more than one distinct bet_id. So the next settlement will settle all
+251 rows as if they were 251 independent positions -- 2.5x the real count
+-- inflating W-L-P, units and every derived figure on RESULTS for
+2026-09-07.
+
+### The decision this needs
+
+Two ways to fix the identity, and they mean different things:
+
+1. **Drop `decision_utc` from `bet_id_for`.** Identity becomes date +
+   system + event + market + selection. Re-runs then collide and dedupe.
+   Meaning: the FIRST decision of the day is the frozen one; a later
+   re-decision at a better price is never staked. For a product whose
+   promise is "frozen before first pitch, never restated", that is
+   arguably the correct semantics.
+2. **Keep `decision_utc`, dedupe before staking** on (date, system, event,
+   market, selection). Same effect on the ledger, but keeps the decision
+   instant in the id for audit.
+
+Either changes what a paper position MEANS, and the ledger is append-only
+and hash-chained, so the 251 existing rows are not something to quietly
+rewrite. That is Brey's call, not mine.
+
+### What is already contained
+
+`scripts/capture_tick.ps1` dedupes both the daily loop and the afternoon
+slate per UTC date, so the scheduler will not reproduce this. Today's five
+runs came from my own manual dispatches plus a very late cron. The
+recurrence risk from automation is low; the existing 2026-09-07 rows are
+the live problem.
+
+### The check that settles it
+
+After the next daily loop, compare RESULTS' 2026-09-07 staked count against
+101. If it reads ~251, the inflation landed and the ledger needs a decision
+before that day's numbers can be trusted.
