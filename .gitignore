@@ -159,3 +159,6 @@ artifacts/analyze_*.html
 .foundry/
 data/processed/l1_observations.jsonl
 data/research/evolab/masks-*.bin
+
+# Local scheduler tick log -- machine-local evidence, not repo history.
+data/logs/
