@@ -113,7 +113,7 @@ import { renderMatchups } from "./matchups.js";
 import { renderRecordStrip } from "./recordstrip.js";
 import { renderStaleness } from "./meta.js";
 import { teamColors } from "./teamcolors.js";
-import { teamName } from "./labels.js";
+import { teamName, bookLabel } from "./labels.js";
 import { slateTile } from "./tiles.js";
 import { setShellStatus } from "./shell.js";
 import { armEntrances } from "./motion.js";
@@ -430,8 +430,11 @@ function priceContextPanel(row, side, h2h, gap) {
   figures.appendChild(el("span", { class: "gv2-price__figure", "data-hook": "gameday-best-price",
     text: formatAmerican(best.price) }));
   const aside = el("div", { class: "gv2-price__aside" });
+  // Books arrive as feed slugs ("williamhill_us"), which were reaching the
+  // page verbatim on the featured price card. bookLabel is the one resolver;
+  // it returns an unknown key unchanged rather than inventing a name.
   aside.appendChild(el("span", { class: "gv2-price__books",
-    text: `${(best.books || []).join(", ") || "—"}` }));
+    text: `${(best.books || []).map(bookLabel).join(", ") || "—"}` }));
   if (consensus && typeof consensus.implied_price === "number") {
     aside.appendChild(el("span", { class: "gv2-price__consensus",
       text: `de-vigged consensus ${formatAmerican(consensus.implied_price)}` }));
