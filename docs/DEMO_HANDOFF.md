@@ -245,3 +245,32 @@ per-game refusal reason is printed directly above it.
    the PC is awake. If the machine sleeps overnight, captures stop until it
    wakes. The honest next step if that bites is an external scheduler
    (a cloud cron hitting `workflow_dispatch`), not a bigger local one.
+
+## NEXT 5 IMPROVEMENTS (written 2026-09-07 23:30Z, after F-1, F-2 and the scheduler shipped)
+
+Ranked by user value × trust × visible impact ÷ cost.
+
+1. **Put tonight's system plays on Today.** For the first time there are
+   FORWARD_TEST decisions on a live slate (six, run 34169306905). They
+   surface on each matchup's frozen-positions section and in the game's
+   ENGINE DECISIONS, but Today's hero still leads with the detector
+   verdict. A "SYSTEM PLAYS TONIGHT" strip -- genome, side, price, grade,
+   `price_standing_only` stated plainly -- is the single most visible
+   thing the product can now show that it could not show yesterday.
+2. **Settle and grade those six tomorrow, visibly.** The daily loop will
+   settle them; Results should show them green/red with the genome id
+   and units, as the first thesis-carrying settled record. Check the
+   10:00Z loop's log and the recap card for 2026-09-07.
+3. **Confirm F-1 unattended.** Tomorrow's 21:10Z+ afternoon-slate run
+   should come from the local task, not a hand. A non-zero FORWARD_TEST
+   count in that run's log closes F-1 for good.
+4. **Two more matchup sections from stores, not fetches.** Pitcher
+   platoon splits and batter-vs-pitcher history are each ~200 live MLB
+   calls per slate today. Build them in the daily loop so they ride the
+   same cache; the page already renders whatever arrives and names what
+   does not.
+5. **The clock still needs the PC awake.** The local task fires ~100% of
+   the time the machine is on; GitHub's cron fired ~6% today. If an
+   overnight gap ever costs a capture, the fix is an external scheduler
+   hitting `workflow_dispatch`, not a bigger local one. Recorded in
+   `docs/LOCAL_SCHEDULER.md` as the known architecture gap.

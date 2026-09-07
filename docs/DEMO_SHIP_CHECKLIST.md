@@ -833,3 +833,28 @@ afternoon-slate: already ran today after 21:10Z", correctly counting the
 
 Still true: GitHub's cron fired 6 of ~97 scheduled runs today (~6%). The
 local task is the clock. It only runs while the PC is awake.
+
+---
+
+## GAME STORY SHIPPED — 2026-09-07 (commit 2a51643)
+
+F-2 put six rich sections into the payload; the page listed their names.
+It now renders them, between the price panel and the spotlight, each
+panel only when its section is present:
+
+| Panel | What it shows | Honesty detail |
+|---|---|---|
+| STARTERS | both probables: ERA, FIP, WHIP, K/9, IP/start, starts, days rest, recent vs season | every rate carries n = starts; thin flag renders; diff row is HOME MINUS AWAY, never "edge" |
+| BULLPEN | per team, 7-day window: relievers used, innings; each reliever with apps, IP, pitches, an availability chip and the reason as given | chip is the enum in words; anything not "available" takes the warn tone; empty window is a sentence |
+| LINEUPS | both orders with position, handedness, platoon fields | an absent share shows the API's own reason |
+| TRAVEL | miles in, zones, days since last game, games in last 7; long-trip / dense-stretch chips | a home team at 0 miles reads as a home stand |
+| CONDITIONS | temperature, wind with compass word, precip chance, roof, altitude, forecast-hour offset to first pitch | -- |
+
+Built as `web/js/gamestory.js` + `web/css/gamestory.css`; `games.js` is
+touched on exactly two lines. A generic key/value reliever renderer was
+replaced by a deliberate one after it printed "Availability available ·
+Availability Reason rested yesterday" on every row and leaked the raw
+enum `likely_unavailable`; unknown fields still fall through with
+underscores turned to spaces. Verified locally at 1440px and 390px: 21
+availability chips (1 warn), zero raw tokens, zero overflow. 126 web
+tests pass; gamestory.css braces 43/43.
