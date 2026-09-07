@@ -468,7 +468,19 @@ Worth recording about the process: this was caught by a second session doing
 a read-only pass, not by the tests or by my own QA, which had checked each
 surface on its own terms and never asked whether two surfaces on one screen
 agreed. Cross-surface contradiction is a class of defect a per-surface test
-suite cannot see.
+suite cannot see -- every surface was individually correct against its own
+fixture, because the field was wrong the SAME way everywhere.
+
+STANDING GUARD ADDED: `tests/test_cross_surface_agreement.py`. It builds ONE
+slate the way the API builds it (a board, no `prices_by_matchup`) and asserts
+two different payload builders report the same de-vigged consensus and the
+same book count for the same game, plus that a game nobody quoted stays
+unpriced on both -- the obvious way this fix could have gone wrong was a
+fallback that manufactured a consensus for a genuinely unpriced game. The
+guard was validated the only way a regression test is worth anything:
+re-run against the pre-fix function it FAILS (1 of 3), and against the fix it
+passes. New cross-surface invariants go in that file rather than in either
+surface's own module tests.
 
 - 03:57Z F-3 fixed (d38876c) and deployed. Verified live: 9 of 11 games now
   carry a consensus and `has_market` is true for exactly those 9, the two
