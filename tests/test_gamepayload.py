@@ -121,6 +121,53 @@ class SlateListTests(unittest.TestCase):
         self.assertNotIn("true_probability", blob)
         self.assertNotIn("win_probability", blob)
 
+    def test_consensus_comes_from_the_board_when_no_market_section_exists(self):
+        """Regression, 2026-09-07. The `market` section only exists when a
+        caller passes `prices_by_matchup` to build_slate -- the CLI does,
+        the API does not -- so every API-built slate reported
+        market_implied_consensus: null while `price_improvement` sat beside
+        it holding the same de-vigged consensus over nine books. On screen
+        that printed "No priced market for this game yet" four lines under a
+        Featured Bet quoting that same game across nine books. Two reads of
+        one board must never disagree about whether the board exists.
+        """
+        game = _game()
+        observed = datetime(2026, 8, 31, 12, 0, 0, tzinfo=timezone.utc)
+        price_key = (game["away_team"], game["home_team"], game["date"])
+        price_boards_by_key = {
+            price_key: {
+                "quotes": [{"ts": observed.isoformat(), "book": b,
+                            "away_price": 110 + i, "home_price": -130 - i}
+                           for i, b in enumerate(["a", "b", "c", "d", "e", "f", "g"])],
+                "observed_utc": observed.isoformat(),
+                "source": "test",
+            }
+        }
+        # NOTE: no prices_by_matchup -- exactly how api/games._build_entries
+        # calls build_slate.
+        slate = briefing.build_slate(
+            [game], history.read_results(),
+            price_boards_by_key=price_boards_by_key, roster_events_by_pk={})
+        entries = slate["games"]
+        self.assertIsNone(entries[0]["dossier"].get("market"),
+                          "fixture must reproduce the API's missing market section")
+        row = gamepayload.build_slate_list(entries)["games"][0]
+        consensus = row["market_implied_consensus"]
+        self.assertIsNotNone(consensus, "a board with seven books is a priced market")
+        # The same number the board itself carries -- one definition, two sources.
+        sides = entries[0]["dossier"].get("price_improvement")["sides"]
+        self.assertAlmostEqual(consensus["away_fair"],
+                               sides["away"]["consensus_probability"], places=9)
+        self.assertAlmostEqual(consensus["home_fair"],
+                               sides["home"]["consensus_probability"], places=9)
+
+    def test_no_board_and_no_market_is_still_an_honest_null(self):
+        """The fallback must not manufacture a consensus out of nothing."""
+        slate = briefing.build_slate([_game()], history.read_results(),
+                                     roster_events_by_pk={})
+        row = gamepayload.build_slate_list(slate["games"])["games"][0]
+        self.assertIsNone(row["market_implied_consensus"])
+
     def test_zero_games_is_an_honest_empty_slate_not_an_error(self):
         payload = gamepayload.build_slate_list([], date="2026-12-25")
         self.assertEqual(payload["checked_games"], 0)

@@ -130,17 +130,38 @@ def _board_staleness(section: Optional[dict], *, now: datetime) -> dict:
 # 1. Slate list -- GET /games/{date}
 # ---------------------------------------------------------------------------
 
-def _market_implied_consensus(market_section: Optional[dict]) -> Optional[dict]:
+def _market_implied_consensus(market_section: Optional[dict],
+                              price_improvement: Optional[dict] = None) -> Optional[dict]:
     """The de-vigged h2h consensus, if a market priced this game.
 
     Named `market_implied_consensus` deliberately -- see the module
     docstring's evidence-rules note. It is a probability implied by the
     board at one instant, not a read on who wins.
+
+    TWO SOURCES FOR ONE NUMBER, AND WHY THE SECOND EXISTS (2026-09-07).
+    The `market` section is the briefing's plain fair-price section, and it
+    only exists when a caller hands `build_slate` a `prices_by_matchup`
+    mapping -- the CLI does, the API does not. So on every API-built slate
+    this returned None while `price_improvement` sat right beside it holding
+    the same de-vigged consensus over nine books. The visible cost: the
+    Gameday matchup panel printed "No priced market for this game yet" four
+    lines under a Featured Bet quoting that same game at -196 across nine
+    books, on the same screen, from the same capture instant. Two reads of
+    one board must never disagree on whether the board exists.
+    `price_improvement.sides.<side>.consensus_probability` is the identical
+    quantity (src/analysis/prices.py de-vigs across the board and averages),
+    so it is used when the `market` section is absent -- a fallback for the
+    SOURCE of the number, never a second definition of it.
     """
     h2h = (market_section or {}).get("markets", {}).get("h2h") if market_section else None
-    if not h2h or h2h.get("away_fair") is None:
+    if h2h and h2h.get("away_fair") is not None:
+        return {"away_fair": h2h.get("away_fair"), "home_fair": h2h.get("home_fair")}
+    sides = (price_improvement or {}).get("sides") or {}
+    away = (sides.get("away") or {}).get("consensus_probability")
+    home = (sides.get("home") or {}).get("consensus_probability")
+    if away is None or home is None:
         return None
-    return {"away_fair": h2h.get("away_fair"), "home_fair": h2h.get("home_fair")}
+    return {"away_fair": away, "home_fair": home}
 
 
 def _board_summary(dossier, *, now: datetime) -> dict:
@@ -182,7 +203,8 @@ def slate_game_summary(entry: dict, *, now: datetime) -> dict:
         "first_pitch_utc": game.get("start_time_utc"),
         "venue": game.get("venue"),
         "verdict": entry.get("verdict"),
-        "market_implied_consensus": _market_implied_consensus(dossier.get("market")),
+        "market_implied_consensus": _market_implied_consensus(
+            dossier.get("market"), dossier.get("price_improvement")),
         "board_summary": _board_summary(dossier, now=now),
         "data_quality": _data_quality(dossier),
     }

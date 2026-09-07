@@ -80,7 +80,16 @@ def _odds_meta(entry: dict, *, now: datetime) -> dict:
     return {
         "observed_utc": observed_utc,
         "age_seconds": _odds_age_seconds(observed_utc, now=now),
-        "has_market": market is not None,
+        # EITHER SOURCE COUNTS AS A PRICED MARKET (2026-09-07). This used to
+        # ask only the `market` section, which exists only when a caller
+        # passes `prices_by_matchup` to build_slate -- the CLI does, this API
+        # does not. So `has_market` was false for every game on every slate
+        # this endpoint has ever served, including games quoted by nine books
+        # at the very instant this payload reports in `observed_utc` two lines
+        # above. A field that says "no market" beside a live board timestamp
+        # is not an honest absence, it is a contradiction, so it now answers
+        # the question its name asks: is there a priced market for this game.
+        "has_market": market is not None or board_section is not None,
     }
 
 
