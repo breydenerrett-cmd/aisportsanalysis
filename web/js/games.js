@@ -1026,21 +1026,26 @@ function gavHave(advanced) {
 
 /** When a game carries a long list of gaps (four or more), naming each one
  * individually reads as a wall of NOT YET AVAILABLE panels -- broken,
- * rather than an honest, structural boundary. This ONE consolidated panel
- * says the true, whole-build reason once: this deployment serves the
- * schedule, the live board and the frozen engine record; the per-game
- * feature layers do not ship in this build, so they are reported as named
- * gaps below rather than guessed (docs/DEMO_SHIP_CHECKLIST.md FINDING
- * F-2 -- api/games.py never assembles those feature inputs, and the
- * container ships without the historical stores they would need). Reuses
- * dom.js's own `notYetAvailable` panel rather than inventing new markup
- * for an absence explanation -- see this file's RULES on that. */
-function gavGapsConsolidated(gapCount) {
+ * rather than an honest boundary. This ONE consolidated panel says it once.
+ *
+ * It names the gaps the payload ACTUALLY reports, not a fixed list. The
+ * fixed list this used to carry ("team records, bullpen, splits,
+ * handedness, lineups") became false the day F-2 landed (2026-09-07:
+ * api/games._enrichment_inputs now feeds those stores in), and a page
+ * that showed 69-74 in the identity panel while this sentence said team
+ * records were not in the build was a contradiction, not an explanation.
+ * Reuses dom.js's own `notYetAvailable` panel -- see this file's RULES. */
+function gavGapsConsolidated(gapKeys) {
+  const named = (gapKeys || []).map((k) => humanizeKey(k).toLowerCase());
+  const list = named.length <= 5
+    ? named.join(", ")
+    : `${named.slice(0, 5).join(", ")} and ${named.length - 5} more`;
   return notYetAvailable(
-    "This deployment serves the schedule, the live board and the frozen engine record. The "
-    + "per-game feature layers — team records, bullpen, splits, handedness, lineups — are not "
-    + `in this build, so they are reported as ${gapCount} named gaps below rather than guessed.`,
-    "NOT IN THIS BUILD");
+    "This build carries the schedule, the live board, the frozen engine record, and the "
+    + "per-game layers it has for this game. What it does not have for this game — "
+    + `${list} — is reported as ${named.length} named gap${named.length === 1 ? "" : "s"} `
+    + "below, each with the reason as given, rather than guessed at.",
+    "NOT AVAILABLE FOR THIS GAME");
 }
 
 /** Every gap the payload actually names, dynamically -- see this file's
@@ -1062,7 +1067,7 @@ function gavGaps(advanced) {
   const block = el("div", { class: "gav-gaps" });
   const consolidate = keys.length >= 4;
 
-  if (consolidate) block.appendChild(gavGapsConsolidated(keys.length));
+  if (consolidate) block.appendChild(gavGapsConsolidated(keys));
 
   const header = el("h4", { class: "gav-subhead gav-subhead--warn",
     text: `THE ${keys.length} GAP${keys.length === 1 ? "" : "S"} · REASONS PRINTED AS GIVEN` });
@@ -1085,7 +1090,9 @@ function gavGaps(advanced) {
   if (consolidate) {
     const outer = el("details", { class: "gav-gaps__collapse", "data-hook": "coverage-gaps-collapsed" });
     outer.appendChild(el("summary", { class: "gav-gaps__collapse-summary",
-      text: `${keys.length} SECTIONS NOT IN THIS BUILD -- SHOW REASONS` }));
+      // Not "NOT IN THIS BUILD": a night with no prices on the board is a
+      // gap on this game, not a gap in the build, and the list is mixed.
+      text: `${keys.length} GAPS ON THIS GAME — SHOW REASONS` }));
     outer.appendChild(header);
     outer.appendChild(lede);
     outer.appendChild(list);

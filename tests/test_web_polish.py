@@ -115,12 +115,29 @@ class GamesConsolidatedGapPanelTests(unittest.TestCase):
         self.js = _read(GAMES_JS)
 
     def test_consolidated_panel_explains_what_is_actually_true(self):
-        self.assertIn("gavGapsConsolidated", self.js)
-        self.assertIn("NOT IN THIS BUILD", self.js)
+        """The panel must describe THIS game's gaps, never a fixed list.
+
+        It used to pin the sentence "team records, bullpen, splits,
+        handedness, lineups -- are not in this build". F-2 (2026-09-07)
+        wired those stores in, and that sentence then sat directly under an
+        identity panel showing 69-74 -- a contradiction, not an
+        explanation. The invariant this test is named for is truthfulness,
+        so it now asserts the panel is built from the payload's own gap
+        keys and that the stale fixed list is gone for good.
+        """
+        self.assertIn("gavGapsConsolidated(gapKeys)", self.js)
+        self.assertNotIn("team records, bullpen, splits, handedness, lineups", self.js,
+                         "the fixed gap list is back -- it was false the day F-2 landed")
+        # The RENDERED template literal, not the bare phrase: the phrase also
+        # appears in a code comment describing the old design, and a comment
+        # is not something a customer sees.
+        self.assertNotIn("${keys.length} SECTIONS NOT IN THIS BUILD", self.js,
+                         "a night with no prices is a gap on the game, not in the build")
         for phrase in (
-            "serves the schedule, the live board and the frozen engine record",
-            "team records, bullpen, splits, handedness, lineups",
+            "NOT AVAILABLE FOR THIS GAME",
+            "named gap",
             "reported as",
+            "humanizeKey(k)",   # the names come from the gap keys themselves
         ):
             self.assertIn(phrase, self.js, f"consolidated panel missing: {phrase!r}")
 

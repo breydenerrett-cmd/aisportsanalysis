@@ -349,7 +349,19 @@ class DepthByPkTest(unittest.TestCase):
         empty.mkdir()
         out = matchup.depth_by_pk([dict(GAME)], {"700001": POSTED},
                                   HANDEDNESS, store=empty)
-        self.assertIn("holds no data", out["700001"]["reason"])
+        reason = out["700001"]["reason"]
+        # A reason, as the test name says -- and one a customer can read.
+        # This used to pin "holds no data", from a string that also printed
+        # the store's filesystem path and "run the statcast build first".
+        # That reason is served on the matchup page as the matchup_depth
+        # gap (2026-09-07), where a path and an operator instruction are
+        # exactly what must not appear. The invariant is: non-empty, says
+        # what is missing, names no path, gives no orders.
+        self.assertTrue(reason)
+        self.assertIn("pitch-level data", reason)
+        self.assertNotIn(str(empty), reason)
+        self.assertNotIn(str(self.root), reason)
+        self.assertNotIn("run the", reason)
 
     def test_no_posted_lineups_never_opens_the_store(self):
         # The store path does not even exist; if the walk were attempted the

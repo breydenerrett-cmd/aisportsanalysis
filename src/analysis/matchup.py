@@ -464,8 +464,15 @@ def depth_by_pk(games, lineups_by_pk, handedness, *, store=None,
                 out[game.get("game_pk")] = {"reason": undated_reason}
             return out
         if not sp.read_manifest(target).get("windows"):
-            reason = (f"the pitch store at {target} holds no data; run the "
-                      "statcast build first")
+            # This reason is served on the customer matchup page as the
+            # matchup_depth gap. It used to print the store's filesystem
+            # path and an operator instruction ("run the statcast build
+            # first") -- neither belongs on a page a bettor reads. The fact
+            # is unchanged; the path is an operator detail and is not part
+            # of what the page says. (`target` stays in scope for the
+            # accumulate call below.)
+            reason = ("no pitch-level data is available for this season, so "
+                      "matchup depth cannot be computed")
             for game, _ in with_lineup:
                 out[game.get("game_pk")] = {"reason": reason}
             return out
