@@ -28,7 +28,7 @@
  */
 
 import { el, clear, formatEasternDate, formatEasternClock } from "./dom.js";
-import { apiGet } from "./api.js";
+import { apiGet, setPublicDemo } from "./api.js";
 import { setShellStatus } from "./shell.js";
 import { renderDisclaimerFooter } from "./meta.js";
 import { renderToday } from "./today.js";
@@ -199,6 +199,9 @@ function boot() {
   // yanking it away once the fetch resolves.
   apiGet("/meta").then((meta) => {
     publicDemo = !!(meta && meta.public_demo);
+    // Shared with the views (Bet Check picks the open route over the
+    // three-for-life free route when the server is in public demo).
+    setPublicDemo(publicDemo);
   }).catch(() => {
     // Unreachable /meta: fall back to showing every nav item rather than
     // guessing a visitor is in the public demo -- the individual routes

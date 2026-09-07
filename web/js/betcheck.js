@@ -99,7 +99,7 @@
  * Fixed here to read `claim.statement` first.
  */
 
-import { apiFetch, apiPost, getToken, getFreeCheckToken, setFreeCheckToken } from "./api.js";
+import { apiFetch, apiPost, getToken, getFreeCheckToken, setFreeCheckToken, isPublicDemo } from "./api.js";
 import { el, clear, renderUnknown, renderError, renderLoading, notYetAvailable,
   formatAmerican, formatConsensusShare, formatEasternClock, formatAge, renderWordChip } from "./dom.js";
 import { bookLabel } from "./labels.js";
@@ -804,7 +804,10 @@ export async function renderBetCheck(container, prefill = {}) {
   ticket.appendChild(form);
 
   const freeMeterHost = el("div", { class: "bc2-freemeter" });
-  const authed = !!getToken();
+  // A public demo deployment (GET /meta public_demo, see api.js) serves
+  // POST /betcheck with no token: use it, never the three-for-life free
+  // route that would stop a demo on its fourth check.
+  const authed = !!getToken() || isPublicDemo();
   if (!authed) {
     renderFreeMeter(freeMeterHost, null);
     ticket.appendChild(freeMeterHost);

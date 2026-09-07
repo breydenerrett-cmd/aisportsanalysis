@@ -77,6 +77,25 @@ export function setFreeCheckToken(token) {
 }
 
 /**
+ * PUBLIC DEMO FLAG (2026-09-07). When GET /meta says `public_demo` is true
+ * the server serves the read-only game surface and POST /betcheck with no
+ * token (api/app.py APP_PUBLIC_DEMO). The client must then use the open
+ * paid route rather than /betcheck/free: the free route is capped at three
+ * checks FOR LIFE per anonymous identity, which would end a demo on the
+ * fourth click. main.js sets this once at boot, before the first route
+ * renders; views read it through isPublicDemo().
+ */
+let _publicDemo = false;
+
+export function setPublicDemo(value) {
+  _publicDemo = !!value;
+}
+
+export function isPublicDemo() {
+  return _publicDemo;
+}
+
+/**
  * A structured API error, distinct from a network failure -- callers need
  * to tell "the server said no, here is why" (status + whatever `detail`
  * the API sent, per its documented structured-error shape) apart from
