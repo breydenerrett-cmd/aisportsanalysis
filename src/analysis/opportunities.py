@@ -45,6 +45,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Optional
 
+from src.analysis import derivative_prices
 from src.analysis import gamepayload
 from src.analysis import priceverdict
 from src.analysis import synthesis as synthesis_mod
@@ -120,8 +121,98 @@ def _unpriced_entry(game: dict, gid: str, reason: str) -> dict:
     }
 
 
+def _derivative_rows(date, now, entries, candidates=None) -> list:
+    """Every non-moneyline contract on this date, priced the same way the
+    moneyline above is priced.
+
+    First-five totals and moneylines, team totals, alternate lines and
+    pitcher strikeouts were captured daily and shown nowhere, because this
+    module used to look at `MARKET` alone. They go through the SAME
+    `priceverdict.build_price_verdict` as the moneyline: same six-book
+    floor, same evidence tiers, same vocabulary. A contract below the floor
+    keeps its row and carries `thin_or_unavailable_reason` with no verdict,
+    so the reader sees the market exists and why it is not called.
+    """
+    if candidates is None:
+        candidates = derivative_prices.candidates_for_date(date)
+
+    # Derivative rows name their clubs, not this product's game ids. Joining
+    # on the two club names is what lets a first-five line sit on the same
+    # card as the game's moneyline; a contract whose clubs are not on this
+    # slate keeps a null game_id rather than being attached to a guess.
+    by_clubs = {}
+    for entry in entries:
+        game = entry["dossier"].game
+        by_clubs[(game.get("away_team"), game.get("home_team"))] = (
+            gamepayload.game_id(game), game)
+
+    rows = []
+    for cand in candidates:
+        joined = by_clubs.get((cand.get("away_team"), cand.get("home_team")))
+        gid, game = joined if joined else (None, {})
+        row = {
+            "game_id": gid,
+            "away_team": cand.get("away_team"),
+            "home_team": cand.get("home_team"),
+            "first_pitch_utc": game.get("start_time_utc") or cand.get("commence_time"),
+            "venue": game.get("venue"),
+            "side": cand.get("side"),
+            "market": cand.get("market"),
+            "market_noun": cand.get("market_noun"),
+            "line": cand.get("line"),
+            "player": cand.get("player"),
+            "wager_text": cand.get("wager_text"),
+            "best_price": cand.get("best_price"),
+            "best_book": cand.get("best_book"),
+            "books": cand.get("books"),
+            "observed_utc": cand.get("observed_utc"),
+            # No findings exist for a derivative contract: the research
+            # record is written against full-game sides. Empty lists, never
+            # the moneyline's findings borrowed onto a different bet.
+            "support_claims": [],
+            "counter_claims": [],
+            "engine": None,
+        }
+        if cand.get("consensus_probability") is None:
+            row.update({
+                "age_seconds": None,
+                "market_implied_probability": None,
+                "stated_implied_probability": None,
+                "value_points": None,
+                "price_verdict": None,
+                "independent_model": priceverdict.NO_MODEL,
+                "reasons": [],
+                "risks": [],
+                "thin_or_unavailable_reason": cand.get("thin_reason"),
+            })
+            rows.append(row)
+            continue
+
+        verdict = priceverdict.build_price_verdict(
+            american_price=cand["best_price"],
+            consensus_probability=cand["consensus_probability"],
+            books=cand.get("books"), observed_utc=cand.get("observed_utc"),
+            now=now, best_price=cand["best_price"],
+            best_book=cand.get("best_book"))
+        row.update({
+            "age_seconds": verdict["age_seconds"],
+            "market_implied_probability": verdict["market_implied_probability"],
+            "stated_implied_probability": verdict["stated_implied_probability"],
+            "value_points": verdict["value_points"],
+            "price_verdict": verdict,
+            "independent_model": verdict["independent_model"],
+            "reasons": list(verdict["reasons"]),
+            "risks": list(verdict["risks"]),
+            "thin_or_unavailable_reason": None,
+        })
+        rows.append(row)
+
+    rows.sort(key=_sort_key)
+    return rows
+
+
 def build_opportunities(entries, *, date, now=None, engine_by_key=None,
-                        top_n: int = 5) -> dict:
+                        top_n: int = 5, derivative_candidates=None) -> dict:
     """The Top Opportunities payload for one date's already-built slate.
 
     `entries` is the list `api.games._build_entries` produces (each a dict
@@ -205,7 +296,17 @@ def build_opportunities(entries, *, date, now=None, engine_by_key=None,
                 game, gid, "no priceable quote on either side"))
 
     rows.sort(key=_sort_key)
-    qualifying = [r for r in rows
+
+    # Every other market on the board. `rows` stays moneyline-only because
+    # that is the shape the moneyline surfaces already consume; the ranking
+    # below draws from BOTH, so the best-priced bet on the slate wins on
+    # price whether it is a moneyline, a first-five under or a strikeout
+    # prop. That is the whole reason this section exists.
+    derivative = _derivative_rows(date, now, entries, derivative_candidates)
+    derivative_priced = [r for r in derivative if r["price_verdict"] is not None]
+
+    ranked = sorted(rows + derivative_priced, key=_sort_key)
+    qualifying = [r for r in ranked
                   if r["price_verdict"]["word"] in QUALIFYING_WORDS][:top_n]
     priced_games = len({r["game_id"] for r in rows})
 
@@ -215,6 +316,9 @@ def build_opportunities(entries, *, date, now=None, engine_by_key=None,
         "checked_games": len(entries),
         "priced_games": priced_games,
         "rows": rows,
+        "derivative_rows": derivative,
+        "derivative_priced": len(derivative_priced),
+        "derivative_thin": len(derivative) - len(derivative_priced),
         "qualifying": qualifying,
         "empty_reason": None if qualifying else EMPTY_REASON,
         "unpriced": unpriced,

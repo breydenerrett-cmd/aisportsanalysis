@@ -69,6 +69,12 @@ TIERS = ("HIGH", "MEDIUM", "LOW")
 # two numbers can never drift apart.
 MIN_BOOKS = prices_mod.MIN_BOOKS
 
+# Said on every priced row, and on every row too thin to price. Named here
+# rather than repeated as a literal so a surface that reports no verdict at
+# all (a below-floor first-five line) still says the same thing about the
+# model as a surface that reports one.
+NO_MODEL = "NO INDEPENDENT MODEL YET"
+
 BASIS = (
     "Price verdict = your price versus the de-vigged multi-book consensus "
     "at one capture instant. Line-shopping value on the same bet, never "
@@ -283,7 +289,7 @@ def build_price_verdict(*, american_price, consensus_probability, books,
         "books": books,
         "observed_utc": observed_utc,
         "age_seconds": age_seconds,
-        "independent_model": "NO INDEPENDENT MODEL YET",
+        "independent_model": NO_MODEL,
         "market_reference_provenance": "market_derived",
         "reasons": tuple(reasons),
         "risks": tuple(risks),
