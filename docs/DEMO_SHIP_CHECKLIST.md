@@ -668,3 +668,9 @@ visible. A route-by-route review finds route-by-route bugs.
 - 09:50Z watchdog dispatched forward-capture (newest run was 60 min old; schedule total_count still 2)
 - 10:50Z watchdog dispatched forward-capture (newest run was 60 min old; schedule total_count still 2)
 - 11:50Z watchdog dispatched forward-capture (newest run was 60 min old; schedule total_count still 2)
+- 12:50Z Third genuine schedule firing: `event=schedule` total_count is 3.
+  Run 34122392182, forward-capture, 12:32:12Z, success. Genuine firings so
+  far: 01:00:46Z, 06:06:21Z, 12:32:12Z. Gaps of about 5h and 6.5h against a
+  */15 cron, so roughly 1 firing in 22 expected. The watchdog dispatches are
+  what has actually kept the board fresh all night. No dispatch this tick;
+  newest capture is 18 min old.
