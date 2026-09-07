@@ -3428,8 +3428,50 @@
 .day-detail__game-record { margin: 0; font-family: var(--font-mono); font-size: 11.5px; color: var(--v-t5); }
 .day-detail__game-net--pos { margin: 0; font-family: var(--font-mono); font-size: 12px; color: var(--v-win-lit); }
 .day-detail__game-net--neg { margin: 0; font-family: var(--font-mono); font-size: 12px; color: var(--v-money-lit); }
-.day-detail__positions { display: flex; flex-direction: column; gap: var(--sp-4); }
 .day-detail__note { margin: 0; font-size: 12px; color: var(--v-t5); }
+
+/* ---- HOW-TO-READ LEGEND -- states the class/thin-board explanations
+   ONCE per page instead of once per row (see dayrecap.js's own comment on
+   dayDetailLegend / dayPositionRow for why). Sentences, so body face. --- */
+.day-detail__legend { padding: var(--sp-6) var(--sp-7); display: flex; flex-direction: column; gap: var(--sp-3);
+  background: linear-gradient(150deg, rgba(255, 255, 255, .03), rgba(255, 255, 255, .006)); }
+.day-detail__legend-title { font-family: var(--font-display); font-size: 10.5px; font-weight: 800; letter-spacing: .12em;
+  color: var(--v-t5); }
+.day-detail__legend-line { margin: 0; display: flex; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap;
+  font-size: 12.5px; line-height: 1.5; color: var(--v-t3); }
+.day-detail__legend-chip { flex: none; font-family: var(--font-display); font-size: 9px; font-weight: 800;
+  letter-spacing: .08em; padding: 3px 8px; }
+.day-detail__legend-line--thin { color: var(--v-warn-lit); }
+
+/* ---- POSITIONS LIST -- one dense row per recommendation, not a box in a
+   box. Up to ~213 of these can render on one slate, so every per-row
+   sentence a prior pass printed here now lives once in the legend above;
+   what's left on the row is a scan line: chips, the bet in plain English,
+   the price, the figures. Body face for the bet phrase (it's a sentence
+   fragment, not a figure); mono stays reserved for the price/points/units
+   figures, per this product's own house style (see signup.css). -------- */
+.day-detail__positions { display: flex; flex-direction: column; }
+.day-pos { padding: var(--sp-3) 0; display: flex; flex-direction: column; gap: 3px;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .055); }
+.day-pos:last-child { box-shadow: none; }
+.day-pos__top { display: flex; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap; }
+.day-pos__class { flex: none; font-family: var(--font-display); font-size: 8.5px; font-weight: 800; letter-spacing: .07em;
+  padding: 3px 7px; align-self: center; }
+.day-pos__label { flex: 1 1 auto; min-width: 120px; font-size: 13px; font-weight: 600; color: var(--v-t1); }
+.day-pos__price { flex: none; font-family: var(--font-mono); font-size: 12.5px; font-weight: 700; color: var(--v-t0); }
+.day-pos__profit { flex: none; font-family: var(--font-mono); font-size: 12px; font-weight: 700; }
+.day-pos__profit--pos { color: var(--v-win-lit); }
+.day-pos__profit--neg { color: var(--v-money-lit); }
+.day-pos__bottom { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; padding-left: 2px; }
+.day-pos__books { font-family: var(--font-mono); font-size: 10px; color: var(--v-t6); }
+.day-pos__vp { font-family: var(--font-mono); font-size: 10.5px; color: var(--v-money-lit); }
+.day-pos__thin { font-family: var(--font-display); font-size: 8.5px; font-weight: 800; letter-spacing: .06em;
+  padding: 2px 7px; --r: var(--r-marker);
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
+  background: rgba(255, 176, 32, .14); box-shadow: inset 0 0 0 1px rgba(255, 176, 32, .38); color: var(--v-warn-label); }
+/* Scoped to this row only -- the shared .day-settle/.badge rules stay
+   untouched so matchups.js's Today grid never sees this row's layout. */
+.day-pos__top .day-settle, .day-pos__top .badge { flex: none; align-self: center; }
 
 /* ---- 899px and below (RECORD STRIP / MATCHUP GRID / DAILY RECAP) ------- */
 @media (max-width: 899px) {

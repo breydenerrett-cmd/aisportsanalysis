@@ -407,7 +407,13 @@ class TestPriceIsNeverAnEdge(unittest.TestCase):
         item = result["items"][0]
         self.assertEqual(item["side"], "away")
         self.assertIn("BOS", item["statement"])
-        self.assertIn("pinnacle", item["statement"])
+        # The book this pins is still `pinnacle` in the fixture; the
+        # statement now names it the way a reader sees it, because the raw
+        # feed slug was reaching the game page in prose ("the best number
+        # on BAL is +125 at williamhill_us"). What this test is actually
+        # about -- that the reported side and book are the best ones and
+        # not some other row -- is unchanged. See prices.book_label.
+        self.assertIn("Pinnacle", item["statement"])
 
     def test_a_thin_board_is_a_reason_not_a_number(self):
         result = synthesis.synthesize(

@@ -33,6 +33,53 @@ MIN_BOOKS = 6
 LABEL = ("price improvement / line-shopping value — a better execution "
          "price, not expected value and not a prediction")
 
+# Sportsbooks arrive from the odds feed as machine slugs (`williamhill_us`,
+# `betonlineag`). A slug is fine as a key and wrong in a sentence: the price
+# narrative on the game page read "the best number on BAL is +125 at
+# williamhill_us". These are the books that actually appear in this feed;
+# anything unrecognised falls back to underscores-to-spaces and title case,
+# which is still readable, and a missing book stays "an unnamed book"
+# rather than being guessed at.
+_BOOK_NAMES = {
+    "betonlineag": "BetOnline",
+    "betus": "BetUS",
+    "betmgm": "BetMGM",
+    "betrivers": "BetRivers",
+    "betfred_us": "Betfred",
+    "bovada": "Bovada",
+    "caesars": "Caesars",
+    "draftkings": "DraftKings",
+    "espnbet": "ESPN BET",
+    "fanatics": "Fanatics",
+    "fanduel": "FanDuel",
+    "hardrockbet": "Hard Rock Bet",
+    "lowvig": "LowVig",
+    "mybookieag": "MyBookie",
+    "pointsbetus": "PointsBet",
+    "superbook": "SuperBook",
+    "twinspires": "TwinSpires",
+    "unibet_us": "Unibet",
+    "williamhill_us": "William Hill",
+    "wynnbet": "WynnBET",
+}
+
+_BOOK_ACRONYMS = {"us", "uk", "au", "eu", "ag", "usa", "mgm", "espn"}
+
+
+def book_label(slug, *, missing="an unnamed book"):
+    """The sportsbook's name, for prose. Never invents a book: an empty
+    slug returns `missing` unchanged."""
+    if not slug:
+        return missing
+    key = str(slug).strip().lower()
+    if key in _BOOK_NAMES:
+        return _BOOK_NAMES[key]
+    words = key.replace("_", " ").split()
+    if not words:
+        return missing
+    return " ".join(w.upper() if w in _BOOK_ACRONYMS else w.capitalize()
+                    for w in words)
+
 # Said whenever no side on a board beats the de-vigged consensus, which on a
 # normally-priced board is every side. Without it a column of negatives reads
 # as a verdict on the night instead of as the definition of the two numbers

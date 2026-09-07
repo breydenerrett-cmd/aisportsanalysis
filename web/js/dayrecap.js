@@ -26,7 +26,7 @@
 
 import { apiGet } from "./api.js";
 import { el, clear, renderError, renderLoading, notYetAvailable, formatAmerican } from "./dom.js";
-import { frozenPositionRow } from "./matchups.js";
+import { CLASS_MEANING } from "./matchups.js";
 
 // This product's forward-testing record only runs within 2026 (see
 // CLAUDE.md's "2025 tuning-only, sealed 2026" policy) -- GET /daily can
@@ -198,6 +198,229 @@ function dayRollupSummary(rollup) {
   return wrap;
 }
 
+// Local copies of matchups.js's private CLASS_CHIP_LABEL / SETTLEMENT_CHIP --
+// only CLASS_MEANING is exported from that module, and this file owns its
+// own row renderer now (see the ROW RENDERER comment below), so these two
+// small, static display maps are kept in sync by hand rather than imported.
+// Any drift here is a display-label typo, not an honesty issue: the actual
+// class/settlement values driving color and meaning still come from
+// matchups.js's own CLASS_MEANING and the payload's own settlement.status.
+const CLASS_CHIP_LABEL = {
+  CONTROL: "CONTROL",
+  MARKET_REFERENCE: "MARKET REFERENCE",
+  FORWARD_TEST: "FORWARD-TEST SYSTEM",
+};
+
+const SETTLEMENT_CHIP = {
+  win: { text: "WIN", cls: "day-settle--win" },
+  loss: { text: "LOSS", cls: "day-settle--loss" },
+  push: { text: "PUSH", cls: "day-settle--push" },
+  pending: { text: "PENDING", cls: "day-settle--pending" },
+  unsettled: { text: "UNSETTLED", cls: "day-settle--pending" },
+};
+
+// market_key -> the plain-English noun for that market. Never guessed --
+// an unrecognized market_key falls through to the raw key itself below.
+const MARKET_NOUN = { h2h: "moneyline", spreads: "spread", totals: "total" };
+
+/** "home"/"away"/"over"/"under" (case-insensitive) are the only side
+ * values this client knows how to turn into a bet phrase. Anything else --
+ * including the stray 16-hex genome id seen leaking into this field on one
+ * row -- is NOT guessed at; the caller falls back to printing it verbatim. */
+function knownSide(side) {
+  if (typeof side !== "string") return null;
+  const s = side.toLowerCase();
+  return (s === "home" || s === "away" || s === "over" || s === "under") ? s : null;
+}
+
+function teamAbbrForSide(side, game) {
+  if (side === "home") return (game && game.home_team) || null;
+  if (side === "away") return (game && game.away_team) || null;
+  return null;
+}
+
+function formatLineText(line) {
+  if (line === null || line === undefined || line === "") return null;
+  const n = Number(line);
+  if (Number.isFinite(n)) return n > 0 ? `+${n}` : `${n}`;
+  return String(line);
+}
+
+/**
+ * Turns one recommendation's market_key/side/line into a bet phrase a
+ * customer reads naturally -- "ARI moneyline", "Under 8.5", "HOU -1.5" --
+ * using the game's OWN away/home abbreviations (never a guess). Every
+ * branch either resolves a real value or falls through to the last
+ * paragraph, which prints whatever raw components exist and nothing it
+ * doesn't have -- the same "never a fabricated label" rule dayDateLabel
+ * above states for the date. This is presentation only: no field here is
+ * recomputed, just reworded.
+ */
+function humanizeBetLabel(rec, game) {
+  const marketKey = rec.market_key;
+  const side = knownSide(rec.side);
+  const lineText = formatLineText(rec.line);
+
+  if (marketKey === "h2h") {
+    const abbr = teamAbbrForSide(side, game);
+    if (abbr) return `${abbr} moneyline`;
+  } else if (marketKey === "spreads") {
+    const abbr = teamAbbrForSide(side, game);
+    if (abbr && lineText) return `${abbr} ${lineText}`;
+    if (abbr) return `${abbr} spread`;
+  } else if (marketKey === "totals") {
+    if (side === "over") return lineText ? `Over ${lineText}` : "Over";
+    if (side === "under") return lineText ? `Under ${lineText}` : "Under";
+  }
+
+  // Nothing above could be resolved. Show exactly what the payload has
+  // rather than fabricate a team -- with one exception that is still not a
+  // fabrication: some records carry a 16-hex system id in `side` where a
+  // side belongs, and printing it produced "spread · ac8dfe0cf3aeecdb ·
+  // +1.5" on a customer page. That string is not a bet and not a side. The
+  // row still shows the market and the line it really has, and says
+  // plainly that the side was not recorded. Nothing is invented: no team
+  // is guessed, and the id is not silently dropped as if the field were
+  // empty -- it was populated, just not with a side.
+  const marketText = MARKET_NOUN[marketKey] || marketKey || "unknown market";
+  const rawSide = rec.side === null || rec.side === undefined ? "" : String(rec.side);
+  const sideIsSystemId = /^[0-9a-f]{16}$/i.test(rawSide);
+  const parts = [marketText];
+  if (rawSide && !sideIsSystemId) parts.push(rawSide);
+  if (lineText) parts.push(lineText);
+  if (sideIsSystemId) parts.push("side not recorded (a system id was stored here)");
+  return parts.length ? parts.join(" · ") : "no market recorded";
+}
+
+/* ---------------------------------------------------------------------
+ * ROW RENDERER -- one compact recommendation row for this detail page
+ * only. matchups.js's frozenPositionRow (shared with the Today grid,
+ * which shows at most 4 STAKED positions per game) prints the class
+ * chip's full meaning sentence and the full thin-board explanation on
+ * every row; on this page that renders up to ~213 times on a single
+ * slate, which is the wall this row exists to fix. Both explanations
+ * stay fully reachable -- see dayDetailLegend below -- just not repeated
+ * per row. The class chip color classes (mx-pos__class--*) and the
+ * settlement chip classes (day-settle--*) are shared, generic selectors
+ * already used by matchups.js, reused here (not redefined) so a WIN/LOSS
+ * color or a class tint still can never drift between the two screens.
+ * ------------------------------------------------------------------- */
+function dayPositionRow(rec, game) {
+  const row = el("div", { class: "day-pos", "data-hook": "day-position" });
+
+  const top = el("div", { class: "day-pos__top" });
+  const cls = rec.system_class;
+  top.appendChild(el("span", {
+    class: `badge chamfer chamfer--chip day-pos__class mx-pos__class--${cls ? cls.toLowerCase() : "unknown"}`,
+    "data-hook": "day-position-class",
+    text: CLASS_CHIP_LABEL[cls] || cls || "UNKNOWN CLASS",
+  }));
+  if (rec.staked) {
+    const settlement = rec.settlement || {};
+    const meta = SETTLEMENT_CHIP[settlement.status] || {
+      text: settlement.status ? String(settlement.status).toUpperCase() : "NO SETTLEMENT DATA",
+      cls: "day-settle--pending",
+    };
+    top.appendChild(el("span", { class: `day-settle ${meta.cls}`, "data-hook": "day-position-settlement", text: meta.text }));
+  } else {
+    top.appendChild(el("span", { class: "badge chamfer chamfer--chip badge--outline", text: "NOT STAKED" }));
+  }
+  top.appendChild(el("span", { class: "day-pos__label", "data-hook": "day-position-label",
+    text: humanizeBetLabel(rec, game) }));
+  const priceText = formatAmerican(rec.price_american);
+  top.appendChild(el("span", { class: "day-pos__price", text: priceText || "—" }));
+
+  const settlement = rec.settlement || {};
+  if ((settlement.status === "win" || settlement.status === "loss" || settlement.status === "push")
+      && typeof settlement.profit_units === "number") {
+    const tone = settlement.profit_units >= 0 ? "day-pos__profit--pos" : "day-pos__profit--neg";
+    top.appendChild(el("span", { class: `day-pos__profit ${tone}`, "data-hook": "day-position-profit",
+      text: `${settlement.profit_units >= 0 ? "+" : ""}${settlement.profit_units.toFixed(2)}u` }));
+  }
+  row.appendChild(top);
+
+  const bottom = el("div", { class: "day-pos__bottom" });
+  const books = rec.books_at_decision;
+  if (typeof rec.value_points === "number") {
+    bottom.appendChild(el("span", { class: "day-pos__books",
+      text: typeof books === "number" ? `${books} books at decision` : "books at decision not available" }));
+    bottom.appendChild(el("span", { class: "day-pos__vp",
+      text: `${rec.value_points >= 0 ? "+" : ""}${rec.value_points.toFixed(2)} pts` }));
+  } else if (rec.value_points_reason) {
+    // The full sentence (why no value comparison exists) is stated once,
+    // in dayDetailLegend -- this chip carries only this row's own book
+    // count so the reason it's missing stays scannable per row.
+    const n = typeof books === "number" ? books : 0;
+    bottom.appendChild(el("span", { class: "day-pos__thin", "data-hook": "day-position-thin-board",
+      text: `THIN BOARD · ${n} BOOK${n === 1 ? "" : "S"}` }));
+  } else {
+    bottom.appendChild(el("span", { class: "day-pos__books",
+      text: typeof books === "number" ? `${books} books at decision` : "books at decision not available" }));
+  }
+  row.appendChild(bottom);
+
+  return row;
+}
+
+/**
+ * Scans every recommendation on the date for the two facts dayDetailLegend
+ * needs: which system classes actually appear (so the legend never states
+ * a meaning for a class not on this slate) and, if any row's value
+ * comparison was suppressed by the book floor, the GENERIC half of that
+ * explanation. `value_points_reason` is always
+ * "<N> book(s) quoted at decision time; <generic explanation>"
+ * (src/report/daily_record.py) -- the generic half after the semicolon is
+ * identical on every row regardless of N, so lifting it from whichever row
+ * has it first (rather than hardcoding the book floor here) means this
+ * client never has to duplicate that policy number.
+ */
+function collectLegendFacts(games) {
+  const classes = new Set();
+  let thinBoardSentence = null;
+  for (const game of games) {
+    for (const rec of game.recommendations || []) {
+      if (rec.system_class) classes.add(rec.system_class);
+      if (!thinBoardSentence && rec.value_points_reason) {
+        const reason = String(rec.value_points_reason);
+        const sepIndex = reason.indexOf(";");
+        const tail = sepIndex >= 0 ? reason.slice(sepIndex + 1).trim() : reason;
+        thinBoardSentence = tail ? `${tail.charAt(0).toUpperCase()}${tail.slice(1)}.` : reason;
+      }
+    }
+  }
+  return { classes, thinBoardSentence };
+}
+
+const CLASS_LEGEND_ORDER = ["FORWARD_TEST", "MARKET_REFERENCE", "CONTROL"];
+
+/** States each system class's meaning, and (when it applies anywhere on
+ * this date) the thin-board explanation, exactly ONCE for the whole page --
+ * see dayPositionRow's own comment for why this exists. Returns null when
+ * there is nothing to explain (e.g. no games yet), never an empty shell. */
+function dayDetailLegend(games) {
+  const { classes, thinBoardSentence } = collectLegendFacts(games);
+  if (classes.size === 0 && !thinBoardSentence) return null;
+
+  const wrap = el("div", { class: "day-detail__legend panel chamfer", "data-hook": "day-detail-legend" });
+  wrap.appendChild(el("div", { class: "day-detail__legend-title", text: "HOW TO READ EVERY POSITION BELOW" }));
+  for (const cls of CLASS_LEGEND_ORDER) {
+    if (!classes.has(cls)) continue;
+    const line = el("p", { class: "day-detail__legend-line" });
+    line.appendChild(el("span", {
+      class: `badge chamfer chamfer--chip day-detail__legend-chip mx-pos__class--${cls.toLowerCase()}`,
+      text: CLASS_CHIP_LABEL[cls] || cls,
+    }));
+    line.appendChild(document.createTextNode(` ${CLASS_MEANING[cls] || ""}`));
+    wrap.appendChild(line);
+  }
+  if (thinBoardSentence) {
+    wrap.appendChild(el("p", { class: "day-detail__legend-line day-detail__legend-line--thin",
+      "data-hook": "day-detail-thin-board-note",
+      text: `THIN BOARD · ${thinBoardSentence}` }));
+  }
+  return wrap;
+}
+
 function dayDetailGame(game) {
   const card = el("article", { class: "day-detail__game panel chamfer", "data-hook": "day-detail-game" });
 
@@ -231,7 +454,7 @@ function dayDetailGame(game) {
     card.appendChild(notYetAvailable("No recommendations recorded for this game.", "NO RECOMMENDATIONS"));
   } else {
     const list = el("div", { class: "day-detail__positions" });
-    for (const rec of recs) list.appendChild(frozenPositionRow(rec));
+    for (const rec of recs) list.appendChild(dayPositionRow(rec, game));
     card.appendChild(list);
   }
   return card;
@@ -279,6 +502,9 @@ export async function renderDayDetail(container, date) {
   screen.appendChild(dayRollupSummary(payload.rollup));
 
   const games = payload.games || [];
+  const legend = dayDetailLegend(games);
+  if (legend) screen.appendChild(legend);
+
   if (games.length === 0) {
     screen.appendChild(notYetAvailable("No games recorded for this date.", "NO GAMES"));
   } else {

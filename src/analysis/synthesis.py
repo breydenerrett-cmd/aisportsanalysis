@@ -66,6 +66,7 @@ import math
 import re
 
 import src.analysis as analysis
+from src.analysis import prices
 from src.detect import base as detect
 
 # ---------------------------------------------------------------------------
@@ -606,7 +607,7 @@ def _from_price(dossier, price_improvement, candidates, skipped) -> None:
                   else str(price))
     statement = (
         f"The best number on {team} is {price_text} at "
-        f"{best.get('best_book') or 'an unnamed book'}, {pct:+.2f}% better in "
+        f"{prices.book_label(best.get('best_book'))}, {pct:+.2f}% better in "
         f"return than the de-vigged consensus of {books} books. That is "
         f"line-shopping value — a better execution price — not expected "
         f"value and not a prediction.")
