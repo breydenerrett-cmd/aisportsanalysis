@@ -126,3 +126,8 @@ The first run's 5 failures were never captured (stderr lost) and cannot be recon
 | `… test_refuses_before_touching_any_other_store` | ERROR (`TimeoutExpired`) | Same as above | Same. |
 
 No REAL REGRESSION was identified, but "suite green" is NOT yet a beta baseline: the local Parent should run the full suite once with no concurrent git pulls, confirm zero failures, and only then apply the FACTORY_OVERLAP_REPORT purity fix (§11).
+
+## Addendum 01:0xZ — P0-1 cron PROVEN; cloud capture routine is FALLBACK-ONLY
+- Scheduled run 34071611931 succeeded at 01:00:46Z → bot commit 0bc53ca. §8's SCHEDULER_INCIDENT is withdrawn: first-slot enqueue delay was ~1h50m.
+- The cloud session's hourly capture routine (trig_016uRqogxtFdQZSs67DJRada) now only launches when no bot commit / successful run exists in the last 45 min. The 00:15Z fallback overlapped the 01:00Z slot once (≈20 credits); rows union-merged in 4fc98fc.
+- Remaining P0-1 evidence to collect: a second consecutive scheduled run (01:15Z), and one observed overlap where the `forward-capture` concurrency group queues a run.
