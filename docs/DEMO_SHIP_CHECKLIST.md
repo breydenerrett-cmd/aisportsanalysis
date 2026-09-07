@@ -320,8 +320,21 @@ consequence: (1) leave it -- the genomes never play, and the product says so;
 games whose lineups have posted, which means one date can carry two frozen
 decision sets and the ledger/settlement path must be checked for that;
 (3) move the single run later, which trades pre-game lead time for lineup
-coverage and changes every decision's point-in-time meaning. This is a
-methodology call, not an implementation detail.
+coverage and changes every decision's point-in-time meaning.
+
+Evidence that makes option (2) LESS radical than it first looks, gathered
+after the options were written: every genome decision in the ledger through
+09-03 carries a `decision_utc` between 16:25Z and 01:51Z, and dates carry
+several distinct decision instants. The old cloud session invoked the loop
+repeatedly through the day, so multiple frozen sets per date is the
+behaviour this ledger already contains, not a new idea -- option (2) largely
+restores how the system ran until 09-05 rather than inventing a scheme.
+
+It is still not a change to make unattended at four in the morning: these
+rows are the audit trail the product now puts on screen, and writing a
+second set for a date under a scheduler nobody is watching is exactly the
+kind of thing that should be done with an owner awake. Hence: written up,
+not executed.
 
 ### FINDING F-2 (03:10Z): the matchup story cannot be told from the container
 
