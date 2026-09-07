@@ -674,3 +674,16 @@ visible. A route-by-route review finds route-by-route bugs.
   */15 cron, so roughly 1 firing in 22 expected. The watchdog dispatches are
   what has actually kept the board fresh all night. No dispatch this tick;
   newest capture is 18 min old.
+- 13:27Z Daily loop for 2026-09-07 dispatched (no scheduled run had fired
+  today; the 2026-09-06T23:57Z run failed honestly, refusing to settle a
+  partial slate while two game_pks had no result yet). Run 34127480634
+  succeeded clean: no ESCALATE, `unsettled_past_dates: []`, 15 settlements
+  written per system, commit 439f30d. **The loop's own push does not
+  trigger deploy-staging** -- a bot push with GITHUB_TOKEN never triggers
+  other workflows -- so the demo still served the 06:06Z image and reported
+  `settled_through` 2026-09-05 while the ledger on the branch had already
+  advanced. Dispatched deploy 34127788550 on 439f30d; after it landed the
+  live API reports `settled_through` 2026-09-06, /daily shows 09-06 fully
+  settled (47-40-3, +1.50u, 0 pending) and 09-07 frozen with 123 staked
+  positions pending. Worth remembering: after any daily loop the demo needs
+  a deploy, or it will keep showing yesterday's record with no error.
