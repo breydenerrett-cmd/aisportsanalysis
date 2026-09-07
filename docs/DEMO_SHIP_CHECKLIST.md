@@ -429,6 +429,16 @@ Ledger continues below.
   than the three-hour capture window AND no game is inside it. Verified
   against the served module across all four branches. 179 web tests.
 
+- 03:40Z capture watchdog: newest forward-capture WORKFLOW run was 54 min old,
+  which normally means dispatch. Did NOT dispatch, on purpose. The old cloud
+  session's in-session fallback had just captured at 03:38Z (commit 928022c:
+  weather, lineups, probables, transactions, umpires) -- the cutover rule
+  exists to stop two paths capturing the same slot -- and the odds pass would
+  in any case return "0 capture(s), 0 observations" until about 14:05Z,
+  three hours before the 17:05Z first pitch. Dispatching would have burned a
+  runner to write nothing. The scheduled-run count stands at 1 (the 01:00Z
+  run, already recorded).
+
 ## PHASE 2 SCORECARD against the owner's priority list
 
 | # | Item | State |
