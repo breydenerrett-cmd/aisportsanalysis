@@ -356,8 +356,15 @@ function boardTable(h2h, awayAbbr, homeAbbr, date, referenceNow) {
     bookCell.appendChild(el("span", { class: `ov2-bookname${stale ? " ov2-bookname--stale" : ""}`,
       text: bookLabel(row.book) }));
     if (stale) {
+      // One word, not a sentence. This flag repeats on every stale book row
+      // of every game -- 121 of them on a normal slate -- and at 8.5px it was
+      // both illegible and the loudest thing on the page. The full meaning
+      // lives once in the legend above ("OVER OUR 30-MINUTE THRESHOLD"), and
+      // the title carries it for anyone who hovers. Nothing is hidden: the
+      // row still tints, and `data-stale` on the <tr> is unchanged.
       bookCell.appendChild(el("span", { class: "ov2-rowflag", "data-hook": "odds-row-stale",
-        text: "OVER 30 MIN (OUR THRESHOLD)" }));
+        title: "Quoted more than 30 minutes ago, our staleness threshold",
+        text: "STALE" }));
     }
     tr.appendChild(bookCell);
     const hash = `#/betcheck?date=${encodeURIComponent(date)}&away=${encodeURIComponent(awayAbbr)}`
