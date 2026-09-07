@@ -19,7 +19,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100%;
+  flex: 1;
   padding: var(--sp-16) var(--gutter-desktop);
   background:
     radial-gradient(60% 50% at 50% 0%, rgba(0, 224, 255, .07), transparent 70%),
@@ -162,13 +162,13 @@
 .signup-card__notice--go { padding: 0; background: none; box-shadow: none; }
 
 /* ---- trust line + token (signup-complete) -----------------------------*/
+/* legal small print, not debug output -- it was mono/10.5px/ghost and read
+   as a developer footnote under a $19.99 button. Body face, legible size. */
 .signup-card__trust {
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  letter-spacing: .1em;
-  line-height: 1.7;
+  font-size: 12.5px;
+  line-height: 1.6;
   text-align: center;
-  color: var(--text-ghost);
+  color: var(--text-mute);
 }
 .signup-card__token {
   display: block;

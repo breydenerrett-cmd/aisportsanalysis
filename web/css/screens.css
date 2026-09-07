@@ -3064,6 +3064,17 @@
 .perf-cuts__note { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--v-t5); }
 @media (max-width: 899px) {
   .perf-cuts__rolling-row { grid-template-columns: 1fr; }
+  /* EVERY PRICED SIDE is eight columns. Squeezed into a phone the verdict
+     word ran into the evidence tier and the value points ran into the
+     market-implied percent. Scroll it in its own rail instead of dropping
+     columns -- the tier is what caps how strong the word is allowed to be,
+     so it is not something to hide on small screens. */
+  .opp-ranked { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .opp-ranked .ov2-table { min-width: 620px; }
+  .opp-ranked .ov2-table th,
+  .opp-ranked .ov2-table td { padding-left: var(--sp-3); padding-right: var(--sp-3); }
+  .opp-ranked .ov2-table td:nth-child(7),
+  .opp-ranked .ov2-table td:nth-child(8) { white-space: nowrap; }
 }
 
 /* ---- PRICE VERDICT block (web/js/betcheck.js's renderPriceVerdict) -----*/
@@ -3337,7 +3348,11 @@
 /* ---- DAILY RECAP GALLERY + DETAIL --------------------------------------- */
 .day-gallery-section { padding: 0 var(--gutter-desktop) var(--sp-11); }
 .day-gallery-body { display: flex; flex-direction: column; gap: var(--sp-6); }
-.day-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--sp-7); align-items: stretch; }
+.day-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--sp-7);
+  /* start, not stretch: a pending day carries three fewer rows than a settled
+     one, and stretching left a column of dead black under the short cards.
+     Each card is now exactly as tall as the record it actually holds. */
+  align-items: start; }
 .day-card { padding: var(--sp-8); display: flex; flex-direction: column; gap: var(--sp-4);
   background: linear-gradient(150deg, rgba(255, 255, 255, .035), rgba(255, 255, 255, .008)); }
 .day-card__head { display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap; }
@@ -3390,7 +3405,18 @@
 /* ---- 899px and below (RECORD STRIP / MATCHUP GRID / DAILY RECAP) ------- */
 @media (max-width: 899px) {
   .rec-strip { padding: 0 var(--gutter-mobile) var(--sp-7); }
-  .rec-strip__cells { grid-template-columns: 1fr; gap: var(--sp-4); }
+  /* Three stacked full-size cards ate the entire first phone screen, so the
+     slate itself was below the fold. Keep all three visible: one compact row,
+     figure over label, no card chrome competing with the games underneath. */
+  .rec-strip__cells { grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }
+  .rec-cell { padding: var(--sp-5) var(--sp-4); gap: var(--sp-2); }
+  .rec-cell__label { font-size: 9px; letter-spacing: .1em; }
+  .rec-cell__record { font-size: 13px; }
+  .rec-cell__figure { gap: var(--sp-2); }
+  .rec-cell__units { font-size: 19px; }
+  .rec-cell__pct { font-size: 12px; }
+  .rec-cell__sep { display: none; }
+  .rec-cell__pending, .rec-cell__empty { font-size: 10.5px; line-height: 1.35; }
 
   .mx-section { padding: 0 var(--gutter-mobile) var(--sp-9); }
   .mx-grid { grid-template-columns: 1fr; gap: var(--sp-6); }

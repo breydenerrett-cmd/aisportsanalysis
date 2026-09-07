@@ -23,7 +23,7 @@ import { BRAND_NAME } from "./brand.js";
  * and unedited. */
 const SUMMARY =
   "Beta. We show what supports a bet, what argues against it, and where the "
-  + "price is better -- never what to bet. Read the full disclaimer below.";
+  + "price is better — never what to bet. Read the full disclaimer below.";
 
 export async function renderDisclaimerFooter(container) {
   clear(container);

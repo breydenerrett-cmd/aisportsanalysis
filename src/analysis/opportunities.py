@@ -59,7 +59,7 @@ QUALIFYING_WORDS = ("STRONG VALUE", "VALUE", "LEAN")
 
 EMPTY_REASON = "NO QUALIFYING BEST BETS RIGHT NOW"
 
-LABEL = ("TOP OPPORTUNITIES -- price versus de-vigged consensus "
+LABEL = ("TOP OPPORTUNITIES — price versus de-vigged consensus "
          "(line-shopping value), not predictions")
 
 _SIDES = (("away", "home"), ("home", "away"))

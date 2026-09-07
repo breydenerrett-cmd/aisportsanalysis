@@ -370,7 +370,7 @@ export function renderError(container, err) {
   if (status === "network") {
     section.appendChild(el("p", { class: "gate__title", text: "We could not reach the board." }));
     section.appendChild(el("p", { class: "gate__body", text:
-      "That could be your own connection or a service outage -- it is not the same as "
+      "That could be your own connection or a service outage — it is not the same as "
       + "the server answering \"no games\"." }));
   } else {
     section.appendChild(el("p", { class: "gate__title", text: "That request did not go through." }));

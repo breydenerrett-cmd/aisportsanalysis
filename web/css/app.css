@@ -105,7 +105,11 @@
 }
 
 /* ---- outlet ---------------------------------------------------------*/
-.outlet { flex: 1; min-width: 0; }
+/* column flex, not a bare block: a short view (#/signup) can then say
+   `flex: 1` and center itself in the leftover height instead of sitting at
+   the top with a screen of dead black under it. */
+.outlet { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.outlet > * { min-width: 0; }
 
 /* Sections inside a screen align to the 40px desktop page gutter. */
 .gutter { padding-left: var(--gutter-desktop); padding-right: var(--gutter-desktop); }

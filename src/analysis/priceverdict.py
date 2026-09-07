@@ -265,11 +265,11 @@ def build_price_verdict(*, american_price, consensus_probability, books,
         if tier == "LOW":
             if age_seconds is not None and age_seconds > 7200:
                 risks.append(
-                    f"Board is {age_seconds / 3600.0:.0f} hr old -- prices "
+                    f"Board is {age_seconds / 3600.0:.0f} hr old — prices "
                     "may have moved")
             else:
                 risks.append(
-                    "Board age is unknown -- prices may have moved")
+                    "Board age is unknown — prices may have moved")
         if books < 8:
             risks.append(f"Only {books} books quoted")
 

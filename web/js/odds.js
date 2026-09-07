@@ -277,7 +277,7 @@ function noBoardBlock(h2h) {
     text: "No price board recorded for this game." }));
   box.appendChild(el("p", { class: "ov2-noboard__body",
     text: "There is no board and this could be a genuine gap in coverage or a club-name match failure on "
-        + "our side -- both look identical from here, so we say exactly this and nothing further." }));
+        + "our side — both look identical from here, so we say exactly this and nothing further." }));
   const staleness = h2h.staleness || {};
   const fields = el("div", { class: "ov2-noboard__fields" });
   const field = (key, value) => {
@@ -466,7 +466,7 @@ function gameCard(gameEntry, { date, referenceNow }) {
   }));
   card.appendChild(actions);
   card.appendChild(el("p", { class: "ov2-disclaimer",
-    text: "Comparison only. No sportsbook link and no bet-placement endpoint here -- we show the number, "
+    text: "Comparison only. No sportsbook link and no bet-placement endpoint here — we show the number, "
         + "not a way to it." }));
 
   return card;

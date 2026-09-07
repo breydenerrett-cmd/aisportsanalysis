@@ -465,7 +465,7 @@ function matchupContextPanel(row) {
     ]));
     panel.appendChild(cols);
     panel.appendChild(el("p", { class: "gv2-matchup__caption",
-      text: "MARKET-IMPLIED CONSENSUS, DE-VIGGED -- a measurement of the board, not a forecast." }));
+      text: "MARKET-IMPLIED CONSENSUS, DE-VIGGED — a measurement of the board, not a forecast." }));
   } else {
     panel.appendChild(notYetAvailable(
       "No priced market for this game yet, so there is no consensus share to show.", "NO MARKET"));
@@ -476,7 +476,7 @@ function matchupContextPanel(row) {
   // Team records and probable starters are deliberately not shown here --
   // see the module docstring's "what this screen does not print" note.
   panel.appendChild(el("p", { class: "gv2-matchup__gap-note",
-    text: "Team records and probable starters live on the Game screen, not here -- "
+    text: "Team records and probable starters live on the Game screen, not here — "
         + "this endpoint set does not carry them." }));
   return panel;
 }
@@ -617,7 +617,7 @@ function heroNoPlay(row, h2h, aggregates, sameVerdictCount, totalGames) {
     text: "WE CHECKED THE SLATE. NOTHING CLEARS THE BAR." }));
   main.appendChild(el("p", { class: "gv2-hero__body",
     text: "That is the honest answer most nights, and it is the answer this product is built to give. "
-        + "The market and the matchup below are still real -- we just will not invent a reason to act on "
+        + "The market and the matchup below are still real — we just will not invent a reason to act on "
         + "them." }));
   // Mobile-only: replaces the WHAT WE CHECKED TONIGHT panel below (V2-22).
   main.appendChild(heroStatChips(aggregates));
@@ -681,7 +681,7 @@ function heroMarketUnavailable(row, date, aggregates, sameVerdictCount, totalGam
     text: "NO PRICE BOARD RECORDED FOR THIS GAME." }));
   hero.appendChild(el("p", { class: "gv2-hero__body gv2-hero__body--warn",
     text: "Nothing is broken. Either no book posted this game at capture time, or the club name did not "
-        + "match this product's map -- and since there is no reason field distinguishing the two, it does "
+        + "match this product's map — and since there is no reason field distinguishing the two, it does "
         + "not guess between them." }));
 
   const gaps = (row.data_quality && row.data_quality.gaps) || {};
@@ -754,7 +754,7 @@ function renderFeaturedSection(host, candidate, totalGames) {
   const head = el("div", { class: "gv2-featured__head" });
   head.appendChild(el("span", { class: "gv2-featured__tag", text: "FEATURED · LARGEST PRICE GAP AGAINST CONSENSUS" }));
   head.appendChild(el("span", { class: "gv2-featured__sub",
-    text: "Computed from tonight's boards -- a measured gap, not a judgement." }));
+    text: "Computed from tonight's boards — a measured gap, not a judgement." }));
   if (candidate) {
     head.appendChild(el("span", { class: "gv2-featured__count",
       text: `1 OF ${totalGames} · SWIPE FOR THE REST` }));
@@ -865,7 +865,7 @@ function renderWhatChanged(changed) {
       ? "Recorded, but not admissible as evidence."
       : "Recorded as a pre-event observation. It is not a prediction." }));
   lead.appendChild(notYetAvailable(
-    "The market's reaction to this change -- the line movement behind it -- is "
+    "The market's reaction to this change — the line movement behind it — is "
     + "not served by this board yet, so no chart is drawn.", "NO SERIES"));
   left.appendChild(lead);
   section.appendChild(left);
@@ -952,7 +952,7 @@ export async function renderToday(container) {
     host.appendChild(renderCaptureUnavailable({
       eyebrow: "SLATE UNREACHABLE",
       headline: "Tonight's slate didn't come back.",
-      body: "This is a fetch failure, not an honest empty night -- try reloading.",
+      body: "This is a fetch failure, not an honest empty night — try reloading.",
       reason: "GET /games/{date} did not respond.",
     }));
     host.appendChild(renderWhatChanged(changed));
@@ -983,7 +983,7 @@ export async function renderToday(container) {
     host.appendChild(renderCaptureUnavailable({
       eyebrow: "PRICE BOARD UNREACHABLE",
       headline: "Prices didn't come back this time.",
-      body: "The slate and verdicts below are real -- only the price board failed to load.",
+      body: "The slate and verdicts below are real — only the price board failed to load.",
       reason: "GET /odds/{date} did not respond.",
     }));
   }
@@ -1032,7 +1032,7 @@ export async function renderToday(container) {
           parsed: false,
           parseError: gapCandidate
             ? "The bet check for tonight's largest price gap did not come back."
-            : "No priceable gap against consensus on tonight's board -- there is nothing to feature." },
+            : "No priceable gap against consensus on tonight's board — there is nothing to feature." },
       }, {});
     }
   });

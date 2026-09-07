@@ -33,11 +33,11 @@ const CLASS_LABEL = {
   ALL: "ALL SYSTEMS COMBINED",
 };
 const CLASS_EXPLAIN = {
-  CONTROL: "Fixed-direction null baselines, never picks -- a floor to measure everything else against.",
+  CONTROL: "Fixed-direction null baselines, never picks — a floor to measure everything else against.",
   MARKET_REFERENCE: "Republishes the board's own de-vigged consensus. A calibration reference only, "
     + "never a system this product is claiming credit for.",
   FORWARD_TEST: "An unproven directional thesis, under forward test right now. Nothing here is validated "
-    + "yet -- these are the systems actually being tested.",
+    + "yet — these are the systems actually being tested.",
   ALL: "Every paper account rolled into one, across all three classes. A single system's own class "
     + "still tells you what kind of claim (or non-claim) it is making.",
 };
@@ -447,11 +447,11 @@ function polylinePoints(series, minV, maxV) {
 
 function renderSparkline(seriesAll, seriesForward) {
   const section = el("section", { class: "perf-spark panel chamfer", "data-hook": "performance-sparkline" });
-  section.appendChild(el("h3", { class: "perf-spark__title", text: "CUMULATIVE UNITS -- ALL vs FORWARD-TEST" }));
+  section.appendChild(el("h3", { class: "perf-spark__title", text: "CUMULATIVE UNITS — ALL vs FORWARD-TEST" }));
   const all = Array.isArray(seriesAll) ? seriesAll : [];
   const fwd = Array.isArray(seriesForward) ? seriesForward : [];
   if (all.length === 0 && fwd.length === 0) {
-    section.appendChild(notYetAvailable("No settled series yet -- nothing to chart.", "NO SERIES"));
+    section.appendChild(notYetAvailable("No settled series yet — nothing to chart.", "NO SERIES"));
     return section;
   }
   const values = [...all, ...fwd].map((p) => p.units_net).filter((n) => typeof n === "number");

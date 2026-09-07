@@ -299,7 +299,7 @@ function gqvIdentity(quick, advanced) {
   // covers the asymmetric case honestly without a whole-panel callout).
   if (!awayProbable && !homeProbable) {
     wrap.appendChild(notYetAvailable(
-      "Starters not posted yet for this game. The field is absent, not empty -- we show "
+      "Starters not posted yet for this game. The field is absent, not empty — we show "
       + "nothing rather than a placeholder name. Records and splits above are unaffected.",
       "UNANNOUNCED"));
   }
@@ -386,7 +386,7 @@ function gqvPrice(quick) {
     panel.appendChild(notYetAvailable(
       price.reason || "No price board recorded for this game.", "MARKET UNAVAILABLE"));
     panel.appendChild(el("p", { class: "gqv-price__footnote",
-      text: "has_board is false, and there is no reason field beyond what is shown above -- so we state "
+      text: "has_board is false, and there is no reason field beyond what is shown above — so we state "
           + "the fact and stop. The identity panel above is unaffected." }));
     return panel;
   }
@@ -432,7 +432,7 @@ function gqvPrice(quick) {
     panel.appendChild(el("p", { class: "gqv-price__note", "data-hook": "price-note", text: price.note }));
   }
   panel.appendChild(el("p", { class: "gqv-price__disclaimer",
-    text: "Comparison only. No sportsbook links and no wagers taken -- check the number yourself." }));
+    text: "Comparison only. No sportsbook links and no wagers taken — check the number yourself." }));
   return panel;
 }
 
@@ -550,7 +550,7 @@ function mapGameToStanding(quick, advanced) {
       label: price.label,
     } : null,
     boardDepthBooks: typeof price.books === "number" ? price.books : null,
-    thesisSupportCount: 0, // see docstring -- known primitive limitation, not "zero evaluated"
+    thesisSupportCount: 0, // see docstring — known primitive limitation, not "zero evaluated"
     counterargumentCount: 0,
     evidenceStatus: null,
     observedUtc: (price.staleness && price.staleness.observed_utc) || null,
@@ -564,9 +564,9 @@ function gqvSpotlight(quick, advanced) {
   const findings = quick.top_findings || [];
   wrap.appendChild(el("p", { class: "gqv-spotlight__lede",
     text: findings.length === 0
-      ? "Nothing clears the evidence bar, so the spotlight holds the price standing -- which is "
+      ? "Nothing clears the evidence bar, so the spotlight holds the price standing — which is "
         + "always real."
-      : "A finding cleared the bar for this game -- the spotlight below is its price standing." }));
+      : "A finding cleared the bar for this game — the spotlight below is its price standing." }));
   const mount = el("div", { "data-hook": "featured-bet-mount" });
   wrap.appendChild(mount);
   renderFeaturedBet(mount, mapGameToStanding(quick, advanced), {});
@@ -600,7 +600,7 @@ function gmvRankBadge(rank) {
     wrap.appendChild(el("div", { class: "gmv__rank gmv__rank--best", "data-hook": "gmv-best-side",
       text: "BEST SUPPORTED PRICE ON THIS GAME" }));
     wrap.appendChild(el("p", { class: "gmv__rank-caption",
-      text: "Ranked by price against the de-vigged consensus only -- not a prediction of who wins, "
+      text: "Ranked by price against the de-vigged consensus only — not a prediction of who wins, "
           + "and not advice to bet it." }));
     return wrap;
   }
@@ -687,7 +687,7 @@ function engineDecisionsList(engine) {
   const plays = Array.isArray(engine.forward_test_plays) ? engine.forward_test_plays : [];
   if (plays.length === 0) {
     wrap.appendChild(el("p", { class: "gmv-engine__none",
-      text: "No forward-test system played this game -- CONTROL and MARKET REFERENCE decisions are "
+      text: "No forward-test system played this game — CONTROL and MARKET REFERENCE decisions are "
           + "never shown here as interest (they carry no checkable thesis)." }));
   } else {
     const list = el("div", { class: "gmv-engine__plays" });
@@ -721,7 +721,7 @@ function engineDecisionsList(engine) {
 
   if (engine.market_reference_present) {
     wrap.appendChild(el("p", { class: "gmv-engine__note",
-      text: "A MARKET REFERENCE system also decided this game -- it republishes the board's own "
+      text: "A MARKET REFERENCE system also decided this game — it republishes the board's own "
           + "consensus, a calibration reference only, never a pick." }));
   }
   return wrap;
@@ -882,7 +882,7 @@ const SECTION_BLURBS = {
     + "direction label.",
   multibook_board: "Per-book prices from one capture instant, with best-price ties.",
   what_changed: "Roster/lineup events this poller has seen for this game.",
-  teams: "Records, win pct, runs for and against per game, last-5 and last-10 -- every rate with "
+  teams: "Records, win pct, runs for and against per game, last-5 and last-10 — every rate with "
     + "its sample n.",
 };
 
@@ -940,7 +940,7 @@ function gavIntro(advanced) {
   wrap.appendChild(el("div", { class: "gav-intro__headline",
     text: `${sectionsCount} THING${sectionsCount === 1 ? "" : "S"} WE KNOW. ${gapsCount} WE DON'T.` }));
   wrap.appendChild(el("p", { class: "gav-intro__body",
-    text: "This is the advanced view. Not a stat dump -- an honest map of our coverage, with every "
+    text: "This is the advanced view. Not a stat dump — an honest map of our coverage, with every "
         + "gap named and its reason printed as the API gave it. Knowing what is missing is worth "
         + "more than a number we made up." }));
 
@@ -998,7 +998,7 @@ function gavHave(advanced) {
 function gavGapsConsolidated(gapCount) {
   return notYetAvailable(
     "This deployment serves the schedule, the live board and the frozen engine record. The "
-    + "per-game feature layers -- team records, bullpen, splits, handedness, lineups -- are not "
+    + "per-game feature layers — team records, bullpen, splits, handedness, lineups — are not "
     + `in this build, so they are reported as ${gapCount} named gaps below rather than guessed.`,
     "NOT IN THIS BUILD");
 }
@@ -1027,7 +1027,7 @@ function gavGaps(advanced) {
   const header = el("h4", { class: "gav-subhead gav-subhead--warn",
     text: `THE ${keys.length} GAP${keys.length === 1 ? "" : "S"} · REASONS PRINTED AS GIVEN` });
   const lede = el("p", { class: "gav-gaps__lede",
-    text: "Every one of these is a coverage finding, not an error -- knowing what is missing is "
+    text: "Every one of these is a coverage finding, not an error — knowing what is missing is "
         + "worth more than a number we made up." });
   const list = el("div", { class: "gav-gaps__list" });
   for (const key of keys) {
@@ -1117,8 +1117,8 @@ function gavMarketRefusal() {
   const block = el("div", { class: "gav-refusal" });
   block.appendChild(el("h4", { class: "gav-subhead", text: "MARKET REFUSAL" }));
   block.appendChild(el("p", { class: "gav-refusal__body",
-    text: "This product checks moneyline (h2h) only. Every other market -- spreads, totals, run "
-        + "line, player props and the rest -- is refused by name rather than approximated as a "
+    text: "This product checks moneyline (h2h) only. Every other market — spreads, totals, run "
+        + "line, player props and the rest — is refused by name rather than approximated as a "
         + "moneyline bet." }));
   return block;
 }

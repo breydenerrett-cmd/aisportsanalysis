@@ -85,12 +85,12 @@ export function renderValueMeter({ marketImplied, priceImplied, valuePoints, wor
 
   if (gap === null) {
     wrap.appendChild(el("p", { class: "vmeter-gap vmeter-gap--na", "data-hook": "value-meter-gap",
-      text: "Gap not computable -- one side of the comparison is missing." }));
+      text: "Gap not computable — one side of the comparison is missing." }));
   } else {
     const better = gap > 0;
     const flat = Math.abs(gap) < 0.05;
     const gapText = flat
-      ? "Priced right at fair -- no measurable gap either way."
+      ? "Priced right at fair — no measurable gap either way."
       : `${better ? "+" : ""}${gap.toFixed(1)} pts ${better ? "better" : "worse"} than fair`;
     wrap.appendChild(el("p", {
       class: `vmeter-gap ${flat ? "vmeter-gap--flat" : (better ? "vmeter-gap--better" : "vmeter-gap--worse")}`,

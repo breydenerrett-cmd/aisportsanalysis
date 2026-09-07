@@ -242,7 +242,7 @@ function renderCase(result) {
         text: "Nothing in our data supports this bet. That is not the same as it being wrong." }),
     ]));
     section.appendChild(el("p", { class: "bc2-block__note",
-      text: "thesis_support came back empty -- the usual case, not a fabricated finding." }));
+      text: "thesis_support came back empty — the usual case, not a fabricated finding." }));
     return section;
   }
   const list = el("ul", { class: "bc2-lines" });
@@ -529,14 +529,14 @@ function renderEvidenceStatus(result) {
   const value = result.evidence_status ? String(result.evidence_status).toUpperCase() : null;
   if (!value) {
     return naBlock("07", "EVIDENCE STATUS",
-      "No evidence rung was reported for this bet, so none is shown -- a rung is never assumed. Twenty-seven "
+      "No evidence rung was reported for this bet, so none is shown — a rung is never assumed. Twenty-seven "
       + "pre-registered hypotheses have been measured and none has survived.");
   }
   const section = block("07", "EVIDENCE STATUS");
   section.appendChild(el("span", { class: "bc2-pill", "data-hook": "evidence-status", text: value }));
   section.appendChild(el("p", { class: "bc2-block__note",
     text: value === "OBSERVATION"
-      ? "The only reachable value today. No badge -- a badge is reserved for tested and failed."
+      ? "The only reachable value today. No badge — a badge is reserved for tested and failed."
       : "" }));
   return section;
 }
@@ -598,7 +598,7 @@ function renderBottomLine(result) {
   recommendation.appendChild(renderUnknown(result.recommendation));
   section.appendChild(recommendation);
   section.appendChild(el("p", { class: "bc2-block__foot",
-    text: "MECHANICALLY COMPOSED FROM FINDING COUNT + PRICE CLAUSE + DISCLAIMER -- NOT EDITORIAL" }));
+    text: "MECHANICALLY COMPOSED FROM FINDING COUNT + PRICE CLAUSE + DISCLAIMER — NOT EDITORIAL" }));
   return section;
 }
 
@@ -636,7 +636,7 @@ function renderFreeMeter(host, freeCheck) {
     host.appendChild(meterBar(freeCheck.remaining, freeCheck.limit));
   } else {
     host.appendChild(el("p", { class: "bc2-freemeter__static",
-      text: "THREE FREE CHECKS, FOR LIFE -- NOT DAILY" }));
+      text: "THREE FREE CHECKS, FOR LIFE — NOT DAILY" }));
   }
 }
 
@@ -659,7 +659,7 @@ function renderExhausted(container, detail) {
   main.appendChild(el("p", { class: "bc2-wall__body",
     text: detail && detail.message
       ? String(detail.message)
-      : "Three in total, for the life of the account -- you've used them. You've seen what it does, "
+      : "Three in total, for the life of the account — you've used them. You've seen what it does, "
         + "including the nights it says there's nothing there." }));
   main.appendChild(meterBar(remaining, limit));
   const actions = el("div", { class: "bc2-wall__actions" });
@@ -669,7 +669,7 @@ function renderExhausted(container, detail) {
     "data-hook": "keep-using-board", text: "KEEP USING THE BOARD" }));
   main.appendChild(actions);
   main.appendChild(el("p", { class: "bc2-wall__fine",
-    text: "$19.99 a month, cancel whenever you like -- it schedules at the end of the period and you keep "
+    text: "$19.99 a month, cancel whenever you like — it schedules at the end of the period and you keep "
         + "access until then. The board stays open either way." }));
   wall.appendChild(main);
 
@@ -684,7 +684,7 @@ function renderExhausted(container, detail) {
     ]));
   }
   still.appendChild(el("p", { class: "bc2-wall__still-foot",
-    text: "AMBER, NOT RED -- A PAYWALL IS NOT A RISK · 402 ON POST /betcheck" }));
+    text: "AMBER, NOT RED — A PAYWALL IS NOT A RISK · 402 ON POST /betcheck" }));
   wall.appendChild(still);
   container.appendChild(wall);
 }

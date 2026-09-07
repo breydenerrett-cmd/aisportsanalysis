@@ -198,7 +198,7 @@ function frozenPositionsBlock(dailyGame) {
 
   if (staked.length > 4) {
     const details = el("details", { class: "mx-frozen__details" });
-    details.appendChild(el("summary", { text: `${staked.length} PAPER POSITIONS -- SHOW ALL` }));
+    details.appendChild(el("summary", { text: `${staked.length} PAPER POSITIONS — SHOW ALL` }));
     details.appendChild(list);
     block.appendChild(details);
   } else {
@@ -462,12 +462,12 @@ export async function renderMatchups(container, date, preloadedToday = null) {
 
   if (!dailyPayload) {
     body.appendChild(notYetAvailable(
-      "The frozen pregame record did not load for this date -- paper positions are not shown below.",
+      "The frozen pregame record did not load for this date — paper positions are not shown below.",
       "RECORD UNREACHABLE"));
   }
   if (!oppPayload) {
     body.appendChild(notYetAvailable(
-      "Live price data did not load for this date -- the moneyline and price-read sections are not shown below.",
+      "Live price data did not load for this date — the moneyline and price-read sections are not shown below.",
       "PRICE DATA UNREACHABLE"));
   }
 
