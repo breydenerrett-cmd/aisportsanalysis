@@ -503,6 +503,25 @@ surface's own module tests.
   do capture every slot and cannot be bought back later. The odds pass will
   still return nothing until about 14:05Z, and costs no credits to try.
 
+## FINAL DEMO PATH — verified in the browser on staging, 04:30–04:46Z
+
+Walked the owner's required path end to end at 1440px and again at 375px.
+
+| Surface | Verified |
+|---|---|
+| LIVE URL | `/app` resolves to `/web/`, no token; the bare domain shows the landing page with OPEN THE LIVE DEMO |
+| TODAY | record strip (0-0-0 · 48 pending / 101-99-9 +2.83u / 124-112-9 +11.17u), slate banner, hero, TOP OPPORTUNITIES above the grid, 11 matchup cards with starters, moneyline, market-implied %, book count, capture age and the live price read |
+| TOP PLAY | qualifying cards when they exist; tonight none qualify, so the exact text NO QUALIFYING BEST BETS RIGHT NOW plus the full ranked table of all 18 priced sides and the unpriced list with reasons |
+| MATCHUP DETAIL | all 11 games return 200 and open; probable starters, verdict, price panel, MODEL vs MARKET, ENGINE DECISIONS. The three with no engine data (AZ@KC, MIN@DET, WSH@SD) are exactly the three with no board |
+| BET CHECK | prefilled from a card link; PRICE VERDICT with word, fair price, both probabilities, meter, evidence tier, books, capture age, reasons and risks. Uses the open route, no three-check cap |
+| PERFORMANCE | label, record strip, recap gallery, per-class standings, all four cuts, rolling 7/30, recent picks, reasoning split |
+| DAILY RECAP | 7 day cards; `#/day/2026-09-05` shows 45 WIN / 52 LOSS / 2 PUSH chips matching its own 45-52-2 rollup, 15 final scores, units, and distinct win/loss/push colours |
+| Refresh | `/app` reloaded twice, both times 11 cards and the full grid |
+| Console | no errors on any surface, desktop or mobile |
+| Mobile 375px | no horizontal overflow on Today, Game, Performance or the day record; tab bar carries RESULTS |
+| Timestamps | every board shows its capture time and age; the strip reads PRICES AS OF 10:05pm ET |
+| Unpriced games | stay unpriced everywhere, named with a reason, never scored |
+
 ## PHASE 2 SCORECARD against the owner's priority list
 
 | # | Item | State |
