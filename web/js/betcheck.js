@@ -367,8 +367,12 @@ function renderMarket(result) {
   // capture instant. Shown as a clock, never as a fabricated "X min ago".
   const observed = et(best && best.observed_utc);
   section.appendChild(el("p", { class: "bc2-block__foot",
-    text: observed ? `OBSERVED ${observed} · NO age_seconds FIELD ON THIS PAYLOAD`
-      : "NO FRESHNESS FIGURE ON THIS PAYLOAD" }));
+    // `age_seconds` was the payload's field name. The point being made is
+    // that this endpoint gives a capture instant and no age, so no "X min
+    // ago" can be shown without inventing it. That point survives; the
+    // field name does not.
+    text: observed ? `CAPTURED ${observed} · NO AGE ON THIS FEED, ONLY THE CAPTURE TIME`
+      : "NO CAPTURE TIME ON THIS FEED" }));
   return section;
 }
 
@@ -898,6 +902,22 @@ export async function renderBetCheck(container, prefill = {}) {
     }
     renderResult(resultHost, result);
   });
+
+  // A deep link that already carries every field is a request for the
+  // answer, not for a filled-in form. "CHECK THIS PRICE" on an opportunity
+  // card and the same link on a matchup both arrive here with date, away,
+  // home, side and price, and used to land on "Paste a bet to begin." over
+  // an already-complete ticket -- the reader had to press CHECK IT to be
+  // told what they had just clicked to be told. Run it for them. A partial
+  // link (someone hand-editing the hash) still gets the form and the empty
+  // state, and nothing is prefilled that the link did not carry.
+  const linkIsComplete = !!(prefill.date && prefill.away && prefill.home
+    && (prefill.side === "away" || prefill.side === "home")
+    && prefill.price !== undefined && prefill.price !== null && prefill.price !== ""
+    && Number.isFinite(Number(prefill.price)));
+  if (linkIsComplete) {
+    form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+  }
 
   armEntrances(ticket);
 }

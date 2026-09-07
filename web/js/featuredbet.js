@@ -102,7 +102,7 @@
  */
 
 import { el, clear, verdictLabel,
-  formatAmerican, formatConsensusShare, formatEasternClock } from "./dom.js";
+  formatAmerican, formatConsensusShare, formatEasternClock, formatBook } from "./dom.js";
 import { teamColors } from "./teamcolors.js";
 import { teamName } from "./labels.js";
 
@@ -322,7 +322,7 @@ export function renderFeaturedBet(container, standing, opts = {}) {
     present: !!s.priceStanding,
     node: s.priceStanding
       ? el("span", { text: `Better than ${s.priceStanding.betterThan} of ${s.priceStanding.total} books` })
-      : notAvailable("requires the full per-book board; POST /betcheck does not return one"),
+      : notAvailable("needs the full per-book board, which this check does not carry"),
   }));
 
   segments.appendChild(segmentRow({
@@ -330,7 +330,9 @@ export function renderFeaturedBet(container, standing, opts = {}) {
     present: s.yourPriceBeatsConsensus !== null && s.yourPriceBeatsConsensus !== undefined,
     node: (s.yourPriceBeatsConsensus === null || s.yourPriceBeatsConsensus === undefined)
       ? notAvailable("no priceable consensus for this side")
-      : el("span", { text: `your_price_beats_consensus = ${s.yourPriceBeatsConsensus}` }),
+      // was `your_price_beats_consensus = true`: the payload's own field
+      // name and a JS boolean, printed on a customer page. Same fact.
+      : el("span", { text: s.yourPriceBeatsConsensus ? "Yes" : "No" }),
   }));
 
   segments.appendChild(segmentRow({
@@ -340,7 +342,9 @@ export function renderFeaturedBet(container, standing, opts = {}) {
       const wrap = el("span", {});
       const pts = typeof s.priceImprovement.improvementPoints === "number"
         ? `${s.priceImprovement.improvementPoints >= 0 ? "+" : ""}${(s.priceImprovement.improvementPoints * 100).toFixed(2)} pts` : null;
-      const book = s.priceImprovement.book;
+      // formatBook turns the machine slug (`williamhill_us`) into the book's
+      // name -- the slug was reaching the page verbatim.
+      const book = formatBook(s.priceImprovement.book);
       const bookPrice = formatAmerican(s.priceImprovement.americanPrice);
       const consensusPct = formatConsensusShare(s.priceImprovement.consensusImpliedProbability);
       const bits = [];
@@ -363,7 +367,10 @@ export function renderFeaturedBet(container, standing, opts = {}) {
   segments.appendChild(segmentRow({
     label: "SUPPORT VS CONCERN", hook: "fb-segment-support-concern",
     present: true, // thesis_support / counterargument are structurally always present, even when empty
-    node: el("span", { text: `${s.thesisSupportCount} thesis_support / ${s.counterargumentCount} counterargument` }),
+    // `thesis_support` / `counterargument` are the payload's field names.
+    // The counts are the point; the field names were never the point.
+    node: el("span", { text: `${s.thesisSupportCount} supporting, `
+      + `${s.counterargumentCount} against` }),
   }));
 
   if (s.priceImprovement && s.priceImprovement.label) {
