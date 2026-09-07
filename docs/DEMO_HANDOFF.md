@@ -204,12 +204,18 @@ per-game refusal reason is printed directly above it.
 
 ## NEXT 3 IMPROVEMENTS
 
-1. **Confirm F-1 on a live cron run.** The workflow is registered and
-   proven safe, but no genome has yet decided on a real slate, so the
-   honest answer to "what does it like tonight" is still "nothing". Until a
-   `FORWARD_TEST` count comes back non-zero this remains a very good
-   instrument rather than a product with an opinion. Everything else here
-   is cosmetic next to it.
+1. ~~**Confirm F-1 on a live cron run.**~~ **PROVEN 2026-09-07 23:13Z --
+   with one caveat.** Run 34169306905 recorded `FORWARD_TEST: 6`: the
+   first thesis-carrying systems to decide on a live slate, alongside 45
+   reasoned stand-downs (NO_LINEUP 16, NO_SIGNAL 19, BELOW_ENTRY 2,
+   MARKET_UNAVAILABLE 8). Each play is recorded with `p_model=None` and
+   `value_basis=price_standing_only` -- it played on price standing and
+   the record says so. The caveat: the 21:10Z cron did not fire; this was
+   a manual dispatch. `scripts/capture_tick.ps1` now covers the afternoon
+   slate (after 21:10Z, once per date, counting only runs created at or
+   after 21:10Z), so from tomorrow the local task fires it.
+   **What to read tomorrow:** the 21:10Z+ run's per-class line. A non-zero
+   FORWARD_TEST from the task, unattended, closes this item for good.
 2. ~~**Fix F-2**~~ **SHIPPED 2026-09-07 (commit 4a8c6b1).** The matchup
    page now carries team records with sample n, starter form (ERA, FIP,
    WHIP, K/9, IP per start, days rest, recent vs season), bullpen workload

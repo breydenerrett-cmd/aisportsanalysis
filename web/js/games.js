@@ -76,6 +76,7 @@ import { el, clear, renderAbsent, humanizeKey,
   formatEasternTime, formatEasternClock, renderWordChip } from "./dom.js";
 import { renderLoadingSkeleton, renderError, notYetAvailable } from "./states.js";
 import { renderFeaturedBet } from "./featuredbet.js";
+import { renderGameStory } from "./gamestory.js";
 import { renderValueMeter } from "./valuemeter.js";
 import { renderStaleness } from "./meta.js";
 import { teamColors } from "./teamcolors.js";
@@ -1215,6 +1216,7 @@ export async function renderGameDetail(container, date, away, home) {
   body.appendChild(gqvIdentity(quick, advanced));
   body.appendChild(gqvVerdict(quick));
   body.appendChild(gqvPrice(quick));
+  const gameStory = renderGameStory(advanced, quick); if (gameStory) body.appendChild(gameStory);
   body.appendChild(gqvSpotlight(quick, advanced));
   body.appendChild(gqvModelVsMarket(payload, quick));
   body.appendChild(gqvTeams(advanced, quick));
