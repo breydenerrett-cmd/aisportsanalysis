@@ -98,7 +98,16 @@ what does it like, why, and how has it actually done.
   says LAST UPDATED instead of LIVE.
 - Moneyline only on the odds board and in Bet Check. Spreads, totals and
   first-five prices are captured into the store but not exposed on these
-  screens yet.
+  screens yet. The engine does freeze run-line and totals positions, and
+  those DO show on the matchup cards and in the daily record.
+- **The game screen cannot tell the matchup story yet** (finding F-2). It
+  shows the park, the board and the price read, but team records, bullpen,
+  splits, handedness and lineups all come back as gaps, because the API
+  never assembles those inputs and the container ships without the
+  historical feature stores they need. Starter names are fine — they ride on
+  the schedule. Fixing it means publishing the rebuilt stores the way the
+  Statcast pitch store is already published, then threading them through;
+  that is a repo-size decision for you, written up in the checklist.
 - On 2026-09-07 four games had no usable board at capture time (AZ@KC,
   MIN@DET, WSH@SD not quoted; LAA@BOS only 5 books, below the 6-book
   consensus floor). They are listed as UNPRICED with the reason, never

@@ -322,6 +322,41 @@ decision sets and the ledger/settlement path must be checked for that;
 coverage and changes every decision's point-in-time meaning. This is a
 methodology call, not an implementation detail.
 
+### FINDING F-2 (03:10Z): the matchup story cannot be told from the container
+
+`GET /game/{date}/{away}/{home}` on staging returns THREE dossier sections
+(park, price_improvement, multibook_board) and TWELVE gaps: teams, starters,
+weather, news, lineups, matchup_depth, bullpen, arsenals, travel, splits,
+matchup_history, market. That is why the game screen shows a column of
+NOT YET AVAILABLE panels and why the directive's "tell the story of the
+matchup" (pitchers, offence, bullpen, handedness) cannot be built tonight.
+
+Two compounding causes, both structural, neither a bug in the UI:
+1. `api/games._build_entries` calls `briefing.build_slate(games, store)` with
+   NO feature inputs, while the CLI's `cmd_brief` (src/cli.py:1194) passes
+   pitcher_logs, bullpen, lineups, handedness, splits, matchups, arsenals,
+   weather, travel and news. The API was written as a thin read of the
+   domain path and never grew the assembly step.
+2. Even if it did, the inputs are not in the image: `data/historical/*` is
+   gitignored (deliberately -- these are large derived stores), so the
+   container has no results store, no pitcher logs and no bullpen log. The
+   Actions daily-loop rebuilds them on the runner every morning and throws
+   them away with the runner.
+
+Note the starter NAMES are fine -- they ride on the MLB schedule
+(`dossier.game.away_probable`) and the matchup grid already shows them. What
+is missing is every analytical layer beneath them.
+
+To fix, in order of size: (a) have the daily loop publish the rebuilt
+results/pitcher/bullpen stores the way `data-seed/statcast` already
+publishes the pitch store, and have `deploy/Dockerfile` copy them; then
+(b) thread those inputs through `_build_entries` the way `cmd_brief` does.
+(a) is a repo-size and data-policy decision (the same class of call as F-1's
+schedule question) and is left for Brey; (b) is a couple of hours once (a)
+exists. Until then the honest thing on screen is one sentence explaining
+that this deployment ships without the feature stores, rather than twelve
+unexplained NOT YET AVAILABLE panels.
+
 Ledger continues below.
 
 - 02:35Z F-1 diagnosed (see the corrected finding above) and its silent half
