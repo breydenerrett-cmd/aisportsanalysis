@@ -255,4 +255,42 @@ Facts established before starting (verified 02:11–02:20Z, so no one re-derives
 | C2 | Multi-market live board: extend `oddspayload.MARKETS` to run line and total with per-line consensus grouping, so matchup detail shows live best bets beyond moneyline | AFTER F2 |
 | F3 | Matchup detail story (pitchers, offence, bullpen, warnings, reasoning), performance cuts by market / tier / odds range, polish | AFTER C2 |
 
+### FINDING F-1 (02:25Z): the forward-test systems stopped deciding on 09-05
+
+Evidence, in order:
+- Decisions by class over the whole ledger: CONTROL 305, MARKET_REFERENCE 466,
+  FORWARD_TEST 64. Last decision date per class: CONTROL 2026-09-07,
+  MARKET_REFERENCE 2026-09-07, **FORWARD_TEST 2026-09-03**.
+- Per-date mix: 09-02 and 09-03 carry 21 and 19 forward-test decisions; 09-05,
+  09-06 and 09-07 carry ZERO while the baselines carry 213, 198 and 96.
+- The 16 genome systems are still registered
+  (`evolab_system.REGISTERED_SYSTEMS` = 27: 3 CONTROL, 8 MARKET_REFERENCE,
+  16 FORWARD_TEST) and the daily loop still dispatches every one of them --
+  the Actions run log for 34068303330 shows `engine slate --systems` listing
+  all 27 ids, then "decisions written: 96 new", none of them from a genome.
+- So the genomes are invoked and silently propose nothing for every game; the
+  baselines in the same run do write rows (including `refused_thin` ones).
+- Timing lines up exactly with the daily loop moving to GitHub Actions
+  (P0-2, first Actions-run loop on 09-05). A fresh runner has no gitignored
+  research stores; `scripts/daily_bootstrap.sh` deliberately restores only the
+  Statcast, results, pitcher and bullpen stores and states that
+  `data/processed/matchup_matrix.jsonl` "is NOT read by the daily loop". If a
+  genome's feature path reads that (or another unrestored store) it would
+  return no proposal without raising -- the leading hypothesis, NOT yet proven.
+
+Why it matters for the product: the genomes are the only systems with a
+directional thesis. Their 64 settled bets are what the Performance page shows
+as +19.18 units. Since 09-05 the daily slate has frozen only null baselines and
+market references, which the product must never present as picks to follow. So
+"what does the system like today" is honestly "nothing with a thesis" until
+this is fixed. Every surface built tonight states that rather than dressing a
+baseline up as a recommendation.
+
+Next step (not done tonight, deliberately -- it is data-plane work that can only
+be validated by a real 10:00Z slate): run one genome's `propose()` on a fresh
+checkout with the runner's exact data tree, find the missing input, and either
+restore it in `daily_bootstrap.sh` or make the genome refuse loudly (an
+`ESCALATE` line) instead of silently proposing nothing. A system that vanishes
+without a refusal row is the real defect here, whatever the missing input is.
+
 Ledger continues below.
