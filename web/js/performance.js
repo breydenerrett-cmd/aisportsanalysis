@@ -22,6 +22,8 @@
 import { apiGet } from "./api.js";
 import { el, clear, renderError, renderLoading, notYetAvailable, formatAmerican } from "./dom.js";
 import { armEntrances } from "./motion.js";
+import { renderRecordStrip } from "./recordstrip.js";
+import { renderDayRecap } from "./dayrecap.js";
 
 const CLASS_ORDER = ["FORWARD_TEST", "ALL", "MARKET_REFERENCE", "CONTROL"];
 const CLASS_LABEL = {
@@ -387,6 +389,16 @@ export async function renderPerformance(container) {
     return;
   }
   clear(screen);
+
+  // RECORD STRIP + DAILY RECAP GALLERY -- mounted above the existing
+  // paper-standings content (see this module's own docstring update);
+  // web/js/recordstrip.js and web/js/dayrecap.js own their own
+  // render/fetch, this screen only places them.
+  const recordStripHost = el("div", {});
+  screen.appendChild(recordStripHost);
+  await renderRecordStrip(recordStripHost);
+
+  await renderDayRecap(screen);
 
   screen.appendChild(renderHead(payload));
   screen.appendChild(renderSummaryTiles(payload.classes));

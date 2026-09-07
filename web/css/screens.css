@@ -2968,3 +2968,199 @@
 
   .gmv__cols { grid-template-columns: 1fr; }
 }
+
+/* =========================================================================
+ * RECORD STRIP / MATCHUP GRID / DAILY RECAP -- Task F2 (2026-09-07)
+ *
+ * .rec-  (web/js/recordstrip.js, GET /record)      TODAY / LAST 7 / LAST 30
+ * .mx-   (web/js/matchups.js, GET /today +
+ *         GET /daily/{date} + GET /opportunities/{date})  THE MATCHUP GRID
+ * .day-  (web/js/dayrecap.js, GET /daily + GET /daily/{date})
+ *         the daily-recap gallery and the #/day/{date} audit-trail detail
+ *
+ * SETTLEMENT COLOR (read before touching any --v-win/--v-money rule
+ * below): a settled WIN renders --v-win (tokens.css, new) -- none of the
+ * existing money/live/warn trio fits a settlement outcome. A settled
+ * LOSS renders --v-money -- the one deliberate use of red beyond a price
+ * advantage anywhere in this system, because a settled loss is a real,
+ * booked negative outcome, not a caution or an absence (tokens.css's own
+ * comment on --v-win repeats this same rule at its source). A push
+ * renders neutral grey. PENDING/UNSETTLED stay the ordinary amber
+ * --v-warn family, matching every other "not settled yet" state already
+ * in this client.
+ * ========================================================================= */
+
+/* ---- RECORD STRIP ---------------------------------------------------- */
+.rec-strip { padding: 0 var(--gutter-desktop) var(--sp-9); }
+.rec-strip__cells { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-7); }
+.rec-cell { padding: var(--sp-7); display: flex; flex-direction: column; gap: var(--sp-3); }
+.rec-cell__label { font-family: var(--font-display); font-size: 11.5px; font-weight: 800; letter-spacing: .14em;
+  color: var(--v-t4); }
+.rec-cell__figure { font-family: var(--font-mono); font-size: 16px; color: var(--v-t0); }
+.rec-cell__figure--pos { color: var(--v-win-lit); }
+.rec-cell__figure--neg { color: var(--v-money-lit); }
+.rec-cell__pending { margin: 0; font-size: 12px; color: var(--v-warn-label); }
+.rec-cell__empty { margin: 0; font-size: 12px; color: var(--v-t5); }
+.rec-strip__note { margin: var(--sp-5) 0 0; font-size: 12px; color: var(--v-t5); }
+
+/* ---- MATCHUP GRID ------------------------------------------------------ */
+.mx-section { padding: 0 var(--gutter-desktop) var(--sp-11); }
+.mx-body { display: flex; flex-direction: column; gap: var(--sp-9); }
+.mx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: var(--sp-8); }
+.mx-card { padding: var(--sp-8); display: flex; flex-direction: column; gap: var(--sp-5); }
+.mx-card--qualifies { box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .4); }
+.mx-card__header { display: flex; align-items: center; gap: var(--sp-4); }
+.mx-badge { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px;
+  font-family: var(--font-display); font-size: 11px; font-weight: 800; --r: 6px;
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r)); }
+.mx-card__matchup { flex: 1; font-family: var(--font-display); font-size: 16px; font-weight: 800; color: var(--v-t0);
+  text-align: center; }
+.mx-card__meta { margin: 0; font-family: var(--font-mono); font-size: 11px; color: var(--v-t5); }
+.mx-card__probables { display: flex; justify-content: space-between; gap: var(--sp-5); font-size: 12.5px; color: var(--v-t3); }
+.mx-card__probable { display: flex; align-items: baseline; gap: var(--sp-2); }
+.mx-card__probable-abbr { font-family: var(--font-mono); font-size: 10.5px; color: var(--v-t5); }
+.mx-card__probable-none { color: var(--v-t6); font-style: italic; }
+
+.mx-ml, .mx-read, .mx-frozen { padding-top: var(--sp-5); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06); }
+.mx-ml__title, .mx-read__title, .mx-frozen__title {
+  margin: 0 0 var(--sp-4); font-family: var(--font-display); font-size: 11px; font-weight: 800;
+  letter-spacing: .12em; color: var(--v-t4); }
+.mx-ml__cols { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-6); }
+.mx-ml__col { display: flex; flex-direction: column; gap: var(--sp-2); }
+.mx-ml__abbr { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; color: var(--v-t5); }
+.mx-ml__side { display: flex; flex-direction: column; gap: var(--sp-1); }
+.mx-ml__price { font-family: var(--font-mono); font-size: 15px; font-weight: 700; color: var(--v-t0); }
+.mx-ml__book { font-family: var(--font-mono); font-size: 10.5px; color: var(--v-t5); }
+.mx-ml__consensus { font-size: 11.5px; color: var(--v-t4); }
+.mx-ml__age { font-family: var(--font-mono); font-size: 10px; color: var(--v-t6); }
+.mx-ml__none { margin: 0; font-size: 12px; color: var(--v-t6); }
+
+.mx-read__side { display: flex; flex-direction: column; gap: var(--sp-2); margin-bottom: var(--sp-5); }
+.mx-read__side:last-child { margin-bottom: 0; }
+.mx-read__abbr { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; color: var(--v-t5); }
+.mx-read__vp { font-family: var(--font-mono); font-size: 12px; color: var(--v-money-lit); }
+.mx-read__reason { margin: 0; font-size: 12px; line-height: 1.5; color: var(--v-t5); }
+
+.mx-frozen__none-forward { margin: 0 0 var(--sp-4); font-size: 12px; color: var(--v-t5); }
+.mx-frozen__empty { margin: 0; font-size: 12px; color: var(--v-t5); }
+.mx-frozen__list { display: flex; flex-direction: column; gap: var(--sp-5); }
+.mx-frozen__details summary {
+  cursor: pointer; font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em;
+  color: var(--v-live-label); margin-bottom: var(--sp-4); }
+
+.mx-pos {
+  padding: var(--sp-5); background: rgba(255, 255, 255, .035); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .07);
+  --r: 8px; clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
+  display: flex; flex-direction: column; gap: var(--sp-2); }
+.mx-pos__head { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+.mx-pos__meaning { margin: 0; font-size: 11px; line-height: 1.45; color: var(--v-t5); }
+.mx-pos__market { margin: 0; font-size: 12.5px; color: var(--v-t2); }
+.mx-pos__figs { display: flex; align-items: baseline; gap: var(--sp-4); flex-wrap: wrap; }
+.mx-pos__price { font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--v-t0); }
+.mx-pos__books { font-family: var(--font-mono); font-size: 10.5px; color: var(--v-t5); }
+.mx-pos__vp { font-family: var(--font-mono); font-size: 11.5px; color: var(--v-money-lit); }
+.mx-pos__vp-reason { margin: 0; font-size: 11.5px; line-height: 1.45; color: var(--v-warn-lit); }
+.mx-pos__profit { font-family: var(--font-mono); font-size: 12px; font-weight: 700; }
+.mx-pos__profit--pos { color: var(--v-win-lit); }
+.mx-pos__profit--neg { color: var(--v-money-lit); }
+
+/* Class-specific chip tints, distinct from the money/live/warn reserved
+   trio -- a paper position's SYSTEM CLASS is identity/classification, not
+   a price advantage or a caution, so it gets its own small palette. */
+.mx-pos__class--control { background: rgba(255, 255, 255, .09); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18);
+  color: var(--v-t3); }
+.mx-pos__class--market_reference { background: rgba(0, 224, 255, .14); box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .38);
+  color: var(--v-live-label); }
+.mx-pos__class--forward_test { background: rgba(255, 176, 32, .16); box-shadow: inset 0 0 0 1px rgba(255, 176, 32, .4);
+  color: var(--v-warn-label); }
+
+/* Settlement chips -- see this section's own head comment for the color
+   rule (win green / loss red / push grey / pending amber). Shared by
+   web/js/matchups.js's per-game cards and web/js/dayrecap.js's audit
+   trail via the one frozenPositionRow renderer both import. */
+.day-settle {
+  display: inline-flex; align-items: center; padding: 4px 10px; font-family: var(--font-display);
+  font-size: 9.5px; font-weight: 800; letter-spacing: .1em; --r: 6px;
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r)); }
+.day-settle--win { background: linear-gradient(120deg, var(--v-win), var(--v-win-2)); color: var(--v-win-ink); }
+.day-settle--loss { background: linear-gradient(120deg, var(--v-money), var(--v-money-2)); color: var(--v-money-ink); }
+.day-settle--push { background: rgba(255, 255, 255, .14); color: var(--v-t2); }
+.day-settle--pending { background: rgba(255, 176, 32, .16); box-shadow: inset 0 0 0 1px rgba(255, 176, 32, .4);
+  color: var(--v-warn-label); }
+
+.mx-outcome {
+  display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap; padding-top: var(--sp-4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06); }
+.mx-outcome__score, .mx-outcome__score-reason { font-family: var(--font-mono); font-size: 12px; color: var(--v-t2); }
+.mx-outcome__record { font-family: var(--font-mono); font-size: 11px; color: var(--v-t5); }
+.mx-outcome__net { font-family: var(--font-mono); font-size: 12px; font-weight: 700; }
+.mx-outcome__net--pos { color: var(--v-win-lit); }
+.mx-outcome__net--neg { color: var(--v-money-lit); }
+
+.mx-card__link { align-self: flex-start; margin-top: var(--sp-2); font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: .08em; color: var(--v-live-label); }
+.mx-card__link:hover { color: var(--v-live); }
+
+/* ---- DAILY RECAP GALLERY + DETAIL --------------------------------------- */
+.day-gallery-section { padding: 0 var(--gutter-desktop) var(--sp-11); }
+.day-gallery-body { display: flex; flex-direction: column; gap: var(--sp-6); }
+.day-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--sp-7); }
+.day-card { padding: var(--sp-7); display: flex; flex-direction: column; gap: var(--sp-3); }
+.day-card__head { display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap; }
+.day-card__date { font-family: var(--font-display); font-size: 15px; font-weight: 800; color: var(--v-t0);
+  text-decoration: none; }
+.day-card__date:hover { color: var(--v-live); }
+.day-card__record, .day-card__pending { margin: 0; font-family: var(--font-mono); font-size: 13px; color: var(--v-t2); }
+.day-card__figure--pos { color: var(--v-win-lit); }
+.day-card__figure--neg { color: var(--v-money-lit); }
+.day-card__meta { margin: 0; font-size: 11.5px; color: var(--v-t5); }
+.day-card__bet { display: flex; flex-direction: column; gap: var(--sp-1); font-size: 11.5px; margin-top: var(--sp-2); }
+.day-card__bet-label { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .1em; color: var(--v-t5); }
+.day-card__bet-line { color: var(--v-t3); }
+.day-card__bet-profit--pos { color: var(--v-win-lit); font-family: var(--font-mono); }
+.day-card__bet-profit--neg { color: var(--v-money-lit); font-family: var(--font-mono); }
+.day-card__bet-vp { font-family: var(--font-mono); color: var(--v-money-lit); }
+.day-card__bet-basis { margin: 0; color: var(--v-t6); font-size: 10.5px; }
+.day-card__link { margin-top: var(--sp-3); align-self: flex-start; font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: .08em; color: var(--v-live-label); }
+.day-card__link:hover { color: var(--v-live); }
+
+.day-detail-screen { padding: var(--sp-9) var(--gutter-desktop) var(--sp-15); display: flex; flex-direction: column;
+  gap: var(--sp-9); }
+.day-detail__back { font-family: var(--font-mono); font-size: 12px; color: var(--v-live-label); }
+.day-detail__back:hover { color: var(--v-live); }
+.day-detail__head { display: flex; align-items: center; gap: var(--sp-5); flex-wrap: wrap; }
+.day-detail__date { margin: 0; font-size: 26px; }
+.day-detail__basis { margin: 0; max-width: 72ch; font-size: 13px; line-height: 1.55; color: var(--v-t3); }
+.day-detail__stake-policy, .day-detail__settled-through { margin: 0; font-family: var(--font-mono); font-size: 11.5px;
+  color: var(--v-t5); }
+.day-detail__rollup { padding: var(--sp-8); }
+.day-detail__rollup-title { margin: 0 0 var(--sp-4); font-family: var(--font-display); font-size: 12px; font-weight: 800;
+  letter-spacing: .1em; color: var(--v-t3); }
+.day-detail__rollup-line { margin: 0 0 var(--sp-2); font-family: var(--font-mono); font-size: 12.5px; color: var(--v-t2); }
+.day-detail__rollup-figs { margin: 0; font-family: var(--font-mono); font-size: 13px; color: var(--v-t0); }
+.day-detail__games { display: flex; flex-direction: column; gap: var(--sp-7); }
+.day-detail__game { padding: var(--sp-7); display: flex; flex-direction: column; gap: var(--sp-4); }
+.day-detail__game-head { display: flex; align-items: center; gap: var(--sp-4); }
+.day-detail__game-matchup { font-family: var(--font-display); font-size: 15px; font-weight: 800; color: var(--v-t0); }
+.day-detail__game-score, .day-detail__game-score-reason { margin: 0; font-family: var(--font-mono); font-size: 13px;
+  color: var(--v-t2); }
+.day-detail__game-record { margin: 0; font-family: var(--font-mono); font-size: 11.5px; color: var(--v-t5); }
+.day-detail__game-net--pos { margin: 0; font-family: var(--font-mono); font-size: 12px; color: var(--v-win-lit); }
+.day-detail__game-net--neg { margin: 0; font-family: var(--font-mono); font-size: 12px; color: var(--v-money-lit); }
+.day-detail__positions { display: flex; flex-direction: column; gap: var(--sp-4); }
+.day-detail__note { margin: 0; font-size: 12px; color: var(--v-t5); }
+
+/* ---- 899px and below (RECORD STRIP / MATCHUP GRID / DAILY RECAP) ------- */
+@media (max-width: 899px) {
+  .rec-strip { padding: 0 var(--gutter-mobile) var(--sp-7); }
+  .rec-strip__cells { grid-template-columns: 1fr; gap: var(--sp-4); }
+
+  .mx-section { padding: 0 var(--gutter-mobile) var(--sp-9); }
+  .mx-grid { grid-template-columns: 1fr; gap: var(--sp-6); }
+  .mx-ml__cols { grid-template-columns: 1fr; }
+
+  .day-gallery-section { padding: 0 var(--gutter-mobile) var(--sp-9); }
+  .day-gallery { grid-template-columns: 1fr; }
+  .day-detail-screen { padding: var(--sp-7) var(--gutter-mobile) var(--sp-13); gap: var(--sp-7); }
+}

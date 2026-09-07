@@ -18,6 +18,9 @@
  *   #/odds[/YYYY-MM-DD]                      ODDS (board)
  *   #/odds/YYYY-MM-DD/AWAY/HOME              ODDS (one game)
  *   #/mybets                                 BETS
+ *   #/performance                            RESULTS (PAPER / RESEARCH PERFORMANCE)
+ *   #/day/YYYY-MM-DD                         DAILY RECORD (one day's frozen
+ *                                             pregame record, GET /daily/{date})
  *   #/signin                                 SIGN IN (interim -- see signin.js)
  *   #/support                                SUPPORT
  *   #/signup                                 SIGNUP (public CTA target from
@@ -41,6 +44,7 @@ import { renderSupport } from "./support.js";
 import { renderSignup, renderSignupComplete } from "./signup.js";
 import { renderBilling } from "./billing.js";
 import { renderPerformance } from "./performance.js";
+import { renderDayDetail } from "./dayrecap.js";
 import { BRAND_NAME } from "./brand.js";
 
 // The six app destinations and their glyphs, verbatim from handoff
@@ -72,6 +76,7 @@ const SECTION_LABELS = {
   signup: "SIGN UP",
   billing: "BILLING",
   performance: "PERFORMANCE",
+  day: "DAILY RECORD",
 };
 
 // GET /meta's public_demo flag, fetched once at boot (see boot() below).
@@ -170,6 +175,8 @@ async function renderRoute(main) {
     await renderMyBets(main);
   } else if (route === "performance") {
     await renderPerformance(main);
+  } else if (route === "day" && rest.length >= 1) {
+    await renderDayDetail(main, rest[0]);
   } else if (route === "signin") {
     await renderSignin(main, query);
   } else if (route === "support") {

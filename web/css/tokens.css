@@ -184,6 +184,22 @@
   --v-warn-label: #FFCF6B;
   --v-warn-ink: #2A1A00;
 
+  /* ---- green: a settled paper WIN, and ONLY a settled win (new,
+     2026-09-07, web/css/screens.css's RECORD STRIP / MATCHUP GRID /
+     DAILY RECAP section) -- none of the trio above fits a settlement
+     outcome (money is a price advantage, live is analytical/movement,
+     warn is caution/absence). Paired with --v-money as the one other
+     deliberate use of red beyond a price advantage anywhere in this
+     system: a settled LOSS is a real, booked negative outcome, not a
+     caution -- see that section's own comment. Never used for anything
+     else (never "found", never "available", never a live/status dot --
+     those stay --v-live). ------------------------------------------- */
+  --v-win: #2ED47A;
+  --v-win-2: #17A863;
+  --v-win-lit: #8CF0BB;
+  --v-win-label: #7BE8AC;
+  --v-win-ink: #05230F;
+
   /* ---- type ---------------------------------------------------------*/
   --v-t0: #F7F7F9;
   --v-t1: #F0F1F4;

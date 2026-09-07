@@ -109,6 +109,8 @@ import { renderError, renderLoadingSkeleton, renderEmptySlate,
   renderCaptureUnavailable } from "./states.js";
 import { renderFeaturedBet, mapBetCheckPayloadToStanding } from "./featuredbet.js";
 import { renderOpportunities } from "./opportunities.js";
+import { renderMatchups } from "./matchups.js";
+import { renderRecordStrip } from "./recordstrip.js";
 import { renderStaleness } from "./meta.js";
 import { teamColors } from "./teamcolors.js";
 import { teamName } from "./labels.js";
@@ -880,6 +882,14 @@ export async function renderToday(container) {
   ]);
   loadingWrap.remove();
 
+  // RECORD STRIP -- mounted at the absolute top of the Today screen,
+  // above the hero and every early-return branch below, so the paper
+  // record shows regardless of tonight's slate state (an unreachable
+  // slate or an honest off night are both still real nights of results).
+  const recordStripHost = el("div", { class: "gutter", "data-hook": "today-record-strip" });
+  host.appendChild(recordStripHost);
+  await renderRecordStrip(recordStripHost);
+
   // A failed /games/{date} fetch must never look like an honest empty
   // slate -- those are two different real conditions (V1's own bug
   // class this rebuild avoids: `(slate && slate.games) || []` alone
@@ -945,6 +955,13 @@ export async function renderToday(container) {
   // head (web/js/opportunities.js owns this section's own render/fetch;
   // this screen only places it).
   await renderOpportunities(host, date);
+
+  // THE MATCHUP GRID -- every game on tonight's slate, its live
+  // moneyline, its price read, and its frozen pregame positions
+  // (web/js/matchups.js owns this section's own render/fetch; this
+  // screen only places it, below TOP OPPORTUNITIES and above the
+  // Featured Bet carousel head).
+  await renderMatchups(host, date);
 
   const slot = renderFeaturedSection(host, gapCandidate, rows.length);
   slot.appendChild(el("div", { class: "gv2-featured__loading",
