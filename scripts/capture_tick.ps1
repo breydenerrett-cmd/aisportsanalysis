@@ -161,3 +161,46 @@ try {
 catch {
     Write-Tick "ERROR in daily-loop check: $($_.Exception.Message)"
 }
+
+# ---- afternoon-slate (F-1) ---------------------------------------------------
+# The second slate pass at 21:10Z, so the sixteen genome systems -- which all
+# require a posted lineup -- get to decide once lineups exist instead of
+# refusing NO_LINEUP at the 10:00Z freeze. Added 2026-09-07 after that day's
+# cron simply did not fire: by 23:12Z the only run was a 05:23Z manual test.
+#
+# Once per UTC date, and only a run created AT OR AFTER 21:10Z counts as
+# "today's" -- a pre-window manual dispatch (like that 05:23Z test) must not
+# satisfy this check, or the real pass never happens. Never before 21:10Z,
+# so a healthy cron always wins the race. The workflow itself carries the
+# first-pitch and board-staleness guards and spends no odds credits (proven
+# on run 34086614213), so a late dispatch that finds nothing eligible is a
+# logged refusal, not a cost.
+try {
+    $windowOpen = ($now.Hour -gt 21) -or ($now.Hour -eq 21 -and $now.Minute -ge 10)
+    if ($windowOpen) {
+        $runs = Get-Runs "afternoon-slate" 5
+        if ($null -eq $runs) {
+            Write-Tick "skip afternoon-slate: could not read run list"
+        }
+        elseif ($runs | Where-Object { $_.status -in @("in_progress", "queued") }) {
+            Write-Tick "skip afternoon-slate: a run is already in flight"
+        }
+        else {
+            $today = $now.Date
+            $cronMoment = $today.AddHours(21).AddMinutes(10)
+            $inWindow = $runs | Where-Object {
+                $t = Get-Utc $_.createdAt
+                $t.Date -eq $today -and $t -ge $cronMoment
+            }
+            if ($inWindow) {
+                Write-Tick "skip afternoon-slate: already ran today after 21:10Z"
+            }
+            else {
+                Invoke-Dispatch "afternoon-slate.yml" $CaptureRef "no run since 21:10Z for $($today.ToString('yyyy-MM-dd'))"
+            }
+        }
+    }
+}
+catch {
+    Write-Tick "ERROR in afternoon-slate check: $($_.Exception.Message)"
+}

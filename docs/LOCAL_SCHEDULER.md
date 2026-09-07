@@ -28,6 +28,13 @@ One tick, run on a timer:
    dispatch one.
 2. **daily-loop** — only after 10:00Z, so a healthy cron always wins the
    race. If a run already exists for the UTC date, do nothing. Else dispatch.
+3. **afternoon-slate** (F-1) — only after 21:10Z, once per UTC date, and
+   only a run created at or after 21:10Z counts as today's: a pre-window
+   manual test must not satisfy the check or the real lineup-aware pass
+   never happens. Added the day the 21:10Z cron failed to fire at all (by
+   23:12Z the only run was a 05:23Z test). The workflow carries its own
+   first-pitch and staleness guards and spends no odds credits, so a late
+   dispatch that finds nothing eligible is a logged refusal, not a cost.
 
 Every decision is written to `data/logs/capture_tick.log`, including the
 decision to do nothing — a silent scheduler is indistinguishable from a dead

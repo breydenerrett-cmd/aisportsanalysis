@@ -788,3 +788,48 @@ pitcher logs 78s, lineups 11s, bullpen the rest), zero odds credits.
 Still absent and named as gaps: batter-vs-pitcher history, pitcher splits
 (both ~200 live calls per slate -- need a store), pitch arsenals (Statcast
 not in the image), roster news (store not in the cache list).
+
+---
+
+## F-1 PROVEN ON A LIVE SLATE — 2026-09-07 23:13Z (manual dispatch; the cron did not fire)
+
+By 23:12Z the only afternoon-slate run for the day was the 05:23Z manual
+test. The 21:10Z cron simply did not fire, and `scripts/capture_tick.ps1`
+did not cover this workflow. Dispatched by hand at 23:13Z while three or
+four games were still pregame.
+
+Run 34169306905, success, no ESCALATE, committed:
+
+    decisions recorded for 2026-09-07 by class:
+      {'MARKET_REFERENCE': 302, 'CONTROL': 151, 'FORWARD_TEST': 6}
+
+**Six FORWARD_TEST decisions -- the first thesis-carrying systems to
+decide on a live slate.** One of them, verbatim from the log:
+
+    [999a7baa84ce385c] Cincinnati Reds (away) moneyline (+160, Caesars)
+    verdict=play p_model=None value_basis=price_standing_only:no_calibrated_p_model
+    grade=A record_provenance=live_pre_commencement STAKED
+
+Note `p_model=None` and `price_standing_only`: the genome played on price
+standing, and the record says so. No calibrated model probability was
+claimed, because none exists.
+
+The sixteen genomes stood down 45 times, every one with a reason:
+NO_LINEUP 16 (a late game whose lineup had not posted), NO_SIGNAL 19,
+BELOW_ENTRY 2, MARKET_UNAVAILABLE 8. That is the honesty path working
+alongside the play path -- the same systems, evaluating, and saying no.
+
+The board was 30 minutes old so the staleness guard passed; the
+first-pitch guard excluded games already under way. No settle, no EOD, no
+odds credits -- the same properties the 05:23Z test proved.
+
+**Scheduler extended.** `capture_tick.ps1` now carries a third rule:
+after 21:10Z, once per UTC date, dispatch afternoon-slate if no run exists
+that was created at or after 21:10Z. The "at or after" matters -- a
+pre-window manual test like the 05:23Z one must not satisfy the check or
+the real lineup-aware pass never happens. Dry run at 23:17Z: "skip
+afternoon-slate: already ran today after 21:10Z", correctly counting the
+23:13Z run. See docs/LOCAL_SCHEDULER.md.
+
+Still true: GitHub's cron fired 6 of ~97 scheduled runs today (~6%). The
+local task is the clock. It only runs while the PC is awake.
