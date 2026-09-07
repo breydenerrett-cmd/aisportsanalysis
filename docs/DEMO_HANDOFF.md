@@ -178,14 +178,38 @@ run, because a second one would write a duplicate set of frozen decisions.
 That watchdog lives only as long as the session, so treat it as a bonus, not
 a guarantee.
 
+## F-1 IS REGISTERED (2026-09-07)
+
+`afternoon-slate.yml` is now a live workflow on both the working branch and
+the default branch, on cron at 21:10Z. It runs `engine slate` only. Proven
+on one manual dispatch (run 34086614213):
+
+- it printed the per-class counts —
+  `MARKET_REFERENCE: 64, CONTROL: 32`, plus `note: still no FORWARD_TEST
+  decisions for this date`;
+- it did **not** settle games, did **not** run the end-of-day pass, did
+  **not** touch the dense pipeline;
+- the odds credit balance was identical before and after (24,789), so it
+  spends nothing;
+- it committed one line, to `docs/OVERNIGHT_RUN.md`.
+
+**What that run does not prove.** It was dispatched at ~05:00Z, hours
+outside any capture window, so preflight refused the board as 3.3h stale
+and the genomes never got to decide. That refusal is the guard working, not
+a bug. The real test is the first 21:10Z cron run against a live evening
+slate: captures buy within three hours of first pitch, so an evening game
+has a fresh board at 21:10Z while a 1:05pm ET game does not. Read the next
+run's log for a non-zero `FORWARD_TEST` count. If it is still zero, the
+per-game refusal reason is printed directly above it.
+
 ## NEXT 3 IMPROVEMENTS
 
-1. **Fix F-1** so the systems with an actual thesis start deciding again.
-   Right now every position on the slate is a null baseline or a market
-   reference, which the product correctly refuses to dress up as a pick —
-   so the honest answer to "what does it like tonight" is "nothing". That
-   is the one change that turns this from a very good instrument into a
-   product with an opinion. Everything else here is cosmetic next to it.
+1. **Confirm F-1 on a live cron run.** The workflow is registered and
+   proven safe, but no genome has yet decided on a real slate, so the
+   honest answer to "what does it like tonight" is still "nothing". Until a
+   `FORWARD_TEST` count comes back non-zero this remains a very good
+   instrument rather than a product with an opinion. Everything else here
+   is cosmetic next to it.
 2. **Fix F-2** so the matchup page can tell a story. Publish the rebuilt
    results, pitcher and bullpen stores the way the Statcast pitch store is
    already published, copy them into the image, and thread them through

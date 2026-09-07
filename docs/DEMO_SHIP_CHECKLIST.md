@@ -584,3 +584,48 @@ Walked the owner's required path end to end at 1440px and again at 375px.
 | 11 | Browser QA | done, desktop and 375px, no console errors |
 | 12 | Deploy / verify staging | done, every step deployed and re-verified live |
 | 13 | Polish | done (F3 + the freshness sentence) |
+
+---
+
+## VISUAL EMERGENCY PASS — 2026-09-07, verified route by route
+
+Directive: stop calling the demo polished, open every main route in a
+browser at desktop width, judge the screenshots as a product. Done. What
+follows is what looking at it actually found, in the order it was found.
+
+Every defect below was invisible from the source and visible in one glance
+at the rendered page. That is the whole lesson of this pass: a per-surface
+test suite and a careful reading of the CSS both said the product was fine.
+
+### Found by looking, then fixed
+
+| # | Route | Defect | Fix |
+|---|-------|--------|-----|
+| V-1 | Results | Recap gallery stretched every card to the tallest in its row, so a pending day carried a column of dead black | `align-items: start` |
+| V-2 | Signup | Card sat at the top with roughly a screen of empty black under it | `.outlet` is a column flex container; `.signup` takes `flex: 1` |
+| V-3 | Signup | Legal line was mono 10.5px ghost, reading as debug output under a price | body face, 12.5px, muted |
+| V-4 | Today (mobile) | Record strip stacked three full-size cards and pushed the slate below the fold | one compact three-across row under 900px |
+| V-5 | Today (mobile) | EVERY PRICED SIDE is eight columns; the verdict word collided with the evidence tier | scrolls in its own rail; no column dropped |
+| V-6 | Games | Staleness readout printed `Age (seconds) 13070.244993` and `Has board true` | formatted with the product's own ET/age helpers; still no fresh/stale verdict invented |
+| V-7 | Games | Slate picker was a bare OS date control in a panel; its chamfer clipped the "SLATE DATE" label | styled like the Odds date bar, clip dropped with the chrome |
+| V-8 | Odds | Stat tiles printed payload field names `games_count` and `spread_cents` as sample notes | dropped / reworded |
+| V-9 | Today | "What we checked tonight" labelled its own provenance with expressions — `count !has_board`, `max board_summary.books` | same provenance, in words |
+| V-10 | everywhere | 136 leaf text elements measured under 4.5:1 contrast, worst three at 2.31:1 in 9.5–10px | bottom three rungs of the text scale lifted; after: 7 under 4.5:1, worst 3.93:1 |
+| V-11 | everywhere | ASCII `--` in customer copy, front end and API | swept to em dashes; source comments keep ASCII |
+
+### How V-10 was decided
+
+Not by eye. A script walked every leaf text node against the app background
+and computed WCAG contrast, before and after. "Tiny grey text everywhere"
+was a real, countable defect, and the count is the acceptance criterion:
+136 → 7, worst rung 2.31:1 → 3.93:1, and the seven survivors are 10px
+metadata tags rather than sentences.
+
+### Deliberately not done
+
+- No de-mono sweep of every remaining caption. Mono is correct for prices,
+  book names and capture times, and a blanket pass would have taken it off
+  those too.
+- The reveal animation still leaves a synthetic 1400px-plus viewport dim
+  until the first scroll. At a real 1440x900 the page paints fully bright
+  on first load, which was checked before shipping.
