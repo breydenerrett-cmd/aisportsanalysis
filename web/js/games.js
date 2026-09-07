@@ -349,8 +349,8 @@ function gqvVerdict(quick) {
   if (body) panel.appendChild(el("p", { class: "gqv-verdict__body", "data-hook": "quick-headline", text: body }));
   panel.appendChild(el("p", { class: "gqv-verdict__note",
     text: noEdge
-      ? "top_findings came back empty, which is the normal case. Everything below is context we "
-        + "can stand behind, not a case for a bet."
+      ? "No finding cleared the evidence bar, which is the normal case. Everything below is "
+        + "context we can stand behind, not a case for a bet."
       : `${findings.length} finding${findings.length === 1 ? "" : "s"} cleared the bar for this game.` }));
 
   const tiles = el("div", { class: "gqv-mini-row" });
@@ -386,8 +386,8 @@ function gqvPrice(quick) {
     panel.appendChild(notYetAvailable(
       price.reason || "No price board recorded for this game.", "MARKET UNAVAILABLE"));
     panel.appendChild(el("p", { class: "gqv-price__footnote",
-      text: "has_board is false, and there is no reason field beyond what is shown above — so we state "
-          + "the fact and stop. The identity panel above is unaffected." }));
+      text: "No board was recorded for this game, and the feed gives no reason beyond what is shown "
+          + "above — so we state the fact and stop. The identity panel above is unaffected." }));
     return panel;
   }
 
@@ -668,8 +668,40 @@ function gmvVerdictColumn(sideKey, abbr, verdict, priceSide, rank) {
 
 function provenanceLine(provenanceCounts) {
   if (!provenanceCounts || typeof provenanceCounts !== "object") return "not available";
-  const parts = Object.keys(provenanceCounts).map((k) => `${k}: ${provenanceCounts[k]}`);
+  // Provenance keys are enum values ("market_derived", "model_derived").
+  // Said out loud they are still the same categories, just not underscored.
+  const parts = Object.keys(provenanceCounts).map(
+    (k) => `${k.replace(/_/g, "-")}: ${provenanceCounts[k]}`);
   return parts.length ? parts.join(", ") : "not available";
+}
+
+/** A refusal reason the engine recorded, said in words.
+ *
+ * The engine writes these as the expression it evaluated --
+ * "books_at_decision=0 < 2", "staleness_seconds=40950 > 1800" -- which is
+ * exactly right in an audit ledger and reads as debug output on a page a
+ * bettor is looking at. Only the shapes named here are rewritten; anything
+ * else comes back UNCHANGED rather than being guessed at, because a reason
+ * we cannot parse is still a reason the reader is entitled to see.
+ */
+function refusalText(detail) {
+  const raw = String(detail || "").trim();
+  const m = raw.match(/^([a-z_]+)=([\d.]+)\s*([<>]=?)\s*([\d.]+)$/);
+  if (!m) return raw;
+  const [, field, valueText, , limitText] = m;
+  const value = Number(valueText);
+  const limit = Number(limitText);
+  if (field === "books_at_decision") {
+    return `${value} book${value === 1 ? "" : "s"} quoted at decision time; `
+      + `this system needs ${limit}`;
+  }
+  if (field === "staleness_seconds") {
+    const hours = value / 3600;
+    const age = hours >= 1 ? `${hours.toFixed(1)} hr` : `${Math.round(value / 60)} min`;
+    const cap = limit >= 3600 ? `${(limit / 3600).toFixed(1)} hr` : `${Math.round(limit / 60)} min`;
+    return `board was ${age} old at decision time; the limit is ${cap}`;
+  }
+  return raw;
 }
 
 function engineDecisionsList(engine) {
@@ -712,8 +744,16 @@ function engineDecisionsList(engine) {
     const warn = el("div", { class: "gmv-engine__fatals" });
     warn.appendChild(el("p", { class: "gmv-engine__fatals-title", text: `${fatals.length} FATAL COUNTERARGUMENT${fatals.length === 1 ? "" : "S"}` }));
     const list = el("ul", { class: "gmv-engine__fatals-list" });
+    // Sixteen systems refusing for the same reason produced sixteen
+    // identical lines. Group them: the count is information, the repetition
+    // is not. Every distinct reason is still listed.
+    const counts = new Map();
     for (const ca of fatals) {
-      list.appendChild(el("li", { text: ca.detail || ca.cause || "no detail given" }));
+      const text = refusalText(ca.detail || ca.cause || "no detail given");
+      counts.set(text, (counts.get(text) || 0) + 1);
+    }
+    for (const [text, n] of counts) {
+      list.appendChild(el("li", { text: n > 1 ? `${text} (${n} systems)` : text }));
     }
     warn.appendChild(list);
     wrap.appendChild(warn);

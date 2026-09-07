@@ -242,7 +242,7 @@ function renderCase(result) {
         text: "Nothing in our data supports this bet. That is not the same as it being wrong." }),
     ]));
     section.appendChild(el("p", { class: "bc2-block__note",
-      text: "thesis_support came back empty — the usual case, not a fabricated finding." }));
+      text: "Nothing came back supporting this bet — the usual case, not a fabricated finding." }));
     return section;
   }
   const list = el("ul", { class: "bc2-lines" });
