@@ -698,3 +698,5 @@
 {"category": "recalled", "date": "2026-09-06", "first_seen_utc": "2026-09-06T23:08:04.380401+00:00", "player": "Eliezer Alfonzo", "player_id": 672613, "team": "LAD", "transaction_id": 941512}
 {"fetched_utc": "2026-09-07T00:36:02.737641+00:00", "game_date": "2026-09-06", "poll": true}
 {"fetched_utc": "2026-09-07T00:36:04.850782+00:00", "game_date": "2026-09-06", "poll": true}
+{"fetched_utc": "2026-09-07T01:00:55.524403+00:00", "game_date": "2026-09-06", "poll": true}
+{"fetched_utc": "2026-09-07T01:00:57.572206+00:00", "game_date": "2026-09-06", "poll": true}
