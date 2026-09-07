@@ -81,8 +81,16 @@ function dayBetLine(label, bet, withBasis) {
   const wrap = el("div", { class: "day-card__bet", "data-hook": "day-card-bet" });
   wrap.appendChild(el("span", { class: "day-card__bet-label", text: label }));
   const priceText = formatAmerican(bet.price_american);
-  const sideLine = [bet.market_key, bet.side ? String(bet.side).toUpperCase() : null,
-    (bet.line !== null && bet.line !== undefined) ? String(bet.line) : null].filter(Boolean).join(" ");
+  // Same treatment the detail page's rows get: "OAK moneyline", not
+  // "h2h AWAY". The gallery row carries only `matchup` ("OAK @ SEA"), so
+  // the two abbreviations are read back off it -- and only when it really
+  // has that shape. If it does not, humanizeBetLabel falls through to its
+  // own no-guess path exactly as it does on the detail page.
+  const sides = String(bet.matchup || "").split(" @ ");
+  const gameLike = sides.length === 2
+    ? { away_team: sides[0].trim(), home_team: sides[1].trim() }
+    : null;
+  const sideLine = humanizeBetLabel(bet, gameLike);
   wrap.appendChild(el("span", { class: "day-card__bet-line",
     text: `${bet.matchup || "—"} · ${sideLine || "—"} at ${priceText || "—"}` }));
   if (typeof bet.profit_units === "number") {
