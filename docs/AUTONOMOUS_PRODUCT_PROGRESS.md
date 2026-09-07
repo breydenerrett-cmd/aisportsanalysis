@@ -10,3 +10,9 @@
 - Not yet: workflow file on the default branch (will follow once the cold-runner seed path exists); Statcast seed on a cold cache — a second Sonnet worker is building an orphan `data-seed/statcast` branch and a bootstrap fallback that restores from it before escalating.
 - Full suite baseline (4,563 tests) reported 5 failures with details lost to stderr; re-running with output captured to identify them before the next push carrying code.
 - P0-1 still waiting for the first `schedule`-event run: none by 23:42Z (slots 23:15/23:30 not fired — treated as first-registration delay per the cutover rule). In-session tracked capture stays available as fallback.
+
+## 2026-09-07 00:1xZ — cloud Parent handoff to the local Parent (owner directive)
+- P0-1: no `schedule` run by the 00:08Z deadline → SCHEDULER_INCIDENT (deterministic checks recorded in docs/LOCAL_PARENT_TAKEOVER.md §8). In-session capture stays fallback-only with the no-duplicate-spend checks.
+- P0-2: 98a31ed seed fallback landed; daily-loop.yml registered on the default branch (2b63f0d); dispatched run 34068303330 proved cold-runner bootstrap, real output, bot commit 560f900, and the ESCALATE failure path. Scheduled proof pending.
+- Suite rerun classified (2 NON-HERMETIC guard failures caused by a mid-run git pull; 2 bootstrap-test timeouts, candidate NON-HERMETIC, pass standalone). No regression identified; baseline not yet green-verified.
+- No new workers dispatched. Handoff file: docs/LOCAL_PARENT_TAKEOVER.md.
