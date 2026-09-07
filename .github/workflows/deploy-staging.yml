@@ -40,6 +40,29 @@ jobs:
             exit 1
           fi
       - uses: actions/checkout@v4
+      # F-2: the historical stores are git-ignored and live only in the
+      # daily-loop cache. Restore the newest one so deploy/Dockerfile can
+      # COPY them into the image; the matchup page reads them for team
+      # records, starter form, bullpen and lineups. The key never matches
+      # (it carries this run's id) so restore-keys always resolves to the
+      # newest daily-loop save. A miss is not fatal: the image builds with
+      # an empty data/historical/ and the API states each gap.
+      - name: Restore historical stores from the daily-loop cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data/historical/statcast
+            data/historical/mlb_results.csv
+            data/historical/mlb_results.manifest.json
+            data/historical/pitcher_logs.jsonl
+            data/historical/bullpen_log.jsonl
+            data/historical/lineups.jsonl
+            data/historical/handedness.json
+          key: daily-loop-data-${{ github.run_id }}
+          restore-keys: |
+            daily-loop-data-
+      - name: Report which stores the image will carry
+        run: ls -la data/historical/ || true
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Deploy
         run: flyctl deploy -c deploy/fly.staging.toml -a linehound-staging --remote-only --yes

@@ -29,6 +29,20 @@ data/app/*
 !data/app/.gitkeep
 # Paper-account ledgers: read by the Performance surface (2026-09-07).
 !data/paper_accounts/
+# F-2 (2026-09-07): the historical stores the matchup page reads for team
+# records, starter form, bullpen workload, posted lineups and handedness.
+# They are git-ignored and live in the daily-loop actions/cache; the deploy
+# workflow restores that cache before building so they are present here.
+# Only these five files -- data/historical/statcast (pitch-level, ~40 MB)
+# stays out of the image until something on a customer route reads it.
+!data/historical/
+data/historical/*
+!data/historical/mlb_results.csv
+!data/historical/mlb_results.manifest.json
+!data/historical/pitcher_logs.jsonl
+!data/historical/bullpen_log.jsonl
+!data/historical/lineups.jsonl
+!data/historical/handedness.json
 
 design/
 docs/

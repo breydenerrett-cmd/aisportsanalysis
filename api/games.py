@@ -33,7 +33,11 @@ from fastapi import APIRouter, HTTPException, Request
 from src.analysis import gamepayload
 from src.analysis import priceverdict
 from src.appstate import events, freshness
-from src.pipeline import briefing, history
+# F-2: every store the CLI briefing reads, so the matchup page carries team
+# records, starter form, bullpen workload, lineups, travel and weather.
+# See _enrichment_inputs for why none of these ever reaches the network.
+from src.pipeline import (briefing, bullpen, history, lineup_store, lineups,
+                          pitchers, travel, weather_capture)
 from src.providers import mlb
 from src.report import engine_bridge
 
@@ -94,6 +98,123 @@ def _newest_entries_odds_observed_utc(entries_and_notes: Tuple[list, list]
     return max(observed) if observed else None
 
 
+def _latest_weather_by_pk(rows, games) -> dict:
+    """The newest captured forecast per game, reshaped to the reading
+    `weather.extract_hour` returns -- which is the shape dossier.build and
+    the weather detectors were written against.
+
+    The capture store row is a superset of that reading (it adds park, roof,
+    hours-to-first-pitch and the capture instant). Only the reading's own
+    eight keys are handed on; `forecast_hour_utc` is the reading's
+    `observed_utc`, and the row's `observed_utc` (when it was captured) is
+    used only to pick the newest row. game_pk is compared as str on both
+    sides: the schedule carries an int and the store round-trips through
+    JSON, and a silent int/str mismatch here would just mean "no weather"
+    with no error anywhere.
+    """
+    wanted = {str(g.get("game_pk")): g.get("game_pk")
+              for g in games if g.get("game_pk") is not None}
+    newest = {}
+    for row in rows or ():
+        key = str(row.get("game_pk"))
+        if key not in wanted:
+            continue
+        stamp = row.get("observed_utc") or ""
+        if key not in newest or stamp > (newest[key].get("observed_utc") or ""):
+            newest[key] = row
+    out = {}
+    for key, row in newest.items():
+        out[wanted[key]] = {
+            "observed_utc": row.get("forecast_hour_utc"),
+            "hours_from_first_pitch": row.get("forecast_hour_offset_hours"),
+            "temp_f": row.get("temp_f"),
+            "humidity_pct": row.get("humidity_pct"),
+            "wind_mph": row.get("wind_mph"),
+            "wind_from_deg": row.get("wind_from_deg"),
+            "precip_probability_pct": row.get("precip_probability_pct"),
+            "pressure_hpa": row.get("pressure_hpa"),
+        }
+    return out
+
+
+def _enrichment_inputs(games, date, store) -> dict:
+    """Every store-backed input the CLI briefing hands to build_slate,
+    loaded for the API request path. This is F-2.
+
+    The CLI (src/cli.py, `briefing` command) passes pitcher logs, bullpen
+    workload, posted lineups, handedness, travel and weather; this module
+    passed only the results store, so the matchup page said "team records
+    and form are not in this build" on every game. The stores were always
+    there for the daily loop -- they were never wired into the API.
+
+    Two rules, both deliberate:
+
+    - NOTHING HERE TOUCHES THE NETWORK. The CLI also fetches lineup-vs-
+      pitcher history (one MLB call per hitter, ~200 per slate) and pitcher
+      splits; those are left out. A page render reads what the daily loop
+      already wrote, or shows the gap.
+    - EVERY INPUT IS ABSENT-SAFE. A missing or unreadable store yields None
+      for that input, and dossier.build records the miss with a reason. A
+      container built without data/historical/ behaves exactly as it did
+      before this function existed.
+
+    Lineups are the one join with a type trap: lineup_store.read() keys by
+    str (it round-trips through JSON) and the schedule carries int game_pk,
+    and build_slate looks up by the schedule's value. The store's own
+    docstring records that this exact mismatch once silently matched nothing
+    for weeks. Re-keyed here on the schedule's value.
+    """
+    inputs = {}
+
+    logs = pitchers.read_logs()
+    inputs["pitcher_logs"] = logs or None
+
+    pens = {}
+    try:
+        pen_log = bullpen.read_log()
+    except Exception:  # noqa: BLE001 -- a corrupt log is a gap, not a 500
+        pen_log = []
+    if pen_log:
+        wanted = {t for g in games for t in (g.get("away_team"), g.get("home_team")) if t}
+        for team in wanted:
+            try:
+                pens[team] = bullpen.team_workload(pen_log, team, date)
+            except Exception:  # noqa: BLE001
+                continue
+    inputs["bullpen_by_team"] = pens or None
+
+    stored = lineup_store.read()
+    lineups_by_pk = {}
+    for g in games:
+        pk = g.get("game_pk")
+        row = stored.get(str(pk)) if pk is not None else None
+        if row:
+            lineups_by_pk[pk] = row
+    inputs["lineups_by_pk"] = lineups_by_pk or None
+    inputs["handedness"] = lineups.read_handedness() or None
+
+    trips = {}
+    if store:
+        for g in games:
+            pk, home = g.get("game_pk"), g.get("home_team")
+            if pk is None or not home:
+                continue
+            legs = {}
+            for team in (g.get("away_team"), home):
+                if not team:
+                    continue
+                try:
+                    legs[team] = travel.travel_load(store, team, date, home)
+                except Exception:  # noqa: BLE001
+                    continue
+            if legs:
+                trips[pk] = legs
+    inputs["travel_by_pk"] = trips or None
+
+    inputs["weather_by_pk"] = _latest_weather_by_pk(weather_capture.read(), games) or None
+    return inputs
+
+
 def _build_entries(date: str, **build_slate_kwargs) -> list:
     """One date's (entries, notes), from cache when available.
 
@@ -114,7 +235,11 @@ def _build_entries(date: str, **build_slate_kwargs) -> list:
     def _rebuild():
         games = mlb.fetch_games(date)
         store = history.read_results()
-        slate = briefing.build_slate(games, store, **build_slate_kwargs)
+        # F-2: the same store-backed inputs the CLI briefing passes. A
+        # caller's explicit kwarg still wins over the loaded default.
+        inputs = _enrichment_inputs(games, date, store)
+        inputs.update(build_slate_kwargs)
+        slate = briefing.build_slate(games, store, **inputs)
         return slate["games"], slate.get("notes", [])
 
     try:

@@ -240,3 +240,105 @@ class PageViewEventTests(_ResetEntriesCache):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ---------------------------------------------------------------------------
+# F-2 (2026-09-07): the store-backed enrichment inputs reach build_slate.
+#
+# These test the WIRING, not the stores' contents: briefing.build_slate is
+# replaced with a spy that records its kwargs, and each store reader is
+# patched on its own module. That keeps the tests hermetic and keeps them
+# from fabricating a results-store shape team_features would have to parse.
+# ---------------------------------------------------------------------------
+
+@unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")
+class EnrichmentWiringTests(_ResetEntriesCache):
+
+    def _spy_slate(self):
+        seen = {}
+
+        def fake_build_slate(games, store, **kwargs):
+            seen.update(kwargs)
+            return {"games": [], "notes": []}
+        return seen, fake_build_slate
+
+    def _run(self, seen_builder, *, results=None, logs=None, pen_log=None,
+             lineup_rows=None, handedness=None, weather_rows=None):
+        """Explicit names per store. Two of the readers are both called
+        `read` (lineup_store.read, weather_capture.read), so keying patches
+        by bare function name once handed the weather rows to the lineup
+        store as well -- which is a list, and `.get` on it was the first
+        failure this test ever produced. Named by what they ARE instead."""
+        from src.pipeline import (briefing, bullpen, history, lineup_store,
+                                  lineups, pitchers, travel, weather_capture)
+        seen, fake = seen_builder()
+        targets = [
+            (history, "read_results", results if results is not None else {}),
+            (pitchers, "read_logs", logs if logs is not None else {}),
+            (bullpen, "read_log", pen_log if pen_log is not None else []),
+            (lineup_store, "read", lineup_rows if lineup_rows is not None else {}),
+            (lineups, "read_handedness", handedness if handedness is not None else {}),
+            (weather_capture, "read", weather_rows if weather_rows is not None else []),
+        ]
+        patches = [patch.object(mod, name, return_value=value)
+                   for mod, name, value in targets]
+        patches.append(patch.object(briefing, "build_slate", side_effect=fake))
+        patches.append(patch.object(mlb, "fetch_games", return_value=_schedule()))
+        patches.append(patch.object(travel, "travel_load",
+                                    return_value={"miles": 0, "reason": None}))
+        for p in patches:
+            p.start()
+            self.addCleanup(p.stop)
+        games_mod._build_entries("2026-08-31")
+        return seen
+
+    def test_every_store_is_handed_to_build_slate_when_present(self):
+        seen = self._run(
+            self._spy_slate,
+            results={"990101": {"game_pk": "990101"}},
+            logs={"123": [{"ip": 6.0}]},
+            pen_log=[{"team": "BOS", "date": "2026-08-30"}],
+            weather_rows=[{"game_pk": 990101, "observed_utc": "2026-08-31T12:00:00Z",
+                   "forecast_hour_utc": "2026-08-31T23:00:00Z",
+                   "forecast_hour_offset_hours": 0.0, "temp_f": 71.0,
+                   "humidity_pct": 40, "wind_mph": 5.0, "wind_from_deg": 180,
+                   "precip_probability_pct": 10, "pressure_hpa": 1012.0}],
+            handedness={"123": {"bats": "R", "throws": "R"}},
+        )
+        self.assertIsNotNone(seen.get("pitcher_logs"))
+        self.assertIsNotNone(seen.get("handedness"))
+        self.assertIsNotNone(seen.get("weather_by_pk"))
+        self.assertIsNotNone(seen.get("travel_by_pk"))
+        # The weather reading is reshaped to extract_hour's own keys, and
+        # keyed by the schedule's game_pk value.
+        reading = seen["weather_by_pk"][990101]
+        self.assertEqual(reading["observed_utc"], "2026-08-31T23:00:00Z")
+        self.assertEqual(reading["temp_f"], 71.0)
+        self.assertNotIn("park", reading)
+
+    def test_absent_stores_are_none_never_an_error(self):
+        """A container built without data/historical/ must behave exactly as
+        the API did before F-2: every input None, dossier.build records the
+        gap, nothing raises."""
+        seen = self._run(self._spy_slate)
+        for key in ("pitcher_logs", "bullpen_by_team", "lineups_by_pk",
+                    "handedness", "weather_by_pk"):
+            self.assertIsNone(seen.get(key), key)
+
+    def test_lineups_are_rekeyed_from_the_stores_str_to_the_schedules_int(self):
+        """lineup_store.read() keys by str; the schedule carries int; build_slate
+        looks up by the schedule's value. The store's own docstring records
+        this exact mismatch once silently matching nothing. Guarded."""
+        seen = self._run(
+            self._spy_slate,
+            lineup_rows={"990101": {"game_pk": "990101", "date": "2026-08-31",
+                                    "away": [{"person_id": 1}], "home": []}},
+        )
+        self.assertIn(990101, seen["lineups_by_pk"])
+        self.assertNotIn("990101", seen["lineups_by_pk"])
+
+    def test_a_corrupt_bullpen_log_is_a_gap_not_a_500(self):
+        from src.pipeline import bullpen
+        with patch.object(bullpen, "read_log", side_effect=bullpen.BullpenError("bad line")):
+            seen = self._run(self._spy_slate)
+        self.assertIsNone(seen.get("bullpen_by_team"))

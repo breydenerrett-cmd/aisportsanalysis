@@ -64,6 +64,13 @@ COPY data/app/.gitkeep data/app/.gitkeep
 # surfaces. ~10 MB together. Nothing in api/ ever writes to either tree.
 COPY evidence/ evidence/
 COPY data/paper_accounts/ data/paper_accounts/
+# F-2 (2026-09-07): team records, starter form, bullpen workload, posted
+# lineups and handedness for the matchup page. .dockerignore admits exactly
+# five files here; the deploy workflow restores them from the daily-loop
+# cache first. On a cache miss the directory holds only .gitkeep, the COPY
+# still succeeds, and api/games._enrichment_inputs treats every absent
+# store as a stated gap -- the page degrades, it does not break.
+COPY data/historical/ data/historical/
 
 # APP_DB_PATH defaults to data/app/app.db (src/appstate/users.py) when the
 # env var is unset -- fine for a quick local run, but on a real host this

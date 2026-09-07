@@ -103,6 +103,17 @@ def _player(player, order) -> dict:
 # Handedness
 # ---------------------------------------------------------------------------
 
+def read_handedness(cache_path=DEFAULT_HANDEDNESS) -> dict:
+    """The handedness cache as it sits on disk. No network, ever.
+
+    fetch_handedness below fills gaps by calling the MLB API, which is right
+    for the daily loop and wrong for an API request path -- a page render
+    must never wait on a third-party call for a player it has not seen. This
+    reads what the loop already wrote and returns {} when nothing has.
+    """
+    return _read_json(cache_path, {})
+
+
 def fetch_handedness(person_ids, cache_path=DEFAULT_HANDEDNESS, timeout=20) -> dict:
     """Bat side per player, cached. Switch hitters are 'S' and stay 'S'.
 
