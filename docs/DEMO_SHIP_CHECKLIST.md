@@ -140,3 +140,13 @@ A stale board can never carry the strongest words.
   above fair (ATH +189 vs TOR, +0.59 pts → LEAN), everything else FAIR
   PRICE/PASS as a vigged board normally is. NYM@MIA books disagree by 211
   cents on the away side.
+- 00:51Z 93c4306 pushed (S6); deploy 34071119375 green; staging `/odds/2026-09-07`
+  now prices 7 of 11 games (LAA@BOS has 5 books, honestly below the floor).
+- 00:53Z hourly capture heartbeat scheduled in this session (dispatches
+  forward-capture when the newest run is >45 min old; stops if a genuine
+  `schedule` run ever appears).
+- 00:55Z B1 (price verdict) implemented and PASSED adversarial verification:
+  `src/analysis/priceverdict.py`, `PriceVerdict` on the Bet Check contract,
+  44 new tests, 265 tests green across the 11 named modules. B2 started.
+- 00:57Z S7 found (two unclosed media queries) and fixed; 8c70cab pushed;
+  deploy 34071425456 green. Local desktop parse: 775 rules (was 567).

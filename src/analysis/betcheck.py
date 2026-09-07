@@ -64,6 +64,7 @@ import re
 
 import src.analysis as analysis
 from src.analysis import gamepayload
+from src.analysis import priceverdict as priceverdict_mod
 from src.analysis import prices as prices_mod
 from src.analysis import relevance as relevance_mod
 from src.analysis import synthesis as synthesis_mod
@@ -558,6 +559,33 @@ def _market_facts(side, american_price, board) -> dict:
                reason=None)
 
 
+def _price_verdict(american_price, market, reasons=(), risks=(), now=None) -> dict:
+    """The price-verdict dict (docs/DEMO_SHIP_CHECKLIST.md "The verdict
+    rule") for this bet, built entirely from `_market_facts`'s output --
+    no new market arithmetic here, only the translation into
+    `priceverdict.build_price_verdict`'s shape. A missing consensus
+    produces the INSUFFICIENT DATA word with `market["reason"]` carried as
+    the reason, exactly like every other unavailable-market path in this
+    module.
+    """
+    consensus = market.get("market_consensus")
+    if consensus is None:
+        return priceverdict_mod.build_price_verdict(
+            american_price=american_price, consensus_probability=None,
+            books=None, observed_utc=None, now=now,
+            reasons=(market.get("reason")
+                    or "market context unavailable for this side",),
+            risks=risks)
+    best = market.get("best_available_price")
+    return priceverdict_mod.build_price_verdict(
+        american_price=american_price,
+        consensus_probability=consensus.implied_probability,
+        books=consensus.books, observed_utc=consensus.observed_utc, now=now,
+        best_price=best.american_price if best is not None else None,
+        best_book=best.book if best is not None else None,
+        reasons=reasons, risks=risks)
+
+
 def _evidence_status(claims) -> "str | None":
     """The single highest customer-evidence label across every surviving
     claim, or None when there are none to grade -- never a fabricated
@@ -736,6 +764,15 @@ def build_contract(date, away_club, home_club, side, american_price, *,
                     (_change_item(ev) for ev in (what_changed or []))
                     if item is not None)
 
+    # 1-2 sentences each, verbatim from the claims already partitioned
+    # above -- no new text, no new analysis, the same reuse discipline the
+    # rest of this module follows.
+    verdict_reasons = tuple(k.statement for k in support_claims[:2])
+    verdict_risks = tuple(k.statement for k in counter_claims[:2])
+    price_verdict = c.PriceVerdict(**_price_verdict(
+        american_price, market, reasons=verdict_reasons,
+        risks=verdict_risks))
+
     return c.BetCheckContract(
         query=query,
         game=game_ref,
@@ -752,4 +789,5 @@ def build_contract(date, away_club, home_club, side, american_price, *,
         bottom_line=_bottom_line_text(len(support_claims), len(counter_claims),
                                       market),
         price_improvement=market["price_improvement"],
+        price_verdict=price_verdict,
     )

@@ -11,11 +11,14 @@ enforced by SHAPE, not convention:
 A `Claim` cannot be constructed quantitative without both. That refusal is
 the product.
 
-FOUR SEPARATE VOCABULARIES (never merged — §4.1 of the architecture doc):
+FIVE SEPARATE VOCABULARIES (never merged — §4.1 of the architecture doc):
   evidence ladder   detect.base.EVIDENCE_ORDER   (how much do we know?)
   observation       synthesis.OBSERVED           (not a hypothesis at all)
   game verdict      no_play/candidate/flagged/market_unavailable
   relevance tier    HIGH/MEDIUM/LOW/UNKNOWN      (how much could it matter?)
+  price verdict     priceverdict.WORDS           (how good is this price,
+                                                   right now, versus the
+                                                   de-vigged consensus?)
 
 MARKET SEMANTICS: a quoted price, the market-implied consensus, and a price
 improvement are three distinct types and are never collapsible into each
@@ -37,6 +40,7 @@ from typing import Optional, Tuple
 from src.analysis import synthesis
 from src.analysis import relevance
 from src.analysis import prices as prices_mod
+from src.analysis import priceverdict as priceverdict_mod
 from src.detect import base as detect
 
 # ---------------------------------------------------------------------------
@@ -206,6 +210,44 @@ class PriceImprovement:
             raise ValueError("the price-improvement label is required; "
                              "removing it is a product decision nobody gets "
                              "to make silently")
+
+    def to_json(self) -> str:
+        return _dumps(asdict(self))
+
+
+@dataclass(frozen=True)
+class PriceVerdict:
+    """One word (`priceverdict.WORDS`) for one stated price versus the
+    de-vigged multi-book consensus, at one capture instant
+    (`src.analysis.priceverdict.build_price_verdict`). Line-shopping value
+    only — never expected value, never a prediction of who wins, and
+    `independent_model` is always the literal statement that no
+    independent model probability exists yet."""
+    word: str
+    value_points: Optional[float]
+    fair_price: Optional[int]
+    stated_implied_probability: Optional[float]
+    market_implied_probability: Optional[float]
+    evidence_tier: Optional[str]
+    books: Optional[int]
+    observed_utc: Optional[str]
+    age_seconds: Optional[float]
+    independent_model: str
+    market_reference_provenance: str
+    reasons: Tuple[str, ...]
+    risks: Tuple[str, ...]
+    basis: str
+
+    def __post_init__(self):
+        if self.word not in priceverdict_mod.WORDS:
+            raise ValueError(
+                f"word {self.word!r} is not one of the allowed price-"
+                f"verdict words {priceverdict_mod.WORDS}")
+        if self.evidence_tier is not None and \
+                self.evidence_tier not in priceverdict_mod.TIERS:
+            raise ValueError(
+                f"evidence_tier {self.evidence_tier!r} is not HIGH/MEDIUM/"
+                "LOW/None")
 
     def to_json(self) -> str:
         return _dumps(asdict(self))
@@ -491,6 +533,8 @@ class BetCheckContract:
     bottom_line: Optional[str] = field(
         default=None, metadata=_cap(ENGINEERING_REQUIRED))
     price_improvement: Optional[PriceImprovement] = field(
+        default=None, metadata=_cap(REAL_TODAY))
+    price_verdict: Optional[PriceVerdict] = field(
         default=None, metadata=_cap(REAL_TODAY))
     recommendation: None = None   # permanently None while Engine 2 is None
 
