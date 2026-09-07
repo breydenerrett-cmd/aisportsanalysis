@@ -30,11 +30,28 @@ with the market list and the family name swapped -- exactly the kind of
 duplication that drifts the moment one guard changes and the other two
 copies are not updated to match.
 
-BOUNDED, NOT A FULL-SLATE SWEEP
---------------------------------
-Each family fetches at most `MAX_EVENTS_PER_FAMILY_PER_RUN` events per run,
-mirroring prop_listing.py/batter_props.py's own per-run ceiling shape. A
-family whose cost is still unmeasured (team_totals and f5_trio, as of this
+TWO SLOTS PER GAME, FULL SLATE
+-------------------------------
+Each game's own first pitch, not the hour a scheduled run happens to land
+on, decides when a family is fetched for that game: once at T-3h (matches
+`dense.WINDOW_MINUTES = 180`, the same 3-hour price window baseline capture
+already uses) and once at T-30m (the deepest board, closest to when a price
+is actually actionable). `SLOTS` below carries the same label vocabulary as
+`prop_prices.SLOTS` (`"T-Xh"` / `"T-30m"`) even though the offsets differ,
+so a read-time join across families never has to reconcile two label sets.
+A game whose T-3h or T-30m instant is never observed by a run is gone for
+that slot -- the same "a missed window is gone" rule `prop_listing._due_slot`
+already enforces, duplicated here (rather than imported) only because that
+function reads its own module-level `SLOTS` directly, not a parameter.
+
+Coverage is the full slate at both slots for every family -- not a sample.
+`MAX_EVENTS_PER_FAMILY_PER_RUN` is a runaway guard, not a coverage limit: it
+is sized above the real maximum (30 teams => 15 concurrent games, plus
+headroom for a doubleheader pushing one date past that) so a normal slate's
+plan is never truncated; hitting it is a signal something is wrong, not the
+expected steady state.
+
+A family whose cost is still unmeasured (team_totals and f5_trio, as of this
 writing -- see config/capture_families.json) never actually spends: every
 event for that family comes back PROBE_REQUIRED from `can_spend`, which is
 printed as a single status line and never treated as a capture failure (see
@@ -65,10 +82,19 @@ same side are two rows, not one row overwritten.
 
 IDEMPOTENCY
 -----------
-Projected rows are keyed by (event_id, family, market, book, selection,
+The L1 marker (one per billed fetch, in `_done_today`) is keyed by
+`(family, event_id, game_date, slot)` -- each of a game's two slots is its
+own fetch, but a slot already recorded is never re-fetched, whatever else
+happened that day.
+
+Projected L2 rows are keyed by (event_id, family, market, book, selection,
 line, book_last_update) -- the same instant re-observed by a second run (or
 a retried call after a partial write) produces the identical key and is
-skipped, not duplicated.
+skipped, not duplicated. This is deliberately slot-independent: if a book's
+`last_update` truly has not moved between a game's T-3h and T-30m captures,
+re-observing it a second time recorded nothing new and collapsing it to one
+row is correct, not a bug -- the row still carries its own `slot` for
+traceability even when the key does not use it.
 
 Off unless DERIVATIVES=1 (see scripts/capture_extras.sh).
 """
@@ -107,9 +133,21 @@ FAMILY_MARKETS = {
 # reviewable iteration order so a transcript reads the same way every run.
 FAMILIES = ("team_totals", "alternates", "f5_trio")
 
+# Two capture instants per game, anchored to first pitch, minutes before it.
+# Same label vocabulary as prop_prices.SLOTS ("T-Xh" / "T-30m") even though
+# the offsets differ -- see the module docstring's "TWO SLOTS PER GAME"
+# section. T-3h mirrors dense.WINDOW_MINUTES (180); T-30m is the deepest
+# board this project ever samples.
+SLOTS = (
+    ("T-3h", 180),
+    ("T-30m", 30),
+)
+
 # A run may not fetch more than this many events per family, whatever the
-# slate size -- the same per-run ceiling shape as prop_listing/batter_props.
-MAX_EVENTS_PER_FAMILY_PER_RUN = 4
+# slate size -- a runaway guard, not a coverage limit (see module
+# docstring). 20 sits above the real max of 15 concurrent MLB games, with
+# headroom for a doubleheader pushing one date's event count past that.
+MAX_EVENTS_PER_FAMILY_PER_RUN = 20
 
 CREDIT_FLOOR = prop_listing.CREDIT_FLOOR
 
@@ -182,21 +220,36 @@ def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
     all_ids = sorted(e.get("id") for e in slate if e.get("id"))
     by_id = {e.get("id"): e for e in slate if e.get("id")}
 
+    # An event's due slot depends only on its own first pitch, never on
+    # which family is asking, so it is computed once per event rather than
+    # once per (family, event) pair. An event with no due slot right now
+    # (too early for T-3h, or first pitch already passed) is not in this
+    # dict at all -- see _due_slot.
+    due_slot_by_id = {
+        event_id: slot
+        for event_id in all_ids
+        for slot in [_due_slot(by_id[event_id], clock_now)]
+        if slot is not None
+    }
+
     plan = []
     for family in FAMILIES:
-        slots = MAX_EVENTS_PER_FAMILY_PER_RUN
+        slots_budget = MAX_EVENTS_PER_FAMILY_PER_RUN
         for event_id in all_ids:
-            if slots <= 0:
+            if slots_budget <= 0:
                 break
-            if (family, event_id, today) in done_today:
+            slot = due_slot_by_id.get(event_id)
+            if slot is None:
                 continue
-            plan.append((family, by_id[event_id]))
-            slots -= 1
+            if (family, event_id, today, slot) in done_today:
+                continue
+            plan.append((family, by_id[event_id], slot))
+            slots_budget -= 1
 
     report["games_due"] = len(plan)
 
     stopped_families = set()
-    for family, event in plan:
+    for family, event, slot in plan:
         if family in stopped_families:
             continue
         event_id = event.get("id")
@@ -245,6 +298,7 @@ def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
                 "family": family,
                 "event_id": event_id,
                 "game_date": today,
+                "slot": slot,
                 "error": str(exc),
             }], store)
             report["errors"].append(f"{family} {event_id}: {exc}")
@@ -256,7 +310,7 @@ def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
         report["fetches"] += 1
         report["credits_spent"] += charged
 
-        projected = _project(payload, event, family, markets, observed, today)
+        projected = _project(payload, event, family, markets, observed, today, slot)
         written = _append_projected(projected, processed_store)
 
         append([{
@@ -265,6 +319,7 @@ def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
             "event_id": payload.get("id") or event_id,
             "commence_time": payload.get("commence_time") or event.get("commence_time"),
             "game_date": today,
+            "slot": slot,
             "poll": True,
             "rows_projected": written,
             "credits_last": billed,
@@ -276,7 +331,7 @@ def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
     return report
 
 
-def _project(payload, event, family, markets, observed, game_date) -> list:
+def _project(payload, event, family, markets, observed, game_date, slot=None) -> list:
     """One row per (market, book, selection, line): MARKET/SELECTION/LINE/
     PRICE/BOOK/TIMESTAMPS plus the provider's own `last_update`.
 
@@ -324,6 +379,7 @@ def _project(payload, event, family, markets, observed, game_date) -> list:
                     "book": book_key,
                     "book_last_update": last_update,
                     "observed_utc": observed,
+                    "slot": slot,
                 })
     return rows
 
@@ -382,8 +438,32 @@ def _done_today(rows, game_date) -> set:
     out = set()
     for row in rows or []:
         if row.get("poll") and row.get("game_date") == game_date:
-            out.add((row.get("family"), row.get("event_id"), game_date))
+            out.add((row.get("family"), row.get("event_id"), game_date, row.get("slot")))
     return out
+
+
+def _due_slot(event, now):
+    """The slot this event is currently in, or None.
+
+    The current slot is the SMALLEST offset whose moment has passed -- at
+    T-2h the T-3h slot is the live one; past T-30m, or past first pitch,
+    nothing is due. Identical rule to `prop_listing._due_slot`, duplicated
+    (not imported) because that function reads its own module-level `SLOTS`
+    directly rather than taking one as a parameter -- see module docstring.
+    A missed window is gone: this never back-fills a slot whose moment has
+    already passed under a different label.
+    """
+    commence = prop_listing._parse_iso(event.get("commence_time"))
+    if commence is None:
+        return None
+    minutes = (commence - now).total_seconds() / 60.0
+    if minutes <= 0:
+        return None  # first pitch has passed; nothing here is worth a credit
+    current = None
+    for name, offset in SLOTS:
+        if minutes <= offset:
+            current = name
+    return current
 
 
 # ---------------------------------------------------------------------------

@@ -1,6 +1,8 @@
 """Tests for src/pipeline/prop_prices.py. Hermetic: the provider is a
 stand-in that never touches a network or a key, matching test_prop_listing.py's
-pattern -- this layer reuses prop_listing's slot/sampling logic directly."""
+pattern. This layer now covers the FULL slate at its own two-slot grid
+(T-3h/T-30m) rather than sampling 3 games at prop_listing's six slots -- see
+the module docstring's "TWO SLOTS PER GAME" section."""
 
 import datetime as dt
 import tempfile
@@ -79,24 +81,22 @@ class FakeProvider:
                          "last": self.billed}
 
 
-class ReusesPropListingDesignTests(unittest.TestCase):
-    """The whole point of importing rather than copying: no drift possible."""
+class SlotGridTests(unittest.TestCase):
+    """Own two-slot grid -- T-3h (dense.WINDOW_MINUTES) and T-30m -- the
+    same design derivative_markets.py uses, not prop_listing's six slots."""
 
-    def test_the_slot_grid_is_the_same_object_as_prop_listings(self):
-        from src.pipeline import prop_listing
-        self.assertIs(prop_prices.SLOTS, prop_listing.SLOTS)
-        self.assertIs(prop_prices.GAMES_PER_DAY, prop_listing.GAMES_PER_DAY)
+    def test_the_slot_grid_is_two_slots_matching_the_dense_window_and_t30m(self):
+        self.assertEqual(prop_prices.SLOTS, (("T-3h", 180), ("T-30m", 30)))
 
-    def test_the_day_cap_is_three_games_times_six_slots(self):
-        self.assertEqual(len(prop_prices.SLOTS), 6)
-        self.assertEqual(prop_prices.DAILY_CREDIT_CAP, 18)
+    def test_credits_per_game_per_day_is_one_per_slot(self):
+        self.assertEqual(prop_prices.CREDITS_PER_GAME_PER_DAY, 2)
 
 
 class SchemaTests(unittest.TestCase):
     """What a price row must carry -- price AND point, unlike prop_listing."""
 
     def test_a_priced_market_writes_one_row_per_book_per_pitcher(self):
-        listed = [_event("g1", _at(6))]
+        listed = [_event("g1", _at(3))]
         provider = FakeProvider(listed, {"g1": _payload("g1")})
         with tempfile.TemporaryDirectory() as folder:
             store = Path(folder) / "prices.jsonl"
@@ -128,7 +128,7 @@ class SchemaTests(unittest.TestCase):
                 }],
             }],
         }
-        listed = [_event("g1", _at(6))]
+        listed = [_event("g1", _at(3))]
         provider = FakeProvider(listed, {"g1": payload})
         with tempfile.TemporaryDirectory() as folder:
             store = Path(folder) / "prices.jsonl"
@@ -139,7 +139,7 @@ class SchemaTests(unittest.TestCase):
         self.assertIsNone(rows[0]["under_price"])
 
     def test_a_successful_fetch_always_writes_a_marker(self):
-        listed = [_event("g1", _at(6))]
+        listed = [_event("g1", _at(3))]
         provider = FakeProvider(listed, {"g1": _payload("g1")})
         with tempfile.TemporaryDirectory() as folder:
             store = Path(folder) / "prices.jsonl"
@@ -150,7 +150,7 @@ class SchemaTests(unittest.TestCase):
         self.assertEqual(markers[0]["credits_last"], 1)
 
     def test_a_failed_fetch_writes_an_error_row_and_no_marker(self):
-        listed = [_event("g1", _at(6))]
+        listed = [_event("g1", _at(3))]
         provider = FakeProvider(listed, fail={"g1": "odds API returned HTTP 500"})
         with tempfile.TemporaryDirectory() as folder:
             store = Path(folder) / "prices.jsonl"
@@ -165,7 +165,7 @@ class BudgetTests(unittest.TestCase):
     """Enforced from the store's OWN rows, never an in-memory counter."""
 
     def test_the_credit_floor_stops_everything(self):
-        listed = [_event("g1", _at(6))]
+        listed = [_event("g1", _at(3))]
         provider = FakeProvider(listed, {"g1": _payload("g1")},
                                 remaining=prop_prices.CREDIT_FLOOR)
         with tempfile.TemporaryDirectory() as folder:
@@ -176,7 +176,7 @@ class BudgetTests(unittest.TestCase):
         self.assertEqual(provider.fetched, [])
 
     def test_the_layer_yields_above_the_floor_but_below_the_reserve(self):
-        listed = [_event("g1", _at(6))]
+        listed = [_event("g1", _at(3))]
         provider = FakeProvider(listed, {"g1": _payload("g1")},
                                 remaining=prop_prices.PROBE_RESERVE - 1)
         with tempfile.TemporaryDirectory() as folder:
@@ -189,35 +189,36 @@ class BudgetTests(unittest.TestCase):
     def test_the_day_cap_is_read_from_the_stores_own_marker_rows(self):
         # Pre-seed the store with a day's worth of markers written by a
         # PRIOR run (or process) -- the cap must bind from disk, not from
-        # anything this call remembers.
-        listed = [_event("g1", _at(6))]
+        # anything this call remembers. Cap for a 1-game slate is
+        # CREDITS_PER_GAME_PER_DAY (one game x two slots).
+        listed = [_event("g1", _at(3))]
         provider = FakeProvider(listed, {"g1": _payload("g1")})
         game_date = "2026-09-02"
         with tempfile.TemporaryDirectory() as folder:
             store = Path(folder) / "prices.jsonl"
             prop_prices.append(
                 [{"observed_utc": "x", "poll": True, "credits_last": 1,
-                  "game_date": game_date}] * prop_prices.DAILY_CREDIT_CAP, store)
+                  "game_date": game_date}] * prop_prices.CREDITS_PER_GAME_PER_DAY, store)
             report = prop_prices.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=store, provider=provider)
         self.assertEqual(provider.fetched, [])
         self.assertTrue(any("ESCALATE" in line and game_date in line
                             for line in report["escalate"]))
 
     def test_a_day_under_the_cap_still_spends(self):
-        listed = [_event("g1", _at(6))]
+        listed = [_event("g1", _at(3))]
         provider = FakeProvider(listed, {"g1": _payload("g1")})
         game_date = "2026-09-02"
         with tempfile.TemporaryDirectory() as folder:
             store = Path(folder) / "prices.jsonl"
             prop_prices.append(
                 [{"observed_utc": "x", "poll": True, "credits_last": 1,
-                  "game_date": game_date}] * (prop_prices.DAILY_CREDIT_CAP - 1),
+                  "game_date": game_date}] * (prop_prices.CREDITS_PER_GAME_PER_DAY - 1),
                 store)
             report = prop_prices.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW, store=store, provider=provider)
         self.assertEqual(report["fetches"], 1)
 
     def test_spend_is_counted_from_markers_not_from_price_rows(self):
-        listed = [_event("g1", _at(6))]
+        listed = [_event("g1", _at(3))]
         provider = FakeProvider(listed, {"g1": _payload("g1")})
         with tempfile.TemporaryDirectory() as folder:
             store = Path(folder) / "prices.jsonl"
@@ -226,7 +227,7 @@ class BudgetTests(unittest.TestCase):
         self.assertEqual(prop_prices.credits_spent(rows), 1)
 
     def test_an_unconfigured_provider_spends_nothing(self):
-        provider = FakeProvider([_event("g1", _at(6))])
+        provider = FakeProvider([_event("g1", _at(3))])
         provider.status = lambda env=None: {"configured": False}
         with tempfile.TemporaryDirectory() as folder:
             report = prop_prices.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW,
@@ -237,7 +238,7 @@ class BudgetTests(unittest.TestCase):
 
 class ResumabilityTests(unittest.TestCase):
     def test_a_slot_already_recorded_is_never_re_fetched(self):
-        listed = [_event("g1", _at(6))]
+        listed = [_event("g1", _at(3))]
         with tempfile.TemporaryDirectory() as folder:
             store = Path(folder) / "prices.jsonl"
             first = FakeProvider(listed, {"g1": _payload("g1")})
@@ -247,6 +248,50 @@ class ResumabilityTests(unittest.TestCase):
                                      store=store, provider=second)
         self.assertEqual(second.fetched, [])
         self.assertEqual(report["credits_spent"], 0)
+
+    def test_a_pitcher_is_captured_at_both_slots_and_not_more_than_once_per_slot(self):
+        commence = _at(3)  # T-3h at now=NOW
+        listed = [_event("g1", commence)]
+        with tempfile.TemporaryDirectory() as folder:
+            store = Path(folder) / "prices.jsonl"
+            provider = FakeProvider(listed, {"g1": _payload("g1")})
+            r1 = prop_prices.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
+                                  now=NOW, store=store, provider=provider)
+            # Still inside the open T-3h band: already captured, no re-fetch.
+            r2 = prop_prices.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
+                                  now=commence - dt.timedelta(hours=1),
+                                  store=store, provider=provider)
+            # T-30m (25 minutes to first pitch): second, distinct fetch.
+            r3 = prop_prices.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
+                                  now=commence - dt.timedelta(minutes=25),
+                                  store=store, provider=provider)
+            # Still inside the open T-30m band: already captured, no re-fetch.
+            r4 = prop_prices.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
+                                  now=commence - dt.timedelta(minutes=10),
+                                  store=store, provider=provider)
+            markers = [r for r in prop_prices.read(store)
+                       if r.get("poll") and r.get("event_id") == "g1"]
+        self.assertEqual(r1["fetches"], 1)
+        self.assertEqual(r2["fetches"], 0)
+        self.assertEqual(r3["fetches"], 1)
+        self.assertEqual(r4["fetches"], 0)
+        self.assertEqual(len(markers), 2)
+        self.assertEqual({m["slot"] for m in markers}, {"T-3h", "T-30m"})
+        self.assertEqual(provider.fetched, [("g1", (prop_prices.MARKET,)),
+                                             ("g1", (prop_prices.MARKET,))])
+
+    def test_full_slate_coverage_not_a_three_game_sample(self):
+        # Five games due at once -- more than the old GAMES_PER_DAY=3 cap --
+        # must all be fetched, not just a sampled subset.
+        listed = [_event(f"g{i}", _at(3)) for i in range(1, 6)]
+        provider = FakeProvider(listed, {f"g{i}": _payload(f"g{i}") for i in range(1, 6)})
+        with tempfile.TemporaryDirectory() as folder:
+            store = Path(folder) / "prices.jsonl"
+            report = prop_prices.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
+                                      now=NOW, store=store, provider=provider)
+        self.assertEqual(report["fetches"], 5)
+        self.assertEqual({eid for eid, _ in provider.fetched},
+                          {"g1", "g2", "g3", "g4", "g5"})
 
 
 class SwitchTests(unittest.TestCase):

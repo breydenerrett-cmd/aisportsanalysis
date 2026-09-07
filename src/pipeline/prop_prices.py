@@ -15,23 +15,44 @@ exactly as docs/COLLECTION_POLICY.md's dated amendment states -- see that
 file for the full accounting. It does NOT authorize a historical prop
 purchase, which stays a hard approval gate.
 
-WHY THIS REUSES prop_listing'S SLOT LOGIC RATHER THAN RE-DERIVING IT
-----------------------------------------------------------------------
-The two layers are meant to observe the SAME games at the SAME instants
-(`SLOTS`, anchored to first pitch) so a later read can compare "was it
-listed" against "what did it cost" without reconciling two independent
-sampling grids. Reusing `prop_listing._due_slot` / `_choose` /
-`_events_by_slate_date` -- rather than copying them -- makes drift between
-the two grids impossible by construction, not just unlikely.
+TWO SLOTS PER GAME, FULL SLATE (not the 3-game sample the design started with)
+--------------------------------------------------------------------------------
+Originally this layer imported prop_listing's whole grid verbatim: 3 games
+picked deterministically per day (`_choose`), each polled at 6 slots
+(T-12h..T-30m). That undersampled exactly the way derivative_markets.py did
+for the same reason -- see `src/pipeline/derivative_markets.py`'s own "TWO
+SLOTS PER GAME" section for the shared design. This layer now polls EVERY
+game on the slate (no sampling) at the SAME two instants derivative_markets
+uses: T-3h (matches `dense.WINDOW_MINUTES = 180`) and T-30m (the deepest
+board). `SLOTS` below is this module's own copy of that two-entry grid --
+duplicated, not imported from derivative_markets, so neither module takes an
+import dependency on the other; both were built from the same design at the
+same time and are meant to be read together, never silently diverge.
+
+`_due_slot` is likewise this module's own function rather than
+`prop_listing._due_slot`, because that function reads its own six-slot
+`SLOTS` directly as a module global, not as a parameter -- it cannot be
+pointed at a different grid without editing prop_listing.py, which is out of
+this module's scope. `_events_by_slate_date` and `_parse_iso` stay imported
+from prop_listing: both are generic (no dependency on which slot grid is in
+use), so reusing them still makes drift in THOSE mechanics impossible by
+construction.
 
 BUDGET
 ------
-Same shape as prop_listing: 3 games/day x 6 slots = 18 credits/day, hard
-per-slate-date cap enforced from THIS store's own marker rows (never from an
-in-memory counter, so a killed run cannot lose track of its own spend), the
-absolute 5,000 floor, and the same probe reserve -- this layer yields before
-baseline capture is touched, and is skipped first when a day approaches the
-overall ~132/day envelope. Off unless PROP_PRICES=1.
+Every game, both slots: for a normal MLB slate (up to 15 games, real max
+since only 30 teams play at once) that is at most 15 x 2 x 1 credit/event =
+30 credits/day (pitcher_props is 1 credit/event per
+config/capture_families.json). The per-slate-date cap is computed from the
+day's actual slate size (`len(slate) * len(SLOTS)`) rather than a fixed
+constant, so it scales with the real slate instead of silently truncating a
+15-game day sized for the old 3-game sample. Enforced from THIS store's own
+marker rows (never from an in-memory counter, so a killed run cannot lose
+track of its own spend), gated per-event through `budget.can_spend` exactly
+like derivative_markets.py, plus the absolute 5,000 floor and the same probe
+reserve -- this layer yields before baseline capture is touched, and is
+skipped first when a day approaches the overall ~900/day envelope
+(`budget.DAILY_ENVELOPE`). Off unless PROP_PRICES=1.
 
 WHY A MARKER ROW EXISTS HERE TOO
 ----------------------------------
@@ -68,18 +89,36 @@ MARKET = prop_listing.MARKET  # "pitcher_strikeouts"
 # reasoning as prop_listing.SCHEDULE_VERSION.
 SCHEDULE_VERSION = 1
 
-# Reused, not re-derived -- see module docstring. Importing rather than
-# copying the numbers means "3 games/day x 6 slots" can never drift between
-# the listing audit and this layer.
-SLOTS = prop_listing.SLOTS
-GAMES_PER_DAY = prop_listing.GAMES_PER_DAY
+# Two capture instants per game, anchored to first pitch, minutes before it.
+# This module's OWN copy of the same two-entry grid
+# src/pipeline/derivative_markets.py uses (see that module's "TWO SLOTS PER
+# GAME" docstring section) -- duplicated, not imported, so neither module
+# takes a dependency on the other; see this module's own docstring for why
+# prop_listing.SLOTS (six slots, three sampled games) is no longer reused.
+SLOTS = (
+    ("T-3h", 180),
+    ("T-30m", 30),
+)
+
+# Generic constants with no dependency on which slot grid is in use --
+# still safe, and still correct by construction, to reuse from prop_listing.
 MAX_ATTEMPTS_PER_SLOT = prop_listing.MAX_ATTEMPTS_PER_SLOT
-MAX_FETCHES_PER_RUN = prop_listing.MAX_FETCHES_PER_RUN
 CREDIT_FLOOR = prop_listing.CREDIT_FLOOR
 PROBE_RESERVE = prop_listing.PROBE_RESERVE
 
-# 3 games x 6 slots, identical shape to prop_listing's day cap.
-DAILY_CREDIT_CAP = GAMES_PER_DAY * len(SLOTS)
+# Credits budgeted per game per day: one fetch per slot, and pitcher_props
+# costs 1 credit/event (config/capture_families.json). The per-date cap
+# used at runtime is this times THAT DAY's own slate size, not a fixed
+# sample size -- see `run()`.
+CREDITS_PER_GAME_PER_DAY = len(SLOTS)
+
+# A run may not fetch more than this, whatever the arithmetic concludes --
+# a runaway guard, not a coverage limit (see module docstring). Sized above
+# the real max of 15 concurrent MLB games (30 teams), with headroom for a
+# doubleheader and for two slate dates legitimately having events due in one
+# run (tonight's late games at T-30m, tomorrow's early games at T-3h).
+MAX_EVENTS_PER_SLATE = 20
+MAX_FETCHES_PER_RUN = 2 * MAX_EVENTS_PER_SLATE
 
 ENV_SWITCH = "PROP_PRICES"
 
@@ -94,7 +133,7 @@ class PropPricesError(RuntimeError):
 
 def run(env=None, now=None, store=DEFAULT_STORE, provider=odds_provider,
         credit_floor=CREDIT_FLOOR, probe_reserve=PROBE_RESERVE,
-        daily_cap=DAILY_CREDIT_CAP, credit_log_store=None) -> dict:
+        credit_log_store=None) -> dict:
     """One scheduled pass. Returns a report; never raises for a network fault.
 
     Everything injectable is injectable so the tests spend nothing:
@@ -106,7 +145,7 @@ def run(env=None, now=None, store=DEFAULT_STORE, provider=odds_provider,
     clock_now = _now(now)
     report = {"observed_utc": _utc_iso(clock_now), "fetches": 0, "rows": 0,
               "markers": 0, "credits_spent": 0, "errors": [], "escalate": [],
-              "events_due": 0, "skipped": None}
+              "events_due": 0, "skipped": None, "budget_reasons": {}}
 
     status = provider.status(env)
     if not status.get("configured"):
@@ -134,27 +173,6 @@ def run(env=None, now=None, store=DEFAULT_STORE, provider=odds_provider,
         report["skipped"] = "probe reserve"
         return report
 
-    # Budget guard (docs/planning/attack.md F13/S17). "pitcher_props" has no
-    # measured per-event cost in config/capture_families.json -- this layer
-    # predates the family cost table and already carries its own bounded
-    # caps (18/day, 400 total, both enforced above from the store's own
-    # marker rows), approved on 2026-08-31 under docs/COLLECTION_POLICY.md
-    # before F13 existed. PROBE_REQUIRED is therefore surfaced (printed,
-    # and recorded on the report) rather than treated as a hard stop here:
-    # this pre-existing, separately-capped layer keeps running under its
-    # own approval until a real probe measures it and the family enters the
-    # ~900/day envelope for real. A floor or envelope refusal, unlike
-    # PROBE_REQUIRED, DOES stop this run -- those are absolute, regardless
-    # of which layer is asking.
-    decision = budget_module.can_spend("pitcher_props", DAILY_CREDIT_CAP,
-                                        remaining=remaining, store=credit_log_store)
-    if not decision.allowed:
-        print(f"prop_prices.run: {decision.reason}")
-        report["budget_reason"] = decision.reason
-        if not decision.reason.startswith("PROBE_REQUIRED"):
-            report["skipped"] = decision.reason
-            return report
-
     try:
         listed = provider.list_events(env)  # free
     except provider.OddsProviderError as exc:
@@ -164,56 +182,66 @@ def run(env=None, now=None, store=DEFAULT_STORE, provider=odds_provider,
 
     rows_on_disk = read(store)
     by_date = prop_listing._events_by_slate_date(listed)
-    samples = _samples(rows_on_disk)
     attempts = _attempts(rows_on_disk)
     per_date_spend = credits_spent_by_date(rows_on_disk)
 
+    # Full slate, not a 3-game sample: every event on each date's slate that
+    # is currently due gets a slot. cap_for_date scales with that day's OWN
+    # slate size (CREDITS_PER_GAME_PER_DAY per game), so a 15-game day is
+    # never truncated by a cap sized for the old 3-game design.
     pending = []
     for game_date in sorted(by_date):
         slate = by_date[game_date]
-        due = [e for e in slate if prop_listing._due_slot(e, clock_now) is not None]
-        if not due:
-            continue
-        chosen = samples.get(game_date)
-        if chosen is None:
-            chosen = prop_listing._choose(slate)
-            append([{
-                "observed_utc": _utc_iso(clock_now),
-                "schedule_version": SCHEDULE_VERSION,
-                "sample": True,
-                "game_date": game_date,
-                "slate_size": len(slate),
-                "rule": "earliest, median, latest by commence_time",
-                "event_ids": chosen,
-            }], store)
-            samples[game_date] = chosen
+        cap_for_date = len(slate) * CREDITS_PER_GAME_PER_DAY
         for event in slate:
-            if event.get("id") not in chosen:
-                continue
-            slot = prop_listing._due_slot(event, clock_now)
+            slot = _due_slot(event, clock_now)
             if slot is None:
                 continue
             key = (event.get("id"), slot)
             if attempts.get(key, 0) >= MAX_ATTEMPTS_PER_SLOT:
                 continue
-            pending.append((game_date, event, slot))
+            pending.append((game_date, event, slot, cap_for_date))
 
     report["events_due"] = len(pending)
 
-    for game_date, event, slot in pending:
+    # Budget guard (docs/planning/attack.md F13/S17), checked per event
+    # about to be fetched -- the same shape derivative_markets.py uses,
+    # rather than one upfront estimate for the whole day. "pitcher_props"
+    # IS a measured family (config/capture_families.json: 1 credit/event),
+    # so a real PROBE_REQUIRED here would mean that measurement was
+    # invalidated; it is surfaced (printed, recorded) and stops this run's
+    # remaining fetches without retrying each one, since every other event
+    # is equally unmeasured. A floor or envelope refusal, unlike
+    # PROBE_REQUIRED, is absolute and also stops the run.
+    probe_required = False
+    for game_date, event, slot, cap_for_date in pending:
+        if probe_required:
+            break
         if report["fetches"] >= MAX_FETCHES_PER_RUN:
             report["escalate"].append(
                 "ESCALATE: prop-prices capture hit its per-run fetch ceiling "
                 f"({MAX_FETCHES_PER_RUN}) -- more events came due than the "
-                "design expects; check the sampler before the next run")
+                "design expects; check the plan before the next run")
             break
         spent_today = per_date_spend.get(game_date, 0)
-        if spent_today + 1 > daily_cap:
+        if spent_today + 1 > cap_for_date:
             report["escalate"].append(
-                f"ESCALATE: prop-prices capture would exceed its {daily_cap}"
+                f"ESCALATE: prop-prices capture would exceed its {cap_for_date}"
                 f"-credit day cap on {game_date} ({spent_today} spent); slot "
                 f"{slot} on {event.get('id')} was NOT fetched")
             continue
+
+        decision = budget_module.can_spend(
+            "pitcher_props", 1, remaining=remaining, store=credit_log_store)
+        report["budget_reasons"][event.get("id")] = decision.reason
+        if not decision.allowed:
+            print(f"prop_prices.run: {event.get('id')} {slot}: {decision.reason}")
+            report["budget_reason"] = decision.reason
+            if decision.reason.startswith("PROBE_REQUIRED"):
+                probe_required = True
+                continue
+            report["escalate"].append(f"prop_prices: stopped -- {decision.reason}")
+            break
 
         observed = _utc_iso(_now(now))
         try:
@@ -234,6 +262,7 @@ def run(env=None, now=None, store=DEFAULT_STORE, provider=odds_provider,
         billed = (usage or {}).get("last")
         charged = 1 if billed is None else billed
         per_date_spend[game_date] = per_date_spend.get(game_date, 0) + charged
+        remaining = None if remaining is None else remaining - charged
         report["fetches"] += 1
         report["credits_spent"] += charged
 
@@ -368,12 +397,28 @@ def credits_spent_by_date(rows) -> dict:
     return out
 
 
-def _samples(rows) -> dict:
-    out = {}
-    for row in rows or []:
-        if row.get("sample") and row.get("game_date"):
-            out.setdefault(row["game_date"], list(row.get("event_ids") or []))
-    return out
+def _due_slot(event, now):
+    """The slot this event is currently in, or None.
+
+    The current slot is the SMALLEST offset whose moment has passed -- at
+    T-2h the T-3h slot is the live one; past T-30m, or past first pitch,
+    nothing is due. Identical rule to `prop_listing._due_slot`, duplicated
+    (not imported) because that function reads its own module-level
+    six-slot `SLOTS` directly rather than taking one as a parameter -- see
+    module docstring. A missed window is gone: this never back-fills a slot
+    whose moment has already passed under a different label.
+    """
+    commence = prop_listing._parse_iso(event.get("commence_time"))
+    if commence is None:
+        return None
+    minutes = (commence - now).total_seconds() / 60.0
+    if minutes <= 0:
+        return None  # first pitch has passed; nothing here is worth a credit
+    current = None
+    for name, offset in SLOTS:
+        if minutes <= offset:
+            current = name
+    return current
 
 
 def _attempts(rows) -> dict:

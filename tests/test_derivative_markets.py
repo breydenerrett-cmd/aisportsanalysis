@@ -15,8 +15,14 @@ from tests import HERMETIC_CREDIT_LOG_STORE
 
 NOW = dt.datetime(2026, 9, 3, 12, 0, tzinfo=dt.timezone.utc)
 
+# Default fixture commence time sits exactly at the T-3h boundary (180
+# minutes out) so a plain _event("g1") is due for a fetch under the new
+# slot-gated plan without every test having to reason about timing.
+T3H = NOW + dt.timedelta(hours=3)
+T30M = NOW + dt.timedelta(minutes=30)
 
-def _event(identifier, commence=NOW, home="Atlanta Braves", away="San Francisco Giants"):
+
+def _event(identifier, commence=T3H, home="Atlanta Braves", away="San Francisco Giants"):
     return {"id": identifier,
             "commence_time": commence.isoformat().replace("+00:00", "Z"),
             "home_team": home, "away_team": away}
@@ -294,6 +300,103 @@ class SchemaTests(unittest.TestCase):
             written = derivative_markets._append_projected([row], processed)
             self.assertEqual(written, 0)
             self.assertEqual(len(derivative_markets.read_processed(processed)), 1)
+
+
+class SlotTests(unittest.TestCase):
+    """T-3h and T-30m are two independent fetches per (family, event); a
+    slot already captured is never re-fetched, and a slot not yet due is
+    never fetched early."""
+
+    def test_not_due_between_slots_is_not_fetched(self):
+        # 90 minutes out: past neither boundary from below -- still inside
+        # the open T-3h band, so nothing NEW is due (it was already due,
+        # and stays due, from T-3h all the way down to T-30m; a run at this
+        # instant with nothing yet captured still owes the T-3h fetch).
+        # This test instead checks the genuinely-too-early case: 4 hours out.
+        listed = [_event("g1", commence=NOW + dt.timedelta(hours=4))]
+        provider = FakeProvider(listed, {
+            ("team_totals", "g1"): _team_totals_payload("g1"),
+        })
+        with tempfile.TemporaryDirectory() as folder:
+            fam_path = _families(folder)
+            raw = Path(folder) / "raw.jsonl"
+            processed = Path(folder) / "processed.jsonl"
+            with _WithFamiliesPath(fam_path):
+                report = derivative_markets.run(
+                    credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW,
+                    store=raw, processed_store=processed, provider=provider)
+        self.assertEqual(provider.fetched, [])
+        self.assertEqual(report["games_due"], 0)
+
+    def test_past_first_pitch_is_not_fetched(self):
+        listed = [_event("g1", commence=NOW - dt.timedelta(minutes=1))]
+        provider = FakeProvider(listed, {
+            ("team_totals", "g1"): _team_totals_payload("g1"),
+        })
+        with tempfile.TemporaryDirectory() as folder:
+            fam_path = _families(folder)
+            raw = Path(folder) / "raw.jsonl"
+            processed = Path(folder) / "processed.jsonl"
+            with _WithFamiliesPath(fam_path):
+                report = derivative_markets.run(
+                    credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW,
+                    store=raw, processed_store=processed, provider=provider)
+        self.assertEqual(provider.fetched, [])
+        self.assertEqual(report["games_due"], 0)
+
+    def test_a_contract_is_captured_at_both_slots_and_not_more_than_once_per_slot(self):
+        listed = [_event("g1", commence=T3H)]
+        provider = FakeProvider(listed, {
+            ("team_totals", "g1"): _team_totals_payload("g1", books=("draftkings",)),
+        })
+        with tempfile.TemporaryDirectory() as folder:
+            # Only team_totals is measured, so alternates/f5_trio stay
+            # PROBE_REQUIRED and never fetch -- keeps this test's fetch
+            # count to exactly the one family under test.
+            fam_path = _families(folder, measured=False)
+            data = json.loads(fam_path.read_text(encoding="utf-8"))
+            data["families"]["team_totals"] = {
+                "measured": True,
+                "credits_per_event": len(odds.TEAM_TOTALS_MARKETS),
+                "measured_utc": "2026-08-31T00:00:00Z",
+            }
+            fam_path.write_text(json.dumps(data), encoding="utf-8")
+            raw = Path(folder) / "raw.jsonl"
+            processed = Path(folder) / "processed.jsonl"
+            with _WithFamiliesPath(fam_path):
+                # T-3h: first fetch.
+                r1 = derivative_markets.run(
+                    credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW,
+                    store=raw, processed_store=processed, provider=provider)
+                # Still within the T-3h band (2h remaining): already captured,
+                # must NOT re-fetch.
+                r2 = derivative_markets.run(
+                    credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
+                    now=T3H - dt.timedelta(hours=1),
+                    store=raw, processed_store=processed, provider=provider)
+                # T-30m (25 minutes to first pitch): second, distinct fetch.
+                r3 = derivative_markets.run(
+                    credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
+                    now=T3H - dt.timedelta(minutes=25),
+                    store=raw, processed_store=processed, provider=provider)
+                # Still within the T-30m band (10 minutes to first pitch):
+                # already captured, must NOT re-fetch again.
+                r4 = derivative_markets.run(
+                    credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
+                    now=T3H - dt.timedelta(minutes=10),
+                    store=raw, processed_store=processed, provider=provider)
+            markers = [r for r in derivative_markets.read(raw)
+                       if r.get("poll") and r.get("family") == "team_totals"
+                       and r.get("event_id") == "g1"]
+        self.assertEqual(r1["fetches"], 1)
+        self.assertEqual(r2["fetches"], 0)
+        self.assertEqual(r3["fetches"], 1)
+        self.assertEqual(r4["fetches"], 0)
+        self.assertEqual(len(markers), 2)
+        self.assertEqual({m["slot"] for m in markers}, {"T-3h", "T-30m"})
+        fetched_families_and_slots = [(f, e) for f, e, m in provider.fetched]
+        self.assertEqual(fetched_families_and_slots,
+                          [("team_totals", "g1"), ("team_totals", "g1")])
 
 
 class BudgetGuardTests(unittest.TestCase):
