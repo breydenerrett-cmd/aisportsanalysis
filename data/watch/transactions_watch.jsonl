@@ -749,3 +749,6 @@
 {"category": "optioned", "date": "2026-09-07", "first_seen_utc": "2026-09-07T19:58:30.238071+00:00", "player": "Chris Murphy", "player_id": 669684, "team": "CWS", "transaction_id": 941534}
 {"category": "recalled", "date": "2026-09-07", "first_seen_utc": "2026-09-07T19:58:30.238071+00:00", "player": "Yovanny Cruz", "player_id": 672442, "team": "WSH", "transaction_id": 941540}
 {"fetched_utc": "2026-09-07T19:58:31.569291+00:00", "game_date": "2026-09-07", "poll": true}
+{"fetched_utc": "2026-09-07T20:40:43.760665+00:00", "game_date": "2026-09-07", "poll": true}
+{"category": "il_placement", "date": "2026-09-04", "first_seen_utc": "2026-09-07T20:40:43.760665+00:00", "player": "Orlando Ribalta", "player_id": 687377, "team": "WSH", "transaction_id": 941541}
+{"fetched_utc": "2026-09-07T20:40:45.611279+00:00", "game_date": "2026-09-07", "poll": true}
