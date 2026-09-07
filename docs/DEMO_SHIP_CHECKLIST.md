@@ -219,3 +219,40 @@ A stale board can never carry the strongest words.
   at 02:04Z (run 34075074865) because the cron skipped every slot after
   01:00Z and the session watchdog cannot fire mid-turn.
 - SHIPPED. Handoff: docs/DEMO_HANDOFF.md.
+
+## PHASE 2 — from demo to a usable product (owner directive 02:10Z)
+
+Goal: a living record of what the analyzer thought BEFORE each game and what
+happened AFTER. Same honesty discipline; nothing post-hoc. One implementation
+stream at a time, orchestrator integrates, commits and deploys each step.
+
+Facts established before starting (verified 02:11–02:20Z, so no one re-derives them):
+- The engine ALREADY freezes decisions for every market: on 2026-09-07 it wrote
+  24 moneyline, 39 run-line and 33 totals decisions (`evidence/decisions_v2.jsonl`,
+  each with its price, `consensus_fair`, `books_at_decision` and `decision_utc`).
+  A "best bets per matchup across markets" surface is a READ of that, not new
+  analysis. Stakes are flat 1 unit by policy.
+- The multi-book store now carries all three markets per capture (02:05Z instant:
+  87 moneyline, 84 run-line, 87 totals rows over 10 games). Spreads rows carry
+  `away_line`/`home_line`/`away_price`/`home_price`; totals rows carry
+  `total`/`over_price`/`under_price`. Books mostly agree on the line (e.g. 11 of 11
+  at total 8.5), but NOT always (NYM@MIA split 6 at 7.5 / 3 at 8.0) — so a
+  consensus must be computed per (market, line) group with the ≥6-book floor
+  applied inside the group, and the line always printed. Never de-vig across
+  different lines: they are different bets.
+- Final scores are available: `data/processed/boxscores_2026.jsonl` holds
+  `type: "linescore"` rows with per-inning `away_runs`/`home_runs` per `game_pk`
+  (15 of 15 games on 09-05, 13 on 09-06). Today's schedule also carries
+  `away_score`/`home_score`/`state` on `dossier.game` in the `/today` payload.
+- `/today`'s `dossier.game` already carries `away_probable`/`home_probable`,
+  venue, first pitch and state, so a per-matchup grid with starters needs no
+  new endpoint. `/games/{date}` rows do NOT carry probables or scores.
+
+| Step | Scope | Status |
+|---|---|---|
+| C1 | `src/report/daily_record.py` + `GET /daily`, `/daily/{date}`, `/record`: frozen pregame recommendations per game, settlement joined by bet_id, per-day rollups, day index for the gallery, today/7-day/30-day record strip | RUNNING |
+| F2 | Today = every matchup (starters, time, odds, freshness, analyzer status) with its frozen recommendations and GREEN/RED/GRAY settled states; TOP PLAYS strip; system record strip; daily recap gallery reading `/daily` | NEXT |
+| C2 | Multi-market live board: extend `oddspayload.MARKETS` to run line and total with per-line consensus grouping, so matchup detail shows live best bets beyond moneyline | AFTER F2 |
+| F3 | Matchup detail story (pitchers, offence, bullpen, warnings, reasoning), performance cuts by market / tier / odds range, polish | AFTER C2 |
+
+Ledger continues below.
