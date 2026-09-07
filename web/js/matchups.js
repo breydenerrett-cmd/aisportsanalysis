@@ -381,7 +381,7 @@ function matchupCard(entry, date, indices) {
  * any of the three sources renders an honest in-place state instead of
  * blanking the rest of the Today screen.
  */
-export async function renderMatchups(container, date) {
+export async function renderMatchups(container, date, preloadedToday = null) {
   const section = el("section", { class: "mx-section", "data-hook": "matchup-grid" });
   container.appendChild(section);
   section.appendChild(sectionHead("THE MATCHUP GRID", "EVERY GAME ON TONIGHT'S SLATE"));
@@ -389,19 +389,29 @@ export async function renderMatchups(container, date) {
   body.appendChild(renderLoading("LOADING THE MATCHUP GRID"));
   section.appendChild(body);
 
-  let todayPayload;
+  // ONE ROUND TRIP, NOT TWO, AND NEVER A SECOND /today (2026-09-07).
+  // This used to await /today and only then start /daily and /opportunities,
+  // so the grid cost two sequential round trips -- and the /today it fetched
+  // was the one the Gameday screen had already just fetched and still holds.
+  // On a cold container (every deploy empties the caches) that read as a
+  // ten-second hang under "LOADING THE MATCHUP GRID". The caller now hands
+  // its payload in; when nobody does, all three still start together.
+  let todayPayload = preloadedToday;
+  let dailyPayload = null;
+  let oppPayload = null;
+  const sideFetches = [
+    apiGet(`/daily/${encodeURIComponent(date)}`).catch(() => null),
+    apiGet(`/opportunities/${encodeURIComponent(date)}`).catch(() => null),
+  ];
   try {
-    todayPayload = await apiGet("/today");
+    const todayFetch = todayPayload ? Promise.resolve(todayPayload) : apiGet("/today");
+    [todayPayload, dailyPayload, oppPayload] = await Promise.all(
+      [todayFetch, ...sideFetches]);
   } catch (err) {
     clear(body);
     renderError(body, err);
     return section;
   }
-
-  const [dailyPayload, oppPayload] = await Promise.all([
-    apiGet(`/daily/${encodeURIComponent(date)}`).catch(() => null),
-    apiGet(`/opportunities/${encodeURIComponent(date)}`).catch(() => null),
-  ]);
   clear(body);
 
   const games = todayPayload.games || [];

@@ -91,7 +91,10 @@ class MatchupsWiredIntoToday(unittest.TestCase):
     def test_today_js_imports_and_calls_render_matchups(self):
         text = _read(TODAY_PATH)
         self.assertIn('from "./matchups.js"', text)
-        self.assertIn("renderMatchups(host, date)", text)
+        # The third argument hands over the /today payload this screen has
+        # already fetched, so the grid does not pay for a second copy of it
+        # before it can start -- see matchups.js's own note.
+        self.assertIn("renderMatchups(host, date, today)", text)
 
     def test_matchups_sits_between_opportunities_and_featured_bet(self):
         # renderFeaturedSection is both declared and called in today.js --
@@ -100,7 +103,7 @@ class MatchupsWiredIntoToday(unittest.TestCase):
         text = _read(TODAY_PATH)
         body = text.split("export async function renderToday(")[1]
         opp_index = body.find("renderOpportunities(host, date)")
-        mx_index = body.find("renderMatchups(host, date)")
+        mx_index = body.find("renderMatchups(host, date, today)")
         featured_index = body.find("renderFeaturedSection(host, gapCandidate, rows.length)")
         self.assertGreaterEqual(opp_index, 0)
         self.assertGreaterEqual(mx_index, 0)

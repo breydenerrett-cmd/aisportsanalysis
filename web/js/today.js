@@ -1013,7 +1013,9 @@ export async function renderToday(container) {
   // (web/js/matchups.js owns this section's own render/fetch; this
   // screen only places it, below TOP OPPORTUNITIES and above the
   // Featured Bet carousel head).
-  await renderMatchups(host, date);
+  // Hand over the /today payload this screen already fetched, so the grid
+  // does not pay for a second copy of it before it can start.
+  await renderMatchups(host, date, today);
 
   const slot = renderFeaturedSection(host, gapCandidate, rows.length);
   slot.appendChild(el("div", { class: "gv2-featured__loading",
