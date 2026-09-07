@@ -28,6 +28,7 @@
  */
 
 import { el, clear, formatEasternDate, formatEasternClock } from "./dom.js";
+import { apiGet } from "./api.js";
 import { setShellStatus } from "./shell.js";
 import { renderDisclaimerFooter } from "./meta.js";
 import { renderToday } from "./today.js";
@@ -39,17 +40,23 @@ import { renderMyBets } from "./mybets.js";
 import { renderSupport } from "./support.js";
 import { renderSignup, renderSignupComplete } from "./signup.js";
 import { renderBilling } from "./billing.js";
+import { renderPerformance } from "./performance.js";
 import { BRAND_NAME } from "./brand.js";
 
-// The five app destinations and their glyphs, verbatim from handoff
-// section 06's destination table. Support/Signin are utility routes, not
-// destinations -- they never appear in either nav shell.
+// The six app destinations and their glyphs, verbatim from handoff
+// section 06's destination table plus RESULTS (Task B3's PAPER / RESEARCH
+// PERFORMANCE surface, #/performance). Support/Signin are utility routes,
+// not destinations -- they never appear in either nav shell. BETS is
+// hidden at mount time when GET /meta's `public_demo` is true (saved bets
+// need an invite token that a public demo visitor does not have) -- see
+// `applyPublicDemoNav` below.
 const NAV_ITEMS = [
   { hash: "#/today", label: "TODAY", glyph: "" },
   { hash: "#/games", label: "GAMES", glyph: "" },
   { hash: "#/betcheck", label: "CHECK", glyph: "glyph--circle" },
   { hash: "#/odds", label: "ODDS", glyph: "glyph--line" },
   { hash: "#/mybets", label: "BETS", glyph: "glyph--ticket" },
+  { hash: "#/performance", label: "RESULTS", glyph: "glyph--line" },
 ];
 
 // Route root -> the section label printed beside the wordmark.
@@ -64,7 +71,13 @@ const SECTION_LABELS = {
   support: "SUPPORT",
   signup: "SIGN UP",
   billing: "BILLING",
+  performance: "PERFORMANCE",
 };
+
+// GET /meta's public_demo flag, fetched once at boot (see boot() below).
+// null until the fetch resolves -- mountNav treats "not known yet" the
+// same as "not a public demo" (never hides BETS on a guess).
+let publicDemo = false;
 
 function navItem(item, activeHash) {
   const a = el("a", { href: item.hash, class: "nav-item chamfer chamfer--badge",
@@ -91,7 +104,11 @@ function mountNav(rail, tabbar, activeHash) {
   head.appendChild(houndMark());
   rail.appendChild(head);
   const items = el("div", { class: "rail__items" });
-  for (const item of NAV_ITEMS) {
+  // A public-demo visitor has no invite token, so BETS (which needs one)
+  // is hidden rather than shown as a route that will only ever 401 --
+  // never rendered as a broken destination.
+  const visibleItems = publicDemo ? NAV_ITEMS.filter((item) => item.hash !== "#/mybets") : NAV_ITEMS;
+  for (const item of visibleItems) {
     items.appendChild(navItem(item, activeHash));
     tabbar.appendChild(navItem(item, activeHash));
   }
@@ -151,6 +168,8 @@ async function renderRoute(main) {
     await renderBetCheck(main, query);
   } else if (route === "mybets") {
     await renderMyBets(main);
+  } else if (route === "performance") {
+    await renderPerformance(main);
   } else if (route === "signin") {
     await renderSignin(main, query);
   } else if (route === "support") {
@@ -173,7 +192,20 @@ function boot() {
   renderDisclaimerFooter(disclaimerHost);
 
   window.addEventListener("hashchange", () => renderRoute(main));
-  renderRoute(main);
+
+  // GET /meta once at boot, public and unauthenticated -- fetched before
+  // the first renderRoute() so the very first nav mount already knows
+  // whether to hide BETS, rather than showing it for one frame and then
+  // yanking it away once the fetch resolves.
+  apiGet("/meta").then((meta) => {
+    publicDemo = !!(meta && meta.public_demo);
+  }).catch(() => {
+    // Unreachable /meta: fall back to showing every nav item rather than
+    // guessing a visitor is in the public demo -- the individual routes
+    // still enforce their own auth regardless of what the nav shows.
+  }).finally(() => {
+    renderRoute(main);
+  });
 }
 
 document.addEventListener("DOMContentLoaded", boot);

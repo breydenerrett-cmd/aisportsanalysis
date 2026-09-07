@@ -227,6 +227,37 @@ export function formatConsensusShare(fraction) {
   return `${(n * 100).toFixed(1)}%`;
 }
 
+/** The eight `price_verdict.word` values (src/analysis/priceverdict.py's
+ * WORDS, verbatim) mapped onto the shared "wordchip" tone this client uses
+ * everywhere a price verdict is shown (opportunities.js, betcheck.js's
+ * price-verdict block, games.js's MODEL vs MARKET panel) -- ONE mapping,
+ * reused rather than reimplemented per call site. Money is reserved for a
+ * genuine price advantage (STRONG VALUE/VALUE); LEAN/FAIR PRICE are the
+ * live/analytical cyan; PASS is a neutral outline (the ordinary, expected
+ * outcome, not a downside); OVERPRICED/FADE ALERT/INSUFFICIENT DATA are
+ * amber -- caution, never red (tokens.css's --v-warn family; red never
+ * marks a caution or an absence, only a genuine price advantage). An
+ * unrecognized future word falls back to the neutral tone rather than
+ * guessing at a color it was never told to use. */
+export function priceVerdictTone(word) {
+  if (word === "STRONG VALUE" || word === "VALUE") return "money";
+  if (word === "LEAN" || word === "FAIR PRICE") return "live";
+  if (word === "PASS") return "outline";
+  if (word === "OVERPRICED" || word === "FADE ALERT" || word === "INSUFFICIENT DATA") return "warn";
+  return "outline";
+}
+
+/** The small chip every price-verdict word renders as, everywhere one
+ * appears (opportunities.js's cards and ranked table, betcheck.js's
+ * price-verdict block, games.js's MODEL vs MARKET panel) -- one definition
+ * so the tone mapping and the markup can never drift apart between call
+ * sites. Renders the payload's own word text verbatim; never maps it to a
+ * different word (see priceVerdictTone's docstring on the tone rule). */
+export function renderWordChip(word) {
+  const tone = priceVerdictTone(word);
+  return el("span", { class: `pv-chip pv-chip--${tone}`, "data-hook": "price-verdict-word", text: word || "—" });
+}
+
 /** Book slugs arrive machine-shaped (`williamhill_us`) -- this only
  * reformats the same string for reading, it never renames a book. */
 export function formatBook(book) {

@@ -2732,3 +2732,239 @@
   .gv2-featured { padding: 0 var(--gutter-mobile) var(--sp-9); }
   .gv2-featured__head { flex-direction: column; align-items: flex-start; gap: var(--sp-3); }
 }
+
+/* =====================================================================
+   TOP OPPORTUNITIES / PAPER-RESEARCH PERFORMANCE / PRICE VERDICT / VALUE
+   METER -- Task B2 (web/js/opportunities.js, wired into web/js/today.js)
+   and Task B3 (web/js/performance.js, #/performance), plus the shared
+   PRICE VERDICT chip (dom.js's renderWordChip) and VALUE METER primitive
+   (web/js/valuemeter.js) reused by opportunities.js, betcheck.js's new
+   price-verdict block, and games.js's MODEL vs MARKET panel.
+
+   Additive only -- everything below uses the existing V2 token bridge
+   (--v-* families from tokens.css) and the existing .panel/.chamfer/
+   .sechead/.ov2-table primitives rather than inventing new ones. Class
+   prefixes used here: .opp- (opportunities.js + today.js's slate-date
+   banner), .perf- (performance.js), .pv- (the shared word chip + Bet
+   Check's price-verdict block), .vmeter- (the shared value-meter bars),
+   .gmv- (games.js's MODEL vs MARKET panel).
+   ===================================================================== */
+
+/* ---- shared word chip (dom.js's renderWordChip) -------------------------
+   money = STRONG VALUE/VALUE (a genuine price advantage); live = LEAN/FAIR
+   PRICE (analytical, not a downside); outline = PASS (the ordinary,
+   expected outcome); warn = OVERPRICED/FADE ALERT/INSUFFICIENT DATA
+   (caution/absence, amber, never red). */
+.pv-chip {
+  display: inline-flex; align-items: center; padding: 5px 11px;
+  font-family: var(--font-display); font-size: 10px; font-weight: 800;
+  letter-spacing: .14em; white-space: nowrap; --r: var(--r-chip);
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r));
+}
+.pv-chip--money { background: linear-gradient(120deg, var(--v-money), var(--v-money-2)); color: var(--v-money-ink); }
+.pv-chip--live { background: linear-gradient(120deg, var(--v-live), var(--v-live-2)); color: var(--v-live-ink); }
+.pv-chip--outline { background: rgba(255, 255, 255, .09); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16); color: var(--v-t3); }
+.pv-chip--warn { background: rgba(255, 176, 32, .16); box-shadow: inset 0 0 0 1px rgba(255, 176, 32, .4); color: var(--v-warn-label); }
+
+/* ---- VALUE METER (web/js/valuemeter.js) ---------------------------------*/
+.vmeter { display: flex; flex-direction: column; gap: var(--sp-4); margin: var(--sp-6) 0; }
+.vmeter-row { display: grid; grid-template-columns: 1fr 2fr auto; align-items: center; gap: var(--sp-5); }
+.vmeter-row__label { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .04em; color: var(--v-t4); }
+.vmeter-row__track { position: relative; height: 8px; background: rgba(255, 255, 255, .08); --r: 3px;
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r)); }
+.vmeter-row__fill { display: block; height: 100%; border-radius: inherit; }
+.vmeter-row__fill--market { background: linear-gradient(90deg, var(--v-live-2), var(--v-live)); }
+.vmeter-row__fill--price { background: linear-gradient(90deg, var(--v-money-2), var(--v-money)); }
+.vmeter-row__empty { position: absolute; inset: 0; display: flex; align-items: center; padding-left: 6px;
+  font-family: var(--font-mono); font-size: 8.5px; letter-spacing: .1em; color: var(--v-t6); }
+.vmeter-row__figure { font-family: var(--font-mono); font-size: 12.5px; color: var(--v-t1); text-align: right; min-width: 48px; }
+.vmeter-row__na { color: var(--v-t6); }
+.vmeter-gap { margin: var(--sp-2) 0 0; font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: .04em; }
+.vmeter-gap--better { color: var(--v-money-lit); }
+.vmeter-gap--worse { color: var(--v-warn-lit); }
+.vmeter-gap--flat, .vmeter-gap--na { color: var(--v-t5); font-weight: 500; }
+.vmeter-caption { margin: var(--sp-3) 0 0; font-size: 12px; line-height: 1.5; color: var(--v-t5); }
+.vmeter-word-note { margin: var(--sp-2) 0 0; font-family: var(--font-mono); font-size: 10.5px; color: var(--v-t5); }
+
+/* ---- TOP OPPORTUNITIES (web/js/opportunities.js) ------------------------*/
+.opp-slateband { display: flex; align-items: center; gap: var(--sp-5); flex-wrap: wrap;
+  padding: var(--sp-4) var(--gutter-desktop); }
+.opp-slateband__date { font-family: var(--font-display); font-size: 20px; font-weight: 800; letter-spacing: .06em; color: var(--v-t0); }
+.opp-slateband__tag { font-family: var(--font-mono); font-size: 10px; letter-spacing: .14em; padding: 3px 10px;
+  background: rgba(255, 255, 255, .08); color: var(--v-t3); --r: var(--r-chip);
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r)); }
+.opp-slateband__tag--next { background: rgba(255, 176, 32, .16); color: var(--v-warn-label); }
+
+.opp-section { padding: 0 var(--gutter-desktop) var(--sp-11); }
+.opp-label { margin: 0 0 var(--sp-6); font-size: 13px; color: var(--v-t4); }
+.opp-empty { padding: var(--sp-9) var(--sp-9); background: rgba(255, 176, 32, .06);
+  box-shadow: inset 0 0 0 1px rgba(255, 176, 32, .24), inset 3px 0 0 var(--v-warn); }
+.opp-empty__headline { margin: 0 0 var(--sp-4); font-family: var(--font-display); font-size: 20px; font-weight: 800;
+  letter-spacing: .04em; color: var(--v-warn-label); }
+.opp-empty__basis { margin: 0; font-size: 13px; line-height: 1.55; color: var(--v-warn-lit); }
+
+.opp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--sp-8); margin-bottom: var(--sp-11); }
+.opp-card { padding: var(--sp-8); display: flex; flex-direction: column; gap: var(--sp-4); }
+.opp-card__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-4); }
+.opp-card__matchup { font-family: var(--font-display); font-size: 18px; font-weight: 800; color: var(--v-t0); text-decoration: none; }
+.opp-card__matchup:hover { color: var(--v-live); }
+.opp-card__pitch { font-family: var(--font-mono); font-size: 11px; color: var(--v-t5); white-space: nowrap; }
+.opp-card__wager { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+.opp-card__wager-text { font-size: 14px; color: var(--v-t2); }
+.opp-card__price { font-family: var(--font-mono); font-size: 15px; font-weight: 700; color: var(--v-t0); }
+.opp-card__book { font-family: var(--font-mono); font-size: 10.5px; color: var(--v-t5); }
+.opp-card__chips { display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap; }
+.opp-card__vp { font-family: var(--font-mono); font-size: 12px; color: var(--v-money-lit); }
+.opp-card__tier { font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; color: var(--v-t5); }
+.opp-card__figline { margin: 0; font-size: 12.5px; color: var(--v-t4); }
+.opp-card__model { margin: 0; font-family: var(--font-mono); font-size: 11px; color: var(--v-t5); }
+.opp-card__lists { display: flex; flex-direction: column; gap: var(--sp-2); }
+.opp-card__reasons, .opp-card__risks { margin: 0; padding-left: 18px; font-size: 12.5px; line-height: 1.5; }
+.opp-card__reasons { color: var(--v-t3); }
+.opp-card__risks { color: var(--v-warn-lit); }
+.opp-card__engine { padding: var(--sp-4); background: rgba(255, 255, 255, .04); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08); --r: 8px;
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r)); }
+.opp-card__engine-line { margin: 0; font-size: 12px; color: var(--v-t3); }
+.opp-card__thesis { margin-top: var(--sp-2); font-size: 12px; color: var(--v-t4); }
+.opp-card__thesis-body { margin: var(--sp-2) 0 0; line-height: 1.5; }
+.opp-card__captured { margin: 0; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; color: var(--v-t6); }
+.opp-card__actions { display: flex; gap: var(--sp-4); flex-wrap: wrap; margin-top: var(--sp-2); }
+
+.opp-ranked { margin-bottom: var(--sp-9); }
+.opp-ranked__title { margin: 0 0 var(--sp-5); font-family: var(--font-display); font-size: 13px; font-weight: 700;
+  letter-spacing: .12em; color: var(--v-t4); }
+.opp-unpriced__title { margin: 0 0 var(--sp-5); font-family: var(--font-display); font-size: 13px; font-weight: 700;
+  letter-spacing: .12em; color: var(--v-t4); }
+.opp-unpriced__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+.opp-unpriced__row { display: flex; justify-content: space-between; gap: var(--sp-5); padding: var(--sp-4) 0;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .05); flex-wrap: wrap; }
+.opp-unpriced__matchup { font-size: 13px; color: var(--v-t2); }
+.opp-unpriced__reason { font-size: 12.5px; color: var(--v-t5); }
+
+/* ---- PAPER / RESEARCH PERFORMANCE (web/js/performance.js) ---------------*/
+.perf-screen { padding: var(--sp-9) var(--gutter-desktop) var(--sp-15); display: flex; flex-direction: column; gap: var(--sp-11); }
+.perf-head { display: flex; flex-direction: column; gap: var(--sp-4); }
+.perf-eyebrow { display: flex; }
+.perf-disclaimer { margin: 0; font-size: 14px; line-height: 1.55; color: var(--v-t3); max-width: 72ch; }
+.perf-freshness { margin: 0; font-family: var(--font-mono); font-size: 11.5px; color: var(--v-t5); }
+
+.perf-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--sp-8); }
+.perf-tile { padding: var(--sp-8); }
+.perf-tile__label { font-family: var(--font-display); font-size: 13px; font-weight: 800; letter-spacing: .12em;
+  color: var(--v-t1); margin-bottom: var(--sp-6); }
+.perf-tile__grid { display: flex; flex-direction: column; gap: var(--sp-3); }
+.perf-tile__row { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-4);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .045); padding: 6px 0; }
+.perf-tile__key { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; color: var(--v-t5); }
+.perf-tile__value { font-family: var(--font-mono); font-size: 14px; color: var(--v-t0); }
+.perf-figure__na { color: var(--v-t6); }
+
+.perf-classes { display: flex; flex-direction: column; gap: var(--sp-11); }
+.perf-class__explain { margin: var(--sp-2) 0 var(--sp-5); font-size: 13px; line-height: 1.5; color: var(--v-t4); max-width: 68ch; }
+.perf-class__rollup { margin: 0 0 var(--sp-6); font-family: var(--font-mono); font-size: 12px; color: var(--v-t3); }
+
+/* system_id / system_class strings (e.g.
+   "market_derived_consensus_h2h_1st_5_innings_away", "MARKET_REFERENCE")
+   carry no spaces for the browser's default word-break to hook into --
+   without an explicit break rule an unbroken string overflows .ov2-table's
+   auto-sized column straight into the next cell's content instead of
+   wrapping. Scoped to this screen's own tables only -- .ov2-table's shared
+   base rules (also used by odds.js's board) are left untouched. */
+.perf-classes .ov2-table td, .perf-picks .ov2-table td {
+  overflow-wrap: anywhere; word-break: break-word; max-width: 200px;
+}
+
+.perf-picks { display: flex; flex-direction: column; gap: var(--sp-5); }
+.perf-reasoning { padding: var(--sp-9); }
+.perf-reasoning__title { margin: 0 0 var(--sp-7); font-family: var(--font-display); font-size: 15px; font-weight: 800;
+  letter-spacing: .06em; color: var(--v-t0); }
+.perf-matrix { display: grid; grid-template-columns: 120px 1fr 1fr; gap: var(--sp-4); align-items: stretch; }
+.perf-matrix__row { display: contents; }
+.perf-matrix__colhead { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .08em; color: var(--v-t5);
+  align-self: end; padding-bottom: var(--sp-2); text-align: center; }
+.perf-matrix__rowhead { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .08em; color: var(--v-t5);
+  align-self: center; }
+.perf-matrix__cell { padding: var(--sp-6); background: rgba(255, 255, 255, .04); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08);
+  text-align: center; --r: 8px;
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r)); }
+.perf-matrix__value { font-family: var(--font-display); font-size: 26px; font-weight: 800; color: var(--v-t0); }
+.perf-matrix__label { margin-top: var(--sp-2); font-family: var(--font-mono); font-size: 9px; letter-spacing: .06em; color: var(--v-t5); }
+.perf-reasoning__untested { margin: var(--sp-6) 0 0; font-family: var(--font-mono); font-size: 12px; color: var(--v-t4); }
+.perf-reasoning__note { margin: var(--sp-3) 0 0; font-size: 12.5px; line-height: 1.5; color: var(--v-t5); }
+
+.perf-spark { padding: var(--sp-9); }
+.perf-spark__title { margin: 0 0 var(--sp-6); font-family: var(--font-display); font-size: 15px; font-weight: 800;
+  letter-spacing: .06em; color: var(--v-t0); }
+.perf-spark__svg { width: 100%; height: auto; display: block; }
+.perf-spark__zero { stroke: rgba(255, 255, 255, .18); stroke-width: 1; stroke-dasharray: 3 3; }
+.perf-spark__line { fill: none; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.perf-spark__line--all { stroke: var(--v-t3); }
+.perf-spark__line--forward { stroke: var(--v-live); }
+.perf-spark__legend { display: flex; gap: var(--sp-7); margin-top: var(--sp-5); flex-wrap: wrap; }
+.perf-spark__legend-item { font-family: var(--font-mono); font-size: 11px; padding-left: 18px; position: relative; }
+.perf-spark__legend-item::before { content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  width: 12px; height: 2px; }
+.perf-spark__legend-item--all { color: var(--v-t3); }
+.perf-spark__legend-item--all::before { background: var(--v-t3); }
+.perf-spark__legend-item--forward { color: var(--v-live-label); }
+.perf-spark__legend-item--forward::before { background: var(--v-live); }
+.perf-note { margin: 0; font-size: 12.5px; color: var(--v-t5); }
+
+/* ---- PRICE VERDICT block (web/js/betcheck.js's renderPriceVerdict) -----*/
+.pv-block { padding: var(--sp-8); display: flex; flex-direction: column; gap: var(--sp-5); }
+.pv-block__head { display: flex; align-items: center; }
+.pv-block__eyebrow { font-family: var(--font-display); font-size: 11px; font-weight: 800; letter-spacing: .18em; color: var(--v-t4); }
+.pv-block__reason { margin: 0; font-size: 13px; line-height: 1.5; color: var(--v-t3); }
+.pv-block__risk { margin: 0; font-size: 13px; line-height: 1.5; color: var(--v-warn-lit); }
+.pv-block__figs { display: flex; gap: var(--sp-9); flex-wrap: wrap; }
+.pv-block__fig-label { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .1em; color: var(--v-t5); margin-bottom: var(--sp-2); }
+.pv-block__fig-value { font-family: var(--font-display); font-size: 24px; font-weight: 800; color: var(--v-t0); }
+.pv-block__meta { margin: 0; font-family: var(--font-mono); font-size: 11px; color: var(--v-t5); }
+.pv-block__list { margin: 0; padding-left: 18px; font-size: 12.5px; line-height: 1.5; }
+.pv-block__list--reasons { color: var(--v-t3); }
+.pv-block__list--risks { color: var(--v-warn-lit); }
+.pv-block__basis { margin: var(--sp-2) 0 0; font-size: 11px; line-height: 1.5; color: var(--v-t6); }
+
+/* ---- MODEL vs MARKET panel (web/js/games.js) ----------------------------*/
+.gmv { padding: var(--sp-9); margin: var(--sp-9) 0; }
+.gmv__eyebrow { font-family: var(--font-display); font-size: 13px; font-weight: 800; letter-spacing: .12em;
+  color: var(--v-t1); margin-bottom: var(--sp-7); }
+.gmv__cols { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-9); }
+.gmv__col { display: flex; flex-direction: column; gap: var(--sp-3); }
+.gmv__col-name { font-family: var(--font-display); font-size: 13px; font-weight: 700; color: var(--v-t2); }
+.gmv__price-line { font-family: var(--font-mono); font-size: 13px; color: var(--v-t0); }
+.gmv__tier { margin: 0; font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; color: var(--v-t5); }
+.gmv__model-line { margin: var(--sp-7) 0 0; font-family: var(--font-mono); font-size: 11px; color: var(--v-t5); }
+.gmv-engine { margin-top: var(--sp-6); padding-top: var(--sp-6); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06); }
+.gmv-engine__title { margin: 0 0 var(--sp-4); font-family: var(--font-display); font-size: 12px; font-weight: 800;
+  letter-spacing: .1em; color: var(--v-t3); }
+.gmv-engine__summary { margin: 0 0 var(--sp-4); font-family: var(--font-mono); font-size: 11.5px; color: var(--v-t4); }
+.gmv-engine__none { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--v-t5); }
+.gmv-engine__plays { display: flex; flex-direction: column; gap: var(--sp-3); }
+.gmv-engine__play { display: flex; flex-direction: column; gap: var(--sp-1); font-size: 12.5px; }
+.gmv-engine__play-system { font-family: var(--font-mono); color: var(--v-t2); }
+.gmv-engine__play-side { font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; color: var(--v-t5); }
+.gmv-engine__thesis { font-size: 12px; color: var(--v-t4); }
+.gmv-engine__fatals { margin-top: var(--sp-5); padding: var(--sp-5); background: rgba(255, 176, 32, .08);
+  box-shadow: inset 0 0 0 1px rgba(255, 176, 32, .3); --r: 8px;
+  clip-path: polygon(var(--r) 0, 100% 0, 100% calc(100% - var(--r)), calc(100% - var(--r)) 100%, 0 100%, 0 var(--r)); }
+.gmv-engine__fatals-title { margin: 0 0 var(--sp-3); font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em;
+  color: var(--v-warn-label); }
+.gmv-engine__fatals-list { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.5; color: var(--v-warn-lit); }
+.gmv-engine__note { margin: var(--sp-5) 0 0; font-size: 12px; line-height: 1.5; color: var(--v-t5); }
+
+/* ---- 899px and below ----------------------------------------------------*/
+@media (max-width: 899px) {
+  .opp-section { padding: 0 var(--gutter-mobile) var(--sp-9); }
+  .opp-slateband { padding: var(--sp-4) var(--gutter-mobile); }
+  .opp-grid { grid-template-columns: 1fr; gap: var(--sp-6); }
+  .vmeter-row { grid-template-columns: 1fr; row-gap: var(--sp-2); }
+  .vmeter-row__figure { text-align: left; }
+
+  .perf-screen { padding: var(--sp-7) var(--gutter-mobile) var(--sp-13); gap: var(--sp-9); }
+  .perf-summary { grid-template-columns: 1fr; }
+  .perf-matrix { grid-template-columns: 90px 1fr 1fr; }
+  .perf-matrix__value { font-size: 20px; }
+
+  .gmv__cols { grid-template-columns: 1fr; }
+}

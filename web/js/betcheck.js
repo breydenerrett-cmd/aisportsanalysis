@@ -101,11 +101,12 @@
 
 import { apiFetch, apiPost, getToken, getFreeCheckToken, setFreeCheckToken } from "./api.js";
 import { el, clear, renderUnknown, renderError, renderLoading, notYetAvailable,
-  formatAmerican, formatConsensusShare, formatEasternClock } from "./dom.js";
+  formatAmerican, formatConsensusShare, formatEasternClock, formatAge, renderWordChip } from "./dom.js";
 import { bookLabel } from "./labels.js";
 import { setShellStatus } from "./shell.js";
 import { armEntrances } from "./motion.js";
 import { renderFeaturedBet, mapBetCheckPayloadToStanding } from "./featuredbet.js";
+import { renderValueMeter } from "./valuemeter.js";
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -372,6 +373,88 @@ function renderMarket(result) {
 }
 
 /* ---------------------------------------------------------------------
+ * PRICE VERDICT -- src/analysis/priceverdict.py's build_price_verdict,
+ * carried on POST /betcheck's own `price_verdict` field. Not one of the
+ * mandated ten blocks (BetCheckSkeletonOrder pins exactly five hooks in
+ * order; this is a new, additional panel), placed right after block 02
+ * THE MARKET in renderResult's assembly, since it is the same market-
+ * versus-your-price comparison in a single-word, single-glance form.
+ *
+ * INSUFFICIENT DATA renders ONLY the reasons/risks sentences that explain
+ * why -- never a fair price, your price, or a value meter drawn from
+ * numbers the verdict itself says it does not have.
+ * ------------------------------------------------------------------- */
+
+function renderPriceVerdict(result) {
+  const verdict = result.price_verdict || null;
+  const section = el("section", { class: "pv-block panel chamfer", "data-hook": "bet-check-price-verdict",
+    "data-rise": "" });
+  const head = el("div", { class: "pv-block__head" });
+  head.appendChild(el("span", { class: "pv-block__eyebrow", text: "PRICE VERDICT" }));
+  section.appendChild(head);
+
+  if (!verdict) {
+    section.appendChild(notYetAvailable("No price verdict on this response.", "NO VERDICT"));
+    return section;
+  }
+
+  section.appendChild(renderWordChip(verdict.word));
+
+  if (verdict.word === "INSUFFICIENT DATA") {
+    for (const r of verdict.reasons || []) section.appendChild(el("p", { class: "pv-block__reason", text: r }));
+    for (const r of verdict.risks || []) section.appendChild(el("p", { class: "pv-block__risk", text: r }));
+    if (!(verdict.reasons || []).length && !(verdict.risks || []).length) {
+      section.appendChild(el("p", { class: "pv-block__reason", text: "No reason given." }));
+    }
+    return section;
+  }
+
+  const yourPrice = result.query && typeof result.query.price === "number"
+    ? formatAmerican(result.query.price) : null;
+  const fairPrice = formatAmerican(verdict.fair_price);
+  const figs = el("div", { class: "pv-block__figs" });
+  figs.appendChild(el("div", { class: "pv-block__fig" }, [
+    el("div", { class: "pv-block__fig-label", text: "YOUR PRICE" }),
+    el("div", { class: "pv-block__fig-value" },
+      [yourPrice ? document.createTextNode(yourPrice) : notYetAvailable("No price stated.", "NO PRICE")]),
+  ]));
+  figs.appendChild(el("div", { class: "pv-block__fig" }, [
+    el("div", { class: "pv-block__fig-label", text: "FAIR PRICE" }),
+    el("div", { class: "pv-block__fig-value" },
+      [fairPrice ? document.createTextNode(fairPrice) : notYetAvailable("No de-vigged consensus to convert.", "NO FAIR PRICE")]),
+  ]));
+  section.appendChild(figs);
+
+  section.appendChild(renderValueMeter({
+    marketImplied: verdict.market_implied_probability,
+    priceImplied: verdict.stated_implied_probability,
+    valuePoints: verdict.value_points,
+    word: null,
+  }));
+
+  const metaBits = [];
+  if (verdict.evidence_tier) metaBits.push(`EVIDENCE TIER ${verdict.evidence_tier}`);
+  if (typeof verdict.books === "number") metaBits.push(`${verdict.books} books`);
+  const age = formatAge(verdict.age_seconds);
+  if (age) metaBits.push(`captured ${age.toLowerCase()}`);
+  if (metaBits.length) section.appendChild(el("p", { class: "pv-block__meta", text: metaBits.join(" · ") }));
+
+  if ((verdict.reasons || []).length) {
+    const list = el("ul", { class: "pv-block__list pv-block__list--reasons" });
+    for (const r of verdict.reasons) list.appendChild(el("li", { text: r }));
+    section.appendChild(list);
+  }
+  if ((verdict.risks || []).length) {
+    const list = el("ul", { class: "pv-block__list pv-block__list--risks" });
+    for (const r of verdict.risks) list.appendChild(el("li", { text: r }));
+    section.appendChild(list);
+  }
+  if (verdict.basis) section.appendChild(el("p", { class: "pv-block__basis", text: verdict.basis }));
+
+  return section;
+}
+
+/* ---------------------------------------------------------------------
  * 05 -- WHAT CHANGED (usually NOT YET AVAILABLE)
  * ------------------------------------------------------------------- */
 
@@ -631,6 +714,7 @@ function renderResult(container, result) {
   blocks.appendChild(renderTheBet(result));
   blocks.appendChild(connector("SO WHAT DOES THE MARKET SAY?"));
   blocks.appendChild(renderMarket(result));
+  blocks.appendChild(renderPriceVerdict(result));
   blocks.appendChild(connector("IS THERE A CASE FOR IT?"));
   blocks.appendChild(renderCase(result));
   blocks.appendChild(connector("AND THE OTHER SIDE OF IT?"));
@@ -700,8 +784,14 @@ export async function renderBetCheck(container, prefill = {}) {
   const sideSelect = el("select", { id: "bc-side", name: "side", required: "required" });
   sideSelect.appendChild(el("option", { value: "away", text: "AWAY" }));
   sideSelect.appendChild(el("option", { value: "home", text: "HOME" }));
+  // Prefilled from a #/betcheck?...&side=&price= query -- e.g. Top
+  // Opportunities' own "CHECK THIS PRICE" links (web/js/opportunities.js)
+  // land here with a real side/price already known, so the reader is not
+  // asked to retype a number this client already has.
+  if (prefill.side === "away" || prefill.side === "home") sideSelect.value = prefill.side;
   const priceInput = el("input", { type: "number", id: "bc-price", name: "american_price",
-    step: "1", placeholder: "-140", required: "required" });
+    step: "1", placeholder: "-140", required: "required",
+    value: prefill.price !== undefined && prefill.price !== null && prefill.price !== "" ? prefill.price : undefined });
   field.appendChild(part("date", "Date", dateInput));
   field.appendChild(part("team", "Away", awayInput));
   field.appendChild(part("team", "Home", homeInput));

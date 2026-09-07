@@ -108,6 +108,7 @@ import { el, clear, formatAmerican, formatConsensusShare,
 import { renderError, renderLoadingSkeleton, renderEmptySlate,
   renderCaptureUnavailable } from "./states.js";
 import { renderFeaturedBet, mapBetCheckPayloadToStanding } from "./featuredbet.js";
+import { renderOpportunities } from "./opportunities.js";
 import { renderStaleness } from "./meta.js";
 import { teamColors } from "./teamcolors.js";
 import { teamName } from "./labels.js";
@@ -220,6 +221,49 @@ function boardAggregates(rows) {
 function et(isoUtc) {
   const clock = formatEasternClock(isoUtc);
   return clock ? `${clock} ET` : null;
+}
+
+/** "SAT SEP 7" from a bare `YYYY-MM-DD` slate date -- the calendar date
+ * itself, formatted in UTC (matching `dateStrip`'s own convention below:
+ * a slate date is a calendar day, not an instant, so there is no ET
+ * conversion to apply to it). Noon UTC keeps the formatted day stable
+ * regardless of which UTC offset the reader's own clock happens to be in. */
+function slateDateLabel(dateIso) {
+  if (!dateIso) return null;
+  const d = new Date(`${dateIso}T12:00:00Z`);
+  if (Number.isNaN(d.getTime())) return null;
+  return new Intl.DateTimeFormat("en-US", { timeZone: "UTC", weekday: "short", month: "short", day: "numeric" })
+    .format(d).toUpperCase().replace(/,/g, "");
+}
+
+/** Today's own calendar date in America/New_York, as `YYYY-MM-DD` --
+ * compared against GET /today's own `date` (a UTC calendar date) to tell
+ * a reader when the slate they are looking at is not the one their own
+ * local evening's games belong to (GET /today's date is UTC, so after
+ * roughly 8pm ET it has already rolled to tomorrow's slate). */
+function currentEasternDateIso() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(new Date());
+  const map = {};
+  for (const p of parts) map[p.type] = p.value;
+  return `${map.year}-${map.month}-${map.day}`;
+}
+
+/** The slate-date banner shown near the hero (handoff's own instruction:
+ * "the API's today is the UTC date, so after ~8pm ET it is the next
+ * day's slate"). Never a guess -- both dates compared are real fields
+ * (the payload's own `date`, and the reader's own current ET calendar
+ * date computed the same way `formatEasternDate` already does elsewhere
+ * in this client). */
+function renderSlateBanner(dateIso) {
+  const label = slateDateLabel(dateIso);
+  const isNext = !!dateIso && dateIso > currentEasternDateIso();
+  const banner = el("div", { class: "opp-slateband", "data-hook": "slate-date-banner" });
+  banner.appendChild(el("span", { class: "opp-slateband__date", text: label || "SLATE DATE NOT AVAILABLE" }));
+  banner.appendChild(el("span", { class: `opp-slateband__tag${isNext ? " opp-slateband__tag--next" : ""}`,
+    "data-hook": "slate-date-context", text: isNext ? "NEXT SLATE" : "TONIGHT'S SLATE" }));
+  return banner;
 }
 
 /** "<1 MIN AGO" .. "N DAY AGO" -- no seconds-level liveness claim
@@ -889,12 +933,18 @@ export async function renderToday(container) {
   // Mobile-only (V2-22); hidden on desktop by screens.css.
   host.appendChild(dateStrip(date));
 
+  host.appendChild(renderSlateBanner(date));
   renderHero(host, featured, aggregates, rows, date);
   setShellStatus(aggregates.freshest ? `PRICES AS OF ${et(aggregates.freshest)}` : null);
 
   // Mobile-only matchup poster (V2-22) -- the featured game's identity,
   // no records or starters (see matchupPoster's own docstring).
   host.appendChild(matchupPoster(featured.row));
+
+  // TOP OPPORTUNITIES -- between the hero and the Featured Bet carousel
+  // head (web/js/opportunities.js owns this section's own render/fetch;
+  // this screen only places it).
+  await renderOpportunities(host, date);
 
   const slot = renderFeaturedSection(host, gapCandidate, rows.length);
   slot.appendChild(el("div", { class: "gv2-featured__loading",

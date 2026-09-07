@@ -1,0 +1,188 @@
+"""Structural checks for the hosted-demo sprint's new front-end surfaces:
+
+  - web/js/performance.js (#/performance, GET /performance)
+  - web/js/opportunities.js (TOP OPPORTUNITIES, wired into today.js)
+  - web/js/valuemeter.js (the shared MARKET-IMPLIED vs YOUR-PRICE bars)
+  - main.js's #/performance route registration and RESULTS nav item
+  - betcheck.js's new price-verdict block and games.js's MODEL vs MARKET
+    panel, at least at the "does not violate the honesty boundary" level
+
+A plain-text scan, like tests/test_web_structure.py and
+tests/test_web_v2_betcheck.py -- never starts a server, never imports a JS
+engine.
+"""
+
+from __future__ import annotations
+
+import re
+import unittest
+from pathlib import Path
+
+from tests.test_customer_language import HARD_BANNED, NEGATION_ONLY, NEGATORS
+
+ROOT = Path(__file__).resolve().parent.parent
+WEB_JS = ROOT / "web" / "js"
+
+PERFORMANCE_PATH = WEB_JS / "performance.js"
+OPPORTUNITIES_PATH = WEB_JS / "opportunities.js"
+VALUEMETER_PATH = WEB_JS / "valuemeter.js"
+MAIN_PATH = WEB_JS / "main.js"
+BETCHECK_PATH = WEB_JS / "betcheck.js"
+GAMES_PATH = WEB_JS / "games.js"
+TODAY_PATH = WEB_JS / "today.js"
+DOM_PATH = WEB_JS / "dom.js"
+
+NEW_JS_FILES = (PERFORMANCE_PATH, OPPORTUNITIES_PATH, VALUEMETER_PATH)
+
+BANNED_PROBABILITY_TOKENS = (
+    "win_probability", "winProbability", "modelProbability", "true_probability",
+)
+
+
+def _read(path: Path) -> str:
+    return path.read_text(encoding="utf-8")
+
+
+class NewFilesExist(unittest.TestCase):
+    def test_new_files_present_and_nonempty(self):
+        for path in NEW_JS_FILES:
+            self.assertTrue(path.is_file(), f"{path.name} missing")
+            self.assertTrue(_read(path).strip(), f"{path.name} is empty")
+
+
+class MainJsRegistersPerformanceRoute(unittest.TestCase):
+    def setUp(self):
+        self.text = _read(MAIN_PATH)
+
+    def test_imports_performance_js(self):
+        self.assertIn('from "./performance.js"', self.text)
+        self.assertIn("renderPerformance", self.text)
+
+    def test_hash_route_registered(self):
+        self.assertIn('"#/performance"', self.text)
+        self.assertIn('route === "performance"', self.text)
+
+    def test_section_label_registered(self):
+        self.assertIn("performance: \"PERFORMANCE\"", self.text)
+
+    def test_nav_item_present(self):
+        self.assertIn('label: "RESULTS"', self.text)
+
+
+class OpportunitiesNeverInventsAnEmptyMessage(unittest.TestCase):
+    def test_empty_literal_present_verbatim(self):
+        text = _read(OPPORTUNITIES_PATH)
+        self.assertIn("NO QUALIFYING BEST BETS RIGHT NOW", text)
+
+    def test_qualifying_rows_never_a_fabricated_default(self):
+        text = _read(OPPORTUNITIES_PATH)
+        # qualifying is always read from the payload, never defaulted to a
+        # non-empty literal array of invented rows.
+        self.assertIn("payload.qualifying || []", text)
+
+
+class ValueMeterLabelsHonestlyMarketImplied(unittest.TestCase):
+    def test_market_implied_label_present(self):
+        text = _read(VALUEMETER_PATH)
+        self.assertIn("MARKET-IMPLIED", text)
+
+    def test_no_verdict_or_probability_fabrication(self):
+        text = _read(VALUEMETER_PATH)
+        self.assertNotRegex(text, r"verdict\s*\|\|\s*[\"']\w+[\"']")
+
+
+class NeverFabricateGuardsAcrossNewFiles(unittest.TestCase):
+    """This sprint's own honesty invariant, restated as a tripwire, scoped
+    to the three genuinely NEW files this change adds (performance.js,
+    opportunities.js, valuemeter.js) -- the pre-existing files
+    (betcheck.js, games.js, today.js, dom.js) already carry their own
+    tailored guards in test_web_v2_betcheck.py / test_web_v2_game.py /
+    test_web_v2_gameday.py, and their long module docstrings legitimately
+    NAME banned words in prose (negated, explaining why something is not
+    done) -- a whole-file regex sweep over those would false-positive on
+    exactly the sentences that enforce the rule."""
+
+    def test_no_verdict_or_default_fallback(self):
+        for path in NEW_JS_FILES:
+            text = _read(path)
+            self.assertNotRegex(
+                text, r"verdict\s*\|\|\s*[\"']\w+[\"']",
+                f"{path.name}: a verdict must never be defaulted")
+
+    def test_no_win_probability_or_model_probability_tokens(self):
+        for path in NEW_JS_FILES:
+            text = _read(path)
+            for token in BANNED_PROBABILITY_TOKENS:
+                self.assertNotIn(token, text, f"{path.name}: banned token {token!r}")
+
+
+class NoBannedVocabulary(unittest.TestCase):
+    """Reuses tests/test_customer_language's own banned-phrase lists,
+    applied to the three new files this change adds -- independent of
+    tests/test_web_structure.py's web-wide (HARD_BANNED-only) sweep."""
+
+    def test_no_hard_banned_or_unnegated_phrases(self):
+        violations = []
+        for path in NEW_JS_FILES:
+            text = _read(path)
+            for pattern, label in HARD_BANNED:
+                if re.search(pattern, text, re.IGNORECASE):
+                    violations.append(f"{path.name}: hard-banned {label!r}")
+            for pattern, label in NEGATION_ONLY:
+                for m in re.finditer(pattern, text, re.IGNORECASE):
+                    window = text[max(0, m.start() - 90):m.start()]
+                    if not NEGATORS.search(window):
+                        violations.append(f"{path.name}: {label!r} affirmed (no negation nearby)")
+        self.assertEqual(violations, [], "\n".join(violations))
+
+    def test_no_bare_ev_or_clv(self):
+        for path in NEW_JS_FILES:
+            text = _read(path)
+            self.assertNotRegex(text, r"\bEV\b", f"{path.name}: bare EV")
+            self.assertNotIn("CLV", text, f"{path.name}: CLV")
+
+
+class PriceVerdictBlockWiredHonestly(unittest.TestCase):
+    """betcheck.js's new renderPriceVerdict block: a new hook, distinct
+    from the five mandated data-hook markers, never reusing or
+    interfering with block 01's verdict-free contract."""
+
+    def setUp(self):
+        self.text = _read(BETCHECK_PATH)
+
+    def test_price_verdict_hook_present(self):
+        self.assertIn('"bet-check-price-verdict"', self.text)
+
+    def test_price_verdict_function_defined(self):
+        self.assertRegex(self.text, r"\bfunction renderPriceVerdict\s*\(")
+
+    def test_called_in_render_result(self):
+        assembly = self.text.split("function renderResult(")[1].split("\nfunction ")[0]
+        self.assertIn("renderPriceVerdict(result)", assembly)
+
+    def test_block_01_still_verdict_free(self):
+        # renderTheBet (block 01) must still pass no verdict/priceStanding
+        # literal to the Featured Bet mapper -- the price-verdict addition
+        # lives in its own new block, never folded into block 01.
+        the_bet = self.text.split("function renderTheBet(")[1].split("\nfunction ")[0]
+        self.assertNotRegex(the_bet, r"verdict\s*:\s*[\"']\w+[\"']")
+        self.assertNotRegex(the_bet, r"priceStanding\s*:\s*\{")
+
+
+class GamesModelVsMarketWiredHonestly(unittest.TestCase):
+    def setUp(self):
+        self.text = _read(GAMES_PATH)
+
+    def test_model_vs_market_hook_present(self):
+        self.assertIn('"model-vs-market"', self.text)
+
+    def test_reads_price_verdicts_and_engine_from_the_payload(self):
+        self.assertIn("payload.price_verdicts", self.text)
+        self.assertIn("payload.engine", self.text)
+
+    def test_independent_model_line_states_the_literal(self):
+        self.assertIn("NO INDEPENDENT MODEL YET", self.text)
+
+
+if __name__ == "__main__":
+    unittest.main()

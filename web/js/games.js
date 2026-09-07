@@ -73,9 +73,10 @@
 import { apiGet } from "./api.js";
 import { el, clear, renderAbsent, humanizeKey,
   verdictLabel, formatAmerican, formatBook, formatConsensusShare,
-  formatEasternTime, formatEasternClock } from "./dom.js";
+  formatEasternTime, formatEasternClock, renderWordChip } from "./dom.js";
 import { renderLoadingSkeleton, renderError, notYetAvailable } from "./states.js";
 import { renderFeaturedBet } from "./featuredbet.js";
+import { renderValueMeter } from "./valuemeter.js";
 import { renderStaleness } from "./meta.js";
 import { teamColors } from "./teamcolors.js";
 import { teamName, bookLabel } from "./labels.js";
@@ -562,6 +563,134 @@ function gqvSpotlight(quick, advanced) {
 }
 
 /* =====================================================================
+ * MODEL vs MARKET -- payload.price_verdicts (src/analysis/priceverdict.py's
+ * build_price_verdict, one per side, keyed away/home -- GET /game's own
+ * `price_verdicts` field, distinct from `quick.price.sides`, which carries
+ * the best price + book each verdict was measured against) plus
+ * payload.engine (src/report/engine_bridge.py's summarize_game rollup,
+ * null when no forward-test decision joins to this game). Sits directly
+ * beneath the Quick View spotlight (V2-34), before the TEAMS panel.
+ *
+ * "MODEL" here is never an independent model probability -- there is none
+ * (see `price_verdict.independent_model`'s own literal string, rendered
+ * verbatim below). This panel puts the market-derived price verdict next
+ * to the engine's forward-test decisions so a reader can see both real
+ * signals side by side without either one masquerading as the other.
+ * ===================================================================*/
+
+function gmvVerdictColumn(sideKey, abbr, verdict, priceSide) {
+  const col = el("div", { class: "gmv__col" });
+  col.appendChild(gqvBadge(abbr));
+  col.appendChild(el("div", { class: "gmv__col-name", text: `${teamName(abbr, "name") || abbr} moneyline` }));
+
+  if (!verdict) {
+    col.appendChild(notYetAvailable("No price verdict for this side.", "NO VERDICT"));
+    return col;
+  }
+
+  col.appendChild(renderWordChip(verdict.word));
+
+  const bestPrice = priceSide && typeof priceSide.best_price === "number" ? formatAmerican(priceSide.best_price) : null;
+  if (bestPrice) {
+    col.appendChild(el("div", { class: "gmv__price-line" },
+      [document.createTextNode(`${bestPrice}${priceSide.best_book ? ` at ${bookLabel(priceSide.best_book)}` : ""}`)]));
+  }
+
+  col.appendChild(renderValueMeter({
+    marketImplied: verdict.market_implied_probability,
+    priceImplied: verdict.stated_implied_probability,
+    valuePoints: verdict.value_points,
+    word: null,
+  }));
+
+  if (verdict.evidence_tier) {
+    col.appendChild(el("p", { class: "gmv__tier", text: `EVIDENCE TIER ${verdict.evidence_tier}` }));
+  }
+  return col;
+}
+
+function provenanceLine(provenanceCounts) {
+  if (!provenanceCounts || typeof provenanceCounts !== "object") return "not available";
+  const parts = Object.keys(provenanceCounts).map((k) => `${k}: ${provenanceCounts[k]}`);
+  return parts.length ? parts.join(", ") : "not available";
+}
+
+function engineDecisionsList(engine) {
+  const wrap = el("div", { class: "gmv-engine" });
+  wrap.appendChild(el("h4", { class: "gmv-engine__title", text: "ENGINE DECISIONS" }));
+  if (!engine) {
+    wrap.appendChild(notYetAvailable(
+      "No frozen engine decisions joined to this game.", "ENGINE"));
+    return wrap;
+  }
+  wrap.appendChild(el("p", { class: "gmv-engine__summary",
+    text: `${engine.n_decisions} decision${engine.n_decisions === 1 ? "" : "s"} · `
+      + `${engine.n_play} played · ${engine.n_staked} staked` }));
+
+  const plays = Array.isArray(engine.forward_test_plays) ? engine.forward_test_plays : [];
+  if (plays.length === 0) {
+    wrap.appendChild(el("p", { class: "gmv-engine__none",
+      text: "No forward-test system played this game -- CONTROL and MARKET REFERENCE decisions are "
+          + "never shown here as interest (they carry no checkable thesis)." }));
+  } else {
+    const list = el("div", { class: "gmv-engine__plays" });
+    for (const play of plays) {
+      const row = el("div", { class: "gmv-engine__play" });
+      row.appendChild(el("span", { class: "gmv-engine__play-system", text: play.system_id || "unknown system" }));
+      row.appendChild(el("span", { class: "gmv-engine__play-side",
+        text: play.side_or_selection ? String(play.side_or_selection).toUpperCase() : "" }));
+      if (play.thesis) {
+        const details = el("details", { class: "gmv-engine__thesis" });
+        details.appendChild(el("summary", { text: "Thesis" }));
+        details.appendChild(el("p", { text: String(play.thesis) }));
+        row.appendChild(details);
+      }
+      list.appendChild(row);
+    }
+    wrap.appendChild(list);
+  }
+
+  const fatals = Array.isArray(engine.fatal_counterarguments) ? engine.fatal_counterarguments : [];
+  if (fatals.length) {
+    const warn = el("div", { class: "gmv-engine__fatals" });
+    warn.appendChild(el("p", { class: "gmv-engine__fatals-title", text: `${fatals.length} FATAL COUNTERARGUMENT${fatals.length === 1 ? "" : "S"}` }));
+    const list = el("ul", { class: "gmv-engine__fatals-list" });
+    for (const ca of fatals) {
+      list.appendChild(el("li", { text: ca.detail || ca.cause || "no detail given" }));
+    }
+    warn.appendChild(list);
+    wrap.appendChild(warn);
+  }
+
+  if (engine.market_reference_present) {
+    wrap.appendChild(el("p", { class: "gmv-engine__note",
+      text: "A MARKET REFERENCE system also decided this game -- it republishes the board's own "
+          + "consensus, a calibration reference only, never a pick." }));
+  }
+  return wrap;
+}
+
+function gqvModelVsMarket(payload, quick) {
+  const wrap = el("section", { class: "gmv panel chamfer", "data-hook": "model-vs-market",
+    "data-rise": "" });
+  wrap.appendChild(el("div", { class: "gmv__eyebrow", text: "MODEL vs MARKET" }));
+
+  const verdicts = (payload && typeof payload.price_verdicts === "object" && payload.price_verdicts) || {};
+  const sides = (quick.price && quick.price.sides) || {};
+  const cols = el("div", { class: "gmv__cols" });
+  cols.appendChild(gmvVerdictColumn("away", quick.away_team, verdicts.away, sides.away));
+  cols.appendChild(gmvVerdictColumn("home", quick.home_team, verdicts.home, sides.home));
+  wrap.appendChild(cols);
+
+  const engine = payload && payload.engine ? payload.engine : null;
+  wrap.appendChild(el("p", { class: "gmv__model-line",
+    text: `INDEPENDENT MODEL: NO INDEPENDENT MODEL YET · engine provenance: ${provenanceLine(engine && engine.provenance_counts)}` }));
+
+  wrap.appendChild(engineDecisionsList(engine));
+  return wrap;
+}
+
+/* =====================================================================
  * TEAMS panel -- records, win pct, RS/RA per game, last-5/last-10, every
  * rate with its sample n. away/home split intentionally NOT shown: the
  * dossier only exposes the split as a bare win_pct fraction
@@ -907,6 +1036,7 @@ export async function renderGameDetail(container, date, away, home) {
   body.appendChild(gqvVerdict(quick));
   body.appendChild(gqvPrice(quick));
   body.appendChild(gqvSpotlight(quick, advanced));
+  body.appendChild(gqvModelVsMarket(payload, quick));
   body.appendChild(gqvTeams(advanced, quick));
   body.appendChild(gqvActions(date, away, home));
 
