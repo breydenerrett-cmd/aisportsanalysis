@@ -2265,6 +2265,9 @@ def cmd_engine(args) -> int:
     if args.engine_command == "settle":
         return _cmd_engine_settle(args)
 
+    if args.engine_command == "slip":
+        return _cmd_engine_slip(args)
+
     if args.engine_command == "replay-one":
         return _cmd_engine_replay_one(args)
 
@@ -2437,6 +2440,75 @@ def _cmd_engine_settle(args) -> int:
         if s.scorecard_absent:
             print(f"    scorecard absent    : "
                   f"{[a.field for a in s.scorecard_absent]}")
+    return EXIT_OK
+
+
+def _cmd_engine_slip(args) -> int:
+    """`engine slip --date DATE [--dry-run]`. See `src.engine.slip`.
+
+    Runs AFTER `engine slate` on the same date: it reads the decisions that
+    run already froze rather than deciding anything itself, so a slip can
+    never contain a pick that is not already on the decisions ledger.
+
+    The family clustering is built from the WHOLE forward history, not from
+    this date alone. Two genomes that happened to differ on one night's six
+    games are not thereby independent, and a clustering rebuilt nightly from
+    a handful of decisions would report near-duplicates as distinct families
+    on exactly the thin nights where that error does the most damage.
+    """
+    from datetime import datetime, timezone
+
+    from src.analysis import families as families_mod
+    from src.engine import slip as slip_mod
+    from src.engine.adapters.evolab_system import REGISTERED_SYSTEMS
+    from src.ledger.chain import HashChainLedger
+
+    rows = [r for r in HashChainLedger("evidence/decisions_v2.jsonl").read()
+            if not r.get("kind")]
+    forward_rows = [r for r in rows
+                    if slip_mod.is_forward_test(r.get("system_id"))]
+    roster = [s.id for s in REGISTERED_SYSTEMS
+              if slip_mod.is_forward_test(s.id)]
+    clustering = families_mod.families(
+        families_mod.forward_selections(forward_rows, systems=roster)
+        .selections)
+
+    today_rows = [r for r in rows
+                  if str(r.get("decision_utc") or "").startswith(args.date)]
+    if not today_rows:
+        print(f"ERROR: no frozen decisions for {args.date} -- run "
+              f"`engine slate --date {args.date}` first", file=sys.stderr)
+        return EXIT_ERROR
+
+    slip = slip_mod.build_slip(
+        today_rows, clustering, date=args.date,
+        slip_utc=datetime.now(timezone.utc).isoformat())
+
+    print(f"[PAPER] engine slip --date {args.date}")
+    print(f"  rule                : {slip.rule}")
+    print(f"  population          : {len(roster)} forward-test system(s) in "
+          f"{clustering.n_families} famil(ies)")
+    print(f"  considered          : {len(today_rows)} decision(s), "
+          f"{slip.n_instrument_plays} instrument play(s) not eligible")
+    if not slip.picks:
+        print("  PUBLISHED           : nothing cleared the evidence floors")
+    for pick in slip.picks:
+        tags = "/".join(pick.cohorts)
+        print(f"  #{pick.rank} [{tags}] {pick.market_key} "
+              f"{pick.selection_id} @ {pick.price_american} ({pick.book})")
+        print(f"      families={pick.n_families} of {pick.n_systems} "
+              f"system(s) | signals={pick.n_signals} rung={pick.deepest_rung} "
+              f"| books={pick.books_at_decision} "
+              f"| standing={pick.price_standing_bps}bps")
+    for miss in slip.misses:
+        print(f"  missed: {miss.system_id} {miss.reason} -- {miss.detail}")
+
+    if args.dry_run:
+        print("  (dry run -- nothing appended)")
+        return EXIT_OK
+    slip_mod.append_slip(slip)
+    print(f"  appended to {slip_mod.DEFAULT_SLIP_PATH} "
+          f"at {slip.slip_utc}")
     return EXIT_OK
 
 
@@ -3105,6 +3177,14 @@ def build_parser() -> argparse.ArgumentParser:
         "settle", help="S6a: settle a date's paper wagers from real "
                       "results and append Scorecards")
     engine_settle.add_argument("--date", required=True, help="YYYY-MM-DD")
+
+    engine_slip = engine_sub.add_parser(
+        "slip", help="rank a date's frozen plays into the published slip "
+                     "(Top 3 / Top 5 / published) and append it")
+    engine_slip.add_argument("--date", required=True, help="YYYY-MM-DD")
+    engine_slip.add_argument(
+        "--dry-run", action="store_true",
+        help="rank and print without appending to the slip ledger")
 
     engine_replay_one = engine_sub.add_parser(
         "replay-one", help="S3 demonstration: one 2023-24 replay decision "
