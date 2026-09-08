@@ -768,3 +768,13 @@
 {"fetched_utc": "2026-09-07T23:25:45.143568+00:00", "game_date": "2026-09-07", "poll": true}
 {"fetched_utc": "2026-09-07T23:30:27.451580+00:00", "game_date": "2026-09-07", "poll": true}
 {"fetched_utc": "2026-09-07T23:30:29.525802+00:00", "game_date": "2026-09-07", "poll": true}
+{"fetched_utc": "2026-09-08T00:10:44.861855+00:00", "game_date": "2026-09-07", "poll": true}
+{"category": "optioned", "date": "2026-09-07", "first_seen_utc": "2026-09-08T00:10:44.861855+00:00", "player": "Jake Meyers", "player_id": 676694, "team": "HOU", "transaction_id": 941554}
+{"category": "il_activation", "date": "2026-09-07", "first_seen_utc": "2026-09-08T00:10:44.861855+00:00", "player": "Jorge Barrosa", "player_id": 678489, "team": "HOU", "transaction_id": 941555}
+{"category": "optioned", "date": "2026-09-07", "first_seen_utc": "2026-09-08T00:10:44.861855+00:00", "player": "Elmer Rodr\u00edguez", "player_id": 695684, "team": "NYY", "transaction_id": 941556}
+{"category": "designated", "date": "2026-09-07", "first_seen_utc": "2026-09-08T00:10:44.861855+00:00", "player": "Chase Hampton", "player_id": 694633, "team": "NYY", "transaction_id": 941557}
+{"category": "il_activation", "date": "2026-09-07", "first_seen_utc": "2026-09-08T00:10:44.861855+00:00", "player": "Aaron Judge", "player_id": 592450, "team": "NYY", "transaction_id": 941559}
+{"category": "optioned", "date": "2026-09-07", "first_seen_utc": "2026-09-08T00:10:44.861855+00:00", "player": "Ben Peoples", "player_id": 687239, "team": "TEX", "transaction_id": 941560}
+{"category": "il_activation", "date": "2026-09-07", "first_seen_utc": "2026-09-08T00:10:44.861855+00:00", "player": "Robert Garcia", "player_id": 676395, "team": "TEX", "transaction_id": 941561}
+{"category": "other", "date": "2026-09-07", "first_seen_utc": "2026-09-08T00:10:44.861855+00:00", "player": "Christian Bethancourt", "player_id": 542194, "team": "PIT", "transaction_id": 941562}
+{"fetched_utc": "2026-09-08T00:10:45.920355+00:00", "game_date": "2026-09-07", "poll": true}
