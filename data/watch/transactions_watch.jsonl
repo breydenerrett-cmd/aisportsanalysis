@@ -812,3 +812,13 @@
 {"fetched_utc": "2026-09-08T18:52:26.314285+00:00", "game_date": "2026-09-08", "poll": true}
 {"fetched_utc": "2026-09-08T19:40:43.884453+00:00", "game_date": "2026-09-08", "poll": true}
 {"fetched_utc": "2026-09-08T19:40:45.575656+00:00", "game_date": "2026-09-08", "poll": true}
+{"fetched_utc": "2026-09-08T20:25:43.566514+00:00", "game_date": "2026-09-08", "poll": true}
+{"category": "il_placement", "date": "2026-09-06", "first_seen_utc": "2026-09-08T20:25:43.566514+00:00", "player": "Taylor Walls", "player_id": 670764, "team": "TB", "transaction_id": 941700}
+{"category": "rehab", "date": "2026-09-08", "first_seen_utc": "2026-09-08T20:25:43.566514+00:00", "player": "Tanner Houck", "player_id": 656557, "team": "BOS", "transaction_id": 941687}
+{"category": "other", "date": "2026-09-08", "first_seen_utc": "2026-09-08T20:25:43.566514+00:00", "player": "Nick Madrigal", "player_id": 663611, "team": "TB", "transaction_id": 941699}
+{"category": "rehab", "date": "2026-09-08", "first_seen_utc": "2026-09-08T20:25:43.566514+00:00", "player": "Cionel P\u00e9rez", "player_id": 672335, "team": "NYM", "transaction_id": 941704}
+{"category": "il_activation", "date": "2026-09-08", "first_seen_utc": "2026-09-08T20:25:43.566514+00:00", "player": "Corbin Burnes", "player_id": 669203, "team": "ARI", "transaction_id": 941705}
+{"category": "recalled", "date": "2026-09-08", "first_seen_utc": "2026-09-08T20:25:43.566514+00:00", "player": "Kade Strowd", "player_id": 669704, "team": "ARI", "transaction_id": 941706}
+{"category": "optioned", "date": "2026-09-08", "first_seen_utc": "2026-09-08T20:25:43.566514+00:00", "player": "Gerardo Carrillo", "player_id": 672629, "team": "ARI", "transaction_id": 941707}
+{"category": "optioned", "date": "2026-09-08", "first_seen_utc": "2026-09-08T20:25:43.566514+00:00", "player": "Jose Cabrera", "player_id": 703615, "team": "ARI", "transaction_id": 941708}
+{"fetched_utc": "2026-09-08T20:25:45.498817+00:00", "game_date": "2026-09-08", "poll": true}
