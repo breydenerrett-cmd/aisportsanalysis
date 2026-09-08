@@ -184,6 +184,59 @@ class TestIdempotency(SlateTestBase):
         wager_rows = HashChainLedger(self.wagers_path).read()
         self.assertEqual(len(wager_rows), 1)
 
+    def test_a_second_pass_freezes_a_second_decision_but_stakes_once(self):
+        """The morning and afternoon passes both decide; only one stake opens.
+
+        This is the shape scripts/afternoon_slate.sh describes as intended:
+        the 10:00Z pass records what was knowable then, the 21:10Z pass what
+        was knowable once lineups posted, and BOTH stay frozen. What was not
+        intended is each of them opening its own 1-unit paper position on the
+        same selection.
+
+        Defect E-1, measured on 2026-09-07: five slate runs turned 101 real
+        positions into 251 staked rows, and RESULTS reported -1.82% ROI for
+        the day where the truth was -10.00%. `bet_id_for` mixes in
+        `decision_utc` (correctly -- it names WHICH decision was staked), so
+        the bet_id guard alone could never catch it. `position_key_for` is
+        the guard that does.
+        """
+        systems = (glue_module.TrivialAlwaysHomeSystem(),)
+        # Morning pass: one board, one decision, one stake.
+        _write_jsonl(self.l1_path, _two_book_rows(GAME_A, "2026-09-02T18:00:00Z"))
+        self._commence_rows(GAME_A, "2026-09-02T22:00:00Z")
+        first = self.run_slate("2026-09-02", systems=systems)
+
+        # Afternoon pass: the board has moved, so this decides at a NEW
+        # instant on the SAME selection -- a different decision, not a
+        # re-run of the first one.
+        _write_jsonl(self.l1_path, [
+            *_two_book_rows(GAME_A, "2026-09-02T18:00:00Z"),
+            *_two_book_rows(GAME_A, "2026-09-02T20:30:00Z",
+                            home_price=-160, away_price=140),
+        ])
+        second = self.run_slate("2026-09-02", systems=systems)
+
+        self.assertEqual(first.n_new_decisions, 1)
+        self.assertEqual(first.n_new_wagers, 1)
+        # A genuinely new decision, because the board moved...
+        self.assertEqual(second.n_new_decisions, 1, "the second pass must still freeze its own decision")
+        # ...and NO second stake on the same position.
+        self.assertEqual(second.n_new_wagers, 0, "the same position was staked twice")
+        self.assertEqual(second.n_duplicate_wagers, 1)
+
+        decision_rows = [r for r in HashChainLedger(self.decisions_path).read()
+                         if r.get("kind") != "genesis"]
+        wager_rows = HashChainLedger(self.wagers_path).read()
+        self.assertEqual(len(decision_rows), 2, "both frozen decisions must survive")
+        self.assertEqual(len(wager_rows), 1, "one position, one unit")
+        # The surviving stake is the FIRST decision's -- frozen before first
+        # pitch, never restated.
+        self.assertEqual(wager_rows[0]["decision_utc"],
+                         decision_rows[0]["decision_utc"])
+        for ledger in (self.decisions_path, self.wagers_path):
+            verify = HashChainLedger(ledger).verify()
+            self.assertTrue(verify.ok, verify.reason)
+
 
 class TestFirstPitchGuard(SlateTestBase):
     def test_in_play_capture_is_skipped_not_staked(self):

@@ -410,11 +410,39 @@ def bet_id_for(date_str: str, record: DecisionRecord) -> str:
     """A deterministic bet id from the decision's own identity -- re-running
     the same date derives the SAME id for the SAME staked decision, which is
     what makes wager placement idempotent without a separate "already
-    placed" flag anywhere."""
+    placed" flag anywhere.
+
+    NOTE what this does and does not cover. `decision_utc` is part of the
+    id on purpose (scripts/afternoon_slate.sh: "TWO FROZEN SETS FOR ONE
+    DATE IS EXPECTED HERE"), so the 10:00Z pass and the 21:10Z pass derive
+    DIFFERENT ids for the same selection -- which is right for a decision
+    and wrong for a stake. `position_key_for` below is what stops the same
+    position being staked twice; this id still names which decision the
+    stake was opened against.
+    """
     parts = (date_str, record.system_id, record.event_id,
             record.market_key or "", record.selection_id or "",
             record.decision_utc)
     return hashlib.sha256("\x1f".join(parts).encode("utf-8")).hexdigest()[:24]
+
+
+def position_key_for(date_str: str, record: DecisionRecord) -> tuple:
+    """What a bettor would call "the same bet": one date, one system, one
+    game, one market, one selection -- and deliberately NOT the instant it
+    was decided at.
+
+    A system may legitimately decide the same selection twice in a day (the
+    morning pass on what was knowable at 10:00Z, the afternoon pass once
+    lineups posted). Both decisions are kept and both stay frozen. But a
+    bettor placing that bet places ONE unit on it, not one per time we
+    looked, so only the first frozen decision opens a stake.
+
+    Measured cost of not having this (defect E-1, 2026-09-07): five slate
+    runs turned 101 real positions into 251 staked rows, and the day
+    reported -1.82% ROI where the truth was -10.00%.
+    """
+    return (date_str, record.system_id, record.event_id,
+            record.market_key or "", record.selection_id or "")
 
 
 @dataclass(frozen=True, slots=True)
@@ -553,6 +581,22 @@ def _load_existing_bet_ids(path) -> set:
         bid = row.get("bet_id")
         if bid:
             out.add(bid)
+    return out
+
+
+def _load_existing_positions(path) -> set:
+    """Every position already staked, keyed the way `position_key_for` keys
+    one. Read from the wager ledger's own rows, which carry each field --
+    so a position staked by an earlier pass, an earlier run, or an earlier
+    process is seen, not just one this run happens to remember."""
+    out = set()
+    for row in HashChainLedger(path).read():
+        date = row.get("date")
+        system = row.get("system_id")
+        if not date or not system:
+            continue
+        out.add((date, system, row.get("event_id"),
+                 row.get("market_key") or "", row.get("selection_id") or ""))
     return out
 
 
@@ -735,6 +779,7 @@ def run_slate(
 
     existing_decisions = _load_existing_decision_keys(decisions_path)
     existing_bet_ids = _load_existing_bet_ids(wagers_path)
+    existing_positions = _load_existing_positions(wagers_path)
     # `DecisionRecord.game_pk` is only ever the numeric MLB id when
     # `snapshot.game_pk` (== `PricedBoard.game_pk`, `GameRef.board_key`)
     # itself is numeric -- for every L1-sourced game it is the odds
@@ -851,7 +896,14 @@ def run_slate(
 
             if record.verdict == "play" and record.stake_units == FLAT_1U:
                 bet_id = bet_id_for(date_str, record)
-                if bet_id in existing_bet_ids:
+                position_key = position_key_for(date_str, record)
+                # Two guards, deliberately not one. The bet_id guard stops
+                # the SAME decision being staked twice (a re-run of one
+                # pass). The position guard stops a DIFFERENT decision on
+                # the same selection opening a second stake -- the morning
+                # pass and the afternoon pass both legitimately decide
+                # CIN moneyline, and a bettor puts one unit on it, not two.
+                if bet_id in existing_bet_ids or position_key in existing_positions:
                     duplicate_wagers += 1
                     continue
                 settlement_rule = (MARKET_CATALOGUE[record.market_key]
@@ -894,6 +946,7 @@ def run_slate(
                         "selection_rule": SELECTION_RULE,
                     })
                 existing_bet_ids.add(bet_id)
+                existing_positions.add(position_key)
                 new_bet_ids.append(bet_id)
 
         game_outcomes.append(GameOutcome(
