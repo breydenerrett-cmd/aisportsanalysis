@@ -15,6 +15,8 @@ from dataclasses import fields
 
 from src.ledger import records as records_module
 from src.ledger.records import (
+    COHORT_IMPLIES,
+    COHORTS,
     FORBIDDEN_OBJECTIVE_FIELDS,
     PROBABILITY_PROVENANCE_MODEL_DERIVED,
     PROBABILITY_PROVENANCE_NONE,
@@ -443,127 +445,55 @@ class ProbabilityProvenanceTests(unittest.TestCase):
             self.assertIsNone(d.edge_bps)
 
 
-def _play(**overrides) -> DecisionRecord:
-    """A minimal valid `play`, which is the only verdict a rank may sit on."""
-    base = dict(verdict="play", price_american=-110, evidence=["x"],
-                selection_id="sel1", market_key="h2h")
-    base.update(overrides)
-    return _decision(**base)
+class CohortContractTests(unittest.TestCase):
+    """docs/PRODUCT_DOCTRINE.md section 6's cohort contract.
 
+    The cohort TAGS themselves live on the published-slip ledger, not on a
+    DecisionRecord: a day-level rank is not knowable when a decision is
+    written (run_slate writes game by game), and the slip has to be frozen
+    rather than re-derived, so the slip is the authority. What records.py
+    owns is the shared vocabulary the slip writes against, and these tests
+    pin it.
+    """
 
-class PublishedSlipContractTests(unittest.TestCase):
-    """docs/PRODUCT_DOCTRINE.md sections 4 and 6: the day_rank / cohorts /
-    agreement fields, and the invariants that keep them honest."""
+    def test_the_three_cohorts_are_exactly_these(self):
+        self.assertEqual(COHORTS, frozenset({"TOP_3", "TOP_5", "PUBLISHED"}))
 
-    def test_an_unranked_record_carries_no_rank_cohort_or_agreement(self):
-        d = _decision()
-        self.assertIsNone(d.day_rank)
-        self.assertIsNone(d.day_rank_rule)
-        self.assertEqual(d.cohorts, ())
-        self.assertIsNone(d.agreement)
+    def test_cohorts_nest_outward(self):
+        """A rollup is a FILTER over one frozen set of picks. If TOP_3 did
+        not imply PUBLISHED, two surfaces reading the same night could
+        disagree and both look plausible."""
+        self.assertEqual(set(COHORT_IMPLIES["TOP_3"]), {"TOP_5", "PUBLISHED"})
+        self.assertEqual(set(COHORT_IMPLIES["TOP_5"]), {"PUBLISHED"})
+        self.assertEqual(COHORT_IMPLIES["PUBLISHED"], ())
 
-    def test_a_ranked_play_constructs(self):
-        d = _play(day_rank=1, day_rank_rule="RULE_V1",
-                  cohorts=("PUBLISHED", "TOP_5", "TOP_3"),
-                  agreement={"n_families": 2, "n_systems": 5})
-        self.assertEqual(d.day_rank, 1)
-        self.assertEqual(d.agreement["n_families"], 2)
+    def test_every_cohort_declares_its_implications(self):
+        self.assertEqual(set(COHORT_IMPLIES), set(COHORTS))
 
-    # -- the epoch stamp (doctrine amendment 8) ---------------------------
+    def test_implications_are_transitively_closed(self):
+        """TOP_3 implies TOP_5, and TOP_5 implies PUBLISHED, so TOP_3 must
+        name PUBLISHED directly -- a caller checking only one level deep
+        must never be able to build a half-tagged pick."""
+        for tag, implied in COHORT_IMPLIES.items():
+            for other in implied:
+                for transitive in COHORT_IMPLIES[other]:
+                    self.assertIn(
+                        transitive, implied,
+                        f"{tag} implies {other} which implies {transitive}, "
+                        f"but {tag} does not name {transitive}")
 
-    def test_a_rank_without_its_rule_is_refused(self):
-        """A rank whose rule is unrecorded cannot be compared against a later
-        ranker without re-ranking history -- which is the exact move the
-        epoch stamp exists to prevent."""
-        with self.assertRaises(RecordContractError):
-            _play(day_rank=1)
-
-    def test_rank_must_be_a_positive_int(self):
-        for bad in (0, -1, 1.5, True, "1"):
-            with self.assertRaises(RecordContractError):
-                _play(day_rank=bad, day_rank_rule="RULE_V1")
-
-    # -- a refusal is not a pick ------------------------------------------
-
-    def test_a_refusal_can_never_be_ranked(self):
-        """Ranking a refusal would misrepresent the engine standing down as
-        the engine choosing."""
-        for verdict in ("no_play", "refused_thin", "refused_stale",
-                        "market_unavailable"):
-            with self.assertRaises(RecordContractError):
-                _decision(verdict=verdict, day_rank=1,
-                          day_rank_rule="RULE_V1")
-
-    def test_cohorts_cannot_exist_without_the_rank_that_produced_them(self):
-        with self.assertRaises(RecordContractError):
-            _decision(cohorts=("PUBLISHED",))
-
-    # -- cohorts nest ------------------------------------------------------
-
-    def test_unknown_cohort_is_refused(self):
-        with self.assertRaises(RecordContractError):
-            _play(day_rank=1, day_rank_rule="RULE_V1",
-                  cohorts=("PUBLISHED", "TOP_1"))
-
-    def test_top3_without_its_implied_cohorts_is_refused(self):
-        """A row tagged TOP_3 but not PUBLISHED would make every cohort
-        rollup disagree with every other one."""
-        with self.assertRaises(RecordContractError):
-            _play(day_rank=1, day_rank_rule="RULE_V1", cohorts=("TOP_3",))
-        with self.assertRaises(RecordContractError):
-            _play(day_rank=1, day_rank_rule="RULE_V1",
-                  cohorts=("TOP_3", "TOP_5"))
-
-    def test_top5_without_published_is_refused(self):
-        with self.assertRaises(RecordContractError):
-            _play(day_rank=4, day_rank_rule="RULE_V1", cohorts=("TOP_5",))
-
-    def test_published_alone_is_legal(self):
-        d = _play(day_rank=9, day_rank_rule="RULE_V1",
-                  cohorts=("PUBLISHED",))
-        self.assertEqual(d.cohorts, ("PUBLISHED",))
-
-    def test_cohorts_must_be_an_immutable_tuple(self):
-        with self.assertRaises(RecordContractError):
-            _play(day_rank=1, day_rank_rule="RULE_V1",
-                  cohorts=["PUBLISHED"])
-
-    # -- family-aware agreement (doctrine amendment 9) ---------------------
-
-    def test_agreement_must_carry_both_counts(self):
-        """Both are recorded so the family discount is auditable rather than
-        an unexplained number."""
-        for partial in ({"n_families": 2}, {"n_systems": 5}, {}):
-            with self.assertRaises(RecordContractError):
-                _play(day_rank=1, day_rank_rule="RULE_V1",
-                      agreement=partial)
-
-    def test_families_can_never_outnumber_systems(self):
-        """Families are groups of systems. If the count says otherwise, the
-        clustering and the count disagree and neither can be trusted."""
-        with self.assertRaises(RecordContractError):
-            _play(day_rank=1, day_rank_rule="RULE_V1",
-                  agreement={"n_families": 6, "n_systems": 5})
-
-    def test_equal_counts_are_legal(self):
-        """Five genuinely independent systems is a real, if uncommon, state
-        -- it must not be confused with the impossible one above."""
-        d = _play(day_rank=1, day_rank_rule="RULE_V1",
-                  agreement={"n_families": 5, "n_systems": 5})
-        self.assertEqual(d.agreement["n_families"], 5)
-
-    # -- backward compatibility -------------------------------------------
-
-    def test_a_legacy_row_round_trips_without_gaining_a_rank(self):
-        """Every row written before this lane existed must read as "never
-        ranked for publication", never as "ranked last"."""
-        row = _decision().to_dict()
-        for key in ("day_rank", "day_rank_rule", "cohorts", "agreement"):
-            row.pop(key)
-        restored = DecisionRecord.from_row(row)
-        self.assertIsNone(restored.day_rank)
-        self.assertEqual(restored.cohorts, ())
-        self.assertIsNone(restored.agreement)
+    def test_a_decision_record_cannot_carry_a_rank_or_cohort(self):
+        """Guards a deliberate absence. If these fields are ever added back
+        to the decision contract, the slip stops being the single authority
+        on rank, and this is where that gets caught."""
+        names = {f.name for f in fields(DecisionRecord)}
+        for forbidden in ("day_rank", "day_rank_rule", "cohorts",
+                          "agreement"):
+            self.assertNotIn(
+                forbidden, names,
+                f"{forbidden} belongs to the published-slip ledger, not to "
+                "DecisionRecord -- two authorities on one fact is the "
+                "failure mode this module exists to prevent")
 
 
 if __name__ == "__main__":
