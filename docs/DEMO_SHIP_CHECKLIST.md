@@ -1006,3 +1006,8 @@ the live problem.
 After the next daily loop, compare RESULTS' 2026-09-07 staked count against
 101. If it reads ~251, the inflation landed and the ledger needs a decision
 before that day's numbers can be trusted.
+- 01:50Z Ninth genuine schedule firing: forward-capture 34176337967 at
+  2026-09-08T01:20:53Z, success. First cron firing of the new UTC day. No
+  dispatch this tick per the heartbeat rule; the newest capture was 30 min
+  old regardless, and the local task has been carrying the cadence on its
+  own (00:10:31Z at 41 min stale, 00:55:31Z at 45 min stale).
