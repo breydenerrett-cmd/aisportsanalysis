@@ -1,0 +1,348 @@
+"""tests for src.engine.slip: the published slip and what may reach it.
+
+The load-bearing test in this file is
+`test_two_systems_in_two_families_outrank_three_in_one`. If that one ever
+passes for the wrong reason, the product is advertising manufactured
+confidence, which is the single failure docs/PRODUCT_DOCTRINE.md amendment 9
+exists to prevent.
+"""
+
+from __future__ import annotations
+
+import unittest
+
+from src.analysis import families as fam
+from src.engine import slip as slip_mod
+from src.engine.slip import (
+    COHORT_CUTS,
+    MIN_MECHANISM_PREDICATES,
+    SLIP_RULE,
+    Slip,
+    SlipError,
+    build_slip,
+    cohorts_for_rank,
+    confirmation_strength,
+    is_forward_test,
+)
+from src.ledger.records import COHORT_PUBLISHED, COHORT_TOP_3, COHORT_TOP_5
+
+DATE = "2026-09-08"
+SLIP_UTC = "2026-09-08T22:00:00+00:00"
+
+
+def _row(system_id, event_id, selection_id="sel_a", *, verdict="play",
+         price=-110, books=11, signals=1, rung=0, consensus=0.5,
+         market="h2h", staleness=0, **extra):
+    """One decision row in raw ledger shape (a dict), which is what the slip
+    builder reads off `evidence/decisions_v2.jsonl`."""
+    preds = [{"threshold_index": rung, "feature": f"feat{i}",
+              "predicate_id": f"p{i}@rung{rung}"} for i in range(signals)]
+    row = {
+        "system_id": system_id, "event_id": event_id,
+        "selection_id": selection_id, "market_key": market,
+        "verdict": verdict, "price_american": price,
+        "books_at_decision": books, "consensus_fair": consensus,
+        "friction": {"book_count": books, "staleness_seconds": staleness},
+        "mechanism_predicates": preds, "line": None, "book": "somebook",
+        "thesis": "because", "counterarguments": [],
+        "decision_utc": SLIP_UTC,
+    }
+    row.update(extra)
+    return row
+
+
+def _clustering(rows, systems=None):
+    ids = systems or sorted({r["system_id"] for r in rows})
+    return fam.families(fam.forward_selections(rows, systems=ids).selections)
+
+
+def _forced_clustering(groups):
+    """A clustering with EXACTLY the families named in `groups`.
+
+    Built by handing `families()` synthetic decision sets: members of a group
+    share an identical set (Jaccard 1.0, above the 0.8 threshold), and
+    different groups share nothing. That exercises the real clustering code
+    rather than hand-building a FamilyClustering the production path would
+    never produce.
+    """
+    selections = {}
+    for i, members in enumerate(groups):
+        shared = frozenset({f"evt{i}:h2h:s{j}" for j in range(10)})
+        for m in members:
+            selections[m] = shared
+    return fam.families(selections)
+
+
+class CohortNestingTests(unittest.TestCase):
+    def test_rank_one_is_in_all_three_cohorts(self):
+        self.assertEqual(cohorts_for_rank(1),
+                         (COHORT_PUBLISHED, COHORT_TOP_5, COHORT_TOP_3))
+
+    def test_rank_four_is_top5_and_published_only(self):
+        self.assertEqual(cohorts_for_rank(4),
+                         (COHORT_PUBLISHED, COHORT_TOP_5))
+
+    def test_rank_six_is_published_only(self):
+        self.assertEqual(cohorts_for_rank(6), (COHORT_PUBLISHED,))
+
+    def test_every_rank_is_at_least_published(self):
+        for rank in range(1, 40):
+            self.assertIn(COHORT_PUBLISHED, cohorts_for_rank(rank))
+
+    def test_cohorts_nest_at_every_rank(self):
+        """TOP_3 without TOP_5 (or without PUBLISHED) would make two rollups
+        of the same night disagree."""
+        for rank in range(1, 40):
+            tags = cohorts_for_rank(rank)
+            if COHORT_TOP_3 in tags:
+                self.assertIn(COHORT_TOP_5, tags)
+                self.assertIn(COHORT_PUBLISHED, tags)
+            if COHORT_TOP_5 in tags:
+                self.assertIn(COHORT_PUBLISHED, tags)
+
+    def test_cuts_are_the_frozen_ones(self):
+        self.assertEqual(COHORT_CUTS[COHORT_TOP_3], 3)
+        self.assertEqual(COHORT_CUTS[COHORT_TOP_5], 5)
+
+
+class AgreementOutranksSystemCountTests(unittest.TestCase):
+    """Doctrine amendment 9, pinned."""
+
+    def test_two_systems_in_two_families_outrank_three_in_one(self):
+        """THE test. Three near-duplicate genomes agreeing is one opinion
+        wearing three hats; two independent families agreeing is two
+        opinions. If raw system count ever wins here, the product is
+        manufacturing confidence out of near-copies.
+
+        Everything else is held equal, and the three-system selection is
+        given the BETTER price standing, so the only way it can lose is if
+        family agreement genuinely dominates."""
+        rows = [
+            # one family, three members, better price standing
+            _row("dup1", "evtA", consensus=0.60, price=-110),
+            _row("dup2", "evtA", consensus=0.60, price=-110),
+            _row("dup3", "evtA", consensus=0.60, price=-110),
+            # two families, two members, worse price standing
+            _row("indep1", "evtB", consensus=0.40, price=-110),
+            _row("indep2", "evtB", consensus=0.40, price=-110),
+        ]
+        clustering = _forced_clustering(
+            [("dup1", "dup2", "dup3"), ("indep1",), ("indep2",)])
+        slip = build_slip(rows, clustering, date=DATE, slip_utc=SLIP_UTC)
+
+        self.assertEqual(len(slip.picks), 2)
+        top, second = slip.picks
+        self.assertEqual(top.event_id, "evtB",
+                         "two independent families must outrank three "
+                         "near-duplicates")
+        self.assertEqual((top.n_families, top.n_systems), (2, 2))
+        self.assertEqual((second.n_families, second.n_systems), (1, 3))
+
+    def test_the_discount_is_reported_not_just_applied(self):
+        rows = [_row("dup1", "evtA"), _row("dup2", "evtA"),
+                _row("dup3", "evtA")]
+        clustering = _forced_clustering([("dup1", "dup2", "dup3")])
+        pick = build_slip(rows, clustering, date=DATE,
+                          slip_utc=SLIP_UTC).picks[0]
+        self.assertEqual(pick.n_families, 1)
+        self.assertEqual(pick.n_systems, 3)
+        self.assertEqual(pick.agreement["n_systems_discounted"], 2)
+
+    def test_one_system_deciding_the_same_wager_twice_is_not_agreement(self):
+        """A system that re-decided at two capture instants agreed with
+        itself."""
+        rows = [_row("solo", "evtA", decision_utc="2026-09-08T15:00:00+00:00"),
+                _row("solo", "evtA", decision_utc="2026-09-08T21:00:00+00:00")]
+        clustering = _forced_clustering([("solo",)])
+        pick = build_slip(rows, clustering, date=DATE,
+                          slip_utc=SLIP_UTC).picks[0]
+        self.assertEqual(pick.n_systems, 1)
+        self.assertEqual(pick.n_families, 1)
+
+
+class RankingOrderTests(unittest.TestCase):
+    def test_price_standing_is_the_last_term_not_the_first(self):
+        """Between two selections whose cases are identical, the better
+        number wins -- but a better number must never beat a stronger case.
+        The stronger case here is more fired signals."""
+        rows = [
+            _row("a", "evtA", signals=2, consensus=0.40),   # stronger case
+            _row("b", "evtB", signals=1, consensus=0.90),   # better standing
+        ]
+        clustering = _forced_clustering([("a",), ("b",)])
+        picks = build_slip(rows, clustering, date=DATE,
+                           slip_utc=SLIP_UTC).picks
+        self.assertEqual(picks[0].event_id, "evtA")
+
+    def test_identical_cases_separate_on_price_standing(self):
+        rows = [_row("a", "evtA", consensus=0.40),
+                _row("b", "evtB", consensus=0.90)]
+        clustering = _forced_clustering([("a",), ("b",)])
+        picks = build_slip(rows, clustering, date=DATE,
+                           slip_utc=SLIP_UTC).picks
+        self.assertEqual(picks[0].event_id, "evtB")
+        self.assertGreater(picks[0].price_standing_bps,
+                           picks[1].price_standing_bps)
+
+    def test_a_deeper_threshold_rung_outranks_a_shallower_one(self):
+        rows = [_row("a", "evtA", rung=0, consensus=0.90),
+                _row("b", "evtB", rung=2, consensus=0.40)]
+        clustering = _forced_clustering([("a",), ("b",)])
+        picks = build_slip(rows, clustering, date=DATE,
+                           slip_utc=SLIP_UTC).picks
+        self.assertEqual(picks[0].event_id, "evtB")
+        self.assertEqual(picks[0].deepest_rung, 2)
+
+    def test_the_slip_is_deterministic(self):
+        rows = [_row(f"s{i}", f"evt{i}") for i in range(6)]
+        clustering = _forced_clustering([(f"s{i}",) for i in range(6)])
+        a = build_slip(rows, clustering, date=DATE, slip_utc=SLIP_UTC)
+        b = build_slip(list(reversed(rows)), clustering, date=DATE,
+                       slip_utc=SLIP_UTC)
+        self.assertEqual([p.wager_id for p in a.picks],
+                         [p.wager_id for p in b.picks])
+
+
+class EvidenceThresholdTests(unittest.TestCase):
+    def test_a_refusal_never_reaches_the_slip(self):
+        rows = [_row("a", "evtA", verdict="no_play"),
+                _row("b", "evtB", verdict="refused_thin")]
+        slip = build_slip(rows, _forced_clustering([("a",), ("b",)]),
+                          date=DATE, slip_utc=SLIP_UTC)
+        self.assertEqual(slip.picks, ())
+
+    def test_control_and_market_reference_never_reach_the_slip(self):
+        rows = [_row("trivial_always_home", "evtA"),
+                _row("market_derived_consensus_h2h_home", "evtB"),
+                _row("genome1", "evtC")]
+        slip = build_slip(rows, _forced_clustering([("genome1",)]),
+                          date=DATE, slip_utc=SLIP_UTC)
+        self.assertEqual([p.event_id for p in slip.picks], ["evtC"])
+
+    def test_instrument_plays_are_counted_not_listed(self):
+        """`misses` answers "what would it have taken tonight?". Burying two
+        genuine near-misses under hundreds of rows that were never eligible
+        would make it useless for that."""
+        rows = [_row("trivial_always_home", f"evt{i}") for i in range(50)]
+        rows.append(_row("genome1", "evtX", books=2))
+        slip = build_slip(rows, _forced_clustering([("genome1",)]),
+                          date=DATE, slip_utc=SLIP_UTC)
+        self.assertEqual(slip.n_instrument_plays, 50)
+        self.assertEqual(len(slip.misses), 1)
+        self.assertEqual(slip.misses[0].reason, slip_mod.MISS_THIN_BOARD)
+
+    def test_a_thin_board_is_a_named_miss_carrying_the_count(self):
+        rows = [_row("genome1", "evtA", books=3)]
+        slip = build_slip(rows, _forced_clustering([("genome1",)]),
+                          date=DATE, slip_utc=SLIP_UTC)
+        self.assertEqual(slip.picks, ())
+        self.assertIn("3 book", slip.misses[0].detail)
+
+    def test_a_pick_with_no_falsifiable_mechanism_is_refused(self):
+        """Without a predicate frozen with the pick, no game can ever refute
+        it, so the learning loop can never grade it."""
+        rows = [_row("genome1", "evtA", signals=0)]
+        slip = build_slip(rows, _forced_clustering([("genome1",)]),
+                          date=DATE, slip_utc=SLIP_UTC)
+        self.assertEqual(slip.picks, ())
+        self.assertEqual(slip.misses[0].reason,
+                         slip_mod.MISS_NO_FALSIFIABLE_MECHANISM)
+
+    def test_no_price_is_a_named_miss(self):
+        rows = [_row("genome1", "evtA", price=None)]
+        slip = build_slip(rows, _forced_clustering([("genome1",)]),
+                          date=DATE, slip_utc=SLIP_UTC)
+        self.assertEqual(slip.picks, ())
+        self.assertEqual(slip.misses[0].reason, slip_mod.MISS_NO_PRICE)
+
+    def test_an_empty_night_is_a_measurement_not_an_error(self):
+        slip = build_slip([], _forced_clustering([("a",)]), date=DATE,
+                          slip_utc=SLIP_UTC)
+        self.assertEqual(slip.picks, ())
+        self.assertEqual(slip.rule, SLIP_RULE)
+
+    def test_the_floor_is_at_least_one_predicate(self):
+        self.assertEqual(MIN_MECHANISM_PREDICATES, 1)
+
+
+class ClusteringIsRequiredTests(unittest.TestCase):
+    def test_build_slip_refuses_without_a_clustering(self):
+        """Without one the agreement count silently degrades to a raw system
+        count -- the exact number amendment 9 replaces."""
+        with self.assertRaises(SlipError):
+            build_slip([_row("a", "evtA")], None, date=DATE,
+                       slip_utc=SLIP_UTC)
+
+
+class HelperTests(unittest.TestCase):
+    def test_forward_test_prefix_rule(self):
+        self.assertFalse(is_forward_test("trivial_always_home"))
+        self.assertFalse(is_forward_test("market_derived_consensus_h2h_home"))
+        self.assertTrue(is_forward_test("56ba4bb647b80640"))
+
+    def test_an_unset_system_id_is_never_treated_as_a_baseline(self):
+        self.assertTrue(is_forward_test(None))
+        self.assertTrue(is_forward_test(""))
+
+    def test_confirmation_strength_reads_predicates_not_evidence_strings(self):
+        row = _row("a", "evtA", signals=3, rung=2)
+        row["evidence"] = ["score=99.0"]
+        self.assertEqual(confirmation_strength(row), (3, 2))
+
+    def test_no_predicates_sorts_below_rung_zero(self):
+        self.assertEqual(confirmation_strength(_row("a", "e", signals=0)),
+                         (0, -1))
+
+    def test_absent_price_standing_never_beats_a_real_one(self):
+        """Zero is a real, middling standing and must never stand in for
+        'unknown'."""
+        self.assertFalse(slip_mod._better_standing(None, -500))
+        self.assertTrue(slip_mod._better_standing(-500, None))
+        self.assertFalse(slip_mod._better_standing(None, None))
+
+
+class SerialisationTests(unittest.TestCase):
+    def test_slip_round_trips_to_a_json_safe_dict(self):
+        import json
+        rows = [_row("a", "evtA"), _row("b", "evtB")]
+        slip = build_slip(rows, _forced_clustering([("a",), ("b",)]),
+                          date=DATE, slip_utc=SLIP_UTC)
+        payload = slip.to_dict()
+        json.dumps(payload)  # raises if anything is not serialisable
+        self.assertEqual(payload["rule"], SLIP_RULE)
+        self.assertEqual(payload["n_picks"], 2)
+        self.assertEqual(payload["cohort_cuts"], {"TOP_3": 3, "TOP_5": 5})
+
+    def test_every_pick_carries_both_agreement_counts(self):
+        rows = [_row("a", "evtA")]
+        slip = build_slip(rows, _forced_clustering([("a",)]), date=DATE,
+                          slip_utc=SLIP_UTC)
+        ag = slip.to_dict()["picks"][0]["agreement"]
+        self.assertIn("n_families", ag)
+        self.assertIn("n_systems", ag)
+
+
+class CohortFilterTests(unittest.TestCase):
+    def test_cohort_is_a_filter_over_one_frozen_list(self):
+        rows = [_row(f"s{i}", f"evt{i}") for i in range(6)]
+        slip = build_slip(rows, _forced_clustering([(f"s{i}",)
+                                                    for i in range(6)]),
+                          date=DATE, slip_utc=SLIP_UTC)
+        self.assertEqual(len(slip.cohort(COHORT_TOP_3)), 3)
+        self.assertEqual(len(slip.cohort(COHORT_TOP_5)), 5)
+        self.assertEqual(len(slip.cohort(COHORT_PUBLISHED)), 6)
+        # Nested: every Top 3 pick is also in the wider cohorts.
+        top3 = {p.wager_id for p in slip.cohort(COHORT_TOP_3)}
+        top5 = {p.wager_id for p in slip.cohort(COHORT_TOP_5)}
+        self.assertTrue(top3 <= top5)
+
+    def test_a_short_night_yields_short_cohorts_without_padding(self):
+        rows = [_row("a", "evtA"), _row("b", "evtB")]
+        slip = build_slip(rows, _forced_clustering([("a",), ("b",)]),
+                          date=DATE, slip_utc=SLIP_UTC)
+        self.assertEqual(len(slip.cohort(COHORT_TOP_3)), 2)
+        self.assertEqual(len(slip.cohort(COHORT_TOP_5)), 2)
+
+
+if __name__ == "__main__":
+    unittest.main()
