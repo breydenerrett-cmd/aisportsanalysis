@@ -829,3 +829,18 @@
 {"category": "recalled", "date": "2026-09-08", "first_seen_utc": "2026-09-08T21:35:30.312302+00:00", "player": "Brett Harris", "player_id": 695391, "team": "SF", "transaction_id": 941726}
 {"category": "rehab", "date": "2026-09-08", "first_seen_utc": "2026-09-08T21:35:30.312302+00:00", "player": "Ryne Nelson", "player_id": 669194, "team": "ARI", "transaction_id": 941730}
 {"fetched_utc": "2026-09-08T21:35:31.898489+00:00", "game_date": "2026-09-08", "poll": true}
+{"fetched_utc": "2026-09-08T22:25:49.226598+00:00", "game_date": "2026-09-08", "poll": true}
+{"category": "other", "date": "2026-09-08", "first_seen_utc": "2026-09-08T22:25:49.226598+00:00", "player": "Jos\u00e9 Suarez", "player_id": 660761, "team": "OAK", "transaction_id": 941734}
+{"category": "other", "date": "2026-09-08", "first_seen_utc": "2026-09-08T22:25:49.226598+00:00", "player": "Albert Su\u00e1rez", "player_id": 544150, "team": "BAL", "transaction_id": 941735}
+{"category": "other", "date": "2026-09-08", "first_seen_utc": "2026-09-08T22:25:49.226598+00:00", "player": "Oliver Dunn", "player_id": 686554, "team": "TB", "transaction_id": 941736}
+{"category": "designated", "date": "2026-09-08", "first_seen_utc": "2026-09-08T22:25:49.226598+00:00", "player": "Hunter Bigge", "player_id": 685801, "team": "TB", "transaction_id": 941738}
+{"category": "other", "date": "2026-09-08", "first_seen_utc": "2026-09-08T22:25:49.226598+00:00", "player": "Max Kepler", "player_id": 596146, "team": "ARI", "transaction_id": 941739}
+{"category": "other", "date": "2026-09-08", "first_seen_utc": "2026-09-08T22:25:49.226598+00:00", "player": "Sam Moll", "player_id": 594580, "team": "CIN", "transaction_id": 941740}
+{"category": "other", "date": "2026-09-08", "first_seen_utc": "2026-09-08T22:25:49.226598+00:00", "player": "Blake Hunt", "player_id": 675448, "team": "SD", "transaction_id": 941741}
+{"category": "optioned", "date": "2026-09-08", "first_seen_utc": "2026-09-08T22:25:49.226598+00:00", "player": "C\u00e9sar Prieto", "player_id": 693409, "team": "STL", "transaction_id": 941742}
+{"category": "il_activation", "date": "2026-09-08", "first_seen_utc": "2026-09-08T22:25:49.226598+00:00", "player": "Masyn Winn", "player_id": 691026, "team": "STL", "transaction_id": 941743}
+{"category": "rehab", "date": "2026-09-08", "first_seen_utc": "2026-09-08T22:25:49.226598+00:00", "player": "Ryan O'Hearn", "player_id": 656811, "team": "PIT", "transaction_id": 941744}
+{"category": "rehab", "date": "2026-09-08", "first_seen_utc": "2026-09-08T22:25:49.226598+00:00", "player": "Austin Martin", "player_id": 668885, "team": "MIN", "transaction_id": 941754}
+{"category": "il_placement", "date": "2026-09-08", "first_seen_utc": "2026-09-08T22:25:49.226598+00:00", "player": "Isaac Mattson", "player_id": 676755, "team": "PIT", "transaction_id": 941758}
+{"category": "recalled", "date": "2026-09-08", "first_seen_utc": "2026-09-08T22:25:49.226598+00:00", "player": "Brandon Eisert", "player_id": 685126, "team": "PIT", "transaction_id": 941759}
+{"fetched_utc": "2026-09-08T22:25:51.245250+00:00", "game_date": "2026-09-08", "poll": true}
