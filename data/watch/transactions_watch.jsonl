@@ -824,3 +824,8 @@
 {"fetched_utc": "2026-09-08T20:25:45.498817+00:00", "game_date": "2026-09-08", "poll": true}
 {"fetched_utc": "2026-09-08T21:10:43.730206+00:00", "game_date": "2026-09-08", "poll": true}
 {"fetched_utc": "2026-09-08T21:10:44.832247+00:00", "game_date": "2026-09-08", "poll": true}
+{"fetched_utc": "2026-09-08T21:35:30.312302+00:00", "game_date": "2026-09-08", "poll": true}
+{"category": "optioned", "date": "2026-09-08", "first_seen_utc": "2026-09-08T21:35:30.312302+00:00", "player": "Zach Morgan", "player_id": 681439, "team": "SF", "transaction_id": 941725}
+{"category": "recalled", "date": "2026-09-08", "first_seen_utc": "2026-09-08T21:35:30.312302+00:00", "player": "Brett Harris", "player_id": 695391, "team": "SF", "transaction_id": 941726}
+{"category": "rehab", "date": "2026-09-08", "first_seen_utc": "2026-09-08T21:35:30.312302+00:00", "player": "Ryne Nelson", "player_id": 669194, "team": "ARI", "transaction_id": 941730}
+{"fetched_utc": "2026-09-08T21:35:31.898489+00:00", "game_date": "2026-09-08", "poll": true}
