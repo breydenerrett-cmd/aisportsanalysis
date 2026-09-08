@@ -42,6 +42,10 @@ param(
     # kept reaching 60 minutes old on 2026-09-07 -- observed in this script's
     # own log at 19:55:29Z ("newest run is 45 min old (threshold 45)").
     [int]$StaleMinutes = 40,
+    # How often a slate pass may run inside the 15:00-03:00Z window. 30 gets
+    # a newly-posted lineup decided within half an hour of posting, at ~24
+    # passes a day, each spending no odds credits.
+    [int]$SlateEveryMinutes = 30,
     [switch]$WhatIf,
     [string]$Repo = "breydenerrett-cmd/aisportsanalysis",
     [string]$CaptureRef = "claude/cowork-session-migration-tn3sx2",
@@ -176,7 +180,19 @@ catch {
 # on run 34086614213), so a late dispatch that finds nothing eligible is a
 # logged refusal, not a cost.
 try {
-    $windowOpen = ($now.Hour -gt 21) -or ($now.Hour -eq 21 -and $now.Minute -ge 10)
+    # 15:00Z-03:00Z, not "after 21:10Z once". Lineups post 3-5 hours before
+    # each game's OWN first pitch, staggered across the day, so one batch at
+    # 21:10Z decides late games and misses every afternoon one -- last
+    # night's picks landed 7-8pm ET, after the early games had started.
+    # Running through the window lets each game be decided as soon as its
+    # lineup lands, always ahead of its own first pitch (run_slate's
+    # first-pitch guard skips anything already under way).
+    #
+    # Safe to repeat only because staking is now idempotent per position
+    # (src/engine/slate.py position_key_for, defect E-1). Before that guard
+    # every extra pass re-staked the whole slate.
+    $hour = $now.Hour
+    $windowOpen = ($hour -ge 15) -or ($hour -lt 3)
     if ($windowOpen) {
         $runs = Get-Runs "afternoon-slate" 5
         if ($null -eq $runs) {
@@ -186,17 +202,17 @@ try {
             Write-Tick "skip afternoon-slate: a run is already in flight"
         }
         else {
-            $today = $now.Date
-            $cronMoment = $today.AddHours(21).AddMinutes(10)
-            $inWindow = $runs | Where-Object {
-                $t = Get-Utc $_.createdAt
-                $t.Date -eq $today -and $t -ge $cronMoment
-            }
-            if ($inWindow) {
-                Write-Tick "skip afternoon-slate: already ran today after 21:10Z"
+            # Cadence, not once-per-date: a pass every SlateEveryMinutes so
+            # newly-posted lineups get decided within the half hour. Each
+            # pass is free (no odds credits) and stakes nothing it has
+            # already staked.
+            $newest = $runs | Sort-Object createdAt -Descending | Select-Object -First 1
+            $age = if ($newest) { [int]($now - (Get-Utc $newest.createdAt)).TotalMinutes } else { 9999 }
+            if ($age -ge $SlateEveryMinutes) {
+                Invoke-Dispatch "afternoon-slate.yml" $CaptureRef "newest slate pass was $age min old"
             }
             else {
-                Invoke-Dispatch "afternoon-slate.yml" $CaptureRef "no run since 21:10Z for $($today.ToString('yyyy-MM-dd'))"
+                Write-Tick "skip afternoon-slate: last pass $age min ago (every $SlateEveryMinutes min, 15:00-03:00Z)"
             }
         }
     }
