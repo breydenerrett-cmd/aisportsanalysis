@@ -258,9 +258,39 @@ data, never a weaker gate.
    any live genome** (every scorecard `battery_verdict: NOT_RUN`, every review
    `UNTESTED`).
 
+6. **The product's own systems decide ~10 minutes before first pitch.**
+   Measured 2026-09-08 over 1,055 played decisions: FORWARD_TEST median lead
+   time before first pitch is **9.9 minutes**, and **72% of forward-test picks
+   freeze inside 30 minutes of it**. The null baselines, which need no lineup,
+   decide with a median lead of ~8 hours (CONTROL 484m, MARKET_REFERENCE
+   524m).
+
+   Root cause: `lineup_store.build` is called from exactly one place,
+   `scripts/daily_loop.sh`. The engine only ever *reads* the store off disk,
+   so a lineup that posts at 21:00Z is invisible to a genome until a daily
+   loop happens to catch it, and the genome then fires on whatever slate pass
+   follows. The genomes require a posted lineup; the store that would give
+   them one refreshes on a schedule unrelated to when lineups post.
+
+   This costs three things at once. A pick delivered ten minutes before first
+   pitch is commercially near-useless -- the customer has no time to act and
+   the line has already moved. It is unmeasurable for CLV by construction: the
+   closing board IS the decision board, which is why 56 of 85 forward-test
+   decisions were refused a CLV for exactly that reason. And it means the
+   forward record is being built out of the worst prices the day had to offer.
+
+   Refreshing the lineup store on the slate's own cadence is the single
+   highest-leverage operational fix available, and it is what turns the
+   published slip from a novelty into a product.
+
 *Smaller but corrosive:* the homepage prints "27 hypotheses pre-registered …
 zero surviving" as a **hardcoded constant**. The registry says 42. A product
 whose pitch is "we don't make numbers up" must not hand-type that number.
+
+*Correcting an earlier read in this same document's first draft:* the capture
+cadence is NOT the CLV blocker. The board is captured a median 9.9 minutes
+before first pitch, 67% of it within 15 minutes -- that part works. The
+blocker is the decision lead time above.
 
 *Known broken:* `scripts/factory_masks_from_sweep.py` fails to rebuild the
 sweep decision masks — `placebo.real_world` receives zero games although
