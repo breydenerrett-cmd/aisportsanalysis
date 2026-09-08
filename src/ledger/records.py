@@ -34,6 +34,26 @@ VERDICTS = frozenset({
     "refused_sample", "refused_regime", "refused_friction",
 })
 
+# The published-slip cohorts (docs/PRODUCT_DOCTRINE.md section 6). Every one
+# of these is reported every time, separately and never merged, so that "let
+# the evidence determine the ideal cutoff" stays a measurement rather than a
+# licence to report whichever cut happened to win.
+COHORT_TOP_3 = "TOP_3"          # the flagship slip
+COHORT_TOP_5 = "TOP_5"          # secondary tracked cohort
+COHORT_PUBLISHED = "PUBLISHED"  # everything that cleared the evidence threshold
+COHORTS = frozenset({COHORT_TOP_3, COHORT_TOP_5, COHORT_PUBLISHED})
+
+# Cohorts NEST: rank 2 is in all three, rank 4 is in the outer two. Declared
+# here as data rather than left to each caller's arithmetic, because the whole
+# point of nesting is that a cohort rollup is a FILTER over one frozen set of
+# picks -- if a reader had to recompute membership, two surfaces could disagree
+# about the same night and both look plausible.
+COHORT_IMPLIES: Mapping[str, tuple] = {
+    COHORT_TOP_3: (COHORT_TOP_5, COHORT_PUBLISHED),
+    COHORT_TOP_5: (COHORT_PUBLISHED,),
+    COHORT_PUBLISHED: (),
+}
+
 # B1 (slice-review-2026-09-03): `DecisionRecord.record_provenance` names WHEN
 # a record was written relative to the game it decides -- the thing
 # `recorded_utc` alone cannot say on its own, since a caller could set
@@ -269,6 +289,51 @@ class DecisionRecord:
     #                      the `no_falsifiable_mechanism` qualifier rather
     #                      than as an exoneration.
     mechanism_predicates: tuple = ()
+    # The published-slip lane's addition (docs/PRODUCT_DOCTRINE.md sections 4
+    # and 6), same optional convention as every field above -- default absent,
+    # so every pre-existing construction site keeps working and every row
+    # written before this lane existed reads honestly as "this decision was
+    # never ranked for publication", never as "it ranked last".
+    #
+    #   day_rank      -- this decision's position in the day's published slip,
+    #                    1-based. None means it was not ranked at all (it did
+    #                    not clear the evidence threshold, or it predates the
+    #                    slip). A refusal is never ranked.
+    #   day_rank_rule -- the named, pre-registered rule that produced
+    #                    `day_rank`, INCLUDING its version suffix. This is the
+    #                    EPOCH STAMP that makes doctrine amendment 8
+    #                    enforceable: a later rule version is a new epoch, and
+    #                    because every row carries the rule it was ranked
+    #                    under, comparing two rankers means comparing forward
+    #                    epochs rather than re-scoring graded history. Nothing
+    #                    may recompute this field on a row that already has
+    #                    one -- re-ranking history would let a new ranker
+    #                    manufacture a better-looking record without making a
+    #                    single better pick.
+    #   cohorts       -- the frozen cohort tags this pick belongs to, e.g.
+    #                    ("PUBLISHED", "TOP_5", "TOP_3"). Stored explicitly
+    #                    rather than derived from `day_rank` at read time so
+    #                    the ledger stays self-describing: the cohort cuts are
+    #                    part of the rule, and a later rule with different cuts
+    #                    must not silently re-cohort rows decided under the old
+    #                    one. Nested by construction (a TOP_3 pick is also
+    #                    TOP_5 and PUBLISHED) so a cohort rollup is a filter,
+    #                    never an arithmetic reassignment.
+    #   agreement     -- how many INDEPENDENT families backed this selection
+    #                    (doctrine amendment 9), carrying both `n_families`
+    #                    and `n_systems`. Ranking reads n_families; both are
+    #                    recorded so the discount is auditable rather than an
+    #                    unexplained number. A raw system count is not a
+    #                    measure of agreement -- the 8,811-genome sweep
+    #                    collapsed to 1,062 families and its largest family
+    #                    held 4,019 members, so counting systems counts how
+    #                    many near-copies happen to be registered. None means
+    #                    agreement was not computed for this row, never that
+    #                    nothing agreed.
+    day_rank: int | None = None
+    day_rank_rule: str | None = None
+    cohorts: tuple = ()
+    agreement: dict | None = None
     prev_hash: str = ""
     row_hash: str = ""
 
@@ -321,6 +386,65 @@ class DecisionRecord:
                 "separate columns with separate meanings and must not be "
                 "silently assigned the same computed value"
             )
+        # The published-slip invariants. Each one is a rule that a later
+        # caller could otherwise break quietly, so it raises here rather than
+        # being left to a report to notice.
+        if self.day_rank is not None:
+            _require(isinstance(self.day_rank, int)
+                      and not isinstance(self.day_rank, bool)
+                      and self.day_rank >= 1,
+                      f"day_rank={self.day_rank!r} must be a 1-based int")
+            # A rank with no rule is a rank nobody can check, and it defeats
+            # the epoch stamp doctrine amendment 8 depends on.
+            _require(bool(self.day_rank_rule),
+                      "day_rank requires day_rank_rule -- a rank whose rule "
+                      "is unrecorded cannot be compared against a later "
+                      "ranker without re-ranking history, which is exactly "
+                      "what the epoch stamp exists to prevent")
+            # A refusal is not a pick. Ranking one would misrepresent the
+            # engine standing down as the engine choosing.
+            _require(self.verdict == "play",
+                      f"verdict={self.verdict!r} cannot carry a day_rank -- "
+                      "only a play is ever ranked for publication")
+        else:
+            _require(not self.cohorts,
+                      f"cohorts={self.cohorts!r} on a record with no "
+                      "day_rank -- a cohort is a position in a ranked slip, "
+                      "so it cannot exist without the rank that produced it")
+        if self.cohorts:
+            _require(isinstance(self.cohorts, tuple),
+                      "cohorts must be a tuple, not a mutable sequence")
+            unknown = [c for c in self.cohorts if c not in COHORTS]
+            _require(not unknown,
+                      f"unknown cohort(s) {unknown!r} -- must be from "
+                      f"{sorted(COHORTS)}")
+            # Nested by construction: a TOP_3 pick is necessarily also TOP_5
+            # and PUBLISHED. A row tagged TOP_3 but not PUBLISHED would make
+            # every cohort rollup disagree with every other one.
+            for tag, implied in COHORT_IMPLIES.items():
+                if tag in self.cohorts:
+                    missing = [i for i in implied if i not in self.cohorts]
+                    _require(not missing,
+                              f"cohort {tag!r} implies {missing!r}, which "
+                              "this record does not carry -- cohorts nest, "
+                              "so a rollup is a filter and never an "
+                              "arithmetic reassignment")
+        if self.agreement is not None:
+            _require(isinstance(self.agreement, Mapping),
+                      "agreement must be a mapping carrying n_families and "
+                      "n_systems")
+            for key in ("n_families", "n_systems"):
+                _require(key in self.agreement,
+                          f"agreement is missing {key!r} -- both counts are "
+                          "recorded so the family discount is auditable")
+            # Families are formed BY grouping systems, so there can never be
+            # more families than systems. If there are, the clustering and the
+            # count disagree and neither can be trusted.
+            _require(self.agreement["n_families"] <= self.agreement["n_systems"],
+                      f"agreement n_families={self.agreement['n_families']} "
+                      f"exceeds n_systems={self.agreement['n_systems']} -- "
+                      "families are groups of systems and cannot outnumber "
+                      "them")
 
     def to_dict(self) -> dict:
         return asdict(self)
