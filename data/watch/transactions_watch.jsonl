@@ -848,3 +848,5 @@
 {"category": "il_placement", "date": "2026-09-05", "first_seen_utc": "2026-09-08T23:10:45.917797+00:00", "player": "Matt Waldron", "player_id": 663362, "team": "WSH", "transaction_id": 941764}
 {"category": "recalled", "date": "2026-09-08", "first_seen_utc": "2026-09-08T23:10:45.917797+00:00", "player": "Zak Kent", "player_id": 687849, "team": "WSH", "transaction_id": 941763}
 {"fetched_utc": "2026-09-08T23:10:47.951169+00:00", "game_date": "2026-09-08", "poll": true}
+{"fetched_utc": "2026-09-08T23:40:12.897733+00:00", "game_date": "2026-09-08", "poll": true}
+{"fetched_utc": "2026-09-08T23:40:14.104837+00:00", "game_date": "2026-09-08", "poll": true}
