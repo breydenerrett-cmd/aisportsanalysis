@@ -778,3 +778,5 @@
 {"category": "il_activation", "date": "2026-09-07", "first_seen_utc": "2026-09-08T00:10:44.861855+00:00", "player": "Robert Garcia", "player_id": 676395, "team": "TEX", "transaction_id": 941561}
 {"category": "other", "date": "2026-09-07", "first_seen_utc": "2026-09-08T00:10:44.861855+00:00", "player": "Christian Bethancourt", "player_id": 542194, "team": "PIT", "transaction_id": 941562}
 {"fetched_utc": "2026-09-08T00:10:45.920355+00:00", "game_date": "2026-09-07", "poll": true}
+{"fetched_utc": "2026-09-08T00:55:46.650774+00:00", "game_date": "2026-09-07", "poll": true}
+{"fetched_utc": "2026-09-08T00:55:47.827523+00:00", "game_date": "2026-09-07", "poll": true}
