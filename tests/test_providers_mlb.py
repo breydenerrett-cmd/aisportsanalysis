@@ -678,3 +678,143 @@ class TestParseLinescoreSecondFixtureFirstInningScored(unittest.TestCase):
         self.assertEqual(springer["doubles"], 1)
         self.assertEqual(springer["total_bases"], 3)  # 1 single + 1 double
         self.assertEqual(springer["hits_runs_rbi"], 3)  # 2h + 1r + 0rbi
+
+
+# ---------------------------------------------------------------------------
+# Standings
+# ---------------------------------------------------------------------------
+
+def _team_record(team_id, name, division_rank, wins, losses, pct, games_back,
+                  wc_rank=None, wc_games_back=None, games_played=None,
+                  clinched=False, division_leader=False, streak="W1"):
+    record = {
+        "team": {"id": team_id, "name": name, "link": f"/api/v1/teams/{team_id}"},
+        "season": "2026",
+        "streak": {"streakCode": streak},
+        "divisionRank": str(division_rank),
+        "gamesBack": games_back,
+        "gamesPlayed": games_played if games_played is not None else wins + losses,
+        "wins": wins,
+        "losses": losses,
+        "winningPercentage": pct,
+        "clinched": clinched,
+        "divisionLeader": division_leader,
+    }
+    if wc_rank is not None:
+        record["wildCardRank"] = str(wc_rank)
+    if wc_games_back is not None:
+        record["wildCardGamesBack"] = wc_games_back
+    else:
+        record["wildCardGamesBack"] = "-"
+    return record
+
+
+# Mirrors the real AL East shape observed live 2026-09-08 (season=2026,
+# date=2026-09-01): the division leader carries no wildCardRank at all, a
+# team leading a wild-card spot gets a "+"-prefixed cushion, and a team
+# trailing the cutline gets a plain (unsigned) games-back.
+AL_EAST_RECORD = {
+    "standingsType": "regularSeason",
+    "league": {"id": mlb.LEAGUE_ID_AL},
+    "division": {"id": 201, "name": "American League East"},
+    "teamRecords": [
+        _team_record(139, "Rays", 1, 83, 55, ".601", "-", games_played=138,
+                     division_leader=True),
+        _team_record(147, "Yankees", 2, 79, 60, ".568", "4.5",
+                     wc_rank=1, wc_games_back="+8.5", games_played=139),
+        _team_record(110, "Orioles", 4, 69, 70, ".496", "14.5",
+                     wc_rank=5, wc_games_back="1.5", games_played=139),
+    ],
+}
+
+
+class TestFetchStandings(unittest.TestCase):
+    """No network -- _get_json is patched. Path, params, and the raw-passthrough
+    shape are what's under test here; POINT-IN-TIME correctness itself was
+    verified live against the real host (see mlb.py's module comment)."""
+
+    def test_requests_the_standings_path_with_both_leagues(self):
+        with mock.patch.object(mlb, "_get_json", return_value={"records": []}) as fake:
+            mlb.fetch_standings(2026, date="2026-09-01")
+        self.assertEqual(fake.call_args[0][0], "standings")
+        params = fake.call_args[0][1]
+        self.assertEqual(params["leagueId"], "103,104")
+        self.assertEqual(params["season"], 2026)
+        self.assertEqual(params["date"], "2026-09-01")
+        self.assertEqual(params["hydrate"], "division")
+
+    def test_no_date_omits_the_date_param(self):
+        with mock.patch.object(mlb, "_get_json", return_value={"records": []}) as fake:
+            mlb.fetch_standings(2026)
+        self.assertNotIn("date", fake.call_args[0][1])
+
+    def test_an_invalid_date_raises_before_any_network_call(self):
+        with self.assertRaises(mlb.MLBError):
+            mlb.fetch_standings(2026, date="not-a-date")
+
+    def test_returns_the_records_list(self):
+        with mock.patch.object(mlb, "_get_json",
+                                return_value={"records": [AL_EAST_RECORD]}):
+            records = mlb.fetch_standings(2026, date="2026-09-01")
+        self.assertEqual(records, [AL_EAST_RECORD])
+
+    def test_missing_records_key_is_an_empty_list_not_a_crash(self):
+        with mock.patch.object(mlb, "_get_json", return_value={}):
+            self.assertEqual(mlb.fetch_standings(2026), [])
+
+
+class TestParseStandings(unittest.TestCase):
+
+    def setUp(self):
+        self.rows = mlb.parse_standings([AL_EAST_RECORD])
+
+    def test_one_row_per_team(self):
+        self.assertEqual(len(self.rows), 3)
+
+    def test_division_leader_is_zero_games_back_a_real_number(self):
+        rays = next(r for r in self.rows if r["team_id"] == 139)
+        self.assertEqual(rays["games_back"], 0.0)
+        self.assertEqual(rays["division_rank"], 1)
+        self.assertTrue(rays["division_leader"])
+
+    def test_division_leader_has_no_wildcard_rank_none_not_zero(self):
+        rays = next(r for r in self.rows if r["team_id"] == 139)
+        self.assertIsNone(rays["wildcard_rank"])
+        self.assertIsNone(rays["wildcard_games_back"])
+        self.assertIsNone(rays["wildcard_leading"])
+
+    def test_a_team_leading_the_wild_card_has_the_sign_recorded(self):
+        yankees = next(r for r in self.rows if r["team_id"] == 147)
+        self.assertEqual(yankees["wildcard_rank"], 1)
+        self.assertEqual(yankees["wildcard_games_back"], 8.5)
+        self.assertTrue(yankees["wildcard_leading"])
+
+    def test_a_team_trailing_the_cutline_is_not_leading(self):
+        orioles = next(r for r in self.rows if r["team_id"] == 110)
+        self.assertEqual(orioles["wildcard_rank"], 5)
+        self.assertEqual(orioles["wildcard_games_back"], 1.5)
+        self.assertFalse(orioles["wildcard_leading"])
+
+    def test_team_abbrev_and_division_name_are_attached(self):
+        rays = next(r for r in self.rows if r["team_id"] == 139)
+        self.assertEqual(rays["team_abbrev"], "TB")
+        self.assertEqual(rays["division_name"], "American League East")
+        self.assertEqual(rays["league_id"], mlb.LEAGUE_ID_AL)
+
+    def test_win_pct_parses_the_leading_dot_string(self):
+        rays = next(r for r in self.rows if r["team_id"] == 139)
+        self.assertAlmostEqual(rays["win_pct"], 0.601)
+
+    def test_an_unknown_team_id_still_produces_a_row(self):
+        record = {
+            "league": {"id": mlb.LEAGUE_ID_NL},
+            "division": {"id": 999, "name": "Unknown Division"},
+            "teamRecords": [_team_record(999999, "Ghosts", 1, 0, 0, ".000", "-")],
+        }
+        rows = mlb.parse_standings([record])
+        self.assertIsNone(rows[0]["team_abbrev"])
+        self.assertEqual(rows[0]["team_id"], 999999)
+
+    def test_empty_records_list_is_an_empty_list(self):
+        self.assertEqual(mlb.parse_standings([]), [])
+        self.assertEqual(mlb.parse_standings(None), [])

@@ -57,7 +57,7 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
                 travel_by_pk=None, arsenals=None, batter_arsenals=None,
                 news_by_pk=None, matchup_depth_by_pk=None,
                 price_improvement_by_key=None, price_boards_by_key=None,
-                roster_events_by_pk=None,
+                roster_events_by_pk=None, standings_by_pk=None,
                 detectors=None, information_time=None) -> dict:
     """One briefing for one date.
 
@@ -113,6 +113,7 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
                 (lineups_by_pk or {}).get(game.get("game_pk")), handedness, game,
                 batter_arsenals),
             splits=(splits_by_pk or {}).get(game.get("game_pk")),
+            standings=(standings_by_pk or {}).get(game.get("game_pk")),
             matchups=(matchups_by_pk or {}).get(game.get("game_pk")),
             travel=(travel_by_pk or {}).get(game.get("game_pk")),
             arsenals=_arsenal_section(game, arsenals),

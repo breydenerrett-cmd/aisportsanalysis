@@ -543,6 +543,163 @@ def fetch_pitcher_game_log(person_id, season, timeout: float = DEFAULT_TIMEOUT) 
 
 
 # ---------------------------------------------------------------------------
+# Standings and playoff context
+# ---------------------------------------------------------------------------
+#
+# WHY THIS EXISTS: no store in this project answers "where did this team
+# stand -- division rank, games back, wild-card chase -- on the day of this
+# game". Every downstream reader (a dossier, a narrative) that wants that
+# context has had nothing to read.
+#
+# POINT-IN-TIME -- VERIFIED LIVE, 2026-09-08
+# --------------------------------------------
+# `standings`' `date` parameter genuinely returns the table AS IT STOOD on
+# that date, not today's. Verified with three live calls against this same
+# host, identical query except `date`: 2025-04-15 showed the AL East 16-19
+# games into the season (Yankees 10-7 in 17 GP); 2025-07-15 showed the same
+# division 96-98 games in; 2026-09-01 showed 138-139. So a caller building a
+# dossier for a past game gets that day's real standings, never today's --
+# always pass `date` for anything but "right now".
+#
+# leagueId=103,104 (AL, NL) in one call returns all 30 teams across 6
+# divisions -- verified live, same session. `hydrate=division` is required
+# to get each division's NAME (`American League East`); without it the API
+# returns only `{"id": ..., "link": ...}` for `division`, verified the same
+# session.
+
+LEAGUE_ID_AL = 103
+LEAGUE_ID_NL = 104
+
+# team.id -> team.abbreviation, verified live 2026-09-08 against
+# GET /api/v1/teams?sportId=1&season=2025&activeStatus=Y (all 30 active MLB
+# clubs). This is the SAME abbreviation `_team_abbrev` above reads off the
+# schedule endpoint's team object -- e.g. "ATH" for the Athletics and "AZ"
+# for Arizona, not the "OAK"/"ARI" spelling `src/data/parks.py` normalizes
+# onto. Kept static rather than fetched per call: MLB franchise IDs are
+# permanent, and a `standings` teamRecord carries no abbreviation of its own
+# to read one off of.
+TEAM_ID_TO_ABBREV = {
+    108: "LAA", 109: "AZ", 110: "BAL", 111: "BOS", 112: "CHC",
+    113: "CIN", 114: "CLE", 115: "COL", 116: "DET", 117: "HOU",
+    118: "KC", 119: "LAD", 120: "WSH", 121: "NYM", 133: "ATH",
+    134: "PIT", 135: "SD", 136: "SEA", 137: "SF", 138: "STL",
+    139: "TB", 140: "TEX", 141: "TOR", 142: "MIN", 143: "PHI",
+    144: "ATL", 145: "CWS", 146: "MIA", 147: "NYY", 158: "MIL",
+}
+
+
+def fetch_standings(season, date=None, timeout: float = DEFAULT_TIMEOUT) -> list:
+    """Division-by-division standings for one season, at a point in time.
+
+    `date=None` asks the API for the CURRENT standings -- correct for "what
+    are the standings right now" but wrong for a past game's dossier, which
+    must pass its own date explicitly (see the POINT-IN-TIME note above;
+    verified live that this parameter is genuinely historical, not just
+    accepted and ignored).
+
+    Returns the raw `records` list: one entry per division (6 total, AL+NL),
+    each hydrated with its own `division.name` and a `teamRecords` list in
+    the API's own per-team shape. Call `parse_standings` to flatten it into
+    one row per team. An unrecognised/future season with no data yet comes
+    back as an empty list, not an error -- there is nothing to report yet,
+    which is different from a failed request.
+    """
+    params = {
+        "leagueId": f"{LEAGUE_ID_AL},{LEAGUE_ID_NL}",
+        "season": season,
+        "hydrate": "division",
+    }
+    if date is not None:
+        params["date"] = _validate_date(date)
+    payload = _get_json("standings", params, timeout=timeout)
+    return payload.get("records") or []
+
+
+def _as_float(value):
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _games_back(value):
+    """'-' is the division leader's own games-back: a real 0.0, not a miss."""
+    if value is None:
+        return None
+    text = str(value).strip()
+    if text in ("-", ""):
+        return 0.0
+    return _as_float(text)
+
+
+def _wildcard_games_back(value):
+    """None when not applicable -- a division leader isn't chasing a wild
+    card and the API reports '-' for it. Otherwise the distance, sign
+    stripped (see `_wildcard_leading` for what the sign meant)."""
+    if value is None:
+        return None
+    text = str(value).strip()
+    if text in ("-", ""):
+        return None
+    return _as_float(text.lstrip("+"))
+
+
+def _wildcard_leading(value):
+    """True if this team currently holds a wild-card spot (API prefixes its
+    cushion with '+'), False if trailing the cutline, None if not applicable
+    (division leader, or the field is absent)."""
+    if value is None:
+        return None
+    text = str(value).strip()
+    if text in ("-", ""):
+        return None
+    return text.startswith("+")
+
+
+def parse_standings(records: list) -> list:
+    """Flatten `fetch_standings`' raw division records into one row per team.
+
+    Pure, network-free. Nothing is invented: a field the API omits for a
+    given team (`wildCardRank` for a division leader, who isn't chasing a
+    wild-card spot) stays None, never 0 or a guessed rank.
+    """
+    rows = []
+    for division_record in records or []:
+        division = division_record.get("division") or {}
+        league = division_record.get("league") or {}
+        for team_record in division_record.get("teamRecords") or []:
+            team = team_record.get("team") or {}
+            team_id = team.get("id")
+            streak = team_record.get("streak") or {}
+            wc_raw = team_record.get("wildCardGamesBack")
+            rows.append({
+                "team_id": team_id,
+                "team_abbrev": TEAM_ID_TO_ABBREV.get(team_id),
+                "team_name": team.get("name"),
+                "league_id": league.get("id"),
+                "division_id": division.get("id"),
+                "division_name": division.get("name"),
+                "season": (team_record.get("season")
+                           and str(team_record["season"])),
+                "games_played": _as_int(team_record.get("gamesPlayed")),
+                "wins": _as_int(team_record.get("wins")),
+                "losses": _as_int(team_record.get("losses")),
+                "win_pct": _as_float(team_record.get("winningPercentage")),
+                "division_rank": _as_int(team_record.get("divisionRank")),
+                "games_back": _games_back(team_record.get("gamesBack")),
+                "wildcard_rank": _as_int(team_record.get("wildCardRank")),
+                "wildcard_games_back": _wildcard_games_back(wc_raw),
+                "wildcard_leading": _wildcard_leading(wc_raw),
+                "streak_code": streak.get("streakCode"),
+                "clinched": bool(team_record.get("clinched")),
+                "division_leader": bool(team_record.get("divisionLeader")),
+            })
+    return rows
+
+
+# ---------------------------------------------------------------------------
 # Boxscores and linescores (per-game, per-player lines)
 # ---------------------------------------------------------------------------
 #

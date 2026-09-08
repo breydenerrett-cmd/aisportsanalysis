@@ -74,7 +74,7 @@ def build(game, store, pitcher_logs=None, prices=None, weather=None,
           lineups=None, bullpen=None, splits=None, matchups=None,
           travel=None, arsenals=None, news=None, matchup_depth=None,
           price_improvement=None, price_board=None, roster_events=None,
-          information_time=None) -> Dossier:
+          standings=None, information_time=None) -> Dossier:
     """Assemble one dossier from whatever sources are available."""
     dossier = Dossier(game, information_time=information_time)
     date = game.get("date")
@@ -86,6 +86,25 @@ def build(game, store, pitcher_logs=None, prices=None, weather=None,
         dossier.add("teams", team_features.matchup_features(store, away, home, date))
     else:
         dossier.miss("teams", "no historical results store")
+
+    # Where the clubs sit in the league on THIS date -- division rank, games
+    # back, wild-card position. The standings store is snapshotted per date
+    # (src/pipeline/standings.py) and the accessor never substitutes another
+    # date for the one asked for, so a past game shows the table as it stood
+    # then rather than as it stands now. A club with no snapshot for the date
+    # is absent with its own reason, never a fabricated rank.
+    if standings:
+        found = {side: row for side, row in standings.items()
+                 if isinstance(row, dict) and row.get("found")}
+        if found:
+            dossier.add("standings", standings)
+        else:
+            reasons = {row.get("reason") for row in standings.values()
+                       if isinstance(row, dict) and row.get("reason")}
+            dossier.miss("standings", "; ".join(sorted(r for r in reasons if r))
+                         or "no standings snapshot for this date")
+    else:
+        dossier.miss("standings", "standings not built for this date")
 
     if pitcher_logs:
         dossier.add("starters", pitcher_features.matchup_pitcher_features(

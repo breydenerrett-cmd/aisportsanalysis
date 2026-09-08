@@ -37,7 +37,7 @@ from src.appstate import events, freshness
 # records, starter form, bullpen workload, lineups, travel and weather.
 # See _enrichment_inputs for why none of these ever reaches the network.
 from src.pipeline import (briefing, bullpen, history, lineup_store, lineups,
-                          pitchers, travel, weather_capture)
+                          pitchers, standings, travel, weather_capture)
 from src.providers import mlb
 from src.report import engine_bridge
 
@@ -212,6 +212,35 @@ def _enrichment_inputs(games, date, store) -> dict:
     inputs["travel_by_pk"] = trips or None
 
     inputs["weather_by_pk"] = _latest_weather_by_pk(weather_capture.read(), games) or None
+
+    # League position on THIS date, per club. The index is read once and
+    # reused across the slate rather than re-read per game, and
+    # `team_standing` never substitutes a different date for the one asked
+    # for -- so a past game shows the table as it stood then. A club with no
+    # snapshot comes back `found: False` with its own reason, which
+    # dossier.build renders as a stated gap rather than a rank of zero.
+    try:
+        index = standings.read()
+    except Exception:  # noqa: BLE001 -- an unreadable store is a gap, not a 500
+        index = {}
+    standings_by_pk = {}
+    if index:
+        for g in games:
+            pk = g.get("game_pk")
+            if pk is None:
+                continue
+            rows = {}
+            for side in ("away", "home"):
+                team = g.get(f"{side}_team")
+                if not team:
+                    continue
+                try:
+                    rows[side] = standings.team_standing(date, team, index=index)
+                except Exception:  # noqa: BLE001
+                    continue
+            if rows:
+                standings_by_pk[pk] = rows
+    inputs["standings_by_pk"] = standings_by_pk or None
     return inputs
 
 
