@@ -2467,11 +2467,22 @@ def _cmd_engine_slip(args) -> int:
             if not r.get("kind")]
     forward_rows = [r for r in rows
                     if slip_mod.is_forward_test(r.get("system_id"))]
-    roster = [s.id for s in REGISTERED_SYSTEMS
-              if slip_mod.is_forward_test(s.id)]
+    forward_systems = [s for s in REGISTERED_SYSTEMS
+                       if slip_mod.is_forward_test(s.id)]
+    roster = [s.id for s in forward_systems]
+    # BOTH relations, which means handing over the genomes. Clustering on
+    # decisions alone finds 15 families among these 16 systems; with structure
+    # it finds 11, because all four F5 genomes are feature-set twins of an h2h
+    # genome and add no independent evidence at all. Only five of the sixteen
+    # have ever fired forward, so the behavioural relation is near-blind today
+    # and structure is doing almost all the work -- exactly the small-n case it
+    # was specified for. Omitting genomes here understates family collapse,
+    # and understating collapse is the direction that manufactures confidence.
+    genomes = {s.id: getattr(s, "genome", None) for s in forward_systems}
     clustering = families_mod.families(
         families_mod.forward_selections(forward_rows, systems=roster)
-        .selections)
+        .selections,
+        genomes=genomes)
 
     today_rows = [r for r in rows
                   if str(r.get("decision_utc") or "").startswith(args.date)]

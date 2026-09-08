@@ -375,6 +375,24 @@ def build_slip(records: Iterable, clustering, *, date: str, slip_utc: str,
             "build_slip requires a family clustering -- without one the "
             "agreement count silently degrades to a raw system count, which "
             "is the number the family discount exists to replace")
+    # A clustering built WITHOUT genomes runs only the behavioural relation,
+    # and that is not a smaller version of the right answer -- it is biased in
+    # the one direction that matters. On this population it finds 15 families
+    # where both relations find 11, because every F5 genome is a feature-set
+    # twin of an h2h genome. Understating collapse overstates agreement, which
+    # is precisely the manufactured confidence amendment 9 exists to prevent,
+    # so a structure-blind clustering is refused rather than quietly used.
+    # (Caught here because it was shipped once: the CLI omitted `genomes=` and
+    # the slip reported 15 families for a night with no structural twins both
+    # firing, so nothing looked wrong.)
+    bases = set((clustering.basis_of or {}).values())
+    if bases and not (bases & {families_mod.BASIS_BEHAVIOURAL_AND_STRUCTURAL,
+                               families_mod.BASIS_STRUCTURAL_ONLY}):
+        raise SlipError(
+            "this family clustering was built without genome structure, so "
+            "only the behavioural relation ran. Structurally identical "
+            "genomes would be counted as independent agreement. Pass "
+            "genomes= to families()")
 
     rows = list(records or ())
     misses: list = []

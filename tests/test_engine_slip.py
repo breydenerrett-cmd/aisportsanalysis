@@ -66,11 +66,17 @@ def _forced_clustering(groups):
     never produce.
     """
     selections = {}
+    genomes = {}
     for i, members in enumerate(groups):
         shared = frozenset({f"evt{i}:h2h:s{j}" for j in range(10)})
         for m in members:
             selections[m] = shared
-    return fam.families(selections)
+            # A DISTINCT feature set per system, so the structural relation
+            # adds no merges of its own and the groups above are exactly what
+            # comes out. Passing genomes at all is required: build_slip
+            # refuses a structure-blind clustering.
+            genomes[m] = frozenset({f"feature_{m}"})
+    return fam.families(selections, genomes=genomes)
 
 
 class CohortNestingTests(unittest.TestCase):
@@ -272,6 +278,37 @@ class ClusteringIsRequiredTests(unittest.TestCase):
         with self.assertRaises(SlipError):
             build_slip([_row("a", "evtA")], None, date=DATE,
                        slip_utc=SLIP_UTC)
+
+    def test_build_slip_refuses_a_structure_blind_clustering(self):
+        """A clustering built without genomes runs only the behavioural
+        relation. That is not a smaller version of the right answer -- it is
+        biased toward finding MORE families, so it overstates agreement.
+
+        This shipped once: the CLI omitted genomes= and the slip reported 15
+        families where both relations find 11, on a night when no structural
+        twins both fired, so nothing looked wrong."""
+        blind = fam.families({"a": frozenset({"w1"}), "b": frozenset({"w2"})})
+        with self.assertRaises(SlipError) as ctx:
+            build_slip([_row("a", "evtA")], blind, date=DATE,
+                       slip_utc=SLIP_UTC)
+        self.assertIn("genomes", str(ctx.exception))
+
+    def test_structural_twins_do_not_manufacture_agreement(self):
+        """Two genomes with identical feature sets are one family even if
+        their decision sets have not yet had room to diverge. All four F5
+        genomes in the live registry are feature-set twins of an h2h genome,
+        so this is the real case, not a hypothetical."""
+        clustering = fam.families(
+            {"twin_a": frozenset({"w1"}), "twin_b": frozenset({"w2"})},
+            genomes={"twin_a": frozenset({"velocity_gap"}),
+                     "twin_b": frozenset({"velocity_gap"})})
+        slip = build_slip([_row("twin_a", "evtA"), _row("twin_b", "evtA")],
+                          clustering, date=DATE, slip_utc=SLIP_UTC)
+        pick = slip.picks[0]
+        self.assertEqual(pick.n_systems, 2)
+        self.assertEqual(pick.n_families, 1,
+                         "identical feature sets are one source of evidence, "
+                         "not two")
 
 
 class HelperTests(unittest.TestCase):
