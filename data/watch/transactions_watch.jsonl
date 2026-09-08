@@ -803,3 +803,6 @@
 {"fetched_utc": "2026-09-08T14:40:52.471915+00:00", "game_date": "2026-09-08", "poll": true}
 {"fetched_utc": "2026-09-08T15:19:26.078469+00:00", "game_date": "2026-09-08", "poll": true}
 {"fetched_utc": "2026-09-08T16:10:59.232058+00:00", "game_date": "2026-09-08", "poll": true}
+{"fetched_utc": "2026-09-08T16:55:55.415880+00:00", "game_date": "2026-09-08", "poll": true}
+{"category": "rehab", "date": "2026-09-08", "first_seen_utc": "2026-09-08T16:55:55.415880+00:00", "player": "Miguel Andujar", "player_id": 609280, "team": "SD", "transaction_id": 941611}
+{"category": "rehab", "date": "2026-09-08", "first_seen_utc": "2026-09-08T16:55:55.415880+00:00", "player": "Miguel Andujar", "player_id": 609280, "team": "SD", "transaction_id": 941621}
