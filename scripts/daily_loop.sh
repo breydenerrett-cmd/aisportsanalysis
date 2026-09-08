@@ -49,6 +49,118 @@ TODAY=$(date -u +%Y-%m-%d)
 YESTERDAY=$(date -u -d 'yesterday' +%Y-%m-%d)
 RUN_NOTE=docs/OVERNIGHT_RUN.md
 
+# ENRICHMENT, never a blocker -- same contract as weather in src/cli.py's
+# slate/brief steps (wrapped in its own try/except, prints "(weather
+# unavailable: ...)" on a fault, never raises out). Standings/playoff
+# context (src/pipeline/standings.py) is the same shape: a request-time
+# store the API reads with no network call, refreshed here through TODAY.
+# Its exit is captured and logged below, but deliberately never turned into
+# an ESCALATE line -- a stalled MLB standings call must not block
+# slate/settle/eod, which is the entire operational point of this loop.
+echo "== standings catchup (through $TODAY) =="
+STANDINGS_OUT=$(python3 -c "
+from src.pipeline import standings
+try:
+    report = standings.catchup(end='$TODAY')
+    print('dates_built:', report['dates_built'], 'dates_skipped:', report['dates_skipped'],
+          'teams:', report['teams'], 'errors:', len(report['errors']))
+except Exception as exc:
+    print('(standings unavailable:', exc, ')')
+" 2>&1)
+echo "$STANDINGS_OUT" | sed 's/^/  /'
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: standings catchup end=$TODAY" >> "$RUN_NOTE"
+
+# THREE MORE REQUEST-TIME STORES, same ENRICHMENT-NEVER-A-BLOCKER contract as
+# standings and weather above: api/games.py::_enrichment_inputs reads these
+# off disk with no network call on the request path, so this loop is the only
+# place they get written. See src/pipeline/matchup_history.py's own docstring
+# for the full reasoning; the short version of each:
+#
+#   - posted lineups + matchup history: lineup_store.build tops up
+#     data/historical/lineups.jsonl for YESTERDAY and TODAY (a posted lineup
+#     is a fixed historical fact once a game is final, so backfilling
+#     yesterday is safe). matchup_history.build is deliberately TODAY ONLY,
+#     never yesterday: the vsPlayer endpoint it reads returns CAREER totals
+#     with no as-of parameter (src/model/pointintime.py marks it LEAKY for
+#     exactly this reason), so fetching it a day late for a game that has
+#     already been played would bake that very game's plate appearances into
+#     its own "history" -- a point-in-time leak this loop must not introduce.
+#     A lineup posted after this step runs is simply not covered until the
+#     NEXT day this script reaches it fresh (that game will have moved from
+#     "no lineup yet" to final by then, so it never becomes coverage --
+#     matchup_history's realistic ceiling on a once-daily cadence is whatever
+#     posts before this run; catching the rest would need an hourly caller,
+#     e.g. forward_capture.sh, which this task did not touch).
+#   - pitcher splits: refresh_splits covers every probable starter TODAY's
+#     schedule names, refreshed (not just cached) every run since a platoon
+#     split is season-to-date and moves every time its pitcher takes the ball.
+#   - pitch arsenals: statcast.build rebuilds the Savant leaderboard summary
+#     for the current season -- one HTTP request per side, no lineup or
+#     per-player looping, so it costs seconds regardless of slate size.
+#
+# Measured on a real 15-game slate (2026-09-08, 10 games with lineups posted):
+# lineups+matchup_history ~70s, splits ~8s for 29 probables, arsenals ~1s.
+echo "== posted lineups + matchup history ($YESTERDAY lineups only, $TODAY both) =="
+MATCHUP_OUT=$(python3 -c "
+from src.pipeline import lineup_store, matchup_history
+
+try:
+    lineup_report = lineup_store.build(['$YESTERDAY', '$TODAY'])
+    print('lineups: %d date(s) processed, %d skipped, %d game(s) posted, '
+          '%d failed' % (lineup_report['dates'], lineup_report['skipped'],
+                         lineup_report['games'], lineup_report['failed']))
+except Exception as exc:
+    print('(lineups unavailable:', exc, ')')
+
+try:
+    report = matchup_history.build('$TODAY')
+    if report.get('error'):
+        print('matchup_history $TODAY: schedule unavailable:', report['error'])
+    else:
+        print('matchup_history $TODAY: %d game(s) on slate, %d written, '
+              '%d already stored, %d no lineup yet, %d pair(s) fetched, '
+              '%d cache hit' % (report['games'], report['written'],
+                                report['skipped_stored'],
+                                report['skipped_no_lineup'],
+                                report['pairs_fetched'], report['pairs_cached']))
+except Exception as exc:
+    print('(matchup_history unavailable:', exc, ')')
+" 2>&1)
+echo "$MATCHUP_OUT" | sed 's/^/  /'
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: lineups+matchup_history date=$TODAY" >> "$RUN_NOTE"
+
+echo "== pitcher platoon splits (today's probables, $TODAY) =="
+SPLITS_OUT=$(python3 -c "
+from src.providers import mlb
+from src.pipeline import lineups
+
+try:
+    games = mlb.fetch_games('$TODAY')
+    ids = [g[k] for g in games
+           for k in ('away_probable_id', 'home_probable_id') if g.get(k)]
+    report = lineups.refresh_splits(ids, '$TODAY'[:4])
+    print('splits: %d probable(s) requested, %d fetched, %d failed' % (
+        report['requested'], report['fetched'], report['failed']))
+except Exception as exc:
+    print('(splits unavailable:', exc, ')')
+" 2>&1)
+echo "$SPLITS_OUT" | sed 's/^/  /'
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: pitcher splits date=$TODAY" >> "$RUN_NOTE"
+
+echo "== pitch arsenals (season ${TODAY:0:4}) =="
+ARSENAL_OUT=$(python3 -c "
+from src.providers import statcast
+
+try:
+    report = statcast.build('${TODAY:0:4}')
+    print('arsenals: %d pitcher row(s), %d batter row(s), store %s' % (
+        report['pitcher_rows'], report['batter_rows'], report['store']))
+except Exception as exc:
+    print('(arsenals unavailable:', exc, ')')
+" 2>&1)
+echo "$ARSENAL_OUT" | sed 's/^/  /'
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: pitch arsenals season=${TODAY:0:4}" >> "$RUN_NOTE"
+
 # No separate "refresh L1" step belongs here: `engine slate` (via
 # `src.engine.slate.run_slate`) refreshes `data/processed/
 # l1_observations.jsonl` itself, immediately before reading it, on every

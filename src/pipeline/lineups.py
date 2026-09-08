@@ -237,6 +237,42 @@ def fetch_pitcher_splits(person_id, season, cache_path=DEFAULT_SPLITS,
     return record
 
 
+def read_splits(cache_path=DEFAULT_SPLITS) -> dict:
+    """The splits cache as it sits on disk. No network, ever.
+
+    Same absent-is-safe contract as `read_handedness`: a page render reads
+    what the daily loop already wrote via `refresh_splits`/`fetch_pitcher_splits`
+    below, and gets {} rather than a network call when nothing has been
+    written yet. Keyed `"{person_id}:{season}"`, exactly as `fetch_pitcher_splits`
+    writes it -- this is a thin read of that same cache, not a reshaped copy.
+    """
+    return _read_json(cache_path, {})
+
+
+def refresh_splits(person_ids, season, cache_path=DEFAULT_SPLITS, timeout=20,
+                   refresh=True) -> dict:
+    """Top up the splits cache for a set of pitchers, one call each.
+
+    `refresh=True` by default -- unlike a biographical fact, a platoon split
+    is season-to-date and changes every time its pitcher takes the mound, so
+    the daily loop wants the CURRENT number each run, not whatever was cached
+    the first time this pitcher was seen this season. `fetch_pitcher_splits`
+    still does the actual caching and disk write; this just calls it once per
+    pitcher and never lets one pitcher's MLBError stop the rest of the slate.
+    """
+    ids = sorted({str(p) for p in person_ids if p})
+    report = {"season": str(season), "requested": len(ids), "fetched": 0,
+              "failed": 0, "cache_path": str(cache_path)}
+    for person_id in ids:
+        try:
+            fetch_pitcher_splits(person_id, season, cache_path=cache_path,
+                                 timeout=timeout, refresh=refresh)
+            report["fetched"] += 1
+        except mlb.MLBError:
+            report["failed"] += 1
+    return report
+
+
 def _split_row(stat) -> dict:
     return {
         "batters_faced": stat.get("battersFaced"),

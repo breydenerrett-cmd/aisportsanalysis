@@ -1,6 +1,7 @@
 # Runs the 10:00Z daily operational pass (scripts/daily_loop.sh: snapshot,
 # results/pitcher/bullpen ingest, briefing+ledger, settle, grade, my-bets
-# settle, box lines, then statcast catchup, gamekey map, engine slate,
+# settle, box lines, standings, posted lineups + matchup history, pitcher
+# splits, pitch arsenals, then statcast catchup, gamekey map, engine slate,
 # engine settle, eod) on a schedule independent of any interactive Claude
 # session/container -- the same externalization
 # .github/workflows/forward-capture.yml already did for forward capture. See
@@ -85,6 +86,11 @@ jobs:
             data/historical/bullpen_log.jsonl
             data/historical/lineups.jsonl
             data/historical/handedness.json
+            data/historical/matchup_history.jsonl
+            data/historical/matchup_pairs.json
+            data/historical/pitcher_splits.json
+            data/historical/arsenals
+            data/historical/standings.jsonl
           key: daily-loop-data-${{ github.run_id }}
           restore-keys: |
             daily-loop-data-
@@ -139,4 +145,9 @@ jobs:
             data/historical/bullpen_log.jsonl
             data/historical/lineups.jsonl
             data/historical/handedness.json
+            data/historical/matchup_history.jsonl
+            data/historical/matchup_pairs.json
+            data/historical/pitcher_splits.json
+            data/historical/arsenals
+            data/historical/standings.jsonl
           key: daily-loop-data-${{ github.run_id }}

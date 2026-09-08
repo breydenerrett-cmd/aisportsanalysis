@@ -37,7 +37,9 @@ from src.appstate import events, freshness
 # records, starter form, bullpen workload, lineups, travel and weather.
 # See _enrichment_inputs for why none of these ever reaches the network.
 from src.pipeline import (briefing, bullpen, history, lineup_store, lineups,
-                          pitchers, standings, travel, weather_capture)
+                          matchup_history, news, pitchers, standings, travel,
+                          weather_capture)
+from src.providers import statcast
 from src.providers import mlb
 from src.report import engine_bridge
 
@@ -241,6 +243,90 @@ def _enrichment_inputs(games, date, store) -> dict:
             if rows:
                 standings_by_pk[pk] = rows
     inputs["standings_by_pk"] = standings_by_pk or None
+
+    # Batter-vs-pitcher history. The store is already keyed by game_pk in
+    # exactly the shape build_slate wants, so this is a re-key onto the
+    # schedule's own value and nothing more. Forward-only by design: the
+    # vsPlayer endpoint returns CAREER totals with no as-of parameter (marked
+    # LEAKY in src/model/pointintime.py), so a past date is never built after
+    # the fact -- doing so would fold that day's own plate appearances into
+    # its "history", which is the classic backtest that looks brilliant and
+    # loses money.
+    try:
+        history_by_pk = matchup_history.read()
+    except Exception:  # noqa: BLE001 -- an unreadable store is a gap, not a 500
+        history_by_pk = {}
+    matchups_by_pk = {}
+    for g in games:
+        pk = g.get("game_pk")
+        row = history_by_pk.get(str(pk)) if pk is not None else None
+        if row:
+            matchups_by_pk[pk] = row
+    inputs["matchups_by_pk"] = matchups_by_pk or None
+
+    # Pitcher platoon splits, cached by "{person_id}:{season}". Reshaped here
+    # into the per-game/per-side form build_slate takes, the same shape the
+    # CLI briefing builds live -- `platoon_split` is pure, so deriving it on
+    # read costs nothing and keeps one definition of the split.
+    try:
+        split_cache = lineups.read_splits()
+    except Exception:  # noqa: BLE001
+        split_cache = {}
+    splits_by_pk = {}
+    if split_cache:
+        season = str(date)[:4]
+        for g in games:
+            pk = g.get("game_pk")
+            if pk is None:
+                continue
+            per_side = {}
+            for side, pid_key in (("away", "away_probable_id"),
+                                  ("home", "home_probable_id")):
+                pid = g.get(pid_key)
+                record = split_cache.get(f"{pid}:{season}") if pid else None
+                if not record:
+                    continue
+                try:
+                    per_side[side] = {"record": record,
+                                      "platoon": lineups.platoon_split(record)}
+                except Exception:  # noqa: BLE001
+                    continue
+            if per_side:
+                splits_by_pk[pk] = per_side
+    inputs["splits_by_pk"] = splits_by_pk or None
+
+    # Roster moves and injuries. The module was complete and the CLI has
+    # ingested it every briefing run all along; the API simply never read
+    # it, so every game reported "roster news not fetched" while the data
+    # was a free endpoint away. READ ONLY here -- `news.ingest` is the daily
+    # loop's job, and a page render must not fetch.
+    try:
+        news_rows = news.read()
+    except Exception:  # noqa: BLE001 -- an unreadable store is a gap, not a 500
+        news_rows = []
+    news_by_pk = {}
+    if news_rows:
+        for g in games:
+            pk = g.get("game_pk")
+            if pk is None:
+                continue
+            try:
+                news_by_pk[pk] = news.attach(g, news_rows, date)
+            except Exception:  # noqa: BLE001
+                continue
+    inputs["news_by_pk"] = news_by_pk or None
+
+    # Pitch arsenals, season-scoped, keyed by player. Same accessor the CLI
+    # uses; a season with no store yields {} and the page states the gap.
+    try:
+        season_int = int(str(date)[:4])
+        inputs["arsenals"] = statcast.by_player(
+            statcast.read(season_int, statcast.PITCHER)) or None
+        inputs["batter_arsenals"] = statcast.by_player(
+            statcast.read(season_int, statcast.BATTER)) or None
+    except Exception:  # noqa: BLE001 -- arsenals are enrichment, never a blocker
+        inputs["arsenals"] = inputs["batter_arsenals"] = None
+
     return inputs
 
 

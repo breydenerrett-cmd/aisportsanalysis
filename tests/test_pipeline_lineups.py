@@ -13,6 +13,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from src.pipeline import lineups
+from src.providers import mlb
 
 
 def slot(person_id, order=1, name=None):
@@ -209,6 +210,57 @@ class TestCacheIO(unittest.TestCase):
         path = Path(self.dir.name) / "h.json"
         lineups._write_json(path, {"1": {"bats": "L"}})
         self.assertEqual(lineups._read_json(path, {}), {"1": {"bats": "L"}})
+
+
+class TestSplitsAccessors(unittest.TestCase):
+
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.dir.cleanup)
+        self.path = Path(self.dir.name) / "splits.json"
+
+    def test_read_splits_missing_file_is_empty_not_an_error(self):
+        self.assertEqual(lineups.read_splits(self.path), {})
+
+    def test_read_splits_is_a_thin_read_of_the_fetch_cache(self):
+        lineups._write_json(self.path, {"100:2026": {"person_id": "100",
+                                                      "season": "2026"}})
+        self.assertEqual(lineups.read_splits(self.path),
+                         {"100:2026": {"person_id": "100", "season": "2026"}})
+
+    def test_refresh_splits_calls_once_per_pitcher_and_dedupes(self):
+        calls = []
+
+        def fake_fetch(person_id, season, cache_path=None, timeout=20,
+                       refresh=False):
+            calls.append((person_id, season, refresh))
+
+        original = lineups.fetch_pitcher_splits
+        lineups.fetch_pitcher_splits = fake_fetch
+        try:
+            report = lineups.refresh_splits([100, 100, "200", None], "2026",
+                                            cache_path=self.path)
+        finally:
+            lineups.fetch_pitcher_splits = original
+        self.assertEqual(sorted(c[0] for c in calls), ["100", "200"])
+        self.assertEqual(report["requested"], 2)
+        self.assertEqual(report["fetched"], 2)
+        self.assertEqual(report["failed"], 0)
+        self.assertTrue(all(c[2] is True for c in calls))  # refresh=True default
+
+    def test_refresh_splits_one_failure_does_not_stop_the_rest(self):
+        def flaky(person_id, season, cache_path=None, timeout=20, refresh=False):
+            if person_id == "100":
+                raise mlb.MLBError("boom")
+
+        original = lineups.fetch_pitcher_splits
+        lineups.fetch_pitcher_splits = flaky
+        try:
+            report = lineups.refresh_splits([100, 200], "2026", cache_path=self.path)
+        finally:
+            lineups.fetch_pitcher_splits = original
+        self.assertEqual(report["fetched"], 1)
+        self.assertEqual(report["failed"], 1)
 
 
 if __name__ == "__main__":

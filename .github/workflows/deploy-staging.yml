@@ -58,6 +58,12 @@ jobs:
             data/historical/bullpen_log.jsonl
             data/historical/lineups.jsonl
             data/historical/handedness.json
+            data/historical/standings.jsonl
+            data/historical/matchup_history.jsonl
+            data/historical/matchup_pairs.json
+            data/historical/pitcher_splits.json
+            data/historical/arsenals
+            data/historical/transactions.jsonl
           key: daily-loop-data-${{ github.run_id }}
           restore-keys: |
             daily-loop-data-

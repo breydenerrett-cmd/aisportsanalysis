@@ -43,6 +43,17 @@ data/historical/*
 !data/historical/bullpen_log.jsonl
 !data/historical/lineups.jsonl
 !data/historical/handedness.json
+# The per-matchup analysis stores (2026-09-08): league position, batter-vs-
+# pitcher history, pitcher platoon splits and pitch arsenals. ~1.1 MB
+# together -- the arsenal SUMMARY is 688 KB, which is a different and far
+# smaller artifact than the 40 MB pitch-level data/historical/statcast/
+# store that still stays out of the image.
+!data/historical/standings.jsonl
+!data/historical/matchup_history.jsonl
+!data/historical/matchup_pairs.json
+!data/historical/pitcher_splits.json
+!data/historical/arsenals/
+!data/historical/transactions.jsonl
 
 design/
 docs/
