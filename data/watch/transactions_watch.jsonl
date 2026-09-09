@@ -923,3 +923,9 @@
 {"category": "rehab", "date": "2026-09-09", "first_seen_utc": "2026-09-09T20:40:53.353182+00:00", "player": "Anthony Santander", "player_id": 623993, "team": "TOR", "transaction_id": 941849}
 {"category": "rehab", "date": "2026-09-09", "first_seen_utc": "2026-09-09T20:40:53.353182+00:00", "player": "Rob Zastryzny", "player_id": 642239, "team": "MIL", "transaction_id": 941856}
 {"fetched_utc": "2026-09-09T20:40:54.552177+00:00", "game_date": "2026-09-09", "poll": true}
+{"fetched_utc": "2026-09-09T21:25:54.266951+00:00", "game_date": "2026-09-09", "poll": true}
+{"category": "rehab", "date": "2026-09-09", "first_seen_utc": "2026-09-09T21:25:54.266951+00:00", "player": "Rob Zastryzny", "player_id": 642239, "team": "MIL", "transaction_id": 941857}
+{"category": "recalled", "date": "2026-09-09", "first_seen_utc": "2026-09-09T21:25:54.266951+00:00", "player": "Jeremiah Jackson", "player_id": 669236, "team": "BAL", "transaction_id": 941861}
+{"category": "il_placement", "date": "2026-09-09", "first_seen_utc": "2026-09-09T21:25:54.266951+00:00", "player": "Blaze Alexander", "player_id": 677942, "team": "BAL", "transaction_id": 941862}
+{"category": "rehab", "date": "2026-09-09", "first_seen_utc": "2026-09-09T21:25:54.266951+00:00", "player": "James McArthur", "player_id": 663704, "team": "KC", "transaction_id": 941863}
+{"fetched_utc": "2026-09-09T21:25:56.244996+00:00", "game_date": "2026-09-09", "poll": true}
