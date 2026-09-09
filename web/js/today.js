@@ -586,6 +586,156 @@ function matchupPoster(row) {
  * Hero -- the three verdict states (V2-01a / b / c)
  * ------------------------------------------------------------------- */
 
+// TONIGHT'S PICKS -- the ranked, evidence-tiered slip (src/engine/slip.py),
+// leading Today, above the hero. Owner directive 2026-09-09: a customer
+// should never open the app to silence -- and when the evidence is thin, the
+// honest answer is to say so plainly and show what little there is, not to
+// hide it behind the hero's "nothing clears the bar" framing.
+//
+// Renders NOTHING (host stays untouched) when:
+//   - `slip` is null: `engine slip` has not reached this date yet. This is
+//     an operational gap, not a customer fact -- the existing hero already
+//     covers "we checked and found nothing" honestly; a broken-looking empty
+//     picks block would say something false ("nothing to see") about a
+//     state that actually means "we have not looked."
+//   - `slip.read_as === "NOTHING_CLEARED"`: the honest empty case, already
+//     the hero's job below. Never duplicated here.
+const EVIDENCE_TIER_TONE = {
+  STRONG: "green", BUILDING: "yellow", THIN: "orange", MINIMAL: "red",
+};
+
+function evidenceTierChip(pick) {
+  const tier = pick.evidence_tier || "MINIMAL";
+  const tone = EVIDENCE_TIER_TONE[tier] || "red";
+  return el("span", { class: `gv2-picks__tier gv2-picks__tier--${tone}`,
+    title: pick.evidence_tier_label || "" }, [tier]);
+}
+
+// src/engine/slate.py's SCOPE_MARKETS, spelled out -- a plain lookup rather
+// than a generic word-capitalizer, because a generic one reads "h2h" as
+// "H2h" and "1st" as "1St" (CSS text-transform:capitalize breaks on any
+// token starting with a digit, which several of these do).
+const MARKET_LABEL = {
+  h2h: "Moneyline",
+  spreads: "Run line",
+  totals: "Total",
+  h2h_1st_5_innings: "First 5 innings moneyline",
+};
+
+function pickWagerLine(pick) {
+  // No client-side event_id -> game join yet (matchups.js does not do this
+  // resolution either, and guessing one risks the same silent-mismatch bug
+  // the stand-down telemetry join had before it was keyed correctly on
+  // game_pk -- see src/report/stand_downs.py's own history). The board link
+  // below is deliberately generic rather than a specific, unverified game
+  // link.
+  const market = MARKET_LABEL[pick.market_key] || String(pick.market_key || "market");
+  const price = formatAmerican(pick.price_american);
+  const bits = [market];
+  if (price) bits.push(`at ${price}`);
+  if (pick.book) bits.push(`(${pick.book})`);
+  return bits.join(" ");
+}
+
+function pickCard(pick) {
+  const card = el("article", { class: "gv2-picks__card panel chamfer",
+    "data-hook": "tonights-pick", "data-rank": String(pick.rank) });
+  const head = el("div", { class: "gv2-picks__card-head" });
+  head.appendChild(el("span", { class: "gv2-picks__rank" }, [`#${pick.rank}`]));
+  head.appendChild(evidenceTierChip(pick));
+  card.appendChild(head);
+  card.appendChild(el("p", { class: "gv2-picks__wager" }, [pickWagerLine(pick)]));
+  if (pick.thesis) {
+    // The real mechanism text, in full -- src/engine/explain.py's own
+    // percentile-and-sample-size prose (owner directive: "the thesis is the
+    // product"). Long enough that showing all of it on every card by
+    // default would bury the scannable part; collapsed to a short teaser
+    // with the rest one click away, never shortened or paraphrased.
+    //
+    // Cut by a character budget, not by "first sentence": this prose is
+    // parenthetical-heavy ("(each side's number describes ...): away 36.9%,
+    // home 61.4% (... away over 176 batted balls; home over 1,563 ...)"),
+    // so the first period-or-semicolon lands deep inside an aside, not at a
+    // real sentence break -- a punctuation-based split produced a "teaser"
+    // that was most of the paragraph.
+    const full = String(pick.thesis);
+    const TEASER_CHARS = 92;
+    let teaser = full;
+    if (full.length > TEASER_CHARS + 20) {
+      const cut = full.lastIndexOf(" ", TEASER_CHARS);
+      teaser = full.slice(0, cut > 40 ? cut : TEASER_CHARS) + "…";
+    }
+    if (teaser === full) {
+      card.appendChild(el("p", { class: "gv2-picks__thesis" }, [full]));
+    } else {
+      const details = el("details", { class: "gv2-picks__thesis-details" });
+      details.appendChild(el("summary", { class: "gv2-picks__thesis" }, [teaser]));
+      details.appendChild(el("p", { class: "gv2-picks__thesis gv2-picks__thesis--rest" },
+        [full]));
+      card.appendChild(details);
+    }
+  }
+  // "Agree" implies more than one; a single system has fired, not agreed
+  // with itself. n_systems > n_families only when near-duplicate genomes
+  // were folded into one independent source (doctrine amendment 9) -- named
+  // here so the discount stays auditable rather than a silent subtraction.
+  const agreementLine = pick.n_families === 1
+    ? "1 system's signal"
+    : `${pick.n_families} independent systems agree`;
+  const meta = el("p", { class: "gv2-picks__meta" },
+    [agreementLine
+     + (pick.n_systems > pick.n_families ? ` (${pick.n_systems} systems, family-discounted)` : "")
+     + ` · ${pick.books_at_decision} books at decision`]);
+  card.appendChild(meta);
+  if (pick.evidence_tier_label) {
+    card.appendChild(el("p", { class: "gv2-picks__tier-label" }, [pick.evidence_tier_label]));
+  }
+  return card;
+}
+
+function renderTonightsPicks(slip) {
+  if (!slip || slip.read_as === "NOTHING_CLEARED") return null;
+  const picks = Array.isArray(slip.picks) ? slip.picks : [];
+  if (picks.length === 0) return null;
+
+  const light = slip.read_as === "LIGHT";
+  const wrap = el("section", { class: `gv2-picks gv2-picks--${light ? "light" : "notable"} gutter`,
+    "data-hook": "tonights-picks", "data-rise": "" });
+
+  const eyebrow = light ? "TONIGHT'S LEAN" : "TONIGHT'S PICKS";
+  const headline = light
+    ? "Thin night. If you're betting anyway, here's where the evidence points."
+    : "Where our systems currently see the strongest case.";
+  const sub = light
+    ? "None of tonight's evidence is strong. We'd sit tonight out — but " +
+      "these are the real, floor-cleared plays, honestly labelled thin."
+    : "Ranked by how many independent systems agree and how deep their " +
+      "signal cleared — never by a promised outcome. No system here claims " +
+      "a guaranteed winner.";
+
+  wrap.appendChild(el("span", { class: "gv2-picks__eyebrow" }, [eyebrow]));
+  wrap.appendChild(el("h2", { class: "gv2-picks__headline" }, [headline]));
+  wrap.appendChild(el("p", { class: "gv2-picks__sub" }, [sub]));
+
+  const top3 = picks.filter((p) => (p.cohorts || []).includes("TOP_3"));
+  const rest = picks.filter((p) => !(p.cohorts || []).includes("TOP_3"));
+
+  const grid = el("div", { class: "gv2-picks__grid" });
+  for (const pick of top3) grid.appendChild(pickCard(pick));
+  wrap.appendChild(grid);
+
+  if (rest.length) {
+    const details = el("details", { class: "gv2-picks__more" });
+    details.appendChild(el("summary", {}, [`${rest.length} more published pick${rest.length === 1 ? "" : "s"}`]));
+    const moreGrid = el("div", { class: "gv2-picks__grid" });
+    for (const pick of rest) moreGrid.appendChild(pickCard(pick));
+    details.appendChild(moreGrid);
+    wrap.appendChild(details);
+  }
+
+  return wrap;
+}
+
 function heroShell(tone, extraClass) {
   const hero = el("section", { class: `gv2-hero panel chamfer gv2-hero--${tone}${extraClass ? ` ${extraClass}` : ""}`,
     "data-hook": "gameday-hero", "data-verdict-tone": tone, "data-rise": "" });
@@ -1004,6 +1154,11 @@ export async function renderToday(container) {
 
   // Mobile-only (V2-22); hidden on desktop by screens.css.
   host.appendChild(dateStrip(date));
+
+  // TONIGHT'S PICKS leads, above the hero -- see renderTonightsPicks's own
+  // header comment for exactly when it renders nothing.
+  const picksBlock = renderTonightsPicks(today.slip);
+  if (picksBlock) host.appendChild(picksBlock);
 
   host.appendChild(renderSlateBanner(date, rows, aggregates.freshest));
   renderHero(host, featured, aggregates, rows, date);
