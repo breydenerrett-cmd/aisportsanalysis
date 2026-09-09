@@ -49,6 +49,7 @@ that cannot be retconned.
 from __future__ import annotations
 
 import collections
+import itertools
 import unittest
 from pathlib import Path
 
@@ -792,14 +793,35 @@ LEDGER_MEASURED_REPLAY_ROWS = 125
 
 # `REGISTERED_SYSTEMS` when the structure below was measured. Asserted first
 # and on its own, so a roster change (a genome promoted, a control retired)
-# fails with "the population changed" rather than an unreadable 19-family diff.
+# fails with "the population changed" rather than an unreadable 38-family
+# diff.
+#
+# RE-MEASURED 2026-09-09: REGISTERED_GENOME_COUNT 12->40 and
+# REGISTERED_F5_GENOME_COUNT 4->12 (owner directive -- too few nights were
+# clearing any published pick at all; see the constants' own comments in
+# src/engine/adapters/evolab_system.py). This is a roster-size change only.
+# The evidence floors in src/engine/slip.py, MIN_BOOKS and
+# MIN_MECHANISM_PREDICATES are untouched, and every new genome earns its
+# place under the identical pre-registered rules the original 16 used.
 LEDGER_MEASURED_ROSTER = (
-    "18fa0f4f34bd30fb", "192eda5ca8760fce", "3fc88bd084c5226a",
-    "410024de8934544a", "4a7700d36b3855ab", "56ba4bb647b80640",
-    "606be696ff199952", "7be45f28a9c9312a", "8974e1cb85d58bcb",
-    "999a7baa84ce385c", "9f653877f196fef4", "b0f7d329342ebce1",
-    "cba0c3752371f42a", "dcedc80dd159bf62", "e8c58d079df7ecdd",
-    "ed2b9ec19d3b9b9a",
+    "11da2d044a08ac38", "192eda5ca8760fce", "1c41c299676854d1",
+    "1f5b79a0578568b7", "2bff17328ce70639", "375833d79e4bfef1",
+    "42f0801e3e427201", "44faa9639a3a54e8", "4703ed67882a9d2b",
+    "487b77c84551b046", "4a7700d36b3855ab", "4d21e4380e2ef716",
+    "55b224b73474abec", "5f6d68dec562b5b3", "606be696ff199952",
+    "6093c1cf8a6d6c08", "63ca06e1f2178a6c", "6435b1c945d78929",
+    "6672fa80e22d2863", "66fd4a5e38e890fd", "67dd8b42c8a8be00",
+    "6e9a91ab8b7c0b55", "7f7b7086400aea0b", "812f69c21540b56d",
+    "8974e1cb85d58bcb", "8b2bb45d42021846", "8f24d63763454ce2",
+    "8f27edc938ea2a56", "97a1156fdf4ba7cd", "999a7baa84ce385c",
+    "9f653877f196fef4", "a3fd07c4387af7f0", "aabf4ae1da4d438a",
+    "ab993b80cf517276", "aee91192d90b3be2", "b0f7d329342ebce1",
+    "b6c0d42d22ff73a4", "b8135c76981b90be", "cbd1c70811efbf71",
+    "cf08b6622ea2abda", "d8990c3e820ca117", "da1aab8fe3b869ce",
+    "dd96d24159d3c866", "e5b0edc481775057", "e5ff00d4b3899ccc",
+    "e64c85130b4664cc", "e7f41ed66082c279", "e8c58d079df7ecdd",
+    "ec712e93b6b9d771", "f2f0a57586755527", "f301c228a7092d20",
+    "f7685be895a987f9",
     "market_derived_consensus_h2h_1st_5_innings_away",
     "market_derived_consensus_h2h_1st_5_innings_home",
     "market_derived_consensus_h2h_away", "market_derived_consensus_h2h_home",
@@ -810,22 +832,42 @@ LEDGER_MEASURED_ROSTER = (
     "trivial_always_home", "trivial_always_home_spread", "trivial_under_total",
 )
 
-# 27 systems, 19 families. Hard-coded, not derived: a structure recomputed from
-# the module under test is not an expectation, it is an echo.
+# 63 systems, 38 families. Hard-coded, not derived: a structure recomputed
+# from the module under test is not an expectation, it is an echo.
 LEDGER_MEASURED_FAMILIES = (
-    ("56ba4bb647b80640", "999a7baa84ce385c", "b0f7d329342ebce1"),
+    ("56ba4bb647b80640", "999a7baa84ce385c", "b0f7d329342ebce1",
+     "f2f0a57586755527"),
+    ("11da2d044a08ac38", "dd96d24159d3c866", "e64c85130b4664cc"),
+    ("1c41c299676854d1", "b8135c76981b90be", "e7f41ed66082c279"),
+    ("1f5b79a0578568b7", "375833d79e4bfef1", "97a1156fdf4ba7cd"),
+    ("2bff17328ce70639", "55b224b73474abec", "812f69c21540b56d"),
+    ("42f0801e3e427201", "4d21e4380e2ef716", "e5ff00d4b3899ccc"),
+    ("4703ed67882a9d2b", "487b77c84551b046", "cf08b6622ea2abda"),
+    ("5f6d68dec562b5b3", "63ca06e1f2178a6c", "da1aab8fe3b869ce"),
+    ("606be696ff199952", "6435b1c945d78929", "9f653877f196fef4"),
+    ("8974e1cb85d58bcb", "e8c58d079df7ecdd", "f7685be895a987f9"),
     ("192eda5ca8760fce", "4a7700d36b3855ab"),
-    ("606be696ff199952", "9f653877f196fef4"),
-    ("8974e1cb85d58bcb", "e8c58d079df7ecdd"),
+    ("6093c1cf8a6d6c08", "66fd4a5e38e890fd"),
+    ("67dd8b42c8a8be00", "6e9a91ab8b7c0b55"),
+    ("7f7b7086400aea0b", "aee91192d90b3be2"),
+    ("8f24d63763454ce2", "d8990c3e820ca117"),
+    ("8f27edc938ea2a56", "f301c228a7092d20"),
     ("market_derived_consensus_h2h_home", "trivial_always_home"),
     ("market_derived_consensus_spreads_home", "trivial_always_home_spread"),
     ("market_derived_consensus_totals_under", "trivial_under_total"),
-    ("18fa0f4f34bd30fb",),
-    ("3fc88bd084c5226a",),
     ("410024de8934544a",),
+    ("44faa9639a3a54e8",),
+    ("6672fa80e22d2863",),
     ("7be45f28a9c9312a",),
-    ("cba0c3752371f42a",),
+    ("8b2bb45d42021846",),
+    ("a3fd07c4387af7f0",),
+    ("aabf4ae1da4d438a",),
+    ("ab993b80cf517276",),
+    ("b6c0d42d22ff73a4",),
+    ("cbd1c70811efbf71",),
     ("dcedc80dd159bf62",),
+    ("e5b0edc481775057",),
+    ("ec712e93b6b9d771",),
     ("ed2b9ec19d3b9b9a",),
     ("market_derived_consensus_h2h_1st_5_innings_away",),
     ("market_derived_consensus_h2h_1st_5_innings_home",),
@@ -834,39 +876,75 @@ LEDGER_MEASURED_FAMILIES = (
     ("market_derived_consensus_totals_over",),
 )
 
-# The ONE behavioural merge between two evolab genomes on the live ledger: five
-# forward wagers each, and the SAME five, so Jaccard is exactly 1.000. Their
-# feature sets differ, so nothing but the behavioural relation can have put
-# them together -- which is what makes this pair, and not the structural twins,
-# the fixture that dies if the behavioural relation is disabled.
+# The ONE behavioural merge between two evolab genomes on the live ledger:
+# five forward wagers each, and the SAME five, so Jaccard is exactly 1.000.
+# Unchanged by the roster expansion -- the new genomes have no forward
+# history on the frozen ledger prefix this fixture is measured over, so they
+# cannot join this pair behaviourally. Their feature sets differ, so nothing
+# but the behavioural relation can have put THIS pair together -- which is
+# what makes it, and not the structural twins below, the fixture that dies if
+# the behavioural relation is disabled. (It sits inside a larger 4-member
+# family above because two of its members separately have a structural F5
+# twin; that chaining is exactly what LEDGER_STRUCTURAL_TWINS documents.)
 LEDGER_BEHAVIOURAL_MERGE = ("56ba4bb647b80640", "999a7baa84ce385c")
 LEDGER_BEHAVIOURAL_MERGE_WAGERS_EACH = 5
 
-# The four F5/h2h twins: same feature set, different `routing.market_preference`
-# (`h2h` vs `h2h_1st_5_innings`). Routing deliberately does not split a
-# structural family -- two genomes reading the same measurements and disagreeing
-# only about which market to express the answer in are one reading published
-# twice. Their behavioural Jaccard is 0.0 in every case (one member of each
-# pair has no forward decisions at all), so nothing but the structural relation
-# can have put them together.
+# Every structural-only component with more than one member: same feature
+# set, different `routing.market_preference` (`h2h` vs `h2h_1st_5_innings`).
+# Routing deliberately does not split a structural family -- two genomes
+# reading the same measurements and disagreeing only about which market to
+# express the answer in are one reading published twice. Ten are 3-member
+# triads (an h2h genome, its F5 twin, and a second F5 genome the enumeration
+# happened to place at the same feature set); six are plain 2-member pairs.
+# Their behavioural Jaccard is 0.0 in every case on this frozen prefix (at
+# least one member of each group has no forward decisions at all), so nothing
+# but the structural relation can have put them together.
 LEDGER_STRUCTURAL_TWINS = (
+    ("11da2d044a08ac38", "dd96d24159d3c866", "e64c85130b4664cc"),
+    ("1c41c299676854d1", "b8135c76981b90be", "e7f41ed66082c279"),
+    ("1f5b79a0578568b7", "375833d79e4bfef1", "97a1156fdf4ba7cd"),
+    ("2bff17328ce70639", "55b224b73474abec", "812f69c21540b56d"),
+    ("42f0801e3e427201", "4d21e4380e2ef716", "e5ff00d4b3899ccc"),
+    ("4703ed67882a9d2b", "487b77c84551b046", "cf08b6622ea2abda"),
+    ("5f6d68dec562b5b3", "63ca06e1f2178a6c", "da1aab8fe3b869ce"),
+    ("606be696ff199952", "6435b1c945d78929", "9f653877f196fef4"),
+    ("8974e1cb85d58bcb", "e8c58d079df7ecdd", "f7685be895a987f9"),
+    ("999a7baa84ce385c", "b0f7d329342ebce1", "f2f0a57586755527"),
     ("192eda5ca8760fce", "4a7700d36b3855ab"),
-    ("606be696ff199952", "9f653877f196fef4"),
-    ("8974e1cb85d58bcb", "e8c58d079df7ecdd"),
-    ("999a7baa84ce385c", "b0f7d329342ebce1"),
+    ("6093c1cf8a6d6c08", "66fd4a5e38e890fd"),
+    ("67dd8b42c8a8be00", "6e9a91ab8b7c0b55"),
+    ("7f7b7086400aea0b", "aee91192d90b3be2"),
+    ("8f24d63763454ce2", "d8990c3e820ca117"),
+    ("8f27edc938ea2a56", "f301c228a7092d20"),
 )
 
 LEDGER_MEASURED_BASIS_COUNTS = {
-    "behavioural_and_structural": 5,
-    "structural_only": 11,
-    "behavioural_only": 9,
-    "unclusterable": 2,
+    "behavioural_and_structural": 3,
+    "structural_only": 49,
+    "behavioural_only": 11,
+    "unclusterable": 5,
 }
+
+# Five ids `forward_selections` finds mentioned on this frozen ledger prefix
+# that are NOT in the current REGISTERED_SYSTEMS: the remnant of the old
+# 16-system roster the 2026-09-09 stride change did not re-select. This is
+# the module working exactly as documented ("every id the records mention on
+# an excluded row" -- families.py's own forward_selections docstring): a
+# genome's historical forward decisions do not vanish when it rotates out of
+# the live population, so the clustering still has to account for them. It is
+# why `clustering.n_systems` (68) exceeds `len(REGISTERED_SYSTEMS)` (63).
+LEDGER_MEASURED_RETIRED_IN_LEDGER = (
+    "410024de8934544a", "56ba4bb647b80640", "7be45f28a9c9312a",
+    "dcedc80dd159bf62", "ed2b9ec19d3b9b9a",
+)
 
 # Live agreement over the 909 forward rows: 338 distinct wagers, and the
 # (n_systems, n_families) shape of the discount on them. With clustering
 # disabled every entry would be (n, n); with everything collapsed into one
-# family every entry would be (n, 1). Neither is this.
+# family every entry would be (n, 1). Neither is this. Unchanged by the
+# roster expansion, for the same reason LEDGER_BEHAVIOURAL_MERGE is: the new
+# genomes carry no forward decisions on this frozen prefix, so they can never
+# appear in any wager's agreement group here.
 LEDGER_MEASURED_FORWARD_WAGERS = 338
 LEDGER_MEASURED_AGREEMENT_SHAPE = {
     (1, 1): 163, (2, 1): 164, (2, 2): 3, (3, 2): 4, (3, 3): 1,
@@ -907,6 +985,13 @@ class LiveLedgerTests(unittest.TestCase):
         cls.n_rows_on_disk = len(rows)
         cls.rows = rows[:LEDGER_MEASURED_ROWS]
         cls.roster = tuple(sorted(s.id for s in REGISTERED_SYSTEMS))
+        # REGISTERED_SYSTEMS ONLY -- exactly what production builds
+        # (src/cli.py's `engine slip` command). An id that has rotated out of
+        # the roster (LEDGER_MEASURED_RETIRED_IN_LEDGER) is simply ABSENT as a
+        # key here, matching production exactly; `.get()` reads below turn
+        # that absence into families.families's own documented "structure
+        # unavailable" handling (`genomes=None` for a system -> an Absence,
+        # never a fabricated feature set) rather than a KeyError.
         cls.genomes = {s.id: getattr(s, "genome", None)
                        for s in REGISTERED_SYSTEMS}
         cls.selections = fam.forward_selections(cls.rows, systems=cls.roster)
@@ -981,17 +1066,19 @@ class LiveLedgerTests(unittest.TestCase):
 
     def test_the_measured_family_structure_is_reproduced_exactly(self):
         """One assertion that fails under every clustering mutation the
-        verifier found: disabling the merge (27 singleton families), collapsing
-        it (one family of 27), switching off either relation, and losing
+        verifier found: disabling the merge (68 singleton families), collapsing
+        it (one family of 68), switching off either relation, and losing
         transitivity all change this tuple."""
         self.assertEqual(self.clustering.families, LEDGER_MEASURED_FAMILIES)
-        self.assertEqual(self.clustering.n_families, 19)
-        self.assertEqual(self.clustering.n_systems, 27)
+        self.assertEqual(self.clustering.n_families, 38)
+        self.assertEqual(self.clustering.n_systems, 68)
 
     def test_the_measured_basis_of_every_system(self):
-        """Why `_FULLY_TESTED_BASES` matters in production: only 5 of the 27
-        registered systems have been compared under both relations. 11 of the
-        16 genomes rest on structural identity alone."""
+        """Why `_FULLY_TESTED_BASES` matters in production: only 3 of the 68
+        systems this clustering covers have been compared under BOTH
+        relations. The rest are placed on structural identity alone, on
+        behavioural agreement alone, or (5 of them) on neither -- a family of
+        one by absence of evidence, not by evidence of distinctness."""
         counts = collections.Counter(self.clustering.basis_of.values())
         self.assertEqual(dict(counts), LEDGER_MEASURED_BASIS_COUNTS)
 
@@ -1002,44 +1089,73 @@ class LiveLedgerTests(unittest.TestCase):
         self.assertEqual(len(wagers_a), LEDGER_BEHAVIOURAL_MERGE_WAGERS_EACH)
         self.assertEqual(len(wagers_b), LEDGER_BEHAVIOURAL_MERGE_WAGERS_EACH)
         self.assertEqual(overlap.jaccard(wagers_a, wagers_b), 1.0)
-        self.assertNotEqual(fam.feature_set(self.genomes[a]),
-                            fam.feature_set(self.genomes[b]),
+        # .get(), not [a]/[b]: `a` (56ba...) has rotated out of
+        # REGISTERED_SYSTEMS (LEDGER_MEASURED_RETIRED_IN_LEDGER), so it is not
+        # a key in `self.genomes` at all -- exactly production's shape.
+        # `feature_set(None)` is `None` by the module's own contract, and
+        # `None != a real frozenset` still proves the point below.
+        self.assertNotEqual(fam.feature_set(self.genomes.get(a)),
+                            fam.feature_set(self.genomes.get(b)),
                             "if their feature sets were equal this pair would "
                             "prove nothing about the behavioural relation")
         self.assertIn((a, b), self.clustering.behavioural)
         self.assertEqual(self.clustering.family_id(a),
                          self.clustering.family_id(b))
 
-    def test_the_four_structural_twins_merge_on_structure_alone(self):
-        for a, b in LEDGER_STRUCTURAL_TWINS:
-            with self.subTest(pair=(a, b)):
-                self.assertEqual(fam.feature_set(self.genomes[a]),
-                                 fam.feature_set(self.genomes[b]))
-                behavioural_j = overlap.jaccard(
-                    self.selections.selections[a],
-                    self.selections.selections[b])
-                self.assertLess(behavioural_j, fam.FAMILY_THRESHOLD,
-                                "this pair would merge behaviourally too, so "
-                                "it cannot pin the structural relation")
-                self.assertIn((a, b), self.clustering.structural)
-                self.assertEqual(self.clustering.family_id(a),
-                                 self.clustering.family_id(b))
+    def test_the_structural_twins_merge_on_structure_alone(self):
+        """Each group here is one structural component: same feature set,
+        different `routing.market_preference`. Ten are 3-member triads (an
+        h2h genome, its F5 twin, and a second F5 genome the enumeration
+        happened to place at the same feature set); six are plain pairs.
+        Checked pairwise within each group, plus the group as a whole against
+        the clustering's own structural components -- not just `assertIn`,
+        which silently stops proving anything once a component has more than
+        two members (a 2-tuple can never equal a 3-tuple)."""
+        structural_components = {tuple(sorted(c))
+                                 for c in self.clustering.structural
+                                 if len(c) > 1}
+        for group in LEDGER_STRUCTURAL_TWINS:
+            with self.subTest(group=group):
+                for a, b in itertools.combinations(group, 2):
+                    self.assertEqual(fam.feature_set(self.genomes.get(a)),
+                                     fam.feature_set(self.genomes.get(b)))
+                    behavioural_j = overlap.jaccard(
+                        self.selections.selections[a],
+                        self.selections.selections[b])
+                    self.assertLess(
+                        behavioural_j, fam.FAMILY_THRESHOLD,
+                        "this pair would merge behaviourally too, so it "
+                        "cannot pin the structural relation")
+                self.assertIn(tuple(sorted(group)), structural_components)
+                fids = {self.clustering.family_id(m) for m in group}
+                self.assertEqual(len(fids), 1)
 
-    def test_the_cross_relation_family_of_three_is_actually_built(self):
-        """`56ba` and `999a` are behavioural twins; `999a` and `b0f7` are
-        structural twins; `56ba` and `b0f7` are related by neither. The live
-        population contains the union case, and it must be one family."""
+    def test_the_cross_relation_family_of_four_is_actually_built(self):
+        """`56ba` and `999a` are behavioural twins (five forward wagers each,
+        Jaccard exactly 1.0). `999a`, `b0f7` and `f2f0` are a structural
+        triad (identical feature set). `56ba` shares neither relation with
+        `b0f7` or `f2f0` directly. The live population contains the union
+        case chained through `999a`, and it must be one family of four --
+        not two families that happen to share a member."""
         self.assertEqual(self.clustering.families[0],
                          ("56ba4bb647b80640", "999a7baa84ce385c",
-                          "b0f7d329342ebce1"))
+                          "b0f7d329342ebce1", "f2f0a57586755527"))
         self.assertIn(("56ba4bb647b80640", "999a7baa84ce385c"),
                       self.clustering.behavioural)
-        self.assertIn(("999a7baa84ce385c", "b0f7d329342ebce1"),
-                      self.clustering.structural)
+        self.assertIn(
+            ("999a7baa84ce385c", "b0f7d329342ebce1", "f2f0a57586755527"),
+            self.clustering.structural)
         self.assertNotIn(("56ba4bb647b80640", "b0f7d329342ebce1"),
                          self.clustering.behavioural)
-        self.assertNotIn(("56ba4bb647b80640", "b0f7d329342ebce1"),
-                         self.clustering.structural)
+        self.assertNotIn(("56ba4bb647b80640", "f2f0a57586755527"),
+                         self.clustering.behavioural)
+        for c in self.clustering.structural:
+            if len(c) > 1:
+                self.assertNotIn(
+                    "56ba4bb647b80640", c,
+                    "56ba's feature set differs from the triad's; it must "
+                    "not appear in any MULTI-member structural component "
+                    "(its own singleton component is expected and fine)")
 
     def test_systems_sharing_neither_relation_are_not_one_family(self):
         """The other direction: collapsing the population into a single family

@@ -88,12 +88,23 @@ def loud_snapshot() -> PriceBlindSnapshot:
 
 
 def all_proposals():
-    """Every proposal every registered system makes on one loud snapshot."""
+    """Every PROPOSAL (never a stand-down) every registered system makes on
+    one loud snapshot.
+
+    `system.propose()` can also yield `StandDown` objects (src.engine.slate,
+    2026-09-09) -- a system saying why it declined, not a proposal. Neither
+    `.thesis` nor `.p_model_provenance` exists on one (it names no market, no
+    selection, no price), so every test below that reads a proposal field
+    would raise AttributeError on a stand-down rather than testing anything.
+    Filtered here, once, at the shared source, rather than in each test."""
+    from src.engine.analyze import StandDown
     view = loud_snapshot()
     out = []
     for system in REGISTERED_SYSTEMS:
-        for proposal in system.propose(view):
-            out.append((system, proposal))
+        for item in system.propose(view):
+            if isinstance(item, StandDown):
+                continue
+            out.append((system, item))
     return out
 
 

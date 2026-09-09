@@ -378,11 +378,20 @@ MARKET_DERIVED_SYSTEMS: tuple = tuple(
 # ---------------------------------------------------------------------------
 
 # How many enumerated genomes to register alongside the trivial control.
-# Chosen small on purpose (checkpoint doc: "say 8-16") -- this is the
-# starting population for the slice, not a sweep; mutation/retirement are
-# explicitly out of scope (docs/CHECKPOINT_PHASE0_2026-09-03.md S5 closing
-# note).
-REGISTERED_GENOME_COUNT = 12
+#
+# Raised from 12 to 40 on 2026-09-09 (owner directive: too few nights clear
+# any picks at all). This is NOT a lowered bar -- MIN_MECHANISM_PREDICATES,
+# MIN_BOOKS and the evidence threshold in src/engine/slip.py are untouched,
+# and every genome here still has to earn a place under the same
+# pre-registered rules as the original 12. It is more independent shots on
+# goal: measured against the enumerated pool, 12 h2h + 4 F5 genomes reduce to
+# 12 structurally distinct families; 40 h2h + 12 F5 reduce to 26 -- roughly
+# double the real, non-duplicate coverage of the mechanism space, which is
+# the actual bottleneck on how many nights produce a published pick. 80 h2h +
+# 20 F5 was measured too and only reached 28 families -- past this point the
+# enumerated space is mostly near-duplicates of what 40/12 already covers, so
+# raising further would add volume without adding independent evidence.
+REGISTERED_GENOME_COUNT = 40
 
 # B6 fix (slice-review-2026-09-03): SCOPE_MARKETS (src/engine/slate.py) names
 # four markets, but until this module registered ANY system whose eligibility
@@ -409,7 +418,9 @@ REGISTERED_GENOME_COUNT = 12
 # a frozen direction and p_model=None (no calibrated probability is claimed,
 # so PROJECT's edge_bps and RATE's rating stay honestly None/absent for them,
 # exactly like every evolab-origin proposal already does).
-REGISTERED_F5_GENOME_COUNT = 4
+# Raised from 4 to 12 alongside REGISTERED_GENOME_COUNT above, same reasoning
+# and same 2026-09-09 date.
+REGISTERED_F5_GENOME_COUNT = 12
 
 # The F5 eligibility/routing pair: eligible for the F5 market only, and
 # routed to it unconditionally once `if_all_signals_first_five` is checked

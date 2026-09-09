@@ -26,8 +26,16 @@ class TestRegisteredSystems(unittest.TestCase):
         )
 
         self.assertGreaterEqual(len(REGISTERED_SYSTEMS), 9)
-        self.assertLessEqual(len(REGISTERED_EVOLAB_SYSTEMS) + 1,
-                             17)  # trivial + "say 8-16" genomes
+        # Raised 2026-09-09 (owner directive: too few nights cleared any
+        # picks). REGISTERED_GENOME_COUNT 12->40, REGISTERED_F5_GENOME_COUNT
+        # 4->12 -- see both constants' own comments in
+        # src/engine/adapters/evolab_system.py for the family-count
+        # measurement behind the new numbers. 60 upper bound is deliberately
+        # loose (52 genomes + headroom), not a re-pin of the exact count --
+        # that precision belongs to LiveLedgerTests in
+        # tests/test_analysis_families.py, which fails loudly and by name on
+        # any roster change instead of silently widening here.
+        self.assertLessEqual(len(REGISTERED_EVOLAB_SYSTEMS) + 1, 60)
         self.assertEqual(REGISTERED_SYSTEMS[0].id, "trivial_always_home")
         ids = [s.id for s in REGISTERED_SYSTEMS]
         self.assertEqual(len(ids), len(set(ids)),
