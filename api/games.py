@@ -41,7 +41,7 @@ from src.pipeline import (briefing, bullpen, history, lineup_store, lineups,
                           weather_capture)
 from src.providers import statcast
 from src.providers import mlb
-from src.report import engine_bridge
+from src.report import engine_bridge, stand_downs
 
 router = APIRouter()
 
@@ -434,7 +434,26 @@ def _engine_summary_for_entry(dossier, date: str) -> Optional[dict]:
                                  game.get("date") or date)
     by_key = engine_decisions_for_date(date)
     summaries = by_key.get(key)
-    return engine_bridge.summarize_game(summaries) if summaries else None
+    rollup = engine_bridge.summarize_game(summaries) if summaries else None
+
+    # WHY THERE IS NO PICK, when there is no pick. "Nothing clears the bar" is
+    # the honest and most common answer this product gives, and until now it
+    # was an unexplained one: a reader could not tell whether the systems
+    # examined this game and declined, or never reached it. Those are
+    # different facts and the page rendered them identically.
+    #
+    # Attached whether or not a rollup exists, because the two answer
+    # different questions -- the rollup says what the systems DID, this says
+    # why the ones that did nothing did nothing. `None` means the stand-down
+    # ledger holds nothing for this game, which is itself distinct from "every
+    # system had a reason": the slate may simply not have reached it.
+    try:
+        standing_down = stand_downs.summarize_game(date, key)
+    except Exception:  # noqa: BLE001 -- a gap is never a 500
+        standing_down = None
+    if standing_down is None and rollup is None:
+        return None
+    return {**(rollup or {}), "stand_downs": standing_down}
 
 
 def _record_page_view(request: Optional[Request], route: str, date: str) -> None:
