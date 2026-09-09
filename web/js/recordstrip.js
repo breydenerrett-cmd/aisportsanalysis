@@ -89,8 +89,14 @@ export async function renderRecordStrip(container) {
   cells.appendChild(windowCell(payload.last_30));
   strip.appendChild(cells);
 
+  // Named explicitly (2026-09-09): before this the windows above pooled
+  // CONTROL and MARKET_REFERENCE in beside the product's own picks -- on the
+  // real ledger that was roughly 90% of what the number actually was. The
+  // filter changed what these tiles mean; the caption has to say so, not
+  // just the number quietly getting better.
   strip.appendChild(el("p", { class: "rec-strip__note", "data-hook": "record-strip-note",
-    text: `Paper results, flat 1-unit stakes. Settled through ${payload.settled_through || "not yet available"}.` }));
+    text: `Our forward-test systems only — not the null baselines or the market-reference republishers. `
+        + `Paper results, flat 1-unit stakes. Settled through ${payload.settled_through || "not yet available"}.` }));
 
   return strip;
 }
