@@ -54,6 +54,14 @@ if [ "$SLATE_STATUS" -ne 0 ]; then
 fi
 echo "- $(date -u +%Y-%m-%dT%H:%MZ) afternoon_slate: engine slate --date $TODAY exit=$SLATE_STATUS" >> "$RUN_NOTE"
 
+# engine slip RANKS what engine slate just froze (src/engine/slip.py) --
+# ENRICHMENT, never a blocker: a ranking failure must never escalate over
+# decisions and wagers that are already committed.
+echo "== engine slip (afternoon pass, $TODAY) =="
+SLIP_OUT=$(python3 -m src.cli engine slip --date "$TODAY" 2>&1)
+echo "$SLIP_OUT" | sed 's/^/  /' || echo "  (slip pass failed; frozen decisions are unaffected)"
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) afternoon_slate: engine slip --date $TODAY" >> "$RUN_NOTE"
+
 # How many genomes actually played, printed so the run log answers the
 # question this whole pass exists to answer, without anyone reading the
 # ledger by hand.

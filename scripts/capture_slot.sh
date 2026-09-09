@@ -88,6 +88,17 @@ if [ "${GATE_OUT%% *}" = "RUN" ]; then
     echo "== engine slate (lineup cadence) =="
     python3 -m src.cli engine slate --date "$(date -u +%Y-%m-%d)" 2>&1 \
         | sed 's/^/  /' || echo "  (slate pass failed; scheduled passes unaffected)"
+    # engine slip RANKS what engine slate just froze -- see src/engine/slip.py.
+    # Without this call nothing ever appends to evidence/slips_v1.jsonl, which
+    # is the gap that made the whole ranked-picks/evidence-tier surface
+    # (2026-09-09) invisible in production even though every piece of it
+    # worked in a dry run: engine slate was the only command any script here
+    # ever called. Same optional-pass contract as the gate above -- a failure
+    # here costs one ranking, never the frozen decisions or staked wagers
+    # engine slate already committed.
+    echo "== engine slip (lineup cadence) =="
+    python3 -m src.cli engine slip --date "$(date -u +%Y-%m-%d)" 2>&1 \
+        | sed 's/^/  /' || echo "  (slip pass failed; decisions already frozen are unaffected)"
 fi
 
 GIT_LOCK=/tmp/linehound_git.lock

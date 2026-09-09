@@ -117,6 +117,39 @@ class BuildTodayPayloadTests(unittest.TestCase):
         payload = build_today_payload(games, store)
         self.assertEqual(payload["date"], games[0]["date"])
 
+    def test_a_date_with_no_slip_ledger_entry_reports_none_not_an_error(self):
+        """`engine slip` may not have run for this date yet -- that is a
+        real, expected state (`_slip_for_date`'s own docstring), never a
+        reason for /today to 500."""
+        store = history.read_results()
+        games = [_today_game()]
+        games[0]["date"] = "1999-01-01"  # certainly never sliped
+        payload = build_today_payload(games, store, date="1999-01-01")
+        self.assertIn("slip", payload)
+        self.assertIsNone(payload["slip"])
+        json.dumps(payload)  # still round-trips with the new key present
+
+
+class SlipForDateTests(unittest.TestCase):
+    """`_slip_for_date` directly: the None-vs-absent-vs-present distinction
+    the field exists to preserve."""
+
+    def test_no_date_is_none(self):
+        from api.today import _slip_for_date
+        self.assertIsNone(_slip_for_date(None))
+
+    def test_a_date_never_sliped_is_none(self):
+        from api.today import _slip_for_date
+        self.assertIsNone(_slip_for_date("1901-01-01"))
+
+    def test_an_unreadable_ledger_is_none_not_a_crash(self):
+        from unittest import mock
+
+        from api.today import _slip_for_date
+        with mock.patch("src.engine.slip.latest_slip_for",
+                        side_effect=OSError("disk full")):
+            self.assertIsNone(_slip_for_date("2026-09-09"))
+
 
 if __name__ == "__main__":
     unittest.main()

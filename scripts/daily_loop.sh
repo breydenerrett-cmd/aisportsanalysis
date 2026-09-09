@@ -217,6 +217,16 @@ if [ "$SLATE_STATUS" -ne 0 ]; then
 fi
 echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: engine slate --date $TODAY exit=$SLATE_STATUS" >> "$RUN_NOTE"
 
+# engine slip RANKS what engine slate just froze (src/engine/slip.py) --
+# ENRICHMENT, never a blocker, unlike engine slate above: a ranking failure
+# must never escalate over decisions and wagers that are already committed.
+# Runs even when SLATE_STATUS != 0 -- a refused/partial slate can still have
+# decisions worth ranking from earlier in this run or an earlier pass today.
+echo "== engine slip (today, $TODAY) =="
+SLIP_OUT=$(python3 -m src.cli engine slip --date "$TODAY" 2>&1)
+echo "$SLIP_OUT" | sed 's/^/  /' || echo "  (slip pass failed; frozen decisions are unaffected)"
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: engine slip --date $TODAY" >> "$RUN_NOTE"
+
 echo "== engine settle (yesterday, $YESTERDAY) =="
 SETTLE_OUT=$(python3 -m src.cli engine settle --date "$YESTERDAY" 2>&1)
 SETTLE_STATUS=$?

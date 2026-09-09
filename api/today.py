@@ -129,12 +129,34 @@ def build_today_payload(games: list, store: dict, *, date: Optional[str] = None,
     """
     now = now or datetime.now(timezone.utc)
     slate = briefing.build_slate(games, store, **build_slate_kwargs)
+    resolved_date = date or slate.get("date")
     return {
-        "date": date or slate.get("date"),
+        "date": resolved_date,
         "generated_at": now.isoformat(),
         "games": [serialize_entry(e, now=now) for e in slate["games"]],
         "notes": slate.get("notes", []),
+        "slip": _slip_for_date(resolved_date),
     }
+
+
+def _slip_for_date(date: Optional[str]) -> Optional[dict]:
+    """The most recently published ranked slip for this date, or None if no
+    `engine slip` pass has ever run for it yet.
+
+    Read-only, exactly like every other field here: `engine slip` freezes and
+    appends the slip separately (src.engine.slip.append_slip); this endpoint
+    only ever reads the newest row back. `None` is a real, expected answer
+    on a date the cadence has not yet reached -- never a fabricated "nothing
+    cleared the bar" standing in for "we have not looked yet", which is a
+    different fact than an honestly empty slip's `read_as=NOTHING_CLEARED`.
+    """
+    if not date:
+        return None
+    try:
+        from src.engine import slip as slip_mod
+        return slip_mod.latest_slip_for(date)
+    except Exception:  # noqa: BLE001 -- an unreadable slip ledger is a gap
+        return None
 
 
 # ~120s: long enough that a normal burst of page loads/refreshes for the
