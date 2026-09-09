@@ -510,10 +510,20 @@ an honest evidence-tier read, actually reaching the page.
    restored). Published CLV is now 196 rows, 100% FORWARD_TEST. The honest
    read at that sample size is still "no signal yet" — the fix is about the
    number being trustworthy, not about it being good.
-3. **The performance page still pools CONTROL/MARKET_REFERENCE into the
-   headline record strip.** Doctrine section 6 requires four cohorts,
-   always separate, Top 3 leading. `LAST 7 DAYS 273-259-18` on the live
-   record strip is ~90% instrument noise, not the product's record.
+3. ~~The record strip pooled CONTROL/MARKET_REFERENCE into the headline~~
+   — **PARTIALLY DONE (2026-09-09), committed `a1d2866`.** The strip's
+   TODAY/LAST 7/LAST 30 windows are now FORWARD_TEST-only; the pooled view
+   survives as `all_classes` for diagnostics, never the customer default.
+   Corrected live number: LAST 7 DAYS 34-28-0 +1.06u (+1.7%), LAST 30 DAYS
+   70-44-3 +19.71u (+17.3%) — against the pooled strip's -21.79u / -4.91u a
+   customer was actually seeing. **Read this correctly:** a small,
+   non-independent sample turning positive is not evidence of an edge —
+   the same-day CLV check on 196 published rows found no signal. **STILL
+   OPEN:** doctrine's actual design is an ALL-TIME, COHORT-based record
+   (Top 3 / Top 5 / Published / Research, never a time window) — deferred
+   because cohort tags only exist since `engine slip` went live today, so
+   an all-time Top-3 query would return almost nothing. Revisit once a
+   real week of cohort-tagged history exists.
 4. **`opportunities.js`'s "TOP PLAY" still ranks on `price_standing_bps`**
    (execution quality) instead of the slip's case-strength ranking. Now
    that the slip is live, this component is redundant with — and
