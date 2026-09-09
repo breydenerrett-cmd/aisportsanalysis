@@ -15,13 +15,22 @@ from src.analysis import families as fam
 from src.engine import slip as slip_mod
 from src.engine.slip import (
     COHORT_CUTS,
+    EVIDENCE_BUILDING,
+    EVIDENCE_MINIMAL,
+    EVIDENCE_STRONG,
+    EVIDENCE_TIER_LABEL,
+    EVIDENCE_THIN,
     MIN_MECHANISM_PREDICATES,
+    READ_LIGHT,
+    READ_NOTABLE,
+    READ_NOTHING_CLEARED,
     SLIP_RULE,
     Slip,
     SlipError,
     build_slip,
     cohorts_for_rank,
     confirmation_strength,
+    evidence_tier,
     is_forward_test,
 )
 from src.ledger.records import COHORT_PUBLISHED, COHORT_TOP_3, COHORT_TOP_5
@@ -379,6 +388,137 @@ class CohortFilterTests(unittest.TestCase):
                           date=DATE, slip_utc=SLIP_UTC)
         self.assertEqual(len(slip.cohort(COHORT_TOP_3)), 2)
         self.assertEqual(len(slip.cohort(COHORT_TOP_5)), 2)
+
+
+class EvidenceTierTests(unittest.TestCase):
+    """docs/PRODUCT_DOCTRINE.md section 4's confidence axis, gated: this is a
+    tier over CASE STRENGTH (family agreement + signal-ladder depth), never a
+    win probability. Every boundary below is checked from both sides -- one
+    input over the line, everything else held constant -- so the tier
+    actually discriminates rather than reading the same value everywhere."""
+
+    def test_three_families_is_strong_regardless_of_rung(self):
+        self.assertEqual(evidence_tier(3, 0), EVIDENCE_STRONG)
+        self.assertEqual(evidence_tier(3, 2), EVIDENCE_STRONG)
+
+    def test_two_families_is_building(self):
+        self.assertEqual(evidence_tier(2, 0), EVIDENCE_BUILDING)
+
+    def test_one_family_at_the_hardest_rung_is_also_building(self):
+        """A single system that cleared p90 alone is treated the same as two
+        systems agreeing at a weaker rung -- both are real, checkable
+        evidence, neither is a guess at which matters more."""
+        self.assertEqual(evidence_tier(1, 2), EVIDENCE_BUILDING)
+
+    def test_one_family_at_the_middle_rung_is_thin(self):
+        self.assertEqual(evidence_tier(1, 1), EVIDENCE_THIN)
+
+    def test_one_family_at_the_weakest_rung_is_minimal(self):
+        self.assertEqual(evidence_tier(1, 0), EVIDENCE_MINIMAL)
+
+    def test_every_boundary_is_a_real_boundary(self):
+        """The four tiers are actually distinct outcomes, not the same label
+        wearing four names -- this is the test a constant-function mutation
+        would fail."""
+        seen = {evidence_tier(3, 0), evidence_tier(2, 0), evidence_tier(1, 2),
+                evidence_tier(1, 1), evidence_tier(1, 0)}
+        self.assertEqual(len(seen), 4)
+
+    def test_raising_n_families_alone_never_lowers_the_tier(self):
+        order = {EVIDENCE_MINIMAL: 0, EVIDENCE_THIN: 1, EVIDENCE_BUILDING: 2,
+                 EVIDENCE_STRONG: 3}
+        for rung in (0, 1, 2):
+            prev = -1
+            for n in (1, 2, 3, 5):
+                rank = order[evidence_tier(n, rung)]
+                self.assertGreaterEqual(rank, prev)
+                prev = rank
+
+    def test_raising_rung_alone_never_lowers_the_tier(self):
+        order = {EVIDENCE_MINIMAL: 0, EVIDENCE_THIN: 1, EVIDENCE_BUILDING: 2,
+                 EVIDENCE_STRONG: 3}
+        for n in (1, 2):
+            prev = -1
+            for rung in (0, 1, 2):
+                rank = order[evidence_tier(n, rung)]
+                self.assertGreaterEqual(rank, prev)
+                prev = rank
+
+    def test_every_tier_has_a_plain_english_label(self):
+        for tier in (EVIDENCE_STRONG, EVIDENCE_BUILDING, EVIDENCE_THIN,
+                    EVIDENCE_MINIMAL):
+            label = EVIDENCE_TIER_LABEL[tier]
+            self.assertNotIn("_", label)
+            self.assertGreater(len(label), 10)
+
+    def test_a_slip_picks_tier_matches_the_pure_function(self):
+        """The property on SlipPick must never drift from the function every
+        test above pins -- two implementations of the same rule is exactly
+        the failure mode this project designs against."""
+        rows = [_row("a", "evtA", signals=1, rung=0)]
+        pick = build_slip(rows, _forced_clustering([("a",)]), date=DATE,
+                          slip_utc=SLIP_UTC).picks[0]
+        self.assertEqual(pick.evidence_tier,
+                         evidence_tier(pick.n_families, pick.deepest_rung))
+
+    def test_the_tier_reaches_the_serialised_dict(self):
+        rows = [_row("a", "evtA", signals=1, rung=0)]
+        payload = build_slip(rows, _forced_clustering([("a",)]), date=DATE,
+                             slip_utc=SLIP_UTC).picks[0].to_dict()
+        self.assertEqual(payload["evidence_tier"], EVIDENCE_MINIMAL)
+        self.assertIn("evidence_tier_label", payload)
+
+    def test_no_tier_ever_names_a_probability_or_a_percent(self):
+        """Doctrine: no independent model probability exists, so nothing here
+        may look like one."""
+        for label in EVIDENCE_TIER_LABEL.values():
+            lowered = label.lower()
+            for banned in ("%", "probability", "chance of winning",
+                          "confidence that", "will win", "guaranteed"):
+                self.assertNotIn(banned, lowered)
+
+
+class SlipReadAsTests(unittest.TestCase):
+    """The honest framing a page reads off tonight's slip -- computed only
+    from PUBLISHED, floor-cleared picks. Never from a miss."""
+
+    def test_no_picks_reads_as_nothing_cleared(self):
+        slip = build_slip([], _forced_clustering([("a",)]), date=DATE,
+                          slip_utc=SLIP_UTC)
+        self.assertEqual(slip.read_as, READ_NOTHING_CLEARED)
+
+    def test_only_thin_or_minimal_picks_read_as_light(self):
+        """One real, floor-cleared, honestly-labelled-thin pick is the 'skip
+        tonight unless you're betting anyway, here is our lean' case -- a
+        real pick, never a fabricated one."""
+        rows = [_row("a", "evtA", signals=1, rung=0)]
+        slip = build_slip(rows, _forced_clustering([("a",)]), date=DATE,
+                          slip_utc=SLIP_UTC)
+        self.assertEqual(slip.read_as, READ_LIGHT)
+        self.assertEqual(slip.tier_counts[EVIDENCE_MINIMAL], 1)
+
+    def test_a_strong_pick_reads_as_notable(self):
+        rows = [_row("a", "evtA", signals=1, rung=0),
+                _row("b", "evtB", signals=1, rung=2)]
+        clustering = _forced_clustering([("a",), ("b",)])
+        slip = build_slip(rows, clustering, date=DATE, slip_utc=SLIP_UTC)
+        self.assertEqual(slip.read_as, READ_NOTABLE)
+
+    def test_tier_counts_always_report_all_four_keys(self):
+        """A caller must never have to guess whether a missing key means zero
+        or means unmeasured."""
+        slip = build_slip([], _forced_clustering([("a",)]), date=DATE,
+                          slip_utc=SLIP_UTC)
+        self.assertEqual(set(slip.tier_counts),
+                         {EVIDENCE_MINIMAL, EVIDENCE_THIN, EVIDENCE_BUILDING,
+                          EVIDENCE_STRONG})
+        self.assertEqual(sum(slip.tier_counts.values()), 0)
+
+    def test_read_as_reaches_the_serialised_dict(self):
+        payload = build_slip([], _forced_clustering([("a",)]), date=DATE,
+                             slip_utc=SLIP_UTC).to_dict()
+        self.assertEqual(payload["read_as"], READ_NOTHING_CLEARED)
+        self.assertIn("tier_counts", payload)
 
 
 if __name__ == "__main__":

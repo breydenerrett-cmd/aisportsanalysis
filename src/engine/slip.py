@@ -220,6 +220,70 @@ class Miss:
                 "reason": self.reason, "detail": self.detail}
 
 
+# ---------------------------------------------------------------------------
+# Evidence tier -- a real, checkable label, never a win probability
+# ---------------------------------------------------------------------------
+#
+# Owner directive (2026-09-09): every published pick should carry a plain
+# visual read of how much evidence backs it, and a slate should never sit
+# silent just because nothing is spectacular. What it may NOT do -- and what
+# nothing below computes -- is a probability of winning, a confidence score,
+# or anything resembling one. `docs/PRODUCT_DOCTRINE.md` section 4 gates
+# exactly that until a model-derived probability exists, and none does.
+#
+# So this is a tier over CASE STRENGTH, built from nothing but the two inputs
+# `SLIP_BASIS` already ranks on: how many independent families agree
+# (amendment 9's own headline number) and how deep into the genome's own
+# signal ladder the strongest fired predicate reached (registry.py's rungs:
+# 0 = p50, 1 = p75, 2 = p90 -- a HARDER threshold to clear, not a probability
+# of anything). Nothing here is a weighted score or an invented formula: the
+# tier is read directly off the same two numbers a reader can already see on
+# the card, so a reader who disagrees with the label can check the arithmetic
+# themselves in two comparisons.
+EVIDENCE_STRONG = "STRONG"      # green  -- 3+ independent families agree
+EVIDENCE_BUILDING = "BUILDING"  # yellow -- 2 families, or 1 at the hardest rung
+EVIDENCE_THIN = "THIN"          # orange -- 1 family, mid rung
+EVIDENCE_MINIMAL = "MINIMAL"    # red    -- 1 family, weakest rung it can still
+                                 #           publish at
+
+EVIDENCE_TIERS = (EVIDENCE_MINIMAL, EVIDENCE_THIN, EVIDENCE_BUILDING,
+                  EVIDENCE_STRONG)
+
+EVIDENCE_TIER_LABEL = {
+    EVIDENCE_STRONG: "Multiple independent systems agree, at the strongest "
+                     "signal they check for.",
+    EVIDENCE_BUILDING: "More than one system agrees, or one system's "
+                       "signal cleared its hardest threshold.",
+    EVIDENCE_THIN: "One system's signal, at a middle threshold. Real, but "
+                  "thin -- treat it as a lean, not a lock.",
+    EVIDENCE_MINIMAL: "One system's signal, at the lightest threshold that "
+                      "still clears our floor. The weakest case a "
+                      "published pick can carry.",
+}
+
+# GREEN IS MEANT TO BE RARE. The strongest agreement ever measured on this
+# project's live ledger, across its whole history, is 3 families (2026-09-08
+# measurement) -- so EVIDENCE_STRONG describes the ceiling of what the
+# current research population has ever produced, not a routine grade. A
+# scheme that made most nights green would be recalibrating the label to
+# flatter the picks instead of describing them, which is the exact
+# manufactured-confidence failure this module exists to refuse.
+def evidence_tier(n_families: int, deepest_rung: int) -> str:
+    """The tier for one pick, from its own frozen numbers.
+
+    `n_families` and `deepest_rung` are never negative on a record that
+    reached a `SlipPick` -- MIN_MECHANISM_PREDICATES already refused anything
+    with no fired signal, so `deepest_rung` is always >= 0 here.
+    """
+    if n_families >= 3:
+        return EVIDENCE_STRONG
+    if n_families >= 2 or deepest_rung >= 2:
+        return EVIDENCE_BUILDING
+    if deepest_rung >= 1:
+        return EVIDENCE_THIN
+    return EVIDENCE_MINIMAL
+
+
 @dataclass(frozen=True)
 class SlipPick:
     """One published pick, at its frozen rank, with the basis inspectable.
@@ -254,7 +318,12 @@ class SlipPick:
         return families_mod.wager_id(
             self.event_id, self.market_key, self.selection_id)
 
+    @property
+    def evidence_tier(self) -> str:
+        return evidence_tier(self.n_families, self.deepest_rung)
+
     def to_dict(self) -> dict:
+        tier = self.evidence_tier
         return {
             "rank": self.rank,
             "cohorts": list(self.cohorts),
@@ -276,7 +345,17 @@ class SlipPick:
             "counterarguments": list(self.counterarguments),
             "agreement": dict(self.agreement),
             "decision_utc": self.decision_utc,
+            "evidence_tier": tier,
+            "evidence_tier_label": EVIDENCE_TIER_LABEL[tier],
         }
+
+
+# Slip.read_as's three values. NOTHING_CLEARED and LIGHT are both "do not
+# lead with hype" states; NOTABLE is the only one that earns the front of the
+# page. See Slip.read_as's own docstring for what each means and why.
+READ_NOTHING_CLEARED = "NOTHING_CLEARED"
+READ_LIGHT = "LIGHT"
+READ_NOTABLE = "NOTABLE"
 
 
 @dataclass(frozen=True)
@@ -302,6 +381,41 @@ class Slip:
         arithmetic reassignment -- which is why cohorts nest."""
         return tuple(p for p in self.picks if tag in p.cohorts)
 
+    @property
+    def tier_counts(self) -> dict:
+        """How many published picks sit at each evidence tier, always
+        reporting all four keys (zero included) so a caller never has to
+        guess whether a missing key means zero or means unmeasured."""
+        counts = {t: 0 for t in EVIDENCE_TIERS}
+        for p in self.picks:
+            counts[p.evidence_tier] += 1
+        return counts
+
+    @property
+    def read_as(self) -> str:
+        """The honest framing for tonight's slip, from the tier distribution
+        alone -- never from a miss, never from anything that did not clear
+        the evidence threshold.
+
+        `NOTHING_CLEARED`: no picks at all. The page's existing "nothing
+        clears the bar" state already covers this; nothing here invents a
+        substitute.
+
+        `LIGHT`: every published pick sits at THIN or MINIMAL. The honest
+        read is "skip tonight unless you're betting anyway, and here is our
+        lean" -- a real, floor-cleared pick, plainly labelled as thin
+        evidence, never dressed up as more than it is.
+
+        `NOTABLE`: at least one pick reached BUILDING or STRONG -- genuine,
+        checkable multi-system agreement worth leading the page with.
+        """
+        if not self.picks:
+            return READ_NOTHING_CLEARED
+        counts = self.tier_counts
+        if counts[EVIDENCE_BUILDING] or counts[EVIDENCE_STRONG]:
+            return READ_NOTABLE
+        return READ_LIGHT
+
     def to_dict(self) -> dict:
         return {
             "date": self.date,
@@ -314,6 +428,8 @@ class Slip:
             "n_picks": len(self.picks),
             "n_misses": len(self.misses),
             "n_instrument_plays": self.n_instrument_plays,
+            "tier_counts": self.tier_counts,
+            "read_as": self.read_as,
         }
 
 

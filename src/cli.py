@@ -2503,10 +2503,13 @@ def _cmd_engine_slip(args) -> int:
           f"{slip.n_instrument_plays} instrument play(s) not eligible")
     if not slip.picks:
         print("  PUBLISHED           : nothing cleared the evidence floors")
+    print(f"  read_as             : {slip.read_as} "
+          f"(tiers: {slip.tier_counts})")
     for pick in slip.picks:
         tags = "/".join(pick.cohorts)
-        print(f"  #{pick.rank} [{tags}] {pick.market_key} "
-              f"{pick.selection_id} @ {pick.price_american} ({pick.book})")
+        print(f"  #{pick.rank} [{tags}] [{pick.evidence_tier}] "
+              f"{pick.market_key} {pick.selection_id} @ "
+              f"{pick.price_american} ({pick.book})")
         print(f"      families={pick.n_families} of {pick.n_systems} "
               f"system(s) | signals={pick.n_signals} rung={pick.deepest_rung} "
               f"| books={pick.books_at_decision} "
