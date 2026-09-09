@@ -931,3 +931,6 @@
 {"fetched_utc": "2026-09-09T21:25:56.244996+00:00", "game_date": "2026-09-09", "poll": true}
 {"fetched_utc": "2026-09-09T21:43:53.839024+00:00", "game_date": "2026-09-09", "poll": true}
 {"fetched_utc": "2026-09-09T21:43:55.720074+00:00", "game_date": "2026-09-09", "poll": true}
+{"fetched_utc": "2026-09-09T22:25:50.103442+00:00", "game_date": "2026-09-09", "poll": true}
+{"category": "rehab", "date": "2026-09-09", "first_seen_utc": "2026-09-09T22:25:50.103442+00:00", "player": "Victor Bericoto", "player_id": 682674, "team": "SF", "transaction_id": 941884}
+{"fetched_utc": "2026-09-09T22:25:52.098428+00:00", "game_date": "2026-09-09", "poll": true}
