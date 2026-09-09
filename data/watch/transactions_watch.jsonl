@@ -850,3 +850,11 @@
 {"fetched_utc": "2026-09-08T23:10:47.951169+00:00", "game_date": "2026-09-08", "poll": true}
 {"fetched_utc": "2026-09-08T23:40:12.897733+00:00", "game_date": "2026-09-08", "poll": true}
 {"fetched_utc": "2026-09-08T23:40:14.104837+00:00", "game_date": "2026-09-08", "poll": true}
+{"fetched_utc": "2026-09-09T00:25:49.047276+00:00", "game_date": "2026-09-08", "poll": true}
+{"category": "rehab", "date": "2026-09-08", "first_seen_utc": "2026-09-09T00:25:49.047276+00:00", "player": "Peter Strzelecki", "player_id": 657265, "team": "STL", "transaction_id": 941771}
+{"category": "rehab", "date": "2026-09-08", "first_seen_utc": "2026-09-09T00:25:49.047276+00:00", "player": "Josh Jung", "player_id": 673962, "team": "TEX", "transaction_id": 941777}
+{"category": "il_activation", "date": "2026-09-08", "first_seen_utc": "2026-09-09T00:25:49.047276+00:00", "player": "Victor Robles", "player_id": 645302, "team": "SEA", "transaction_id": 941778}
+{"category": "il_activation", "date": "2026-09-08", "first_seen_utc": "2026-09-09T00:25:49.047276+00:00", "player": "Hoby Milner", "player_id": 571948, "team": "SEA", "transaction_id": 941779}
+{"category": "optioned", "date": "2026-09-08", "first_seen_utc": "2026-09-09T00:25:49.047276+00:00", "player": "Troy Taylor", "player_id": 700187, "team": "SEA", "transaction_id": 941780}
+{"category": "designated", "date": "2026-09-08", "first_seen_utc": "2026-09-09T00:25:49.047276+00:00", "player": "Stuart Fairchild", "player_id": 656413, "team": "SEA", "transaction_id": 941781}
+{"fetched_utc": "2026-09-09T00:25:50.330335+00:00", "game_date": "2026-09-08", "poll": true}
