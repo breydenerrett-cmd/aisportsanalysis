@@ -900,3 +900,5 @@
 {"category": "rehab", "date": "2026-09-09", "first_seen_utc": "2026-09-09T17:25:51.781370+00:00", "player": "Jose Quintana", "player_id": 500779, "team": "COL", "transaction_id": 941821}
 {"category": "rehab", "date": "2026-09-09", "first_seen_utc": "2026-09-09T17:25:51.781370+00:00", "player": "Kyle Freeland", "player_id": 607536, "team": "COL", "transaction_id": 941822}
 {"fetched_utc": "2026-09-09T17:25:53.495181+00:00", "game_date": "2026-09-09", "poll": true}
+{"fetched_utc": "2026-09-09T18:10:54.011865+00:00", "game_date": "2026-09-09", "poll": true}
+{"fetched_utc": "2026-09-09T18:10:55.872001+00:00", "game_date": "2026-09-09", "poll": true}
