@@ -656,17 +656,36 @@ class RecordStripTests(_HermeticBase):
         self.assertIsNone(today_w["units_net"])
         self.assertIsNone(today_w["return_on_units"])
 
-    def test_last_7_includes_the_settled_day(self):
+    def test_last_7_is_forward_test_only(self):
+        """doctrine section 6, fixed 2026-09-09: the headline windows report
+        the product's own record, not CONTROL pooled in beside it. bet-a1
+        (FWD, +150) won; bet-a2 (CTRL, -110) lost on the same game -- the
+        headline strip must show only the win."""
         strip = dr.record_strip("2026-09-09", wagers=self.wagers,
                                 accounts_dir=self.accounts_dir)
         last7 = strip["last_7"]
         self.assertEqual(last7["wins"], 1)
-        self.assertEqual(last7["losses"], 1)
-        self.assertAlmostEqual(last7["units_net"], 0.5, places=6)
-        self.assertEqual(last7["n_settled"], 2)
+        self.assertEqual(last7["losses"], 0)
+        self.assertAlmostEqual(last7["units_net"], 1.5, places=6)
+        self.assertEqual(last7["n_settled"], 1)
         # bet-orphan (unsettled) and bet-pending both count toward pending
         # at this summary-tile granularity -- see the module docstring.
+        # bet-a2 (CTRL) is excluded from this window entirely, not counted
+        # as pending -- it is not the product's record, not an open position
+        # in it.
         self.assertEqual(last7["pending"], 2)
+
+    def test_all_classes_still_carries_the_pooled_diagnostic(self):
+        """The unfiltered view is not deleted -- CONTROL's loss is still
+        fully visible, just no longer inside the number a customer reads
+        as the product's own record."""
+        strip = dr.record_strip("2026-09-09", wagers=self.wagers,
+                                accounts_dir=self.accounts_dir)
+        pooled = strip["all_classes"]["last_7"]
+        self.assertEqual(pooled["wins"], 1)
+        self.assertEqual(pooled["losses"], 1)
+        self.assertAlmostEqual(pooled["units_net"], 0.5, places=6)
+        self.assertEqual(pooled["n_settled"], 2)
 
     def test_settled_through(self):
         strip = dr.record_strip("2026-09-09", wagers=self.wagers,

@@ -793,10 +793,23 @@ _RECORD_STRIP_NOTE = (
 )
 
 
-def _window(label, from_date, to_date, wagers_all, settlement_idx) -> "dict | None":
+def _window(label, from_date, to_date, wagers_all, settlement_idx, *,
+           system_class=None) -> "dict | None":
+    """`system_class`, when given, keeps only wagers whose
+    `engine_bridge.system_class(system_id)` matches it -- e.g.
+    `engine_bridge.FORWARD_TEST`, so the headline strip reports the
+    product's own record rather than the null baselines and the
+    market-reference republishers (doctrine section 6: "Only settled,
+    published, FORWARD_TEST rows. No backtests, replays, unpublished
+    positions or controls."). `None` keeps every class, unfiltered --
+    still the right choice for a diagnostic caller who wants the whole
+    ledger, never the default for anything a customer reads.
+    """
     rows = [w for w in wagers_all
            if isinstance(w, dict) and w.get("date")
-           and from_date <= w["date"] <= to_date]
+           and from_date <= w["date"] <= to_date
+           and (system_class is None
+                or engine_bridge.system_class(w.get("system_id")) == system_class)]
     if not rows:
         return None
     wins = losses = pushes = pending = n_settled = 0
@@ -833,7 +846,27 @@ def record_strip(today=None, *, decisions=None, wagers=None, accounts_dir=None,
                  boxscores=None, index=None) -> dict:
     """TODAY / LAST 7 DAYS / LAST 30 DAYS units-net tiles, plus
     `settled_through`. `today` is the caller's own ISO date -- this
-    function never reads a clock (see the module docstring)."""
+    function never reads a clock (see the module docstring).
+
+    FORWARD_TEST ONLY (doctrine section 6, fixed 2026-09-09). Every window
+    was previously pooling every registered system -- measured live, that
+    made CONTROL and MARKET_REFERENCE roughly 90% of what a customer's
+    first-seen number on the site actually was. `all_classes` carries the
+    identical windows over the WHOLE ledger, unfiltered, so a caller that
+    genuinely needs the diagnostic view (an internal page, a future
+    per-cohort comparison) still has it -- it is simply no longer what
+    `today`/`last_7`/`last_30` mean by default.
+
+    This is a bounded fix, not doctrine section 6's full design: the section
+    specifies an ALL-TIME, COHORT-based record (Top 3 / Top 5 / Published /
+    Research, never a time window) as the actual headline, with 7/30-day
+    windows secondary. That redesign needs its own pass -- cohort tags only
+    exist for picks published under `engine slip`, which went live
+    2026-09-09, so an all-time Top-3 query today would return almost
+    nothing. Class-filtering the existing windows removes the worst of the
+    dishonesty immediately without shipping a headline that looks broken on
+    day one for an unrelated reason.
+    """
     wagers_all = _safe_wagers(wagers)
     settlement_idx, settled_through = _settlement_index(accounts_dir)
 
@@ -855,11 +888,22 @@ def record_strip(today=None, *, decisions=None, wagers=None, accounts_dir=None,
     today_s = today_d.isoformat()
     last7_from = (today_d - timedelta(days=6)).isoformat()
     last30_from = (today_d - timedelta(days=29)).isoformat()
+    ft = engine_bridge.FORWARD_TEST
 
     return {
-        "today": _window("TODAY", today_s, today_s, wagers_all, settlement_idx),
-        "last_7": _window("LAST 7 DAYS", last7_from, today_s, wagers_all, settlement_idx),
-        "last_30": _window("LAST 30 DAYS", last30_from, today_s, wagers_all, settlement_idx),
+        "today": _window("TODAY", today_s, today_s, wagers_all, settlement_idx,
+                         system_class=ft),
+        "last_7": _window("LAST 7 DAYS", last7_from, today_s, wagers_all,
+                          settlement_idx, system_class=ft),
+        "last_30": _window("LAST 30 DAYS", last30_from, today_s, wagers_all,
+                           settlement_idx, system_class=ft),
+        "all_classes": {
+            "today": _window("TODAY", today_s, today_s, wagers_all, settlement_idx),
+            "last_7": _window("LAST 7 DAYS", last7_from, today_s, wagers_all,
+                              settlement_idx),
+            "last_30": _window("LAST 30 DAYS", last30_from, today_s, wagers_all,
+                               settlement_idx),
+        },
         "settled_through": settled_through,
         "note": _RECORD_STRIP_NOTE,
     }
