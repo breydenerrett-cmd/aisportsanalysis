@@ -4,6 +4,13 @@
 stage below, take its highest-value unfinished item, and go. Update this file as
 stages move. `docs/OVERNIGHT_RUN.md` is the running log; this is the map.
 
+**CURRENT STAGE POINTER (updated 2026-09-09).** Stages 1–11 below are the
+research programme's history and a pre-rebuild dashboard product — real,
+kept for the audit trail, but NOT the active work queue. Read
+`docs/PRODUCT_DOCTRINE.md` first (LOCKED, governs every product decision),
+then resume at **Stage 12** at the bottom of this file. Stage 9's "IN
+PROGRESS" marker is stale; Stage 12 supersedes it.
+
 **Stage states:** OPEN / IN PROGRESS / DONE / BLOCKED / RETIRED. A permanently
 BLOCKED item is moved to RETIRED with its reason rather than left to clog
 execution.
@@ -437,3 +444,168 @@ cadence needs your approval once.
 **Gate:** BLOCKED until MLB has a validated forward result. Explicitly deferred
 by you ("stay on MLB").
 **Requires:** your go + probably a fresh odds-subscription month.
+
+---
+
+# THE ACTIVE PLAN (Stage 12+, started 2026-09-08)
+
+Everything below is real, dated, and checkable — no item is aspirational
+copy. Each stage names what's DONE, what's NEXT (autonomous, no gate), and
+what NEEDS BREY (an account, a purchase, a judgment call only he can make).
+Horizon tags (TODAY / THIS WEEK / THIS MONTH) are Brey's own asked-for
+framing, layered onto the stage structure this file already uses.
+
+## Stage 12 — Doctrine-locked product build-out — **ACTIVE**
+
+**Objective:** the product doctrine (`docs/PRODUCT_DOCTRINE.md`, 9 amendments)
+implemented end to end: real picks, ranked on case strength not price, with
+an honest evidence-tier read, actually reaching the page.
+
+**DONE (2026-09-08 → 09-09), verified live, not just tested:**
+- Doctrine locked. Picks are the product; provability is the trust layer,
+  not a substitute for it.
+- `src/analysis/families.py` — family-aware agreement (amendment 9).
+  Measured on the real ledger: 52 registered genomes collapse to a real,
+  changing family count (30 as of 09-09) — raw system count would have
+  overstated agreement by up to 2x on real selections.
+- `src/engine/slip.py` — the published, ranked, evidence-tiered slip.
+  Ranks on family agreement → signal depth → price standing LAST (price
+  standing alone is what the old day-rank rule used, and `slate.py`'s own
+  comment calls that "emphatically NOT an edge").
+- Evidence tier (green/yellow/orange/red) — real inputs only (family count,
+  signal-ladder rung), never a win probability. GREEN is deliberately rare
+  by construction (the ledger's all-time ceiling is 3 families).
+- Lineup cadence fixed. Three separate deploy-path bugs found and fixed
+  before it actually ran in production (gate in a script CI doesn't
+  execute → gate in the wrong branch's workflow file → missing cache
+  restore). Forward-test decisions now freeze near when lineups post,
+  not hours later.
+- `REGISTERED_GENOME_COUNT` 12→40, `REGISTERED_F5_GENOME_COUNT` 4→12 (owner
+  directive: too many empty nights). Not a lowered bar — same floors, more
+  independent shots at them.
+- Stand-down telemetry — why a game has no pick (`NO_LINEUP` vs
+  `NO_SIGNAL`, a clock vs a verdict), on the page, not buried in a CI log.
+- `engine slip` wired into all three production scripts. It had been built,
+  tested, and had NEVER ONCE RUN in production before this was caught.
+- **TONIGHT'S PICKS on the Today page.** Doctrine's own list of
+  misalignments named "the picks are not on the page" as the single most
+  damaging thing on the site. Closed.
+
+**NEXT (autonomous, no gate — take the highest-value one):**
+1. **Verify the cadence appends a slip AUTONOMOUSLY**, unwatched, overnight.
+   As of 09-09 evening only one slip has ever been appended, and it was a
+   manual `engine slip` run — the automated gate has correctly gone SKIP
+   every slot since (no newer lineup than that manual run), which is
+   plausibly correct behavior but has not yet been proven hands-off.
+   Acceptance: `git log -- evidence/slips_v1.jsonl` shows a commit whose
+   author is the forward-capture bot, not a manual run.
+2. **CLV hardening — unblocks committing `src/report/clv.py`.** It produced
+   this project's first-ever CLV numbers, then had to be retracted: replay
+   rows and unstamped rows were pooling into the published mean, staleness
+   was computed but stripped before any rollup, `by_cohort` reads a
+   `DecisionRecord.cohorts` field that was deliberately removed. That last
+   one is now easy to actually fix — `evidence/slips_v1.jsonl` is real, so
+   `by_cohort` can be rewired to read it instead of a field that never
+   existed in production.
+3. **The performance page still pools CONTROL/MARKET_REFERENCE into the
+   headline record strip.** Doctrine section 6 requires four cohorts,
+   always separate, Top 3 leading. `LAST 7 DAYS 273-259-18` on the live
+   record strip is ~90% instrument noise, not the product's record.
+4. **`opportunities.js`'s "TOP PLAY" still ranks on `price_standing_bps`**
+   (execution quality) instead of the slip's case-strength ranking. Now
+   that the slip is live, this component is redundant with — and
+   contradicts — `TONIGHT'S PICKS`. Fold it into the slip or demote it to
+   a clearly-labelled price board, never call it a pick.
+5. The overlap-report generator has destroyed the 8,811→1,062-family
+   result TWICE by overwriting it with "not yet computable" when a
+   regenerable cache was merely cold. Make it refuse instead of downgrade.
+   (`scripts/factory_masks_from_sweep.py` itself also still fails —
+   `PlaceboError: a world needs at least one game` — despite intact
+   inputs; diagnose before touching the generator.)
+6. Homepage hardcodes "27 hypotheses pre-registered … zero surviving" as a
+   literal string; `data/research/alpha_registry.jsonl` says 42. Derive it.
+7. `#/billing` renders a raw JSON dump; `#/mybets` is an unstyled form that
+   doesn't join to anything Bet Check produces. Both customer-reachable.
+
+## Stage 13 — Turn on the learning loop
+
+**Objective:** doctrine amendment 7 — "learn from post-game reasoning
+failures" — stops being aspirational. This is the single highest-leverage
+dormant asset in the codebase: fully built, never run.
+
+**NEXT (autonomous):**
+1. Evaluate `mechanism_predicates` post-settlement so a loss classifies
+   `REFUTED` (the reasoning was wrong) vs `VARIANCE` (the reasoning was
+   fine, unlucky). Measured 09-08: **0 of 624 reviews classified** — every
+   settled bet in this project's history still reads `UNTESTED`.
+   `src/review/postmortem.py` already runs its classifier over wins too
+   (deliberately, to avoid a losses-only bias) — the wiring gap is at
+   settlement, not a missing capability.
+2. Run an actual falsification battery on the (now 52, previously 16) live
+   genomes. Every scorecard on the ledger reads `battery_verdict: NOT_RUN`.
+   "Forward test" currently means "staking and watching" — weaker than
+   what the machinery already supports.
+3. Feed REFUTED-classified genomes back into retirement
+   (`lifecycle.py`'s `RETIRED` state), so `admit()`'s family-dedup gate
+   keeps the live population honestly distinct over time instead of
+   accumulating dead weight.
+
+## Stage 14 — As-of family clustering (design pass)
+
+**Objective:** amendment 9's discount, made time-consistent. Family
+structure is measurably time-varying (23 families as-of 09-04 → 19 as-of
+09-08 → 30 as-of 09-09, as the registered population and its forward
+history both grew). Re-scoring an already-*frozen* pick with *today's*
+clustering would be re-ranking history — amendment 8 forbids exactly that.
+**Contained today:** each slip freezes its own `agreement` block including
+`families_by_id`, so a published pick is reproducible from its own
+artifact regardless of how the live population changes later. Needs a real
+design pass before implementation, not a quick patch — this is a THIS
+MONTH item, not a THIS WEEK one.
+
+## Stage 15 — Distribution & commerce
+
+**Objective:** a subscriber can actually pay, without an app-store
+gatekeeper standing between the product and revenue.
+
+**Autonomous (I can build these without you):**
+1. PWA — manifest, service worker, icons. Installs to a home screen from
+   Safari/Chrome, launches fullscreen, supports web push on iOS 16.4+. No
+   store, no review, no commission. Roughly a day or two of real work
+   against the existing no-build ES-module app.
+2. Harden the signup → billing path already in the repo
+   (`src/appstate/billing.py`, `pricing.js`) against the production domain
+   once it exists.
+
+**NEEDS BREY (an account or a purchase only you can make):**
+1. A real domain + DNS, off `fly.dev` staging.
+2. Stripe account live mode (currently the founding-beta price/plan code
+   exists but has never taken a real card).
+3. The go/no-go on a native App Store / Google Play wrapper. My
+   recommendation stands from the earlier app-store discussion: web + PWA
+   first, native only after the record is long enough to market on —
+   shipping to review with 72 settled bets and no confirmed edge invites
+   scrutiny of the claims, not just the binary.
+
+---
+
+## Horizon summary (Brey's own framing, mapped onto the stages above)
+
+**TODAY / TONIGHT:** Stage 12 item 1 (prove the cadence is hands-off) is
+pure monitoring — check back rather than re-running anything manually.
+Items 5–6 (overlap-report bug, hardcoded hypothesis count) are small,
+bounded, and safe to take right now if item 1 is just waiting on the
+clock.
+
+**THIS WEEK:** Stage 12 items 2–4 (CLV hardening + commit, cohort-split
+record strip, retire the price-ranked "TOP PLAY") are the real priority —
+they are what makes the record honestly *publishable*, which is the
+product's whole claim to being different from every other tout. Stage 12
+item 7 (the two undesigned routes) if time remains.
+
+**THIS MONTH:** Stage 13 (turn on the learning loop — predicate evaluation,
+a real falsification battery, retirement feeding back into the population)
+is the highest-value research work available and has been fully built and
+sitting idle. Stage 14 (as-of clustering design) follows once 13 is moving.
+Stage 15's autonomous half (PWA) can run in parallel any time; its "needs
+Brey" half is a standing ask, not a blocker on anything else.
