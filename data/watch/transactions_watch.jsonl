@@ -918,3 +918,8 @@
 {"category": "optioned", "date": "2026-09-09", "first_seen_utc": "2026-09-09T19:55:52.654280+00:00", "player": "Kade Strowd", "player_id": 669704, "team": "ARI", "transaction_id": 941841}
 {"category": "optioned", "date": "2026-09-09", "first_seen_utc": "2026-09-09T19:55:52.654280+00:00", "player": "Blake Walston", "player_id": 686796, "team": "ARI", "transaction_id": 941842}
 {"fetched_utc": "2026-09-09T19:55:53.647402+00:00", "game_date": "2026-09-09", "poll": true}
+{"fetched_utc": "2026-09-09T20:40:53.353182+00:00", "game_date": "2026-09-09", "poll": true}
+{"category": "rehab", "date": "2026-09-09", "first_seen_utc": "2026-09-09T20:40:53.353182+00:00", "player": "Josiah Gray", "player_id": 680686, "team": "WSH", "transaction_id": 941845}
+{"category": "rehab", "date": "2026-09-09", "first_seen_utc": "2026-09-09T20:40:53.353182+00:00", "player": "Anthony Santander", "player_id": 623993, "team": "TOR", "transaction_id": 941849}
+{"category": "rehab", "date": "2026-09-09", "first_seen_utc": "2026-09-09T20:40:53.353182+00:00", "player": "Rob Zastryzny", "player_id": 642239, "team": "MIL", "transaction_id": 941856}
+{"fetched_utc": "2026-09-09T20:40:54.552177+00:00", "game_date": "2026-09-09", "poll": true}
