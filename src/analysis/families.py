@@ -68,14 +68,52 @@ WHAT COUNTS AS A FORWARD DECISION, EXACTLY
 Both halves are load-bearing:
 
 - `src.ledger.records` states the rule for the third value plainly: a record
-  with `record_provenance is None` predates the field and "carries no evidence
-  either way -- it must never be read as pre-commitment confirmed". 818 of the
-  1,852 decision rows on disk are in that state. Treating them as forward
-  because they are not marked replay would be inventing provenance, so they
-  are excluded and COUNTED, and the count is returned.
+  with `record_provenance is None` "carries no evidence either way -- it must
+  never be read as pre-commitment confirmed". Treating such a row as forward
+  because it is not marked replay would be inventing provenance, so it is
+  excluded and COUNTED, and the count is returned.
 - A `refused_thin` / `refused_stale` verdict is a decision NOT to bet. Folding
   refusals into a decision set would make two systems that refuse the same
   thin boards look like they agree about a bet neither one took.
+
+THE UNSTAMPED ROWS ARE NOT A LEGACY TAIL -- THEY ARE BEING WRITTEN TODAY
+-------------------------------------------------------------------------
+An earlier revision of this docstring said all 818 unstamped rows "predate the
+field". That was false, and it hid a live defect. Measured 2026-09-08 over the
+1,852 decision rows in `evidence/decisions_v2.jsonl` (`record_provenance` x
+`verdict`, whole file):
+
+    (None, 'play')                     69
+    (None, 'refused_thin')            495
+    (None, 'refused_stale')           254
+    ('live_pre_commencement', 'play') 909
+    ('replay', 'play')                125
+
+The 818 unstamped rows are two unrelated populations:
+
+  * 69 `play` rows -- ledger positions 0-68, written 2026-08-31 to 2026-09-03.
+    These are the genuine legacy rows, and they are exactly the "69 rows
+    published before this fix" that `src.ledger.records` itself names.
+  * 749 refusal rows, written from the first replay through
+    2026-09-08T19:40:45Z -- that is, TODAY. NOT ONE refusal row in the ledger
+    carries a provenance, at any date, from any system. 447 of them were
+    written on 2026-09-07 and 2026-09-08, side by side with 666 stamped rows;
+    252 on 2026-09-08 alone.
+
+Root cause, in a file this module does not own: `src.engine.slate.run_slate`
+computes the provenance correctly and hands it to `src.engine.analyze.analyze`,
+which passes `recorded_utc`/`record_provenance` through to `play_records` and
+OMITS BOTH when it builds `refusal_records`. So every refusal is written
+unstamped, and with `recorded_utc` silently defaulted to `snapshot.t` -- which
+is why an unstamped refusal's `recorded_utc` equals its `decision_utc` exactly.
+
+It changes no number this module produces: a refusal is excluded by the verdict
+half regardless of provenance, and every one of the 909 forward rows is a
+`live_pre_commencement` `play`. It is recorded here because
+`excluded_by_reason` attributes 749 rows to "provenance unknown" when the
+honest reason is "the writer never stamps a refusal", and because a reader
+watching that count shrink as the legacy rows age out would be waiting for
+something that is not happening. It is growing.
 
 WHY NOT `wagers.canonical_wager_id`
 ------------------------------------
@@ -376,10 +414,31 @@ def feature_set(genome) -> Optional["frozenset[str]"]:
     told about.
 
     `None` in, `None` out: "no structure" is returned as an absence, never as
-    an empty set. An empty set would compare equal to another empty set under
-    the identity relation and would therefore MERGE two systems whose
-    structure nobody knows -- fabricating a family out of two absences, which
-    is the exact class of corruption this project's doctrine forbids.
+    an empty set.
+
+    NOT because two empty sets would merge. They would not: `overlap.jaccard`
+    returns 0.0 for two empty sets by explicit design ("two strategies that
+    never bet cannot be said to overlap OR to differ"), so under the identity
+    relation two unknown structures stay separate singletons. An earlier
+    revision of this docstring claimed the merge as the reason, and the claim
+    was simply wrong.
+
+    The real corruption is quieter and worse than a merge. An empty feature
+    set is a POSITIVE claim -- "this system reads no features at all" -- and
+    `families()` would believe it: the system would land in `structured`, its
+    `basis_of` would be recorded as `structural_only` or
+    `behavioural_and_structural`, no `ABSENCE_STRUCTURE_UNAVAILABLE` would be
+    emitted for it, and `Agreement.families_resting_on_absence` would stop
+    flagging its family. `n_families` would not move by one; the record of WHY
+    it is what it is would silently become false, and a family that nobody has
+    ever been able to compare to anything would be published as one that was
+    compared and found distinct. Turning an absence into a measurement is the
+    exact class of corruption this project's doctrine forbids.
+
+    Refusing to guess also keeps this function's correctness its own: resting
+    on `jaccard`'s empty-set convention would make it hostage to an edge-case
+    choice made one module away and changeable there without a thought for
+    this caller.
 
     A bare `str` is refused rather than iterated: `frozenset("abc")` is
     `{'a','b','c'}`, a silent and very plausible caller mistake.

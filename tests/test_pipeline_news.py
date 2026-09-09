@@ -18,6 +18,29 @@ Nothing here touches the network. The store is a temp file in every test, and
 `mlb_news.fetch` is swapped for a canned feed in the only function that fetches
 at all. `read()`, `for_team()`, `attach()` and `sentence()` are pure functions
 over rows and need no fake.
+
+WHAT THE FIRST VERSION OF THIS FILE GOT WRONG
+---------------------------------------------
+It was green with four separate defects present, and the reason is worth
+keeping written down because it is not a coverage problem. Three of the four
+were fixtures too uniform to tell the bug from the fix:
+
+- `_row` defaulted `player_id` to `transaction_id`, so `ingest` deduping on
+  either field behaved identically and all seven ingest tests passed with the
+  wrong one. See PLAYER_ID_BASE.
+- The category test put all seven notable categories on ONE date, where
+  MAX_PER_TEAM=4 caps the answer at four, and then asserted a subset relation
+  that the empty set satisfies. It measured nothing.
+- The dedup-key tests moved two variables at once, so no single component of
+  `(player_id, category, date)` was pinned by a case that isolated it. All
+  three deletions survived.
+
+The fourth was a fixture in the wrong place: the undated-row test used a game
+date three months in the past, which is the one band where a `_date` fallback
+of "today" is harmless. api/games.py asks for today or tomorrow.
+
+The habit that follows: vary one thing, name the field the assertion is about,
+and put the fixture where the caller actually stands.
 """
 
 import datetime as dt
@@ -40,6 +63,24 @@ def _day(offset, base=GAME_DATE):
     return (dt.date.fromisoformat(base) + dt.timedelta(days=offset)).isoformat()
 
 
+# Transaction ids and player ids come out of two unrelated MLB id spaces, and
+# the first version of this fixture defaulted one to the other. That single
+# convenience made every one of the seven TestIngest cases pass with `ingest`
+# deduping on the WRONG field -- a mutation that in production would have
+# discarded 192 of the 586 stored rows, every repeat move by the 134 players
+# who have more than one. Defaulting into a range no transaction id in this
+# module reaches keeps the two independently varied by construction, so a test
+# can no longer be blind to which field is read.
+PLAYER_ID_BASE = 900_000
+
+
+def _player_id_for(transaction_id):
+    """A player id that is never equal to the transaction id beside it."""
+    if isinstance(transaction_id, int) and not isinstance(transaction_id, bool):
+        return PLAYER_ID_BASE + transaction_id
+    return f"P{PLAYER_ID_BASE}-{transaction_id}"
+
+
 def _row(transaction_id, team, date, category=mlb_news.IL_PLACEMENT,
          player_id=None, player=None, description=None, filed_date=None):
     """One stored transaction, shaped exactly as `mlb_news.parse()` writes them.
@@ -48,6 +89,11 @@ def _row(transaction_id, team, date, category=mlb_news.IL_PLACEMENT,
     because `attach()` copies whole rows onto the card and a test fixture that
     is thinner than production data cannot catch a consumer reading a field the
     fixture never had.
+
+    `player_id` defaults independently of `transaction_id` -- see
+    PLAYER_ID_BASE. Any test that cares which of the two a caller reads must
+    still set the ids it means, but no test can now pass by accident because
+    they happened to be equal.
     """
     return {
         "transaction_id": transaction_id,
@@ -55,7 +101,8 @@ def _row(transaction_id, team, date, category=mlb_news.IL_PLACEMENT,
         "filed_date": filed_date if filed_date is not None else date,
         "category": category,
         "type_desc": "Status Change",
-        "player_id": player_id if player_id is not None else transaction_id,
+        "player_id": (player_id if player_id is not None
+                      else _player_id_for(transaction_id)),
         "player": player or f"Player {transaction_id}",
         "to_team": team,
         "from_team": None,
@@ -146,10 +193,53 @@ class TestRead(StoreCase):
         self.assertEqual([row["transaction_id"] for row in news.read(self.store)],
                          [1, 2, 3])
 
-    def test_stored_ids_is_the_id_set_of_read(self):
+    def test_stored_ids_is_the_transaction_id_set_not_some_other_id(self):
+        # Named after the field on purpose. `ingest` seeds its dedup set from
+        # this function, so a stored_ids that returned player ids would make
+        # every re-ingest write duplicates. The fixture's player ids are
+        # 900011/900012, so reading the wrong field cannot look right.
         self.write_store(json.dumps(_row(11, "CIN", _day(-2))),
                          json.dumps(_row(12, "PIT", _day(-2))))
         self.assertEqual(news.stored_ids(self.store), {11, 12})
+
+    def test_ids_that_tie_on_date_order_numerically_not_lexicographically(self):
+        # The tie-break only runs when two rows share a date, which in a
+        # 586-row store is most of them. Coercing ids to str to make mixed
+        # types comparable -- the obvious one-line fix for the case below --
+        # would put 10 before 2 and silently reshuffle every same-date group.
+        self.write_store(json.dumps(_row(10, "CIN", _day(-2))),
+                         json.dumps(_row(2, "CIN", _day(-2))))
+        self.assertEqual([row["transaction_id"] for row in news.read(self.store)],
+                         [2, 10])
+
+    def test_a_str_id_beside_an_int_id_on_one_date_reads_instead_of_raising(self):
+        # Latent, and latent is the dangerous kind here. All 586 stored ids are
+        # ints today, so the sort never reaches two types -- but this store is
+        # append-only JSON Lines, `api/games.py` wraps the read in a bare
+        # except, and one str id would therefore blank the news section for the
+        # WHOLE slate while the page said "roster news not fetched". A stated
+        # gap would be survivable; a silent one is not.
+        self.write_store(json.dumps(_row("T-9", "CIN", _day(-2))),
+                         json.dumps(_row(7, "CIN", _day(-2))))
+        self.assertEqual([row["transaction_id"] for row in news.read(self.store)],
+                         [7, "T-9"])
+
+    def test_a_row_with_no_transaction_id_does_not_break_the_ordering(self):
+        # `mlb_news.parse()` copies MLB's id through without requiring it, so a
+        # feed row that omits one is stored with None.
+        self.write_store(json.dumps(_row(2, "CIN", _day(-2))),
+                         json.dumps(_row(None, "CIN", _day(-2))))
+        self.assertEqual([row["transaction_id"] for row in news.read(self.store)],
+                         [None, 2])
+
+    def test_a_non_string_date_does_not_break_the_ordering_either(self):
+        # The same defect one element to the left of the id: the primary sort
+        # term is the date, and it is compared raw. `20260613` is what a JSON
+        # writer produces from an unquoted basic-format date, and it is enough
+        # to take the whole read down.
+        self.write_store(json.dumps(_row(1, "CIN", 20260613)),
+                         json.dumps(_row(2, "CIN", _day(-2))))
+        self.assertEqual(len(news.read(self.store)), 2)
 
 
 class TestIngest(StoreCase):
@@ -192,6 +282,41 @@ class TestIngest(StoreCase):
         report = news.ingest(_day(-3), store=self.store)
         self.assertEqual(report["written"], 1)
         self.assertEqual(len(news.read(self.store)), 1)
+
+    def test_a_second_move_by_a_player_already_fetched_is_still_written(self):
+        # WHICH field the dedup key reads, measured directly. Deduping on the
+        # player instead of the transaction would keep a player's first move
+        # and silently drop every later one -- 192 of the 586 stored production
+        # rows, across the 134 players who have more than one. Silently, in the
+        # store, with no count anywhere saying rows went missing.
+        self.use_feed(_row(1, "CIN", _day(-3), player_id=555),
+                      _row(2, "CIN", _day(-1), player_id=555,
+                           category=mlb_news.IL_ACTIVATION))
+        report = news.ingest(_day(-3), _day(-1), store=self.store)
+        self.assertEqual(report["written"], 2)
+        self.assertEqual([row["transaction_id"] for row in news.read(self.store)],
+                         [1, 2])
+
+    def test_a_move_by_a_player_already_on_disk_is_still_written(self):
+        # The same question across two runs, which is how the daily loop meets
+        # it: the player is in the store from last night, tonight's move is new.
+        self.use_feed(_row(1, "CIN", _day(-3), player_id=555))
+        news.ingest(_day(-3), store=self.store)
+        self.use_feed(_row(2, "CIN", _day(-1), player_id=555,
+                           category=mlb_news.IL_ACTIVATION))
+        report = news.ingest(_day(-1), store=self.store)
+        self.assertEqual((report["written"], report["skipped_duplicate"]), (1, 0))
+        self.assertEqual([row["transaction_id"] for row in news.read(self.store)],
+                         [1, 2])
+
+    def test_a_repeated_transaction_id_is_a_duplicate_whatever_else_differs(self):
+        # The converse, so the pair pins the key rather than one direction of
+        # it. Same transaction id, different player id: still one transaction,
+        # because the id is what MLB says is the same move.
+        self.use_feed(_row(1, "CIN", _day(-3), player_id=555),
+                      _row(1, "CIN", _day(-3), player_id=777))
+        report = news.ingest(_day(-3), store=self.store)
+        self.assertEqual((report["written"], report["skipped_duplicate"]), (1, 1))
 
     def test_the_store_directory_is_created_when_it_does_not_exist(self):
         nested = Path(self.tmp.name) / "historical" / "transactions.jsonl"
@@ -260,12 +385,59 @@ class TestWindowBoundaries(unittest.TestCase):
                 _row(3, "CIN", "")]
         self.assertEqual(news.for_team(rows, "CIN", GAME_DATE), [])
 
+    def test_an_undated_row_is_dropped_across_the_band_the_product_runs_in(self):
+        # The test above says the right thing and cannot see the failure it
+        # names. GAME_DATE is fixed and in the past, so a `_date` that fell back
+        # to TODAY on an unparseable value put the row after the cutoff and it
+        # was dropped anyway -- for the wrong reason, and green either way.
+        #
+        # api/games.py attaches news with the slate date, which is today or
+        # tomorrow. That band is exactly where a today-shaped fallback leaks: on
+        # an as-of of tomorrow, `earliest <= today < tomorrow` holds and the
+        # undated row lands on all fifteen cards. So sweep the band, and sweep a
+        # century-wide window too, which catches a fallback to any fixed past
+        # date the default window would have hidden.
+        #
+        # The control row makes the sweep non-vacuous: every case must return
+        # exactly it, so "nothing came back" cannot be mistaken for "nothing
+        # leaked".
+        undated = [_row(1, "CIN", None), _row(2, "CIN", "not-a-date"),
+                   _row(3, "CIN", ""), _row(4, "CIN", "2026-02-30")]
+        today = dt.date.today()
+        for offset in (-30, -1, 0, 1, 30):
+            as_of = today + dt.timedelta(days=offset)
+            control = _row(99, "CIN", (as_of - dt.timedelta(days=1)).isoformat())
+            for window in (news.WINDOW_DAYS, 36500):
+                with self.subTest(as_of=as_of.isoformat(), window_days=window):
+                    got = news.for_team(undated + [control], "CIN",
+                                        as_of.isoformat(), window_days=window)
+                    self.assertEqual(
+                        [row["transaction_id"] for row in got], [99],
+                        f"as-of {as_of}: a row with no usable date reached the "
+                        f"card, which would make it news on every date forever")
+
     def test_an_unparseable_as_of_date_yields_nothing_rather_than_everything(self):
         # If the caller's date is junk there is no cutoff to enforce, so the
         # answer is no news -- never the whole store.
         rows = self.team_rows(_day(-2))
         self.assertEqual(news.for_team(rows, "CIN", "whenever"), [])
         self.assertEqual(news.for_team(rows, "CIN", None), [])
+
+    def test_a_non_string_date_on_one_row_does_not_take_the_whole_card_down(self):
+        # `read()` has its own version of this; this is the second sort, the one
+        # that orders the card inside `for_team`, and it is reached even when
+        # the store was never read from disk. `_date` parses 20260613 as
+        # 2026-06-13 -- basic-format ISO -- so the row clears the window and
+        # arrives at a sort that compared it against a str and raised.
+        # `attach()` runs under api/games.py's bare except, so the result is
+        # fifteen blank cards and a page saying the news was never fetched.
+        #
+        # Where a non-ISO date sorts among real ones is not worth pinning; that
+        # it does not raise is the whole point, so this asserts the set.
+        rows = [_row(1, "CIN", 20260613, player_id=555),
+                _row(2, "CIN", _day(-1), player_id=777)]
+        got = news.for_team(rows, "CIN", GAME_DATE)
+        self.assertEqual({row["transaction_id"] for row in got}, {1, 2})
 
     def test_a_timestamped_date_is_read_as_its_calendar_day(self):
         rows = [_row(1, "CIN", _day(-2) + "T23:41:00Z")]
@@ -296,11 +468,24 @@ class TestSelection(unittest.TestCase):
         self.assertEqual(news.for_team(rows, "CIN", GAME_DATE), [])
 
     def test_every_notable_category_survives_the_filter(self):
-        rows = [_row(index, "CIN", _day(-2), category=category, player_id=index)
-                for index, category in enumerate(mlb_news.NOTABLE, 1)]
-        got = news.for_team(rows, "CIN", GAME_DATE, window_days=90)
-        self.assertEqual(len(got), news.MAX_PER_TEAM)  # capped, but nothing filtered
-        self.assertTrue(set(row["category"] for row in got) <= set(mlb_news.NOTABLE))
+        # One category per call, because all seven in one call measures nothing.
+        # MAX_PER_TEAM is 4 and mlb_news.NOTABLE holds 7, so three are dropped
+        # by the cap no matter what the filter does -- and `set(cats) <=
+        # set(NOTABLE)` is satisfied by any subset, the empty set included.
+        # That form stayed green with `optioned`, `designated` and `traded`
+        # removed from the filter: 132 of the 586 stored production rows.
+        #
+        # Asked one at a time, the cap cannot hide anything and the assertion is
+        # an equality, so dropping any single category fails here by name.
+        checked = []
+        for index, category in enumerate(mlb_news.NOTABLE, 1):
+            with self.subTest(category=category):
+                row = _row(index, "CIN", _day(-2), category=category)
+                got = news.for_team([row], "CIN", GAME_DATE)
+                self.assertEqual([r["category"] for r in got], [category])
+            checked.append(category)
+        self.assertTrue(checked,
+                        "mlb_news.NOTABLE is empty -- this test measured nothing")
 
     def test_categories_none_means_no_category_filter_at_all(self):
         # The stored categories a card ignores today are kept for hypotheses
@@ -309,12 +494,57 @@ class TestSelection(unittest.TestCase):
         self.assertEqual(len(news.for_team(rows, "CIN", GAME_DATE,
                                            categories=None)), 1)
 
+    # The dedup key is (player_id, category, date). The three tests below vary
+    # exactly ONE of those three at a time and the collapse test above them
+    # varies none, so each component is pinned by a case that isolates it.
+    #
+    # This is the shape the earlier pair lacked. Two tests pinned only the
+    # collapse direction, and the "two dates" one moved the date AND the
+    # category together -- so dropping either component from the key left both
+    # green, and dropping player_id was unguarded entirely. All three deletions
+    # survived the suite.
+
     def test_one_player_one_category_one_date_is_one_piece_of_news(self):
         # The feed files the same move under separate ids. To a reader that is
         # one line, and printing it twice reads as two injuries.
         rows = [_row(1, "CIN", _day(-2), player_id=555),
                 _row(2, "CIN", _day(-2), player_id=555)]
         self.assertEqual(len(news.for_team(rows, "CIN", GAME_DATE)), 1)
+
+    def test_two_players_moved_the_same_way_that_day_are_two_pieces_of_news(self):
+        # Varies player_id alone. A club placing two players on the IL on one
+        # day is an ordinary Monday and it is two facts; collapsing it would
+        # print one injury and hide the other, which is the worst direction for
+        # this section to fail in.
+        rows = [_row(1, "CIN", _day(-2), player_id=555),
+                _row(2, "CIN", _day(-2), player_id=777)]
+        self.assertEqual(sorted(row["player_id"]
+                                for row in news.for_team(rows, "CIN", GAME_DATE)),
+                         [555, 777])
+
+    def test_one_player_two_categories_on_one_day_is_two_pieces_of_news(self):
+        # Varies category alone. Placed on the 10-day IL and transferred to the
+        # 60-day the same day is two moves MLB files separately, and the second
+        # is the one that says the player is gone for the season.
+        rows = [_row(1, "CIN", _day(-2), player_id=555,
+                     category=mlb_news.IL_PLACEMENT),
+                _row(2, "CIN", _day(-2), player_id=555,
+                     category=mlb_news.IL_TRANSFER)]
+        self.assertEqual(sorted(row["category"]
+                                for row in news.for_team(rows, "CIN", GAME_DATE)),
+                         sorted([mlb_news.IL_PLACEMENT, mlb_news.IL_TRANSFER]))
+
+    def test_one_player_one_category_on_two_dates_is_two_pieces_of_news(self):
+        # Varies date alone. A pitcher recalled, optioned back, and recalled
+        # again inside a week is the shuttle every bullpen runs; the second
+        # recall is the one that says he is available tonight.
+        rows = [_row(1, "CIN", _day(-6), player_id=555,
+                     category=mlb_news.RECALLED),
+                _row(2, "CIN", _day(-2), player_id=555,
+                     category=mlb_news.RECALLED)]
+        self.assertEqual([row["date"]
+                          for row in news.for_team(rows, "CIN", GAME_DATE)],
+                         [_day(-2), _day(-6)])
 
     def test_the_same_player_on_two_dates_is_two_pieces_of_news(self):
         # Placed on the IL, then activated, is a story. Collapsing it would hide
@@ -488,6 +718,39 @@ class TestSentence(unittest.TestCase):
         row = _row(1, "CIN", _day(-2), description="")
         row["player"] = None
         self.assertEqual(news.sentence(row), "A player: il placement.")
+
+    def test_a_null_category_renders_the_fallback_rather_than_raising(self):
+        # A MISSING key and a key holding None are different questions, and
+        # `row.get('category', 'roster move')` only answers the first. Every row
+        # here carries the key -- `mlb_news.parse()` always writes it -- so the
+        # default never fired and None reached `.replace()`: AttributeError,
+        # inside the slate render path. `api/games.py` swallows it, so the
+        # customer page reports "roster news not fetched" for all fifteen games
+        # while the store holds 586 rows. A stated gap would be honest; this one
+        # is a lie the page cannot tell it is telling.
+        row = _row(1, "CIN", _day(-2), player="Ke'Bryan Hayes", description="")
+        row["category"] = None
+        self.assertEqual(news.sentence(row),
+                         f"Ke'Bryan Hayes: {news.UNCATEGORISED_MOVE}.")
+
+    def test_an_empty_category_falls_back_the_same_way_a_null_one_does(self):
+        # "" is a value too, and it renders "Ke'Bryan Hayes: ." -- which reads
+        # as a rendering fault rather than as a move nobody classified.
+        row = _row(1, "CIN", _day(-2), player="Ke'Bryan Hayes", description="")
+        row["category"] = ""
+        self.assertEqual(news.sentence(row),
+                         f"Ke'Bryan Hayes: {news.UNCATEGORISED_MOVE}.")
+
+    def test_a_null_category_survives_the_whole_attach_path(self):
+        # End to end, because the raise above only matters where it is caught.
+        # `categories=None` is how a caller asks for the stored categories the
+        # card ignores today, and it is the path that carries an unclassified
+        # row all the way to `sentence()`.
+        row = _row(1, "CIN", _day(-2), player="Ke'Bryan Hayes", description="")
+        row["category"] = None
+        got = news.for_team([row], "CIN", GAME_DATE, categories=None)
+        self.assertEqual([news.sentence(r) for r in got],
+                         [f"Ke'Bryan Hayes: {news.UNCATEGORISED_MOVE}."])
 
     def test_a_whitespace_only_description_counts_as_no_description(self):
         row = _row(1, "CIN", _day(-2), player="A Hitter", description="   \n ")

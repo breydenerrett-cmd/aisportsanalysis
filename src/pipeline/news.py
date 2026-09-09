@@ -42,9 +42,39 @@ WINDOW_DAYS = 10
 # Most items a game card shows per team before it stops being readable.
 MAX_PER_TEAM = 4
 
+# What a move is called when the stored row does not name a category. Not a
+# guess about what happened -- it is the honest minimum the row still supports:
+# something changed on this roster.
+UNCATEGORISED_MOVE = "roster move"
+
 
 class NewsStoreError(RuntimeError):
     """Raised when the news store cannot be read or written."""
+
+
+def _order_key(value):
+    """A sort position for one id, total across the types a store can hold.
+
+    Sorting on the raw id was correct for the store we have -- all 586 stored
+    transaction ids are ints -- and fatal for the store we could get. This is
+    append-only JSON Lines written by more than one path, so a single str id
+    landing on the same date as an int one made `list.sort` raise TypeError and
+    `read()` return nothing. `api/games.py` wraps the call in a bare except, so
+    the result would be the news section blanked for every game on the slate
+    while the page said "roster news not fetched" and the store held 586 rows.
+    A silent slate-wide gap is the worst available outcome here.
+
+    Coercing everything to str() would have been one line shorter and wrong: it
+    orders 10 before 2, silently reshuffling every same-date group in the
+    existing store. So ints keep their numeric order, an absent id sorts with
+    them where `or 0` already put it, and anything else sorts after them by its
+    string form -- unusual rather than fatal.
+    """
+    if value is None:
+        return (0, 0, "")
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return (0, value, "")
+    return (1, 0, str(value))
 
 
 def read(store=DEFAULT_STORE) -> list:
@@ -63,7 +93,11 @@ def read(store=DEFAULT_STORE) -> list:
             # One corrupt line costs one transaction, not the whole file. That
             # is the entire reason this is JSON Lines.
             continue
-    rows.sort(key=lambda r: (r.get("date") or "", r.get("transaction_id") or 0))
+    # str() on the date for the same reason `_order_key` exists: every stored
+    # date is a string today, and a single non-string one would otherwise take
+    # the whole read down rather than sort oddly.
+    rows.sort(key=lambda r: (str(r.get("date") or ""),
+                             _order_key(r.get("transaction_id"))))
     return rows
 
 
@@ -139,7 +173,10 @@ def for_team(rows, team, on_date, window_days=WINDOW_DAYS,
         seen.add(key)
         out.append(row)
 
-    out.sort(key=lambda r: r.get("date") or "", reverse=True)
+    # Same total-order reasoning as `read()`: this sort runs inside `attach()`,
+    # which api/games.py calls under a bare except, so a raise here is a silent
+    # slate-wide gap rather than a visible error.
+    out.sort(key=lambda r: str(r.get("date") or ""), reverse=True)
     return out[:MAX_PER_TEAM]
 
 
@@ -149,11 +186,22 @@ def sentence(row) -> str:
     MLB's own description is already a decent sentence, so this mostly trims it
     and appends the diagnosis when there is one. Rewriting it wholesale would
     risk saying something the feed did not.
+
+    The category fallback is `or`, not `dict.get`'s default, because those are
+    different questions. `row.get('category', UNCATEGORISED_MOVE)` answers "is
+    the key there", and every row this function is handed carries the key --
+    `mlb_news.parse()` always writes it. What varies is the VALUE, and a null
+    one reached `.replace()` and raised AttributeError. That raise is invisible
+    where it matters: `briefing._event_headline` calls this directly, outside
+    `for_team`'s category filter, and `attach()` runs it under api/games.py's
+    bare except, so the page reports "roster news not fetched" for the whole
+    slate while the store is full.
     """
     text = (row.get("description") or "").strip()
     if not text:
         player = row.get("player") or "A player"
-        return f"{player}: {row.get('category', 'roster move').replace('_', ' ')}."
+        category = row.get("category") or UNCATEGORISED_MOVE
+        return f"{player}: {str(category).replace('_', ' ')}."
     # Strip the retroactive clause, which is administrative detail.
     for marker in (" retroactive to ",):
         index = text.lower().find(marker)
