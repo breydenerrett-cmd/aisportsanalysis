@@ -59,10 +59,149 @@ jobs:
           git config user.name "forward-capture-bot"
           git config user.email "actions@users.noreply.github.com"
 
+      # READ-ONLY restore of whatever the daily loop last saved. This job never
+      # writes back to `daily-loop-data-` (that key belongs to daily-loop.yml,
+      # which saves the full ~200MB set once a day); it only needs the
+      # git-ignored stores `engine slate` reads -- the Statcast pitch store the
+      # pre-slate coverage guard checks, the handedness cache every lineup
+      # feature joins through, the results store. On a genuine miss nothing
+      # here fails: the lineup step below refuses out loud and the scheduled
+      # 10:00Z and 21:10Z passes are untouched.
+      - name: Restore the daily loop's git-ignored inputs (read-only)
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data/historical/statcast
+            data/historical/mlb_results.csv
+            data/historical/mlb_results.manifest.json
+            data/historical/pitcher_logs.jsonl
+            data/historical/bullpen_log.jsonl
+            data/historical/lineups.jsonl
+            data/historical/handedness.json
+            data/historical/matchup_history.jsonl
+            data/historical/matchup_pairs.json
+            data/historical/pitcher_splits.json
+            data/historical/arsenals
+            data/historical/standings.jsonl
+          key: forward-capture-never-saved-${{ github.run_id }}
+          restore-keys: |
+            daily-loop-data-
+
+      # Restored SECOND, and deliberately: the daily-loop cache above carries a
+      # copy of lineups.jsonl as it stood at 10:00Z, and this smaller cache
+      # carries the same file as the last capture slot left it -- hours of
+      # afternoon postings later. Last restore wins, so the fresher store is
+      # the one on disk.
+      - name: Restore the intraday posted-lineup store
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data/historical/lineups.jsonl
+            data/historical/handedness.json
+            data/historical/matchup_history.jsonl
+            data/historical/matchup_pairs.json
+          key: lineup-store-${{ github.run_id }}
+          restore-keys: |
+            lineup-store-
+
       - name: Capture one slot
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
         run: bash scripts/capture_slot.sh
+
+      # THE P0 CHANGE (2026-09-08). `lineup_store.build` was called from
+      # exactly one place, the 10:00Z daily loop -- hours before lineups post.
+      # Measured over the 1,055 played decisions then in the ledger: the
+      # FORWARD_TEST systems (the product; the only ones that require a posted
+      # lineup) froze a median 8.9 minutes before first pitch, 72% of them
+      # inside 30 minutes, while the null baselines that need no lineup decided
+      # with a 7-9 HOUR median lead. The lineups were not the late part: the
+      # first capture holding a complete card sat a median 160 minutes before
+      # first pitch, so the median decision was frozen 137 minutes after its
+      # own inputs existed. This step closes that gap -- it tops the store up
+      # on the capture cadence and then, ONLY when a lineup has landed since
+      # the last frozen decision set, runs one more slate pass.
+      #
+      # ENRICHMENT, NEVER A BLOCKER: `|| true` on every command and
+      # `if: always()` on the step, so a stalled MLB call or a cold cache costs
+      # this pass its slate and nothing else. The capture above has already
+      # committed; the scheduled 10:00Z and 21:10Z passes run regardless.
+      - name: Refresh the posted-lineup store, and decide if a lineup has posted
+        if: always()
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: |
+          TODAY=$(date -u +%Y-%m-%d)
+          YESTERDAY=$(date -u -d 'yesterday' +%Y-%m-%d)
+          python3 -c "
+          from src.pipeline import lineup_store, matchup_history
+          try:
+              r = lineup_store.build(['$YESTERDAY', '$TODAY'],
+                                     refresh=['$YESTERDAY', '$TODAY'])
+              print('lineups: %d date(s) fetched, %d game(s) written, '
+                    '%d topped up on a date already covered, %d failed'
+                    % (r['dates'], r['games'], r['topped_up'], r['failed']))
+          except Exception as exc:
+              print('(lineups unavailable:', exc, ')')
+          # TODAY ONLY and this cadence does not change that: the vsPlayer
+          # endpoint returns CAREER totals with no as-of parameter, so asking
+          # it about an already-played game would bake that game into its own
+          # history. A POSTED LINEUP is a fixed fact once posted and may be
+          # refreshed as often as we like; the two are not the same and must
+          # not be treated as one.
+          try:
+              r = matchup_history.build('$TODAY')
+              print('matchup_history: %s' % (r.get('error') or
+                    '%d game(s), %d written, %d stored, %d no lineup yet'
+                    % (r['games'], r['written'], r['skipped_stored'],
+                       r['skipped_no_lineup'])))
+          except Exception as exc:
+              print('(matchup_history unavailable:', exc, ')')
+          " || true
+
+          # The gate lives in src.pipeline.lineup_store.slate_due, not in this
+          # YAML: see its docstring for why it is stateless (a marker file
+          # under a git-ignored path reads as "never ran" on a fresh Actions
+          # checkout, which would fire this on every single slot -- the exact
+          # failure the gate exists to prevent). Keeping the decision in one
+          # unit-tested function is also what stops this workflow and
+          # scripts/forward_capture.sh drifting apart on what "due" means.
+          GATE=$(python3 -c "
+          from src.pipeline import lineup_store
+          gate = lineup_store.slate_due()
+          print('RUN' if gate['due'] else 'SKIP', gate['reason'])
+          " 2>&1) || GATE="SKIP the gate could not read its stores"
+          echo "$GATE"
+
+          # scripts/afternoon_slate.sh is reused verbatim rather than
+          # reimplemented here: it already runs `engine slate` for TODAY and
+          # nothing else, buys no prices, commits evidence + paper accounts
+          # under the shared git lock, and its own header documents why TWO
+          # FROZEN DECISION SETS FOR ONE DATE IS INTENDED. Staking is
+          # idempotent per position (src.engine.slate.position_key_for) and
+          # run_slate's live-mode guard skips any game already under way, so a
+          # third, fourth or tenth pass in a day adds decisions without
+          # double-staking anything and without touching decision identity.
+          if [ "${GATE%% *}" = "RUN" ]; then
+            bash scripts/afternoon_slate.sh || \
+              echo "lineup-cadence slate pass did not complete cleanly -- see above; the scheduled 10:00Z and 21:10Z passes are unaffected"
+          fi
+
+      # Saved every slot so the next one starts from the afternoon's postings
+      # rather than from the 10:00Z snapshot. Small (a few hundred KB against
+      # the daily loop's ~200MB), and keyed per run because actions/cache is
+      # immutable per key. daily-loop.yml restores this same prefix after its
+      # own, so a day of intraday top-ups reaches the morning's full run.
+      - name: Save the intraday posted-lineup store
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data/historical/lineups.jsonl
+            data/historical/handedness.json
+            data/historical/matchup_history.jsonl
+            data/historical/matchup_pairs.json
+          key: lineup-store-${{ github.run_id }}
 
       - name: Dispatch staging redeploy if data changed (at most hourly)
         if: always()

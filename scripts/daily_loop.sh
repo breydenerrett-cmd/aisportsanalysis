@@ -85,12 +85,21 @@ echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: standings catchup end=$TODAY" >>
 #     exactly this reason), so fetching it a day late for a game that has
 #     already been played would bake that very game's plate appearances into
 #     its own "history" -- a point-in-time leak this loop must not introduce.
-#     A lineup posted after this step runs is simply not covered until the
-#     NEXT day this script reaches it fresh (that game will have moved from
-#     "no lineup yet" to final by then, so it never becomes coverage --
-#     matchup_history's realistic ceiling on a once-daily cadence is whatever
-#     posts before this run; catching the rest would need an hourly caller,
-#     e.g. forward_capture.sh, which this task did not touch).
+#
+#     BOTH DATES ARE PASSED AS `refresh` (2026-09-08). This step used to rely
+#     on plain `resume`, which skips any date the store has ever attempted --
+#     correct for a closed historical date, wrong for one still filling in.
+#     The 10:00Z pass stored whatever had posted by 10:00Z, marked the date
+#     covered, and every later pass (this script's own, the next morning's
+#     pass over YESTERDAY, anything) skipped it: measured on 2026-09-08 the
+#     store held 10 of the day's 15 games and the missing 5 were unreachable
+#     forever. Naming TODAY makes each run of this script a top-up; naming
+#     YESTERDAY makes the morning after the backstop that closes any game
+#     the evening cadence missed. `build` decides per GAME what to append, so
+#     a refresh costs one schedule request per date and writes only what is
+#     genuinely new. The intraday cadence itself lives in the capture path
+#     (scripts/forward_capture.sh, .github/workflows/forward-capture.yml) --
+#     this script is once a day and cannot be the thing that tracks postings.
 #   - pitcher splits: refresh_splits covers every probable starter TODAY's
 #     schedule names, refreshed (not just cached) every run since a platoon
 #     split is season-to-date and moves every time its pitcher takes the ball.
@@ -105,10 +114,13 @@ MATCHUP_OUT=$(python3 -c "
 from src.pipeline import lineup_store, matchup_history
 
 try:
-    lineup_report = lineup_store.build(['$YESTERDAY', '$TODAY'])
-    print('lineups: %d date(s) processed, %d skipped, %d game(s) posted, '
-          '%d failed' % (lineup_report['dates'], lineup_report['skipped'],
-                         lineup_report['games'], lineup_report['failed']))
+    lineup_report = lineup_store.build(['$YESTERDAY', '$TODAY'],
+                                       refresh=['$YESTERDAY', '$TODAY'])
+    print('lineups: %d date(s) processed, %d skipped, %d game(s) written '
+          '(%d of them topped up on a date already covered), %d failed'
+          % (lineup_report['dates'], lineup_report['skipped'],
+             lineup_report['games'], lineup_report['topped_up'],
+             lineup_report['failed']))
 except Exception as exc:
     print('(lineups unavailable:', exc, ')')
 

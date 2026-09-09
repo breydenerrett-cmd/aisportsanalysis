@@ -95,6 +95,27 @@ jobs:
           restore-keys: |
             daily-loop-data-
 
+      # Restored SECOND, so it wins for the files both caches carry. The cache
+      # above holds the posted-lineup store as YESTERDAY's 10:00Z run left it;
+      # this one holds it as the last capture slot left it, a full afternoon of
+      # postings later (.github/workflows/forward-capture.yml saves it every
+      # slot). Without this the intraday top-ups would be silently discarded
+      # every morning and the store would go back to holding only what had
+      # posted by 10:00Z -- the very defect the cadence was added to fix.
+      # Restore-only: the save below folds these files into the full daily
+      # cache, so this key is never written from here.
+      - name: Restore the intraday posted-lineup store
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data/historical/lineups.jsonl
+            data/historical/handedness.json
+            data/historical/matchup_history.jsonl
+            data/historical/matchup_pairs.json
+          key: daily-loop-never-saves-this-${{ github.run_id }}
+          restore-keys: |
+            lineup-store-
+
       # Bootstrap's own hard stops (missing Statcast manifest, a failed
       # results backfill) already exit non-zero and fail this step outright.
       # A softer bootstrap escalation (e.g. the bullpen backfill failing)

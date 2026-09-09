@@ -265,12 +265,38 @@ data, never a weaker gate.
    decide with a median lead of ~8 hours (CONTROL 484m, MARKET_REFERENCE
    524m).
 
-   Root cause: `lineup_store.build` is called from exactly one place,
-   `scripts/daily_loop.sh`. The engine only ever *reads* the store off disk,
-   so a lineup that posts at 21:00Z is invisible to a genome until a daily
-   loop happens to catch it, and the genome then fires on whatever slate pass
-   follows. The genomes require a posted lineup; the store that would give
-   them one refreshes on a schedule unrelated to when lineups post.
+   **Root cause — CORRECTED 2026-09-08.** My first diagnosis, that
+   `lineup_store` refreshes too rarely, was **wrong**, and the correction
+   matters because it changes the fix entirely.
+
+   `lineup_store` gates no live decision at all. `src/engine/features.py:848`
+   branches on the decision instant: before 2025-01-01Z it takes
+   `_build_replay`, and `lineup_store_mod.read` (line 646) is called ONLY in
+   that replay branch. Every live 2026 decision takes `_build_live`. The
+   `lineup_posted` flag `evolab.decide` actually checks is derived at
+   `src/engine/glue.py:388` from an as-of read of
+   `data/watch/lineups_watch.jsonl`, a store the capture cadence already
+   refreshes. So no lineup-store cadence could ever have moved this number.
+
+   The real cause is that **nothing was running.** `decision_time_for_game`
+   sets the decision instant to the latest L1 capture at or before
+   `commence - 5min`, and every slate pass refreshes L1 before reading it, so
+   the instant lands wherever the pass runs. Only two slate passes are
+   scheduled in Actions: `daily-loop` at 10:00Z and `afternoon-slate` at
+   21:10Z. At 10:00Z no lineup has posted, so every genome refuses NO_LINEUP
+   and only the null baselines record — which is exactly why CONTROL and
+   MARKET_REFERENCE carry seven-to-nine-hour leads while the genomes carry
+   ten minutes. All 85 forward-test decisions on the ledger came from *ad-hoc
+   late passes*.
+
+   The "slate on a cadence" change (`135440b`) touched
+   `scripts/capture_tick.ps1` — the LOCAL PowerShell scheduler, which only
+   runs when Brey's machine is on. In the cloud the cadence never existed.
+
+   Measured slack: the first capture holding a complete posted lineup sits a
+   median **160 minutes** before first pitch, and the median forward-test
+   decision was frozen **137 minutes after its own gating input was already
+   visible**. Nothing was waiting on data. Nothing was running.
 
    This costs three things at once. A pick delivered ten minutes before first
    pitch is commercially near-useless -- the customer has no time to act and
@@ -279,9 +305,11 @@ data, never a weaker gate.
    decisions were refused a CLV for exactly that reason. And it means the
    forward record is being built out of the worst prices the day had to offer.
 
-   Refreshing the lineup store on the slate's own cadence is the single
-   highest-leverage operational fix available, and it is what turns the
-   published slip from a novelty into a product.
+   The fix is therefore a **slate pass on the capture cadence**, gated on
+   whether a complete posted lineup is newer than the last frozen decision
+   set — not a lineup-store refresh. That is the single highest-leverage
+   operational change available, and it is what turns the published slip from
+   a novelty into a product.
 
 *Smaller but corrosive:* the homepage prints "27 hypotheses pre-registered …
 zero surviving" as a **hardcoded constant**. The registry says 42. A product

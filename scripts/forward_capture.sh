@@ -64,6 +64,106 @@ echo "== capture extras =="
 EXTRAS_OUT=$(PROP_PRICES=1 BATTER_PROPS=1 DERIVATIVES=1 bash scripts/capture_extras.sh 2>&1)
 echo "$EXTRAS_OUT" | grep -v "^ESCALATE:" | sed 's/^/  /'
 
+# ---------------------------------------------------------------------------
+# LINEUP CADENCE (P0, 2026-09-08). Everything from here to the git section is
+# ENRICHMENT, never a blocker: each block owns its try/except, prints a reason
+# on a fault, never raises out of this script and never emits an ESCALATE --
+# the same contract standings/weather already hold in daily_loop.sh and
+# src/cli.py. A stalled MLB call must not cost the capture pass its commit.
+#
+# WHY IT LIVES HERE. `lineup_store.build` used to be called from exactly one
+# place, the once-daily 10:00Z loop -- hours before lineups post. Measured over
+# the 1,055 played decisions in the ledger on 2026-09-08: FORWARD_TEST systems
+# (the ones that ARE the product, and the only ones that require a posted
+# lineup) froze a median 8.9 minutes before first pitch with 72% inside 30
+# minutes, while the null baselines, which need no lineup, decided with a
+# median lead of 7-9 HOURS. The lineups themselves were not late: the first
+# capture that saw a complete card sat a median 160 minutes before first pitch,
+# so the median decision was frozen 137 minutes after its own inputs existed.
+# Nothing was waiting on data. Nothing was RUNNING.
+#
+# So this pass does the two things that turn a posted lineup into a decision on
+# the cadence lineups actually post at: it tops the posted-lineup store (and
+# the matchup history built from it) up for the dates still moving, and then --
+# only when a lineup has landed since the last frozen decision set -- runs one
+# more slate pass.
+# ---------------------------------------------------------------------------
+TODAY=$(date -u +%Y-%m-%d)
+YESTERDAY=$(date -u -d 'yesterday' +%Y-%m-%d)
+
+echo "== posted lineups + matchup history ($TODAY top-up) =="
+LINEUP_OUT=$(python3 -c "
+from src.pipeline import lineup_store, matchup_history
+
+try:
+    report = lineup_store.build(['$YESTERDAY', '$TODAY'],
+                                refresh=['$YESTERDAY', '$TODAY'])
+    print('lineups: %d date(s) fetched, %d game(s) written, %d topped up on a '
+          'date already covered, %d failed'
+          % (report['dates'], report['games'], report['topped_up'],
+             report['failed']))
+except Exception as exc:
+    print('(lineups unavailable:', exc, ')')
+
+# TODAY ONLY, deliberately, and this cadence does not change that: the
+# vsPlayer endpoint matchup_history reads returns CAREER totals with no as-of
+# parameter (src/model/pointintime.py marks it LEAKY), so asking it about a
+# game that has already been played would bake that game into its own history.
+# Refreshing a POSTED LINEUP more often is not a leak -- it is a fixed fact
+# once posted -- and the two must not be conflated.
+try:
+    report = matchup_history.build('$TODAY')
+    if report.get('error'):
+        print('matchup_history $TODAY: schedule unavailable:', report['error'])
+    else:
+        print('matchup_history $TODAY: %d game(s) on slate, %d written, '
+              '%d already stored, %d no lineup yet'
+              % (report['games'], report['written'],
+                 report['skipped_stored'], report['skipped_no_lineup']))
+except Exception as exc:
+    print('(matchup_history unavailable:', exc, ')')
+" 2>&1)
+echo "$LINEUP_OUT" | sed 's/^/  /'
+
+# THE GATE (src.pipeline.lineup_store.slate_due -- see its docstring for the
+# full reasoning and for why it is stateless). A slate pass is only worth
+# running when a genome's gating input has changed since the last one;
+# otherwise every capture slot would append a decision set saying exactly what
+# the previous one said. The decision lives in the module, not in this shell,
+# so it is unit-tested and so this script and the Actions workflow cannot drift
+# apart on what "due" means.
+echo "== lineup-cadence slate gate =="
+GATE_OUT=$(python3 -c "
+from src.pipeline import lineup_store
+gate = lineup_store.slate_due()
+print('RUN' if gate['due'] else 'SKIP', gate['reason'])
+" 2>&1) || GATE_OUT="SKIP the gate could not read its stores"
+echo "$GATE_OUT" | sed 's/^/  /'
+
+if [ "${GATE_OUT%% *}" = "RUN" ]; then
+    # TWO FROZEN DECISION SETS FOR ONE DATE IS EXPECTED, NOT A BUG -- the same
+    # property scripts/afternoon_slate.sh documents at length. `engine slate`
+    # dedups on (event_id, system_id, market_key, selection_id, decision_utc),
+    # so this pass appends its own decisions beside the morning's rather than
+    # overwriting them, and STAKING is idempotent per position
+    # (src.engine.slate.position_key_for), so a game already staked this date
+    # is not staked again by a later pass. run_slate's own live-mode guard
+    # skips any game whose first pitch has already passed. Nothing here
+    # touches decision identity.
+    echo "== engine slate (lineup cadence, $TODAY) =="
+    CADENCE_SLATE_OUT=$(python3 -m src.cli engine slate --date "$TODAY" 2>&1)
+    CADENCE_SLATE_STATUS=$?
+    echo "$CADENCE_SLATE_OUT" | sed 's/^/  /'
+    # Deliberately NOT an ESCALATE. The pre-slate freshness guard refusing on
+    # this path means one extra pass did not happen; the 10:00Z loop and the
+    # afternoon pass still run, and they escalate on their own. Turning an
+    # enrichment refusal into an escalation would page on a working system.
+    if [ "$CADENCE_SLATE_STATUS" -ne 0 ]; then
+        echo "  (lineup-cadence slate refused or failed, exit $CADENCE_SLATE_STATUS -- see output above; the scheduled passes are unaffected)"
+    fi
+    echo "- $(date -u +%Y-%m-%dT%H:%MZ) forward_capture: lineup-cadence slate --date $TODAY exit=$CADENCE_SLATE_STATUS" >> docs/OVERNIGHT_RUN.md
+fi
+
 # Concurrent runs of this script and daily_loop.sh on the same shared
 # checkout raced each other into stranded/mismerged commits four times in
 # 30h (87312f2, de8a582, b258fc1, 9d30526): both scripts trip hourly, and
@@ -80,7 +180,14 @@ if ! flock -w 300 9; then
     exit 1
 fi
 
-git add data/watch data/processed data/raw/oddsapi docs/OVERNIGHT_RUN.md 2>/dev/null || true
+# Explicit paths, never bare `data`: data/app (customer/auth state) and
+# data/raw (reproducible provider pulls, gitignored) must never be staged by an
+# automated pass. `evidence` and `data/paper_accounts` are staged because the
+# lineup-cadence slate above writes the decision and paper-wager ledgers -- the
+# same two paths daily_loop.sh and afternoon_slate.sh already stage for exactly
+# that reason. Leaving them out would let a pass freeze decisions locally and
+# then hand the next `pull --rebase --autostash` an uncommitted ledger to carry.
+git add data/watch data/processed data/raw/oddsapi evidence data/paper_accounts docs/OVERNIGHT_RUN.md 2>/dev/null || true
 if ! git diff --cached --quiet; then
     BRANCH=$(git rev-parse --abbrev-ref HEAD)
     if ! git commit -q -m "Forward capture $(date -u +%H:%MZ)"; then
