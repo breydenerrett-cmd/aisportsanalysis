@@ -54,6 +54,47 @@ jobs:
           ref: claude/sports-betting-analysis-review-g1o0co
           fetch-depth: 0
 
+      # RESTORE-ONLY, never save. scripts/capture_slot.sh now runs a gated
+      # `engine slate` pass when a complete posted lineup lands (the lineup
+      # cadence -- see its own block, and docs/PRODUCT_DOCTRINE.md 8.6). That
+      # pass refuses outright without the Statcast pitch store:
+      #
+      #   ERROR: [LIVE] the matchup feature store (Statcast pitch backfill)
+      #   has no coverage recorded at all
+      #
+      # The store is git-ignored (~45MB) and lives only in the daily loop's
+      # actions/cache, so without this step the gate fires, the slate refuses,
+      # and the cadence produces nothing -- the fix would look deployed and do
+      # nothing, which is exactly how it failed once already.
+      #
+      # `cache/restore` rather than `cache`: this workflow must never SAVE
+      # under the `daily-loop-data-` key space. actions/cache is immutable per
+      # key, and a capture slot running every 15 minutes would either collide
+      # with the daily loop's run-unique keys or churn them. The key below
+      # never matches (it carries this run's id) so `restore-keys` always
+      # resolves to the newest daily-loop save.
+      #
+      # A MISS IS NOT FATAL. The capture half of this slot is the job that
+      # must not fail; the slate pass is enrichment. On a miss the gate still
+      # runs, the slate refuses with the message above, and the capture
+      # commits normally -- the same "never a blocker" contract the gate
+      # itself keeps.
+      - name: Restore the daily loop's historical stores (read-only)
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: |
+            data/historical/statcast
+            data/historical/mlb_results.csv
+            data/historical/mlb_results.manifest.json
+            data/historical/pitcher_logs.jsonl
+            data/historical/bullpen_log.jsonl
+            data/historical/lineups.jsonl
+            data/historical/handedness.json
+          key: forward-capture-readonly-${{ github.run_id }}
+          restore-keys: |
+            daily-loop-data-
+
       - name: Configure git identity for the commit this run may make
         run: |
           git config user.name "forward-capture-bot"
