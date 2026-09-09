@@ -973,6 +973,26 @@ def run_slate(
 STAND_DOWNS_PATH = "evidence/stand_downs_v1.jsonl"
 
 
+def stand_down_join_key(outcome) -> str | None:
+    """The identifier a READER can look this game up by.
+
+    `GameOutcome.game_key` is the L1 board key -- an event-id hash like
+    '01ff759b99c1daf7fe8fbee28fd97362'. Nothing on the customer path has one:
+    `api/games` and `src/detect/dossier` both work from the schedule's game
+    dict, which carries `game_pk` and team names and no event id at all. A
+    ledger keyed only on the board key would therefore join to nothing, and
+    the page would print "no reason recorded" forever while the ledger filled
+    up -- a silent failure, and the exact class of bug this telemetry exists
+    to expose.
+
+    `game_pk` is the one identifier both sides hold. Normalised to a string
+    because the schedule serves it as an int and JSON round-trips it as
+    whichever the writer had.
+    """
+    pk = getattr(outcome, "game_pk", None)
+    return str(pk) if pk is not None else None
+
+
 def stand_down_key(date_str: str, game_key: str, system_id: str,
                    reason: str) -> tuple:
     """The identity of a stand-down, for dedup.
@@ -1001,7 +1021,9 @@ def record_stand_downs(date_str: str, outcomes) -> int:
     actually exists to produce.
     """
     rows = []
+    join_pk_of = {}
     for outcome in outcomes:
+        join_pk_of[outcome.game_key] = stand_down_join_key(outcome)
         for sd in getattr(outcome, "stand_downs", ()) or ():
             rows.append((stand_down_key(date_str, outcome.game_key,
                                         sd.system_id, sd.reason), sd,
@@ -1011,7 +1033,7 @@ def record_stand_downs(date_str: str, outcomes) -> int:
     try:
         ledger = HashChainLedger(STAND_DOWNS_PATH)
         seen = {
-            (r.get("date"), r.get("game_key"), r.get("system_id"),
+            (r.get("date"), r.get("event_id"), r.get("system_id"),
              r.get("reason"))
             for r in ledger.read()
         }
@@ -1022,10 +1044,12 @@ def record_stand_downs(date_str: str, outcomes) -> int:
             seen.add(key)
             ledger.append({
                 "date": date_str,
-                "game_key": game_key,
+                # The board key, kept for an operator tracing a slate run.
+                "event_id": game_key,
+                # The key a reader joins on -- see stand_down_join_key.
+                "game_pk": join_pk_of.get(game_key),
                 "system_id": sd.system_id,
                 "reason": sd.reason,
-                "game_pk": sd.game_pk,
                 "first_seen_utc": sd.t,
             })
             written += 1

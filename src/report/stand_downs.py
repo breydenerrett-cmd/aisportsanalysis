@@ -62,13 +62,23 @@ def read(store: str = DEFAULT_STORE) -> list:
 
 
 def by_game(date: str, store: str = DEFAULT_STORE) -> dict:
-    """`{game_key: {reason: [system_id, ...]}}` for one date."""
+    """`{game_pk: {reason: [system_id, ...]}}` for one date.
+
+    KEYED ON game_pk, NOT on the slate's board key. The board key is an
+    event-id hash and nothing on the customer path holds one -- `api/games`
+    and the dossier both work from the schedule's game dict. Keying on the
+    board key would join to nothing and the page would print "no reason
+    recorded" forever while the ledger filled up.
+
+    Normalised to a string on both sides: the schedule serves game_pk as an
+    int and JSON round-trips it as whichever the writer had.
+    """
     out: dict = collections.defaultdict(lambda: collections.defaultdict(list))
     for row in read(store):
-        if row.get("date") != date or not row.get("game_key"):
+        if row.get("date") != date or row.get("game_pk") is None:
             continue
         reason = row.get("reason") or "UNKNOWN"
-        out[row["game_key"]][reason].append(row.get("system_id"))
+        out[str(row["game_pk"])][reason].append(row.get("system_id"))
     return {game: dict(reasons) for game, reasons in out.items()}
 
 
@@ -81,15 +91,18 @@ def _ordered(reasons: dict) -> list:
     return known + unknown
 
 
-def summarize_game(date: str, game_key: str,
-                   store: str = DEFAULT_STORE) -> Optional[dict]:
+def summarize_game(date: str, game_pk, store: str = DEFAULT_STORE
+                   ) -> Optional[dict]:
     """Why no system took a position on this game, or None if not recorded.
 
-    None means the ledger holds nothing for this game -- the slate may not
-    have reached it. That is deliberately distinct from a summary listing
-    zero systems, which cannot occur: a row exists only because a system
-    actually declined.
+    `game_pk` is the join key (see `by_game`). None means the ledger holds
+    nothing for this game -- the slate may not have reached it. That is
+    deliberately distinct from a summary listing zero systems, which cannot
+    occur: a row exists only because a system actually declined.
     """
+    if game_pk is None:
+        return None
+    game_key = str(game_pk)
     reasons = by_game(date, store).get(game_key)
     if not reasons:
         return None

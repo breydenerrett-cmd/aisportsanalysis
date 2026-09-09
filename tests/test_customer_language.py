@@ -88,6 +88,28 @@ PROSE_FIELD_NAME_ALLOWED = frozenset({
     ("src/report/eod.py", "edge_bps"),
     ("src/report/eod.py", "assumption_exposure"),
     ("src/report/eod.py", "log_loss"),
+    # FamilyError text raised at the contract boundary -- developers only.
+    # These name the argument shape a caller got wrong; a customer route
+    # never constructs a clustering, so none of them can reach a page.
+    ("src/analysis/families.py", "system_id"),
+    ("src/analysis/families.py", "wager_id"),
+    ("src/analysis/families.py", "feature_set"),
+    # CLV research report; no customer route serves it. Same category as
+    # src/report/eod.py below -- the notes name their own fields ON PURPOSE
+    # so a reader can check the arithmetic (clv_bps = consensus_move_bps +
+    # price_standing_bps) rather than take the decomposition on faith.
+    ("src/report/clv.py", "clv_bps"),
+    ("src/report/clv.py", "consensus_move_bps"),
+    ("src/report/clv.py", "price_standing_bps"),
+    ("src/report/clv.py", "n_games"),
+    ("src/report/clv.py", "n_decisions"),
+    ("src/report/clv.py", "record_provenance"),
+    ("src/report/clv.py", "price_american"),
+    ("src/report/clv.py", "selection_id"),
+    ("src/report/clv.py", "event_id"),
+    ("src/report/clv.py", "books_at_decision"),
+    ("src/report/clv.py", "consensus_fair"),
+    ("src/report/clv.py", "commence_time"),
     # CSS class names inside the dashboard's stylesheet literal.
     ("src/report/dashboard.py", "forward_testing"),
     ("src/report/dashboard.py", "tuning_evidence"),

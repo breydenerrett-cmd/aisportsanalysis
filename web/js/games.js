@@ -705,6 +705,36 @@ function refusalText(detail) {
   return raw;
 }
 
+function standDownBlock(summary) {
+  // `null` means the stand-down ledger holds nothing for this game, which is
+  // NOT the same as "every system had a reason" -- the slate may not have
+  // reached it. Say that rather than implying the systems looked.
+  if (!summary || !Array.isArray(summary.reasons) || summary.reasons.length === 0) {
+    return el("p", { class: "gmv-engine__standdown gmv-engine__standdown--absent",
+      text: "No reason recorded for this game — the slate may not have reached it yet." });
+  }
+  const wrap = el("div", { class: "gmv-engine__standdown" });
+  wrap.appendChild(el("p", { class: "gmv-engine__standdown-headline",
+    text: String(summary.headline || "") }));
+  const list = el("ul", { class: "gmv-engine__standdown-list" });
+  for (const r of summary.reasons) {
+    const n = Number(r.n_systems) || 0;
+    const li = el("li", { class: "gmv-engine__standdown-item" });
+    li.appendChild(el("span", { class: "gmv-engine__standdown-count",
+      text: `${n} system${n === 1 ? "" : "s"}` }));
+    li.appendChild(el("span", { class: "gmv-engine__standdown-why",
+      text: String(r.sentence || "") }));
+    // Only a clock earns "yet". A settled verdict must not read as pending.
+    if (r.transient) {
+      li.appendChild(el("span", { class: "gmv-engine__standdown-chip",
+        text: "MAY CHANGE" }));
+    }
+    list.appendChild(li);
+  }
+  wrap.appendChild(list);
+  return wrap;
+}
+
 function engineDecisionsList(engine) {
   const wrap = el("div", { class: "gmv-engine" });
   wrap.appendChild(el("h4", { class: "gmv-engine__title", text: "ENGINE DECISIONS" }));
@@ -722,6 +752,11 @@ function engineDecisionsList(engine) {
     wrap.appendChild(el("p", { class: "gmv-engine__none",
       text: "No forward-test system played this game — CONTROL and MARKET REFERENCE decisions are "
           + "never shown here as interest (they carry no checkable thesis)." }));
+    // WHY none played. Without this the sentence above is a dead end: it says
+    // nobody acted but not whether the systems examined the game and passed,
+    // or never reached it. Those are different facts and a reader cannot tell
+    // them apart from "no play" alone.
+    wrap.appendChild(standDownBlock(engine.stand_downs));
   } else {
     const list = el("div", { class: "gmv-engine__plays" });
     for (const play of plays) {

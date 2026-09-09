@@ -857,10 +857,11 @@ def agreement(records: Iterable, clustering: FamilyClustering) -> Agreement:
             resting.append(fid)
             absences.append(Absence(
                 subject=fid, kind=ABSENCE_FAMILY_UNTESTED,
-                reason="no member of this family could be compared under BOTH "
+                reason="no member of this family could be compared under both "
                        "relations, so its separation from the other families "
-                       "counted here is untested. It raises n_families on the "
-                       "strength of missing evidence, not measured distinctness"))
+                       "counted here is untested. It raises the family count "
+                       "on the strength of missing evidence, not on measured "
+                       "distinctness"))
 
     if not ordered_systems:
         absences.append(Absence(

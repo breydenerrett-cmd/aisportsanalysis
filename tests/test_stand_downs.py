@@ -19,8 +19,12 @@ from src.engine.analyze import Analysis, StandDown
 
 
 class _Outcome:
-    def __init__(self, game_key, stand_downs):
+    """A GameOutcome as run_slate builds one: `game_key` is the L1 board key
+    (an event-id hash), `game_pk` is the identifier a reader can join on."""
+
+    def __init__(self, game_key, stand_downs, game_pk="777"):
         self.game_key = game_key
+        self.game_pk = game_pk
         self.stand_downs = stand_downs
 
 
@@ -51,7 +55,10 @@ class StandDownLedgerTests(unittest.TestCase):
         row = self._rows()[0]
         self.assertEqual(row["reason"], "NO_LINEUP")
         self.assertEqual(row["system_id"], "g1")
-        self.assertEqual(row["game_key"], "AZ@KC")
+        # The board key is kept for an operator; game_pk is what a reader
+        # joins on, and a row without it can never reach the page.
+        self.assertEqual(row["event_id"], "AZ@KC")
+        self.assertEqual(row["game_pk"], "777")
 
     def test_the_same_refusal_at_a_later_pass_is_not_written_twice(self):
         """A genome refusing NO_LINEUP at every pass has said one thing, not

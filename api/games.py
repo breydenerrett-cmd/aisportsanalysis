@@ -447,8 +447,11 @@ def _engine_summary_for_entry(dossier, date: str) -> Optional[dict]:
     # why the ones that did nothing did nothing. `None` means the stand-down
     # ledger holds nothing for this game, which is itself distinct from "every
     # system had a reason": the slate may simply not have reached it.
+    # Joined on game_pk, the one identifier the slate runner and this page
+    # both hold: the slate's own game_key is an L1 board-key hash and nothing
+    # on this path has one.
     try:
-        standing_down = stand_downs.summarize_game(date, key)
+        standing_down = stand_downs.summarize_game(date, game.get("game_pk"))
     except Exception:  # noqa: BLE001 -- a gap is never a 500
         standing_down = None
     if standing_down is None and rollup is None:
