@@ -45,6 +45,7 @@ number in this module is independent of the market it is quoted against.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Iterable, Mapping, Optional, Sequence
 
 from src.analysis import families as families_mod
@@ -125,6 +126,18 @@ MISS_NOT_FORWARD_TEST = "not_forward_test"
 MISS_NO_PRICE = "no_price"
 MISS_THIN_BOARD = "thin_board"
 MISS_NO_FALSIFIABLE_MECHANISM = "no_falsifiable_mechanism"
+# A DIFFERENT KIND OF FLOOR from the four above. Those refuse a candidate for
+# not clearing a pre-registered evidence bar; this refuses one that cleared
+# every bar but whose game a reader can no longer act on. Found live
+# 2026-09-09: 21 of 23 published picks that night were for games already
+# in progress or final -- the underlying decisions were genuinely frozen
+# pregame (this is not a point-in-time leak in the decision itself), but
+# nothing stopped the SLIP from continuing to present them as fresh, live
+# recommendations for the rest of the day. A customer reading "STRONG" next
+# to a game that is 8-0 in the 6th reasonably concludes the system is
+# reacting to the score, even when it never saw it.
+MISS_GAME_STARTED = "game_started"
+MISS_COMMENCE_TIME_UNKNOWN = "commence_time_unknown"
 
 CONTROL_PREFIX = "trivial_"
 MARKET_REFERENCE_PREFIX = "market_derived_consensus_"
@@ -132,6 +145,16 @@ MARKET_REFERENCE_PREFIX = "market_derived_consensus_"
 
 class SlipError(ValueError):
     """A slip could not be built honestly."""
+
+
+def _parse_utc(value: str) -> datetime:
+    """The two timestamp shapes this project actually produces --
+    `mlb.fetch_games`'s `"...Z"` and `datetime.isoformat()`'s `"...+00:00"` --
+    parsed to the same comparable, timezone-aware instant. Never compared as
+    raw strings (see `build_slip`'s commence-time check for why)."""
+    v = value.replace("Z", "+00:00") if value.endswith("Z") else value
+    d = datetime.fromisoformat(v)
+    return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
 
 
 def is_forward_test(system_id: Optional[str]) -> bool:
@@ -471,7 +494,9 @@ def _rank_key(entry) -> tuple:
 
 
 def build_slip(records: Iterable, clustering, *, date: str, slip_utc: str,
-               systems: Optional[Sequence[str]] = None) -> Slip:
+               systems: Optional[Sequence[str]] = None,
+               commence_time_by_event: Optional[Mapping[str, str]] = None,
+               now: Optional[str] = None) -> Slip:
     """Rank one date's plays into a frozen slip.
 
     `records` are that date's decision records (any verdict, any class -- the
@@ -485,6 +510,25 @@ def build_slip(records: Iterable, clustering, *, date: str, slip_utc: str,
     `slip_utc` is passed in rather than read from a clock so this function
     stays pure and reproducible: the same records and instant always produce
     the same slip.
+
+    `commence_time_by_event`/`now`: OPT-IN, both required together, for the
+    same reason `slip_utc` is caller-supplied rather than clock-read -- this
+    function must stay pure. When given, a candidate whose game's commence
+    time is at or before `now` is refused (`MISS_GAME_STARTED`), and a
+    candidate this map has no entry for is refused too
+    (`MISS_COMMENCE_TIME_UNKNOWN`) rather than let through unverified --
+    a partial schedule fetch must fail closed, not silently trust whatever
+    it happened to have. Neither given (the default) reproduces the old
+    behaviour exactly, for every existing caller and test that has no
+    schedule handy.
+
+    Found live 2026-09-09: without this, 21 of 23 published picks on one
+    real slip were for games already in progress or final. The frozen
+    decision underneath each one was genuinely pregame -- this is not a
+    point-in-time leak in the decision itself -- but the SLIP kept
+    presenting them as live recommendations for the rest of the day, which
+    is its own honesty failure: a reader has no way to tell a pregame call
+    from the system quietly agreeing with an 8-0 score after the fact.
     """
     if clustering is None:
         raise SlipError(
@@ -534,6 +578,26 @@ def build_slip(records: Iterable, clustering, *, date: str, slip_utc: str,
             # tonight?" on an empty night.
             n_instrument_plays += 1
             continue
+        if commence_time_by_event is not None and now is not None:
+            eid = _field(record, "event_id")
+            commence = commence_time_by_event.get(eid)
+            if commence is None:
+                misses.append(Miss(
+                    wid, system_id, MISS_COMMENCE_TIME_UNKNOWN,
+                    "this game's first-pitch time could not be confirmed, "
+                    "so whether it is still pregame cannot be verified"))
+                continue
+            # Parsed, never compared as raw strings: "...Z" and "...+00:00"
+            # (the two shapes this project's own timestamps come in --
+            # mlb.fetch_games uses "Z", datetime.isoformat() uses "+00:00")
+            # do not sort the same way lexicographically, and a naive string
+            # compare would silently mis-rank some fraction of games.
+            if _parse_utc(commence) <= _parse_utc(now):
+                misses.append(Miss(
+                    wid, system_id, MISS_GAME_STARTED,
+                    f"first pitch was {commence}, at or before {now} -- no "
+                    "longer a pregame call"))
+                continue
         if _field(record, "price_american") is None:
             misses.append(Miss(wid, system_id, MISS_NO_PRICE,
                                "no price on the board at decision time"))

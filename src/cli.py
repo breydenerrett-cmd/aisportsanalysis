@@ -2491,9 +2491,47 @@ def _cmd_engine_slip(args) -> int:
               f"`engine slate --date {args.date}` first", file=sys.stderr)
         return EXIT_ERROR
 
+    # THE STARTED-GAME GATE (found live 2026-09-09): a decision frozen
+    # genuinely pregame does not stay a pregame CALL forever -- once its game
+    # starts, publishing it as a fresh "STRONG" recommendation misrepresents
+    # a frozen pick as live analysis. 21 of 23 picks on one real slip that
+    # night were for games already in progress or final before this existed.
+    #
+    # Fails OPEN, not closed, on a schedule-fetch problem: `today_rows` being
+    # non-empty already means `engine slate` used this exact same provider
+    # call successfully to build the decisions this pass is about to rank, so
+    # a failure here would be a new, narrower problem worth a loud warning --
+    # but refusing every candidate as commence-time-unknown on an operational
+    # hiccup would trade one honesty bug for a worse one (an empty slip on a
+    # night that had real pregame picks). commence_time_by_event/now are
+    # simply omitted on failure, reproducing the pre-fix behaviour exactly
+    # rather than crashing the run.
+    now_iso = datetime.now(timezone.utc).isoformat()
+    commence_time_by_event = None
+    try:
+        from src.board import gamekey as gamekey_module
+        from src.providers import mlb as mlb_provider
+        schedule = mlb_provider.fetch_games(args.date)
+        by_pk = {g.get("game_pk"): g.get("start_time_utc") for g in schedule}
+        gk_map = gamekey_module.load_map()
+        commence_time_by_event = {}
+        for r in today_rows:
+            eid = r.get("event_id")
+            if not eid or eid in commence_time_by_event:
+                continue
+            pk = gamekey_module.game_pk_for_event(eid, gk_map)
+            start = by_pk.get(int(pk)) if pk is not None else None
+            if start:
+                commence_time_by_event[eid] = start
+    except Exception as exc:  # noqa: BLE001 -- see docstring above
+        print(f"  (started-game gate unavailable: {exc} -- publishing "
+              f"without it this pass)")
+        commence_time_by_event = None
+
     slip = slip_mod.build_slip(
         today_rows, clustering, date=args.date,
-        slip_utc=datetime.now(timezone.utc).isoformat())
+        slip_utc=now_iso, commence_time_by_event=commence_time_by_event,
+        now=(now_iso if commence_time_by_event is not None else None))
 
     print(f"[PAPER] engine slip --date {args.date}")
     print(f"  rule                : {slip.rule}")
@@ -2514,7 +2552,18 @@ def _cmd_engine_slip(args) -> int:
               f"system(s) | signals={pick.n_signals} rung={pick.deepest_rung} "
               f"| books={pick.books_at_decision} "
               f"| standing={pick.price_standing_bps}bps")
-    for miss in slip.misses:
+    # Counted, not listed, for the started-game reasons specifically: late in
+    # the day most of the slate has started, and listing each one would bury
+    # the small number of genuine evidence-floor misses under noise -- the
+    # same reasoning build_slip already applies to instrument plays.
+    started_misses = [m for m in slip.misses
+                      if m.reason in (slip_mod.MISS_GAME_STARTED,
+                                     slip_mod.MISS_COMMENCE_TIME_UNKNOWN)]
+    other_misses = [m for m in slip.misses if m not in started_misses]
+    if started_misses:
+        print(f"  already started/unverified: {len(started_misses)} "
+              "candidate(s) refused, not published")
+    for miss in other_misses:
         print(f"  missed: {miss.system_id} {miss.reason} -- {miss.detail}")
 
     if args.dry_run:

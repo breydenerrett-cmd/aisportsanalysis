@@ -21,6 +21,8 @@ from src.engine.slip import (
     EVIDENCE_TIER_LABEL,
     EVIDENCE_THIN,
     MIN_MECHANISM_PREDICATES,
+    MISS_COMMENCE_TIME_UNKNOWN,
+    MISS_GAME_STARTED,
     READ_LIGHT,
     READ_NOTABLE,
     READ_NOTHING_CLEARED,
@@ -519,6 +521,101 @@ class SlipReadAsTests(unittest.TestCase):
                              slip_utc=SLIP_UTC).to_dict()
         self.assertEqual(payload["read_as"], READ_NOTHING_CLEARED)
         self.assertIn("tier_counts", payload)
+
+
+class GameAlreadyStartedTests(unittest.TestCase):
+    """Found live 2026-09-09: 21 of 23 published picks on a real slip were
+    for games already in progress or final. The frozen decision underneath
+    each one was genuinely pregame; nothing stopped the SLIP from
+    continuing to present them as live recommendations. This is the guard."""
+
+    PRE = "2026-09-09T23:05:00+00:00"  # first pitch, per the real incident
+    NOW_BEFORE = "2026-09-09T22:00:00+00:00"   # 65 min before first pitch
+    NOW_AT = "2026-09-09T23:05:00+00:00"       # exactly first pitch
+    NOW_AFTER = "2026-09-09T23:45:00+00:00"    # the actual incident's clock
+
+    def test_with_no_schedule_data_behaves_exactly_as_before(self):
+        """The opt-in default: omitting commence_time_by_event/now must
+        reproduce the pre-fix behaviour for every existing caller and test
+        that has no schedule handy."""
+        rows = [_row("a", "evtA")]
+        slip = build_slip(rows, _forced_clustering([("a",)]), date=DATE,
+                          slip_utc=SLIP_UTC)
+        self.assertEqual(len(slip.picks), 1)
+
+    def test_a_game_still_pregame_is_published(self):
+        rows = [_row("a", "evtA")]
+        slip = build_slip(
+            rows, _forced_clustering([("a",)]), date=DATE, slip_utc=SLIP_UTC,
+            commence_time_by_event={"evtA": self.PRE}, now=self.NOW_BEFORE)
+        self.assertEqual(len(slip.picks), 1)
+
+    def test_a_game_already_started_is_refused_not_published(self):
+        rows = [_row("a", "evtA")]
+        slip = build_slip(
+            rows, _forced_clustering([("a",)]), date=DATE, slip_utc=SLIP_UTC,
+            commence_time_by_event={"evtA": self.PRE}, now=self.NOW_AFTER)
+        self.assertEqual(slip.picks, ())
+        self.assertEqual(slip.misses[0].reason, MISS_GAME_STARTED)
+
+    def test_exactly_at_first_pitch_is_already_started(self):
+        """At-or-before, not strictly-before: the instant of first pitch is
+        no longer a pregame call."""
+        rows = [_row("a", "evtA")]
+        slip = build_slip(
+            rows, _forced_clustering([("a",)]), date=DATE, slip_utc=SLIP_UTC,
+            commence_time_by_event={"evtA": self.PRE}, now=self.NOW_AT)
+        self.assertEqual(slip.picks, ())
+        self.assertEqual(slip.misses[0].reason, MISS_GAME_STARTED)
+
+    def test_an_event_missing_from_the_schedule_map_fails_closed(self):
+        """A partial schedule fetch must not silently trust whatever it
+        happened to have -- an unverifiable game is refused, not published."""
+        rows = [_row("a", "evtA")]
+        slip = build_slip(
+            rows, _forced_clustering([("a",)]), date=DATE, slip_utc=SLIP_UTC,
+            commence_time_by_event={}, now=self.NOW_BEFORE)
+        self.assertEqual(slip.picks, ())
+        self.assertEqual(slip.misses[0].reason, MISS_COMMENCE_TIME_UNKNOWN)
+
+    def test_the_two_real_timestamp_shapes_compare_correctly(self):
+        """mlb.fetch_games uses a trailing 'Z'; datetime.isoformat() uses
+        '+00:00'. A raw string compare of the two does not sort the same way
+        and would silently mis-rank some fraction of games -- this is the
+        exact live incident's timestamp shapes, byte for byte."""
+        rows = [_row("a", "evtA")]
+        slip = build_slip(
+            rows, _forced_clustering([("a",)]), date=DATE, slip_utc=SLIP_UTC,
+            commence_time_by_event={"evtA": "2026-09-09T23:05:00Z"},
+            now="2026-09-09T23:45:51.448314+00:00")
+        self.assertEqual(slip.picks, (),
+                         "a 'Z'-suffixed commence time after a "
+                         "microsecond-precision '+00:00' now must still "
+                         "correctly compare as already started")
+
+    def test_only_the_started_game_is_refused_others_unaffected(self):
+        rows = [_row("a", "evtA"), _row("b", "evtB")]
+        slip = build_slip(
+            rows, _forced_clustering([("a",), ("b",)]), date=DATE,
+            slip_utc=SLIP_UTC,
+            commence_time_by_event={
+                "evtA": "2026-09-09T20:00:00+00:00",   # already started
+                "evtB": "2026-09-10T02:00:00+00:00",   # still hours away
+            },
+            now=self.NOW_AFTER)
+        self.assertEqual(len(slip.picks), 1)
+        self.assertEqual(slip.picks[0].event_id, "evtB")
+        self.assertEqual(slip.misses[0].reason, MISS_GAME_STARTED)
+
+    def test_the_miss_names_the_actual_first_pitch_time(self):
+        """The reason string carries the real timestamp, not just the
+        category -- a reader (or a future debugger) can see exactly how
+        late the pass ran without cross-referencing anything else."""
+        rows = [_row("a", "evtA")]
+        slip = build_slip(
+            rows, _forced_clustering([("a",)]), date=DATE, slip_utc=SLIP_UTC,
+            commence_time_by_event={"evtA": self.PRE}, now=self.NOW_AFTER)
+        self.assertIn(self.PRE, slip.misses[0].detail)
 
 
 if __name__ == "__main__":
