@@ -460,6 +460,10 @@ class GameOutcome:
     duplicate_decisions: int
     staked_bet_ids: tuple  # bet_ids newly placed this run
     duplicate_wagers: int
+    # Systems that declined to propose, and why (analyze.StandDown). Carried
+    # so an empty `records` can be told apart from a slate that never ran:
+    # a genome standing down is correct behaviour and must be visible as such.
+    stand_downs: tuple = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -955,11 +959,80 @@ def run_slate(
             records=tuple(final_records), new_decisions=new_decisions,
             duplicate_decisions=duplicate_decisions,
             staked_bet_ids=tuple(new_bet_ids),
-            duplicate_wagers=duplicate_wagers))
+            duplicate_wagers=duplicate_wagers,
+            stand_downs=tuple(getattr(analysis, "stand_downs", ()))))
+
+    if not dry_run:
+        record_stand_downs(date_str, game_outcomes)
 
     return SlateReport(date=date_str, dry_run=dry_run,
                        systems=tuple(s.id for s in systems),
                        games=tuple(game_outcomes))
+
+
+STAND_DOWNS_PATH = "evidence/stand_downs_v1.jsonl"
+
+
+def stand_down_key(date_str: str, game_key: str, system_id: str,
+                   reason: str) -> tuple:
+    """The identity of a stand-down, for dedup.
+
+    Deliberately EXCLUDES the instant. A genome that refuses NO_LINEUP at
+    every one of the day's passes has said one thing, not sixteen; writing a
+    row per pass would put ~3,800 rows a day on this ledger and bury the
+    moment a reason actually CHANGED, which is the only interesting event
+    here. A later pass whose reason differs (NO_LINEUP -> NO_SIGNAL, because
+    the lineup posted) is a new key and is recorded.
+    """
+    return (date_str, game_key, system_id, reason)
+
+
+def record_stand_downs(date_str: str, outcomes) -> int:
+    """Append this slate's stand-downs, deduped, and return how many were new.
+
+    A SEPARATE LEDGER, NOT decisions_v2. A stand-down is not a decision: it
+    has no market, no selection and no price, and folding it into the
+    decisions ledger would inflate every count computed off that file and
+    require every reader to filter it back out. It is telemetry about why a
+    decision is absent.
+
+    Never raises out. This is diagnostic: losing a stand-down row must never
+    cost a frozen decision or a staked wager, which are the things this run
+    actually exists to produce.
+    """
+    rows = []
+    for outcome in outcomes:
+        for sd in getattr(outcome, "stand_downs", ()) or ():
+            rows.append((stand_down_key(date_str, outcome.game_key,
+                                        sd.system_id, sd.reason), sd,
+                         outcome.game_key))
+    if not rows:
+        return 0
+    try:
+        ledger = HashChainLedger(STAND_DOWNS_PATH)
+        seen = {
+            (r.get("date"), r.get("game_key"), r.get("system_id"),
+             r.get("reason"))
+            for r in ledger.read()
+        }
+        written = 0
+        for key, sd, game_key in rows:
+            if key in seen:
+                continue
+            seen.add(key)
+            ledger.append({
+                "date": date_str,
+                "game_key": game_key,
+                "system_id": sd.system_id,
+                "reason": sd.reason,
+                "game_pk": sd.game_pk,
+                "first_seen_utc": sd.t,
+            })
+            written += 1
+        return written
+    except Exception as exc:  # noqa: BLE001 -- see docstring
+        print(f"  (stand-down ledger unavailable: {exc})")
+        return 0
 
 
 def _side_for_record(record: DecisionRecord) -> str:

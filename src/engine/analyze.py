@@ -126,17 +126,55 @@ class Candidate:
 
 
 @dataclass(frozen=True, slots=True)
+class StandDown:
+    """A system that declined to propose anything, and the named reason.
+
+    WHY THIS IS A RETURN VALUE AND NOT A LOG LINE
+    ----------------------------------------------
+    A stand-down at PROPOSE happens before any candidate exists, so it cannot
+    become a DecisionRecord: there is no market, no selection and no price for
+    one to be about. Finding F-1 (2026-09-07) made the reason visible by
+    printing it to stderr, which was strictly better than the silence before
+    it -- but stderr in a scheduled runner is archaeology. On 2026-09-09 the
+    only way to learn why the product had produced no picks all day was to
+    pull a CI log and grep it, and the answer (224 NO_LINEUP, 12 NO_SIGNAL, 4
+    MARKET_UNAVAILABLE across 16 systems and 15 games) was information the
+    product itself should have been able to state.
+
+    Carrying it out of `analyze()` lets the caller persist it, so "why is
+    there no pick on this game?" is answerable from data. That question is the
+    single most common one a reader has on a night with an empty slip, and
+    doctrine is explicit that an absence must be stated rather than left to be
+    inferred.
+
+    This is NOT a decision and never enters the decisions ledger. It records
+    that a system correctly declined to have an opinion.
+    """
+
+    system_id: str
+    reason: str
+    game_pk: str | None = None
+    t: str | None = None
+
+    def to_dict(self) -> dict:
+        return {"system_id": self.system_id, "reason": self.reason,
+                "game_pk": self.game_pk, "t": self.t}
+
+
+@dataclass(frozen=True, slots=True)
 class Analysis:
     """The full result of one `analyze()` call: 0..N ranked DecisionRecords.
 
     Empty is a normal answer -- a board where every proposal was vetoed, or
     where no system proposed anything, produces `records == ()`, not an
-    error.
+    error. `stand_downs` says WHICH systems declined and why, so an empty
+    `records` can be told apart from a slate that never ran.
     """
 
     game_pk: str
     t: str
     records: tuple = ()
+    stand_downs: tuple = ()
 
 
 class EngineConfig:
@@ -227,10 +265,20 @@ def analyze(snapshot: PriceBlindSnapshot, board: PricedBoard, *,
     adversaries = tuple(adversaries)
 
     # 1. PROPOSE -- each system sees ONLY the price-blind snapshot.
+    #
+    # A system may yield `StandDown` objects alongside (or instead of)
+    # proposals to say why it declined. They are partitioned out here rather
+    # than being dropped: a system that proposes nothing and says nothing is
+    # indistinguishable from a system that never ran, and that ambiguity hid
+    # an entire day of empty output on 2026-09-09.
     proposals: list[Proposal] = []
+    stand_downs: list[StandDown] = []
     for system in systems:
-        for proposal in system.propose(snapshot):
-            proposals.append(proposal)
+        for item in system.propose(snapshot):
+            if isinstance(item, StandDown):
+                stand_downs.append(item)
+            else:
+                proposals.append(item)
 
     # 2. PROJECT -- price every proposal against EVERY selection on the
     # board its thesis covers. A proposal that names a market/side without a
@@ -395,7 +443,8 @@ def analyze(snapshot: PriceBlindSnapshot, board: PricedBoard, *,
         for cand in vetoed
     )
     records = play_records + refusal_records
-    return Analysis(game_pk=snapshot.game_pk, t=snapshot.t, records=records)
+    return Analysis(game_pk=snapshot.game_pk, t=snapshot.t, records=records,
+                    stand_downs=tuple(stand_downs))
 
 
 # FATAL adversary_id -> the specific refused_* verdict registered for it in

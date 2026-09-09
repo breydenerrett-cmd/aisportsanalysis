@@ -29,7 +29,7 @@ from dataclasses import dataclass
 
 from src.board.ids import selection_id as _selection_id
 from src.board.record import PriceObservation
-from src.engine.analyze import Proposal
+from src.engine.analyze import Proposal, StandDown
 from src.engine.analyze import analyze as _analyze
 from src.engine.explain import evolab_thesis
 from src.engine.mechanism_predicates import predicates_for
@@ -114,11 +114,22 @@ class EvolabGenomeSystem:
             # market or selection, which DecisionRecord requires), so the
             # reason goes to the run log instead. Not an ESCALATE: standing
             # down is correct behaviour, it just must never again be invisible.
+            #
+            # 2026-09-09: stderr alone was not enough. The product produced no
+            # picks for an entire day and the only way to find out why was to
+            # pull a scheduled run's log and grep it -- the answer (224
+            # NO_LINEUP, 12 NO_SIGNAL, 4 MARKET_UNAVAILABLE) was a fact the
+            # product should have been able to state about itself. The reason
+            # is now RETURNED as well as printed, so `analyze()` can hand it to
+            # a caller that persists it and "why is there no pick on this
+            # game?" becomes answerable from data instead of archaeology.
             print(f"[evolab] {self.id} stood down: reason={reason} "
                   f"game_pk={getattr(view, 'game_pk', None)} "
                   f"t={getattr(view, 'information_time', None)}",
                   file=sys.stderr, flush=True)
-            return ()
+            return (StandDown(system_id=self.id, reason=str(reason),
+                              game_pk=getattr(view, "game_pk", None),
+                              t=getattr(view, "information_time", None)),)
         # A genome's `score` is explicitly NOT a probability or an edge
         # (decide.py's own docstring). It cannot be projected onto a price
         # as a p_model without inventing information the genome never
