@@ -497,3 +497,5 @@
 {"game_date": "2026-09-09", "observed_utc": "2026-09-09T18:55:57.410413+00:00", "poll": true}
 {"commence_time": "2026-09-09T22:40:00Z", "crew": [{"id": 665576, "name": "Brock Ballou", "officialType": "Home Plate"}, {"id": 605672, "name": "Jeremie Rehak", "officialType": "First Base"}, {"id": 644760, "name": "Adam Beck", "officialType": "Second Base"}, {"id": 427248, "name": "Dan Iassogna", "officialType": "Third Base"}], "game_date": "2026-09-09", "game_pk": 823416, "game_state": "Pre-Game", "home_plate_umpire": "Brock Ballou", "observed_utc": "2026-09-09T18:55:57.410413+00:00", "prev_poll_utc": "2026-09-09T18:10:54.331482+00:00", "revealed": true}
 {"game_date": "2026-09-10", "observed_utc": "2026-09-09T18:55:57.593558+00:00", "poll": true}
+{"game_date": "2026-09-09", "observed_utc": "2026-09-09T19:13:08.192213+00:00", "poll": true}
+{"game_date": "2026-09-10", "observed_utc": "2026-09-09T19:13:08.347805+00:00", "poll": true}

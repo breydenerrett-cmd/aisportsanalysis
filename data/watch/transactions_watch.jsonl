@@ -905,3 +905,7 @@
 {"fetched_utc": "2026-09-09T18:55:57.101448+00:00", "game_date": "2026-09-09", "poll": true}
 {"category": "il_activation", "date": "2026-09-09", "first_seen_utc": "2026-09-09T18:55:57.101448+00:00", "player": "Bailey Falter", "player_id": 663559, "team": "ATL", "transaction_id": 941823}
 {"fetched_utc": "2026-09-09T18:55:58.584642+00:00", "game_date": "2026-09-09", "poll": true}
+{"fetched_utc": "2026-09-09T19:13:07.851486+00:00", "game_date": "2026-09-09", "poll": true}
+{"category": "other", "date": "2026-09-09", "first_seen_utc": "2026-09-09T19:13:07.851486+00:00", "player": "Tyler Davis", "player_id": 699823, "team": "CWS", "transaction_id": 941826}
+{"category": "recalled", "date": "2026-09-09", "first_seen_utc": "2026-09-09T19:13:07.851486+00:00", "player": "Chris Murphy", "player_id": 669684, "team": "CWS", "transaction_id": 941827}
+{"fetched_utc": "2026-09-09T19:13:09.860153+00:00", "game_date": "2026-09-09", "poll": true}
