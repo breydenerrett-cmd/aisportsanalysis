@@ -43,6 +43,53 @@ echo "== capture extras =="
 EXTRAS_OUT=$(PROP_PRICES=1 BATTER_PROPS=1 DERIVATIVES=1 bash scripts/capture_extras.sh 2>&1)
 echo "$EXTRAS_OUT" | grep -v "^ESCALATE:" | sed 's/^/  /'
 
+# ---------------------------------------------------------------------------
+# THE LINEUP CADENCE GATE
+#
+# WHY IT LIVES HERE AND NOT IN forward_capture.sh. This script is what the
+# schedule actually runs: the DEFAULT branch's forward-capture.yml checks out
+# the working branch and invokes `scripts/capture_slot.sh`. forward_capture.sh
+# is the standalone looping variant and is NOT called by CI, so a gate placed
+# there runs nowhere. Neither does an edit to the working branch's copy of
+# forward-capture.yml -- cron reads the default branch's copy. Putting the gate
+# in this script is the only one of the three that deploys.
+#
+# WHAT IT FIXES. Measured 2026-09-08: forward-test systems froze decisions a
+# median 9.9 minutes before first pitch while the null baselines, which need no
+# lineup, decided ~8 hours out. Nothing was waiting on data -- only two slate
+# passes were scheduled (10:00Z and 21:10Z), and at 10:00Z no lineup has posted
+# so every genome refuses NO_LINEUP. A complete posted lineup is available a
+# median 160 minutes before first pitch; the median decision was frozen 137
+# minutes after its own gating input was already visible.
+#
+# `slate_due` is the gate (see its docstring): due only when a COMPLETE posted
+# lineup is newer than the last frozen decision set. Without it a capture
+# cadence would append hundreds of null-baseline rows every slot all day,
+# carrying no new information.
+#
+# ENRICHMENT, NEVER A BLOCKER -- the same contract daily_loop.sh states for
+# weather and standings. Its own guard, prints a reason either way, never
+# raises out, never an ESCALATE: a refusal here costs one optional pass, and
+# the scheduled passes are unaffected.
+#
+# NO ODDS-API SPEND. `engine slate` reads L1 off disk; the prices this pass
+# reasons about were already bought by the dense capture above.
+echo "== lineup cadence gate =="
+GATE_OUT=$(python3 -c "
+from src.pipeline import lineup_store
+try:
+    g = lineup_store.slate_due()
+    print('RUN' if g['due'] else 'SKIP', g['reason'])
+except Exception as exc:
+    print('SKIP gate unavailable:', exc)
+" 2>&1) || GATE_OUT="SKIP gate raised"
+echo "  $GATE_OUT"
+if [ "${GATE_OUT%% *}" = "RUN" ]; then
+    echo "== engine slate (lineup cadence) =="
+    python3 -m src.cli engine slate --date "$(date -u +%Y-%m-%d)" 2>&1 \
+        | sed 's/^/  /' || echo "  (slate pass failed; scheduled passes unaffected)"
+fi
+
 GIT_LOCK=/tmp/linehound_git.lock
 exec 9>"$GIT_LOCK"
 GIT_FAILED=0
@@ -51,7 +98,11 @@ if ! flock -w 300 9; then
     exit 1
 fi
 
-git add data/watch data/processed data/raw/oddsapi docs/OVERNIGHT_RUN.md 2>/dev/null || true
+# evidence/ and data/paper_accounts are staged because the gated slate pass
+# above now writes those ledgers. Without them a pass would freeze decisions
+# locally and hand the next `pull --rebase --autostash` an uncommitted ledger.
+git add data/watch data/processed data/raw/oddsapi docs/OVERNIGHT_RUN.md \
+        evidence data/paper_accounts 2>/dev/null || true
 if ! git diff --cached --quiet; then
     BRANCH=$(git rev-parse --abbrev-ref HEAD)
     if ! git commit -q -m "Forward capture slot $(date -u +%H:%MZ) (external)"; then
