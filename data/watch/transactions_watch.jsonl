@@ -858,3 +858,5 @@
 {"category": "optioned", "date": "2026-09-08", "first_seen_utc": "2026-09-09T00:25:49.047276+00:00", "player": "Troy Taylor", "player_id": 700187, "team": "SEA", "transaction_id": 941780}
 {"category": "designated", "date": "2026-09-08", "first_seen_utc": "2026-09-09T00:25:49.047276+00:00", "player": "Stuart Fairchild", "player_id": 656413, "team": "SEA", "transaction_id": 941781}
 {"fetched_utc": "2026-09-09T00:25:50.330335+00:00", "game_date": "2026-09-08", "poll": true}
+{"fetched_utc": "2026-09-09T01:10:50.097218+00:00", "game_date": "2026-09-08", "poll": true}
+{"fetched_utc": "2026-09-09T01:10:51.967120+00:00", "game_date": "2026-09-08", "poll": true}
