@@ -909,3 +909,12 @@
 {"category": "other", "date": "2026-09-09", "first_seen_utc": "2026-09-09T19:13:07.851486+00:00", "player": "Tyler Davis", "player_id": 699823, "team": "CWS", "transaction_id": 941826}
 {"category": "recalled", "date": "2026-09-09", "first_seen_utc": "2026-09-09T19:13:07.851486+00:00", "player": "Chris Murphy", "player_id": 669684, "team": "CWS", "transaction_id": 941827}
 {"fetched_utc": "2026-09-09T19:13:09.860153+00:00", "game_date": "2026-09-09", "poll": true}
+{"fetched_utc": "2026-09-09T19:55:52.654280+00:00", "game_date": "2026-09-09", "poll": true}
+{"category": "il_activation", "date": "2026-09-09", "first_seen_utc": "2026-09-09T19:55:52.654280+00:00", "player": "Pete Fairbanks", "player_id": 664126, "team": "MIA", "transaction_id": 941828}
+{"category": "optioned", "date": "2026-09-09", "first_seen_utc": "2026-09-09T19:55:52.654280+00:00", "player": "Bradley Blalock", "player_id": 687134, "team": "MIA", "transaction_id": 941829}
+{"category": "rehab", "date": "2026-09-09", "first_seen_utc": "2026-09-09T19:55:52.654280+00:00", "player": "Clarke Schmidt", "player_id": 657376, "team": "NYY", "transaction_id": 941837}
+{"category": "il_activation", "date": "2026-09-09", "first_seen_utc": "2026-09-09T19:55:52.654280+00:00", "player": "Zac Gallen", "player_id": 668678, "team": "ARI", "transaction_id": 941839}
+{"category": "il_activation", "date": "2026-09-09", "first_seen_utc": "2026-09-09T19:55:52.654280+00:00", "player": "Michael Soroka", "player_id": 647336, "team": "ARI", "transaction_id": 941840}
+{"category": "optioned", "date": "2026-09-09", "first_seen_utc": "2026-09-09T19:55:52.654280+00:00", "player": "Kade Strowd", "player_id": 669704, "team": "ARI", "transaction_id": 941841}
+{"category": "optioned", "date": "2026-09-09", "first_seen_utc": "2026-09-09T19:55:52.654280+00:00", "player": "Blake Walston", "player_id": 686796, "team": "ARI", "transaction_id": 941842}
+{"fetched_utc": "2026-09-09T19:55:53.647402+00:00", "game_date": "2026-09-09", "poll": true}
