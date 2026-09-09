@@ -499,14 +499,17 @@ an honest evidence-tier read, actually reaching the page.
    plausibly correct behavior but has not yet been proven hands-off.
    Acceptance: `git log -- evidence/slips_v1.jsonl` shows a commit whose
    author is the forward-capture bot, not a manual run.
-2. **CLV hardening — unblocks committing `src/report/clv.py`.** It produced
-   this project's first-ever CLV numbers, then had to be retracted: replay
-   rows and unstamped rows were pooling into the published mean, staleness
-   was computed but stripped before any rollup, `by_cohort` reads a
-   `DecisionRecord.cohorts` field that was deliberately removed. That last
-   one is now easy to actually fix — `evidence/slips_v1.jsonl` is real, so
-   `by_cohort` can be rewired to read it instead of a field that never
-   existed in production.
+2. ~~CLV hardening~~ — **DONE (2026-09-09), committed `596ecae`.** Replay
+   rows, unstamped rows and closing-board staleness are all excluded from
+   the published rollup; `by_cohort` reads the real `evidence/slips_v1.jsonl`.
+   Independent re-verification while committing found one more live
+   violation nobody had caught: `is_publishable()` never checked system
+   class at all, so 938 MARKET_REFERENCE + 469 CONTROL rows outnumbered 196
+   genuine FORWARD_TEST rows 7-to-1 in what the code called "the published
+   cut" — fixed, proven load-bearing (reverted, watched the test go red,
+   restored). Published CLV is now 196 rows, 100% FORWARD_TEST. The honest
+   read at that sample size is still "no signal yet" — the fix is about the
+   number being trustworthy, not about it being good.
 3. **The performance page still pools CONTROL/MARKET_REFERENCE into the
    headline record strip.** Doctrine section 6 requires four cohorts,
    always separate, Top 3 leading. `LAST 7 DAYS 273-259-18` on the live
