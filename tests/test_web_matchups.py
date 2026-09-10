@@ -80,7 +80,12 @@ class RecordStripWiredIntoBothScreens(unittest.TestCase):
         text = _read(TODAY_PATH)
         body = text.split("export async function renderToday(")[1]
         strip_index = body.find("renderRecordStrip(recordStripHost)")
-        hero_index = body.find("renderHero(host, featured, aggregates, rows, date);")
+        # Matched on the call's PREFIX, not its full argument list. Pinning
+        # every argument made this break the day renderHero gained one
+        # (`hasPicks`, so the hero could stop printing "NOTHING CLEARS THE
+        # BAR" beneath a list of picks) -- a failure that said nothing about
+        # the ordering this test exists to protect.
+        hero_index = body.find("renderHero(host, featured, aggregates, rows,")
         self.assertGreaterEqual(strip_index, 0)
         self.assertGreaterEqual(hero_index, 0)
         self.assertLess(strip_index, hero_index,

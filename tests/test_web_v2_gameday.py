@@ -150,10 +150,32 @@ class NeverFabricateGuards(unittest.TestCase):
         for banned in ("93.0%", "93%", "2.3%", "4.7%"):
             self.assertNotIn(banned, code, f"hardcoded ledger frequency {banned!r} found in live code")
 
-    def test_the_27_hypotheses_line_is_framed_as_a_static_constant(self):
-        text = _read(TODAY_PATH)
-        self.assertIn("27 hypotheses", text)
-        self.assertIn("Static constant, not tonight's count", text)
+    def test_the_hypothesis_count_is_read_from_the_registry(self):
+        """REPLACES test_the_27_hypotheses_line_is_framed_as_a_static_constant,
+        which asserted the literal "27 hypotheses" and the phrase "Static
+        constant, not tonight's count".
+
+        That test was pinning the bug. The constant WAS framed honestly as a
+        closed record -- and being framed honestly is exactly why nobody
+        re-checked it. Meanwhile web/js/betcheck.js said "Twenty-seven",
+        web/landing.html said 25 in two places, and
+        data/research/alpha_registry.jsonl said 40. Four numbers for one
+        claim, so a prospect read one figure on the page that sold them the
+        subscription and a different one the first time they opened the app.
+
+        The guarantee worth having is the opposite of the old one: this
+        screen must NOT carry its own copy of the number. Full coverage
+        (spelled-out forms, the landing page, /meta's honest-absence
+        behaviour) lives in tests/test_research_count_is_computed.py.
+        """
+        code = _strip_js_comments(_read(TODAY_PATH))
+        self.assertIn("fillResearchCount", code,
+                      "today.js does not read the hypothesis count from "
+                      "GET /meta")
+        for stale in ("27 hypotheses", "twenty-seven", "Twenty-seven",
+                      "25 distinct"):
+            self.assertNotIn(stale, code,
+                             f"today.js hardcodes {stale!r} again")
 
     def test_empty_slate_never_conflated_with_a_fetch_failure(self):
         # `(slate && slate.games) || []` alone would render "no games
