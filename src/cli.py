@@ -2861,6 +2861,127 @@ def _record_from_row(cls, row):
     return cls(**{k: v for k, v in row.items() if k in valid})
 
 
+def cmd_card(args) -> int:
+    """`card publish|settle|record`: THE CARD's frozen public receipts.
+
+    PUBLISH freezes a date's three-to-five bets before first pitch and is
+    idempotent per date -- running it twice never rewrites a card, because a
+    card that could be rewritten after a game started is a record of
+    nothing. SETTLE appends the outcome as a separate row and never touches
+    the published one. RECORD pools every settled card, voids included.
+
+    Publish runs from the afternoon slot (scripts/afternoon_slate.sh), close
+    to the lines; settle runs the next morning from scripts/daily_loop.sh
+    once results are ingested.
+    """
+    from datetime import datetime, timezone
+
+    from src.analysis import opportunities as opportunities_mod
+    from src.appstate import card_ledger
+    from src.pipeline import briefing, enrichment, history
+    from src.report import card as card_mod
+
+    sub = getattr(args, "card_command", None)
+
+    if sub == "record":
+        rec = card_ledger.record(since=getattr(args, "since", None))
+        chain = card_ledger.verify()
+        print(f"THE CARD -- {rec['days']} settled day(s)"
+              + (f" since {rec['since']}" if rec.get("since") else ""))
+        if not rec["n_staked"]:
+            print("  nothing graded yet.")
+            return EXIT_OK
+        print(f"  {rec['wins']}-{rec['losses']}"
+              + (f"-{rec['pushes']}" if rec["pushes"] else "")
+              + f"   win rate {rec['win_rate']:.1%}"
+              f"   {rec['profit_units']:+.2f}u   ROI {rec['roi_pct']:+.2f}%")
+        if rec["voids"]:
+            print(f"  {rec['voids']} pick(s) VOID (no final score) -- counted "
+                  "in neither the record nor the return.")
+        for label, slot in sorted(rec["by_label"].items()):
+            if not slot["staked"]:
+                continue
+            print(f"    {label:<8} {slot['wins']}-{slot['losses']}"
+                  f"   {slot['profit_units']:+.2f}u")
+        print(f"  chain: {'intact' if getattr(chain, 'ok', True) else 'BROKEN'}")
+        return EXIT_OK
+
+    date_str = args.date
+
+    if sub == "settle":
+        store = history.read_results()
+        if not store:
+            print("historical store is empty -- run `ingest` first.",
+                  file=sys.stderr)
+            return EXIT_ERROR
+        by_pk = {}
+        for row in store.values():
+            if str(row.get("date")) == date_str:
+                by_pk[row.get("game_pk")] = row
+                by_pk[str(row.get("game_pk"))] = row
+        row = card_ledger.settle(date_str, by_pk)
+        if row is None:
+            published = card_ledger.published_row(date_str)
+            print(f"nothing to settle for {date_str}: "
+                  + ("already settled." if published else
+                     "no card was published that day."))
+            return EXIT_OK
+        print(f"settled {date_str}: {row['wins']}-{row['losses']}"
+              + (f"-{row['pushes']}" if row["pushes"] else "")
+              + f"   {row['profit_units']:+.2f}u"
+              + (f"   ROI {row['roi_pct']:+.2f}%" if row["roi_pct"] is not None
+                 else ""))
+        for pick in row["picks"]:
+            print(f"    #{pick['rank']} [{pick['result']}] {pick['bet']}"
+                  f"   {pick['profit_units']:+.2f}u")
+        if row["voids"]:
+            print(f"  {row['voids']} VOID -- no final score stored. Not "
+                  "counted as losses; see card_ledger.grade_pick.")
+        return EXIT_OK
+
+    # publish
+    try:
+        games = mlb.fetch_games(date_str)
+    except mlb.MLBError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+    store = history.read_results()
+    # THE SAME INPUTS THE API USES, not a bare build_slate. Without them the
+    # frozen card and the served card disagree -- see src/pipeline/
+    # enrichment.py's module docstring for the measurement.
+    slate = briefing.build_slate(
+        games, store, **enrichment.enrichment_inputs(games, date_str, store))
+    entries = slate["games"]
+    now = datetime.now(timezone.utc)
+    opportunities = opportunities_mod.build_opportunities(
+        entries, date=date_str, now=now)
+    card = card_mod.card_for_date(entries, opportunities.get("rows") or [],
+                                  date=date_str, now=now)
+
+    print(f"THE CARD -- {date_str}")
+    print(f"  slate {card['games_on_slate']}   open {card['games_open']}   "
+          f"started {card['games_started']}   "
+          f"calibrated {card['calibrated']}")
+    if not card["picks"]:
+        print(f"  no card: {card.get('reason')}")
+        return EXIT_OK
+    for pick in card["picks"]:
+        print(f"  #{pick['rank']} [{pick['label']}] {pick['bet']}"
+              f"   ({pick['book']}, {pick['books']} books)")
+
+    if getattr(args, "dry_run", False):
+        print("  --dry-run: nothing written.")
+        return EXIT_OK
+
+    row = card_ledger.publish(card)
+    if row.get("already_published"):
+        print(f"  already published for {date_str}; the frozen card stands. "
+              f"row_hash={row.get('row_hash')}")
+    else:
+        print(f"  frozen. row_hash={row.get('row_hash')}")
+    return EXIT_OK
+
+
 def cmd_eod(args) -> int:
     """`eod --date DATE`: build and write the end-of-day self-review from
     whatever stores exist (S7). No slate runner writes these stores yet
@@ -3349,6 +3470,22 @@ def build_parser() -> argparse.ArgumentParser:
         "--adversaries", action="store_true",
         help="run the registered DEFAULT_ADVERSARIES roster instead of none")
 
+    card_cmd = sub.add_parser(
+        "card", help="THE CARD: publish or settle a date's three-to-five bets")
+    card_sub = card_cmd.add_subparsers(dest="card_command", required=True)
+    card_publish = card_sub.add_parser(
+        "publish", help="freeze one date's card into evidence/cards_v1.jsonl")
+    card_publish.add_argument("--date", required=True, help="YYYY-MM-DD")
+    card_publish.add_argument(
+        "--dry-run", action="store_true",
+        help="build and print the card without writing to the ledger")
+    card_settle = card_sub.add_parser(
+        "settle", help="grade one date's published card from final scores")
+    card_settle.add_argument("--date", required=True, help="YYYY-MM-DD")
+    card_record = card_sub.add_parser(
+        "record", help="the running record over every settled card")
+    card_record.add_argument("--since", default=None, help="YYYY-MM-DD")
+
     eod_cmd = sub.add_parser(
         "eod", help="build and write the end-of-day self-review (S7)")
     eod_cmd.add_argument("--date", required=True, help="YYYY-MM-DD")
@@ -3397,6 +3534,7 @@ COMMANDS = {
     "gamekey": cmd_gamekey,
     "statcast": cmd_statcast,
     "engine": cmd_engine,
+    "card": cmd_card,
     "eod": cmd_eod,
 }
 

@@ -1,0 +1,226 @@
+/* THE CARD -- tonight's three to five bets, at the top of Gameday.
+ *
+ * ONE THING IS BIG ON EACH CARD and it is the instruction. Everything else
+ * on the card is deliberately quieter than it: the rank, the label, the
+ * teams, the reasoning, the note. A reader scanning the page at arm's length
+ * should be able to read the bets and nothing else, which is the layout
+ * answer to "it just looks like a lot of random numbers".
+ *
+ * COLOUR DISCIPLINE, unchanged from the rest of the system:
+ *   --v-money   price advantage only. NOT used here -- a card is not a claim
+ *               that the price is good, and colouring it that way would say
+ *               so without a sentence to back it up.
+ *   --v-live    analytical / live. The label chips use it at low saturation.
+ *   --v-warn    caution, pending, unavailable. SPLIT uses it, because SPLIT
+ *               means our own numbers disagree and the reader should weigh
+ *               it lower -- that is exactly "know this".
+ *   --v-win     settled wins only. Never here; nothing on this card is
+ *               settled yet.
+ */
+
+.card2lede {
+  margin: 0 0 var(--sp-8);
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-3);
+  max-width: 62ch;
+}
+.card2lede--mute { color: var(--text-mute); font-size: 12.5px; }
+
+.card2grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--sp-8);
+  margin-bottom: var(--sp-10);
+}
+/* One column below 900px: these cards are read, not compared side by side,
+   and a two-up grid at 420px makes the instruction line wrap twice. */
+@media (max-width: 899px) {
+  .card2grid { grid-template-columns: 1fr; gap: var(--sp-7); }
+}
+
+.card2 {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  padding: var(--sp-8) var(--sp-8) var(--sp-7);
+  --r: 12px;
+  background:
+    linear-gradient(180deg, var(--v-fill-a), var(--v-fill-b)),
+    var(--v-s1);
+  border: 1px solid var(--v-edge);
+}
+/* The accent is a single hairline down the leading edge -- enough to sort
+   the cards by strength at a glance, not enough to read as a status light. */
+.card2::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--card2-accent, var(--v-edge));
+}
+.card2--strong { --card2-accent: var(--v-live); }
+.card2--lean { --card2-accent: var(--v-live-2); }
+.card2--slight { --card2-accent: rgba(255, 255, 255, .22); }
+.card2--split { --card2-accent: var(--v-warn-2); }
+
+.card2__top {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-5);
+  flex-wrap: wrap;
+}
+.card2__rank {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .16em;
+  color: var(--text-dim);
+}
+.card2__label {
+  font-family: var(--font-display);
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: .18em;
+  padding: 2px 7px;
+  border: 1px solid currentColor;
+  color: var(--text-mute);
+}
+.card2__label--strong { color: var(--v-live-label); }
+.card2__label--lean { color: var(--v-live-label); opacity: .8; }
+.card2__label--slight { color: var(--text-mute); }
+.card2__label--split { color: var(--v-warn-label); }
+.card2__time {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .12em;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+/* THE INSTRUCTION. The largest type on the screen, on purpose. */
+.card2__bet {
+  margin: 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 34px;
+  font-weight: 800;
+  line-height: .98;
+  letter-spacing: -.01em;
+  color: var(--text-hi);
+}
+@media (max-width: 899px) {
+  .card2__bet { font-size: 30px; }
+}
+
+.card2__matchup {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-5);
+  flex-wrap: wrap;
+}
+.card2__teams {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  color: var(--text-2);
+}
+.card2__book {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .1em;
+  color: var(--text-faint);
+}
+
+.card2__why {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--v-edge);
+}
+.card2__whyline {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+.card2__meaning {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-mute);
+}
+.card2--split .card2__meaning { color: var(--v-warn-label); }
+
+.card2__actions { margin-top: auto; padding-top: var(--sp-4); }
+
+/* The standing note. Rendered on every card set, never dismissible, and
+   never smaller than the reasoning above it -- it is the sentence that keeps
+   the whole surface honest. */
+.card2note {
+  --r: 10px;
+  padding: var(--sp-7) var(--sp-8);
+  background: var(--v-s2);
+  border: 1px solid var(--v-edge);
+}
+.card2note__label {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .2em;
+  color: var(--text-mute);
+  margin-bottom: var(--sp-4);
+}
+.card2note__body {
+  margin: 0 0 var(--sp-4);
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-3);
+  max-width: 72ch;
+}
+.card2note__body--mute { color: var(--text-mute); font-size: 12.5px; margin-bottom: 0; }
+.card2note__warn {
+  margin: var(--sp-5) 0 0;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--v-warn-label);
+}
+
+.card2empty {
+  padding: var(--sp-10) var(--sp-9);
+  --r: 12px;
+  background: var(--v-s1);
+  border: 1px solid var(--v-edge);
+}
+.card2empty__label {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .2em;
+  color: var(--v-warn-label);
+  margin-bottom: var(--sp-5);
+}
+.card2empty__body {
+  margin: 0 0 var(--sp-8);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.05;
+  color: var(--text-hi);
+  max-width: 24ch;
+}
+.card2empty__actions { display: flex; gap: var(--sp-5); flex-wrap: wrap; }

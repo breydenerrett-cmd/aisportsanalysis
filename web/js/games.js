@@ -323,8 +323,17 @@ function gqvIdentity(quick, advanced) {
   return wrap;
 }
 
+// The big word for a game with no finding. It was "NO DEMONSTRATED EDGE"
+// until 2026-09-10, which is precise, true, and unreadable: "edge" and
+// "demonstrated" are both terms of art, and a reader who has just been shown
+// a bet on the card screen has no idea whether this contradicts it. It does
+// not -- it says this particular matchup has no angle worth writing up --
+// and now it says that in words. The API's own sentence underneath is
+// unchanged and still rendered verbatim.
+const NOTHING_STANDS_OUT = "NOTHING STANDS OUT HERE";
+
 /** Big verdict word + the API's own headline sentence + FINDINGS/EVIDENCE
- * mini tiles. "NO DEMONSTRATED EDGE" as the big word, and the sentence
+ * mini tiles. The big word, and the sentence
  * beneath it, are `quick.headline` when `top_findings` is empty --
  * literally `synthesis.NO_EDGE_HEADLINE` on the wire ("Interesting
  * matchup, but no demonstrated betting edge.", `src/analysis/
@@ -343,7 +352,7 @@ function gqvVerdict(quick) {
     "data-rise": "", "data-delay": "80" });
   const findings = quick.top_findings || [];
   const noEdge = findings.length === 0;
-  const bigWord = noEdge ? "NO DEMONSTRATED EDGE" : (verdictLabel(quick.verdict) || "FINDING");
+  const bigWord = noEdge ? NOTHING_STANDS_OUT : (verdictLabel(quick.verdict) || "FINDING");
   panel.appendChild(el("div", { class: "gqv-verdict__word", "data-hook": "verdict-word", text: bigWord }));
   const body = quick.headline
     || (noEdge ? "Interesting matchup, but no demonstrated betting edge." : null);
@@ -1000,7 +1009,7 @@ function gavRecap(quick) {
     text: `${quick.away_team} @ ${quick.home_team}` }));
   const findings = quick.top_findings || [];
   strip.appendChild(el("span", { class: "gav-recap__verdict",
-    text: findings.length === 0 ? "NO DEMONSTRATED EDGE" : (verdictLabel(quick.verdict) || "") }));
+    text: findings.length === 0 ? NOTHING_STANDS_OUT : (verdictLabel(quick.verdict) || "") }));
   return strip;
 }
 

@@ -260,6 +260,45 @@ if [ "$SETTLE_STATUS" -ne 0 ]; then
 fi
 echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: engine settle --date $YESTERDAY exit=$SETTLE_STATUS" >> "$RUN_NOTE"
 
+# THE CARD'S RECEIPTS. Grades yesterday's frozen card from the results just
+# ingested and appends the outcome as a SEPARATE ledger row -- the published
+# row is never touched, so the file reads as what was claimed and then what
+# happened, in that order. Idempotent: a date already settled is a no-op.
+#
+# ESCALATES. This is the number the product sells, and a record that
+# silently stops updating is a record that quietly drifts into flattering
+# itself. A day with no published card exits 0 and says so.
+echo "== card settle (yesterday, $YESTERDAY) =="
+CARDSETTLE_OUT=$(python3 -m src.cli card settle --date "$YESTERDAY" 2>&1)
+CARDSETTLE_STATUS=$?
+echo "$CARDSETTLE_OUT" | sed 's/^/  /'
+if [ "$CARDSETTLE_STATUS" -ne 0 ]; then
+    echo "ESCALATE: card settle failed for $YESTERDAY (exit $CARDSETTLE_STATUS) -- the public record stops updating silently if this keeps failing. See src/appstate/card_ledger.py."
+    type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "card settle failed" || true
+fi
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: card settle --date $YESTERDAY exit=$CARDSETTLE_STATUS" >> "$RUN_NOTE"
+
+# The running record, printed so the run log answers "how is the card doing"
+# without anyone opening the ledger. Read-only, never escalates.
+echo "== card record (running) =="
+python3 -m src.cli card record 2>&1 | sed 's/^/  /' || true
+
+# Refit the card model's calibration on everything that has now finished.
+# Two numbers, and without them src/report/card.py serves the RAW model,
+# which runs about twice as confident as its accuracy earns. Runs AFTER
+# settle so today's card is calibrated on every completed game including
+# yesterday's -- and never on its own, which is the walk-forward discipline
+# scripts/backtest_card.py measures under.
+echo "== card calibration refit =="
+CALFIT_OUT=$(python3 scripts/fit_card_calibration.py 2>&1)
+CALFIT_STATUS=$?
+echo "$CALFIT_OUT" | sed 's/^/  /'
+if [ "$CALFIT_STATUS" -ne 0 ]; then
+    echo "ESCALATE: card calibration refit failed (exit $CALFIT_STATUS) -- the card will keep using the last fit, which ages. If this persists the published probabilities drift from the model's real accuracy."
+    type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "card calibration refit failed" || true
+fi
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: fit_card_calibration exit=$CALFIT_STATUS" >> "$RUN_NOTE"
+
 echo "== eod (yesterday, $YESTERDAY) =="
 EOD_OUT=$(python3 -m src.cli eod --date "$YESTERDAY" 2>&1)
 EOD_STATUS=$?

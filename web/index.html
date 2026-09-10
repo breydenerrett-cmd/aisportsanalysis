@@ -38,6 +38,10 @@
 <link rel="stylesheet" href="css/screens.css">
 <link rel="stylesheet" href="css/gamestory.css">
 <link rel="stylesheet" href="css/signup.css">
+<!-- THE CARD (web/js/card.js). After app.css and screens.css so it can rely
+     on .gutter/.panel/.chamfer/.sechead being defined, and before gotcha.css
+     which must stay last. -->
+<link rel="stylesheet" href="css/card.css">
 <!-- The rickroll's theme. Loaded last so it can sit on top of the app
      shell, and scoped entirely under .gotcha* so it styles nothing unless
      web/js/gotcha.js has actually mounted the overlay. Delete this line

@@ -108,6 +108,7 @@ import { el, clear, formatAmerican, formatConsensusShare,
 import { renderError, renderLoadingSkeleton, renderEmptySlate,
   renderCaptureUnavailable } from "./states.js";
 import { renderFeaturedBet, mapBetCheckPayloadToStanding } from "./featuredbet.js";
+import { renderCard } from "./card.js";
 import { renderOpportunities } from "./opportunities.js";
 import { renderMatchups } from "./matchups.js";
 import { renderRecordStrip } from "./recordstrip.js";
@@ -772,13 +773,20 @@ function heroNoPlay(row, h2h, aggregates, sameVerdictCount, totalGames,
                      date, hasPicks) {
   const hero = heroShell("noplay");
   const top = el("div", { class: "gv2-hero__top" });
-  // "NO DEMONSTRATED EDGE" stays on BOTH branches, and that is deliberate.
-  // It is a standing fact about this product -- no strategy has cleared the
-  // promotion gate and CLV shows no signal -- and it remains true on a night
-  // the slip publishes something. Publishing a pick is not a claim of edge.
-  top.appendChild(verdictChip("NO DEMONSTRATED EDGE", "noplay"));
+  // THE HERO IS NO LONGER A VERDICT. It sits beneath THE CARD, which is
+  // where a reader gets an answer, so its job here is to describe the rest
+  // of the board -- what we looked at, what the prices are doing -- and
+  // nothing else. The chip used to read NO DEMONSTRATED EDGE, which is a
+  // true and important statement about our RESEARCH and a baffling thing to
+  // read three inches under a bet we are telling someone to make. It lives
+  // on the record page now, next to the numbers that support it.
+  top.appendChild(verdictChip("THE REST OF THE BOARD", "noplay"));
+  // "N OF M GAMES TONIGHT · SAME VERDICT" until 2026-09-10, which stopped
+  // parsing the moment the chip beside it stopped being a verdict: same as
+  // WHAT? The count is still real and still worth stating -- it is how many
+  // games we looked at -- so it says that instead.
   top.appendChild(el("span", { class: "gv2-hero__fraction", "data-hook": "gameday-verdict-fraction",
-    text: `${sameVerdictCount} OF ${totalGames} GAMES TONIGHT · SAME VERDICT` }));
+    text: `${totalGames} ${totalGames === 1 ? "GAME" : "GAMES"} ON TONIGHT'S SLATE` }));
   hero.appendChild(top);
 
   // ---- row 1 (>=1280px: side by side, hero ~2/3 : checked-tonight ~1/3;
@@ -786,33 +794,22 @@ function heroNoPlay(row, h2h, aggregates, sameVerdictCount, totalGames,
   const row1 = el("div", { class: "gv2-hero__row" });
   const main = el("div", { class: "gv2-hero__main" });
 
-  // THE HEADLINE IS CONDITIONAL. It did not used to be, and the result was a
-  // page that answered "what should I bet tonight?" twice, differently, three
-  // inches apart: TONIGHT'S PICKS listed the ranked slip, and then this hero
-  // said WE CHECKED THE SLATE. NOTHING CLEARS THE BAR. Both blocks were
-  // individually honest. Together they were incoherent, and a reader
-  // resolves incoherence by believing whichever half they liked.
+  // ONE HEADLINE, NOT TWO BRANCHES. This block used to carry a second
+  // branch reading "WE CHECKED THE SLATE. NOTHING CLEARS THE BAR." on nights
+  // with no published pick. That sentence is gone from this repo entirely
+  // and tests/test_no_nothing_clears_the_bar.py stops it coming back.
   //
-  // "Nothing clears the bar" is a statement about the EVIDENCE THRESHOLD in
-  // src/engine/slip.py. When the slip published picks, things cleared it, so
-  // the sentence is simply false and has to go -- not be softened.
-  if (hasPicks) {
-    main.appendChild(el("div", { class: "gv2-hero__headline",
-      text: "TONIGHT'S PICKS ARE ABOVE. THIS IS THE REST OF THE BOARD." }));
-    main.appendChild(el("p", { class: "gv2-hero__body",
-      text: "Some candidates cleared the evidence threshold tonight, which is "
-          + "not the same as us having an edge — nothing in our research has "
-          + "cleared that bar yet, and the picks above are published so they "
-          + "can be graded, not because they are expected to win. Everything "
-          + "below is the rest of tonight's board." }));
-  } else {
-    main.appendChild(el("div", { class: "gv2-hero__headline",
-      text: "WE CHECKED THE SLATE. NOTHING CLEARS THE BAR." }));
-    main.appendChild(el("p", { class: "gv2-hero__body",
-      text: "That is the honest answer most nights, and it is the answer this product is built to give. "
-          + "The market and the matchup below are still real — we just will not invent a reason to act on "
-          + "them." }));
-  }
+  // It was not gone for being false -- it was an accurate statement about
+  // the evidence threshold in src/engine/slip.py. It is gone because it was
+  // the FIRST thing a paying reader saw, it answered a question they did not
+  // ask, and the thing they did ask for is now the card at the top of this
+  // screen. A page's largest sentence should be the one the reader came for.
+  main.appendChild(el("div", { class: "gv2-hero__headline",
+    text: "THIS IS THE REST OF THE BOARD." }));
+  main.appendChild(el("p", { class: "gv2-hero__body",
+    text: "Tonight's bets are at the top of this screen. Everything from here "
+        + "down is the rest of what we looked at: every game on the slate, "
+        + "what the books are charging, and where the numbers moved." }));
   // Mobile-only: replaces the WHAT WE CHECKED TONIGHT panel below (V2-22).
   main.appendChild(heroStatChips(aggregates));
   // `date`, not nothing. Called with no argument at both live call sites
@@ -1205,7 +1202,14 @@ export async function renderToday(container) {
   // Mobile-only (V2-22); hidden on desktop by screens.css.
   host.appendChild(dateStrip(date));
 
-  // TONIGHT'S PICKS leads, above the hero -- see renderTonightsPicks's own
+  // THE CARD LEADS. Everything below it is context for it. This is the whole
+  // shape of the page as of 2026-09-10: a reader who reads exactly one thing
+  // on this screen should read a bet, not a verdict about our evidence.
+  const hasCard = await renderCard(host, date);
+
+  // TONIGHT'S PICKS -- the engine's own frozen slip, which is a different
+  // and stricter object than the card above and usually empty. It sits
+  // BELOW the card now rather than leading; see renderTonightsPicks's own
   // header comment for exactly when it renders nothing.
   const picksBlock = renderTonightsPicks(today.slip);
   if (picksBlock) host.appendChild(picksBlock);
@@ -1213,7 +1217,8 @@ export async function renderToday(container) {
   host.appendChild(renderSlateBanner(date, rows, aggregates.freshest));
   // The hero must know whether the slip spoke, or it will contradict it --
   // see heroNoPlay's conditional headline.
-  renderHero(host, featured, aggregates, rows, date, Boolean(picksBlock));
+  renderHero(host, featured, aggregates, rows, date,
+             Boolean(picksBlock) || hasCard);
   setShellStatus(aggregates.freshest ? `PRICES AS OF ${et(aggregates.freshest)}` : null);
 
   // Mobile-only matchup poster (V2-22) -- the featured game's identity,

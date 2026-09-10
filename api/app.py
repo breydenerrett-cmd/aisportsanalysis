@@ -33,6 +33,7 @@ from api.support import router as support_router
 from api.betcheck import free_router as free_betcheck_router, router as betcheck_router
 from api.daily import router as daily_router
 from api.games import router as games_router
+from api.card import router as card_router
 from api.opportunities import router as opportunities_router
 from api.performance import router as performance_router
 from api.meta import router as meta_router
@@ -84,6 +85,10 @@ app.include_router(games_router, dependencies=_authed_paid)
 # /opportunities/{date}, /opportunities -- Task B2's Top Opportunities
 # surface, same paid-demo gate as the rest of the read-only game surface.
 app.include_router(opportunities_router, dependencies=_authed_paid)
+# /card/{date}, /card -- THE CARD, the three-to-five bets the front page
+# leads with. Paid, like every other read-only game surface: it is the
+# product, and the free surface is Bet Check.
+app.include_router(card_router, dependencies=_authed_paid)
 # /performance -- Task B3's Paper / Research Performance surface, same
 # paid-demo gate as the rest of the read-only game surface.
 app.include_router(performance_router, dependencies=_authed_paid)

@@ -54,6 +54,28 @@ if [ "$SLATE_STATUS" -ne 0 ]; then
 fi
 echo "- $(date -u +%Y-%m-%dT%H:%MZ) afternoon_slate: engine slate --date $TODAY exit=$SLATE_STATUS" >> "$RUN_NOTE"
 
+# THE CARD -- the customer-facing three-to-five bets, frozen here rather
+# than in the morning loop because this pass runs closest to first pitch,
+# when the lines are real. `card publish` is idempotent per date: a second
+# run never rewrites a card, so a retry or a manual re-run cannot alter what
+# a reader was shown. See src/appstate/card_ledger.py.
+#
+# ESCALATES ON FAILURE, unlike the slip below. An empty card is a legitimate
+# state with its own reason (no games, all started, no prices) and exits 0;
+# a non-zero exit means the pipeline that publishes the product's headline
+# surface fell over, and nobody should find that out from a customer.
+echo "== card publish ($TODAY) =="
+CARD_OUT=$(python3 -m src.cli card publish --date "$TODAY" 2>&1)
+CARD_STATUS=$?
+echo "$CARD_OUT" | sed 's/^/  /'
+if [ "$CARD_STATUS" -ne 0 ]; then
+    echo "ESCALATE: card publish failed for $TODAY (exit $CARD_STATUS) -- the front page's picks come from this. See src/report/card.py."
+    type foundry_beat >/dev/null 2>&1 && foundry_beat afternoon_slate escalate escalate "" "card publish failed" || true
+elif echo "$CARD_OUT" | grep -q "^  no card:"; then
+    echo "NOTE: no card published for $TODAY -- the reason above is a fact about the slate, not a confidence statement. The page renders that reason verbatim."
+fi
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) afternoon_slate: card publish --date $TODAY exit=$CARD_STATUS" >> "$RUN_NOTE"
+
 # engine slip RANKS what engine slate just froze (src/engine/slip.py) --
 # ENRICHMENT, never a blocker: a ranking failure must never escalate over
 # decisions and wagers that are already committed.
