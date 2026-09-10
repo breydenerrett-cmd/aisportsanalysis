@@ -20,13 +20,21 @@ from __future__ import annotations
 from datetime import date as date_cls, datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 
 from api.games import _build_entries, _record_page_view
+from src.analysis import daily_card
 from src.analysis import opportunities as opportunities_mod
 from src.report import card as card_mod
 
 router = APIRouter()
+
+# GET /card/history's page size. Capped, not unlimited -- the record page
+# is the public sales pitch, not a data export; a reader who wants the
+# whole ledger can read evidence/cards_v1.jsonl directly, which is the
+# actual receipt.
+DEFAULT_HISTORY_LIMIT = 60
+MAX_HISTORY_LIMIT = 200
 
 
 def _build_payload(date: str, request: Optional[Request], route: str) -> dict:
@@ -66,7 +74,40 @@ def get_card_record(request: Request = None) -> dict:
     chain = card_ledger.verify()
     payload["chain_ok"] = bool(getattr(chain, "ok", True))
     payload["chain_detail"] = None if payload["chain_ok"] else str(chain)
+    payload["rows_checked"] = getattr(chain, "rows_checked", None)
+    # THE SAME WORDS THE CARD ITSELF SHOWS, sourced from the one constant
+    # both surfaces read -- never a second hand-written sentence on the
+    # record page that could quietly drift from daily_card.CARD_DISCLAIMER
+    # and end up contradicting it.
+    payload["disclaimer"] = daily_card.CARD_DISCLAIMER
+    payload["basis"] = daily_card.CARD_BASIS
     _record_page_view(request, "card_record", None)
+    return payload
+
+
+# ALSO DECLARED BEFORE /card/{date}, for the identical reason /card/record
+# is above: "history" would otherwise be matched as a date and 400 out of
+# _validate_date. See that route's comment and tests/test_api_card.py.
+@router.get("/card/history")
+def get_card_history(request: Request = None, limit: int = DEFAULT_HISTORY_LIMIT) -> dict:
+    """Every settled day, newest first -- the day-by-day detail behind
+    /card/record's pooled totals: each day's picks, results, prices, books
+    and profit, plus that day's published row_hash.
+
+    `limit` is validated here rather than left to FastAPI's own coercion --
+    same reasoning as api/daily.py's get_daily_index: a direct function
+    call (this codebase's own test style) never runs FastAPI's
+    request-parsing layer at all, so an out-of-range value has to be
+    caught by hand to be caught the same way in both call paths.
+    """
+    from src.appstate import card_ledger
+
+    if limit < 1 or limit > MAX_HISTORY_LIMIT:
+        raise HTTPException(
+            status_code=400,
+            detail=f"limit must be between 1 and {MAX_HISTORY_LIMIT} (got {limit!r})")
+    payload = card_ledger.history(limit=limit)
+    _record_page_view(request, "card_history", None)
     return payload
 
 

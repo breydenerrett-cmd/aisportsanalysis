@@ -112,6 +112,14 @@ export async function renderDisclaimerFooter(container) {
   // link cannot be forgotten.
   row.appendChild(el("a", { class: "sitefoot__support", href: "#/support",
     "data-hook": "footer-support", text: "SUPPORT" }));
+  // THE RECORD, reachable from every page -- same reasoning as the SUPPORT
+  // link immediately above: the footer is mounted once and survives every
+  // view swap, so it is the one place this link cannot be forgotten. It is
+  // the receipts for the product's whole pitch ("picks with receipts"),
+  // not a utility route, but it belongs here rather than the primary nav
+  // (see cardrecord.js's own docstring on why).
+  row.appendChild(el("a", { class: "sitefoot__support", href: "#/record-card",
+    "data-hook": "footer-record", text: "THE RECORD" }));
   region.appendChild(row);
 
   region.appendChild(el("p", { class: "sitefoot__summary", "data-hook": "disclaimer-summary",

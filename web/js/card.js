@@ -173,10 +173,17 @@ function recordLine(rec) {
   const wrap = el("div", { class: "card2rec chamfer", "data-hook": "card-record" });
   wrap.appendChild(el("span", { class: "card2rec__label", text: "THE RECORD SO FAR" }));
 
+  // EVERY DAY, INCLUDING THE ONES WITH NOTHING GRADED YET -- this is the
+  // one link off the page that sells the product on its own past, so it
+  // sits here whether or not this pooled summary has numbers to show yet.
+  const seeFullRecord = () => el("a", { class: "card2rec__link", href: "#/record-card",
+    "data-hook": "card-record-link", text: "SEE THE FULL RECORD, DAY BY DAY →" });
+
   if (!rec || !rec.n_staked) {
     wrap.appendChild(el("p", { class: "card2rec__body",
       text: "Nothing graded yet. Every card is settled the morning after, "
           + "win or lose, and the running record appears here from then on." }));
+    wrap.appendChild(seeFullRecord());
     return wrap;
   }
 
@@ -201,6 +208,7 @@ function recordLine(rec) {
       text: "The record's tamper-proof chain does not currently verify, so "
           + "treat the numbers above as unconfirmed until it does." }));
   }
+  wrap.appendChild(seeFullRecord());
   return wrap;
 }
 

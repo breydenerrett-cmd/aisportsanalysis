@@ -1,12 +1,12 @@
 """The /card routes: the one collision that is easy to reintroduce.
 
-`/card/record` and `/card/{date}` share a prefix, and FastAPI matches in
-DECLARATION order -- so if `/card/{date}` is declared first, `/card/record`
-is captured as a date and rejected by `_validate_date` as a 400. That is
-exactly what happened on the first run of this endpoint, and it fails in the
-quietest possible way: the client's `.catch(() => null)` turns the 400 into
-"no record yet", which is a real and normal state, so the page renders
-correctly and the record silently never appears.
+`/card/record`, `/card/history` and `/card/{date}` share a prefix, and
+FastAPI matches in DECLARATION order -- so if `/card/{date}` is declared
+first, the other two are captured as a date and rejected by `_validate_date`
+as a 400. That is exactly what happened on the first run of this endpoint,
+and it fails in the quietest possible way: the client's `.catch(() => null)`
+turns the 400 into "no record yet", which is a real and normal state, so the
+page renders correctly and the record silently never appears.
 
 A test that only asserted the route "returns something" would have passed.
 This one asserts the resolved route object.
@@ -54,9 +54,23 @@ class RouteOrder(unittest.TestCase):
             "matched as a date and 400s. Declaration order IS the fix; see "
             "this module's docstring.")
 
-    def test_all_three_card_routes_are_declared(self):
-        self.assertEqual({"/card", "/card/record", "/card/{date}"},
-                         set(_card_router_paths()))
+    def test_card_history_is_declared_before_the_date_route(self):
+        """THE RECORD page's day-by-day route (2026-09-10) has the exact
+        same collision /card/record does, against the exact same
+        /card/{date} -- see this module's docstring."""
+        paths = _card_router_paths()
+        self.assertIn("/card/history", paths,
+                      "the history route is not declared at all")
+        self.assertIn("/card/{date}", paths)
+        self.assertLess(
+            paths.index("/card/history"), paths.index("/card/{date}"),
+            "/card/{date} is declared before /card/history, so 'history' "
+            "is matched as a date and 400s.")
+
+    def test_all_four_card_routes_are_declared(self):
+        self.assertEqual(
+            {"/card", "/card/record", "/card/history", "/card/{date}"},
+            set(_card_router_paths()))
 
 
 @unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")
@@ -96,6 +110,13 @@ class CardRequiresAuth(unittest.TestCase):
         """The record is the sales pitch, and it is still behind the gate.
         A 400 here instead of a 401 means the route collision is back."""
         self.assertEqual(401, self._status("/card/record"))
+
+    def test_card_history_is_401_without_a_token(self):
+        """Same reasoning as test_card_record_is_401_without_a_token: THE
+        RECORD's day-by-day detail is still the product, not a free
+        preview of it. A 400 here means the /card/{date} collision is
+        back for this route too."""
+        self.assertEqual(401, self._status("/card/history"))
 
 
 if __name__ == "__main__":

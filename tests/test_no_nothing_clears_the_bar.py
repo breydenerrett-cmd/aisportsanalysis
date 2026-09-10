@@ -90,6 +90,12 @@ CUSTOMER_STRING_MODULES = (
     os.path.join("src", "analysis", "opportunities.py"),
     os.path.join("src", "analysis", "daily_card.py"),
     os.path.join("src", "report", "card.py"),
+    # card_ledger.grade_pick's VOID `reason` strings ("no final score
+    # stored for this game", etc.) used to be ledger-internal bookkeeping
+    # only. web/js/cardrecord.js (THE RECORD page, 2026-09-10) now renders
+    # them verbatim beside a VOID pick, so they reach a customer's screen
+    # exactly like daily_card.py's and report/card.py's strings already do.
+    os.path.join("src", "appstate", "card_ledger.py"),
 )
 
 SKIP_DIR_NAMES = {"node_modules", "__pycache__", ".git"}

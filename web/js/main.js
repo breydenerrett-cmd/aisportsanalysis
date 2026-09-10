@@ -21,6 +21,12 @@
  *   #/performance                            RESULTS (PAPER / RESEARCH PERFORMANCE)
  *   #/day/YYYY-MM-DD                         DAILY RECORD (one day's frozen
  *                                             pregame record, GET /daily/{date})
+ *   #/record-card                            THE RECORD (every card ever
+ *                                             published, GET /card/record +
+ *                                             GET /card/history -- see
+ *                                             cardrecord.js. Reachable from
+ *                                             THE CARD's own summary and the
+ *                                             footer, not the primary nav)
  *   #/signin                                 SIGN IN (interim -- see signin.js)
  *   #/support                                SUPPORT
  *   #/signup                                 SIGNUP (public CTA target from
@@ -45,6 +51,7 @@ import { renderSignup, renderSignupComplete } from "./signup.js";
 import { renderBilling } from "./billing.js";
 import { renderPerformance } from "./performance.js";
 import { renderDayDetail } from "./dayrecap.js";
+import { renderCardRecord } from "./cardrecord.js";
 import { BRAND_NAME } from "./brand.js";
 import { maybeGotcha } from "./gotcha.js";
 
@@ -78,6 +85,7 @@ const SECTION_LABELS = {
   billing: "BILLING",
   performance: "PERFORMANCE",
   day: "DAILY RECORD",
+  "record-card": "THE RECORD",
 };
 
 // GET /meta's public_demo flag, fetched once at boot (see boot() below).
@@ -202,6 +210,8 @@ async function _renderRouteInner(main) {
     await renderPerformance(main);
   } else if (route === "day" && rest.length >= 1) {
     await renderDayDetail(main, rest[0]);
+  } else if (route === "record-card") {
+    await renderCardRecord(main);
   } else if (route === "signin") {
     await renderSignin(main, query);
   } else if (route === "support") {

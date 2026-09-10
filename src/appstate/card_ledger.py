@@ -344,6 +344,99 @@ def record(*, path: Optional[str] = None, since: Optional[str] = None) -> dict:
     }
 
 
+def history(*, path: Optional[str] = None, limit: Optional[int] = 60) -> dict:
+    """Every settled day, newest first, each joined back to its own
+    PUBLISHED row for the book and team names a settled row does not carry.
+
+    WHY THE JOIN. `settle` deliberately appends a SEPARATE row (rule 2 in
+    this module's docstring) carrying only what grading needs: rank, bet,
+    label, market, price, game_pk, the result and the score. The book, the
+    books-compared count and the team names are FROZEN_FIELDS on the
+    PUBLISHED row alone -- they describe what a reader was shown at
+    publish time, not what grading needed -- so a page that wants "took
+    -140 at DraftKings, best of 11 books" beside a graded pick has to read
+    both rows for the date and match them up. Matched by `rank`, which is
+    unique within one date's picks (1..daily_card.MAX_PICKS) and is carried
+    unchanged on both the frozen pick and its graded counterpart.
+
+    `limit` caps how many days come back, newest first -- the ledger only
+    grows, and the public record page has no reason to pull every day that
+    ever settled just to show the last couple of months. Capped, never
+    silently truncated: `total_days` and `truncated` say exactly what
+    happened, so a caller can render "60 of 214 days" instead of a number
+    that just looks complete. `limit=None` returns every settled day; the
+    API route never does this (see api/card.py) but a script reading the
+    whole history should not have to pass an arbitrarily large number.
+    """
+    ledger = _ledger(path)
+    published_by_date: dict = {}
+    settled: list = []
+    for row in ledger.read():
+        kind = row.get("kind")
+        if kind == KIND_PUBLISHED:
+            published_by_date[row.get("date")] = row
+        elif kind == KIND_SETTLED:
+            settled.append(row)
+
+    # Lexicographic order on YYYY-MM-DD is chronological order.
+    settled.sort(key=lambda r: r.get("date") or "", reverse=True)
+    total_days = len(settled)
+    capped = settled if limit is None else settled[:max(limit, 0)]
+
+    days = []
+    for row in capped:
+        published = published_by_date.get(row.get("date")) or {}
+        frozen_by_rank = {p.get("rank"): p for p in (published.get("picks") or ())}
+        picks = []
+        for graded in row.get("picks") or ():
+            frozen = frozen_by_rank.get(graded.get("rank")) or {}
+            picks.append({
+                "rank": graded.get("rank"),
+                "bet": graded.get("bet"),
+                "label": graded.get("label"),
+                "market": graded.get("market"),
+                "price": graded.get("price"),
+                "book": frozen.get("book"),
+                "books": frozen.get("books"),
+                "away_team": frozen.get("away_team"),
+                "home_team": frozen.get("home_team"),
+                "team_name": frozen.get("team_name"),
+                "opponent_name": frozen.get("opponent_name"),
+                "result": graded.get("result"),
+                "profit_units": graded.get("profit_units"),
+                "away_score": graded.get("away_score"),
+                "home_score": graded.get("home_score"),
+                # Populated only for a VOID pick (see grade_pick) -- the
+                # plain-English reason nothing here could be graded.
+                "reason": graded.get("reason"),
+            })
+        days.append({
+            "date": row.get("date"),
+            "settled_utc": row.get("settled_utc"),
+            "wins": row.get("wins") or 0,
+            "losses": row.get("losses") or 0,
+            "pushes": row.get("pushes") or 0,
+            "voids": row.get("voids") or 0,
+            "n_staked": row.get("n_staked") or 0,
+            "profit_units": row.get("profit_units"),
+            "roi_pct": row.get("roi_pct"),
+            # This settled row's own hash, and the PUBLISHED row's hash it
+            # was graded against -- two different receipts. The published
+            # hash is the one a reader wants: "this is what was claimed,
+            # before the game, and here is the exact entry that proves it."
+            "row_hash": row.get("row_hash"),
+            "published_row_hash": row.get("published_row_hash"),
+            "picks": picks,
+        })
+
+    return {
+        "days": days,
+        "limit": limit,
+        "total_days": total_days,
+        "truncated": total_days > len(days),
+    }
+
+
 def verify(*, path: Optional[str] = None):
     """Walk the chain. A published record whose chain is broken is not a
     record, and the page that shows it has to be able to say so."""
