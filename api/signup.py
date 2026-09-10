@@ -57,6 +57,7 @@ display name; Stripe Checkout renders it from the Product itself.
 
 from __future__ import annotations
 
+import os
 import re
 import sys
 from typing import Optional
@@ -131,6 +132,33 @@ class _CheckoutProviderError(Exception):
     """
 
 
+class _CheckoutMisconfigured(Exception):
+    """Billing is switched ON and the deploy cannot honour a payment.
+
+    The third state, and the one that hid for weeks. `_attempt_checkout`
+    returning None used to mean two very different things at once:
+
+      * billing is deliberately off (BILLING_PROVIDER unset -- the honest
+        default while there is nothing to sell). Waitlisting is correct.
+      * billing is switched on and MISCONFIGURED -- no PUBLIC_BASE_URL, no
+        STRIPE_BETA_PRICE_ID. Waitlisting is a lie: the person came to buy,
+        the product meant to sell to them, and they were told "we'll email
+        you when a beta spot opens up" by a codebase that contains no email
+        sender at all.
+
+    Collapsing the two meant a broken production deploy looked exactly like
+    a closed beta, in the logs and in the response, and would have kept
+    looking like one for as long as nobody happened to try to pay.
+    """
+
+
+def _billing_is_switched_on() -> bool:
+    """True when this deploy intends to sell, whatever state it is in."""
+    selected = (os.environ.get(billing.ENV_BILLING_PROVIDER)
+                or billing.DEFAULT_BILLING_PROVIDER).strip()
+    return selected != billing.DEFAULT_BILLING_PROVIDER
+
+
 def _attempt_checkout(user_id: int) -> Optional[str]:
     """A real Stripe checkout URL for user_id, or None -- the honest
     "billing not ready" state -- whenever either half of billing
@@ -147,11 +175,22 @@ def _attempt_checkout(user_id: int) -> Optional[str]:
     """
     price_id = billing.beta_plan_stripe_price_id()
     if not price_id:
+        if _billing_is_switched_on():
+            print(f"ESCALATE: signup: {billing.ENV_BILLING_PROVIDER} is set "
+                  f"but no beta plan price id is configured -- every paying "
+                  f"customer is being silently waitlisted",
+                  file=sys.stderr, flush=True)
+            raise _CheckoutMisconfigured()
         return None
     provider = billing.get_billing_provider()
     try:
         url = provider.create_checkout(user_id, price_id)
-    except billing.BillingProviderNotConfigured:
+    except billing.BillingProviderNotConfigured as exc:
+        if _billing_is_switched_on():
+            # Names the variable, never a secret's value.
+            print(f"ESCALATE: signup: billing is switched on but cannot "
+                  f"complete a checkout: {exc}", file=sys.stderr, flush=True)
+            raise _CheckoutMisconfigured() from None
         return None
     except RuntimeError as exc:
         # Never relay Stripe's raw error body -- log it server-side only,
@@ -179,6 +218,14 @@ def _respond_for(user: users_store.User) -> dict:
         # one endpoint the public actually hits.
         return {"user_id": user.id, "status": "error",
                 "message": "checkout could not be started; try again shortly"}
+    except _CheckoutMisconfigured:
+        # Deliberately NOT "try again shortly" -- trying again will not help,
+        # and telling someone it might is the same false comfort as putting
+        # them on a waitlist nothing can email. No config detail reaches the
+        # caller; the ESCALATE line in the logs is for the operator.
+        return {"user_id": user.id, "status": "error",
+                "message": "payments are not available right now; nothing "
+                           "has been charged"}
     if checkout_url:
         if user.status != "pending_payment":
             users_store.set_user_status(user.id, "pending_payment")

@@ -50,11 +50,38 @@ should never be the same value protecting anything real.
 | `ODDS_API_KEY` | Only for live odds fetches | `.env` locally; host secrets store remotely | From https://the-odds-api.com; free tier is sufficient at this scale (see `.env.example`). |
 | `DEFAULT_BOOK`, `ODDS_API_REGION`, `ODDS_API_MARKETS`, `ODDS_API_ODDS_FORMAT` | No | Same as `ODDS_API_KEY` | Non-secret config, but listed here because they travel with the odds key in `.env`/`.env.example`. |
 
-Auth (Clerk) and billing (Stripe) env vars are not listed here: per
-`docs/LAUNCH_DECISIONS.md`'s Decisions 1-2, both stay behind their
-provider seams (`AuthProvider`, `BillingProvider`) in dev/test mode with
-no live keys until Brey connects the real accounts -- that moment gets
-its own env-var line in this table, not before.
+Auth (Clerk) env vars are not listed here: per
+`docs/LAUNCH_DECISIONS.md`'s Decision 1, auth stays behind its provider
+seam (`AuthProvider`) in dev/test mode with no live keys until Brey
+connects the real account -- that moment gets its own env-var line in
+this table, not before.
+
+## Billing (Stripe) -- all four, or none
+
+Listed now because "not listed here" is what caused the problem. Billing
+is **four** variables and partial configuration fails *quietly*: a deploy
+with a real `STRIPE_API_KEY` and nothing else looks configured and
+silently waitlists every person who tries to pay.
+
+| Variable | Required | Where it's set | Notes |
+| --- | --- | --- | --- |
+| `BILLING_PROVIDER` | Yes, to sell anything | Host secrets store | Defaults to `null`. `NullBillingProvider.create_checkout` returns `""`, which `api/signup.py` reads as "no billing yet -- waitlist them". **Setting the Stripe key without this changes nothing.** Value: `stripe`. |
+| `STRIPE_API_KEY` | Yes | Host secrets store, never `.env` on a shared host | `sk_test_...` on staging. A live key never goes anywhere staging's operators can read. |
+| `STRIPE_WEBHOOK_SECRET` | Yes | Host secrets store | Without it `POST /billing/webhook` returns a structured 501, so no completed payment ever mints an access token. |
+| `STRIPE_BETA_PRICE_ID` | Yes | Host secrets store | The beta plan's Stripe price. Absent, signup waitlists before it reaches Stripe at all. |
+| `PUBLIC_BASE_URL` | Yes | **`deploy/fly.*.toml` `[env]`, not a secret** | Where Stripe returns the browser after checkout, and the ONLY route from a payment to the token it buys -- this repo has no email sender. Unset it resolves to `https://example.invalid`. Kept in version control on purpose so a review can see what it points at. |
+
+`billing.checkout_delivery_ready` refuses a charge that could not be
+delivered, and `GET /health` reports `checkout: ok | off | broken`, so a
+misconfigured deploy can no longer take money it cannot honour. Check it
+before trusting a deploy:
+
+```bash
+curl -s https://<app>/health | grep -o '"checkout":{[^}]*}'
+```
+
+`broken` means billing is on and a paying customer would land nowhere.
+The `reason` field names the missing **variable** -- never its value.
 
 ## Rotation
 

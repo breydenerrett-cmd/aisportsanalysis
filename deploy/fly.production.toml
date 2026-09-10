@@ -28,11 +28,46 @@ primary_region = "iad"
 
 [env]
   APP_DB_PATH = "/app/data/app/app.db"
-  # BILLING_PROVIDER / STRIPE_API_KEY: production secrets, set via
-  # `fly secrets set` against THIS app only (BOUNDARY 3 below) -- never
-  # copied from staging's secrets store, since a staging Stripe key is
-  # test-mode and a leaked/rotated production key must never have lived
-  # in a place staging's operators could read it.
+
+  # BOUNDARY 5, and the one that costs a customer money if it is wrong.
+  #
+  # Where Stripe returns the browser after hosted Checkout. This file had NO
+  # PUBLIC_BASE_URL until 2026-09-10, which meant src/appstate/billing.py
+  # fell back to DEFAULT_PUBLIC_BASE_URL = "https://example.invalid": Stripe
+  # would take the card and send the customer to a domain that does not
+  # exist. That redirect is the ONLY bridge from a payment to the access
+  # token it buys -- there is no email sender in this repo -- so the
+  # customer would have been charged, landed nowhere, and had no route to
+  # the product and no way to ask for one.
+  #
+  # billing.checkout_delivery_ready now refuses the charge outright in that
+  # state and GET /health reports it, so the failure can no longer reach a
+  # customer. This line is what makes production able to sell at all.
+  #
+  # Set to the Fly-assigned hostname, which is real the moment this app is
+  # deployed. WHEN A CUSTOM DOMAIN IS BOUGHT AND ITS DNS/TLS IS LIVE, change
+  # this line and redeploy -- it is deliberately not a secret, so it lives
+  # here in version control where a review can see what it points at.
+  PUBLIC_BASE_URL = "https://linehound-prod.fly.dev"
+
+  # APP_PUBLIC_DEMO IS DELIBERATELY ABSENT, and must stay absent.
+  # deploy/fly.staging.toml sets it to "1", which makes api/app.py drop the
+  # paid dependency from every game surface AND makes web/js/betcheck.js
+  # route anonymous visitors to the uncapped endpoint instead of the
+  # 3-free-checks one. On staging that is the point. On production it would
+  # give the entire paid product away to anyone with the URL and silently
+  # disable the paywall we are asking people to cross.
+  #
+  # BILLING_PROVIDER / STRIPE_API_KEY / STRIPE_WEBHOOK_SECRET /
+  # STRIPE_BETA_PRICE_ID: production secrets, set via `fly secrets set`
+  # against THIS app only (BOUNDARY 3 below) -- never copied from staging's
+  # secrets store, since a staging Stripe key is test-mode and a
+  # leaked/rotated production key must never have lived in a place
+  # staging's operators could read it. All four are required together:
+  # BILLING_PROVIDER defaults to "null", whose create_checkout returns an
+  # empty URL, which api/signup.py reads as "waitlist this person" -- so a
+  # deploy with a real STRIPE_API_KEY and no BILLING_PROVIDER looks
+  # configured and silently waitlists every paying customer.
 
 [mounts]
   source = "app_data_production"  # BOUNDARY 2: a SEPARATE volume from

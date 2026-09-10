@@ -50,17 +50,55 @@ fly volumes create app_data --app <real-app-name> --region iad --size 1
 
 # 1e. Set the secrets this process actually reads (deploy/secrets.md).
 # APP_ADMIN_TOKEN is required for the admin invite endpoint to work at
-# all; STRIPE_API_KEY/STRIPE_WEBHOOK_SECRET are optional -- omit both and
-# the app runs with NullBillingProvider (dev/test-safe,
-# src/appstate/billing.py) exactly as it does locally with no .env.
+# all; billing is optional -- omit it entirely and the app runs with
+# NullBillingProvider (dev/test-safe, src/appstate/billing.py) exactly as
+# it does locally with no .env.
 fly secrets set --app <real-app-name> \
     APP_ADMIN_TOKEN="$(openssl rand -base64 32)"
+
+# BILLING IS FOUR VARIABLES, NOT TWO, AND PARTIAL CONFIGURATION FAILS
+# QUIETLY. This block used to list only STRIPE_API_KEY and
+# STRIPE_WEBHOOK_SECRET, and an operator who followed it exactly ended up
+# with a deploy that LOOKED configured and silently waitlisted every
+# person who tried to buy:
+#
+#   BILLING_PROVIDER      -- defaults to "null". NullBillingProvider's
+#                            create_checkout returns an empty string, which
+#                            api/signup.py reads as "no billing yet, put
+#                            them on the waitlist". Setting STRIPE_API_KEY
+#                            without this changes NOTHING.
+#   STRIPE_API_KEY        -- test-mode on staging. Never a live key here.
+#   STRIPE_WEBHOOK_SECRET -- without it POST /billing/webhook returns 501,
+#                            so no payment ever mints an access token.
+#   STRIPE_BETA_PRICE_ID  -- the beta plan's Stripe price. Absent, signup
+#                            waitlists before it ever reaches Stripe.
+#
+# PUBLIC_BASE_URL is NOT a secret and belongs in the fly.*.toml [env]
+# block, in version control, where a review can see what it points at.
+# It is where Stripe returns the browser after checkout, and it is the
+# ONLY route from a payment to the access token that payment buys --
+# there is no email sender in this repo. Unset, it resolves to
+# https://example.invalid; billing.checkout_delivery_ready now REFUSES
+# the charge in that state and GET /health reports `checkout: broken`,
+# so this can no longer reach a customer, but a deploy missing it cannot
+# sell anything either.
+#
 # Only if Brey has Stripe *test-mode* keys ready for staging -- never a
 # live key here (deploy/secrets.md's NEVER-COMMIT rule is about git, but
 # the same "test key only in staging" boundary applies to secrets stores):
 #   fly secrets set --app <real-app-name> \
+#       BILLING_PROVIDER="stripe" \
 #       STRIPE_API_KEY="sk_test_..." \
-#       STRIPE_WEBHOOK_SECRET="whsec_..."
+#       STRIPE_WEBHOOK_SECRET="whsec_..." \
+#       STRIPE_BETA_PRICE_ID="price_..."
+#
+# Then confirm, before trusting it:
+#   curl -s https://<app>.fly.dev/health | grep -o '"checkout":{[^}]*}'
+# `"status":"ok"`      -- a payment can be taken and delivered
+# `"status":"off"`     -- billing deliberately disabled (staging default)
+# `"status":"broken"`  -- STOP. Billing is on and a customer who paid
+#                         would land nowhere. The reason field says which
+#                         variable is missing.
 
 # 1f. Ship it.
 fly deploy --app <real-app-name> --config deploy/fly.staging.toml

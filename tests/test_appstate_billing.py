@@ -121,12 +121,32 @@ class StripeBillingProviderNotConfiguredTests(unittest.TestCase):
                 provider.create_checkout(1, "price_beta")
 
 
+def _deliverable(case):
+    """Give a test a real PUBLIC_BASE_URL for the duration of the case.
+
+    `create_checkout` refuses when a completed payment could not deliver
+    access (billing.checkout_delivery_ready) -- added 2026-09-10 after
+    deploy/fly.production.toml was found to carry no PUBLIC_BASE_URL at all,
+    which would have sent every paying customer to example.invalid with no
+    route to the token they had just bought. These tests exercise checkout
+    MECHANICS, so they have to satisfy that precondition the same way a real
+    deploy does, rather than the guard being weakened to accommodate them.
+    """
+    import os
+    from unittest import mock
+    patcher = mock.patch.dict(
+        os.environ, {billing.ENV_PUBLIC_BASE_URL: "https://linehound.test"})
+    patcher.start()
+    case.addCleanup(patcher.stop)
+
+
 class StripeBillingProviderConfiguredTests(unittest.TestCase):
 
     def setUp(self):
         self.transport = _FakeTransport()
         self.provider = billing.StripeBillingProvider(
             api_key="sk_test_synthetic", transport=self.transport)
+        _deliverable(self)
 
     def test_create_checkout_posts_and_returns_the_hosted_url(self):
         self.transport.queue(200, {"id": "cs_test_123", "url": "https://checkout.stripe.com/test123"})
@@ -257,6 +277,7 @@ class StripeCheckoutPersistenceWiringTests(unittest.TestCase):
             idempotency_key_resolver=lambda uid, plan, gen: (
                 customers.get_or_create_idempotency_key(uid, plan, gen, db=self.db)),
         )
+        _deliverable(self)
 
     def tearDown(self):
         self._tmp.cleanup()

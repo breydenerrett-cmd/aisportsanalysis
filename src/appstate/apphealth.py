@@ -36,6 +36,7 @@ green status; a check that could not run reports why, not "ok".
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -215,6 +216,42 @@ def report(*, data_dir: Optional[Path] = None, db_path: Optional[Path] = None,
     now = now or datetime.now(timezone.utc)
     root = Path(data_dir) if data_dir is not None else paths.data_root()
 
+    def check_checkout() -> dict:
+        """Can a completed payment actually deliver access?
+
+        `broken` means billing is switched ON and a customer who pays would
+        land nowhere -- the production deploy had no PUBLIC_BASE_URL, so
+        Stripe's success_url resolved to example.invalid and the only bridge
+        from a payment to its access token led to a domain that does not
+        exist. src.appstate.billing.create_checkout already refuses in that
+        state, so nobody is charged; this exists so an operator learns about
+        it from a health check rather than from a customer who tried to buy.
+
+        Reported for the null provider too, as `off` -- a deploy with billing
+        deliberately disabled is a different fact from one that is broken,
+        and flattening the two would make this line useless on staging.
+
+        Never names a secret or its value: the reason strings name the
+        VARIABLE, never its contents (see module docstring).
+        """
+        try:
+            from src.appstate import billing as _billing
+            provider = (os.environ.get(_billing.ENV_BILLING_PROVIDER)
+                        or _billing.DEFAULT_BILLING_PROVIDER).strip()
+            if provider == _billing.DEFAULT_BILLING_PROVIDER:
+                return {"status": "off", "provider": provider,
+                        "reason": "billing provider is the null provider; "
+                                  "no payment can be taken"}
+            reason = _billing.checkout_delivery_ready()
+            if reason:
+                return {"status": "broken", "provider": provider,
+                        "reason": reason}
+            return {"status": "ok", "provider": provider, "reason": None}
+        except Exception as exc:  # noqa: BLE001
+            # A health check must never be the thing that 500s.
+            return {"status": "unknown", "provider": None,
+                    "reason": f"could not evaluate checkout readiness: {exc}"}
+
     db = check_app_db(db_path)
     odds = check_store(root / "processed" / "odds_multibook.jsonl",
                        ODDS_STORE_TIMESTAMP_FIELD, now=now)
@@ -224,7 +261,8 @@ def report(*, data_dir: Optional[Path] = None, db_path: Optional[Path] = None,
     unreadable = [name for name, data in
                   {ODDS_STORE_NAME: odds.to_dict(), **forward}.items()
                   if data["status"] == "unreadable"]
-    healthy = db.reachable and not unreadable
+    checkout = check_checkout()
+    healthy = db.reachable and not unreadable and checkout["status"] != "broken"
 
     reasons = []
     if not db.reachable:
@@ -232,6 +270,8 @@ def report(*, data_dir: Optional[Path] = None, db_path: Optional[Path] = None,
     for name, data in {ODDS_STORE_NAME: odds.to_dict(), **forward}.items():
         if data["status"] == "unreadable":
             reasons.append(f"{name}: {data['reason']}")
+    if checkout["status"] == "broken":
+        reasons.append(f"checkout: {checkout['reason']}")
 
     return {
         "status": "ok" if healthy else "degraded",
@@ -240,5 +280,6 @@ def report(*, data_dir: Optional[Path] = None, db_path: Optional[Path] = None,
         "app_db": db.to_dict(),
         "odds": {ODDS_STORE_NAME: odds.to_dict()},
         "forward_captures": forward,
+        "checkout": checkout,
         "reasons": reasons,
     }

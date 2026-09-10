@@ -245,6 +245,51 @@ def _public_base_url() -> str:
             or DEFAULT_PUBLIC_BASE_URL)
 
 
+def checkout_delivery_ready(base_url: Optional[str] = None) -> Optional[str]:
+    """None when a completed checkout can actually deliver access; otherwise
+    the reason it cannot, in one sentence.
+
+    WHY THIS EXISTS
+    ----------------
+    `deploy/fly.production.toml` carried no PUBLIC_BASE_URL, so a production
+    deploy would have resolved `success_url` to `https://example.invalid`.
+    Stripe would have taken the money and sent the customer to a domain that
+    does not exist. There is no email sender in this repo, and
+    `GET /signup/complete` -- reached only through that redirect -- is the
+    ONLY bridge from a payment to the access token it buys
+    (api/signup.py's "NO-EMAIL-SENDER ACTIVATION BRIDGE"). So the customer
+    would have been charged, landed nowhere, and had no route to the product
+    and no way to ask for one.
+
+    A missing redirect target is therefore not a cosmetic config gap. It is
+    the difference between selling a subscription and taking money for
+    nothing, which is why it is checked before the charge rather than
+    discovered after it.
+
+    Deliberately NOT a boot-time refusal. Failing to start would take down
+    the free surfaces and the research pages over a setting that only
+    affects checkout, and an operator who mis-set one variable would lose
+    the whole site instead of one button. Checkout refuses honestly instead
+    -- api/billing.py turns this into the same `not_configured` answer
+    web/js/billing.js already renders as "Payments are not switched on for
+    this deployment yet" -- and `GET /health` reports it so nobody has to
+    discover it by trying to buy something.
+    """
+    resolved = (base_url if base_url is not None else _public_base_url())
+    resolved = (resolved or "").strip().rstrip("/")
+    if not resolved:
+        return (f"{ENV_PUBLIC_BASE_URL} is empty, so a completed checkout has "
+                f"nowhere to send the customer to collect their access")
+    if resolved == DEFAULT_PUBLIC_BASE_URL:
+        return (f"{ENV_PUBLIC_BASE_URL} is unset, so checkout would send a "
+                f"paying customer to {DEFAULT_PUBLIC_BASE_URL} -- they would "
+                f"be charged and have no route to their access token")
+    if not resolved.startswith(("http://", "https://")):
+        return (f"{ENV_PUBLIC_BASE_URL} is {resolved!r}, which is not an "
+                f"absolute http(s) URL; Stripe requires one for success_url")
+    return None
+
+
 ENV_STRIPE_API_KEY = "STRIPE_API_KEY"
 ENV_STRIPE_WEBHOOK_SECRET = "STRIPE_WEBHOOK_SECRET"
 
@@ -524,6 +569,13 @@ class StripeBillingProvider:
         behavior before src.appstate.customers existed.
         """
         self._require_configured()
+        # Refuse BEFORE the charge, never after. See checkout_delivery_ready:
+        # without a real PUBLIC_BASE_URL this session's success_url points at
+        # example.invalid, and a customer who pays lands nowhere with no
+        # second route to their token.
+        undeliverable = checkout_delivery_ready()
+        if undeliverable:
+            raise BillingProviderNotConfigured(undeliverable)
         key = idempotency_key or self._resolve_idempotency_key(user_id, plan_id)
         customer_id = self._ensure_customer(user_id)
         form = {
