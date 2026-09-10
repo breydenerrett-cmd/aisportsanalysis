@@ -265,6 +265,65 @@ class TheCardAlwaysHasAFloor(unittest.TestCase):
         for pick in out["picks"]:
             self.assertTrue(pick["bet"].startswith("Take "), pick["bet"])
 
+    def test_the_alternative_names_the_line_it_was_priced_at(self):
+        """A bet instruction naming the wrong line is worse than no
+        alternative at all.
+
+        The first draft derived the run line from the sign of the MONEYLINE
+        price -- favourite implies -1.5, underdog implies +1.5 -- which is
+        wrong whenever the two markets disagree about who is favoured, and
+        on a near-pick'em game they often do. Measured live on 2026-09-10 it
+        printed "White Sox -1.5 at -185 pays more" when -185 was the price
+        for +1.5 and paid LESS than the -104 moneyline beside it.
+        """
+        from src.analysis import daily_card
+
+        candidate = {"side": "away", "price": -104, "team_name": "White Sox"}
+        # The board says this side is TAKING the runs, whatever the
+        # moneyline's sign suggests.
+        daily_card._attach_run_line(
+            candidate, {"away": {"best_price": -185, "best_book": "betus",
+                                 "books": 11, "line": 1.5}})
+        alt = candidate["alternative"]
+        self.assertEqual(1.5, alt["line"])
+        self.assertIn("+1.5", alt["bet"])
+        self.assertNotIn("pays more", alt["trade"])
+        self.assertIn("safer", alt["trade"])
+
+    def test_the_alternative_says_pays_more_only_when_laying_runs(self):
+        from src.analysis import daily_card
+
+        candidate = {"side": "home", "price": -280, "team_name": "Yankees"}
+        daily_card._attach_run_line(
+            candidate, {"home": {"best_price": -128, "best_book": "dk",
+                                 "books": 8, "line": -1.5}})
+        alt = candidate["alternative"]
+        self.assertEqual(-1.5, alt["line"])
+        self.assertIn("-1.5", alt["bet"])
+        self.assertIn("pays more", alt["trade"])
+
+    def test_a_non_standard_run_line_is_not_offered(self):
+        """An alternate line is a different bet and must not be presented
+        under the standard one's wording."""
+        from src.analysis import daily_card
+
+        candidate = {"side": "home", "price": -280, "team_name": "Yankees"}
+        daily_card._attach_run_line(
+            candidate, {"home": {"best_price": +240, "line": -2.5}})
+        self.assertNotIn("alternative", candidate)
+
+    def test_the_card_never_chooses_the_run_line_as_the_pick(self):
+        """The comparison that used to do this is deleted; see
+        RUNLINE_AS_ALTERNATIVE. A future edit that reinstates it has to
+        trip over this."""
+        from src.analysis import daily_card
+
+        self.assertTrue(daily_card.RUNLINE_AS_ALTERNATIVE)
+        self.assertFalse(hasattr(daily_card, "RUNLINE_PREFERENCE_POINTS"),
+                         "the model-vs-model market comparison is back, and "
+                         "one of its inputs is measured wrong -- see "
+                         "docs/PREREG_RUN_DISPERSION.md")
+
     def test_no_more_than_one_pick_per_game(self):
         from src.analysis import daily_card
 

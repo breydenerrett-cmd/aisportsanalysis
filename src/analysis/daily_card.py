@@ -112,11 +112,35 @@ LABEL_LEAN = "LEAN"
 LABEL_SLIGHT = "SLIGHT"
 LABEL_SPLIT = "SPLIT"
 
-# A run line is preferred over the moneyline only when the model's own
-# distribution prices it better by more than this, in probability points.
-# A margin this small is not a claim about which is the better bet; it is a
-# tie-break that stops the card flapping between two markets on rounding.
-RUNLINE_PREFERENCE_POINTS = 0.02
+# THE CARD NO LONGER CHOOSES BETWEEN THE MONEYLINE AND THE RUN LINE.
+#
+# It used to, by comparing each market's model probability against that
+# market's own consensus and taking whichever gap was larger. That
+# comparison is dead because one of its two inputs is measured wrong:
+# `src.analysis.strength` uses independent Poissons, and on 2026-09-10 two
+# independent measurements put real run variance at 2.31x the mean rather
+# than 1.0x (docs/PREREG_RUN_DISPERSION.md). The practical size of that
+# error is on exactly the quantity a run line pays on -- 72.7% of real games
+# are decided by two or more runs and the Poisson says 61.0%.
+#
+# So every run-line probability the card produced was roughly nine points
+# low, the comparison was biased against the run line throughout, and the
+# one run-line pick it did make on 2026-09-10 was selected by model error
+# rather than by anything real. That pick stays in the ledger, frozen, with
+# this note beside it; a record you can edit after the fact is not a record.
+#
+# The correction is NOT being applied yet. The pre-registered test passed
+# every substantive check (calibration error fell 93% out of sample, and the
+# moneyline improved) and FAILED its parameter-stability check at 0.3151
+# against a 0.30 limit. The threshold is not moving. Rescue by threshold
+# change is the one thing this project's research discipline exists to stop,
+# and it does not become acceptable because the result is flattering.
+#
+# What replaces the choice is better than it anyway: the card publishes the
+# moneyline and shows the run line beside it as an alternative, with the
+# trade stated in words. No model has to be right for that to be useful, and
+# a reader who wants the shorter price can take it knowing what it costs.
+RUNLINE_AS_ALTERNATIVE = True
 
 STANDARD_RUN_LINE = 1.5
 
@@ -166,7 +190,7 @@ def _bet_sentence(pick) -> str:
     goes underneath, where a reader who wants it will find it.
     """
     if pick["market"] == "run_line":
-        line = f"+{STANDARD_RUN_LINE}" if pick["is_underdog"] else f"-{STANDARD_RUN_LINE}"
+        line = f"+{STANDARD_RUN_LINE:g}" if pick["is_underdog"] else f"-{STANDARD_RUN_LINE:g}"
         return f"Take {pick['team_name']} {line} at {_fmt_price(pick['price'])}"
     return f"Take {pick['team_name']} to win at {_fmt_price(pick['price'])}"
 
@@ -204,14 +228,12 @@ def _why_sentences(pick) -> list:
             f"The market makes {pick['team_name']} a {market_pct} bet to win "
             f"and our own numbers agree at {model_pct}.")
 
-    if pick["market"] == "run_line":
-        out.append(
-            f"We are taking the run line rather than the moneyline: "
-            f"{pick['team_name']} have to "
-            + ("stay within a run" if pick["is_underdog"]
-               else "win by two or more")
-            + f", and at {_fmt_price(pick['price'])} that pays better for the "
-              f"same read.")
+    alt = pick.get("alternative")
+    if alt and alt.get("trade"):
+        # THE ALTERNATIVE IS OFFERED, NOT RECOMMENDED. Nothing in this
+        # sentence depends on our run distribution being right, which is the
+        # point -- see RUNLINE_AS_ALTERNATIVE.
+        out.append("If you want the other side of that trade: " + alt["trade"])
 
     if pick.get("price_note"):
         out.append(pick["price_note"])
@@ -367,7 +389,7 @@ def build_pick_candidates(games: Sequence, *, model_lines: Mapping,
             row.get("best_price"), row.get("market_implied_probability"),
             row.get("best_book"), row.get("books"))
 
-        _maybe_switch_to_run_line(candidate, line, runline_rows.get(gid) or {})
+        _attach_run_line(candidate, runline_rows.get(gid) or {})
         candidate["label"] = _label(candidate["confidence"], agrees)
         out.append(candidate)
     return out
@@ -383,43 +405,64 @@ def _team_numbers(game: Mapping, side: str) -> dict:
     }
 
 
-def _maybe_switch_to_run_line(candidate: dict, line: Mapping, rl: Mapping) -> None:
-    """Swap the moneyline for the run line when the run line prices the same
-    opinion better against the model's own distribution.
+def _attach_run_line(candidate: dict, rl: Mapping) -> None:
+    """Attach the same side's run line as an ALTERNATIVE, never as the pick.
 
-    "Better" is measured as model probability minus the run line's OWN
-    de-vigged consensus, against the same quantity on the moneyline. Both
-    numbers come off one joint distribution, so preferring one is a statement
-    about price shape, not a second opinion about the game.
+    No model comparison decides anything here -- see RUNLINE_AS_ALTERNATIVE
+    for why the comparison that used to live in this function was removed.
+    What is attached is the market's own price for the same opinion,
+    together with the trade stated in words, so a reader who wants the
+    shorter number can take it knowing exactly what it costs them.
+
+    The tradeoff sentence is composed from the price and the side alone.
+    Nothing in it depends on our distribution being right.
     """
     side = candidate["side"]
     row = rl.get(side) or {}
     price = row.get("best_price")
-    cons = row.get("consensus_probability")
-    if price is None or cons is None:
+    if price is None:
         return
 
-    underdog = (candidate["price"] or 0) > 0
-    p_cover = _model_runline_probability(line, side, underdog=underdog)
-    ml_gap = candidate["model_probability"] - (candidate["market_probability"] or 0.0)
-    rl_gap = p_cover - cons
-    if rl_gap <= ml_gap + RUNLINE_PREFERENCE_POINTS:
+    # THE LINE IS READ, NEVER INFERRED. An earlier draft derived it from the
+    # sign of the moneyline price -- favourite implies -1.5, underdog
+    # implies +1.5 -- which is wrong whenever the two markets disagree about
+    # who is favoured, and they disagree often on a near-pick'em game.
+    # Measured live on 2026-09-10: it printed "White Sox -1.5 at -185 pays
+    # more", when -185 was the price for +1.5 and pays LESS than the -104
+    # moneyline beside it. A bet instruction naming the wrong line is worse
+    # than no alternative at all, and it is the same mistake the price board
+    # made with spreads in the 2026-09-09 incident.
+    line = row.get("line")
+    if not isinstance(line, (int, float)):
+        return
+    line = float(line)
+    if abs(abs(line) - STANDARD_RUN_LINE) > 1e-9:
+        # Not the standard run line, so not the alternative this is for.
         return
 
-    candidate.update({
+    taking_runs = line > 0
+    if taking_runs:
+        trade = (f"{candidate['team_name']} +{STANDARD_RUN_LINE:g} at "
+                 f"{_fmt_price(price)} is the safer side — it wins if they "
+                 f"lose by one or win outright — and it pays less.")
+    else:
+        trade = (f"{candidate['team_name']} -{STANDARD_RUN_LINE:g} at "
+                 f"{_fmt_price(price)} pays more, and needs them to win by "
+                 f"two or more.")
+    underdog = taking_runs
+
+    candidate["alternative"] = {
         "market": "run_line",
-        "line": (STANDARD_RUN_LINE if underdog else -STANDARD_RUN_LINE),
+        "line": line,
         "price": price,
         "book": row.get("best_book"),
         "books": row.get("books"),
+        "consensus_probability": row.get("consensus_probability"),
         "is_underdog": underdog,
-        "model_probability_moneyline": candidate["model_probability"],
-        "model_probability": p_cover,
-        "market_probability_moneyline": candidate["market_probability"],
-        "market_probability": cons,
-    })
-    candidate["price_note"] = _price_note(price, cons, row.get("best_book"),
-                                          row.get("books"))
+        "bet": (f"Take {candidate['team_name']} "
+                f"{'+' if line > 0 else ''}{line:g} at {_fmt_price(price)}"),
+        "trade": trade,
+    }
 
 
 # ---------------------------------------------------------------------------

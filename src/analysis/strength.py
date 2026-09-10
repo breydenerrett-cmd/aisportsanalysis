@@ -123,12 +123,51 @@ STARTER_REGRESSION_INNINGS = 50.0
 # a runs-scored rate that is still substantially luck.
 TEAM_REGRESSION_GAMES = 25.0
 
-# Poisson understates the spread of real run margins. This widens both means
-# symmetrically before the joint is formed, which fattens the tails without
-# moving the expected margin. 1.0 would be pure Poisson. Set at 1.0 -- i.e.
-# OFF -- until `scripts/backtest_card.py` measures what it should be out of
-# sample; a correction invented at the same time as the model is a fitted
-# parameter wearing a constant's clothes.
+# RUNS ARE NOT POISSON, AND IT IS NOT CLOSE.
+#
+# Measured two independent ways on 2026-09-10 (docs/PREREG_RUN_DISPERSION.md):
+#
+#   final scores, 2,153 games   per-team variance/mean = 2.33
+#                               conditional on this model's own per-game
+#                               means, mean squared Pearson residual = 2.313
+#                               over 3,792 team-games (Poisson is 1.000)
+#
+#   the books' own boards       solving each book's moneyline and total for
+#                               two Poisson means and reading off the run
+#                               line they imply, the books disagree with us
+#                               by +3.6 points when the home club lays the
+#                               runs and -8.4 when it takes them, with
+#                               interquartile ranges about a point wide
+#
+# Both say the margin distribution is far too narrow. What it costs is on the
+# one quantity the run line pays on: 72.7% of real games are decided by two
+# or more runs and independent Poissons say 61.0%.
+#
+# `DISPERSION` is variance/mean per team. 1.0 is exact Poisson and reproduces
+# every number this module produced before the correction existed -- asserted
+# by a test, so the correction can always be switched off and compared.
+#
+# STILL 1.0 HERE. The pre-registration fixes the fit window, the evaluation
+# window and the adoption criterion, and none of them has been run yet. A
+# constant changed at the same moment it is measured is a fitted parameter
+# wearing a constant's clothes, which is the whole thing this file's "nothing
+# is fitted" claim exists to mean.
+DISPERSION = 1.0
+
+# Which family the variance follows once DISPERSION is above 1.
+#   "nb1"  variance = DISPERSION * mean            (quasi-Poisson)
+#   "nb2"  variance = mean + mean^2 / k, k chosen to hit DISPERSION at the
+#                                        league mean
+# They agree at the league-average mean by construction and differ for a
+# heavy favourite or an extreme total -- which is exactly where the card's
+# run-line picks live, so the choice between them is decided by the
+# pre-registered out-of-sample criterion and not by inspection.
+DISPERSION_FAMILY = "nb1"
+
+# Retained under its old name because tests and docs refer to it; it was
+# always 1.0 and it stays 1.0. Widening both MEANS was the wrong lever
+# anyway: it moves the expected total as well as the margin, so it cannot
+# fix the shape without breaking the level.
 MARGIN_INFLATION = 1.0
 
 # The joint is summed over this many runs per side. A 25-run game is a
@@ -316,7 +355,58 @@ def _poisson_pmf(mean: float, k: int) -> float:
     return math.exp(-mean + k * math.log(mean) - math.lgamma(k + 1))
 
 
-def outcome_grid(away_mean: float, home_mean: float) -> list:
+def _negbinom_pmf(mean: float, size: float, k: int) -> float:
+    """Negative binomial in (mean, size) form: variance = mean + mean^2/size.
+
+    `size` -> infinity recovers the Poisson, which is why `run_pmf` below
+    can switch families on a single constant without a second code path.
+    """
+    p = size / (size + mean)
+    return math.exp(
+        math.lgamma(k + size) - math.lgamma(size) - math.lgamma(k + 1)
+        + size * math.log(p) + k * math.log1p(-p))
+
+
+def _size_for(mean: float, dispersion: float, family: str) -> Optional[float]:
+    """The negative binomial `size` that gives this mean the target variance.
+
+    NB1 wants variance = dispersion * mean, so size = mean / (dispersion - 1)
+    and the size scales with the mean. NB2 wants a constant size, pinned so
+    that the LEAGUE-average mean hits the same target -- which is what makes
+    the two families agree there and diverge in the tails.
+
+    None means "use the Poisson", which is the honest answer for dispersion
+    at or below 1: a variance below the mean is not something a count model
+    of runs should be asked to represent, and silently clamping it would hide
+    a bad input.
+    """
+    if dispersion <= 1.0 + 1e-12 or mean <= 0:
+        return None
+    if family == "nb2":
+        ref = LEAGUE_REFERENCE_RUNS
+        return ref / (dispersion - 1.0)
+    return mean / (dispersion - 1.0)
+
+
+def run_pmf(mean: float, k: int, *, dispersion: float = None,
+            family: str = None) -> float:
+    """P(a team scores exactly k runs). Poisson when dispersion is 1."""
+    dispersion = DISPERSION if dispersion is None else dispersion
+    family = DISPERSION_FAMILY if family is None else family
+    size = _size_for(mean, dispersion, family)
+    if size is None:
+        return _poisson_pmf(mean, k)
+    return _negbinom_pmf(mean, size, k)
+
+
+# The mean the NB2 family is pinned at. Not a fitted value: it is the
+# reference point where the two families are defined to agree, and moving it
+# changes what NB2 MEANS rather than how well it fits.
+LEAGUE_REFERENCE_RUNS = 4.5
+
+
+def outcome_grid(away_mean: float, home_mean: float, *,
+                 dispersion: float = None, family: str = None) -> list:
     """`grid[a][h]` = P(away scores a AND home scores h), ties redistributed.
 
     Two independent Poissons. Independence is an assumption, not a fact --
@@ -330,8 +420,21 @@ def outcome_grid(away_mean: float, home_mean: float) -> list:
     """
     a_mean = away_mean * MARGIN_INFLATION
     h_mean = home_mean * MARGIN_INFLATION
-    away_pmf = [_poisson_pmf(a_mean, k) for k in range(MAX_RUNS + 1)]
-    home_pmf = [_poisson_pmf(h_mean, k) for k in range(MAX_RUNS + 1)]
+    away_pmf = [run_pmf(a_mean, k, dispersion=dispersion, family=family)
+                for k in range(MAX_RUNS + 1)]
+    home_pmf = [run_pmf(h_mean, k, dispersion=dispersion, family=family)
+                for k in range(MAX_RUNS + 1)]
+
+    # RENORMALISED, because an overdispersed distribution has a real tail
+    # past MAX_RUNS and truncating it silently would make every probability
+    # here sum to less than one. Under the Poisson the correction is smaller
+    # than 1e-9 and this is a no-op; under a negative binomial it is not, and
+    # a grid that does not sum to one is not a distribution.
+    for pmf in (away_pmf, home_pmf):
+        mass = sum(pmf)
+        if mass > 0:
+            for i in range(len(pmf)):
+                pmf[i] /= mass
 
     grid = [[a * h for h in home_pmf] for a in away_pmf]
 
@@ -355,7 +458,9 @@ def outcome_grid(away_mean: float, home_mean: float) -> list:
 
 def market_probabilities(away_mean: float, home_mean: float,
                          *, run_line: float = 1.5,
-                         totals: Optional[list] = None) -> dict:
+                         totals: Optional[list] = None,
+                         dispersion: float = None,
+                         family: str = None) -> dict:
     """Every market this product quotes, from one joint distribution.
 
     One grid, read several ways -- so the moneyline, the run line and the
@@ -364,7 +469,8 @@ def market_probabilities(away_mean: float, home_mean: float,
     +1.5" and "take the under" on the same game with no internal
     contradiction to trip over. This cannot.
     """
-    grid = outcome_grid(away_mean, home_mean)
+    grid = outcome_grid(away_mean, home_mean, dispersion=dispersion,
+                        family=family)
     totals = list(totals or ())
 
     # FOUR RUN-LINE QUANTITIES, EACH NAMED FOR EXACTLY WHAT IT IS. An earlier

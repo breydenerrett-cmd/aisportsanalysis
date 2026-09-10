@@ -123,6 +123,26 @@ function pickCard(pick, total) {
   }
   card.appendChild(why);
 
+  // THE ALTERNATIVE. Offered, never recommended, and visually quieter than
+  // the pick so it cannot be mistaken for one. It exists because the run
+  // line is a genuinely different bet on the same opinion and a reader is
+  // better served choosing it themselves than having a model choose for
+  // them -- especially this model, whose run distribution is measured wrong
+  // (see src/analysis/daily_card.py's RUNLINE_AS_ALTERNATIVE).
+  if (pick.alternative && pick.alternative.bet) {
+    const alt = el("div", { class: "card2__alt", "data-hook": "card-alternative" });
+    alt.appendChild(el("span", { class: "card2__alt-label", text: "OR" }));
+    const body = el("div", { class: "card2__alt-body" });
+    body.appendChild(el("span", { class: "card2__alt-bet",
+      text: pick.alternative.bet }));
+    if (pick.alternative.book) {
+      body.appendChild(el("span", { class: "card2__alt-book",
+        text: bookLabel(pick.alternative.book) || pick.alternative.book }));
+    }
+    alt.appendChild(body);
+    card.appendChild(alt);
+  }
+
   const meaning = LABEL_MEANING[pick.label];
   if (meaning) {
     card.appendChild(el("p", { class: "card2__meaning", text: meaning }));

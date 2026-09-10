@@ -68,6 +68,12 @@ FROZEN_FIELDS = (
     "confidence", "market_probability", "model_probability",
     "model_probability_moneyline", "game_id", "game_pk", "event_id",
     "away_team", "home_team", "first_pitch_utc", "observed_utc", "model",
+    # The run line offered alongside the pick. Frozen with it because it was
+    # shown to the reader, and anything shown is part of what was claimed --
+    # but NEVER graded: `settle` scores `market`/`line`/`price`, which are
+    # the pick's own, and an alternative nobody was told to take is not a
+    # bet this record gets credit or blame for.
+    "alternative",
 )
 
 
