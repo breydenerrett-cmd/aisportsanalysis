@@ -195,6 +195,15 @@ class TheServerAcceptsIt(unittest.TestCase):
     def test_it_is_postable_by_an_anonymous_visitor(self):
         """It happens before any authenticated identity exists, so there is
         no server-side moment that could record it instead."""
+        # CI runs this suite WITHOUT api/requirements.txt -- fastapi
+        # lives only in api/'s dependencies (tests/test_api_boundary.py
+        # exists to prove src/ never needs it). Skip rather than error,
+        # so the api-less job stays green and still runs everything else
+        # in this file.
+        try:
+            import fastapi  # noqa: F401
+        except ImportError:
+            self.skipTest('fastapi is not installed in this job')
         from api import funnel
         from src.appstate import events
         self.assertIn(events.CTA_CLICK, funnel.PUBLIC_FUNNEL_KINDS)
@@ -202,6 +211,15 @@ class TheServerAcceptsIt(unittest.TestCase):
     def test_the_public_allowlist_stays_narrow(self):
         """Three kinds, all genuinely pre-identity. Anything else belongs
         server-recorded."""
+        # CI runs this suite WITHOUT api/requirements.txt -- fastapi
+        # lives only in api/'s dependencies (tests/test_api_boundary.py
+        # exists to prove src/ never needs it). Skip rather than error,
+        # so the api-less job stays green and still runs everything else
+        # in this file.
+        try:
+            import fastapi  # noqa: F401
+        except ImportError:
+            self.skipTest('fastapi is not installed in this job')
         from api import funnel
         from src.appstate import events
         self.assertEqual(

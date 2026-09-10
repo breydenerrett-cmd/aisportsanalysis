@@ -63,6 +63,15 @@ class TheManifestIsValidAndServable(unittest.TestCase):
     def test_every_icon_type_is_servable(self):
         """The allowlist in api/web.py is a real 404 -- a manifest naming a
         file type it refuses is a manifest that silently does not work."""
+        # CI runs this suite WITHOUT api/requirements.txt -- fastapi
+        # lives only in api/'s dependencies (tests/test_api_boundary.py
+        # exists to prove src/ never needs it). Skip rather than error,
+        # so the api-less job stays green and still runs everything else
+        # in this file.
+        try:
+            import fastapi  # noqa: F401
+        except ImportError:
+            self.skipTest('fastapi is not installed in this job')
         from api.web import _ALLOWED_SUFFIXES
         refused = [i["src"] for i in self.data["icons"]
                    if Path(i["src"]).suffix not in _ALLOWED_SUFFIXES]

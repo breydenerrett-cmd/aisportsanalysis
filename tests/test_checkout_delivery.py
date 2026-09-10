@@ -160,6 +160,15 @@ class SilentWaitlistTests(unittest.TestCase):
     """
 
     def setUp(self):
+        # CI runs this suite WITHOUT api/requirements.txt -- fastapi
+        # lives only in api/'s dependencies (tests/test_api_boundary.py
+        # exists to prove src/ never needs it). Skip rather than error,
+        # so the api-less job stays green and still runs everything else
+        # in this file.
+        try:
+            import fastapi  # noqa: F401
+        except ImportError:
+            self.skipTest('fastapi is not installed in this job')
         from api import signup as signup_mod
         self.signup = signup_mod
 

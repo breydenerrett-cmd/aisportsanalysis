@@ -21,8 +21,14 @@ from typing import Optional, Sequence
 
 from src.analysis import calibrate, daily_card, strength
 from src.analysis import prices as prices_mod
+from src.appstate import freshness
 from src.core import odds as odds_math
 from src.detect import dossier as dossier_mod
+
+# Long enough that a page refresh never re-parses the odds store, short
+# enough that a fresh capture reaches the card within one cadence slot
+# (capture runs every 15 minutes).
+RUNLINE_CACHE_TTL_S = 300
 
 CALIBRATION_STORE = os.path.join("data", "processed", "card_calibration.json")
 
@@ -78,6 +84,38 @@ def load_calibration(path: str = CALIBRATION_STORE) -> Optional[calibrate.Calibr
         return None
 
 
+# CACHED, and the caching is not an optimisation -- it is a fix.
+#
+# `bullpen.read_log()` parses data/historical/bullpen_log.jsonl, which is
+# 4.2 MB and 18,365 rows, and `relief_rates_by_team` walks all of it. The
+# first version of `relief_rates_for` did both on EVERY /card request, on a
+# container sized for a read-only page render. Staging went 503 within an
+# hour of that shipping.
+#
+# Keyed by date because the rates change once a day by construction (they
+# are "strictly before this date"), and bounded because an unbounded dict
+# keyed by a path parameter is a memory leak a caller controls.
+_RELIEF_CACHE: dict = {}
+_RELIEF_CACHE_MAX = 8
+_RELIEF_LOG: list = []
+_RELIEF_LOG_LOADED = False
+
+
+def _relief_log() -> list:
+    """The bullpen log, read at most once per process."""
+    global _RELIEF_LOG, _RELIEF_LOG_LOADED
+    if _RELIEF_LOG_LOADED:
+        return _RELIEF_LOG
+    from src.pipeline import bullpen
+
+    try:
+        _RELIEF_LOG = bullpen.read_log() or []
+    except Exception:  # noqa: BLE001 -- a corrupt log is a gap, not a 500
+        _RELIEF_LOG = []
+    _RELIEF_LOG_LOADED = True
+    return _RELIEF_LOG
+
+
 def relief_rates_for(date: str) -> dict:
     """`{team: runs allowed per nine in relief}` strictly before `date`.
 
@@ -97,18 +135,27 @@ def relief_rates_for(date: str) -> dict:
     """
     from src.pipeline import bullpen
 
-    try:
-        log = bullpen.read_log()
-    except Exception:  # noqa: BLE001 -- a corrupt log is a gap, not a 500
-        return {}
+    cached = _RELIEF_CACHE.get(date)
+    if cached is not None:
+        return cached
+
+    log = _relief_log()
     if not log:
         return {}
     try:
-        return {team: row.get("rate")
-                for team, row in bullpen.relief_rates_by_team(log, date).items()
-                if row.get("rate")}
+        rates = {team: row.get("rate")
+                 for team, row in bullpen.relief_rates_by_team(log, date).items()
+                 if row.get("rate")}
     except Exception:  # noqa: BLE001
         return {}
+
+    if len(_RELIEF_CACHE) >= _RELIEF_CACHE_MAX:
+        # Oldest key out. Insertion order is date order in practice and the
+        # cap is small enough that a smarter policy would cost more than it
+        # saves.
+        _RELIEF_CACHE.pop(next(iter(_RELIEF_CACHE)), None)
+    _RELIEF_CACHE[date] = rates
+    return rates
 
 
 def _flatten(entry) -> dict:
@@ -178,7 +225,40 @@ def _has_started(first_pitch_utc, now: datetime) -> bool:
     return when <= now.astimezone(timezone.utc)
 
 
+# THE OTHER THING THAT WAS READ ON EVERY REQUEST, and the bigger one.
+#
+# `run_line_rows` called `snapshots.read_multibook()` with no caching, and
+# that parses data/processed/odds_multibook.jsonl -- 38 MB and 119,000 rows
+# -- into Python dicts. On a 512 MB staging container serving a read-only
+# page, one request could allocate several hundred megabytes of short-lived
+# objects; two at once could not. Staging went 503 within an hour of this
+# shipping and the deploy's own health check had passed on the way in,
+# because nothing had requested a card yet.
+#
+# Cached per date behind the same single-flight TTL cache api/games.py uses
+# for its slate builds, so a burst of requests for one date shares one parse
+# instead of each paying for it.
+_RUNLINE_CACHE = freshness.SingleFlightTTLCache(ttl_s=RUNLINE_CACHE_TTL_S)
+
+
 def run_line_rows(date: str, *, rows=None, run_line: float = RUN_LINE) -> dict:
+    """Cached wrapper. `rows` given explicitly bypasses the cache, because a
+    caller injecting its own rows is a test and must not see another test's
+    result."""
+    if rows is not None:
+        return _run_line_rows_uncached(date, rows=rows, run_line=run_line)
+    try:
+        value, _meta = _RUNLINE_CACHE.get(
+            ("run_lines", date, run_line),
+            lambda: _run_line_rows_uncached(date, rows=None, run_line=run_line))
+        return value
+    except Exception:  # noqa: BLE001 -- an unreadable store is a gap, and a
+        # card with no alternatives is a real state; a 500 is not.
+        return {}
+
+
+def _run_line_rows_uncached(date: str, *, rows=None,
+                            run_line: float = RUN_LINE) -> dict:
     """{game_id: {"away": {...}, "home": {...}}} for the standard run line.
 
     Built from the same multibook store and the same `prices.snapshot` the

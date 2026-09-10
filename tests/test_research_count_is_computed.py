@@ -91,6 +91,15 @@ class TheRegistryIsTheSource(unittest.TestCase):
         self.assertEqual(searched["hypotheses"], counts["hypotheses"])
 
     def test_meta_serves_it(self):
+        # CI runs this suite WITHOUT api/requirements.txt -- fastapi
+        # lives only in api/'s dependencies (tests/test_api_boundary.py
+        # exists to prove src/ never needs it). Skip rather than error,
+        # so the api-less job stays green and still runs everything else
+        # in this file.
+        try:
+            import fastapi  # noqa: F401
+        except ImportError:
+            self.skipTest('fastapi is not installed in this job')
         from api import meta as meta_api
         payload = meta_api.get_meta()
         self.assertIn("research", payload)
@@ -100,6 +109,15 @@ class TheRegistryIsTheSource(unittest.TestCase):
         """/meta is hit on every page load and must not 500 because a file
         moved -- and must not invent a number either."""
         from unittest import mock
+        # CI runs this suite WITHOUT api/requirements.txt -- fastapi
+        # lives only in api/'s dependencies (tests/test_api_boundary.py
+        # exists to prove src/ never needs it). Skip rather than error,
+        # so the api-less job stays green and still runs everything else
+        # in this file.
+        try:
+            import fastapi  # noqa: F401
+        except ImportError:
+            self.skipTest('fastapi is not installed in this job')
         from api import meta as meta_api
         with mock.patch("src.research.alpha_registry.public_research_counts",
                         side_effect=RuntimeError("gone")):
