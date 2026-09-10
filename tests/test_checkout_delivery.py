@@ -225,6 +225,41 @@ class ProductionConfigTests(unittest.TestCase):
     """The deploy file itself. The guard above stops the charge; this stops
     production from shipping in the refusing state at all."""
 
+    def test_production_never_enables_the_public_demo(self):
+        """APP_PUBLIC_DEMO=1 does two things, and on production both are
+        catastrophic: api/app.py drops the paid dependency from every game
+        surface, and web/js/betcheck.js routes anonymous visitors to the
+        UNCAPPED /betcheck instead of the three-free-checks route. So the
+        entire paid product is given away AND the paywall we are asking
+        people to cross silently stops existing.
+
+        Staging sets it on purpose -- it is a demo, and it is how the only
+        person with the URL can see anything without a token. That is
+        exactly why this test exists: the two configs must not converge by
+        somebody copying one to the other.
+        """
+        from pathlib import Path
+        toml = Path(__file__).resolve().parents[1] / "deploy" / "fly.production.toml"
+        if not toml.is_file():
+            self.skipTest("deploy/fly.production.toml not present")
+        code = "\n".join(l for l in toml.read_text(encoding="utf-8").splitlines()
+                         if not l.lstrip().startswith("#"))
+        self.assertNotIn(
+            "APP_PUBLIC_DEMO", code,
+            "production sets APP_PUBLIC_DEMO -- the paid product would be "
+            "free to anyone with the URL and the free-check paywall would "
+            "never fire")
+
+    def test_staging_still_has_it(self):
+        """Belt and braces on the reverse mistake: 'fixing' the line above
+        by stripping it from staging too would lock out the only people who
+        can currently see the product at all."""
+        from pathlib import Path
+        toml = Path(__file__).resolve().parents[1] / "deploy" / "fly.staging.toml"
+        if not toml.is_file():
+            self.skipTest("deploy/fly.staging.toml not present")
+        self.assertIn("APP_PUBLIC_DEMO", toml.read_text(encoding="utf-8"))
+
     def test_production_toml_sets_a_public_base_url(self):
         from pathlib import Path
         toml = Path(__file__).resolve().parents[1] / "deploy" / "fly.production.toml"
