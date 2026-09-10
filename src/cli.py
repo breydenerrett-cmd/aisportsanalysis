@@ -2914,11 +2914,22 @@ def cmd_card(args) -> int:
             print("historical store is empty -- run `ingest` first.",
                   file=sys.stderr)
             return EXIT_ERROR
+        # KEYED BOTH WAYS ON PURPOSE. The results store round-trips through
+        # JSON and its game_pk is a str; a frozen pick's game_pk came off the
+        # schedule and is an int. A single-typed map here would miss every
+        # pick and settle the whole card as VOID -- which does not look like
+        # a bug, it looks like a postponed slate, and nobody would chase it.
+        # Verified against the real 2026-09-10 card: 3 picks, 0 voids.
         by_pk = {}
         for row in store.values():
             if str(row.get("date")) == date_str:
-                by_pk[row.get("game_pk")] = row
-                by_pk[str(row.get("game_pk"))] = row
+                pk = row.get("game_pk")
+                by_pk[pk] = row
+                by_pk[str(pk)] = row
+                try:
+                    by_pk[int(pk)] = row
+                except (TypeError, ValueError):
+                    pass
         row = card_ledger.settle(date_str, by_pk)
         if row is None:
             published = card_ledger.published_row(date_str)

@@ -177,6 +177,24 @@ class SettleNeverRewrites(LedgerCase):
     def test_settling_a_date_that_was_never_published_does_nothing(self):
         self.assertIsNone(card_ledger.settle("2026-09-10", {}, path=self.path))
 
+    def test_a_str_keyed_results_map_still_joins_to_int_game_pks(self):
+        """THE TYPE TRAP, and it is the expensive one.
+
+        The results store round-trips through JSON so its game_pk is a str;
+        a frozen pick's came off the schedule and is an int. A join that
+        only tried one type would VOID every pick -- and a card settling
+        0-0 with three voids does not look like a bug, it looks like a
+        postponed slate, so nobody would chase it. Verified against the real
+        2026-09-10 card as well: 3 picks, 0 voids.
+        """
+        card_ledger.publish(_card(picks=[_pick(game_pk=1001)]), path=self.path)
+        row = card_ledger.settle(
+            "2026-09-10",
+            {"1001": {"away_score": 1, "home_score": 4}},  # str key only
+            path=self.path)
+        self.assertEqual(0, row["voids"], "the int/str game_pk join failed")
+        self.assertEqual(1, row["wins"])
+
     def test_voids_are_excluded_from_the_return_but_reported(self):
         card_ledger.publish(
             _card(picks=[_pick(rank=1, game_pk=1001),
