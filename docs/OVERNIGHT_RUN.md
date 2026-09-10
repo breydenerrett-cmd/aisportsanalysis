@@ -731,3 +731,19 @@ https://linehound-staging.fly.dev/billing/webhook -> dry-run purchase.
 - 2026-09-10T10:13Z daily_loop: closing-audit exit=0
 - 2026-09-10T10:13Z daily_loop: research-readiness exit=0
 - 2026-09-10T10:13Z daily_loop: prereg-clv exit=0
+- 2026-09-10T13:55Z daily_loop: standings catchup end=2026-09-10
+- 2026-09-10T13:55Z daily_loop: lineups+matchup_history date=2026-09-10
+- 2026-09-10T13:55Z daily_loop: pitcher splits date=2026-09-10
+- 2026-09-10T13:55Z daily_loop: pitch arsenals season=2026
+- 2026-09-10T13:55Z daily_loop: statcast --catchup exit=0
+- 2026-09-10T13:55Z daily_loop: gamekey --date 2026-09-09 --end 2026-09-10 exit=0
+- 2026-09-10T13:55Z daily_loop: gameflow --date 2026-09-09 exit=0
+- 2026-09-10T13:56Z daily_loop: engine slate --date 2026-09-10 exit=0
+- 2026-09-10T13:56Z daily_loop: engine slip --date 2026-09-10
+- 2026-09-10T13:56Z daily_loop: engine settle --date 2026-09-09 exit=0
+- 2026-09-10T13:56Z daily_loop: eod --date 2026-09-09 exit=0
+- 2026-09-10T13:56Z daily_loop: postmortem --date 2026-09-09 exit=0
+- 2026-09-10T13:56Z daily_loop: train exit=0
+- 2026-09-10T13:56Z daily_loop: closing-audit exit=0
+- 2026-09-10T13:56Z daily_loop: research-readiness exit=0
+- 2026-09-10T13:56Z daily_loop: prereg-clv exit=0
