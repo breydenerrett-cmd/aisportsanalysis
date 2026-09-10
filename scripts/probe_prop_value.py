@@ -120,6 +120,28 @@ def main(argv=None):
     for lines in by_player_name.values():
         lines.sort(key=lambda r: str(r.get("date") or ""))
 
+    # TONIGHT'S BATTING SLOT, joined by (date, player name). The prop store
+    # carries the odds feed's event id and the lineup store carries game_pk,
+    # so a name-and-date join avoids a mapping that could silently match
+    # nothing -- and a batter appears once per date, so it is unambiguous.
+    #
+    # Slot beats the batter's own season average on plate appearances by 13%
+    # (scripts/probe_lineup_slot.py). Whether it also closes the gap against
+    # a PRICE is the question this probe now answers, by running both arms.
+    slot_by_player_date = {}
+    try:
+        from src.pipeline import lineup_store
+        for card in (lineup_store.read() or {}).values():
+            if not isinstance(card, dict):
+                continue
+            date = str(card.get("date") or "")
+            for side in ("away", "home"):
+                for entry in card.get(side) or ():
+                    if entry.get("name") and entry.get("order"):
+                        slot_by_player_date[(date, entry["name"])] = entry["order"]
+    except Exception:  # noqa: BLE001 -- no lineups is a gap, not a crash
+        slot_by_player_date = {}
+
     # Group the prices: one contract is (date, event, player, market, line),
     # and within it one row per book per side at the newest instant.
     contracts = defaultdict(lambda: defaultdict(dict))
@@ -197,10 +219,12 @@ def main(argv=None):
             skipped["no prior games for this batter"] += 1
             continue
         history = [r for r in box if str(r.get("date") or "") < str(date)]
+        slot = slot_by_player_date.get((str(date), player))
         try:
             league = playerprops.league_rates(history)
             priced = playerprops.price_prop(market=market, line=line,
-                                            batter_lines=prior, league=league)
+                                            batter_lines=prior, league=league,
+                                            batting_slot=slot)
         except playerprops.PropError:
             skipped["batter below the plate-appearance floor"] += 1
             continue
@@ -224,7 +248,8 @@ def main(argv=None):
                     outcome = 1 if int(got) > line else 0
                 break
 
-        all_assessed.append({"best_price": best_over[0], "outcome": outcome})
+        all_assessed.append({"best_price": best_over[0], "outcome": outcome,
+                             "pa_source": priced["expected_pa_source"]})
 
         if edge < args.min_edge:
             continue
@@ -239,6 +264,8 @@ def main(argv=None):
             "vs_market_points": round((ours - consensus) * 100, 2),
             "books": len(fair_overs),
             "outcome": outcome,
+            "pa_source": priced["expected_pa_source"],
+            "batter_pa_sample": priced["batter_pa_sample"],
         })
 
     findings.sort(key=lambda f: -f["edge_points"])
@@ -323,6 +350,27 @@ def main(argv=None):
         print("    does worse, the disagreement is selecting our own errors.")
         print()
         print("    A WEEK OF PRICES SETTLES NEITHER. Read the intervals.")
+        print()
+        # DID THE LINEUP HELP? The flagged picks split by which plate-
+        # appearance estimate they used. Tonight's slot beats the season
+        # average on PAs by 13%; whether that also closes the gap against a
+        # PRICE is a different question and this is where it gets answered.
+        with_slot = [f for f in graded if f["pa_source"] == "batting_slot"]
+        without = [f for f in graded if f["pa_source"] != "batting_slot"]
+        ws, wo = _roi(with_slot), _roi(without)
+        print("  DID KNOWING TONIGHT'S LINEUP HELP?")
+        if ws:
+            print(f"    with tonight's slot     n={ws['n']:<5} "
+                  f"ROI {ws['roi_pct']:+.1f}%   "
+                  f"[{ws['ci95'][0]:+.1f}, {ws['ci95'][1]:+.1f}]")
+        else:
+            print(f"    with tonight's slot     n={len(with_slot)} -- too few "
+                  f"to score; the posted-lineup store covers far fewer games "
+                  f"than the price store")
+        if wo:
+            print(f"    season average only     n={wo['n']:<5} "
+                  f"ROI {wo['roi_pct']:+.1f}%   "
+                  f"[{wo['ci95'][0]:+.1f}, {wo['ci95'][1]:+.1f}]")
     print()
     print(f"{'date':<12}{'player':<22}{'market':<22}{'line':>5}"
           f"{'ours':>7}{'mkt':>7}{'price':>7}{'edge':>7}  book")
