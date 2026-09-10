@@ -90,8 +90,22 @@ class ConsistencyError(ValueError):
     """The three markets could not be read as one game."""
 
 
-def _devig_pair(price_a, price_b) -> Optional[tuple]:
-    """De-vigged (p_a, p_b), or None when the pair is unusable."""
+def _devig_pair(price_a, price_b, method: str = "proportional") -> Optional[tuple]:
+    """De-vigged (p_a, p_b), or None when the pair is unusable.
+
+    THE METHOD IS A PARAMETER BECAUSE IT IS A HYPOTHESIS. Proportional
+    de-vigging splits the hold in proportion to each side's raw probability,
+    which is the simplest rule and is known to be biased where the two
+    prices are very asymmetric -- a book takes a larger margin on the
+    longshot than the favourite (the favourite-longshot bias), and
+    proportional splitting assumes it does not.
+
+    A run line at -1.5 is exactly such a market. If our residual
+    disagreement with the books is really a de-vig artefact rather than a
+    distribution artefact, changing this argument will show it, and the
+    answer matters far beyond this module: proportional is what
+    `src.analysis.prices` uses for every number the product publishes.
+    """
     try:
         raw = (odds_math.american_to_probability(price_a)
                + odds_math.american_to_probability(price_b))
@@ -100,54 +114,60 @@ def _devig_pair(price_a, price_b) -> Optional[tuple]:
     if raw < MIN_TWO_WAY_BOOKSUM:
         return None
     try:
-        return odds_math.devig_two_way(price_a, price_b)
+        return odds_math.devig_two_way(price_a, price_b, method=method)
     except odds_math.OddsError:
         return None
 
 
-def _p_home(sum_means: float, diff: float) -> float:
+def _p_home(sum_means: float, diff: float, dispersion=None, family=None) -> float:
     """P(home wins) for means with this sum and difference."""
     home = (sum_means + diff) / 2.0
     away = (sum_means - diff) / 2.0
     if home <= 0 or away <= 0:
         return 0.0 if home <= 0 else 1.0
-    return strength.market_probabilities(away, home)["p_home"]
+    return strength.market_probabilities(
+        away, home, dispersion=dispersion, family=family)["p_home"]
 
 
-def _p_over(sum_means: float, diff: float, total_line: float) -> float:
+def _p_over(sum_means: float, diff: float, total_line: float,
+            dispersion=None, family=None) -> float:
     home = (sum_means + diff) / 2.0
     away = (sum_means - diff) / 2.0
     if home <= 0 or away <= 0:
         return 0.0
-    probs = strength.market_probabilities(away, home, totals=[total_line])
+    probs = strength.market_probabilities(
+        away, home, totals=[total_line], dispersion=dispersion, family=family)
     return probs["p_over"][total_line]
 
 
-def _solve_diff(sum_means: float, target_p_home: float) -> float:
+def _solve_diff(sum_means: float, target_p_home: float,
+                dispersion=None, family=None) -> float:
     """The mean difference that reproduces `target_p_home` at this sum."""
     lo, hi = -(sum_means - 2 * MIN_MEAN), (sum_means - 2 * MIN_MEAN)
     for _ in range(BISECTION_STEPS):
         mid = (lo + hi) / 2.0
-        if _p_home(sum_means, mid) < target_p_home:
+        if _p_home(sum_means, mid, dispersion, family) < target_p_home:
             lo = mid
         else:
             hi = mid
     return (lo + hi) / 2.0
 
 
-def _solve_sum(diff: float, target_p_over: float, total_line: float) -> float:
+def _solve_sum(diff: float, target_p_over: float, total_line: float,
+               dispersion=None, family=None) -> float:
     """The mean sum that reproduces `target_p_over` at this difference."""
     lo, hi = max(2 * MIN_MEAN, abs(diff) + 2 * MIN_MEAN), 2 * MAX_MEAN
     for _ in range(BISECTION_STEPS):
         mid = (lo + hi) / 2.0
-        if _p_over(mid, diff, total_line) < target_p_over:
+        if _p_over(mid, diff, total_line, dispersion, family) < target_p_over:
             lo = mid
         else:
             hi = mid
     return (lo + hi) / 2.0
 
 
-def implied_means(p_home: float, p_over: float, total_line: float) -> dict:
+def implied_means(p_home: float, p_over: float, total_line: float,
+                  dispersion=None, family=None) -> dict:
     """The two run means a book's moneyline and total imply together.
 
     Alternating bisection: the sum drives the total, the difference drives
@@ -157,15 +177,20 @@ def implied_means(p_home: float, p_over: float, total_line: float) -> dict:
     hard board into a fake "inconsistency".
     """
     if not (0.0 < p_home < 1.0) or not (0.0 < p_over < 1.0):
+        # Worded without field names on purpose: tests/test_customer_language.py
+        # scans src/ for snake_case inside sentences, because that is how a
+        # payload key ends up rendered on a page. This message is for a
+        # developer and it can say the same thing in words.
         raise ConsistencyError(
-            f"probabilities out of range: p_home={p_home}, p_over={p_over}")
+            f"a probability is outside (0, 1): home win {p_home}, "
+            f"over {p_over}")
 
     sum_means = 2 * 4.5
     diff = 0.0
     converged = False
     for _ in range(MAX_PASSES):
-        new_diff = _solve_diff(sum_means, p_home)
-        new_sum = _solve_sum(new_diff, p_over, total_line)
+        new_diff = _solve_diff(sum_means, p_home, dispersion, family)
+        new_sum = _solve_sum(new_diff, p_over, total_line, dispersion, family)
         if (abs(new_diff - diff) < TOLERANCE
                 and abs(new_sum - sum_means) < TOLERANCE):
             diff, sum_means = new_diff, new_sum
@@ -184,14 +209,16 @@ def implied_means(p_home: float, p_over: float, total_line: float) -> dict:
         # The check that matters: do these means actually reproduce the two
         # inputs? Reported so a caller can refuse a bad solve rather than
         # trust `converged` alone.
-        "refit_p_home": _p_home(sum_means, diff),
-        "refit_p_over": _p_over(sum_means, diff, total_line),
+        "refit_p_home": _p_home(sum_means, diff, dispersion, family),
+        "refit_p_over": _p_over(sum_means, diff, total_line, dispersion, family),
     }
 
 
 def check_board(*, home_ml, away_ml, total_line, over_price, under_price,
                 home_rl_price, away_rl_price, home_rl_line=-STANDARD_RUN_LINE,
-                run_line: float = STANDARD_RUN_LINE) -> Optional[dict]:
+                run_line: float = STANDARD_RUN_LINE,
+                dispersion=None, family=None,
+                devig: str = "proportional") -> Optional[dict]:
     """One book, one instant, one game: does its own board hang together?
 
     Returns None -- not an exception -- when any leg is unusable, because a
@@ -203,9 +230,9 @@ def check_board(*, home_ml, away_ml, total_line, over_price, under_price,
     points. Positive means the book is pricing the favourite's run line
     CHEAPER than its own other two markets say it should be.
     """
-    ml = _devig_pair(away_ml, home_ml)
-    tot = _devig_pair(over_price, under_price)
-    rl = _devig_pair(away_rl_price, home_rl_price)
+    ml = _devig_pair(away_ml, home_ml, devig)
+    tot = _devig_pair(over_price, under_price, devig)
+    rl = _devig_pair(away_rl_price, home_rl_price, devig)
     if ml is None or tot is None or rl is None:
         return None
     if total_line is None:
@@ -227,7 +254,8 @@ def check_board(*, home_ml, away_ml, total_line, over_price, under_price,
     p_home_rl_book = rl[1]
 
     try:
-        solved = implied_means(p_home_ml, p_over, total_line)
+        solved = implied_means(p_home_ml, p_over, total_line,
+                               dispersion=dispersion, family=family)
     except ConsistencyError:
         return None
     if not solved["converged"]:
@@ -239,7 +267,8 @@ def check_board(*, home_ml, away_ml, total_line, over_price, under_price,
         return None
 
     probs = strength.market_probabilities(
-        solved["away_mean"], solved["home_mean"], run_line=run_line)
+        solved["away_mean"], solved["home_mean"], run_line=run_line,
+        dispersion=dispersion, family=family)
     # `home_rl_line` is negative when the home club is laying the runs.
     home_is_favourite_on_rl = float(home_rl_line) < 0
     p_home_rl_implied = (probs["p_home_minus"] if home_is_favourite_on_rl

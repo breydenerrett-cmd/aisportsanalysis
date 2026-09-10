@@ -96,6 +96,21 @@ def main(argv=None):
                          "the store")
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--top", type=int, default=12)
+    ap.add_argument(
+        "--dispersion", type=float, default=None,
+        help="run the solve with an overdispersed run distribution instead "
+             "of the Poisson. DIAGNOSTIC ONLY -- this does not adopt "
+             "anything (docs/PREREG_RUN_DISPERSION.md). Its purpose is to "
+             "subtract our own known model error so that whatever "
+             "disagreement REMAINS is the books' own.")
+    ap.add_argument("--family", default="nb1", choices=("nb1", "nb2"))
+    ap.add_argument(
+        "--devig", default="proportional",
+        choices=("proportional", "additive", "power", "shin"),
+        help="how the book's hold is removed. Proportional is what "
+             "src/analysis/prices.py uses for every number the product "
+             "publishes, so a large difference here is a finding about the "
+             "whole product and not only about this probe.")
     args = ap.parse_args(argv)
 
     rows = snapshots.pregame_rows(snapshots.read_multibook())
@@ -118,7 +133,9 @@ def main(argv=None):
             under_price=totals.get("under_price"),
             home_rl_price=spreads.get("home_price"),
             away_rl_price=spreads.get("away_price"),
-            home_rl_line=spreads.get("home_line"))
+            home_rl_line=spreads.get("home_line"),
+            dispersion=args.dispersion, family=args.family,
+            devig=args.devig)
         if check is None:
             skipped += 1
             continue
