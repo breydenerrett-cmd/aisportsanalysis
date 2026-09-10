@@ -68,8 +68,19 @@ MIN_GAMES_FOR_A_VERDICT = 400
 # results has to reproduce this before the comparison between five and nine
 # innings can be read as being about the innings rather than about which
 # games got a linescore row stored.
-FULL_SEASON_GAIN = 0.00089
+# The RAW model's full-game gain over a base rate on the whole season
+# (scripts/backtest_card.py, "model (raw, uncalibrated)" against "always the
+# base rate"). Raw, not calibrated, because that is what this probe measures
+# on both arms -- comparing against the walk-forward calibrated figure would
+# be comparing two different quantities and the check would drift for
+# reasons that have nothing to do with representativeness.
+FULL_SEASON_GAIN = 0.00395
 REPRESENTATIVE_TOLERANCE = 0.005
+
+# How far the predicted first-five total may sit from the observed one
+# before the F5 arm is measuring this probe's own construction rather than
+# the model. A fifth of a run over ~1,000 games is generous.
+CONSTRUCTION_BIAS_LIMIT = 0.20
 
 
 def _int(value):
@@ -149,6 +160,7 @@ def main(argv=None):
 
     full_pairs, f5_pairs = [], []
     full_base, f5_base = [], []
+    predicted_totals, actual_totals = [], []
     f5_ties = 0
     missing = 0
 
@@ -180,14 +192,30 @@ def main(argv=None):
         # a push for exactly that reason -- so ties are EXCLUDED from the
         # win/loss comparison and counted, rather than folded into one side
         # where they would flatter or punish the model at random.
+        fm = _first_five_means(means, feats)
+        # Recorded for EVERY game including ties, because the totals check is
+        # about the construction and a tie is as informative as any other
+        # score for that.
+        predicted_totals.append(fm["away_mean"] + fm["home_mean"])
+        actual_totals.append(f5_home + f5_away)
+
         if f5_home == f5_away:
             f5_ties += 1
             continue
-        fm = _first_five_means(means, feats)
         probs = strength.market_probabilities(fm["away_mean"], fm["home_mean"])
         # Renormalised over the two decisive outcomes, since ties are out.
         p_home_no_tie = probs["p_home"]
         f5_pairs.append((p_home_no_tie, 1 if f5_home > f5_away else 0))
+
+    # IS THE F5 CONSTRUCTION ITSELF THE PROBLEM? It has to be asked before a
+    # negative result is believed. `_first_five_means` scales offence by five
+    # ninths, which assumes runs are spread evenly across innings -- they are
+    # not; the first inning scores more than the fourth. If the predicted F5
+    # totals are biased against the observed ones, this probe is measuring
+    # that crudeness rather than the model's skill at five innings, and the
+    # hypothesis has not actually been tested.
+    bias = (statistics.fmean(predicted_totals) - statistics.fmean(actual_totals)
+            if predicted_totals else None)
 
     full_rate = statistics.fmean(y for _, y in full_pairs) if full_pairs else 0.5
     f5_rate = statistics.fmean(y for _, y in f5_pairs) if f5_pairs else 0.5
@@ -209,6 +237,13 @@ def main(argv=None):
             "home_win_rate": round(f5_rate, 4),
             "model_log_loss": round(_log_loss(f5_pairs), 5),
             "base_log_loss": round(_log_loss(f5_base), 5),
+        },
+        "construction_check": {
+            "predicted_f5_total": (round(statistics.fmean(predicted_totals), 3)
+                                   if predicted_totals else None),
+            "actual_f5_total": (round(statistics.fmean(actual_totals), 3)
+                                if actual_totals else None),
+            "bias": round(bias, 3) if bias is not None else None,
         },
     }
     report["full_game"]["gain_nats"] = round(
@@ -235,8 +270,27 @@ def main(argv=None):
         print(f"{label:<14}{s['home_win_rate']:>12.1%}{s['model_log_loss']:>11.5f}"
               f"{s['base_log_loss']:>11.5f}{s['gain_nats']:>+11.5f}")
     print()
+    cc = report["construction_check"]
+    print("CONSTRUCTION CHECK -- is the F5 arm measuring the model, or the")
+    print("crude way this probe builds an F5 line?")
+    print(f"  predicted F5 total {cc['predicted_f5_total']}   "
+          f"actual {cc['actual_f5_total']}   bias {cc['bias']:+.3f} runs")
+    print()
+
     fg = report["full_game"]["gain_nats"]
     f5g = report["first_five"]["gain_nats"]
+
+    if cc["bias"] is not None and abs(cc["bias"]) > CONSTRUCTION_BIAS_LIMIT:
+        print(f"  NO VERDICT. The F5 run means are off by "
+              f"{cc['bias']:+.2f} runs a game, past the "
+              f"{CONSTRUCTION_BIAS_LIMIT} this probe allows. The F5 arm is")
+        print("  measuring `_first_five_means`, not the model's skill over")
+        print("  five innings -- most likely the five-ninths offence scaling,")
+        print("  which assumes runs spread evenly across innings and they do")
+        print("  not. Fix the construction before believing either answer.")
+        print()
+        print("  No price was read by this probe.")
+        return 0
 
     # TWO REFUSALS BEFORE ANY VERDICT, and the first draft of this file had
     # neither. It printed "THE ARGUMENT SURVIVES" off 97 games whose

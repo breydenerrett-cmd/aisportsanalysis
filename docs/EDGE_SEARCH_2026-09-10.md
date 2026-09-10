@@ -195,19 +195,45 @@ walk-forward, the difference explained by thin April samples. The
 pre-specified window is the one that counts and the other number is printed
 at the same size.
 
-### 2. First-five innings — BLOCKED ON DATA, 2026-09-10
+### 2. First-five innings — TESTED AND REFUTED, 2026-09-10
 
-`scripts/probe_first_five.py` was built to test the argument below. **It
-cannot yet**: the boxscore store carries a first-five result for **111 of
-1,896 games**, and on that subsample the model's full-game gain is −0.00949
-nats against +0.00089 for the season — so the games that happen to have a
-linescore row are not a representative slice and the comparison is not
-interpretable.
+**The argument was wrong. Drop the direction.**
 
-The probe's first draft printed "THE ARGUMENT SURVIVES" off 97 games. It now
-refuses a verdict below 400 games, and refuses again unless the subsample
-reproduces the season's own full-game figure. **The blocker is the boxscore
-backfill, not the hypothesis.** The argument itself is untouched:
+It was blocked on data for most of the day — the boxscore store carried a
+first-five result for 111 of 1,896 games — so the season was backfilled
+(free, MLB API, no odds credits) and the probe re-run on **894 decisive
+first-five games**.
+
+| outcome | model | base rate | gain |
+|---|---|---|---|
+| full game | 0.68737 | 0.69232 | **+0.00495** |
+| first five | 0.69038 | 0.68990 | **−0.00048** |
+
+Over nine innings the model beats a base rate. **Over five it is worse than
+knowing nothing.** That is the opposite of the prediction.
+
+**The obvious confound is ruled out.** The probe builds its F5 line by
+scaling offence to five ninths, which assumes runs spread evenly across
+innings — they do not, the first inning scores more than the fourth. If
+those means were biased, this would be measuring the construction rather
+than the model. They are not: predicted first-five total **4.914** against
+an observed **4.991**, a bias of −0.077 runs over ~1,000 games. The probe
+now refuses a verdict at all if that bias exceeds 0.20.
+
+**What the negative actually tells us**, and it is worth more than the
+hypothesis was: the model's (small) predictive value is **not** coming from
+its starting-pitcher component. If it were, isolating the innings the
+starter throws would sharpen it. It comes from the team-level scoring rates,
+which apply across all nine.
+
+That reframes the whole "where to look" question. The starter features are
+real, carefully built, point-in-time — and on this evidence they are not
+what makes the model work. The next thing to measure is which component
+carries the +0.00495, by ablation, rather than which market to point the
+existing model at.
+
+The argument that failed, recorded so it is not re-derived from scratch in
+three months:
 
 The argument is specific rather than hopeful:
 
