@@ -74,12 +74,51 @@ jobs:
         run: flyctl deploy -c deploy/fly.staging.toml -a linehound-staging --remote-only --yes
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      # TWO PHASES, AND THE SECOND ONE EXISTS BECAUSE OF 2026-09-10.
+      #
+      # This step used to exit 0 on the first successful /health and stop.
+      # That day a deploy passed it and the app was returning 503 within the
+      # hour: /health touches no store, and the card endpoint was parsing a
+      # 38 MB odds file per request on a 512 MB machine. Nothing broke until
+      # a person opened the page, by which time the workflow was long green.
+      #
+      # Phase 1 waits for the app to come up. Phase 2 then EXERCISES THE
+      # PAGE PATH -- a request that actually builds a card -- and keeps
+      # checking health for a further minute, so a container that dies under
+      # its first real request fails the deploy that shipped it.
       - name: Health check
         run: |
+          set -u
+          BASE=https://linehound-staging.fly.dev
+          up=0
           for i in $(seq 1 12); do
-            if curl -sf https://linehound-staging.fly.dev/health >/dev/null; then
-              echo "healthy"; exit 0
-            fi
+            if curl -sf "$BASE/health" >/dev/null; then up=1; break; fi
             sleep 10
           done
-          echo "health check did not pass within 2 minutes"; exit 1
+          if [ "$up" -ne 1 ]; then
+            echo "health check did not pass within 2 minutes"; exit 1
+          fi
+          echo "up; now exercising the page path"
+
+          # The card route is behind the paid gate, so 401 is the SUCCESS
+          # case here -- it proves the route is mounted and the app answered.
+          # What must not happen is a 5xx or a dropped connection, which is
+          # what an out-of-memory container produces.
+          TODAY=$(date -u +%Y-%m-%d)
+          for path in "/card/$TODAY" "/card/record" "/opportunities/$TODAY" "/today"; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 45 "$BASE$path" || echo 000)
+            echo "  $path -> $code"
+            case "$code" in
+              5*|000) echo "ESCALATE: $path returned $code -- the deploy is up but cannot serve a page"; exit 1 ;;
+            esac
+          done
+
+          # Still alive a minute after doing real work?
+          for i in $(seq 1 6); do
+            sleep 10
+            if ! curl -sf "$BASE/health" >/dev/null; then
+              echo "ESCALATE: the app answered a page request and then stopped responding -- almost certainly out of memory"
+              exit 1
+            fi
+          done
+          echo "healthy, and still healthy after serving real requests"
