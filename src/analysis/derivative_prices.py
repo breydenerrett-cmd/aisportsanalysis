@@ -77,6 +77,19 @@ PROP_MARKET = "pitcher_strikeouts"
 SUPPORTED = (TOTALS_MARKETS + TEAM_TOTAL_MARKETS + MONEYLINE_MARKETS
              + SPREAD_MARKETS + (PROP_MARKET,))
 
+# The smallest combined implied probability a genuine two-way quote can have.
+#
+# A book pricing both sides of one contract always exceeds 100% -- the excess
+# IS the vig. So a "pair" summing below 1.0 is not one market with a margin
+# on it; it is two different bets that got paired by mistake, and de-vigging
+# it scales both legs up and invents edge out of nothing.
+#
+# 1.0 exactly is the theoretical floor (a zero-margin book). Sitting slightly
+# below it tolerates rounding and a genuinely razor-thin quote while still
+# rejecting the failure this exists for by a factor of seven: the live
+# 2026-09-09 case summed to 0.129.
+MIN_TWO_WAY_BOOKSUM = 0.98
+
 # How each market is said in a sentence. `{line}`, `{team}`, `{player}` and
 # `{side}` are filled from the row's own fields; nothing is inferred.
 MARKET_NOUN = {
@@ -195,6 +208,38 @@ def _derivative_contracts(rows, *, date):
         market = row.get("market")
         if market not in SUPPORTED or not row.get("event_id"):
             continue
+        if market in SPREAD_MARKETS:
+            # SPREADS ARE NOT PAIRED HERE, AND MUST NOT BE.
+            #
+            # This key groups on the line AS WRITTEN, and every spread row
+            # arrives with `team` null -- so `NYM -2.5` and `MIA -2.5` fell
+            # into one group and were treated as the two sides of one
+            # two-way market. They are not. The complement of NYM -2.5 is
+            # MIA **+2.5**; two teams cannot both be -2.5.
+            #
+            # De-vigging that pair normalises it to 1.0 in whichever
+            # direction it is wrong, and BOTH legs come out fabricated:
+            #
+            #   Tigers -8.5 (+1400) & Twins -8.5 (+1500), sum 0.129
+            #     -> scaled up ~8x, board reported +45 and +42 points of
+            #        "value" on two outcomes that cannot both happen
+            #   NYM +2.5 (-310) & MIA +2.5 (-330), sum 1.523
+            #     -> scaled down, board reported -26 points OVERPRICED
+            #
+            # 387 such pairs existed on 2026-09-09 alone, and this is the
+            # arithmetic behind the "+286 crazy value" a reader saw that day
+            # and reasonably read as a recommendation. It was recorded at the
+            # time as a price gap on a thin book. It was a manufactured
+            # number, and relabelling the card would not have made it honest.
+            #
+            # The correct fix is to pair a spread with its true complement --
+            # the other team at the NEGATED line -- which needs a different
+            # grouping key and its own tests. Until that exists, this module
+            # publishes NO value claim on a spread at all. An absence is
+            # honest; a fabricated edge is not, and doctrine already says
+            # spreads are covered by null controls rather than by anything
+            # that can express them.
+            continue
         key = (row.get("event_id"), market, str(row.get("line")),
                row.get("team") or "")
         grouped.setdefault(key, []).append(row)
@@ -226,6 +271,52 @@ def _derivative_contracts(rows, *, date):
                    "home_price": v.get("home_price")}
                   for book, v in sorted(by_book.items())
                   if v.get("away_price") is not None and v.get("home_price") is not None]
+
+        # ------------------------------------------------------------------
+        # REFUSE A PAIR THAT CANNOT BE A REAL TWO-WAY MARKET.
+        #
+        # A book quoting both sides of one contract ALWAYS prices them above
+        # 100% combined -- that excess is the vig, it is how the book earns,
+        # and it is the entire premise of de-vigging. A pair whose implied
+        # probabilities sum BELOW 1.0 is therefore not two sides of one
+        # market at all; it is two different bets that this module has
+        # mistakenly paired.
+        #
+        # It was doing exactly that, live, on 2026-09-09. The grouping key
+        # above is (event_id, market, line, team), and `team` is null on
+        # every alternate_spreads row -- so `Tigers -8.5` (+1400) and
+        # `Twins -8.5` (+1500) collapsed into ONE contract and were de-vigged
+        # against each other. Their implied probabilities sum to 0.129.
+        # `odds.devig` normalises to 1.0 unconditionally, so both legs were
+        # scaled up nearly eightfold and the board reported +45 and +42
+        # points of "value" -- on two outcomes that cannot both happen, and
+        # neither of which was mispriced at all. 387 such pairs existed on
+        # that one date.
+        #
+        # This is the arithmetic behind the +286 "crazy value" a reader saw
+        # on 2026-09-09 and read as a system recommendation. It was recorded
+        # at the time as a price gap on a thin book. It was not; it was a
+        # fabricated number, and no amount of relabelling the card would have
+        # made it honest.
+        #
+        # The right long-term fix is to pair a spread with its true
+        # complement (the other team at the NEGATED line) rather than at the
+        # same one. This guard is deliberately narrower and lands first,
+        # because it makes the fabrication impossible for every market at
+        # once, including any future one whose pairing rule is also wrong.
+        # Dropping the contract is correct: an absence is honest, a
+        # manufactured edge is not.
+        from src.core import odds as _odds
+
+        def _plausible(quote):
+            try:
+                total = (_odds.american_to_probability(quote["away_price"])
+                         + _odds.american_to_probability(quote["home_price"]))
+            except (TypeError, ValueError, ZeroDivisionError):
+                return False
+            return total >= MIN_TWO_WAY_BOOKSUM
+
+        quotes = [q for q in quotes if _plausible(q)]
         if not quotes:
             continue
 

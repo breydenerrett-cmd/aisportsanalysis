@@ -306,6 +306,49 @@ def _route_is_called(path, callers):
                or c.rstrip("/") == prefix for c in callers)
 
 
+def orphan_scripts():
+    """Python scripts under scripts/ that nothing executes.
+
+    THE AUDIT'S SECOND BLIND SPOT, found the day after the first.
+
+    scripts/*.sh were treated as ENTRY POINTS -- things that run -- and
+    scripts/*.py were never considered at all, in either direction. So a
+    Python script nobody calls was invisible to the one tool whose entire
+    job is finding code nobody calls.
+
+    It cost something immediately: scripts/prereg_clv_feature_test.py, whose
+    own commit message says "a hypothesis nobody automated is one that
+    quietly never gets tested," was called by nothing, while this audit
+    reported CLEAN.
+
+    `--check`-style helpers invoked from CI count as reached, since ci.sh is
+    walked like any other shell entry point.
+    """
+    called = "\n".join(
+        [_strip_comments_sh(_read(p)) for p in ENTRY_SHELL]
+        + [_strip_comments_sh(src) for src in ENTRY_WORKFLOW_SOURCES])
+    orphans = []
+    for path in sorted((REPO / "scripts").glob("*.py")):
+        name = path.name
+        if name in DECLARED_MANUAL_SCRIPTS:
+            continue
+        # Matched on the file NAME, so `python3 scripts/x.py`,
+        # `python -m scripts.x` and a bare `scripts/x.py` all count.
+        if name not in called and path.stem not in called:
+            orphans.append(name)
+    return orphans
+
+
+# Same stinginess as DECLARED_MANUAL: a reason that would still convince
+# someone reading it cold, or wire the thing up.
+DECLARED_MANUAL_SCRIPTS = {
+    "make_icons.py",          # run by ci.sh --check; also a human tool
+    "reachability_audit.py",  # run by ci.sh
+    "publication_audit.py",   # run by capture_slot.sh
+    "research_readiness.py",  # run by daily_loop.sh
+}
+
+
 def view_modules():
     """Browser modules whose renderers NOTHING imports.
 
@@ -365,6 +408,14 @@ def main():
             f"server-side capability with no way to reach it (this is what "
             f"POST /billing/checkout was):\n    "
             + "\n    ".join(orphan_routes))
+
+    stray_scripts = orphan_scripts()
+    if stray_scripts:
+        findings.append(
+            f"{len(stray_scripts)} script(s) under scripts/ that no shell "
+            f"script or workflow executes -- this is what hid "
+            f"prereg_clv_feature_test.py:\n    "
+            + "\n    ".join(stray_scripts))
 
     orphan_views = view_modules()
     if orphan_views:

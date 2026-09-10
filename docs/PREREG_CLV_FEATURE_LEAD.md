@@ -8,9 +8,56 @@ test on games this project had not yet played when the document was written.
 
 ---
 
+> ## CORRECTION, 2026-09-10 — read this before anything below
+>
+> **The "+15.00 bps effect" reported in the first version of this document
+> was not an effect size. The real excess is about +3 bps.**
+>
+> The statistic was `mean(all with) − mean(all without)`, pooled across
+> games. That weights each game's mean by `k_g` in one arm and `n_g − k_g`
+> in the other, so it has a **non-zero expectation under random labels**.
+> Here **18 of 30 games are single-arm** (13 all-with, 5 all-without): the
+> within-game shuffle is a no-op in them, and their contribution is frozen
+> identically in every trial.
+>
+> Measured on the real pool, the permutation null for that statistic is
+> **centred at +11.89 bps (sd 1.13), not at zero.** Observed +14.85. Excess
+> over its own null: **+2.96 bps.**
+>
+> The p-value was never wrong — it is a valid test of "labels are
+> exchangeable within game," and it survives a placebo split (p = 0.94) and
+> leave-one-game-out in 29 of 30 cases. What was wrong was quoting the
+> observed statistic **as if measured from zero**.
+>
+> Two further problems found in the same review, both real:
+>
+> * **The arms are not exchangeable for reasons that are not information.**
+>   Within-game, decisions carrying the feature freeze a median of **45
+>   minutes earlier** (20:40Z vs 21:25Z) and sit at different price
+>   standing. The response variable is how far the market moved between
+>   freeze and close, so an arm that freezes earlier gets a mechanically
+>   larger move. The permutation attributes all of that to the feature.
+> * **The cleanest available contrast says zero.** Where both arms took the
+>   *identical* bet (same event, market, side, line — 12 such selections),
+>   the difference is **−0.67 bps, median 0.00, positive in 0 of 12**.
+>
+> **The statistic has been changed** (before any forward data accrued —
+> the window is still PENDING at 0 of 60 games) to the mean of **within-game
+> contrasts**, which is centred at zero by construction because each game's
+> own mean cancels. It costs sample: only games holding both arms can
+> contribute, which is the honest position, since a game where every
+> decision carries the feature contains no information about it.
+>
+> Also corrected below: the pool is **3 dates, not 10**, and **100% h2h
+> moneyline**, neither of which the first version said.
+
 ## What was observed (exploratory — not evidence)
 
-Measured over the publishable CLV pool on 2026-08-31 … 2026-09-09: decisions
+Measured over the publishable CLV pool. **Three dates only — 2026-09-07,
+-08 and -09** (the first version said 2026-08-31 … 2026-09-09, which is the
+range of the raw ledger, not of the rows that survive the publishable
+filter), with 382 of 452 rows on a single day, and **100% h2h moneyline**.
+Decisions
 whose record provenance is `live_pre_commencement`, whose closing board sits
 within 90 minutes of first pitch, and whose system is FORWARD_TEST.
 
@@ -68,7 +115,8 @@ is a refutation, not a discovery about the other direction.
 |---|---|
 | **Window** | decisions frozen on or after **2026-09-10 00:00 UTC** |
 | **Pool** | `clv.is_publishable` rows with a non-null `consensus_move_bps` |
-| **Statistic** | mean(with feature) − mean(without), in bps |
+| **Statistic** | mean of **within-game contrasts** — per game holding both arms, mean(with) − mean(without), then averaged over games. Centred at zero under the null by construction. See the correction at the top: the pooled version this replaced had a null centred at +11.89 bps. |
+| **Reported effect** | the **excess over the permuted null mean**, never the raw statistic |
 | **Null** | permutation, system labels shuffled within game, 10,000 trials |
 | **Stopping rule** | **≥ 60 distinct games** in the window. Not a date, not a decision count |
 | **Threshold** | one-sided p < 0.05 against the permuted distribution of THIS single effect |
@@ -103,14 +151,43 @@ gated behind the promotion gate, which this test is not.
 
 ## The larger finding this sits inside
 
-The same measurement says something blunter and more actionable than H1:
-**16 of 22 measured systems have negative closing-line value**, several at
-|t| > 3. The engine as a whole currently takes sides the market moves away
-from. Worse, the systems backing the flagship STRONG pick of 2026-09-09 were
-disproportionately the negative ones — five of its six families sit below
-zero, two of them below −20 bps.
+**RETRACTED, 2026-09-10.** The first version of this section said *"16 of 22
+measured systems have negative closing-line value, several at |t| > 3. The
+engine as a whole currently takes sides the market moves away from."* That
+is not supported, for three separate reasons:
 
-That is not a promotion question, it is a defect: family agreement is
-currently clustering the *worst* systems and presenting the result as the
-strongest evidence tier. It is tracked separately from this pre-registration
-because fixing a defect needs no hypothesis test.
+* **It names the wrong quantity.** Those figures are `consensus_move_bps`,
+  not `clv_bps`. This module exists to keep them apart: `clv_bps` is
+  *structurally* negative by roughly half the hold before any line moves,
+  and 27 of 28 systems are negative on it by construction. Calling
+  `consensus_move_bps` "closing-line value" is the exact conflation the
+  measurement was built to prevent.
+* **It is one observation restated 28 times.** All 28 systems draw from the
+  same **31 games and 39 distinct selections**. The pooled mean is −4.05 bps
+  over 506 decisions, but the game-level mean of means is **−3.01 over 31
+  games with a game-clustered 95% CI of [−16.2, +10.2] — which includes
+  zero.**
+* **The |t| > 3 figures used `_stderr_naive`,** which `src/report/clv.py`
+  itself labels a LOWER BOUND on the true uncertainty. One system showed
+  t = −8.03 on two decisions in one game.
+
+**The honest statement:** *across 31 games the publishable pool's vig-neutral
+consensus move averages about −3 bps, with a game-clustered 95% CI of roughly
+[−16, +10]. It cannot be distinguished from zero. The per-system split is 18
+negative and 10 positive, but those are 28 overlapping views of the same 31
+games, not 28 independent tests.*
+
+**Also retracted:** *"correlation(confirm rate, mean CLV) = +0.35 over 21
+genomes."* It reproduces at +0.341 under a ≥10-checks-and-≥10-rows filter and
+flips to **−0.047 at n = 28** under a slightly looser one. A sign change from
+a threshold change is what an n≈21 noise correlation does. It was also
+offered as evidence that confirm rate is a *forward* selector, which it
+cannot be: confirm rate and mean move are computed over **the same games**,
+so the relationship is contemporaneous. The forward version has no history at
+all yet — only reviews written from 2026-09-10 onward carry resolved checks.
+
+What survives, and is still worth acting on: the systems backing the flagship
+STRONG pick of 2026-09-09 skew toward the negative end of a distribution
+centred near zero. That is a reason to look at whether family agreement
+clusters correlated systems, which is a design question about the ranker —
+not evidence that the engine is systematically anti-predictive.

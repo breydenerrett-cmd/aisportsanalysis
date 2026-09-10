@@ -154,6 +154,23 @@ def _derivative_rows(date, now, entries, candidates=None) -> list:
     if candidates is None:
         candidates = derivative_prices.candidates_for_date(date)
 
+    # NOTHING ON THE SLATE MEANS NOTHING ON THE BOARD.
+    #
+    # This read the derivative store off disk for `date` regardless of what
+    # `entries` held, so `build_opportunities([])` -- an empty or failed
+    # slate -- still returned a full price board. Every row carried
+    # `game_id: None` and feed-derived club names, so the page rendered
+    # priced cards with dead game links for games it had just said it could
+    # not see, and `empty_reason` came back None while `checked_games` said
+    # 0. A payload cannot honestly report zero games checked and a list of
+    # qualifying bets at the same time.
+    #
+    # This is also the path that surfaced the fabricated alternate-spreads
+    # values (see src/analysis/derivative_prices.py): the board was being
+    # built and priced from disk alone, with no slate to anchor it.
+    if not entries:
+        return []
+
     # The odds feed names clubs in full ("Atlanta Braves"); the slate names
     # them by abbreviation ("ATL"). Joining the two raw strings matches
     # nothing, so both sides go through `slate.team_abbrev_from_name`, which
@@ -174,7 +191,16 @@ def _derivative_rows(date, now, entries, candidates=None) -> list:
         away_abbr = _abbr(cand.get("away_team"))
         home_abbr = _abbr(cand.get("home_team"))
         joined = by_clubs.get((away_abbr, home_abbr))
-        gid, game = joined if joined else (None, {})
+        if joined is None:
+            # A CONTRACT FOR A GAME THAT IS NOT ON THIS SLATE IS NOT ON THIS
+            # BOARD. It used to be kept with `game_id: None`, which put a
+            # priced card with a dead game link in front of a reader for a
+            # matchup the page had not checked -- and let `checked_games: 0`
+            # coexist with a list of qualifying bets. Dropping it is the
+            # honest answer: we cannot show a price for a game we did not
+            # look at.
+            continue
+        gid, game = joined
         row = {
             "game_id": gid,
             # The slate's own naming, so a derivative row reads the same way

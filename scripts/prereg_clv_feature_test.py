@@ -62,6 +62,52 @@ def _effect(sample, feats):
     return statistics.mean(with_f) - statistics.mean(without)
 
 
+def within_game_effect(rows):
+    """The mean of WITHIN-GAME contrasts: for each game holding both arms,
+    mean(with) - mean(without) inside that game, then averaged over games.
+
+    THIS REPLACED THE POOLED STATISTIC ABOVE, AND THE REASON MATTERS.
+
+    `mean(all with) - mean(all without)` pooled across games weights each
+    game's mean by k_g in one arm and (n_g - k_g) in the other. When those
+    differ the statistic has a NON-ZERO EXPECTATION under random labels --
+    and here 18 of 30 games are single-arm (13 all-with, 5 all-without), so
+    the within-game shuffle is a no-op in them and their contribution is
+    frozen identically in every trial.
+
+    Measured on the real pool: the permutation null for the pooled statistic
+    is centred at +11.89 bps (sd 1.13), not at zero. So the "+15.00 bps
+    effect" reported in the first draft of docs/PREREG_CLV_FEATURE_LEAD.md
+    was about +3 bps of actual excess over its own null, and the rest was an
+    artefact of the estimator. The p-value was never wrong -- it is a valid
+    test that labels are exchangeable within game -- but an effect SIZE
+    quoted from zero, when the design's null sits at +11.89, is not an
+    effect size.
+
+    A within-game contrast is centred at zero under the null by
+    construction, because each game's own mean cancels. It costs sample --
+    only games holding both arms can contribute -- and that honesty is the
+    point: a game where every decision carries the feature contains no
+    information about the feature.
+    """
+    contrasts = []
+    for game_rows in rows.values() if isinstance(rows, dict) else _by_game(rows):
+        with_f = [r["move"] for r in game_rows if r["has"]]
+        without = [r["move"] for r in game_rows if not r["has"]]
+        if with_f and without:
+            contrasts.append(statistics.mean(with_f) - statistics.mean(without))
+    if not contrasts:
+        return None
+    return statistics.mean(contrasts)
+
+
+def _by_game(rows):
+    grouped = defaultdict(list)
+    for r in rows:
+        grouped[r["game"]].append(r)
+    return list(grouped.values())
+
+
 def run():
     from src.report import clv
 
@@ -118,15 +164,23 @@ def run():
               f"needed. The window does not get shortened.")
         return 0
 
-    obs = _effect(rows, feats)
-    if obs is None:
-        print("\nVERDICT: NOT SUPPORTED -- one arm is empty, so no "
-              "comparison exists")
-        return 1
-
     by_game = defaultdict(list)
     for r in rows:
         by_game[r["game"]].append(r)
+
+    # Games holding BOTH arms are the only ones carrying information about
+    # the feature -- a game where every decision has it (or none does) says
+    # nothing, and including it is what made the old pooled statistic drift.
+    informative = [g for g in by_game.values()
+                   if any(r["has"] for r in g) and any(not r["has"] for r in g)]
+    print(f"  (informative games -- both arms present: {len(informative)} "
+          f"of {len(by_game)})")
+
+    obs = within_game_effect(rows)
+    if obs is None:
+        print("\nVERDICT: NOT SUPPORTED -- no game holds both arms, so no "
+              "within-game comparison exists")
+        return 1
 
     rng = random.Random(SEED)
     null = []
@@ -136,16 +190,26 @@ def run():
             flags = [r["has"] for r in game_rows]
             rng.shuffle(flags)
             for r, flag in zip(game_rows, flags):
-                shuffled.append({"has": flag, "move": r["move"]})
-        e = _effect(shuffled, feats)
+                shuffled.append({"game": r["game"], "has": flag,
+                                 "move": r["move"]})
+        e = within_game_effect(shuffled)
         if e is not None:
             null.append(e)
 
     p = sum(1 for e in null if e >= obs) / len(null)   # one-sided, directional
-    print(f"\nobserved effect: {obs:+.2f} bps")
-    print(f"permuted null  : mean {statistics.mean(null):+.2f}, "
+    null_mean = statistics.mean(null)
+    print(f"\nobserved effect: {obs:+.2f} bps  (mean within-game contrast)")
+    print(f"permuted null  : mean {null_mean:+.2f}, "
           f"95th pct {sorted(null)[int(.95 * len(null))]:+.2f}")
+    print(f"excess over null: {obs - null_mean:+.2f} bps")
     print(f"one-sided p    : {p:.4f}  (threshold {ALPHA})")
+    # Printed every run, because the whole reason this statistic changed is
+    # that a null centred away from zero turned a +3 bps excess into a
+    # reported "+15.00 bps effect".
+    if abs(null_mean) > 1.0:
+        print(f"  WARNING: the permutation null is centred at "
+              f"{null_mean:+.2f} bps rather than ~0. Read the EXCESS, never "
+              f"the observed statistic, as the effect size.")
 
     if obs > 0 and p < ALPHA:
         print("\nVERDICT: SUPPORTED")
