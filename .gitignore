@@ -38,6 +38,15 @@ data/app/*
 !data/processed/f5_close.jsonl
 !data/processed/prop_listing.jsonl
 
+# THE CARD'S CALIBRATION IS A DEPLOY INPUT, not a scratch file. Two numbers,
+# refit nightly by scripts/fit_card_calibration.py -- and without them
+# src/report/card.py serves the RAW model, which says 73% about games that
+# happen 60% of the time. A deploy that silently loses this file publishes
+# overconfident numbers under the same words as calibrated ones, which is the
+# worst of the three possible states. Small, and regenerable only where a
+# full results store exists; the web container has no such store.
+!data/processed/card_calibration.json
+
 # L1 canonical PriceObservation backfill (packet W3): deterministically
 # reprojected from the forward-evidence stores above, so it is rebuildable in
 # principle -- but it is also the shape the rest of the engine reads, and a

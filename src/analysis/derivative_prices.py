@@ -181,12 +181,61 @@ def _wager_text(market, *, side, line, team=None, player=None) -> Optional[str]:
     return None
 
 
+def _parse_line(value) -> Optional[float]:
+    """A stored line as a number, or None. `"+1.5"`, `"-1.5"` and `1.5` all
+    occur in the store; a line that will not parse must never be guessed at,
+    because the guess decides which two bets get called complements."""
+    if value is None:
+        return None
+    try:
+        return float(str(value).strip().replace("+", ""))
+    except (TypeError, ValueError):
+        return None
+
+
+def _spread_key(row, market):
+    """Group key for one spread row, oriented from the AWAY club.
+
+    Both real sides of one spread contract -- away at L, home at -L -- map
+    to the same key, and no other pair does. Returns None when the row
+    cannot be oriented (unparseable line, or a `side` that is neither club),
+    which drops it rather than pairing it with something arbitrary.
+    """
+    line = _parse_line(row.get("line"))
+    if line is None:
+        return None
+    # Resolved through `_club`, never compared raw. The odds feed writes
+    # "Atlanta Braves" in `side` and may write either that or ATL in
+    # `away_team`/`home_team` depending on which store the row came through.
+    # A raw string compare silently fails to orient the row, and a row that
+    # cannot be oriented is dropped -- so a mismatch here does not produce a
+    # wrong pairing, it produces a spread board that is quietly empty.
+    side = _club(row.get("side"))
+    away, home = _club(row.get("away_team")), _club(row.get("home_team"))
+    if side and away and side == away:
+        canonical = line
+    elif side and home and side == home:
+        canonical = -line
+    else:
+        return None
+    # Formatted, not raw: -0.0 and 0.0 are the same contract and must not
+    # produce two groups that then each look like a one-sided market.
+    return (row.get("event_id"), market, f"{canonical + 0.0:+.1f}", "")
+
+
 def _pair_sides(market, rows):
     """The two sides of this contract, in a stable order, or None.
 
     A two-way market has exactly two named sides. Anything else -- one side
     only, or three -- is not a contract this module can de-vig, and is
     dropped rather than forced into a pair.
+
+    SPREADS ARE ORDERED AWAY-THEN-HOME, not alphabetically. Everything
+    downstream maps the first side to `away_price`, and for a spread the two
+    sides carry DIFFERENT lines (away at L, home at -L). Sorting the names
+    would put the two clubs in alphabetical order, so roughly half of all
+    contracts would attach each club's price to the other club's line -- a
+    silent side-swap that reads as a plausible price on the wrong bet.
     """
     names = sorted({r.get("side") for r in rows if r.get("side")})
     if len(names) != 2:
@@ -195,6 +244,17 @@ def _pair_sides(market, rows):
         if set(names) != {"Over", "Under"}:
             return None
         return ("Over", "Under")
+    if market in SPREAD_MARKETS:
+        away = next((r.get("away_team") for r in rows if r.get("away_team")), None)
+        home = next((r.get("home_team") for r in rows if r.get("home_team")), None)
+        by_club = {_club(n): n for n in names}
+        if set(by_club) != {_club(away), _club(home)}:
+            return None
+        # The names AS WRITTEN in `side`, in away-then-home order -- the
+        # caller keys `side_lines` and the rendered rows off these exact
+        # strings, so resolving them to abbreviations here would break the
+        # lookup on every row.
+        return (by_club[_club(away)], by_club[_club(home)])
     return (names[0], names[1])
 
 
@@ -209,11 +269,12 @@ def _derivative_contracts(rows, *, date):
         if market not in SUPPORTED or not row.get("event_id"):
             continue
         if market in SPREAD_MARKETS:
-            # SPREADS ARE NOT PAIRED HERE, AND MUST NOT BE.
+            # A SPREAD IS PAIRED WITH THE OTHER TEAM AT THE NEGATED LINE.
             #
-            # This key groups on the line AS WRITTEN, and every spread row
+            # This is the arithmetic behind the 2026-09-09 incident. The key
+            # below groups on the line AS WRITTEN and every spread row
             # arrives with `team` null -- so `NYM -2.5` and `MIA -2.5` fell
-            # into one group and were treated as the two sides of one
+            # into one group and were handed on as the two sides of one
             # two-way market. They are not. The complement of NYM -2.5 is
             # MIA **+2.5**; two teams cannot both be -2.5.
             #
@@ -226,22 +287,20 @@ def _derivative_contracts(rows, *, date):
             #   NYM +2.5 (-310) & MIA +2.5 (-330), sum 1.523
             #     -> scaled down, board reported -26 points OVERPRICED
             #
-            # 387 such pairs existed on 2026-09-09 alone, and this is the
-            # arithmetic behind the "+286 crazy value" a reader saw that day
-            # and reasonably read as a recommendation. It was recorded at the
-            # time as a price gap on a thin book. It was a manufactured
-            # number, and relabelling the card would not have made it honest.
+            # 387 such pairs existed on 2026-09-09 alone, and that is the
+            # "+286 crazy value" a reader saw and read as a recommendation.
             #
-            # The correct fix is to pair a spread with its true complement --
-            # the other team at the NEGATED line -- which needs a different
-            # grouping key and its own tests. Until that exists, this module
-            # publishes NO value claim on a spread at all. An absence is
-            # honest; a fabricated edge is not, and doctrine already says
-            # spreads are covered by null controls rather than by anything
-            # that can express them.
-            continue
-        key = (row.get("event_id"), market, str(row.get("line")),
-               row.get("team") or "")
+            # `_spread_key` orients every spread from the AWAY club's point
+            # of view, so the two real sides of one contract -- away at L and
+            # home at -L -- land in the same group and nothing else does.
+            # A row whose line will not parse gets no contract at all rather
+            # than a guessed orientation.
+            key = _spread_key(row, market)
+            if key is None:
+                continue
+        else:
+            key = (row.get("event_id"), market, str(row.get("line")),
+                   row.get("team") or "")
         grouped.setdefault(key, []).append(row)
 
     out = []
@@ -321,10 +380,20 @@ def _derivative_contracts(rows, *, date):
             continue
 
         sample = at_instant[0]
+        # PER-SIDE LINES, because a spread's two sides do not share one.
+        # Over 8.5 and Under 8.5 are both "8.5"; the Mets at -1.5 pair with
+        # the Marlins at +1.5. Rendering both sides of a spread from one
+        # stored `line` prints the wrong bet on one of them every time.
+        side_lines = {}
+        for row in at_instant:
+            side = row.get("side")
+            if side in (side_a, side_b) and side not in side_lines:
+                side_lines[side] = row.get("line")
         out.append({
             "event_id": event_id,
             "market": market,
             "line": sample.get("line"),
+            "side_lines": side_lines,
             "team": team or None,
             "player": None,
             "sides": (side_a, side_b),
@@ -418,6 +487,13 @@ def candidates_for_date(date, *, derivative_rows=None, prop_rows=None) -> list:
             "books": books,
         }
 
+        side_lines = contract.get("side_lines") or {}
+
+        def _line_for(side):
+            """This side's own line. Falls back to the contract's when the
+            market has one shared line (totals, team totals, props)."""
+            return side_lines.get(side, contract["line"])
+
         if snap.get("skipped"):
             # Below the floor. The contract is still reported, with the
             # count and the floor named, and no verdict of any kind.
@@ -425,8 +501,9 @@ def candidates_for_date(date, *, derivative_rows=None, prop_rows=None) -> list:
                 row = dict(base)
                 row.update({
                     "side": side,
+                    "line": _line_for(side),
                     "wager_text": _wager_text(
-                        contract["market"], side=side, line=contract["line"],
+                        contract["market"], side=side, line=_line_for(side),
                         team=contract["team"], player=contract["player"]),
                     "best_price": None,
                     "best_book": None,
@@ -445,8 +522,9 @@ def candidates_for_date(date, *, derivative_rows=None, prop_rows=None) -> list:
             row = dict(base)
             row.update({
                 "side": side,
+                "line": _line_for(side),
                 "wager_text": _wager_text(
-                    contract["market"], side=side, line=contract["line"],
+                    contract["market"], side=side, line=_line_for(side),
                     team=contract["team"], player=contract["player"]),
                 "best_price": detail.get("best_price"),
                 "best_book": detail.get("best_book"),

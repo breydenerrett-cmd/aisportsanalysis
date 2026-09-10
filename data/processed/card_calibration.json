@@ -1,0 +1,12 @@
+{
+ "a": 0.030391,
+ "b": 0.507144,
+ "base_rate": 0.521097,
+ "fitted": true,
+ "fitted_at": "2026-09-10T14:20:33.324391+00:00",
+ "fitted_through": "2026-09-06",
+ "model_id": "run_expectancy_poisson_v1",
+ "n": 1896,
+ "season": "2026",
+ "skipped_no_model_line": 0
+}

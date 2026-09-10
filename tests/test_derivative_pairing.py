@@ -30,10 +30,25 @@ book". It was not. The book was fine; the number was invented. Removing the
 TOP PLAY label from the card -- which is what shipped first -- left the
 number that made it dangerous.
 
-Two independent guards, because they fail differently:
-  * spreads are not paired at all until the pairing is correct
-  * ANY market whose two legs sum below 1.0 is refused, since a real
-    two-way quote always exceeds 1.0 -- that excess is the vig
+THREE GUARDS NOW, BECAUSE THEY FAIL DIFFERENTLY
+------------------------------------------------
+  * `_spread_key` orients every spread from the away club, so the two real
+    sides of one contract -- away at L, home at -L -- group together and
+    nothing else does. This is the actual fix.
+  * `_pair_sides` returns spreads away-then-home rather than alphabetically,
+    because everything downstream maps the first side to `away_price` and
+    the two sides of a spread carry DIFFERENT lines. Sorting by name would
+    attach roughly half of all contracts' prices to the other club's line.
+  * ANY market whose two legs sum below 1.0 is still refused, since a real
+    two-way quote always exceeds 1.0 -- that excess is the vig. This one
+    covers every market at once, including a future one whose pairing rule
+    turns out to be wrong too.
+
+The first guard shipped only after the second and third: for a day this
+module published no spread value claim at all, on the principle that an
+absence is honest where a manufactured edge is not. Measured on the incident
+date after the real fix, the largest claimed value on the whole board is
+3.87 points and no row claims 15 or more. Before it, one claimed 45.
 """
 
 from __future__ import annotations
@@ -56,9 +71,80 @@ def _row(event_id, market, line, side, price, book, **extra):
     return row
 
 
+class SpreadsPairAtTheNegatedLine(unittest.TestCase):
+    """The fix itself: away at L pairs with home at -L, and only that."""
+
+    def test_the_true_complement_produces_one_contract(self):
+        rows = [
+            _row("e10", "alternate_spreads", -1.5, "New York Mets", 150, "b1"),
+            _row("e10", "alternate_spreads", 1.5, "Miami Marlins", -180, "b1"),
+        ]
+        contracts = dp._derivative_contracts(rows, date="2026-09-09")
+        self.assertEqual(1, len(contracts))
+        self.assertEqual(("New York Mets", "Miami Marlins"),
+                         contracts[0]["sides"])
+
+    def test_each_side_keeps_its_own_line(self):
+        """The two sides of a spread do not share a line. Rendering both
+        from one stored value prints the wrong bet on one of them."""
+        rows = [
+            _row("e11", "alternate_spreads", -1.5, "New York Mets", 150, "b1"),
+            _row("e11", "alternate_spreads", 1.5, "Miami Marlins", -180, "b1"),
+        ]
+        contract = dp._derivative_contracts(rows, date="2026-09-09")[0]
+        self.assertEqual({"New York Mets": -1.5, "Miami Marlins": 1.5},
+                         contract["side_lines"])
+
+    def test_sides_are_away_then_home_not_alphabetical(self):
+        """Downstream maps the FIRST side to `away_price`. Alphabetical
+        order would swap the two clubs' prices whenever the home club's
+        name sorts first -- roughly half of all contracts."""
+        rows = [
+            # "Atlanta" sorts before "Tampa Bay"; Atlanta is the HOME club.
+            _row("e12", "alternate_spreads", -1.5, "Tampa Bay Rays", 150, "b1",
+                 away_team="Tampa Bay Rays", home_team="Atlanta Braves"),
+            _row("e12", "alternate_spreads", 1.5, "Atlanta Braves", -180, "b1",
+                 away_team="Tampa Bay Rays", home_team="Atlanta Braves"),
+        ]
+        contract = dp._derivative_contracts(rows, date="2026-09-09")[0]
+        self.assertEqual(("Tampa Bay Rays", "Atlanta Braves"),
+                         contract["sides"])
+
+    def test_a_side_that_is_neither_club_is_dropped(self):
+        """An unrecognised `side` must not be oriented by guessing."""
+        rows = [
+            _row("e13", "alternate_spreads", -1.5, "Detroit Tigers", 150, "b1"),
+            _row("e13", "alternate_spreads", 1.5, "Miami Marlins", -180, "b1"),
+        ]
+        self.assertEqual([], dp._derivative_contracts(rows, date="2026-09-09"))
+
+    def test_an_unparseable_line_is_dropped(self):
+        rows = [
+            _row("e14", "alternate_spreads", "pk", "New York Mets", 150, "b1"),
+            _row("e14", "alternate_spreads", 1.5, "Miami Marlins", -180, "b1"),
+        ]
+        self.assertEqual([], dp._derivative_contracts(rows, date="2026-09-09"))
+
+    def test_different_lines_are_different_contracts(self):
+        """-1.5 and -2.5 are different bets and must never be pooled into
+        one consensus, which would average two propositions and call the
+        result a fair price."""
+        rows = [
+            _row("e15", "alternate_spreads", -1.5, "New York Mets", 150, "b1"),
+            _row("e15", "alternate_spreads", 1.5, "Miami Marlins", -180, "b1"),
+            _row("e15", "alternate_spreads", -2.5, "New York Mets", 260, "b1"),
+            _row("e15", "alternate_spreads", 2.5, "Miami Marlins", -320, "b1"),
+        ]
+        contracts = dp._derivative_contracts(rows, date="2026-09-09")
+        self.assertEqual(2, len(contracts))
+        self.assertEqual(
+            {"-1.5", "-2.5"},
+            {f"{contract['side_lines']['New York Mets']}" for contract in contracts})
+
+
 class SpreadsAreNotPaired(unittest.TestCase):
-    """Until a spread is paired with the other team at the NEGATED line,
-    this module publishes no value claim on one at all."""
+    """The bug: two clubs at the SAME line are not each other's complement
+    and must never be de-vigged against one another."""
 
     def test_two_teams_at_the_same_line_produce_no_contract(self):
         rows = [
@@ -93,6 +179,24 @@ class SpreadsAreNotPaired(unittest.TestCase):
             self.assertEqual(
                 [], dp._derivative_contracts(rows, date="2026-09-09"),
                 f"{market} still produces a paired contract")
+
+    def test_the_live_board_carries_no_implausible_spread_claim(self):
+        """End-to-end on the incident date's own captured rows. Before the
+        pairing fix this produced 387 fabricated pairs, one claiming 45
+        points; the guard alone dropped every spread instead."""
+        rows = dp.candidates_for_date("2026-09-09")
+        spreads = [r for r in rows if r["market"] in dp.SPREAD_MARKETS
+                   and r.get("consensus_probability") is not None]
+        if not spreads:
+            self.skipTest("no spread rows captured for 2026-09-09 here")
+        worst = max(
+            abs(odds_math.american_to_probability(r["best_price"])
+                - r["consensus_probability"]) * 100.0
+            for r in spreads if r.get("best_price") is not None)
+        self.assertLess(
+            worst, 15,
+            f"a spread claims {worst:.1f} points against consensus; a gap "
+            f"that size is an arithmetic error, not an opportunity")
 
 
 class ImpossibleBooksumsAreRefused(unittest.TestCase):

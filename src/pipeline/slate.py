@@ -235,6 +235,31 @@ _NAME_TAIL_TO_ABBREV = {
 }
 
 
+# The same table, read the other way. DERIVED, never typed out a second
+# time: a card that says "Take Padres" and a board that says "SD" have to
+# agree about which club that is, and two hand-maintained tables drift.
+# The keys above are already the nicknames, so inverting them is the whole
+# job -- title-casing turns "red sox" into "Red Sox" and "blue jays" into
+# "Blue Jays" without a special case.
+_ABBREV_TO_NICKNAME = {
+    abbrev: tail.title() for tail, abbrev in _NAME_TAIL_TO_ABBREV.items()
+}
+
+
+def team_nickname(abbrev):
+    """"SD" -> "Padres". The abbreviation itself when unrecognised.
+
+    This is how the customer-facing card names a club: "Take Padres -1.5" is
+    the sentence the owner asked for by name, and "Take SD -1.5" is not it.
+    Falling back to the abbreviation rather than to None keeps a bet
+    sentence renderable for a club this table has never heard of -- a new
+    franchise reads oddly for one release, which beats a blank pick.
+    """
+    if not isinstance(abbrev, str) or not abbrev.strip():
+        return abbrev
+    return _ABBREV_TO_NICKNAME.get(abbrev.strip().upper(), abbrev)
+
+
 def team_abbrev_from_name(name):
     """Resolve a full club name to an abbreviation, or None if unrecognized."""
     if not isinstance(name, str) or not name.strip():
