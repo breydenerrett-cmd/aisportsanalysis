@@ -207,6 +207,29 @@ if [ "$GAMEKEY_STATUS" -ne 0 ]; then
 fi
 echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: gamekey --date $YESTERDAY --end $TODAY exit=$GAMEKEY_STATUS" >> "$RUN_NOTE"
 
+# A THIRD free prerequisite, and the one whose absence was costliest. The
+# post-game mechanism checks (docs/PREREG_MECHANISM_CHECKS.md) read
+# play-by-play from data/processed/gameflow_<yyyy>.jsonl, and until
+# 2026-09-10 NO script or workflow in this repo ever called `gameflow` --
+# so the store did not exist, `mechanism_eval.evaluate` had no plays for any
+# game, and every check it ever ran returned UNDETERMINED. That is the whole
+# reason 0 of 624 reviews had ever classified CONFIRMED or REFUTED: not a
+# classifier bug, a missing ingest. With the store backfilled, 616 of 666
+# checks resolve (350 refuted, 266 confirmed).
+#
+# Runs BEFORE settle, because settle is what writes the reviews the checks
+# land on, and a review written against an empty store is frozen wrong
+# forever -- the ledger is append-only and reviews are never rewritten.
+# Yesterday, not today: today's games have not finished. Zero odds credits.
+echo "== gameflow ($YESTERDAY, post-game play-by-play) =="
+GAMEFLOW_OUT=$(python3 -m src.cli gameflow --date "$YESTERDAY" 2>&1)
+GAMEFLOW_STATUS=$?
+echo "$GAMEFLOW_OUT" | sed 's/^/  /'
+if [ "$GAMEFLOW_STATUS" -ne 0 ]; then
+    echo "ESCALATE: gameflow ingest failed (exit $GAMEFLOW_STATUS) -- tonight's reviews will freeze with every mechanism check UNDETERMINED and cannot be re-scored later"
+fi
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: gameflow --date $YESTERDAY exit=$GAMEFLOW_STATUS" >> "$RUN_NOTE"
+
 echo "== engine slate (today, $TODAY) =="
 SLATE_OUT=$(python3 -m src.cli engine slate --date "$TODAY" 2>&1)
 SLATE_STATUS=$?

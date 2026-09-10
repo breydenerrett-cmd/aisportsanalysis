@@ -85,13 +85,31 @@ class TheGateIsInTheScriptTheSchedulerRunsTests(unittest.TestCase):
                       "capture_slot.sh does not stage data/paper_accounts, "
                       "so a gated slate pass would strand its wagers")
 
+    def _gate_block(self):
+        """The gated pass ONLY: from the gate comment to the `fi` that closes
+        its `if`.
+
+        Originally bounded at GIT_LOCK, which was the same span while nothing
+        sat between. It is not any more -- the publication audit
+        (scripts/publication_audit.py) runs after the gate and deliberately
+        escalates, because it reports customer-visible wrongness rather than
+        a skipped optional pass. Bounding on the `fi` restores what these
+        assertions always meant, rather than widening them to whatever
+        happens to precede the git section.
+        """
+        region = self.code.split("lineup cadence gate", 1)
+        self.assertEqual(len(region), 2, "gate block not found")
+        lines = region[1].splitlines()
+        for i, line in enumerate(lines):
+            if line.strip() == "fi":
+                return "\n".join(lines[:i + 1])
+        self.fail("the gate's `if` block is never closed by an `fi`")
+
     def test_the_gate_never_takes_the_capture_down(self):
         """ENRICHMENT, never a blocker: the slate pass is optional, the
         capture is not. A gate that can abort the run would trade a working
         capture cadence for an optional one."""
-        gate_region = self.code.split("lineup cadence gate", 1)
-        self.assertEqual(len(gate_region), 2, "gate block not found")
-        block = gate_region[1].split("GIT_LOCK", 1)[0]
+        block = self._gate_block()
         self.assertNotIn("ESCALATE", block,
                          "a refused or failed optional slate pass must not "
                          "escalate -- the scheduled passes are unaffected")
@@ -102,14 +120,71 @@ class TheGateIsInTheScriptTheSchedulerRunsTests(unittest.TestCase):
     def test_the_pass_spends_no_odds_credits(self):
         """`engine slate` reads L1 off disk. If a future edit made this buy
         prices, a 15-minute cadence would multiply the odds bill by ~40x."""
-        gate_block = self.code.split("lineup cadence gate", 1)[1]
-        block = gate_block.split("GIT_LOCK", 1)[0]
+        block = self._gate_block()
         for spender in ("dense", "capture_extras", "prop_prices",
                         "odds_snapshot"):
             self.assertNotIn(
                 spender, block,
                 f"the gated block invokes {spender!r}, which spends odds-API "
                 "credits on a 15-minute cadence")
+
+
+DAILY_LOOP = REPO / "scripts" / "daily_loop.sh"
+
+
+class TheLearningLoopHasItsInputTests(unittest.TestCase):
+    """The same silent-deployment failure, found again on 2026-09-10.
+
+    `docs/PREREG_MECHANISM_CHECKS.md` describes a fully-wired post-game
+    classifier. It was wired. It had also never once produced a verdict --
+    0 CONFIRMED and 0 REFUTED across 624 reviews -- and the reason was not in
+    any of the code the document describes: NO SCRIPT AND NO WORKFLOW IN THIS
+    REPO EVER CALLED `gameflow`. The play-by-play store the checks read did
+    not exist, so every check honestly returned UNDETERMINED, and the honesty
+    of that answer is exactly what made it invisible.
+
+    Reviews are frozen on write and never re-scored, so a night that runs
+    settle without the store loses those classifications permanently. That
+    makes the ORDER load-bearing, not just the presence.
+    """
+
+    def setUp(self):
+        self.assertTrue(DAILY_LOOP.exists(), "scripts/daily_loop.sh is missing")
+        text = DAILY_LOOP.read_text(encoding="utf-8", errors="replace")
+        # Comments stripped for the same reason as above: this block is
+        # heavily documented and a raw scan would pass on the prose alone.
+        self.code = "\n".join(line for line in text.splitlines()
+                              if not line.lstrip().startswith("#"))
+
+    def test_gameflow_is_ingested(self):
+        self.assertIn(
+            "cli gameflow", self.code,
+            "daily_loop.sh never ingests play-by-play, so every mechanism "
+            "check tonight freezes as UNDETERMINED and the learning loop "
+            "stays at 0 classifications forever")
+
+    def test_gameflow_runs_before_settle(self):
+        """Settle writes the reviews the checks land on, and a review is
+        frozen on write -- so an ingest that runs after it is too late."""
+        flow = self.code.find("cli gameflow")
+        settle = self.code.find("engine settle")
+        self.assertNotEqual(flow, -1, "no gameflow ingest in daily_loop.sh")
+        self.assertNotEqual(settle, -1, "no settle in daily_loop.sh")
+        self.assertLess(
+            flow, settle,
+            "gameflow runs AFTER settle, so tonight's reviews are written "
+            "against a store that does not yet hold tonight's games and "
+            "freeze UNDETERMINED; append-only means they never get re-scored")
+
+    def test_gameflow_ingests_a_finished_day(self):
+        """Today's games have not finished. Ingesting TODAY would store
+        partial play-by-play and score mechanisms off half a game."""
+        line = next((l for l in self.code.splitlines()
+                     if "cli gameflow" in l), "")
+        self.assertIn(
+            "YESTERDAY", line,
+            "gameflow must ingest a completed day; ingesting today scores "
+            f"mechanisms off unfinished games (line was: {line.strip()!r})")
 
 
 if __name__ == "__main__":
