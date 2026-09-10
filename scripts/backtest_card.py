@@ -122,6 +122,28 @@ def main(argv=None):
         league_by_date[d] = lg or strength.league_runs_per_game(by_date[d])
         running.extend(by_date[d])
 
+    # THE SAME MODEL THE CARD RUNS. Measuring the whole-season stand-in and
+    # publishing the number as the live model's would be measuring a model
+    # nobody uses -- and the two differ by more than the model's entire gain
+    # over a base rate (scripts/test_bullpen_rate.py).
+    from src.pipeline import bullpen
+
+    try:
+        pen_log = bullpen.read_log()
+    except Exception:  # noqa: BLE001
+        pen_log = []
+    rate_cache = {}
+
+    def _relief(date):
+        if not pen_log:
+            return {}
+        if date not in rate_cache:
+            rate_cache[date] = {
+                team: r.get("rate")
+                for team, r in bullpen.relief_rates_by_team(pen_log, date).items()
+                if r.get("rate")}
+        return rate_cache[date]
+
     raw_preds, cal_preds, base_preds = [], [], []
     errors = defaultdict(int)
     margin_err = []
@@ -141,8 +163,12 @@ def main(argv=None):
         if not lg:
             errors["no_league_rate"] += 1
             continue
+        relief = _relief(r["date"])
+        features = {**r,
+                    "away_bullpen_rate": relief.get(r["away_team"]),
+                    "home_bullpen_rate": relief.get(r["home_team"])}
         try:
-            line = strength.model_line(r, league_rpg=lg)
+            line = strength.model_line(features, league_rpg=lg)
         except strength.StrengthError:
             errors["no_model_line"] += 1
             continue

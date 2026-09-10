@@ -64,11 +64,44 @@ def main(argv=None):
         return 1
 
     league = strength.league_runs_per_game(rows)
+
+    # THE SAME MODEL THE CARD RUNS, including the real relief rate. Without
+    # this the Platt fit describes a DIFFERENT model from the one whose
+    # probabilities it is used to correct -- fitted on the whole-season
+    # stand-in, applied to the relief-rate version -- and the correction
+    # would be wrong by however much the two differ. Rebuilt per date
+    # because the rates are identical for every game on a slate.
+    from src.pipeline import bullpen  # noqa: PLC0415 -- optional store
+
+    try:
+        pen_log = bullpen.read_log()
+    except Exception:  # noqa: BLE001
+        pen_log = []
+    rate_cache = {}
+
+    def _relief(date):
+        if not pen_log:
+            return {}
+        if date not in rate_cache:
+            rate_cache[date] = {
+                team: row.get("rate")
+                for team, row in bullpen.relief_rates_by_team(pen_log, date).items()
+                if row.get("rate")}
+        return rate_cache[date]
+
     pairs = []
     skipped = 0
+    with_bullpen = 0
     for row in rows:
+        relief = _relief(row["date"])
+        away_pen = relief.get(row["away_team"])
+        home_pen = relief.get(row["home_team"])
+        if away_pen and home_pen:
+            with_bullpen += 1
+        features = {**row, "away_bullpen_rate": away_pen,
+                    "home_bullpen_rate": home_pen}
         try:
-            line = strength.model_line(row, league_rpg=league)
+            line = strength.model_line(features, league_rpg=league)
         except strength.StrengthError:
             skipped += 1
             continue
@@ -82,6 +115,7 @@ def main(argv=None):
         "fitted_through": table["last_date"],
         "fitted_at": datetime.now(timezone.utc).isoformat(),
         "skipped_no_model_line": skipped,
+        "games_with_relief_rate": with_bullpen,
     })
 
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)

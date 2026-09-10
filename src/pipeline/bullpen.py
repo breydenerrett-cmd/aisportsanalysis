@@ -238,6 +238,143 @@ def team_workload(log, team, as_of_date, window=WORKLOAD_WINDOW_DAYS) -> dict:
     }
 
 
+# How the relief rate is regressed toward the league's, in innings. A club
+# 40 relief innings into a season has a rate that is mostly luck; 120 is
+# roughly a quarter of a full bullpen season and moves an established pen
+# barely at all. Fixed in advance and never tuned against results.
+RELIEF_REGRESSION_INNINGS = 120.0
+
+# The log records EARNED runs. Team scoring rates elsewhere in this project
+# are TOTAL runs, and unearned runs are roughly 8% of the modern game, so a
+# relief ERA has to be lifted onto the runs-allowed scale before it can be
+# averaged against one. Same constant and same reason as
+# `src.analysis.strength.FIP_TO_RA_SCALE`.
+EARNED_TO_TOTAL_RUNS = 1.08
+
+
+def relief_rate(log, team, as_of_date, *, league_rate=None) -> dict:
+    """One club's relief runs allowed per nine innings, strictly before a date.
+
+    WHY THIS EXISTS. `src.analysis.strength` splits a game's run prevention
+    at the starter and then uses the team's WHOLE-SEASON runs-allowed rate
+    for the innings after him. That rate includes the rotation, so the
+    rotation is counted twice and every bullpen in the league is dragged
+    toward its own starters. It is the largest known modelling error in that
+    file and `docs/THE_CARD.md` lists it first.
+
+    This is the real number: only appearances where `started` is false, only
+    dates strictly before the cutoff, regressed toward the league's own
+    relief rate over the same window.
+
+    POINT-IN-TIME BY CONSTRUCTION -- `appeared < cutoff`, never `<=`. A game
+    on the cutoff date is exactly the game being predicted, and its own
+    bullpen usage is not available to predict it.
+
+    Returns the rate together with the innings behind it and whether the
+    sample cleared the regression prior, so a caller can state the gap
+    rather than quietly use a number built on nine innings.
+    """
+    cutoff = _to_date(as_of_date)
+    innings = 0.0
+    earned = 0
+
+    league_innings = 0.0
+    league_earned = 0
+    for row in log:
+        if row.get("empty") or row.get("started"):
+            continue
+        try:
+            appeared = _to_date(row["date"])
+        except (BullpenError, KeyError, ValueError):
+            continue
+        if appeared >= cutoff:
+            continue
+        row_innings = row.get("innings") or 0.0
+        row_earned = row.get("earned_runs") or 0
+        league_innings += row_innings
+        league_earned += row_earned
+        if row.get("team") == team:
+            innings += row_innings
+            earned += row_earned
+
+    if league_rate is None:
+        league_rate = ((league_earned / league_innings * 9.0
+                        * EARNED_TO_TOTAL_RUNS)
+                       if league_innings > 0 else None)
+
+    if innings <= 0:
+        return {"team": team, "as_of": cutoff.isoformat(), "innings": 0.0,
+                "rate": league_rate, "thin": True, "league_rate": league_rate,
+                "reason": "no relief appearances stored before this date"}
+
+    raw = earned / innings * 9.0 * EARNED_TO_TOTAL_RUNS
+    if league_rate is None:
+        rate = raw
+    else:
+        weight = RELIEF_REGRESSION_INNINGS
+        rate = (raw * innings + league_rate * weight) / (innings + weight)
+
+    return {
+        "team": team,
+        "as_of": cutoff.isoformat(),
+        "innings": round(innings, 2),
+        "raw_rate": round(raw, 4),
+        "rate": round(rate, 4),
+        "league_rate": round(league_rate, 4) if league_rate else None,
+        "thin": innings < RELIEF_REGRESSION_INNINGS / 2.0,
+        "reason": None,
+    }
+
+
+def relief_rates_by_team(log, as_of_date) -> dict:
+    """`{team: relief_rate(...)}` for every club in the log, one pass.
+
+    Built in one pass because the per-team version rescans the whole log,
+    and a slate asks the same question thirty times.
+    """
+    cutoff = _to_date(as_of_date)
+    per_team = {}
+    league_innings = 0.0
+    league_earned = 0
+    for row in log:
+        if row.get("empty") or row.get("started"):
+            continue
+        team = row.get("team")
+        if not team:
+            continue
+        try:
+            appeared = _to_date(row["date"])
+        except (BullpenError, KeyError, ValueError):
+            continue
+        if appeared >= cutoff:
+            continue
+        slot = per_team.setdefault(team, [0.0, 0])
+        slot[0] += row.get("innings") or 0.0
+        slot[1] += row.get("earned_runs") or 0
+        league_innings += row.get("innings") or 0.0
+        league_earned += row.get("earned_runs") or 0
+
+    league_rate = ((league_earned / league_innings * 9.0 * EARNED_TO_TOTAL_RUNS)
+                   if league_innings > 0 else None)
+
+    out = {}
+    for team, (innings, earned) in per_team.items():
+        if innings <= 0:
+            continue
+        raw = earned / innings * 9.0 * EARNED_TO_TOTAL_RUNS
+        weight = RELIEF_REGRESSION_INNINGS
+        rate = ((raw * innings + (league_rate or raw) * weight)
+                / (innings + weight))
+        out[team] = {
+            "team": team, "as_of": cutoff.isoformat(),
+            "innings": round(innings, 2), "raw_rate": round(raw, 4),
+            "rate": round(rate, 4),
+            "league_rate": round(league_rate, 4) if league_rate else None,
+            "thin": innings < RELIEF_REGRESSION_INNINGS / 2.0, "reason": None,
+        }
+    return out
+
+
 def availability(appearances) -> dict:
     """Modelled likelihood a reliever is available, with the reason attached.
 

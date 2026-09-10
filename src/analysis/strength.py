@@ -68,9 +68,13 @@ WHERE THIS MODEL IS WRONG, STATED UP FRONT
   practical effect is that this model puts slightly too little probability in
   the tails, so it will tend to shade blowout run lines and extreme totals
   toward the middle. `MARGIN_INFLATION` exists to name that, not to hide it.
-* `bullpen_rate` is the team's whole-season allowance, which includes the
-  starters. Using it for relief innings double-counts rotation quality a
-  little.
+* The relief innings use a real relief-only rate when the caller supplies
+  `away_bullpen_rate` / `home_bullpen_rate` (`src.pipeline.bullpen.
+  relief_rate`), and fall back to the team's whole-season allowance when it
+  does not. That fallback includes the starters, so it double-counts
+  rotation quality and drags every bullpen toward its own rotation. It was
+  the only behaviour until 2026-09-10 and it is the largest known error
+  here.
 * Lineups are ignored entirely. A club resting four regulars is priced as its
   season self.
 * Park and weather are ignored. Coors Field is priced like Petco.
@@ -297,10 +301,21 @@ def run_means(features: Mapping, *, league_rpg: float) -> dict:
     away_share = _innings_share(features.get("away_sp_ip_per_start"))
     home_share = _innings_share(features.get("home_sp_ip_per_start"))
 
+    # THE RELIEF INNINGS. `away_bullpen_rate` / `home_bullpen_rate`, when the
+    # caller supplies them, are real relief-only runs-per-nine figures from
+    # `src.pipeline.bullpen.relief_rate`. When they are absent the team's
+    # whole-season rate stands in, which is what this model did everywhere
+    # until 2026-09-10 -- and that stand-in includes the rotation, so the
+    # rotation was counted twice and every bullpen was dragged toward its own
+    # starters. It is the largest known error in this file and it is named as
+    # such in the module docstring.
+    away_pen = _positive(features.get("away_bullpen_rate")) or away_def
+    home_pen = _positive(features.get("home_bullpen_rate")) or home_def
+
     # Defence, rebuilt around tonight's starter. When the starter is unknown
-    # the share collapses to zero and this is exactly the team rate.
-    away_defence = _blend(away_def, away_sp, away_share)
-    home_defence = _blend(home_def, home_sp, home_share)
+    # the share collapses to zero and this is exactly the relief rate.
+    away_defence = _blend(away_pen, away_sp, away_share)
+    home_defence = _blend(home_pen, home_sp, home_share)
 
     # Odds-ratio: offence against defence, scaled by the league.
     away_mean = away_off * home_defence / league_rpg
@@ -318,6 +333,10 @@ def run_means(features: Mapping, *, league_rpg: float) -> dict:
         "home_defence": home_defence,
         "away_team_defence": away_def,
         "home_team_defence": home_def,
+        "away_bullpen_rate": away_pen,
+        "home_bullpen_rate": home_pen,
+        "bullpen_known": (_positive(features.get("away_bullpen_rate")) is not None
+                          and _positive(features.get("home_bullpen_rate")) is not None),
         "away_starter_rate": away_sp,
         "home_starter_rate": home_sp,
         "away_starter_share": away_share,
@@ -328,6 +347,19 @@ def run_means(features: Mapping, *, league_rpg: float) -> dict:
         "home_field_runs": HOME_FIELD_RUNS,
         "model_id": MODEL_ID,
     }
+
+
+def _positive(value) -> Optional[float]:
+    """A usable positive rate, or None. Zero and negative are not "no
+    bullpen" -- they are corrupt input, and falling back to the team rate is
+    the honest response to both."""
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if number > 0 else None
 
 
 def _innings_share(ip_per_start) -> float:

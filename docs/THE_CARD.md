@@ -134,15 +134,50 @@ is missing, and `scripts/publication_audit.py` escalates on both.
 ## What the evidence says so far
 
 **Model vs. a coin that knows the home-field base rate** — walk-forward,
-1,896 games, 2026-04-15 to 2026-09-06:
+1,896 games, 2026-04-15 to 2026-09-06, with the real relief rate:
 
 | | log-loss | Brier | accuracy |
 |---|---|---|---|
-| model (calibrated) | 0.69103 | 0.24888 | 53.7% |
-| model (raw) | 0.69183 | 0.24914 | 53.7% |
+| model (calibrated) | 0.69137 | 0.24905 | 53.5% |
+| model (raw) | 0.69256 | 0.24950 | 54.4% |
 | always the base rate | 0.69226 | 0.24955 | 52.1% |
 
-Gain over the base rate: **+0.00123 nats**. Real, and very small.
+Gain over the base rate: **+0.00089 nats**. Real, and very small.
+
+### The bullpen change, and the number that disagrees with itself
+
+The relief innings used to be priced with the team's whole-season
+runs-allowed rate, which includes its own starters — so the rotation was
+counted twice. `src.pipeline.bullpen.relief_rate` replaced it with a real
+relief-only figure on 2026-09-10.
+
+**The two measurements of that change do not agree, and both are here.**
+
+| test | window | result |
+|---|---|---|
+| `scripts/test_bullpen_rate.py` — window fixed BEFORE running | 2026-07-16 onward, 710 games | **+0.00216 nats**, improving in both halves |
+| `scripts/backtest_card.py` — full season, walk-forward | 2026-04-15 onward, 1,896 games | **−0.00034 nats** |
+
+The mechanism is not mysterious. `relief_rate` regresses toward the league
+over a 120-inning prior, and in April a club has barely any relief innings
+before its own game — so the early-season figure is mostly the league
+average with extra noise on top. The July-onward window starts with half a
+season of bullpen behind every club.
+
+**The pre-specified test is the one that counts**, because its window was
+fixed before it was run and the full-season figure was computed afterwards.
+A post-hoc measurement does not overturn a pre-specified one; that is the
+entire reason for specifying first. It is reported here anyway, at the same
+size, because a reader deciding whether to believe this model is entitled
+to the number that argues against it.
+
+**What was deliberately not done:** the 120-inning prior was not enlarged,
+and the relief rate was not switched off for thin samples. Both would be
+tuning a constant against a result already seen, and either might well be
+right — which is exactly why they need a window fixed in advance.
+
+Raw accuracy went the other way too, 53.7% to **54.4%**, while calibrated
+log-loss fell slightly. Mixed, and stated as mixed.
 
 **The selection rule vs. controls** — `scripts/backtest_card_rule.py`, over
 the eleven days where real multi-book prices exist (2026-08-31 to
