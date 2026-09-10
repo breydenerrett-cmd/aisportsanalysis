@@ -187,5 +187,39 @@ class TheLearningLoopHasItsInputTests(unittest.TestCase):
             f"mechanisms off unfinished games (line was: {line.strip()!r})")
 
 
+CI_SH = REPO / "scripts" / "ci.sh"
+REACHABILITY = REPO / "scripts" / "reachability_audit.py"
+
+
+class TheOrphanDetectorIsNotItselfAnOrphanTests(unittest.TestCase):
+    """scripts/reachability_audit.py finds code nothing calls. If nothing
+    calls IT, it joins the list it was written to produce."""
+
+    def test_the_audit_exists(self):
+        self.assertTrue(REACHABILITY.is_file(),
+                        "scripts/reachability_audit.py is missing")
+
+    def test_ci_runs_it(self):
+        code = "\n".join(l for l in _read_code(CI_SH).splitlines()
+                         if not l.lstrip().startswith("#"))
+        self.assertIn(
+            "reachability_audit.py", code,
+            "scripts/ci.sh does not run the reachability audit, so the check "
+            "for code nothing calls is itself code nothing calls")
+
+    def test_it_fails_the_build_rather_than_only_printing(self):
+        """ci.sh is `set -euo pipefail`, so a non-zero exit stops the build.
+        A checker that only prints is a checker that gets scrolled past."""
+        self.assertIn("set -euo pipefail", _read_code(CI_SH))
+        source = _read_code(REACHABILITY)
+        self.assertIn("return 1", source,
+                      "the audit never exits non-zero, so CI would pass with "
+                      "orphans reported")
+
+
+def _read_code(path):
+    return path.read_text(encoding="utf-8", errors="replace")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -270,6 +270,27 @@ if [ "$EOD_STATUS" -ne 0 ]; then
 fi
 echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: eod --date $YESTERDAY exit=$EOD_STATUS" >> "$RUN_NOTE"
 
+# The learning loop's reporting half: why the losses lost, with a WON control
+# beside them so a pattern claimed about losers has to survive appearing in a
+# winner too. It reads the mechanism checks settle just froze, which is why it
+# runs here and not earlier -- and why running it before 2026-09-10 would have
+# produced nothing but "no falsifiable mechanism" for every row, the gameflow
+# store having never been ingested.
+#
+# DESCRIPTION ONLY. docs/PREREG_MECHANISM_CHECKS.md rule 4: nothing here
+# returns a parameter, enters fitness, or selects a strategy. It says what
+# happened. Never blocks the loop -- a missing report costs a day's reading,
+# and the ledgers it describes are already frozen either way.
+echo "== postmortem (yesterday, $YESTERDAY) =="
+POSTMORTEM_OUT=$(python3 -m src.cli postmortem --date "$YESTERDAY" \
+    --out "docs/postmortem/$YESTERDAY.md" 2>&1)
+POSTMORTEM_STATUS=$?
+echo "$POSTMORTEM_OUT" | sed 's/^/  /'
+if [ "$POSTMORTEM_STATUS" -ne 0 ]; then
+    echo "  (postmortem did not produce a report; frozen ledgers are unaffected)"
+fi
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: postmortem --date $YESTERDAY exit=$POSTMORTEM_STATUS" >> "$RUN_NOTE"
+
 # Concurrent runs of this script and forward_capture.sh on the same shared
 # checkout raced each other into stranded/mismerged commits four times in
 # 30h (87312f2, de8a582, b258fc1, 9d30526): both scripts trip on their own

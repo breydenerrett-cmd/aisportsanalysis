@@ -34,23 +34,33 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-echo "== [1/5] full unit suite (python3 -m unittest discover) =="
+# FIRST, and deliberately before the unit suite. Every check below this line
+# asks whether code WORKS. This one asks whether anything CALLS it -- the
+# question that went unasked while `gameflow` sat uninvoked for weeks, the
+# lineup gate sat in a branch cron never reads, `engine slip` sat with no
+# caller, and POST /billing/checkout sat with no button. A green suite proved
+# each of those components correct the whole time.
+echo "== [0/6] reachability: is anything actually calling this code? =="
+python3 scripts/reachability_audit.py
+
+echo
+echo "== [1/6] full unit suite (python3 -m unittest discover) =="
 python3 -m unittest discover -s tests -q
 
 echo
-echo "== [2/5] src/-stdlib boundary gate (tests/test_api_boundary.py) =="
+echo "== [2/6] src/-stdlib boundary gate (tests/test_api_boundary.py) =="
 python3 -m unittest tests.test_api_boundary -q
 
 echo
-echo "== [3/5] banned-vocabulary tripwire (tests/test_customer_language.py) =="
+echo "== [3/6] banned-vocabulary tripwire (tests/test_customer_language.py) =="
 python3 -m unittest tests.test_customer_language -q
 
 echo
-echo "== [4/5] live smoke test against a real uvicorn process =="
+echo "== [4/6] live smoke test against a real uvicorn process =="
 bash scripts/smoke_api.sh
 
 echo
-echo "== [5/5] full paid-funnel smoke (fake-transport Stripe, real uvicorn) =="
+echo "== [5/6] full paid-funnel smoke (fake-transport Stripe, real uvicorn) =="
 bash scripts/funnel_smoke.sh
 
 echo
