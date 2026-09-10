@@ -44,6 +44,32 @@ def _build_payload(date: str, request: Optional[Request], route: str) -> dict:
     return payload
 
 
+# DECLARED BEFORE /card/{date}, because FastAPI matches routes in
+# declaration order and "record" would otherwise be captured as a date and
+# rejected by _validate_date as a 400.
+@router.get("/card/record")
+def get_card_record(request: Request = None) -> dict:
+    """The card's public record: every settled day, pooled.
+
+    Pooling is correct here and is not the pooling mistake this repo warns
+    about elsewhere. The card is ONE system with ONE rule, so its picks are
+    one population; the warning is about pooling different systems, where a
+    control and a forward test average into a number describing neither.
+
+    The chain is verified on every request and reported. A published record
+    whose hash chain is broken is not a record, and the page showing it has
+    to be able to say so rather than keep printing the totals.
+    """
+    from src.appstate import card_ledger
+
+    payload = card_ledger.record()
+    chain = card_ledger.verify()
+    payload["chain_ok"] = bool(getattr(chain, "ok", True))
+    payload["chain_detail"] = None if payload["chain_ok"] else str(chain)
+    _record_page_view(request, "card_record", None)
+    return payload
+
+
 @router.get("/card/{date}")
 def get_card_for_date(date: str, request: Request = None) -> dict:
     return _build_payload(date, request, "card")

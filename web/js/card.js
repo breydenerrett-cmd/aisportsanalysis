@@ -125,6 +125,52 @@ function pickCard(pick, total) {
   return card;
 }
 
+/** The card's own running record, or an honest statement that there is none.
+ *
+ * THIS IS THE SENTENCE THE PRODUCT IS SOLD ON, so it sits directly under
+ * the picks rather than on a page nobody clicks. It reports the losses at
+ * the same size as the wins and it reports VOIDS, because a record that
+ * silently omits postponed games has a hole in it that nobody can see.
+ *
+ * "No record yet" is rendered rather than hidden. A brand-new product with
+ * an empty record is a fact about how new it is; a product that hides the
+ * empty record is making a different, worse impression on purpose.
+ */
+function recordLine(rec) {
+  const wrap = el("div", { class: "card2rec chamfer", "data-hook": "card-record" });
+  wrap.appendChild(el("span", { class: "card2rec__label", text: "THE RECORD SO FAR" }));
+
+  if (!rec || !rec.n_staked) {
+    wrap.appendChild(el("p", { class: "card2rec__body",
+      text: "Nothing graded yet. Every card is settled the morning after, "
+          + "win or lose, and the running record appears here from then on." }));
+    return wrap;
+  }
+
+  const line = el("p", { class: "card2rec__figures" });
+  line.appendChild(el("span", { class: "card2rec__wl",
+    text: `${rec.wins}-${rec.losses}${rec.pushes ? `-${rec.pushes}` : ""}` }));
+  line.appendChild(el("span", { class: "card2rec__meta",
+    text: `${rec.days} day${rec.days === 1 ? "" : "s"} · `
+        + `${(rec.win_rate * 100).toFixed(0)}% of bets won · `
+        + `${rec.profit_units > 0 ? "+" : ""}${rec.profit_units.toFixed(2)} units `
+        + `at 1 unit a bet` }));
+  wrap.appendChild(line);
+
+  if (rec.voids) {
+    wrap.appendChild(el("p", { class: "card2rec__body",
+      text: `${rec.voids} pick${rec.voids === 1 ? "" : "s"} could not be `
+          + `graded (game postponed or no final score). They count as neither `
+          + `a win nor a loss and are left out of the return above.` }));
+  }
+  if (rec.chain_ok === false) {
+    wrap.appendChild(el("p", { class: "card2rec__warn",
+      text: "The record's tamper-proof chain does not currently verify, so "
+          + "treat the numbers above as unconfirmed until it does." }));
+  }
+  return wrap;
+}
+
 /** The one honest line about what a card is and is not, always rendered. */
 function standingNote(payload) {
   const note = el("div", { class: "card2note chamfer", "data-hook": "card-standing-note" });
@@ -175,9 +221,16 @@ export async function renderCard(host, date) {
   const wrap = el("section", { class: "gutter", "data-hook": "card" });
   host.appendChild(wrap);
 
+  // Two reads, and the record must never take the card down with it: a
+  // failed record fetch is not a night with no picks, and the picks are the
+  // thing the reader came for.
   let payload;
+  let record = null;
   try {
-    payload = await apiGet(`/card/${encodeURIComponent(date || "")}`);
+    [payload, record] = await Promise.all([
+      apiGet(`/card/${encodeURIComponent(date || "")}`),
+      apiGet("/card/record").catch(() => null),
+    ]);
   } catch (err) {
     renderError(wrap, err);
     return false;
@@ -236,6 +289,7 @@ export async function renderCard(host, date) {
           + `marked SPLIT.` }));
   }
 
+  wrap.appendChild(recordLine(record));
   wrap.appendChild(standingNote(payload));
   return true;
 }
