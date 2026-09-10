@@ -153,6 +153,39 @@ class CtaClicksAreAttributed(unittest.TestCase):
         self.assertNotIn("textContent", block)
 
 
+class EveryCtaGoesWhereItPromises(unittest.TestCase):
+    """All four "Try 3 Bet Checks free" buttons pointed at #/signup -- an
+    email form -- and `#/betcheck` appeared ZERO times on the page. The one
+    offer the page makes was the one thing no button on it delivered.
+    docs/CONVERSION_INSTRUMENTATION_AUDIT.md flagged this and it was never
+    fixed."""
+
+    def setUp(self):
+        self.html = (REPO / "web" / "landing.html").read_text(encoding="utf-8")
+        self.links = re.findall(
+            r'<a[^>]*href="([^"]+)"[^>]*data-hook="(cta[^"]*)"[^>]*>([^<]*)<',
+            self.html)
+
+    def test_the_page_links_to_the_free_check_at_all(self):
+        self.assertIn("#/betcheck", self.html,
+                      "the landing page never links to the free Bet Check "
+                      "it spends four buttons advertising")
+
+    def test_bet_check_buttons_go_to_bet_check(self):
+        wrong = [(hook, href) for href, hook, text in self.links
+                 if "bet check" in text.lower() and "betcheck" not in href]
+        self.assertEqual(
+            [], wrong,
+            f"CTAs promising a Bet Check point somewhere else: {wrong}")
+
+    def test_the_paid_cta_still_goes_to_signup(self):
+        """Fixing the free-check buttons must not have swept the one button
+        that is actually meant to start a subscription."""
+        signup = [hook for href, hook, _t in self.links if "signup" in href]
+        self.assertTrue(signup,
+                        "no CTA on the page leads to signup any more")
+
+
 class TheServerAcceptsIt(unittest.TestCase):
 
     def test_cta_click_is_a_known_event_kind(self):

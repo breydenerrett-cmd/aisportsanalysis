@@ -3,8 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LINEHOUND — check your bet before you fire</title>
-<meta name="description" content="See the actual price, the market-implied consensus, and what changed — for one bet you're about to make. MLB only. No predictions, no guarantees.">
+<!-- POSITIONING, 2026-09-10. This page sold line-shopping -- "check your
+     bet before you fire", "No predictions" -- which is the product this
+     used to be. docs/PRODUCT_DOCTRINE.md amendment 1 says the picks ARE
+     the product and provability is the trust moat that makes them
+     believable. Brey chose picks-with-receipts on 2026-09-10, so the copy
+     moves to the doctrine rather than the other way round.
+
+     What did NOT change: every honesty rule. No edge is claimed, no win
+     probability is stated, nothing is guaranteed, and the fact that
+     nothing has cleared our own bar stays on the page in the same size
+     type as everything else. tests/test_web_structure.py enforces that
+     mechanically. -->
+<title>LINEHOUND — tonight's picks, frozen before first pitch</title>
+<meta name="description" content="A ranked slip of MLB bets, written to a public hash-chained ledger before the games start, with the mechanism and the counterargument on every card. We publish the losers too. No demonstrated edge — and we say so out loud.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;1,600;1,700;1,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -43,7 +55,7 @@
     <a href="#pricing">Pricing</a>
     <a href="#faq">FAQ</a>
   </div>
-  <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-primary">Try 3 Bet Checks free</a>
+  <a class="btn btn--primary" href="index.html#/betcheck" data-hook="cta-primary">Try 3 Bet Checks free</a>
 </nav>
 
 <main>
@@ -104,12 +116,66 @@
       </div>
     </div>
     <div class="hero__cta-group" data-rise data-delay="520">
-      <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup-hero">Try 3 Bet Checks free</a>
+      <!-- POINTS AT THE THING IT PROMISES. All four "Try 3 Bet Checks
+           free" buttons used to link to #/signup -- an email form -- and
+           `#/betcheck` appeared ZERO times on this page. The single offer
+           the page makes was the one thing no button on it delivered, and
+           docs/CONVERSION_INSTRUMENTATION_AUDIT.md had already flagged
+           exactly this. The free-check flow needs no account
+           (src/appstate/freechecks.py, POST /betcheck/free), so sending
+           people to it is both honest and shorter. -->
+      <a class="btn btn--primary" href="index.html#/betcheck" data-hook="cta-signup-hero">Try 3 Bet Checks free</a>
       <p class="hero__cta-note">Your first 3 Bet Checks are free — three total, not per day. No card required. MLB only.</p>
       <div class="hero__demo-entry" data-hook="public-demo-entry" hidden>
         <a class="btn btn--cyan on-live" href="index.html#/today" data-hook="cta-open-demo">OPEN THE LIVE DEMO</a>
         <p class="hero__cta-note" data-hook="public-demo-note">No sign-up needed while this preview is open.</p>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT WE ACTUALLY PUBLISH -- the picks-led positioning (2026-09-10).
+     Sits directly under the hero because the doctrine puts the slip first
+     and this page previously never mentioned it at all. Every claim below
+     is one the ledger can back: the freeze is real (evidence/slips_v1.jsonl
+     is hash-chained), the losers really are published (#/performance), the
+     null results really are counted (the number comes from the registry
+     via GET /meta). Nothing here asserts an edge, and the last card says
+     so plainly rather than burying it. -->
+<section class="section" aria-label="what we publish" data-hook="what-we-publish">
+  <div class="section__head" data-rise>
+    <span class="eyebrow eyebrow--money">What you actually get</span>
+  </div>
+  <h2 class="section__title" data-rise data-delay="60">A ranked slip, written down before the games start.</h2>
+  <div class="story-grid" style="margin-top:32px">
+    <div class="story-card panel chamfer" data-rise data-delay="80">
+      <div class="story-card__kicker">The slip</div>
+      <div class="story-card__title">Tonight's bets,<br>ranked by case strength.</div>
+      <p class="story-card__body">Not by how pretty the price is — by how many independent systems
+        landed on the same side, how many pre-registered signals fired, and how deep the book
+        coverage goes. Some nights that list is empty, and we show you that instead of filling it.</p>
+    </div>
+    <div class="story-card panel chamfer" data-rise data-delay="140">
+      <div class="story-card__kicker">The receipt</div>
+      <div class="story-card__title">Committed to a public ledger<br>before first pitch.</div>
+      <p class="story-card__body">Every pick is written to a hash-chained record the moment it is made,
+        so the timestamp is not something you have to take our word for. Nothing is re-graded, re-ranked
+        or quietly removed afterwards.</p>
+    </div>
+    <div class="story-card panel chamfer" data-rise data-delay="200">
+      <div class="story-card__kicker">The argument</div>
+      <div class="story-card__title">The reason it might work,<br>and the reason it might not.</div>
+      <p class="story-card__body">Each card carries the mechanism in plain English, the counterargument
+        against it, the sample size behind it, and how many books were quoting when we froze it.
+        A claim you cannot check is a claim we do not make.</p>
+    </div>
+    <div class="story-card panel chamfer" data-rise data-delay="260">
+      <div class="story-card__kicker">The part nobody else prints</div>
+      <div class="story-card__title">We have not beaten<br>the market yet.</div>
+      <p class="story-card__body">Every losing pick stays on the record at the same size as the winners,
+        and <span data-hook="research-count">40</span> pre-registered research ideas have been tested
+        and killed. If that ever changes it will change because the evidence changed, and you will be
+        able to check it yourself.</p>
     </div>
   </div>
 </section>
@@ -396,7 +462,7 @@
       <span class="badge badge--outline chamfer chamfer--chip pricing-card__badge">On the house</span>
       <div class="pricing-card__name">3 Bet Checks, free</div>
       <p class="pricing-card__note">Three introductory checks total — not per day, not renewing. No card required. MLB only.</p>
-      <a class="btn btn--ghost" href="index.html#/signup" data-hook="cta-primary-secondary">Try 3 Bet Checks free</a>
+      <a class="btn btn--ghost" href="index.html#/betcheck" data-hook="cta-primary-secondary">Try 3 Bet Checks free</a>
     </div>
     <div class="pricing-card pricing-card--founding panel chamfer" data-rise data-delay="140">
       <span class="badge badge--money chamfer chamfer--chip pricing-card__badge">Founding beta</span>
@@ -510,7 +576,7 @@
 <section class="closing-band" aria-label="call to action" data-view="cta" data-hook="cta-bottom">
   <div class="closing-band__title">Before you fire,<br>run it through.</div>
   <div class="closing-band__cta">
-    <a class="btn btn--primary btn--lg" href="index.html#/signup" data-hook="cta-signup-bottom">Try 3 Bet Checks free</a>
+    <a class="btn btn--primary btn--lg" href="index.html#/betcheck" data-hook="cta-signup-bottom">Try 3 Bet Checks free</a>
   </div>
 </section>
 
