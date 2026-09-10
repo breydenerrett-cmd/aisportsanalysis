@@ -415,6 +415,29 @@ if [ "$DRIFT_STATUS" -ne 0 ]; then
 fi
 echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: calibration_drift_audit exit=$DRIFT_STATUS" >> "$RUN_NOTE"
 
+# THE TIER LADDER'S PENDING PRE-REGISTRATION. docs/PREREG_TIER_LADDER.md
+# fixed the rule -- percentiles of a permutation null -- before any number
+# was computed, and it currently REFUSES for want of data: five usable dates
+# against a required twenty.
+#
+# Runs nightly so the recalibration happens because the data arrived rather
+# than because someone remembered. Deliberately non-escalating while it is
+# short: a pending pre-registration is a normal state, and treating "not
+# yet" as a failure trains everyone to ignore the night it becomes "now".
+# It escalates on its own once answerable.
+echo "== tier ladder readiness (pre-registered, pending) =="
+LADDER_OUT=$(python3 scripts/test_tier_ladder.py 2>&1)
+LADDER_STATUS=$?
+echo "$LADDER_OUT" | sed 's/^/  /'
+if [ "$LADDER_STATUS" -ne 0 ]; then
+    echo "ESCALATE: the tier ladder pre-registration is now answerable and did not adopt -- read the checks above; EVIDENCE_STRONG has been mis-calibrated since 2026-09-10"
+    type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "tier ladder answerable" || true
+elif echo "$LADDER_OUT" | grep -q "ADOPT THIS LADDER"; then
+    echo "ESCALATE: the tier ladder pre-registration is answerable and ADOPTS -- src/engine/slip.py's thresholds should now be changed to the ones printed above, and docs/PREREG_TIER_LADDER.md updated"
+    type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "tier ladder ready to adopt" || true
+fi
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: test_tier_ladder exit=$LADDER_STATUS" >> "$RUN_NOTE"
+
 echo "== research readiness =="
 READINESS_OUT=$(python3 scripts/research_readiness.py 2>&1)
 READINESS_STATUS=$?
