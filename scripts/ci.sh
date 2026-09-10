@@ -44,6 +44,14 @@ echo "== [0/6] reachability: is anything actually calling this code? =="
 python3 scripts/reachability_audit.py
 
 echo
+# The app icons are GENERATED (scripts/make_icons.py) rather than pasted in,
+# because the brand is a working placeholder pending trademark clearance and
+# a binary nobody can regenerate is a binary nobody dares change. This fails
+# if a checked-in icon no longer matches its source.
+echo "== [0b/6] app icons match their generator =="
+python3 scripts/make_icons.py --check
+
+echo
 echo "== [1/6] full unit suite (python3 -m unittest discover) =="
 python3 -m unittest discover -s tests -q
 

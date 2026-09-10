@@ -24,8 +24,12 @@
 }
 @media (max-width: 899px) {
   /* Room for the tab bar plus the sticky Bet Check field that sits on
-     top of it (screens.css) -- neither may ever cover page content. */
-  .shell__column { padding-bottom: calc(var(--tabbar-height) + 74px); }
+     top of it (screens.css) -- neither may ever cover page content.
+     Plus the home-indicator inset, since the tab bar grew by it. */
+  .shell__column {
+    padding-bottom: calc(var(--tabbar-height) + 74px
+                         + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 /* ---- top strip (62px, canvas: sticky, blurred, hairline underline) --*/

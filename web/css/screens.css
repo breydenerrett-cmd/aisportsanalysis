@@ -633,7 +633,11 @@
      the glow drop out; what is left is the field and a compact CHECK. */
   .checkband {
     position: fixed;
-    left: 0; right: 0; bottom: var(--tabbar-height);
+    left: 0; right: 0;
+    /* Rides on top of the tab bar, which is now itself taller by the
+       home-indicator inset (nav.css). Without adding the same inset here
+       the field would slide down behind the bar on a notched phone. */
+    bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom, 0px));
     z-index: 55;
     margin: 0;
     padding: 8px var(--gutter-mobile);

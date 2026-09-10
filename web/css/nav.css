@@ -202,10 +202,24 @@
   position: fixed;
   left: 0; right: 0; bottom: 0;
   z-index: 60;
-  height: var(--tabbar-height);
+  /* SAFE AREA (2026-09-10). On a notched iPhone the bottom of the screen
+     belongs to the home indicator, and a bar pinned to `bottom: 0` sits
+     underneath it -- the tap targets are physically reachable but the
+     labels are cut and a swipe-up hits the OS instead of the app. The
+     inset is 0 on every device that does not have one, and 0 in a normal
+     browser tab, so this only pays out where it is needed: installed to a
+     home screen, which is the whole point of shipping a manifest.
+
+     Needs viewport-fit=cover on the viewport meta or env() reports 0
+     regardless -- see web/index.html. */
+  height: calc(var(--tabbar-height) + env(safe-area-inset-bottom, 0px));
   display: flex;
   align-items: center;
+  /* Shorthand FIRST, then the inset -- the other way round the shorthand
+     resets padding-bottom back to 0 and the whole fix silently does
+     nothing. */
   padding: 0 6px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   background: rgba(13, 14, 17, .94);
   backdrop-filter: blur(22px);
   -webkit-backdrop-filter: blur(22px);

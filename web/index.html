@@ -2,8 +2,29 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>LINEHOUND</title>
+<!-- INSTALLABLE SURFACE (2026-09-10). There was none: no manifest, no
+     icons, and not one image file anywhere in web/. The bottom tab bar and
+     the fixed Bet Check field were already built and the mobile layout is
+     genuinely good, so the only thing standing between this and a home
+     screen was the metadata below plus four PNGs.
+
+     `viewport-fit=cover` above pairs with the env(safe-area-inset-*) rules
+     in css/app.css: without it iOS letterboxes the page instead of letting
+     it reach the edges, and the insets it reports stay zero.
+
+     Icons come from scripts/make_icons.py, which regenerates them from the
+     design tokens -- the brand is still a working placeholder pending
+     trademark clearance (api/meta.py marks it temporary), so these are
+     certain to be replaced and a binary nobody can regenerate is a binary
+     nobody dares change. -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0A0A0B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LINEHOUND">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <!-- Typefaces are self-hosted (css/fonts.css): the design's identity must
      not depend on a third-party CDN being reachable, and this page has to
      render identically from file:// with no network at all. -->

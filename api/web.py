@@ -42,7 +42,21 @@ WEB_DIR = (REPO_ROOT / "web").resolve()
 # web/ by mistake must never become servable just by matching a path
 # pattern -- an allowlist refuses everything not named here rather than
 # trying to blocklist what should never be exposed.
-_ALLOWED_SUFFIXES = {".html", ".js", ".css", ".json", ".md"}
+# Extended 2026-09-10 for the installable-app surface. The allowlist is a
+# real defence -- it is what stops a traversal or a stray file type being
+# served out of web/ -- so this grew by exactly what a web manifest and its
+# icons need and nothing else:
+#
+#   .webmanifest  the manifest itself
+#   .png          the icon set (scripts/make_icons.py generates it)
+#   .svg, .ico    favicons, which browsers request whether or not we ship
+#                 them; serving a real one beats a 404 on every page load
+#
+# Still refused, deliberately: everything executable or archival, anything
+# that could carry a payload a browser would run. If a future asset type
+# needs adding, add the ONE suffix, not a wildcard.
+_ALLOWED_SUFFIXES = {".html", ".js", ".css", ".json", ".md",
+                     ".webmanifest", ".png", ".svg", ".ico"}
 
 
 def _safe_path(relative: str) -> Path:
