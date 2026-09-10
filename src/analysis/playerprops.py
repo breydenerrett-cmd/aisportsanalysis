@@ -177,6 +177,54 @@ NOT_PUBLISHABLE = {
 }
 
 
+# MARKETS NO BOOK QUOTES BOTH SIDES OF, so no fair price can be computed.
+#
+# Measured over 15,020 captured quotes: `batter_home_runs` has 3,038 Over
+# quotes and **zero** Unders, across 2,125 contracts and eight books. That
+# is not a capture fault -- the projection stores every outcome the feed
+# returns -- it is market convention. Nobody offers "under 0.5 home runs".
+#
+# Why it matters, and it is the whole lesson of this project's 2026-09-09
+# incident: without both sides there is no de-vig, so any "value" measured
+# on a home-run price is measured against a RAW price that still contains
+# the book's entire margin. A 10% gap against a raw price on a market
+# holding 12% is not a 10% edge, it is minus two, and it looks identical to
+# a real one.
+#
+# The market can still be PRICED -- a probability is a probability -- and it
+# can be shown as information. It may not be presented as value.
+NOT_DEVIGGABLE = {
+    "batter_home_runs": "no book quotes the under, so there is no fair price "
+                        "to measure a gap against -- 3,038 over quotes and "
+                        "zero unders across 2,125 contracts and eight books",
+}
+
+# How much of each market's board carries enough two-way books to de-vig,
+# measured on the same 15,020 quotes. Kept as documentation rather than as a
+# gate: it tells a reader why some markets produce far fewer picks.
+#
+#     batter_total_bases     40% of contracts have 3+ two-way books
+#     batter_hits_runs_rbis  58%   (but the market is not publishable)
+#     batter_hits            10%   (56% have 2+)
+#     batter_rbis             3%   (not publishable)
+#     batter_runs_scored      0%   (72% have 2+)
+#     batter_home_runs        0%   (structurally, see above)
+#
+# Two books skew the raw totals and neither is a fault: betrivers quotes
+# overs only, and williamhill_us runs 4.45 overs per under. Six of the eight
+# quote both sides exactly evenly.
+
+
+def deviggable(market: str) -> bool:
+    """Can a fair price be computed for this market at all?
+
+    Separate from `publishable`, which is about whether the MODEL is any
+    good. A market can be well modelled and still un-assessable for value
+    because the book never shows the other side.
+    """
+    return market not in NOT_DEVIGGABLE
+
+
 def publishable(market: str) -> bool:
     """May a pick in this market be shown to a customer?
 

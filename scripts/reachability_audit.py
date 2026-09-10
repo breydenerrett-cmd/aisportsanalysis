@@ -402,6 +402,8 @@ DECLARED_MANUAL_SCRIPTS = {
     "test_calibration_still_helps.py",
     "test_drop_hurting_components.py",
     "backtest_player_props.py",
+    "probe_prop_value.py",
+    "test_prop_dispersion.py",
     "test_tier_ladder.py",
 
     # --- read-only analyses an operator runs while asking something. They

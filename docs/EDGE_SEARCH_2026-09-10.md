@@ -12,6 +12,94 @@ activity that produced it.
 
 ---
 
+## PLAYER PROPS — tested end to end, 2026-09-10
+
+The owner's thesis, and the structural argument is right: game outcomes are
+mostly noise and the moneyline is the most heavily priced line in the sport;
+a hitter's chance of a hit is far more tractable and the lines get less
+attention. Test the model, find where our number beats the price, publish
+that.
+
+### The model works. Really.
+
+`src/analysis/playerprops.py`, measured on **16,741 real batter games** with
+no price involved:
+
+| market | vs. a base rate | calibration |
+|---|---|---|
+| batter_hits over 0.5 | **+0.01334** | within 0.8 pts |
+| batter_total_bases over 1.5 | **+0.01021** | within 1.3 pts |
+| batter_runs_scored over 0.5 | +0.00794 | within 0.5 pts |
+| batter_home_runs over 0.5 | +0.00653 | within 0.2 pts |
+| batter_rbis over 0.5 | −0.00575 | **blocked** |
+| batter_hits_runs_rbis over 1.5 | −0.04033 | **blocked** |
+
+The best is **3.3× the team moneyline model's entire gain**. The owner was
+right that the game line was the wrong place to look.
+
+### And its disagreements with the market still lose money.
+
+`scripts/probe_prop_value.py`, against the 15,020 captured prices, flat
+stakes at the best available price:
+
+| arm | n | won | ROI | 95% interval |
+|---|---|---|---|---|
+| flagged: our edge ≥ 3 pts | 82 | 43.9% | **−16.6%** | [−37.5, +4.4] |
+| control: every over, no selection | 1,107 | 48.9% | **−9.1%** | [−14.8, −3.3] |
+
+**Selecting on our own edge did worse than not selecting at all.** The
+control is decisively negative — backing overs blindly loses about the vig,
+exactly as it should. Our selection made it worse.
+
+The flagged interval is wide on 82 bets and does not settle the question by
+itself. What it does not do is show any sign of the thing we were looking
+for.
+
+### Why a calibrated model still loses
+
+**Calibrated overall is not the same as calibrated conditional on
+disagreeing with the market.** When our number says 62% and the market says
+46%, the market is usually right — it knows tonight's lineup slot, the
+platoon matchup, the weather, the park, who is nursing something. Our model
+knows a season rate and a crude pitcher multiplier.
+
+This is the same finding as the team model, at a larger scale of signal, and
+it leads to the same rule: **do not publish picks selected by
+model-versus-market disagreement.** That rule is why THE CARD takes the
+market's side and uses the model only for agreement.
+
+### What would change it
+
+Everything the market has that we do not, and most of it is already
+captured:
+
+1. **Tonight's lineup slot.** We use the batter's season average plate
+   appearances. Leadoff versus eighth is worth most of a plate appearance,
+   and the lineup card says which.
+2. **Platoon splits.** `data/historical/handedness.json` is captured and
+   unused here.
+3. **Park and weather.** Both reach the dossier; neither reaches this model.
+4. **Recent form** versus a flat season rate.
+
+The thesis is not refuted. The **current model** is not good enough to beat
+a price, and that is a different and fixable statement.
+
+### Two structural facts found on the way
+
+- **Home runs cannot be assessed for value at all.** 3,038 over quotes and
+  **zero** unders across 2,125 contracts and eight books. No under means no
+  fair price, so any "gap" there is measured against a raw price that still
+  contains the book's whole margin. Market convention, not a capture fault —
+  and encoded as `NOT_DEVIGGABLE` so it cannot be published as value.
+- **Prop boards are thin two-way.** Only 40% of total-base contracts carry
+  three books quoting both sides, and 10% of hits contracts. At a three-book
+  floor the scan examined 12% of the board and its findings bunched on
+  whichever day happened to get a fuller capture — 13 of the top 18 from one
+  date. The floor is two now, which is a real weakening, stated rather than
+  hidden.
+
+---
+
 ## What everyone else is doing
 
 Roughly in order of how common:
