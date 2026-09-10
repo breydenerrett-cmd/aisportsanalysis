@@ -971,3 +971,9 @@
 {"fetched_utc": "2026-09-10T15:41:27.460175+00:00", "game_date": "2026-09-10", "poll": true}
 {"fetched_utc": "2026-09-10T15:52:31.638457+00:00", "game_date": "2026-09-10", "poll": true}
 {"fetched_utc": "2026-09-10T15:52:32.806253+00:00", "game_date": "2026-09-10", "poll": true}
+{"fetched_utc": "2026-09-10T16:40:56.847510+00:00", "game_date": "2026-09-10", "poll": true}
+{"category": "il_placement", "date": "2026-09-09", "first_seen_utc": "2026-09-10T16:40:56.847510+00:00", "player": "Jazz Chisholm Jr.", "player_id": 665862, "team": "NYY", "transaction_id": 941937}
+{"category": "recalled", "date": "2026-09-10", "first_seen_utc": "2026-09-10T16:40:56.847510+00:00", "player": "Andrew Pinckney", "player_id": 687605, "team": "WSH", "transaction_id": 941935}
+{"category": "other", "date": "2026-09-10", "first_seen_utc": "2026-09-10T16:40:56.847510+00:00", "player": "Nasim Nu\u00f1ez", "player_id": 683083, "team": "WSH", "transaction_id": 941936}
+{"category": "recalled", "date": "2026-09-10", "first_seen_utc": "2026-09-10T16:40:56.847510+00:00", "player": "Anthony Volpe", "player_id": 683011, "team": "NYY", "transaction_id": 941938}
+{"fetched_utc": "2026-09-10T16:40:58.675739+00:00", "game_date": "2026-09-10", "poll": true}
