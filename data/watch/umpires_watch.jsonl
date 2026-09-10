@@ -573,3 +573,6 @@
 {"game_date": "2026-09-11", "observed_utc": "2026-09-10T16:40:57.373338+00:00", "poll": true}
 {"game_date": "2026-09-10", "observed_utc": "2026-09-10T17:25:57.697642+00:00", "poll": true}
 {"game_date": "2026-09-11", "observed_utc": "2026-09-10T17:25:57.919234+00:00", "poll": true}
+{"game_date": "2026-09-10", "observed_utc": "2026-09-10T18:10:49.997421+00:00", "poll": true}
+{"commence_time": "2026-09-10T20:10:00Z", "crew": [{"id": 427128, "name": "Rob Drake", "officialType": "Home Plate"}, {"id": 521889, "name": "Stu Scheurwater", "officialType": "First Base"}, {"id": 490319, "name": "Jordan Baker", "officialType": "Second Base"}, {"id": 608093, "name": "Junior Valentine", "officialType": "Third Base"}], "game_date": "2026-09-10", "game_pk": 823088, "game_state": "Pre-Game", "home_plate_umpire": "Rob Drake", "observed_utc": "2026-09-10T18:10:49.997421+00:00", "prev_poll_utc": "2026-09-10T17:25:57.697642+00:00", "revealed": true}
+{"game_date": "2026-09-11", "observed_utc": "2026-09-10T18:10:50.231464+00:00", "poll": true}
