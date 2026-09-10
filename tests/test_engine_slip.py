@@ -618,5 +618,71 @@ class GameAlreadyStartedTests(unittest.TestCase):
         self.assertIn(self.PRE, slip.misses[0].detail)
 
 
+class ContradictingSides(unittest.TestCase):
+    """Found live 2026-09-10: the slip published both sides of one game.
+
+    Every per-candidate floor passed, because each side really was
+    well-evidenced on its own. The failure is a property of the slip as a
+    whole, so these tests are about what the SET asserts, not what any one
+    pick does.
+    """
+
+    def _slip(self, rows, families):
+        return build_slip(rows, _forced_clustering(families), date=DATE,
+                          slip_utc=SLIP_UTC)
+
+    def test_opposite_sides_of_one_market_cannot_both_publish(self):
+        rows = [_row("a", "evtA", "home", signals=2),
+                _row("b", "evtA", "away")]
+        slip = self._slip(rows, [("a",), ("b",)])
+        self.assertEqual(len(slip.picks), 1)
+        self.assertEqual(
+            [m.reason for m in slip.misses],
+            [slip_mod.MISS_CONTRADICTS_HIGHER_PICK])
+
+    def test_the_stronger_case_is_the_side_that_survives(self):
+        """Which side wins is decided by the ranking basis, not by input
+        order -- so the weaker side is refused whichever way it arrives."""
+        strong = _row("a", "evtA", "home", signals=3)
+        weak = _row("b", "evtA", "away", signals=1)
+        for rows in ([strong, weak], [weak, strong]):
+            slip = self._slip(rows, [("a",), ("b",)])
+            self.assertEqual(slip.picks[0].selection_id, "home")
+
+    def test_the_refused_side_does_not_consume_a_rank(self):
+        """Ranks must stay contiguous from 1, or the cohort cuts silently
+        publish fewer picks than they claim."""
+        rows = [_row("a", "evtA", "home", signals=3),
+                _row("b", "evtA", "away"),
+                _row("c", "evtB", "home", signals=2)]
+        slip = self._slip(rows, [("a",), ("b",), ("c",)])
+        self.assertEqual([p.rank for p in slip.picks], [1, 2])
+        self.assertIn(COHORT_TOP_3, slip.picks[1].cohorts)
+
+    def test_the_same_side_from_two_systems_is_not_a_contradiction(self):
+        """Agreement must still collapse to one pick, but for the existing
+        top-play-per-wager reason -- never as a contradiction."""
+        rows = [_row("a", "evtA", "home"), _row("b", "evtA", "home")]
+        slip = self._slip(rows, [("a",), ("b",)])
+        self.assertEqual(len(slip.picks), 1)
+        self.assertEqual(slip.picks[0].n_families, 2)
+        self.assertEqual(
+            [m.reason for m in slip.misses
+             if m.reason == slip_mod.MISS_CONTRADICTS_HIGHER_PICK], [])
+
+    def test_different_markets_on_one_game_both_publish(self):
+        """h2h and the first-five h2h are correlated, not contradictory. The
+        audit warns about the correlation; the builder must not drop it."""
+        rows = [_row("a", "evtA", "home", market="h2h"),
+                _row("b", "evtA", "away", market="h2h_1st_5_innings")]
+        slip = self._slip(rows, [("a",), ("b",)])
+        self.assertEqual(len(slip.picks), 2)
+
+    def test_different_games_are_untouched(self):
+        rows = [_row("a", "evtA", "home"), _row("b", "evtB", "away")]
+        slip = self._slip(rows, [("a",), ("b",)])
+        self.assertEqual(len(slip.picks), 2)
+
+
 if __name__ == "__main__":
     unittest.main()

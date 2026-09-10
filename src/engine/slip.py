@@ -138,6 +138,16 @@ MISS_NO_FALSIFIABLE_MECHANISM = "no_falsifiable_mechanism"
 # reacting to the score, even when it never saw it.
 MISS_GAME_STARTED = "game_started"
 MISS_COMMENCE_TIME_UNKNOWN = "commence_time_unknown"
+# A THIRD kind of floor, and the only one that is a property of the slip as a
+# whole rather than of a candidate. Every filter above judges one selection in
+# isolation, which is why both sides of one game could clear all of them: on
+# 2026-09-10 the two published picks were LAD at -272 (rank 1) and CIN at +242
+# (rank 2), opposite sides of the same h2h market, both tagged TOP_3. Each was
+# individually well-evidenced. Together they are a guaranteed loss of the hold
+# for any reader who takes the slip at its word, and they are evidence that the
+# systems disagree -- which is the opposite of what a ranked slip asserts.
+# The higher-ranked side survives; the contradicting one is refused and named.
+MISS_CONTRADICTS_HIGHER_PICK = "contradicts_higher_pick"
 
 CONTROL_PREFIX = "trivial_"
 MARKET_REFERENCE_PREFIX = "market_derived_consensus_"
@@ -638,7 +648,36 @@ def build_slip(records: Iterable, clustering, *, date: str, slip_utc: str,
         ranked_input.append((ag, record, standing))
 
     ranked_input.sort(key=_rank_key)
-    for i, (ag, record, standing) in enumerate(ranked_input, start=1):
+
+    # Refuse any candidate that contradicts one already ranked above it. This
+    # has to run AFTER the sort and BEFORE ranks are stamped: which side of a
+    # contradiction survives is decided by the ranking basis, and the loser
+    # must not consume a rank number. See MISS_CONTRADICTS_HIGHER_PICK.
+    #
+    # Scoped to the same (event, market) pair only. Two different markets on
+    # one game are correlated but not contradictory -- backing a side in h2h
+    # and the same side through five is one thesis expressed twice, and that
+    # is a diversification question for the cohort cuts, not a falsehood.
+    kept = []
+    claimed: dict = {}
+    for ag, record, standing in ranked_input:
+        key = (_field(record, "event_id"), _field(record, "market_key"))
+        selection = _field(record, "selection_id")
+        held = claimed.get(key)
+        if held is not None and held != selection:
+            wid = families_mod.wager_id(
+                _field(record, "event_id"), _field(record, "market_key"),
+                selection)
+            misses.append(Miss(
+                wid, _field(record, "system_id"),
+                MISS_CONTRADICTS_HIGHER_PICK,
+                f"a higher-ranked pick already backs the other side of this "
+                f"{_field(record, 'market_key')} market"))
+            continue
+        claimed[key] = selection
+        kept.append((ag, record, standing))
+
+    for i, (ag, record, standing) in enumerate(kept, start=1):
         n_signals, rung = confirmation_strength(record)
         books, _ = board_quality(record)
         picks.append(SlipPick(

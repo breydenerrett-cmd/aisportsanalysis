@@ -101,6 +101,22 @@ if [ "${GATE_OUT%% *}" = "RUN" ]; then
         | sed 's/^/  /' || echo "  (slip pass failed; decisions already frozen are unaffected)"
 fi
 
+# Deliberately OUTSIDE the lineup-cadence gate above. Everything else in this
+# script asks "did this pass do its job?". This asks "is what the site is
+# showing right now still TRUE?" -- and the way a slip goes false is by the
+# clock running past first pitch, which happens BETWEEN passes, not during
+# one. Gating it behind RUN would leave the site unaudited for exactly the
+# hours the 2026-09-09 incident lived in.
+#
+# Never fails the slot: findings exit 1 by design, and a stale-slip warning
+# must not eat the capture that follows it.
+echo "== publication audit =="
+AUDIT_OUT=$(python3 scripts/publication_audit.py 2>&1) || true
+echo "$AUDIT_OUT" | sed 's/^/  /'
+# Re-echoed unindented so the heartbeat's `^ESCALATE:` grep still matches --
+# same convention as PROP_OUT/EXTRAS_OUT below.
+echo "$AUDIT_OUT" | grep "^ESCALATE:" || true
+
 GIT_LOCK=/tmp/linehound_git.lock
 exec 9>"$GIT_LOCK"
 GIT_FAILED=0
