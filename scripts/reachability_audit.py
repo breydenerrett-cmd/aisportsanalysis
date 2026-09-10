@@ -342,10 +342,46 @@ def orphan_scripts():
 # Same stinginess as DECLARED_MANUAL: a reason that would still convince
 # someone reading it cold, or wire the thing up.
 DECLARED_MANUAL_SCRIPTS = {
-    "make_icons.py",          # run by ci.sh --check; also a human tool
-    "reachability_audit.py",  # run by ci.sh
-    "publication_audit.py",   # run by capture_slot.sh
-    "research_readiness.py",  # run by daily_loop.sh
+    "__init__.py",            # a package marker, not a script
+
+    # --- one-off migrations and corrections: correct BECAUSE they are not
+    #     automatic. Re-running one is at best a no-op and at worst a
+    #     duplicate row in an append-only ledger.
+    "alpha_registry_migrate.py",
+    "append_edge_withdrawal_corrections.py",
+
+    # --- exploratory probes: each was written to answer one question that
+    #     had an owner at the time. A probe on a schedule is a probe nobody
+    #     is reading.
+    "probe_historical_boundaries.py",
+    "probe_historical_f5_props.py",
+    "probe_historical_leadtime.py",
+    "probe_prop_name_join.py",
+
+    # --- credit-metered or long-running research runs, started deliberately
+    #     with a budget in mind (docs/RESOURCE_POLICY.md).
+    "evolab_sweep.py",
+    "run_f5_tminus2_tranche.py",
+    "factory_masks_from_sweep.py",
+    "factory_lifecycle_dryrun.py",
+
+    # --- freezes: a family is frozen once, on purpose, by a person who has
+    #     decided to freeze it.
+    "f5_freeze_family.py",
+    "totals_freeze_family.py",
+
+    # --- read-only analyses an operator runs while asking something. They
+    #     write no state and gate nothing.
+    "derive_mechanism_baselines.py",
+    "engine_equivalence.py",
+    "f5_tie_audit.py",
+    "factory_overlap_report.py",
+    "measure_market_derived_calibration.py",
+    "time_tests.py",
+    "totals_coverage_audit.py",
+    "totals_m2_coverage.py",
+    "totals_population_audit.py",
+    "totals_reschedule_audit.py",
 }
 
 

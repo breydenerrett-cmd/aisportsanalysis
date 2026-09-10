@@ -364,6 +364,25 @@ echo "$READINESS_OUT" | sed 's/^/  /'
 echo "$READINESS_OUT" | grep "^ESCALATE:" || true
 echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: research-readiness exit=$READINESS_STATUS" >> "$RUN_NOTE"
 
+# The pre-registered CLV forward test (docs/PREREG_CLV_FEATURE_LEAD.md).
+#
+# Its own commit message said "a hypothesis nobody automated is one that
+# quietly never gets tested by the person hoping it works" -- and then
+# nothing called it, for a day, while scripts/reachability_audit.py reported
+# CLEAN. That audit walked scripts/*.sh as entry points and never asked
+# whether scripts/*.py were REACHED: its second blind spot in two days, both
+# times in the one tool whose job is finding code nobody calls.
+#
+# Reports PENDING until 60 distinct games have accrued in the window, and
+# computes no effect before that (so nightly runs cannot become peeking).
+# Read-only, no credits.
+echo "== pre-registered CLV forward test =="
+PREREG_OUT=$(python3 scripts/prereg_clv_feature_test.py 2>&1)
+PREREG_STATUS=$?
+echo "$PREREG_OUT" | sed 's/^/  /'
+echo "$PREREG_OUT" | grep "^ESCALATE:" || true
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: prereg-clv exit=$PREREG_STATUS" >> "$RUN_NOTE"
+
 # Concurrent runs of this script and forward_capture.sh on the same shared
 # checkout raced each other into stranded/mismerged commits four times in
 # 30h (87312f2, de8a582, b258fc1, 9d30526): both scripts trip on their own
