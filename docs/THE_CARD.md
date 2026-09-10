@@ -80,21 +80,44 @@ expected_runs = offence * defence / league_average          (log5, on runs)
 margin        = home_runs - away_runs + HOME_FIELD_RUNS
 ```
 
-**Nothing in it is fitted.** Every constant is either published
-(`HOME_FIELD_RUNS = 0.20`, `FIP_TO_RA_SCALE = 1.08`) or measured from the
-point-in-time store at call time (the league run rate). A model with no free
-parameters cannot be overfitted, so its out-of-sample behaviour is its only
-behaviour.
+**One constant is fitted, and it took three pre-registrations.** Everything
+else is published (`HOME_FIELD_RUNS = 0.20`, `FIP_TO_RA_SCALE = 1.08`) or
+measured from the point-in-time store at call time (the league run rate).
 
-`MARGIN_INFLATION` is deliberately **1.0 — off**. It is a real correction
-(runs are overdispersed relative to Poisson) and switching it on without an
-out-of-sample measurement would be a fitted parameter wearing a constant's
-clothes. `tests/test_strength_model.py` asserts it stays off.
+### `DISPERSION = 2.3352` — runs are not Poisson
 
-### Where the model is wrong, stated up front
+Per-team run variance is **2.33× the mean**, not 1.0×. Poisson badly
+understates how spread out real games are, and it costs most on the exact
+quantity a run line pays: 72.7% of real games are decided by two or more
+runs and independent Poissons say 61.0%.
 
-- Runs are overdispersed relative to Poisson, so tail probabilities are
-  understated and blowout run lines shade toward the middle.
+Adopted 2026-09-10 after being **refused once**. Full history in
+[`PREREG_RUN_DISPERSION.md`](PREREG_RUN_DISPERSION.md); the short version is
+that the first pre-registration's stability check failed, the threshold was
+not moved, and the question was then settled on the 2025 season — 2,212
+games ingested afterwards, untouched by any prior measurement:
+
+| | dispersion | se |
+|---|---|---|
+| 2025, estimated from scratch | 2.3265 | 0.0682 |
+| 2026, the value applied | 2.3352 | — |
+| apart | **0.128 standard errors** | |
+
+Applying the 2026 value unchanged to 2025: run-line calibration error
+**0.08088 → 0.00950**, moneyline log-loss **−0.0065 nats**. That last number
+is roughly seven times the model's entire gain over a home-field base rate —
+correcting the *shape* of the run distribution did more for picking winners
+than every other input in the model combined.
+
+### Where the model is still wrong, stated up front
+
+- The two clubs' scores are modelled as independent. Measured and defensible
+  — residual correlation −0.0203 over 1,896 games, z = −0.88 — but it is an
+  assumption, not a finding of zero.
+- A single dispersion constant is one number where the true shape has more
+  than one. The books' own boards still disagree with our run line by a
+  uniform ≈2.4 points after the correction, and that residual is most likely
+  this.
 - `bullpen_rate` is the team's whole-season allowance, which includes the
   starters, so rotation quality is double-counted a little.
 - Lineups are ignored. A club resting four regulars is priced as its season
@@ -104,6 +127,11 @@ clothes. `tests/test_strength_model.py` asserts it stays off.
 ---
 
 ## Calibration
+
+**This section describes the model as it was BEFORE the dispersion
+correction, and the correction changed the picture — see the note at the
+end.** The table below is kept because it is the reason the calibration
+layer exists at all.
 
 The raw model orders games correctly and states its confidence wrongly.
 Measured over the same 1,896 games:
@@ -128,6 +156,21 @@ confident as its accuracy earns.
 card would serve raw, overconfident numbers under the same words — so the
 file is tracked in git, the card payload carries `calibrated: false` when it
 is missing, and `scripts/publication_audit.py` escalates on both.
+
+### The correction changed this, and the open question it left
+
+With the run distribution fixed, the model is far better calibrated
+natively. The fitted shrink relaxed from **b = 0.489 to b = 0.708** — it
+needs much less correcting than it did.
+
+And the raw model's log-loss (**0.68831**) is now *better* than the
+Platt-calibrated one (**0.69137**). The calibration layer was built to fix an
+overconfidence that no longer exists at the same size, and it may now be
+over-shrinking a model that has earned its confidence.
+
+**Not acted on, deliberately.** It needs its own pre-registered window, and
+changing two things at once is how a result stops being attributable to
+either. It is the top open question on this model.
 
 ---
 
