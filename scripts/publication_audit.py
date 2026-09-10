@@ -46,15 +46,83 @@ SLIPS = REPO / "evidence" / "slips_v1.jsonl"
 # A tier the product declares RARE must not fire routinely. src/engine/slip.py
 # sets STRONG at "3+ independent families agree" and its own comment says the
 # whole-ledger historical ceiling is 3 -- so a night where most published
-# picks are STRONG is not a good night, it is a broken measurement. Set well
-# above any plausible real rate so this fires on the pathological case only.
+# picks are STRONG is not a good night, it is a broken measurement.
+#
+# THE MINIMUM WAS 5 AND THAT IS WHY IT NEVER FIRED. On 2026-09-10 the engine
+# published 14 picks across the day, EVERY ONE of them STRONG, and this check
+# stayed silent throughout because no single slip carried five. A rare-tier
+# alarm that needs five picks cannot see a day of one- and two-pick slips,
+# which is exactly the shape a selective engine produces. Three is enough to
+# tell "all of them" from "one of them".
 STRONG_SHARE_ALARM = 0.40
-STRONG_SHARE_MIN_PICKS = 5
+STRONG_SHARE_MIN_PICKS = 3
 
 # The largest number of independent families anyone has VERIFIED can agree on
 # one selection. Raising it is a deliberate act that must be justified in the
 # commit that raises it -- that is the whole point of the constant.
-DOCUMENTED_FAMILY_CEILING = 3
+#
+# RAISED FROM 3 TO 16 ON 2026-09-10, and the verification is the reason:
+#
+#   * The "3" came from a 2026-09-08 measurement, recorded in slip.py's own
+#     comment. On that date essentially NOTHING forward-test played, so it
+#     was the ceiling of a population of almost zero.
+#   * By 2026-09-10 the engine ran 166 forward-test decisions from 29
+#     distinct systems that played. More systems agreeing is the arithmetic
+#     consequence, not an anomaly.
+#   * The obvious alternative -- a structure-blind clustering counting
+#     near-duplicates as independent -- was checked and REFUTED. The
+#     clustering is collapsing: 22 systems into 16 families, 17 into 14, 6
+#     into 6. A structure-blind run would collapse nothing anywhere.
+#   * The day's largest observed value is 16, from 22 backing systems.
+#
+# So this ceiling is now descriptive of a real population. What it does NOT
+# settle is whether EVIDENCE_STRONG firing at 3+ families still means
+# anything -- see THE_STRONG_TIER_IS_NO_LONGER_RARE below.
+DOCUMENTED_FAMILY_CEILING = 16
+
+# THE CEILING ABOVE IS A RATCHET, AND A RATCHET CANNOT CATCH THE NEXT ONE.
+#
+# Raising it to today's largest observation means it cannot fire on today's
+# data by construction. That is honest for what the constant claims to be --
+# "the largest anyone has verified" -- and it is useless as a detector, for
+# the same reason every threshold set to the largest observed value is
+# useless.
+#
+# So the real guard is this one, and it is population-independent. A
+# structure-blind clustering has a signature that does not depend on how many
+# systems exist: EVERY SYSTEM BECOMES ITS OWN FAMILY. Nothing merges.
+#
+#   22 systems -> 16 families    collapsing, healthy
+#    4 systems ->  4 families    collapsed nothing, and legitimate: four
+#                                genuinely distinct systems agreed
+#   22 systems -> 22 families    collapsed nothing at 22, which cannot be
+#                                right in a population with known
+#                                structural twins
+#
+# Zero collapse is unremarkable on a handful of systems and implausible on
+# many. Eight is where "these four happen to be distinct" stops being the
+# easy explanation. The threshold is about the ARITHMETIC of the clustering,
+# not about how good tonight's picks are, so it does not drift as the
+# population grows.
+COLLAPSE_CHECK_MIN_SYSTEMS = 8
+
+# EVERY PICK PUBLISHED ON 2026-09-10 WAS STRONG. Fourteen of fourteen, at
+# family counts of 4, 6, 13, 14, 15 and 16 against a threshold of 3.
+#
+# EVIDENCE_STRONG's own comment in src/engine/slip.py justifies the 3 by
+# saying 3 is "the strongest agreement ever measured on this project's live
+# ledger, across its whole history". That was true on 2026-09-08 and stopped
+# being true the moment the engine started playing. A tier calibrated to the
+# ceiling of a population that no longer exists now fires on everything, and
+# a label that fires on everything tells a reader nothing.
+#
+# THIS FILE DOES NOT PICK A NEW THRESHOLD. slip.py's own words: "a threshold
+# picked to produce a target number of picks is the purest form of the thing
+# this project's whole research discipline exists to resist." Choosing 12
+# because it would make today's picks look selective is that, exactly.
+#
+# What it does is refuse to let the condition pass silently.
+STRONG_TIER_RECALIBRATION_OWED = True
 
 # A published slip is a live recommendation. Past this age it is stale
 # regardless of game states, because prices have moved even if nothing
@@ -165,6 +233,21 @@ def audit_slip(slip, resolve, schedule, now):
                 f"often is a broken measurement, not a good night -- check "
                 f"the clustering before believing any of it"))
 
+        # THE STANDING DEBT, reported on every run until it is paid. Not
+        # conditional on today's slate: the threshold is miscalibrated
+        # whether or not any pick happens to clear it tonight, and a check
+        # that goes quiet on an empty night is a check that gets forgotten.
+        if STRONG_TIER_RECALIBRATION_OWED:
+            findings.append((
+                "WARN",
+                "EVIDENCE_STRONG still fires at 3+ families, a threshold set "
+                "when the ceiling of the whole ledger was 3. On 2026-09-10 "
+                "the verified ceiling was 16 and every published pick was "
+                "STRONG. The label currently distinguishes nothing. "
+                "Recalibrating it is a deliberate decision that must not be "
+                "made by picking whatever number flatters tonight's picks -- "
+                "see this file's STRONG_TIER_RECALIBRATION_OWED"))
+
         # This one is ESCALATE rather than WARN on purpose. The temptation on
         # 2026-09-09 was to reason about how a grown population MIGHT justify
         # a surprising number, and ship. The only way to clear this alarm is
@@ -182,6 +265,28 @@ def audit_slip(slip, resolve, schedule, now):
                 f"exactly the confidence doctrine amendment 9 forbids), or the "
                 f"ceiling is genuinely higher now -- verify which, then raise "
                 f"DOCUMENTED_FAMILY_CEILING with the reason"))
+
+        # THE CHECK THAT DOES NOT DRIFT. A structure-blind clustering makes
+        # every system its own family and merges nothing, and that signature
+        # is the same whatever the population size -- unlike the ceiling
+        # above, which stops being able to fire the moment it is raised to
+        # the largest thing anyone has seen.
+        for pick in picks:
+            families = pick.get("n_families")
+            systems = pick.get("n_systems")
+            if not isinstance(families, int) or not isinstance(systems, int):
+                continue
+            if systems < COLLAPSE_CHECK_MIN_SYSTEMS or families != systems:
+                continue
+            findings.append((
+                "ESCALATE",
+                f"pick #{pick.get('rank')} is backed by {systems} systems in "
+                f"{families} families -- the clustering merged NOTHING at "
+                f"that size. On a population with known structural twins "
+                f"(every first-five genome is a feature-set twin of an h2h "
+                f"one) that is the signature of a structure-blind run, and "
+                f"the agreement count behind this pick is a raw system count "
+                f"wearing a family count's name"))
 
     # ---- CLAIM 3: the slip is fresh enough to be a recommendation --------
     if slip_utc and (now - slip_utc) > timedelta(minutes=SLIP_STALE_MINUTES):

@@ -397,6 +397,8 @@ DECLARED_MANUAL_SCRIPTS = {
     "probe_market_consistency.py",
     "probe_run_dispersion.py",
     "probe_first_five.py",
+    "probe_model_ablation.py",
+    "test_run_dispersion_2025.py",
 
     # --- read-only analyses an operator runs while asking something. They
     #     write no state and gate nothing.

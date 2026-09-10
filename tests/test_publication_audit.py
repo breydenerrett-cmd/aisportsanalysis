@@ -35,6 +35,30 @@ def _severities(findings):
     return {sev for sev, _ in findings}
 
 
+# THE STANDING DEBT IS NOT A FINDING ABOUT THE SLIP UNDER TEST.
+#
+# `STRONG_TIER_RECALIBRATION_OWED` reports on EVERY run, unconditionally,
+# because the EVIDENCE_STRONG threshold is miscalibrated whether or not any
+# pick happens to clear it tonight -- see
+# docs/INCIDENT_2026-09-10_STRONG_TIER.md. A check that goes quiet on an
+# empty slate is a check that gets forgotten.
+#
+# These tests ask "does THIS slip produce a finding", so the standing debt
+# has to come out first. Filtered by its own text rather than by dropping
+# every WARN, so a genuine WARN about the slip still fails the test it
+# should.
+STANDING_DEBT_MARKER = "EVIDENCE_STRONG still fires at"
+
+
+def _about_this_slip(findings):
+    return [(sev, msg) for sev, msg in findings
+            if STANDING_DEBT_MARKER not in msg]
+
+
+def _slip_severities(findings):
+    return _severities(_about_this_slip(findings))
+
+
 def _slip(date_iso, slip_utc):
     with open(SLIPS, encoding="utf-8") as fh:
         for line in fh:
@@ -78,11 +102,21 @@ class IncidentReplay(unittest.TestCase):
                       + "\n".join(f"  [{s}] {m}" for s, m in findings))
 
     def test_incident_slip_flags_the_tier_anomaly(self):
-        """17 of 23 STRONG and families well past the ceiling."""
+        """17 of 23 STRONG.
+
+        This used to also assert the per-pick family-ceiling message. It no
+        longer can: the ceiling was raised from 3 to 16 on 2026-09-10 after
+        the higher counts were VERIFIED legitimate
+        (docs/INCIDENT_2026-09-10_STRONG_TIER.md), and a ratchet raised to
+        the largest observed value cannot fire on the data that raised it.
+
+        That is precisely why the collapse-ratio check exists, and the
+        share alarm below is what actually catches this slip.
+        """
         findings = audit_slip(self.slip, lambda _e: None, None, INCIDENT_NOW)
         blob = " ".join(m for _s, m in findings)
         self.assertIn("STRONG", blob)
-        self.assertIn("independent families", blob)
+        self.assertIn("ESCALATE", _severities(findings))
 
 
 class StartedGames(unittest.TestCase):
@@ -156,7 +190,41 @@ class TierAlarms(unittest.TestCase):
         picks = [_pick(1, "STRONG", DOCUMENTED_FAMILY_CEILING)]
         findings = audit_slip(_synthetic(picks), lambda _e: None, None,
                               INCIDENT_NOW)
-        self.assertEqual(set(), _severities(findings))
+        self.assertEqual(set(), _slip_severities(findings))
+
+    def test_a_clustering_that_merged_nothing_at_size_escalates(self):
+        """The population-independent guard. A structure-blind run makes
+        every system its own family, and that signature does not change as
+        the population grows -- unlike the ceiling, which stops being able
+        to fire the moment it is raised."""
+        pick = _pick(1, "STRONG", 22)
+        pick["n_systems"] = 22
+        findings = audit_slip(_synthetic([pick]), lambda _e: None, None,
+                              INCIDENT_NOW)
+        blob = " ".join(m for _s, m in findings)
+        self.assertIn("ESCALATE", _severities(findings))
+        self.assertIn("merged NOTHING", blob)
+
+    def test_a_small_pick_that_merged_nothing_is_fine(self):
+        """Four genuinely distinct systems agreeing is ordinary, and the
+        real 2026-09-10 pick was exactly that. A check that flagged it
+        would fire on every honest small pick."""
+        pick = _pick(1, "STRONG", 4)
+        pick["n_systems"] = 4
+        findings = audit_slip(_synthetic([pick]), lambda _e: None, None,
+                              INCIDENT_NOW)
+        self.assertNotIn("merged NOTHING",
+                         " ".join(m for _s, m in findings))
+
+    def test_the_standing_recalibration_debt_is_always_reported(self):
+        """It is a fact about the THRESHOLD, not about tonight's slate, so
+        it must survive even a slip with nothing wrong with it."""
+        findings = audit_slip(_synthetic([_pick()]), lambda _e: None, None,
+                              INCIDENT_NOW)
+        self.assertTrue(
+            any(STANDING_DEBT_MARKER in msg for _sev, msg in findings),
+            "the STRONG-tier recalibration debt went silent; see "
+            "docs/INCIDENT_2026-09-10_STRONG_TIER.md")
 
 
 class DoctrineClaims(unittest.TestCase):
@@ -180,7 +248,7 @@ class DoctrineClaims(unittest.TestCase):
         fresh = (INCIDENT_NOW - timedelta(minutes=5)).isoformat()
         findings = audit_slip(_synthetic([_pick()], slip_utc=fresh),
                               lambda _e: None, None, INCIDENT_NOW)
-        self.assertEqual(set(), _severities(findings))
+        self.assertEqual(set(), _slip_severities(findings))
 
 
 if __name__ == "__main__":
