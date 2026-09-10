@@ -115,10 +115,63 @@ DECLARED_MANUAL = {
 # The files that actually execute on a schedule or in a request. Anything not
 # reachable from one of these runs only when a person types it.
 ENTRY_SHELL = sorted((REPO / "scripts").glob("*.sh"))
-ENTRY_WORKFLOWS = sorted((REPO / ".github" / "workflows").glob("*.yml"))
 CLI_PATH = REPO / "src" / "cli.py"
 API_DIR = REPO / "api"
 WEB_JS = REPO / "web" / "js"
+
+# CRON READS THE DEFAULT BRANCH, NOT THIS ONE.
+#
+# GitHub fires a scheduled workflow from the repository's DEFAULT branch's
+# copy of the file. This repo's default branch is an orphan holding five
+# files; the working branch is where everything else lives. So a workflow
+# edited here changes nothing on a schedule -- which is exactly how the
+# lineup-cadence gate came to sit in a committed, tested, reviewed workflow
+# that never ran once (tests/test_cadence_is_deployed.py exists for that
+# incident).
+#
+# This audit walked the WORKING tree's .github/workflows, so a command wired
+# only in a working-branch workflow looked reachable while cron never touched
+# it -- the same blind spot the audit was written to close, inside the audit.
+# Found by checking, by hand, whether the gameflow ingest committed a few
+# hours earlier would actually fire.
+#
+# Falls back to the working tree when the default branch cannot be read (a
+# shallow clone, no remote, a fresh checkout) and SAYS SO in the output,
+# because silently auditing the wrong branch is worse than not auditing.
+DEFAULT_BRANCH = "claude/cowork-session-migration-tn3sx2"
+
+
+def _default_branch_workflows():
+    """(sources, note) -- the workflow text cron actually reads."""
+    import subprocess
+    for ref in (f"origin/{DEFAULT_BRANCH}", DEFAULT_BRANCH):
+        try:
+            listing = subprocess.run(
+                ["git", "ls-tree", "--name-only", "-r", ref, ".github/"],
+                cwd=str(REPO), capture_output=True, text=True, timeout=20)
+            if listing.returncode != 0:
+                continue
+            paths = [p for p in listing.stdout.split() if p.endswith(".yml")]
+            if not paths:
+                continue
+            out = []
+            for path in paths:
+                blob = subprocess.run(["git", "show", f"{ref}:{path}"],
+                                      cwd=str(REPO), capture_output=True,
+                                      text=True, timeout=20)
+                if blob.returncode == 0:
+                    out.append(blob.stdout)
+            if out:
+                return out, f"{len(out)} workflow(s) from {ref} (what cron reads)"
+        except Exception:  # noqa: BLE001
+            continue
+    local = [_read(p) for p in sorted((REPO / ".github" / "workflows").glob("*.yml"))]
+    return local, (f"{len(local)} workflow(s) from the WORKING TREE -- could "
+                   f"not read {DEFAULT_BRANCH}, so a command wired only here "
+                   f"may look reachable while cron never runs it")
+
+
+ENTRY_WORKFLOW_SOURCES, WORKFLOW_SOURCE_NOTE = _default_branch_workflows()
 
 
 def _read(path):
@@ -189,9 +242,11 @@ def cli_commands():
 def cli_callers():
     """Every subcommand any executing file actually invokes."""
     called = set()
-    corpus = []
-    for path in ENTRY_SHELL + ENTRY_WORKFLOWS:
-        corpus.append(_strip_comments_sh(_read(path)))
+    corpus = [_strip_comments_sh(_read(p)) for p in ENTRY_SHELL]
+    # Workflow text comes from the DEFAULT branch -- see the comment on
+    # _default_branch_workflows for why the working tree's copy is the wrong
+    # thing to read.
+    corpus += [_strip_comments_sh(src) for src in ENTRY_WORKFLOW_SOURCES]
     # Scripts that shell out to other scripts still count as executing code.
     for blob in corpus:
         for m in re.finditer(r"cli\s+([a-z0-9_\-]+)(?:\s+([a-z0-9_\-]+))?",
@@ -318,8 +373,8 @@ def main():
             + "\n    ".join(f"{n}: {', '.join(r)}" for n, r in orphan_views))
 
     print(f"entry points walked: {len(ENTRY_SHELL)} shell scripts, "
-          f"{len(ENTRY_WORKFLOWS)} workflows, {len(routes)} HTTP routes, "
-          f"{len(commands)} CLI commands")
+          f"{len(routes)} HTTP routes, {len(commands)} CLI commands")
+    print(f"  workflows: {WORKFLOW_SOURCE_NOTE}")
     if not findings:
         print("\nreachability audit: clean -- everything is reachable from "
               "something that runs")

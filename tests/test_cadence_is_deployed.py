@@ -207,6 +207,30 @@ class TheOrphanDetectorIsNotItselfAnOrphanTests(unittest.TestCase):
             "scripts/ci.sh does not run the reachability audit, so the check "
             "for code nothing calls is itself code nothing calls")
 
+    def test_it_reads_the_branch_cron_actually_reads(self):
+        """The audit's own blind spot, found the day after it shipped.
+
+        GitHub fires a scheduled workflow from the DEFAULT branch's copy of
+        the file -- the whole reason this test file exists. The audit walked
+        the WORKING tree's .github/workflows, so a command wired only in a
+        working-branch workflow looked reachable while cron never touched
+        it. The exact failure it was written to catch, inside itself.
+        """
+        source = _read_code(REACHABILITY)
+        self.assertIn("DEFAULT_BRANCH", source,
+                      "reachability_audit.py reads the working tree's "
+                      "workflows, which cron does not run")
+        self.assertIn("git", source,
+                      "it does not fetch the default branch's copy")
+
+    def test_it_says_so_when_it_falls_back_to_the_working_tree(self):
+        """A shallow clone or a missing remote must produce a LOUD note, not
+        a quietly wrong answer -- auditing the wrong branch while claiming
+        to audit the right one is worse than not auditing."""
+        source = _read_code(REACHABILITY)
+        self.assertIn("WORKING TREE", source,
+                      "the fallback path does not announce itself")
+
     def test_it_fails_the_build_rather_than_only_printing(self):
         """ci.sh is `set -euo pipefail`, so a non-zero exit stops the build.
         A checker that only prints is a checker that gets scrolled past."""
