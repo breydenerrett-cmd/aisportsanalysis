@@ -252,7 +252,8 @@ RELIEF_REGRESSION_INNINGS = 120.0
 EARNED_TO_TOTAL_RUNS = 1.08
 
 
-def relief_rate(log, team, as_of_date, *, league_rate=None) -> dict:
+def relief_rate(log, team, as_of_date, *, league_rate=None,
+                same_season_only=True) -> dict:
     """One club's relief runs allowed per nine innings, strictly before a date.
 
     WHY THIS EXISTS. `src.analysis.strength` splits a game's run prevention
@@ -275,6 +276,7 @@ def relief_rate(log, team, as_of_date, *, league_rate=None) -> dict:
     rather than quietly use a number built on nine innings.
     """
     cutoff = _to_date(as_of_date)
+    season = cutoff.year
     innings = 0.0
     earned = 0
 
@@ -288,6 +290,8 @@ def relief_rate(log, team, as_of_date, *, league_rate=None) -> dict:
         except (BullpenError, KeyError, ValueError):
             continue
         if appeared >= cutoff:
+            continue
+        if same_season_only and appeared.year != season:
             continue
         row_innings = row.get("innings") or 0.0
         row_earned = row.get("earned_runs") or 0
@@ -326,13 +330,22 @@ def relief_rate(log, team, as_of_date, *, league_rate=None) -> dict:
     }
 
 
-def relief_rates_by_team(log, as_of_date) -> dict:
+def relief_rates_by_team(log, as_of_date, *, same_season_only=True) -> dict:
     """`{team: relief_rate(...)}` for every club in the log, one pass.
 
     Built in one pass because the per-team version rescans the whole log,
     and a slate asks the same question thirty times.
+
+    `same_season_only` DEFAULTS TRUE, matching `features.games_before` and
+    `parkfactors.park_factors`. A bullpen is not the same unit across a
+    winter -- rosters turn over far more than a ballpark does -- so folding
+    last season's relief innings into this season's rate would be actively
+    wrong, not merely a larger sample. It is also the flag that stops a
+    backfill of an earlier season silently changing every number already
+    measured against a single-season log.
     """
     cutoff = _to_date(as_of_date)
+    season = cutoff.year
     per_team = {}
     league_innings = 0.0
     league_earned = 0
@@ -347,6 +360,8 @@ def relief_rates_by_team(log, as_of_date) -> dict:
         except (BullpenError, KeyError, ValueError):
             continue
         if appeared >= cutoff:
+            continue
+        if same_season_only and appeared.year != season:
             continue
         slot = per_team.setdefault(team, [0.0, 0])
         slot[0] += row.get("innings") or 0.0

@@ -14,15 +14,18 @@ club has scored and allowed, and how the two starting pitchers have pitched.
 From those two numbers every market this product quotes falls out at once:
 the moneyline, the run line, the total.
 
-NOTHING IN HERE IS FITTED
--------------------------
-Every constant below is either a published baseball constant or a quantity
-measured from the point-in-time store at call time. Not one was chosen by
-looking at how it scored. That is deliberate and it is the model's main
-defence: a model with no free parameters cannot be overfitted, so its
-out-of-sample behaviour is its only behaviour. `scripts/backtest_card.py`
-measures it; whatever that measurement says is what this model is worth, and
-the number is published either way.
+ONE FITTED CONSTANT, AND IT TOOK THREE PRE-REGISTRATIONS
+--------------------------------------------------------
+Every constant below is a published baseball constant or a quantity measured
+from the point-in-time store at call time, with a single exception:
+`DISPERSION`, which is estimated from data and whose full adoption history
+is in `docs/PREREG_RUN_DISPERSION.md` -- including the pre-registration that
+refused it.
+
+The rest of the model still has no free parameters, which is its main
+defence: it cannot be overfitted, so its out-of-sample behaviour is its only
+behaviour. `scripts/backtest_card.py` measures it; whatever that says is
+what this model is worth, and the number is published either way.
 
 THE ARITHMETIC, IN ORDER
 ------------------------
@@ -151,12 +154,36 @@ TEAM_REGRESSION_GAMES = 25.0
 # every number this module produced before the correction existed -- asserted
 # by a test, so the correction can always be switched off and compared.
 #
-# STILL 1.0 HERE. The pre-registration fixes the fit window, the evaluation
-# window and the adoption criterion, and none of them has been run yet. A
-# constant changed at the same moment it is measured is a fitted parameter
-# wearing a constant's clothes, which is the whole thing this file's "nothing
-# is fitted" claim exists to mean.
-DISPERSION = 1.0
+# ADOPTED 2026-09-10 under the THIRD pre-registration in
+# docs/PREREG_RUN_DISPERSION.md, and it took three to get here.
+#
+# H1 fit 2.3352 on 2026-04-15..07-15 and cut run-line calibration error 93%
+# on the held-out remainder -- and was REFUSED, because a parameter-stability
+# check failed at 0.3151 against a 0.30 limit. The threshold did not move.
+# That refusal was correct in process and, it turns out, wrong on the facts:
+# the criterion was underpowered, at SE(diff) 0.19 a perfectly stable
+# parameter fails it about one time in nine.
+#
+# H3 settled it properly. The 2025 season was ingested afterwards -- 2,212
+# games that did not exist in the store when H1 ran and that no measurement
+# here had touched -- and estimated from scratch it gives:
+#
+#     2025   2.3265   (se 0.0682, 4,372 team-games)
+#     2026   2.3352
+#     apart  0.128 standard errors
+#
+# Two independent seasons, different rosters, different run environment, and
+# they agree to a tenth of a standard error. The overdispersion is a property
+# of baseball, not of one year.
+#
+# Applying the 2026 value unchanged to 2025: run-line calibration error
+# 0.08088 -> 0.00950 (-88.2%), moneyline log-loss -0.0065 nats, which is
+# seven times the model's entire gain over a home-field base rate.
+#
+# THE VALUE IS H1's, NOT A REFIT. Pooling both seasons would give a slightly
+# better estimate and would also be fitting after seeing the answer, which is
+# the thing all three pre-registrations exist to prevent.
+DISPERSION = 2.3352
 
 # Which family the variance follows once DISPERSION is above 1.
 #   "nb1"  variance = DISPERSION * mean            (quasi-Poisson)

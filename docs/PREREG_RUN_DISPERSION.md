@@ -323,3 +323,137 @@ precision rather than in raw dispersion points, which is what the first one
 should have been.
 
 **Status: PENDING**, 0 of 300 games. Reported either way.
+
+---
+
+# Third pre-registration — 2025, held out and never looked at
+
+**Written 2026-09-10, after the 2025 season was ingested and BEFORE any
+dispersion figure was computed on it.** 2,212 games. This document's first
+test used 2026 only, both windows; 2025 did not exist in the store when it
+ran and no measurement in this repo has touched it.
+
+It settles today what H2's forward window would settle in a month, on seven
+times the sample, and it is a stricter test than either: an entirely
+different season, different rosters, a different run environment.
+
+> **H3.** The overdispersion measured on 2026 is a property of baseball, not
+> of 2026. Estimated independently on 2025 it lands close to the 2026
+> figure, and applying the 2026 estimate to 2025 improves run-line
+> calibration there.
+
+**Why the first half matters more than the second.** The reason H1 was not
+adopted was parameter stability, and the strongest possible evidence about
+stability is a completely separate season estimated from scratch. If 2025
+comes back near 2.31, the constant is a fact about the sport. If it comes
+back at 1.6 or 3.0, the first test was right to refuse and this correction
+should not be carried forward at a single value at all.
+
+**Fit.** Nothing is fitted on 2025. `DISPERSION = 2.3352` — the value
+estimated from the 2026 fit window in H1 — is applied unchanged. The 2025
+dispersion is computed only to be compared against it.
+
+**Primary criterion, powered this time.** Adopt if BOTH:
+
+- the dispersion estimated independently on 2025 sits within **±3 standard
+  errors** of 2.3352, using 2025's own residual standard error, and
+- run-line calibration error on 2025 under `nb1` at 2.3352 is at least
+  **50% below** the Poisson arm's on the same games.
+
+Three standard errors rather than two: this is a cross-season comparison and
+the run environment genuinely differs between years, so a criterion tight
+enough to fail on a real league-wide scoring shift would be measuring the
+wrong thing. The interval is stated in units of the estimator's own
+precision, which is the correction H1's criterion needed.
+
+**Secondary, reported and not gating.** Moneyline log-loss on 2025 must not
+degrade by more than 0.001 nats.
+
+**What would make this a failure**, and it is written up either way:
+
+- 2025's dispersion is more than 3 standard errors from 2.3352.
+- Run-line calibration does not improve by half on 2025.
+- The moneyline degrades by more than 0.001 nats.
+
+**Status: RUN 2026-09-10. VERDICT: ADOPT.** `DISPERSION = 2.3352`.
+
+## H3 result
+
+`scripts/test_run_dispersion_2025.py`. 2,186 usable games, 4,372 team-games,
+none of which existed in the store when H1 ran.
+
+| | dispersion | se |
+|---|---|---|
+| estimated on **2025**, from scratch | **2.3265** | 0.0682 |
+| estimated on **2026** (the value applied) | **2.3352** | — |
+| **distance** | **0.128 standard errors** | limit 3.0 |
+
+Two independent seasons, different rosters, a different run environment, and
+they agree to a tenth of a standard error.
+
+Applying the 2026 value unchanged to 2025:
+
+| | Poisson | nb1 @ 2.3352 |
+|---|---|---|
+| run-line calibration error | 0.08088 | **0.00950** (−88.2%) |
+| moneyline log-loss | 0.690832 | **0.684298** (−0.0065) |
+
+| check | result |
+|---|---|
+| dispersion within 3 SE of the 2026 estimate | **PASS** (0.128) |
+| run-line calibration improved by half | **PASS** (+88.2%) |
+| moneyline not degraded (reported, not gating) | **PASS** (improved 0.0065) |
+
+The moneyline improvement is worth stating separately: **0.0065 nats is
+about seven times the model's entire gain over a home-field base rate.** A
+correction to the *shape* of the run distribution did more for the moneyline
+than everything else in the model put together.
+
+### Secondary check, no outcomes involved
+
+`scripts/probe_market_consistency.py` on 2026-09-09, before and after:
+
+| | Poisson | adopted |
+|---|---|---|
+| disagreement sd | 5.288 | **0.921** |
+| home lays the runs, median | +3.57 | −2.16 |
+| home takes the runs, median | −8.42 | −2.74 |
+
+The two clusters converge and the spread falls by a factor of five. The
+correction explains what it was derived from.
+
+### What H1's refusal cost, and whether it was worth it
+
+H1 refused this correction for six hours on a criterion that was
+underpowered — a perfectly stable parameter fails it about one time in nine.
+Adopting it there would have reached the same place sooner.
+
+**The refusal was still right.** The criterion was written before the answer
+was known, it failed, and the rule is that a failed pre-registered check is a
+failed check. What that bought is this document: a correction adopted on a
+completely separate season under a criterion fixed in advance, rather than
+one adopted because the number looked good. The two paths end at the same
+constant and only one of them is evidence.
+
+### What is still true after adopting
+
+- **This is not an edge.** A better-shaped run distribution describes the
+  game more accurately. It says nothing about beating the price.
+- **The card still does not rank by model disagreement.** That remains
+  forbidden for the reason in `THE_CARD.md`.
+- **The card still does not select the run line.** `RUNLINE_AS_ALTERNATIVE`
+  stands; run lines are offered beside the pick, not chosen by a model.
+  Reinstating that comparison is a separate question needing its own
+  pre-registration now that one of its inputs is fixed.
+
+### The question this opened
+
+With the shape corrected, the RAW model's log-loss (0.68831) is now **better
+than the Platt-calibrated one** (0.69137), and the fitted shrink relaxed from
+b = 0.489 to b = 0.708. The calibration layer was built to fix an
+overconfidence that no longer exists at the same size, and may now be
+over-shrinking.
+
+**Not acted on.** It needs its own pre-registered window, and changing two
+things at once is how a result stops being attributable. Recorded here as
+the next question.

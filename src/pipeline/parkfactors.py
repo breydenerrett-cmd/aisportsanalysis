@@ -84,7 +84,8 @@ def _int(value) -> Optional[int]:
 
 
 def park_factors(store: Mapping, as_of_date: str, *,
-                 prior_games: float = PRIOR_GAMES) -> dict:
+                 prior_games: float = PRIOR_GAMES,
+                 same_season_only: bool = True) -> dict:
     """`{team: factor}` -- the run multiplier for that club's home park.
 
     Keyed by the HOME CLUB rather than by venue name, because that is what a
@@ -94,14 +95,27 @@ def park_factors(store: Mapping, as_of_date: str, *,
     A club with too few home games comes back at exactly 1.0 with
     `thin: True`, never absent, so a caller can tell "neutral because we
     measured neutral" from "neutral because we know nothing".
+
+    `same_season_only` DEFAULTS TRUE, matching `features.games_before`'s
+    rule and for the same reason. The results store held one season when
+    this was written and gained a second the same day; without this flag the
+    answer for a 2026 game would silently have started including 2025, and
+    every number recorded against the single-season store would have become
+    unreproducible with nothing to explain the change. Earlier seasons are
+    genuinely useful here -- a park barely moves year to year and more games
+    means less regression -- but that is a deliberate call a caller makes by
+    passing False, not something a data ingest decides on its behalf.
     """
     cutoff = str(as_of_date)
+    season = cutoff[:4]
     home_runs, home_games = {}, {}
     away_runs, away_games = {}, {}
 
     for row in (store or {}).values():
         date = str(row.get("date") or "")
         if not date or date >= cutoff:
+            continue
+        if same_season_only and date[:4] != season:
             continue
         away_score = _int(row.get("away_score"))
         home_score = _int(row.get("home_score"))
