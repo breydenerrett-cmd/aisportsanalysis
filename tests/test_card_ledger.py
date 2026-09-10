@@ -128,6 +128,45 @@ class GradingIsHonest(LedgerCase):
             card_ledger.RESULT_WIN,
             card_ledger.grade_pick(taking, {"away_score": 6, "home_score": 1})["result"])
 
+    def test_string_scores_grade_exactly_like_int_scores(self):
+        """THE SECOND TYPE TRAP, and this one was live.
+
+        `history.read_results()` round-trips through CSV, so a 7-9 game
+        arrives as ("7", "9"). An isinstance(int) guard here rejected all
+        2,153 stored games and would have graded EVERY pick on EVERY card
+        VOID -- reading, to anyone who looked, like a rained-out slate
+        rather than a bug. The public record would have stopped recording,
+        quietly, on its first real morning.
+
+        Found by a research probe that hit the identical trap and reported
+        "only 0 finished games".
+        """
+        pick = _pick(side="home", price=-150)
+        as_str = card_ledger.grade_pick(pick, {"away_score": "2",
+                                               "home_score": "5"})
+        as_int = card_ledger.grade_pick(pick, {"away_score": 2,
+                                               "home_score": 5})
+        self.assertEqual(card_ledger.RESULT_WIN, as_str["result"])
+        self.assertEqual(as_int["result"], as_str["result"])
+        self.assertEqual(as_int["profit_units"], as_str["profit_units"])
+
+    def test_a_string_run_line_grades_on_the_real_margin(self):
+        laying = _pick(market="run_line", side="home", line=-1.5, price=-149)
+        self.assertEqual(
+            card_ledger.RESULT_WIN,
+            card_ledger.grade_pick(laying, {"away_score": "2",
+                                            "home_score": "4"})["result"])
+        self.assertEqual(
+            card_ledger.RESULT_LOSS,
+            card_ledger.grade_pick(laying, {"away_score": "3",
+                                            "home_score": "4"})["result"])
+
+    def test_a_non_numeric_score_is_void_not_a_crash(self):
+        for bad in ("", "  ", "PPD", None, True):
+            grade = card_ledger.grade_pick(
+                _pick(), {"away_score": bad, "home_score": 4})
+            self.assertEqual(card_ledger.RESULT_VOID, grade["result"], bad)
+
     def test_a_game_with_no_score_is_void_and_never_a_loss(self):
         """A postponed slate graded as losses makes a public record wrong in
         the one direction nobody would ever check."""

@@ -150,6 +150,29 @@ def publish(card: Mapping, *, now: Optional[str] = None,
 # Grading
 # ---------------------------------------------------------------------------
 
+def _score(value) -> Optional[int]:
+    """A final score as an int, or None. NEVER an isinstance check.
+
+    THE RESULTS STORE KEEPS SCORES AS STRINGS. `history.read_results()`
+    round-trips through CSV, so a 7-9 game arrives as `("7", "9")`. An
+    `isinstance(value, int)` guard here rejected all 2,153 stored games and
+    would have graded every pick on every card VOID -- and a card settling
+    0-0 with three voids does not read as a bug, it reads as a postponed
+    slate. The public record would simply have stopped recording, quietly,
+    forever.
+
+    Found 2026-09-10 by a research probe that used the same isinstance guard
+    and reported "only 0 finished games". The same trap, twice, in one day:
+    see also the int/str game_pk join in src/cli.py's `card settle`.
+    """
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+
+
 def grade_pick(pick: Mapping, result: Mapping) -> dict:
     """One frozen pick against one final score.
 
@@ -159,9 +182,9 @@ def grade_pick(pick: Mapping, result: Mapping) -> dict:
     bad night, which is the single easiest way for a public record to become
     quietly wrong in the flattering direction's opposite.
     """
-    away = result.get("away_score")
-    home = result.get("home_score")
-    if not isinstance(away, int) or not isinstance(home, int):
+    away = _score(result.get("away_score"))
+    home = _score(result.get("home_score"))
+    if away is None or home is None:
         return {"result": RESULT_VOID, "profit_units": 0.0,
                 "reason": "no final score stored for this game"}
 
