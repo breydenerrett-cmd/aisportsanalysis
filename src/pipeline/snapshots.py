@@ -428,6 +428,61 @@ def read_multibook(path=DEFAULT_MULTIBOOK_PATH, skip_corrupt: bool = True) -> li
     return read(path=path, skip_corrupt=skip_corrupt)
 
 
+def iter_multibook(path=DEFAULT_MULTIBOOK_PATH, skip_corrupt: bool = True,
+                   *, market=None, keep=None):
+    """Multi-book observations one at a time, filtered while reading.
+
+    WHY THIS EXISTS RATHER THAN `read_multibook(...)` PLUS A LIST
+    COMPREHENSION. The store is 38 MB and 119,000 rows. Materialising all of
+    it to keep a few hundred allocates hundreds of megabytes of short-lived
+    dicts, and on the 512 MB staging container that is the difference
+    between a page that renders and a 502. It shipped that way on
+    2026-09-10 and took staging down twice: first as a 503 when the machine
+    ran out of memory outright, then as a 502 when caching the RESULT still
+    left the first request paying for the whole parse.
+
+    `market` skips lines whose raw text cannot contain that market, before
+    any JSON is parsed -- the cheap win. `keep` is a predicate applied to the
+    parsed row for anything the text cannot decide.
+
+    THE TEXT PREFILTER MAY ONLY EVER OVER-MATCH. It is the bare quoted value
+    (`"spreads"`), not a key-and-value pair, because the store's exact
+    spacing is not this function's business to know: the first version
+    matched `'"market": "spreads"'` and found ZERO lines in a file holding
+    1,054 of them, silently returning an empty board that read as "no run
+    lines quoted today". A prefilter that under-matches turns real data into
+    a plausible absence. The parsed row is then checked exactly, so
+    over-matching costs a little parsing and nothing else.
+
+    The moneyline rows carry no `market` key at all (see `boards_by_matchup`),
+    so `market=None` means "every row" and never "rows whose market is null".
+    """
+    target = Path(path)
+    if not target.exists():
+        return
+    needle = f'"{market}"' if market else None
+    with target.open(encoding="utf-8") as handle:
+        for number, line in enumerate(handle, start=1):
+            line = line.strip()
+            if not line:
+                continue
+            if needle is not None and needle not in line:
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                if skip_corrupt:
+                    continue
+                raise SnapshotError(
+                    f"corrupt snapshot on line {number} of {target}")
+            # The exact check the prefilter is only an approximation of.
+            if market is not None and row.get("market") != market:
+                continue
+            if keep is not None and not keep(row):
+                continue
+            yield row
+
+
 def is_pregame(row) -> bool:
     """True when this observation was taken BEFORE its game's first pitch.
 

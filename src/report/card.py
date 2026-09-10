@@ -275,15 +275,22 @@ def _run_line_rows_uncached(date: str, *, rows=None,
     from src.pipeline import slate as slate_mod
     from src.pipeline import snapshots
 
-    source = snapshots.pregame_rows(
-        snapshots.read_multibook() if rows is None else rows)
+    # FILTERED WHILE READING, never materialised. The store is 38 MB and
+    # 119,000 rows and this needs a few hundred of them -- see
+    # `snapshots.iter_multibook` for what building the whole list did to a
+    # 512 MB container. `rows` given explicitly is a test injecting its own
+    # data and is filtered in memory as before.
+    if rows is None:
+        source = (r for r in snapshots.iter_multibook(market="spreads")
+                  if snapshots.official_date(r.get("commence_time")) == date
+                  and snapshots.is_pregame(r))
+    else:
+        source = (r for r in snapshots.pregame_rows(rows)
+                  if r.get("market") == "spreads"
+                  and snapshots.official_date(r.get("commence_time")) == date)
 
     grouped = {}
     for row in source:
-        if row.get("market") != "spreads":
-            continue
-        if snapshots.official_date(row.get("commence_time")) != date:
-            continue
         try:
             home_line = float(str(row.get("home_line")))
             away_line = float(str(row.get("away_line")))
