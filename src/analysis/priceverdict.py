@@ -75,11 +75,16 @@ MIN_BOOKS = prices_mod.MIN_BOOKS
 # model as a surface that reports one.
 NO_MODEL = "NO INDEPENDENT MODEL YET"
 
+# THE CUSTOMER-FACING WORDING, in one place. "De-vigged multi-book
+# consensus" was exact and unreadable; "the fair price across the books"
+# names the same number, and web/js/labels.js's FAIR_EXPLAINER carries the
+# one-sentence definition on every screen that shows it. Nothing about what
+# is measured changed -- only what it is called in front of a person.
 BASIS = (
-    "Price verdict = your price versus the de-vigged multi-book consensus "
-    "at one capture instant. Line-shopping value on the same bet, never "
-    "expected value, never a prediction of who wins. No independent model "
-    "probability exists yet."
+    "Price verdict = your price versus the fair price across the books at "
+    "one capture instant — the books' average with their cut taken back "
+    "out. This tells you whether you are getting a good NUMBER on the bet, "
+    "not whether the bet wins. No independent model probability exists yet."
 )
 
 
@@ -228,8 +233,7 @@ def build_price_verdict(*, american_price, consensus_probability, books,
         fair = None
         if consensus_probability is None:
             risks.append(
-                "INSUFFICIENT DATA: no de-vigged consensus available for "
-                "this side")
+                "INSUFFICIENT DATA: no fair price available for this side")
         elif books is not None and books < MIN_BOOKS:
             risks.append(
                 f"INSUFFICIENT DATA: fewer than {MIN_BOOKS} books quoted "
@@ -248,9 +252,8 @@ def build_price_verdict(*, american_price, consensus_probability, books,
 
         reasons.append(
             f"Your price {_fmt_price(american_price)} implies "
-            f"{p_price * 100:.1f}%; de-vigged consensus "
-            f"{consensus_probability * 100:.1f}% across {books} books "
-            f"({vp:+.1f} pts)")
+            f"{p_price * 100:.1f}%; the fair price across {books} books is "
+            f"{consensus_probability * 100:.1f}% ({vp:+.1f} pts)")
         if best_price is not None and best_book and american_price is not None:
             try:
                 beats = (odds_math.american_to_decimal(best_price)

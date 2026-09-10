@@ -102,7 +102,7 @@
 import { apiFetch, apiPost, getToken, getFreeCheckToken, setFreeCheckToken, isPublicDemo } from "./api.js";
 import { el, clear, renderUnknown, renderError, renderLoading, notYetAvailable,
   formatAmerican, formatConsensusShare, formatEasternClock, formatAge, renderWordChip, priceVerdictTone } from "./dom.js";
-import { bookLabel } from "./labels.js";
+import { bookLabel, FAIR_LABEL } from "./labels.js";
 import { setShellStatus } from "./shell.js";
 import { armEntrances } from "./motion.js";
 import { renderFeaturedBet, mapBetCheckPayloadToStanding } from "./featuredbet.js";
@@ -323,7 +323,7 @@ function renderMarket(result) {
   }
   if (consensus && typeof consensus.implied_probability === "number") {
     const cell = el("div", { class: "bc2-market__cell bc2-market__cell--accent" });
-    cell.appendChild(el("div", { class: "bc2-market__label", text: "DE-VIGGED CONSENSUS" }));
+    cell.appendChild(el("div", { class: "bc2-market__label", text: FAIR_LABEL }));
     const row = el("div", { class: "bc2-market__row" });
     row.appendChild(el("span", { class: "bc2-market__figure", "data-hook": "market-consensus",
       text: formatConsensusShare(consensus.implied_probability) }));
@@ -433,7 +433,7 @@ function renderPriceVerdict(result) {
   figs.appendChild(el("div", { class: "pv-block__fig" }, [
     el("div", { class: "pv-block__fig-label", text: "FAIR PRICE" }),
     el("div", { class: "pv-block__fig-value" },
-      [fairPrice ? document.createTextNode(fairPrice) : notYetAvailable("No de-vigged consensus to convert.", "NO FAIR PRICE")]),
+      [fairPrice ? document.createTextNode(fairPrice) : notYetAvailable("No fair price to convert — too few books quoted this.", "NO FAIR PRICE")]),
   ]));
   section.appendChild(figs);
 

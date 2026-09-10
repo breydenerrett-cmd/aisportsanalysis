@@ -34,7 +34,7 @@ const CLASS_LABEL = {
 };
 const CLASS_EXPLAIN = {
   CONTROL: "Fixed-direction null baselines, never picks — a floor to measure everything else against.",
-  MARKET_REFERENCE: "Republishes the board's own de-vigged consensus. A calibration reference only, "
+  MARKET_REFERENCE: "Republishes the board's own fair price. A calibration reference only, "
     + "never a system this product is claiming credit for.",
   FORWARD_TEST: "An unproven directional thesis, under forward test right now. Nothing here is validated "
     + "yet — these are the systems actually being tested.",

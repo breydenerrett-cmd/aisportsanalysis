@@ -69,12 +69,12 @@ export function renderValueMeter({ marketImplied, priceImplied, valuePoints, wor
 
   if (typeof marketImplied !== "number" && typeof priceImplied !== "number") {
     wrap.appendChild(notYetAvailable(
-      "No de-vigged market-implied probability and no priceable stated price for this side.",
+      "No fair price and no usable quoted price for this side.",
       "NO PRICE DATA"));
     return wrap;
   }
 
-  wrap.appendChild(bar("MARKET-IMPLIED PROBABILITY (de-vigged consensus)", marketImplied, "market"));
+  wrap.appendChild(bar("THE MARKET'S FAIR CHANCE", marketImplied, "market"));
   wrap.appendChild(bar("PROBABILITY YOUR PRICE IMPLIES", priceImplied, "price"));
 
   const gap = typeof valuePoints === "number"
@@ -109,7 +109,7 @@ export function renderValueMeter({ marketImplied, priceImplied, valuePoints, wor
 
   wrap.appendChild(el("p", { class: "vmeter-caption", text:
     "A likely winner at a bad price is still a bad price; an underdog can be value when the price "
-    + "implies less than the market's own de-vigged consensus." }));
+    + "implies less than the market's own fair price." }));
 
   if (word) {
     wrap.appendChild(el("p", { class: "vmeter-word-note", "data-hook": "value-meter-word",

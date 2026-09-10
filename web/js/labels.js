@@ -95,6 +95,40 @@ export const BOOK_LABELS = {
 };
 
 /**
+ * "DE-VIGGED CONSENSUS" IN ENGLISH, IN ONE PLACE.
+ *
+ * The quantity is the books' average price with the bookmaker's cut taken
+ * back out. Every surface in this app rendered that as some variant of
+ * "de-vigged market-implied consensus", which is exact, and which the
+ * owner's note on 2026-09-10 correctly described as a wall of random words
+ * nobody knows the meaning of.
+ *
+ * The concept is not dropped -- it is the honest denominator behind every
+ * price comparison this product makes, and hiding it would be worse than
+ * naming it badly. It is renamed, once, here, so no two screens invent a
+ * different plain-English phrase for the same number and the reader has to
+ * learn it twice.
+ *
+ * FAIR_LABEL is the tight version for a table cell or a chip; FAIR_LONG is
+ * for a section heading with room; FAIR_EXPLAINER is the sentence that
+ * appears wherever the number is first shown on a screen.
+ */
+export const FAIR_LABEL = "FAIR PRICE";
+export const FAIR_LONG = "FAIR PRICE ACROSS THE BOOKS";
+export const FAIR_EXPLAINER =
+  "The books' average price with their cut taken back out — what the market "
+  + "really thinks the chances are. It is a measurement of the board, not a "
+  + "forecast of who wins.";
+
+/** "the fair price across 11 books", or without the count when unknown. */
+export function fairPhrase(books) {
+  const n = Number(books);
+  return Number.isFinite(n) && n > 0
+    ? `the fair price across ${n} books`
+    : "the fair price across the books";
+}
+
+/**
  * Display name for a club abbreviation. `form` selects "full" (default,
  * e.g. "San Diego Padres"), "city" (e.g. "San Diego"), or "name" (e.g.
  * "Padres"). An abbreviation this table does not know -- or a falsy

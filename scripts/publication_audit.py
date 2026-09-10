@@ -275,9 +275,143 @@ def audit(date_iso=None, now=None):
     return audit_slip(slip, resolve, schedule, now)
 
 
+# THE CARD'S OWN CHECKS.
+#
+# The card became the headline surface on 2026-09-10 -- it is the first
+# thing a paying reader sees and the only thing most of them will read. An
+# audit that asks "is what the page claims true right now" and does not look
+# at it is auditing last month's front page.
+#
+# Every check below is a way the card can be WRONG WHILE LOOKING FINE, which
+# is the only failure mode worth an audit. A card that fails to build is
+# loud on its own.
+CARD_STALE_MINUTES = 240
+
+# How old the Platt fit may get before its numbers stop describing the
+# model. It is refit nightly; a week means the loop has been failing quietly
+# for a week, and every published probability has been drifting from the
+# model's real accuracy that whole time.
+CALIBRATION_STALE_DAYS = 7
+
+
+def audit_card(date_iso, now):
+    """The published card for `date_iso`, checked against the world."""
+    from src.appstate import card_ledger
+    from src.report import card as card_mod
+
+    findings = []
+
+    published = card_ledger.published_row(date_iso)
+    if published is None:
+        # Normal before the afternoon pass. Stated rather than skipped: "no
+        # card yet" and "a card with no picks" are different facts.
+        findings.append(("INFO", f"no card published for {date_iso} yet"))
+    else:
+        picks = published.get("picks") or []
+        if len(picks) < 3:
+            findings.append((
+                "ESCALATE",
+                f"the published card for {date_iso} carries {len(picks)} "
+                f"pick(s); the floor is 3 and it is met by lowering the "
+                f"LABEL, never by publishing fewer"))
+
+        # Started games. The 2026-09-09 failure, on the new surface: the
+        # card is frozen once and then served for the rest of the day, so
+        # nothing stops it presenting a game in the sixth inning as a live
+        # recommendation.
+        started = []
+        for pick in picks:
+            first_pitch = _parse_utc(pick.get("first_pitch_utc"))
+            if first_pitch is None:
+                findings.append((
+                    "WARN",
+                    f"card pick #{pick.get('rank')} has no first-pitch time, "
+                    f"so whether it is still actionable cannot be checked"))
+            elif first_pitch <= now:
+                started.append(pick)
+        if started:
+            findings.append((
+                "WARN",
+                f"{len(started)} of {len(picks)} card picks are for games "
+                f"that have already started -- the card is frozen by design, "
+                f"but the page must not present these as live"))
+
+        published_at = _parse_utc(published.get("published_utc"))
+        if published_at is not None:
+            age = (now - published_at).total_seconds() / 60.0
+            if age > CARD_STALE_MINUTES and len(started) < len(picks):
+                findings.append((
+                    "WARN",
+                    f"the card was frozen {age:.0f} minutes ago (limit "
+                    f"{CARD_STALE_MINUTES}); the prices on it are quoted "
+                    f"from that instant and books move"))
+
+        # A pick with no book or no price is an instruction a reader cannot
+        # act on, which is worse than no pick.
+        for pick in picks:
+            if pick.get("price") is None or not pick.get("book"):
+                findings.append((
+                    "ESCALATE",
+                    f"card pick #{pick.get('rank')} ({pick.get('bet')}) "
+                    f"carries no price or no book -- it names a bet nobody "
+                    f"can place"))
+
+        if published.get("calibrated") is False:
+            findings.append((
+                "ESCALATE",
+                f"the card for {date_iso} was published UNCALIBRATED. Its "
+                f"own probabilities run about twice as confident as the "
+                f"model's accuracy earns, under the same words a calibrated "
+                f"card uses"))
+
+    # The calibration file itself, independently of any card.
+    cal_path = REPO / card_mod.CALIBRATION_STORE
+    if not cal_path.exists():
+        findings.append((
+            "ESCALATE",
+            f"{card_mod.CALIBRATION_STORE} is missing; every card built "
+            f"from here serves the raw model's overconfident numbers"))
+    else:
+        try:
+            blob = json.loads(cal_path.read_text(encoding="utf-8"))
+            fitted_at = _parse_utc(blob.get("fitted_at"))
+        except (OSError, ValueError):
+            findings.append((
+                "ESCALATE",
+                f"{card_mod.CALIBRATION_STORE} could not be read"))
+            fitted_at = None
+        if fitted_at is not None:
+            days = (now - fitted_at).total_seconds() / 86400.0
+            if days > CALIBRATION_STALE_DAYS:
+                findings.append((
+                    "WARN",
+                    f"the card calibration was last fit {days:.0f} days ago "
+                    f"(limit {CALIBRATION_STALE_DAYS}) -- the nightly refit "
+                    f"in scripts/daily_loop.sh has been failing quietly"))
+
+    # THE LEDGER MUST STILL BE A CHAIN. A published record whose chain is
+    # broken is not a record, and the page that shows it has to know.
+    chain = card_ledger.verify()
+    if not getattr(chain, "ok", True):
+        findings.append((
+            "ESCALATE",
+            f"the card ledger's hash chain is broken: {chain}"))
+
+    return findings
+
+
 def main():
     date_iso = sys.argv[1] if len(sys.argv) > 1 else None
     findings = audit(date_iso)
+    try:
+        findings = findings + audit_card(
+            date_iso or datetime.now(timezone.utc).date().isoformat(),
+            datetime.now(timezone.utc))
+    except Exception as exc:  # noqa: BLE001
+        # An audit that dies takes the whole check down and reports CLEAN by
+        # absence, which is the one outcome this file exists to prevent.
+        findings = findings + [
+            ("ESCALATE", f"the card audit itself failed to run: {exc!r}")]
     escalations = [m for sev, m in findings if sev == "ESCALATE"]
     for severity, message in findings:
         prefix = "ESCALATE: " if severity == "ESCALATE" else f"[{severity}] "

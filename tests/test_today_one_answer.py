@@ -24,6 +24,16 @@ whole was incoherent, and no test read the page as a whole.
 
 These tests read the source the way a customer reads the screen: what claims
 can appear at the same time.
+
+UPDATED 2026-09-10, and the update is a reversal worth naming. The first fix
+made the hero's verdict CONDITIONAL, so it could not contradict the slip.
+`TheHeroNeverContradictsTheSlip` enforced that, and two of its tests
+required the hero to carry NO DEMONSTRATED EDGE and to branch its headline.
+
+What shipped instead was THE CARD at the top of the screen, which answers
+the question outright. The hero below it therefore states no verdict at all,
+and those two tests now assert the opposite of what they used to. A page
+with one answer needs no rule about which of its answers wins.
 """
 
 from __future__ import annotations
@@ -93,37 +103,58 @@ class TheHeroNeverContradictsTheSlip(unittest.TestCase):
     def setUp(self):
         self.code = _code("today.js")
 
-    def test_the_no_play_headline_is_conditional_on_the_slip(self):
-        """"Nothing clears the bar" is a claim about src/engine/slip.py's
-        evidence threshold. When the slip published picks, things cleared it,
-        so the sentence is false -- not merely awkward next to them."""
-        self.assertIn("hasPicks", self.code,
-                      "heroNoPlay does not know whether the slip spoke, so it "
-                      "will state NOTHING CLEARS THE BAR directly beneath a "
-                      "list of picks")
-        headline = "WE CHECKED THE SLATE. NOTHING CLEARS THE BAR."
-        self.assertIn(headline, self.code, "the honest empty-night headline "
-                                           "should still exist")
-        # It must sit inside a branch, not unconditionally.
-        before = self.code.split(headline, 1)[0]
-        self.assertIn("if (hasPicks)", before,
-                      "the empty-night headline is not guarded by the "
-                      "has-picks branch")
+    def test_the_hero_states_no_verdict_at_all(self):
+        """SUPERSEDES two tests, 2026-09-10.
 
-    def test_the_hero_is_told_whether_picks_rendered(self):
+        This class used to require the opposite of what it requires now, and
+        the change is worth recording rather than quietly rewriting.
+
+        The old design had the hero carry the verdict: a standing
+        NO DEMONSTRATED EDGE chip, and a headline that branched between
+        "TONIGHT'S PICKS ARE ABOVE" and "WE CHECKED THE SLATE. NOTHING CLEARS
+        THE BAR." Two tests here enforced exactly that, and both were right
+        about the problem they were written for -- the hero must not
+        contradict the slip.
+
+        The fix they encoded was to make the contradiction conditional. The
+        fix that shipped instead removes the competition: THE CARD answers
+        "what should I bet tonight" at the top of the screen, so the hero
+        below it has no verdict to state and states none. A page with one
+        answer needs no rule about which of its two answers wins.
+
+        The banned strings themselves are enforced repo-wide by
+        tests/test_no_nothing_clears_the_bar.py. What this test guards is the
+        structural property: the hero renders no verdict word of its own.
+        """
+        for phrase in ("NOTHING CLEARS THE BAR", "NO DEMONSTRATED EDGE",
+                       "WE CHECKED THE SLATE"):
+            self.assertNotIn(phrase, self.code,
+                             f"the hero still renders {phrase!r}")
+
+    def test_the_card_renders_above_the_hero(self):
+        """Order is the whole point. A reader who reads exactly one thing on
+        this screen must read a bet, not a description of the board."""
+        # Scoped to renderToday's BODY. Searching the whole module would find
+        # `function renderHero(...)`'s definition, which sits above every
+        # call site and would make this test pass or fail on where the
+        # helpers happen to be declared rather than on render order.
+        body_at = self.code.find("export async function renderToday")
+        self.assertNotEqual(-1, body_at, "renderToday is gone")
+        body = self.code[body_at:]
+        card_at = body.find("renderCard(host, date)")
+        hero_at = body.find("renderHero(host,")
+        self.assertNotEqual(-1, card_at, "renderToday never mounts the card")
+        self.assertNotEqual(-1, hero_at, "renderToday never mounts the hero")
+        self.assertLess(card_at, hero_at,
+                        "the hero mounts before the card, so the first thing "
+                        "on the screen is context rather than an answer")
+
+    def test_the_hero_is_told_whether_anything_answered_the_question(self):
+        """Still passed, and now it means "did the card OR the slip speak" --
+        either one makes the hero's job purely descriptive."""
         self.assertTrue(
-            re.search(r"renderHero\([^)]*Boolean\(picksBlock\)", self.code),
-            "renderToday does not pass the picks state into renderHero")
-
-    def test_no_demonstrated_edge_survives_both_branches(self):
-        """The standing truth about this product. Publishing a pick is not a
-        claim of edge, and the chip must not quietly disappear on the nights
-        we do publish -- that would be the contradiction running the other
-        way."""
-        self.assertEqual(
-            1, self.code.count('verdictChip("NO DEMONSTRATED EDGE"'),
-            "NO DEMONSTRATED EDGE should be stated once, before the branch, "
-            "so it cannot be dropped on a night with picks")
+            re.search(r"renderHero\((?:.|\n)*?hasCard", self.code),
+            "renderToday does not tell renderHero whether the card rendered")
 
 
 class NoFalseAffordances(unittest.TestCase):

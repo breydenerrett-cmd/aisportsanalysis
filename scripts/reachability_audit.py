@@ -370,6 +370,20 @@ DECLARED_MANUAL_SCRIPTS = {
     "f5_freeze_family.py",
     "totals_freeze_family.py",
 
+    # --- THE CARD'S TWO MEASUREMENTS. Both are read-only, both take
+    #     minutes over the full season, and both answer a question a person
+    #     is currently asking rather than gating anything. Putting them on
+    #     the nightly loop would spend real time producing a number nobody
+    #     reads on most days, and the number they produce only moves as the
+    #     season adds games.
+    #
+    #     NOT the same as an unwired gate. What the loop DOES run nightly is
+    #     scripts/fit_card_calibration.py, which is the part the product
+    #     depends on -- if that ever goes orphan the card silently publishes
+    #     raw, overconfident probabilities, and the audit must catch it.
+    "backtest_card.py",
+    "backtest_card_rule.py",
+
     # --- read-only analyses an operator runs while asking something. They
     #     write no state and gate nothing.
     "derive_mechanism_baselines.py",

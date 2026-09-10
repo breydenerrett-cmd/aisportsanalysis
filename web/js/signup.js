@@ -45,7 +45,7 @@ import { BETA_TIER } from "./pricing.js";
 // "find the better number" and "paper trail" sections; api/meta.py's
 // PRODUCT_ONE_LINER), just made scannable as bullets on the access card.
 const BENEFITS = [
-  "Every matchup priced against a de-vigged, multi-book consensus — not one line, not one book.",
+  "Every matchup priced against the fair price across every book we can reach — not one line, not one book.",
   "A verdict on the price, never a tip — whether the number is good, not what to bet.",
   "Every pick frozen before first pitch, so there's no shopping the call after it's made.",
   "Paper results published win or lose — the record is checkable, not curated.",

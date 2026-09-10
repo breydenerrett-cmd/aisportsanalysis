@@ -114,7 +114,7 @@ import { renderMatchups } from "./matchups.js";
 import { renderRecordStrip } from "./recordstrip.js";
 import { renderStaleness, fillResearchCount } from "./meta.js";
 import { teamColors } from "./teamcolors.js";
-import { teamName, bookLabel } from "./labels.js";
+import { teamName, bookLabel, FAIR_EXPLAINER } from "./labels.js";
 import { slateTile } from "./tiles.js";
 import { setShellStatus } from "./shell.js";
 import { armEntrances } from "./motion.js";
@@ -447,14 +447,14 @@ function priceContextPanel(row, side, h2h, gap) {
     text: `${(best.books || []).map(bookLabel).join(", ") || "—"}` }));
   if (consensus && typeof consensus.implied_price === "number") {
     aside.appendChild(el("span", { class: "gv2-price__consensus",
-      text: `de-vigged consensus ${formatAmerican(consensus.implied_price)}` }));
+      text: `fair price ${formatAmerican(consensus.implied_price)}` }));
   }
   figures.appendChild(aside);
   panel.appendChild(figures);
 
   if (typeof gap === "number") {
     panel.appendChild(el("span", { class: "gv2-price__pill", "data-hook": "gameday-points-better",
-      text: `${gap.toFixed(1)} PTS BETTER · best price vs. de-vigged consensus` }));
+      text: `${gap.toFixed(1)} PTS BETTER · best price vs. the fair price` }));
   }
   panel.appendChild(el("p", { class: "gv2-price__note",
     text: `BEST OF ${bookCount === null ? "—" : bookCount} BOOKS · OBSERVATION` }));
@@ -482,7 +482,7 @@ function matchupContextPanel(row) {
     ]));
     panel.appendChild(cols);
     panel.appendChild(el("p", { class: "gv2-matchup__caption",
-      text: "MARKET-IMPLIED CONSENSUS, DE-VIGGED — a measurement of the board, not a forecast." }));
+      text: FAIR_EXPLAINER }));
   } else {
     panel.appendChild(notYetAvailable(
       "No priced market for this game yet, so there is no consensus share to show.", "NO MARKET"));

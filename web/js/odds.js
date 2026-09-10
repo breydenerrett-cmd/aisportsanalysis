@@ -62,7 +62,7 @@ import { apiGet } from "./api.js";
 import { el, clear, renderError, renderLoading,
   formatAmerican, formatConsensusShare, formatEasternClock } from "./dom.js";
 import { teamColors } from "./teamcolors.js";
-import { teamName, bookLabel } from "./labels.js";
+import { teamName, bookLabel, FAIR_LONG } from "./labels.js";
 import { setShellStatus } from "./shell.js";
 import { armEntrances } from "./motion.js";
 
@@ -200,7 +200,7 @@ function bestPanel(sideAbbr, best) {
  * game payload always carries both sides. */
 function consensusPanel(consensus, spreadCents, awayAbbr, homeAbbr) {
   const panel = el("div", { class: "ov2-panel ov2-panel--consensus" });
-  panel.appendChild(el("div", { class: "ov2-panel__label", text: "MARKET-IMPLIED CONSENSUS (DE-VIGGED)" }));
+  panel.appendChild(el("div", { class: "ov2-panel__label", text: FAIR_LONG }));
   const cols = el("div", { class: "ov2-consensus-cols" });
   for (const [side, abbr] of [["away", awayAbbr], ["home", homeAbbr]]) {
     const detail = consensus ? consensus[side] : null;

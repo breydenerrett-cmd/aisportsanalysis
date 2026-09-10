@@ -354,7 +354,7 @@ export function renderFeaturedBet(container, standing, opts = {}) {
       const bits = [];
       if (pts) bits.push(pts);
       if (bookPrice) bits.push(`best ${bookPrice}${book ? ` (${book})` : ""}`);
-      if (consensusPct) bits.push(`vs de-vigged consensus ${consensusPct}`);
+      if (consensusPct) bits.push(`vs a fair price of ${consensusPct}`);
       wrap.textContent = bits.length ? bits.join(" ") : "present, no figures to show";
       return wrap;
     })() : notAvailable("no priceable consensus for this side"),

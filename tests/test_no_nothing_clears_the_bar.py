@@ -53,10 +53,41 @@ BANNED_PHRASES = (
     "we checked the slate",
 )
 
+# THE JARGON BAN, from the same instruction and the same day: "nobody knows
+# what divig means... no making up random words". These are terms of art
+# that were correct and unreadable. Each has a plain-English replacement
+# defined once in web/js/labels.js (FAIR_LABEL / FAIR_LONG / FAIR_EXPLAINER)
+# and on the server in src/analysis/priceverdict.py's BASIS.
+#
+# The CONCEPTS are not banned and must not be dropped -- the fair price is
+# the honest denominator behind every price comparison this product makes,
+# and hiding it would be worse than naming it badly. What is banned is
+# putting the unexplained term in front of a reader.
+BANNED_JARGON = (
+    "de-vig",
+    "devig",
+    "de-vigged",
+    "closing line value",
+    "basis points",
+    " bps",
+    "expected value play",
+)
+
 # Surfaces a customer reads. `web/` is the whole client; the two Python
 # modules are the ones that compose customer-visible sentences on the server.
 CUSTOMER_DIRS = ("web",)
 CUSTOMER_FILES = (
+    os.path.join("src", "analysis", "daily_card.py"),
+    os.path.join("src", "report", "card.py"),
+)
+
+# Server modules whose STRING LITERALS reach a customer's screen verbatim.
+# Narrower than "all of src/", deliberately: src/core/odds.py's `devig` is a
+# function name and must keep it, and the research docs and ledgers speak
+# the technical vocabulary because that is what they are for.
+CUSTOMER_STRING_MODULES = (
+    os.path.join("src", "analysis", "priceverdict.py"),
+    os.path.join("src", "analysis", "opportunities.py"),
     os.path.join("src", "analysis", "daily_card.py"),
     os.path.join("src", "report", "card.py"),
 )
@@ -114,6 +145,11 @@ def _rendered_text(path: str) -> str:
         raw = _strip_py_comments(raw)
     elif path.endswith(".html"):
         raw = _strip_html_comments(raw)
+    elif path.endswith(".css"):
+        # CSS is still scanned rather than skipped: `content: "..."` renders
+        # real text to a reader. Only its /* */ comments come out, and those
+        # are where a stylesheet legitimately explains what a class is for.
+        raw = re.sub(r"/\*.*?\*/", " ", raw, flags=re.S)
     return _normalise(raw)
 
 
@@ -132,6 +168,48 @@ class NoBannedVerdictCopy(unittest.TestCase):
             "phrases. The product's answer to 'what should I bet' is "
             "src/analysis/daily_card.py, which always has one. See this "
             "file's docstring:\n  " + "\n  ".join(offenders))
+
+    def test_no_customer_surface_uses_unexplained_jargon(self):
+        offenders = []
+        for path in _customer_files():
+            text = _rendered_text(path)
+            for phrase in BANNED_JARGON:
+                if phrase in text:
+                    offenders.append(
+                        f"{os.path.relpath(path, ROOT)}: {phrase!r}")
+        self.assertEqual(
+            [], offenders,
+            "a customer-facing surface prints a term of art with no "
+            "explanation. The plain-English wording lives in "
+            "web/js/labels.js (FAIR_LABEL / FAIR_LONG / FAIR_EXPLAINER) and "
+            "src/analysis/priceverdict.py's BASIS -- use those rather than "
+            "inventing a second phrase for the same number:\n  "
+            + "\n  ".join(offenders))
+
+    def test_the_server_sentences_that_reach_a_screen_are_clean_too(self):
+        """A payload's `basis` and `label` render verbatim in the client, so
+        banning jargon in web/ alone would leave it on the page."""
+        offenders = []
+        for rel in CUSTOMER_STRING_MODULES:
+            path = os.path.join(ROOT, rel)
+            if not os.path.exists(path):
+                continue
+            text = _rendered_text(path)
+            for phrase in BANNED_JARGON + BANNED_PHRASES:
+                if phrase in text:
+                    offenders.append(f"{rel}: {phrase!r}")
+        self.assertEqual([], offenders, "\n  ".join(offenders))
+
+    def test_the_plain_wording_actually_exists_where_it_is_pointed_at(self):
+        """A ban with no replacement is how copy quietly gets worse. These
+        are the strings the rest of the app is told to use."""
+        labels = os.path.join(ROOT, "web", "js", "labels.js")
+        with open(labels, encoding="utf-8") as fh:
+            src = fh.read()
+        for name in ("FAIR_LABEL", "FAIR_LONG", "FAIR_EXPLAINER", "fairPhrase"):
+            self.assertIn(f"export const {name}" if name != "fairPhrase"
+                          else "export function fairPhrase", src,
+                          f"{name} is missing from web/js/labels.js")
 
     def test_the_ban_is_actually_testing_rendered_strings(self):
         """The stripper must remove documentation, or this whole file is a

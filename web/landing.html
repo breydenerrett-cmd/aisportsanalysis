@@ -146,14 +146,22 @@
   <div class="section__head" data-rise>
     <span class="eyebrow eyebrow--money">What you actually get</span>
   </div>
-  <h2 class="section__title" data-rise data-delay="60">A ranked slip, written down before the games start.</h2>
+  <h2 class="section__title" data-rise data-delay="60">Three to five bets a day, written down before the games start.</h2>
   <div class="story-grid" style="margin-top:32px">
     <div class="story-card panel chamfer" data-rise data-delay="80">
-      <div class="story-card__kicker">The slip</div>
-      <div class="story-card__title">Tonight's bets,<br>ranked by case strength.</div>
-      <p class="story-card__body">Not by how pretty the price is — by how many independent systems
-        landed on the same side, how many pre-registered signals fired, and how deep the book
-        coverage goes. Some nights that list is empty, and we show you that instead of filling it.</p>
+      <div class="story-card__kicker">The card</div>
+      <div class="story-card__title">Tonight's bets,<br>in one sentence each.</div>
+      <!-- THE OLD COPY SAID "some nights that list is empty, and we show you
+           that instead of filling it." That was true of the engine's slip
+           and is now FALSE of the card, which always publishes three to
+           five. Leaving it would have been the page describing a product
+           that no longer exists -- exactly what scripts/publication_audit.py
+           exists to catch. What replaces it is the honest version of the
+           same promise: the floor is met by lowering the LABEL, and a pick
+           our own numbers disagree with says so on its face. -->
+      <p class="story-card__body">"Take Padres −1.5 at −140." Then the reason, in plain English:
+        who scores, who pitches, and what the price says. Every card carries how strong the read
+        actually is — including the nights when the honest answer is "not very".</p>
     </div>
     <div class="story-card panel chamfer" data-rise data-delay="140">
       <div class="story-card__kicker">The receipt</div>
@@ -409,13 +417,13 @@
         innings priced separately from the full game.</p>
     </div>
     <details class="demo-block" data-hook="advanced-view">
-      <summary class="demo-block__label" style="cursor:pointer;list-style:none">Advanced ▸ book spread, de-vig, and pitcher detail</summary>
+      <summary class="demo-block__label" style="cursor:pointer;list-style:none">Advanced ▸ book spread, fair price, and pitcher detail</summary>
       <div style="margin-top:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px">
         <div><div class="stat-label">IP / start</div><div class="stat-figure">6.1</div></div>
         <div><div class="stat-label">Book spread</div><div class="stat-figure">8c</div></div>
         <div><div class="stat-label">Books moved</div><div class="stat-figure">9 / 11</div></div>
         <div><div class="stat-label">First five (Pit)</div><div class="stat-figure">-135</div></div>
-        <div><div class="stat-label">De-vig (Pit)</div><div class="stat-figure">54.2%</div></div>
+        <div><div class="stat-label">Fair price (Pit)</div><div class="stat-figure">54.2%</div></div>
         <div class="not-yet-available chamfer" style="grid-column:1/-1">
           <div class="not-yet-available__head"><span class="not-yet-available__marker chamfer"></span><span class="not-yet-available__label">Not yet available</span></div>
           <div class="not-yet-available__body">Pitch mix and velocity trend — not ingested from a verified source yet, so nothing is
@@ -492,7 +500,7 @@
     <div class="demo-block" data-hook="how-it-works-game">
       <div class="demo-block__label">Game</div>
       <p class="demo-block__body">Team and venue identity, the market-implied consensus for each side (derived from
-        de-vigged prices, not a prediction), and the supporting detail behind it.</p>
+        the fair price across the books, not a prediction), and the supporting detail behind it.</p>
     </div>
     <div class="demo-block" data-hook="how-it-works-odds">
       <div class="demo-block__label">Odds</div>

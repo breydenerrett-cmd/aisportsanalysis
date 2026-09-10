@@ -79,7 +79,9 @@ QUALIFYING_WORDS = ("STRONG VALUE", "VALUE", "LEAN")
 EMPTY_REASON = "NO BETTER-THAN-CONSENSUS PRICES RIGHT NOW"
 
 LABEL = ("THE PRICE BOARD — where tonight's best available number sits "
-         "against the de-vigged consensus. Line-shopping value, not picks.")
+         "against the fair price across the books. This is about getting a "
+         "better number on a bet you already want, not about which bet to "
+         "make. Tonight's picks are at the top of the page.")
 
 _SIDES = (("away", "home"), ("home", "away"))
 

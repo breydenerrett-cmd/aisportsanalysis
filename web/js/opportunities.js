@@ -185,7 +185,7 @@ function opportunityCard(date, row, isHero) {
   const pricePct = formatConsensusShare(row.stated_implied_probability);
   main.appendChild(el("p", { class: "opp-card__figline" },
     [document.createTextNode(
-      `MARKET-IMPLIED (de-vigged, ${booksN === null ? "—" : booksN} books) ${marketPct || "—"} `
+      `FAIR PRICE (${booksN === null ? "—" : booksN} books) ${marketPct || "—"} `
       + `· your price implies ${pricePct || "—"}`)]));
   main.appendChild(el("p", { class: "opp-card__model", text: `INDEPENDENT MODEL: ${row.independent_model || "NO INDEPENDENT MODEL YET"}` }));
 
@@ -397,7 +397,7 @@ export async function renderOpportunities(container, date) {
   const section = el("section", { class: "opp-section", "data-hook": "top-opportunities" });
   container.appendChild(section);
   section.appendChild(sectionHead("THE PRICE BOARD",
-                                  "BEST AVAILABLE NUMBER VS. DE-VIGGED CONSENSUS"));
+                                  "BEST AVAILABLE NUMBER VS. THE FAIR PRICE"));
   const body = el("div", { class: "opp-body" });
   body.appendChild(renderLoading("LOADING TONIGHT'S OPPORTUNITIES"));
   section.appendChild(body);

@@ -610,7 +610,7 @@ function gmvRankBadge(rank) {
     wrap.appendChild(el("div", { class: "gmv__rank gmv__rank--best", "data-hook": "gmv-best-side",
       text: "BEST SUPPORTED PRICE ON THIS GAME" }));
     wrap.appendChild(el("p", { class: "gmv__rank-caption",
-      text: "Ranked by price against the de-vigged consensus only — not a prediction of who wins, "
+      text: "Ranked by price against the fair price only — not a prediction of who wins, "
           + "and not advice to bet it." }));
     return wrap;
   }
@@ -963,7 +963,7 @@ function gqvActions(date, away, home) {
  * humanized fallback instead of an invented description. */
 const SECTION_BLURBS = {
   park: "Venue identifier resolved from the game record.",
-  price_improvement: "Your price against the de-vigged market-implied consensus, with a mandatory "
+  price_improvement: "Your price against the fair price across the books, with a mandatory "
     + "direction label.",
   multibook_board: "Per-book prices from one capture instant, with best-price ties.",
   what_changed: "Roster/lineup events this poller has seen for this game.",
