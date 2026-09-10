@@ -43,6 +43,23 @@ HTML_FILES = sorted(WEB_DIR.glob("*.html"))
 JS_FILES = sorted((WEB_DIR / "js").glob("*.js"))
 ALL_TEXT_FILES = HTML_FILES + JS_FILES + sorted(WEB_DIR.glob("*.md"))
 
+# Files exempt from the banned-vocabulary scan below, BY NAME.
+#
+# web/js/gotcha.js is a rickroll for one person, reachable only by a URL
+# token, and its entire joke is that it says every phrase this product
+# forbids -- "GUARANTEED", "LOCK OF THE DAY", "+EV", a fake win
+# probability. Exempting it by name is the narrow fix; loosening the word
+# list to accommodate it would be the wide one, and this file already
+# learned that lesson once (it used to shadow the imported lists with a
+# weaker local copy, which is how "better than fair" shipped).
+#
+# tests/test_gotcha.py is what pays for this hole: it pins that the overlay
+# cannot fire without the token, persists nothing, touches no DOM before
+# the token check, is always escapable, and is never loaded by the
+# marketing page. Delete this set when the joke is deleted.
+JOKE_FILES = {"gotcha.js"}
+SCANNED_TEXT_FILES = [p for p in ALL_TEXT_FILES if p.name not in JOKE_FILES]
+
 
 class _ParseOnlyHTMLParser(HTMLParser):
     """Just walks the document; html.parser raises on malformed markup
@@ -176,7 +193,7 @@ class NoBannedCustomerVocabulary(unittest.TestCase):
 
     def test_no_hard_banned_phrases(self):
         violations = []
-        for path in ALL_TEXT_FILES:
+        for path in SCANNED_TEXT_FILES:
             text = path.read_text(encoding="utf-8")
             for pattern, label in self.HARD_BANNED:
                 if re.search(pattern, text, re.IGNORECASE):
@@ -185,7 +202,7 @@ class NoBannedCustomerVocabulary(unittest.TestCase):
 
     def test_no_unnegated_guaranteed_win_or_win_probability(self):
         violations = []
-        for path in ALL_TEXT_FILES:
+        for path in SCANNED_TEXT_FILES:
             text = path.read_text(encoding="utf-8")
             for pattern, label in self.NEGATION_ONLY_WEB:
                 for m in re.finditer(pattern, text, re.IGNORECASE):

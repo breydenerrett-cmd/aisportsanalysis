@@ -1,0 +1,283 @@
+/* GOTCHA -- the rickroll takeover. See web/js/gotcha.js for what this is,
+   how it is triggered, and how to delete it.
+
+   Written in the product's own tokens on purpose: the joke only lands if
+   the alert looks like a real LINEHOUND surface right up until Rick. Every
+   colour here is an existing reserved token (--v-money for the price
+   moment, --v-warn for caution, --live for the analytical cyan) rather
+   than a new palette, so it reads as this product having a breakdown
+   rather than as a different website. */
+
+html.gotcha-on,
+html.gotcha-on body {
+  overflow: hidden;
+}
+
+.gotcha {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 4vw, 48px);
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(255, 61, 87, .16), transparent 60%),
+    radial-gradient(90% 70% at 50% 100%, rgba(0, 224, 255, .10), transparent 60%),
+    var(--v-ground, #0A0A0B);
+  overflow-y: auto;
+}
+
+/* CRT scanlines. Cheap, and it sells "something has gone wrong in here". */
+.gotcha__scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, .035) 0 1px,
+    transparent 1px 3px);
+  mix-blend-mode: overlay;
+}
+
+.gotcha__stage {
+  position: relative;
+  width: min(760px, 100%);
+}
+
+/* ---- act 1: the alert --------------------------------------------- */
+
+.gotcha-card {
+  border: 1px solid rgba(255, 61, 87, .45);
+  background: linear-gradient(180deg, #17171A 0%, #121214 100%);
+  box-shadow: 0 0 0 1px rgba(255, 61, 87, .12), 0 30px 80px rgba(0, 0, 0, .6);
+  padding: clamp(20px, 4vw, 40px);
+  text-align: center;
+  opacity: 0;
+  transform: translateY(14px) scale(.98);
+  transition: opacity .45s ease, transform .45s cubic-bezier(.2, .8, .2, 1);
+}
+.gotcha-card.is-in { opacity: 1; transform: none; }
+
+.gotcha-siren {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 61, 87, .5);
+  font-family: var(--font-mono, monospace);
+  font-size: 10.5px;
+  letter-spacing: .16em;
+  color: #FFB3BD;
+}
+.gotcha-siren__dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #FF3D57;
+  animation: gotcha-pulse 1s steps(2, end) infinite;
+}
+@keyframes gotcha-pulse { 50% { opacity: .15; } }
+
+.gotcha-headline {
+  margin: 22px 0 0;
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-weight: 800;
+  font-size: clamp(38px, 8vw, 76px);
+  line-height: .94;
+  letter-spacing: -.01em;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+.gotcha-sub {
+  margin: 16px auto 0;
+  max-width: 52ch;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, .68);
+}
+
+.gotcha-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 28px 0 0;
+}
+.gotcha-stat {
+  padding: 14px 8px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  background: rgba(255, 255, 255, .025);
+}
+.gotcha-stat__value {
+  display: block;
+  font-family: var(--font-display, sans-serif);
+  font-weight: 700;
+  font-size: clamp(22px, 4.4vw, 34px);
+  line-height: 1;
+}
+.gotcha-stat__label {
+  display: block;
+  margin-top: 7px;
+  font-family: var(--font-mono, monospace);
+  font-size: 9px;
+  letter-spacing: .14em;
+  color: rgba(255, 255, 255, .42);
+}
+.gotcha-stat--money .gotcha-stat__value { color: #FF6274; }
+.gotcha-stat--warn  .gotcha-stat__value { color: #FFB020; }
+.gotcha-stat--live  .gotcha-stat__value { color: #00E0FF; }
+
+.gotcha-fineprint {
+  margin: 22px 0 0;
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  letter-spacing: .13em;
+  line-height: 1.9;
+  color: #FFB020;
+}
+
+.gotcha-cta {
+  display: block;
+  width: 100%;
+  margin: 24px 0 0;
+  padding: 18px 20px;
+  border: 0;
+  cursor: pointer;
+  font-family: var(--font-display, sans-serif);
+  font-weight: 700;
+  font-size: clamp(16px, 3vw, 22px);
+  letter-spacing: .04em;
+  color: #22060A;
+  background: linear-gradient(135deg, #FF3D57 0%, #FF7A45 100%);
+  animation: gotcha-throb 1.6s ease-in-out infinite;
+}
+.gotcha-cta:hover { filter: brightness(1.08); }
+@keyframes gotcha-throb {
+  50% { box-shadow: 0 0 0 10px rgba(255, 61, 87, .10); }
+}
+
+.gotcha-nag {
+  margin: 14px 0 0;
+  font-family: var(--font-mono, monospace);
+  font-size: 9.5px;
+  letter-spacing: .12em;
+  color: rgba(255, 255, 255, .3);
+}
+
+/* ---- act 2: the terminal ------------------------------------------ */
+
+.gotcha-term {
+  border: 1px solid rgba(0, 224, 255, .28);
+  background: #08090B;
+  opacity: 0;
+  transition: opacity .3s ease;
+}
+.gotcha-term.is-in { opacity: 1; }
+.gotcha-term__bar {
+  padding: 9px 14px;
+  border-bottom: 1px solid rgba(0, 224, 255, .18);
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  letter-spacing: .12em;
+  color: #9FE9F5;
+}
+.gotcha-term__body {
+  margin: 0;
+  padding: 20px 16px 26px;
+  min-height: 300px;
+  max-height: 52vh;
+  overflow: auto;
+  font-family: var(--font-mono, monospace);
+  font-size: clamp(10px, 2.1vw, 13px);
+  line-height: 2;
+  color: #00E0FF;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.gotcha-term__body::after {
+  content: "\2588";
+  animation: gotcha-caret .8s steps(2, end) infinite;
+}
+@keyframes gotcha-caret { 50% { opacity: 0; } }
+
+/* ---- act 3: Rick --------------------------------------------------- */
+
+.gotcha-reveal {
+  text-align: center;
+  opacity: 0;
+  transform: scale(.96);
+  transition: opacity .35s ease, transform .35s cubic-bezier(.2, .8, .2, 1);
+}
+.gotcha-reveal.is-in { opacity: 1; transform: none; }
+
+.gotcha-reveal__shout {
+  margin: 0;
+  font-family: var(--font-display, sans-serif);
+  font-weight: 800;
+  font-size: clamp(44px, 11vw, 116px);
+  line-height: .88;
+  letter-spacing: -.02em;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #FF3D57, #FFB020, #00E0FF, #FF3D57);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gotcha-slide 3s linear infinite;
+}
+@keyframes gotcha-slide { to { background-position: 300% 0; } }
+
+.gotcha-reveal__sub {
+  margin: 14px 0 0;
+  font-family: var(--font-mono, monospace);
+  font-size: clamp(11px, 2.6vw, 16px);
+  letter-spacing: .16em;
+  color: #fff;
+}
+
+.gotcha-reveal__frame {
+  position: relative;
+  margin: 24px 0 0;
+  padding-top: 56.25%;
+  border: 1px solid rgba(255, 255, 255, .12);
+  background: #000;
+}
+.gotcha-reveal__frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.gotcha-reveal__credit {
+  margin: 18px auto 0;
+  max-width: 56ch;
+  font-size: 13px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, .55);
+}
+
+.gotcha-close {
+  margin: 20px 0 0;
+  padding: 12px 22px;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, .25);
+  background: transparent;
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  letter-spacing: .14em;
+  color: #fff;
+  transition: transform .25s cubic-bezier(.2, .8, .2, 1);
+}
+.gotcha-close:hover { border-color: #fff; }
+
+/* Respect a reader who has asked for less motion -- the bit still works
+   without anything moving. */
+@media (prefers-reduced-motion: reduce) {
+  .gotcha-card, .gotcha-term, .gotcha-reveal { transition: none; }
+  .gotcha-siren__dot, .gotcha-cta, .gotcha-reveal__shout,
+  .gotcha-term__body::after { animation: none; }
+  .gotcha-close { transition: none; }
+}
+
+@media (max-width: 620px) {
+  .gotcha-stats { grid-template-columns: repeat(2, 1fr); }
+}

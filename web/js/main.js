@@ -46,6 +46,7 @@ import { renderBilling } from "./billing.js";
 import { renderPerformance } from "./performance.js";
 import { renderDayDetail } from "./dayrecap.js";
 import { BRAND_NAME } from "./brand.js";
+import { maybeGotcha } from "./gotcha.js";
 
 // The six app destinations and their glyphs, verbatim from handoff
 // section 06's destination table plus RESULTS (Task B3's PAPER / RESEARCH
@@ -215,6 +216,15 @@ async function _renderRouteInner(main) {
 }
 
 function boot() {
+  // A joke, for one person, off a link. FIRST thing in boot and it returns
+  // early, so nothing else mounts underneath it -- but it only ever returns
+  // true when the URL carries the exact token in web/js/gotcha.js. No timer,
+  // no stored flag, no nth-visitor roll: absent that parameter this call is
+  // a string comparison that fails and nothing happens. See that file's
+  // docstring for why the trigger is narrow on purpose and how to delete
+  // the whole thing.
+  if (maybeGotcha()) return;
+
   const main = document.querySelector("[data-hook='app-outlet']");
   const disclaimerHost = document.querySelector("[data-hook='disclaimer-host']");
 
