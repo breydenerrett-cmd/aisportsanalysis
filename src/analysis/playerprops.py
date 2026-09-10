@@ -112,6 +112,66 @@ STARTER_SHARE = 0.62
 MIN_PITCHER_FACTOR = 0.80
 MAX_PITCHER_FACTOR = 1.25
 
+# TONIGHT'S BATTING SLOT, AND WHY IT BEATS THE BATTER'S OWN AVERAGE.
+#
+# The obvious objection to needing the lineup is that a batter's own
+# PA-per-game already encodes his usual slot -- a man who always leads off
+# averages about 4.5 and one who always bats ninth about 3.5. So the card
+# would only help when a batter MOVES.
+#
+# Measured (`scripts/probe_lineup_slot.py`, 3,417 batter-games with both a
+# posted lineup and a boxscore): batters move a lot. Median slot range 2.0
+# across their starts, and only 18.6% never move at all. Predicting tonight's
+# plate appearances:
+#
+#     the batter's own season average    mean absolute error 0.699
+#     tonight's slot alone                                   0.608
+#     a naive combination of both                            0.766
+#
+# Slot alone wins by 13%, and it wins while ignoring the batter entirely --
+# which makes sense once said out loud: how many times you bat depends on
+# where you hit and how long the innings run, not on who you are.
+#
+# THE NAIVE COMBINATION IS WORSE THAN EITHER, and that is the useful part.
+# Adding "slot minus league average" on top of a season average that already
+# contains the slot effect double-counts it. Measured rather than assumed,
+# and not adopted.
+#
+# This table is a MEASURED CONSTANT, not a published one, so it is
+# registered in `scripts/calibration_drift_audit.py` -- a threshold
+# calibrated against a population is a claim with an expiry date, and this
+# repo learned that the hard way today
+# (docs/INCIDENT_2026-09-10_STRONG_TIER.md).
+SLOT_PLATE_APPEARANCES = {
+    1: 4.467, 2: 4.444, 3: 4.326, 4: 4.234, 5: 4.105,
+    6: 3.919, 7: 3.753, 8: 3.623, 9: 3.461,
+}
+
+
+def expected_pa_for_slot(slot) -> Optional[float]:
+    """Expected plate appearances for tonight's batting slot, or None.
+
+    None for a slot outside 1-9 rather than a clamped guess: an unreadable
+    lineup entry should fall back to the batter's own average, which is a
+    worse estimate honestly arrived at, not a better one invented.
+
+    NON-INTEGRAL VALUES ARE REFUSED, not truncated. `int(2.7)` is 2, so a
+    corrupt lineup entry of 2.7 would silently have been priced as the
+    number-two hitter -- a plausible answer to a question nobody asked.
+    A batting slot is an integer by definition, and anything else is a fault
+    in the card rather than a slot to round toward.
+    """
+    if isinstance(slot, bool) or slot is None:
+        return None
+    try:
+        as_int = int(slot)
+    except (TypeError, ValueError):
+        return None
+    if as_int != slot:
+        return None
+    return SLOT_PLATE_APPEARANCES.get(as_int)
+
+
 MODEL_ID = "batter_pa_outcome_v1"
 MODEL_BASIS = (
     "Per-plate-appearance outcome rates from the batter's own season, "
@@ -555,6 +615,7 @@ def _at_least_count(p_per_pa: float, expected_pa: float, need: int) -> float:
 
 def price_prop(*, market: str, line: float, batter_lines: Sequence[Mapping],
                league: Mapping, expected_pa: Optional[float] = None,
+               batting_slot: Optional[int] = None,
                pitcher_hits_allowed: Optional[int] = None,
                pitcher_batters_faced: Optional[int] = None) -> dict:
     """The whole model for one batter and one line, with the workings kept.
@@ -565,7 +626,19 @@ def price_prop(*, market: str, line: float, batter_lines: Sequence[Mapping],
     aloud.
     """
     rates = batter_rates(batter_lines, league)
-    pa = expected_pa if expected_pa else rates["pa_per_game"]
+    # PREFERENCE ORDER, and it is measured rather than assumed: an explicit
+    # override, then tonight's slot (mean absolute error 0.608), then the
+    # batter's own season average (0.699). Falling back rather than refusing,
+    # because a card with no lineup yet is still worth pricing -- it just
+    # says which estimate it used.
+    pa_source = "explicit"
+    pa = expected_pa
+    if not pa:
+        pa = expected_pa_for_slot(batting_slot)
+        pa_source = "batting_slot" if pa else None
+    if not pa:
+        pa = rates["pa_per_game"]
+        pa_source = "season_average"
     if not pa or pa <= 0:
         raise PropError("no expected plate appearances for this batter")
 
@@ -582,6 +655,8 @@ def price_prop(*, market: str, line: float, batter_lines: Sequence[Mapping],
         "line": line,
         "probability": probability,
         "expected_pa": round(pa, 3),
+        "expected_pa_source": pa_source,
+        "batting_slot": batting_slot,
         "pitcher_factor": round(factor, 4),
         "blended_factor": round(blended, 4),
         "batter_hit_rate": round(rates["hit"], 5),

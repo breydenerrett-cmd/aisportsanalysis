@@ -165,6 +165,47 @@ def _measure_dispersion():
             f"{len(residuals)} team-games in {season}, se {se:.4f}")
 
 
+def _measure_slot_spread():
+    """The live leadoff-to-ninth plate-appearance gap, re-measured.
+
+    Rebuilt from posted lineups joined to boxscores rather than read back
+    off the table it is checking -- an audit that reads the constant it
+    guards verifies nothing.
+    """
+    from src.pipeline import boxscores, lineup_store
+
+    lineups = lineup_store.read()
+    if not lineups:
+        return None, "no posted lineups stored"
+    box = [r for r in boxscores.read(
+        os.path.join(REPO, "data", "processed", "boxscores_2026.jsonl"))
+        if r.get("type") == "batter"]
+    by_game_player = {}
+    for row in box:
+        pk, pid = str(row.get("game_pk")), row.get("player_id")
+        if pk and pid is not None:
+            by_game_player[(pk, int(pid))] = row
+
+    per_slot = {1: [], 9: []}
+    for pk, card in lineups.items():
+        if not isinstance(card, dict):
+            continue
+        for side in ("away", "home"):
+            for entry in card.get(side) or ():
+                slot, pid = entry.get("order"), entry.get("person_id")
+                if slot not in per_slot or pid is None:
+                    continue
+                row = by_game_player.get((str(pk), int(pid)))
+                if row is not None:
+                    per_slot[slot].append(int(row.get("pa") or 0))
+    if len(per_slot[1]) < 100 or len(per_slot[9]) < 100:
+        return None, (f"only {len(per_slot[1])} leadoff and "
+                      f"{len(per_slot[9])} ninth-slot batter-games")
+    spread = statistics.fmean(per_slot[1]) - statistics.fmean(per_slot[9])
+    return spread, (f"{len(per_slot[1])} leadoff and {len(per_slot[9])} "
+                    f"ninth-slot batter-games")
+
+
 def _measure_card_band_share():
     """The fraction of recent card picks landing in the top confidence band.
 
@@ -246,6 +287,22 @@ REGISTER = [
                           "2025 and 2026 agreed to 0.128 standard errors, so "
                           "this is stable -- but it is a measurement, not a "
                           "law, and it is registered because it could move.",
+    },
+    {
+        "constant": "playerprops leadoff-to-ninth PA spread",
+        "where": "src/analysis/playerprops.py",
+        "calibrated_against": "the gap in plate appearances between the "
+                              "first and ninth batting slots, over 3,417 "
+                              "batter-games with a posted lineup",
+        "measured_on": "2026-09-10",
+        "measure": _measure_slot_spread,
+        "expected": 1.006,
+        "tolerance": 0.25,
+        "why_it_matters": "The whole reason a props card waits for the "
+                          "lineup. If the spread collapses, tonight's slot "
+                          "stops beating the batter's own season average "
+                          "and the lineup dependency is no longer worth its "
+                          "cost in publication delay.",
     },
     {
         "constant": "daily_card.BAND_STRONG = 0.62",
