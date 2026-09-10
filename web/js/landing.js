@@ -63,12 +63,40 @@ async function revealPublicDemoEntry() {
   }
 }
 
+/**
+ * Replace every [data-hook="research-count"] with the registry's own figure.
+ *
+ * This page said "25 distinct ideas" in two places while web/js/today.js
+ * said 27, web/js/betcheck.js said "twenty-seven", and
+ * data/research/alpha_registry.jsonl said 40. Four numbers for one claim --
+ * so a prospect read one figure on the page that sold them a subscription
+ * and a different one the first time they opened the app, on a product
+ * whose entire pitch is that it counts honestly.
+ *
+ * Same fire-and-forget rule as everything else here: the markup carries a
+ * correct fallback, so a slow or failed /meta leaves a true sentence on the
+ * page rather than a gap or a spinner.
+ */
+async function fillResearchCounts() {
+  const nodes = document.querySelectorAll("[data-hook='research-count']");
+  if (!nodes.length) return;
+  try {
+    const meta = await apiGet("/meta");
+    const n = meta && meta.research && meta.research.hypotheses;
+    if (typeof n !== "number") return;
+    nodes.forEach((node) => { node.textContent = String(n); });
+  } catch (err) {
+    // Leave the markup's own figure in place.
+  }
+}
+
 function boot() {
   const disclaimerHost = document.querySelector("[data-hook='disclaimer-host']");
   const pricingHost = document.querySelector("[data-hook='pricing-host']");
   if (disclaimerHost) renderDisclaimerFooter(disclaimerHost);
   if (pricingHost) renderPricing(pricingHost);
   revealPublicDemoEntry();
+  fillResearchCounts();
   // Tonight's real slate replaces the hardcoded Aug 28 sample matchup, or
   // degrades to an honest labelled-sample state on failure -- see
   // landing-live.js's module docstring. Fire-and-forget, same rule as

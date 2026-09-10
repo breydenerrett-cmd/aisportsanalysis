@@ -135,10 +135,16 @@
   </div>
   <h2 class="section__title" data-hook="honesty-story-headline" data-rise data-delay="60">We bet too. Most ideas don't survive contact with real games.</h2>
   <div class="prose" style="margin-top:24px" data-rise data-delay="100">
-    <p>Between 2023 and 2024 we pre-registered four separate research families against
-    MLB moneyline betting — 25 distinct ideas at the detector level (35 counting every
-    registered variant), from bullpen workload and platoon matchups to market-structure
-    effects like fading recent price moves and cross-book price dispersion.</p>
+    <!-- COUNT READ FROM THE REGISTRY at runtime (landing.js -> GET /meta ->
+         data/research/alpha_registry.jsonl). The figure written here is the
+         no-JS fallback and must match the registry; it said 25 while the app
+         said 27 and the registry said 40, so a prospect read one number on
+         this page and a different one the moment they signed up. -->
+    <p>Between 2023 and 2024 we pre-registered several separate research families against
+    MLB moneyline betting — <span data-hook="research-count">40</span> distinct
+    pre-registered hypotheses, from bullpen workload and platoon matchups to
+    market-structure effects like fading recent price moves and cross-book price
+    dispersion.</p>
     <p data-hook="honesty-story-zero-survivors"><strong>Zero of them survived our own
     falsification tests.</strong> One idea looked like a real signal at first — a
     positive, statistically significant effect over 249 selections — until the
@@ -449,9 +455,10 @@
     </details>
     <details class="faq-item panel chamfer" data-hook="faq-no-edge">
       <summary>No betting edge found yet — what does that mean?</summary>
-      <p class="faq-item__body">Exactly what it says. We've pre-registered and tested 25 distinct research ideas (35
-        counting every variant) against real MLB games from 2023–2024, and none survived our falsification
-        tests. We publish the losers, including the one that looked promising until we checked it properly.</p>
+      <p class="faq-item__body">Exactly what it says. We've pre-registered and tested
+        <span data-hook="research-count">40</span> distinct research hypotheses against real MLB games from
+        2023–2024, and none survived our falsification tests. We publish the losers, including the one
+        that looked promising until we checked it properly.</p>
     </details>
     <details class="faq-item panel chamfer" data-hook="faq-data-freshness">
       <summary>How fresh is the data?</summary>

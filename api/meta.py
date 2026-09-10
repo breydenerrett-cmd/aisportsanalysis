@@ -88,6 +88,21 @@ def _public_demo() -> bool:
         "1", "true", "yes")
 
 
+def _research_counts() -> dict:
+    """Registry counts, or an explicit absence -- never a guessed number.
+
+    /meta is hit on every page load and must not 500 because a research
+    file moved. An unreadable registry reports nulls, and the client
+    renders the sentence without figures rather than inventing them; that
+    is the same honest-absence rule every other surface here follows.
+    """
+    try:
+        from src.research import alpha_registry
+        return alpha_registry.public_research_counts()
+    except Exception:  # noqa: BLE001
+        return {"hypotheses": None, "surviving": None}
+
+
 @router.get("/meta")
 def get_meta() -> dict:
     return {
@@ -99,4 +114,13 @@ def get_meta() -> dict:
         # without a token (hosted demo). The client hides the sign-in wall
         # and the BETS destination when this is set; see api/app.py.
         "public_demo": _public_demo(),
+        # The two research numbers the product states to customers, read
+        # from data/research/alpha_registry.jsonl rather than typed into a
+        # view. They used to be hardcoded in four places at three different
+        # values -- the app said 27, Bet Check said "twenty-seven", the
+        # landing page said 25, and the registry said 40 -- so a prospect
+        # read one number on the page that sold them the subscription and a
+        # different one the first time they opened the app. See
+        # src/research/alpha_registry.public_research_counts.
+        "research": _research_counts(),
     }

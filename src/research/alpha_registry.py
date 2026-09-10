@@ -454,6 +454,51 @@ class AlphaRegistry:
 # given -- tests pass a temp-dir path; production callers pass nothing).
 # ---------------------------------------------------------------------------
 
+SURVIVING_RESULTS = frozenset({"survivor"})
+
+
+def public_research_counts(path: Optional[Any] = None) -> Dict[str, int]:
+    """The two numbers the customer-facing product states about research:
+    how many hypotheses were pre-registered, and how many survived.
+
+    WHY THIS EXISTS
+    ----------------
+    Those two numbers were hardcoded, in four places, at three different
+    values. web/js/today.js said "27 hypotheses pre-registered ... zero
+    surviving. Static constant, not tonight's count." web/js/betcheck.js
+    said "Twenty-seven pre-registered hypotheses have been measured and none
+    has survived" -- a second, independently worded copy. web/landing.html
+    said "25 distinct ideas at the detector level (35 counting every
+    registered variant)", twice. This registry says 40.
+
+    So a prospect read one number on the page that sold them the
+    subscription and a different number the first time they opened the app.
+    On a product whose entire pitch is that it counts honestly.
+
+    The old constant's defence -- that it is a closed historical record, not
+    tonight's count -- was reasonable and is why it drifted: a number nobody
+    expects to change is a number nobody re-checks. The registry IS the
+    closed record, so reading it costs nothing and cannot drift.
+
+    `surviving` counts registration rows whose LATEST verdict is
+    "survivor" (see `_latest_verdict_results` for why latest, not first --
+    a withdrawn read must not keep counting). It is 0 today and the product
+    says so; if it ever stops being 0, this number changes on its own
+    rather than waiting for someone to notice.
+    """
+    registry = AlphaRegistry(path)
+    latest = registry._latest_verdict_results()  # noqa: SLF001
+    hypotheses = 0
+    surviving = 0
+    for row in registry._iter_raw():  # noqa: SLF001
+        if row.get("kind") != "hypothesis":
+            continue
+        hypotheses += 1
+        if latest.get(row.get("id")) in SURVIVING_RESULTS:
+            surviving += 1
+    return {"hypotheses": hypotheses, "surviving": surviving}
+
+
 def register(row: Dict[str, Any], path: Optional[Any] = None) -> Dict[str, Any]:
     return AlphaRegistry(path).register(row)
 

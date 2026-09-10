@@ -25,6 +25,58 @@ const SUMMARY =
   "Beta. We show what supports a bet, what argues against it, and where the "
   + "price is better — never what to bet. Read the full disclaimer below.";
 
+/**
+ * THE RESEARCH COUNTS, FROM THE REGISTRY, ONCE.
+ *
+ * "27 hypotheses pre-registered ... zero surviving" was a hardcoded string
+ * in web/js/today.js. web/js/betcheck.js carried a second, independently
+ * worded copy saying "Twenty-seven". web/landing.html said 25 in two
+ * places. data/research/alpha_registry.jsonl says 40. So a prospect read
+ * one number on the page that sold them the subscription and a different
+ * one the first time they opened the app -- on a product whose whole pitch
+ * is that it counts honestly.
+ *
+ * The old constant's defence was that this is a CLOSED historical record,
+ * not a live count, so pinning it was safe. That is exactly why it drifted:
+ * a number nobody expects to change is a number nobody re-checks. The
+ * registry is the closed record; reading it costs one request that every
+ * page already makes.
+ *
+ * One in-flight promise, shared -- not one fetch per caller.
+ */
+let _metaPromise = null;
+
+function meta() {
+  if (!_metaPromise) {
+    _metaPromise = apiGet("/meta").catch(() => null);
+  }
+  return _metaPromise;
+}
+
+/**
+ * Fills `node` with a sentence about the research record once /meta answers.
+ *
+ * `build(hypotheses, surviving)` returns the sentence -- each call site
+ * writes its own wording, since Today's panel and Bet Check's evidence
+ * block are different registers. `fallback` is rendered when the registry
+ * could not be read: a sentence with no figures in it, never a guessed
+ * number, matching the honest-absence rule everywhere else in this client.
+ *
+ * Asynchronous on purpose. Both call sites build their DOM synchronously
+ * inside a larger render, so the alternative is either blocking the whole
+ * screen on /meta or going back to a hardcoded string.
+ */
+export function fillResearchCount(node, build, fallback) {
+  node.textContent = fallback;
+  meta().then((payload) => {
+    const counts = (payload && payload.research) || {};
+    if (typeof counts.hypotheses !== "number"
+        || typeof counts.surviving !== "number") return;
+    node.textContent = build(counts.hypotheses, counts.surviving);
+  });
+  return node;
+}
+
 export async function renderDisclaimerFooter(container) {
   clear(container);
   const region = el("footer", {

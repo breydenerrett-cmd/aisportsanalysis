@@ -107,6 +107,7 @@ import { setShellStatus } from "./shell.js";
 import { armEntrances } from "./motion.js";
 import { renderFeaturedBet, mapBetCheckPayloadToStanding } from "./featuredbet.js";
 import { renderValueMeter } from "./valuemeter.js";
+import { fillResearchCount } from "./meta.js";
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -532,9 +533,20 @@ function renderHistorical(result) {
 function renderEvidenceStatus(result) {
   const value = result.evidence_status ? String(result.evidence_status).toUpperCase() : null;
   if (!value) {
-    return naBlock("07", "EVIDENCE STATUS",
-      "No evidence rung was reported for this bet, so none is shown — a rung is never assumed. Twenty-seven "
-      + "pre-registered hypotheses have been measured and none has survived.");
+    // The count came from the registry via GET /meta as of 2026-09-10. This
+    // block used to spell out "Twenty-seven" while today.js said "27" and
+    // the landing page said "25"; the registry says 40. Same claim, four
+    // numbers. See meta.js's fillResearchCount.
+    const section = naBlock("07", "EVIDENCE STATUS",
+      "No evidence rung was reported for this bet, so none is shown — a rung "
+      + "is never assumed.");
+    section.appendChild(fillResearchCount(
+      el("p", { class: "bc2-na__body" }),
+      (n, surviving) => `${n} pre-registered hypotheses have been measured `
+        + `and ${surviving === 0 ? "none has" : `${surviving} have`} survived.`,
+      "Every hypothesis in our research record is pre-registered, and none "
+      + "has survived."));
+    return section;
   }
   const section = block("07", "EVIDENCE STATUS");
   section.appendChild(el("span", { class: "bc2-pill", "data-hook": "evidence-status", text: value }));

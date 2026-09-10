@@ -111,7 +111,7 @@ import { renderFeaturedBet, mapBetCheckPayloadToStanding } from "./featuredbet.j
 import { renderOpportunities } from "./opportunities.js";
 import { renderMatchups } from "./matchups.js";
 import { renderRecordStrip } from "./recordstrip.js";
-import { renderStaleness } from "./meta.js";
+import { renderStaleness, fillResearchCount } from "./meta.js";
 import { teamColors } from "./teamcolors.js";
 import { teamName, bookLabel } from "./labels.js";
 import { slateTile } from "./tiles.js";
@@ -389,11 +389,20 @@ function checkedTonightPanel(aggregates) {
   panel.appendChild(research);
   const programme = el("div", { class: "gv2-checked__programme" });
   programme.appendChild(el("span", { class: "gv2-checked__programme-tag", text: "RESEARCH PROGRAMME" }));
-  // Fixed, closed-record constant -- see module docstring. Never
-  // tonight's count, never recomputed from a live field.
-  programme.appendChild(el("span", { class: "gv2-checked__programme-body",
-    text: "27 hypotheses pre-registered across this product's V1-V5 research record, zero surviving. "
-        + "Static constant, not tonight's count." }));
+  // Read from the registry via GET /meta, not typed here. This said "27"
+  // while Bet Check said "twenty-seven", the landing page said "25", and
+  // data/research/alpha_registry.jsonl said 40 -- four numbers for one
+  // claim, on a product whose pitch is that it counts honestly. Still the
+  // closed research record, never tonight's count; see meta.js's
+  // fillResearchCount.
+  programme.appendChild(fillResearchCount(
+    el("span", { class: "gv2-checked__programme-body" }),
+    (n, surviving) => `${n} hypotheses pre-registered across this product's `
+      + `research record, ${surviving === 0 ? "zero" : surviving} surviving. `
+      + `The closed research record, not tonight's count.`,
+    "Every hypothesis in this product's research record is pre-registered, "
+    + "and none has survived. The closed research record, not tonight's "
+    + "count."));
   panel.appendChild(programme);
   return panel;
 }
