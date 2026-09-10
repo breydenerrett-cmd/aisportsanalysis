@@ -118,11 +118,23 @@ remembered.
 
 Roughly fifteen more slate days at the current rate.
 
-### The one caveat on the eventual answer
+### A landmine, found and defused the same day
 
-The run above reported no family-map warning, which means the clustering map
-was not reachable from this script and every count fell back to distinct
-systems. That fallback is **exactly the number the family discount exists to
-replace**, so when the twenty dates arrive the first thing to check is that
-`systems_with_no_known_family` is zero. The script prints it prominently and
-calls the ladder provisional if it is not.
+The first version of the script asked the clustering for `family_of`. The
+attribute is `family_id_of`. It got `None`, fell back to counting **distinct
+systems**, and would have produced a ladder in three weeks that looked
+entirely normal and was wrong in the confidence-manufacturing direction —
+because a raw system count is precisely the number the family discount
+exists to replace.
+
+Nothing would have failed. The script would have run, printed percentiles,
+and passed its own checks.
+
+Fixed, and the fallback is now a **refusal** rather than a warning: no
+clustering, no ladder. The map check runs *before* the date count so a
+broken clustering can never be mistaken for "not enough data yet" — one is a
+fault to fix today, the other is a normal wait.
+
+Verified against the live population: **57 forward-test systems collapse
+into 28 families**, 29 merged. The clustering is doing substantial work, and
+the null will be collapsed the same way the real counts are.

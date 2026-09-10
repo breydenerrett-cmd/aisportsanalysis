@@ -53,6 +53,47 @@ MAX_SPLIT_HALF_DISAGREEMENT = 1
 DECISIONS = os.path.join("evidence", "decisions_v2.jsonl")
 
 
+def _family_map():
+    """`{system_id: family_id}` from the SAME clustering the live slip uses.
+
+    Built exactly the way `src/cli.py`'s slip command builds it -- whole
+    forward history, both relations, genomes handed over -- because a null
+    collapsed differently from the real counts it is compared against is not
+    a null, it is two different measurements subtracted.
+
+    Handing over `genomes` is the load-bearing part. Clustering on decisions
+    alone found 15 families among 16 systems where structure finds 11: every
+    first-five genome is a feature-set twin of an h2h one and adds no
+    independent evidence at all. Omitting them understates collapse, and
+    understating collapse is the direction that manufactures confidence.
+
+    Returns {} on any failure, which the caller reports loudly rather than
+    quietly degrading to a raw system count.
+    """
+    from src.analysis import families as families_mod
+    from src.engine import slip as slip_mod
+    from src.engine.adapters.evolab_system import REGISTERED_SYSTEMS
+    from src.ledger.chain import HashChainLedger
+
+    rows = [r for r in HashChainLedger(DECISIONS).read() if not r.get("kind")]
+    forward_rows = [r for r in rows
+                    if slip_mod.is_forward_test(r.get("system_id"))]
+    forward_systems = [s for s in REGISTERED_SYSTEMS
+                       if slip_mod.is_forward_test(s.id)]
+    if not forward_systems:
+        return {}
+    roster = [s.id for s in forward_systems]
+    genomes = {s.id: getattr(s, "genome", None) for s in forward_systems}
+    clustering = families_mod.families(
+        families_mod.forward_selections(forward_rows, systems=roster).selections,
+        genomes=genomes)
+    # `family_id_of`, not `family_of`. The first draft asked for the latter,
+    # got None, and silently fell back to counting distinct systems -- which
+    # is exactly the number the family discount exists to replace, arrived at
+    # by a typo. The caller now reports an empty map loudly for that reason.
+    return dict(getattr(clustering, "family_id_of", None) or {})
+
+
 def _percentile(sorted_values, pct):
     if not sorted_values:
         return None
@@ -144,6 +185,22 @@ def main(argv=None):
               if len(w) >= MIN_WAGERS_PER_DATE
               and len({s for b in w.values() for s in b}) >= MIN_SYSTEMS_PER_DATE}
 
+    # THE MAP IS CHECKED FIRST, before the date count, so a broken clustering
+    # is never mistaken for "not enough data yet" -- one is a fault to fix
+    # today and the other is a normal wait.
+    family_of = _family_map()
+    if not family_of:
+        message = ("REFUSED: the family clustering is unavailable here, so "
+                   "every agreement count would fall back to a raw system "
+                   "count. That is the number the family discount exists to "
+                   "replace and a ladder built on it would be wrong in the "
+                   "direction that manufactures confidence.")
+        if args.json:
+            print(json.dumps({"refused": "no family map"}))
+        else:
+            print(message, file=sys.stderr)
+        return 2
+
     if len(usable) < MIN_DATES:
         # EXIT 0, NOT AN ERROR. A pending pre-registration is a normal state
         # and this runs nightly; treating "not yet" as a failure would train
@@ -167,15 +224,6 @@ def main(argv=None):
                   "a ladder could not be estimated off a handful of days and "
                   "then defended because it existed.")
         return 0
-
-    # The real clustering, so the null is collapsed the same way the live
-    # slip collapses. Built once over the whole played population.
-    family_of = {}
-    try:
-        from src.engine import glue
-        family_of = glue.family_map() if hasattr(glue, "family_map") else {}
-    except Exception:  # noqa: BLE001
-        family_of = {}
 
     rng = random.Random(SEED)
     real_counts, null_counts = [], []
