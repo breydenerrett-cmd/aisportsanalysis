@@ -293,6 +293,49 @@ class ThePageServesTheFrozenCard(unittest.TestCase):
         self.assertIsNone(served["games_open"])
         self.assertIsNone(served["agreed"])
 
+    def test_the_freeze_waits_until_the_first_game_is_close(self):
+        """THE OVERNIGHT FREEZE, which would have shipped silently.
+
+        `card publish` is dispatched roughly every half hour. Without this
+        gate the first run after the UTC date rolls over -- 00:25Z, which is
+        8:25pm ET the evening BEFORE -- would freeze the card on the
+        thinnest board of the day with no lineups posted, and publish being
+        idempotent means that run wins the whole day.
+        """
+        from datetime import datetime, timezone
+
+        from src.report import card as card_mod
+
+        card = {"picks": [{"first_pitch_utc": "2026-09-10T23:05:00Z"},
+                          {"first_pitch_utc": "2026-09-10T16:15:00Z"}]}
+
+        overnight = card_mod.freeze_window(
+            card, now=datetime(2026, 9, 10, 0, 25, tzinfo=timezone.utc))
+        self.assertFalse(overnight["ready"], overnight["reason"])
+        self.assertIn("too early", overnight["reason"])
+
+        # Measured against the EARLIEST game, not the latest: the card is one
+        # object covering the whole slate, so waiting for the 7pm game would
+        # mean freezing after the matinee had started.
+        in_window = card_mod.freeze_window(
+            card, now=datetime(2026, 9, 10, 17, 0, tzinfo=timezone.utc))
+        self.assertTrue(in_window["ready"], in_window["reason"])
+        self.assertEqual("2026-09-10T16:15:00+00:00",
+                         in_window["earliest_first_pitch"])
+
+    def test_the_gate_fails_open_when_no_first_pitch_can_be_read(self):
+        """Blocking forever would silently stop the public record, which is
+        a worse failure than freezing a card slightly early."""
+        from src.report import card as card_mod
+
+        window = card_mod.freeze_window({"picks": [{"first_pitch_utc": None}]})
+        self.assertTrue(window["ready"])
+
+    def test_an_empty_card_is_never_ready_to_freeze(self):
+        from src.report import card as card_mod
+
+        self.assertFalse(card_mod.freeze_window({"picks": []})["ready"])
+
     def test_a_live_build_is_marked_not_frozen(self):
         from src.report import card as card_mod
 

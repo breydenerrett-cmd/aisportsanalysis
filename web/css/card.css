@@ -27,6 +27,9 @@
   max-width: 62ch;
 }
 .card2lede--mute { color: var(--text-mute); font-size: 12.5px; }
+/* Amber, per the system's own rule: know this. Not red -- a stale price is
+   a caution, not a booked loss. */
+.card2lede--warn { color: var(--v-warn-label); }
 
 .card2grid {
   display: grid;

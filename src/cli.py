@@ -2987,6 +2987,18 @@ def cmd_card(args) -> int:
         print("  --dry-run: nothing written.")
         return EXIT_OK
 
+    # THE FREEZE GATE. Declining here is the normal outcome for most of the
+    # day, not a failure -- this command is dispatched roughly every half
+    # hour and would otherwise freeze the card the evening BEFORE, on the
+    # thinnest board of the day with no lineups posted. See
+    # src/report/card.py's CARD_FREEZE_LEAD_HOURS.
+    window = card_mod.freeze_window(card, now=now)
+    if not window["ready"] and not getattr(args, "force", False):
+        print(f"  not frozen yet -- {window['reason']}")
+        print("  (the page shows this card live in the meantime, marked as "
+              "not locked in)")
+        return EXIT_OK
+
     row = card_ledger.publish(card)
     if row.get("already_published"):
         print(f"  already published for {date_str}; the frozen card stands. "
@@ -3493,6 +3505,11 @@ def build_parser() -> argparse.ArgumentParser:
     card_publish.add_argument(
         "--dry-run", action="store_true",
         help="build and print the card without writing to the ledger")
+    card_publish.add_argument(
+        "--force", action="store_true",
+        help="freeze even outside the pre-first-pitch window (operator "
+             "override; the window exists so a scheduler running every half "
+             "hour cannot freeze the card the evening before)")
     card_settle = card_sub.add_parser(
         "settle", help="grade one date's published card from final scores")
     card_settle.add_argument("--date", required=True, help="YYYY-MM-DD")

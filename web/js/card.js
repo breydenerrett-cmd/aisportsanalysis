@@ -52,6 +52,19 @@ const LABEL_MEANING = {
        + "because tonight's slate was thin, and you should weigh it lower.",
 };
 
+// Four hours is roughly how long a major-league moneyline holds its shape
+// on a quiet board. Past that a reader quoting our number at a book is
+// likely to find a different one.
+const STALE_PRICE_HOURS = 4;
+
+/** Hours since an ISO timestamp, or null if it cannot be read. */
+function hoursSince(iso) {
+  if (!iso) return null;
+  const then = Date.parse(String(iso).replace(" ", "T"));
+  if (Number.isNaN(then)) return null;
+  return Math.max((Date.now() - then) / 3600000, 0);
+}
+
 function sectionHead(label, meta) {
   const head = el("div", { class: "sechead" });
   head.appendChild(el("span", { class: "sechead__label", text: label }));
@@ -266,6 +279,21 @@ export async function renderCard(host, date) {
           + `prices we committed to before first pitch, and they have not `
           + `been touched since. Every one is graded win or lose on the `
           + `record page, including the ones that lose.` }));
+
+    // A FROZEN PRICE IS A HISTORICAL FACT, NOT A QUOTE. On a slate with an
+    // early game the card freezes in the morning, and a reader arriving at
+    // 4pm would otherwise take "-149 at DraftKings" as a number they can
+    // still get. Told plainly at the point of confusion rather than left to
+    // the reader to work out from the timestamp.
+    const ageHours = hoursSince(payload.frozen_at);
+    if (ageHours !== null && ageHours >= STALE_PRICE_HOURS) {
+      wrap.appendChild(el("p", { class: "card2lede card2lede--warn",
+        "data-hook": "card-stale-prices",
+        text: `Those prices are ${Math.round(ageHours)} hours old. The bets `
+            + `are what we committed to; the numbers beside them have `
+            + `almost certainly moved, so check the current price before you `
+            + `take one.` }));
+    }
   } else {
     wrap.appendChild(el("p", { class: "card2lede", "data-hook": "card-live",
       text: "Live prices — tonight's card is not locked in yet. It freezes "

@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Sequence
 
 from src.analysis import calibrate, daily_card, strength
@@ -25,6 +25,26 @@ from src.core import odds as odds_math
 from src.detect import dossier as dossier_mod
 
 CALIBRATION_STORE = os.path.join("data", "processed", "card_calibration.json")
+
+# HOW LATE THE CARD IS ALLOWED TO FREEZE, and therefore how early it is NOT.
+#
+# The afternoon pass is scheduled at 21:10Z (5:10pm ET) precisely because
+# lineups are posted by then. It is also dispatched on a ~30-minute loop by
+# an external scheduler, which means without this gate the FIRST run after
+# the UTC date rolls over -- 00:25Z, which is 8:25pm ET the evening BEFORE
+# -- would freeze the card. `publish` is idempotent per date, so that first
+# run wins the whole day.
+#
+# A card frozen the night before is built on the thinnest board of the day,
+# with no posted lineups and some starters unconfirmed, and then presented
+# to a reader for the next twenty hours as "what we committed to before
+# first pitch". Technically true. Substantively the worst version of the
+# product.
+#
+# So the freeze waits until the day's earliest open game is within this many
+# hours of first pitch. The PAGE is unaffected and shows a live card all day
+# -- see `card_for_date` -- clearly marked as not locked in yet.
+CARD_FREEZE_LEAD_HOURS = 4.0
 
 # The main run line. Alternates are a different bet and are not considered
 # here: the card publishes one standard, quotable number per game, and
@@ -209,6 +229,73 @@ def moneyline_rows(opportunity_rows: Sequence) -> dict:
             continue
         out.setdefault(gid, {})[side] = row
     return out
+
+
+def freeze_window(card: dict, *, now: Optional[datetime] = None,
+                  lead_hours: float = CARD_FREEZE_LEAD_HOURS) -> dict:
+    """Is it late enough in the day to freeze this card?
+
+    Returns `{"ready": bool, "reason": str, "earliest_first_pitch": str|None,
+    "opens_at": str|None}`. The reason is written for a run log, because
+    this gate declining is the NORMAL outcome for most of the day and a bare
+    "skipped" would read as a failure every half hour.
+
+    Measured against the day's EARLIEST still-open game, not its latest. The
+    card is one object covering the whole slate, so it has to be frozen
+    while every game on it is still pregame -- waiting for the 10pm game
+    would mean freezing after the matinee started.
+    """
+    now = now or datetime.now(timezone.utc)
+    picks = card.get("picks") or []
+    if not picks:
+        return {"ready": False, "reason": "no picks to freeze",
+                "earliest_first_pitch": None, "opens_at": None}
+
+    stamps = []
+    for pick in picks:
+        parsed = _parse_first_pitch(pick.get("first_pitch_utc"))
+        if parsed is not None:
+            stamps.append(parsed)
+    if not stamps:
+        # Fail OPEN here, deliberately: a card whose first-pitch times are
+        # all unreadable is already refused upstream by `_has_started`, so
+        # reaching this branch means something stranger, and blocking the
+        # freeze forever would silently stop the record.
+        return {"ready": True,
+                "reason": "no readable first-pitch times; freezing rather "
+                          "than blocking the record indefinitely",
+                "earliest_first_pitch": None, "opens_at": None}
+
+    earliest = min(stamps)
+    opens_at = earliest - timedelta(hours=lead_hours)
+    if now < opens_at:
+        return {
+            "ready": False,
+            "reason": (f"too early: the first game starts "
+                       f"{earliest.isoformat()} and the card freezes from "
+                       f"{opens_at.isoformat()} ({lead_hours:g}h before)"),
+            "earliest_first_pitch": earliest.isoformat(),
+            "opens_at": opens_at.isoformat(),
+        }
+    return {
+        "ready": True,
+        "reason": (f"within {lead_hours:g}h of the first game "
+                   f"({earliest.isoformat()})"),
+        "earliest_first_pitch": earliest.isoformat(),
+        "opens_at": opens_at.isoformat(),
+    }
+
+
+def _parse_first_pitch(value) -> Optional[datetime]:
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
 
 
 def frozen_card(date: str) -> Optional[dict]:
