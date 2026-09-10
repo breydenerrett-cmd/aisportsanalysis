@@ -220,5 +220,69 @@ class TheRunningRecord(LedgerCase):
         self.assertIsNone(rec["roi_pct"])
 
 
+class ThePageServesTheFrozenCard(unittest.TestCase):
+    """The property that makes the receipts mean anything.
+
+    `card_for_date` rebuilds from live prices. A page that always rebuilt
+    would drift away from the ledger row as books move -- so the record page
+    would be receipts for a card nobody was ever shown. Once a date is
+    published, the page serves the frozen row and says so.
+    """
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.path = os.path.join(self._tmp.name, "cards_v1.jsonl")
+        # `frozen_card` reads the module-level default, so point that at the
+        # temp chain for the duration. Restored by addCleanup either way.
+        self._real = card_ledger.CARD_STORE
+        card_ledger.CARD_STORE = self.path
+        self.addCleanup(setattr, card_ledger, "CARD_STORE", self._real)
+
+    def test_frozen_card_returns_none_before_anything_is_published(self):
+        from src.report import card as card_mod
+        self.assertIsNone(card_mod.frozen_card("2026-09-10"))
+
+    def test_the_frozen_row_is_served_verbatim_once_published(self):
+        from src.report import card as card_mod
+
+        card_ledger.publish(_card(picks=[_pick(price=-150)]), path=self.path)
+        served = card_mod.frozen_card("2026-09-10")
+        self.assertTrue(served["frozen"])
+        self.assertIsNotNone(served["frozen_at"])
+        self.assertEqual(-150, served["picks"][0]["price"])
+
+    def test_the_frozen_payload_carries_every_key_the_live_one_does(self):
+        """A payload whose keys vary by branch is a trap for any consumer:
+        the renderer cannot tell "absent" from "zero" and prints one for the
+        other."""
+        from src.report import card as card_mod
+
+        card_ledger.publish(_card(), path=self.path)
+        served = card_mod.frozen_card("2026-09-10")
+        for key in ("picks", "filled", "considered", "agreed", "split",
+                    "rule", "basis", "disclaimer", "min_picks", "max_picks",
+                    "calibrated", "calibration", "model_id",
+                    "games_on_slate", "games_started", "games_open",
+                    "frozen", "frozen_at"):
+            self.assertIn(key, served, f"the frozen payload is missing {key}")
+
+    def test_unknown_counts_are_none_not_zero(self):
+        from src.report import card as card_mod
+
+        card_ledger.publish(_card(), path=self.path)
+        served = card_mod.frozen_card("2026-09-10")
+        self.assertIsNone(served["games_open"])
+        self.assertIsNone(served["agreed"])
+
+    def test_a_live_build_is_marked_not_frozen(self):
+        from src.report import card as card_mod
+
+        built = card_mod.card_for_date([], [], date="2026-09-10")
+        self.assertFalse(built["frozen"])
+        self.assertIsNone(built["frozen_at"])
+        self.assertIn("reason", built)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -194,9 +194,32 @@ export async function renderCard(host, date) {
     ? `${picks.length} of ${payload.games_on_slate} games`
     : `${picks.length} picks`;
   wrap.appendChild(sectionHead("TONIGHT'S CARD", meta));
-  wrap.appendChild(el("p", { class: "card2lede",
-    text: "Frozen before first pitch. Every one of these is graded win or "
-        + "lose on the record page, including the ones that lose." }));
+
+  // TWO DIFFERENT PROMISES, AND THE PAGE MUST NOT MAKE THE WRONG ONE.
+  //
+  // Once the afternoon pass has published, this card is the frozen ledger
+  // row -- the exact bets, at the exact prices, that were committed before
+  // first pitch and cannot be edited afterwards. That is the product, and
+  // it is the sentence that earns the record page's credibility.
+  //
+  // Before that, the page is building from live prices and the card can
+  // still change. Saying "frozen before first pitch" then would be claiming
+  // a commitment that has not been made yet, which is the small dishonesty
+  // that makes the large one possible.
+  if (payload.frozen) {
+    const at = payload.frozen_at ? formatEasternTime(payload.frozen_at) : null;
+    wrap.appendChild(el("p", { class: "card2lede", "data-hook": "card-frozen",
+      text: `Frozen${at ? ` at ${at}` : ""} — these are the exact bets and `
+          + `prices we committed to before first pitch, and they have not `
+          + `been touched since. Every one is graded win or lose on the `
+          + `record page, including the ones that lose.` }));
+  } else {
+    wrap.appendChild(el("p", { class: "card2lede", "data-hook": "card-live",
+      text: "Live prices — tonight's card is not locked in yet. It freezes "
+          + "before first pitch, and from that point the bets and prices "
+          + "below cannot change. Every one is then graded win or lose on "
+          + "the record page, including the ones that lose." }));
+  }
 
   const grid = el("div", { class: "card2grid", "data-hook": "card-grid" });
   for (const pick of picks) grid.appendChild(pickCard(pick, picks.length));

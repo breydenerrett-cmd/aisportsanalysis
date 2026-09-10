@@ -2955,8 +2955,11 @@ def cmd_card(args) -> int:
     now = datetime.now(timezone.utc)
     opportunities = opportunities_mod.build_opportunities(
         entries, date=date_str, now=now)
+    # `prefer_frozen=False`: this command IS the thing that freezes, and a
+    # publisher that reads its own output would echo yesterday's decision
+    # back and call it today's.
     card = card_mod.card_for_date(entries, opportunities.get("rows") or [],
-                                  date=date_str, now=now)
+                                  date=date_str, now=now, prefer_frozen=False)
 
     print(f"THE CARD -- {date_str}")
     print(f"  slate {card['games_on_slate']}   open {card['games_open']}   "

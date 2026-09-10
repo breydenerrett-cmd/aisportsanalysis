@@ -211,16 +211,80 @@ def moneyline_rows(opportunity_rows: Sequence) -> dict:
     return out
 
 
+def frozen_card(date: str) -> Optional[dict]:
+    """The card as it was FROZEN for `date`, in payload shape, or None.
+
+    THIS IS WHY THE RECEIPTS MEAN ANYTHING. `card_for_date` rebuilds from
+    live prices, so a page that always rebuilt would show a card that drifts
+    away from the one in the ledger as books move -- and a record whose
+    receipts do not match the page they are receipts for is not a record.
+
+    Once a date is published, the page serves the frozen row. The prices on
+    it are quoted from that instant and are named as such
+    (`frozen_at`), and scripts/publication_audit.py warns when they get old.
+    That is the promise, stated plainly: this is what we said, before the
+    games started, and it has not been touched since.
+
+    Returns None before the afternoon pass publishes, and the page then
+    builds live and says so.
+    """
+    from src.appstate import card_ledger
+
+    row = card_ledger.published_row(date)
+    if row is None:
+        return None
+    # EVERY KEY THE LIVE BRANCH EMITS, so a consumer never has to ask which
+    # branch it got. The counts a frozen row cannot know are None rather
+    # than absent -- and None rather than 0, because "we did not record this"
+    # and "this was zero" are different facts and a renderer that treats them
+    # the same prints "0 games on the slate" for a card that has three picks.
+    return {
+        "picks": list(row.get("picks") or ()),
+        "filled": row.get("n_filled") or 0,
+        "considered": None,
+        "agreed": None,
+        "split": None,
+        "games_started": None,
+        "games_open": None,
+        "rule": row.get("rule"),
+        "basis": row.get("basis"),
+        "disclaimer": row.get("disclaimer"),
+        "min_picks": daily_card.MIN_PICKS,
+        "max_picks": daily_card.MAX_PICKS,
+        "frozen": True,
+        "frozen_at": row.get("published_utc"),
+        "row_hash": row.get("row_hash"),
+        "calibrated": row.get("calibrated"),
+        "calibration": row.get("calibration"),
+        "model_id": row.get("model_id"),
+        "games_on_slate": row.get("games_on_slate"),
+    }
+
+
 def card_for_date(entries: Sequence, opportunity_rows: Sequence, *, date: str,
                   now: Optional[datetime] = None,
-                  calibration=None, multibook_rows=None) -> dict:
+                  calibration=None, multibook_rows=None,
+                  prefer_frozen: bool = True) -> dict:
     """The published card for one date.
+
+    Serves the FROZEN card when one exists (see `frozen_card`), and builds
+    live otherwise. `prefer_frozen=False` forces a live build, which is what
+    `card publish` itself needs -- it is the thing doing the freezing and
+    must not read its own output.
 
     Never raises on a thin slate; an empty schedule produces an empty card
     with `reason` set, which is a different statement from "nothing cleared
     the bar" and is the only empty state this surface has.
     """
     now = now or datetime.now(timezone.utc)
+
+    if prefer_frozen:
+        frozen = frozen_card(date)
+        if frozen is not None:
+            frozen["date"] = date
+            frozen["generated_at"] = now.astimezone(timezone.utc).isoformat()
+            frozen["model_basis"] = strength.MODEL_BASIS
+            return frozen
     cal = calibration if calibration is not None else load_calibration()
 
     games, model_lines = [], {}
@@ -265,6 +329,12 @@ def card_for_date(entries: Sequence, opportunity_rows: Sequence, *, date: str,
         "calibration": cal.to_dict() if cal is not None else None,
         "model_id": strength.MODEL_ID,
         "model_basis": strength.MODEL_BASIS,
+        # NOT YET FROZEN. The page says so, because "these are the prices
+        # right now and this card can still change" and "this is what we
+        # committed to before first pitch" are different promises and only
+        # one of them is the product.
+        "frozen": False,
+        "frozen_at": None,
     })
     if not payload["picks"]:
         payload["reason"] = _empty_reason(entries, started, len(games),
