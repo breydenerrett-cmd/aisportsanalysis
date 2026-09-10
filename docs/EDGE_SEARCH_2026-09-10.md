@@ -152,7 +152,62 @@ adding it explains the residual.
 
 **This is the highest-value next measurement** and it costs one probe.
 
-### 2. First-five innings, where our model has its best structural case
+### 1a. Correlation — RULED OUT, 2026-09-10
+
+Residual correlation between the two clubs' runs, conditional on the model's
+own per-game means: **−0.0203 over 1,896 games, z = −0.88.** Independence is
+fine. Do not add a correlation term.
+
+### 1b. The de-vig method — RULED OUT, and it validated something
+
+The next suspect was the de-vig. Proportional splitting assumes a book takes
+the same relative margin on both sides, which is known to be wrong on an
+asymmetric market like a −1.5 run line — and proportional is what
+`src/analysis/prices.py` uses for **every number this product publishes**,
+so an answer here reached much further than one probe.
+
+All four methods, same games, same distribution, residual disagreement:
+
+| method | mean | sd |
+|---|---|---|
+| **proportional** | **−2.38** | **0.933** |
+| shin | −2.77 | 0.958 |
+| additive | −2.77 | 0.958 |
+| power | −2.97 | 1.080 |
+
+**Proportional is the best of the four**, and by a clear margin. The
+hypothesis is dead, and the unexpected win is that the de-vig this product
+already uses is now validated against an independent criterion — the one
+that makes the books' own boards most internally self-consistent, measured
+over 3,575 triples. That was never checked before; it was chosen as the
+simplest rule.
+
+**Three suspects, three ruled out.** The remaining uniform −2.3 points is
+most likely the residual shape error of a single-parameter negative binomial
+— small, uniform, and not worth chasing ahead of the things below.
+
+### 1b. The bullpen — DONE, 2026-09-10
+
+Replaced the whole-season stand-in with a real relief-only rate. Measured
+both ways and both are in [`THE_CARD.md`](THE_CARD.md): **+0.00216 nats** on
+a window fixed before running, **−0.00034** over the full season
+walk-forward, the difference explained by thin April samples. The
+pre-specified window is the one that counts and the other number is printed
+at the same size.
+
+### 2. First-five innings — BLOCKED ON DATA, 2026-09-10
+
+`scripts/probe_first_five.py` was built to test the argument below. **It
+cannot yet**: the boxscore store carries a first-five result for **111 of
+1,896 games**, and on that subsample the model's full-game gain is −0.00949
+nats against +0.00089 for the season — so the games that happen to have a
+linescore row are not a representative slice and the comparison is not
+interpretable.
+
+The probe's first draft printed "THE ARGUMENT SURVIVES" off 97 games. It now
+refuses a verdict below 400 games, and refuses again unless the subsample
+reproduces the season's own full-game figure. **The blocker is the boxscore
+backfill, not the hypothesis.** The argument itself is untouched:
 
 The argument is specific rather than hopeful:
 
