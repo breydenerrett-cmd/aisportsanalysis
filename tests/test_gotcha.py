@@ -59,11 +59,32 @@ class ItCannotFireByAccident(unittest.TestCase):
     def setUp(self):
         self.code = _code(GOTCHA_JS)
 
-    def test_there_is_exactly_one_trigger_and_it_is_a_token_match(self):
-        self.assertIn("GOTCHA_TOKEN", self.code)
+    def test_there_is_exactly_one_trigger_and_it_is_an_exact_route_match(self):
+        self.assertIn("GOTCHA_ROUTE", self.code)
         self.assertTrue(
-            re.search(r"tokenFromLocation\(\)\s*!==\s*GOTCHA_TOKEN", self.code),
-            "the overlay does not gate on an exact token match")
+            re.search(r"routeFromLocation\(\)\s*!==\s*GOTCHA_ROUTE", self.code),
+            "the overlay does not gate on an exact hash-route match")
+
+    def test_the_slug_does_not_announce_itself(self):
+        """It was `?gotcha=jacob` first, which gave the whole thing away in
+        the URL bar. The slug has to read like a real deep link, because the
+        entire audience is one person who will look at it."""
+        route = re.search(r'GOTCHA_ROUTE\s*=\s*"([^"]+)"', self.code)
+        self.assertIsNotNone(route, "no GOTCHA_ROUTE constant")
+        slug = route.group(1).lower()
+        for tell in ("gotcha", "prank", "joke", "rick", "troll", "jacob",
+                     "roll"):
+            self.assertNotIn(
+                tell, slug,
+                f"the trigger slug {slug!r} contains {tell!r} -- it is "
+                f"visible in the address bar before he clicks")
+
+    def test_the_route_is_matched_whole_not_as_a_prefix(self):
+        """A prefix match would fire on any hash that merely starts with the
+        slug, which is a wider door than intended."""
+        self.assertIn("!==", self.code)
+        self.assertNotIn("startsWith(GOTCHA_ROUTE)", self.code)
+        self.assertNotIn("indexOf(GOTCHA_ROUTE)", self.code)
 
     def test_no_time_or_chance_based_trigger(self):
         """A timer, a random roll or an nth-visitor counter would make this
@@ -118,6 +139,17 @@ class ItCannotFireByAccident(unittest.TestCase):
 class ItIsCleanlyDeletable(unittest.TestCase):
     """When it stops being funny it should come out in one commit without
     touching a real surface."""
+
+    def test_it_is_checked_on_hashchange_too_not_only_at_boot(self):
+        """The most likely path is: he already has the site open, Brey sends
+        the link, he taps it. That changes the hash without reloading, so a
+        boot-only check would silently do nothing in exactly the case the
+        prank is designed for."""
+        main = _code(MAIN_JS)
+        self.assertEqual(
+            2, main.count("maybeGotcha()"),
+            "maybeGotcha is not wired into both boot() and the hashchange "
+            "listener")
 
     def test_only_main_js_references_it(self):
         offenders = []

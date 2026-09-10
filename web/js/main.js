@@ -232,7 +232,14 @@ function boot() {
   // cleared or skipped by a view swap.
   renderDisclaimerFooter(disclaimerHost);
 
-  window.addEventListener("hashchange", () => renderRoute(main));
+  window.addEventListener("hashchange", () => {
+    // Also checked here, not only at boot: clicking the link while the app
+    // is ALREADY open changes the hash without reloading, so a boot-only
+    // check would silently do nothing in the most likely case -- he has
+    // the site up, Brey sends the link, he taps it.
+    if (maybeGotcha()) return;
+    renderRoute(main);
+  });
 
   // GET /meta once at boot, public and unauthenticated -- fetched before
   // the first renderRoute() so the very first nav mount already knows

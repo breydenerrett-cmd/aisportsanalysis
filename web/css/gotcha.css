@@ -247,6 +247,36 @@ html.gotcha-on body {
   height: 100%;
 }
 
+/* Sits over the bottom of the video, clear of YouTube's own controls at
+   the very bottom edge. It has to be obvious -- the video arrives muted
+   because that is the only way it plays at all, so this is the difference
+   between a rickroll and a silent film. */
+.gotcha-sound {
+  position: absolute;
+  left: 50%;
+  bottom: 14%;
+  transform: translateX(-50%);
+  z-index: 2;
+  padding: 12px 20px;
+  cursor: pointer;
+  border: 0;
+  font-family: var(--font-mono, monospace);
+  font-size: clamp(10px, 2.4vw, 13px);
+  letter-spacing: .14em;
+  white-space: nowrap;
+  color: #22060A;
+  background: linear-gradient(135deg, #FFB020 0%, #FF7A45 100%);
+  box-shadow: 0 6px 26px rgba(0, 0, 0, .55);
+  animation: gotcha-throb 1.6s ease-in-out infinite;
+}
+.gotcha-sound:disabled {
+  cursor: default;
+  animation: none;
+  color: #fff;
+  background: rgba(0, 0, 0, .6);
+  border: 1px solid rgba(255, 255, 255, .25);
+}
+
 .gotcha-reveal__credit {
   margin: 18px auto 0;
   max-width: 56ch;
@@ -274,7 +304,7 @@ html.gotcha-on body {
 @media (prefers-reduced-motion: reduce) {
   .gotcha-card, .gotcha-term, .gotcha-reveal { transition: none; }
   .gotcha-siren__dot, .gotcha-cta, .gotcha-reveal__shout,
-  .gotcha-term__body::after { animation: none; }
+  .gotcha-sound, .gotcha-term__body::after { animation: none; }
   .gotcha-close { transition: none; }
 }
 

@@ -14,12 +14,19 @@
  *
  * HOW IT IS TRIGGERED, AND WHY IT CANNOT GO OFF BY ACCIDENT
  * -------------------------------------------------------------------
- * ONE way in: `?gotcha=<token>` in the URL, where the token matches
- * GOTCHA_TOKEN below. Nothing else reaches this module -- no timer, no
- * random roll, no "nth visitor", no stored flag that could re-fire on a
- * later visit, no user-agent or IP sniffing. If the token is absent or
- * wrong, `maybeGotcha()` returns false and this file may as well not
- * exist.
+ * ONE way in: the hash is exactly `#/rollins-rickold` (GOTCHA_ROUTE).
+ * Nothing else reaches this module -- no timer, no random roll, no "nth
+ * visitor", no stored flag that could re-fire on a later visit, no
+ * user-agent or IP sniffing. Any other hash and `maybeGotcha()` returns
+ * false, having touched nothing; this file may as well not exist.
+ *
+ * A SLUG, NOT A QUERY PARAMETER. It was `?gotcha=jacob` first, which gave
+ * the whole thing away in the URL bar before he had finished reading it.
+ * A scouting-report slug for a player who does not exist reads like every
+ * other deep link in this app (`#/game/...`, `#/day/...`, `#/odds/...`),
+ * so the con survives being looked at -- which is the only property that
+ * matters in a prank whose entire audience is one person who will
+ * absolutely look.
  *
  * That matters more than the joke does. Founding-beta outreach starts
  * this week; a stranger's first impression of this product cannot be an
@@ -50,12 +57,41 @@
  * it is narrowed to one file that cannot reach a customer.
  */
 
-const GOTCHA_TOKEN = "jacob";
-const GOTCHA_PARAM = "gotcha";
+/**
+ * The route: a scouting-report slug for a player who does not exist.
+ *
+ * `?gotcha=jacob` was the first version and it announced itself in the URL
+ * bar before he had finished reading it. `/rollins-rickold` was the second
+ * and it is better, but "rick" is still sitting right there in the address
+ * bar of a link whose entire audience is one suspicious person.
+ *
+ * So: a plain surname-initial slug of the same shape as every other deep
+ * link in this app (`#/game/...`, `#/day/...`, `#/odds/...`), with no
+ * rickroll signal in it at all. It reads as a player report, which is
+ * exactly what he will expect a betting product to have.
+ *
+ * Matched against the hash PATH, exactly, after stripping any query. An
+ * unknown hash otherwise falls through to Today (web/js/main.js), so this
+ * slug is invisible unless it is opened exactly.
+ */
+const GOTCHA_ROUTE = "/scout/hollins-t";
 
-/* The video. Yes, that one. nocookie host so it sets nothing. */
+/* The video. Yes, that one. nocookie host so it sets nothing.
+ *
+ * MUTED autoplay, deliberately. `autoplay=1` alone is refused by every
+ * modern browser unless the video is also muted -- so the first live run
+ * fell all the way back to a YouTube thumbnail with a play button, which
+ * is a rickroll that has to be accepted rather than one that happens to
+ * you. Muted autoplay is always permitted, so Rick is MOVING the instant
+ * the reveal lands, and the sound button below turns it up in one tap.
+ *
+ * `playsinline=1` matters more than it looks: without it iOS Safari
+ * hijacks the video into its own fullscreen player, which throws away the
+ * whole surrounding joke. `enablejsapi=1` is what lets the sound button
+ * postMessage an unMute command to the frame. */
 const RICK = "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ"
-  + "?autoplay=1&rel=0&modestbranding=1";
+  + "?autoplay=1&mute=1&playsinline=1&enablejsapi=1&rel=0&modestbranding=1"
+  + "&controls=1&loop=1&playlist=dQw4w9WgXcQ";
 
 /* The unlock sequence. Timed to be just slow enough to be believed. */
 const UNLOCK_LINES = [
@@ -81,15 +117,15 @@ function el(tag, attrs = {}, children = []) {
   return node;
 }
 
-/** Reads the token off either the search string or the hash query, since
- *  this app routes on the hash and a link may carry it either way. */
-function tokenFromLocation() {
-  const search = new URLSearchParams(window.location.search);
-  if (search.get(GOTCHA_PARAM)) return search.get(GOTCHA_PARAM);
-  const hash = window.location.hash || "";
+/** The hash path, normalised: no leading '#', no query, no trailing slash,
+ *  lowercased. `#/Rollins-Rickold/` and `#/rollins-rickold?x=1` both reach
+ *  the joke; `#/rollins-rickoldxyz` does not. */
+function routeFromLocation() {
+  let hash = (window.location.hash || "").replace(/^#/, "");
   const q = hash.indexOf("?");
-  if (q === -1) return null;
-  return new URLSearchParams(hash.slice(q + 1)).get(GOTCHA_PARAM);
+  if (q !== -1) hash = hash.slice(0, q);
+  hash = hash.replace(/\/+$/, "").toLowerCase();
+  return hash || "/";
 }
 
 /* ---------------------------------------------------------------------
@@ -186,11 +222,37 @@ function actThree(stage, teardown) {
     text: "GET *!%#ED, JACOB — LMAO, ALL LOVE" }));
 
   const frame = el("div", { class: "gotcha-reveal__frame" });
-  frame.appendChild(el("iframe", {
+  const video = el("iframe", {
     src: RICK, title: "Never Gonna Give You Up", frameborder: "0",
-    allow: "autoplay; encrypted-media", allowfullscreen: "",
+    // `autoplay` in the permissions list as well as the URL -- the attribute
+    // grants the capability, the query parameter asks to use it, and a
+    // cross-origin frame needs both.
+    allow: "autoplay; encrypted-media; picture-in-picture",
+    allowfullscreen: "", playsinline: "",
     "data-hook": "gotcha-video",
-  }));
+  });
+  frame.appendChild(video);
+
+  /* It arrives muted (see RICK). This turns it up, and is the second time
+     he clicks a button that rickrolls him. */
+  const sound = el("button", { type: "button", class: "gotcha-sound",
+    "data-hook": "gotcha-sound", text: "TAP FOR SOUND" });
+  sound.addEventListener("click", () => {
+    try {
+      video.contentWindow.postMessage(JSON.stringify(
+        { event: "command", func: "unMute", args: [] }), "*");
+      video.contentWindow.postMessage(JSON.stringify(
+        { event: "command", func: "setVolume", args: [100] }), "*");
+      video.contentWindow.postMessage(JSON.stringify(
+        { event: "command", func: "playVideo", args: [] }), "*");
+    } catch (err) {
+      // A blocked postMessage is not worth breaking the joke over -- the
+      // frame's own controls are right there.
+    }
+    sound.textContent = "♪ NEVER GONNA GIVE YOU UP";
+    sound.disabled = true;
+  });
+  frame.appendChild(sound);
   reveal.appendChild(frame);
 
   reveal.appendChild(el("p", { class: "gotcha-reveal__credit",
@@ -217,14 +279,19 @@ function actThree(stage, teardown) {
 }
 
 /**
- * Run the whole bit, if and only if the URL carries the token.
+ * Run the whole bit, if and only if the hash is exactly GOTCHA_ROUTE.
  *
  * Returns true when it took over the screen, so main.js can skip the
  * normal route render. Returns false -- having done nothing at all, and
  * touched no DOM -- in every other case.
+ *
+ * Idempotent: a second call while the overlay is already up is a no-op,
+ * so the hashchange listener cannot stack two of these on top of each
+ * other.
  */
 export function maybeGotcha() {
-  if (tokenFromLocation() !== GOTCHA_TOKEN) return false;
+  if (routeFromLocation() !== GOTCHA_ROUTE) return false;
+  if (document.querySelector("[data-hook='gotcha-overlay']")) return true;
 
   document.documentElement.classList.add("gotcha-on");
   const overlay = el("div", { class: "gotcha", "data-hook": "gotcha-overlay",
@@ -239,11 +306,11 @@ export function maybeGotcha() {
     document.removeEventListener("keydown", onKey);
     document.documentElement.classList.remove("gotcha-on");
     overlay.remove();
-    // Drop the parameter so a refresh returns the real product, and so
-    // the back button does not walk him into it again.
+    // Send the hash back to a real route so a refresh returns the product
+    // and the back button does not walk him into it again. replaceState,
+    // not assignment, so no extra history entry is created.
     const url = new URL(window.location.href);
-    url.searchParams.delete(GOTCHA_PARAM);
-    if (url.hash.includes(GOTCHA_PARAM)) url.hash = "#/today";
+    url.hash = "#/today";
     window.history.replaceState({}, "", url.toString());
     window.location.reload();
   };
