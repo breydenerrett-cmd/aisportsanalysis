@@ -400,6 +400,8 @@ DECLARED_MANUAL_SCRIPTS = {
     "probe_model_ablation.py",
     "test_run_dispersion_2025.py",
     "test_calibration_still_helps.py",
+    "test_drop_hurting_components.py",
+    "test_tier_ladder.py",
 
     # --- read-only analyses an operator runs while asking something. They
     #     write no state and gate nothing.

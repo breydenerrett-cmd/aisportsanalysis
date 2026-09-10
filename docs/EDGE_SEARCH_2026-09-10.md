@@ -316,6 +316,35 @@ model and both are, on a full season, costing it. Neither is being removed
 today: an ablation is descriptive, and removing a component is a change that
 needs its own pre-registered window like every other.
 
+> ### THE ABLATION'S MOST SURPRISING RESULT DID NOT REPLICATE
+>
+> `scripts/test_drop_hurting_components.py`, on the **2025** season held out
+> from the ablation, with the criterion fixed before it ran:
+>
+> | arm | moneyline log-loss | 1st half | 2nd half |
+> |---|---|---|---|
+> | full | **0.684298** | 0.682975 | 0.685622 |
+> | drop team rates | 0.691174 | 0.691244 | 0.691103 |
+>
+> Removing team scoring rates is **−0.00688 nats — much worse**, consistently
+> in both halves of the season. On 2026 the same manipulation read −0.00051,
+> i.e. marginally *better*.
+>
+> **Team rates are worth about 0.007 nats and the 2026 reading was noise.**
+> The ablation's headline — "the model is better without them" — is refuted
+> on held-out data, and it would have been a tempting story: a simpler model,
+> two inputs shown to be dead weight.
+>
+> Nothing was removed, because an ablation is descriptive and this is what
+> the held-out test was for. The correction is recorded rather than the
+> ablation table being quietly edited.
+>
+> **The bullpen arm was NOT TESTED**, and the script now says so instead of
+> printing a verdict. The bullpen log holds no 2025 appearances, so that arm
+> removes an input that was never there and comes out byte-identical to the
+> full model — a `0.000000` "gain" that reads exactly like a measured null
+> and is not one. Absent is not zero.
+
 ### 3. The three inputs already captured and not used
 
 Park, weather, and posted lineups all reach the dossier and none reaches
