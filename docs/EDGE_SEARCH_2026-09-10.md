@@ -220,17 +220,38 @@ than the model. They are not: predicted first-five total **4.914** against
 an observed **4.991**, a bias of −0.077 runs over ~1,000 games. The probe
 now refuses a verdict at all if that bias exceeds 0.20.
 
-**What the negative actually tells us**, and it is worth more than the
-hypothesis was: the model's (small) predictive value is **not** coming from
-its starting-pitcher component. If it were, isolating the innings the
-starter throws would sharpen it. It comes from the team-level scoring rates,
-which apply across all nine.
+> ### CORRECTION, same day — I over-read this result within the hour
+>
+> The first write-up of this finding said: *"the model's predictive value is
+> not coming from its starting-pitcher component… it comes from the
+> team-level scoring rates."* **Both halves of that are wrong**, and the
+> ablation below refutes them directly:
+>
+> | component removed | costs |
+> |---|---|
+> | starting pitcher | **+0.00269 nats (68% of the model's gain)** |
+> | team scoring rates | **−0.00051 nats — the model is BETTER without them** |
+>
+> The starter is the second-largest contributor in the model. The team rates
+> are a net negative.
+>
+> **What the F5 result actually shows** is narrower than what I claimed: our
+> *five-inning construction* does not predict five-inning outcomes. That is a
+> fact about `_first_five_means` and about whatever else differs over five
+> innings — it is not evidence that the starter features are worthless, and I
+> should not have generalised from one to the other.
+>
+> The over-claim is left visible rather than edited out. It is the same
+> mistake the probe itself made an hour earlier when it declared victory off
+> 97 games, and the lesson is the same: a negative result invites a story,
+> and the story needs its own test.
 
-That reframes the whole "where to look" question. The starter features are
-real, carefully built, point-in-time — and on this evidence they are not
-what makes the model work. The next thing to measure is which component
-carries the +0.00495, by ablation, rather than which market to point the
-existing model at.
+**What the negative does tell us**: the F5 direction is dead as a *market*
+to point this model at, because the model cannot predict five-inning
+outcomes even with unbiased five-inning run means (predicted total 4.914
+against observed 4.991). Why it cannot, when it predicts nine-inning
+outcomes and leans heavily on the starter, is an open question and not one
+this probe answers.
 
 The argument that failed, recorded so it is not re-derived from scratch in
 three months:
@@ -252,6 +273,48 @@ The same consistency instrument extends here and gets sharper: a book's F5
 line should be consistent with its full-game line under any sensible innings
 split. A book deriving F5 by a fixed rule is wrong on exactly the unusual
 games — a dominant starter in front of a poor bullpen, or the reverse.
+
+### 2a. Which part of the model actually works — ABLATION, 2026-09-10
+
+`scripts/probe_model_ablation.py`, 1,896 games. Each arm replaces one
+component with its league-neutral self and changes nothing else. "Costs" is
+how much log-loss rises without it, so bigger is more important.
+
+| component removed | log-loss | costs | share of the model's gain |
+|---|---|---|---|
+| **run dispersion** | 0.692568 | **+0.00424** | 108% |
+| **starting pitcher** | 0.691013 | **+0.00269** | 68% |
+| home field | 0.689374 | +0.00105 | 27% |
+| team scoring rates | 0.687815 | **−0.00051** | −13% |
+| bullpen | 0.687733 | **−0.00059** | −15% |
+
+Full model 0.688326 against a base rate of 0.692257 — a gain of **+0.00393
+nats**.
+
+**I wrote my expectations into the script before running it and three of
+five were wrong**, two badly:
+
+- I expected **team rates largest**. They are a net *negative*: the model is
+  better without season runs scored and allowed. Those rates are polluted by
+  which opponents and parks a club happened to draw, and the starter and the
+  distribution shape are doing the real work.
+- I expected **starter small or nothing**, generalising from the F5 result.
+  It is the second-largest contributor at 68%. See the correction above.
+- I expected **dispersion near zero on the moneyline**. It is the single
+  largest contributor — which I should have anticipated, because the
+  held-out 2025 test had already measured a −0.0065 nat moneyline
+  improvement from it. I stated an expectation that contradicted evidence I
+  already had.
+- Bullpen negative over the full season is consistent with what was already
+  recorded ([`THE_CARD.md`](THE_CARD.md)): +0.00216 on the pre-specified
+  July-onward window, −0.00034 full-season, thin early-season samples.
+
+**What this changes about where to look.** The two components worth
+investing in are the run distribution's shape and the starter. The two worth
+questioning are the team rates and the bullpen — both are currently in the
+model and both are, on a full season, costing it. Neither is being removed
+today: an ablation is descriptive, and removing a component is a change that
+needs its own pre-registered window like every other.
 
 ### 3. The three inputs already captured and not used
 
