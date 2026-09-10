@@ -64,11 +64,22 @@ class PostFunnelEventTests(unittest.TestCase):
 
     def test_the_public_allowlist_is_unchanged_by_the_split(self):
         """The existing web/ client keeps posting {landing_view,
-        signup_started} and must keep working -- the split is a server-side
-        fix, never a client-visible contract change."""
+        signup_started} and must keep working -- the 2026-09-01 split is a
+        server-side fix, never a client-visible contract change.
+
+        Asserted as a SUBSET, not as the whole set. This used to demand the
+        allowlist be exactly those two, which made it fail on 2026-09-10
+        when `cta_click` was added -- a deliberate, unrelated change that
+        breaks nothing this test cares about. A test that fires on any edit
+        to a collection cannot say which edit was the bad one.
+
+        The narrowness guarantee still exists; it just lives where it
+        belongs, in tests/test_funnel_attribution.py, which pins the exact
+        membership and the reason each kind is on it.
+        """
         from api.funnel import PUBLIC_FUNNEL_KINDS
-        self.assertEqual(PUBLIC_FUNNEL_KINDS,
-                         frozenset({"landing_view", "signup_started"}))
+        self.assertLessEqual(frozenset({"landing_view", "signup_started"}),
+                             PUBLIC_FUNNEL_KINDS)
 
     def test_free_bet_check_is_rejected_from_the_public_endpoint(self):
         """A free check is recorded by POST /betcheck/free actually

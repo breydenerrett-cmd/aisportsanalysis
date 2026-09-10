@@ -168,15 +168,30 @@ SIGNUP_STARTED = "signup_started"
 # single most decision-relevant launch number was wrong rather than merely
 # missing (docs/CONVERSION_INSTRUMENTATION_AUDIT.md, gap 1).
 ACCOUNT_CREATED = "account_created"
-# The one funnel kind with no authenticated identity behind it at all --
+# The funnel kinds with no authenticated identity behind them at all --
 # see api/funnel.py's PUBLIC_FUNNEL_KINDS and module docstring above.
 LANDING_VIEW = "landing_view"
+
+# WHICH call to action a visitor actually pressed. Added 2026-09-10.
+#
+# The landing page carries FIVE calls to action, four of them with
+# identical copy pointing at the same destination, and until now the funnel
+# recorded only that a visitor arrived and that somebody later reached the
+# signup form. So "which button works" -- the single question the page
+# exists to answer, and the one every copy decision depends on -- was
+# unanswerable, and docs/CONVERSION_INSTRUMENTATION_AUDIT.md had already
+# specified this fix and never had it built.
+#
+# Carries the CTA's own data-hook in `properties`, never free text from
+# the page, so the cardinality stays bounded and a compromised client
+# cannot fill the table with junk kinds.
+CTA_CLICK = "cta_click"
 
 EVENT_KINDS = frozenset({
     PAGE_VIEW, BET_CHECK_RUN, FREE_BET_CHECK, BET_SAVED, INVITE_REDEEMED,
     SIGNUP_STARTED, ACCOUNT_CREATED, CHECKOUT_STARTED, CHECKOUT_COMPLETED,
     SUBSCRIPTION_CANCELLED, SUBSCRIPTION_REACTIVATED,
-    DIGEST_VIEWED, LANDING_VIEW,
+    DIGEST_VIEWED, LANDING_VIEW, CTA_CLICK,
 })
 
 

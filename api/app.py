@@ -199,10 +199,24 @@ def _route_template(request: Request) -> str:
 # is preserved and nothing is cached permanently while these paths are
 # still moving.
 @app.get("/", include_in_schema=False)
-def root_redirect() -> RedirectResponse:
+def root_redirect(request: Request) -> RedirectResponse:
     """The bare origin -> the marketing landing page. No auth: this is the
-    first thing a prospective customer ever hits."""
-    return RedirectResponse(url="/web/landing.html", status_code=307)
+    first thing a prospective customer ever hits.
+
+    THE QUERY STRING IS CARRIED ACROSS, and that is load-bearing. Every
+    campaign link anyone will ever share points at the bare origin with
+    UTM parameters on it -- linehound.app/?utm_source=reddit -- and this
+    redirect used to drop them, so web/js/landing.js read an empty
+    `window.location.search` and recorded an unattributed landing view.
+    Found 2026-09-10 by sending a real UTM link at a running server and
+    reading the row it wrote: `properties_json` came back `{}`.
+
+    The whole attribution feature would have shipped, passed its tests,
+    and silently measured nothing -- every visitor an organic one, on the
+    exact metric the outreach plan is meant to be steered by."""
+    query = request.url.query
+    target = "/web/landing.html" + (f"?{query}" if query else "")
+    return RedirectResponse(url=target, status_code=307)
 
 
 @app.get("/app", include_in_schema=False)

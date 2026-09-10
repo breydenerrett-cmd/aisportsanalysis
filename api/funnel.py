@@ -66,7 +66,14 @@ router = APIRouter()
 
 # The only two kinds an unauthenticated POST may ever record -- see module
 # docstring. Every other member of events.EVENT_KINDS is refused with a 400.
-PUBLIC_FUNNEL_KINDS = frozenset({events.LANDING_VIEW, events.SIGNUP_STARTED})
+# CTA_CLICK joined this allowlist 2026-09-10 for the same reason the other
+# two are on it: it happens before any authenticated identity exists, so
+# there is no server-side moment that could record it instead. It is
+# rate-limited and property-validated identically, and its `properties`
+# carry the CTA's own data-hook rather than anything the page can invent.
+PUBLIC_FUNNEL_KINDS = frozenset({
+    events.LANDING_VIEW, events.SIGNUP_STARTED, events.CTA_CLICK,
+})
 
 # See module docstring's "WHY A FIXED SENTINEL id" section.
 ANONYMOUS_FUNNEL_USER_ID = "anonymous-funnel-visitor"

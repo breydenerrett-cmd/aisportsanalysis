@@ -77,6 +77,71 @@ async function revealPublicDemoEntry() {
  * correct fallback, so a slow or failed /meta leaves a true sentence on the
  * page rather than a gap or a spinner.
  */
+/**
+ * WHERE A VISITOR CAME FROM, and WHICH BUTTON THEY PRESSED.
+ *
+ * There was no attribution of any kind: no UTM capture, no referrer, no
+ * CTA-click event. The funnel recorded that somebody arrived and that
+ * somebody later reached the signup form, and nothing in between -- so
+ * across five calls to action, four of them with identical copy pointing
+ * at the same destination, "which one works" was unanswerable. That is the
+ * single question this page exists to answer, and every copy decision
+ * downstream depends on it. docs/CONVERSION_INSTRUMENTATION_AUDIT.md had
+ * already specified this and it was never built.
+ *
+ * WHAT IS DELIBERATELY NOT COLLECTED. No cookie, no fingerprint, no
+ * cross-site identifier, no full referring URL -- only the referrer's HOST,
+ * because "came from reddit" is the entire question and the specific thread
+ * someone was reading is none of our business. UTM values are truncated and
+ * capped in number so a crafted link cannot stuff the table. Everything
+ * here is already in the URL the visitor arrived on or the header their
+ * browser volunteered; nothing is derived, joined, or stored beyond the
+ * single event row.
+ */
+const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content",
+                  "utm_term"];
+const UTM_MAX_LENGTH = 64;
+
+function arrivalProperties() {
+  const props = {};
+  try {
+    const params = new URLSearchParams(window.location.search);
+    for (const key of UTM_KEYS) {
+      const value = (params.get(key) || "").trim();
+      if (value) props[key] = value.slice(0, UTM_MAX_LENGTH);
+    }
+    // HOST only, never the full referring URL. And never our own host --
+    // an internal navigation is not a referral and would otherwise be the
+    // most common "source" in the table.
+    if (document.referrer) {
+      const host = new URL(document.referrer).host;
+      if (host && host !== window.location.host) props.referrer_host = host;
+    }
+  } catch (err) {
+    // A malformed referrer or URL must never stop the page rendering.
+  }
+  return Object.keys(props).length ? props : undefined;
+}
+
+/**
+ * One delegated listener for every CTA on the page, so a new button is
+ * instrumented by carrying a `data-hook` starting with "cta" and nothing
+ * else. Fire-and-forget, and deliberately NOT preventing the navigation:
+ * an analytics call must never be able to swallow a click.
+ */
+function trackCtaClicks() {
+  document.addEventListener("click", (event) => {
+    const target = event.target.closest
+      ? event.target.closest("[data-hook^='cta']")
+      : null;
+    if (!target) return;
+    const hook = target.getAttribute("data-hook");
+    if (!hook) return;
+    const props = Object.assign({ cta: hook }, arrivalProperties() || {});
+    trackFunnelEvent("cta_click", props);
+  }, true);
+}
+
 async function fillResearchCounts() {
   const nodes = document.querySelectorAll("[data-hook='research-count']");
   if (!nodes.length) return;
@@ -107,7 +172,11 @@ function boot() {
   // hook so a future rename only has to touch BRAND_NAME plus these two
   // literal strings, not hunt through the design-system CSS.
   document.querySelectorAll("[data-hook='brand-mark']").forEach((host) => renderWordmark(host));
-  trackFunnelEvent("landing_view");
+  // With WHERE THEY CAME FROM attached. `properties` has been supported
+  // end to end by api/funnel.py since it existed and had no caller, so
+  // every landing view until now was an unattributed tally.
+  trackFunnelEvent("landing_view", arrivalProperties());
+  trackCtaClicks();
   // Design-system motion (handoff section 08) -- content renders complete
   // and static if this never runs; see motion.js's fail-safe-reveal note.
   armEntrances(document);
