@@ -239,6 +239,34 @@ publish, a stale calibration file, and the ledger's hash chain.
 
 ---
 
+### The park factor — built, measured, and NOT wired in
+
+`src.pipeline.parkfactors` derives a real run factor per venue,
+point-in-time, from the home club's own home-versus-road split — not from
+"runs at this venue over the league average", which is part park and part
+the home club's own offence and would double-count what the model already
+knows. Regressed toward neutral over 150 imaginary games, because a raw
+single-season park factor on ~70 games is mostly noise.
+
+The factors are sensible: **0.94 to 1.16, mean 1.00** across the evaluation
+window.
+
+`scripts/test_park_factor.py` on the same 710-game window as the bullpen
+test: moneyline gain **+0.000337 nats** against a 0.0005 threshold, improving
+in both halves, with run-line calibration marginally better (0.08707 →
+0.08694). **DO NOT ADOPT**, and the threshold did not move.
+
+**The test's own docstring predicted this before it was run**, and the
+prediction is the useful part: a park multiplies both clubs' run means
+equally, so it changes how MANY runs are scored far more than it changes WHO
+wins. A near-zero moneyline result was named in advance as the likely
+outcome and as meaning the factor belongs in the totals and run-line
+surfaces — which the card does not publish.
+
+So the code exists, is tested and is correct, and nothing passes
+`park_factor` to `run_means`. It is off. When totals are published, this is
+the first thing to switch on and it already has its measurement.
+
 ## What would change the story
 
 In rough order of how much each would move the product:

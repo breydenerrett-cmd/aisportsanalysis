@@ -384,6 +384,20 @@ DECLARED_MANUAL_SCRIPTS = {
     "backtest_card.py",
     "backtest_card_rule.py",
 
+    # --- PRE-SPECIFIED MODEL TESTS. Each fixes a window and an adoption
+    #     criterion in code above the measurement, runs read-only over a
+    #     season, and adopts nothing. Running one nightly would spend
+    #     minutes reproducing a number that only moves as games accumulate,
+    #     and worse, it would invite reading the answer repeatedly until it
+    #     said something -- which is the failure these files exist to
+    #     prevent. They are run once, deliberately, by a person asking.
+    "test_run_dispersion.py",
+    "test_bullpen_rate.py",
+    "test_park_factor.py",
+    "probe_market_consistency.py",
+    "probe_run_dispersion.py",
+    "probe_first_five.py",
+
     # --- read-only analyses an operator runs while asking something. They
     #     write no state and gate nothing.
     "derive_mechanism_baselines.py",

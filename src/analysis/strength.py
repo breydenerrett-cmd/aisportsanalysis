@@ -321,6 +321,22 @@ def run_means(features: Mapping, *, league_rpg: float) -> dict:
     away_mean = away_off * home_defence / league_rpg
     home_mean = home_off * away_defence / league_rpg + HOME_FIELD_RUNS
 
+    # THE PARK, applied to both clubs equally and last. A venue inflates or
+    # suppresses scoring for everyone in it, so this is one multiplier on
+    # both means rather than an adjustment to either side's talent -- which
+    # is also why it must come AFTER the odds-ratio: scaling the inputs
+    # would feed a park effect into the offence-against-defence ratio and
+    # change who is favoured, which a park does not do.
+    #
+    # `park_factor` absent leaves this at 1.0, exactly the behaviour before
+    # 2026-09-10. `src.pipeline.parkfactors` derives it point-in-time from a
+    # club's own home-versus-road split, so it is the venue and not the
+    # home club's offence -- see that module for why the naive version is
+    # wrong.
+    park = _positive(features.get("park_factor")) or 1.0
+    away_mean *= park
+    home_mean *= park
+
     away_mean = min(max(away_mean, MIN_TEAM_RUNS), MAX_TEAM_RUNS)
     home_mean = min(max(home_mean, MIN_TEAM_RUNS), MAX_TEAM_RUNS)
 
@@ -345,6 +361,8 @@ def run_means(features: Mapping, *, league_rpg: float) -> dict:
         "home_starter_known": home_sp is not None,
         "league_runs_per_game": league_rpg,
         "home_field_runs": HOME_FIELD_RUNS,
+        "park_factor": park,
+        "park_known": _positive(features.get("park_factor")) is not None,
         "model_id": MODEL_ID,
     }
 
