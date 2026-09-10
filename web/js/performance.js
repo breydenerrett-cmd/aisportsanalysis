@@ -147,8 +147,29 @@ function summaryTile(label, cls) {
 
 function renderSummaryTiles(classes) {
   const wrap = el("div", { class: "perf-summary", "data-hook": "performance-summary-tiles" });
+  // ONE HEADLINE, NOT TWO.
+  //
+  // These used to be equal-weight tiles side by side, both with large
+  // win/loss-coloured UNITS NET and RETURN ON UNITS figures. The second one
+  // pools CONTROL and MARKET_REFERENCE -- the null baselines and the
+  // market-reference republishers, which were ~90% of measured positions and
+  // which no customer is ever sold. src/report/daily_record.py's record_strip
+  // was fixed to exclude them and captioned to say so; a reader then scrolled
+  // two inches and met the pooled number again, at the same visual weight,
+  // with no caption. The strip's caption and this tile were describing the
+  // same product and disagreeing about what it did.
+  //
+  // ALL SYSTEMS COMBINED is still worth showing -- it is the honest
+  // diagnostic that says the instruments are behaving -- but it belongs in
+  // the research section below with the other per-class rollups, not beside
+  // the number a customer reads as ours.
   wrap.appendChild(summaryTile("FORWARD-TEST SYSTEM", classes && classes.FORWARD_TEST));
-  wrap.appendChild(summaryTile("ALL SYSTEMS COMBINED", classes && classes.ALL));
+  wrap.appendChild(el("p", { class: "perf-summary__note",
+    "data-hook": "performance-summary-note",
+    text: "Our forward-test systems only. The null baselines and the "
+        + "market-reference republishers are measured too, and are reported "
+        + "per class further down this page — never pooled into this "
+        + "number." }));
   return wrap;
 }
 
@@ -206,6 +227,28 @@ function renderClassSections(classes, systems) {
     const rows = byClass.get(cls) || [];
     if (rows.length) section.appendChild(classTable(rows));
     else section.appendChild(notYetAvailable(`No individual systems reporting under ${cls} yet.`, "NO SYSTEMS"));
+    wrap.appendChild(section);
+  }
+  // ALL SYSTEMS COMBINED lands HERE, in the research section, rather than
+  // beside the forward-test headline where it used to sit at equal weight.
+  // It is a real and useful diagnostic -- it says the instruments are
+  // behaving -- but it pools the null baselines and the market-reference
+  // republishers, ~90% of measured positions, none of which anyone is sold.
+  // Printed as a single line rather than a tile of big coloured figures, so
+  // it reads as the accounting check it is.
+  const all = classes && classes.ALL;
+  if (all) {
+    const section = el("section", { class: "perf-class", "data-hook": "performance-class-section",
+      "data-class": "ALL" });
+    section.appendChild(sectionHead(CLASS_LABEL.ALL || "ALL SYSTEMS COMBINED"));
+    section.appendChild(el("p", { class: "perf-class__explain",
+      text: "Every registered system pooled together, including the null "
+          + "baselines and the market-reference republishers. A diagnostic "
+          + "that the measurement itself is working -- not our record, and "
+          + "not a number anything here is sold on." }));
+    section.appendChild(el("p", { class: "perf-class__rollup",
+      text: `${all.n_settled} settled · ${all.wins}-${all.losses}-${all.pushes} · `
+        + `${numFmt(all.units_net) || "—"} units net · ${pctFmt(all.return_on_units) || "—"} return` }));
     wrap.appendChild(section);
   }
   return wrap;

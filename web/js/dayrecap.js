@@ -120,17 +120,58 @@ function dayCard(day) {
   card.appendChild(head);
 
   if (day.settled) {
-    const record = `${day.wins}-${day.losses}-${day.pushes}`;
-    const units = unitsFmt(day.units_net);
-    const pct = pctFmt(day.return_on_units);
-    const line = el("p", { class: "day-card__record", "data-hook": "day-record-line" });
-    line.appendChild(document.createTextNode(record));
-    if (units !== null) {
-      const tone = day.units_net > 0 ? "day-card__figure--pos" : day.units_net < 0 ? "day-card__figure--neg" : "";
-      line.appendChild(el("span", { class: tone, text: ` · ${units}` }));
+    // FORWARD-TEST ONLY, matching the record strip above this gallery.
+    //
+    // These cards used to print day.wins/losses/units_net, which pool
+    // CONTROL and MARKET_REFERENCE -- the null baselines and the
+    // market-reference republishers, roughly 90% of measured positions and
+    // nothing anyone is sold. src/report/daily_record.py's record_strip was
+    // fixed to exclude them and captioned "our forward-test systems only";
+    // a reader scrolled two inches and met thirty daily cards computed the
+    // old way, with no caption. Same product, two numbers, no explanation
+    // of which was which.
+    //
+    // Falls back to the pooled figures ONLY when by_class is absent (an
+    // older payload). It says so in that case rather than quietly implying
+    // the cohort.
+    const hasSplit = Boolean(day.by_class);
+    const fwd = (day.by_class || {}).FORWARD_TEST;
+
+    if (hasSplit && !fwd) {
+      // A DAY WITH NO FORWARD-TEST SETTLEMENTS IS NOT A DAY WITH A RECORD.
+      // Falling back to the pooled figures here would be the worst version
+      // of the bug this whole change exists to fix: on 2026-09-05 and
+      // 2026-09-06 the gallery showed 45-52-2 and 47-40-3, and NOT ONE of
+      // those positions came from a system anybody is sold -- they were
+      // entirely null baselines and market-reference republishers. The same
+      // is true of the 2023 backtest day. A reader saw a losing record and
+      // attributed it to us; on another night they would have seen a
+      // winning one and done the same.
+      card.appendChild(el("p", { class: "day-card__pending", "data-hook": "day-record-line",
+        text: "No forward-test positions settled" }));
+      card.appendChild(el("p", { class: "day-card__cohort", "data-hook": "day-record-cohort",
+        text: "Only null baselines and market-reference systems ran this day" }));
+    } else {
+      const src = fwd || day;
+      const staked = typeof src.units_staked === "number" ? src.units_staked : null;
+      const netUnits = src.units_net;
+      const ret = hasSplit ? (staked ? netUnits / staked : null) : day.return_on_units;
+
+      const record = `${src.wins}-${src.losses}-${src.pushes}`;
+      const units = unitsFmt(netUnits);
+      const pct = pctFmt(ret);
+      const line = el("p", { class: "day-card__record", "data-hook": "day-record-line" });
+      line.appendChild(document.createTextNode(record));
+      if (units !== null) {
+        const tone = netUnits > 0 ? "day-card__figure--pos" : netUnits < 0 ? "day-card__figure--neg" : "";
+        line.appendChild(el("span", { class: tone, text: ` · ${units}` }));
+      }
+      if (pct !== null) line.appendChild(document.createTextNode(` · ${pct}`));
+      card.appendChild(line);
+      card.appendChild(el("p", { class: "day-card__cohort", "data-hook": "day-record-cohort",
+        text: hasSplit ? "Forward-test systems only"
+                       : "All classes pooled — per-class split unavailable for this day" }));
     }
-    if (pct !== null) line.appendChild(document.createTextNode(` · ${pct}`));
-    card.appendChild(line);
   } else {
     card.appendChild(el("p", { class: "day-card__pending", "data-hook": "day-record-line",
       text: `${day.pending} position${day.pending === 1 ? "" : "s"} pending` }));

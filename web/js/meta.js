@@ -87,6 +87,14 @@ export async function renderDisclaimerFooter(container) {
   row.appendChild(el("span", { class: "sitefoot__mark", text: BRAND_NAME }));
   row.appendChild(el("span", { class: "sitefoot__hair", "aria-hidden": "true" }));
   row.appendChild(el("span", { class: "sitefoot__legal", text: "ALL TIMES ET · 21+ · PLAY RESPONSIBLY" }));
+  // #/support had ZERO inbound links anywhere in web/ -- a working support
+  // form reachable only by typing the URL. A paying customer with a problem
+  // could not find the one place built to hear about it, which is how a
+  // fixable complaint becomes a silent cancellation. The footer is mounted
+  // once by main.js and survives every view swap, so it is the one place a
+  // link cannot be forgotten.
+  row.appendChild(el("a", { class: "sitefoot__support", href: "#/support",
+    "data-hook": "footer-support", text: "SUPPORT" }));
   region.appendChild(row);
 
   region.appendChild(el("p", { class: "sitefoot__summary", "data-hook": "disclaimer-summary",

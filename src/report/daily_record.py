@@ -658,8 +658,17 @@ def day_rollup(games) -> dict:
         cls = r["system_class"]
         bm = by_market.setdefault(
             market_key, {"wins": 0, "losses": 0, "pushes": 0, "units_net": 0.0})
+        # `units_staked` added 2026-09-10 so a caller can compute a RETURN
+        # per class, not just a unit total. The Daily Recap gallery rendered
+        # the pooled wins/losses/units as each day's headline while the
+        # record strip directly above it had already been fixed to exclude
+        # CONTROL and MARKET_REFERENCE and captioned to say so -- two numbers
+        # for the same product, three inches apart, disagreeing. The gallery
+        # could not show the forward-test slice instead, because this bucket
+        # carried no denominator.
         bc = by_class.setdefault(
-            cls, {"wins": 0, "losses": 0, "pushes": 0, "units_net": 0.0})
+            cls, {"wins": 0, "losses": 0, "pushes": 0, "units_net": 0.0,
+                  "units_staked": 0.0})
 
         if status in ("win", "loss", "push"):
             profit = r["settlement"]["profit_units"] or 0.0
@@ -670,6 +679,7 @@ def day_rollup(games) -> dict:
                 # Same convention as src.accounts.paper.PaperAccount:
                 # a push/void never counted toward stake exposure.
                 units_staked += 1.0
+                bc["units_staked"] += 1.0
             if status == "win":
                 wins += 1; bm["wins"] += 1; bc["wins"] += 1
             elif status == "loss":
@@ -775,6 +785,13 @@ def day_index(limit=30, *, decisions=None, wagers=None, accounts_dir=None,
             "return_on_units": r["return_on_units"],
             "avg_odds_decimal": r["avg_odds_decimal"],
             "settled": r["pending"] == 0,
+            # Carried so the gallery card can show the FORWARD_TEST slice
+            # rather than the pooled figures beside it. The rollup has
+            # always computed this; the gallery payload simply never
+            # forwarded it, so web/js/dayrecap.js had nothing to render but
+            # the pooled number -- directly beneath a record strip captioned
+            # "our forward-test systems only".
+            "by_class": r["by_class"],
             "best_bet": r["best_bet"],
             "worst_bet": r["worst_bet"],
             "strongest_pregame": r["strongest_pregame"],

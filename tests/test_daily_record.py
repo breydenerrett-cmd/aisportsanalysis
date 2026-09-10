@@ -552,9 +552,19 @@ class DayRollupMathTests(unittest.TestCase):
         self.assertEqual(r["by_class"][dr.FORWARD_TEST]["wins"], 1)
         self.assertEqual(r["by_class"][dr.FORWARD_TEST]["losses"], 1)
         self.assertAlmostEqual(r["by_class"][dr.FORWARD_TEST]["units_net"], -1.0, places=6)
-        self.assertEqual(r["by_class"][dr.CONTROL], {"wins": 1, "losses": 0, "pushes": 0, "units_net": 2.0})
+        # units_staked joined this bucket 2026-09-10 so a caller can compute
+        # a RETURN per class, not just a unit total -- the Daily Recap
+        # gallery needed a denominator to show the forward-test slice
+        # instead of the pooled figures it was printing beneath a strip
+        # captioned "our forward-test systems only".
+        self.assertEqual(r["by_class"][dr.CONTROL],
+                         {"wins": 1, "losses": 0, "pushes": 0,
+                          "units_net": 2.0, "units_staked": 1.0})
         self.assertEqual(r["by_class"][dr.MARKET_REFERENCE]["losses"], 1)
         self.assertEqual(r["by_class"][dr.MARKET_REFERENCE]["pushes"], 1)
+        # A push never counts toward stake exposure (src.accounts.paper's
+        # convention), so this class staked one unit across two settlements.
+        self.assertEqual(r["by_class"][dr.MARKET_REFERENCE]["units_staked"], 1.0)
 
     def test_best_bet_tie_break_is_earliest_decision_utc(self):
         r = dr.day_rollup(self.games)

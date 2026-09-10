@@ -86,7 +86,18 @@ function renderBetsTable(container, bets, onDeleted) {
     tr.appendChild(el("td", { colspan: "7" },
       [el("div", { class: "state-empty", "data-hook": "my-bets-empty" }, [
         el("p", { class: "state-empty__title", text: "No saved bets yet." }),
-        el("p", { class: "state-empty__body", text: "Save a bet from Bet Check to track it here." }),
+        // NOT "Save a bet from Bet Check to track it here." That instruction
+        // was false: there is no save action anywhere in web/js/betcheck.js
+        // -- grep it for my-bets, mybets, or any save handler and there is
+        // nothing. A customer who read it went to Bet Check looking for a
+        // button that has never existed, and concluded the app was broken.
+        //
+        // Wiring Bet Check to this list is the right fix and is real work
+        // (a checked bet has a resolved game, side, market and price; this
+        // list stores three free-text strings that join to nothing). Until
+        // that exists, the honest instruction is the form directly above.
+        el("p", { class: "state-empty__body",
+          text: "Add one with the form above to track it here." }),
       ])]));
     tbody.appendChild(tr);
   }
