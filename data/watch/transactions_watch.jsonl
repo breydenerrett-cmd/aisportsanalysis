@@ -1002,3 +1002,7 @@
 {"category": "rehab", "date": "2026-09-10", "first_seen_utc": "2026-09-10T22:10:57.085993+00:00", "player": "Connor Seabold", "player_id": 657756, "team": "KC", "transaction_id": 941968}
 {"category": "recalled", "date": "2026-09-10", "first_seen_utc": "2026-09-10T22:10:57.085993+00:00", "player": "Antwone Kelly", "player_id": 699008, "team": "PIT", "transaction_id": 941970}
 {"fetched_utc": "2026-09-10T22:10:58.080239+00:00", "game_date": "2026-09-10", "poll": true}
+{"fetched_utc": "2026-09-10T22:55:49.968382+00:00", "game_date": "2026-09-10", "poll": true}
+{"category": "il_activation", "date": "2026-09-10", "first_seen_utc": "2026-09-10T22:55:49.968382+00:00", "player": "Austin Martin", "player_id": 668885, "team": "MIN", "transaction_id": 941975}
+{"category": "optioned", "date": "2026-09-10", "first_seen_utc": "2026-09-10T22:55:49.968382+00:00", "player": "Gabriel Gonzalez", "player_id": 694224, "team": "MIN", "transaction_id": 941976}
+{"fetched_utc": "2026-09-10T22:55:51.981259+00:00", "game_date": "2026-09-10", "poll": true}
