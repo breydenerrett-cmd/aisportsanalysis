@@ -19,8 +19,21 @@ from src.ledger import bridge
 
 
 def _write_lines(path: Path, lines: list[str]) -> None:
+    """`newline=""` is load-bearing, not style.
+
+    Without it Python's text mode translates every "\\n" to "\\r\\n" on
+    Windows, so this helper wrote a CRLF file while `_hash_of` below hashed
+    the same lines with LF endings. The hashes could not match, and
+    `_classify_v1` correctly reported `tampered` on a file nothing had
+    touched -- three tests failing on the ledger-integrity classifier, which
+    is exactly the alarming place for a spurious failure. Two independent
+    audits disagreed about whether it was a real bug; it is the harness.
+
+    The product code is fine: it reads and hashes bytes. This is a test that
+    passed on Linux by luck of the platform rather than by construction.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as fh:
+    with path.open("w", encoding="utf-8", newline="") as fh:
         for line in lines:
             fh.write(line + "\n")
 
