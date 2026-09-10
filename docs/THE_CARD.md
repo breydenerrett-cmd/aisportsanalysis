@@ -157,20 +157,39 @@ card would serve raw, overconfident numbers under the same words — so the
 file is tracked in git, the card payload carries `calibrated: false` when it
 is missing, and `scripts/publication_audit.py` escalates on both.
 
-### The correction changed this, and the open question it left
+### The correction changed this, and the question it raised is now answered
 
 With the run distribution fixed, the model is far better calibrated
 natively. The fitted shrink relaxed from **b = 0.489 to b = 0.708** — it
 needs much less correcting than it did.
 
-And the raw model's log-loss (**0.68831**) is now *better* than the
-Platt-calibrated one (**0.69137**). The calibration layer was built to fix an
-overconfidence that no longer exists at the same size, and it may now be
-over-shrinking a model that has earned its confidence.
+That raised a real worry: over the full 2026 season the raw model's
+walk-forward log-loss (**0.68831**) came out *better* than the calibrated one
+(**0.69137**), which would mean the layer was now over-shrinking a model that
+had earned its confidence.
 
-**Not acted on, deliberately.** It needs its own pre-registered window, and
-changing two things at once is how a result stops being attributable to
-either. It is the top open question on this model.
+**Tested, and the worry was wrong.** `scripts/test_calibration_still_helps.py`
+fits Platt once on 2025 and applies it to 2026, so the fit never sees a game
+it is scored on:
+
+| | log-loss on 2026 |
+|---|---|
+| raw | 0.688326 |
+| calibrated | **0.687946** |
+
+Calibration **helps** by +0.00038 nats, and helps in both halves of the
+season. Under the criterion fixed before the test ran — keep if it gains
+0.0005, drop if it loses 0.0005, otherwise leave alone — the verdict is
+**leave it in place**.
+
+**What the 0.69137 actually was:** the walk-forward *procedure* warming up.
+In April it fits on a handful of games and is mostly noise, and that drags
+the season figure down. It is an artefact of how the backtest simulates
+calibration, not a property of the live card — which fits on ~1,900
+completed games by September, not on a handful.
+
+The prediction that this was the explanation was written into the test's
+docstring before it ran.
 
 ---
 

@@ -454,6 +454,16 @@ b = 0.489 to b = 0.708. The calibration layer was built to fix an
 overconfidence that no longer exists at the same size, and may now be
 over-shrinking.
 
-**Not acted on.** It needs its own pre-registered window, and changing two
-things at once is how a result stops being attributable. Recorded here as
-the next question.
+**ANSWERED 2026-09-10, and the worry was wrong.**
+`scripts/test_calibration_still_helps.py` fits Platt once on 2025 and scores
+it on 2026, so the fit never sees a game it is judged on. Calibration
+**helps**: 0.688326 raw against 0.687946 calibrated, in both halves.
+
+The 0.69137 figure was the walk-forward *procedure* warming up — in April it
+fits on a handful of games and is mostly noise, which drags the season
+figure down. That is an artefact of how the backtest simulates calibration,
+not a property of the live card, which fits on ~1,900 completed games.
+
+Under the criterion fixed before the test ran (keep at +0.0005, drop at
+−0.0005, otherwise leave alone) the verdict is **leave it in place** — the
+gain is +0.00038, real but under the margin.
