@@ -70,9 +70,15 @@ class MainJsRegistersPerformanceRoute(unittest.TestCase):
 
 
 class OpportunitiesNeverInventsAnEmptyMessage(unittest.TestCase):
-    def test_empty_literal_present_verbatim(self):
+    def test_empty_literal_matches_the_api_verbatim(self):
+        """The client's fallback string must be the API's own, character for
+        character. Compared against the Python constant rather than a literal
+        typed here, so the two can never drift -- they did drift once already
+        (the 2026-09-10 rename away from "BEST BETS", which is pick language
+        for a price board)."""
+        from src.analysis import opportunities as opp
         text = _read(OPPORTUNITIES_PATH)
-        self.assertIn("NO QUALIFYING BEST BETS RIGHT NOW", text)
+        self.assertIn(opp.EMPTY_REASON, text)
 
     def test_qualifying_rows_never_a_fabricated_default(self):
         text = _read(OPPORTUNITIES_PATH)

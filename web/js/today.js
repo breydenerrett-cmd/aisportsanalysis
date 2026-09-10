@@ -759,9 +759,14 @@ function heroActions(date) {
 /** V2-01a -- NO_PLAY, the confident default (~93% of nights per the
  * forward ledger, though that percentage itself is not printed here --
  * see module docstring). */
-function heroNoPlay(row, h2h, aggregates, sameVerdictCount, totalGames) {
+function heroNoPlay(row, h2h, aggregates, sameVerdictCount, totalGames,
+                     date, hasPicks) {
   const hero = heroShell("noplay");
   const top = el("div", { class: "gv2-hero__top" });
+  // "NO DEMONSTRATED EDGE" stays on BOTH branches, and that is deliberate.
+  // It is a standing fact about this product -- no strategy has cleared the
+  // promotion gate and CLV shows no signal -- and it remains true on a night
+  // the slip publishes something. Publishing a pick is not a claim of edge.
   top.appendChild(verdictChip("NO DEMONSTRATED EDGE", "noplay"));
   top.appendChild(el("span", { class: "gv2-hero__fraction", "data-hook": "gameday-verdict-fraction",
     text: `${sameVerdictCount} OF ${totalGames} GAMES TONIGHT · SAME VERDICT` }));
@@ -771,15 +776,42 @@ function heroNoPlay(row, h2h, aggregates, sameVerdictCount, totalGames) {
   //      below that, and always on mobile, stacked) ----
   const row1 = el("div", { class: "gv2-hero__row" });
   const main = el("div", { class: "gv2-hero__main" });
-  main.appendChild(el("div", { class: "gv2-hero__headline",
-    text: "WE CHECKED THE SLATE. NOTHING CLEARS THE BAR." }));
-  main.appendChild(el("p", { class: "gv2-hero__body",
-    text: "That is the honest answer most nights, and it is the answer this product is built to give. "
-        + "The market and the matchup below are still real — we just will not invent a reason to act on "
-        + "them." }));
+
+  // THE HEADLINE IS CONDITIONAL. It did not used to be, and the result was a
+  // page that answered "what should I bet tonight?" twice, differently, three
+  // inches apart: TONIGHT'S PICKS listed the ranked slip, and then this hero
+  // said WE CHECKED THE SLATE. NOTHING CLEARS THE BAR. Both blocks were
+  // individually honest. Together they were incoherent, and a reader
+  // resolves incoherence by believing whichever half they liked.
+  //
+  // "Nothing clears the bar" is a statement about the EVIDENCE THRESHOLD in
+  // src/engine/slip.py. When the slip published picks, things cleared it, so
+  // the sentence is simply false and has to go -- not be softened.
+  if (hasPicks) {
+    main.appendChild(el("div", { class: "gv2-hero__headline",
+      text: "TONIGHT'S PICKS ARE ABOVE. THIS IS THE REST OF THE BOARD." }));
+    main.appendChild(el("p", { class: "gv2-hero__body",
+      text: "Some candidates cleared the evidence threshold tonight, which is "
+          + "not the same as us having an edge — nothing in our research has "
+          + "cleared that bar yet, and the picks above are published so they "
+          + "can be graded, not because they are expected to win. Everything "
+          + "below is the rest of tonight's board." }));
+  } else {
+    main.appendChild(el("div", { class: "gv2-hero__headline",
+      text: "WE CHECKED THE SLATE. NOTHING CLEARS THE BAR." }));
+    main.appendChild(el("p", { class: "gv2-hero__body",
+      text: "That is the honest answer most nights, and it is the answer this product is built to give. "
+          + "The market and the matchup below are still real — we just will not invent a reason to act on "
+          + "them." }));
+  }
   // Mobile-only: replaces the WHAT WE CHECKED TONIGHT panel below (V2-22).
   main.appendChild(heroStatChips(aggregates));
-  main.appendChild(heroActions());
+  // `date`, not nothing. Called with no argument at both live call sites
+  // until 2026-09-10, so every hero CTA lost the date and fell back to the
+  // browser's own today -- which is the WRONG slate after ~8pm ET, exactly
+  // when this screen is already showing its own "next slate" banner because
+  // /today has rolled over.
+  main.appendChild(heroActions(date));
   row1.appendChild(main);
   row1.appendChild(checkedTonightPanel(aggregates));
   hero.appendChild(row1);
@@ -805,7 +837,7 @@ function heroNoPlay(row, h2h, aggregates, sameVerdictCount, totalGames) {
 
 /** V2-01b -- FLAGGED, the rare exception (~2.3% per the ledger; the only
  * verdict state that carries the bloom accent). */
-function heroFlagged(row, side, h2h, gap, sameVerdictCount, totalGames) {
+function heroFlagged(row, side, h2h, gap, sameVerdictCount, totalGames, date) {
   const hero = heroShell("flagged", "gv2-hero--bloom");
   const top = el("div", { class: "gv2-hero__top" });
   top.appendChild(verdictChip("FLAGGED", "flagged"));
@@ -821,7 +853,7 @@ function heroFlagged(row, side, h2h, gap, sameVerdictCount, totalGames) {
         + `pre-registration on ${away} at ${home}, and it is a price finding, not a prediction.` }));
 
   hero.appendChild(priceContextPanel(row, side, h2h, gap));
-  hero.appendChild(heroActions());
+  hero.appendChild(heroActions(date));
   return hero;
 }
 
@@ -870,18 +902,20 @@ function heroMarketUnavailable(row, date, aggregates, sameVerdictCount, totalGam
   return hero;
 }
 
-function renderHero(host, featured, aggregates, rows, date) {
+function renderHero(host, featured, aggregates, rows, date, hasPicks) {
   const verdict = featured.row.verdict;
   const sameVerdictCount = rows.filter((r) => r.verdict === verdict).length;
   const totalGames = rows.length;
   let node;
   if (verdict === "flagged" || verdict === "candidate") {
     node = heroFlagged(featured.row, featured.side || "away", featured.h2h || null,
-      typeof featured.gap === "number" ? featured.gap : null, sameVerdictCount, totalGames);
+      typeof featured.gap === "number" ? featured.gap : null, sameVerdictCount,
+      totalGames, date);
   } else if (verdict === "market_unavailable") {
     node = heroMarketUnavailable(featured.row, date, aggregates, sameVerdictCount, totalGames);
   } else {
-    node = heroNoPlay(featured.row, featured.h2h || null, aggregates, sameVerdictCount, totalGames);
+    node = heroNoPlay(featured.row, featured.h2h || null, aggregates,
+                      sameVerdictCount, totalGames, date, hasPicks);
   }
   host.appendChild(node);
 }
@@ -914,8 +948,15 @@ function renderFeaturedSection(host, candidate, totalGames) {
   head.appendChild(el("span", { class: "gv2-featured__sub",
     text: "Computed from tonight's boards — a measured gap, not a judgement." }));
   if (candidate) {
+    // NOT "SWIPE FOR THE REST". There is nothing to swipe to: this section
+    // creates ONE slot, loadFeaturedStanding appends exactly one card into
+    // it, and .gv2-featured__slot has no overflow, no scroll-snap and no
+    // handler. The V2 artboard specified a carousel; only the head shipped,
+    // and the promise stayed. A control that does nothing when you touch it
+    // reads as a broken app, which is a worse first impression than an
+    // honest single card -- and on mobile a reader will actually try it.
     head.appendChild(el("span", { class: "gv2-featured__count",
-      text: `1 OF ${totalGames} · SWIPE FOR THE REST` }));
+      text: `THE LARGEST OF ${totalGames} GAMES` }));
   }
   section.appendChild(head);
 
@@ -1161,22 +1202,26 @@ export async function renderToday(container) {
   if (picksBlock) host.appendChild(picksBlock);
 
   host.appendChild(renderSlateBanner(date, rows, aggregates.freshest));
-  renderHero(host, featured, aggregates, rows, date);
+  // The hero must know whether the slip spoke, or it will contradict it --
+  // see heroNoPlay's conditional headline.
+  renderHero(host, featured, aggregates, rows, date, Boolean(picksBlock));
   setShellStatus(aggregates.freshest ? `PRICES AS OF ${et(aggregates.freshest)}` : null);
 
   // Mobile-only matchup poster (V2-22) -- the featured game's identity,
   // no records or starters (see matchupPoster's own docstring).
   host.appendChild(matchupPoster(featured.row));
 
-  // TOP OPPORTUNITIES -- between the hero and the Featured Bet carousel
-  // head (web/js/opportunities.js owns this section's own render/fetch;
-  // this screen only places it).
+  // THE PRICE BOARD -- between the hero and the Featured Bet head
+  // (web/js/opportunities.js owns this section's own render/fetch; this
+  // screen only places it). Renamed from TOP OPPORTUNITIES 2026-09-10: it
+  // ranks execution quality, and a heading that read as a pick list was
+  // competing with TONIGHT'S PICKS above for the same job.
   await renderOpportunities(host, date);
 
   // THE MATCHUP GRID -- every game on tonight's slate, its live
   // moneyline, its price read, and its frozen pregame positions
   // (web/js/matchups.js owns this section's own render/fetch; this
-  // screen only places it, below TOP OPPORTUNITIES and above the
+  // screen only places it, below THE PRICE BOARD and above the
   // Featured Bet carousel head).
   // Hand over the /today payload this screen already fetched, so the grid
   // does not pay for a second copy of it before it can start.

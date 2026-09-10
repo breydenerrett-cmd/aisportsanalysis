@@ -59,10 +59,27 @@ MARKET = "h2h"
 # better-than-fair price, so they never qualify regardless of rank.
 QUALIFYING_WORDS = ("STRONG VALUE", "VALUE", "LEAN")
 
-EMPTY_REASON = "NO QUALIFYING BEST BETS RIGHT NOW"
+# RENAMED 2026-09-10, and the old names are worth recording because they are
+# what went wrong. This surface used to call itself TOP OPPORTUNITIES and
+# report NO QUALIFYING BEST BETS RIGHT NOW. Both are pick language for a thing
+# that is not a pick: every row here is ranked by `value_points`, which
+# src/analysis/priceverdict.py defines as how much cheaper one book is than
+# the de-vigged consensus at a single capture instant. That is execution
+# quality. It says nothing about who wins.
+#
+# The disclaimers were all present and all correct -- "not predictions" was
+# right there in the label. It did not help. On 2026-09-09 a reader took the
+# top row as a system recommendation and told Brey the site had called a great
+# bet at a great price. A heading is read; a qualifier after a dash is not.
+#
+# So the heading now says what the thing is, and the qualifier is no longer
+# load-bearing. docs/PRODUCT_DOCTRINE.md amendment 1 gives the "what should I
+# bet" job to the ranked slip; this is the price board, and a better number is
+# worth having on its own terms.
+EMPTY_REASON = "NO BETTER-THAN-CONSENSUS PRICES RIGHT NOW"
 
-LABEL = ("TOP OPPORTUNITIES — price versus de-vigged consensus "
-         "(line-shopping value), not predictions")
+LABEL = ("THE PRICE BOARD — where tonight's best available number sits "
+         "against the de-vigged consensus. Line-shopping value, not picks.")
 
 _SIDES = (("away", "home"), ("home", "away"))
 

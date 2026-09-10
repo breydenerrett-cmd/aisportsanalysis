@@ -28,7 +28,7 @@
  *     its place.
  * The only thing this product stands behind as an opportunity is the
  * live price-vs-consensus verdict already computed by
- * GET /opportunities/{date} (web/js/opportunities.js's TOP OPPORTUNITIES
+ * GET /opportunities/{date} (web/js/opportunities.js's PRICE BOARD
  * section) -- this screen's LIVE PRICE READ block reuses those same rows,
  * never a second, client-computed comparison.
  *

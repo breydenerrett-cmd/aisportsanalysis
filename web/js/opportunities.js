@@ -1,5 +1,5 @@
 /**
- * TOP OPPORTUNITIES (GET /opportunities/{date}, src/analysis/opportunities.py's
+ * THE PRICE BOARD (GET /opportunities/{date}, src/analysis/opportunities.py's
  * build_opportunities) -- the day's best-priced sides, ranked by
  * value_points, rendered as a section wired into Gameday (#/today) between
  * the hero and the Featured Bet carousel head. See web/js/today.js's call
@@ -41,7 +41,11 @@ import { el, clear, renderError, renderLoading, notYetAvailable,
 import { bookLabel } from "./labels.js";
 import { renderValueMeter } from "./valuemeter.js";
 
-export const EMPTY_LITERAL = "NO QUALIFYING BEST BETS RIGHT NOW";
+// Mirrors src/analysis/opportunities.py's EMPTY_REASON, which the payload
+// normally carries; this is only the fallback when it does not. "BEST BETS"
+// was the old wording and was pick language for a price board -- see that
+// module's comment for why it changed.
+export const EMPTY_LITERAL = "NO BETTER-THAN-CONSENSUS PRICES RIGHT NOW";
 
 function sectionHead(label, meta) {
   const head = el("div", { class: "sechead" });
@@ -123,9 +127,33 @@ function opportunityCard(date, row, isHero) {
   const main = el("div", { class: "opp-card__main" });
   card.appendChild(main);
 
-  if (isHero) {
-    main.appendChild(el("span", { class: "opp-card__eyebrow", text: "TOP PLAY" }));
-  }
+  // NO "TOP PLAY" EYEBROW. Removed 2026-09-10.
+  //
+  // The top-ranked card used to carry the words TOP PLAY. That string was
+  // invented here -- it appears nowhere in the backend, which calls these
+  // rows `qualifying` and ranks them by `value_points`, defined in
+  // src/analysis/priceverdict.py as (p_fair - p_price) * 100: how much
+  // cheaper this book is than the de-vigged consensus at one capture
+  // instant. src/analysis/opportunities.py says it outright -- "Not a
+  // ranking by expected value, not a model's picks, not a prediction of
+  // who wins." It is execution quality. It says nothing about whether the
+  // bet is good.
+  //
+  // On 2026-09-09 a reader took the biggest price gap on the board as a
+  // system recommendation and told Brey the site had called a great bet.
+  // It had not. Two words in a hero eyebrow outweighed every careful
+  // disclaimer on the card beneath them, including the card's own
+  // "NO INDEPENDENT MODEL YET" line, because a label is read and fine
+  // print is not.
+  //
+  // docs/PRODUCT_DOCTRINE.md's amendment 1 puts the ranked slip -- ranked
+  // on case strength -- in the position this was occupying. The price
+  // board stays, because a better number is genuinely worth having; it
+  // just stops calling itself a pick.
+  //
+  // The hero KEEPS its two-column layout (screens.css .opp-card--hero):
+  // largest price gap first is a fine way to order a price board.
+  void isHero;
 
   const head = el("div", { class: "opp-card__head" });
   head.appendChild(el("a", { class: "opp-card__matchup", href: gameHref(date, row),
@@ -359,7 +387,7 @@ function unpricedList(unpriced) {
 }
 
 /**
- * Fetches and renders the TOP OPPORTUNITIES section for `date` into a new
+ * Fetches and renders THE PRICE BOARD section for `date` into a new
  * child of `container`. Returns the section element (today.js inserts it
  * at a specific position in the DOM); never throws -- a fetch failure
  * renders dom.js's own error treatment inside the section instead of
@@ -368,7 +396,8 @@ function unpricedList(unpriced) {
 export async function renderOpportunities(container, date) {
   const section = el("section", { class: "opp-section", "data-hook": "top-opportunities" });
   container.appendChild(section);
-  section.appendChild(sectionHead("TOP OPPORTUNITIES", "PRICE VS. DE-VIGGED CONSENSUS"));
+  section.appendChild(sectionHead("THE PRICE BOARD",
+                                  "BEST AVAILABLE NUMBER VS. DE-VIGGED CONSENSUS"));
   const body = el("div", { class: "opp-body" });
   body.appendChild(renderLoading("LOADING TONIGHT'S OPPORTUNITIES"));
   section.appendChild(body);
@@ -388,7 +417,7 @@ export async function renderOpportunities(container, date) {
   const qualifying = payload.qualifying || [];
   if (qualifying.length === 0) {
     const panel = el("div", { class: "opp-empty panel chamfer", "data-hook": "opportunities-empty" });
-    panel.appendChild(el("span", { class: "opp-empty__eyebrow", text: "TOP OPPORTUNITIES" }));
+    panel.appendChild(el("span", { class: "opp-empty__eyebrow", text: "THE PRICE BOARD" }));
     panel.appendChild(el("p", { class: "opp-empty__headline", text: payload.empty_reason || EMPTY_LITERAL }));
     panel.appendChild(el("p", { class: "opp-empty__basis", text: payload.basis || "" }));
     body.appendChild(panel);

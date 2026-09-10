@@ -24,6 +24,7 @@ except ImportError:
 if _HAVE_FASTAPI:
     from api import games as games_mod
     from api import opportunities as opp_api
+    from src.analysis import opportunities as opp
     from src.appstate import freshness
     from src.providers import mlb
 
@@ -83,7 +84,9 @@ class GetOpportunitiesForDateTests(_ResetEntriesCache):
         self.assertEqual(payload["checked_games"], 0)
         self.assertEqual(payload["rows"], [])
         self.assertEqual(payload["unpriced"], [])
-        self.assertEqual(payload["empty_reason"], "NO QUALIFYING BEST BETS RIGHT NOW")
+        # From the constant, not a literal -- see test_opportunities.py's
+        # note on the 2026-09-10 rename away from pick language.
+        self.assertEqual(payload["empty_reason"], opp.EMPTY_REASON)
 
 
 @unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")

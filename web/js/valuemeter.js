@@ -87,11 +87,20 @@ export function renderValueMeter({ marketImplied, priceImplied, valuePoints, wor
     wrap.appendChild(el("p", { class: "vmeter-gap vmeter-gap--na", "data-hook": "value-meter-gap",
       text: "Gap not computable — one side of the comparison is missing." }));
   } else {
+    // "than fair" was the old wording, and it is the exact register
+    // tests/test_customer_language.py bans on the Python side: the de-vigged
+    // number is the MARKET-IMPLIED CONSENSUS, never "the true price" or "the
+    // fair price". Calling a gap "better than fair" tells a reader the market
+    // is wrong and we know the right number. We do not, and no field in this
+    // product emits one. It shipped because the JS tripwire
+    // (tests/test_web_structure.py) carries a weaker word list than the
+    // Python one -- that gap is being closed separately.
     const better = gap > 0;
     const flat = Math.abs(gap) < 0.05;
     const gapText = flat
-      ? "Priced right at fair — no measurable gap either way."
-      : `${better ? "+" : ""}${gap.toFixed(1)} pts ${better ? "better" : "worse"} than fair`;
+      ? "Right at the market's own consensus — no measurable gap either way."
+      : `${better ? "+" : ""}${gap.toFixed(1)} pts `
+        + `${better ? "better" : "worse"} than the market's consensus`;
     wrap.appendChild(el("p", {
       class: `vmeter-gap ${flat ? "vmeter-gap--flat" : (better ? "vmeter-gap--better" : "vmeter-gap--worse")}`,
       "data-hook": "value-meter-gap", text: gapText,
@@ -100,7 +109,7 @@ export function renderValueMeter({ marketImplied, priceImplied, valuePoints, wor
 
   wrap.appendChild(el("p", { class: "vmeter-caption", text:
     "A likely winner at a bad price is still a bad price; an underdog can be value when the price "
-    + "implies less than the market's own fair probability." }));
+    + "implies less than the market's own de-vigged consensus." }));
 
   if (word) {
     wrap.appendChild(el("p", { class: "vmeter-word-note", "data-hook": "value-meter-word",

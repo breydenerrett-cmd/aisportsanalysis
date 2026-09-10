@@ -150,30 +150,29 @@ class NoBannedCustomerVocabulary(unittest.TestCase):
     files, not Python) -- this client must never compose a claim the API
     itself would not make (see docs/API_CONTRACTS.md's vocabulary rules)."""
 
-    HARD_BANNED = (
-        (r"\+\s*EV\b", "+EV"),
-        (r"\btrue\s+line\b", "true line"),
-        (r"\btrue\s+probabilit", "true probability"),
-        (r"\btrue\s+odds\b", "true odds"),
-        (r"market'?s\s+true\s+read", "market's true read"),
-        (r"\bfree\s+money\b", "free money"),
-        (r"\ba\s+lock\b", "a lock"),
-        (r"\bsure\s+thing\b", "sure thing"),
-        (r"\bcan'?t\s+lose\b", "can't lose"),
-    )
-
-    # "guaranteed win" and "win probability" are checked negation-only:
-    # docs/CONTENT_LANDING.md's approved copy legitimately SAYS these
-    # phrases -- negated -- to state the product's own honesty rule ("No
-    # guaranteed wins", "we do not publish a win probability"). A blanket
-    # ban would forbid the client from ever stating the rule it exists to
-    # enforce. Checked the same way tests/test_customer_language.py checks
-    # NEGATION_ONLY phrases: banned unless a negator appears in the
-    # preceding text.
-    NEGATION_ONLY_WEB = (
-        (r"\bguaranteed?\s+win", "guaranteed win"),
-        (r"\bwin[- ]probabilit\w*", "win probability"),
-    )
+    # IMPORTED, NOT RE-DECLARED. This class used to carry its own copy of the
+    # word list, and the copy had drifted: it dropped `edge` as a customer
+    # noun, bare `guaranteed`, `lock of the day`, and `expected value play`
+    # entirely, and only checked `guaranteed win` / `win probability` for
+    # negation. So the JS layer could affirm "edge" freely while the Python
+    # layer could not.
+    #
+    # That is how web/js/valuemeter.js shipped "+2.4 pts better than fair" --
+    # telling a reader the market's price is wrong and we know the right one,
+    # which is the precise claim src/analysis is forbidden from making -- with
+    # every test green. A second copy of a rule is a rule that will disagree
+    # with itself, and the half that matters is always the half nobody
+    # remembers to update.
+    #
+    # Importing from tests/test_customer_language.py means the two layers now
+    # cannot drift by construction: adding a banned phrase there covers the
+    # browser too, and the customer never sees a claim the API would refuse to
+    # make.
+    # The module already imported both lists at the top of this file. The
+    # class then shadowed them with weaker local copies, which is worse than
+    # never importing them: the import reads as "we use the real rules".
+    HARD_BANNED = HARD_BANNED
+    NEGATION_ONLY_WEB = NEGATION_ONLY
 
     def test_no_hard_banned_phrases(self):
         violations = []

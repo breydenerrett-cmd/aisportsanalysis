@@ -233,8 +233,23 @@ class RowContentTests(unittest.TestCase):
 class LabelAndBasisTests(unittest.TestCase):
     def test_label_and_basis_present_and_clean(self):
         payload = opp.build_opportunities([], date="2026-09-07", now=NOW)
-        self.assertIn("TOP OPPORTUNITIES", payload["label"])
+        # Asserted against the constant, not a literal: the heading was
+        # renamed on 2026-09-10 (TOP OPPORTUNITIES -> THE PRICE BOARD) and a
+        # hardcoded copy here would have to be edited in lockstep forever.
+        self.assertEqual(opp.LABEL, payload["label"])
         self.assertIn("NO INDEPENDENT MODEL", payload["basis"].upper())
+
+    def test_the_heading_does_not_call_a_price_gap_a_pick(self):
+        """The rename is the point, not a cosmetic. These rows are ranked by
+        value_points -- execution quality -- and a heading that reads as a
+        pick list is what let a reader take the top row as a system
+        recommendation on 2026-09-09."""
+        label = opp.LABEL.upper()
+        for pick_word in ("TOP OPPORTUNIT", "BEST BET", "TOP PLAY",
+                          "OUR PICK", "PLAY OF THE"):
+            self.assertNotIn(pick_word, label,
+                             f"{opp.LABEL!r} reads as a pick list")
+        self.assertNotIn("BEST BET", opp.EMPTY_REASON.upper())
 
 
 class CustomerLanguageTripwireTests(unittest.TestCase):
