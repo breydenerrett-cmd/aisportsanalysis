@@ -164,11 +164,68 @@ class TheTwoBrokenMarkets(unittest.TestCase):
         self.assertTrue(priced["not_publishable_because"])
 
 
+class TheWithinGameCorrelation(unittest.TestCase):
+    """Plate appearances are not independent coin flips. `RHO` carries how
+    much they are not, and `rho = 0` must reproduce the old model exactly so
+    the correction stays switchable and comparable."""
+
+    def setUp(self):
+        self.rates = playerprops.batter_rates(
+            _season(games=120, pa=4, h=1, doubles=1), LEAGUE)
+
+    def test_rho_zero_is_exactly_the_binomial(self):
+        p = self.rates["hit"]
+        for n in (1, 3, 4, 7):
+            self.assertAlmostEqual(
+                (1 - p) ** n,
+                playerprops._beta_binomial_none(p, n, 0.0), places=12,
+                msg=f"rho=0 must be the plain binomial at n={n}")
+
+    def test_correlation_makes_a_zero_more_likely(self):
+        """Clustering means more 0-fers AND more multi-hit games, and 'at
+        least one hit' is exactly the quantity the extra 0-fers come out
+        of. If this ever inverts, the correction has the sign backwards and
+        would make an already-overconfident model worse."""
+        p = self.rates["hit"]
+        independent = playerprops._beta_binomial_none(p, 4, 0.0)
+        correlated = playerprops._beta_binomial_none(p, 4, 0.05)
+        self.assertGreater(correlated, independent)
+
+    def test_it_lowers_the_published_probability(self):
+        plain = playerprops.probability_over("batter_hits", 0.5, self.rates,
+                                             4.2, rho=0.0)
+        corrected = playerprops.probability_over("batter_hits", 0.5,
+                                                 self.rates, 4.2, rho=0.05)
+        self.assertLess(corrected, plain)
+
+    def test_total_bases_is_deliberately_left_alone(self):
+        """It measured calibrated to about one point already, so a
+        correction fitted for the hits market has nothing to fix there and
+        applying it would move a number that is right."""
+        plain = playerprops.probability_over("batter_total_bases", 1.5,
+                                             self.rates, 4.2, rho=0.0)
+        corrected = playerprops.probability_over("batter_total_bases", 1.5,
+                                                 self.rates, 4.2, rho=0.20)
+        self.assertAlmostEqual(plain, corrected, places=12)
+
+    def test_a_probability_stays_a_probability(self):
+        for rho in (0.0, 0.01, 0.05, 0.3, 0.9):
+            value = playerprops.probability_over("batter_hits", 0.5,
+                                                 self.rates, 4.2, rho=rho)
+            self.assertGreaterEqual(value, 0.0)
+            self.assertLessEqual(value, 1.0)
+
+
 class NothingIsFitted(unittest.TestCase):
+    """One fitted constant now, and it took a held-out window to adopt."""
+
     def test_the_regression_priors_are_stated_constants(self):
         self.assertEqual(200.0, playerprops.PA_REGRESSION)
         self.assertEqual(300.0, playerprops.BF_REGRESSION)
         self.assertEqual(40, playerprops.MIN_PA_FOR_A_RATE)
+
+    def test_rho_is_the_value_the_pre_registered_test_adopted(self):
+        self.assertEqual(0.05065, playerprops.RHO)
 
 
 if __name__ == "__main__":

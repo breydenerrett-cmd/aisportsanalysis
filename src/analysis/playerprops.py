@@ -296,17 +296,88 @@ def pitcher_hit_factor(hits_allowed, batters_faced, league_hit_rate) -> float:
 # The count distributions
 # ---------------------------------------------------------------------------
 
-def _binomial_at_least_one(p: float, n: float) -> float:
+# WITHIN-GAME CORRELATION BETWEEN PLATE APPEARANCES.
+#
+# The model treats a batter's plate appearances as independent coin flips at
+# his season rate. They are not: he faces one starter three times, in one
+# park, on one night, and his true rate that night is not his season rate.
+# Positive correlation makes outcomes CLUSTER -- more 0-for-4s and more
+# 3-for-4s than independence allows -- and "at least one hit" is exactly the
+# quantity clustering reduces, because the extra 0-fers come straight out of
+# it.
+#
+# Measured: `batter_hits` over 0.5 came out roughly FOUR POINTS
+# overconfident in every bucket, same sign throughout, which is the
+# signature of a modelling assumption rather than noise. Four points is the
+# difference between a bet worth taking at +110 and one that quietly loses.
+#
+# `RHO` is the intra-class correlation. **0.0 is exact binomial and
+# reproduces every number this module produced before the correction
+# existed** -- asserted by a test, so it can always be switched off and
+# compared.
+#
+# ADOPTED 2026-09-10 under `scripts/test_prop_dispersion.py`, whose fit
+# window, test window and criterion were all fixed before it ran.
+#
+#   fit    2026-06-17..08-05, 7,665 batter games
+#   test   2026-08-06 onward, 9,076 batter games, never seen by the fit
+#
+#   hits-per-game variance          1.1422x the binomial
+#   fitted rho                      0.05065  (halves 0.0444 / 0.0575)
+#
+#   mean prediction    binomial 0.588  ->  beta-binomial 0.561   actual 0.557
+#   calibration gap    binomial 0.031  ->  beta-binomial 0.006   (-82%)
+#   log-loss           binomial 0.674  ->  beta-binomial 0.672
+#
+# Three points of systematic overconfidence became four tenths of a point,
+# and the log-loss improved rather than being traded away for calibration.
+# Four points is the difference between a bet worth taking at +110 and one
+# that quietly loses, which is the whole reason this mattered.
+#
+# THE VALUE IS THE FIT WINDOW'S, NOT A REFIT ON EVERYTHING. Re-estimating
+# over the test window too would give a marginally better number and would
+# also be fitting after seeing the answer.
+RHO = 0.05065
+
+
+def _beta_binomial_none(p: float, n: int, rho: float) -> float:
+    """P(zero successes) in `n` correlated trials of probability `p`.
+
+    Beta-binomial in (mean, intra-class correlation) form. `rho -> 0`
+    recovers `(1 - p) ** n`, which is what makes the correction switchable.
+    """
+    if n <= 0:
+        return 1.0
+    if rho <= 0:
+        return (1.0 - p) ** n
+    concentration = (1.0 - rho) / rho
+    alpha = p * concentration
+    beta = (1.0 - p) * concentration
+    # P(X = 0) = B(alpha, beta + n) / B(alpha, beta), via log-gamma so a
+    # large concentration cannot overflow.
+    return math.exp(
+        math.lgamma(alpha + beta) + math.lgamma(beta + n)
+        - math.lgamma(beta) - math.lgamma(alpha + beta + n))
+
+
+def _binomial_at_least_one(p: float, n: float, rho: float = None) -> float:
     """P(at least one success) over `n` trials, `n` fractional.
 
     Fractional trials are the honest treatment of "about 4.3 plate
     appearances": rounding to 4 throws away a tenth of a hit's worth of
     chance across a slate, and rounding up invents one.
     """
+    rho = RHO if rho is None else rho
     p = min(max(p, 0.0), 1.0)
     if p <= 0 or n <= 0:
         return 0.0
-    return 1.0 - (1.0 - p) ** n
+    whole = int(math.floor(n))
+    frac = n - whole
+    low = 1.0 - _beta_binomial_none(p, whole, rho)
+    if frac <= 1e-9:
+        return low
+    high = 1.0 - _beta_binomial_none(p, whole + 1, rho)
+    return (1 - frac) * low + frac * high
 
 
 def total_bases_distribution(rates: Mapping, expected_pa: float,
@@ -351,7 +422,8 @@ def total_bases_distribution(rates: Mapping, expected_pa: float,
 
 
 def probability_over(market: str, line: float, rates: Mapping,
-                     expected_pa: float, pitcher_factor: float = 1.0) -> float:
+                     expected_pa: float, pitcher_factor: float = 1.0,
+                     rho: float = None) -> float:
     """P(this batter clears `line` in `market`).
 
     Every market is read off the same per-PA rates, so the numbers cannot
@@ -370,20 +442,26 @@ def probability_over(market: str, line: float, rates: Mapping,
     if market == "batter_hits":
         # Over 0.5 is "at least one"; over 1.5 is "at least two".
         need = int(math.floor(line)) + 1
-        return _at_least(adjusted["hit"], expected_pa, need)
+        return _at_least(adjusted["hit"], expected_pa, need, rho)
     if market == "batter_home_runs":
         need = int(math.floor(line)) + 1
-        return _at_least(adjusted["home_run"], expected_pa, need)
+        return _at_least(adjusted["home_run"], expected_pa, need, rho)
     if market == "batter_total_bases":
+        # NOT rho-corrected. This market measured calibrated to within about
+        # one point already (`scripts/backtest_player_props.py`), so a
+        # correction fitted for the hits market has nothing to fix here and
+        # applying it would move a number that is right.
         dist = total_bases_distribution(adjusted, expected_pa)
         need = int(math.floor(line)) + 1
         return sum(dist[need:])
     if market == "batter_runs_scored":
         need = int(math.floor(line)) + 1
-        return _at_least(adjusted["run"] * pitcher_factor, expected_pa, need)
+        return _at_least(adjusted["run"] * pitcher_factor, expected_pa, need,
+                         rho)
     if market == "batter_rbis":
         need = int(math.floor(line)) + 1
-        return _at_least(adjusted["rbi"] * pitcher_factor, expected_pa, need)
+        return _at_least(adjusted["rbi"] * pitcher_factor, expected_pa, need,
+                         rho)
     # hits + runs + RBIs: three counts on the same plate appearances, and
     # they are correlated (a home run is a hit, a run and an RBI at once).
     # Summing their independent rates would understate the correlation and
@@ -395,9 +473,10 @@ def probability_over(market: str, line: float, rates: Mapping,
     return _at_least_count(combined, expected_pa, need)
 
 
-def _at_least(p_per_pa: float, expected_pa: float, need: int) -> float:
+def _at_least(p_per_pa: float, expected_pa: float, need: int,
+              rho: float = None) -> float:
     if need <= 1:
-        return _binomial_at_least_one(p_per_pa, expected_pa)
+        return _binomial_at_least_one(p_per_pa, expected_pa, rho)
     return _at_least_count(p_per_pa, expected_pa, need)
 
 
