@@ -343,6 +343,27 @@ if [ "$CLOSING_STATUS" -ne 0 ]; then
 fi
 echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: closing-audit exit=$CLOSING_STATUS" >> "$RUN_NOTE"
 
+# How close the forward evidence is to supporting the tests we cannot run.
+#
+# All 85 scorecards read battery_verdict NOT_RUN and the tempting move was
+# to wire the falsification battery into settlement and declare the biggest
+# dormant asset turned on. Checking first showed that would be damage: the
+# battery needs 30 graded selections per check and the best forward-test
+# system has 21, so every check would SKIP and it would report a vacuous
+# `survives` -- into a hash-chained, append-only scorecard ledger. NOT_RUN
+# is honest; a vacuous survives reads as evidence and cannot be withdrawn.
+#
+# So this reports the distance nightly and escalates the day a system first
+# crosses MIN_N, which is the day wiring the battery stops being a mistake.
+# The alternative is a person re-checking by hand forever, and this repo now
+# has a reachability audit precisely because nobody ever does.
+echo "== research readiness =="
+READINESS_OUT=$(python3 scripts/research_readiness.py 2>&1)
+READINESS_STATUS=$?
+echo "$READINESS_OUT" | sed 's/^/  /'
+echo "$READINESS_OUT" | grep "^ESCALATE:" || true
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: research-readiness exit=$READINESS_STATUS" >> "$RUN_NOTE"
+
 # Concurrent runs of this script and forward_capture.sh on the same shared
 # checkout raced each other into stranded/mismerged commits four times in
 # 30h (87312f2, de8a582, b258fc1, 9d30526): both scripts trip on their own
