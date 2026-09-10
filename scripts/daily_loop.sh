@@ -396,6 +396,25 @@ echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: closing-audit exit=$CLOSING_STAT
 # crosses MIN_N, which is the day wiring the battery stops being a mistake.
 # The alternative is a person re-checking by hand forever, and this repo now
 # has a reachability audit precisely because nobody ever does.
+# WHICH CONSTANTS HAVE GONE STALE. Every threshold in this repo that was set
+# by measuring a population is a claim with an expiry date, and until
+# 2026-09-10 nothing recorded which ones those were -- so EVIDENCE_STRONG
+# went on firing at "3+ families agree" while the ceiling moved to 16 and
+# every published pick turned green. Nothing broke, no test failed, and the
+# rarest grade in the product silently stopped meaning anything.
+#
+# ESCALATES. A drifted constant is not cosmetic: it is a customer-facing
+# claim that has quietly become false.
+echo "== calibration drift (constants measured against a population) =="
+DRIFT_OUT=$(python3 scripts/calibration_drift_audit.py 2>&1)
+DRIFT_STATUS=$?
+echo "$DRIFT_OUT" | sed 's/^/  /'
+if [ "$DRIFT_STATUS" -ne 0 ]; then
+    echo "ESCALATE: a constant calibrated against a population has drifted past its tolerance -- see docs/INCIDENT_2026-09-10_STRONG_TIER.md for what this class of failure looks like"
+    type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "calibration drift" || true
+fi
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: calibration_drift_audit exit=$DRIFT_STATUS" >> "$RUN_NOTE"
+
 echo "== research readiness =="
 READINESS_OUT=$(python3 scripts/research_readiness.py 2>&1)
 READINESS_STATUS=$?

@@ -294,13 +294,35 @@ EVIDENCE_TIER_LABEL = {
                       "published pick can carry.",
 }
 
-# GREEN IS MEANT TO BE RARE. The strongest agreement ever measured on this
-# project's live ledger, across its whole history, is 3 families (2026-09-08
-# measurement) -- so EVIDENCE_STRONG describes the ceiling of what the
-# current research population has ever produced, not a routine grade. A
-# scheme that made most nights green would be recalibrating the label to
-# flatter the picks instead of describing them, which is the exact
-# manufactured-confidence failure this module exists to refuse.
+# GREEN IS MEANT TO BE RARE, AND AS OF 2026-09-10 IT IS NOT.
+#
+# The original justification: the strongest agreement ever measured on this
+# project's live ledger, across its whole history, was 3 families
+# (2026-09-08 measurement) -- so EVIDENCE_STRONG described the ceiling of
+# what the research population had ever produced, not a routine grade.
+#
+# THAT MEASUREMENT WAS TAKEN WHEN ALMOST NOTHING PLAYED. By 2026-09-10 the
+# engine ran 166 forward-test decisions from 29 systems, the verified
+# ceiling was 16, and EVERY published pick that day was STRONG. The tier now
+# distinguishes nothing and BUILDING/THIN/MINIMAL are unreachable. See
+# docs/INCIDENT_2026-09-10_STRONG_TIER.md.
+#
+# THE THRESHOLD HAS NOT BEEN CHANGED, deliberately. Picking a new number
+# because it makes today's picks look selective is the exact
+# manufactured-confidence failure this module exists to refuse -- see this
+# file's own comment on the evidence threshold above. Recalibrating the
+# ladder needs a rule stated before the answer is known.
+#
+# It is a NAMED CONSTANT now rather than a literal inside the branch below,
+# because a threshold buried in an `if` is invisible to
+# scripts/calibration_drift_audit.py and to anyone reading for what might
+# have gone stale. That invisibility is a large part of why this drifted
+# for two days without anything noticing.
+EVIDENCE_STRONG_MIN_FAMILIES = 3
+EVIDENCE_BUILDING_MIN_FAMILIES = 2
+EVIDENCE_BUILDING_MIN_RUNG = 2
+
+
 def evidence_tier(n_families: int, deepest_rung: int) -> str:
     """The tier for one pick, from its own frozen numbers.
 
@@ -308,9 +330,10 @@ def evidence_tier(n_families: int, deepest_rung: int) -> str:
     reached a `SlipPick` -- MIN_MECHANISM_PREDICATES already refused anything
     with no fired signal, so `deepest_rung` is always >= 0 here.
     """
-    if n_families >= 3:
+    if n_families >= EVIDENCE_STRONG_MIN_FAMILIES:
         return EVIDENCE_STRONG
-    if n_families >= 2 or deepest_rung >= 2:
+    if (n_families >= EVIDENCE_BUILDING_MIN_FAMILIES
+            or deepest_rung >= EVIDENCE_BUILDING_MIN_RUNG):
         return EVIDENCE_BUILDING
     if deepest_rung >= 1:
         return EVIDENCE_THIN
