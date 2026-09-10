@@ -291,6 +291,58 @@ if [ "$POSTMORTEM_STATUS" -ne 0 ]; then
 fi
 echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: postmortem --date $YESTERDAY exit=$POSTMORTEM_STATUS" >> "$RUN_NOTE"
 
+# The probability model, refit nightly against whatever data now exists.
+#
+# `train` was the last real orphan scripts/reachability_audit.py reported:
+# committed, complete, and called by nothing. The assumption was that this
+# is why p_model_provenance == model_derived has zero rows across the whole
+# ledger, and therefore why every gated feature (win probability, edge %,
+# confidence meter, variable staking) never ships.
+#
+# It is not. Run on 2026-09-10 the model fits fine and has NO SIGNAL:
+# 0.0006 nats of log loss better than always guessing the base rate, every
+# prediction inside 0.447..0.570, calibration off by three points. Wiring
+# it here does not unlock anything and is not meant to -- it makes the
+# number a SERIES instead of somebody's one-time impression, so that if it
+# ever does gain signal as the season accumulates, the pre-registered gate
+# in src/cli.py::cmd_train escalates on the night it happens rather than
+# whenever someone next thinks to check.
+#
+# Evaluates on the VALIDATION split. Never --test: that burns the sealed
+# split (src/model/seal.py) and a sealed split spends exactly once.
+# Zero odds credits, seconds to run, and never blocks the loop.
+echo "== train (probability model, validation split) =="
+TRAIN_OUT=$(python3 -m src.cli train 2>&1)
+TRAIN_STATUS=$?
+echo "$TRAIN_OUT" | sed 's/^/  /'
+echo "$TRAIN_OUT" | grep "^ESCALATE:" || true
+if [ "$TRAIN_STATUS" -ne 0 ]; then
+    echo "  (model refit failed; nothing downstream depends on it today)"
+fi
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: train exit=$TRAIN_STATUS" >> "$RUN_NOTE"
+
+# Closing-price coverage, read-only, per market.
+#
+# CLV is this product's only measured leading indicator, and a closing
+# price that was never captured is a decision that can never be scored --
+# so coverage rotting means the measurement goes blind while every report
+# keeps printing numbers. This was the last orphan the reachability audit
+# reported: complete, correct, invoked by nothing, which is exactly the
+# state in which coverage could degrade for weeks and only surface later
+# as a confusing CLV result.
+#
+# Writes nothing to any ledger (see cmd_closing_audit's docstring) and
+# spends no odds credits.
+echo "== closing audit (per-market coverage) =="
+CLOSING_OUT=$(python3 -m src.cli closing-audit 2>&1)
+CLOSING_STATUS=$?
+echo "$CLOSING_OUT" | sed 's/^/  /'
+echo "$CLOSING_OUT" | grep "^ESCALATE:" || true
+if [ "$CLOSING_STATUS" -ne 0 ]; then
+    echo "  (closing audit failed; it is read-only, nothing downstream is affected)"
+fi
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: closing-audit exit=$CLOSING_STATUS" >> "$RUN_NOTE"
+
 # Concurrent runs of this script and forward_capture.sh on the same shared
 # checkout raced each other into stranded/mismerged commits four times in
 # 30h (87312f2, de8a582, b258fc1, 9d30526): both scripts trip on their own

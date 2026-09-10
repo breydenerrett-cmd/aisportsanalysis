@@ -776,6 +776,56 @@ def cmd_train(args) -> int:
     print("  starting pitchers, injuries, and lineups that this model never sees.")
     print("  Answering 'does this have edge' needs historical closing odds, which")
     print("  have not been acquired. No bet should be placed on this.")
+
+    # ------------------------------------------------------------------
+    # A PRE-REGISTERED VERDICT LINE, so this stops being a thing somebody
+    # reads once and forms an impression about.
+    #
+    # docs/PRODUCT_DOCTRINE.md gates win probability, edge %, the
+    # confidence meter and variable staking behind a `model_derived`
+    # p_model that clears a calibration harness. The whole ledger carries
+    # ZERO model_derived rows, and the reason turned out not to be that
+    # nobody had run this command -- it is that when you do run it, the
+    # model has no signal. First measured run, 2026-09-10: log_loss
+    # 0.690736 against a base rate of 0.691346, an improvement of 0.0006
+    # over "always guess the base rate", with every prediction inside
+    # 0.447..0.570 and calibration off by nearly three points (predicted
+    # 0.5018, observed 0.5300).
+    #
+    # So the thresholds below are the bar this has to clear before the
+    # gated features are worth revisiting AT ALL -- and they are written
+    # here, before any run has met them, for the same reason every other
+    # threshold in this repo is pre-registered. If a future run wants to
+    # claim the model works, it moves these numbers in a commit that says
+    # why, or it does not get to claim it.
+    #
+    # 0.01 nats of log loss is roughly 16x today's margin and is the point
+    # where the improvement stops being indistinguishable from noise at
+    # this sample size. ECE <= 0.02 is a calibration floor: a probability
+    # that is not calibrated is not a probability, whatever its log loss.
+    MODEL_LOGLOSS_GAIN_BAR = 0.01
+    MODEL_ECE_BAR = 0.02
+
+    gain = baseline["log_loss"] - scores["log_loss"]
+    ece = scores["ece"]
+    clears = gain >= MODEL_LOGLOSS_GAIN_BAR and ece <= MODEL_ECE_BAR
+    print(f"\n  GATE: log_loss gain {gain:+.6f} "
+          f"(bar {MODEL_LOGLOSS_GAIN_BAR:+.4f}) · "
+          f"ece {ece:.4f} (bar {MODEL_ECE_BAR:.4f})")
+    if clears:
+        # Deliberately an ESCALATE: this would be the first evidence in
+        # this project's history that a model-derived probability could be
+        # honest, and it should interrupt somebody rather than scroll past
+        # in a nightly log.
+        print("ESCALATE: the probability model cleared the calibration bar "
+              "for the first time -- docs/PRODUCT_DOCTRINE.md's gated "
+              "features (win probability, edge %, confidence meter, "
+              "variable staking) are now worth re-opening. Confirm on a "
+              "second independent run before acting.")
+    else:
+        print("  VERDICT: NO SIGNAL. Not close to the bar. The gated "
+              "features stay gated, and this is why -- not an unrun "
+              "command.")
     return EXIT_OK
 
 
@@ -959,6 +1009,41 @@ def cmd_closing_audit(args) -> int:
         print(f"    {market} (source: {c['source']}):")
         for reason, count in sorted(c["not_derivable"].items(), key=lambda kv: -kv[1]):
             print(f"      {count:>5}  {reason}")
+
+    # ------------------------------------------------------------------
+    # A VERDICT, so this stops being a table nobody reads.
+    #
+    # h2h is the market the whole CLV programme runs on -- it is this
+    # product's only measured leading indicator, and a closing price that
+    # was never captured is a decision that can never be scored. Coverage
+    # silently rotting is therefore not a data-quality nit; it is the
+    # measurement going blind while every report still prints numbers.
+    #
+    # Wired into scripts/daily_loop.sh 2026-09-10. Before that this
+    # command was one of the reachability audit's orphans: complete,
+    # correct, and invoked by nothing, so coverage could have degraded for
+    # weeks without anyone learning about it from anything other than a
+    # confusing CLV result much later.
+    H2H_COVERAGE_FLOOR = 0.95
+
+    h2h = coverage.get("h2h")
+    if h2h and h2h["settled"]:
+        share = h2h["with_closing"] / h2h["settled"]
+        print(f"\n  GATE: h2h closing coverage {share:.1%} "
+              f"({h2h['with_closing']}/{h2h['settled']}, floor "
+              f"{H2H_COVERAGE_FLOOR:.0%})")
+        if share < H2H_COVERAGE_FLOOR:
+            print(f"ESCALATE: h2h closing coverage has fallen to {share:.1%} "
+                  f"-- CLV is this product's only measured leading indicator "
+                  f"and every uncaptured close is a decision that can never "
+                  f"be scored. Check the capture cadence before trusting any "
+                  f"CLV number.")
+        elif h2h["derivable_not_recorded"]:
+            # Derivable-but-not-recorded is recoverable, unlike a missed
+            # capture, so it is a nudge rather than an escalation.
+            print(f"  {h2h['derivable_not_recorded']} h2h close(s) are "
+                  f"derivable but not yet on the ledger -- "
+                  f"`engine closing-backfill` would record them.")
     return EXIT_OK
 
 
