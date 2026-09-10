@@ -188,6 +188,35 @@
   letter-spacing: .14em;
   color: var(--text-ghost);
 }
+/* The helpline and the support link share the legal row's register --
+   quiet, monospaced, the same size as the 21+ notice beside them. They are
+   links, not decoration, so they get an underline on hover and a visible
+   focus ring; a helpline that cannot be found by keyboard is not a
+   helpline. Deliberately NOT --money or --live: neither is an alert and
+   neither is a price. */
+.sitefoot__help,
+.sitefoot__support {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .14em;
+  color: var(--text-faint);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.sitefoot__help:hover,
+.sitefoot__support:hover,
+.sitefoot__help:focus-visible,
+.sitefoot__support:focus-visible {
+  color: var(--text-1);
+  text-decoration: underline;
+}
+@media (max-width: 899px) {
+  /* The row wraps on a phone rather than shrinking the helpline out of
+     legibility -- it is the one item here that must stay readable. */
+  .sitefoot__row { flex-wrap: wrap; row-gap: 8px; }
+  .sitefoot__hair { min-width: 24px; }
+}
 .sitefoot__summary {
   font-size: 12.5px;
   line-height: 1.6;

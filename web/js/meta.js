@@ -87,6 +87,23 @@ export async function renderDisclaimerFooter(container) {
   row.appendChild(el("span", { class: "sitefoot__mark", text: BRAND_NAME }));
   row.appendChild(el("span", { class: "sitefoot__hair", "aria-hidden": "true" }));
   row.appendChild(el("span", { class: "sitefoot__legal", text: "ALL TIMES ET · 21+ · PLAY RESPONSIBLY" }));
+  // A REACHABLE HELPLINE, not just the words "play responsibly".
+  //
+  // 1-800-GAMBLER existed only in design/linehound-v1 and -v2 mockups; it
+  // never shipped into web/. So the product told people to play responsibly
+  // and gave them nowhere to go -- the one piece of copy on this page whose
+  // whole value is being actionable at the moment somebody needs it.
+  //
+  // A tel: link, because on the device most people read this on it is one
+  // tap. Both app stores require a helpline in the listing for anything
+  // betting-adjacent, so this is also on the path to being installable --
+  // but it would be here even if it were not.
+  // No extra hairline here: .sitefoot__row already sets `gap`, and a second
+  // `flex: 1` spacer competed with the first for the same slack and
+  // collapsed BOTH to zero width -- which quietly undid the row's original
+  // mark-left / legal-right composition.
+  row.appendChild(el("a", { class: "sitefoot__help", href: "tel:1-800-426-2537",
+    "data-hook": "responsible-gambling-help", text: "1-800-GAMBLER" }));
   // #/support had ZERO inbound links anywhere in web/ -- a working support
   // form reachable only by typing the URL. A paying customer with a problem
   // could not find the one place built to hear about it, which is how a

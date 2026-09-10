@@ -12,6 +12,22 @@
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/nav.css">
+<!-- app.css, on the MARKETING page, deliberately.
+
+     web/js/meta.js's renderDisclaimerFooter is a SHARED component: both
+     this page and the app shell mount it, and it carries the beta
+     disclaimer, the 21+ notice, the 1-800-GAMBLER helpline and the support
+     link. Its styles (.sitefoot__*) live in app.css, which this page did
+     not load -- so the whole footer rendered as unstyled browser defaults
+     on the one page every stranger sees first. `.sitefoot__row` computed
+     `display: block` here, which is how it was found: the flex spacer had
+     zero width and the legal notice, the helpline and the support link ran
+     together as one string.
+
+     Linked BEFORE landing.css so this page's own rules still win any
+     conflict. Verified there are none: all 77 class selectors in app.css
+     were checked against this file's markup and not one appears here. -->
+<link rel="stylesheet" href="css/app.css">
 <link rel="stylesheet" href="css/landing.css">
 </head>
 <body class="landing">
