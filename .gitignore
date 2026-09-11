@@ -88,6 +88,13 @@ data/app/*
 !data/historical/matchup_pairs.json
 !data/historical/pitcher_splits.json
 !data/historical/transactions.jsonl
+# A DIRECTORY, and it was missed on the first pass because the list above is
+# files. The deploy went out, the gap count fell from 14 to 9, and `arsenals:
+# pitch arsenals not built for this season` was still on the page -- 700 KB
+# sitting on a laptop while the site said it did not exist. .dockerignore has
+# admitted it since 2026-09-08 (`!data/historical/arsenals/`); nothing was
+# ever going to put it in the build.
+!data/historical/arsenals/
 
 # L1 canonical PriceObservation backfill (packet W3): deterministically
 # reprojected from the forward-evidence stores above, so it is rebuildable in
