@@ -21,9 +21,23 @@ import { BRAND_NAME } from "./brand.js";
  * deliberately NOT a paraphrase of the legal text -- it says what the
  * product is and points at the full wording, which sits one click away
  * and unedited. */
+// REWRITTEN 2026-09-10 because the old line had become false.
+//
+// It read: "We show what supports a bet, what argues against it, and where
+// the price is better — never what to bet." That described the product
+// before THE CARD, which names three to five bets a day in plain words. A
+// page that opens with "Take Yankees -1.5 at -149" and carries a footer
+// promising it never says what to bet is not being careful, it is
+// contradicting itself, and a reader who notices trusts neither half.
+//
+// What replaces it is the thing that is actually true and actually rare:
+// the picks are written down before first pitch and graded afterwards,
+// losers included. No claim of edge -- nothing measured supports one (see
+// docs/DOES_THE_MODEL_BEAT_THE_MARKET.md) -- and no guarantee.
 const SUMMARY =
-  "Beta. We show what supports a bet, what argues against it, and where the "
-  + "price is better — never what to bet. Read the full disclaimer below.";
+  "Beta. Three to five bets a day, frozen before first pitch and graded "
+  + "after — wins and losses both. Nothing here is a guarantee. Read the "
+  + "full disclaimer below.";
 
 /**
  * THE RESEARCH COUNTS, FROM THE REGISTRY, ONCE.

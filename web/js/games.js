@@ -1328,9 +1328,10 @@ export async function renderGameDetail(container, date, away, home) {
   // THE BET FIRST. Everything below is why, not what.
   body.appendChild(gqvTonightsPick(cardPick, quick));
   body.appendChild(gqvPrice(quick));
+  // GAME STORY STAYS. Starters, bullpen workload, travel and weather are the
+  // things a reader actually wants under a bet -- who is pitching, who is
+  // rested, what the park is doing tonight.
   const gameStory = renderGameStory(advanced, quick); if (gameStory) body.appendChild(gameStory);
-  body.appendChild(gqvSpotlight(quick, advanced));
-  body.appendChild(gqvModelVsMarket(payload, quick));
   body.appendChild(gqvTeams(advanced, quick));
   body.appendChild(gqvActions(date, away, home));
 
@@ -1345,6 +1346,26 @@ export async function renderGameDetail(container, date, away, home) {
   const advHost = el("div", { id: "game-advanced-host" });
   advHost.hidden = true;
   advHost.appendChild(renderAdvancedV2(advanced, quick));
+  // MOVED OFF THE QUICK VIEW 2026-09-10, both of them price-verification
+  // apparatus rather than anything a reader came for.
+  //
+  // SPOTLIGHT read "Nothing clears the evidence bar, so the spotlight holds
+  // the price standing -- which is always real", over a table whose rows were
+  // PRICE STANDING / NOT AVAILABLE / "needs the full per-book board, which
+  // this check does not carry", BEATS CONSENSUS / No, and a footnote reading
+  // "price improvement / line-shopping value -- a better execution price, not
+  // expected value and not a prediction".
+  //
+  // MODEL vs MARKET printed, for each side, THE MARKET'S FAIR CHANCE against
+  // PROBABILITY YOUR PRICE IMPLIES, the difference in points, and then the
+  // same sentence twice: "A likely winner at a bad price is still a bad
+  // price; an underdog can be value when the price implies less than the
+  // market's own fair price."
+  //
+  // All of it accurate. None of it is why anyone opened the page, and
+  // together they were most of its length.
+  advHost.appendChild(gqvSpotlight(quick, advanced));
+  advHost.appendChild(gqvModelVsMarket(payload, quick));
   // The engine's own record, moved off the quick view -- see the comment at
   // the end of gqvModelVsMarket for what it was doing to the first screen.
   const engine = payload && payload.engine ? payload.engine : null;
