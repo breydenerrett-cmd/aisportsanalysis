@@ -59,7 +59,35 @@ on:
     # this block would have looked right and fired at the old time.
     #
     # Deliberately not on the hour: every repository asks for :00.
+    # FOUR RUNS A DAY, 2026-09-11 (owner asked for three to five).
+    #
+    # 15:40 UTC = 11:40am ET   before the earliest first pitch on any slate
+    # 18:40 UTC =  2:40pm ET
+    # 21:40 UTC =  5:40pm ET
+    # 23:40 UTC =  7:40pm ET
+    #
+    # IT COSTS NOTHING. `card publish` reads the free MLB schedule and local
+    # stores; it makes no paid odds call. The only thing more runs buy is a
+    # later read on games that have not started.
+    #
+    # WHY IT IS WORTH BUYING. card_ledger.publish locks each pick against ITS
+    # OWN first pitch and carries locked picks forward untouched, so every
+    # run improves the games still open and cannot touch the ones that are
+    # not. The bet of record is the last version written before that game
+    # began -- "not the preview or early bets", which is the point.
+    #
+    # ALL FOUR SIT INSIDE ONE UTC DAY ON PURPOSE. afternoon_slate.sh derives
+    # $TODAY from the UTC clock, and Eastern is UTC-4 all season, so 15:40
+    # through 23:40 UTC are 11:40am through 7:40pm on the SAME Eastern date.
+    # A run at, say, 01:40 UTC would be 9:40pm ET on the previous day's slate
+    # and would publish against the wrong date.
+    #
+    # A 10:10pm ET game still locks: its window opens 6:10pm ET and the 23:40
+    # run closes it.
     - cron: "40 15 * * *"
+    - cron: "40 18 * * *"
+    - cron: "40 21 * * *"
+    - cron: "40 23 * * *"
   workflow_dispatch: {}
 
 # The same group forward-capture and daily-loop share. All three commit and
