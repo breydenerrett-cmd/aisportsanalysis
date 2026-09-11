@@ -224,9 +224,12 @@ export function renderStaleness(staleness) {
     const clock = staleness.observed_utc == null ? null : formatEasternClock(staleness.observed_utc);
     const age = typeof staleness.age_seconds === "number" ? formatAge(staleness.age_seconds) : null;
     let text = null;
-    if (clock && age) text = `${clock} ET · ${age} ago`;
+    // `formatAge` already ends in AGO ("13 HR AGO"). Appending another one
+    // printed "11:52am ET · 13 HR AGO ago" on the slate page, in the
+    // freshness row, where a reader is being asked to trust the timestamp.
+    if (clock && age) text = `${clock} ET · ${age}`;
     else if (clock) text = `${clock} ET`;
-    else if (age) text = `${age} ago`;
+    else if (age) text = age;
     pair("observed_utc", "Prices captured",
       text === null ? renderUnknown(staleness.observed_utc == null ? null : staleness.observed_utc)
                     : el("span", { text }));

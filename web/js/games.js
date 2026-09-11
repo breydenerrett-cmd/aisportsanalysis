@@ -184,9 +184,36 @@ export async function renderGamesList(container, date) {
     setShellStatusFromStaleness(first.board_summary);
   }
 
-  for (const note of payload.notes || []) {
-    screen.appendChild(el("p", { class: "gutter changed__sub", text: note }));
-  }
+  // THE SLATE'S ENGINE NOTES ARE NOT RENDERED HERE, 2026-09-10.
+  //
+  // `briefing.build_slate` attaches the detector engine's own commentary to
+  // the payload, and the slate page printed it verbatim under the games. On
+  // 2026-09-10 that read:
+  //
+  //   "1 game(s) cleared the talent bar but had no price on the market they
+  //    were routed to. That is a different result from no play, and it is
+  //    common: measured on three seasons, more than a third of flagged games
+  //    have no first-five market at all."
+  //
+  //   "No play on the whole slate. That is the normal case, not a failure of
+  //    the scan..."
+  //
+  // TWO PROBLEMS, and the second is the serious one.
+  //
+  // It is jargon -- "talent bar", "routed to", "first-five market" are our
+  // words for our machinery, and the owner's instruction about this exact
+  // page was "keep it minimal, to the point... most of these people are
+  // degenerates and even have a hard time reading English."
+  //
+  // And it CONTRADICTED THE CARD. "No play on the whole slate" was printed
+  // beneath a slate on which the published card held three picks -- TB@ATL,
+  // HOU@PHI and COL@NYY were all on it. The detector engine and the card are
+  // different systems answering different questions, and a reader does not
+  // reconcile that; they pick the half they like. It is the same defect
+  // tests/test_today_one_answer.py was written for, on a different screen.
+  //
+  // Nothing is lost: these notes are the OPERATOR's view and still print in
+  // the CLI briefing, which is where they were written for.
   armEntrances(screen);
 }
 

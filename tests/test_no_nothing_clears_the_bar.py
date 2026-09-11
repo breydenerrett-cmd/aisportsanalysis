@@ -51,6 +51,21 @@ BANNED_PHRASES = (
     "nothing cleared the bar",
     "no demonstrated edge",
     "we checked the slate",
+    # ADDED 2026-09-10. The instruction is about a MEANING, not a spelling,
+    # and this list only had the spellings anyone had thought of.
+    #
+    # The slate page was printing "No play on the whole slate. That is the
+    # normal case, not a failure of the scan" underneath a slate on which the
+    # published card held three picks -- TB@ATL, HOU@PHI and COL@NYY were all
+    # on it. Every phrase already banned was absent, so nothing went red.
+    #
+    # It came from the detector engine's own commentary
+    # (src/pipeline/briefing.py), which is honest operator output and still
+    # prints in the CLI briefing. What is banned is putting it in front of a
+    # customer, where it is both the forbidden sentence in different words
+    # and a direct contradiction of the card above it.
+    "no play on the whole slate",
+    "no play on this slate",
 )
 
 # THE JARGON BAN, from the same instruction and the same day: "nobody knows
@@ -71,6 +86,14 @@ BANNED_JARGON = (
     "basis points",
     " bps",
     "expected value play",
+    # ADDED 2026-09-10, from the same slate-page note. "cleared the talent
+    # bar but had no price on the market they were routed to" is three terms
+    # of art in one sentence, and the owner's words about that screen were
+    # "most of these people are degenerates and even have a hard time reading
+    # English." These are ours, for our machinery, and they stay in the
+    # operator's CLI where they mean something to the reader.
+    "talent bar",
+    "routed to",
 )
 
 # Surfaces a customer reads. `web/` is the whole client; the two Python
@@ -205,6 +228,33 @@ class NoBannedVerdictCopy(unittest.TestCase):
                 if phrase in text:
                     offenders.append(f"{rel}: {phrase!r}")
         self.assertEqual([], offenders, "\n  ".join(offenders))
+
+    def test_the_slate_page_does_not_print_the_engines_own_commentary(self):
+        """THE STRING BAN CANNOT CATCH THIS ONE, which is why it is separate.
+
+        `briefing.build_slate` attaches the detector engine's commentary to
+        its payload, and the slate page used to render `payload.notes`
+        verbatim. The banned sentences therefore never appeared in any file
+        under web/ -- they arrived at runtime from src/pipeline/briefing.py,
+        which is legitimate CLI output and must keep them.
+
+        So on 2026-09-10 a customer read "No play on the whole slate" beneath
+        a slate whose published card held three picks, and every phrase test
+        above passed.
+
+        What is checked is the WIRING, not the words: the slate renderer must
+        not iterate the payload's notes. A server sentence that has not been
+        written for a customer must not be piped onto their screen.
+        """
+        path = os.path.join(ROOT, "web", "js", "games.js")
+        with open(path, encoding="utf-8") as fh:
+            source = _strip_js_comments(fh.read())
+        self.assertNotRegex(
+            source, r"for\s*\(\s*const\s+note\s+of\s+payload\.notes",
+            "the slate page is printing briefing.build_slate's engine notes "
+            "again. Those are the operator's view -- they carry our terms of "
+            "art and they contradict the card. They belong in the CLI "
+            "briefing, which still prints them.")
 
     def test_the_plain_wording_actually_exists_where_it_is_pointed_at(self):
         """A ban with no replacement is how copy quietly gets worse. These
