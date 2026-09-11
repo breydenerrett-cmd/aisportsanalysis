@@ -510,5 +510,11 @@
 @media (max-width: 640px) {
   .crp-cal__grid { gap: 4px; }
   .crp-cal__day, .crp-cal__pad { min-height: 54px; }
+  .crp-cal__day { padding: 5px 4px; }
   .crp-cal__figure { font-size: 15px; }
+  /* A 375px phone gives each square about 46px. At the desktop size the
+     units line ran past the edge and "+0.54u" lost its u -- a clipped
+     number on the page whose whole job is that the numbers are checkable. */
+  .crp-cal__note { font-size: 11px; letter-spacing: 0; }
+  .crp-cal__num { font-size: 11px; }
 }
