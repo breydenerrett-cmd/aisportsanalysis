@@ -60,7 +60,20 @@ const SUMMARY =
  */
 let _metaPromise = null;
 
-function meta() {
+/**
+ * /meta, fetched at most ONCE per page load and shared by every caller.
+ *
+ * EXPORTED 2026-09-10 BECAUSE THE SHARING WAS NOT HAPPENING. This cache has
+ * existed for a while and four call sites went around it -- the disclaimer
+ * footer directly below, main.js's version stamp, and landing.js twice --
+ * each calling `apiGet("/meta")` on its own. A single load of #/today fired
+ * FIVE requests for one unchanging payload, against a container that serves
+ * them one at a time on a single shared CPU.
+ *
+ * A private cache that callers can bypass is not a cache, it is a
+ * suggestion. This one is now the only way in.
+ */
+export function meta() {
   if (!_metaPromise) {
     _metaPromise = apiGet("/meta").catch(() => null);
   }
@@ -140,24 +153,27 @@ export async function renderDisclaimerFooter(container) {
     text: SUMMARY }));
 
   try {
-    const meta = await apiGet("/meta");
+    // The shared promise, not a fifth request for the same payload.
+    const payload = await meta();
+    if (!payload) throw new Error("meta unavailable");
     // meta.disclaimer is documented as an object ({id, temporary,
     // requires_final_legal_review, text} -- api/meta.py) rather than a
     // bare string; a legal disclaimer must never render as
     // "[object Object]" (the el() text-node path would do exactly that
     // if handed the object itself).
-    const disclaimerText = meta.disclaimer && typeof meta.disclaimer === "object"
-      ? meta.disclaimer.text
-      : meta.disclaimer;
+    const disclaimerText =
+      payload.disclaimer && typeof payload.disclaimer === "object"
+        ? payload.disclaimer.text
+        : payload.disclaimer;
 
     const disclosure = el("details", { class: "sitefoot__disclosure" });
     disclosure.appendChild(el("summary", { text: "Full beta disclaimer" }));
     const body = el("div", { class: "sitefoot__full chamfer" });
     body.appendChild(el("p", { class: "sitefoot__product", "data-hook": "product-one-liner",
-      text: meta.product }));
+      text: payload.product }));
     body.appendChild(el("p", { "data-hook": "disclaimer-text", text: disclaimerText }));
     body.appendChild(el("p", { class: "sitefoot__version", "data-hook": "app-version",
-      text: `BUILD ${meta.version}` }));
+      text: `BUILD ${payload.version}` }));
     disclosure.appendChild(body);
     region.appendChild(disclosure);
   } catch (err) {

@@ -15,9 +15,9 @@
  * and BETA_TIER already state; this file wires DOM plumbing, not copy.
  */
 
-import { apiGet, trackFunnelEvent } from "./api.js";
+import { trackFunnelEvent } from "./api.js";
 import { el, clear } from "./dom.js";
-import { renderDisclaimerFooter } from "./meta.js";
+import { renderDisclaimerFooter, meta as fetchMeta } from "./meta.js";
 import { BETA_TIER } from "./pricing.js";
 import { renderWordmark } from "./brand.js";
 import { armEntrances, armParallax, armCharts } from "./motion.js";
@@ -56,7 +56,7 @@ async function revealPublicDemoEntry() {
   const host = document.querySelector("[data-hook='public-demo-entry']");
   if (!host) return;
   try {
-    const meta = await apiGet("/meta");
+    const meta = await fetchMeta();
     if (meta && meta.public_demo === true) host.hidden = false;
   } catch (err) {
     // /meta unreachable -- leave the entry hidden (see docstring above).
@@ -146,7 +146,7 @@ async function fillResearchCounts() {
   const nodes = document.querySelectorAll("[data-hook='research-count']");
   if (!nodes.length) return;
   try {
-    const meta = await apiGet("/meta");
+    const meta = await fetchMeta();
     const n = meta && meta.research && meta.research.hypotheses;
     if (typeof n !== "number") return;
     nodes.forEach((node) => { node.textContent = String(n); });

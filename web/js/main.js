@@ -37,9 +37,9 @@
  */
 
 import { el, clear, formatEasternDate, formatEasternClock } from "./dom.js";
-import { apiGet, setPublicDemo } from "./api.js";
+import { setPublicDemo } from "./api.js";
 import { setShellStatus } from "./shell.js";
-import { renderDisclaimerFooter } from "./meta.js";
+import { renderDisclaimerFooter, meta as fetchMeta } from "./meta.js";
 import { renderToday } from "./today.js";
 import { renderGamesList, renderGameDetail } from "./games.js";
 import { renderBetCheck } from "./betcheck.js";
@@ -255,7 +255,9 @@ function boot() {
   // the first renderRoute() so the very first nav mount already knows
   // whether to hide BETS, rather than showing it for one frame and then
   // yanking it away once the fetch resolves.
-  apiGet("/meta").then((meta) => {
+  // Through the shared promise, so this and the disclaimer footer and every
+  // view that needs the registry counts are ONE request, not four.
+  fetchMeta().then((meta) => {
     publicDemo = !!(meta && meta.public_demo);
     // Shared with the views (Bet Check picks the open route over the
     // three-for-life free route when the server is in public demo).
