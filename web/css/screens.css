@@ -2336,6 +2336,55 @@
 }
 
 /* ---- verdict: big word + headline + FINDINGS/EVIDENCE mini tiles -----*/
+/* TONIGHT'S PICK -- the first panel on a game screen and the biggest type on
+   it. The bet sentence is the message; everything else here is deliberately
+   quiet so it cannot compete. Replaces the NOTHING STANDS OUT HERE panel,
+   which used to lead (see web/js/games.js). */
+.gqv-pick {
+  padding: var(--sp-10) var(--sp-11);
+  margin-bottom: var(--sp-8);
+  background: linear-gradient(180deg, rgba(255,255,255,.035), transparent 70%);
+  border: 1px solid var(--v-line, rgba(255,255,255,.10));
+}
+.gqv-pick__head {
+  display: flex; align-items: center; gap: var(--sp-6);
+  margin-bottom: var(--sp-5); flex-wrap: wrap;
+}
+.gqv-pick__eyebrow {
+  margin: 0; font-size: 12px; font-weight: 800; letter-spacing: .2em;
+  color: var(--v-t5);
+}
+.gqv-pick__label {
+  font-size: 12px; font-weight: 800; letter-spacing: .12em;
+  padding: 3px 9px; border: 1px solid currentColor; color: var(--v-t2);
+}
+/* The sentence itself. Bigger than the old verdict word, because it is the
+   one line on the screen a reader came for. */
+.gqv-pick__bet {
+  margin: 0;
+  font-family: var(--font-display); font-style: italic; font-weight: 800;
+  font-size: clamp(28px, 4vw, 46px); line-height: 1.05; letter-spacing: -.015em;
+  color: var(--v-t0);
+}
+.gqv-pick__why {
+  margin: var(--sp-7) 0 0; padding: 0; list-style: none;
+  display: grid; gap: var(--sp-3); max-width: 640px;
+}
+.gqv-pick__why li {
+  font-size: 15px; line-height: 1.5; color: var(--v-t3);
+  padding-left: var(--sp-5); position: relative;
+}
+.gqv-pick__why li::before {
+  content: "·"; position: absolute; left: 0; color: var(--v-t5);
+}
+/* The not-on-the-card case gets a fraction of the room, on purpose: it is
+   the common outcome and must not read as the headline. */
+.gqv-pick--none { padding: var(--sp-8) var(--sp-11); background: none; }
+.gqv-pick--none .gqv-pick__eyebrow { margin-bottom: var(--sp-3); }
+.gqv-pick__none-body {
+  margin: 0; font-size: 15px; line-height: 1.5; color: var(--v-t4); max-width: 640px;
+}
+
 .gqv-verdict { padding: var(--sp-10) var(--sp-11); margin-bottom: var(--sp-8); }
 .gqv-verdict__word {
   font-family: var(--font-display); font-style: italic; font-weight: 800;
@@ -2403,7 +2452,7 @@
 
 @media (max-width: 899px) {
   .gqv-body { padding: 0 var(--gutter-mobile) var(--sp-13); }
-  .gqv-identity, .gqv-verdict, .gqv-price, .gqv-teams { padding: var(--sp-8); }
+  .gqv-identity, .gqv-verdict, .gqv-price, .gqv-teams, .gqv-pick { padding: var(--sp-8); }
   .gqv-identity__row { gap: var(--sp-5); }
   .gqv-badge { width: 32px; height: 32px; font-size: 13.5px; }
   .gqv-team__name { font-size: 16px; }

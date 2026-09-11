@@ -347,36 +347,22 @@ const NOTHING_STANDS_OUT = "NOTHING STANDS OUT HERE";
  * evidence-status ladder (`contracts.py`'s Observation/Exploratory/...)
  * -- a distinct vocabulary this endpoint does not carry, never conflated
  * here. */
-function gqvVerdict(quick) {
-  const panel = el("section", { class: "gqv-verdict panel chamfer", "data-hook": "quick-verdict",
-    "data-rise": "", "data-delay": "80" });
-  const findings = quick.top_findings || [];
-  const noEdge = findings.length === 0;
-  const bigWord = noEdge ? NOTHING_STANDS_OUT : (verdictLabel(quick.verdict) || "FINDING");
-  panel.appendChild(el("div", { class: "gqv-verdict__word", "data-hook": "verdict-word", text: bigWord }));
-  const body = quick.headline
-    || (noEdge ? "Interesting matchup, but no demonstrated betting edge." : null);
-  if (body) panel.appendChild(el("p", { class: "gqv-verdict__body", "data-hook": "quick-headline", text: body }));
-  panel.appendChild(el("p", { class: "gqv-verdict__note",
-    text: noEdge
-      ? "No finding cleared the evidence bar, which is the normal case. Everything below is "
-        + "context we can stand behind, not a case for a bet."
-      : `${findings.length} finding${findings.length === 1 ? "" : "s"} cleared the bar for this game.` }));
-
-  const tiles = el("div", { class: "gqv-mini-row" });
-  tiles.appendChild(el("div", { class: "gqv-mini" }, [
-    el("div", { class: "gqv-mini__label", text: "FINDINGS" }),
-    el("div", { class: "gqv-mini__value", text: String(findings.length) }),
-  ]));
-  const topEvidence = findings.length ? findings[0].evidence_label : null;
-  tiles.appendChild(el("div", { class: "gqv-mini" }, [
-    el("div", { class: "gqv-mini__label", text: "EVIDENCE" }),
-    el("div", { class: "gqv-mini__value" },
-      [topEvidence ? document.createTextNode(String(topEvidence).toUpperCase()) : renderAbsent()]),
-  ]));
-  panel.appendChild(tiles);
-  return panel;
-}
+/* REMOVED 2026-09-10 -- the panel this comment describes no longer exists.
+ *
+ * It was the FIRST thing on a game screen, and on the overwhelming majority
+ * of games it read, in oversized type: NOTHING STANDS OUT HERE, then
+ * "Interesting matchup, but no demonstrated betting edge.", then a FINDINGS
+ * tile reading 0.
+ *
+ * Every word of that is true and it is the worst possible thing to open
+ * with. A reader who taps a game and is told immediately that nothing stands
+ * out has been given no reason to read the next screen, and the product's
+ * actual answer -- the day's three to five picks -- was nowhere on the page.
+ *
+ * `gqvTonightsPick` leads now: this game's pick if it made the card, and one
+ * short line if it did not. The no-edge headline is not lost -- it is still
+ * the advanced view's own summary line (see NOTHING_STANDS_OUT's remaining
+ * use below), which is where a reader who wants the evidence ladder goes. */
 
 /** BEST AVAILABLE / MARKET-IMPLIED CONSENSUS / PRICE IMPROVEMENT for
  * BOTH sides -- deliberately not the artboard's single-side layout (see
@@ -834,6 +820,57 @@ function gmvRankOrder(verdicts) {
   return keys.map((key, i) => ({ key, rank: unranked ? null : (i === 0 ? "best" : "other") }));
 }
 
+/* =====================================================================
+ * TONIGHT'S PICK -- the first thing on the screen, and the only thing on it
+ * that answers "what do I bet".
+ *
+ * `pick.bet` is composed in src/analysis/daily_card.py and is already the
+ * sentence: "Take Pittsburgh Pirates +1.5 at -110". It is rendered VERBATIM
+ * -- never reworded here, never assembled from parts in the client. The last
+ * time this frontend composed its own betting language it invented TOP PLAY
+ * and a reader took a price gap for a recommendation.
+ * ===================================================================*/
+
+function gqvTonightsPick(pick, quick) {
+  if (!pick) {
+    // A short, honest line rather than a panel of explanation. A game that
+    // did not make the card is the common case and does not deserve more
+    // room than the games that did.
+    const none = el("section", { class: "gqv-pick gqv-pick--none chamfer",
+      "data-hook": "game-pick-none" });
+    none.appendChild(el("p", { class: "gqv-pick__eyebrow", text: "NOT ON TONIGHT'S CARD" }));
+    none.appendChild(el("p", { class: "gqv-pick__none-body",
+      text: "This one didn't make the day's three to five. The full read is below." }));
+    return none;
+  }
+
+  const section = el("section", { class: "gqv-pick chamfer", "data-hook": "game-pick",
+    "data-label": pick.label || "" });
+  const head = el("div", { class: "gqv-pick__head" });
+  head.appendChild(el("p", { class: "gqv-pick__eyebrow", text: "TONIGHT'S PICK" }));
+  if (pick.label) {
+    head.appendChild(el("span", { class: "gqv-pick__label", text: pick.label }));
+  }
+  section.appendChild(head);
+
+  section.appendChild(el("p", { class: "gqv-pick__bet", "data-hook": "game-pick-bet",
+    text: pick.bet || "" }));
+
+  // AT MOST TWO REASONS. The card carries more; this is the game screen, not
+  // the card, and a wall of justification under the bet is the fluff this
+  // page was just cleared of.
+  const why = Array.isArray(pick.why) ? pick.why.slice(0, 2) : [];
+  if (why.length) {
+    const list = el("ul", { class: "gqv-pick__why" });
+    for (const sentence of why) {
+      list.appendChild(el("li", { text: sentence }));
+    }
+    section.appendChild(list);
+  }
+  return section;
+}
+
+
 function gqvModelVsMarket(payload, quick) {
   const wrap = el("section", { class: "gmv panel chamfer", "data-hook": "model-vs-market",
     "data-rise": "" });
@@ -1254,9 +1291,28 @@ export async function renderGameDetail(container, date, away, home) {
   screen.appendChild(loadingWrap);
 
   let payload;
+  let cardPick = null;
   try {
-    payload = await apiGet(
-      `/game/${encodeURIComponent(date)}/${encodeURIComponent(away)}/${encodeURIComponent(home)}`);
+    // THE CARD'S PICK FOR THIS GAME, fetched alongside. It leads the screen.
+    //
+    // Until 2026-09-10 this page opened with NOTHING STANDS OUT HERE and a
+    // price board. The owner: "make it impactful, concise, to the point,
+    // make them want to see our bets." A reader who opened a game and was
+    // told nothing stands out had no reason to read anything below it.
+    //
+    // FAILURE HERE IS NOT FATAL. The card is a separate endpoint with its
+    // own cache; if it is slow or down, the game still renders without a
+    // pick rather than the whole page dying for the sake of a banner.
+    const both = await Promise.allSettled([
+      apiGet(`/game/${encodeURIComponent(date)}/${encodeURIComponent(away)}/${encodeURIComponent(home)}`),
+      apiGet(`/card/${encodeURIComponent(date)}`),
+    ]);
+    if (both[0].status !== "fulfilled") throw both[0].reason;
+    payload = both[0].value;
+    if (both[1].status === "fulfilled") {
+      const picks = (both[1].value && both[1].value.picks) || [];
+      cardPick = picks.find((p) => p.away_team === away && p.home_team === home) || null;
+    }
   } catch (err) {
     renderError(loadingWrap, err);
     return;
@@ -1271,7 +1327,8 @@ export async function renderGameDetail(container, date, away, home) {
     text: "← BACK TO THE SLATE" }));
   body.appendChild(gqvTopStrip(quick));
   body.appendChild(gqvIdentity(quick, advanced));
-  body.appendChild(gqvVerdict(quick));
+  // THE BET FIRST. Everything below is why, not what.
+  body.appendChild(gqvTonightsPick(cardPick, quick));
   body.appendChild(gqvPrice(quick));
   const gameStory = renderGameStory(advanced, quick); if (gameStory) body.appendChild(gameStory);
   body.appendChild(gqvSpotlight(quick, advanced));
