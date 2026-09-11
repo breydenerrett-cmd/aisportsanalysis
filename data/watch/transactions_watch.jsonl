@@ -1051,3 +1051,7 @@
 {"fetched_utc": "2026-09-11T18:35:51.132574+00:00", "game_date": "2026-09-11", "poll": true}
 {"category": "designated", "date": "2026-09-11", "first_seen_utc": "2026-09-11T18:35:51.132574+00:00", "player": "Jes\u00fas S\u00e1nchez", "player_id": 660821, "team": "TOR", "transaction_id": 942021}
 {"category": "other", "date": "2026-09-11", "first_seen_utc": "2026-09-11T18:35:51.132574+00:00", "player": "Rudy Martin Jr.", "player_id": 657675, "team": "TOR", "transaction_id": 942022}
+{"fetched_utc": "2026-09-11T19:26:01.621486+00:00", "game_date": "2026-09-11", "poll": true}
+{"category": "il_placement", "date": "2026-09-09", "first_seen_utc": "2026-09-11T19:26:01.621486+00:00", "player": "Eli White", "player_id": 642201, "team": "BOS", "transaction_id": 942027}
+{"category": "other", "date": "2026-09-11", "first_seen_utc": "2026-09-11T19:26:01.621486+00:00", "player": "Hunter Bigge", "player_id": 685801, "team": "OAK", "transaction_id": 942023}
+{"category": "recalled", "date": "2026-09-11", "first_seen_utc": "2026-09-11T19:26:01.621486+00:00", "player": "Anthony Seigler", "player_id": 678011, "team": "BOS", "transaction_id": 942026}
