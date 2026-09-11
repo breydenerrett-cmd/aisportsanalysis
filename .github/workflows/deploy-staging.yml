@@ -47,7 +47,34 @@ jobs:
       # (it carries this run's id) so restore-keys always resolves to the
       # newest daily-loop save. A miss is not fatal: the image builds with
       # an empty data/historical/ and the API states each gap.
+      # THIS PATH LIST MUST MATCH daily-loop.yml's SAVE STEP EXACTLY --
+      # same entries, same order. It is not a list of "files we would like";
+      # it is half of the cache's identity.
+      #
+      # GitHub derives a cache VERSION by hashing the `path` input, and a
+      # restore only matches when BOTH the key and that version agree. A key
+      # that matches with a different path list reports, in full,
+      # "Cache not found" -- indistinguishable from no cache existing.
+      #
+      # It said exactly that on every staging deploy up to 2026-09-10, while
+      # 45 MiB caches with that very prefix were being written every thirty
+      # minutes. Two differences were enough: this list asked for a
+      # `transactions.jsonl` that daily-loop never saves, and it put
+      # `standings.jsonl` in a different position.
+      #
+      # The consequence was not a failed deploy. A cache miss is not an
+      # error, so every deploy went green and shipped an image whose
+      # data/historical/ held one empty .gitkeep. The app then had no results
+      # store, no lineups and no bullpen log, fell back to live provider
+      # calls on a single shared CPU, and stopped answering -- which is what
+      # the owner saw as "LOADING THE SLATE" spinning on his phone for
+      # minutes on 2026-09-10.
+      #
+      # If a store is genuinely needed here, ADD IT TO daily-loop's save step
+      # first and then to this list. Adding it only here silently breaks
+      # every restore, which is the failure this comment exists to prevent.
       - name: Restore historical stores from the daily-loop cache
+        id: restore_stores
         uses: actions/cache/restore@v4
         with:
           path: |
@@ -58,17 +85,49 @@ jobs:
             data/historical/bullpen_log.jsonl
             data/historical/lineups.jsonl
             data/historical/handedness.json
-            data/historical/standings.jsonl
             data/historical/matchup_history.jsonl
             data/historical/matchup_pairs.json
             data/historical/pitcher_splits.json
             data/historical/arsenals
-            data/historical/transactions.jsonl
+            data/historical/standings.jsonl
           key: daily-loop-data-${{ github.run_id }}
           restore-keys: |
             daily-loop-data-
       - name: Report which stores the image will carry
         run: ls -la data/historical/ || true
+
+      # A DEPLOY THAT SHIPS NO DATA MUST NOT BE GREEN.
+      #
+      # The restore above had been missing for an unknown number of deploys
+      # and nothing noticed, because a cache miss is a normal outcome and
+      # every later step still succeeded. The image was empty, the app
+      # answered slowly or not at all, and the only report was a customer
+      # saying the page would not load.
+      #
+      # This turns that into a failed build. `mlb_results.csv` is the check
+      # because it is the store the game surface cannot do anything without:
+      # no results means no records, no model inputs and no slate history.
+      - name: Refuse to ship an image with no data
+        run: |
+          set -eu
+          results="data/historical/mlb_results.csv"
+          if [ ! -s "$results" ]; then
+            echo "::error::$results is missing or empty -- the daily-loop"
+            echo "::error::cache did not restore, and deploying now would"
+            echo "::error::ship an app with no results store."
+            echo "Caches that exist right now (key / size / branch):"
+            gh cache list --limit 5 || true
+            echo ""
+            echo "MOST LIKELY CAUSE: this workflow's cache \`path\` list no"
+            echo "longer matches daily-loop.yml's save step. GitHub hashes"
+            echo "that list into the cache version, so a mismatch reports"
+            echo "\"Cache not found\" even when the key matches."
+            exit 1
+          fi
+          lines=$(wc -l < "$results")
+          echo "results store: $lines rows -- shipping"
+        env:
+          GH_TOKEN: ${{ github.token }}
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Deploy
         run: flyctl deploy -c deploy/fly.staging.toml -a linehound-staging --remote-only --yes

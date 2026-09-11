@@ -18,6 +18,30 @@
 
 export const TOKEN_STORAGE_KEY = "aisportsanalysis.invite_token";
 
+/**
+ * HOW LONG A REQUEST MAY HANG BEFORE WE GIVE UP AND SAY SO.
+ *
+ * There was no timeout here until 2026-09-10, and on that evening the
+ * staging box stopped answering while still accepting connections. `fetch`
+ * has no default timeout, so the promise simply never settled: `renderError`
+ * below was never reached, the skeleton kept animating, and the owner
+ * watched "LOADING THE SLATE" spin on his phone for minutes with no error,
+ * no retry, and nothing to tell him the service was down.
+ *
+ * A 503 was never the problem -- that rejects immediately and renders the
+ * error state correctly. The silent case is a server that holds the socket
+ * open and never writes a response, which is exactly what an overloaded
+ * container does before it dies, and it is the one case an infinite wait
+ * handles worst.
+ *
+ * TWENTY SECONDS, and the number is a judgement rather than a measurement:
+ * long enough that a genuinely slow cold build still lands (the slowest
+ * endpoint measured locally is /opportunities at 4.6s), short enough that a
+ * reader on a phone learns the truth while still caring. A caller with a
+ * legitimately slower endpoint passes its own `timeoutMs`.
+ */
+export const DEFAULT_TIMEOUT_MS = 20000;
+
 export function getToken() {
   try {
     return window.localStorage.getItem(TOKEN_STORAGE_KEY) || "";
@@ -123,14 +147,53 @@ export async function apiFetch(path, options = {}) {
   if (options.body !== undefined && headers["Content-Type"] === undefined) {
     headers["Content-Type"] = "application/json";
   }
+  // THE SAME SIGNAL COVERS THE BODY READ, not just the headers. A stalled
+  // response that sends a status line and then stops would otherwise hang
+  // on `response.text()` below with the headers already in hand -- the
+  // spinner case again, one step further along.
+  const timeoutMs = options.timeoutMs === undefined
+    ? DEFAULT_TIMEOUT_MS : options.timeoutMs;
+  const controller = typeof AbortController === "function"
+    ? new AbortController() : null;
+  let timedOut = false;
+  let timer = null;
+  if (controller && timeoutMs) {
+    timer = setTimeout(() => { timedOut = true; controller.abort(); },
+                       timeoutMs);
+  }
+  const init = Object.assign({}, options, { headers });
+  delete init.timeoutMs;          // not a fetch option; would be ignored,
+  if (controller) {               // but leaving it there invites confusion
+    init.signal = controller.signal;
+  }
+
   let response;
   try {
-    response = await fetch(path, Object.assign({}, options, { headers }));
+    response = await fetch(path, init);
   } catch (err) {
+    if (timer) clearTimeout(timer);
+    if (timedOut) {
+      // `status: null` routes this to renderError's "network" branch, which
+      // already says the right thing: could be your connection, could be an
+      // outage, and it is NOT the server answering "no games".
+      throw new ApiError(null, `no response after ${Math.round(timeoutMs / 1000)}`
+        + "s — the service did not answer");
+    }
     throw new ApiError(null, "network request failed: " + err.message);
   }
   let payload = null;
-  const text = await response.text();
+  let text;
+  try {
+    text = await response.text();
+  } catch (err) {
+    if (timedOut) {
+      throw new ApiError(null, `no response after ${Math.round(timeoutMs / 1000)}`
+        + "s — the service stopped mid-answer");
+    }
+    throw new ApiError(null, "network request failed: " + err.message);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
   if (text) {
     try {
       payload = JSON.parse(text);
@@ -145,8 +208,8 @@ export async function apiFetch(path, options = {}) {
   return payload;
 }
 
-export function apiGet(path) {
-  return apiFetch(path, { method: "GET" });
+export function apiGet(path, options = {}) {
+  return apiFetch(path, Object.assign({ method: "GET" }, options));
 }
 
 export function apiPost(path, body) {
