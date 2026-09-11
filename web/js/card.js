@@ -385,8 +385,13 @@ export async function renderCard(host, date) {
     servingOlderCard ? "LAST PUBLISHED CARD" : "TONIGHT'S CARD", meta));
   if (servingOlderCard) {
     wrap.appendChild(el("p", { class: "card2lede", "data-hook": "card-older",
+      // "already graded" was wrong and shipped for about ten minutes. A card
+      // is published in the morning and graded after its games settle, so at
+      // 10:52pm the card being shown here is frozen but NOT yet graded. It
+      // is a small claim and it was still a false one, on the page whose
+      // whole pitch is that the claims are checkable.
       text: `Tomorrow's card posts in the morning. These are the bets from `
-          + `${servingOlderCard}, already graded on the record.` }));
+          + `${servingOlderCard}, frozen before those games started.` }));
   }
 
   // TWO DIFFERENT PROMISES, AND THE PAGE MUST NOT MAKE THE WRONG ONE.
