@@ -1,0 +1,3180 @@
+{
+ "dates": {
+  "2025-03-20": {
+   "cancelled": 0,
+   "final": 11,
+   "pending": 0,
+   "skipped_game_type": 11,
+   "stored": 0,
+   "total": 11
+  },
+  "2025-03-21": {
+   "cancelled": 0,
+   "final": 18,
+   "pending": 0,
+   "skipped_game_type": 18,
+   "stored": 0,
+   "total": 18
+  },
+  "2025-03-22": {
+   "cancelled": 0,
+   "final": 16,
+   "pending": 0,
+   "skipped_game_type": 16,
+   "stored": 0,
+   "total": 16
+  },
+  "2025-03-23": {
+   "cancelled": 0,
+   "final": 16,
+   "pending": 0,
+   "skipped_game_type": 16,
+   "stored": 0,
+   "total": 16
+  },
+  "2025-03-24": {
+   "cancelled": 1,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 14,
+   "stored": 0,
+   "total": 15
+  },
+  "2025-03-25": {
+   "cancelled": 0,
+   "final": 10,
+   "pending": 0,
+   "skipped_game_type": 10,
+   "stored": 0,
+   "total": 10
+  },
+  "2025-03-26": {
+   "cancelled": 0,
+   "final": 0,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 0,
+   "total": 0
+  },
+  "2025-03-27": {
+   "cancelled": 0,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 14
+  },
+  "2025-03-28": {
+   "cancelled": 0,
+   "final": 9,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 9,
+   "total": 9
+  },
+  "2025-03-29": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-03-30": {
+   "cancelled": 0,
+   "final": 13,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 13,
+   "total": 13
+  },
+  "2025-03-31": {
+   "cancelled": 0,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 14
+  },
+  "2025-04-01": {
+   "cancelled": 0,
+   "final": 13,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 13,
+   "total": 13
+  },
+  "2025-04-02": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-04-03": {
+   "cancelled": 0,
+   "final": 5,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 5,
+   "total": 5
+  },
+  "2025-04-04": {
+   "cancelled": 0,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 14
+  },
+  "2025-04-05": {
+   "cancelled": 1,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 15
+  },
+  "2025-04-06": {
+   "cancelled": 1,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 16
+  },
+  "2025-04-07": {
+   "cancelled": 0,
+   "final": 11,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 11,
+   "total": 11
+  },
+  "2025-04-08": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-04-09": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-04-10": {
+   "cancelled": 0,
+   "final": 6,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 6,
+   "total": 6
+  },
+  "2025-04-11": {
+   "cancelled": 1,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 15
+  },
+  "2025-04-12": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-04-13": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-04-14": {
+   "cancelled": 0,
+   "final": 10,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 10,
+   "total": 10
+  },
+  "2025-04-15": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-04-16": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-04-17": {
+   "cancelled": 0,
+   "final": 10,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 10,
+   "total": 10
+  },
+  "2025-04-18": {
+   "cancelled": 1,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 15
+  },
+  "2025-04-19": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-04-20": {
+   "cancelled": 0,
+   "final": 16,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 16,
+   "total": 16
+  },
+  "2025-04-21": {
+   "cancelled": 0,
+   "final": 8,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 8,
+   "total": 8
+  },
+  "2025-04-22": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-04-23": {
+   "cancelled": 1,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 15
+  },
+  "2025-04-24": {
+   "cancelled": 0,
+   "final": 9,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 9,
+   "total": 9
+  },
+  "2025-04-25": {
+   "cancelled": 2,
+   "final": 13,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 13,
+   "total": 15
+  },
+  "2025-04-26": {
+   "cancelled": 1,
+   "final": 16,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 16,
+   "total": 17
+  },
+  "2025-04-27": {
+   "cancelled": 0,
+   "final": 16,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 16,
+   "total": 16
+  },
+  "2025-04-28": {
+   "cancelled": 0,
+   "final": 8,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 8,
+   "total": 8
+  },
+  "2025-04-29": {
+   "cancelled": 1,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 15
+  },
+  "2025-04-30": {
+   "cancelled": 0,
+   "final": 16,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 16,
+   "total": 16
+  },
+  "2025-05-01": {
+   "cancelled": 0,
+   "final": 11,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 11,
+   "total": 11
+  },
+  "2025-05-02": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-05-03": {
+   "cancelled": 1,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 15
+  },
+  "2025-05-04": {
+   "cancelled": 0,
+   "final": 16,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 16,
+   "total": 16
+  },
+  "2025-05-05": {
+   "cancelled": 1,
+   "final": 9,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 9,
+   "total": 10
+  },
+  "2025-05-06": {
+   "cancelled": 1,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 16
+  },
+  "2025-05-07": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-05-08": {
+   "cancelled": 0,
+   "final": 9,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 9,
+   "total": 9
+  },
+  "2025-05-09": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-05-10": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-05-11": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-05-12": {
+   "cancelled": 0,
+   "final": 11,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 11,
+   "total": 11
+  },
+  "2025-05-13": {
+   "cancelled": 2,
+   "final": 13,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 13,
+   "total": 15
+  },
+  "2025-05-14": {
+   "cancelled": 0,
+   "final": 17,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 17,
+   "total": 17
+  },
+  "2025-05-15": {
+   "cancelled": 0,
+   "final": 6,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 6,
+   "total": 6
+  },
+  "2025-05-16": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-05-17": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-05-18": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-05-19": {
+   "cancelled": 0,
+   "final": 12,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 12,
+   "total": 12
+  },
+  "2025-05-20": {
+   "cancelled": 1,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 15
+  },
+  "2025-05-21": {
+   "cancelled": 1,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 16
+  },
+  "2025-05-22": {
+   "cancelled": 1,
+   "final": 8,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 8,
+   "total": 9
+  },
+  "2025-05-23": {
+   "cancelled": 1,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 16
+  },
+  "2025-05-24": {
+   "cancelled": 0,
+   "final": 16,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 16,
+   "total": 16
+  },
+  "2025-05-25": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-05-26": {
+   "cancelled": 0,
+   "final": 12,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 12,
+   "total": 12
+  },
+  "2025-05-27": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-05-28": {
+   "cancelled": 1,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 15
+  },
+  "2025-05-29": {
+   "cancelled": 0,
+   "final": 5,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 5,
+   "total": 5
+  },
+  "2025-05-30": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-05-31": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-06-01": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-06-02": {
+   "cancelled": 0,
+   "final": 7,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 7,
+   "total": 7
+  },
+  "2025-06-03": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-06-04": {
+   "cancelled": 1,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 15
+  },
+  "2025-06-05": {
+   "cancelled": 0,
+   "final": 13,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 13,
+   "total": 13
+  },
+  "2025-06-06": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-06-07": {
+   "cancelled": 0,
+   "final": 16,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 16,
+   "total": 16
+  },
+  "2025-06-08": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-06-09": {
+   "cancelled": 0,
+   "final": 9,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 9,
+   "total": 9
+  },
+  "2025-06-10": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-06-11": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-06-12": {
+   "cancelled": 0,
+   "final": 8,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 8,
+   "total": 8
+  },
+  "2025-06-13": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-06-14": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-06-15": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-06-16": {
+   "cancelled": 0,
+   "final": 7,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 7,
+   "total": 7
+  },
+  "2025-06-17": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-06-18": {
+   "cancelled": 3,
+   "final": 12,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 12,
+   "total": 15
+  },
+  "2025-06-19": {
+   "cancelled": 0,
+   "final": 16,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 16,
+   "total": 16
+  },
+  "2025-06-20": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-06-21": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-06-22": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-06-23": {
+   "cancelled": 0,
+   "final": 9,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 9,
+   "total": 9
+  },
+  "2025-06-24": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-06-25": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-06-26": {
+   "cancelled": 0,
+   "final": 9,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 9,
+   "total": 9
+  },
+  "2025-06-27": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-06-28": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-06-29": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-06-30": {
+   "cancelled": 0,
+   "final": 8,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 8,
+   "total": 8
+  },
+  "2025-07-01": {
+   "cancelled": 3,
+   "final": 12,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 12,
+   "total": 15
+  },
+  "2025-07-02": {
+   "cancelled": 0,
+   "final": 19,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 19,
+   "total": 19
+  },
+  "2025-07-03": {
+   "cancelled": 0,
+   "final": 10,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 10,
+   "total": 10
+  },
+  "2025-07-04": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-07-05": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-07-06": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-07-07": {
+   "cancelled": 0,
+   "final": 10,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 10,
+   "total": 10
+  },
+  "2025-07-08": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-07-09": {
+   "cancelled": 1,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 15
+  },
+  "2025-07-10": {
+   "cancelled": 1,
+   "final": 10,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 10,
+   "total": 11
+  },
+  "2025-07-11": {
+   "cancelled": 0,
+   "final": 16,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 16,
+   "total": 16
+  },
+  "2025-07-12": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-07-13": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-07-14": {
+   "cancelled": 0,
+   "final": 0,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 0,
+   "total": 0
+  },
+  "2025-07-15": {
+   "cancelled": 0,
+   "final": 1,
+   "pending": 0,
+   "skipped_game_type": 1,
+   "stored": 0,
+   "total": 1
+  },
+  "2025-07-16": {
+   "cancelled": 0,
+   "final": 0,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 0,
+   "total": 0
+  },
+  "2025-07-17": {
+   "cancelled": 0,
+   "final": 0,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 0,
+   "total": 0
+  },
+  "2025-07-18": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-07-19": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-07-20": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-07-21": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-07-22": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-07-23": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-07-24": {
+   "cancelled": 0,
+   "final": 5,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 5,
+   "total": 5
+  },
+  "2025-07-25": {
+   "cancelled": 1,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 15
+  },
+  "2025-07-26": {
+   "cancelled": 0,
+   "final": 16,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 16,
+   "total": 16
+  },
+  "2025-07-27": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-07-28": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-07-29": {
+   "cancelled": 0,
+   "final": 16,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 16,
+   "total": 16
+  },
+  "2025-07-30": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-07-31": {
+   "cancelled": 0,
+   "final": 3,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 3,
+   "total": 3
+  },
+  "2025-08-01": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-08-02": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-08-03": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-08-04": {
+   "cancelled": 0,
+   "final": 13,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 13,
+   "total": 13
+  },
+  "2025-08-05": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-08-06": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-08-07": {
+   "cancelled": 0,
+   "final": 4,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 4,
+   "total": 4
+  },
+  "2025-08-08": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-08-09": {
+   "cancelled": 0,
+   "final": 16,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 16,
+   "total": 16
+  },
+  "2025-08-10": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-08-11": {
+   "cancelled": 0,
+   "final": 11,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 11,
+   "total": 11
+  },
+  "2025-08-12": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-08-13": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-08-14": {
+   "cancelled": 0,
+   "final": 7,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 7,
+   "total": 7
+  },
+  "2025-08-15": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-08-16": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-08-17": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-08-18": {
+   "cancelled": 1,
+   "final": 12,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 12,
+   "total": 13
+  },
+  "2025-08-19": {
+   "cancelled": 0,
+   "final": 16,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 16,
+   "total": 16
+  },
+  "2025-08-20": {
+   "cancelled": 0,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 14
+  },
+  "2025-08-21": {
+   "cancelled": 0,
+   "final": 9,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 9,
+   "total": 9
+  },
+  "2025-08-22": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-08-23": {
+   "cancelled": 0,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 14
+  },
+  "2025-08-24": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-08-25": {
+   "cancelled": 0,
+   "final": 13,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 13,
+   "total": 13
+  },
+  "2025-08-26": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-08-27": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-08-28": {
+   "cancelled": 0,
+   "final": 8,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 8,
+   "total": 8
+  },
+  "2025-08-29": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-08-30": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-08-31": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-09-01": {
+   "cancelled": 0,
+   "final": 13,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 13,
+   "total": 13
+  },
+  "2025-09-02": {
+   "cancelled": 0,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 14
+  },
+  "2025-09-03": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-09-04": {
+   "cancelled": 0,
+   "final": 6,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 6,
+   "total": 6
+  },
+  "2025-09-05": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-09-06": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-09-07": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-09-08": {
+   "cancelled": 0,
+   "final": 11,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 11,
+   "total": 11
+  },
+  "2025-09-09": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-09-10": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-09-11": {
+   "cancelled": 0,
+   "final": 9,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 9,
+   "total": 9
+  },
+  "2025-09-12": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-09-13": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-09-14": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-09-15": {
+   "cancelled": 0,
+   "final": 9,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 9,
+   "total": 9
+  },
+  "2025-09-16": {
+   "cancelled": 0,
+   "final": 16,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 16,
+   "total": 16
+  },
+  "2025-09-17": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-09-18": {
+   "cancelled": 0,
+   "final": 10,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 10,
+   "total": 10
+  },
+  "2025-09-19": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-09-20": {
+   "cancelled": 0,
+   "final": 16,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 16,
+   "total": 16
+  },
+  "2025-09-21": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-09-22": {
+   "cancelled": 0,
+   "final": 3,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 3,
+   "total": 3
+  },
+  "2025-09-23": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-09-24": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-09-25": {
+   "cancelled": 0,
+   "final": 12,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 12,
+   "total": 12
+  },
+  "2025-09-26": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-09-27": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-09-28": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2025-09-29": {
+   "cancelled": 0,
+   "final": 0,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 0,
+   "total": 0
+  },
+  "2025-09-30": {
+   "cancelled": 0,
+   "final": 4,
+   "pending": 0,
+   "skipped_game_type": 4,
+   "stored": 0,
+   "total": 4
+  },
+  "2025-10-01": {
+   "cancelled": 0,
+   "final": 4,
+   "pending": 0,
+   "skipped_game_type": 4,
+   "stored": 0,
+   "total": 4
+  },
+  "2025-10-02": {
+   "cancelled": 0,
+   "final": 3,
+   "pending": 0,
+   "skipped_game_type": 3,
+   "stored": 0,
+   "total": 3
+  },
+  "2025-10-03": {
+   "cancelled": 0,
+   "final": 0,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 0,
+   "total": 0
+  },
+  "2025-10-04": {
+   "cancelled": 0,
+   "final": 4,
+   "pending": 0,
+   "skipped_game_type": 4,
+   "stored": 0,
+   "total": 4
+  },
+  "2025-10-05": {
+   "cancelled": 0,
+   "final": 2,
+   "pending": 0,
+   "skipped_game_type": 2,
+   "stored": 0,
+   "total": 2
+  },
+  "2025-10-06": {
+   "cancelled": 0,
+   "final": 2,
+   "pending": 0,
+   "skipped_game_type": 2,
+   "stored": 0,
+   "total": 2
+  },
+  "2025-10-07": {
+   "cancelled": 0,
+   "final": 2,
+   "pending": 0,
+   "skipped_game_type": 2,
+   "stored": 0,
+   "total": 2
+  },
+  "2025-10-08": {
+   "cancelled": 0,
+   "final": 4,
+   "pending": 0,
+   "skipped_game_type": 4,
+   "stored": 0,
+   "total": 4
+  },
+  "2025-10-09": {
+   "cancelled": 0,
+   "final": 2,
+   "pending": 0,
+   "skipped_game_type": 2,
+   "stored": 0,
+   "total": 2
+  },
+  "2025-10-10": {
+   "cancelled": 0,
+   "final": 1,
+   "pending": 0,
+   "skipped_game_type": 1,
+   "stored": 0,
+   "total": 1
+  },
+  "2025-10-11": {
+   "cancelled": 0,
+   "final": 1,
+   "pending": 0,
+   "skipped_game_type": 1,
+   "stored": 0,
+   "total": 1
+  },
+  "2025-10-12": {
+   "cancelled": 0,
+   "final": 1,
+   "pending": 0,
+   "skipped_game_type": 1,
+   "stored": 0,
+   "total": 1
+  },
+  "2025-10-13": {
+   "cancelled": 0,
+   "final": 2,
+   "pending": 0,
+   "skipped_game_type": 2,
+   "stored": 0,
+   "total": 2
+  },
+  "2025-10-14": {
+   "cancelled": 0,
+   "final": 1,
+   "pending": 0,
+   "skipped_game_type": 1,
+   "stored": 0,
+   "total": 1
+  },
+  "2025-10-15": {
+   "cancelled": 0,
+   "final": 1,
+   "pending": 0,
+   "skipped_game_type": 1,
+   "stored": 0,
+   "total": 1
+  },
+  "2025-10-16": {
+   "cancelled": 0,
+   "final": 2,
+   "pending": 0,
+   "skipped_game_type": 2,
+   "stored": 0,
+   "total": 2
+  },
+  "2025-10-17": {
+   "cancelled": 0,
+   "final": 2,
+   "pending": 0,
+   "skipped_game_type": 2,
+   "stored": 0,
+   "total": 2
+  },
+  "2025-10-18": {
+   "cancelled": 0,
+   "final": 0,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 0,
+   "total": 0
+  },
+  "2025-10-19": {
+   "cancelled": 0,
+   "final": 1,
+   "pending": 0,
+   "skipped_game_type": 1,
+   "stored": 0,
+   "total": 1
+  },
+  "2025-10-20": {
+   "cancelled": 0,
+   "final": 1,
+   "pending": 0,
+   "skipped_game_type": 1,
+   "stored": 0,
+   "total": 1
+  },
+  "2025-10-21": {
+   "cancelled": 0,
+   "final": 0,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 0,
+   "total": 0
+  },
+  "2025-10-22": {
+   "cancelled": 0,
+   "final": 0,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 0,
+   "total": 0
+  },
+  "2025-10-23": {
+   "cancelled": 0,
+   "final": 0,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 0,
+   "total": 0
+  },
+  "2025-10-24": {
+   "cancelled": 0,
+   "final": 1,
+   "pending": 0,
+   "skipped_game_type": 1,
+   "stored": 0,
+   "total": 1
+  },
+  "2025-10-25": {
+   "cancelled": 0,
+   "final": 1,
+   "pending": 0,
+   "skipped_game_type": 1,
+   "stored": 0,
+   "total": 1
+  },
+  "2025-10-26": {
+   "cancelled": 0,
+   "final": 0,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 0,
+   "total": 0
+  },
+  "2025-10-27": {
+   "cancelled": 0,
+   "final": 1,
+   "pending": 0,
+   "skipped_game_type": 1,
+   "stored": 0,
+   "total": 1
+  },
+  "2025-10-28": {
+   "cancelled": 0,
+   "final": 1,
+   "pending": 0,
+   "skipped_game_type": 1,
+   "stored": 0,
+   "total": 1
+  },
+  "2025-10-29": {
+   "cancelled": 0,
+   "final": 1,
+   "pending": 0,
+   "skipped_game_type": 1,
+   "stored": 0,
+   "total": 1
+  },
+  "2025-10-30": {
+   "cancelled": 0,
+   "final": 0,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 0,
+   "total": 0
+  },
+  "2025-10-31": {
+   "cancelled": 0,
+   "final": 1,
+   "pending": 0,
+   "skipped_game_type": 1,
+   "stored": 0,
+   "total": 1
+  },
+  "2025-11-01": {
+   "cancelled": 0,
+   "final": 1,
+   "pending": 0,
+   "skipped_game_type": 1,
+   "stored": 0,
+   "total": 1
+  },
+  "2025-11-02": {
+   "cancelled": 0,
+   "final": 0,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 0,
+   "total": 0
+  },
+  "2025-11-03": {
+   "cancelled": 0,
+   "final": 0,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 0,
+   "total": 0
+  },
+  "2025-11-04": {
+   "cancelled": 0,
+   "final": 0,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 0,
+   "total": 0
+  },
+  "2025-11-05": {
+   "cancelled": 0,
+   "final": 0,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 0,
+   "total": 0
+  },
+  "2026-03-26": {
+   "cancelled": 0,
+   "final": 11,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 11,
+   "total": 11
+  },
+  "2026-03-27": {
+   "cancelled": 0,
+   "final": 8,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 8,
+   "total": 8
+  },
+  "2026-03-28": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-03-29": {
+   "cancelled": 0,
+   "final": 12,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 12,
+   "total": 12
+  },
+  "2026-03-30": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-03-31": {
+   "cancelled": 0,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 14
+  },
+  "2026-04-01": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-04-02": {
+   "cancelled": 1,
+   "final": 3,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 3,
+   "total": 4
+  },
+  "2026-04-03": {
+   "cancelled": 1,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 15
+  },
+  "2026-04-04": {
+   "cancelled": 1,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 16
+  },
+  "2026-04-05": {
+   "cancelled": 0,
+   "final": 16,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 16,
+   "total": 16
+  },
+  "2026-04-06": {
+   "cancelled": 0,
+   "final": 13,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 13,
+   "total": 13
+  },
+  "2026-04-07": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-04-08": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-04-09": {
+   "cancelled": 0,
+   "final": 6,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 6,
+   "total": 6
+  },
+  "2026-04-10": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-04-11": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-04-12": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-04-13": {
+   "cancelled": 0,
+   "final": 10,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 10,
+   "total": 10
+  },
+  "2026-04-14": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-04-15": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-04-16": {
+   "cancelled": 0,
+   "final": 10,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 10,
+   "total": 10
+  },
+  "2026-04-17": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-04-18": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-04-19": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-04-20": {
+   "cancelled": 0,
+   "final": 10,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 10,
+   "total": 10
+  },
+  "2026-04-21": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-04-22": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-04-23": {
+   "cancelled": 0,
+   "final": 9,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 9,
+   "total": 9
+  },
+  "2026-04-24": {
+   "cancelled": 0,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 14
+  },
+  "2026-04-25": {
+   "cancelled": 1,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 15
+  },
+  "2026-04-26": {
+   "cancelled": 0,
+   "final": 16,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 16,
+   "total": 16
+  },
+  "2026-04-27": {
+   "cancelled": 0,
+   "final": 8,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 8,
+   "total": 8
+  },
+  "2026-04-28": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-04-29": {
+   "cancelled": 2,
+   "final": 13,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 13,
+   "total": 15
+  },
+  "2026-04-30": {
+   "cancelled": 0,
+   "final": 11,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 11,
+   "total": 11
+  },
+  "2026-05-01": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-05-02": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-05-03": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-05-04": {
+   "cancelled": 0,
+   "final": 12,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 12,
+   "total": 12
+  },
+  "2026-05-05": {
+   "cancelled": 2,
+   "final": 13,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 13,
+   "total": 15
+  },
+  "2026-05-06": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-05-07": {
+   "cancelled": 0,
+   "final": 10,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 10,
+   "total": 10
+  },
+  "2026-05-08": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-05-09": {
+   "cancelled": 1,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 15
+  },
+  "2026-05-10": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-05-11": {
+   "cancelled": 0,
+   "final": 6,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 6,
+   "total": 6
+  },
+  "2026-05-12": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-05-13": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-05-14": {
+   "cancelled": 0,
+   "final": 11,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 11,
+   "total": 11
+  },
+  "2026-05-15": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-05-16": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-05-17": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-05-18": {
+   "cancelled": 0,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 14
+  },
+  "2026-05-19": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-05-20": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-05-21": {
+   "cancelled": 0,
+   "final": 7,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 7,
+   "total": 7
+  },
+  "2026-05-22": {
+   "cancelled": 1,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 15
+  },
+  "2026-05-23": {
+   "cancelled": 2,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 16
+  },
+  "2026-05-24": {
+   "cancelled": 1,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 16
+  },
+  "2026-05-25": {
+   "cancelled": 0,
+   "final": 13,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 13,
+   "total": 13
+  },
+  "2026-05-26": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-05-27": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-05-28": {
+   "cancelled": 0,
+   "final": 6,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 6,
+   "total": 6
+  },
+  "2026-05-29": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-05-30": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-05-31": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-06-01": {
+   "cancelled": 0,
+   "final": 9,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 9,
+   "total": 9
+  },
+  "2026-06-02": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-06-03": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-06-04": {
+   "cancelled": 0,
+   "final": 9,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 9,
+   "total": 9
+  },
+  "2026-06-05": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-06-06": {
+   "cancelled": 1,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 15
+  },
+  "2026-06-07": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-06-08": {
+   "cancelled": 0,
+   "final": 8,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 8,
+   "total": 8
+  },
+  "2026-06-09": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-06-10": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-06-11": {
+   "cancelled": 1,
+   "final": 7,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 7,
+   "total": 8
+  },
+  "2026-06-12": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-06-13": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-06-14": {
+   "cancelled": 1,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 15
+  },
+  "2026-06-15": {
+   "cancelled": 0,
+   "final": 10,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 10,
+   "total": 10
+  },
+  "2026-06-16": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-06-17": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-06-18": {
+   "cancelled": 1,
+   "final": 8,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 8,
+   "total": 9
+  },
+  "2026-06-19": {
+   "cancelled": 0,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 14
+  },
+  "2026-06-20": {
+   "cancelled": 0,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 14
+  },
+  "2026-06-21": {
+   "cancelled": 1,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 15
+  },
+  "2026-06-22": {
+   "cancelled": 1,
+   "final": 12,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 12,
+   "total": 13
+  },
+  "2026-06-23": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-06-24": {
+   "cancelled": 0,
+   "final": 16,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 16,
+   "total": 16
+  },
+  "2026-06-25": {
+   "cancelled": 1,
+   "final": 8,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 8,
+   "total": 9
+  },
+  "2026-06-26": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-06-27": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-06-28": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-06-29": {
+   "cancelled": 0,
+   "final": 13,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 13,
+   "total": 13
+  },
+  "2026-06-30": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-07-01": {
+   "cancelled": 0,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 14
+  },
+  "2026-07-02": {
+   "cancelled": 0,
+   "final": 9,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 9,
+   "total": 9
+  },
+  "2026-07-03": {
+   "cancelled": 0,
+   "final": 13,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 13,
+   "total": 13
+  },
+  "2026-07-04": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-07-05": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-07-06": {
+   "cancelled": 0,
+   "final": 8,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 8,
+   "total": 8
+  },
+  "2026-07-07": {
+   "cancelled": 0,
+   "final": 16,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 16,
+   "total": 16
+  },
+  "2026-07-08": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-07-09": {
+   "cancelled": 0,
+   "final": 13,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 13,
+   "total": 13
+  },
+  "2026-07-10": {
+   "cancelled": 1,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 15
+  },
+  "2026-07-11": {
+   "cancelled": 0,
+   "final": 16,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 16,
+   "total": 16
+  },
+  "2026-07-12": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-07-13": {
+   "cancelled": 0,
+   "final": 0,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 0,
+   "total": 0
+  },
+  "2026-07-14": {
+   "cancelled": 0,
+   "final": 1,
+   "pending": 0,
+   "skipped_game_type": 1,
+   "stored": 0,
+   "total": 1
+  },
+  "2026-07-15": {
+   "cancelled": 0,
+   "final": 0,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 0,
+   "total": 0
+  },
+  "2026-07-16": {
+   "cancelled": 0,
+   "final": 1,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 1,
+   "total": 1
+  },
+  "2026-07-17": {
+   "cancelled": 1,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 15
+  },
+  "2026-07-18": {
+   "cancelled": 1,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 16
+  },
+  "2026-07-19": {
+   "cancelled": 0,
+   "final": 16,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 16,
+   "total": 16
+  },
+  "2026-07-20": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-07-21": {
+   "cancelled": 2,
+   "final": 13,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 13,
+   "total": 15
+  },
+  "2026-07-22": {
+   "cancelled": 0,
+   "final": 17,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 17,
+   "total": 17
+  },
+  "2026-07-23": {
+   "cancelled": 0,
+   "final": 5,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 5,
+   "total": 5
+  },
+  "2026-07-24": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-07-25": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-07-26": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-07-27": {
+   "cancelled": 1,
+   "final": 11,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 11,
+   "total": 12
+  },
+  "2026-07-28": {
+   "cancelled": 1,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 16
+  },
+  "2026-07-29": {
+   "cancelled": 0,
+   "final": 16,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 16,
+   "total": 16
+  },
+  "2026-07-30": {
+   "cancelled": 0,
+   "final": 10,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 10,
+   "total": 10
+  },
+  "2026-07-31": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-08-01": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-08-02": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-08-03": {
+   "cancelled": 0,
+   "final": 8,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 8,
+   "total": 8
+  },
+  "2026-08-04": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-08-05": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-08-06": {
+   "cancelled": 0,
+   "final": 11,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 11,
+   "total": 11
+  },
+  "2026-08-07": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-08-08": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-08-09": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-08-10": {
+   "cancelled": 0,
+   "final": 10,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 10,
+   "total": 10
+  },
+  "2026-08-11": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-08-12": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-08-13": {
+   "cancelled": 0,
+   "final": 9,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 9,
+   "total": 9
+  },
+  "2026-08-14": {
+   "cancelled": 0,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 14
+  },
+  "2026-08-15": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-08-16": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-08-17": {
+   "cancelled": 0,
+   "final": 11,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 11,
+   "total": 11
+  },
+  "2026-08-18": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-08-19": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-08-20": {
+   "cancelled": 0,
+   "final": 9,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 9,
+   "total": 9
+  },
+  "2026-08-21": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-08-22": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-08-23": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-08-24": {
+   "cancelled": 0,
+   "final": 10,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 10,
+   "total": 10
+  },
+  "2026-08-25": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-08-26": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-08-27": {
+   "cancelled": 0,
+   "final": 7,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 7,
+   "total": 7
+  },
+  "2026-08-28": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-08-29": {
+   "cancelled": 0,
+   "final": 17,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 17,
+   "total": 17
+  },
+  "2026-08-30": {
+   "cancelled": 0,
+   "final": 14,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 14,
+   "total": 14
+  },
+  "2026-08-31": {
+   "cancelled": 0,
+   "final": 12,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 12,
+   "total": 12
+  },
+  "2026-09-01": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-09-02": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-09-03": {
+   "cancelled": 0,
+   "final": 9,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 9,
+   "total": 9
+  },
+  "2026-09-04": {
+   "cancelled": 0,
+   "final": 16,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 16,
+   "total": 16
+  },
+  "2026-09-05": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-09-06": {
+   "cancelled": 0,
+   "final": 15,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 15,
+   "total": 15
+  },
+  "2026-09-10": {
+   "cancelled": 0,
+   "final": 5,
+   "pending": 0,
+   "skipped_game_type": 0,
+   "stored": 5,
+   "total": 5
+  }
+ }
+}

@@ -1,0 +1,6407 @@
+{
+ "445276": {
+  "bats": "S",
+  "name": "Kenley Jansen",
+  "throws": "R"
+ },
+ "453286": {
+  "bats": "R",
+  "name": "Max Scherzer",
+  "throws": "R"
+ },
+ "455119": {
+  "bats": "R",
+  "name": "Chris Martin",
+  "throws": "R"
+ },
+ "471911": {
+  "bats": "R",
+  "name": "Carlos Carrasco",
+  "throws": "R"
+ },
+ "476594": {
+  "bats": "L",
+  "name": "Robert Stock",
+  "throws": "R"
+ },
+ "489446": {
+  "bats": "L",
+  "name": "Kirby Yates",
+  "throws": "R"
+ },
+ "500743": {
+  "bats": "R",
+  "name": "Miguel Rojas",
+  "throws": "R"
+ },
+ "502054": {
+  "bats": "R",
+  "name": "Tommy Pham",
+  "throws": "R"
+ },
+ "502671": {
+  "bats": "R",
+  "name": "Paul Goldschmidt",
+  "throws": "R"
+ },
+ "506702": {
+  "bats": "S",
+  "name": "Sandy Le\u00f3n",
+  "throws": "R"
+ },
+ "514888": {
+  "bats": "R",
+  "name": "Jose Altuve",
+  "throws": "R"
+ },
+ "516782": {
+  "bats": "R",
+  "name": "Starling Marte",
+  "throws": "R"
+ },
+ "518585": {
+  "bats": "R",
+  "name": "Fernando Cruz",
+  "throws": "R"
+ },
+ "518595": {
+  "bats": "R",
+  "name": "Travis d'Arnaud",
+  "throws": "R"
+ },
+ "518692": {
+  "bats": "L",
+  "name": "Freddie Freeman",
+  "throws": "R"
+ },
+ "518876": {
+  "bats": "R",
+  "name": "Merrill Kelly",
+  "throws": "R"
+ },
+ "518886": {
+  "bats": "R",
+  "name": "Craig Kimbrel",
+  "throws": "R"
+ },
+ "519141": {
+  "bats": "R",
+  "name": "Drew Pomeranz",
+  "throws": "L"
+ },
+ "519242": {
+  "bats": "L",
+  "name": "Chris Sale",
+  "throws": "L"
+ },
+ "521692": {
+  "bats": "R",
+  "name": "Salvador Perez",
+  "throws": "R"
+ },
+ "527048": {
+  "bats": "L",
+  "name": "Mart\u00edn P\u00e9rez",
+  "throws": "L"
+ },
+ "542303": {
+  "bats": "R",
+  "name": "Marcell Ozuna",
+  "throws": "R"
+ },
+ "542888": {
+  "bats": "R",
+  "name": "Shawn Armstrong",
+  "throws": "R"
+ },
+ "543037": {
+  "bats": "R",
+  "name": "Gerrit Cole",
+  "throws": "R"
+ },
+ "543056": {
+  "bats": "L",
+  "name": "Danny Coulombe",
+  "throws": "L"
+ },
+ "543135": {
+  "bats": "R",
+  "name": "Nathan Eovaldi",
+  "throws": "R"
+ },
+ "543238": {
+  "bats": "L",
+  "name": "Anthony Gose",
+  "throws": "L"
+ },
+ "543243": {
+  "bats": "R",
+  "name": "Sonny Gray",
+  "throws": "R"
+ },
+ "543309": {
+  "bats": "R",
+  "name": "Kyle Higashioka",
+  "throws": "R"
+ },
+ "543510": {
+  "bats": "R",
+  "name": "James McCann",
+  "throws": "R"
+ },
+ "543760": {
+  "bats": "R",
+  "name": "Marcus Semien",
+  "throws": "R"
+ },
+ "543807": {
+  "bats": "R",
+  "name": "George Springer",
+  "throws": "R"
+ },
+ "543877": {
+  "bats": "R",
+  "name": "Christian V\u00e1zquez",
+  "throws": "R"
+ },
+ "544150": {
+  "bats": "R",
+  "name": "Albert Su\u00e1rez",
+  "throws": "R"
+ },
+ "545121": {
+  "bats": "S",
+  "name": "Ildemaro Vargas",
+  "throws": "R"
+ },
+ "545341": {
+  "bats": "R",
+  "name": "Randal Grichuk",
+  "throws": "R"
+ },
+ "545361": {
+  "bats": "R",
+  "name": "Mike Trout",
+  "throws": "R"
+ },
+ "547179": {
+  "bats": "R",
+  "name": "Michael Lorenzen",
+  "throws": "R"
+ },
+ "547180": {
+  "bats": "L",
+  "name": "Bryce Harper",
+  "throws": "R"
+ },
+ "547973": {
+  "bats": "L",
+  "name": "Aroldis Chapman",
+  "throws": "L"
+ },
+ "548384": {
+  "bats": "L",
+  "name": "Brooks Raley",
+  "throws": "L"
+ },
+ "552640": {
+  "bats": "R",
+  "name": "Andrew Kittredge",
+  "throws": "R"
+ },
+ "553869": {
+  "bats": "R",
+  "name": "Elias D\u00edaz",
+  "throws": "R"
+ },
+ "553993": {
+  "bats": "R",
+  "name": "Eugenio Su\u00e1rez",
+  "throws": "R"
+ },
+ "554430": {
+  "bats": "L",
+  "name": "Zack Wheeler",
+  "throws": "R"
+ },
+ "571448": {
+  "bats": "R",
+  "name": "Nolan Arenado",
+  "throws": "R"
+ },
+ "571510": {
+  "bats": "L",
+  "name": "Matthew Boyd",
+  "throws": "L"
+ },
+ "571578": {
+  "bats": "L",
+  "name": "Patrick Corbin",
+  "throws": "L"
+ },
+ "571657": {
+  "bats": "R",
+  "name": "Kyle Farmer",
+  "throws": "R"
+ },
+ "571771": {
+  "bats": "R",
+  "name": "Enrique Hern\u00e1ndez",
+  "throws": "R"
+ },
+ "571882": {
+  "bats": "R",
+  "name": "Derek Law",
+  "throws": "R"
+ },
+ "571912": {
+  "bats": "R",
+  "name": "Luke Maile",
+  "throws": "R"
+ },
+ "571927": {
+  "bats": "R",
+  "name": "Steven Matz",
+  "throws": "L"
+ },
+ "571945": {
+  "bats": "R",
+  "name": "Miles Mikolas",
+  "throws": "R"
+ },
+ "571948": {
+  "bats": "L",
+  "name": "Hoby Milner",
+  "throws": "L"
+ },
+ "571970": {
+  "bats": "L",
+  "name": "Max Muncy",
+  "throws": "R"
+ },
+ "572233": {
+  "bats": "R",
+  "name": "Christian Walker",
+  "throws": "R"
+ },
+ "572955": {
+  "bats": "R",
+  "name": "Pierce Johnson",
+  "throws": "R"
+ },
+ "573009": {
+  "bats": "R",
+  "name": "Joe Mantiply",
+  "throws": "L"
+ },
+ "573124": {
+  "bats": "L",
+  "name": "Taylor Rogers",
+  "throws": "L"
+ },
+ "573204": {
+  "bats": "R",
+  "name": "Caleb Thielbar",
+  "throws": "L"
+ },
+ "573262": {
+  "bats": "L",
+  "name": "Mike Yastrzemski",
+  "throws": "L"
+ },
+ "575929": {
+  "bats": "R",
+  "name": "Willson Contreras",
+  "throws": "R"
+ },
+ "579328": {
+  "bats": "L",
+  "name": "Yusei Kikuchi",
+  "throws": "L"
+ },
+ "592094": {
+  "bats": "R",
+  "name": "Jason Adam",
+  "throws": "R"
+ },
+ "592155": {
+  "bats": "L",
+  "name": "Cam Booser",
+  "throws": "L"
+ },
+ "592288": {
+  "bats": "L",
+  "name": "Kent Emanuel",
+  "throws": "L"
+ },
+ "592332": {
+  "bats": "L",
+  "name": "Kevin Gausman",
+  "throws": "R"
+ },
+ "592450": {
+  "bats": "R",
+  "name": "Aaron Judge",
+  "throws": "R"
+ },
+ "592454": {
+  "bats": "R",
+  "name": "Tommy Kahnle",
+  "throws": "R"
+ },
+ "592518": {
+  "bats": "R",
+  "name": "Manny Machado",
+  "throws": "R"
+ },
+ "592626": {
+  "bats": "L",
+  "name": "Joc Pederson",
+  "throws": "L"
+ },
+ "592662": {
+  "bats": "L",
+  "name": "Robbie Ray",
+  "throws": "L"
+ },
+ "592663": {
+  "bats": "R",
+  "name": "J.T. Realmuto",
+  "throws": "R"
+ },
+ "592773": {
+  "bats": "R",
+  "name": "Ryne Stanek",
+  "throws": "R"
+ },
+ "592779": {
+  "bats": "L",
+  "name": "Brock Stewart",
+  "throws": "R"
+ },
+ "592791": {
+  "bats": "R",
+  "name": "Jameson Taillon",
+  "throws": "R"
+ },
+ "592826": {
+  "bats": "R",
+  "name": "Vince Velasquez",
+  "throws": "R"
+ },
+ "592866": {
+  "bats": "R",
+  "name": "Trevor Williams",
+  "throws": "R"
+ },
+ "592885": {
+  "bats": "L",
+  "name": "Christian Yelich",
+  "throws": "R"
+ },
+ "593428": {
+  "bats": "R",
+  "name": "Xander Bogaerts",
+  "throws": "R"
+ },
+ "593871": {
+  "bats": "S",
+  "name": "Jorge Polanco",
+  "throws": "R"
+ },
+ "593958": {
+  "bats": "L",
+  "name": "Eduardo Rodriguez",
+  "throws": "L"
+ },
+ "593974": {
+  "bats": "L",
+  "name": "Wandy Peralta",
+  "throws": "L"
+ },
+ "594027": {
+  "bats": "R",
+  "name": "Tyron Guerrero",
+  "throws": "R"
+ },
+ "594580": {
+  "bats": "L",
+  "name": "Sam Moll",
+  "throws": "L"
+ },
+ "594798": {
+  "bats": "L",
+  "name": "Jacob deGrom",
+  "throws": "R"
+ },
+ "594835": {
+  "bats": "L",
+  "name": "Marco Gonzales",
+  "throws": "L"
+ },
+ "595014": {
+  "bats": "R",
+  "name": "Blake Treinen",
+  "throws": "R"
+ },
+ "595345": {
+  "bats": "L",
+  "name": "Steven Okert",
+  "throws": "L"
+ },
+ "595879": {
+  "bats": "R",
+  "name": "Javier B\u00e1ez",
+  "throws": "R"
+ },
+ "595978": {
+  "bats": "R",
+  "name": "Austin Hedges",
+  "throws": "R"
+ },
+ "596001": {
+  "bats": "R",
+  "name": "Jakob Junis",
+  "throws": "R"
+ },
+ "596019": {
+  "bats": "S",
+  "name": "Francisco Lindor",
+  "throws": "R"
+ },
+ "596103": {
+  "bats": "R",
+  "name": "Austin Slater",
+  "throws": "R"
+ },
+ "596115": {
+  "bats": "R",
+  "name": "Trevor Story",
+  "throws": "R"
+ },
+ "596117": {
+  "bats": "L",
+  "name": "Garrett Stubbs",
+  "throws": "R"
+ },
+ "596133": {
+  "bats": "R",
+  "name": "Luke Weaver",
+  "throws": "R"
+ },
+ "596142": {
+  "bats": "R",
+  "name": "Gary S\u00e1nchez",
+  "throws": "R"
+ },
+ "596146": {
+  "bats": "L",
+  "name": "Max Kepler",
+  "throws": "L"
+ },
+ "601713": {
+  "bats": "R",
+  "name": "Nick Pivetta",
+  "throws": "R"
+ },
+ "602104": {
+  "bats": "R",
+  "name": "Ram\u00f3n Ur\u00edas",
+  "throws": "R"
+ },
+ "605130": {
+  "bats": "R",
+  "name": "Scott Barlow",
+  "throws": "R"
+ },
+ "605135": {
+  "bats": "R",
+  "name": "Chris Bassitt",
+  "throws": "R"
+ },
+ "605137": {
+  "bats": "S",
+  "name": "Josh Bell",
+  "throws": "R"
+ },
+ "605141": {
+  "bats": "R",
+  "name": "Mookie Betts",
+  "throws": "R"
+ },
+ "605154": {
+  "bats": "L",
+  "name": "John Brebbia",
+  "throws": "R"
+ },
+ "605170": {
+  "bats": "S",
+  "name": "Victor Caratini",
+  "throws": "R"
+ },
+ "605242": {
+  "bats": "R",
+  "name": "Michael Fulmer",
+  "throws": "R"
+ },
+ "605280": {
+  "bats": "R",
+  "name": "Clay Holmes",
+  "throws": "R"
+ },
+ "605288": {
+  "bats": "R",
+  "name": "Adrian Houser",
+  "throws": "R"
+ },
+ "605353": {
+  "bats": "L",
+  "name": "Vimael Mach\u00edn",
+  "throws": "R"
+ },
+ "605400": {
+  "bats": "R",
+  "name": "Aaron Nola",
+  "throws": "R"
+ },
+ "605447": {
+  "bats": "R",
+  "name": "Jordan Romano",
+  "throws": "R"
+ },
+ "605452": {
+  "bats": "R",
+  "name": "Joe Ross",
+  "throws": "R"
+ },
+ "605483": {
+  "bats": "L",
+  "name": "Blake Snell",
+  "throws": "L"
+ },
+ "605488": {
+  "bats": "L",
+  "name": "Jeffrey Springs",
+  "throws": "L"
+ },
+ "605540": {
+  "bats": "L",
+  "name": "Brandon Woodruff",
+  "throws": "R"
+ },
+ "606192": {
+  "bats": "R",
+  "name": "Teoscar Hern\u00e1ndez",
+  "throws": "R"
+ },
+ "606466": {
+  "bats": "S",
+  "name": "Ketel Marte",
+  "throws": "R"
+ },
+ "606965": {
+  "bats": "R",
+  "name": "Chris Devenski",
+  "throws": "R"
+ },
+ "606992": {
+  "bats": "R",
+  "name": "Eric Haase",
+  "throws": "R"
+ },
+ "606996": {
+  "bats": "L",
+  "name": "Kyle Hart",
+  "throws": "L"
+ },
+ "607043": {
+  "bats": "L",
+  "name": "Brandon Nimmo",
+  "throws": "R"
+ },
+ "607067": {
+  "bats": "R",
+  "name": "Colin Rea",
+  "throws": "R"
+ },
+ "607074": {
+  "bats": "L",
+  "name": "Carlos Rod\u00f3n",
+  "throws": "L"
+ },
+ "607192": {
+  "bats": "L",
+  "name": "Tyler Glasnow",
+  "throws": "R"
+ },
+ "607200": {
+  "bats": "R",
+  "name": "Erick Fedde",
+  "throws": "R"
+ },
+ "607208": {
+  "bats": "R",
+  "name": "Trea Turner",
+  "throws": "R"
+ },
+ "607259": {
+  "bats": "L",
+  "name": "Nick Martinez",
+  "throws": "R"
+ },
+ "607455": {
+  "bats": "L",
+  "name": "Anthony Banda",
+  "throws": "L"
+ },
+ "607481": {
+  "bats": "L",
+  "name": "Aaron Bummer",
+  "throws": "L"
+ },
+ "607536": {
+  "bats": "L",
+  "name": "Kyle Freeland",
+  "throws": "L"
+ },
+ "607625": {
+  "bats": "R",
+  "name": "Seth Lugo",
+  "throws": "R"
+ },
+ "608070": {
+  "bats": "S",
+  "name": "Jos\u00e9 Ram\u00edrez",
+  "throws": "R"
+ },
+ "608324": {
+  "bats": "R",
+  "name": "Alex Bregman",
+  "throws": "R"
+ },
+ "608331": {
+  "bats": "L",
+  "name": "Max Fried",
+  "throws": "L"
+ },
+ "608337": {
+  "bats": "R",
+  "name": "Lucas Giolito",
+  "throws": "R"
+ },
+ "608344": {
+  "bats": "L",
+  "name": "Cole Irvin",
+  "throws": "L"
+ },
+ "608348": {
+  "bats": "R",
+  "name": "Carson Kelly",
+  "throws": "R"
+ },
+ "608369": {
+  "bats": "L",
+  "name": "Corey Seager",
+  "throws": "R"
+ },
+ "608372": {
+  "bats": "R",
+  "name": "Tomoyuki Sugano",
+  "throws": "R"
+ },
+ "608379": {
+  "bats": "R",
+  "name": "Michael Wacha",
+  "throws": "R"
+ },
+ "608566": {
+  "bats": "R",
+  "name": "Germ\u00e1n M\u00e1rquez",
+  "throws": "R"
+ },
+ "608701": {
+  "bats": "R",
+  "name": "Rob Refsnyder",
+  "throws": "R"
+ },
+ "608718": {
+  "bats": "L",
+  "name": "Brent Suter",
+  "throws": "L"
+ },
+ "608723": {
+  "bats": "R",
+  "name": "Austin Voth",
+  "throws": "R"
+ },
+ "608841": {
+  "bats": "R",
+  "name": "Joey Meneses",
+  "throws": "R"
+ },
+ "609280": {
+  "bats": "R",
+  "name": "Miguel Andujar",
+  "throws": "R"
+ },
+ "615698": {
+  "bats": "L",
+  "name": "Cal Quantrill",
+  "throws": "R"
+ },
+ "620443": {
+  "bats": "R",
+  "name": "Luis Torrens",
+  "throws": "R"
+ },
+ "621016": {
+  "bats": "R",
+  "name": "Jose Cuas",
+  "throws": "R"
+ },
+ "621020": {
+  "bats": "R",
+  "name": "Dansby Swanson",
+  "throws": "R"
+ },
+ "621053": {
+  "bats": "R",
+  "name": "Tyler Ferguson",
+  "throws": "R"
+ },
+ "621074": {
+  "bats": "R",
+  "name": "Michael Rucker",
+  "throws": "R"
+ },
+ "621097": {
+  "bats": "R",
+  "name": "Jacob Waguespack",
+  "throws": "R"
+ },
+ "621111": {
+  "bats": "R",
+  "name": "Walker Buehler",
+  "throws": "R"
+ },
+ "621112": {
+  "bats": "R",
+  "name": "Paul Blackburn",
+  "throws": "R"
+ },
+ "621121": {
+  "bats": "L",
+  "name": "Lance McCullers Jr.",
+  "throws": "R"
+ },
+ "621237": {
+  "bats": "L",
+  "name": "Jos\u00e9 Alvarado",
+  "throws": "L"
+ },
+ "621242": {
+  "bats": "R",
+  "name": "Edwin D\u00edaz",
+  "throws": "R"
+ },
+ "621345": {
+  "bats": "L",
+  "name": "A.J. Minter",
+  "throws": "L"
+ },
+ "621381": {
+  "bats": "R",
+  "name": "Matt Strahm",
+  "throws": "L"
+ },
+ "621383": {
+  "bats": "R",
+  "name": "Tanner Banks",
+  "throws": "L"
+ },
+ "621438": {
+  "bats": "R",
+  "name": "Tyrone Taylor",
+  "throws": "R"
+ },
+ "621439": {
+  "bats": "R",
+  "name": "Byron Buxton",
+  "throws": "R"
+ },
+ "621493": {
+  "bats": "R",
+  "name": "Taylor Ward",
+  "throws": "R"
+ },
+ "621550": {
+  "bats": "R",
+  "name": "Patrick Wisdom",
+  "throws": "R"
+ },
+ "621566": {
+  "bats": "L",
+  "name": "Matt Olson",
+  "throws": "R"
+ },
+ "622088": {
+  "bats": "R",
+  "name": "Tejay Antone",
+  "throws": "R"
+ },
+ "622268": {
+  "bats": "L",
+  "name": "Donovan Walton",
+  "throws": "R"
+ },
+ "622491": {
+  "bats": "R",
+  "name": "Luis Castillo",
+  "throws": "R"
+ },
+ "622554": {
+  "bats": "R",
+  "name": "Seranthony Dom\u00ednguez",
+  "throws": "R"
+ },
+ "622608": {
+  "bats": "R",
+  "name": "Antonio Senzatela",
+  "throws": "R"
+ },
+ "622694": {
+  "bats": "R",
+  "name": "Elieser Hern\u00e1ndez",
+  "throws": "R"
+ },
+ "622761": {
+  "bats": "R",
+  "name": "Jorge Mateo",
+  "throws": "R"
+ },
+ "623149": {
+  "bats": "R",
+  "name": "Paul Sewald",
+  "throws": "R"
+ },
+ "623168": {
+  "bats": "S",
+  "name": "Tyler Heineman",
+  "throws": "R"
+ },
+ "623205": {
+  "bats": "S",
+  "name": "Andrew Velazquez",
+  "throws": "R"
+ },
+ "623211": {
+  "bats": "R",
+  "name": "Huascar Brazob\u00e1n",
+  "throws": "R"
+ },
+ "623352": {
+  "bats": "L",
+  "name": "Josh Hader",
+  "throws": "L"
+ },
+ "623381": {
+  "bats": "L",
+  "name": "Thomas Pannone",
+  "throws": "L"
+ },
+ "623437": {
+  "bats": "R",
+  "name": "Justin Topa",
+  "throws": "R"
+ },
+ "623454": {
+  "bats": "R",
+  "name": "Drew Anderson",
+  "throws": "R"
+ },
+ "623465": {
+  "bats": "R",
+  "name": "Evan Phillips",
+  "throws": "R"
+ },
+ "623474": {
+  "bats": "R",
+  "name": "Jimmy Herget",
+  "throws": "R"
+ },
+ "624133": {
+  "bats": "L",
+  "name": "Ranger Suarez",
+  "throws": "L"
+ },
+ "624413": {
+  "bats": "R",
+  "name": "Pete Alonso",
+  "throws": "R"
+ },
+ "624424": {
+  "bats": "L",
+  "name": "Michael Conforto",
+  "throws": "R"
+ },
+ "624428": {
+  "bats": "L",
+  "name": "Adam Frazier",
+  "throws": "R"
+ },
+ "624431": {
+  "bats": "R",
+  "name": "Jose Trevino",
+  "throws": "R"
+ },
+ "624585": {
+  "bats": "R",
+  "name": "Jorge Soler",
+  "throws": "R"
+ },
+ "624641": {
+  "bats": "R",
+  "name": "Edmundo Sosa",
+  "throws": "R"
+ },
+ "625643": {
+  "bats": "R",
+  "name": "Reynaldo L\u00f3pez",
+  "throws": "R"
+ },
+ "628452": {
+  "bats": "R",
+  "name": "Raisel Iglesias",
+  "throws": "R"
+ },
+ "630105": {
+  "bats": "L",
+  "name": "Jake Cronenworth",
+  "throws": "R"
+ },
+ "640448": {
+  "bats": "R",
+  "name": "Kyle Finnegan",
+  "throws": "R"
+ },
+ "640454": {
+  "bats": "L",
+  "name": "Matt Krook",
+  "throws": "L"
+ },
+ "640455": {
+  "bats": "R",
+  "name": "Sean Manaea",
+  "throws": "L"
+ },
+ "640459": {
+  "bats": "R",
+  "name": "Brian Navarreto",
+  "throws": "R"
+ },
+ "640492": {
+  "bats": "R",
+  "name": "Jos\u00e9 Az\u00f3car",
+  "throws": "R"
+ },
+ "640902": {
+  "bats": "R",
+  "name": "Jhonny Pereda",
+  "throws": "R"
+ },
+ "641302": {
+  "bats": "R",
+  "name": "Tyler Alexander",
+  "throws": "L"
+ },
+ "641312": {
+  "bats": "R",
+  "name": "Shaun Anderson",
+  "throws": "R"
+ },
+ "641329": {
+  "bats": "R",
+  "name": "Bryan Baker",
+  "throws": "R"
+ },
+ "641343": {
+  "bats": "L",
+  "name": "Jake Bauers",
+  "throws": "L"
+ },
+ "641355": {
+  "bats": "L",
+  "name": "Cody Bellinger",
+  "throws": "L"
+ },
+ "641386": {
+  "bats": "L",
+  "name": "Ben Bowden",
+  "throws": "L"
+ },
+ "641487": {
+  "bats": "L",
+  "name": "J.P. Crawford",
+  "throws": "R"
+ },
+ "641555": {
+  "bats": "L",
+  "name": "J.C. Escarra",
+  "throws": "R"
+ },
+ "641598": {
+  "bats": "R",
+  "name": "Mitch Garver",
+  "throws": "R"
+ },
+ "641656": {
+  "bats": "R",
+  "name": "Ian Hamilton",
+  "throws": "R"
+ },
+ "641680": {
+  "bats": "S",
+  "name": "Jonah Heim",
+  "throws": "R"
+ },
+ "641743": {
+  "bats": "L",
+  "name": "Anthony Kay",
+  "throws": "L"
+ },
+ "641745": {
+  "bats": "R",
+  "name": "Brad Keller",
+  "throws": "R"
+ },
+ "641755": {
+  "bats": "R",
+  "name": "Tyler Kinley",
+  "throws": "R"
+ },
+ "641778": {
+  "bats": "R",
+  "name": "Eric Lauer",
+  "throws": "L"
+ },
+ "641793": {
+  "bats": "R",
+  "name": "Zack Littell",
+  "throws": "R"
+ },
+ "641816": {
+  "bats": "R",
+  "name": "Tyler Mahle",
+  "throws": "R"
+ },
+ "641835": {
+  "bats": "L",
+  "name": "Tim Mayza",
+  "throws": "L"
+ },
+ "641857": {
+  "bats": "L",
+  "name": "Ryan McMahon",
+  "throws": "R"
+ },
+ "641927": {
+  "bats": "R",
+  "name": "Bailey Ober",
+  "throws": "R"
+ },
+ "641933": {
+  "bats": "R",
+  "name": "Tyler O'Neill",
+  "throws": "R"
+ },
+ "641941": {
+  "bats": "L",
+  "name": "Emilio Pag\u00e1n",
+  "throws": "R"
+ },
+ "642020": {
+  "bats": "R",
+  "name": "Chuckie Robinson",
+  "throws": "R"
+ },
+ "642048": {
+  "bats": "L",
+  "name": "Tayler Saucedo",
+  "throws": "L"
+ },
+ "642086": {
+  "bats": "L",
+  "name": "Dominic Smith",
+  "throws": "L"
+ },
+ "642100": {
+  "bats": "L",
+  "name": "Gabe Speier",
+  "throws": "L"
+ },
+ "642121": {
+  "bats": "R",
+  "name": "Cole Sulser",
+  "throws": "R"
+ },
+ "642133": {
+  "bats": "L",
+  "name": "Rowdy Tellez",
+  "throws": "L"
+ },
+ "642152": {
+  "bats": "R",
+  "name": "Lou Trivino III",
+  "throws": "R"
+ },
+ "642201": {
+  "bats": "R",
+  "name": "Eli White",
+  "throws": "R"
+ },
+ "642207": {
+  "bats": "R",
+  "name": "Devin Williams",
+  "throws": "R"
+ },
+ "642215": {
+  "bats": "R",
+  "name": "Weston Wilson",
+  "throws": "R"
+ },
+ "642232": {
+  "bats": "R",
+  "name": "Ryan Yarbrough",
+  "throws": "L"
+ },
+ "642350": {
+  "bats": "R",
+  "name": "Jose Siri",
+  "throws": "R"
+ },
+ "642376": {
+  "bats": "L",
+  "name": "Jefry Yan",
+  "throws": "L"
+ },
+ "642397": {
+  "bats": "L",
+  "name": "Gregory Soto",
+  "throws": "L"
+ },
+ "642528": {
+  "bats": "R",
+  "name": "Jonathan Lo\u00e1isiga",
+  "throws": "R"
+ },
+ "642546": {
+  "bats": "R",
+  "name": "Jonathan Hern\u00e1ndez",
+  "throws": "R"
+ },
+ "642547": {
+  "bats": "R",
+  "name": "Freddy Peralta",
+  "throws": "R"
+ },
+ "642701": {
+  "bats": "R",
+  "name": "Dennis Santana",
+  "throws": "R"
+ },
+ "642708": {
+  "bats": "R",
+  "name": "Amed Rosario",
+  "throws": "R"
+ },
+ "642715": {
+  "bats": "R",
+  "name": "Willy Adames",
+  "throws": "R"
+ },
+ "642851": {
+  "bats": "R",
+  "name": "Austin Wynns",
+  "throws": "R"
+ },
+ "643217": {
+  "bats": "L",
+  "name": "Andrew Benintendi",
+  "throws": "L"
+ },
+ "643289": {
+  "bats": "R",
+  "name": "Mauricio Dub\u00f3n",
+  "throws": "R"
+ },
+ "643361": {
+  "bats": "L",
+  "name": "Kevin Herget",
+  "throws": "R"
+ },
+ "643376": {
+  "bats": "R",
+  "name": "Danny Jansen",
+  "throws": "R"
+ },
+ "643377": {
+  "bats": "R",
+  "name": "Griffin Jax",
+  "throws": "R"
+ },
+ "643396": {
+  "bats": "R",
+  "name": "Isiah Kiner-Falefa",
+  "throws": "R"
+ },
+ "643410": {
+  "bats": "R",
+  "name": "Mark Leiter Jr.",
+  "throws": "R"
+ },
+ "643446": {
+  "bats": "L",
+  "name": "Jeff McNeil",
+  "throws": "R"
+ },
+ "643511": {
+  "bats": "R",
+  "name": "Tyler Rogers",
+  "throws": "R"
+ },
+ "644433": {
+  "bats": "R",
+  "name": "Chadwick Tromp",
+  "throws": "R"
+ },
+ "645261": {
+  "bats": "R",
+  "name": "Sandy Alcantara",
+  "throws": "R"
+ },
+ "645277": {
+  "bats": "S",
+  "name": "Ozzie Albies",
+  "throws": "R"
+ },
+ "645302": {
+  "bats": "R",
+  "name": "Victor Robles",
+  "throws": "R"
+ },
+ "645305": {
+  "bats": "R",
+  "name": "Ali S\u00e1nchez",
+  "throws": "R"
+ },
+ "646240": {
+  "bats": "L",
+  "name": "Rafael Devers",
+  "throws": "R"
+ },
+ "646241": {
+  "bats": "L",
+  "name": "Enmanuel De Jesus",
+  "throws": "L"
+ },
+ "646242": {
+  "bats": "L",
+  "name": "Jhonathan D\u00edaz",
+  "throws": "L"
+ },
+ "647304": {
+  "bats": "L",
+  "name": "Josh Naylor",
+  "throws": "L"
+ },
+ "647336": {
+  "bats": "R",
+  "name": "Michael Soroka",
+  "throws": "R"
+ },
+ "649966": {
+  "bats": "R",
+  "name": "Luis Ur\u00edas",
+  "throws": "R"
+ },
+ "650333": {
+  "bats": "L",
+  "name": "Luis Arraez",
+  "throws": "R"
+ },
+ "650402": {
+  "bats": "R",
+  "name": "Gleyber Torres",
+  "throws": "R"
+ },
+ "650489": {
+  "bats": "S",
+  "name": "Willi Castro",
+  "throws": "R"
+ },
+ "650490": {
+  "bats": "R",
+  "name": "Yandy D\u00edaz",
+  "throws": "R"
+ },
+ "650556": {
+  "bats": "R",
+  "name": "Bryan Abreu",
+  "throws": "R"
+ },
+ "650559": {
+  "bats": "R",
+  "name": "Bryan De La Cruz",
+  "throws": "R"
+ },
+ "650633": {
+  "bats": "R",
+  "name": "Michael King",
+  "throws": "R"
+ },
+ "650644": {
+  "bats": "R",
+  "name": "Aaron Civale",
+  "throws": "R"
+ },
+ "650859": {
+  "bats": "S",
+  "name": "Luis Rengifo",
+  "throws": "R"
+ },
+ "650911": {
+  "bats": "L",
+  "name": "Cristopher S\u00e1nchez",
+  "throws": "L"
+ },
+ "650960": {
+  "bats": "R",
+  "name": "Daniel Duarte",
+  "throws": "R"
+ },
+ "650968": {
+  "bats": "R",
+  "name": "Yohel Pozo",
+  "throws": "R"
+ },
+ "655316": {
+  "bats": "R",
+  "name": "Andruw Monasterio",
+  "throws": "R"
+ },
+ "655889": {
+  "bats": "R",
+  "name": "Manuel Rodr\u00edguez",
+  "throws": "R"
+ },
+ "656212": {
+  "bats": "L",
+  "name": "Charlie Barnes",
+  "throws": "L"
+ },
+ "656234": {
+  "bats": "R",
+  "name": "Jake Bird",
+  "throws": "R"
+ },
+ "656240": {
+  "bats": "R",
+  "name": "Scott Blewett",
+  "throws": "R"
+ },
+ "656271": {
+  "bats": "L",
+  "name": "Brock Burke",
+  "throws": "L"
+ },
+ "656288": {
+  "bats": "R",
+  "name": "Griffin Canning",
+  "throws": "R"
+ },
+ "656302": {
+  "bats": "R",
+  "name": "Dylan Cease",
+  "throws": "R"
+ },
+ "656305": {
+  "bats": "R",
+  "name": "Matt Chapman",
+  "throws": "R"
+ },
+ "656413": {
+  "bats": "R",
+  "name": "Stuart Fairchild",
+  "throws": "R"
+ },
+ "656427": {
+  "bats": "R",
+  "name": "Jack Flaherty",
+  "throws": "R"
+ },
+ "656457": {
+  "bats": "L",
+  "name": "Tyler Gilbert",
+  "throws": "L"
+ },
+ "656464": {
+  "bats": "L",
+  "name": "Kevin Ginkel",
+  "throws": "R"
+ },
+ "656484": {
+  "bats": "L",
+  "name": "Tristan Gray",
+  "throws": "R"
+ },
+ "656492": {
+  "bats": "R",
+  "name": "Foster Griffin",
+  "throws": "L"
+ },
+ "656529": {
+  "bats": "L",
+  "name": "Sam Hentges",
+  "throws": "L"
+ },
+ "656537": {
+  "bats": "R",
+  "name": "Derek Hill",
+  "throws": "R"
+ },
+ "656546": {
+  "bats": "R",
+  "name": "Jeff Hoffman",
+  "throws": "R"
+ },
+ "656550": {
+  "bats": "L",
+  "name": "Grant Holmes",
+  "throws": "R"
+ },
+ "656555": {
+  "bats": "R",
+  "name": "Rhys Hoskins",
+  "throws": "R"
+ },
+ "656577": {
+  "bats": "R",
+  "name": "Alex Jackson",
+  "throws": "R"
+ },
+ "656582": {
+  "bats": "R",
+  "name": "Connor Joe",
+  "throws": "R"
+ },
+ "656605": {
+  "bats": "R",
+  "name": "Mitch Keller",
+  "throws": "R"
+ },
+ "656638": {
+  "bats": "R",
+  "name": "Alex Lange",
+  "throws": "R"
+ },
+ "656641": {
+  "bats": "R",
+  "name": "Jacob Latz",
+  "throws": "L"
+ },
+ "656716": {
+  "bats": "L",
+  "name": "Zach McKinstry",
+  "throws": "R"
+ },
+ "656730": {
+  "bats": "L",
+  "name": "Trevor Megill",
+  "throws": "R"
+ },
+ "656756": {
+  "bats": "L",
+  "name": "Jordan Montgomery",
+  "throws": "L"
+ },
+ "656775": {
+  "bats": "L",
+  "name": "Cedric Mullins",
+  "throws": "L"
+ },
+ "656786": {
+  "bats": "L",
+  "name": "Parker Mushinski",
+  "throws": "L"
+ },
+ "656794": {
+  "bats": "L",
+  "name": "Sean Newcomb",
+  "throws": "L"
+ },
+ "656811": {
+  "bats": "L",
+  "name": "Ryan O'Hearn",
+  "throws": "L"
+ },
+ "656848": {
+  "bats": "R",
+  "name": "Michael Petersen",
+  "throws": "R"
+ },
+ "656849": {
+  "bats": "L",
+  "name": "David Peterson",
+  "throws": "L"
+ },
+ "656876": {
+  "bats": "R",
+  "name": "Drew Rasmussen",
+  "throws": "R"
+ },
+ "656941": {
+  "bats": "L",
+  "name": "Kyle Schwarber",
+  "throws": "R"
+ },
+ "656945": {
+  "bats": "R",
+  "name": "Tanner Scott",
+  "throws": "L"
+ },
+ "656976": {
+  "bats": "L",
+  "name": "Pavin Smith",
+  "throws": "L"
+ },
+ "656986": {
+  "bats": "L",
+  "name": "Bennett Sousa",
+  "throws": "L"
+ },
+ "657041": {
+  "bats": "R",
+  "name": "Lane Thomas",
+  "throws": "R"
+ },
+ "657044": {
+  "bats": "R",
+  "name": "Ryan Thompson",
+  "throws": "R"
+ },
+ "657097": {
+  "bats": "R",
+  "name": "Jacob Webb",
+  "throws": "R"
+ },
+ "657136": {
+  "bats": "R",
+  "name": "Connor Wong",
+  "throws": "R"
+ },
+ "657265": {
+  "bats": "R",
+  "name": "Peter Strzelecki",
+  "throws": "R"
+ },
+ "657277": {
+  "bats": "R",
+  "name": "Logan Webb",
+  "throws": "R"
+ },
+ "657424": {
+  "bats": "L",
+  "name": "Matt Gage",
+  "throws": "L"
+ },
+ "657514": {
+  "bats": "L",
+  "name": "Brennan Bernardino",
+  "throws": "L"
+ },
+ "657571": {
+  "bats": "R",
+  "name": "Caleb Ferguson",
+  "throws": "L"
+ },
+ "657612": {
+  "bats": "R",
+  "name": "Tim Hill",
+  "throws": "L"
+ },
+ "657649": {
+  "bats": "R",
+  "name": "Jared Koenig",
+  "throws": "L"
+ },
+ "657746": {
+  "bats": "R",
+  "name": "Joe Ryan",
+  "throws": "R"
+ },
+ "657756": {
+  "bats": "R",
+  "name": "Connor Seabold",
+  "throws": "R"
+ },
+ "657757": {
+  "bats": "L",
+  "name": "Gavin Sheets",
+  "throws": "L"
+ },
+ "660271": {
+  "bats": "L",
+  "name": "Shohei Ohtani",
+  "throws": "R"
+ },
+ "660604": {
+  "bats": "R",
+  "name": "Alan Rangel",
+  "throws": "R"
+ },
+ "660670": {
+  "bats": "R",
+  "name": "Ronald Acu\u00f1a Jr.",
+  "throws": "R"
+ },
+ "660688": {
+  "bats": "S",
+  "name": "Keibert Ruiz",
+  "throws": "R"
+ },
+ "660710": {
+  "bats": "R",
+  "name": "Rodolfo Dur\u00e1n",
+  "throws": "R"
+ },
+ "660761": {
+  "bats": "L",
+  "name": "Jos\u00e9 Suarez",
+  "throws": "L"
+ },
+ "660787": {
+  "bats": "R",
+  "name": "Yerry De los Santos",
+  "throws": "R"
+ },
+ "660821": {
+  "bats": "L",
+  "name": "Jes\u00fas S\u00e1nchez",
+  "throws": "R"
+ },
+ "660825": {
+  "bats": "R",
+  "name": "Eduard Bazardo",
+  "throws": "R"
+ },
+ "660844": {
+  "bats": "S",
+  "name": "Leo Rivas",
+  "throws": "R"
+ },
+ "660853": {
+  "bats": "R",
+  "name": "Enyel De Los Santos",
+  "throws": "R"
+ },
+ "661388": {
+  "bats": "R",
+  "name": "William Contreras",
+  "throws": "R"
+ },
+ "661395": {
+  "bats": "R",
+  "name": "Jhoan Duran",
+  "throws": "R"
+ },
+ "661527": {
+  "bats": "R",
+  "name": "Seth Martinez",
+  "throws": "R"
+ },
+ "661531": {
+  "bats": "R",
+  "name": "Brian Serven",
+  "throws": "R"
+ },
+ "661563": {
+  "bats": "R",
+  "name": "Luis Gil",
+  "throws": "R"
+ },
+ "662139": {
+  "bats": "L",
+  "name": "Daulton Varsho",
+  "throws": "R"
+ },
+ "662144": {
+  "bats": "R",
+  "name": "Brian Keller",
+  "throws": "R"
+ },
+ "662253": {
+  "bats": "R",
+  "name": "Andr\u00e9s Mu\u00f1oz",
+  "throws": "R"
+ },
+ "663158": {
+  "bats": "R",
+  "name": "Robert Suarez",
+  "throws": "R"
+ },
+ "663330": {
+  "bats": "R",
+  "name": "Jahmai Jones",
+  "throws": "R"
+ },
+ "663362": {
+  "bats": "R",
+  "name": "Matt Waldron",
+  "throws": "R"
+ },
+ "663368": {
+  "bats": "S",
+  "name": "Blake Perkins",
+  "throws": "R"
+ },
+ "663372": {
+  "bats": "R",
+  "name": "Ryan Feltner",
+  "throws": "R"
+ },
+ "663423": {
+  "bats": "R",
+  "name": "Trent Thornton",
+  "throws": "R"
+ },
+ "663432": {
+  "bats": "R",
+  "name": "Tanner Rainey",
+  "throws": "R"
+ },
+ "663436": {
+  "bats": "L",
+  "name": "Davis Martin",
+  "throws": "R"
+ },
+ "663457": {
+  "bats": "L",
+  "name": "Lars Nootbaar",
+  "throws": "R"
+ },
+ "663485": {
+  "bats": "R",
+  "name": "Cole Sands",
+  "throws": "R"
+ },
+ "663494": {
+  "bats": "L",
+  "name": "Bryan Torres",
+  "throws": "R"
+ },
+ "663538": {
+  "bats": "R",
+  "name": "Nico Hoerner",
+  "throws": "R"
+ },
+ "663542": {
+  "bats": "L",
+  "name": "Bryan Hudson",
+  "throws": "L"
+ },
+ "663554": {
+  "bats": "R",
+  "name": "Casey Mize",
+  "throws": "R"
+ },
+ "663556": {
+  "bats": "L",
+  "name": "Shane McClanahan",
+  "throws": "L"
+ },
+ "663558": {
+  "bats": "L",
+  "name": "Jovani Mor\u00e1n",
+  "throws": "L"
+ },
+ "663559": {
+  "bats": "R",
+  "name": "Bailey Falter",
+  "throws": "L"
+ },
+ "663567": {
+  "bats": "R",
+  "name": "Peter Lambert",
+  "throws": "R"
+ },
+ "663568": {
+  "bats": "R",
+  "name": "Stephen Kolek",
+  "throws": "R"
+ },
+ "663574": {
+  "bats": "R",
+  "name": "Tony Santillan",
+  "throws": "R"
+ },
+ "663586": {
+  "bats": "R",
+  "name": "Austin Riley",
+  "throws": "R"
+ },
+ "663604": {
+  "bats": "R",
+  "name": "Brandon Lockridge",
+  "throws": "R"
+ },
+ "663611": {
+  "bats": "R",
+  "name": "Nick Madrigal",
+  "throws": "R"
+ },
+ "663616": {
+  "bats": "L",
+  "name": "Trevor Larnach",
+  "throws": "R"
+ },
+ "663623": {
+  "bats": "R",
+  "name": "Jake Irvin",
+  "throws": "R"
+ },
+ "663647": {
+  "bats": "R",
+  "name": "Ke'Bryan Hayes",
+  "throws": "R"
+ },
+ "663656": {
+  "bats": "L",
+  "name": "Kyle Tucker",
+  "throws": "R"
+ },
+ "663662": {
+  "bats": "R",
+  "name": "Daz Cameron",
+  "throws": "R"
+ },
+ "663687": {
+  "bats": "R",
+  "name": "Hogan Harris",
+  "throws": "L"
+ },
+ "663698": {
+  "bats": "R",
+  "name": "Joey Bart",
+  "throws": "R"
+ },
+ "663728": {
+  "bats": "S",
+  "name": "Cal Raleigh",
+  "throws": "R"
+ },
+ "663738": {
+  "bats": "L",
+  "name": "Daniel Lynch IV",
+  "throws": "L"
+ },
+ "663743": {
+  "bats": "R",
+  "name": "Nick Fortes",
+  "throws": "R"
+ },
+ "663757": {
+  "bats": "L",
+  "name": "Trent Grisham",
+  "throws": "L"
+ },
+ "663765": {
+  "bats": "R",
+  "name": "Jake Woodford",
+  "throws": "R"
+ },
+ "663767": {
+  "bats": "L",
+  "name": "Chase Shugart",
+  "throws": "R"
+ },
+ "663776": {
+  "bats": "L",
+  "name": "Patrick Sandoval",
+  "throws": "L"
+ },
+ "663795": {
+  "bats": "R",
+  "name": "Justin Hagenman",
+  "throws": "R"
+ },
+ "663837": {
+  "bats": "R",
+  "name": "Matt Vierling",
+  "throws": "R"
+ },
+ "663853": {
+  "bats": "R",
+  "name": "Romy Gonzalez",
+  "throws": "R"
+ },
+ "663855": {
+  "bats": "R",
+  "name": "Jordan Hicks",
+  "throws": "R"
+ },
+ "663878": {
+  "bats": "R",
+  "name": "Nate Pearson",
+  "throws": "R"
+ },
+ "663884": {
+  "bats": "R",
+  "name": "Nolan Kingham",
+  "throws": "R"
+ },
+ "663886": {
+  "bats": "R",
+  "name": "Tyler Stephenson",
+  "throws": "R"
+ },
+ "663893": {
+  "bats": "L",
+  "name": "Brendon Little",
+  "throws": "L"
+ },
+ "663903": {
+  "bats": "R",
+  "name": "Brady Singer",
+  "throws": "R"
+ },
+ "663941": {
+  "bats": "R",
+  "name": "Tristan Beck",
+  "throws": "R"
+ },
+ "663947": {
+  "bats": "L",
+  "name": "Tyler Holton",
+  "throws": "L"
+ },
+ "663968": {
+  "bats": "S",
+  "name": "Jake Mangum",
+  "throws": "L"
+ },
+ "663969": {
+  "bats": "R",
+  "name": "Tyler Phillips",
+  "throws": "R"
+ },
+ "663978": {
+  "bats": "R",
+  "name": "Chris Paddack",
+  "throws": "R"
+ },
+ "663992": {
+  "bats": "L",
+  "name": "Richard Lovelady",
+  "throws": "L"
+ },
+ "663993": {
+  "bats": "L",
+  "name": "Nathaniel Lowe",
+  "throws": "R"
+ },
+ "664023": {
+  "bats": "S",
+  "name": "Ian Happ",
+  "throws": "R"
+ },
+ "664034": {
+  "bats": "R",
+  "name": "Ty France",
+  "throws": "R"
+ },
+ "664040": {
+  "bats": "L",
+  "name": "Brandon Lowe",
+  "throws": "R"
+ },
+ "664076": {
+  "bats": "R",
+  "name": "Garrett Cleavinger",
+  "throws": "L"
+ },
+ "664126": {
+  "bats": "R",
+  "name": "Pete Fairbanks",
+  "throws": "R"
+ },
+ "664129": {
+  "bats": "R",
+  "name": "Geoff Hartlieb",
+  "throws": "R"
+ },
+ "664141": {
+  "bats": "R",
+  "name": "JT Brubaker",
+  "throws": "R"
+ },
+ "664199": {
+  "bats": "R",
+  "name": "Taylor Clarke",
+  "throws": "R"
+ },
+ "664208": {
+  "bats": "R",
+  "name": "Phil Maton",
+  "throws": "R"
+ },
+ "664285": {
+  "bats": "R",
+  "name": "Framber Valdez",
+  "throws": "L"
+ },
+ "664299": {
+  "bats": "R",
+  "name": "Cristian Javier",
+  "throws": "R"
+ },
+ "664353": {
+  "bats": "R",
+  "name": "Jos\u00e9 Urquidy",
+  "throws": "R"
+ },
+ "664702": {
+  "bats": "R",
+  "name": "Myles Straw",
+  "throws": "R"
+ },
+ "664728": {
+  "bats": "L",
+  "name": "Kyle Isbel",
+  "throws": "R"
+ },
+ "664761": {
+  "bats": "R",
+  "name": "Alec Bohm",
+  "throws": "R"
+ },
+ "664770": {
+  "bats": "L",
+  "name": "Nathan Lukes",
+  "throws": "R"
+ },
+ "664774": {
+  "bats": "L",
+  "name": "LaMonte Wade Jr.",
+  "throws": "L"
+ },
+ "664849": {
+  "bats": "L",
+  "name": "Danny Young",
+  "throws": "L"
+ },
+ "664854": {
+  "bats": "R",
+  "name": "Ryan Helsley",
+  "throws": "R"
+ },
+ "664875": {
+  "bats": "R",
+  "name": "Justin Lawrence",
+  "throws": "R"
+ },
+ "664954": {
+  "bats": "L",
+  "name": "Brett Sullivan",
+  "throws": "R"
+ },
+ "664983": {
+  "bats": "L",
+  "name": "Jake McCarthy",
+  "throws": "L"
+ },
+ "664991": {
+  "bats": "L",
+  "name": "Grant Wolfram",
+  "throws": "L"
+ },
+ "665019": {
+  "bats": "L",
+  "name": "Kody Clemens",
+  "throws": "R"
+ },
+ "665052": {
+  "bats": "L",
+  "name": "Griffin Conine",
+  "throws": "R"
+ },
+ "665152": {
+  "bats": "R",
+  "name": "Dean Kremer",
+  "throws": "R"
+ },
+ "665161": {
+  "bats": "R",
+  "name": "Jeremy Pe\u00f1a",
+  "throws": "R"
+ },
+ "665487": {
+  "bats": "R",
+  "name": "Fernando Tatis Jr.",
+  "throws": "R"
+ },
+ "665489": {
+  "bats": "R",
+  "name": "Vladimir Guerrero Jr.",
+  "throws": "R"
+ },
+ "665506": {
+  "bats": "R",
+  "name": "Cristian Pache",
+  "throws": "R"
+ },
+ "665561": {
+  "bats": "S",
+  "name": "Rafael March\u00e1n",
+  "throws": "R"
+ },
+ "665622": {
+  "bats": "R",
+  "name": "Luis Medina",
+  "throws": "R"
+ },
+ "665645": {
+  "bats": "R",
+  "name": "Kervin Castro",
+  "throws": "R"
+ },
+ "665660": {
+  "bats": "R",
+  "name": "Elvis Alvarado",
+  "throws": "R"
+ },
+ "665665": {
+  "bats": "L",
+  "name": "Reiver Sanmartin",
+  "throws": "L"
+ },
+ "665742": {
+  "bats": "L",
+  "name": "Juan Soto",
+  "throws": "L"
+ },
+ "665750": {
+  "bats": "S",
+  "name": "Leody Taveras",
+  "throws": "R"
+ },
+ "665795": {
+  "bats": "R",
+  "name": "Edward Cabrera",
+  "throws": "R"
+ },
+ "665804": {
+  "bats": "R",
+  "name": "Miguel Amaya",
+  "throws": "R"
+ },
+ "665828": {
+  "bats": "S",
+  "name": "Oswaldo Cabrera",
+  "throws": "R"
+ },
+ "665833": {
+  "bats": "L",
+  "name": "Oneil Cruz",
+  "throws": "R"
+ },
+ "665856": {
+  "bats": "R",
+  "name": "Jair Camargo",
+  "throws": "R"
+ },
+ "665862": {
+  "bats": "L",
+  "name": "Jazz Chisholm Jr.",
+  "throws": "R"
+ },
+ "665871": {
+  "bats": "R",
+  "name": "Javier Assad",
+  "throws": "R"
+ },
+ "665877": {
+  "bats": "R",
+  "name": "Jos\u00e9 Ferm\u00edn",
+  "throws": "R"
+ },
+ "665923": {
+  "bats": "R",
+  "name": "Esteury Ruiz",
+  "throws": "R"
+ },
+ "665926": {
+  "bats": "L",
+  "name": "Andr\u00e9s Gim\u00e9nez",
+  "throws": "R"
+ },
+ "665953": {
+  "bats": "R",
+  "name": "Andr\u00e9s Chaparro",
+  "throws": "R"
+ },
+ "665966": {
+  "bats": "R",
+  "name": "Carlos Narv\u00e1ez",
+  "throws": "R"
+ },
+ "666018": {
+  "bats": "L",
+  "name": "Jonathan Aranda",
+  "throws": "R"
+ },
+ "666023": {
+  "bats": "R",
+  "name": "Freddy Fermin",
+  "throws": "R"
+ },
+ "666126": {
+  "bats": "L",
+  "name": "Carlos Cortes",
+  "throws": "S"
+ },
+ "666139": {
+  "bats": "L",
+  "name": "Josh Lowe",
+  "throws": "R"
+ },
+ "666152": {
+  "bats": "L",
+  "name": "David Hamilton",
+  "throws": "R"
+ },
+ "666157": {
+  "bats": "L",
+  "name": "Nick Lodolo",
+  "throws": "L"
+ },
+ "666160": {
+  "bats": "L",
+  "name": "Mickey Moniak",
+  "throws": "R"
+ },
+ "666163": {
+  "bats": "L",
+  "name": "Ben Rortvedt",
+  "throws": "R"
+ },
+ "666171": {
+  "bats": "R",
+  "name": "Ryan Zeferjahn",
+  "throws": "R"
+ },
+ "666176": {
+  "bats": "R",
+  "name": "Jo Adell",
+  "throws": "R"
+ },
+ "666182": {
+  "bats": "R",
+  "name": "Bo Bichette",
+  "throws": "R"
+ },
+ "666200": {
+  "bats": "L",
+  "name": "Jes\u00fas Luzardo",
+  "throws": "L"
+ },
+ "666211": {
+  "bats": "L",
+  "name": "Taylor Trammell",
+  "throws": "L"
+ },
+ "666277": {
+  "bats": "R",
+  "name": "George Soriano",
+  "throws": "R"
+ },
+ "666310": {
+  "bats": "L",
+  "name": "Bo Naylor",
+  "throws": "R"
+ },
+ "666397": {
+  "bats": "L",
+  "name": "Edouard Julien",
+  "throws": "R"
+ },
+ "666624": {
+  "bats": "R",
+  "name": "Christopher Morel",
+  "throws": "R"
+ },
+ "666661": {
+  "bats": "R",
+  "name": "Juan Morillo",
+  "throws": "R"
+ },
+ "666745": {
+  "bats": "R",
+  "name": "Jhony Brito",
+  "throws": "R"
+ },
+ "666808": {
+  "bats": "R",
+  "name": "Camilo Doval",
+  "throws": "R"
+ },
+ "666971": {
+  "bats": "R",
+  "name": "Lourdes Gurriel Jr.",
+  "throws": "R"
+ },
+ "666974": {
+  "bats": "R",
+  "name": "Yennier Cano",
+  "throws": "R"
+ },
+ "667297": {
+  "bats": "R",
+  "name": "Tommy Nance",
+  "throws": "R"
+ },
+ "667452": {
+  "bats": "R",
+  "name": "Corey Julks",
+  "throws": "R"
+ },
+ "667463": {
+  "bats": "L",
+  "name": "John King",
+  "throws": "L"
+ },
+ "667472": {
+  "bats": "R",
+  "name": "Dane Myers",
+  "throws": "R"
+ },
+ "667652": {
+  "bats": "R",
+  "name": "Jack Ralston",
+  "throws": "R"
+ },
+ "667755": {
+  "bats": "R",
+  "name": "Jos\u00e9 Soriano",
+  "throws": "R"
+ },
+ "668227": {
+  "bats": "R",
+  "name": "Randy Arozarena",
+  "throws": "R"
+ },
+ "668390": {
+  "bats": "R",
+  "name": "Cole Winn",
+  "throws": "R"
+ },
+ "668670": {
+  "bats": "R",
+  "name": "Jake Rogers",
+  "throws": "R"
+ },
+ "668674": {
+  "bats": "L",
+  "name": "Lucas Erceg",
+  "throws": "R"
+ },
+ "668678": {
+  "bats": "R",
+  "name": "Zac Gallen",
+  "throws": "R"
+ },
+ "668709": {
+  "bats": "L",
+  "name": "JJ Bleday",
+  "throws": "L"
+ },
+ "668715": {
+  "bats": "R",
+  "name": "Spencer Steer",
+  "throws": "R"
+ },
+ "668716": {
+  "bats": "R",
+  "name": "Noah Murdock",
+  "throws": "R"
+ },
+ "668723": {
+  "bats": "R",
+  "name": "Ryan Vilade",
+  "throws": "R"
+ },
+ "668800": {
+  "bats": "R",
+  "name": "Andrew Knizner",
+  "throws": "R"
+ },
+ "668804": {
+  "bats": "S",
+  "name": "Bryan Reynolds",
+  "throws": "R"
+ },
+ "668820": {
+  "bats": "R",
+  "name": "Max Kranick",
+  "throws": "R"
+ },
+ "668831": {
+  "bats": "R",
+  "name": "Garrett Stallings",
+  "throws": "R"
+ },
+ "668834": {
+  "bats": "R",
+  "name": "Easton McGee",
+  "throws": "R"
+ },
+ "668873": {
+  "bats": "R",
+  "name": "Caleb Kilian",
+  "throws": "R"
+ },
+ "668881": {
+  "bats": "R",
+  "name": "Hunter Greene",
+  "throws": "R"
+ },
+ "668885": {
+  "bats": "R",
+  "name": "Austin Martin",
+  "throws": "R"
+ },
+ "668901": {
+  "bats": "R",
+  "name": "Mark Vientos",
+  "throws": "R"
+ },
+ "668904": {
+  "bats": "R",
+  "name": "Royce Lewis",
+  "throws": "R"
+ },
+ "668909": {
+  "bats": "L",
+  "name": "Gavin Williams",
+  "throws": "R"
+ },
+ "668930": {
+  "bats": "L",
+  "name": "Brice Turang",
+  "throws": "R"
+ },
+ "668933": {
+  "bats": "L",
+  "name": "Graham Ashcraft",
+  "throws": "R"
+ },
+ "668939": {
+  "bats": "S",
+  "name": "Adley Rutschman",
+  "throws": "R"
+ },
+ "668941": {
+  "bats": "L",
+  "name": "JoJo Romero",
+  "throws": "L"
+ },
+ "668942": {
+  "bats": "L",
+  "name": "Josh Rojas",
+  "throws": "R"
+ },
+ "668952": {
+  "bats": "R",
+  "name": "Ryan Kreidler",
+  "throws": "R"
+ },
+ "668964": {
+  "bats": "R",
+  "name": "Tobias Myers",
+  "throws": "R"
+ },
+ "668970": {
+  "bats": "R",
+  "name": "Gavin Hollowell",
+  "throws": "R"
+ },
+ "668984": {
+  "bats": "R",
+  "name": "Casey Legumina",
+  "throws": "R"
+ },
+ "669003": {
+  "bats": "L",
+  "name": "Garrett Mitchell",
+  "throws": "R"
+ },
+ "669004": {
+  "bats": "L",
+  "name": "MJ Melendez",
+  "throws": "R"
+ },
+ "669016": {
+  "bats": "L",
+  "name": "Brandon Marsh",
+  "throws": "R"
+ },
+ "669020": {
+  "bats": "R",
+  "name": "Ryan Rolison",
+  "throws": "L"
+ },
+ "669022": {
+  "bats": "L",
+  "name": "MacKenzie Gore",
+  "throws": "L"
+ },
+ "669060": {
+  "bats": "R",
+  "name": "Bryse Wilson",
+  "throws": "R"
+ },
+ "669062": {
+  "bats": "L",
+  "name": "Erik Miller",
+  "throws": "L"
+ },
+ "669065": {
+  "bats": "L",
+  "name": "Kyle Stowers",
+  "throws": "L"
+ },
+ "669084": {
+  "bats": "L",
+  "name": "DL Hall",
+  "throws": "L"
+ },
+ "669087": {
+  "bats": "R",
+  "name": "Sam Huff",
+  "throws": "R"
+ },
+ "669093": {
+  "bats": "S",
+  "name": "Jeremiah Estrada",
+  "throws": "R"
+ },
+ "669127": {
+  "bats": "R",
+  "name": "Shea Langeliers",
+  "throws": "R"
+ },
+ "669134": {
+  "bats": "R",
+  "name": "Luis Campusano",
+  "throws": "R"
+ },
+ "669145": {
+  "bats": "L",
+  "name": "Bruce Zimmermann",
+  "throws": "L"
+ },
+ "669160": {
+  "bats": "R",
+  "name": "Dustin May",
+  "throws": "R"
+ },
+ "669165": {
+  "bats": "R",
+  "name": "Kyle Hurt",
+  "throws": "R"
+ },
+ "669199": {
+  "bats": "R",
+  "name": "Lake Bachar",
+  "throws": "R"
+ },
+ "669203": {
+  "bats": "R",
+  "name": "Corbin Burnes",
+  "throws": "R"
+ },
+ "669211": {
+  "bats": "L",
+  "name": "Keegan Akin",
+  "throws": "L"
+ },
+ "669212": {
+  "bats": "R",
+  "name": "Eli Morgan",
+  "throws": "R"
+ },
+ "669221": {
+  "bats": "R",
+  "name": "Sean Murphy",
+  "throws": "R"
+ },
+ "669224": {
+  "bats": "L",
+  "name": "Austin Wells",
+  "throws": "R"
+ },
+ "669236": {
+  "bats": "R",
+  "name": "Jeremiah Jackson",
+  "throws": "R"
+ },
+ "669242": {
+  "bats": "S",
+  "name": "Tommy Edman",
+  "throws": "R"
+ },
+ "669256": {
+  "bats": "R",
+  "name": "Nick Solak",
+  "throws": "R"
+ },
+ "669257": {
+  "bats": "R",
+  "name": "Will Smith",
+  "throws": "R"
+ },
+ "669270": {
+  "bats": "R",
+  "name": "Joel Kuhnel",
+  "throws": "R"
+ },
+ "669276": {
+  "bats": "L",
+  "name": "Dylan Lee",
+  "throws": "L"
+ },
+ "669298": {
+  "bats": "R",
+  "name": "TJ Shook",
+  "throws": "R"
+ },
+ "669302": {
+  "bats": "R",
+  "name": "Logan Gilbert",
+  "throws": "R"
+ },
+ "669310": {
+  "bats": "R",
+  "name": "CJ Van Eyk",
+  "throws": "R"
+ },
+ "669326": {
+  "bats": "R",
+  "name": "Bryce Teodosio",
+  "throws": "L"
+ },
+ "669330": {
+  "bats": "R",
+  "name": "Tyler Wells",
+  "throws": "R"
+ },
+ "669357": {
+  "bats": "L",
+  "name": "Nolan Gorman",
+  "throws": "R"
+ },
+ "669358": {
+  "bats": "R",
+  "name": "Shane Baz",
+  "throws": "R"
+ },
+ "669360": {
+  "bats": "S",
+  "name": "Trei Cruz",
+  "throws": "R"
+ },
+ "669364": {
+  "bats": "S",
+  "name": "Xavier Edwards",
+  "throws": "R"
+ },
+ "669371": {
+  "bats": "R",
+  "name": "Cole Henry",
+  "throws": "R"
+ },
+ "669372": {
+  "bats": "R",
+  "name": "J.T. Ginn",
+  "throws": "R"
+ },
+ "669373": {
+  "bats": "R",
+  "name": "Tarik Skubal",
+  "throws": "L"
+ },
+ "669384": {
+  "bats": "L",
+  "name": "Raynel Delgado",
+  "throws": "R"
+ },
+ "669387": {
+  "bats": "R",
+  "name": "Carmen Mlodzinski",
+  "throws": "R"
+ },
+ "669392": {
+  "bats": "R",
+  "name": "Samad Taylor",
+  "throws": "R"
+ },
+ "669394": {
+  "bats": "R",
+  "name": "Jake Burger",
+  "throws": "R"
+ },
+ "669397": {
+  "bats": "R",
+  "name": "Nick Allen",
+  "throws": "R"
+ },
+ "669398": {
+  "bats": "L",
+  "name": "Gage Workman",
+  "throws": "R"
+ },
+ "669432": {
+  "bats": "L",
+  "name": "Trevor Rogers",
+  "throws": "L"
+ },
+ "669438": {
+  "bats": "S",
+  "name": "Mason Englert",
+  "throws": "R"
+ },
+ "669456": {
+  "bats": "R",
+  "name": "Shane Bieber",
+  "throws": "R"
+ },
+ "669461": {
+  "bats": "L",
+  "name": "Matthew Liberatore",
+  "throws": "L"
+ },
+ "669467": {
+  "bats": "R",
+  "name": "Andre Pallante",
+  "throws": "R"
+ },
+ "669477": {
+  "bats": "R",
+  "name": "Casey Schmitt",
+  "throws": "R"
+ },
+ "669620": {
+  "bats": "R",
+  "name": "Brady Basso",
+  "throws": "L"
+ },
+ "669622": {
+  "bats": "R",
+  "name": "Anthony Bender",
+  "throws": "R"
+ },
+ "669684": {
+  "bats": "L",
+  "name": "Chris Murphy",
+  "throws": "L"
+ },
+ "669699": {
+  "bats": "L",
+  "name": "Braden Shewmake",
+  "throws": "R"
+ },
+ "669701": {
+  "bats": "L",
+  "name": "Josh Smith",
+  "throws": "R"
+ },
+ "669704": {
+  "bats": "R",
+  "name": "Kade Strowd",
+  "throws": "R"
+ },
+ "669707": {
+  "bats": "R",
+  "name": "Jared Triolo",
+  "throws": "R"
+ },
+ "669711": {
+  "bats": "R",
+  "name": "Greg Weissert",
+  "throws": "R"
+ },
+ "669713": {
+  "bats": "R",
+  "name": "Hayden Wesneski",
+  "throws": "R"
+ },
+ "669720": {
+  "bats": "R",
+  "name": "Austin Hays",
+  "throws": "R"
+ },
+ "669724": {
+  "bats": "R",
+  "name": "Brenan Hanifee",
+  "throws": "R"
+ },
+ "669743": {
+  "bats": "R",
+  "name": "Alex Call",
+  "throws": "R"
+ },
+ "669854": {
+  "bats": "R",
+  "name": "Ronel Blanco",
+  "throws": "R"
+ },
+ "669899": {
+  "bats": "L",
+  "name": "Ryan Ward",
+  "throws": "R"
+ },
+ "669911": {
+  "bats": "S",
+  "name": "Michael Toglia",
+  "throws": "L"
+ },
+ "669923": {
+  "bats": "R",
+  "name": "George Kirby",
+  "throws": "R"
+ },
+ "669947": {
+  "bats": "R",
+  "name": "Jesse Scholtens",
+  "throws": "R"
+ },
+ "670032": {
+  "bats": "L",
+  "name": "Nicky Lopez",
+  "throws": "R"
+ },
+ "670036": {
+  "bats": "R",
+  "name": "Matt Festa",
+  "throws": "R"
+ },
+ "670042": {
+  "bats": "L",
+  "name": "Luke Raley",
+  "throws": "R"
+ },
+ "670059": {
+  "bats": "R",
+  "name": "Colin Holderman",
+  "throws": "R"
+ },
+ "670062": {
+  "bats": "L",
+  "name": "Julian Garcia",
+  "throws": "R"
+ },
+ "670090": {
+  "bats": "R",
+  "name": "Wyatt Mills",
+  "throws": "R"
+ },
+ "670097": {
+  "bats": "R",
+  "name": "Zack Short",
+  "throws": "R"
+ },
+ "670103": {
+  "bats": "L",
+  "name": "Raymond Burgos",
+  "throws": "L"
+ },
+ "670156": {
+  "bats": "L",
+  "name": "Miles Mastrobuoni",
+  "throws": "R"
+ },
+ "670167": {
+  "bats": "R",
+  "name": "John Schreiber",
+  "throws": "R"
+ },
+ "670183": {
+  "bats": "L",
+  "name": "Garrett Acton",
+  "throws": "R"
+ },
+ "670224": {
+  "bats": "L",
+  "name": "Kameron Misner",
+  "throws": "L"
+ },
+ "670231": {
+  "bats": "L",
+  "name": "John Rave",
+  "throws": "L"
+ },
+ "670245": {
+  "bats": "R",
+  "name": "Ryan Watson",
+  "throws": "R"
+ },
+ "670280": {
+  "bats": "L",
+  "name": "David Bednar",
+  "throws": "R"
+ },
+ "670329": {
+  "bats": "R",
+  "name": "Rico Garcia",
+  "throws": "R"
+ },
+ "670541": {
+  "bats": "L",
+  "name": "Yordan Alvarez",
+  "throws": "R"
+ },
+ "670623": {
+  "bats": "R",
+  "name": "Isaac Paredes",
+  "throws": "R"
+ },
+ "670764": {
+  "bats": "S",
+  "name": "Taylor Walls",
+  "throws": "R"
+ },
+ "670770": {
+  "bats": "L",
+  "name": "TJ Friedl",
+  "throws": "L"
+ },
+ "670871": {
+  "bats": "R",
+  "name": "Guillo Zu\u00f1iga",
+  "throws": "R"
+ },
+ "670950": {
+  "bats": "R",
+  "name": "Trevor Richards",
+  "throws": "R"
+ },
+ "670970": {
+  "bats": "L",
+  "name": "Adrian Morejon",
+  "throws": "L"
+ },
+ "670990": {
+  "bats": "R",
+  "name": "Yohan Ram\u00edrez",
+  "throws": "R"
+ },
+ "671056": {
+  "bats": "R",
+  "name": "Iv\u00e1n Herrera",
+  "throws": "R"
+ },
+ "671083": {
+  "bats": "R",
+  "name": "Buddy Kennedy",
+  "throws": "R"
+ },
+ "671096": {
+  "bats": "L",
+  "name": "Andrew Abbott",
+  "throws": "L"
+ },
+ "671106": {
+  "bats": "R",
+  "name": "Logan Allen",
+  "throws": "L"
+ },
+ "671111": {
+  "bats": "L",
+  "name": "Sammy Peralta",
+  "throws": "L"
+ },
+ "671155": {
+  "bats": "S",
+  "name": "Ivan Johnson",
+  "throws": "R"
+ },
+ "671162": {
+  "bats": "L",
+  "name": "Connor Thomas",
+  "throws": "L"
+ },
+ "671212": {
+  "bats": "R",
+  "name": "Joe Boyle",
+  "throws": "R"
+ },
+ "671218": {
+  "bats": "R",
+  "name": "Heliot Ramos",
+  "throws": "R"
+ },
+ "671277": {
+  "bats": "L",
+  "name": "Luis Garc\u00eda Jr.",
+  "throws": "R"
+ },
+ "671286": {
+  "bats": "R",
+  "name": "Johnathan Rodr\u00edguez",
+  "throws": "R"
+ },
+ "671289": {
+  "bats": "R",
+  "name": "Tyler Freeman",
+  "throws": "R"
+ },
+ "671345": {
+  "bats": "R",
+  "name": "Jason Foley",
+  "throws": "R"
+ },
+ "671732": {
+  "bats": "L",
+  "name": "Lawrence Butler",
+  "throws": "R"
+ },
+ "671737": {
+  "bats": "R",
+  "name": "Taj Bradley",
+  "throws": "R"
+ },
+ "671739": {
+  "bats": "L",
+  "name": "Michael Harris II",
+  "throws": "L"
+ },
+ "671922": {
+  "bats": "R",
+  "name": "Cade Smith",
+  "throws": "R"
+ },
+ "671936": {
+  "bats": "L",
+  "name": "Adam Macko",
+  "throws": "L"
+ },
+ "671976": {
+  "bats": "L",
+  "name": "Tristan Peters",
+  "throws": "R"
+ },
+ "672016": {
+  "bats": "R",
+  "name": "Denzel Clarke",
+  "throws": "R"
+ },
+ "672021": {
+  "bats": "R",
+  "name": "Eric Cerantola",
+  "throws": "R"
+ },
+ "672275": {
+  "bats": "S",
+  "name": "Patrick Bailey",
+  "throws": "R"
+ },
+ "672279": {
+  "bats": "L",
+  "name": "Michael Siani",
+  "throws": "L"
+ },
+ "672282": {
+  "bats": "L",
+  "name": "Reid Detmers",
+  "throws": "L"
+ },
+ "672284": {
+  "bats": "L",
+  "name": "Jarred Kelenic",
+  "throws": "L"
+ },
+ "672335": {
+  "bats": "R",
+  "name": "Cionel P\u00e9rez",
+  "throws": "L"
+ },
+ "672356": {
+  "bats": "R",
+  "name": "Gabriel Arias",
+  "throws": "R"
+ },
+ "672386": {
+  "bats": "R",
+  "name": "Alejandro Kirk",
+  "throws": "R"
+ },
+ "672442": {
+  "bats": "R",
+  "name": "Yovanny Cruz",
+  "throws": "R"
+ },
+ "672456": {
+  "bats": "R",
+  "name": "Keider Montero",
+  "throws": "R"
+ },
+ "672515": {
+  "bats": "R",
+  "name": "Gabriel Moreno",
+  "throws": "R"
+ },
+ "672569": {
+  "bats": "S",
+  "name": "Gustavo Campero",
+  "throws": "R"
+ },
+ "672578": {
+  "bats": "R",
+  "name": "Carlos Hern\u00e1ndez",
+  "throws": "R"
+ },
+ "672580": {
+  "bats": "R",
+  "name": "Maikel Garcia",
+  "throws": "R"
+ },
+ "672613": {
+  "bats": "S",
+  "name": "Eliezer Alfonzo",
+  "throws": "R"
+ },
+ "672629": {
+  "bats": "R",
+  "name": "Gerardo Carrillo",
+  "throws": "R"
+ },
+ "672640": {
+  "bats": "R",
+  "name": "Otto Lopez",
+  "throws": "R"
+ },
+ "672695": {
+  "bats": "S",
+  "name": "Geraldo Perdomo",
+  "throws": "R"
+ },
+ "672724": {
+  "bats": "R",
+  "name": "Oswald Peraza",
+  "throws": "R"
+ },
+ "672782": {
+  "bats": "R",
+  "name": "Yoendrys G\u00f3mez",
+  "throws": "R"
+ },
+ "672841": {
+  "bats": "R",
+  "name": "Carlos Vargas",
+  "throws": "R"
+ },
+ "672960": {
+  "bats": "R",
+  "name": "Kazuma Okamoto",
+  "throws": "R"
+ },
+ "673237": {
+  "bats": "R",
+  "name": "Yainer Diaz",
+  "throws": "R"
+ },
+ "673357": {
+  "bats": "R",
+  "name": "Luis Robert Jr.",
+  "throws": "R"
+ },
+ "673380": {
+  "bats": "R",
+  "name": "Dedniel N\u00fa\u00f1ez",
+  "throws": "R"
+ },
+ "673490": {
+  "bats": "R",
+  "name": "Ha-Seong Kim",
+  "throws": "R"
+ },
+ "673513": {
+  "bats": "L",
+  "name": "Yuki Matsui",
+  "throws": "L"
+ },
+ "673540": {
+  "bats": "L",
+  "name": "Kodai Senga",
+  "throws": "R"
+ },
+ "673548": {
+  "bats": "R",
+  "name": "Seiya Suzuki",
+  "throws": "R"
+ },
+ "673962": {
+  "bats": "R",
+  "name": "Josh Jung",
+  "throws": "R"
+ },
+ "674003": {
+  "bats": "L",
+  "name": "Cody Bradford",
+  "throws": "L"
+ },
+ "674073": {
+  "bats": "R",
+  "name": "Jack Weisenburger",
+  "throws": "R"
+ },
+ "674444": {
+  "bats": "R",
+  "name": "Steven Cruz",
+  "throws": "R"
+ },
+ "674841": {
+  "bats": "L",
+  "name": "Andrew Alvarez",
+  "throws": "L"
+ },
+ "675448": {
+  "bats": "R",
+  "name": "Blake Hunt",
+  "throws": "R"
+ },
+ "675512": {
+  "bats": "R",
+  "name": "Troy Melton",
+  "throws": "R"
+ },
+ "675540": {
+  "bats": "R",
+  "name": "Xzavion Curry",
+  "throws": "R"
+ },
+ "675627": {
+  "bats": "R",
+  "name": "Michael Grove",
+  "throws": "R"
+ },
+ "675659": {
+  "bats": "S",
+  "name": "Greg Jones",
+  "throws": "R"
+ },
+ "675660": {
+  "bats": "L",
+  "name": "Shane Drohan",
+  "throws": "L"
+ },
+ "675848": {
+  "bats": "R",
+  "name": "Juan Mejia",
+  "throws": "R"
+ },
+ "675916": {
+  "bats": "R",
+  "name": "James Karinchak",
+  "throws": "R"
+ },
+ "675919": {
+  "bats": "R",
+  "name": "Nick Raquet",
+  "throws": "L"
+ },
+ "675920": {
+  "bats": "L",
+  "name": "Seth Lonsway",
+  "throws": "L"
+ },
+ "675961": {
+  "bats": "R",
+  "name": "Alika Williams",
+  "throws": "R"
+ },
+ "676051": {
+  "bats": "R",
+  "name": "Codi Heuer",
+  "throws": "R"
+ },
+ "676083": {
+  "bats": "R",
+  "name": "Janson Junk",
+  "throws": "R"
+ },
+ "676105": {
+  "bats": "R",
+  "name": "Jeff Criswell",
+  "throws": "R"
+ },
+ "676106": {
+  "bats": "R",
+  "name": "Emerson Hancock",
+  "throws": "R"
+ },
+ "676254": {
+  "bats": "R",
+  "name": "Ryan Walker",
+  "throws": "R"
+ },
+ "676263": {
+  "bats": "R",
+  "name": "Jack Dreyer",
+  "throws": "L"
+ },
+ "676272": {
+  "bats": "L",
+  "name": "Bobby Miller",
+  "throws": "R"
+ },
+ "676282": {
+  "bats": "L",
+  "name": "Joey Cantillo",
+  "throws": "L"
+ },
+ "676356": {
+  "bats": "R",
+  "name": "Jonny DeLuca",
+  "throws": "R"
+ },
+ "676369": {
+  "bats": "R",
+  "name": "Nelson Vel\u00e1zquez",
+  "throws": "R"
+ },
+ "676391": {
+  "bats": "R",
+  "name": "Ernie Clement",
+  "throws": "R"
+ },
+ "676395": {
+  "bats": "R",
+  "name": "Robert Garcia",
+  "throws": "L"
+ },
+ "676428": {
+  "bats": "L",
+  "name": "Brant Hurter",
+  "throws": "L"
+ },
+ "676439": {
+  "bats": "L",
+  "name": "Hunter Feduccia",
+  "throws": "R"
+ },
+ "676440": {
+  "bats": "R",
+  "name": "Tanner Bibee",
+  "throws": "R"
+ },
+ "676475": {
+  "bats": "L",
+  "name": "Alec Burleson",
+  "throws": "L"
+ },
+ "676477": {
+  "bats": "R",
+  "name": "Garrett Whitlock",
+  "throws": "R"
+ },
+ "676510": {
+  "bats": "R",
+  "name": "Nolan Hoffman",
+  "throws": "R"
+ },
+ "676534": {
+  "bats": "R",
+  "name": "Calvin Faucher",
+  "throws": "R"
+ },
+ "676551": {
+  "bats": "R",
+  "name": "Brewer Hicklen",
+  "throws": "R"
+ },
+ "676566": {
+  "bats": "R",
+  "name": "Shawn Ross",
+  "throws": "R"
+ },
+ "676571": {
+  "bats": "R",
+  "name": "PJ Poulin",
+  "throws": "L"
+ },
+ "676572": {
+  "bats": "R",
+  "name": "Eric Wagaman",
+  "throws": "R"
+ },
+ "676604": {
+  "bats": "R",
+  "name": "Tyler Zuber",
+  "throws": "R"
+ },
+ "676609": {
+  "bats": "R",
+  "name": "Jos\u00e9 Caballero",
+  "throws": "R"
+ },
+ "676617": {
+  "bats": "R",
+  "name": "Riley O'Brien",
+  "throws": "R"
+ },
+ "676620": {
+  "bats": "R",
+  "name": "Blake Weiman",
+  "throws": "L"
+ },
+ "676661": {
+  "bats": "R",
+  "name": "Max Lazar",
+  "throws": "R"
+ },
+ "676664": {
+  "bats": "R",
+  "name": "JP Sears",
+  "throws": "L"
+ },
+ "676679": {
+  "bats": "R",
+  "name": "Luis V\u00e1zquez",
+  "throws": "R"
+ },
+ "676680": {
+  "bats": "L",
+  "name": "Tom Cosgrove",
+  "throws": "L"
+ },
+ "676684": {
+  "bats": "R",
+  "name": "Will Vest",
+  "throws": "R"
+ },
+ "676694": {
+  "bats": "R",
+  "name": "Jake Meyers",
+  "throws": "L"
+ },
+ "676702": {
+  "bats": "R",
+  "name": "Hunter Stratton",
+  "throws": "R"
+ },
+ "676724": {
+  "bats": "L",
+  "name": "Jared Young",
+  "throws": "R"
+ },
+ "676742": {
+  "bats": "R",
+  "name": "Cam Sanders",
+  "throws": "R"
+ },
+ "676755": {
+  "bats": "R",
+  "name": "Isaac Mattson",
+  "throws": "R"
+ },
+ "676760": {
+  "bats": "R",
+  "name": "Ron Marinaccio",
+  "throws": "R"
+ },
+ "676775": {
+  "bats": "R",
+  "name": "Keaton Winn",
+  "throws": "R"
+ },
+ "676879": {
+  "bats": "R",
+  "name": "Aaron Ashby",
+  "throws": "L"
+ },
+ "676910": {
+  "bats": "R",
+  "name": "Matt Seelinger",
+  "throws": "R"
+ },
+ "676914": {
+  "bats": "R",
+  "name": "Davis Schneider",
+  "throws": "R"
+ },
+ "676917": {
+  "bats": "R",
+  "name": "Cade Cavalli",
+  "throws": "R"
+ },
+ "676962": {
+  "bats": "R",
+  "name": "Ben Brown",
+  "throws": "R"
+ },
+ "676974": {
+  "bats": "L",
+  "name": "Max Meyer",
+  "throws": "R"
+ },
+ "677008": {
+  "bats": "L",
+  "name": "Heston Kjerstad",
+  "throws": "R"
+ },
+ "677020": {
+  "bats": "L",
+  "name": "Josh Walker",
+  "throws": "L"
+ },
+ "677347": {
+  "bats": "R",
+  "name": "Kyren Paris",
+  "throws": "R"
+ },
+ "677587": {
+  "bats": "S",
+  "name": "Brayan Rocchio",
+  "throws": "R"
+ },
+ "677588": {
+  "bats": "L",
+  "name": "Jos\u00e9 Tena",
+  "throws": "R"
+ },
+ "677592": {
+  "bats": "R",
+  "name": "Everson Pereira",
+  "throws": "R"
+ },
+ "677594": {
+  "bats": "R",
+  "name": "Julio Rodr\u00edguez",
+  "throws": "R"
+ },
+ "677595": {
+  "bats": "S",
+  "name": "Ronny Mauricio",
+  "throws": "R"
+ },
+ "677649": {
+  "bats": "R",
+  "name": "Ezequiel Duran",
+  "throws": "R"
+ },
+ "677800": {
+  "bats": "L",
+  "name": "Wilyer Abreu",
+  "throws": "L"
+ },
+ "677865": {
+  "bats": "L",
+  "name": "Justin Bruihl",
+  "throws": "L"
+ },
+ "677870": {
+  "bats": "R",
+  "name": "Leo Jim\u00e9nez",
+  "throws": "R"
+ },
+ "677942": {
+  "bats": "R",
+  "name": "Blaze Alexander",
+  "throws": "R"
+ },
+ "677943": {
+  "bats": "R",
+  "name": "Will Banfield",
+  "throws": "R"
+ },
+ "677944": {
+  "bats": "R",
+  "name": "Slade Cecconi",
+  "throws": "R"
+ },
+ "677950": {
+  "bats": "L",
+  "name": "Alek Thomas",
+  "throws": "L"
+ },
+ "677951": {
+  "bats": "R",
+  "name": "Bobby Witt Jr.",
+  "throws": "R"
+ },
+ "677952": {
+  "bats": "L",
+  "name": "Braxton Ashcraft",
+  "throws": "R"
+ },
+ "677955": {
+  "bats": "R",
+  "name": "Jaden Hill",
+  "throws": "R"
+ },
+ "677956": {
+  "bats": "R",
+  "name": "Rece Hinds",
+  "throws": "R"
+ },
+ "677958": {
+  "bats": "R",
+  "name": "Kumar Rocker",
+  "throws": "R"
+ },
+ "677960": {
+  "bats": "R",
+  "name": "Ryan Weathers",
+  "throws": "L"
+ },
+ "677961": {
+  "bats": "R",
+  "name": "Cole Wilcox",
+  "throws": "R"
+ },
+ "677976": {
+  "bats": "R",
+  "name": "Randy Dobnak",
+  "throws": "R"
+ },
+ "678011": {
+  "bats": "S",
+  "name": "Anthony Seigler",
+  "throws": "S"
+ },
+ "678020": {
+  "bats": "R",
+  "name": "Seth Halvorsen",
+  "throws": "R"
+ },
+ "678022": {
+  "bats": "R",
+  "name": "Jack Perkins",
+  "throws": "R"
+ },
+ "678061": {
+  "bats": "L",
+  "name": "Ray Kerr",
+  "throws": "L"
+ },
+ "678218": {
+  "bats": "S",
+  "name": "Brandon Valenzuela",
+  "throws": "R"
+ },
+ "678225": {
+  "bats": "L",
+  "name": "Jihwan Bae",
+  "throws": "R"
+ },
+ "678246": {
+  "bats": "R",
+  "name": "Miguel Vargas",
+  "throws": "R"
+ },
+ "678391": {
+  "bats": "L",
+  "name": "Jorbit Vivas",
+  "throws": "R"
+ },
+ "678394": {
+  "bats": "R",
+  "name": "Brayan Bello",
+  "throws": "R"
+ },
+ "678489": {
+  "bats": "S",
+  "name": "Jorge Barrosa",
+  "throws": "L"
+ },
+ "678545": {
+  "bats": "R",
+  "name": "Osleivis Basabe",
+  "throws": "R"
+ },
+ "678554": {
+  "bats": "R",
+  "name": "Curtis Mead",
+  "throws": "R"
+ },
+ "678577": {
+  "bats": "R",
+  "name": "Junior Perez",
+  "throws": "R"
+ },
+ "678606": {
+  "bats": "L",
+  "name": "Jos\u00e9 A. Ferrer",
+  "throws": "L"
+ },
+ "678662": {
+  "bats": "R",
+  "name": "Ezequiel Tovar",
+  "throws": "R"
+ },
+ "678760": {
+  "bats": "R",
+  "name": "Eddys Leonard",
+  "throws": "R"
+ },
+ "678868": {
+  "bats": "R",
+  "name": "Eddy Yean",
+  "throws": "R"
+ },
+ "678882": {
+  "bats": "R",
+  "name": "Ceddanne Rafaela",
+  "throws": "R"
+ },
+ "678906": {
+  "bats": "R",
+  "name": "Kai-Wei Teng",
+  "throws": "R"
+ },
+ "679358": {
+  "bats": "R",
+  "name": "Eric Orze",
+  "throws": "R"
+ },
+ "679529": {
+  "bats": "R",
+  "name": "Spencer Torkelson",
+  "throws": "R"
+ },
+ "679775": {
+  "bats": "L",
+  "name": "Kyle Backhus",
+  "throws": "L"
+ },
+ "679822": {
+  "bats": "R",
+  "name": "Justin Foscue",
+  "throws": "R"
+ },
+ "679845": {
+  "bats": "R",
+  "name": "Nick Loftin",
+  "throws": "R"
+ },
+ "679883": {
+  "bats": "R",
+  "name": "Luinder Avila",
+  "throws": "R"
+ },
+ "679885": {
+  "bats": "R",
+  "name": "Justin Martinez",
+  "throws": "R"
+ },
+ "679922": {
+  "bats": "R",
+  "name": "Carlos Duran",
+  "throws": "R"
+ },
+ "680474": {
+  "bats": "R",
+  "name": "Max Schuemann",
+  "throws": "R"
+ },
+ "680570": {
+  "bats": "L",
+  "name": "Grayson Rodriguez",
+  "throws": "R"
+ },
+ "680573": {
+  "bats": "R",
+  "name": "Simeon Woods Richardson",
+  "throws": "R"
+ },
+ "680574": {
+  "bats": "R",
+  "name": "Matt McLain",
+  "throws": "R"
+ },
+ "680604": {
+  "bats": "R",
+  "name": "Blas Casta\u00f1o",
+  "throws": "R"
+ },
+ "680664": {
+  "bats": "R",
+  "name": "Eduardo Valencia",
+  "throws": "R"
+ },
+ "680689": {
+  "bats": "S",
+  "name": "Lyon Richardson",
+  "throws": "R"
+ },
+ "680694": {
+  "bats": "R",
+  "name": "Kyle Bradish",
+  "throws": "R"
+ },
+ "680700": {
+  "bats": "L",
+  "name": "Richie Palacios",
+  "throws": "R"
+ },
+ "680702": {
+  "bats": "R",
+  "name": "Joey Gerber",
+  "throws": "R"
+ },
+ "680716": {
+  "bats": "R",
+  "name": "Jonathan Ornelas",
+  "throws": "R"
+ },
+ "680723": {
+  "bats": "L",
+  "name": "Drew Rom",
+  "throws": "L"
+ },
+ "680728": {
+  "bats": "L",
+  "name": "Adrian Del Castillo",
+  "throws": "R"
+ },
+ "680730": {
+  "bats": "L",
+  "name": "Mitchell Parker",
+  "throws": "L"
+ },
+ "680732": {
+  "bats": "R",
+  "name": "Sean Burke",
+  "throws": "R"
+ },
+ "680736": {
+  "bats": "L",
+  "name": "Justin Wrobleski",
+  "throws": "L"
+ },
+ "680742": {
+  "bats": "R",
+  "name": "Jonathan Bowlan",
+  "throws": "R"
+ },
+ "680744": {
+  "bats": "R",
+  "name": "Ty Madden",
+  "throws": "R"
+ },
+ "680755": {
+  "bats": "R",
+  "name": "Braydon Fisher",
+  "throws": "R"
+ },
+ "680757": {
+  "bats": "L",
+  "name": "Steven Kwan",
+  "throws": "L"
+ },
+ "680767": {
+  "bats": "R",
+  "name": "Victor Vodnik",
+  "throws": "R"
+ },
+ "680776": {
+  "bats": "L",
+  "name": "Jarren Duran",
+  "throws": "R"
+ },
+ "680777": {
+  "bats": "R",
+  "name": "Ryan Jeffers",
+  "throws": "R"
+ },
+ "680779": {
+  "bats": "R",
+  "name": "Henry Davis",
+  "throws": "R"
+ },
+ "680869": {
+  "bats": "R",
+  "name": "Zack Gelof",
+  "throws": "R"
+ },
+ "680899": {
+  "bats": "L",
+  "name": "Erik Tolman",
+  "throws": "L"
+ },
+ "680911": {
+  "bats": "R",
+  "name": "Owen Miller",
+  "throws": "R"
+ },
+ "680916": {
+  "bats": "R",
+  "name": "Franco Aleman",
+  "throws": "R"
+ },
+ "680977": {
+  "bats": "L",
+  "name": "Brendan Donovan",
+  "throws": "R"
+ },
+ "681006": {
+  "bats": "L",
+  "name": "Josh Simpson",
+  "throws": "L"
+ },
+ "681035": {
+  "bats": "R",
+  "name": "Christian Scott",
+  "throws": "R"
+ },
+ "681047": {
+  "bats": "R",
+  "name": "Christian Franklin",
+  "throws": "R"
+ },
+ "681082": {
+  "bats": "L",
+  "name": "Bryson Stott",
+  "throws": "R"
+ },
+ "681146": {
+  "bats": "R",
+  "name": "Jonah Bride",
+  "throws": "R"
+ },
+ "681151": {
+  "bats": "R",
+  "name": "Jayden Murray",
+  "throws": "R"
+ },
+ "681168": {
+  "bats": "R",
+  "name": "Luis Curvelo",
+  "throws": "R"
+ },
+ "681190": {
+  "bats": "R",
+  "name": "Randy V\u00e1squez",
+  "throws": "R"
+ },
+ "681198": {
+  "bats": "L",
+  "name": "TJ Rumfield",
+  "throws": "R"
+ },
+ "681217": {
+  "bats": "R",
+  "name": "Chase Silseth",
+  "throws": "R"
+ },
+ "681230": {
+  "bats": "S",
+  "name": "BJ Murray Jr.",
+  "throws": "R"
+ },
+ "681252": {
+  "bats": "R",
+  "name": "Jack Anderson",
+  "throws": "R"
+ },
+ "681293": {
+  "bats": "R",
+  "name": "Spencer Arrighetti",
+  "throws": "R"
+ },
+ "681297": {
+  "bats": "L",
+  "name": "Colton Cowser",
+  "throws": "R"
+ },
+ "681320": {
+  "bats": "L",
+  "name": "Nate Lavender",
+  "throws": "L"
+ },
+ "681347": {
+  "bats": "R",
+  "name": "Mike Burrows",
+  "throws": "R"
+ },
+ "681351": {
+  "bats": "R",
+  "name": "Logan O'Hoppe",
+  "throws": "R"
+ },
+ "681393": {
+  "bats": "R",
+  "name": "Connor Norby",
+  "throws": "R"
+ },
+ "681402": {
+  "bats": "L",
+  "name": "Gus Varland",
+  "throws": "R"
+ },
+ "681481": {
+  "bats": "L",
+  "name": "Kerry Carpenter",
+  "throws": "R"
+ },
+ "681508": {
+  "bats": "S",
+  "name": "Mickey Gasper",
+  "throws": "R"
+ },
+ "681517": {
+  "bats": "S",
+  "name": "Kyle Leahy",
+  "throws": "R"
+ },
+ "681520": {
+  "bats": "L",
+  "name": "Antoine Kelly",
+  "throws": "L"
+ },
+ "681544": {
+  "bats": "R",
+  "name": "Wyatt Olds",
+  "throws": "R"
+ },
+ "681546": {
+  "bats": "L",
+  "name": "James Outman",
+  "throws": "R"
+ },
+ "681624": {
+  "bats": "R",
+  "name": "Andy Pages",
+  "throws": "R"
+ },
+ "681676": {
+  "bats": "R",
+  "name": "Ryan Fernandez",
+  "throws": "R"
+ },
+ "681715": {
+  "bats": "R",
+  "name": "Heriberto Hern\u00e1ndez",
+  "throws": "R"
+ },
+ "681751": {
+  "bats": "R",
+  "name": "Lazaro Estrada",
+  "throws": "R"
+ },
+ "681799": {
+  "bats": "R",
+  "name": "Ethan Roberts",
+  "throws": "R"
+ },
+ "681806": {
+  "bats": "R",
+  "name": "Andrew Wantz",
+  "throws": "R"
+ },
+ "681807": {
+  "bats": "R",
+  "name": "David Fry",
+  "throws": "R"
+ },
+ "681810": {
+  "bats": "R",
+  "name": "Austin Warren",
+  "throws": "R"
+ },
+ "681867": {
+  "bats": "R",
+  "name": "Cooper Criswell",
+  "throws": "R"
+ },
+ "681870": {
+  "bats": "R",
+  "name": "Erik Sabrowski",
+  "throws": "L"
+ },
+ "681892": {
+  "bats": "L",
+  "name": "Kody Funderburk",
+  "throws": "L"
+ },
+ "681895": {
+  "bats": "L",
+  "name": "Evan Sisk",
+  "throws": "L"
+ },
+ "681909": {
+  "bats": "R",
+  "name": "Justin Dean",
+  "throws": "R"
+ },
+ "681911": {
+  "bats": "L",
+  "name": "Alex Vesia",
+  "throws": "L"
+ },
+ "681916": {
+  "bats": "R",
+  "name": "Dylan Smith",
+  "throws": "R"
+ },
+ "681982": {
+  "bats": "R",
+  "name": "Grant Anderson",
+  "throws": "R"
+ },
+ "681987": {
+  "bats": "R",
+  "name": "Nate Eaton",
+  "throws": "R"
+ },
+ "682052": {
+  "bats": "L",
+  "name": "Jacob Lopez",
+  "throws": "L"
+ },
+ "682120": {
+  "bats": "L",
+  "name": "Tim Herrin",
+  "throws": "L"
+ },
+ "682177": {
+  "bats": "L",
+  "name": "Daniel Schneemann",
+  "throws": "R"
+ },
+ "682227": {
+  "bats": "R",
+  "name": "Brandon Williamson",
+  "throws": "L"
+ },
+ "682243": {
+  "bats": "R",
+  "name": "Bryce Miller",
+  "throws": "R"
+ },
+ "682254": {
+  "bats": "L",
+  "name": "Mason Montgomery",
+  "throws": "L"
+ },
+ "682274": {
+  "bats": "R",
+  "name": "Yaramil Hiraldo",
+  "throws": "R"
+ },
+ "682515": {
+  "bats": "R",
+  "name": "Logan Porter",
+  "throws": "R"
+ },
+ "682608": {
+  "bats": "R",
+  "name": "Peyton Gray",
+  "throws": "R"
+ },
+ "682622": {
+  "bats": "R",
+  "name": "Noelvi Marte",
+  "throws": "R"
+ },
+ "682626": {
+  "bats": "R",
+  "name": "Francisco Alvarez",
+  "throws": "R"
+ },
+ "682634": {
+  "bats": "R",
+  "name": "Kevin Alc\u00e1ntara",
+  "throws": "R"
+ },
+ "682657": {
+  "bats": "S",
+  "name": "Angel Mart\u00ednez",
+  "throws": "R"
+ },
+ "682663": {
+  "bats": "R",
+  "name": "Agust\u00edn Ram\u00edrez",
+  "throws": "R"
+ },
+ "682668": {
+  "bats": "R",
+  "name": "Luisangel Acu\u00f1a",
+  "throws": "R"
+ },
+ "682674": {
+  "bats": "R",
+  "name": "Victor Bericoto",
+  "throws": "R"
+ },
+ "682729": {
+  "bats": "S",
+  "name": "Jonatan Clase",
+  "throws": "R"
+ },
+ "682818": {
+  "bats": "L",
+  "name": "Yohendrick Pi\u00f1ango",
+  "throws": "L"
+ },
+ "682825": {
+  "bats": "R",
+  "name": "Luis Mey",
+  "throws": "R"
+ },
+ "682829": {
+  "bats": "S",
+  "name": "Elly De La Cruz",
+  "throws": "R"
+ },
+ "682842": {
+  "bats": "R",
+  "name": "Abner Uribe",
+  "throws": "R"
+ },
+ "682848": {
+  "bats": "S",
+  "name": "Endy Rodr\u00edguez",
+  "throws": "R"
+ },
+ "682877": {
+  "bats": "S",
+  "name": "Juan Brito",
+  "throws": "R"
+ },
+ "682927": {
+  "bats": "S",
+  "name": "Ronny Simon",
+  "throws": "R"
+ },
+ "682928": {
+  "bats": "L",
+  "name": "CJ Abrams",
+  "throws": "R"
+ },
+ "682982": {
+  "bats": "R",
+  "name": "Daniel Espino",
+  "throws": "R"
+ },
+ "682985": {
+  "bats": "L",
+  "name": "Riley Greene",
+  "throws": "L"
+ },
+ "682987": {
+  "bats": "L",
+  "name": "Spencer Jones",
+  "throws": "L"
+ },
+ "682988": {
+  "bats": "R",
+  "name": "Tyler Locklear",
+  "throws": "R"
+ },
+ "682989": {
+  "bats": "R",
+  "name": "Victor Mederos",
+  "throws": "R"
+ },
+ "682995": {
+  "bats": "L",
+  "name": "Hunter Barco",
+  "throws": "L"
+ },
+ "682997": {
+  "bats": "L",
+  "name": "Tyler Callihan",
+  "throws": "R"
+ },
+ "682998": {
+  "bats": "L",
+  "name": "Corbin Carroll",
+  "throws": "L"
+ },
+ "683000": {
+  "bats": "R",
+  "name": "Riley Cornelio",
+  "throws": "R"
+ },
+ "683002": {
+  "bats": "L",
+  "name": "Gunnar Henderson",
+  "throws": "R"
+ },
+ "683003": {
+  "bats": "L",
+  "name": "Jared Jones",
+  "throws": "R"
+ },
+ "683004": {
+  "bats": "R",
+  "name": "Jack Leiter",
+  "throws": "R"
+ },
+ "683011": {
+  "bats": "R",
+  "name": "Anthony Volpe",
+  "throws": "R"
+ },
+ "683021": {
+  "bats": "R",
+  "name": "Michael Stefanic",
+  "throws": "R"
+ },
+ "683083": {
+  "bats": "S",
+  "name": "Nasim Nu\u00f1ez",
+  "throws": "R"
+ },
+ "683090": {
+  "bats": "R",
+  "name": "Matthew Lugo",
+  "throws": "R"
+ },
+ "683146": {
+  "bats": "L",
+  "name": "Brett Baty",
+  "throws": "R"
+ },
+ "683227": {
+  "bats": "R",
+  "name": "Cody Freeman",
+  "throws": "R"
+ },
+ "683352": {
+  "bats": "L",
+  "name": "Mitch Bratt",
+  "throws": "L"
+ },
+ "683357": {
+  "bats": "L",
+  "name": "Owen Caissie",
+  "throws": "R"
+ },
+ "683363": {
+  "bats": "R",
+  "name": "Matt Wilkinson",
+  "throws": "L"
+ },
+ "683409": {
+  "bats": "R",
+  "name": "Angel Chivilli",
+  "throws": "R"
+ },
+ "683618": {
+  "bats": "R",
+  "name": "Edgardo Henriquez",
+  "throws": "R"
+ },
+ "683627": {
+  "bats": "R",
+  "name": "Anthony Molina",
+  "throws": "R"
+ },
+ "683679": {
+  "bats": "R",
+  "name": "Jesus Rodriguez",
+  "throws": "R"
+ },
+ "683734": {
+  "bats": "R",
+  "name": "Andrew Vaughn",
+  "throws": "R"
+ },
+ "683737": {
+  "bats": "L",
+  "name": "Michael Busch",
+  "throws": "R"
+ },
+ "683742": {
+  "bats": "R",
+  "name": "Jose Franco",
+  "throws": "R"
+ },
+ "683748": {
+  "bats": "L",
+  "name": "Victor Mesa Jr.",
+  "throws": "L"
+ },
+ "683766": {
+  "bats": "R",
+  "name": "Christian Koss",
+  "throws": "R"
+ },
+ "683769": {
+  "bats": "R",
+  "name": "Hunter Gaddis",
+  "throws": "R"
+ },
+ "683953": {
+  "bats": "L",
+  "name": "Travis Bazzana",
+  "throws": "R"
+ },
+ "684007": {
+  "bats": "L",
+  "name": "Shota Imanaga",
+  "throws": "L"
+ },
+ "684049": {
+  "bats": "R",
+  "name": "Brandan Bidois",
+  "throws": "R"
+ },
+ "684442": {
+  "bats": "L",
+  "name": "Kohl Drake",
+  "throws": "L"
+ },
+ "684516": {
+  "bats": "R",
+  "name": "Hancel Rincon",
+  "throws": "R"
+ },
+ "684665": {
+  "bats": "R",
+  "name": "Luke Murphy",
+  "throws": "R"
+ },
+ "684974": {
+  "bats": "R",
+  "name": "Craig Yoho",
+  "throws": "R"
+ },
+ "685112": {
+  "bats": "L",
+  "name": "Zach McCambley",
+  "throws": "R"
+ },
+ "685126": {
+  "bats": "L",
+  "name": "Brandon Eisert",
+  "throws": "L"
+ },
+ "685133": {
+  "bats": "L",
+  "name": "Wade Meckler",
+  "throws": "R"
+ },
+ "685299": {
+  "bats": "L",
+  "name": "Tanner Gordon",
+  "throws": "R"
+ },
+ "685464": {
+  "bats": "R",
+  "name": "Cade Winquest",
+  "throws": "R"
+ },
+ "686217": {
+  "bats": "L",
+  "name": "Sal Frelick",
+  "throws": "R"
+ },
+ "686218": {
+  "bats": "R",
+  "name": "Emmet Sheehan",
+  "throws": "R"
+ },
+ "686228": {
+  "bats": "R",
+  "name": "Juan Burgos",
+  "throws": "R"
+ },
+ "686452": {
+  "bats": "S",
+  "name": "Drew Millas",
+  "throws": "R"
+ },
+ "686469": {
+  "bats": "L",
+  "name": "Vinnie Pasquantino",
+  "throws": "L"
+ },
+ "686475": {
+  "bats": "R",
+  "name": "Tyler Tolbert",
+  "throws": "R"
+ },
+ "686527": {
+  "bats": "L",
+  "name": "Dominic Canzone",
+  "throws": "R"
+ },
+ "686555": {
+  "bats": "S",
+  "name": "Isaac Collins",
+  "throws": "R"
+ },
+ "686560": {
+  "bats": "R",
+  "name": "Gavin Collyer",
+  "throws": "R"
+ },
+ "686563": {
+  "bats": "R",
+  "name": "Jonathan Cannon",
+  "throws": "R"
+ },
+ "686580": {
+  "bats": "R",
+  "name": "Justin Slaten",
+  "throws": "R"
+ },
+ "686611": {
+  "bats": "R",
+  "name": "Dylan Crews",
+  "throws": "R"
+ },
+ "686613": {
+  "bats": "R",
+  "name": "Hunter Brown",
+  "throws": "R"
+ },
+ "686628": {
+  "bats": "R",
+  "name": "Blake Burkhalter",
+  "throws": "R"
+ },
+ "686668": {
+  "bats": "R",
+  "name": "Brenton Doyle",
+  "throws": "R"
+ },
+ "686681": {
+  "bats": "L",
+  "name": "Michael Massey",
+  "throws": "R"
+ },
+ "686751": {
+  "bats": "R",
+  "name": "Seth Johnson",
+  "throws": "R"
+ },
+ "686753": {
+  "bats": "R",
+  "name": "Drey Jameson",
+  "throws": "R"
+ },
+ "686765": {
+  "bats": "S",
+  "name": "Nick Sogard",
+  "throws": "R"
+ },
+ "686780": {
+  "bats": "R",
+  "name": "Pedro Pag\u00e9s",
+  "throws": "R"
+ },
+ "686790": {
+  "bats": "R",
+  "name": "Trevor McDonald",
+  "throws": "R"
+ },
+ "686796": {
+  "bats": "L",
+  "name": "Blake Walston",
+  "throws": "L"
+ },
+ "686797": {
+  "bats": "S",
+  "name": "Brooks Lee",
+  "throws": "R"
+ },
+ "686930": {
+  "bats": "R",
+  "name": "Mason Barnett",
+  "throws": "R"
+ },
+ "686934": {
+  "bats": "R",
+  "name": "Alex McFarlane",
+  "throws": "R"
+ },
+ "686948": {
+  "bats": "L",
+  "name": "Drake Baldwin",
+  "throws": "R"
+ },
+ "686973": {
+  "bats": "L",
+  "name": "Louis Varland",
+  "throws": "R"
+ },
+ "686993": {
+  "bats": "R",
+  "name": "Justin Sterner",
+  "throws": "R"
+ },
+ "687060": {
+  "bats": "R",
+  "name": "Blake Adams",
+  "throws": "R"
+ },
+ "687064": {
+  "bats": "R",
+  "name": "Brandon Young",
+  "throws": "R"
+ },
+ "687075": {
+  "bats": "R",
+  "name": "Brandon Sproat",
+  "throws": "R"
+ },
+ "687093": {
+  "bats": "R",
+  "name": "Vaughn Grissom",
+  "throws": "R"
+ },
+ "687134": {
+  "bats": "R",
+  "name": "Bradley Blalock",
+  "throws": "R"
+ },
+ "687209": {
+  "bats": "R",
+  "name": "Zach Maxwell",
+  "throws": "R"
+ },
+ "687221": {
+  "bats": "L",
+  "name": "Dalton Rushing",
+  "throws": "R"
+ },
+ "687223": {
+  "bats": "L",
+  "name": "Carson Palmquist",
+  "throws": "L"
+ },
+ "687231": {
+  "bats": "R",
+  "name": "Darell Hernaiz",
+  "throws": "R"
+ },
+ "687239": {
+  "bats": "L",
+  "name": "Ben Peoples",
+  "throws": "R"
+ },
+ "687263": {
+  "bats": "R",
+  "name": "Zach Neto",
+  "throws": "R"
+ },
+ "687273": {
+  "bats": "L",
+  "name": "Quinn Mathews",
+  "throws": "L"
+ },
+ "687282": {
+  "bats": "L",
+  "name": "Gabriel Rincones Jr.",
+  "throws": "R"
+ },
+ "687287": {
+  "bats": "R",
+  "name": "Patrick Monteverde",
+  "throws": "L"
+ },
+ "687309": {
+  "bats": "L",
+  "name": "Cooper Hjerpe",
+  "throws": "L"
+ },
+ "687312": {
+  "bats": "R",
+  "name": "Gabriel Hughes",
+  "throws": "R"
+ },
+ "687330": {
+  "bats": "R",
+  "name": "Kevin Kelly",
+  "throws": "R"
+ },
+ "687363": {
+  "bats": "L",
+  "name": "Victor Scott II",
+  "throws": "L"
+ },
+ "687377": {
+  "bats": "R",
+  "name": "Orlando Ribalta",
+  "throws": "R"
+ },
+ "687394": {
+  "bats": "R",
+  "name": "Jack Brannigan",
+  "throws": "R"
+ },
+ "687396": {
+  "bats": "L",
+  "name": "Brent Headrick",
+  "throws": "L"
+ },
+ "687401": {
+  "bats": "R",
+  "name": "Joey Ortiz",
+  "throws": "R"
+ },
+ "687462": {
+  "bats": "L",
+  "name": "Spencer Horwitz",
+  "throws": "R"
+ },
+ "687473": {
+  "bats": "R",
+  "name": "Ryan Gusto",
+  "throws": "R"
+ },
+ "687515": {
+  "bats": "R",
+  "name": "Colby Thomas",
+  "throws": "R"
+ },
+ "687529": {
+  "bats": "L",
+  "name": "Grant McCray",
+  "throws": "R"
+ },
+ "687531": {
+  "bats": "R",
+  "name": "William Kempner",
+  "throws": "R"
+ },
+ "687551": {
+  "bats": "L",
+  "name": "Drew Gilbert",
+  "throws": "L"
+ },
+ "687562": {
+  "bats": "L",
+  "name": "Jake Bennett",
+  "throws": "L"
+ },
+ "687570": {
+  "bats": "L",
+  "name": "Connor Prielipp",
+  "throws": "L"
+ },
+ "687597": {
+  "bats": "R",
+  "name": "Jordan Beck",
+  "throws": "R"
+ },
+ "687605": {
+  "bats": "R",
+  "name": "Andrew Pinckney",
+  "throws": "R"
+ },
+ "687606": {
+  "bats": "L",
+  "name": "Paxton Schultz",
+  "throws": "R"
+ },
+ "687637": {
+  "bats": "L",
+  "name": "Dylan Beavers",
+  "throws": "R"
+ },
+ "687749": {
+  "bats": "R",
+  "name": "Jase Bowen",
+  "throws": "R"
+ },
+ "687765": {
+  "bats": "R",
+  "name": "Mitch Spence",
+  "throws": "R"
+ },
+ "687849": {
+  "bats": "R",
+  "name": "Zak Kent",
+  "throws": "R"
+ },
+ "687859": {
+  "bats": "L",
+  "name": "Troy Johnston",
+  "throws": "L"
+ },
+ "687911": {
+  "bats": "R",
+  "name": "Bryan King",
+  "throws": "L"
+ },
+ "687931": {
+  "bats": "L",
+  "name": "Carson Whisenhunt",
+  "throws": "L"
+ },
+ "687941": {
+  "bats": "S",
+  "name": "Alec Gamboa",
+  "throws": "L"
+ },
+ "687952": {
+  "bats": "R",
+  "name": "Christian Encarnacion-Strand",
+  "throws": "R"
+ },
+ "687957": {
+  "bats": "L",
+  "name": "Dustin Harris",
+  "throws": "R"
+ },
+ "688107": {
+  "bats": "L",
+  "name": "Robert Gasser",
+  "throws": "L"
+ },
+ "688158": {
+  "bats": "R",
+  "name": "David Morgan",
+  "throws": "R"
+ },
+ "688297": {
+  "bats": "R",
+  "name": "Chris Roycroft",
+  "throws": "R"
+ },
+ "688363": {
+  "bats": "L",
+  "name": "Graham Pauley",
+  "throws": "R"
+ },
+ "688497": {
+  "bats": "R",
+  "name": "Taylor Rashi",
+  "throws": "R"
+ },
+ "688642": {
+  "bats": "R",
+  "name": "Zach Agnos",
+  "throws": "R"
+ },
+ "688692": {
+  "bats": "L",
+  "name": "Jared Simpson",
+  "throws": "L"
+ },
+ "689017": {
+  "bats": "L",
+  "name": "Landon Knack",
+  "throws": "R"
+ },
+ "689147": {
+  "bats": "R",
+  "name": "Orion Kerkering",
+  "throws": "R"
+ },
+ "689149": {
+  "bats": "R",
+  "name": "Chad Dallas",
+  "throws": "R"
+ },
+ "689225": {
+  "bats": "R",
+  "name": "Beau Brieske",
+  "throws": "R"
+ },
+ "689254": {
+  "bats": "R",
+  "name": "Mason Fluharty",
+  "throws": "L"
+ },
+ "689266": {
+  "bats": "L",
+  "name": "Dylan Dodd",
+  "throws": "L"
+ },
+ "689296": {
+  "bats": "S",
+  "name": "Anthony Nunez",
+  "throws": "R"
+ },
+ "689414": {
+  "bats": "L",
+  "name": "Liam Hicks",
+  "throws": "R"
+ },
+ "689520": {
+  "bats": "L",
+  "name": "Cody Laweryson",
+  "throws": "R"
+ },
+ "689546": {
+  "bats": "R",
+  "name": "Nick Davila",
+  "throws": "R"
+ },
+ "689690": {
+  "bats": "L",
+  "name": "Alek Jacob",
+  "throws": "R"
+ },
+ "689818": {
+  "bats": "R",
+  "name": "David Sandlin",
+  "throws": "R"
+ },
+ "690022": {
+  "bats": "R",
+  "name": "Ryan Ritter",
+  "throws": "R"
+ },
+ "690279": {
+  "bats": "R",
+  "name": "Mason Adams",
+  "throws": "R"
+ },
+ "690440": {
+  "bats": "R",
+  "name": "Bradley Hanner",
+  "throws": "R"
+ },
+ "690829": {
+  "bats": "R",
+  "name": "Ben Joyce",
+  "throws": "R"
+ },
+ "690924": {
+  "bats": "R",
+  "name": "Braxton Fulford",
+  "throws": "R"
+ },
+ "690925": {
+  "bats": "R",
+  "name": "Clayton Beeter",
+  "throws": "R"
+ },
+ "690928": {
+  "bats": "R",
+  "name": "Hunter Dobbins",
+  "throws": "R"
+ },
+ "690976": {
+  "bats": "S",
+  "name": "Alex Freeland",
+  "throws": "R"
+ },
+ "690978": {
+  "bats": "L",
+  "name": "Dax Fulton",
+  "throws": "L"
+ },
+ "690984": {
+  "bats": "L",
+  "name": "Petey Halpin",
+  "throws": "R"
+ },
+ "690986": {
+  "bats": "R",
+  "name": "Kyle Harrison",
+  "throws": "L"
+ },
+ "690993": {
+  "bats": "L",
+  "name": "Colt Keith",
+  "throws": "R"
+ },
+ "690997": {
+  "bats": "R",
+  "name": "Nolan McLean",
+  "throws": "R"
+ },
+ "691002": {
+  "bats": "R",
+  "name": "Yohandy Morales",
+  "throws": "R"
+ },
+ "691008": {
+  "bats": "R",
+  "name": "Max Rajcic",
+  "throws": "R"
+ },
+ "691011": {
+  "bats": "S",
+  "name": "Drew Romo",
+  "throws": "R"
+ },
+ "691016": {
+  "bats": "L",
+  "name": "Tyler Soderstrom",
+  "throws": "R"
+ },
+ "691019": {
+  "bats": "L",
+  "name": "Kyle Teel",
+  "throws": "R"
+ },
+ "691023": {
+  "bats": "R",
+  "name": "Jordan Walker",
+  "throws": "R"
+ },
+ "691026": {
+  "bats": "R",
+  "name": "Masyn Winn",
+  "throws": "R"
+ },
+ "691176": {
+  "bats": "S",
+  "name": "Jasson Dom\u00ednguez",
+  "throws": "R"
+ },
+ "691182": {
+  "bats": "S",
+  "name": "Adael Amador",
+  "throws": "R"
+ },
+ "691277": {
+  "bats": "R",
+  "name": "Deyvison De Los Santos",
+  "throws": "R"
+ },
+ "691373": {
+  "bats": "R",
+  "name": "Jhostynxon Garcia",
+  "throws": "R"
+ },
+ "691384": {
+  "bats": "R",
+  "name": "Luis Perales",
+  "throws": "R"
+ },
+ "691406": {
+  "bats": "R",
+  "name": "Junior Caminero",
+  "throws": "R"
+ },
+ "691458": {
+  "bats": "R",
+  "name": "Blaze Jordan",
+  "throws": "R"
+ },
+ "691587": {
+  "bats": "R",
+  "name": "Eury P\u00e9rez",
+  "throws": "R"
+ },
+ "691594": {
+  "bats": "R",
+  "name": "Javier Sanoja",
+  "throws": "R"
+ },
+ "691718": {
+  "bats": "L",
+  "name": "Pete Crow-Armstrong",
+  "throws": "L"
+ },
+ "691720": {
+  "bats": "R",
+  "name": "Kyle Karros",
+  "throws": "R"
+ },
+ "691723": {
+  "bats": "R",
+  "name": "Coby Mayo",
+  "throws": "R"
+ },
+ "691725": {
+  "bats": "R",
+  "name": "Andrew Painter",
+  "throws": "R"
+ },
+ "691728": {
+  "bats": "L",
+  "name": "Zac Veen",
+  "throws": "R"
+ },
+ "691740": {
+  "bats": "R",
+  "name": "Daniel Susac",
+  "throws": "R"
+ },
+ "691769": {
+  "bats": "L",
+  "name": "Philip Abner",
+  "throws": "L"
+ },
+ "691777": {
+  "bats": "R",
+  "name": "Max Muncy",
+  "throws": "R"
+ },
+ "691781": {
+  "bats": "R",
+  "name": "Brady House",
+  "throws": "R"
+ },
+ "691783": {
+  "bats": "R",
+  "name": "Jordan Lawlar",
+  "throws": "R"
+ },
+ "691785": {
+  "bats": "L",
+  "name": "Marcelo Mayer",
+  "throws": "R"
+ },
+ "691788": {
+  "bats": "L",
+  "name": "Joe Mack",
+  "throws": "R"
+ },
+ "691799": {
+  "bats": "R",
+  "name": "Grant Taylor",
+  "throws": "R"
+ },
+ "691858": {
+  "bats": "R",
+  "name": "Jared Serna",
+  "throws": "R"
+ },
+ "691907": {
+  "bats": "L",
+  "name": "Tsung-Che Cheng",
+  "throws": "R"
+ },
+ "691946": {
+  "bats": "R",
+  "name": "George Klassen",
+  "throws": "R"
+ },
+ "691951": {
+  "bats": "L",
+  "name": "Sam Aldegheri",
+  "throws": "L"
+ },
+ "692030": {
+  "bats": "R",
+  "name": "Jose Corniell",
+  "throws": "R"
+ },
+ "692437": {
+  "bats": "R",
+  "name": "Winston Santos",
+  "throws": "R"
+ },
+ "693304": {
+  "bats": "R",
+  "name": "Nick Gonzales",
+  "throws": "R"
+ },
+ "693307": {
+  "bats": "R",
+  "name": "Dillon Dingler",
+  "throws": "R"
+ },
+ "693308": {
+  "bats": "R",
+  "name": "Nick Frasso",
+  "throws": "R"
+ },
+ "693313": {
+  "bats": "R",
+  "name": "Carson Seymour",
+  "throws": "R"
+ },
+ "693409": {
+  "bats": "L",
+  "name": "C\u00e9sar Prieto",
+  "throws": "R"
+ },
+ "693433": {
+  "bats": "R",
+  "name": "Bryan Woo",
+  "throws": "R"
+ },
+ "693459": {
+  "bats": "R",
+  "name": "Kyler Fedko",
+  "throws": "R"
+ },
+ "693645": {
+  "bats": "R",
+  "name": "Cam Schlittler",
+  "throws": "R"
+ },
+ "693686": {
+  "bats": "L",
+  "name": "Spencer Miles",
+  "throws": "R"
+ },
+ "693713": {
+  "bats": "R",
+  "name": "Emiliano Teodo",
+  "throws": "R"
+ },
+ "693821": {
+  "bats": "R",
+  "name": "Bryce Elder",
+  "throws": "R"
+ },
+ "693855": {
+  "bats": "L",
+  "name": "Ian Seymour",
+  "throws": "L"
+ },
+ "694037": {
+  "bats": "R",
+  "name": "Daniel Palencia",
+  "throws": "R"
+ },
+ "694192": {
+  "bats": "R",
+  "name": "Jackson Chourio",
+  "throws": "R"
+ },
+ "694197": {
+  "bats": "S",
+  "name": "Angel Genao",
+  "throws": "R"
+ },
+ "694203": {
+  "bats": "R",
+  "name": "Denzer Guzman",
+  "throws": "R"
+ },
+ "694208": {
+  "bats": "L",
+  "name": "Mois\u00e9s Ballesteros",
+  "throws": "R"
+ },
+ "694212": {
+  "bats": "L",
+  "name": "Samuel Basallo",
+  "throws": "R"
+ },
+ "694224": {
+  "bats": "R",
+  "name": "Gabriel Gonzalez",
+  "throws": "R"
+ },
+ "694249": {
+  "bats": "S",
+  "name": "Cole Carrigg",
+  "throws": "R"
+ },
+ "694297": {
+  "bats": "R",
+  "name": "Brandon Pfaadt",
+  "throws": "R"
+ },
+ "694335": {
+  "bats": "R",
+  "name": "Matt Svanson",
+  "throws": "R"
+ },
+ "694341": {
+  "bats": "R",
+  "name": "Brendan Beck",
+  "throws": "R"
+ },
+ "694346": {
+  "bats": "R",
+  "name": "Trey Gibson",
+  "throws": "R"
+ },
+ "694350": {
+  "bats": "R",
+  "name": "Zach Brzykcy",
+  "throws": "R"
+ },
+ "694357": {
+  "bats": "L",
+  "name": "Ricky Tiedemann",
+  "throws": "L"
+ },
+ "694360": {
+  "bats": "R",
+  "name": "Beck Way",
+  "throws": "R"
+ },
+ "694361": {
+  "bats": "R",
+  "name": "Will Klein",
+  "throws": "R"
+ },
+ "694362": {
+  "bats": "R",
+  "name": "Blake Dunn",
+  "throws": "R"
+ },
+ "694363": {
+  "bats": "L",
+  "name": "Jared Shuster",
+  "throws": "L"
+ },
+ "694371": {
+  "bats": "R",
+  "name": "Tommy Troy",
+  "throws": "R"
+ },
+ "694374": {
+  "bats": "R",
+  "name": "Tim Tawa",
+  "throws": "R"
+ },
+ "694376": {
+  "bats": "R",
+  "name": "Shay Whitcomb",
+  "throws": "R"
+ },
+ "694377": {
+  "bats": "R",
+  "name": "Nick Yorke",
+  "throws": "R"
+ },
+ "694378": {
+  "bats": "L",
+  "name": "Jacob Gonzalez",
+  "throws": "R"
+ },
+ "694384": {
+  "bats": "L",
+  "name": "Nolan Schanuel",
+  "throws": "R"
+ },
+ "694388": {
+  "bats": "L",
+  "name": "Joey Loperfido",
+  "throws": "R"
+ },
+ "694397": {
+  "bats": "R",
+  "name": "Marco Raya",
+  "throws": "R"
+ },
+ "694410": {
+  "bats": "R",
+  "name": "LuJames Groover",
+  "throws": "R"
+ },
+ "694462": {
+  "bats": "R",
+  "name": "Hurston Waldrep",
+  "throws": "R"
+ },
+ "694477": {
+  "bats": "R",
+  "name": "Chad Patrick",
+  "throws": "R"
+ },
+ "694494": {
+  "bats": "L",
+  "name": "Ty Johnson",
+  "throws": "R"
+ },
+ "694497": {
+  "bats": "L",
+  "name": "Evan Carter",
+  "throws": "R"
+ },
+ "694514": {
+  "bats": "L",
+  "name": "Sterlin Thompson",
+  "throws": "R"
+ },
+ "694646": {
+  "bats": "L",
+  "name": "Chayce McDermott",
+  "throws": "R"
+ },
+ "694671": {
+  "bats": "R",
+  "name": "Wyatt Langford",
+  "throws": "R"
+ },
+ "694673": {
+  "bats": "L",
+  "name": "Abimelec Ortiz",
+  "throws": "L"
+ },
+ "694680": {
+  "bats": "R",
+  "name": "Trevor Martin",
+  "throws": "R"
+ },
+ "694728": {
+  "bats": "R",
+  "name": "Brice Matthews",
+  "throws": "R"
+ },
+ "694738": {
+  "bats": "R",
+  "name": "Landen Roupp",
+  "throws": "R"
+ },
+ "694753": {
+  "bats": "R",
+  "name": "Khristian Curtis",
+  "throws": "R"
+ },
+ "694795": {
+  "bats": "R",
+  "name": "Josh Ekness",
+  "throws": "R"
+ },
+ "694819": {
+  "bats": "R",
+  "name": "Jacob Misiorowski",
+  "throws": "R"
+ },
+ "694820": {
+  "bats": "R",
+  "name": "Braxton Roxby",
+  "throws": "R"
+ },
+ "694876": {
+  "bats": "L",
+  "name": "Cooper Ingle",
+  "throws": "R"
+ },
+ "694918": {
+  "bats": "R",
+  "name": "Blade Tidwell",
+  "throws": "R"
+ },
+ "694973": {
+  "bats": "R",
+  "name": "Paul Skenes",
+  "throws": "R"
+ },
+ "695001": {
+  "bats": "R",
+  "name": "Alimber Santa",
+  "throws": "R"
+ },
+ "695034": {
+  "bats": "R",
+  "name": "Kade Morris",
+  "throws": "R"
+ },
+ "695049": {
+  "bats": "R",
+  "name": "Brett Kerry",
+  "throws": "R"
+ },
+ "695076": {
+  "bats": "R",
+  "name": "Rhett Lowder",
+  "throws": "R"
+ },
+ "695238": {
+  "bats": "L",
+  "name": "Will Wagner",
+  "throws": "R"
+ },
+ "695239": {
+  "bats": "L",
+  "name": "Robby Ahlstrom",
+  "throws": "L"
+ },
+ "695243": {
+  "bats": "R",
+  "name": "Mason Miller",
+  "throws": "R"
+ },
+ "695257": {
+  "bats": "R",
+  "name": "Billy Cook",
+  "throws": "R"
+ },
+ "695336": {
+  "bats": "R",
+  "name": "Thomas Saggese",
+  "throws": "R"
+ },
+ "695378": {
+  "bats": "R",
+  "name": "Jack Sinclair",
+  "throws": "R"
+ },
+ "695380": {
+  "bats": "R",
+  "name": "Alex Hoppe",
+  "throws": "R"
+ },
+ "695391": {
+  "bats": "R",
+  "name": "Brett Harris",
+  "throws": "R"
+ },
+ "695418": {
+  "bats": "R",
+  "name": "Brad Lord",
+  "throws": "R"
+ },
+ "695445": {
+  "bats": "R",
+  "name": "Chase Lee",
+  "throws": "R"
+ },
+ "695490": {
+  "bats": "S",
+  "name": "Edwin Arroyo",
+  "throws": "R"
+ },
+ "695491": {
+  "bats": "R",
+  "name": "Joshua B\u00e1ez",
+  "throws": "R"
+ },
+ "695505": {
+  "bats": "R",
+  "name": "Chase Burns",
+  "throws": "R"
+ },
+ "695506": {
+  "bats": "L",
+  "name": "Jac Caglianone",
+  "throws": "L"
+ },
+ "695508": {
+  "bats": "R",
+  "name": "Cam Cauley",
+  "throws": "R"
+ },
+ "695534": {
+  "bats": "R",
+  "name": "Chase Petty",
+  "throws": "R"
+ },
+ "695549": {
+  "bats": "R",
+  "name": "Jackson Jobe",
+  "throws": "R"
+ },
+ "695578": {
+  "bats": "L",
+  "name": "James Wood",
+  "throws": "R"
+ },
+ "695600": {
+  "bats": "L",
+  "name": "Carter Jensen",
+  "throws": "R"
+ },
+ "695611": {
+  "bats": "L",
+  "name": "Gage Jump",
+  "throws": "L"
+ },
+ "695657": {
+  "bats": "L",
+  "name": "Colson Montgomery",
+  "throws": "R"
+ },
+ "695670": {
+  "bats": "R",
+  "name": "Harry Ford",
+  "throws": "R"
+ },
+ "695681": {
+  "bats": "R",
+  "name": "Christian Moore",
+  "throws": "R"
+ },
+ "695684": {
+  "bats": "L",
+  "name": "Elmer Rodr\u00edguez",
+  "throws": "R"
+ },
+ "695720": {
+  "bats": "R",
+  "name": "Tommy White",
+  "throws": "R"
+ },
+ "695731": {
+  "bats": "S",
+  "name": "Braden Montgomery",
+  "throws": "R"
+ },
+ "695734": {
+  "bats": "L",
+  "name": "Daylen Lile",
+  "throws": "R"
+ },
+ "696030": {
+  "bats": "L",
+  "name": "Alejandro Osuna",
+  "throws": "L"
+ },
+ "696062": {
+  "bats": "R",
+  "name": "Wilber Dotel",
+  "throws": "R"
+ },
+ "696070": {
+  "bats": "L",
+  "name": "Kendry Rojas",
+  "throws": "L"
+ },
+ "696100": {
+  "bats": "R",
+  "name": "Hunter Goodman",
+  "throws": "R"
+ },
+ "696131": {
+  "bats": "R",
+  "name": "Mason Black",
+  "throws": "R"
+ },
+ "696135": {
+  "bats": "L",
+  "name": "Kahlil Watson",
+  "throws": "R"
+ },
+ "696136": {
+  "bats": "L",
+  "name": "Jordan Wicks",
+  "throws": "L"
+ },
+ "696146": {
+  "bats": "L",
+  "name": "Hagen Smith",
+  "throws": "L"
+ },
+ "696147": {
+  "bats": "R",
+  "name": "Sam Bachman",
+  "throws": "R"
+ },
+ "696149": {
+  "bats": "S",
+  "name": "Bubba Chandler",
+  "throws": "R"
+ },
+ "696270": {
+  "bats": "S",
+  "name": "Ryan Johnson",
+  "throws": "R"
+ },
+ "696285": {
+  "bats": "R",
+  "name": "Jacob Young",
+  "throws": "R"
+ },
+ "696519": {
+  "bats": "L",
+  "name": "Samy Natera Jr.",
+  "throws": "L"
+ },
+ "696522": {
+  "bats": "R",
+  "name": "Hayden Juenger",
+  "throws": "R"
+ },
+ "697811": {
+  "bats": "R",
+  "name": "Dylan Ross",
+  "throws": "R"
+ },
+ "697812": {
+  "bats": "L",
+  "name": "Joe Rock",
+  "throws": "L"
+ },
+ "699008": {
+  "bats": "R",
+  "name": "Antwone Kelly",
+  "throws": "R"
+ },
+ "699013": {
+  "bats": "R",
+  "name": "Esmerlyn Valdez",
+  "throws": "R"
+ },
+ "699024": {
+  "bats": "S",
+  "name": "Leo Bernal",
+  "throws": "R"
+ },
+ "699044": {
+  "bats": "R",
+  "name": "Miguel Ullola",
+  "throws": "R"
+ },
+ "699115": {
+  "bats": "L",
+  "name": "Carlos Jorge",
+  "throws": "R"
+ },
+ "699134": {
+  "bats": "R",
+  "name": "Bradgley Rodriguez",
+  "throws": "R"
+ },
+ "699151": {
+  "bats": "R",
+  "name": "Jedixson Paez",
+  "throws": "R"
+ },
+ "699302": {
+  "bats": "L",
+  "name": "H\u00e9ctor Rodr\u00edguez",
+  "throws": "R"
+ },
+ "699393": {
+  "bats": "S",
+  "name": "Pedro Ram\u00edrez",
+  "throws": "R"
+ },
+ "699625": {
+  "bats": "L",
+  "name": "Jimmy Crooks",
+  "throws": "R"
+ },
+ "699823": {
+  "bats": "R",
+  "name": "Tyler Davis",
+  "throws": "R"
+ },
+ "699912": {
+  "bats": "R",
+  "name": "Jose Fernandez",
+  "throws": "R"
+ },
+ "700241": {
+  "bats": "L",
+  "name": "Michael McGreevy",
+  "throws": "R"
+ },
+ "700246": {
+  "bats": "R",
+  "name": "Carson Williams",
+  "throws": "R"
+ },
+ "700249": {
+  "bats": "L",
+  "name": "Cade Povich",
+  "throws": "L"
+ },
+ "700250": {
+  "bats": "L",
+  "name": "Ben Rice",
+  "throws": "R"
+ },
+ "700270": {
+  "bats": "R",
+  "name": "Yilber D\u00edaz",
+  "throws": "R"
+ },
+ "700337": {
+  "bats": "S",
+  "name": "Edgar Quero",
+  "throws": "R"
+ },
+ "700363": {
+  "bats": "R",
+  "name": "AJ Smith-Shawver",
+  "throws": "R"
+ },
+ "700652": {
+  "bats": "R",
+  "name": "Kenny Piper",
+  "throws": "R"
+ },
+ "700669": {
+  "bats": "R",
+  "name": "Gordon Graceffo",
+  "throws": "R"
+ },
+ "700712": {
+  "bats": "R",
+  "name": "Walbert Ure\u00f1a",
+  "throws": "R"
+ },
+ "700842": {
+  "bats": "L",
+  "name": "Eduardo Rivera",
+  "throws": "L"
+ },
+ "700932": {
+  "bats": "L",
+  "name": "Kyle Manzardo",
+  "throws": "R"
+ },
+ "701121": {
+  "bats": "R",
+  "name": "Logan VanWey",
+  "throws": "R"
+ },
+ "701162": {
+  "bats": "R",
+  "name": "Ben Malgeri",
+  "throws": "R"
+ },
+ "701305": {
+  "bats": "R",
+  "name": "Zach Dezenzo",
+  "throws": "R"
+ },
+ "701350": {
+  "bats": "L",
+  "name": "Roman Anthony",
+  "throws": "R"
+ },
+ "701358": {
+  "bats": "R",
+  "name": "Cam Smith",
+  "throws": "R"
+ },
+ "701398": {
+  "bats": "R",
+  "name": "Sal Stewart",
+  "throws": "R"
+ },
+ "701474": {
+  "bats": "R",
+  "name": "Duncan Davitt",
+  "throws": "R"
+ },
+ "701519": {
+  "bats": "R",
+  "name": "Travis Adams",
+  "throws": "R"
+ },
+ "701538": {
+  "bats": "L",
+  "name": "Jackson Merrill",
+  "throws": "R"
+ },
+ "701542": {
+  "bats": "R",
+  "name": "Will Warren",
+  "throws": "R"
+ },
+ "701649": {
+  "bats": "R",
+  "name": "James Triantos",
+  "throws": "R"
+ },
+ "701656": {
+  "bats": "R",
+  "name": "Logan Henderson",
+  "throws": "R"
+ },
+ "701675": {
+  "bats": "L",
+  "name": "Nathan Church",
+  "throws": "L"
+ },
+ "701678": {
+  "bats": "R",
+  "name": "Hao-Yu Lee",
+  "throws": "R"
+ },
+ "701762": {
+  "bats": "L",
+  "name": "Nick Kurtz",
+  "throws": "L"
+ },
+ "701780": {
+  "bats": "R",
+  "name": "Tanner McDougal",
+  "throws": "R"
+ },
+ "701785": {
+  "bats": "R",
+  "name": "Kaelen Culpepper",
+  "throws": "R"
+ },
+ "701807": {
+  "bats": "L",
+  "name": "Carson Benge",
+  "throws": "R"
+ },
+ "701852": {
+  "bats": "L",
+  "name": "Drew Cavanaugh",
+  "throws": "R"
+ },
+ "702021": {
+  "bats": "L",
+  "name": "Will Dion",
+  "throws": "L"
+ },
+ "702047": {
+  "bats": "R",
+  "name": "Alex Cook",
+  "throws": "R"
+ },
+ "702056": {
+  "bats": "R",
+  "name": "Trey Yesavage",
+  "throws": "R"
+ },
+ "702070": {
+  "bats": "L",
+  "name": "Noah Cameron",
+  "throws": "L"
+ },
+ "702176": {
+  "bats": "L",
+  "name": "Alan Roden",
+  "throws": "R"
+ },
+ "702193": {
+  "bats": "R",
+  "name": "Andrew Morris",
+  "throws": "R"
+ },
+ "702222": {
+  "bats": "L",
+  "name": "Justin Crawford",
+  "throws": "R"
+ },
+ "702273": {
+  "bats": "L",
+  "name": "Noah Schultz",
+  "throws": "L"
+ },
+ "702275": {
+  "bats": "R",
+  "name": "JR Ritchie",
+  "throws": "R"
+ },
+ "702284": {
+  "bats": "L",
+  "name": "Cole Young",
+  "throws": "R"
+ },
+ "702332": {
+  "bats": "R",
+  "name": "Caleb Durbin",
+  "throws": "R"
+ },
+ "702352": {
+  "bats": "R",
+  "name": "Spencer Bivens",
+  "throws": "R"
+ },
+ "702474": {
+  "bats": "R",
+  "name": "Mike Paredes",
+  "throws": "R"
+ },
+ "702566": {
+  "bats": "R",
+  "name": "Owen Murphy",
+  "throws": "R"
+ },
+ "702616": {
+  "bats": "L",
+  "name": "Jackson Holliday",
+  "throws": "R"
+ },
+ "702752": {
+  "bats": "R",
+  "name": "Jonathan Pintaro",
+  "throws": "R"
+ },
+ "702885": {
+  "bats": "L",
+  "name": "Cesar Perdomo",
+  "throws": "L"
+ },
+ "703155": {
+  "bats": "L",
+  "name": "Lazaro Montes",
+  "throws": "R"
+ },
+ "703197": {
+  "bats": "R",
+  "name": "Michael Arroyo",
+  "throws": "R"
+ },
+ "703492": {
+  "bats": "R",
+  "name": "Nick Morabito",
+  "throws": "R"
+ },
+ "703520": {
+  "bats": "L",
+  "name": "Brett Bateman",
+  "throws": "L"
+ },
+ "703601": {
+  "bats": "L",
+  "name": "Max Clark",
+  "throws": "L"
+ },
+ "703607": {
+  "bats": "R",
+  "name": "Henry Bolte",
+  "throws": "R"
+ },
+ "703615": {
+  "bats": "R",
+  "name": "Jose Cabrera",
+  "throws": "R"
+ },
+ "703725": {
+  "bats": "R",
+  "name": "Luis Gastelum",
+  "throws": "R"
+ },
+ "800048": {
+  "bats": "L",
+  "name": "Parker Messick",
+  "throws": "L"
+ },
+ "800050": {
+  "bats": "L",
+  "name": "Chase DeLauter",
+  "throws": "L"
+ },
+ "800311": {
+  "bats": "R",
+  "name": "Didier Fuentes",
+  "throws": "R"
+ },
+ "800325": {
+  "bats": "S",
+  "name": "Luis Lara",
+  "throws": "R"
+ },
+ "800600": {
+  "bats": "L",
+  "name": "Jackson Kent",
+  "throws": "L"
+ },
+ "801126": {
+  "bats": "S",
+  "name": "Brock Rodden",
+  "throws": "R"
+ },
+ "801139": {
+  "bats": "L",
+  "name": "Payton Tolle",
+  "throws": "L"
+ },
+ "801434": {
+  "bats": "R",
+  "name": "Paul Gervase",
+  "throws": "R"
+ },
+ "801501": {
+  "bats": "L",
+  "name": "Nate Furman",
+  "throws": "R"
+ },
+ "801725": {
+  "bats": "L",
+  "name": "Luis De Le\u00f3n",
+  "throws": "L"
+ },
+ "802139": {
+  "bats": "L",
+  "name": "JJ Wetherholt",
+  "throws": "R"
+ },
+ "802408": {
+  "bats": "L",
+  "name": "Brycen Mautz",
+  "throws": "L"
+ },
+ "802415": {
+  "bats": "L",
+  "name": "Chandler Simpson",
+  "throws": "R"
+ },
+ "803011": {
+  "bats": "L",
+  "name": "Sam Antonacci",
+  "throws": "R"
+ },
+ "804267": {
+  "bats": "L",
+  "name": "Zac Thornton",
+  "throws": "L"
+ },
+ "804606": {
+  "bats": "R",
+  "name": "Konnor Griffin",
+  "throws": "R"
+ },
+ "804636": {
+  "bats": "R",
+  "name": "Jonah Tong",
+  "throws": "R"
+ },
+ "804668": {
+  "bats": "R",
+  "name": "Rafael Flores Jr.",
+  "throws": "R"
+ },
+ "804926": {
+  "bats": "R",
+  "name": "Austin Peterson",
+  "throws": "R"
+ },
+ "805074": {
+  "bats": "R",
+  "name": "Yunior Marte",
+  "throws": "R"
+ },
+ "805123": {
+  "bats": "R",
+  "name": "AJ Blubaugh",
+  "throws": "R"
+ },
+ "805299": {
+  "bats": "L",
+  "name": "Brandyn Garcia",
+  "throws": "L"
+ },
+ "805300": {
+  "bats": "L",
+  "name": "Jakob Marsee",
+  "throws": "L"
+ },
+ "805326": {
+  "bats": "L",
+  "name": "Tyler Schweitzer",
+  "throws": "L"
+ },
+ "805345": {
+  "bats": "R",
+  "name": "Trent Harris",
+  "throws": "R"
+ },
+ "805346": {
+  "bats": "R",
+  "name": "Ben Ross",
+  "throws": "R"
+ },
+ "805347": {
+  "bats": "L",
+  "name": "Jim Jarvis",
+  "throws": "R"
+ },
+ "805367": {
+  "bats": "R",
+  "name": "Chase Meidroth",
+  "throws": "R"
+ },
+ "805427": {
+  "bats": "L",
+  "name": "Drew Sommers",
+  "throws": "L"
+ },
+ "805673": {
+  "bats": "R",
+  "name": "Zebby Matthews",
+  "throws": "R"
+ },
+ "805779": {
+  "bats": "R",
+  "name": "Jacob Wilson",
+  "throws": "R"
+ },
+ "805805": {
+  "bats": "L",
+  "name": "Walker Jenkins",
+  "throws": "R"
+ },
+ "805808": {
+  "bats": "L",
+  "name": "Kevin McGonigle",
+  "throws": "R"
+ },
+ "805811": {
+  "bats": "L",
+  "name": "Bryce Eldridge",
+  "throws": "R"
+ },
+ "805999": {
+  "bats": "L",
+  "name": "A.J. Ewing",
+  "throws": "R"
+ },
+ "806068": {
+  "bats": "L",
+  "name": "Colt Emerson",
+  "throws": "R"
+ },
+ "806146": {
+  "bats": "R",
+  "name": "George Lombard Jr.",
+  "throws": "R"
+ },
+ "806188": {
+  "bats": "L",
+  "name": "Cade Gibson",
+  "throws": "L"
+ },
+ "806198": {
+  "bats": "R",
+  "name": "Cooper Pratt",
+  "throws": "R"
+ },
+ "806367": {
+  "bats": "L",
+  "name": "Turner Hill",
+  "throws": "L"
+ },
+ "806956": {
+  "bats": "L",
+  "name": "Ethan Salas",
+  "throws": "R"
+ },
+ "806960": {
+  "bats": "R",
+  "name": "Luis Morales",
+  "throws": "R"
+ },
+ "807712": {
+  "bats": "R",
+  "name": "Luke Keaschall",
+  "throws": "R"
+ },
+ "807713": {
+  "bats": "R",
+  "name": "Matt Shaw",
+  "throws": "R"
+ },
+ "807726": {
+  "bats": "R",
+  "name": "John Peck",
+  "throws": "R"
+ },
+ "807727": {
+  "bats": "R",
+  "name": "Charles McAdoo",
+  "throws": "R"
+ },
+ "807739": {
+  "bats": "L",
+  "name": "Kade Anderson",
+  "throws": "L"
+ },
+ "807743": {
+  "bats": "R",
+  "name": "Sean Sullivan",
+  "throws": "L"
+ },
+ "807799": {
+  "bats": "L",
+  "name": "Masataka Yoshida",
+  "throws": "R"
+ },
+ "808825": {
+  "bats": "L",
+  "name": "Andrew Sears",
+  "throws": "L"
+ },
+ "808959": {
+  "bats": "L",
+  "name": "Munetaka Murakami",
+  "throws": "R"
+ },
+ "808963": {
+  "bats": "R",
+  "name": "Roki Sasaki",
+  "throws": "R"
+ },
+ "808967": {
+  "bats": "R",
+  "name": "Yoshinobu Yamamoto",
+  "throws": "R"
+ },
+ "808970": {
+  "bats": "R",
+  "name": "Woo-Suk Go",
+  "throws": "R"
+ },
+ "808982": {
+  "bats": "L",
+  "name": "Jung Hoo Lee",
+  "throws": "R"
+ },
+ "810938": {
+  "bats": "R",
+  "name": "Ben Williamson",
+  "throws": "R"
+ },
+ "811965": {
+  "bats": "R",
+  "name": "Joshua Kuroda-Grauer",
+  "throws": "R"
+ },
+ "813349": {
+  "bats": "L",
+  "name": "Connelly Early",
+  "throws": "L"
+ },
+ "813841": {
+  "bats": "R",
+  "name": "Jonah Cox",
+  "throws": "R"
+ },
+ "814305": {
+  "bats": "R",
+  "name": "Yunior Tur",
+  "throws": "R"
+ },
+ "814430": {
+  "bats": "L",
+  "name": "Brett Callahan",
+  "throws": "R"
+ },
+ "814439": {
+  "bats": "R",
+  "name": "Ryan Waldschmidt",
+  "throws": "R"
+ },
+ "814490": {
+  "bats": "R",
+  "name": "Ethan Pecko",
+  "throws": "R"
+ },
+ "815081": {
+  "bats": "R",
+  "name": "Mark Manfredi",
+  "throws": "L"
+ },
+ "815083": {
+  "bats": "L",
+  "name": "Mitch Farris",
+  "throws": "L"
+ },
+ "815873": {
+  "bats": "L",
+  "name": "Sean Keys",
+  "throws": "R"
+ },
+ "820862": {
+  "bats": "R",
+  "name": "Jos\u00e9 Fermin",
+  "throws": "R"
+ },
+ "823550": {
+  "bats": "L",
+  "name": "Sung-Mun Song",
+  "throws": "R"
+ },
+ "828599": {
+  "bats": "L",
+  "name": "Lucas Spence",
+  "throws": "L"
+ },
+ "837227": {
+  "bats": "R",
+  "name": "Tatsuya Imai",
+  "throws": "R"
+ }
+}

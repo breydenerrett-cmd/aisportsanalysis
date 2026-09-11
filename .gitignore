@@ -47,6 +47,48 @@ data/app/*
 # full results store exists; the web container has no such store.
 !data/processed/card_calibration.json
 
+# THE MATCHUP STORES ARE A DEPLOY INPUT AND THE DEPLOY HAS NEVER HAD THEM.
+#
+# Tracked as of 2026-09-11 because the mechanism that was supposed to carry
+# them does not work and cannot be made to from this branch.
+#
+# deploy/Dockerfile COPYs data/historical/ and .dockerignore admits exactly
+# these files. The plan was that the daily-loop's actions/cache would restore
+# them into the build first. It never has: the cache is written on the ORPHAN
+# default branch and a run on this branch sees zero of it, so every deploy
+# reports "Cache not found" and ships a data/historical/ holding one empty
+# .gitkeep. See docs/INCIDENT_2026-09-10_SPINNING_SLATE.md.
+#
+# WHAT THAT COSTS, on the live site, right now: every game page reports
+# fourteen named gaps -- "no historical results store", "no pitcher logs",
+# "bullpen workload not built", "travel load not computed", "pitcher platoon
+# splits not fetched", "batter-vs-pitcher history not fetched" -- and a
+# COVERAGE LEDGER reading "2 THINGS WE KNOW. 14 WE DON'T." Every one of those
+# sections is built, tested and works: the same game on a developer machine
+# renders team records, the starter's ERA/FIP/WHIP over 21 starts, nine
+# bullpen arms with rest days, travel miles and the park forecast. The
+# features are not missing. The DATA is not arriving.
+#
+# The owner, reading that screen: "if all the systems are still waiting to be
+# built and says that on the screen why the fuck are they not being built?"
+# They are. This is the answer.
+#
+# ~7.9 MB, against a repo that already tracks a 12.5 MB boxscore store for
+# the same reason -- a store this cheap to keep should not depend on a cache
+# that is invisible from the branch that deploys. statcast/ (pitch-level,
+# ~40 MB) stays ignored; nothing on a customer route reads it.
+!data/historical/mlb_results.csv
+!data/historical/mlb_results.manifest.json
+!data/historical/pitcher_logs.jsonl
+!data/historical/bullpen_log.jsonl
+!data/historical/lineups.jsonl
+!data/historical/handedness.json
+!data/historical/standings.jsonl
+!data/historical/matchup_history.jsonl
+!data/historical/matchup_pairs.json
+!data/historical/pitcher_splits.json
+!data/historical/transactions.jsonl
+
 # L1 canonical PriceObservation backfill (packet W3): deterministically
 # reprojected from the forward-evidence stores above, so it is rebuildable in
 # principle -- but it is also the shape the rest of the engine reads, and a
