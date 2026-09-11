@@ -859,3 +859,6 @@ https://linehound-staging.fly.dev/billing/webhook -> dry-run purchase.
 - 2026-09-11T13:58Z daily_loop: test_tier_ladder exit=0
 - 2026-09-11T13:58Z daily_loop: research-readiness exit=0
 - 2026-09-11T13:58Z daily_loop: prereg-clv exit=0
+- 2026-09-11T15:11Z afternoon_slate: engine slate --date 2026-09-11 exit=0
+- 2026-09-11T15:11Z afternoon_slate: card publish --date 2026-09-11 exit=0
+- 2026-09-11T15:11Z afternoon_slate: engine slip --date 2026-09-11
