@@ -360,10 +360,20 @@ def freeze_window(card: dict, *, now: Optional[datetime] = None,
     this gate declining is the NORMAL outcome for most of the day and a bare
     "skipped" would read as a failure every half hour.
 
-    Measured against the day's EARLIEST still-open game, not its latest. The
-    card is one object covering the whole slate, so it has to be frozen
-    while every game on it is still pregame -- waiting for the 10pm game
-    would mean freezing after the matinee started.
+    MEASURED AGAINST THE DAY'S EARLIEST STILL-OPEN GAME, and what that means
+    changed on 2026-09-11.
+
+    It used to mean the card was fixed for the whole day at that moment: the
+    ledger was idempotent per date, so the first publish won and a 7:40pm
+    pick was locked at 8:15am to protect a 12:15pm matinee. A scratch at 6pm
+    could not touch it.
+
+    It no longer means that. `card_ledger.publish` locks each pick against
+    ITS OWN first pitch and carries locked picks forward untouched, so
+    publishing repeatedly through the day is safe and is the intended
+    cadence. This gate now answers a narrower question: is it late enough
+    that the EARLIEST game's pick is worth writing down at all? Everything
+    later on the slate keeps improving until its own window closes.
     """
     now = now or datetime.now(timezone.utc)
     picks = card.get("picks") or []

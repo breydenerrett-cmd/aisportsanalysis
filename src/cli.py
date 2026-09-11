@@ -2987,24 +2987,51 @@ def cmd_card(args) -> int:
         print("  --dry-run: nothing written.")
         return EXIT_OK
 
-    # THE FREEZE GATE. Declining here is the normal outcome for most of the
-    # day, not a failure -- this command is dispatched roughly every half
-    # hour and would otherwise freeze the card the evening BEFORE, on the
-    # thinnest board of the day with no lineups posted. See
-    # src/report/card.py's CARD_FREEZE_LEAD_HOURS.
+    # THE FREEZE GATE NO LONGER BLOCKS PUBLICATION, 2026-09-11.
+    #
+    # It used to return here for most of the day, because publishing was
+    # irreversible: `card_ledger.publish` was idempotent per DATE, so the
+    # first run won and an early publish would have frozen the whole card on
+    # the thinnest board of the day with no lineups posted. Refusing was the
+    # only protection there was.
+    #
+    # It is not irreversible any more. Each pick locks against ITS OWN first
+    # pitch and locked picks carry forward untouched, so an early publish is
+    # a PREVIEW that later runs improve -- and the bet of record is the last
+    # version written before that game started, which is what the owner
+    # asked for. Blocking now would only mean the preview does not exist.
+    #
+    # On today's slate that difference is the whole thing: fifteen games, the
+    # earliest at 6:40pm ET, so the old gate would not open until 2:40pm and
+    # the 11:40am run would have published nothing at all.
+    #
+    # The window is still COMPUTED and still reported, because "is the
+    # earliest game close enough that this card is worth reading as a bet
+    # rather than a sketch" is a real question. It is now a label, not a veto.
     window = card_mod.freeze_window(card, now=now)
-    if not window["ready"] and not getattr(args, "force", False):
-        print(f"  not frozen yet -- {window['reason']}")
-        print("  (the page shows this card live in the meantime, marked as "
-              "not locked in)")
-        return EXIT_OK
+    if not window["ready"]:
+        print(f"  preview -- {window['reason']}")
+        print("  (published as a preview; each pick locks 4h before its own "
+              "first pitch and can improve until then)")
 
     row = card_ledger.publish(card)
+    picks = row.get("picks") or []
+    locked = sum(1 for p in picks if p.get("locked"))
+    open_picks = len(picks) - locked
     if row.get("already_published"):
-        print(f"  already published for {date_str}; the frozen card stands. "
-              f"row_hash={row.get('row_hash')}")
+        print(f"  no change since the last run ({locked} locked, "
+              f"{open_picks} still open). row_hash={row.get('row_hash')}")
     else:
-        print(f"  frozen. row_hash={row.get('row_hash')}")
+        print(f"  published: {locked} locked, {open_picks} still open. "
+              f"row_hash={row.get('row_hash')}")
+    # WHICH PICKS CAN STILL MOVE, named in the run log. This command is meant
+    # to run several times a day now, and "published" alone would not say
+    # whether anything was still allowed to change -- which is the whole
+    # difference between this cadence and the single morning freeze it
+    # replaced.
+    for pick in picks:
+        state = "LOCKED " if pick.get("locked") else "open   "
+        print(f"    {state} {pick.get('bet')}")
     return EXIT_OK
 
 

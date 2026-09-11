@@ -42,7 +42,7 @@ anyone bet that amount.
 from __future__ import annotations
 
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Mapping, Optional, Sequence
 
 from src.core import odds as odds_math
@@ -89,13 +89,121 @@ def _frozen_pick(pick: Mapping) -> dict:
     return {key: pick.get(key) for key in FROZEN_FIELDS}
 
 
+def _same_picks(left, right) -> bool:
+    """Would appending `right` say anything `left` does not?
+
+    Compared on the FROZEN FIELDS ONLY, deliberately. `locked_at` is a
+    timestamp that moves every run, so including it would make every publish
+    look like a change and write an identical row five times a day, burying
+    the versions that matter under noise. `locked` itself is derived from the
+    first pitch and the clock, so a pick that locked since the last run
+    ALREADY differs on nothing else -- and that transition is worth a row,
+    which is why `locked` is compared and `locked_at` is not.
+    """
+    def _shape(picks):
+        out = []
+        for pick in picks or ():
+            row = {key: pick.get(key) for key in FROZEN_FIELDS}
+            row["locked"] = bool(pick.get("locked"))
+            out.append(row)
+        return sorted(out, key=lambda r: (str(r.get("game_pk")),
+                                          str(r.get("market")),
+                                          str(r.get("line"))))
+    return _shape(left) == _shape(right)
+
+
+# HOW LONG BEFORE ITS OWN FIRST PITCH A PICK STOPS CHANGING.
+#
+# Matches src/report/card.py's CARD_FREEZE_LEAD_HOURS. Inside this window the
+# pick is the bet of record and nothing later can alter it; outside it, a
+# later run may replace it with a better read.
+LOCK_LEAD_HOURS = 4.0
+
+
+def _parse_utc(value) -> Optional[datetime]:
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _is_locked(pick: Mapping, moment: datetime,
+               lead_hours: float = LOCK_LEAD_HOURS) -> bool:
+    """Is this pick close enough to ITS OWN first pitch to be final?
+
+    PER PICK, NOT PER SLATE, AND THAT IS THE WHOLE POINT. The card used to
+    freeze once for the whole day, measured against the day's EARLIEST game,
+    so a 7:40pm pick was locked at 8:15am to protect a 12:15pm matinee. A
+    scratch at 6pm could not touch it, and the recorded bet was one made
+    eleven hours before the game with information nobody would bet on.
+
+    The owner, 2026-09-11: "The last run scheduled or finished before the
+    game first pitch should be recorded, not the preview or early bets. Even
+    if they're rock solid... it could change within the time frame to first
+    pitch."
+
+    A pick with no readable first pitch is treated as LOCKED. That fails
+    closed: the alternative is a pick that can be rewritten forever because
+    its timestamp was unparseable, which is the one outcome this ledger
+    exists to make impossible.
+    """
+    first_pitch = _parse_utc(pick.get("first_pitch_utc"))
+    if first_pitch is None:
+        return True
+    return moment >= first_pitch - timedelta(hours=lead_hours)
+
+
+def _pick_key(pick: Mapping):
+    """What makes two picks the same BET on the same game.
+
+    game_pk is the join everywhere else in this module and it is kept as a
+    STRING deliberately -- the results store round-trips through CSV, and the
+    int/str mismatch has already cost this project two separate all-VOID
+    incidents (see `_score`).
+    """
+    return (str(pick.get("game_pk")), pick.get("market"), pick.get("line"))
+
+
 def published_row(date: str, *, path: Optional[str] = None) -> Optional[dict]:
-    """The published card for `date`, or None. Reads the whole chain, which
-    is cheap at one row a day and stays correct if rows are ever backfilled
-    out of order."""
+    """The card of record for `date`, or None.
+
+    THE NEWEST published row, not the first. Publish now appends a new
+    version each time the picks change, carrying every already-locked pick
+    forward untouched (see `publish`), so the newest row is by construction
+    the full current composition: locked picks exactly as they were locked,
+    open picks as of the latest read.
+
+    It used to return the FIRST row, because a date was published once and
+    never again. Nothing else in this module had to change when that did --
+    which is the point of composing in `publish` rather than here.
+    """
+    # THE LAST MATCHING ROW IN THE CHAIN. A hash-chained append-only log
+    # cannot have a row inserted into its middle -- that is the property the
+    # chain exists to guarantee -- so physical order IS publication order and
+    # no timestamp comparison is needed or wanted. The first version of this
+    # sorted on `published_utc` with a fallback for unparseable stamps, and
+    # that fallback could have selected an OLDER row than one already held.
+    newest = None
     for row in _ledger(path).read():
         if row.get("kind") == KIND_PUBLISHED and row.get("date") == date:
-            return row
+            newest = row
+    return newest
+
+
+def published_versions(date: str, *, path: Optional[str] = None) -> list:
+    """Every published version for `date`, oldest first.
+
+    The receipt is not just the final card -- it is that the card CHANGED and
+    when. A reader who wants to check that we did not quietly improve a pick
+    after the fact reads this.
+    """
+    return [row for row in _ledger(path).read()
+            if row.get("kind") == KIND_PUBLISHED and row.get("date") == date]
     return None
 
 
@@ -107,13 +215,42 @@ def settled_row(date: str, *, path: Optional[str] = None) -> Optional[dict]:
 
 
 def publish(card: Mapping, *, now: Optional[str] = None,
-            path: Optional[str] = None) -> dict:
-    """Freeze one date's card. Idempotent per date.
+            path: Optional[str] = None,
+            lock_lead_hours: float = LOCK_LEAD_HOURS) -> dict:
+    """Publish one date's card. A pick locks at ITS OWN game's first pitch.
 
-    Returns the row -- the existing one when this date is already published,
-    so a caller that runs twice a day never doubles a date and never silently
-    replaces one. `already_published` on the returned dict says which
-    happened, and it is not part of the hashed payload.
+    WHAT CHANGED ON 2026-09-11, AND WHY
+    -------------------------------------
+    This used to be idempotent per DATE: the first publish won and every
+    later run was a no-op. Combined with src/report/card.py's freeze gate --
+    which opens four hours before the day's EARLIEST game -- that meant the
+    whole card was fixed once, in the morning, to protect a matinee. A 7:40pm
+    pick was locked at 8:15am. A scratch at 6pm could not touch it, and what
+    went on the record was a bet made eleven hours early on information
+    nobody would bet on.
+
+    The owner: "The last run scheduled or finished before the game first
+    pitch should be recorded, not the preview or early bets."
+
+    So publish now runs several times a day and composes:
+
+      * a pick within `lock_lead_hours` of its own first pitch is LOCKED and
+        is carried forward VERBATIM from the version that locked it -- no
+        later run can alter it, and `locked_at` records when it happened;
+      * a pick whose game is further out is provisional and is replaced by
+        this run's read;
+      * a locked pick whose game this run no longer picks is still carried
+        forward. Dropping it would erase a bet of record.
+
+    NOTHING IS EVER REWRITTEN. Each call appends a new row, so the ledger
+    reads as the full history of what was claimed and when, and a reader can
+    check for themselves that no pick improved after its game began --
+    `published_versions` returns the lot. The receipt was never "we only said
+    it once"; it is "we wrote down what we said, when we said it, and you can
+    see every version."
+
+    Returns the row. `already_published` is True when this run changed
+    nothing and no row was appended -- it is not part of the hashed payload.
     """
     date = card.get("date")
     if not date:
@@ -125,12 +262,56 @@ def publish(card: Mapping, *, now: Optional[str] = None,
             "An empty card is a real state -- see src/report/card.py's "
             "_empty_reason -- but it is not evidence and is not recorded.")
 
-    existing = published_row(date, path=path)
-    if existing is not None:
-        out = dict(existing)
+    moment = _parse_utc(now) or datetime.now(timezone.utc)
+    previous = published_row(date, path=path)
+    prior_picks = list((previous or {}).get("picks") or ())
+
+    # Every pick already locked by an earlier run, kept exactly as it was.
+    locked: dict = {}
+    for pick in prior_picks:
+        if pick.get("locked"):
+            locked[_pick_key(pick)] = pick
+        elif _is_locked(pick, moment, lock_lead_hours):
+            # It was provisional when written and its game has since come
+            # within the window. This run is the one that locks it, and it
+            # locks the pick AS LAST PUBLISHED -- the reader saw that bet at
+            # that price, and the lock records what was shown, not a fresh
+            # read taken after the window closed.
+            stamped = dict(pick)
+            stamped["locked"] = True
+            stamped["locked_at"] = moment.isoformat()
+            locked[_pick_key(pick)] = stamped
+
+    merged = []
+    seen = set()
+    for pick in picks:
+        key = _pick_key(pick)
+        seen.add(key)
+        if key in locked:
+            merged.append(locked[key])
+            continue
+        fresh = _frozen_pick(pick)
+        if _is_locked(pick, moment, lock_lead_hours):
+            fresh["locked"] = True
+            fresh["locked_at"] = moment.isoformat()
+        else:
+            fresh["locked"] = False
+            fresh["locked_at"] = None
+        merged.append(fresh)
+
+    # A locked pick this run no longer makes is still a bet of record.
+    for key, pick in locked.items():
+        if key not in seen:
+            merged.append(pick)
+
+    # NOTHING CHANGED, NOTHING APPENDED. Publishing five times a day would
+    # otherwise write five identical rows and bury the versions that matter.
+    if previous is not None and _same_picks(prior_picks, merged):
+        out = dict(previous)
         out["already_published"] = True
         return out
 
+    picks = merged
     payload = {
         "kind": KIND_PUBLISHED,
         "date": date,
@@ -144,7 +325,12 @@ def publish(card: Mapping, *, now: Optional[str] = None,
         "n_picks": len(picks),
         "n_filled": card.get("filled"),
         "games_on_slate": card.get("games_on_slate"),
-        "picks": [_frozen_pick(p) for p in picks],
+        # ALREADY FROZEN-SHAPED. Re-running `_frozen_pick` here would strip
+        # `locked`/`locked_at` straight back off, because they are not in
+        # FROZEN_FIELDS -- every pick would land unlocked and a later run
+        # could rewrite a bet whose game had already started.
+        "picks": picks,
+        "n_locked": sum(1 for p in picks if p.get("locked")),
     }
     row = _ledger(path).append(payload)
     out = dict(row)
