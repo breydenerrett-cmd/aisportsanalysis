@@ -92,18 +92,51 @@ def get_web_index_no_slash() -> RedirectResponse:
 # before reusing", not "never store": FileResponse's ETag/Last-Modified
 # make that a cheap 304 on every unchanged asset, and a redeploy is picked
 # up on the next load instead of whenever the heuristic expires.
-_ASSET_HEADERS = {"Cache-Control": "no-cache"}
+#
+# THE SHELL KEEPS THAT RULE. It is one request, it decides the route table,
+# and it must never be a version behind.
+_SHELL_HEADERS = {"Cache-Control": "no-cache"}
+
+# EVERYTHING ELSE GETS A SHORT WINDOW (2026-09-10), and the reason is
+# measured. This app has no build step, so the page loads roughly thirty
+# separate ES module files plus its stylesheets. Under `no-cache` the
+# browser must revalidate every one of them on every load: thirty
+# conditional requests, served one at a time by a single shared CPU, before
+# any JavaScript runs at all. On the staging container the first API call
+# did not fire until 2.9 SECONDS after navigation, and every one of those
+# API calls then returned in about 150ms. The page was not waiting on data.
+# It was waiting to be allowed to ask for it.
+#
+# Thirty seconds is deliberately short. The failure the rule above exists to
+# prevent -- fresh shell, stale module -- is now possible only for a reader
+# who loads the page during the thirty seconds after a deploy, rather than
+# impossible; that is a real and stated cost, taken because a three-second
+# blank screen on EVERY load is the larger harm to a reader who is deciding
+# whether this product is worth anything.
+#
+# The right fix is fingerprinted asset URLs, which needs a build step this
+# repo has deliberately not taken on. If one ever lands, this becomes
+# `immutable` and the window closes entirely.
+_ASSET_MAX_AGE_S = 30
+_ASSET_HEADERS = {"Cache-Control": f"public, max-age={_ASSET_MAX_AGE_S}"}
 
 
 @router.get("/web/")
 def get_web_index() -> FileResponse:
     """The app shell -- GET /web/ serves web/index.html."""
-    return FileResponse(_safe_path("index.html"), headers=_ASSET_HEADERS)
+    return FileResponse(_safe_path("index.html"), headers=_SHELL_HEADERS)
 
 
 @router.get("/web/{path:path}")
 def get_web_asset(path: str) -> FileResponse:
     """Any other file under web/ (web/js/*.js today; web/README.md is
     documentation, not fetched by the page itself, but stays reachable
-    here too for a reviewer following a link)."""
-    return FileResponse(_safe_path(path), headers=_ASSET_HEADERS)
+    here too for a reviewer following a link).
+
+    HTML under web/ is a shell too -- landing.html is a whole page, not an
+    asset -- so it takes the shell's revalidate-every-time rule rather than
+    the short window the modules get.
+    """
+    headers = (_SHELL_HEADERS if path.lower().endswith(".html")
+               else _ASSET_HEADERS)
+    return FileResponse(_safe_path(path), headers=headers)
