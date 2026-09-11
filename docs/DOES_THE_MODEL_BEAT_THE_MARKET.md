@@ -126,19 +126,54 @@ moneyline, and no edge of even the smaller size has been demonstrated.
    2026-09-10 — it was built the same day. Every statement about its
    performance is forward-looking and must be written that way.
 
+## Inputs attempted, and what happened
+
+### Platoon splits — ATTEMPTED, NO FEATURE
+`scripts/probe_platoon_split.py`
+
+The handedness cache turned out to hold **one of 286 starting pitchers**:
+`lineups.fetch_handedness` has always captured `throws`, but its only caller
+passes tonight's lineup plus two probables, so the cache never looked
+backwards. `scripts/backfill_handedness.py` fixed that from the free MLB
+Stats API — 1,281 people, 738 of 739 pitchers now carry a throwing hand.
+
+With the data in hand the measurement still refuses to produce a feature, and
+**the switch-hitter control is what caught it.** Pooled rates say left-handed
+*and* right-handed batters both hit left-handed pitching better, which cannot
+be true.
+
+The cause is composition, not noise. Teams platoon left-handed hitters
+heavily, so the lefties who face a left-hander are the subset good enough not
+to be benched against one — pooling compares two different populations.
+Comparing each batter with **himself** removes that exactly and moves both
+groups the right way (lefties −0.51 → −0.22, righties −0.51 → −1.04) without
+finishing the job. Relief attribution is the remaining confound and it bites
+lefties hardest, since left-handed relievers exist to face left-handed
+batters.
+
+**Blocked on a data gap with a free fix**: the plate-appearance store that
+resolves relief attribution covered 183 of 1,099 games. Backfilled
+2026-09-10.
+
+Also worth recording while here: **player-level data exists for 2026 only.**
+There is no sealed holdout for any prop-model constant, so `RHO`, the slot
+table and anything that follows are tuned in-sample and their gains are
+optimistic. Pre-registration guards against moving a threshold; it does not
+make an estimate out-of-sample.
+
 ## What would change the answer
 
 The bar is now explicit and the instrument exists. **Adding an input is only
 progress if it moves the paired difference in item 3**, which is re-runnable
-on demand. Candidates, in order of how much the market plausibly knows that
-we do not:
+on demand. Remaining candidates:
 
-1. **Platoon splits** — `data/historical/handedness.json` is captured and
-   unused by `playerprops`.
-2. **Park factors** — built (`src/pipeline/parkfactors.py`), measured, and
+1. **Park factors** — built (`src/pipeline/parkfactors.py`), measured, and
    deliberately switched off. Re-measure against item 3 rather than adopting.
-3. **Weather** — `data/processed/weather_forecast.jsonl` exists.
-4. **Recent form** — a batter's last N games against his season rate.
+2. **Weather** — `data/processed/weather_forecast.jsonl` exists.
+3. **Recent form** — a batter's last N games against his season rate.
+4. **Platoon, second attempt** — once the plate-appearance store covers the
+   season, the within-batter comparison becomes possible without the relief
+   confound.
 
 And the one structural candidate that is not an input at all: **prove the
 method on the game market first**, where the margin is half and the books are
