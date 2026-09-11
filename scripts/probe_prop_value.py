@@ -54,48 +54,12 @@ from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import _propboard  # noqa: E402  -- the shared board, see its docstring
+
 from src.analysis import playerprops  # noqa: E402
 from src.core import odds as odds_math  # noqa: E402
-from src.pipeline import boxscores  # noqa: E402
 
-BOX_STORE = os.path.join("data", "processed", "boxscores_2026.jsonl")
-PROP_STORE = os.path.join("data", "processed", "batter_props.jsonl")
-
-# A pair whose two sides sum below this cannot be a real two-way market --
-# a book always prices both sides above 100% and that excess is its margin.
-# Same floor and same reason as src/analysis/derivative_prices.py's.
-MIN_TWO_WAY_BOOKSUM = 0.98
-
-# Below this many books quoting BOTH sides of one player-line, a
-# "consensus" is a handful's opinion rather than a market.
-#
-# TWO, NOT THREE, AND THE REASON IS MEASURED. At three this examined 12% of
-# the board and the survivors bunched on whichever date happened to get a
-# fuller capture -- 13 of the top 18 findings came from one day. Player-prop
-# boards are simply thinner two-way than game boards: only 40% of total-base
-# contracts carry three books quoting both sides, and 10% of hits contracts,
-# though 56-75% carry two.
-#
-# Two is a real weakening and it is stated rather than hidden. It is not a
-# threshold moved to produce more findings -- it is moved because three was
-# selecting on capture depth rather than on anything about the bets.
-MIN_BOOKS = 2
-
-
-def _read_props():
-    rows = []
-    if not os.path.exists(PROP_STORE):
-        return rows
-    with open(PROP_STORE, encoding="utf-8") as fh:
-        for raw in fh:
-            raw = raw.strip()
-            if not raw:
-                continue
-            try:
-                rows.append(json.loads(raw))
-            except ValueError:
-                continue
-    return rows
+MIN_BOOKS = _propboard.MIN_BOOKS
 
 
 def main(argv=None):
@@ -106,75 +70,20 @@ def main(argv=None):
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args(argv)
 
-    props = _read_props()
+    props = _propboard.read_props()
     if not props:
         print("no captured prop prices", file=sys.stderr)
         return 1
 
-    box = [r for r in boxscores.read(BOX_STORE) if r.get("type") == "batter"]
-    by_player_name = defaultdict(list)
-    for row in box:
-        name = row.get("player_name")
-        if name:
-            by_player_name[name].append(row)
-    for lines in by_player_name.values():
-        lines.sort(key=lambda r: str(r.get("date") or ""))
+    box, by_player_name = _propboard.read_batters()
 
-    # TONIGHT'S BATTING SLOT, joined by (date, player name). The prop store
-    # carries the odds feed's event id and the lineup store carries game_pk,
-    # so a name-and-date join avoids a mapping that could silently match
-    # nothing -- and a batter appears once per date, so it is unambiguous.
-    #
-    # Slot beats the batter's own season average on plate appearances by 13%
-    # (scripts/probe_lineup_slot.py). Whether it also closes the gap against
-    # a PRICE is the question this probe now answers, by running both arms.
-    slot_by_player_date = {}
-    try:
-        from src.pipeline import lineup_store
-        for card in (lineup_store.read() or {}).values():
-            if not isinstance(card, dict):
-                continue
-            date = str(card.get("date") or "")
-            for side in ("away", "home"):
-                for entry in card.get(side) or ():
-                    if entry.get("name") and entry.get("order"):
-                        slot_by_player_date[(date, entry["name"])] = entry["order"]
-    except Exception:  # noqa: BLE001 -- no lineups is a gap, not a crash
-        slot_by_player_date = {}
+    # TONIGHT'S BATTING SLOT. Slot beats the batter's own season average on
+    # plate appearances by 13% (scripts/probe_lineup_slot.py). Whether it
+    # also closes the gap against a PRICE is a different question, and this
+    # probe answers it by running both arms.
+    slot_by_player_date = _propboard.slot_index()
 
-    # Group the prices: one contract is (date, event, player, market, line),
-    # and within it one row per book per side at the newest instant.
-    contracts = defaultdict(lambda: defaultdict(dict))
-    newest = {}
-    def _assessable(market):
-        # BOTH gates. `publishable` asks whether the model is any good;
-        # `deviggable` asks whether a fair price exists to measure against.
-        # Home runs pass the first and fail the second -- no book quotes the
-        # under, so a "gap" there is measured against a raw price that still
-        # contains the book's whole margin, which is not value.
-        return (playerprops.publishable(market or "")
-                and playerprops.deviggable(market or ""))
-
-    for row in props:
-        market = row.get("market")
-        if not _assessable(market):
-            continue
-        key = (row.get("game_date"), row.get("event_id"), row.get("player"),
-               market, str(row.get("line")))
-        stamp = row.get("observed_utc") or ""
-        if stamp > newest.get(key, ""):
-            newest[key] = stamp
-    for row in props:
-        market = row.get("market")
-        if not _assessable(market):
-            continue
-        key = (row.get("game_date"), row.get("event_id"), row.get("player"),
-               market, str(row.get("line")))
-        if (row.get("observed_utc") or "") != newest.get(key):
-            continue
-        side = row.get("side")
-        if side in ("Over", "Under") and row.get("book"):
-            contracts[key][row["book"]][side] = row.get("price")
+    contracts = _propboard.build_contracts(props)
 
     findings = []
     all_assessed = []
@@ -190,24 +99,10 @@ def main(argv=None):
 
         # De-vig each book, then average. A gap measured against a raw price
         # partly IS the book's margin, which is not value and is not ours.
-        fair_overs, best_over, best_book = [], None, None
-        for book, sides in books.items():
-            over, under = sides.get("Over"), sides.get("Under")
-            if over is None or under is None:
-                continue
-            try:
-                raw = (odds_math.american_to_probability(over)
-                       + odds_math.american_to_probability(under))
-                if raw < MIN_TWO_WAY_BOOKSUM:
-                    continue
-                fair_over, _fair_under = odds_math.devig_two_way(over, under)
-                decimal = odds_math.american_to_decimal(over)
-            except (odds_math.OddsError, TypeError, ValueError,
-                    ZeroDivisionError):
-                continue
-            fair_overs.append(fair_over)
-            if best_over is None or decimal > best_over[1]:
-                best_over, best_book = (over, decimal), book
+        fair_overs, best_american, best_decimal, best_book = \
+            _propboard.devig(books)
+        best_over = (None if best_american is None
+                     else (best_american, best_decimal))
 
         if len(fair_overs) < MIN_BOOKS or best_over is None:
             skipped[f"fewer than {MIN_BOOKS} two-way books"] += 1
@@ -237,16 +132,8 @@ def main(argv=None):
         # Did it actually happen? Resolved for EVERY assessable contract,
         # not only the flagged ones, because the control arm needs them --
         # and never used to select.
-        outcome = None
-        for row in by_player_name.get(player, []):
-            if str(row.get("date") or "") == str(date):
-                got = {"batter_hits": row.get("h"),
-                       "batter_total_bases": row.get("total_bases"),
-                       "batter_home_runs": row.get("hr"),
-                       "batter_runs_scored": row.get("r")}.get(market)
-                if got is not None:
-                    outcome = 1 if int(got) > line else 0
-                break
+        outcome = _propboard.resolve(by_player_name, player, date, market,
+                                     line)
 
         all_assessed.append({"best_price": best_over[0], "outcome": outcome,
                              "pa_source": priced["expected_pa_source"]})

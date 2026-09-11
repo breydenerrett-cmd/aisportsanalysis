@@ -94,6 +94,29 @@ total-bases line on the same night settle on the same at-bats and are not
 independent draws. The standard error is a clustered bootstrap over those
 clusters, 2,000 resamples, resampling whole player-nights.
 
+**Numerical details, fixed here before the run.** Probabilities are clipped to
+`[1e-6, 1 - 1e-6]` before taking a logarithm, because a confident arm that
+happened to say 0.0 on an event that occurred would otherwise return infinity
+and destroy the mean. The bootstrap RNG is seeded at `20260910` so the
+interval reproduces exactly.
+
+## Secondary, descriptive analyses — also fixed before the run
+
+These do not carry the decision. They are declared here so that they cannot be
+introduced afterwards as a way of finding a slice where the answer changes.
+
+1. **Per-market breakdown** of the same paired difference. Reported for all
+   markets in the population; no market is promoted or dropped on the strength
+   of it.
+2. **Conditional on disagreement.** Restricted to contracts where
+   `|model - market| > 0.05`, which number lands closer to the outcome. This
+   is the H1/H2 question stated in its most direct form, and it is *secondary
+   precisely because* the restriction conditions on the model's own departure
+   — the same selection the primary analysis exists to avoid.
+3. **Concentration.** How much of the flagged board comes from a handful of
+   batters with thin prior samples. The current top five findings contain the
+   same player three times, which is a reason to look.
+
 ---
 
 ## The decision rule, fixed before running
@@ -141,3 +164,94 @@ is reported as the corner it is.
 
 `scripts/prereg_market_vs_model.py` — read-only, reads no result before the
 criterion above was committed.
+
+---
+
+# RESULT — run 2026-09-10, 1,107 contracts across 689 player-nights
+
+## Primary: UNDETERMINED
+
+```
+paired difference  loss(model) - loss(market)
+  +0.00655 nats    95% clustered CI [-0.00137, +0.01455]
+```
+
+The interval spans zero. By the rule fixed above, **the answer is
+undetermined and the point estimate is not read.** Neither H1 nor H2 is
+supported. A week of prices was never going to settle this and it did not.
+
+What can be said without violating the rule:
+
+```
+                log loss (nats)     brier
+  base_rate        0.69289         0.24987
+  market           0.66784         0.23760
+  model            0.67439         0.24072
+```
+
+**Both arms beat the do-nothing floor.** The prop model carries real
+information — about +0.019 nats over the base rate on this population, which
+is consistent with the +0.0133 measured independently on 16,741 batter games.
+The market carries about +0.025. That the model is genuinely informative is
+established; whether it is informative *about anything the price has missed*
+is what stayed undetermined.
+
+## The blend curve is monotone, with its minimum at the corner
+
+```
+  w=0.0   0.66784   <-- lowest
+  w=0.1   0.66797
+  w=0.2   0.66821
+  ...
+  w=1.0   0.67439
+```
+
+Every unit of weight moved from the price onto our model makes the estimate
+worse, with no interior minimum anywhere. This is the shape the
+pre-registration named in advance as the corner case: it is not a fitted
+parameter and it is reported as the corner it is.
+
+**It is also the more interesting half of the result.** Two predictors that
+carry *independent* information almost always blend better than either alone —
+that is ordinary shrinkage, and a small `w` should have helped even if our
+model were much the weaker of the two. It did not help at `w = 0.1`. The
+natural reading is that the market's information already contains ours.
+
+**That reading is suggestive, not established.** The whole curve spans
+0.0066 nats, which is the same size as the primary point estimate whose
+interval spans zero. Do not promote it.
+
+## Secondary findings
+
+**Conditional on disagreement** (355 contracts more than 5 points apart):
+our number landed closer to the outcome **49.6%** of the time. A coin flip.
+When we depart from the price, we are right exactly as often as chance — and
+departure is precisely what a value card selects on.
+
+**The card can only ever recommend overs, and that is a structural bias
+nobody chose.** On those same 355 disagreements we were the *higher* number
+only **39.7%** of the time — our model sits *below* the market's more often
+than above it. But `probe_prop_value.py` scans the over side only. So every
+pick it can ever produce is drawn from the minority tail where our model runs
+hottest relative to the price. That is selection on our own upward error,
+built into the shape of the scan rather than chosen. Registered separately in
+`docs/PREREG_UNDER_SIDE.md`.
+
+**Concentration:** 256 distinct batters; 8.1% of contracts are batters with
+fewer than 100 prior plate appearances. The paired difference is worse on
+those (+0.019 vs +0.005), consistent with thin histories producing wilder
+model numbers — and the top of the flagged board is where they surface (the
+same player held three of the top five findings).
+
+**Per market:** `batter_runs_scored` is the worst arm by a factor of six
+(+0.030 nats against +0.005 for hits and +0.003 for total bases) on n=99.
+Descriptive. Nothing is dropped on the strength of it; if it survives to a
+larger sample it becomes a candidate for the `publishable` gate.
+
+## What this changes
+
+Nothing is adopted. The direction of the prop work is unchanged but the bar
+is now explicit: **adding an input is only progress if it moves this paired
+difference**, and that measurement now exists and is re-runnable. Platoon
+splits, park, weather and recent form each get re-measured here, not merely
+added.
