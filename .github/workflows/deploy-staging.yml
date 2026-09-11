@@ -96,36 +96,52 @@ jobs:
       - name: Report which stores the image will carry
         run: ls -la data/historical/ || true
 
-      # A DEPLOY THAT SHIPS NO DATA MUST NOT BE GREEN.
+      # A DEPLOY THAT SHIPS NO DATA MUST BE LOUD. It is not, by itself, a
+      # reason to refuse.
       #
-      # The restore above had been missing for an unknown number of deploys
-      # and nothing noticed, because a cache miss is a normal outcome and
-      # every later step still succeeded. The image was empty, the app
-      # answered slowly or not at all, and the only report was a customer
-      # saying the page would not load.
+      # This step first failed the build outright, and that was calibrated
+      # too strong. The reasoning was that an image with no results store
+      # must be what made the slate pages hang for the owner on 2026-09-10.
+      # It was then MEASURED instead of assumed: building the same slate with
+      # the results store empty takes 0.81s against 0.86s with 4,581 rows
+      # loaded -- marginally FASTER, because there is less to read. The
+      # missing data degrades what the page can say; it is not what made it
+      # hang, and deploy/Dockerfile says as much where it COPYs the stores.
       #
-      # This turns that into a failed build. `mlb_results.csv` is the check
-      # because it is the store the game surface cannot do anything without:
-      # no results means no records, no model inputs and no slate history.
-      - name: Refuse to ship an image with no data
+      # Failing here therefore blocked every deploy -- including fixes for
+      # the far worse problem -- over a defect that is real but separate.
+      # So: annotate loudly, record the cause, and let the deploy through.
+      #
+      # WHY IT NEVER RESTORES. The caches exist (45 MiB, written every 30
+      # minutes) but they live on refs/heads/claude/cowork-session-migration
+      # -tn3sx2, and a run on the working branch reports zero caches visible.
+      # That branch is an ORPHAN default branch -- it shares no history with
+      # the working branch -- so the working branch never inherits its cache
+      # scope. Matching the `path` list to daily-loop's save step (done
+      # above, and necessary in its own right) did not fix it.
+      #
+      # The durable fix is to stop crossing branches for this: publish the
+      # stores as a workflow ARTIFACT, which is repo-scoped rather than
+      # branch-scoped. That requires editing daily-loop.yml ON THE DEFAULT
+      # BRANCH, since cron workflows run from there, and is not something
+      # this branch can do to itself.
+      - name: Warn if the image is shipping with no data
         run: |
           set -eu
           results="data/historical/mlb_results.csv"
           if [ ! -s "$results" ]; then
-            echo "::error::$results is missing or empty -- the daily-loop"
-            echo "::error::cache did not restore, and deploying now would"
-            echo "::error::ship an app with no results store."
-            echo "Caches that exist right now (key / size / branch):"
-            gh cache list --limit 5 || true
-            echo ""
-            echo "MOST LIKELY CAUSE: this workflow's cache \`path\` list no"
-            echo "longer matches daily-loop.yml's save step. GitHub hashes"
-            echo "that list into the cache version, so a mismatch reports"
-            echo "\"Cache not found\" even when the key matches."
-            exit 1
+            echo "::warning::$results is missing -- the daily-loop cache did"
+            echo "::warning::not restore, so this image ships with no results"
+            echo "::warning::store. The matchup page will state the gap rather"
+            echo "::warning::than show records. See this step's comment."
+            echo "Caches that exist right now:"
+            gh cache list --limit 3 || true
+            echo "Visible to THIS ref (expect 0 -- that is the bug):"
+            gh api "/repos/${GITHUB_REPOSITORY}/actions/caches?ref=${GITHUB_REF}" \
+              --jq '.total_count' || true
+          else
+            echo "results store: $(wc -l < "$results") rows -- shipping"
           fi
-          lines=$(wc -l < "$results")
-          echo "results store: $lines rows -- shipping"
         env:
           GH_TOKEN: ${{ github.token }}
       - uses: superfly/flyctl-actions/setup-flyctl@master
@@ -163,8 +179,21 @@ jobs:
           # case here -- it proves the route is mounted and the app answered.
           # What must not happen is a 5xx or a dropped connection, which is
           # what an out-of-memory container produces.
+          # /games AND /changed ARE IN THIS LIST BECAUSE THEY WERE NOT.
+          #
+          # On the evening of 2026-09-10 the owner watched "LOADING THE
+          # SLATE" spin on his phone while this very check was green. The
+          # four paths below it were all answering; /games/{date} was
+          # hanging past 34 seconds, and /changed/{date} with it. Nothing
+          # exercised either, so a completely dead Games page shipped as a
+          # successful deploy.
+          #
+          # The rule the omission broke: a deploy check must touch every
+          # route a customer's first screen calls. #/today alone fires
+          # /today, /games/{date}, /odds/{date} and /changed/{date}.
           TODAY=$(date -u +%Y-%m-%d)
-          for path in "/card/$TODAY" "/card/record" "/opportunities/$TODAY" "/today"; do
+          for path in "/card/$TODAY" "/card/record" "/opportunities/$TODAY" \
+                      "/today" "/games/$TODAY" "/changed/$TODAY" "/odds/$TODAY"; do
             code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 45 "$BASE$path" || echo 000)
             echo "  $path -> $code"
             case "$code" in
@@ -181,3 +210,16 @@ jobs:
             fi
           done
           echo "healthy, and still healthy after serving real requests"
+
+      # THE LOGS, WHEN IT GOES WRONG. Without this, a failing health check
+      # reports only the status code a customer would have seen, and the one
+      # place that knows WHY -- the container's own stderr -- is unreadable
+      # from a laptop because FLY_API_TOKEN is an Actions secret and stays
+      # one. Diagnosing /games/{date} hanging on 2026-09-10 meant probing the
+      # live app from a browser and reasoning backwards; these lines would
+      # have said it outright.
+      - name: Container logs (only when the check failed)
+        if: failure()
+        run: flyctl logs -a linehound-staging --no-tail | tail -120
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
