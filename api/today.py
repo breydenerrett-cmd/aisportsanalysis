@@ -169,7 +169,15 @@ TODAY_CACHE_TTL_S = 120.0
 # Module-level so every call to get_today_payload_cached across requests
 # shares one cache -- a fresh SingleFlightTTLCache per call would cache
 # nothing. Callers that need isolation (tests) pass their own `cache=`.
-_today_cache = freshness.SingleFlightTTLCache(ttl_s=TODAY_CACHE_TTL_S)
+# Same window and same reason as api/games.py's ENTRIES_STALE_WINDOW_S: past
+# the TTL, serve the last good board instantly with `freshness.stale` set and
+# rebuild behind the request, so only the first caller after a cold start
+# ever waits. See that constant's comment for what this cost to learn.
+TODAY_STALE_WINDOW_S = 600.0
+
+_today_cache = freshness.SingleFlightTTLCache(
+    ttl_s=TODAY_CACHE_TTL_S,
+    stale_while_revalidate_s=TODAY_STALE_WINDOW_S)
 
 
 def _newest_odds_observed_utc(payload: dict) -> Optional[str]:

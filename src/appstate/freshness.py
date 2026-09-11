@@ -140,11 +140,46 @@ class SingleFlightTTLCache:
     stampede protection and freshness metadata attached to every result.
     """
 
-    def __init__(self, ttl_s: float, policy: Optional[FreshnessPolicy] = None):
+    def __init__(self, ttl_s: float, policy: Optional[FreshnessPolicy] = None,
+                 stale_while_revalidate_s: float = 0.0):
+        """`stale_while_revalidate_s` -- how far past the TTL a value may be
+        served WITHOUT making the caller wait for a rebuild.
+
+        WHY THIS EXISTS, AND WHAT IT COST TO LEARN. With it at 0 (the
+        default, and the behaviour every caller had until 2026-09-10) an
+        expired key makes the requesting thread run `builder()` itself. That
+        is correct and it is also how the app read to a customer on a small
+        machine: /games/{date} rebuilds in about 3s on a developer laptop
+        and 20-45s on the 512 MB staging container, against a 120s TTL. So
+        roughly every other visitor arrived just after an expiry and paid
+        the full rebuild, watching a skeleton animate for half a minute. The
+        owner's report was "they just sit there and spin for many many many
+        minutes... how would we fix this so that as soon as they click on
+        the link they're already loaded."
+
+        This is that fix. Past the TTL but within this window, the last-good
+        value is returned IMMEDIATELY, flagged stale with a reason, and the
+        rebuild runs on a background thread so the NEXT caller gets the
+        fresh one. Nobody waits for a rebuild except the very first caller
+        after a cold start, which is the one case where there is genuinely
+        nothing honest to serve.
+
+        THE WINDOW IS BOUNDED ON PURPOSE. Past it, callers block and wait
+        again. An unbounded window would let a permanently failing rebuild
+        serve last week's slate forever while every response cheerfully
+        carried `stale: true` -- which is exactly the kind of quiet wrongness
+        the rest of this module exists to refuse. Old-but-honest has a limit,
+        and past that limit correct-but-slow wins.
+        """
         self.ttl_s = ttl_s
+        self.stale_while_revalidate_s = stale_while_revalidate_s
         self.policy = policy or FreshnessPolicy()
         self._entries: dict = {}
         self._locks: dict = {}
+        # Keys with a background refresh already in flight. Guarded by
+        # `_locks_guard` -- never by a per-key lock, because the whole point
+        # is to decide WITHOUT waiting on the thread doing the rebuild.
+        self._refreshing: set = set()
         # Guards only the _locks dict itself (creating/looking-up the
         # per-key lock) -- the actual rebuild work happens under the
         # per-key lock, never under this one, so unrelated keys never
@@ -203,6 +238,26 @@ class SingleFlightTTLCache:
         if entry is not None and (now - entry.built_at).total_seconds() < self.ttl_s:
             return self._serve_hit(entry, now, odds_observed_extractor)
 
+        # PAST THE TTL BUT STILL WITHIN THE STALE WINDOW: answer now, refresh
+        # behind the caller. Only reachable when a prior good value exists --
+        # a cold key has nothing honest to serve and falls through to block.
+        if entry is not None and self.stale_while_revalidate_s > 0:
+            age_s = (now - entry.built_at).total_seconds()
+            if age_s < self.ttl_s + self.stale_while_revalidate_s:
+                self._start_background_refresh(key, builder)
+                reason = (f"serving a {age_s:.0f}s-old build while a fresh "
+                          f"one is being made in the background")
+                stale_odds, odds_reason = self._odds_stale(
+                    entry.value, now=now,
+                    odds_observed_extractor=odds_observed_extractor)
+                return entry.value, self._meta(
+                    served_at=now, built_at=entry.built_at, age_s=age_s,
+                    stale=True,
+                    # The odds-age complaint is the more specific one and
+                    # the one a bettor acts on, so it wins the slot when
+                    # both are true.
+                    stale_reason=odds_reason if stale_odds else reason)
+
         lock = self._lock_for(key)
         with lock:
             # Re-check inside the lock: another thread may have already
@@ -235,6 +290,44 @@ class SingleFlightTTLCache:
                 value, now=now, odds_observed_extractor=odds_observed_extractor)
             return value, self._meta(served_at=now, built_at=now, age_s=0.0,
                                      stale=stale, stale_reason=reason)
+
+    def _start_background_refresh(self, key: Any,
+                                  builder: Callable[[], Any]) -> None:
+        """Rebuild `key` off the request thread, at most one at a time.
+
+        A FAILURE HERE IS SWALLOWED, deliberately and narrowly. The caller
+        has already been handed a stale-flagged value and has gone; there is
+        no one left to raise to, and letting an exception escape a daemon
+        thread would print a traceback with no request context attached to
+        it. The last-good entry simply stays, keeps ageing, and once it
+        passes the stale window the next caller blocks and meets the real
+        exception through the normal path -- where the endpoint's own error
+        contract applies.
+        """
+        with self._locks_guard:
+            if key in self._refreshing:
+                return
+            self._refreshing.add(key)
+
+        def _run():
+            try:
+                value = builder()
+                # STORED BEFORE THE FLAG IS CLEARED. The other order leaves a
+                # window where the key looks idle but still holds the old
+                # value, so the next request starts a second identical
+                # rebuild -- on a one-CPU box, the pile-up this cache exists
+                # to prevent.
+                self._entries[key] = _Entry(
+                    value=value, built_at=datetime.now(timezone.utc))
+            except Exception:  # noqa: BLE001 -- see docstring
+                pass
+            finally:
+                with self._locks_guard:
+                    self._refreshing.discard(key)
+
+        thread = threading.Thread(target=_run, daemon=True,
+                                  name=f"revalidate-{key!r}"[:60])
+        thread.start()
 
     def _serve_hit(self, entry: _Entry, now: datetime,
                    odds_observed_extractor: Optional[OddsObservedExtractor]

@@ -51,11 +51,31 @@ router = APIRouter()
 # slate more than two minutes stale by cache age alone.
 ENTRIES_CACHE_TTL_S = 120.0
 
+# NOBODY WAITS FOR A REBUILD EXCEPT THE FIRST CALLER AFTER A COLD START.
+#
+# The 120s TTL above is right for how fast a slate changes and wrong for who
+# pays to rebuild it. This endpoint takes about 3s on a developer laptop and
+# 20-45s on the 512 MB staging container; against a 120s TTL that meant
+# roughly every other visitor landed just after an expiry and waited out the
+# whole rebuild. On 2026-09-10 the owner watched exactly that happen on his
+# phone, on both #/today and #/games, and said so: "how would we fix this so
+# that as soon as they click on the link they're already loaded."
+#
+# Ten minutes of stale-while-revalidate is the answer. Past the TTL the last
+# good slate is served instantly with `freshness.stale` set and a reason the
+# UI already renders, while the rebuild runs behind the request. The window
+# is bounded rather than infinite so a rebuild that is failing every time
+# cannot quietly serve an ancient slate forever -- past ten minutes callers
+# block and wait, and meet the real error if there is one.
+ENTRIES_STALE_WINDOW_S = 600.0
+
 # One cache shared by all three routes below, keyed by date -- they all
 # want the identical (entries, notes) pair, so caching it once here covers
 # get_games, get_game, and get_changed together rather than each keeping
 # its own copy.
-_entries_cache = freshness.SingleFlightTTLCache(ttl_s=ENTRIES_CACHE_TTL_S)
+_entries_cache = freshness.SingleFlightTTLCache(
+    ttl_s=ENTRIES_CACHE_TTL_S,
+    stale_while_revalidate_s=ENTRIES_STALE_WINDOW_S)
 
 # Red-team round: a malformed {date} path segment used to reach
 # mlb.fetch_games unchecked, where src.providers.mlb's own _validate_date
