@@ -57,6 +57,15 @@ const LABEL_MEANING = {
 // likely to find a different one.
 const STALE_PRICE_HOURS = 4;
 
+/** How long the last-published-card fallback may hold up the page.
+ *
+ * Much shorter than api.js's DEFAULT_TIMEOUT_MS, and deliberately so: this
+ * request is a courtesy, not the page. It runs inside the render path, so
+ * every second it spends is a second of blank screen. If it cannot answer
+ * quickly the honest empty state is better than a longer wait for a nicer
+ * one. */
+const FALLBACK_TIMEOUT_MS = 5000;
+
 /** Hours since an ISO timestamp, or null if it cannot be read. */
 function hoursSince(iso) {
   if (!iso) return null;
@@ -300,24 +309,31 @@ export async function renderCard(host, date) {
   // while /card/2026-09-10 served three picks, and the fallback silently did
   // nothing. Checked rather than assumed, after it failed once.
   //
-  // Three days is the limit. Further back than that is not "last night's
-  // card" in any sense a reader would accept, and on a genuinely dead
-  // ledger this must stop asking rather than walk into the season opener.
+  // ONE DAY BACK, AND ON A SHORT LEASH. Both limits were paid for.
+  //
+  // The first version walked back three days, awaiting each in turn. This
+  // runs inside the page's render path, so on a container where a cold card
+  // takes seconds that is three sequential stalls before anything appears --
+  // and #/today rendered as a bare nav and footer, 336 characters, while it
+  // waited. A fallback whose job is to stop the page looking broken must not
+  // be the thing that breaks it.
+  //
+  // One day back is also all a reader wants: "last night's card" means last
+  // night, not last week. FALLBACK_TIMEOUT_MS bounds the worst case; the
+  // normal case is a frozen row and returns in about 200ms.
   async function lastPublishedCard(fromDate) {
     const start = fromDate ? new Date(`${fromDate}T12:00:00Z`) : new Date();
     if (Number.isNaN(start.getTime())) return null;
-    for (let back = 1; back <= 3; back += 1) {
-      const day = new Date(start.getTime() - back * 86400000)
-        .toISOString().slice(0, 10);
-      try {
-        const older = await apiGet(`/card/${day}`);
-        if (older && (older.picks || []).length) return older;
-      } catch (_err) {
-        // A day that will not load is not a reason to stop looking at the
-        // one before it.
-      }
+    const day = new Date(start.getTime() - 86400000).toISOString().slice(0, 10);
+    try {
+      const older = await apiGet(`/card/${day}`,
+                                 { timeoutMs: FALLBACK_TIMEOUT_MS });
+      return older && (older.picks || []).length ? older : null;
+    } catch (_err) {
+      // A fallback that cannot load is not an error worth showing. The
+      // caller falls through to its own empty state, which is honest.
+      return null;
     }
-    return null;
   }
 
   let payload;
