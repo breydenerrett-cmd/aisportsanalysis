@@ -3,7 +3,7 @@
  "b": 0.725406,
  "base_rate": 0.523172,
  "fitted": true,
- "fitted_at": "2026-09-11T10:14:11.519298+00:00",
+ "fitted_at": "2026-09-11T13:57:47.042457+00:00",
  "fitted_through": "2026-09-10",
  "games_with_relief_rate": 1942,
  "model_id": "run_expectancy_poisson_v1",
