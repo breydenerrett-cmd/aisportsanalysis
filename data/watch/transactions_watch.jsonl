@@ -1045,3 +1045,6 @@
 {"category": "designated", "date": "2026-09-11", "first_seen_utc": "2026-09-11T17:26:00.817489+00:00", "player": "Chris Devenski", "player_id": 606965, "team": "NYM", "transaction_id": 942018}
 {"category": "recalled", "date": "2026-09-11", "first_seen_utc": "2026-09-11T17:26:00.817489+00:00", "player": "Jack Weisenburger", "player_id": 674073, "team": "NYM", "transaction_id": 942019}
 {"fetched_utc": "2026-09-11T17:26:02.831592+00:00", "game_date": "2026-09-11", "poll": true}
+{"fetched_utc": "2026-09-11T18:10:59.436922+00:00", "game_date": "2026-09-11", "poll": true}
+{"category": "other", "date": "2026-09-11", "first_seen_utc": "2026-09-11T18:10:59.436922+00:00", "player": "Stuart Fairchild", "player_id": 656413, "team": "SEA", "transaction_id": 942020}
+{"fetched_utc": "2026-09-11T18:11:01.325136+00:00", "game_date": "2026-09-11", "poll": true}
