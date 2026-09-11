@@ -429,8 +429,48 @@ def history(*, path: Optional[str] = None, limit: Optional[int] = 60) -> dict:
             "picks": picks,
         })
 
+    # PUBLISHED BUT NOT YET GRADED, carried separately.
+    #
+    # `days` above is settled days only, and that is right for the record: an
+    # ungraded day has no result to put in a tally. But it is wrong for a
+    # CALENDAR, which is the question "what did you say, and when" before it
+    # is the question "how did it go". A calendar built from `days` alone
+    # shows nothing at all on the day a card is published and only fills in
+    # the morning after -- so on the first day of the product, and on every
+    # day before that night's settle, it reads as if nothing was published.
+    #
+    # Kept as its own key rather than mixed into `days` so no existing
+    # consumer of `days` starts seeing rows with no result in them. A caller
+    # that wants both merges them and knows which is which.
+    pending = []
+    settled_dates = {row.get("date") for row in settled}
+    for date, row in published_by_date.items():
+        if date in settled_dates:
+            continue
+        pending.append({
+            "date": date,
+            "published_utc": row.get("published_utc"),
+            "n_filled": row.get("n_filled") or 0,
+            "row_hash": row.get("row_hash"),
+            "picks": [{
+                "rank": p.get("rank"),
+                "bet": p.get("bet"),
+                "label": p.get("label"),
+                "market": p.get("market"),
+                "price": p.get("price"),
+                "book": p.get("book"),
+                "books": p.get("books"),
+                "away_team": p.get("away_team"),
+                "home_team": p.get("home_team"),
+                "team_name": p.get("team_name"),
+                "opponent_name": p.get("opponent_name"),
+            } for p in (row.get("picks") or ())],
+        })
+    pending.sort(key=lambda r: r.get("date") or "", reverse=True)
+
     return {
         "days": days,
+        "pending_days": pending,
         "limit": limit,
         "total_days": total_days,
         "truncated": total_days > len(days),

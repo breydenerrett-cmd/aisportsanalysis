@@ -111,7 +111,7 @@ import { renderFeaturedBet, mapBetCheckPayloadToStanding } from "./featuredbet.j
 import { renderCard } from "./card.js";
 import { renderOpportunities } from "./opportunities.js";
 import { renderMatchups } from "./matchups.js";
-import { renderRecordStrip } from "./recordstrip.js";
+import { renderCardRecordStrip } from "./recordstrip.js";
 import { renderStaleness, fillResearchCount } from "./meta.js";
 import { teamColors } from "./teamcolors.js";
 import { teamName, bookLabel, FAIR_EXPLAINER } from "./labels.js";
@@ -1145,9 +1145,14 @@ export async function renderToday(container) {
   // above the hero and every early-return branch below, so the paper
   // record shows regardless of tonight's slate state (an unreachable
   // slate or an honest off night are both still real nights of results).
+  // THE CARD'S RECORD, NOT THE FORWARD-TEST SYSTEMS'. This mounted
+  // `renderRecordStrip` until 2026-09-10, which put "LAST 30 DAYS 143-97-3 ·
+  // +47.48u · +19.8%" directly above three published picks. Those numbers
+  // belong to a different selection rule; the card's own record that day was
+  // zero graded days. See recordstrip.js's `renderCardRecordStrip`.
   const recordStripHost = el("div", { class: "gutter", "data-hook": "today-record-strip" });
   host.appendChild(recordStripHost);
-  await renderRecordStrip(recordStripHost);
+  await renderCardRecordStrip(recordStripHost);
 
   // A failed /games/{date} fetch must never look like an honest empty
   // slate -- those are two different real conditions (V1's own bug

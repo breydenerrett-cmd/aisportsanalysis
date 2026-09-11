@@ -73,9 +73,101 @@ function windowCell(window) {
 }
 
 /**
+ * THE CARD'S OWN RECORD -- GET /card/record. For the picks page.
+ *
+ * WHY THIS EXISTS SEPARATELY FROM `renderRecordStrip` BELOW, WHICH IS THE
+ * WHOLE POINT.
+ *
+ * #/today mounted the /record strip directly above TONIGHT'S CARD. On
+ * 2026-09-10 that read "LAST 7 DAYS 102-77-0 · +28.30u · +15.8%" and "LAST
+ * 30 DAYS 143-97-3 · +47.48u · +19.8%", and immediately underneath it, three
+ * published picks.
+ *
+ * Those numbers are not the card's. They are the forward-test detector
+ * systems' paper results -- 243 settled positions from a different selection
+ * rule entirely. THE CARD'S record on that date was zero days, zero bets,
+ * zero wins, zero losses, because the card had been built that morning and
+ * nothing had been graded yet.
+ *
+ * A caption said "Our forward-test systems only". That is true and it is not
+ * enough: a reader who sees +19.8% above three picks attributes +19.8% to
+ * the picks, and no amount of small type under it undoes that. The owner's
+ * question -- "do we have a record keeping page with data truly being
+ * recorded for our picks" -- is exactly the question that number answers
+ * wrongly.
+ *
+ * So the picks page shows the PICKS' record, and when there isn't one it
+ * says so in one line. An empty record honestly stated is worth more than a
+ * good number that belongs to something else; it is also the only version
+ * that stays true tomorrow.
+ */
+export async function renderCardRecordStrip(container) {
+  const strip = el("div", { class: "rec-strip", "data-hook": "card-record-strip" });
+  container.appendChild(strip);
+
+  let rec;
+  try {
+    rec = await apiGet("/card/record");
+  } catch (err) {
+    renderError(strip, err);
+    return strip;
+  }
+  clear(strip);
+
+  const days = Number(rec && rec.days) || 0;
+  if (!days) {
+    strip.appendChild(el("p", { class: "rec-cell__empty", "data-hook": "card-record-none",
+      text: "No graded cards yet. Every card is settled the morning after it "
+          + "runs — win or lose — and this fills in from the first one." }));
+    return strip;
+  }
+
+  const cells = el("div", { class: "rec-strip__cells" });
+  const cell = el("div", { class: "rec-cell panel chamfer", "data-hook": "card-record-window" });
+  cell.appendChild(el("div", { class: "rec-cell__label",
+    text: `EVERY CARD${rec.since ? ` SINCE ${rec.since}` : ""}` }));
+
+  const record = `${rec.wins || 0}-${rec.losses || 0}-${rec.pushes || 0}`;
+  const units = unitsFmt(rec.profit_units);
+  const pct = pctFmt(typeof rec.roi_pct === "number" ? rec.roi_pct / 100 : null);
+  const tone = (rec.profit_units || 0) > 0 ? "--pos"
+    : (rec.profit_units || 0) < 0 ? "--neg" : "";
+
+  const fig = el("div", { class: "rec-cell__figure", "data-hook": "card-record-figure" });
+  fig.appendChild(el("span", { class: "rec-cell__record", text: record }));
+  if (units !== null) {
+    fig.appendChild(el("span", { class: "rec-cell__sep", "aria-hidden": "true", text: "·" }));
+    fig.appendChild(el("span", { class: `rec-cell__units${tone}`, text: units }));
+  }
+  if (pct !== null) {
+    fig.appendChild(el("span", { class: "rec-cell__sep", "aria-hidden": "true", text: "·" }));
+    fig.appendChild(el("span", { class: `rec-cell__pct${tone}`, text: pct }));
+  }
+  cell.appendChild(fig);
+  cells.appendChild(cell);
+  strip.appendChild(cells);
+
+  // THE CHAIN, NAMED ON THE PAGE THAT SHOWS THE NUMBER. A tamper-evident
+  // ledger nobody is told about is just a file.
+  strip.appendChild(el("p", { class: "rec-strip__note", "data-hook": "card-record-note",
+    text: `${days} graded card${days === 1 ? "" : "s"}, every pick frozen `
+        + `before first pitch. `
+        + (rec.chain_ok === false
+             ? "The ledger's hash chain does NOT verify — treat these numbers "
+               + "as unconfirmed until that is resolved."
+             : "The ledger's hash chain verifies.") }));
+  return strip;
+}
+
+/**
  * Fetches GET /record and renders the three-cell strip into `container`.
  * Never throws -- a fetch failure renders dom.js's own error treatment
  * inside the strip rather than blanking whatever screen mounted it.
+ *
+ * THIS IS THE FORWARD-TEST SYSTEMS' PAPER RECORD, NOT THE CARD'S. It belongs
+ * on #/performance, where it sits among the other research surfaces and its
+ * caption has context. It must not be mounted on the picks page -- see
+ * `renderCardRecordStrip` above for what happened when it was.
  */
 export async function renderRecordStrip(container) {
   const strip = el("div", { class: "rec-strip", "data-hook": "record-strip" });

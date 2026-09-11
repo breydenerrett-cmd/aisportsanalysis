@@ -448,3 +448,67 @@
   .crp-day .ov2-table th:nth-child(2), .crp-day .ov2-table th:nth-child(3),
   .crp-day .ov2-table td:nth-child(2), .crp-day .ov2-table td:nth-child(3) { width: auto; }
 }
+
+/* =====================================================================
+ * THE CALENDAR (web/js/cardrecord.js's `calendar`)
+ *
+ * Asked for directly: a month grid anyone can click through to see the
+ * verifiable wins. Three day states that must be distinguishable at a
+ * glance and without relying on colour alone -- a graded day carries its
+ * W-L as text, a pending day says PENDING, an empty day carries nothing.
+ * ===================================================================*/
+.crp-calwrap { display: flex; flex-direction: column; gap: var(--sp-7); }
+.crp-cal__legend {
+  margin: 0; max-width: 68ch; font-size: 14.5px; line-height: 1.55;
+  color: var(--text-3);
+}
+.crp-cal { display: flex; flex-direction: column; gap: var(--sp-5); }
+.crp-cal__title {
+  margin: 0; font-size: 15px; font-weight: 800; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--text-2);
+}
+.crp-cal__grid {
+  display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+.crp-cal__dow {
+  font-size: 12px; font-weight: 800; letter-spacing: .12em;
+  color: var(--text-5); text-align: center; padding-bottom: 2px;
+}
+.crp-cal__pad { min-height: 62px; }
+.crp-cal__day {
+  min-height: 62px; padding: 6px 7px; display: flex; flex-direction: column;
+  gap: 2px; border: 1px solid var(--line, rgba(255,255,255,.08));
+  background: rgba(255,255,255,.015);
+}
+.crp-cal__num { font-size: 12px; font-weight: 700; color: var(--text-5); }
+.crp-cal__figure {
+  font-family: var(--font-display, inherit); font-weight: 800;
+  font-size: 17px; line-height: 1.1; color: var(--text-hi);
+}
+.crp-cal__note {
+  font-size: 12px; font-weight: 700; letter-spacing: .06em;
+  color: var(--text-4);
+}
+.crp-cal__day--empty { opacity: .32; }
+.crp-cal__day--pending { border-color: rgba(255,255,255,.16); }
+.crp-cal__day--graded { background: rgba(255,255,255,.04); }
+/* Colour REINFORCES the W-L already written in the cell; it never carries
+   the meaning alone. */
+.crp-cal__day--pos { border-color: var(--pos, #2fbf71); }
+.crp-cal__day--neg { border-color: var(--neg, #e5484d); }
+.crp-cal__note--pos { color: var(--pos, #2fbf71); }
+.crp-cal__note--neg { color: var(--neg, #e5484d); }
+.crp-cal__day--link { cursor: pointer; }
+.crp-cal__day--link:hover,
+.crp-cal__day--link:focus-visible {
+  background: rgba(255,255,255,.08); outline: none;
+}
+/* Where a calendar click lands, so the jump is visible rather than silent. */
+.crp-day--flash { outline: 2px solid var(--accent, #35c3f3); outline-offset: 2px; }
+
+@media (max-width: 640px) {
+  .crp-cal__grid { gap: 4px; }
+  .crp-cal__day, .crp-cal__pad { min-height: 54px; }
+  .crp-cal__figure { font-size: 15px; }
+}

@@ -236,7 +236,9 @@ function pickRow(pick) {
 }
 
 function dayBlock(day) {
-  const card = el("article", { class: "crp-day panel chamfer", "data-hook": "record-day" });
+  // `data-date` is the calendar's jump target -- see `calendarDayCell`.
+  const card = el("article", { class: "crp-day panel chamfer", "data-hook": "record-day",
+    "data-date": day.date || "" });
 
   const head = el("div", { class: "crp-day__head" });
   head.appendChild(el("span", { class: "crp-day__date", text: dayDateLabel(day.date) || day.date }));
@@ -285,6 +287,161 @@ function dayBlock(day) {
  * ordinary state for a brand-new record, not a fault to paper over.
  * ------------------------------------------------------------------- */
 
+/* =====================================================================
+ * THE CALENDAR
+ *
+ * Asked for directly: "a true tally, seeable by everyone on a calendar that
+ * people can click and go through and see the verifiable wins".
+ *
+ * A month grid over the ledger. Three states a day can be in, and they are
+ * deliberately different from each other at a glance:
+ *
+ *   no card       dim and empty. Most days, early on, and never dressed up.
+ *   published     the picks are locked but the games have not been graded.
+ *                 Shows the pick count and says PENDING -- because "we said
+ *                 this before the games" is the claim that matters, and it
+ *                 is true the moment it is published, not the morning after.
+ *   graded        W-L and the day's units, coloured. This is the receipt.
+ *
+ * Clicking a day scrolls to that day's full detail below, which already
+ * exists (`dayBlock`) and carries every pick, its result and the hash it was
+ * frozen under. The calendar is navigation, not a second source of truth --
+ * it never states a result the detail below does not.
+ * ===================================================================*/
+
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
+                     "July", "August", "September", "October", "November",
+                     "December"];
+
+/** YYYY-MM-DD -> {y, m, d} with no timezone in the way.
+ *
+ * `new Date("2026-09-10")` is parsed as UTC midnight and then rendered in
+ * the reader's local zone, which in the Americas is the day BEFORE. A
+ * calendar that puts a card on the wrong square is worse than no calendar,
+ * so the string is split rather than parsed. */
+function ymd(dateIso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateIso || ""));
+  if (!m) return null;
+  return { y: Number(m[1]), m: Number(m[2]), d: Number(m[3]) };
+}
+
+function monthKey(dateIso) {
+  const p = ymd(dateIso);
+  return p ? `${p.y}-${String(p.m).padStart(2, "0")}` : null;
+}
+
+function calendarDayCell(dateIso, entry) {
+  const p = ymd(dateIso);
+  const cell = el("div", { class: "crp-cal__day", "data-hook": "calendar-day",
+    "data-date": dateIso });
+  cell.appendChild(el("span", { class: "crp-cal__num", text: String(p.d) }));
+
+  if (!entry) {
+    cell.classList.add("crp-cal__day--empty");
+    return cell;
+  }
+
+  if (entry.kind === "pending") {
+    cell.classList.add("crp-cal__day--pending");
+    const n = (entry.picks || []).length;
+    cell.appendChild(el("span", { class: "crp-cal__figure",
+      text: `${n} pick${n === 1 ? "" : "s"}` }));
+    cell.appendChild(el("span", { class: "crp-cal__note", text: "PENDING" }));
+    cell.setAttribute("title",
+      `${dateIso}: ${n} pick${n === 1 ? "" : "s"} published, not yet graded`);
+    return cell;
+  }
+
+  const wins = entry.wins || 0;
+  const losses = entry.losses || 0;
+  const units = typeof entry.profit_units === "number" ? entry.profit_units : null;
+  const tone = units === null ? "" : units > 0 ? "--pos" : units < 0 ? "--neg" : "";
+  cell.classList.add("crp-cal__day--graded");
+  if (tone) cell.classList.add(`crp-cal__day${tone}`);
+  cell.appendChild(el("span", { class: "crp-cal__figure", text: `${wins}-${losses}` }));
+  if (units !== null) {
+    cell.appendChild(el("span", { class: `crp-cal__note crp-cal__note${tone}`,
+      text: `${units > 0 ? "+" : ""}${units.toFixed(2)}u` }));
+  }
+  cell.setAttribute("title", `${dateIso}: ${wins} won, ${losses} lost`);
+
+  // Clickable only where there is something to click TO. A day with no
+  // detail below would scroll nowhere and feel broken.
+  cell.setAttribute("role", "link");
+  cell.setAttribute("tabindex", "0");
+  cell.classList.add("crp-cal__day--link");
+  const go = () => {
+    const target = document.querySelector(
+      `[data-hook="record-day"][data-date="${dateIso}"]`);
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      target.classList.add("crp-day--flash");
+      setTimeout(() => target.classList.remove("crp-day--flash"), 1600);
+    }
+  };
+  cell.addEventListener("click", go);
+  cell.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); }
+  });
+  return cell;
+}
+
+function calendarMonth(key, byDate) {
+  const [year, month] = key.split("-").map(Number);
+  const section = el("section", { class: "crp-cal", "data-hook": "record-calendar",
+    "data-month": key });
+  section.appendChild(el("h3", { class: "crp-cal__title",
+    text: `${MONTH_NAMES[month - 1]} ${year}` }));
+
+  const grid = el("div", { class: "crp-cal__grid" });
+  for (const label of ["S", "M", "T", "W", "T", "F", "S"]) {
+    grid.appendChild(el("span", { class: "crp-cal__dow", text: label }));
+  }
+  // Date.UTC keeps the weekday calculation out of the reader's timezone,
+  // for the same reason `ymd` does not parse the string.
+  const firstDow = new Date(Date.UTC(year, month - 1, 1)).getUTCDay();
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  for (let i = 0; i < firstDow; i += 1) {
+    grid.appendChild(el("span", { class: "crp-cal__pad" }));
+  }
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const iso = `${year}-${String(month).padStart(2, "0")}-`
+      + `${String(day).padStart(2, "0")}`;
+    grid.appendChild(calendarDayCell(iso, byDate.get(iso)));
+  }
+  section.appendChild(grid);
+  return section;
+}
+
+/** The whole calendar: one block per month that has any card in it. */
+function calendar(settledDays, pendingDays) {
+  const byDate = new Map();
+  for (const day of settledDays || []) {
+    if (day && day.date) byDate.set(day.date, { kind: "graded", ...day });
+  }
+  for (const day of pendingDays || []) {
+    // A settled day wins: once it is graded, that is the fact.
+    if (day && day.date && !byDate.has(day.date)) {
+      byDate.set(day.date, { kind: "pending", ...day });
+    }
+  }
+  if (!byDate.size) return null;
+
+  const months = [...new Set([...byDate.keys()].map(monthKey))]
+    .filter(Boolean).sort().reverse();
+
+  const wrap = el("section", { class: "crp-calwrap", "data-hook": "record-calendar-wrap" });
+  wrap.appendChild(sectionHead("THE CALENDAR",
+    `${byDate.size} DAY${byDate.size === 1 ? "" : "S"} PUBLISHED`));
+  wrap.appendChild(el("p", { class: "crp-cal__legend",
+    text: "Every day we published a card. Green won, red lost, and a day "
+        + "still waiting on its games says PENDING. Click a graded day to "
+        + "jump to its picks." }));
+  for (const key of months) wrap.appendChild(calendarMonth(key, byDate));
+  return wrap;
+}
+
+
 function emptyRecord() {
   const wrap = el("section", { class: "gutter", "data-hook": "record-empty" });
   const panel = el("div", { class: "panel chamfer card2empty" });
@@ -328,6 +485,15 @@ export async function renderCardRecord(container) {
   screen.appendChild(el("p", { class: "crp-intro",
     text: "Every pick this product has made, frozen before the result was known and chained so none of it can "
         + "be quietly edited afterward — the wins and the losses both." }));
+
+  // THE CALENDAR SITS ABOVE BOTH BRANCHES, because it is the one thing on
+  // this page that has something to show on day one: a published card is a
+  // claim on the record the moment it is frozen, not the morning after it is
+  // graded. Rendering it only in the settled branch would leave the page
+  // blank on exactly the day someone first looks at it.
+  const calendarBlock = calendar((history && history.days) || [],
+                                 (history && history.pending_days) || []);
+  if (calendarBlock) screen.appendChild(calendarBlock);
 
   const nothingSettled = !record.days;
   if (nothingSettled) {
