@@ -23,6 +23,22 @@ on:
       # (concurrency group serializes; volume-backed app db is unaffected).
       - "data/processed/**"
       - "data/watch/**"
+      # ADDED 2026-09-11, THE SAME DAY data/historical/ BECAME TRACKED.
+      #
+      # Those eleven stores plus arsenals/ are what the matchup page reads for
+      # team records, starter form, bullpen workload, travel and pitch mix.
+      # They were git-ignored until today and reached the image (or rather
+      # failed to) through a cache, so this filter never needed them.
+      #
+      # Now the daily loop commits them. Without this line a run that only
+      # refreshes team records or pitcher logs would commit, deploy nothing,
+      # and leave the site serving whatever those files looked like on the
+      # last day some OTHER file happened to change -- stale records under a
+      # fresh timestamp, which is worse than an honest gap.
+      #
+      # Caught because the commit that added arsenals/ pushed cleanly and no
+      # deploy ran.
+      - "data/historical/**"
   workflow_dispatch: {}
 
 concurrency:
