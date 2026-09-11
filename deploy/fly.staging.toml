@@ -74,11 +74,41 @@ primary_region = "iad"  # US East -- change to whatever region the volume
   # Fly's own health check, independent of and in addition to the
   # container HEALTHCHECK in deploy/Dockerfile -- this one gates whether
   # Fly's proxy routes traffic to the machine at all.
+  # WHY THESE NUMBERS MOVED, 2026-09-10.
+  #
+  # They were grace 10s / interval 15s / timeout 5s, and on a single shared
+  # CPU that guaranteed flapping. From the container's own log that evening:
+  #
+  #   GET /card/{date}  status=200  latency_ms=15260.3
+  #   GET /health       status=200  latency_ms=2866.6
+  #   health[...] ERROR Health check on port 8000 has failed.
+  #
+  # /health touches no store and does no work. Taking 2.9 seconds means the
+  # process was starved, not broken -- one CPU, and a 15-second card build
+  # holding it. The check then missed its 5s window, Fly pulled the machine
+  # out of rotation, and every visitor got a 503 from an app that was alive
+  # and working. That is what the owner saw as pages that "just sit there
+  # and spin for many many many minutes".
+  #
+  # A timeout shorter than the app's own slowest legitimate request is not a
+  # health check; it is a guarantee of intermittent outage under exactly the
+  # load the service exists to handle.
+  #
+  # 15s timeout clears the slowest measured build with room. 30s interval
+  # means a genuinely dead app is still pulled within about a minute, which
+  # is the thing a health check is actually for. 30s grace lets the app
+  # finish importing before the first probe -- cold imports on this box are
+  # not instant either.
+  #
+  # THE REAL FIX IS A BIGGER MACHINE and this is not a substitute for it. A
+  # 15-second card build on one shared vCPU is the underlying problem; these
+  # numbers only stop Fly from turning slowness into a total outage. Sizing
+  # costs money and is the owner's call.
   [[http_service.checks]]
-    grace_period = "10s"
-    interval = "15s"
+    grace_period = "30s"
+    interval = "30s"
     method = "GET"
-    timeout = "5s"
+    timeout = "15s"
     path = "/health"
 
 [[vm]]
