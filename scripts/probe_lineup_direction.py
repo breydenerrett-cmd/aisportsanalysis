@@ -71,8 +71,35 @@ MIN_PRIOR_LINEUPS = 3
 # Fixed in the pre-registration; the same floor the transaction tests used.
 MIN_EVENTS = 25
 
-# One primary hypothesis here, so no Bonferroni division.
+# THE PRE-REGISTERED ALPHA, and why it is not the one that decides.
+#
+# docs/PREREG_LINEUP_DIRECTION.md declared 0.05 on the grounds that this is
+# one primary hypothesis. Adversarial review, 2026-09-11, pointed out that
+# the grounds are wrong: this programme keeps `data/research/alpha_registry.jsonl`
+# precisely to count how many hypotheses it has tested against this market,
+# and the answer is 40 before this one. The parent probe
+# (scripts/probe_event_direction.py) already divides by its own sibling count.
+#
+# A result that clears 0.05 as though it were the first thing ever tried is
+# not clearing the bar this programme set for itself. So both are computed
+# and THE STRICTER ONE DECIDES. Reporting only the pre-registered figure
+# would be true and misleading at the same time.
 ALPHA = 0.05
+
+
+def family_alpha(declared=ALPHA):
+    """`declared` spread over every hypothesis this programme has registered.
+
+    Falls back to the declared alpha when the registry cannot be read -- a
+    missing ledger must not silently make the bar easier.
+    """
+    try:
+        from src.research import alpha_registry
+        counts = alpha_registry.public_research_counts()
+        n = max(1, int(counts.get("hypotheses") or 1))
+    except Exception:  # noqa: BLE001 -- see docstring
+        return declared, None
+    return declared / n, n
 
 
 def _lineup_rows(events, sides, first_pitch):
@@ -331,10 +358,36 @@ def main(argv=None):
     ci = f"[{interval[0]:.3f}, {interval[1]:.3f}]" if interval else "[too few]"
     before = f"{b_hits / b_movers:.3f}" if b_movers else "  --  "
     print(f"  depleted lineup -> its own number falls")
-    print(f"    n={movers}   hit {rate}   95% {ci}   "
-          f"before {before}   {verdict}")
+    print(f"    n={movers}   hit {rate}   before {before}")
     if ties:
         print(f"    ({ties} did not move at all, excluded)")
+    print()
+    print(f"    as pre-registered   alpha {ALPHA:.5f}   95%   "
+          f"{ci}   {verdict}")
+
+    # And the same interval at the bar this programme actually set itself.
+    strict_alpha, family_size = family_alpha()
+    strict = base._clustered_interval(observations, "after",
+                                      alpha=strict_alpha)
+    strict_verdict = (base._verdict(movers, strict)
+                      if movers >= MIN_EVENTS else "UNDETERMINED")
+    strict_ci = (f"[{strict[0]:.3f}, {strict[1]:.3f}]" if strict
+                 else "[too few]")
+    label = (f"family of {family_size}" if family_size
+             else "registry unreadable")
+    print(f"    {label:<19} alpha {strict_alpha:.5f}   "
+          f"{100 * (1 - strict_alpha):.2f}% {strict_ci}   {strict_verdict}")
+    print()
+    if verdict == "CONFIRMED" and strict_verdict != "CONFIRMED":
+        print("  *** THE STRICTER READING DECIDES, AND IT IS NOT CONFIRMED. ***")
+        print("  This clears the alpha its own pre-registration declared, and")
+        print("  does not clear the one implied by the 40 hypotheses this")
+        print("  programme had already tested against this same market")
+        print("  (data/research/alpha_registry.jsonl). The first 'yes' after")
+        print("  forty 'no's is exactly the result that needs the harsher")
+        print("  bar, not the kinder one. NOT PROMOTED -- held for forward")
+        print("  replication on data collected after 2026-09-11.")
+        verdict = strict_verdict
 
     print()
     print("SENSITIVITY CONTROL -- can this instrument see lineup news at all?")
