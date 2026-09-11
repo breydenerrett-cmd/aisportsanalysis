@@ -1225,12 +1225,32 @@ export async function renderToday(container) {
   // no records or starters (see matchupPoster's own docstring).
   host.appendChild(matchupPoster(featured.row));
 
-  // THE PRICE BOARD -- between the hero and the Featured Bet head
-  // (web/js/opportunities.js owns this section's own render/fetch; this
-  // screen only places it). Renamed from TOP OPPORTUNITIES 2026-09-10: it
-  // ranks execution quality, and a heading that read as a pick list was
-  // competing with TONIGHT'S PICKS above for the same job.
-  await renderOpportunities(host, date);
+  // THE PRICE BOARD IS NOT ON THIS SCREEN ANY MORE, 2026-09-10.
+  //
+  // It was 16,378 characters of a 26,743-character page -- 61% of #/today --
+  // and the card, which is the product, was 2,338. A reader arriving for
+  // tonight's bets scrolled past six times as much price-comparison table as
+  // actual picks.
+  //
+  // The owner: "This whole 'we do price verification and see which book has
+  // the better odds, dude,' that has to stop. None of that's important.
+  // Nobody fucking cares."
+  //
+  // THE PRICE SURFACE ALREADY EXISTS AND IS BETTER: #/odds renders the whole
+  // slate's per-book board from /odds/{date} (web/js/odds.js). A reader who
+  // wants to compare books has a tab for it in the nav.
+  //
+  // BE PRECISE ABOUT WHAT THIS COSTS, because the first version of this
+  // comment said "opportunities.js is still mounted at #/odds" and that was
+  // simply false -- #/odds uses odds.js, a different module. This line was
+  // renderOpportunities' ONLY caller, so removing it makes
+  // web/js/opportunities.js unreachable.
+  //
+  // That is left visible rather than hidden: scripts/reachability_audit.py
+  // exists to catch exactly this and will now flag it, which is the correct
+  // outcome for a module nothing renders. Deleting it is a separate decision
+  // -- the board may want a home again -- and it is not made silently here.
+  void renderOpportunities;
 
   // THE MATCHUP GRID -- every game on tonight's slate, its live
   // moneyline, its price read, and its frozen pregame positions
