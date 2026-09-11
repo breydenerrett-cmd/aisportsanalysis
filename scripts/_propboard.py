@@ -170,15 +170,20 @@ def build_contracts(props):
 
 
 def devig(books):
-    """De-vig each book's two-way pair; return the fair overs and best price.
+    """De-vig each book's two-way pair; return the fair overs and best prices.
 
     A gap measured against a RAW price partly IS the book's margin, which is
     not value and does not belong to us. Every fair probability returned here
     has had its book's own margin removed first.
 
-    Returns (fair_overs, best_over_american, best_over_decimal, best_book).
+    BOTH SIDES are returned. The under price was always in the capture and
+    was never read -- see `docs/PREREG_UNDER_SIDE.md`. A scan that can only
+    ever recommend one direction selects on one tail of its own error.
+
+    Returns (fair_overs, best) where `best` maps "Over"/"Under" to
+    (american, decimal, book), missing when no book priced that side.
     """
-    fair_overs, best = [], None
+    fair_overs, best = [], {}
     for book, sides in books.items():
         over, under = sides.get("Over"), sides.get("Under")
         if over is None or under is None:
@@ -189,16 +194,17 @@ def devig(books):
             if raw < MIN_TWO_WAY_BOOKSUM:
                 continue
             fair_over, _fair_under = odds_math.devig_two_way(over, under)
-            decimal = odds_math.american_to_decimal(over)
+            prices = {"Over": odds_math.american_to_decimal(over),
+                      "Under": odds_math.american_to_decimal(under)}
         except (odds_math.OddsError, TypeError, ValueError,
                 ZeroDivisionError):
             continue
         fair_overs.append(fair_over)
-        if best is None or decimal > best[1]:
-            best = (over, decimal, book)
-    if best is None:
-        return fair_overs, None, None, None
-    return fair_overs, best[0], best[1], best[2]
+        for side, american in (("Over", over), ("Under", under)):
+            held = best.get(side)
+            if held is None or prices[side] > held[1]:
+                best[side] = (american, prices[side], book)
+    return fair_overs, best
 
 
 def resolve(by_name, player, date, market, line):
@@ -208,9 +214,19 @@ def resolve(by_name, player, date, market, line):
     go 0-for-4 -- he may have been scratched, the game may not be ingested,
     the name may not have matched. Returning 0 there would score a
     non-observation as a loss.
+
+    A WHOLE-NUMBER LINE IS REFUSED RATHER THAN GUESSED. Every line in the
+    capture today is a half -- 0.5, 1.5, 2.5 -- so an exact landing is
+    impossible and over/under partition the outcomes cleanly. On a line of
+    1.0 a batter with one hit PUSHES: the book returns the stake, which is
+    neither a win nor a loss. Scoring that as an under win would quietly
+    inflate the under arm, which is the arm this board was just extended to
+    measure. Refusing is the only answer that cannot be silently wrong.
     """
     field = OUTCOME_FIELD.get(market)
     if field is None:
+        return None
+    if float(line) == int(float(line)):
         return None
     for row in by_name.get(player, ()):
         if str(row.get("date") or "") == str(date):

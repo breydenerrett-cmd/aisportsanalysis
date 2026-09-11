@@ -61,6 +61,13 @@ from src.core import odds as odds_math  # noqa: E402
 
 MIN_BOOKS = _propboard.MIN_BOOKS
 
+# TWO SIDES OF THE MARKET ARE EXAMINED ON ONE WEEK OF PRICES, so a nominal
+# 95% interval is not a 95% statement about the pair. 2.2414 is the normal
+# quantile for a two-sided 97.5% interval -- Bonferroni across the two arms.
+# Fixed in docs/PREREG_UNDER_SIDE.md before either side was read. A third
+# slice would need a further correction, registered before it was looked at.
+Z_BONFERRONI = 2.2414
+
 
 def main(argv=None):
     ap = argparse.ArgumentParser()
@@ -99,12 +106,10 @@ def main(argv=None):
 
         # De-vig each book, then average. A gap measured against a raw price
         # partly IS the book's margin, which is not value and is not ours.
-        fair_overs, best_american, best_decimal, best_book = \
-            _propboard.devig(books)
-        best_over = (None if best_american is None
-                     else (best_american, best_decimal))
+        fair_overs, best = _propboard.devig(books)
 
-        if len(fair_overs) < MIN_BOOKS or best_over is None:
+        if (len(fair_overs) < MIN_BOOKS
+                or "Over" not in best or "Under" not in best):
             skipped[f"fewer than {MIN_BOOKS} two-way books"] += 1
             continue
 
@@ -124,10 +129,8 @@ def main(argv=None):
             skipped["batter below the plate-appearance floor"] += 1
             continue
 
-        ours = priced["probability"]
+        p_over = priced["probability"]
         consensus = statistics.fmean(fair_overs)
-        break_even = 1.0 / best_over[1]
-        edge = ours - break_even
 
         # Did it actually happen? Resolved for EVERY assessable contract,
         # not only the flagged ones, because the control arm needs them --
@@ -135,33 +138,57 @@ def main(argv=None):
         outcome = _propboard.resolve(by_player_name, player, date, market,
                                      line)
 
-        all_assessed.append({"best_price": best_over[0], "outcome": outcome,
-                             "pa_source": priced["expected_pa_source"]})
+        # BOTH SIDES. Reading the over row alone drew every possible pick
+        # from the minority tail where our model runs hottest against the
+        # price -- see docs/PREREG_UNDER_SIDE.md. The under price was always
+        # in the capture. The threshold is the SAME on both sides; a
+        # threshold tuned per side would be a threshold tuned to produce a
+        # result.
+        for side in ("Over", "Under"):
+            american, decimal, book = best[side]
+            ours = p_over if side == "Over" else 1.0 - p_over
+            mkt = consensus if side == "Over" else 1.0 - consensus
+            break_even = 1.0 / decimal
+            edge = ours - break_even
+            won = (None if outcome is None
+                   else (outcome if side == "Over" else 1 - outcome))
 
-        if edge < args.min_edge:
-            continue
+            all_assessed.append({
+                "side": side, "best_price": american, "outcome": won,
+                "pa_source": priced["expected_pa_source"]})
 
-        findings.append({
-            "date": date, "player": player, "market": market, "line": line,
-            "our_probability": round(ours, 4),
-            "market_fair": round(consensus, 4),
-            "best_price": best_over[0], "best_book": best_book,
-            "break_even": round(break_even, 4),
-            "edge_points": round(edge * 100, 2),
-            "vs_market_points": round((ours - consensus) * 100, 2),
-            "books": len(fair_overs),
-            "outcome": outcome,
-            "pa_source": priced["expected_pa_source"],
-            "batter_pa_sample": priced["batter_pa_sample"],
-        })
+            if edge < args.min_edge:
+                continue
+
+            findings.append({
+                "date": date, "player": player, "market": market,
+                "line": line, "side": side,
+                "our_probability": round(ours, 4),
+                "market_fair": round(mkt, 4),
+                "best_price": american, "best_book": book,
+                "break_even": round(break_even, 4),
+                "edge_points": round(edge * 100, 2),
+                "vs_market_points": round((ours - mkt) * 100, 2),
+                "books": len(fair_overs),
+                "outcome": won,
+                "pa_source": priced["expected_pa_source"],
+                "batter_pa_sample": priced["batter_pa_sample"],
+            })
 
     findings.sort(key=lambda f: -f["edge_points"])
     graded = [f for f in findings if f["outcome"] is not None]
 
     def _roi(rows):
-        """Flat one-unit stakes at the price that was actually available,
-        with a normal 95% interval. These are independent single bets with
-        no clustering to correct for."""
+        """Flat one-unit stakes at the price that was actually available.
+
+        Two intervals are returned. The 95% is the ordinary one. The 97.5% is
+        the one the DECISION uses: two sides of the market are being examined
+        on the same week of prices, so a nominal 95% interval is not a 95%
+        statement about the pair. The Bonferroni correction was fixed in
+        `docs/PREREG_UNDER_SIDE.md` before either side was read.
+
+        These are independent single bets with no clustering to correct for.
+        """
         if not rows:
             return None
         profits = []
@@ -179,31 +206,45 @@ def main(argv=None):
         return {"n": len(profits), "roi_pct": round(mean * 100, 2),
                 "ci95": [round((mean - 1.96 * se) * 100, 2),
                          round((mean + 1.96 * se) * 100, 2)],
+                "ci975": [round((mean - Z_BONFERRONI * se) * 100, 2),
+                          round((mean + Z_BONFERRONI * se) * 100, 2)],
                 "units": round(sum(profits), 2)}
 
+    def _side(rows, side):
+        return [r for r in rows if r["side"] == side
+                and r["outcome"] is not None]
+
     # THE CONTROL, and without it the flagged number means nothing. Every
-    # assessable contract, backed on the over at the best price, with no
-    # selection by our model at all. If the flagged arm does not beat this,
-    # our disagreement with the market is not adding anything -- and if it
-    # does worse, the disagreement is actively selecting our own errors,
-    # which is what the team model was measured doing.
-    control = [f for f in all_assessed if f["outcome"] is not None]
+    # assessable contract at the best price on that side, with no selection
+    # by our model at all. If a flagged arm does not beat its OWN side's
+    # control, our disagreement with the market is not adding anything -- and
+    # if it does worse, the disagreement is actively selecting our own
+    # errors, which is what the team model was measured doing.
+    #
+    # OWN SIDE, and the reason is arithmetic: overs hit 48.9% of these
+    # contracts and unders therefore 51.1%. Judging the under arm against the
+    # over control would credit that base-rate gap to our model.
+    sides = {}
+    for side in ("Over", "Under"):
+        flagged_side = _side(findings, side)
+        control_side = _side(all_assessed, side)
+        sides[side] = {
+            "flagged": _roi(flagged_side),
+            "control": _roi(control_side),
+            "flagged_hit_rate": (
+                round(statistics.fmean(f["outcome"] for f in flagged_side), 4)
+                if flagged_side else None),
+            "control_hit_rate": (
+                round(statistics.fmean(f["outcome"] for f in control_side), 4)
+                if control_side else None),
+        }
 
     report = {
         "contracts_examined": len(contracts),
         "assessable": len(all_assessed),
         "flagged": len(findings),
         "graded": len(graded),
-        "hit_rate": (round(statistics.fmean(f["outcome"] for f in graded), 4)
-                     if graded else None),
-        "mean_break_even": (round(statistics.fmean(f["break_even"]
-                                                   for f in graded), 4)
-                            if graded else None),
-        "flagged_return": _roi(graded),
-        "control_return": _roi(control),
-        "control_hit_rate": (round(statistics.fmean(f["outcome"]
-                                                    for f in control), 4)
-                             if control else None),
+        "sides": sides,
         "skipped": dict(skipped),
         "top": findings[:args.top],
     }
@@ -218,52 +259,81 @@ def main(argv=None):
           f"{args.min_edge * 100:.0f} points over break-even")
     print(f"  skipped: {report['skipped']}")
     print()
-    fr, cr = report["flagged_return"], report["control_return"]
-    if fr and cr:
-        print("  DID SELECTING ON OUR EDGE HELP? Flat stakes, best available")
-        print("  price, 95% intervals.")
-        print(f"    flagged (edge >= {args.min_edge * 100:.0f} pts)   "
-              f"n={fr['n']:<5} won {report['hit_rate']:.1%}   "
-              f"ROI {fr['roi_pct']:+.1f}%   [{fr['ci95'][0]:+.1f}, "
-              f"{fr['ci95'][1]:+.1f}]")
-        print(f"    control (every over)          n={cr['n']:<5} won "
-              f"{report['control_hit_rate']:.1%}   "
-              f"ROI {cr['roi_pct']:+.1f}%   [{cr['ci95'][0]:+.1f}, "
-              f"{cr['ci95'][1]:+.1f}]")
-        print()
-        print("    The control takes every assessable over with no selection")
-        print("    by our model at all. If the flagged arm does not beat it,")
-        print("    our disagreement with the market is adding nothing; if it")
-        print("    does worse, the disagreement is selecting our own errors.")
-        print()
-        print("    A WEEK OF PRICES SETTLES NEITHER. Read the intervals.")
-        print()
-        # DID THE LINEUP HELP? The flagged picks split by which plate-
-        # appearance estimate they used. Tonight's slot beats the season
-        # average on PAs by 13%; whether that also closes the gap against a
-        # PRICE is a different question and this is where it gets answered.
-        with_slot = [f for f in graded if f["pa_source"] == "batting_slot"]
-        without = [f for f in graded if f["pa_source"] != "batting_slot"]
-        ws, wo = _roi(with_slot), _roi(without)
-        print("  DID KNOWING TONIGHT'S LINEUP HELP?")
-        if ws:
-            print(f"    with tonight's slot     n={ws['n']:<5} "
-                  f"ROI {ws['roi_pct']:+.1f}%   "
-                  f"[{ws['ci95'][0]:+.1f}, {ws['ci95'][1]:+.1f}]")
-        else:
-            print(f"    with tonight's slot     n={len(with_slot)} -- too few "
-                  f"to score; the posted-lineup store covers far fewer games "
-                  f"than the price store")
-        if wo:
-            print(f"    season average only     n={wo['n']:<5} "
-                  f"ROI {wo['roi_pct']:+.1f}%   "
-                  f"[{wo['ci95'][0]:+.1f}, {wo['ci95'][1]:+.1f}]")
+    print("  DID SELECTING ON OUR EDGE HELP? Flat stakes at the best price")
+    print("  that side actually had. The DECISION interval is the 97.5% --")
+    print("  two sides on one week of prices, Bonferroni, fixed in")
+    print("  docs/PREREG_UNDER_SIDE.md before either side was read.")
     print()
-    print(f"{'date':<12}{'player':<22}{'market':<22}{'line':>5}"
+    verdicts = {}
+    for side in ("Over", "Under"):
+        s = sides[side]
+        fr, cr = s["flagged"], s["control"]
+        print(f"    --- {side.upper()} ---")
+        if not (fr and cr):
+            print(f"      too few graded to score "
+                  f"(flagged {fr['n'] if fr else 0})")
+            verdicts[side] = "NOT MEASURABLE"
+            continue
+        print(f"      flagged (edge >= {args.min_edge * 100:.0f} pts)  "
+              f"n={fr['n']:<5} won {s['flagged_hit_rate']:.1%}   "
+              f"ROI {fr['roi_pct']:+.1f}%")
+        print(f"        95%   [{fr['ci95'][0]:+.1f}, {fr['ci95'][1]:+.1f}]"
+              f"      97.5% [{fr['ci975'][0]:+.1f}, {fr['ci975'][1]:+.1f}]"
+              f"  <-- decides")
+        print(f"      control (every {side.lower()})       "
+              f"n={cr['n']:<5} won {s['control_hit_rate']:.1%}   "
+              f"ROI {cr['roi_pct']:+.1f}%   "
+              f"[{cr['ci95'][0]:+.1f}, {cr['ci95'][1]:+.1f}]")
+        clears = fr["ci975"][0] > 0
+        beats = fr["roi_pct"] > cr["roi_pct"]
+        verdicts[side] = ("CANDIDATE" if (clears and beats)
+                          else "NO FINDING")
+        print(f"      -> {verdicts[side]}  "
+              f"(interval excludes zero: {'yes' if clears else 'no'}; "
+              f"beats own control: {'yes' if beats else 'no'})")
+        print()
+    print("    Each flagged arm is judged against its OWN side's control.")
+    print("    Overs hit ~49% of these contracts and unders ~51%, so judging")
+    print("    the under arm against the over control would credit that")
+    print("    base-rate gap to our model.")
+    print()
+    if set(verdicts.values()) <= {"NO FINDING", "NOT MEASURABLE"}:
+        print("    BOTH SIDES: NO FINDING. As pre-registered, the conclusion")
+        print("    is that model-versus-price disagreement does not select")
+        print("    profitable player props on this data in either direction,")
+        print("    and the prop card does not ship as a disagreement scanner.")
+        print()
+    print("    A WEEK OF PRICES SETTLES NOTHING EITHER WAY. Read the intervals.")
+    print()
+    # DID THE LINEUP HELP? The flagged picks split by which plate-appearance
+    # estimate they used. Tonight's slot beats the season average on PAs by
+    # 13%; whether that also closes the gap against a PRICE is a different
+    # question and this is where it gets answered.
+    with_slot = [f for f in graded if f["pa_source"] == "batting_slot"]
+    without = [f for f in graded if f["pa_source"] != "batting_slot"]
+    ws, wo = _roi(with_slot), _roi(without)
+    print("  DID KNOWING TONIGHT'S LINEUP HELP? (both sides pooled)")
+    if ws:
+        print(f"    with tonight's slot     n={ws['n']:<5} "
+              f"ROI {ws['roi_pct']:+.1f}%   "
+              f"[{ws['ci95'][0]:+.1f}, {ws['ci95'][1]:+.1f}]")
+    else:
+        print(f"    with tonight's slot     n={len(with_slot)} -- too few "
+              f"to score; the posted-lineup store covers far fewer games "
+              f"than the price store")
+    if wo:
+        print(f"    season average only     n={wo['n']:<5} "
+              f"ROI {wo['roi_pct']:+.1f}%   "
+              f"[{wo['ci95'][0]:+.1f}, {wo['ci95'][1]:+.1f}]")
+    else:
+        print(f"    season average only     n={len(without)} -- too few to "
+              f"score, and a number here would mean nothing")
+    print()
+    print(f"{'date':<12}{'player':<20}{'market':<21}{'line':>5}{'side':>6}"
           f"{'ours':>7}{'mkt':>7}{'price':>7}{'edge':>7}  book")
     for f in report["top"]:
-        print(f"{f['date']:<12}{f['player'][:21]:<22}{f['market']:<22}"
-              f"{f['line']:>5}{f['our_probability']:>7.3f}"
+        print(f"{f['date']:<12}{f['player'][:19]:<20}{f['market']:<21}"
+              f"{f['line']:>5}{f['side']:>6}{f['our_probability']:>7.3f}"
               f"{f['market_fair']:>7.3f}{f['best_price']:>7}"
               f"{f['edge_points']:>+7.1f}  {f['best_book']}")
     print()

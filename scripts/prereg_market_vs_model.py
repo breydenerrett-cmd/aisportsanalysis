@@ -114,8 +114,7 @@ def _collect():
             skipped["unreadable line"] += 1
             continue
 
-        fair_overs, _best_american, _best_decimal, _best_book = \
-            _propboard.devig(books)
+        fair_overs, _best = _propboard.devig(books)
         if len(fair_overs) < _propboard.MIN_BOOKS:
             skipped[f"fewer than {_propboard.MIN_BOOKS} two-way books"] += 1
             continue
