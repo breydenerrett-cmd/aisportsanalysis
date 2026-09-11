@@ -282,3 +282,69 @@ def test_totals_arrive_as_strings_and_are_coerced():
     assert probe._number(8.5) == pytest.approx(8.5)
     assert probe._number("") is None
     assert probe._number(None) is None
+
+
+# --------------------------------------------------------------------------
+# Resolving a game to its two sides
+# --------------------------------------------------------------------------
+
+def test_full_names_translate_back_to_the_codes_the_ledger_uses():
+    """The event map speaks the odds feed's full names; the ledger speaks
+    abbreviations. Inverted from src/data/labels.py so the two cannot
+    drift."""
+    codes = probe._code_by_full_name()
+    assert codes["Atlanta Braves"] == "ATL"
+    assert codes["Boston Red Sox"] == "BOS"
+
+
+def test_every_club_in_the_label_table_inverts_uniquely():
+    """A duplicate full name would silently collapse two clubs into one and
+    put half their events on the wrong side of the board."""
+    from src.data import labels
+    fulls = [(entry or {}).get("full") for entry in labels.TEAM_NAMES.values()]
+    fulls = [f for f in fulls if f]
+    assert len(fulls) == len(set(fulls)), "two clubs share a full name"
+    assert len(probe._code_by_full_name()) == len(fulls)
+
+
+def test_an_unknown_club_name_is_skipped_never_guessed(tmp_path, monkeypatch):
+    """A club the label table does not know must drop out of the mapping.
+
+    Inventing a code would put the event on a side of the board chosen by
+    accident -- the one error that inverts a direction result while still
+    printing a plausible number.
+    """
+    game_map = tmp_path / "event_game_map.jsonl"
+    game_map.write_text(
+        '{"game_pk": "1", "home_team": "Atlanta Braves", '
+        '"away_team": "San Diego Padres", "commence_time": '
+        '"2026-09-11T23:05:00Z"}\n'
+        '{"game_pk": "2", "home_team": "Faketown Sluggers", '
+        '"away_team": "San Diego Padres", "commence_time": '
+        '"2026-09-11T23:05:00Z"}\n',
+        encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "data" / "processed").mkdir(parents=True)
+    game_map.rename(tmp_path / "data" / "processed" / "event_game_map.jsonl")
+
+    sides = probe._game_sides(path=str(tmp_path / "nonexistent.csv"))
+    assert sides["1"] == ("ATL", "SD")
+    assert "2" not in sides, "an unknown club was given a code anyway"
+
+
+def test_the_settled_results_store_wins_over_the_schedule(tmp_path,
+                                                          monkeypatch):
+    """A schedule time is a plan; a results row is what happened."""
+    monkeypatch.chdir(tmp_path)
+    processed = tmp_path / "data" / "processed"
+    processed.mkdir(parents=True)
+    (processed / "event_game_map.jsonl").write_text(
+        '{"game_pk": "1", "home_team": "Atlanta Braves", '
+        '"away_team": "San Diego Padres", '
+        '"commence_time": "2026-09-11T23:05:00Z"}\n', encoding="utf-8")
+    results = tmp_path / "results.csv"
+    results.write_text(
+        "game_pk,start_time_utc,home_team,away_team\n"
+        "1,2026-09-12T01:40:00Z,ATL,SD\n", encoding="utf-8")
+
+    assert probe._first_pitch(path=str(results))["1"].hour == 1

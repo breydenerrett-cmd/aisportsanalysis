@@ -17,11 +17,36 @@ point of this document.
 | | events that carry a direction | usable | moved | hit rate | 98.33% CI | verdict |
 |---|---|---|---|---|---|---|
 | **CONTROL** temp → total | 107 | 17 | 10 | 0.500 | [0.222, 0.857] | UNDETERMINED |
-| **H1** IL placement → team down | 24 | 6 | 6 | 0.500 | [0.000, 1.000] | UNDETERMINED |
-| **H2** IL activation → team up | 35 | 23 | 23 | 0.435 | [0.143, 0.700] | UNDETERMINED |
+| **H1** IL placement → team down | 28 | 9 | 9 | 0.556 | [0.222, 0.889] | UNDETERMINED |
+| **H2** IL activation → team up | 44 | 32 | 32 | 0.438 | [0.207, 0.676] | UNDETERMINED |
 
 Three tests, Bonferroni-corrected, clustered by game. Nothing clears
-anything. The floor of `n >= 25` is not reached by any of them.
+anything. Only H2 reaches the `n >= 25` floor, and its interval straddles
+chance.
+
+### A join was fixed between the first run and this table
+
+`_game_sides` and `_first_pitch` read `data/historical/mlb_results.csv`,
+which holds only **settled** games and therefore lags the event ledger. 41
+game_pks carrying events were absent from it, and **every one of them was
+present in the capture's own `event_game_map.jsonl`** — those events were
+being dropped by a broken join, not by the pre-registered population rule.
+Both helpers now fall back to the event map (translating its full club names
+back through `src/data/labels.py`, skipping any club that table does not
+know rather than guessing a code), with settled results still winning where
+they exist.
+
+**This is a defect fix, not a rescue.** The pre-registration defines the
+population as every event whose game is on a captured board with quotes on
+both sides; a game missing from a settled-results CSV was never part of that
+definition. The criterion, the signs, the window, the correction and the
+decision rule are all untouched.
+
+And the reason it can be trusted: **not one verdict changed.** H1 went from
+6 usable to 9, H2 from 23 to 32, and all three hypotheses were UNDETERMINED
+before the fix and are UNDETERMINED after it. The control is unaffected —
+its losses are structural, not clerical. The first-run numbers are recorded
+above in this same paragraph rather than quietly replaced.
 
 ## Why the control is the whole story
 
@@ -48,16 +73,17 @@ three *different* reasons, and only one of them is a dead end.
 
 ```
                                 hours before first pitch
-  totals board opens                     median 23.4h
-  temperature change (control)           median 27.0h   p90 42.0h
+  totals board opens                     median 24.9h
+  temperature change (control)           median 23.1h   p90 42.9h
 ```
 
-**Thirty of fifty-six temperature changes arrive before any book has priced
-the game.** A market that does not exist cannot react. Books open an MLB game
-about a day out; weather forecasts update two days out. Of 107 signable
-changes, 32 had no board at all, 38 preceded the board, 2 followed it, and 18
-had no quote inside the window — leaving 17, of which 7 sat perfectly still,
-because a posted total moves in half-run steps and often just doesn't.
+**Fifty-two of a hundred and seven temperature changes arrive before any book
+has priced the game.** A market that does not exist cannot react. Books open
+an MLB game about a day out; weather forecasts update two days out. Of 107
+signable changes, 32 had no board at all, 38 preceded the board, 2 followed
+it, and 18 had no quote inside the window — leaving 17, of which 7 sat
+perfectly still, because a posted total moves in half-run steps and often
+just doesn't.
 
 This is not a spending decision. The featured odds endpoint bills once for the
 whole slate, so breadth is already free; the limit is that **no book has
@@ -66,7 +92,7 @@ opened the game yet.**
 ### H1 is starved by a defect in our own ledger, and it is a real one
 
 ```
-  il_placement (H1)   median  -18.5h     <- NEGATIVE. After first pitch.
+  il_placement (H1)   median  -10.4h     <- NEGATIVE. After first pitch.
 ```
 
 `src/board/events.py::transaction_events` maps a roster move to the game its
@@ -74,7 +100,7 @@ team played **on the move's own date**. A placement announced after Tuesday
 night's game is therefore filed against Tuesday's game — already played —
 when the game it actually affects is Wednesday's.
 
-**Fourteen of twenty-four IL placements are observed after first pitch of the
+**Fifteen of twenty-eight IL placements are observed after first pitch of the
 game they are attached to.**
 
 This is *not* a leakage bug: `src/core/asof.py` filters on
@@ -89,17 +115,24 @@ exist on disk: `data/historical/mlb_results.csv` stops at yesterday and
 piece of work, not a one-line change, and it is recorded here rather than
 half-done.
 
-### H2 is the one that is merely early
+### H2 is the one that actually got measured
 
 ```
-  il_activation (H2)  median  +4.1h      <- inside the priceable window
+  il_activation (H2)  median  +3.7h      <- inside the priceable window
 ```
 
 Activations are announced before the game, because the player has to be on the
-card. Twenty-three of thirty-five were usable — the healthiest yield of the
-three — and the hypothesis is **two events short of its own reporting floor.**
+card. **Thirty-two of forty-four were usable** — the healthiest yield of the
+three by a wide margin, and the only hypothesis to clear its own `n >= 25`
+floor.
 
-Nothing is wrong with H2 except the calendar.
+Its answer is an honest UNDETERMINED: 0.438, interval [0.207, 0.676],
+straddling chance. The point estimate sits *below* 0.50, which if anything
+leans against the declared sign, but at n=32 the interval is far too wide to
+say so and the pre-registration forbids reading a point estimate as a result.
+
+Nothing is wrong with H2 except sample size — and, until the control passes,
+its null means nothing either.
 
 ## When does this become answerable?
 
@@ -112,9 +145,9 @@ Power, at the Bonferroni α, for the hit rate to clear 0.50:
 | 0.65 | ~114 |
 | 0.70 | ~63 |
 
-H2 accrues about **2.2 usable events per day**. It crosses the reporting floor
-within days; it reaches power for a *strong* effect (0.65) in roughly six
-weeks, and for a moderate one (0.60) in roughly three and a half months.
+H2 accrues about **3.0 usable events per day**. It has already crossed the
+reporting floor; it reaches power for a *strong* effect (0.65) in roughly four
+more weeks, and for a moderate one (0.60) in roughly two and a half months.
 
 **A 0.55 edge is out of reach in this sport this season, and would be worth a
 great deal.** That is worth knowing before more is spent chasing it.
@@ -135,10 +168,30 @@ construction, because no direction was declared for it.
 
 **That is where the next pre-registration goes.** Signing a posted lineup —
 is this batting order stronger or weaker than the one the price was built on
-— is genuinely hard and needs a lineup-strength estimate. But it is the only
-place in this data where the sample and the timing are both already there, and
-at 27 events a day it reaches power for a 0.60 effect in **ten days**, not
-three months.
+— is genuinely hard and needs a lineup-strength estimate.
+
+Three things were measured before claiming it is feasible, and they qualify
+the promise:
+
+- **A baseline is reconstructable.** All 287 lineup events resolve to a
+  (team, game-date) once the join above is fixed, giving **255 distinct
+  posted lineups across all 30 clubs**. Of those, **165 have three or more
+  prior lineups** for the same club to average against, and 225 have at
+  least one. So the signable sample is ~165, not 255 — a third smaller than
+  the headline, and the honest number to plan against.
+- **There is real churn to sign.** A posted lineup differs from that club's
+  previous one by a mean of **2.22 batters out of 9**; only 24 of 255 are
+  identical. If lineups barely moved there would be nothing to predict.
+- **And that is also the trap.** Most of those 2.22 are routine rotation —
+  rest days, platoon splits — which the market already expects and has
+  already priced. A test that scores "different from last night" as news
+  will mostly be measuring the weekly rest schedule. The baseline has to
+  approximate *what the market expected*, not *what happened last night*,
+  and getting that wrong is the way this test fails while appearing to work.
+
+At ~165 signable events already in hand and ~16/day accruing, a 0.60 effect
+is reachable in roughly **six days** of further collection, not three months.
+That is what makes it the next thing to build.
 
 ## What was NOT done, deliberately
 
@@ -152,19 +205,27 @@ three months.
 
 ## Instrument
 
-`tests/test_event_direction.py` — 29 tests, and the four mutants that matter
+`tests/test_event_direction.py` — 33 tests, and the four mutants that matter
 were each confirmed to turn them red before being restored: a home/away
 inversion (which would flip every transaction result while printing a
 plausible number), a tie counted as a hit, peak substituted for net movement,
 and a bootstrap resampling events instead of games. The clustering test failed
 to catch its mutant on the first attempt and was rewritten until it did.
 
+The join fix added four more, including that an unrecognised club name drops
+out of the side mapping rather than being assigned a code, and that no two
+clubs share a full name — either would put events on the wrong side of the
+board, which is the same silent inversion the mutation test exists to catch.
+
 ## Honest status
 
 - **No edge is claimed. None was found. None was ruled out either.**
-- The single reusable result is the diagnosis: **we collect news at hours when
-  we hold no prices, and we file roster moves against games that have already
-  been played.** Both are ours to fix; neither is about the market.
+- The reusable results are all diagnoses, and all three are ours to fix rather
+  than facts about the market: **we collect news at hours when we hold no
+  prices**, **we file roster moves against games that have already been
+  played**, and **we were joining the ledger to a store that only holds
+  settled games** — the last of which was fixed here and cost 41 games'
+  worth of events while it stood.
 - Everything here is sport-agnostic. Nothing in the probe knows about
   baseball except which store the events come from — the same test runs on a
   UFC fight week or an NFL injury report the moment those events are recorded

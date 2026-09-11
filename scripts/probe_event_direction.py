@@ -141,31 +141,98 @@ def _event_to_game_map(path=EVENT_MAP):
     return out
 
 
-def _first_pitch(path=RESULTS):
-    """{game_pk: first pitch}, from the results store."""
-    out = {}
+def _jsonl(path):
     if not os.path.exists(path):
-        return out
+        return
     with open(path, encoding="utf-8") as fh:
-        for row in csv.DictReader(fh):
-            when = _parse(row.get("start_time_utc"))
-            if when and row.get("game_pk"):
-                out[str(row["game_pk"])] = when
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                yield json.loads(line)
+            except ValueError:
+                continue
+
+
+def _code_by_full_name():
+    """{"Atlanta Braves": "ATL"}, INVERTED from the table that owns the
+    mapping rather than typed out again, so the two cannot drift.
+
+    The capture's own event map names clubs the way the odds feed does --
+    full names -- while the results store and the information ledger use
+    abbreviations. A name this table does not know is skipped by the callers
+    below, never guessed, which is the same rule src/data/labels.py states
+    for the forward direction.
+    """
+    from src.data import labels
+    out = {}
+    for code, entry in labels.TEAM_NAMES.items():
+        full = (entry or {}).get("full")
+        if full:
+            out[full] = code
+    return out
+
+
+def _first_pitch(path=RESULTS):
+    """{game_pk: first pitch}.
+
+    The results store is authoritative but only holds SETTLED games, so it
+    lags the ledger -- 41 of the game_pks carrying lineup events were absent
+    from it, and every one of them was in the capture's own event map. Those
+    events were being dropped by a join, not by the pre-registered
+    population rule, which is a defect and not a finding.
+    """
+    out = {}
+    for row in _jsonl(os.path.join("data", "processed",
+                                   "event_game_map.jsonl")):
+        when = _parse(row.get("commence_time")
+                      or row.get("schedule_commence_time"))
+        if when and row.get("game_pk"):
+            out[str(row["game_pk"])] = when
+    for row in _jsonl(os.path.join("data", "processed",
+                                   "weather_forecast.jsonl")):
+        when = _parse(row.get("commence_time"))
+        if when and row.get("game_pk"):
+            out.setdefault(str(row["game_pk"]), when)
+    # Settled results last so they win: a schedule time is a plan, a results
+    # row is what happened.
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as fh:
+            for row in csv.DictReader(fh):
+                when = _parse(row.get("start_time_utc"))
+                if when and row.get("game_pk"):
+                    out[str(row["game_pk"])] = when
     return out
 
 
 def _game_sides(path=RESULTS):
     """{game_pk: (home_code, away_code)} so a transaction's team resolves to
-    a side of the board. Codes in the results store and in the information
-    ledger are the same vocabulary -- ATL, SD, CWS -- checked before use."""
+    a side of the board.
+
+    Same two sources and the same precedence as `_first_pitch`. The event map
+    speaks full names, so they are translated back through the label table;
+    a club that table does not know is SKIPPED, never guessed -- an invented
+    code would silently put an event on the wrong side of the board, which is
+    the one error that flips a direction result while looking plausible.
+    """
     out = {}
-    if not os.path.exists(path):
-        return out
-    with open(path, encoding="utf-8") as fh:
-        for row in csv.DictReader(fh):
-            pk = row.get("game_pk")
-            if pk and row.get("home_team") and row.get("away_team"):
-                out[str(pk)] = (row["home_team"], row["away_team"])
+    codes = _code_by_full_name()
+    for row in _jsonl(os.path.join("data", "processed",
+                                   "event_game_map.jsonl")):
+        pk, home, away = (row.get("game_pk"), row.get("home_team"),
+                          row.get("away_team"))
+        if not (pk and home and away):
+            continue
+        home_code, away_code = codes.get(home), codes.get(away)
+        if home_code and away_code:
+            out[str(pk)] = (home_code, away_code)
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as fh:
+            for row in csv.DictReader(fh):
+                pk = row.get("game_pk")
+                if pk and row.get("home_team") and row.get("away_team"):
+                    out[str(pk)] = (row["home_team"], row["away_team"])
     return out
 
 
