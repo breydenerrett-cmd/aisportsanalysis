@@ -22,20 +22,21 @@ name: afternoon-slate
 
 on:
   schedule:
-    # ⚠ THIS CRON IS NOT THE ONE THAT FIRES. READ THIS BEFORE TRUSTING IT.
+    # THIS CRON IS NOT THE ONE THAT FIRES -- IT MUST STILL MATCH THE ONE THAT
+    # DOES.
     #
     # GitHub reads `schedule` from the DEFAULT branch's copy of a workflow
     # file. The default branch here is claude/cowork-session-migration-tn3sx2,
-    # whose copy of this file still says `cron: "10 21 * * *"` and whose job
-    # checks out THIS branch for the code. So the schedule below documents
-    # what the time SHOULD be and changes nothing about when the job runs.
+    # whose copy of this file carries the live schedule and whose job checks
+    # out THIS branch for the code. So a change here alone would read
+    # correctly and fire at whatever time the other branch says.
     #
-    # Making it real is a one-line edit to the same block on the default
-    # branch. Flagged to the owner 2026-09-10 rather than done, because
-    # changing production scheduling is his call.
+    # Both were moved to 40 15 on 2026-09-11 (owner approved), and they are
+    # kept identical on purpose: the next person to read this file should not
+    # have to know about the split to trust what it says.
     #
-    # 15:40 UTC = 11:40am Eastern. SHOULD MOVE FROM 21:10 UTC (5:10pm ET),
-    # WHICH IS COSTING A CARD A WEEK.
+    # 15:40 UTC = 11:40am Eastern. MOVED FROM 21:10 UTC (5:10pm ET), WHICH WAS
+    # COSTING A CARD A WEEK.
     #
     # `card publish` runs only from this workflow, and run_slate's first-pitch
     # guard skips games already under way -- correctly, since a card cannot

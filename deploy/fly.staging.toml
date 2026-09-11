@@ -111,9 +111,31 @@ primary_region = "iad"  # US East -- change to whatever region the volume
     timeout = "15s"
     path = "/health"
 
+# SIZED UP 2026-09-11 (owner approved), AND THE CONSTRAINT IS CPU, NOT MEMORY.
+#
+# The old note said to raise this only if /health showed MEMORY pressure. That
+# was the wrong thing to watch. Measured against the live 512 MB / 1-shared-CPU
+# machine, after the card endpoint had already been fixed from 15s to 212ms:
+#
+#   three simultaneous visitors (7 requests)  -> every one timed out at 6.5s,
+#                                                INCLUDING /health
+#   one request at a time, warm               -> /health 2,216ms
+#                                                /today  3,210ms
+#
+# /health reads a few store headers and does no work. Two and a fifth seconds
+# for it, with nothing else in flight, is a throttled CPU rather than a busy
+# one -- a shared vCPU has a quota, and parsing 39 MB of JSON stores burns
+# through it. Memory was never the binding limit: local peak RSS serving the
+# same routes is about 157 MB.
+#
+# So: twice the CPU quota, and the memory doubled alongside it because the
+# opportunities payload alone is 1.6 MB and headroom is cheap at this size.
+#
+# THIS IS A FIRST STEP, NOT A VERDICT. If /health is still measured in seconds
+# after this, the next move is cpu_kind = "performance" (a dedicated core, no
+# quota) rather than more shared CPUs -- but that costs materially more and
+# should be bought on evidence, the same way this was.
 [[vm]]
   cpu_kind = "shared"
-  cpus = 1
-  memory_mb = 512   # api/app.py + src/ imports comfortably under this at
-                     # alpha scale; raise only if /health or smoke starts
-                     # showing memory pressure.
+  cpus = 2
+  memory_mb = 1024
