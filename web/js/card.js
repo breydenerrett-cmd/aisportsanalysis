@@ -271,14 +271,43 @@ export async function renderCard(host, date) {
   // thing the reader came for.
   let payload;
   let record = null;
+  let servingOlderCard = null;
   try {
     [payload, record] = await Promise.all([
       apiGet(`/card/${encodeURIComponent(date || "")}`),
       apiGet("/card/record").catch(() => null),
     ]);
   } catch (err) {
-    renderError(wrap, err);
-    return false;
+    // THE PAGE MUST NOT SHOW AN ERROR WHERE THE BETS GO.
+    //
+    // After the slate rolls in the evening this asks for TOMORROW's card,
+    // and tomorrow's card does not exist until the morning pass publishes
+    // it. On 2026-09-10 at 10:23pm that rendered "REQUEST FAILED — We could
+    // not reach the board" directly beneath the record strip: the honest
+    // message for a timeout, and the wrong one for a card that simply has
+    // not been written yet.
+    //
+    // The owner's standing rule is that this product always has bets on it.
+    // So: fall back to the most recently published card and SAY that is what
+    // it is. Old and labelled beats an error where the picks should be, and
+    // it beats inventing a card for a slate nobody has looked at.
+    try {
+      const history = await apiGet("/card/history?limit=1");
+      const last = ((history && history.days) || [])[0];
+      if (last && (last.picks || []).length) {
+        payload = last;
+        servingOlderCard = last.date || null;
+        record = await apiGet("/card/record").catch(() => null);
+      } else {
+        renderError(wrap, err);
+        return false;
+      }
+    } catch (_fallbackErr) {
+      // Both failed -- this really is unreachable, and the original error is
+      // the one worth showing, not the fallback's.
+      renderError(wrap, err);
+      return false;
+    }
   }
 
   const picks = payload.picks || [];
@@ -291,7 +320,15 @@ export async function renderCard(host, date) {
   const meta = payload.games_on_slate
     ? `${picks.length} of ${payload.games_on_slate} games`
     : `${picks.length} picks`;
-  wrap.appendChild(sectionHead("TONIGHT'S CARD", meta));
+  // Named for what it is. A card from an earlier slate must never sit under
+  // a heading that says TONIGHT'S.
+  wrap.appendChild(sectionHead(
+    servingOlderCard ? "LAST PUBLISHED CARD" : "TONIGHT'S CARD", meta));
+  if (servingOlderCard) {
+    wrap.appendChild(el("p", { class: "card2lede", "data-hook": "card-older",
+      text: `Tomorrow's card posts in the morning. These are the bets from `
+          + `${servingOlderCard}, already graded on the record.` }));
+  }
 
   // TWO DIFFERENT PROMISES, AND THE PAGE MUST NOT MAKE THE WRONG ONE.
   //
