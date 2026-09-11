@@ -25,6 +25,7 @@ from fastapi import APIRouter, HTTPException, Request
 from api.games import _build_entries, _record_page_view
 from src.analysis import daily_card
 from src.analysis import opportunities as opportunities_mod
+from src.analysis import strength
 from src.report import card as card_mod
 
 router = APIRouter()
@@ -38,8 +39,65 @@ MAX_HISTORY_LIMIT = 200
 
 
 def _build_payload(date: str, request: Optional[Request], route: str) -> dict:
-    entries, _notes, meta = _build_entries(date)
+    """The card for one date.
+
+    THE FROZEN CHECK COMES FIRST, AND IT IS WORTH 15 SECONDS A REQUEST.
+    ------------------------------------------------------------------
+    This function used to run `_build_entries` (a live schedule fetch plus a
+    full slate build) and then `build_opportunities` over the result, before
+    handing both to `card_mod.card_for_date`.
+
+    But `card_for_date` serves the FROZEN row whenever one exists, and in that
+    branch it reads neither argument. `frozen_card` needs one ledger row and
+    nothing else. So on every request for a date whose card is published --
+    which is every request for today's card, all day, from every visitor --
+    the endpoint built a slate and a price board and threw both away.
+
+    Measured on the 512 MB staging container from its own log:
+
+        GET /card/{date}  status=200  latency_ms=15260.3
+
+    Fifteen seconds of a one-CPU machine, per request, for a result already
+    sitting on disk. It starved /health past Fly's timeout, Fly pulled the
+    machine out of rotation, and visitors got 503s from an app that was alive
+    -- see docs/INCIDENT_2026-09-10_SPINNING_SLATE.md.
+
+    Checking first costs one ledger read. The live branch below is unchanged
+    and still pays full price, which is correct: a date with no published
+    card genuinely has to be built.
+    """
     now = datetime.now(timezone.utc)
+
+    frozen = card_mod.frozen_card(date)
+    if frozen is not None:
+        frozen["date"] = date
+        frozen["generated_at"] = now.isoformat()
+        frozen["model_basis"] = strength.MODEL_BASIS
+        # An honest freshness block for a row that is frozen ON PURPOSE. It
+        # describes when this payload was BUILT, which for a frozen card is
+        # when it was published -- not how old the prices on it are. The page
+        # warns about price age separately (web/js/card.js's
+        # `card-stale-prices`), and conflating the two would either cry stale
+        # about a card doing exactly what it promised, or hide a genuinely
+        # old quote behind a fresh-looking build time.
+        published = frozen.get("frozen_at")
+        age_s = None
+        if published:
+            try:
+                age_s = (now - datetime.fromisoformat(published)).total_seconds()
+            except (TypeError, ValueError):
+                age_s = None
+        frozen["freshness"] = {
+            "served_at": now.isoformat(),
+            "built_at": published,
+            "age_s": age_s,
+            "stale": False,
+            "stale_reason": None,
+        }
+        _record_page_view(request, route, date)
+        return frozen
+
+    entries, _notes, meta = _build_entries(date)
     # The moneyline board comes from the SAME builder the price board uses,
     # so the card and the board can never quote different best prices for
     # the same bet on the same page.
