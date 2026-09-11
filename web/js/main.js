@@ -78,8 +78,15 @@ const NAV_ITEMS = [
   //
   // That is the same attribution problem the record strip had on #/today,
   // one level up and worse: the nav label IS the question the reader is
-  // asking. #/performance stays reachable and unchanged -- it is a real
-  // research surface -- it just is not the answer to RESULTS.
+  // asking. #/performance is a real research surface -- it just is not the
+  // answer to RESULTS.
+  //
+  // THIS COMMENT USED TO SAY #/performance "stays reachable and unchanged".
+  // That was false for a day: the route still dispatched below, but taking
+  // it out of the nav left NOTHING in the app linking to it. Its entry
+  // point is now the footer's RESEARCH link (meta.js), which is mounted
+  // once and survives every view swap. A route reachable only by typing
+  // its URL is an orphan, whatever a comment beside it claims.
   { hash: "#/record-card", label: "RESULTS", glyph: "glyph--line" },
 ];
 

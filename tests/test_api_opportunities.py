@@ -38,12 +38,25 @@ def _schedule(date="2026-08-31"):
 
 class _ResetEntriesCache(unittest.TestCase):
     """Same cache-isolation rationale as tests/test_api_games.py: the two
-    modules share one `_entries_cache` inside api/games.py."""
+    modules share one `_entries_cache` inside api/games.py.
+
+    Including the two defects fixed there on 2026-09-11 -- mirror
+    production's stale window rather than dropping it, and put the module's
+    real cache back afterwards so the swap cannot outlive this file. See
+    that docstring for what the missing restore broke.
+    """
 
     def setUp(self):
+        if not _HAVE_FASTAPI:
+            return
+        self._real_entries_cache = games_mod._entries_cache
+        games_mod._entries_cache = freshness.SingleFlightTTLCache(
+            ttl_s=games_mod.ENTRIES_CACHE_TTL_S,
+            stale_while_revalidate_s=games_mod.ENTRIES_STALE_WINDOW_S)
+
+    def tearDown(self):
         if _HAVE_FASTAPI:
-            games_mod._entries_cache = freshness.SingleFlightTTLCache(
-                ttl_s=games_mod.ENTRIES_CACHE_TTL_S)
+            games_mod._entries_cache = self._real_entries_cache
 
 
 @unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")

@@ -150,8 +150,16 @@ class GamesEntriesCacheTests(unittest.TestCase):
     real route functions (same style as tests/test_api_games.py)."""
 
     def setUp(self):
+        # Mirror production's shape (stale window included) and put the real
+        # cache back in tearDown -- the same two defects fixed in
+        # tests/test_api_games.py on 2026-09-11, where the reasoning lives.
+        self._real_entries_cache = games_mod._entries_cache
         games_mod._entries_cache = freshness.SingleFlightTTLCache(
-            ttl_s=games_mod.ENTRIES_CACHE_TTL_S)
+            ttl_s=games_mod.ENTRIES_CACHE_TTL_S,
+            stale_while_revalidate_s=games_mod.ENTRIES_STALE_WINDOW_S)
+
+    def tearDown(self):
+        games_mod._entries_cache = self._real_entries_cache
 
     def test_freshness_key_is_additive_on_all_three_routes(self):
         with patch.object(mlb, "fetch_games", return_value=_schedule()):

@@ -54,9 +54,21 @@ class LandingPublicDemoEntryTests(unittest.TestCase):
         self.html = _read(LANDING_HTML)
 
     def test_fetches_meta_and_gates_on_public_demo(self):
-        self.assertIn("apiGet", self.js)
-        self.assertIn('"/meta"', self.js)
+        """The demo entry is gated on /meta's `public_demo`.
+
+        This used to assert `apiGet` and the literal "/meta" INSIDE
+        landing.js. Both moved when the page switched to meta.js's shared
+        `meta()` promise -- the landing page was making its own copy of a
+        request four other callers were already making, and the shared
+        promise is one request for all of them. The gate did not change; the
+        transport did. So the assertion is on the behaviour that matters,
+        plus a check that the request still exists where it now lives.
+        """
+        self.assertIn('from "./meta.js"', self.js)
         self.assertIn("public_demo", self.js)
+        meta_js = _read(LANDING_JS.parent / "meta.js")
+        self.assertIn("apiGet", meta_js)
+        self.assertIn('"/meta"', meta_js)
 
     def test_contains_the_literal_open_the_live_demo_copy(self):
         self.assertIn("OPEN THE LIVE DEMO", self.js + self.html)

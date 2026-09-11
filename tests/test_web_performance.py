@@ -59,8 +59,45 @@ class MainJsRegistersPerformanceRoute(unittest.TestCase):
         self.assertIn("renderPerformance", self.text)
 
     def test_hash_route_registered(self):
-        self.assertIn('"#/performance"', self.text)
+        """The router dispatches #/performance.
+
+        This used to also assert the literal `"#/performance"` appeared in
+        main.js, which was really asserting a NAV ENTRY while claiming to
+        test route registration. When RESULTS was repointed to
+        #/record-card the assertion failed against a router that was working
+        perfectly -- and, worse, it did not fail for the thing that had
+        actually broken. See `test_route_has_an_entry_point_somewhere`.
+        """
         self.assertIn('route === "performance"', self.text)
+
+    def test_route_has_an_entry_point_somewhere(self):
+        """Something a user can click must lead here.
+
+        Taking RESULTS out of the nav orphaned #/performance for a day: the
+        route dispatched, performance.js rendered, every test was green, and
+        the only hrefs left were dayrecap.js's "back to performance" --
+        reachable only FROM #/performance -- and a mention inside an HTML
+        comment on the landing page.
+
+        So this test deliberately ignores main.js and dayrecap.js and looks
+        for a link from a surface a visitor reaches without already being
+        there. A green suite proved the module worked; nothing proved
+        anything ran it.
+        """
+        entry_points = []
+        for path in sorted(WEB_JS.glob("*.js")):
+            if path.name in ("main.js", "dayrecap.js", "performance.js"):
+                continue
+            for line in _read(path).splitlines():
+                stripped = line.strip()
+                if stripped.startswith("*") or stripped.startswith("//"):
+                    continue
+                if 'href: "#/performance"' in line or "'#/performance'" in line:
+                    entry_points.append(f"{path.name}: {stripped[:70]}")
+        self.assertTrue(
+            entry_points,
+            "#/performance has no entry point outside itself -- the route "
+            "dispatches but nothing in the app links to it")
 
     def test_section_label_registered(self):
         self.assertIn("performance: \"PERFORMANCE\"", self.text)

@@ -147,6 +147,23 @@ export async function renderDisclaimerFooter(container) {
   // (see cardrecord.js's own docstring on why).
   row.appendChild(el("a", { class: "sitefoot__support", href: "#/record-card",
     "data-hook": "footer-record", text: "THE RECORD" }));
+  // RESEARCH (#/performance), for the same reason and after an ORPHANING.
+  //
+  // When RESULTS was repointed from #/performance to #/record-card
+  // (main.js, 2026-09-10) the comment justifying it claimed #/performance
+  // "stays reachable and unchanged". It did not. The route still dispatched
+  // and the module still rendered, but after that edit NOTHING IN THE APP
+  // LINKED TO IT -- the only remaining hrefs were dayrecap.js's "back to
+  // performance", reachable only from #/performance itself, and a mention
+  // inside an HTML COMMENT in landing.html.
+  //
+  // A route that only answers to a typed URL is not reachable, and the
+  // paper standings are where this product publishes its losers, which is
+  // the whole claim the landing page makes. Same fix as THE RECORD above,
+  // and tests/test_web_performance.py now asserts the link rather than
+  // asserting a nav entry while claiming to test the route.
+  row.appendChild(el("a", { class: "sitefoot__support", href: "#/performance",
+    "data-hook": "footer-performance", text: "RESEARCH" }));
   region.appendChild(row);
 
   region.appendChild(el("p", { class: "sitefoot__summary", "data-hook": "disclaimer-summary",

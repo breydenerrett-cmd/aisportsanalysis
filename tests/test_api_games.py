@@ -64,12 +64,35 @@ class _FakeRequest:
 
 
 class _ResetEntriesCache(unittest.TestCase):
-    """Shared setUp: see the module docstring's CACHE ISOLATION note."""
+    """Shared setUp: see the module docstring's CACHE ISOLATION note.
+
+    TWO THINGS THIS GOT WRONG UNTIL 2026-09-11, both silent.
+
+    It built the replacement with `ttl_s` ONLY, dropping
+    `ENTRIES_STALE_WINDOW_S`. Production serves stale past the TTL and
+    rebuilds behind the caller -- that is the fix for the spinning-slate
+    outage -- so every test in this file was exercising a cache shape the
+    app does not run.
+
+    And it never put the module's own cache back. The swap outlived the
+    class, so whichever of the three files touching `_entries_cache` ran
+    last left api.games holding a test double for the remainder of the
+    suite. `tests/test_stale_while_revalidate.py` failed on that: green
+    alone, red in the full run, asserting against an object this file had
+    replaced.
+    """
 
     def setUp(self):
+        if not _HAVE_FASTAPI:
+            return
+        self._real_entries_cache = games_mod._entries_cache
+        games_mod._entries_cache = freshness.SingleFlightTTLCache(
+            ttl_s=games_mod.ENTRIES_CACHE_TTL_S,
+            stale_while_revalidate_s=games_mod.ENTRIES_STALE_WINDOW_S)
+
+    def tearDown(self):
         if _HAVE_FASTAPI:
-            games_mod._entries_cache = freshness.SingleFlightTTLCache(
-                ttl_s=games_mod.ENTRIES_CACHE_TTL_S)
+            games_mod._entries_cache = self._real_entries_cache
 
 
 def _schedule(date="2026-08-31"):
@@ -263,25 +286,52 @@ class EnrichmentWiringTests(_ResetEntriesCache):
         return seen, fake_build_slate
 
     def _run(self, seen_builder, *, results=None, logs=None, pen_log=None,
-             lineup_rows=None, handedness=None, weather_rows=None):
+             pen_log_error=None, lineup_rows=None, handedness=None,
+             weather_rows=None):
         """Explicit names per store. Two of the readers are both called
         `read` (lineup_store.read, weather_capture.read), so keying patches
         by bare function name once handed the weather rows to the lineup
         store as well -- which is a list, and `.get` on it was the first
-        failure this test ever produced. Named by what they ARE instead."""
+        failure this test ever produced. Named by what they ARE instead.
+
+        `pen_log_error` exists because a caller CANNOT wrap this helper in
+        its own `with patch.object(bullpen, "read_log", ...)`. Two things
+        went wrong when one did, and both were silent:
+
+        1. The store patches here are started with `addCleanup`, which runs
+           at tearDown -- AFTER an enclosing `with` block has already
+           unwound. So the inner patcher's stop reinstated the OUTER mock
+           and left it installed for the rest of the process.
+           tests/test_pipeline_bullpen.py then failed with 'bad line', a
+           message from a mock in this file, but only when the two ran in
+           the same session.
+
+        2. This helper patches `read_log` again, after the enclosing `with`
+           took effect, so the outer mock never reached `_build_entries` at
+           all. The corrupt-log test passed while exercising an EMPTY log.
+
+        Raising behaviour therefore has to be installed by this helper, in
+        the same LIFO order as every other patch.
+        """
         from src.pipeline import (briefing, bullpen, history, lineup_store,
                                   lineups, pitchers, travel, weather_capture)
         seen, fake = seen_builder()
         targets = [
             (history, "read_results", results if results is not None else {}),
             (pitchers, "read_logs", logs if logs is not None else {}),
-            (bullpen, "read_log", pen_log if pen_log is not None else []),
             (lineup_store, "read", lineup_rows if lineup_rows is not None else {}),
             (lineups, "read_handedness", handedness if handedness is not None else {}),
             (weather_capture, "read", weather_rows if weather_rows is not None else []),
         ]
         patches = [patch.object(mod, name, return_value=value)
                    for mod, name, value in targets]
+        if pen_log_error is not None:
+            patches.append(patch.object(bullpen, "read_log",
+                                        side_effect=pen_log_error))
+        else:
+            patches.append(patch.object(
+                bullpen, "read_log",
+                return_value=pen_log if pen_log is not None else []))
         patches.append(patch.object(briefing, "build_slate", side_effect=fake))
         patches.append(patch.object(mlb, "fetch_games", return_value=_schedule()))
         patches.append(patch.object(travel, "travel_load",
@@ -338,7 +388,11 @@ class EnrichmentWiringTests(_ResetEntriesCache):
         self.assertNotIn("990101", seen["lineups_by_pk"])
 
     def test_a_corrupt_bullpen_log_is_a_gap_not_a_500(self):
+        # Through _run's own parameter, not an enclosing `with` -- see that
+        # helper's docstring for the two failures the `with` version caused,
+        # including this assertion passing against an empty log rather than
+        # a corrupt one.
         from src.pipeline import bullpen
-        with patch.object(bullpen, "read_log", side_effect=bullpen.BullpenError("bad line")):
-            seen = self._run(self._spy_slate)
+        seen = self._run(self._spy_slate,
+                         pen_log_error=bullpen.BullpenError("bad line"))
         self.assertIsNone(seen.get("bullpen_by_team"))

@@ -79,7 +79,12 @@ class RecordStripWiredIntoBothScreens(unittest.TestCase):
         # so this only ever compares the two actual DOM-append call sites.
         text = _read(TODAY_PATH)
         body = text.split("export async function renderToday(")[1]
-        strip_index = body.find("renderRecordStrip(recordStripHost)")
+        # renderCardRecordStrip since 2026-09-10: the strip used to show the
+        # detector systems' paper standings above the card's own picks,
+        # which answered "did YOUR picks win?" with another system's
+        # numbers. The ordering this test protects is unchanged; only the
+        # function that fills the slot is.
+        strip_index = body.find("renderCardRecordStrip(recordStripHost)")
         # Matched on the call's PREFIX, not its full argument list. Pinning
         # every argument made this break the day renderHero gained one
         # (`hasPicks`, so the hero could stop printing "NOTHING CLEARS THE
@@ -101,20 +106,41 @@ class MatchupsWiredIntoToday(unittest.TestCase):
         # before it can start -- see matchups.js's own note.
         self.assertIn("renderMatchups(host, date, today)", text)
 
-    def test_matchups_sits_between_opportunities_and_featured_bet(self):
+    def test_matchups_sits_above_the_featured_bet(self):
         # renderFeaturedSection is both declared and called in today.js --
         # scope to renderToday's own body so this compares actual DOM-
         # append call sites, not the earlier function declaration.
+        #
+        # TOP OPPORTUNITIES used to lead this ordering and no longer mounts
+        # at all (see the test below). What survives is the part that was
+        # ever about ordering: the matchup grid above the featured slot.
         text = _read(TODAY_PATH)
         body = text.split("export async function renderToday(")[1]
-        opp_index = body.find("renderOpportunities(host, date)")
         mx_index = body.find("renderMatchups(host, date, today)")
         featured_index = body.find("renderFeaturedSection(host, gapCandidate, rows.length)")
-        self.assertGreaterEqual(opp_index, 0)
         self.assertGreaterEqual(mx_index, 0)
         self.assertGreaterEqual(featured_index, 0)
-        self.assertLess(opp_index, mx_index)
         self.assertLess(mx_index, featured_index)
+
+    def test_top_opportunities_is_not_mounted_on_today(self):
+        """TOP OPPORTUNITIES must not come back to #/today by accident.
+
+        Its hero card was labelled TOP PLAY -- a client-invented string with
+        no backend equivalent; the API calls those rows `qualifying` and
+        ranks them by execution quality, not by how good a bet they are.
+        That component is what made a price gap read as a great pick, and
+        removing it was a deliberate product decision
+        (docs/PRODUCT_DOCTRINE.md).
+
+        The import is kept alive deliberately (`void renderOpportunities`)
+        so the module is not orphaned while the decision is revisited, which
+        is exactly why a grep for the NAME would not catch a regression.
+        This asserts on the CALL.
+        """
+        body = _read(TODAY_PATH).split("export async function renderToday(")[1]
+        self.assertEqual(
+            body.find("renderOpportunities(host"), -1,
+            "TOP OPPORTUNITIES is mounted on #/today again")
 
     def test_existing_today_data_hooks_kept_intact(self):
         # A short sample of today.js's pre-existing data-hooks that must
