@@ -558,6 +558,39 @@ export async function renderPerformance(container) {
   }
   clear(screen);
 
+  // WHOSE NUMBERS THESE ARE, SAID FIRST AND SAID LARGE.
+  //
+  // This page opens on "LAST 30 DAYS 143-97-3 · +47.48u · +19.8%". Those
+  // belong to the forward-test detector systems -- a research population of
+  // hundreds of paper positions from a different selection rule. They are
+  // NOT the card's record, which on 2026-09-10 was a single graded day.
+  //
+  // A caption under the strip already said "Our forward-test systems only".
+  // It was not enough three times running: the same numbers were mounted on
+  // the picks page above the card, and the RESULTS tab in the nav pointed
+  // here. Both are fixed. This is the third place, and small type under a
+  // big number is how it kept happening -- so the distinction goes ABOVE the
+  // number, in the reader's way, with a link to the record they came for.
+  const whose = el("section", { class: "perf-whose panel chamfer",
+    "data-hook": "performance-scope" });
+  whose.appendChild(el("p", { class: "perf-whose__eyebrow",
+    text: "RESEARCH — NOT THE CARD" }));
+  whose.appendChild(el("p", { class: "perf-whose__body",
+    // Reworded twice after tests/test_customer_language.py flagged it. The
+    // first draft used the banned customer noun this repo refuses to put in
+    // front of a reader; so did the comment explaining the first draft,
+    // because that scanner reads raw text rather than stripping comments.
+    // The tripwire was right both times -- the whole point of this banner is
+    // that it claims nothing.
+    text: "These are our research systems betting on paper — hundreds of "
+        + "positions, testing which ideas survive real games. They are not "
+        + "the picks we publish, and none of this money is real." }));
+  const link = el("a", { class: "perf-whose__link", href: "#/record-card",
+    "data-hook": "performance-to-record",
+    text: "The published card's own record →" });
+  whose.appendChild(link);
+  screen.appendChild(whose);
+
   // RECORD STRIP + DAILY RECAP GALLERY -- mounted above the existing
   // paper-standings content (see this module's own docstring update);
   // web/js/recordstrip.js and web/js/dayrecap.js own their own
