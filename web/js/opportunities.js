@@ -24,7 +24,7 @@
  * NOT JUST THE MONEYLINE -- the backend now prices every market, not only
  * h2h (`derivative_rows`: first-five lines, team/alternate totals,
  * alternate spreads, strikeout props). `qualifying` and `rows` already fold
- * these in for ranking/TOP PLAY purposes; this module additionally renders
+ * these in for ranking; this module additionally renders
  * the full derivative board in two pieces so a market that was CHECKED and
  * came up short never reads as ignored: "EVERY OTHER MARKET ON THE BOARD"
  * (the `derivative_priced` contracts that cleared the six-book floor, same
@@ -439,9 +439,9 @@ export async function renderOpportunities(container, date) {
   // alternate spreads, strikeout props), ranked by value_points alongside
   // each other so the day's best-priced derivative surfaces regardless of
   // which market it's in. `qualifying` above already folds these in when
-  // one is good enough to rank as a TOP PLAY -- this section is the full
-  // priced board underneath that, the same relationship `rows`/rankedTable
-  // has to the moneyline TOP PLAY.
+  // one ranks high enough to card -- this section is the full priced board
+  // underneath that, the same relationship `rows`/rankedTable has to the
+  // moneyline cards.
   const derivativeRows = payload.derivative_rows || [];
   const pricedDerivative = derivativeRows.filter((row) => row.price_verdict);
   if (derivativeRows.length) {

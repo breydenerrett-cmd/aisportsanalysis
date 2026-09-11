@@ -2957,10 +2957,17 @@
 
 .opp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--sp-8); margin-bottom: var(--sp-11); }
 
-/* The first card in a qualifying grid gets TOP PLAY hero treatment
-   (web/js/opportunities.js marks it `opp-card--hero` and adds the eyebrow
-   badge) -- spans the full row and everything in it reads bigger: this is
-   the one thing on the page this product stands behind tonight. */
+/* The first card in a qualifying grid gets hero LAYOUT -- spans the full row
+   and reads bigger (web/js/opportunities.js marks it `opp-card--hero`).
+
+   LAYOUT ONLY. It carries no eyebrow and no label. The words TOP PLAY sat
+   here until 2026-09-10, invented in the client and appearing nowhere in the
+   backend, which calls these rows `qualifying` and ranks them by
+   `value_points` -- execution quality, not a prediction. A reader took the
+   biggest price gap on the board as a system recommendation and told Brey
+   the site had called a great bet. Two words outweighed every disclaimer
+   beneath them. tests/test_today_one_answer.py pins the absence; do not
+   restore a label here. */
 .opp-card--hero { grid-column: 1 / -1; }
 
 .opp-card {
