@@ -235,9 +235,42 @@ def _why_sentences(pick) -> list:
             f"Our own numbers make it {model_pct} — we do not agree on this "
             f"one, and it is on the card because the slate was thin.")
     else:
-        out.append(
-            f"The market makes {pick['team_name']} a {market_pct} bet to win "
-            f"and our own numbers agree at {model_pct}.")
+        # "AGREE" USED TO MEAN TWO DIFFERENT THINGS IN ONE SENTENCE.
+        #
+        # `agrees` is a question about the WINNER -- `model_p > 0.5`, set in
+        # select(). It says nothing about price. But this sentence rendered
+        # it as agreement between two NUMBERS, and the two numbers are
+        # directly comparable: `confidence` is the de-vigged multi-book
+        # consensus and `model_probability` is Platt-calibrated, so both are
+        # honest probabilities of the same event.
+        #
+        # So on 2026-09-11 the live card read "the market makes Mariners a
+        # 60% bet to win and our own numbers agree at 54%" -- on four of its
+        # five picks the model was BELOW the market, which is the direction
+        # that removes the reason to bet, and the page called it agreement.
+        # A reader cannot be expected to notice that 54 < 60 undoes the
+        # sentence containing it.
+        #
+        # The fix is only wording. It changes no selection, no ranking and
+        # no pick count: the card still publishes what it published, it just
+        # stops describing a gap against us as though it were support.
+        gap_points = (pick["model_probability"] - pick["confidence"]) * 100.0
+        if abs(gap_points) < AGREEMENT_BAND_POINTS:
+            out.append(
+                f"The market makes {pick['team_name']} a {market_pct} bet to "
+                f"win and our own numbers land in the same place at "
+                f"{model_pct}.")
+        elif gap_points > 0:
+            out.append(
+                f"The market makes {pick['team_name']} a {market_pct} bet to "
+                f"win. Our own numbers make it {model_pct} — a little higher "
+                f"than the market, so the price is in your favour.")
+        else:
+            out.append(
+                f"The market makes {pick['team_name']} a {market_pct} bet to "
+                f"win. Our own numbers make it {model_pct} — lower than the "
+                f"market, so we agree on the winner but the price is against "
+                f"you. This is a read on the game, not value at this price.")
 
     alt = pick.get("alternative")
     if alt and alt.get("trade"):
@@ -279,6 +312,17 @@ def _price_note(best_price, consensus_probability, book, books) -> Optional[str]
 
 # Below this the price difference is inside the noise between two captures.
 PRICE_NOTE_FLOOR_POINTS = 1.0
+
+# How far the model probability has to sit from the de-vigged market
+# consensus before the card describes a DIRECTION rather than saying the two
+# landed in the same place. Both quantities are honest probabilities of the
+# same event, so the comparison is meaningful -- but the model is calibrated
+# on n=1896 and the consensus moves between captures, so a fraction of a
+# point apart is not a disagreement worth narrating. Two points is
+# deliberately wider than PRICE_NOTE_FLOOR_POINTS: that floor bounds capture
+# noise on one price, this one has to clear capture noise AND calibration
+# noise on two different estimates.
+AGREEMENT_BAND_POINTS = 2.0
 
 
 def _label(confidence: float, agrees: bool) -> str:

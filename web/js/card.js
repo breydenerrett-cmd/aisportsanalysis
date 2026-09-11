@@ -154,10 +154,13 @@ function pickCard(pick, total) {
 
   // THE LABEL MEANING LINE IS GONE, 2026-09-10.
   //
-  // A STRONG pick already carries a STRONG chip and a sentence reading "The
-  // market makes Yankees a 74% bet to win and our own numbers agree at 64%".
-  // Printing "The market and our numbers both make this side a clear
-  // favourite" under that says the same thing a third time in vaguer words.
+  // A STRONG pick already carries a STRONG chip and a sentence naming both
+  // probabilities and which way they differ (src/analysis/daily_card.py's
+  // `_why`). Printing "The market and our numbers both make this side a
+  // clear favourite" under that says the same thing a third time in vaguer
+  // words -- and on most picks it is not even true: the model usually sits
+  // BELOW the de-vigged market number, which is why that sentence stopped
+  // saying "our own numbers agree at X" on 2026-09-11.
   // LABEL_MEANING stays in this file for the tooltip and the legend, where
   // explaining the vocabulary is the whole point.
 

@@ -30,10 +30,29 @@ a different bet.
 
 THIN BOARDS ARE REPORTED, NOT HIDDEN AND NOT RESCUED
 ----------------------------------------------------
-Fewer books quote a first-five total than quote a moneyline, so most of
-these contracts fall below the six-book floor. Measured on 2026-09-07: 0 of
-6 first-five totals and 0 of 12 first-five spreads cleared it. Two things
-this module will not do about that:
+Fewer books quote a first-five total than quote a moneyline, so many of
+these contracts fall below the six-book floor.
+
+RE-MEASURED 2026-09-11, and the original note below was badly stale. It read
+"Measured on 2026-09-07: 0 of 6 first-five totals and 0 of 12 first-five
+spreads cleared it" -- a conclusion drawn when the board was 7 books deep.
+It is now 9, and the same floor, applied by this module's own
+`candidates_for_date` through `build_opportunities`, clears far more:
+
+    game_date    priced contracts (verdict, not thin)
+    2026-09-07   214
+    2026-09-08   394
+    2026-09-09   424   (alt totals 216, alt spreads 64, team totals 46,
+                        strikeouts 30, F5 h2h 26, F5 totals 26, F5 spreads 16)
+    2026-09-10   154
+
+So the supply is real and it is not first-five-only. The thinness claim
+above shaped a product decision -- the daily card takes moneyline rows only
+(api/card.py) -- and that decision now rests on a number that stopped being
+true. Recording it here rather than acting on it: changing what the card
+publishes is an owner call, not a docstring's.
+
+Two things this module will not do about thin boards:
 
   - It will not lower the floor for derivatives. A three-book consensus is
     a handful's opinion whatever market it is quoted in.
