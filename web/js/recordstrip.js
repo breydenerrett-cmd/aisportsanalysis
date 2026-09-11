@@ -29,13 +29,20 @@ function unitsFmt(n) {
 }
 
 function windowCell(window) {
+  // AN EMPTY WINDOW RENDERS NOTHING, 2026-09-10.
+  //
+  // It used to render a panel reading NO DATA over "No paper positions
+  // recorded in this window." TODAY is the empty one on most evenings --
+  // nothing has settled yet -- and it is the FIRST cell, so #/today opened
+  // on the words NO DATA with the real seven- and thirty-day records
+  // underneath it.
+  //
+  // Nothing is concealed by dropping it: a window with no settled positions
+  // has no record to report, and an empty box announcing that is worse than
+  // no box. The windows that HAVE results still show them, and if none does
+  // the caller says so once instead of three times.
+  if (!window) return null;
   const cell = el("div", { class: "rec-cell panel chamfer", "data-hook": "record-window" });
-  if (!window) {
-    cell.appendChild(el("div", { class: "rec-cell__label", text: "NO DATA" }));
-    cell.appendChild(el("p", { class: "rec-cell__empty",
-      text: "No paper positions recorded in this window." }));
-    return cell;
-  }
   cell.appendChild(el("div", { class: "rec-cell__label", text: window.label || "" }));
   const record = `${window.wins}-${window.losses}-${window.pushes}`;
   const units = unitsFmt(window.units_net);
@@ -84,9 +91,17 @@ export async function renderRecordStrip(container) {
   clear(strip);
 
   const cells = el("div", { class: "rec-strip__cells" });
-  cells.appendChild(windowCell(payload.today));
-  cells.appendChild(windowCell(payload.last_7));
-  cells.appendChild(windowCell(payload.last_30));
+  const rendered = [payload.today, payload.last_7, payload.last_30]
+    .map(windowCell)
+    .filter(Boolean);
+  for (const cell of rendered) cells.appendChild(cell);
+  // Every window empty is a real state -- a brand-new deploy, or a season
+  // break -- and it gets ONE honest line rather than three identical empty
+  // panels.
+  if (!rendered.length) {
+    cells.appendChild(el("p", { class: "rec-cell__empty", "data-hook": "record-none",
+      text: "Nothing settled yet — the record starts with the first graded card." }));
+  }
   strip.appendChild(cells);
 
   // Named explicitly (2026-09-09): before this the windows above pooled

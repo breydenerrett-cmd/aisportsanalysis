@@ -306,11 +306,17 @@ export async function renderCard(host, date) {
   // that makes the large one possible.
   if (payload.frozen) {
     const at = payload.frozen_at ? formatEasternTime(payload.frozen_at) : null;
+    // FORTY WORDS CUT TO TEN, 2026-09-10. It read: "Frozen at 10:36 AM ET --
+    // these are the exact bets and prices we committed to before first
+    // pitch, and they have not been touched since. Every one is graded win
+    // or lose on the record page, including the ones that lose."
+    //
+    // Every clause was true and the whole paragraph stood between a reader
+    // and the first bet on the page. The claim survives intact -- locked
+    // before first pitch, graded either way -- in a line someone will
+    // actually read. "Keep it minimal, to the point."
     wrap.appendChild(el("p", { class: "card2lede", "data-hook": "card-frozen",
-      text: `Frozen${at ? ` at ${at}` : ""} — these are the exact bets and `
-          + `prices we committed to before first pitch, and they have not `
-          + `been touched since. Every one is graded win or lose on the `
-          + `record page, including the ones that lose.` }));
+      text: `Locked${at ? ` at ${at}` : ""}, before first pitch. Graded after — win or lose.` }));
 
     // A FROZEN PRICE IS A HISTORICAL FACT, NOT A QUOTE. On a slate with an
     // early game the card freezes in the morning, and a reader arriving at
@@ -321,10 +327,8 @@ export async function renderCard(host, date) {
     if (ageHours !== null && ageHours >= STALE_PRICE_HOURS) {
       wrap.appendChild(el("p", { class: "card2lede card2lede--warn",
         "data-hook": "card-stale-prices",
-        text: `Those prices are ${Math.round(ageHours)} hours old. The bets `
-            + `are what we committed to; the numbers beside them have `
-            + `almost certainly moved, so check the current price before you `
-            + `take one.` }));
+        text: `These prices are ${Math.round(ageHours)} hours old — check the `
+            + `current number before you bet.` }));
     }
   } else {
     wrap.appendChild(el("p", { class: "card2lede", "data-hook": "card-live",
