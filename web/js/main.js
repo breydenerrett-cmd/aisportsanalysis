@@ -68,7 +68,19 @@ const NAV_ITEMS = [
   { hash: "#/betcheck", label: "CHECK", glyph: "glyph--circle" },
   { hash: "#/odds", label: "ODDS", glyph: "glyph--line" },
   { hash: "#/mybets", label: "BETS", glyph: "glyph--ticket" },
-  { hash: "#/performance", label: "RESULTS", glyph: "glyph--line" },
+  // RESULTS POINTS AT THE CARD'S RECORD, 2026-09-10.
+  //
+  // It pointed at #/performance, which is the forward-test detector systems'
+  // paper standings -- a different selection rule with its own numbers. So a
+  // reader who tapped RESULTS to answer "did your picks win?" was shown
+  // another system's results and had no reason to think otherwise, while the
+  // card's own record sat behind a small footer link.
+  //
+  // That is the same attribution problem the record strip had on #/today,
+  // one level up and worse: the nav label IS the question the reader is
+  // asking. #/performance stays reachable and unchanged -- it is a real
+  // research surface -- it just is not the answer to RESULTS.
+  { hash: "#/record-card", label: "RESULTS", glyph: "glyph--line" },
 ];
 
 // Route root -> the section label printed beside the wordmark.
