@@ -1029,3 +1029,6 @@
 {"fetched_utc": "2026-09-11T12:25:52.071102+00:00", "game_date": "2026-09-11", "poll": true}
 {"fetched_utc": "2026-09-11T13:10:52.550820+00:00", "game_date": "2026-09-11", "poll": true}
 {"fetched_utc": "2026-09-11T13:58:47.112380+00:00", "game_date": "2026-09-11", "poll": true}
+{"fetched_utc": "2026-09-11T14:40:58.312821+00:00", "game_date": "2026-09-11", "poll": true}
+{"category": "il_placement", "date": "2026-09-08", "first_seen_utc": "2026-09-11T14:40:58.312821+00:00", "player": "Lane Thomas", "player_id": 657041, "team": "ATL", "transaction_id": 942013}
+{"category": "recalled", "date": "2026-09-11", "first_seen_utc": "2026-09-11T14:40:58.312821+00:00", "player": "DaShawn Keirsey Jr.", "player_id": 680577, "team": "ATL", "transaction_id": 942012}
