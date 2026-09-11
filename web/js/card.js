@@ -292,14 +292,32 @@ export async function renderCard(host, date) {
   // Falling back to the most recently published card and SAYING SO is old
   // but honest, and it beats both an error and an empty state. It never
   // invents a card for a slate nobody has looked at.
-  async function lastPublishedCard() {
-    try {
-      const history = await apiGet("/card/history?limit=1");
-      const last = ((history && history.days) || [])[0];
-      return last && (last.picks || []).length ? last : null;
-    } catch (_err) {
-      return null;
+  // WALK BACK A DAY AT A TIME, and NOT through /card/history.
+  //
+  // /card/history was the obvious source and it is the wrong one: it lists
+  // SETTLED days, so tonight's card -- published this morning, graded
+  // tomorrow -- is not in it. On staging at 10:45pm it returned zero days
+  // while /card/2026-09-10 served three picks, and the fallback silently did
+  // nothing. Checked rather than assumed, after it failed once.
+  //
+  // Three days is the limit. Further back than that is not "last night's
+  // card" in any sense a reader would accept, and on a genuinely dead
+  // ledger this must stop asking rather than walk into the season opener.
+  async function lastPublishedCard(fromDate) {
+    const start = fromDate ? new Date(`${fromDate}T12:00:00Z`) : new Date();
+    if (Number.isNaN(start.getTime())) return null;
+    for (let back = 1; back <= 3; back += 1) {
+      const day = new Date(start.getTime() - back * 86400000)
+        .toISOString().slice(0, 10);
+      try {
+        const older = await apiGet(`/card/${day}`);
+        if (older && (older.picks || []).length) return older;
+      } catch (_err) {
+        // A day that will not load is not a reason to stop looking at the
+        // one before it.
+      }
     }
+    return null;
   }
 
   let payload;
@@ -311,7 +329,7 @@ export async function renderCard(host, date) {
       apiGet("/card/record").catch(() => null),
     ]);
   } catch (err) {
-    const last = await lastPublishedCard();
+    const last = await lastPublishedCard(date);
     if (!last) {
       // Both the card and the fallback are unreachable. This really is an
       // outage, and the ORIGINAL error is the one that describes it -- not
@@ -325,7 +343,7 @@ export async function renderCard(host, date) {
   }
 
   if (!(payload.picks || []).length) {
-    const last = await lastPublishedCard();
+    const last = await lastPublishedCard(payload.date || date);
     if (last) {
       payload = last;
       servingOlderCard = last.date || null;
