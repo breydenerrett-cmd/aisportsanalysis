@@ -14,7 +14,7 @@
   padding: 13px 24px;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 15px;
+  font-size: 16px;
   letter-spacing: .14em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -45,7 +45,7 @@
 }
 .btn--cyan:focus-visible { outline-color: #FFFFFF; }
 .btn--full { width: 100%; }
-.btn--lg { padding: 16px 28px; font-size: 16px; }
+.btn--lg { padding: 16px 28px; font-size: 17px; }
 
 /* ---- monogram chip ---------------------------------------------------*/
 .monogram {
@@ -55,7 +55,7 @@
   justify-content: center;
   width: 34px; height: 34px;
   font-family: var(--font-display);
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 700;
 }
 
@@ -85,7 +85,7 @@
 .price-was-label {
   margin-top: var(--sp-3);
   font-family: var(--font-display);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: .2em;
   color: rgba(255, 255, 255, .5);
@@ -99,7 +99,7 @@
   padding: 9px 16px;
   background: linear-gradient(120deg, var(--money), var(--money-2));
   font-family: var(--font-display);
-  font-size: 13px;
+  font-size: 14.5px;
   font-weight: 800;
   letter-spacing: .18em;
   color: var(--money-ink);
@@ -120,7 +120,7 @@
 .event-line__meta {
   display: flex; align-items: baseline; gap: var(--sp-5);
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 13.5px;
   color: var(--live);
   margin-bottom: var(--sp-2);
 }
@@ -128,7 +128,7 @@
   font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: .2em;
-  font-size: 11px;
+  font-size: 13px;
 }
 .event-line__category--risk { color: var(--money-lit); }
 .event-line__headline {
@@ -146,7 +146,7 @@
 }
 .stat-label {
   font-family: var(--font-display);
-  font-size: 10px;
+  font-size: 12.5px;
   font-weight: 700;
   letter-spacing: .16em;
   color: var(--text-faint);
@@ -166,7 +166,7 @@
   padding: 9px 20px;
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 13px;
+  font-size: 14.5px;
   letter-spacing: .1em;
   color: var(--text-mute);
   transition: background var(--dur-segment) ease, color var(--dur-segment) ease, box-shadow var(--dur-segment) ease;

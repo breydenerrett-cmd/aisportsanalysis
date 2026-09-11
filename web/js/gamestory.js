@@ -112,7 +112,7 @@ function starterColumn(section, side, teamAbbr, probable) {
   if (thin) col.appendChild(warnChip("THIN SAMPLE"));
 
   const starts = section[`${side}_sp_starts`];
-  const sample = typeof starts === "number" ? `n = ${starts} starts` : null;
+  const sample = typeof starts === "number" ? `${starts} starts` : null;
   const grid = el("div", { class: "gs-stats" });
   grid.appendChild(statCell("STARTS", typeof starts === "number" ? String(starts) : null, null));
   for (const { key, label, digits } of STARTER_STATS) {
@@ -300,7 +300,7 @@ function handednessLine(h) {
   if (typeof h.S === "number" && h.S > 0) parts.push(`${h.S} S`);
   if (typeof h.unknown === "number" && h.unknown > 0) parts.push(`${h.unknown} unknown`);
   if (!parts.length) return null;
-  const known = typeof h.known === "number" ? ` (n = ${h.known} known)` : "";
+  const known = typeof h.known === "number" ? ` (${h.known} known)` : "";
   return parts.join(" · ") + known;
 }
 

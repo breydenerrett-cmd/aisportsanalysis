@@ -226,7 +226,7 @@ function consensusPanel(consensus, spreadCents, awayAbbr, homeAbbr) {
   }
   panel.appendChild(cols);
   if (consensus && typeof consensus.books === "number") {
-    panel.appendChild(el("div", { class: "ov2-panel__sample", text: `n = ${consensus.books} books` }));
+    panel.appendChild(el("div", { class: "ov2-panel__sample", text: `across ${consensus.books} books` }));
   }
   return panel;
 }
@@ -522,7 +522,7 @@ function masthead(summary, games, freshLabel) {
   const stats = el("div", { class: "ov2-summary__stats" });
   stats.appendChild(statTile("BOOKS DISAGREE ON FAVOURITE",
     disagree === null ? "—" : String(disagree),
-    `n = ${gamesCount} game${gamesCount === 1 ? "" : "s"}`, { accent: true }));
+    `${gamesCount} game${gamesCount === 1 ? "" : "s"}`, { accent: true }));
   const widest = widestSpreadLabel(summary, games);
   stats.appendChild(statTile("WIDEST SPREAD",
     widest ? widest.matchup : "—",

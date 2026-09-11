@@ -65,7 +65,7 @@ html.gotcha-on body {
   padding: 6px 12px;
   border: 1px solid rgba(255, 61, 87, .5);
   font-family: var(--font-mono, monospace);
-  font-size: 10.5px;
+  font-size: 12.5px;
   letter-spacing: .16em;
   color: #FFB3BD;
 }
@@ -90,7 +90,7 @@ html.gotcha-on body {
 .gotcha-sub {
   margin: 16px auto 0;
   max-width: 52ch;
-  font-size: 14.5px;
+  font-size: 15px;
   line-height: 1.65;
   color: rgba(255, 255, 255, .68);
 }
@@ -117,7 +117,7 @@ html.gotcha-on body {
   display: block;
   margin-top: 7px;
   font-family: var(--font-mono, monospace);
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: .14em;
   color: rgba(255, 255, 255, .42);
 }
@@ -128,7 +128,7 @@ html.gotcha-on body {
 .gotcha-fineprint {
   margin: 22px 0 0;
   font-family: var(--font-mono, monospace);
-  font-size: 10px;
+  font-size: 12.5px;
   letter-spacing: .13em;
   line-height: 1.9;
   color: #FFB020;
@@ -157,7 +157,7 @@ html.gotcha-on body {
 .gotcha-nag {
   margin: 14px 0 0;
   font-family: var(--font-mono, monospace);
-  font-size: 9.5px;
+  font-size: 12px;
   letter-spacing: .12em;
   color: rgba(255, 255, 255, .3);
 }
@@ -175,7 +175,7 @@ html.gotcha-on body {
   padding: 9px 14px;
   border-bottom: 1px solid rgba(0, 224, 255, .18);
   font-family: var(--font-mono, monospace);
-  font-size: 10px;
+  font-size: 12.5px;
   letter-spacing: .12em;
   color: #9FE9F5;
 }
@@ -280,7 +280,7 @@ html.gotcha-on body {
 .gotcha-reveal__credit {
   margin: 18px auto 0;
   max-width: 56ch;
-  font-size: 13px;
+  font-size: 14.5px;
   line-height: 1.7;
   color: rgba(255, 255, 255, .55);
 }
@@ -292,7 +292,7 @@ html.gotcha-on body {
   border: 1px solid rgba(255, 255, 255, .25);
   background: transparent;
   font-family: var(--font-mono, monospace);
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: .14em;
   color: #fff;
   transition: transform .25s cubic-bezier(.2, .8, .2, 1);

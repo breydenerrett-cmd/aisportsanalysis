@@ -21,12 +21,12 @@
 .card2lede {
   margin: 0 0 var(--sp-8);
   font-family: var(--font-body);
-  font-size: 13.5px;
+  font-size: 14.5px;
   line-height: 1.5;
   color: var(--text-3);
   max-width: 62ch;
 }
-.card2lede--mute { color: var(--text-mute); font-size: 12.5px; }
+.card2lede--mute { color: var(--text-mute); font-size: 13.5px; }
 /* Amber, per the system's own rule: know this. Not red -- a stale price is
    a caution, not a booked loss. */
 .card2lede--warn { color: var(--v-warn-label); }
@@ -79,13 +79,13 @@
 }
 .card2__rank {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12.5px;
   letter-spacing: .16em;
   color: var(--text-dim);
 }
 .card2__label {
   font-family: var(--font-display);
-  font-size: 11.5px;
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: .18em;
   padding: 2px 7px;
@@ -99,7 +99,7 @@
 .card2__time {
   margin-left: auto;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12.5px;
   letter-spacing: .12em;
   color: var(--text-dim);
   white-space: nowrap;
@@ -128,14 +128,14 @@
 }
 .card2__teams {
   font-family: var(--font-display);
-  font-size: 13px;
+  font-size: 14.5px;
   font-weight: 600;
   letter-spacing: .1em;
   color: var(--text-2);
 }
 .card2__book {
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 12.5px;
   letter-spacing: .1em;
   color: var(--text-faint);
 }
@@ -150,7 +150,7 @@
 .card2__whyline {
   margin: 0;
   font-family: var(--font-body);
-  font-size: 13.5px;
+  font-size: 14.5px;
   line-height: 1.55;
   color: var(--text-2);
 }
@@ -170,7 +170,7 @@
 .card2__alt-label {
   flex: none;
   font-family: var(--font-display);
-  font-size: 10.5px;
+  font-size: 12.5px;
   font-weight: 800;
   letter-spacing: .2em;
   color: var(--text-dim);
@@ -183,14 +183,14 @@
 }
 .card2__alt-bet {
   font-family: var(--font-display);
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: .01em;
   color: var(--text-2);
 }
 .card2__alt-book {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12.5px;
   letter-spacing: .1em;
   color: var(--text-dim);
 }
@@ -198,7 +198,7 @@
 .card2__meaning {
   margin: 0;
   font-family: var(--font-body);
-  font-size: 12px;
+  font-size: 13.5px;
   line-height: 1.5;
   color: var(--text-mute);
 }
@@ -220,7 +220,7 @@
 .card2rec__label {
   display: block;
   font-family: var(--font-display);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: .2em;
   color: var(--text-mute);
@@ -242,14 +242,14 @@
 }
 .card2rec__meta {
   font-family: var(--font-mono);
-  font-size: 11.5px;
+  font-size: 13px;
   letter-spacing: .06em;
   color: var(--text-3);
 }
 .card2rec__body {
   margin: var(--sp-4) 0 0;
   font-family: var(--font-body);
-  font-size: 12.5px;
+  font-size: 13.5px;
   line-height: 1.5;
   color: var(--text-mute);
   max-width: 68ch;
@@ -257,7 +257,7 @@
 .card2rec__warn {
   margin: var(--sp-4) 0 0;
   font-family: var(--font-body);
-  font-size: 12.5px;
+  font-size: 13.5px;
   line-height: 1.5;
   color: var(--v-warn-label);
 }
@@ -265,7 +265,7 @@
   display: inline-block;
   margin-top: var(--sp-5);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: .06em;
   color: var(--v-live-label);
 }
@@ -283,7 +283,7 @@
 .card2note__label {
   display: block;
   font-family: var(--font-display);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: .2em;
   color: var(--text-mute);
@@ -292,16 +292,16 @@
 .card2note__body {
   margin: 0 0 var(--sp-4);
   font-family: var(--font-body);
-  font-size: 13px;
+  font-size: 14.5px;
   line-height: 1.55;
   color: var(--text-3);
   max-width: 72ch;
 }
-.card2note__body--mute { color: var(--text-mute); font-size: 12.5px; margin-bottom: 0; }
+.card2note__body--mute { color: var(--text-mute); font-size: 13.5px; margin-bottom: 0; }
 .card2note__warn {
   margin: var(--sp-5) 0 0;
   font-family: var(--font-body);
-  font-size: 12.5px;
+  font-size: 13.5px;
   line-height: 1.5;
   color: var(--v-warn-label);
 }
@@ -315,7 +315,7 @@
 .card2empty__label {
   display: block;
   font-family: var(--font-display);
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 800;
   letter-spacing: .2em;
   color: var(--v-warn-label);
@@ -356,13 +356,13 @@
 
 .crp-screen { padding: var(--sp-9) var(--gutter-desktop) var(--sp-15); display: flex; flex-direction: column;
   gap: var(--sp-9); }
-.crp-intro { margin: 0; max-width: 68ch; font-size: 13.5px; line-height: 1.55; color: var(--text-3); }
+.crp-intro { margin: 0; max-width: 68ch; font-size: 14.5px; line-height: 1.55; color: var(--text-3); }
 
 .crp-headline { padding: var(--sp-9) var(--sp-10); }
 .crp-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: var(--sp-8); }
 .crp-stat { display: flex; flex-direction: column; gap: var(--sp-3); }
 .crp-stat__label {
-  font-family: var(--font-display); font-size: 10px; font-weight: 800; letter-spacing: .14em;
+  font-family: var(--font-display); font-size: 12.5px; font-weight: 800; letter-spacing: .14em;
   color: var(--text-mute);
 }
 /* SAME size, SAME weight for every stat here, wins and losses included --
@@ -378,40 +378,40 @@
 .crp-stat__figure--warn { color: var(--v-warn-label); }
 .crp-stat__figure--absent { font-style: normal; color: var(--text-ghost); }
 
-.crp-voids { margin: 0; max-width: 68ch; font-size: 12.5px; line-height: 1.5; color: var(--text-mute); }
+.crp-voids { margin: 0; max-width: 68ch; font-size: 13.5px; line-height: 1.5; color: var(--text-mute); }
 
 .crp-chain { padding: var(--sp-7) var(--sp-8); }
 .crp-chain__label {
-  display: block; font-family: var(--font-display); font-size: 11px; font-weight: 800;
+  display: block; font-family: var(--font-display); font-size: 13px; font-weight: 800;
   letter-spacing: .18em; color: var(--text-mute); margin-bottom: var(--sp-4);
 }
-.crp-chain__body { margin: 0; max-width: 72ch; font-size: 13px; line-height: 1.55; color: var(--text-3); }
-.crp-chain__warn { margin: 0; max-width: 72ch; font-size: 13px; line-height: 1.55; color: var(--v-warn-label); }
-.crp-chain__detail { margin-top: var(--sp-4); font-size: 11.5px; color: var(--text-mute); }
+.crp-chain__body { margin: 0; max-width: 72ch; font-size: 14.5px; line-height: 1.55; color: var(--text-3); }
+.crp-chain__warn { margin: 0; max-width: 72ch; font-size: 14.5px; line-height: 1.55; color: var(--v-warn-label); }
+.crp-chain__detail { margin-top: var(--sp-4); font-size: 13px; color: var(--text-mute); }
 .crp-chain__detail summary { cursor: pointer; }
 
 .crp-days { display: flex; flex-direction: column; gap: var(--sp-8); }
 .crp-day { padding: var(--sp-7); display: flex; flex-direction: column; gap: var(--sp-5); }
 .crp-day__head { display: flex; align-items: baseline; gap: var(--sp-5); flex-wrap: wrap; }
 .crp-day__date {
-  font-family: var(--font-display); font-style: italic; font-size: 16px; font-weight: 800; color: var(--text-hi);
+  font-family: var(--font-display); font-style: italic; font-size: 17px; font-weight: 800; color: var(--text-hi);
 }
-.crp-day__record { font-family: var(--font-mono); font-size: 13px; color: var(--text-2); }
-.crp-day__voids { font-family: var(--font-mono); font-size: 11px; color: var(--v-warn-label); }
-.crp-day__net { margin-left: auto; font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--text-2); }
+.crp-day__record { font-family: var(--font-mono); font-size: 14.5px; color: var(--text-2); }
+.crp-day__voids { font-family: var(--font-mono); font-size: 13px; color: var(--v-warn-label); }
+.crp-day__net { margin-left: auto; font-family: var(--font-mono); font-size: 14.5px; font-weight: 700; color: var(--text-2); }
 .crp-day__net--pos { color: var(--v-win-lit); }
 .crp-day__net--neg { color: var(--v-money-lit); }
 .crp-day__hash {
-  margin: 0; font-family: var(--font-mono); font-size: 10px; letter-spacing: .01em; color: var(--text-ghost);
+  margin: 0; font-family: var(--font-mono); font-size: 12.5px; letter-spacing: .01em; color: var(--text-ghost);
   word-break: break-all;
 }
 
 .crp-pick-bet { display: flex; flex-direction: column; gap: 2px; max-width: 320px; }
-.crp-pick-bet__text { font-size: 13px; font-weight: 600; color: var(--text-2); }
-.crp-pick-bet__label { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .1em; color: var(--text-dim); }
+.crp-pick-bet__text { font-size: 14.5px; font-weight: 600; color: var(--text-2); }
+.crp-pick-bet__label { font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em; color: var(--text-dim); }
 .crp-pick-result { white-space: nowrap; }
 .crp-pick-reason, .crp-pick-score {
-  margin: 3px 0 0; font-family: var(--font-mono); font-size: 10.5px; color: var(--text-mute); white-space: normal;
+  margin: 3px 0 0; font-family: var(--font-mono); font-size: 12.5px; color: var(--text-mute); white-space: normal;
 }
 .crp-figure--pos { color: var(--v-win-lit); }
 .crp-figure--neg { color: var(--v-money-lit); }
@@ -424,7 +424,7 @@
   background: rgba(255, 255, 255, .07); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2); color: var(--text-3);
 }
 
-.crp-disclaimer { margin: 0; max-width: 72ch; font-size: 12.5px; line-height: 1.55; color: var(--text-mute); }
+.crp-disclaimer { margin: 0; max-width: 72ch; font-size: 13.5px; line-height: 1.55; color: var(--text-mute); }
 
 @media (max-width: 899px) {
   .crp-screen { padding: var(--sp-7) var(--gutter-mobile) var(--sp-13); gap: var(--sp-7); }

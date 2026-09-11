@@ -247,7 +247,7 @@ function teamRecordParts(teams, key) {
   const l = teams[`${key}_losses`];
   const n = teams[`${key}_games_played`];
   const text = (typeof w === "number" && typeof l === "number") ? `${w}-${l}` : null;
-  const sample = typeof n === "number" ? `n = ${n} games` : null;
+  const sample = typeof n === "number" ? `${n} games` : null;
   return { text, sample };
 }
 
@@ -433,7 +433,7 @@ function gqvPrice(quick) {
   panel.appendChild(cols);
 
   if (typeof price.books === "number") {
-    panel.appendChild(el("div", { class: "gqv-price__meta", text: `n = ${price.books} books` }));
+    panel.appendChild(el("div", { class: "gqv-price__meta", text: `across ${price.books} books` }));
   }
   if (price.label) {
     panel.appendChild(el("p", { class: "gqv-price__labeltext", text: String(price.label).toUpperCase() }));
@@ -855,11 +855,24 @@ function gqvModelVsMarket(payload, quick) {
   }
   wrap.appendChild(cols);
 
-  const engine = payload && payload.engine ? payload.engine : null;
-  wrap.appendChild(el("p", { class: "gmv__model-line",
-    text: `INDEPENDENT MODEL: NO INDEPENDENT MODEL YET · engine provenance: ${provenanceLine(engine && engine.provenance_counts)}` }));
-
-  wrap.appendChild(engineDecisionsList(engine));
+  // ENGINE TELEMETRY IS NOT QUICK VIEW. Removed 2026-09-10.
+  //
+  // This used to append, to the FIRST screen a reader lands on: a line
+  // reading "INDEPENDENT MODEL: NO INDEPENDENT MODEL YET · engine
+  // provenance: market-derived: 206, placeholder: 103, none: 16", then
+  // ENGINE DECISIONS -- 325 rows of raw system hashes like
+  // `4703ed67882a9d2b` each with a collapsed Thesis -- then a panel headed
+  // 207 FATAL COUNTERARGUMENTS listing "board was 14.2 hr old at decision
+  // time; the limit is 30 min (3 systems)" twenty-five times over.
+  //
+  // Every line of it is true and every line of it is for us. The owner,
+  // looking at that screen: "there's just a lot of AI slop language and a
+  // lot of fluff... make it impactful, concise, to the point, make them
+  // want to see our bets."
+  //
+  // It now lives under SHOW ADVANCED ANALYSIS, which is where a reader goes
+  // when they want the machinery. Nothing is deleted and no payload field
+  // stopped being rendered -- it moved to the layer that asks for it.
   return wrap;
 }
 
@@ -897,7 +910,7 @@ function windowWins(teams, key, window) {
   if (typeof wins !== "number") return null;
   return {
     text: `${wins} WIN${wins === 1 ? "" : "S"}`,
-    sample: typeof games === "number" ? `n = ${games} games` : null,
+    sample: typeof games === "number" ? `${games} games` : null,
   };
 }
 
@@ -913,7 +926,7 @@ function gqvTeams(advanced, quick) {
   const grid = el("div", { class: "gqv-stats" });
   for (const [key, label] of [["away", quick.away_team], ["home", quick.home_team]]) {
     const n = typeof teams[`${key}_games_played`] === "number"
-      ? `n = ${teams[`${key}_games_played`]} games` : null;
+      ? `${teams[`${key}_games_played`]} games` : null;
     const w = teams[`${key}_wins`];
     const l = teams[`${key}_losses`];
     grid.appendChild(gqvStatCell(`${label} RECORD`,
@@ -981,7 +994,7 @@ function sectionFact(name, section) {
   if (name === "park") return section.name || null;
   if (name === "price_improvement") {
     const books = section.dispersion && section.dispersion.books;
-    return typeof books === "number" ? `n = ${books} books` : null;
+    return typeof books === "number" ? `across ${books} books` : null;
   }
   if (name === "multibook_board") {
     const n = Array.isArray(section.quotes) ? section.quotes.length : null;
@@ -993,7 +1006,7 @@ function sectionFact(name, section) {
   }
   if (name === "teams") {
     const n = section.away_games_played;
-    return typeof n === "number" ? `n = ${n} games` : null;
+    return typeof n === "number" ? `${n} games` : null;
   }
   return null;
 }
@@ -1193,7 +1206,7 @@ function gavBoard(advanced, quick) {
   block.appendChild(scroll);
   block.appendChild(el("p", { class: "gav-board__note",
     text: `Replaces the old stat-versus-stat table -- FIP, WHIP and K-BB% are gaps, not data. `
-        + `Every figure n = ${board.quotes.length} books.` }));
+        + `Across ${board.quotes.length} books.` }));
   return block;
 }
 
@@ -1277,6 +1290,12 @@ export async function renderGameDetail(container, date, away, home) {
   const advHost = el("div", { id: "game-advanced-host" });
   advHost.hidden = true;
   advHost.appendChild(renderAdvancedV2(advanced, quick));
+  // The engine's own record, moved off the quick view -- see the comment at
+  // the end of gqvModelVsMarket for what it was doing to the first screen.
+  const engine = payload && payload.engine ? payload.engine : null;
+  advHost.appendChild(el("p", { class: "gmv__model-line",
+    text: `INDEPENDENT MODEL: NO INDEPENDENT MODEL YET · engine provenance: ${provenanceLine(engine && engine.provenance_counts)}` }));
+  advHost.appendChild(engineDecisionsList(engine));
   body.appendChild(advHost);
 
   toggle.addEventListener("click", () => {

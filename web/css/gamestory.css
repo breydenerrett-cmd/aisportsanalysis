@@ -15,7 +15,7 @@
 
 .gs-story__head {
   font-family: var(--font-display);
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 800;
   letter-spacing: .22em;
   color: var(--v-t4);
@@ -35,7 +35,7 @@
 
 .gs-panel__eyebrow {
   font-family: var(--font-display);
-  font-size: 10.5px;
+  font-size: 12.5px;
   font-weight: 800;
   letter-spacing: .2em;
   color: var(--v-t5);
@@ -58,7 +58,7 @@
 
 .gs-col__head {
   font-family: var(--font-display);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: .12em;
   color: var(--v-t2);
@@ -66,7 +66,7 @@
 }
 
 .gs-col__absent {
-  font-size: 12.5px;
+  font-size: 13.5px;
   line-height: 1.5;
   color: var(--v-t5);
 }
@@ -88,7 +88,7 @@
 
 .gs-stat__label {
   font-family: var(--font-display);
-  font-size: 8.5px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: .13em;
   color: var(--v-t6);
@@ -97,14 +97,14 @@
 
 .gs-stat__value {
   font-family: var(--font-mono);
-  font-size: 15px;
+  font-size: 16px;
   color: var(--v-t1);
 }
 
 .gs-stat__n {
   margin-top: var(--sp-2);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 12px;
   color: var(--v-t7);
 }
 
@@ -124,7 +124,7 @@
 
 .gs-fact__label {
   font-family: var(--font-display);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: .11em;
   color: var(--v-t6);
@@ -132,14 +132,14 @@
 
 .gs-fact__value {
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 13.5px;
   color: var(--v-t2);
   text-align: right;
 }
 
 .gs-fact__reason {
   font-family: var(--font-body);
-  font-size: 11.5px;
+  font-size: 13px;
   color: var(--v-t5);
 }
 
@@ -147,7 +147,7 @@
    forecast timing, travel reason) -------------------------------------- */
 .gs-note {
   margin: var(--sp-4) 0 0;
-  font-size: 12.5px;
+  font-size: 13.5px;
   line-height: 1.5;
   color: var(--v-t4);
 }
@@ -161,7 +161,7 @@
 
 .gs-diffrow__label {
   font-family: var(--font-display);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: .13em;
   color: var(--v-t6);
@@ -176,7 +176,7 @@
 
 .gs-diffchip {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 13px;
   padding: 4px 9px;
   background: rgba(255, 255, 255, .06);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12);
@@ -212,14 +212,14 @@
 
 .gs-reliever__name {
   font-family: var(--font-body);
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 600;
   color: var(--v-t1);
 }
 
 .gs-reliever__meta {
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 12.5px;
   color: var(--v-t6);
 }
 
@@ -243,7 +243,7 @@
 
 .gs-lineup__order {
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 12.5px;
   color: var(--v-t6);
   width: 1.4em;
   flex: none;
@@ -251,7 +251,7 @@
 
 .gs-lineup__name {
   font-family: var(--font-body);
-  font-size: 12.5px;
+  font-size: 13.5px;
   color: var(--v-t2);
   flex: 1 1 auto;
   min-width: 0;
@@ -260,7 +260,7 @@
 
 .gs-lineup__pos {
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 12.5px;
   color: var(--v-t6);
   flex: none;
 }
@@ -278,9 +278,9 @@
    payload's own sentence. Anything not "available" takes the warn tone
    so a taxed arm is visible at a glance, never buried in a meta line. */
 .gs-reliever__avail { display: inline-block; margin-left: 8px; padding: 2px 7px;
-  font-family: var(--font-display); font-size: 9.5px; font-weight: 800; letter-spacing: .12em;
+  font-family: var(--font-display); font-size: 12px; font-weight: 800; letter-spacing: .12em;
   color: var(--v-win-label, var(--v-t3)); background: rgba(46, 204, 113, .12);
   box-shadow: inset 0 0 0 1px rgba(46, 204, 113, .35); vertical-align: middle; }
 .gs-reliever__avail--warn { color: var(--v-warn-label, #FFB020); background: rgba(255, 176, 32, .13);
   box-shadow: inset 0 0 0 1px rgba(255, 176, 32, .4); }
-.gs-reliever__why { display: block; margin-top: 2px; font-size: 11.5px; line-height: 1.45; color: var(--v-t5); }
+.gs-reliever__why { display: block; margin-top: 2px; font-size: 13px; line-height: 1.45; color: var(--v-t5); }

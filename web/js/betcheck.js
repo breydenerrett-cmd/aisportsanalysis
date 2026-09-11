@@ -148,7 +148,7 @@ function claimText(claim) {
   const text = claim.statement || claim.text || claim.claim || claim.headline || claim.summary || null;
   let sample = null;
   if (claim.sample_n !== undefined && claim.sample_n !== null) {
-    sample = claim.sample_unit ? `n = ${claim.sample_n} ${claim.sample_unit}` : `n = ${claim.sample_n}`;
+    sample = claim.sample_unit ? `${claim.sample_n} ${claim.sample_unit}` : `${claim.sample_n}`;
   }
   return { text, sample, raw: claim };
 }
@@ -328,7 +328,7 @@ function renderMarket(result) {
     row.appendChild(el("span", { class: "bc2-market__figure", "data-hook": "market-consensus",
       text: formatConsensusShare(consensus.implied_probability) }));
     if (typeof consensus.books === "number") {
-      row.appendChild(el("span", { class: "bc2-market__sample", text: `n = ${consensus.books} books` }));
+      row.appendChild(el("span", { class: "bc2-market__sample", text: `across ${consensus.books} books` }));
     }
     cell.appendChild(row);
     cells.appendChild(cell);

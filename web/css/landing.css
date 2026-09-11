@@ -31,7 +31,7 @@
   color: var(--text-hi);
 }
 .section__lede {
-  font-size: 16.5px;
+  font-size: 17px;
   line-height: 1.55;
   color: var(--text-mute);
   max-width: 700px;
@@ -88,7 +88,7 @@
   border-top: 2px solid rgba(0, 224, 255, .7);
 }
 .hero__scanner-text {
-  font-family: var(--font-display); font-size: 13px; font-weight: 700;
+  font-family: var(--font-display); font-size: 14.5px; font-weight: 700;
   letter-spacing: .28em; color: var(--live-label);
 }
 .hero__matchup {
@@ -113,10 +113,10 @@
 }
 .hero__team--home .hero__team-meta { justify-content: flex-end; }
 .hero__team-record { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: .06em; }
-.hero__team-pitcher { font-family: var(--font-mono); font-size: 11px; letter-spacing: .14em; color: rgba(255, 255, 255, .55); }
+.hero__team-pitcher { font-family: var(--font-mono); font-size: 13px; letter-spacing: .14em; color: rgba(255, 255, 255, .55); }
 .hero__vs { flex: none; display: flex; flex-direction: column; align-items: center; gap: var(--sp-3); }
 .hero__vs-text { font-family: var(--font-display); font-style: italic; font-size: 26px; font-weight: 800; letter-spacing: .06em; color: rgba(255, 255, 255, .34); }
-.hero__vs-time { font-family: var(--font-mono); font-size: 10px; letter-spacing: .16em; color: rgba(255, 255, 255, .42); white-space: nowrap; }
+.hero__vs-time { font-family: var(--font-mono); font-size: 12.5px; letter-spacing: .16em; color: rgba(255, 255, 255, .42); white-space: nowrap; }
 .hero__spacer { flex: 1; min-height: 20px; }
 .hero__scrim {
   position: absolute; left: 0; right: 0; bottom: 0; height: 340px; pointer-events: none;
@@ -145,10 +145,10 @@
 }
 .hero__price-eyebrow { display: flex; align-items: center; gap: var(--sp-4); margin-bottom: var(--sp-4); white-space: nowrap; }
 .hero__price-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--money-lit); box-shadow: 0 0 14px rgba(255, 61, 87, .9); }
-.hero__price-label { font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: .24em; color: var(--money-label); }
+.hero__price-label { font-family: var(--font-display); font-size: 14.5px; font-weight: 700; letter-spacing: .24em; color: var(--money-label); }
 .hero__price-row { display: flex; align-items: flex-end; gap: var(--sp-10); }
 .hero__cta-group { display: flex; flex-direction: column; gap: var(--sp-5); align-items: flex-start; }
-.hero__cta-note { font-size: 13px; color: var(--text-dim); max-width: 320px; }
+.hero__cta-note { font-size: 14.5px; color: var(--text-dim); max-width: 320px; }
 /* ---- public-demo front-door entry (hidden unless GET /meta says
    public_demo -- see landing.js's revealPublicDemoEntry) --------------*/
 .hero__demo-entry { display: flex; flex-direction: column; gap: var(--sp-3); align-items: flex-start; }
@@ -163,18 +163,18 @@
   padding: var(--sp-9) var(--sp-9);
   --r: var(--r-panel);
 }
-.story-card__kicker { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .14em; color: var(--money-soft); margin-bottom: var(--sp-4); }
+.story-card__kicker { font-family: var(--font-mono); font-size: 12.5px; letter-spacing: .14em; color: var(--money-soft); margin-bottom: var(--sp-4); }
 .story-card__title { font-family: var(--font-display); font-style: italic; font-weight: 800; font-size: 24px; line-height: 1.05; color: var(--text-hi); margin-bottom: var(--sp-4); }
-.story-card__body { font-size: 14px; line-height: 1.5; color: var(--text-mute); }
+.story-card__body { font-size: 15px; line-height: 1.5; color: var(--text-mute); }
 
 /* ---- honesty / evidence sections -----------------------------------*/
-.prose { max-width: 780px; font-size: 16px; line-height: 1.6; color: var(--text-2); }
+.prose { max-width: 780px; font-size: 17px; line-height: 1.6; color: var(--text-2); }
 .prose + .prose { margin-top: var(--sp-7); }
 .callout-list { display: grid; gap: var(--sp-5); margin-top: var(--sp-9); }
 .callout-list li {
   padding: var(--sp-7);
   --r: var(--r-panel);
-  font-size: 14.5px; line-height: 1.55; color: var(--text-3);
+  font-size: 15px; line-height: 1.55; color: var(--text-3);
 }
 
 .evidence-ladder { display: flex; flex-direction: column; gap: var(--sp-3); margin: var(--sp-9) 0; }
@@ -189,11 +189,11 @@
   box-shadow: 0 0 14px var(--live);
 }
 .evidence-ladder__name {
-  font-family: var(--font-display); font-size: 13px; font-weight: 600;
+  font-family: var(--font-display); font-size: 14.5px; font-weight: 600;
   letter-spacing: .14em; color: var(--text-faint); white-space: nowrap;
 }
 .evidence-ladder__rung--current .evidence-ladder__name { font-weight: 700; color: var(--text); }
-.evidence-ladder__flag { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .14em; color: var(--live); }
+.evidence-ladder__flag { font-family: var(--font-mono); font-size: 12px; letter-spacing: .14em; color: var(--live); }
 
 /* ---- slate rail -------------------------------------------------- */
 .slate-rail {
@@ -226,8 +226,8 @@
 .tile__matchup { position: absolute; left: var(--sp-6); top: var(--sp-6); font-family: var(--font-display); font-style: italic; font-weight: 800; font-size: 36px; color: var(--text-hi); }
 .tile__prices { position: absolute; left: var(--sp-6); bottom: var(--sp-6); display: flex; align-items: baseline; gap: var(--sp-5); }
 .tile__meta { position: absolute; right: var(--sp-6); bottom: var(--sp-6); text-align: right; }
-.tile__venue { font-family: var(--font-display); font-size: 11px; font-weight: 600; color: var(--text-mute); }
-.tile__first-pitch { font-family: var(--font-mono); font-size: 11px; color: var(--live); }
+.tile__venue { font-family: var(--font-display); font-size: 13px; font-weight: 600; color: var(--text-mute); }
+.tile__first-pitch { font-family: var(--font-mono); font-size: 13px; color: var(--live); }
 
 /* ---- demo panels (Bet Check / price comparison / movement) --------*/
 .demo-panel {
@@ -241,8 +241,8 @@
 }
 .demo-block { padding: var(--sp-7) 0; box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .06); }
 .demo-block:last-child { box-shadow: none; }
-.demo-block__label { font-family: var(--font-display); font-size: 10.5px; font-weight: 700; letter-spacing: .2em; color: var(--text-faint); margin-bottom: var(--sp-4); }
-.demo-block__body { font-size: 15px; line-height: 1.55; color: var(--text-2); }
+.demo-block__label { font-family: var(--font-display); font-size: 12.5px; font-weight: 700; letter-spacing: .2em; color: var(--text-faint); margin-bottom: var(--sp-4); }
+.demo-block__body { font-size: 16px; line-height: 1.55; color: var(--text-2); }
 
 .chart-wrap { width: 100%; height: 150px; }
 .chart-stroke { fill: none; stroke: var(--live); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
@@ -279,10 +279,10 @@
 .pricing-card__name { font-family: var(--font-display); font-style: italic; font-size: 30px; font-weight: 800; color: var(--text-hi); }
 .pricing-card__price { display: flex; align-items: baseline; gap: var(--sp-4); }
 .pricing-card__price-figure { font-family: var(--font-mono); font-size: 46px; font-weight: 500; color: var(--text-hi); }
-.pricing-card__price-period { font-family: var(--font-display); font-size: 13px; letter-spacing: .1em; color: var(--text-mute); }
-.pricing-card__note { font-size: 14px; line-height: 1.5; color: var(--text-mute); }
+.pricing-card__price-period { font-family: var(--font-display); font-size: 14.5px; letter-spacing: .1em; color: var(--text-mute); }
+.pricing-card__note { font-size: 15px; line-height: 1.5; color: var(--text-mute); }
 .pricing-card__list { display: grid; gap: var(--sp-4); margin-top: var(--sp-4); }
-.pricing-card__list li { font-size: 14.5px; color: var(--text-3); padding-left: var(--sp-7); position: relative; }
+.pricing-card__list li { font-size: 15px; color: var(--text-3); padding-left: var(--sp-7); position: relative; }
 .pricing-card__list li::before { content: "\2014"; position: absolute; left: 0; color: var(--text-faint); }
 
 /* pricing-tier is emitted programmatically by landing.js from the one
@@ -293,8 +293,8 @@
   gap: var(--sp-3) var(--sp-6);
   margin: 0;
 }
-.pricing-tier dt { font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: .16em; color: var(--text-faint); align-self: center; }
-.pricing-tier dd { margin: 0; font-family: var(--font-mono); font-size: 15px; color: var(--text-2); }
+.pricing-tier dt { font-family: var(--font-display); font-size: 12.5px; font-weight: 700; letter-spacing: .16em; color: var(--text-faint); align-self: center; }
+.pricing-tier dd { margin: 0; font-family: var(--font-mono); font-size: 16px; color: var(--text-2); }
 .pricing-tier dd[data-hook="pricing-tier-price"] { font-size: 30px; color: var(--text-hi); }
 
 /* ---- FAQ (native details/summary) -----------------------------------*/
@@ -323,7 +323,7 @@
   flex: none;
 }
 .faq-item[open] summary::after { content: "\2212"; }
-.faq-item__body { margin-top: var(--sp-5); font-size: 14.5px; line-height: 1.55; color: var(--text-mute); }
+.faq-item__body { margin-top: var(--sp-5); font-size: 15px; line-height: 1.55; color: var(--text-mute); }
 
 /* ---- closing band ---------------------------------------------------*/
 .closing-band {
@@ -351,13 +351,13 @@
 .site-footer__data-note {
   padding: var(--sp-9);
   --r: var(--r-panel);
-  font-size: 13px; line-height: 1.55; color: var(--text-dim);
+  font-size: 14.5px; line-height: 1.55; color: var(--text-dim);
   margin-bottom: var(--sp-9);
 }
-.site-footer__data-note h3 { font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: .16em; color: var(--text-mute); margin-bottom: var(--sp-4); }
+.site-footer__data-note h3 { font-family: var(--font-display); font-size: 13.5px; font-weight: 700; letter-spacing: .16em; color: var(--text-mute); margin-bottom: var(--sp-4); }
 
 .app-disclaimer { padding-top: var(--sp-7); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07); display: grid; gap: var(--sp-3); }
-.app-disclaimer p { font-size: 12.5px; line-height: 1.5; color: var(--text-faint); margin: 0; }
+.app-disclaimer p { font-size: 13.5px; line-height: 1.5; color: var(--text-faint); margin: 0; }
 .app-disclaimer__product { color: var(--text-mute) !important; font-weight: 600; }
 
 /* ---- responsive: < 900px is the 390px mobile canvas ------------------*/

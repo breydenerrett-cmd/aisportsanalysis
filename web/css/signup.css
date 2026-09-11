@@ -48,7 +48,7 @@
 }
 
 .signup-card__subhead {
-  font-size: 15.5px;
+  font-size: 16px;
   line-height: 1.55;
   text-align: center;
   color: var(--text-2);
@@ -64,13 +64,13 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), inset 0 -1px 0 rgba(255, 255, 255, .08);
 }
 .signup-card__tier-badge {
-  font-size: 12.5px;
+  font-size: 13.5px;
   padding: 9px 18px;
 }
 .signup-card__tier-sep { opacity: .6; }
 .signup-card__tier-note {
   max-width: 42ch;
-  font-size: 12.5px;
+  font-size: 13.5px;
   line-height: 1.5;
   text-align: center;
   color: var(--text-mute);
@@ -85,7 +85,7 @@
 .signup-card__benefits li {
   position: relative;
   padding-left: var(--sp-8);
-  font-size: 14.5px;
+  font-size: 15px;
   line-height: 1.5;
   color: var(--text-3);
 }
@@ -113,7 +113,7 @@
 }
 .signup-card__field label {
   font-family: var(--font-display);
-  font-size: 10.5px;
+  font-size: 12.5px;
   font-weight: 700;
   letter-spacing: .18em;
   text-transform: uppercase;
@@ -125,7 +125,7 @@
   background: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .025));
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .11);
   font-family: var(--font-body);
-  font-size: 15.5px;
+  font-size: 16px;
   color: var(--text-hi);
   transition: box-shadow var(--dur-ring-bloom) ease;
 }
@@ -136,7 +136,7 @@
 }
 .signup-card__status {
   min-height: 1.4em;
-  font-size: 13px;
+  font-size: 14.5px;
   color: var(--text-mute);
 }
 .signup-card__status:empty { display: none; }
@@ -146,7 +146,7 @@
 .signup-card__notice {
   padding: var(--sp-6) var(--sp-7);
   --r: var(--r-badge);
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.5;
 }
 .signup-card__notice--info {
@@ -165,7 +165,7 @@
 /* legal small print, not debug output -- it was mono/10.5px/ghost and read
    as a developer footnote under a $19.99 button. Body face, legible size. */
 .signup-card__trust {
-  font-size: 12.5px;
+  font-size: 13.5px;
   line-height: 1.6;
   text-align: center;
   color: var(--text-mute);
@@ -177,7 +177,7 @@
   background: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .025));
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14);
   font-family: var(--font-mono);
-  font-size: 16px;
+  font-size: 17px;
   letter-spacing: .04em;
   text-align: center;
   color: var(--text-hi);
