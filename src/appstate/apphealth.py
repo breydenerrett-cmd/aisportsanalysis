@@ -116,6 +116,32 @@ def _parse_timestamp(value) -> Optional[datetime]:
     return parsed
 
 
+# SCAN RESULTS, KEYED ON THE FILE'S OWN FINGERPRINT.
+#
+# THIS MODULE'S DOCSTRING SAYS /health "must answer with near-zero latency,
+# because it is the thing a host's load balancer or uptime checker polls every
+# few seconds." It did not. Measured on the live container 2026-09-11:
+# 1,087-1,212ms, warm, with nothing else in flight.
+#
+# The cause is `_newest_timestamp` below, which reads and JSON-parses EVERY
+# LINE of every store to find the newest one -- 123,182 rows and about 40 MB
+# per call. Fly polls /health every 30 seconds, so that was roughly a second
+# of CPU burned every thirty, continuously, on a shared vCPU with a quota.
+# That background burn is a large part of why everything else on the box was
+# being throttled.
+#
+# The stores are append-only and only change when a capture runs (~every 30
+# minutes). So the scan is memoised on (size, mtime_ns): unchanged file,
+# cached answer, no read at all. A changed file costs exactly one scan. Fly's
+# 120 polls an hour go from 120 scans to about 2.
+#
+# KEYED ON THE FINGERPRINT RATHER THAN A TTL ON PURPOSE. A TTL would still
+# rescan on a timer whether or not anything moved, and -- worse -- could serve
+# a stale "newest row" for its whole window, which is the one number this
+# check exists to report. Size-and-mtime changes the instant an append lands.
+_SCAN_CACHE: dict = {}
+
+
 def _newest_timestamp(path: Path, field_name: str) -> tuple:
     """Scan a JSONL store for its newest parseable timestamp.
 
@@ -123,7 +149,22 @@ def _newest_timestamp(path: Path, field_name: str) -> tuple:
     src/pipeline/health.py's _read_jsonl, costs that one row rather than the
     whole store -- an interrupted append is the normal signature of a killed
     collector, not proof the rest of the file is unusable.
+
+    Memoised on the file's size and mtime -- see `_SCAN_CACHE` above.
     """
+    try:
+        stat = path.stat()
+        fingerprint = (str(path), stat.st_size, stat.st_mtime_ns, field_name)
+    except OSError:
+        # Cannot stat it: fall through and let the open() below raise the
+        # error the caller already knows how to report.
+        fingerprint = None
+
+    if fingerprint is not None:
+        cached = _SCAN_CACHE.get(fingerprint)
+        if cached is not None:
+            return cached
+
     rows = 0
     newest = None
     with path.open("r", encoding="utf-8") as handle:
@@ -139,6 +180,16 @@ def _newest_timestamp(path: Path, field_name: str) -> tuple:
             stamp = _parse_timestamp(row.get(field_name))
             if stamp is not None and (newest is None or stamp > newest):
                 newest = stamp
+
+    if fingerprint is not None:
+        # ONE ENTRY PER STORE, not one per scan. The key carries the size and
+        # mtime, so a growing file would otherwise leave a copy of every
+        # version it ever had in memory -- a slow leak on a long-lived
+        # process, in the module whose job is to notice that sort of thing.
+        for stale in [k for k in _SCAN_CACHE
+                      if k[0] == str(path) and k[3] == field_name]:
+            del _SCAN_CACHE[stale]
+        _SCAN_CACHE[fingerprint] = (rows, newest)
     return rows, newest
 
 
