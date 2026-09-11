@@ -72,7 +72,7 @@
 
 import { apiGet } from "./api.js";
 import { el, clear, renderAbsent, humanizeKey,
-  verdictLabel, formatAmerican, formatBook, formatConsensusShare,
+  verdictLabel, formatAmerican, formatBook,
   formatEasternTime, formatEasternClock, renderWordChip } from "./dom.js";
 import { renderLoadingSkeleton, renderError, notYetAvailable } from "./states.js";
 import { renderFeaturedBet } from "./featuredbet.js";
@@ -398,37 +398,35 @@ function gqvPrice(quick) {
       [figure ? document.createTextNode(figure) : renderAbsent()]));
     if (side.best_book) col.appendChild(el("div", { class: "gqv-price__book", text: bookLabel(side.best_book) }));
 
-    const consensus = formatConsensusShare(side.consensus_probability);
-    const consLine = el("div", { class: "gqv-price__consensus" });
-    consLine.appendChild(el("span", { class: "gqv-price__consensus-label", text: "MARKET-IMPLIED CONSENSUS" }));
-    consLine.appendChild(consensus
-      ? el("span", { class: "gqv-price__consensus-figure", "data-hook": "consensus-price", text: consensus })
-      : renderAbsent());
-    col.appendChild(consLine);
-
-    const positive = typeof side.improvement_probability_points === "number"
-      && side.improvement_probability_points > 0;
-    if (positive) {
-      col.appendChild(el("span", { class: "gqv-price__pill", "data-hook": "advantage-pill",
-        text: `+${(side.improvement_probability_points * 100).toFixed(2)} PTS BETTER` }));
-    } else {
-      col.appendChild(el("p", { class: "gqv-price__none", text: "NO IMPROVEMENT ON THIS SIDE" }));
-    }
+    // THE PRICE, AND WHERE. Nothing else.
+    //
+    // This column used to carry, under every side: MARKET-IMPLIED CONSENSUS
+    // with a percentage, then either a "+0.42 PTS BETTER" pill or the words
+    // NO IMPROVEMENT ON THIS SIDE -- which is what it said on nearly every
+    // side of nearly every game, since a best available price still carries
+    // the book's vig while the consensus it is measured against has had the
+    // vig removed. Below that came a paragraph explaining that.
+    //
+    // The owner, 2026-09-10: "This whole 'we do price verification and see
+    // which book has the better odds, dude,' that has to stop. None of
+    // that's important. Nobody fucking cares."
+    //
+    // He is right about the audience. A bettor needs the number and the
+    // book. The de-vig arithmetic behind it is ours, it is still in the
+    // payload, and it is still rendered under SHOW ADVANCED ANALYSIS for
+    // anyone who wants it -- it is no longer the shape of this screen.
     cols.appendChild(col);
   }
   panel.appendChild(cols);
 
-  if (typeof price.books === "number") {
-    panel.appendChild(el("div", { class: "gqv-price__meta", text: `across ${price.books} books` }));
-  }
-  if (price.label) {
-    panel.appendChild(el("p", { class: "gqv-price__labeltext", text: String(price.label).toUpperCase() }));
-  }
-  if (price.note) {
-    panel.appendChild(el("p", { class: "gqv-price__note", "data-hook": "price-note", text: price.note }));
-  }
+  // `price.note` IS NOT RENDERED HERE any more. On a normally-priced board
+  // it is src/analysis/prices.py's NO_IMPROVEMENT_NOTE -- a five-line
+  // explanation of why the improvement figures are negative. Those figures
+  // no longer appear on this screen, so the paragraph explaining them was
+  // explaining something the reader could not see. It still renders in the
+  // advanced view, alongside the numbers it is about.
   panel.appendChild(el("p", { class: "gqv-price__disclaimer",
-    text: "Comparison only. No sportsbook links and no wagers taken — check the number yourself." }));
+    text: "Prices only — we take no bets. Check the number at the book." }));
   return panel;
 }
 
