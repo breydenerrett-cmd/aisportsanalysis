@@ -22,13 +22,44 @@ name: afternoon-slate
 
 on:
   schedule:
-    # 21:10 UTC = 5:10pm Eastern. Late enough that lineups are posted for the
-    # evening slate (on 2026-09-05 they landed 17:16Z-22:39Z), early enough
-    # to be pre-game for the 7pm ET and later games, which are the bulk of a
-    # normal card. Games already under way are skipped by run_slate's own
-    # first-pitch guard rather than decided late. Deliberately not on the
-    # hour: every repository on the platform asks for :00.
-    - cron: "10 21 * * *"
+    # 15:40 UTC = 11:40am Eastern. MOVED FROM 21:10 UTC (5:10pm ET) ON
+    # 2026-09-10, AND THE OLD TIME WAS COSTING A CARD A WEEK.
+    #
+    # `card publish` runs only from this workflow, and run_slate's first-pitch
+    # guard skips games already under way -- correctly, since a card cannot
+    # freeze a bet after the game has started. At 5:10pm Eastern that guard
+    # was throwing away the whole afternoon.
+    #
+    # Measured over the last 45 slates in data/historical/mlb_results.csv:
+    #
+    #   publish ET   days with <3 games open   share of games excluded
+    #      11:40              0  (0%)                     0%
+    #      13:40              0  (0%)                    10%
+    #      15:40              1  (2%)                    24%
+    #      17:10              8 (18%)                    33%   <- the old time
+    #
+    # daily_card.MIN_PICKS is 3 and the standing rule is three to five bets
+    # every day no matter what. One day in five the automatic card physically
+    # could not make three -- Sundays worst, where 2026-08-23 and 2026-08-30
+    # left ONE game open out of fifteen.
+    #
+    # 11:40 is the LATEST time that costs nothing: the earliest first pitch in
+    # the sample is 12:10 ET, so this is pre-game for every game on every
+    # slate in it, and later means a more mature board.
+    #
+    # WHAT IT COSTS, STATED. Evening lineups are not posted at 11:40 -- they
+    # land 17:16Z-22:39Z. The card does not read lineups (that is the
+    # player-props surface, which does not ship), so the cost is board depth
+    # rather than correctness, and the 2026-09-10 card settles it: published
+    # 10:36am ET, it priced a 7:05pm game across eight books.
+    #
+    # THE SCHEDULE LIVES ON THIS BRANCH AND THE CODE DOES NOT. GitHub reads
+    # cron from the default branch; the job below checks out the working
+    # branch for everything else. A change to the working branch's copy of
+    # this block would have looked right and fired at the old time.
+    #
+    # Deliberately not on the hour: every repository asks for :00.
+    - cron: "40 15 * * *"
   workflow_dispatch: {}
 
 # The same group forward-capture and daily-loop share. All three commit and
