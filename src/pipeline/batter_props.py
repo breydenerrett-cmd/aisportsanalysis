@@ -78,6 +78,35 @@ MAX_FETCHES_PER_RUN = budget_module.NON_DROPPABLE_GAMES_PER_NIGHT + EXTRA_GAMES_
 
 CREDIT_FLOOR = prop_listing.CREDIT_FLOOR
 
+# WHEN a game is captured, which until 2026-09-11 was "the first time a run
+# saw it" and is now anchored to its own first pitch.
+#
+# THE DEFECT THIS FIXES. Each game is captured once per slate date
+# (`_done_today`), and forward_capture.sh calls this pass every fifteen
+# minutes. So the first run after the Eastern date rolled over captured the
+# whole plan and every later run that day found nothing due. Measured over
+# the store on 2026-09-11: all 9,672 batter-prop quotes landed between 04:00
+# and 09:10 UTC -- midnight to 5am Eastern -- a median 17.3 HOURS before
+# first pitch.
+#
+# WHY THAT IS THE WRONG HOUR. A posted lineup sets each batter's SLOT, and
+# slot sets plate appearances (playerprops.SLOT_PLATE_APPEARANCES: leadoff
+# 4.467, nine-hole 3.461). A hitter moving up the order gains roughly 29%
+# more chances, which is enormous against a hits or total-bases line.
+# Lineups post a median 2.9 hours before first pitch. Capturing at 17 hours
+# meant that of 77 games where we held both a lineup event and prop quotes,
+# ZERO had a quote on both sides of the posting. The single most informative
+# moment for a player total was one we had never once priced.
+#
+# T-2h matches the `T-2h` band prop_listing's SLOTS grid already uses, and by
+# then roughly 85% of lineups are out (lead-time p10 1.84h, median 2.92h).
+#
+# THIS DOES NOT CHANGE SPEND. Same games, same once-per-slate-date rule, same
+# floor and extra families, same caps -- only the hour. A game sits inside
+# this window for two hours and the pass runs every fifteen minutes, so it
+# gets about eight chances to catch each one.
+CAPTURE_LEAD_MINUTES = 120
+
 ENV_SWITCH = "BATTER_PROPS"
 
 
@@ -152,8 +181,12 @@ def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
     # Floor games first, always -- the non-droppable surface must never be
     # starved by an "extra" game that happened to sort earlier.
     plan = []
+    not_yet = 0
     for event_id in sorted(floor_ids):
         if (event_id, today) in done_today:
+            continue
+        if not _in_capture_window(by_id[event_id], clock_now):
+            not_yet += 1
             continue
         plan.append((FLOOR_FAMILY, by_id[event_id]))
 
@@ -165,8 +198,16 @@ def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
             continue
         if (event_id, today) in done_today:
             continue
+        if not _in_capture_window(by_id[event_id], clock_now):
+            not_yet += 1
+            continue
         plan.append((EXTRA_FAMILY, by_id[event_id]))
         remaining_slots -= 1
+
+    # Not a skip reason in the budget sense -- these games are still coming,
+    # and a later run the same day will take them. Reported so a reader of
+    # the transcript can tell "waiting for the window" from "dropped".
+    report["games_outside_window"] = not_yet
 
     report["games_due"] = len(plan)
 
@@ -339,6 +380,25 @@ def credits_spent(rows) -> int:
         billed = row.get("credits_last")
         total += CREDITS_PER_EVENT if billed is None else billed
     return total
+
+
+def _in_capture_window(event, now, lead_minutes=CAPTURE_LEAD_MINUTES) -> bool:
+    """Is this game close enough to first pitch to be worth a credit yet?
+
+    True inside `(0, lead_minutes]` before first pitch. False once first
+    pitch has passed -- a price after the game started is not a pregame
+    price and is worth nothing here.
+
+    An event with no readable commence_time returns True: an unparseable
+    timestamp must not silently stop a game being captured at all, which
+    would turn a clock bug into a permanent coverage hole. That is the same
+    direction prop_listing's own guards fail in.
+    """
+    commence = prop_listing._parse_iso(event.get("commence_time"))
+    if commence is None:
+        return True
+    minutes = (commence - now).total_seconds() / 60.0
+    return 0 < minutes <= lead_minutes
 
 
 def _done_today(rows, game_date) -> set:

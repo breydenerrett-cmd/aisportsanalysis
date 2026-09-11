@@ -14,8 +14,19 @@ from tests import HERMETIC_CREDIT_LOG_STORE
 
 NOW = dt.datetime(2026, 9, 3, 12, 0, tzinfo=dt.timezone.utc)
 
+# Ninety minutes after NOW, i.e. INSIDE batter_props.CAPTURE_LEAD_MINUTES.
+#
+# The default used to be NOW itself -- a game whose first pitch is this
+# instant. That was fine while the pass captured every game the first time it
+# saw one, and stopped being fine on 2026-09-11 when capture was anchored to
+# first pitch: a game already starting is correctly worth no credits, so
+# every fixture silently fell outside the window and four tests went red.
+# They were right to. The fixture now describes a game that is genuinely
+# about to be played, which is what these tests were always about.
+SOON = NOW + dt.timedelta(minutes=90)
 
-def _event(identifier, commence=NOW, home="Atlanta Braves", away="San Francisco Giants"):
+
+def _event(identifier, commence=SOON, home="Atlanta Braves", away="San Francisco Giants"):
     return {"id": identifier,
             "commence_time": commence.isoformat().replace("+00:00", "Z"),
             "home_team": home, "away_team": away}
@@ -318,6 +329,84 @@ class FloorAndExtraTests(unittest.TestCase):
         self.assertTrue(any(r.get("error") for r in rows))
         self.assertFalse(any(r.get("poll") for r in rows))
         self.assertEqual(report["errors"], ["g1: boom"])
+
+
+class CaptureWindowTests(unittest.TestCase):
+    """Capture is anchored to first pitch, not to whenever a run first looks.
+
+    Until 2026-09-11 each game was captured the first time any run saw it.
+    Since `_done_today` then blocks every later run that day, and
+    forward_capture.sh runs every fifteen minutes, the whole slate was priced
+    the moment the Eastern date rolled over: all 9,672 quotes in the store
+    landed between 04:00 and 09:10 UTC, a median 17.3 hours before first
+    pitch, and not one of 77 games had a quote on both sides of its own
+    lineup posting -- the moment that actually sets a batter's plate
+    appearances.
+    """
+
+    def test_a_game_inside_the_window_is_due(self):
+        event = _event("g1", commence=NOW + dt.timedelta(minutes=90))
+        self.assertTrue(batter_props._in_capture_window(event, NOW))
+
+    def test_a_game_still_hours_away_is_not_due_yet(self):
+        """The defect, stated as a test: 17 hours out is not the moment."""
+        event = _event("g1", commence=NOW + dt.timedelta(hours=17))
+        self.assertFalse(batter_props._in_capture_window(event, NOW))
+
+    def test_a_game_already_started_is_never_due(self):
+        """A price after first pitch is not a pregame price."""
+        event = _event("g1", commence=NOW - dt.timedelta(minutes=1))
+        self.assertFalse(batter_props._in_capture_window(event, NOW))
+
+    def test_the_boundary_is_inclusive_at_the_lead_and_open_at_zero(self):
+        lead = batter_props.CAPTURE_LEAD_MINUTES
+        at_lead = _event("g1", commence=NOW + dt.timedelta(minutes=lead))
+        past_lead = _event("g2", commence=NOW + dt.timedelta(minutes=lead + 1))
+        at_zero = _event("g3", commence=NOW)
+        self.assertTrue(batter_props._in_capture_window(at_lead, NOW))
+        self.assertFalse(batter_props._in_capture_window(past_lead, NOW))
+        self.assertFalse(batter_props._in_capture_window(at_zero, NOW))
+
+    def test_an_unreadable_commence_time_does_not_block_capture(self):
+        """Fail toward capturing, not toward a silent coverage hole.
+
+        A clock bug that made every game look 'not yet due' would stop the
+        surface entirely and report a clean run while doing it -- the exact
+        shape of failure this repo keeps finding.
+        """
+        self.assertTrue(batter_props._in_capture_window(
+            {"commence_time": "not a timestamp"}, NOW))
+        self.assertTrue(batter_props._in_capture_window({}, NOW))
+
+    def test_the_window_lands_after_lineups_post(self):
+        """Lineups post a median 2.92h before first pitch (p10 1.84h).
+
+        The window has to open later than that or it reprices the board
+        before the information it exists to catch has arrived.
+        """
+        self.assertLessEqual(batter_props.CAPTURE_LEAD_MINUTES, 120)
+
+    def test_a_run_before_the_window_fetches_nothing_and_says_why(self):
+        # Eleven hours, not seventeen: NOW is 08:00 Eastern, so a game
+        # seventeen hours out belongs to TOMORROW's slate and would be
+        # skipped for an entirely different reason ("no games on today's
+        # slate"), making this test pass without exercising the window at
+        # all. Eleven hours is a 7pm Eastern game seen at breakfast -- the
+        # real case this gate exists for.
+        listed = [_event(f"g{i}", commence=NOW + dt.timedelta(hours=11))
+                  for i in range(1, 8)]
+        provider = FakeProvider(listed, {})
+        with tempfile.TemporaryDirectory() as folder:
+            raw = Path(folder) / "raw.jsonl"
+            processed = Path(folder) / "processed.jsonl"
+            report = batter_props.run(
+                credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW,
+                store=raw, processed_store=processed, provider=provider)
+        self.assertEqual(provider.fetched, [])
+        self.assertIsNone(report.get("skipped"),
+                          "skipped for some other reason, so the window was "
+                          "never exercised")
+        self.assertGreater(report.get("games_outside_window", 0), 0)
 
 
 class EnabledSwitchTests(unittest.TestCase):
