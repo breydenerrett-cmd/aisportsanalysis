@@ -269,6 +269,39 @@ export async function renderCard(host, date) {
   // Two reads, and the record must never take the card down with it: a
   // failed record fetch is not a night with no picks, and the picks are the
   // thing the reader came for.
+  // THE PAGE MUST NEVER SHOW NOTHING WHERE THE BETS GO.
+  //
+  // The owner's standing rule, in his words: "never, ever, not once, ever
+  // let this LINEHOUND site say 'We check the slate and nothing clears the
+  // bar.' ... You need to have 3-5 bets every day, no matter what."
+  //
+  // TWO WAYS THIS SCREEN BROKE THAT RULE on the evening of 2026-09-10, and
+  // they arrive by different routes, so both are handled here:
+  //
+  //   1. The request FAILED. After the slate rolls in the evening the page
+  //      asks for TOMORROW's card; while the box was struggling that timed
+  //      out and rendered "REQUEST FAILED — We could not reach the board"
+  //      directly beneath the record strip.
+  //
+  //   2. The request SUCCEEDED AND WAS EMPTY. Once the box was fast the same
+  //      request returned 200 with zero picks, and the page rendered "NO CARD
+  //      TODAY — The books have not posted prices for today's games yet."
+  //      True, and the same forbidden sentence in different words.
+  //
+  // Tomorrow's card does not exist until the morning pass publishes it.
+  // Falling back to the most recently published card and SAYING SO is old
+  // but honest, and it beats both an error and an empty state. It never
+  // invents a card for a slate nobody has looked at.
+  async function lastPublishedCard() {
+    try {
+      const history = await apiGet("/card/history?limit=1");
+      const last = ((history && history.days) || [])[0];
+      return last && (last.picks || []).length ? last : null;
+    } catch (_err) {
+      return null;
+    }
+  }
+
   let payload;
   let record = null;
   let servingOlderCard = null;
@@ -278,36 +311,28 @@ export async function renderCard(host, date) {
       apiGet("/card/record").catch(() => null),
     ]);
   } catch (err) {
-    // THE PAGE MUST NOT SHOW AN ERROR WHERE THE BETS GO.
-    //
-    // After the slate rolls in the evening this asks for TOMORROW's card,
-    // and tomorrow's card does not exist until the morning pass publishes
-    // it. On 2026-09-10 at 10:23pm that rendered "REQUEST FAILED — We could
-    // not reach the board" directly beneath the record strip: the honest
-    // message for a timeout, and the wrong one for a card that simply has
-    // not been written yet.
-    //
-    // The owner's standing rule is that this product always has bets on it.
-    // So: fall back to the most recently published card and SAY that is what
-    // it is. Old and labelled beats an error where the picks should be, and
-    // it beats inventing a card for a slate nobody has looked at.
-    try {
-      const history = await apiGet("/card/history?limit=1");
-      const last = ((history && history.days) || [])[0];
-      if (last && (last.picks || []).length) {
-        payload = last;
-        servingOlderCard = last.date || null;
-        record = await apiGet("/card/record").catch(() => null);
-      } else {
-        renderError(wrap, err);
-        return false;
-      }
-    } catch (_fallbackErr) {
-      // Both failed -- this really is unreachable, and the original error is
-      // the one worth showing, not the fallback's.
+    const last = await lastPublishedCard();
+    if (!last) {
+      // Both the card and the fallback are unreachable. This really is an
+      // outage, and the ORIGINAL error is the one that describes it -- not
+      // the fallback's.
       renderError(wrap, err);
       return false;
     }
+    payload = last;
+    servingOlderCard = last.date || null;
+    record = await apiGet("/card/record").catch(() => null);
+  }
+
+  if (!(payload.picks || []).length) {
+    const last = await lastPublishedCard();
+    if (last) {
+      payload = last;
+      servingOlderCard = last.date || null;
+    }
+    // If there is no published card anywhere either -- a first deploy, the
+    // off-season -- `emptyCard` below still runs and states that plainly.
+    // Saying nothing at all would be worse than saying there is nothing yet.
   }
 
   const picks = payload.picks || [];
