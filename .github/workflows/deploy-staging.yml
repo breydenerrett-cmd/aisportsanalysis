@@ -191,9 +191,31 @@ jobs:
           # The rule the omission broke: a deploy check must touch every
           # route a customer's first screen calls. #/today alone fires
           # /today, /games/{date}, /odds/{date} and /changed/{date}.
-          TODAY=$(date -u +%Y-%m-%d)
-          for path in "/card/$TODAY" "/card/record" "/opportunities/$TODAY" \
-                      "/today" "/games/$TODAY" "/changed/$TODAY" "/odds/$TODAY"; do
+          # BOTH DATES, AND THE EASTERN ONE IS THE ONE THAT MATTERS.
+          #
+          # This used `date -u` only. The app's slate date is EASTERN
+          # (snapshots.official_date, and the page header reads "THU SEP 10 ·
+          # 9:00pm ET"), so for the four or five hours a day when the two
+          # disagree, the check warmed a cache key no visitor ever asks for.
+          #
+          # That is not cosmetic. Every one of these requests leaves its date
+          # cached, so the check doubles as the cache warmer that spares the
+          # first real visitor a cold rebuild -- and on the evening of
+          # 2026-09-10 it warmed 09-11 while the page asked for 09-10 and got
+          # a 503. Warming the wrong key is the same as not warming at all.
+          #
+          # Late evening ET also rolls the page to the NEXT slate, so both
+          # dates are genuinely wanted; the duplicate when they agree costs a
+          # cache hit.
+          ET=$(TZ=America/New_York date +%Y-%m-%d)
+          UTC=$(date -u +%Y-%m-%d)
+          DATES="$ET"
+          [ "$UTC" != "$ET" ] && DATES="$ET $UTC"
+          paths="/card/record /today"
+          for d in $DATES; do
+            paths="$paths /card/$d /opportunities/$d /games/$d /changed/$d /odds/$d"
+          done
+          for path in $paths; do
             code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 45 "$BASE$path" || echo 000)
             echo "  $path -> $code"
             case "$code" in
