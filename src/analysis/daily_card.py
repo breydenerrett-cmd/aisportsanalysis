@@ -196,8 +196,19 @@ def _bet_sentence(pick) -> str:
 
 
 def _why_sentences(pick) -> list:
-    """Two or three sentences of real numbers. No word here is invented and
-    none of them is a term of art a reader would have to look up."""
+    """A few sentences of real numbers. No word here is invented and none of
+    them is a term of art a reader would have to look up.
+
+    THE DOCSTRING USED TO SAY "two or three" AND THE FUNCTION RETURNED FIVE:
+    the runs comparison, the starter matchup, market-versus-us, the run-line
+    trade, and a price note. On the card that rendered as a paragraph per
+    pick, and the owner's reading of the result on 2026-09-10 was "a lot of
+    AI slop language and a lot of fluff... keep it minimal, to the point."
+
+    What survives is what a reader acts on: who scores and who gives up runs,
+    who is pitching, how confident the market and we are, and -- when the bet
+    is a run line rather than a moneyline -- what that actually means.
+    """
     out = []
     us, them = pick["us"], pick["them"]
     out.append(
@@ -235,8 +246,14 @@ def _why_sentences(pick) -> list:
         # point -- see RUNLINE_AS_ALTERNATIVE.
         out.append("If you want the other side of that trade: " + alt["trade"])
 
-    if pick.get("price_note"):
-        out.append(pick["price_note"])
+    # THE PRICE NOTE IS NOT A REASON TO TAKE A BET. It read "-149 at
+    # draftkings is the best of 8 books" -- line shopping, which the owner
+    # ruled off the customer surface on 2026-09-10: "that has to stop. None
+    # of that's important. Nobody fucking cares."
+    #
+    # The field is still computed and still on the pick, because the book and
+    # its price are shown beside every bet already; it is no longer dressed
+    # up as part of the case FOR the bet.
     return out
 
 

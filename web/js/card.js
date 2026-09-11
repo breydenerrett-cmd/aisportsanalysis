@@ -143,10 +143,14 @@ function pickCard(pick, total) {
     card.appendChild(alt);
   }
 
-  const meaning = LABEL_MEANING[pick.label];
-  if (meaning) {
-    card.appendChild(el("p", { class: "card2__meaning", text: meaning }));
-  }
+  // THE LABEL MEANING LINE IS GONE, 2026-09-10.
+  //
+  // A STRONG pick already carries a STRONG chip and a sentence reading "The
+  // market makes Yankees a 74% bet to win and our own numbers agree at 64%".
+  // Printing "The market and our numbers both make this side a clear
+  // favourite" under that says the same thing a third time in vaguer words.
+  // LABEL_MEANING stays in this file for the tooltip and the legend, where
+  // explaining the vocabulary is the whole point.
 
   const actions = el("div", { class: "card2__actions" });
   actions.appendChild(el("a", {
