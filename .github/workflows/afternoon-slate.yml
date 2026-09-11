@@ -22,13 +22,54 @@ name: afternoon-slate
 
 on:
   schedule:
-    # 21:10 UTC = 5:10pm Eastern. Late enough that lineups are posted for the
-    # evening slate (on 2026-09-05 they landed 17:16Z-22:39Z), early enough
-    # to be pre-game for the 7pm ET and later games, which are the bulk of a
-    # normal card. Games already under way are skipped by run_slate's own
-    # first-pitch guard rather than decided late. Deliberately not on the
-    # hour: every repository on the platform asks for :00.
-    - cron: "10 21 * * *"
+    # ⚠ THIS CRON IS NOT THE ONE THAT FIRES. READ THIS BEFORE TRUSTING IT.
+    #
+    # GitHub reads `schedule` from the DEFAULT branch's copy of a workflow
+    # file. The default branch here is claude/cowork-session-migration-tn3sx2,
+    # whose copy of this file still says `cron: "10 21 * * *"` and whose job
+    # checks out THIS branch for the code. So the schedule below documents
+    # what the time SHOULD be and changes nothing about when the job runs.
+    #
+    # Making it real is a one-line edit to the same block on the default
+    # branch. Flagged to the owner 2026-09-10 rather than done, because
+    # changing production scheduling is his call.
+    #
+    # 15:40 UTC = 11:40am Eastern. SHOULD MOVE FROM 21:10 UTC (5:10pm ET),
+    # WHICH IS COSTING A CARD A WEEK.
+    #
+    # `card publish` runs only from this workflow, and run_slate's first-pitch
+    # guard skips games already under way -- correctly, since a card cannot
+    # freeze a bet after the game starts. At 5:10pm Eastern that guard was
+    # throwing away the whole afternoon.
+    #
+    # Measured over the last 45 slates in data/historical/mlb_results.csv:
+    #
+    #   publish ET   days with <3 games open   share of games excluded
+    #      11:40              0  (0%)                     0%
+    #      13:40              0  (0%)                    10%
+    #      15:40              1  (2%)                    24%
+    #      17:10              8 (18%)                    33%   <- the old time
+    #
+    # daily_card.MIN_PICKS is 3 and the standing rule is three to five bets
+    # every day no matter what. One day in five the automatic card physically
+    # could not make three -- Sundays worst of all, where 2026-08-23 and
+    # 2026-08-30 left ONE game open out of fifteen.
+    #
+    # 11:40 is chosen as the LATEST time that costs nothing: the earliest
+    # first pitch in the sample is 12:10 ET, so this is pre-game for every
+    # game on every slate in it, and being as late as possible leaves the
+    # board as mature as it can be.
+    #
+    # WHAT IT COSTS, STATED. Evening lineups are not posted at 11:40 -- they
+    # land 17:16Z-22:39Z. The card does not read lineups (that is the
+    # player-props surface, which does not ship), so the cost is to the
+    # board's depth rather than its correctness, and the 2026-09-10 card
+    # settles it: published 10:36am ET, it priced a 7:05pm game across eight
+    # books. Fewer books than the afternoon games' eleven, and enough.
+    #
+    # Deliberately not on the hour: every repository on the platform asks
+    # for :00.
+    - cron: "40 15 * * *"
   workflow_dispatch: {}
 
 # The same group forward-capture and daily-loop share. All three commit and
