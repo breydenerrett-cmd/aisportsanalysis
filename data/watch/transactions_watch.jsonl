@@ -1048,3 +1048,6 @@
 {"fetched_utc": "2026-09-11T18:10:59.436922+00:00", "game_date": "2026-09-11", "poll": true}
 {"category": "other", "date": "2026-09-11", "first_seen_utc": "2026-09-11T18:10:59.436922+00:00", "player": "Stuart Fairchild", "player_id": 656413, "team": "SEA", "transaction_id": 942020}
 {"fetched_utc": "2026-09-11T18:11:01.325136+00:00", "game_date": "2026-09-11", "poll": true}
+{"fetched_utc": "2026-09-11T18:35:51.132574+00:00", "game_date": "2026-09-11", "poll": true}
+{"category": "designated", "date": "2026-09-11", "first_seen_utc": "2026-09-11T18:35:51.132574+00:00", "player": "Jes\u00fas S\u00e1nchez", "player_id": 660821, "team": "TOR", "transaction_id": 942021}
+{"category": "other", "date": "2026-09-11", "first_seen_utc": "2026-09-11T18:35:51.132574+00:00", "player": "Rudy Martin Jr.", "player_id": 657675, "team": "TOR", "transaction_id": 942022}
