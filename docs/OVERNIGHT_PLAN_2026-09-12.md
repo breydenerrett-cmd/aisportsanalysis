@@ -162,7 +162,8 @@ adversely selected.
   difference in `src/pipeline/news.py` (basic-format ISO), older than
   tonight; fixed explicitly. Also found: `tests/test_factory_overlap_report.py`
   rewrote the committed `docs/FACTORY_OVERLAP_REPORT.md` on every run —
-  it writes to a temp path now.
+  it writes to a temp path now. **CI green on 3.10, 3.11 and 3.12 from
+  `d04f64d`** — the first green check since 05:00Z.
 - **INCIDENT, mine, ~07:00Z:** the dead-view deletion missed the
   one remaining importer (`today.js` kept `opportunities.js` alive with a
   `void renderOpportunities;` line). My grep for importers was piped
