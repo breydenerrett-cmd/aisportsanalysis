@@ -42,6 +42,8 @@ American price on one side of the board (e.g. -105 best vs -120 worst is a
 probability-weighted figure, and it is not comparable across the -100/+100
 sign boundary in a currency-consistent way (a -105-to-+100 gap and a
 +100-to-+105 gap are not the same amount of "value" despite both reading 5).
+The two are made to read 5 by `_cents`, which closes the scale's hole
+between -100 and +100; plain subtraction read the first as 205.
 It answers one question honestly -- "how far apart are the books quoting
 this side" -- and no more than that.
 """
@@ -139,10 +141,23 @@ def _best_price_side(board_quotes: list, price_key: str) -> Optional[dict]:
     return {"price": best_price, "books": books}
 
 
+def _cents(price: float) -> float:
+    """An American price on a scale with no hole in it.
+
+    The American scale skips from -100 to +100 -- both are even money -- so
+    subtracting two quotes that straddle it counts the hole as 200 cents of
+    disagreement that no book ever quoted. On 2026-09-11 the live board
+    printed "205c between books" for LAA at -105 and +100, five cents apart,
+    and the slate's WIDEST SPREAD headline was that same artefact. Here
+    -105 is -5, +100 and -100 are both 0, +105 is +5.
+    """
+    return price + 100.0 if price < 0 else price - 100.0
+
+
 def _spread_cents_side(board_quotes: list, price_key: str) -> Optional[float]:
     """See the module docstring's SPREAD-IN-CENTS note. None below two
     priced quotes -- a spread needs two numbers to be apart from each other."""
-    prices = [row.get(price_key) for row in board_quotes or []
+    prices = [_cents(float(row.get(price_key))) for row in board_quotes or []
               if row.get(price_key) is not None]
     if len(prices) < 2:
         return None

@@ -328,9 +328,11 @@ function renderAuthRequired(container, err) {
     class: "gate chamfer", role: "alert", "data-hook": "auth-required",
   });
   section.appendChild(el("p", { class: "gate__eyebrow", text: "SIGN IN REQUIRED" }));
-  section.appendChild(el("p", { class: "gate__title", text: "Sign in to view tonight's board." }));
+  // One gate for every signed-in route, so it names none of them: it used
+  // to say "view tonight's board" on #/billing, which is not a board.
+  section.appendChild(el("p", { class: "gate__title", text: "Sign in to continue." }));
   section.appendChild(el("p", { class: "gate__body",
-    text: "This board is part of the private beta, so it needs your invite token. "
+    text: "This part of the private beta needs your invite token. "
         + "Add it once and it stays on this device." }));
   const actions = el("div", { class: "gate__actions" });
   actions.appendChild(el("a", { href: "#/signin", class: "btn btn--primary chamfer chamfer--btn",

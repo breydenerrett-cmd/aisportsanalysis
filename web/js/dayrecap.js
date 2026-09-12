@@ -290,7 +290,10 @@ const SETTLEMENT_CHIP = {
 
 // market_key -> the plain-English noun for that market. Never guessed --
 // an unrecognized market_key falls through to the raw key itself below.
-const MARKET_NOUN = { h2h: "moneyline", spreads: "spread", totals: "total" };
+const MARKET_NOUN = {
+  h2h: "moneyline", spreads: "spread", totals: "total",
+  h2h_1st_5_innings: "first-5-innings moneyline",
+};
 
 /** "home"/"away"/"over"/"under" (case-insensitive) are the only side
  * values this client knows how to turn into a bet phrase. Anything else --
@@ -308,10 +311,12 @@ function teamAbbrForSide(side, game) {
   return null;
 }
 
-function formatLineText(line) {
+/** A run line carries its sign ("-1.5", "+1.5"); a total is a number of
+ * runs and carries none -- "Under 8", never "Under +8". */
+function formatLineText(line, { signed = true } = {}) {
   if (line === null || line === undefined || line === "") return null;
   const n = Number(line);
-  if (Number.isFinite(n)) return n > 0 ? `+${n}` : `${n}`;
+  if (Number.isFinite(n)) return signed && n > 0 ? `+${n}` : `${n}`;
   return String(line);
 }
 
@@ -328,11 +333,11 @@ function formatLineText(line) {
 function humanizeBetLabel(rec, game) {
   const marketKey = rec.market_key;
   const side = knownSide(rec.side);
-  const lineText = formatLineText(rec.line);
+  const lineText = formatLineText(rec.line, { signed: marketKey !== "totals" });
 
-  if (marketKey === "h2h") {
+  if (marketKey === "h2h" || marketKey === "h2h_1st_5_innings") {
     const abbr = teamAbbrForSide(side, game);
-    if (abbr) return `${abbr} moneyline`;
+    if (abbr) return `${abbr} ${MARKET_NOUN[marketKey]}`;
   } else if (marketKey === "spreads") {
     const abbr = teamAbbrForSide(side, game);
     if (abbr && lineText) return `${abbr} ${lineText}`;
@@ -357,7 +362,7 @@ function humanizeBetLabel(rec, game) {
   const parts = [marketText];
   if (rawSide && !sideIsSystemId) parts.push(rawSide);
   if (lineText) parts.push(lineText);
-  if (sideIsSystemId) parts.push("side not recorded (a system id was stored here)");
+  if (sideIsSystemId) parts.push("side not recorded");
   return parts.length ? parts.join(" · ") : "no market recorded";
 }
 

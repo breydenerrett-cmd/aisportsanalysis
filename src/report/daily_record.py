@@ -414,7 +414,11 @@ def _final_score_for(game_pk, box_final_scores):
         return None, "game_pk could not be resolved for this event, so no boxscore row could be matched"
     row = box_final_scores.get(game_pk)
     if row is None:
-        return None, f"no linescore row found in boxscores_2026.jsonl for game_pk={game_pk}"
+        # Rendered on the day page under the matchup, so it is written for
+        # the reader; the store and the key it was looked up by belong in a
+        # log, not on the screen ("no linescore row found in
+        # boxscores_2026.jsonl for game_pk=822767" was on it, 2026-09-11).
+        return None, "final score not recorded yet"
     return {"away": row["away"], "home": row["home"]}, None
 
 

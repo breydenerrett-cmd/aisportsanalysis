@@ -31,6 +31,35 @@ adversely selected.
 - **Owner decision added:** the hero on Today is still *chosen* by "largest
   price gap against consensus" (`chooseGapCandidate`). The tile that
   announced that rule is gone; the rule still picks the headline game.
+- **T1.2 gap closed** (`7d6c98d`): a frozen card carries the legend too.
+- **Found on Today, not in any test: the card printed "3 OF 9" twice.**
+  Picks lock through the day and keep the `rank` they froze with (a frozen
+  field), so the served row carried ranks `[3,2,3,1,2,4,5,5,4]`. The report
+  layer now orders the served picks by the card's own stated rule and
+  stamps `position`; `rank` is untouched as the receipt.
+- **T2 sweep — DONE for every route.** `#/odds`: `SPREAD_CENTS`, a raw
+  `has_board false / observed_utc null` key dump and the engineering rule
+  "Never 'no odds'…" were on screen; all gone. **And the spread itself was
+  wrong**: "205c between books" for LAA quoted between -105 and +100 (five
+  cents apart) — plain subtraction across the hole in the American scale.
+  The slate's WIDEST SPREAD headline was that artefact. Fixed with a test
+  that fails on the old arithmetic. `#/day`: "no linescore row found in
+  boxscores_2026.jsonl for game_pk=822767", "Under +8", raw
+  `h2h_1st_5_innings`, "(a system id was stored here)" — all fixed.
+  `#/billing`: the gate said "view tonight's board"; now names no route.
+  `#/signup`: still sold the fair price across every book — rewritten in
+  the owner's order (likely first, then what the price needs).
+  `landing.html`: said "nothing here states a win probability or a
+  predicted winner" and "the recommendation field stays permanently empty"
+  while the card two clicks away says "64% to win" — both false; fixed,
+  the "What line shopping is actually worth" section removed, hero
+  rewritten to likelihood + break-even. `#/game` quick view, `#/support`:
+  clean. Today's systems slip: "Backing the home side of h2h … (1)
+  primary_pitch_share…" — engine prose now names the market in words and
+  leads with the quantity (stored theses keep their old text; new ones
+  read plainly).
+- **Props are in the bottom nav** (took ODDS's tab; `#/odds` stays linked
+  from the card, Today and every game page).
 
 ## Tier 1 — things the owner asked for that are still not done
 

@@ -71,7 +71,12 @@ const NAV_ITEMS = [
   { hash: "#/today", label: "TODAY", glyph: "" },
   { hash: "#/games", label: "GAMES", glyph: "" },
   { hash: "#/betcheck", label: "CHECK", glyph: "glyph--circle" },
-  { hash: "#/odds", label: "ODDS", glyph: "glyph--line" },
+  // PROPS TOOK ODDS'S TAB, 2026-09-12. #/odds is a board of prices compared
+  // across books, which the owner has said twice is not the product; the
+  // player-prop board (likelihood first, then what the price needs) is what
+  // he asked for by name. #/odds stays reachable from every game page's
+  // OPEN THE FULL BOARD and from Today.
+  { hash: "#/props", label: "PROPS", glyph: "glyph--line" },
   { hash: "#/mybets", label: "BETS", glyph: "glyph--ticket" },
   // RESULTS POINTS AT THE CARD'S RECORD, 2026-09-10.
   //

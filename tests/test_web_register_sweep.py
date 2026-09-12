@@ -1,0 +1,166 @@
+"""The developer register and the retired price-comparison register, swept
+off the screens that were opened and read on 2026-09-11/12: #/odds, #/day,
+the sign-in gate, the signup page, the landing page and the bottom nav.
+
+Every phrase below was on a live page. Plain-text scans of what a renderer
+sees, the same shape as the other web structure tests -- a test that ran
+the page would pass or fail by browser, and this only has to notice the
+words coming back.
+"""
+
+from __future__ import annotations
+
+import re
+import unittest
+from pathlib import Path
+
+from tests.test_no_developer_notes_on_screen import _rendered_strings
+
+ROOT = Path(__file__).resolve().parent.parent
+WEB = ROOT / "web"
+JS = WEB / "js"
+
+
+def _rendered(name: str):
+    return list(_rendered_strings(JS / name))
+
+
+def _offenders(pairs, phrases, where):
+    out = []
+    for line_no, text in pairs:
+        lowered = text.lower()
+        for phrase in phrases:
+            if phrase in lowered:
+                out.append(f"{where}:{line_no}: {phrase!r} in {text[:70]!r}")
+    return out
+
+
+class TheOddsBoardSpeaksToAReader(unittest.TestCase):
+    # Field names, a null, and the engineering rule behind a sentence --
+    # all rendered on #/odds on 2026-09-11.
+    LEAKS = ("spread_cents", "has_board", "key absent", "observed_utc",
+             "never “no odds”", "consensus_unavailable_reason:")
+
+    def test_no_field_name_or_engineering_rule_is_rendered(self):
+        self.assertEqual(_offenders(_rendered("odds.js"), self.LEAKS, "odds.js"), [])
+
+    def test_the_scanner_saw_the_page(self):
+        self.assertGreater(len(_rendered("odds.js")), 20)
+
+
+class TheDayPageSpeaksToAReader(unittest.TestCase):
+    def setUp(self):
+        self.text = (JS / "dayrecap.js").read_text(encoding="utf-8")
+
+    def test_the_system_id_aside_is_gone(self):
+        self.assertEqual(_offenders(_rendered("dayrecap.js"),
+                                    ("system id was stored",), "dayrecap.js"), [])
+
+    def test_a_total_carries_no_sign(self):
+        """"Under +8" is not a bet anyone places."""
+        self.assertIn('signed: marketKey !== "totals"', self.text)
+
+    def test_first_five_innings_has_a_noun(self):
+        noun_block = self.text.split("const MARKET_NOUN = {")[1].split("};")[0]
+        self.assertIn("h2h_1st_5_innings", noun_block)
+        body = self.text.split("function humanizeBetLabel(")[1].split("\nfunction ")[0]
+        self.assertIn('marketKey === "h2h_1st_5_innings"', body)
+
+
+class TheGateNamesNoRoute(unittest.TestCase):
+    def test_it_does_not_promise_a_board(self):
+        """One gate serves every signed-in route; on #/billing it said
+        "view tonight's board"."""
+        self.assertEqual(_offenders(_rendered("dom.js"), ("tonight's board",), "dom.js"), [])
+
+
+RETIRED = (
+    "line shopping", "line-shopping", "market-implied consensus", "never a tip",
+    "recommendation field", "not one line, not one book", "checking every book",
+    "predicted winner", "better number", "price improvement",
+)
+
+
+def _signup_copy():
+    """Every sentence the signup page renders. The benefits list is a
+    `const BENEFITS = [...]` fed to `text: line`, so the rendered-string
+    scanner never sees it -- which is how the old list ("every book we can
+    reach", "never a tip") stayed invisible to every tripwire. Scanned by
+    hand here, line-numbered against the file."""
+    text = (JS / "signup.js").read_text(encoding="utf-8")
+    pairs = _rendered("signup.js")
+    start = text.index("const BENEFITS = [")
+    block = text[start:text.index("];", start)]
+    first_line = text[:start].count("\n") + 1
+    for offset, line in enumerate(block.splitlines()):
+        stripped = line.strip().strip(",").strip('"')
+        if stripped and not stripped.startswith("//") and not stripped.startswith("const "):
+            pairs.append((first_line + offset, stripped))
+    return pairs
+
+
+class TheSignupPageSellsThePicks(unittest.TestCase):
+    def test_no_retired_phrase_is_rendered(self):
+        self.assertEqual(_offenders(_signup_copy(), RETIRED, "signup.js"), [])
+
+    def test_it_leads_with_likelihood_then_the_price(self):
+        copy = " ".join(t for _n, t in _signup_copy()).lower()
+        self.assertIn("more likely", copy)
+        self.assertIn("break even", copy)
+
+    def test_the_benefits_were_actually_read(self):
+        self.assertGreaterEqual(
+            len([t for _n, t in _signup_copy() if "first pitch" in t.lower()]), 2)
+
+
+def _visible_html(path: Path) -> str:
+    html = path.read_text(encoding="utf-8")
+    html = re.sub(r"<!--.*?-->", " ", html, flags=re.S)
+    html = re.sub(r"<script\b.*?</script>", " ", html, flags=re.S)
+    html = re.sub(r"<style\b.*?</style>", " ", html, flags=re.S)
+    return re.sub(r"<[^>]+>", " ", html).lower()
+
+
+class TheLandingPageAgreesWithTheProduct(unittest.TestCase):
+    """The card says "the market makes Brewers a 64% bet to win"; the page
+    that sold it said "nothing here states a win probability or a predicted
+    winner". Both were live at once on 2026-09-11."""
+
+    def setUp(self):
+        self.text = _visible_html(WEB / "landing.html")
+
+    def test_it_no_longer_denies_what_the_card_says(self):
+        for phrase in ("nothing here states a win probability",
+                       "recommendation field",
+                       "do not publish a win probability",
+                       "predicted winner anywhere"):
+            self.assertNotIn(phrase, self.text, phrase)
+
+    def test_the_line_shopping_section_is_gone(self):
+        for phrase in ("what line shopping is actually worth",
+                       "find the better number", "better numbers",
+                       "another book had"):
+            self.assertNotIn(phrase, self.text, phrase)
+
+    def test_it_says_what_the_price_needs(self):
+        self.assertIn("break even", self.text)
+        self.assertIn("more likely", self.text)
+
+
+class PropsHaveTheTab(unittest.TestCase):
+    def test_props_replaced_odds_in_the_bottom_nav(self):
+        text = (JS / "main.js").read_text(encoding="utf-8")
+        nav = text.split("const NAV_ITEMS = [")[1].split("];")[0]
+        self.assertIn('hash: "#/props", label: "PROPS"', nav)
+        self.assertNotIn('label: "ODDS"', nav)
+
+    def test_the_odds_board_is_still_reachable(self):
+        """Leaving the nav must not orphan the route (the #/performance
+        lesson: an unlinked page is a page nobody reaches)."""
+        linked = [p.name for p in JS.glob("*.js")
+                  if p.name != "main.js" and "#/odds" in p.read_text(encoding="utf-8")]
+        self.assertTrue(linked, "#/odds is linked from nowhere but the nav it just left")
+
+
+if __name__ == "__main__":
+    unittest.main()

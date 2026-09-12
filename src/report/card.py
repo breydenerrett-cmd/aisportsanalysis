@@ -428,6 +428,25 @@ def _parse_first_pitch(value) -> Optional[datetime]:
     return parsed.astimezone(timezone.utc)
 
 
+def _served_order(picks) -> list:
+    """The frozen picks in the order the card says it uses -- "ranked by how
+    confident the market is" -- each numbered by `position`.
+
+    A pick's `rank` is the slot it was frozen in and is a frozen field
+    (card_ledger.FROZEN_FIELDS), so it is never rewritten. But a card is
+    assembled through the day: each pick locks against its own first pitch
+    and is carried forward with the rank it held in THAT freeze. The row
+    served for 2026-09-11 carried nine picks with ranks [3,2,3,1,2,4,5,5,4],
+    in lock order, and the page printed "3 OF 9" twice. `position` is where
+    the pick sits on the card actually being served; `rank` stays as the
+    receipt of where it sat when it froze.
+    """
+    ordered = sorted((dict(p) for p in picks), key=daily_card._rank_key)
+    for i, pick in enumerate(ordered, start=1):
+        pick["position"] = i
+    return ordered
+
+
 def frozen_card(date: str) -> Optional[dict]:
     """The card as it was FROZEN for `date`, in payload shape, or None.
 
@@ -456,7 +475,7 @@ def frozen_card(date: str) -> Optional[dict]:
     # and "this was zero" are different facts and a renderer that treats them
     # the same prints "0 games on the slate" for a card that has three picks.
     return {
-        "picks": list(row.get("picks") or ()),
+        "picks": _served_order(row.get("picks") or ()),
         "filled": row.get("n_filled") or 0,
         "considered": None,
         "agreed": None,

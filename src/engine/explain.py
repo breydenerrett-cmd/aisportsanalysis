@@ -237,8 +237,12 @@ def explain_signal(feature: str, threshold_index: int, side: str,
     gap = None if (away is None or home is None) else away - home
     threshold = spec.threshold(threshold_index)
 
+    # The plain-words quantity leads and the feature id follows it in
+    # brackets: this sentence is the first thing under a pick on Today, cut
+    # to a ~90-character teaser, and "(1) primary_pitch_share…" was the whole
+    # teaser a reader got.
     return (
-        f"{feature} -- {quantity} ({SIDE_CONVENTION}): away "
+        f"{quantity} ({feature}; {SIDE_CONVENTION}): away "
         f"{format_value(away, unit)}, home {format_value(home, unit)}"
         f"{_own_sample_phrase(feature, samples)}; a gap "
         f"of {format_gap(gap, unit)}, clearing the threshold of "
@@ -258,12 +262,20 @@ def explain_signal(feature: str, threshold_index: int, side: str,
 # (`src.evolab.decide.Decision`), and a reader who is not told that will
 # supply the missing interpretation themselves.
 NO_EDGE_CLAIM = (
-    "This is a signal count, not a forecast: the genome publishes no "
-    "calibrated probability, so p_model is null and edge_bps is null by "
-    "construction. Nothing here says the market's price is mistaken, and "
-    "no claim of value is attached to it -- no such claim has been earned "
-    "(docs/PREREG_CALIBRATED_PROBABILITY.md)."
+    "This is a signal count, not a forecast: it publishes no probability of "
+    "its own, says nothing about whether the market's price is mistaken, and "
+    "attaches no claim of value -- none has been earned."
 )
+
+# The market a thesis is backing, in the words a reader uses. The keys are
+# src/engine/slate.py's SCOPE_MARKETS; "Backing the home side of h2h" was
+# on the Today page verbatim (2026-09-11).
+MARKET_PHRASE = {
+    "h2h": "the moneyline",
+    "spreads": "the run line",
+    "totals": "the total",
+    "h2h_1st_5_innings": "the first-five-innings moneyline",
+}
 
 
 def evolab_thesis(strategy_id: str, market_key: str, side: str,
@@ -294,7 +306,7 @@ def evolab_thesis(strategy_id: str, market_key: str, side: str,
     count = len(fired)
     plural = "signal" if count == 1 else "signals"
     return (
-        f"Backing the {side} side of {market_key} because {count} "
+        f"Backing the {side} side of {MARKET_PHRASE.get(market_key, market_key)} because {count} "
         f"pre-registered {plural} fired: {body} {NO_EDGE_CLAIM} "
         f"(Strategy: evolab genome {strategy_id}.)"
     )

@@ -219,7 +219,7 @@ function consensusPanel(consensus, spreadCents, awayAbbr, homeAbbr) {
       const spread = spreadCents ? spreadCents[side] : null;
       if (typeof spread === "number") {
         col.appendChild(el("div", { class: "ov2-consensus-col__meta",
-          text: `SPREAD_CENTS ${spread}c between books` }));
+          text: `Books ${spread}c apart on this side` }));
       }
     }
     cols.appendChild(col);
@@ -241,7 +241,7 @@ function spreadLine(spreadCents, awayAbbr, homeAbbr) {
   if (typeof spreadCents.home === "number") parts.push(`${homeAbbr} ${spreadCents.home}c`);
   if (!parts.length) return null;
   return el("p", { class: "ov2-spreadline", "data-hook": "odds-spread-cents",
-    text: `SPREAD_CENTS — ${parts.join(" · ")} (raw disagreement between books, not a point spread)` });
+    text: `How far apart the books are: ${parts.join(" · ")}. That is disagreement between quotes, not a run line.` });
 }
 
 function thinAlert(h2h, bookCount) {
@@ -262,8 +262,10 @@ function thinAlert(h2h, bookCount) {
   const reason = hasOwn(h2h, "consensus_unavailable_reason") && h2h.consensus_unavailable_reason
     ? h2h.consensus_unavailable_reason
     : "insufficient books for a market-wide read";
+  // The server's reason is already a sentence a reader can use; it used to
+  // print behind its field name (`consensus_unavailable_reason: "..."`).
   body.appendChild(el("p", { class: "ov2-alert__reason", "data-hook": "odds-consensus-reason",
-    text: `consensus_unavailable_reason: "${reason}"` }));
+    text: reason }));
   head.appendChild(body);
   box.appendChild(head);
   return box;
@@ -277,25 +279,15 @@ function noBoardBlock(h2h) {
   // internal `reason` string as the headline.
   box.appendChild(el("p", { class: "ov2-noboard__title", "data-hook": "odds-no-board",
     text: "No price board recorded for this game." }));
+  // Either the books have not posted this game or our own club-name match
+  // failed, and the two look identical from here -- so the page says that
+  // and stops. It used to follow with a key/value dump (`has_board false`,
+  // `observed_utc null`, `consensus_unavailable_reason key absent`) and the
+  // engineering rule behind the wording, both of which are for this file's
+  // author, not a reader.
   box.appendChild(el("p", { class: "ov2-noboard__body",
-    text: "There is no board and this could be a genuine gap in coverage or a club-name match failure on "
-        + "our side — both look identical from here, so we say exactly this and nothing further." }));
-  const staleness = h2h.staleness || {};
-  const fields = el("div", { class: "ov2-noboard__fields" });
-  const field = (key, value) => {
-    fields.appendChild(el("span", { class: "ov2-noboard__key", text: key }));
-    fields.appendChild(el("span", { class: "ov2-noboard__val", text: value }));
-  };
-  field("has_board", String(!!staleness.has_board));
-  field("books", "0");
-  field("consensus_unavailable_reason",
-    hasOwn(h2h, "consensus_unavailable_reason") ? String(h2h.consensus_unavailable_reason) : "key absent");
-  field("observed_utc", staleness.observed_utc == null ? "null" : String(staleness.observed_utc));
-  if (h2h.reason) field("reason", h2h.reason);
-  box.appendChild(fields);
-  box.appendChild(el("p", { class: "ov2-noboard__note",
-    text: "Never “no odds” — that would claim the market is empty when our own match may have "
-        + "failed instead." }));
+    text: "Either the books have not posted this game yet or our own team-name match failed — "
+        + "the two look the same from here, so we say only that." }));
   return box;
 }
 

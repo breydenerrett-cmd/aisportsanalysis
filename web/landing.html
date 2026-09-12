@@ -51,8 +51,7 @@
   </span>
   <div class="site-nav__links">
     <a href="#bet-check">Bet Check</a>
-    <a href="#better-numbers">Better numbers</a>
-    <a href="#pricing">Pricing</a>
+        <a href="#pricing">Pricing</a>
     <a href="#faq">FAQ</a>
   </div>
   <a class="btn btn--primary" href="index.html#/betcheck" data-hook="cta-primary">Try 3 Bet Checks free</a>
@@ -105,13 +104,15 @@
       <div class="hero__price-sheen" aria-hidden="true"></div>
       <div class="hero__price-eyebrow">
         <span class="hero__price-dot"></span>
-        <span class="hero__price-label" data-hook="hero-price-label">Best of 11 books · BetRivers</span>
+        <!-- Likelihood first, then what the price needs -- the owner's
+             order. This block used to read "Best of 11 books · BetRivers
+             -110, ~~-118~~ Everywhere else", which is line shopping. -->
+        <span class="hero__price-label" data-hook="hero-price-label">Pirates to win · the market makes it 58%</span>
       </div>
       <div class="hero__price-row">
-        <span class="price-figure price-figure--hero" data-beat data-hook="hero-price-figure">-110</span>
-        <div data-hook="hero-price-was-wrap">
-          <div class="price-was" data-hook="hero-price-was">-118</div>
-          <div class="price-was-label" data-hook="hero-price-was-label">Everywhere else</div>
+        <span class="price-figure price-figure--hero" data-beat data-hook="hero-price-figure">-125</span>
+        <div data-hook="hero-price-needs-wrap">
+          <div class="price-was-label" data-hook="hero-price-needs">Needs 56% to break even · we make it 57%</div>
         </div>
       </div>
     </div>
@@ -196,9 +197,9 @@
   <h2 class="section__title" data-rise data-delay="60">The bet was already dead and you didn't know it.</h2>
   <div class="story-grid" style="margin-top:32px">
     <div class="story-card panel chamfer" data-rise data-delay="80">
-      <div class="story-card__kicker">The number</div>
-      <div class="story-card__title">Took −125.<br>Another book had −110.</div>
-      <p class="story-card__body">Same bet, worse price, no way to have known without checking every book yourself.</p>
+      <div class="story-card__kicker">The favourite</div>
+      <div class="story-card__title">Took −180.<br>They win 58% of the time.</div>
+      <p class="story-card__body">At −180 you need 64% just to break even. The bet was losing money before the first pitch.</p>
     </div>
     <div class="story-card panel chamfer" data-rise data-delay="140">
       <div class="story-card__kicker">The last leg</div>
@@ -245,10 +246,10 @@
   <ul class="callout-list">
     <li class="panel chamfer" data-rise data-delay="60">We don't ship a pick because one candidate idea looked good in a backtest —
       every idea here failed a pre-committed replication test before it could reach the product.</li>
-    <li class="panel chamfer" data-rise data-delay="120">Nothing here states a win probability or a predicted winner. That's not a feature we
-      haven't built yet — it's a rule, and no field in the product emits one.</li>
-    <li class="panel chamfer" data-rise data-delay="180">What we do give you — the quoted prices, the market-implied consensus, and what changed
-      recently — is real, checkable, and never dressed up as more than it is.</li>
+    <li class="panel chamfer" data-rise data-delay="120">Every pick says how likely it is — by the whole market and by our own numbers — and
+      what the price needs to break even. When those two disagree, the pick says so.</li>
+    <li class="panel chamfer" data-rise data-delay="180">What we give you — the pick, the likelihood, the price it needs, and what changed —
+      is real, checkable, and never dressed up as more than it is.</li>
   </ul>
 </section>
 
@@ -280,7 +281,7 @@
   <div class="section__head" data-rise>
     <span class="eyebrow">Sample slate</span>
   </div>
-  <h2 class="section__title" data-rise data-delay="60">Fifteen games. Every price checked across books.</h2>
+  <h2 class="section__title" data-rise data-delay="60">Fifteen games. Every one read the same way.</h2>
   <div class="slate-rail" style="margin-top:28px">
     <article class="tile tile--selected chamfer" data-tile data-delay="0">
       <div class="tile__blocking">
@@ -339,46 +340,26 @@
         </div>
         <div class="demo-block">
           <div class="demo-block__label">Bottom line</div>
-          <p class="demo-block__body" data-hook="bottom-line">We show what supports this bet, what argues against it, and where the price is better.
-            We never say bet it — the recommendation field stays permanently empty until a validated
-            engine exists, which it does not today.</p>
+          <p class="demo-block__body" data-hook="bottom-line">The Pirates are the more likely side: the market makes them 58% and our own
+            numbers say 57%. At −125 the bet needs 56% to break even. Close — which is why this reads
+            as a lean, not a strong one. The decision stays yours.</p>
         </div>
       </div>
       <div class="demo-block" style="border-left:0">
-        <div class="demo-block__label">Price check</div>
-        <p class="demo-block__body" style="margin-bottom:14px">You were taking −125 at your book. FanDuel has it at:</p>
-        <div class="hero__price-row"><span class="price-figure price-figure--panel">-110</span></div>
-        <p class="demo-block__body" style="margin-top:14px">Same bet, better number — checkable at the book right now.</p>
+        <div class="demo-block__label">What the price needs</div>
+        <p class="demo-block__body" style="margin-bottom:14px">At −125, this bet has to win this often just to break even:</p>
+        <div class="hero__price-row"><span class="price-figure price-figure--panel">56%</span></div>
+        <p class="demo-block__body" style="margin-top:14px">The market makes it 58%. Our numbers say 57%. That gap is the whole read, and it is thin.</p>
         <a class="btn btn--cyan on-live" href="index.html#/signup" style="margin-top:18px">Check it</a>
       </div>
     </div>
   </div>
 </section>
 
-<!-- FIND THE BETTER NUMBER -->
-<section class="section" id="better-numbers" aria-label="what line shopping is actually worth" data-hook="price-improvement">
-  <div class="section__head" data-rise>
-    <span class="eyebrow">Find the better number</span>
-  </div>
-  <h2 class="section__title" data-rise data-delay="60">What line shopping is actually worth.</h2>
-  <div class="prose" style="margin-top:20px" data-rise data-delay="80">
-    <p>The same bet is often quoted at different prices by different books. Taking the better one
-    costs you nothing if the bet loses, and pays you more if it wins — no prediction, no probability,
-    just the arithmetic of two prices on the same bet.</p>
-  </div>
-  <ul class="callout-list" data-hook="price-improvement-two-branch" style="grid-template-columns:1fr 1fr">
-    <li class="panel chamfer" data-hook="price-improvement-branch-win" data-rise data-delay="60">
-      <strong style="color:var(--text-hi)">If the bet wins:</strong> the better price pays more.</li>
-    <li class="panel chamfer" data-hook="price-improvement-branch-loss" data-rise data-delay="120">
-      <strong style="color:var(--text-hi)">If the bet loses:</strong> both prices lose the same stake — the difference is $0.</li>
-  </ul>
-  <p class="section__lede" data-rise data-delay="160">A better price also lowers the win rate you need to break even — at −110 you need 52.4% of
-    these bets to win to break even; at −105 you need only 51.2%. Pure price arithmetic; no assumed
-    win rate goes into it.</p>
-  <p class="section__lede" data-hook="price-improvement-small-print">We never name which book had the best price on this page — on 63–79% of observed instants,
-    more than one book was tied for it, so naming one would be arbitrary. A quoted price is what we
-    observed, not a guarantee that book will take your exact bet at your exact size.</p>
-</section>
+<!-- The "FIND THE BETTER NUMBER" section that stood here sold line shopping.
+     Removed 2026-09-12: the owner has said twice that comparing prices
+     across books is not the product. What the price needs to break even
+     now lives in the Bet Check demo above, beside the likelihood. -->
 
 <!-- MOVEMENT -->
 <section class="section" aria-label="what moved and when" data-hook="movement-demo">
@@ -529,19 +510,21 @@
     </details>
     <details class="faq-item panel chamfer" data-hook="faq-gambling-advice">
       <summary>Is this gambling advice?</summary>
-      <p class="faq-item__body">No. We show prices, market-implied consensus, and what changed — not a recommendation.
-        The product's own recommendation field is intentionally and permanently empty until a validated
-        prediction engine clears our own bar.</p>
+      <p class="faq-item__body">No. We publish our own picks with how likely they are and what the price needs, and we
+        publish how they do. Whether to bet, how much, and where is your decision, and nothing here is a
+        guarantee.</p>
     </details>
     <details class="faq-item panel chamfer" data-hook="faq-predict-winners">
       <summary>Do you predict who wins?</summary>
-      <p class="faq-item__body">No. We do not publish a win probability or a predicted winner anywhere in the product.
-        That is a permanent rule, not a gap we are planning to fill.</p>
+      <p class="faq-item__body">We say which side is more likely — by the whole market and by our own numbers — before
+        first pitch, and we grade it after. That is not a promised winner: a 64% side loses more than a
+        third of the time, and the record shows it.</p>
     </details>
     <details class="faq-item panel chamfer" data-hook="faq-price-improvement">
-      <summary>What's a "price improvement," then?</summary>
-      <p class="faq-item__body">The better of two quoted prices for the same bet — line shopping, not a prediction. See
-        "Find the better number" above.</p>
+      <summary>If you already know who's more likely, why does the price matter?</summary>
+      <p class="faq-item__body">Because a likely side at a bad price still loses money. Every pick shows the win rate the
+        price needs to break even next to the likelihood we actually have; if the price needs more than
+        the side is likely to deliver, the pick says so.</p>
     </details>
     <details class="faq-item panel chamfer" data-hook="faq-no-edge">
       <summary>No betting edge found yet — what does that mean?</summary>
@@ -598,8 +581,7 @@
     </span>
     <div class="site-nav__links" style="display:flex">
       <a href="#bet-check">Bet Check</a>
-      <a href="#better-numbers">Better numbers</a>
-      <a href="#pricing">Pricing</a>
+            <a href="#pricing">Pricing</a>
       <a href="#faq">FAQ</a>
     </div>
   </div>

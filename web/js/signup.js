@@ -44,11 +44,15 @@ import { BETA_TIER } from "./pricing.js";
 // product already says elsewhere (web/landing.html's "why we built this",
 // "find the better number" and "paper trail" sections; api/meta.py's
 // PRODUCT_ONE_LINER), just made scannable as bullets on the access card.
+// The order is the owner's rule, verbatim: "none of that price matters
+// until we know it's a more than likely bet" -- likelihood first, then what
+// the price needs. This list used to sell the fair price across every book,
+// which is the register he retired.
 const BENEFITS = [
-  "Every matchup priced against the fair price across every book we can reach — not one line, not one book.",
-  "A verdict on the price, never a tip — whether the number is good, not what to bet.",
-  "Every pick frozen before first pitch, so there's no shopping the call after it's made.",
-  "Paper results published win or lose — the record is checkable, not curated.",
+  "Each pick starts with who is more likely to win — by the whole market and by our own numbers — then what the price needs to break even.",
+  "Every pick frozen before first pitch, so there's no changing the call after it's made.",
+  "Results published win or lose — the record is checkable, not curated.",
+  "Player props on the same footing: how often it actually happens first, what the price needs second.",
 ];
 
 function renderPricingBadge() {
@@ -81,11 +85,9 @@ export async function renderSignup(main) {
   const card = el("div", { class: "signup-card panel chamfer chamfer--lg" });
 
   card.appendChild(el("p", { class: "eyebrow eyebrow--money signup-card__eyebrow", text: "FOUNDING BETA ACCESS" }));
-  // Headline is the site's own <title> line (web/landing.html); subhead is
-  // that page's <meta name="description"> verbatim.
-  card.appendChild(el("h1", { class: "signup-card__title", text: "Check your bet before you fire." }));
+  card.appendChild(el("h1", { class: "signup-card__title", text: "Tonight's bets, written down before first pitch." }));
   card.appendChild(el("p", { class: "signup-card__subhead", text:
-    "See the actual price, the market-implied consensus, and what changed — for one bet you're about to make." }));
+    "Three to five picks a day: which side is more likely, what the price needs, and the record of every one — win or lose." }));
 
   card.appendChild(renderPricingBadge());
   card.appendChild(renderBenefits());

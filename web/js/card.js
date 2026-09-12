@@ -102,8 +102,14 @@ function pickCard(pick, total) {
   });
 
   const top = el("div", { class: "card2__top" });
+  // `position` is where this pick sits on the card being served; `rank` is
+  // the slot it was frozen in. They differ on a card assembled through the
+  // day -- picks lock against their own first pitch and keep their frozen
+  // rank, so a nine-pick card carried ranks [3,2,3,1,2,4,5,5,4] and the
+  // page printed "3 OF 9" twice (2026-09-11). The server orders and numbers;
+  // this only prints.
   top.appendChild(el("span", { class: "card2__rank",
-    text: `${pick.rank} OF ${total}` }));
+    text: `${pick.position || pick.rank} OF ${total}` }));
   top.appendChild(el("span", { class: `card2__label card2__label--${tone}`,
     text: pick.label || "" }));
   // THE KNOWLEDGE GRADE (src/analysis/grade.py): how complete our read of
