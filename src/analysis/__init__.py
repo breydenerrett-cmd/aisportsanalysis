@@ -38,8 +38,9 @@ from __future__ import annotations
 # they are visibly stale; a test compares them to the registry.
 # The READ count, not the registered one: on 2026-09-12 the registry held
 # 42 registrations of which 5 (four V3 forward-window tests and V7) had no
-# verdict yet. The product had been saying 41 "tested"; 37 had been.
-_LAST_KNOWN_HYPOTHESES = 37
+# verdict yet and one more (V3:transaction_first_seen) only a withdrawn,
+# below-floor one. The product had been saying 41 "tested"; 36 had been.
+_LAST_KNOWN_HYPOTHESES = 36
 _LAST_KNOWN_FAMILIES = 6
 
 _UNITS = ("zero", "one", "two", "three", "four", "five", "six", "seven",

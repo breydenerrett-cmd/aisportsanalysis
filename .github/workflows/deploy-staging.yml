@@ -19,6 +19,12 @@ on:
       - "deploy/**"
       # What reaches the build context is part of the image definition.
       - ".dockerignore"
+      # Everything else deploy/Dockerfile bakes in. The registry drives the
+      # hypothesis count every surface prints; a registry-only commit (like
+      # 914e9fd) used to deploy nothing and left staging's count stale.
+      - "data/research/alpha_registry.jsonl"
+      - "evidence/**"
+      - "data/paper_accounts/**"
       - ".github/workflows/deploy-staging.yml"
       # forward-capture commits refresh the stores baked into the image, so
       # staging's Today/Odds data follows the hourly captures automatically

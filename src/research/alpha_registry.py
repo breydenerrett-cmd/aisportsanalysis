@@ -511,8 +511,14 @@ def public_research_counts(path: Optional[Any] = None) -> Dict[str, int]:
         # data does (V7, 2026-09-12: registered the morning before the first
         # quote it can read), so "pre-registered" and "measured" are two
         # different counts, and the product's "N have been measured" is the
-        # second one.
-        if row.get("id") not in latest:
+        # second one. A verdict row whose result is in NOT_READ_RESULTS
+        # (withdrawn, below_floor) is also NOT a read -- the same rule
+        # `total_searched` applies below. V3:transaction_first_seen carries
+        # a "withdrawn" verdict whose own note says no result was read, and
+        # an independent review caught it being counted as tested
+        # (2026-09-12).
+        result = latest.get(row.get("id"))
+        if result is None or result in NOT_READ_RESULTS:
             pending += 1
     return {"hypotheses": hypotheses, "read": hypotheses - pending,
             "pending": pending, "surviving": surviving}

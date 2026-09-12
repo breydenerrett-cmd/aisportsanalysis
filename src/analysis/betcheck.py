@@ -505,7 +505,7 @@ def _market_facts(side, american_price, board) -> dict:
     observed_utc = board.get("observed_utc") if isinstance(board, dict) else None
     unavailable = dict(best_available_price=None, market_consensus=None,
                        your_price_beats_consensus=None, price_improvement=None,
-                       cents_delta=None)
+                       cents_delta=None, stated_price=american_price)
 
     if not quotes:
         return dict(unavailable, reason="no multi-book board provided for this game")
@@ -555,6 +555,7 @@ def _market_facts(side, american_price, board) -> dict:
                your_price_beats_consensus=your_price_beats_consensus,
                price_improvement=improvement,
                cents_delta=_cents_delta(american_price, detail.get("best_price")),
+               stated_price=american_price,
                reason=None)
 
 
@@ -630,31 +631,43 @@ def _bottom_line_text(support_n, counter_n, market) -> str:
     if market["reason"] is not None:
         price_clause = f" Market context is unavailable: {market['reason']}."
     else:
-        cents = market["cents_delta"]
-        best = market["best_available_price"]
-        if cents is None or best is None:
-            price_clause = (" The stated price sits against the fair price "
-                            "across the books, shown above.")
-        # DIRECTION, stated once so it cannot be re-derived wrong: for two
-        # same-sign American prices on the same side, a HIGHER number is the
-        # better price for the bettor (-105 risks less than -110 to win the
-        # same; +150 pays more than +140). `cents_delta` is stated minus
-        # best, so cents > 0 means the stated price BEATS the best number on
-        # our board -- it does not mean it is worse than it.
-        elif cents > 0:
-            unit = "cent" if cents == 1 else "cents"
-            price_clause = (f" The stated price is {cents} {unit} better than "
-                           f"the best available {_fmt_price(best.american_price)}.")
-        elif cents < 0:
-            unit = "cent" if abs(cents) == 1 else "cents"
-            price_clause = (f" The stated price is {abs(cents)} {unit} worse "
-                           f"than the best available "
-                           f"{_fmt_price(best.american_price)}.")
+        # WHAT THE PRICE NEEDS, then what the market makes it -- the owner's
+        # order. This clause used to say the stated price was N cents
+        # "better than" or "worse than" the best available on the board:
+        # the price-comparison register, retired 2026-09-10, and the one
+        # block every check renders. An independent review caught it still
+        # here on 2026-09-12 after the caption that used to flag it had
+        # been removed. `cents_delta` is still computed for the contract;
+        # it is no longer a sentence.
+        needs = _breakeven_share(market.get("stated_price"))
+        consensus = market.get("market_consensus")
+        if needs is None or consensus is None:
+            price_clause = (" What the price needs and the market's own "
+                            "number are shown above.")
         else:
-            price_clause = (" The stated price matches the best available "
-                            "price on the board.")
+            price_clause = (
+                f" At {_fmt_price(market['stated_price'])} this bet needs "
+                f"{needs} to break even; the market makes it "
+                f"{_share(consensus.implied_probability)}.")
 
     return lead + price_clause + " " + _NO_EDGE_DISCLAIMER
+
+
+def _share(probability) -> str:
+    """0.574 -> "57%": the whole-percent form every surface prints."""
+    return f"{round(float(probability) * 100)}%"
+
+
+def _breakeven_share(american_price) -> "str | None":
+    """The win rate a stated American price needs to break even, as a
+    whole percent -- -130 needs 57%, +150 needs 40%. None for a price that
+    is not one. Arithmetic on the stated price, not a de-vig."""
+    if american_price is None:
+        return None
+    try:
+        return _share(odds_math.american_to_probability(american_price))
+    except (odds_math.OddsError, TypeError, ValueError, ZeroDivisionError):
+        return None
 
 
 def _change_item(event: dict) -> "c.ChangeItem | None":

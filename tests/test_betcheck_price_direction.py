@@ -73,61 +73,64 @@ class CentsDeltaArithmeticTests(unittest.TestCase):
         self.assertIsNone(betcheck._cents_delta(120, -130))
 
 
-class BottomLineDirectionTests(unittest.TestCase):
+class BottomLineSaysWhatThePriceNeeds(unittest.TestCase):
+    """Probability before price, in the one block every check renders.
 
-    def test_a_worse_stated_price_is_never_called_better(self):
-        # -130 against a board best of -106: the customer's number loses.
+    This clause used to compare the stated price to the board's best number
+    ("24 cents worse than the best available -106") -- the register the
+    owner retired on 2026-09-10 -- and an independent review found it still
+    here on 2026-09-12, after the caption that used to flag it had gone.
+    Now it says what the stated price needs to break even, then what the
+    market makes it. The direction arithmetic above still guards
+    `cents_delta`, which stays on the contract but is no longer a sentence.
+    """
+
+    def test_a_minus_price_states_its_break_even(self):
+        # -130 needs 130/230 = 56.5% -> "57%"; a -106/-106 board de-vigs to 50%.
         line = bottom_line("home", -130, -106)
-        self.assertIn("24 cents worse than the best available -106", line)
-        self.assertNotIn("cents better", line)
+        self.assertIn("At -130 this bet needs 57% to break even", line)
+        self.assertIn("the market makes it 50%", line)
 
-    def test_a_better_stated_price_is_never_called_worse(self):
-        # -105 against a board best of -106: the customer found a number our
-        # board does not have.
-        line = bottom_line("home", -105, -106)
-        self.assertIn("1 cent better than the best available -106", line)
-        self.assertNotIn("cents worse", line)
-
-    def test_underdog_direction_reads_the_same_way(self):
-        # Positive prices, same rule: +150 beats +140.
+    def test_a_plus_price_states_its_break_even(self):
+        # +150 needs 100/250 = 40%.
         line = bottom_line("home", 150, 140)
-        self.assertIn("10 cents better than the best available +140", line)
-        line = bottom_line("home", 140, 150)
-        self.assertIn("10 cents worse than the best available +150", line)
+        self.assertIn("At +150 this bet needs 40% to break even", line)
 
-    def test_matching_the_board_claims_neither_direction(self):
-        line = bottom_line("home", -110, -110)
-        self.assertIn("matches the best available price on the board", line)
-        self.assertNotIn("cents better", line)
-        self.assertNotIn("cents worse", line)
+    def test_the_break_even_follows_the_stated_price_not_the_board(self):
+        self.assertIn("needs 52% to break even", bottom_line("home", -110, -106))
+        self.assertIn("needs 57% to break even", bottom_line("home", -130, -106))
+
+    def test_no_comparison_to_the_best_available_price(self):
+        for stated, best in [(-130, -106), (-105, -106), (150, 140), (-110, -110)]:
+            with self.subTest(stated=stated, best=best):
+                line = bottom_line("home", stated, best).lower()
+                for phrase in ("cents better", "cents worse", "cent better",
+                               "cent worse", "best available", "matches the best"):
+                    self.assertNotIn(phrase, line, phrase)
+
+    def test_the_retired_register_never_reaches_the_screen_from_python(self):
+        """The client sweep (tests/test_web_betcheck_register.py) scans JS
+        literals; this sentence is composed in Python and rendered verbatim,
+        so it is swept with the same list."""
+        from tests.test_web_betcheck_register import RETIRED
+        for stated, best in [(-130, -106), (-105, -106), (150, 140)]:
+            line = bottom_line("home", stated, best).lower()
+            for phrase in RETIRED:
+                self.assertNotIn(phrase, line, phrase)
 
     def test_the_price_sentence_never_promotes_itself_to_an_edge(self):
-        # The clause used to carry the caption "-- line-shopping value, not
-        # a prediction" after every cents figure. That register was retired
-        # by the owner on 2026-09-10 and the caption went with it on
-        # 2026-09-12. The guard this test exists for -- that the price
-        # sentence never becomes a claim about the game -- is now carried by
-        # the no-edge record that still closes every bottom line.
         for stated, best in [(-130, -106), (-105, -106), (150, 140)]:
             with self.subTest(stated=stated, best=best):
                 line = bottom_line("home", stated, best)
                 self.assertNotIn("line-shopping", line)
                 self.assertIn("No predictive edge is claimed", line)
 
-    def test_a_one_cent_delta_is_singular_in_both_directions(self):
-        """Red-team round: "1 cents better/worse" -- the plural nit. A
-        one-cent delta is the only magnitude where English cares."""
-        better = bottom_line("home", -105, -106)
-        self.assertIn("1 cent better than the best available -106", better)
-        self.assertNotIn("1 cents better", better)
-        worse = bottom_line("home", -111, -110)
-        self.assertIn("1 cent worse than the best available -110", worse)
-        self.assertNotIn("1 cents worse", worse)
-
-    def test_a_multi_cent_delta_stays_plural(self):
-        line = bottom_line("home", -130, -106)
-        self.assertIn("24 cents worse", line)
-        self.assertNotIn("24 cent worse", line)
+    def test_no_market_context_says_so_and_states_no_number(self):
+        result = betcheck.build_contract(
+            "2026-08-31", "BOS", "NYY", "home", -130,
+            board={"quotes": []}, findings=[])
+        self.assertIn("Market context is unavailable", result.bottom_line)
+        self.assertNotIn("break even", result.bottom_line)
 
 
 class YourPriceBeatsConsensusTests(unittest.TestCase):
