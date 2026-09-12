@@ -74,11 +74,15 @@ class WiresWave0PrimitivesWithoutForking(unittest.TestCase):
                      "renderCaptureUnavailable"):
             self.assertIn(name, text, f"{name} should be imported from states.js")
 
-    def test_imports_featured_bet_primitive(self):
+    def test_no_longer_imports_the_featured_bet_tile(self):
+        # Inverted on 2026-09-12. V2-33 had Today mount featuredbet.js as a
+        # "FEATURED · LARGEST PRICE GAP AGAINST CONSENSUS" section; the tile
+        # is five rows of price comparison, which is the register the owner
+        # retired on 2026-09-10. Gameday must not mount it. It still serves
+        # the game page, which is the next sweep.
         text = _read(TODAY_PATH)
-        self.assertIn('from "./featuredbet.js"', text)
-        self.assertIn("renderFeaturedBet", text)
-        self.assertIn("mapBetCheckPayloadToStanding", text)
+        self.assertNotIn('from "./featuredbet.js"', text)
+        self.assertNotIn("mapBetCheckPayloadToStanding", text)
 
     def test_does_not_redefine_shared_primitives(self):
         text = _read(TODAY_PATH)
@@ -109,10 +113,17 @@ class VerdictStatesAndFeatureSelection(unittest.TestCase):
         text = _read(TODAY_PATH)
         self.assertIn('["away", "home"]', text)
 
-    def test_betcheck_price_is_the_real_best_price_never_a_literal(self):
+    def test_gameday_no_longer_fires_a_bet_check_on_load(self):
+        # Until 2026-09-12 this asserted `american_price: best.price` -- the
+        # body of a POST /betcheck the screen fired on every load to fill
+        # the Featured Bet tile. The tile is gone (the price-comparison
+        # register the owner retired), so the request must be gone too: a
+        # page that quietly runs a bet check nobody asked for, on a bet
+        # chosen by price gap, is the feature by another route.
         text = _read(TODAY_PATH)
-        self.assertIn("american_price: best.price", text)
-        # No hardcoded American price literal anywhere near the POST body.
+        self.assertNotIn('apiPost("/betcheck"', text)
+        self.assertNotIn("american_price:", text)
+        # And still never a hardcoded American price literal.
         self.assertNotRegex(text, r"american_price:\s*-?\d")
 
     def test_featured_bet_verdict_is_never_defaulted_to_no_play(self):

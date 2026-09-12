@@ -106,21 +106,36 @@ class MatchupsWiredIntoToday(unittest.TestCase):
         # before it can start -- see matchups.js's own note.
         self.assertIn("renderMatchups(host, date, today)", text)
 
-    def test_matchups_sits_above_the_featured_bet(self):
-        # renderFeaturedSection is both declared and called in today.js --
-        # scope to renderToday's own body so this compares actual DOM-
-        # append call sites, not the earlier function declaration.
+    def test_matchups_sits_above_the_slate_rail(self):
+        # Scoped to renderToday's own body so this compares actual DOM-
+        # append call sites, not function declarations.
         #
         # TOP OPPORTUNITIES used to lead this ordering and no longer mounts
-        # at all (see the test below). What survives is the part that was
-        # ever about ordering: the matchup grid above the featured slot.
+        # at all (see the test below). Then the Featured Bet section was the
+        # thing below the grid, and on 2026-09-12 it went the same way --
+        # both were the price-comparison register on the main screen. What
+        # survives is the part that was ever about ordering: the matchup
+        # grid above whatever comes next, which is now the slate rail.
         text = _read(TODAY_PATH)
         body = text.split("export async function renderToday(")[1]
         mx_index = body.find("renderMatchups(host, date, today)")
-        featured_index = body.find("renderFeaturedSection(host, gapCandidate, rows.length)")
+        rail_index = body.find("renderSlateRail(rows, oddsIndex")
         self.assertGreaterEqual(mx_index, 0)
-        self.assertGreaterEqual(featured_index, 0)
-        self.assertLess(mx_index, featured_index)
+        self.assertGreaterEqual(rail_index, 0)
+        self.assertLess(mx_index, rail_index)
+
+    def test_the_featured_price_gap_section_is_not_mounted_on_today(self):
+        """The price-gap feature must not come back by accident.
+
+        It headlined "the largest price gap against consensus" as a feature
+        and fired a POST /betcheck on every page load to fill a tile of
+        PRICE STANDING / BEATS CONSENSUS / IMPROVEMENT rows.
+        """
+        text = _read(TODAY_PATH)
+        body = text.split("export async function renderToday(")[1]
+        self.assertEqual(body.find("renderFeaturedSection("), -1)
+        self.assertEqual(body.find("loadFeaturedStanding("), -1)
+        self.assertNotIn('from "./featuredbet.js"', text)
 
     def test_top_opportunities_is_not_mounted_on_today(self):
         """TOP OPPORTUNITIES must not come back to #/today by accident.
@@ -148,7 +163,12 @@ class MatchupsWiredIntoToday(unittest.TestCase):
         # lives in opportunities.js, not today.js -- today.js only places
         # that section, so it is not checked here).
         text = _read(TODAY_PATH)
-        for hook in ("gameday-hero", "gameday-featured-bet", "tonights-slate",
+        # "gameday-featured-bet" was in this list until 2026-09-12. That
+        # section -- FEATURED · LARGEST PRICE GAP AGAINST CONSENSUS, over
+        # featuredbet.js's price-comparison tile -- was removed as the
+        # register the owner retired on 2026-09-10, and a hook for a section
+        # that must not exist has no business in a list of hooks that must.
+        for hook in ("gameday-hero", "tonights-slate",
                      "what-changed", "check-band", "board-freshness"):
             self.assertIn(f'"{hook}"', text, f"missing pre-existing data-hook {hook!r}")
 

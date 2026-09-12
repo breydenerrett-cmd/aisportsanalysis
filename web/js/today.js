@@ -57,31 +57,25 @@
  * V2-33's own eyebrow states its rule in words: "FEATURED . LARGEST
  * PRICE GAP AGAINST CONSENSUS -- Computed from tonight's boards, a
  * measured gap, not a judgement." This screen uses that ONE rule for
- * both the top hero's verdict state AND the Featured Bet slot, rather
- * than V1's separate "earliest not-yet-started" rule for the hero --
- * running two different "features" on one screen would be confusing,
- * and this rule is already deterministic, real-data-only and carries no
- * favourite bias (it is picked from realised price gaps, not from who
- * is favoured). When no game has a priced board with a genuine gap, the
- * hero falls back to the earliest game chronologically (V1's rule,
- * still non-editorial) and the Featured Bet slot renders its own
- * honest-absence state.
+ * the top hero's verdict state and the slate rail (the Featured Bet slot
+ * it also fed is gone -- next section), rather than V1's separate
+ * "earliest not-yet-started" rule for the hero. The rule is
+ * deterministic, real-data-only and carries no favourite bias (it is
+ * picked from realised price gaps, not from who is favoured). When no
+ * game has a priced board with a genuine gap, the hero falls back to the
+ * earliest game chronologically (V1's rule, still non-editorial).
  *
- * V2-33's FEATURED BET CARD -- WHY THIS CALLS POST /betcheck
+ * V2-33's FEATURED BET CARD -- REMOVED 2026-09-12
  * -------------------------------------------------------------------
- * web/js/featuredbet.js's own docstring TODO for this exact call site
- * says the Featured Bet primitive needs "a matched game and a Bet
- * Check-shaped payload for it (e.g. by also calling POST /betcheck for
- * the slate's featured game ... not decided here)". This screen decides
- * it: once the largest-gap game+side is known (a real, deterministic,
- * non-favourite pick -- never "always check the away side"), it POSTs
- * that exact bet (real american_price already on the board) to
- * /betcheck and maps the real response through
- * `mapBetCheckPayloadToStanding`. Every figure the Featured Bet card
- * then shows is server-computed, real analysis -- nothing here invents
- * a probability, a rating or a rank. When no gap exists anywhere on
- * tonight's board, the slot renders featuredbet.js's own honest
- * could-not-check state with a real reason, never a fabricated query.
+ * This screen used to POST the largest-gap bet to /betcheck on every load
+ * and mount web/js/featuredbet.js's tile with the response: PRICE
+ * STANDING, BEATS CONSENSUS, IMPROVEMENT, BOARD DEPTH, "N BOOKS
+ * COMPARED", under the eyebrow "FEATURED . LARGEST PRICE GAP AGAINST
+ * CONSENSUS". That is the price-comparison register the owner retired on
+ * 2026-09-10, headlined as a feature. The section, the request and the
+ * import are gone. The largest-gap rule survives ONLY as the way the hero
+ * and the slate rail choose which game to lead with (see below); whether
+ * that should change too is the owner's call, not a copy fix.
  *
  * GET /odds/{date} IS NOT ONE OF THIS ARTBOARD FAMILY'S LISTED
  * ENDPOINTS (IMPLEMENTATION_MANIFEST.json lists only /today,
@@ -102,13 +96,12 @@
  * the slate rail rather than forked into a V2-only tile.
  */
 
-import { apiGet, apiPost } from "./api.js";
+import { apiGet } from "./api.js";
 import { el, clear, formatAmerican, formatConsensusShare,
   formatEasternClock, formatSlateDate, verdictLabel,
   notYetAvailable } from "./dom.js";
 import { renderError, renderLoadingSkeleton, renderEmptySlate,
   renderCaptureUnavailable } from "./states.js";
-import { renderFeaturedBet, mapBetCheckPayloadToStanding } from "./featuredbet.js";
 import { renderCard } from "./card.js";
 import { renderOpportunities } from "./opportunities.js";
 import { renderMatchups } from "./matchups.js";
@@ -944,51 +937,6 @@ function renderHero(host, featured, aggregates, rows, date, hasPicks) {
   host.appendChild(node);
 }
 
-/* ---------------------------------------------------------------------
- * V2-33 -- Featured Bet carousel head
- * ------------------------------------------------------------------- */
-
-async function loadFeaturedStanding(candidate, date, featuredVerdict) {
-  if (!candidate || !candidate.best || typeof candidate.best.price !== "number") return null;
-  const { row, side, best } = candidate;
-  try {
-    const payload = await apiPost("/betcheck", {
-      date: row.date || date,
-      away: row.away_team,
-      home: row.home_team,
-      side,
-      american_price: best.price,
-    });
-    return mapBetCheckPayloadToStanding(payload, { verdict: featuredVerdict });
-  } catch (err) {
-    return null;
-  }
-}
-
-function renderFeaturedSection(host, candidate, totalGames) {
-  const section = el("section", { class: "gv2-featured", "data-hook": "gameday-featured-bet", "data-rise": "" });
-  const head = el("div", { class: "gv2-featured__head" });
-  head.appendChild(el("span", { class: "gv2-featured__tag", text: "FEATURED · LARGEST PRICE GAP AGAINST CONSENSUS" }));
-  head.appendChild(el("span", { class: "gv2-featured__sub",
-    text: "Computed from tonight's boards — a measured gap, not a judgement." }));
-  if (candidate) {
-    // NOT "SWIPE FOR THE REST". There is nothing to swipe to: this section
-    // creates ONE slot, loadFeaturedStanding appends exactly one card into
-    // it, and .gv2-featured__slot has no overflow, no scroll-snap and no
-    // handler. The V2 artboard specified a carousel; only the head shipped,
-    // and the promise stayed. A control that does nothing when you touch it
-    // reads as a broken app, which is a worse first impression than an
-    // honest single card -- and on mobile a reader will actually try it.
-    head.appendChild(el("span", { class: "gv2-featured__count",
-      text: `THE LARGEST OF ${totalGames} GAMES` }));
-  }
-  section.appendChild(head);
-
-  const slot = el("div", { class: "gv2-featured__slot", "data-hook": "gameday-featured-bet-slot" });
-  section.appendChild(slot);
-  host.appendChild(section);
-  return slot;
-}
 
 /* ---------------------------------------------------------------------
  * Slate rail -- reuses web/js/tiles.js's shared slateTile unchanged
@@ -1278,8 +1226,8 @@ export async function renderToday(container) {
   // THE MATCHUP GRID -- every game on tonight's slate, its live
   // moneyline, its price read, and its frozen pregame positions
   // (web/js/matchups.js owns this section's own render/fetch; this
-  // screen only places it, below THE PRICE BOARD and above the
-  // Featured Bet carousel head).
+  // screen only places it, below THE PRICE BOARD and above the slate
+  // rail).
   // Hand over the /today payload this screen already fetched, so the grid
   // does not pay for a second copy of it before it can start.
   await renderMatchups(host, date, today);
@@ -1302,23 +1250,20 @@ export async function renderToday(container) {
   propsWrap.appendChild(propsEntry);
   host.appendChild(propsWrap);
 
-  const slot = renderFeaturedSection(host, gapCandidate, rows.length);
-  slot.appendChild(el("div", { class: "gv2-featured__loading",
-    text: "Checking tonight's largest price gap…" }));
-  loadFeaturedStanding(gapCandidate, date, featured.row.verdict).then((standing) => {
-    clear(slot);
-    if (standing) {
-      renderFeaturedBet(slot, standing, {});
-    } else {
-      renderFeaturedBet(slot, {
-        query: { raw: gapCandidate ? `${gapCandidate.row.away_team} @ ${gapCandidate.row.home_team}` : "",
-          parsed: false,
-          parseError: gapCandidate
-            ? "The bet check for tonight's largest price gap did not come back."
-            : "No priceable gap against consensus on tonight's board — there is nothing to feature." },
-      }, {});
-    }
-  });
+  // THE FEATURED BET SECTION USED TO MOUNT HERE, 2026-09-07 to 2026-09-12.
+  //
+  // "FEATURED · LARGEST PRICE GAP AGAINST CONSENSUS", then featuredbet.js's
+  // tile: PRICE STANDING, BEATS CONSENSUS, IMPROVEMENT, BOARD DEPTH, "N
+  // BOOKS COMPARED", captioned "price improvement / line-shopping value".
+  // It fired a POST /betcheck on every load of this screen to fill itself.
+  //
+  // That is the register the owner retired on 2026-09-10 ("that has to
+  // stop. None of that's important. Nobody fucking cares."), and it was
+  // headlining the largest price gap on the slate as a feature -- the
+  // same thing TOP PLAY did, one screen down. `gapCandidate` still picks
+  // which game the hero and the slate rail lead with; changing what the
+  // headline game is chosen on is a product decision and is left for the
+  // owner (docs/OVERNIGHT_PLAN_2026-09-12.md, "What I will not do").
 
   host.appendChild(renderSlateRail(rows, oddsIndex, featured.row.game_id, changedIds));
 

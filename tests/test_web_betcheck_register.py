@@ -144,5 +144,20 @@ class WhatReplacedIt(unittest.TestCase):
             self.assertNotIn(f'"{word}', body)
 
 
+class TheRegisterIsGoneFromTodayToo(unittest.TestCase):
+    """The same tile headlined the main screen as "FEATURED · LARGEST PRICE
+    GAP AGAINST CONSENSUS" and fired a POST /betcheck on every load to fill
+    itself. Removed 2026-09-12."""
+
+    def test_today_does_not_mount_the_tile_or_name_the_gap_as_a_feature(self):
+        today = WEB_JS / "today.js"
+        text = _read(today)
+        self.assertNotIn('from "./featuredbet.js"', text)
+        offenders = [f"today.js:{n}: {t[:60]!r}"
+                     for n, t in _rendered_strings(today)
+                     if "price gap" in t.lower() or "beats consensus" in t.lower()]
+        self.assertEqual(offenders, [], "\n".join(offenders))
+
+
 if __name__ == "__main__":
     unittest.main()
