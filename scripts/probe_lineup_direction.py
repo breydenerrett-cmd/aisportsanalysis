@@ -102,6 +102,15 @@ def family_alpha(declared=ALPHA):
     return declared / n, n
 
 
+# FORWARD REPLICATION, as registered (data/research/alpha_registry.jsonl,
+# V6:lineup_surprise_direction:h2h): postings collected strictly after the
+# registration instant, read once at a floor of 150 usable observations,
+# at the family-wise alpha only. Neither number moves.
+from datetime import datetime as _dt, timezone as _tz
+REGISTERED_AT = _dt(2026, 9, 11, 20, 38, 15, tzinfo=_tz.utc)
+FORWARD_FLOOR = 150
+
+
 def _lineup_rows(events, sides, first_pitch):
     """[{team, date, lineup, side, game_pk, at}] for every usable posting.
 
@@ -242,8 +251,38 @@ def _observations(scored, boards, window=base.HORIZON_MINUTES):
                     "before": base._net(series, anchor - span, anchor),
                     "expected": expected, "surprise": row["surprise"],
                     "team": row["team"], "side": row["side"],
-                    "novel": row["novel"], "missing": row["missing"]})
+                    "novel": row["novel"], "missing": row["missing"],
+                    # When the posting landed, so a forward read can keep to
+                    # postings collected after the registration instant.
+                    "at": anchor})
     return out, census
+
+
+def forward_only(observations, cutoff=None):
+    """The observations whose posting landed AFTER the registration instant
+    -- the out-of-sample set V6's forward replication is allowed to read.
+
+    Strictly after: a posting at the registration second itself was in the
+    discovery data. A naive timestamp is read as UTC, which is what every
+    store in this repo writes."""
+    from datetime import timezone
+    cutoff = cutoff or REGISTERED_AT
+    out = []
+    for o in observations:
+        at = o.get("at")
+        if at is None:
+            continue
+        if at.tzinfo is None:
+            at = at.replace(tzinfo=timezone.utc)
+        if at > cutoff:
+            out.append(o)
+    return out
+
+
+def forward_state(n, floor=FORWARD_FLOOR):
+    """"PENDING" until the pre-registered floor, "READ" at or past it. The
+    floor is not lowered by a run that happens to be close."""
+    return "READ" if n >= floor else "PENDING"
 
 
 def _dose_response(observations):
@@ -321,6 +360,10 @@ def _structural_split(observations, gaps, shared_minutes=45):
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--json", action="store_true")
+    ap.add_argument("--forward", action="store_true",
+                    help="the registered forward replication: postings after "
+                         f"{REGISTERED_AT.isoformat()} only, PENDING below "
+                         f"{FORWARD_FLOOR}, family-wise alpha only")
     args = ap.parse_args(argv)
 
     events = base._read_events()
@@ -335,6 +378,33 @@ def main(argv=None):
     rows, dropped = _lineup_rows(events, sides, first_pitch)
     scored, skipped_thin = score_lineups(rows)
     observations, census = _observations(scored, boards)
+
+    if args.forward:
+        # The priors behind each posting's "expected nine" may reach back
+        # into the discovery window -- that is history, not a read. Only the
+        # POSTINGS being scored are held to the cutoff.
+        forward = forward_only(observations)
+        state = forward_state(len(forward))
+        print("=" * 78)
+        print("LINEUP DIRECTION -- FORWARD REPLICATION (V6, registered "
+              f"{REGISTERED_AT.isoformat()})")
+        print("=" * 78)
+        print(f"  {len(forward)} usable postings after the registration "
+              f"instant; floor {FORWARD_FLOOR}")
+        if state == "PENDING":
+            print(f"\nVERDICT: PENDING -- {FORWARD_FLOOR - len(forward)} more "
+                  "usable postings needed. The floor does not get lowered, "
+                  "and nothing below is read early.")
+            return 0
+        strict_alpha, family_size = family_alpha()
+        hits, movers, ties = base._hit_rate(forward, "after")
+        strict = base._clustered_interval(forward, "after", alpha=strict_alpha)
+        verdict = base._verdict(movers, strict) if strict else "UNDETERMINED"
+        ci = f"[{strict[0]:.3f}, {strict[1]:.3f}]" if strict else "[too few]"
+        print(f"    n={movers}   hit {hits / movers:.3f}   "
+              f"family of {family_size}   alpha {strict_alpha:.5f}   {ci}")
+        print(f"\nVERDICT: {verdict}")
+        return 0
 
     print("=" * 78)
     print("LINEUP DIRECTION -- does a depleted lineup push its own price down?")

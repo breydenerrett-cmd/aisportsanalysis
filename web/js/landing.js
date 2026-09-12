@@ -147,7 +147,11 @@ async function fillResearchCounts() {
   if (!nodes.length) return;
   try {
     const meta = await fetchMeta();
-    const n = meta && meta.research && meta.research.hypotheses;
+    // The READ count: the sentence says "tested", and a hypothesis
+    // registered ahead of its data has not been. `read` arrived 2026-09-12;
+    // an older /meta without it still carries the total.
+    const research = (meta && meta.research) || {};
+    const n = typeof research.read === "number" ? research.read : research.hypotheses;
     if (typeof n !== "number") return;
     nodes.forEach((node) => { node.textContent = String(n); });
   } catch (err) {

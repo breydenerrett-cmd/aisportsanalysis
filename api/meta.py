@@ -100,7 +100,8 @@ def _research_counts() -> dict:
         from src.research import alpha_registry
         return alpha_registry.public_research_counts()
     except Exception:  # noqa: BLE001
-        return {"hypotheses": None, "surviving": None}
+        return {"hypotheses": None, "read": None, "pending": None,
+                "surviving": None}
 
 
 @router.get("/meta")

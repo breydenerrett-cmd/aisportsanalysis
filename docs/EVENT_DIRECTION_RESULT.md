@@ -230,3 +230,20 @@ board, which is the same silent inversion the mutation test exists to catch.
   baseball except which store the events come from — the same test runs on a
   UFC fight week or an NFL injury report the moment those events are recorded
   with an `observed_utc`.
+
+## Re-run, 2026-09-12 (after the join fix, 41 more games of events)
+
+Same criterion, same instrument, nothing changed but the data.
+
+| row | n | hit | 98.33% CI | verdict |
+|---|---|---|---|---|
+| CONTROL temperature -> total | 14 | 0.500 | [0.300, 0.778] | UNDETERMINED |
+| H1 IL placement -> team down | 9 | 0.556 | [0.222, 0.889] | UNDETERMINED |
+| H2 IL activation -> team up | 32 | 0.438 | [0.207, 0.676] | UNDETERMINED |
+
+The positive control still did not confirm, so nothing above it is
+evidence of anything. H2 crossed its n=30 floor for the first time and
+the answer is the same. Structural finding unchanged: the moneyline board
+opens a median 26h before first pitch and IL placements land a median
+17.6h AFTER first pitch of the game they are filed against, so most of
+H1 can never be measured on this feed.

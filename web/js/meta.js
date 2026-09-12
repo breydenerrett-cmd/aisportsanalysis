@@ -97,9 +97,13 @@ export function fillResearchCount(node, build, fallback) {
   node.textContent = fallback;
   meta().then((payload) => {
     const counts = (payload && payload.research) || {};
-    if (typeof counts.hypotheses !== "number"
-        || typeof counts.surviving !== "number") return;
-    node.textContent = build(counts.hypotheses, counts.surviving);
+    // The READ count: every sentence built here says "measured" or
+    // "pre-registered ... surviving", and a hypothesis registered ahead of
+    // its data (V7, 2026-09-12) is neither measured nor a survivor. An
+    // older /meta without `read` still carries the total.
+    const read = typeof counts.read === "number" ? counts.read : counts.hypotheses;
+    if (typeof read !== "number" || typeof counts.surviving !== "number") return;
+    node.textContent = build(read, counts.surviving);
   });
   return node;
 }

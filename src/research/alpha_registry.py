@@ -490,13 +490,22 @@ def public_research_counts(path: Optional[Any] = None) -> Dict[str, int]:
     latest = registry._latest_verdict_results()  # noqa: SLF001
     hypotheses = 0
     surviving = 0
+    pending = 0
     for row in registry._iter_raw():  # noqa: SLF001
         if row.get("kind") != "hypothesis":
             continue
         hypotheses += 1
         if latest.get(row.get("id")) in SURVIVING_RESULTS:
             surviving += 1
-    return {"hypotheses": hypotheses, "surviving": surviving}
+        # Registered and not yet read. A pre-registration exists BEFORE its
+        # data does (V7, 2026-09-12: registered the morning before the first
+        # quote it can read), so "pre-registered" and "measured" are two
+        # different counts, and the product's "N have been measured" is the
+        # second one.
+        if row.get("id") not in latest:
+            pending += 1
+    return {"hypotheses": hypotheses, "read": hypotheses - pending,
+            "pending": pending, "surviving": surviving}
 
 
 def register(row: Dict[str, Any], path: Optional[Any] = None) -> Dict[str, Any]:

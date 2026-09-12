@@ -36,7 +36,10 @@ from __future__ import annotations
 # What the registry said the last time someone looked. A fallback for a
 # container with no data/ tree, never the primary source. Update these when
 # they are visibly stale; a test compares them to the registry.
-_LAST_KNOWN_HYPOTHESES = 41
+# The READ count, not the registered one: on 2026-09-12 the registry held
+# 42 registrations of which 5 (four V3 forward-window tests and V7) had no
+# verdict yet. The product had been saying 41 "tested"; 37 had been.
+_LAST_KNOWN_HYPOTHESES = 37
 _LAST_KNOWN_FAMILIES = 6
 
 _UNITS = ("zero", "one", "two", "three", "four", "five", "six", "seven",
@@ -78,6 +81,11 @@ def research_counts() -> dict:
         }
         return {
             "hypotheses": int(counts["hypotheses"]),
+            # Registered AND read. A hypothesis registered before its data
+            # exists is pre-registered but not measured, and every customer
+            # sentence here says "measured".
+            "read": int(counts.get("read", counts["hypotheses"])),
+            "pending": int(counts.get("pending") or 0),
             "families": len(families),
             "surviving": int(counts.get("surviving") or 0),
             "source": "registry",
@@ -85,6 +93,8 @@ def research_counts() -> dict:
     except Exception:  # noqa: BLE001 -- see the module docstring
         return {
             "hypotheses": _LAST_KNOWN_HYPOTHESES,
+            "read": _LAST_KNOWN_HYPOTHESES,
+            "pending": 0,
             "families": _LAST_KNOWN_FAMILIES,
             "surviving": 0,
             "source": "last_known",
@@ -94,7 +104,10 @@ def research_counts() -> dict:
 _COUNTS = research_counts()
 
 # Pre-registered hypotheses measured against outcomes, across all families.
-HYPOTHESES_TESTED = _COUNTS["hypotheses"]
+# The READ count: a registration whose data has not arrived yet is not a
+# measurement and is counted in HYPOTHESES_PENDING instead.
+HYPOTHESES_TESTED = _COUNTS["read"]
+HYPOTHESES_PENDING = _COUNTS["pending"]
 HYPOTHESIS_FAMILIES = _COUNTS["families"]
 COUNTS_FROM_REGISTRY = _COUNTS["source"] == "registry"
 # Spelled out for prose that reads better with a word than a numeral. The

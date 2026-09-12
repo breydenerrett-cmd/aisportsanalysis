@@ -71,6 +71,48 @@ adversely selected.
   club, side and book through `src/board/readable.py` on the way out
   ("Milwaukee Brewers (home) moneyline (-182, BetRivers)"); the ledger row
   is untouched.
+- **`#/game` SHOW ADVANCED ANALYSIS — DONE.** It was the retired register
+  end to end: SPOTLIGHT · PRICE STANDING (the featuredbet tile: BEATS
+  CONSENSUS, IMPROVEMENT -1.38 pts, "line-shopping value", 11 BOOKS
+  COMPARED), MODEL vs MARKET "ranked by price against the fair price only",
+  BOOK VERSUS BOOK "the comparison that is real", and a MARKET REFUSAL that
+  said player props were refused (false since the prop board shipped). The
+  tile, its mapper and the verdict block are deleted from games.js; the
+  board is "THE BOARD · every book's price from one capture instant"; OTHER
+  MARKETS links the prop board. Tests that pinned the old wiring flipped.
+- **Landing hero at 375px** clipped its new sentences (the block sized to
+  its longest line, 451px on a 375px screen); fixed and measured.
+- **T3 lineup store:** diagnosed. The runner restores `lineups.jsonl` from
+  an actions cache and the 09-11 evening runs DID write rows
+  (`lineups: games=15, written=2` at 22:55Z) — the script's `git add` for
+  the file landed after those runs, so nothing reached git yet. First
+  commit expected from tonight's afternoon slots (lineups ~16:30Z+).
+  **Verify after 18:00Z:** `git log -1 -- data/historical/lineups.jsonl`
+  shows a 09-12 capture commit.
+- **T3 V6 forward reader — DONE.** `scripts/probe_lineup_direction.py
+  --forward`: postings strictly after the registration instant
+  (2026-09-11T20:38:15Z), PENDING below 150, family-wise α only. Ran it:
+  12 of 150, PENDING. V6's discovery read is now recorded in the registry
+  as `candidate` (read, not a survivor, not killed).
+- **T3 slot test — PRE-REGISTERED (V7)** before any post-lineup quote
+  exists: `docs/PREREG_SLOT_PROP.md`, reader `scripts/probe_slot_prop.py`
+  (PENDING until 150 UP / 150 FLAT / 100+100 control rows), registry row
+  `V7:lineup_slot_prop_repricing:batter_hits`. Market-only design (a
+  batter against his own prior nights) so it needs no extra credits; the
+  timing version needs a ~T-6h baseline capture and is the owner's spend
+  call — see the doc.
+- **Found in the registry while registering V7: "41 tested" was never
+  true.** Five registered hypotheses have no verdict row — four V3
+  forward-window tests still waiting on data, and now V7. `public_research_counts`
+  now returns `read` and `pending` beside the total; every customer surface
+  prints the READ count (37), the landing sentence says "tested, and none
+  has survived", and the family-wise α still divides by all 42.
+- **T4 event probe re-run — DONE.** Same verdicts; H2 crossed its floor
+  (n=32) and is still UNDETERMINED; the control still does not confirm.
+  Appended to `docs/EVENT_DIRECTION_RESULT.md`.
+- **T5 debt:** the three doc-churn stashes and the `%SystemDrive%/` junk
+  need a `git stash drop` / `rm` the harness would not run unattended —
+  left for the owner (two commands, both listed in Tier 5).
 
 ## Tier 1 — things the owner asked for that are still not done
 

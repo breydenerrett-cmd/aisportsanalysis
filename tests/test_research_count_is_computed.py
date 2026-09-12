@@ -141,8 +141,12 @@ class ThePythonConstantsReadTheRegistryToo(unittest.TestCase):
         from src.research import alpha_registry
         self.assertTrue(analysis.COUNTS_FROM_REGISTRY,
                         "src.analysis fell back to its last-known figures")
-        self.assertEqual(analysis.HYPOTHESES_TESTED,
-                         alpha_registry.public_research_counts()["hypotheses"])
+        counts = alpha_registry.public_research_counts()
+        # "Tested" is the READ count. A registration ahead of its data (V7,
+        # 2026-09-12) is pre-registered and pending, not measured.
+        self.assertEqual(analysis.HYPOTHESES_TESTED, counts["read"])
+        self.assertEqual(analysis.HYPOTHESES_PENDING, counts["pending"])
+        self.assertEqual(counts["read"] + counts["pending"], counts["hypotheses"])
 
     def test_the_family_count_is_the_registry_family_count(self):
         from src import analysis
@@ -172,7 +176,7 @@ class ThePythonConstantsReadTheRegistryToo(unittest.TestCase):
         from src import analysis
         from src.research import alpha_registry
         self.assertEqual(analysis._LAST_KNOWN_HYPOTHESES,
-                         alpha_registry.public_research_counts()["hypotheses"],
+                         alpha_registry.public_research_counts()["read"],
                          "bump _LAST_KNOWN_HYPOTHESES in src/analysis/__init__.py")
 
     def test_the_bet_check_bottom_line_carries_the_registry_count(self):
@@ -228,7 +232,8 @@ class NoCustomerFileHardcodesIt(unittest.TestCase):
         """The no-JS fallback is real copy a visitor can read. It is allowed
         to be a literal -- it is not allowed to be a WRONG literal."""
         from src.research import alpha_registry
-        expected = str(alpha_registry.public_research_counts()["hypotheses"])
+        # The READ count: the sentences around every hook say "tested".
+        expected = str(alpha_registry.public_research_counts()["read"])
         html = (WEB / "landing.html").read_text(encoding="utf-8")
         fallbacks = re.findall(
             r'data-hook="research-count"[^>]*>([^<]*)<', html)
