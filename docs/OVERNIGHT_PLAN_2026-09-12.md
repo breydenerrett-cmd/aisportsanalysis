@@ -171,8 +171,16 @@ adversely selected.
   layers — a missing registry now raises (callers already treat that as
   unknown: `/meta` nulls, pages keep their fallback copy, `src.analysis`
   uses last-known and says so), the Dockerfile copies the registry, and
-  `.dockerignore` is a deploy trigger. Verify on staging after the
-  deploy: `/meta.research.read == 37`.
+  `.dockerignore` is a deploy trigger. Verified on staging after the
+  deploy: `/meta.research` = 42 registered / 37 read / 5 pending, and the
+  landing page prints 37.
+- **Owner asleep from ~08:00Z; running unattended.** Two multi-agent jobs
+  in flight: an independent six-dimension review of today's ~50 commits
+  (every finding adversarially verified before it counts), and two
+  decision memos with numbers from the stores — `docs/DECISION_TODAY_ONE_ANSWER.md`
+  and `docs/DECISION_PROP_CAPTURE_SPEND.md` — each checked by a second
+  agent that reproduces every figure. Findings get fixed; memos get read
+  before they are committed.
 - **INCIDENT, mine, ~07:00Z:** the dead-view deletion missed the
   one remaining importer (`today.js` kept `opportunities.js` alive with a
   `void renderOpportunities;` line). My grep for importers was piped
