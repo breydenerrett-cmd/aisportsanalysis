@@ -86,8 +86,9 @@ adversely selected.
   an actions cache and the 09-11 evening runs DID write rows
   (`lineups: games=15, written=2` at 22:55Z) — the script's `git add` for
   the file landed after those runs, so nothing reached git yet. First
-  commit expected from tonight's afternoon slots (lineups ~16:30Z+).
-  **Verify after 18:00Z:** `git log -1 -- data/historical/lineups.jsonl`
+  commit expected from today's afternoon slots: the first game is 1:10pm
+  ET (17:10Z) and lineups post a median 3.0h before, so ~14:10Z.
+  **Verify after 14:30Z:** `git log -1 -- data/historical/lineups.jsonl`
   shows a 09-12 capture commit.
 - **T3 V6 forward reader — DONE.** `scripts/probe_lineup_direction.py
   --forward`: postings strictly after the registration instant
