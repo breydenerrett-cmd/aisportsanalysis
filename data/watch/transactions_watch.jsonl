@@ -1126,3 +1126,17 @@
 {"category": "optioned", "date": "2026-09-12", "first_seen_utc": "2026-09-12T19:20:35.473106+00:00", "player": "Alex Cook", "player_id": 702047, "team": "TB", "transaction_id": 942149}
 {"category": "designated", "date": "2026-09-12", "first_seen_utc": "2026-09-12T19:20:35.473106+00:00", "player": "Michael Grove", "player_id": 675627, "team": "TB", "transaction_id": 942150}
 {"fetched_utc": "2026-09-12T19:20:37.579050+00:00", "game_date": "2026-09-12", "poll": true}
+{"fetched_utc": "2026-09-12T21:33:01.539945+00:00", "game_date": "2026-09-12", "poll": true}
+{"category": "other", "date": "2026-09-12", "first_seen_utc": "2026-09-12T21:33:01.539945+00:00", "player": "Chase Hampton", "player_id": 694633, "team": "WSH", "transaction_id": 942157}
+{"category": "optioned", "date": "2026-09-12", "first_seen_utc": "2026-09-12T21:33:01.539945+00:00", "player": "Chase Hampton", "player_id": 694633, "team": "WSH", "transaction_id": 942161}
+{"category": "optioned", "date": "2026-09-12", "first_seen_utc": "2026-09-12T21:33:01.539945+00:00", "player": "Darell Hernaiz", "player_id": 687231, "team": "OAK", "transaction_id": 942166}
+{"category": "il_activation", "date": "2026-09-12", "first_seen_utc": "2026-09-12T21:33:01.539945+00:00", "player": "Shea Langeliers", "player_id": 669127, "team": "OAK", "transaction_id": 942167}
+{"category": "il_activation", "date": "2026-09-12", "first_seen_utc": "2026-09-12T21:33:01.539945+00:00", "player": "Nathan Eovaldi", "player_id": 543135, "team": "TEX", "transaction_id": 942169}
+{"category": "il_activation", "date": "2026-09-12", "first_seen_utc": "2026-09-12T21:33:01.539945+00:00", "player": "Josh Jung", "player_id": 673962, "team": "TEX", "transaction_id": 942171}
+{"category": "optioned", "date": "2026-09-12", "first_seen_utc": "2026-09-12T21:33:01.539945+00:00", "player": "Adam Macko", "player_id": 671936, "team": "TEX", "transaction_id": 942172}
+{"category": "optioned", "date": "2026-09-12", "first_seen_utc": "2026-09-12T21:33:01.539945+00:00", "player": "Logan O'Hoppe", "player_id": 681351, "team": "TEX", "transaction_id": 942173}
+{"category": "optioned", "date": "2026-09-12", "first_seen_utc": "2026-09-12T21:33:01.539945+00:00", "player": "Adrian Del Castillo", "player_id": 680728, "team": "ARI", "transaction_id": 942174}
+{"category": "other", "date": "2026-09-12", "first_seen_utc": "2026-09-12T21:33:01.539945+00:00", "player": "Pavin Smith", "player_id": 656976, "team": "ARI", "transaction_id": 942175}
+{"category": "recalled", "date": "2026-09-12", "first_seen_utc": "2026-09-12T21:33:01.539945+00:00", "player": "Tyler Locklear", "player_id": 682988, "team": "ARI", "transaction_id": 942176}
+{"category": "il_placement", "date": "2026-09-12", "first_seen_utc": "2026-09-12T21:33:01.539945+00:00", "player": "Tyler Locklear", "player_id": 682988, "team": "ARI", "transaction_id": 942177}
+{"fetched_utc": "2026-09-12T21:33:03.131967+00:00", "game_date": "2026-09-12", "poll": true}
