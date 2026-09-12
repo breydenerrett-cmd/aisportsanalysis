@@ -181,6 +181,17 @@ adversely selected.
   and `docs/DECISION_PROP_CAPTURE_SPEND.md` — each checked by a second
   agent that reproduces every figure. Findings get fixed; memos get read
   before they are committed.
+- **The review came back: 16 agents, 5 findings raised, 3 confirmed, 2
+  refuted — all three fixed.** (1) Bet Check's bottom line still compared
+  the stated price to the best available book — now "At -130 this bet
+  needs 57% to break even; the market makes it 50%." (2) A withdrawn,
+  below-floor verdict counted as read: the honest number is **36**, not
+  37; every surface follows. (3) Registry/evidence/paper-account commits
+  never redeployed staging; they are triggers now. Refuted: a card
+  wording boundary no published board has reached (model above market by
+  ≥2 pts while the best price's vig exceeds 2 pts — 0 of 91 picks), and a
+  coverage gap in one research test (the code is right; the test could
+  be stronger).
 - **INCIDENT, mine, ~07:00Z:** the dead-view deletion missed the
   one remaining importer (`today.js` kept `opportunities.js` alive with a
   `void renderOpportunities;` line). My grep for importers was piped
