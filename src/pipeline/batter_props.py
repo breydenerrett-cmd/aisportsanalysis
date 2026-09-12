@@ -1,5 +1,7 @@
 """Batter-prop CAPTURE: owner decision 3 (2026-09-03) -- capture batter props
-now, within the ~900/day envelope, with hard guards.
+now, within the ~900/day envelope, with hard guards. Extended 2026-09-12
+(docs/DECISION_PROP_CAPTURE_SPEND.md, owner approved) to capture each game
+TWICE per slate date -- see "TWO PHASES PER GAME" below.
 
 WHAT THIS IS
 ------------
@@ -13,10 +15,22 @@ Two families, both gated through `src.capture.budget.can_spend`:
   spends (PROBE_REQUIRED otherwise).
 - `batter_props_extra`: every other game on the slate, fully gated by the
   floor and the ~900/day envelope, and the family this project's DROP_ORDER
-  sheds first among the batter surfaces (rank 7, just above featured).
+  sheds first among the batter surfaces (rank 7, just above featured). The
+  cap is sized to the FULL slate (EXTRA_GAMES_PER_NIGHT), not a sample of
+  it -- see that constant's own comment.
 
 Markets: `src.providers.odds.BATTER_MARKETS` (6 keys), fetched together in
 one per-event call -- 6 credits/event/region at the default single region.
+
+TWO PHASES PER GAME
+--------------------
+Each game on today's slate may be captured up to TWICE per slate date: once
+in the BASELINE window (5-7h before first pitch, pre-lineup) and once in the
+GATE window (0-2h before first pitch, post-lineup for ~85% of games). See
+BASELINE_LEAD_MIN_MINUTES/BASELINE_LEAD_MAX_MINUTES and `_capture_phase`
+below for the full rationale and credit arithmetic. Every written row (the
+L1 marker AND the L2 projected rows) carries `"capture_phase": "baseline"`
+or `"gate"` recording which pass produced it.
 
 L0/L1 SHAPE
 -----------
@@ -34,7 +48,11 @@ last_update) -- the same instant re-observed by a second run (or a retried
 call after a partial write) produces the identical key and is skipped, not
 duplicated. `selection` is the player id (falling back to the player name
 when the provider does not carry one) plus the over/under side, matching
-this project's SELECTION identity convention (src/board/ids.py).
+this project's SELECTION identity convention (src/board/ids.py). Whether a
+GAME is due for another fetch at all is a separate question, tracked by
+`_done_today` per (event_id, game_date, capture_phase) -- so a game already
+captured baseline is still due for gate, and the reverse, but never a third
+capture within either phase.
 
 Off unless BATTER_PROPS=1 (see scripts/capture_extras.sh).
 """
@@ -66,14 +84,23 @@ FLOOR_FAMILY = budget_module.NON_DROPPABLE_FAMILY  # "batter_props_floor"
 EXTRA_FAMILY = "batter_props_extra"
 
 # Extra (droppable) games captured per slate date, on top of the
-# non-droppable floor's NON_DROPPABLE_GAMES_PER_NIGHT. Kept small and
-# explicit -- this is the family DROP_ORDER sheds first among the batter
-# surfaces, and a run that fetched an unbounded "rest of the slate" would
-# make that drop meaningless.
-EXTRA_GAMES_PER_NIGHT = 4
+# non-droppable floor's NON_DROPPABLE_GAMES_PER_NIGHT. This is the family
+# DROP_ORDER sheds first among the batter surfaces, but the cap itself is
+# sized to the FULL SLATE, not to a token sample of it -- owner decision
+# 2026-09-12 (docs/DECISION_PROP_CAPTURE_SPEND.md): "full slate (~15/night)"
+# was the approved option, and the store already shows the existing gate
+# pass fetching 9-16 events on a normal night, so a cap here below that
+# range would silently reintroduce a partial-slate ceiling the owner did not
+# ask for. 18 covers the observed range with room for a heavy doubleheader
+# night; it is a ceiling, not a target -- a thin slate still spends less.
+EXTRA_GAMES_PER_NIGHT = 18
 
 # A run may not fetch more than this many events, whatever the arithmetic
 # above concludes -- the same per-run ceiling shape as prop_listing/prop_prices.
+# Still one ceiling for BOTH phases combined: the baseline and gate windows
+# never overlap for the same game (see BASELINE_LEAD_MIN/MAX_MINUTES below),
+# so at most one phase per game can be due in any single run, and the sum
+# across all games due this run is still bounded by slate size.
 MAX_FETCHES_PER_RUN = budget_module.NON_DROPPABLE_GAMES_PER_NIGHT + EXTRA_GAMES_PER_NIGHT
 
 CREDIT_FLOOR = prop_listing.CREDIT_FLOOR
@@ -107,7 +134,105 @@ CREDIT_FLOOR = prop_listing.CREDIT_FLOOR
 # gets about eight chances to catch each one.
 CAPTURE_LEAD_MINUTES = 120
 
+# ---------------------------------------------------------------------------
+# THE BASELINE PASS (2026-09-12, docs/DECISION_PROP_CAPTURE_SPEND.md, owner
+# approved)
+# ---------------------------------------------------------------------------
+#
+# THE GATE WINDOW ABOVE ONLY EVER CATCHES ONE SIDE OF EACH GAME: POST-LINEUP.
+# By design -- T-120m is chosen because ~85% of lineups are out by then. But
+# a single capture per game per slate date means we only ever get ONE side,
+# never both on the same game -- and, corrected 2026-09-12 (a checker caught
+# this block asserting the opposite of the measured fact, contradicting
+# docs/DECISION_PROP_CAPTURE_SPEND.md, docs/LINEUP_DIRECTION_RESULT.md and
+# this file's own CAPTURE_LEAD_MINUTES history two screens up), the side
+# we've actually been getting is PRE-lineup, not post. Measured on the store
+# as it stood 2026-09-11: of 17,149 batter-prop rows, lead time ran min
+# 3.38h / median 16.42h / max 22.08h -- 14,470 rows (84%) at 5h or more, ZERO
+# inside 2h. Every held row is pre-lineup (lineups post a median 2.92h out);
+# ZERO are post-lineup. That is the CAPTURE_LEAD_MINUTES fix's own starting
+# point restated: before 2026-09-11 this module captured once, ~17.3h before
+# first pitch, hours ahead of any lineup. The 2026-09-11 fix moves the ONE
+# capture this module makes to T-120m -- post-lineup for ~85% of games --
+# which corrects the historical blind spot going forward but trades it for
+# the opposite one: a game now relying solely on the gate window holds the
+# post-lineup side and never the pre-lineup side to compare it against. So a
+# hitter moving up the order (SLOT_PLATE_APPEARANCES: leadoff 4.467 PA vs
+# nine-hole 3.461, ~29% more chances) has still never once been priced on
+# both sides of the move that mattered -- not for lack of a pre-lineup
+# quote, but because a single per-game capture only ever banks one side.
+#
+# So a SECOND pass, anchored to the SAME first-pitch clock as the gate,
+# fires 5-7 hours out -- clear of the LATEST-posting lineups (lead-time p10
+# 1.84h = 110min, well under BASELINE_LEAD_MIN_MINUTES=300) and a full two
+# hours ahead of the median post (2.92h = 175min). This is NOT "before ANY
+# lineup posts": p10 is the SHORT-lead tail -- the latest-posting lineups --
+# and says nothing about the EARLIEST-posting tail (p90/max), which is not
+# measured here or in docs/PLAYER_PROPS_NEXT.md. An unusually early lineup
+# could still land before T-5h; the baseline pass is a second look, not a
+# guarantee of pre-lineup timing for every game (see "additional
+# information... never a precondition" below). It closes a full 3 hours
+# before the gate window opens (BASELINE_LEAD_MIN_MINUTES=300 >
+# CAPTURE_LEAD_MINUTES=120), so the two windows never overlap and a single
+# instant is never billed twice under two different phase labels.
+#
+# EACH GAME ON THE SLATE MAY THEREFORE BE CAPTURED TWICE PER SLATE DATE, NOT
+# ONCE: once when it is baseline-due, once when it is gate-due. `_done_today`
+# tracks this per (event_id, game_date, capture_phase) rather than per
+# (event_id, game_date) -- the same game clearing the gate window no longer
+# blocks the baseline window it already cleared, or the reverse, but neither
+# phase is ever billed a second time for the same game/date. A game first
+# observed already inside the gate window (baseline's own window necessarily
+# already elapsed) gets the gate capture only -- there is no mechanism here
+# that retroactively "catches up" a missed baseline, by design: baseline is
+# additional information when available, never a precondition for gate.
+#
+# CREDIT ARITHMETIC (measured 2026-09-03, docs/DECISION_PROP_CAPTURE_SPEND.md).
+# Batter-prop capture bills 5-6 credits/event (5 is the measured figure;
+# 6 = CREDITS_PER_EVENT is the worst case, 1 credit/market x 6 markets, and
+# what the budget guards actually charge against). A full slate is ~15
+# events; two passes/night is ~30 event-captures/night, so 150-180 credits/
+# night worst case against the 900/day LIVE_CAPTURE envelope
+# (budget.DAILY_ENVELOPE) -- 17-20% of one night's envelope -- and against
+# the 22,699 credits remaining this billing cycle (measured 2026-09-12) it
+# rounds to nothing. THIS DOES NOT WEAKEN ANY GUARD: can_spend's floor,
+# envelope and per-family measured-cost check all run exactly as before,
+# once per fetch, for every baseline fetch exactly as for every gate fetch --
+# only the number of times a given game passes through them grows from at
+# most one to at most two.
+BASELINE_LEAD_MAX_MINUTES = 420  # T-7h: the far edge of the baseline window.
+BASELINE_LEAD_MIN_MINUTES = 300  # T-5h: the near edge -- 3h clear of the gate.
+
 ENV_SWITCH = "BATTER_PROPS"
+
+# STOLEN BASES (2026-09-12, docs/DECISION_PROP_CAPTURE_SPEND.md). Off by
+# default -- setting this to "1" adds `batter_stolen_bases`
+# (odds_provider.STOLEN_BASE_MARKETS) to the markets this module fetches for
+# EVERY captured event, on top of the six measured BATTER_MARKETS keys. It
+# stays off by default because the owner-approved path here is
+# PROBE-then-capture: `scripts/probe_stolen_bases.py` answers, cheaply,
+# whether any book even offers this market before a single live credit is
+# spent capturing it on a schedule. Flip this only after that probe has run
+# and come back positive -- flipping it blind spends a credit/event on a
+# market that may not exist, and (unlike the six measured markets) its real
+# per-event cost is not yet in config/capture_families.json, so the budget
+# estimate below is a plain market count, not a measured figure.
+STOLEN_BASES_ENV_SWITCH = "STOLEN_BASES"
+
+
+def _stolen_bases_enabled(env=None) -> bool:
+    source = os.environ if env is None else env
+    return (source.get(STOLEN_BASES_ENV_SWITCH) or "").strip().lower() in {
+        "on", "1", "yes", "true"}
+
+
+def _capture_markets(env=None) -> tuple:
+    """Markets this run requests: MARKETS, plus `batter_stolen_bases` when
+    `_stolen_bases_enabled`. See STOLEN_BASES_ENV_SWITCH's comment above for
+    why this defaults off and what turning it on costs."""
+    if _stolen_bases_enabled(env):
+        return MARKETS + odds_provider.STOLEN_BASE_MARKETS
+    return MARKETS
 
 
 class BatterPropsError(RuntimeError):
@@ -136,7 +261,16 @@ def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
     clock_now = _now(now)
     report = {"observed_utc": _utc_iso(clock_now), "fetches": 0, "rows": 0,
               "markers": 0, "credits_spent": 0, "errors": [], "escalate": [],
-              "games_due": 0, "skipped": None, "budget_reasons": {}}
+              "games_due": 0, "skipped": None, "budget_reasons": {},
+              "fetches_by_phase": {}}
+
+    # MARKETS unless STOLEN_BASES=1 (off by default -- see that switch's own
+    # docstring). `credits_per_event` tracks whichever set is actually being
+    # requested this run, rather than the fixed CREDITS_PER_EVENT constant,
+    # so the budget guard below is never asked to approve a request smaller
+    # than the one about to be made.
+    markets = _capture_markets(env)
+    credits_per_event = len(markets)
 
     status = provider.status(env)
     if not status.get("configured"):
@@ -179,16 +313,23 @@ def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
     by_id = {e.get("id"): e for e in slate if e.get("id")}
 
     # Floor games first, always -- the non-droppable surface must never be
-    # starved by an "extra" game that happened to sort earlier.
+    # starved by an "extra" game that happened to sort earlier. Each entry
+    # now carries its capture PHASE ("baseline" or "gate") alongside the
+    # family: `_capture_phase` returns whichever of the two windows `now`
+    # currently falls inside for that game (never both -- see
+    # BASELINE_LEAD_MIN_MINUTES's docstring), and the done-check is keyed by
+    # phase so a game already captured baseline is still due for gate, and
+    # the reverse, but neither phase twice.
     plan = []
     not_yet = 0
     for event_id in sorted(floor_ids):
-        if (event_id, today) in done_today:
-            continue
-        if not _in_capture_window(by_id[event_id], clock_now):
+        phase = _capture_phase(by_id[event_id], clock_now)
+        if phase is None:
             not_yet += 1
             continue
-        plan.append((FLOOR_FAMILY, by_id[event_id]))
+        if (event_id, today, phase) in done_today:
+            continue
+        plan.append((FLOOR_FAMILY, by_id[event_id], phase))
 
     remaining_slots = EXTRA_GAMES_PER_NIGHT
     for event_id in all_ids:
@@ -196,12 +337,13 @@ def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
             break
         if event_id in floor_ids:
             continue
-        if (event_id, today) in done_today:
-            continue
-        if not _in_capture_window(by_id[event_id], clock_now):
+        phase = _capture_phase(by_id[event_id], clock_now)
+        if phase is None:
             not_yet += 1
             continue
-        plan.append((EXTRA_FAMILY, by_id[event_id]))
+        if (event_id, today, phase) in done_today:
+            continue
+        plan.append((EXTRA_FAMILY, by_id[event_id], phase))
         remaining_slots -= 1
 
     # Not a skip reason in the budget sense -- these games are still coming,
@@ -212,7 +354,7 @@ def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
     report["games_due"] = len(plan)
 
     spent_this_run = 0
-    for family, event in plan:
+    for family, event, phase in plan:
         if report["fetches"] >= MAX_FETCHES_PER_RUN:
             report["escalate"].append(
                 "ESCALATE: batter-props capture hit its per-run fetch "
@@ -221,7 +363,7 @@ def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
             break
 
         decision = budget_module.can_spend(
-            family, CREDITS_PER_EVENT, remaining=remaining,
+            family, credits_per_event, remaining=remaining,
             store=credit_log_store)
         report["budget_reasons"][event.get("id")] = decision.reason
         if not decision.allowed:
@@ -245,26 +387,28 @@ def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
         observed = _utc_iso(_now(now))
         try:
             payload, usage = provider.fetch_event_odds_with_usage(
-                event.get("id"), markets=MARKETS, env=env)
+                event.get("id"), markets=markets, env=env)
         except provider.OddsProviderError as exc:
             append([{
                 "observed_utc": observed,
                 "family": family,
                 "event_id": event.get("id"),
                 "game_date": today,
+                "capture_phase": phase,
                 "error": str(exc),
             }], store)
             report["errors"].append(f"{event.get('id')}: {exc}")
             continue
 
         billed = (usage or {}).get("last")
-        charged = CREDITS_PER_EVENT if billed is None else billed
+        charged = credits_per_event if billed is None else billed
         remaining = None if remaining is None else remaining - charged
         spent_this_run += charged
         report["fetches"] += 1
         report["credits_spent"] += charged
+        report["fetches_by_phase"][phase] = report["fetches_by_phase"].get(phase, 0) + 1
 
-        projected = _project(payload, event, observed, today)
+        projected = _project(payload, event, observed, today, phase, markets)
         written = _append_projected(projected, processed_store)
 
         append([{
@@ -273,6 +417,7 @@ def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
             "event_id": payload.get("id") or event.get("id"),
             "commence_time": payload.get("commence_time") or event.get("commence_time"),
             "game_date": today,
+            "capture_phase": phase,
             "poll": True,
             "rows_projected": written,
             "credits_last": billed,
@@ -284,15 +429,35 @@ def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
     return report
 
 
-def _project(payload, event, observed, game_date) -> list:
+def _project(payload, event, observed, game_date, phase, markets=MARKETS) -> list:
     """One row per (market, book, selection, line): MARKET/SELECTION/LINE/
     PRICE/BOOK/TIMESTAMPS plus the provider's own `last_update`.
+
+    `markets` is the set actually REQUESTED this fetch (default MARKETS,
+    the six measured keys) -- rows are kept only for a market in that set,
+    so a payload that happens to echo back a market nobody asked for is
+    never silently projected. This is also how STOLEN_BASES=1 reaches the
+    L2 store: `run()` passes its own `_capture_markets(env)` result through
+    here, and `batter_stolen_bases` rows are only ever kept when that wider
+    set is what was actually billed for.
 
     SELECTION is the player id when the provider supplies one (`description_
     id`/`participant_id`, whichever the payload carries), falling back to the
     player name -- plus the over/under side, matching src/board/ids.py's
     "the line is part of the selection" convention: a different side is a
     different selection, not a modifier on one.
+
+    `phase` ("baseline" or "gate") is stamped onto every row as
+    `capture_phase` so a reader can tell which of the two passes produced a
+    given quote without rejoining against the raw store's marker rows --
+    the whole point of the baseline pass is a before/after comparison, and
+    that comparison needs the phase on the row it is comparing, not just on
+    the marker. NOT part of `_projected_key`'s idempotency tuple on purpose:
+    a book whose `last_update` genuinely has not moved between the two
+    passes is the same observed price twice, correctly deduplicated at the
+    L2 layer exactly as a same-phase re-poll already is -- the raw store's
+    marker (billed, phase-stamped) is still the record that both fetches
+    happened.
     """
     rows = []
     event_id = payload.get("id") or event.get("id")
@@ -303,7 +468,7 @@ def _project(payload, event, observed, game_date) -> list:
         book_key = book.get("key")
         for market in book.get("markets") or []:
             market_key = market.get("key")
-            if market_key not in MARKETS:
+            if market_key not in markets:
                 continue
             last_update = market.get("last_update")
             for outcome in market.get("outcomes") or []:
@@ -331,6 +496,7 @@ def _project(payload, event, observed, game_date) -> list:
                     "book": book_key,
                     "book_last_update": last_update,
                     "observed_utc": observed,
+                    "capture_phase": phase,
                 })
     return rows
 
@@ -383,7 +549,7 @@ def credits_spent(rows) -> int:
 
 
 def _in_capture_window(event, now, lead_minutes=CAPTURE_LEAD_MINUTES) -> bool:
-    """Is this game close enough to first pitch to be worth a credit yet?
+    """Is this game close enough to first pitch to be worth a GATE credit yet?
 
     True inside `(0, lead_minutes]` before first pitch. False once first
     pitch has passed -- a price after the game started is not a pregame
@@ -392,7 +558,11 @@ def _in_capture_window(event, now, lead_minutes=CAPTURE_LEAD_MINUTES) -> bool:
     An event with no readable commence_time returns True: an unparseable
     timestamp must not silently stop a game being captured at all, which
     would turn a clock bug into a permanent coverage hole. That is the same
-    direction prop_listing's own guards fail in.
+    direction prop_listing's own guards fail in. This is deliberately the
+    FAIL-OPEN phase -- `_capture_phase` checks this one first for exactly
+    that reason -- rather than the baseline window below, which has no
+    equivalent obligation: the gate is the backstop every game must clear at
+    least once, baseline is a bonus second look this contract never promised.
     """
     commence = prop_listing._parse_iso(event.get("commence_time"))
     if commence is None:
@@ -401,11 +571,61 @@ def _in_capture_window(event, now, lead_minutes=CAPTURE_LEAD_MINUTES) -> bool:
     return 0 < minutes <= lead_minutes
 
 
+def _in_baseline_window(event, now, lead_min=BASELINE_LEAD_MIN_MINUTES,
+                         lead_max=BASELINE_LEAD_MAX_MINUTES) -> bool:
+    """Is this game far enough out to be worth a BASELINE (pre-lineup) credit?
+
+    True inside `[lead_min, lead_max]` minutes before first pitch -- see
+    BASELINE_LEAD_MIN_MINUTES's module-level docstring for why that band sits
+    where it does relative to lineup-posting and to the gate window.
+
+    An event with no readable commence_time returns False, the opposite of
+    `_in_capture_window`'s fail-open: baseline is the SECOND of two chances
+    at a game, never the only one, so an unparseable timestamp here simply
+    forfeits the earlier look rather than needing its own escape hatch --
+    the gate window's unconditional fail-open still guarantees the game is
+    captured at least once.
+    """
+    commence = prop_listing._parse_iso(event.get("commence_time"))
+    if commence is None:
+        return False
+    minutes = (commence - now).total_seconds() / 60.0
+    return lead_min <= minutes <= lead_max
+
+
+def _capture_phase(event, now):
+    """Which capture phase, if any, `event` is due for right now.
+
+    Returns "gate" if inside the gate window (checked first: it is the
+    backstop every game must clear, and the fail-open destination when
+    first pitch is unparseable), else "baseline" if inside the baseline
+    window, else None if due for neither -- too far out, in the dead zone
+    between the two windows, or already started. The two windows never
+    overlap (BASELINE_LEAD_MIN_MINUTES=300 > CAPTURE_LEAD_MINUTES=120), so
+    this ordering never actually has to break a tie; it exists for the
+    unparseable-commence_time case, where only the gate check can fire.
+    """
+    if _in_capture_window(event, now):
+        return "gate"
+    if _in_baseline_window(event, now):
+        return "baseline"
+    return None
+
+
 def _done_today(rows, game_date) -> set:
+    """(event_id, game_date, capture_phase) already captured today.
+
+    Phase is part of the key (2026-09-12, the baseline-pass change): a game
+    captured in the baseline window is still due for the gate window later
+    the same day, and the reverse, but neither phase is ever billed twice.
+    A legacy row written before `capture_phase` existed reads as phase
+    `None` here, which never matches either live phase string -- it cannot
+    silently satisfy a "baseline" or "gate" check it was never billed under.
+    """
     out = set()
     for row in rows or []:
         if row.get("poll") and row.get("game_date") == game_date:
-            out.add((row.get("event_id"), game_date))
+            out.add((row.get("event_id"), game_date, row.get("capture_phase")))
     return out
 
 
@@ -508,8 +728,11 @@ def main(argv=None) -> int:
     if report.get("skipped"):
         print(f"batter props: skipped: {report['skipped']}")
     else:
-        print(f"batter props: {report['fetches']} fetches, {report['rows']} rows, "
-              f"{report['markers']} markers, {report['credits_spent']} credits "
+        by_phase = report.get("fetches_by_phase") or {}
+        print(f"batter props: {report['fetches']} fetches "
+              f"(baseline={by_phase.get('baseline', 0)}, gate={by_phase.get('gate', 0)}), "
+              f"{report['rows']} rows, {report['markers']} markers, "
+              f"{report['credits_spent']} credits "
               f"(cumulative {report.get('credits_cumulative')})")
     probe_required = {eid: reason for eid, reason in
                        (report.get("budget_reasons") or {}).items()

@@ -113,11 +113,24 @@ TEAM_TOTALS_MARKETS = ("team_totals",)
 # src.board.ids.MARKET_CATALOGUE.
 ALTERNATE_MARKETS = ("alternate_spreads", "alternate_totals")
 
+# Stolen-base batter market. Deliberately NOT part of BATTER_MARKETS: owner
+# decision 2026-09-12 (docs/DECISION_PROP_CAPTURE_SPEND.md) approved only a
+# bounded PROBE of this market (scripts/probe_stolen_bases.py) -- whether the
+# provider even offers it is unconfirmed, and unlike the six BATTER_MARKETS
+# keys this one has no measured per-event cost. Declared here, and folded
+# into EVENT_ONLY_MARKETS below, purely so `_validate_markets` recognizes the
+# key and the probe (or an operator opting in via batter_props.py's
+# STOLEN_BASES=1 flag) can name it to `fetch_event_odds_with_usage` without
+# being rejected as unknown. Adding it here does NOT add it to
+# BATTER_MARKETS or change CREDITS_PER_EVENT for unconditional capture.
+STOLEN_BASE_MARKETS = ("batter_stolen_bases",)
+
 # Markets the featured /odds endpoint does NOT serve, whatever the caller
 # intends. All families here 422 there, and all bill per event on
 # /events/{id}/odds.
 EVENT_ONLY_MARKETS = (EVENT_MARKETS + PROP_MARKETS + BATTER_MARKETS
-                       + TEAM_TOTALS_MARKETS + ALTERNATE_MARKETS)
+                       + TEAM_TOTALS_MARKETS + ALTERNATE_MARKETS
+                       + STOLEN_BASE_MARKETS)
 
 # Everything a caller may legitimately name. Kept separate from DEFAULT_MARKETS,
 # which is what gets requested when nothing is configured -- conflating "allowed"

@@ -409,12 +409,334 @@ class CaptureWindowTests(unittest.TestCase):
         self.assertGreater(report.get("games_outside_window", 0), 0)
 
 
+class BaselineWindowTests(unittest.TestCase):
+    """Unit tests for `_in_baseline_window`/`_capture_phase` in isolation --
+    owner decision 2026-09-12, docs/DECISION_PROP_CAPTURE_SPEND.md."""
+
+    def test_a_game_six_hours_out_is_in_the_baseline_window(self):
+        event = _event("g1", commence=NOW + dt.timedelta(hours=6))
+        self.assertTrue(batter_props._in_baseline_window(event, NOW))
+        self.assertEqual(batter_props._capture_phase(event, NOW), "baseline")
+
+    def test_the_baseline_boundary_is_inclusive_at_both_ends(self):
+        at_min = _event("g1", commence=NOW + dt.timedelta(
+            minutes=batter_props.BASELINE_LEAD_MIN_MINUTES))
+        at_max = _event("g2", commence=NOW + dt.timedelta(
+            minutes=batter_props.BASELINE_LEAD_MAX_MINUTES))
+        just_under = _event("g3", commence=NOW + dt.timedelta(
+            minutes=batter_props.BASELINE_LEAD_MIN_MINUTES - 1))
+        just_over = _event("g4", commence=NOW + dt.timedelta(
+            minutes=batter_props.BASELINE_LEAD_MAX_MINUTES + 1))
+        self.assertTrue(batter_props._in_baseline_window(at_min, NOW))
+        self.assertTrue(batter_props._in_baseline_window(at_max, NOW))
+        self.assertFalse(batter_props._in_baseline_window(just_under, NOW))
+        self.assertFalse(batter_props._in_baseline_window(just_over, NOW))
+
+    def test_the_two_windows_never_overlap(self):
+        """A defect here would let the same instant bill under both phase
+        labels -- see BASELINE_LEAD_MIN_MINUTES's own module docstring."""
+        self.assertGreater(batter_props.BASELINE_LEAD_MIN_MINUTES,
+                            batter_props.CAPTURE_LEAD_MINUTES)
+
+    def test_capture_phase_is_gate_inside_the_gate_window(self):
+        event = _event("g1", commence=NOW + dt.timedelta(minutes=90))
+        self.assertEqual(batter_props._capture_phase(event, NOW), "gate")
+
+    def test_capture_phase_is_none_in_the_dead_zone_between_windows(self):
+        event = _event("g1", commence=NOW + dt.timedelta(minutes=200))
+        self.assertIsNone(batter_props._capture_phase(event, NOW))
+
+    def test_capture_phase_is_none_once_first_pitch_has_passed(self):
+        event = _event("g1", commence=NOW - dt.timedelta(minutes=1))
+        self.assertIsNone(batter_props._capture_phase(event, NOW))
+
+    def test_an_unreadable_commence_time_fails_open_to_gate_not_baseline(self):
+        junk = {"commence_time": "not a timestamp"}
+        self.assertFalse(batter_props._in_baseline_window(junk, NOW))
+        self.assertEqual(batter_props._capture_phase(junk, NOW), "gate")
+
+
+class BaselinePassTests(unittest.TestCase):
+    """Integration tests for the two-phase capture (owner decision
+    2026-09-12): a game may be captured once baseline (pre-lineup, 5-7h out)
+    and once gate (post-lineup, 0-2h out) per slate date -- never a third
+    time in either phase."""
+
+    def test_a_game_six_hours_out_is_captured_in_the_baseline_window(self):
+        event = _event("g1", commence=NOW + dt.timedelta(hours=6))
+        provider = FakeProvider([event], {"g1": _payload("g1")})
+        with tempfile.TemporaryDirectory() as folder:
+            raw = Path(folder) / "raw.jsonl"
+            processed = Path(folder) / "processed.jsonl"
+            report = batter_props.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
+                                       now=NOW, store=raw, processed_store=processed,
+                                       provider=provider)
+            rows = batter_props.read_processed(processed)
+        self.assertEqual(provider.fetched, [("g1", tuple(batter_props.MARKETS))])
+        self.assertEqual(report["fetches_by_phase"], {"baseline": 1})
+        self.assertTrue(rows)
+        self.assertTrue(all(r["capture_phase"] == "baseline" for r in rows))
+
+    def test_not_captured_twice_within_the_same_baseline_window(self):
+        """The mission's own "not again until inside 2h" case, pinned for
+        real (2026-09-12, checker finding): the dead-zone test below only
+        exercises WINDOW logic -- `_capture_phase` returns None between the
+        two windows regardless of done-ness, so it stayed green even under
+        a mutation that broke `_done_today`'s "baseline" bucket entirely.
+        This test instead runs TWICE while `now` stays inside the SAME
+        baseline window (still `_capture_phase`=="baseline" both times), so
+        only `_done_today` can be the thing stopping the second fetch. The
+        baseline window is 120 minutes wide and forward_capture.yml polls
+        every 15 minutes -- a broken baseline done-check would refetch on
+        most of those polls, roughly 8x/game/night (~15 games x 8 x 6 =
+        ~720 credits against the 900/day envelope) while every other test
+        in this file stayed green.
+        """
+        commence = NOW + dt.timedelta(hours=6)  # 360 minutes out at NOW
+        event = _event("g1", commence=commence)
+        provider = FakeProvider([event], {"g1": _payload("g1")})
+        with tempfile.TemporaryDirectory() as folder:
+            raw = Path(folder) / "raw.jsonl"
+            processed = Path(folder) / "processed.jsonl"
+            first = batter_props.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
+                                      now=NOW, store=raw, processed_store=processed,
+                                      provider=provider)
+            # 20 minutes later: 340 minutes out, still inside the baseline
+            # window (300-420) -- `_capture_phase` returns "baseline" again,
+            # exactly as it did for the first run.
+            second_now = NOW + dt.timedelta(minutes=20)
+            self.assertEqual(batter_props._capture_phase(event, second_now), "baseline")
+            second = batter_props.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
+                                       now=second_now, store=raw,
+                                       processed_store=processed, provider=provider)
+        self.assertEqual(first["fetches_by_phase"], {"baseline": 1})
+        self.assertEqual(len(provider.fetched), 1,
+                          "second run inside the same baseline window must not refetch")
+        self.assertEqual(second.get("fetches_by_phase"), {},
+                          "baseline done-ness must block the second run, not just the window")
+
+    def test_not_captured_again_in_the_dead_zone_between_windows(self):
+        commence = NOW + dt.timedelta(hours=6)
+        event = _event("g1", commence=commence)
+        provider = FakeProvider([event], {"g1": _payload("g1")})
+        with tempfile.TemporaryDirectory() as folder:
+            raw = Path(folder) / "raw.jsonl"
+            processed = Path(folder) / "processed.jsonl"
+            batter_props.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW,
+                              store=raw, processed_store=processed, provider=provider)
+            # 200 minutes before first pitch: past the gate window's 120m
+            # edge, short of the baseline window's 300m edge -- the dead
+            # zone between the two passes.
+            dead_zone_now = commence - dt.timedelta(minutes=200)
+            report = batter_props.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
+                                       now=dead_zone_now, store=raw,
+                                       processed_store=processed, provider=provider)
+        self.assertEqual(len(provider.fetched), 1, "no second fetch in the dead zone")
+        self.assertEqual(report.get("fetches_by_phase"), {})
+
+    def test_after_baseline_a_gate_run_captures_once_more(self):
+        """The book's price moves between the two passes (it is 6 hours
+        later and the lineup has posted), so `last_update` differs and both
+        captures land as distinct L2 rows -- not merely distinct markers."""
+        commence = NOW + dt.timedelta(hours=6)
+        event = _event("g1", commence=commence)
+
+        class _MovingPriceProvider(FakeProvider):
+            def fetch_event_odds_with_usage(self, event_id, markets=None, env=None):
+                self.fetched.append((event_id, tuple(markets or ())))
+                last_update = ("2026-09-03T11:00:00Z" if len(self.fetched) == 1
+                                else "2026-09-03T17:00:00Z")
+                payload = _payload(event_id, last_update=last_update)
+                used = self.remaining - self.billed if self.remaining is not None else None
+                self.remaining = used
+                return payload, {"remaining": used, "used": 1, "last": self.billed}
+
+        provider = _MovingPriceProvider([event], {"g1": _payload("g1")})
+        with tempfile.TemporaryDirectory() as folder:
+            raw = Path(folder) / "raw.jsonl"
+            processed = Path(folder) / "processed.jsonl"
+            first = batter_props.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
+                                      now=NOW, store=raw, processed_store=processed,
+                                      provider=provider)
+            gate_now = commence - dt.timedelta(minutes=90)  # inside the gate window
+            second = batter_props.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
+                                       now=gate_now, store=raw,
+                                       processed_store=processed, provider=provider)
+            rows = batter_props.read_processed(processed)
+        self.assertEqual(first["fetches_by_phase"], {"baseline": 1})
+        self.assertEqual(second["fetches_by_phase"], {"gate": 1})
+        self.assertEqual(len(provider.fetched), 2)
+        self.assertEqual({r["capture_phase"] for r in rows}, {"baseline", "gate"})
+
+    def test_never_a_third_capture_for_the_same_game_same_date(self):
+        commence = NOW + dt.timedelta(hours=6)
+        event = _event("g1", commence=commence)
+        provider = FakeProvider([event], {"g1": _payload("g1")})
+        with tempfile.TemporaryDirectory() as folder:
+            raw = Path(folder) / "raw.jsonl"
+            processed = Path(folder) / "processed.jsonl"
+            batter_props.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW,
+                              store=raw, processed_store=processed, provider=provider)
+            gate_now = commence - dt.timedelta(minutes=90)
+            batter_props.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
+                              now=gate_now, store=raw, processed_store=processed,
+                              provider=provider)
+            # Still inside the gate window, on the same slate date, after
+            # the gate phase was already captured once.
+            third_now = commence - dt.timedelta(minutes=30)
+            third = batter_props.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
+                                      now=third_now, store=raw,
+                                      processed_store=processed, provider=provider)
+        self.assertEqual(len(provider.fetched), 2, "no third fetch for the same game/date")
+        self.assertEqual(third.get("fetches_by_phase"), {})
+
+    def test_a_game_first_seen_inside_the_gate_window_gets_only_gate(self):
+        """No baseline is fabricated after the fact for a game only ever
+        observed close to first pitch -- baseline is a bonus second look,
+        never a precondition for the gate capture."""
+        commence = NOW + dt.timedelta(minutes=90)
+        event = _event("g1", commence=commence)
+        provider = FakeProvider([event], {"g1": _payload("g1")})
+        with tempfile.TemporaryDirectory() as folder:
+            raw = Path(folder) / "raw.jsonl"
+            processed = Path(folder) / "processed.jsonl"
+            report = batter_props.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
+                                       now=NOW, store=raw, processed_store=processed,
+                                       provider=provider)
+            rows = batter_props.read_processed(processed)
+        self.assertEqual(report["fetches_by_phase"], {"gate": 1})
+        self.assertTrue(rows)
+        self.assertTrue(all(r["capture_phase"] == "gate" for r in rows))
+        self.assertEqual(len(provider.fetched), 1)
+
+    def test_rows_carry_capture_phase_on_marker_and_projection_alike(self):
+        event = _event("g1", commence=NOW + dt.timedelta(hours=6))
+        provider = FakeProvider([event], {"g1": _payload("g1")})
+        with tempfile.TemporaryDirectory() as folder:
+            raw = Path(folder) / "raw.jsonl"
+            processed = Path(folder) / "processed.jsonl"
+            batter_props.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW,
+                              store=raw, processed_store=processed, provider=provider)
+            markers = [r for r in batter_props.read(raw) if r.get("poll")]
+            rows = batter_props.read_processed(processed)
+        self.assertTrue(markers)
+        self.assertTrue(all(m.get("capture_phase") == "baseline" for m in markers))
+        self.assertTrue(rows)
+        self.assertTrue(all(r.get("capture_phase") == "baseline" for r in rows))
+
+    def test_the_report_counts_both_phases_in_a_single_run(self):
+        """A mixed slate -- one game baseline-due, another gate-due -- in
+        the SAME run must show up under both phase keys, not just whichever
+        the loop happened to process last."""
+        baseline_event = _event("g1", commence=NOW + dt.timedelta(hours=6))
+        gate_event = _event("g2", commence=NOW + dt.timedelta(minutes=90))
+        listed = [baseline_event, gate_event]
+        payloads = {
+            "g1": _payload("g1", books=("draftkings",),
+                           players=(("p1", "Player One"),)),
+            "g2": _payload("g2", books=("draftkings",),
+                           players=(("p2", "Player Two"),)),
+        }
+        provider = FakeProvider(listed, payloads)
+        with tempfile.TemporaryDirectory() as folder:
+            raw = Path(folder) / "raw.jsonl"
+            processed = Path(folder) / "processed.jsonl"
+            report = batter_props.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={},
+                                       now=NOW, store=raw, processed_store=processed,
+                                       provider=provider)
+        self.assertEqual(report["fetches_by_phase"], {"baseline": 1, "gate": 1})
+
+
 class EnabledSwitchTests(unittest.TestCase):
     def test_off_by_default(self):
         self.assertFalse(batter_props.enabled(env={}))
 
     def test_on_when_set(self):
         self.assertTrue(batter_props.enabled(env={"BATTER_PROPS": "1"}))
+
+
+class StolenBasesFlagTests(unittest.TestCase):
+    """STOLEN_BASES=1 (docs/DECISION_PROP_CAPTURE_SPEND.md, 2026-09-12):
+    off by default, and the flag is what the probe-then-capture rule
+    depends on -- scripts/probe_stolen_bases.py is the "probe", this flag
+    is the "then-capture"."""
+
+    def test_off_by_default(self):
+        self.assertFalse(batter_props._stolen_bases_enabled(env={}))
+
+    def test_on_when_set(self):
+        self.assertTrue(batter_props._stolen_bases_enabled(env={"STOLEN_BASES": "1"}))
+
+    def test_capture_markets_excludes_stolen_bases_by_default(self):
+        self.assertEqual(batter_props._capture_markets(env={}), batter_props.MARKETS)
+
+    def test_capture_markets_includes_stolen_bases_when_enabled(self):
+        markets = batter_props._capture_markets(env={"STOLEN_BASES": "1"})
+        self.assertIn("batter_stolen_bases", markets)
+        self.assertEqual(len(markets), len(batter_props.MARKETS) + 1)
+
+    def test_run_requests_only_the_six_markets_by_default(self):
+        event = _event("g1")
+        provider = FakeProvider([event], {"g1": _payload("g1")})
+        with tempfile.TemporaryDirectory() as folder:
+            raw = Path(folder) / "raw.jsonl"
+            processed = Path(folder) / "processed.jsonl"
+            batter_props.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW,
+                              store=raw, processed_store=processed, provider=provider)
+        self.assertEqual(provider.fetched[0][1], tuple(batter_props.MARKETS))
+
+    def test_run_requests_seven_markets_when_stolen_bases_enabled(self):
+        event = _event("g1")
+        provider = FakeProvider([event], {"g1": _payload("g1")})
+        with tempfile.TemporaryDirectory() as folder:
+            raw = Path(folder) / "raw.jsonl"
+            processed = Path(folder) / "processed.jsonl"
+            batter_props.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE,
+                              env={"STOLEN_BASES": "1"}, now=NOW, store=raw,
+                              processed_store=processed, provider=provider)
+        self.assertEqual(provider.fetched[0][1],
+                          tuple(batter_props.MARKETS) + ("batter_stolen_bases",))
+
+    def test_stolen_bases_rows_are_projected_only_when_the_flag_is_on(self):
+        """A payload that happens to echo a stolen-bases outcome is kept
+        only when the flag turned the request on -- the market filter inside
+        `_project` is what actually gates the L2 write, not merely the shape
+        of the request."""
+        def payload_with_steals(event_id):
+            base = _payload(event_id, books=("draftkings",),
+                             players=(("p1", "Player One"),))
+            base["bookmakers"][0]["markets"].append({
+                "key": "batter_stolen_bases",
+                "last_update": "2026-09-03T11:00:00Z",
+                "outcomes": [
+                    {"name": "Over", "description": "Player One",
+                     "participant_id": "p1", "price": 120, "point": 0.5},
+                    {"name": "Under", "description": "Player One",
+                     "participant_id": "p1", "price": -150, "point": 0.5},
+                ],
+            })
+            return base
+
+        event = _event("g1")
+        provider_off = FakeProvider([event], {"g1": payload_with_steals("g1")})
+        with tempfile.TemporaryDirectory() as folder:
+            raw = Path(folder) / "raw.jsonl"
+            processed = Path(folder) / "processed.jsonl"
+            batter_props.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, env={}, now=NOW,
+                              store=raw, processed_store=processed, provider=provider_off)
+            off_rows = batter_props.read_processed(processed)
+        self.assertFalse(any(r["market"] == "batter_stolen_bases" for r in off_rows))
+
+        provider_on = FakeProvider([event], {"g1": payload_with_steals("g1")})
+        with tempfile.TemporaryDirectory() as folder:
+            raw = Path(folder) / "raw.jsonl"
+            processed = Path(folder) / "processed.jsonl"
+            batter_props.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE,
+                              env={"STOLEN_BASES": "1"}, now=NOW, store=raw,
+                              processed_store=processed, provider=provider_on)
+            on_rows = batter_props.read_processed(processed)
+        self.assertTrue(any(r["market"] == "batter_stolen_bases" for r in on_rows))
+        self.assertTrue(all(r.get("capture_phase") for r in on_rows))
 
 
 if __name__ == "__main__":
