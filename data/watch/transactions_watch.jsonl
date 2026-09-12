@@ -1140,3 +1140,10 @@
 {"category": "recalled", "date": "2026-09-12", "first_seen_utc": "2026-09-12T21:33:01.539945+00:00", "player": "Tyler Locklear", "player_id": 682988, "team": "ARI", "transaction_id": 942176}
 {"category": "il_placement", "date": "2026-09-12", "first_seen_utc": "2026-09-12T21:33:01.539945+00:00", "player": "Tyler Locklear", "player_id": 682988, "team": "ARI", "transaction_id": 942177}
 {"fetched_utc": "2026-09-12T21:33:03.131967+00:00", "game_date": "2026-09-12", "poll": true}
+{"fetched_utc": "2026-09-12T23:23:24.085054+00:00", "game_date": "2026-09-12", "poll": true}
+{"category": "rehab", "date": "2026-09-12", "first_seen_utc": "2026-09-12T23:23:24.085054+00:00", "player": "Ryan Helsley", "player_id": 664854, "team": "BAL", "transaction_id": 942199}
+{"category": "other", "date": "2026-09-12", "first_seen_utc": "2026-09-12T23:23:24.085054+00:00", "player": "Spencer Bivens", "player_id": 702352, "team": "KC", "transaction_id": 942200}
+{"category": "optioned", "date": "2026-09-12", "first_seen_utc": "2026-09-12T23:23:24.085054+00:00", "player": "Spencer Bivens", "player_id": 702352, "team": "KC", "transaction_id": 942201}
+{"category": "il_transfer", "date": "2026-09-12", "first_seen_utc": "2026-09-12T23:23:24.085054+00:00", "player": "Matt Waldron", "player_id": 663362, "team": "WSH", "transaction_id": 942202}
+{"category": "signed", "date": "2026-09-12", "first_seen_utc": "2026-09-12T23:23:24.085054+00:00", "player": "Albert Su\u00e1rez", "player_id": 544150, "team": "BAL", "transaction_id": 942208}
+{"fetched_utc": "2026-09-12T23:23:25.848640+00:00", "game_date": "2026-09-12", "poll": true}
