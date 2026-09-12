@@ -164,6 +164,15 @@ adversely selected.
   rewrote the committed `docs/FACTORY_OVERLAP_REPORT.md` on every run —
   it writes to a temp path now. **CI green on 3.10, 3.11 and 3.12 from
   `d04f64d`** — the first green check since 05:00Z.
+- **Staging told every visitor "0 pre-registered research ideas".** Found
+  by reading `/meta` on staging after the deploy: the image never
+  included `data/research/`, and a missing registry counted as zero. Older
+  than tonight (since the count went registry-driven). Fixed on three
+  layers — a missing registry now raises (callers already treat that as
+  unknown: `/meta` nulls, pages keep their fallback copy, `src.analysis`
+  uses last-known and says so), the Dockerfile copies the registry, and
+  `.dockerignore` is a deploy trigger. Verify on staging after the
+  deploy: `/meta.research.read == 37`.
 - **INCIDENT, mine, ~07:00Z:** the dead-view deletion missed the
   one remaining importer (`today.js` kept `opportunities.js` alive with a
   `void renderOpportunities;` line). My grep for importers was piped
