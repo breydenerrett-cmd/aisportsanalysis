@@ -1117,3 +1117,12 @@
 {"fetched_utc": "2026-09-12T16:25:58.741379+00:00", "game_date": "2026-09-12", "poll": true}
 {"fetched_utc": "2026-09-12T17:09:43.556649+00:00", "game_date": "2026-09-12", "poll": true}
 {"fetched_utc": "2026-09-12T17:09:44.678682+00:00", "game_date": "2026-09-12", "poll": true}
+{"fetched_utc": "2026-09-12T19:20:35.473106+00:00", "game_date": "2026-09-12", "poll": true}
+{"category": "il_activation", "date": "2026-09-12", "first_seen_utc": "2026-09-12T19:20:35.473106+00:00", "player": "Edward Cabrera", "player_id": 665795, "team": "CHC", "transaction_id": 942144}
+{"category": "il_placement", "date": "2026-09-12", "first_seen_utc": "2026-09-12T19:20:35.473106+00:00", "player": "Trent Thornton", "player_id": 663423, "team": "CHC", "transaction_id": 942145}
+{"category": "recalled", "date": "2026-09-12", "first_seen_utc": "2026-09-12T19:20:35.473106+00:00", "player": "Ronny Simon", "player_id": 682927, "team": "PIT", "transaction_id": 942146}
+{"category": "il_placement", "date": "2026-09-12", "first_seen_utc": "2026-09-12T19:20:35.473106+00:00", "player": "Esmerlyn Valdez", "player_id": 699013, "team": "PIT", "transaction_id": 942147}
+{"category": "other", "date": "2026-09-12", "first_seen_utc": "2026-09-12T19:20:35.473106+00:00", "player": "Brody Hopkins", "player_id": 811315, "team": "TB", "transaction_id": 942148}
+{"category": "optioned", "date": "2026-09-12", "first_seen_utc": "2026-09-12T19:20:35.473106+00:00", "player": "Alex Cook", "player_id": 702047, "team": "TB", "transaction_id": 942149}
+{"category": "designated", "date": "2026-09-12", "first_seen_utc": "2026-09-12T19:20:35.473106+00:00", "player": "Michael Grove", "player_id": 675627, "team": "TB", "transaction_id": 942150}
+{"fetched_utc": "2026-09-12T19:20:37.579050+00:00", "game_date": "2026-09-12", "poll": true}
