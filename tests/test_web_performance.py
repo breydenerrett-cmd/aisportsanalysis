@@ -220,15 +220,18 @@ class GamesModelVsMarketWiredHonestly(unittest.TestCase):
     def setUp(self):
         self.text = _read(GAMES_PATH)
 
-    def test_model_vs_market_hook_present(self):
-        self.assertIn('"model-vs-market"', self.text)
+    def test_model_vs_market_block_is_retired(self):
+        """Retired 2026-09-12 with the rest of the price-comparison
+        register; see tests/test_web_v2_game.py::SpotlightRetired."""
+        self.assertNotIn('"model-vs-market"', self.text)
 
-    def test_reads_price_verdicts_and_engine_from_the_payload(self):
-        self.assertIn("payload.price_verdicts", self.text)
+    def test_reads_the_engine_record_but_no_price_verdicts(self):
+        self.assertNotIn("payload.price_verdicts", self.text)
         self.assertIn("payload.engine", self.text)
 
-    def test_independent_model_line_states_the_literal(self):
-        self.assertIn("NO INDEPENDENT MODEL YET", self.text)
+    def test_the_no_independent_model_line_is_gone(self):
+        """It stopped being true when the card got its own run model."""
+        self.assertNotIn("NO INDEPENDENT MODEL YET", self.text)
 
 
 class AnalyticalCutsRendered(unittest.TestCase):

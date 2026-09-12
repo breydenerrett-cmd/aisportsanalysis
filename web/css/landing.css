@@ -372,8 +372,17 @@
   .hero__vs { flex-direction: row; align-self: flex-start; gap: var(--sp-5); }
   .hero__scanner { padding: var(--sp-9) var(--gutter-mobile) 0; white-space: normal; }
   .hero__footer { padding: 0 var(--gutter-mobile) var(--sp-9); margin-top: -26px; }
-  .hero__price { padding: var(--sp-7) var(--sp-9); }
-  .hero__price-row { gap: var(--sp-6); }
+  /* `flex: none` let the block size to its longest line (451px at a 375px
+     viewport, measured) instead of the screen. Pin it to the column. */
+  .hero__price { padding: var(--sp-7) var(--sp-9); width: 100%; max-width: 100%; box-sizing: border-box; }
+  /* The label now carries a sentence ("Dodgers to win · the market makes
+     it 65%") and the line under the figure another; at 375px both clipped
+     against the nowrap rules above. Let them wrap under the figure. */
+  .hero__price-eyebrow { white-space: normal; }
+  .hero__price-label { font-size: 13px; letter-spacing: .14em; }
+  .hero__price-row { flex-wrap: wrap; gap: var(--sp-2) var(--sp-6); }
+  .hero__price-row .price-was-label { white-space: normal; margin-top: 0; }
+  .hero__price-row [data-hook="hero-price-needs-wrap"] { flex-basis: 100%; }
   .story-grid { grid-template-columns: 1fr; }
   .demo-panel__grid { grid-template-columns: 1fr; gap: var(--sp-7); }
   .pricing-grid { grid-template-columns: 1fr; }

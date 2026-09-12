@@ -182,6 +182,35 @@ class TheLandingHeroLeadsWithTheCard(unittest.TestCase):
         self.assertIn('data-hook="hero-price-needs"', html)
 
 
+class TheGamePageAdvancedLayerIsNotAPriceBoard(unittest.TestCase):
+    """SHOW ADVANCED ANALYSIS on 2026-09-11 was, in order: SPOTLIGHT · PRICE
+    STANDING, BEATS CONSENSUS, IMPROVEMENT -1.38 pts, "price improvement /
+    line-shopping value", 11 BOOKS COMPARED, MODEL vs MARKET "ranked by
+    price against the fair price only", BOOK VERSUS BOOK "the comparison
+    that is real", and a MARKET REFUSAL that said player props were refused
+    -- false since the prop board shipped."""
+
+    RETIRED_HERE = ("beats consensus", "line-shopping", "books compared",
+                    "comparison that is real", "book versus book",
+                    "market refusal", "price standing", "fair price only",
+                    "player props and the rest", "no independent model")
+
+    def setUp(self):
+        self.text = (JS / "games.js").read_text(encoding="utf-8")
+
+    def test_no_retired_phrase_is_rendered(self):
+        self.assertEqual(_offenders(_rendered("games.js"), self.RETIRED_HERE, "games.js"), [])
+
+    def test_the_tile_and_meter_are_not_imported(self):
+        self.assertNotIn('from "./featuredbet.js"', self.text)
+        self.assertNotIn('from "./valuemeter.js"', self.text)
+
+    def test_other_markets_points_at_the_prop_board(self):
+        body = self.text.split("function gavMarketRefusal(")[1].split("\nfunction ")[0]
+        self.assertIn('href: "#/props"', body)
+        self.assertIn("OTHER MARKETS", body)
+
+
 class PropsHaveTheTab(unittest.TestCase):
     def test_props_replaced_odds_in_the_bottom_nav(self):
         text = (JS / "main.js").read_text(encoding="utf-8")

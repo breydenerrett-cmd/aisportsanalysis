@@ -10,12 +10,11 @@ imports a JS engine. It checks:
 
   - main.js's two games.js imports (`renderGamesList`, `renderGameDetail`)
     are unchanged -- this lane must never touch main.js's routing;
-  - games.js wires in the shared Featured Bet primitive (not a fork);
+  - games.js no longer mounts the Featured Bet spotlight (retired
+    2026-09-12 with the price-comparison register);
   - the 11-gap coverage ledger is rendered from the real payload's own
     `gaps`/`sections` keys, never a hardcoded (and stale, per
     RECONCILED_CONTRACT_CURRENT_HEAD.md) artboard gap-name list;
-  - the V2-34 spotlight never invents a side/pick for the dominant
-    no_play case;
   - screens.css carries the two mandated bannered sections, additive
     only;
   - no banned customer-facing vocabulary, reusing
@@ -55,65 +54,11 @@ class RoutingUntouched(unittest.TestCase):
         self.assertRegex(text, r"\bexport async function renderGameDetail\s*\(")
 
 
-class FeaturedBetWiredNotForked(unittest.TestCase):
-    def test_imports_the_shared_primitive(self):
-        text = _read(GAMES_PATH)
-        self.assertIn('import { renderFeaturedBet } from "./featuredbet.js";', text)
-        self.assertIn("renderFeaturedBet(", text)
-
-    def test_does_not_redefine_render_featured_bet(self):
-        text = _read(GAMES_PATH)
-        self.assertNotRegex(text, r"\bfunction\s+renderFeaturedBet\s*\(")
-
-    def test_does_not_reuse_the_betcheck_mapper_for_a_different_payload_shape(self):
-        # mapBetCheckPayloadToStanding expects POST /betcheck's response
-        # shape (query/price_improvement/thesis_support/...) -- this
-        # screen's own quick/advanced payload has none of those field
-        # names, so games.js must build its own mapper (mapGameToStanding)
-        # rather than call the wrong mapper for the payload it actually
-        # has. games.js's docstring is allowed to NAME the other mapper
-        # to explain why it is not used -- only an import or a call site
-        # is actually forbidden.
-        text = _read(GAMES_PATH)
-        self.assertNotRegex(text, r"^\s*import\b.*mapBetCheckPayloadToStanding", re.MULTILINE)
-        self.assertNotRegex(text, r"\bmapBetCheckPayloadToStanding\s*\(")
-        self.assertIn("mapGameToStanding", text)
-        self.assertRegex(text, r"\bfunction\s+mapGameToStanding\s*\(")
-
-
-class SpotlightNeverInventsASide(unittest.TestCase):
-    """V2-34's honesty-critical rule: quick.side names a real side only
-    for the rare flagged verdict; the dominant no_play case must never
-    get an arbitrary default side/team so the spotlight can fill its
-    SIDE/LINE cells."""
-
-    def test_side_is_read_from_the_payload_not_defaulted(self):
-        text = _read(GAMES_PATH)
-        self.assertIn('quick.side === "away" || quick.side === "home" ? quick.side : null', text)
-
-    def test_no_default_side_fallback_to_away_or_home(self):
-        text = _read(GAMES_PATH)
-        self.assertNotRegex(text, r"side\s*\|\|\s*[\"']away[\"']")
-        self.assertNotRegex(text, r"side\s*\|\|\s*[\"']home[\"']")
-
-    def test_query_parsed_always_true_never_a_parse_failure_path(self):
-        # This mapper never feeds featuredbet.js's "COULD NOT READ THIS
-        # BET" fallback -- nobody typed anything on this screen for it to
-        # fail to parse.
-        text = _read(GAMES_PATH)
-        self.assertIn("parsed: true,", text)
-
-
 class SpotlightHeaderSurvivesNoSide(unittest.TestCase):
     """L23 fix: featuredbet.js's SIDE fallback is now null-safe (only
     reads s.game.home/away when s.query.side is literally "home"/"away"),
     so this mapper no longer needs to withhold `game` to keep the SIDE
     pill honest -- the matchup header should render for every game."""
-
-    def test_game_is_no_longer_withheld_as_a_workaround(self):
-        text = _read(GAMES_PATH)
-        self.assertNotIn("game: side ?", text)
-        self.assertNotIn("game: null", text)
 
     FEATUREDBET_PATH = WEB_JS / "featuredbet.js"
 
@@ -167,8 +112,10 @@ class NoBetPlacementOrRankOrEdge(unittest.TestCase):
         self.assertNotIn('text: "SAVE THIS BET"', text)
 
     def test_price_standing_never_computed_here(self):
+        """The mapper that carried `priceStanding: null` is gone with the
+        spotlight (2026-09-12); the rule survives as "never computed"."""
         text = _read(GAMES_PATH)
-        self.assertIn("priceStanding: null", text)
+        self.assertNotIn("priceStanding", text)
 
     def test_no_book_link_or_placement_affordance(self):
         text = _read(GAMES_PATH)
@@ -223,6 +170,30 @@ class NoBannedCustomerVocabularyInThisFile(unittest.TestCase):
                 if not NEGATORS.search(window):
                     violations.append(f"{label} (unnegated)")
         self.assertEqual(violations, [], "\n".join(violations))
+
+
+class SpotlightRetired(unittest.TestCase):
+    """The V2-34 spotlight (featuredbet.js's tile: PRICE STANDING, BEATS
+    CONSENSUS, IMPROVEMENT, "line-shopping value") and MODEL vs MARKET were
+    the whole of SHOW ADVANCED ANALYSIS on 2026-09-11. Both compare prices
+    across books, which the owner has said twice is not the product."""
+
+    def setUp(self):
+        self.text = _read(GAMES_PATH)
+
+    def test_the_shared_tile_is_neither_imported_nor_mounted(self):
+        self.assertNotIn('from "./featuredbet.js"', self.text)
+        self.assertNotIn("renderFeaturedBet(", self.text)
+        self.assertNotIn('"featured-bet-mount"', self.text)
+        self.assertNotIn('"game-spotlight"', self.text)
+
+    def test_the_mapper_and_the_verdict_block_are_gone(self):
+        self.assertNotRegex(self.text, r"\bfunction\s+mapGameToStanding\s*\(")
+        self.assertNotRegex(self.text, r"\bfunction\s+gqvModelVsMarket\s*\(")
+        self.assertNotIn('"model-vs-market"', self.text)
+
+    def test_the_engine_record_still_renders_in_the_advanced_layer(self):
+        self.assertIn("engineDecisionsList(engine)", self.text)
 
 
 if __name__ == "__main__":

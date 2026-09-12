@@ -21,11 +21,6 @@
  *   price            best-available + market-implied consensus + price
  *                    improvement, BOTH sides (or V2-15's amber absent
  *                    treatment when price.available is false)
- *   spotlight        V2-34 -- the shared Featured Bet primitive
- *                    (featuredbet.js's renderFeaturedBet), fed this
- *                    game's own quick/advanced fields -- see
- *                    `mapGameToStanding`'s docstring for exactly what
- *                    this endpoint can and cannot honestly fill
  *   teams            records/win-pct/RS-RA-per-game/last-5/last-10,
  *                    every rate with its sample n
  *   actions          CHECK A BET ON THIS GAME / OPEN THE FULL BOARD
@@ -64,10 +59,12 @@
  * pipeline), bullpen workload (B), weather (D -- never rendered live),
  * lineups pre-posting, matchup history, news, travel -- each of these is
  * one of the real `advanced.gaps` keys and renders with the API's own
- * reason string, never a placeholder. See `mapGameToStanding`'s
- * docstring for the spotlight's own, separate set of fields it cannot
- * honestly fill from this endpoint (PRICE STANDING, SUPPORT VS CONCERN,
- * evidence status) -- flagged in the L21 report for the orchestrator.
+ * reason string, never a placeholder.
+ *
+ * WHAT IS NOT HERE ANY MORE (2026-09-12): the V2-34 spotlight (the shared
+ * Featured Bet tile: PRICE STANDING, BEATS CONSENSUS, IMPROVEMENT) and the
+ * MODEL vs MARKET block. Both compared prices across books, which the
+ * owner has said is not the product.
  */
 
 import { apiGet } from "./api.js";
@@ -75,9 +72,7 @@ import { el, clear, renderAbsent, humanizeKey,
   verdictLabel, formatAmerican, formatBook,
   formatEasternTime, formatEasternClock, renderWordChip } from "./dom.js";
 import { renderLoadingSkeleton, renderError, notYetAvailable } from "./states.js";
-import { renderFeaturedBet } from "./featuredbet.js";
 import { renderGameStory } from "./gamestory.js";
-import { renderValueMeter } from "./valuemeter.js";
 import { renderStaleness } from "./meta.js";
 import { teamColors } from "./teamcolors.js";
 import { teamName, bookLabel } from "./labels.js";
@@ -477,245 +472,6 @@ function gqvPrice(quick) {
   return panel;
 }
 
-/* =====================================================================
- * V2-34 -- GAME SPOTLIGHT ON PRICE STANDING
- * The shared Featured Bet primitive (web/js/featuredbet.js), placed as
- * this screen's spotlight per design/linehound-v2/IMPLEMENTATION_PLAN.md
- * Wave 0/Group F. This file NEVER forks that component's markup -- it
- * only builds the `standing` object `renderFeaturedBet` consumes.
- * ===================================================================*/
-
-/**
- * Maps THIS GAME's quick/advanced payload onto featuredbet.js's
- * `standing` shape. This is deliberately NOT
- * `mapBetCheckPayloadToStanding` (featuredbet.js's own mapper for POST
- * /betcheck): that function expects POST /betcheck's response shape
- * (`query`, `price_improvement`, `your_price_beats_consensus`,
- * `thesis_support`, `counterargument`...), and calling POST /betcheck
- * from this screen would require a STATED, priced bet nobody has typed
- * here -- the Game view analyzes a matchup, it does not check a bet.
- * featuredbet.js's own docstring explicitly allows a caller to "build
- * one by hand ... for a fixture/test"; this is that allowance used for
- * production, because it is the only honest option this endpoint gives.
- *
- * SIDE SELECTION -- HONESTY-CRITICAL, READ BEFORE CHANGING
- * -------------------------------------------------------------------
- * `quick.side` names a real side ONLY when the analysis singled one out
- * (`entry.get("side")` in gamepayload.py -- the rare "flagged" verdict,
- * ~2% of games per RECONCILED_CONTRACT_CURRENT_HEAD.md's forward
- * ledger). For the DOMINANT no_play/market_unavailable case there is no
- * side, and this mapper never invents one (e.g. "always away") to fill
- * the card's SIDE/LINE cells -- that would read as a highlighted pick
- * where the system made none, exactly the pattern this product's
- * honesty rule forbids. When no side exists, `query.parsed` stays
- * `true` (nobody mistyped anything -- there is nothing to parse) but
- * `side`/`price`/`team` are `null`, which featuredbet.js's own spec-strip
- * cells already render as NOT AVAILABLE without this file having to ask
- * it to.
- *
- * SEGMENTS THIS ENDPOINT CANNOT HONESTLY FILL
- * -------------------------------------------------------------------
- * - PRICE STANDING ("better than N of M books"): `priceStanding` is left
- *   `null` on every call. `advanced.sections.multibook_board` DOES carry
- *   the raw per-book board (unlike POST /betcheck, which does not) so a
- *   book-count rank is theoretically computable here -- but
- *   featuredbet.js's own docstring treats this segment as reserved for
- *   "a future join with the odds board's raw rows, which is an
- *   engineering request, not something this component does on its own."
- *   Inlining a bespoke rank comparison in this lane, untested anywhere
- *   else in the product, would be new analysis this lane's boundary asks
- *   to avoid ("never compute ... a rank"). Left NOT AVAILABLE for
- *   consistency with the other two placements (Bet Check, Gameday).
- * - SUPPORT VS CONCERN: featuredbet.js hardcodes this row `present: true`
- *   and always prints "N thesis_support / M counterargument" -- correct
- *   for POST /betcheck, where those arrays always exist (even empty),
- *   but this endpoint has NO thesis_support/counterargument concept at
- *   all. `Finding.side` partitioning into support/counter only happens
- *   for a STATED, priced bet (`src/analysis/betcheck.py`'s `check()` /
- *   `build_contract()`), and reproducing it here would also disagree
- *   with what Bet Check itself would say: `build_contract()` excludes
- *   CONTEXT-kind findings via `finding.kind`, a field
- *   `gamepayload.py`'s `_finding_wire` never puts on the wire, so a
- *   client-side partition of `advanced.findings` could overcount versus
- *   the real endpoint for the identical side and price. Rather than risk
- *   a wrong number, `thesisSupportCount`/`counterargumentCount` are both
- *   `0` here -- THIS IS A KNOWN, DOCUMENTED PRIMITIVE LIMITATION, NOT A
- *   CLAIM THAT ZERO ITEMS WERE EVALUATED. Flagged loudly in the L21
- *   report; featuredbet.js would need a caller-supplied override for
- *   this row to render NOT AVAILABLE instead of a number for a screen
- *   with no thesis/counterargument concept.
- * - evidenceStatus: Bet-Check-only vocabulary (`contracts.py`'s
- *   Observation/Exploratory/Historical support/Forward testing/
- *   Validated ladder). Never conflated with this payload's own,
- *   differently-scaled per-finding `evidence_label` -- left `null`,
- *   which the trust strip already renders as NOT AVAILABLE.
- */
-function mapGameToStanding(quick, advanced) {
-  const price = quick.price || {};
-  const side = quick.side === "away" || quick.side === "home" ? quick.side : null;
-  const sideDetail = side && price.available ? (price.sides || {})[side] : null;
-  const teamAbbr = side === "home" ? quick.home_team : side === "away" ? quick.away_team : null;
-  const game = advanced && typeof advanced.game === "object" ? advanced.game : null;
-  const improvementPoints = sideDetail && typeof sideDetail.improvement_probability_points === "number"
-    ? sideDetail.improvement_probability_points : null;
-
-  return {
-    query: {
-      raw: (teamAbbr && sideDetail && typeof sideDetail.best_price === "number")
-        ? `${teamAbbr} h2h ${formatAmerican(sideDetail.best_price)}` : "",
-      parsed: true,
-      parseError: null,
-      market: "moneyline",
-      price: sideDetail && typeof sideDetail.best_price === "number" ? sideDetail.best_price : null,
-      line: null,
-      side,
-      team: teamAbbr,
-    },
-    // `game` is always passed (matchup header shows regardless of side).
-    // featuredbet.js's SIDE fallback is now null-safe -- it only reads
-    // `s.game.home`/`s.game.away` when `s.query.side` is literally
-    // "home"/"away", so a no-side game keeps its "AWAY @ HOME" header
-    // while the SIDE pill correctly renders NOT AVAILABLE instead of
-    // inventing a pick. Fixed upstream in featuredbet.js (L23).
-    game: { away: quick.away_team, home: quick.home_team,
-      firstPitchUtc: (game && game.start_time_utc) || null },
-    verdict: quick.verdict || null,
-    priceStanding: null, // see docstring -- reserved as an engineering request, never inlined here
-    yourPriceBeatsConsensus: improvementPoints === null ? null : improvementPoints > 0,
-    priceImprovement: sideDetail ? {
-      book: sideDetail.best_book,
-      americanPrice: sideDetail.best_price,
-      consensusImpliedProbability: sideDetail.consensus_probability,
-      improvementPoints: sideDetail.improvement_probability_points,
-      improvementReturnPct: sideDetail.improvement_return_pct,
-      label: price.label,
-    } : null,
-    boardDepthBooks: typeof price.books === "number" ? price.books : null,
-    thesisSupportCount: 0, // see docstring — known primitive limitation, not "zero evaluated"
-    counterargumentCount: 0,
-    evidenceStatus: null,
-    observedUtc: (price.staleness && price.staleness.observed_utc) || null,
-  };
-}
-
-function gqvSpotlight(quick, advanced) {
-  const wrap = el("section", { class: "gqv-spotlight", "data-hook": "game-spotlight",
-    "data-rise": "", "data-delay": "160" });
-  wrap.appendChild(el("div", { class: "gqv-spotlight__eyebrow", text: "SPOTLIGHT · PRICE STANDING ON THIS MATCHUP" }));
-  const findings = quick.top_findings || [];
-  wrap.appendChild(el("p", { class: "gqv-spotlight__lede",
-    text: findings.length === 0
-      ? "Nothing clears the evidence bar, so the spotlight holds the price standing — which is "
-        + "always real."
-      : "A finding cleared the bar for this game — the spotlight below is its price standing." }));
-  const mount = el("div", { "data-hook": "featured-bet-mount" });
-  wrap.appendChild(mount);
-  renderFeaturedBet(mount, mapGameToStanding(quick, advanced), {});
-  return wrap;
-}
-
-/* =====================================================================
- * MODEL vs MARKET -- payload.price_verdicts (src/analysis/priceverdict.py's
- * build_price_verdict, one per side, keyed away/home -- GET /game's own
- * `price_verdicts` field, distinct from `quick.price.sides`, which carries
- * the best price + book each verdict was measured against) plus
- * payload.engine (src/report/engine_bridge.py's summarize_game rollup,
- * null when no forward-test decision joins to this game). Sits directly
- * beneath the Quick View spotlight (V2-34), before the TEAMS panel.
- *
- * "MODEL" here is never an independent model probability -- there is none
- * (see `price_verdict.independent_model`'s own literal string, rendered
- * verbatim below). This panel puts the market-derived price verdict next
- * to the engine's forward-test decisions so a reader can see both real
- * signals side by side without either one masquerading as the other.
- * ===================================================================*/
-
-/** The ranking eyebrow for one column -- "best" gets the labeled claim
- * plus the honesty caption (ranked on price-vs-consensus only, never a
- * pick), "other" gets the plain, unadorned label, and `null` (both
- * sides unranked) renders nothing here -- the panel-level note in
- * `gqvModelVsMarket` covers that case once, not per column. */
-function gmvRankBadge(rank) {
-  if (rank === "best") {
-    const wrap = el("div", { class: "gmv__rank-wrap" });
-    wrap.appendChild(el("div", { class: "gmv__rank gmv__rank--best", "data-hook": "gmv-best-side",
-      text: "BEST SUPPORTED PRICE ON THIS GAME" }));
-    wrap.appendChild(el("p", { class: "gmv__rank-caption",
-      text: "Ranked by price against the fair price only — not a prediction of who wins, "
-          + "and not advice to bet it." }));
-    return wrap;
-  }
-  if (rank === "other") {
-    return el("div", { class: "gmv__rank gmv__rank--other", "data-hook": "gmv-other-side", text: "OTHER SIDE" });
-  }
-  return null;
-}
-
-/** One side's `reasons`/`risks` array under a quiet heading, rendered
- * VERBATIM -- never reworded, summarised or invented. An empty (or
- * missing) array renders nothing at all, never an empty box or a
- * padded filler line. */
-function gmvEvidenceList(label, items) {
-  if (!Array.isArray(items) || items.length === 0) return null;
-  const tone = label === "WHY" ? " gmv__evidence--why" : label === "AGAINST" ? " gmv__evidence--against" : "";
-  const block = el("div", { class: `gmv__evidence${tone}` });
-  block.appendChild(el("div", { class: "gmv__evidence-label", text: label }));
-  const list = el("ul", { class: "gmv__evidence-list" });
-  for (const item of items) {
-    list.appendChild(el("li", { text: String(item) }));
-  }
-  block.appendChild(list);
-  return block;
-}
-
-function gmvVerdictColumn(sideKey, abbr, verdict, priceSide, rank) {
-  const col = el("div", { class: "gmv__col" });
-  const badge = gmvRankBadge(rank);
-  if (badge) col.appendChild(badge);
-  col.appendChild(gqvBadge(abbr));
-  col.appendChild(el("div", { class: "gmv__col-name", text: `${teamName(abbr, "name") || abbr} moneyline` }));
-
-  if (!verdict) {
-    col.appendChild(notYetAvailable("No price verdict for this side.", "NO VERDICT"));
-    return col;
-  }
-
-  col.appendChild(renderWordChip(verdict.word));
-
-  const bestPrice = priceSide && typeof priceSide.best_price === "number" ? formatAmerican(priceSide.best_price) : null;
-  if (bestPrice) {
-    col.appendChild(el("div", { class: "gmv__price-line" },
-      [document.createTextNode(`${bestPrice}${priceSide.best_book ? ` at ${bookLabel(priceSide.best_book)}` : ""}`)]));
-  }
-
-  col.appendChild(renderValueMeter({
-    marketImplied: verdict.market_implied_probability,
-    priceImplied: verdict.stated_implied_probability,
-    valuePoints: verdict.value_points,
-    word: null,
-  }));
-
-  if (verdict.evidence_tier) {
-    col.appendChild(el("p", { class: "gmv__tier", text: `EVIDENCE TIER ${verdict.evidence_tier}` }));
-  }
-
-  const why = gmvEvidenceList("WHY", verdict.reasons);
-  if (why) col.appendChild(why);
-  const against = gmvEvidenceList("AGAINST", verdict.risks);
-  if (against) col.appendChild(against);
-
-  return col;
-}
-
-function provenanceLine(provenanceCounts) {
-  if (!provenanceCounts || typeof provenanceCounts !== "object") return "not available";
-  // Provenance keys are enum values ("market_derived", "model_derived").
-  // Said out loud they are still the same categories, just not underscored.
-  const parts = Object.keys(provenanceCounts).map(
-    (k) => `${k.replace(/_/g, "-")}: ${provenanceCounts[k]}`);
-  return parts.length ? parts.join(", ") : "not available";
-}
-
 /** A refusal reason the engine recorded, said in words.
  *
  * The engine writes these as the expression it evaluated --
@@ -848,22 +604,6 @@ function engineDecisionsList(engine) {
  * last, so it never outranks a priced side. Returns two `{key, rank}`
  * entries in display order; `rank` is "best"/"other", or `null` on BOTH
  * entries when neither side has a priced `value_points` to rank on. */
-function gmvRankOrder(verdicts) {
-  const points = (key) => {
-    const v = verdicts[key];
-    return v && typeof v.value_points === "number" ? v.value_points : null;
-  };
-  const keys = ["away", "home"].sort((a, b) => {
-    const pa = points(a);
-    const pb = points(b);
-    if (pa === null && pb === null) return 0;
-    if (pa === null) return 1;
-    if (pb === null) return -1;
-    return pb - pa;
-  });
-  const unranked = points(keys[0]) === null && points(keys[1]) === null;
-  return keys.map((key, i) => ({ key, rank: unranked ? null : (i === 0 ? "best" : "other") }));
-}
 
 /* =====================================================================
  * TONIGHT'S PICK -- the first thing on the screen, and the only thing on it
@@ -916,47 +656,6 @@ function gqvTonightsPick(pick, quick) {
 }
 
 
-function gqvModelVsMarket(payload, quick) {
-  const wrap = el("section", { class: "gmv panel chamfer", "data-hook": "model-vs-market",
-    "data-rise": "" });
-  wrap.appendChild(el("div", { class: "gmv__eyebrow", text: "MODEL vs MARKET" }));
-
-  const verdicts = (payload && typeof payload.price_verdicts === "object" && payload.price_verdicts) || {};
-  const sides = (quick.price && quick.price.sides) || {};
-  const order = gmvRankOrder(verdicts);
-
-  if (order.every((o) => o.rank === null)) {
-    wrap.appendChild(el("p", { class: "gmv__unranked-note", "data-hook": "gmv-unranked",
-      text: "No priced side to rank on this game." }));
-  }
-
-  const cols = el("div", { class: "gmv__cols" });
-  for (const { key, rank } of order) {
-    const abbr = key === "away" ? quick.away_team : quick.home_team;
-    cols.appendChild(gmvVerdictColumn(key, abbr, verdicts[key], sides[key], rank));
-  }
-  wrap.appendChild(cols);
-
-  // ENGINE TELEMETRY IS NOT QUICK VIEW. Removed 2026-09-10.
-  //
-  // This used to append, to the FIRST screen a reader lands on: a line
-  // reading "INDEPENDENT MODEL: NO INDEPENDENT MODEL YET · engine
-  // provenance: market-derived: 206, placeholder: 103, none: 16", then
-  // ENGINE DECISIONS -- 325 rows of raw system hashes like
-  // `4703ed67882a9d2b` each with a collapsed Thesis -- then a panel headed
-  // 207 FATAL COUNTERARGUMENTS listing "board was 14.2 hr old at decision
-  // time; the limit is 30 min (3 systems)" twenty-five times over.
-  //
-  // Every line of it is true and every line of it is for us. The owner,
-  // looking at that screen: "there's just a lot of AI slop language and a
-  // lot of fluff... make it impactful, concise, to the point, make them
-  // want to see our bets."
-  //
-  // It now lives under SHOW ADVANCED ANALYSIS, which is where a reader goes
-  // when they want the machinery. Nothing is deleted and no payload field
-  // stopped being rendered -- it moved to the layer that asks for it.
-  return wrap;
-}
 
 /* =====================================================================
  * TEAMS panel -- records, win pct, RS/RA per game, last-5/last-10, every
@@ -1058,8 +757,7 @@ function gqvActions(date, away, home) {
  * humanized fallback instead of an invented description. */
 const SECTION_BLURBS = {
   park: "Venue identifier resolved from the game record.",
-  price_improvement: "Your price against the fair price across the books, with a mandatory "
-    + "direction label.",
+  price_improvement: "What the price needs to break even, beside the fair price across the books.",
   multibook_board: "Per-book prices from one capture instant, with best-price ties.",
   what_changed: "Roster/lineup events this poller has seen for this game.",
   teams: "Records, win pct, runs for and against per game, last-5 and last-10 — every rate with "
@@ -1256,9 +954,9 @@ function gavGaps(advanced) {
 function gavBoard(advanced, quick) {
   const board = readSection(advanced, "multibook_board");
   const block = el("div", { class: "gav-board" });
-  block.appendChild(el("h4", { class: "gav-subhead", text: "BOOK VERSUS BOOK" }));
+  block.appendChild(el("h4", { class: "gav-subhead", text: "THE BOARD" }));
   block.appendChild(el("p", { class: "gav-board__lede",
-    text: "The comparison that is real. Books disagree; that is measurable." }));
+    text: "Every book's price, from one capture instant." }));
   if (!board || !Array.isArray(board.quotes) || !board.quotes.length) {
     block.appendChild(notYetAvailable(
       gapReason(advanced, "market") || "No board captured for this game.", "NO BOARD"));
@@ -1287,8 +985,7 @@ function gavBoard(advanced, quick) {
   scroll.appendChild(table);
   block.appendChild(scroll);
   block.appendChild(el("p", { class: "gav-board__note",
-    text: `Replaces the old stat-versus-stat table -- FIP, WHIP and K-BB% are gaps, not data. `
-        + `Across ${board.quotes.length} books.` }));
+    text: `${board.quotes.length} books.` }));
   return block;
 }
 
@@ -1301,12 +998,15 @@ function gavBoard(advanced, quick) {
  * here as the one verified, product-wide fact instead (same sentence
  * odds.js's own footnote already states elsewhere in this client). */
 function gavMarketRefusal() {
+  // It used to say player props were refused. They have their own board
+  // now (#/props), so the sentence would have been false.
   const block = el("div", { class: "gav-refusal" });
-  block.appendChild(el("h4", { class: "gav-subhead", text: "MARKET REFUSAL" }));
+  block.appendChild(el("h4", { class: "gav-subhead", text: "OTHER MARKETS" }));
   block.appendChild(el("p", { class: "gav-refusal__body",
-    text: "This product checks moneyline (h2h) only. Every other market — spreads, totals, run "
-        + "line, player props and the rest — is refused by name rather than approximated as a "
-        + "moneyline bet." }));
+    text: "This page reads the moneyline. Spreads and totals are not read here, and are never "
+        + "approximated as a moneyline bet. " }, [
+    el("a", { href: "#/props", text: "Player props have their own board." }),
+  ]));
   return block;
 }
 
@@ -1393,31 +1093,18 @@ export async function renderGameDetail(container, date, away, home) {
   const advHost = el("div", { id: "game-advanced-host" });
   advHost.hidden = true;
   advHost.appendChild(renderAdvancedV2(advanced, quick));
-  // MOVED OFF THE QUICK VIEW 2026-09-10, both of them price-verification
-  // apparatus rather than anything a reader came for.
+  // GONE, 2026-09-12: the SPOTLIGHT (featuredbet.js's tile -- PRICE
+  // STANDING, BEATS CONSENSUS, IMPROVEMENT, "line-shopping value") and MODEL
+  // vs MARKET ("ranked by price against the fair price only"). They were
+  // moved off the quick view on 09-10 and lived down here; the owner's rule
+  // is that comparing prices across books is not the product, so they do
+  // not live anywhere now. The line that announced there was no model of
+  // our own went with them -- it stopped being true when the card got its
+  // own run model (src/analysis/strength.MODEL_BASIS).
   //
-  // SPOTLIGHT read "Nothing clears the evidence bar, so the spotlight holds
-  // the price standing -- which is always real", over a table whose rows were
-  // PRICE STANDING / NOT AVAILABLE / "needs the full per-book board, which
-  // this check does not carry", BEATS CONSENSUS / No, and a footnote reading
-  // "price improvement / line-shopping value -- a better execution price, not
-  // expected value and not a prediction".
-  //
-  // MODEL vs MARKET printed, for each side, THE MARKET'S FAIR CHANCE against
-  // PROBABILITY YOUR PRICE IMPLIES, the difference in points, and then the
-  // same sentence twice: "A likely winner at a bad price is still a bad
-  // price; an underdog can be value when the price implies less than the
-  // market's own fair price."
-  //
-  // All of it accurate. None of it is why anyone opened the page, and
-  // together they were most of its length.
-  advHost.appendChild(gqvSpotlight(quick, advanced));
-  advHost.appendChild(gqvModelVsMarket(payload, quick));
-  // The engine's own record, moved off the quick view -- see the comment at
-  // the end of gqvModelVsMarket for what it was doing to the first screen.
+  // The engine's own record stays: it is the machinery a reader asked to
+  // see by opening this layer.
   const engine = payload && payload.engine ? payload.engine : null;
-  advHost.appendChild(el("p", { class: "gmv__model-line",
-    text: `INDEPENDENT MODEL: NO INDEPENDENT MODEL YET · engine provenance: ${provenanceLine(engine && engine.provenance_counts)}` }));
   advHost.appendChild(engineDecisionsList(engine));
   body.appendChild(advHost);
 
