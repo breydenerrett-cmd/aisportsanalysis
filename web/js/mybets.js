@@ -145,6 +145,17 @@ export async function renderMyBets(container) {
   section.appendChild(boardHost);
   container.appendChild(section);
 
+  // THE FORM WAITS FOR THE BOARD.
+  //
+  // Until 2026-09-12 the save form rendered first, unconditionally, and the
+  // board request ran after it. On staging, signed out, that put a working-
+  // looking GAME / SIDE / PRICE / SAVE BET form directly ABOVE a "SIGN IN
+  // REQUIRED" wall -- a control the reader could fill in and submit into a
+  // 401. Offering a control that cannot work reads as a broken app. The
+  // form now appears only once the board has actually loaded, which is the
+  // one moment we know a save could succeed.
+  let formShown = false;
+
   async function reload() {
     clear(boardHost);
     boardHost.appendChild(el("div", { class: "state-loading panel chamfer", "data-hook": "view-loading" },
@@ -153,12 +164,17 @@ export async function renderMyBets(container) {
     try {
       payload = await apiGet("/my-bets");
     } catch (err) {
+      clear(formHost);
+      formShown = false;
       renderError(boardHost, err);
       return;
+    }
+    if (!formShown) {
+      renderSaveForm(formHost, reload);
+      formShown = true;
     }
     renderBetsTable(boardHost, payload.bets, reload);
   }
 
-  renderSaveForm(formHost, reload);
   await reload();
 }
