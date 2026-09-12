@@ -1,7 +1,7 @@
 """Structural checks for the hosted-demo sprint's new front-end surfaces:
 
   - web/js/performance.js (#/performance, GET /performance)
-  - web/js/opportunities.js (TOP OPPORTUNITIES, wired into today.js)
+  - web/js/opportunities.js -- DELETED 2026-09-12 with the price-comparison register
   - web/js/valuemeter.js (the shared MARKET-IMPLIED vs YOUR-PRICE bars)
   - main.js's #/performance route registration and RESULTS nav item
   - betcheck.js's new price-verdict block and games.js's MODEL vs MARKET
@@ -24,7 +24,6 @@ ROOT = Path(__file__).resolve().parent.parent
 WEB_JS = ROOT / "web" / "js"
 
 PERFORMANCE_PATH = WEB_JS / "performance.js"
-OPPORTUNITIES_PATH = WEB_JS / "opportunities.js"
 VALUEMETER_PATH = WEB_JS / "valuemeter.js"
 MAIN_PATH = WEB_JS / "main.js"
 BETCHECK_PATH = WEB_JS / "betcheck.js"
@@ -32,7 +31,7 @@ GAMES_PATH = WEB_JS / "games.js"
 TODAY_PATH = WEB_JS / "today.js"
 DOM_PATH = WEB_JS / "dom.js"
 
-NEW_JS_FILES = (PERFORMANCE_PATH, OPPORTUNITIES_PATH, VALUEMETER_PATH)
+NEW_JS_FILES = (PERFORMANCE_PATH, VALUEMETER_PATH)
 
 BANNED_PROBABILITY_TOKENS = (
     "win_probability", "winProbability", "modelProbability", "true_probability",
@@ -104,24 +103,6 @@ class MainJsRegistersPerformanceRoute(unittest.TestCase):
 
     def test_nav_item_present(self):
         self.assertIn('label: "RESULTS"', self.text)
-
-
-class OpportunitiesNeverInventsAnEmptyMessage(unittest.TestCase):
-    def test_empty_literal_matches_the_api_verbatim(self):
-        """The client's fallback string must be the API's own, character for
-        character. Compared against the Python constant rather than a literal
-        typed here, so the two can never drift -- they did drift once already
-        (the 2026-09-10 rename away from "BEST BETS", which is pick language
-        for a price board)."""
-        from src.analysis import opportunities as opp
-        text = _read(OPPORTUNITIES_PATH)
-        self.assertIn(opp.EMPTY_REASON, text)
-
-    def test_qualifying_rows_never_a_fabricated_default(self):
-        text = _read(OPPORTUNITIES_PATH)
-        # qualifying is always read from the payload, never defaulted to a
-        # non-empty literal array of invented rows.
-        self.assertIn("payload.qualifying || []", text)
 
 
 class ValueMeterLabelsHonestlyMarketImplied(unittest.TestCase):

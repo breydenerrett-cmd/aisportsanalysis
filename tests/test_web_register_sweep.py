@@ -219,6 +219,13 @@ class TheSupportPageSaysWhatItIsFor(unittest.TestCase):
         self.assertIn('"support-intro"', text)
 
 
+class ThePerformancePageNamesSystemsInWords(unittest.TestCase):
+    def test_system_ids_go_through_the_humanizer(self):
+        text = (JS / "performance.js").read_text(encoding="utf-8")
+        self.assertIn("humanizeKey(s.system_id)", text)
+        self.assertNotIn('text: s.system_id }', text)
+
+
 class PropsHaveTheTab(unittest.TestCase):
     def test_props_replaced_odds_in_the_bottom_nav(self):
         text = (JS / "main.js").read_text(encoding="utf-8")

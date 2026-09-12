@@ -91,13 +91,15 @@ class WiresWave0PrimitivesWithoutForking(unittest.TestCase):
             self.assertNotRegex(text, rf"\bfunction\s+{name}\s*\(",
                                  f"today.js must not redefine {name} -- it owns exactly one definition")
 
-    def test_render_featured_bet_still_defined_only_in_featuredbet_js(self):
+    def test_render_featured_bet_is_defined_nowhere(self):
+        """featuredbet.js was deleted 2026-09-12 with the price-comparison
+        register. Nothing may quietly re-create the tile under a new name."""
         matches = []
         for path in sorted(WEB_JS.glob("*.js")):
             text = _read(path)
             if re.search(r"\bfunction\s+renderFeaturedBet\s*\(", text):
                 matches.append(path.name)
-        self.assertEqual(matches, ["featuredbet.js"])
+        self.assertEqual(matches, [])
 
 
 class VerdictStatesAndFeatureSelection(unittest.TestCase):

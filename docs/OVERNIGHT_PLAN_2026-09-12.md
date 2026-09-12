@@ -139,10 +139,14 @@ adversely selected.
   `_propboard.py`, `backfill_handedness.py`, `prereg_market_vs_model.py`,
   `probe_information_edge.py`, `probe_line_shopping.py`,
   `probe_lineup_slot.py`, `probe_platoon_split.py`.
-- **New debt from tonight's purge:** `web/js/featuredbet.js` and
-  `web/js/opportunities.js` are imported by nothing that runs (the audit
-  lists both as orphan views); ten test files still pin them. Deleting
-  both with their tests is a clean follow-up, not a 4am job.
+- **Dead views deleted.** `web/js/featuredbet.js` (the tile) and
+  `web/js/opportunities.js` (the value-points board) were imported by
+  nothing that runs; both are gone with the tests that pinned their
+  contents. `valuemeter.js` stays — `matchups.js` still uses it. The
+  `.fb-`/`.opp-` rules in `screens.css` (~170 lines) are inert and left
+  for a CSS pass.
+- **`#/performance`** printed system ids as keys
+  (`market_derived_consensus_totals_under`); they read in words now.
 
 ## Tier 1 — things the owner asked for that are still not done
 

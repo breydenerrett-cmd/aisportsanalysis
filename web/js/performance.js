@@ -20,7 +20,7 @@
  */
 
 import { apiGet } from "./api.js";
-import { el, clear, renderError, renderLoading, notYetAvailable, formatAmerican } from "./dom.js";
+import { el, clear, renderError, renderLoading, notYetAvailable, formatAmerican, humanizeKey } from "./dom.js";
 import { armEntrances } from "./motion.js";
 import { renderRecordStrip } from "./recordstrip.js";
 import { renderDayRecap } from "./dayrecap.js";
@@ -190,7 +190,10 @@ function classTable(systems) {
   const tbody = el("tbody");
   for (const s of systems) {
     const tr = el("tr");
-    tr.appendChild(el("td", { text: s.system_id }));
+    // A system's id in words ("market derived consensus totals under"),
+    // not its key: `market_derived_consensus_totals_under` was in this
+    // table on 2026-09-12. A genome hash has no words and prints as itself.
+    tr.appendChild(el("td", { text: humanizeKey(s.system_id) || s.system_id }));
     tr.appendChild(el("td", { text: String(s.n_settled) }));
     tr.appendChild(el("td", { text: `${s.wins}-${s.losses}-${s.pushes}` }));
     tr.appendChild(el("td", { text: numFmt(s.units_net) || "—" }));

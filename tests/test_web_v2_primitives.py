@@ -1,4 +1,11 @@
-"""Structural checks for LINEHOUND V2 Wave 0's two shared primitives:
+"""Structural checks for LINEHOUND V2 Wave 0's shared primitives.
+
+featuredbet.js (V2-32's Tier A "bet standing" hero card) was deleted
+on 2026-09-12 with the rest of the price-comparison register -- nothing
+imported it any more -- and every check here that read it went with it.
+What follows is the original docstring.
+
+Wave 0's two shared primitives were:
 web/js/states.js (V2-27..30, the shared loading/empty/unavailable/error
 states) and web/js/featuredbet.js (V2-32's Tier A "bet standing" hero
 card) -- design/linehound-v2/IMPLEMENTATION_PLAN.md's Wave 0, Group F
@@ -39,7 +46,6 @@ ROOT = Path(__file__).resolve().parent.parent
 WEB_JS = ROOT / "web" / "js"
 
 STATES_PATH = WEB_JS / "states.js"
-FEATUREDBET_PATH = WEB_JS / "featuredbet.js"
 
 WAVE1_SCREEN_FILES = ("odds.js", "mybets.js", "main.js")
 # betcheck.js, games.js and today.js are deliberately EXCLUDED here (not
@@ -59,10 +65,6 @@ class FilesExist(unittest.TestCase):
     def test_states_js_exists_and_nonempty(self):
         self.assertTrue(STATES_PATH.is_file())
         self.assertTrue(_read(STATES_PATH).strip())
-
-    def test_featuredbet_js_exists_and_nonempty(self):
-        self.assertTrue(FEATUREDBET_PATH.is_file())
-        self.assertTrue(_read(FEATUREDBET_PATH).strip())
 
 
 class SharedStatesWrapDomJs(unittest.TestCase):
@@ -89,61 +91,11 @@ class SharedStatesWrapDomJs(unittest.TestCase):
             self.assertRegex(text, rf"\bexport function {name}\s*\(", name)
 
 
-class FeaturedBetSingleDefinition(unittest.TestCase):
-    def test_render_featured_bet_exported_once_under_web_js(self):
-        matches = []
-        for path in sorted(WEB_JS.glob("*.js")):
-            text = _read(path)
-            if re.search(r"\bfunction\s+renderFeaturedBet\s*\(", text):
-                matches.append(path.name)
-        self.assertEqual(matches, ["featuredbet.js"],
-                          "renderFeaturedBet must be defined in exactly one file")
-
-    def test_exports_the_documented_call_signature(self):
-        text = _read(FEATUREDBET_PATH)
-        self.assertRegex(text, r"\bexport function renderFeaturedBet\s*\(")
-        self.assertRegex(text, r"\bexport function mapBetCheckPayloadToStanding\s*\(")
-
-    def test_wave1_screens_not_wired_in_yet(self):
-        # Wave 0 publishes the component and its call signature only --
-        # IMPLEMENTATION_PLAN.md is explicit that wiring it into a
-        # consuming screen is Wave 1's job, in that screen's own file.
-        # This assertion documents that boundary; a Wave-1 worker should
-        # update it in the same change that adds the real import.
-        for name in WAVE1_SCREEN_FILES:
-            path = WEB_JS / name
-            if not path.is_file():
-                continue
-            text = _read(path)
-            self.assertNotIn("featuredbet.js", text,
-                              f"{name} should not import featuredbet.js yet (Wave 1's job)")
-
-
 class NeverFabricateGuards(unittest.TestCase):
     """Boundary-specific tripwires -- narrower than the general banned-
     vocabulary scan, these catch the specific shortcuts this lane's
     BOUNDARIES section calls out by name."""
 
-    def test_no_default_verdict(self):
-        text = _read(FEATUREDBET_PATH)
-        # A caller-absent verdict must render NOT AVAILABLE, never fall
-        # back to "no_play" (the majority real-world case) as if that
-        # were a real answer for THIS bet.
-        self.assertNotRegex(text, r"verdict\s*\|\|\s*[\"']no_play[\"']")
-        self.assertNotRegex(text, r"verdict\s*(:|=)\s*[\"']no_play[\"']\s*;?\s*//.*default", re.IGNORECASE)
-
-    def test_counterargument_count_uses_raw_array_not_padded_lines(self):
-        text = _read(FEATUREDBET_PATH)
-        self.assertIn("p.counterargument.length", text)
-        self.assertNotIn("counterargument_lines.length", text)
-
-    def test_price_standing_never_computed_from_a_rank(self):
-        text = _read(FEATUREDBET_PATH)
-        # "priceStanding" may only ever be READ from caller-supplied
-        # input (mapBetCheckPayloadToStanding's `extra.priceStanding`)
-        # -- never derived from board/price fields on this module's own.
-        self.assertIn("extra.priceStanding", text)
-        self.assertNotRegex(text, r"priceStanding\s*=\s*\{[^}]*betterThan\s*:\s*\w+\.length")
 
     def test_loading_skeleton_never_prints_a_fabricated_progress_figure(self):
         text = _read(STATES_PATH)
@@ -171,7 +123,7 @@ class NoBannedVocabulary(unittest.TestCase):
 
     def test_no_hard_banned_or_unnegated_phrases(self):
         violations = []
-        for path in (STATES_PATH, FEATUREDBET_PATH):
+        for path in (STATES_PATH,):
             text = path.read_text(encoding="utf-8")
             for pattern, label in HARD_BANNED:
                 if re.search(pattern, text, re.IGNORECASE):

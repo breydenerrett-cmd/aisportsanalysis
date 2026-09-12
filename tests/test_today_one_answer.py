@@ -72,22 +72,13 @@ def _code(name):
 
 class ThePriceBoardIsNotAPickList(unittest.TestCase):
 
-    def test_no_top_play_label(self):
-        """The label that misled a real reader. It was invented in the client
-        and existed nowhere in the payload."""
-        self.assertNotIn(
-            "TOP PLAY", _code("opportunities.js"),
-            "the price board is labelling its top row TOP PLAY again; it "
-            "ranks value_points, which src/analysis/priceverdict.py defines "
-            "as execution quality, and says nothing about who wins")
-
-    def test_no_pick_language_in_any_heading_it_renders(self):
-        code = _code("opportunities.js")
-        for phrase in ("TOP OPPORTUNITIES", "BEST BETS", "TOP PICK",
-                       "BEST BET", "PLAY OF THE"):
-            self.assertNotIn(phrase, code,
-                             f"{phrase!r} reads as a pick list on a surface "
-                             f"that ranks price, not case strength")
+    def test_the_price_board_view_is_gone(self):
+        """opportunities.js -- the board ranked by value points, whose top
+        row was labelled TOP PLAY and misled a real reader -- was deleted on
+        2026-09-12 with the rest of the price-comparison register. Nothing
+        routes to it and nothing may bring it back under the same name."""
+        self.assertFalse((JS / "opportunities.js").exists())
+        self.assertNotIn("opportunities.js", _code("main.js"))
 
     def test_the_gap_is_not_described_against_a_true_or_fair_price(self):
         """"better than fair" says the market is wrong and we know the right
