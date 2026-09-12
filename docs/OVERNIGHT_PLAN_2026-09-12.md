@@ -393,6 +393,12 @@ and reproduced by a second before I read them:
 hero) and `docs/DECISION_PROP_CAPTURE_SPEND.md` (the ~T-6h baseline pass
 and stolen bases, costed against the envelope).
 
+Two more, same method: `docs/ORPHAN_SCRIPTS_2026-09-12.md` (a disposition
+for each of the seven scripts nothing runs — nothing deleted) and
+`docs/PROPOSAL_LANDING_COPY_2026-09-12.md` (the landing page section by
+section: keep / rewrite / cut, with the copy written out; landing.html is
+untouched until you approve).
+
 - **Today gives two answers to "what do I bet".** TONIGHT'S CARD (the
   product: 3–5 picks, frozen, graded) sits above TONIGHT'S PICKS ("where
   our systems currently see the strongest case" — the engine slip, ranked
