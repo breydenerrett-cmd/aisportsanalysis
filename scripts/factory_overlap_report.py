@@ -66,7 +66,9 @@ def _load_sweep_reports(pattern: str = SWEEP_GLOB) -> list[dict]:
     for path in sorted(glob.glob(pattern)):
         with open(path, "r", encoding="utf-8") as fh:
             payload = json.load(fh)
-        payload["_source_path"] = os.path.relpath(path, REPO_ROOT)
+        # Forward slashes whatever the OS: this string lands in a committed
+        # doc, and a Windows run rewrote every path with backslashes.
+        payload["_source_path"] = os.path.relpath(path, REPO_ROOT).replace(os.sep, "/")
         reports.append(payload)
     return reports
 
@@ -208,8 +210,8 @@ def _render(reports: list[dict], generated_at: str) -> str:
         elif masks_paths:
             index_path, bin_path = masks_paths
             combined, _order, n_games = _load_combined_masks(index_path, bin_path)
-            source_note = (f"backfilled from `{os.path.relpath(index_path, REPO_ROOT)}`"
-                           f" + `{os.path.relpath(bin_path, REPO_ROOT)}`"
+            source_note = (f"backfilled from `{os.path.relpath(index_path, REPO_ROOT).replace(os.sep, '/')}`"
+                           f" + `{os.path.relpath(bin_path, REPO_ROOT).replace(os.sep, '/')}`"
                            " (see `scripts/factory_masks_from_sweep.py`)")
         else:
             lines += [
@@ -262,18 +264,26 @@ def _render(reports: list[dict], generated_at: str) -> str:
     return "\n".join(lines)
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None, out_path: str | None = None) -> int:
+    """`--out PATH` (or `out_path=`) writes somewhere other than the
+    committed doc. The test suite passes a temp path: it used to call this
+    with no arguments and rewrote docs/FACTORY_OVERLAP_REPORT.md on every
+    run, which left the working tree dirty after every `pytest`."""
+    args = list(argv or [])
+    if "--out" in args:
+        out_path = args[args.index("--out") + 1]
+    target = out_path or OUT_PATH
     reports = _load_sweep_reports()
     generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     body = _render(reports, generated_at)
-    os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
-    with open(OUT_PATH, "w", encoding="utf-8") as fh:
+    os.makedirs(os.path.dirname(target) or ".", exist_ok=True)
+    with open(target, "w", encoding="utf-8") as fh:
         fh.write(body)
         fh.write("\n")
     if not reports:
-        print(f"no sweep output found; wrote {OUT_PATH} saying so")
+        print(f"no sweep output found; wrote {target} saying so")
     else:
-        print(f"wrote {OUT_PATH} covering {len(reports)} sweep artifact(s)")
+        print(f"wrote {target} covering {len(reports)} sweep artifact(s)")
     return 0
 
 

@@ -151,12 +151,27 @@ class TestMainExitsCleanly(unittest.TestCase):
     def test_main_returns_zero_and_writes_doc(self):
         # Exercise the real main() against whatever exists in the repo today
         # (present or absent) -- either way it must exit 0 and write the doc.
-        rc = report_mod.main([])
-        self.assertEqual(rc, 0)
-        self.assertTrue(os.path.exists(report_mod.OUT_PATH))
-        with open(report_mod.OUT_PATH) as fh:
-            content = fh.read()
+        # To a TEMP path: this used to write the committed
+        # docs/FACTORY_OVERLAP_REPORT.md on every run, leaving the tree dirty
+        # after every test run (and, on Windows, with backslashed paths).
+        with tempfile.TemporaryDirectory() as tmp:
+            out = os.path.join(tmp, "overlap.md")
+            rc = report_mod.main(["--out", out])
+            self.assertEqual(rc, 0)
+            self.assertTrue(os.path.exists(out))
+            with open(out, encoding="utf-8") as fh:
+                content = fh.read()
         self.assertIn("Factory overlap report", content)
+        # Never a backslash in a path the doc prints, whatever the OS.
+        self.assertNotIn("data\\research", content)
+
+    def test_main_never_touches_the_committed_doc_from_a_test(self):
+        """The default target is the committed doc; a test must name its
+        own. This pins that the seam exists rather than trusting callers."""
+        with tempfile.TemporaryDirectory() as tmp:
+            out = os.path.join(tmp, "o.md")
+            report_mod.main([], out_path=out)
+            self.assertTrue(os.path.exists(out))
 
 
 if __name__ == "__main__":
