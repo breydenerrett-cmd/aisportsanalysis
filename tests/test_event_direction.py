@@ -13,7 +13,7 @@ Both have a test below that fails against the inverted or sloppy version.
 
 from datetime import datetime, timedelta, timezone
 
-import pytest
+from tests._unittest_bridge import approx, raises
 
 from scripts import probe_event_direction as probe
 
@@ -34,7 +34,7 @@ def test_net_measures_from_last_quote_before_the_anchor():
     series = _series([(-30, 0.50), (-5, 0.55), (60, 0.60)])
     got = probe._net(series, BASE, BASE + timedelta(minutes=120))
     # Base is 0.55 (the -5 quote), not 0.50 (the -30 one).
-    assert got == pytest.approx(0.05)
+    assert got == approx(0.05)
 
 
 def test_net_is_net_and_not_peak():
@@ -59,14 +59,14 @@ def test_net_is_none_without_a_quote_on_each_side():
 def test_net_ignores_quotes_past_the_window():
     series = _series([(0, 0.50), (60, 0.55), (300, 0.99)])
     got = probe._net(series, BASE, BASE + timedelta(minutes=120))
-    assert got == pytest.approx(0.05)
+    assert got == approx(0.05)
 
 
 def test_before_window_reads_the_prior_two_hours():
     series = _series([(-180, 0.40), (-60, 0.50), (30, 0.80)])
     span = timedelta(minutes=probe.HORIZON_MINUTES)
     got = probe._net(series, BASE - span, BASE)
-    assert got == pytest.approx(0.10)
+    assert got == approx(0.10)
 
 
 # --------------------------------------------------------------------------
@@ -244,7 +244,7 @@ def test_the_market_moving_the_other_way_is_refuted_not_ignored():
 
 def test_bonferroni_is_applied_to_the_three_primary_tests():
     assert probe.PRIMARY_HYPOTHESES == 3
-    assert probe.ALPHA == pytest.approx(0.05 / 3)
+    assert probe.ALPHA == approx(0.05 / 3)
 
 
 # --------------------------------------------------------------------------
@@ -273,13 +273,13 @@ def test_a_consensus_is_the_mean_across_books():
                          "event_id": "e1", "book": f"b{book}", "total": total})
     series = probe._series_by_event_id(rows, lambda r: probe._number(
         r.get("total")))
-    assert series["e1"][0][1] == pytest.approx(8.5)
+    assert series["e1"][0][1] == approx(8.5)
 
 
 def test_totals_arrive_as_strings_and_are_coerced():
     """The stores round-trip through JSON and CSV. Coerce, never isinstance."""
-    assert probe._number("8.5") == pytest.approx(8.5)
-    assert probe._number(8.5) == pytest.approx(8.5)
+    assert probe._number("8.5") == approx(8.5)
+    assert probe._number(8.5) == approx(8.5)
     assert probe._number("") is None
     assert probe._number(None) is None
 
@@ -348,3 +348,11 @@ def test_the_settled_results_store_wins_over_the_schedule(tmp_path,
         "1,2026-09-12T01:40:00Z,ATL,SD\n", encoding="utf-8")
 
     assert probe._first_pitch(path=str(results))["1"].hour == 1
+
+
+# CI runs `python -m unittest discover` on a stdlib-only interpreter; the
+# bridge turns the functions above into a TestCase there and returns None
+# under pytest so nothing is collected twice.
+from tests._unittest_bridge import as_test_case  # noqa: E402
+
+FunctionTests = as_test_case(globals())

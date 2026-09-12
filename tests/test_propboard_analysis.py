@@ -11,7 +11,7 @@ Four failures here would be silent and each would produce a plausible board:
   * a home-run contract slipping through on a one-sided market.
 """
 
-import pytest
+from tests._unittest_bridge import approx, raises
 
 from src.analysis import propboard
 
@@ -80,7 +80,7 @@ def test_the_fair_probability_has_the_book_margin_removed():
              "b": {"Over": -110, "Under": -110}}
     fair, best = propboard.fair_and_best(books)
     # -110 both ways is a 4.8% margin; the fair number is 0.500, not 0.524.
-    assert fair == pytest.approx(0.5, abs=1e-9)
+    assert fair == approx(0.5, abs=1e-9)
     assert best["Over"][0] == -110
 
 
@@ -214,7 +214,7 @@ def test_a_real_shaped_board_prices_both_sides():
     for contract in board["contracts"]:
         assert 0.0 < contract["probability"] < 1.0
         assert 0.0 < contract["breakeven"] < 1.0
-        assert contract["gap_vs_breakeven"] == pytest.approx(
+        assert contract["gap_vs_breakeven"] == approx(
             contract["probability"] - contract["breakeven"])
 
 
@@ -223,7 +223,7 @@ def test_the_two_sides_probabilities_complement():
         _two_way(), date="2026-09-11",
         batters_by_name={"Batter A": _history()}, league=LEAGUE)
     by_side = {c["side"]: c["probability"] for c in board["contracts"]}
-    assert by_side["Over"] + by_side["Under"] == pytest.approx(1.0)
+    assert by_side["Over"] + by_side["Under"] == approx(1.0)
 
 
 def test_batting_slot_is_used_when_known():
@@ -295,7 +295,7 @@ def test_a_home_run_row_carries_ours_and_the_price_but_no_market_number():
     assert "no book quotes the under" in row["market_probability_absent"]
     # The best stated Over: +350 at fanduel, break-even 1/4.5.
     assert row["price"] == 350 and row["book"] == "fanduel"
-    assert row["breakeven"] == pytest.approx(1 / 4.5)
+    assert row["breakeven"] == approx(1 / 4.5)
 
 
 def test_a_home_run_with_no_over_at_all_is_refused_by_name():
@@ -348,7 +348,7 @@ def test_long_shots_are_capped():
 
 
 def test_a_board_needs_a_date():
-    with pytest.raises(propboard.PropBoardError):
+    with raises(propboard.PropBoardError):
         propboard.build([], date="", batters_by_name={}, league=LEAGUE)
 
 
@@ -361,3 +361,11 @@ def test_summarise_counts_both_filters():
     assert got["contracts"] == 2
     assert got["markets"] == ["batter_hits"]
     assert got["likely"] >= 1
+
+
+# CI runs `python -m unittest discover` on a stdlib-only interpreter; the
+# bridge turns the functions above into a TestCase there and returns None
+# under pytest so nothing is collected twice.
+from tests._unittest_bridge import as_test_case  # noqa: E402
+
+FunctionTests = as_test_case(globals())

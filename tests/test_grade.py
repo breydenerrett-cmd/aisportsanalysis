@@ -5,7 +5,7 @@ empty. And the one thing the grade must never do is rank on the price gap:
 that selection was measured at -13.4% against a -9.1% control.
 """
 
-import pytest
+from tests._unittest_bridge import approx, raises
 
 from src.analysis import grade
 from src.analysis import prices as prices_mod
@@ -179,3 +179,11 @@ def test_the_legend_says_what_the_grade_is_not():
     text = " ".join(grade.legend()).lower()
     assert "not how much we expect to win" in text
     assert "a note, not a reason" in text
+
+
+# CI runs `python -m unittest discover` on a stdlib-only interpreter; the
+# bridge turns the functions above into a TestCase there and returns None
+# under pytest so nothing is collected twice.
+from tests._unittest_bridge import as_test_case  # noqa: E402
+
+FunctionTests = as_test_case(globals())

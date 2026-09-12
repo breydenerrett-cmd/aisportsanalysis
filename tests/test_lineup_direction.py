@@ -15,7 +15,7 @@ Each has a test below that fails against the broken version.
 
 from datetime import date, datetime, timedelta, timezone
 
-import pytest
+from tests._unittest_bridge import approx, raises
 
 from scripts import probe_lineup_direction as probe
 
@@ -42,8 +42,8 @@ def test_the_expected_nine_are_the_most_frequent_starters():
              [101, 102, 103, 104, 105, 106, 107, 108, 999]]
     expected, rate = probe._expected_lineup(prior)
     assert set(expected) == set(REGULARS)
-    assert rate[109] == pytest.approx(0.75)
-    assert rate[999] == pytest.approx(0.25)
+    assert rate[109] == approx(0.75)
+    assert rate[999] == approx(0.25)
 
 
 def test_a_bench_player_does_not_displace_a_regular():
@@ -82,7 +82,7 @@ def test_the_expected_lineup_is_exactly_nine():
 
 def test_the_expected_nine_all_playing_is_zero_surprise():
     expected, rate = probe._expected_lineup([REGULARS] * 5)
-    assert probe._surprise(expected, rate, REGULARS) == pytest.approx(0.0)
+    assert probe._surprise(expected, rate, REGULARS) == approx(0.0)
 
 
 def test_surprise_is_weighted_by_how_reliable_the_missing_man_was():
@@ -155,7 +155,7 @@ def test_a_lineup_is_never_scored_against_itself():
     last = [s for s in scored if s["date"] == date(2026, 9, 5)][0]
     # 109 was an everyday starter across all four prior games, so his
     # absence is a full point of surprise -- not diluted by tonight.
-    assert last["surprise"] == pytest.approx(1.0)
+    assert last["surprise"] == approx(1.0)
 
 
 def test_clubs_with_too_little_history_are_skipped_not_guessed():
@@ -243,7 +243,7 @@ def test_dose_response_is_flat_when_surprise_does_not_matter():
     rows = ([_obs(0.2, 0.010, f"a{i}") for i in range(5)]
             + [_obs(3.0, 0.010, f"b{i}") for i in range(5)])
     dose = probe._dose_response(rows)
-    assert dose["ratio"] == pytest.approx(1.0)
+    assert dose["ratio"] == approx(1.0)
 
 
 def test_dose_response_ignores_direction():
@@ -265,4 +265,12 @@ def test_dose_response_refuses_on_too_few_events():
 def test_the_declared_constants_match_the_preregistration():
     assert probe.MIN_PRIOR_LINEUPS == 3
     assert probe.MIN_EVENTS == 25
-    assert probe.ALPHA == pytest.approx(0.05)
+    assert probe.ALPHA == approx(0.05)
+
+
+# CI runs `python -m unittest discover` on a stdlib-only interpreter; the
+# bridge turns the functions above into a TestCase there and returns None
+# under pytest so nothing is collected twice.
+from tests._unittest_bridge import as_test_case  # noqa: E402
+
+FunctionTests = as_test_case(globals())

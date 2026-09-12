@@ -22,7 +22,7 @@ the threshold.
 
 from __future__ import annotations
 
-import pytest
+from tests._unittest_bridge import approx, raises
 
 from src.analysis import daily_card
 
@@ -175,3 +175,11 @@ def test_the_threshold_changes_no_selection_field():
     before = dict(pick)
     daily_card._why_sentences(pick)
     assert pick == before
+
+
+# CI runs `python -m unittest discover` on a stdlib-only interpreter; the
+# bridge turns the functions above into a TestCase there and returns None
+# under pytest so nothing is collected twice.
+from tests._unittest_bridge import as_test_case  # noqa: E402
+
+FunctionTests = as_test_case(globals())

@@ -22,7 +22,7 @@ until a measurement says otherwise.
 
 from __future__ import annotations
 
-import pytest
+from tests._unittest_bridge import approx, raises
 
 from src.analysis import playerprops
 
@@ -62,7 +62,7 @@ def test_a_row_with_nothing_to_read_is_absent_not_zero():
 
 
 def test_an_unbunched_market_is_refused_here():
-    with pytest.raises(playerprops.PropError):
+    with raises(playerprops.PropError):
         playerprops.game_count({"h": 1}, "batter_hits")
 
 
@@ -105,7 +105,7 @@ def test_bunching_is_carried_for_free():
 
 def test_a_thin_game_log_is_refused_not_guessed():
     league = [c["rbi"] for c in LEAGUE]
-    with pytest.raises(playerprops.PropError):
+    with raises(playerprops.PropError):
         playerprops.empirical_over([2] * 5, 1.5, league)
 
 
@@ -133,7 +133,7 @@ def test_the_shrinkage_target_is_the_league_at_the_SAME_line():
 
 
 def test_an_empty_league_is_refused(self=None):
-    with pytest.raises(playerprops.PropError):
+    with raises(playerprops.PropError):
         playerprops.empirical_over([1] * 30, 1.5, [])
 
 
@@ -163,3 +163,11 @@ def test_the_bunched_markets_are_STILL_not_publishable():
 def test_the_bunched_list_matches_what_was_measured_bad():
     assert set(playerprops.BUNCHED_MARKETS) == set(
         playerprops.NOT_PUBLISHABLE)
+
+
+# CI runs `python -m unittest discover` on a stdlib-only interpreter; the
+# bridge turns the functions above into a TestCase there and returns None
+# under pytest so nothing is collected twice.
+from tests._unittest_bridge import as_test_case  # noqa: E402
+
+FunctionTests = as_test_case(globals())

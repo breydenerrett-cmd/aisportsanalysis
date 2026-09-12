@@ -147,7 +147,17 @@ adversely selected.
   for a CSS pass.
 - **`#/performance`** printed system ids as keys
   (`market_derived_consensus_totals_under`); they read in words now.
-- **INCIDENT, mine, ~08:40–08:50 UTC:** the dead-view deletion missed the
+- **CI was red from ~05:00Z — also mine.** `.github/workflows/tests.yml`
+  runs `python -m unittest discover` on a stdlib-only interpreter (a
+  stated invariant), and six test files written today were pytest-style
+  (module-level functions, `pytest.approx`, `pytest.raises`): unittest
+  could not import them, so every push since showed a red check while
+  the same files passed under pytest here. `tests/_unittest_bridge.py`
+  now supplies `approx`, `raises`, `tmp_path`/`monkeypatch`, and turns a
+  module's functions into a TestCase for the stdlib loader (and returns
+  None under pytest so nothing runs twice). 165 tests under unittest,
+  139 under pytest, both green.
+- **INCIDENT, mine, ~07:00Z:** the dead-view deletion missed the
   one remaining importer (`today.js` kept `opportunities.js` alive with a
   `void renderOpportunities;` line). My grep for importers was piped
   through `head` and the list was cut short. With no build step, one
