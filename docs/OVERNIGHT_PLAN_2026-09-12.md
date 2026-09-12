@@ -157,7 +157,12 @@ adversely selected.
   now supplies `approx`, `raises`, `tmp_path`/`monkeypatch`, and turns a
   module's functions into a TestCase for the stdlib loader (and returns
   None under pytest so nothing runs twice). 165 tests under unittest,
-  139 under pytest, both green.
+  139 under pytest, both green. With the import errors gone, CI showed
+  the one failure they had been hiding: a Python 3.10-only date-parse
+  difference in `src/pipeline/news.py` (basic-format ISO), older than
+  tonight; fixed explicitly. Also found: `tests/test_factory_overlap_report.py`
+  rewrote the committed `docs/FACTORY_OVERLAP_REPORT.md` on every run —
+  it writes to a temp path now.
 - **INCIDENT, mine, ~07:00Z:** the dead-view deletion missed the
   one remaining importer (`today.js` kept `opportunities.js` alive with a
   `void renderOpportunities;` line). My grep for importers was piped
