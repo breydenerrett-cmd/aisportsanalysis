@@ -328,6 +328,24 @@ def most_likely(contracts: Sequence[Mapping], *, floor: float = LIKELY_FLOOR,
     return kept[:limit] if limit else kept
 
 
+LONG_SHOT_LIMIT = 10
+
+
+def long_shots(contracts: Sequence[Mapping], *, limit: int = LONG_SHOT_LIMIT) -> list:
+    """The likelihood-only markets' most likely contracts, likeliest first.
+
+    A home run is a 10-20% event, so it never clears `most_likely`'s floor
+    and would never be seen. The owner asked for the market by name; this is
+    the honest way to show it -- its own list, under a heading that says none
+    of these is likely, ranked by the same rule as everything else and never
+    by the price."""
+    kept = [c for c in contracts
+            if likelihood_only(c.get("market")) and c.get("side") == "Over"]
+    kept.sort(key=lambda c: (-(c.get("probability") or 0.0),
+                             str(c.get("player") or "")))
+    return kept[:limit]
+
+
 def clears_its_price(contracts: Sequence[Mapping]) -> list:
     """His second filter, applied to survivors of the first.
 

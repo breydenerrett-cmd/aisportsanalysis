@@ -211,6 +211,14 @@ class TheGamePageAdvancedLayerIsNotAPriceBoard(unittest.TestCase):
         self.assertIn("OTHER MARKETS", body)
 
 
+class TheSupportPageSaysWhatItIsFor(unittest.TestCase):
+    def test_one_sentence_above_the_form(self):
+        rendered = " ".join(t for _n, t in _rendered("support.js")).lower()
+        self.assertIn("we reply by email", rendered)
+        text = (JS / "support.js").read_text(encoding="utf-8")
+        self.assertIn('"support-intro"', text)
+
+
 class PropsHaveTheTab(unittest.TestCase):
     def test_props_replaced_odds_in_the_bottom_nav(self):
         text = (JS / "main.js").read_text(encoding="utf-8")

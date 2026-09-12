@@ -119,6 +119,14 @@ adversely selected.
   market's own number absent and the row saying why in words. Ranked by
   probability like everything else, so it sits low — a home run is a
   ~10–20% event. Refused by name when no over is quoted either.
+- **…and they are on the page.** A home run never clears the "more likely
+  than not" list, so `/props` now carries `long_shots` — the ten likeliest
+  home runs — under the heading "Home runs — none of these is likely".
+  Verified on `#/props/2026-09-11`: "Rafael Devers over 0.5 home runs ·
+  OURS 20% · PRICE NEEDS 17% · +500 at Caesars", with the absent market
+  number said in words on every row. Found on the same page: books
+  printed as feed keys (`williamhill_us`); fixed. `#/support` had no
+  sentence saying what it was for; it has one.
 - **T4 umpire signing — CANNOT, and why:** `umpirewatch` brackets WHEN a
   crew is revealed; no per-umpire run-environment history exists in
   `data/historical/`. Signing `umpire_assigned` needs an outside source

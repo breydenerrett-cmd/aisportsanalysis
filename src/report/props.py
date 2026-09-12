@@ -135,6 +135,10 @@ def board_for_date(date: str, *, limit: Optional[int] = DEFAULT_LIMIT,
     payload = {
         "date": date,
         "contracts": [_public(c) for c in likely[:capped]],
+        # Home runs: never more likely than not, so never in `contracts`;
+        # shown under their own heading, likeliest first, market number
+        # absent by construction (propboard.long_shots).
+        "long_shots": [_public(c) for c in propboard.long_shots(built["contracts"])],
         "counts": counts,
         "reason": None,
     }

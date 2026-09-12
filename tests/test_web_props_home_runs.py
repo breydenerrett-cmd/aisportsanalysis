@@ -31,6 +31,22 @@ class HomeRunsReadAsHomeRuns(unittest.TestCase):
         rendered = " ".join(t for _n, t in _rendered_strings(PROPS_JS)).lower()
         self.assertIn("no book quotes the under", rendered)
 
+    def test_home_runs_have_their_own_list_under_an_honest_heading(self):
+        body = self.text.split("function longShots(")[1].split("\nfunction ")[0]
+        self.assertIn("payload.long_shots", body)
+        self.assertIn('"props-long-shots-list"', body)
+        self.assertIn("none of these is likely", body)
+        # Mounted after the likely list, and on an empty likely list too.
+        render = self.text.split("export async function renderProps(")[1].split("\nfunction ")[0]
+        self.assertIn("host.appendChild(longShots(payload))", render)
+
+    def test_the_book_is_named_not_keyed(self):
+        """"+500 at williamhill_us" was on the page (2026-09-12); the book
+        resolver every other screen uses names it."""
+        body = self.text.split("function propRow(")[1].split("\nfunction ")[0]
+        self.assertIn("bookLabel(row.book)", body)
+        self.assertIn('import { bookLabel } from "./labels.js";', self.text)
+
     def test_it_never_prints_a_zero_for_the_absent_number(self):
         """`percent(null)` is null and the row has no market column, so a
         None market_probability can never render as "0%"."""

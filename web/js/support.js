@@ -28,6 +28,10 @@ export async function renderSupport(container) {
   clear(container);
   const section = el("section", { class: "support-view", "data-view": "support" });
   section.appendChild(el("h1", { text: "Support" }));
+  // The page was a bare form -- four labels and a button, no sentence
+  // saying what it was for or what happens next (read on 2026-09-12).
+  section.appendChild(el("p", { class: "support__intro", "data-hook": "support-intro",
+    text: "A question about a pick, a number that looks wrong, or something broken? Write it here and we reply by email." }));
 
   const isAuthed = Boolean(getToken());
   const form = el("form", { class: "support-form", "data-hook": "support-form" });

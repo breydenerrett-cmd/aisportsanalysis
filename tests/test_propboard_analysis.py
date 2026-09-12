@@ -319,6 +319,34 @@ def test_home_runs_rank_by_probability_alongside_everything_else():
     assert likely[-1]["market"] == "batter_home_runs"
 
 
+def test_long_shots_are_the_likelihood_only_overs_likeliest_first():
+    """A home run never clears the more-likely-than-not floor, so it gets
+    its own list -- same rule (probability), never the price."""
+    rows = (_two_way()
+            + _overs_only(player="Batter A")
+            + _overs_only(player="Batter B", prices=(("draftkings", 250), ("fanduel", 260))))
+    board = propboard.build(
+        rows, date="2026-09-11",
+        batters_by_name={"Batter A": _history(hr=0), "Batter B": _history(hr=1)},
+        league=LEAGUE)
+    shots = propboard.long_shots(board["contracts"])
+    assert [c["market"] for c in shots] == ["batter_home_runs"] * 2
+    assert all(c["side"] == "Over" for c in shots)
+    # Batter B homers every game in his history; he is likelier and first.
+    assert shots[0]["player"] == "Batter B"
+    assert shots[0]["probability"] > shots[1]["probability"]
+    # The likely list is untouched by them.
+    assert all(c["market"] != "batter_home_runs"
+               for c in propboard.most_likely(board["contracts"]))
+
+
+def test_long_shots_are_capped():
+    contracts = [{"market": "batter_home_runs", "side": "Over",
+                  "probability": 0.1 + i / 1000, "player": f"P{i}"} for i in range(30)]
+    assert len(propboard.long_shots(contracts)) == propboard.LONG_SHOT_LIMIT
+    assert propboard.long_shots(contracts, limit=3)[0]["player"] == "P29"
+
+
 def test_a_board_needs_a_date():
     with pytest.raises(propboard.PropBoardError):
         propboard.build([], date="", batters_by_name={}, league=LEAGUE)

@@ -29,6 +29,7 @@
  */
 
 import { apiGet } from "./api.js";
+import { bookLabel } from "./labels.js";
 import {
   el, clear, renderError, formatAmerican, formatSlateDate,
 } from "./dom.js";
@@ -121,7 +122,9 @@ function propRow(row) {
   if (price !== null && price !== undefined) {
     card.appendChild(el("p", {
       class: "prop-row__price", "data-hook": "prop-price",
-      text: `${price} at ${row.book || "book"}`,
+      // The book's name, not its feed key: "+500 at williamhill_us" was on
+      // the page. labels.js is the one resolver every screen uses.
+      text: `${price} at ${bookLabel(row.book) || row.book || "book"}`,
     }));
   }
 
@@ -212,13 +215,42 @@ export async function renderProps(container, date) {
       class: "props__empty", "data-hook": "props-empty",
       text: payload.reason || "Nothing priced for this slate yet.",
     }));
-    return;
+  } else {
+    const list = el("ul", { class: "props__list", "data-hook": "props-list" });
+    rows.forEach((row) => list.appendChild(propRow(row)));
+    host.appendChild(list);
+
+    const tally = counts(payload);
+    if (tally) host.appendChild(tally);
   }
 
-  const list = el("ul", { class: "props__list", "data-hook": "props-list" });
-  rows.forEach((row) => list.appendChild(propRow(row)));
-  host.appendChild(list);
+  host.appendChild(longShots(payload));
+}
 
-  const tally = counts(payload);
-  if (tally) host.appendChild(tally);
+/**
+ * Home runs, under their own heading. A home run is a 10-20% event, so it
+ * never clears the "more likely than not" list above and would never be
+ * seen; the owner asked for the market by name. Same order as everything
+ * else -- how likely we make it -- and the heading says plainly that none
+ * of these is likely. No book quotes the under, so there is no market
+ * number on any of them; each row says so.
+ */
+function longShots(payload) {
+  const rows = payload.long_shots || [];
+  const wrap = el("section", { class: "props__long-shots", "data-hook": "props-long-shots" });
+  if (!rows.length) return wrap;
+  wrap.appendChild(el("h3", {
+    class: "props__title props__title--long-shots",
+    text: "Home runs — none of these is likely",
+  }));
+  wrap.appendChild(el("p", {
+    class: "props__lede", "data-hook": "props-long-shots-lede",
+    text: "How often we make each one happen, likeliest first, and what the price "
+      + "needs. These are long shots by nature; a one-in-five chance is a good "
+      + "night for a home run.",
+  }));
+  const list = el("ul", { class: "props__list", "data-hook": "props-long-shots-list" });
+  rows.forEach((row) => list.appendChild(propRow(row)));
+  wrap.appendChild(list);
+  return wrap;
 }
