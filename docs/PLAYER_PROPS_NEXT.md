@@ -119,3 +119,29 @@ days, not months — but it is measured when it arrives, not estimated here.
 No edge is claimed for player props. One is now *testable* that was not
 testable last week, because the thing we needed to observe was happening at
 an hour we were asleep.
+
+---
+
+## Status, 2026-09-12 (early morning UTC)
+
+- **Home runs are on the board.** `propboard.likelihood_only` admits a
+  market the model is measured good on but no book quotes the under of;
+  `/props` carries `long_shots` (the ten likeliest home runs) and the page
+  shows them under "Home runs — none of these is likely", OURS and PRICE
+  NEEDS only, the market number absent and said so. Ranked by probability,
+  never by gap.
+- **The T-2h capture gate produces its first rows tonight** (the evening
+  of 09-12 UTC). Until then every quote on disk is a pre-lineup quote from
+  the 04:00Z runs. Verify after ~22:00Z: a quote observed within two hours
+  of a first pitch, and a `batting_slot` on a board row.
+- **V7 is pre-registered** before any of that data exists:
+  `docs/PREREG_SLOT_PROP.md`, reader `scripts/probe_slot_prop.py` (PENDING
+  until 150 UP / 150 FLAT / 100+100 control rows). Market-only: a batter
+  against his own prior nights. Needs no extra credits.
+- **The timing version** ("does the price move after the lineup posts")
+  needs a quote from before the posting, which the gate never takes. A
+  ~T-6h baseline capture is about one credit per game per night. That is
+  the owner's spend decision and is not made here.
+- **Still refused, still measured:** RBIs and hits+runs+RBIs (bunched
+  counts; `probe_bunched_counts.py` reports it cannot run until the box
+  store is deep enough). Stolen bases: not collected; cost it first.

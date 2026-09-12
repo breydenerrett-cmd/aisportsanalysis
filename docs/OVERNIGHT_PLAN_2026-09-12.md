@@ -155,7 +155,9 @@ adversely selected.
   since staging deploys on push, staging was blank for the minutes
   between `ade8477` and the fix. Tests were green throughout — none
   checks that imports resolve. `tests/test_web_imports_resolve.py` now
-  does, and it is the test that would have gone red.
+  does, and it is the test that would have gone red. Staging verified
+  back up after `739a2f2` deployed (5 picks, PROPS tab, no failed
+  modules).
 
 ## Tier 1 — things the owner asked for that are still not done
 
