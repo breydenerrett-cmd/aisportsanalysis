@@ -147,6 +147,15 @@ adversely selected.
   for a CSS pass.
 - **`#/performance`** printed system ids as keys
   (`market_derived_consensus_totals_under`); they read in words now.
+- **INCIDENT, mine, ~08:40–08:50 UTC:** the dead-view deletion missed the
+  one remaining importer (`today.js` kept `opportunities.js` alive with a
+  `void renderOpportunities;` line). My grep for importers was piped
+  through `head` and the list was cut short. With no build step, one
+  missing module fails the whole graph: the app rendered nothing, and
+  since staging deploys on push, staging was blank for the minutes
+  between `ade8477` and the fix. Tests were green throughout — none
+  checks that imports resolve. `tests/test_web_imports_resolve.py` now
+  does, and it is the test that would have gone red.
 
 ## Tier 1 — things the owner asked for that are still not done
 
