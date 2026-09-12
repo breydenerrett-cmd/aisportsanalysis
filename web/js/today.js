@@ -103,7 +103,6 @@ import { el, clear, formatAmerican, formatConsensusShare,
 import { renderError, renderLoadingSkeleton, renderEmptySlate,
   renderCaptureUnavailable } from "./states.js";
 import { renderCard } from "./card.js";
-import { renderOpportunities } from "./opportunities.js";
 import { renderMatchups } from "./matchups.js";
 import { renderCardRecordStrip } from "./recordstrip.js";
 import { renderStaleness, fillResearchCount } from "./meta.js";
@@ -1218,11 +1217,11 @@ export async function renderToday(container) {
   // renderOpportunities' ONLY caller, so removing it makes
   // web/js/opportunities.js unreachable.
   //
-  // That is left visible rather than hidden: scripts/reachability_audit.py
-  // exists to catch exactly this and will now flag it, which is the correct
-  // outcome for a module nothing renders. Deleting it is a separate decision
-  // -- the board may want a home again -- and it is not made silently here.
-  void renderOpportunities;
+  // The decision was made 2026-09-12: web/js/opportunities.js is deleted
+  // with the rest of the price-comparison register. The `void` reference
+  // that kept its import alive here is gone with it -- and it cost a broken
+  // app for the minutes between the deletion and this line, because a grep
+  // for the importer was cut short by `head`. Look at the whole list.
 
   // THE MATCHUP GRID -- every game on tonight's slate, its live
   // moneyline, its price read, and its frozen pregame positions
