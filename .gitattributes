@@ -1,0 +1,5 @@
+# Shell scripts run on Linux runners and are parsed by `bash -n` in
+# tests/test_deploy_scripts.py. With core.autocrlf=true a Windows checkout
+# turned them CRLF and those tests failed here for that reason alone.
+# They are LF everywhere, always.
+*.sh text eol=lf
