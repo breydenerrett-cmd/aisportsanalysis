@@ -357,6 +357,10 @@ DECLARED_MANUAL_SCRIPTS = {
     "probe_historical_f5_props.py",
     "probe_historical_leadtime.py",
     "probe_prop_name_join.py",
+    "probe_stolen_bases.py",       # docs/DECISION_PROP_CAPTURE_SPEND.md:
+                                    # probe-then-capture for batter_stolen_bases;
+                                    # answers "is it even offered" once, by hand,
+                                    # before STOLEN_BASES=1 is ever set
 
     # --- pre-registered readers: each reads a criterion committed to git
     #     before its data existed, prints PENDING below its floor, and is
@@ -427,6 +431,46 @@ DECLARED_MANUAL_SCRIPTS = {
     "totals_m2_coverage.py",
     "totals_population_audit.py",
     "totals_reschedule_audit.py",
+
+    # --- docs/ORPHAN_SCRIPTS_2026-09-12.md, owner-approved 2026-09-12.
+    #     Two other scripts the same memo covers -- probe_line_shopping.py
+    #     and probe_lineup_slot.py -- are deliberately NOT here: the memo
+    #     itself says their declare-or-delete call waits on a separate owner
+    #     decision (the price-comparison feature's removal, and the box-score
+    #     history backfill, respectively) that had not been made as of this
+    #     commit. Declaring them now would be inventing a disposition the
+    #     memo explicitly withheld.
+    # The two dispositions the memo withheld, made by the owner on 2026-09-12
+    # ("apply"): probe_line_shopping.py is DELETED -- the price-comparison
+    # register it measured is retired from the product, so its question has
+    # no surface to inform; probe_lineup_slot.py is declared, the same shape
+    # as the other pre-registered readers -- it raises today (its store
+    # holds no batter with ten prior games) and is run by hand once the
+    # box-score store is deep enough, never on a schedule.
+    "probe_lineup_slot.py",
+    "_propboard.py",          # supplies two readers: probe_prop_value.py
+                               # (declared above) and prereg_market_vs_model.py
+                               # (declared below); the third, probe_line_shopping.py,
+                               # was deleted 2026-09-12. No output of its own
+                               # to be called for.
+    "backfill_handedness.py",  # fix-once job -- rerun only after a batch of
+                               # new players shows up with no handedness on file
+    "prereg_market_vs_model.py",  # the project's standing bar for judging
+                               # every model change; run by hand each time an
+                               # input is added, never on a schedule -- a
+                               # schedule would invite reading a partial
+                               # answer before enough bets have accumulated
+    "probe_information_edge.py",  # reads a moving research question with no
+                               # fixed criterion yet; today's comparison
+                               # groups don't line up and the script says so
+                               # -- rerun by hand as history accumulates,
+                               # don't schedule until the direction-of-move
+                               # test it names exists
+    "probe_platoon_split.py",  # run by hand only when an input is about to
+                               # be added or re-attempted (next on the list
+                               # in docs/DOES_THE_MODEL_BEAT_THE_MARKET.md,
+                               # line 174) -- the answer only changes when
+                               # there's new history to feed it
 }
 
 

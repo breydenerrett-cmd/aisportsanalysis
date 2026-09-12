@@ -390,6 +390,35 @@ evening, the other tonight. Build the readers now so nothing waits on me.
 
 ---
 
+## Morning of 2026-09-12: the owner said "apply and commit, keep pushing"
+
+Applied, each as its own commit, each by a worker and checked by a second
+agent before I verified it in the browser:
+
+- **Landing copy** — `docs/PROPOSAL_LANDING_COPY_2026-09-12.md` applied
+  (the pain points are about picks now, a real graded loss is shown in
+  full, the sample slate is cut). The record sentence is still typed by
+  hand and will go stale — next: fill it from the ledger like the
+  research count.
+- **Today gives one answer** — the card leads; the engine slip moved to
+  `#/performance` under a research heading (`web/js/slip.js`); the hero
+  features the card's #1 game, never a price gap (`chooseGapCandidate`
+  deleted). `docs/PRODUCT_DOCTRINE.md` §5.2 records it.
+- **Prop capture spend** — a ~T-6h baseline pass (300–420 min out) at
+  full-slate scale, per-phase done-ness, `capture_phase` on every row;
+  stolen bases behind `STOLEN_BASES=1` (off) with `scripts/probe_stolen_bases.py`
+  to run once where `ODDS_API_KEY` is set (not on this machine).
+- **Orphan scripts** — declared per the memo; `probe_line_shopping.py`
+  deleted (its register is retired); `probe_lineup_slot.py` declared.
+- **Lineup store** — the 15:45Z capture slot committed
+  `data/historical/lineups.jsonl` for the first time since 09-08, from
+  `capture_slot.sh` (the script the schedule runs).
+
+**The owner's next ask, 08:44 ET: "It's still showing ML's."** The card
+is moneyline-first by its own rule and today's card was frozen last night.
+Building now: the likeliest player props that clear their price join the
+card as frozen, graded picks.
+
 ## Owner decisions surfaced tonight (not made)
 
 Two of these now have memos with the numbers, each written by one agent

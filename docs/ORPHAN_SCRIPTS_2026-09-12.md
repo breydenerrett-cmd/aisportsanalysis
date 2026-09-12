@@ -1,5 +1,18 @@
 # Seven scripts nothing calls — what they are, and what to do with each
 
+**Disposition applied 2026-09-12** (`scripts/reachability_audit.py`,
+`DECLARED_MANUAL_SCRIPTS`): the five scripts this memo gives a clear
+declare-it verdict for — `_propboard.py`, `backfill_handedness.py`,
+`prereg_market_vs_model.py`, `probe_information_edge.py`,
+`probe_platoon_split.py` — are now declared, each with the reason this memo
+gives. `probe_line_shopping.py` and `probe_lineup_slot.py` are deliberately
+**not** declared or deleted: this memo says both wait on a separate owner
+decision (the price-comparison feature's removal; the box-score history
+backfill) that had not been made as of this commit, so
+`python scripts/reachability_audit.py` still reports those two as orphans —
+correctly, since forcing a declaration either way would be inventing a
+disposition the memo withheld.
+
 Read for the owner. No code-reading required. Every number below was run or
 read today (2026-09-12) and its source is named.
 
