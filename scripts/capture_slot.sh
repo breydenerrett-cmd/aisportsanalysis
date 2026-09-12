@@ -74,6 +74,58 @@ echo "$EXTRAS_OUT" | grep -v "^ESCALATE:" | sed 's/^/  /'
 #
 # NO ODDS-API SPEND. `engine slate` reads L1 off disk; the prices this pass
 # reasons about were already bought by the dense capture above.
+
+# ---------------------------------------------------------------------------
+# THE POSTED-LINEUP STORE, TOPPED UP HERE -- IN THE SCRIPT THAT RUNS.
+#
+# This block was added to forward_capture.sh on 2026-09-11 ("the capture
+# rebuilt the lineup store every 15 minutes and threw it away") together with
+# the `git add` of the store. forward_capture.sh is not what the schedule
+# runs; this script is (see the gate's comment above). So for two days the
+# fix ran nowhere: the store on the branch stayed at 2026-09-09 while the
+# watch poller logged "lineups: games=2, written=2" every slot -- a different
+# store (data/watch). Found 2026-09-12 by watching the 14:55Z run's commit
+# leave data/historical/lineups.jsonl untouched.
+#
+# It runs BEFORE the gate, deliberately: `slate_due` asks whether a complete
+# posted lineup is newer than the last frozen decision set, and the store it
+# reads has to be current for that question to mean anything. Same
+# enrichment contract: own try/except, prints a reason, never raises out.
+# MLB Stats API only; no odds-API spend.
+TODAY=$(date -u +%Y-%m-%d)
+YESTERDAY=$(date -u -d 'yesterday' +%Y-%m-%d)
+echo "== posted lineups + matchup history ($TODAY top-up) =="
+LINEUP_OUT=$(python3 -c "
+from src.pipeline import lineup_store, matchup_history
+
+try:
+    report = lineup_store.build(['$YESTERDAY', '$TODAY'],
+                                refresh=['$YESTERDAY', '$TODAY'])
+    print('lineups: %d date(s) fetched, %d game(s) written, %d topped up on a '
+          'date already covered, %d failed'
+          % (report['dates'], report['games'], report['topped_up'],
+             report['failed']))
+except Exception as exc:
+    print('(lineups unavailable:', exc, ')')
+
+# TODAY ONLY: the vsPlayer endpoint matchup_history reads returns CAREER
+# totals with no as-of parameter (src/model/pointintime.py marks it LEAKY),
+# so a played game must never be asked about. A posted lineup is a fixed
+# fact once posted and may be refreshed as often as we like.
+try:
+    report = matchup_history.build('$TODAY')
+    if report.get('error'):
+        print('matchup_history $TODAY: schedule unavailable:', report['error'])
+    else:
+        print('matchup_history $TODAY: %d game(s) on slate, %d written, '
+              '%d already stored, %d no lineup yet'
+              % (report['games'], report['written'],
+                 report['skipped_stored'], report['skipped_no_lineup']))
+except Exception as exc:
+    print('(matchup_history unavailable:', exc, ')')
+" 2>&1) || LINEUP_OUT="(lineup top-up raised)"
+echo "$LINEUP_OUT" | sed 's/^/  /'
+
 echo "== lineup cadence gate =="
 GATE_OUT=$(python3 -c "
 from src.pipeline import lineup_store
@@ -128,8 +180,13 @@ fi
 # evidence/ and data/paper_accounts are staged because the gated slate pass
 # above now writes those ledgers. Without them a pass would freeze decisions
 # locally and hand the next `pull --rebase --autostash` an uncommitted ledger.
+# The three historical stores the top-up above writes are named one by one,
+# never `data/historical` wholesale: that directory also holds the results
+# CSV and the arsenals tree, multi-megabyte churn that does not belong in a
+# commit made ninety-six times a day.
 git add data/watch data/processed data/raw/oddsapi docs/OVERNIGHT_RUN.md \
         evidence data/paper_accounts 2>/dev/null || true
+git add data/historical/lineups.jsonl data/historical/matchup_history.jsonl data/historical/matchup_pairs.json 2>/dev/null || true
 if ! git diff --cached --quiet; then
     BRANCH=$(git rev-parse --abbrev-ref HEAD)
     if ! git commit -q -m "Forward capture slot $(date -u +%H:%MZ) (external)"; then

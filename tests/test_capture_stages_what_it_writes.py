@@ -35,6 +35,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 CAPTURE = ROOT / "scripts" / "forward_capture.sh"
+# THE SCRIPT THE SCHEDULE ACTUALLY RUNS. forward-capture.yml checks out the
+# working branch and invokes capture_slot.sh; forward_capture.sh is the
+# standalone looping variant. The lineup-store top-up and its `git add` were
+# added to forward_capture.sh on 2026-09-11 and ran nowhere for two days --
+# the store on the branch stayed at 2026-09-09 while every slot logged a
+# different store's "written=2". Both scripts are held to the same rule now,
+# and the workflow's own `run:` line is read so the pair cannot drift.
+SLOT = ROOT / "scripts" / "capture_slot.sh"
+WORKFLOW = ROOT / ".github" / "workflows" / "forward-capture.yml"
 
 # Builders the capture script invokes, and the store each one writes.
 # Resolved from the modules themselves so a store that MOVES cannot leave a
@@ -70,8 +79,10 @@ def _covered(target: str, staged) -> bool:
 
 
 class CaptureStagesEveryStoreItWrites(unittest.TestCase):
+    SCRIPT = CAPTURE
+
     def setUp(self):
-        self.text = CAPTURE.read_text(encoding="utf-8")
+        self.text = self.SCRIPT.read_text(encoding="utf-8")
         self.staged = _staged_paths(self.text)
 
     def test_the_script_stages_something(self):
@@ -95,7 +106,7 @@ class CaptureStagesEveryStoreItWrites(unittest.TestCase):
             self.assertTrue(
                 _covered(relative, self.staged),
                 f"{module_name}.{attribute} writes {relative}, which "
-                f"forward_capture.sh never stages -- every run will rebuild "
+                f"{self.SCRIPT.name} never stages -- every run will rebuild "
                 f"it and throw it away. Staged: {self.staged}")
 
     def test_data_historical_is_never_staged_wholesale(self):
@@ -117,6 +128,41 @@ class CaptureStagesEveryStoreItWrites(unittest.TestCase):
             self.assertFalse(
                 path.replace("\\", "/").rstrip("/").startswith("data/app"),
                 f"{path!r} would commit customer state")
+
+
+class TheSlotScriptStagesEveryStoreItWrites(CaptureStagesEveryStoreItWrites):
+    """The same four checks against the script cron actually runs."""
+    SCRIPT = SLOT
+
+
+class TheScriptTheWorkflowRunsTopsUpTheStore(unittest.TestCase):
+    """Read from the workflow outward, not from the script inward: whichever
+    script forward-capture.yml invokes must call `lineup_store.build` and
+    stage the store it writes. A fix in the other script is a fix nowhere."""
+
+    def setUp(self):
+        self.workflow = WORKFLOW.read_text(encoding="utf-8")
+        run_lines = [line.strip() for line in self.workflow.splitlines()
+                     if "scripts/capture_slot.sh" in line or "scripts/forward_capture.sh" in line]
+        self.run_lines = [line for line in run_lines if line.startswith("run:")]
+
+    def test_the_workflow_runs_exactly_one_capture_script(self):
+        self.assertEqual(len(self.run_lines), 1, self.run_lines)
+
+    def test_that_script_tops_up_and_stages_the_lineup_store(self):
+        line = self.run_lines[0]
+        name = "capture_slot.sh" if "capture_slot.sh" in line else "forward_capture.sh"
+        text = (ROOT / "scripts" / name).read_text(encoding="utf-8")
+        self.assertIn("lineup_store.build(", text,
+                      f"{name} is what the schedule runs and it never tops up the store")
+        self.assertIn("matchup_history.build(", text)
+        self.assertTrue(_covered("data/historical/lineups.jsonl", _staged_paths(text)),
+                        f"{name} never stages data/historical/lineups.jsonl")
+
+    def test_the_top_up_runs_before_the_cadence_gate(self):
+        """`slate_due` reads the store; it must be current first."""
+        text = SLOT.read_text(encoding="utf-8")
+        self.assertLess(text.index("lineup_store.build("), text.index("== lineup cadence gate =="))
 
 
 if __name__ == "__main__":

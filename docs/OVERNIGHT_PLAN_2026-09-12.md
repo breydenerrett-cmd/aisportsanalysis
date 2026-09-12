@@ -82,14 +82,19 @@ adversely selected.
   MARKETS links the prop board. Tests that pinned the old wiring flipped.
 - **Landing hero at 375px** clipped its new sentences (the block sized to
   its longest line, 451px on a 375px screen); fixed and measured.
-- **T3 lineup store:** diagnosed. The runner restores `lineups.jsonl` from
-  an actions cache and the 09-11 evening runs DID write rows
-  (`lineups: games=15, written=2` at 22:55Z) — the script's `git add` for
-  the file landed after those runs, so nothing reached git yet. First
-  commit expected from today's afternoon slots: the first game is 1:10pm
-  ET (17:10Z) and lineups post a median 3.0h before, so ~14:10Z.
-  **Verify after 14:30Z:** `git log -1 -- data/historical/lineups.jsonl`
-  shows a 09-12 capture commit.
+- **T3 lineup store: my first diagnosis was wrong, and the fix had run
+  nowhere.** I had read "lineups: games=2, written=2" in the capture logs
+  as the store being written — that line is the lineups *watch* poller
+  (`data/watch`), a different store. Watching the 14:55Z run's commit
+  leave `data/historical/lineups.jsonl` untouched exposed it: the
+  schedule runs `scripts/capture_slot.sh`, and the top-up plus its
+  `git add` had been added to `scripts/forward_capture.sh` (09-11), which
+  the schedule never invokes. The ninth instance of the "nothing calls
+  it" class. Ported into capture_slot.sh, before the cadence gate (the
+  gate reads the store, so it has to be current); the wiring test now
+  reads the workflow's `run:` line and holds whichever script it names
+  to the rule. **Verify after the next slot (~15:40Z):** a capture
+  commit touching `data/historical/lineups.jsonl` with 09-12 rows.
 - **T3 V6 forward reader — DONE.** `scripts/probe_lineup_direction.py
   --forward`: postings strictly after the registration instant
   (2026-09-11T20:38:15Z), PENDING below 150, family-wise α only. Ran it:
