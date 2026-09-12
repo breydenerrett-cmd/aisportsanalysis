@@ -36,6 +36,7 @@ from api.games import router as games_router
 from api.card import router as card_router
 from api.opportunities import router as opportunities_router
 from api.performance import router as performance_router
+from api.props import router as props_router
 from api.meta import router as meta_router
 from api.web import router as web_router
 from api.odds import router as odds_router
@@ -92,6 +93,11 @@ app.include_router(card_router, dependencies=_authed_paid)
 # /performance -- Task B3's Paper / Research Performance surface, same
 # paid-demo gate as the rest of the read-only game surface.
 app.include_router(performance_router, dependencies=_authed_paid)
+# /props/{date}, /props -- the player-prop board. Paid, like every other
+# read-only game surface. It is a BOARD and not a card: ranked by how likely
+# each outcome is, never by the gap against its price, because selecting on
+# that gap was measured at -13.4% against a -9.1% control.
+app.include_router(props_router, dependencies=_authed_paid)
 # /daily, /daily/{date}, /record -- Task C1's Frozen Pregame Record surface,
 # same paid-demo gate as the rest of the read-only game surface.
 app.include_router(daily_router, dependencies=_authed_paid)
