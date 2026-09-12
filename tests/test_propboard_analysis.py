@@ -26,8 +26,8 @@ def _box(date, *, h=1, ab=4, pa=4, doubles=0, triples=0, hr=0, r=0, rbi=0):
             "rbi": rbi, "total_bases": h + doubles + 2 * triples + 3 * hr}
 
 
-def _history(n=30, start=1):
-    return [_box(f"2026-08-{day:02d}") for day in range(start, start + n)]
+def _history(n=30, start=1, hr=0):
+    return [_box(f"2026-08-{day:02d}", hr=hr) for day in range(start, start + n)]
 
 
 def _quote(player, market, line, side, price, book, *,
@@ -258,6 +258,65 @@ def test_the_refusal_census_is_reported_not_swallowed():
         batters_by_name={"Batter A": _history()}, league=LEAGUE)
     assert board["contracts"] == []
     assert board["refused"]["fewer than two books quoting both sides"] == 1
+
+
+# --------------------------------------------------------------------------
+# Home runs: likelihood only. No under is ever quoted, so no fair price and
+# no gap against the market -- only how likely we make it and what the best
+# stated Over needs. The owner asked for the market by name.
+# --------------------------------------------------------------------------
+
+def _overs_only(player="Batter A", market="batter_home_runs", line=0.5,
+                prices=(("draftkings", 320), ("fanduel", 350)), **kw):
+    return [_quote(player, market, line, "Over", price, book, **kw)
+            for book, price in prices]
+
+
+def test_home_runs_are_likelihood_only_and_hits_are_not():
+    assert propboard.likelihood_only("batter_home_runs")
+    assert not propboard.likelihood_only("batter_hits")
+    assert not propboard.likelihood_only("batter_rbis")   # not publishable
+    assert not propboard.likelihood_only(None)
+    # `assessable` is unchanged: a home run still has no fair price.
+    assert not propboard.assessable("batter_home_runs")
+
+
+def test_a_home_run_row_carries_ours_and_the_price_but_no_market_number():
+    board = propboard.build(
+        _overs_only(), date="2026-09-11",
+        batters_by_name={"Batter A": _history(hr=0)}, league=LEAGUE)
+    assert board["refused"] == {}
+    assert len(board["contracts"]) == 1
+    row = board["contracts"][0]
+    assert row["side"] == "Over"
+    assert row["market"] == "batter_home_runs"
+    assert 0.0 < row["probability"] < 1.0
+    assert row["market_probability"] is None
+    assert "no book quotes the under" in row["market_probability_absent"]
+    # The best stated Over: +350 at fanduel, break-even 1/4.5.
+    assert row["price"] == 350 and row["book"] == "fanduel"
+    assert row["breakeven"] == pytest.approx(1 / 4.5)
+
+
+def test_a_home_run_with_no_over_at_all_is_refused_by_name():
+    rows = [_quote("Batter A", "batter_home_runs", 0.5, "Under", -400, "draftkings")]
+    board = propboard.build(
+        rows, date="2026-09-11",
+        batters_by_name={"Batter A": _history()}, league=LEAGUE)
+    assert board["contracts"] == []
+    assert board["refused"] == {"no over quoted": 1}
+
+
+def test_home_runs_rank_by_probability_alongside_everything_else():
+    """One list, one rule: most likely first, never by gap -- and a home run
+    is a low-probability event, so it sits below the hits rows."""
+    board = propboard.build(
+        _two_way() + _overs_only(), date="2026-09-11",
+        batters_by_name={"Batter A": _history()}, league=LEAGUE)
+    likely = propboard.most_likely(board["contracts"], floor=0.0)
+    probabilities = [c["probability"] for c in likely]
+    assert probabilities == sorted(probabilities, reverse=True)
+    assert likely[-1]["market"] == "batter_home_runs"
 
 
 def test_a_board_needs_a_date():

@@ -38,6 +38,7 @@ const MARKET_LABELS = {
   batter_hits: "hits",
   batter_total_bases: "total bases",
   batter_runs_scored: "runs",
+  batter_home_runs: "home runs",
 };
 
 function marketLabel(market) {
@@ -126,6 +127,18 @@ function propRow(row) {
 
   const pa = plateAppearances(row);
   if (pa) card.appendChild(pa);
+
+  // A one-sided market (home runs: no book quotes the under) has no fair
+  // price. OURS and PRICE NEEDS are both real; what is missing is the
+  // market's own number, and the row says so rather than leaving a gap a
+  // reader would fill with a guess.
+  if (row.market_probability_absent) {
+    card.appendChild(el("p", {
+      class: "prop-row__pa", "data-hook": "prop-market-absent",
+      text: "No book quotes the under on this one, so there is no market number to "
+        + "compare against — only how often we make it, and what the price needs.",
+    }));
+  }
 
   return card;
 }

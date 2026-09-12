@@ -160,8 +160,13 @@ def _public(contract: Mapping) -> dict:
         "line": contract.get("line"),
         "side": contract.get("side"),
         "probability": round(float(contract.get("probability") or 0.0), 4),
-        "market_probability": round(
-            float(contract.get("market_probability") or 0.0), 4),
+        # None stays None: a one-sided market (home runs) has no fair price,
+        # and rounding its absence to 0.0 would print "the market makes it
+        # 0%", which is a number nobody quoted.
+        "market_probability": (
+            None if contract.get("market_probability") is None
+            else round(float(contract["market_probability"]), 4)),
+        "market_probability_absent": contract.get("market_probability_absent"),
         "breakeven": round(float(contract.get("breakeven") or 0.0), 4),
         "gap_vs_breakeven": round(
             float(contract.get("gap_vs_breakeven") or 0.0), 4),

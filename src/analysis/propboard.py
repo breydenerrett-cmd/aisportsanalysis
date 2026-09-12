@@ -110,6 +110,20 @@ def assessable(market: Optional[str]) -> bool:
             and playerprops.deviggable(market or ""))
 
 
+def likelihood_only(market: Optional[str]) -> bool:
+    """Well modelled, but no fair price exists to measure against -- home
+    runs: 3,038 over quotes and zero unders across eight books. "How often
+    does this batter go deep" is a number this board can stand behind; "is
+    the price good against the market" is not, and the row says which.
+    The owner asked for home runs by name (2026-09-11)."""
+    return (playerprops.publishable(market or "")
+            and not playerprops.deviggable(market or ""))
+
+
+def _on_the_board(market: Optional[str]) -> bool:
+    return assessable(market) or likelihood_only(market)
+
+
 def _newest_quotes(rows: Iterable[Mapping]) -> dict:
     """{(date, event, player, market, line): {book: {side: price}}}.
 
@@ -119,7 +133,7 @@ def _newest_quotes(rows: Iterable[Mapping]) -> dict:
     """
     newest: dict = {}
     for row in rows:
-        if not assessable(row.get("market")):
+        if not _on_the_board(row.get("market")):
             continue
         key = (row.get("game_date"), row.get("event_id"), row.get("player"),
                row.get("market"), str(row.get("line")))
@@ -129,7 +143,7 @@ def _newest_quotes(rows: Iterable[Mapping]) -> dict:
 
     out: dict = {}
     for row in rows:
-        if not assessable(row.get("market")):
+        if not _on_the_board(row.get("market")):
             continue
         key = (row.get("game_date"), row.get("event_id"), row.get("player"),
                row.get("market"), str(row.get("line")))
@@ -173,6 +187,27 @@ def fair_and_best(books: Mapping) -> tuple:
     if len(fair_overs) < MIN_BOOKS:
         return None, {}
     return sum(fair_overs) / len(fair_overs), best
+
+
+def best_over_only(books: Mapping) -> dict:
+    """{"Over": (american, decimal, book)} for a one-sided market, or {}.
+
+    No de-vig is possible with one side, so nothing here is a fair price;
+    it is the best stated Over on the board, which is all a likelihood-only
+    row needs for what the price needs to break even."""
+    best: dict = {}
+    for book, sides in (books or {}).items():
+        over = sides.get("Over")
+        if over is None:
+            continue
+        try:
+            decimal = odds_math.american_to_decimal(over)
+        except (odds_math.OddsError, TypeError, ValueError):
+            continue
+        held = best.get("Over")
+        if held is None or decimal > held[1]:
+            best["Over"] = (over, decimal, book)
+    return best
 
 
 def _prior_lines(batter_rows: Sequence[Mapping], date: str) -> list:
@@ -225,10 +260,20 @@ def build(prop_rows: Iterable[Mapping], *, date: str,
             refuse("no prior box score for this batter")
             continue
 
-        market_over, best = fair_and_best(books)
-        if market_over is None:
-            refuse("fewer than two books quoting both sides")
-            continue
+        one_sided = likelihood_only(market)
+        if one_sided:
+            # No under is ever quoted, so no fair price and no gap against
+            # the market -- only how likely we make it, and what the best
+            # stated Over needs. The row carries the reason as text.
+            market_over, best = None, best_over_only(books)
+            if not best:
+                refuse("no over quoted")
+                continue
+        else:
+            market_over, best = fair_and_best(books)
+            if market_over is None:
+                refuse("fewer than two books quoting both sides")
+                continue
 
         try:
             priced = playerprops.price_prop(
@@ -245,12 +290,17 @@ def build(prop_rows: Iterable[Mapping], *, date: str,
                 continue
             american, decimal, book = quote
             breakeven = 1.0 / decimal
+            if market_over is None:
+                market_p = None
+            else:
+                market_p = market_over if side == "Over" else 1.0 - market_over
             contracts.append({
                 "player": player, "market": market, "line": line,
                 "side": side, "event_id": event_id,
                 "probability": model_p,
-                "market_probability": (market_over if side == "Over"
-                                       else 1.0 - market_over),
+                "market_probability": market_p,
+                "market_probability_absent": (
+                    playerprops.NOT_DEVIGGABLE.get(market) if one_sided else None),
                 "breakeven": breakeven,
                 "gap_vs_breakeven": model_p - breakeven,
                 "price": american, "book": book,

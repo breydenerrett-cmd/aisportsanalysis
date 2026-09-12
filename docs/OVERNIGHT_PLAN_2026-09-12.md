@@ -113,6 +113,28 @@ adversely selected.
 - **T5 debt:** the three doc-churn stashes and the `%SystemDrive%/` junk
   need a `git stash drop` / `rm` the harness would not run unattended —
   left for the owner (two commands, both listed in Tier 5).
+- **T4 home runs, likelihood only — DONE.** `propboard.likelihood_only`:
+  a market the model is measured good on (HR: calibrated to ~2 pts) with
+  no under ever quoted joins the board with OURS and PRICE NEEDS, the
+  market's own number absent and the row saying why in words. Ranked by
+  probability like everything else, so it sits low — a home run is a
+  ~10–20% event. Refused by name when no over is quoted either.
+- **T4 umpire signing — CANNOT, and why:** `umpirewatch` brackets WHEN a
+  crew is revealed; no per-umpire run-environment history exists in
+  `data/historical/`. Signing `umpire_assigned` needs an outside source
+  of per-umpire strike-zone/run data. Not promised.
+- **T5 reachability audit** already reads the default branch's workflows
+  (`_default_branch_workflows`, done before tonight). Ran it: my four
+  pre-registered readers were orphans by its rule and are now declared
+  with the reason (run by hand at the floor; on a schedule they would
+  read early). Still orphaned and not mine to declare cold:
+  `_propboard.py`, `backfill_handedness.py`, `prereg_market_vs_model.py`,
+  `probe_information_edge.py`, `probe_line_shopping.py`,
+  `probe_lineup_slot.py`, `probe_platoon_split.py`.
+- **New debt from tonight's purge:** `web/js/featuredbet.js` and
+  `web/js/opportunities.js` are imported by nothing that runs (the audit
+  lists both as orphan views); ten test files still pin them. Deleting
+  both with their tests is a clean follow-up, not a 4am job.
 
 ## Tier 1 — things the owner asked for that are still not done
 

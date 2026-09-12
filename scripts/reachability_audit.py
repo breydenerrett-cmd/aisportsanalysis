@@ -358,6 +358,15 @@ DECLARED_MANUAL_SCRIPTS = {
     "probe_historical_leadtime.py",
     "probe_prop_name_join.py",
 
+    # --- pre-registered readers: each reads a criterion committed to git
+    #     before its data existed, prints PENDING below its floor, and is
+    #     run by hand at the floor. On a schedule it would read early, which
+    #     is the one thing a pre-registration exists to prevent.
+    "probe_event_direction.py",     # docs/PREREG_EVENT_DIRECTION.md
+    "probe_lineup_direction.py",    # docs/PREREG_LINEUP_DIRECTION.md, --forward for V6
+    "probe_slot_prop.py",           # docs/PREREG_SLOT_PROP.md (V7)
+    "probe_bunched_counts.py",      # reports it cannot run until the box store is deep enough
+
     # --- credit-metered or long-running research runs, started deliberately
     #     with a budget in mind (docs/RESOURCE_POLICY.md).
     "evolab_sweep.py",
