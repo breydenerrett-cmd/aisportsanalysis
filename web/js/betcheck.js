@@ -263,9 +263,21 @@ function renderCase(result) {
 function renderCounterargument(result) {
   const raw = Array.isArray(result.counterargument) ? result.counterargument : [];
   const lines = Array.isArray(result.counterargument_lines) ? result.counterargument_lines : [];
+  // THE CHIP READ "NEVER EMPTY BY CONSTRUCTOR" UNTIL 2026-09-12.
+  //
+  // That is a note one developer left another about an invariant in this
+  // function, and it was rendering on the live site as a customer-facing
+  // label. A reader has no idea what a constructor is and no reason to
+  // care; what the invariant actually promises them is that this section
+  // always runs, so the case against never gets quietly dropped when it is
+  // inconvenient. That is worth saying, in those words.
+  //
+  // The tone was `money` too -- the red the design system reserves for the
+  // price moment (web/css/tokens.css: "hot red: the money moment, reserved
+  // -- price advantage only"). A counterargument is not a money moment.
   const section = block("04", "COUNTERARGUMENT", {
     attrs: { "data-hook": "bet-check-counterargument" }, tone: "counter",
-    chip: { text: "NEVER EMPTY BY CONSTRUCTOR", tone: "money" },
+    chip: { text: "ALWAYS CHECKED", tone: "counter" },
   });
   const list = el("ul", { class: "bc2-lines", "data-hook": "counterargument-lines" });
   if (raw.length) {

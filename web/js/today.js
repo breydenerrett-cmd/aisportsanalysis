@@ -884,16 +884,33 @@ function heroMarketUnavailable(row, date, aggregates, sameVerdictCount, totalGam
   const gaps = (row.data_quality && row.data_quality.gaps) || {};
   const reason = gaps.market || null;
   const box = el("div", { class: "gv2-payload panel chamfer" });
-  box.appendChild(el("div", { class: "gv2-payload__title", text: "WHAT THE PAYLOAD SAYS" }));
+  // THIS BLOCK WAS A RAW DATA DUMP UNTIL 2026-09-12.
+  //
+  // It rendered "WHAT THE PAYLOAD SAYS" over four rows of internal field
+  // names -- has_board, books, observed_utc, gaps.market -- with the word
+  // "null" printed where a value was missing. On the live site. The owner
+  // on this exact register, 2026-09-10: "there's just a lot of AI slop
+  // written language in here... nobody wants to do math or algebra".
+  //
+  // The facts were the right facts to show. A reader who opens a game with
+  // no prices deserves to know exactly what we do and do not hold. They
+  // just needed saying in English, with "we did not record that" instead of
+  // "null" -- absent is not zero, and it is not the word `null` either.
+  box.appendChild(el("div", { class: "gv2-payload__title",
+    text: "WHAT WE HOLD FOR THIS GAME" }));
   const bs = row.board_summary || {};
   const field = (key, value) => box.appendChild(el("div", { class: "gv2-payload__row" }, [
     el("span", { class: "gv2-payload__key", text: key }),
     el("span", { class: "gv2-payload__val", text: value }),
   ]));
-  field("has_board", String(!!bs.has_board));
-  field("books", bs.books === null || bs.books === undefined ? "null" : String(bs.books));
-  field("observed_utc", bs.observed_utc == null ? "null" : String(bs.observed_utc));
-  field("gaps.market", reason ? reason : "no reason given");
+  const missing = "not recorded";
+  field("PRICES", bs.has_board ? "yes" : "none captured");
+  field("BOOKS QUOTING",
+    bs.books === null || bs.books === undefined ? missing : String(bs.books));
+  field("LAST CHECKED",
+    bs.observed_utc == null ? missing
+      : (formatEasternClock(bs.observed_utc) || String(bs.observed_utc)));
+  field("WHY", reason ? reason : "no reason recorded");
   box.appendChild(el("p", { class: "gv2-payload__note",
     text: "Amber, not red. Absence of a board is not a risk to a bet." }));
   hero.appendChild(box);
