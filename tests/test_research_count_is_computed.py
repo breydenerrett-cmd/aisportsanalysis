@@ -125,6 +125,65 @@ class TheRegistryIsTheSource(unittest.TestCase):
         self.assertIsNone(payload["research"]["hypotheses"])
 
 
+class ThePythonConstantsReadTheRegistryToo(unittest.TestCase):
+    """The JS side was fixed first and the Python side kept drifting.
+
+    On 2026-09-12 one Bet Check result said "41 pre-registered hypotheses"
+    in block 07 (registry, via GET /meta) and "27 pre-registered hypotheses
+    across four families" in block 10 (src/analysis/__init__.py's typed
+    constant, via the bottom line's no-edge record). Same page, two counts.
+    Five customer sentences read those constants: the Bet Check bottom line,
+    the synthesis note, the Ranker banner, the dashboard and the archive.
+    """
+
+    def test_the_count_is_the_registry_count(self):
+        from src import analysis
+        from src.research import alpha_registry
+        self.assertTrue(analysis.COUNTS_FROM_REGISTRY,
+                        "src.analysis fell back to its last-known figures")
+        self.assertEqual(analysis.HYPOTHESES_TESTED,
+                         alpha_registry.public_research_counts()["hypotheses"])
+
+    def test_the_family_count_is_the_registry_family_count(self):
+        from src import analysis
+        from src.research import alpha_registry
+        families = {r.get("family") for r in alpha_registry.read_all()
+                    if r.get("kind") == "hypothesis" and r.get("family")}
+        self.assertEqual(analysis.HYPOTHESIS_FAMILIES, len(families))
+
+    def test_the_words_match_the_numbers(self):
+        from src import analysis
+        self.assertEqual(analysis.HYPOTHESES_TESTED_WORD,
+                         analysis.number_word(analysis.HYPOTHESES_TESTED).capitalize())
+        self.assertEqual(analysis.HYPOTHESIS_FAMILIES_WORD,
+                         analysis.number_word(analysis.HYPOTHESIS_FAMILIES))
+
+    def test_number_words(self):
+        from src.analysis import number_word
+        self.assertEqual(number_word(4), "four")
+        self.assertEqual(number_word(20), "twenty")
+        self.assertEqual(number_word(27), "twenty-seven")
+        self.assertEqual(number_word(41), "forty-one")
+        self.assertEqual(number_word(100), "100")
+
+    def test_the_last_known_fallback_is_not_stale(self):
+        """The fallback is only for a container with no data/ tree, but a
+        stale fallback is the old bug waiting for that container."""
+        from src import analysis
+        from src.research import alpha_registry
+        self.assertEqual(analysis._LAST_KNOWN_HYPOTHESES,
+                         alpha_registry.public_research_counts()["hypotheses"],
+                         "bump _LAST_KNOWN_HYPOTHESES in src/analysis/__init__.py")
+
+    def test_the_bet_check_bottom_line_carries_the_registry_count(self):
+        from src import analysis
+        from src.analysis import betcheck
+        self.assertIn(f"{analysis.HYPOTHESES_TESTED} pre-registered",
+                      betcheck._NO_EDGE_DISCLAIMER)
+        self.assertIn(f"across {analysis.HYPOTHESIS_FAMILIES_WORD} families",
+                      betcheck._NO_EDGE_DISCLAIMER)
+
+
 class NoCustomerFileHardcodesIt(unittest.TestCase):
 
     def test_no_spelled_out_counts_in_customer_prose(self):
