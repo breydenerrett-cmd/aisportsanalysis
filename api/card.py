@@ -23,7 +23,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Request
 
 from api.games import _build_entries, _record_page_view
-from src.analysis import daily_card
+from src.analysis import daily_card, grade
 from src.analysis import opportunities as opportunities_mod
 from src.analysis import strength
 from src.report import card as card_mod
@@ -73,6 +73,12 @@ def _build_payload(date: str, request: Optional[Request], route: str) -> dict:
         frozen["date"] = date
         frozen["generated_at"] = now.isoformat()
         frozen["model_basis"] = strength.MODEL_BASIS
+        # The grade legend rides every card, frozen or live. This branch
+        # returns before src/report/card.py's card_for_date (which is where
+        # the live path attaches it), so it is attached here too -- a
+        # frozen card's picks carry the grade they were frozen with, and the
+        # page needs the legend to read it.
+        frozen["knowledge_legend"] = list(grade.legend())
         # An honest freshness block for a row that is frozen ON PURPOSE. It
         # describes when this payload was BUILT, which for a frozen card is
         # when it was published -- not how old the prices on it are. The page

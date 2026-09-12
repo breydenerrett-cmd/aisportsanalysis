@@ -11,6 +11,27 @@ adversely selected.
 
 ---
 
+## Progress log (updated as the night goes)
+
+- **T1.1 Bet Check purge — DONE** (`ba8e036`). The retired register is gone
+  from Bet Check; verified on the running app, desktop and 375px. Server
+  copy followed (`_bottom_line_text`, `_market_context` notes).
+- **Found while doing it: the research count drifted again — DONE**
+  (`52a3bef`). Block 07 said 41, block 10 said 27, same page. The Python
+  constant now reads the registry.
+- **T2 Today featured tile — DONE** (`3e448b9`). The same tile headlined
+  Today as "LARGEST PRICE GAP" and fired a POST /betcheck on every load.
+  `chooseGapCandidate` deliberately kept (it picks the hero's game) —
+  owner decision, see below.
+- **T2 My Bets form-above-wall — DONE** (`985e808`).
+- **T1.2 Knowledge grade — DONE, one gap** (`5e55cd6`). Live on the Games
+  grid (15 tiles, C/D at 2am, correctly: no lineups, stale boards). The
+  card's frozen branch in `api/card.py` bypasses `card_for_date`, so a
+  frozen card carries no legend yet — fixing next.
+- **Owner decision added:** the hero on Today is still *chosen* by "largest
+  price gap against consensus" (`chooseGapCandidate`). The tile that
+  announced that rule is gone; the rule still picks the headline game.
+
 ## Tier 1 — things the owner asked for that are still not done
 
 ### 1.1 Bet Check: delete the line-shopping register

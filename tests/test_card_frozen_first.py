@@ -100,6 +100,16 @@ class AFrozenCardCostsOneLedgerRead(unittest.TestCase):
         self.assertEqual(payload["date"], "2026-09-10")
         self.assertIsNotNone(payload.get("model_basis"))
 
+    def test_a_frozen_card_still_carries_the_grade_legend(self):
+        """This branch returns before card_for_date attaches the legend, so
+        it attaches it itself. Without this, the first frozen card served
+        after the grade shipped rendered picks with no legend under READ
+        THIS ONCE -- found by opening the page, 2026-09-12."""
+        from src.analysis import grade
+        self._arm(FROZEN)
+        payload = apicard._build_payload("2026-09-10", None, "card")
+        self.assertEqual(payload["knowledge_legend"], list(grade.legend()))
+
     def test_freshness_is_still_present_and_describes_the_freeze(self):
         """Consumers read `freshness` on every card payload. A frozen row is
         exactly as fresh as it promised to be, so `stale` is False and
