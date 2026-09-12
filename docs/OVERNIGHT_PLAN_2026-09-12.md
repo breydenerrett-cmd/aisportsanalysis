@@ -60,6 +60,17 @@ adversely selected.
   read plainly).
 - **Props are in the bottom nav** (took ODDS's tab; `#/odds` stays linked
   from the card, Today and every game page).
+- **Two things the first pass missed, caught by re-opening the pages:**
+  the landing hero is refilled at runtime by `landing-live.js` from
+  `/opportunities` — the price-gap ranker — so it still read "Best of 11
+  books · Caesars +175, ~~+160~~ Everywhere else" over the rewritten copy.
+  It now leads with the card's first pick: who, how likely by the market,
+  the price, and the win rate it needs. And the systems slip on Today
+  printed "Moneyline at -182 (betrivers)" with no club: the slip names a
+  pick by event id and a selection hash. `GET /today` now renders the
+  club, side and book through `src/board/readable.py` on the way out
+  ("Milwaukee Brewers (home) moneyline (-182, BetRivers)"); the ledger row
+  is untouched.
 
 ## Tier 1 — things the owner asked for that are still not done
 

@@ -154,9 +154,21 @@ def _slip_for_date(date: Optional[str]) -> Optional[dict]:
         return None
     try:
         from src.engine import slip as slip_mod
-        return slip_mod.latest_slip_for(date)
+        slip = slip_mod.latest_slip_for(date)
     except Exception:  # noqa: BLE001 -- an unreadable slip ledger is a gap
         return None
+    if slip is None:
+        return None
+    # THE WORDS A READER NEEDS, added on the way out. The frozen slip names
+    # a pick by event_id, market_key and a selection hash, and the page
+    # printed "Moneyline at -182 (betrivers)" with no club (2026-09-11).
+    # src/board/readable.py renders the club, the side and the book; the
+    # event map supplies the clubs. The ledger row itself is untouched.
+    try:
+        from src.board import gamekey, readable
+        return readable.readable_slip(slip, gamekey.events_for_date(date))
+    except Exception:  # noqa: BLE001 -- losing the names must not lose the slip
+        return slip
 
 
 # ~120s: long enough that a normal burst of page loads/refreshes for the

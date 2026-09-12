@@ -147,6 +147,41 @@ class TheLandingPageAgreesWithTheProduct(unittest.TestCase):
         self.assertIn("more likely", self.text)
 
 
+class TheSlipLineNamesTheClub(unittest.TestCase):
+    def test_the_server_sentence_is_printed_when_present(self):
+        text = (JS / "today.js").read_text(encoding="utf-8")
+        body = text.split("function pickWagerLine(")[1].split("\nfunction ")[0]
+        self.assertIn("pick.wager_text", body)
+        self.assertIn("bookLabel(pick.book)", body)
+
+
+class TheLandingHeroLeadsWithTheCard(unittest.TestCase):
+    """The hero was filled at runtime from GET /opportunities -- the
+    price-gap ranker -- and read "Best of 11 books · Caesars +175, +160
+    Everywhere else" over the copy that had just been rewritten."""
+
+    def setUp(self):
+        raw = (WEB / "js" / "landing-live.js").read_text(encoding="utf-8")
+        # Code only: the module docstring quotes the old hero as history.
+        raw = re.sub(r"/\*.*?\*/", " ", raw, flags=re.S)
+        self.text = "\n".join(line for line in raw.splitlines()
+                              if not line.strip().startswith("//"))
+
+    def test_it_reads_the_card_not_the_price_board(self):
+        self.assertIn('apiGet("/card")', self.text)
+        self.assertNotIn('apiGet("/opportunities")', self.text)
+
+    def test_no_everywhere_else_comparison(self):
+        for phrase in ("Everywhere else", "Best of ${", "worstRealPrice", "hero-price-was"):
+            self.assertNotIn(phrase, self.text, phrase)
+
+    def test_it_says_what_the_price_needs(self):
+        self.assertIn("to break even", self.text)
+        self.assertIn("the market makes it", self.text)
+        html = (WEB / "landing.html").read_text(encoding="utf-8")
+        self.assertIn('data-hook="hero-price-needs"', html)
+
+
 class PropsHaveTheTab(unittest.TestCase):
     def test_props_replaced_odds_in_the_bottom_nav(self):
         text = (JS / "main.js").read_text(encoding="utf-8")

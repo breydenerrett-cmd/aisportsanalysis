@@ -627,17 +627,18 @@ const MARKET_LABEL = {
 };
 
 function pickWagerLine(pick) {
-  // No client-side event_id -> game join yet (matchups.js does not do this
-  // resolution either, and guessing one risks the same silent-mismatch bug
-  // the stand-down telemetry join had before it was keyed correctly on
-  // game_pk -- see src/report/stand_downs.py's own history). The board link
-  // below is deliberately generic rather than a specific, unverified game
-  // link.
+  // The server renders the club, the side and the book into one sentence
+  // (src/board/readable.py's `wager_text`, joined through the event map).
+  // The fallback below is for a payload that lacks it: no event_id -> game
+  // join is attempted here, because guessing one risks the silent-mismatch
+  // bug the stand-down telemetry join had before it was keyed correctly on
+  // game_pk -- see src/report/stand_downs.py's own history.
+  if (pick.wager_text) return pick.wager_text;
   const market = MARKET_LABEL[pick.market_key] || String(pick.market_key || "market");
   const price = formatAmerican(pick.price_american);
   const bits = [market];
   if (price) bits.push(`at ${price}`);
-  if (pick.book) bits.push(`(${pick.book})`);
+  if (pick.book) bits.push(`(${bookLabel(pick.book) || pick.book})`);
   return bits.join(" ");
 }
 

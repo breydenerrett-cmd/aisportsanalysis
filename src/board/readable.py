@@ -201,3 +201,39 @@ def render_record(record, teams: GameTeams | None = None) -> str:
                             line=record.line, teams=teams,
                             price_american=record.price_american,
                             book=record.book)
+
+
+def readable_pick(pick: dict, events: dict) -> dict:
+    """One published slip pick with the words a reader needs ADDED:
+    `wager_text`, `side`, `away_team`, `home_team`. Nothing removed, nothing
+    renamed -- the frozen pick's own fields ride through untouched.
+
+    The slip names a pick by `event_id`, `market_key` and a selection hash,
+    which is right for a ledger and unreadable on a page: #/today printed
+    "Moneyline at -182 (betrivers)" with no club (2026-09-11). `events` is
+    `src.board.gamekey.events_for_date`'s map; an event it does not carry
+    renders as "the home side" -- named, never guessed.
+    """
+    teams = GameTeams.from_event_meta(events.get(str(pick.get("event_id"))))
+    line = pick.get("line")
+    side = side_for_selection(pick.get("market_key"), pick.get("selection_id"),
+                              None if line is None else str(line))
+    out = dict(pick)
+    out["side"] = side
+    out["away_team"] = teams.away
+    out["home_team"] = teams.home
+    out["wager_text"] = render_selection(
+        market_key=pick.get("market_key"), side=side,
+        line=None if line is None else str(line), teams=teams,
+        price_american=pick.get("price_american"), book=pick.get("book"))
+    return out
+
+
+def readable_slip(slip: dict | None, events: dict) -> dict | None:
+    """`readable_pick` over every pick of one slip row; the row's other
+    fields (hashes included) are copied as they are. None stays None."""
+    if not slip:
+        return slip
+    out = dict(slip)
+    out["picks"] = [readable_pick(p, events) for p in slip.get("picks") or []]
+    return out
