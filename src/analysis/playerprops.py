@@ -285,6 +285,106 @@ def deviggable(market: str) -> bool:
     return market not in NOT_DEVIGGABLE
 
 
+# ---------------------------------------------------------------------------
+# Bunched counts: the per-GAME distribution, as NOT_PUBLISHABLE prescribes
+# ---------------------------------------------------------------------------
+#
+# NOT_PUBLISHABLE above names the defect and names the fix:
+#
+#     "RBIs and hits-plus-runs-plus-RBIs are BUNCHED counts: a home run with
+#      two aboard is three RBIs in a single plate appearance. Treating a
+#      per-PA rate as a Bernoulli trial and asking for 'at least one' assumes
+#      those events arrive one at a time... The fix, when someone does it:
+#      model these off the batter's own per-GAME distribution rather than a
+#      per-PA rate, which carries the bunching for free."
+#
+# This is that. Counting how often a batter's OWN GAMES cleared the line
+# makes no assumption about how the events arrive inside a game, because it
+# never looks inside one. A three-RBI game is one game over 1.5, exactly as
+# the outcome will be scored.
+#
+# Nothing here makes these markets publishable. That is decided by
+# `scripts/backtest_player_props.py` measuring them against a base rate, and
+# NOT_PUBLISHABLE stays exactly as it is until it does.
+
+# Markets whose events bunch inside a plate appearance.
+BUNCHED_MARKETS = ("batter_rbis", "batter_hits_runs_rbis")
+
+# Shrinkage, in pseudo-games, toward the league's own rate at the same line.
+# A batter with 30 games and a 40% rate is pulled about a third of the way
+# toward league; one with 150 games is barely moved. Deliberately looser than
+# PA_REGRESSION's 200 because a GAME carries far more information about a
+# bunched count than a plate appearance does.
+GAME_REGRESSION = 25.0
+
+# Below this a batter's own game log says nothing and the model refuses,
+# rather than publishing the league's number under his name.
+MIN_GAMES_FOR_A_RATE = 15
+
+
+def game_count(row: Mapping, market: str) -> Optional[int]:
+    """What this batter actually did in ONE game, for a bunched market.
+
+    Reads the same box-score fields `scripts/backtest_player_props.py`
+    settles the bet with, so the quantity modelled and the quantity graded
+    cannot drift apart.
+    """
+    if market == "batter_rbis":
+        value = row.get("rbi")
+    elif market == "batter_hits_runs_rbis":
+        value = row.get("hits_runs_rbi")
+        if value is None:
+            # Older rows predate the combined column. Summing the three is
+            # the same quantity, not an approximation of it.
+            parts = [row.get("h"), row.get("r"), row.get("rbi")]
+            if all(p is None for p in parts):
+                return None
+            value = sum(int(p or 0) for p in parts)
+    else:
+        raise PropError(f"{market!r} is not a bunched count")
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def game_counts(lines: Sequence[Mapping], market: str) -> list:
+    """That batter's per-game counts, one per game he appeared in."""
+    out = []
+    for row in lines or ():
+        value = game_count(row, market)
+        if value is not None:
+            out.append(value)
+    return out
+
+
+def empirical_over(counts: Sequence[int], line: float,
+                   league_counts: Sequence[int],
+                   regression: float = GAME_REGRESSION) -> float:
+    """P(this batter clears `line`), from how often his own games did.
+
+    Shrunk toward the league's rate AT THE SAME LINE -- not toward a single
+    league average, because the shrinkage target has to be the same quantity
+    being estimated or it pulls the answer somewhere it was never headed.
+
+    Raises when the batter has too few games. A league number published under
+    a named player is the fabrication this model refuses everywhere else.
+    """
+    if len(counts) < MIN_GAMES_FOR_A_RATE:
+        raise PropError(
+            f"{len(counts)} game(s) is below the {MIN_GAMES_FOR_A_RATE} "
+            f"floor; this batter has no per-game rate worth publishing "
+            f"under his name")
+    if not league_counts:
+        raise PropError("no league games supplied to regress toward")
+
+    own = sum(1 for c in counts if c > line)
+    league = sum(1 for c in league_counts if c > line) / len(league_counts)
+    return (own + regression * league) / (len(counts) + regression)
+
+
 def publishable(market: str) -> bool:
     """May a pick in this market be shown to a customer?
 
