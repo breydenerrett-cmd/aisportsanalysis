@@ -132,10 +132,25 @@ def ingest(start_date, end_date=None, store=DEFAULT_STORE) -> dict:
 
 
 def _date(value):
+    """The calendar day of a stored date, or None -- never a guess.
+
+    Basic-format ISO (`20260613`, which one feed row carried as an int) is
+    parsed explicitly: `date.fromisoformat` accepts it from Python 3.11 and
+    rejects it on 3.10, so without this branch the same store produced a
+    different card per interpreter, and CI's 3.10 job was the one that
+    noticed (tests/test_pipeline_news.py, 2026-09-12).
+    """
     if not value:
         return None
+    text = str(value)
+    head = text[:8]
+    if len(text) >= 8 and head.isdigit() and (len(text) == 8 or not text[8].isdigit()):
+        try:
+            return dt.date(int(head[:4]), int(head[4:6]), int(head[6:8]))
+        except ValueError:
+            return None
     try:
-        return dt.date.fromisoformat(str(value)[:10])
+        return dt.date.fromisoformat(text[:10])
     except ValueError:
         return None
 
