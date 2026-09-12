@@ -387,6 +387,12 @@ evening, the other tonight. Build the readers now so nothing waits on me.
 
 ## Owner decisions surfaced tonight (not made)
 
+Two of these now have memos with the numbers, each written by one agent
+and reproduced by a second before I read them:
+`docs/DECISION_TODAY_ONE_ANSWER.md` (the two answers on Today, and the
+hero) and `docs/DECISION_PROP_CAPTURE_SPEND.md` (the ~T-6h baseline pass
+and stolen bases, costed against the envelope).
+
 - **Today gives two answers to "what do I bet".** TONIGHT'S CARD (the
   product: 3–5 picks, frozen, graded) sits above TONIGHT'S PICKS ("where
   our systems currently see the strongest case" — the engine slip, ranked
