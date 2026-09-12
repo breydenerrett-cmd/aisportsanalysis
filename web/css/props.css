@@ -1,0 +1,148 @@
+/* PLAYER PROPS (#/props) -- web/js/props.js.
+ *
+ * The layout carries the argument. Two numbers sit side by side on every
+ * row, the same size and the same weight, because they answer two different
+ * questions and neither is worth reading alone: how likely we think it is,
+ * and what the price needs before it is worth taking. Styling one of them
+ * larger would be the screen making a recommendation, which this screen does
+ * not do.
+ *
+ * Nothing here uses --money. That red is reserved for the price moment and
+ * a board with no pick on it has no money moment.
+ */
+
+.props {
+  padding: var(--sp-9) var(--gutter, 20px) var(--sp-13);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-9);
+}
+
+.props__head { display: flex; flex-direction: column; gap: var(--sp-4); }
+
+.props__eyebrow {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+}
+
+.props__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(26px, 6vw, 38px);
+  line-height: 1.05;
+  letter-spacing: .01em;
+  color: var(--text-hi);
+}
+
+.props__lede {
+  margin: 0;
+  max-width: 60ch;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-3);
+}
+
+.props__loading,
+.props__empty {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--text-mute);
+}
+
+.props__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--sp-5);
+}
+
+.prop-row {
+  padding: var(--sp-7);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  background: linear-gradient(var(--surface-1-a), var(--surface-1-b));
+  border: 1px solid var(--edge-1);
+}
+
+.prop-row__bet {
+  margin: 0;
+  font-family: var(--font-display);
+  /* Big enough to read at arm's length. The owner's note, 2026-09-10:
+   * "even at 100% zoom there are just so many things zoomed out, I have to
+   * squint and get my face next to the monitor". */
+  font-size: clamp(19px, 4.6vw, 24px);
+  line-height: 1.15;
+  color: var(--text-hi);
+}
+
+/* The two numbers, deliberately equal. */
+.prop-row__numbers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-11);
+}
+
+.prop-row__stat { display: flex; flex-direction: column; gap: var(--sp-1); }
+
+.prop-row__stat-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: .12em;
+  color: var(--text-mute);
+}
+
+.prop-row__stat-value {
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 1;
+  color: var(--text-hi);
+}
+
+.prop-row__stat-value--muted { color: var(--text-3); }
+
+.prop-row__price,
+.prop-row__pa {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-mute);
+}
+
+.props__counts {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* The entry point on #/today. */
+.today-props { padding: 0 var(--gutter, 20px); margin: var(--sp-9) 0; }
+
+.today-props__link {
+  display: block;
+  padding: var(--sp-7);
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: clamp(16px, 4vw, 20px);
+  letter-spacing: .04em;
+  text-decoration: none;
+  color: var(--live-label);
+  background: linear-gradient(var(--surface-1-a), var(--surface-1-b));
+  border: 1px solid var(--edge-1);
+}
+
+.today-props__link:hover,
+.today-props__link:focus-visible { color: var(--live-lit); }
+
+@media (max-width: 640px) {
+  .props { padding: var(--sp-7) var(--gutter-mobile, 14px) var(--sp-13); }
+  .prop-row__numbers { gap: var(--sp-9); }
+}

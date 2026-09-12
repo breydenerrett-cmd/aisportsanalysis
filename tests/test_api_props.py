@@ -197,6 +197,29 @@ class Endpoint(unittest.TestCase):
         from api import props as api_props
         self.assertEqual(api_props._validate("2026-09-11"), "2026-09-11")
 
+    def test_the_default_date_is_the_EASTERN_slate_not_utc_today(self):
+        """The blackout this caused, as a test.
+
+        At 01:00 UTC it is 9pm Eastern and tonight's games are being played.
+        UTC-today has already rolled to tomorrow, so `/props` asked for a
+        slate with no prices and rendered "no prop prices posted for this
+        slate yet" -- every night, from 8pm Eastern, for the whole window in
+        which anyone would actually look.
+        """
+        import datetime as dt
+        from unittest import mock
+        from api import props as api_props
+
+        late = dt.datetime(2026, 9, 12, 1, 0, tzinfo=dt.timezone.utc)
+
+        class _Clock(dt.datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return late if tz else late.replace(tzinfo=None)
+
+        with mock.patch.object(api_props, "datetime", _Clock):
+            self.assertEqual(api_props._today(), "2026-09-11")
+
     def test_an_unreadable_store_is_a_502_not_a_blank_board(self):
         """An empty board and a broken one are different facts.
 

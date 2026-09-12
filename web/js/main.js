@@ -19,6 +19,10 @@
  *   #/odds/YYYY-MM-DD/AWAY/HOME              ODDS (one game)
  *   #/mybets                                 BETS
  *   #/performance                            RESULTS (PAPER / RESEARCH PERFORMANCE)
+ *   #/props[/YYYY-MM-DD]                     PLAYER PROPS (the priced
+ *                                             board -- most likely first,
+ *                                             never ranked by the gap
+ *                                             against the price)
  *   #/day/YYYY-MM-DD                         DAILY RECORD (one day's frozen
  *                                             pregame record, GET /daily/{date})
  *   #/record-card                            THE RECORD (every card ever
@@ -50,6 +54,7 @@ import { renderSupport } from "./support.js";
 import { renderSignup, renderSignupComplete } from "./signup.js";
 import { renderBilling } from "./billing.js";
 import { renderPerformance } from "./performance.js";
+import { renderProps } from "./props.js";
 import { renderDayDetail } from "./dayrecap.js";
 import { renderCardRecord } from "./cardrecord.js";
 import { BRAND_NAME } from "./brand.js";
@@ -103,6 +108,7 @@ const SECTION_LABELS = {
   signup: "SIGN UP",
   billing: "BILLING",
   performance: "PERFORMANCE",
+  props: "PLAYER PROPS",
   day: "DAILY RECORD",
   "record-card": "THE RECORD",
 };
@@ -227,6 +233,8 @@ async function _renderRouteInner(main) {
     await renderMyBets(main);
   } else if (route === "performance") {
     await renderPerformance(main);
+  } else if (route === "props") {
+    await renderProps(main, rest[0]);
   } else if (route === "day" && rest.length >= 1) {
     await renderDayDetail(main, rest[0]);
   } else if (route === "record-card") {

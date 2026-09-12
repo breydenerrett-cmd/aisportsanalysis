@@ -104,7 +104,8 @@
 
 import { apiGet, apiPost } from "./api.js";
 import { el, clear, formatAmerican, formatConsensusShare,
-  formatEasternClock, verdictLabel, notYetAvailable } from "./dom.js";
+  formatEasternClock, formatSlateDate, verdictLabel,
+  notYetAvailable } from "./dom.js";
 import { renderError, renderLoadingSkeleton, renderEmptySlate,
   renderCaptureUnavailable } from "./states.js";
 import { renderFeaturedBet, mapBetCheckPayloadToStanding } from "./featuredbet.js";
@@ -231,12 +232,12 @@ function et(isoUtc) {
  * a slate date is a calendar day, not an instant, so there is no ET
  * conversion to apply to it). Noon UTC keeps the formatted day stable
  * regardless of which UTC offset the reader's own clock happens to be in. */
+// Moved to dom.js as `formatSlateDate` on 2026-09-11 so #/props could use
+// the same one. A slate date is a calendar date, not an instant, and the
+// screen that formatted it the other way rendered tonight's board under
+// yesterday's heading.
 function slateDateLabel(dateIso) {
-  if (!dateIso) return null;
-  const d = new Date(`${dateIso}T12:00:00Z`);
-  if (Number.isNaN(d.getTime())) return null;
-  return new Intl.DateTimeFormat("en-US", { timeZone: "UTC", weekday: "short", month: "short", day: "numeric" })
-    .format(d).toUpperCase().replace(/,/g, "");
+  return formatSlateDate(dateIso);
 }
 
 /** Today's own calendar date in America/New_York, as `YYYY-MM-DD` --
@@ -1265,6 +1266,24 @@ export async function renderToday(container) {
   // Hand over the /today payload this screen already fetched, so the grid
   // does not pay for a second copy of it before it can start.
   await renderMatchups(host, date, today);
+
+  // PLAYER PROPS, reachable from the one screen a reader actually opens.
+  //
+  // THE CARD above can only ever show a moneyline or a run line -- those are
+  // the only two markets src/analysis/daily_card.py emits -- so a reader who
+  // wants a hits or total-bases line has no route to one from here. The
+  // board has existed in the store all along (seventeen thousand prices) and
+  // nothing in the product pointed at it. The footer carries this link too;
+  // a footer is not an entry point anyone finds on purpose.
+  const propsEntry = el("a", {
+    class: "today-props__link chamfer", href: "#/props",
+    "data-hook": "today-props-link",
+    text: "PLAYER PROPS — WHAT IS MOST LIKELY TONIGHT →",
+  });
+  const propsWrap = el("div", { class: "today-props",
+    "data-hook": "today-props" });
+  propsWrap.appendChild(propsEntry);
+  host.appendChild(propsWrap);
 
   const slot = renderFeaturedSection(host, gapCandidate, rows.length);
   slot.appendChild(el("div", { class: "gv2-featured__loading",

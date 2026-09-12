@@ -172,6 +172,32 @@ export function renderUnknown(value) {
  * ------------------------------------------------------------------- */
 
 /** "THU SEP 1" in ET -- the shell clock's date half. */
+/**
+ * "FRI SEP 11" from a bare slate date like "2026-09-11".
+ *
+ * NOT the same function as `formatEasternDate` below, and the difference is
+ * a whole day. That one takes an INSTANT and converts it to Eastern. Hand it
+ * a bare `YYYY-MM-DD` and JavaScript parses it as midnight UTC, which in
+ * Eastern is 8pm the PREVIOUS evening -- so tonight's board renders under
+ * yesterday's date. That is exactly what #/props did on its first run: the
+ * rows were Friday's and the header said THU SEP 10.
+ *
+ * A slate date is a calendar date, not a moment. Pinning it to noon UTC puts
+ * it safely inside its own day in every timezone the product is read in, and
+ * formatting in UTC then returns the date it was handed.
+ *
+ * Shared from here rather than copied per screen: a second implementation is
+ * how the two drift, and one of them is always the one nobody re-checked.
+ */
+export function formatSlateDate(dateIso) {
+  if (!dateIso) return null;
+  const pinned = new Date(`${dateIso}T12:00:00Z`);
+  if (Number.isNaN(pinned.getTime())) return null;
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "UTC", weekday: "short", month: "short", day: "numeric",
+  }).format(pinned).toUpperCase().replace(/,/g, "");
+}
+
 export function formatEasternDate(isoUtc) {
   if (!isoUtc) return null;
   const date = new Date(isoUtc);

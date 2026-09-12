@@ -164,6 +164,13 @@ export async function renderDisclaimerFooter(container) {
   // asserting a nav entry while claiming to test the route.
   row.appendChild(el("a", { class: "sitefoot__support", href: "#/performance",
     "data-hook": "footer-performance", text: "RESEARCH" }));
+  // PLAYER PROPS (#/props), for the same reason the two above are here: the
+  // footer is mounted once and survives every view swap, so it is the one
+  // place a link cannot be forgotten. THE CARD can only show moneylines and
+  // run lines, so without this the product has no route at all to the
+  // seventeen thousand player-prop prices it already collects.
+  row.appendChild(el("a", { class: "sitefoot__support", href: "#/props",
+    "data-hook": "footer-props", text: "PLAYER PROPS" }));
   region.appendChild(row);
 
   region.appendChild(el("p", { class: "sitefoot__summary", "data-hook": "disclaimer-summary",

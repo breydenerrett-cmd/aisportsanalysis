@@ -33,6 +33,7 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, Request
 
+from src.pipeline import prop_listing
 from src.report import props as props_mod
 
 router = APIRouter()
@@ -49,7 +50,20 @@ def _validate(date: str) -> str:
 
 
 def _today() -> str:
-    return datetime.now(timezone.utc).date().isoformat()
+    """Tonight's slate date -- EASTERN, not UTC.
+
+    A baseball slate is an Eastern-date concept and the prop store keys its
+    rows by exactly that (`game_date`). UTC-today is a different day for the
+    four hours between 00:00 UTC and 04:00 UTC, which is 8pm to midnight
+    Eastern -- the window in which people are actually looking at tonight's
+    board while the games are being played.
+
+    Measured 2026-09-12T01:00Z: `/props` resolved to 2026-09-12 and returned
+    an empty board with "no prop prices posted for this slate yet", while
+    `/props/2026-09-11` returned forty contracts. The page went blank every
+    night at 8pm Eastern and said the slate was unpriced.
+    """
+    return prop_listing._slate_date(datetime.now(timezone.utc))
 
 
 def _board(date: str, limit: Optional[int]) -> dict:

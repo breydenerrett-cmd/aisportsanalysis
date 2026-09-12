@@ -1,0 +1,211 @@
+/**
+ * PLAYER PROPS (#/props, GET /props/{date}).
+ *
+ * WHY THIS SCREEN EXISTS
+ * ----------------------
+ * THE CARD can only ever show two kinds of bet -- a moneyline or a run line
+ * -- so every night it showed the same shape: whichever side the market
+ * already liked most. Meanwhile seventeen thousand player-prop prices sat in
+ * the store and nothing in the product read one of them.
+ *
+ * THE ORDER, AND IT IS THE WHOLE POINT OF THE SCREEN
+ * --------------------------------------------------
+ * Two numbers per row, asked in this order and never the other way round:
+ *
+ *   OURS  -- how likely we think it is. Built from that batter's own game
+ *            log before tonight. No price is read to produce it.
+ *   NEEDS -- what the best price on offer requires before it is worth
+ *            taking.
+ *
+ * Rows are ordered by OURS. They are never ordered by the gap between the
+ * two, and the server does not order them that way either: picking bets by
+ * that gap was measured returning -13.4% against -9.1% for taking everything,
+ * so sorting by it would put the worst rows on top while looking clever.
+ *
+ * So this is a BOARD. It carries no pick, no star, no label saying take
+ * this. A row can be very likely and poor value at the same time -- most of
+ * them are -- and both numbers are shown precisely so a reader can see that
+ * for themselves.
+ */
+
+import { apiGet } from "./api.js";
+import {
+  el, clear, renderError, formatAmerican, formatSlateDate,
+} from "./dom.js";
+
+/** Human names for the market keys the API returns. */
+const MARKET_LABELS = {
+  batter_hits: "hits",
+  batter_total_bases: "total bases",
+  batter_runs_scored: "runs",
+};
+
+function marketLabel(market) {
+  return MARKET_LABELS[market] || String(market || "").replace(/_/g, " ");
+}
+
+function percent(value) {
+  if (value === null || value === undefined) return null;
+  return `${(Number(value) * 100).toFixed(0)}%`;
+}
+
+/**
+ * "Jeff McNeil under 1.5 hits" -- the bet as a person would say it aloud,
+ * not as the feed stores it.
+ */
+function betSentence(row) {
+  const side = String(row.side || "").toLowerCase();
+  return `${row.player} ${side} ${row.line} ${marketLabel(row.market)}`;
+}
+
+/**
+ * The two numbers, side by side, with the comparison spelled out rather than
+ * left as arithmetic for the reader.
+ *
+ * A row where ours is below what the price needs is the ordinary case and is
+ * stated plainly. Nothing here calls that a reason to bet or a reason not
+ * to; it is the fact, and the fact is what the screen is for.
+ */
+function numbers(row) {
+  const wrap = el("div", { class: "prop-row__numbers" });
+
+  const mine = el("div", { class: "prop-row__stat" });
+  mine.appendChild(el("span", { class: "prop-row__stat-label", text: "OURS" }));
+  mine.appendChild(el("span", {
+    class: "prop-row__stat-value", "data-hook": "prop-probability",
+    text: percent(row.probability) || "--",
+  }));
+  wrap.appendChild(mine);
+
+  const needed = el("div", { class: "prop-row__stat" });
+  needed.appendChild(el("span", {
+    class: "prop-row__stat-label", text: "PRICE NEEDS",
+  }));
+  needed.appendChild(el("span", {
+    class: "prop-row__stat-value prop-row__stat-value--muted",
+    "data-hook": "prop-breakeven",
+    text: percent(row.breakeven) || "--",
+  }));
+  wrap.appendChild(needed);
+
+  return wrap;
+}
+
+/** Where the plate-appearance estimate came from, in plain words.
+ *
+ * It matters and it is not decoration: batting first is about 4.5 trips to
+ * the plate and batting ninth about 3.5, which is a quarter more chances at
+ * the same line. Before the lineup posts we are using his season average and
+ * the row says so instead of pretending to know. */
+function plateAppearances(row) {
+  const pa = row.expected_pa;
+  if (pa === null || pa === undefined) return null;
+  const slot = row.batting_slot;
+  const text = slot
+    ? `batting ${slot}${slot === 1 ? "st" : slot === 2 ? "nd" : slot === 3 ? "rd" : "th"} · about ${Number(pa).toFixed(1)} times up`
+    : `about ${Number(pa).toFixed(1)} times up (lineup not posted yet)`;
+  return el("p", { class: "prop-row__pa", "data-hook": "prop-pa", text });
+}
+
+function propRow(row) {
+  const card = el("li", { class: "prop-row panel chamfer", "data-hook": "prop-row" });
+
+  card.appendChild(el("p", {
+    class: "prop-row__bet", "data-hook": "prop-bet", text: betSentence(row),
+  }));
+
+  card.appendChild(numbers(row));
+
+  const price = formatAmerican(row.price);
+  if (price !== null && price !== undefined) {
+    card.appendChild(el("p", {
+      class: "prop-row__price", "data-hook": "prop-price",
+      text: `${price} at ${row.book || "book"}`,
+    }));
+  }
+
+  const pa = plateAppearances(row);
+  if (pa) card.appendChild(pa);
+
+  return card;
+}
+
+/**
+ * The header. It says what the list is and what it is not, once, at the top,
+ * because a list of numbers with no frame reads as a list of bets.
+ */
+function heading(payload) {
+  const head = el("header", { class: "props__head" });
+  head.appendChild(el("p", {
+    class: "props__eyebrow", "data-hook": "props-date",
+    text: formatSlateDate(payload.date) || payload.date || "",
+  }));
+  head.appendChild(el("h2", {
+    class: "props__title", text: "What is most likely tonight",
+  }));
+  head.appendChild(el("p", {
+    class: "props__lede", "data-hook": "props-lede",
+    text: "Ordered by how likely we think each one is. The price each one "
+        + "needs is shown beside it. Winning often and being worth the price "
+        + "are different things, and plenty of these are the first without "
+        + "the second.",
+  }));
+  return head;
+}
+
+/** Counts, so a short list reads as a short list and not as a broken page. */
+function counts(payload) {
+  const got = payload.counts || {};
+  if (!got.contracts) return null;
+  const parts = [`${got.contracts} priced`];
+  if (got.likely !== undefined) parts.push(`${got.likely} better than a coin`);
+  if (got.markets && got.markets.length) {
+    parts.push(got.markets.map(marketLabel).join(" · "));
+  }
+  return el("p", {
+    class: "props__counts", "data-hook": "props-counts",
+    text: parts.join("  ·  "),
+  });
+}
+
+export async function renderProps(container, date) {
+  clear(container);
+  const screen = el("section", { class: "props", "data-hook": "props-screen" });
+  container.appendChild(screen);
+
+  const host = el("div", { "data-hook": "props-host" });
+  screen.appendChild(host);
+  host.appendChild(el("p", {
+    class: "props__loading", "data-hook": "props-loading",
+    text: "Reading tonight's board...",
+  }));
+
+  let payload;
+  try {
+    const path = date ? `/props/${encodeURIComponent(date)}` : "/props";
+    payload = await apiGet(path);
+  } catch (err) {
+    clear(host);
+    renderError(host, err);
+    return;
+  }
+
+  clear(host);
+  host.appendChild(heading(payload));
+
+  const rows = payload.contracts || [];
+  if (!rows.length) {
+    host.appendChild(el("p", {
+      class: "props__empty", "data-hook": "props-empty",
+      text: payload.reason || "Nothing priced for this slate yet.",
+    }));
+    return;
+  }
+
+  const list = el("ul", { class: "props__list", "data-hook": "props-list" });
+  rows.forEach((row) => list.appendChild(propRow(row)));
+  host.appendChild(list);
+
+  const tally = counts(payload);
+  if (tally) host.appendChild(tally);
+}
