@@ -1112,3 +1112,6 @@
 {"fetched_utc": "2026-09-12T15:40:58.900277+00:00", "game_date": "2026-09-12", "poll": true}
 {"category": "optioned", "date": "2026-09-12", "first_seen_utc": "2026-09-12T15:40:58.900277+00:00", "player": "Clayton Beeter", "player_id": 690925, "team": "WSH", "transaction_id": 942137}
 {"fetched_utc": "2026-09-12T15:41:00.919327+00:00", "game_date": "2026-09-12", "poll": true}
+{"fetched_utc": "2026-09-12T16:25:57.544801+00:00", "game_date": "2026-09-12", "poll": true}
+{"category": "il_activation", "date": "2026-09-12", "first_seen_utc": "2026-09-12T16:25:57.544801+00:00", "player": "Richard Lovelady", "player_id": 663992, "team": "WSH", "transaction_id": 942139}
+{"fetched_utc": "2026-09-12T16:25:58.741379+00:00", "game_date": "2026-09-12", "poll": true}
