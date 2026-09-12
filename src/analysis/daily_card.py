@@ -182,6 +182,41 @@ def _fmt_runs(x) -> str:
     return "—" if x is None else f"{float(x):.1f}"
 
 
+def _format_american(price) -> str:
+    """"-205", "+118". The sign is the whole meaning of the number."""
+    if price is None:
+        return "—"
+    try:
+        value = int(round(float(price)))
+    except (TypeError, ValueError):
+        return "—"
+    return f"+{value}" if value > 0 else str(value)
+
+
+def _breakeven_pct(price) -> Optional[str]:
+    """How often this price has to win before it stops losing money.
+
+    This is the implied probability of the STATED price, vig and all --
+    deliberately not de-vigged. A reader is not being told what the market
+    thinks; they are being told what THEY have to be right about to come out
+    level, and the vig is part of what they pay. The de-vigged consensus is
+    already on the same line as `market_probability`.
+
+    Returns None on an unusable price rather than a placeholder: a sentence
+    asserting a break-even it could not compute is worse than one that
+    stops early.
+    """
+    if price is None:
+        return None
+    try:
+        implied = odds_math.american_to_probability(price)
+    except (odds_math.OddsError, TypeError, ValueError, ZeroDivisionError):
+        return None
+    if not implied or not 0.0 < implied < 1.0:
+        return None
+    return f"{round(implied * 100)}%"
+
+
 def _bet_sentence(pick) -> str:
     """The instruction, on its own line, with nothing else in it.
 
@@ -227,8 +262,19 @@ def _why_sentences(pick) -> list:
     # `model_probability` have been overwritten with cover probabilities, and
     # printing those under the words "to win" would describe the wrong bet.
     market_pct = _fmt_pct(pick["confidence"])
-    model_pct = _fmt_pct(pick.get("model_probability_moneyline",
-                                  pick["model_probability"]))
+    # EXPLICIT None, not `.get(key, default)`.
+    #
+    # Nothing ever WRITES `model_probability_moneyline` -- it is read here
+    # and frozen by src/appstate/card_ledger.py, which means every pick in
+    # evidence/cards_v1.jsonl carries it as an explicit null. `.get(key,
+    # default)` returns the default only when the key is ABSENT, so a pick
+    # re-read from the ledger would take None and render the model's
+    # percentage as an em dash -- the number missing from the sentence that
+    # exists to compare it.
+    moneyline_p = pick.get("model_probability_moneyline")
+    if moneyline_p is None:
+        moneyline_p = pick.get("model_probability")
+    model_pct = _fmt_pct(moneyline_p)
     if pick["label"] == LABEL_SPLIT:
         out.append(
             f"The market makes {pick['team_name']} a {market_pct} bet to win. "
@@ -255,22 +301,50 @@ def _why_sentences(pick) -> list:
         # no pick count: the card still publishes what it published, it just
         # stops describing a gap against us as though it were support.
         gap_points = (pick["model_probability"] - pick["confidence"]) * 100.0
+        # THE NUMBER THE PRICE ACTUALLY REQUIRES, which the card has never
+        # printed.
+        #
+        # The owner, 2026-09-11, looking at a published pick reading "the
+        # market makes Dodgers a 65% bet to win and our own numbers agree at
+        # 51%" at a price of -205: "the value just isn't there still".
+        # He was right and the page gave him no way to see it -- -205 needs
+        # 67.2% to break even, so 51% is not a close call, it is a bet our
+        # own model says loses. Two percentages were on the page and the
+        # third, the only one that decides, was not.
+        #
+        # MONEYLINE PICKS ONLY. On a run-line pick this sentence is about
+        # who WINS while `price` is for a different bet entirely (see the
+        # comment above on both numbers being moneyline numbers), and
+        # printing that break-even here would attach one bet's threshold to
+        # another bet's sentence.
+        needed_pct = None
+        if pick.get("market") == "moneyline":
+            needed_pct = _breakeven_pct(pick.get("price"))
+        # The threshold sentence, appended to whichever comparison follows.
+        # Stated as what the PRICE needs, never as a verdict on the bet: the
+        # reader is given the third number and left to do the one comparison
+        # that matters.
+        needs = (f" At {_format_american(pick['price'])} you need "
+                 f"{needed_pct} to break even."
+                 if needed_pct else "")
+
         if abs(gap_points) < AGREEMENT_BAND_POINTS:
             out.append(
                 f"The market makes {pick['team_name']} a {market_pct} bet to "
                 f"win and our own numbers land in the same place at "
-                f"{model_pct}.")
+                f"{model_pct}.{needs}")
         elif gap_points > 0:
             out.append(
                 f"The market makes {pick['team_name']} a {market_pct} bet to "
                 f"win. Our own numbers make it {model_pct} — a little higher "
-                f"than the market, so the price is in your favour.")
+                f"than the market, so the price is in your favour.{needs}")
         else:
             out.append(
                 f"The market makes {pick['team_name']} a {market_pct} bet to "
                 f"win. Our own numbers make it {model_pct} — lower than the "
                 f"market, so we agree on the winner but the price is against "
-                f"you. This is a read on the game, not value at this price.")
+                f"you. This is a read on the game, not value at this "
+                f"price.{needs}")
 
     alt = pick.get("alternative")
     if alt and alt.get("trade"):
