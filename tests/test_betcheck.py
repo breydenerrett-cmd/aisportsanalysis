@@ -278,15 +278,24 @@ class MarketContextTests(unittest.TestCase):
                                 board=board(rows=3), findings=[])
         self.assertFalse(result["market_context"]["available"])
 
-    def test_stated_price_beating_consensus_is_labelled_line_shopping_value(self):
+    def test_stated_price_beating_consensus_is_about_the_price_not_the_game(self):
         # Home consensus at -110/-110 implies ~0.5238; a stated +150 on the
         # home side beats that consensus by a wide margin.
+        #
+        # The note used to end "-- that is line-shopping value, not expected
+        # value and not a prediction." The owner retired that register on
+        # 2026-09-10; the fact survives, the caption does not. The note now
+        # says what it is about (the price) and what it is not about (who
+        # wins), in words a reader uses.
         result = betcheck.check("Yankees ML +150", game_dossier(),
                                 board=board(), findings=[])
         context = result["market_context"]
         self.assertTrue(context["available"])
         self.assertTrue(context["beats_consensus"])
-        self.assertIn("line-shopping value", context["note"])
+        self.assertIn("fair price", context["note"])
+        self.assertIn("not about who wins", context["note"])
+        self.assertNotIn("line-shopping", context["note"])
+        self.assertNotIn("expected value", context["note"])
 
     def test_stated_price_worse_than_consensus_never_called_ev(self):
         result = betcheck.check("Yankees ML -500", game_dossier(),

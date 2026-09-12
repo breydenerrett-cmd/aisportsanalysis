@@ -15,7 +15,7 @@ WHAT THIS IS NOT
 ----------------
 Not a predictor. Not a recommendation engine. The record this module is
 required to state on every call is unchanged from the rest of the product:
-27 pre-registered hypotheses across four families (src/analysis/__init__.py)
+the registry's count of pre-registered hypotheses (src/analysis/__init__.py)
 have been measured against outcomes and none has survived. A bet's stated
 price beating the de-vigged consensus is LINE-SHOPPING VALUE -- a better
 execution price -- and is labelled exactly that, never expected value and
@@ -318,14 +318,14 @@ def _market_context(price, side, board) -> dict:
 
     note = None
     if beats_consensus is True:
-        note = (f"the stated price {_fmt_price(price)} beats the de-vigged "
-               f"consensus by {stated_vs_consensus_points * 100:.2f} "
-               "probability points -- that is line-shopping value, not "
-               "expected value and not a prediction.")
+        note = (f"the stated price {_fmt_price(price)} is better than the "
+               f"fair price across the books by "
+               f"{stated_vs_consensus_points * 100:.2f} points. That is "
+               "about the price, not about who wins.")
     elif beats_consensus is False:
-        note = (f"the stated price {_fmt_price(price)} does not beat the "
-               "de-vigged consensus; this is price context, never expected "
-               "value.")
+        note = (f"the stated price {_fmt_price(price)} is worse than the "
+               "fair price across the books. That is about the price, not "
+               "about who wins.")
 
     return {
         "available": True,
@@ -345,8 +345,7 @@ def _market_context(price, side, board) -> dict:
 _NO_EDGE_DISCLAIMER = (
     f"No predictive edge is claimed here: {analysis.HYPOTHESES_TESTED} "
     f"pre-registered hypotheses across {analysis.HYPOTHESIS_FAMILIES_WORD} "
-    "families have been measured against outcomes and none has survived. "
-    "Price context above is line-shopping value, never expected value.")
+    "families have been measured against outcomes and none has survived.")
 
 
 def _bottom_line(supporting, opposing) -> dict:
@@ -634,9 +633,8 @@ def _bottom_line_text(support_n, counter_n, market) -> str:
         cents = market["cents_delta"]
         best = market["best_available_price"]
         if cents is None or best is None:
-            price_clause = (" The stated price sits against a de-vigged "
-                            "consensus below -- line-shopping value, not a "
-                            "prediction.")
+            price_clause = (" The stated price sits against the fair price "
+                            "across the books, shown above.")
         # DIRECTION, stated once so it cannot be re-derived wrong: for two
         # same-sign American prices on the same side, a HIGHER number is the
         # better price for the bettor (-105 risks less than -110 to win the
@@ -646,14 +644,12 @@ def _bottom_line_text(support_n, counter_n, market) -> str:
         elif cents > 0:
             unit = "cent" if cents == 1 else "cents"
             price_clause = (f" The stated price is {cents} {unit} better than "
-                           f"the best available {_fmt_price(best.american_price)} "
-                           "-- line-shopping value, not a prediction.")
+                           f"the best available {_fmt_price(best.american_price)}.")
         elif cents < 0:
             unit = "cent" if abs(cents) == 1 else "cents"
             price_clause = (f" The stated price is {abs(cents)} {unit} worse "
                            f"than the best available "
-                           f"{_fmt_price(best.american_price)} -- "
-                           "line-shopping value, not a prediction.")
+                           f"{_fmt_price(best.american_price)}.")
         else:
             price_clause = (" The stated price matches the best available "
                             "price on the board.")

@@ -11,9 +11,10 @@ imports a JS engine. tests/test_web_structure.py's BetCheckSkeletonOrder
 already pins the five mandated data-hook markers in order; this file adds
 the checks specific to this lane's boundary:
 
-  - block 01 wires in the shared Featured Bet primitive (web/js/
-    featuredbet.js) rather than a bespoke price readout, and does so
-    honestly (no verdict/priceStanding guessed at);
+  - block 01 states the bet in words and no longer mounts the shared
+    Featured Bet tile -- that tile is the price-comparison register the
+    owner retired on 2026-09-10 (see tests/test_web_betcheck_register.py);
+    it still never guesses a verdict or price standing;
   - the ten-block skeleton keeps SIMILAR BETS / YOUR HISTORY as
     permanently NOT YET AVAILABLE (no field anywhere backs either);
   - the free-check meter and the 402 wall read the server's own
@@ -42,29 +43,34 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
-class FeaturedBetWiredHonestly(unittest.TestCase):
-    """V2-32: block 01 is the shared Featured Bet Tier-A hero, not a
-    fork of it, and it never guesses at the two fields POST /betcheck
-    cannot supply."""
+class BlockOneIsThePlainBet(unittest.TestCase):
+    """Block 01 states the bet in words. It no longer mounts featuredbet.js.
+
+    V2-32 had it mount the shared Featured Bet tile, and this class used to
+    enforce that. The tile is five rows of price comparison -- PRICE
+    STANDING, BEATS CONSENSUS, IMPROVEMENT, BOARD DEPTH, "N BOOKS COMPARED"
+    -- which the owner retired on 2026-09-10 ("that has to stop. None of
+    that's important."). tests/test_web_betcheck_register.py owns the
+    full ban; this keeps the V2 contract that block 01 never GUESSES.
+    """
 
     def setUp(self):
         self.text = _read(BETCHECK_PATH)
 
-    def test_imports_the_shared_primitive_not_a_fork(self):
-        self.assertIn('from "./featuredbet.js"', self.text)
-        self.assertIn("renderFeaturedBet", self.text)
-        self.assertIn("mapBetCheckPayloadToStanding", self.text)
-        # No second definition of either function in this file.
-        self.assertNotRegex(self.text, r"\bfunction\s+renderFeaturedBet\s*\(")
-        self.assertNotRegex(self.text, r"\bfunction\s+mapBetCheckPayloadToStanding\s*\(")
+    def test_does_not_mount_the_price_tile(self):
+        self.assertNotIn('from "./featuredbet.js"', self.text)
+        self.assertNotIn("renderFeaturedBet", self.text)
 
     def test_never_guesses_a_verdict_or_price_standing(self):
-        # This screen has no second fetch to source a verdict from, and no
-        # per-book board to count a price-standing rank against -- the
-        # call site must pass no extra fields for either, letting
-        # featuredbet.js's own honest-absence rendering take over.
+        # Still true, and now trivially: there is no tile to hand them to.
         self.assertNotRegex(self.text, r"verdict\s*:\s*[\"']\w+[\"']")
         self.assertNotRegex(self.text, r"priceStanding\s*:\s*\{")
+
+    def test_the_bet_sentence_reads_off_real_fields_only(self):
+        body = self.text.split("function renderTheBet(")[1].split("\nfunction ")[0]
+        self.assertIn("result.query", body)
+        self.assertIn("result.game", body)
+        self.assertIn("teamName(", body)
 
 
 class TenBlockSkeletonV2(unittest.TestCase):
@@ -76,7 +82,10 @@ class TenBlockSkeletonV2(unittest.TestCase):
         self.text = _read(BETCHECK_PATH)
 
     def test_ten_blocks_present_in_order(self):
-        titles = ["THE BET", "THE MARKET", "THE CASE", "COUNTERARGUMENT",
+        # 02 was THE MARKET until 2026-09-12 -- a your-price / fair-price /
+        # best-available section with a YES/NO line under it. Now THE
+        # NUMBERS: how likely, then what the price needs, no verdict.
+        titles = ["THE BET", "THE NUMBERS", "THE CASE", "COUNTERARGUMENT",
                   "WHAT CHANGED", "HISTORICAL SUPPORT", "EVIDENCE STATUS",
                   "SIMILAR BETS", "YOUR HISTORY", "BOTTOM LINE"]
         positions = []
@@ -95,7 +104,7 @@ class TenBlockSkeletonV2(unittest.TestCase):
         assembly = self.text.split("function renderResult(")[1].split("\nfunction ")[0]
         call_order = [m.group(1) for m in re.finditer(r"render(\w+)\(", assembly)]
         # The ten render calls, in the order they must be appended.
-        expected_calls = ["TheBet", "Market", "Case", "Counterargument",
+        expected_calls = ["TheBet", "Numbers", "Case", "Counterargument",
                            "WhatChanged", "Historical", "EvidenceStatus",
                            "SimilarBets", "YourHistory", "BottomLine"]
         filtered = [c for c in call_order if c in expected_calls]

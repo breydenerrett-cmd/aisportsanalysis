@@ -13,9 +13,19 @@
  * this product's honesty mechanism -- docs/PRODUCT_DESIGN_HANDOFF.md: "an
  * omission becomes visible only if the shape never changes"):
  *
- *   01 THE BET              (data-hook="bet-check-your-bet") -- the Featured
- *      Bet Tier-A hero (web/js/featuredbet.js), NOT a plain price readout
- *   02 THE MARKET           (data-hook="bet-check-prices")
+ *   01 THE BET              (data-hook="bet-check-your-bet") -- the bet,
+ *      stated plainly. Until 2026-09-12 this mounted the Featured Bet
+ *      tile (PRICE STANDING / BEATS CONSENSUS / IMPROVEMENT / BOARD
+ *      DEPTH / N BOOKS COMPARED), which is the register the owner
+ *      retired on 2026-09-10: "this whole we do price verification and
+ *      see which book has the better odds, dude, that has to stop. None
+ *      of that's important. Nobody fucking cares." It was still the
+ *      dominant content of this page two days later.
+ *   02 THE NUMBERS          (data-hook="bet-check-prices") -- two numbers
+ *      in the owner's order: how likely it is, then what the price
+ *      needs. No verdict word, no improvement figure, no best-of-N-books
+ *      section. The one line of execution detail (best price seen, at
+ *      which book) sits at the bottom of this block and nowhere else.
  *   03 THE CASE             (data-hook="bet-check-support")
  *   04 COUNTERARGUMENT      (data-hook="bet-check-counterargument")
  *   05 WHAT CHANGED         -- usually NOT YET AVAILABLE
@@ -101,34 +111,14 @@
 
 import { apiFetch, apiPost, getToken, getFreeCheckToken, setFreeCheckToken, isPublicDemo } from "./api.js";
 import { el, clear, renderUnknown, renderError, renderLoading, notYetAvailable,
-  formatAmerican, formatConsensusShare, formatEasternClock, formatAge, renderWordChip, priceVerdictTone } from "./dom.js";
-import { bookLabel, FAIR_LABEL } from "./labels.js";
+  formatAmerican, formatConsensusShare, formatEasternClock } from "./dom.js";
+import { bookLabel, teamName } from "./labels.js";
 import { setShellStatus } from "./shell.js";
 import { armEntrances } from "./motion.js";
-import { renderFeaturedBet, mapBetCheckPayloadToStanding } from "./featuredbet.js";
-import { renderValueMeter } from "./valuemeter.js";
 import { fillResearchCount } from "./meta.js";
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
-}
-
-/** Cents between two American prices on the same side -- the unit the
- * API's own bottom line uses ("8 cents worse than the best available
- * -132"). Plain arithmetic on two supplied integers; countable by the
- * reader at the books. */
-function centsBetween(a, b) {
-  if (typeof a !== "number" || typeof b !== "number") return null;
-  return Math.abs(a - b);
-}
-
-/** True when `candidate` pays strictly better than `reference` on the
- * same side. Higher payout, not "more likely" -- this client never makes
- * a probability claim. */
-function paysBetter(candidate, reference) {
-  if (typeof candidate !== "number" || typeof reference !== "number") return null;
-  const payout = (p) => (p > 0 ? p / 100 : 100 / -p);
-  return payout(candidate) > payout(reference);
 }
 
 /** "4:12pm ET" -- the compact clock style every V2 screen uses. */
@@ -208,21 +198,36 @@ function line(text, kind, sample) {
 }
 
 /* ---------------------------------------------------------------------
- * 01 -- THE BET (the Featured Bet Tier-A hero; V2-32)
+ * 01 -- THE BET, stated plainly.
+ *
+ * This used to mount web/js/featuredbet.js's tile under a "TIER A" chip.
+ * That tile is five rows of price comparison -- PRICE STANDING, BEATS
+ * CONSENSUS, IMPROVEMENT, BOARD DEPTH, "10 BOOKS COMPARED" -- and a
+ * caption reading "price improvement / line-shopping value". The owner
+ * retired that register and it was still the first thing on the page.
+ * "TIER A" meant nothing to a reader either.
  * ------------------------------------------------------------------- */
 
 function renderTheBet(result) {
   const section = block("01", "THE BET", {
     attrs: { "data-hook": "bet-check-your-bet" },
-    chip: { text: "TIER A", tone: "live" },
   });
-  const mount = el("div", { class: "bc2-fbmount" });
-  section.appendChild(mount);
-  // Neither `verdict` nor `priceStanding` is supplied: this screen has no
-  // second fetch to source a verdict from, and no per-book board to count
-  // a rank against -- both render as that module's own honest NOT
-  // AVAILABLE, exactly as its docstring requires. Never guessed here.
-  renderFeaturedBet(mount, mapBetCheckPayloadToStanding(result, {}));
+  const query = result.query || {};
+  const game = result.game || {};
+  const code = query.team
+    || (query.side === "home" ? game.home : query.side === "away" ? game.away : null);
+  const team = teamName(code) || code || "This side";
+  const price = typeof query.price === "number" ? formatAmerican(query.price) : null;
+  section.appendChild(el("p", { class: "bc2-bet__line", "data-hook": "bet-check-bet-sentence",
+    text: `${team} to win${price ? ` at ${price}` : ""}` }));
+  const bits = [];
+  if (game.away && game.home) bits.push(`${game.away} at ${game.home}`);
+  const clock = et(game.start_time_utc);
+  if (clock) bits.push(`first pitch ${clock}`);
+  if (bits.length) {
+    section.appendChild(el("p", { class: "bc2-block__note", "data-hook": "bet-check-bet-game",
+      text: bits.join(" · ") }));
+  }
   return section;
 }
 
@@ -302,7 +307,7 @@ function renderCounterargument(result) {
 }
 
 /* ---------------------------------------------------------------------
- * 02 -- THE MARKET (price / consensus / improvement)
+ * 02 -- THE NUMBERS (how likely it is, then what the price needs)
  *
  * Defined here, textually AFTER blocks 03/04, purely so this file's
  * data-hook literals stay in the exact order
@@ -313,170 +318,81 @@ function renderCounterargument(result) {
  * definition without re-checking that test.
  * ------------------------------------------------------------------- */
 
-function renderMarket(result) {
-  const section = block("02", "THE MARKET", { attrs: { "data-hook": "bet-check-prices" } });
-  const best = result.best_available_price;
-  const consensus = result.market_consensus;
-  const yours = result.query && typeof result.query.price === "number" ? result.query.price : null;
+function renderNumbers(result) {
+  const section = block("02", "THE NUMBERS", { attrs: { "data-hook": "bet-check-prices" } });
+  const consensus = result.market_consensus || null;
+  const verdict = result.price_verdict || null;
+  // Both figures are the server's. This client never derives a chance from
+  // a price on its own.
+  const needs = verdict && typeof verdict.stated_implied_probability === "number"
+    ? verdict.stated_implied_probability : null;
+  const makes = consensus && typeof consensus.implied_probability === "number"
+    ? consensus.implied_probability : null;
+  const books = consensus && typeof consensus.books === "number" ? consensus.books : null;
 
-  if (!best && !consensus) {
-    section.appendChild(notYetAvailable(
-      "No book has posted a price on this game yet, so there is nothing to compare your price against.",
-      "NO PRICE CAPTURED"));
+  if (needs === null && makes === null) {
+    const why = (verdict && Array.isArray(verdict.reasons) && verdict.reasons[0])
+      || "No book has posted a price on this game yet.";
+    section.appendChild(notYetAvailable(why, "NO NUMBERS YET"));
     return section;
   }
 
+  // Two figures, deliberately the same size. Making one larger would be the
+  // screen deciding for the reader.
   const cells = el("div", { class: "bc2-market" });
-  if (typeof yours === "number") {
-    const cell = el("div", { class: "bc2-market__cell" });
-    cell.appendChild(el("div", { class: "bc2-market__label", text: "YOUR PRICE" }));
-    cell.appendChild(el("div", { class: "bc2-market__figure", text: formatAmerican(yours) }));
-    cells.appendChild(cell);
-  }
-  if (consensus && typeof consensus.implied_probability === "number") {
+  if (makes !== null) {
     const cell = el("div", { class: "bc2-market__cell bc2-market__cell--accent" });
-    cell.appendChild(el("div", { class: "bc2-market__label", text: FAIR_LABEL }));
+    cell.appendChild(el("div", { class: "bc2-market__label", text: "THE MARKET MAKES IT" }));
     const row = el("div", { class: "bc2-market__row" });
     row.appendChild(el("span", { class: "bc2-market__figure", "data-hook": "market-consensus",
-      text: formatConsensusShare(consensus.implied_probability) }));
-    if (typeof consensus.books === "number") {
-      row.appendChild(el("span", { class: "bc2-market__sample", text: `across ${consensus.books} books` }));
+      text: formatConsensusShare(makes) }));
+    if (books !== null) {
+      row.appendChild(el("span", { class: "bc2-market__sample", text: `across ${books} books` }));
     }
     cell.appendChild(row);
     cells.appendChild(cell);
   }
-  if (best) {
-    const cell = el("div", { class: "bc2-market__cell bc2-market__cell--pill" });
-    cell.appendChild(el("div", { class: "bc2-market__label", text: "BEST AVAILABLE" }));
-    const pill = el("div", { class: "bc2-market__pill", "data-hook": "best-available-price" });
-    pill.appendChild(el("span", { text: formatAmerican(best.american_price) }));
-    if (best.book) pill.appendChild(el("span", { class: "bc2-market__pill-book", text: bookLabel(best.book) }));
-    cell.appendChild(pill);
-    // A checkable line-shopping tip: a real, named, better price at a
-    // named book -- never expected value, never an edge. Absent entirely
-    // when the reader's own price already is the best one.
-    const better = yours !== null ? paysBetter(best.american_price, yours) : null;
-    const cents = centsBetween(best.american_price, yours);
-    if (better && cents) {
-      cell.appendChild(el("div", { class: "bc2-market__advantage", "data-hook": "price-improvement",
-        text: `${cents}c BETTER AT ${bookLabel(best.book)}` }));
-    }
+  if (needs !== null) {
+    const cell = el("div", { class: "bc2-market__cell" });
+    cell.appendChild(el("div", { class: "bc2-market__label", text: "THE PRICE NEEDS" }));
+    cell.appendChild(el("div", { class: "bc2-market__figure", "data-hook": "price-needs",
+      text: formatConsensusShare(needs) }));
     cells.appendChild(cell);
   }
   section.appendChild(cells);
 
-  section.appendChild(el("p", { class: "bc2-block__note", "data-hook": "your-price-beats-consensus",
-    text: result.your_price_beats_consensus === null || result.your_price_beats_consensus === undefined
-      ? "YOUR PRICE VS MARKET-IMPLIED CONSENSUS: NOT AVAILABLE"
-      : `YOUR PRICE BEATS THE MARKET-IMPLIED CONSENSUS: ${result.your_price_beats_consensus ? "YES" : "NO"}` }));
-
-  if (result.price_improvement && result.price_improvement.label) {
-    section.appendChild(el("p", { class: "bc2-block__note bc2-block__note--muted",
-      text: String(result.price_improvement.label) }));
+  // The comparison in one plain sentence, and no verdict on it.
+  const parts = [];
+  if (needs !== null) {
+    parts.push(`You need this to win ${formatConsensusShare(needs)} of the time just to break even.`);
   }
+  if (makes !== null) {
+    parts.push(`The market, with its cut taken back out, puts it at ${formatConsensusShare(makes)}.`);
+  }
+  section.appendChild(el("p", { class: "bc2-block__note", "data-hook": "bet-check-numbers-sentence",
+    text: parts.join(" ") }));
 
-  // No age_seconds field exists on this payload at all (design/linehound-v2/
-  // RECONCILED_CONTRACT_CURRENT_HEAD.md, priority answer 4) -- only a
-  // capture instant. Shown as a clock, never as a fabricated "X min ago".
-  const observed = et(best && best.observed_utc);
-  section.appendChild(el("p", { class: "bc2-block__foot",
-    // `age_seconds` was the payload's field name. The point being made is
-    // that this endpoint gives a capture instant and no age, so no "X min
-    // ago" can be shown without inventing it. That point survives; the
-    // field name does not.
-    text: observed ? `CAPTURED ${observed} · NO AGE ON THIS FEED, ONLY THE CAPTURE TIME`
-      : "NO CAPTURE TIME ON THIS FEED" }));
+  // Whose number the first one is. We do not have our own on a moneyline
+  // here, and saying so beats implying we do.
+  section.appendChild(el("p", { class: "bc2-block__note bc2-block__note--muted",
+    "data-hook": "bet-check-our-number",
+    text: "We do not have a number of our own on this one. The market's is what "
+        + "we have, and it already carries what every book knows." }));
+
+  // The single line of execution detail this page keeps. Which book had the
+  // best price is worth one line once you already like the bet; it is not a
+  // reason to like the bet, so it does not get a section.
+  const best = result.best_available_price || null;
+  if (best && typeof best.american_price === "number") {
+    const observed = et(best.observed_utc);
+    const bits = [`Best we saw: ${formatAmerican(best.american_price)} at ${bookLabel(best.book) || "a book"}`];
+    if (observed) bits.push(`captured ${observed}`);
+    section.appendChild(el("p", { class: "bc2-block__foot", "data-hook": "best-available-price",
+      text: bits.join(" · ") }));
+  }
   return section;
 }
 
-/* ---------------------------------------------------------------------
- * PRICE VERDICT -- src/analysis/priceverdict.py's build_price_verdict,
- * carried on POST /betcheck's own `price_verdict` field. Not one of the
- * mandated ten blocks (BetCheckSkeletonOrder pins exactly five hooks in
- * order; this is a new, additional panel), placed right after block 02
- * THE MARKET in renderResult's assembly, since it is the same market-
- * versus-your-price comparison in a single-word, single-glance form.
- *
- * INSUFFICIENT DATA renders ONLY the reasons/risks sentences that explain
- * why -- never a fair price, your price, or a value meter drawn from
- * numbers the verdict itself says it does not have.
- * ------------------------------------------------------------------- */
-
-function renderPriceVerdict(result) {
-  const verdict = result.price_verdict || null;
-  // Visually the dominant block on the screen (spec: "the result blocks
-  // as confident cards with the PRICE VERDICT block visually dominant") --
-  // a tone class matching the shared pv-chip colour map (dom.js's
-  // priceVerdictTone) tints the whole card's left rule and background, not
-  // just the small chip inside it, so the verdict reads before any text
-  // is parsed.
-  const tone = verdict ? priceVerdictTone(verdict.word) : "outline";
-  const section = el("section", { class: `pv-block pv-block--${tone} panel chamfer`, "data-hook": "bet-check-price-verdict",
-    "data-rise": "" });
-  const head = el("div", { class: "pv-block__head" });
-  head.appendChild(el("span", { class: "pv-block__eyebrow", text: "PRICE VERDICT" }));
-  section.appendChild(head);
-
-  if (!verdict) {
-    section.appendChild(notYetAvailable("No price verdict on this response.", "NO VERDICT"));
-    return section;
-  }
-
-  section.appendChild(renderWordChip(verdict.word));
-
-  if (verdict.word === "INSUFFICIENT DATA") {
-    for (const r of verdict.reasons || []) section.appendChild(el("p", { class: "pv-block__reason", text: r }));
-    for (const r of verdict.risks || []) section.appendChild(el("p", { class: "pv-block__risk", text: r }));
-    if (!(verdict.reasons || []).length && !(verdict.risks || []).length) {
-      section.appendChild(el("p", { class: "pv-block__reason", text: "No reason given." }));
-    }
-    return section;
-  }
-
-  const yourPrice = result.query && typeof result.query.price === "number"
-    ? formatAmerican(result.query.price) : null;
-  const fairPrice = formatAmerican(verdict.fair_price);
-  const figs = el("div", { class: "pv-block__figs" });
-  figs.appendChild(el("div", { class: "pv-block__fig" }, [
-    el("div", { class: "pv-block__fig-label", text: "YOUR PRICE" }),
-    el("div", { class: "pv-block__fig-value" },
-      [yourPrice ? document.createTextNode(yourPrice) : notYetAvailable("No price stated.", "NO PRICE")]),
-  ]));
-  figs.appendChild(el("div", { class: "pv-block__fig" }, [
-    el("div", { class: "pv-block__fig-label", text: "FAIR PRICE" }),
-    el("div", { class: "pv-block__fig-value" },
-      [fairPrice ? document.createTextNode(fairPrice) : notYetAvailable("No fair price to convert — too few books quoted this.", "NO FAIR PRICE")]),
-  ]));
-  section.appendChild(figs);
-
-  section.appendChild(renderValueMeter({
-    marketImplied: verdict.market_implied_probability,
-    priceImplied: verdict.stated_implied_probability,
-    valuePoints: verdict.value_points,
-    word: null,
-  }));
-
-  const metaBits = [];
-  if (verdict.evidence_tier) metaBits.push(`EVIDENCE TIER ${verdict.evidence_tier}`);
-  if (typeof verdict.books === "number") metaBits.push(`${verdict.books} books`);
-  const age = formatAge(verdict.age_seconds);
-  if (age) metaBits.push(`captured ${age.toLowerCase()}`);
-  if (metaBits.length) section.appendChild(el("p", { class: "pv-block__meta", text: metaBits.join(" · ") }));
-
-  if ((verdict.reasons || []).length) {
-    const list = el("ul", { class: "pv-block__list pv-block__list--reasons" });
-    for (const r of verdict.reasons) list.appendChild(el("li", { text: r }));
-    section.appendChild(list);
-  }
-  if ((verdict.risks || []).length) {
-    const list = el("ul", { class: "pv-block__list pv-block__list--risks" });
-    for (const r of verdict.risks) list.appendChild(el("li", { text: r }));
-    section.appendChild(list);
-  }
-  if (verdict.basis) section.appendChild(el("p", { class: "pv-block__basis", text: verdict.basis }));
-
-  return section;
-}
 
 /* ---------------------------------------------------------------------
  * 05 -- WHAT CHANGED (usually NOT YET AVAILABLE)
@@ -600,17 +516,11 @@ function renderBottomLine(result) {
   section.appendChild(el("p", { class: "bc2-block__note",
     text: "Observation only. This is not advice and not a prediction, and we never tell you to place a bet." }));
 
+  // ONE action. "COMPARE 10 BOOKS" used to sit beside it, a button whose
+  // whole purpose was the register this page no longer speaks.
   const actions = el("div", { class: "bc2-bottom__actions" });
   const game = result.game || null;
   if (game && game.date && game.away && game.home) {
-    actions.appendChild(el("a", {
-      class: "btn btn--secondary chamfer chamfer--btn",
-      href: `#/odds/${encodeURIComponent(game.date)}/${encodeURIComponent(game.away)}/${encodeURIComponent(game.home)}`,
-      "data-hook": "compare-books",
-      text: result.market_consensus && result.market_consensus.books
-        ? `COMPARE ${result.market_consensus.books} BOOKS`
-        : "COMPARE BOOKS",
-    }));
     actions.appendChild(el("a", {
       class: "btn btn--ghost chamfer chamfer--btn",
       href: `#/game/${encodeURIComponent(game.date)}/${encodeURIComponent(game.away)}/${encodeURIComponent(game.home)}`,
@@ -619,14 +529,21 @@ function renderBottomLine(result) {
   }
   section.appendChild(actions);
 
-  // recommendation is contractually always null (Ranker Engine 2 gate) --
-  // rendered verbatim, never interpreted into a pick.
-  const recommendation = el("p", { class: "bc2-block__foot", "data-hook": "recommendation" });
-  recommendation.appendChild(document.createTextNode("RECOMMENDATION: "));
-  recommendation.appendChild(renderUnknown(result.recommendation));
-  section.appendChild(recommendation);
+  // `recommendation` is contractually always null -- this product never
+  // recommends a bet. It used to print "RECOMMENDATION:" followed by an
+  // empty glyph on every check, which read as a broken field rather than
+  // a promise kept. The note above already makes the promise in words;
+  // the field is rendered only if it ever carries something, verbatim.
+  if (result.recommendation !== null && result.recommendation !== undefined) {
+    const recommendation = el("p", { class: "bc2-block__foot", "data-hook": "recommendation" });
+    recommendation.appendChild(renderUnknown(result.recommendation));
+    section.appendChild(recommendation);
+  }
+  // The old footer read "MECHANICALLY COMPOSED FROM FINDING COUNT + PRICE
+  // CLAUSE + DISCLAIMER -- NOT EDITORIAL". True, and written for an
+  // engineer.
   section.appendChild(el("p", { class: "bc2-block__foot",
-    text: "MECHANICALLY COMPOSED FROM FINDING COUNT + PRICE CLAUSE + DISCLAIMER — NOT EDITORIAL" }));
+    text: "Put together from the counts above. Nobody wrote it by hand." }));
   return section;
 }
 
@@ -747,9 +664,8 @@ function renderResult(container, result) {
 
   // Fixed order -- see module docstring. Do not reorder.
   blocks.appendChild(renderTheBet(result));
-  blocks.appendChild(connector("SO WHAT DOES THE MARKET SAY?"));
-  blocks.appendChild(renderMarket(result));
-  blocks.appendChild(renderPriceVerdict(result));
+  blocks.appendChild(connector("IS IT LIKELY, AND WHAT DOES THE PRICE NEED?"));
+  blocks.appendChild(renderNumbers(result));
   blocks.appendChild(connector("IS THERE A CASE FOR IT?"));
   blocks.appendChild(renderCase(result));
   blocks.appendChild(connector("AND THE OTHER SIDE OF IT?"));

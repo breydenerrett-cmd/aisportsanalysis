@@ -2145,6 +2145,10 @@
 .bc2-market__label { font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: .15em; color: var(--v-t6); margin-bottom: var(--sp-6); }
 .bc2-market__cell--accent .bc2-market__label { color: var(--v-live-label); }
 .bc2-market__figure { font-family: var(--font-display); font-style: italic; font-size: 36px; font-weight: 800; line-height: .84; color: var(--v-t1); }
+/* Block 01's bet, stated in one line -- replaces the Featured Bet tile
+ * (2026-09-12). Big enough to read at arm's length; the owner's note on
+ * squinting at this product still stands. */
+.bc2-bet__line { margin: 0 0 var(--sp-4); font-family: var(--font-display); font-style: italic; font-size: clamp(24px, 5vw, 34px); font-weight: 800; line-height: 1.05; color: var(--v-t1); }
 .bc2-market__cell--accent .bc2-market__figure { color: #FFF; }
 .bc2-market__row { display: flex; align-items: baseline; gap: var(--sp-6); flex-wrap: wrap; }
 .bc2-market__sample { font-family: var(--font-mono); font-size: 12.5px; color: var(--v-live-label); white-space: nowrap; }

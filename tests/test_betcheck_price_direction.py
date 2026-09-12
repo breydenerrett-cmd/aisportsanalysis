@@ -102,10 +102,16 @@ class BottomLineDirectionTests(unittest.TestCase):
         self.assertNotIn("cents worse", line)
 
     def test_the_price_sentence_never_promotes_itself_to_an_edge(self):
+        # The clause used to carry the caption "-- line-shopping value, not
+        # a prediction" after every cents figure. That register was retired
+        # by the owner on 2026-09-10 and the caption went with it on
+        # 2026-09-12. The guard this test exists for -- that the price
+        # sentence never becomes a claim about the game -- is now carried by
+        # the no-edge record that still closes every bottom line.
         for stated, best in [(-130, -106), (-105, -106), (150, 140)]:
             with self.subTest(stated=stated, best=best):
                 line = bottom_line("home", stated, best)
-                self.assertIn("line-shopping value, not a prediction", line)
+                self.assertNotIn("line-shopping", line)
                 self.assertIn("No predictive edge is claimed", line)
 
     def test_a_one_cent_delta_is_singular_in_both_directions(self):

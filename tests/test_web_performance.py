@@ -185,28 +185,32 @@ class NoBannedVocabulary(unittest.TestCase):
             self.assertNotIn("CLV", text, f"{path.name}: CLV")
 
 
-class PriceVerdictBlockWiredHonestly(unittest.TestCase):
-    """betcheck.js's new renderPriceVerdict block: a new hook, distinct
-    from the five mandated data-hook markers, never reusing or
-    interfering with block 01's verdict-free contract."""
+class PriceVerdictBlockRetired(unittest.TestCase):
+    """betcheck.js's PRICE VERDICT panel is gone, and stays gone.
+
+    This class used to pin the panel IN: its hook, its function, its call
+    in renderResult. The panel printed a one-word verdict ("PASS") on the
+    gap between the reader's price and the de-vigged consensus, under a
+    value meter -- the price-comparison register the owner retired on
+    2026-09-10. Swept live on 2026-09-12 it was still there. The
+    assertions are now inverted, deliberately, with this note so nobody
+    reads the old version out of git and restores it as a regression fix.
+    """
 
     def setUp(self):
         self.text = _read(BETCHECK_PATH)
 
-    def test_price_verdict_hook_present(self):
-        self.assertIn('"bet-check-price-verdict"', self.text)
+    def test_price_verdict_hook_absent(self):
+        self.assertNotIn('"bet-check-price-verdict"', self.text)
 
-    def test_price_verdict_function_defined(self):
-        self.assertRegex(self.text, r"\bfunction renderPriceVerdict\s*\(")
+    def test_price_verdict_function_gone(self):
+        self.assertNotRegex(self.text, r"\bfunction renderPriceVerdict\s*\(")
 
-    def test_called_in_render_result(self):
+    def test_not_called_in_render_result(self):
         assembly = self.text.split("function renderResult(")[1].split("\nfunction ")[0]
-        self.assertIn("renderPriceVerdict(result)", assembly)
+        self.assertNotIn("renderPriceVerdict(", assembly)
 
     def test_block_01_still_verdict_free(self):
-        # renderTheBet (block 01) must still pass no verdict/priceStanding
-        # literal to the Featured Bet mapper -- the price-verdict addition
-        # lives in its own new block, never folded into block 01.
         the_bet = self.text.split("function renderTheBet(")[1].split("\nfunction ")[0]
         self.assertNotRegex(the_bet, r"verdict\s*:\s*[\"']\w+[\"']")
         self.assertNotRegex(the_bet, r"priceStanding\s*:\s*\{")
