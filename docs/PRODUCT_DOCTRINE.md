@@ -188,6 +188,40 @@ Reserved and gated — four separate axes, never one score. This is
 | **Evidence confidence** | **live today** — tier, book depth, n |
 | **Unit sizing** | variable staking only after edge exists and the Kelly gate is deliberately opened |
 
+### 5.2 Homepage leads with the card, not the slip (2026-09-12)
+
+**Owner-approved, docs/DECISION_TODAY_ONE_ANSWER.md, options A1 + B1.** The
+ordered list at the top of this section was never updated after THE CARD
+(src/analysis/daily_card.py, market-confidence ranked) shipped and started
+leading the homepage in its place — so this document kept specifying that
+the slip led while the running app said the card did: two documents
+describing one screen, disagreeing.
+
+**What leads `#/today` now, and why:**
+
+- **THE CARD is #1.** It is what the owner told this product to sell, and
+  it is the more defensible claim: 3–5 bets a night, ranked by market
+  confidence, frozen before first pitch and graded either way.
+- **TONIGHT'S PICKS (the slip, agreement-ranked) is off the homepage
+  entirely.** It moved to the performance page (`#/performance`,
+  `web/js/slip.js`'s `renderTonightsPicks`), under a heading that states
+  plainly it is research, not the card. On the two nights checked before
+  this decision (09-10, 09-11), the slip's own #1 pick named a *different
+  game* than the card's #1 pick, both nights — a customer reading both in
+  one scroll had no way to tell which one this product actually stood
+  behind. The slip has also tagged only seven bets "published" ever, as of
+  this decision — too thin for any record of its own, and none is claimed
+  for it on the performance page.
+- **The hero panel on `#/today`, below the card, now reads the card's own
+  #1 pick** (`web/js/card.js`'s `renderCard` return value) to choose which
+  game to feature, never a price-gap computation against consensus.
+  `chooseGapCandidate` is deleted, not left dormant.
+
+The ordered list above this subsection is left exactly as written, as the
+record of what this document specified before today — read it as history,
+not as the current spec. Its item 1 (TONIGHT'S PICKS leads) and any
+homepage-hierarchy conclusion drawn from it are superseded by this section.
+
 ## 6. Public performance
 
 Four cohorts, always reported together, never merged:

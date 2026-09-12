@@ -293,12 +293,24 @@ function emptyCard(payload) {
   return wrap;
 }
 
-/**
- * Mount the card into `host`. Returns true when picks rendered, so the
- * caller can decide what the rest of the screen says beneath it.
+/** The card's own #1 pick, by the position it is actually SERVED at (see
+ * `pickCard`'s own comment on `position` vs `rank`) -- falls back to `rank`
+ * for a live (not-yet-frozen) card, whose picks carry `rank` only.
+ * `docs/DECISION_TODAY_ONE_ANSWER.md` option B1: this is what the Today
+ * hero leads with now, never a price-gap computation. */
+function firstPickOf(payload) {
+  const picks = (payload && payload.picks) || [];
+  return picks.find((p) => (p.position || p.rank) === 1) || picks[0] || null;
+}
+
+/** Mount the card into `host`. Returns `{ rendered, firstPick }`:
+ * `rendered` is true when picks actually rendered, so the caller can decide
+ * what the rest of the screen says beneath it; `firstPick` is the served
+ * #1 pick (or null on an empty/failed card) for the Today hero to read.
  *
- * A fetch failure renders the error and returns false -- it must never look
- * like a night with no picks, which is a different and real condition.
+ * A fetch failure renders the error and returns `rendered: false` -- it
+ * must never look like a night with no picks, which is a different and
+ * real condition.
  */
 export async function renderCard(host, date) {
   const wrap = el("section", { class: "gutter", "data-hook": "card" });
@@ -380,7 +392,7 @@ export async function renderCard(host, date) {
       // outage, and the ORIGINAL error is the one that describes it -- not
       // the fallback's.
       renderError(wrap, err);
-      return false;
+      return { rendered: false, firstPick: null };
     }
     payload = last;
     servingOlderCard = last.date || null;
@@ -402,7 +414,7 @@ export async function renderCard(host, date) {
   if (!picks.length) {
     clear(wrap);
     wrap.appendChild(emptyCard(payload));
-    return false;
+    return { rendered: false, firstPick: null };
   }
 
   const meta = payload.games_on_slate
@@ -485,5 +497,5 @@ export async function renderCard(host, date) {
 
   wrap.appendChild(recordLine(record));
   wrap.appendChild(standingNote(payload));
-  return true;
+  return { rendered: true, firstPick: firstPickOf(payload) };
 }

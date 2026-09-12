@@ -17,6 +17,18 @@
  * directional thesis under forward test. Each per-class section below
  * carries its own one-line explanation so a reader never mistakes one
  * class's numbers for another's meaning.
+ *
+ * THE ENGINE'S SLIP -- MOVED HERE FROM #/today, 2026-09-12
+ * -------------------------------------------------------------------
+ * docs/DECISION_TODAY_ONE_ANSWER.md option A1, owner-approved: this page
+ * also fetches GET /today (the only place the slip is served -- no
+ * dedicated endpoint exists, and this change does not add one) purely to
+ * read its `slip` field and render it with `web/js/slip.js`'s
+ * `renderTonightsPicks`, under a heading that says plainly what it is:
+ * research, not the card. A failed `/today` fetch renders nothing here
+ * (`.catch(() => null)`), the same "must not take the rest of the page
+ * down with it" rule every other optional fetch on this screen already
+ * follows.
  */
 
 import { apiGet } from "./api.js";
@@ -24,6 +36,7 @@ import { el, clear, renderError, renderLoading, notYetAvailable, formatAmerican,
 import { armEntrances } from "./motion.js";
 import { renderRecordStrip } from "./recordstrip.js";
 import { renderDayRecap } from "./dayrecap.js";
+import { renderTonightsPicks } from "./slip.js";
 
 const CLASS_ORDER = ["FORWARD_TEST", "ALL", "MARKET_REFERENCE", "CONTROL"];
 const CLASS_LABEL = {
@@ -545,6 +558,62 @@ function renderSparkline(seriesAll, seriesForward) {
  * View
  * ------------------------------------------------------------------- */
 
+/** THE ENGINE'S SLIP, framed as research -- see this module's own docstring
+ * ("THE ENGINE'S SLIP -- MOVED HERE FROM #/today") for why it lives here
+ * now instead of leading Today. Renders nothing when `renderTonightsPicks`
+ * itself renders nothing (no slip yet for today, or an honest empty
+ * night) -- a heading with no picks beneath it would be worse than either.
+ *
+ * THE HONESTY NOTE BELOW IS DATED, NOT LIVE. GET /today carries no running
+ * count of how many slip picks have ever been tagged "published", and this
+ * module does not invent one -- a number that drifts every time one more
+ * bet gets tagged must never be hardcoded as though it were current. What
+ * IS a fact, and stays one regardless of tonight's count, is that at the
+ * time this decision was made the answer was seven, too few for any track
+ * record -- see docs/DECISION_TODAY_ONE_ANSWER.md for the count and the
+ * reasoning it rests on. */
+function renderEngineSlipSection(slip) {
+  // Own copy, not Today's -- see slip.js's `renderTonightsPicks` docstring
+  // on `copy`. The eyebrow and mechanism sentence already said above (in
+  // this section's own `perf-engine-slip__eyebrow`/`__body`) covers what
+  // Today's inline eyebrow/headline used to say; repeating it inside the
+  // grid read as a second, competing pick feed directly under the label
+  // saying this is not one (checker finding, 2026-09-12) -- so eyebrow and
+  // headline are dropped entirely here, and `sub` says only the one thing
+  // the outer paragraph does not: whether tonight specifically is thin.
+  const light = slip && slip.read_as === "LIGHT";
+  const picks = renderTonightsPicks(slip, {
+    eyebrow: null,
+    headline: null,
+    sub: light
+      ? "Thin night by the engine's own evidence bar. These are still the "
+        + "real, floor-cleared picks — labelled thin because the evidence is."
+      : null,
+    nested: true,
+  });
+  if (!picks) return null;
+  const section = el("section", { class: "perf-engine-slip panel chamfer",
+    "data-hook": "performance-engine-slip" });
+  section.appendChild(el("p", { class: "perf-engine-slip__eyebrow",
+    text: "THE ENGINE'S OWN SLIP — RESEARCH" }));
+  section.appendChild(el("p", { class: "perf-engine-slip__body",
+    // No "above" -- this page's only card-shaped thing is the record link
+    // in the RESEARCH — NOT THE CARD banner above THIS section, not a card
+    // itself. The published card lives on #/today; naming it by page,
+    // not position, keeps this true regardless of where either section
+    // ends up moving next (checker finding, 2026-09-12: the original text
+    // said "above" on a page with nothing named "the card" above it).
+    text: "Ranked by how many independent groups of systems agree — a "
+        + "different, stricter rule than the published card's "
+        + "market-confidence ranking (the card is on #/today, not this "
+        + "page). As of the decision that moved this section here "
+        + "(2026-09-12), only seven bets had ever been tagged published on "
+        + "this slip. Seven is too few for a record of its own, so none is "
+        + "claimed for it." }));
+  section.appendChild(picks);
+  return section;
+}
+
 export async function renderPerformance(container) {
   clear(container);
   const screen = el("div", { class: "screen perf-screen", "data-view": "performance" });
@@ -552,8 +621,18 @@ export async function renderPerformance(container) {
   screen.appendChild(renderLoading("LOADING PAPER PERFORMANCE"));
 
   let payload;
+  let todayPayload = null;
   try {
-    payload = await apiGet("/performance?limit=50");
+    // /today, not a dedicated slip endpoint -- GET /today is the only place
+    // the slip is served (see this module's own docstring); a failed fetch
+    // here must not take the rest of this page down with it, so it is
+    // caught on its own and this screen simply shows no slip section.
+    const [perf, todayResult] = await Promise.all([
+      apiGet("/performance?limit=50"),
+      apiGet("/today").catch(() => null),
+    ]);
+    payload = perf;
+    todayPayload = todayResult;
   } catch (err) {
     clear(screen);
     renderError(screen, err);
@@ -593,6 +672,13 @@ export async function renderPerformance(container) {
     text: "The published card's own record →" });
   whose.appendChild(link);
   screen.appendChild(whose);
+
+  // THE ENGINE'S OWN SLIP -- see renderEngineSlipSection's own docstring.
+  // Mounted right under the RESEARCH — NOT THE CARD banner, so a reader who
+  // scrolls past that framing meets the slip immediately, not after the
+  // FORWARD-TEST tiles below (a different research population entirely).
+  const slipSection = renderEngineSlipSection(todayPayload && todayPayload.slip);
+  if (slipSection) screen.appendChild(slipSection);
 
   // RECORD STRIP + DAILY RECAP GALLERY -- mounted above the existing
   // paper-standings content (see this module's own docstring update);

@@ -108,12 +108,16 @@ class VerdictStatesAndFeatureSelection(unittest.TestCase):
         for name in ("heroNoPlay", "heroFlagged", "heroMarketUnavailable"):
             self.assertRegex(text, rf"\bfunction {name}\s*\(", name)
 
-    def test_gap_candidate_checks_both_sides_never_one_favourite(self):
-        # V2-33's own rule ("largest price gap against consensus") must
-        # not collapse into "always check the away side" -- both sides
-        # are considered for every game.
+    def test_the_price_gap_feature_selection_rule_is_retired(self):
+        # V2-33's original rule -- "largest price gap against consensus"
+        # chooses the hero and the slate rail -- is gone as of
+        # docs/DECISION_TODAY_ONE_ANSWER.md option B1 (2026-09-12,
+        # owner-approved). The hero now leads with THE CARD's own #1 pick;
+        # see tests/test_today_one_answer.py::ThePriceGapRuleIsGone for the
+        # full replacement-rule coverage. This test only guards against the
+        # deleted function quietly coming back.
         text = _read(TODAY_PATH)
-        self.assertIn('["away", "home"]', text)
+        self.assertNotRegex(text, r"\bfunction\s+chooseGapCandidate\s*\(")
 
     def test_gameday_no_longer_fires_a_bet_check_on_load(self):
         # Until 2026-09-12 this asserted `american_price: best.price` -- the

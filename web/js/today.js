@@ -52,18 +52,24 @@
  * a documented, stable field on THAT endpoint). Reported as a deliberate
  * deviation.
  *
- * FEATURE SELECTION -- ONE RULE FOR THE WHOLE SCREEN
+ * FEATURE SELECTION -- ONE RULE FOR THE WHOLE SCREEN, 2026-09-12
  * -------------------------------------------------------------------
- * V2-33's own eyebrow states its rule in words: "FEATURED . LARGEST
- * PRICE GAP AGAINST CONSENSUS -- Computed from tonight's boards, a
- * measured gap, not a judgement." This screen uses that ONE rule for
- * the top hero's verdict state and the slate rail (the Featured Bet slot
- * it also fed is gone -- next section), rather than V1's separate
- * "earliest not-yet-started" rule for the hero. The rule is
- * deterministic, real-data-only and carries no favourite bias (it is
- * picked from realised price gaps, not from who is favoured). When no
- * game has a priced board with a genuine gap, the hero falls back to the
- * earliest game chronologically (V1's rule, still non-editorial).
+ * docs/DECISION_TODAY_ONE_ANSWER.md option B1, owner-approved: the hero
+ * leads with THE CARD's own #1 pick -- the same game a reader already saw
+ * asked to bet at the top of this screen (`renderCard`'s return now hands
+ * back that pick's `game_id`; see `renderToday`'s own featured-row lookup
+ * below). When there is no card (a fetch failure, or a genuinely empty
+ * night), the hero falls back to the earliest game chronologically --
+ * never a price-gap computation, which is retired here for good.
+ *
+ * This replaces V2-33's original rule, "FEATURED . LARGEST PRICE GAP
+ * AGAINST CONSENSUS", which chose the hero AND the slate rail's featured
+ * tile by the largest realised gap between the best available price and
+ * the de-vigged consensus. That rule was undisclosed on screen, and on
+ * both nights the owner checked it, the game it picked was not the game
+ * THE CARD's own #1 pick named -- one more page giving two different
+ * answers to "what do I bet tonight". `chooseGapCandidate` is deleted, not
+ * kept dormant, so it cannot quietly become the rule again.
  *
  * V2-33's FEATURED BET CARD -- REMOVED 2026-09-12
  * -------------------------------------------------------------------
@@ -73,17 +79,17 @@
  * COMPARED", under the eyebrow "FEATURED . LARGEST PRICE GAP AGAINST
  * CONSENSUS". That is the price-comparison register the owner retired on
  * 2026-09-10, headlined as a feature. The section, the request and the
- * import are gone. The largest-gap rule survives ONLY as the way the hero
- * and the slate rail choose which game to lead with (see below); whether
- * that should change too is the owner's call, not a copy fix.
+ * import are gone, and (as of the same day) so is the price-gap rule that
+ * fed it -- see FEATURE SELECTION above.
  *
  * GET /odds/{date} IS NOT ONE OF THIS ARTBOARD FAMILY'S LISTED
  * ENDPOINTS (IMPLEMENTATION_MANIFEST.json lists only /today,
  * /games/{date}, /changed/{date} for V2-01/01a/b/c/22/33) -- fetched
- * anyway, continuing the exact pattern V1's today.js already used, and
- * required by the "largest price gap" rule above (there is no other
- * source for a per-book best price or a de-vigged consensus price to
- * compare it against). Reported as a likely manifest omission.
+ * anyway, continuing the exact pattern V1's today.js already used. Still
+ * needed after the price-gap rule's retirement: it is the only source for
+ * the featured game's own best price and de-vigged consensus (the price
+ * context panel beside the hero) and for the slate rail's per-book prices.
+ * Reported as a likely manifest omission.
  *
  * WHAT WAS DELIBERATELY LEFT ALONE
  * -------------------------------------------------------------------
@@ -134,50 +140,10 @@ function bestOn(h2h, side) {
   return best && typeof best.price === "number" ? best : null;
 }
 
-/** The share an American price implies, vig included -- plain
- * arithmetic on a price the API supplied, the same conversion
- * oddspayload.py documents for `implied_price`, run the other way. */
-function impliedShare(american) {
-  const n = Number(american);
-  if (!Number.isFinite(n) || n === 0) return null;
-  return n > 0 ? 100 / (n + 100) : -n / (-n + 100);
-}
-
-/** Points of implied-share advantage the best price carries over the
- * de-vigged consensus, on one side -- line-shopping value, never EV,
- * never a prediction (same math V1's today.js used). Null unless the
- * best price genuinely pays a smaller implied share than consensus. */
-function pointsBetter(h2h, side) {
-  const best = bestOn(h2h, side);
-  const consensus = h2h && h2h.consensus ? h2h.consensus[side] : null;
-  if (!best || !consensus || typeof consensus.implied_probability !== "number") return null;
-  const bestShare = impliedShare(best.price);
-  if (bestShare === null) return null;
-  const delta = consensus.implied_probability - bestShare;
-  if (!(delta > 0)) return null;
-  return delta * 100;
-}
-
-/** V2-33's own rule, in code: the game+side with the largest real price
- * gap against consensus, across every game with a priced board tonight.
- * Never a favourite pick -- the side is whichever one the market itself
- * produced the bigger gap on. */
-function chooseGapCandidate(rows, oddsIndex) {
-  let winner = null;
-  for (const row of rows) {
-    const h2h = oddsIndex.get(row.game_id);
-    if (!h2h || !h2h.board_available) continue;
-    for (const side of ["away", "home"]) {
-      const gap = pointsBetter(h2h, side);
-      if (gap === null) continue;
-      if (!winner || gap > winner.gap) {
-        winner = { row, side, gap, h2h, best: bestOn(h2h, side) };
-      }
-    }
-  }
-  return winner;
-}
-
+/** V1's rule, and now the ONLY hero-selection fallback (see this module's
+ * "FEATURE SELECTION" docstring above): the earliest game chronologically,
+ * used only when there is no card to read a #1 pick from. Deterministic,
+ * real-data-only, carries no favourite bias. */
 function chronologicalFallback(rows) {
   const sorted = rows.slice().sort((a, b) => {
     const at = Date.parse(a.first_pitch_utc || "") || 0;
@@ -401,11 +367,17 @@ function checkedTonightPanel(aggregates) {
   return panel;
 }
 
-/** A compact, honest price-context panel for one game+side -- best price,
- * the de-vigged consensus beside it, and the real points-better gap when
- * one exists. Used by the no_play hero ("price context always real")
- * and the flagged hero (the price finding itself). */
-function priceContextPanel(row, side, h2h, gap) {
+/** A compact, honest price-context panel for one game+side -- best price
+ * and the de-vigged consensus beside it. Used by the no_play hero ("price
+ * context always real") and the flagged hero (the price finding itself).
+ *
+ * Used to take a fourth argument, `gap` (the largest price-vs-fair-price
+ * margin), and print it as a "N PTS BETTER" pill when non-null. That was
+ * `chooseGapCandidate`'s own register, retired with the rest of it under
+ * B1 (docs/DECISION_TODAY_ONE_ANSWER.md) -- the hero now reads the card's
+ * #1 pick, never a price gap, and nothing here should be able to print
+ * gap language again just because some future caller passes a number. */
+function priceContextPanel(row, side, h2h) {
   const panel = el("div", { class: "gv2-price panel chamfer" });
   if (!h2h || !h2h.board_available) {
     panel.appendChild(el("div", { class: "gv2-price__title", text: "PRICE CONTEXT" }));
@@ -445,10 +417,6 @@ function priceContextPanel(row, side, h2h, gap) {
   figures.appendChild(aside);
   panel.appendChild(figures);
 
-  if (typeof gap === "number") {
-    panel.appendChild(el("span", { class: "gv2-price__pill", "data-hook": "gameday-points-better",
-      text: `${gap.toFixed(1)} PTS BETTER · best price vs. the fair price` }));
-  }
   panel.appendChild(el("p", { class: "gv2-price__note",
     text: `BEST OF ${bookCount === null ? "—" : bookCount} BOOKS · OBSERVATION` }));
   return panel;
@@ -589,156 +557,16 @@ function matchupPoster(row) {
  * Hero -- the three verdict states (V2-01a / b / c)
  * ------------------------------------------------------------------- */
 
-// TONIGHT'S PICKS -- the ranked, evidence-tiered slip (src/engine/slip.py),
-// leading Today, above the hero. Owner directive 2026-09-09: a customer
-// should never open the app to silence -- and when the evidence is thin, the
-// honest answer is to say so plainly and show what little there is, not to
-// hide it behind the hero's "nothing clears the bar" framing.
-//
-// Renders NOTHING (host stays untouched) when:
-//   - `slip` is null: `engine slip` has not reached this date yet. This is
-//     an operational gap, not a customer fact -- the existing hero already
-//     covers "we checked and found nothing" honestly; a broken-looking empty
-//     picks block would say something false ("nothing to see") about a
-//     state that actually means "we have not looked."
-//   - `slip.read_as === "NOTHING_CLEARED"`: the honest empty case, already
-//     the hero's job below. Never duplicated here.
-const EVIDENCE_TIER_TONE = {
-  STRONG: "green", BUILDING: "yellow", THIN: "orange", MINIMAL: "red",
-};
-
-function evidenceTierChip(pick) {
-  const tier = pick.evidence_tier || "MINIMAL";
-  const tone = EVIDENCE_TIER_TONE[tier] || "red";
-  return el("span", { class: `gv2-picks__tier gv2-picks__tier--${tone}`,
-    title: pick.evidence_tier_label || "" }, [tier]);
-}
-
-// src/engine/slate.py's SCOPE_MARKETS, spelled out -- a plain lookup rather
-// than a generic word-capitalizer, because a generic one reads "h2h" as
-// "H2h" and "1st" as "1St" (CSS text-transform:capitalize breaks on any
-// token starting with a digit, which several of these do).
-const MARKET_LABEL = {
-  h2h: "Moneyline",
-  spreads: "Run line",
-  totals: "Total",
-  h2h_1st_5_innings: "First 5 innings moneyline",
-};
-
-function pickWagerLine(pick) {
-  // The server renders the club, the side and the book into one sentence
-  // (src/board/readable.py's `wager_text`, joined through the event map).
-  // The fallback below is for a payload that lacks it: no event_id -> game
-  // join is attempted here, because guessing one risks the silent-mismatch
-  // bug the stand-down telemetry join had before it was keyed correctly on
-  // game_pk -- see src/report/stand_downs.py's own history.
-  if (pick.wager_text) return pick.wager_text;
-  const market = MARKET_LABEL[pick.market_key] || String(pick.market_key || "market");
-  const price = formatAmerican(pick.price_american);
-  const bits = [market];
-  if (price) bits.push(`at ${price}`);
-  if (pick.book) bits.push(`(${bookLabel(pick.book) || pick.book})`);
-  return bits.join(" ");
-}
-
-function pickCard(pick) {
-  const card = el("article", { class: "gv2-picks__card panel chamfer",
-    "data-hook": "tonights-pick", "data-rank": String(pick.rank) });
-  const head = el("div", { class: "gv2-picks__card-head" });
-  head.appendChild(el("span", { class: "gv2-picks__rank" }, [`#${pick.rank}`]));
-  head.appendChild(evidenceTierChip(pick));
-  card.appendChild(head);
-  card.appendChild(el("p", { class: "gv2-picks__wager" }, [pickWagerLine(pick)]));
-  if (pick.thesis) {
-    // The real mechanism text, in full -- src/engine/explain.py's own
-    // percentile-and-sample-size prose (owner directive: "the thesis is the
-    // product"). Long enough that showing all of it on every card by
-    // default would bury the scannable part; collapsed to a short teaser
-    // with the rest one click away, never shortened or paraphrased.
-    //
-    // Cut by a character budget, not by "first sentence": this prose is
-    // parenthetical-heavy ("(each side's number describes ...): away 36.9%,
-    // home 61.4% (... away over 176 batted balls; home over 1,563 ...)"),
-    // so the first period-or-semicolon lands deep inside an aside, not at a
-    // real sentence break -- a punctuation-based split produced a "teaser"
-    // that was most of the paragraph.
-    const full = String(pick.thesis);
-    const TEASER_CHARS = 92;
-    let teaser = full;
-    if (full.length > TEASER_CHARS + 20) {
-      const cut = full.lastIndexOf(" ", TEASER_CHARS);
-      teaser = full.slice(0, cut > 40 ? cut : TEASER_CHARS) + "…";
-    }
-    if (teaser === full) {
-      card.appendChild(el("p", { class: "gv2-picks__thesis" }, [full]));
-    } else {
-      const details = el("details", { class: "gv2-picks__thesis-details" });
-      details.appendChild(el("summary", { class: "gv2-picks__thesis" }, [teaser]));
-      details.appendChild(el("p", { class: "gv2-picks__thesis gv2-picks__thesis--rest" },
-        [full]));
-      card.appendChild(details);
-    }
-  }
-  // "Agree" implies more than one; a single system has fired, not agreed
-  // with itself. n_systems > n_families only when near-duplicate genomes
-  // were folded into one independent source (doctrine amendment 9) -- named
-  // here so the discount stays auditable rather than a silent subtraction.
-  const agreementLine = pick.n_families === 1
-    ? "1 system's signal"
-    : `${pick.n_families} independent systems agree`;
-  const meta = el("p", { class: "gv2-picks__meta" },
-    [agreementLine
-     + (pick.n_systems > pick.n_families ? ` (${pick.n_systems} systems, family-discounted)` : "")
-     + ` · ${pick.books_at_decision} books at decision`]);
-  card.appendChild(meta);
-  if (pick.evidence_tier_label) {
-    card.appendChild(el("p", { class: "gv2-picks__tier-label" }, [pick.evidence_tier_label]));
-  }
-  return card;
-}
-
-function renderTonightsPicks(slip) {
-  if (!slip || slip.read_as === "NOTHING_CLEARED") return null;
-  const picks = Array.isArray(slip.picks) ? slip.picks : [];
-  if (picks.length === 0) return null;
-
-  const light = slip.read_as === "LIGHT";
-  const wrap = el("section", { class: `gv2-picks gv2-picks--${light ? "light" : "notable"} gutter`,
-    "data-hook": "tonights-picks", "data-rise": "" });
-
-  const eyebrow = light ? "TONIGHT'S LEAN" : "TONIGHT'S PICKS";
-  const headline = light
-    ? "Thin night. If you're betting anyway, here's where the evidence points."
-    : "Where our systems currently see the strongest case.";
-  const sub = light
-    ? "None of tonight's evidence is strong. We'd sit tonight out — but " +
-      "these are the real, floor-cleared plays, honestly labelled thin."
-    : "Ranked by how many independent systems agree and how deep their " +
-      "signal cleared — never by a promised outcome. No system here claims " +
-      "a guaranteed winner.";
-
-  wrap.appendChild(el("span", { class: "gv2-picks__eyebrow" }, [eyebrow]));
-  wrap.appendChild(el("h2", { class: "gv2-picks__headline" }, [headline]));
-  wrap.appendChild(el("p", { class: "gv2-picks__sub" }, [sub]));
-
-  const top3 = picks.filter((p) => (p.cohorts || []).includes("TOP_3"));
-  const rest = picks.filter((p) => !(p.cohorts || []).includes("TOP_3"));
-
-  const grid = el("div", { class: "gv2-picks__grid" });
-  for (const pick of top3) grid.appendChild(pickCard(pick));
-  wrap.appendChild(grid);
-
-  if (rest.length) {
-    const details = el("details", { class: "gv2-picks__more" });
-    details.appendChild(el("summary", {}, [`${rest.length} more published pick${rest.length === 1 ? "" : "s"}`]));
-    const moreGrid = el("div", { class: "gv2-picks__grid" });
-    for (const pick of rest) moreGrid.appendChild(pickCard(pick));
-    details.appendChild(moreGrid);
-    wrap.appendChild(details);
-  }
-
-  return wrap;
-}
+// TONIGHT'S PICKS -- the ranked, evidence-tiered slip (src/engine/slip.py)
+// -- MOVED to web/js/performance.js, 2026-09-12
+// (docs/DECISION_TODAY_ONE_ANSWER.md option A1, owner-approved). It used to
+// lead this screen, above the hero, answering "what do I bet tonight" a
+// second and different way from THE CARD above it -- on both nights
+// checked, the two disagreed about which game was even #1. THE CARD is
+// what the owner told this product to sell; the slip has seven bets ever
+// tagged published, too few for a record of its own, so its home is the
+// research page now (`renderTonightsPicks`, `web/js/slip.js`), not Today.
+// This screen no longer imports that module at all.
 
 function heroShell(tone, extraClass) {
   const hero = el("section", { class: `gv2-hero panel chamfer gv2-hero--${tone}${extraClass ? ` ${extraClass}` : ""}`,
@@ -763,8 +591,8 @@ function heroActions(date) {
 /** V2-01a -- NO_PLAY, the confident default (~93% of nights per the
  * forward ledger, though that percentage itself is not printed here --
  * see module docstring). */
-function heroNoPlay(row, h2h, aggregates, sameVerdictCount, totalGames,
-                     date, hasPicks) {
+function heroNoPlay(row, side, h2h, aggregates, sameVerdictCount, totalGames,
+                     date, hasCard) {
   const hero = heroShell("noplay");
   const top = el("div", { class: "gv2-hero__top" });
   // THE HERO IS NO LONGER A VERDICT. It sits beneath THE CARD, which is
@@ -829,7 +657,11 @@ function heroNoPlay(row, h2h, aggregates, sameVerdictCount, totalGames,
 
   // ---- row 2 (>=1280px: price context beside matchup context) ----
   const row2 = el("div", { class: "gv2-hero__row2" });
-  row2.appendChild(priceContextPanel(row, "away", h2h, null));
+  // `side` is the card's #1 pick's own side (B1) when the hero is featuring
+  // a card game; when there is no card (chronological fallback, no pick to
+  // read a side from) it falls back to "away" here -- an arbitrary but
+  // stated default, never the retired price-gap rule's doing.
+  row2.appendChild(priceContextPanel(row, side || "away", h2h));
   row2.appendChild(matchupContextPanel(row));
   hero.appendChild(row2);
   return hero;
@@ -837,7 +669,7 @@ function heroNoPlay(row, h2h, aggregates, sameVerdictCount, totalGames,
 
 /** V2-01b -- FLAGGED, the rare exception (~2.3% per the ledger; the only
  * verdict state that carries the bloom accent). */
-function heroFlagged(row, side, h2h, gap, sameVerdictCount, totalGames, date) {
+function heroFlagged(row, side, h2h, sameVerdictCount, totalGames, date) {
   const hero = heroShell("flagged", "gv2-hero--bloom");
   const top = el("div", { class: "gv2-hero__top" });
   top.appendChild(verdictChip("FLAGGED", "flagged"));
@@ -852,7 +684,7 @@ function heroFlagged(row, side, h2h, gap, sameVerdictCount, totalGames, date) {
     text: `Rare enough that this product does not dress it up when it happens. One finding survived `
         + `pre-registration on ${away} at ${home}, and it is a price finding, not a prediction.` }));
 
-  hero.appendChild(priceContextPanel(row, side, h2h, gap));
+  hero.appendChild(priceContextPanel(row, side, h2h));
   hero.appendChild(heroActions(date));
   return hero;
 }
@@ -919,20 +751,23 @@ function heroMarketUnavailable(row, date, aggregates, sameVerdictCount, totalGam
   return hero;
 }
 
-function renderHero(host, featured, aggregates, rows, date, hasPicks) {
+function renderHero(host, featured, aggregates, rows, date, hasCard) {
   const verdict = featured.row.verdict;
   const sameVerdictCount = rows.filter((r) => r.verdict === verdict).length;
   const totalGames = rows.length;
   let node;
   if (verdict === "flagged" || verdict === "candidate") {
+    // `featured.side` is the card's #1 pick's own side (B1) -- the side the
+    // finding below is actually about. Falls back to "away" only when the
+    // featured game did not come from a card pick (chronological fallback
+    // has no side to read).
     node = heroFlagged(featured.row, featured.side || "away", featured.h2h || null,
-      typeof featured.gap === "number" ? featured.gap : null, sameVerdictCount,
-      totalGames, date);
+      sameVerdictCount, totalGames, date);
   } else if (verdict === "market_unavailable") {
     node = heroMarketUnavailable(featured.row, date, aggregates, sameVerdictCount, totalGames);
   } else {
-    node = heroNoPlay(featured.row, featured.h2h || null, aggregates,
-                      sameVerdictCount, totalGames, date, hasPicks);
+    node = heroNoPlay(featured.row, featured.side, featured.h2h || null, aggregates,
+                      sameVerdictCount, totalGames, date, hasCard);
   }
   host.appendChild(node);
 }
@@ -1164,10 +999,6 @@ export async function renderToday(container) {
     }));
   }
   const oddsIndex = odds ? oddsIndexOf(odds) : new Map();
-
-  const gapCandidate = chooseGapCandidate(rows, oddsIndex);
-  const fallbackRow = chronologicalFallback(rows);
-  const featured = gapCandidate || { row: fallbackRow, side: null, gap: null, h2h: null, best: null };
   const aggregates = boardAggregates(rows);
 
   // Mobile-only (V2-22); hidden on desktop by screens.css.
@@ -1176,20 +1007,29 @@ export async function renderToday(container) {
   // THE CARD LEADS. Everything below it is context for it. This is the whole
   // shape of the page as of 2026-09-10: a reader who reads exactly one thing
   // on this screen should read a bet, not a verdict about our evidence.
-  const hasCard = await renderCard(host, date);
+  const cardResult = await renderCard(host, date);
 
-  // TONIGHT'S PICKS -- the engine's own frozen slip, which is a different
-  // and stricter object than the card above and usually empty. It sits
-  // BELOW the card now rather than leading; see renderTonightsPicks's own
-  // header comment for exactly when it renders nothing.
-  const picksBlock = renderTonightsPicks(today.slip);
-  if (picksBlock) host.appendChild(picksBlock);
+  // B1: THE HERO READS THE CARD, NEVER A PRICE GAP (see this module's
+  // "FEATURE SELECTION" docstring). `cardResult.firstPick` is the served
+  // #1 pick's game; find that same game among tonight's slate rows so the
+  // hero has the full row (verdict, board summary, matchup fields) the
+  // card payload does not carry. Falls back to the earliest first pitch
+  // when there is no card, or its #1 game is not one of tonight's rows.
+  const cardGameId = cardResult.firstPick && cardResult.firstPick.game_id;
+  const featuredRow = (cardGameId && rows.find((r) => r.game_id === cardGameId))
+    || chronologicalFallback(rows);
+  // `side` is the card pick's own side (card_ledger.FROZEN_FIELDS includes
+  // "side") -- read only when the featured row actually came from that
+  // pick's game_id. The chronological fallback has no pick to read a side
+  // from and stays null; every hero that needs one falls back to "away"
+  // itself rather than this object inventing a side it was not told.
+  const matchedCardPick = Boolean(cardGameId) && featuredRow.game_id === cardGameId;
+  const featured = { row: featuredRow,
+    side: matchedCardPick ? (cardResult.firstPick.side || null) : null,
+    h2h: oddsIndex.get(featuredRow.game_id) || null };
 
   host.appendChild(renderSlateBanner(date, rows, aggregates.freshest));
-  // The hero must know whether the slip spoke, or it will contradict it --
-  // see heroNoPlay's conditional headline.
-  renderHero(host, featured, aggregates, rows, date,
-             Boolean(picksBlock) || hasCard);
+  renderHero(host, featured, aggregates, rows, date, cardResult.rendered);
   setShellStatus(aggregates.freshest ? `PRICES AS OF ${et(aggregates.freshest)}` : null);
 
   // Mobile-only matchup poster (V2-22) -- the featured game's identity,
@@ -1260,10 +1100,10 @@ export async function renderToday(container) {
   // That is the register the owner retired on 2026-09-10 ("that has to
   // stop. None of that's important. Nobody fucking cares."), and it was
   // headlining the largest price gap on the slate as a feature -- the
-  // same thing TOP PLAY did, one screen down. `gapCandidate` still picks
-  // which game the hero and the slate rail lead with; changing what the
-  // headline game is chosen on is a product decision and is left for the
-  // owner (docs/OVERNIGHT_PLAN_2026-09-12.md, "What I will not do").
+  // same thing TOP PLAY did, one screen down. The price-gap rule that fed
+  // it is retired too, as of the same day: the hero and the slate rail now
+  // lead with THE CARD's own #1 pick instead (docs/
+  // DECISION_TODAY_ONE_ANSWER.md option B1, owner-approved).
 
   host.appendChild(renderSlateRail(rows, oddsIndex, featured.row.game_id, changedIds));
 

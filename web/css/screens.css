@@ -2541,8 +2541,14 @@
 
 .gv2-hero__actions { position: relative; display: flex; align-items: center; gap: var(--sp-6); flex-wrap: wrap; margin-top: var(--sp-9); }
 
-/* TONIGHT'S PICKS -- leads Today, above the hero. See web/js/today.js's
-   renderTonightsPicks for exactly when this renders. */
+/* THE ENGINE'S SLIP -- lived on Today, above the hero, until 2026-09-12
+   (docs/DECISION_TODAY_ONE_ANSWER.md option A1). Moved to #/performance,
+   under "THE ENGINE'S OWN SLIP — RESEARCH"; the renderer that owns this
+   markup is `renderTonightsPicks`, now in web/js/slip.js and called from
+   web/js/performance.js, not today.js. Comment corrected 2026-09-12 --
+   the selectors below needed no changes for the move, but this one did,
+   and a stale "leads Today" comment on CSS that no longer runs there is
+   exactly the kind of pointer-at-nothing this whole decision was about. */
 .gv2-picks { margin: var(--sp-9) auto var(--sp-10); max-width: 1180px; }
 .gv2-picks__eyebrow { display: block; font-family: var(--font-mono); font-size: 13px;
   letter-spacing: .14em; color: var(--v-t5); margin-bottom: var(--sp-3); }
@@ -3030,6 +3036,26 @@
   text-decoration: none; align-self: flex-start;
 }
 .perf-whose__link:hover, .perf-whose__link:focus-visible { text-decoration: underline; }
+
+/* THE ENGINE'S OWN SLIP section (#/performance) -- NOT .perf-whose. That
+   class is an amber warn-callout built for one short paragraph (sp-8/sp-9
+   padding, amber left border); reusing it here doubled up with the picks
+   grid's own `gutter` padding and rendered as an oversized amber warning
+   box around what is really a picks grid with a caption, not a warning
+   (checker finding, 2026-09-12). This is its own, neutral panel padding --
+   no border accent, because nothing here is a warning. */
+.perf-engine-slip {
+  padding: var(--sp-9);
+  display: flex; flex-direction: column; gap: var(--sp-6);
+}
+.perf-engine-slip__eyebrow {
+  margin: 0; font-size: 12px; font-weight: 800; letter-spacing: .18em;
+  color: var(--v-t5);
+}
+.perf-engine-slip__body {
+  margin: 0; max-width: 68ch; font-size: 15px; line-height: 1.55;
+  color: var(--text-2);
+}
 .perf-head { display: flex; flex-direction: column; gap: var(--sp-4); }
 .perf-eyebrow { display: flex; }
 .perf-disclaimer { margin: 0; font-size: 15px; line-height: 1.55; color: var(--v-t3); max-width: 72ch; }

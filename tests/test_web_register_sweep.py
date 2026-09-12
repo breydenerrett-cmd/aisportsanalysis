@@ -148,8 +148,12 @@ class TheLandingPageAgreesWithTheProduct(unittest.TestCase):
 
 
 class TheSlipLineNamesTheClub(unittest.TestCase):
+    # MOVED 2026-09-12 with the rest of the slip renderer, from today.js to
+    # web/js/slip.js (docs/DECISION_TODAY_ONE_ANSWER.md option A1) -- see
+    # tests/test_today_one_answer.py::TheSlipIsNotOnToday for the coverage
+    # that guards today.js no longer carrying its own copy.
     def test_the_server_sentence_is_printed_when_present(self):
-        text = (JS / "today.js").read_text(encoding="utf-8")
+        text = (JS / "slip.js").read_text(encoding="utf-8")
         body = text.split("function pickWagerLine(")[1].split("\nfunction ")[0]
         self.assertIn("pick.wager_text", body)
         self.assertIn("bookLabel(pick.book)", body)

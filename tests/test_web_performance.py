@@ -10,6 +10,11 @@
 A plain-text scan, like tests/test_web_structure.py and
 tests/test_web_v2_betcheck.py -- never starts a server, never imports a JS
 engine.
+
+ADDED 2026-09-12 (docs/DECISION_TODAY_ONE_ANSWER.md option A1,
+owner-approved): `TheEngineSlipMovedHere` covers the slip's move from
+#/today to this screen -- web/js/slip.js now owns `renderTonightsPicks`
+and this module is its only caller.
 """
 
 from __future__ import annotations
@@ -30,6 +35,7 @@ BETCHECK_PATH = WEB_JS / "betcheck.js"
 GAMES_PATH = WEB_JS / "games.js"
 TODAY_PATH = WEB_JS / "today.js"
 DOM_PATH = WEB_JS / "dom.js"
+SLIP_PATH = WEB_JS / "slip.js"
 
 NEW_JS_FILES = (PERFORMANCE_PATH, VALUEMETER_PATH)
 
@@ -40,6 +46,17 @@ BANNED_PROBABILITY_TOKENS = (
 
 def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def _function_body(text: str, start: int) -> str:
+    """`text` from `start` up to (not including) the next top-level
+    function declaration, or to end-of-file when `start`'s function is the
+    last one in the module -- `renderEngineSlipSection` is, in
+    performance.js, so a fixed "\\nfunction " sentinel (this file's older
+    pattern) raises ValueError instead of finding the boundary, since the
+    next declaration is `export async function renderPerformance(`."""
+    m = re.search(r"\n(?:export\s+(?:async\s+)?)?function\s", text[start + 1:])
+    return text[start:start + 1 + m.start()] if m else text[start:]
 
 
 class NewFilesExist(unittest.TestCase):
@@ -261,6 +278,138 @@ class AnalyticalCutsRendered(unittest.TestCase):
         fn = self.text.split("function cutsSignedCell(")[1].split("\nfunction ")[0]
         self.assertIn('"—"', fn)
         self.assertNotRegex(fn, r"\|\|\s*0\b")
+
+
+class TheEngineSlipMovedHere(unittest.TestCase):
+    """A1: the slip that used to lead #/today now renders on #/performance,
+    under a heading that says plainly it is research, not the card."""
+
+    def test_slip_module_exists_and_is_imported(self):
+        self.assertTrue(SLIP_PATH.is_file(), "web/js/slip.js is missing")
+        self.assertTrue(_read(SLIP_PATH).strip(), "slip.js is empty")
+        text = _read(PERFORMANCE_PATH)
+        self.assertIn('from "./slip.js"', text)
+        self.assertIn("renderTonightsPicks", text)
+
+    def test_performance_mounts_the_tonights_picks_hook(self):
+        # UPDATED 2026-09-12 (checker finding): the previous version of this
+        # test only checked the hook STRING exists somewhere in slip.js --
+        # true of a performance.js that defined renderEngineSlipSection and
+        # never called it, or called it and never mounted the result. This
+        # walks the real call chain instead: the hook lives in slip.js's own
+        # markup (reached only through renderTonightsPicks), and that
+        # function is reachable only by tracing renderEngineSlipSection
+        # actually calling it AND appending what it returns, and
+        # renderPerformance actually calling renderEngineSlipSection AND
+        # appending its result to the screen.
+        self.assertIn('"data-hook": "tonights-picks"', _read(SLIP_PATH))
+
+        text = _read(PERFORMANCE_PATH)
+        fn_at = text.find("function renderEngineSlipSection(")
+        self.assertNotEqual(-1, fn_at, "renderEngineSlipSection is gone")
+        fn_body = _function_body(text, fn_at)
+        self.assertRegex(fn_body, r"renderTonightsPicks\(\s*slip",
+                         "renderEngineSlipSection never calls renderTonightsPicks")
+        self.assertIn("section.appendChild(picks)", fn_body,
+                     "renderEngineSlipSection builds the picks node but "
+                     "never mounts it into the section it returns")
+
+        render_at = text.find("export async function renderPerformance(")
+        self.assertNotEqual(-1, render_at, "renderPerformance is gone")
+        render_body = text[render_at:]
+        call_at = render_body.find("renderEngineSlipSection(")
+        mount_at = render_body.find("screen.appendChild(slipSection)")
+        self.assertNotEqual(-1, call_at,
+                            "renderPerformance never calls renderEngineSlipSection")
+        self.assertNotEqual(-1, mount_at,
+                            "renderPerformance builds the slip section but "
+                            "never mounts it onto the screen")
+        self.assertLess(call_at, mount_at,
+                        "the slip section is mounted before it is built")
+
+    def test_performance_fetches_today_for_the_slip_not_a_new_endpoint(self):
+        # GET /today is where the slip is served (src/engine/slip.py via
+        # the /today route) -- this screen must read it from there, not
+        # invent a dedicated endpoint the mission explicitly forbids adding.
+        text = _read(PERFORMANCE_PATH)
+        self.assertIn('apiGet("/today")', text)
+
+    def test_the_slip_section_does_not_point_at_a_card_not_on_this_page(self):
+        # Checker finding, 2026-09-12: the section used to say "a different,
+        # stricter rule than the card's market-confidence ranking above" --
+        # but nothing named "the card" renders above it on #/performance,
+        # only the RESEARCH — NOT THE CARD banner and a link to
+        # #/record-card. Honesty rule: a page must not point a reader at
+        # something that is not on the screen.
+        text = _read(PERFORMANCE_PATH)
+        fn_at = text.find("function renderEngineSlipSection(")
+        self.assertNotEqual(-1, fn_at, "renderEngineSlipSection is gone")
+        fn_body = _function_body(text, fn_at)
+        self.assertNotIn("ranking above", fn_body,
+                         "this section still claims something renders "
+                         "\"above\" it that is not actually on this page")
+
+    def test_the_slip_section_is_not_the_amber_warn_callout(self):
+        # Checker finding, 2026-09-12: reusing .perf-whose (a warn-amber
+        # callout sized for one short paragraph) around the whole picks
+        # grid, itself still carrying .gutter, doubled up the padding and
+        # rendered as an oversized amber warning box. The slip section must
+        # use its own, non-warn wrapper class, and the nested picks grid
+        # must not carry a second full-bleed gutter inside it.
+        text = _read(PERFORMANCE_PATH)
+        fn_at = text.find("function renderEngineSlipSection(")
+        self.assertNotEqual(-1, fn_at, "renderEngineSlipSection is gone")
+        fn_body = _function_body(text, fn_at)
+        self.assertNotIn("perf-whose", fn_body,
+                         "the slip section reuses the amber warn-callout class")
+        self.assertRegex(fn_body, r"nested:\s*true",
+                         "the nested picks grid keeps its own full gutter, "
+                         "double-padding inside this section's panel")
+
+    def test_the_slip_section_names_its_own_thin_history_honestly(self):
+        # The slip has seven bets ever tagged published -- too few for a
+        # record, and this section must say so rather than pool it with
+        # the FORWARD_TEST classes' hundreds of paper positions below.
+        text = _read(PERFORMANCE_PATH).lower()
+        self.assertIn("seven bets", text)
+        self.assertIn("too few for a record", text)
+
+    def test_the_research_heading_is_present(self):
+        # UPDATED 2026-09-12 (checker finding): "RESEARCH" and
+        # "renderEngineSlipSection" both existing SOMEWHERE in the file
+        # passes even if they never appear together -- the top-of-page
+        # "RESEARCH — NOT THE CARD" banner alone would satisfy it. Scoped
+        # to renderEngineSlipSection's own body so the heading text is
+        # actually the one this section renders, not a different banner
+        # elsewhere on the page.
+        text = _read(PERFORMANCE_PATH)
+        fn_at = text.find("function renderEngineSlipSection(")
+        self.assertNotEqual(-1, fn_at, "renderEngineSlipSection is gone")
+        fn_body = _function_body(text, fn_at)
+        self.assertIn("RESEARCH", fn_body,
+                      "renderEngineSlipSection's own heading no longer says RESEARCH")
+
+    def test_the_slip_section_has_no_duplicate_leading_heading(self):
+        # Checker finding, 2026-09-12: the moved renderer used to print its
+        # own Today-era eyebrow/headline ("TONIGHT'S PICKS" / "Where our
+        # systems currently see the strongest case.") immediately under
+        # this section's "THE ENGINE'S OWN SLIP — RESEARCH" heading -- two
+        # stacked headings reading as a second pick feed directly under the
+        # label saying this is not one. renderEngineSlipSection must pass
+        # slip.js's renderTonightsPicks an explicit eyebrow/headline
+        # override (null or otherwise), not rely on that function's
+        # Today-flavoured defaults.
+        text = _read(PERFORMANCE_PATH)
+        fn_at = text.find("function renderEngineSlipSection(")
+        self.assertNotEqual(-1, fn_at, "renderEngineSlipSection is gone")
+        fn_body = _function_body(text, fn_at)
+        call = re.search(r"renderTonightsPicks\(\s*slip\s*,\s*\{", fn_body)
+        self.assertIsNotNone(call,
+                             "renderEngineSlipSection calls renderTonightsPicks "
+                             "with no copy override, so it renders Today's own "
+                             "eyebrow/headline as a second heading here")
+        self.assertNotIn("TONIGHT'S PICKS", fn_body)
+        self.assertNotIn("strongest case", fn_body)
 
 
 if __name__ == "__main__":
