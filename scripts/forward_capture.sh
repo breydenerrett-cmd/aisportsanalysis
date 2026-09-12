@@ -187,7 +187,28 @@ fi
 # same two paths daily_loop.sh and afternoon_slate.sh already stage for exactly
 # that reason. Leaving them out would let a pass freeze decisions locally and
 # then hand the next `pull --rebase --autostash` an uncommitted ledger to carry.
+#
+# data/historical/lineups.jsonl AND matchup_history, BY NAME, because leaving
+# them out silently discarded three days of work.
+#
+# The lineup-cadence block above has called `lineup_store.build` every fifteen
+# minutes since 2026-09-08. It writes to data/historical/, which was not in
+# this list -- so every run rebuilt the store on the runner and every run threw
+# it away unstaged. Measured 2026-09-11: data/watch/lineups_watch.jsonl was
+# current to the hour with 25 games fetched that day, while
+# data/historical/lineups.jsonl had not moved since 2026-09-08 and carried
+# exactly one commit in its whole history.
+#
+# That store is not a research artefact. api/games.py and
+# src/pipeline/enrichment.py read it for tonight's batting orders, so the
+# product had been pricing three-day-old lineups while the block that fixed
+# lineup cadence reported success every quarter hour.
+#
+# Named individually, never `data/historical` wholesale: that directory also
+# holds mlb_results.csv and the arsenals tree, and staging it bare would put
+# multi-megabyte churn into a commit that runs ninety-six times a day.
 git add data/watch data/processed data/raw/oddsapi evidence data/paper_accounts docs/OVERNIGHT_RUN.md 2>/dev/null || true
+git add data/historical/lineups.jsonl data/historical/matchup_history.jsonl data/historical/matchup_pairs.json 2>/dev/null || true
 if ! git diff --cached --quiet; then
     BRANCH=$(git rev-parse --abbrev-ref HEAD)
     if ! git commit -q -m "Forward capture $(date -u +%H:%MZ)"; then
