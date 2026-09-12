@@ -1102,3 +1102,10 @@
 {"fetched_utc": "2026-09-12T12:40:54.875927+00:00", "game_date": "2026-09-12", "poll": true}
 {"fetched_utc": "2026-09-12T13:25:56.793728+00:00", "game_date": "2026-09-12", "poll": true}
 {"fetched_utc": "2026-09-12T14:07:31.732513+00:00", "game_date": "2026-09-12", "poll": true}
+{"fetched_utc": "2026-09-12T14:55:55.898085+00:00", "game_date": "2026-09-12", "poll": true}
+{"category": "optioned", "date": "2026-09-12", "first_seen_utc": "2026-09-12T14:55:55.898085+00:00", "player": "Ben Ross", "player_id": 805346, "team": "MIN", "transaction_id": 942121}
+{"category": "recalled", "date": "2026-09-12", "first_seen_utc": "2026-09-12T14:55:55.898085+00:00", "player": "Emmanuel Rodriguez", "player_id": 691181, "team": "MIN", "transaction_id": 942122}
+{"category": "recalled", "date": "2026-09-12", "first_seen_utc": "2026-09-12T14:55:55.898085+00:00", "player": "Andrew Sears", "player_id": 808825, "team": "DET", "transaction_id": 942128}
+{"category": "other", "date": "2026-09-12", "first_seen_utc": "2026-09-12T14:55:55.898085+00:00", "player": "Keider Montero", "player_id": 672456, "team": "DET", "transaction_id": 942129}
+{"category": "il_activation", "date": "2026-09-12", "first_seen_utc": "2026-09-12T14:55:55.898085+00:00", "player": "Emmanuel Rodriguez", "player_id": 691181, "team": "MIN", "transaction_id": 942135}
+{"fetched_utc": "2026-09-12T14:55:57.965422+00:00", "game_date": "2026-09-12", "poll": true}
