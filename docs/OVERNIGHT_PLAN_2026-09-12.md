@@ -325,6 +325,24 @@ evening, the other tonight. Build the readers now so nothing waits on me.
 
 ---
 
+## Owner decisions surfaced tonight (not made)
+
+- **Today gives two answers to "what do I bet".** TONIGHT'S CARD (the
+  product: 3–5 picks, frozen, graded) sits above TONIGHT'S PICKS ("where
+  our systems currently see the strongest case" — the engine slip, ranked
+  by how many systems agree). `docs/PRODUCT_DOCTRINE.md` §5 names the
+  slip as #1; the card did not exist when that was written. One should
+  lead and the other should be labelled as research, or go. Which is a
+  product call.
+- **The hero on Today is chosen by "largest price gap against consensus"**
+  (`chooseGapCandidate`) — the retired register still picks the headline
+  game even though nothing on screen says so.
+- **A ~T-6h baseline prop capture** (about one credit per game per night)
+  would unlock the timing version of the slot test (`docs/PREREG_SLOT_PROP.md`,
+  "Why this version"). Spend decision.
+- **Drop the stashes and the junk directory** — `git stash drop` ×3 (all
+  three are the same generated-doc churn) and `rm -rf '%SystemDrive%'`.
+
 ## What I will not do without being asked
 
 - **Change what the card ranks on.** It ranks by how confident the market is,
