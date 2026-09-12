@@ -41,6 +41,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Optional
 
+from src.analysis import grade
 from src.analysis import synthesis as synthesis_mod
 
 
@@ -195,7 +196,7 @@ def slate_game_summary(entry: dict, *, now: datetime) -> dict:
     detail -- that lives in the quick/advanced views for one game."""
     dossier = entry["dossier"]
     game = dossier.game
-    return {
+    row = {
         "game_id": game_id(game),
         "away_team": game.get("away_team"),
         "home_team": game.get("home_team"),
@@ -208,6 +209,15 @@ def slate_game_summary(entry: dict, *, now: datetime) -> dict:
         "board_summary": _board_summary(dossier, now=now),
         "data_quality": _data_quality(dossier),
     }
+    # THE KNOWLEDGE GRADE -- how complete our read of this game is, from the
+    # census above and nothing else. Not a forecast and not a ranking on
+    # price; src/analysis/grade.py's docstring carries the bands and the
+    # measurement that forbids grading on the price gap.
+    row["knowledge"] = grade.knowledge_grade(
+        game=game, data_quality=row["data_quality"],
+        board_summary=row["board_summary"],
+        lineups=dossier.get("lineups"), gaps=dossier.gaps)
+    return row
 
 
 def build_slate_list(entries: list, *, date: Optional[str] = None,
@@ -227,6 +237,9 @@ def build_slate_list(entries: list, *, date: Optional[str] = None,
         "checked_games": len(entries),
         "games": [slate_game_summary(e, now=now) for e in entries],
         "notes": list(notes or []),
+        # Printed once beside the first grade a page shows. Served rather
+        # than typed client-side so the two cannot drift.
+        "knowledge_legend": list(grade.legend()),
     }
 
 

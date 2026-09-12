@@ -189,6 +189,27 @@ class SlateListTests(unittest.TestCase):
         self.assertFalse(quality["has_lineups"])
         self.assertIn("lineups", quality["gaps"])
 
+    def test_every_row_carries_a_knowledge_grade_and_the_slate_a_legend(self):
+        """src/analysis/grade.py: how complete our read is, as a letter.
+
+        This fixture has a seven-book board and no lineup, so it cannot be an
+        A; the letter is checked against the grader's own rule rather than
+        pinned to a literal that would drift with the fixture."""
+        entries, observed = _priced_game_entries()
+        payload = gamepayload.build_slate_list(
+            entries, now=observed + timedelta(minutes=10))
+        row = payload["games"][0]
+        self.assertIn("knowledge", row)
+        knowledge = row["knowledge"]
+        self.assertIn(knowledge["letter"], ("A", "B", "C", "D"))
+        self.assertFalse(knowledge["core"]["lineups"])
+        self.assertNotEqual(knowledge["letter"], "A")
+        self.assertTrue(knowledge["why"].startswith(f"{knowledge['letter']}: "))
+        self.assertTrue(payload["knowledge_legend"])
+        self.assertIn("not how much we expect to win",
+                      " ".join(payload["knowledge_legend"]))
+        json.dumps(payload)  # still serialisable
+
 
 class QuickViewTests(unittest.TestCase):
 

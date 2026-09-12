@@ -106,6 +106,20 @@ function pickCard(pick, total) {
     text: `${pick.rank} OF ${total}` }));
   top.appendChild(el("span", { class: `card2__label card2__label--${tone}`,
     text: pick.label || "" }));
+  // THE KNOWLEDGE GRADE (src/analysis/grade.py): how complete our read of
+  // this game was when the pick was frozen. A letter beside the label, the
+  // one-line reason on hover, the legend once under READ THIS ONCE. It is
+  // not a forecast and the legend says so; the "+" is the only place a
+  // price enters.
+  const knowledge = pick.knowledge || null;
+  if (knowledge && knowledge.grade) {
+    top.appendChild(el("span", {
+      class: `card2__grade card2__grade--${String(knowledge.letter || "").toLowerCase()}`,
+      "data-hook": "card-grade",
+      title: knowledge.why || "",
+      text: knowledge.grade,
+    }));
+  }
   if (pick.first_pitch_utc) {
     top.appendChild(el("span", { class: "card2__time",
       text: formatEasternTime(pick.first_pitch_utc) || "" }));
@@ -235,6 +249,12 @@ function standingNote(payload) {
   note.appendChild(el("p", { class: "card2note__body", text: payload.disclaimer || "" }));
   note.appendChild(el("p", { class: "card2note__body card2note__body--mute",
     text: payload.basis || "" }));
+  // What the letter beside each pick means -- served, never typed here, so
+  // the page and the grader cannot disagree about it.
+  for (const line of payload.knowledge_legend || []) {
+    note.appendChild(el("p", { class: "card2note__body card2note__body--mute",
+      "data-hook": "card-grade-legend", text: line }));
+  }
   if (payload.calibrated === false) {
     // A card built without the calibration file publishes the raw model's
     // numbers, which run about twice as confident as they should. That is a

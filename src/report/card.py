@@ -19,7 +19,7 @@ import os
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Sequence
 
-from src.analysis import calibrate, daily_card, strength
+from src.analysis import calibrate, daily_card, gamepayload, grade, strength
 from src.analysis import prices as prices_mod
 from src.appstate import freshness
 from src.core import odds as odds_math
@@ -499,6 +499,7 @@ def card_for_date(entries: Sequence, opportunity_rows: Sequence, *, date: str,
         frozen = frozen_card(date)
         if frozen is not None:
             frozen["date"] = date
+            frozen["knowledge_legend"] = list(grade.legend())
             frozen["generated_at"] = now.astimezone(timezone.utc).isoformat()
             frozen["model_basis"] = strength.MODEL_BASIS
             return frozen
@@ -558,9 +559,62 @@ def card_for_date(entries: Sequence, opportunity_rows: Sequence, *, date: str,
         "frozen": False,
         "frozen_at": None,
     })
+    attach_knowledge(payload, entries, now=now)
     if not payload["picks"]:
         payload["reason"] = _empty_reason(entries, started, len(games),
                                           len(candidates))
+    return payload
+
+
+def attach_knowledge(payload: dict, entries: Sequence, *, now: datetime) -> dict:
+    """Put a knowledge grade on every pick, and the legend on the card.
+
+    The grade comes from the same dossier census the slate list shows
+    (src/analysis/gamepayload.py), joined on game_pk -- the one identifier
+    both the card and the slate carry unchanged. A pick whose game has no
+    dossier here gets no grade rather than a guessed one.
+
+    The "+" is decided here and nowhere else, because this is the only
+    place a pick and its price exist together: an A becomes A+ when the
+    pick's own model number clears the break-even its stated price demands.
+    Moneyline picks only -- on a run-line pick `model_probability` is a
+    cover probability and `price` is the run-line price, and comparing them
+    is a different question than the one the plus asks.
+    """
+    grades = {}
+    for entry in entries or ():
+        dossier = entry.get("dossier") if isinstance(entry, dict) else None
+        if not isinstance(dossier, dossier_mod.Dossier):
+            continue
+        game = dossier.game or {}
+        key = game.get("game_pk")
+        if key is None:
+            continue
+        grades[str(key)] = grade.knowledge_grade(
+            game=game,
+            data_quality=gamepayload._data_quality(dossier),
+            board_summary=gamepayload._board_summary(dossier, now=now),
+            lineups=dossier.get("lineups"),
+            gaps=dossier.gaps)
+
+    for pick in payload.get("picks") or ():
+        base = grades.get(str(pick.get("game_pk")))
+        if base is None:
+            pick["knowledge"] = None
+            continue
+        breakeven = None
+        if pick.get("market") == "moneyline" and pick.get("price") is not None:
+            try:
+                breakeven = odds_math.american_to_probability(pick["price"])
+            except (odds_math.OddsError, TypeError, ValueError, ZeroDivisionError):
+                breakeven = None
+        pick["knowledge"] = grade.with_plus(
+            base,
+            model_probability=(pick.get("model_probability")
+                               if pick.get("market") == "moneyline" else None),
+            breakeven=breakeven)
+
+    payload["knowledge_legend"] = list(grade.legend())
     return payload
 
 

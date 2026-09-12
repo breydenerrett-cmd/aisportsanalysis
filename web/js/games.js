@@ -165,14 +165,34 @@ export async function renderGamesList(container, date) {
     for (const row2 of rows) {
       const h2h = markets.get(row2.game_id) || null;
       const best = h2h && h2h.best ? h2h.best : {};
+      // THE KNOWLEDGE GRADE rides the tile's one flag slot on this screen:
+      // how complete our read of the game is (src/analysis/grade.py), the
+      // sentence behind it on hover. Never `money` -- a grade is a fact
+      // about what we hold, not a price advantage.
+      const knowledge = row2.knowledge || null;
+      const flag = knowledge && knowledge.grade
+        ? { text: knowledge.grade, title: knowledge.why || "",
+            kind: /^[AB]/.test(knowledge.grade) ? "live" : "neutral" }
+        : null;
       grid.appendChild(slateTile(Object.assign({ date: payload.date || useDate }, row2), {
         awayPrice: best.away ? best.away.price : null,
         homePrice: best.home ? best.home.price : null,
+        flag,
         delay: (i % 6) * 70,
       }));
       i += 1;
     }
     screen.appendChild(grid);
+    // What the letter on each tile means -- served with the slate, never
+    // typed here.
+    if (Array.isArray(payload.knowledge_legend) && payload.knowledge_legend.length) {
+      const legend = el("section", { class: "gutter games-grade-legend",
+        "data-hook": "games-grade-legend" });
+      for (const line of payload.knowledge_legend) {
+        legend.appendChild(el("p", { class: "games-grade-legend__line", text: line }));
+      }
+      screen.appendChild(legend);
+    }
   }
 
   // Board freshness for the slate, verbatim from the payload.

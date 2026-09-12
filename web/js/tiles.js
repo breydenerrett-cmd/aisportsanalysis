@@ -57,10 +57,14 @@ export function slateTile(game, opts = {}) {
   if (opts.flag && opts.flag.text) {
     const kind = opts.flag.kind === "money" ? "badge--money"
       : opts.flag.kind === "live" ? "badge--live" : "badge--neutral";
-    tile.appendChild(el("span", {
+    const flagAttrs = {
       class: `tile__flag badge chamfer chamfer--chip ${kind}`,
       "data-hook": "tile-flag", text: opts.flag.text,
-    }));
+    };
+    // A flag may carry the sentence behind it (the knowledge grade's
+    // "why"), shown on hover; nothing else changes.
+    if (opts.flag.title) flagAttrs.title = opts.flag.title;
+    tile.appendChild(el("span", flagAttrs));
   }
 
   const teams = el("span", { class: "tile__teams" });

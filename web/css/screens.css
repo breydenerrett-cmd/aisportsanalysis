@@ -2042,6 +2042,10 @@
 .bc2-empty__title { font-family: var(--font-display); font-size: 21px; font-weight: 700; color: var(--v-t1); margin-bottom: var(--sp-5); }
 .bc2-empty__body { font-size: 15px; line-height: 1.55; color: var(--v-t4); max-width: 480px; }
 
+/* The knowledge-grade legend under the Games grid (src/analysis/grade.py). */
+.games-grade-legend { display: flex; flex-direction: column; gap: var(--sp-2); margin-top: var(--sp-7); }
+.games-grade-legend__line { margin: 0; font-family: var(--font-body); font-size: 13px; line-height: 1.45; color: var(--text-mute); max-width: 70ch; }
+
 .bc2-blocks { display: flex; flex-direction: column; gap: var(--sp-8); }
 .bc2-note {
   padding: var(--sp-7) var(--sp-8);

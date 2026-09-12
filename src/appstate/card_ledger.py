@@ -74,6 +74,11 @@ FROZEN_FIELDS = (
     # the pick's own, and an alternative nobody was told to take is not a
     # bet this record gets credit or blame for.
     "alternative",
+    # The knowledge grade shown beside the pick (src/analysis/grade.py):
+    # how complete our read of the game was when the pick was frozen. Shown
+    # to the reader, so part of what was claimed; never graded, because it
+    # is not a bet.
+    "knowledge",
 )
 
 

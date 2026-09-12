@@ -96,6 +96,21 @@
 .card2__label--lean { color: var(--v-live-label); opacity: .8; }
 .card2__label--slight { color: var(--text-mute); }
 .card2__label--split { color: var(--v-warn-label); }
+/* The knowledge grade (src/analysis/grade.py). Mono, boxed, no colour for
+ * A and B beyond the page's own text, muted for C and D -- a letter is a
+ * fact about what we hold, not a call, so it gets no money red. */
+.card2__grade {
+  margin-left: var(--sp-4);
+  padding: 2px 7px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: var(--text-hi);
+  border: 1px solid var(--edge-1);
+  cursor: help;
+}
+.card2__grade--c, .card2__grade--d { color: var(--text-mute); }
 .card2__time {
   margin-left: auto;
   font-family: var(--font-mono);
