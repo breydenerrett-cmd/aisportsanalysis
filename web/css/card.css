@@ -523,6 +523,14 @@
 .crp-day--flash { outline: 2px solid var(--accent, #35c3f3); outline-offset: 2px; }
 
 @media (max-width: 640px) {
+  /* "CHECK THIS PRICE YOURSELF" is a 375px-wide nowrap button inside a
+     card that clips overflow: on a phone its last word was cut off
+     (measured 2026-09-12, right edge at 408px of 375). Fill the card and
+     let it wrap. */
+  .card2__actions .btn {
+    width: 100%; box-sizing: border-box; white-space: normal;
+    text-align: center; padding: 13px 16px; font-size: 15px; letter-spacing: .1em;
+  }
   .crp-cal__grid { gap: 4px; }
   .crp-cal__day, .crp-cal__pad { min-height: 54px; }
   .crp-cal__day { padding: 5px 4px; }
