@@ -17,6 +17,8 @@ on:
       - "src/**"
       - "web/**"
       - "deploy/**"
+      # What reaches the build context is part of the image definition.
+      - ".dockerignore"
       - ".github/workflows/deploy-staging.yml"
       # forward-capture commits refresh the stores baked into the image, so
       # staging's Today/Odds data follows the hourly captures automatically

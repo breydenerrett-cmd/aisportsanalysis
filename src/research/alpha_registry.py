@@ -487,6 +487,16 @@ def public_research_counts(path: Optional[Any] = None) -> Dict[str, int]:
     rather than waiting for someone to notice.
     """
     registry = AlphaRegistry(path)
+    # ABSENT IS NOT ZERO. A deployment without the registry file used to
+    # report {"hypotheses": 0, ...}, and the live demo told every visitor
+    # "0 pre-registered research ideas have been tested" (staging,
+    # 2026-09-12). Every caller already handles an exception as "unknown"
+    # -- /meta serves nulls, src.analysis falls back to its last-known
+    # figures -- so a missing file is raised, never counted.
+    if not registry.path.exists():
+        raise FileNotFoundError(
+            f"alpha registry not found at {registry.path}; a count of zero "
+            "would be a claim, and this is an absence")
     latest = registry._latest_verdict_results()  # noqa: SLF001
     hypotheses = 0
     surviving = 0

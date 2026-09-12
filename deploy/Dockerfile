@@ -64,6 +64,11 @@ COPY data/app/.gitkeep data/app/.gitkeep
 # surfaces. ~10 MB together. Nothing in api/ ever writes to either tree.
 COPY evidence/ evidence/
 COPY data/paper_accounts/ data/paper_accounts/
+# THE RESEARCH REGISTRY (2026-09-12): every customer surface states how
+# many hypotheses were pre-registered and read, from this one file via
+# GET /meta. It was never in the image, so staging told every visitor
+# "0 pre-registered research ideas". ~100 KB, git-tracked, read-only here.
+COPY data/research/alpha_registry.jsonl data/research/alpha_registry.jsonl
 # F-2 (2026-09-07): team records, starter form, bullpen workload, posted
 # lineups and handedness for the matchup page. .dockerignore admits exactly
 # five files here; the deploy workflow restores them from the daily-loop

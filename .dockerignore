@@ -54,6 +54,12 @@ data/historical/*
 !data/historical/pitcher_splits.json
 !data/historical/arsenals/
 !data/historical/transactions.jsonl
+# The research registry, and only it: GET /meta's hypothesis counts read
+# this file, and without it the live demo said "0 pre-registered research
+# ideas" (2026-09-12). Sweep artifacts under data/research/ stay out.
+!data/research/
+data/research/*
+!data/research/alpha_registry.jsonl
 
 design/
 docs/
