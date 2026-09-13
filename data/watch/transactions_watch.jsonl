@@ -1183,3 +1183,9 @@
 {"category": "signed", "date": "2026-09-13", "first_seen_utc": "2026-09-13T21:20:08.398297+00:00", "player": "Elieser Hern\u00e1ndez", "player_id": 622694, "team": "ATL", "transaction_id": 942272}
 {"category": "rehab", "date": "2026-09-13", "first_seen_utc": "2026-09-13T21:20:08.398297+00:00", "player": "Jason Adam", "player_id": 592094, "team": "SD", "transaction_id": 942273}
 {"fetched_utc": "2026-09-13T21:20:09.538267+00:00", "game_date": "2026-09-13", "poll": true}
+{"fetched_utc": "2026-09-13T23:19:33.072672+00:00", "game_date": "2026-09-13", "poll": true}
+{"category": "other", "date": "2026-09-13", "first_seen_utc": "2026-09-13T23:19:33.072672+00:00", "player": "Chris Devenski", "player_id": 606965, "team": "NYM", "transaction_id": 942274}
+{"category": "other", "date": "2026-09-13", "first_seen_utc": "2026-09-13T23:19:33.072672+00:00", "player": "Taylor Rashi", "player_id": 688497, "team": "OAK", "transaction_id": 942275}
+{"category": "rehab", "date": "2026-09-13", "first_seen_utc": "2026-09-13T23:19:33.072672+00:00", "player": "Nolan Schanuel", "player_id": 694384, "team": "LAA", "transaction_id": 942276}
+{"category": "rehab", "date": "2026-09-13", "first_seen_utc": "2026-09-13T23:19:33.072672+00:00", "player": "Sam Bachman", "player_id": 696147, "team": "LAA", "transaction_id": 942277}
+{"fetched_utc": "2026-09-13T23:19:34.165985+00:00", "game_date": "2026-09-13", "poll": true}
