@@ -1178,3 +1178,8 @@
 {"category": "il_placement", "date": "2026-09-13", "first_seen_utc": "2026-09-13T18:57:55.927276+00:00", "player": "Anthony Seigler", "player_id": 678011, "team": "BOS", "transaction_id": 942261}
 {"category": "il_activation", "date": "2026-09-13", "first_seen_utc": "2026-09-13T18:57:55.927276+00:00", "player": "Willson Contreras", "player_id": 575929, "team": "BOS", "transaction_id": 942262}
 {"fetched_utc": "2026-09-13T18:57:57.026578+00:00", "game_date": "2026-09-13", "poll": true}
+{"fetched_utc": "2026-09-13T21:20:08.398297+00:00", "game_date": "2026-09-13", "poll": true}
+{"category": "other", "date": "2026-09-13", "first_seen_utc": "2026-09-13T21:20:08.398297+00:00", "player": "Scott Bandura", "player_id": 814154, "team": "SF", "transaction_id": 942269}
+{"category": "signed", "date": "2026-09-13", "first_seen_utc": "2026-09-13T21:20:08.398297+00:00", "player": "Elieser Hern\u00e1ndez", "player_id": 622694, "team": "ATL", "transaction_id": 942272}
+{"category": "rehab", "date": "2026-09-13", "first_seen_utc": "2026-09-13T21:20:08.398297+00:00", "player": "Jason Adam", "player_id": 592094, "team": "SD", "transaction_id": 942273}
+{"fetched_utc": "2026-09-13T21:20:09.538267+00:00", "game_date": "2026-09-13", "poll": true}
