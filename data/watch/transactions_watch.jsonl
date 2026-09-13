@@ -1169,3 +1169,12 @@
 {"category": "recalled", "date": "2026-09-13", "first_seen_utc": "2026-09-13T16:33:00.124859+00:00", "player": "Jose Fernandez", "player_id": 699912, "team": "ARI", "transaction_id": 942239}
 {"category": "rehab", "date": "2026-09-13", "first_seen_utc": "2026-09-13T16:33:00.124859+00:00", "player": "Jose Quintana", "player_id": 500779, "team": "COL", "transaction_id": 942240}
 {"fetched_utc": "2026-09-13T16:33:01.704470+00:00", "game_date": "2026-09-13", "poll": true}
+{"fetched_utc": "2026-09-13T18:57:55.927276+00:00", "game_date": "2026-09-13", "poll": true}
+{"category": "rehab", "date": "2026-09-13", "first_seen_utc": "2026-09-13T18:57:55.927276+00:00", "player": "Christian Franklin", "player_id": 681047, "team": "BAL", "transaction_id": 942241}
+{"category": "il_placement", "date": "2026-09-13", "first_seen_utc": "2026-09-13T18:57:55.927276+00:00", "player": "Owen Caissie", "player_id": 683357, "team": "MIA", "transaction_id": 942251}
+{"category": "il_activation", "date": "2026-09-13", "first_seen_utc": "2026-09-13T18:57:55.927276+00:00", "player": "Xavier Edwards", "player_id": 669364, "team": "MIA", "transaction_id": 942252}
+{"category": "recalled", "date": "2026-09-13", "first_seen_utc": "2026-09-13T18:57:55.927276+00:00", "player": "Drew Rom", "player_id": 680723, "team": "OAK", "transaction_id": 942253}
+{"category": "optioned", "date": "2026-09-13", "first_seen_utc": "2026-09-13T18:57:55.927276+00:00", "player": "Joey Estes", "player_id": 683155, "team": "OAK", "transaction_id": 942254}
+{"category": "il_placement", "date": "2026-09-13", "first_seen_utc": "2026-09-13T18:57:55.927276+00:00", "player": "Anthony Seigler", "player_id": 678011, "team": "BOS", "transaction_id": 942261}
+{"category": "il_activation", "date": "2026-09-13", "first_seen_utc": "2026-09-13T18:57:55.927276+00:00", "player": "Willson Contreras", "player_id": 575929, "team": "BOS", "transaction_id": 942262}
+{"fetched_utc": "2026-09-13T18:57:57.026578+00:00", "game_date": "2026-09-13", "poll": true}
