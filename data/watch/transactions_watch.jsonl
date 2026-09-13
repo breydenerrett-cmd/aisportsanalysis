@@ -1147,3 +1147,5 @@
 {"category": "il_transfer", "date": "2026-09-12", "first_seen_utc": "2026-09-12T23:23:24.085054+00:00", "player": "Matt Waldron", "player_id": 663362, "team": "WSH", "transaction_id": 942202}
 {"category": "signed", "date": "2026-09-12", "first_seen_utc": "2026-09-12T23:23:24.085054+00:00", "player": "Albert Su\u00e1rez", "player_id": 544150, "team": "BAL", "transaction_id": 942208}
 {"fetched_utc": "2026-09-12T23:23:25.848640+00:00", "game_date": "2026-09-12", "poll": true}
+{"fetched_utc": "2026-09-13T01:17:55.182299+00:00", "game_date": "2026-09-12", "poll": true}
+{"fetched_utc": "2026-09-13T01:17:57.463392+00:00", "game_date": "2026-09-12", "poll": true}
