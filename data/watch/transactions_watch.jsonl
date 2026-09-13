@@ -1151,3 +1151,21 @@
 {"fetched_utc": "2026-09-13T01:17:57.463392+00:00", "game_date": "2026-09-12", "poll": true}
 {"fetched_utc": "2026-09-13T06:33:13.707954+00:00", "game_date": "2026-09-13", "poll": true}
 {"fetched_utc": "2026-09-13T12:17:52.013880+00:00", "game_date": "2026-09-13", "poll": true}
+{"fetched_utc": "2026-09-13T16:33:00.124859+00:00", "game_date": "2026-09-13", "poll": true}
+{"category": "rehab", "date": "2026-09-13", "first_seen_utc": "2026-09-13T16:33:00.124859+00:00", "player": "Connelly Early", "player_id": 813349, "team": "WSH", "transaction_id": 942215}
+{"category": "rehab", "date": "2026-09-13", "first_seen_utc": "2026-09-13T16:33:00.124859+00:00", "player": "Manuel Rodr\u00edguez", "player_id": 655889, "team": "TB", "transaction_id": 942218}
+{"category": "il_activation", "date": "2026-09-13", "first_seen_utc": "2026-09-13T16:33:00.124859+00:00", "player": "Tanner Banks", "player_id": 621383, "team": "PHI", "transaction_id": 942220}
+{"category": "optioned", "date": "2026-09-13", "first_seen_utc": "2026-09-13T16:33:00.124859+00:00", "player": "Grant Holman", "player_id": 680880, "team": "PHI", "transaction_id": 942221}
+{"category": "designated", "date": "2026-09-13", "first_seen_utc": "2026-09-13T16:33:00.124859+00:00", "player": "Christian Cairo", "player_id": 686551, "team": "PHI", "transaction_id": 942222}
+{"category": "il_activation", "date": "2026-09-13", "first_seen_utc": "2026-09-13T16:33:00.124859+00:00", "player": "Nasim Nu\u00f1ez", "player_id": 683083, "team": "WSH", "transaction_id": 942223}
+{"category": "optioned", "date": "2026-09-13", "first_seen_utc": "2026-09-13T16:33:00.124859+00:00", "player": "Eddy Yean", "player_id": 678868, "team": "WSH", "transaction_id": 942224}
+{"category": "recalled", "date": "2026-09-13", "first_seen_utc": "2026-09-13T16:33:00.124859+00:00", "player": "David Sandlin", "player_id": 689818, "team": "CWS", "transaction_id": 942231}
+{"category": "optioned", "date": "2026-09-13", "first_seen_utc": "2026-09-13T16:33:00.124859+00:00", "player": "Tyler Schweitzer", "player_id": 805326, "team": "CWS", "transaction_id": 942232}
+{"category": "optioned", "date": "2026-09-13", "first_seen_utc": "2026-09-13T16:33:00.124859+00:00", "player": "Franco Aleman", "player_id": 680916, "team": "CLE", "transaction_id": 942234}
+{"category": "other", "date": "2026-09-13", "first_seen_utc": "2026-09-13T16:33:00.124859+00:00", "player": "Connor Brogdon", "player_id": 641401, "team": "CLE", "transaction_id": 942235}
+{"category": "il_placement", "date": "2026-09-13", "first_seen_utc": "2026-09-13T16:33:00.124859+00:00", "player": "Kyle Bradish", "player_id": 680694, "team": "BAL", "transaction_id": 942236}
+{"category": "recalled", "date": "2026-09-13", "first_seen_utc": "2026-09-13T16:33:00.124859+00:00", "player": "Yaramil Hiraldo", "player_id": 682274, "team": "BAL", "transaction_id": 942237}
+{"category": "designated", "date": "2026-09-13", "first_seen_utc": "2026-09-13T16:33:00.124859+00:00", "player": "Lourdes Gurriel Jr.", "player_id": 666971, "team": "ARI", "transaction_id": 942238}
+{"category": "recalled", "date": "2026-09-13", "first_seen_utc": "2026-09-13T16:33:00.124859+00:00", "player": "Jose Fernandez", "player_id": 699912, "team": "ARI", "transaction_id": 942239}
+{"category": "rehab", "date": "2026-09-13", "first_seen_utc": "2026-09-13T16:33:00.124859+00:00", "player": "Jose Quintana", "player_id": 500779, "team": "COL", "transaction_id": 942240}
+{"fetched_utc": "2026-09-13T16:33:01.704470+00:00", "game_date": "2026-09-13", "poll": true}
