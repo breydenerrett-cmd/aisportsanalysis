@@ -82,13 +82,13 @@ function hasOwn(obj, key) {
   return !!obj && Object.prototype.hasOwnProperty.call(obj, key);
 }
 
-/** "4:12pm ET" -- the compact lowercase clock style the artboard uses
- * throughout this screen (formatEasternClock is the same helper
- * web/js/tiles.js already reuses; this only appends the ET marker every
- * call site on this screen wants). Null in, null out. */
+/** "3:40 PM PDT" (the viewer's own zone) -- the compact clock style the
+ * artboard uses throughout this screen (formatEasternClock is the same
+ * helper web/js/tiles.js already reuses). Local-time rewrite,
+ * 2026-09-14: the zone abbreviation now comes baked into the helper
+ * itself, so this no longer appends a literal " ET". Null in, null out. */
 function et(isoUtc) {
-  const clock = formatEasternClock(isoUtc);
-  return clock ? `${clock} ET` : null;
+  return formatEasternClock(isoUtc);
 }
 
 /** No seconds-level liveness claim on this screen (capture cadence is

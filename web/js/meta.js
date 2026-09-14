@@ -14,7 +14,7 @@
  */
 
 import { apiGet } from "./api.js";
-import { el, clear, renderUnknown, humanizeKey, formatEasternClock, formatAge } from "./dom.js";
+import { el, clear, renderUnknown, humanizeKey, formatEasternClock, formatAge, localZoneAbbr } from "./dom.js";
 import { BRAND_NAME } from "./brand.js";
 
 /** The always-visible one-liner above the fold. Deliberately short and
@@ -117,7 +117,13 @@ export async function renderDisclaimerFooter(container) {
   const row = el("div", { class: "sitefoot__row" });
   row.appendChild(el("span", { class: "sitefoot__mark", text: BRAND_NAME }));
   row.appendChild(el("span", { class: "sitefoot__hair", "aria-hidden": "true" }));
-  row.appendChild(el("span", { class: "sitefoot__legal", text: "ALL TIMES ET · 21+ · PLAY RESPONSIBLY" }));
+  // Local-time rewrite, 2026-09-14: this used to hardcode "ALL TIMES ET"
+  // even though every clock on the page now shows the VIEWER's own zone.
+  // localZoneAbbr() falls back to null only if Intl itself is unusable,
+  // in which case the legal line still reads fine without the clause.
+  const zoneAbbr = localZoneAbbr();
+  row.appendChild(el("span", { class: "sitefoot__legal",
+    text: `${zoneAbbr ? `ALL TIMES ${zoneAbbr} · ` : ""}21+ · PLAY RESPONSIBLY` }));
   // A REACHABLE HELPLINE, not just the words "play responsibly".
   //
   // 1-800-GAMBLER existed only in design/linehound-v1 and -v2 mockups; it
@@ -255,8 +261,11 @@ export function renderStaleness(staleness) {
     // `formatAge` already ends in AGO ("13 HR AGO"). Appending another one
     // printed "11:52am ET · 13 HR AGO ago" on the slate page, in the
     // freshness row, where a reader is being asked to trust the timestamp.
-    if (clock && age) text = `${clock} ET · ${age}`;
-    else if (clock) text = `${clock} ET`;
+    // Local-time rewrite, 2026-09-14: `clock` now already carries the
+    // viewer's own zone abbreviation ("11:52 AM PDT"), so no more literal
+    // " ET" appended here.
+    if (clock && age) text = `${clock} · ${age}`;
+    else if (clock) text = clock;
     else if (age) text = age;
     pair("observed_utc", "Prices captured",
       text === null ? renderUnknown(staleness.observed_utc == null ? null : staleness.observed_utc)

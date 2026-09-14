@@ -105,7 +105,7 @@
 import { apiGet } from "./api.js";
 import { el, clear, formatAmerican, formatConsensusShare,
   formatEasternClock, formatSlateDate, verdictLabel,
-  notYetAvailable } from "./dom.js";
+  localZoneAbbr, notYetAvailable } from "./dom.js";
 import { renderError, renderLoadingSkeleton, renderEmptySlate,
   renderCaptureUnavailable } from "./states.js";
 import { renderCard } from "./card.js";
@@ -180,9 +180,9 @@ function boardAggregates(rows) {
   return { gamesCount: rows.length, boardsReceived, noBoard, deepest, thinnest, freshest };
 }
 
+// Local-time rewrite 2026-09-14: formatEasternClock now bakes in the viewer's own zone abbreviation.
 function et(isoUtc) {
-  const clock = formatEasternClock(isoUtc);
-  return clock ? `${clock} ET` : null;
+  return formatEasternClock(isoUtc);
 }
 
 /** "SAT SEP 7" from a bare `YYYY-MM-DD` slate date -- the calendar date
@@ -826,8 +826,9 @@ function sectionHead(label, meta, { live = false, dot = false } = {}) {
 
 function renderSlateRail(rows, oddsIndex, featuredGameId, changedIds) {
   const section = el("section", { class: "slate", "data-hook": "tonights-slate" });
+  const zoneAbbr = localZoneAbbr();
   section.appendChild(sectionHead("TONIGHT'S SLATE",
-    `${rows.length} GAME${rows.length === 1 ? "" : "S"} · ALL TIMES ET`));
+    `${rows.length} GAME${rows.length === 1 ? "" : "S"}${zoneAbbr ? ` · ALL TIMES ${zoneAbbr}` : ""}`));
   const rail = el("div", { class: "slate__rail", "data-rail": "" });
   let i = 0;
   for (const row of rows) {

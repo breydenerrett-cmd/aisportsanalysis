@@ -111,20 +111,83 @@ export function verdictChipClass(verdict) {
   return "badge--outline";
 }
 
-/** ET, always with the meridiem -- never a bare UTC timestamp or a
- * 24-hour clock (design/linehound-v1 handoff, section 11's "Times" rule).
- * `Intl` resolves America/New_York against the real IANA database, so
- * this is correct across the DST boundary without a bundled tz table.
- * Returns null (never a guess) when `isoUtc` is missing or unparsable. */
-export function formatEasternTime(isoUtc) {
+/* ---------------------------------------------------------------------
+ * LOCAL-TIME REWRITE, 2026-09-14 (pacific_time track)
+ * -------------------------------------------------------------------
+ * The owner is in Pacific time; every clock on the site used to hardcode
+ * America/New_York and print a literal " ET" suffix, so a PT viewer read
+ * every first pitch three hours later than it actually is. These helpers
+ * now show each VIEWER their own wall-clock time with their own zone's
+ * real abbreviation (Intl resolves both against the browser's own IANA
+ * timezone -- correct across DST without a bundled table), no timezone
+ * hardcoded. `resolveDisplayTimeZone` falls back to America/Los_Angeles
+ * (the owner's own zone) only when the browser cannot resolve one at all.
+ *
+ * The OLD names (formatEasternTime/formatEasternClock) are kept as
+ * aliases below so files outside this track (web/js/card.js,
+ * web/js/cardrecord.js) keep working unedited -- they already read as
+ * "the shared clock formatter", not "Eastern specifically", and every
+ * caller of theirs already expects a single ready-to-print string.
+ *
+ * Slate DATE boundaries (which calendar night a game belongs to) are a
+ * SEPARATE concern and are deliberately NOT touched here -- see
+ * `formatSlateDate` (already UTC-pinned) and today.js's own
+ * `currentEasternDateIso`, which stays on the Eastern calendar on
+ * purpose (that's a date KEY, not a displayed clock).
+ * ------------------------------------------------------------------- */
+
+/** The viewer's own IANA time zone, resolved from the browser. Falls back
+ * to America/Los_Angeles (never a guess at a zone the browser did not
+ * actually report) only when Intl cannot resolve one at all -- some
+ * embedded/locked-down webviews throw here rather than returning "UTC". */
+function resolveDisplayTimeZone() {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz) return tz;
+  } catch (_) {
+    // fall through to the Pacific default below
+  }
+  return "America/Los_Angeles";
+}
+
+/** "3:40 PM PDT" -- the viewer's own local clock time plus their zone's
+ * real abbreviation, always with the meridiem, never a bare UTC
+ * timestamp or a 24-hour clock (design/linehound-v1 handoff, section
+ * 11's "Times" rule -- unchanged, just no longer Eastern-only). Returns
+ * null (never a guess) when `isoUtc` is missing or unparsable. */
+export function formatLocalClock(isoUtc) {
   if (!isoUtc) return null;
   const date = new Date(isoUtc);
   if (Number.isNaN(date.getTime())) return null;
-  const time = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York", hour: "numeric", minute: "2-digit", hour12: true,
-  }).format(date);
-  return `${time} ET`;
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: resolveDisplayTimeZone(), hour: "numeric", minute: "2-digit",
+    hour12: true, timeZoneName: "short",
+  }).formatToParts(date);
+  const get = (type) => (parts.find((p) => p.type === type) || {}).value || "";
+  const time = `${get("hour")}:${get("minute")} ${get("dayPeriod")}`.trim();
+  const zone = get("timeZoneName");
+  return zone ? `${time} ${zone}` : time || null;
 }
+
+/** Just the viewer's own zone abbreviation (e.g. "PDT") -- for header
+ * copy that used to hardcode "ALL TIMES ET". Defaults to right now when
+ * no instant is given, since these headers describe the viewer's own
+ * zone in general, not one specific game's timestamp. */
+export function localZoneAbbr(isoUtc) {
+  const date = isoUtc ? new Date(isoUtc) : new Date();
+  if (Number.isNaN(date.getTime())) return null;
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: resolveDisplayTimeZone(), hour: "numeric", timeZoneName: "short",
+  }).formatToParts(date);
+  return (parts.find((p) => p.type === "timeZoneName") || {}).value || null;
+}
+
+// Back-compat aliases: every other file on the site (including the other
+// track's card.js/cardrecord.js) still imports these two names and
+// already treats their return value as one ready-to-print string -- so
+// the rewrite happens once, here, rather than at every call site.
+export function formatEasternTime(isoUtc) { return formatLocalClock(isoUtc); }
+export function formatEasternClock(isoUtc) { return formatLocalClock(isoUtc); }
 
 /** A single "value not present" marker. Not a composed claim -- a
  * placeholder for JSON `null`/`undefined`, distinct from any API-supplied
@@ -171,7 +234,6 @@ export function renderUnknown(value) {
  * gets null renders NOT YET AVAILABLE or omits the line entirely.
  * ------------------------------------------------------------------- */
 
-/** "THU SEP 1" in ET -- the shell clock's date half. */
 /**
  * "FRI SEP 11" from a bare slate date like "2026-09-11".
  *
@@ -198,26 +260,22 @@ export function formatSlateDate(dateIso) {
   }).format(pinned).toUpperCase().replace(/,/g, "");
 }
 
-export function formatEasternDate(isoUtc) {
+/** "THU SEP 11" -- the shell clock's date half, in the VIEWER's own local
+ * calendar date (local-time rewrite, 2026-09-14; was hardcoded Eastern).
+ * This is the shell clock's live "what date is it right now" half, not a
+ * slate date key -- see `formatSlateDate` above for the calendar-date
+ * (not-an-instant) case, which stays UTC-pinned on purpose. */
+export function formatLocalDate(isoUtc) {
   if (!isoUtc) return null;
   const date = new Date(isoUtc);
   if (Number.isNaN(date.getTime())) return null;
   return new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric",
+    timeZone: resolveDisplayTimeZone(), weekday: "short", month: "short", day: "numeric",
   }).format(date).toUpperCase().replace(/,/g, "");
 }
 
-/** "7:40pm" in ET, without the trailing " ET" -- for places the canvas
- * prints the meridiem time beside a separate ET marker. Times are always
- * ET with the meridiem (handoff section 11's Times rule). */
-export function formatEasternClock(isoUtc) {
-  if (!isoUtc) return null;
-  const date = new Date(isoUtc);
-  if (Number.isNaN(date.getTime())) return null;
-  return new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York", hour: "numeric", minute: "2-digit", hour12: true,
-  }).format(date).replace(/\s/g, "").toLowerCase();
-}
+// Back-compat alias -- see the LOCAL-TIME REWRITE note above formatLocalClock.
+export function formatEasternDate(isoUtc) { return formatLocalDate(isoUtc); }
 
 /** "32 SEC AGO" / "13 MIN AGO" / "2 HR AGO" from the API's own
  * `age_seconds`. Null in, null out -- never a fabricated 0. */

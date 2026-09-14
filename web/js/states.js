@@ -205,8 +205,10 @@ export function renderCaptureUnavailable({ eyebrow = "CAPTURE UNREACHABLE", head
     box.appendChild(el("div", { class: "vst-reasonbox__label", text: "LAST GOOD CAPTURE" }));
     const parts = [];
     if (lastGood && lastGood.observedUtc) {
+      // Local-time rewrite, 2026-09-14: `clock` already carries the
+      // viewer's own zone abbreviation, so no more literal " ET" appended.
       const clock = formatEasternClock(lastGood.observedUtc);
-      if (clock) parts.push(`${clock} ET`);
+      if (clock) parts.push(clock);
       const age = formatAge(lastGood.ageSeconds);
       if (age) parts.push(age.toLowerCase());
     }

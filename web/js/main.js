@@ -168,7 +168,11 @@ function setClock() {
   const host = document.querySelector("[data-hook='shell-clock']");
   if (!host) return;
   const now = new Date().toISOString();
-  const parts = [formatEasternDate(now), `${formatEasternClock(now)} ET`].filter(Boolean);
+  // Local-time rewrite, 2026-09-14: both halves are now in the viewer's
+  // own zone (formatEasternDate/formatEasternClock are dom.js aliases for
+  // formatLocalDate/formatLocalClock), and the clock already carries its
+  // own zone abbreviation, so no more literal " ET" appended here.
+  const parts = [formatEasternDate(now), formatEasternClock(now)].filter(Boolean);
   host.textContent = parts.join(" · ");
 }
 

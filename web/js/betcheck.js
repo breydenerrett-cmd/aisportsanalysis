@@ -121,10 +121,12 @@ function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
-/** "4:12pm ET" -- the compact clock style every V2 screen uses. */
+/** "3:40 PM PDT" (the viewer's own zone) -- the compact clock style every
+ * V2 screen uses. Local-time rewrite, 2026-09-14: the zone abbreviation
+ * now comes baked into the helper itself, so this no longer appends a
+ * literal " ET". */
 function et(isoUtc) {
-  const clock = formatEasternClock(isoUtc);
-  return clock ? `${clock} ET` : null;
+  return formatEasternClock(isoUtc);
 }
 
 /** A `Claim` (thesis_support / counterargument) rendered as its own
@@ -682,7 +684,7 @@ function renderResult(container, result) {
   container.appendChild(blocks);
   armEntrances(blocks);
 
-  // "PRICES CAPTURED <time> ET" in the shell strip, derived client-side
+  // "PRICES CAPTURED <time>" (viewer's own zone) in the shell strip, derived client-side
   // from the one capture instant this payload actually carries -- never a
   // seconds-level "updated N sec ago" (there is no age_seconds field here
   // at all to draw one from).

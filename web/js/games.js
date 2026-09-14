@@ -70,7 +70,7 @@
 import { apiGet } from "./api.js";
 import { el, clear, renderAbsent, humanizeKey,
   verdictLabel, formatAmerican, formatBook,
-  formatEasternTime, formatEasternClock, renderWordChip } from "./dom.js";
+  formatEasternTime, formatEasternClock, localZoneAbbr, renderWordChip } from "./dom.js";
 import { renderLoadingSkeleton, renderError, notYetAvailable } from "./states.js";
 import { renderGameStory } from "./gamestory.js";
 import { renderStaleness } from "./meta.js";
@@ -136,8 +136,9 @@ export async function renderGamesList(container, date) {
   }
   loadingWrap.remove();
 
+  const zoneAbbr = localZoneAbbr();
   headHost.appendChild(sectionHead(`SLATE · ${payload.date || useDate}`,
-    `${payload.checked_games} GAMES CHECKED · ALL TIMES ET`));
+    `${payload.checked_games} GAMES CHECKED${zoneAbbr ? ` · ALL TIMES ${zoneAbbr}` : ""}`));
 
   const markets = new Map();
   for (const game of (odds && odds.games) || []) {
@@ -247,14 +248,16 @@ function gapReason(advanced, name) {
   return gaps && gaps[name] ? String(gaps[name]) : null;
 }
 
-/** "4:12pm ET" -- same compact style web/js/odds.js already established
- * for this product; kept as its own tiny copy here rather than an
- * import, matching the pattern web/js/states.js's docstring calls out
- * (each screen's own display threshold/format is that screen's call,
- * not a shared constant to reach across module boundaries for). */
+/** "3:40 PM PDT" (the viewer's own zone) -- same compact style
+ * web/js/odds.js already established for this product; kept as its own
+ * tiny copy here rather than an import, matching the pattern
+ * web/js/states.js's docstring calls out (each screen's own display
+ * threshold/format is that screen's call, not a shared constant to reach
+ * across module boundaries for). Local-time rewrite, 2026-09-14:
+ * formatEasternClock already returns the zone abbreviation baked in, so
+ * this no longer appends a literal " ET". */
 function etClock(isoUtc) {
-  const clock = formatEasternClock(isoUtc);
-  return clock ? `${clock} ET` : null;
+  return formatEasternClock(isoUtc);
 }
 
 /* =====================================================================
