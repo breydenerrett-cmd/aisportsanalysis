@@ -817,3 +817,6 @@
 {"game_date": "2026-09-15", "observed_utc": "2026-09-14T18:10:59.529447+00:00", "poll": true}
 {"game_date": "2026-09-14", "observed_utc": "2026-09-14T18:23:27.551226+00:00", "poll": true}
 {"game_date": "2026-09-15", "observed_utc": "2026-09-14T18:23:27.810084+00:00", "poll": true}
+{"game_date": "2026-09-14", "observed_utc": "2026-09-14T18:36:28.379056+00:00", "poll": true}
+{"commence_time": "2026-09-14T22:40:00Z", "crew": [{"id": 544728, "name": "Nic Lentz", "officialType": "Home Plate"}, {"id": 482663, "name": "David Rackley", "officialType": "First Base"}, {"id": 427537, "name": "Hunter Wendelstedt", "officialType": "Second Base"}, {"id": 554242, "name": "Edwin Moscoso", "officialType": "Third Base"}], "game_date": "2026-09-14", "game_pk": 824386, "game_state": "Pre-Game", "home_plate_umpire": "Nic Lentz", "observed_utc": "2026-09-14T18:36:28.379056+00:00", "prev_poll_utc": "2026-09-14T18:23:27.551226+00:00", "revealed": true}
+{"game_date": "2026-09-15", "observed_utc": "2026-09-14T18:36:28.697697+00:00", "poll": true}
