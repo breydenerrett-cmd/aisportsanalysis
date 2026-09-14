@@ -291,6 +291,181 @@ that is likely but expensive (the first live pick was an Under 1.5 hits at
 "bets", or whether a price ceiling is part of the rule; (3) whether the
 public record page should ever headline the two populations together.
 
+### 5.4 All bets, merged, and totals join the card (2026-09-14)
+
+> **Status at ship, 2026-09-14 (orchestrator):** totals are built, frozen,
+> graded and rendered, but **paused on the live card**
+> (`src/report/card.py` `TOTALS_ON_CARD = False`). On the day they shipped the
+> run model's expected total sat above the market's line in 8 of 9 games and
+> below it only at Coors, and every total it would have published cleared its
+> price on our number alone at a 50–52% market. They go live when the run
+> model's totals are measured against finished games — an owner decision.
+> Props rank by the market's number and require the market to call them more
+> likely than not, with our number clearing the price
+> (`PROP_RANK_SOURCE = "both"`, docs/PROP_CALIBRATION_2026-09-14.md).
+
+**The owner, that morning, with today's slate already live and no bets on
+the page:** *"get todays games and analysis up and running, merge the today
+bets for ALL BETS not just MLs include all best bets like player props ...
+need bets asap for today"* — and, separately, that analysis on props, run
+lines and "the niche bets" runs **pre-emptively, ahead of first pitch**, on
+no fixed clock, and that the product's own clock is **Pacific, not
+Eastern**. The card carried moneylines and props (§5.3); everything else the
+scout found priced (run totals) sat in the odds store unread, and the two
+kinds that did exist were never shown as one list.
+
+**Game totals are now a third kind of pick**
+(`src.analysis.daily_card.build_total_candidates` /
+`select_totals`, `TOTAL_CARD_RULE =
+DAILY_CARD_TOTAL_MARKET_SIDE_MODEL_AGREEMENT_V1`):
+
+- Candidates come from the multi-book totals board at each game's **own
+  consensus line** — the total most books are currently quoting for that
+  game. There is no fixed standard the way the run line has 1.5; a total
+  moves with the park and the day's two starters, so the line is read off
+  the board, per game, rather than declared in advance.
+- The **side** is whichever the de-vigged multi-book consensus makes more
+  likely at that line.
+- **Agreement**: our own run model must also make that side more likely
+  than not, at that exact line. There is no fallback pile the way a thin
+  moneyline night fills from its SPLIT pile — a total nobody agrees on is
+  not a total pick.
+- **Clears its price**: our probability must beat the break-even the best
+  available price demands.
+- Ranked by **market** probability, descending — the same axis the
+  moneyline card ranks on. Labelled by the same STRONG/LEAN/SLIGHT bands,
+  read off that market number. No SPLIT label: disagreement disqualifies a
+  total candidate outright rather than demoting it.
+- **At most three** (`MAX_TOTAL_PICKS = 3`), no minimum — a thin totals
+  board is a true state, exactly like a thin prop board.
+- Same receipts as the other two kinds: frozen on the ledger row as
+  `total_picks` (`TOTAL_FROZEN_FIELDS`), locked per the pick's own first
+  pitch four hours out and carried forward verbatim once locked
+  (`card_ledger._lock_and_merge`, the same function every kind uses), graded
+  in `card_ledger.settle` by `grade_total_pick` (total runs from the same
+  final-score map the game picks grade from: over the line wins Over, under
+  it wins Under, exactly on it pushes), and pooled in `record()`'s
+  `by_kind.total` — never merged into the game or prop populations. A
+  locked total pick is identified by `game_pk` alone
+  (`card_ledger._total_pick_key`, fixed 2026-09-14) — there is at most one
+  total pick per game by construction, so a board move that flips the line
+  or the side after a pick locks cannot add a second, contradictory total
+  bet on the same game; keying on the line and side too let exactly that
+  happen (Over 8.5 locked, the board moving to Under 9.0, and the ledger
+  carrying both).
+- **A whole-number line can push, and the push has to come out of BOTH
+  sides before either is compared to anything.** Fixed 2026-09-14: `p_over`
+  at the market's own line already excludes a push on the Over side (it is
+  a strict `>`), but the Under side read as `1 - p_over`, which on a
+  whole-number line folds the push in with the Under win — and the
+  market's de-vigged number and the price's own break-even are both
+  measured ignoring the push, so an Under measured with it included is
+  compared against two things on a different basis than itself. Live, BAL
+  @NYM at 8.0 runs: P(over) 47.54%, P(push) 7.54%, the push-inflated Under
+  read 52.46% — clearing -110's 52.38% break-even — when the push-excluded
+  Under is really 48.58%, under both 50% and the break-even; the model
+  actually leaned Over. `src.report.card.card_for_date` now asks the model
+  for the line one half-run below any whole-number total too, and
+  `build_total_candidates` divides the push back out of both sides before
+  the agreement or clears-price gates ever see a number. A half-point line
+  cannot push and is unaffected.
+
+**Player props go on the card before any lineup posts.** The owner's ask
+was explicit: analysis "needs to be ran pre emptively before any games."
+`propboard.build`'s `expected_pa_source == "season_average"` contracts —
+built from the batter's own season rate of plate appearances, with no
+posted batting order behind them — are no longer refused by the card; they
+carry `"lineup_posted": false` and a why-sentence that says plainly the
+lineup is not posted yet and the estimate is the season-average trips to
+the plate, not tonight's actual slot — and, fixed 2026-09-14, is refused
+outright as a card pick when the season rate behind it comes from fewer
+than `MIN_SEASON_GAMES_FOR_PRELINEUP` (15) prior box rows. Live today the
+top three `all_bets` rows (84%/81%/78%) rested on 11-13 games each, and a
+season rate that thin is the likeliest source of the suspected UNDER bias
+on the prop board (five of the top ten contracts were unders at Coors
+Field) — a small, one-park, one-pitcher sample dressed as a season number.
+A contract WITH a posted lineup is not gated by this floor; only the
+season-average estimate this section exists to allow before one posts.
+
+The existing open-pick replacement in `card_ledger.publish` (an unlocked
+pick is replaced wholesale by the next publish's read) is what swaps a
+season-average contract for a `batting_slot` one the moment a lineup posts
+and the pick is still open. **Fixed 2026-09-14** (Opus checker problem 5):
+this section used to say "same game and market," and the identity key
+(`card_ledger._prop_pick_key`) used to include the market and the line too
+— so a lineup posting that moved `select_props`'s own pick to a different
+market or line for the SAME PLAYER (it selects one contract per player,
+whichever is highest-probability, not one per market) produced a fresh key
+that did not match the locked one, and both were kept: two graded prop
+bets standing on one bettor's decision, the identical duplicate hazard
+totals had before the fix above. The key is now `(game_pk, player)` alone
+— everything `select_props`'s own one-pick-per-player rule already
+guarantees is unique — so a locked prop pick blocks any fresh prop for the
+same player in the same game, whatever market or line it is priced on.
+
+**Ranking a prop pick against the OTHER kinds is a separate question from
+ranking props against each other.** `select_props`'s own rule — rank by our
+probability, never the gap — is untouched (§5.3, and the measurement
+behind it). `daily_card.prop_rank_probability(contract)`, gated by
+`PROP_RANK_SOURCE`, is the declared seam for the cross-kind question only:
+`"model"` (our number), `"market"` (the de-vigged market number) or
+`"both"` (our number and the market's both clear the contract's own
+break-even, the market's also clears 50%, ranked by the market's).
+
+**Set to `"both"` 2026-09-14 (integrator), from
+`docs/PROP_CALIBRATION_2026-09-14.md` rev. 2.** On 1,200 settled prop
+contracts the market's number scored at least as well as ours on every cut
+(Brier 0.2406 vs 0.2469, and in each of the three markets). Ours leans to
+Unders: Overs hit 53.2% against our 48.4%, and among contracts both numbers
+call likely, Unders hit 53.6% against our 61.7% (n=332) while Overs matched.
+Where ours ran 10+ points above the market, 32 contracts hit 40.6% against
+our 62.1%. The sample is small and concentrated (5 dates, one of them 69% of
+rows), so this is not proof the market is right; it is a refusal to rank a
+prop above a game on our number alone while the only settled evidence says
+it runs high. It also puts the merged list on one axis, since game and
+total picks already rank by the market's number. Neither number is compared
+to the other; there is no gap ranking. This setting changes ORDER in
+`all_bets` only; which props reach the card is still `select_props`.
+
+**`all_bets`: one ranked list, every kind.** `payload["all_bets"]`
+(`daily_card.merge_all_bets`) merges `picks`, `total_picks` and
+`prop_picks` into one array: `{kind, position, index, probability, label,
+bet, first_pitch_utc, lineup_posted}`, `position` 1..n across the whole
+list, `index` the pick's own position back in whichever of the three arrays
+it came from. Ranked by market probability for a game or total pick,
+`prop_rank_probability` for a prop pick. The three arrays a reader already
+knows — `picks`, `total_picks`, `prop_picks` — are unchanged and still what
+the ledger freezes and grades; `all_bets` is a view built fresh over them,
+live or frozen, so it can never say something the three arrays underneath
+it do not. **`lineup_posted` added 2026-09-14** (Opus checker problem 3):
+`None` for a game or total pick, which never turns on a lineup either way;
+a prop pick's own `lineup_posted` value otherwise. Before the fix, a page
+drawing its ranking straight off `all_bets` could show a pre-lineup prop at
+position one with nothing marking it as such — the label lived one hop
+away, on `prop_picks[index]`, not on the row a reader actually reads.
+
+**What is still NOT on the card, and why:**
+
+- **First-five markets, team totals, and alternate lines** — no model
+  probability exists for any of them yet (`src.analysis.strength` — not
+  `src.model.strength`, which is not a module in this repo — prices the
+  full-game moneyline, run line and total only). Publishing a pick with no
+  model behind it would be the market's opinion alone, which is the exact
+  thing this product refuses to sell as a pick (§1).
+- **Pitcher strikeouts** — same reason: no model.
+- **Home runs, RBIs, hits+runs+RBIs** — blocked by design, not by a missing
+  model. Home runs have no fair price to clear (no book quotes the under,
+  so nothing to de-vig against — `propboard.likelihood_only`); RBIs and the
+  combined market are refused by `playerprops.publishable` because the
+  model is not good enough on them yet. See `propboard`'s own module
+  docstring for the measurement behind each refusal.
+
+**Timezone.** The owner: "we are in PST not EST." Every timestamp this
+module reads and writes is UTC on the wire, as it always has been — the
+correction is in how a human reads the card's own first-pitch times against
+"today," not in the pick logic itself, and belongs to the surface that
+renders them for a reader, not to the selection rule.
+
 ## 6. Public performance
 
 Four cohorts, always reported together, never merged:

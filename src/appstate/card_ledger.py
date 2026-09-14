@@ -94,6 +94,28 @@ PROP_FROZEN_FIELDS = (
     "market", "line", "side", "probability", "market_probability",
     "breakeven", "price", "book", "books", "batting_slot", "expected_pa",
     "expected_pa_source", "observed_utc",
+    # ADDED 2026-09-14 for pre-lineup props: whether a posted batting order
+    # stood behind this pick when it was frozen. Shown to the reader
+    # (the why-sentence says the same thing in words), so it is part of
+    # what was claimed and belongs on the receipt.
+    "lineup_posted",
+    # ADDED 2026-09-14 (Opus checker problem 4): the sample size the why-
+    # sentence's season rate was measured over. Shown to the reader in
+    # words ("...in all 11 games we have for him this season"), so it too
+    # is part of what was claimed.
+    "season_games",
+)
+
+# The fields of a TOTAL pick that are frozen. ADDED 2026-09-14, same
+# reasoning as PROP_FROZEN_FIELDS above -- a fixed list, not "whatever the
+# card happened to carry". `rank` is the receipt of where it sat when IT
+# locked; `position` is recomputed at serve time by
+# `src/report/card.py`'s `_served_total_order`, exactly like a prop pick's
+# own rank/position split.
+TOTAL_FROZEN_FIELDS = (
+    "rank", "label", "bet", "why", "line", "side", "price", "book", "books",
+    "market_probability", "model_probability", "game_id", "game_pk",
+    "event_id", "away_team", "home_team", "first_pitch_utc", "observed_utc",
 )
 
 
@@ -111,6 +133,10 @@ def _frozen_pick(pick: Mapping) -> dict:
 
 def _frozen_prop_pick(pick: Mapping) -> dict:
     return {key: pick.get(key) for key in PROP_FROZEN_FIELDS}
+
+
+def _frozen_total_pick(pick: Mapping) -> dict:
+    return {key: pick.get(key) for key in TOTAL_FROZEN_FIELDS}
 
 
 def _shape_for_compare(picks, fields, sort_key) -> list:
@@ -151,6 +177,17 @@ def _same_prop_picks(left, right) -> bool:
                      str(r.get("market")), str(r.get("line")))
     return (_shape_for_compare(left, PROP_FROZEN_FIELDS, key)
             == _shape_for_compare(right, PROP_FROZEN_FIELDS, key))
+
+
+def _same_total_picks(left, right) -> bool:
+    """`_same_picks`'s counterpart for TOTAL picks. game_pk alone is
+    already unique (one total pick per game, like a moneyline pick), but the
+    line joins it for the same reason `_pick_key` below carries `line` too:
+    a republish that only moved the line is a real change worth a new row."""
+    key = lambda r: (str(r.get("game_pk")), str(r.get("line")),
+                     str(r.get("side")))
+    return (_shape_for_compare(left, TOTAL_FROZEN_FIELDS, key)
+            == _shape_for_compare(right, TOTAL_FROZEN_FIELDS, key))
 
 
 # HOW LONG BEFORE ITS OWN FIRST PITCH A PICK STOPS CHANGING.
@@ -211,12 +248,55 @@ def _pick_key(pick: Mapping):
 
 
 def _prop_pick_key(pick: Mapping):
-    """What makes two picks the same PROP bet. A game_pk alone collides
-    across players, so the player and market join the game_pk the way
-    `_pick_key` alone does for a game pick, of which there is only one per
-    game."""
-    return (str(pick.get("game_pk")), pick.get("player"),
-            pick.get("market"), pick.get("line"))
+    """What makes two picks the same PROP bet -- game_pk AND player, never
+    the market or the line.
+
+    FIXED 2026-09-14 (Opus checker problem 5, the duplicate hazard it flags
+    as the same shape as problem 2). The key used to be `(game_pk, player,
+    market, line)`, on the reasoning that a game_pk alone collides across
+    players -- true, but the fix over-corrected: `select_props` already
+    enforces ONE PICK PER PLAYER (his own highest-probability surviving
+    contract, whatever the market), so two picks for the same player in the
+    same game are never two different bets, they are the same bet read at
+    two different times. The old key let them collide only when the market
+    AND line matched exactly. A season-average pick on Devers at `batter_
+    hits 0.5` that locked, followed by a lineup posting and `select_props`
+    preferring his `batter_total_bases 1.5` contract instead, produced a
+    FRESH key -- `_lock_and_merge` would not find it in `locked` and would
+    append it beside the still-locked hits pick, same player, same game, two
+    graded prop bets on one bettor's decision. `docs/PRODUCT_DOCTRINE.md`
+    5.4 described the replacement as "same game and market" when the code
+    keyed on market and line too; both the doctrine and the key undersold
+    what "the same bet" has to mean here. `game_pk` and `player` alone is
+    everything `select_props`'s own invariant already guarantees is unique.
+    """
+    return (str(pick.get("game_pk")), pick.get("player"))
+
+
+def _total_pick_key(pick: Mapping):
+    """What makes two picks the same TOTAL bet -- ONE PER GAME, game_pk
+    alone.
+
+    FIXED 2026-09-14 (Opus checker problem 2). The key used to be `(game_pk,
+    line, side)`, on the reasoning that it should match `_same_total_picks`'
+    own compare key (below) -- that reasoning was backwards. THIS key
+    decides whether a FRESH total pick replaces or joins a LOCKED one in
+    `_lock_and_merge`; `_same_total_picks` only sorts two already-built
+    lists into a stable order before checking whether publishing would add
+    anything. `build_total_candidates` already prices at most one total per
+    game (one side, one line, per game), so "the same TOTAL bet" is "the
+    same game", full stop -- exactly like a moneyline pick's own `_pick_key`
+    (`(game_pk, market, line)`, where `market` never varies for a given
+    row). Keyed on line and side, a board move split a locked pick from its
+    own game: 'Over 8.5' locked at 19:00Z, the board moved to 9.0 and
+    flipped to 'Under' by 20:00Z, and the fresh 'Under 9.0' candidate's key
+    no longer matched the locked entry's -- `_lock_and_merge` carried the
+    locked pick forward AND appended the new one, so one game carried two
+    graded total bets on opposite sides, and `total_picks` could exceed
+    `MAX_TOTAL_PICKS`. A locked pick has to block any fresh total for the
+    same game, so the key is the game alone.
+    """
+    return (str(pick.get("game_pk")),)
 
 
 def published_row(date: str, *, path: Optional[str] = None) -> Optional[dict]:
@@ -358,16 +438,19 @@ def publish(card: Mapping, *, now: Optional[str] = None,
             f"the card for {date} has no picks; there is nothing to freeze. "
             "An empty card is a real state -- see src/report/card.py's "
             "_empty_reason -- but it is not evidence and is not recorded.")
-    # A card with NO PROP picks is a real state (a thin prop board), not an
-    # error -- unlike an empty `picks`, which refuses above. `select_props`
-    # has no floor to fail (MAX_PROP_PICKS, no minimum), so nothing here
-    # should either.
+    # A card with NO PROP picks, or no TOTAL picks, is a real state (a thin
+    # prop board, or a totals board where nothing agreed and cleared its
+    # price) -- not an error, unlike an empty `picks`, which refuses above.
+    # Neither `select_props` nor `select_totals` has a floor to fail, so
+    # nothing here should either.
     prop_picks_in = card.get("prop_picks") or []
+    total_picks_in = card.get("total_picks") or []
 
     moment = _parse_utc(now) or datetime.now(timezone.utc)
     previous = published_row(date, path=path)
     prior_picks = list((previous or {}).get("picks") or ())
     prior_prop_picks = list((previous or {}).get("prop_picks") or ())
+    prior_total_picks = list((previous or {}).get("total_picks") or ())
 
     merged = _lock_and_merge(prior_picks, picks, moment=moment,
                              lock_lead_hours=lock_lead_hours,
@@ -375,20 +458,25 @@ def publish(card: Mapping, *, now: Optional[str] = None,
     merged_props = _lock_and_merge(prior_prop_picks, prop_picks_in, moment=moment,
                                    lock_lead_hours=lock_lead_hours,
                                    key_fn=_prop_pick_key, frozen_fn=_frozen_prop_pick)
+    merged_totals = _lock_and_merge(prior_total_picks, total_picks_in, moment=moment,
+                                    lock_lead_hours=lock_lead_hours,
+                                    key_fn=_total_pick_key, frozen_fn=_frozen_total_pick)
 
     # NOTHING CHANGED, NOTHING APPENDED. Publishing five times a day would
     # otherwise write five identical rows and bury the versions that matter.
-    # Both halves have to agree nothing changed -- a slate whose moneyline
-    # picks are stable but whose prop board just posted a lineup is a real
-    # change and still earns a new row.
+    # All three halves have to agree nothing changed -- a slate whose
+    # moneyline picks are stable but whose totals board just moved a line
+    # is a real change and still earns a new row.
     if (previous is not None and _same_picks(prior_picks, merged)
-            and _same_prop_picks(prior_prop_picks, merged_props)):
+            and _same_prop_picks(prior_prop_picks, merged_props)
+            and _same_total_picks(prior_total_picks, merged_totals)):
         out = dict(previous)
         out["already_published"] = True
         return out
 
     picks = merged
     prop_picks = merged_props
+    total_picks = merged_totals
     payload = {
         "kind": KIND_PUBLISHED,
         "date": date,
@@ -412,6 +500,10 @@ def publish(card: Mapping, *, now: Optional[str] = None,
         "prop_picks": prop_picks,
         "n_prop_picks": len(prop_picks),
         "n_prop_locked": sum(1 for p in prop_picks if p.get("locked")),
+        # TOTAL PICKS, carried the same way -- ADDED 2026-09-14.
+        "total_picks": total_picks,
+        "n_total_picks": len(total_picks),
+        "n_total_locked": sum(1 for p in total_picks if p.get("locked")),
     }
     row = _ledger(path).append(payload)
     out = dict(row)
@@ -575,6 +667,55 @@ def grade_prop_pick(pick: Mapping, box_by_game_and_player: Mapping) -> dict:
             "profit_units": round(profit, 4)}
 
 
+def grade_total_pick(pick: Mapping, result: Mapping) -> dict:
+    """One frozen total pick against one final score.
+
+    Same shape as `grade_pick`: `result` carries `away_score`/`home_score`
+    from the same `src.pipeline.history` row, and a missing score grades
+    VOID rather than a guessed LOSS, for the same reason. Over/under/push
+    reads exactly `src.board.settle._settle_totals`'s arithmetic -- not
+    called directly (that function wants a `GameResult`, this a frozen
+    pick), but the same three comparisons: total runs above the line wins
+    Over, below wins Under, exactly on it pushes.
+    """
+    away = _score(result.get("away_score"))
+    home = _score(result.get("home_score"))
+    if away is None or home is None:
+        return {"result": RESULT_VOID, "profit_units": 0.0,
+                "reason": "no final score stored for this game"}
+
+    line = pick.get("line")
+    if not isinstance(line, (int, float)):
+        return {"result": RESULT_VOID, "profit_units": 0.0,
+                "reason": "total pick carries no line"}
+
+    side = pick.get("side")
+    if side not in ("over", "under"):
+        return {"result": RESULT_VOID, "profit_units": 0.0,
+                "reason": f"unknown side {side!r} on a frozen total pick"}
+
+    total_runs = away + home
+    if abs(total_runs - float(line)) < 1e-9:
+        return {"result": RESULT_PUSH, "profit_units": 0.0,
+                "reason": "the total landed exactly on the line"}
+    won = (total_runs > line) if side == "over" else (total_runs < line)
+
+    price = pick.get("price")
+    try:
+        profit = (odds_math.american_to_decimal(price) - 1.0) if won else -1.0
+    except (odds_math.OddsError, TypeError, ValueError):
+        return {"result": RESULT_VOID, "profit_units": 0.0,
+                "reason": f"unusable published price {price!r}"}
+
+    return {
+        "result": RESULT_WIN if won else RESULT_LOSS,
+        "profit_units": round(profit, 4),
+        "away_score": away,
+        "home_score": home,
+        "total_runs": total_runs,
+    }
+
+
 def settle(date: str, results_by_game_pk: Mapping, *,
            prop_box_rows: Optional[Sequence] = None,
            now: Optional[str] = None, path: Optional[str] = None) -> Optional[dict]:
@@ -629,6 +770,28 @@ def settle(date: str, results_by_game_pk: Mapping, *,
     prop_wins = sum(1 for g in prop_graded if g["result"] == RESULT_WIN)
     prop_losses = sum(1 for g in prop_graded if g["result"] == RESULT_LOSS)
 
+    # TOTAL PICKS, graded from the SAME results map the game picks above
+    # use -- a total is graded off the same final score, so there is no
+    # second results argument to thread through.
+    total_graded, total_staked, total_profit = [], 0, 0.0
+    for pick in published.get("total_picks") or ():
+        pk = pick.get("game_pk")
+        result = (results_by_game_pk.get(pk)
+                  or results_by_game_pk.get(str(pk))
+                  or {})
+        grade = grade_total_pick(pick, result)
+        total_graded.append({
+            "rank": pick.get("rank"), "bet": pick.get("bet"),
+            "label": pick.get("label"), "line": pick.get("line"),
+            "side": pick.get("side"), "price": pick.get("price"),
+            "game_pk": pk, **grade})
+        if grade["result"] in (RESULT_WIN, RESULT_LOSS):
+            total_staked += 1
+            total_profit += grade["profit_units"]
+
+    total_wins = sum(1 for g in total_graded if g["result"] == RESULT_WIN)
+    total_losses = sum(1 for g in total_graded if g["result"] == RESULT_LOSS)
+
     payload = {
         "kind": KIND_SETTLED,
         "date": date,
@@ -657,6 +820,19 @@ def settle(date: str, results_by_game_pk: Mapping, *,
         "prop_profit_units": round(prop_profit, 4),
         "prop_roi_pct": (round(prop_profit / prop_staked * 100.0, 3)
                          if prop_staked else None),
+        # TOTAL PICKS, graded and totalled the same way, under their own
+        # keys for the same reason the prop keys above are separate --
+        # ADDED 2026-09-14.
+        "total_picks": total_graded,
+        "n_total_picks": len(total_graded),
+        "n_total_staked": total_staked,
+        "total_wins": total_wins,
+        "total_losses": total_losses,
+        "total_pushes": sum(1 for g in total_graded if g["result"] == RESULT_PUSH),
+        "total_voids": sum(1 for g in total_graded if g["result"] == RESULT_VOID),
+        "total_profit_units": round(total_profit, 4),
+        "total_roi_pct": (round(total_profit / total_staked * 100.0, 3)
+                          if total_staked else None),
     }
     return _ledger(path).append(payload)
 
@@ -683,6 +859,9 @@ def record(*, path: Optional[str] = None, since: Optional[str] = None) -> dict:
     prop_wins = prop_losses = prop_pushes = prop_voids = prop_staked = 0
     prop_profit = 0.0
     prop_by_label = {}
+    total_wins = total_losses = total_pushes = total_voids = total_staked = 0
+    total_profit = 0.0
+    total_by_label = {}
     for row in _ledger(path).read():
         if row.get("kind") != KIND_SETTLED:
             continue
@@ -728,11 +907,35 @@ def record(*, path: Optional[str] = None, since: Optional[str] = None) -> dict:
                 slot["staked"] += 1
                 slot["profit_units"] += pick.get("profit_units") or 0.0
 
+        # TOTAL PICKS, pooled the same way but never into the same totals --
+        # ADDED 2026-09-14, same reasoning as the prop pooling just above.
+        total_wins += row.get("total_wins") or 0
+        total_losses += row.get("total_losses") or 0
+        total_pushes += row.get("total_pushes") or 0
+        total_voids += row.get("total_voids") or 0
+        total_staked += row.get("n_total_staked") or 0
+        total_profit += row.get("total_profit_units") or 0.0
+        for pick in row.get("total_picks") or ():
+            label = pick.get("label") or "UNLABELLED"
+            slot = total_by_label.setdefault(
+                label, {"wins": 0, "losses": 0, "staked": 0, "profit_units": 0.0})
+            if pick.get("result") == RESULT_WIN:
+                slot["wins"] += 1
+            elif pick.get("result") == RESULT_LOSS:
+                slot["losses"] += 1
+            if pick.get("result") in (RESULT_WIN, RESULT_LOSS):
+                slot["staked"] += 1
+                slot["profit_units"] += pick.get("profit_units") or 0.0
+
     for slot in by_label.values():
         slot["profit_units"] = round(slot["profit_units"], 4)
         slot["win_rate"] = (round(slot["wins"] / slot["staked"], 4)
                             if slot["staked"] else None)
     for slot in prop_by_label.values():
+        slot["profit_units"] = round(slot["profit_units"], 4)
+        slot["win_rate"] = (round(slot["wins"] / slot["staked"], 4)
+                            if slot["staked"] else None)
+    for slot in total_by_label.values():
         slot["profit_units"] = round(slot["profit_units"], 4)
         slot["win_rate"] = (round(slot["wins"] / slot["staked"], 4)
                             if slot["staked"] else None)
@@ -762,12 +965,26 @@ def record(*, path: Optional[str] = None, since: Optional[str] = None) -> dict:
                     if prop_staked else None),
         "by_label": prop_by_label,
     }
+    total_summary = {
+        "days": days,
+        "wins": total_wins,
+        "losses": total_losses,
+        "pushes": total_pushes,
+        "voids": total_voids,
+        "n_staked": total_staked,
+        "win_rate": round(total_wins / total_staked, 4) if total_staked else None,
+        "profit_units": round(total_profit, 4),
+        "roi_pct": (round(total_profit / total_staked * 100.0, 3)
+                    if total_staked else None),
+        "by_label": total_by_label,
+    }
 
     return {
         # TOP-LEVEL FIELDS UNCHANGED. Every existing reader of `record()`
         # (the /card/record route, the dashboard) keeps reading the pooled
         # GAME totals exactly where it always has -- `by_kind` is additive,
-        # ADDED 2026-09-12, so the two populations can also be read apart.
+        # ADDED 2026-09-12 (props) and 2026-09-14 (totals), so every
+        # population can also be read apart.
         "days": days,
         "wins": wins,
         "losses": losses,
@@ -779,7 +996,8 @@ def record(*, path: Optional[str] = None, since: Optional[str] = None) -> dict:
         "roi_pct": game_summary["roi_pct"],
         "by_label": by_label,
         "since": since,
-        "by_kind": {"game": game_summary, "prop": prop_summary},
+        "by_kind": {"game": game_summary, "prop": prop_summary,
+                    "total": total_summary},
     }
 
 
@@ -885,13 +1103,14 @@ def history(*, path: Optional[str] = None, limit: Optional[int] = 60) -> dict:
                 "reason": graded.get("reason"),
             })
 
-        # PROP PICKS, joined the same way -- keyed by (game_pk, player,
-        # market, line) rather than `rank` alone, because unlike a game's
-        # picks a slate's prop picks are not one-per-game: `rank` repeats
-        # across dates but never collides WITHIN one date's prop picks
-        # (select_props assigns it 1..MAX_PROP_PICKS), so the richer key is
-        # only needed because `frozen_by_rank`'s simpler join does not carry
-        # over -- game picks and prop picks are ranked in separate spaces.
+        # PROP PICKS, joined the same way -- keyed by (game_pk, player) per
+        # `_prop_pick_key` (FIXED 2026-09-14, see that function) rather than
+        # `rank` alone, because unlike a game's picks a slate's prop picks
+        # are not one-per-game: `rank` repeats across dates but never
+        # collides WITHIN one date's prop picks (select_props assigns it
+        # 1..MAX_PROP_PICKS), so the richer key is only needed because
+        # `frozen_by_rank`'s simpler join does not carry over -- game picks
+        # and prop picks are ranked in separate spaces.
         frozen_props_by_key = {
             _prop_pick_key(p): p for p in (published.get("prop_picks") or ())
         }
@@ -916,6 +1135,32 @@ def history(*, path: Optional[str] = None, limit: Optional[int] = 60) -> dict:
                 "profit_units": graded.get("profit_units"),
                 # Populated only for a VOID pick (see grade_prop_pick) -- the
                 # plain-English reason nothing here could be graded.
+                "reason": graded.get("reason"),
+            })
+
+        # TOTAL PICKS, joined the same way -- keyed by (game_pk, line, side)
+        # per `_total_pick_key`, ADDED 2026-09-14.
+        frozen_totals_by_key = {
+            _total_pick_key(p): p for p in (published.get("total_picks") or ())
+        }
+        total_picks = []
+        for graded in row.get("total_picks") or ():
+            frozen = frozen_totals_by_key.get(_total_pick_key(graded)) or {}
+            total_picks.append({
+                "rank": graded.get("rank"),
+                "bet": graded.get("bet"),
+                "label": graded.get("label"),
+                "line": graded.get("line"),
+                "side": graded.get("side"),
+                "price": graded.get("price"),
+                "book": frozen.get("book"),
+                "books": frozen.get("books"),
+                "away_team": frozen.get("away_team"),
+                "home_team": frozen.get("home_team"),
+                "result": graded.get("result"),
+                "profit_units": graded.get("profit_units"),
+                # Populated only for a VOID pick (see grade_total_pick) --
+                # the plain-English reason nothing here could be graded.
                 "reason": graded.get("reason"),
             })
 
@@ -944,6 +1189,14 @@ def history(*, path: Optional[str] = None, limit: Optional[int] = 60) -> dict:
             "n_prop_staked": row.get("n_prop_staked") or 0,
             "prop_profit_units": row.get("prop_profit_units"),
             "prop_roi_pct": row.get("prop_roi_pct"),
+            "total_picks": total_picks,
+            "total_wins": row.get("total_wins") or 0,
+            "total_losses": row.get("total_losses") or 0,
+            "total_pushes": row.get("total_pushes") or 0,
+            "total_voids": row.get("total_voids") or 0,
+            "n_total_staked": row.get("n_total_staked") or 0,
+            "total_profit_units": row.get("total_profit_units"),
+            "total_roi_pct": row.get("total_roi_pct"),
         })
 
     # PUBLISHED BUT NOT YET GRADED, carried separately.
@@ -997,6 +1250,18 @@ def history(*, path: Optional[str] = None, limit: Optional[int] = 60) -> dict:
                 "away_team": p.get("away_team"),
                 "home_team": p.get("home_team"),
             } for p in (row.get("prop_picks") or ())],
+            "total_picks": [{
+                "rank": p.get("rank"),
+                "bet": p.get("bet"),
+                "label": p.get("label"),
+                "line": p.get("line"),
+                "side": p.get("side"),
+                "price": p.get("price"),
+                "book": p.get("book"),
+                "books": p.get("books"),
+                "away_team": p.get("away_team"),
+                "home_team": p.get("home_team"),
+            } for p in (row.get("total_picks") or ())],
         })
     pending.sort(key=lambda r: r.get("date") or "", reverse=True)
 

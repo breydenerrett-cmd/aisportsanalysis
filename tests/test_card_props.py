@@ -707,5 +707,352 @@ class CardForDateWithInjectedBoard(unittest.TestCase):
         self.assertGreater(props_mod.MAX_LIMIT, props_mod.DEFAULT_LIMIT)
 
 
+class PreLineupProps(unittest.TestCase):
+    """ADDED 2026-09-14. The owner: analysis "needs to be ran pre emptively
+    before any games." A `season_average` contract -- no posted batting
+    order, priced off the batter's own season rate of plate appearances --
+    is no longer refused outright; it can reach the card labelled as such,
+    and is replaced by a `batting_slot` contract for the same player the
+    moment one exists and the pick is still open.
+    """
+
+    def test_require_lineup_defaults_true_so_every_existing_caller_is_unchanged(self):
+        self.assertTrue(
+            daily_card.select_props.__kwdefaults__["require_lineup"])
+
+    def test_a_season_average_contract_is_still_refused_by_default(self):
+        """The exact behaviour `test_a_season_average_fallback_is_never_a_pick`
+        (above) already covers, re-stated as the DEFAULT of the new
+        parameter rather than the only behaviour there is."""
+        no_lineup = _contract(player="No Lineup",
+                              expected_pa_source="season_average")
+        self.assertEqual([], daily_card.select_props([no_lineup], now=NOW))
+
+    def test_require_lineup_false_admits_a_season_average_contract(self):
+        no_lineup = _contract(player="Pre Lineup",
+                              expected_pa_source="season_average",
+                              batting_slot=None)
+        picks = daily_card.select_props(
+            [no_lineup], now=NOW, require_lineup=False)
+        self.assertEqual(1, len(picks))
+        self.assertEqual("Pre Lineup", picks[0]["player"])
+
+    def test_the_pick_carries_lineup_posted_false_for_a_season_average_contract(self):
+        c = _contract(expected_pa_source="season_average", batting_slot=None)
+        pick = daily_card._build_prop_pick(c, position=1)
+        self.assertFalse(pick["lineup_posted"])
+
+    def test_the_pick_carries_lineup_posted_true_for_a_batting_slot_contract(self):
+        c = _contract(expected_pa_source="batting_slot")
+        pick = daily_card._build_prop_pick(c, position=1)
+        self.assertTrue(pick["lineup_posted"])
+
+    def test_the_why_sentence_says_the_lineup_is_not_posted_yet(self):
+        c = _contract(player="Pre Lineup", market="batter_hits", line=0.5,
+                     expected_pa_source="season_average", batting_slot=None,
+                     expected_pa=3.9)
+        pick = daily_card.select_props([c], now=NOW, require_lineup=False)[0]
+        first = pick["why"][0]
+        self.assertIn("lineup is not posted yet", first)
+        self.assertIn("season-average", first)
+        self.assertIn("3.9", first)
+        # Must NOT claim a batting slot it does not have.
+        self.assertNotIn("tonight, he should get", first)
+
+    def test_a_batting_slot_contract_replaces_an_open_season_average_pick(self):
+        """The existing open-pick replacement in `card_ledger.publish` --
+        an unlocked pick is rewritten wholesale by the next run's read, same
+        game and market -- is what does this. No new mechanism; this test
+        confirms it actually happens for this specific transition."""
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        path = os.path.join(tmp.name, "cards_v1.jsonl")
+
+        def _card(prop_picks):
+            return {
+                "date": "2026-09-12", "rule": "r", "basis": "b",
+                "disclaimer": "d", "model_id": "m", "calibrated": True,
+                "calibration": {}, "filled": 0, "games_on_slate": 1,
+                "picks": [{
+                    "rank": 1, "label": "STRONG",
+                    "bet": "Take Yankees to win at -150", "why": ["because"],
+                    "market": "moneyline", "line": None, "side": "home",
+                    "team": "NYY", "team_name": "Yankees",
+                    "opponent_name": "Rockies", "price": -150, "book": "dk",
+                    "books": 8, "confidence": 0.74, "market_probability": 0.74,
+                    "model_probability": 0.64, "game_id": "g1", "game_pk": 1001,
+                    "event_id": "e0", "away_team": "COL", "home_team": "NYY",
+                    "first_pitch_utc": FUTURE,
+                    "observed_utc": "2026-09-12T16:00:00Z", "model": {},
+                }],
+                "prop_picks": prop_picks,
+            }
+
+        pre_lineup = daily_card.select_props(
+            [_contract(player="Rafael Devers", expected_pa_source="season_average",
+                      batting_slot=None, price=-135)],
+            now=NOW, require_lineup=False)
+        first = card_ledger.publish(_card(pre_lineup), now=NOW.isoformat(),
+                                    path=path)
+        self.assertFalse(first["prop_picks"][0]["lineup_posted"])
+        self.assertEqual(-135, first["prop_picks"][0]["price"])
+
+        posted = daily_card.select_props(
+            [_contract(player="Rafael Devers", expected_pa_source="batting_slot",
+                      batting_slot=3, price=-140)],
+            now=NOW, require_lineup=False)
+        second = card_ledger.publish(_card(posted), now=NOW.isoformat(),
+                                     path=path)
+        self.assertFalse(second["already_published"])
+        self.assertTrue(second["prop_picks"][0]["lineup_posted"])
+        self.assertEqual(-140, second["prop_picks"][0]["price"])
+        self.assertEqual(3, second["prop_picks"][0]["batting_slot"])
+
+    def test_a_locked_pre_lineup_pick_is_not_replaced_even_once_a_lineup_posts(self):
+        """Inside its own lock window a pick is the bet of record, whatever
+        arrives after -- the same promise every other kind of pick makes."""
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        path = os.path.join(tmp.name, "cards_v1.jsonl")
+
+        def _card(prop_picks):
+            return {
+                "date": "2026-09-12", "rule": "r", "basis": "b",
+                "disclaimer": "d", "model_id": "m", "calibrated": True,
+                "calibration": {}, "filled": 0, "games_on_slate": 1,
+                "picks": [{
+                    "rank": 1, "label": "STRONG", "bet": "x", "why": [],
+                    "market": "moneyline", "line": None, "side": "home",
+                    "team": "NYY", "team_name": "Yankees",
+                    "opponent_name": "Rockies", "price": -150, "book": "dk",
+                    "books": 8, "confidence": 0.74, "market_probability": 0.74,
+                    "model_probability": 0.64, "game_id": "g1", "game_pk": 1001,
+                    "event_id": "e0", "away_team": "COL", "home_team": "NYY",
+                    "first_pitch_utc": FUTURE, "observed_utc": "x", "model": {},
+                }],
+                "prop_picks": prop_picks,
+            }
+
+        locking_now = datetime(2026, 9, 12, 18, 30, tzinfo=timezone.utc)
+        pre_lineup = daily_card.select_props(
+            [_contract(player="Rafael Devers", expected_pa_source="season_average",
+                      batting_slot=None, price=-135, first_pitch_utc=SOON)],
+            now=locking_now, require_lineup=False)
+        first = card_ledger.publish(_card(pre_lineup),
+                                    now=locking_now.isoformat(), path=path)
+        self.assertTrue(first["prop_picks"][0]["locked"])
+
+        later = datetime(2026, 9, 12, 19, 0, tzinfo=timezone.utc)
+        posted = daily_card.select_props(
+            [_contract(player="Rafael Devers", expected_pa_source="batting_slot",
+                      batting_slot=3, price=-140, first_pitch_utc=SOON)],
+            now=later, require_lineup=False)
+        second = card_ledger.publish(_card(posted), now=later.isoformat(),
+                                     path=path)
+        self.assertFalse(second["prop_picks"][0]["lineup_posted"],
+                         "a locked pre-lineup pick was replaced after the "
+                         "lineup posted")
+        self.assertEqual(-135, second["prop_picks"][0]["price"])
+
+    def test_the_live_card_admits_a_pre_lineup_contract(self):
+        """`src.report.card._build_prop_picks` -- the live card's own
+        caller -- is the one that must pass `require_lineup=False`, not
+        just `select_props` supporting the option."""
+        from src.report import card as card_mod
+
+        entries = [{"dossier": {
+            "game": {"away_team": "KC", "home_team": "BOS", "game_pk": 823499,
+                     "start_time_utc": FUTURE, "game_number": 1},
+            "sections": {},
+        }}]
+        payload = card_mod.card_for_date(
+            entries, [], date="2026-09-12", now=NOW, prefer_frozen=False,
+            event_map={"e1": {"game_pk": 823499}},
+            prop_board=lambda date: {
+                "contracts": [_contract(expected_pa_source="season_average",
+                                        batting_slot=None)],
+                "reason": None})
+        self.assertEqual(1, len(payload["prop_picks"]))
+        self.assertFalse(payload["prop_picks"][0]["lineup_posted"])
+
+
+def _contract_with_games(season_games=None, **kwargs):
+    """`_contract()` plus `season_games` -- a thin wrapper rather than a
+    change to the shared fixture (that function stays append-only-safe:
+    every EXISTING test above keeps calling it with the exact same
+    signature it always had). `season_games` defaults to None, i.e. the key
+    is genuinely absent from the dict, matching what `_contract()` itself
+    produces today and what a contract from `propboard.build` never does
+    (that function always sets it)."""
+    c = _contract(**kwargs)
+    if season_games is not None:
+        c["season_games"] = season_games
+    return c
+
+
+class SeasonSampleGate(unittest.TestCase):
+    """Opus checker problem 4, fixed 2026-09-14. A pre-lineup contract's
+    probability rests on `season_rate`, which is this batter's own rate
+    over `season_games` prior box rows -- often a double-digit sample early
+    in a season. `MIN_SEASON_GAMES_FOR_PRELINEUP` refuses a season-average
+    contract built on too thin a sample; the why-sentence names the sample
+    it did use instead of implying a full season.
+    """
+
+    def test_a_thin_sample_pre_lineup_contract_is_refused(self):
+        """Live shape: Cronenworth-style, 11 games behind an 84% number."""
+        thin = _contract_with_games(
+            season_games=11, player="Thin Sample", probability=0.84,
+            breakeven=0.65, expected_pa_source="season_average",
+            batting_slot=None)
+        self.assertEqual(
+            [], daily_card.select_props([thin], now=NOW, require_lineup=False))
+
+    def test_a_sample_at_or_above_the_floor_is_admitted(self):
+        deep = _contract_with_games(
+            season_games=daily_card.MIN_SEASON_GAMES_FOR_PRELINEUP,
+            player="Deep Sample", probability=0.70, breakeven=0.55,
+            expected_pa_source="season_average", batting_slot=None)
+        picks = daily_card.select_props([deep], now=NOW, require_lineup=False)
+        self.assertEqual(1, len(picks))
+        self.assertEqual("Deep Sample", picks[0]["player"])
+
+    def test_a_contract_with_a_posted_lineup_is_never_gated_by_sample_size(self):
+        """The floor only touches the PRE-LINEUP fallback -- a contract
+        that already has a posted batting order behind it is unaffected,
+        however thin its own sample."""
+        posted_thin = _contract_with_games(
+            season_games=5, player="Posted Thin", probability=0.70,
+            breakeven=0.55, expected_pa_source="batting_slot", batting_slot=2)
+        picks = daily_card.select_props([posted_thin], now=NOW)
+        self.assertEqual(1, len(picks))
+
+    def test_a_missing_season_games_is_not_refused(self):
+        """Backward compatible with a contract that carries no
+        `season_games` at all (a caller that built one by hand, never
+        `propboard.build`, which always sets it) -- there is nothing here
+        to measure the sample against, so it is not refused on that
+        ground."""
+        no_sample_field = _contract(player="No Sample Field", probability=0.70,
+                                    breakeven=0.55,
+                                    expected_pa_source="season_average",
+                                    batting_slot=None)
+        self.assertNotIn("season_games", no_sample_field)
+        picks = daily_card.select_props(
+            [no_sample_field], now=NOW, require_lineup=False)
+        self.assertEqual(1, len(picks))
+
+
+class SeasonSampleWhySentence(unittest.TestCase):
+    """The why-sentence must name the sample behind a season rate, not
+    imply a full season -- see `SeasonSampleGate`'s docstring."""
+
+    def test_the_sentence_names_the_sample_size(self):
+        # `season_rate` is always the OVER outcome's rate (propboard's own
+        # convention) -- 0.0 here means he never once had 2+ hits in the 11
+        # games we have, so the UNDER (1 or fewer) rate is 1.0, "all 11".
+        c = _contract_with_games(
+            season_games=11, player="Jake Cronenworth", market="batter_hits",
+            line=1.5, side="Under", probability=0.84, breakeven=0.65,
+            season_rate=0.0, expected_pa_source="batting_slot", batting_slot=2)
+        pick = daily_card.select_props([c], now=NOW)[0]
+        first = pick["why"][0]
+        self.assertIn("all 11 games we have for him", first)
+        self.assertNotIn("100% of his games this season", first)
+
+    def test_a_fractional_rate_also_names_the_sample(self):
+        c = _contract_with_games(
+            season_games=13, player="Ozzie Albies", market="batter_hits",
+            line=0.5, side="Over", probability=0.78, breakeven=0.60,
+            season_rate=0.769, expected_pa_source="batting_slot", batting_slot=2)
+        pick = daily_card.select_props([c], now=NOW)[0]
+        first = pick["why"][0]
+        self.assertIn("of the 13 games we have for him", first)
+        self.assertNotIn('this season"', first)  # sanity: not the bare-season phrasing
+
+    def test_the_built_pick_carries_season_games_for_the_receipt(self):
+        c = _contract_with_games(season_games=11)
+        pick = daily_card._build_prop_pick(c, position=1)
+        self.assertEqual(11, pick["season_games"])
+
+    def test_no_season_games_falls_back_to_the_older_phrasing(self):
+        """Regression guard: a contract with no `season_games` (every
+        existing test fixture above this class) keeps saying "of his games
+        this season" -- unchanged behaviour for every caller that predates
+        this field."""
+        pick = daily_card.select_props([_contract()], now=NOW)[0]
+        self.assertIn("71% of his games this season", pick["why"][0])
+
+
+class LockedPropPickBlocksAnyFreshPickForTheSamePlayer(unittest.TestCase):
+    """Opus checker problem 5, fixed 2026-09-14: `card_ledger._prop_pick_key`
+    used to include the market and the line, so a lineup posting that moved
+    `select_props`'s own choice for one player to a DIFFERENT market or line
+    (it picks the player's single highest-probability contract, not one per
+    market) produced a fresh key that did not match the locked entry --
+    both were kept, two graded prop bets on one player in one game. The key
+    is now `(game_pk, player)` alone."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.path = os.path.join(self._tmp.name, "cards_v1.jsonl")
+
+    def _card(self, prop_picks):
+        return {
+            "date": "2026-09-12", "rule": "r", "basis": "b", "disclaimer": "d",
+            "model_id": "m", "calibrated": True, "calibration": {},
+            "filled": 0, "games_on_slate": 1,
+            "picks": [{
+                "rank": 1, "label": "STRONG", "bet": "x", "why": [],
+                "market": "moneyline", "line": None, "side": "home",
+                "team": "NYY", "team_name": "Yankees", "opponent_name": "COL",
+                "price": -150, "book": "dk", "books": 8, "confidence": 0.74,
+                "market_probability": 0.74, "model_probability": 0.64,
+                "game_id": "g1", "game_pk": 1001, "event_id": "e0",
+                "away_team": "COL", "home_team": "NYY",
+                "first_pitch_utc": FUTURE, "observed_utc": "x", "model": {},
+            }],
+            "prop_picks": prop_picks,
+        }
+
+    def test_a_locked_hits_pick_is_not_joined_by_a_fresh_total_bases_pick_same_player(self):
+        locking_now = datetime(2026, 9, 12, 18, 30, tzinfo=timezone.utc)
+        pre_lineup = daily_card.select_props(
+            [_contract(player="Rafael Devers", market="batter_hits", line=0.5,
+                      expected_pa_source="season_average", batting_slot=None,
+                      price=-135, first_pitch_utc=SOON, game_pk=823499)],
+            now=locking_now, require_lineup=False)
+        first = card_ledger.publish(self._card(pre_lineup),
+                                    now=locking_now.isoformat(), path=self.path)
+        self.assertTrue(first["prop_picks"][0]["locked"])
+        self.assertEqual("batter_hits", first["prop_picks"][0]["market"])
+
+        # A lineup has now posted, and select_props -- run again -- prefers
+        # a DIFFERENT market/line for the SAME player (its own one-pick-
+        # per-player rule, applied to a fresh read of the board).
+        later = datetime(2026, 9, 12, 19, 0, tzinfo=timezone.utc)
+        posted = daily_card.select_props(
+            [_contract(player="Rafael Devers", market="batter_total_bases",
+                      line=1.5, expected_pa_source="batting_slot",
+                      batting_slot=3, price=-160, first_pitch_utc=SOON,
+                      game_pk=823499)],
+            now=later, require_lineup=False)
+        second = card_ledger.publish(self._card(posted), now=later.isoformat(),
+                                     path=self.path)
+
+        by_player = {}
+        for p in second["prop_picks"]:
+            by_player.setdefault(p["player"], []).append(p)
+        self.assertEqual(
+            1, len(by_player["Rafael Devers"]),
+            "the locked hits pick and the fresh total-bases pick for the "
+            "SAME player both survived -- exactly the duplicate hazard "
+            "described in docs/PRODUCT_DOCTRINE.md 5.4")
+        self.assertEqual("batter_hits", by_player["Rafael Devers"][0]["market"],
+                         "the LOCKED pick must be the one carried forward")
+        self.assertEqual(-135, by_player["Rafael Devers"][0]["price"])
+
+
 if __name__ == "__main__":
     unittest.main()

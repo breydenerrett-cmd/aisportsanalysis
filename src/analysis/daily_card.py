@@ -681,6 +681,245 @@ def select(candidates: Sequence, *, min_picks: int = MIN_PICKS,
 
 
 # ---------------------------------------------------------------------------
+# GAME TOTALS ON THE CARD
+# ---------------------------------------------------------------------------
+#
+# ADDED 2026-09-14. The owner that morning: "merge the today bets for ALL
+# BETS not just MLs include all best bets like player props ... we dont need
+# a set time for analysis on props or MLs or all other Bets we havent gotten
+# to yet, like run lines and the niche bets" -- totals named by name. The
+# moneyline rule above (`select`) and the prop rule below (`select_props`)
+# both already publish only where the market's opinion and our own agree;
+# totals get the same shape, not a new one.
+#
+# THE RULE, PRE-REGISTERED, RIGHT HERE, BEFORE THE SLATE IS READ:
+#
+#   1. Candidates come from the multi-book totals board, at each game's OWN
+#      consensus line -- the total the most books are currently quoting for
+#      that game (`src.report.card.total_rows`). There is no single standard
+#      total the way the run line has 1.5: a total moves with the park and
+#      the day's two starters, so the line itself is read off the board
+#      rather than fixed in advance.
+#   2. The SIDE is whichever the de-vigged multi-book consensus makes more
+#      likely at that line -- over or under -- read the same way `select`
+#      reads the moneyline consensus.
+#   3. AGREEMENT. Our own run model must ALSO make that side more likely
+#      than not, at that exact line -- `src.model.strength.market_probabilities`
+#      by way of `src.report.card`, which is the caller responsible for
+#      passing this game's own total line into `model_line(totals=...)` so
+#      `p_over` is computed at the market's own number, not a different one.
+#      Disagreement drops the candidate outright. There is no fallback pile
+#      for totals the way a thin moneyline night fills from its SPLIT pile:
+#      a total nobody agrees on is not a total pick, full stop.
+#   4. CLEARS ITS PRICE. Our probability for that side must beat the
+#      break-even its best available price demands.
+#   5. Ranked by MARKET probability, descending -- the same axis the
+#      moneyline card ranks on, how sure the market is, not how sure we are.
+#   6. At most `MAX_TOTAL_PICKS`, no minimum. A thin totals board is a true
+#      state, exactly like a thin prop board (see `MAX_PROP_PICKS` below) --
+#      nothing here fills a floor by lowering a label.
+#
+# Labelled by the SAME bands the moneyline card uses (STRONG/LEAN/SLIGHT),
+# read off the MARKET probability -- there is no SPLIT label here either,
+# because for a total pick disagreement is disqualifying, never a demotion.
+
+MAX_TOTAL_PICKS = 3
+
+TOTAL_CARD_RULE = "DAILY_CARD_TOTAL_MARKET_SIDE_MODEL_AGREEMENT_V1"
+TOTAL_CARD_BASIS = (
+    "The total side is whichever the multi-book market makes more likely, "
+    "at that game's own consensus line. Our own run model has to agree "
+    "that side is more likely too, and the price has to clear its own "
+    "break-even. Ranked by how confident the market is. At most three.")
+
+
+def _total_label(market_probability: float) -> str:
+    """Same bands as the moneyline card (`_label`), read off the MARKET
+    probability -- a total pick has already passed the agreement gate
+    before it reaches this function, so there is nothing left to disagree
+    about and no SPLIT label to assign."""
+    if market_probability >= BAND_STRONG:
+        return LABEL_STRONG
+    if market_probability >= BAND_LEAN:
+        return LABEL_LEAN
+    return LABEL_SLIGHT
+
+
+def _total_bet_sentence(c: Mapping) -> str:
+    """"Take Over 8.5 runs at -110." The matchup lives in the pick's own
+    meta (away/home team), not in this sentence -- the same split the
+    moneyline and prop bet sentences use."""
+    side_word = "Over" if c.get("side") == "over" else "Under"
+    return (f"Take {side_word} {c.get('line'):g} runs at "
+            f"{_fmt_price(c.get('price'))}")
+
+
+def _total_why_sentences(c: Mapping) -> list:
+    """One sentence, both numbers, the register `_why_sentences`' own
+    agreement branch uses for the moneyline: the market's number, our
+    number, and what the price needs."""
+    side_word = "Over" if c.get("side") == "over" else "Under"
+    market_pct = _fmt_pct(c.get("market_probability"))
+    model_pct = _fmt_pct(c.get("model_probability"))
+    sentence = (
+        f"{c.get('away_name') or c.get('away_team')} at "
+        f"{c.get('home_name') or c.get('home_team')}: the market makes "
+        f"{side_word} {c.get('line'):g} runs a {market_pct} bet and our "
+        f"own run numbers agree at {model_pct}.")
+    needed_pct = _breakeven_pct(c.get("price"))
+    if needed_pct:
+        sentence += (f" At {_format_american(c.get('price'))} you need "
+                     f"{needed_pct} to break even.")
+    return [sentence]
+
+
+def _is_whole_number(line) -> bool:
+    try:
+        return float(line).is_integer()
+    except (TypeError, ValueError):
+        return False
+
+
+def build_total_candidates(games: Sequence, *, model_lines: Mapping,
+                           total_rows: Mapping) -> list:
+    """One candidate per game whose total clears every gate, or none.
+
+    `total_rows` -- {game_id: {"line", "over": {...}, "under": {...},
+    "books", "observed_utc"}}, from `src.report.card.total_rows`.
+    `model_lines` -- {game_id: strength.model_line(...) output}; the CALLER
+    (`src.report.card.card_for_date`) is responsible for having passed this
+    game's own total line into `model_line(totals=[line])` so `p_over`
+    carries a probability at the exact line the market is quoting --
+    otherwise there is nothing here to agree or disagree with.
+    """
+    out = []
+    for game in games:
+        gid = game.get("game_id")
+        detail = total_rows.get(gid)
+        if not detail:
+            continue
+        line = detail.get("line")
+        if not isinstance(line, (int, float)):
+            continue
+        over = detail.get("over") or {}
+        under = detail.get("under") or {}
+        over_p = over.get("consensus_probability")
+        under_p = under.get("consensus_probability")
+        if over_p is None or under_p is None:
+            continue
+        side, market_p = (("over", over_p) if over_p > under_p
+                          else ("under", under_p))
+
+        line_row = model_lines.get(gid)
+        if not line_row:
+            continue
+        p_over_map = line_row.get("p_over") or {}
+        p_over = p_over_map.get(line)
+        if p_over is None:
+            continue
+
+        # WHOLE-NUMBER LINES CAN PUSH. FIXED 2026-09-14 (Opus checker
+        # problem 1). `p_over[L]` is `P(total_runs > L)`, strict -- it
+        # already excludes a push on the OVER side. But the old code read
+        # the UNDER side as `1.0 - p_over[L]`, which is `P(total_runs <=
+        # L)`: on a whole-number line that FOLDS the push in with the Under
+        # win. The market's de-vigged number and the price's own break-even
+        # are both measured ignoring the push (a push refunds the stake; it
+        # settles neither side), so comparing a push-inflated Under against
+        # either one is comparing numbers on two different bases.
+        #
+        # Live, BAL@NYM 8.0 on 2026-09-14: P(over) = 0.4754, P(push) =
+        # 0.0754. The push-inflated Under read 0.5246 -- clearing -110's own
+        # 52.38% break-even -- when the push-EXCLUDED Under is really
+        # 0.4858, under it and under 0.5: the model actually leans Over. The
+        # card published "Take Under 8 runs" on a false agreement and a
+        # false clears-price claim, both.
+        #
+        # `p_over[L - 0.5]` is `P(total_runs > L - 0.5)`, which for an
+        # integer `total_runs` equals `P(total_runs >= L)` -- so
+        # `p_over[L - 0.5] - p_over[L]` is exactly the push mass, and both
+        # sides read correctly once it is divided back out:
+        #   Over,  push excluded: p_over[L] / (1 - push)
+        #   Under, push excluded: (1 - p_over[L - 0.5]) / (1 - push)
+        # `src.report.card.card_for_date` is the caller responsible for
+        # having asked the model about `L - 0.5` too (see its own comment)
+        # for exactly a whole-number line; if it did not, there is nothing
+        # here to measure the push with and the candidate is refused rather
+        # than measured wrong -- same discipline as the "line never asked
+        # about" refusal just above.
+        if _is_whole_number(line):
+            p_at_half_below = p_over_map.get(float(line) - 0.5)
+            if p_at_half_below is None:
+                continue
+            push = p_at_half_below - p_over
+            if not (0.0 <= push < 1.0):
+                continue  # float noise or a malformed grid -- refuse, don't guess
+            denom = 1.0 - push
+            if denom <= 0.0:
+                continue
+            model_p = ((p_over / denom) if side == "over"
+                      else ((1.0 - p_at_half_below) / denom))
+        else:
+            model_p = p_over if side == "over" else 1.0 - p_over
+        if not (model_p > 0.5):
+            continue  # AGREEMENT. No fallback pile -- see the module note.
+
+        info = over if side == "over" else under
+        price = info.get("best_price")
+        if price is None:
+            continue
+        try:
+            breakeven = odds_math.american_to_probability(price)
+        except (odds_math.OddsError, TypeError, ValueError, ZeroDivisionError):
+            continue
+        if not (0.0 < breakeven < 1.0) or not (model_p > breakeven):
+            continue  # CLEARS ITS PRICE.
+
+        out.append({
+            "kind": "total",
+            "game_id": gid,
+            "game_pk": game.get("game_pk"),
+            "event_id": game.get("event_id"),
+            "away_team": game.get("away_team"),
+            "home_team": game.get("home_team"),
+            "away_name": game.get("away_name"),
+            "home_name": game.get("home_name"),
+            "first_pitch_utc": game.get("first_pitch_utc"),
+            "line": line,
+            "side": side,
+            "price": price,
+            "book": info.get("best_book"),
+            "books": detail.get("books"),
+            "market_probability": market_p,
+            "model_probability": model_p,
+            "observed_utc": detail.get("observed_utc"),
+            "label": _total_label(market_p),
+        })
+    return out
+
+
+def select_totals(candidates: Sequence, *,
+                  max_picks: int = MAX_TOTAL_PICKS) -> dict:
+    """The card's total picks: at most `max_picks`, no floor -- every
+    candidate handed in already agreed and cleared its price
+    (`build_total_candidates`); this only ranks and caps."""
+    ranked = sorted(candidates,
+                    key=lambda c: -(c.get("market_probability") or 0.0))
+    picks = list(ranked[:max_picks])
+    for i, pick in enumerate(picks, start=1):
+        pick["rank"] = i
+        pick["bet"] = _total_bet_sentence(pick)
+        pick["why"] = _total_why_sentences(pick)
+    return {
+        "picks": picks,
+        "considered": len(candidates),
+        "rule": TOTAL_CARD_RULE,
+        "basis": TOTAL_CARD_BASIS,
+        "max_picks": max_picks,
+    }
+
+
+# ---------------------------------------------------------------------------
 # PLAYER PROPS ON THE CARD
 # ---------------------------------------------------------------------------
 #
@@ -719,6 +958,23 @@ def select(candidates: Sequence, *, min_picks: int = MIN_PICKS,
 # reaching, and this file only decides.
 
 MAX_PROP_PICKS = 3
+
+# ADDED 2026-09-14 (Opus checker problem 4, second half). A pre-lineup
+# contract's `probability` is built on `season_rate`, which is this
+# batter's own rate over `season_games` PRIOR box rows -- often a
+# double-digit sample two weeks into a season. Live today, the top three
+# `all_bets` rows (84%/81%/78%) all rested on 11-13 games, and 5 of the top
+# 10 prop contracts on the whole board were UNDERS at Coors Field, which is
+# the shape a small-sample season rate produces when it has not yet met a
+# park or an opposing pitcher (see docs/PRODUCT_DOCTRINE.md 5.4 and "the
+# instrument is the suspect" in this repo's own research discipline). This
+# gate is deliberately narrow: it only touches a PRE-LINEUP contract
+# (`select_props(require_lineup=False)`, `expected_pa_source ==
+# "season_average"`) -- a contract WITH a posted lineup is unaffected, and
+# `season_games` missing entirely (a caller that built its own contract by
+# hand rather than through `propboard.build`, which always sets it) is not
+# refused either, since there is nothing here to measure the sample against.
+MIN_SEASON_GAMES_FOR_PRELINEUP = 15
 
 # THE MARKETS THE CARD WILL PICK FROM, declared here and nowhere else.
 #
@@ -850,6 +1106,20 @@ def _prop_why_sentences(c: Mapping) -> list:
     else:
         rate = 1.0 - float(season_rate) if is_under else float(season_rate)
 
+    # FIXED 2026-09-14 (Opus checker problem 4). The rate above comes from
+    # `propboard._season_rate`, which reads this batter's PRIOR BOX ROWS --
+    # often a double-digit sample this early in a slate, not a season. Live
+    # today: Jake Cronenworth's 84% probability and Ozzie Albies's 81% both
+    # rest on `season_games` of 11 and 13. The sentence used to say "in
+    # 100% of his games this season" -- true of the 11 games on file, false
+    # of the word "season", and the two top-of-card pre-lineup picks read as
+    # a full season's evidence when they were a season-average estimate
+    # built on two weeks of it. If `season_games` is on the contract, the
+    # sentence names the sample instead of implying the whole season; a
+    # contract with no `season_games` at all (only possible from a caller
+    # that built its own contract by hand, never `propboard.build`) keeps
+    # the older phrasing rather than claim a sample size it cannot show.
+
     # OUR NUMBER LEADS (2026-09-12, seen on the first live build). The
     # sentence used to open with the season rate alone -- "Connor Norby has
     # at least one total base in 55% of his games this season" -- on a pick
@@ -863,16 +1133,32 @@ def _prop_why_sentences(c: Mapping) -> list:
     probability = c.get("probability")
     ours = (f"Our own numbers make it {_fmt_pct(float(probability))}. "
             if probability is not None else "")
-    if rate is not None:
+    season_games = c.get("season_games")
+    if rate is not None and isinstance(season_games, (int, float)) and season_games > 0:
+        n = int(season_games)
+        sample = (f"all {n}" if abs(rate - 1.0) < 1e-9
+                  else f"{_fmt_pct(rate)} of the {n}")
+        first = f"{ours}{player} has {clause} in {sample} games we have for him this season"
+    elif rate is not None:
         first = f"{ours}{player} has {clause} in {_fmt_pct(rate)} of his games this season"
     else:
         first = f"{ours}{player} has {clause} in his prior games this season"
 
     slot = c.get("batting_slot")
     expected_pa = c.get("expected_pa")
+    pa_source = c.get("expected_pa_source")
     if slot and expected_pa:
         first += (f"; batting {_ordinal(slot)} tonight, he should get about "
                   f"{float(expected_pa):.1f} trips to the plate.")
+    elif pa_source == "season_average" and expected_pa:
+        # ADDED 2026-09-14 for pre-lineup props (the owner: analysis "needs
+        # to be ran pre emptively before any games"). No batting order is
+        # posted for this game yet, so there is no slot to name -- the pick
+        # says so, in these words, rather than let a reader think a posted
+        # order stands behind the estimate.
+        first += (f"; tonight's lineup is not posted yet, so this uses his "
+                  f"season-average {float(expected_pa):.1f} trips to the "
+                  f"plate.")
     elif slot:
         first += f", batting {_ordinal(slot)} tonight."
     elif expected_pa:
@@ -924,6 +1210,17 @@ def _build_prop_pick(c: Mapping, *, position: int) -> dict:
         "batting_slot": c.get("batting_slot"),
         "expected_pa": c.get("expected_pa"),
         "expected_pa_source": c.get("expected_pa_source"),
+        # ADDED 2026-09-14 (Opus checker problem 4) so the receipt carries
+        # the sample size the why-sentence names, not just the sentence
+        # text itself.
+        "season_games": c.get("season_games"),
+        # ADDED 2026-09-14. Whether a posted batting order stands behind
+        # this estimate, or the batter's own season-average trips to the
+        # plate stand in for it -- see `select_props`'s `require_lineup`.
+        # Read straight off `expected_pa_source` rather than carried as a
+        # separate input, so it can never say something the estimate it
+        # describes does not.
+        "lineup_posted": c.get("expected_pa_source") == "batting_slot",
         "observed_utc": c.get("observed_utc"),
         "locked": False,
         "locked_at": None,
@@ -934,7 +1231,8 @@ def _build_prop_pick(c: Mapping, *, position: int) -> dict:
 
 
 def select_props(contracts: Sequence, *, now: Optional[datetime] = None,
-                 max_picks: int = MAX_PROP_PICKS) -> list:
+                 max_picks: int = MAX_PROP_PICKS,
+                 require_lineup: bool = True) -> list:
     """The card's player-prop picks: at most `max_picks`, no floor.
 
     `contracts` are the prop board's contracts for the date
@@ -943,6 +1241,20 @@ def select_props(contracts: Sequence, *, now: Optional[datetime] = None,
     Ranked by OUR probability, descending, and never by the gap over the
     price -- see the module-level comment above this section for the full
     rule and why the gap is disqualified.
+
+    `require_lineup` -- ADDED 2026-09-14. The owner: analysis "needs to be
+    ran pre emptively before any games." Default TRUE keeps this function's
+    original behaviour (a `season_average` contract is never a pick) for
+    every existing caller; `src.report.card._build_prop_picks` -- the live
+    card's own caller -- passes FALSE so a contract priced off the batter's
+    season-average plate appearances can reach the card before any lineup
+    posts. Either way the pick says which estimate it stands on
+    (`lineup_posted` on the built pick, and the why-sentence), and a
+    `batting_slot` contract for the same player replaces a season-average
+    one on the very next publish while the pick is still open -- the
+    existing open-pick replacement in `card_ledger.publish` (an unlocked
+    pick is rewritten wholesale by the next run's read, same game and
+    market), not a new mechanism.
     """
     now = now or datetime.now(timezone.utc)
 
@@ -959,26 +1271,193 @@ def select_props(contracts: Sequence, *, now: Optional[datetime] = None,
         breakeven = c.get("breakeven")
         if breakeven is None or not (probability > breakeven):
             continue
-        if c.get("expected_pa_source") != "batting_slot":
+        if require_lineup and c.get("expected_pa_source") != "batting_slot":
             continue
+        if (not require_lineup) and c.get("expected_pa_source") != "batting_slot":
+            games = c.get("season_games")
+            if (isinstance(games, (int, float))
+                    and games < MIN_SEASON_GAMES_FOR_PRELINEUP):
+                continue  # sample too thin to stand alone before a lineup posts
         if _prop_game_started(c.get("first_pitch_utc"), now):
+            continue
+        # The declared rank source gates selection too (2026-09-14): a prop
+        # the merged list would refuse to rank is not a card pick. Under
+        # "both" that means the market must also call it more likely than
+        # not -- see `prop_rank_probability`. Under "model" this is a no-op.
+        if PROP_RANK_SOURCE != "model" and not prop_rank_probability(c):
             continue
         eligible.append(c)
 
-    # One pick per player: his own highest-probability surviving contract.
+    def _rank_p(c):
+        return (prop_rank_probability(c) if PROP_RANK_SOURCE != "model"
+                else (c.get("probability") or 0.0))
+
+    # One pick per player: his own best-ranked surviving contract.
     best_by_player: dict = {}
     for c in eligible:
         player = c.get("player")
         current = best_by_player.get(player)
-        if current is None or (c.get("probability") or 0.0) > (current.get("probability") or 0.0):
+        if current is None or (_rank_p(c), c.get("probability") or 0.0) > (
+                _rank_p(current), current.get("probability") or 0.0):
             best_by_player[player] = c
 
-    # RANKED BY PROBABILITY, NEVER BY THE GAP -- the player-name tie-break is
-    # only there for a deterministic order when two contracts land on the
-    # exact same probability; it is not part of the ranking rule itself.
+    # RANKED BY PROBABILITY, NEVER BY THE GAP -- by the declared rank source
+    # (the market's number under "both"), then our own number, then the
+    # player name only for a deterministic order on an exact tie.
     ranked = sorted(best_by_player.values(),
-                    key=lambda c: (-(c.get("probability") or 0.0),
+                    key=lambda c: (-_rank_p(c), -(c.get("probability") or 0.0),
                                    str(c.get("player") or "")))
 
     return [_build_prop_pick(c, position=i)
             for i, c in enumerate(ranked[:max_picks], start=1)]
+
+
+# ---------------------------------------------------------------------------
+# PROP RANKING SOURCE -- a declared seam, not yet decided
+# ---------------------------------------------------------------------------
+#
+# ADDED 2026-09-14 for the merged list below. `select_props` above still
+# ranks its OWN array by our probability alone, and that rule stays exactly
+# as measured (see the module comment above it) -- this is a SEPARATE
+# question. When a prop pick sits in the ONE merged list beside game and
+# total picks, which number does it rank against them by? A parallel
+# calibration track may find our probability, the market's, or agreement
+# between the two is the right read for that cross-kind comparison; until it
+# reports, the merged list reads our own number, the same one the prop
+# board's own ranking already uses, so the two never contradict each other
+# about which prop matters more. `PROP_RANK_SOURCE` is the one place that
+# decision is set -- the integrator sets it, not this file's author.
+#
+# SET TO "both" 2026-09-14 by the integrator, from
+# docs/PROP_CALIBRATION_2026-09-14.md (rev. 2) and its checker's rerun. Why:
+#  * the market's de-vigged number scored at least as well as ours on every
+#    cut measured (Brier 0.2406 vs 0.2469 overall, and in all three markets);
+#  * ours is miscalibrated toward UNDERS: Overs hit 53.2% against our 48.4%
+#    (n=600), and among contracts both numbers call likely, Unders hit 53.6%
+#    against our 61.7% (n=332) while Overs hit 61.3% against 61.7%;
+#  * where ours ran 10+ points above the market, n=32 hit 40.6% against our
+#    62.1% (the market said 50.2%).
+# The sample is thin (5 dates; 09-12 alone is 69% of rows), so this is not
+# proof the market is right. It is a refusal to rank a prop above a game on
+# our number alone when the only settled evidence says our number runs high,
+# most of all on the Unders topping today's board. "both" also puts the
+# merged list on ONE axis: game and total picks already rank by the market's
+# probability. It never selects or ranks by the gap between the two numbers;
+# each number is checked against its own floor and price.
+PROP_RANK_SOURCE = "both"  # "model" | "market" | "both"
+
+
+def prop_rank_probability(contract: Mapping) -> float:
+    """The probability a prop pick is ranked by in the MERGED list only --
+    `select_props`'s own selection and ranking are untouched by this.
+
+    "model"  -- our own probability.
+    "market" -- the de-vigged market probability.
+    "both"   -- ranked by the market's number, but only when BOTH our
+                probability and the market's clear the contract's own
+                break-even and the market's clears 50% (the declared
+                setting since 2026-09-14); a contract that fails either ranks last (0.0)
+                rather than raising, because this function has to return a
+                number for every prop pick handed to it, not refuse some.
+    """
+    if PROP_RANK_SOURCE == "market":
+        return contract.get("market_probability") or 0.0
+    if PROP_RANK_SOURCE == "both":
+        # THE BOTH-GATE (orchestrator, 2026-09-14, after the integration pass).
+        # The integrator's first cut required the MARKET's number to clear the
+        # break-even too. A market number that beats the best available
+        # price's break-even is a price discrepancy between books -- line
+        # shopping, which this product does not sell -- and it held back
+        # nearly every prop on the board, the same way no moneyline pick on
+        # today's card clears its price by the market's number either. The
+        # gate is the one docs/PROP_CALIBRATION_2026-09-14.md declares:
+        # the MARKET says more likely than not (probability first, on the
+        # number measured to be better calibrated), OUR number clears the
+        # price, and the pick ranks by the market's number -- the same axis
+        # game picks rank on. Its checker measured that this filters little
+        # of our number's over-confidence (12 of 600); that is why the card
+        # shows both numbers and the break-even on every prop, and why the
+        # pick ranks by the market's number, never ours.
+        breakeven = contract.get("breakeven")
+        market_p = contract.get("market_probability")
+        model_p = contract.get("probability")
+        if breakeven is None or market_p is None or model_p is None:
+            return 0.0
+        if not (market_p > propboard.LIKELY_FLOOR) or not (model_p > breakeven):
+            return 0.0
+        return market_p
+    return contract.get("probability") or 0.0
+
+
+# ---------------------------------------------------------------------------
+# THE MERGED LIST -- every kind of bet, ranked on one axis
+# ---------------------------------------------------------------------------
+#
+# ADDED 2026-09-14. The owner: "merge the today bets for ALL BETS not just
+# MLs include all best bets like player props". `picks`, `total_picks` and
+# `prop_picks` stay exactly as they are -- the ledger freezes them and
+# `card_ledger.settle` grades them, by kind, unchanged; nothing about this
+# function feeds back into any of the three. `all_bets` is a VIEW built
+# fresh, every time, from whichever version of those three arrays is being
+# served (live or frozen), so it can never disagree with the arrays it was
+# built from.
+
+def merge_all_bets(picks: Sequence, total_picks: Sequence,
+                   prop_picks: Sequence) -> list:
+    """One ranked list spanning all three kinds.
+
+    Ranked by the probability each kind's OWN rule already ranks it by:
+    market probability for a game or a total pick (both read
+    `market_probability` off the same de-vigged consensus), and
+    `prop_rank_probability` for a prop pick. `index` is the pick's position
+    in ITS OWN array -- `picks[index]` for a "game" item, `total_picks
+    [index]` for a "total" one, `prop_picks[index]` for a "prop" one -- so
+    the merge never copies a pick, it only orders references to the three
+    arrays a caller already has.
+    """
+    # `lineup_posted` ON EVERY ITEM. FIXED 2026-09-14 (Opus checker problem
+    # 3). A game or total pick never turns on a lineup, so it carries `None`
+    # -- neither True nor False, because both would claim a fact this kind
+    # of pick has no opinion about. A prop pick carries whatever
+    # `_build_prop_pick` put on it (see that function): the merged list is a
+    # VIEW over the three arrays, so this can only ever read the value that
+    # is already there, never decide one. Without this field a page drawing
+    # its ranking straight off `all_bets` showed "STRONG Take Jake
+    # Cronenworth under 1.5 hits at -220" at position 1-3 with nothing
+    # marking that no lineup was posted -- the pre-lineup label existed only
+    # on `prop_picks[index]`, one hop away from the list a reader actually
+    # reads top to bottom.
+    items = []
+    for i, p in enumerate(picks or ()):
+        items.append({
+            "kind": "game", "index": i,
+            "probability": p.get("market_probability"),
+            "label": p.get("label"), "bet": p.get("bet"),
+            "first_pitch_utc": p.get("first_pitch_utc"),
+            "lineup_posted": None,
+        })
+    for i, p in enumerate(total_picks or ()):
+        items.append({
+            "kind": "total", "index": i,
+            "probability": p.get("market_probability"),
+            "label": p.get("label"), "bet": p.get("bet"),
+            "first_pitch_utc": p.get("first_pitch_utc"),
+            "lineup_posted": None,
+        })
+    for i, p in enumerate(prop_picks or ()):
+        # `None`, not 0.0, when the declared rank source refuses to rank this
+        # prop (2026-09-14): under "both" a prop whose market number misses
+        # its price came back 0.0 and the payload said "0%" for a bet our own
+        # number puts at 62%. `None` claims nothing, and still sorts last.
+        rank_p = prop_rank_probability(p)
+        items.append({
+            "kind": "prop", "index": i,
+            "probability": rank_p if rank_p else None,
+            "label": p.get("label"), "bet": p.get("bet"),
+            "first_pitch_utc": p.get("first_pitch_utc"),
+            "lineup_posted": p.get("lineup_posted"),
+        })
+    items.sort(key=lambda it: -(it.get("probability") or 0.0))
+    for position, item in enumerate(items, start=1):
+        item["position"] = position
+    return items

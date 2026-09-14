@@ -338,6 +338,125 @@ def _run_line_rows_uncached(date: str, *, rows=None,
     return out
 
 
+# TOTALS ROWS ARE CACHED THE SAME WAY THE RUN-LINE ROWS ARE, and for the
+# same reason: the multi-book store is large and this reads it once per date
+# per TTL window rather than once per request. `rows` given explicitly (a
+# test's own injected store) bypasses the cache for the same reason
+# `run_line_rows` bypasses it -- a caller supplying its own rows must not see
+# another test's cached result.
+_TOTALS_CACHE = freshness.SingleFlightTTLCache(ttl_s=RUNLINE_CACHE_TTL_S)
+
+
+def total_rows(date: str, *, rows=None) -> dict:
+    """Cached wrapper around `_total_rows_uncached`. See `run_line_rows`."""
+    if rows is not None:
+        return _total_rows_uncached(date, rows=rows)
+    try:
+        value, _meta = _TOTALS_CACHE.get(
+            ("totals", date), lambda: _total_rows_uncached(date, rows=None))
+        return value
+    except Exception:  # noqa: BLE001 -- an unreadable store is a gap, and a
+        # card with no total picks is a real state; a 500 is not.
+        return {}
+
+
+def _total_rows_uncached(date: str, *, rows=None) -> dict:
+    """{game_id: {"line", "over": {...}, "under": {...}, "books",
+    "observed_utc"}} -- one entry per game, at that game's own CONSENSUS
+    line.
+
+    Unlike the run line (`_run_line_rows_uncached`), a total has no fixed
+    standard to filter to: 8.5 in Coors Field is a different bet from 8.5 at
+    Petco, and the number itself is what the board is pricing. So rather
+    than skip every line but one, this groups each book's NEWEST quote by
+    the line IT is currently posting, and takes the line the MOST books
+    currently agree on -- ties broken toward the lower number, arbitrarily
+    but deterministically, since a tie is rare and nothing downstream should
+    depend on dict iteration order deciding it. Books quoting a different
+    line are simply not part of this de-vig -- exactly the same choice
+    `_run_line_rows_uncached` makes by skipping non-standard lines, applied
+    to a number that has to be discovered per game instead of declared once.
+    """
+    from src.pipeline import slate as slate_mod
+    from src.pipeline import snapshots
+
+    if rows is None:
+        source = (r for r in snapshots.iter_multibook(market="totals")
+                  if snapshots.official_date(r.get("commence_time")) == date
+                  and snapshots.is_pregame(r))
+    else:
+        source = (r for r in snapshots.pregame_rows(rows)
+                  if r.get("market") == "totals"
+                  and snapshots.official_date(r.get("commence_time")) == date)
+
+    grouped: dict = {}
+    for row in source:
+        away = slate_mod.team_abbrev_from_name(row.get("away_team") or "")
+        home = slate_mod.team_abbrev_from_name(row.get("home_team") or "")
+        if not away or not home:
+            continue
+        try:
+            line = float(str(row.get("total")))
+        except (TypeError, ValueError):
+            continue
+        grouped.setdefault((away, home, date), []).append((line, row))
+
+    out = {}
+    for (away, home, day), entries in grouped.items():
+        # Each book's newest quote, at the line IT posted it at.
+        by_book: dict = {}
+        for line, row in entries:
+            book = row.get("book")
+            if not book:
+                continue
+            ts = row.get("observed_utc") or ""
+            held = by_book.get(book)
+            if held is None or ts > held[0]:
+                by_book[book] = (ts, line, row)
+
+        by_line: dict = {}
+        for _ts, line, row in by_book.values():
+            by_line.setdefault(line, []).append(row)
+        if not by_line:
+            continue
+        # Most books, ties toward the lower number -- see the docstring.
+        consensus_line = max(by_line, key=lambda l: (len(by_line[l]), -l))
+        group = by_line[consensus_line]
+
+        quotes = prices_mod.latest_instant([
+            {"ts": r.get("observed_utc"), "book": r.get("book"),
+             "away_price": r.get("over_price"), "home_price": r.get("under_price")}
+            for r in group])
+        if not quotes:
+            continue
+        snap = prices_mod.snapshot(quotes)
+        if snap.get("skipped"):
+            continue
+        sides = snap.get("sides") or {}
+        over_info, under_info = sides.get("away") or {}, sides.get("home") or {}
+        if (over_info.get("skipped") or under_info.get("skipped")
+                or over_info.get("best_price") is None
+                or under_info.get("best_price") is None):
+            continue
+
+        out[f"{away}-{home}-{day}-1"] = {
+            "line": consensus_line,
+            "over": {
+                "best_price": over_info.get("best_price"),
+                "best_book": over_info.get("best_book"),
+                "consensus_probability": over_info.get("consensus_probability"),
+            },
+            "under": {
+                "best_price": under_info.get("best_price"),
+                "best_book": under_info.get("best_book"),
+                "consensus_probability": under_info.get("consensus_probability"),
+            },
+            "books": (snap.get("dispersion") or {}).get("books"),
+            "observed_utc": quotes[0].get("ts"),
+        }
+    return out
+
+
 def moneyline_rows(opportunity_rows: Sequence) -> dict:
     """{game_id: {"away": row, "home": row}} from opportunities rows."""
     out = {}
@@ -445,6 +564,34 @@ _PROP_NONE_SELECTED_FROZEN = (
 # "didn't clear its price" on that row is a claim about history that isn't
 # true (checker problem 4). See `frozen_card`.
 _PROP_NOT_PART_OF_CARD = "Player props were not part of this card when it was frozen."
+
+# THE SAME THREE-WAY SPLIT, FOR TOTALS. ADDED 2026-09-14, same reasoning as
+# the prop reasons just above: "nothing cleared" is a verdict on our own
+# confidence and this surface never states one; each string here states a
+# fact about tonight's totals board instead (or, for a row frozen before
+# this feature existed, the fact that totals were never asked about at all).
+# TOTALS ARE BUILT, GRADED AND RENDERED -- AND PAUSED ON THE LIVE CARD
+# (orchestrator, 2026-09-14). The instrument is the suspect: on today's slate
+# the run model's expected total sat ABOVE the market's line in 8 of 9 games
+# (LAD@CIN 9.27 vs 7.5, NYY@MIN 9.78 vs 8.0) and BELOW it only at Coors
+# (SD@COL 9.57 vs 11.0) -- the shape of a missing park factor -- and every
+# total it would have published cleared its price on our run model alone, at
+# a market of 50-52%, a coin flip. A graded public ledger is not the place to
+# find out whether that is bias. Flip this to True once the run model's
+# totals have been measured against settled games (owner decision). Frozen
+# rows that already hold total picks are served either way.
+TOTALS_ON_CARD = False
+_TOTALS_PAUSED = (
+    "Game totals are not on the card yet: our run numbers read high on "
+    "totals, and we are measuring that against finished games first.")
+
+_TOTAL_NONE_SELECTED_LIVE = (
+    "No game total on the board both agrees with our own numbers and "
+    "clears its price tonight.")
+_TOTAL_NONE_SELECTED_FROZEN = (
+    "No game total on the board both agreed with our own numbers and "
+    "cleared its price when this card was frozen.")
+_TOTAL_NOT_PART_OF_CARD = "Game totals were not part of this card when it was frozen."
 
 
 def _prop_identity_by_game_pk(entries: Sequence, *, date: str) -> dict:
@@ -561,7 +708,10 @@ def _build_prop_picks(entries: Sequence, *, date: str, now: datetime,
             "team": team,
         })
 
-    picks = daily_card.select_props(enriched, now=now)
+    # `require_lineup=False`: the owner's ask is analysis run pre-emptively,
+    # before any lineup posts (see `daily_card.select_props`'s own docstring
+    # for the full reasoning and the replacement mechanism).
+    picks = daily_card.select_props(enriched, now=now, require_lineup=False)
     if not picks:
         return [], _PROP_NONE_SELECTED_LIVE
     return picks, None
@@ -579,6 +729,19 @@ def _served_prop_order(picks) -> list:
     ordered = sorted(
         (dict(p) for p in picks),
         key=lambda p: (-(p.get("probability") or 0.0), str(p.get("player") or "")))
+    for i, pick in enumerate(ordered, start=1):
+        pick["position"] = i
+    return ordered
+
+
+def _served_total_order(picks) -> list:
+    """The frozen total picks in market-probability order, each numbered by
+    `position` -- the total-pick counterpart to `_served_prop_order` above.
+    A total pick's own rule ranks by market probability (see
+    `daily_card.select_totals`), so the served order reads the same field.
+    """
+    ordered = sorted((dict(p) for p in picks),
+                     key=lambda p: -(p.get("market_probability") or 0.0))
     for i, pick in enumerate(ordered, start=1):
         pick["position"] = i
     return ordered
@@ -636,8 +799,17 @@ def frozen_card(date: str) -> Optional[dict]:
     # comment above and checker problem 4.
     prop_picks_considered = "prop_picks" in row
     prop_picks = row.get("prop_picks") or ()
+    # TOTAL PICKS, the same "key present vs. key missing" distinction as
+    # `prop_picks_considered` just above -- see that comment and
+    # `_TOTAL_NOT_PART_OF_CARD`.
+    total_picks_considered = "total_picks" in row
+    total_picks = row.get("total_picks") or ()
+
+    served_picks = _served_order(row.get("picks") or ())
+    served_totals = _served_total_order(total_picks)
+    served_props = _served_prop_order(prop_picks)
     return {
-        "picks": _served_order(row.get("picks") or ()),
+        "picks": served_picks,
         "filled": row.get("n_filled") or 0,
         "considered": None,
         "agreed": None,
@@ -657,11 +829,23 @@ def frozen_card(date: str) -> Optional[dict]:
         # built under. `prop_reason` is the one exception: a MISSING key
         # and an EMPTY list are different facts (props never considered vs.
         # considered and none selected) and read differently below.
-        "prop_picks": _served_prop_order(prop_picks),
+        "prop_picks": served_props,
         "prop_reason": (
             None if prop_picks
             else _PROP_NONE_SELECTED_FROZEN if prop_picks_considered
             else _PROP_NOT_PART_OF_CARD),
+        # TOTAL PICKS, same three-way distinction as props (2026-09-14).
+        "total_picks": served_totals,
+        "total_reason": (
+            None if total_picks
+            else _TOTAL_NONE_SELECTED_FROZEN if total_picks_considered
+            else _TOTAL_NOT_PART_OF_CARD),
+        # THE MERGED LIST, built from these same three served arrays -- see
+        # `card_for_date`'s live branch for why it is always rebuilt rather
+        # than frozen as its own field: it is a view over the three, never
+        # an independent claim.
+        "all_bets": daily_card.merge_all_bets(
+            served_picks, served_totals, served_props),
         "frozen": True,
         "frozen_at": row.get("published_utc"),
         "row_hash": row.get("row_hash"),
@@ -711,6 +895,9 @@ def card_for_date(entries: Sequence, opportunity_rows: Sequence, *, date: str,
     feature_rows = [_flatten(e) for e in entries or ()]
     league_rpg = strength.league_runs_per_game(feature_rows)
     relief = relief_rates_for(date)
+    # READ BEFORE THE LOOP, because the loop needs each game's own line to
+    # ask the model about THAT line -- see the `totals=` call below.
+    total_lines = total_rows(date, rows=multibook_rows)
 
     for entry in entries or ():
         game = _game_identity(entry, date=date)
@@ -723,9 +910,31 @@ def card_for_date(entries: Sequence, opportunity_rows: Sequence, *, date: str,
         # keys leave `run_means` on its old fallback and it says so.
         game["features"]["away_bullpen_rate"] = relief.get(game["away_team"])
         game["features"]["home_bullpen_rate"] = relief.get(game["home_team"])
+        # THE GAME'S OWN TOTAL LINE, PASSED IN. Scouted 2026-09-14: this call
+        # never passed `totals=`, so `strength.market_probabilities`' own
+        # `p_over` dict was always empty and no total pick could ever agree
+        # with anything -- there was nothing to read `p_over` at. The total
+        # board has no fixed standard the way the run line does, so the line
+        # itself has to be read off `total_lines` per game before the model
+        # is asked about it.
+        game_total = total_lines.get(game["game_id"])
+        total_line = (game_total or {}).get("line")
+        totals_arg = None
+        if isinstance(total_line, (int, float)):
+            totals_arg = [total_line]
+            # WHOLE-NUMBER LINES CAN PUSH. ADDED 2026-09-14 (Opus checker
+            # problem 1). `daily_card.build_total_candidates` needs the
+            # model's probability at `total_line - 0.5` too, to measure how
+            # much mass sits exactly on the push and read both sides
+            # ignoring it -- see that function's own comment for the full
+            # reasoning and the live number it was measured against. A
+            # half-point line cannot push, so nothing extra is asked of the
+            # model for one.
+            if float(total_line).is_integer():
+                totals_arg.append(float(total_line) - 0.5)
         try:
             line = strength.model_line(game["features"], league_rpg=league_rpg,
-                                       run_line=RUN_LINE)
+                                       run_line=RUN_LINE, totals=totals_arg)
         except strength.StrengthError:
             continue
         if cal is not None:
@@ -743,6 +952,17 @@ def card_for_date(entries: Sequence, opportunity_rows: Sequence, *, date: str,
         runline_rows=run_line_rows(date, rows=multibook_rows),
     )
     payload = daily_card.select(candidates)
+
+    if TOTALS_ON_CARD:
+        total_candidates = daily_card.build_total_candidates(
+            games, model_lines=model_lines, total_rows=total_lines)
+        total_payload = daily_card.select_totals(total_candidates)
+        payload["total_picks"] = total_payload["picks"]
+        payload["total_reason"] = (
+            None if total_payload["picks"] else _TOTAL_NONE_SELECTED_LIVE)
+    else:
+        payload["total_picks"] = []
+        payload["total_reason"] = _TOTALS_PAUSED
     payload.update({
         "date": date,
         "generated_at": now.astimezone(timezone.utc).isoformat(),
@@ -766,6 +986,12 @@ def card_for_date(entries: Sequence, opportunity_rows: Sequence, *, date: str,
         entries, date=date, now=now, prop_board=prop_board, event_map=event_map)
     payload["prop_picks"] = prop_picks
     payload["prop_reason"] = prop_reason
+
+    # THE MERGED LIST -- every kind the card can carry today, one ranking.
+    # Built fresh from the three arrays just assigned above, so it can never
+    # disagree with them (see `daily_card.merge_all_bets`).
+    payload["all_bets"] = daily_card.merge_all_bets(
+        payload["picks"], payload["total_picks"], payload["prop_picks"])
 
     if not payload["picks"]:
         payload["reason"] = _empty_reason(entries, started, len(games),
