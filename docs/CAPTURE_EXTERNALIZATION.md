@@ -357,3 +357,236 @@ unattended-retry season fetch. It is not automated here on purpose, the
 same way `capture_slot.sh` deliberately never mints a new `ODDS_API_KEY`
 on its own -- both are "an operator does this once, infrastructure keeps
 it fresh forever after" boundaries, not gaps this task left unfinished.
+
+## Self-chaining cadence (2026-09-14)
+
+### Observation
+
+`gh run list --workflow forward-capture.yml` on 2026-09-13/14: the
+`*/15 * * * *` cron produced runs at 01:17Z, 06:32Z, 12:17Z, 16:32Z, 18:57Z,
+21:19Z, 23:19Z, 01:21Z, 06:44Z, 13:23Z -- every 2-5 hours, not every 15
+minutes. Slots near a 15-minute spacing existed only while the
+orchestrator's session dispatched them by hand. A slot takes about two
+minutes (run 34863237749: 15:36:09Z -> 15:38:04Z).
+
+### Revision after review (same day)
+
+The first build slept INSIDE the shared `forward-capture` concurrency group
+(workflow-level group; spacing wait as the job's first step), dispatched at
+the end of the slot, and stopped chaining whenever a rival was waiting. A
+review walked three defects out of that:
+
+1. **CI red.** `tests/test_capture_stages_what_it_writes.py` treats the one
+   `run:` line naming `scripts/capture_slot.sh` as THE slot; the mode calls
+   made it three.
+2. **The chain died at every rival.** A rival queued while the chain slept ->
+   the chain yielded and did not dispatch -> the rival ran -> nothing
+   re-dispatched (afternoon-slate.yml and daily-loop.yml have no chain step).
+   Only the cron copy (2-5 hours) restarted it -- a gap that can cover every
+   first pitch on a night slate.
+3. **More cancellation exposure, not less.** A chain sleeping in the group
+   holds it ~13 minutes of every 13, so a rival that used to start at once
+   now went pending nearly every day, where any forward-capture that queued
+   after it without checking (the default branch's cron copy; a hand
+   dispatch) cancelled it. The sleep's one-minute poll did not cover the
+   capture / lineup / slate steps.
+
+All three are fixed by the design below rather than by patches: the wait no
+longer holds the group.
+
+### Design
+
+`forward-capture.yml` has two jobs and NO workflow-level concurrency:
+
+    pace     (no group)   1. --space-only  sleep until prev_slot_start + spacing
+                          2. --chain-only  dispatch the next run   (if: always())
+                          3. --gate-only   wait until no rival waits in the group (LAST)
+    capture  (job-level group forward-capture; needs: pace;
+              if: !cancelled() && needs.pace.outputs.yielded == 'false')
+                          the slot, unchanged
+
+The dispatch is:
+
+    gh workflow run forward-capture.yml --ref claude/sports-betting-analysis-review-g1o0co \
+        -f capture_now=0 -f prev_slot_start=<this slot's start epoch> -f spacing_minutes=<13|60>
+
+`workflow_dispatch` events created with `GITHUB_TOKEN` do start runs
+(GitHub's loop-prevention rule exempts `workflow_dispatch` and
+`repository_dispatch`); the workflow already had `actions: write`. The
+logic lives in `scripts/capture_slot.sh` (`--space-only`, `--chain-only`,
+`--gate-only`, and an exit trap), so the workflow, the cron copy and any
+future caller share one tested implementation
+(`tests/test_capture_no_set_time.py`, which runs the real script against a
+fake `gh` and a fake `sleep`).
+
+Job-level and workflow-level concurrency groups share one namespace per
+repository (GitHub docs, "Using concurrency": "a single job or workflow
+using the same concurrency group"), so the capture job still serialises
+against afternoon-slate and the default branch's cron copy, both of which
+use a workflow-level `forward-capture` group. Docs-level (tier-1) evidence;
+not yet observed on this repo.
+
+### The constraints, and how each is met
+
+**(a) Never cancel a waiting daily-loop or afternoon-slate.** GitHub keeps
+one running and one pending entry per group, and a newer pending entry
+cancels the older. Two rules make a chained or hand-dispatched slot of this
+branch unable to do that:
+
+- The dispatch cannot cancel anything: the run it creates holds no group
+  until its capture job, which queues only after `--gate-only`, at least 13
+  minutes later. So `--chain-only` no longer checks rivals at all.
+- `--gate-only`, the last step before the capture job queues, reads the
+  newest 50 runs and waits (one read a minute, outside the group, blocking
+  nobody) while a `daily-loop` or `afternoon-slate` run on any branch is
+  `queued`, `pending`, `waiting` or `requested`. `pending` is what a
+  group-held run reports. When nothing waits it outputs `yielded=false` and
+  the capture job queues. A rival still waiting after 30 minutes costs THIS
+  slot (`yielded=true`), never the rival; an unreadable queue for 30 minutes
+  also skips the slot and turns the step red (`gate: BROKEN`).
+
+daily-loop stays on the rival list although this branch's `daily-loop.yml`
+moved to its own `daily-loop` group on 2026-09-14 (another track,
+docs/DAILY_LOOP_REPAIR_2026-09-14.md): cron runs the DEFAULT branch's copy,
+whose group this branch cannot see or change.
+
+Residual exposure, stated:
+
+- **The gate race**: seconds between the gate's last read and the capture
+  job queuing (the gate is the last step of `pace` to keep it that short).
+- **The default branch's cron copy** queues into the group without passing
+  any gate (its YAML cannot be edited from here). It can cancel a rival that
+  is pending. That was true before the chain too; what the chain changes is
+  how often a rival is pending. With the wait outside the group, the group
+  is held only while a slot actually runs (about 2 minutes, longer when a
+  lineup triggers a slate pass), so a rival at 15:40Z goes pending only if it
+  lands inside a running slot, and is then cancelled only if a cron-copy
+  firing (every 2-5 hours) lands inside the remaining minutes of that slot.
+  Estimate, not measured: low single-digit percent of days at most.
+- **A hand dispatch of the default branch's copy** (`gh workflow run
+  forward-capture.yml` WITHOUT `--ref`) behaves like the cron copy. Always
+  pass `--ref claude/sports-betting-analysis-review-g1o0co`; that copy goes
+  through the gate and is safe while a rival waits.
+- A chained capture job pending behind something can be replaced by a newer
+  pending entry (a later chained slot, a cron-copy run, a rival queuing).
+  That loses one slot, never the chain -- the dispatch already happened.
+
+**(b) Spacing.** `--space-only` sleeps until `prev_slot_start +
+spacing_minutes` (13 on game days). Bounded both ways: spacing is clamped to
+13-60 minutes, and the wait never exceeds one spacing interval even for a
+start epoch in the future. 13 rather than 15 because a dispatch takes tens
+of seconds to become a running job and `capture_slot.sh` widens the dense
+window on the first slot of each hour (minute < 15): every gap has to stay
+under 15 minutes for no hour to miss that widening. The sleep never reads
+the queue and never skips the slot -- it holds no group, so a rival is
+irrelevant to it. The capture job starts after the wait, so its checkout is
+current (the old "catch the checkout up" step is gone). The `pace` job's
+timeout is 100 minutes (60 spacing + 30 gate + margin).
+
+**(c) Hand vs chain.** A chained dispatch is also a `workflow_dispatch`
+event, so `github.event_name` no longer tells them apart. Input
+`capture_now` (default `'1'`); the chain sends `0`; the capture step sets
+`CAPTURE_NOW: ${{ github.event_name == 'workflow_dispatch' && inputs.capture_now == '1' && '1' || '' }}`.
+The comparison is spelled out because the string `'0'` is truthy in an
+Actions expression. `gh workflow run forward-capture.yml --ref <branch>` with
+no `-f` still means CAPTURE_NOW=1, with no spacing wait (it still passes the
+gate).
+
+**(d) Chains cannot multiply.** The group no longer bounds chains (the
+waiting part is outside it), so the dispatch does: `--chain-only` does not
+dispatch when a NEWER live (`queued`/`pending`/`waiting`/`requested`/
+`in_progress`) forward-capture run of this branch exists
+(`CHAIN_SELF_RUN_ID` = `github.run_id`). Every run is live while it
+dispatches, so of two live chains the older sees the newer and stands down
+and the newer dispatches: they collapse to one at the first dispatch point.
+Example: a hand dispatch H lands while chained run R sleeps. H dispatches
+H2; R wakes, sees H2 (newer) and does not dispatch. Each run dispatches at
+most once (the capture step sets `CHAIN_BY_WORKFLOW_STEP=1` so the script's
+exit trap stays out of it). The slots themselves stay bounded by the group:
+one running, one pending. `cancel-in-progress` stays `false` on the capture
+job and in afternoon-slate.yml. If the run queue cannot be read at dispatch
+time, the chain dispatches anyway: blind, it risks a duplicate chain that
+the next readable check collapses, while not dispatching would leave no
+slots until cron, hours later.
+
+**(e) A failed slot does not end the chain.** The dispatch runs in `pace`,
+BEFORE the slot, as `if: always() && vars.CAPTURE_CHAIN != 'off'`. A failed,
+skipped or cancelled slot cannot touch it. A rival waiting in the group no
+longer ends the chain either (review defect 2): the run waits at the gate
+and the chain carries on, so afternoon-slate.yml and daily-loop.yml need no
+chain step. A dispatch that cannot happen (no gh, no token, API refusal)
+exits 1 and prints `chain: BROKEN`, so the run is red rather than the
+cadence quietly stopping, and the capture job still runs (`!cancelled()`).
+Because `always()` also runs after a cancellation, cancelling a run does
+NOT stop the chain. Kill switches: repository variable `CAPTURE_CHAIN=off`;
+a committed `.github/CAPTURE_CHAIN_OFF` file (the only one that reaches the
+cron copy); or disabling the workflow in the Actions tab.
+
+**(f) Quiet hours.** Before dispatching, the chain reads the MLB schedule
+(free, keyless) for yesterday, today and tomorrow by UTC date -- a superset
+of today's and tomorrow's slate that covers every first pitch inside 26
+hours. No game starting within the next 26 hours -> `spacing_minutes=60`. An
+unreadable schedule keeps 13: a missed slot on a game day costs more than a
+few extra slots on an off day. In-season, a day with any game tomorrow is
+never quiet; this bites on off days, the All-Star break and the offseason.
+
+### The default-branch problem, and what it means for the backstop
+
+`schedule:` runs the DEFAULT branch's copy of `forward-capture.yml`
+(`claude/cowork-session-migration-tn3sx2`), which this branch cannot change,
+which has no chain step and no gate, and which passes no token to the
+script. A `--ref <working branch>` dispatch runs THIS branch's copy.
+Consequences:
+
+1. **Cron's YAML cannot restart a dead chain.** It does run this branch's
+   `scripts/capture_slot.sh`, so the script chains from an EXIT trap
+   whenever `GITHUB_WORKFLOW_REF` names a `forward-capture.yml` from a
+   branch other than the working branch, as a RESTARTER
+   (`CHAIN_RESTARTER=1`): it dispatches only when NO live run of this
+   branch's forward-capture exists. The token comes from the checkout's
+   persisted credential (`actions/checkout@v4` stores the job's
+   `GITHUB_TOKEN` as `http.https://github.com/.extraheader`); never printed.
+   **Unverified on a real runner.** If the credential is not there, the
+   script prints `chain: BROKEN -- no token` and the cron slot captures
+   without chaining.
+2. So the backstop is: the chain dies (runner failure inside `pace`, a
+   refused dispatch, an Actions outage), and the next cron firing -- 2 to 5
+   hours later on the evidence above -- captures a slot and restarts it.
+   The worst-case gap is the cron's real interval, never worse than before.
+   Rivals no longer kill the chain, so that gap is no longer a daily event.
+3. The cron copy itself stays ungated (see (a), residual exposure).
+4. If the owner repoints the default branch to the working line, cron runs
+   this file, the script's trap stands down (the workflow ref is the working
+   branch), and cron runs go through `pace` like any other run.
+
+### For the orchestrator while hand dispatches continue
+
+- Hand dispatches of THIS branch's copy (`--ref claude/sports-betting-analysis-review-g1o0co`)
+  pass the gate and are safe while a rival waits. Never dispatch without
+  `--ref`.
+- A hand dispatch while the chain runs costs nothing extra: the chains
+  collapse at the next dispatch point (d).
+- To stop hand-dispatching: confirm two consecutive `workflow_dispatch` runs
+  whose `pace` log shows `chain: dispatched the next slot` -- that is the
+  chain surviving past its first hop.
+
+### Costs, stated
+
+- ~4.4 slots an hour instead of ~0.3. Dense is still gated by its 180-minute
+  window (1440 on the first slot of each hour), its credit floor and budget
+  guard; props by their own phase windows. Schedule and queue reads are free
+  (gate: one read a minute only while a rival waits).
+- Two staging redeploys in one hour become possible (slots at :01 and :14
+  both pass the workflow's `minute < 15` check).
+- Actions minutes: $0 (public repo). A `pace` job is an idle runner for up
+  to 13 minutes (60 in quiet hours); at most a couple are alive at once.
+
+### Not verified
+
+No workflow was dispatched from here. Unverified until a live run: that a
+job-level group and a workflow-level group with the same name serialise
+against each other (documented); that `gh run list` reports group-held runs
+as `pending` (the gate checks `queued`, `pending`, `waiting` and
+`requested`); that the job-level `if` sees `needs.pace.outputs.yielded` as
+the string `'false'`; the checkout credential in the cron copy; and that a
+dispatch made by a dispatched run keeps chaining past the first hop.

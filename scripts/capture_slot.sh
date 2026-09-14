@@ -17,6 +17,331 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
+# ---------------------------------------------------------------------------
+# THE SELF-CHAINING CADENCE (2026-09-14). docs/CAPTURE_EXTERNALIZATION.md,
+# "Self-chaining cadence", has the full design; the short version:
+#
+# GitHub's `*/15` cron fired every 2-5 HOURS on this repo (gh run list,
+# 09-13/09-14), so "a slot every 15 minutes" was only true while someone
+# dispatched runs by hand. A run now dispatches the NEXT run of itself.
+# workflow_dispatch events made with GITHUB_TOKEN do start runs (GitHub's
+# loop-prevention rule exempts workflow_dispatch).
+#
+# REVISED THE SAME DAY after review: the first version slept INSIDE the
+# shared `forward-capture` concurrency group and yielded (skipping its slot
+# and NOT dispatching) when a rival queued. That held the group ~13 minutes
+# of every 13, so afternoon-slate went pending almost every day and could be
+# cancelled by any unchecked forward-capture that queued after it (the
+# default branch's cron copy), and the chain died on every yield. Now the
+# wait and the dispatch happen in a job OUTSIDE the group; only the slot
+# itself joins it, and only after a check that nothing is waiting there.
+#
+# The pieces live here, not in YAML, so that every caller shares one tested
+# implementation:
+#   --space-only  chained runs: sleep until ~13 minutes after the previous
+#                 slot started (hourly in quiet hours), bounded. Outside the
+#                 group, so the sleep blocks nobody.
+#   --chain-only  dispatch the next run, unless a NEWER run of this branch's
+#                 forward-capture is already alive (it carries the chain).
+#                 Cannot cancel anything: the dispatched run joins the group
+#                 only through --gate-only, at least 13 minutes later.
+#   --gate-only   the last thing before the slot joins the group: wait while a
+#                 daily-loop or afternoon-slate run is WAITING in it (GitHub
+#                 cancels a pending run when a newer one queues), bounded;
+#                 give up the slot rather than cancel one.
+#   (no flag)     the slot itself; on exit it chains ONLY when the workflow
+#                 file running it has no chain step of its own -- i.e. the
+#                 DEFAULT branch's forward-capture.yml, the copy cron runs.
+#                 That is what lets the cron backstop RESTART a dead chain.
+CHAIN_BRANCH="${CHAIN_BRANCH:-claude/sports-betting-analysis-review-g1o0co}"
+CHAIN_PY="${CHAIN_PY:-python3}"
+CHAIN_SLEEP="${CHAIN_SLEEP:-sleep}"
+# 13, not 15: a dispatch takes tens of seconds to become a running job, and
+# capture_slot.sh widens the dense window on the first slot of each hour
+# (minute < 15) -- every gap must stay under 15 minutes for no hour to miss it.
+CHAIN_MIN_SPACING_MINUTES=13
+CHAIN_QUIET_SPACING_MINUTES=60
+CHAIN_QUIET_HORIZON_HOURS=26
+# How long the gate waits for a waiting rival to start before giving up this
+# slot. A rival is only ever waiting behind something RUNNING in the group (a
+# slot, a few minutes), so 30 minutes is generous; the next chained run tries
+# again 13 minutes later either way.
+CHAIN_GATE_MAX_MINUTES=30
+SLOT_STARTED_EPOCH=$(date +%s)
+
+_chain_out() {
+    if [ -n "${GITHUB_OUTPUT:-}" ]; then echo "$1" >> "$GITHUB_OUTPUT"; fi
+}
+
+# The job's own GITHUB_TOKEN. A workflow step passes it as GH_TOKEN. The
+# default branch's forward-capture.yml (which cron runs, and which this branch
+# cannot edit) passes no token to this script -- but actions/checkout@v4
+# persists that same token in the checkout's git config for its fetch/push,
+# so it is read from there. Never printed.
+_chain_token() {
+    if [ -n "${GH_TOKEN:-}" ]; then return 0; fi
+    local header cred
+    header=$(git config --get 'http.https://github.com/.extraheader' 2>/dev/null) || return 1
+    cred=$(printf '%s' "${header##* }" | base64 -d 2>/dev/null) || return 1
+    case "$cred" in
+        x-access-token:?*) GH_TOKEN="${cred#x-access-token:}"; export GH_TOKEN ;;
+        *) return 1 ;;
+    esac
+}
+
+_chain_repo() {
+    if [ -z "${GH_REPO:-}" ] && [ -n "${GITHUB_REPOSITORY:-}" ]; then
+        export GH_REPO="$GITHUB_REPOSITORY"
+    fi
+}
+
+# One `gh run list` over the newest 50 runs, classified by a mode:
+#   blockers   a daily-loop or afternoon-slate run (any branch) WAITING --
+#              queued/pending/waiting/requested. `pending` is what a run held
+#              by a concurrency group reports; a `queued` check alone misses
+#              exactly the run that gets cancelled. daily-loop stays in the
+#              list although this branch's copy moved to its own group
+#              (2026-09-14): cron runs the DEFAULT branch's copy, whose group
+#              this branch cannot see or change.
+#   successor  an ALIVE (waiting or in_progress) forward-capture run of THIS
+#              branch that will carry the chain: any such run when
+#              CHAIN_RESTARTER=1 (the cron copy only restarts a dead chain),
+#              otherwise one NEWER than this run (CHAIN_SELF_RUN_ID). Newest
+#              wins, so of two live chains exactly one dispatches.
+# Exit 0: found (printed). Exit 1: none. Exit 2: the queue could not be read.
+_chain_scan() {
+    local runs
+    runs=$(gh run list --limit 50 --json databaseId,status,workflowName,headBranch,event 2>/dev/null) || return 2
+    CHAIN_MODE="$1" CHAIN_RUNS="$runs" CHAIN_BRANCH="$CHAIN_BRANCH" \
+        CHAIN_RESTARTER="${CHAIN_RESTARTER:-}" \
+        CHAIN_SELF_RUN_ID="${CHAIN_SELF_RUN_ID:-${GITHUB_RUN_ID:-}}" "$CHAIN_PY" -c '
+import json, os, sys
+try:
+    runs = json.loads(os.environ["CHAIN_RUNS"])
+except ValueError:
+    sys.exit(2)
+if not isinstance(runs, list):
+    sys.exit(2)
+mode = os.environ["CHAIN_MODE"]
+waiting = {"queued", "pending", "waiting", "requested"}
+alive = waiting | {"in_progress"}
+restarter = os.environ.get("CHAIN_RESTARTER") == "1"
+try:
+    self_id = int(os.environ.get("CHAIN_SELF_RUN_ID") or 0)
+except ValueError:
+    self_id = 0
+found = False
+for run in runs:
+    if not isinstance(run, dict):
+        continue
+    name, status = run.get("workflowName"), run.get("status")
+    try:
+        run_id = int(run.get("databaseId") or 0)
+    except (TypeError, ValueError):
+        run_id = 0
+    if mode == "blockers":
+        hit = name in ("daily-loop", "afternoon-slate") and status in waiting
+    else:
+        hit = (name == "forward-capture" and status in alive
+               and run.get("headBranch") == os.environ["CHAIN_BRANCH"]
+               and run_id != self_id
+               and (restarter or not self_id or run_id > self_id))
+    if hit:
+        print("  %s: %s run %s is %s (%s)" % (
+            "waiting" if mode == "blockers" else "carries the chain",
+            name, run_id, status, run.get("event")))
+        found = True
+sys.exit(0 if found else 1)
+'
+}
+
+# Minutes the NEXT slot should wait after this one started. Quiet hours
+# (owner/orchestrator, 2026-09-14): no game on the schedule starts within the
+# next 26 hours -> hourly. The MLB schedule is free and keyless; yesterday,
+# today and tomorrow (UTC dates) cover every first pitch inside 26 hours.
+# Any failure to read it keeps the 13-minute cadence: a missed slot on a game
+# day costs more than a few extra free schedule reads on an off day.
+# CHAIN_FIRST_PITCHES (space-separated ISO times) replaces the fetch in tests.
+_chain_spacing() {
+    local verdict
+    verdict=$(CHAIN_QUIET_HORIZON_HOURS="$CHAIN_QUIET_HORIZON_HOURS" "$CHAIN_PY" -c '
+import datetime as dt, os
+now = dt.datetime.now(dt.timezone.utc)
+override = os.environ.get("CHAIN_FIRST_PITCHES")
+if override is not None:
+    starts = override.split()
+else:
+    from src.providers import mlb
+    starts = []
+    for delta in (-1, 0, 1):
+        day = (now + dt.timedelta(days=delta)).date().isoformat()
+        starts += [game.get("gameDate") for game in mlb.fetch_schedule(day)]
+horizon = now + dt.timedelta(hours=int(os.environ["CHAIN_QUIET_HORIZON_HOURS"]))
+upcoming = sorted(s for s in starts if s and now < dt.datetime.fromisoformat(
+    s.replace("Z", "+00:00")) <= horizon)
+print("ACTIVE next first pitch %s" % upcoming[0] if upcoming else "QUIET")
+' 2>/dev/null) || verdict="UNKNOWN"
+    case "$verdict" in
+        QUIET)
+            echo "chain: no first pitch within ${CHAIN_QUIET_HORIZON_HOURS}h -- quiet hours, hourly" >&2
+            echo "$CHAIN_QUIET_SPACING_MINUTES" ;;
+        ACTIVE*)
+            echo "chain: ${verdict#ACTIVE } -- ${CHAIN_MIN_SPACING_MINUTES}-minute cadence" >&2
+            echo "$CHAIN_MIN_SPACING_MINUTES" ;;
+        *)
+            echo "chain: schedule unreadable -- keeping the ${CHAIN_MIN_SPACING_MINUTES}-minute cadence" >&2
+            echo "$CHAIN_MIN_SPACING_MINUTES" ;;
+    esac
+}
+
+# Sleep only. No queue polling: this runs in a job that holds no concurrency
+# group, so nothing can be waiting behind it.
+chain_space() {
+    local now prev spacing wait step
+    now=$(date +%s)
+    prev="${PREV_SLOT_START:-}"
+    spacing="${SPACING_MINUTES:-}"
+    case "$prev" in
+        ''|*[!0-9]*)
+            echo "spacing: not a chained run (no previous slot start) -- starting now"
+            _chain_out "slot_start=$now"
+            return 0 ;;
+    esac
+    case "$spacing" in ''|*[!0-9]*) spacing=$CHAIN_MIN_SPACING_MINUTES ;; esac
+    # BOUNDED both ways: never closer than 13 minutes, never a wait longer than
+    # one quiet-hours interval, even for a previous start in the future.
+    if [ "$spacing" -lt "$CHAIN_MIN_SPACING_MINUTES" ]; then spacing=$CHAIN_MIN_SPACING_MINUTES; fi
+    if [ "$spacing" -gt "$CHAIN_QUIET_SPACING_MINUTES" ]; then spacing=$CHAIN_QUIET_SPACING_MINUTES; fi
+    wait=$((prev + spacing * 60 - now))
+    if [ "$wait" -gt $((spacing * 60)) ]; then wait=$((spacing * 60)); fi
+    if [ "$wait" -le 0 ]; then
+        echo "spacing: previous slot started $((now - prev))s ago -- starting now"
+    else
+        echo "spacing: previous slot started $((now - prev))s ago; waiting ${wait}s (${spacing}-minute spacing, outside the concurrency group)"
+        while [ "$wait" -gt 0 ]; do
+            step=60
+            if [ "$wait" -lt 60 ]; then step=$wait; fi
+            "$CHAIN_SLEEP" "$step"
+            wait=$((wait - step))
+        done
+    fi
+    _chain_out "slot_start=$(date +%s)"
+}
+
+# The slot may join the shared group only when no daily-loop/afternoon-slate
+# is waiting in it: the slot's job would be the NEWER pending entry and GitHub
+# would cancel the rival. Waiting here costs nobody anything (no group held).
+# Outputs yielded=false (join) or yielded=true (skip this slot). The residual
+# race is the few seconds between the last read and the job queuing -- which
+# is why this is the LAST step before the slot's job.
+chain_gate() {
+    local rc waited=0
+    _chain_token || true
+    _chain_repo
+    while :; do
+        _chain_scan blockers
+        rc=$?
+        if [ "$rc" -eq 1 ]; then
+            echo "gate: nothing waiting in the forward-capture group -- the slot may join it"
+            _chain_out "yielded=false"
+            return 0
+        fi
+        if [ "$waited" -ge "$CHAIN_GATE_MAX_MINUTES" ]; then
+            _chain_out "yielded=true"
+            if [ "$rc" -eq 0 ]; then
+                echo "gate: the run above is still waiting after ${waited} minutes -- skipping this slot rather than cancel it (the chain continues)"
+                return 0
+            fi
+            echo "gate: BROKEN -- could not read the run queue for ${waited} minutes; skipping this slot rather than risk cancelling a waiting daily-loop or afternoon-slate"
+            return 1
+        fi
+        if [ "$rc" -eq 0 ]; then
+            echo "gate: the run above is waiting in the group; letting it start first"
+        else
+            echo "gate: run queue unreadable; retrying"
+        fi
+        "$CHAIN_SLEEP" 60
+        waited=$((waited + 1))
+    done
+}
+
+chain_dispatch() {
+    local rc spacing start
+    # Two kill switches. The repository variable reaches only this branch's
+    # workflow step; the committed file also reaches the default branch's cron
+    # copy, which passes this script no variables.
+    if [ "${CAPTURE_CHAIN:-on}" = "off" ] || [ -f .github/CAPTURE_CHAIN_OFF ]; then
+        echo "chain: switched off (CAPTURE_CHAIN=off or .github/CAPTURE_CHAIN_OFF) -- the chain stops here; cron still runs"
+        return 0
+    fi
+    if ! command -v gh >/dev/null 2>&1; then
+        echo "chain: BROKEN -- gh is not installed, the next slot was not dispatched"
+        return 1
+    fi
+    if ! _chain_token; then
+        echo "chain: BROKEN -- no token to dispatch with, the next slot was not dispatched"
+        return 1
+    fi
+    _chain_repo
+    spacing=$(_chain_spacing)
+    start="${SLOT_START_EPOCH:-}"
+    case "$start" in ''|*[!0-9]*) start=$SLOT_STARTED_EPOCH ;; esac
+    # No rival check here, deliberately (it was here until review): the run
+    # this creates cannot cancel anything, because its slot joins the group
+    # only through chain_gate, 13+ minutes from now. The only question is
+    # whether another live run already carries the chain.
+    _chain_scan successor
+    rc=$?
+    if [ "$rc" -eq 0 ]; then
+        echo "chain: not dispatching -- the run above is newer and dispatches the next slot itself"
+        return 0
+    elif [ "$rc" -ne 1 ]; then
+        # Dispatching blind risks at most a duplicate chain, which the next
+        # readable successor check collapses (newest wins); not dispatching
+        # risks no slots until the next cron firing (2-5 hours).
+        echo "chain: run queue unreadable -- dispatching anyway (a duplicate chain collapses at the next check; a missing one waits hours for cron)"
+    fi
+    # Three attempts with backoff (orchestrator, 2026-09-14, from the cadence
+    # checker): one transient API failure used to end the chain until the
+    # next cron firing, 2-5 hours later -- tonight that is every first pitch.
+    local attempt
+    for attempt in 1 2 3; do
+        if gh workflow run forward-capture.yml --ref "$CHAIN_BRANCH" \
+                -f capture_now=0 -f prev_slot_start="$start" -f spacing_minutes="$spacing"; then
+            echo "chain: dispatched the next slot (${spacing}-minute spacing from $start)"
+            return 0
+        fi
+        [ "$attempt" -lt 3 ] && "$CHAIN_SLEEP" $((attempt * 10))
+    done
+    echo "chain: BROKEN -- gh workflow run failed 3 times, the next slot was not dispatched"
+    return 1
+}
+
+case "${1:-}" in
+    --space-only) chain_space; exit $? ;;
+    --chain-only) chain_dispatch; exit $? ;;
+    --gate-only) chain_gate; exit $? ;;
+esac
+
+# The slot's own exit (any exit, a failed commit included) chains -- but only
+# from a workflow file that has no chain step: GITHUB_WORKFLOW_REF names the
+# branch the RUNNING workflow file came from. This branch's forward-capture.yml
+# chains in its own `if: always()` step; running both would dispatch twice.
+# From here the chain is only RESTARTED (CHAIN_RESTARTER=1): any live run of
+# this branch's forward-capture already carries it.
+_chain_from_script() {
+    [ "${GITHUB_ACTIONS:-}" = "true" ] || return 0
+    [ "${CHAIN_BY_WORKFLOW_STEP:-}" = "1" ] && return 0
+    case "${GITHUB_WORKFLOW_REF:-}" in
+        */forward-capture.yml@refs/heads/"$CHAIN_BRANCH") return 0 ;;
+        */forward-capture.yml@*) ;;
+        *) return 0 ;;
+    esac
+    echo "== chain (this workflow file has no chain step) =="
+    CHAIN_RESTARTER=1 chain_dispatch 2>&1 | sed 's/^/  /' || true
+}
+trap _chain_from_script EXIT
+
 export PROP_LISTING_AUDIT="on"
 
 echo "== watch =="

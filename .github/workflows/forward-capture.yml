@@ -28,27 +28,144 @@ on:
     # day (deploy-staging.yml, this workflow's own commits), so that guard
     # should never trip here, but a stalled schedule is worth checking for
     # if data/watch stops growing.
+    #
+    # 2026-09-14: in practice this fires every 2-5 HOURS, not every 15
+    # minutes, and GitHub reads it from the DEFAULT branch's copy of this
+    # file, not this one. It stays as the RESTART BACKSTOP for the
+    # self-chaining cadence below: the default copy runs this branch's
+    # scripts/capture_slot.sh, which chains on exit whenever the running
+    # workflow file has no chain step (see "Chain the next slot").
     - cron: "*/15 * * * *"
-  workflow_dispatch: {}
+  # SELF-CHAINING CADENCE (2026-09-14, docs/CAPTURE_EXTERNALIZATION.md,
+  # "Self-chaining cadence"). The `pace` job of every run dispatches the next
+  # run of this file with capture_now=0 and its own slot start, so slots land
+  # about every 13-15 minutes without anyone's session. A hand dispatch sends
+  # no inputs and gets the defaults: CAPTURE_NOW=1, no spacing wait.
+  workflow_dispatch:
+    inputs:
+      capture_now:
+        description: "1 = hand dispatch: price the whole slate and take every prop capture due now. The chain sends 0."
+        required: false
+        default: "1"
+      prev_slot_start:
+        description: "Chain only: epoch seconds the previous slot started. Empty = start now."
+        required: false
+        default: ""
+      spacing_minutes:
+        description: "Chain only: minutes after prev_slot_start to start (13 on game days, 60 in quiet hours; bounded 13-60)."
+        required: false
+        default: ""
 
-concurrency:
-  group: forward-capture
-  cancel-in-progress: false
+# NO workflow-level concurrency here (revised 2026-09-14 after review). The
+# shared `forward-capture` group moved onto the `capture` job below, so the
+# pacing wait, the chain dispatch and the rival check run OUTSIDE the group
+# and block nobody. The first version slept inside the group: it held the
+# group ~13 minutes of every 13, so afternoon-slate went pending nearly every
+# day, where any forward-capture that queued after it without checking (the
+# default branch's cron copy) cancelled it; and each time it yielded to a
+# rival the chain ended until the next cron firing, hours later.
+# Job-level and workflow-level groups share one namespace per repository
+# (GitHub docs, "Using concurrency": "a single job or workflow using the same
+# concurrency group"), so the capture job still serialises against
+# afternoon-slate and the default branch's cron copy.
 
 permissions:
   contents: write
   actions: write
 
 jobs:
-  capture:
+  # Holds no concurrency group. Three steps, in this order on purpose:
+  # wait out the spacing, dispatch the successor (which itself cannot join the
+  # group for 13+ minutes, so the dispatch can cancel nothing), then check the
+  # group LAST so the gap between that read and the capture job queuing is
+  # seconds.
+  #
+  # The mode calls use `run: |` blocks: tests/test_capture_stages_what_it_writes.py
+  # identifies THE slot as the single one-line `run: bash scripts/capture_slot.sh`,
+  # and these modes exit before any slot work.
+  pace:
     runs-on: ubuntu-latest
+    # Up to 60 minutes of quiet-hours spacing + 30 of gate + margin.
+    timeout-minutes: 100
+    outputs:
+      yielded: ${{ steps.gate.outputs.yielded }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/sports-betting-analysis-review-g1o0co
+          fetch-depth: 1
+
+      # A chained run waits here until ~13 minutes after the previous slot
+      # started (hourly in quiet hours), bounded. A hand dispatch carries no
+      # prev_slot_start and passes straight through.
+      - name: Space this slot from the previous one (chained runs only)
+        id: spacing
+        env:
+          PREV_SLOT_START: ${{ inputs.prev_slot_start }}
+          SPACING_MINUTES: ${{ inputs.spacing_minutes }}
+        run: |
+          bash scripts/capture_slot.sh --space-only
+
+      # Dispatches the next run of this file (2026-09-14,
+      # docs/CAPTURE_EXTERNALIZATION.md "Self-chaining cadence"), BEFORE this
+      # run's slot: a failed, skipped or cancelled slot cannot end the chain.
+      #
+      # always(): a failed spacing step or a cancelled run still chains -- the
+      # chain ends only by decision (a newer live run of this branch carries
+      # it), never by accident. A dispatch that cannot happen (no gh, no token,
+      # API refusal) fails THIS step, so the run shows red instead of the
+      # cadence quietly stopping; the slot below still runs.
+      #
+      # Kill switch: set the repository variable CAPTURE_CHAIN=off (Settings ->
+      # Secrets and variables -> Actions -> Variables). always() means
+      # cancelling a run does NOT stop the chain; this variable does.
+      - name: Chain the next slot
+        if: always() && vars.CAPTURE_CHAIN != 'off'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SLOT_START_EPOCH: ${{ steps.spacing.outputs.slot_start }}
+          CAPTURE_CHAIN: ${{ vars.CAPTURE_CHAIN }}
+          CHAIN_SELF_RUN_ID: ${{ github.run_id }}
+        run: |
+          bash scripts/capture_slot.sh --chain-only
+
+      # MUST STAY THE LAST STEP OF THIS JOB. GitHub cancels a PENDING run in a
+      # concurrency group when a newer one queues, so the capture job must not
+      # queue while a daily-loop or afternoon-slate is waiting there. Waits
+      # (up to 30 minutes, outside the group) for it to start; if it never
+      # does, this slot is skipped, never the rival.
+      - name: Wait until joining the shared group cancels nobody
+        id: gate
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          bash scripts/capture_slot.sh --gate-only
+
+  capture:
+    needs: pace
+    # !cancelled(): a red chain step (dispatch refused) must not cost the slot.
+    # yielded must be exactly 'false' -- an unset output (gate did not run)
+    # skips the slot rather than joining the group unchecked.
+    if: ${{ !cancelled() && needs.pace.outputs.yielded == 'false' }}
+    runs-on: ubuntu-latest
+    # The shared group (with afternoon-slate and the default branch's cron
+    # copy): at most ONE running and ONE pending entry, a newer pending entry
+    # cancels the older. cancel-in-progress must stay false, or a slot could
+    # cancel the running slot or afternoon-slate before it.
+    concurrency:
+      group: forward-capture
+      cancel-in-progress: false
     steps:
       # Scheduled workflows only run from the repository's DEFAULT branch,
       # and this repo's default branch is an orphan that shares no history
       # with the working line. The working line is therefore named
       # explicitly here so the job captures into and pushes to it wherever
       # the workflow file happens to live (docs/CAPTURE_EXTERNALIZATION.md,
-      # "Default-branch constraint").
+      # "Default-branch constraint"). This job starts after the pacing wait,
+      # so the checkout is current.
       - uses: actions/checkout@v4
         with:
           ref: claude/sports-betting-analysis-review-g1o0co
@@ -58,7 +175,6 @@ jobs:
         run: |
           git config user.name "forward-capture-bot"
           git config user.email "actions@users.noreply.github.com"
-
       # READ-ONLY restore of whatever the daily loop last saved. This job never
       # writes back to `daily-loop-data-` (that key belongs to daily-loop.yml,
       # which saves the full ~200MB set once a day); it only needs the
@@ -109,10 +225,17 @@ jobs:
       # for the clock (scripts/capture_slot.sh, src/pipeline/batter_props.py).
       # Scheduled runs never set it. Dispatch this branch's copy:
       #   gh workflow run forward-capture.yml --ref claude/sports-betting-analysis-review-g1o0co
+      # A CHAINED dispatch is also a workflow_dispatch event, so the event name
+      # alone no longer tells a hand from the chain (2026-09-14): the input
+      # does. A hand dispatch sends none and gets the default '1'; the chain
+      # sends capture_now=0. The comparison is spelled out because the string
+      # '0' is truthy in an Actions expression.
       - name: Capture one slot
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
-          CAPTURE_NOW: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
+          CAPTURE_NOW: ${{ github.event_name == 'workflow_dispatch' && inputs.capture_now == '1' && '1' || '' }}
+          # This file chains in its `pace` job; the script must not also.
+          CHAIN_BY_WORKFLOW_STEP: "1"
         run: bash scripts/capture_slot.sh
 
       # THE P0 CHANGE (2026-09-08). `lineup_store.build` was called from
