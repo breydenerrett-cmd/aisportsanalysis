@@ -17,8 +17,17 @@ Brey has asked for this repeatedly. Ignoring it is the main way to get this wron
 These are owner directives, recorded so they survive context loss. **After a
 context reset, do not revert to the older behaviour they replaced.**
 
+**Owner directive, 2026-09-14 — Opus 5 is the primary orchestrator.** It
+owns the plan, architecture, priorities, delegation, integration and the
+final quality bar, and decides which model does each task. Haiku executes
+(searches, inspection, basic verification, repetitive checks, running
+tests); Sonnet engineers (implementation, review, debugging, tests, UI);
+Opus judges (architecture, hard debugging, cross-system integration, final
+review and revision, any change where a mistake hurts the product).
+Delegated work is inspected, tested and integrated before it counts.
+
 **`docs/MODEL_ROUTING_POLICY.md` — use the cheapest model that can do the
-work correctly.** Fable orchestrates and does not personally do routine
+work correctly.** The orchestrator does not personally do routine
 implementation. Haiku for simple/mechanical work. **Sonnet is the default
 serious worker and where most engineering happens.** Opus ONLY for difficult
 architecture, deep statistical/methodological reasoning, adversarial review,

@@ -104,9 +104,15 @@ jobs:
           restore-keys: |
             lineup-store-
 
+      # CAPTURE_NOW (2026-09-14): a hand-dispatched run prices the whole slate
+      # and takes every prop capture still due right now, instead of waiting
+      # for the clock (scripts/capture_slot.sh, src/pipeline/batter_props.py).
+      # Scheduled runs never set it. Dispatch this branch's copy:
+      #   gh workflow run forward-capture.yml --ref claude/sports-betting-analysis-review-g1o0co
       - name: Capture one slot
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          CAPTURE_NOW: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
         run: bash scripts/capture_slot.sh
 
       # THE P0 CHANGE (2026-09-08). `lineup_store.build` was called from

@@ -200,8 +200,36 @@ CAPTURE_LEAD_MINUTES = 120
 # once per fetch, for every baseline fetch exactly as for every gate fetch --
 # only the number of times a given game passes through them grows from at
 # most one to at most two.
-BASELINE_LEAD_MAX_MINUTES = 420  # T-7h: the far edge of the baseline window.
-BASELINE_LEAD_MIN_MINUTES = 300  # T-5h: the near edge -- 3h clear of the gate.
+#
+# WIDENED 2026-09-14 -- NO SET TIME FOR THE FIRST LOOK. The owner, on a day
+# the card went out on the previous night's prices: "we dont need a set time
+# for analysis on props ... analysis needs to be ran pre emptively before any
+# games, so if a game is at 10:30 and analysis at 11:40 ... not helpful." A
+# 5-7h band means a 10:05 PT day game gets its first prop look no earlier than
+# 3:05 AM PT, and a game listed late misses it entirely. The far edge is now
+# a full day: the first capture slot after a game joins today's slate takes
+# its baseline, whatever the clock says. The NEAR edge stays at T-5h on
+# purpose -- it is what keeps `baseline` a pre-lineup label for the V7
+# lineup-slot study (docs/PREREG_SLOT_PROP.md), and moving it would change
+# what that pre-registered comparison measures. Cost is unchanged: still at
+# most one baseline fetch per game per slate date (`_done_today`).
+BASELINE_LEAD_MAX_MINUTES = 1440  # T-24h: any time the game is on today's slate.
+BASELINE_LEAD_MIN_MINUTES = 300   # T-5h: the near edge -- 3h clear of the gate.
+
+# ON DEMAND (2026-09-14). `CAPTURE_NOW=1` -- set only when someone dispatches
+# the capture workflow by hand -- also takes a game that sits in the dead zone
+# between the two windows (T-5h to T-2h) and has no capture yet today, under
+# its own phase label `ondemand`, so neither the pre-lineup `baseline` nor the
+# post-lineup `gate` label is ever stretched to cover it. Same guards, same
+# one-fetch-per-phase-per-game-per-date rule.
+ON_DEMAND_ENV_SWITCH = "CAPTURE_NOW"
+PHASE_ON_DEMAND = "ondemand"
+
+
+def _on_demand(env=None) -> bool:
+    source = os.environ if env is None else env
+    return (source.get(ON_DEMAND_ENV_SWITCH) or "").strip().lower() in {
+        "on", "1", "yes", "true"}
 
 ENV_SWITCH = "BATTER_PROPS"
 
@@ -322,8 +350,9 @@ def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
     # the reverse, but neither phase twice.
     plan = []
     not_yet = 0
+    on_demand = _on_demand(env)
     for event_id in sorted(floor_ids):
-        phase = _capture_phase(by_id[event_id], clock_now)
+        phase = _capture_phase(by_id[event_id], clock_now, on_demand=on_demand)
         if phase is None:
             not_yet += 1
             continue
@@ -337,7 +366,7 @@ def run(env=None, now=None, store=RAW_STORE, processed_store=PROCESSED_STORE,
             break
         if event_id in floor_ids:
             continue
-        phase = _capture_phase(by_id[event_id], clock_now)
+        phase = _capture_phase(by_id[event_id], clock_now, on_demand=on_demand)
         if phase is None:
             not_yet += 1
             continue
@@ -593,7 +622,7 @@ def _in_baseline_window(event, now, lead_min=BASELINE_LEAD_MIN_MINUTES,
     return lead_min <= minutes <= lead_max
 
 
-def _capture_phase(event, now):
+def _capture_phase(event, now, on_demand=False):
     """Which capture phase, if any, `event` is due for right now.
 
     Returns "gate" if inside the gate window (checked first: it is the
@@ -609,6 +638,10 @@ def _capture_phase(event, now):
         return "gate"
     if _in_baseline_window(event, now):
         return "baseline"
+    if on_demand:
+        commence = prop_listing._parse_iso(event.get("commence_time"))
+        if commence is not None and (commence - now).total_seconds() > 0:
+            return PHASE_ON_DEMAND
     return None
 
 

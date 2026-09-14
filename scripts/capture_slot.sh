@@ -29,7 +29,26 @@ F5_STORE=data/processed/f5_close.jsonl
 f5_rows() { if [ -f "$F5_STORE" ]; then wc -l < "$F5_STORE" | tr -d ' '; else echo 0; fi; }
 F5_BEFORE=$(f5_rows)
 
-DENSE_OUT=$(python3 -m src.cli dense --captures 1 --interval 0 2>&1)
+# THE FULL-SLATE BOARD, WITH NO SET TIME (2026-09-14). The dense pass only
+# fires when a game is inside its 180-minute window, so on a night slate
+# nothing priced today's games until 19:40Z: the card published at 15:12Z on
+# the previous night's 23:19Z board and the engine slate refused ("no price
+# capture observed for 2026-09-14 at all"). The owner: "analysis needs to be
+# ran pre emtively before any games". One capture call prices EVERY listed
+# game (snapshots.capture), so the first slot of each hour widens the window
+# to a full day -- the board is never more than an hour old for any game on
+# the slate, day game or night game -- and a hand-dispatched run
+# (CAPTURE_NOW=1, forward-capture.yml) does the same immediately. Cost: 3
+# credits a call, at most 24 extra calls a day, inside the live envelope and
+# still behind dense.run's own floor and budget guard.
+CAPTURE_NOW="${CAPTURE_NOW:-}"
+export CAPTURE_NOW
+DENSE_WINDOW=180
+if [ "$CAPTURE_NOW" = "1" ] || [ "$((10#$(date -u +%M)))" -lt 15 ]; then
+    DENSE_WINDOW=1440
+fi
+echo "  window: ${DENSE_WINDOW} minutes (CAPTURE_NOW=${CAPTURE_NOW:-0})"
+DENSE_OUT=$(python3 -m src.cli dense --captures 1 --interval 0 --window "$DENSE_WINDOW" 2>&1)
 echo "$DENSE_OUT" | sed 's/^/  /'
 
 F5_AFTER=$(f5_rows)
@@ -152,6 +171,22 @@ if [ "${GATE_OUT%% *}" = "RUN" ]; then
     python3 -m src.cli engine slip --date "$(date -u +%Y-%m-%d)" 2>&1 \
         | sed 's/^/  /' || echo "  (slip pass failed; decisions already frozen are unaffected)"
 fi
+
+# THE CARD, REPUBLISHED EVERY SLOT (2026-09-14). `card publish` ran from one
+# place, afternoon_slate.sh at 15:40Z, so the card was built once a day on
+# whatever prices and props existed then -- before any post-lineup prop
+# capture (T-2h) and, on a night slate, before any same-day price. Publishing
+# is safe to repeat: a pick more than LOCK_LEAD_HOURS out is replaced by the
+# fresh read, a locked pick is carried forward verbatim, a pick first made
+# inside its lock window locks on the spot, and a run that changes nothing
+# appends nothing (src/appstate/card_ledger.publish). No odds-API spend -- it
+# reads what the passes above just bought. Never fails the slot.
+# The SLATE date, not the UTC date: from 00:00Z (5 PM PT) the UTC calendar has
+# already moved on while that night's West Coast games are still to come.
+SLATE_DATE=$(TZ=America/New_York date +%Y-%m-%d)
+echo "== card publish ($SLATE_DATE) =="
+CARD_OUT=$(python3 -m src.cli card publish --date "$SLATE_DATE" 2>&1) || true
+echo "$CARD_OUT" | tail -n 25 | sed 's/^/  /'
 
 # Deliberately OUTSIDE the lineup-cadence gate above. Everything else in this
 # script asks "did this pass do its job?". This asks "is what the site is

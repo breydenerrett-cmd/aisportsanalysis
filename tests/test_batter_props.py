@@ -387,13 +387,16 @@ class CaptureWindowTests(unittest.TestCase):
         self.assertLessEqual(batter_props.CAPTURE_LEAD_MINUTES, 120)
 
     def test_a_run_before_the_window_fetches_nothing_and_says_why(self):
-        # Eleven hours, not seventeen: NOW is 08:00 Eastern, so a game
-        # seventeen hours out belongs to TOMORROW's slate and would be
-        # skipped for an entirely different reason ("no games on today's
-        # slate"), making this test pass without exercising the window at
-        # all. Eleven hours is a 7pm Eastern game seen at breakfast -- the
-        # real case this gate exists for.
-        listed = [_event(f"g{i}", commence=NOW + dt.timedelta(hours=11))
+        # CHANGED 2026-09-14. This used to put the games ELEVEN hours out --
+        # "a 7pm Eastern game seen at breakfast", which the gate then refused.
+        # The owner overruled exactly that case ("analysis needs to be ran
+        # pre emptively before any games"): the baseline window now opens a
+        # day out, so that game is baseline-due at breakfast
+        # (tests/test_capture_no_set_time.py). What still fetches nothing is
+        # the dead zone between the pre-lineup baseline (T-5h) and the
+        # post-lineup gate (T-2h) on a scheduled, non-dispatched run: 200
+        # minutes out, the same case the dead-zone tests below use.
+        listed = [_event(f"g{i}", commence=NOW + dt.timedelta(minutes=200))
                   for i in range(1, 8)]
         provider = FakeProvider(listed, {})
         with tempfile.TemporaryDirectory() as folder:
