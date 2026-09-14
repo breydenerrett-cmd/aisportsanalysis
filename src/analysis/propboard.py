@@ -76,6 +76,7 @@ Pure analysis. No I/O, no network, no api/ import.
 
 from __future__ import annotations
 
+import math
 from typing import Iterable, Mapping, Optional, Sequence
 
 from src.analysis import playerprops
@@ -153,6 +154,54 @@ def _newest_quotes(rows: Iterable[Mapping]) -> dict:
         if side in ("Over", "Under") and book:
             out.setdefault(key, {}).setdefault(book, {})[side] = row.get("price")
     return out
+
+
+def _newest_observed_utc(rows: Iterable[Mapping]) -> dict:
+    """{(date, event, player, market, line): newest observed_utc string}.
+
+    ADDED 2026-09-12 so a prop pick can show when its price was actually
+    last seen -- the same promise a game pick's own `observed_utc` already
+    makes (src/analysis/daily_card.py). Mirrors `_newest_quotes`'s own
+    newest-per-key selection rather than changing that function's return
+    shape: `scripts/probe_slot_prop.py` already unpacks `_newest_quotes`'s
+    result as a plain `{key: books}` mapping, and widening it to a tuple
+    would silently break that unpacking.
+    """
+    newest: dict = {}
+    for row in rows:
+        if not _on_the_board(row.get("market")):
+            continue
+        key = (row.get("game_date"), row.get("event_id"), row.get("player"),
+               row.get("market"), str(row.get("line")))
+        stamp = row.get("observed_utc") or ""
+        if stamp > newest.get(key, ""):
+            newest[key] = stamp
+    return newest
+
+
+def _season_rate(market: str, line: float, prior: Sequence[Mapping]):
+    """(rate, games) -- this batter's OWN rate of clearing `line` in
+    `market`, from his prior box scores alone.
+
+    This is the number the card's prop picks quote by name: "has at least
+    one hit in 71% of his games this season". Computed here, once, because
+    `prior` (this batter's own rows, strictly before the slate date) is
+    already in scope -- a consumer three layers up recomputing it from a
+    stripped-down transport dict would either duplicate this exactly or
+    drift from it.
+
+    Only defined for the two markets a card pick ever comes from
+    (`batter_hits`, `batter_total_bases`); every other market returns
+    `(None, len(prior))` so a caller can still see the sample size behind a
+    contract it is not going to quote a season rate for.
+    """
+    stat_key = {"batter_hits": "h", "batter_total_bases": "total_bases"}.get(market)
+    games = len(prior)
+    if not stat_key or games == 0:
+        return None, games
+    need = int(math.floor(line)) + 1
+    cleared = sum(1 for row in prior if (row.get(stat_key) or 0) >= need)
+    return cleared / games, games
 
 
 def fair_and_best(books: Mapping) -> tuple:
@@ -239,8 +288,11 @@ def build(prop_rows: Iterable[Mapping], *, date: str,
     if not date:
         raise PropBoardError("a slate date is required")
 
-    quotes = _newest_quotes(
-        [row for row in prop_rows if row.get("game_date") == date])
+    rows_for_date = [row for row in prop_rows if row.get("game_date") == date]
+    quotes = _newest_quotes(rows_for_date)
+    # THE CARD'S OWN RECEIPT TIMESTAMP, PER CONTRACT. Kept as a separate pass
+    # rather than folded into `quotes` above -- see `_newest_observed_utc`.
+    observed = _newest_observed_utc(rows_for_date)
 
     contracts, refused = [], {}
 
@@ -283,6 +335,16 @@ def build(prop_rows: Iterable[Mapping], *, date: str,
             refuse(str(exc))
             continue
 
+        # THE CARD'S OWN GAME IDENTITY, NEVER GUESSED. `prior[-1]` is this
+        # batter's most recent prior game -- its team is the same-day proxy
+        # for tonight's team (wrong only across an in-slate trade, which is
+        # rare enough that a guessed team abbreviation would be a worse bet
+        # than an occasionally-stale one). Season rate is read off the same
+        # `prior` list -- see `_season_rate`.
+        team_name = prior[-1].get("team_name") if prior else None
+        season_rate, season_games = _season_rate(market, line, prior)
+        books_count = len(books)
+
         over_p = priced["probability"]
         for side, model_p in (("Over", over_p), ("Under", 1.0 - over_p)):
             quote = best.get(side)
@@ -304,9 +366,20 @@ def build(prop_rows: Iterable[Mapping], *, date: str,
                 "breakeven": breakeven,
                 "gap_vs_breakeven": model_p - breakeven,
                 "price": american, "book": book,
+                "books": books_count,
                 "expected_pa": priced.get("expected_pa"),
                 "expected_pa_source": priced.get("expected_pa_source"),
                 "batting_slot": priced.get("batting_slot"),
+                # ADDED 2026-09-12 for the card's prop picks
+                # (src/analysis/daily_card.select_props) -- the shared pick
+                # shape needs a team, a season rate to quote in the why
+                # sentence, and a receipt timestamp, none of which the
+                # stripped-down board transport (`src/report/props._public`)
+                # would otherwise be able to hand downstream.
+                "team_name": team_name,
+                "season_rate": season_rate,
+                "season_games": season_games,
+                "observed_utc": observed.get(key),
             })
 
     return {"date": date, "contracts": contracts, "refused": refused}

@@ -194,6 +194,131 @@ function pickCard(pick, total) {
   return card;
 }
 
+/* -----------------------------------------------------------------------
+ * PLAYER PROPS ON THE CARD, 2026-09-12.
+ *
+ * The owner's note this morning, verbatim in substance: the card is
+ * moneyline-first by rule, and it was "still showing ML's" -- so the
+ * likeliest player props that also clear their price join it here, as
+ * frozen, graded picks. Same card2 shell the game picks use, same rules
+ * (probability before price, no verdict language) -- see this module's own
+ * docstring and src/analysis/daily_card.select_props, which is the one
+ * place the selection itself happens. This file only lays out what that
+ * function already decided.
+ *
+ * NO CHECK THIS PRICE LINK. Bet Check only ever checked a moneyline
+ * (src/analysis/betcheck.py reads game-level markets), so pointing a prop
+ * pick at it would send a reader to a page that cannot answer about their
+ * bet. The action here goes to the prop board instead (#/props), which
+ * carries every price this pick could be checked against.
+ * -------------------------------------------------------------------- */
+
+/** "PLAYER PROPS", plus the one-line sub-heading explaining the ordering
+ * rule in the reader's own words -- never rendered without at least one
+ * of a pick list or a reason under it (see the caller in `renderCard`).
+ *
+ * `servingOlderDate` carries the same fact the game-picks head already
+ * acts on (renderCard's `servingOlderCard`): when set, `payload` -- and so
+ * every prop pick under this heading -- came from an earlier slate's
+ * frozen card, not tonight's. A checker caught the sub-head saying
+ * "tonight" over picks whose own first_pitch_utc was a prior day, twelve
+ * lines below a game-picks head that had already switched off "TONIGHT'S"
+ * for the same reason (2026-09-12). Dropping "tonight" here keeps the two
+ * headings telling the same story about which night this is. */
+function propSectionHead(servingOlderDate, withSubhead = true) {
+  const wrap = el("div", { "data-hook": "card-prop-divider" });
+  wrap.appendChild(sectionHead("PLAYER PROPS"));
+  // No sub-heading over an EMPTY section (2026-09-12, seen on the local
+  // build of today's frozen card): "The likeliest props tonight that also
+  // clear their price" sat directly above "Player props were not part of
+  // this card when it was frozen." The sub-heading describes picks; when
+  // the only line under the head is the reason there are none, the head
+  // alone is the honest amount of framing.
+  if (!withSubhead) return wrap;
+  // Two literal branches, not a ternary inside `text:` -- kept this shape
+  // (same as the frozen/live ledes above) so each sentence still starts
+  // right at `text: "` for the register sweep to find, the way this file's
+  // own scanning convention requires (test_web_card_props.py's
+  // EveryRenderedStringPassesTheRegisterSweep). A ternary value handed to
+  // `text:` -- `text: subhead` -- would be a variable like sectionHead's
+  // own `label`, invisible to that scan.
+  if (servingOlderDate) {
+    wrap.appendChild(el("p", { class: "card2lede card2lede--mute",
+      "data-hook": "card-prop-subhead",
+      text: "The likeliest props that night that also cleared their price. "
+          + "Ranked by how likely we made them, never by the price." }));
+  } else {
+    wrap.appendChild(el("p", { class: "card2lede card2lede--mute",
+      "data-hook": "card-prop-subhead",
+      text: "The likeliest props tonight that also clear their price. "
+          + "Ranked by how likely we make them, never by the price." }));
+  }
+  return wrap;
+}
+
+/** "Rafael Devers · BOS · KC at BOS · FanDuel · best of 7 books" -- one
+ * line, everything a reader needs to place the bet against a real matchup,
+ * in the order a person would say it. */
+function propMetaLine(pick) {
+  const bits = [];
+  if (pick.player) bits.push(pick.player);
+  if (pick.team) bits.push(pick.team);
+  if (pick.away_team && pick.home_team) bits.push(`${pick.away_team} at ${pick.home_team}`);
+  if (pick.book) bits.push(bookLabel(pick.book) || pick.book);
+  if (pick.books) bits.push(`best of ${pick.books} books`);
+  return bits.join(" · ");
+}
+
+/** One player-prop pick, in the same card2 shell as `pickCard` above --
+ * "N OF M" counts against the OTHER prop picks on the card, never mixed
+ * with the game picks' own count. `servingOlderDate` sends the board link
+ * to that same earlier date (#/props/<date>, routed in main.js) instead of
+ * tonight's board, which would show different games than the ones these
+ * picks were frozen against. */
+function propPickCard(pick, total, servingOlderDate) {
+  const tone = LABEL_TONE[pick.label] || "slight";
+  const card = el("article", {
+    class: `card2 panel chamfer card2--${tone}`,
+    "data-hook": "card-prop-pick",
+    "data-rank": String(pick.position || pick.rank || ""),
+    "data-label": pick.label || "",
+    "data-market": pick.market || "",
+  });
+
+  const top = el("div", { class: "card2__top" });
+  top.appendChild(el("span", { class: "card2__rank",
+    text: `${pick.position || pick.rank || 1} OF ${total}` }));
+  top.appendChild(el("span", { class: `card2__label card2__label--${tone}`,
+    text: pick.label || "" }));
+  if (pick.first_pitch_utc) {
+    top.appendChild(el("span", { class: "card2__time",
+      text: formatEasternTime(pick.first_pitch_utc) || "" }));
+  }
+  card.appendChild(top);
+
+  // THE SENTENCE. Server-composed, same as the game picks' own bet line.
+  card.appendChild(el("p", { class: "card2__bet", "data-hook": "card-prop-bet",
+    text: pick.bet || "" }));
+
+  card.appendChild(el("p", { class: "card2__meta", "data-hook": "card-prop-meta",
+    text: propMetaLine(pick) }));
+
+  const why = el("div", { class: "card2__why", "data-hook": "card-prop-why" });
+  for (const sentence of pick.why || []) {
+    why.appendChild(el("p", { class: "card2__whyline", text: sentence }));
+  }
+  card.appendChild(why);
+
+  const actions = el("div", { class: "card2__actions" });
+  actions.appendChild(el("a", {
+    class: "btn btn--ghost chamfer chamfer--btn",
+    href: servingOlderDate ? `#/props/${servingOlderDate}` : "#/props",
+    "data-hook": "card-prop-board-link",
+    text: "SEE THE PROP BOARD" }));
+  card.appendChild(actions);
+  return card;
+}
+
 /** The card's own running record, or an honest statement that there is none.
  *
  * THIS IS THE SENTENCE THE PRODUCT IS SOLD ON, so it sits directly under
@@ -493,6 +618,29 @@ export async function renderCard(host, date) {
           + `was thin — our own numbers do not agree with the market on `
           + `${payload.filled === 1 ? "it" : "them"}, and ${payload.filled === 1 ? "it is" : "they are"} `
           + `marked SPLIT.` }));
+  }
+
+  // PLAYER PROPS, after the game picks. `prop_picks` is absent on every
+  // ledger row written before 2026-09-12 -- `|| []` is the whole
+  // compatibility story for those rows, and an empty array here renders
+  // nothing beyond this point, same as an absent key. `prop_reason` only
+  // ever gets a line when there ARE game picks above it (this point is
+  // never reached otherwise -- see the early `emptyCard` return above): a
+  // reason with nothing else on the
+  // screen would read as the forbidden "nothing clears the bar" in a
+  // different key.
+  const propPicks = payload.prop_picks || [];
+  if (propPicks.length) {
+    wrap.appendChild(propSectionHead(servingOlderCard));
+    const propGrid = el("div", { class: "card2grid", "data-hook": "card-prop-grid" });
+    for (const pick of propPicks) {
+      propGrid.appendChild(propPickCard(pick, propPicks.length, servingOlderCard));
+    }
+    wrap.appendChild(propGrid);
+  } else if (payload.prop_reason && picks.length) {
+    wrap.appendChild(propSectionHead(servingOlderCard, false));
+    wrap.appendChild(el("p", { class: "card2lede card2lede--mute",
+      "data-hook": "card-prop-reason", text: payload.prop_reason }));
   }
 
   wrap.appendChild(recordLine(record));

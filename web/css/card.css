@@ -155,6 +155,17 @@
   color: var(--text-faint);
 }
 
+/* PLAYER PROPS ON THE CARD, 2026-09-12 -- one meta line per prop pick
+   (player, team, matchup, book) in place of the game picks' two-piece
+   .card2__matchup, since a prop pick names a person as well as a game. */
+.card2__meta {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: .06em;
+  color: var(--text-dim);
+}
+
 .card2__why {
   display: flex;
   flex-direction: column;
@@ -424,6 +435,20 @@
 .crp-pick-bet { display: flex; flex-direction: column; gap: 2px; max-width: 320px; }
 .crp-pick-bet__text { font-size: 14.5px; font-weight: 600; color: var(--text-2); }
 .crp-pick-bet__label { font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em; color: var(--text-dim); }
+/* PLAYER PROPS ON THE CARD, 2026-09-12 -- marks a prop row on the same
+   table the game picks use (cardrecord.js's pickRow(pick, "prop")). Same
+   size and weight as .crp-pick-bet__label; a border instead of colour so it
+   reads as a category tag, not a result. */
+.crp-pick-bet__kind {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  color: var(--text-dim);
+  border: 1px solid var(--v-edge, var(--edge-1));
+  padding: 1px 5px;
+}
 .crp-pick-result { white-space: nowrap; }
 .crp-pick-reason, .crp-pick-score {
   margin: 3px 0 0; font-family: var(--font-mono); font-size: 12.5px; color: var(--text-mute); white-space: normal;

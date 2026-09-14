@@ -384,5 +384,58 @@ class ThePageServesTheFrozenCard(unittest.TestCase):
         self.assertIn("reason", built)
 
 
+class HistoryJoinsEachPickToItsOwnGame(LedgerCase):
+    """Seen live on 2026-09-12: the 09-11 card composed nine picks from
+    several publishes, so ranks 1..5 appeared twice, and `history` -- which
+    joined a graded pick back to its frozen clubs BY RANK -- printed the
+    Brewers pick (CIN@MIL, final 0-20) with the Guardians' clubs beside it.
+    Fails on the rank join."""
+
+    def _publish_two_rank_one_picks(self):
+        # First publish: the Yankees pick, inside its own lock window, so it
+        # is carried forward verbatim with rank 1.
+        first = _pick(rank=1, game_pk=1001)
+        first["first_pitch_utc"] = "2026-09-10T20:00:00Z"
+        card_ledger.publish(_card(picks=[first]), now="2026-09-10T17:00:00Z",
+                            path=self.path)
+        # Second publish: a different game is now the #1 -- also rank 1.
+        second = _pick(rank=1, game_pk=2002)
+        second.update({"bet": "Take Brewers to win at -186", "team": "MIL",
+                       "team_name": "Brewers", "opponent_name": "Reds",
+                       "away_team": "CIN", "home_team": "MIL",
+                       "book": "betrivers", "books": 9,
+                       "game_id": "CIN-MIL-2026-09-10-1",
+                       "first_pitch_utc": "2026-09-11T00:10:00Z"})
+        row = card_ledger.publish(_card(picks=[second]), now="2026-09-10T18:00:00Z",
+                                  path=self.path)
+        self.assertEqual([1, 1], [p["rank"] for p in row["picks"]],
+                         "the composed card no longer carries a duplicate rank; "
+                         "this test needs one to mean anything")
+        card_ledger.settle("2026-09-10",
+                           {1001: {"away_score": 3, "home_score": 10},
+                            2002: {"away_score": 0, "home_score": 20}},
+                           path=self.path)
+
+    def test_each_graded_pick_carries_its_own_clubs_and_book(self):
+        self._publish_two_rank_one_picks()
+        day = card_ledger.history(path=self.path)["days"][0]
+        by_bet = {p["bet"]: p for p in day["picks"]}
+        yankees = by_bet["Take Yankees to win at -150"]
+        brewers = by_bet["Take Brewers to win at -186"]
+        self.assertEqual(("COL", "NYY", 3, 10, "draftkings"),
+                         (yankees["away_team"], yankees["home_team"],
+                          yankees["away_score"], yankees["home_score"], yankees["book"]))
+        self.assertEqual(("CIN", "MIL", 0, 20, "betrivers"),
+                         (brewers["away_team"], brewers["home_team"],
+                          brewers["away_score"], brewers["home_score"], brewers["book"]))
+
+    def test_a_pick_with_no_game_pk_still_joins_by_rank(self):
+        """The ledger is append-only and old rows are what they are."""
+        frozen = [{"rank": 2, "game_pk": None, "book": "bovada"}]
+        self.assertEqual("bovada",
+                         card_ledger._frozen_for_graded({"rank": 2, "game_pk": None}, frozen)["book"])
+        self.assertEqual({}, card_ledger._frozen_for_graded({"rank": 2, "game_pk": 77}, frozen))
+
+
 if __name__ == "__main__":
     unittest.main()

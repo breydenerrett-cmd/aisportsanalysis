@@ -2930,7 +2930,26 @@ def cmd_card(args) -> int:
                     by_pk[int(pk)] = row
                 except (TypeError, ValueError):
                     pass
-        row = card_ledger.settle(date_str, by_pk)
+        # THIS DATE'S BATTER BOX ROWS, for grading the prop picks alongside
+        # the game picks. FIXED 2026-09-12 (checker problem 6): this call
+        # used to pass no `prop_box_rows` at all, so on the real scheduled
+        # path (scripts/daily_loop.sh) every prop pick graded VOID with "no
+        # box score found for this player in this game" even on a night
+        # data/processed/boxscores_<yyyy>.jsonl held the row -- `settle()`
+        # was ready for the kwarg, nothing read it off disk and handed it
+        # over. `boxscores.read` on a missing/unwritten file returns `[]`,
+        # so an early settle (box scores not ingested yet) still voids every
+        # prop pick, honestly, rather than crashing the whole command.
+        from src.pipeline import boxscores as boxscores_mod
+
+        try:
+            prop_box_rows = boxscores_mod.read(
+                processed_path(f"boxscores_{date_str[:4]}.jsonl"))
+        except boxscores_mod.BoxscoresError as exc:
+            print(f"WARNING: prop box scores unreadable for {date_str}: {exc} "
+                  "-- prop picks will grade VOID.", file=sys.stderr)
+            prop_box_rows = []
+        row = card_ledger.settle(date_str, by_pk, prop_box_rows=prop_box_rows)
         if row is None:
             published = card_ledger.published_row(date_str)
             print(f"nothing to settle for {date_str}: "

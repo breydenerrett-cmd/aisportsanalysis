@@ -428,6 +428,162 @@ def _parse_first_pitch(value) -> Optional[datetime]:
     return parsed.astimezone(timezone.utc)
 
 
+# THE TWO REASON SENTENCES FOR "NOTHING SELECTED", chosen deliberately to
+# avoid the retired "nothing clears the bar" register (checker problem 5,
+# 2026-09-12). `tests/test_no_nothing_clears_the_bar.py`'s own docstring
+# says the ban is on the MEANING, not the spelling -- "No player prop
+# clears our bar tonight." was a paraphrase of exactly that sentence. Both
+# strings below state a fact about tonight's props (posted lineup, cleared
+# its price) rather than a verdict about our confidence.
+_PROP_NONE_SELECTED_LIVE = (
+    "No player prop posted with a lineup behind it clears its price tonight.")
+_PROP_NONE_SELECTED_FROZEN = (
+    "No player prop posted with a lineup behind it cleared its price when "
+    "this card was frozen.")
+# The THIRD reason -- and a different fact from the two above. An old row
+# published before 2026-09-12 never considered props at all; saying a prop
+# "didn't clear its price" on that row is a claim about history that isn't
+# true (checker problem 4). See `frozen_card`.
+_PROP_NOT_PART_OF_CARD = "Player props were not part of this card when it was frozen."
+
+
+def _prop_identity_by_game_pk(entries: Sequence, *, date: str) -> dict:
+    """{str(game_pk): game identity} for every game on today's schedule,
+    whether or not it produced a game-pick candidate.
+
+    KEYED BY game_pk, NOT event_id -- fixed 2026-09-12 (checker BLOCKER,
+    problem 1). A real slate entry's `game` dict never carries an
+    `event_id`: `src.providers.mlb.parse_game` emits no such field, and
+    nothing in `briefing.build_slate` adds one, so the old event_id-keyed
+    version of this function was always `{}` in production and every prop
+    pick was silently dropped at the join below -- verified against all 19
+    published card rows in evidence/cards_v1.jsonl (every one carries
+    `"event_id": null`) and against the real 2026-09-12 board (15 eligible
+    contracts, 0 joined). `game_pk` is the identifier `_game_identity`
+    actually gets off the schedule, so this is keyed on that instead; see
+    `_build_prop_picks` for the other half of the join (event_id ->
+    game_pk, via `src.board.gamekey`).
+    """
+    from src.core.asof import game_pk_key
+
+    out = {}
+    for entry in entries or ():
+        game = _game_identity(entry, date=date)
+        pk = game_pk_key(game.get("game_pk"))
+        if pk is not None:
+            out[pk] = game
+    return out
+
+
+def _build_prop_picks(entries: Sequence, *, date: str, now: datetime,
+                      prop_board=None, event_map=None) -> tuple:
+    """`(prop_picks, prop_reason)` for a LIVE card build.
+
+    `prop_board` is the injectable seam: a callable `date -> board dict`,
+    defaulting to `src.report.props.board_for_date` called for every
+    eligible contract on the board (see the `limit` note below). Injected
+    so a test never has to let this read `data/processed/batter_props.jsonl`
+    and `boxscores_2026.jsonl` off the real disk to exercise it -- see
+    `docs/` on "a test that reads the disk" for the defect this guards.
+
+    `event_map` is the second injectable seam, shaped like
+    `src.board.gamekey.load_map()`'s return ({event_id: {"game_pk": ...}}):
+    a prop contract carries the odds feed's `event_id`, a slate entry
+    carries the schedule's `game_pk` and no `event_id` at all, and
+    `data/processed/event_game_map.jsonl` (`src.board.gamekey`) is the one
+    store on disk that already resolves one id space to the other. Defaults
+    to the real map; a test passes its own dict so this never touches disk.
+
+    THE BOARD IS ASKED FOR EVERY CONTRACT, not its default page. Checker
+    problem 2: `board_fn(date)` used to call `props_mod.board_for_date`
+    with no `limit`, so the candidate pool was silently capped at
+    `DEFAULT_LIMIT` (40) -- most likely first, so this only ever bites when
+    fewer than `MAX_PROP_PICKS` of the top 40 survive `select_props`'s
+    filters while an eligible contract sits below the cut, but the
+    truncation was silent and slate-size dependent either way. Only the
+    REAL default is widened to `MAX_LIMIT` (200) here, by wrapping it
+    rather than adding a `limit` kwarg to this function's own call of
+    `board_fn` -- an injected test double is a plain `callable(date)` and
+    must not be required to accept one.
+
+    The board can raise (a corrupt store) or come back with no contracts (no
+    props posted yet, or nothing on it clears `propboard.LIKELY_FLOOR`).
+    Either way `prop_picks` is `[]` and `prop_reason` names why in the
+    reader's own words -- the same contract `_empty_reason` keeps for the
+    moneyline picks beside it. A broken prop board must never take the
+    moneyline card down with it: the moneyline picks are the product this
+    surface has always sold, and props are additive to it.
+    """
+    from src.report import props as props_mod
+
+    board_fn = prop_board or (
+        lambda d: props_mod.board_for_date(d, limit=props_mod.MAX_LIMIT))
+    try:
+        board = board_fn(date)
+    except Exception:  # noqa: BLE001 -- see the docstring above
+        return [], "Player props aren't available for today's games right now."
+
+    contracts = (board or {}).get("contracts") or []
+    if not contracts:
+        reason = ((board or {}).get("reason")
+                  or "No player props are posted for today's games yet.")
+        return [], reason
+
+    from src.board import gamekey
+    from src.pipeline import slate as slate_mod
+
+    if event_map is None:
+        try:
+            event_map = gamekey.load_map()
+        except Exception:  # noqa: BLE001 -- an unreadable map is a gap,
+            # not a reason to take the moneyline card down with it.
+            event_map = {}
+
+    identity = _prop_identity_by_game_pk(entries, date=date)
+    enriched = []
+    for contract in contracts:
+        pk = gamekey.game_pk_for_event(contract.get("event_id"), event_map)
+        game = identity.get(pk) if pk is not None else None
+        if game is None:
+            # A prop quote whose game is not on today's read schedule -- a
+            # feed mismatch, an unresolved event_id, or a doubleheader game
+            # the schedule pass did not carry. Not a pick without knowing
+            # which game it is or when it starts.
+            continue
+        team = (slate_mod.team_abbrev_from_name(contract["team_name"])
+               if contract.get("team_name") else None)
+        enriched.append({
+            **contract,
+            "game_pk": game.get("game_pk"),
+            "away_team": game.get("away_team"),
+            "home_team": game.get("home_team"),
+            "first_pitch_utc": game.get("first_pitch_utc"),
+            "team": team,
+        })
+
+    picks = daily_card.select_props(enriched, now=now)
+    if not picks:
+        return [], _PROP_NONE_SELECTED_LIVE
+    return picks, None
+
+
+def _served_prop_order(picks) -> list:
+    """The frozen prop picks in probability order, each numbered by
+    `position` -- the prop-pick counterpart to `_served_order` below.
+
+    Ranked by probability rather than by `daily_card._rank_key` (which reads
+    `confidence`/`market_probability`, fields a prop pick does not carry):
+    a prop pick's own rule ranks by probability and only by probability, and
+    the served order has to agree with the rule that selected it.
+    """
+    ordered = sorted(
+        (dict(p) for p in picks),
+        key=lambda p: (-(p.get("probability") or 0.0), str(p.get("player") or "")))
+    for i, pick in enumerate(ordered, start=1):
+        pick["position"] = i
+    return ordered
+
+
 def _served_order(picks) -> list:
     """The frozen picks in the order the card says it uses -- "ranked by how
     confident the market is" -- each numbered by `position`.
@@ -474,6 +630,12 @@ def frozen_card(date: str) -> Optional[dict]:
     # than absent -- and None rather than 0, because "we did not record this"
     # and "this was zero" are different facts and a renderer that treats them
     # the same prints "0 games on the slate" for a card that has three picks.
+    # `"prop_picks" in row` (not `.get(...) or ()` truthiness alone) is
+    # what tells a card published before this feature from a card that
+    # considered props and found none -- see `_PROP_NOT_PART_OF_CARD`'s
+    # comment above and checker problem 4.
+    prop_picks_considered = "prop_picks" in row
+    prop_picks = row.get("prop_picks") or ()
     return {
         "picks": _served_order(row.get("picks") or ()),
         "filled": row.get("n_filled") or 0,
@@ -487,6 +649,19 @@ def frozen_card(date: str) -> Optional[dict]:
         "disclaimer": row.get("disclaimer"),
         "min_picks": daily_card.MIN_PICKS,
         "max_picks": daily_card.MAX_PICKS,
+        # PROP PICKS, FROZEN LIKE THE GAME PICKS BESIDE THEM. An old row
+        # published before 2026-09-12 has no `prop_picks` key at all, and
+        # `.get(...) or ()` reads that exactly like an empty list for
+        # `prop_picks` itself -- the whole point of the "every reader
+        # treats a missing key as an empty list" rule this feature was
+        # built under. `prop_reason` is the one exception: a MISSING key
+        # and an EMPTY list are different facts (props never considered vs.
+        # considered and none selected) and read differently below.
+        "prop_picks": _served_prop_order(prop_picks),
+        "prop_reason": (
+            None if prop_picks
+            else _PROP_NONE_SELECTED_FROZEN if prop_picks_considered
+            else _PROP_NOT_PART_OF_CARD),
         "frozen": True,
         "frozen_at": row.get("published_utc"),
         "row_hash": row.get("row_hash"),
@@ -500,7 +675,8 @@ def frozen_card(date: str) -> Optional[dict]:
 def card_for_date(entries: Sequence, opportunity_rows: Sequence, *, date: str,
                   now: Optional[datetime] = None,
                   calibration=None, multibook_rows=None,
-                  prefer_frozen: bool = True) -> dict:
+                  prefer_frozen: bool = True, prop_board=None,
+                  event_map=None) -> dict:
     """The published card for one date.
 
     Serves the FROZEN card when one exists (see `frozen_card`), and builds
@@ -511,6 +687,12 @@ def card_for_date(entries: Sequence, opportunity_rows: Sequence, *, date: str,
     Never raises on a thin slate; an empty schedule produces an empty card
     with `reason` set, which is a different statement from "nothing cleared
     the bar" and is the only empty state this surface has.
+
+    `prop_board` and `event_map` are the player-props seams: `prop_board` a
+    callable `date -> board dict`, defaulting to `src.report.props.
+    board_for_date`; `event_map` an `{event_id: {"game_pk": ...}}` dict,
+    defaulting to `src.board.gamekey.load_map()`. See `_build_prop_picks`
+    for what each is for and why both are injectable.
     """
     now = now or datetime.now(timezone.utc)
 
@@ -579,6 +761,12 @@ def card_for_date(entries: Sequence, opportunity_rows: Sequence, *, date: str,
         "frozen_at": None,
     })
     attach_knowledge(payload, entries, now=now)
+
+    prop_picks, prop_reason = _build_prop_picks(
+        entries, date=date, now=now, prop_board=prop_board, event_map=event_map)
+    payload["prop_picks"] = prop_picks
+    payload["prop_reason"] = prop_reason
+
     if not payload["picks"]:
         payload["reason"] = _empty_reason(entries, started, len(games),
                                           len(candidates))

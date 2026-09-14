@@ -75,9 +75,10 @@ Pure. stdlib only. Every input arrives as an argument.
 from __future__ import annotations
 
 import math
+from datetime import datetime, timezone
 from typing import Mapping, Optional, Sequence
 
-from src.analysis import strength
+from src.analysis import propboard, strength
 from src.core import odds as odds_math
 
 # ---------------------------------------------------------------------------
@@ -677,3 +678,307 @@ def select(candidates: Sequence, *, min_picks: int = MIN_PICKS,
         "min_picks": min_picks,
         "max_picks": max_picks,
     }
+
+
+# ---------------------------------------------------------------------------
+# PLAYER PROPS ON THE CARD
+# ---------------------------------------------------------------------------
+#
+# ADDED 2026-09-12. The owner, this morning: "Did you wire everything? It's
+# still showing ML's" -- the card is moneyline-first by rule (nothing above
+# this line changes), but the likeliest player props that clear their price
+# belong beside it, frozen and graded the same way.
+#
+# THE RULE, and it is `src.analysis.propboard`'s rule, not a new one:
+#
+#   1. Market: `propboard.assessable` -- `batter_hits` or `batter_total_bases`
+#      only. Never home runs (no fair price exists to clear -- see that
+#      module's docstring) and never any other likelihood-only market.
+#   2. "More likely than not": probability > `propboard.LIKELY_FLOOR` (0.50).
+#   3. "Clears its price": our probability beats the break-even the price
+#      demands -- `probability > breakeven`.
+#   4. A posted lineup, not the season-average fallback:
+#      `expected_pa_source == "batting_slot"`.
+#   5. The player's game has not started.
+#   6. One pick per player -- his highest-probability surviving contract.
+#   7. Ranked by OUR probability, descending, and ONLY that. Never by the
+#      gap over the price: `propboard`'s own module docstring carries the
+#      measurement for why (`scripts/probe_prop_value.py`, -13.4% selecting
+#      on the gap against -9.1% for the control) and this file does not
+#      re-litigate it.
+#   8. `MAX_PROP_PICKS` picks, no minimum -- a thin prop board is a true
+#      state, not a hole to fill with a demoted contract the way game picks
+#      fill to `MIN_PICKS`.
+#
+# Pure, exactly like everything above it: every contract arrives as an
+# argument, already carrying the game identity (`game_pk`, `event_id`,
+# `away_team`, `home_team`, `first_pitch_utc`, `team`) that
+# `src.report.card` joined on before calling this. This module does not
+# reach for a schedule -- that would make it impure, and the whole point of
+# `src.report.card` existing as a separate file is that IT does the
+# reaching, and this file only decides.
+
+MAX_PROP_PICKS = 3
+
+# THE MARKETS THE CARD WILL PICK FROM, declared here and nowhere else.
+#
+# 2026-09-12, caught by the second check before it shipped: the first draft
+# gated on `propboard.assessable`, which is every market the board can
+# publish AND de-vig -- three markets, not two. `batter_runs_scored` is
+# assessable, so a runs contract could reach the card, and the card's own
+# sentence builders only know hits and total bases: the bet would have
+# printed "Take Juan Soto under 0.5 batter_runs_scored at -140" -- a payload
+# field name on the front page -- and settlement (src/board/settle_props)
+# keys runs as 'batter_runs', so the pick would have graded VOID forever
+# with "no settlement rule" beside it on the record. Two runs contracts on
+# the real 2026-09-12 board passed every other filter; they missed the card
+# only because three hits/total-bases contracts happened to rank above
+# them. The gate is now this tuple, and tests hold it equal to the sentence
+# builders' vocabulary and inside the settlement rules.
+PROP_MARKETS = ("batter_hits", "batter_total_bases")
+
+PROP_CARD_RULE = "DAILY_CARD_PROP_LIKELY_AND_CLEARS_PRICE_V1"
+PROP_CARD_BASIS = (
+    "Player props that are more likely than not, clear their price, and "
+    "have a posted lineup behind them. Ranked by how likely we make it, "
+    "never by how big the gap against the price is. One pick per player, "
+    "at most three."
+)
+
+
+def _prop_game_started(first_pitch_utc, now: datetime) -> bool:
+    """Same fail-closed rule as `src.report.card._has_started`, duplicated
+    rather than imported: `src.report` is the plumbing layer and imports
+    THIS module, so the reverse import would be a cycle. An unreadable or
+    absent first-pitch time counts as started -- a prop pick with no known
+    kickoff time is not one this file will publish."""
+    if not first_pitch_utc:
+        return True
+    try:
+        when = datetime.fromisoformat(str(first_pitch_utc).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return True
+    if when.tzinfo is None:
+        when = when.replace(tzinfo=timezone.utc)
+    return when <= now.astimezone(timezone.utc)
+
+
+def _prop_label(probability: float) -> str:
+    """Same bands as the moneyline card, read off OUR probability this
+    time -- a prop pick has no separate market-vs-model split to report, so
+    there is no SPLIT label here. Every candidate that reaches this function
+    already cleared `propboard.LIKELY_FLOOR`, so SLIGHT is a real floor, not
+    a name for "everything left over"."""
+    if probability >= BAND_STRONG:
+        return LABEL_STRONG
+    if probability >= BAND_LEAN:
+        return LABEL_LEAN
+    return LABEL_SLIGHT
+
+
+_PROP_MARKET_WORD = {"batter_hits": "hits", "batter_total_bases": "total bases"}
+
+
+def _prop_bet_sentence(c: Mapping) -> str:
+    """"Take Rafael Devers over 0.5 hits at -140." One line, one instruction,
+    same register as `_bet_sentence` above."""
+    line = c.get("line")
+    line_str = f"{float(line):g}" if isinstance(line, (int, float)) else str(line)
+    word = _PROP_MARKET_WORD.get(c.get("market"), c.get("market") or "")
+    side = str(c.get("side") or "").lower()
+    return (f"Take {c.get('player')} {side} {line_str} {word} "
+            f"at {_fmt_price(c.get('price'))}")
+
+
+def _ordinal(n) -> str:
+    try:
+        n = int(n)
+    except (TypeError, ValueError):
+        return str(n)
+    if 10 <= n % 100 <= 20:
+        suffix = "th"
+    else:
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"
+
+
+def _prop_why_sentences(c: Mapping) -> list:
+    """Two sentences, built from the numbers already on the contract --
+    never a verdict, never "value", never "edge". The season rate and the
+    plate-appearance estimate come from `propboard.build` (the batter rows
+    the board already read); nothing here recomputes them.
+
+    FIXED 2026-09-12 (checker problem 3). `season_rate` on the contract is
+    always the OVER outcome's rate -- `propboard.build` writes the same
+    value onto both the Over and the Under contract for a line (that
+    module's own `_season_rate`). The first draft of this function quoted
+    it unconditionally, so an Under pick's why-sentence read the batter's
+    HIT rate next to a `probability` that was the batter's MISS rate for
+    the same threshold -- two numbers about the same bet that looked like
+    they disagreed. Measured live: Kevin McGonigle Under 1.5 hits, our
+    probability 0.758 (STRONG), rendered "has at least 2 hits in 18% of his
+    games" -- the number for the side of the bet nobody took. On an Under
+    the clause and the rate now both describe what the UNDER needs: at most
+    `need - 1`, at a rate of `1 - season_rate`.
+    """
+    market = c.get("market")
+    line = c.get("line") or 0.0
+    need = int(math.floor(float(line))) + 1
+    player = c.get("player") or "This batter"
+    is_under = str(c.get("side") or "").strip().lower() == "under"
+
+    def _at_least(word: str) -> str:
+        return "at least one " + word if need <= 1 else f"at least {need} {word}s"
+
+    def _at_most(word: str) -> str:
+        cap = need - 1
+        if cap <= 0:
+            return f"no {word}s"
+        return (f"{cap} {word}" if cap == 1 else f"{cap} {word}s") + " or fewer"
+
+    if market == "batter_hits":
+        clause = _at_most("hit") if is_under else _at_least("hit")
+    elif market == "batter_total_bases":
+        clause = _at_most("total base") if is_under else _at_least("total base")
+    else:
+        clause = (f"stays under {line:g} in {market}" if is_under
+                  else f"clears {line:g} in {market}")
+
+    season_rate = c.get("season_rate")
+    if season_rate is None:
+        rate = None
+    else:
+        rate = 1.0 - float(season_rate) if is_under else float(season_rate)
+
+    # OUR NUMBER LEADS (2026-09-12, seen on the first live build). The
+    # sentence used to open with the season rate alone -- "Connor Norby has
+    # at least one total base in 55% of his games this season" -- on a pick
+    # labelled STRONG whose price needs 63%. The 55% is an input (the
+    # batter's rate per game); our probability is that rate lifted by the
+    # trips a 2nd-place hitter gets tonight, and it is the number the pick
+    # stands on. Left unsaid, the reader had a rate below the break-even
+    # and a label that said the opposite, and no way to see the step
+    # between them. Same shape as the game pick's "Our own numbers make it
+    # 62%".
+    probability = c.get("probability")
+    ours = (f"Our own numbers make it {_fmt_pct(float(probability))}. "
+            if probability is not None else "")
+    if rate is not None:
+        first = f"{ours}{player} has {clause} in {_fmt_pct(rate)} of his games this season"
+    else:
+        first = f"{ours}{player} has {clause} in his prior games this season"
+
+    slot = c.get("batting_slot")
+    expected_pa = c.get("expected_pa")
+    if slot and expected_pa:
+        first += (f"; batting {_ordinal(slot)} tonight, he should get about "
+                  f"{float(expected_pa):.1f} trips to the plate.")
+    elif slot:
+        first += f", batting {_ordinal(slot)} tonight."
+    elif expected_pa:
+        first += f", with about {float(expected_pa):.1f} trips to the plate."
+    else:
+        first += "."
+
+    market_probability = c.get("market_probability")
+    if market_probability is not None:
+        second = f"The market makes it {_fmt_pct(market_probability)}."
+    else:
+        second = "The market has no two-way price posted to compare against."
+    needed_pct = _breakeven_pct(c.get("price"))
+    if needed_pct:
+        second += (f" At {_format_american(c.get('price'))} you need "
+                   f"{needed_pct} to break even.")
+
+    return [first, second]
+
+
+def _build_prop_pick(c: Mapping, *, position: int) -> dict:
+    """One contract, in the shared prop-pick shape -- the same shape whether
+    it just got selected here or is being read back off a frozen ledger row.
+    """
+    probability = float(c.get("probability") or 0.0)
+    pick = {
+        "kind": "prop",
+        "position": position,
+        "rank": position,
+        "label": _prop_label(probability),
+        "player": c.get("player"),
+        "team": c.get("team"),
+        "game_pk": c.get("game_pk"),
+        "event_id": c.get("event_id"),
+        "away_team": c.get("away_team"),
+        "home_team": c.get("home_team"),
+        "first_pitch_utc": c.get("first_pitch_utc"),
+        "market": c.get("market"),
+        "line": c.get("line"),
+        "side": c.get("side"),
+        "probability": round(probability, 4),
+        "market_probability": (
+            None if c.get("market_probability") is None
+            else round(float(c["market_probability"]), 4)),
+        "breakeven": round(float(c.get("breakeven") or 0.0), 4),
+        "price": c.get("price"),
+        "book": c.get("book"),
+        "books": c.get("books"),
+        "batting_slot": c.get("batting_slot"),
+        "expected_pa": c.get("expected_pa"),
+        "expected_pa_source": c.get("expected_pa_source"),
+        "observed_utc": c.get("observed_utc"),
+        "locked": False,
+        "locked_at": None,
+    }
+    pick["bet"] = _prop_bet_sentence(c)
+    pick["why"] = _prop_why_sentences(c)
+    return pick
+
+
+def select_props(contracts: Sequence, *, now: Optional[datetime] = None,
+                 max_picks: int = MAX_PROP_PICKS) -> list:
+    """The card's player-prop picks: at most `max_picks`, no floor.
+
+    `contracts` are the prop board's contracts for the date
+    (`src.report.props.board_for_date` -> `propboard.build`), already
+    enriched with game identity by `src.report.card` before this is called.
+    Ranked by OUR probability, descending, and never by the gap over the
+    price -- see the module-level comment above this section for the full
+    rule and why the gap is disqualified.
+    """
+    now = now or datetime.now(timezone.utc)
+
+    eligible = []
+    for c in contracts or ():
+        market = c.get("market")
+        # Membership in PROP_MARKETS, not `propboard.assessable` -- see the
+        # constant's comment for the runs-scored contract that got through.
+        if market not in PROP_MARKETS or not propboard.assessable(market):
+            continue
+        probability = c.get("probability")
+        if probability is None or not (probability > propboard.LIKELY_FLOOR):
+            continue
+        breakeven = c.get("breakeven")
+        if breakeven is None or not (probability > breakeven):
+            continue
+        if c.get("expected_pa_source") != "batting_slot":
+            continue
+        if _prop_game_started(c.get("first_pitch_utc"), now):
+            continue
+        eligible.append(c)
+
+    # One pick per player: his own highest-probability surviving contract.
+    best_by_player: dict = {}
+    for c in eligible:
+        player = c.get("player")
+        current = best_by_player.get(player)
+        if current is None or (c.get("probability") or 0.0) > (current.get("probability") or 0.0):
+            best_by_player[player] = c
+
+    # RANKED BY PROBABILITY, NEVER BY THE GAP -- the player-name tie-break is
+    # only there for a deterministic order when two contracts land on the
+    # exact same probability; it is not part of the ranking rule itself.
+    ranked = sorted(best_by_player.values(),
+                    key=lambda c: (-(c.get("probability") or 0.0),
+                                   str(c.get("player") or "")))
+
+    return [_build_prop_pick(c, position=i)
+            for i, c in enumerate(ranked[:max_picks], start=1)]

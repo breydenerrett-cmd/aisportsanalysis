@@ -222,6 +222,75 @@ record of what this document specified before today — read it as history,
 not as the current spec. Its item 1 (TONIGHT'S PICKS leads) and any
 homepage-hierarchy conclusion drawn from it are superseded by this section.
 
+### 5.3 Player props are on the card (2026-09-12)
+
+**The owner, on the morning of 09-12, looking at a card of five moneyline
+picks:** *"Did you wire everything? It's still showing ML's."* The standing
+directive behind it: *"none of that price matters until we know it's a MORE
+THAN LIKELY BET, once we have the almost guaranteed bets, then we find the
+best sports picks of those with the best value."* The card had been
+moneyline-first by rule (§5.1: side by market confidence, moneyline unless
+the run line prices the same opinion better), and the prop board had shipped
+as its own page. Two surfaces, one product, and the one the owner sells did
+not carry the market he asked for.
+
+**The rule, pure and declared** (`src/analysis/daily_card.select_props`,
+`PROP_CARD_RULE = DAILY_CARD_PROP_LIKELY_AND_CLEARS_PRICE_V1`):
+
+- Candidates are the prop board's contracts for the date in **`PROP_MARKETS =
+  (batter_hits, batter_total_bases)`** — the two markets the card can
+  describe in a sentence and settle from a box score. Never home runs (not
+  de-viggable, likelihood-only), never runs scored (no sentence, no
+  settlement rule under that name — caught by the second check on the day
+  it shipped).
+- A candidate must be **more likely than not** by our number
+  (`probability > propboard.LIKELY_FLOOR`, 0.50), must **clear its price**
+  (`probability > breakeven`), must stand on a **posted lineup**
+  (`expected_pa_source == batting_slot`; the season-average fallback is not
+  a card pick), and its game must not have started.
+- **One pick per player**, the player's own likeliest contract.
+- **Ranked by our probability, descending — never by the gap over the
+  price.** The gap is measured adversely selected in this repo
+  (docs/PLAYER_PROPS_NEXT.md); ranking on it would put the most-wrong
+  numbers first.
+- **At most three** (`MAX_PROP_PICKS = 3`), no minimum. Labels are the
+  card's own bands read off our probability: STRONG ≥ 0.62, LEAN ≥ 0.55,
+  SLIGHT above the floor. There is no SPLIT label for a prop — there is no
+  separate market-vs-model side to disagree about.
+- The why is two sentences composed from the numbers on the contract and
+  nothing else: the batter's season rate for the outcome the bet needs (an
+  Under quotes the under rate), the batting slot and expected trips, then
+  what the market makes it and what the price needs to break even.
+
+**Same receipts as the game picks.** Prop picks freeze on the same ledger
+row (`evidence/cards_v1.jsonl`, `PROP_FROZEN_FIELDS`), lock per their own
+game's first pitch under the same four-hour lead, are carried forward
+verbatim once locked, and are graded from box scores through
+`src/board/settle_props` — the settlement a backtest would use — flat one
+unit, VOID when the batter has no box row.
+
+**Records are read apart, never pooled invisibly.** `card_ledger.record()`'s
+headline numbers stay the game record; `by_kind.game` and `by_kind.prop`
+carry the two populations separately. A 9-3 game record must not quietly
+absorb prop results, and a prop record must not borrow the game record's
+nights.
+
+**What the card says when nothing qualifies.** On a live build:
+"No player prop posted with a lineup behind it clears its price tonight."
+On a frozen row that recorded an empty evaluation, the same in the past
+tense. On a row frozen before props existed: "Player props were not part of
+this card when it was frozen." Three different facts, three sentences —
+never "nothing cleared the bar" and never a claim that props were checked
+when they were not.
+
+**Open owner decisions, surfaced not made:** (1) the minimum number of books
+behind a card prop — today it is the board's own two-book de-vig floor,
+while a game pick needs six for an A grade; (2) whether a heavy favourite
+that is likely but expensive (the first live pick was an Under 1.5 hits at
+-250, our number 76% against a 71% break-even) belongs on a card sold as
+"bets", or whether a price ceiling is part of the rule; (3) whether the
+public record page should ever headline the two populations together.
+
 ## 6. Public performance
 
 Four cohorts, always reported together, never merged:

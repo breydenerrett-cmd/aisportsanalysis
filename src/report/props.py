@@ -176,7 +176,22 @@ def _public(contract: Mapping) -> dict:
             float(contract.get("gap_vs_breakeven") or 0.0), 4),
         "price": contract.get("price"),
         "book": contract.get("book"),
+        "books": contract.get("books"),
         "expected_pa": contract.get("expected_pa"),
         "expected_pa_source": contract.get("expected_pa_source"),
         "batting_slot": contract.get("batting_slot"),
+        # ADDED 2026-09-12 -- carried straight through from
+        # `propboard.build`, not recomputed: `src.report.card.card_for_date`
+        # joins these contracts against the schedule by `event_id` to build
+        # the card's own prop picks, and needs the game identity and the
+        # season rate the why-sentence quotes. Additive only; nothing above
+        # this line changed, so no existing reader of this board is
+        # affected.
+        "event_id": contract.get("event_id"),
+        "team_name": contract.get("team_name"),
+        "season_rate": (
+            None if contract.get("season_rate") is None
+            else round(float(contract["season_rate"]), 4)),
+        "season_games": contract.get("season_games"),
+        "observed_utc": contract.get("observed_utc"),
     }
