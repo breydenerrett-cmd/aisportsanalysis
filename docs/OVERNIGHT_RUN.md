@@ -1104,3 +1104,6 @@ https://linehound-staging.fly.dev/billing/webhook -> dry-run purchase.
 - 2026-09-14T20:48Z afternoon_slate: engine slate --date 2026-09-14 exit=2
 - 2026-09-14T20:48Z afternoon_slate: card publish --date 2026-09-14 exit=0
 - 2026-09-14T20:48Z afternoon_slate: engine slip --date 2026-09-14
+- 2026-09-14T21:01Z afternoon_slate: engine slate --date 2026-09-14 exit=2
+- 2026-09-14T21:02Z afternoon_slate: card publish --date 2026-09-14 exit=0
+- 2026-09-14T21:02Z afternoon_slate: engine slip --date 2026-09-14
