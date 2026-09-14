@@ -208,6 +208,84 @@ adversely selected.
   does, and it is the test that would have gone red. Staging verified
   back up after `739a2f2` deployed (5 picks, PROPS tab, no failed
   modules).
+- **~16:00Z. The four applied changes (`ca144ed` landing copy, `cbbbecd`
+  Today one answer, `ca47eaa` prop capture, `c8debb5` orphans) are green
+  on 3.10/3.11/3.12 and deployed.** Verified on staging by reading the
+  pages: the landing hero reads the card ("Red Sox to win · the market
+  makes it 66% · -212 · Needs 68% to break even · we make it 62%"), the
+  landing record prints 36 tested ideas, `#/today` leads with the card
+  (5 picks, locked 11:47 AM ET, record 9-3, +2.64u), the slip is off
+  Today and on `#/performance` under a research heading.
+- **Tonight's capture, checked at 16:00Z with the one-command script:**
+  the lineup store committed from the cron for the first time since
+  09-08 (`68f8663`, 15:45Z: 41 rows, three 09-12 games with a posting
+  time); 1,339 batter-prop quotes for 09-12, all inside the 120-minute
+  gate (lead 88–114 min, the two early games); the prop board joins 43
+  likely contracts to a batting slot, 15 of them clear their price. The
+  T-2h passes for the evening games land after ~22:00Z.
+- **The owner, on waking: "Did you wire everything? It's still showing
+  ML's."** The card is moneyline-first by rule (`daily_card`: side by
+  market confidence, moneyline unless the run line prices it better) and
+  last night's card froze at 10:15 PM ET; the prop board shipped as its
+  own page, not on the card. Taking the message as the ask: **player
+  props join the card.** Rule, pure and declared: the likeliest
+  hits/total-bases contracts with a posted lineup slot, probability above
+  0.50 AND above the price's break-even, one per player, at most three,
+  ranked by our probability never by the gap over the price; frozen,
+  locked per first pitch and graded from box scores like the game picks,
+  with a separate by-kind record so the two are never pooled invisibly.
+  Building now (backend + frontend workers, each checked, then an
+  integration run on today's board).
+- **Landing record sentence now reads the ledger.** It was typed ("2
+  wins, 1 loss … 7 wins, 2 losses … 9 wins, 3 losses") and would have been
+  wrong tomorrow morning — the research-count drift again. `GET /meta`
+  carries `card_record` from the ledger; the page fills the sentence and
+  its no-JS fallback names no figure. `tests/test_landing_record_from_ledger.py`.
+- **Found by looking at staging, ~16:10Z: the Today hero contradicts the
+  card on the same screen.** Card #1: "Take Red Sox to win at -212 ·
+  LowVig · best of 11 books". Hero for the same game: "MARKET UNAVAILABLE
+  · NO PRICE BOARD RECORDED FOR THIS GAME … PRICES yes · BOOKS QUOTING 11
+  · WHY no prices on the board for this game". Root cause: the briefing's
+  dossier takes its `market` section only from `prices_by_matchup`, which
+  only the CLI supplies (a live odds fetch); the API path never does, so
+  every game's dossier says "no prices on the board" while the same
+  build holds the 11-book multibook board for it. The one game that
+  cleared the talent bar (KC@BOS) went to the market screen with no
+  price and came out `market_unavailable`. Older than tonight. Fix in
+  build: the dossier's market comes from the board when no caller
+  supplies one; a candidate routed to the first five (a market the board
+  does not carry) gets a precise reason on its row, and the hero says
+  that instead of "no price board recorded".
+- **Found in the same trace: `GET /today` builds its slate without the
+  enrichment inputs `GET /games/{date}` uses** (`api/app.py:260` passes
+  none; `api/games._build_entries` passes pitcher logs, lineups,
+  standings, travel, weather). Same game, two verdicts on two endpoints
+  (KC@BOS: `no_play` on /today, `market_unavailable` on /games). Same
+  class as the CLI-vs-page card incident of 09-10. To fix once the two
+  builds above land.
+- **Props on the card: built, checked, one gap closed by hand (~17:30Z).**
+  Two workers on one declared shape, each checked by a second model, then
+  an integration run on tonight's real board. The checks earned their
+  keep: the first backend joined props to games by a field real schedule
+  rows never carry (production would have shipped an empty prop section
+  with a false "none cleared" line); the redo joins by game key and the
+  live build now yields three picks (McGonigle U1.5 hits 76%, Norby,
+  Carrigg). The second check found a runs-scored contract could reach the
+  card with a raw field name as its bet and no settlement rule under that
+  name — closed with a declared `PROP_MARKETS` tuple and two tests. Old
+  frozen rows say "Player props were not part of this card when it was
+  frozen", never that props were checked. The record page keeps the two
+  populations apart (`GAME PICKS` headline, a `PLAYER PROPS, GRADED APART`
+  panel). Doctrine §5.3 written. **The first card with props freezes at
+  the next `card publish` (afternoon-slate cron, 15:40Z daily — so
+  tomorrow's; tonight's card stays as frozen at 11:47 AM ET).**
+- **Found while verifying the record page, ~17:40Z: wrong clubs beside a
+  graded pick, live.** The 09-11 card was composed from several publishes
+  and carries ranks 1..5 twice; `card_ledger.history` joined graded picks
+  back to their frozen clubs BY RANK, so the Brewers pick (CIN@MIL, final
+  0-20) rendered as "CLE 0 — MIN 20". Joined by game key now, bet
+  sentence as tie-break, rank only for a pick with no game key. Regression
+  test publishes two rank-1 picks and settles both.
 
 ## Tier 1 — things the owner asked for that are still not done
 
