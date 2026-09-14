@@ -1264,3 +1264,5 @@
 {"category": "recalled", "date": "2026-09-14", "first_seen_utc": "2026-09-14T21:51:28.828058+00:00", "player": "Paul Gervase", "player_id": 801434, "team": "LAD", "transaction_id": 942322}
 {"category": "optioned", "date": "2026-09-14", "first_seen_utc": "2026-09-14T21:51:28.828058+00:00", "player": "Emmet Sheehan", "player_id": 686218, "team": "LAD", "transaction_id": 942323}
 {"fetched_utc": "2026-09-14T21:51:30.566778+00:00", "game_date": "2026-09-14", "poll": true}
+{"fetched_utc": "2026-09-14T22:04:41.475709+00:00", "game_date": "2026-09-14", "poll": true}
+{"fetched_utc": "2026-09-14T22:04:43.481142+00:00", "game_date": "2026-09-14", "poll": true}
