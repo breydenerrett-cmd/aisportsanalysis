@@ -187,6 +187,48 @@ function propHeadline(record) {
   return wrap;
 }
 
+/**
+ * THE TOTALS RECORD, APART FROM THE GAME RECORD (2026-09-14).
+ *
+ * Totals joined the card today (the owner's note: merge every bet, not
+ * just moneylines) and are graded on the same ledger rows, but
+ * `card_ledger.record()` keeps the populations apart in `by_kind` --
+ * `by_kind.total` beside `by_kind.prop` -- and this page follows the same
+ * rule it already follows for props: a game record must not quietly
+ * absorb totals results, and a totals record must not borrow the game
+ * record's nights. Same tiles, same size, same weight, same panel shape as
+ * `propHeadline` right above it. Before any total has graded, the panel
+ * says exactly that instead of printing 0-0-0 as if it were a result.
+ */
+function totalHeadline(record) {
+  const total = record.by_kind && record.by_kind.total;
+  if (!total) return null;   // an older /card/record without by_kind, or one before totals
+  const wrap = el("div", { class: "crp-headline crp-headline--totals panel chamfer",
+    "data-hook": "record-total-headline" });
+  wrap.appendChild(el("span", { class: "crp-chain__label", text: "TOTALS, GRADED APART" }));
+  const staked = typeof total.n_staked === "number" ? total.n_staked : 0;
+  const graded = staked + (total.pushes || 0) + (total.voids || 0);
+  if (!graded) {
+    wrap.appendChild(el("p", { class: "crp-chain__body", "data-hook": "record-total-none",
+      text: "No total has graded yet. Totals are on the card from 2026-09-14, frozen and graded "
+          + "the same way as the game picks, and their record is kept here on its own." }));
+    return wrap;
+  }
+  const grid = el("div", { class: "crp-stats" });
+  const wlp = `${total.wins ?? 0}-${total.losses ?? 0}-${total.pushes ?? 0}`;
+  grid.appendChild(statTile("TOTALS (W-L-P)", figure(wlp)));
+  grid.appendChild(statTile("VOIDS", figure(String(total.voids || 0), total.voids ? "warn" : null)));
+  grid.appendChild(statTile("WIN RATE", staked ? figure(winRateFmt(total.win_rate)) : absentFigure()));
+  grid.appendChild(statTile("UNITS NET", staked
+    ? figure(unitsFmt(total.profit_units), total.profit_units > 0 ? "pos" : total.profit_units < 0 ? "neg" : null)
+    : absentFigure()));
+  grid.appendChild(statTile("ROI", staked
+    ? figure(roiFmt(total.roi_pct), total.roi_pct > 0 ? "pos" : total.roi_pct < 0 ? "neg" : null)
+    : absentFigure()));
+  wrap.appendChild(grid);
+  return wrap;
+}
+
 /** Rendered UNCONDITIONALLY -- whether there are zero voids or forty, the
  * reader is told which. Silence is not one of the honest options here. */
 function voidsNote(record) {
@@ -240,20 +282,25 @@ function chainStatus(record) {
  * returned.
  * ------------------------------------------------------------------- */
 
-/** `kind` distinguishes a player-prop row from a game row on the same
- * table -- both read the same five columns (BET/RESULT/PRICE/BOOK/RETURN)
- * off the same shape, since a prop pick is frozen exactly like a game pick
- * (see card.js's own PLAYER PROPS section). Defaults to "game" so every
- * existing call site, and every ledger row with no `prop_picks` at all,
- * renders exactly as before. */
+/** `kind` distinguishes a player-prop (or, since 2026-09-14, a total) row
+ * from a game row on the same table -- all three read the same five
+ * columns (BET/RESULT/PRICE/BOOK/RETURN) off the same shape, since a prop
+ * or total pick is frozen exactly like a game pick (see card.js's own
+ * PLAYER PROPS / totals sections). Defaults to "game" so every existing
+ * call site, and every ledger row with no `prop_picks`/`total_picks` at
+ * all, renders exactly as before. */
 function pickRow(pick, kind = "game") {
   const isProp = kind === "prop";
-  const tr = el("tr", { "data-hook": isProp ? "record-prop-pick-row" : "record-pick-row" });
+  const isTotal = kind === "total";
+  const tr = el("tr", { "data-hook": isTotal ? "record-total-pick-row"
+    : (isProp ? "record-prop-pick-row" : "record-pick-row") });
 
   const betCell = el("td", { class: "crp-pick-bet" });
   betCell.appendChild(el("span", { class: "crp-pick-bet__text", text: pick.bet || "—" }));
   if (isProp) {
     betCell.appendChild(el("span", { class: "crp-pick-bet__kind", text: "PROP" }));
+  } else if (isTotal) {
+    betCell.appendChild(el("span", { class: "crp-pick-bet__kind", text: "TOTAL" }));
   }
   if (pick.label) betCell.appendChild(el("span", { class: "crp-pick-bet__label", text: pick.label }));
   tr.appendChild(betCell);
@@ -326,8 +373,10 @@ function dayBlock(day) {
   for (const pick of day.picks || []) tbody.appendChild(pickRow(pick));
   // `prop_picks` is absent on every history day settled before
   // 2026-09-12 -- `|| []` is the whole compatibility story, same as
-  // card.js's own frozen-card reader.
+  // card.js's own frozen-card reader. `total_picks` is the same story
+  // again from 2026-09-14.
   for (const pick of day.prop_picks || []) tbody.appendChild(pickRow(pick, "prop"));
+  for (const pick of day.total_picks || []) tbody.appendChild(pickRow(pick, "total"));
   table.appendChild(tbody);
   wrap.appendChild(table);
   card.appendChild(wrap);
@@ -563,6 +612,8 @@ export async function renderCardRecord(container) {
     screen.appendChild(voidsNote(record));
     const props = propHeadline(record);
     if (props) screen.appendChild(props);
+    const totals = totalHeadline(record);
+    if (totals) screen.appendChild(totals);
     screen.appendChild(chainStatus(record));
 
     const days = (history && history.days) || [];

@@ -100,9 +100,15 @@ class CardReadsPropPicks(unittest.TestCase):
         self.assertNotIn("betCheckHref", body)
 
     def test_the_grid_is_appended_after_the_game_picks_grid(self):
+        """Checks the OLD (`payload.all_bets`-absent) branch's own ordering
+        specifically -- 2026-09-14 added a SECOND, earlier `propSectionHead`
+        call site inside the merged branch above it (the reason-props-are-
+        missing line, kept alive there too -- see tests/test_web_all_bets.py),
+        so this looks for the call site AFTER the game grid rather than the
+        first one in the file."""
         game_grid_at = self.text.find('"data-hook": "card-grid"')
         prop_section_call_at = self.text.find(
-            "wrap.appendChild(propSectionHead(servingOlderCard")
+            "wrap.appendChild(propSectionHead(servingOlderCard", game_grid_at)
         self.assertGreater(game_grid_at, 0)
         self.assertGreater(prop_section_call_at, game_grid_at)
 
@@ -117,11 +123,14 @@ class CardReadsPropPicks(unittest.TestCase):
         heading that had already said otherwise."""
         body = _function_body(self.text, "function propSectionHead(")
         self.assertIn("servingOlderDate", body)
-        # Both call sites in renderCard must forward the same flag the
-        # game-picks head already computed -- not a hardcoded call.
-        self.assertEqual(
+        # Every call site in renderCard must forward the same flag the
+        # game-picks head already computed -- not a hardcoded call. Two in
+        # the original (pre-2026-09-14) branch; a merged-card branch added
+        # 2026-09-14 (tests/test_web_all_bets.py) can add a third, for the
+        # same reason and with the same flag, never fewer than two.
+        self.assertGreaterEqual(
             self.text.count("propSectionHead(servingOlderCard"), 2,
-            "both call sites must pass servingOlderCard through")
+            "every call site must pass servingOlderCard through")
         self.assertNotIn("propSectionHead()", self.text)
 
     def test_older_card_props_never_say_tonight(self):
@@ -234,6 +243,91 @@ class EveryRenderedStringPassesTheRegisterSweep(unittest.TestCase):
         # in this file (e.g. card.js's own "Live prices —" lede) -- so this
         # checks the first segment, not the whole sentence.
         self.assertIn("The likeliest props tonight", rendered)
+
+
+# ---------------------------------------------------------------------------
+# TOTALS ON THE RECORD PAGE (web/js/cardrecord.js), 2026-09-14.
+#
+# The owner's note today, verbatim in substance: merge every bet onto the
+# card, not just moneylines -- and the record page has to keep up with it
+# the same way it already kept up with props on 2026-09-12: day rows for
+# total picks marked TOTAL, sharing the game rows' own five columns, and a
+# totals record panel beside the props panel, graded apart, saying
+# plainly when nothing has graded yet. Same append-only convention as the
+# rest of this file: new classes below, nothing above touched.
+# ---------------------------------------------------------------------------
+
+class CardRecordReadsTotalPicks(unittest.TestCase):
+    def setUp(self):
+        self.text = _read("cardrecord.js")
+
+    def test_it_reads_day_total_picks(self):
+        self.assertIn("day.total_picks", self.text)
+
+    def test_old_game_and_prop_pick_rows_are_unchanged(self):
+        """Neither pre-existing loop in `dayBlock` moved or lost its own
+        call shape when the total_picks loop joined them."""
+        self.assertIn(
+            "for (const pick of day.picks || []) tbody.appendChild(pickRow(pick));",
+            self.text)
+        self.assertIn('tbody.appendChild(pickRow(pick, "prop"));', self.text)
+
+    def test_total_pick_rows_are_marked_and_share_the_same_columns(self):
+        self.assertIn('tbody.appendChild(pickRow(pick, "total"));', self.text)
+        body = _function_body(self.text, "function pickRow(")
+        self.assertIn('isTotal ? "record-total-pick-row"', body)
+        # Same result/price/book/return columns a game or prop row gets --
+        # no separate code path that could quietly drop one of them. These
+        # are the same literals test_prop_pick_rows_are_marked_and_share_
+        # the_same_columns already checks; re-checked here because a
+        # regression that only broke the total branch, leaving the prop
+        # branch fine, would otherwise slip through unnoticed.
+        self.assertIn("RESULT_CHIP[pick.result]", body)
+        self.assertIn("formatAmerican(pick.price)", body)
+        self.assertIn("bookLabel(pick.book)", body)
+        self.assertIn("unitsFmt(pick.profit_units)", body)
+
+    def test_the_total_record_is_read_apart_from_the_game_and_prop_record(self):
+        """`card_ledger.record()` keeps by_kind.total apart from by_kind.prop
+        and the top-level game figures; the page must too."""
+        body = _function_body(self.text, "function totalHeadline(")
+        self.assertIn("record.by_kind.total", body)
+        self.assertIn('"record-total-headline"', body)
+        self.assertIn('"record-total-none"', body)
+        self.assertIn("TOTALS (W-L-P)", body)
+        headline_body = _function_body(self.text, "function headline(")
+        self.assertIn("GAME PICKS (W-L-P)", headline_body)
+        self.assertNotIn("TOTALS (W-L-P)", headline_body)
+
+    def test_nothing_graded_yet_says_so_instead_of_a_fabricated_zero(self):
+        body = _function_body(self.text, "function totalHeadline(")
+        self.assertIn("if (!graded) {", body)
+        self.assertIn("No total has graded yet.", body)
+
+    def test_it_is_wired_into_the_page_beside_the_prop_panel(self):
+        render = _function_body(self.text, "export async function renderCardRecord(")
+        props_at = render.find("propHeadline(record)")
+        totals_at = render.find("totalHeadline(record)")
+        self.assertGreater(props_at, 0)
+        self.assertGreater(totals_at, props_at)
+
+    def test_an_older_record_payload_without_by_kind_total_renders_no_panel(self):
+        body = _function_body(self.text, "function totalHeadline(")
+        self.assertIn("if (!total) return null;", body)
+
+
+class TotalsPassTheRegisterSweepToo(unittest.TestCase):
+    """Same scan as EveryRenderedStringPassesTheRegisterSweep above, with
+    its own found-something guard so a change that stops rendering the
+    totals panel's own strings cannot pass silently."""
+
+    def test_the_new_total_strings_were_actually_scanned(self):
+        found = []
+        for name in ("card.js", "cardrecord.js"):
+            found.extend(_rendered_strings(JS / name))
+        rendered = " ".join(t for _n, t in found)
+        self.assertIn("TOTALS, GRADED APART", rendered)
+        self.assertIn("No total has graded yet", rendered)
 
 
 if __name__ == "__main__":

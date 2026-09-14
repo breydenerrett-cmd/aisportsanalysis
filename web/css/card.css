@@ -221,6 +221,31 @@
   color: var(--text-dim);
 }
 
+/* THE MERGED CARD (web/js/card.js's mergedBetCard), 2026-09-14 -- ALL bets
+   ranked together, game picks, totals and player props alike, not just
+   moneylines. Same card2 shell as every card above; the only new visual is
+   this small kind tag riding the top row beside the rank and label, so a
+   reader can tell a MONEYLINE from a TOTAL or a PLAYER PROP without
+   reading the bet sentence first. Neutral border, no fill -- it is a
+   category, not a call. */
+.card2__kind {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  color: var(--text-dim);
+  border: 1px solid var(--v-edge, var(--edge-1));
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+/* LINEUP NOT POSTED used to be a trailing chip here (`.card2__kind--warn`),
+   appended LAST in `.card2__top` -- 11px, the smallest text on the card,
+   and one more flex item `.card2__top`'s own wrap could drop onto a second
+   line and lose entirely. An Opus checker caught it 2026-09-14: not
+   unmissable. It is now its own line above the bet sentence, in
+   `.card2lede--warn` above (web/js/card.js's `lineupNotPostedWarning`) --
+   no chip variant needed here any more. */
+
 .card2__meaning {
   margin: 0;
   font-family: var(--font-body);

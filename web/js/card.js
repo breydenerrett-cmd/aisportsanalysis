@@ -319,6 +319,312 @@ function propPickCard(pick, total, servingOlderDate) {
   return card;
 }
 
+/* -----------------------------------------------------------------------
+ * TOTALS ON THE CARD, 2026-09-14.
+ *
+ * The owner's note today, verbatim in substance: merge the card for ALL
+ * bets, not just moneylines -- run lines, totals and the rest, whenever
+ * their own analysis is ready, no fixed time of day for any one market.
+ * `payload.total_picks` is the run-line/moneyline-shaped sibling of
+ * `prop_picks`: same frozen, graded picks, same card2 shell, read from a
+ * game-level market instead of a per-player one.
+ * -------------------------------------------------------------------- */
+
+/** Bet Check (POST /betcheck, api/betcheck.py's `BetCheckRequest`) validates
+ * `side: Literal["away", "home"]` -- there is no totals shape on that
+ * endpoint at all, checked directly against the source rather than
+ * assumed. A total card gets no CHECK THIS PRICE link while this stays
+ * false; flip it the day that endpoint grows a totals body and
+ * `totalPickCard` picks the link back up on its own. */
+const BETCHECK_SUPPORTS_TOTALS = false;
+
+/** One total pick, in the same card2 shell as `pickCard` -- a total is a
+ * game-level bet like a moneyline, not a per-player bet like a prop, so it
+ * gets the same "AWAY at HOME · Book" matchup line `pickCard` uses rather
+ * than `propPickCard`'s player-first meta line. "N OF M" counts against
+ * the OTHER total picks on the card, never mixed with the game picks' or
+ * the props' own count -- same convention `propPickCard` already follows. */
+function totalPickCard(pick, total) {
+  const tone = LABEL_TONE[pick.label] || "slight";
+  const card = el("article", {
+    class: `card2 panel chamfer card2--${tone}`,
+    "data-hook": "card-total-pick",
+    "data-rank": String(pick.position || pick.rank || ""),
+    "data-label": pick.label || "",
+    "data-market": pick.market || "",
+  });
+
+  const top = el("div", { class: "card2__top" });
+  top.appendChild(el("span", { class: "card2__rank",
+    text: `${pick.position || pick.rank || 1} OF ${total}` }));
+  top.appendChild(el("span", { class: `card2__label card2__label--${tone}`,
+    text: pick.label || "" }));
+  if (pick.first_pitch_utc) {
+    top.appendChild(el("span", { class: "card2__time",
+      text: formatEasternTime(pick.first_pitch_utc) || "" }));
+  }
+  card.appendChild(top);
+
+  // THE SENTENCE. Server-composed, same as the game picks' own bet line.
+  card.appendChild(el("p", { class: "card2__bet", "data-hook": "card-total-bet",
+    text: pick.bet || "" }));
+
+  const matchup = el("div", { class: "card2__matchup" });
+  matchup.appendChild(el("span", { class: "card2__teams",
+    text: `${pick.away_team} at ${pick.home_team}` }));
+  if (pick.book) {
+    matchup.appendChild(el("span", { class: "card2__book",
+      text: `${bookLabel(pick.book) || pick.book}${pick.books ? ` · best of ${pick.books} books` : ""}` }));
+  }
+  card.appendChild(matchup);
+
+  const why = el("div", { class: "card2__why", "data-hook": "card-total-why" });
+  for (const sentence of pick.why || []) {
+    why.appendChild(el("p", { class: "card2__whyline", text: sentence }));
+  }
+  card.appendChild(why);
+
+  // NO ACTION ROW while BETCHECK_SUPPORTS_TOTALS is false -- see that
+  // constant's own comment. Unlike a prop pick, a total has no board of
+  // its own to fall back to either, so nothing renders here at all until
+  // Bet Check itself can take a totals ticket.
+  if (BETCHECK_SUPPORTS_TOTALS) {
+    const actions = el("div", { class: "card2__actions" });
+    actions.appendChild(el("a", {
+      class: "btn btn--ghost chamfer chamfer--btn",
+      href: betCheckHref(pick),
+      "data-hook": "card-check-this",
+      text: "CHECK THIS PRICE YOURSELF" }));
+    card.appendChild(actions);
+  }
+  return card;
+}
+
+/* -----------------------------------------------------------------------
+ * THE MERGED CARD -- "TODAY'S BETS", 2026-09-14.
+ *
+ * The owner's note today, verbatim in substance: "merge the today bets
+ * for ALL BETS not just MLs include all best bets like player props."
+ * `payload.all_bets` is the server's own merged order across
+ * `payload.picks` / `payload.total_picks` / `payload.prop_picks` -- this
+ * file renders that order, it never re-sorts or re-selects anything.
+ *
+ * FOUND DEFENSIVELY, NOT TRUSTED BLINDLY. The backend track's own notes on
+ * the exact shape of `item.key` were not available to this track (see this
+ * file's git history / the integrator's brief) -- `resolveAllBetsItem`
+ * treats `item.key` as a hint (an index into the pick's own array) and
+ * only trusts it once the pick found there actually carries the same
+ * `bet` sentence the merged entry named; otherwise it falls back to a
+ * straight scan of that array for a matching `bet` string, which is the
+ * one field every pick kind serializes identically.
+ * -------------------------------------------------------------------- */
+
+/** Which of the three type-specific arrays a merged entry's full pick
+ * lives in. Never `prop_picks` for a "total" entry or vice versa -- each
+ * kind reads its own array only. */
+function allBetsSourceArray(kind, payload) {
+  if (kind === "game") return payload.picks;
+  if (kind === "total") return payload.total_picks;
+  if (kind === "prop") return payload.prop_picks;
+  return null;
+}
+
+function resolveAllBetsItem(item, payload) {
+  const list = allBetsSourceArray(item.kind, payload);
+  if (!Array.isArray(list)) return null;
+  // `item.index`, not `item.key` (2026-09-14, integrator): the backend
+  // (daily_card.merge_all_bets) emits `index`; `key` never existed, so this
+  // hint never hit and every entry went through the scan below.
+  if (Number.isInteger(item.index) && list[item.index] && list[item.index].bet === item.bet) {
+    return list[item.index];
+  }
+  return list.find((p) => p && p.bet === item.bet) || null;
+}
+
+/** Every `payload.all_bets` entry that actually resolves to a full pick,
+ * in order, paired with that pick -- an entry whose `bet` string cannot be
+ * found in its own kind's array (a mismatch between the merged list and
+ * the arrays it was built from) is dropped here rather than rendered
+ * broken.
+ *
+ * RESOLVED ONCE, UP FRONT, 2026-09-14. An Opus checker caught the count and
+ * numbering ("N OF M") being computed from `allBets.length` -- the RAW
+ * array, unresolved entries included -- while the render loop skipped any
+ * entry `mergedBetCard` could not resolve. An 8-item list with one
+ * unresolved entry rendered 7 cards under "8 bets", numbered 1, 3, 4 ... 8:
+ * a gap where the dropped entry's number used to be. Resolving first means
+ * the count and every "N OF M" are both taken from the SAME list that
+ * actually renders -- see the loop in `renderCard` below. */
+function resolveAllBets(payload, allBets) {
+  const resolved = [];
+  for (const item of allBets) {
+    const full = resolveAllBetsItem(item, payload);
+    if (full) resolved.push({ item, full });
+  }
+  return resolved;
+}
+
+/** The small kind tag every merged card carries, beside its rank and
+ * label -- MONEYLINE / RUN LINE / TOTAL / PLAYER PROP. A "game" entry can
+ * be either of the first two (`pick.market === "run_line"` names the
+ * alternative-turned-pick case); "total" and "prop" are each always one
+ * word, because payload.total_picks and payload.prop_picks never carry
+ * anything else. */
+function kindTagText(kind, pick) {
+  if (kind === "game") return (pick && pick.market === "run_line") ? "RUN LINE" : "MONEYLINE";
+  if (kind === "total") return "TOTAL";
+  if (kind === "prop") return "PLAYER PROP";
+  return "";
+}
+
+function kindTagEl(text) {
+  return el("span", { class: "card2__kind", "data-hook": "card-kind-tag", text });
+}
+
+/** A prop whose lineup has not posted yet -- `expected_pa_source` is still
+ * read from the last game log, not tonight's actual batting order, and a
+ * reader is told so on the card face rather than left to notice only if
+ * they click through.
+ *
+ * NOT A TRAILING CHIP, 2026-09-14. An Opus checker caught the first version:
+ * a small amber chip appended LAST in `.card2__top`, after the rank, label,
+ * grade, first-pitch time and kind tag -- 11px, the smallest text on the
+ * card, and one more flex item that `.card2__top`'s own wrap could push onto
+ * a second line and lose. This is its own warn line instead, the same size
+ * and colour as the stale-price warning above (`.card2lede--warn`), and it
+ * goes ABOVE the bet sentence -- the first thing read, not the last thing
+ * noticed. */
+function lineupNotPostedWarning() {
+  return el("p", { class: "card2lede card2lede--warn",
+    "data-hook": "card-lineup-tag",
+    // WORDING FIXED 2026-09-14 (integrator): it claimed the pick read his
+    // most recent game, which is untrue -- the fallback is his season-average
+    // plate appearances per game (playerprops.py pa_source "season_average").
+    text: "LINEUP NOT POSTED — priced off his season-average plate appearances, "
+        + "not tonight's batting order." });
+}
+
+/** The merged head's second sentence, built from the kinds ACTUALLY
+ * rendered under it, never a fixed claim about all three.
+ *
+ * THE DEFECT, 2026-09-14: this always printed "Game picks, totals and
+ * player props together," even on today's own card -- five moneylines,
+ * zero totals, zero props (no lineup has posted) -- naming two kinds of
+ * bet that were nowhere on the page under it. EIGHT LITERAL BRANCHES, not
+ * a computed sentence handed to `text:` -- same reasoning as
+ * `propSectionHead`'s own comment above: each sentence must start right at
+ * `text: "` for the register sweep (tests/test_web_register_sweep.py,
+ * tests/test_customer_language.py) to find it. */
+function allBetsSectionHead(count, kindsPresent) {
+  const wrap = el("div", { "data-hook": "card-all-bets-divider" });
+  wrap.appendChild(sectionHead("TODAY'S BETS",
+    count ? `${count} bet${count === 1 ? "" : "s"}` : null));
+  const g = kindsPresent.has("game");
+  const t = kindsPresent.has("total");
+  const p = kindsPresent.has("prop");
+  if (g && t && p) {
+    wrap.appendChild(el("p", { class: "card2lede card2lede--mute",
+      "data-hook": "card-all-bets-subhead",
+      text: "Every bet we can price and grade, ranked by how likely it is. "
+          + "Game picks, totals and player props together." }));
+  } else if (g && t) {
+    wrap.appendChild(el("p", { class: "card2lede card2lede--mute",
+      "data-hook": "card-all-bets-subhead",
+      text: "Every bet we can price and grade, ranked by how likely it is. "
+          + "Game picks and totals together." }));
+  } else if (g && p) {
+    wrap.appendChild(el("p", { class: "card2lede card2lede--mute",
+      "data-hook": "card-all-bets-subhead",
+      text: "Every bet we can price and grade, ranked by how likely it is. "
+          + "Game picks and player props together." }));
+  } else if (t && p) {
+    wrap.appendChild(el("p", { class: "card2lede card2lede--mute",
+      "data-hook": "card-all-bets-subhead",
+      text: "Every bet we can price and grade, ranked by how likely it is. "
+          + "Totals and player props together." }));
+  } else if (g) {
+    wrap.appendChild(el("p", { class: "card2lede card2lede--mute",
+      "data-hook": "card-all-bets-subhead",
+      text: "Every bet we can price and grade, ranked by how likely it is. "
+          + "Game picks, and only game picks, so far today." }));
+  } else if (t) {
+    wrap.appendChild(el("p", { class: "card2lede card2lede--mute",
+      "data-hook": "card-all-bets-subhead",
+      text: "Every bet we can price and grade, ranked by how likely it is. "
+          + "Totals, and only totals, so far today." }));
+  } else if (p) {
+    wrap.appendChild(el("p", { class: "card2lede card2lede--mute",
+      "data-hook": "card-all-bets-subhead",
+      text: "Every bet we can price and grade, ranked by how likely it is. "
+          + "Player props, and only player props, so far today." }));
+  }
+  return wrap;
+}
+
+/** One entry of `payload.all_bets`, rendered from the kind's own renderer
+ * -- `pickCard` for a game pick, `totalPickCard` for a total,
+ * `propPickCard` for a prop -- with the merged list's own position/count
+ * (never the type-specific array's), the kind tag, and the LINEUP NOT
+ * POSTED warning where a prop's lineup has not posted.
+ *
+ * `full` and `index` come from the caller's already-`resolveAllBets`-ed
+ * list (see that function's own comment) -- this never re-resolves and
+ * never returns null, because an entry that could not be resolved was
+ * already left out before numbering happened. */
+function mergedBetCard(item, full, allBetsTotal, index, servingOlderDate) {
+  // THE POSITION, 2026-09-14. `item.position || full.position` was the
+  // defect an Opus checker caught: when the server's own `item.position`
+  // was falsy, this fell back to `full.position` -- the pick's position
+  // WITHIN ITS OWN KIND'S ARRAY -- so a game pick and a prop could both
+  // read "1 OF 8" on the same card. The merged list is already in rank
+  // order (the server's own doing, never re-sorted here -- see this
+  // section's own docstring), so the position within the RESOLVED list
+  // (`index`, 0-based) is always a safe, contiguous fallback.
+  // ALWAYS the resolved index (2026-09-14, integrator): the server sets
+  // `item.position` over the UNRESOLVED list, so one dropped entry still
+  // read "1, 3, 4 ... 8 OF 7". The resolved list keeps the server's order.
+  const position = index + 1;
+  const positioned = Object.assign({}, full, { position });
+  let card;
+  if (item.kind === "prop") {
+    card = propPickCard(positioned, allBetsTotal, servingOlderDate);
+  } else if (item.kind === "total") {
+    card = totalPickCard(positioned, allBetsTotal);
+  } else {
+    card = pickCard(positioned, allBetsTotal);
+  }
+  const top = card.querySelector(".card2__top");
+  if (top) top.appendChild(kindTagEl(kindTagText(item.kind, full)));
+  if (item.kind === "prop" && full.lineup_posted === false) {
+    // ABOVE THE BET SENTENCE, not a trailing chip in `.card2__top` -- see
+    // `lineupNotPostedWarning`'s own comment for why.
+    const bet = card.querySelector(".card2__bet");
+    const warning = lineupNotPostedWarning();
+    if (bet) card.insertBefore(warning, bet);
+    else card.appendChild(warning);
+  }
+  return card;
+}
+
+/** "N of tonight's picks are here because the slate was thin ... marked
+ * SPLIT." Shared by both the merged (`all_bets`) and the original render
+ * paths in `renderCard` below -- same sentence either way, read from
+ * `payload.filled`, which counts game picks only and does not change
+ * shape when totals or props join the card beside them. Returns null
+ * rather than an empty string so both callers can `if (note)` rather than
+ * appending an empty paragraph. */
+function filledNote(payload) {
+  if (!payload.filled) return null;
+  // Named out loud. A reader is entitled to know that the last pick is on
+  // the card because it was the next best thing available, not because
+  // anything about it was convincing.
+  return el("p", { class: "card2lede card2lede--mute",
+    text: `${payload.filled} of tonight's picks are here because the slate `
+        + `was thin — our own numbers do not agree with the market on `
+        + `${payload.filled === 1 ? "it" : "them"}, and ${payload.filled === 1 ? "it is" : "they are"} `
+        + `marked SPLIT.` });
+}
+
 /** The card's own running record, or an honest statement that there is none.
  *
  * THIS IS THE SENTENCE THE PRODUCT IS SOLD ON, so it sits directly under
@@ -418,6 +724,32 @@ function emptyCard(payload) {
   return wrap;
 }
 
+/** Whether a card payload has anything to render at all -- game picks OR a
+ * non-empty `payload.all_bets`.
+ *
+ * THE DEFECT, 2026-09-14: every emptiness check on this page read
+ * `payload.picks` alone, a leftover from before totals and props could
+ * lead the card on their own. A slate with zero moneylines but real totals
+ * or props in `all_bets` -- read: today's, whenever a moneyline card
+ * SPLITs out entirely but a total or a prop still clears its price -- was
+ * treated as a night with nothing, walked back to yesterday's card or
+ * `emptyCard`'s "NO CARD TODAY", and every bet actually available was
+ * thrown away along with it. Checked once, here, and reused everywhere
+ * this page decides "is there anything on this card". */
+function payloadHasBets(payload) {
+  if (!payload) return false;
+  if ((payload.picks || []).length) return true;
+  const allBets = Array.isArray(payload.all_bets) ? payload.all_bets : [];
+  if (!allBets.length) return false;
+  // A RESOLVED count, not just a non-empty array -- an `all_bets` list
+  // whose entries cannot be matched to any pick in their own kind's array
+  // (a backend/frontend mismatch, not this night's actual bets) must not
+  // itself count as "has bets"; that is exactly the reasoning
+  // `resolveAllBets` already applies to what gets rendered, reused here so
+  // the emptiness check and the render agree.
+  return resolveAllBets(payload, allBets).length > 0;
+}
+
 /** The card's own #1 pick, by the position it is actually SERVED at (see
  * `pickCard`'s own comment on `position` vs `rank`) -- falls back to `rank`
  * for a live (not-yet-frozen) card, whose picks carry `rank` only.
@@ -494,7 +826,7 @@ export async function renderCard(host, date) {
     try {
       const older = await apiGet(`/card/${day}`,
                                  { timeoutMs: FALLBACK_TIMEOUT_MS });
-      return older && (older.picks || []).length ? older : null;
+      return older && payloadHasBets(older) ? older : null;
     } catch (_err) {
       // A fallback that cannot load is not an error worth showing. The
       // caller falls through to its own empty state, which is honest.
@@ -524,7 +856,7 @@ export async function renderCard(host, date) {
     record = await apiGet("/card/record").catch(() => null);
   }
 
-  if (!(payload.picks || []).length) {
+  if (!payloadHasBets(payload)) {
     const last = await lastPublishedCard(payload.date || date);
     if (last) {
       payload = last;
@@ -535,12 +867,16 @@ export async function renderCard(host, date) {
     // Saying nothing at all would be worse than saying there is nothing yet.
   }
 
-  const picks = payload.picks || [];
-  if (!picks.length) {
+  if (!payloadHasBets(payload)) {
     clear(wrap);
     wrap.appendChild(emptyCard(payload));
     return { rendered: false, firstPick: null };
   }
+  // `picks` (game picks only) can still be empty here -- a card can be
+  // non-empty on `all_bets` alone (totals or props, no moneyline that
+  // clears). Every place below that used to assume `picks.length > 0`
+  // reads `payload.all_bets` too, from here down.
+  const picks = payload.picks || [];
 
   const meta = payload.games_on_slate
     ? `${picks.length} of ${payload.games_on_slate} games`
@@ -605,42 +941,74 @@ export async function renderCard(host, date) {
           + "the record page, including the ones that lose." }));
   }
 
-  const grid = el("div", { class: "card2grid", "data-hook": "card-grid" });
-  for (const pick of picks) grid.appendChild(pickCard(pick, picks.length));
-  wrap.appendChild(grid);
-
-  if (payload.filled) {
-    // Named out loud. A reader is entitled to know that the last pick is on
-    // the card because it was the next best thing available, not because
-    // anything about it was convincing.
-    wrap.appendChild(el("p", { class: "card2lede card2lede--mute",
-      text: `${payload.filled} of tonight's picks are here because the slate `
-          + `was thin — our own numbers do not agree with the market on `
-          + `${payload.filled === 1 ? "it" : "them"}, and ${payload.filled === 1 ? "it is" : "they are"} `
-          + `marked SPLIT.` }));
-  }
-
-  // PLAYER PROPS, after the game picks. `prop_picks` is absent on every
-  // ledger row written before 2026-09-12 -- `|| []` is the whole
-  // compatibility story for those rows, and an empty array here renders
-  // nothing beyond this point, same as an absent key. `prop_reason` only
-  // ever gets a line when there ARE game picks above it (this point is
-  // never reached otherwise -- see the early `emptyCard` return above): a
-  // reason with nothing else on the
-  // screen would read as the forbidden "nothing clears the bar" in a
-  // different key.
-  const propPicks = payload.prop_picks || [];
-  if (propPicks.length) {
-    wrap.appendChild(propSectionHead(servingOlderCard));
-    const propGrid = el("div", { class: "card2grid", "data-hook": "card-prop-grid" });
-    for (const pick of propPicks) {
-      propGrid.appendChild(propPickCard(pick, propPicks.length, servingOlderCard));
+  // THE MERGED CARD, 2026-09-14. `payload.all_bets` is the server's own
+  // ranked merge of picks/total_picks/prop_picks -- when it is a non-empty
+  // array, IT leads the card as one list, and the old two-grid layout
+  // below does not also run (a bet must appear once, not twice). When it
+  // is absent -- every row written before 2026-09-14, or a backend that
+  // has not shipped it on this deploy yet -- the `else` branch renders
+  // exactly what this file has always rendered. Do not fold the two
+  // branches together; the `else` branch is this file's whole
+  // compatibility story for those older rows.
+  const allBets = Array.isArray(payload.all_bets) ? payload.all_bets : [];
+  // RESOLVED ONCE, before the count or a single card is rendered -- see
+  // `resolveAllBets`'s own comment for the gap-numbering defect this fixes.
+  const resolvedBets = allBets.length ? resolveAllBets(payload, allBets) : [];
+  if (resolvedBets.length) {
+    const kindsPresent = new Set(resolvedBets.map((r) => r.item.kind));
+    wrap.appendChild(allBetsSectionHead(resolvedBets.length, kindsPresent));
+    const mergedGrid = el("div", { class: "card2grid", "data-hook": "card-all-bets-grid" });
+    resolvedBets.forEach(({ item, full }, index) => {
+      mergedGrid.appendChild(
+        mergedBetCard(item, full, resolvedBets.length, index, servingOlderCard));
+    });
+    wrap.appendChild(mergedGrid);
+    const note = filledNote(payload);
+    if (note) wrap.appendChild(note);
+    // THE REASON PROPS ARE MISSING MUST NOT DISAPPEAR, 2026-09-14. The old
+    // branch below (`payload.prop_reason && picks.length`) said why there
+    // are no player props on nights there are none -- "no lineup has
+    // posted yet" and the like. The first version of this merged branch
+    // dropped that sentence entirely whenever `all_bets` existed, even on
+    // a card with zero props in it, which is exactly the case the sentence
+    // exists for. Same condition, same wording, just reached from here
+    // too: only when the RENDERED list has no prop in it, never when one
+    // is already on the card above.
+    if (!kindsPresent.has("prop") && payload.prop_reason) {
+      wrap.appendChild(propSectionHead(servingOlderCard, false));
+      wrap.appendChild(el("p", { class: "card2lede card2lede--mute",
+        "data-hook": "card-prop-reason", text: payload.prop_reason }));
     }
-    wrap.appendChild(propGrid);
-  } else if (payload.prop_reason && picks.length) {
-    wrap.appendChild(propSectionHead(servingOlderCard, false));
-    wrap.appendChild(el("p", { class: "card2lede card2lede--mute",
-      "data-hook": "card-prop-reason", text: payload.prop_reason }));
+  } else {
+    const grid = el("div", { class: "card2grid", "data-hook": "card-grid" });
+    for (const pick of picks) grid.appendChild(pickCard(pick, picks.length));
+    wrap.appendChild(grid);
+
+    const note = filledNote(payload);
+    if (note) wrap.appendChild(note);
+
+    // PLAYER PROPS, after the game picks. `prop_picks` is absent on every
+    // ledger row written before 2026-09-12 -- `|| []` is the whole
+    // compatibility story for those rows, and an empty array here renders
+    // nothing beyond this point, same as an absent key. `prop_reason` only
+    // ever gets a line when there ARE game picks above it (this point is
+    // never reached otherwise -- see the early `emptyCard` return above): a
+    // reason with nothing else on the
+    // screen would read as the forbidden "nothing clears the bar" in a
+    // different key.
+    const propPicks = payload.prop_picks || [];
+    if (propPicks.length) {
+      wrap.appendChild(propSectionHead(servingOlderCard));
+      const propGrid = el("div", { class: "card2grid", "data-hook": "card-prop-grid" });
+      for (const pick of propPicks) {
+        propGrid.appendChild(propPickCard(pick, propPicks.length, servingOlderCard));
+      }
+      wrap.appendChild(propGrid);
+    } else if (payload.prop_reason && picks.length) {
+      wrap.appendChild(propSectionHead(servingOlderCard, false));
+      wrap.appendChild(el("p", { class: "card2lede card2lede--mute",
+        "data-hook": "card-prop-reason", text: payload.prop_reason }));
+    }
   }
 
   wrap.appendChild(recordLine(record));
