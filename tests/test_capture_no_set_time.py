@@ -98,6 +98,13 @@ class TheCardIsRepublishedEverySlot(unittest.TestCase):
         self.assertIn('card publish --date "$SLATE_DATE"', code)
         self.assertLess(code.index("capture_extras.sh"), code.index("card publish"))
 
+    def test_the_event_map_is_built_before_the_publish_that_joins_through_it(self):
+        """2026-09-14: the map was built only by the daily loop, which had
+        failed two days running, so no prop could join its game."""
+        code = _code(SLOT)
+        self.assertIn('src.cli gamekey --date "$SLATE_DATE"', code)
+        self.assertLess(code.index("src.cli gamekey"), code.index("card publish --date"))
+
     def test_it_publishes_for_the_slate_date_not_the_utc_date(self):
         self.assertIn("SLATE_DATE=$(TZ=America/New_York date +%Y-%m-%d)", _code(SLOT))
 

@@ -184,6 +184,14 @@ fi
 # The SLATE date, not the UTC date: from 00:00Z (5 PM PT) the UTC calendar has
 # already moved on while that night's West Coast games are still to come.
 SLATE_DATE=$(TZ=America/New_York date +%Y-%m-%d)
+# The odds-event -> game_pk map the card joins player props through
+# (src/report/card.py). It was built only by daily_loop.sh at 10:00Z, and that
+# loop failed 09-12 and 09-13 and was cancelled 09-14: the map held no event
+# for 2026-09-14, so every prop contract failed the join and the card could
+# carry no prop all day. Free (schedule + stored events), idempotent
+# (already-mapped events are skipped), and run before the publish that needs it.
+echo "== gamekey map ($SLATE_DATE) =="
+python3 -m src.cli gamekey --date "$SLATE_DATE" 2>&1 | tail -n 4 | sed 's/^/  /' || true
 echo "== card publish ($SLATE_DATE) =="
 CARD_OUT=$(python3 -m src.cli card publish --date "$SLATE_DATE" 2>&1) || true
 echo "$CARD_OUT" | tail -n 25 | sed 's/^/  /'
