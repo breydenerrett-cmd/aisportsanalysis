@@ -1235,3 +1235,7 @@
 {"category": "recalled", "date": "2026-09-14", "first_seen_utc": "2026-09-14T19:28:21.250860+00:00", "player": "Brendan Cellucci", "player_id": 676454, "team": "TOR", "transaction_id": 942307}
 {"category": "recalled", "date": "2026-09-14", "first_seen_utc": "2026-09-14T19:28:21.250860+00:00", "player": "Davis Schneider", "player_id": 676914, "team": "TOR", "transaction_id": 942308}
 {"category": "optioned", "date": "2026-09-14", "first_seen_utc": "2026-09-14T19:28:21.250860+00:00", "player": "Ricky Tiedemann", "player_id": 694357, "team": "TOR", "transaction_id": 942309}
+{"fetched_utc": "2026-09-14T19:43:16.968693+00:00", "game_date": "2026-09-14", "poll": true}
+{"category": "recalled", "date": "2026-09-14", "first_seen_utc": "2026-09-14T19:43:16.968693+00:00", "player": "Codi Heuer", "player_id": 676051, "team": "BAL", "transaction_id": 942311}
+{"category": "optioned", "date": "2026-09-14", "first_seen_utc": "2026-09-14T19:43:16.968693+00:00", "player": "Yaramil Hiraldo", "player_id": 682274, "team": "BAL", "transaction_id": 942312}
+{"fetched_utc": "2026-09-14T19:43:19.126292+00:00", "game_date": "2026-09-14", "poll": true}
