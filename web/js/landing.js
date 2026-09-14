@@ -159,6 +159,39 @@ async function fillResearchCounts() {
   }
 }
 
+/**
+ * Replace [data-hook="card-record"] with the ledger's running record.
+ *
+ * The sentence used to be typed: "2 wins, 1 loss ... 7 wins, 2 losses ...
+ * 9 wins, 3 losses" (2026-09-12). Right that morning, wrong the morning
+ * after the next settlement -- the research-count drift again, on the
+ * page whose pitch is that it counts honestly. The markup's fallback names
+ * no figure, so a slow or failed /meta leaves a sentence that stays true.
+ */
+export function recordSentence(rec) {
+  if (!rec || typeof rec.wins !== "number" || typeof rec.losses !== "number"
+      || typeof rec.days !== "number" || rec.days < 1) return null;
+  const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`;
+  const parts = [plural(rec.wins, "win", "wins"), plural(rec.losses, "loss", "losses")];
+  if (rec.pushes) parts.push(plural(rec.pushes, "push", "pushes"));
+  if (rec.voids) parts.push(plural(rec.voids, "void", "voids"));
+  const nights = rec.days === 1 ? "one night" : `${rec.days} nights`;
+  return `Across ${nights} graded so far: ${parts.join(", ")}. Every one of them is on the record page.`;
+}
+
+async function fillCardRecord() {
+  const nodes = document.querySelectorAll("[data-hook='card-record']");
+  if (!nodes.length) return;
+  try {
+    const meta = await fetchMeta();
+    const sentence = recordSentence(meta && meta.card_record);
+    if (!sentence) return;
+    nodes.forEach((node) => { node.textContent = sentence; });
+  } catch (err) {
+    // Leave the markup's own sentence in place.
+  }
+}
+
 function boot() {
   const disclaimerHost = document.querySelector("[data-hook='disclaimer-host']");
   const pricingHost = document.querySelector("[data-hook='pricing-host']");
@@ -166,6 +199,7 @@ function boot() {
   if (pricingHost) renderPricing(pricingHost);
   revealPublicDemoEntry();
   fillResearchCounts();
+  fillCardRecord();
   // Tonight's real slate replaces the hardcoded Aug 28 sample matchup, or
   // degrades to an honest labelled-sample state on failure -- see
   // landing-live.js's module docstring. Fire-and-forget, same rule as

@@ -104,6 +104,29 @@ def _research_counts() -> dict:
                 "surviving": None}
 
 
+def _card_record() -> dict:
+    """The card's running record -- days, wins, losses, pushes, voids -- or
+    explicit nulls, never a guessed figure.
+
+    2026-09-12: web/landing.html carried the record as a typed sentence
+    ("2 wins, 1 loss ... 7 wins, 2 losses ... 9 wins, 3 losses"). True the
+    morning it was written and wrong the morning after the next settlement
+    -- the same drift the research count had (four values in four places)
+    on a page whose pitch is that it counts honestly. The ledger IS the
+    record; the page reads it here and keeps a sentence with no figures as
+    its no-JS fallback. Read per request: settlement appends rows while
+    the process runs.
+    """
+    try:
+        from src.appstate import card_ledger
+        rec = card_ledger.record()
+        return {key: rec.get(key) for key in
+                ("days", "wins", "losses", "pushes", "voids")}
+    except Exception:  # noqa: BLE001
+        return {"days": None, "wins": None, "losses": None,
+                "pushes": None, "voids": None}
+
+
 @router.get("/meta")
 def get_meta() -> dict:
     return {
@@ -124,4 +147,8 @@ def get_meta() -> dict:
         # different one the first time they opened the app. See
         # src/research/alpha_registry.public_research_counts.
         "research": _research_counts(),
+        # The card's running record, from evidence/cards_v1.jsonl -- the
+        # landing page fills its record sentence from this instead of a
+        # typed figure that is stale after the next settlement.
+        "card_record": _card_record(),
     }
