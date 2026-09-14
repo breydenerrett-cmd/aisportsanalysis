@@ -1225,3 +1225,4 @@
 {"category": "recalled", "date": "2026-09-14", "first_seen_utc": "2026-09-14T18:23:27.224374+00:00", "player": "Lucas Erceg", "player_id": 668674, "team": "KC", "transaction_id": 942305}
 {"category": "optioned", "date": "2026-09-14", "first_seen_utc": "2026-09-14T18:23:27.224374+00:00", "player": "Easton McGee", "player_id": 668834, "team": "KC", "transaction_id": 942306}
 {"fetched_utc": "2026-09-14T18:36:28.031062+00:00", "game_date": "2026-09-14", "poll": true}
+{"fetched_utc": "2026-09-14T18:48:36.486225+00:00", "game_date": "2026-09-14", "poll": true}
