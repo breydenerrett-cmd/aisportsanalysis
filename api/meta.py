@@ -39,10 +39,15 @@ router = APIRouter()
 # src/report) on purpose -- this is app.py-adjacent wiring, not domain
 # code -- but it is still written to the same rule: no EV/edge/guarantee
 # language, because it is customer-facing the moment a staging URL exists.
+# REWRITTEN 2026-09-14 (owner-approved wording fix). It said "price
+# comparisons and context ... not picks or guarantees" -- the retired
+# line-shopping positioning, rendered in the shared footer on the landing
+# page and every app screen, under a hero that sells tonight's picks. Still
+# no edge, value or guarantee claim.
 PRODUCT_ONE_LINER = (
-    "Linehound -- sports-betting information and research -- price "
-    "comparisons and context to inform your own wagering decisions, not "
-    "picks or guarantees."
+    "Linehound: daily MLB picks in plain English, written down before first "
+    "pitch and graded win or lose. Information to inform your own "
+    "decisions, not guarantees."
 )
 
 # Working brand only -- per Brey's 2026-09-01 decision: "Use LINEHOUND

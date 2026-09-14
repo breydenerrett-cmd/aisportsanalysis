@@ -504,6 +504,13 @@ def publish(card: Mapping, *, now: Optional[str] = None,
         "total_picks": total_picks,
         "n_total_picks": len(total_picks),
         "n_total_locked": sum(1 for p in total_picks if p.get("locked")),
+        # WHETHER TOTALS WERE SWITCHED OFF when this version was built
+        # (2026-09-14, owner-approved wording fix). Without it an empty
+        # `total_picks` read back as "no total cleared its price" -- a claim
+        # that totals were checked -- while they were paused and never
+        # evaluated. Recorded on the row because the switch can change later
+        # and a frozen card must keep describing the day it was frozen.
+        "totals_paused": bool(card.get("totals_paused")),
     }
     row = _ledger(path).append(payload)
     out = dict(row)

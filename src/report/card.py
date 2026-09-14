@@ -592,6 +592,9 @@ _TOTAL_NONE_SELECTED_FROZEN = (
     "No game total on the board both agreed with our own numbers and "
     "cleared its price when this card was frozen.")
 _TOTAL_NOT_PART_OF_CARD = "Game totals were not part of this card when it was frozen."
+_TOTALS_PAUSED_FROZEN = (
+    "Game totals were paused when this card was frozen, so none were "
+    "checked for it.")
 
 
 def _prop_identity_by_game_pk(entries: Sequence, *, date: str) -> dict:
@@ -804,6 +807,14 @@ def frozen_card(date: str) -> Optional[dict]:
     # `_TOTAL_NOT_PART_OF_CARD`.
     total_picks_considered = "total_picks" in row
     total_picks = row.get("total_picks") or ()
+    # PAUSED, NOT EVALUATED (2026-09-14, owner-approved wording fix). Totals
+    # have been switched off on the live card since the day the key first
+    # appeared on a ledger row (`TOTALS_ON_CARD = False` shipped in the same
+    # commit as `total_picks`), so a row that carries `total_picks` but no
+    # `totals_paused` flag was built while paused. Rows written after this
+    # fix carry the flag explicitly.
+    totals_paused = bool(row.get("totals_paused",
+                                 total_picks_considered and not total_picks))
 
     served_picks = _served_order(row.get("picks") or ())
     served_totals = _served_total_order(total_picks)
@@ -838,8 +849,10 @@ def frozen_card(date: str) -> Optional[dict]:
         "total_picks": served_totals,
         "total_reason": (
             None if total_picks
+            else _TOTALS_PAUSED_FROZEN if totals_paused
             else _TOTAL_NONE_SELECTED_FROZEN if total_picks_considered
             else _TOTAL_NOT_PART_OF_CARD),
+        "totals_paused": totals_paused,
         # THE MERGED LIST, built from these same three served arrays -- see
         # `card_for_date`'s live branch for why it is always rebuilt rather
         # than frozen as its own field: it is a view over the three, never
@@ -960,9 +973,11 @@ def card_for_date(entries: Sequence, opportunity_rows: Sequence, *, date: str,
         payload["total_picks"] = total_payload["picks"]
         payload["total_reason"] = (
             None if total_payload["picks"] else _TOTAL_NONE_SELECTED_LIVE)
+        payload["totals_paused"] = False
     else:
         payload["total_picks"] = []
         payload["total_reason"] = _TOTALS_PAUSED
+        payload["totals_paused"] = True
     payload.update({
         "date": date,
         "generated_at": now.astimezone(timezone.utc).isoformat(),
