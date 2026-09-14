@@ -43,7 +43,7 @@ from typing import Callable, Optional
 
 from src.appstate import events, freshness
 from src.detect import dossier as dossier_mod
-from src.pipeline import briefing
+from src.pipeline import briefing, enrichment
 
 
 def _odds_age_seconds(observed_utc: Optional[str], *, now: datetime) -> Optional[float]:
@@ -126,10 +126,33 @@ def build_today_payload(games: list, store: dict, *, date: Optional[str] = None,
     historical store and a hand-built or already-fetched game list -- the
     live HTTP path (once wired) is the only caller that reaches out to the
     network to produce them.
+
+    PARITY WITH /games/{date} (2026-09-14): api/games._build_entries loads
+    every store-backed enrichment input (lineups, bullpen, weather, travel,
+    standings, splits, news, arsenals -- src/pipeline/enrichment.py) before
+    calling build_slate. This function used to call build_slate with
+    whatever build_slate_kwargs api/app.py's GET /today happened to pass,
+    which was none -- so the same game could show no_play here and
+    market_unavailable on /games/{date} for the identical first pitch
+    (KC@BOS, 2026-09-12), because the two endpoints handed build_slate two
+    different sets of facts about the same game. Loading the same
+    enrichment_inputs here, the same way _build_entries does, makes the two
+    endpoints agree by construction rather than by coincidence. An explicit
+    build_slate_kwargs entry from a caller still wins over the loaded
+    default (dict.update after the loaded inputs, same precedence rule
+    _build_entries uses) -- this only fills gaps a caller left open.
     """
     now = now or datetime.now(timezone.utc)
-    slate = briefing.build_slate(games, store, **build_slate_kwargs)
-    resolved_date = date or slate.get("date")
+    # Best guess at the date BEFORE build_slate runs: enrichment_inputs needs
+    # a real date (it scopes standings, travel and the arsenal season by
+    # it), and build_slate hasn't computed its own slate date yet at this
+    # point. Falls back to the slate's own date below only if still unknown
+    # (an empty games list with no explicit `date`).
+    inputs_date = date or (games[0].get("date") if games else None)
+    inputs = enrichment.enrichment_inputs(games, inputs_date, store)
+    inputs.update(build_slate_kwargs)
+    slate = briefing.build_slate(games, store, **inputs)
+    resolved_date = date or inputs_date or slate.get("date")
     return {
         "date": resolved_date,
         "generated_at": now.isoformat(),
