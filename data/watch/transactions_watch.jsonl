@@ -1230,3 +1230,8 @@
 {"fetched_utc": "2026-09-14T19:02:30.278819+00:00", "game_date": "2026-09-14", "poll": true}
 {"fetched_utc": "2026-09-14T19:02:31.284003+00:00", "game_date": "2026-09-14", "poll": true}
 {"fetched_utc": "2026-09-14T19:15:25.893268+00:00", "game_date": "2026-09-14", "poll": true}
+{"fetched_utc": "2026-09-14T19:28:21.250860+00:00", "game_date": "2026-09-14", "poll": true}
+{"category": "il_placement", "date": "2026-09-13", "first_seen_utc": "2026-09-14T19:28:21.250860+00:00", "player": "Rudy Martin Jr.", "player_id": 657675, "team": "TOR", "transaction_id": 942310}
+{"category": "recalled", "date": "2026-09-14", "first_seen_utc": "2026-09-14T19:28:21.250860+00:00", "player": "Brendan Cellucci", "player_id": 676454, "team": "TOR", "transaction_id": 942307}
+{"category": "recalled", "date": "2026-09-14", "first_seen_utc": "2026-09-14T19:28:21.250860+00:00", "player": "Davis Schneider", "player_id": 676914, "team": "TOR", "transaction_id": 942308}
+{"category": "optioned", "date": "2026-09-14", "first_seen_utc": "2026-09-14T19:28:21.250860+00:00", "player": "Ricky Tiedemann", "player_id": 694357, "team": "TOR", "transaction_id": 942309}
