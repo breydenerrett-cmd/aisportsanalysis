@@ -1193,3 +1193,7 @@
 {"fetched_utc": "2026-09-14T06:45:14.638357+00:00", "game_date": "2026-09-14", "poll": true}
 {"fetched_utc": "2026-09-14T13:23:48.395971+00:00", "game_date": "2026-09-14", "poll": true}
 {"fetched_utc": "2026-09-14T15:11:04.160781+00:00", "game_date": "2026-09-14", "poll": true}
+{"fetched_utc": "2026-09-14T15:37:03.552887+00:00", "game_date": "2026-09-14", "poll": true}
+{"category": "recalled", "date": "2026-09-14", "first_seen_utc": "2026-09-14T15:37:03.552887+00:00", "player": "Owen Murphy", "player_id": 702566, "team": "ATL", "transaction_id": 942288}
+{"category": "designated", "date": "2026-09-14", "first_seen_utc": "2026-09-14T15:37:03.552887+00:00", "player": "Bailey Falter", "player_id": 663559, "team": "ATL", "transaction_id": 942289}
+{"fetched_utc": "2026-09-14T15:37:05.820859+00:00", "game_date": "2026-09-14", "poll": true}
