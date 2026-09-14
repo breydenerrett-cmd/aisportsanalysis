@@ -337,6 +337,116 @@ def boards_by_matchup(rows=None) -> dict:
     return boards
 
 
+def legacy_quotes_from_board(board, preferred_book=None):
+    """A multibook board, reshaped into the CLI's live-odds quote shape.
+
+    THE DEFECT THIS CLOSES (2026-09-12, live on staging). The CLI's briefing
+    command hands `build_slate` a `prices_by_matchup` mapping built from a
+    live odds fetch (src.providers.odds.normalize_event -> {"h2h": {...},
+    "all_books": {...}}); api/games._build_entries never does, so
+    src.detect.dossier.build(..., prices=None) recorded the gap "no prices
+    on the board for this game" for EVERY API-built game -- including the
+    ones whose board (price_boards_by_key, the SAME multibook capture the
+    price-improvement table beside it reads) held eleven priced books. On
+    the Today page that put a "MARKET UNAVAILABLE ... NO PRICE BOARD
+    RECORDED" hero directly beneath a card already quoting that same game at
+    -212 from that same board -- a contradiction on one screen. The board
+    was always there; it just never reached the shape `_market_section` (and
+    every detector downstream of it) expects. This function is that bridge,
+    called from `briefing.build_slate` only when no explicit
+    `prices_by_matchup` entry exists for the game.
+
+    Output, `normalize_event`'s per-market record shape plus one marker
+    (see below), so `dossier._market_section` and every OTHER reader of
+    `dossier["market"]` -- the scan screen, the ledger, the quick-view
+    price section -- read it exactly like a live-fetched quote:
+        {"h2h": {"book", "away_price", "home_price", "last_update",
+                 "derived_from_board": True},
+         "all_books": {"h2h": [{"book","away_price","home_price",
+                                 "last_update"}, ...]}}
+    Only "h2h" is ever produced -- the multibook store is a moneyline board
+    (boards_by_matchup's own docstring: "FULL-GAME MONEYLINE ROWS ONLY"), so
+    inventing a spread or total here would be a market nobody quoted.
+
+    THE ONE MARKER, AND WHY IT EXISTS (checker findings #2/#3, 2026-09-12).
+    `h2h.derived_from_board: True` is the one thing that tells this row
+    apart from a live-fetched quote, and exactly one caller looks at it:
+    src.analysis.gamepayload._market_implied_consensus, which must NOT
+    print this single book's price under the customer-facing label "fair
+    price across the books" -- it disagreed with the real board average by
+    up to a point of implied probability on a normal board, and below the
+    6-book floor it printed a number on a row the SAME payload calls
+    unpriced. That function falls through to `price_improvement` (the real
+    average, or nothing below the floor) whenever it sees the tag. Every
+    other reader ignores the extra key and works exactly as before.
+
+    THE REPRESENTATIVE "h2h" QUOTE. `preferred_book` wins when it quoted
+    BOTH sides of the board; otherwise the book with the LOWEST two-way hold
+    (src.core.odds.hold_percentage) is chosen, ties broken by book name --
+    the least house-distorted single number the board holds, not the
+    newest, best, or worst price. This is deliberately a coarse choice: on
+    a normally-priced board any one book's h2h number is within roughly a
+    point of any other's, and the question this whole path answers is
+    "was this game priced at all", not "which book quotes best" (that
+    question already has its own answer, src.analysis.prices.snapshot's
+    best-price-per-side table).
+
+    Rows missing either price are skipped outright -- nothing to devig,
+    nothing to rank by hold. Returns None when the board is empty or
+    nothing on it prices both sides: absence, never a fabricated quote.
+    """
+    quotes = (board or {}).get("quotes") or []
+    priced = [q for q in quotes
+              if q.get("away_price") is not None and q.get("home_price") is not None]
+    if not priced:
+        return None
+
+    chosen = None
+    if preferred_book:
+        for quote in priced:
+            if quote.get("book") == preferred_book:
+                chosen = quote
+                break
+
+    if chosen is None:
+        ranked = []
+        for quote in priced:
+            try:
+                hold = odds_math.hold_percentage(
+                    [quote.get("away_price"), quote.get("home_price")])
+            except odds_math.OddsError:
+                continue
+            ranked.append((hold, quote.get("book") or "", quote))
+        if not ranked:
+            return None
+        ranked.sort(key=lambda entry: (entry[0], entry[1]))
+        chosen = ranked[0][2]
+
+    def _row(quote):
+        return {"book": quote.get("book"), "away_price": quote.get("away_price"),
+                "home_price": quote.get("home_price"),
+                "last_update": quote.get("ts")}
+
+    # `derived_from_board` marks the h2h row as ONE book's number, not the
+    # board's consensus -- checker finding #2/#3, 2026-09-12. Without this
+    # tag, src.analysis.gamepayload._market_implied_consensus could not
+    # tell a board-derived single-book quote from a real multi-book
+    # de-vigged average and read this row as "the fair price across the
+    # books" (the label web/js/labels.js renders for that field), which is
+    # false by up to a point of implied probability on a normal board and,
+    # below the 6-book floor, printed a consensus on a row this same
+    # payload calls unpriced (board_summary.has_board False). The tag rides
+    # in the h2h dict itself (not a sibling top-level key) so
+    # dossier._market_section's `entry = dict(quote)` carries it through
+    # unchanged and every OTHER reader of dossier["market"] -- the scan
+    # screen, the ledger, the quick-view price section -- keeps working on
+    # exactly the shape it always read; only `_market_implied_consensus`
+    # inspects this flag.
+    h2h = _row(chosen)
+    h2h["derived_from_board"] = True
+    return {"h2h": h2h, "all_books": {"h2h": [_row(q) for q in priced]}}
+
+
 def by_matchup(rows=None, boards=None) -> dict:
     """{(away_abbrev, home_abbrev, date): improvement section} for a store.
 

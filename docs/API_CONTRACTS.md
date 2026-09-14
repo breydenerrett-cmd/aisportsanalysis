@@ -97,6 +97,7 @@ Each row in `games[]`:
 | `board_summary.has_board` | boolean | |
 | `data_quality.has_market` / `has_lineups` / `has_starters` / `has_price_board` | boolean | |
 | `data_quality.gaps` | object | section name → human-readable reason it's missing |
+| `verdict_reason` | string \| null | only set when `verdict` is `market_unavailable`; explains WHY (no board captured at all, vs. a real board that just carries no price for the market this game was routed to). Added 2026-09-12 alongside `src.analysis.prices.legacy_quotes_from_board`. Consumed by `web/js/today.js` (`row.verdict_reason \|\| gaps.market`) |
 
 ## `GET /game/{date}/{away}/{home}`
 

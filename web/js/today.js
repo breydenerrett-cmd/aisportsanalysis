@@ -699,15 +699,54 @@ function heroMarketUnavailable(row, date, aggregates, sameVerdictCount, totalGam
     text: `${sameVerdictCount} OF ${totalGames} TONIGHT` }));
   hero.appendChild(top);
 
-  hero.appendChild(el("div", { class: "gv2-hero__headline",
-    text: "NO PRICE BOARD RECORDED FOR THIS GAME." }));
-  hero.appendChild(el("p", { class: "gv2-hero__body gv2-hero__body--warn",
-    text: "Nothing is broken. Either no book posted this game at capture time, or the club name did not "
-        + "match this product's map — and since there is no reason field distinguishing the two, it does "
-        + "not guess between them." }));
-
+  // 2026-09-12 -- staging showed this exact card's #1 pick (KC at BOS,
+  // -212, 11 books quoting) directly above a hero claiming "no price
+  // board recorded" for the SAME game. Root cause: dossier["market"] is
+  // fed only by a live odds fetch the API path never runs, so every row
+  // misses "market" regardless of whether a board exists -- while
+  // board_summary.has_board (fed from the real multibook board,
+  // src/analysis/prices.boards_by_matchup) was true the whole time. The
+  // routed candidate can legitimately have no F5 price even with a real
+  // full-game board; that is a *routing* gap, not a *capture* gap, and
+  // the two must not share one paragraph. Branch on has_board so the
+  // "maybe nobody posted, maybe a name didn't match" copy only renders
+  // when there truly is no board on file.
+  const bs = row.board_summary || {};
   const gaps = (row.data_quality && row.data_quality.gaps) || {};
-  const reason = gaps.market || null;
+  const reason = row.verdict_reason || gaps.market || "no reason recorded";
+
+  if (bs.has_board) {
+    hero.appendChild(el("div", { class: "gv2-hero__headline",
+      text: "THE PRICE THIS GAME NEEDS IS NOT ON OUR BOARD." }));
+    // 2026-09-12 -- the checker that reviewed the first draft of this branch
+    // flagged two things and both are fixed by this if/else instead of a
+    // ternary: (1) the mission's original copy re-used "cleared the talent
+    // bar" / "routed to" -- our internal words for our own machinery, the
+    // exact register web/js/games.js:218-221 (2026-09-10) pulled off the
+    // slate page on the owner's instruction to write for readers who "have
+    // a hard time reading English". Rewritten in plain English below; this
+    // comment is the record superseding that decision for THIS surface.
+    // (2) `text: row.verdict_reason ? row.verdict_reason : "..."` put a
+    // non-literal expression right after `text:`, so the fallback string
+    // never reached `text:\s*(["'`])` in tests/test_no_developer_notes_on_
+    // screen.py's scanner -- it was unguarded copy. Splitting the branches
+    // so the fallback is its own literal `text: "..."` puts it back where
+    // the scanner (and the register sweep) can see it.
+    if (row.verdict_reason) {
+      hero.appendChild(el("p", { class: "gv2-hero__body", "data-hook": "gameday-market-gap-reason",
+        text: row.verdict_reason }));
+    } else {
+      hero.appendChild(el("p", { class: "gv2-hero__body", "data-hook": "gameday-market-gap-reason",
+        text: "This game passed our first screen, but the board we hold has no price for the part of the game it was checked on. The full-game board is real." }));
+    }
+  } else {
+    hero.appendChild(el("div", { class: "gv2-hero__headline",
+      text: "NO PRICE BOARD RECORDED FOR THIS GAME." }));
+    hero.appendChild(el("p", { class: "gv2-hero__body gv2-hero__body--warn", "data-hook": "gameday-market-gap-reason",
+      text: "Nothing is broken. Either no book posted this game at capture time, or the club name did not "
+          + "match this product's map." }));
+  }
+
   const box = el("div", { class: "gv2-payload panel chamfer" });
   // THIS BLOCK WAS A RAW DATA DUMP UNTIL 2026-09-12.
   //
@@ -723,7 +762,6 @@ function heroMarketUnavailable(row, date, aggregates, sameVerdictCount, totalGam
   // "null" -- absent is not zero, and it is not the word `null` either.
   box.appendChild(el("div", { class: "gv2-payload__title",
     text: "WHAT WE HOLD FOR THIS GAME" }));
-  const bs = row.board_summary || {};
   const field = (key, value) => box.appendChild(el("div", { class: "gv2-payload__row" }, [
     el("span", { class: "gv2-payload__key", text: key }),
     el("span", { class: "gv2-payload__val", text: value }),
@@ -735,7 +773,7 @@ function heroMarketUnavailable(row, date, aggregates, sameVerdictCount, totalGam
   field("LAST CHECKED",
     bs.observed_utc == null ? missing
       : (formatEasternClock(bs.observed_utc) || String(bs.observed_utc)));
-  field("WHY", reason ? reason : "no reason recorded");
+  field("WHY", reason);
   box.appendChild(el("p", { class: "gv2-payload__note",
     text: "Amber, not red. Absence of a board is not a risk to a bet." }));
   hero.appendChild(box);

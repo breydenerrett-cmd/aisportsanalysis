@@ -122,14 +122,41 @@ class SlateListTests(unittest.TestCase):
         self.assertNotIn("win_probability", blob)
 
     def test_consensus_comes_from_the_board_when_no_market_section_exists(self):
-        """Regression, 2026-09-07. The `market` section only exists when a
-        caller passes `prices_by_matchup` to build_slate -- the CLI does,
-        the API does not -- so every API-built slate reported
+        """Regression, 2026-09-07. The `market` section used to exist only
+        when a caller passed `prices_by_matchup` to build_slate -- the CLI
+        does, the API does not -- so every API-built slate reported
         market_implied_consensus: null while `price_improvement` sat beside
         it holding the same de-vigged consensus over nine books. On screen
         that printed "No priced market for this game yet" four lines under a
         Featured Bet quoting that same game across nine books. Two reads of
         one board must never disagree about whether the board exists.
+
+        UPDATED 2026-09-12: src.pipeline.briefing.build_slate now falls back
+        to src.analysis.prices.legacy_quotes_from_board when no explicit
+        prices_by_matchup entry exists for a game, so dossier["market"] is
+        no longer None on this call shape -- it is now populated, tagged
+        `derived_from_board: True` (src/analysis/prices.py). That tag
+        matters: a board-derived h2h row is ONE book's de-vigged price
+        (picked for lowest hold), not the board's average, so
+        `_market_implied_consensus` must SKIP it and read
+        `price_improvement`'s real multi-book average instead -- reusing
+        the single-book number would print it under the "fair price across
+        the books" label while disagreeing with it (checker finding #2,
+        2026-09-12: ~0.6 probability points on this exact fixture -- see
+        the numbers asserted below).
+
+        RE-TIGHTENED 2026-09-12 (checker finding #5): this test previously
+        asserted `consensus["away_fair"] == dossier["market"]["h2h"]
+        ["away_fair"]`, which is exactly what the (buggy) single-book-first
+        code returned -- a tautology that could not fail against the
+        defect it claimed to guard. It now asserts against an
+        independently computed board average (the same style as the
+        sibling `test_market_implied_consensus_is_named_honestly` above,
+        which hardcodes a manually-devigged literal) and separately proves
+        the wire number is NOT the single board-derived book's own price.
+        test_market_from_the_board.py's NoBoardLeavesTheOriginalGapTests
+        and BoardSuppliesTheMarketSectionTests cover the two paths (no
+        board at all vs. board present) directly.
         """
         game = _game()
         observed = datetime(2026, 8, 31, 12, 0, 0, tzinfo=timezone.utc)
@@ -149,17 +176,28 @@ class SlateListTests(unittest.TestCase):
             [game], history.read_results(),
             price_boards_by_key=price_boards_by_key, roster_events_by_pk={})
         entries = slate["games"]
-        self.assertIsNone(entries[0]["dossier"].get("market"),
-                          "fixture must reproduce the API's missing market section")
+        self.assertIsNotNone(
+            entries[0]["dossier"].get("market"),
+            "a seven-book board must now populate dossier market directly")
+        h2h = entries[0]["dossier"].get("market")["markets"]["h2h"]
+        self.assertTrue(h2h.get("derived_from_board"),
+                        "a board-sourced quote must be tagged so the wire "
+                        "field knows to look past it")
+
         row = gamepayload.build_slate_list(entries)["games"][0]
         consensus = row["market_implied_consensus"]
         self.assertIsNotNone(consensus, "a board with seven books is a priced market")
-        # The same number the board itself carries -- one definition, two sources.
-        sides = entries[0]["dossier"].get("price_improvement")["sides"]
-        self.assertAlmostEqual(consensus["away_fair"],
-                               sides["away"]["consensus_probability"], places=9)
-        self.assertAlmostEqual(consensus["home_fair"],
-                               sides["home"]["consensus_probability"], places=9)
+        # The books average 0.45133/0.54867 (each book's own de-vigged fair
+        # price, averaged -- src.analysis.prices.snapshot's exact
+        # arithmetic, reproduced independently here rather than imported,
+        # so this assertion cannot pass just because it calls the same
+        # function the production code calls).
+        self.assertAlmostEqual(consensus["away_fair"], 0.45133, places=5)
+        self.assertAlmostEqual(consensus["home_fair"], 0.54867, places=5)
+        # And NOT the single lowest-hold book's own price (book "g",
+        # 116/-136 -> 0.44548/0.55452) -- the exact number this field
+        # printed before the fix, and the checker's repro of finding #2.
+        self.assertNotAlmostEqual(consensus["away_fair"], h2h["away_fair"], places=2)
 
     def test_no_board_and_no_market_is_still_an_honest_null(self):
         """The fallback must not manufacture a consensus out of nothing."""

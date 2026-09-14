@@ -43,6 +43,7 @@ from typing import Optional
 
 from src.analysis import grade
 from src.analysis import synthesis as synthesis_mod
+from src.pipeline import mismatch as mismatch_mod
 
 
 # ---------------------------------------------------------------------------
@@ -153,9 +154,28 @@ def _market_implied_consensus(market_section: Optional[dict],
     quantity (src/analysis/prices.py de-vigs across the board and averages),
     so it is used when the `market` section is absent -- a fallback for the
     SOURCE of the number, never a second definition of it.
+
+    A THIRD CASE, ADDED 2026-09-12 (checker findings #2/#3 on the fix for
+    F-3 above). `market` is no longer only "absent or a live CLI fetch" --
+    src.pipeline.briefing.build_slate can now also fill it from the
+    multibook board itself (src.analysis.prices.legacy_quotes_from_board)
+    when no caller supplied `prices_by_matchup`, which is every API-built
+    slate. That board-derived h2h row is ONE book's de-vigged price, picked
+    for the lowest hold -- reusing it here would print it under the label
+    "fair price across the books" (web/js/labels.js FAIR_LONG), which it is
+    not: it disagreed with the real board average by ~0.6 probability
+    points on a realistic 7-book board (checker repro, 2026-09-12), and
+    below the 6-book floor it printed a number at all on a row this same
+    payload calls unpriced (`board_summary.has_board: False`). The board
+    fallback tags that row `derived_from_board: True`
+    (src/analysis/prices.py) precisely so this function can refuse it and
+    fall through to `price_improvement` -- the real multi-book average, and
+    None below the floor, exactly matching `board_summary`/`opportunities`
+    on both counts. A live CLI quote (no tag) is still used directly, same
+    as before this date.
     """
     h2h = (market_section or {}).get("markets", {}).get("h2h") if market_section else None
-    if h2h and h2h.get("away_fair") is not None:
+    if h2h and h2h.get("away_fair") is not None and not h2h.get("derived_from_board"):
         return {"away_fair": h2h.get("away_fair"), "home_fair": h2h.get("home_fair")}
     sides = (price_improvement or {}).get("sides") or {}
     away = (sides.get("away") or {}).get("consensus_probability")
@@ -190,6 +210,83 @@ def _data_quality(dossier) -> dict:
     }
 
 
+def _board_book_count(dossier) -> int:
+    """How many books this game's board actually holds, read from whichever
+    of the two board-derived sections is populated. Mirrors `_board_summary`
+    above rather than re-deriving a count some other way."""
+    dispersion = (dossier.get("price_improvement") or {}).get("dispersion") or {}
+    books = dispersion.get("books")
+    if books is not None:
+        return books
+    quotes = (dossier.get("multibook_board") or {}).get("quotes") or []
+    return len(quotes)
+
+
+def _verdict_reason(entry: dict) -> Optional[str]:
+    """Why THIS market_unavailable verdict landed here -- null for every
+    other verdict.
+
+    THE DEFECT THIS CLOSES (2026-09-12, live on staging). Before
+    src.pipeline.briefing.build_slate could build a market section from the
+    multibook board (src.analysis.prices.legacy_quotes_from_board), every
+    market_unavailable row on the API path carried the identical
+    data_quality.gaps.market string -- "no prices on the board for this
+    game" -- whether or not a board had actually been captured for the
+    game. On the Today page that sentence sat under KC@BOS's hero while the
+    card two lines above it quoted the same game, from the same board, at
+    -212. Once the board reaches the dossier, the only way a candidate can
+    still land on market_unavailable is a real gap: no board was ever
+    captured, or a board exists but only ever carries a full-game price
+    while the scan routed this game to the first five (the multibook store
+    is moneyline-only -- src.analysis.prices.boards_by_matchup's own
+    docstring -- so a first-five price is never on it at all). This
+    function names which of those two happened, instead of repeating one
+    sentence for both.
+    """
+    if entry.get("verdict") != mismatch_mod.MARKET_UNAVAILABLE:
+        return None
+    dossier = entry["dossier"]
+    if not dossier.get("market"):
+        return "No book on our board quoted this game."
+    scan = entry.get("scan") or {}
+    # `books` backs both branches below. Checker finding #4 (2026-09-12):
+    # `_board_book_count` returns 0 when neither price_improvement nor
+    # multibook_board is on the dossier (an explicit caller supplied a
+    # market with no accompanying board -- not reachable through today's
+    # api/ callers, but not impossible), and a "0 books" or "the board is
+    # real: 0 books" sentence is the identical contradiction this whole
+    # fix exists to remove, just spelled with a number instead of a
+    # missing hero. Both branches fall back to the plain "no book quoted
+    # this game" sentence whenever the count is 0.
+    books = _board_book_count(dossier)
+    if scan.get("market") == mismatch_mod.MARKET_F5:
+        if not books:
+            return "No book on our board quoted this game."
+        # Plain English, 2026-09-12: "talent bar" and "routed to" are our
+        # words for our machinery, pulled off the slate page on 09-10
+        # (web/js/games.js) and caught coming back here by the second check.
+        # today.js renders this string verbatim as the hero body.
+        return (
+            "This game passed our first screen on the first five innings, "
+            "and the board we hold has no first-five price for it. The "
+            f"full-game prices are real: {books} book"
+            f"{'' if books == 1 else 's'} quoting.")
+    # The routed market was full-game and the dossier's market section
+    # exists yet still lacks a full-game price -- an explicit caller gap
+    # (a hand-built prices_by_matchup carrying only an F5 quote, say).
+    # Checker finding #4's milder sibling: when the board IS populated,
+    # naming its book count is honest and the F5 branch's sentence above
+    # already sets that expectation; when it is not, the original blanket
+    # sentence still applies.
+    if not books:
+        return "No book on our board quoted this game."
+    return (
+        "This game passed our first screen on the full game, and the board "
+        "we hold has no full-game price for it yet, though "
+        f"{books} book{'' if books == 1 else 's'} "
+        f"{'is' if books == 1 else 'are'} quoting the game.")
+
+
 def slate_game_summary(entry: dict, *, now: datetime) -> dict:
     """One row of the slate list: identity, first pitch, consensus, board
     summary and data-quality flags. Nothing here is a finding or a verdict
@@ -208,6 +305,7 @@ def slate_game_summary(entry: dict, *, now: datetime) -> dict:
             dossier.get("market"), dossier.get("price_improvement")),
         "board_summary": _board_summary(dossier, now=now),
         "data_quality": _data_quality(dossier),
+        "verdict_reason": _verdict_reason(entry),
     }
     # THE KNOWLEDGE GRADE -- how complete our read of this game is, from the
     # census above and nothing else. Not a forecast and not a ranking on

@@ -104,10 +104,24 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
         # while the store holds eleven books.
         price_key = prices_mod.matchup_key(
             game.get("away_team"), game.get("home_team"), game.get("date"))
+        # An explicit caller mapping (the CLI's live odds fetch) always wins
+        # for its own keys. When it has nothing for this game -- every
+        # API-built slate, since api/games._build_entries never supplies
+        # prices_by_matchup -- fall back to the multibook board this same
+        # call already holds (price_boards_by_key, read once above). Before
+        # this fallback the dossier's "market" section, and so `_routed_price`
+        # below, was ALWAYS empty on the API path even when the board held a
+        # dozen priced books, which is the root cause of the Today page
+        # showing a "market unavailable" hero directly under a card already
+        # quoting that same game from that same board (2026-09-12, staging).
+        prices = (prices_by_matchup or {}).get(key)
+        if prices is None:
+            prices = prices_mod.legacy_quotes_from_board(
+                (price_boards_by_key or {}).get(price_key))
         dossier = dossier_mod.build(
             game, store,
             pitcher_logs=pitcher_logs,
-            prices=(prices_by_matchup or {}).get(key),
+            prices=prices,
             weather=(weather_by_pk or {}).get(game.get("game_pk")),
             lineups=_lineup_section(
                 (lineups_by_pk or {}).get(game.get("game_pk")), handedness, game,
