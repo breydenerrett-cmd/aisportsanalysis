@@ -1256,3 +1256,7 @@
 {"fetched_utc": "2026-09-14T21:12:27.572238+00:00", "game_date": "2026-09-14", "poll": true}
 {"fetched_utc": "2026-09-14T21:25:25.060290+00:00", "game_date": "2026-09-14", "poll": true}
 {"fetched_utc": "2026-09-14T21:25:25.990482+00:00", "game_date": "2026-09-14", "poll": true}
+{"fetched_utc": "2026-09-14T21:38:30.621042+00:00", "game_date": "2026-09-14", "poll": true}
+{"category": "il_activation", "date": "2026-09-14", "first_seen_utc": "2026-09-14T21:38:30.621042+00:00", "player": "Keider Montero", "player_id": 672456, "team": "DET", "transaction_id": 942318}
+{"category": "optioned", "date": "2026-09-14", "first_seen_utc": "2026-09-14T21:38:30.621042+00:00", "player": "Yilber D\u00edaz", "player_id": 700270, "team": "DET", "transaction_id": 942319}
+{"fetched_utc": "2026-09-14T21:38:32.496744+00:00", "game_date": "2026-09-14", "poll": true}
