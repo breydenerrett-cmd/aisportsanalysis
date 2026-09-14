@@ -1724,3 +1724,8 @@
 {"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 21791, "credits_used_last": 0, "utc": "2026-09-14T20:08:05.833887Z"}
 {"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 21790, "credits_used_last": 0, "utc": "2026-09-14T20:08:06.361782Z"}
 {"budget_band": "live_capture", "caller": "derivative_markets.run", "credits_remaining": 21790, "credits_used_last": 0, "utc": "2026-09-14T20:08:06.736116Z"}
+{"budget_band": "live_capture", "caller": "dense.run", "credits_remaining": 21784, "credits_used_last": 0, "utc": "2026-09-14T20:20:21.790703Z"}
+{"budget_band": "live_capture", "caller": "prop_listing.run", "credits_remaining": 21781, "credits_used_last": 0, "utc": "2026-09-14T20:20:23.308322Z"}
+{"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 21781, "credits_used_last": 0, "utc": "2026-09-14T20:21:10.008381Z"}
+{"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 21780, "credits_used_last": 0, "utc": "2026-09-14T20:21:10.658054Z"}
+{"budget_band": "live_capture", "caller": "derivative_markets.run", "credits_remaining": 21780, "credits_used_last": 0, "utc": "2026-09-14T20:21:11.465454Z"}
