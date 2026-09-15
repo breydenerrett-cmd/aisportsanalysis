@@ -17,6 +17,13 @@ name: balldontlie-harvest
 on:
   workflow_dispatch:
     inputs:
+      mode:
+        description: "harvest (full run) or probe (one cheap per-sport request to check rate-limit state)"
+        type: choice
+        options:
+          - harvest
+          - probe
+        default: harvest
       sports:
         description: "Comma-separated sports to harvest"
         default: "tennis,nfl,mlb,nba,nhl"
@@ -60,7 +67,8 @@ jobs:
           git config user.name "balldontlie-harvest-bot"
           git config user.email "balldontlie-harvest-bot@users.noreply.github.com"
 
-      - name: Run the harvester
+      - name: Run the harvester (harvest mode)
+        if: ${{ inputs.mode == 'harvest' }}
         env:
           BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
         run: |
@@ -68,7 +76,17 @@ jobs:
             --sports "${{ inputs.sports }}" \
             --max-minutes "${{ inputs.max_minutes }}"
 
+      - name: Run the harvester (probe mode)
+        if: ${{ inputs.mode == 'probe' }}
+        env:
+          BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
+        run: |
+          python scripts/balldontlie_harvest.py \
+            --probe \
+            --sports "${{ inputs.sports }}"
+
       - name: Ensure the release exists
+        if: ${{ inputs.mode == 'harvest' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -78,6 +96,7 @@ jobs:
               --notes "BALLDONTLIE ALL-ACCESS harvest"
 
       - name: Upload harvested files to the release
+        if: ${{ inputs.mode == 'harvest' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -95,6 +114,7 @@ jobs:
       # in, so a plain `git add` here would silently stage nothing and
       # every run would look like it starts from zero.
       - name: Commit the manifest and any resumable cursor state
+        if: ${{ inputs.mode == 'harvest' }}
         run: |
           set -uo pipefail
           git add -f data/historical/balldontlie/MANIFEST.json 2>/dev/null || true

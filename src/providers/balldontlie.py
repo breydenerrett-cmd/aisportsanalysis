@@ -17,6 +17,28 @@ This module does NOT replace tennis_results.BallDontLieFeed (that stays as
 the live results-grading path); it is the general client for bulk archival
 pulls across every sport's endpoints.
 
+429 POLICY (2026-09-15 incident: run 35001607006)
+--------------------------------------------------
+The account behaves as if limited to ~5 requests/minute, well under the
+ALL-ACCESS 600/min the tier is supposed to grant. The original retry policy
+(5 attempts, 1/2/4/8/16s backoff, ~31s total) gave up inside a single
+60-second rate window, so every job errored after its first 5 pages. A 429
+now means "wait", not "give up": `get()` sleeps out each 429 (Retry-After if
+present, else the reset header, else 61s -- see `_compute_429_wait`) and
+retries indefinitely, bounded only by two things: `max_429_wait_seconds`
+(cumulative wait for one request, default 900s) and an optional `deadline`
+(a `clock()`-scale cutoff the caller -- the harvester -- passes in so a long
+429 sleep never runs past `--max-minutes`). Hitting either bound raises a
+dedicated exception (`BallDontLieRateLimitExhausted` /
+`BallDontLieDeadlineExceeded`), never `BallDontLieHTTPError`, so the
+harvester can tell "still worth resuming" apart from "permanently not
+entitled" (403/404). Every 429 also adapts the pacer's rate down (95% of
+x-ratelimit-limit if the vendor sends one, else halved with a 4/min floor)
+so subsequent requests stop hammering a limit that has already been hit.
+5xx keeps the original bounded exponential backoff (`max_retries`) --
+that's a vendor/transport problem, not a quota one, and should still
+surface as a terminal error rather than hang indefinitely.
+
 SECURITY
 --------
 The API key is a bearer credential (raw value in the `Authorization` header,
@@ -25,7 +47,11 @@ document a "Bearer " prefix). It is never logged, never placed in a URL
 query string, and never included in an exception message: every error raised
 here carries only an HTTP status and a bare API path (no query string, no
 host, no key). Callers must not do their own string-formatting of the key
-into logs either.
+into logs either. Response headers are treated the same way: only the
+rate-limit header names this module actually reads are ever kept (see
+`_RATE_LIMIT_HEADER_NAMES` / `_whitelist_headers`) -- anything else a
+transport hands back (Set-Cookie, an echoed Authorization header, etc.) is
+dropped before it reaches any client state or caller-visible return value.
 """
 
 from __future__ import annotations
@@ -49,12 +75,27 @@ DEFAULT_MAX_RETRIES = 5
 DEFAULT_BACKOFF_BASE_SECONDS = 1.0
 DEFAULT_BACKOFF_CAP_SECONDS = 60.0
 DEFAULT_PER_PAGE = 100
+DEFAULT_MAX_429_WAIT_SECONDS = 900.0
 
-# Statuses the client retries with backoff. Everything else (2xx handled
-# separately, 4xx other than 429) is returned to the caller as an error --
-# in particular 403 (tier does not cover this endpoint) and 404 are NOT
-# retried, so a harvester job fails fast and the caller can record+skip it.
-_RETRYABLE_STATUS = {429}
+# 429 handling constants (see module docstring's "429 POLICY").
+_DEFAULT_429_WAIT_SECONDS = 61.0
+_MIN_RATE_PER_MINUTE = 4.0
+_ADAPTED_RATE_FRACTION_OF_LIMIT = 0.95
+_EPOCH_SECONDS_THRESHOLD = 1e9  # a reset value above this is epoch time, not a delta
+
+# Only these header names (case-insensitive) are ever read, kept, or
+# returned by this module -- see the SECURITY section above.
+_RATE_LIMIT_HEADER_NAMES = frozenset({
+    "retry-after",
+    "x-ratelimit-limit", "x-ratelimit-remaining", "x-ratelimit-reset",
+    "ratelimit-limit", "ratelimit-remaining", "ratelimit-reset",
+})
+
+# Statuses the client retries with the original bounded exponential backoff.
+# 429 is handled separately (see _handle_429) and is NOT in this set. 403 and
+# 404 are NOT retried, so a harvester job fails fast and the caller can
+# record+skip it.
+_RETRYABLE_5XX = range(500, 600)
 
 
 class BallDontLieError(RuntimeError):
@@ -62,7 +103,8 @@ class BallDontLieError(RuntimeError):
 
 
 class BallDontLieHTTPError(BallDontLieError):
-    """An HTTP-status failure from the API (after any retries were exhausted).
+    """A terminal HTTP-status failure from the API (after any retries were
+    exhausted, or immediately for a non-retryable status).
 
     Carries the plain integer `status` so callers (the harvester) can branch
     on it -- e.g. treat 403/404 as "not entitled / not found, skip" -- without
@@ -75,8 +117,57 @@ class BallDontLieHTTPError(BallDontLieError):
         super().__init__(f"balldontlie API returned HTTP {status} for {path}")
 
 
-def _is_retryable(status: int) -> bool:
-    return status in _RETRYABLE_STATUS or 500 <= status < 600
+class BallDontLieRateLimitExhausted(BallDontLieError):
+    """A single request's cumulative 429 wait hit `max_429_wait_seconds`.
+
+    This is NOT a terminal failure the way BallDontLieHTTPError is -- the
+    account is still rate-limited, not disallowed, so the caller (the
+    harvester) should treat this as resumable: save progress and try again
+    later, not record a permanent error.
+    """
+
+    def __init__(self, path: str, waited_seconds: float):
+        self.path = path
+        self.waited_seconds = waited_seconds
+        super().__init__(
+            f"balldontlie API 429 wait exceeded max_429_wait_seconds for {path}")
+
+
+class BallDontLieDeadlineExceeded(BallDontLieError):
+    """A 429 wait would have run past the caller's `deadline`.
+
+    Also resumable, not terminal -- the caller's time budget ran out while
+    waiting on the vendor, not the vendor refusing the request.
+    """
+
+    def __init__(self, path: str):
+        self.path = path
+        super().__init__(f"balldontlie API 429 wait would exceed the caller deadline for {path}")
+
+
+def _to_float(value) -> Optional[float]:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _whitelist_headers(headers) -> dict:
+    """Keep only the rate-limit header names this client ever reads.
+
+    Case-insensitive on the way in, lower-cased on the way out. Applied to
+    every transport response regardless of transport implementation, so a
+    custom/test transport that hands back a Set-Cookie or an echoed
+    Authorization header can never leak it into client state or output.
+    """
+    if not headers:
+        return {}
+    out = {}
+    for key, value in headers.items():
+        lowered = key.lower()
+        if lowered in _RATE_LIMIT_HEADER_NAMES:
+            out[lowered] = value
+    return out
 
 
 class _TokenBucketPacer:
@@ -89,6 +180,10 @@ class _TokenBucketPacer:
     a fake clock, rather than a statistical one. Pass a larger `capacity` to
     allow short bursts (e.g. after an idle period) while still bounding the
     long-run rate to rate_per_minute.
+
+    The rate is mutable via set_rate_per_minute -- the client calls this
+    after every 429 to adapt to what the vendor is actually enforcing (see
+    module docstring's "429 POLICY").
     """
 
     def __init__(self, rate_per_minute: float, clock: Callable[[], float],
@@ -117,6 +212,14 @@ class _TokenBucketPacer:
             self._refill()
         self._tokens -= 1.0
 
+    def rate_per_minute(self) -> float:
+        return self._rate_per_second * 60.0
+
+    def set_rate_per_minute(self, rate_per_minute: float) -> None:
+        self._refill()  # settle tokens under the OLD rate before changing it
+        rate_per_minute = max(rate_per_minute, 0.0001)
+        self._rate_per_second = rate_per_minute / 60.0
+
 
 @dataclass
 class ClientConfig:
@@ -128,23 +231,29 @@ class ClientConfig:
     backoff_base: float = DEFAULT_BACKOFF_BASE_SECONDS
     backoff_cap: float = DEFAULT_BACKOFF_CAP_SECONDS
     user_agent: str = DEFAULT_USER_AGENT
+    max_429_wait_seconds: float = DEFAULT_MAX_429_WAIT_SECONDS
 
 
 class Client:
     """Thin BALLDONTLIE HTTP client: one transport seam, cursor pager, pacer.
 
     `transport` is the single injectable seam: a callable
-    `(path: str, params: dict, headers: dict) -> tuple[int, bytes]` returning
-    (status_code, raw_body). Headers (including the real `Authorization`
-    value) are always built by the Client itself and handed to the seam,
-    never assembled by caller code -- so a test can assert the key reached
-    the transport without the client ever formatting the key into a log or
-    an f-string a test might echo back.
+    `(path: str, params: dict, headers: dict) -> tuple` returning either
+    `(status_code, raw_body)` (old 2-tuple shape, still supported -- headers
+    are treated as `{}`) or `(status_code, raw_body, response_headers)`
+    (3-tuple; `response_headers` may be any header-name -> value mapping,
+    filtered down to `_RATE_LIMIT_HEADER_NAMES` before this client keeps or
+    returns any of it). Headers sent to the vendor (including the real
+    `Authorization` value) are always built by the Client itself and handed
+    to the seam, never assembled by caller code -- so a test can assert the
+    key reached the transport without the client ever formatting the key
+    into a log or an f-string a test might echo back.
     """
 
     def __init__(self, api_key: str, *, transport: Optional[Callable[[str, dict, dict], tuple]] = None,
                  clock: Optional[Callable[[], float]] = None,
                  sleep: Optional[Callable[[float], None]] = None,
+                 now: Optional[Callable[[], float]] = None,
                  config: Optional[ClientConfig] = None):
         if not api_key:
             raise BallDontLieError(f"{ENV_API_KEY} is not set")
@@ -152,6 +261,11 @@ class Client:
         self._config = config or ClientConfig()
         self._clock = clock or time.monotonic
         self._sleep = sleep or time.sleep
+        # Wall-clock source used ONLY to turn an epoch-seconds
+        # x-ratelimit-reset into a wait duration -- separate from `clock`
+        # (which the pacer/backoff treat as monotonic) because production
+        # `clock` defaults to time.monotonic, which is not epoch time.
+        self._now = now or time.time
         self._transport = transport or self._default_transport
         self._pacer = _TokenBucketPacer(
             rate_per_minute=self._config.rate_per_minute,
@@ -159,6 +273,8 @@ class Client:
             sleep=self._sleep,
             capacity=self._config.bucket_capacity,
         )
+        self._total_429_wait_seconds = 0.0
+        self._last_rate_limit_seen: dict = {}
 
     # -- transport -----------------------------------------------------
 
@@ -176,13 +292,18 @@ class Client:
         request = urllib.request.Request(url, headers=headers)
         try:
             with urllib.request.urlopen(request, timeout=self._config.timeout) as response:
-                return response.status, response.read()
+                resp_headers = dict(response.headers.items()) if response.headers else {}
+                return response.status, response.read(), resp_headers
         except urllib.error.HTTPError as exc:
             try:
                 body = exc.read()
             except Exception:
                 body = b""
-            return exc.code, body
+            try:
+                resp_headers = dict(exc.headers.items()) if exc.headers else {}
+            except Exception:
+                resp_headers = {}
+            return exc.code, body, resp_headers
         except urllib.error.URLError as exc:
             raise BallDontLieError(
                 f"could not reach balldontlie API: {exc.reason}") from None
@@ -190,15 +311,138 @@ class Client:
             raise BallDontLieError(
                 f"balldontlie API connection failed: {type(exc).__name__}") from None
 
+    def _call_transport(self, path: str, params: dict) -> tuple:
+        """Call the transport seam and return (status, body, whitelisted_headers),
+        accepting either the 2-tuple or 3-tuple shape."""
+        raw = self._transport(path, params, self._headers())
+        if len(raw) == 3:
+            status, body, raw_headers = raw
+        else:
+            status, body = raw
+            raw_headers = {}
+        return status, body, _whitelist_headers(raw_headers)
+
+    # -- 429 handling ----------------------------------------------------
+
+    def _compute_429_wait(self, resp_headers: dict) -> float:
+        """How long to wait before retrying one 429, per the vendor's own
+        headers when present, else a fixed fallback. See module docstring's
+        "429 POLICY"."""
+        retry_after = _to_float(resp_headers.get("retry-after"))
+        if retry_after is not None:
+            return max(0.0, retry_after)
+
+        reset = resp_headers.get("x-ratelimit-reset")
+        if reset is None:
+            reset = resp_headers.get("ratelimit-reset")
+        reset = _to_float(reset)
+        if reset is not None:
+            if reset > _EPOCH_SECONDS_THRESHOLD:
+                return max(0.0, reset - self._now())
+            return max(0.0, reset)
+
+        return _DEFAULT_429_WAIT_SECONDS
+
+    def _adapt_pacer_after_429(self, resp_headers: dict) -> None:
+        """Lower the pacer rate after a 429: 95% of x-ratelimit-limit if the
+        vendor sent one, else halve the current rate (floor 4/min). Also
+        records the whitelisted values for rate_state()."""
+        limit = resp_headers.get("x-ratelimit-limit")
+        if limit is None:
+            limit = resp_headers.get("ratelimit-limit")
+        parsed_limit = _to_float(limit)
+
+        if parsed_limit is not None and parsed_limit > 0:
+            new_rate = parsed_limit * _ADAPTED_RATE_FRACTION_OF_LIMIT
+            self._last_rate_limit_seen["limit"] = parsed_limit
+        else:
+            new_rate = max(_MIN_RATE_PER_MINUTE, self._pacer.rate_per_minute() / 2.0)
+        self._pacer.set_rate_per_minute(new_rate)
+
+        remaining = resp_headers.get("x-ratelimit-remaining", resp_headers.get("ratelimit-remaining"))
+        remaining = _to_float(remaining)
+        if remaining is not None:
+            self._last_rate_limit_seen["remaining"] = remaining
+
+        reset = resp_headers.get("x-ratelimit-reset", resp_headers.get("ratelimit-reset"))
+        reset = _to_float(reset)
+        if reset is not None:
+            self._last_rate_limit_seen["reset"] = reset
+
+    def _handle_429(self, path: str, resp_headers: dict, deadline: Optional[float],
+                     rate_limit_wait_total: float) -> float:
+        """Sleep out one 429, adapt the pacer, and return the updated
+        running total wait for this call.
+
+        Raises BallDontLieDeadlineExceeded if waiting the full amount would
+        pass `deadline`, or BallDontLieRateLimitExhausted if it would push
+        the cumulative wait for this request past
+        `config.max_429_wait_seconds`. Both are resumable-not-terminal (see
+        their docstrings) -- callers should catch them separately from
+        BallDontLieHTTPError.
+        """
+        wait_seconds = self._compute_429_wait(resp_headers)
+
+        if deadline is not None:
+            remaining = deadline - self._clock()
+            if remaining <= 0:
+                raise BallDontLieDeadlineExceeded(path)
+            wait_seconds = min(wait_seconds, remaining)
+
+        exhausted = False
+        if rate_limit_wait_total + wait_seconds >= self._config.max_429_wait_seconds:
+            wait_seconds = max(0.0, self._config.max_429_wait_seconds - rate_limit_wait_total)
+            exhausted = True
+
+        if wait_seconds > 0:
+            self._sleep(wait_seconds)
+            rate_limit_wait_total += wait_seconds
+            self._total_429_wait_seconds += wait_seconds
+
+        # Adapt even when we're about to raise -- the next attempt (this
+        # request resumed later, or the next job) should start paced down.
+        self._adapt_pacer_after_429(resp_headers)
+
+        if exhausted:
+            raise BallDontLieRateLimitExhausted(path, rate_limit_wait_total)
+        if deadline is not None and self._clock() >= deadline:
+            raise BallDontLieDeadlineExceeded(path)
+
+        return rate_limit_wait_total
+
+    def rate_state(self) -> dict:
+        """Read-only numeric snapshot: current pacer rate, the last-seen
+        whitelisted x-ratelimit-* values (only keys actually observed so
+        far), and the running total of time spent waiting out 429s across
+        this client's lifetime. Never includes any header this client
+        doesn't whitelist -- see `_whitelist_headers`."""
+        state = {
+            "rate_per_minute": self._pacer.rate_per_minute(),
+            "total_429_wait_seconds": self._total_429_wait_seconds,
+        }
+        state.update(self._last_rate_limit_seen)
+        return state
+
     # -- public API ------------------------------------------------------
 
-    def get(self, path: str, params: Optional[dict] = None) -> dict:
-        """One request, following the pacer and retrying 429/5xx with backoff."""
+    def get(self, path: str, params: Optional[dict] = None, *,
+            deadline: Optional[float] = None) -> dict:
+        """One request, following the pacer.
+
+        429s are retried indefinitely (waiting per `_compute_429_wait` each
+        time), bounded only by `config.max_429_wait_seconds` and the
+        optional `deadline` -- see `_handle_429`. 5xx uses the original
+        bounded exponential backoff (`config.max_retries`) and raises
+        BallDontLieHTTPError once exhausted, same as any other non-2xx,
+        non-429 status.
+        """
         params = dict(params or {})
         attempt = 0
+        rate_limit_wait_total = 0.0
         while True:
             self._pacer.acquire()
-            status, body = self._transport(path, params, self._headers())
+            status, body, resp_headers = self._call_transport(path, params)
+
             if 200 <= status < 300:
                 try:
                     text = body.decode("utf-8") if isinstance(body, bytes) else body
@@ -206,7 +450,13 @@ class Client:
                 except (json.JSONDecodeError, UnicodeDecodeError):
                     raise BallDontLieError(
                         f"balldontlie API returned invalid JSON for {path}") from None
-            if _is_retryable(status):
+
+            if status == 429:
+                rate_limit_wait_total = self._handle_429(
+                    path, resp_headers, deadline, rate_limit_wait_total)
+                continue
+
+            if status in _RETRYABLE_5XX:
                 attempt += 1
                 if attempt > self._config.max_retries:
                     raise BallDontLieHTTPError(status, path)
@@ -214,17 +464,32 @@ class Client:
                             self._config.backoff_base * (2 ** (attempt - 1)))
                 self._sleep(delay)
                 continue
+
             raise BallDontLieHTTPError(status, path)
+
+    def probe(self, path: str, params: Optional[dict] = None) -> tuple:
+        """Exactly one request, no retries, no body parsing:
+        `(status, whitelisted_rate_limit_headers)`. Used by --probe to check
+        the account's current rate-limit state as cheaply as possible --
+        deliberately does not call `get()` (which retries 429s and parses
+        JSON) since a probe wants to see the raw status, not wait it out."""
+        params = dict(params or {})
+        self._pacer.acquire()
+        status, _body, resp_headers = self._call_transport(path, params)
+        return status, resp_headers
 
     def pages(self, path: str, params: Optional[dict] = None, *,
               page_cap: Optional[int] = None,
-              start_cursor: Optional[int] = None) -> Iterator[dict]:
+              start_cursor: Optional[int] = None,
+              deadline: Optional[float] = None) -> Iterator[dict]:
         """Yield each page's full JSON payload, following meta.next_cursor.
 
         `params` should not itself carry `cursor`; pass a resume point via
         `start_cursor` instead. Stops when a page has no data, or meta has
         no next_cursor, or `page_cap` pages have been yielded (whichever
         comes first). per_page defaults to DEFAULT_PER_PAGE if not set.
+        `deadline` is forwarded to every underlying `get()` call so a 429
+        wait mid-pagination still respects it.
         """
         base_params = dict(params or {})
         base_params.setdefault("per_page", DEFAULT_PER_PAGE)
@@ -234,7 +499,7 @@ class Client:
             call_params = dict(base_params)
             if cursor is not None:
                 call_params["cursor"] = cursor
-            payload = self.get(path, call_params)
+            payload = self.get(path, call_params, deadline=deadline)
             pages_yielded += 1
             yield payload
 

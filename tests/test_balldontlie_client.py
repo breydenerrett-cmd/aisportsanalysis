@@ -1,11 +1,15 @@
 """Tests for src/providers/balldontlie.py.
 
-All network is faked at the Client's single transport seam
-(`(path, params, headers) -> (status, body)`); nothing here touches a
+All network is faked at the Client's single transport seam -- either the
+old `(path, params, headers) -> (status, body)` 2-tuple shape or the new
+`(status, body, response_headers)` 3-tuple shape; nothing here touches a
 socket. Covers: the Authorization header carries the raw key, cursor
 pagination (including page_cap), the pacer never exceeds its configured
-rate under a fake clock, 429 backs off then succeeds, and no error string
-ever contains the key.
+rate under a fake clock, 5xx backs off then succeeds, the 429 wait policy
+(Retry-After / x-ratelimit-reset / 61s default, the max_429_wait_seconds
+cap, and the caller deadline), the pacer adapting after a 429, the header
+whitelist, and no error string or rate_state() ever contains the key or an
+unlisted header.
 """
 
 from __future__ import annotations
@@ -15,8 +19,10 @@ import unittest
 from unittest import mock
 
 from src.providers.balldontlie import (
+    BallDontLieDeadlineExceeded,
     BallDontLieError,
     BallDontLieHTTPError,
+    BallDontLieRateLimitExhausted,
     Client,
     ClientConfig,
     client_from_env,
@@ -53,8 +59,9 @@ def _body(payload: dict) -> bytes:
 
 
 class RecordingTransport:
-    """Fake transport: returns queued (status, payload) responses in order,
-    and records every (path, params, headers) call it received."""
+    """Fake transport: returns queued (status, payload) 2-tuple responses in
+    order (the pre-headers shape), and records every (path, params, headers)
+    call it received. Used to prove the 2-tuple shape still works."""
 
     def __init__(self, responses):
         self._responses = list(responses)
@@ -64,6 +71,21 @@ class RecordingTransport:
         self.calls.append((path, dict(params), dict(headers)))
         status, payload = self._responses.pop(0)
         return status, _body(payload)
+
+
+class HeaderedTransport:
+    """Fake transport returning the new 3-tuple (status, payload,
+    response_headers) shape, for exercising 429 / rate-limit-header
+    handling. `responses` is a list of (status, payload_dict, headers_dict)."""
+
+    def __init__(self, responses):
+        self._responses = list(responses)
+        self.calls = []
+
+    def __call__(self, path, params, headers):
+        self.calls.append((path, dict(params), dict(headers)))
+        status, payload, resp_headers = self._responses.pop(0)
+        return status, _body(payload), dict(resp_headers)
 
 
 class TestHeaders(unittest.TestCase):
@@ -87,6 +109,7 @@ class TestHeaders(unittest.TestCase):
 
         class FakeResponse:
             status = 200
+            headers = {}  # real urlopen responses expose .headers.items()
 
             def read(self):
                 return _body({"data": [], "meta": {}})
@@ -197,10 +220,14 @@ class TestPacer(unittest.TestCase):
 
 
 class TestBackoff(unittest.TestCase):
-    def test_429_then_5xx_back_off_then_succeed(self):
+    """5xx retries: unchanged bounded exponential backoff. 429 has its own
+    policy -- see TestRateLimitWait / TestRateLimitPacerAdaptation /
+    TestRateLimitCapsAndDeadline below."""
+
+    def test_5xx_backs_off_then_succeeds(self):
         responses = [
-            (429, {}),
             (503, {}),
+            (502, {}),
             (200, {"data": [{"id": 1}], "meta": {}}),
         ]
         transport = RecordingTransport(responses)
@@ -217,8 +244,8 @@ class TestBackoff(unittest.TestCase):
         # Exponential backoff: 1s, then 2s.
         self.assertEqual(sleep.calls, [1.0, 2.0])
 
-    def test_retries_exhausted_raises_http_error(self):
-        responses = [(429, {})] * 10
+    def test_5xx_retries_exhausted_raises_http_error(self):
+        responses = [(503, {})] * 10
         transport = RecordingTransport(responses)
         clock = FakeClock()
         sleep = FakeSleep(clock)
@@ -228,10 +255,217 @@ class TestBackoff(unittest.TestCase):
 
         with self.assertRaises(BallDontLieHTTPError) as ctx:
             client.get("/atp/v1/matches", {})
-        self.assertEqual(ctx.exception.status, 429)
+        self.assertEqual(ctx.exception.status, 503)
         # Backoff is capped -- never exceeds backoff_cap.
         for delay in sleep.calls:
             self.assertLessEqual(delay, 10.0)
+
+
+class TestRateLimitWait(unittest.TestCase):
+    """429 handling waits instead of giving up -- see
+    src/providers/balldontlie.py's "429 POLICY" docstring. Every case here
+    uses a fast pacer (rate_per_minute=6000, bucket_capacity=6000) so the
+    pacer itself never sleeps -- every recorded sleep call is the 429 wait."""
+
+    def _fast_client(self, transport, clock, sleep, **config_kwargs):
+        return Client(FAKE_KEY, transport=transport, clock=clock, sleep=sleep,
+                      config=ClientConfig(rate_per_minute=6000, bucket_capacity=6000,
+                                           **config_kwargs))
+
+    def test_retry_after_waits_that_long_then_succeeds(self):
+        responses = [
+            (429, {}, {"Retry-After": "5"}),
+            (200, {"data": [{"id": 1}], "meta": {}}, {}),
+        ]
+        transport = HeaderedTransport(responses)
+        clock = FakeClock()
+        sleep = FakeSleep(clock)
+        client = self._fast_client(transport, clock, sleep)
+
+        result = client.get("/nfl/v1/games", {})
+
+        self.assertEqual(result["data"], [{"id": 1}])
+        self.assertEqual(sleep.calls, [5.0])
+
+    def test_ratelimit_reset_epoch_waits_until_reset(self):
+        # A value above 10**9 is epoch seconds, not seconds-until-reset --
+        # the wait is (reset_epoch - now), using the injectable wall clock.
+        clock = FakeClock(start=2_000_000_000.0)
+        sleep = FakeSleep(clock)
+        reset_epoch = clock.now + 45.0
+        responses = [
+            (429, {}, {"X-RateLimit-Reset": str(reset_epoch)}),
+            (200, {"data": [], "meta": {}}, {}),
+        ]
+        transport = HeaderedTransport(responses)
+        client = Client(FAKE_KEY, transport=transport, clock=clock, sleep=sleep, now=clock,
+                         config=ClientConfig(rate_per_minute=6000, bucket_capacity=6000))
+
+        client.get("/nfl/v1/games", {})
+
+        self.assertEqual(sleep.calls, [45.0])
+
+    def test_ratelimit_reset_seconds_until_reset_waits_that_long(self):
+        # A value at or below 10**9 is seconds-until-reset, used as-is.
+        responses = [
+            (429, {}, {"ratelimit-reset": "12"}),
+            (200, {"data": [], "meta": {}}, {}),
+        ]
+        transport = HeaderedTransport(responses)
+        clock = FakeClock()
+        sleep = FakeSleep(clock)
+        client = self._fast_client(transport, clock, sleep)
+
+        client.get("/nfl/v1/games", {})
+
+        self.assertEqual(sleep.calls, [12.0])
+
+    def test_no_headers_waits_61_seconds(self):
+        responses = [(429, {}, {}), (200, {"data": [], "meta": {}}, {})]
+        transport = HeaderedTransport(responses)
+        clock = FakeClock()
+        sleep = FakeSleep(clock)
+        client = self._fast_client(transport, clock, sleep)
+
+        client.get("/nfl/v1/games", {})
+
+        self.assertEqual(sleep.calls, [61.0])
+
+    def test_2_tuple_transport_still_works_for_429(self):
+        # Backward compat: a transport that still returns the old 2-tuple
+        # shape is treated as having no headers, so it gets the 61s default.
+        responses = [(429, {}), (200, {"data": [], "meta": {}})]
+        transport = RecordingTransport(responses)
+        clock = FakeClock()
+        sleep = FakeSleep(clock)
+        client = self._fast_client(transport, clock, sleep)
+
+        result = client.get("/nfl/v1/games", {})
+
+        self.assertEqual(result["data"], [])
+        self.assertEqual(sleep.calls, [61.0])
+
+
+class TestRateLimitPacerAdaptation(unittest.TestCase):
+    def test_adapts_to_95_percent_of_ratelimit_limit(self):
+        responses = [
+            (429, {}, {"X-RateLimit-Limit": "10"}),
+            (200, {"data": [], "meta": {}}, {}),
+        ]
+        transport = HeaderedTransport(responses)
+        clock = FakeClock()
+        sleep = FakeSleep(clock)
+        client = Client(FAKE_KEY, transport=transport, clock=clock, sleep=sleep,
+                         config=ClientConfig(rate_per_minute=6000, bucket_capacity=6000))
+
+        client.get("/nfl/v1/games", {})
+
+        state = client.rate_state()
+        self.assertAlmostEqual(state["rate_per_minute"], 9.5, places=6)
+        self.assertEqual(state["limit"], 10.0)
+
+    def test_halves_with_floor_when_no_limit_header(self):
+        responses = [(429, {}, {}), (200, {"data": [], "meta": {}}, {})]
+        transport = HeaderedTransport(responses)
+        clock = FakeClock()
+        sleep = FakeSleep(clock)
+        client = Client(FAKE_KEY, transport=transport, clock=clock, sleep=sleep,
+                         config=ClientConfig(rate_per_minute=6, bucket_capacity=6000))
+
+        client.get("/nfl/v1/games", {})
+
+        # 6/2 = 3, below the 4/min floor -- floor wins.
+        self.assertAlmostEqual(client.rate_state()["rate_per_minute"], 4.0, places=6)
+
+    def test_halves_without_hitting_floor(self):
+        responses = [(429, {}, {}), (200, {"data": [], "meta": {}}, {})]
+        transport = HeaderedTransport(responses)
+        clock = FakeClock()
+        sleep = FakeSleep(clock)
+        client = Client(FAKE_KEY, transport=transport, clock=clock, sleep=sleep,
+                         config=ClientConfig(rate_per_minute=20, bucket_capacity=6000))
+
+        client.get("/nfl/v1/games", {})
+
+        self.assertAlmostEqual(client.rate_state()["rate_per_minute"], 10.0, places=6)
+
+
+class TestRateLimitCapsAndDeadline(unittest.TestCase):
+    def test_wait_never_passes_the_deadline_and_raises(self):
+        responses = [(429, {}, {})] * 3
+        transport = HeaderedTransport(responses)
+        clock = FakeClock()
+        sleep = FakeSleep(clock)
+        client = Client(FAKE_KEY, transport=transport, clock=clock, sleep=sleep,
+                         config=ClientConfig(rate_per_minute=6000, bucket_capacity=6000))
+
+        # Default wait (no headers) is 61s; a 10s-away deadline must cap the
+        # sleep to 10s and then raise, never sleeping the full 61.
+        with self.assertRaises(BallDontLieDeadlineExceeded):
+            client.get("/nfl/v1/games", {}, deadline=10.0)
+
+        self.assertEqual(sleep.calls, [10.0])
+
+    def test_exhausting_max_429_wait_seconds_raises(self):
+        responses = [(429, {}, {})] * 5
+        transport = HeaderedTransport(responses)
+        clock = FakeClock()
+        sleep = FakeSleep(clock)
+        client = Client(FAKE_KEY, transport=transport, clock=clock, sleep=sleep,
+                         config=ClientConfig(rate_per_minute=6000, bucket_capacity=6000,
+                                              max_429_wait_seconds=100.0))
+
+        with self.assertRaises(BallDontLieRateLimitExhausted) as ctx:
+            client.get("/nfl/v1/games", {})
+
+        self.assertLessEqual(sum(sleep.calls), 100.0)
+        self.assertEqual(ctx.exception.path, "/nfl/v1/games")
+
+    def test_default_max_429_wait_seconds_is_900(self):
+        self.assertEqual(ClientConfig().max_429_wait_seconds, 900.0)
+
+
+class TestRateLimitHeaderWhitelist(unittest.TestCase):
+    def test_only_whitelisted_headers_survive_into_rate_state(self):
+        responses = [
+            (429, {}, {
+                "Retry-After": "1",
+                "X-RateLimit-Limit": "10",
+                "Set-Cookie": "session=abc123",
+                "Authorization": FAKE_KEY,
+            }),
+            (200, {"data": [], "meta": {}}, {}),
+        ]
+        transport = HeaderedTransport(responses)
+        clock = FakeClock()
+        sleep = FakeSleep(clock)
+        client = Client(FAKE_KEY, transport=transport, clock=clock, sleep=sleep,
+                         config=ClientConfig(rate_per_minute=6000, bucket_capacity=6000))
+
+        client.get("/nfl/v1/games", {})
+
+        state = client.rate_state()
+        self.assertNotIn("set-cookie", state)
+        self.assertNotIn(FAKE_KEY, repr(state))
+        self.assertNotIn("session=abc123", repr(state))
+        # The whitelisted one made it through.
+        self.assertEqual(state["limit"], 10.0)
+
+    def test_probe_only_returns_whitelisted_headers(self):
+        transport = HeaderedTransport([
+            (200, {"data": []}, {
+                "X-RateLimit-Remaining": "42",
+                "Set-Cookie": "x=y",
+                "Authorization": FAKE_KEY,
+            }),
+        ])
+        client = Client(FAKE_KEY, transport=transport, clock=FakeClock(), sleep=lambda s: None)
+
+        status, headers = client.probe("/nfl/v1/teams", {"per_page": 1})
+
+        self.assertEqual(status, 200)
+        self.assertEqual(headers, {"x-ratelimit-remaining": "42"})
+        self.assertEqual(len(transport.calls), 1)
 
 
 class TestErrorsNeverLeakTheKey(unittest.TestCase):

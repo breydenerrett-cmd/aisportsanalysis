@@ -72,6 +72,22 @@ CLI
     python scripts/balldontlie_harvest.py --dry-run
     python scripts/balldontlie_harvest.py --sports tennis,nfl --max-minutes 300
     python scripts/balldontlie_harvest.py --only atp_matches
+    python scripts/balldontlie_harvest.py --probe --sports tennis,nfl,mlb,nba,nhl
+
+429 HANDLING AND JOB PRIORITY (2026-09-15 incident)
+-----------------------------------------------------
+The first real run (35001607006) showed the account rate-limited far below
+the ALL-ACCESS ceiling, and the old retry policy gave up inside a single
+rate window -- see src/providers/balldontlie.py's "429 POLICY" docstring
+for the client-side fix (wait out 429s, bounded by max_429_wait_seconds and
+the run's own --max-minutes deadline; a job that gives up for either reason
+is recorded "partial" with its cursor saved, not a terminal error). Because
+a slow/rate-limited account may not finish the whole PLAN in one trial
+window, build_plan() also orders jobs by value instead of sport-then-
+alphabetical -- see the block comment above _TIER0_SEASON_FLOOR for the
+exact phases. --probe makes one cheap request per sport (no harvesting) so
+a run can be started with a fresh read of the account's current rate-limit
+headers before committing the full window to it.
 """
 
 from __future__ import annotations
@@ -92,8 +108,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.paths import repo_root  # noqa: E402
 from src.providers.balldontlie import (  # noqa: E402
+    BallDontLieDeadlineExceeded,
     BallDontLieError,
     BallDontLieHTTPError,
+    BallDontLieRateLimitExhausted,
     Client,
     client_from_env,
 )
@@ -327,12 +345,97 @@ _SPORT_BUILDERS = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Plan priority (2026-09-15 429 incident, see src/providers/balldontlie.py's
+# "429 POLICY" docstring): a slow/rate-limited account may not finish the
+# whole PLAN, so job ORDER decides what survives if the run stops early.
+# Three global phases, cutting across sports (not sport-then-alphabetical):
+#
+#   phase 0 -- newest-season matches/games/odds for the highest-value
+#              window per sport, sport-major within the phase: tennis (ATP
+#              then WTA) matches 2026->2019, then NFL games+odds
+#              2026->2019, then MLB/NBA/NHL games+odds 2026->2022.
+#   phase 1 -- endpoint kinds with no season priority, in this order, across
+#              ALL selected sports: players, tournaments, rankings,
+#              standings, injuries, stats.
+#   phase 2 -- "older seasons": the same matches/games/odds kinds as phase 0,
+#              for seasons below that phase's floor.
+#
+# This only reorders the jobs _tennis_jobs/etc. already build; out_name
+# (and therefore the manifest file key and .cursor sidecar path) is
+# untouched, so existing manifest entries keep resuming across a reorder.
+# ---------------------------------------------------------------------------
+
+_TIER0_SEASON_FLOOR = {"tennis": 2019, "nfl": 2019, "mlb": 2022, "nba": 2022, "nhl": 2022}
+_TIER0_ENDPOINT_KINDS = {
+    "tennis": {"atp_matches", "wta_matches"},
+    "nfl": {"games", "odds", "odds_opening"},
+    "mlb": {"games", "odds", "odds_opening"},
+    "nba": {"games", "odds", "odds_opening"},
+    "nhl": {"games", "odds", "odds_opening"},
+}
+# Endpoint-kind order within phase 1 -- "players, tournaments, rankings,
+# standings, injuries, stats" from the FIX brief. Lower sorts first.
+_TIER1_ENDPOINT_RANK = {
+    "atp_players": 0, "wta_players": 0,
+    "atp_tournaments": 1, "wta_tournaments": 1,
+    "atp_rankings": 2, "wta_rankings": 2,
+    "standings": 3,
+    "player_injuries": 4,
+    "atp_match_stats": 5, "wta_match_stats": 5,
+    "stats": 5, "season_stats": 5, "team_season_stats": 5, "box_scores": 5,
+}
+_SPORT_VALUE_ORDER = {sport: i for i, sport in enumerate(ALL_SPORTS)}
+
+
+def _job_season(job: "Job") -> Optional[int]:
+    """The season a job's params carry, under whichever of the three key
+    spellings this plan uses (season / seasons[] / seasons), or None for a
+    job with no season param at all (e.g. the unfiltered odds jobs)."""
+    params = job.params
+    if "season" in params:
+        return params["season"]
+    for key in ("seasons[]", "seasons"):
+        value = params.get(key)
+        if value:
+            return value[0]
+    return None
+
+
+def _job_priority(job: "Job") -> tuple:
+    """Sort key implementing the 3-phase priority described above. Lower
+    tuples sort first; see the block comment for what each phase means."""
+    sport_rank = _SPORT_VALUE_ORDER.get(job.sport, 99)
+    season = _job_season(job)
+    tier0_kinds = _TIER0_ENDPOINT_KINDS.get(job.sport, ())
+    # "matches"/"games" rank ahead of "odds"/"odds_opening" for the same
+    # sport+season.
+    kind_rank = 1 if "odds" in job.endpoint else 0
+
+    if job.endpoint in tier0_kinds:
+        floor = _TIER0_SEASON_FLOOR.get(job.sport, 0)
+        # The unfiltered MLB/NBA/NHL odds jobs carry no season param at all
+        # -- treat them as "now" (newest) rather than falling out of phase 0.
+        effective_season = season if season is not None else 9999
+        # Season dominates kind: "2026 back to 2019" means every 2026 job
+        # (games AND odds) before any 2025 job, not all games before any odds.
+        if effective_season >= floor:
+            return (0, sport_rank, -effective_season, kind_rank, job.endpoint, job.out_name)
+        return (2, sport_rank, -effective_season, kind_rank, job.endpoint, job.out_name)
+
+    rank = _TIER1_ENDPOINT_RANK.get(job.endpoint, 9)
+    return (1, rank, sport_rank, job.endpoint, -(season or 0), job.out_name)
+
+
 def build_plan(sports=ALL_SPORTS, only: Optional[str] = None) -> list:
-    """Build the ordered job list. Pure -- no network, safe for --dry-run."""
+    """Build the priority-ordered job list. Pure -- no network, safe for
+    --dry-run. See the block comment above _TIER0_SEASON_FLOOR for the
+    ordering rules; --sports/--only filtering is unaffected by it."""
     jobs = []
-    for sport in ALL_SPORTS:  # fixed priority order regardless of --sports order
+    for sport in ALL_SPORTS:  # gather in a fixed order; _job_priority resorts
         if sport in sports:
             jobs.extend(_SPORT_BUILDERS[sport]())
+    jobs.sort(key=_job_priority)
     if only:
         jobs = [j for j in jobs if j.endpoint == only]
     return jobs
@@ -436,7 +539,8 @@ def _run_paged_job(ctx: RunContext, job: Job) -> JobResult:
     harvested_utc = _utc_now_iso()
     try:
         with gzip.open(out_path, mode) as gz:
-            for payload in ctx.client.pages(job.path, job.params, start_cursor=start_cursor):
+            for payload in ctx.client.pages(job.path, job.params, start_cursor=start_cursor,
+                                             deadline=ctx.deadline):
                 data = payload.get("data")
                 rows = data if isinstance(data, list) else ([data] if data else [])
                 rows_written += _write_rows(gz, rows, harvested_utc)
@@ -448,6 +552,11 @@ def _run_paged_job(ctx: RunContext, job: Job) -> JobResult:
 
                 if ctx.deadline is not None and ctx.clock() >= ctx.deadline:
                     return JobResult(status="partial", rows_written=rows_written)
+    except (BallDontLieRateLimitExhausted, BallDontLieDeadlineExceeded):
+        # Still rate-limited / out of time, not permanently disallowed -- the
+        # cursor sidecar from the last successful page (if any) is already
+        # on disk, so this resumes on the next run instead of erroring out.
+        return JobResult(status="partial", rows_written=rows_written)
     except BallDontLieHTTPError as exc:
         return JobResult(status="error", http_status=exc.status, rows_written=rows_written)
 
@@ -461,7 +570,9 @@ def _run_single_job(ctx: RunContext, job: Job) -> JobResult:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     harvested_utc = _utc_now_iso()
     try:
-        payload = ctx.client.get(job.path, job.params)
+        payload = ctx.client.get(job.path, job.params, deadline=ctx.deadline)
+    except (BallDontLieRateLimitExhausted, BallDontLieDeadlineExceeded):
+        return JobResult(status="partial", rows_written=0)
     except BallDontLieHTTPError as exc:
         return JobResult(status="error", http_status=exc.status)
 
@@ -522,7 +633,8 @@ def _run_ranking_probe_job(ctx: RunContext, job: Job) -> JobResult:
 
             if state["phase"] == "probe":
                 probe_date = date.fromisoformat(state["probe_date"])
-                payload = ctx.client.get(path, {"date": probe_date.isoformat(), "per_page": 1})
+                payload = ctx.client.get(path, {"date": probe_date.isoformat(), "per_page": 1},
+                                          deadline=ctx.deadline)
                 found = bool(payload.get("data"))
                 if found:
                     state["known_good"] = probe_date.isoformat()
@@ -549,7 +661,8 @@ def _run_ranking_probe_job(ctx: RunContext, job: Job) -> JobResult:
             until = date.fromisoformat(state["until"])
             if next_date > until:
                 break
-            for fill_payload in ctx.client.pages(path, {"date": next_date.isoformat()}):
+            for fill_payload in ctx.client.pages(path, {"date": next_date.isoformat()},
+                                                  deadline=ctx.deadline):
                 rows = fill_payload.get("data") or []
                 rows_written += _write_rows(gz, rows, harvested_utc)
             state["next_date"] = (next_date + timedelta(days=7)).isoformat()
@@ -557,6 +670,10 @@ def _run_ranking_probe_job(ctx: RunContext, job: Job) -> JobResult:
         else:
             raise BallDontLieError(
                 "rankings probe exceeded its iteration safety cap -- corrupted .cursor state?")
+    except (BallDontLieRateLimitExhausted, BallDontLieDeadlineExceeded):
+        # `state` already reflects the last persisted step (see the
+        # state_path.write_text calls above) -- nothing further to save.
+        return JobResult(status="partial", rows_written=rows_written)
     except BallDontLieHTTPError as exc:
         return JobResult(status="error", http_status=exc.status, rows_written=rows_written)
     finally:
@@ -632,6 +749,37 @@ def run_plan(jobs: list, ctx: RunContext) -> dict:
     return {"completed": completed, "skipped": skipped, "errored": errored, "partial": partial}
 
 
+# One cheap, per_page=1 endpoint per sport for --probe. Paths are ones this
+# plan already uses (tennis' /atp/v1/players -- see _tennis_jobs) or ones
+# confirmed against the OpenAPI specs cited in this module's docstring
+# (nfl/mlb/nba/nhl .../v1/teams).
+_PROBE_ENDPOINTS = {
+    "tennis": "/atp/v1/players",
+    "nfl": "/nfl/v1/teams",
+    "mlb": "/mlb/v1/teams",
+    "nba": "/nba/v1/teams",
+    "nhl": "/nhl/v1/teams",
+}
+
+
+def run_probe(client: Client, sports: list) -> None:
+    """--probe: exactly one per_page=1 request per selected sport, to see
+    the account's current rate-limit state without spending real quota.
+    Prints ONLY the sport, HTTP status, and the whitelisted rate-limit
+    headers -- no response body, no API key, no URL/query string (see
+    src/providers/balldontlie.py's Client.probe and _whitelist_headers)."""
+    for sport in sports:
+        path = _PROBE_ENDPOINTS.get(sport)
+        if path is None:
+            continue
+        try:
+            status, headers = client.probe(path, {"per_page": 1})
+        except BallDontLieError as exc:
+            print(f"{sport}: error ({exc})")
+            continue
+        print(f"{sport}: status={status} headers={headers}")
+
+
 def _print_plan(jobs: list) -> None:
     by_sport: dict = {}
     for job in jobs:
@@ -663,6 +811,9 @@ def main(argv=None) -> int:
                      help="stop cleanly after this many minutes, leaving resumable state")
     ap.add_argument("--dry-run", action="store_true",
                      help="print the plan and a request estimate; touches no network")
+    ap.add_argument("--probe", action="store_true",
+                     help="one cheap per_page=1 request per selected sport; prints status + "
+                          "rate-limit headers only, then exits (no harvesting)")
     ap.add_argument("--out-dir", default=str(DEFAULT_OUT_DIR),
                      help="output directory (default: data/historical/balldontlie)")
     args = ap.parse_args(argv)
@@ -686,6 +837,10 @@ def main(argv=None) -> int:
         print(str(exc), file=sys.stderr)
         return 1
 
+    if args.probe:
+        run_probe(client, sports)
+        return 0
+
     out_dir = Path(args.out_dir)
     manifest = load_manifest(out_dir)
     deadline = (time.monotonic() + args.max_minutes * 60) if args.max_minutes is not None else None
@@ -694,6 +849,7 @@ def main(argv=None) -> int:
     summary = run_plan(jobs, ctx)
     print(f"jobs: {summary['completed']} completed, {summary['skipped']} skipped, "
           f"{summary['partial']} partial (deadline), {summary['errored']} errored")
+    print(f"rate_state: {client.rate_state()}")
     return 0
 
 

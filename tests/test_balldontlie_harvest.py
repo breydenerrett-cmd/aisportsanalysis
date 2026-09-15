@@ -3,10 +3,14 @@
 Everything runs in a temp directory with a fake transport under
 src.providers.balldontlie.Client -- nothing here touches the network or the
 real data/historical/balldontlie tree. Covers: the plan builds for every
-sport, --dry-run prints without network, a job writes gzip rows plus a
-correct manifest entry (sha256/rows), resume skips completed jobs and
-continues a partial one from its saved cursor, a 403 is recorded and
-skipped, and --max-minutes stops cleanly.
+sport and is priority-ordered (newest-value jobs first), --dry-run prints
+without network, --probe makes exactly one request per sport and prints
+only status + whitelisted headers, a job writes gzip rows plus a correct
+manifest entry (sha256/rows), resume skips completed jobs and continues a
+partial one from its saved cursor (including after a reorder of the plan),
+a 403 is recorded and skipped, a 429 that exhausts max_429_wait_seconds or
+the deadline is recorded as partial (resumable) not error, and
+--max-minutes stops cleanly.
 """
 
 from __future__ import annotations
@@ -26,7 +30,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from scripts import balldontlie_harvest as harvest  # noqa: E402
-from src.providers.balldontlie import BallDontLieHTTPError  # noqa: E402
+from src.providers.balldontlie import (  # noqa: E402
+    BallDontLieDeadlineExceeded,
+    BallDontLieHTTPError,
+    BallDontLieRateLimitExhausted,
+)
 
 FAKE_KEY = "sk-test-harvest-0000000000"
 
@@ -43,18 +51,23 @@ class ScriptedClient:
     tests/test_balldontlie_client.py).
     """
 
-    def __init__(self, page_script=None, get_script=None, http_errors=None):
+    def __init__(self, page_script=None, get_script=None, http_errors=None,
+                 rate_limit_errors=None):
         # page_script: {(path, frozenset(base_params.items())): [rows_page1, rows_page2, ...]}
         self.page_script = page_script or {}
         self.get_script = get_script or {}
         self.http_errors = http_errors or {}  # path -> status
+        # path -> exception instance (BallDontLieRateLimitExhausted or
+        # BallDontLieDeadlineExceeded) to raise instead of serving data --
+        # simulates the real Client giving up on a 429 wait.
+        self.rate_limit_errors = rate_limit_errors or {}
         self.calls = []
 
     def _key(self, path, params):
         base = {k: v for k, v in params.items() if k not in ("cursor", "per_page")}
         return (path, tuple(sorted((k, _freeze(v)) for k, v in base.items())))
 
-    def pages(self, path, params=None, *, page_cap=None, start_cursor=None):
+    def pages(self, path, params=None, *, page_cap=None, start_cursor=None, deadline=None):
         # Cursor values are simply the index of the next page, so resuming
         # from start_cursor=N genuinely skips pages 0..N-1 -- this is what
         # makes test_resume_continues_from_saved_cursor_after_deadline a
@@ -62,6 +75,8 @@ class ScriptedClient:
         # just that it re-fetched everything from scratch.
         params = dict(params or {})
         self.calls.append(("pages", path, dict(params)))
+        if path in self.rate_limit_errors:
+            raise self.rate_limit_errors[path]
         if path in self.http_errors:
             raise BallDontLieHTTPError(self.http_errors[path], path)
         key = self._key(path, params)
@@ -76,13 +91,25 @@ class ScriptedClient:
             yield {"data": rows, "meta": {"next_cursor": i + 1 if has_next else None}}
             count += 1
 
-    def get(self, path, params=None):
+    def get(self, path, params=None, *, deadline=None):
         params = dict(params or {})
         self.calls.append(("get", path, dict(params)))
+        if path in self.rate_limit_errors:
+            raise self.rate_limit_errors[path]
         if path in self.http_errors:
             raise BallDontLieHTTPError(self.http_errors[path], path)
         key = self._key(path, params)
         return self.get_script.get(key, {"data": []})
+
+    def probe(self, path, params=None):
+        params = dict(params or {})
+        self.calls.append(("probe", path, dict(params)))
+        if path in self.http_errors:
+            return self.http_errors[path], {}
+        return 200, {"x-ratelimit-remaining": "99"}
+
+    def rate_state(self):
+        return {"rate_per_minute": 550.0, "total_429_wait_seconds": 0.0}
 
 
 def _freeze(v):
@@ -314,7 +341,7 @@ class TestRankingProbe(unittest.TestCase):
             def __init__(self):
                 self.get_calls = []
 
-            def get(self, path, params):
+            def get(self, path, params, *, deadline=None):
                 self.get_calls.append(dict(params))
                 d = date.fromisoformat(params["date"])
                 if d >= self.EARLIEST:
@@ -345,7 +372,7 @@ class TestRankingProbe(unittest.TestCase):
             def __init__(self):
                 self.n_calls = 0
 
-            def get(self, path, params):
+            def get(self, path, params, *, deadline=None):
                 self.n_calls += 1
                 return {"data": [{"player_id": 1}]}
 
@@ -366,6 +393,240 @@ class TestRankingProbe(unittest.TestCase):
 
         out_path = harvest._out_path(self.out_dir, "tennis", "wta_rankings")
         self.assertTrue(harvest._sidecar_path(out_path).exists())
+
+
+class TestPlanOrder(unittest.TestCase):
+    """build_plan() priority order -- see the block comment above
+    _TIER0_SEASON_FLOOR in scripts/balldontlie_harvest.py. A slow/rate-
+    limited account may not finish the whole plan, so job order decides
+    what survives; the highest-value jobs (newest-season tennis matches,
+    then NFL games/odds, then MLB/NBA/NHL games/odds) must come first."""
+
+    def test_first_jobs_are_2026_tennis_matches(self):
+        jobs = harvest.build_plan(["tennis"])
+        first = jobs[0]
+        self.assertEqual(first.endpoint, "atp_matches")
+        self.assertEqual(first.params["season"], harvest._CEILING_YEAR)
+
+    def test_2026_tennis_and_nfl_precede_everything_else(self):
+        jobs = harvest.build_plan(harvest.ALL_SPORTS)
+        first_30 = jobs[:30]
+        # Every one of the first 30 jobs must be a phase-0 (newest-value)
+        # job: tennis matches or NFL games/odds, season >= their floor.
+        for job in first_30:
+            if job.sport == "tennis":
+                self.assertIn(job.endpoint, ("atp_matches", "wta_matches"))
+                self.assertGreaterEqual(job.params["season"], 2019)
+            elif job.sport == "nfl":
+                self.assertIn(job.endpoint, ("games", "odds", "odds_opening"))
+            else:
+                self.fail(f"unexpected sport this early in the plan: {job.sport} ({job.out_name})")
+        # Tennis (higher value) must fully precede NFL within those 30.
+        sports_seen = [job.sport for job in first_30]
+        if "nfl" in sports_seen:
+            last_tennis_idx = max(i for i, s in enumerate(sports_seen) if s == "tennis")
+            first_nfl_idx = sports_seen.index("nfl")
+            self.assertLess(last_tennis_idx, first_nfl_idx)
+
+    def test_tennis_matches_season_strictly_descends_to_the_2019_floor(self):
+        jobs = harvest.build_plan(["tennis"], only="atp_matches")
+        seasons = [j.params["season"] for j in jobs]
+        top = [s for s in seasons if s >= 2019]
+        self.assertEqual(top, sorted(top, reverse=True))
+        self.assertEqual(top[0], harvest._CEILING_YEAR)
+
+    def test_older_tennis_seasons_come_after_non_season_priority_endpoints(self):
+        jobs = harvest.build_plan(["tennis"])
+        index = {id(j): i for i, j in enumerate(jobs)}
+        players_idx = min(i for i, j in enumerate(jobs) if j.endpoint == "atp_players")
+        old_match_idx = min(i for i, j in enumerate(jobs)
+                             if j.endpoint == "atp_matches" and j.params["season"] < 2019)
+        self.assertLess(players_idx, old_match_idx)
+
+    def test_sports_and_only_filters_still_work_after_reordering(self):
+        jobs = harvest.build_plan(["nfl", "mlb"])
+        self.assertTrue(all(j.sport in ("nfl", "mlb") for j in jobs))
+        only_jobs = harvest.build_plan(harvest.ALL_SPORTS, only="games")
+        self.assertTrue(only_jobs)
+        self.assertTrue(all(j.endpoint == "games" for j in only_jobs))
+
+    def test_output_names_still_unique_after_reordering(self):
+        jobs = harvest.build_plan(harvest.ALL_SPORTS)
+        names = [(j.sport, j.out_name) for j in jobs]
+        self.assertEqual(len(names), len(set(names)))
+
+
+class TestProbeMode(unittest.TestCase):
+    def test_probe_makes_exactly_one_request_per_sport_and_prints_status_and_headers(self):
+        client = ScriptedClient()
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            harvest.run_probe(client, ["tennis", "nfl", "mlb", "nba", "nhl"])
+        out = buf.getvalue()
+
+        probe_calls = [c for c in client.calls if c[0] == "probe"]
+        self.assertEqual(len(probe_calls), 5)
+        # Exactly the documented cheap per-sport endpoints, per_page=1.
+        called_paths = {path for (_kind, path, _params) in probe_calls}
+        self.assertEqual(called_paths, {
+            "/atp/v1/players", "/nfl/v1/teams", "/mlb/v1/teams",
+            "/nba/v1/teams", "/nhl/v1/teams",
+        })
+        for _kind, _path, params in probe_calls:
+            self.assertEqual(params.get("per_page"), 1)
+
+        for sport in ("tennis", "nfl", "mlb", "nba", "nhl"):
+            self.assertIn(sport, out)
+        self.assertIn("status=200", out)
+        self.assertIn("x-ratelimit-remaining", out)
+
+    def test_probe_prints_no_body_no_key_no_query_string(self):
+        client = ScriptedClient()
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            harvest.run_probe(client, ["tennis"])
+        out = buf.getvalue()
+        self.assertNotIn(FAKE_KEY, out)
+        self.assertNotIn("?", out)
+        self.assertNotIn("per_page=1", out)  # per_page is a request param, not printed
+
+
+class TestRateLimitJobHandling(unittest.TestCase):
+    """A 429 that exhausts max_429_wait_seconds or the caller's deadline is
+    resumable, not a terminal error -- src/providers/balldontlie.py raises
+    BallDontLieRateLimitExhausted / BallDontLieDeadlineExceeded for those
+    two cases specifically (never BallDontLieHTTPError), and the harvester
+    must record "partial" with the cursor saved, not "error"."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.out_dir = Path(self._tmp.name)
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def test_paged_job_rate_limit_exhausted_is_partial_with_cursor_saved(self):
+        path = "/mlb/v1/games"
+        job = harvest._paged_job("mlb", "games", path, {"seasons[]": [2024]},
+                                  "mlb_games_2024", "games", 1)
+        client = ScriptedClient(
+            page_script={(path, (("seasons[]", (2024,)),)): [[{"id": 1}], [{"id": 2}]]},
+        )
+        # First run: page 1 succeeds (cursor saved), then simulate the
+        # vendor 429ing out on page 2 by swapping in a rate-limit error for
+        # the same path after the first page has already been fetched once.
+        real_pages = client.pages
+
+        def pages_then_exhaust(*args, **kwargs):
+            for i, payload in enumerate(real_pages(*args, **kwargs)):
+                if i == 1:
+                    raise BallDontLieRateLimitExhausted(path, 900.0)
+                yield payload
+
+        client.pages = pages_then_exhaust
+        ctx = harvest.RunContext(client=client, out_dir=self.out_dir, manifest={})
+
+        summary = harvest.run_plan([job], ctx)
+
+        self.assertEqual(summary["partial"], 1)
+        self.assertEqual(summary["errored"], 0)
+        out_path = harvest._out_path(self.out_dir, "mlb", "mlb_games_2024")
+        self.assertTrue(harvest._sidecar_path(out_path).exists())
+        manifest = harvest.load_manifest(self.out_dir)
+        entry = manifest["mlb/mlb_games_2024.jsonl.gz"]
+        self.assertFalse(entry["complete"])
+        self.assertIsNone(entry.get("http_status"))
+
+    def test_paged_job_deadline_exceeded_is_partial(self):
+        path = "/nba/v1/games"
+        job = harvest._paged_job("nba", "games", path, {"seasons[]": [2024]},
+                                  "nba_games_2024", "games", 1)
+        client = ScriptedClient(rate_limit_errors={path: BallDontLieDeadlineExceeded(path)})
+        ctx = harvest.RunContext(client=client, out_dir=self.out_dir, manifest={})
+
+        summary = harvest.run_plan([job], ctx)
+
+        self.assertEqual(summary["partial"], 1)
+        self.assertEqual(summary["errored"], 0)
+
+    def test_single_job_rate_limit_exhausted_is_partial_not_error(self):
+        path = "/nfl/v1/standings"
+        job = harvest._single_job("nfl", "standings", path, {"season": 2024},
+                                   "nfl_standings_2024", "standings", 1)
+        client = ScriptedClient(rate_limit_errors={path: BallDontLieRateLimitExhausted(path, 900.0)})
+        ctx = harvest.RunContext(client=client, out_dir=self.out_dir, manifest={})
+
+        summary = harvest.run_plan([job], ctx)
+
+        self.assertEqual(summary["partial"], 1)
+        self.assertEqual(summary["errored"], 0)
+        manifest = harvest.load_manifest(self.out_dir)
+        entry = manifest["nfl/nfl_standings_2024.jsonl.gz"]
+        self.assertFalse(entry["complete"])
+        self.assertIsNone(entry.get("http_status"))
+        # Not marked complete/errored, so a later run retries it.
+        client.calls.clear()
+        ctx2 = harvest.RunContext(client=client, out_dir=self.out_dir, manifest=manifest)
+        harvest.run_plan([job], ctx2)
+        self.assertEqual(len(client.calls), 1)
+
+    def test_deadline_is_passed_through_to_the_client(self):
+        path = "/nhl/v1/standings"
+        job = harvest._single_job("nhl", "standings", path, {"season": 2024},
+                                   "nhl_standings_2024", "standings", 1)
+
+        class DeadlineCapturingClient:
+            def __init__(self):
+                self.seen_deadlines = []
+
+            def get(self, path, params, *, deadline=None):
+                self.seen_deadlines.append(deadline)
+                return {"data": []}
+
+        client = DeadlineCapturingClient()
+        # Fixed clock well before the deadline -- RunContext.clock defaults
+        # to the real time.monotonic() (process/system uptime), which can
+        # already exceed a small test deadline like this one and make
+        # run_plan's own pre-job check skip the job before it ever runs.
+        ctx = harvest.RunContext(client=client, out_dir=self.out_dir, manifest={},
+                                  deadline=123.0, clock=lambda: 0.0)
+
+        harvest.run_plan([job], ctx)
+
+        self.assertEqual(client.seen_deadlines, [123.0])
+
+
+class TestResumeAfterReorder(unittest.TestCase):
+    """Manifest entries and .cursor sidecars are keyed by output file name,
+    not plan position -- reordering build_plan() must not break resume."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.out_dir = Path(self._tmp.name)
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def test_reordered_plan_still_resumes_completed_job_by_file_name(self):
+        jobs = harvest.build_plan(["tennis"], only="atp_matches")
+        job = jobs[0]  # newest season first under the new priority order
+        client = ScriptedClient(page_script={
+            (job.path, tuple(sorted((k, tuple(v) if isinstance(v, list) else v)
+                                     for k, v in job.params.items()))): [[{"id": 1}]],
+        })
+        ctx = harvest.RunContext(client=client, out_dir=self.out_dir, manifest={})
+        harvest.run_plan([job], ctx)
+
+        manifest2 = harvest.load_manifest(self.out_dir)
+        rel = f"tennis/{job.out_name}.jsonl.gz"
+        self.assertIn(rel, manifest2)
+        self.assertTrue(manifest2[rel]["complete"])
+
+        client.calls.clear()
+        ctx2 = harvest.RunContext(client=client, out_dir=self.out_dir, manifest=manifest2)
+        summary2 = harvest.run_plan([job], ctx2)
+        self.assertEqual(summary2["skipped"], 1)
+        self.assertEqual(client.calls, [])
 
 
 def _read_jsonl_gz(path: Path) -> list:
