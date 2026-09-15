@@ -703,5 +703,110 @@ export async function renderPerformance(container) {
     screen.appendChild(el("p", { class: "perf-note", text: note }));
   }
 
+  // LIVE RESEARCH RECORD -- appended below all existing performance content.
+  // A failed /performance/live fetch renders nothing here (`.catch(() => null)`),
+  // same "must not take the rest of the page down with it" rule every other
+  // optional fetch on this screen already follows.
+  const liveHost = el("div", {});
+  screen.appendChild(liveHost);
+  apiGet("/performance/live?limit=50")
+    .then(livePayload => {
+      clear(liveHost);
+      liveHost.appendChild(renderLiveResearchRecord(livePayload));
+    })
+    .catch(() => {
+      clear(liveHost);
+    });
+
   armEntrances(screen);
+}
+
+/* =====================================================================
+ * Live research record panel
+ * ===================================================================== */
+
+function renderLiveResearchRecord(payload) {
+  const section = el("section", { class: "perf-live", "data-hook": "performance-live-record" });
+  section.appendChild(el("h2", { class: "perf-live__title", text: "Live research record" }));
+  section.appendChild(el("p", { class: "perf-live__notice", "data-hook": "live-notice",
+    text: payload.notice || "Live analysis is in internal testing. No alerts are sent." }));
+
+  const record = payload.record || {};
+  if (record.settled === 0) {
+    section.appendChild(notYetAvailable("No live research candidates have settled yet.", "NO SETTLED CANDIDATES"));
+    return section;
+  }
+
+  // Counts by rule
+  const byRuleSection = el("div", { class: "perf-live__summary" });
+  const byRule = record.by_rule || {};
+  if (Object.keys(byRule).length > 0) {
+    const rulesList = el("div", { class: "perf-live__rules" });
+    for (const [ruleId, counts] of Object.entries(byRule)) {
+      const ruleName = humanizeKey(ruleId) || ruleId;
+      const wins = counts.wins || 0;
+      const losses = counts.losses || 0;
+      const pushes = counts.pushes || 0;
+      const voids = counts.voids || 0;
+      const units = typeof counts.units === "number" ? numFmt(counts.units) : "—";
+      const ruleText = `${ruleName}: ${wins}W-${losses}L-${pushes}P-${voids}V · ${units}u`;
+      rulesList.appendChild(el("p", { class: "perf-live__rule-line", text: ruleText }));
+    }
+    byRuleSection.appendChild(rulesList);
+  }
+
+  // Overall totals
+  const totalsText = `${record.wins || 0}W-${record.losses || 0}L-${record.pushes || 0}P-${record.voids || 0}V · ${numFmt(record.units) || "—"}u`;
+  byRuleSection.appendChild(el("p", { class: "perf-live__totals", text: totalsText }));
+  section.appendChild(byRuleSection);
+
+  // History
+  const history = Array.isArray(payload.history) ? payload.history : [];
+  if (history.length > 0) {
+    const historySection = el("div", { class: "perf-live__history" });
+    historySection.appendChild(el("h3", { class: "perf-live__history-title",
+      text: `Recent candidates (${history.length} shown)` }));
+    const wrap = el("div", { class: "ov2-table-wrap" });
+    const table = el("table", { class: "ov2-table perf-live__table" });
+    const thead = el("thead");
+    const hr = el("tr");
+    for (const label of ["RULE", "BET", "PRICE", "RESULT"]) {
+      hr.appendChild(el("th", { scope: "col", text: label }));
+    }
+    thead.appendChild(hr);
+    table.appendChild(thead);
+    const tbody = el("tbody");
+    for (const candidate of history) {
+      const tr = el("tr");
+      const settlement = candidate.settlement;
+      const ruleId = candidate.rule_id || "—";
+      const ruleName = humanizeKey(ruleId) || ruleId;
+      tr.appendChild(el("td", { text: ruleName }));
+      tr.appendChild(el("td", { text: candidate.bet || "—" }));
+      tr.appendChild(el("td", { text: formatAmerican(candidate.price) || "—" }));
+      if (settlement) {
+        const result = settlement.result || "—";
+        const resultChip = result === "WIN" ? "W"
+          : result === "LOSS" ? "L"
+          : result === "PUSH" ? "P"
+          : result === "VOID" ? "V"
+          : result;
+        const resultTone = result === "WIN" ? "money"
+          : result === "LOSS" ? "outline"
+          : result === "PUSH" ? "live"
+          : "warn";
+        tr.appendChild(el("td", {},
+          [el("span", { class: `pv-chip pv-chip--${resultTone}`, text: resultChip })]));
+      } else {
+        tr.appendChild(el("td", { text: "PENDING" }));
+      }
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    historySection.appendChild(wrap);
+    section.appendChild(historySection);
+  }
+
+  return section;
 }

@@ -1,0 +1,45 @@
+name: live-window
+
+"on":
+  workflow_dispatch:
+    inputs:
+      sport:
+        description: "Sport"
+        required: true
+        type: choice
+        options:
+          - mlb
+          - nfl
+      max_minutes:
+        description: "Maximum minutes to run"
+        required: false
+        default: "330"
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: live-window-${{ inputs.sport }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Run live window
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          LIVE_ODDS: ${{ vars.LIVE_ODDS }}
+          LIVE_WINDOW_COMMIT: "1"
+        run: bash scripts/live_window.sh "${{ inputs.sport }}" "${{ inputs.max_minutes }}"

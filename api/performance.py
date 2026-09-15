@@ -21,6 +21,7 @@ from fastapi import APIRouter, HTTPException
 
 from src.appstate import freshness
 from src.report import paper_performance
+from src.appstate import live_ledger
 
 router = APIRouter()
 
@@ -34,6 +35,10 @@ PERFORMANCE_CACHE_TTL_S = 60.0
 _performance_cache = freshness.SingleFlightTTLCache(ttl_s=PERFORMANCE_CACHE_TTL_S)
 
 MIN_LIMIT, MAX_LIMIT = 1, 200
+
+# Module-level live_ledger calls, patchable for testing.
+_live_ledger_record = live_ledger.record
+_live_ledger_history = live_ledger.history
 
 
 @router.get("/performance")
@@ -69,3 +74,28 @@ def get_performance(limit: int = 50) -> dict:
             limit=limit, today=today),
     )
     return payload
+
+
+@router.get("/performance/live")
+def get_performance_live(limit: int = 50) -> dict:
+    """Live research candidates record and history.
+
+    Returns:
+        {
+            "record": full record counts by rule,
+            "history": list of candidates with settlements (limit-bounded),
+            "notice": "Live analysis is in internal testing. No alerts are sent.",
+            "generated_utc": ISO timestamp
+        }
+    """
+    if not (MIN_LIMIT <= limit <= MAX_LIMIT):
+        raise HTTPException(
+            status_code=400,
+            detail=f"limit must be between {MIN_LIMIT} and {MAX_LIMIT} "
+                   f"(got {limit!r})")
+    return {
+        "record": _live_ledger_record(),
+        "history": _live_ledger_history(limit=limit),
+        "notice": "Live analysis is in internal testing. No alerts are sent.",
+        "generated_utc": datetime.now(timezone.utc).isoformat(),
+    }
