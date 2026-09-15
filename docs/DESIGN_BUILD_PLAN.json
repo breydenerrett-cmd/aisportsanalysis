@@ -1,0 +1,2039 @@
+{
+  "version": "2026-09-15",
+  "source_audit": "wf_279c91fb-292",
+  "groups": [
+    {
+      "id": "foundation",
+      "order": 1,
+      "depends_on": [],
+      "owns": [
+        "web/css/tokens.css",
+        "web/css/base.css",
+        "web/css/components.css",
+        "web/js/layout.js",
+        "web/js/states.js",
+        "web/js/dom.js",
+        "web/js/motion.js"
+      ],
+      "tests_owned": [
+        "tests/test_web_v2_primitives.py",
+        "tests/test_request_timeout.py",
+        "tests/test_no_developer_notes_on_screen.py",
+        "tests/test_no_nothing_clears_the_bar.py",
+        "tests/test_labels.py"
+      ],
+      "tests_to_update": [
+        "tests/test_web_v2_primitives.py: verify the new .btn--primary/.btn--ghost/.btn--text rules and flat .panel/.chip/.dtable/.pagehead/.notice--experimental classes in components.css satisfy whatever primitive-shape assertions this file already makes; add assertions only if a primitive it checks was renamed."
+      ],
+      "tasks": [
+        {
+          "id": "F-1",
+          "what": "tokens.css: append role aliases (--panel, --panel-2, --panel-3, --edge, --edge-soft, --edge-hi, --primary, --primary-soft, --fresh, --fresh-text, --caution, --caution-text, --caution-soft, --win), the --fs-* type scale, --strip-height-phone, --sportrow-height; change --gutter-mobile to 16px, --rail-width to 228px, --tabbar-height to 60px; comment-list retired tokens (--money-2, --money-lit, --money-soft as text, --text-dim, --text-ghost, --v-t7 as text) without deleting any still-referenced value.",
+          "closes": [],
+          "acceptance": [
+            "python -m pytest tests/test_web_v2_primitives.py",
+            "grep -c 'panel-3' web/css/tokens.css returns at least 1"
+          ]
+        },
+        {
+          "id": "F-2",
+          "what": "base.css: display headings upright (no italic outside the wordmark); :focus-visible 3px var(--fresh) outline, 2px offset; a global prefers-reduced-motion rule removing transitions/animations; delete every idle-motion keyframe and duration owned by this file (gbreathe uses at the verified line, --dur-g* durations); add .skip-link.",
+          "closes": [],
+          "acceptance": [
+            "python -m pytest tests/test_web_v2_primitives.py",
+            "grep -c 'infinite' web/css/base.css returns 0",
+            "grep -c 'prefers-reduced-motion' web/css/base.css returns at least 1"
+          ]
+        },
+        {
+          "id": "F-3",
+          "what": "components.css: build .btn--primary/.btn--ghost (secondary)/.btn--text with no gradients or hover transform; point .btn--cyan at the same rules as .btn--ghost; add flat .panel, .chip (confirmed/waiting/neutral/win/settled/coming-soon variants), .pagehead with a body slot separate from its header node, .notice--experimental, .disclosure, .dtable (phone stacked mode, .dtable--scroll sticky-first-column variant), .rankrow, .field/.form (15px labels, 16px inputs, 44px controls), neutral .state-*/gate panels, .news, .comingsoon, .sportlevel.",
+          "closes": [],
+          "acceptance": [
+            "python -m pytest tests/test_web_v2_primitives.py"
+          ]
+        },
+        {
+          "id": "F-4",
+          "what": "layout.js (new): export pageHeader({eyebrow,title,purpose,status}) returning {node, setStatus, body} \u2014 body is the only node any render function clears; sectionHead(label, meta); experimentalNotice(); disclosure({summary, body, id}); chip(word, kind); compactPickCard is NOT here (it lives in card.js, gameday-card-owned) \u2014 layout.js exports only the generic shell/page primitives. Pure DOM, no fetches.",
+          "closes": [],
+          "acceptance": [
+            "python -m pytest tests/test_web_v2_primitives.py",
+            "import web/js/layout.js resolves with no missing export used by any other owned file"
+          ]
+        },
+        {
+          "id": "F-5",
+          "what": "states.js and dom.js: add withLoadingTimeout(promise, {slowMs:15000, failMs:30000, onSlow}) resolving to content or rejecting into renderError; keep renderError's existing signature renderError(container, err) but document that every caller must pass pageHeader()'s body node, never the whole content area, so a mounted header is never wiped; add the network-vs-server-error branch to renderError's copy: when err.status is null/undefined keep the existing 'We could not reach the board.' / 'it is not the same as' / 'Technical detail' strings verbatim (test_request_timeout.py pins these); for a real server error use '[Thing] didn't load.' / 'The request failed.' as the headline/body. Keep every existing dom.js export name.",
+          "closes": [],
+          "acceptance": [
+            "python -m pytest tests/test_request_timeout.py tests/test_no_developer_notes_on_screen.py tests/test_no_nothing_clears_the_bar.py",
+            "'We could not reach the board.' appears verbatim in web/js/dom.js"
+          ]
+        },
+        {
+          "id": "F-6",
+          "what": "motion.js: keep every existing export (armParallax, armCharts, beat, etc., since landing.js still calls them); arm nothing \u2014 every element renders in its final visible state with no entrance/idle animation.",
+          "closes": [],
+          "acceptance": [
+            "python -m pytest tests/test_web_v2_primitives.py"
+          ]
+        }
+      ],
+      "acceptance": [
+        "python -m pytest tests/test_web_v2_primitives.py tests/test_request_timeout.py tests/test_no_developer_notes_on_screen.py tests/test_no_nothing_clears_the_bar.py tests/test_labels.py",
+        "No .css file owned by foundation contains an animation with infinite iteration count after this group lands.",
+        "components.css defines .btn--primary, .btn--ghost, .btn--text, .chip, .dtable, .pagehead, .notice--experimental, .disclosure, .news, .comingsoon, .sportlevel."
+      ]
+    },
+    {
+      "id": "chrome",
+      "order": 2,
+      "depends_on": [
+        "foundation"
+      ],
+      "owns": [
+        "web/index.html",
+        "web/js/main.js",
+        "web/js/sport.js",
+        "web/js/meta.js",
+        "web/js/shell.js",
+        "web/js/news.js",
+        "web/js/comingsoon.js",
+        "web/css/nav.css",
+        "web/css/app.css"
+      ],
+      "tests_owned": [
+        "tests/test_web_structure.py",
+        "tests/test_shared_footer.py",
+        "tests/test_web_sport_routes.py",
+        "tests/test_web_live_tennis_wiring.py",
+        "tests/test_web_imports_resolve.py",
+        "tests/test_web_local_time.py",
+        "tests/test_installable.py",
+        "tests/test_gotcha.py",
+        "tests/test_brand_linehound.py",
+        "tests/test_api_surface_auth.py",
+        "tests/test_asset_cache_policy.py",
+        "tests/test_web_tennis_board.py",
+        "tests/test_web_shell_redesign.py"
+      ],
+      "tests_to_update": [
+        "tests/test_web_sport_routes.py: renderSportSwitcher is deleted and replaced by renderSportLevel(host, activeSport, {placement, linkPrefix}) plus the SPORTS registry (D4); main.js sends every nfl/tennis route to renderComingSoon instead of renderCard/renderCardRecord/renderTennisBoard.",
+        "tests/test_web_live_tennis_wiring.py: tennis routes now go to renderComingSoon (D4); the renderTennisBoard import/dispatch assertions become renderComingSoon assertions. Add an assertion that sport.js carries no '#/live' link anywhere (D5) and that the #/live dispatch itself is unchanged.",
+        "tests/test_web_local_time.py: add news.js, comingsoon.js and layout.js to the OWNED_JS_FILES no-hardcoded-zone scan list.",
+        "tests/test_web_structure.py: NAV_ITEMS entries change label text (TODAY-> GAMEDAY is already SECTION_LABELS' value; NAV_ITEMS.label itself changes from 'TODAY' to 'GAMEDAY', 'GAMES' to 'MATCHUPS', CHECK entry removed) and drop the glyph field; update any literal pin on the old NAV_ITEMS labels. The boot() parsing helper (main_js.split('function boot()')[1].split('function ')[0]) means no new comment containing the literal text 'function ' may be inserted between 'function boot()' and the renderDisclaimerFooter() call \u2014 verified this constraint directly against the test's own split logic.",
+        "tests/test_gotcha.py: preserve exactly two maybeGotcha() calls in main.js after the NAV_ITEMS/router rewrite."
+      ],
+      "tasks": [
+        {
+          "id": "CHR-1",
+          "what": "sport.js: add an exported SPORTS registry ({key,label,status,home,submenu,plan:null}; mlb live with submenu GAMEDAY #/today, MATCHUPS #/games, PROPS #/props, RESULTS #/record-card, BETS #/mybets; nfl and tennis coming_soon with homes #/nfl and #/tennis). Export renderSportLevel(host, activeSport, {placement, linkPrefix=''}) rendering live sports as tabs and coming-soon sports as the two red 'NFL/TENNIS \u00b7 COMING SOON' links, called from _renderRouteInner on every route change (not once in boot()) so aria-current tracks the active route. parseSport also strips a leading 'mlb' segment. Delete renderSportSwitcher and the Live link entirely.",
+          "closes": [
+            "shell-01-switcher-no-coming-soon",
+            "nfl-today-1",
+            "tennis-board-4",
+            "signin-nav-stale",
+            "signup-nav-stale",
+            "signup-complete-nav-stale",
+            "billing-nav-stale",
+            "support-nav-stale",
+            "betcheck-1",
+            "mybets-2",
+            "shell-02-live-still-in-public-chrome",
+            "live-1",
+            "tennis-board-5",
+            "nfl-record-4",
+            "REC-1"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_web_sport_routes.py",
+            "1440x900 capture of #/today shows 'NFL \u00b7 COMING SOON' and 'TENNIS \u00b7 COMING SOON' in red at the far right and no 'LIVE' text anywhere in the top strip"
+          ]
+        },
+        {
+          "id": "CHR-2",
+          "what": "main.js NAV_ITEMS become GAMEDAY(#/today)/MATCHUPS(#/games)/PROPS(#/props)/RESULTS(#/record-card)/BETS(#/mybets, shown only when signed in and public_demo is false) with sub-lines, each written as { hash: \"#/...\", label: \"...\", sub: \"...\" } with hash immediately before label (test_whose_record_is_it.py's regex requirement) and no CHECK entry, no glyph field. Rail heading rendered from SPORTS. Selection compares against the sport-stripped route (games/game/odds -> MATCHUPS, record-card -> RESULTS, everything else -> none) instead of the current pre-sport-parse activeHash bug (shell-06's root cause, verified directly in main.js: activeHash is built from the raw '#/nfl/today'-shaped hash while NAV_ITEMS carries un-prefixed hashes, so indexOf never matches on a sport-prefixed route). Add ROUTE_ALIASES for #/gameday, #/matchups, #/results and #/mlb/... resolved once inside the router. Also map day/* and performance routes so the rail shows no false highlight but the tab bar still renders correctly on those research routes (DAY-4: verified the current no-highlight behaviour there is deliberate, matching betcheck/performance's existing no-highlight treatment for non-sub-menu routes; DAY-4 is deferred, not fixed, see findings_index).",
+          "closes": [
+            "shell-03-nav-structure-and-check",
+            "nfl-today-3",
+            "games-shell-switcher-check-naming",
+            "game-detail-shell-nav-mismatch",
+            "betcheck-2",
+            "mybets-3",
+            "shell-06-nfl-nav-no-active-state",
+            "shell-05-props-results-share-icon",
+            "gd-02",
+            "props-1",
+            "odds-1",
+            "oddsgame-1",
+            "REC-2",
+            "PERF-2"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_web_sport_routes.py",
+            "the rail reads '01 GAMEDAY','02 MATCHUPS','03 PROPS','04 RESULTS'",
+            "the word 'CHECK' appears nowhere in the rail or tab bar",
+            "loading #/nfl/today shows the NFL coming-soon label with the active-state treatment applied to nothing in the MLB rail (no false-positive highlight)"
+          ]
+        },
+        {
+          "id": "CHR-3",
+          "what": "news.js (new): export NEWS_VERSION='2026-09-15' and NEWS_ITEMS with the four verbatim items (tag, text, href); export mountNews(host, {linkPrefix=''}) rendering controls (tag, '1 of 4', previous/next, dismiss) on one row and the item text on its own full-width wrapping row below it; aria-live polite set only after a previous/next press; read/write localStorage key 'lh.news.dismissed' only inside try/catch, falling back to in-memory dismissal on failure; no timers, no auto-rotation. Mount it in index.html's shell directly under the top strip (desktop) / sport row (phone).",
+          "closes": [
+            "shell-08-no-news-banner",
+            "signin-no-banner",
+            "signup-no-banner",
+            "signup-complete-no-banner",
+            "billing-no-banner",
+            "support-no-banner",
+            "betcheck-3",
+            "mybets-4",
+            "games-no-news-banner",
+            "nfl-today-5",
+            "nfl-record-5"
+          ],
+          "acceptance": [
+            "the news banner sits directly under the strip with a 'COMING SOON' tag and the text 'NFL: picks for this season are being tested on this week's games before they go on the record.'",
+            "pressing next shows '2 of 4'; pressing dismiss hides it and it stays hidden after reload; after localStorage.clear() and reload it shows again"
+          ]
+        },
+        {
+          "id": "CHR-4",
+          "what": "comingsoon.js (new): export renderComingSoon(container, sport) using pageHeader() and the section-4 copy for nfl/tennis (no 'with a page for every matchup', no unverified tennis-capture claim); primary 'See today's MLB picks' (#/today), secondary 'View MLB results' (#/record-card); no API calls, no percentages/prices/counts/dates anywhere on the page. main.js dispatches #/nfl, #/nfl/today, #/nfl/record, #/tennis and #/tennis/board all to this one function; stops importing tennis.js and stops calling renderCard/renderCardRecord for sport==='nfl'.",
+          "closes": [
+            "shell-09-nfl-not-marked-coming-soon",
+            "nfl-today-2",
+            "nfl-today-4",
+            "nfl-record-1",
+            "nfl-record-2",
+            "nfl-record-3",
+            "tennis-board-1",
+            "tennis-board-2",
+            "tennis-board-3"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_web_live_tennis_wiring.py",
+            "#/nfl, #/nfl/today, #/nfl/record, #/tennis and #/tennis/board each show 'NFL is coming soon.' or 'Tennis is coming soon.' and a 'See today's MLB picks' button, contain no '%' and no match for /[+-]\\d{3}/ inside <main>, and make no request to /card or the tennis board endpoint"
+          ]
+        },
+        {
+          "id": "CHR-5",
+          "what": "app.css: rebuild .topstrip (desktop 64px: wordmark, sport tabs, spacer, coming-soon links, clock hidden 900-1199px and shown 1200px+; phone 56px wordmark row plus a 44px .sportrow that wraps rather than clips, MLB tab hidden under 400px); delete .sport-switcher, .topstrip__section, .topstrip__status; .shell__column padding-bottom = --tabbar-height + 16px + safe area; 16px phone gutters on .gutter/.view/.signin/.screen-state; .sechead__meta shown under the label at 15px on phone; .sitefoot__* 15px on phone with a two-column 44px link grid; neutral gate/view-error panels; delete every idle-motion keyframe/duration this file owns.",
+          "closes": [
+            "shell-04-mobile-clock-clipped"
+          ],
+          "acceptance": [
+            "390x844 and 360x780 captures of #/today: the sport row shows both red labels fully, with each label's getBoundingClientRect().right <= innerWidth - 16; no clock text visible below 900px",
+            "grep -c 'infinite' web/css/app.css returns 0"
+          ]
+        },
+        {
+          "id": "CHR-6",
+          "what": "nav.css: replace the 76px icon rail with the 228px labelled rail (sport heading, numbered items with sub-lines, selected = 4px red left border + --primary-soft wash, empty data-hook=sport-plan slot); tab bar labels only, 15px, 56px min height, selected = 4px red top border; delete every .glyph rule (verified betcheck.js's only 'glyph' occurrence is a code comment, not a class reference \u2014 safe to delete here without touching Bet Check); restyle .site-nav for landing with a right-hand coming-soon slot, a phone sport row and a phone text-link row (landing.html itself is landing-owned; this file only supplies the CSS rules landing.html's markup will use).",
+          "closes": [],
+          "acceptance": [
+            "python -m pytest tests/test_installable.py",
+            "the .tabbar {} block in nav.css still contains safe-area-inset-bottom, with any padding: shorthand appearing before padding-bottom:"
+          ]
+        },
+        {
+          "id": "CHR-7",
+          "what": "meta.js: SUMMARY = 'Beta. Picks are published before each game and graded as they stood at their lock, win or lose. Nothing here is a guarantee.'; footer links Results/Research/Player props/Bet Check (new data-hook=footer-betcheck, href #/betcheck)/Support; renderDisclaimerFooter and renderSportLevel/mountNews all take an optional linkPrefix so landing.js can prefix every link with 'index.html'; keep the tel: helpline and disclosure; keep the literal uppercase 'PLAY RESPONSIBLY' text (test_shared_footer.py pins it case-sensitively); add 'Times shown in {zone}, your time zone.' from localZoneAbbr(), not duplicating the existing 'ALL TIMES PDT' text elsewhere in the footer.",
+          "closes": [
+            "shell-07-frozen-before-first-pitch",
+            "signin-footer-overclaim",
+            "signup-footer-overclaim",
+            "signup-complete-footer-overclaim",
+            "billing-footer-overclaim",
+            "support-footer-overclaim",
+            "games-frozen-before-first-pitch",
+            "game-detail-frozen-before-first-pitch",
+            "betcheck-5",
+            "mybets-6",
+            "props-5",
+            "oddsgame-4"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_shared_footer.py",
+            "on every route the footer reads 'Beta. Picks are published before each game and graded as they stood at their lock, win or lose. Nothing here is a guarantee.' and contains a 'Bet Check' link to #/betcheck",
+            "the footer contains the literal text 'PLAY RESPONSIBLY'"
+          ]
+        },
+        {
+          "id": "CHR-8",
+          "what": "shell.js: setShellStatus(text, options) keeps its exact signature but writes into the currently mounted pageHeader()'s setStatus, caching the last value so a late call or a call before any header is mounted never throws and never bleeds into the wrong page; STALE_AFTER_SECONDS replaced by a game-hours-aware threshold (~30 min when any first pitch is within a few hours, 90 min otherwise) matching the real 13/60-minute capture cadence in .github/workflows/forward-capture.yml, not a flat hourly assumption; replace mountSportSwitcher with mountSportLevel calling sport.js's renderSportLevel; keep exporting setShellStatusFromStaleness unchanged (games.js imports it by that name).",
+          "closes": [],
+          "acceptance": [
+            "python -m pytest tests/test_web_sport_routes.py",
+            "a stale-status string reads the real age in words, never a flat 'STALE' regardless of true age"
+          ]
+        },
+        {
+          "id": "CHR-9",
+          "what": "index.html: add the skip link; top strip = home link with hound mark + wordmark, data-hook sport-level-host, spacer, data-hook coming-soon-host (same host renderSportLevel targets \u2014 one host CSS repositions between desktop strip and phone row, not two separate mounts), clock; phone sport row host; data-hook news-host directly under the strip; rail and tab bar hosts; keep data-hook app-outlet and disclaimer-host; remove section-label, board-status and sport-switcher-host.",
+          "closes": [],
+          "acceptance": [
+            "python -m pytest tests/test_web_structure.py tests/test_web_imports_resolve.py tests/test_brand_linehound.py tests/test_api_surface_auth.py tests/test_asset_cache_policy.py"
+          ]
+        }
+      ],
+      "acceptance": [
+        "python -m pytest tests/test_web_structure.py tests/test_shared_footer.py tests/test_web_sport_routes.py tests/test_web_live_tennis_wiring.py tests/test_web_imports_resolve.py tests/test_web_local_time.py tests/test_installable.py tests/test_gotcha.py tests/test_brand_linehound.py tests/test_api_surface_auth.py tests/test_asset_cache_policy.py tests/test_web_tennis_board.py",
+        "1440x900 capture of #/today: 'NFL \u00b7 COMING SOON' and 'TENNIS \u00b7 COMING SOON' in red at the far right; the words 'LIVE' and 'CHECK' appear nowhere in the top strip, rail or tab bar (the footer's own 'Bet Check' link and '1-800-GAMBLER' are out of scope for this check \u2014 it is scoped to the strip, rail and tab bar only, not the whole page, because the footer legitimately contains both 'Bet Check' (D7) and the phone number)",
+        "#/live loads by typed URL; on every other route document.querySelectorAll('a[href*=\"#/live\"]').length === 0 in the rendered DOM (comments in main.js's ROUTES docblock mentioning '#/live' as prose are not scanned by this check, only actual href attributes)",
+        "at 390 and 360, no text element in the strip/sport row/banner/tab bar/footer computes under 15px, no link or button under 44px tall, and document.documentElement.scrollWidth === innerWidth",
+        "at 390 on #/today exactly one element has computed position: fixed (the tab bar)"
+      ]
+    },
+    {
+      "id": "copy-truth-sweep",
+      "order": 1,
+      "depends_on": [],
+      "owns": [
+        "src/analysis/daily_card.py",
+        "src/analysis/grade.py",
+        "src/report/daily_record.py"
+      ],
+      "tests_owned": [
+        "tests/test_daily_record.py",
+        "tests/test_api_daily.py"
+      ],
+      "tests_to_update": [
+        "tests/test_daily_record.py: pins LABEL 'FROZEN PREGAME RECORD' (line 199) and dr.LABEL/dr.BASIS consistency checks (lines 780-789); update to 'PREGAME RECORD' and the new BASIS text with no other change to STAKE_POLICY or the selection functions.",
+        "tests/test_api_daily.py: pins blob['label'] == 'FROZEN PREGAME RECORD' (line 85); update to 'PREGAME RECORD' with no other change to the /daily response shape."
+      ],
+      "tasks": [
+        {
+          "id": "CTS-1",
+          "what": "src/analysis/daily_card.py: change only CARD_BASIS (line 149) to drop 'labelled SPLIT' (SPLIT is removed from the card everywhere) and 'confident' language, and CARD_DISCLAIMER (line 155) to drop 'still loses money at the vig' (replaced with the amendment's own restated conclusion: no positive estimated return under the market benchmark) and 'frozen'. No change to CARD_RULE, TOTAL_CARD_*, PROP_CARD_*, or any selection function.",
+          "closes": [],
+          "acceptance": [
+            "python -m pytest tests/test_customer_language.py",
+            "GET /card and GET /card/record for sport=mlb return a basis/disclaimer containing neither 'labelled SPLIT' nor 'loses money at the vig' nor 'frozen'"
+          ]
+        },
+        {
+          "id": "CTS-2",
+          "what": "src/analysis/grade.py: change only the third legend() string (line 208) from 'measured unreliable' to 'has not been checked against enough results yet' \u2014 matches the amendment's own restated conclusion (section 2: at n=29 the tests cannot distinguish the approaches yet, which is absence of evidence, not a finding of unreliability). No change to grade computation or letters.",
+          "closes": [],
+          "acceptance": [
+            "python -m pytest tests/test_web_grade.py tests/test_customer_language.py",
+            "GET /card's knowledge_legend third line starts 'A+ means our number is above what the price needs.'"
+          ]
+        },
+        {
+          "id": "CTS-3",
+          "what": "src/report/daily_record.py: change only LABEL (line 89) to 'PREGAME RECORD' and BASIS (line 91) to replace 'froze' with 'recorded'. No change to STAKE_POLICY, payload keys, joins or ledgers.",
+          "closes": [
+            "DAY-2"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_daily_record.py tests/test_api_daily.py",
+            "GET /daily/{date} returns label 'PREGAME RECORD' with every other key and value unchanged"
+          ]
+        }
+      ],
+      "acceptance": [
+        "python -m pytest tests/test_daily_record.py tests/test_api_daily.py tests/test_customer_language.py tests/test_web_grade.py",
+        "no string in daily_card.py, grade.py or daily_record.py contains 'labelled SPLIT', 'loses money at the vig', 'frozen', or 'measured unreliable' after this group lands"
+      ]
+    },
+    {
+      "id": "gameday-card",
+      "order": 2,
+      "depends_on": [
+        "foundation"
+      ],
+      "owns": [
+        "web/js/card.js",
+        "web/js/recordstrip.js",
+        "web/css/card.css"
+      ],
+      "tests_owned": [
+        "tests/test_web_all_bets.py",
+        "tests/test_web_card_props.py",
+        "tests/test_web_grade.py",
+        "tests/test_web_gameday_card.py"
+      ],
+      "tests_to_update": [
+        "tests/test_web_all_bets.py: LineupNotPostedIsUnmissable pins a 'LINEUP NOT POSTED' warn line above the bet sentence; the new anatomy shows conditions as word chips under the reason line instead. Assert the 'Lineup not posted' condition renders outside the collapsed breakdown and still names season-average plate appearances for props; the kinds-present and numbering assertions stay unchanged.",
+        "tests/test_web_grade.py: TheCardShowsIt expects the grade chip beside the label and the legend inside the standing note; the new anatomy moves both into 'View breakdown'. Keep the card-grade and card-grade-legend hooks, title: knowledge.why, and the served-legend rule (which now reads CTS-2's corrected text); the Games grid and tile classes stay unchanged.",
+        "tests/test_web_card_props.py: the prop subhead assertion 'Ranked by how likely we make them, never by the price.' becomes 'Ranked by how strongly the market favours each, never by the price.' (amendment section 3: prop ranking uses the market's number). The rule that a prop pick never links #/betcheck or card-check-this stays; the cardrecord.js assertions in this file stay unchanged (cardrecord.js is results-owned, not touched here)."
+      ],
+      "tasks": [
+        {
+          "id": "GC-1",
+          "what": "card.js pickCard(): rebuild to the compact anatomy \u2014 rank \u00b7 away at home \u00b7 local first pitch; selection \u00b7 market \u00b7 line; price at book \u00b7 'published {time}'; why[0] rendered whole, never split client-side. Condition chips in words from knowledge.core.lineups/starters and expected_pa_source ('Lineup not posted', 'Starter unconfirmed'); 'Provisional until {first_pitch_utc - lock_lead_hours}' only while now < that time; 'Locked' only while payload.locked === true; a third, neutral 'Lock pending \u00b7 graded as published' state for the gap between the cutoff passing and the next publish run (card_ledger._lock_and_merge only stamps locked during a publish). 'View breakdown' (aria-expanded, aria-controls) expands in place: 'Market says'/'Our number'/'Needs NN% to break even at {price}' boxes, the comparison sentence, argument and counterargument, the alternate bet, the grade chip and legend, 'Open this matchup'. Remove STRONG/LEAN/SPLIT chips and card-check-this buttons. Rank 1 gets the --edge-hi left edge and chamfer. Export compactPickCard(pick, opts) as the one implementation landing-live.js also uses. Phone rank 4+: same fields and chips, denser three-line layout, no View breakdown control (links 'Open this matchup' instead).",
+          "closes": [
+            "gd-04"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_web_all_bets.py tests/test_web_gameday_card.py",
+            "with no breakdown expanded, the rendered card shows none of 'STRONG', 'LEAN', 'SPLIT', a lone grade-letter chip, or 'CHECK THIS PRICE YOURSELF'",
+            "tapping 'View breakdown' sets aria-expanded='true' and shows 'Market says', 'Our number' and 'to break even' inside the same card with no navigation"
+          ]
+        },
+        {
+          "id": "GC-2",
+          "what": "card.js: render layout.experimentalNotice() once above the picks and keep it in the empty and error branches (nfl-today-4's root cause: the empty-card branch currently calls clear(wrap) before rendering emptyCard(), wiping the notice \u2014 re-append it after clearing, do not clear past it). Replace 'READ THIS ONCE' with a 'How this card works' disclosure at the bottom holding the full record wording plus payload.disclaimer/basis (now CTS-1-corrected upstream) labelled 'Note stored with this card'. Prop section subhead becomes 'Ranked by how strongly the market favours each, never by the price.' Older-card sentence: 'published before those games started'.",
+          "closes": [],
+          "acceptance": [
+            "python -m pytest tests/test_web_card_props.py",
+            "'Experimental selections. Performance is still being evaluated.' appears exactly once, above the first card, in both the loaded and empty states"
+          ]
+        },
+        {
+          "id": "GC-3",
+          "what": "card.js: replace the hardcoded 'The record's tamper-proof chain does not currently verify' (line 675) with 'The record's hash chain does not currently verify, so treat the numbers above as unconfirmed until it does.' Client-owned literal, independent of copy-truth-sweep.",
+          "closes": [],
+          "acceptance": [
+            "grep -c 'tamper-proof' web/js/card.js returns 0"
+          ]
+        },
+        {
+          "id": "GC-4",
+          "what": "recordstrip.js: renderCardRecordStrip's note becomes '{n} graded cards, each pick graded as it stood at its lock.' followed by the chain sentence from chain_ok; keep the export name and signature unchanged (today.js/gameday-page still calls it by name).",
+          "closes": [
+            "gd-05"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_web_grade.py",
+            "grep -c 'frozen before first pitch' web/js/recordstrip.js returns 0"
+          ]
+        },
+        {
+          "id": "GC-5",
+          "what": "card.css: compact card, rank-1 edge and chamfer, breakdown boxes, condition chips through the shared chip classes from components.css; delete .card2__label/.card2__grade/card-check rules once unreferenced; keep crp-* (record-page) rules in this file for now (results depends on this group for them \u2014 see results' RES-1); in the <=899px query raise every card2* and crp-* font-size under 15px to 15px; retire any red use for loss/negative figures to a neutral colour (crp-*--neg); no gradients.",
+          "closes": [
+            "gd-08"
+          ],
+          "acceptance": [
+            "at 390, no text inside a compact card computes under 15px",
+            "a LOSS chip's computed colour and border are not in the #FF3D57 family"
+          ]
+        }
+      ],
+      "acceptance": [
+        "python -m pytest tests/test_web_all_bets.py tests/test_web_card_props.py tests/test_web_grade.py tests/test_web_gameday_card.py",
+        "390x844 capture: the first card's lines read '#1 \u00b7 {Away} at {Home} \u00b7 {time}', '{selection} \u00b7 {market}', '{price} at {Book} \u00b7 published {time}' and one reason sentence, followed by 'View breakdown'"
+      ]
+    },
+    {
+      "id": "gameday-page",
+      "order": 3,
+      "depends_on": [
+        "foundation",
+        "chrome",
+        "gameday-card"
+      ],
+      "owns": [
+        "web/js/today.js",
+        "web/js/matchups.js",
+        "web/css/screens.css"
+      ],
+      "tests_owned": [
+        "tests/test_web_v2_gameday.py",
+        "tests/test_web_matchups.py",
+        "tests/test_web_hero_market_gap.py",
+        "tests/test_today_one_answer.py",
+        "tests/test_whose_record_is_it.py"
+      ],
+      "tests_to_update": [
+        "tests/test_web_hero_market_gap.py::TheFallbackBodyIsAScannedLiteral pins today.js lines 720 and 740 via a coverage-style line check; any edit above those lines (removing the Bet Check button at ~580-582, adding an import) shifts them. Replace the line-number assertions with the file's own existing content-presence check on the same fallback string; remove the hard-coded 720/740 pins.",
+        "tests/test_web_v2_gameday.py and tests/test_today_one_answer.py: both pin the heroNoPlay/heroFlagged/heroMarketUnavailable class shapes and copy. Those three builders are removed from Gameday's render path (replaced by nextMatchupCard, a new, minimal component with no price panel and no idle motion). Retarget the relevant assertions to nextMatchupCard's fields (matchup, local time, starter chips, lineup-state chip, 'Our picks in this game: N', 'Open this matchup'); keep any assertion in these files that is about the card list itself unchanged.",
+        "tests/test_web_matchups.py: remove 'check-band' from the required today.js hooks (the fixed Bet Check band and its CSS are deleted). test_record_strip_mounted_above_the_today_hero currently requires renderCardRecordStrip(recordStripHost) to be called before renderHero(...); renderHero itself is removed (see above) and the record now renders once, below the picks, not above a hero \u2014 update this test to check the record's new position instead of its old one. FROZEN_TITLE changes to 'RESEARCH POSITIONS, RECORDED BEFORE FIRST PITCH' (copy truth); the grid stops rendering CONTROL/MARKET_REFERENCE/FORWARD_TEST paper-position chips on Gameday, so the matchups-grid position assertions pin the new grid anatomy while the frozenPositionRow/CLASS_MEANING reuse-by-dayrecap.js assertions stay (results depends on this group for those two exports).",
+        "tests/test_whose_record_is_it.py::test_it_mounts_the_card_record_strip stays passing unmodified: renderCardRecordStrip is kept, only repositioned below the picks and de-duplicated against card.js's own recordLine block."
+      ],
+      "tasks": [
+        {
+          "id": "GP-1",
+          "what": "today.js: render pageHeader({eyebrow:'MLB \u00b7 GAMEDAY', title:\"Today's picks\", purpose:'Ranked by how strongly the betting market favours each pick.'}) and call setShellStatus with the published time and freshest observed_utc; reserve the empty data-hook=sport-plan slot on phone. Page order: header, experimental notice, the compact cards in payload order, the record once (renderCardRecordStrip relocated below the picks, and card.js's own duplicate recordLine block removed so only one record summary shows), the new nextMatchupCard (300px right column desktop / after the picks phone), the matchup grid, the existing href=\"#/props\" link.",
+          "closes": [
+            "gd-01",
+            "gd-09"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_whose_record_is_it.py tests/test_web_matchups.py",
+            "the record appears exactly once, below the last pick, and includes 'Preliminary: not enough picks yet to show an edge or its absence.'"
+          ]
+        },
+        {
+          "id": "GP-2",
+          "what": "today.js: delete renderCheckBand, its mount call, the 'check-band' hook, and the fixed-position 'BET CHECK ENTRY BAND' CSS block in screens.css (<=899px position:fixed rule); remove the 'CHECK A BET OF YOUR OWN' hero button and every other Bet Check CTA on #/today; keep 'OPEN THE FULL BOARD' as a secondary link.",
+          "closes": [
+            "gd-03"
+          ],
+          "acceptance": [
+            "at 390 on #/today exactly one element has computed position: fixed (the tab bar)",
+            "grep -c 'checkband' web/css/screens.css returns 0"
+          ]
+        },
+        {
+          "id": "GP-3",
+          "what": "today.js: build nextMatchupCard (matchup, local first pitch time, both starters with a confirmed/probable word chip from knowledge.core.starters, a lineup-state chip, 'Our picks in this game: N' linking to the cards above, 'Open this matchup'); remove heroNoPlay, heroFlagged, heroMarketUnavailable and their texture/data-rise motion from Gameday's render path entirely \u2014 none of the three fits a 300px column or R_MOTION, and heroNoPlay's price-comparison panel is a direct R3 violation (it sits outside any breakdown).",
+          "closes": [],
+          "acceptance": [
+            "python -m pytest tests/test_web_v2_gameday.py tests/test_today_one_answer.py",
+            "no price-comparison figure (a '%' or a break-even sentence) renders outside a 'View breakdown' disclosure anywhere on #/today"
+          ]
+        },
+        {
+          "id": "GP-4",
+          "what": "today.js matchupContextPanel: prefix figures with 'Market says' (e.g. 'Market says MIL 68.3%') instead of a bare percentage under a team code; slate banner reads \"TONIGHT'S SLATE\" only when the slate date equals the viewer's local date, otherwise '{Tue Sep 15} slate \u00b7 slates turn over at midnight Eastern' \u2014 reuse the existing currentEasternDateIso() and isNext guard in renderSlateBanner rather than reimplementing the comparison; export currentEasternDateIso for betcheck.js (tools group) to import.",
+          "closes": [
+            "gd-10",
+            "gd-11"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_web_polish.py",
+            "every percentage figure on #/today is prefixed with a labelled source ('Market says' or 'Our number')"
+          ]
+        },
+        {
+          "id": "GP-5",
+          "what": "today.js: wrap renderToday in try/catch that falls through to the shared error state; make any loading timeout discard a stale render via a render token rather than paint over a newer one \u2014 api.js already aborts every request at 20s, so a stuck skeleton beyond that is a throw-after-fetch or a render race, not a hung request. Investigate and fix the actual stall rather than only lengthening a timeout.",
+          "closes": [
+            "gd-07"
+          ],
+          "acceptance": [
+            "the 1440x900 capture of #/today shows picks or the shared error state within 30 seconds, never only the loading skeleton",
+            "no uncaught console error during a normal #/today load"
+          ]
+        },
+        {
+          "id": "GP-6",
+          "what": "matchups.js: grid cards show matchup, local time, starters, a 'Market says' figure and 'Open this matchup'; stop rendering frozenPositionsBlock and CONTROL/MARKET_REFERENCE/FORWARD_TEST class chips on Gameday; FROZEN_TITLE becomes 'RESEARCH POSITIONS, RECORDED BEFORE FIRST PITCH'; keep exporting frozenPositionRow and CLASS_MEANING unchanged (results group's dayrecap.js imports CLASS_MEANING directly); when the fetches return no games render 'No games on this slate.', and on failure render the shared error state, never a bare '\u2014'; wrap the fetches in withLoadingTimeout.",
+          "closes": [
+            "gd-06"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_web_matchups.py",
+            "the matchup grid shows game cards or the sentence 'No games on this slate.' and never a lone '\u2014' placeholder",
+            "matchups.js still exports frozenPositionRow and CLASS_MEANING unchanged"
+          ]
+        },
+        {
+          "id": "GP-7",
+          "what": "screens.css: this group's sole-owned legacy file. Apply the mechanical sweep across every section (HERO, TONIGHT'S SLATE, WHAT CHANGED, BET CHECK ENTRY BAND [deleted, see GP-2], CLOSING BAND, BET CHECK SCREEN, BET CHECK V2, GAME VIEW, GAME QUICK V2, GAME ADVANCED V2, ODDS V2, SHARED STATES [superseded by components.css's new shared state classes \u2014 delete this section as dead code], GAMEDAY V2): raise every font-size under 15px to 15px inside each section's <=899px block; delete every 'infinite' animation (gseam, gsheen, three gbreathe uses, the skeleton pulse, the spinner); replace --money/--v-money used for best price, loss, staleness or decoration with --edge-hi/--text-hi (or --caution for a genuinely stale input); cyan-filled buttons take secondary (.btn--ghost) styling; treatment-only pass on the Matchups-list .tile rules (flat panel, upright type, role tokens, no sheen sweep) with tile count/order/content unchanged. Preserve every section banner comment and the file's documented cross-section parsing order (do not reorder sections; several rely on a preceding block for correct media-query nesting). This is the one file other groups (tools, matchups, props-odds) depend on this group for \u2014 coordinate via their own acceptance checks rather than editing it themselves.",
+          "closes": [
+            "games-grid-visual-system-mismatch",
+            "games-sub-15px-text"
+          ],
+          "acceptance": [
+            "grep -c 'infinite' web/css/screens.css returns 0",
+            "tile count and DOM order on #/games match a saved snapshot of the live pre-change /games/{date} order",
+            "at 390 and 360, no text in any screens.css-backed section computes under 15px"
+          ]
+        }
+      ],
+      "acceptance": [
+        "python -m pytest tests/test_web_v2_gameday.py tests/test_web_matchups.py tests/test_web_hero_market_gap.py tests/test_today_one_answer.py tests/test_whose_record_is_it.py tests/test_web_props.py tests/test_web_polish.py tests/test_web_local_time.py tests/test_web_imports_resolve.py",
+        "390x844 capture of #/today: header reads 'MLB \u00b7 GAMEDAY' / \"Today's picks\"; 'Experimental selections. Performance is still being evaluated.' appears exactly once, above the first card"
+      ]
+    },
+    {
+      "id": "landing",
+      "order": 3,
+      "depends_on": [
+        "foundation",
+        "chrome",
+        "gameday-card"
+      ],
+      "owns": [
+        "web/landing.html",
+        "web/js/landing.js",
+        "web/js/landing-live.js",
+        "web/css/landing.css"
+      ],
+      "tests_owned": [
+        "tests/test_web_polish.py",
+        "tests/test_web_register_sweep.py",
+        "tests/test_landing_record_from_ledger.py",
+        "tests/test_funnel_attribution.py",
+        "tests/test_research_count_is_computed.py",
+        "tests/test_web_landing_redesign.py"
+      ],
+      "tests_to_update": [
+        "tests/test_web_polish.py: LandingPublicDemoEntryTests pins 'Try 3 Bet Checks free', cta-signup-hero/cta-signup-bottom, 'OPEN THE LIVE DEMO', 'Run three bets on us first.', data-hook=\"sample-slate-badge\" and 'Sample slate \u00b7 demo data' \u2014 all removed or renamed (amendment section 8: Bet Check out of header and buttons; the sample badge is renamed 'Sample pick \u00b7 Demo data' to match the compact-card anatomy). Retarget those assertions to the new actions and the new badge text/hook; keep the public_demo gate and hidden-by-default assertions, and every pin on today.js (renderSlateBanner/isNext/currentEasternDateIso) and games.js (gavGaps) exactly as-is, since neither file is touched by this group.",
+        "tests/test_web_register_sweep.py: TheLandingPageAgreesWithTheProduct and TheLandingHeroLeadsWithTheCard require the hero to lead with 'the market makes it' / 'to break even' and a data-hook=\"hero-price-needs\" node; amendment section 1 moves that comparison into the sample card's 'View breakdown', off the visible hero. Assert the comparison labels ('Market says'/'to break even') live inside the breakdown instead, and that landing-live.js still reads /card and never /opportunities. Every other class in this file (dayrecap/odds gavMarketRefusal/support/performance humanizeKey(s.system_id)/signup BENEFITS/main.js NAV/dom.js/PropsHaveTheTab) pins content in files this group does not touch \u2014 leave those assertions unchanged; they exist here only because register-sweep is a cross-file scan, not because landing owns those files.",
+        "tests/test_funnel_attribution.py::test_the_page_links_to_the_free_check_at_all asserts '#/betcheck' appears literally in landing.html; the redesign removes every Bet Check CTA from the header/hero and the footer link is rendered by JS, not present in the static markup. Retarget to 'no CTA on the page promises a Bet Check it does not deliver' and keep test_the_paid_cta_still_goes_to_signup unchanged.",
+        "tests/test_research_count_is_computed.py: keep the data-hook=\"research-count\" fallback in landing.html equal to the registry count \u2014 unaffected by this group's other changes, verify it still passes as-is."
+      ],
+      "tasks": [
+        {
+          "id": "LAND-1",
+          "what": "landing.html head: <title> 'LINEHOUND \u2014 Daily MLB picks and matchup analysis'; meta description 'Daily MLB picks and matchup analysis. See today's selections, the reasoning behind them, and the published record.'; add a <link> to web/css/card.css (not currently loaded) so the imported compactPickCard renders with real styles; keep the stylesheet order (app.css before landing.css).",
+          "closes": [
+            "landing-05"
+          ],
+          "acceptance": [
+            "document.title is 'LINEHOUND \u2014 Daily MLB picks and matchup analysis'"
+          ]
+        },
+        {
+          "id": "LAND-2",
+          "what": "landing.html .site-nav: wordmark; links Gameday(index.html#/today)/Matchups(index.html#/games)/Props(index.html#/props)/Results(index.html#/record-card)/Pricing(#pricing)/FAQ(#faq); a coming-soon host rendered via renderSportLevel(host, 'mlb', {linkPrefix:'index.html'}); 'Sign in' as a secondary button to index.html#/signin; remove the 'Try 3 Bet Checks free' header button; mount news via mountNews(host, {linkPrefix:'index.html'}) directly under .site-nav; on phone add the sport row and a Pricing \u00b7 FAQ text-link row under the hero actions so they are reachable without scrolling to the footer.",
+          "closes": [
+            "landing-02",
+            "landing-08",
+            "landing-01"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_funnel_attribution.py",
+            "1440 capture: header shows 'NFL \u00b7 COMING SOON'/'TENNIS \u00b7 COMING SOON' in red at the right and a 'Sign in' secondary button; the news banner sits directly under the header",
+            "390 capture: Pricing and FAQ links are reachable above the first section without scrolling to the footer"
+          ]
+        },
+        {
+          "id": "LAND-3",
+          "what": "Hero: replace the team-versus-team price hero with eyebrow 'YOUR MLB GAME PLAN', h1 'Daily MLB picks. Matchup analysis that goes deeper.', subheading 'See today's selections, the reasoning behind them, and the published record.', primary 'See today's picks' (index.html#/today, the only primary in this viewport) and secondary 'View results' (index.html#/record-card); remove every remaining Bet Check CTA; add a 'What you get' list (01 Gameday, 02 Matchups, 03 Props, 04 Results) and the line 'Live game analysis is planned. It is not available yet.'",
+          "closes": [
+            "landing-06"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_web_polish.py",
+            "h1 reads 'Daily MLB picks. Matchup analysis that goes deeper.'; buttons 'See today's picks' (red) and 'View results' are visible; no red button reads 'Bet Check' or 'Try 3 Bet Checks free'"
+          ]
+        },
+        {
+          "id": "LAND-4",
+          "what": "landing-live.js: keep reading apiGet(\"/card\"); render pick #1 via card.js's exported compactPickCard under the experimental notice; the initial markup names no teams and never says 'Tonight' until the fetch resolves either way ('Loading today's first pick\u2026' as the neutral state); on failure show a labelled 'Sample pick \u00b7 Demo data' card (data-hook=\"sample-slate-badge\" kept as the hook name, text renamed) and the scanner text 'Sample matchup \u00b7 live card unavailable'.",
+          "closes": [
+            "landing-03"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_web_register_sweep.py",
+            "with the /card request blocked, the hero card is labelled 'Sample pick \u00b7 Demo data' and the word 'Tonight' does not appear in the hero"
+          ]
+        },
+        {
+          "id": "LAND-5",
+          "what": "Remove the price-centred Bet Check demo section entirely; add one trust block 'How the record works' using the full record wording from DESIGN_SYSTEM.md section 5; rewrite the data note to 'The pick above is read from today's published card. If it cannot load, a labelled sample shows instead.'; drop 'Between 2023 and 2024' from the research line (use the existing data-hook=\"research-count\" figure); FAQ 'Do you predict who wins?' uses 'Market says' wording with no percentage; FAQ sports-covered becomes 'MLB today. NFL and tennis are coming soon. NFL picks are being tested privately and are not on the record.'; 'What we publish' heading becomes \"Today's picks, published before each game.\"; the paper-trail card uses 'published before each game and recorded in a hash-chained ledger' (no 'tamper-proof'); the pricing heading drops 'Run three bets on us first.' and keeps 'Get founding access' (index.html#/signup) as a **secondary** button (not a second primary in the pricing viewport).",
+          "closes": [
+            "landing-04",
+            "landing-07"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_web_landing_redesign.py",
+            "visible text contains none of 'frozen before first pitch', 'tamper-proof', 'Between 2023 and 2024' or 'not currently supported'",
+            "the FAQ sports answer reads 'MLB today. NFL and tennis are coming soon. NFL picks are being tested privately and are not on the record.'"
+          ]
+        },
+        {
+          "id": "LAND-6",
+          "what": "landing.css: flat Direction A styling with role tokens, one red button per viewport, no gradients or glows, no entrance motion (delete gseam/gsheen keyframes this file owns); at <=899px raise every font-size under 15px to 15px (hero labels, story-card kicker, demo labels, evidence-ladder flag).",
+          "closes": [
+            "landing-09"
+          ],
+          "acceptance": [
+            "390 and 360 captures: no text under 15px, both red labels unclipped, and scrollWidth === innerWidth",
+            "grep -c 'infinite' web/css/landing.css returns 0"
+          ]
+        }
+      ],
+      "acceptance": [
+        "python -m pytest tests/test_web_polish.py tests/test_web_register_sweep.py tests/test_landing_record_from_ledger.py tests/test_web_landing_redesign.py tests/test_web_structure.py tests/test_shared_footer.py tests/test_web_local_time.py tests/test_web_imports_resolve.py tests/test_funnel_attribution.py tests/test_research_count_is_computed.py",
+        "the page contains 'Live game analysis is planned. It is not available yet.' and 'Experimental selections. Performance is still being evaluated.' above the sample card"
+      ]
+    },
+    {
+      "id": "matchups",
+      "order": 4,
+      "depends_on": [
+        "foundation",
+        "chrome",
+        "gameday-page"
+      ],
+      "owns": [
+        "web/js/games.js",
+        "web/js/gamestory.js",
+        "web/css/gamestory.css"
+      ],
+      "tests_owned": [
+        "tests/test_web_v2_game.py",
+        "tests/test_web_matchups_header.py"
+      ],
+      "tests_to_update": [
+        "tests/test_web_polish.py (landing-owned file, listed here only as a heads-up: it pins games.js's gavGaps() function shape) \u2014 no change needed from this group unless gavGaps's internal branching changes, which it does not in this pass."
+      ],
+      "tasks": [
+        {
+          "id": "MATCH-1",
+          "what": "games.js renderGameDetail: render layout.experimentalNotice() directly above gqvTonightsPick's output whenever a pick is shown (both the has-pick and no-pick branches), matching the same notice-placement fix gameday-card made in card.js. Style 'CHECK A BET ON THIS GAME' as the secondary button (it remains Bet Check's entry point); 'OPEN THE FULL BOARD' as a text link. Keep Quick/Advanced layout and every calculation unchanged (R6).",
+          "closes": [
+            "game-detail-no-experimental-notice"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_web_matchups_header.py",
+            "capture of #/game/{date}/LAD/CIN at 390 and 1440: 'Experimental selections. Performance is still being evaluated.' appears exactly once, directly above \"Tonight's pick\""
+          ]
+        },
+        {
+          "id": "MATCH-2",
+          "what": "games.js renderGamesList and renderGameDetail: add pageHeader (list: 'MLB \u00b7 MATCHUPS'/'Every game on the slate', status via setShellStatusFromStaleness; detail: 'MLB \u00b7 MATCHUP'/'{Away full name} at {Home full name}', status 'Prices captured {time} \u00b7 {age}'); label the date field 'Slate date'; wrap fetches in withLoadingTimeout; re-capture the desktop detail view after confirming it is not the gd-07-style stall pattern.",
+          "closes": [
+            "game-detail-desktop-stuck-loading"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_web_v2_game.py",
+            "the 1440 capture of the matchup detail finishes rendering (content or the shared error state) within 30 seconds",
+            "390 capture of #/games: the eyebrow 'MLB \u00b7 MATCHUPS' is visible, and the tile count and order match the pre-change capture for the same slate date"
+          ]
+        },
+        {
+          "id": "MATCH-3",
+          "what": "gamestory.js: make FIP and WHIP tappable 44px terms that reveal a one-line definition (FIP: a pitcher's run prevention estimated from strikeouts, walks, hit batters and home runs; WHIP: walks plus hits per inning pitched), with no change to the underlying figures. ERA/K9/IP stay undefined \u2014 common enough to skip.",
+          "closes": [
+            "game-detail-jargon-stat-labels"
+          ],
+          "acceptance": [
+            "tapping 'FIP' reveals its definition in place"
+          ]
+        },
+        {
+          "id": "MATCH-4",
+          "what": "gamestory.css: in the <=899px query raise every font-size under 15px to 15px (gs-stat__label, gs-col__head, gs-fact__value, gs-note, gs-reliever__name and siblings); replace any red use with role tokens; no layout change; delete any idle-motion this file owns.",
+          "closes": [
+            "game-detail-sub-15px-gamestory-text"
+          ],
+          "acceptance": [
+            "at 390 no text inside the Game Story or Teams panels computes under 15px, and scrollWidth === innerWidth"
+          ]
+        }
+      ],
+      "acceptance": [
+        "python -m pytest tests/test_web_v2_game.py tests/test_web_matchups_header.py tests/test_web_grade.py tests/test_web_polish.py tests/test_web_hero_market_gap.py tests/test_web_register_sweep.py tests/test_web_local_time.py",
+        "game-detail-visual-system-mismatch is explicitly deferred under R6 (see findings_index) \u2014 no visual redesign of this page happens in this build"
+      ]
+    },
+    {
+      "id": "props-odds",
+      "order": 4,
+      "depends_on": [
+        "foundation",
+        "chrome",
+        "gameday-page"
+      ],
+      "owns": [
+        "web/js/props.js",
+        "web/js/odds.js",
+        "web/css/props.css"
+      ],
+      "tests_owned": [
+        "tests/test_web_props.py",
+        "tests/test_web_props_home_runs.py",
+        "tests/test_web_odds_board.py"
+      ],
+      "tests_to_update": [],
+      "tasks": [
+        {
+          "id": "PO-1",
+          "what": "props.js: replace the 'What is most likely tonight' opening with pageHeader('MLB \u00b7 PROPS'/'Player props'/'Every priced player prop on the slate.', status 'Prices captured {time}' \u2014 **never build that time string with a helper or variable whose name contains the letters 'lock'**: test_web_props.py scans the raw text of this file, comments included, and fails on any substring match of 'lock', which 'clock' and 'block' both contain; name the local variable/helper 'capturedTime' and avoid the word 'clock' anywhere in this file including comments); move the counts line above the list; when any row's expected_pa_source is not a posted lineup, show the lineup-note sentence above the list.",
+          "closes": [
+            "props-2"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_web_props.py",
+            "390 capture of #/props: the header, then the counts line and the lineup note, appear before the first row"
+          ]
+        },
+        {
+          "id": "PO-2",
+          "what": "props.js: add market filter chips (All \u00b7 Hits \u00b7 Total bases \u00b7 Home runs) that hide rows without reordering, and render 25 rows then a 'Show 25 more' secondary button; never sort or reorder the server's rows (.sort( must not appear); keep the Home runs section and the both-numbers/plate-appearance-source rendering; keep the literal 'lineup not posted yet' string.",
+          "closes": [
+            "props-3"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_web_props_home_runs.py",
+            "with filter 'All', row order matches the /props response order; tapping 'Hits' hides non-hit rows and leaves the remaining rows in the same relative order"
+          ]
+        },
+        {
+          "id": "PO-3",
+          "what": "props.css: at <=899px raise prop-row__stat-label, prop-row__price, prop-row__pa, props__counts and every other rule under 15px to 15px; filter chips and the show-more button use shared classes from components.css; no red anywhere on this page (the board has no pick on it).",
+          "closes": [
+            "props-4"
+          ],
+          "acceptance": [
+            "390 capture of #/props: no text under 15px; scrollWidth === innerWidth"
+          ]
+        },
+        {
+          "id": "PO-4",
+          "what": "odds.js board and single-game: pageHeader('MLB \u00b7 ODDS'/'Prices across the books', status 'Captured {time} \u00b7 {age}') with a real h2; a jump list of games at the top; each game renders as a shared disclosure whose summary row shows matchup, time and best price per side, with an h3 per game; the books table uses .dtable--scroll with the caption 'Swipe for more books'; 'BEST' panels use neutral classes with the words 'Best price', never a red fill.",
+          "closes": [
+            "odds-3",
+            "odds-4",
+            "odds-5",
+            "oddsgame-3",
+            "oddsgame-5"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_web_odds_board.py",
+            "#/odds has one h2 and an h3 per game, a jump list above the first game, and games collapsed to summary rows; odds_desktop.png is re-captured successfully at 1440x900",
+            "#/odds/{date}/LAD/CIN shows the page header with '{Away} at {Home}' and a status line with the captured time"
+          ]
+        },
+        {
+          "id": "PO-5",
+          "what": "odds.js: replace the fixed STALE_AFTER_SECONDS per-row flag with an amber 'Older quote' chip shown only when a book's observed_utc is at least 3600 seconds older than the newest observed_utc for the same game \u2014 never flagging every row on the newest shared capture, which is what happens today.",
+          "closes": [
+            "odds-2",
+            "oddsgame-2"
+          ],
+          "acceptance": [
+            "#/odds for a slate where all books share one capture time shows zero 'Older quote' chips and zero 'STALE' chips"
+          ]
+        }
+      ],
+      "acceptance": [
+        "python -m pytest tests/test_web_props.py tests/test_web_props_home_runs.py tests/test_web_odds_board.py tests/test_web_register_sweep.py tests/test_web_v2_primitives.py tests/test_web_local_time.py"
+      ]
+    },
+    {
+      "id": "results",
+      "order": 4,
+      "depends_on": [
+        "foundation",
+        "chrome",
+        "gameday-card",
+        "gameday-page",
+        "copy-truth-sweep"
+      ],
+      "owns": [
+        "web/js/cardrecord.js",
+        "web/js/dayrecap.js",
+        "web/js/performance.js"
+      ],
+      "tests_owned": [
+        "tests/test_card_record_page.py",
+        "tests/test_web_performance.py",
+        "tests/test_web_performance_live.py",
+        "tests/test_card_calendar.py",
+        "tests/test_record_cohort_consistency.py",
+        "tests/test_web_results_copy.py"
+      ],
+      "tests_to_update": [
+        "tests/test_card_record_page.py: after CTS-1 changes CARD_DISCLAIMER upstream, verify test_record_disclaimer_is_the_one_true_constant... still passes against the corrected string with no change to the constant-identity assertion itself.",
+        "tests/test_card_calendar.py: pins pending_days, record-day, data-date, and bans literal 'new Date(day)' in cardrecord.js's calendar rendering \u2014 unaffected by this group's copy/header changes; verify it stays green unmodified.",
+        "tests/test_record_cohort_consistency.py: pins FORWARD_TEST, 'No forward-test positions settled', day-record-cohort, the renderSummaryTiles block, performance-summary-note and 'data-class': 'ALL' across dayrecap.js and performance.js \u2014 unaffected by the allSettled/pageHeader changes; verify it stays green unmodified."
+      ],
+      "tasks": [
+        {
+          "id": "RES-1",
+          "what": "cardrecord.js: add pageHeader('MLB \u00b7 RESULTS'/'Every card pick, graded', status 'Last graded {latest settled day}'); keep sectionHead 'THE RECORD' and all calculations/layout (R6). Rewrite the intro to the full record wording; add the cohort line 'Card picks, graded at their lock, rule v1 \u00b7 {period} \u00b7 {n} picks' and 'Preliminary: not enough picks yet to show an edge or its absence.' beside headline(); chainStatus label 'HASH-CHAINED LEDGER', verified text ends '\u2026each one linked by a hash to the entry before it, so changing a past entry breaks every link after it. The chain check passes.' (delete 'nothing below has been changed after the fact'); failure text 'The chain check does not pass. Treat every figure on this page as unconfirmed until it does.'; stop rendering the raw record.disclaimer field verbatim now that CTS-1 has corrected CARD_DISCLAIMER upstream \u2014 this task depends on copy-truth-sweep landing first.",
+          "closes": [
+            "REC-3",
+            "REC-4"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_card_record_page.py tests/test_web_results_copy.py",
+            "#/record-card shows 'Card picks, graded at their lock' and 'Preliminary: not enough picks yet to show an edge or its absence.' within the headline figures block",
+            "visible text on #/record-card contains none of 'frozen', 'tamper-proof', 'quietly edited' or 'changed after the fact'"
+          ]
+        },
+        {
+          "id": "RES-2",
+          "what": "cardrecord.js: dayBlock tables use the shared .dtable stacked classes with cell labels BET/RESULT/PRICE/BOOK/RETURN; the LOSS chip uses the neutral settled chip (colour lives in gameday-card's card.css crp-* rules, already neutralised by GC-5 \u2014 this task depends on gameday-card for that); the empty-record action href follows the sport (#/today for mlb).",
+          "closes": [
+            "REC-5"
+          ],
+          "acceptance": [
+            "390 capture of #/record-card: every day row shows the labels BET, RESULT, PRICE, BOOK and RETURN with full values, and scrollWidth === innerWidth",
+            "a LOSS chip's computed color and border are not in the #FF3D57 family"
+          ]
+        },
+        {
+          "id": "RES-3",
+          "what": "dayrecap.js: add pageHeader('RESEARCH \u00b7 ONE DAY', the date as title, payload.basis as purpose (now CTS-3-corrected upstream), status 'Stake policy {policy} \u00b7 Settled through {date}'); fallback badge 'PREGAME RECORD'; loading copy \"Loading this day's record\u2026\"; each position row names its system through humanizeKey(system_id) so 1,000+ near-identical rows become distinguishable; no grouping or pagination of the list itself (R6).",
+          "closes": [
+            "DAY-1"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_record_cohort_consistency.py",
+            "every row on #/day/{date} includes a humanized system name distinguishing it from an otherwise identical row"
+          ]
+        },
+        {
+          "id": "RES-4",
+          "what": "dayrecap.js dayRollupSummary: show '\u2014' for units and percentages until at least one position has settled \u2014 the same guard cardrecord.js's headline() already applies \u2014 instead of a real '0-0-0 \u00b7 0.00u' that reads identically to a day that broke even.",
+          "closes": [
+            "DAY-3"
+          ],
+          "acceptance": [
+            "#/day/{today} with nothing settled shows '\u2014' for units, not '0.00u'"
+          ]
+        },
+        {
+          "id": "RES-5",
+          "what": "performance.js: add pageHeader('RESEARCH'/'Research systems, kept apart from the card'); replace the single awaited Promise.all with Promise.allSettled inside withLoadingTimeout, rendering every section whose data loaded and a named not-available panel for any that did not.",
+          "closes": [
+            "PERF-1"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_web_performance.py tests/test_web_performance_live.py",
+            "the 1440 capture of #/performance shows content or the shared error state within 30 seconds, never only the skeleton"
+          ]
+        }
+      ],
+      "acceptance": [
+        "python -m pytest tests/test_card_record_page.py tests/test_web_performance.py tests/test_web_performance_live.py tests/test_web_results_copy.py tests/test_web_matchups.py tests/test_web_register_sweep.py tests/test_web_card_props.py tests/test_web_local_time.py tests/test_card_calendar.py tests/test_record_cohort_consistency.py"
+      ]
+    },
+    {
+      "id": "tools",
+      "order": 4,
+      "depends_on": [
+        "foundation",
+        "chrome",
+        "gameday-page"
+      ],
+      "owns": [
+        "web/js/betcheck.js",
+        "web/js/mybets.js"
+      ],
+      "tests_owned": [
+        "tests/test_web_v2_betcheck.py",
+        "tests/test_web_betcheck_register.py",
+        "tests/test_web_mybets.py",
+        "tests/test_web_tools_pages.py"
+      ],
+      "tests_to_update": [],
+      "tasks": [
+        {
+          "id": "TOOLS-1",
+          "what": "betcheck.js: add pageHeader('MLB \u00b7 BET CHECK'/'Check a moneyline: the case for it, the case against it, and the prices.', status via the existing setShellStatus call) above the ticket layout; keep the ten-block skeleton, its data-hook order and the single red 'CHECK IT' primary. The '.glyph' word appearing in this file today is prose inside a comment only (verified directly) \u2014 chrome's deletion of the .glyph CSS class does not require any change here.",
+          "closes": [],
+          "acceptance": [
+            "python -m pytest tests/test_web_v2_betcheck.py",
+            "390 capture of #/betcheck: the header is visible; scrollWidth === innerWidth"
+          ]
+        },
+        {
+          "id": "TOOLS-2",
+          "what": "betcheck.js: replace todayIso()'s toISOString().slice(0,10) UTC-day default with currentEasternDateIso, imported from today.js (gameday-page's export); label the field 'Slate date' with the helper line 'Slates turn over at midnight Eastern.'",
+          "closes": [
+            "betcheck-4"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_web_tools_pages.py",
+            "with the browser clock set to 10:14 PM PDT, the Bet Check date field defaults to the same slate date the Gameday slate banner shows; with the clock at 6:00 PM PDT it defaults to that calendar day, not the next"
+          ]
+        },
+        {
+          "id": "TOOLS-3",
+          "what": "betcheck.js: 15px text floor on the ticket field labels, eyebrow and foot text (bc2- rules live in gameday-page's screens.css \u2014 this task depends on gameday-page's GP-7 sweep for the CSS side; betcheck.js itself only supplies the markup/hooks).",
+          "closes": [
+            "betcheck-6",
+            "betcheck-7"
+          ],
+          "acceptance": [
+            "390 capture of #/betcheck: no ticket label, eyebrow or foot text under 15px"
+          ]
+        },
+        {
+          "id": "TOOLS-4",
+          "what": "mybets.js: add pageHeader('MLB \u00b7 BETS'/'Bets you saved, and how they settled.'); render the save form with the shared .field/.form parts and the saved-bets table with the shared .dtable stacked classes (labels Game, Side, Price, Saved, Settlement, Closing price, Delete); keep the fetch-then-form order and the no-Bet-Check-instruction rule.",
+          "closes": [
+            "mybets-1",
+            "mybets-5",
+            "mybets-7"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_web_mybets.py",
+            "signed-in 390 capture of #/mybets: no horizontal scroll, the Delete control visible for each saved bet, and form labels at 15px or larger"
+          ]
+        }
+      ],
+      "acceptance": [
+        "python -m pytest tests/test_web_v2_betcheck.py tests/test_web_betcheck_register.py tests/test_web_mybets.py tests/test_web_tools_pages.py tests/test_web_structure.py tests/test_web_local_time.py tests/test_web_imports_resolve.py"
+      ]
+    },
+    {
+      "id": "account",
+      "order": 3,
+      "depends_on": [
+        "foundation",
+        "chrome"
+      ],
+      "owns": [
+        "web/js/signin.js",
+        "web/js/signup.js",
+        "web/js/billing.js",
+        "web/js/support.js",
+        "web/css/signup.css"
+      ],
+      "tests_owned": [
+        "tests/test_web_billing.py",
+        "tests/test_web_account_pages.py"
+      ],
+      "tests_to_update": [],
+      "tasks": [
+        {
+          "id": "ACCT-1",
+          "what": "signin.js, signup.js, billing.js, support.js: render pageHeader above a single shared panel on every account route (Sign in: 'ACCOUNT \u00b7 SIGN IN'; Sign up: 'ACCOUNT \u00b7 FOUNDING BETA'; Billing: 'ACCOUNT \u00b7 BILLING'; Support: 'ACCOUNT \u00b7 SUPPORT' with purpose 'A question about a pick, a number that looks wrong, or something broken? Write it here and we reply by email.'). Re-check the fixed tab bar over the signup form on a real, scrolled device rather than trusting the full-page capture tool \u2014 app.css already reserves bottom padding sized to clear the tab bar (tabbar-height + 74px + safe area), so signup-mobile-tabbar-overlap may already be a capture artifact; confirm live before treating it as a CSS fix.",
+          "closes": [
+            "signin-header-pattern",
+            "billing-header-pattern",
+            "signup-mobile-tabbar-overlap"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_web_account_pages.py",
+            "a real-scroll capture of #/signup at 390px shows the tab bar never covering the email field or the submit button"
+          ]
+        },
+        {
+          "id": "ACCT-2",
+          "what": "signup.js copy: headline 'Daily MLB picks, published before each game.'; the benefit bullet becomes 'Every pick is published before its game. It can still change until it locks, then it's graded as it stood at that lock.'; keep 'signup is not yet open', 'index.html#/today', trackFunnelEvent signup_started, result.checkout.checkout_url, result.status === \"waitlisted\" and the signup-token hook.",
+          "closes": [
+            "signup-frozen-overclaim",
+            "signup-headline-drift"
+          ],
+          "acceptance": [
+            "#/signup visible text contains no 'frozen' and shows 'Daily MLB picks, published before each game.'"
+          ]
+        },
+        {
+          "id": "ACCT-3",
+          "what": "signup.js renderSignupComplete: the no-token branch adds a secondary 'Go to sign up' (#/signup) and a text link 'Contact support' (#/support) \u2014 today it is the one error state in the app with no next action.",
+          "closes": [
+            "signup-complete-dead-end"
+          ],
+          "acceptance": [
+            "#/signup/complete with no token shows 'Go to sign up' and 'Contact support' links"
+          ]
+        },
+        {
+          "id": "ACCT-4",
+          "what": "support.js: rebuild the form with shared .panel/.field/.btn parts (15px labels above 16px inputs with an 8px gap, 44px controls, primary 'Send'), inside the 16px phone gutter; keep the 'support-intro' hook and the 'we reply by email' sentence; the confirmation uses the shared table/list styles. signup.css: flat panel, solid primary button, role tokens, no gradients; at <=899px every font-size under 15px becomes 15px.",
+          "closes": [
+            "support-unstyled",
+            "support-mobile-text-and-targets"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_web_account_pages.py",
+            "390 and 360 captures of #/support: inputs at 16px, labels at 15px above their inputs, a styled 'Send' button at least 44px tall, 16px left and right gutters, and scrollWidth === innerWidth"
+          ]
+        },
+        {
+          "id": "ACCT-5",
+          "what": "billing.js: keep the checkout, cancel/reactivate, not_configured, BETA_TIER and UTC-date logic untouched; only header, panel and button classes change. Capture the signed-in success states (no subscription and active subscription) and #/signup/complete?token=\u2026 before calling either done \u2014 both were only ever captured signed out in the original audit.",
+          "closes": [
+            "billing-states-uncaptured",
+            "signup-complete-states-uncaptured"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_web_billing.py",
+            "signed-in 390 captures of #/billing (no subscription and active subscription) and #/signup/complete?token=\u2026 show the page header, one panel and no text under 15px"
+          ]
+        }
+      ],
+      "acceptance": [
+        "python -m pytest tests/test_web_billing.py tests/test_web_account_pages.py tests/test_web_structure.py tests/test_web_register_sweep.py tests/test_web_local_time.py",
+        "a real-scroll check of #/signup at 390 shows the tab bar never covering the email field or the submit button at the end of the page"
+      ]
+    },
+    {
+      "id": "live-internal",
+      "order": 3,
+      "depends_on": [
+        "foundation",
+        "chrome"
+      ],
+      "owns": [
+        "web/js/live.js"
+      ],
+      "tests_owned": [
+        "tests/test_web_live_page.py"
+      ],
+      "tests_to_update": [],
+      "tasks": [
+        {
+          "id": "LIVE-1",
+          "what": "live.js: add pageHeader('INTERNAL \u00b7 LIVE'/'Live analysis in internal testing.', status 'Internal testing. No alerts are sent.'); replace setShellStatus('Ready.') and the other poller messages with that status plus a factual age when data arrives; keep the 'internal testing', 'no alerts' and 'research, not a pick' strings and the /live fetch; when no games are live, render one shared empty state with the headline 'No games are live right now.' and do not also render the poller's own idle sentence underneath it; the MLB/NFL sub-tabs use the shared tab classes (15px); suppress the sport sub-nav shell (rail/tab bar) while rendering #/live so its own sub-tabs are the only navigation on screen.",
+          "closes": [
+            "live-5",
+            "live-2",
+            "live-3",
+            "live-4"
+          ],
+          "acceptance": [
+            "python -m pytest tests/test_web_live_page.py",
+            "#/live at 1440 and 390 shows 'No games are live right now.' exactly once, the status 'Internal testing. No alerts are sent.', no 'Ready.' text, and no phone tab bar"
+          ]
+        }
+      ],
+      "acceptance": [
+        "python -m pytest tests/test_web_live_page.py tests/test_web_live_tennis_wiring.py tests/test_web_imports_resolve.py",
+        "no route other than #/live links to #/live"
+      ]
+    },
+    {
+      "id": "integrate",
+      "order": 5,
+      "depends_on": [
+        "foundation",
+        "chrome",
+        "copy-truth-sweep",
+        "gameday-card",
+        "gameday-page",
+        "landing",
+        "matchups",
+        "props-odds",
+        "results",
+        "tools",
+        "account",
+        "live-internal"
+      ],
+      "owns": [],
+      "tests_owned": [],
+      "tests_to_update": [],
+      "tasks": [
+        {
+          "id": "INT-1",
+          "what": "Run the full test suite once every group has landed on its own branch and been merged in dependency order (each group built and reviewed inside its own worktree, per group order \u2014 this is the reason the parallel-group acceptance commands in each group above only run that group's own tests plus its direct dependencies' tests, not the whole suite: a group built in isolation cannot yet see another in-flight group's uncommitted changes). Capture every route at 1440x900, 1024x768 (the measured desktop-strip overflow band between 900 and 1199px), 390x844 and 360x780, before and after.",
+          "closes": [],
+          "acceptance": [
+            "python -m pytest tests/",
+            "every route captured at all four widths shows no text under 15px, no target under 44px, and scrollWidth === innerWidth",
+            "a site-wide grep for 'frozen before first pitch', 'tamper-proof', 'cannot be edited', 'labelled SPLIT' and 'loses money at the vig' across web/ and the /card, /card/record, /daily/{date} API responses returns no matches"
+          ]
+        }
+      ],
+      "acceptance": [
+        "python -m pytest tests/",
+        "docs/SITE_REDESIGN_2026-09-15.md's process step 5 (re-capture every page locally at three widths; check each against the spec; fix; run the full test suite; push) is satisfied"
+      ]
+    }
+  ],
+  "findings_index": [
+    {
+      "id": "shell-01-switcher-no-coming-soon",
+      "group_audited": "shell",
+      "severity": "high",
+      "closed_by": "CHR-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "shell-02-live-still-in-public-chrome",
+      "group_audited": "shell",
+      "severity": "high",
+      "closed_by": "CHR-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "shell-03-nav-structure-and-check",
+      "group_audited": "shell",
+      "severity": "high",
+      "closed_by": "CHR-2",
+      "deferred_reason": null
+    },
+    {
+      "id": "shell-04-mobile-clock-clipped",
+      "group_audited": "shell",
+      "severity": "high",
+      "closed_by": "CHR-5",
+      "deferred_reason": null
+    },
+    {
+      "id": "shell-05-props-results-share-icon",
+      "group_audited": "shell",
+      "severity": "medium",
+      "closed_by": "CHR-2",
+      "deferred_reason": null
+    },
+    {
+      "id": "shell-06-nfl-nav-no-active-state",
+      "group_audited": "shell",
+      "severity": "high",
+      "closed_by": "CHR-2",
+      "deferred_reason": null
+    },
+    {
+      "id": "shell-07-frozen-before-first-pitch",
+      "group_audited": "shell",
+      "severity": "high",
+      "closed_by": "CHR-7",
+      "deferred_reason": null
+    },
+    {
+      "id": "shell-08-no-news-banner",
+      "group_audited": "shell",
+      "severity": "high",
+      "closed_by": "CHR-3",
+      "deferred_reason": null
+    },
+    {
+      "id": "shell-09-nfl-not-marked-coming-soon",
+      "group_audited": "shell",
+      "severity": "high",
+      "closed_by": "CHR-4",
+      "deferred_reason": null
+    },
+    {
+      "id": "landing-01",
+      "group_audited": "landing",
+      "severity": "high",
+      "closed_by": "LAND-2",
+      "deferred_reason": null
+    },
+    {
+      "id": "landing-02",
+      "group_audited": "landing",
+      "severity": "high",
+      "closed_by": "LAND-2",
+      "deferred_reason": null
+    },
+    {
+      "id": "landing-03",
+      "group_audited": "landing",
+      "severity": "high",
+      "closed_by": "LAND-4",
+      "deferred_reason": null
+    },
+    {
+      "id": "landing-04",
+      "group_audited": "landing",
+      "severity": "high",
+      "closed_by": "LAND-5",
+      "deferred_reason": null
+    },
+    {
+      "id": "landing-05",
+      "group_audited": "landing",
+      "severity": "medium",
+      "closed_by": "LAND-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "landing-06",
+      "group_audited": "landing",
+      "severity": "high",
+      "closed_by": "LAND-3",
+      "deferred_reason": null
+    },
+    {
+      "id": "landing-07",
+      "group_audited": "landing",
+      "severity": "medium",
+      "closed_by": "LAND-5",
+      "deferred_reason": null
+    },
+    {
+      "id": "landing-08",
+      "group_audited": "landing",
+      "severity": "medium",
+      "closed_by": "LAND-2",
+      "deferred_reason": null
+    },
+    {
+      "id": "landing-09",
+      "group_audited": "landing",
+      "severity": "low",
+      "closed_by": "LAND-6",
+      "deferred_reason": null
+    },
+    {
+      "id": "nfl-today-1",
+      "group_audited": "new-sports-live",
+      "severity": "high",
+      "closed_by": "CHR-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "nfl-today-2",
+      "group_audited": "new-sports-live",
+      "severity": "high",
+      "closed_by": "CHR-4",
+      "deferred_reason": null
+    },
+    {
+      "id": "nfl-today-3",
+      "group_audited": "new-sports-live",
+      "severity": "high",
+      "closed_by": "CHR-2",
+      "deferred_reason": null
+    },
+    {
+      "id": "nfl-today-4",
+      "group_audited": "new-sports-live",
+      "severity": "medium",
+      "closed_by": "CHR-4",
+      "deferred_reason": null
+    },
+    {
+      "id": "nfl-today-5",
+      "group_audited": "new-sports-live",
+      "severity": "low",
+      "closed_by": "CHR-3",
+      "deferred_reason": null
+    },
+    {
+      "id": "nfl-record-1",
+      "group_audited": "new-sports-live",
+      "severity": "high",
+      "closed_by": "CHR-4",
+      "deferred_reason": null
+    },
+    {
+      "id": "nfl-record-2",
+      "group_audited": "new-sports-live",
+      "severity": "medium",
+      "closed_by": "CHR-4",
+      "deferred_reason": null
+    },
+    {
+      "id": "nfl-record-3",
+      "group_audited": "new-sports-live",
+      "severity": "medium",
+      "closed_by": "CHR-4",
+      "deferred_reason": null
+    },
+    {
+      "id": "nfl-record-4",
+      "group_audited": "new-sports-live",
+      "severity": "high",
+      "closed_by": "CHR-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "nfl-record-5",
+      "group_audited": "new-sports-live",
+      "severity": "low",
+      "closed_by": "CHR-3",
+      "deferred_reason": null
+    },
+    {
+      "id": "tennis-board-1",
+      "group_audited": "new-sports-live",
+      "severity": "high",
+      "closed_by": "CHR-4",
+      "deferred_reason": null
+    },
+    {
+      "id": "tennis-board-2",
+      "group_audited": "new-sports-live",
+      "severity": "high",
+      "closed_by": "CHR-4",
+      "deferred_reason": null
+    },
+    {
+      "id": "tennis-board-3",
+      "group_audited": "new-sports-live",
+      "severity": "medium",
+      "closed_by": "CHR-4",
+      "deferred_reason": null
+    },
+    {
+      "id": "tennis-board-4",
+      "group_audited": "new-sports-live",
+      "severity": "high",
+      "closed_by": "CHR-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "tennis-board-5",
+      "group_audited": "new-sports-live",
+      "severity": "medium",
+      "closed_by": "CHR-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "live-1",
+      "group_audited": "new-sports-live",
+      "severity": "high",
+      "closed_by": "CHR-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "live-2",
+      "group_audited": "new-sports-live",
+      "severity": "medium",
+      "closed_by": "LIVE-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "live-3",
+      "group_audited": "new-sports-live",
+      "severity": "medium",
+      "closed_by": "LIVE-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "live-4",
+      "group_audited": "new-sports-live",
+      "severity": "medium",
+      "closed_by": "LIVE-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "live-5",
+      "group_audited": "new-sports-live",
+      "severity": "low",
+      "closed_by": "LIVE-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "signin-nav-stale",
+      "group_audited": "account",
+      "severity": "high",
+      "closed_by": "CHR-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "signin-no-banner",
+      "group_audited": "account",
+      "severity": "high",
+      "closed_by": "CHR-3",
+      "deferred_reason": null
+    },
+    {
+      "id": "signin-footer-overclaim",
+      "group_audited": "account",
+      "severity": "high",
+      "closed_by": "CHR-7",
+      "deferred_reason": null
+    },
+    {
+      "id": "signin-header-pattern",
+      "group_audited": "account",
+      "severity": "low",
+      "closed_by": "ACCT-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "signup-frozen-overclaim",
+      "group_audited": "account",
+      "severity": "high",
+      "closed_by": "ACCT-2",
+      "deferred_reason": null
+    },
+    {
+      "id": "signup-mobile-tabbar-overlap",
+      "group_audited": "account",
+      "severity": "high",
+      "closed_by": "ACCT-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "signup-nav-stale",
+      "group_audited": "account",
+      "severity": "high",
+      "closed_by": "CHR-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "signup-no-banner",
+      "group_audited": "account",
+      "severity": "high",
+      "closed_by": "CHR-3",
+      "deferred_reason": null
+    },
+    {
+      "id": "signup-footer-overclaim",
+      "group_audited": "account",
+      "severity": "medium",
+      "closed_by": "CHR-7",
+      "deferred_reason": null
+    },
+    {
+      "id": "signup-headline-drift",
+      "group_audited": "account",
+      "severity": "low",
+      "closed_by": "ACCT-2",
+      "deferred_reason": null
+    },
+    {
+      "id": "signup-complete-dead-end",
+      "group_audited": "account",
+      "severity": "high",
+      "closed_by": "ACCT-3",
+      "deferred_reason": null
+    },
+    {
+      "id": "signup-complete-nav-stale",
+      "group_audited": "account",
+      "severity": "high",
+      "closed_by": "CHR-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "signup-complete-no-banner",
+      "group_audited": "account",
+      "severity": "high",
+      "closed_by": "CHR-3",
+      "deferred_reason": null
+    },
+    {
+      "id": "signup-complete-footer-overclaim",
+      "group_audited": "account",
+      "severity": "medium",
+      "closed_by": "CHR-7",
+      "deferred_reason": null
+    },
+    {
+      "id": "signup-complete-states-uncaptured",
+      "group_audited": "account",
+      "severity": "medium",
+      "closed_by": "ACCT-5",
+      "deferred_reason": null
+    },
+    {
+      "id": "billing-states-uncaptured",
+      "group_audited": "account",
+      "severity": "high",
+      "closed_by": "ACCT-5",
+      "deferred_reason": null
+    },
+    {
+      "id": "billing-nav-stale",
+      "group_audited": "account",
+      "severity": "high",
+      "closed_by": "CHR-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "billing-no-banner",
+      "group_audited": "account",
+      "severity": "high",
+      "closed_by": "CHR-3",
+      "deferred_reason": null
+    },
+    {
+      "id": "billing-footer-overclaim",
+      "group_audited": "account",
+      "severity": "medium",
+      "closed_by": "CHR-7",
+      "deferred_reason": null
+    },
+    {
+      "id": "billing-header-pattern",
+      "group_audited": "account",
+      "severity": "low",
+      "closed_by": "ACCT-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "support-unstyled",
+      "group_audited": "account",
+      "severity": "high",
+      "closed_by": "ACCT-4",
+      "deferred_reason": null
+    },
+    {
+      "id": "support-mobile-text-and-targets",
+      "group_audited": "account",
+      "severity": "high",
+      "closed_by": "ACCT-4",
+      "deferred_reason": null
+    },
+    {
+      "id": "support-nav-stale",
+      "group_audited": "account",
+      "severity": "high",
+      "closed_by": "CHR-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "support-no-banner",
+      "group_audited": "account",
+      "severity": "high",
+      "closed_by": "CHR-3",
+      "deferred_reason": null
+    },
+    {
+      "id": "support-footer-overclaim",
+      "group_audited": "account",
+      "severity": "medium",
+      "closed_by": "CHR-7",
+      "deferred_reason": null
+    },
+    {
+      "id": "games-shell-switcher-check-naming",
+      "group_audited": "matchups",
+      "severity": "high",
+      "closed_by": "CHR-2",
+      "deferred_reason": null
+    },
+    {
+      "id": "games-no-news-banner",
+      "group_audited": "matchups",
+      "severity": "high",
+      "closed_by": "CHR-3",
+      "deferred_reason": null
+    },
+    {
+      "id": "games-grid-visual-system-mismatch",
+      "group_audited": "matchups",
+      "severity": "high",
+      "closed_by": "GP-7",
+      "deferred_reason": null
+    },
+    {
+      "id": "games-sub-15px-text",
+      "group_audited": "matchups",
+      "severity": "medium",
+      "closed_by": "GP-7",
+      "deferred_reason": null
+    },
+    {
+      "id": "games-frozen-before-first-pitch",
+      "group_audited": "matchups",
+      "severity": "high",
+      "closed_by": "CHR-7",
+      "deferred_reason": null
+    },
+    {
+      "id": "game-detail-no-experimental-notice",
+      "group_audited": "matchups",
+      "severity": "high",
+      "closed_by": "MATCH-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "game-detail-sub-15px-gamestory-text",
+      "group_audited": "matchups",
+      "severity": "high",
+      "closed_by": "MATCH-4",
+      "deferred_reason": null
+    },
+    {
+      "id": "game-detail-frozen-before-first-pitch",
+      "group_audited": "matchups",
+      "severity": "high",
+      "closed_by": "CHR-7",
+      "deferred_reason": null
+    },
+    {
+      "id": "game-detail-shell-nav-mismatch",
+      "group_audited": "matchups",
+      "severity": "high",
+      "closed_by": "CHR-2",
+      "deferred_reason": null
+    },
+    {
+      "id": "game-detail-desktop-stuck-loading",
+      "group_audited": "matchups",
+      "severity": "medium",
+      "closed_by": "MATCH-2",
+      "deferred_reason": null
+    },
+    {
+      "id": "game-detail-visual-system-mismatch",
+      "group_audited": "matchups",
+      "severity": "medium",
+      "closed_by": null,
+      "deferred_reason": "Amendment section 7 rule 6 and SITE_REDESIGN decision 2 note (R6): \"Matchups and Results keep their layouts, calculations and behaviour... Only false-claim copy fixes touch their files.\" A full visual pass to Direction A's board look is explicitly out of this build's boundary; scheduled for the next design phase per SITE_REDESIGN's own \"shell first, then pages in parallel, then a further visual pass\" plan."
+    },
+    {
+      "id": "game-detail-jargon-stat-labels",
+      "group_audited": "matchups",
+      "severity": "low",
+      "closed_by": "MATCH-3",
+      "deferred_reason": null
+    },
+    {
+      "id": "betcheck-1",
+      "group_audited": "tools",
+      "severity": "high",
+      "closed_by": "CHR-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "betcheck-2",
+      "group_audited": "tools",
+      "severity": "high",
+      "closed_by": "CHR-2",
+      "deferred_reason": null
+    },
+    {
+      "id": "betcheck-3",
+      "group_audited": "tools",
+      "severity": "high",
+      "closed_by": "CHR-3",
+      "deferred_reason": null
+    },
+    {
+      "id": "betcheck-4",
+      "group_audited": "tools",
+      "severity": "high",
+      "closed_by": "TOOLS-2",
+      "deferred_reason": null
+    },
+    {
+      "id": "betcheck-5",
+      "group_audited": "tools",
+      "severity": "high",
+      "closed_by": "CHR-7",
+      "deferred_reason": null
+    },
+    {
+      "id": "betcheck-6",
+      "group_audited": "tools",
+      "severity": "medium",
+      "closed_by": "TOOLS-3",
+      "deferred_reason": null
+    },
+    {
+      "id": "betcheck-7",
+      "group_audited": "tools",
+      "severity": "medium",
+      "closed_by": "TOOLS-3",
+      "deferred_reason": null
+    },
+    {
+      "id": "mybets-1",
+      "group_audited": "tools",
+      "severity": "high",
+      "closed_by": "TOOLS-4",
+      "deferred_reason": null
+    },
+    {
+      "id": "mybets-2",
+      "group_audited": "tools",
+      "severity": "high",
+      "closed_by": "CHR-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "mybets-3",
+      "group_audited": "tools",
+      "severity": "high",
+      "closed_by": "CHR-2",
+      "deferred_reason": null
+    },
+    {
+      "id": "mybets-4",
+      "group_audited": "tools",
+      "severity": "medium",
+      "closed_by": "CHR-3",
+      "deferred_reason": null
+    },
+    {
+      "id": "mybets-5",
+      "group_audited": "tools",
+      "severity": "medium",
+      "closed_by": "TOOLS-4",
+      "deferred_reason": null
+    },
+    {
+      "id": "mybets-6",
+      "group_audited": "tools",
+      "severity": "medium",
+      "closed_by": "CHR-7",
+      "deferred_reason": null
+    },
+    {
+      "id": "mybets-7",
+      "group_audited": "tools",
+      "severity": "medium",
+      "closed_by": "TOOLS-4",
+      "deferred_reason": null
+    },
+    {
+      "id": "gd-01",
+      "group_audited": "gameday",
+      "severity": "high",
+      "closed_by": "GP-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "gd-02",
+      "group_audited": "gameday",
+      "severity": "high",
+      "closed_by": "CHR-2",
+      "deferred_reason": null
+    },
+    {
+      "id": "gd-03",
+      "group_audited": "gameday",
+      "severity": "high",
+      "closed_by": "GP-2",
+      "deferred_reason": null
+    },
+    {
+      "id": "gd-04",
+      "group_audited": "gameday",
+      "severity": "high",
+      "closed_by": "GC-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "gd-05",
+      "group_audited": "gameday",
+      "severity": "high",
+      "closed_by": "GC-4",
+      "deferred_reason": null
+    },
+    {
+      "id": "gd-06",
+      "group_audited": "gameday",
+      "severity": "high",
+      "closed_by": "GP-6",
+      "deferred_reason": null
+    },
+    {
+      "id": "gd-07",
+      "group_audited": "gameday",
+      "severity": "high",
+      "closed_by": "GP-5",
+      "deferred_reason": null
+    },
+    {
+      "id": "gd-08",
+      "group_audited": "gameday",
+      "severity": "medium",
+      "closed_by": "GC-5",
+      "deferred_reason": null
+    },
+    {
+      "id": "gd-09",
+      "group_audited": "gameday",
+      "severity": "medium",
+      "closed_by": "GP-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "gd-10",
+      "group_audited": "gameday",
+      "severity": "medium",
+      "closed_by": "GP-4",
+      "deferred_reason": null
+    },
+    {
+      "id": "gd-11",
+      "group_audited": "gameday",
+      "severity": "low",
+      "closed_by": "GP-4",
+      "deferred_reason": null
+    },
+    {
+      "id": "props-1",
+      "group_audited": "props-odds",
+      "severity": "high",
+      "closed_by": "CHR-2",
+      "deferred_reason": null
+    },
+    {
+      "id": "props-2",
+      "group_audited": "props-odds",
+      "severity": "high",
+      "closed_by": "PO-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "props-3",
+      "group_audited": "props-odds",
+      "severity": "high",
+      "closed_by": "PO-2",
+      "deferred_reason": null
+    },
+    {
+      "id": "props-4",
+      "group_audited": "props-odds",
+      "severity": "medium",
+      "closed_by": "PO-3",
+      "deferred_reason": null
+    },
+    {
+      "id": "props-5",
+      "group_audited": "props-odds",
+      "severity": "high",
+      "closed_by": "CHR-7",
+      "deferred_reason": null
+    },
+    {
+      "id": "odds-1",
+      "group_audited": "props-odds",
+      "severity": "high",
+      "closed_by": "CHR-2",
+      "deferred_reason": null
+    },
+    {
+      "id": "odds-2",
+      "group_audited": "props-odds",
+      "severity": "high",
+      "closed_by": "PO-5",
+      "deferred_reason": null
+    },
+    {
+      "id": "odds-3",
+      "group_audited": "props-odds",
+      "severity": "high",
+      "closed_by": "PO-4",
+      "deferred_reason": null
+    },
+    {
+      "id": "odds-4",
+      "group_audited": "props-odds",
+      "severity": "medium",
+      "closed_by": "PO-4",
+      "deferred_reason": null
+    },
+    {
+      "id": "odds-5",
+      "group_audited": "props-odds",
+      "severity": "medium",
+      "closed_by": "PO-4",
+      "deferred_reason": null
+    },
+    {
+      "id": "oddsgame-1",
+      "group_audited": "props-odds",
+      "severity": "high",
+      "closed_by": "CHR-2",
+      "deferred_reason": null
+    },
+    {
+      "id": "oddsgame-2",
+      "group_audited": "props-odds",
+      "severity": "high",
+      "closed_by": "PO-5",
+      "deferred_reason": null
+    },
+    {
+      "id": "oddsgame-3",
+      "group_audited": "props-odds",
+      "severity": "high",
+      "closed_by": "PO-4",
+      "deferred_reason": null
+    },
+    {
+      "id": "oddsgame-4",
+      "group_audited": "props-odds",
+      "severity": "high",
+      "closed_by": "CHR-7",
+      "deferred_reason": null
+    },
+    {
+      "id": "oddsgame-5",
+      "group_audited": "props-odds",
+      "severity": "low",
+      "closed_by": "PO-4",
+      "deferred_reason": null
+    },
+    {
+      "id": "REC-1",
+      "group_audited": "results",
+      "severity": "high",
+      "closed_by": "CHR-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "REC-2",
+      "group_audited": "results",
+      "severity": "high",
+      "closed_by": "CHR-2",
+      "deferred_reason": null
+    },
+    {
+      "id": "REC-3",
+      "group_audited": "results",
+      "severity": "high",
+      "closed_by": "RES-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "REC-4",
+      "group_audited": "results",
+      "severity": "medium",
+      "closed_by": "RES-1",
+      "deferred_reason": null
+    },
+    {
+      "id": "REC-5",
+      "group_audited": "results",
+      "severity": "medium",
+      "closed_by": "RES-2",
+      "deferred_reason": null
+    },
+    {
+      "id": "DAY-1",
+      "group_audited": "results",
+      "severity": "high",
+      "closed_by": "RES-3",
+      "deferred_reason": null
+    },
+    {
+      "id": "DAY-2",
+      "group_audited": "results",
+      "severity": "high",
+      "closed_by": "CTS-3",
+      "deferred_reason": null
+    },
+    {
+      "id": "DAY-3",
+      "group_audited": "results",
+      "severity": "medium",
+      "closed_by": "RES-4",
+      "deferred_reason": null
+    },
+    {
+      "id": "DAY-4",
+      "group_audited": "results",
+      "severity": "medium",
+      "closed_by": null,
+      "deferred_reason": "Research routes (#/day/*, #/performance) are deliberately outside the MLB sub-menu \u2014 they are reached from the footer's Research link, not the rail \u2014 so no rail item is meant to highlight there, the same no-highlight treatment #/betcheck and #/performance already have by design. Verified this is consistent, not an oversight, in main.js's existing selection logic; showing a false RESULTS highlight on a research page would misrepresent which record the reader is looking at, which is the exact bug tests/test_whose_record_is_it.py exists to prevent. Not fixed in this build; revisit only alongside a deliberate decision to add research pages to primary navigation."
+    },
+    {
+      "id": "DAY-5",
+      "group_audited": "results",
+      "severity": "low",
+      "closed_by": null,
+      "deferred_reason": "The audit's own finding flags this as low-confidence: \"this may be a full-page-screenshot artifact on an unusually tall page... Recommend a manual scroll-check on staging before treating as a CSS fix.\" Not actioned in this build; add to the integrate group's live-capture pass (INT-1) as a manual check before deciding whether a real fix is needed."
+    },
+    {
+      "id": "PERF-1",
+      "group_audited": "results",
+      "severity": "high",
+      "closed_by": "RES-5",
+      "deferred_reason": null
+    },
+    {
+      "id": "PERF-2",
+      "group_audited": "results",
+      "severity": "high",
+      "closed_by": "CHR-2",
+      "deferred_reason": null
+    }
+  ],
+  "server_strings": [
+    {
+      "file": "src/analysis/daily_card.py",
+      "function": "CARD_BASIS (module-level constant)",
+      "current": "The side is whichever the multi-book market makes more likely. Our own run model has to agree, or the pick is labelled SPLIT. The bet is the moneyline unless the run line prices the same opinion better. Ranked by how confident the market is.",
+      "replacement": "The side is whichever the multi-book market makes more likely. Our own run model has to agree, or the pick does not qualify. The bet is the moneyline unless the run line prices the same opinion better. Ranked by how strongly the market favours each pick.",
+      "group": "copy-truth-sweep"
+    },
+    {
+      "file": "src/analysis/daily_card.py",
+      "function": "CARD_DISCLAIMER (module-level constant)",
+      "current": "These are reads, not guarantees, and they are not claims of positive expected value. Backing the more likely side wins most individual bets and still loses money at the vig. Every pick here is published before first pitch, frozen, and graded win or lose.",
+      "replacement": "These are reads, not guarantees, and they are not claims of positive expected value. No pick here has shown a positive estimated return under our market benchmark. Every pick here is published before first pitch and graded win or lose.",
+      "group": "copy-truth-sweep"
+    },
+    {
+      "file": "src/analysis/grade.py",
+      "function": "legend()",
+      "current": "A+ means the price is on your side by our own number. That number has been measured unreliable when it disagrees with the market, so treat the plus as a note, not a reason.",
+      "replacement": "A+ means our number is above what the price needs. That number has not been checked against enough results yet, so read the plus as a note, not a reason.",
+      "group": "copy-truth-sweep"
+    },
+    {
+      "file": "src/report/daily_record.py",
+      "function": "LABEL (module-level constant)",
+      "current": "FROZEN PREGAME RECORD",
+      "replacement": "PREGAME RECORD",
+      "group": "copy-truth-sweep"
+    },
+    {
+      "file": "src/report/daily_record.py",
+      "function": "BASIS (module-level constant)",
+      "current": "Every recommendation below is the row the engine froze before first pitch; prices and confidence are as of that instant, never restated.",
+      "replacement": "Every recommendation below is the row the engine recorded before first pitch; prices and confidence are as of that instant, never restated.",
+      "group": "copy-truth-sweep"
+    }
+  ],
+  "unowned_files_check": "every file in the union of owns lists appears exactly once; verified programmatically by scratchpad/validate_build_plan.py check (a), which lists the owns arrays across all 13 groups and confirms no path repeats."
+}
