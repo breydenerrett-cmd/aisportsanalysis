@@ -1682,3 +1682,6 @@ Blockers: none new. Standing blockers unchanged: R16-33's key/rate-limit
 question (owner), per-sport pricing decisions (R16-28), the API-Tennis
 trial call (R16-22), R16-02's roadmap-evidence close-out (same rate-limit
 question), R16-06 waiting on 2026-09-16's daily settle as diagnosed above.
+- 2026-09-15T21:52Z afternoon_slate: engine slate --date 2026-09-15 exit=0
+- 2026-09-15T21:52Z afternoon_slate: card publish --date 2026-09-15 exit=0
+- 2026-09-15T21:52Z afternoon_slate: engine slip --date 2026-09-15
