@@ -1,0 +1,138 @@
+# Pulls everything scripts/balldontlie_harvest.py's PLAN asks for from
+# BALLDONTLIE's ALL-ACCESS trial (bought 2026-09-15, ~48 hours -- see the
+# harvester's own module docstring for the full brief and what each sport's
+# plan covers) and uploads the compressed JSONL it writes to a GitHub
+# release. data/historical/* is git-ignored (.gitignore's "Generated data"
+# block does not list balldontlie/ among its negations), and these files
+# are far too large and numerous to commit directly, so a release is the
+# archive instead. Only MANIFEST.json and any in-progress `.cursor`
+# sidecars are committed -- small, and exactly what a later run (this
+# workflow again, or scripts/balldontlie_harvest.py by hand) needs to know
+# what is already done and where a partial job left off.
+#
+# workflow_dispatch only: this drains a one-time trial, it is not a
+# recurring job, so there is deliberately no cron trigger.
+name: balldontlie-harvest
+
+on:
+  workflow_dispatch:
+    inputs:
+      sports:
+        description: "Comma-separated sports to harvest"
+        default: "tennis,nfl,mlb,nba,nhl"
+      max_minutes:
+        description: "Stop cleanly after this many minutes, leaving resumable state"
+        default: "330"
+      release_tag:
+        description: "GitHub release to upload the harvested files to"
+        default: "balldontlie-harvest-2026-09"
+
+concurrency:
+  group: balldontlie-harvest
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  harvest:
+    runs-on: ubuntu-latest
+    # Comfortably above max_minutes' default (330) so the harvester's own
+    # clean stop -- not the runner's hard kill -- is what ends a normal run.
+    timeout-minutes: 350
+    steps:
+      # This branch, not the repo's orphan default branch -- see
+      # docs/CAPTURE_EXTERNALIZATION.md's "Default-branch constraint" for
+      # why every other data-writing workflow in this repo names it
+      # explicitly the same way.
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/sports-betting-analysis-review-g1o0co
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Configure git identity for the commit this run may make
+        run: |
+          git config user.name "balldontlie-harvest-bot"
+          git config user.email "balldontlie-harvest-bot@users.noreply.github.com"
+
+      - name: Run the harvester
+        env:
+          BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
+        run: |
+          python scripts/balldontlie_harvest.py \
+            --sports "${{ inputs.sports }}" \
+            --max-minutes "${{ inputs.max_minutes }}"
+
+      - name: Ensure the release exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view "${{ inputs.release_tag }}" >/dev/null 2>&1 || \
+            gh release create "${{ inputs.release_tag }}" \
+              --title "${{ inputs.release_tag }}" \
+              --notes "BALLDONTLIE ALL-ACCESS harvest"
+
+      - name: Upload harvested files to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          shopt -s globstar nullglob
+          files=(data/historical/balldontlie/**/*.jsonl.gz)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "no .jsonl.gz files produced this run -- nothing to upload"
+          else
+            echo "uploading ${#files[@]} file(s) to release ${{ inputs.release_tag }}"
+            gh release upload "${{ inputs.release_tag }}" "${files[@]}" --clobber
+          fi
+
+      # -f on both `git add` calls: see the header comment above --
+      # data/historical/* is ignored and balldontlie/ is not negated back
+      # in, so a plain `git add` here would silently stage nothing and
+      # every run would look like it starts from zero.
+      - name: Commit the manifest and any resumable cursor state
+        run: |
+          set -uo pipefail
+          git add -f data/historical/balldontlie/MANIFEST.json 2>/dev/null || true
+          find data/historical/balldontlie -name '*.cursor' -print0 2>/dev/null \
+            | xargs -0 -r git add -f
+
+          if git diff --cached --quiet; then
+            echo "== no manifest/cursor changes =="
+            exit 0
+          fi
+
+          BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          if ! git commit -q -m "balldontlie harvest: $(date -u +%Y-%m-%dT%H:%MZ)"; then
+            echo "::error::git commit failed"
+            exit 1
+          elif ! git fetch -q origin "$BRANCH"; then
+            echo "::error::git fetch failed -- commit is local only"
+            exit 1
+          elif ! git pull -q --rebase --autostash origin "$BRANCH"; then
+            git rebase --abort 2>/dev/null || true
+            echo "::error::rebase onto origin/$BRANCH failed -- commit is local only, needs manual resolution"
+            exit 1
+          fi
+
+          # Same retry shape as scripts/capture_slot.sh's push block: three
+          # tries with a short growing backoff for a push that lost a race
+          # against another writer.
+          PUSH_OK=0
+          for delay in 0 2 4; do
+            [ "$delay" -gt 0 ] && sleep "$delay"
+            if git push -q origin "$BRANCH"; then
+              PUSH_OK=1
+              break
+            fi
+          done
+          if [ "$PUSH_OK" -eq 1 ]; then
+            echo "== committed =="
+          else
+            echo "::error::push failed after retries -- commit is local only, needs manual push"
+            exit 1
+          fi
