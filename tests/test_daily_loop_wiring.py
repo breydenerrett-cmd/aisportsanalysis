@@ -29,6 +29,7 @@ from __future__ import annotations
 import inspect
 import json
 import pathlib
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -42,6 +43,31 @@ REPO = pathlib.Path(__file__).resolve().parent.parent
 SCRIPT = REPO / "scripts" / "daily_loop.sh"
 
 GAME = "aaaa1111aaaa1111aaaa1111aaaa1111"
+
+
+def _bash():
+    """A POSIX bash. On Windows `bash` on PATH is often the WSL shim, which
+    fails with returncode 1 (not "not found") when no WSL distribution is
+    installed -- indistinguishable from a real syntax error unless a working
+    bash is found first. Same helper as tests/test_chain_multi_sport.py and
+    tests/test_capture_no_set_time.py, kept local here (rather than shared)
+    because this file owns no import relationship to either."""
+    candidates = []
+    if sys.platform == "win32":
+        candidates += [r"C:\Program Files\Git\bin\bash.exe",
+                       r"C:\Program Files\Git\usr\bin\bash.exe"]
+    candidates.append(shutil.which("bash"))
+    for path in candidates:
+        if not path or not Path(path).exists():
+            continue
+        low = path.lower()
+        if sys.platform == "win32" and ("windowsapps" in low or "system32" in low):
+            continue
+        return path
+    return None
+
+
+BASH = _bash()
 
 
 def _l1_row(event_id, observed_utc):
@@ -81,8 +107,9 @@ class DailyLoopScriptWiringTest(unittest.TestCase):
     def setUp(self):
         self.text = SCRIPT.read_text()
 
+    @unittest.skipUnless(BASH, "no POSIX bash available")
     def test_parses_as_valid_bash(self):
-        result = subprocess.run(["bash", "-n", str(SCRIPT)],
+        result = subprocess.run([BASH, "-n", str(SCRIPT)],
                                 capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
 
@@ -96,6 +123,22 @@ class DailyLoopScriptWiringTest(unittest.TestCase):
         self.assertLess(
             settle_pos, eod_pos,
             "engine settle must run before eod (S7 reads settled data)")
+
+    def test_multi_sport_steps_present_in_order(self):
+        """NFL, tennis and live steps run after MLB card settle."""
+        mlb_settle_pos = self.text.index("== card settle (yesterday")
+        nfl_settle_pos = self.text.index("== nfl card settle")
+        tennis_pos = self.text.index("== tennis discover")
+        live_settle_pos = self.text.index("== live settle")
+        self.assertLess(
+            mlb_settle_pos, nfl_settle_pos,
+            "nfl card settle must run after mlb card settle")
+        self.assertLess(
+            nfl_settle_pos, tennis_pos,
+            "tennis discover must run after nfl card settle")
+        self.assertLess(
+            tennis_pos, live_settle_pos,
+            "live settle must run after tennis discover")
 
     def test_free_prerequisites_run_before_the_slate(self):
         # 2026-09-06: the pitch store had stalled (slate guard refused on

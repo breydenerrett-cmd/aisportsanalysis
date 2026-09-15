@@ -505,6 +505,58 @@ echo "== card publish ($SLATE_DATE) =="
 CARD_OUT=$(python3 -m src.cli card publish --date "$SLATE_DATE" 2>&1) || true
 echo "$CARD_OUT" | tail -n 25 | sed 's/^/  /'
 
+echo "== nfl capture =="
+python3 -m src.cli nfl capture 2>&1 | sed 's/^/  /' || true
+
+echo "== tennis capture =="
+python3 -m src.cli tennis capture 2>&1 | sed 's/^/  /' || true
+
+echo "== nfl card publish ($SLATE_DATE) =="
+NFL_DATE="$SLATE_DATE"
+NFL_CARD_OUT=$(python3 -m src.cli card publish --sport nfl --date "$NFL_DATE" 2>&1) || true
+echo "$NFL_CARD_OUT" | tail -n 25 | sed 's/^/  /'
+
+# Live window dispatch: check if we should dispatch live-window workflow for each sport.
+# SAME gh mechanism as chain_dispatch: this step runs from the "Capture one
+# slot" step of forward-capture.yml, which (like the cron copy's invocation)
+# passes no explicit GH_TOKEN -- so, exactly as chain_dispatch and chain_gate
+# do, the token is read from the checkout's persisted git credential
+# (_chain_token) rather than assumed to already be in the environment.
+LIVE_WINDOW_DISPATCH="${LIVE_WINDOW_DISPATCH:-1}"
+if [ "$LIVE_WINDOW_DISPATCH" = "1" ]; then
+    _chain_token || true
+    _chain_repo
+    for sport in mlb nfl; do
+        echo "== live-window dispatch check ($sport) =="
+        dispatch_output=$(python3 -m src.pipeline.live_window --should-dispatch --sport "$sport" 2>&1) || true
+        echo "$dispatch_output" | sed 's/^/  /'
+
+        if echo "$dispatch_output" | grep -q "^DISPATCH"; then
+            echo "  dispatching live-window.yml for $sport"
+            # No `local` here (unlike chain_dispatch's own retry loop): this
+            # runs at the script's top level, not inside a function, and
+            # `local` outside a function is a bash error (harmless under
+            # `set -uo pipefail` with no `-e`, but wrong) rather than a
+            # scoping guard.
+            live_dispatched=0
+            for attempt in 1 2 3; do
+                if gh workflow run live-window.yml --ref "$CHAIN_BRANCH" -f sport="$sport"; then
+                    echo "  dispatched live-window for $sport (attempt $attempt)"
+                    live_dispatched=1
+                    break
+                fi
+                [ "$attempt" -lt 3 ] && sleep $((attempt * 10))
+            done
+            # Tracked explicitly rather than re-checking $attempt -ge 3: a
+            # successful 3rd attempt also leaves attempt=3, which would
+            # otherwise print this failure line right after "dispatched".
+            if [ "$live_dispatched" -ne 1 ]; then
+                echo "  failed to dispatch live-window for $sport after 3 attempts"
+            fi
+        fi
+    done
+fi
+
 # Deliberately OUTSIDE the lineup-cadence gate above. Everything else in this
 # script asks "did this pass do its job?". This asks "is what the site is
 # showing right now still TRUE?" -- and the way a slip goes false is by the
@@ -536,7 +588,7 @@ fi
 # never `data/historical` wholesale: that directory also holds the results
 # CSV and the arsenals tree, multi-megabyte churn that does not belong in a
 # commit made ninety-six times a day.
-git add data/watch data/processed data/raw/oddsapi docs/OVERNIGHT_RUN.md \
+git add data/watch data/processed data/raw/oddsapi data/live docs/OVERNIGHT_RUN.md \
         evidence data/paper_accounts 2>/dev/null || true
 git add data/historical/lineups.jsonl data/historical/matchup_history.jsonl data/historical/matchup_pairs.json 2>/dev/null || true
 if ! git diff --cached --quiet; then

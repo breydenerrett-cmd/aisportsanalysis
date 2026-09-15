@@ -278,6 +278,26 @@ if [ "$CARDSETTLE_STATUS" -ne 0 ]; then
 fi
 echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: card settle --date $YESTERDAY exit=$CARDSETTLE_STATUS" >> "$RUN_NOTE"
 
+echo "== nfl card settle (yesterday, $YESTERDAY) =="
+NFLSETTLE_OUT=$(python3 -m src.cli card settle --sport nfl --date "$YESTERDAY" 2>&1)
+NFLSETTLE_STATUS=$?
+echo "$NFLSETTLE_OUT" | sed 's/^/  /'
+if [ "$NFLSETTLE_STATUS" -ne 0 ]; then
+    echo "ESCALATE: nfl card settle failed for $YESTERDAY (exit $NFLSETTLE_STATUS)"
+    type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "nfl card settle failed" || true
+fi
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: nfl card settle --date $YESTERDAY exit=$NFLSETTLE_STATUS" >> "$RUN_NOTE"
+
+echo "== tennis discover =="
+TENNIS_OUT=$(python3 -m src.cli tennis discover 2>&1) || true
+echo "$TENNIS_OUT" | sed 's/^/  /'
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: tennis discover" >> "$RUN_NOTE"
+
+echo "== live settle (yesterday, $YESTERDAY) =="
+LIVE_SETTLE_OUT=$(python3 -m src.pipeline.live_window --settle --date "$YESTERDAY" 2>&1) || true
+echo "$LIVE_SETTLE_OUT" | sed 's/^/  /'
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: live settle --date $YESTERDAY" >> "$RUN_NOTE"
+
 # The running record, printed so the run log answers "how is the card doing"
 # without anyone opening the ledger. Read-only, never escalates.
 echo "== card record (running) =="

@@ -31,6 +31,8 @@ on:
       # (concurrency group serializes; volume-backed app db is unaffected).
       - "data/processed/**"
       - "data/watch/**"
+      # Live betting stores from live-window workflow runs.
+      - "data/live/**"
       # ADDED 2026-09-11, THE SAME DAY data/historical/ BECAME TRACKED.
       #
       # Those eleven stores plus arsenals/ are what the matchup page reads for
