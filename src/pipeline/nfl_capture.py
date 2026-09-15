@@ -314,6 +314,19 @@ def run(
     # Make the capture
     summary = capture(env=env, sport="nfl")
 
+    # An unconfigured provider is not a capture. snapshots.capture reports
+    # it with configured=False and no "error" key, and treating that as a
+    # success would mark every due phase done with nothing written -- the
+    # window would be spent without a price in it.
+    if summary.get("configured") is False:
+        return {
+            "due": due_list,
+            "captured": False,
+            "reason": f"odds provider not configured: {summary.get('message')}",
+            "credits": 0,
+            "summary": summary,
+        }
+
     # Check if capture had an error
     if summary.get("error"):
         return {

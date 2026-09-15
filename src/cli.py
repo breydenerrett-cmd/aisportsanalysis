@@ -3235,18 +3235,40 @@ def cmd_nfl(args) -> int:
     sub = getattr(args, "nfl_command", None)
 
     if sub == "capture":
-        from src.pipeline import nfl_capture
+        from src.pipeline import creditlog, nfl_capture
+        from src.providers import odds as odds_provider
 
+        # EVERY ARGUMENT AT ITS DEFAULT. The first version passed placeholders
+        # (capture={}, spend_guard=True, done_path=None, env={}) and died on
+        # its first real run with "argument should be a str ... not
+        # 'NoneType'" -- inside Thursday's first capture window. The module's
+        # defaults are the real schedule, the real snapshot store, the real
+        # budget guard and os.environ; that is what the chain needs.
         try:
-            result = nfl_capture.run(
-                now=datetime.now(timezone.utc),
-                games=None, capture={}, spend_guard=True,
-                done_path=None, env={})
-            print(f"NFL capture: {result.get('games', 0)} game(s) processed")
-            return EXIT_OK
-        except Exception as exc:
-            print(f"ERROR: {exc}", file=sys.stderr)
+            result = nfl_capture.run()
+        except Exception as exc:  # noqa: BLE001 -- the chain step is tolerant
+            print(f"ERROR: nfl capture failed: {exc}", file=sys.stderr)
             return EXIT_ERROR
+        due = result.get("due") or []
+        print(f"  nfl capture: {len(due)} phase(s) due, "
+              f"captured={bool(result.get('captured'))}, "
+              f"credits={result.get('credits', 0)}")
+        if result.get("reason"):
+            print(f"    reason: {result['reason']}")
+        summary = result.get("summary") or {}
+        if summary:
+            print(f"    events {summary.get('events')}, rows {summary.get('captured')}, "
+                  f"multibook rows {summary.get('multibook')}")
+        if result.get("captured"):
+            # The same checkpoint every paid capture writes, so the budget
+            # guard's "remaining today" sees this spend on the next read.
+            try:
+                quota_now = odds_provider.quota()
+                creditlog.log(quota_now.get("remaining"), quota_now.get("last"),
+                              "nfl_capture.run", budget_band="live_capture")
+            except odds_provider.OddsProviderError as exc:
+                print(f"    WARNING: quota unreadable after capture: {exc}")
+        return EXIT_OK
 
     print(f"unknown nfl subcommand: {sub}")
     return EXIT_ERROR
@@ -3268,15 +3290,30 @@ def cmd_tennis(args) -> int:
             return EXIT_ERROR
 
     elif sub == "capture":
-        from src.pipeline import tennis_capture
+        from src.pipeline import tennis_capture, tennis_discovery
 
         try:
+            # Discovery is free and only ran from the once-a-day loop, so the
+            # first real capture slot found no active tournaments and printed
+            # "completed" having done nothing. Rediscover whenever the last
+            # observation is too old to trust.
+            if not tennis_discovery.active_keys():
+                found = tennis_discovery.discover()
+                if found.get("error"):
+                    print(f"  tennis discover: {found['error']}")
+                else:
+                    print(f"  tennis discover: {len(found.get('active_keys') or [])} "
+                          f"active tournament(s)")
             result = tennis_capture.run()
-            print(f"tennis capture: completed")
-            return EXIT_OK
-        except Exception as exc:
-            print(f"ERROR: {exc}", file=sys.stderr)
+        except Exception as exc:  # noqa: BLE001 -- the chain step is tolerant
+            print(f"ERROR: tennis capture failed: {exc}", file=sys.stderr)
             return EXIT_ERROR
+        print(f"  tennis capture: {len(result.get('keys') or [])} key(s) considered, "
+              f"{len(result.get('captured') or [])} captured, "
+              f"{result.get('credits', 0)} credit(s), {result.get('rows', 0)} row(s)")
+        for key, reason in sorted((result.get("skipped") or {}).items()):
+            print(f"    skipped {key}: {reason}")
+        return EXIT_OK
 
     print(f"unknown tennis subcommand: {sub}")
     return EXIT_ERROR

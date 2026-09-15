@@ -128,7 +128,8 @@ def run(*, now: Optional[datetime] = None, keys: Optional[list] = None,
         list_events: Optional[Callable] = None, fetch_normalized: Optional[Callable] = None,
         spend_guard: Optional[Callable] = None, snapshot_path: Optional[str] = None,
         multibook_path: Optional[str] = None, done_path: str = DEFAULT_DONE_PATH,
-        env: Optional[dict] = None) -> dict:
+        env: Optional[dict] = None, quota: Optional[Callable] = None,
+        record_credit: Optional[Callable] = None) -> dict:
     """Run one cycle of tennis h2h capture.
 
     Args:
@@ -169,6 +170,14 @@ def run(*, now: Optional[datetime] = None, keys: Optional[list] = None,
     if fetch_normalized is None:
         from src.providers import odds
         fetch_normalized = odds.fetch_normalized
+        # Credit logging defaults ON only for the real provider. A caller
+        # that injects a fake fetch (every test) spends nothing, so it logs
+        # nothing unless it injects a logger too -- which keeps tests out of
+        # data/processed/credit_log.jsonl by construction.
+        if quota is None:
+            quota = odds.quota
+        if record_credit is None:
+            record_credit = creditlog.log
 
     if spend_guard is None:
         spend_guard = budget.can_spend
@@ -280,10 +289,19 @@ def run(*, now: Optional[datetime] = None, keys: Optional[list] = None,
         captured_keys.append(key)
         total_rows += written + mb_written
 
-        # Log credit usage
-        creditlog.log(remaining=None, used_last=CREDITS_PER_CAPTURE,
-                     caller=f"tennis_capture.run ({key})", store=None, now=current_time,
-                     budget_band=FAMILY)
+        # Log credit usage: the provider's real remaining balance, in a real
+        # budget band. The first version wrote remaining=None under the
+        # family name as the band (not a band) to store=None; a None
+        # "remaining" row is the one thing that can make the budget guard
+        # read the quota as unreadable and refuse every capture after it.
+        if record_credit is not None:
+            try:
+                quota_now = quota(env) if quota is not None else {}
+                record_credit(quota_now.get("remaining"), quota_now.get("last"),
+                              f"tennis_capture.run ({key})", now=current_time,
+                              budget_band="live_capture")
+            except Exception as exc:  # noqa: BLE001 -- logging never fails a capture
+                LOG.warning("tennis_capture: credit log failed for %s: %s", key, exc)
 
     return {
         "keys": selected_keys,
