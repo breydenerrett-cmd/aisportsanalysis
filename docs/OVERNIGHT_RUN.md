@@ -1619,3 +1619,66 @@ API-Tennis trial call (R16-22).
 - 2026-09-15T21:22Z afternoon_slate: engine slate --date 2026-09-15 exit=0
 - 2026-09-15T21:22Z afternoon_slate: card publish --date 2026-09-15 exit=0
 - 2026-09-15T21:22Z afternoon_slate: engine slip --date 2026-09-15
+
+## 2026-09-15 ~21:50Z — hourly cloud routine: no NEW escalation, no unclaimed Tue-9/15 item; diagnosed why R16-06's readiness line hasn't flipped (it's a one-day wait, not a bug)
+
+Start-of-run check: pulled the working branch clean at `d4cc4f43`.
+`gh`-less GitHub check via the Actions MCP tools: `daily-loop` has had no
+new scheduled run since the 14:30Z failure already explained in the
+19:57Z section; `forward-capture` runs 346-355 all `success` or
+`in_progress` (normal chaining); `balldontlie-harvest` run 5
+(35014512871) still `in_progress` since 19:35Z, well inside its
+330-minute budget, so the standing "keep one harvest run active"
+instruction needed nothing; `afternoon-slate` runs all green except the
+already-explained pre-fix 17:40Z failure. Read the most recent
+`daily-loop` job log directly (run 35022286676, 20:55-21:05Z) end to end:
+both acknowledged patterns fired as `KNOWN`, no `NEW` `ESCALATE:` line —
+nothing here outranks the queue.
+
+**Queue check.** Every Stage 16 row dated Tue 9/15 is DONE, RUNNING (owned
+by this or another session with evidence inside the 2-hour reclaim
+window), or BLOCKED_HUMAN; nothing is OPEN and dated today or earlier
+(R16-36 is real but dated Wed 9/16, not yet eligible). R16-34 and R16-35
+still carry their 20:36Z local-session stamp (under 2 hours old) —
+left alone, same reasoning as the 19:57Z run. R16-03's "verify tonight's
+MLB window" isn't actionable yet; tonight's window hasn't happened.
+
+**R16-06's evidence was stale** (its commits, 45aa0dad/cba4ce88, are from
+~09:50-10:00 Pacific, well past the 2-hour mark) with a clear, checkable
+remaining acceptance line, so this run dug into it rather than doing
+nothing. Read the same 20:55-21:05Z `daily-loop` job log for the
+`research readiness` step: it still prints `ESCALATE: 14 forward-test
+system(s) now have 30+ graded selections` (matched `KNOWN` against the
+ledger, so the job still went green — this is not a new problem). Traced
+why: `src/engine/settle_slate.py`'s `run_settle` only calls
+`append_scorecard` when the run "actually settled something new" — a
+deliberate idempotency guard, not an oversight (its own docstring says
+so). Today's dispatch settled `--date 2026-09-14` again and every one of
+the ~30 systems logged `settled 0 new (N already settled)`, because
+2026-09-14 was already fully closed out **before** the battery wiring
+(45aa0dad) landed at 16:50Z today. Confirmed directly against the data:
+`evidence/scorecards_v2.jsonl`'s last commit is still `2f5e1d71` ("Daily
+loop 2026-09-15", 10:15:48Z — before the wiring), and the newest `window`
+on file for all five top-ranked ready systems is still 2026-09-14 with
+`battery_verdict: NOT_RUN`. Since `daily_loop.sh` always settles
+*yesterday's* date, the first window that gets settled for the first time
+after the wiring is 2026-09-15 — which only becomes "yesterday" on the
+next calendar day's run, ~2026-09-16 10:00Z. **No code change needed or
+possible today.** Recorded this diagnosis in R16-06's Evidence
+(`docs/ROADMAP.md`, commit `74c66bad`) so no future run re-derives it or
+mistakes this for something to fix; the next run on or after 2026-09-16
+should just re-check the `research-readiness` step and, if it reads
+`INFO`, mark the ledger row fixed and the item DONE.
+
+Verified this run: full suite (`python -m unittest discover -s tests -t .`,
+7268 tests, 447 skipped, 0 failures); `python scripts/publication_audit.py`
+clean. No `web/` files touched, so no extra web test files needed.
+
+Commits this run: `74c66bad` (roadmap R16-06 evidence) and this section
+(next commit hash after push). No `data/app`, no `data/raw`, no
+force-push.
+
+Blockers: none new. Standing blockers unchanged: R16-33's key/rate-limit
+question (owner), per-sport pricing decisions (R16-28), the API-Tennis
+trial call (R16-22), R16-02's roadmap-evidence close-out (same rate-limit
+question), R16-06 waiting on 2026-09-16's daily settle as diagnosed above.

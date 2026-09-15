@@ -1,23 +1,22 @@
-# Debrief (2026-09-15, early evening, Pacific)
+# Debrief (2026-09-15, late afternoon, Pacific)
 
-Good news: found and fixed a real bug tonight before it caused a slow
-problem. A daily background check was quietly crashing every single day
-and spending a small amount of paid API credit each time it crashed,
-without ever telling anyone. Nobody would have noticed until credits ran
-low for no obvious reason. Fixed, tested, and confirmed working on a real
-run.
+Nothing wrong, nothing to fix. This was a quiet, uneventful check.
 
-Also finished building the tool to check that the tennis results feed
-works, since you turned on that data source earlier today. The tool
-itself works correctly -- it reaches the tennis data provider and reports
-back cleanly. But it's currently getting rate-limited (same issue flagged
-earlier: the account seems capped around 5 requests a minute instead of
-the much higher rate your plan should allow). Nothing broken on our end;
-worth checking whether that trial is tied to the right account or the key
-needs regenerating.
+Quick catch-up on last hour's fix: the crashing daily background check
+(the one quietly spending API credit every day) is confirmed fixed and
+staying fixed.
 
-Today's actual MLB picks are unaffected by any of this -- both issues were
-in background/support systems, not the pick-making or publishing path.
+This hour, everything on the automated to-do list was already being
+worked or is genuinely waiting on something outside our control (mostly
+still the tennis data rate-limit question from before). I did track down
+one loose end: a system that's supposed to start grading its own track
+record automatically hasn't started yet -- but that turned out to be
+completely expected. It just needs one more day to pass before it has a
+fresh day of games to grade. No bug, nothing to do, it'll resolve itself
+tomorrow morning.
 
-Nothing needed from you right now, except possibly a look at the tennis
-API rate-limit question when you get a chance.
+Today's MLB picks: unaffected, publishing normally all afternoon.
+
+Nothing needed from you right now. Same open item as before when you get
+a chance: whether that tennis data trial is tied to the right account
+(still rate-limited far below what it should allow).
