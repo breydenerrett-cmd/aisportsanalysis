@@ -136,5 +136,54 @@ class TennisCaptureCommandRuns(unittest.TestCase):
         discover.assert_not_called()
 
 
+class TennisResultsCommandRuns(unittest.TestCase):
+    """`tennis results --date` (R16-02): read-only, no capture, no spend."""
+
+    def test_prints_rows_from_the_configured_feed(self):
+        rows = [{"event_id": "1", "tournament": "US Open", "player_a": "A. One",
+                  "player_b": "B. Two", "winner": "a", "score": "6-4 6-3",
+                  "tour": "atp", "status": "finished"}]
+        with mock.patch(
+                "src.providers.tennis_results.results_for",
+                return_value={"rows": rows, "provider": "balldontlie",
+                              "reason": None}) as results_for:
+            out = io.StringIO()
+            with redirect_stdout(out):
+                code = cli.main(["tennis", "results", "--date", "2026-09-14"])
+        self.assertEqual(code, cli.EXIT_OK)
+        results_for.assert_called_once_with("2026-09-14")
+        text = out.getvalue()
+        self.assertIn("balldontlie", text)
+        self.assertIn("1 result(s)", text)
+        self.assertIn("A. One vs B. Two", text)
+
+    def test_reports_the_reason_when_no_feed_is_configured(self):
+        with mock.patch(
+                "src.providers.tennis_results.results_for",
+                return_value={"rows": [], "provider": "none",
+                              "reason": "no tennis results feed configured "
+                                        "(TENNIS_RESULTS_PROVIDER is not set)"}):
+            out = io.StringIO()
+            with redirect_stdout(out):
+                code = cli.main(["tennis", "results", "--date", "2026-09-14"])
+        self.assertEqual(code, cli.EXIT_OK)
+        text = out.getvalue()
+        self.assertIn("no tennis results feed configured", text)
+        self.assertIn("0 result(s)", text)
+
+    def test_reports_error_from_the_feed_without_crashing(self):
+        from src.providers import tennis_results
+
+        with mock.patch("src.providers.tennis_results.results_for",
+                        side_effect=tennis_results.TennisResultsError(
+                            "BALLDONTLIE_API_KEY is not set")):
+            err = io.StringIO()
+            with redirect_stdout(io.StringIO()):
+                with mock.patch("sys.stderr", err):
+                    code = cli.main(["tennis", "results", "--date", "2026-09-14"])
+        self.assertEqual(code, cli.EXIT_ERROR)
+        self.assertIn("BALLDONTLIE_API_KEY is not set", err.getvalue())
+
+
 if __name__ == "__main__":
     unittest.main()

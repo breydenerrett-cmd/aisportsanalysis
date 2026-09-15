@@ -3315,6 +3315,26 @@ def cmd_tennis(args) -> int:
             print(f"    skipped {key}: {reason}")
         return EXIT_OK
 
+    elif sub == "results":
+        from src.providers import tennis_results
+
+        try:
+            outcome = tennis_results.results_for(args.date)
+        except tennis_results.TennisResultsError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return EXIT_ERROR
+
+        rows = outcome["rows"]
+        print(f"tennis results {args.date} (provider: {outcome['provider']})")
+        if outcome["reason"]:
+            print(f"  {outcome['reason']}")
+        print(f"  {len(rows)} result(s)")
+        for row in rows:
+            print(f"  [{row.get('tour', '?').upper()}] {row.get('player_a')} vs "
+                  f"{row.get('player_b')} -> winner {row.get('winner')} "
+                  f"({row.get('score')})  {row.get('tournament')}")
+        return EXIT_OK
+
     print(f"unknown tennis subcommand: {sub}")
     return EXIT_ERROR
 
@@ -3716,6 +3736,9 @@ def build_parser() -> argparse.ArgumentParser:
         "discover", help="discover active tennis tournaments")
     tennis_capture_cmd = tennis_sub.add_parser(
         "capture", help="fetch and store tennis data")
+    tennis_results_cmd = tennis_sub.add_parser(
+        "results", help="read-only: fetch tennis results for one date")
+    tennis_results_cmd.add_argument("--date", required=True, help="YYYY-MM-DD")
 
     eod_cmd = sub.add_parser(
         "eod", help="build and write the end-of-day self-review (S7)")

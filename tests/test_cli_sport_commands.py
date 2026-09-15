@@ -76,6 +76,20 @@ class CLISportParsingTests(unittest.TestCase):
         self.assertEqual(args.command, "tennis")
         self.assertEqual(args.tennis_command, "capture")
 
+    def test_tennis_results_parses(self):
+        """tennis results --date 2026-09-14 parses."""
+        args = self.parser.parse_args(
+            ["tennis", "results", "--date", "2026-09-14"])
+
+        self.assertEqual(args.command, "tennis")
+        self.assertEqual(args.tennis_command, "results")
+        self.assertEqual(args.date, "2026-09-14")
+
+    def test_tennis_results_requires_date(self):
+        """tennis results without --date fails."""
+        with self.assertRaises(SystemExit):
+            self.parser.parse_args(["tennis", "results"])
+
     def test_nfl_command_requires_subcommand(self):
         """nfl without subcommand fails."""
         with self.assertRaises(SystemExit):

@@ -293,6 +293,15 @@ TENNIS_OUT=$(python3 -m src.cli tennis discover 2>&1) || true
 echo "$TENNIS_OUT" | sed 's/^/  /'
 echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: tennis discover" >> "$RUN_NOTE"
 
+# Read-only verification (R16-02) that the BALLDONTLIE results feed itself
+# is reachable, ahead of wiring it into any grading path (that is R16-10).
+# Never escalates: a feed that is not configured or briefly unreachable is
+# not news the daily loop needs to page anyone about.
+echo "== tennis results (yesterday, $YESTERDAY) =="
+TENNIS_RESULTS_OUT=$(python3 -m src.cli tennis results --date "$YESTERDAY" 2>&1) || true
+echo "$TENNIS_RESULTS_OUT" | sed 's/^/  /'
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: tennis results --date $YESTERDAY" >> "$RUN_NOTE"
+
 # Unmeasured capture families cannot be budgeted until we record a real one-credit
 # measurement. The first measurement happens here (once per family per day), so the
 # daily loop is the gatekeeper: guard by the measured check, spend once, and

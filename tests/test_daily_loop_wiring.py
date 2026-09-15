@@ -205,6 +205,23 @@ class DailyLoopScriptWiringTest(unittest.TestCase):
         self.assertIn(">> \"$RUN_NOTE\"", self.text)
         self.assertIn("RUN_NOTE=docs/OVERNIGHT_RUN.md", self.text)
 
+    def test_tennis_results_verification_step_present_and_read_only(self):
+        # R16-02: a read-only smoke test of the BALLDONTLIE results feed,
+        # separate from wiring it into any grading path (R16-10). Must run
+        # after discover and before live settle, and must never escalate --
+        # an unconfigured or briefly unreachable feed is not news.
+        tennis_pos = self.text.index("== tennis discover")
+        results_pos = self.text.index("== tennis results")
+        live_settle_pos = self.text.index("== live settle")
+        self.assertLess(tennis_pos, results_pos)
+        self.assertLess(results_pos, live_settle_pos)
+        self.assertIn('python3 -m src.cli tennis results --date "$YESTERDAY"',
+                      self.text)
+        results_line = next(l for l in self.text.splitlines()
+                            if "src.cli tennis results" in l)
+        self.assertIn("|| true", results_line)
+        self.assertNotIn("ESCALATE: tennis results", self.text)
+
 
 # ---------------------------------------------------------------------------
 # 2. the freshness guard's constants exist and are actually enforced
