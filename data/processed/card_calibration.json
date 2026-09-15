@@ -1,13 +1,13 @@
 {
- "a": 0.041387,
- "b": 0.769145,
- "base_rate": 0.525288,
+ "a": 0.028644,
+ "b": 0.735183,
+ "base_rate": 0.52067,
  "fitted": true,
- "fitted_at": "2026-09-15T14:36:29.483259+00:00",
+ "fitted_at": "2026-09-15T21:04:00.873598+00:00",
  "fitted_through": "2026-09-14",
- "games_with_relief_rate": 1997,
+ "games_with_relief_rate": 1911,
  "model_id": "run_expectancy_poisson_v1",
- "n": 1997,
+ "n": 1911,
  "season": "2026",
  "skipped_no_model_line": 0
 }
