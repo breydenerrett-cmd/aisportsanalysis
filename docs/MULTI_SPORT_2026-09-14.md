@@ -70,10 +70,11 @@ settled units before its single read. MLB pre-game behaviour is unchanged.
 | NFL provider (nflverse CSVs), v0 strength model, knowledge grade, capture cadence | `src/providers/nfl.py`, `src/analysis/nfl_strength.py`, `src/analysis/nfl_grade.py`, `src/pipeline/nfl_capture.py` | done |
 | MLB and NFL live state pollers, in-play odds triggers, live ledger, three live rules | `src/pipeline/livefeed_mlb.py`, `livefeed_nfl.py`, `live_odds.py`, `src/appstate/live_ledger.py`, `src/analysis/live_rules.py` | done |
 | Tennis discovery, bounded h2h capture, results-feed adapter | `src/pipeline/tennis_discovery.py`, `tennis_capture.py`, `src/providers/tennis_results.py` | done |
-| NFL card rule, slate, publish and settle, CLI | `src/analysis/nfl_card.py`, `src/pipeline/nfl_slate.py`, `src/report/nfl_card.py`, `src/cli.py` | in progress |
-| API `sport` parameter, live API, tennis API, live record | `api/card.py`, `api/games.py`, `api/live.py`, `api/tennis.py`, `api/performance.py` | in progress |
-| Web: sport switcher, NFL card and record, Live page, tennis board | `web/js/sport.js`, `card.js`, `cardrecord.js`, `live.js`, `tennis.js` | in progress |
-| Chain scheduling, live runner workflow | `scripts/capture_slot.sh`, `scripts/daily_loop.sh`, `scripts/live_window.sh`, `.github/workflows/live-window.yml` | in progress |
+| NFL card rule, slate, publish and settle, CLI | `src/analysis/nfl_card.py`, `src/pipeline/nfl_slate.py`, `src/report/nfl_card.py`, `src/cli.py` | done (2026-09-15 04:27Z) |
+| API `sport` parameter, live API, tennis API, live record | `api/card.py`, `api/games.py`, `api/live.py`, `api/tennis.py`, `api/performance.py` | done |
+| Web: sport switcher, NFL card and record, Live page, tennis board | `web/js/sport.js`, `card.js`, `cardrecord.js`, `live.js`, `tennis.js` | done; on staging |
+| Chain scheduling, live runner workflow | `scripts/capture_slot.sh`, `scripts/daily_loop.sh`, `scripts/live_window.sh`, `.github/workflows/live-window.yml` | done; first slot with the new steps ran 2026-09-15 04:33Z |
+| Daily probe of the unmeasured `scores` and `tennis_h2h` families | `scripts/daily_loop.sh` | done; first probe on the next daily run |
 
 ## 3. Selection rules (all experimental)
 
