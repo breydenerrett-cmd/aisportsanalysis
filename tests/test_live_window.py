@@ -286,6 +286,116 @@ class TestShouldDispatch(unittest.TestCase):
         self.assertFalse(can_run)
         self.assertIn("already running", reason)
 
+    def test_should_dispatch_default_running_checks_gh_across_runners(self):
+        """Default (no `running` override) consults gh, not just the local marker.
+
+        Regression test for the bug where should_dispatch's default check
+        only ever looked at a marker file local to the calling runner, so a
+        different job (like forward-capture's chain) could never see a real
+        window active elsewhere and redispatched every cycle.
+        """
+        now = datetime(2026, 9, 14, 21, 0, 0, tzinfo=timezone.utc)
+        games = [
+            {
+                "game_pk": 747101,
+                "start_time_utc": "2026-09-14T21:00:00Z",
+                "status": {"abstractGameState": "Live"},
+            }
+        ]
+
+        with mock.patch.object(live_window, "_local_window_marker_active", return_value=False), \
+             mock.patch.object(live_window, "_gh_run_active", return_value=True) as m_gh:
+            can_run, reason = live_window.should_dispatch(
+                "mlb", now=now, schedule=lambda date: games
+            )
+
+        m_gh.assert_called_once_with("mlb")
+        self.assertFalse(can_run)
+        self.assertIn("already running", reason)
+
+
+class TestGhRunActive(unittest.TestCase):
+    """Tests for _gh_run_active (the cross-runner 'already dispatched' check)."""
+
+    def test_matching_sport_in_progress_is_active(self):
+        def fake_cli(workflow):
+            return json.dumps([
+                {"status": "in_progress", "displayTitle": "live-window-mlb"},
+            ])
+
+        self.assertTrue(live_window._gh_run_active("mlb", run_cli=fake_cli))
+
+    def test_no_matching_runs_is_not_active(self):
+        def fake_cli(workflow):
+            return json.dumps([
+                {"status": "completed", "displayTitle": "live-window-mlb"},
+            ])
+
+        self.assertFalse(live_window._gh_run_active("mlb", run_cli=fake_cli))
+
+    def test_wrong_sport_prefix_is_not_active(self):
+        def fake_cli(workflow):
+            return json.dumps([
+                {"status": "in_progress", "displayTitle": "live-window-nfl"},
+            ])
+
+        self.assertFalse(live_window._gh_run_active("mlb", run_cli=fake_cli))
+
+    def test_cancelled_run_is_not_active(self):
+        def fake_cli(workflow):
+            return json.dumps([
+                {"status": "completed", "displayTitle": "live-window-mlb", "conclusion": "cancelled"},
+            ])
+
+        self.assertFalse(live_window._gh_run_active("mlb", run_cli=fake_cli))
+
+    def test_queued_run_is_active(self):
+        def fake_cli(workflow):
+            return json.dumps([
+                {"status": "queued", "displayTitle": "live-window-nfl"},
+            ])
+
+        self.assertTrue(live_window._gh_run_active("nfl", run_cli=fake_cli))
+
+    def test_gh_error_fails_open_to_not_active(self):
+        def fake_cli(workflow):
+            raise RuntimeError("gh not found")
+
+        self.assertFalse(live_window._gh_run_active("mlb", run_cli=fake_cli))
+
+    def test_malformed_json_fails_open_to_not_active(self):
+        def fake_cli(workflow):
+            return "not json"
+
+        self.assertFalse(live_window._gh_run_active("mlb", run_cli=fake_cli))
+
+
+class TestLocalWindowMarkerActive(unittest.TestCase):
+    """Tests for _local_window_marker_active (the same-runner marker check)."""
+
+    def test_no_marker_file_is_not_active(self):
+        now = datetime(2026, 9, 14, 21, 0, 0, tzinfo=timezone.utc)
+        with mock.patch.object(
+            live_window, "data_path", return_value="/nonexistent/path/window.lock"
+        ):
+            self.assertFalse(live_window._local_window_marker_active("mlb", now))
+
+    def test_unexpired_marker_is_active(self):
+        now = datetime(2026, 9, 14, 21, 0, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as tmp:
+            marker = Path(tmp) / "window.lock"
+            marker.write_text((now + timedelta(minutes=10)).isoformat(), encoding="utf-8")
+            with mock.patch.object(live_window, "data_path", return_value=str(marker)):
+                self.assertTrue(live_window._local_window_marker_active("mlb", now))
+
+    def test_expired_marker_is_not_active(self):
+        now = datetime(2026, 9, 14, 21, 0, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as tmp:
+            marker = Path(tmp) / "window.lock"
+            marker.write_text((now - timedelta(minutes=10)).isoformat(), encoding="utf-8")
+            with mock.patch.object(live_window, "data_path", return_value=str(marker)):
+                self.assertFalse(live_window._local_window_marker_active("mlb", now))
+
 
 class TestRun(unittest.TestCase):
     """Tests for run."""

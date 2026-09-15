@@ -15,6 +15,7 @@ import hashlib
 import json
 import logging
 import os
+import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -478,6 +479,79 @@ def run(sport, *, max_minutes=330, clock=None, sleep=None, deps=None,
             pass
 
 
+def _local_window_marker_active(sport, now) -> bool:
+    """Whether THIS process's own window-marker file says a window is active.
+
+    Only ever true on the same runner that is (or recently was) actually
+    running the window loop -- it writes and refreshes this file itself
+    (see `run`, above). A different job's fresh checkout never has it, so
+    this alone cannot detect a real window running on another runner; see
+    `_gh_run_active` for that.
+    """
+    window_marker = Path(data_path("live", sport, "window.lock"))
+    if not window_marker.exists():
+        return False
+    try:
+        expiry_str = window_marker.read_text(encoding="utf-8").strip()
+        expiry_dt = datetime.fromisoformat(expiry_str.replace("Z", "+00:00"))
+        if expiry_dt.tzinfo is None:
+            expiry_dt = expiry_dt.replace(tzinfo=timezone.utc)
+        return expiry_dt > now
+    except Exception:
+        return False
+
+
+_GH_RUN_ACTIVE_STATUSES = frozenset(
+    {"queued", "in_progress", "waiting", "pending", "requested"}
+)
+
+
+def _gh_run_active(sport, *, workflow="live-window.yml", run_cli=None) -> bool:
+    """Best-effort check, via `gh`, for an already-active live-window run for this sport.
+
+    Exists because the window-marker file above is local to the runner that
+    wrote it: a *different* job (e.g. the forward-capture chain calling
+    --should-dispatch every ~13 minutes) can never see it and would
+    otherwise redispatch a doomed duplicate for the entire life of every
+    real window. `live-window.yml` sets `run-name: live-window-<sport>`
+    precisely so this can tell sports apart from `gh run list` output,
+    which does not otherwise expose workflow_dispatch inputs.
+
+    Fails open (False, i.e. "not running") on any error -- a missed
+    detection costs one more wasted dispatch this cycle, which the
+    workflow's own concurrency group (cancel-in-progress: false) safely
+    cancels without ever touching a real in-progress run.
+    """
+    run_cli = run_cli or _gh_run_list
+    try:
+        runs = json.loads(run_cli(workflow))
+    except Exception:
+        return False
+    prefix = f"live-window-{sport}"
+    return any(
+        isinstance(run, dict)
+        and run.get("status") in _GH_RUN_ACTIVE_STATUSES
+        and str(run.get("displayTitle", "")).startswith(prefix)
+        for run in runs
+    )
+
+
+def _gh_run_list(workflow) -> str:
+    result = subprocess.run(
+        [
+            "gh", "run", "list",
+            "--workflow", workflow,
+            "--json", "status,displayTitle",
+            "--limit", "20",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=True,
+    )
+    return result.stdout
+
+
 def should_dispatch(sport, *, now=None, schedule=None, running=None) -> tuple[bool, str]:
     """Check if this sport's live window should run right now.
 
@@ -499,18 +573,8 @@ def should_dispatch(sport, *, now=None, schedule=None, running=None) -> tuple[bo
 
     # Check if already running
     if running is None:
-        window_marker = Path(data_path("live", sport, "window.lock"))
         def _check_running():
-            if not window_marker.exists():
-                return False
-            try:
-                expiry_str = window_marker.read_text(encoding="utf-8").strip()
-                expiry_dt = datetime.fromisoformat(expiry_str.replace("Z", "+00:00"))
-                if expiry_dt.tzinfo is None:
-                    expiry_dt = expiry_dt.replace(tzinfo=timezone.utc)
-                return expiry_dt > now
-            except Exception:
-                return False
+            return _local_window_marker_active(sport, now) or _gh_run_active(sport)
         running = _check_running
 
     if running():

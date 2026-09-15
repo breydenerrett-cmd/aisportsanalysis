@@ -1,4 +1,5 @@
 name: live-window
+run-name: "live-window-${{ inputs.sport }}"
 
 "on":
   workflow_dispatch:
