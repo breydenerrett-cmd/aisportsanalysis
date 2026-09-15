@@ -9,15 +9,25 @@ data (`data/paper_accounts/`, `evidence/reviews_v2.jsonl`,
 from __future__ import annotations
 
 import csv
+import datetime as dt
 import json
 import tempfile
 import unittest
 from pathlib import Path
 
 from src.engine import settle_slate
+from src.factory.scorecard import decision_key_for
 from src.ledger.chain import HashChainLedger
+from src.ledger.records import (
+    DecisionRecord,
+    PROBABILITY_PROVENANCE_NONE,
+    ReviewRecord,
+    compute_thesis_outcome,
+)
+from src.research import battery
 
 SYSTEM = "test_system"
+OTHER_SYSTEM = "test_system_2"
 GAME_WIN = 900001  # bet wins
 GAME_LOSS = 900002  # bet loses
 
@@ -40,16 +50,85 @@ def _write_results_csv(path: Path, rows) -> None:
 
 
 def _wager_row(bet_id, game_pk, price_american, date_str="2026-09-02",
-              market_key="h2h", selection_id="sel1", side="home"):
+              market_key="h2h", selection_id="sel1", side="home",
+              system_id=SYSTEM):
     return {
         "label": "PAPER", "date": date_str, "bet_id": bet_id,
-        "system_id": SYSTEM, "market_key": market_key,
+        "system_id": system_id, "market_key": market_key,
         "selection_id": selection_id, "side": side, "line": None,
         "price_american": price_american, "settlement_rule": "h2h",
         "stake_units": 1.0, "game_pk": game_pk, "event_id": f"evt-{bet_id}",
         "decision_utc": f"{date_str}T18:00:00+00:00",
         "selection_rule": "TOP_RANKED_PLAY_PER_SYSTEM_PER_GAME_V1",
     }
+
+
+# ---------------------------------------------------------------------------
+# Battery-wiring fixtures -- a decision/review pair per graded selection,
+# written straight to the decisions/reviews hash chains (independent of any
+# wager this run settles), matching the row shapes
+# `src.engine.settle_slate._battery_rows_for_system` reads.
+# ---------------------------------------------------------------------------
+
+def _battery_decision(day, idx, system_id=SYSTEM):
+    return DecisionRecord(
+        engine_version="v1", system_id=system_id, system_version="1.0.0",
+        registry_fingerprint="fp1", frame_fingerprint=None,
+        snapshot_fingerprint="snap1", game_pk=1, event_id=f"evt-battery-{idx}",
+        decision_utc=f"{day}T12:00:00+00:00", point_class="LATE_BOARD",
+        information_time=f"{day}T11:55:00+00:00",
+        recorded_utc=f"{day}T12:00:01+00:00", verdict="play",
+        selection_id="home", market_key="h2h", line=None, book="book_a",
+        price_american=-110, consensus_fair=0.5, books_at_decision=5,
+        friction=None, p_model=None, p_model_interval=None, edge_bps=None,
+        price_improvement_bps=None, rating=None, thesis="t",
+        evidence=["e"], counterarguments=[], supporting_systems=[],
+        refusal_reason=None, assumption_exposure={}, stake_units=1.0,
+        known_at_grade="A", p_model_provenance=PROBABILITY_PROVENANCE_NONE,
+    )
+
+
+def _append_decision(ledger: HashChainLedger, decision: DecisionRecord) -> None:
+    row = decision.to_dict()
+    row.pop("prev_hash", None)
+    row.pop("row_hash", None)
+    ledger.append(row)
+
+
+def _append_review(ledger: HashChainLedger, decision: DecisionRecord,
+                   settled: str) -> None:
+    review = ReviewRecord(
+        decision_key=decision_key_for(decision),
+        review_utc=decision.decision_utc, settled=settled,
+        thesis_outcome=compute_thesis_outcome((), settled),
+        mechanism_checks=(), market_path={}, late_information=(),
+        missed_information=(), lineup_delta={}, bullpen_delta={},
+        counterargument_realized=(), variance_flag=False,
+        system_action="none", new_hypothesis=None,
+    )
+    ledger.append(review.to_dict())
+
+
+def _seed_graded_selections(decisions_path, review_path, n, *, system_id=SYSTEM,
+                            start_day="2026-08-01", loss_every=4):
+    """Write `n` decision/review pairs for `system_id`, one per day starting
+    at `start_day`, every `loss_every`-th one a LOSS and the rest WIN, all
+    carrying `consensus_fair=0.5` -- exactly the `{"date", "won", "implied"}`
+    shape `battery.run` documents, once joined by
+    `_battery_rows_for_system`. Returns the list of ISO day strings used."""
+    decisions_ledger = HashChainLedger(decisions_path)
+    reviews_ledger = HashChainLedger(review_path)
+    base = dt.date.fromisoformat(start_day)
+    days = []
+    for i in range(n):
+        day = (base + dt.timedelta(days=i)).isoformat()
+        days.append(day)
+        decision = _battery_decision(
+            day, f"{system_id}-{start_day}-{i}", system_id=system_id)
+        _append_decision(decisions_ledger, decision)
+        _append_review(reviews_ledger, decision,
+                       "loss" if i % loss_every == 0 else "win")
+    return days
 
 
 class SettleTestBase(unittest.TestCase):
@@ -350,6 +429,170 @@ class TestScorecardBankrollAgreesWithEod(SettleTestBase):
         self.assertAlmostEqual(
             sc_late["account"]["bankroll"] - sc_early["account"]["bankroll"],
             -1.0 - 1.5)
+
+
+class TestBatteryWiredAboveFloor(SettleTestBase):
+    """docs/ROADMAP.md Stage 13 item 1: a system with >= battery.MIN_N
+    point-in-time graded selections gets a real battery verdict, not the
+    permanent NOT_RUN scripts/research_readiness.py escalates about."""
+
+    def test_system_with_min_n_graded_selections_gets_a_battery_verdict(self):
+        _seed_graded_selections(self.decisions_path, self.review_path,
+                                battery.MIN_N, system_id=SYSTEM)
+        _write_jsonl(self.wagers_path, [_wager_row("bet-1", GAME_WIN, 150)])
+        _write_results_csv(self.results_path, [
+            {"game_pk": GAME_WIN, "date": "2026-09-02",
+             "home_score": 5, "away_score": 2},
+        ])
+        calls = []
+
+        def fake_battery_run(rows, **kwargs):
+            calls.append(rows)
+            return {"survives": True, "ran": True, "fatal": [], "report": {},
+                    "rules": {"version": "9.9.9", "fingerprint": "abc123"}}
+
+        self.run_settle("2026-09-02", battery_run=fake_battery_run)
+
+        self.assertEqual(len(calls), 1)
+        self.assertGreaterEqual(len(calls[0]), battery.MIN_N)
+        for row in calls[0]:
+            self.assertEqual(set(row), {"date", "won", "implied"})
+            self.assertLessEqual(row["date"], "2026-09-02")
+
+        rows = [r for r in HashChainLedger(self.scorecard_path).read()
+               if r.get("kind") != "genesis"]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["battery_verdict"], "PASS")
+        self.assertEqual(rows[0]["battery_rules_version"], "9.9.9")
+
+
+class TestBatteryBelowFloorStaysNotRun(SettleTestBase):
+    def test_system_below_min_n_never_calls_battery_and_stays_not_run(self):
+        _seed_graded_selections(self.decisions_path, self.review_path,
+                                battery.MIN_N - 1, system_id=SYSTEM)
+        _write_jsonl(self.wagers_path, [_wager_row("bet-1", GAME_WIN, 150)])
+        _write_results_csv(self.results_path, [
+            {"game_pk": GAME_WIN, "date": "2026-09-02",
+             "home_score": 5, "away_score": 2},
+        ])
+        calls = []
+
+        def fake_battery_run(rows, **kwargs):
+            calls.append(rows)
+            return {"survives": True, "ran": True, "fatal": []}
+
+        self.run_settle("2026-09-02", battery_run=fake_battery_run)
+
+        self.assertEqual(calls, [])  # never invoked -- below the floor
+        rows = [r for r in HashChainLedger(self.scorecard_path).read()
+               if r.get("kind") != "genesis"]
+        self.assertEqual(rows[0]["battery_verdict"], "NOT_RUN")
+
+
+class TestBatteryErrorDoesNotAbortSettlement(SettleTestBase):
+    def test_battery_exception_yields_error_verdict_and_other_systems_still_settle(self):
+        _seed_graded_selections(self.decisions_path, self.review_path,
+                                battery.MIN_N, system_id=SYSTEM)
+        _write_jsonl(self.wagers_path, [
+            _wager_row("bet-1", GAME_WIN, 150, selection_id="sel1"),
+            _wager_row("bet-2", GAME_LOSS, 150, selection_id="sel2",
+                      system_id=OTHER_SYSTEM),
+        ])
+        _write_results_csv(self.results_path, [
+            {"game_pk": GAME_WIN, "date": "2026-09-02",
+             "home_score": 5, "away_score": 2},
+            {"game_pk": GAME_LOSS, "date": "2026-09-02",
+             "home_score": 2, "away_score": 5},
+        ])
+
+        def raising_battery_run(rows, **kwargs):
+            raise RuntimeError("battery blew up")
+
+        report = self.run_settle("2026-09-02", battery_run=raising_battery_run)
+
+        # Settlement did not abort: both systems are in the report, and both
+        # settled their one new bet each.
+        self.assertEqual(len(report.systems), 2)
+        for settlement in report.systems:
+            self.assertEqual(len(settlement.settled), 1)
+
+        rows = {r["system_id"]: r
+               for r in HashChainLedger(self.scorecard_path).read()
+               if r.get("kind") != "genesis"}
+        # SYSTEM met the floor -- battery_run was called, raised, and the
+        # error was translated rather than propagated. The real battery has
+        # no "FAILED" it did not earn and no "unknown" rules version; this
+        # combination is the honest tell that the battery errored rather
+        # than ran.
+        self.assertEqual(rows[SYSTEM]["battery_verdict"], "FAILED")
+        self.assertEqual(rows[SYSTEM]["battery_rules_version"], "unknown")
+        # OTHER_SYSTEM never had graded selections seeded -- below the
+        # floor, unaffected by SYSTEM's battery blowing up.
+        self.assertEqual(rows[OTHER_SYSTEM]["battery_verdict"], "NOT_RUN")
+
+
+class TestBatteryPointInTime(SettleTestBase):
+    def test_battery_only_sees_selections_graded_on_or_before_the_settle_date(self):
+        # 30 graded selections on/before the settle date (2026-08-31)...
+        before = _seed_graded_selections(
+            self.decisions_path, self.review_path, battery.MIN_N,
+            system_id=SYSTEM, start_day="2026-08-01")
+        self.assertEqual(max(before), "2026-08-30")
+        # ...plus 5 more graded AFTER it, from the same system's later
+        # history -- these must never reach the battery for THIS settle run.
+        _seed_graded_selections(
+            self.decisions_path, self.review_path, 5,
+            system_id=SYSTEM, start_day="2026-09-03")
+
+        _write_jsonl(self.wagers_path, [
+            _wager_row("bet-1", GAME_WIN, 150, date_str="2026-08-31"),
+        ])
+        _write_results_csv(self.results_path, [
+            {"game_pk": GAME_WIN, "date": "2026-08-31",
+             "home_score": 5, "away_score": 2},
+        ])
+        calls = []
+
+        def fake_battery_run(rows, **kwargs):
+            calls.append(rows)
+            return {"survives": True, "ran": True, "fatal": []}
+
+        self.run_settle("2026-08-31", battery_run=fake_battery_run)
+
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(len(calls[0]), battery.MIN_N)
+        self.assertTrue(all(row["date"] <= "2026-08-31" for row in calls[0]))
+
+
+class TestScorecardRowShapeUnchanged(SettleTestBase):
+    def test_battery_wiring_adds_no_new_fields_to_the_scorecard_row(self):
+        _seed_graded_selections(self.decisions_path, self.review_path,
+                                battery.MIN_N, system_id=SYSTEM)
+        _write_jsonl(self.wagers_path, [
+            _wager_row("bet-1", GAME_WIN, 150, selection_id="sel1"),
+            _wager_row("bet-2", GAME_LOSS, 150, selection_id="sel2",
+                      system_id=OTHER_SYSTEM),
+        ])
+        _write_results_csv(self.results_path, [
+            {"game_pk": GAME_WIN, "date": "2026-09-02",
+             "home_score": 5, "away_score": 2},
+            {"game_pk": GAME_LOSS, "date": "2026-09-02",
+             "home_score": 2, "away_score": 5},
+        ])
+
+        def fake_battery_run(rows, **kwargs):
+            return {"survives": True, "ran": True, "fatal": []}
+
+        self.run_settle("2026-09-02", battery_run=fake_battery_run)
+
+        rows = {r["system_id"]: r
+               for r in HashChainLedger(self.scorecard_path).read()
+               if r.get("kind") != "genesis"}
+        # SYSTEM: battery PASS. OTHER_SYSTEM: below the floor, NOT_RUN --
+        # same row shape either way, only the two battery fields differ.
+        self.assertEqual(rows[SYSTEM]["battery_verdict"], "PASS")
+        self.assertEqual(rows[OTHER_SYSTEM]["battery_verdict"], "NOT_RUN")
+        self.assertEqual(set(rows[SYSTEM]), set(rows[OTHER_SYSTEM]))
 
 
 if __name__ == "__main__":

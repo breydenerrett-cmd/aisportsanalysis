@@ -38,7 +38,7 @@ from pathlib import Path
 from typing import Mapping
 
 from src.accounts.paper import PaperAccount, PaperBet, SettledBet
-from src.board.settle import GameResult
+from src.board.settle import GameResult, LOSS, WIN
 from src.board import gamekey
 from src.core.asof import game_pk_key
 from src.factory.fitness import promotion_verdict
@@ -49,6 +49,7 @@ from src.ledger.records import DecisionRecord, ReviewRecord, compute_thesis_outc
 from src.ledger.writer import append_review, append_scorecard
 from src.paths import historical_path, processed_path
 from src.engine.slate import PAPER_WAGERS_PATH
+from src.research import battery
 
 MLB_RESULTS_CSV = historical_path("mlb_results.csv")
 FIRST_FIVE_RESULTS_PATH = historical_path("first_five_results.jsonl")
@@ -378,6 +379,7 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
                decisions_path=None, review_path=None, scorecard_path=None,
                account_ledger_path_fn=None,
                game_pk_map_path=None,
+               battery_run=battery.run,
                now: datetime | None = None) -> SettleReport:
     game_pk_index = gamekey.load_map(
         game_pk_map_path if game_pk_map_path is not None
@@ -511,10 +513,19 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
             r for r in load_reviews(review_path)
             if len(r.decision_key) > 1 and r.decision_key[1] == system_id
         )
+        # docs/ROADMAP.md Stage 13 item 1 -- the falsification battery, wired
+        # in honestly: run only once this system has >= battery.MIN_N
+        # point-in-time graded selections (below that, NOT_RUN stays the
+        # honest verdict -- see `_battery_research_for`'s own docstring),
+        # and a battery that raises never aborts this system's settlement,
+        # let alone every other system's.
+        research = _battery_research_for(
+            system_decisions, system_reviews, date_str, battery_run)
         scorecard, absent = build_scorecard(
             system_id=system_id, world="real", window=date_str,
             point_class="LATE_BOARD", market_key="h2h",
             bets=all_bets, decisions=system_decisions, reviews=system_reviews,
+            research=research,
         )
         fitness = _fitness_for(system_id, all_bets, system_decisions, system_reviews)
         verdict = promotion_verdict(fitness)
@@ -570,6 +581,80 @@ def _replay_prior_settlements(account: PaperAccount) -> None:
 def _fitness_for(system_id, bets, decisions, reviews):
     from src.factory.scorecard import build_fitness
     return build_fitness(system_id, bets, decisions, reviews).fitness
+
+
+def _battery_rows_for_system(decisions, reviews, as_of_day: str) -> list:
+    """Graded selections for `src.research.battery.run`, in the shape its
+    own docstring requires: `{"date", "won", "implied"}` per row.
+
+    Built by the SAME join `src.factory.scorecard`'s own calibration pairing
+    uses (`decision_key_for(decision) == review.decision_key`) -- never a
+    second, divergent join. A pair is usable only when the decision carries
+    a `consensus_fair` (the battery's "implied") and the review settled WIN
+    or LOSS -- PUSH/VOID have no won/lost meaning for mean(won - implied),
+    exactly like `scripts/research_readiness.py`'s own `graded_by_system()`
+    excludes them.
+
+    POINT-IN-TIME: `date` is the decision's own calendar day
+    (`decision_utc[:10]`, the day the pick was made -- the same calendar day
+    `run_settle` stamps on that bet's account-ledger row via
+    `account.settle_and_record(bet, result, date_str)`), and a row dated
+    AFTER `as_of_day` is dropped. `decisions`/`reviews` are a system's WHOLE
+    history, not scoped to the date being processed, so without this cut a
+    system settled out of calendar order -- the same scenario N5/N6 fixed
+    for `_reconstruct_settled_bets` -- would let the battery see selections
+    graded after the date it is being asked to judge as of.
+    """
+    by_key = {decision_key_for(d): d for d in decisions}
+    rows = []
+    for review in reviews:
+        if review.settled not in (WIN, LOSS):
+            continue
+        decision = by_key.get(review.decision_key)
+        if decision is None or decision.consensus_fair is None:
+            continue
+        date = (decision.decision_utc or "")[:10]
+        if not date or date > as_of_day:
+            continue
+        rows.append({"date": date, "won": review.settled == WIN,
+                     "implied": float(decision.consensus_fair)})
+    return rows
+
+
+def _battery_research_for(system_decisions, system_reviews, date_str: str,
+                          battery_run) -> dict:
+    """`{"battery": ...}` (or `{}`) for `build_scorecard`'s `research`
+    argument -- the whole point of this task (docs/ROADMAP.md Stage 13
+    item 1): wire `src.research.battery.run` into settlement so a scorecard
+    reports a real verdict once a system has enough graded evidence,
+    instead of always reporting `NOT_RUN`.
+
+    Below the battery's OWN sample floor (`battery.MIN_N`) `battery_run` is
+    never called at all -- `NOT_RUN` stays the honest verdict
+    (`falsification_from_battery` reads an absent "battery" key as exactly
+    that), and no compute or fake-call is spent on a battery that would
+    only report a vacuous `survives=True` (battery.py's own docstring: a
+    below-floor `survives` "survives vacuously").
+
+    A `battery_run` that raises must never abort settlement -- one system's
+    falsification battery failing must never cost every OTHER system its
+    settlement for the day. The exception is caught here, right at the call
+    site, and translated into a plain, honestly-labelled result
+    (`{"verdict": "ERROR", "error": <plain message>}`) that still flows
+    through `build_scorecard`'s normal `research={"battery": ...}` path --
+    `falsification_from_battery` has no "ERROR" verdict of its own, so this
+    reads as `battery_verdict="FAILED"` with `battery_rules_version=
+    "unknown"` (never a fabricated "PASS", and the "unknown" rules version
+    is itself the tell that this was an execution failure, not a real run
+    of the pre-registered rules).
+    """
+    rows = _battery_rows_for_system(system_decisions, system_reviews, date_str)
+    if len(rows) < battery.MIN_N:
+        return {}
+    try:
+        return {"battery": battery_run(rows)}
+    except Exception as exc:
+        return {"battery": {"verdict": "ERROR", "error": str(exc)}}
 
 
 def _reconstruct_settled_bets(system_id: str, account_ledger_path_fn=None,
