@@ -1493,6 +1493,98 @@ whoever is already on the balldontlie surface) all as before.
 - 2026-09-15T20:30Z afternoon_slate: engine slate --date 2026-09-15 exit=2
 - 2026-09-15T20:31Z afternoon_slate: card publish --date 2026-09-15 exit=0
 - 2026-09-15T20:31Z afternoon_slate: engine slip --date 2026-09-15
+
+## 2026-09-15 21:12Z — hourly cloud routine: claimed R16-02 (tennis results CLI), found and fixed a live credit-leak crash along the way
+
+Start-of-run check: no NEW `ESCALATE:` line outranked the queue. `daily-loop`
+had not run since its 14:30Z failure, which predates 502368c1 (the
+escalations-ledger fix, landed 16:40Z) and was already explained in the
+19:57Z section; `gh` Actions checks (`forward-capture` runs 340-349, all
+`success`; `balldontlie-harvest` run 5 still `in_progress` since 19:35Z, so
+the standing "keep one harvest run active" instruction needed nothing).
+
+**Claimed R16-02** (the only Tue-9/15 item that was OPEN, unblocked and not
+already owned by another session): the owner set `BALLDONTLIE_API_KEY`
+earlier today, but this item's other half -- a runner-verified
+`tennis results --date` command -- was never done.
+
+**Built.** `src/providers/tennis_results.py` already had a complete, tested
+`results_for()`/`BallDontLieFeed` (built ahead of R16-10's future grading
+work) that nothing called. Added `python -m src.cli tennis results --date`
+(37abe21f, 9a366ed4), a thin read-only wrapper: prints the provider, any
+unavailability reason, and each result row; 5 new parsing/routing tests.
+Wired one call of it into `scripts/daily_loop.sh` right after tennis
+discover, for yesterday's date, tolerant of failure and never escalating
+(9a366ed4; 23 `test_daily_loop_wiring.py` tests including a new one
+asserting the step is read-only and correctly ordered) -- so every 10:00Z
+run now gives an ongoing answer to "is the tennis results feed reachable."
+Also added a standalone `tennis-results-check.yml` (727aff25) for an
+on-demand check without replaying the rest of the daily loop -- **left
+undispatchable this run**: GitHub only exposes a `workflow_dispatch` target
+once the file exists on the default branch (confirmed: `POST .../actions/
+workflows/tennis-results-check.yml/dispatches` returned 404), and this
+routine's own instructions forbid editing that branch. It needs the same
+one-line registration commit `balldontlie-harvest.yml` got from an
+authorized session (`b62763fb`, R16-33) before anyone can dispatch it.
+
+**Verified on a real runner.** Rather than leave the wiring unverified until
+tomorrow's 10:00Z run, dispatched `daily-loop.yml` directly (run
+`35022286676`, 20:55-21:05Z UTC) -- safe to do ad hoc: `daily_loop.sh` spends
+zero odds credits of its own (confirmed by reading the script; `engine
+slate` only reprojects already-captured L1 data) and is explicitly designed
+to be re-run safely any time (`card_ledger.publish` locks each pick against
+its own first pitch). Read the job's full log: the run went green end to
+end, both standing acknowledged escalations (STRONG-tier drift, research-
+readiness NOT_RUN) still fired as `KNOWN` not `NEW` (the escalations ledger
+is holding), and the new step printed exactly what it should --
+`== tennis results (yesterday, 2026-09-14) ==` followed by
+`ERROR: balldontlie API returned HTTP 429`. That is the same account-wide
+~5 requests/minute throttle R16-33 already tracked (not a defect here: the
+command reached the real vendor and reported the failure cleanly, no
+crash), so the literal "runner log shows result rows" half of R16-02's
+acceptance stays open on the owner's still-pending key/rate-limit question,
+not on anything left to build here.
+
+**Found and fixed a live bug in that same log.** Further down the same run,
+`== probe unmeasured capture families ==` crashed on `tennis_h2h`:
+`AttributeError: 'list' object has no attribute 'get'`, in
+`src/capture/budget.py`'s `_payload_shape`. Root cause: the `tennis_h2h`
+probe fetches via `provider.fetch_odds()`, which hits
+`/sports/{sport}/odds` and returns every event for that sport as a LIST;
+`_payload_shape` assumed the single-event dict shape
+`fetch_event_odds_with_usage()` returns for every other family. The crash
+happened *after* `creditlog.log()` had already recorded a real spent
+credit and *before* `_record_measurement()` could ever set `measured: true`
+in `config/capture_families.json` -- so `tennis_h2h` would stay permanently
+unmeasured, and every future daily loop would repeat the exact crash and
+spend another real credit, silently (no `ESCALATE:` line, just an unlabelled
+traceback nobody reads). `tests/test_budget_probe_families.py`'s fake
+provider had been hiding this: its `fetch_odds()` default returned a
+single-event dict instead of the real list shape. Fixed `_payload_shape`
+with a new `is_multi_event` branch (aggregates books/markets/outcomes
+across every event in the list instead of assuming one), fixed the test
+double to the real shape, added two regression tests (multi-event
+aggregation; empty-list/no-upcoming-tennis degenerate case). Commit
+f790ceef.
+
+**Verified**: full suite (`python -m unittest discover -s tests -t .`, 7237
+tests, 447 skipped, 0 failures) after each of the three commits; `python
+scripts/publication_audit.py` clean throughout. No `web/` files touched.
+`daily-loop.yml`'s own commit from the dispatched run (`Daily loop
+2026-09-15`) rebased in cleanly alongside another session's `Redesign group
+1` commit -- no conflicts.
+
+Commits this run: 37abe21f (roadmap claim), 9a366ed4 (CLI command +
+daily_loop wiring), 727aff25 (standalone check workflow), f790ceef (budget
+probe fix), and this roadmap/log update. No `data/app`, no `data/raw`
+committed directly, no force-push.
+
+Blockers: R16-02 stays RUNNING, not DONE -- everything buildable here is
+built and tested, but full acceptance needs the owner's R16-33 key/rate-
+limit answer, same as before. `tennis-results-check.yml` needs default-
+branch registration from an authorized session before it is dispatchable.
+Standing blockers unchanged: per-sport pricing decisions (R16-28), the
+API-Tennis trial call (R16-22).
 - 2026-09-15T20:45Z afternoon_slate: engine slate --date 2026-09-15 exit=2
 - 2026-09-15T20:45Z afternoon_slate: card publish --date 2026-09-15 exit=0
 - 2026-09-15T20:45Z afternoon_slate: engine slip --date 2026-09-15

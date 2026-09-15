@@ -1,29 +1,23 @@
 # Debrief (2026-09-15, early evening, Pacific)
 
-Nothing wrong with today's actual picks. Found a smaller, quieter problem
-while checking on yesterday's fix, and decided it's not urgent enough to
-rush a fix into a system that runs every 13 minutes around the clock.
+Good news: found and fixed a real bug tonight before it caused a slow
+problem. A daily background check was quietly crashing every single day
+and spending a small amount of paid API credit each time it crashed,
+without ever telling anyone. Nobody would have noticed until credits ran
+low for no obvious reason. Fixed, tested, and confirmed working on a real
+run.
 
-The background job that captures fresh odds every ~13 minutes was also
-supposed to re-run the pick-making process whenever a new lineup posts
-during the day, as a bonus refresh on top of the two main runs (morning
-and afternoon) that actually freeze and publish the card. That bonus
-refresh has quietly been failing every time since it was added a day or
-two ago, because of a plumbing gap: it never got its own copy of some
-historical baseball data it needs, so it correctly refuses to guess and
-just skips itself. It fails silently — no alert fired, which is itself
-something to fix.
+Also finished building the tool to check that the tennis results feed
+works, since you turned on that data source earlier today. The tool
+itself works correctly -- it reaches the tennis data provider and reports
+back cleanly. But it's currently getting rate-limited (same issue flagged
+earlier: the account seems capped around 5 requests a minute instead of
+the much higher rate your plan should allow). Nothing broken on our end;
+worth checking whether that trial is tied to the right account or the key
+needs regenerating.
 
-The two real passes that publish the card are unaffected and have been
-working correctly the whole time. So today's picks are fine, and no
-customer ever saw anything wrong. This only cost the system some
-extra freshness during the day it should have had.
+Today's actual MLB picks are unaffected by any of this -- both issues were
+in background/support systems, not the pick-making or publishing path.
 
-I looked at two quick fixes and rejected both: one would have silently
-broken the whole 13-minutes-a-day refresh cycle, the other would have
-made every one of those ~100 daily runs 10 minutes slower, which would
-likely jam the schedule. The right fix needs a bit more care, so I wrote
-it up as a queued task for tomorrow rather than rush it into a system
-that runs unattended all day and night.
-
-Nothing needed from you right now.
+Nothing needed from you right now, except possibly a look at the tennis
+API rate-limit question when you get a chance.
