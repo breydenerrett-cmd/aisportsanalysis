@@ -1,4 +1,78 @@
 {
+  "nfl/nfl_games_2015.jsonl.gz": {
+    "bytes": 17835,
+    "complete": true,
+    "endpoint": "games",
+    "file": "nfl/nfl_games_2015.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:14:49Z",
+    "params": {
+      "seasons[]": [
+        2015
+      ]
+    },
+    "rows": 267,
+    "sha256": "e0f535d4d1fc24fb1e36803fd3834e2da7f3436d9fb2c737703b020ce06a821e",
+    "sport": "nfl"
+  },
+  "nfl/nfl_games_2016.jsonl.gz": {
+    "bytes": 14132,
+    "complete": false,
+    "endpoint": "games",
+    "file": "nfl/nfl_games_2016.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:15:21Z",
+    "http_status": 429,
+    "params": {
+      "seasons[]": [
+        2016
+      ]
+    },
+    "rows": 200,
+    "sha256": null,
+    "sport": "nfl"
+  },
+  "nfl/nfl_games_2017.jsonl.gz": {
+    "bytes": 18221,
+    "complete": true,
+    "endpoint": "games",
+    "file": "nfl/nfl_games_2017.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:15:53Z",
+    "params": {
+      "seasons[]": [
+        2017
+      ]
+    },
+    "rows": 268,
+    "sha256": "b0b8483d669994af2e23bb17cdbd0f0eccc702dbdbb5e7a549e3c87825361b06",
+    "sport": "nfl"
+  },
+  "nfl/nfl_games_2018.jsonl.gz": {
+    "bytes": 14229,
+    "complete": false,
+    "endpoint": "games",
+    "file": "nfl/nfl_games_2018.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:16:25Z",
+    "http_status": 429,
+    "params": {
+      "seasons[]": [
+        2018
+      ]
+    },
+    "rows": 200,
+    "sha256": null,
+    "sport": "nfl"
+  },
+  "tennis/atp_match_stats.jsonl.gz": {
+    "bytes": 20951,
+    "complete": false,
+    "endpoint": "atp_match_stats",
+    "file": "tennis/atp_match_stats.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:55:59Z",
+    "http_status": 429,
+    "params": {},
+    "rows": 400,
+    "sha256": null,
+    "sport": "tennis"
+  },
   "tennis/atp_matches_2010.jsonl.gz": {
     "bytes": 36885,
     "complete": false,
@@ -42,15 +116,966 @@
     "sport": "tennis"
   },
   "tennis/atp_matches_2013.jsonl.gz": {
-    "bytes": 8375,
+    "bytes": 37534,
     "complete": false,
     "endpoint": "atp_matches",
     "file": "tennis/atp_matches_2013.jsonl.gz",
-    "harvested_utc": "2026-09-15T17:33:43Z",
+    "harvested_utc": "2026-09-15T17:36:37Z",
+    "http_status": 429,
     "params": {
       "season": 2013
     },
-    "rows": 100,
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/atp_matches_2014.jsonl.gz": {
+    "bytes": 37978,
+    "complete": false,
+    "endpoint": "atp_matches",
+    "file": "tennis/atp_matches_2014.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:37:42Z",
+    "http_status": 429,
+    "params": {
+      "season": 2014
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/atp_matches_2015.jsonl.gz": {
+    "bytes": 37644,
+    "complete": false,
+    "endpoint": "atp_matches",
+    "file": "tennis/atp_matches_2015.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:38:46Z",
+    "http_status": 429,
+    "params": {
+      "season": 2015
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/atp_matches_2016.jsonl.gz": {
+    "bytes": 38425,
+    "complete": false,
+    "endpoint": "atp_matches",
+    "file": "tennis/atp_matches_2016.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:39:51Z",
+    "http_status": 429,
+    "params": {
+      "season": 2016
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/atp_matches_2017.jsonl.gz": {
+    "bytes": 38495,
+    "complete": false,
+    "endpoint": "atp_matches",
+    "file": "tennis/atp_matches_2017.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:40:56Z",
+    "http_status": 429,
+    "params": {
+      "season": 2017
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/atp_matches_2018.jsonl.gz": {
+    "bytes": 38657,
+    "complete": false,
+    "endpoint": "atp_matches",
+    "file": "tennis/atp_matches_2018.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:42:01Z",
+    "http_status": 429,
+    "params": {
+      "season": 2018
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/atp_matches_2019.jsonl.gz": {
+    "bytes": 39273,
+    "complete": false,
+    "endpoint": "atp_matches",
+    "file": "tennis/atp_matches_2019.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:43:06Z",
+    "http_status": 429,
+    "params": {
+      "season": 2019
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/atp_matches_2020.jsonl.gz": {
+    "bytes": 40059,
+    "complete": false,
+    "endpoint": "atp_matches",
+    "file": "tennis/atp_matches_2020.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:44:10Z",
+    "http_status": 429,
+    "params": {
+      "season": 2020
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/atp_matches_2021.jsonl.gz": {
+    "bytes": 38520,
+    "complete": false,
+    "endpoint": "atp_matches",
+    "file": "tennis/atp_matches_2021.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:45:15Z",
+    "http_status": 429,
+    "params": {
+      "season": 2021
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/atp_matches_2022.jsonl.gz": {
+    "bytes": 37580,
+    "complete": false,
+    "endpoint": "atp_matches",
+    "file": "tennis/atp_matches_2022.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:46:19Z",
+    "http_status": 429,
+    "params": {
+      "season": 2022
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/atp_matches_2023.jsonl.gz": {
+    "bytes": 39924,
+    "complete": false,
+    "endpoint": "atp_matches",
+    "file": "tennis/atp_matches_2023.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:47:24Z",
+    "http_status": 429,
+    "params": {
+      "season": 2023
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/atp_matches_2024.jsonl.gz": {
+    "bytes": 40918,
+    "complete": false,
+    "endpoint": "atp_matches",
+    "file": "tennis/atp_matches_2024.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:48:28Z",
+    "http_status": 429,
+    "params": {
+      "season": 2024
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/atp_matches_2025.jsonl.gz": {
+    "bytes": 40115,
+    "complete": false,
+    "endpoint": "atp_matches",
+    "file": "tennis/atp_matches_2025.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:49:33Z",
+    "http_status": 429,
+    "params": {
+      "season": 2025
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/atp_matches_2026.jsonl.gz": {
+    "bytes": 52348,
+    "complete": false,
+    "endpoint": "atp_matches",
+    "file": "tennis/atp_matches_2026.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:50:38Z",
+    "http_status": 429,
+    "params": {
+      "season": 2026
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/atp_odds_opening.jsonl.gz": {
+    "bytes": 43,
+    "complete": false,
+    "endpoint": "atp_odds_opening",
+    "file": "tennis/atp_odds_opening.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:55:27Z",
+    "http_status": 400,
+    "params": {},
+    "rows": 0,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/atp_players.jsonl.gz": {
+    "bytes": 38,
+    "complete": false,
+    "endpoint": "atp_players",
+    "file": "tennis/atp_players.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:53:51Z",
+    "http_status": 429,
+    "params": {},
+    "rows": 0,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/atp_rankings.jsonl.gz": {
+    "bytes": 39,
+    "complete": false,
+    "endpoint": "atp_rankings",
+    "file": "tennis/atp_rankings.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:54:55Z",
+    "http_status": 429,
+    "params": {
+      "tour": "atp"
+    },
+    "rows": 0,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/atp_tournaments_2010.jsonl.gz": {
+    "bytes": 1908,
+    "complete": true,
+    "endpoint": "atp_tournaments",
+    "file": "tennis/atp_tournaments_2010.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:51:10Z",
+    "params": {
+      "season": 2010
+    },
+    "rows": 45,
+    "sha256": "b0aa065db38be13813a9c9a2ce097ab91d568966a41f0a18f1c8909b292682b1",
+    "sport": "tennis"
+  },
+  "tennis/atp_tournaments_2011.jsonl.gz": {
+    "bytes": 1904,
+    "complete": true,
+    "endpoint": "atp_tournaments",
+    "file": "tennis/atp_tournaments_2011.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:51:10Z",
+    "params": {
+      "season": 2011
+    },
+    "rows": 45,
+    "sha256": "d4d868057517f41b31ac46ff53521496675b908cac339998a68a16e106971a7e",
+    "sport": "tennis"
+  },
+  "tennis/atp_tournaments_2012.jsonl.gz": {
+    "bytes": 1969,
+    "complete": true,
+    "endpoint": "atp_tournaments",
+    "file": "tennis/atp_tournaments_2012.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:51:10Z",
+    "params": {
+      "season": 2012
+    },
+    "rows": 46,
+    "sha256": "69cbc7db9df24b0c5b73eb9f112c7df2dd99e2c475bc2710e95d09a5f0a62f18",
+    "sport": "tennis"
+  },
+  "tennis/atp_tournaments_2013.jsonl.gz": {
+    "bytes": 1985,
+    "complete": true,
+    "endpoint": "atp_tournaments",
+    "file": "tennis/atp_tournaments_2013.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:51:10Z",
+    "params": {
+      "season": 2013
+    },
+    "rows": 46,
+    "sha256": "5879df686f29c2ea954965b007c807aabfc1e3a298d4daa167e7ab5bfdfe9d90",
+    "sport": "tennis"
+  },
+  "tennis/atp_tournaments_2014.jsonl.gz": {
+    "bytes": 2006,
+    "complete": true,
+    "endpoint": "atp_tournaments",
+    "file": "tennis/atp_tournaments_2014.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:51:10Z",
+    "params": {
+      "season": 2014
+    },
+    "rows": 47,
+    "sha256": "79b2430e371d13cdbf8d74e61c1574f4177b8b5098d7505bfc505d011349b2fe",
+    "sport": "tennis"
+  },
+  "tennis/atp_tournaments_2015.jsonl.gz": {
+    "bytes": 47,
+    "complete": false,
+    "endpoint": "atp_tournaments",
+    "file": "tennis/atp_tournaments_2015.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:51:42Z",
+    "http_status": 429,
+    "params": {
+      "season": 2015
+    },
+    "rows": 0,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/atp_tournaments_2016.jsonl.gz": {
+    "bytes": 2134,
+    "complete": true,
+    "endpoint": "atp_tournaments",
+    "file": "tennis/atp_tournaments_2016.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:52:14Z",
+    "params": {
+      "season": 2016
+    },
+    "rows": 51,
+    "sha256": "c5b269b97b4bc5405e9931111b8e9b806e9571c15a60fc67cfadb8637ea33202",
+    "sport": "tennis"
+  },
+  "tennis/atp_tournaments_2017.jsonl.gz": {
+    "bytes": 2118,
+    "complete": true,
+    "endpoint": "atp_tournaments",
+    "file": "tennis/atp_tournaments_2017.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:52:14Z",
+    "params": {
+      "season": 2017
+    },
+    "rows": 51,
+    "sha256": "43f2bcd1911f5259d54cbe68d7f0543bd8aeffffc9c1b18c8a91cf096a2e06ca",
+    "sport": "tennis"
+  },
+  "tennis/atp_tournaments_2018.jsonl.gz": {
+    "bytes": 2122,
+    "complete": true,
+    "endpoint": "atp_tournaments",
+    "file": "tennis/atp_tournaments_2018.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:52:14Z",
+    "params": {
+      "season": 2018
+    },
+    "rows": 51,
+    "sha256": "775f265560031b847ccb9c315a82ab1e9c2b5d4c0b9e67c24415ad0dffe3cf55",
+    "sport": "tennis"
+  },
+  "tennis/atp_tournaments_2019.jsonl.gz": {
+    "bytes": 2129,
+    "complete": true,
+    "endpoint": "atp_tournaments",
+    "file": "tennis/atp_tournaments_2019.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:52:15Z",
+    "params": {
+      "season": 2019
+    },
+    "rows": 51,
+    "sha256": "cb8487f9372df31986bc078b80cf9fb876e1d6e6ef721abb4f53f5d2199136a0",
+    "sport": "tennis"
+  },
+  "tennis/atp_tournaments_2020.jsonl.gz": {
+    "bytes": 1187,
+    "complete": true,
+    "endpoint": "atp_tournaments",
+    "file": "tennis/atp_tournaments_2020.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:52:15Z",
+    "params": {
+      "season": 2020
+    },
+    "rows": 24,
+    "sha256": "164629f4686043b528798fea47a9b1c9919258e7e8404eb391707f157ac5f76d",
+    "sport": "tennis"
+  },
+  "tennis/atp_tournaments_2021.jsonl.gz": {
+    "bytes": 47,
+    "complete": false,
+    "endpoint": "atp_tournaments",
+    "file": "tennis/atp_tournaments_2021.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:52:46Z",
+    "http_status": 429,
+    "params": {
+      "season": 2021
+    },
+    "rows": 0,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/atp_tournaments_2022.jsonl.gz": {
+    "bytes": 2099,
+    "complete": true,
+    "endpoint": "atp_tournaments",
+    "file": "tennis/atp_tournaments_2022.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:53:18Z",
+    "params": {
+      "season": 2022
+    },
+    "rows": 50,
+    "sha256": "c732c2cf7afb8149b58a03600fa8a0180056dfc798d8f0432c8aa7d2cd75dc28",
+    "sport": "tennis"
+  },
+  "tennis/atp_tournaments_2023.jsonl.gz": {
+    "bytes": 2223,
+    "complete": true,
+    "endpoint": "atp_tournaments",
+    "file": "tennis/atp_tournaments_2023.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:53:18Z",
+    "params": {
+      "season": 2023
+    },
+    "rows": 55,
+    "sha256": "736f9af3478e33cf8c1347b864be3cd9d91f5eea35769a5dbb19426a82a97323",
+    "sport": "tennis"
+  },
+  "tennis/atp_tournaments_2024.jsonl.gz": {
+    "bytes": 2358,
+    "complete": true,
+    "endpoint": "atp_tournaments",
+    "file": "tennis/atp_tournaments_2024.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:53:18Z",
+    "params": {
+      "season": 2024
+    },
+    "rows": 59,
+    "sha256": "a40a2ef0e8daa8ef3e0a7581d3fe8c306c6f6dcf8802ea2be486e518c28026f2",
+    "sport": "tennis"
+  },
+  "tennis/atp_tournaments_2025.jsonl.gz": {
+    "bytes": 2400,
+    "complete": true,
+    "endpoint": "atp_tournaments",
+    "file": "tennis/atp_tournaments_2025.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:53:19Z",
+    "params": {
+      "season": 2025
+    },
+    "rows": 60,
+    "sha256": "c60c5fef95bf802d91960e3ddbf916b2fc08bb733848dbe2806573e2155d52f3",
+    "sport": "tennis"
+  },
+  "tennis/atp_tournaments_2026.jsonl.gz": {
+    "bytes": 2448,
+    "complete": true,
+    "endpoint": "atp_tournaments",
+    "file": "tennis/atp_tournaments_2026.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:53:19Z",
+    "params": {
+      "season": 2026
+    },
+    "rows": 64,
+    "sha256": "c987e5a5c1bae67d857b5c37dbcf247a5ca718586247272efdc2cbefd8330e9a",
+    "sport": "tennis"
+  },
+  "tennis/wta_match_stats.jsonl.gz": {
+    "bytes": 27233,
+    "complete": false,
+    "endpoint": "wta_match_stats",
+    "file": "tennis/wta_match_stats.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:14:48Z",
+    "http_status": 429,
+    "params": {},
+    "rows": 400,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/wta_matches_2010.jsonl.gz": {
+    "bytes": 43,
+    "complete": true,
+    "endpoint": "wta_matches",
+    "file": "tennis/wta_matches_2010.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:55:59Z",
+    "params": {
+      "season": 2010
+    },
+    "rows": 0,
+    "sha256": "998aeb9ff4bdcc773a370bf58daf24dee43da14dd9c56b01531d7d4bcc14ab38",
+    "sport": "tennis"
+  },
+  "tennis/wta_matches_2011.jsonl.gz": {
+    "bytes": 43,
+    "complete": true,
+    "endpoint": "wta_matches",
+    "file": "tennis/wta_matches_2011.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:56:00Z",
+    "params": {
+      "season": 2011
+    },
+    "rows": 0,
+    "sha256": "c1908fdeb63a4e6b88388205268f1a0299ff834fc1b1595c8a1e3328b917e173",
+    "sport": "tennis"
+  },
+  "tennis/wta_matches_2012.jsonl.gz": {
+    "bytes": 43,
+    "complete": true,
+    "endpoint": "wta_matches",
+    "file": "tennis/wta_matches_2012.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:56:00Z",
+    "params": {
+      "season": 2012
+    },
+    "rows": 0,
+    "sha256": "f7390dc41ab33724e59487d005c8041808ff7f63e32096263853f2736a6eab5d",
+    "sport": "tennis"
+  },
+  "tennis/wta_matches_2013.jsonl.gz": {
+    "bytes": 43,
+    "complete": true,
+    "endpoint": "wta_matches",
+    "file": "tennis/wta_matches_2013.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:56:00Z",
+    "params": {
+      "season": 2013
+    },
+    "rows": 0,
+    "sha256": "0e7922e2af120406bb6a63833a1e80702ed7d781bbf7c03244fecdc3d4ae8c20",
+    "sport": "tennis"
+  },
+  "tennis/wta_matches_2014.jsonl.gz": {
+    "bytes": 43,
+    "complete": true,
+    "endpoint": "wta_matches",
+    "file": "tennis/wta_matches_2014.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:56:00Z",
+    "params": {
+      "season": 2014
+    },
+    "rows": 0,
+    "sha256": "54f0d41dc72a3fddc6311f0a5863a80fa3201b8bfc4e110bf18d73b3ef12f9d8",
+    "sport": "tennis"
+  },
+  "tennis/wta_matches_2015.jsonl.gz": {
+    "bytes": 43,
+    "complete": false,
+    "endpoint": "wta_matches",
+    "file": "tennis/wta_matches_2015.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:56:32Z",
+    "http_status": 429,
+    "params": {
+      "season": 2015
+    },
+    "rows": 0,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/wta_matches_2016.jsonl.gz": {
+    "bytes": 46433,
+    "complete": false,
+    "endpoint": "wta_matches",
+    "file": "tennis/wta_matches_2016.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:57:36Z",
+    "http_status": 429,
+    "params": {
+      "season": 2016
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/wta_matches_2017.jsonl.gz": {
+    "bytes": 45686,
+    "complete": false,
+    "endpoint": "wta_matches",
+    "file": "tennis/wta_matches_2017.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:58:41Z",
+    "http_status": 429,
+    "params": {
+      "season": 2017
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/wta_matches_2018.jsonl.gz": {
+    "bytes": 44199,
+    "complete": false,
+    "endpoint": "wta_matches",
+    "file": "tennis/wta_matches_2018.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:59:46Z",
+    "http_status": 429,
+    "params": {
+      "season": 2018
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/wta_matches_2019.jsonl.gz": {
+    "bytes": 45836,
+    "complete": false,
+    "endpoint": "wta_matches",
+    "file": "tennis/wta_matches_2019.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:00:50Z",
+    "http_status": 429,
+    "params": {
+      "season": 2019
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/wta_matches_2020.jsonl.gz": {
+    "bytes": 48606,
+    "complete": false,
+    "endpoint": "wta_matches",
+    "file": "tennis/wta_matches_2020.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:01:55Z",
+    "http_status": 429,
+    "params": {
+      "season": 2020
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/wta_matches_2021.jsonl.gz": {
+    "bytes": 50271,
+    "complete": false,
+    "endpoint": "wta_matches",
+    "file": "tennis/wta_matches_2021.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:02:59Z",
+    "http_status": 429,
+    "params": {
+      "season": 2021
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/wta_matches_2022.jsonl.gz": {
+    "bytes": 49546,
+    "complete": false,
+    "endpoint": "wta_matches",
+    "file": "tennis/wta_matches_2022.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:04:04Z",
+    "http_status": 429,
+    "params": {
+      "season": 2022
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/wta_matches_2023.jsonl.gz": {
+    "bytes": 50790,
+    "complete": false,
+    "endpoint": "wta_matches",
+    "file": "tennis/wta_matches_2023.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:05:09Z",
+    "http_status": 429,
+    "params": {
+      "season": 2023
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/wta_matches_2024.jsonl.gz": {
+    "bytes": 50842,
+    "complete": false,
+    "endpoint": "wta_matches",
+    "file": "tennis/wta_matches_2024.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:06:13Z",
+    "http_status": 429,
+    "params": {
+      "season": 2024
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/wta_matches_2025.jsonl.gz": {
+    "bytes": 54269,
+    "complete": false,
+    "endpoint": "wta_matches",
+    "file": "tennis/wta_matches_2025.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:07:18Z",
+    "http_status": 429,
+    "params": {
+      "season": 2025
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/wta_matches_2026.jsonl.gz": {
+    "bytes": 55626,
+    "complete": false,
+    "endpoint": "wta_matches",
+    "file": "tennis/wta_matches_2026.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:08:22Z",
+    "http_status": 429,
+    "params": {
+      "season": 2026
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/wta_odds_opening.jsonl.gz": {
+    "bytes": 43,
+    "complete": false,
+    "endpoint": "wta_odds_opening",
+    "file": "tennis/wta_odds_opening.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:14:15Z",
+    "http_status": 400,
+    "params": {},
+    "rows": 0,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/wta_players.jsonl.gz": {
+    "bytes": 16728,
+    "complete": false,
+    "endpoint": "wta_players",
+    "file": "tennis/wta_players.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:12:39Z",
+    "http_status": 429,
+    "params": {},
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/wta_rankings.jsonl.gz": {
+    "bytes": 39,
+    "complete": false,
+    "endpoint": "wta_rankings",
+    "file": "tennis/wta_rankings.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:13:43Z",
+    "http_status": 429,
+    "params": {
+      "tour": "wta"
+    },
+    "rows": 0,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/wta_tournaments_2010.jsonl.gz": {
+    "bytes": 1911,
+    "complete": true,
+    "endpoint": "wta_tournaments",
+    "file": "tennis/wta_tournaments_2010.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:08:54Z",
+    "params": {
+      "season": 2010
+    },
+    "rows": 56,
+    "sha256": "90aecc34800bf3ffdb95606edbc3c181324a8c71f28b34ee4187039db6b2dc9f",
+    "sport": "tennis"
+  },
+  "tennis/wta_tournaments_2011.jsonl.gz": {
+    "bytes": 47,
+    "complete": true,
+    "endpoint": "wta_tournaments",
+    "file": "tennis/wta_tournaments_2011.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:08:54Z",
+    "params": {
+      "season": 2011
+    },
+    "rows": 0,
+    "sha256": "d2ada6bb4fea75b9a4ee3ceeeac17ea718c72515c8a72b91b80d982abc7bc923",
+    "sport": "tennis"
+  },
+  "tennis/wta_tournaments_2012.jsonl.gz": {
+    "bytes": 47,
+    "complete": true,
+    "endpoint": "wta_tournaments",
+    "file": "tennis/wta_tournaments_2012.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:08:54Z",
+    "params": {
+      "season": 2012
+    },
+    "rows": 0,
+    "sha256": "9c222992c983a47572a8d07cd4ff76b23c0a08aa081bb25b48654829c301bfa9",
+    "sport": "tennis"
+  },
+  "tennis/wta_tournaments_2013.jsonl.gz": {
+    "bytes": 47,
+    "complete": true,
+    "endpoint": "wta_tournaments",
+    "file": "tennis/wta_tournaments_2013.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:08:54Z",
+    "params": {
+      "season": 2013
+    },
+    "rows": 0,
+    "sha256": "67619545bc3b16b716e0df385453f904e0e6afcf879c10698f5759445f5dec9b",
+    "sport": "tennis"
+  },
+  "tennis/wta_tournaments_2014.jsonl.gz": {
+    "bytes": 47,
+    "complete": true,
+    "endpoint": "wta_tournaments",
+    "file": "tennis/wta_tournaments_2014.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:08:55Z",
+    "params": {
+      "season": 2014
+    },
+    "rows": 0,
+    "sha256": "9ec469300952645be605ae6f048a0dd5ea024ef6035118e3579851ff22dcc2de",
+    "sport": "tennis"
+  },
+  "tennis/wta_tournaments_2015.jsonl.gz": {
+    "bytes": 47,
+    "complete": false,
+    "endpoint": "wta_tournaments",
+    "file": "tennis/wta_tournaments_2015.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:09:27Z",
+    "http_status": 429,
+    "params": {
+      "season": 2015
+    },
+    "rows": 0,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/wta_tournaments_2016.jsonl.gz": {
+    "bytes": 2278,
+    "complete": true,
+    "endpoint": "wta_tournaments",
+    "file": "tennis/wta_tournaments_2016.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:09:58Z",
+    "params": {
+      "season": 2016
+    },
+    "rows": 65,
+    "sha256": "09a2ee451c4a42fbcd2e248c3c9cbfdef69cc673159785c8a5aa875e58207757",
+    "sport": "tennis"
+  },
+  "tennis/wta_tournaments_2017.jsonl.gz": {
+    "bytes": 2278,
+    "complete": true,
+    "endpoint": "wta_tournaments",
+    "file": "tennis/wta_tournaments_2017.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:09:59Z",
+    "params": {
+      "season": 2017
+    },
+    "rows": 66,
+    "sha256": "b6cf9601f6514a291b7c6f4ad0332fdf16a96cee4209c5c30193f5da4a18a97d",
+    "sport": "tennis"
+  },
+  "tennis/wta_tournaments_2018.jsonl.gz": {
+    "bytes": 2335,
+    "complete": true,
+    "endpoint": "wta_tournaments",
+    "file": "tennis/wta_tournaments_2018.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:09:59Z",
+    "params": {
+      "season": 2018
+    },
+    "rows": 67,
+    "sha256": "897144b1a451ec3db6a100153b538146f4084e54e9b413b041b45fbd8a02fe68",
+    "sport": "tennis"
+  },
+  "tennis/wta_tournaments_2019.jsonl.gz": {
+    "bytes": 2353,
+    "complete": true,
+    "endpoint": "wta_tournaments",
+    "file": "tennis/wta_tournaments_2019.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:09:59Z",
+    "params": {
+      "season": 2019
+    },
+    "rows": 68,
+    "sha256": "1af04c1f19a7ccb4b65184320ff064d8026df118b5c63097f77297cb934cee25",
+    "sport": "tennis"
+  },
+  "tennis/wta_tournaments_2020.jsonl.gz": {
+    "bytes": 2412,
+    "complete": true,
+    "endpoint": "wta_tournaments",
+    "file": "tennis/wta_tournaments_2020.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:09:59Z",
+    "params": {
+      "season": 2020
+    },
+    "rows": 71,
+    "sha256": "afbd3a9d18ba89bbe1b390a15d0e40d04ae0537f5dd1dba57a2f4a2d0c35555e",
+    "sport": "tennis"
+  },
+  "tennis/wta_tournaments_2021.jsonl.gz": {
+    "bytes": 47,
+    "complete": false,
+    "endpoint": "wta_tournaments",
+    "file": "tennis/wta_tournaments_2021.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:10:31Z",
+    "http_status": 429,
+    "params": {
+      "season": 2021
+    },
+    "rows": 0,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/wta_tournaments_2022.jsonl.gz": {
+    "bytes": 2456,
+    "complete": true,
+    "endpoint": "wta_tournaments",
+    "file": "tennis/wta_tournaments_2022.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:11:02Z",
+    "params": {
+      "season": 2022
+    },
+    "rows": 78,
+    "sha256": "a61a31cd5a2398483d89574a0aaba32342d0ee5a33c058bc39791b62500a7082",
+    "sport": "tennis"
+  },
+  "tennis/wta_tournaments_2023.jsonl.gz": {
+    "bytes": 2676,
+    "complete": true,
+    "endpoint": "wta_tournaments",
+    "file": "tennis/wta_tournaments_2023.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:11:03Z",
+    "params": {
+      "season": 2023
+    },
+    "rows": 88,
+    "sha256": "e3f12f248c6aa423d8e1a9c57f1421f7abeb12e8bb1b585eb45fd37651a4b716",
+    "sport": "tennis"
+  },
+  "tennis/wta_tournaments_2024.jsonl.gz": {
+    "bytes": 2734,
+    "complete": true,
+    "endpoint": "wta_tournaments",
+    "file": "tennis/wta_tournaments_2024.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:11:03Z",
+    "params": {
+      "season": 2024
+    },
+    "rows": 91,
+    "sha256": "3e125c7cc6a571fe6530611ff6561bc1020eb91d67344b9b0add6ae10c568452",
+    "sport": "tennis"
+  },
+  "tennis/wta_tournaments_2025.jsonl.gz": {
+    "bytes": 2928,
+    "complete": true,
+    "endpoint": "wta_tournaments",
+    "file": "tennis/wta_tournaments_2025.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:11:03Z",
+    "params": {
+      "season": 2025
+    },
+    "rows": 106,
+    "sha256": "98e403084e86b3b1e785064d4160f97304c6891f9d1a8bee7ff04e888ecbf53f",
+    "sport": "tennis"
+  },
+  "tennis/wta_tournaments_2026.jsonl.gz": {
+    "bytes": 47,
+    "complete": false,
+    "endpoint": "wta_tournaments",
+    "file": "tennis/wta_tournaments_2026.jsonl.gz",
+    "harvested_utc": "2026-09-15T18:11:35Z",
+    "http_status": 429,
+    "params": {
+      "season": 2026
+    },
+    "rows": 0,
     "sha256": null,
     "sport": "tennis"
   }
