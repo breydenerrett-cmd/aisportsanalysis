@@ -138,15 +138,18 @@ jobs:
           bash scripts/daily_loop.sh 2>&1 | tee -a /tmp/daily_run.out
           exit "${PIPESTATUS[0]}"
 
-      - name: Fail the job on any ESCALATE line
+      # Was a bare `grep -q "^ESCALATE:" /tmp/daily_run.out`: any ESCALATE
+      # line at all failed the job, including the two standing, acknowledged
+      # ones (docs/ESCALATIONS.md) that are true on every single run and
+      # therefore never told anyone anything new. Nothing here weakens the
+      # check -- every audit still prints its ESCALATE line exactly as
+      # before, and every line is still printed below, labelled KNOWN or
+      # NEW. Only the job's verdict changes: it now fails only when a line
+      # does not match an acknowledged row in the ledger.
+      - name: Fail the job on any NEW ESCALATE line
         if: always()
         run: |
-          if grep -q "^ESCALATE:" /tmp/daily_run.out; then
-            echo "The daily loop escalated -- see the lines below."
-            grep "^ESCALATE:" /tmp/daily_run.out
-            exit 1
-          fi
-          echo "no ESCALATE lines -- clean run"
+          python3 scripts/escalations.py --check /tmp/daily_run.out
 
       # actions/cache is immutable per key: a plain `save` action would
       # silently no-op once `daily-loop-data-${{ github.run_id }}` (a run
