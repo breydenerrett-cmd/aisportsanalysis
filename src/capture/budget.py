@@ -92,8 +92,32 @@ DAILY_ENVELOPE = round(MONTHLY_ALLOTMENT * UTILIZATION_TARGET / RESET_CYCLE_DAYS
 # policy, not a provider fact.
 CREDIT_FLOOR = 5000
 
+# The daily cap for in-play odds capture. Owner decision 2026-09-14: a hard
+# cap of 300 credits per day for in-play odds across all sports, event-driven,
+# with a kill switch that defaults to OFF (see live_odds_enabled below).
+LIVE_ODDS_DAILY_CAP = 300
+
 CREDIT_LOG_PATH = creditlog.DEFAULT_STORE
 FAMILIES_CONFIG_PATH = repo_root() / "config" / "capture_families.json"
+
+# Environment variable to enable/disable live odds capture. The feature is OFF
+# by default -- live odds capture is only active when this env var is set to
+# one of "1", "true", "yes", or "on" (case-insensitive, whitespace-stripped).
+ENV_LIVE_ODDS = "LIVE_ODDS"
+
+
+def live_odds_enabled(env=None) -> bool:
+    """True only when the LIVE_ODDS env var is set to an enabled value.
+
+    env, if given, is a dict to read (used for testing); omit it to read
+    os.environ. The value must be "1", "true", "yes", or "on" (lowercased,
+    whitespace-stripped) to be considered enabled.
+    """
+    import os
+    if env is None:
+        env = os.environ
+    value = env.get(ENV_LIVE_ODDS, "").strip().lower()
+    return value in ("1", "true", "yes", "on")
 
 # ---------------------------------------------------------------------------
 # Band separation (2026-09-04 incident, amended same day)
@@ -139,7 +163,8 @@ LIVE_CAPTURE = "live_capture"
 HISTORICAL_BACKFILL = "historical_backfill"
 PROBE = "probe"
 TEST = "test"
-VALID_BANDS = frozenset({LIVE_CAPTURE, HISTORICAL_BACKFILL, PROBE, TEST})
+LIVE_ODDS = "live_odds"
+VALID_BANDS = frozenset({LIVE_CAPTURE, HISTORICAL_BACKFILL, PROBE, TEST, LIVE_ODDS})
 
 # Every `caller` string the five paid-capture `run()` entry points log via
 # `pipeline.creditlog` (dense.py's own close-capture pass included -- it is
@@ -334,6 +359,51 @@ def capture_spent_today(now=None, store=None) -> int:
     this can and cannot separate.
     """
     return spent_today(now=now, store=store, band=LIVE_CAPTURE)
+
+
+def can_spend_live_odds(est_credits: int, now=None, store=None, env=None,
+                        remaining=None) -> Decision:
+    """May we spend `est_credits` on in-play odds right now?
+
+    Checked in order:
+    1. Feature enabled: if live_odds_enabled(env) is False, refuse with
+       "disabled" in the reason.
+    2. Non-positive request: est_credits <= 0 is allowed (no spend).
+    3. Remaining quota: if not provided, read from credit log; if still None,
+       refuse as quota unreadable.
+    4. Credit floor: if remaining - est_credits <= CREDIT_FLOOR, refuse with
+       "floor" wording.
+    5. Live odds cap: if spent_today(band=LIVE_ODDS) + est_credits would exceed
+       LIVE_ODDS_DAILY_CAP, refuse with "cap" in the reason.
+
+    Unlike can_spend(), this NEVER checks DAILY_ENVELOPE: the live odds band
+    is separate and has its own cap (LIVE_ODDS_DAILY_CAP).
+    """
+    if not live_odds_enabled(env):
+        return Decision(False, "refused: live odds disabled (LIVE_ODDS is not set)")
+
+    if est_credits <= 0:
+        return Decision(True, "ok: live odds non-positive request")
+
+    if remaining is None:
+        remaining = remaining_today(now=now, store=store)
+
+    if remaining is None:
+        return Decision(False,
+                       "skipped: quota unreadable (no credit_log row for today)")
+
+    if remaining - est_credits <= CREDIT_FLOOR:
+        return Decision(False, f"skipped: credit floor (remaining={remaining}, "
+                               f"floor={CREDIT_FLOOR}, requested={est_credits})")
+
+    spent = spent_today(now=now, store=store, band=LIVE_ODDS)
+    if spent + est_credits > LIVE_ODDS_DAILY_CAP:
+        return Decision(False, f"refused: live odds cap ({spent} of "
+                               f"{LIVE_ODDS_DAILY_CAP} spent today, +{est_credits} "
+                               f"would exceed it)")
+
+    return Decision(True, f"ok: live odds {spent}+{est_credits} of "
+                          f"{LIVE_ODDS_DAILY_CAP} today")
 
 
 def remaining_after(est_credits: int, now=None, store=None) -> Optional[int]:
@@ -541,6 +611,9 @@ def status(now=None, store=None, families_path=None) -> dict:
             "state": ("provisional (degenerate probe)" if degenerate
                       else ("measured" if measured else "PROBE_REQUIRED")),
         }
+    live_odds_spent = spent_today(now=now, store=store, band=LIVE_ODDS)
+    live_odds_remaining = (LIVE_ODDS_DAILY_CAP - live_odds_spent
+                           if live_odds_spent is not None else None)
     return {
         "monthly_allotment": MONTHLY_ALLOTMENT,
         "reset_cycle_days": RESET_CYCLE_DAYS,
@@ -553,6 +626,12 @@ def status(now=None, store=None, families_path=None) -> dict:
         "capture_spent_today": capture_spent,
         "envelope_remaining_today": (
             (DAILY_ENVELOPE - capture_spent) if capture_spent is not None else None),
+        "live_odds": {
+            "enabled": live_odds_enabled(),
+            "spent_today": live_odds_spent,
+            "cap": LIVE_ODDS_DAILY_CAP,
+            "remaining_in_cap": live_odds_remaining,
+        },
         "drop_order_version": DROP_ORDER_VERSION,
         "drop_order": [d["family"] for d in DROP_ORDER],
         "non_droppable_family": NON_DROPPABLE_FAMILY,
@@ -570,6 +649,10 @@ def status(now=None, store=None, families_path=None) -> dict:
 # no endpoint exists, confirmed 2026-09-03 against the vendor's own markets
 # page -- see docs/SGP_PARLAY_CAPTURE.md) is not wired here and returns an
 # explicit error rather than guessing a market to call.
+#
+# SPECIAL CASES: "scores" and "tennis_h2h" do not use market lists like odds
+# calls -- they use different endpoints (fetch_scores, fetch_odds with sport).
+# Return a sentinel marker to indicate these need special handling in probe_family.
 def _probe_markets(family: str, provider) -> Optional[tuple]:
     if family in ("batter_props_floor", "batter_props_extra", "batter_props"):
         return provider.BATTER_MARKETS
@@ -581,6 +664,10 @@ def _probe_markets(family: str, provider) -> Optional[tuple]:
         return provider.ALTERNATE_MARKETS
     if family == "f5_trio":
         return provider.EVENT_MARKETS
+    if family == "scores":
+        return ("SPECIAL:fetch_scores",)  # Sentinel for special handling
+    if family == "tennis_h2h":
+        return ("SPECIAL:fetch_odds_tennis_h2h",)  # Sentinel for special handling
     return None
 
 
@@ -595,13 +682,32 @@ def _probe_markets(family: str, provider) -> Optional[tuple]:
 PROBE_MIN_LEAD_MINUTES = 45
 
 
-def _payload_shape(payload: dict, requested_markets, commence_time=None) -> dict:
+def _payload_shape(payload, requested_markets, commence_time=None, is_scores=False) -> dict:
     """Books/markets/outcomes actually returned by a probe fetch, plus the
     `degenerate` verdict (S17 bugfix): fewer than 2 books, or fewer than 2 of
     the requested markets actually present, means the payload is too thin to
     trust as a per-event cost measurement -- most likely an event whose
     market had already closed or thinned near/after commence_time.
+
+    For scores payloads (is_scores=True), the payload is a list of events
+    (not a dict with bookmakers). We record event count and completed count.
     """
+    if is_scores:
+        # Scores payload is a list of events; no bookmakers, no markets.
+        # Record event count and how many are completed.
+        events = payload if isinstance(payload, list) else []
+        event_count = len(events)
+        completed_count = sum(1 for e in events if e.get("completed"))
+        # Scores payloads with fewer than 2 events are considered degenerate
+        # (thin payload, not enough data to trust the per-event cost).
+        degenerate = event_count < 2
+        return {
+            "event_count": event_count,
+            "completed_count": completed_count,
+            "degenerate": degenerate,
+        }
+
+    # Standard odds payload with bookmakers
     bookmakers = payload.get("bookmakers") or []
     books = len(bookmakers)
     requested = set(requested_markets or ())
@@ -630,7 +736,7 @@ def _payload_shape(payload: dict, requested_markets, commence_time=None) -> dict
 
 
 def probe_family(family: str, env=None, provider=None, now=None,
-                  families_path=None, min_lead_minutes=PROBE_MIN_LEAD_MINUTES) -> dict:
+                  families_path=None, store=None, min_lead_minutes=PROBE_MIN_LEAD_MINUTES) -> dict:
     """Spend exactly ONE bounded fetch measuring `family`'s real per-event cost.
 
     A real API call: one event, one region, `family`'s market list, via
@@ -701,79 +807,173 @@ def probe_family(family: str, env=None, provider=None, now=None,
         return {"family": family, "probed": False,
                 "error": "credit floor", "credits_remaining": remaining_before}
 
-    try:
-        listed = provider.list_events(env)  # free
-    except provider.OddsProviderError as exc:
-        return {"family": family, "probed": False,
-                "error": "events unreadable", "message": str(exc)}
-    if not listed:
-        return {"family": family, "probed": False,
-                "error": "no events available to probe against"}
-
-    earliest_start = moment + timedelta(minutes=min_lead_minutes)
-    eligible = []
-    for e in listed:
-        commence = e.get("commence_time")
-        if not commence:
-            continue
-        try:
-            when = datetime.fromisoformat(str(commence).replace("Z", "+00:00"))
-        except ValueError:
-            continue
-        if when.tzinfo is None:
-            when = when.replace(tzinfo=timezone.utc)
-        if when >= earliest_start:
-            eligible.append((when, e))
-    if not eligible:
-        return {"family": family, "probed": False,
-                "error": f"no event with commence_time at least "
-                         f"{min_lead_minutes} minute(s) in the future "
-                         f"({len(listed)} event(s) listed, all too close to "
-                         f"or past commence -- refusing to probe against a "
-                         f"stale/live event); spent nothing"}
-    eligible.sort(key=lambda pair: (pair[0], pair[1].get("id") or ""))
-    event = eligible[0][1]
-    event_id = event.get("id")
-    event_commence = event.get("commence_time")
-
     measured_utc = _utc_iso(moment)
     result = {"family": family, "probed": False, "measured_utc": measured_utc,
-              "event_id": event_id, "markets": list(markets),
               "credits_remaining_before": remaining_before}
 
-    try:
-        payload, usage = provider.fetch_event_odds_with_usage(
-            event_id, markets=markets, env=env)
-    except provider.OddsProviderError as exc:
-        result["error"] = f"probe fetch failed: {exc}"
-        return result
+    # Initialize variables that will be set by the fetch paths.
+    payload = None
+    usage = None
+    event_id = None
+    event_commence = None
+    fetch_markets = list(markets)  # Markets used for fetch/display
+    is_scores_fetch = False
+    remaining_after_call = None
 
-    billed = (usage or {}).get("last")
-    remaining_after_call = (usage or {}).get("remaining")
+    # SPECIAL HANDLING FOR SCORES AND TENNIS_H2H
+    # These do not use the standard event odds fetch path.
+    if family == "scores":
+        # Fetch scores directly (no event selection needed)
+        try:
+            payload = provider.fetch_scores(sport="nfl", env=env)
+        except provider.OddsProviderError as exc:
+            result["error"] = f"probe fetch failed: {exc}"
+            return result
+        # For scores, there's no usage header like fetch_event_odds_with_usage,
+        # so we estimate based on quota change.
+        try:
+            remaining_after_call = provider.quota(env).get("remaining")
+        except provider.OddsProviderError:
+            remaining_after_call = None
+        fetch_markets = ["scores"]
+        is_scores_fetch = True
+    elif family == "tennis_h2h":
+        # First, find an active tennis key
+        try:
+            sports = provider.fetch_sports(all_sports=True, env=env)
+        except provider.OddsProviderError as exc:
+            result["error"] = f"could not fetch sports list: {exc}"
+            return result
+        # Find the first active tennis sport key
+        tennis_key = None
+        for sport in sports:
+            key = sport.get("key", "")
+            # Look for sports with "tennis" in the key
+            if "tennis" in key.lower():
+                tennis_key = key
+                break
+        if tennis_key is None:
+            result["error"] = "no active tennis market found in provider.fetch_sports()"
+            return result
+        # Now fetch odds for tennis h2h
+        try:
+            payload = provider.fetch_odds(markets=["h2h"], env=env, sport=tennis_key)
+        except provider.OddsProviderError as exc:
+            result["error"] = f"probe fetch failed: {exc}"
+            return result
+        # Read quota after to get billed amount
+        try:
+            remaining_after_call = provider.quota(env).get("remaining")
+        except provider.OddsProviderError:
+            remaining_after_call = None
+        result["sport_key"] = tennis_key
+        fetch_markets = ["h2h"]
+    else:
+        # STANDARD EVENT ODDS FETCH PATH
+        try:
+            listed = provider.list_events(env)  # free
+        except provider.OddsProviderError as exc:
+            return {"family": family, "probed": False,
+                    "error": "events unreadable", "message": str(exc)}
+        if not listed:
+            return {"family": family, "probed": False,
+                    "error": "no events available to probe against"}
+
+        earliest_start = moment + timedelta(minutes=min_lead_minutes)
+        eligible = []
+        for e in listed:
+            commence = e.get("commence_time")
+            if not commence:
+                continue
+            try:
+                when = datetime.fromisoformat(str(commence).replace("Z", "+00:00"))
+            except ValueError:
+                continue
+            if when.tzinfo is None:
+                when = when.replace(tzinfo=timezone.utc)
+            if when >= earliest_start:
+                eligible.append((when, e))
+        if not eligible:
+            return {"family": family, "probed": False,
+                    "error": f"no event with commence_time at least "
+                             f"{min_lead_minutes} minute(s) in the future "
+                             f"({len(listed)} event(s) listed, all too close to "
+                             f"or past commence -- refusing to probe against a "
+                             f"stale/live event); spent nothing"}
+        eligible.sort(key=lambda pair: (pair[0], pair[1].get("id") or ""))
+        event = eligible[0][1]
+        event_id = event.get("id")
+        event_commence = event.get("commence_time")
+
+        try:
+            payload, usage = provider.fetch_event_odds_with_usage(
+                event_id, markets=markets, env=env)
+        except provider.OddsProviderError as exc:
+            result["error"] = f"probe fetch failed: {exc}"
+            return result
+
+    result["event_id"] = event_id
+    result["markets"] = fetch_markets
+
+    # For standard fetch, get billed and remaining from usage; for special cases,
+    # these are already set. Calculate billed from usage first.
+    if usage is not None:
+        billed = usage.get("last")
+        if remaining_after_call is None:
+            remaining_after_call = usage.get("remaining")
+    else:
+        billed = None
+
+    # Determine billed amount: prefer explicit value, else quota delta, else default estimate
     if billed is not None:
         credits_per_event = billed
     elif remaining_before is not None and remaining_after_call is not None:
         credits_per_event = max(remaining_before - remaining_after_call, 0)
     else:
-        credits_per_event = len(markets)  # last-resort, conservative estimate
+        credits_per_event = len(fetch_markets) if fetch_markets else 1
 
-    creditlog.log(remaining_after_call, billed, f"budget.probe_family:{family}",
-                  budget_band=PROBE)
+    # For creditlog, use the calculated credits_per_event if billed was not explicit
+    billed_for_log = billed if billed is not None else credits_per_event
+    creditlog.log(remaining_after_call, billed_for_log, f"budget.probe_family:{family}",
+                  store=store if store is not None else CREDIT_LOG_PATH, budget_band=PROBE)
 
-    shape = _payload_shape(payload, markets, commence_time=event_commence)
-    degenerate = shape["degenerate"]
+    # Calculate payload shape; special handling for scores vs standard odds
+    if is_scores_fetch:
+        shape = _payload_shape(payload, None, is_scores=True)
+    else:
+        shape = _payload_shape(payload, fetch_markets, commence_time=event_commence)
+    degenerate = shape.get("degenerate", False)
+
+    # Build source string: different format for special vs standard
+    if family == "scores":
+        source_str = (f"budget.probe_family: {family} probe fetching NFL scores; "
+                      f"billed={billed!r}, remaining_before={remaining_before!r}, "
+                      f"remaining_after={remaining_after_call!r}")
+    elif family == "tennis_h2h":
+        source_str = (f"budget.probe_family: {family} probe fetching h2h odds for "
+                      f"{result.get('sport_key')}; "
+                      f"billed={billed!r}, remaining_before={remaining_before!r}, "
+                      f"remaining_after={remaining_after_call!r}")
+    else:
+        source_str = (f"budget.probe_family: live {family} probe against event "
+                      f"{event_id} ({len(fetch_markets)} market(s), 1 region); "
+                      f"billed={billed!r}, remaining_before={remaining_before!r}, "
+                      f"remaining_after={remaining_after_call!r}")
+
+    # Append degenerate payload details if applicable
+    if degenerate:
+        if is_scores_fetch:
+            source_str += (f"; DEGENERATE PAYLOAD (event_count={shape.get('event_count')}, "
+                          f"completed_count={shape.get('completed_count')}, does not satisfy "
+                          f"PROBE_REQUIRED, does not block a same-day re-probe)")
+        else:
+            source_str += (f"; DEGENERATE PAYLOAD (books={shape.get('books')}, "
+                          f"markets_returned={shape.get('markets_returned')}, "
+                          f"outcomes={shape.get('outcomes')}, does not satisfy "
+                          f"PROBE_REQUIRED, does not block a same-day re-probe)")
 
     recorded = _record_measurement(
-        family, credits_per_event,
-        source=f"budget.probe_family: live {family} probe against event "
-               f"{event_id} ({len(markets)} market(s), 1 region); "
-               f"billed={billed!r}, remaining_before={remaining_before!r}, "
-               f"remaining_after={remaining_after_call!r}"
-               + (f"; DEGENERATE PAYLOAD (books={shape['books']}, "
-                  f"markets_returned={shape['markets_returned']}, "
-                  f"outcomes={shape['outcomes']}, does not satisfy "
-                  f"PROBE_REQUIRED, does not block a same-day re-probe)"
-                  if degenerate else ""),
+        family, credits_per_event, source=source_str,
         measured_utc=measured_utc, families_path=families_path,
         payload_shape=shape, degenerate=degenerate)
 

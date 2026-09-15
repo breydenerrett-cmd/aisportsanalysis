@@ -156,31 +156,15 @@ sys.exit(0 if found else 1)
 }
 
 # Minutes the NEXT slot should wait after this one started. Quiet hours
-# (owner/orchestrator, 2026-09-14): no game on the schedule starts within the
-# next 26 hours -> hourly. The MLB schedule is free and keyless; yesterday,
-# today and tomorrow (UTC dates) cover every first pitch inside 26 hours.
-# Any failure to read it keeps the 13-minute cadence: a missed slot on a game
-# day costs more than a few extra free schedule reads on an off day.
-# CHAIN_FIRST_PITCHES (space-separated ISO times) replaces the fetch in tests.
+# (owner/orchestrator, 2026-09-14): no game on any registered sport's schedule
+# starts within the next 26 hours -> hourly. Yesterday, today and tomorrow (UTC
+# dates) cover every start inside 26 hours. Any failure to read a schedule keeps
+# the 13-minute cadence: a missed slot on a game day costs more than a few extra
+# free schedule reads on an off day. CHAIN_FIRST_PITCHES (space-separated ISO
+# times) replaces the fetch in tests.
 _chain_spacing() {
     local verdict
-    verdict=$(CHAIN_QUIET_HORIZON_HOURS="$CHAIN_QUIET_HORIZON_HOURS" "$CHAIN_PY" -c '
-import datetime as dt, os
-now = dt.datetime.now(dt.timezone.utc)
-override = os.environ.get("CHAIN_FIRST_PITCHES")
-if override is not None:
-    starts = override.split()
-else:
-    from src.providers import mlb
-    starts = []
-    for delta in (-1, 0, 1):
-        day = (now + dt.timedelta(days=delta)).date().isoformat()
-        starts += [game.get("gameDate") for game in mlb.fetch_schedule(day)]
-horizon = now + dt.timedelta(hours=int(os.environ["CHAIN_QUIET_HORIZON_HOURS"]))
-upcoming = sorted(s for s in starts if s and now < dt.datetime.fromisoformat(
-    s.replace("Z", "+00:00")) <= horizon)
-print("ACTIVE next first pitch %s" % upcoming[0] if upcoming else "QUIET")
-' 2>/dev/null) || verdict="UNKNOWN"
+    verdict=$("$CHAIN_PY" -m src.sports.calendar --horizon "$CHAIN_QUIET_HORIZON_HOURS" 2>/dev/null) || verdict="UNKNOWN"
     case "$verdict" in
         QUIET)
             echo "chain: no first pitch within ${CHAIN_QUIET_HORIZON_HOURS}h -- quiet hours, hourly" >&2

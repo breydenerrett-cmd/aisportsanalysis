@@ -43,6 +43,7 @@ from src.paths import raw_path
 
 API_HOST = "https://api.the-odds-api.com/v4"
 SPORT = "baseball_mlb"
+SPORT_KEYS = {"mlb": "baseball_mlb", "nfl": "americanfootball_nfl"}
 USER_AGENT = "aisportsanalysis/0.1 (stdlib urllib)"
 DEFAULT_TIMEOUT = 20
 
@@ -217,6 +218,28 @@ def api_key(env=None):
 
 def is_configured(env=None) -> bool:
     return api_key(env) is not None
+
+
+def sport_key(sport=None) -> str:
+    """Resolve a sport parameter to its Odds API key.
+
+    None, "", or "mlb" -> "baseball_mlb"
+    A key in SPORT_KEYS (e.g., "nfl") -> its value ("americanfootball_nfl")
+    A string starting with "tennis_" -> returned unchanged (per-tournament keys)
+    A string equal to one of SPORT_KEYS' values -> returned unchanged
+    Anything else -> raises OddsProviderError
+    """
+    if sport is None or sport == "" or sport == "mlb":
+        return SPORT
+    if sport in SPORT_KEYS:
+        return SPORT_KEYS[sport]
+    if isinstance(sport, str) and sport.startswith("tennis_"):
+        return sport
+    if sport in SPORT_KEYS.values():
+        return sport
+    raise OddsProviderError(
+        f"unknown sport {sport!r}; known: mlb, nfl, tennis_<tournament>"
+    )
 
 
 def status(env=None) -> dict:
@@ -485,7 +508,7 @@ def _raw_capture_target(moment, body: bytes):
                      f"{capture_id}.jsonl.gz"), capture_id
 
 
-def _write_raw_capture(payload, kind: str, env=None, now=None) -> str:
+def _write_raw_capture(payload, kind: str, env=None, now=None, sport=None) -> str:
     """Persist the verbatim provider payload for one API call.
 
     `payload` is written exactly as the provider returned it (already JSON-
@@ -500,6 +523,17 @@ def _write_raw_capture(payload, kind: str, env=None, now=None) -> str:
     entire point of this layer.
     """
     moment = now or datetime.now(timezone.utc)
+    # Use sport-specific kind for non-MLB sports
+    resolved_sport = sport_key(sport)
+    if resolved_sport != SPORT and kind == "featured":
+        # Map resolved key back to short form for the kind name
+        if resolved_sport == "americanfootball_nfl":
+            short_sport = "nfl"
+        elif resolved_sport.startswith("tennis_"):
+            short_sport = resolved_sport
+        else:
+            short_sport = resolved_sport
+        kind = f"featured_{short_sport}"
     record = json.dumps(
         {"captured_utc": moment.isoformat(), "kind": kind, "payload": payload},
         separators=(",", ":"),
@@ -533,8 +567,100 @@ def quota(env=None, timeout: int = DEFAULT_TIMEOUT) -> dict:
     return {"configured": True, **usage}
 
 
+def fetch_scores(*, sport=None, days_from=None, env=None, timeout: int = DEFAULT_TIMEOUT) -> list:
+    """Fetch live and completed game scores for the given sport.
+
+    1 credit per call, 2 with daysFrom. Covers live and completed games for MLB and NFL.
+
+    days_from: when given, must be 1-3 (days back to include). Raises OddsProviderError
+    if out of range.
+
+    Returns a list of score events.
+    """
+    source = os.environ if env is None else env
+    key = api_key(source)
+    if key is None:
+        raise NotConfigured(SETUP_MESSAGE)
+
+    if days_from is not None:
+        if not isinstance(days_from, int) or days_from < 1 or days_from > 3:
+            raise OddsProviderError(
+                f"days_from must be between 1 and 3, got {days_from!r}"
+            )
+
+    params = {"apiKey": key}
+    if days_from is not None:
+        params["daysFrom"] = int(days_from)
+
+    return _get_json(f"sports/{sport_key(sport)}/scores", params, timeout=timeout)
+
+
+def normalize_score(event: dict, *, sport=None) -> dict:
+    """Normalize one Odds API scores event.
+
+    Input has: id, sport_key, commence_time, completed, home_team, away_team,
+    scores (list of {name, score} or None), last_update.
+
+    Output: event_id, commence_time, completed (bool), home_team, away_team,
+    home_score (int or None), away_score (int or None), last_update, plus
+    sport field when sport is not MLB.
+    """
+    scores = event.get("scores")
+    score_by_name = {}
+    if scores:
+        for item in scores:
+            if item.get("name"):
+                try:
+                    score_by_name[item["name"]] = int(item.get("score", 0))
+                except (ValueError, TypeError):
+                    score_by_name[item["name"]] = None
+
+    home_team = event.get("home_team")
+    away_team = event.get("away_team")
+    home_score = score_by_name.get(home_team)
+    away_score = score_by_name.get(away_team)
+
+    record = {
+        "event_id": event.get("id"),
+        "commence_time": event.get("commence_time"),
+        "completed": bool(event.get("completed")),
+        "home_team": home_team,
+        "away_team": away_team,
+        "home_score": home_score,
+        "away_score": away_score,
+        "last_update": event.get("last_update"),
+    }
+
+    # Add sport field only when sport is not MLB
+    if sport is not None and sport != "" and sport != "mlb":
+        record["sport"] = sport
+
+    return record
+
+
+def fetch_sports(*, all_sports=False, env=None, timeout: int = DEFAULT_TIMEOUT) -> list:
+    """Fetch list of all available sports.
+
+    Free endpoint (0 credits).
+
+    all_sports: when True, includes all available sports; otherwise returns active ones.
+
+    Raises NotConfigured when no API key is present.
+    """
+    source = os.environ if env is None else env
+    key = api_key(source)
+    if key is None:
+        raise NotConfigured(SETUP_MESSAGE)
+
+    params = {"apiKey": key}
+    if all_sports:
+        params["all"] = "true"
+
+    return _get_json("sports", params, timeout=timeout)
+
+
 def fetch_historical_odds(timestamp, markets=None, region=None, env=None,
-                          timeout: int = DEFAULT_TIMEOUT):
+                          timeout: int = DEFAULT_TIMEOUT, *, sport=None):
     """Odds for the whole slate as they stood at one instant. Paid plans only.
 
     Billed at ten times a live call, per market per region -- so this is the cheap way
@@ -557,7 +683,7 @@ def fetch_historical_odds(timestamp, markets=None, region=None, env=None,
         "oddsFormat": configured_odds_format(source),
         "date": _iso_z(timestamp),
     }
-    return _get_json_with_usage(f"historical/sports/{SPORT}/odds", params,
+    return _get_json_with_usage(f"historical/sports/{sport_key(sport)}/odds", params,
                                 timeout=timeout)
 
 
@@ -570,7 +696,7 @@ def _iso_z(timestamp) -> str:
 
 
 def fetch_odds(markets=None, region=None, env=None,
-               timeout: int = DEFAULT_TIMEOUT):
+               timeout: int = DEFAULT_TIMEOUT, *, sport=None):
     """Fetch current odds. Raises NotConfigured when no key is present.
 
     `markets` defaults to whatever ODDS_API_MARKETS configures, so the credit cost
@@ -587,10 +713,10 @@ def fetch_odds(markets=None, region=None, env=None,
         "markets": ",".join(resolved),
         "oddsFormat": configured_odds_format(source),
     }
-    return _get_json(f"sports/{SPORT}/odds", params, timeout=timeout)
+    return _get_json(f"sports/{sport_key(sport)}/odds", params, timeout=timeout)
 
 
-def list_events(env=None, timeout: int = DEFAULT_TIMEOUT):
+def list_events(env=None, timeout: int = DEFAULT_TIMEOUT, *, sport=None):
     """List upcoming events with their ids. Free -- the /events endpoint costs 0 credits.
 
     Needed because the per-event odds endpoint is addressed by event id, and ids are
@@ -601,25 +727,25 @@ def list_events(env=None, timeout: int = DEFAULT_TIMEOUT):
     key = api_key(source)
     if key is None:
         raise NotConfigured(SETUP_MESSAGE)
-    return _get_json(f"sports/{SPORT}/events", {"apiKey": key}, timeout=timeout)
+    return _get_json(f"sports/{sport_key(sport)}/events", {"apiKey": key}, timeout=timeout)
 
 
 def fetch_event_odds(event_id, markets=None, region=None, env=None,
-                     timeout: int = DEFAULT_TIMEOUT):
+                     timeout: int = DEFAULT_TIMEOUT, *, sport=None):
     """Fetch odds for ONE event, which is the only way to reach first-five markets.
 
     Billed markets x regions for this single event. Call it for games a scan has
     actually flagged; calling it across a whole slate is what exhausts a free month
     in a day and a half. See EVENT_MARKETS for the measured numbers.
     """
-    params = _event_odds_params(event_id, markets, region, env)
-    payload = _get_json(f"sports/{SPORT}/events/{event_id}/odds", params, timeout=timeout)
-    _write_raw_capture(payload, "event", env=env)
+    params = _event_odds_params(event_id, markets, region, env, sport=sport)
+    payload = _get_json(f"sports/{sport_key(sport)}/events/{event_id}/odds", params, timeout=timeout)
+    _write_raw_capture(payload, "event", env=env, sport=sport)
     return payload
 
 
 def fetch_event_odds_with_usage(event_id, markets=None, region=None, env=None,
-                                timeout: int = DEFAULT_TIMEOUT):
+                                timeout: int = DEFAULT_TIMEOUT, *, sport=None):
     """Same call as `fetch_event_odds`, but returns (payload, usage).
 
     WHY A SECOND ENTRY POINT RATHER THAN A FLAG
@@ -634,14 +760,14 @@ def fetch_event_odds_with_usage(event_id, markets=None, region=None, env=None,
     Every row the audit writes carries the `last` value from its own response,
     so the store audits its own spend.
     """
-    params = _event_odds_params(event_id, markets, region, env)
+    params = _event_odds_params(event_id, markets, region, env, sport=sport)
     payload, usage = _get_json_with_usage(
-        f"sports/{SPORT}/events/{event_id}/odds", params, timeout=timeout)
-    _write_raw_capture(payload, "event", env=env)
+        f"sports/{sport_key(sport)}/events/{event_id}/odds", params, timeout=timeout)
+    _write_raw_capture(payload, "event", env=env, sport=sport)
     return payload, usage
 
 
-def _event_odds_params(event_id, markets, region, env):
+def _event_odds_params(event_id, markets, region, env, *, sport=None):
     """Shared parameter build for the per-event odds endpoint.
 
     One builder so the metered and unmetered entry points cannot drift into
@@ -696,7 +822,7 @@ def estimate_event_credits(events: int, markets=None, regions=(DEFAULT_REGION,))
 # Normalization
 # ---------------------------------------------------------------------------
 
-def normalize_event(event: dict, preferred_book=None) -> dict:
+def normalize_event(event: dict, preferred_book=None, *, sport=None) -> dict:
     """Flatten one API event into per-market prices.
 
     Picks the preferred book when it offers the market, otherwise the first
@@ -710,6 +836,10 @@ def normalize_event(event: dict, preferred_book=None) -> dict:
         "away_team": event.get("away_team"),
         "markets": {},
     }
+
+    # Add sport field only when sport is not MLB
+    if sport is not None and sport != "" and sport != "mlb":
+        record["sport"] = sport
 
     bookmakers = event.get("bookmakers") or []
     ordered = _order_books(bookmakers, preferred_book)
@@ -829,13 +959,13 @@ def _parse_outcomes(market, market_key, record):
     return None
 
 
-def normalize(events, preferred_book=None) -> list:
+def normalize(events, preferred_book=None, *, sport=None) -> list:
     """Normalize a full API response."""
-    return [normalize_event(e, preferred_book=preferred_book) for e in events]
+    return [normalize_event(e, preferred_book=preferred_book, sport=sport) for e in events]
 
 
 def fetch_normalized(markets=None, region=None, env=None,
-                     preferred_book=None, timeout: int = DEFAULT_TIMEOUT) -> dict:
+                     preferred_book=None, timeout: int = DEFAULT_TIMEOUT, *, sport=None) -> dict:
     """Fetch and normalize in one call, with a fetch timestamp.
 
     The timestamp matters for line-movement tracking: a price is only
@@ -843,19 +973,31 @@ def fetch_normalized(markets=None, region=None, env=None,
     """
     source = os.environ if env is None else env
     book = preferred_book or (source.get(ENV_BOOK) or "").strip() or None
-    events = fetch_odds(markets=markets, region=region, env=source, timeout=timeout)
+    events = fetch_odds(markets=markets, region=region, env=source, timeout=timeout, sport=sport)
     # Raw-first: the verbatim featured-endpoint response is on disk before
     # `normalize` (a projection) ever sees it, so a normalizer bug leaves a
     # replayable record instead of a permanent hole.
-    _write_raw_capture(events, "featured", env=source)
-    normalized = normalize(events, preferred_book=book)
-    return {
+    _write_raw_capture(events, "featured", env=source, sport=sport)
+    normalized = normalize(events, preferred_book=book, sport=sport)
+    result = {
         "fetched_utc": datetime.now(timezone.utc).isoformat(),
         "preferred_book": book,
         "event_count": len(normalized),
         "events": normalized,
         "coverage": _coverage(normalized),
     }
+    # Add top-level sport key
+    resolved_sport = sport_key(sport)
+    # Map resolved key back to short form
+    if resolved_sport == "baseball_mlb":
+        result["sport"] = "mlb"
+    elif resolved_sport == "americanfootball_nfl":
+        result["sport"] = "nfl"
+    elif resolved_sport.startswith("tennis_"):
+        result["sport"] = resolved_sport
+    else:
+        result["sport"] = resolved_sport
+    return result
 
 
 def _coverage(events) -> dict:

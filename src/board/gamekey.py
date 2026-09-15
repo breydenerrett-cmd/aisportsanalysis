@@ -146,15 +146,19 @@ def _read_jsonl(path: Path) -> Iterable[dict]:
 
 
 def events_for_date(date_str: str, *,
-                     sources: Iterable[Path | str] | None = None
+                     sources: Iterable[Path | str] | None = None,
+                     sport: str = "mlb"
                      ) -> dict[str, dict]:
     """`{event_id: {home_team, away_team, commence_time}}` for every event
-    whose `commence_time` falls on `date_str` (MLB's official ET date, via
+    whose `commence_time` falls on `date_str` (official ET date, via
     `official_date` -- the same conversion every other store in this
     project uses, so a 20:10 ET Saturday night game is filed under Saturday
-    here too). The first row seen for an `event_id` wins; every row for the
-    same event carries the same identity fields by construction (they are
-    facts about the event, not the observation)."""
+    here too). Filters to rows for the given sport: a row's sport field
+    (row.get("sport")) defaults to "mlb" when absent. Pass sport=None to
+    include all rows regardless of sport. The first row seen for an
+    `event_id` wins; every row for the same event carries the same identity
+    fields by construction (they are facts about the event, not the
+    observation)."""
     paths = list(sources) if sources is not None else list(DEFAULT_EVENT_SOURCES)
     out: dict[str, dict] = {}
     for path in paths:
@@ -165,6 +169,10 @@ def events_for_date(date_str: str, *,
             away_team = row.get("away_team")
             if not event_id or not commence_time or not home_team or not away_team:
                 continue
+            if sport is not None:
+                row_sport = row.get("sport") or "mlb"
+                if row_sport != sport:
+                    continue
             if official_date(commence_time) != date_str:
                 continue
             out.setdefault(str(event_id), {
@@ -185,8 +193,10 @@ def resolve_event(event_id: str, home_team: str, away_team: str,
                    commence_time: str, *,
                    schedule_fn: ScheduleFn = mlb.fetch_games,
                    source: str = "mlb_schedule",
-                   now: datetime | None = None) -> dict:
-    """Resolve one odds event to an MLB `game_pk`, or explain why not.
+                   now: datetime | None = None,
+                   sport: str = "mlb",
+                   team_key_fn: Callable[[str], str | None] | None = None) -> dict:
+    """Resolve one odds event to an MLB `game_pk` or non-MLB `game_id`, or explain why not.
 
     Checks the event's own official date AND the calendar days either side
     of it (a commence_time near midnight ET can round to the "wrong"
@@ -198,6 +208,13 @@ def resolve_event(event_id: str, home_team: str, away_team: str,
     `commence_time` wins, and `ambiguous=True` is stamped with every
     candidate recorded -- this function never silently picks one and hides
     the others.
+
+    For sport "mlb", schedule_fn is ignored and defaults to mlb.fetch_games;
+    team_key_fn is ignored and uses the built-in _team_key. For other sports,
+    schedule_fn must be provided (or sourced from the registry) and must return
+    SportSpec-shaped rows [{"game_id", "away", "home", "start_utc"}]; team_key_fn
+    defaults to src.sports.spec(sport).team_abbrev_fn when that is not None, else
+    a normalized full-name comparison like _team_key.
     """
     resolved_utc = _now_iso(now)
     base = {
@@ -206,31 +223,72 @@ def resolve_event(event_id: str, home_team: str, away_team: str,
         "resolved_utc": resolved_utc,
     }
 
-    away_key = _team_key(away_team)
-    home_key = _team_key(home_team)
+    # For non-MLB sports, lazy-import the registry and extract team_key_fn if needed.
+    if sport != "mlb" and team_key_fn is None:
+        from src import sports as sports_mod
+        try:
+            spec_obj = sports_mod.spec(sport)
+            team_key_fn = spec_obj.team_abbrev_fn
+        except sports_mod.UnknownSport:
+            team_key_fn = None
+
+    # Normalize team names for matching. For MLB use _team_key; for non-MLB
+    # use team_key_fn if provided, else fall back to _team_key.
+    if team_key_fn:
+        away_key = team_key_fn(away_team)
+        home_key = team_key_fn(home_team)
+    else:
+        away_key = _team_key(away_team)
+        home_key = _team_key(home_team)
+
     try:
         commence_dt = _parse_utc(commence_time) if commence_time else None
     except ValueError:
         commence_dt = None
 
     if not away_key or not home_key or commence_dt is None:
-        return {
-            **base, "game_pk": None, "resolved": False, "ambiguous": False,
+        # For non-MLB sports, add sport and game_id=None instead of game_pk.
+        result = {
+            **base, "resolved": False, "ambiguous": False,
             "candidates": [], "schedule_commence_time": None,
             "reason": (
                 f"could not normalize team names or commence_time "
                 f"(away={away_team!r} home={home_team!r} "
                 f"commence_time={commence_time!r})"),
         }
+        if sport != "mlb":
+            result["sport"] = sport
+            result["game_id"] = None
+            result["game_pk"] = None
+        else:
+            result["game_pk"] = None
+        return result
+
+    # Helper to extract the correct field names based on sport.
+    def _get_schedule_fields(game: dict) -> tuple:
+        """Extract (away_team_val, home_team_val, start_time_val, game_id_val) from schedule row."""
+        if sport == "mlb":
+            return (game.get("away_team"), game.get("home_team"),
+                    game.get("start_time_utc"), game.get("game_pk"))
+        else:
+            # Non-MLB sports use SportSpec shape: away, home, start_utc, game_id
+            return (game.get("away"), game.get("home"),
+                    game.get("start_utc"), game.get("game_id"))
 
     def _matching_games(day: str) -> list[dict]:
         out = []
         for game in schedule_fn(day):
-            g_away = _team_key(game.get("away_team"))
-            g_home = _team_key(game.get("home_team"))
+            g_away_val, g_home_val, _, game_id_val = _get_schedule_fields(game)
+            # Normalize the schedule row's team names using team_key_fn
+            if team_key_fn:
+                g_away = team_key_fn(g_away_val)
+                g_home = team_key_fn(g_home_val)
+            else:
+                g_away = _team_key(g_away_val)
+                g_home = _team_key(g_home_val)
             if g_away != away_key or g_home != home_key:
                 continue
-            if game.get("game_pk") is None:
+            if game_id_val is None:
                 continue
             out.append(game)
         return out
@@ -245,11 +303,13 @@ def resolve_event(event_id: str, home_team: str, away_team: str,
     # A genuine doubleheader is two schedule games matching on THIS SAME
     # date, which is exactly what this single-date query captures.
     candidates = _matching_games(center_date)
-    # Canonical form (see `src.core.asof.game_pk_key`) even though every
-    # candidate here comes from the SAME `schedule_fn` call and so could
-    # never actually disagree on type -- de-dup membership tests must never
-    # be the one comparison in this module that skips the coercion.
-    seen_pks = {game_pk_key(g["game_pk"]) for g in candidates}
+
+    # For MLB, keep track of game_pks using canonical form.
+    if sport == "mlb":
+        seen_pks = {game_pk_key(g["game_pk"]) for g in candidates}
+    else:
+        # For non-MLB, track game_ids (which are already strings).
+        seen_ids = {g.get("game_id") for g in candidates}
 
     # Only widen to the calendar day either side when the exact date found
     # NOTHING -- a commence_time within a few hours of midnight ET can round
@@ -260,23 +320,36 @@ def resolve_event(event_id: str, home_team: str, away_team: str,
         for day in ((center_dt - timedelta(days=1)).isoformat(),
                     (center_dt + timedelta(days=1)).isoformat()):
             for game in _matching_games(day):
-                pk = game_pk_key(game["game_pk"])
-                if pk in seen_pks:
-                    continue
-                seen_pks.add(pk)
+                if sport == "mlb":
+                    pk = game_pk_key(game["game_pk"])
+                    if pk in seen_pks:
+                        continue
+                    seen_pks.add(pk)
+                else:
+                    game_id = game.get("game_id")
+                    if game_id in seen_ids:
+                        continue
+                    seen_ids.add(game_id)
                 candidates.append(game)
 
     if not candidates:
-        return {
-            **base, "game_pk": None, "resolved": False, "ambiguous": False,
+        result = {
+            **base, "resolved": False, "ambiguous": False,
             "candidates": [], "schedule_commence_time": None,
             "reason": (
                 f"no schedule game matched {away_key}@{home_key} within a "
                 f"day of {commence_time}"),
         }
+        if sport != "mlb":
+            result["sport"] = sport
+            result["game_id"] = None
+            result["game_pk"] = None
+        else:
+            result["game_pk"] = None
+        return result
 
     def _delta(game: dict) -> float:
-        start = game.get("start_time_utc")
+        _, _, start, _ = _get_schedule_fields(game)
         if not start:
             return float("inf")
         try:
@@ -289,28 +362,53 @@ def resolve_event(event_id: str, home_team: str, away_team: str,
     ambiguous = len(candidates) > 1
     reason = None
     if ambiguous:
-        reason = (
-            f"{len(candidates)} schedule games matched {away_key}@{home_key} "
-            f"(doubleheader or scheduling anomaly) -- picked game_pk "
-            f"{best.get('game_pk')} by nearest commence_time")
+        if sport == "mlb":
+            reason = (
+                f"{len(candidates)} schedule games matched {away_key}@{home_key} "
+                f"(doubleheader or scheduling anomaly) -- picked game_pk "
+                f"{best.get('game_pk')} by nearest commence_time")
+        else:
+            reason = (
+                f"{len(candidates)} schedule games matched {away_key}@{home_key} "
+                f"(doubleheader or scheduling anomaly) -- picked game_id "
+                f"{best.get('game_id')} by nearest commence_time")
 
-    return {
-        **base,
-        # Canonical string form (see `src.core.asof.game_pk_key`) -- the
-        # ONE point this store's `game_pk` column is ever produced, so
-        # every downstream reader (`game_pk_for_event`, `src.board.l1`,
-        # `src.engine.glue`) receives the same type without having to
-        # coerce a second time.
-        "game_pk": game_pk_key(best.get("game_pk")),
-        "resolved": True,
-        "ambiguous": ambiguous,
-        "candidates": (
-            [{"game_pk": game_pk_key(c.get("game_pk")),
-              "start_time_utc": c.get("start_time_utc")} for c in candidates]
-            if ambiguous else []),
-        "schedule_commence_time": best.get("start_time_utc"),
-        "reason": reason,
-    }
+    # Build the result based on sport.
+    if sport == "mlb":
+        return {
+            **base,
+            # Canonical string form (see `src.core.asof.game_pk_key`) -- the
+            # ONE point this store's `game_pk` column is ever produced, so
+            # every downstream reader (`game_pk_for_event`, `src.board.l1`,
+            # `src.engine.glue`) receives the same type without having to
+            # coerce a second time.
+            "game_pk": game_pk_key(best.get("game_pk")),
+            "resolved": True,
+            "ambiguous": ambiguous,
+            "candidates": (
+                [{"game_pk": game_pk_key(c.get("game_pk")),
+                  "start_time_utc": c.get("start_time_utc")} for c in candidates]
+                if ambiguous else []),
+            "schedule_commence_time": best.get("start_time_utc"),
+            "reason": reason,
+        }
+    else:
+        # Non-MLB sport: return game_id and sport fields.
+        _, _, start_time, game_id = _get_schedule_fields(best)
+        return {
+            **base,
+            "sport": sport,
+            "game_id": game_id,
+            "game_pk": None,
+            "resolved": True,
+            "ambiguous": ambiguous,
+            "candidates": (
+                [{"game_id": c.get("game_id"),
+                  "start_utc": _get_schedule_fields(c)[2]} for c in candidates]
+                if ambiguous else []),
+            "schedule_commence_time": start_time,
+            "reason": reason,
+        }
 
 
 # ---------------------------------------------------------------------------
@@ -354,6 +452,40 @@ def game_pk_for_event(event_id: str | int | None,
     return game_pk_key(entry.get("game_pk"))
 
 
+def game_id_for_event(event_id: str | int | None,
+                       mapping: Mapping[str, dict] | None = None,
+                       *, map_path: Path | str = DEFAULT_MAP_PATH) -> str | None:
+    """The best-known `game_id` for `event_id` (for non-MLB sports), or `game_pk`
+    for MLB, from an already-loaded map `mapping` or by loading from `map_path`.
+    Returns None when the event is absent from the map or was resolved as
+    unresolvable. An ambiguous row still returns its nearest-commence_time best
+    guess -- ambiguity is recorded on the row for a caller that cares.
+
+    For non-MLB sports, returns the "game_id" field. For MLB or when "game_id"
+    is not present, returns the "game_pk" field (in canonical string form).
+    """
+    if event_id is None:
+        return None
+
+    # Use provided mapping, or load from map_path
+    index = mapping
+    if index is None:
+        index = load_map(map_path)
+
+    if not index:
+        return None
+
+    entry = index.get(str(event_id))
+    if not entry:
+        return None
+
+    # Return game_id if present and not None, otherwise return game_pk
+    game_id = entry.get("game_id")
+    if game_id is not None:
+        return game_id
+    return game_pk_key(entry.get("game_pk"))
+
+
 def _append_rows(path: Path, rows: list[dict]) -> None:
     if not rows:
         return
@@ -366,13 +498,39 @@ def _append_rows(path: Path, rows: list[dict]) -> None:
 def build_map_for_date(date_str: str, *,
                         map_path: Path | str = DEFAULT_MAP_PATH,
                         event_sources: Iterable[Path | str] | None = None,
-                        schedule_fn: ScheduleFn = mlb.fetch_games,
+                        schedule_fn: ScheduleFn | None = None,
                         now: datetime | None = None,
-                        force: bool = False) -> dict:
+                        force: bool = False,
+                        sport: str = "mlb") -> dict:
     """Resolve every odds event captured for `date_str` and append new rows
     to `map_path`. Idempotent: an `event_id` already in the map is skipped
-    unless `force=True`. Returns resolved/ambiguous/unresolved counts."""
-    events = events_for_date(date_str, sources=event_sources)
+    unless `force=True`. Returns resolved/ambiguous/unresolved counts.
+
+    For sport "mlb", schedule_fn defaults to mlb.fetch_games if not provided.
+    For other sports, schedule_fn must be provided explicitly, or None is used
+    (which will raise a GameKeyError when resolve_event tries to call it).
+    When schedule_fn is None for a non-MLB sport, it can be sourced from the
+    registry via src.sports.spec(sport).schedule_fn, but that must be done
+    by the caller before calling this function, or the caller must provide
+    an explicit schedule_fn argument.
+    """
+    # Default schedule_fn for MLB
+    if schedule_fn is None and sport == "mlb":
+        schedule_fn = mlb.fetch_games
+    elif schedule_fn is None and sport != "mlb":
+        # Try to get it from the registry
+        from src import sports as sports_mod
+        try:
+            spec_obj = sports_mod.spec(sport)
+            schedule_fn = spec_obj.schedule_fn
+        except sports_mod.UnknownSport as e:
+            raise GameKeyError(str(e))
+        if schedule_fn is None:
+            raise GameKeyError(
+                f"schedule_fn is None for sport {sport!r}; "
+                f"the sport registry does not have a schedule function yet")
+
+    events = events_for_date(date_str, sources=event_sources, sport=sport)
     existing = load_map(map_path)
     report = {
         "date": date_str, "candidates": len(events),
@@ -388,7 +546,7 @@ def build_map_for_date(date_str: str, *,
         meta = events[event_id]
         entry = resolve_event(
             event_id, meta["home_team"], meta["away_team"],
-            meta["commence_time"], schedule_fn=schedule_fn, now=now)
+            meta["commence_time"], schedule_fn=schedule_fn, now=now, sport=sport)
         if not entry["resolved"]:
             report["unresolved"] += 1
         elif entry["ambiguous"]:
@@ -404,9 +562,10 @@ def build_map_for_date(date_str: str, *,
 def build_map_for_range(start_date: str, end_date: str, *,
                          map_path: Path | str = DEFAULT_MAP_PATH,
                          event_sources: Iterable[Path | str] | None = None,
-                         schedule_fn: ScheduleFn = mlb.fetch_games,
+                         schedule_fn: ScheduleFn | None = None,
                          now: datetime | None = None,
-                         force: bool = False) -> dict:
+                         force: bool = False,
+                         sport: str = "mlb") -> dict:
     """`build_map_for_date` over every calendar date from `start_date` to
     `end_date` inclusive, merging the per-date reports into one totals dict
     plus a `by_date` breakdown."""
@@ -427,7 +586,7 @@ def build_map_for_range(start_date: str, end_date: str, *,
         day_str = day.isoformat()
         report = build_map_for_date(
             day_str, map_path=map_path, event_sources=event_sources,
-            schedule_fn=schedule_fn, now=now, force=force)
+            schedule_fn=schedule_fn, now=now, force=force, sport=sport)
         totals["by_date"][day_str] = report
         for key in ("candidates", "resolved", "ambiguous", "unresolved",
                     "skipped_already_mapped", "rows_written"):

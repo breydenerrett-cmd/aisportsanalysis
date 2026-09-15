@@ -334,9 +334,10 @@ class ProbeFamilyTests(unittest.TestCase):
     def test_a_real_probe_measures_and_records_the_credit_delta(self):
         with tempfile.TemporaryDirectory() as folder:
             path = self._families(folder)
+            store = Path(folder) / "credit_log.jsonl"
             provider = _FakeOddsProvider(remaining_before=53000, billed=6)
             result = budget.probe_family(
-                "batter_props_floor", provider=provider, now=NOW, families_path=path)
+                "batter_props_floor", provider=provider, now=NOW, families_path=path, store=store)
             self.assertTrue(result["probed"])
             self.assertEqual(result["credits_per_event"], 6)
             self.assertEqual(len(provider.calls), 1)
@@ -350,12 +351,13 @@ class ProbeFamilyTests(unittest.TestCase):
     def test_a_second_probe_the_same_utc_day_is_refused_without_spending(self):
         with tempfile.TemporaryDirectory() as folder:
             path = self._families(folder)
+            store = Path(folder) / "credit_log.jsonl"
             provider = _FakeOddsProvider()
             budget.probe_family("batter_props_floor", provider=provider,
-                                 now=NOW, families_path=path)
+                                 now=NOW, families_path=path, store=store)
             second = budget.probe_family(
                 "batter_props_floor", provider=provider,
-                now=NOW + dt.timedelta(hours=2), families_path=path)
+                now=NOW + dt.timedelta(hours=2), families_path=path, store=store)
         self.assertFalse(second["probed"])
         self.assertIn("already probed today", second["error"])
         self.assertEqual(len(provider.calls), 1)  # no second fetch
@@ -363,21 +365,23 @@ class ProbeFamilyTests(unittest.TestCase):
     def test_a_probe_the_next_utc_day_is_allowed(self):
         with tempfile.TemporaryDirectory() as folder:
             path = self._families(folder)
+            store = Path(folder) / "credit_log.jsonl"
             provider = _FakeOddsProvider()
             budget.probe_family("batter_props_floor", provider=provider,
-                                 now=NOW, families_path=path)
+                                 now=NOW, families_path=path, store=store)
             second = budget.probe_family(
                 "batter_props_floor", provider=provider,
-                now=NOW + dt.timedelta(days=1), families_path=path)
+                now=NOW + dt.timedelta(days=1), families_path=path, store=store)
         self.assertTrue(second["probed"])
         self.assertEqual(len(provider.calls), 2)
 
     def test_the_credit_floor_refuses_the_probe_before_any_spend(self):
         with tempfile.TemporaryDirectory() as folder:
             path = self._families(folder)
+            store = Path(folder) / "credit_log.jsonl"
             provider = _FakeOddsProvider(remaining_before=budget.CREDIT_FLOOR)
             result = budget.probe_family(
-                "batter_props_floor", provider=provider, now=NOW, families_path=path)
+                "batter_props_floor", provider=provider, now=NOW, families_path=path, store=store)
         self.assertFalse(result["probed"])
         self.assertEqual(result["error"], "credit floor")
         self.assertEqual(provider.calls, [])
@@ -385,9 +389,10 @@ class ProbeFamilyTests(unittest.TestCase):
     def test_an_unknown_family_is_refused(self):
         with tempfile.TemporaryDirectory() as folder:
             path = self._families(folder)
+            store = Path(folder) / "credit_log.jsonl"
             provider = _FakeOddsProvider()
             result = budget.probe_family(
-                "not_a_real_family", provider=provider, now=NOW, families_path=path)
+                "not_a_real_family", provider=provider, now=NOW, families_path=path, store=store)
         self.assertFalse(result["probed"])
         self.assertIn("unknown family", result["error"])
 
@@ -399,9 +404,10 @@ class ProbeFamilyTests(unittest.TestCase):
             path = self._families(folder, extra={
                 "parlay_sgp": {"measured": False, "credits_per_event": None,
                                 "measured_utc": None}})
+            store = Path(folder) / "credit_log.jsonl"
             provider = _FakeOddsProvider()
             result = budget.probe_family(
-                "parlay_sgp", provider=provider, now=NOW, families_path=path)
+                "parlay_sgp", provider=provider, now=NOW, families_path=path, store=store)
         self.assertFalse(result["probed"])
         self.assertIn("not wired", result["error"])
         self.assertEqual(provider.calls, [])
@@ -418,9 +424,10 @@ class ProbeFamilyTests(unittest.TestCase):
                 path = self._families(folder, extra={
                     family: {"measured": False, "credits_per_event": None,
                              "measured_utc": None}})
+                store = Path(folder) / "credit_log.jsonl"
                 provider = _FakeOddsProvider()
                 result = budget.probe_family(
-                    family, provider=provider, now=NOW, families_path=path)
+                    family, provider=provider, now=NOW, families_path=path, store=store)
                 self.assertTrue(result["probed"], result)
                 self.assertEqual(len(provider.calls), 1)
                 self.assertEqual(set(provider.calls[0][1]), set(expected_markets))
@@ -430,9 +437,10 @@ class ProbeFamilyTests(unittest.TestCase):
     def test_a_failed_fetch_is_reported_not_recorded(self):
         with tempfile.TemporaryDirectory() as folder:
             path = self._families(folder)
+            store = Path(folder) / "credit_log.jsonl"
             provider = _FakeOddsProvider(fail_fetch="boom")
             result = budget.probe_family(
-                "batter_props_floor", provider=provider, now=NOW, families_path=path)
+                "batter_props_floor", provider=provider, now=NOW, families_path=path, store=store)
             self.assertFalse(result["probed"])
             self.assertIn("probe fetch failed", result["error"])
             recorded = json.loads(path.read_text(encoding="utf-8"))
@@ -441,6 +449,7 @@ class ProbeFamilyTests(unittest.TestCase):
     def test_the_earliest_future_event_past_the_lead_time_is_chosen(self):
         with tempfile.TemporaryDirectory() as folder:
             path = self._families(folder)
+            store = Path(folder) / "credit_log.jsonl"
             events = [
                 {"id": "too_soon", "commence_time": "2026-09-03T12:30:00Z"},  # 30min out
                 {"id": "later", "commence_time": "2026-09-04T01:00:00Z"},
@@ -448,18 +457,19 @@ class ProbeFamilyTests(unittest.TestCase):
             ]
             provider = _FakeOddsProvider(events=events)
             result = budget.probe_family(
-                "batter_props_floor", provider=provider, now=NOW, families_path=path)
+                "batter_props_floor", provider=provider, now=NOW, families_path=path, store=store)
         self.assertTrue(result["probed"])
         self.assertEqual(result["event_id"], "earliest_eligible")
 
     def test_refuses_and_spends_nothing_when_no_event_has_enough_lead_time(self):
         with tempfile.TemporaryDirectory() as folder:
             path = self._families(folder)
+            store = Path(folder) / "credit_log.jsonl"
             events = [{"id": "already_started", "commence_time": "2026-09-03T11:59:00Z"},
                       {"id": "too_soon", "commence_time": "2026-09-03T12:10:00Z"}]
             provider = _FakeOddsProvider(events=events)
             result = budget.probe_family(
-                "batter_props_floor", provider=provider, now=NOW, families_path=path)
+                "batter_props_floor", provider=provider, now=NOW, families_path=path, store=store)
             recorded = json.loads(path.read_text(encoding="utf-8"))
         self.assertFalse(result["probed"])
         self.assertIn("commence_time", result["error"])
@@ -469,12 +479,13 @@ class ProbeFamilyTests(unittest.TestCase):
     def test_a_thin_payload_is_recorded_degenerate_and_does_not_satisfy_probe_required(self):
         with tempfile.TemporaryDirectory() as folder:
             path = self._families(folder)
+            store = Path(folder) / "credit_log.jsonl"
             thin_payload = {"id": "g1", "bookmakers": [
                 {"key": "book_a", "markets": [
                     {"key": "batter_home_runs", "outcomes": [{"name": "x", "price": 100}]}]}]}
             provider = _FakeOddsProvider(payload=thin_payload)
             result = budget.probe_family(
-                "batter_props_floor", provider=provider, now=NOW, families_path=path)
+                "batter_props_floor", provider=provider, now=NOW, families_path=path, store=store)
             recorded = json.loads(path.read_text(encoding="utf-8"))
             cost = budget.family_cost("batter_props_floor", path=path)
         self.assertTrue(result["probed"])
@@ -486,41 +497,70 @@ class ProbeFamilyTests(unittest.TestCase):
     def test_a_degenerate_probe_does_not_block_a_same_day_reprobe(self):
         with tempfile.TemporaryDirectory() as folder:
             path = self._families(folder)
+            store = Path(folder) / "credit_log.jsonl"
             thin_payload = {"id": "g1", "bookmakers": [
                 {"key": "book_a", "markets": [
                     {"key": "batter_home_runs", "outcomes": [{"name": "x", "price": 100}]}]}]}
             provider = _FakeOddsProvider(payload=thin_payload)
             budget.probe_family("batter_props_floor", provider=provider,
-                                 now=NOW, families_path=path)
+                                 now=NOW, families_path=path, store=store)
             second = budget.probe_family(
                 "batter_props_floor", provider=provider,
-                now=NOW + dt.timedelta(hours=1), families_path=path)
+                now=NOW + dt.timedelta(hours=1), families_path=path, store=store)
         self.assertTrue(second["probed"])
         self.assertEqual(len(provider.calls), 2)
 
     def test_a_good_probe_blocks_a_same_day_reprobe_even_after_a_prior_degenerate_one(self):
         with tempfile.TemporaryDirectory() as folder:
             path = self._families(folder)
+            store = Path(folder) / "credit_log.jsonl"
             thin_payload = {"id": "g1", "bookmakers": [
                 {"key": "book_a", "markets": [
                     {"key": "batter_home_runs", "outcomes": [{"name": "x", "price": 100}]}]}]}
             provider = _FakeOddsProvider(payload=thin_payload)
             budget.probe_family("batter_props_floor", provider=provider,
-                                 now=NOW, families_path=path)
+                                 now=NOW, families_path=path, store=store)
             provider.payload = None  # next call gets the healthy default
             good = budget.probe_family(
                 "batter_props_floor", provider=provider,
-                now=NOW + dt.timedelta(hours=1), families_path=path)
+                now=NOW + dt.timedelta(hours=1), families_path=path, store=store)
             self.assertTrue(good["probed"])
             self.assertFalse(good["degenerate"])
             blocked = budget.probe_family(
                 "batter_props_floor", provider=provider,
-                now=NOW + dt.timedelta(hours=2), families_path=path)
+                now=NOW + dt.timedelta(hours=2), families_path=path, store=store)
             cost = budget.family_cost("batter_props_floor", path=path)
         self.assertFalse(blocked["probed"])
         self.assertIn("already probed today", blocked["error"])
         self.assertEqual(len(provider.calls), 2)  # no third fetch
         self.assertIsNotNone(cost)
+
+    def test_probe_with_injected_store_leaves_default_store_untouched(self):
+        """When a probe is called with store=temp_store, the real credit log
+        is not modified. This prevents test runs from polluting the data/."""
+        with tempfile.TemporaryDirectory() as folder:
+            path = self._families(folder)
+            temp_store = Path(folder) / "credit_log.jsonl"
+            provider = _FakeOddsProvider()
+            # Patch the default store to a temp path so we can verify it stays empty.
+            with tempfile.TemporaryDirectory() as default_folder:
+                default_store = Path(default_folder) / "credit_log.jsonl"
+                original_credit_log_path = budget.CREDIT_LOG_PATH
+                budget.CREDIT_LOG_PATH = default_store
+                try:
+                    # Probe with temp store
+                    result = budget.probe_family(
+                        "batter_props_floor", provider=provider, now=NOW,
+                        families_path=path, store=temp_store)
+                    self.assertTrue(result["probed"])
+                    # Verify temp store has the log row
+                    self.assertTrue(temp_store.exists())
+                    temp_rows = creditlog.read(temp_store)
+                    self.assertEqual(len(temp_rows), 1)
+                    # Verify default store is untouched
+                    self.assertFalse(default_store.exists())
+                finally:
+                    budget.CREDIT_LOG_PATH = original_credit_log_path
 
 
 class BandSeparationTests(unittest.TestCase):

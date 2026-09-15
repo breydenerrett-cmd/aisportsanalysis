@@ -49,6 +49,7 @@ from src.core import odds as odds_math
 from src.ledger.chain import HashChainLedger
 
 CARD_STORE = os.path.join("evidence", "cards_v1.jsonl")
+LOCK_LEAD_HOURS_DEFAULT = 4.0
 
 KIND_PUBLISHED = "card_published"
 KIND_SETTLED = "card_settled"
@@ -128,7 +129,13 @@ def _ledger(path: Optional[str] = None) -> HashChainLedger:
 
 
 def _frozen_pick(pick: Mapping) -> dict:
-    return {key: pick.get(key) for key in FROZEN_FIELDS}
+    row = {key: pick.get(key) for key in FROZEN_FIELDS}
+    # For non-MLB sports, also preserve sport when present. game_id is
+    # already in FROZEN_FIELDS so it's included if set. MLB frozen picks
+    # are byte-identical: game_id is None and sport is not present.
+    if pick.get("sport") is not None:
+        row["sport"] = pick["sport"]
+    return row
 
 
 def _frozen_prop_pick(pick: Mapping) -> dict:
@@ -198,6 +205,52 @@ def _same_total_picks(left, right) -> bool:
 LOCK_LEAD_HOURS = 4.0
 
 
+def store_path(sport: Optional[str] = None) -> str:
+    """The card ledger file path for a given sport.
+
+    sport=None or "" means MLB, which uses CARD_STORE.
+    Other sports resolve via src.sports.spec().
+
+    Raises CardLedgerError if the sport is unknown.
+    """
+    if sport is None or sport == "":
+        return CARD_STORE
+
+    # Lazy import to avoid cycles: card_ledger imports src.sports at runtime
+    try:
+        from src.sports import spec as sport_spec
+        try:
+            s = sport_spec(sport)
+            return s.card_ledger_path
+        except sport_spec.UnknownSport:
+            raise CardLedgerError(f"unknown sport {sport!r}")
+    except (ImportError, AttributeError) as e:
+        raise CardLedgerError(f"could not resolve sport {sport!r}: {e}")
+
+
+def lock_lead_for(sport: Optional[str] = None) -> float:
+    """The lock-lead hours for a given sport.
+
+    sport=None or "" means MLB, which uses LOCK_LEAD_HOURS.
+    Other sports resolve via src.sports.spec().
+
+    Raises CardLedgerError if the sport is unknown.
+    """
+    if sport is None or sport == "":
+        return LOCK_LEAD_HOURS
+
+    # Lazy import to avoid cycles: card_ledger imports src.sports at runtime
+    try:
+        from src.sports import spec as sport_spec
+        try:
+            s = sport_spec(sport)
+            return s.lock_lead_hours
+        except sport_spec.UnknownSport:
+            raise CardLedgerError(f"unknown sport {sport!r}")
+    except (ImportError, AttributeError) as e:
+        raise CardLedgerError(f"could not resolve sport {sport!r}: {e}")
+
+
 def _parse_utc(value) -> Optional[datetime]:
     if not value:
         return None
@@ -239,12 +292,18 @@ def _is_locked(pick: Mapping, moment: datetime,
 def _pick_key(pick: Mapping):
     """What makes two picks the same BET on the same game.
 
-    game_pk is the join everywhere else in this module and it is kept as a
-    STRING deliberately -- the results store round-trips through CSV, and the
-    int/str mismatch has already cost this project two separate all-VOID
-    incidents (see `_score`).
+    For non-MLB sports (when "sport" field is present), uses game_id.
+    For MLB, uses game_pk. Both are stringified deliberately -- the results
+    store round-trips through CSV, and the int/str mismatch has already cost
+    this project two separate all-VOID incidents (see `_score`).
     """
-    return (str(pick.get("game_pk")), pick.get("market"), pick.get("line"))
+    if pick.get("sport"):
+        # Non-MLB sport: use game_id
+        game_key = str(pick.get("game_id"))
+    else:
+        # MLB: use game_pk
+        game_key = str(pick.get("game_pk"))
+    return (game_key, pick.get("market"), pick.get("line"))
 
 
 def _prop_pick_key(pick: Mapping):
@@ -299,7 +358,8 @@ def _total_pick_key(pick: Mapping):
     return (str(pick.get("game_pk")),)
 
 
-def published_row(date: str, *, path: Optional[str] = None) -> Optional[dict]:
+def published_row(date: str, *, path: Optional[str] = None,
+                   sport: Optional[str] = None) -> Optional[dict]:
     """The card of record for `date`, or None.
 
     THE NEWEST published row, not the first. Publish now appends a new
@@ -318,27 +378,31 @@ def published_row(date: str, *, path: Optional[str] = None) -> Optional[dict]:
     # no timestamp comparison is needed or wanted. The first version of this
     # sorted on `published_utc` with a fallback for unparseable stamps, and
     # that fallback could have selected an OLDER row than one already held.
+    resolved_path = path if path is not None else store_path(sport)
     newest = None
-    for row in _ledger(path).read():
+    for row in _ledger(resolved_path).read():
         if row.get("kind") == KIND_PUBLISHED and row.get("date") == date:
             newest = row
     return newest
 
 
-def published_versions(date: str, *, path: Optional[str] = None) -> list:
+def published_versions(date: str, *, path: Optional[str] = None,
+                       sport: Optional[str] = None) -> list:
     """Every published version for `date`, oldest first.
 
     The receipt is not just the final card -- it is that the card CHANGED and
     when. A reader who wants to check that we did not quietly improve a pick
     after the fact reads this.
     """
-    return [row for row in _ledger(path).read()
+    resolved_path = path if path is not None else store_path(sport)
+    return [row for row in _ledger(resolved_path).read()
             if row.get("kind") == KIND_PUBLISHED and row.get("date") == date]
-    return None
 
 
-def settled_row(date: str, *, path: Optional[str] = None) -> Optional[dict]:
-    for row in _ledger(path).read():
+def settled_row(date: str, *, path: Optional[str] = None,
+                sport: Optional[str] = None) -> Optional[dict]:
+    resolved_path = path if path is not None else store_path(sport)
+    for row in _ledger(resolved_path).read():
         if row.get("kind") == KIND_SETTLED and row.get("date") == date:
             return row
     return None
@@ -393,7 +457,8 @@ def _lock_and_merge(prior, fresh_source, *, moment, lock_lead_hours, key_fn, fro
 
 def publish(card: Mapping, *, now: Optional[str] = None,
             path: Optional[str] = None,
-            lock_lead_hours: float = LOCK_LEAD_HOURS) -> dict:
+            lock_lead_hours: Optional[float] = None,
+            sport: Optional[str] = None) -> dict:
     """Publish one date's card. A pick locks at ITS OWN game's first pitch.
 
     WHAT CHANGED ON 2026-09-11, AND WHY
@@ -429,6 +494,9 @@ def publish(card: Mapping, *, now: Optional[str] = None,
     Returns the row. `already_published` is True when this run changed
     nothing and no row was appended -- it is not part of the hashed payload.
     """
+    resolved_path = path if path is not None else store_path(sport)
+    resolved_lock_lead = lock_lead_hours if lock_lead_hours is not None else lock_lead_for(sport)
+
     date = card.get("date")
     if not date:
         raise CardLedgerError("a card with no date cannot be published")
@@ -447,19 +515,19 @@ def publish(card: Mapping, *, now: Optional[str] = None,
     total_picks_in = card.get("total_picks") or []
 
     moment = _parse_utc(now) or datetime.now(timezone.utc)
-    previous = published_row(date, path=path)
+    previous = published_row(date, path=resolved_path)
     prior_picks = list((previous or {}).get("picks") or ())
     prior_prop_picks = list((previous or {}).get("prop_picks") or ())
     prior_total_picks = list((previous or {}).get("total_picks") or ())
 
     merged = _lock_and_merge(prior_picks, picks, moment=moment,
-                             lock_lead_hours=lock_lead_hours,
+                             lock_lead_hours=resolved_lock_lead,
                              key_fn=_pick_key, frozen_fn=_frozen_pick)
     merged_props = _lock_and_merge(prior_prop_picks, prop_picks_in, moment=moment,
-                                   lock_lead_hours=lock_lead_hours,
+                                   lock_lead_hours=resolved_lock_lead,
                                    key_fn=_prop_pick_key, frozen_fn=_frozen_prop_pick)
     merged_totals = _lock_and_merge(prior_total_picks, total_picks_in, moment=moment,
-                                    lock_lead_hours=lock_lead_hours,
+                                    lock_lead_hours=resolved_lock_lead,
                                     key_fn=_total_pick_key, frozen_fn=_frozen_total_pick)
 
     # NOTHING CHANGED, NOTHING APPENDED. Publishing five times a day would
@@ -512,7 +580,7 @@ def publish(card: Mapping, *, now: Optional[str] = None,
         # and a frozen card must keep describing the day it was frozen.
         "totals_paused": bool(card.get("totals_paused")),
     }
-    row = _ledger(path).append(payload)
+    row = _ledger(resolved_path).append(payload)
     out = dict(row)
     out["already_published"] = False
     return out
@@ -725,7 +793,8 @@ def grade_total_pick(pick: Mapping, result: Mapping) -> dict:
 
 def settle(date: str, results_by_game_pk: Mapping, *,
            prop_box_rows: Optional[Sequence] = None,
-           now: Optional[str] = None, path: Optional[str] = None) -> Optional[dict]:
+           now: Optional[str] = None, path: Optional[str] = None,
+           sport: Optional[str] = None, results_by_game_id: Optional[Mapping] = None) -> Optional[dict]:
     """Grade one published card and append the outcome as a NEW row.
 
     `prop_box_rows` is this date's batter box-score rows (the same shape
@@ -734,25 +803,44 @@ def settle(date: str, results_by_game_pk: Mapping, *,
     empty, every prop pick grades VOID rather than guessing, exactly like a
     game pick with no final score in `results_by_game_pk`.
 
+    `results_by_game_id` is an alias for `results_by_game_pk` for non-MLB sports
+    where game_id is used instead of game_pk.
+
     Returns None when there is nothing to do -- no card for that date, or it
     is already settled. Never edits the published row.
     """
-    published = published_row(date, path=path)
+    resolved_path = path if path is not None else store_path(sport)
+
+    # Support results_by_game_id as an alias
+    results_map = results_by_game_id if results_by_game_id is not None else results_by_game_pk
+
+    published = published_row(date, path=resolved_path)
     if published is None:
         return None
-    if settled_row(date, path=path) is not None:
+    if settled_row(date, path=resolved_path) is not None:
         return None
 
     graded, staked, profit = [], 0, 0.0
     for pick in published.get("picks") or ():
-        pk = pick.get("game_pk")
-        result = (results_by_game_pk.get(pk)
-                  or results_by_game_pk.get(str(pk))
+        # For result lookup, use game_id only for non-MLB (when "sport" is present).
+        # For MLB, always use game_pk (even if game_id is in FROZEN_FIELDS).
+        if pick.get("sport"):
+            lookup_key = pick.get("game_id")
+        else:
+            lookup_key = pick.get("game_pk")
+        result = (results_map.get(lookup_key)
+                  or results_map.get(str(lookup_key))
                   or {})
         grade = grade_pick(pick, result)
-        graded.append({"rank": pick.get("rank"), "bet": pick.get("bet"),
+        graded_pick = {"rank": pick.get("rank"), "bet": pick.get("bet"),
                        "label": pick.get("label"), "market": pick.get("market"),
-                       "price": pick.get("price"), "game_pk": pk, **grade})
+                       "price": pick.get("price"), "game_pk": pick.get("game_pk"), **grade}
+        # For non-MLB sports, preserve game_id and sport
+        if "game_id" in pick:
+            graded_pick["game_id"] = pick["game_id"]
+        if "sport" in pick:
+            graded_pick["sport"] = pick["sport"]
+        graded.append(graded_pick)
         if grade["result"] in (RESULT_WIN, RESULT_LOSS):
             staked += 1
             profit += grade["profit_units"]
@@ -764,12 +852,18 @@ def settle(date: str, results_by_game_pk: Mapping, *,
     prop_graded, prop_staked, prop_profit = [], 0, 0.0
     for pick in published.get("prop_picks") or ():
         grade = grade_prop_pick(pick, box_by_game_and_player)
-        prop_graded.append({
+        prop_graded_pick = {
             "rank": pick.get("rank"), "bet": pick.get("bet"),
             "label": pick.get("label"), "player": pick.get("player"),
             "market": pick.get("market"), "line": pick.get("line"),
             "side": pick.get("side"), "price": pick.get("price"),
-            "game_pk": pick.get("game_pk"), **grade})
+            "game_pk": pick.get("game_pk"), **grade}
+        # For non-MLB sports, preserve game_id and sport
+        if "game_id" in pick:
+            prop_graded_pick["game_id"] = pick["game_id"]
+        if "sport" in pick:
+            prop_graded_pick["sport"] = pick["sport"]
+        prop_graded.append(prop_graded_pick)
         if grade["result"] in (RESULT_WIN, RESULT_LOSS):
             prop_staked += 1
             prop_profit += grade["profit_units"]
@@ -782,16 +876,27 @@ def settle(date: str, results_by_game_pk: Mapping, *,
     # second results argument to thread through.
     total_graded, total_staked, total_profit = [], 0, 0.0
     for pick in published.get("total_picks") or ():
-        pk = pick.get("game_pk")
-        result = (results_by_game_pk.get(pk)
-                  or results_by_game_pk.get(str(pk))
+        # For result lookup, use game_id only for non-MLB (when "sport" is present).
+        # For MLB, always use game_pk (even if game_id is in FROZEN_FIELDS).
+        if pick.get("sport"):
+            lookup_key = pick.get("game_id")
+        else:
+            lookup_key = pick.get("game_pk")
+        result = (results_map.get(lookup_key)
+                  or results_map.get(str(lookup_key))
                   or {})
         grade = grade_total_pick(pick, result)
-        total_graded.append({
+        total_graded_pick = {
             "rank": pick.get("rank"), "bet": pick.get("bet"),
             "label": pick.get("label"), "line": pick.get("line"),
             "side": pick.get("side"), "price": pick.get("price"),
-            "game_pk": pk, **grade})
+            "game_pk": pick.get("game_pk"), **grade}
+        # For non-MLB sports, preserve game_id and sport
+        if "game_id" in pick:
+            total_graded_pick["game_id"] = pick["game_id"]
+        if "sport" in pick:
+            total_graded_pick["sport"] = pick["sport"]
+        total_graded.append(total_graded_pick)
         if grade["result"] in (RESULT_WIN, RESULT_LOSS):
             total_staked += 1
             total_profit += grade["profit_units"]
@@ -841,14 +946,15 @@ def settle(date: str, results_by_game_pk: Mapping, *,
         "total_roi_pct": (round(total_profit / total_staked * 100.0, 3)
                           if total_staked else None),
     }
-    return _ledger(path).append(payload)
+    return _ledger(resolved_path).append(payload)
 
 
 # ---------------------------------------------------------------------------
 # Reading the record
 # ---------------------------------------------------------------------------
 
-def record(*, path: Optional[str] = None, since: Optional[str] = None) -> dict:
+def record(*, path: Optional[str] = None, since: Optional[str] = None,
+           sport: Optional[str] = None) -> dict:
     """The running record: every settled card, pooled.
 
     Pooled is CORRECT here and is not the pooling mistake this repo warns
@@ -860,6 +966,8 @@ def record(*, path: Optional[str] = None, since: Optional[str] = None) -> dict:
     VOIDS ARE COUNTED AND REPORTED, never dropped. A record that silently
     omits postponed games is a record with a hole in it that nobody can see.
     """
+    resolved_path = path if path is not None else store_path(sport)
+
     days, wins, losses, pushes, voids, staked = 0, 0, 0, 0, 0, 0
     profit = 0.0
     by_label = {}
@@ -869,7 +977,7 @@ def record(*, path: Optional[str] = None, since: Optional[str] = None) -> dict:
     total_wins = total_losses = total_pushes = total_voids = total_staked = 0
     total_profit = 0.0
     total_by_label = {}
-    for row in _ledger(path).read():
+    for row in _ledger(resolved_path).read():
         if row.get("kind") != KIND_SETTLED:
             continue
         if since and (row.get("date") or "") < since:
@@ -1030,7 +1138,8 @@ def _frozen_for_graded(graded: Mapping, frozen_picks: Sequence) -> Mapping:
     return {}
 
 
-def history(*, path: Optional[str] = None, limit: Optional[int] = 60) -> dict:
+def history(*, path: Optional[str] = None, limit: Optional[int] = 60,
+            sport: Optional[str] = None) -> dict:
     """Every settled day, newest first, each joined back to its own
     PUBLISHED row for the book and team names a settled row does not carry.
 
@@ -1067,7 +1176,8 @@ def history(*, path: Optional[str] = None, limit: Optional[int] = 60) -> dict:
     API route never does this (see api/card.py) but a script reading the
     whole history should not have to pass an arbitrarily large number.
     """
-    ledger = _ledger(path)
+    resolved_path = path if path is not None else store_path(sport)
+    ledger = _ledger(resolved_path)
     published_by_date: dict = {}
     settled: list = []
     for row in ledger.read():
@@ -1281,7 +1391,8 @@ def history(*, path: Optional[str] = None, limit: Optional[int] = 60) -> dict:
     }
 
 
-def verify(*, path: Optional[str] = None):
+def verify(*, path: Optional[str] = None, sport: Optional[str] = None):
     """Walk the chain. A published record whose chain is broken is not a
     record, and the page that shows it has to be able to say so."""
-    return _ledger(path).verify()
+    resolved_path = path if path is not None else store_path(sport)
+    return _ledger(resolved_path).verify()

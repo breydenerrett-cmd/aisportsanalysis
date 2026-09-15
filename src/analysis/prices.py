@@ -264,7 +264,7 @@ def matchup_key(away, home, date) -> tuple:
             parks.canonical_team(home or ""), date)
 
 
-def boards_by_matchup(rows=None) -> dict:
+def boards_by_matchup(rows=None, sport="mlb") -> dict:
     """{(away_abbrev, home_abbrev, date): board} for the multibook store.
 
     A board is {"quotes": [...], "observed_utc": ts, "source": SOURCE}: ONE
@@ -303,6 +303,8 @@ def boards_by_matchup(rows=None) -> dict:
     official date, like everything else in this project) never looked. Those
     games silently showed no board at all while the detector, reading the
     other store, happily reported eleven books.
+
+    sport filters rows by sport; sport=None returns every row.
     """
     from src.pipeline import slate as slate_mod
     from src.pipeline import snapshots
@@ -315,7 +317,9 @@ def boards_by_matchup(rows=None) -> dict:
     # read "9 books, no consensus" (2026-09-07). snapshots.moneyline_rows is
     # the one place that decides which rows are a moneyline.
     source = snapshots.moneyline_rows(snapshots.pregame_rows(
-        snapshots.read_multibook() if rows is None else rows))
+        snapshots.read_multibook(sport=sport) if rows is None else rows))
+    if rows is not None:
+        source = [r for r in source if snapshots._is_sport(r, sport)]
     grouped = {}
     for row in source:
         away = slate_mod.team_abbrev_from_name(row.get("away_team") or "")

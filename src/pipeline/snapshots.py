@@ -35,6 +35,8 @@ from src.core import odds as odds_math
 from src.paths import processed_path
 from src.providers import odds as odds_provider
 
+DEFAULT_SPORT = "mlb"
+
 DEFAULT_SNAPSHOT_PATH = processed_path("odds_snapshots.jsonl")
 
 # The V3 timing study needs EVERY book's quote at every capture instant, not the
@@ -82,6 +84,18 @@ def _eastern():
 _EASTERN = _eastern()
 
 
+def row_sport(row) -> str:
+    """The sport for a snapshot row. Missing field is treated as mlb."""
+    return row.get("sport") or DEFAULT_SPORT
+
+
+def _is_sport(row, sport) -> bool:
+    """True if `row` belongs to `sport`. None means every row."""
+    if sport is None:
+        return True
+    return row_sport(row) == sport
+
+
 class SnapshotError(RuntimeError):
     """Raised when snapshots cannot be captured, read, or interpreted."""
 
@@ -91,7 +105,7 @@ class SnapshotError(RuntimeError):
 # ---------------------------------------------------------------------------
 
 def capture(env=None, path=DEFAULT_SNAPSHOT_PATH, timeout: int = 20,
-            now=None, multibook_path=None) -> dict:
+            now=None, multibook_path=None, sport=None) -> dict:
     """Fetch current odds and append one observation per game per market.
 
     Returns a summary. Never raises on a missing key -- an unconfigured system reports
@@ -113,8 +127,12 @@ def capture(env=None, path=DEFAULT_SNAPSHOT_PATH, timeout: int = 20,
         }
 
     observed = _timestamp(now)
+    resolved_sport = sport or DEFAULT_SPORT
     try:
-        payload = odds_provider.fetch_normalized(env=env, timeout=timeout)
+        if resolved_sport == DEFAULT_SPORT:
+            payload = odds_provider.fetch_normalized(env=env, timeout=timeout)
+        else:
+            payload = odds_provider.fetch_normalized(env=env, timeout=timeout, sport=sport)
     except odds_provider.OddsProviderError as exc:
         return {
             "captured": 0, "events": 0, "written_to": None,
@@ -124,7 +142,7 @@ def capture(env=None, path=DEFAULT_SNAPSHOT_PATH, timeout: int = 20,
     rows = []
     for event in payload["events"]:
         for market_key, market in (event.get("markets") or {}).items():
-            rows.append({
+            row = {
                 "observed_utc": observed,
                 "event_id": event.get("event_id"),
                 "commence_time": event.get("commence_time"),
@@ -134,19 +152,23 @@ def capture(env=None, path=DEFAULT_SNAPSHOT_PATH, timeout: int = 20,
                 "book": market.get("book"),
                 "prices": {k: v for k, v in market.items() if k not in ("book", "last_update")},
                 "book_last_update": market.get("last_update"),
-            })
+            }
+            if resolved_sport != DEFAULT_SPORT:
+                row["sport"] = resolved_sport
+            rows.append(row)
 
     written = append(rows, path=path)
 
     # Multi-book board, from the same payload. The legacy store above is left
     # byte-identical in format for its existing readers.
     mb_target = _resolve_multibook_path(path, multibook_path)
-    mb_rows = multibook_rows(observed, payload["events"])
+    mb_rows = multibook_rows(observed, payload["events"], sport=sport)
     mb_written = append(mb_rows, path=mb_target)
 
     return {
         "captured": written, "events": payload["event_count"],
         "written_to": str(path), "configured": True, "observed_utc": observed,
+        "sport": resolved_sport,
         "multibook": mb_written, "multibook_path": str(mb_target),
     }
 
@@ -186,7 +208,7 @@ def _decimal_str(value) -> str:
     return value if isinstance(value, str) else str(value)
 
 
-def multibook_rows(observed, events) -> list:
+def multibook_rows(observed, events, sport=None) -> list:
     """One row per (event, book, market) from a normalized payload.
 
     Reads the `all_books` section that odds.normalize_event already carries, so
@@ -199,19 +221,22 @@ def multibook_rows(observed, events) -> list:
     market's rows are new and additive, carrying a `market` key so a reader
     that wants to stay h2h-only can filter for it; new rows do not replace or
     reshape anything the legacy readers already see.
+
+    Non-MLB sports carry a "sport" field; MLB rows stay byte-identical.
     """
     rows = []
     for event in events or []:
         all_books = event.get("all_books") or {}
         for market_key, quotes in all_books.items():
             for quote in quotes or []:
-                row = _multibook_row(observed, event, market_key, quote)
+                row = _multibook_row(observed, event, market_key, quote, sport=sport)
                 if row is not None:
                     rows.append(row)
     return rows
 
 
-def _multibook_row(observed, event, market_key, quote):
+def _multibook_row(observed, event, market_key, quote, sport=None):
+    resolved_sport = sport or DEFAULT_SPORT
     base = {
         "observed_utc": observed,
         "event_id": event.get("event_id"),
@@ -230,6 +255,8 @@ def _multibook_row(observed, event, market_key, quote):
         base["book_last_update"] = quote.get("last_update")
         base["home_price"] = home_price
         base["away_price"] = away_price
+        if resolved_sport != DEFAULT_SPORT:
+            base["sport"] = resolved_sport
         return base
 
     if market_key in _LINE_SHAPED_MARKETS:
@@ -244,6 +271,8 @@ def _multibook_row(observed, event, market_key, quote):
         base["home_price"] = home_price
         base["away_line"] = _decimal_str(away_line)
         base["away_price"] = away_price
+        if resolved_sport != DEFAULT_SPORT:
+            base["sport"] = resolved_sport
         return base
 
     if market_key in _TOTAL_SHAPED_MARKETS:
@@ -257,6 +286,8 @@ def _multibook_row(observed, event, market_key, quote):
         base["total"] = _decimal_str(total)
         base["over_price"] = over_price
         base["under_price"] = under_price
+        if resolved_sport != DEFAULT_SPORT:
+            base["sport"] = resolved_sport
         return base
 
     return None
@@ -298,12 +329,14 @@ def _ends_ragged(target) -> bool:
 # Read
 # ---------------------------------------------------------------------------
 
-def read(path=DEFAULT_SNAPSHOT_PATH, skip_corrupt: bool = True) -> list:
-    """Read all observations.
+def read(path=DEFAULT_SNAPSHOT_PATH, skip_corrupt: bool = True, sport=DEFAULT_SPORT) -> list:
+    """Read observations, optionally filtered by sport.
 
     A truncated final line is the normal signature of a run killed mid-write. With
     `skip_corrupt` that costs one observation instead of the entire history, which is the
     right trade for an append-only log.
+
+    sport=DEFAULT_SPORT (mlb) returns only MLB rows. sport=None returns every row.
     """
     target = Path(path)
     if not target.exists():
@@ -315,7 +348,9 @@ def read(path=DEFAULT_SNAPSHOT_PATH, skip_corrupt: bool = True) -> list:
             if not line:
                 continue
             try:
-                rows.append(json.loads(line))
+                row = json.loads(line)
+                if _is_sport(row, sport):
+                    rows.append(row)
             except json.JSONDecodeError:
                 if skip_corrupt:
                     continue
@@ -423,13 +458,13 @@ def group_by_game(rows, market: str = "h2h") -> dict:
     return grouped
 
 
-def read_multibook(path=DEFAULT_MULTIBOOK_PATH, skip_corrupt: bool = True) -> list:
-    """All multi-book observations. Same resilience rules as `read`."""
-    return read(path=path, skip_corrupt=skip_corrupt)
+def read_multibook(path=DEFAULT_MULTIBOOK_PATH, skip_corrupt: bool = True, sport=DEFAULT_SPORT) -> list:
+    """All multi-book observations, optionally filtered by sport. Same resilience rules as `read`."""
+    return read(path=path, skip_corrupt=skip_corrupt, sport=sport)
 
 
 def iter_multibook(path=DEFAULT_MULTIBOOK_PATH, skip_corrupt: bool = True,
-                   *, market=None, keep=None):
+                   *, market=None, keep=None, sport=DEFAULT_SPORT):
     """Multi-book observations one at a time, filtered while reading.
 
     WHY THIS EXISTS RATHER THAN `read_multibook(...)` PLUS A LIST
@@ -456,6 +491,8 @@ def iter_multibook(path=DEFAULT_MULTIBOOK_PATH, skip_corrupt: bool = True,
 
     The moneyline rows carry no `market` key at all (see `boards_by_matchup`),
     so `market=None` means "every row" and never "rows whose market is null".
+
+    sport filters rows by sport; sport=None returns every row.
     """
     target = Path(path)
     if not target.exists():
@@ -477,6 +514,8 @@ def iter_multibook(path=DEFAULT_MULTIBOOK_PATH, skip_corrupt: bool = True,
                     f"corrupt snapshot on line {number} of {target}")
             # The exact check the prefilter is only an approximation of.
             if market is not None and row.get("market") != market:
+                continue
+            if not _is_sport(row, sport):
                 continue
             if keep is not None and not keep(row):
                 continue
@@ -546,7 +585,7 @@ def moneyline_rows(rows) -> list:
 
 def multibook_quotes(event_id=None, away_team=None, home_team=None, date=None,
                      path=DEFAULT_MULTIBOOK_PATH, rows=None,
-                     pregame_only: bool = False) -> list:
+                     pregame_only: bool = False, sport=DEFAULT_SPORT) -> list:
     """Quotes for one event, shaped for src/research/eventstudy.measure.
 
     Filters by event_id when given, otherwise by team names and/or the
@@ -559,10 +598,14 @@ def multibook_quotes(event_id=None, away_team=None, home_team=None, date=None,
     to False because this is the raw accessor and eventstudy caps post-start
     quotes itself with the game's start time; every caller that presents a
     BOARD passes True.
+
+    `sport` filters by sport; sport=None returns every row.
     """
     if event_id is None and away_team is None and home_team is None and date is None:
         raise SnapshotError("multibook_quotes needs an event_id, team, or date filter")
-    source = read_multibook(path) if rows is None else rows
+    source = read_multibook(path, sport=sport) if rows is None else rows
+    if rows is not None:
+        source = [r for r in source if _is_sport(r, sport)]
     if pregame_only:
         source = pregame_rows(source)
     # The {ts, book, away_price, home_price} shape below IS the full-game
