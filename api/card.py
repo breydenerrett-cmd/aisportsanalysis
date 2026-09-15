@@ -38,7 +38,18 @@ DEFAULT_HISTORY_LIMIT = 60
 MAX_HISTORY_LIMIT = 200
 
 
-def _build_payload(date: str, request: Optional[Request], route: str) -> dict:
+def _validate_sport(sport: str) -> None:
+    """Validate sport parameter against src.sports.keys()."""
+    from src import sports
+    valid_sports = sports.keys()
+    if sport not in valid_sports:
+        raise HTTPException(
+            status_code=400,
+            detail=f"sport must be one of {valid_sports}, got {sport!r}")
+
+
+def _build_payload(date: str, request: Optional[Request], route: str,
+                   sport: str = "mlb") -> dict:
     """The card for one date.
 
     THE FROZEN CHECK COMES FIRST, AND IT IS WORTH 15 SECONDS A REQUEST.
@@ -66,6 +77,25 @@ def _build_payload(date: str, request: Optional[Request], route: str) -> dict:
     and still pays full price, which is correct: a date with no published
     card genuinely has to be built.
     """
+    _validate_sport(sport)
+
+    # Tennis: return research-only notice
+    if sport == "tennis":
+        _record_page_view(request, route, date)
+        return {
+            "sport": "tennis",
+            "reason": "Research only. No tennis picks until results grading is connected."
+        }
+
+    # NFL: use nfl_card
+    if sport == "nfl":
+        from src.report import nfl_card
+        now = datetime.now(timezone.utc)
+        payload = nfl_card.card_for_date(date, now=now)
+        _record_page_view(request, route, date)
+        return payload
+
+    # MLB: existing code path (default)
     now = datetime.now(timezone.utc)
 
     frozen = card_mod.frozen_card(date)
@@ -120,7 +150,7 @@ def _build_payload(date: str, request: Optional[Request], route: str) -> dict:
 # declaration order and "record" would otherwise be captured as a date and
 # rejected by _validate_date as a 400.
 @router.get("/card/record")
-def get_card_record(request: Request = None) -> dict:
+def get_card_record(request: Request = None, sport: str = "mlb") -> dict:
     """The card's public record: every settled day, pooled.
 
     Pooling is correct here and is not the pooling mistake this repo warns
@@ -134,7 +164,9 @@ def get_card_record(request: Request = None) -> dict:
     """
     from src.appstate import card_ledger
 
-    payload = card_ledger.record()
+    _validate_sport(sport)
+
+    payload = card_ledger.record(sport=sport)
     chain = card_ledger.verify()
     payload["chain_ok"] = bool(getattr(chain, "ok", True))
     payload["chain_detail"] = None if payload["chain_ok"] else str(chain)
@@ -143,8 +175,12 @@ def get_card_record(request: Request = None) -> dict:
     # both surfaces read -- never a second hand-written sentence on the
     # record page that could quietly drift from daily_card.CARD_DISCLAIMER
     # and end up contradicting it.
-    payload["disclaimer"] = daily_card.CARD_DISCLAIMER
-    payload["basis"] = daily_card.CARD_BASIS
+    if sport == "mlb":
+        payload["disclaimer"] = daily_card.CARD_DISCLAIMER
+        payload["basis"] = daily_card.CARD_BASIS
+    elif sport == "nfl":
+        payload["sport"] = "nfl"
+        payload["notice"] = "Experimental selections. Performance is still being evaluated."
     _record_page_view(request, "card_record", None)
     return payload
 
@@ -153,7 +189,8 @@ def get_card_record(request: Request = None) -> dict:
 # is above: "history" would otherwise be matched as a date and 400 out of
 # _validate_date. See that route's comment and tests/test_api_card.py.
 @router.get("/card/history")
-def get_card_history(request: Request = None, limit: int = DEFAULT_HISTORY_LIMIT) -> dict:
+def get_card_history(request: Request = None, limit: int = DEFAULT_HISTORY_LIMIT,
+                     sport: str = "mlb") -> dict:
     """Every settled day, newest first -- the day-by-day detail behind
     /card/record's pooled totals: each day's picks, results, prices, books
     and profit, plus that day's published row_hash.
@@ -166,20 +203,27 @@ def get_card_history(request: Request = None, limit: int = DEFAULT_HISTORY_LIMIT
     """
     from src.appstate import card_ledger
 
+    _validate_sport(sport)
+
     if limit < 1 or limit > MAX_HISTORY_LIMIT:
         raise HTTPException(
             status_code=400,
             detail=f"limit must be between 1 and {MAX_HISTORY_LIMIT} (got {limit!r})")
-    payload = card_ledger.history(limit=limit)
+    payload = card_ledger.history(limit=limit, sport=sport)
+    if sport == "nfl":
+        payload["sport"] = "nfl"
+        payload["notice"] = "Experimental selections. Performance is still being evaluated."
     _record_page_view(request, "card_history", None)
     return payload
 
 
 @router.get("/card/{date}")
-def get_card_for_date(date: str, request: Request = None) -> dict:
-    return _build_payload(date, request, "card")
+def get_card_for_date(date: str, request: Request = None,
+                      sport: str = "mlb") -> dict:
+    return _build_payload(date, request, "card", sport=sport)
 
 
 @router.get("/card")
-def get_card_today(request: Request = None) -> dict:
-    return _build_payload(date_cls.today().isoformat(), request, "card")
+def get_card_today(request: Request = None, sport: str = "mlb") -> dict:
+    return _build_payload(date_cls.today().isoformat(), request, "card",
+                         sport=sport)

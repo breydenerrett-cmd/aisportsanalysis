@@ -11,7 +11,9 @@
  *
  * ROUTES
  * -------------------------------------------------------------------
- *   #/today                                  GAMEDAY
+ *   #/today                                  GAMEDAY (MLB)
+ *   #/nfl/today                              GAMEDAY (NFL card only)
+ *   #/nfl/record                             RECORD (NFL)
  *   #/games[/YYYY-MM-DD]                     GAMES (slate)
  *   #/game/YYYY-MM-DD/AWAY/HOME              GAMES (one game, quick+advanced)
  *   #/betcheck[?date=&away=&home=]           BET CHECK
@@ -31,6 +33,10 @@
  *                                             cardrecord.js. Reachable from
  *                                             THE CARD's own summary and the
  *                                             footer, not the primary nav)
+ *   #/live[?sport=]                          LIVE (internal testing,
+ *                                             reachable by URL only)
+ *   #/tennis/board                           TENNIS (research board)
+ *   #/tennis                                 TENNIS (research board, alias)
  *   #/signin                                 SIGN IN (interim -- see signin.js)
  *   #/support                                SUPPORT
  *   #/signup                                 SIGNUP (public CTA target from
@@ -42,9 +48,11 @@
 
 import { el, clear, formatEasternDate, formatEasternClock } from "./dom.js";
 import { setPublicDemo } from "./api.js";
-import { setShellStatus } from "./shell.js";
+import { setShellStatus, mountSportSwitcher } from "./shell.js";
 import { renderDisclaimerFooter, meta as fetchMeta } from "./meta.js";
+import { parseSport } from "./sport.js";
 import { renderToday } from "./today.js";
+import { renderCard } from "./card.js";
 import { renderGamesList, renderGameDetail } from "./games.js";
 import { renderBetCheck } from "./betcheck.js";
 import { renderSignin } from "./signin.js";
@@ -57,6 +65,8 @@ import { renderPerformance } from "./performance.js";
 import { renderProps } from "./props.js";
 import { renderDayDetail } from "./dayrecap.js";
 import { renderCardRecord } from "./cardrecord.js";
+import { renderLive } from "./live.js";
+import { renderTennisBoard } from "./tennis.js";
 import { BRAND_NAME } from "./brand.js";
 import { maybeGotcha } from "./gotcha.js";
 
@@ -216,18 +226,24 @@ async function renderRoute(main) {
 
 async function _renderRouteInner(main) {
   const { segments, query } = parseHash();
-  const [route, ...rest] = segments;
+  const { sport, segments: sportSegments } = parseSport(segments);
+  const [route, ...rest] = sportSegments;
   const rail = document.querySelector("[data-hook='primary-nav']");
   const tabbar = document.querySelector("[data-hook='primary-nav-mobile']");
   mountNav(rail, tabbar, "#/" + segments.join("/"));
   setSectionLabel(route || "today");
   setShellStatus(null);
   setClock();
+  mountSportSwitcher(sport);
 
   clear(main);
   window.scrollTo(0, 0);
   if (route === "billing") {
     await renderBilling(main);
+  } else if (sport === "nfl" && route === "today") {
+    await renderCard(main, { sport: "nfl" });
+  } else if (sport === "nfl" && route === "record") {
+    await renderCardRecord(main, { sport: "nfl" });
   } else if ((route === "games" || route === "game") && rest.length >= 3) {
     await renderGameDetail(main, rest[0], rest[1], rest[2]);
   } else if (route === "games") {
@@ -248,6 +264,10 @@ async function _renderRouteInner(main) {
     await renderDayDetail(main, rest[0]);
   } else if (route === "record-card") {
     await renderCardRecord(main);
+  } else if (route === "live") {
+    await renderLive(main);
+  } else if (sport === "tennis" && (route === "board" || !route)) {
+    await renderTennisBoard(main);
   } else if (route === "signin") {
     await renderSignin(main, query);
   } else if (route === "support") {
@@ -277,6 +297,10 @@ function boot() {
   // Mounted once, outside renderRoute() -- the disclaimer is never
   // cleared or skipped by a view swap.
   renderDisclaimerFooter(disclaimerHost);
+
+  // Mount the sport switcher once -- it persists across all views and is
+  // updated on each route change.
+  mountSportSwitcher();
 
   window.addEventListener("hashchange", () => {
     // Also checked here, not only at boot: clicking the link while the app

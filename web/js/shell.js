@@ -13,6 +13,7 @@
  */
 
 import { el, clear, formatAge } from "./dom.js";
+import { renderSportSwitcher } from "./sport.js";
 
 /** Above this age the board is presented as stale rather than live. It
  * is a DISPLAY threshold for the dot and the wording only -- no payload
@@ -47,4 +48,9 @@ export function setShellStatusFromStaleness(staleness, label = "BOARD UPDATED") 
   const stale = Number(age) > STALE_AFTER_SECONDS;
   const readable = formatAge(age);
   setShellStatus(`${stale ? "LAST UPDATED" : label} ${readable || ""}`.trim(), { stale });
+}
+
+export function mountSportSwitcher(activeSport = "mlb") {
+  const host = document.querySelector("[data-hook='sport-switcher-host']");
+  if (host) renderSportSwitcher(host, activeSport);
 }

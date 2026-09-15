@@ -33,6 +33,7 @@
 import { apiGet } from "./api.js";
 import { el, clear, renderError, formatAmerican, formatEasternTime } from "./dom.js";
 import { bookLabel } from "./labels.js";
+import { NFL_NOTICE } from "./sport.js";
 
 // Mirrors src/analysis/daily_card.py's labels. Kept as a lookup rather than
 // rendered raw so the page controls its own typography, and so a label the
@@ -769,9 +770,28 @@ function firstPickOf(payload) {
  * must never look like a night with no picks, which is a different and
  * real condition.
  */
-export async function renderCard(host, date) {
+export async function renderCard(host, options = {}) {
+  // Support both old signature renderCard(host, date) and new
+  // renderCard(host, {sport, date}) for backward compatibility
+  let sport = "mlb";
+  let date;
+  if (typeof options === "string") {
+    // Old signature: date passed as string
+    date = options;
+  } else if (typeof options === "object" && options !== null) {
+    // New signature: options object
+    sport = options.sport || "mlb";
+    date = options.date;
+  }
+
   const wrap = el("section", { class: "gutter", "data-hook": "card" });
   host.appendChild(wrap);
+
+  // Render notice for NFL
+  if (sport === "nfl") {
+    wrap.appendChild(el("p", { class: "card2lede card2lede--notice",
+      "data-hook": "card-nfl-notice", text: NFL_NOTICE }));
+  }
 
   // Two reads, and the record must never take the card down with it: a
   // failed record fetch is not a night with no picks, and the picks are the
@@ -824,7 +844,8 @@ export async function renderCard(host, date) {
     if (Number.isNaN(start.getTime())) return null;
     const day = new Date(start.getTime() - 86400000).toISOString().slice(0, 10);
     try {
-      const older = await apiGet(`/card/${day}`,
+      const url = `/card/${day}${sport !== "mlb" ? `?sport=${sport}` : ""}`;
+      const older = await apiGet(url,
                                  { timeoutMs: FALLBACK_TIMEOUT_MS });
       return older && payloadHasBets(older) ? older : null;
     } catch (_err) {
@@ -838,9 +859,13 @@ export async function renderCard(host, date) {
   let record = null;
   let servingOlderCard = null;
   try {
+    const cardUrl = date
+      ? `/card/${encodeURIComponent(date)}${sport !== "mlb" ? `?sport=${sport}` : ""}`
+      : `/card${sport !== "mlb" ? `?sport=${sport}` : ""}`;
+    const recordUrl = `/card/record${sport !== "mlb" ? `?sport=${sport}` : ""}`;
     [payload, record] = await Promise.all([
-      apiGet(`/card/${encodeURIComponent(date || "")}`),
-      apiGet("/card/record").catch(() => null),
+      apiGet(cardUrl),
+      apiGet(recordUrl).catch(() => null),
     ]);
   } catch (err) {
     const last = await lastPublishedCard(date);
@@ -853,7 +878,8 @@ export async function renderCard(host, date) {
     }
     payload = last;
     servingOlderCard = last.date || null;
-    record = await apiGet("/card/record").catch(() => null);
+    const recordUrl = `/card/record${sport !== "mlb" ? `?sport=${sport}` : ""}`;
+    record = await apiGet(recordUrl).catch(() => null);
   }
 
   if (!payloadHasBets(payload)) {

@@ -100,6 +100,16 @@ def _validate_date(date: str) -> None:
             detail=f"date must be ISO format YYYY-MM-DD, got {date!r}") from exc
 
 
+def _validate_sport(sport: str) -> None:
+    """Validate sport parameter against src.sports.keys()."""
+    from src import sports
+    valid_sports = sports.keys()
+    if sport not in valid_sports:
+        raise HTTPException(
+            status_code=400,
+            detail=f"sport must be one of {valid_sports}, got {sport!r}")
+
+
 def _newest_entries_odds_observed_utc(entries_and_notes: Tuple[list, list]
                                       ) -> Optional[str]:
     """The freshest board `observed_utc` across a built entries list, or
@@ -290,8 +300,77 @@ def _record_page_view(request: Optional[Request], route: str, date: str) -> None
                              {"route": route, "date": date})
 
 
+def _serialize_nfl_entry(entry: dict) -> dict:
+    """Serialize an nfl_slate entry to JSON-safe format for /games response."""
+    # Extract the grade information
+    grade_info = entry.get("grade", {})
+    grade = {
+        "ready": grade_info.get("ready", False),
+        "reasons": grade_info.get("reasons", []),
+    }
+
+    # Extract model information
+    model = entry.get("model")
+
+    # Extract board information from h2h_quotes
+    board = None
+    h2h_quotes = entry.get("h2h_quotes", [])
+    if h2h_quotes:
+        # Find best price and favourite
+        best_home_price = None
+        best_away_price = None
+        best_book = None
+        observed_utc = None
+        books_count = 0
+
+        for quote in h2h_quotes:
+            if quote.get("observed_utc"):
+                observed_utc = quote.get("observed_utc")
+            books_count += 1
+            home_price = quote.get("home_price")
+            away_price = quote.get("away_price")
+            if home_price is not None and away_price is not None:
+                # Compare: lower (more negative in American) is better
+                if best_home_price is None or home_price < best_home_price:
+                    best_home_price = home_price
+                    best_away_price = away_price
+                    best_book = quote.get("book")
+
+        # Determine favourite: home if home_price is lower (more negative)
+        favourite = None
+        favourite_probability = None
+        if best_home_price is not None and best_away_price is not None:
+            # American odds to probability (simplified)
+            if best_home_price < best_away_price:
+                favourite = "home"
+            else:
+                favourite = "away"
+
+        board = {
+            "books": books_count,
+            "favourite": favourite,
+            "favourite_probability": favourite_probability,
+            "observed_utc": observed_utc,
+        }
+
+    # Build serialized entry
+    result = {
+        "game_id": entry.get("game_id"),
+        "week": entry.get("week"),
+        "home_team": entry.get("home_team"),
+        "away_team": entry.get("away_team"),
+        "home_code": entry.get("home_code"),
+        "away_code": entry.get("away_code"),
+        "kickoff_utc": entry.get("kickoff_utc"),
+        "board": board,
+        "model": model,
+        "grade": grade,
+    }
+    return result
+
+
 @router.get("/games/{date}")
-def get_games(date: str, request: Request = None) -> dict:
+def get_games(date: str, request: Request = None, sport: str = "mlb") -> dict:
     """The slate list for one date: identity, first pitch, market-implied
     consensus, board summary and data-quality flags per game.
 
@@ -300,6 +379,23 @@ def get_games(date: str, request: Request = None) -> dict:
     back as an honest empty slate, `checked_games: 0`, exactly like the
     zero-games case build_slate already handles for /today.
     """
+    _validate_sport(sport)
+
+    # NFL: use nfl_slate
+    if sport == "nfl":
+        from src.pipeline import nfl_slate
+        entries = nfl_slate.entries_for_date(date)
+        serialized = [_serialize_nfl_entry(e) for e in entries]
+        payload = {
+            "date": date,
+            "sport": "nfl",
+            "games": serialized,
+            "notice": "Experimental selections. Performance is still being evaluated.",
+        }
+        _record_page_view(request, "/games/{date}", date)
+        return payload
+
+    # MLB: existing code path (default)
     entries, notes, meta = _build_entries(date)
     payload = gamepayload.build_slate_list(entries, date=date, notes=notes)
     payload["freshness"] = meta

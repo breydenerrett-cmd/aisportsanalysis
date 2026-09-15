@@ -2880,11 +2880,13 @@ def cmd_card(args) -> int:
     from src.appstate import card_ledger
     from src.pipeline import briefing, enrichment, history
     from src.report import card as card_mod
+    from src.sports import spec as sport_spec
 
     sub = getattr(args, "card_command", None)
+    sport = getattr(args, "sport", None) or "mlb"
 
     if sub == "record":
-        rec = card_ledger.record(since=getattr(args, "since", None))
+        rec = card_ledger.record(sport=sport, since=getattr(args, "since", None))
         chain = card_ledger.verify()
         print(f"THE CARD -- {rec['days']} settled day(s)"
               + (f" since {rec['since']}" if rec.get("since") else ""))
@@ -2909,6 +2911,21 @@ def cmd_card(args) -> int:
     date_str = args.date
 
     if sub == "settle":
+        # Handle NFL card settle
+        if sport == "nfl":
+            from src.report import nfl_card as nfl_card_mod
+            row = nfl_card_mod.settle_for_date(date_str)
+            if row is None:
+                print(f"nothing to settle for {date_str}")
+                return EXIT_OK
+            if row.get("already_published"):
+                print(f"settled {date_str}: {row.get('n_settled', 0)} game(s) "
+                      f"({row.get('n_wins', 0)} win, {row.get('n_losses', 0)} loss)")
+            else:
+                print(f"settled {date_str}: {row.get('n_settled', 0)} game(s)")
+            return EXIT_OK
+
+        # Handle MLB card settle (existing logic)
         store = history.read_results()
         if not store:
             print("historical store is empty -- run `ingest` first.",
@@ -2970,6 +2987,26 @@ def cmd_card(args) -> int:
         return EXIT_OK
 
     # publish
+
+    # Handle NFL card publish
+    if sport == "nfl":
+        from src.report import nfl_card as nfl_card_mod
+
+        now = datetime.now(timezone.utc)
+        result = nfl_card_mod.publish_for_date(date_str, now=now)
+
+        print(f"NFL CARD -- {date_str}")
+
+        if result.get("published"):
+            picks = result.get("picks") or []
+            print(f"  published: {len(picks)} pick(s)")
+            for pick in picks:
+                print(f"    #{pick['rank']} [{pick['label']}] {pick['bet']}")
+        else:
+            print(f"  no card: {result.get('reason')}")
+
+        return EXIT_OK
+
     try:
         games = mlb.fetch_games(date_str)
     except mlb.MLBError as exc:
@@ -3191,6 +3228,58 @@ def cmd_calibration_demo(args) -> int:
     print(f"  model beats market : {comparison['model_beats_market']}")
     print(f"  log loss delta     : {comparison['log_loss_delta']:+.4f}")
     return EXIT_OK
+
+
+def cmd_nfl(args) -> int:
+    """NFL commands: capture schedule, odds, and injury data."""
+    sub = getattr(args, "nfl_command", None)
+
+    if sub == "capture":
+        from src.pipeline import nfl_capture
+
+        try:
+            result = nfl_capture.run(
+                now=datetime.now(timezone.utc),
+                games=None, capture={}, spend_guard=True,
+                done_path=None, env={})
+            print(f"NFL capture: {result.get('games', 0)} game(s) processed")
+            return EXIT_OK
+        except Exception as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return EXIT_ERROR
+
+    print(f"unknown nfl subcommand: {sub}")
+    return EXIT_ERROR
+
+
+def cmd_tennis(args) -> int:
+    """Tennis commands: discover and capture tournament data."""
+    sub = getattr(args, "tennis_command", None)
+
+    if sub == "discover":
+        from src.pipeline import tennis_discovery
+
+        try:
+            result = tennis_discovery.discover()
+            print(f"tennis discover: {len(result.get('keys', []))} tournament(s) found")
+            return EXIT_OK
+        except Exception as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return EXIT_ERROR
+
+    elif sub == "capture":
+        from src.pipeline import tennis_capture
+
+        try:
+            result = tennis_capture.run()
+            print(f"tennis capture: completed")
+            return EXIT_OK
+        except Exception as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return EXIT_ERROR
+
+    print(f"unknown tennis subcommand: {sub}")
+    return EXIT_ERROR
 
 
 # ---------------------------------------------------------------------------
@@ -3542,12 +3631,22 @@ def build_parser() -> argparse.ArgumentParser:
         "--adversaries", action="store_true",
         help="run the registered DEFAULT_ADVERSARIES roster instead of none")
 
+    # Lazy import (matches this module's pattern elsewhere): the sport
+    # registry, not a hardcoded list, is the source of truth for --sport's
+    # valid values, so a third sport added to src.sports.SPORTS needs no
+    # matching edit here.
+    from src.sports import keys as sport_keys
+    sport_choices = list(sport_keys())
+
     card_cmd = sub.add_parser(
         "card", help="THE CARD: publish or settle a date's three-to-five bets")
     card_sub = card_cmd.add_subparsers(dest="card_command", required=True)
     card_publish = card_sub.add_parser(
         "publish", help="freeze one date's card into evidence/cards_v1.jsonl")
     card_publish.add_argument("--date", required=True, help="YYYY-MM-DD")
+    card_publish.add_argument(
+        "--sport", default="mlb", choices=sport_choices,
+        help="which sport (default: mlb)")
     card_publish.add_argument(
         "--dry-run", action="store_true",
         help="build and print the card without writing to the ledger")
@@ -3559,9 +3658,27 @@ def build_parser() -> argparse.ArgumentParser:
     card_settle = card_sub.add_parser(
         "settle", help="grade one date's published card from final scores")
     card_settle.add_argument("--date", required=True, help="YYYY-MM-DD")
+    card_settle.add_argument(
+        "--sport", default="mlb", choices=sport_choices,
+        help="which sport (default: mlb)")
     card_record = card_sub.add_parser(
         "record", help="the running record over every settled card")
+    card_record.add_argument(
+        "--sport", default="mlb", choices=sport_choices,
+        help="which sport (default: mlb)")
     card_record.add_argument("--since", default=None, help="YYYY-MM-DD")
+
+    nfl_cmd = sub.add_parser("nfl", help="NFL commands")
+    nfl_sub = nfl_cmd.add_subparsers(dest="nfl_command", required=True)
+    nfl_capture_cmd = nfl_sub.add_parser(
+        "capture", help="fetch and store NFL schedule, odds, and injury data")
+
+    tennis_cmd = sub.add_parser("tennis", help="tennis commands")
+    tennis_sub = tennis_cmd.add_subparsers(dest="tennis_command", required=True)
+    tennis_discover_cmd = tennis_sub.add_parser(
+        "discover", help="discover active tennis tournaments")
+    tennis_capture_cmd = tennis_sub.add_parser(
+        "capture", help="fetch and store tennis data")
 
     eod_cmd = sub.add_parser(
         "eod", help="build and write the end-of-day self-review (S7)")
@@ -3613,6 +3730,8 @@ COMMANDS = {
     "engine": cmd_engine,
     "card": cmd_card,
     "eod": cmd_eod,
+    "nfl": cmd_nfl,
+    "tennis": cmd_tennis,
 }
 
 

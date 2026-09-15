@@ -38,6 +38,7 @@
 import { apiGet } from "./api.js";
 import { el, clear, renderError, renderLoading, notYetAvailable, formatAmerican } from "./dom.js";
 import { bookLabel } from "./labels.js";
+import { NFL_NOTICE } from "./sport.js";
 
 // GET /card/history's own default (api/card.py's DEFAULT_HISTORY_LIMIT) --
 // kept in sync by eye rather than fetched, since it only ever changes the
@@ -569,7 +570,13 @@ function emptyRecord() {
  * View
  * ------------------------------------------------------------------- */
 
-export async function renderCardRecord(container) {
+export async function renderCardRecord(container, options = {}) {
+  // Support both old signature renderCardRecord(container) and new
+  // renderCardRecord(container, {sport}) for backward compatibility
+  const sport = (typeof options === "object" && options !== null)
+    ? (options.sport || "mlb")
+    : "mlb";
+
   clear(container);
   const screen = el("div", { class: "screen crp-screen", "data-view": "record-card" });
   container.appendChild(screen);
@@ -578,9 +585,11 @@ export async function renderCardRecord(container) {
   let record;
   let history;
   try {
+    const recordUrl = `/card/record${sport !== "mlb" ? `?sport=${sport}` : ""}`;
+    const historyUrl = `/card/history?limit=${HISTORY_LIMIT}${sport !== "mlb" ? `&sport=${sport}` : ""}`;
     [record, history] = await Promise.all([
-      apiGet("/card/record"),
-      apiGet(`/card/history?limit=${HISTORY_LIMIT}`),
+      apiGet(recordUrl),
+      apiGet(historyUrl),
     ]);
   } catch (err) {
     clear(screen);
@@ -588,6 +597,12 @@ export async function renderCardRecord(container) {
     return;
   }
   clear(screen);
+
+  // Render notice for NFL
+  if (sport === "nfl") {
+    screen.appendChild(el("p", { class: "card2lede card2lede--notice",
+      "data-hook": "record-nfl-notice", text: NFL_NOTICE }));
+  }
 
   screen.appendChild(sectionHead("THE RECORD", "EVERY CARD WE HAVE EVER PUBLISHED"));
   screen.appendChild(el("p", { class: "crp-intro",
