@@ -1,0 +1,57 @@
+{
+  "tennis/atp_matches_2010.jsonl.gz": {
+    "bytes": 36885,
+    "complete": false,
+    "endpoint": "atp_matches",
+    "file": "tennis/atp_matches_2010.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:31:00Z",
+    "http_status": 429,
+    "params": {
+      "season": 2010
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/atp_matches_2011.jsonl.gz": {
+    "bytes": 37403,
+    "complete": false,
+    "endpoint": "atp_matches",
+    "file": "tennis/atp_matches_2011.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:32:06Z",
+    "http_status": 429,
+    "params": {
+      "season": 2011
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/atp_matches_2012.jsonl.gz": {
+    "bytes": 37381,
+    "complete": false,
+    "endpoint": "atp_matches",
+    "file": "tennis/atp_matches_2012.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:33:11Z",
+    "http_status": 429,
+    "params": {
+      "season": 2012
+    },
+    "rows": 500,
+    "sha256": null,
+    "sport": "tennis"
+  },
+  "tennis/atp_matches_2013.jsonl.gz": {
+    "bytes": 8375,
+    "complete": false,
+    "endpoint": "atp_matches",
+    "file": "tennis/atp_matches_2013.jsonl.gz",
+    "harvested_utc": "2026-09-15T17:33:43Z",
+    "params": {
+      "season": 2013
+    },
+    "rows": 100,
+    "sha256": null,
+    "sport": "tennis"
+  }
+}
