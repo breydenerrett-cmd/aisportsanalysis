@@ -1,6 +1,7 @@
 # Runs the 10:00Z daily operational pass (scripts/daily_loop.sh: snapshot,
 # results/pitcher/bullpen ingest, briefing+ledger, settle, grade, my-bets
-# settle, box lines, then statcast catchup, gamekey map, engine slate,
+# settle, box lines, standings, posted lineups + matchup history, pitcher
+# splits, pitch arsenals, then statcast catchup, gamekey map, engine slate,
 # engine settle, eod) on a schedule independent of any interactive Claude
 # session/container -- the same externalization
 # .github/workflows/forward-capture.yml already did for forward capture. See
@@ -85,9 +86,35 @@ jobs:
             data/historical/bullpen_log.jsonl
             data/historical/lineups.jsonl
             data/historical/handedness.json
+            data/historical/matchup_history.jsonl
+            data/historical/matchup_pairs.json
+            data/historical/pitcher_splits.json
+            data/historical/arsenals
+            data/historical/standings.jsonl
           key: daily-loop-data-${{ github.run_id }}
           restore-keys: |
             daily-loop-data-
+
+      # Restored SECOND, so it wins for the files both caches carry. The cache
+      # above holds the posted-lineup store as YESTERDAY's 10:00Z run left it;
+      # this one holds it as the last capture slot left it, a full afternoon of
+      # postings later (.github/workflows/forward-capture.yml saves it every
+      # slot). Without this the intraday top-ups would be silently discarded
+      # every morning and the store would go back to holding only what had
+      # posted by 10:00Z -- the very defect the cadence was added to fix.
+      # Restore-only: the save below folds these files into the full daily
+      # cache, so this key is never written from here.
+      - name: Restore the intraday posted-lineup store
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data/historical/lineups.jsonl
+            data/historical/handedness.json
+            data/historical/matchup_history.jsonl
+            data/historical/matchup_pairs.json
+          key: daily-loop-never-saves-this-${{ github.run_id }}
+          restore-keys: |
+            lineup-store-
 
       # Bootstrap's own hard stops (missing Statcast manifest, a failed
       # results backfill) already exit non-zero and fail this step outright.
@@ -111,15 +138,18 @@ jobs:
           bash scripts/daily_loop.sh 2>&1 | tee -a /tmp/daily_run.out
           exit "${PIPESTATUS[0]}"
 
-      - name: Fail the job on any ESCALATE line
+      # Was a bare `grep -q "^ESCALATE:" /tmp/daily_run.out`: any ESCALATE
+      # line at all failed the job, including the two standing, acknowledged
+      # ones (docs/ESCALATIONS.md) that are true on every single run and
+      # therefore never told anyone anything new. Nothing here weakens the
+      # check -- every audit still prints its ESCALATE line exactly as
+      # before, and every line is still printed below, labelled KNOWN or
+      # NEW. Only the job's verdict changes: it now fails only when a line
+      # does not match an acknowledged row in the ledger.
+      - name: Fail the job on any NEW ESCALATE line
         if: always()
         run: |
-          if grep -q "^ESCALATE:" /tmp/daily_run.out; then
-            echo "The daily loop escalated -- see the lines below."
-            grep "^ESCALATE:" /tmp/daily_run.out
-            exit 1
-          fi
-          echo "no ESCALATE lines -- clean run"
+          python3 scripts/escalations.py --check /tmp/daily_run.out
 
       # actions/cache is immutable per key: a plain `save` action would
       # silently no-op once `daily-loop-data-${{ github.run_id }}` (a run
@@ -140,4 +170,9 @@ jobs:
             data/historical/bullpen_log.jsonl
             data/historical/lineups.jsonl
             data/historical/handedness.json
+            data/historical/matchup_history.jsonl
+            data/historical/matchup_pairs.json
+            data/historical/pitcher_splits.json
+            data/historical/arsenals
+            data/historical/standings.jsonl
           key: daily-loop-data-${{ github.run_id }}
