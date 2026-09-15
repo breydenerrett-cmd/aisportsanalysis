@@ -26,6 +26,7 @@ import unittest
 from contextlib import redirect_stdout
 from datetime import date
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -321,6 +322,253 @@ class TestJobExecution(unittest.TestCase):
         self.assertEqual(client.calls, [])  # never even started a job
 
 
+class TestManifestSkipsOnlyPermanentStatus(unittest.TestCase):
+    """Root cause A (2026-09-15 incident): a manifest entry recording an
+    http_status must only skip the job on a PERMANENT status (4xx other
+    than 429). 429 and 5xx are exactly the transient statuses the 429-wait
+    machinery exists to survive -- the incident poisoned MANIFEST.json with
+    http_status:429 on every tennis season, silently skipping all of it
+    forever under the old skip test."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.out_dir = Path(self._tmp.name)
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def _poisoned_manifest(self, http_status):
+        rel = "tennis/atp_matches_2024.jsonl.gz"
+        return rel, {rel: {
+            "file": rel, "sport": "tennis", "endpoint": "atp_matches",
+            "params": {"season": 2024}, "harvested_utc": "2026-09-15T00:00:00Z",
+            "rows": 0, "sha256": None, "bytes": 0, "complete": False,
+            "http_status": http_status,
+        }}
+
+    def test_429_recorded_status_does_not_skip_the_job(self):
+        job = harvest._paged_job(
+            "tennis", "atp_matches", "/atp/v1/matches", {"season": 2024},
+            "atp_matches_2024", "test job", 1)
+        client = ScriptedClient(page_script={
+            ("/atp/v1/matches", (("season", 2024),)): [[{"id": 1}]],
+        })
+        _rel, manifest = self._poisoned_manifest(429)
+        ctx = harvest.RunContext(client=client, out_dir=self.out_dir, manifest=manifest)
+
+        summary = harvest.run_plan([job], ctx)
+
+        self.assertEqual(summary["skipped"], 0)
+        self.assertEqual(summary["completed"], 1)
+        self.assertEqual(len(client.calls), 1)
+
+    def test_5xx_recorded_status_does_not_skip_the_job(self):
+        job = harvest._paged_job(
+            "tennis", "atp_matches", "/atp/v1/matches", {"season": 2024},
+            "atp_matches_2024", "test job", 1)
+        client = ScriptedClient(page_script={
+            ("/atp/v1/matches", (("season", 2024),)): [[{"id": 1}]],
+        })
+        _rel, manifest = self._poisoned_manifest(503)
+        ctx = harvest.RunContext(client=client, out_dir=self.out_dir, manifest=manifest)
+
+        summary = harvest.run_plan([job], ctx)
+
+        self.assertEqual(summary["skipped"], 0)
+        self.assertEqual(summary["completed"], 1)
+
+    def test_permanent_4xx_recorded_status_still_skips_the_job(self):
+        job = harvest._paged_job(
+            "tennis", "atp_matches", "/atp/v1/matches", {"season": 2024},
+            "atp_matches_2024", "test job", 1)
+        client = ScriptedClient(page_script={
+            ("/atp/v1/matches", (("season", 2024),)): [[{"id": 1}]],
+        })
+        _rel, manifest = self._poisoned_manifest(403)
+        ctx = harvest.RunContext(client=client, out_dir=self.out_dir, manifest=manifest)
+
+        summary = harvest.run_plan([job], ctx)
+
+        self.assertEqual(summary["skipped"], 1)
+        self.assertEqual(summary["completed"], 0)
+        self.assertEqual(client.calls, [])
+
+
+class TestRateLimitDoesNotEndTheRun(unittest.TestCase):
+    """Root cause B (2026-09-15 incident): a rate-limit exhaustion on one
+    job must not end the whole run while run time remains -- the ACCOUNT is
+    still rate-limited, not the RUN out of time. Only a genuine deadline
+    (BallDontLieDeadlineExceeded, or run_plan's own pre-job clock check)
+    ends the run early."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.out_dir = Path(self._tmp.name)
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def test_rate_limited_partial_continues_to_the_next_job(self):
+        path1, path2 = "/mlb/v1/games", "/nba/v1/games"
+        job1 = harvest._paged_job("mlb", "games", path1, {"seasons[]": [2024]},
+                                   "mlb_games_2024", "games", 1)
+        job2 = harvest._paged_job("nba", "games", path2, {"seasons[]": [2024]},
+                                   "nba_games_2024", "games", 1)
+        client = ScriptedClient(
+            rate_limit_errors={path1: BallDontLieRateLimitExhausted(path1, 900.0)},
+            page_script={(path2, (("seasons[]", (2024,)),)): [[{"id": 1}]]},
+        )
+        ctx = harvest.RunContext(client=client, out_dir=self.out_dir, manifest={})
+
+        summary = harvest.run_plan([job1, job2], ctx)
+
+        self.assertEqual(summary["partial"], 1)
+        self.assertEqual(summary["partial_rate_limited"], 1)
+        self.assertEqual(summary["partial_deadline"], 0)
+        self.assertEqual(summary["completed"], 1)
+        # job2 ran -- the old unconditional "partial => break" would have
+        # stopped the whole run after job1 and never reached it.
+        self.assertEqual(len(client.calls), 2)
+
+    def test_deadline_exceeded_partial_still_ends_the_run(self):
+        path1, path2 = "/mlb/v1/games", "/nba/v1/games"
+        job1 = harvest._paged_job("mlb", "games", path1, {"seasons[]": [2024]},
+                                   "mlb_games_2024", "games", 1)
+        job2 = harvest._paged_job("nba", "games", path2, {"seasons[]": [2024]},
+                                   "nba_games_2024", "games", 1)
+        client = ScriptedClient(
+            rate_limit_errors={path1: BallDontLieDeadlineExceeded(path1)},
+            page_script={(path2, (("seasons[]", (2024,)),)): [[{"id": 1}]]},
+        )
+        ctx = harvest.RunContext(client=client, out_dir=self.out_dir, manifest={})
+
+        summary = harvest.run_plan([job1, job2], ctx)
+
+        self.assertEqual(summary["partial"], 1)
+        self.assertEqual(summary["partial_deadline"], 1)
+        self.assertEqual(summary["partial_rate_limited"], 0)
+        self.assertEqual(summary["completed"], 0)
+        # A genuine deadline still ends the run -- job2 must not run.
+        self.assertEqual(len(client.calls), 1)
+
+    def test_hard_block_stops_after_consecutive_rate_limited_partials(self):
+        # Pathological-case guard: an account that is hard-blocked for the
+        # rest of the run must not sleep max_429_wait_seconds per job for
+        # 330 minutes -- see _RATE_LIMIT_HARD_BLOCK_THRESHOLD.
+        n_jobs = harvest._RATE_LIMIT_HARD_BLOCK_THRESHOLD + 2
+        jobs = []
+        rate_limit_errors = {}
+        for i in range(n_jobs):
+            path = f"/mlb/v1/games_{i}"
+            jobs.append(harvest._paged_job("mlb", "games", path, {"seasons[]": [2024]},
+                                            f"mlb_games_{i}", "games", 1))
+            rate_limit_errors[path] = BallDontLieRateLimitExhausted(path, 900.0)
+        client = ScriptedClient(rate_limit_errors=rate_limit_errors)
+        ctx = harvest.RunContext(client=client, out_dir=self.out_dir, manifest={})
+
+        summary = harvest.run_plan(jobs, ctx)
+
+        self.assertEqual(summary["partial"], harvest._RATE_LIMIT_HARD_BLOCK_THRESHOLD)
+        self.assertEqual(len(client.calls), harvest._RATE_LIMIT_HARD_BLOCK_THRESHOLD)
+
+    def test_a_completed_job_resets_the_consecutive_rate_limited_counter(self):
+        # One rate-limited job, then a SUCCESS, must not count toward the
+        # hard-block threshold -- only CONSECUTIVE rate-limited partials do.
+        path1, path2 = "/mlb/v1/games", "/nba/v1/games"
+        path3 = "/nhl/v1/games"
+        job1 = harvest._paged_job("mlb", "games", path1, {"seasons[]": [2024]},
+                                   "mlb_games_2024", "games", 1)
+        job2 = harvest._paged_job("nba", "games", path2, {"seasons[]": [2024]},
+                                   "nba_games_2024", "games", 1)
+        job3 = harvest._paged_job("nhl", "games", path3, {"seasons": [2024]},
+                                   "nhl_games_2024", "games", 1)
+        client = ScriptedClient(
+            rate_limit_errors={
+                path1: BallDontLieRateLimitExhausted(path1, 900.0),
+                path3: BallDontLieRateLimitExhausted(path3, 900.0),
+            },
+            page_script={(path2, (("seasons[]", (2024,)),)): [[{"id": 1}]]},
+        )
+        ctx = harvest.RunContext(client=client, out_dir=self.out_dir, manifest={})
+
+        summary = harvest.run_plan([job1, job2, job3], ctx)
+
+        # All three ran (2 < threshold even though 2 partials occurred,
+        # because they were not consecutive).
+        self.assertEqual(len(client.calls), 3)
+        self.assertEqual(summary["partial"], 2)
+        self.assertEqual(summary["completed"], 1)
+
+
+class TestPagedJobFlushOrdering(unittest.TestCase):
+    """Root cause D: rows must be flushed to disk BEFORE the cursor/state
+    sidecar that claims them is persisted, and a page with no next_cursor
+    (the job's last page) is not a resumable stopping point."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.out_dir = Path(self._tmp.name)
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def test_flush_happens_before_the_cursor_sidecar_is_written(self):
+        job = harvest._paged_job(
+            "tennis", "atp_matches", "/atp/v1/matches", {"season": 2024},
+            "atp_matches_2024", "test job", 1)
+        client = ScriptedClient(page_script={
+            ("/atp/v1/matches", (("season", 2024),)): [[{"id": 1}], [{"id": 2}]],
+        })
+        ctx = harvest.RunContext(client=client, out_dir=self.out_dir, manifest={})
+
+        events = []
+        real_flush = harvest._flush_to_disk
+
+        def recording_flush(gz):
+            events.append("flush")
+            real_flush(gz)
+
+        real_write_text = Path.write_text
+
+        def recording_write_text(self_path, *args, **kwargs):
+            if self_path.name.endswith(".cursor"):
+                events.append("cursor_write")
+            return real_write_text(self_path, *args, **kwargs)
+
+        with mock.patch.object(harvest, "_flush_to_disk", recording_flush), \
+             mock.patch.object(Path, "write_text", recording_write_text):
+            summary = harvest.run_plan([job], ctx)
+
+        self.assertEqual(summary["completed"], 1)
+        self.assertIn("flush", events)
+        self.assertIn("cursor_write", events)
+        self.assertLess(events.index("flush"), events.index("cursor_write"))
+
+    def test_last_page_with_no_next_cursor_completes_even_at_the_deadline(self):
+        # Before the fix, the deadline check ran unconditionally after
+        # EVERY page including the last one, so hitting the deadline
+        # exactly on the final page (next_cursor is None) returned
+        # "partial" and left a resumable state that would duplicate that
+        # final page on the next run. next_cursor is None means the job is
+        # DONE, not a resumable stopping point.
+        job = harvest._paged_job(
+            "tennis", "atp_players", "/atp/v1/players", {},
+            "atp_players", "test job", 1)
+        client = ScriptedClient(page_script={
+            ("/atp/v1/players", ()): [[{"id": 1}]],  # exactly one page
+        })
+        clock = _FakeMonotonic(start=0.0, step=1.0)
+        ctx = harvest.RunContext(client=client, out_dir=self.out_dir, manifest={},
+                                  deadline=1.0, clock=clock)
+
+        summary = harvest.run_plan([job], ctx)
+
+        self.assertEqual(summary["completed"], 1)
+        self.assertEqual(summary["partial"], 0)
+        out_path = harvest._out_path(self.out_dir, "tennis", "atp_players")
+        self.assertFalse(harvest._sidecar_path(out_path).exists())
+
+
 class TestRankingProbe(unittest.TestCase):
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()
@@ -393,6 +641,122 @@ class TestRankingProbe(unittest.TestCase):
 
         out_path = harvest._out_path(self.out_dir, "tennis", "wta_rankings")
         self.assertTrue(harvest._sidecar_path(out_path).exists())
+
+    def test_orphan_state_without_data_file_restarts_clean(self):
+        # Root cause E(1): mirrors _run_paged_job's identical guard. A
+        # state sidecar can survive a chained run without its .jsonl.gz
+        # (data/historical/* is not committed) -- without this guard the
+        # job resumes mid-fill onto a FRESH file and marks complete=True
+        # over silently truncated data.
+        job = harvest._ranking_probe_job(
+            "tennis", "atp_rankings", "atp", "atp_rankings", "rankings", 100)
+        out_path = harvest._out_path(self.out_dir, "tennis", "atp_rankings")
+        state_path = harvest._sidecar_path(out_path)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        # Orphan state: claims the fill phase is almost done, but the data
+        # file it would be appending to does not exist on this checkout.
+        state_path.write_text(json.dumps({"phase": "fill", "next_date": "2026-09-07",
+                                           "until": "2026-09-14", "known_good": "2020-01-06"}),
+                               encoding="utf-8")
+        self.assertFalse(out_path.exists())
+
+        class RankingClient:
+            EARLIEST = date(2026, 8, 31)
+
+            def get(self, path, params, *, deadline=None):
+                d = date.fromisoformat(params["date"])
+                if d >= self.EARLIEST:
+                    return {"data": [{"player_id": 1, "rank": 1}]}
+                return {"data": []}
+
+            def pages(self, path, params=None, **kwargs):
+                yield self.get(path, params or {})
+
+        client = RankingClient()
+        today = date(2026, 9, 14)  # a Monday
+        ctx = harvest.RunContext(client=client, out_dir=self.out_dir, manifest={}, today=today)
+
+        summary = harvest.run_plan([job], ctx)
+        self.assertEqual(summary["completed"], 1)
+
+        rows = _read_jsonl_gz(out_path)
+        # Discarded the orphan state and restarted the probe from today,
+        # same as test_probe_then_fill_writes_every_monday_with_data (3
+        # Mondays: 08-31, 09-07, 09-14) -- NOT the truncated 2-row result a
+        # trusted orphan fill (resuming at 09-07) would have produced.
+        self.assertEqual(len(rows), 3)
+
+    def test_first_empty_probe_keeps_stepping_backward_not_collapsing(self):
+        # Root cause E(2): an empty probe at TODAY with no known_good yet
+        # (e.g. this week's rankings just haven't posted) must not
+        # collapse to a single-week fill and mark the job complete -- it
+        # must keep stepping backward until data is found.
+        job = harvest._ranking_probe_job(
+            "tennis", "atp_rankings", "atp", "atp_rankings", "rankings", 100)
+
+        class RankingClient:
+            EARLIEST = date(2026, 6, 1)
+            TODAY_GAP = date(2026, 9, 14)  # this week hasn't posted yet
+
+            def __init__(self):
+                self.probe_dates = []
+
+            def get(self, path, params, *, deadline=None):
+                d = date.fromisoformat(params["date"])
+                self.probe_dates.append(d)
+                if d == self.TODAY_GAP:
+                    return {"data": []}
+                if d >= self.EARLIEST:
+                    return {"data": [{"player_id": 1, "rank": 1}]}
+                return {"data": []}
+
+            def pages(self, path, params=None, **kwargs):
+                yield self.get(path, params or {})
+
+        client = RankingClient()
+        today = date(2026, 9, 14)  # a Monday; the FIRST probe here is empty
+        ctx = harvest.RunContext(client=client, out_dir=self.out_dir, manifest={}, today=today)
+
+        summary = harvest.run_plan([job], ctx)
+        self.assertEqual(summary["completed"], 1)
+
+        out_path = harvest._out_path(self.out_dir, "tennis", "atp_rankings")
+        manifest = harvest.load_manifest(self.out_dir)
+        entry = manifest["tennis/atp_rankings.jsonl.gz"]
+        self.assertNotIn("zero_rows", entry)
+        rows = _read_jsonl_gz(out_path)
+        # Real history (weeks in [EARLIEST, today) other than the gap
+        # itself) must have been found, not lost to the single-week
+        # collapse the old code did on an empty first probe.
+        self.assertGreater(len(rows), 5)
+        self.assertIn(date(2026, 8, 17), client.probe_dates)  # stepped backward
+
+    def test_probe_reaches_floor_with_no_data_marks_zero_rows(self):
+        # Root cause E(2), other half: if there is truly no data anywhere
+        # back to the floor, the job completes with 0 rows -- but that
+        # must be visibly distinguishable from an ordinary successful pull
+        # rather than silently looking like one.
+        job = harvest._ranking_probe_job(
+            "tennis", "wta_rankings", "wta", "wta_rankings", "rankings", 100)
+
+        class NoDataClient:
+            def get(self, path, params, *, deadline=None):
+                return {"data": []}
+
+            def pages(self, path, params=None, **kwargs):
+                yield self.get(path, params or {})
+
+        client = NoDataClient()
+        today = date(2026, 9, 14)
+        ctx = harvest.RunContext(client=client, out_dir=self.out_dir, manifest={}, today=today)
+
+        summary = harvest.run_plan([job], ctx)
+        self.assertEqual(summary["completed"], 1)
+
+        manifest = harvest.load_manifest(self.out_dir)
+        entry = manifest["tennis/wta_rankings.jsonl.gz"]
+        self.assertEqual(entry["rows"], 0)
+        self.assertTrue(entry.get("zero_rows"))
 
 
 class TestPlanOrder(unittest.TestCase):

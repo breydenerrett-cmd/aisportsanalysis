@@ -67,6 +67,66 @@ jobs:
           git config user.name "balldontlie-harvest-bot"
           git config user.email "balldontlie-harvest-bot@users.noreply.github.com"
 
+      # Chained runs never commit data/historical/* (it's git-ignored --
+      # only MANIFEST.json and .cursor sidecars are). Without this step a
+      # resumed job opens a FRESH .jsonl.gz, re-pages from its cursor, and
+      # the upload step's --clobber below overwrites the release's longer
+      # asset with that shorter restart -- wasting every request already
+      # paid for and destroying data (root cause C). Release assets are
+      # flat (no sport subdirectory), so restoring them needs the same
+      # basename -> sport mapping the harvester's own out_name convention
+      # implies; MANIFEST.json (already checked out) has it exactly, with
+      # a filename-prefix fallback for anything the manifest doesn't know.
+      # A copy of the PRE-run manifest is also stashed here for the upload
+      # step's own no-clobber-with-a-shorter-file check further below.
+      - name: Restore previously-harvested files from the release
+        if: ${{ inputs.mode == 'harvest' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          mkdir -p /tmp/bdl_restore
+          gh release download "${{ inputs.release_tag }}" --dir /tmp/bdl_restore --pattern '*.jsonl.gz' --clobber \
+            || echo "no release '${{ inputs.release_tag }}' yet (or nothing to download) -- starting clean"
+          cp data/historical/balldontlie/MANIFEST.json /tmp/bdl_manifest_prerun.json 2>/dev/null \
+            || echo '{}' > /tmp/bdl_manifest_prerun.json
+          python3 - /tmp/bdl_restore data/historical/balldontlie <<'PY'
+          import json, shutil, sys
+          from pathlib import Path
+
+          restore_dir, out_dir = Path(sys.argv[1]), Path(sys.argv[2])
+          manifest_path = out_dir / "MANIFEST.json"
+
+          basename_to_sport = {}
+          if manifest_path.exists():
+              try:
+                  manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+              except (json.JSONDecodeError, OSError):
+                  manifest = {}
+              for entry in manifest.values():
+                  file_rel, sport = entry.get("file"), entry.get("sport")
+                  if file_rel and sport:
+                      basename_to_sport[Path(file_rel).name] = sport
+
+          PREFIX_TO_SPORT = {
+              "atp_": "tennis", "wta_": "tennis",
+              "nfl_": "nfl", "mlb_": "mlb", "nba_": "nba", "nhl_": "nhl",
+          }
+
+          for asset in sorted(restore_dir.glob("*.jsonl.gz")):
+              sport = basename_to_sport.get(asset.name)
+              if sport is None:
+                  sport = next((v for k, v in PREFIX_TO_SPORT.items() if asset.name.startswith(k)), None)
+              if sport is None:
+                  print(f"skip {asset.name}: cannot determine its sport subdirectory")
+                  continue
+              dest_dir = out_dir / sport
+              dest_dir.mkdir(parents=True, exist_ok=True)
+              dest = dest_dir / asset.name
+              shutil.move(str(asset), str(dest))
+              print(f"restored {dest}")
+          PY
+
       - name: Run the harvester (harvest mode)
         if: ${{ inputs.mode == 'harvest' }}
         env:
@@ -95,6 +155,13 @@ jobs:
               --title "${{ inputs.release_tag }}" \
               --notes "BALLDONTLIE ALL-ACCESS harvest"
 
+      # Second belt for root cause C: even with the restore step above, never
+      # let --clobber replace a release asset with a file SHORTER than what
+      # the PRE-run manifest (stashed by the restore step, before this run's
+      # own writes) recorded for it -- that would only be possible if a file
+      # somehow went backwards, and clobbering data away from under a live
+      # trial is worse than skipping one upload and leaving it for the next
+      # run to sort out.
       - name: Upload harvested files to the release
         if: ${{ inputs.mode == 'harvest' }}
         env:
@@ -102,11 +169,32 @@ jobs:
         run: |
           shopt -s globstar nullglob
           files=(data/historical/balldontlie/**/*.jsonl.gz)
+          mapfile -t to_upload < <(python3 - "${files[@]}" <<'PY'
+          import json, os, sys
+
+          try:
+              manifest = json.load(open("/tmp/bdl_manifest_prerun.json", encoding="utf-8"))
+          except (OSError, json.JSONDecodeError):
+              manifest = {}
+          base = "data/historical/balldontlie/"
+          for path in sys.argv[1:]:
+              rel = path[len(base):] if path.startswith(base) else path
+              prev_bytes = (manifest.get(rel) or {}).get("bytes") or 0
+              cur_bytes = os.path.getsize(path)
+              if cur_bytes < prev_bytes:
+                  print(f"SKIP {path}: {cur_bytes} bytes < {prev_bytes} bytes already on the "
+                        "release -- would clobber a longer asset with a shorter file", file=sys.stderr)
+              else:
+                  print(path)
+          PY
+          )
           if [ ${#files[@]} -eq 0 ]; then
             echo "no .jsonl.gz files produced this run -- nothing to upload"
+          elif [ ${#to_upload[@]} -eq 0 ]; then
+            echo "every candidate file would shrink its release asset -- nothing safe to upload"
           else
-            echo "uploading ${#files[@]} file(s) to release ${{ inputs.release_tag }}"
-            gh release upload "${{ inputs.release_tag }}" "${files[@]}" --clobber
+            echo "uploading ${#to_upload[@]} file(s) to release ${{ inputs.release_tag }}"
+            gh release upload "${{ inputs.release_tag }}" "${to_upload[@]}" --clobber
           fi
 
       # -f on both `git add` calls: see the header comment above --

@@ -25,6 +25,7 @@ from src.providers.balldontlie import (
     BallDontLieRateLimitExhausted,
     Client,
     ClientConfig,
+    DEFAULT_MAX_429_ATTEMPTS,
     client_from_env,
 )
 
@@ -423,6 +424,45 @@ class TestRateLimitCapsAndDeadline(unittest.TestCase):
 
     def test_default_max_429_wait_seconds_is_900(self):
         self.assertEqual(ClientConfig().max_429_wait_seconds, 900.0)
+
+
+class TestRateLimitAttemptBound(unittest.TestCase):
+    """Root cause F (2026-09-15 incident): a computed 429 wait of 0 (e.g. a
+    malformed/zero Retry-After, or an x-ratelimit-reset already in the past)
+    must not let get() retry with no bound at all -- max_429_wait_seconds
+    alone never fires in that case because rate_limit_wait_total never
+    grows. Measured at 188,101 requests / zero progress in one real run
+    before this existed."""
+
+    def test_zero_computed_wait_does_not_retry_unboundedly(self):
+        # A huge max_429_wait_seconds proves the SECONDS-based cap is not
+        # what stops this -- only the attempt counter can.
+        responses = [(429, {}, {"Retry-After": "0"})] * (DEFAULT_MAX_429_ATTEMPTS + 20)
+        transport = HeaderedTransport(responses)
+        clock = FakeClock()
+        sleep = FakeSleep(clock)
+        client = Client(FAKE_KEY, transport=transport, clock=clock, sleep=sleep,
+                         config=ClientConfig(rate_per_minute=6000, bucket_capacity=6000,
+                                              max_429_wait_seconds=10 ** 9))
+
+        with self.assertRaises(BallDontLieRateLimitExhausted):
+            client.get("/nfl/v1/games", {})
+
+        self.assertLessEqual(len(transport.calls), DEFAULT_MAX_429_ATTEMPTS + 1)
+
+    def test_zero_retry_after_wait_is_floored_to_a_minimum(self):
+        # Belt-and-braces alongside the attempt bound: a computed 0 must
+        # not look like "no wait needed" for even a single attempt.
+        responses = [(429, {}, {"Retry-After": "0"}), (200, {"data": [], "meta": {}}, {})]
+        transport = HeaderedTransport(responses)
+        clock = FakeClock()
+        sleep = FakeSleep(clock)
+        client = Client(FAKE_KEY, transport=transport, clock=clock, sleep=sleep,
+                         config=ClientConfig(rate_per_minute=6000, bucket_capacity=6000))
+
+        client.get("/nfl/v1/games", {})
+
+        self.assertEqual(sleep.calls, [1.0])
 
 
 class TestRateLimitHeaderWhitelist(unittest.TestCase):

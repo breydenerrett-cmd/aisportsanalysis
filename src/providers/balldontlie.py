@@ -25,10 +25,14 @@ ALL-ACCESS 600/min the tier is supposed to grant. The original retry policy
 60-second rate window, so every job errored after its first 5 pages. A 429
 now means "wait", not "give up": `get()` sleeps out each 429 (Retry-After if
 present, else the reset header, else 61s -- see `_compute_429_wait`) and
-retries indefinitely, bounded only by two things: `max_429_wait_seconds`
-(cumulative wait for one request, default 900s) and an optional `deadline`
-(a `clock()`-scale cutoff the caller -- the harvester -- passes in so a long
-429 sleep never runs past `--max-minutes`). Hitting either bound raises a
+retries indefinitely, bounded by three things: `max_429_wait_seconds`
+(cumulative wait for one request, default 900s), `max_429_attempts`
+(cumulative 429 COUNT for one request, default 50 -- independent of seconds
+slept, so a computed wait of 0 can never make the retry free; see root
+cause F, 2026-09-15: 188,101 zero-wait 429 retries in one run before this
+existed), and an optional `deadline` (a `clock()`-scale cutoff the caller --
+the harvester -- passes in so a long 429 sleep never runs past
+`--max-minutes`). Hitting any bound raises a
 dedicated exception (`BallDontLieRateLimitExhausted` /
 `BallDontLieDeadlineExceeded`), never `BallDontLieHTTPError`, so the
 harvester can tell "still worth resuming" apart from "permanently not
@@ -76,9 +80,17 @@ DEFAULT_BACKOFF_BASE_SECONDS = 1.0
 DEFAULT_BACKOFF_CAP_SECONDS = 60.0
 DEFAULT_PER_PAGE = 100
 DEFAULT_MAX_429_WAIT_SECONDS = 900.0
+DEFAULT_MAX_429_ATTEMPTS = 50
 
 # 429 handling constants (see module docstring's "429 POLICY").
 _DEFAULT_429_WAIT_SECONDS = 61.0
+# Floor for a single 429 wait (root cause F, 2026-09-15: a computed wait of
+# 0 -- e.g. a malformed/zero Retry-After, or an x-ratelimit-reset already in
+# the past -- let get() retry with no sleep at all, measured at 188,101
+# requests / zero progress in one run because rate_limit_wait_total never
+# grew). Belt-and-braces alongside DEFAULT_MAX_429_ATTEMPTS below, which is
+# the actual bound: this only keeps each individual attempt from being free.
+_MIN_429_WAIT_SECONDS = 1.0
 _MIN_RATE_PER_MINUTE = 4.0
 _ADAPTED_RATE_FRACTION_OF_LIMIT = 0.95
 _EPOCH_SECONDS_THRESHOLD = 1e9  # a reset value above this is epoch time, not a delta
@@ -232,6 +244,10 @@ class ClientConfig:
     backoff_cap: float = DEFAULT_BACKOFF_CAP_SECONDS
     user_agent: str = DEFAULT_USER_AGENT
     max_429_wait_seconds: float = DEFAULT_MAX_429_WAIT_SECONDS
+    # Root cause F: bounds 429 ATTEMPTS for one get() call, independent of
+    # how many seconds were actually slept -- see _MIN_429_WAIT_SECONDS and
+    # this file's "429 POLICY" docstring.
+    max_429_attempts: int = DEFAULT_MAX_429_ATTEMPTS
 
 
 class Client:
@@ -382,6 +398,7 @@ class Client:
         BallDontLieHTTPError.
         """
         wait_seconds = self._compute_429_wait(resp_headers)
+        wait_seconds = max(wait_seconds, _MIN_429_WAIT_SECONDS)
 
         if deadline is not None:
             remaining = deadline - self._clock()
@@ -439,6 +456,7 @@ class Client:
         params = dict(params or {})
         attempt = 0
         rate_limit_wait_total = 0.0
+        rate_limit_attempts = 0
         while True:
             self._pacer.acquire()
             status, body, resp_headers = self._call_transport(path, params)
@@ -452,6 +470,13 @@ class Client:
                         f"balldontlie API returned invalid JSON for {path}") from None
 
             if status == 429:
+                rate_limit_attempts += 1
+                # The real bound (root cause F): independent of how many
+                # seconds were actually slept, so a computed wait of 0 can
+                # never turn this into an unbounded retry loop.
+                if rate_limit_attempts > self._config.max_429_attempts:
+                    self._adapt_pacer_after_429(resp_headers)
+                    raise BallDontLieRateLimitExhausted(path, rate_limit_wait_total)
                 rate_limit_wait_total = self._handle_429(
                     path, resp_headers, deadline, rate_limit_wait_total)
                 continue

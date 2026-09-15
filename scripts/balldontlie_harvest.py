@@ -143,6 +143,14 @@ class JobResult:
     status: str  # "complete" | "partial" | "error"
     rows_written: int = 0
     http_status: Optional[int] = None
+    # Only meaningful when status == "partial": "rate_limited" (the job gave
+    # up on a single request's 429 wait, i.e. BallDontLieRateLimitExhausted --
+    # the ACCOUNT is still rate-limited, not the RUN out of time) or
+    # "deadline" (BallDontLieDeadlineExceeded, or run_plan's own pre-job
+    # clock check -- the run's --max-minutes budget is what ran out). See
+    # run_plan: only "deadline" ends the whole run; "rate_limited" moves on
+    # to the next job while run time remains (root cause B, 2026-09-15).
+    reason: Optional[str] = None
 
 
 @dataclass
@@ -508,6 +516,20 @@ def _write_rows(gz, rows, harvested_utc: str) -> int:
     return count
 
 
+def _flush_to_disk(gz) -> None:
+    """Flush the gzip stream's buffered output and fsync the underlying file
+    BEFORE a cursor/state sidecar is persisted (root cause D): otherwise a
+    hard kill can leave a sidecar claiming progress whose rows were never
+    actually written to the .jsonl.gz, silently dropping them on resume.
+    fsync is best-effort -- flush() already gets the bytes to the OS, and
+    some sandboxed filesystems reject fsync outright."""
+    gz.flush()
+    try:
+        os.fsync(gz.fileno())
+    except OSError:
+        pass
+
+
 # ---------------------------------------------------------------------------
 # Job execution
 # ---------------------------------------------------------------------------
@@ -547,16 +569,30 @@ def _run_paged_job(ctx: RunContext, job: Job) -> JobResult:
 
                 meta = payload.get("meta") or {}
                 next_cursor = meta.get("next_cursor")
-                if next_cursor is not None:
-                    cursor_path.write_text(json.dumps({"cursor": next_cursor}), encoding="utf-8")
+                if next_cursor is None:
+                    # This was the last page -- NOT a resumable stopping
+                    # point (root cause D): a stale cursor from an earlier
+                    # page left on disk here would duplicate this final page
+                    # on the next run. Drop it and let the pager's own
+                    # generator termination end the loop below.
+                    if cursor_path.exists():
+                        cursor_path.unlink()
+                    continue
+
+                _flush_to_disk(gz)  # rows must be on disk before the cursor claims them
+                cursor_path.write_text(json.dumps({"cursor": next_cursor}), encoding="utf-8")
 
                 if ctx.deadline is not None and ctx.clock() >= ctx.deadline:
                     return JobResult(status="partial", rows_written=rows_written)
-    except (BallDontLieRateLimitExhausted, BallDontLieDeadlineExceeded):
-        # Still rate-limited / out of time, not permanently disallowed -- the
-        # cursor sidecar from the last successful page (if any) is already
-        # on disk, so this resumes on the next run instead of erroring out.
-        return JobResult(status="partial", rows_written=rows_written)
+    except BallDontLieRateLimitExhausted:
+        # Still rate-limited, not permanently disallowed -- the cursor
+        # sidecar from the last successful page (if any) is already on disk,
+        # so this resumes on the next run instead of erroring out. Tagged
+        # "rate_limited" (not "deadline") so run_plan moves on to the next
+        # job instead of ending the whole run (root cause B).
+        return JobResult(status="partial", rows_written=rows_written, reason="rate_limited")
+    except BallDontLieDeadlineExceeded:
+        return JobResult(status="partial", rows_written=rows_written, reason="deadline")
     except BallDontLieHTTPError as exc:
         return JobResult(status="error", http_status=exc.status, rows_written=rows_written)
 
@@ -571,8 +607,10 @@ def _run_single_job(ctx: RunContext, job: Job) -> JobResult:
     harvested_utc = _utc_now_iso()
     try:
         payload = ctx.client.get(job.path, job.params, deadline=ctx.deadline)
-    except (BallDontLieRateLimitExhausted, BallDontLieDeadlineExceeded):
-        return JobResult(status="partial", rows_written=0)
+    except BallDontLieRateLimitExhausted:
+        return JobResult(status="partial", rows_written=0, reason="rate_limited")
+    except BallDontLieDeadlineExceeded:
+        return JobResult(status="partial", rows_written=0, reason="deadline")
     except BallDontLieHTTPError as exc:
         return JobResult(status="error", http_status=exc.status)
 
@@ -607,6 +645,18 @@ def _run_ranking_probe_job(ctx: RunContext, job: Job) -> JobResult:
     out_path = _out_path(ctx.out_dir, job.sport, job.out_name)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     state_path = _sidecar_path(out_path)
+
+    if state_path.exists() and not out_path.exists():
+        # Orphan state (root cause E): exactly the chained-run case, since
+        # data/historical/* is not committed -- a state sidecar can survive
+        # while the .jsonl.gz it describes does not. Without this guard the
+        # job would resume mid-fill onto a FRESH file and later mark
+        # complete=True over silently truncated data, mirroring
+        # _run_paged_job's identical guard above.
+        try:
+            state_path.unlink()
+        except OSError:
+            pass
 
     today = ctx.today or datetime.now(timezone.utc).date()
     this_monday = _most_recent_monday(today)
@@ -644,7 +694,7 @@ def _run_ranking_probe_job(ctx: RunContext, job: Job) -> JobResult:
                                  "until": this_monday.isoformat()}
                     else:
                         state["probe_date"] = next_probe.isoformat()
-                else:
+                elif state.get("known_good") is not None:
                     # The boundary is somewhere inside the last 4-week probe
                     # step. Start the weekly fill AT the failed probe date
                     # (not at known_good, which is much closer to today) so
@@ -653,8 +703,30 @@ def _run_ranking_probe_job(ctx: RunContext, job: Job) -> JobResult:
                     # that turns out to have no data just writes zero rows.
                     state = {"phase": "fill", "next_date": probe_date.isoformat(),
                              "until": this_monday.isoformat()}
+                else:
+                    # No known_good yet (root cause E): an empty probe here
+                    # -- including the very FIRST one, at today -- does not
+                    # mean there is no data anywhere. It can just mean this
+                    # week's rankings have not posted yet. Keep stepping
+                    # backward instead of collapsing to a single-week fill
+                    # and silently losing all ranking history; only give up
+                    # once the floor is reached with nothing found.
+                    next_probe = probe_date - timedelta(days=_RANKING_PROBE_STEP_DAYS)
+                    if next_probe < _RANKING_PROBE_FLOOR:
+                        state = {"phase": "done_empty"}
+                    else:
+                        state["probe_date"] = next_probe.isoformat()
                 state_path.write_text(json.dumps(state), encoding="utf-8")
                 continue
+
+            if state["phase"] == "done_empty":
+                # Probed all the way back to the floor and never found a
+                # single Monday with data -- genuinely nothing to fill, not
+                # a bug. rows_written stays 0; run_plan flags a 0-row
+                # "complete" manifest entry as zero_rows so this reads as
+                # "confirmed empty", not silently indistinguishable from a
+                # normal successful pull (root cause E).
+                break
 
             # phase == "fill": walk forward weekly, fetching every Monday.
             next_date = date.fromisoformat(state["next_date"])
@@ -666,14 +738,17 @@ def _run_ranking_probe_job(ctx: RunContext, job: Job) -> JobResult:
                 rows = fill_payload.get("data") or []
                 rows_written += _write_rows(gz, rows, harvested_utc)
             state["next_date"] = (next_date + timedelta(days=7)).isoformat()
+            _flush_to_disk(gz)  # rows must be on disk before the state claims them (root cause D)
             state_path.write_text(json.dumps(state), encoding="utf-8")
         else:
             raise BallDontLieError(
                 "rankings probe exceeded its iteration safety cap -- corrupted .cursor state?")
-    except (BallDontLieRateLimitExhausted, BallDontLieDeadlineExceeded):
+    except BallDontLieRateLimitExhausted:
         # `state` already reflects the last persisted step (see the
         # state_path.write_text calls above) -- nothing further to save.
-        return JobResult(status="partial", rows_written=rows_written)
+        return JobResult(status="partial", rows_written=rows_written, reason="rate_limited")
+    except BallDontLieDeadlineExceeded:
+        return JobResult(status="partial", rows_written=rows_written, reason="deadline")
     except BallDontLieHTTPError as exc:
         return JobResult(status="error", http_status=exc.status, rows_written=rows_written)
     finally:
@@ -692,6 +767,16 @@ def _rel_file(out_dir: Path, job: Job) -> str:
     return _out_path(out_dir, job.sport, job.out_name).relative_to(out_dir).as_posix()
 
 
+# How many CONSECUTIVE rate-limited partials end the run early instead of
+# moving on to the next job (root cause B guard). Each one has already
+# waited up to max_429_wait_seconds (900s default) before giving up, so 3 in
+# a row is ~45 minutes of real evidence the account is hard-blocked right
+# now -- long enough not to bail on a single transient blip, short enough
+# that it doesn't burn a meaningful slice of a 330-minute run sleeping
+# through a block that isn't going to lift.
+_RATE_LIMIT_HARD_BLOCK_THRESHOLD = 3
+
+
 def run_plan(jobs: list, ctx: RunContext) -> dict:
     """Run jobs in order, skipping completed/permanently-errored ones.
 
@@ -699,12 +784,32 @@ def run_plan(jobs: list, ctx: RunContext) -> dict:
     is caught here as a final backstop even though the job functions already
     handle the HTTP case themselves, so a job kind that forgets to catch
     something still cannot take the whole harvest down.
+
+    A "partial" result ends the run only when it means the run's own
+    deadline is out (JobResult.reason == "deadline", or this loop's own
+    pre-job clock check). A "rate_limited" partial means the ACCOUNT gave up
+    waiting out one request's 429s, not that run time is gone -- the loop
+    moves on to the next job, tracking consecutive rate-limited partials so
+    a genuinely hard-blocked account still stops instead of sleeping
+    max_429_wait_seconds per job for the rest of the run (root cause B, see
+    _RATE_LIMIT_HARD_BLOCK_THRESHOLD).
     """
     completed = skipped = errored = partial = 0
+    partial_rate_limited = partial_deadline = 0
+    consecutive_rate_limited = 0
     for job in jobs:
         rel = _rel_file(ctx.out_dir, job)
         entry = ctx.manifest.get(rel)
-        if entry and (entry.get("complete") or entry.get("http_status") is not None):
+        recorded_status = entry.get("http_status") if entry else None
+        # A recorded status only skips the job if it is PERMANENT (4xx other
+        # than 429). 429 and 5xx are transient -- e.g. the 2026-09-15 incident
+        # poisoned MANIFEST.json with http_status:429 on every tennis season,
+        # and without this check those jobs would be skipped forever. This is
+        # deliberately a property of the recorded status, not a one-time
+        # manifest edit, so a concurrently-running job rewriting the manifest
+        # can never un-fix it.
+        permanent = recorded_status is not None and recorded_status != 429 and not (500 <= recorded_status < 600)
+        if entry and (entry.get("complete") or permanent):
             skipped += 1
             continue
 
@@ -730,6 +835,13 @@ def run_plan(jobs: list, ctx: RunContext) -> dict:
                 sha256, size, rows = None, 0, 0
             ctx.manifest[rel] = {**base_entry, "rows": rows, "sha256": sha256,
                                   "bytes": size, "complete": True}
+            if rows == 0:
+                # Visibly distinguish a genuinely-empty complete job (e.g.
+                # the rankings probe hitting its floor with no data at all,
+                # root cause E) from an ordinary successful pull, rather
+                # than letting it look identical to "complete": True with a
+                # plausible row count.
+                ctx.manifest[rel]["zero_rows"] = True
             completed += 1
         elif result.status == "error":
             ctx.manifest[rel] = {**base_entry, "rows": result.rows_written, "sha256": None,
@@ -741,12 +853,29 @@ def run_plan(jobs: list, ctx: RunContext) -> dict:
                                   "bytes": out_path.stat().st_size if out_path.exists() else 0,
                                   "complete": False}
             partial += 1
+            if result.reason == "rate_limited":
+                partial_rate_limited += 1
+            else:
+                partial_deadline += 1
 
         save_manifest(ctx.out_dir, ctx.manifest)
         if result.status == "partial":
-            break  # deadline hit inside the job -- stop cleanly, state is saved
+            if result.reason == "rate_limited":
+                # Root cause B: a rate-limit exhaustion means the ACCOUNT is
+                # still rate-limited, not that the RUN is out of time -- with
+                # run time left, move on to the next job rather than ending
+                # the whole run. Guard against the pathological case (the
+                # account is hard-blocked for the rest of the run) below.
+                consecutive_rate_limited += 1
+                if consecutive_rate_limited >= _RATE_LIMIT_HARD_BLOCK_THRESHOLD:
+                    break
+            else:
+                break  # genuine deadline hit inside the job -- stop cleanly, state is saved
+        else:
+            consecutive_rate_limited = 0
 
-    return {"completed": completed, "skipped": skipped, "errored": errored, "partial": partial}
+    return {"completed": completed, "skipped": skipped, "errored": errored, "partial": partial,
+            "partial_rate_limited": partial_rate_limited, "partial_deadline": partial_deadline}
 
 
 # One cheap, per_page=1 endpoint per sport for --probe. Paths are ones this
@@ -848,7 +977,9 @@ def main(argv=None) -> int:
 
     summary = run_plan(jobs, ctx)
     print(f"jobs: {summary['completed']} completed, {summary['skipped']} skipped, "
-          f"{summary['partial']} partial (deadline), {summary['errored']} errored")
+          f"{summary['partial']} partial "
+          f"({summary['partial_rate_limited']} rate-limited, {summary['partial_deadline']} deadline), "
+          f"{summary['errored']} errored")
     print(f"rate_state: {client.rate_state()}")
     return 0
 
