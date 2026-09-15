@@ -1935,3 +1935,5 @@
 {"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 21334, "credits_used_last": 0, "utc": "2026-09-15T04:22:03.489503Z"}
 {"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 21334, "credits_used_last": 0, "utc": "2026-09-15T04:22:03.870517Z"}
 {"budget_band": "live_capture", "caller": "derivative_markets.run", "credits_remaining": 21334, "credits_used_last": 0, "utc": "2026-09-15T04:22:04.410665Z"}
+{"budget_band": "probe", "caller": "budget.probe_family:scores", "credits_remaining": 21168, "credits_used_last": 1, "utc": "2026-09-15T10:15:20.623543Z"}
+{"budget_band": "probe", "caller": "budget.probe_family:tennis_h2h", "credits_remaining": 21168, "credits_used_last": 0, "utc": "2026-09-15T10:15:21.443674Z"}

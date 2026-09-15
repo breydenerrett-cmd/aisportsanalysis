@@ -1167,3 +1167,28 @@ https://linehound-staging.fly.dev/billing/webhook -> dry-run purchase.
 - 2026-09-15T02:58Z afternoon_slate: engine slate --date 2026-09-15 exit=0
 - 2026-09-15T02:58Z afternoon_slate: card publish --date 2026-09-15 exit=0
 - 2026-09-15T02:58Z afternoon_slate: engine slip --date 2026-09-15
+- 2026-09-15T10:11Z daily_loop: standings catchup end=2026-09-15
+- 2026-09-15T10:11Z daily_loop: lineups+matchup_history date=2026-09-15
+- 2026-09-15T10:11Z daily_loop: pitcher splits date=2026-09-15
+- 2026-09-15T10:11Z daily_loop: pitch arsenals season=2026
+- 2026-09-15T10:11Z daily_loop: statcast --catchup exit=0
+- 2026-09-15T10:11Z daily_loop: gamekey --date 2026-09-14 --end 2026-09-15 exit=0
+- 2026-09-15T10:11Z daily_loop: gameflow --date 2026-09-14 exit=0
+- 2026-09-15T10:15Z daily_loop: engine slate --date 2026-09-15 exit=0
+- 2026-09-15T10:15Z daily_loop: engine slip --date 2026-09-15
+- 2026-09-15T10:15Z daily_loop: engine settle --date 2026-09-14 exit=0
+- 2026-09-15T10:15Z daily_loop: card settle --date 2026-09-14 exit=0
+- 2026-09-15T10:15Z daily_loop: nfl card settle --date 2026-09-14 exit=0
+- 2026-09-15T10:15Z daily_loop: tennis discover
+- 2026-09-15T10:15Z daily_loop: budget --probe scores
+- 2026-09-15T10:15Z daily_loop: budget --probe tennis_h2h
+- 2026-09-15T10:15Z daily_loop: live settle --date 2026-09-14
+- 2026-09-15T10:15Z daily_loop: fit_card_calibration exit=0
+- 2026-09-15T10:15Z daily_loop: eod --date 2026-09-14 exit=0
+- 2026-09-15T10:15Z daily_loop: postmortem --date 2026-09-14 exit=0
+- 2026-09-15T10:15Z daily_loop: train exit=0
+- 2026-09-15T10:15Z daily_loop: closing-audit exit=0
+- 2026-09-15T10:15Z daily_loop: calibration_drift_audit exit=1
+- 2026-09-15T10:15Z daily_loop: test_tier_ladder exit=0
+- 2026-09-15T10:15Z daily_loop: research-readiness exit=0
+- 2026-09-15T10:15Z daily_loop: prereg-clv exit=0

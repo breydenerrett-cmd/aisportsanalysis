@@ -118,10 +118,16 @@
       "source": "Confirmed 2026-09-03 via vendor markets page (https://the-odds-api.com/sports-odds-data/betting-markets.html): no SGP/parlay endpoint or market key exists on The Odds API. See docs/SGP_PARLAY_CAPTURE.md. Cost stays PROBE_REQUIRED because there is nothing to probe -- not because it is unmeasured."
     },
     "scores": {
-      "measured": false,
-      "credits_per_event": null,
-      "measured_utc": null,
-      "source": "Documented at the-odds-api.com as 1 credit per call, but the measurement is recorded only from a real measurement, not from vendor documentation."
+      "measured": true,
+      "credits_per_event": 1,
+      "measured_utc": "2026-09-15T10:15:19.709833Z",
+      "source": "budget.probe_family: scores probe fetching NFL scores; billed=None, remaining_before=21169, remaining_after=21168",
+      "degenerate": false,
+      "payload_shape": {
+        "event_count": 16,
+        "completed_count": 0,
+        "degenerate": false
+      }
     },
     "tennis_h2h": {
       "measured": false,
