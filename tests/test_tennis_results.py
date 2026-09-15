@@ -12,6 +12,11 @@ from pathlib import Path
 
 from src.providers import tennis_results
 from src.providers.tennis_results import (
+    ALWAYS_GRADED_STATUSES,
+    ALWAYS_VOID_STATUSES,
+    VOID_UNLESS_SET_COMPLETED_STATUSES,
+    BallDontLieFeed,
+    ENV_BALLDONTLIE_KEY,
     FixtureFeed,
     NoFeed,
     ResultsFeed,
@@ -20,6 +25,7 @@ from src.providers.tennis_results import (
     match_winner,
     normalize_name,
     results_for,
+    retirement_rule_note,
     surname,
 )
 
@@ -408,3 +414,253 @@ class TestEdgeCases(unittest.TestCase):
             # Since neither of the valid lines match the date, we expect 0 results.
             # But we need to ensure the malformed line didn't crash the parser.
             self.assertIsInstance(results, list)
+
+
+class TestFeedConfigurationBallDontLie(unittest.TestCase):
+    """Tests for feed() choosing BallDontLieFeed."""
+
+    def test_feed_returns_balldontlie_when_only_key_set(self):
+        """No provider named, but the key is present -> BallDontLieFeed."""
+        f = feed({ENV_BALLDONTLIE_KEY: "test-key"})
+        self.assertIsInstance(f, BallDontLieFeed)
+        self.assertEqual(f.name, "balldontlie")
+
+    def test_feed_returns_nofeed_when_neither_set(self):
+        """Neither provider nor key set -> NoFeed, unchanged."""
+        f = feed({})
+        self.assertIsInstance(f, NoFeed)
+
+    def test_feed_explicit_balldontlie_with_key(self):
+        """TENNIS_RESULTS_PROVIDER=balldontlie with the key set -> BallDontLieFeed."""
+        f = feed({
+            "TENNIS_RESULTS_PROVIDER": "balldontlie",
+            ENV_BALLDONTLIE_KEY: "test-key",
+        })
+        self.assertIsInstance(f, BallDontLieFeed)
+
+    def test_feed_explicit_balldontlie_without_key_raises(self):
+        """TENNIS_RESULTS_PROVIDER=balldontlie with no key -> named error, no leak."""
+        with self.assertRaises(TennisResultsError) as ctx:
+            feed({"TENNIS_RESULTS_PROVIDER": "balldontlie"})
+        self.assertEqual(str(ctx.exception), "BALLDONTLIE_API_KEY is not set")
+
+    def test_fixture_provider_still_wins_over_a_present_key(self):
+        """fixture:<path> still works even when BALLDONTLIE_API_KEY is set."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "results.jsonl"
+            path.write_text("")
+            f = feed({
+                "TENNIS_RESULTS_PROVIDER": f"fixture:{path}",
+                ENV_BALLDONTLIE_KEY: "test-key",
+            })
+            self.assertIsInstance(f, FixtureFeed)
+
+
+def _bdl_player(player_id, full_name):
+    parts = full_name.split()
+    return {
+        "id": player_id,
+        "first_name": parts[0],
+        "last_name": parts[-1],
+        "full_name": full_name,
+    }
+
+
+def _bdl_tournament(name="Test Open", start_date="2025-09-10", end_date="2025-09-20"):
+    return {
+        "id": 1,
+        "name": name,
+        "start_date": start_date,
+        "end_date": end_date,
+    }
+
+
+def _bdl_match(match_id, status, player1, player2, winner=None,
+               tournament=None, score="6-4 6-3"):
+    return {
+        "id": match_id,
+        "tournament": tournament or _bdl_tournament(),
+        "season": 2025,
+        "round": "Final",
+        "player1": player1,
+        "player2": player2,
+        "winner": winner,
+        "score": score,
+        "set_scores": [],
+        "player1_game_score": None,
+        "player2_game_score": None,
+        "server": None,
+        "duration": None,
+        "number_of_sets": None,
+        "match_status": status,
+        "status_state": "final",
+        "is_live": False,
+    }
+
+
+class TestBallDontLieFeed(unittest.TestCase):
+    """Tests for BallDontLieFeed against a fake get_json (no network)."""
+
+    def _players(self):
+        federer = _bdl_player(1, "Roger Federer")
+        nadal = _bdl_player(2, "Rafael Nadal")
+        return federer, nadal
+
+    def test_sends_key_in_authorization_header(self):
+        """The fake key is sent verbatim in the Authorization header."""
+        federer, nadal = self._players()
+        seen_headers = []
+
+        def fake_get_json(url, headers):
+            seen_headers.append(headers)
+            return {"data": [], "meta": {"next_cursor": None, "per_page": 100}}
+
+        f = BallDontLieFeed("test-key", get_json=fake_get_json, sleep=lambda s: None)
+        f.fetch_results("2025-09-14")
+
+        self.assertTrue(seen_headers)
+        for headers in seen_headers:
+            self.assertEqual(headers["Authorization"], "test-key")
+
+    def test_filters_status_winner_and_date_window(self):
+        """Only finished/retired/walkover/defaulted rows come back, with the
+        right winner and vendor status; in_progress and scheduled are dropped."""
+        federer, nadal = self._players()
+        tournament = _bdl_tournament(start_date="2025-09-10", end_date="2025-09-20")
+
+        finished = _bdl_match(101, "finished", federer, nadal, winner=federer,
+                              tournament=tournament, score="6-4 6-3")
+        retired_after_set = _bdl_match(102, "retired", federer, nadal, winner=federer,
+                                       tournament=tournament, score="6-4 2-1 ret.")
+        walkover = _bdl_match(103, "walkover", federer, nadal, winner=nadal,
+                              tournament=tournament, score="W/O")
+        in_progress = _bdl_match(104, "in_progress", federer, nadal, winner=None,
+                                 tournament=tournament)
+        scheduled = _bdl_match(105, "scheduled", federer, nadal, winner=None,
+                               tournament=tournament)
+
+        atp_page = {
+            "data": [finished, retired_after_set, walkover, in_progress, scheduled],
+            "meta": {"next_cursor": None, "per_page": 100},
+        }
+        wta_page = {"data": [], "meta": {"next_cursor": None, "per_page": 100}}
+
+        def fake_get_json(url, headers):
+            if "/atp/v1/matches" in url:
+                return atp_page
+            return wta_page
+
+        f = BallDontLieFeed("test-key", get_json=fake_get_json, sleep=lambda s: None)
+        rows = f.fetch_results("2025-09-14")
+
+        self.assertEqual(len(rows), 3)
+        by_status = {row["status"]: row for row in rows}
+        self.assertEqual(set(by_status), {"finished", "retired", "walkover"})
+
+        self.assertEqual(by_status["finished"]["winner"], "a")
+        self.assertEqual(by_status["finished"]["player_a"], "Roger Federer")
+        self.assertEqual(by_status["finished"]["player_b"], "Rafael Nadal")
+        self.assertEqual(by_status["finished"]["tour"], "atp")
+        self.assertEqual(by_status["finished"]["vendor_match_id"], 101)
+
+        self.assertEqual(by_status["retired"]["winner"], "a")
+        self.assertEqual(by_status["walkover"]["winner"], "b")
+
+        # No per-match timestamp exists in the spec, so this feed never
+        # invents one.
+        for row in rows:
+            self.assertNotIn("completed_utc", row)
+
+    def test_match_outside_tournament_window_is_dropped(self):
+        """A match whose tournament dates don't cover the query date is excluded."""
+        federer, nadal = self._players()
+        tournament = _bdl_tournament(start_date="2025-01-01", end_date="2025-01-14")
+        finished = _bdl_match(201, "finished", federer, nadal, winner=federer,
+                              tournament=tournament)
+
+        def fake_get_json(url, headers):
+            if "/atp/v1/matches" in url:
+                return {"data": [finished], "meta": {"next_cursor": None, "per_page": 100}}
+            return {"data": [], "meta": {"next_cursor": None, "per_page": 100}}
+
+        f = BallDontLieFeed("test-key", get_json=fake_get_json, sleep=lambda s: None)
+        rows = f.fetch_results("2025-09-14")
+        self.assertEqual(rows, [])
+
+    def test_stops_at_page_cap(self):
+        """A vendor that always hands back a next_cursor is capped, not looped forever."""
+        federer, nadal = self._players()
+        call_count = {"n": 0}
+        # Non-empty (but filtered-out) data on every page, so pagination is
+        # driven by next_cursor rather than stopped early by an empty page.
+        filler = _bdl_match(1, "scheduled", federer, nadal)
+
+        def fake_get_json(url, headers):
+            call_count["n"] += 1
+            return {"data": [filler], "meta": {"next_cursor": 999, "per_page": 100}}
+
+        f = BallDontLieFeed("test-key", get_json=fake_get_json, sleep=lambda s: None,
+                            page_cap=3)
+        f.fetch_results("2025-09-14")
+
+        # 3 pages per tour, 2 tours (atp, wta).
+        self.assertEqual(call_count["n"], 6)
+
+    def test_calls_sleep_seam_between_pages(self):
+        """The sleep seam is invoked between requests, not before the first one."""
+        federer, nadal = self._players()
+        sleep_calls = []
+        filler = _bdl_match(1, "scheduled", federer, nadal)
+
+        page1 = {"data": [filler], "meta": {"next_cursor": 42, "per_page": 100}}
+        page2 = {"data": [], "meta": {"next_cursor": None, "per_page": 100}}
+        responses = {"atp": [page1, page2], "wta": [page2]}
+
+        def fake_get_json(url, headers):
+            tour = "atp" if "/atp/v1/matches" in url else "wta"
+            return responses[tour].pop(0)
+
+        f = BallDontLieFeed("test-key", get_json=fake_get_json,
+                            sleep=lambda s: sleep_calls.append(s))
+        f.fetch_results("2025-09-14")
+
+        # 3 total requests (atp page1, atp page2, wta page1) -> 2 sleeps.
+        self.assertEqual(len(sleep_calls), 2)
+        for s in sleep_calls:
+            self.assertEqual(s, tennis_results.BALLDONTLIE_RATE_LIMIT_SLEEP_SECONDS)
+
+    def test_no_resolvable_winner_is_dropped(self):
+        """A completed-status match whose winner id matches neither player is dropped."""
+        federer, nadal = self._players()
+        stranger = _bdl_player(999, "Someone Else")
+        tournament = _bdl_tournament()
+        bad = _bdl_match(301, "finished", federer, nadal, winner=stranger,
+                         tournament=tournament)
+
+        def fake_get_json(url, headers):
+            if "/atp/v1/matches" in url:
+                return {"data": [bad], "meta": {"next_cursor": None, "per_page": 100}}
+            return {"data": [], "meta": {"next_cursor": None, "per_page": 100}}
+
+        f = BallDontLieFeed("test-key", get_json=fake_get_json, sleep=lambda s: None)
+        rows = f.fetch_results("2025-09-14")
+        self.assertEqual(rows, [])
+
+
+class TestRetirementRule(unittest.TestCase):
+    """Tests for retirement_rule_note() and the exported status constants."""
+
+    def test_retirement_rule_note_mentions_void_and_advanced(self):
+        note = retirement_rule_note()
+        self.assertIn("VOID", note)
+        self.assertIn("walkover", note.lower())
+        self.assertIn("retired", note.lower())
+
+    def test_status_constants_partition_cleanly(self):
+        """The three status buckets never overlap."""
+        self.assertEqual(ALWAYS_VOID_STATUSES & ALWAYS_GRADED_STATUSES, set())
+        self.assertEqual(ALWAYS_VOID_STATUSES & VOID_UNLESS_SET_COMPLETED_STATUSES, set())
+        self.assertEqual(ALWAYS_GRADED_STATUSES & VOID_UNLESS_SET_COMPLETED_STATUSES, set())
+        self.assertIn("walkover", ALWAYS_VOID_STATUSES)
+        self.assertIn("retired", VOID_UNLESS_SET_COMPLETED_STATUSES)
+        self.assertIn("finished", ALWAYS_GRADED_STATUSES)

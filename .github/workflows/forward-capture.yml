@@ -233,6 +233,7 @@ jobs:
       - name: Capture one slot
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
           CAPTURE_NOW: ${{ github.event_name == 'workflow_dispatch' && inputs.capture_now == '1' && '1' || '' }}
           # This file chains in its `pace` job; the script must not also.
           CHAIN_BY_WORKFLOW_STEP: "1"
