@@ -7,7 +7,7 @@ never a recommendation.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional
 
 from fastapi import APIRouter, HTTPException
@@ -23,17 +23,28 @@ _get_livefeed_nfl_latest_states: Callable = livefeed_nfl.latest_states
 _get_live_ledger_candidates: Callable = live_ledger.candidates
 
 
-def _et_date_today() -> str:
-    """ET date (YYYY-MM-DD) for today."""
+def _eastern():
+    """America/New_York when tz data is installed, else a fixed -4 offset.
+
+    THE BUG THIS REPLACES (2026-09-15): the fallback branch used to do
+    `from datetime import timedelta, timezone` INSIDE the except clause,
+    which made `timezone` a local name for the whole function. On a Windows
+    box without tz data the except ran and everything worked; in the
+    container, where tz data exists, the try succeeded, the local was never
+    bound, and every /live request died with UnboundLocalError -- a 500 on
+    staging that no local run could reproduce.
+    """
     try:
         from zoneinfo import ZoneInfo
-        et = ZoneInfo("America/New_York")
-    except Exception:
-        from datetime import timedelta, timezone
-        et = timezone(timedelta(hours=-4))
+        return ZoneInfo("America/New_York")
+    except Exception:  # noqa: BLE001 -- missing tz data is the only case
+        return timezone(timedelta(hours=-4))
 
-    dt = datetime.now(timezone.utc).astimezone(et)
-    return dt.strftime("%Y-%m-%d")
+
+def _et_date_today(now: Optional[datetime] = None) -> str:
+    """ET date (YYYY-MM-DD) for today."""
+    moment = now or datetime.now(timezone.utc)
+    return moment.astimezone(_eastern()).strftime("%Y-%m-%d")
 
 
 def _age_seconds(observed_utc: Optional[str]) -> Optional[int]:

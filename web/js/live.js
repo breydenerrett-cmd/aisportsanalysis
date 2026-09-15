@@ -254,13 +254,15 @@ export async function renderLive(main) {
       setShellStatus("Ready.");
     }
   } catch (err) {
-    clear(main);
-    if (err instanceof ApiError) {
-      main.appendChild(renderError(err));
-    } else {
-      main.appendChild(renderError(
-        new ApiError(null, `Failed to load live data: ${err.message}`)));
-    }
+    // renderError(container, err) clears the container and paints the error
+    // panel into it; it returns nothing. The first version called it with
+    // the error alone and appended its return value, which threw
+    // "container.appendChild is not a function" on every failed fetch --
+    // so the one page whose job is to show an outage showed a spinner.
+    const shown = err instanceof ApiError
+      ? err
+      : new ApiError(null, `Failed to load live data: ${err.message}`);
+    renderError(main, shown);
     setShellStatus("Error loading live data.");
   }
 }

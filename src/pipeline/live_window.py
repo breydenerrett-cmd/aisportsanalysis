@@ -663,23 +663,56 @@ def main(argv):
 
     # Main loop
     def _commit():
+        """Stage, commit AND PUSH the live stores.
+
+        The first version committed and stopped. On the Actions runner a
+        commit that is never pushed is deleted with the job, so every live
+        row of the night would have been lost while the log said
+        "committed". Same discipline as scripts/capture_slot.sh: identity
+        set on the runner, rebase onto whatever the capture chain pushed
+        meanwhile, push, three attempts.
+        """
         import subprocess
-        subprocess.run([
-            "git", "add",
-            "data/live",
-            "evidence/live_candidates_v1.jsonl",
-            "data/processed/credit_log.jsonl"
-        ], capture_output=True)
-        result = subprocess.run([
-            "git", "commit", "-q", "-m",
-            f"Live window {args.sport} {datetime.now(timezone.utc).isoformat()} (external)"
-        ], capture_output=True)
-        # Ignore "nothing to commit" errors
-        return result.returncode in (0, 1)
+
+        def _git(*argv, check=False):
+            return subprocess.run(["git", *argv], capture_output=True,
+                                  text=True, check=check)
+
+        if not _git("config", "--get", "user.email").stdout.strip():
+            _git("config", "user.name", "live-window-bot")
+            _git("config", "user.email", "actions@users.noreply.github.com")
+        _git("add", "data/live", "evidence/live_candidates_v1.jsonl",
+             "data/processed/credit_log.jsonl")
+        if _git("diff", "--cached", "--quiet").returncode == 0:
+            return True  # nothing new since the last commit
+        stamp = datetime.now(timezone.utc).strftime("%H:%MZ")
+        committed = _git("commit", "-q", "-m",
+                         f"Live window {args.sport} {stamp} (external)")
+        if committed.returncode != 0:
+            LOG.error("live_window: git commit failed: %s", committed.stderr.strip())
+            return False
+        branch = _git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip() or "HEAD"
+        for attempt in range(3):
+            pulled = _git("pull", "-q", "--rebase", "--autostash", "origin", branch)
+            if pulled.returncode != 0:
+                _git("rebase", "--abort")
+                LOG.error("live_window: rebase failed (attempt %d): %s",
+                          attempt + 1, pulled.stderr.strip())
+                continue
+            pushed = _git("push", "-q", "origin", branch)
+            if pushed.returncode == 0:
+                return True
+            LOG.error("live_window: push failed (attempt %d): %s",
+                      attempt + 1, pushed.stderr.strip())
+        return False
 
     commit_fn = _commit if os.environ.get("LIVE_WINDOW_COMMIT") == "1" else None
 
     result = run(args.sport, max_minutes=args.max_minutes, commit=commit_fn)
+    if commit_fn is not None:
+        # The rows written since the last five-minute commit, and the
+        # window marker's removal, go out with the job -- not with the next one.
+        commit_fn()
     print(json.dumps(result, indent=2))
     return 0
 

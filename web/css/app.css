@@ -68,6 +68,23 @@
   color: var(--text);
 }
 .topstrip__spacer { flex: 1; }
+/* Sport switcher (2026-09-15): MLB / NFL / Tennis plus a quieter Live link,
+   mounted in the top strip on every page. Spaced like the section label. */
+.sport-switcher { flex: none; display: inline-flex; align-items: center; gap: 14px; margin-left: 14px; }
+.sport-switcher__link {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: rgba(255, 255, 255, .62);
+  padding-bottom: 2px;
+  border-bottom: 2px solid transparent;
+}
+.sport-switcher__link:hover { color: var(--text); }
+.sport-switcher__link[aria-current="page"] { color: var(--text); border-bottom-color: currentColor; }
+.sport-switcher__link--quiet { opacity: .75; }
 .topstrip__status {
   flex: 0 1 auto;
   min-width: 0;
