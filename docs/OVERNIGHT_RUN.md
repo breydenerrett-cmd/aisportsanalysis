@@ -1694,3 +1694,40 @@ question), R16-06 waiting on 2026-09-16's daily settle as diagnosed above.
 - 2026-09-15T22:33Z afternoon_slate: engine slate --date 2026-09-15 exit=0
 - 2026-09-15T22:33Z afternoon_slate: card publish --date 2026-09-15 exit=0
 - 2026-09-15T22:33Z afternoon_slate: engine slip --date 2026-09-15
+
+## 2026-09-15 ~22:39Z — hourly cloud routine: no NEW escalation, no unclaimed item; quiet check
+
+Start-of-run check: pulled the working branch clean at `33418a79`.
+`gh`-less GitHub check via the Actions MCP tools: `daily-loop` has had no
+new run since 20:52-21:04Z (`35022286676`, already logged in the 21:12Z
+section) -- no new failure beyond the already-explained, pre-fix 14:30Z
+one; `forward-capture` runs 352-361 all `success` or normally `in_progress`
+(the chain is healthy); `afternoon-slate` runs 131-135 all `success` or a
+normal `cancelled` superseded-by-newer-dispatch; `balldontlie-harvest` run 5
+(`35014512871`) still `in_progress`, harvester step running since 20:34:11Z
+(about 2h5m into its 330-minute budget) -- job log not yet downloadable
+while in progress (`HTTP 404`, a known GitHub Actions limitation for live
+logs, not a run failure), but the run is inside its budget and not
+`completed`/`cancelled`, so the standing "dispatch another one if none is
+active" instruction needed nothing this hour. No `NEW` `ESCALATE:` line
+anywhere -- nothing outranks the queue.
+
+**Queue check.** Every Stage 16 row dated Tue 9/15 is `DONE`, `SUPERSEDED`,
+`BLOCKED_HUMAN`, or `RUNNING` with evidence inside the 2-hour reclaim
+window: R16-02 (21:12Z, ~1h27m old) and R16-06 (21:50Z, ~49m old) both
+still owned by the prior run's session. R16-33's harvest is the standing
+background item and has an active run. R16-36 is real but dated Wed 9/16 --
+current time is 2026-09-15 15:39 PDT (confirmed via `date`), still Tuesday,
+so it is not yet eligible under "When is today or earlier (Pacific time)."
+Nothing is `OPEN`, unblocked, and dated today or earlier. Made no code
+change, so no test run and no `docs/publication_audit.py` invocation --
+nothing here claims anything is live or verified.
+
+Commits this run: this section only. No `data/app`, no `data/raw`, no
+force-push.
+
+Blockers: none new. Standing blockers unchanged: R16-33's key/rate-limit
+question (owner), per-sport pricing decisions (R16-28), the API-Tennis
+trial call (R16-22), R16-02's roadmap-evidence close-out (rate-limit
+question), R16-06 waiting on 2026-09-16's daily settle, R16-34 waiting on
+the owner's PREREG_CARD_V2 answers.
