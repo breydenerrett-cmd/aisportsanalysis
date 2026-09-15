@@ -446,6 +446,31 @@ class TestMain(unittest.TestCase):
                 call_arg = m_print.call_args[0][0]
                 self.assertIn("HOLD", call_arg)
 
+    def test_main_settle_needs_no_sport(self):
+        """The exact command scripts/daily_loop.sh runs: --settle --date, no --sport.
+
+        It used to exit with an argparse error, so the live candidates would
+        never have been graded.
+        """
+        with mock.patch("src.pipeline.live_window.settle", return_value=None) as m_settle:
+            with mock.patch("builtins.print"):
+                code = live_window.main(["live_window.py", "--settle", "--date", "2026-09-14"])
+        self.assertEqual(code, 0)
+        m_settle.assert_called_once_with("2026-09-14")
+
+    def test_main_run_still_requires_sport(self):
+        with mock.patch("sys.stderr"):
+            with self.assertRaises(SystemExit):
+                live_window.main(["live_window.py", "--max-minutes", "5"])
+
+    def test_daily_loop_calls_settle_the_way_main_accepts(self):
+        """Tie the test above to the script, so the two cannot drift apart."""
+        from pathlib import Path
+
+        script = (Path(__file__).resolve().parents[1] / "scripts" / "daily_loop.sh").read_text(
+            encoding="utf-8")
+        self.assertIn('src.pipeline.live_window --settle --date "$YESTERDAY"', script)
+
 
 if __name__ == "__main__":
     unittest.main()

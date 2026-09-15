@@ -637,13 +637,20 @@ def main(argv):
     import argparse
 
     parser = argparse.ArgumentParser(description="Live window runner")
-    parser.add_argument("--sport", required=True, choices=["mlb", "nfl"])
+    # --sport is required to RUN a window or check dispatch, not to settle:
+    # settle grades every sport's candidates for the date. The daily loop
+    # calls `--settle --date D` with no sport, and a required flag failed
+    # that step every morning.
+    parser.add_argument("--sport", required=False, choices=["mlb", "nfl"])
     parser.add_argument("--max-minutes", type=int, default=330)
     parser.add_argument("--should-dispatch", action="store_true")
     parser.add_argument("--settle", action="store_true")
     parser.add_argument("--date", default=None)
 
     args = parser.parse_args(argv[1:])
+
+    if not args.settle and not args.sport:
+        parser.error("--sport is required unless --settle is given")
 
     if args.should_dispatch:
         can_run, reason = should_dispatch(args.sport)

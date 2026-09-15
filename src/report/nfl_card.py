@@ -170,6 +170,15 @@ def settle_for_date(date_str: str, *, now: Optional[datetime] = None,
     Returns:
         Settled row from card_ledger.settle().
     """
+    # NOTHING TO GRADE, NOTHING TO FETCH. The scores endpoint costs credits
+    # (2 with daysFrom) and the daily loop runs this every morning of the
+    # year; without this check it bought scores on every day no NFL card was
+    # published -- most days.
+    if card_ledger.published_row(date_str, sport="nfl", path=path) is None:
+        return None
+    if card_ledger.settled_row(date_str, sport="nfl", path=path) is not None:
+        return None
+
     if results is None:
         results = nfl_slate.results_for_date(date_str)
 

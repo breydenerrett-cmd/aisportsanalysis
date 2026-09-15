@@ -85,6 +85,23 @@ class NflCaptureUnconfiguredIsNotACapture(unittest.TestCase):
             self.assertEqual(nfl_capture.load_done(done), set())
 
 
+class NflSettleBuysNoScoresWithoutACard(unittest.TestCase):
+    def test_no_published_card_means_no_scores_fetch(self):
+        """The daily loop settles yesterday's NFL card every morning of the
+        year; on the days with no card it must not buy scores."""
+        import tempfile
+        from pathlib import Path
+
+        from src.report import nfl_card as nfl_card_report
+
+        with tempfile.TemporaryDirectory() as folder:
+            ledger = str(Path(folder) / "cards_nfl_v1.jsonl")
+            with mock.patch("src.pipeline.nfl_slate.results_for_date") as fetch:
+                result = nfl_card_report.settle_for_date("2026-09-14", path=ledger)
+        self.assertIsNone(result)
+        fetch.assert_not_called()
+
+
 class TennisCaptureCommandRuns(unittest.TestCase):
     def test_discovers_first_when_no_active_keys(self):
         with mock.patch("src.pipeline.tennis_discovery.active_keys", return_value=[]), \
