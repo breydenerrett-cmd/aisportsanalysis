@@ -13,7 +13,7 @@ from typing import Callable, Optional
 from fastapi import APIRouter, HTTPException
 
 from src.appstate import live_ledger
-from src.pipeline import livefeed_mlb, livefeed_nfl
+from src.pipeline import livefeed_mlb, livefeed_nfl, live_remote
 
 router = APIRouter()
 
@@ -21,6 +21,8 @@ router = APIRouter()
 _get_livefeed_mlb_latest_states: Callable = livefeed_mlb.latest_states
 _get_livefeed_nfl_latest_states: Callable = livefeed_nfl.latest_states
 _get_live_ledger_candidates: Callable = live_ledger.candidates
+_remote_state_rows: Callable = live_remote.live_state_rows
+_remote_candidate_rows: Callable = live_remote.live_candidate_rows
 
 
 def _eastern():
@@ -135,7 +137,8 @@ def get_live(sport: str = "mlb") -> dict:
             "poller": {
                 "last_observed_utc": ISO string or null,
                 "fresh": bool,
-                "status": "live" | "stale" | "idle"
+                "status": "live" | "stale" | "idle",
+                "source": "local" | "remote" | "merged"
             },
             "games": [
                 {
@@ -143,7 +146,8 @@ def get_live(sport: str = "mlb") -> dict:
                     "away_team": str,
                     "score": str (e.g. "Yankees 3, Red Sox 2, top of the 6th"),
                     "status": str,
-                    "observed_utc": ISO string
+                    "observed_utc": ISO string,
+                    "source": "local" | "remote" | "merged"
                 }
             ],
             "candidates": [
@@ -152,6 +156,7 @@ def get_live(sport: str = "mlb") -> dict:
                     "bet": str,
                     "price": int,
                     "observed_utc": ISO string,
+                    "source": "local" | "remote" | "merged",
                     ... (other live_ledger candidate fields)
                 }
             ]
@@ -165,34 +170,132 @@ def get_live(sport: str = "mlb") -> dict:
     # Get today's ET date
     today = _et_date_today()
 
-    # Fetch newest game states
+    # Fetch newest game states from local
     if sport == "mlb":
         states_by_game = _get_livefeed_mlb_latest_states(today)
+        game_key = "game_pk"
     else:  # nfl
         states_by_game = _get_livefeed_nfl_latest_states(today)
+        game_key = "event_id"
+
+    # Mark all local rows with source
+    for row in states_by_game.values():
+        row["source"] = "local"
+
+    # Merge with remote states if enabled
+    if live_remote.enabled():
+        try:
+            remote_rows = _remote_state_rows(sport, today)
+            for remote_row in remote_rows:
+                game_id = remote_row.get(game_key)
+                if game_id is None:
+                    continue
+
+                remote_row["source"] = "remote"
+
+                if game_id in states_by_game:
+                    # Both exist: take newer by observed_utc
+                    local_obs = states_by_game[game_id].get("observed_utc")
+                    remote_obs = remote_row.get("observed_utc")
+                    if remote_obs and (not local_obs or remote_obs > local_obs):
+                        # Remote is newer
+                        states_by_game[game_id] = remote_row
+                        states_by_game[game_id]["source"] = "merged"
+                    else:
+                        # Local is newer (or equally old); mark as merged since it was compared
+                        states_by_game[game_id]["source"] = "merged"
+                else:
+                    # Only in remote
+                    states_by_game[game_id] = remote_row
+        except Exception:
+            # Remote failure never fails the request
+            pass
 
     # Extract newest observed_utc across all games
     newest_observed_utc = None
+    source_for_newest = None
     for row in states_by_game.values():
         obs_utc = row.get("observed_utc")
         if obs_utc:
             if newest_observed_utc is None or obs_utc > newest_observed_utc:
                 newest_observed_utc = obs_utc
+                source_for_newest = row.get("source", "local")
 
     # Determine poller status
     status = _poller_status(newest_observed_utc, sport)
 
-    # Reduce game rows to plain fields
-    games = [
-        _reduce_game_row(row, sport)
-        for row in states_by_game.values()
-    ]
+    # Reduce game rows to plain fields, keeping source
+    games = []
+    for row in states_by_game.values():
+        reduced = _reduce_game_row(row, sport)
+        reduced["source"] = row.get("source", "local")
+        games.append(reduced)
 
-    # Fetch candidates for today (newest first)
+    # Fetch candidates for today from local
     candidates_list = _get_live_ledger_candidates(date=today)
-    # Filter to this sport and reverse to get newest first
-    candidates_list = [c for c in candidates_list if c.get("sport") == sport]
-    candidates_list.reverse()
+    # Filter to this sport
+    local_candidates = [c for c in candidates_list if c.get("sport") == sport]
+    for c in local_candidates:
+        c["source"] = "local"
+
+    # Build index of local candidates by (rule_id, sport, game_id)
+    candidates_by_key = {}
+    for c in local_candidates:
+        key = (c.get("rule_id"), c.get("sport"), c.get("game_id"))
+        candidates_by_key[key] = c
+
+    # Merge with remote candidates if enabled
+    if live_remote.enabled():
+        try:
+            remote_candidates = _remote_candidate_rows()
+            for remote_c in remote_candidates:
+                if remote_c.get("sport") != sport:
+                    continue
+
+                key = (remote_c.get("rule_id"), remote_c.get("sport"), remote_c.get("game_id"))
+                remote_c["source"] = "remote"
+
+                if key in candidates_by_key:
+                    # Both exist: take newer by observed_utc
+                    local_obs = candidates_by_key[key].get("observed_utc")
+                    remote_obs = remote_c.get("observed_utc")
+                    if remote_obs and (not local_obs or remote_obs > local_obs):
+                        candidates_by_key[key] = remote_c
+                        candidates_by_key[key]["source"] = "merged"
+                    else:
+                        # Local is newer (or equally old); mark as merged since it was compared
+                        candidates_by_key[key]["source"] = "merged"
+                else:
+                    # Only in remote
+                    candidates_by_key[key] = remote_c
+        except Exception:
+            # Remote failure never fails the request
+            pass
+
+    # Convert to list, filter to today, and sort newest first
+    candidates_list = list(candidates_by_key.values())
+    today_candidates = []
+    for c in candidates_list:
+        # Get the date from the candidate, or compute it from a timestamp
+        c_date = c.get("date")
+        if not c_date:
+            timestamp_str = c.get("recorded_utc") or c.get("observed_utc")
+            if timestamp_str:
+                try:
+                    dt = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=timezone.utc)
+                    c_date = dt.astimezone(_eastern()).strftime("%Y-%m-%d")
+                except (ValueError, TypeError, AttributeError):
+                    c_date = today
+            else:
+                c_date = today
+        if c_date == today:
+            today_candidates.append(c)
+
+    # `or ""`, not a .get default: a row whose observed_utc is present but
+    # null would otherwise compare None with a string and 500 the page.
+    today_candidates.sort(key=lambda c: c.get("observed_utc") or "", reverse=True)
 
     return {
         "sport": sport,
@@ -202,7 +305,8 @@ def get_live(sport: str = "mlb") -> dict:
             "last_observed_utc": newest_observed_utc,
             "fresh": status == "live",
             "status": status,
+            "source": source_for_newest or "local",
         },
         "games": games,
-        "candidates": candidates_list,
+        "candidates": today_candidates,
     }

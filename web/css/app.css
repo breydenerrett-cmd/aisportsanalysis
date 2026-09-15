@@ -85,6 +85,25 @@
 .sport-switcher__link:hover { color: var(--text); }
 .sport-switcher__link[aria-current="page"] { color: var(--text); border-bottom-color: currentColor; }
 .sport-switcher__link--quiet { opacity: .75; }
+/* Live sport tabs: tabs sit in a row with 14px gap, active tab underlined. */
+.live-sport-tabs { display: inline-flex; align-items: center; gap: 14px; }
+.live-sport-tab {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  background: none;
+  /* `border: none` first, then the bottom rule: the other order erased the
+     underline the active tab depends on. */
+  border: none;
+  padding: 0 0 2px;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  color: rgba(255, 255, 255, .62);
+}
+.live-sport-tab:hover { color: var(--text); }
+.live-sport-tab--active { color: var(--text); border-bottom-color: currentColor; }
 .topstrip__status {
   flex: 0 1 auto;
   min-width: 0;
