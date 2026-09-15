@@ -227,45 +227,80 @@ class LiveOddsBandTests(unittest.TestCase):
 
 
 class NewFamiliesTests(unittest.TestCase):
+    """The two families added for scores and tennis exist in the real config
+    (a config fact), and an UNMEASURED entry for either is refused as
+    PROBE_REQUIRED (a behaviour fact, checked against an injected config).
+
+    The behaviour tests used to read the real config/capture_families.json
+    and assert that both families were still unmeasured. The daily loop's
+    probe step measures a family the first time it runs, so those tests went
+    red the morning the `scores` probe landed (2026-09-15) without any code
+    changing. A test that reads the disk passes or fails by machine and by
+    date; the seam (`path` / `families_path`) is injected instead.
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.path = _write_families(self.tmp.name, {
+            "scores": {"measured": False,
+                       "reason": "not yet probed in this test"},
+            "tennis_h2h": {"measured": False,
+                           "reason": "not yet probed in this test"},
+        })
+
     def test_load_families_includes_scores(self):
-        """load_families() includes the 'scores' family from config."""
+        """The real config declares the 'scores' family."""
         families = budget.load_families()
         self.assertIn("scores", families)
 
     def test_load_families_includes_tennis_h2h(self):
-        """load_families() includes the 'tennis_h2h' family from config."""
+        """The real config declares the 'tennis_h2h' family."""
         families = budget.load_families()
         self.assertIn("tennis_h2h", families)
 
-    def test_scores_family_measured_false(self):
-        """The 'scores' family has measured=False."""
+    def test_real_config_entries_carry_a_measured_flag(self):
+        """Whatever the probe has done by now, both real entries say so
+        explicitly: `measured` is a bool, and a measured entry names its
+        measurement time and cost."""
         families = budget.load_families()
+        for name in ("scores", "tennis_h2h"):
+            entry = families[name]
+            self.assertIsInstance(entry.get("measured"), bool, name)
+            if entry["measured"]:
+                self.assertTrue(entry.get("measured_utc"), name)
+                self.assertIsNotNone(entry.get("credits_per_event"), name)
+
+    def test_scores_family_measured_false(self):
+        """An unmeasured 'scores' entry loads as measured=False."""
+        families = budget.load_families(self.path)
         self.assertFalse(families["scores"]["measured"])
 
     def test_tennis_h2h_family_measured_false(self):
-        """The 'tennis_h2h' family has measured=False."""
-        families = budget.load_families()
+        """An unmeasured 'tennis_h2h' entry loads as measured=False."""
+        families = budget.load_families(self.path)
         self.assertFalse(families["tennis_h2h"]["measured"])
 
     def test_family_cost_scores_is_none(self):
-        """family_cost('scores') returns None (unmeasured)."""
-        self.assertIsNone(budget.family_cost("scores"))
+        """family_cost('scores') is None while the family is unmeasured."""
+        self.assertIsNone(budget.family_cost("scores", path=self.path))
 
     def test_family_cost_tennis_h2h_is_none(self):
-        """family_cost('tennis_h2h') returns None (unmeasured)."""
-        self.assertIsNone(budget.family_cost("tennis_h2h"))
+        """family_cost('tennis_h2h') is None while the family is unmeasured."""
+        self.assertIsNone(budget.family_cost("tennis_h2h", path=self.path))
 
     def test_can_spend_scores_probe_required(self):
-        """can_spend('scores', 1, remaining=50000) refuses as PROBE_REQUIRED."""
+        """can_spend on an unmeasured 'scores' refuses as PROBE_REQUIRED."""
         decision = budget.can_spend(
-            "scores", 1, remaining=50000, spent=0)
+            "scores", 1, remaining=50000, spent=0, families_path=self.path)
         self.assertFalse(decision.allowed)
         self.assertTrue(decision.reason.startswith("PROBE_REQUIRED"))
 
     def test_can_spend_tennis_h2h_probe_required(self):
-        """can_spend('tennis_h2h', 1, remaining=50000) refuses as PROBE_REQUIRED."""
+        """can_spend on an unmeasured 'tennis_h2h' refuses as PROBE_REQUIRED."""
         decision = budget.can_spend(
-            "tennis_h2h", 1, remaining=50000, spent=0)
+            "tennis_h2h", 1, remaining=50000, spent=0,
+            families_path=self.path)
         self.assertFalse(decision.allowed)
         self.assertTrue(decision.reason.startswith("PROBE_REQUIRED"))
 

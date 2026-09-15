@@ -352,22 +352,33 @@ class DailyLoopWorkflowWiringTest(unittest.TestCase):
         check_step = self.text[self.text.index("Fail the job"):]
         self.assertIn(bootstrap_log, check_step)
 
-    def test_fails_the_job_on_any_escalate_line(self):
+    def test_fails_the_job_on_a_new_escalate_line(self):
         self.assertIn("ESCALATE:", self.text)
-        # The failing step must actually exit non-zero, not just print.
-        fail_step_pos = self.text.index("Fail the job on any ESCALATE line")
+        # The verdict step delegates to scripts/escalations.py, which exits
+        # non-zero only for an ESCALATE line that docs/ESCALATIONS.md has not
+        # acknowledged (tests/test_escalations_ledger.py pins that exit code;
+        # the two standing lines are acknowledged there so the job stops
+        # being red every morning for reasons everyone already knows). The
+        # workflow must call it on the same combined log the loop writes,
+        # and must not soften its exit code.
+        fail_step_pos = self.text.index("Fail the job on any NEW ESCALATE line")
         fail_step_text = self.text[fail_step_pos:fail_step_pos + 400]
-        self.assertIn("exit 1", fail_step_text)
+        self.assertIn("scripts/escalations.py --check", fail_step_text)
+        self.assertNotIn("|| true", fail_step_text)
+        self.assertNotIn("continue-on-error", fail_step_text)
+        self.assertTrue((REPO / "scripts" / "escalations.py").is_file())
 
     def test_git_identity_is_daily_loop_bot(self):
         self.assertIn('user.name "daily-loop-bot"', self.text)
 
     def test_only_declares_the_odds_api_key_secret(self):
-        # The mission's one hard boundary: no secret other than
-        # ODDS_API_KEY may be referenced.
+        # The hard boundary: no secret other than the two declared names may
+        # be referenced. ODDS_API_KEY pays for odds; BALLDONTLIE_API_KEY
+        # (added 2026-09-15 for tennis results and the all-sports feed) is
+        # passed by name only. Anything else appearing here is a finding.
         import re
         secrets_used = set(re.findall(r"secrets\.([A-Za-z0-9_]+)", self.text))
-        self.assertEqual(secrets_used, {"ODDS_API_KEY"})
+        self.assertEqual(secrets_used, {"ODDS_API_KEY", "BALLDONTLIE_API_KEY"})
 
 
 if __name__ == "__main__":
