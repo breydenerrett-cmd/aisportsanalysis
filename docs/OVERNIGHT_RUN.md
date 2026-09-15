@@ -1234,3 +1234,41 @@ https://linehound-staging.fly.dev/billing/webhook -> dry-run purchase.
 - 2026-09-15T17:43Z afternoon_slate: engine slate --date 2026-09-15 exit=2
 - 2026-09-15T17:43Z afternoon_slate: card publish --date 2026-09-15 exit=0
 - 2026-09-15T17:43Z afternoon_slate: engine slip --date 2026-09-15
+
+## 2026-09-15 17:41Z — hourly cloud routine, first live fire (R16-07 smoke test / R16-08)
+
+Claimed R16-08 (the only OPEN, unblocked, today-dated queue item; everything
+else eligible was already RUNNING/DONE/BLOCKED_HUMAN). Checked GitHub Actions
+via the MCP tools (no `gh` CLI in this container) for new escalations since
+the last run: the two most recent `daily-loop` runs (10:10Z, 14:30Z) both
+failed, but their job logs show only the two escalations already acknowledged
+in `docs/ESCALATIONS.md` (strong-tier drift, research-readiness battery
+wiring) — the 14:30Z run predates the default-branch sync of the acknowledged-
+escalations ledger fix (R16-06), so it still ran the old unconditional
+ESCALATE check; nothing NEW. The `balldontlie-harvest` failure (run 1) is the
+already-documented expected stop at the missing `BALLDONTLIE_API_KEY` secret.
+No new `ESCALATE:` lines, so nothing outranked the queue.
+
+R16-08 turned out to be a no-op in this environment: a fresh cloud clone never
+carried the described stray root `test_*.py` files, `wt-default` worktree, or
+held stash — those live only on an earlier local/interactive session's
+persistent disk, which this ephemeral container does not share. `git status
+--porcelain` was already empty, `git worktree list` showed only the current
+worktree, `git stash list` was empty. Recorded this honestly rather than
+claiming a cleanup that didn't happen; this class of stray cannot recur
+through the hourly routine going forward since every run starts from the
+same clean clone.
+
+Verified: full suite green (`python -m unittest discover -s tests -t .`,
+7186 tests, 447 skipped, 0 failures); `python scripts/publication_audit.py`
+clean. No `web/` changes this run, so the customer-language/web-structure
+tests weren't separately required (they're also covered by the full
+discover run).
+
+Commits: 417cc92e (claim R16-08), 60ef4fc9 (R16-08 DONE, R16-07 DONE).
+Pushed cleanly; one concurrent push from another automation (a card/slip
+publish) fast-forwarded in between with no conflict.
+
+Blockers: none new. Standing blockers unchanged — `BALLDONTLIE_API_KEY`
+secret (R16-02), per-sport pricing decisions (R16-28), API-Tennis trial
+call (R16-22) all still BLOCKED_HUMAN as before.

@@ -1,18 +1,22 @@
-# Debrief (2026-09-15, morning, Pacific)
+# Debrief (2026-09-15, late afternoon, Pacific)
 
-Roadmap approved and committed: it runs from today through October 15 and an
-hourly automated run will work through it. You'll find the latest catch-up in
-this file after every run.
+No bad news this hour — everything checked out clean.
 
-Bad news first: the daily job has been failing every morning because two
-long-standing warnings fire each day. One is a research grade that has been
-firing on almost every pick since September 10 (customers never see it). The
-other says our validation battery is finally ready to run on real results.
-Both are being fixed today so a failing daily job means something again.
+The hourly automated runner had its first real test run, and it worked:
+it pulled the latest code, ran the full test suite (all green), and pushed
+its work back automatically, exactly as designed.
+
+The one cleanup task on today's list turned out to already be a non-issue,
+so there was nothing to fix. The two known daily-job warnings from this
+morning (the one about a grade firing too often, and the one about the new
+validation check) are still just those same two known issues — nothing new
+showed up.
 
 Still needed from you: save the BALLDONTLIE key as a GitHub secret named
-BALLDONTLIE_API_KEY. Until then tennis results cannot be graded.
+BALLDONTLIE_API_KEY. Until then tennis results still can't be graded, and
+that trial window is ticking (it ends in about 36 hours).
 
-Next up today: live in-game prices switch on tonight (capped at 300 credits a
-day), the site redesign starts with the shared frame and the red NFL and
-TENNIS "coming soon" labels, and the hourly runner gets its first test.
+Everything else — the live in-game prices switching on tonight, the site
+redesign, and the "best bets not best favourites" pick-quality fix you
+flagged this morning — is being worked by other runs in parallel and isn't
+part of this update.
