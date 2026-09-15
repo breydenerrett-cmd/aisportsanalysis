@@ -16,26 +16,17 @@ Two things first, because they shape everything else:
    or we would be selling luck. The plan below keeps the bar where the
    product's credibility needs it, and still runs the volume you asked for.
 
-## 1. What to buy (one month, $190)
+## 1. What to buy (revised 2026-09-15: $19.98, or $99.98 if the trial passes)
+
+**Revised the same day.** A full check of every tennis feed, prompted by a
+ChatGPT review, found Goalserve has no historical odds product and does not
+state its licence, so it is dropped. Decision, links and the free-trial
+checklist: [TENNIS_FEED_DECISION_2026-09-15.md](TENNIS_FEED_DECISION_2026-09-15.md).
 
 | Buy | Cost | Click | What it gives us |
 |---|---|---|---|
-| **Goalserve Tennis API**, one month | **$150** | [Request the free 30-day trial](https://www.goalserve.com/en/contact-us) then [pricing](https://www.goalserve.com/en/sport-data-feeds/tennis-api/prices) | Results **and odds since 2010** from 20+ books, pre-match and in-play, so tennis can be backtested; live point-by-point scores every ~5 seconds with a serving flag; in-play odds. Sources: [coverage](https://www.goalserve.com/en/sport-data-feeds/tennis-api/coverage), [description](https://www.goalserve.com/en/sport-data-feeds/tennis-api/description/14), [live sample](https://www.goalserve.com/en/sport-data-feeds/tennis-api/sample/34), [player sample](https://www.goalserve.com/en/sport-data-feeds/tennis-api/sample/72), [docs](https://documentation.goalserve.com/). |
-| **api-tennis.com Starter** | **$40** | [Register](https://api-tennis.com/register) · [docs](https://api-tennis.com/documentation) · [terms](https://api-tennis.com/terms-of-use) | Player surface records (hard, clay, grass won/lost), head-to-head, rankings, live scores and in-play odds. Historical depth is not documented, so it is our day-to-day enrichment feed, not the backtest source. 14-day trial. |
-
-Two things to type into the Goalserve contact form when you request the
-trial, so we have them in writing before the month starts:
-
-- "We build a paid betting-analysis subscription. Does the tennis feed
-  licence cover use inside a consumer analysis product?" (Their public pages
-  say "betting and more"; the licence sentence itself is not published.)
-- "Are match and player IDs stable across seasons, and what is the request
-  limit per day on the $150 tier?"
-
-And for api-tennis.com, by email after registering: "Is Davis Cup covered
-on Starter, and is commercial use inside a paid product allowed?" Their terms
-say accounts are individual and that what you do with the data is your
-responsibility; they do not say yes or no.
+| **BALLDONTLIE ALL-STAR, ATP and WTA** | **$19.98 a month** | [ATP](https://atp.balldontlie.io/) · [WTA](https://wta.balldontlie.io/) · [pricing](https://www.balldontlie.io/#pricing) · [terms](https://www.balldontlie.io/terms.html) | Results with retired and walkover statuses for grading, live score with the server, rankings on past dates. Terms explicitly allow betting products and storing the data. 48-hour trial. |
+| **API-Tennis Business**, only if its trial checks pass | **$80 a month** | [pricing](https://api-tennis.com/) · [docs](https://api-tennis.com/documentation) · [register](https://api-tennis.com/register) | Point-by-point log, in-play odds with a suspension flag: what the live tennis rules need. Licence not stated, so internal research until they confirm in writing. 14-day trial. |
 
 Not buying, but relevant:
 
@@ -129,9 +120,13 @@ tennis, real forward ledgers, published sweep results, and the $1,000 pages.
 
 ## 5. Tennis: the analysis, the courts, and live versus pre-match
 
-**What the data lets us do.** Goalserve gives results with odds since 2010,
-which is roughly 7,000 tour matches a year: enough to power a real backtest.
-api-tennis.com gives the day-to-day player records.
+**What the data lets us do** (revised 2026-09-15). BALLDONTLIE gives results
+with retirement and walkover statuses for grading; The Odds API's historical
+tennis odds give pre-match backtests, mostly Grand Slams from 2020 to 2021 and
+1000s from 2024 to 2025; API-Tennis, if its trial passes, gives the live point
+log and in-play odds. There is no historical in-play data in this stack, so
+**live tennis rules are forward-tested only**. Detail:
+[TENNIS_FEED_DECISION_2026-09-15.md](TENNIS_FEED_DECISION_2026-09-15.md).
 
 **Court surfaces and who is good where.** Surface (hard, clay, grass, indoor)
 is known before the match, so it is safe to use. We build, from timestamped
@@ -159,8 +154,9 @@ priced like their overall record; head-to-head dominance; early-round
 favourite overpricing at 250 and 500 events; ranking gap versus price on
 each surface.
 
-**Live strategy families** (Goalserve point-by-point with a serving flag and
-in-play odds, so **tennis live does not spend our odds credits**): favourite
+**Live strategy families** (API-Tennis Business point-by-point with a serving
+flag, in-play odds and a suspension flag, so **tennis live does not spend our
+odds credits**; built only if its trial checks pass): favourite
 loses the first set; break of serve against the favourite; favourite down a
 break in the deciding set; momentum runs (three games in a row). Two rules
 protect these from fooling us: we only enter at a price observed after the
@@ -206,7 +202,7 @@ pages as an addition, not a reordering of the card.
   two sweeps a week per sport).
 - **Live is rationed:** MLB and NFL in-play prices come from The Odds API
   under the 300-credit-a-day cap and are fetched only when a game's state
-  changes; tennis in-play prices come from Goalserve. We measure MLB's own
+  changes; tennis in-play prices come from API-Tennis if its trial passes. We measure MLB's own
   in-play draw for a week before assigning any of the cap to NFL, and tennis
   needs none of it.
 - **The money question.** Live markets are where a single fact (a starter
@@ -221,8 +217,8 @@ pages as an addition, not a reordering of the card.
 
 | Day | What happens |
 |---|---|
-| Tue 9/15 | You request the Goalserve trial and register api-tennis.com. I finish the NFL card publish path, the API and web surfaces, and the live runner already in progress. |
-| Wed 9/16 | Tennis results feed wired to Goalserve (results, odds, status field). Historical tennis loader with outcome isolation on. |
+| Tue 9/15 | You start the BALLDONTLIE (48 hours) and API-Tennis Business (14 days) free trials and send API-Tennis the licence questions. The NFL card, API, web surfaces and live runner are shipped. |
+| Wed 9/16 | Tennis results feed wired to BALLDONTLIE (results, status field), API-Tennis adapter behind the trial. Trial checks start. Historical tennis loader with outcome isolation on. |
 | Thu 9/17 | Phase 0 data audits for tennis and NFL (fields, timestamps, gaps only; no outcome distributions). NFL Thursday game: first NFL card published and locked. |
 | Fri 9/18 | Tennis feature accumulators (surface, serve, H2H); the $1,000 page engine (real forward paths, broke agents carried); the sweep budget for the month declared. |
 | Sat 9/19 | Tennis sweep pre-registered, enumerated and run against the placebo ceiling (CPU only). NFL: forward-only; the purchase decision in section 6 is yours. |
@@ -232,9 +228,11 @@ pages as an addition, not a reordering of the card.
 ## 10. Credits
 
 About 100,000 a month. Live capture envelope 900 a day; in-play cap 300 a
-day shared by MLB and NFL; tennis live costs no credits (Goalserve). The
-pre-match lab costs no credits. The only new credit spend on the table is the
-NFL historical purchase in section 6 (about 8,000 for three seasons).
+day shared by MLB and NFL; tennis live costs no credits (API-Tennis). The
+pre-match lab costs no credits. New credit spend on the table: the NFL
+historical purchase in section 6 (about 8,000 for three seasons) and tennis
+historical odds (about 16,000 at two snapshots a day, Slams and 1000s, run
+after the monthly reset).
 
 ## 11. What you will and will not see by 2026-10-15
 
@@ -251,8 +249,9 @@ tennis grading before the status field is confirmed.
 
 ## 12. Decisions I need from you
 
-1. Buy Goalserve (one month, $150, trial first) and api-tennis.com Starter
-   ($40): yes or no.
+1. Start the free trials, then buy BALLDONTLIE ALL-STAR ATP and WTA ($19.98)
+   and, only if its checks pass, API-Tennis Business ($80) for one month:
+   yes or no. (Revised from Goalserve plus API-Tennis Starter; see section 1.)
 2. Buy NFL historical odds for backtesting (about 8,000 credits for three
    seasons, verified with one 30-credit call first): yes or no.
 3. Headline windows: 30 days for MLB and tennis, 60 days for NFL: agree or

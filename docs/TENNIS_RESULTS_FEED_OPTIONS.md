@@ -1,5 +1,9 @@
 # Tennis Results Feed Options
 
+> **Superseded 2026-09-15 by [TENNIS_FEED_DECISION_2026-09-15.md](TENNIS_FEED_DECISION_2026-09-15.md).**
+> A fuller check found no historical odds product at Goalserve and a vendor
+> (BALLDONTLIE) whose terms explicitly allow betting products. Kept for the record.
+
 **Verification date: 2026-09-14.** Every price and term below was read on the vendor page linked in the same row on that date.
 
 ## Vendor Comparison Table
