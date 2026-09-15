@@ -1749,3 +1749,102 @@ the owner's PREREG_CARD_V2 answers.
 - 2026-09-15T23:45Z afternoon_slate: engine slate --date 2026-09-15 exit=0
 - 2026-09-15T23:46Z afternoon_slate: card publish --date 2026-09-15 exit=0
 - 2026-09-15T23:46Z afternoon_slate: engine slip --date 2026-09-15
+
+## 2026-09-15 ~23:40Z — hourly cloud routine: claimed and fixed R16-37 (live-window dispatch spam, not a real outage)
+
+Start-of-run check: pulled the working branch clean. GitHub check via the
+Actions MCP tools: no new `daily-loop` run since 20:52-21:04Z (already
+logged); `forward-capture` chaining normally (runs 362-366, all
+`success`/`in_progress`); `balldontlie-harvest` run 5 (`35014512871`)
+still `in_progress` since 19:35Z, about 4h10m into its 330-minute budget,
+so the standing "keep one active" instruction needed nothing. No `NEW`
+`ESCALATE:` line anywhere.
+
+**Queue check.** Every Stage 16 row dated Tue 9/15 was `DONE`,
+`SUPERSEDED`, `BLOCKED_HUMAN`, or `RUNNING` with evidence too fresh to
+reclaim (R16-02 at 21:12Z was past the 2-hour mark but its only remaining
+acceptance is blocked on the same owner rate-limit question as R16-33;
+R16-06 at 21:50Z is waiting on tomorrow's daily settle, not reclaimable
+work). R16-36 is dated Wed 9/16 -- not eligible; current time is Tue 9/15
+16:40 PDT. Nothing OPEN and unblocked for today.
+
+**Went looking anyway**, since `live-window.yml` had just started real
+activity for the first time (R16-35/R16-03 turned `LIVE_ODDS=1` on
+earlier today) and that is exactly the kind of automation change worth a
+first real check. Found: 7 `live-window` dispatches between 22:11Z and
+23:30Z, every one after the first showing conclusion `cancelled` with
+`0` jobs ever created. Traced it fully before touching anything:
+
+- The FIRST dispatch (run `35029678164`, 22:11Z) is genuinely fine --
+  read its job log directly: it has been sitting on the "Run live
+  window" step continuously since 22:12Z, over 90 minutes in. Tonight's
+  real MLB live window is running exactly as intended and was never at
+  risk: `live-window.yml`'s `concurrency: {group: live-window-<sport>,
+  cancel-in-progress: false}` only ever cancels a newer, not-yet-started
+  dispatch in the same group -- never the one already running.
+- Every dispatch AFTER that one (runs 2-7) is `capture_slot.sh`
+  redispatching `live-window.yml` on its own ~13-minute cadence
+  (`scripts/capture_slot.sh:560-587`, gated by
+  `python3 -m src.pipeline.live_window --should-dispatch`) because
+  `should_dispatch`'s default "already running" check
+  (`src/pipeline/live_window.py`, previously lines 501-514) read a local
+  marker file the live-window job writes on ITS OWN ephemeral runner --
+  a file a *different* job's fresh checkout can never see. So the check
+  always said "not running" and the chain kept redispatching a doomed
+  duplicate every cycle, each one immediately cancelled by the next
+  before a single job step ran (`duration_ms: 0` on every one, confirmed
+  via `get_workflow_run_usage`).
+- Net effect tonight: harmless (no credits, no billable runner time, the
+  real window untouched) but permanent, recurring noise in Actions run
+  history for the life of every future live window too, on both sports
+  once NFL windows start (R16-14 week) -- and exactly the kind of thing
+  that could cost a future hourly run another 30 minutes re-diagnosing
+  what this run just spent tracing to ground.
+
+Claimed it as **R16-37** (`docs/ROADMAP.md`, committed alone first,
+`4c438cfc`, before any code change, per the claim-before-execute rule).
+Fixed `df85df78`: added `run-name: live-window-${{ inputs.sport }}` to
+`live-window.yml` (so `gh run list` output can tell sports apart --
+workflow_dispatch inputs aren't otherwise exposed there), and made
+`should_dispatch`'s default check OR the local marker with a new
+`_gh_run_active` helper that shells out to `gh run list --workflow
+live-window.yml --json status,displayTitle`, matching this sport's
+run-name prefix against any `queued`/`in_progress`/`waiting`/`pending`/
+`requested` run. Fails open (reports "not running") on any `gh` or
+parse error, so a check outage costs at most one more harmlessly-
+cancelled dispatch, never a stuck HOLD that could suppress a real
+dispatch. 9 new tests: `TestGhRunActive` (matching sport + in_progress,
+no match, wrong-sport prefix, cancelled/completed run, queued run,
+`gh` raising, malformed JSON -- 7 cases, all fail open on error),
+`TestLocalWindowMarkerActive` (no file, unexpired, expired -- 3 cases),
+and a `should_dispatch` regression test proving the default path (no
+`running=` override) actually calls the new gh check rather than only
+the old local one. Marked R16-37 DONE with this evidence, `60c4a784`.
+
+Verified this run: `python -m unittest tests.test_live_window` (30
+tests) then the full suite (`python -m unittest discover -s tests -t .`,
+7279 tests, 447 skipped, 0 failures); `python scripts/publication_audit.py`
+exit 0 (one pre-existing, unrelated WARN about card freshness --
+untouched by this change). No `web/` files touched, so no extra web test
+files needed.
+
+**Not verified live end-to-end**: confirming the fix actually suppresses
+the next real duplicate dispatch means waiting out a ~13-minute
+forward-capture cycle and reading its job log, which this run's time
+budget did not allow after the fix-and-test cycle. Left as an explicit
+follow-up in R16-37's evidence for the next run: check that the next
+`live-window.yml` dispatch for the still-active MLB window prints `HOLD
+window already running` instead of spawning another cancelled run.
+
+Commits this run: `4c438cfc` (claim), `df85df78` (fix + tests),
+`60c4a784` (evidence/DONE), and this section (next commit hash after
+push). No `data/app`, no `data/raw`, no force-push; rebased cleanly past
+one concurrent `forward-capture-bot` data commit (`f6828c65`, its own
+normal per-slot data files, no conflict).
+
+Blockers: none new. Standing blockers unchanged: R16-33's key/rate-limit
+question (owner), per-sport pricing decisions (R16-28), the API-Tennis
+trial call (R16-22), R16-02's roadmap-evidence close-out (same
+rate-limit question), R16-06 waiting on 2026-09-16's daily settle,
+R16-34 waiting on the owner's PREREG_CARD_V2 answers, R16-37's live
+end-to-end confirmation (above).
