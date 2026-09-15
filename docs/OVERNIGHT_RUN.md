@@ -1484,3 +1484,6 @@ not an owner decision, so it is OPEN rather than BLOCKED_HUMAN. Standing
 blockers unchanged: per-sport pricing decisions (R16-28), the API-Tennis
 trial call (R16-22), and R16-02's roadmap-evidence close-out (owned by
 whoever is already on the balldontlie surface) all as before.
+- 2026-09-15T20:02Z afternoon_slate: engine slate --date 2026-09-15 exit=2
+- 2026-09-15T20:02Z afternoon_slate: card publish --date 2026-09-15 exit=0
+- 2026-09-15T20:02Z afternoon_slate: engine slip --date 2026-09-15
