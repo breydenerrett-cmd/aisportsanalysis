@@ -30,14 +30,15 @@ import { BRAND_NAME } from "./brand.js";
 // promising it never says what to bet is not being careful, it is
 // contradicting itself, and a reader who notices trusts neither half.
 //
-// What replaces it is the thing that is actually true and actually rare:
-// the picks are written down before first pitch and graded afterwards,
-// losers included. No claim of edge -- nothing measured supports one (see
-// docs/DOES_THE_MODEL_BEAT_THE_MARKET.md) -- and no guarantee.
+// REWRITTEN AGAIN, 2026-09-15 (DESIGN_SYSTEM.md section 3 / shell-07):
+// "frozen before first pitch" overclaimed a fixed price the moment a
+// later publish replaces a provisional pick (see section 5's record
+// wording). The record is what a pick read AT ITS LOCK, not what it read
+// the instant it was first published. This line now matches that policy
+// exactly, and drops the specific "three to five" count and "frozen"
+// verb, neither of which the record wording repeats.
 const SUMMARY =
-  "Beta. Three to five bets a day, frozen before first pitch and graded "
-  + "after — wins and losses both. Nothing here is a guarantee. Read the "
-  + "full disclaimer below.";
+  "Beta. Picks are published before each game and graded as they stood at their lock, win or lose. Nothing here is a guarantee.";
 
 /**
  * THE RESEARCH COUNTS, FROM THE REGISTRY, ONCE.
@@ -108,22 +109,35 @@ export function fillResearchCount(node, build, fallback) {
   return node;
 }
 
-export async function renderDisclaimerFooter(container) {
+/**
+ * `container` is the footer's mount point; `linkPrefix` (DESIGN_SYSTEM.md
+ * section 3, matching `sport.js`'s `renderSportLevel`) defaults to `""`
+ * so every app-route href here (`#/record-card`, `#/performance`,
+ * `#/props`, `#/betcheck`, `#/support`) resolves normally when mounted by
+ * `main.js` inside the app shell. `landing.js` calls this with
+ * `linkPrefix: "index.html"` so the SAME hrefs resolve from
+ * `landing.html`, which has no route behind a bare `#/...` fragment of
+ * its own -- confirmed dead-end otherwise (section 3).
+ */
+export async function renderDisclaimerFooter(container, { linkPrefix = "" } = {}) {
   clear(container);
   const region = el("footer", {
     class: "sitefoot", "aria-label": "disclaimer", "data-hook": "disclaimer",
   });
+  const route = (hash) => `${linkPrefix}${hash}`;
 
   const row = el("div", { class: "sitefoot__row" });
   row.appendChild(el("span", { class: "sitefoot__mark", text: BRAND_NAME }));
   row.appendChild(el("span", { class: "sitefoot__hair", "aria-hidden": "true" }));
-  // Local-time rewrite, 2026-09-14: this used to hardcode "ALL TIMES ET"
-  // even though every clock on the page now shows the VIEWER's own zone.
-  // localZoneAbbr() falls back to null only if Intl itself is unusable,
-  // in which case the legal line still reads fine without the clause.
-  const zoneAbbr = localZoneAbbr();
-  row.appendChild(el("span", { class: "sitefoot__legal",
-    text: `${zoneAbbr ? `ALL TIMES ${zoneAbbr} · ` : ""}21+ · PLAY RESPONSIBLY` }));
+  // Row 1's legal line (DESIGN_SYSTEM.md section 3): "21+ · Play
+  // responsibly · 1-800-GAMBLER" -- the source string stays uppercase
+  // "PLAY RESPONSIBLY" (tests/test_shared_footer.py pins it case-
+  // sensitively; CSS may transform the case it renders, the DOM text does
+  // not need to). The viewer's own zone abbreviation used to be prefixed
+  // onto this same line -- moved to its own row 4 below so the zone is
+  // stated once, not twice (section 3: do not duplicate the old
+  // zone-prefix phrase from elsewhere in the footer).
+  row.appendChild(el("span", { class: "sitefoot__legal", text: "21+ · PLAY RESPONSIBLY" }));
   // A REACHABLE HELPLINE, not just the words "play responsibly".
   //
   // 1-800-GAMBLER existed only in design/linehound-v1 and -v2 mockups; it
@@ -134,53 +148,54 @@ export async function renderDisclaimerFooter(container) {
   // A tel: link, because on the device most people read this on it is one
   // tap. Both app stores require a helpline in the listing for anything
   // betting-adjacent, so this is also on the path to being installable --
-  // but it would be here even if it were not.
+  // but it would be here even if it were not. Not a `#/...` route, so it
+  // is never prefixed by `linkPrefix`.
   // No extra hairline here: .sitefoot__row already sets `gap`, and a second
   // `flex: 1` spacer competed with the first for the same slack and
   // collapsed BOTH to zero width -- which quietly undid the row's original
   // mark-left / legal-right composition.
   row.appendChild(el("a", { class: "sitefoot__help", href: "tel:1-800-426-2537",
     "data-hook": "responsible-gambling-help", text: "1-800-GAMBLER" }));
-  // #/support had ZERO inbound links anywhere in web/ -- a working support
-  // form reachable only by typing the URL. A paying customer with a problem
-  // could not find the one place built to hear about it, which is how a
-  // fixable complaint becomes a silent cancellation. The footer is mounted
-  // once by main.js and survives every view swap, so it is the one place a
-  // link cannot be forgotten.
-  row.appendChild(el("a", { class: "sitefoot__support", href: "#/support",
-    "data-hook": "footer-support", text: "SUPPORT" }));
-  // THE RECORD, reachable from every page -- same reasoning as the SUPPORT
-  // link immediately above: the footer is mounted once and survives every
-  // view swap, so it is the one place this link cannot be forgotten. It is
-  // the receipts for the product's whole pitch ("picks with receipts"),
-  // not a utility route, but it belongs here rather than the primary nav
-  // (see cardrecord.js's own docstring on why).
-  row.appendChild(el("a", { class: "sitefoot__support", href: "#/record-card",
-    "data-hook": "footer-record", text: "THE RECORD" }));
-  // RESEARCH (#/performance), for the same reason and after an ORPHANING.
+  // Row 1's link list, in DESIGN_SYSTEM.md section 3's stated order --
+  // Results, Research, Player props, Bet Check, Support. The footer is
+  // mounted once by main.js (and by landing.js) and survives every view
+  // swap, so it is the one place none of these links can be forgotten;
+  // see the per-link history below for why each one is here at all.
   //
-  // When RESULTS was repointed from #/performance to #/record-card
-  // (main.js, 2026-09-10) the comment justifying it claimed #/performance
-  // "stays reachable and unchanged". It did not. The route still dispatched
-  // and the module still rendered, but after that edit NOTHING IN THE APP
-  // LINKED TO IT -- the only remaining hrefs were dayrecap.js's "back to
-  // performance", reachable only from #/performance itself, and a mention
-  // inside an HTML COMMENT in landing.html.
-  //
-  // A route that only answers to a typed URL is not reachable, and the
-  // paper standings are where this product publishes its losers, which is
-  // the whole claim the landing page makes. Same fix as THE RECORD above,
-  // and tests/test_web_performance.py now asserts the link rather than
-  // asserting a nav entry while claiming to test the route.
-  row.appendChild(el("a", { class: "sitefoot__support", href: "#/performance",
-    "data-hook": "footer-performance", text: "RESEARCH" }));
-  // PLAYER PROPS (#/props), for the same reason the two above are here: the
-  // footer is mounted once and survives every view swap, so it is the one
-  // place a link cannot be forgotten. THE CARD can only show moneylines and
-  // run lines, so without this the product has no route at all to the
+  // THE RECORD -> Results (#/record-card): the receipts for the product's
+  // whole pitch ("picks with receipts"), not a utility route, but it
+  // belongs here rather than the primary nav (see cardrecord.js's own
+  // docstring on why).
+  row.appendChild(el("a", { class: "sitefoot__support", href: route("#/record-card"),
+    "data-hook": "footer-record", text: "Results" }));
+  // RESEARCH (#/performance), after an ORPHANING. When RESULTS was
+  // repointed from #/performance to #/record-card (main.js, 2026-09-10)
+  // the comment justifying it claimed #/performance "stays reachable and
+  // unchanged". It did not -- the route still dispatched, but nothing in
+  // the app linked to it any more. A route only reachable by typing its
+  // URL is an orphan, and the paper standings are where this product
+  // publishes its losers, which is the whole claim the landing page makes.
+  row.appendChild(el("a", { class: "sitefoot__support", href: route("#/performance"),
+    "data-hook": "footer-performance", text: "Research" }));
+  // PLAYER PROPS (#/props): THE CARD can only show moneylines and run
+  // lines, so without this the product has no route at all to the
   // seventeen thousand player-prop prices it already collects.
-  row.appendChild(el("a", { class: "sitefoot__support", href: "#/props",
-    "data-hook": "footer-props", text: "PLAYER PROPS" }));
+  row.appendChild(el("a", { class: "sitefoot__support", href: route("#/props"),
+    "data-hook": "footer-props", text: "Player props" }));
+  // BET CHECK (#/betcheck), NEW (DESIGN_SYSTEM.md section 3 / D7): CHECK
+  // leaves the primary navigation and the fixed "Check a bet" band goes
+  // with it, but Bet Check's own route and function stay, reachable from
+  // matchup pages and here -- the one place in the shared chrome it is
+  // still one click away.
+  row.appendChild(el("a", { class: "sitefoot__support", href: route("#/betcheck"),
+    "data-hook": "footer-betcheck", text: "Bet Check" }));
+  // SUPPORT (#/support): before this it had ZERO inbound links anywhere
+  // in web/ -- a working support form reachable only by typing the URL.
+  // A paying customer with a problem could not find the one place built
+  // to hear about it, which is how a fixable complaint becomes a silent
+  // cancellation.
+  row.appendChild(el("a", { class: "sitefoot__support", href: route("#/support"),
+    "data-hook": "footer-support", text: "Support" }));
   region.appendChild(row);
 
   region.appendChild(el("p", { class: "sitefoot__summary", "data-hook": "disclaimer-summary",
@@ -213,6 +228,18 @@ export async function renderDisclaimerFooter(container) {
   } catch (err) {
     region.appendChild(el("p", { class: "sitefoot__summary", "data-hook": "disclaimer-unavailable",
       text: "Disclaimer unavailable: " + (err && err.message ? err.message : "request failed") }));
+  }
+
+  // Row 4 (DESIGN_SYSTEM.md section 3): the one place the viewer's own
+  // zone is stated in the footer now (row 1's legal line used to carry
+  // the same zone prefix too -- removed above so this is not said twice).
+  // Client-side only, so it renders whether or not /meta answered; omitted
+  // entirely (not a guessed zone) on the rare browser where Intl cannot
+  // resolve one at all.
+  const zoneAbbr = localZoneAbbr();
+  if (zoneAbbr) {
+    region.appendChild(el("p", { class: "sitefoot__summary", "data-hook": "disclaimer-timezone",
+      text: `Times shown in ${zoneAbbr}, your time zone.` }));
   }
 
   container.appendChild(region);

@@ -26,9 +26,9 @@
 
   /* ---- hot red: the money moment (reserved -- price advantage only) */
   --money: #FF3D57;
-  --money-2: #FF7A45;
-  --money-lit: #FF6274;
-  --money-soft: #FF9AA6;
+  --money-2: #FF7A45; /* retired (gradients) -- kept, still referenced outside foundation; use --primary for new rules */
+  --money-lit: #FF6274; /* retired as a TEXT color (under 4.5:1) -- kept, still referenced outside foundation */
+  --money-soft: #FF9AA6; /* retired as a TEXT color (under 4.5:1) -- kept, still referenced outside foundation */
   --money-label: #FFB3BD;
   --money-ink: #22060A;
 
@@ -46,10 +46,10 @@
   --text-2: #D6DBE4;
   --text-3: #B9C0CC;
   --text-mute: #8A919E;
-  --text-dim: #6F7682;
+  --text-dim: #6F7682; /* retired as a TEXT color (under 4.5:1) -- kept, still referenced outside foundation */
   /* same contrast lift as the --v-t5..t7 rungs below */
   --text-faint: #7C8390;
-  --text-ghost: #6C737E;
+  --text-ghost: #6C737E; /* retired as a TEXT color (under 4.5:1) -- kept, still referenced outside foundation */
 
   /* ---- team accents (identity only -- never a status color) ------ */
   --team-pit: #FDB827;
@@ -122,12 +122,14 @@
   --dur-segment: 250ms;
 
   /* ---- layout constants ------------------------------------------*/
-  --rail-width: 76px;
+  --rail-width: 228px;
   --gutter-desktop: 40px;
-  --gutter-mobile: 14px;
+  --gutter-mobile: 16px;
   --topbar-height: 64px;
-  --tabbar-height: 74px;
+  --tabbar-height: 60px;
   --mobile-breakpoint: 900px;
+  --strip-height-phone: 56px;
+  --sportrow-height: 44px;
 
   /* =================================================================
    * LINEHOUND V2 TOKENS -- ADDITIVE ONLY. Nothing above this point is
@@ -215,5 +217,46 @@
   --v-t4: #949AA5;
   --v-t5: #848A96;
   --v-t6: #767C87;
-  --v-t7: #6A707B;
+  --v-t7: #6A707B; /* retired as a TEXT color (under 4.5:1) -- kept, still referenced outside foundation */
+
+  /* =================================================================
+   * LINEHOUND REDESIGN (2026-09-15) -- ROLE ALIASES, ADDITIVE ONLY.
+   * Nothing above this point is touched, removed, or renamed by this
+   * block (docs/DESIGN_SYSTEM.md section 2). New rules use these role
+   * names, never --v-* or --money* directly.
+   * ================================================================= */
+
+  /* ---- surface roles --------------------------------------------- */
+  --panel-3: var(--tile-base);          /* #0E1013 -- chrome: strip, rail, tab bar, banner */
+  --panel: #111317;                     /* cards */
+  --panel-2: #15171B;                   /* nested / breakdown boxes */
+
+  /* ---- edge roles --------------------------------------------------*/
+  --edge-soft: var(--edge-1);           /* white .07 -- row dividers */
+  --edge: rgba(255, 255, 255, .10);     /* panel borders */
+  --edge-hi: rgba(255, 255, 255, .28);  /* secondary buttons, neutral chips, rank-1 edge */
+
+  /* ---- signal roles --------------------------------------------------
+     Red is never a better price, a loss, staleness, an error or
+     decoration. Cyan is never a button fill. Loss/push/void are
+     neutral, not red -- a customer's own bad night is not a warning
+     colour. ------------------------------------------------------- */
+  --primary: var(--money);              /* #FF3D57 -- brand mark, selected item, one primary action, COMING SOON */
+  --primary-soft: rgba(255, 61, 87, .13);
+  --fresh: var(--live);                 /* #00E0FF -- confirmed inputs, times, links, focus ring */
+  --fresh-text: var(--live-badge);      /* #8FE9FA */
+  --caution: var(--v-warn);             /* #FFB020 -- waiting on an input: lineup, starter, an older quote */
+  --caution-text: var(--v-warn-label);  /* #FFCF6B */
+  --caution-soft: rgba(255, 176, 32, .10);
+  --win: var(--v-win-label);            /* #7BE8AC -- the word "Win" only */
+
+  /* ---- type scale ----------------------------------------------------*/
+  --fs-meta: 13px;   /* desktop labels only */
+  --fs-small: 15px;
+  --fs-body: 17px;
+  --fs-lead: 19px;
+  --fs-h3: 22px;
+  --fs-h2: 26px;
+  --fs-h1: 34px;
+  --fs-hero: clamp(40px, 6vw, 72px);
 }

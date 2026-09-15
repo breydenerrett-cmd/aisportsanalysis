@@ -1,12 +1,45 @@
 /*
- * LINEHOUND v1 app shell -- the chrome every routed screen sits inside:
- * the wrapper the rail is absolutely positioned in, the 62px top strip,
- * the outlet, the footer, and the shared state panels (loading / empty /
- * error / sign-in / billing).
+ * LINEHOUND app shell -- docs/DESIGN_SYSTEM.md section 3 (the shell) and
+ * section 7 (phone rules). Chrome-owned, CHR-5: the wrapper, the top
+ * strip / phone sport row, page-level gutters, the section-head meta
+ * fix, the shared footer's phone layout, and the neutral gate/view-error
+ * baseline.
  *
  * Per-screen composition (Gameday, Bet Check, Game View) lives in
- * screens.css. Nothing here re-declares a token.
- */
+ * screens.css, owned by other groups. Nothing here re-declares a token,
+ * and nothing outside the sections named above is touched by this pass
+ * (tracks 2 pages -- Odds, My Bets, Signin, Support, Billing, Signup --
+ * keep the layouts and tokens they had; docs/DESIGN_SYSTEM.md's R6 keeps
+ * those out of scope for this build wave).
+ *
+ * MARKUP (web/index.html, chrome-owned, verified against the file):
+ *   <div class="shell">
+ *     <nav class="rail" data-hook="primary-nav">...</nav>            (nav.css)
+ *     <div class="shell__column">
+ *       <header class="topstrip" data-hook="topstrip">
+ *         <a class="topstrip__home" href="landing.html">
+ *           <span class="hound">...</span>
+ *           <span class="topstrip__wordmark">LINEHOUND</span>
+ *         </a>
+ *         <span class="topstrip__rule"></span>
+ *         <div data-hook="sport-level-host"></div>
+ *         <span class="topstrip__rule topstrip__rule--wide"></span>
+ *         <time class="topstrip__clock" data-hook="shell-clock"></time>
+ *       </header>
+ *       <div data-hook="news-host"></div>                            (news.js)
+ *       <main class="outlet" data-hook="app-outlet"></main>
+ *       <div class="footer-host" data-hook="disclaimer-host"></div>
+ *     </div>
+ *     <nav class="tabbar" data-hook="primary-nav-mobile">...</nav>   (nav.css)
+ *   </div>
+ *
+ * ONE HOST, CSS-REPOSITIONED (docs/DESIGN_SYSTEM.md section 3: "One host
+ * element renders the sport-level content... a single renderSportLevel
+ * mount, not two" -- confirmed: sport.js's renderSportLevel takes one
+ * `host` and builds tabs + its own internal spacer + the coming-soon
+ * links inside one `.sportlevel` component; index.html mounts it at the
+ * single `[data-hook="sport-level-host"]` below). No `.topstrip__spacer`
+ * element exists either -- the host's own `flex: 1` here does that job. */
 
 /* ---- wrapper --------------------------------------------------------*/
 .shell {
@@ -23,125 +56,112 @@
   .shell__column { margin-left: var(--rail-width); }
 }
 @media (max-width: 899px) {
-  /* Room for the tab bar plus the sticky Bet Check field that sits on
-     top of it (screens.css) -- neither may ever cover page content.
-     Plus the home-indicator inset, since the tab bar grew by it. */
+  /* "Page content is padded by the bar height plus 16px"
+     (docs/DESIGN_SYSTEM.md section 3) -- plus the home-indicator inset,
+     since the tab bar reports its own height including it. */
   .shell__column {
-    padding-bottom: calc(var(--tabbar-height) + 74px
+    padding-bottom: calc(var(--tabbar-height) + 16px
                          + env(safe-area-inset-bottom, 0px));
   }
 }
 
-/* ---- top strip (62px, canvas: sticky, blurred, hairline underline) --*/
+/* ---- top strip --------------------------------------------------------
+   Desktop (>=900px): 64px, --panel-3, a 1px --edge line below. Left to
+   right: mark+wordmark, a rule, the sport-level host (tabs ... a flex
+   spacer ... coming-soon links, all inside .sportlevel), a second rule,
+   the clock (hidden 900-1199px, shown again at 1200px+).
+   Phone (<900px): not sticky. Two rows in ONE flex container, forced
+   onto separate lines by giving the sport-level host `flex-basis: 100%`
+   (a plain CSS-only two-row wrap, no grid, no second mount): row 1
+   (56px) is the mark+wordmark, no clock; row 2 (44px, 16px gutters) is
+   the sport-level host, MLB tab hidden under 400px. ------------------*/
 .topstrip {
   position: sticky;
   top: 0;
   z-index: 50;
-  height: 62px;
+  height: var(--topbar-height); /* 64px */
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--sp-9);
-  padding: 0 var(--sp-12);
-  overflow: hidden;
-  background: rgba(13, 14, 17, .82);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .07);
+  gap: var(--sp-6);
+  padding: 0 var(--gutter-desktop);
+  background: var(--panel-3);
+  box-shadow: inset 0 -1px 0 0 var(--edge);
 }
-.topstrip__home { flex: none; display: none; }
-.topstrip__wordmark {
+.topstrip__home {
   flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-5);
+}
+.topstrip__wordmark {
   font-family: var(--font-display);
-  font-style: italic;
+  font-style: italic; /* italic survives only in the wordmark (section 2) */
   font-size: 21px;
   font-weight: 800;
   letter-spacing: .03em;
-  color: var(--text);
+  color: var(--text-hi);
 }
-.topstrip__rule { flex: none; width: 1px; height: 20px; background: rgba(255, 255, 255, .12); }
-.topstrip__section {
+.topstrip__rule {
   flex: none;
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: .16em;
-  color: var(--text);
+  width: 1px;
+  height: 20px;
+  background: var(--edge);
 }
-.topstrip__spacer { flex: 1; }
-/* Sport switcher (2026-09-15): MLB / NFL / Tennis plus a quieter Live link,
-   mounted in the top strip on every page. Spaced like the section label. */
-.sport-switcher { flex: none; display: inline-flex; align-items: center; gap: 14px; margin-left: 14px; }
-.sport-switcher__link {
-  font-family: var(--font-display);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  text-decoration: none;
-  color: rgba(255, 255, 255, .62);
-  padding-bottom: 2px;
-  border-bottom: 2px solid transparent;
+.topstrip__rule--wide { display: none; }
+@media (min-width: 1200px) {
+  .topstrip__rule--wide { display: block; }
 }
-.sport-switcher__link:hover { color: var(--text); }
-.sport-switcher__link[aria-current="page"] { color: var(--text); border-bottom-color: currentColor; }
-.sport-switcher__link--quiet { opacity: .75; }
-/* Live sport tabs: tabs sit in a row with 14px gap, active tab underlined. */
-.live-sport-tabs { display: inline-flex; align-items: center; gap: 14px; }
-.live-sport-tab {
-  font-family: var(--font-display);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  background: none;
-  /* `border: none` first, then the bottom rule: the other order erased the
-     underline the active tab depends on. */
-  border: none;
-  padding: 0 0 2px;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
-  color: rgba(255, 255, 255, .62);
+.topstrip__clock {
+  flex: none;
+  display: none;
+  font-family: var(--font-mono);
+  font-size: var(--fs-meta);
+  letter-spacing: .06em;
+  color: var(--text-3);
+  white-space: nowrap;
 }
-.live-sport-tab:hover { color: var(--text); }
-.live-sport-tab--active { color: var(--text); border-bottom-color: currentColor; }
-.topstrip__status {
-  flex: 0 1 auto;
+@media (min-width: 1200px) {
+  .topstrip__clock { display: inline-flex; align-items: center; }
+}
+[data-hook="sport-level-host"] {
+  flex: 1;
   min-width: 0;
-  overflow: hidden;
   display: flex;
   align-items: center;
-  gap: var(--sp-3);
-  white-space: nowrap;
-  font-family: var(--font-mono);
-  font-size: 12.5px;
-  letter-spacing: .18em;
-  color: var(--live);
 }
-.topstrip__status[data-stale="true"] { color: var(--money-soft); }
-.topstrip__clock {
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  font-family: var(--font-mono);
-  font-size: 12.5px;
-  letter-spacing: .14em;
-  color: var(--text-dim);
-  white-space: nowrap;
-}
+
 @media (max-width: 899px) {
-  /* No rail below 900px, so the monogram moves into the strip. The strip
-     itself never scrolls or wraps: the status readout truncates before
-     the clock is pushed off, because a time nobody can read is worse
-     than a shortened freshness label. */
-  .topstrip { gap: var(--sp-4); padding: 0 var(--gutter-mobile); }
-  .topstrip__home { display: block; }
-  .topstrip__rule--wide, .topstrip__section { display: none; }
-  .topstrip__wordmark { font-size: 18px; }
-  .topstrip__status { letter-spacing: .08em; font-size: 12px; }
-  .topstrip__status > span:last-child {
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+  .topstrip {
+    position: static; /* "Neither row is sticky" (section 3, phone) */
+    height: auto;
+    padding: 0 var(--gutter-mobile);
+    row-gap: 0;
   }
-  .topstrip__clock { flex: none; font-size: 12px; letter-spacing: .08em; }
+  .topstrip__home {
+    min-height: var(--strip-height-phone); /* 56px: row 1 */
+  }
+  .topstrip__wordmark { font-size: 18px; }
+  .topstrip__rule,
+  .topstrip__rule--wide,
+  .topstrip__clock {
+    display: none; /* no clock on phone (shell-04); rules only separate desktop groups */
+  }
+  /* Forces a new line: the "phone sport row" (44px, 16px gutters via the
+     .topstrip padding above, which applies to every wrapped line). One
+     host, not two -- see the file header. */
+  [data-hook="sport-level-host"] {
+    flex: 1 0 100%;
+    min-height: var(--sportrow-height); /* 44px */
+    box-shadow: inset 0 1px 0 0 var(--edge-soft);
+  }
+}
+@media (max-width: 399px) {
+  /* Measured slack at 375-399px is 4px -- not enough for real font/
+     padding variance, so the cut is at 400px, not 375px. */
+  [data-hook="sport-level-host"] .sportlevel__tab {
+    display: none;
+  }
 }
 
 /* ---- outlet ---------------------------------------------------------*/
@@ -151,7 +171,10 @@
 .outlet { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .outlet > * { min-width: 0; }
 
-/* Sections inside a screen align to the 40px desktop page gutter. */
+/* Sections inside a screen align to the 40px desktop page gutter, 16px
+   on phone -- both already read var(--gutter-mobile), which foundation
+   moved from 14px to 16px (docs/DESIGN_SYSTEM.md section 2), so these
+   picked up the redesign's phone gutter with no further edit here. */
 .gutter { padding-left: var(--gutter-desktop); padding-right: var(--gutter-desktop); }
 @media (max-width: 899px) {
   .gutter { padding-left: var(--gutter-mobile); padding-right: var(--gutter-mobile); }
@@ -161,6 +184,8 @@
 .sechead {
   display: flex;
   align-items: baseline;
+  flex-wrap: wrap;
+  row-gap: var(--sp-2);
   gap: var(--sp-7);
   margin-bottom: var(--sp-10);
 }
@@ -173,7 +198,7 @@
   color: var(--text-mute);
   white-space: nowrap;
 }
-.sechead__label--live { color: var(--live); }
+.sechead__label--live { color: var(--fresh); }
 .sechead__hair {
   flex: 1;
   height: 1px;
@@ -189,11 +214,19 @@
 }
 .sechead__dot { flex: none; }
 @media (max-width: 899px) {
+  /* Meta is never hidden (section 7: "never hidden -- section meta,
+     sample sizes, conditions, the experimental notice"). It moves under
+     the label at 15px instead, forced onto its own line the same way
+     the top strip's sport row is: flex-basis 100% in a wrapping row. */
   .sechead { gap: var(--sp-5); }
-  .sechead__label { font-size: 14.5px; letter-spacing: .2em; }
-  /* At 390px the right-hand meta is the first thing to go: it is
-     supporting detail, and truncating it beats pushing the label off. */
-  .sechead__meta { display: none; }
+  .sechead__label { font-size: var(--fs-small); letter-spacing: .2em; } /* no text under 15px (section 7) */
+  .sechead__meta {
+    flex: 1 0 100%;
+    font-size: var(--fs-small);
+    letter-spacing: normal;
+    white-space: normal;
+    color: var(--text-3);
+  }
 }
 
 /* ---- footer (canvas: wordmark, hairline, legal meta; the full beta
@@ -220,20 +253,25 @@
   letter-spacing: .03em;
   color: var(--text-faint);
 }
-.sitefoot__hair { flex: 1; height: 1px; background: rgba(255, 255, 255, .07); }
+.sitefoot__product {
+  font-size: var(--fs-small);
+  font-weight: 700;
+  color: var(--text-hi);
+}
+.sitefoot__hair { flex: 1; height: 1px; background: var(--edge-soft); }
 .sitefoot__legal {
   flex: none;
   font-family: var(--font-mono);
   font-size: 12.5px;
   letter-spacing: .14em;
-  color: var(--text-ghost);
+  color: var(--text-3);
 }
-/* The helpline and the support link share the legal row's register --
-   quiet, monospaced, the same size as the 21+ notice beside them. They are
-   links, not decoration, so they get an underline on hover and a visible
-   focus ring; a helpline that cannot be found by keyboard is not a
-   helpline. Deliberately NOT --money or --live: neither is an alert and
-   neither is a price. */
+/* The helpline and the support/record/research/props/bet-check links
+   share the legal row's register -- quiet, monospaced, the same size as
+   the 21+ notice beside them. They are links, not decoration, so they
+   get an underline on hover and a visible focus ring; a helpline that
+   cannot be found by keyboard is not a helpline. Deliberately NOT
+   --primary or --fresh: neither is an alert and neither is a price. */
 .sitefoot__help,
 .sitefoot__support {
   flex: none;
@@ -248,14 +286,29 @@
 .sitefoot__support:hover,
 .sitefoot__help:focus-visible,
 .sitefoot__support:focus-visible {
-  color: var(--text-1);
+  color: var(--text-hi);
   text-decoration: underline;
 }
 @media (max-width: 899px) {
-  /* The row wraps on a phone rather than shrinking the helpline out of
-     legibility -- it is the one item here that must stay readable. */
-  .sitefoot__row { flex-wrap: wrap; row-gap: 8px; }
-  .sitefoot__hair { min-width: 24px; }
+  /* "Links at 15px in a two-column grid of 44px targets" (section 3,
+     Footer, Phone). The mark and the legal line each take their own
+     full-width row; every link (help + support-styled, whatever count
+     meta.js renders) wraps two-per-row via a 50% flex-basis, each a real
+     44px target. */
+  .sitefoot__row { flex-wrap: wrap; row-gap: var(--sp-4); }
+  .sitefoot__mark,
+  .sitefoot__legal { flex: 1 1 100%; white-space: normal; }
+  .sitefoot__hair { display: none; }
+  .sitefoot__help,
+  .sitefoot__support {
+    flex: 1 1 calc(50% - var(--sp-4));
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    font-size: var(--fs-small);
+    letter-spacing: normal;
+    white-space: normal;
+  }
 }
 .sitefoot__summary {
   font-size: 13.5px;
@@ -281,9 +334,8 @@
 .sitefoot__full {
   margin-top: var(--sp-5);
   padding: var(--sp-7) var(--sp-8);
-  --r: var(--r-badge);
-  background: rgba(255, 255, 255, .028);
-  box-shadow: inset 0 0 0 1px var(--edge-1);
+  background: var(--panel-2);
+  box-shadow: inset 0 0 0 1px var(--edge);
   font-size: 13.5px;
   line-height: 1.65;
   color: var(--text-faint);
@@ -292,11 +344,20 @@
   font-family: var(--font-mono);
   font-size: 12.5px;
   letter-spacing: .12em;
-  color: var(--text-ghost);
+  color: var(--text-3);
 }
 @media (max-width: 899px) {
   .sitefoot { padding: 22px var(--gutter-mobile) 32px; }
-  .sitefoot__row { flex-wrap: wrap; white-space: normal; }
+  /* No text under 15px (section 7) -- these read fine small on desktop
+     but the legal/summary/disclosure/version text was still under the
+     phone floor. */
+  .sitefoot__legal,
+  .sitefoot__summary,
+  .sitefoot__disclosure > summary,
+  .sitefoot__full,
+  .sitefoot__version {
+    font-size: var(--fs-small);
+  }
 }
 
 /* ---- reduced-motion note (canvas keeps this visible on Gameday) -----*/
@@ -328,9 +389,14 @@
 .screen-state { padding: var(--sp-15) var(--gutter-desktop); }
 @media (max-width: 899px) { .screen-state { padding: var(--sp-13) var(--gutter-mobile); } }
 
+/* Flat and square (section 2): dom.js still applies a "chamfer" class to
+   these shared panels, so --r is zeroed here rather than left at the
+   default --r-panel (16px) .chamfer would otherwise clip-path in --
+   these state panels are not one of the three things (brand mark,
+   rank-1 card, primary button) the chamfer stays on. */
 .state-loading {
   padding: var(--sp-9) var(--sp-11);
-  --r: var(--r-panel);
+  --r: 0;
 }
 .state-loading__figure {
   font-family: var(--font-mono);
@@ -339,70 +405,65 @@
   color: var(--text-faint);
 }
 
-.view-error { --r: var(--r-panel); }
+.view-error { --r: 0; }
 .view-error__status {
   font-family: var(--font-mono);
   font-size: 13px;
-  letter-spacing: .14em;
-  color: var(--text-faint);
+  letter-spacing: .06em;
+  color: var(--text-3);
 }
 .view-error__detail {
   margin-top: var(--sp-5);
   font-family: var(--font-mono);
   font-size: 13.5px;
-  color: var(--text-dim);
+  color: var(--text-2);
   word-break: break-word;
 }
 
-/* Sign-in required / subscription expired: money-tinted panel, 3px money
-   left rule, headline in Barlow italic 800, one sentence on what
-   happened and one on what happens next (handoff section 10's error
-   treatment). The technical detail sits in a collapsed disclosure -- a
-   raw API string never leads a customer surface. */
+/* Sign-in required / subscription expired / request failed -- a neutral
+   state panel now (docs/DESIGN_SYSTEM.md section 4's "Signed out"
+   treatment), not an alarm: a customer's own sign-in prompt, lapsed
+   subscription or network hiccup is not a warning to flash red at them.
+   Background/box-shadow/::before come from components.css's shared
+   neutral baseline (.state-loading/.state-empty/.state-error/.gate);
+   this file only adds layout, never a red tint. */
 .gate {
   position: relative;
   max-width: 620px;
   padding: var(--sp-11) var(--sp-12);
-  --r: var(--r-lg);
-  background: linear-gradient(150deg, rgba(255, 61, 87, .12), rgba(255, 255, 255, .014));
-  box-shadow: inset 0 0 0 1px rgba(255, 61, 87, .24);
+  --r: 0;
   display: flex;
   flex-direction: column;
   gap: var(--sp-6);
 }
-.gate::before {
-  content: "";
-  position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-  background: linear-gradient(180deg, var(--money), transparent);
-}
 .gate__eyebrow {
   font-family: var(--font-display);
-  font-size: 13.5px; font-weight: 700; letter-spacing: .24em;
-  color: var(--money-label);
+  font-size: var(--fs-meta); font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-3);
 }
 .gate__title {
   font-family: var(--font-display);
-  font-style: italic;
   font-weight: 800;
-  font-size: clamp(30px, 3.6vw, 44px);
-  line-height: .94;
+  font-size: var(--fs-h2);
+  line-height: 1.1;
   color: var(--text-hi);
 }
-.gate__body { font-size: 16px; line-height: 1.55; color: var(--text-2); }
+.gate__body { font-size: var(--fs-body); line-height: 1.5; color: var(--text-2); }
 .gate__actions { display: flex; gap: var(--sp-6); flex-wrap: wrap; }
 .gate__detail > summary {
   cursor: pointer;
   font-family: var(--font-display);
   font-size: 12.5px; font-weight: 700; letter-spacing: .18em;
   text-transform: uppercase;
-  color: var(--text-faint);
+  color: var(--text-3);
 }
 .gate__detail-body {
   margin-top: var(--sp-4);
   font-family: var(--font-mono);
   font-size: 13px;
   line-height: 1.6;
-  color: var(--text-dim);
+  color: var(--text-2);
   word-break: break-word;
 }
 

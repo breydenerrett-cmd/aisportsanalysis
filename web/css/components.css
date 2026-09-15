@@ -4,48 +4,66 @@
  * from handoff section 05. Depends on tokens.css + base.css.
  */
 
-/* ---- buttons -------------------------------------------------------*/
+/* ---- buttons ---------------------------------------------------------
+   Rebuilt flat, per docs/DESIGN_SYSTEM.md section 4: no gradients, no
+   hover lift, anywhere. .btn--ghost is kept as the name for the
+   secondary style so the nine existing call sites need no rename;
+   .btn--secondary and .btn--cyan (four existing callers: games.js,
+   mybets.js, today.js, landing.html) point at the same rules until
+   each caller migrates to .btn--ghost in its own group's pass. -------*/
 .btn {
   --r: var(--r-btn);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--sp-3);
-  padding: 13px 24px;
+  min-height: 44px;
+  padding: 0 24px;
+  border: 0;
   font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 16px;
-  letter-spacing: .14em;
-  text-transform: uppercase;
+  font-weight: 700;
   white-space: nowrap;
-  transition: transform var(--dur-hover-lift) ease, filter var(--dur-hover-lift) ease;
 }
-.btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
-.btn:active { transform: translateY(1px) scale(.99); }
 .btn:disabled { opacity: .4; pointer-events: none; }
 
 .btn--primary {
-  background: linear-gradient(120deg, var(--money), var(--money-2));
-  color: var(--money-ink);
-  box-shadow: 0 18px 42px -16px rgba(255, 61, 87, .8);
+  min-height: 48px;
+  background: var(--primary);
+  color: #FFFFFF;
+  font-weight: 800;
+  font-size: var(--fs-lead);
+  clip-path: polygon(
+    var(--r-btn) 0, 100% 0, 100% calc(100% - var(--r-btn)),
+    calc(100% - var(--r-btn)) 100%, 0 100%, 0 var(--r-btn)
+  );
 }
-.btn--secondary {
-  background: linear-gradient(160deg, var(--text-hi), var(--text-3));
-  color: var(--ground);
-}
-.btn--ghost {
-  background: transparent;
-  color: var(--text-3);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2);
-}
-.btn--ghost:hover { background: rgba(255, 255, 255, .06); }
+.btn--ghost,
+.btn--secondary,
 .btn--cyan {
-  background: linear-gradient(120deg, var(--live), var(--live-2));
-  color: var(--live-ink);
+  background: transparent;
+  color: var(--text-2);
+  font-size: 17px;
+  box-shadow: inset 0 0 0 1px var(--edge-hi);
 }
-.btn--cyan:focus-visible { outline-color: #FFFFFF; }
+.btn--ghost:hover,
+.btn--secondary:hover,
+.btn--cyan:hover {
+  background: rgba(255, 255, 255, .05);
+}
+.btn--text {
+  min-height: 44px;
+  padding: 0 var(--sp-2);
+  background: transparent;
+  color: var(--fresh-text);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 15px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.btn--text:hover { color: var(--fresh); }
 .btn--full { width: 100%; }
-.btn--lg { padding: 16px 28px; font-size: 17px; }
+.btn--lg { min-height: 52px; padding: 0 28px; font-size: 19px; }
 
 /* ---- monogram chip ---------------------------------------------------*/
 .monogram {
@@ -177,3 +195,524 @@
   box-shadow: inset 0 0 0 1px rgba(0, 224, 255, .45);
 }
 .segset__opt:hover { background: rgba(0, 224, 255, .08); }
+
+/* =====================================================================
+ * LINEHOUND REDESIGN (2026-09-15) -- shared page primitives.
+ * docs/DESIGN_SYSTEM.md sections 3-4. Defined once here, before any
+ * page group starts, so no two groups invent their own version (shell
+ * section 3's "shared class names" note). These class names are the
+ * contract other groups' JS builds to.
+ * ===================================================================== */
+
+/* ---- flat panel (cards) -----------------------------------------------
+   Overrides base.css's v1 gradient + scanline .panel now that surfaces
+   are flat, square and 1px-bordered (section 2: "everything is flat and
+   square, with 1px borders... depth comes from surface steps"). -------*/
+.panel {
+  background: var(--panel);
+  box-shadow: inset 0 0 0 1px var(--edge);
+}
+.panel::before { content: none; }
+
+/* ---- chip -------------------------------------------------------------
+   The word comes first (content is set by the caller); square corners,
+   13px desktop / 15px phone. Variants: confirmed (cyan dot), waiting
+   (amber ring), neutral (dashed), win (green, "Win" only), settled
+   (Loss/Push/Void -- neutral, never red) and coming-soon (the red news-
+   banner tag; --new is the banner's cyan counterpart). --------------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--edge-hi);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-meta);
+  letter-spacing: .02em;
+  white-space: nowrap;
+  color: var(--text-2);
+}
+.chip::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.chip--confirmed { color: var(--fresh-text); border-color: var(--fresh); }
+.chip--confirmed::before { background: var(--fresh); }
+.chip--waiting { color: var(--caution-text); border-color: var(--caution); }
+.chip--waiting::before { background: transparent; box-shadow: inset 0 0 0 1px var(--caution); }
+.chip--neutral { border-style: dashed; }
+.chip--neutral::before { display: none; }
+.chip--win { color: var(--win); border-color: var(--win); }
+.chip--win::before { display: none; }
+.chip--settled { color: var(--text-2); border-color: var(--edge-hi); }
+.chip--settled::before { display: none; }
+.chip--coming-soon { color: var(--primary); border-color: var(--primary); }
+.chip--coming-soon::before { display: none; }
+.chip--new { color: var(--fresh-text); border-color: var(--fresh); }
+.chip--new::before { display: none; }
+@media (max-width: 899px) {
+  .chip { font-size: var(--fs-small); }
+}
+
+/* ---- page header (web/js/layout.js's pageHeader()) --------------------
+   .pagehead is `node`: eyebrow, h1 title, purpose, status line. It
+   mounts once per route and is never cleared by a state render.
+   .pagehead__body is `body`, a separate sibling slot: every loading,
+   empty, error and content render clears and repaints only this node
+   (section 3's status-line note -- renderError must never wipe the
+   header). One h1 per page. ------------------------------------------*/
+.pagehead {
+  padding: var(--sp-9) 0 var(--sp-7);
+}
+.pagehead__eyebrow {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: .1em;
+  font-size: var(--fs-meta);
+  color: var(--text-3);
+  text-transform: uppercase;
+}
+.pagehead__title {
+  margin-top: var(--sp-3);
+  font-family: var(--font-display);
+  font-style: normal;
+  font-weight: 800;
+  font-size: var(--fs-h1);
+  line-height: 1.1;
+  color: var(--text-hi);
+}
+.pagehead__purpose {
+  margin-top: var(--sp-3);
+  max-width: 70ch;
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  color: var(--text-2);
+}
+.pagehead__status {
+  margin-top: var(--sp-5);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--text-3);
+}
+.pagehead__status b,
+.pagehead__status strong,
+.pagehead__status .pagehead__status-value {
+  font-weight: 400;
+  color: var(--text-hi);
+}
+.pagehead__body {
+  margin-top: var(--sp-9);
+}
+@media (max-width: 899px) {
+  .pagehead__eyebrow { font-size: var(--fs-small); }
+  .pagehead__title { font-size: 28px; }
+  .pagehead__purpose { font-size: 16px; }
+  .pagehead__status { font-size: var(--fs-small); }
+}
+
+/* ---- experimental notice ----------------------------------------------
+   One block above the picks (section 4). Never a per-card badge. ----- */
+.notice--experimental {
+  position: relative;
+  padding: var(--sp-5) var(--sp-7);
+  background: var(--panel-3);
+  box-shadow: inset 0 0 0 1px var(--edge);
+  font-size: var(--fs-small);
+  line-height: 1.5;
+  color: var(--text-2);
+}
+.notice--experimental::before {
+  content: "";
+  position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+  background: var(--edge-hi);
+}
+
+/* ---- disclosure (layout.js's disclosure({summary, body, id})) ---------
+   "View breakdown" and similar: a text control with aria-expanded that
+   expands in place. Its open/close is one of the two allowed motions
+   sitewide (section 8): 150ms, visitor-triggered, never idle. Works
+   whether the caller renders a native <details class="disclosure"> (the
+   accessibility-section-8-preferred markup) or a plain
+   <div class="disclosure"><button class="disclosure__summary">. -------*/
+.disclosure { }
+.disclosure > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.disclosure > summary::-webkit-details-marker,
+.disclosure > summary::marker {
+  display: none;
+  content: "";
+}
+.disclosure__summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 44px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--fresh-text);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 15px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.disclosure__summary::after {
+  content: "";
+  width: 7px; height: 7px;
+  flex: none;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform .15s ease;
+}
+.disclosure__summary[aria-expanded="true"]::after { transform: rotate(-135deg); }
+.disclosure__body {
+  margin-top: var(--sp-5);
+  padding: var(--sp-7);
+  background: var(--panel-2);
+  box-shadow: inset 0 0 0 1px var(--edge);
+}
+.disclosure__body[hidden] { display: none; }
+
+/* ---- data table (.dtable) ----------------------------------------------
+   Header cells 13px display, body cells 15px, figures in mono and
+   right-aligned, --edge-soft dividers. .dtable--stack is the phone
+   label:value mode for tables with more than three columns (each td
+   reads its column label from data-label); .dtable--scroll is the wide
+   book-table mode: horizontal scroll, sticky first column. ------------*/
+.dtable {
+  width: 100%;
+  border-collapse: collapse;
+}
+.dtable caption {
+  text-align: left;
+  padding-bottom: var(--sp-3);
+  font-size: var(--fs-meta);
+  color: var(--text-3);
+}
+.dtable th {
+  text-align: left;
+  padding: var(--sp-4) var(--sp-5);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-meta);
+  letter-spacing: .03em;
+  color: var(--text-3);
+  box-shadow: inset 0 -1px 0 var(--edge-soft);
+}
+.dtable td {
+  padding: var(--sp-4) var(--sp-5);
+  font-size: var(--fs-small);
+  color: var(--text-2);
+  box-shadow: inset 0 -1px 0 var(--edge-soft);
+}
+.dtable td[data-figure] {
+  font-family: var(--font-mono);
+  text-align: right;
+}
+@media (max-width: 899px) {
+  .dtable--stack thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .dtable--stack, .dtable--stack tbody, .dtable--stack tr, .dtable--stack td {
+    display: block; width: 100%;
+  }
+  .dtable--stack tr {
+    padding: var(--sp-5) 0;
+    box-shadow: inset 0 -1px 0 var(--edge-soft);
+  }
+  .dtable--stack td {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--sp-5);
+    padding: var(--sp-2) 0;
+    box-shadow: none;
+  }
+  .dtable--stack td[data-label]::before {
+    content: attr(data-label);
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--text-3);
+  }
+}
+.dtable--scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.dtable--scroll .dtable { width: max-content; min-width: 100%; }
+.dtable--scroll .dtable th:first-child,
+.dtable--scroll .dtable td:first-child {
+  position: sticky;
+  left: 0;
+  background: var(--panel);
+}
+
+/* ---- ranked row (.rankrow) ---------------------------------------------
+   At least 56px tall; rank 20px; selection 17-19px; meta 15px. --------*/
+.rankrow {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-5);
+  min-height: 56px;
+  padding: var(--sp-3) 0;
+  box-shadow: inset 0 -1px 0 var(--edge-soft);
+}
+.rankrow__rank {
+  flex: none;
+  min-width: 2ch;
+  font-family: var(--font-mono);
+  font-size: 20px;
+  color: var(--text-3);
+  text-align: right;
+}
+.rankrow__selection {
+  flex: 1;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 19px;
+  color: var(--text-hi);
+}
+.rankrow__meta {
+  flex: none;
+  font-size: var(--fs-small);
+  color: var(--text-3);
+}
+@media (max-width: 899px) {
+  .rankrow__selection { font-size: 17px; }
+}
+
+/* ---- forms (.form / .field) --------------------------------------------
+   15px labels, 16px inputs, 44px controls. ----------------------------*/
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-7);
+}
+.form__actions {
+  display: flex;
+  gap: var(--sp-5);
+  flex-wrap: wrap;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.field__label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-small);
+  color: var(--text-2);
+}
+.field__hint {
+  font-size: var(--fs-small);
+  color: var(--text-3);
+}
+.field__error {
+  font-size: var(--fs-small);
+  color: var(--caution-text);
+}
+.field input,
+.field select,
+.field textarea,
+.field__input {
+  min-height: 44px;
+  padding: 0 var(--sp-5);
+  background: var(--panel-2);
+  border: 1px solid var(--edge);
+  color: var(--text-hi);
+  font-family: var(--font-body);
+  font-size: 16px;
+}
+.field textarea,
+.field textarea.field__input {
+  padding: var(--sp-4) var(--sp-5);
+  min-height: 96px;
+}
+.field input:focus-visible,
+.field select:focus-visible,
+.field textarea:focus-visible,
+.field__input:focus-visible {
+  outline: 3px solid var(--fresh);
+  outline-offset: 2px;
+}
+
+/* ---- neutral state / gate panels ---------------------------------------
+   dom.js's .state-loading/.state-empty/.state-error and .gate (sign-in,
+   subscription, request-failed) -- flat and neutral here as a shared
+   baseline; chrome's app.css may layer route-specific placement on top
+   without conflict, since it loads after this file everywhere. -------*/
+.state-loading,
+.state-empty,
+.state-error,
+.gate {
+  background: var(--panel-3);
+  box-shadow: inset 0 0 0 1px var(--edge);
+}
+.state-loading::before,
+.state-error::before,
+.gate::before {
+  content: none;
+}
+
+/* ---- news banner (news.js's mountNews) ---------------------------------
+   Row 1: controls (tag, "N of 4", previous/next, dismiss), each a 44px
+   target. Row 2: the item text, full width, wrapping freely -- the tag
+   itself is a .chip--coming-soon or .chip--new. Items never rotate on
+   their own (R_MOTION); aria-live is set only after a press. ---------*/
+.news {
+  width: 100%;
+  padding: var(--sp-5) var(--sp-7);
+  background: var(--panel-3);
+  box-shadow: inset 0 -1px 0 var(--edge-soft);
+}
+.news__row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-5);
+}
+.news__count {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-3);
+}
+.news__spacer { flex: 1; }
+.news__nav,
+.news__dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  background: none;
+  border: 0;
+  font-size: 17px;
+  line-height: 1;
+  color: var(--text-2);
+}
+.news__nav:hover,
+.news__dismiss:hover {
+  color: var(--text-hi);
+}
+.news__text {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-small);
+  line-height: 1.5;
+  color: var(--text-2);
+}
+.news__text a { color: var(--fresh-text); }
+@media (max-width: 899px) {
+  /* Integration fix, group-1 pass: .news__count ("1 of 4") was a flat 13px
+     --fs-meta value with no phone override, under the phone 15px text
+     floor the chrome group's own acceptance bar checks for the banner row
+     (DESIGN_SYSTEM.md section 9 / --fs-meta is documented as "desktop
+     labels only"). Bumped to --fs-small on phone, matching every other
+     meta-style label in this file (.rankrow__meta, .field__label, etc). */
+  .news__count { font-size: var(--fs-small); }
+}
+
+/* ---- coming-soon page (comingsoon.js's renderComingSoon) --------------*/
+.comingsoon { }
+.comingsoon__section {
+  margin-top: var(--sp-9);
+}
+.comingsoon__heading {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--text-2);
+  margin-bottom: var(--sp-3);
+}
+.comingsoon__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.comingsoon__item {
+  padding: var(--sp-5) var(--sp-7);
+  background: var(--panel);
+  box-shadow: inset 0 0 0 1px var(--edge);
+  font-size: var(--fs-small);
+  line-height: 1.5;
+  color: var(--text-2);
+}
+.comingsoon__actions {
+  display: flex;
+  gap: var(--sp-5);
+  flex-wrap: wrap;
+  margin-top: var(--sp-9);
+}
+
+/* ---- sport level bar (sport.js's renderSportLevel) ---------------------
+   Live sports render as tabs (3px red underline when selected); coming-
+   soon sports render as the two red text links. One host, styled here;
+   chrome's app.css repositions the same host between the desktop strip
+   and the phone sport row -- not two separate mounts. ------------------*/
+.sportlevel {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-7);
+  min-height: 44px;
+  /* CHR-1: the host (`[data-hook="sport-level-host"]` in app.css) is
+     `flex: 1` so it fills the strip's leftover width, but a flex ITEM
+     with no `flex-grow` of its own still only sizes to its own content
+     -- `.sportlevel` was stopping at the width of its tabs + soon links,
+     so `.sportlevel__spacer`'s `flex: 1` had nothing beyond that to grow
+     into and the coming-soon links sat right after the MLB tab instead
+     of at the strip's far right (measured: host l428-r1165, .sportlevel
+     only l428-r760). Stretching `.sportlevel` itself to the host's full
+     width is what makes the internal spacer's growth reach the edge, on
+     both the desktop strip and the phone sport row. */
+  flex: 1;
+  min-width: 0;
+}
+.sportlevel__tabs {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-7);
+}
+.sportlevel__tab {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--text-2);
+  box-shadow: inset 0 -3px 0 transparent;
+}
+.sportlevel__tab[aria-current="page"] {
+  color: var(--text-hi);
+  box-shadow: inset 0 -3px 0 var(--primary);
+}
+.sportlevel__spacer { flex: 1; }
+.sportlevel__soon {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-9);
+}
+.sportlevel__soon-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-small);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--primary);
+  white-space: nowrap;
+}
+.sportlevel__soon-link:hover,
+.sportlevel__soon-link:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.sportlevel__soon-link[aria-current="page"] {
+  box-shadow: inset 0 -3px 0 var(--primary);
+}

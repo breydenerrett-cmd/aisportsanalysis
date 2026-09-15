@@ -57,40 +57,61 @@
 <style>[hidden]{display:none}</style>
 </head>
 <body>
-<!-- APP SHELL, per design/linehound-v1 section 06 ("5 destinations, two
-     shells"): a 76px left icon rail ABSOLUTE inside this wrapper (never
-     fixed to the viewport -- handoff section 12's rail-scoping note), a
-     compact 62px top strip, the routed view, and the footer. Below 900px
-     the rail is replaced by the bottom tab bar at the end of this file.
+<!-- APP SHELL, docs/DESIGN_SYSTEM.md sections 3-4 ("the shell") and 8
+     ("landmarks"): a skip link first, then the labelled desktop rail
+     (228px, ABSOLUTE inside this wrapper, never fixed to the viewport),
+     the top strip, the news banner, the routed view, and the footer.
+     Below 900px the rail is replaced by the fixed bottom tab bar at the
+     end of this file.
 
      There is deliberately NO invite-token bar in the chrome: token entry
      lives on the interim #/signin route (web/js/signin.js), so an
      unauthenticated reader meets one customer-language screen instead of
      a credential form bolted to every page. -->
+<!-- CHR-9: href="#main-content" is a hash change, and the hash router
+     (main.js's parseHash) treats any unknown hash as the default route,
+     so an unhandled click re-routed the visitor to Today from wherever
+     they actually were. main.js's boot() wires a click handler on this
+     link (data-hook below) that prevents the hash navigation and
+     focuses #main-content directly instead -- kept in the module, not
+     an inline attribute here, per test_web_structure.py's
+     no-inline-event-handler rule. The href stays so the link still
+     degrades to a plain same-page anchor jump if JS never boots. -->
+<a class="skip-link" data-hook="skip-link" href="#main-content">Skip to content</a>
 <div class="shell">
-  <nav class="rail" aria-label="primary" data-hook="primary-nav"></nav>
+  <nav class="rail" aria-label="MLB sections" data-hook="primary-nav"></nav>
 
   <div class="shell__column">
     <header class="topstrip" data-hook="topstrip">
       <a class="topstrip__home" href="landing.html" aria-label="LINEHOUND home">
         <span class="hound" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span class="topstrip__wordmark" data-hook="product-name">LINEHOUND</span>
       </a>
-      <span class="topstrip__wordmark" data-hook="product-name">LINEHOUND</span>
       <span class="topstrip__rule" aria-hidden="true"></span>
-      <span class="topstrip__section" data-hook="section-label"></span>
-      <div data-hook="sport-switcher-host"></div>
-      <span class="topstrip__spacer"></span>
-      <span class="topstrip__status" data-hook="board-status" role="status"></span>
+      <!-- ONE host: web/js/sport.js's renderSportLevel(host, activeSport,
+           {placement, linkPrefix}) builds a single <nav aria-label="Sports">
+           containing the live sport tabs, its own spacer and the two red
+           coming-soon links together (desktop strip items 3-5,
+           docs/DESIGN_SYSTEM.md section 3) and mounts the whole thing here
+           in one call -- never two separate hosts. CSS repositions this
+           same host between the desktop strip and the phone sport row
+           (section 3's "single renderSportLevel mount, not two"). -->
+      <div data-hook="sport-level-host"></div>
       <span class="topstrip__rule topstrip__rule--wide" aria-hidden="true"></span>
       <time class="topstrip__clock" data-hook="shell-clock"></time>
     </header>
 
-    <main class="outlet" data-hook="app-outlet" aria-label="page content"></main>
+    <!-- News banner (web/js/news.js), directly under the strip on
+         desktop and under the sport row on phone (docs/DESIGN_SYSTEM.md
+         section 3). Mounted by main.js on every route change. -->
+    <div class="news-host" data-hook="news-host"></div>
+
+    <main class="outlet" data-hook="app-outlet" aria-label="page content" id="main-content" tabindex="-1"></main>
 
     <div class="footer-host" data-hook="disclaimer-host" aria-label="disclaimer"></div>
   </div>
 
-  <nav class="tabbar" aria-label="primary mobile" data-hook="primary-nav-mobile"></nav>
+  <nav class="tabbar" aria-label="MLB sections" data-hook="primary-nav-mobile"></nav>
 </div>
 
 <script type="module" src="js/main.js"></script>

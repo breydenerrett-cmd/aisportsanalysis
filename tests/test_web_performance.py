@@ -108,7 +108,10 @@ class MainJsRegistersPerformanceRoute(unittest.TestCase):
                 stripped = line.strip()
                 if stripped.startswith("*") or stripped.startswith("//"):
                     continue
-                if 'href: "#/performance"' in line or "'#/performance'" in line:
+                # meta.js's footer wraps every app-route href in route() so the
+                # same footer works from landing.html (linkPrefix, CHR-7).
+                if ('href: "#/performance"' in line or "'#/performance'" in line
+                        or 'route("#/performance")' in line):
                     entry_points.append(f"{path.name}: {stripped[:70]}")
         self.assertTrue(
             entry_points,
@@ -116,7 +119,12 @@ class MainJsRegistersPerformanceRoute(unittest.TestCase):
             "dispatches but nothing in the app links to it")
 
     def test_section_label_registered(self):
-        self.assertIn("performance: \"PERFORMANCE\"", self.text)
+        # The redesign (docs/DESIGN_SYSTEM.md section 3, CHR-9, 2026-09-15)
+        # removed the top strip's section label and its SECTION_LABELS table:
+        # the page names itself in its own pageHeader instead. What must still
+        # hold is that main.js dispatches the route at all.
+        self.assertNotIn("SECTION_LABELS", self.text)
+        self.assertIn('route === "performance"', self.text)
 
     def test_nav_item_present(self):
         self.assertIn('label: "RESULTS"', self.text)

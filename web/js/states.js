@@ -91,6 +91,73 @@ function actionsRow(actions, note) {
 }
 
 /* ---------------------------------------------------------------------
+ * withLoadingTimeout -- DESIGN_SYSTEM.md section 4, the LOADING state's
+ * two-stage timeout ("After 15s add 'Still loading. The server is slow
+ * right now.' After 30s switch to the error state", PERF-1, gd-07).
+ * Lives here, once, because today.js, matchups.js, performance.js and
+ * every other screen need the identical pair of thresholds -- a second
+ * hand-rolled setTimeout pair per screen is exactly how they drift.
+ * ------------------------------------------------------------------- */
+
+/**
+ * Wraps a screen's own loading promise (typically an API call, or a
+ * `Promise.allSettled` over several) with the design system's two-stage
+ * timeout. `onSlow()` fires once, at `slowMs` (default 15000ms), ONLY if
+ * the promise has not already settled -- a caller uses it to swap in the
+ * "Still loading. The server is slow right now." copy without changing
+ * what is being awaited. At `failMs` (default 30000ms) the RETURNED
+ * promise gives up and rejects with a network-shaped error object
+ * (`{status: null, message}`) -- the same shape `api.js`'s own request
+ * timeout raises and `dom.js`'s `renderError` already renders as "We
+ * could not reach the board.", so a caller passes the rejection straight
+ * into `renderError(body, err)` with no second error-shape special case.
+ *
+ * The wrapped promise itself is never cancelled -- this module owns no
+ * network layer, so a caller that needs the underlying request to stop
+ * (rather than merely be ignored) still needs its own AbortController.
+ * A resolution or rejection that arrives after `failMs` is simply
+ * ignored: by then the screen has already moved to the error state, and
+ * painting over it with a late arrival would be the same stale-render
+ * race DESIGN_SYSTEM.md section 6 calls out for Gameday (gd-07).
+ */
+export function withLoadingTimeout(promise, { slowMs = 15000, failMs = 30000, onSlow } = {}) {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+
+    const slowTimer = slowMs > 0
+      ? setTimeout(() => {
+          if (!settled && typeof onSlow === "function") onSlow();
+        }, slowMs)
+      : null;
+
+    const failTimer = failMs > 0
+      ? setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          reject({ status: null, message: "The page gave up waiting for a response." });
+        }, failMs)
+      : null;
+
+    Promise.resolve(promise).then(
+      (value) => {
+        if (settled) return;
+        settled = true;
+        if (slowTimer) clearTimeout(slowTimer);
+        if (failTimer) clearTimeout(failTimer);
+        resolve(value);
+      },
+      (err) => {
+        if (settled) return;
+        settled = true;
+        if (slowTimer) clearTimeout(slowTimer);
+        if (failTimer) clearTimeout(failTimer);
+        reject(err);
+      }
+    );
+  });
+}
+
+/* ---------------------------------------------------------------------
  * V2-27 -- LOADING · SKELETON
  * ------------------------------------------------------------------- */
 

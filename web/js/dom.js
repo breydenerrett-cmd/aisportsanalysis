@@ -453,19 +453,34 @@ export function renderError(container, err) {
     "data-status": status,
   });
   section.appendChild(el("p", { class: "gate__eyebrow", text: "REQUEST FAILED" }));
+  // NETWORK VS. SERVER ERROR, KEPT DISTINCT (DESIGN_SYSTEM.md section 4).
+  // A `status` of null means the request never reached the server at all
+  // (no response) -- that is a different failure for the reader than the
+  // server answering with an error, even though this client cannot always
+  // tell local network trouble from a real service outage. Collapsing
+  // both into one generic sentence would let a real outage read exactly
+  // like the server calmly saying "no games" -- see this module's own
+  // docstring and docs/OPERATIONS_RUNBOOK.md sect 7. Both branches share
+  // the same neutral panel and "Technical detail" structure below; only
+  // the headline/body sentence differs by cause.
   if (status === "network") {
     section.appendChild(el("p", { class: "gate__title", text: "We could not reach the board." }));
     section.appendChild(el("p", { class: "gate__body", text:
       "That could be your own connection or a service outage — it is not the same as "
       + "the server answering \"no games\"." }));
   } else {
-    section.appendChild(el("p", { class: "gate__title", text: "That request did not go through." }));
-    section.appendChild(el("p", { class: "view-error__status gate__body", text: `Status: ${status}` }));
+    section.appendChild(el("p", { class: "gate__title", text: "That didn’t load." }));
+    section.appendChild(el("p", { class: "gate__body", text: "The request failed." }));
   }
   const disclosure = el("details", { class: "gate__detail" });
   disclosure.appendChild(el("summary", { text: "Technical detail" }));
-  disclosure.appendChild(el("div", { class: "gate__detail-body view-error__detail" },
-    [typeof detail === "string" ? document.createTextNode(detail) : renderUnknown(detail)]));
+  const disclosureBody = el("div", { class: "gate__detail-body view-error__detail" });
+  if (status !== "network") {
+    disclosureBody.appendChild(el("p", { class: "view-error__status", text: `Status: ${status}` }));
+  }
+  disclosureBody.appendChild(
+    typeof detail === "string" ? document.createTextNode(detail) : renderUnknown(detail));
+  disclosure.appendChild(disclosureBody);
   section.appendChild(disclosure);
   container.appendChild(section);
 }

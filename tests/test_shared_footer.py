@@ -90,6 +90,70 @@ class TheFooterIsStyledEverywhereItMounts(unittest.TestCase):
                         "override the marketing page's own styling")
 
 
+class FooterMatchesTheRedesign(unittest.TestCase):
+    """CHR-7 (DESIGN_SYSTEM.md section 3, "Footer"): the summary sentence,
+    the link set/order, and the linkPrefix parameter that lets landing.js
+    reuse this same footer with working hrefs. Static text checks, same
+    style as the rest of this file."""
+
+    def setUp(self):
+        self.code = (WEB / "js" / "meta.js").read_text(encoding="utf-8")
+
+    def test_summary_matches_the_design_system_wording(self):
+        # DESIGN_SYSTEM.md section 5's replacement table, shell-07: the old
+        # "Three to five bets a day, frozen before first pitch and graded
+        # after" overclaimed a fixed price a later publish can still
+        # replace (section 5's record wording) -- this exact sentence
+        # replaces it.
+        self.assertIn(
+            "Beta. Picks are published before each game and graded as "
+            "they stood at their lock, win or lose. Nothing here is a "
+            "guarantee.",
+            self.code,
+        )
+
+    def test_renderDisclaimerFooter_takes_an_optional_linkPrefix(self):
+        # Matches sport.js's renderSportLevel(host, activeSport,
+        # {placement, linkPrefix}) contract -- landing.js calls this with
+        # linkPrefix: "index.html" so #/betcheck etc. resolve from
+        # landing.html rather than dead-ending as a bare fragment there.
+        self.assertIn(
+            "export async function renderDisclaimerFooter(container, "
+            '{ linkPrefix = "" } = {})',
+            self.code,
+        )
+
+    def test_footer_betcheck_link_exists(self):
+        # D7: CHECK leaves the primary navigation and the fixed "Check a
+        # bet" band goes with it, but Bet Check's route stays reachable
+        # from the footer.
+        self.assertIn('"data-hook": "footer-betcheck"', self.code)
+        self.assertIn('route("#/betcheck")', self.code)
+
+    def test_every_existing_footer_hook_is_kept(self):
+        for hook in ("footer-support", "footer-record", "footer-performance", "footer-props"):
+            self.assertIn(f'"data-hook": "{hook}"', self.code,
+                          f"{hook} must stay -- another file may link to it by name")
+
+    def test_footer_links_appear_in_the_design_systems_stated_order(self):
+        # Section 3: "links to Results, Research, Player props, Bet Check
+        # and Support."
+        hooks_in_order = ["footer-record", "footer-performance", "footer-props",
+                          "footer-betcheck", "footer-support"]
+        positions = [self.code.index(f'"data-hook": "{h}"') for h in hooks_in_order]
+        self.assertEqual(positions, sorted(positions),
+                         "footer links are not in Results/Research/Player props/"
+                         "Bet Check/Support order")
+
+    def test_viewer_zone_is_stated_exactly_once(self):
+        # Section 3, row 4: "Times shown in PDT, your time zone." -- and
+        # explicitly NOT duplicated with the legal row's old "ALL TIMES
+        # {zone} ·" prefix, which is removed.
+        self.assertIn("your time zone", self.code)
+        self.assertIn("localZoneAbbr()", self.code)
+        self.assertNotIn("ALL TIMES", self.code)
+
+
 class ResponsibleGamblingIsActionable(unittest.TestCase):
     """1-800-GAMBLER existed only in the design mockups and never shipped
     into web/. The product told people to play responsibly and gave them

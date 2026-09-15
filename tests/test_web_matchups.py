@@ -185,7 +185,11 @@ class DayRouteRegistered(unittest.TestCase):
         self.assertIn('route === "day"', self.text)
 
     def test_section_label_registered(self):
-        self.assertIn('day: "DAILY RECORD"', self.text)
+        # The redesign (docs/DESIGN_SYSTEM.md section 3, CHR-9, 2026-09-15)
+        # removed the top strip's section label and its SECTION_LABELS table;
+        # each page names itself in its own header. The route test above
+        # still pins the dispatch; this pins that the old table is gone.
+        self.assertNotIn("SECTION_LABELS", self.text)
 
 
 class DayRecapGalleryWiredIntoPerformance(unittest.TestCase):

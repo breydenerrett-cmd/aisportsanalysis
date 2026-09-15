@@ -1,13 +1,17 @@
 /*
- * LINEHOUND v1 navigation -- handoff section 06 ("5 destinations, two
- * shells").
+ * LINEHOUND navigation -- docs/DESIGN_SYSTEM.md section 3 (the shell).
  *
  *   .site-nav          the PUBLIC landing page: no rail, no tab bar, one
- *                      sticky 64px top bar (unchanged, still used by
- *                      web/landing.html)
- *   .rail / .tabbar    the APP shell's two forms of the same five
- *                      destinations -- 76px absolute icon rail at
- *                      >= 900px, 74px bottom tab bar below it
+ *                      sticky top bar, plus (2026-09-15) a right-hand
+ *                      coming-soon slot and, on phone, a sport row and a
+ *                      text-link row -- still used by web/landing.html
+ *   .rail / .tabbar    the APP shell's two forms of the same destinations
+ *                      -- a 228px labelled rail at >= 900px (sport
+ *                      heading, numbered items with sub-lines), a bottom
+ *                      tab bar (labels only) below it
+ *
+ * Chrome-owned, CHR-6. Flat and square throughout (section 2): no
+ * chamfer, no gradient fill, no hover-lift transform on a nav item.
  */
 
 /* ---- public site nav (landing) ------------------------------------*/
@@ -20,10 +24,8 @@
   align-items: center;
   gap: var(--sp-9);
   padding: 0 var(--gutter-desktop);
-  background: rgba(13, 14, 17, .84);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .07);
+  background: var(--panel-3);
+  box-shadow: inset 0 -1px 0 0 var(--edge);
 }
 
 .wordmark {
@@ -49,7 +51,7 @@
 }
 .wordmark__mark::before {
   left: 1px;
-  border-left: 7px solid var(--money);
+  border-left: 7px solid var(--primary);
 }
 .wordmark__mark::after {
   left: 9px;
@@ -61,16 +63,16 @@
   left: 2px;
   width: 18px;
   height: 11px;
-  background: linear-gradient(120deg, var(--money), var(--money-2));
+  background: var(--primary);
   clip-path: polygon(0 0, 100% 0, 100% 40%, 52% 100%, 0 60%);
 }
 .wordmark__text {
   font-family: var(--font-display);
-  font-style: italic;
+  font-style: italic; /* italic survives only in the wordmark (section 2) */
   font-weight: 800;
   font-size: 21px;
   letter-spacing: .03em;
-  color: var(--text);
+  color: var(--text-hi);
   white-space: nowrap;
 }
 
@@ -84,12 +86,65 @@
   font-size: 14.5px;
   color: var(--text-mute);
 }
-.site-nav__links a:hover { color: var(--text); }
+.site-nav__links a:hover { color: var(--text-hi); }
+
+/* ---- right-hand coming-soon slot (desktop) --------------------------
+   The same "NFL · COMING SOON" / "TENNIS · COMING SOON" red links as
+   the app shell's top strip -- landing.js mounts renderSportLevel's host
+   here with linkPrefix: "index.html" (section 3). Assumes it lands as
+   the last child of .site-nav, after .site-nav__links; .site-nav__links'
+   own flex:1 already pushes a later sibling to the far right, so no
+   margin-left:auto is needed (and would only compete with it). -------*/
+.site-nav__soon {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+}
+@media (max-width: 899px) {
+  .site-nav__soon { display: none; } /* moves into .site-nav__sportrow below */
+}
+
+/* ---- phone sport row / phone text-link row --------------------------
+   Landing's phone header (section 6, Landing item 1): "a sport row, with
+   Pricing · FAQ as text links under the hero actions" -- carried here as
+   two dedicated rows under .site-nav so landing.html has a documented
+   class to mount into. Hidden at >=900px; .site-nav__links already
+   covers desktop. ------------------------------------------------------*/
+.site-nav__sportrow { display: none; }
+.site-nav__textlinks { display: none; }
+@media (max-width: 899px) {
+  .site-nav__sportrow {
+    display: flex;
+    align-items: center;
+    min-height: var(--sportrow-height);
+    padding: 0 var(--gutter-mobile);
+    background: var(--panel-3);
+    box-shadow: inset 0 -1px 0 0 var(--edge-soft);
+  }
+  .site-nav__textlinks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-7);
+    padding: var(--sp-3) var(--gutter-mobile) 0;
+  }
+  .site-nav__textlinks a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    font-size: var(--fs-small);
+    color: var(--text-2);
+  }
+  .site-nav__textlinks a:hover,
+  .site-nav__textlinks a:focus-visible {
+    color: var(--fresh-text);
+  }
+}
 
 /* ---- the hound monogram block --------------------------------------
-   Two ears over a skewed muzzle, built from four boxes (canvas: rail
-   head, 30x26). Rendered at the rail head on desktop and in the top
-   strip on mobile, where there is no rail to carry it. -------------- */
+   Two ears over a skewed muzzle, built from four boxes. Rendered at the
+   top strip on both desktop and mobile now that the rail carries no
+   mark of its own (the sport heading took its place -- see .rail
+   below). --------------------------------------------------------- */
 .hound {
   position: relative;
   display: block;
@@ -100,7 +155,7 @@
 .hound i { position: absolute; display: block; }
 .hound i:nth-child(1) {
   top: 0; left: 2px; width: 0; height: 0;
-  border-left: 9px solid var(--money);
+  border-left: 9px solid var(--primary);
   border-bottom: 11px solid transparent;
 }
 .hound i:nth-child(2) {
@@ -110,122 +165,177 @@
 }
 .hound i:nth-child(3) {
   bottom: 0; left: 3px; width: 25px; height: 16px;
-  background: linear-gradient(120deg, var(--money), var(--money-2));
+  background: var(--primary);
   clip-path: polygon(0 0, 100% 0, 100% 40%, 52% 100%, 0 60%);
 }
 .hound i:nth-child(4) {
   bottom: 5px; left: 3px; width: 7px; height: 3px;
-  background: var(--rail);
+  background: var(--panel-3);
   transform: skewX(-14deg);
 }
 
-/* ---- desktop icon rail ---------------------------------------------
-   ABSOLUTE inside .shell, never fixed to the viewport (handoff 12).  */
+/* ---- desktop rail -----------------------------------------------------
+   228px wide (docs/DESIGN_SYSTEM.md section 2 changed this from 76px),
+   --panel-3, full height, ABSOLUTE inside .shell, never fixed to the
+   viewport. A "MLB" heading (display 700 13px, --text-3) sits above the
+   numbered items; the rail reserves an empty data-hook="sport-plan" slot
+   under them for D6's later per-sport plan/price (renders nothing while
+   `plan` is null). ------------------------------------------------- */
 .rail {
   position: absolute;
   inset: 0 auto 0 0;
-  width: var(--rail-width);
+  width: var(--rail-width); /* 228px */
   z-index: 60;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 20px 0;
-  background: linear-gradient(180deg, var(--rail-top), var(--rail));
-  box-shadow: inset -1px 0 0 rgba(255, 255, 255, .06),
-              8px 0 40px -20px rgba(0, 0, 0, .9);
+  background: var(--panel-3);
+  box-shadow: inset -1px 0 0 0 var(--edge);
+  padding: var(--sp-9) 0;
 }
-.rail__mark { margin-bottom: 26px; }
+.rail__heading {
+  flex: none;
+  padding: 0 var(--sp-9) var(--sp-7);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-meta); /* 13px */
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
 .rail__items {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--sp-2);
   width: 100%;
+  /* The index ("01", "02"...) is generated here, not by main.js -- its
+     NAV_ITEMS carry no index field, only {hash, label, sub}. A CSS
+     counter reproduces docs/DESIGN_SYSTEM.md section 3's "index in mono
+     14px" with no JS change: numbering the rendered items is exactly
+     what a counter is for. */
+  counter-reset: rail-item;
 }
+.rail__plan {
+  margin-top: auto;
+  padding: var(--sp-7) var(--sp-9);
+}
+.rail__plan:empty { display: none; }
 
-.nav-item {
-  --r: var(--r-badge);
+/* ---- rail item (docs/DESIGN_SYSTEM.md section 3: index + label +
+   sub-line, >=64px tall) and tab bar item (label only, >=56px tall) --
+   main.js's navItem() renders these as two independently classed
+   elements (`.rail__item` with a sub-line, `.tabbar__item` without), so
+   they are styled as two selectors sharing the same visual language
+   below rather than one class with contextual overrides. Selected = a
+   4px --primary edge (left on the rail, top in the tab bar) plus a
+   --primary-soft wash; never a gradient, never a hover-lift. -------- */
+.rail__item,
+.tabbar__item {
   position: relative;
-  width: 52px;
-  height: 52px;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 5px;
-  transition: background var(--dur-hover-lift) ease;
+  color: var(--text-2);
 }
-.nav-item:hover { background: rgba(255, 255, 255, .05); }
-.nav-item__label {
+.rail__item:hover,
+.tabbar__item:hover { background: rgba(255, 255, 255, .04); }
+
+.rail__item {
+  counter-increment: rail-item;
+  /* CHR-6: the shared `.rail__item, .tabbar__item` rule above sets
+     `display: flex`, which puts the index, the label and the sub-line
+     in one row -- the label and sub then compete for the same line's
+     width, and the sub (nowrap + ellipsis, below) truncates: "Every
+     game, in depth" measured 76px visible against a 125px scrollWidth.
+     Grid puts the index in its own column, spanning both rows, and
+     stacks the label (row 1) over the sub (row 2) in the second column,
+     which is exactly the >=64px-tall "label + sub-line" anatomy section
+     3 asks for. This overrides the shared rule's `display: flex` for
+     `.rail__item` only -- `.tabbar__item` (label only, no sub-line)
+     keeps it. */
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: var(--sp-5);
+  width: 100%;
+  min-height: 64px;
+  padding: var(--sp-3) var(--sp-9);
+}
+.rail__item::before {
+  content: counter(rail-item, decimal-leading-zero);
+  grid-row: 1 / span 2;
+  grid-column: 1;
+  align-self: center;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--text-3);
+}
+.rail__item-label {
+  grid-column: 2;
+  display: block;
   font-family: var(--font-display);
-  font-size: 12.5px;
   font-weight: 700;
-  letter-spacing: .1em;
-  color: var(--text-dim);
+  font-size: var(--fs-lead); /* 19px */
+  color: var(--text-hi);
   white-space: nowrap;
 }
-.nav-item[aria-current="page"] {
-  background: linear-gradient(150deg, rgba(255, 61, 87, .22), rgba(255, 61, 87, .05));
-  box-shadow: inset 0 0 0 1px rgba(255, 61, 87, .4);
-}
-.nav-item[aria-current="page"]::before {
-  content: "";
-  position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px;
-  background: var(--money);
-}
-.nav-item[aria-current="page"] .nav-item__label { color: var(--money-label); }
-.nav-item[aria-current="page"] .glyph {
-  background: var(--money-lit);
-  box-shadow: 0 0 14px rgba(255, 61, 87, .7);
-}
-
-/* Glyph set, section 06's destination table: rounded square (TODAY,
-   GAMES), circle (CHECK), rising line (ODDS), ticket notch (BETS). */
-.glyph {
+.rail__item-sub {
+  grid-column: 2;
   display: block;
-  width: 15px; height: 15px;
-  border-radius: 3px;
-  background: rgba(233, 235, 240, .3);
+  margin-top: 2px;
+  font-size: var(--fs-meta); /* 13px */
+  color: var(--text-3);
+  /* Full column width now (not squeezed beside the label), so the
+     ellipsis truncation this used to need is dropped -- the sub-line
+     shows in full, wrapping if a fallback font ever runs long. */
+  white-space: normal;
 }
-.glyph--circle { border-radius: 50%; }
-.glyph--line {
-  height: 11px; border-radius: 0;
-  clip-path: polygon(0 100%, 32% 40%, 66% 62%, 100% 0, 100% 100%);
+.rail__item[aria-current="page"] {
+  background: var(--primary-soft);
+  box-shadow: inset 4px 0 0 0 var(--primary);
 }
-.glyph--ticket {
-  width: 13px; border-radius: 0;
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 76%, 0 100%);
-}
+.rail__item[aria-current="page"]::before { color: var(--primary); }
+.rail__item[aria-current="page"] .rail__item-label { color: var(--text-hi); }
 
 /* ---- mobile tab bar -------------------------------------------------*/
 .tabbar {
   position: fixed;
   left: 0; right: 0; bottom: 0;
   z-index: 60;
-  /* SAFE AREA (2026-09-10). On a notched iPhone the bottom of the screen
-     belongs to the home indicator, and a bar pinned to `bottom: 0` sits
-     underneath it -- the tap targets are physically reachable but the
-     labels are cut and a swipe-up hits the OS instead of the app. The
-     inset is 0 on every device that does not have one, and 0 in a normal
-     browser tab, so this only pays out where it is needed: installed to a
-     home screen, which is the whole point of shipping a manifest.
-
-     Needs viewport-fit=cover on the viewport meta or env() reports 0
-     regardless -- see web/index.html. */
+  /* SAFE AREA. On a notched iPhone the bottom of the screen belongs to
+     the home indicator, and a bar pinned to `bottom: 0` sits underneath
+     it -- the tap targets are physically reachable but the labels are
+     cut and a swipe-up hits the OS instead of the app. The inset is 0 on
+     every device that does not have one, and 0 in a normal browser tab,
+     so this only pays out where it is needed: installed to a home
+     screen. Needs viewport-fit=cover on the viewport meta or env()
+     reports 0 regardless -- see web/index.html. */
   height: calc(var(--tabbar-height) + env(safe-area-inset-bottom, 0px));
   display: flex;
-  align-items: center;
+  align-items: stretch;
   /* Shorthand FIRST, then the inset -- the other way round the shorthand
      resets padding-bottom back to 0 and the whole fix silently does
      nothing. */
-  padding: 0 6px;
+  padding: 0;
   padding-bottom: env(safe-area-inset-bottom, 0px);
-  background: rgba(13, 14, 17, .94);
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
+  background: var(--panel-3);
+  box-shadow: inset 0 1px 0 0 var(--edge);
 }
-.tabbar .nav-item { flex: 1; width: auto; height: 56px; }
+.tabbar__item {
+  flex: 1;
+  min-height: 56px;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--sp-3) var(--sp-2);
+  text-align: center;
+}
+.tabbar__item-label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-small); /* 15px, no glyphs (shell-05) */
+  color: var(--text-hi);
+  white-space: normal;
+}
+.tabbar__item[aria-current="page"] {
+  background: var(--primary-soft);
+  box-shadow: inset 0 4px 0 0 var(--primary);
+}
 
 @media (max-width: 899px) {
   .site-nav__links { display: none; }

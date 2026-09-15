@@ -52,11 +52,31 @@ button, a.btn, .nav-item {
 /* ---- focus-visible ring: replaces any removed outline (mandatory) --- */
 :focus { outline: none; }
 :focus-visible {
-  outline: 2px solid var(--live);
+  outline: 3px solid var(--fresh);
   outline-offset: 2px;
 }
 /* On a cyan fill, a cyan ring has no contrast -- swap to white. */
 .on-live:focus-visible { outline-color: #FFFFFF; }
+
+/* ---- skip link (accessibility section 8: "a 'Skip to content' link
+   first"). Off-screen until focused, then pinned top-left. ----------- */
+.skip-link {
+  position: absolute;
+  left: var(--sp-5);
+  top: -60px;
+  z-index: 1000;
+  padding: 12px 20px;
+  background: var(--panel-3);
+  color: var(--text-hi);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  box-shadow: inset 0 0 0 1px var(--edge-hi);
+  transition: top .15s ease;
+}
+.skip-link:focus-visible {
+  top: var(--sp-5);
+}
 
 /* ---- chamfers: clip-path replaces border-radius everywhere except
    the mobile device frame. Set --r on the element (or use an -r-* class)
@@ -154,14 +174,15 @@ button, a.btn, .nav-item {
   color: var(--money-soft);
 }
 
-/* ---- live dot ------------------------------------------------------*/
+/* ---- live dot -------------------------------------------------------
+   No breathing dot (R_MOTION, docs/DESIGN_SYSTEM.md section 3): a
+   status is said in words, this is decoration only, and it never
+   pulses. --------------------------------------------------------- */
 .live-dot {
   width: 6px; height: 6px; border-radius: 50%;
-  background: var(--live);
-  animation: gbreathe var(--dur-gbreathe) ease-in-out infinite;
+  background: var(--fresh);
 }
 .live-dot--stale {
-  animation: none;
   opacity: .35;
   background: var(--text-faint);
 }
@@ -183,7 +204,6 @@ button, a.btn, .nav-item {
 }
 .state-empty__title {
   font-family: var(--font-display);
-  font-style: italic;
   font-weight: 800;
   font-size: 22px;
   color: var(--text-hi);
@@ -208,7 +228,6 @@ button, a.btn, .nav-item {
 }
 .state-error__title {
   font-family: var(--font-display);
-  font-style: italic;
   font-weight: 800;
   font-size: 22px;
   color: var(--text-hi);
@@ -286,30 +305,18 @@ button, a.btn, .nav-item {
   animation: gbeat var(--dur-gbeat) var(--ease-beat);
 }
 
-@keyframes gbreathe {
-  0%, 100% { opacity: .35; transform: scale(.86); }
-  50% { opacity: 1; transform: scale(1.14); }
-}
+/* gbreathe, gseam, gsheen, gping and gcaret (the idle/looping keyframes
+   this file owned) are deleted here (R_MOTION,
+   docs/DESIGN_SYSTEM.md section 8: seven never-ending keyframe
+   animations existed before this pass; every one is deleted or
+   replaced with a static final state). gbeat survives: it is a
+   one-shot, visitor/data-triggered pulse (motion.js's exported
+   `beat()`, still called by landing-live.js on a price change), never
+   looped, never armed idly. */
 @keyframes gbeat {
   0% { transform: scale(1); }
   40% { transform: scale(1.055); }
   100% { transform: scale(1); }
-}
-@keyframes gseam {
-  0%, 45% { transform: translateY(-140%); }
-  100% { transform: translateY(240%); }
-}
-@keyframes gsheen {
-  0%, 100% { transform: translateX(-120%); }
-  50% { transform: translateX(220%); }
-}
-@keyframes gping {
-  0% { transform: scale(1); opacity: .6; }
-  100% { transform: scale(3.6); opacity: 0; }
-}
-@keyframes gcaret {
-  0%, 49% { opacity: 1; }
-  50%, 100% { opacity: 0; }
 }
 
 /* ---- prefers-reduced-motion: mandatory, no loss of information ----*/
@@ -322,7 +329,6 @@ button, a.btn, .nav-item {
   .g-armed[data-rise], .g-armed[data-tile], .g-armed[data-price] {
     opacity: 1 !important; transform: none !important; filter: none !important;
   }
-  .live-dot { animation: none; }
 }
 
 /* NOT YET AVAILABLE, second label: the short machine-ish tag on the

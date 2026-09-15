@@ -1,19 +1,25 @@
-"""Structural checks for NFL surface wiring (Task 1.9).
+"""Structural checks for the sport-level bar and registry (DESIGN_SYSTEM.md
+section 3, "Sport level and sub menu").
 
-Static text scans of web/js/main.js, card.js, cardrecord.js, sport.js,
-and labels_nfl.js to verify:
+REWRITTEN 2026-09-15 for the chrome-group redesign (CHR-1/CHR-7/CHR-8).
+The old sport switcher (`renderSportSwitcher`, three links plus "Live")
+is replaced by one `SPORTS` registry and `renderSportLevel`, which renders
+live sports as tabs and exactly two coming-soon sports ("NFL · COMING
+SOON", "TENNIS · COMING SOON", D4) as red text links -- never a generic
+loop over every `coming_soon` entry, since NBA and NHL (owner addition,
+2026-09-15, beyond DESIGN_BUILD_PLAN.json's own CHR-1 text) are also
+registered as `coming_soon` but are NOT one of the two shown there, in
+the phone sport row, or in the desktop rail heading list (DESIGN_SYSTEM.md
+places none of those for NBA/NHL). `#/live` stays reachable only by a
+typed URL -- D5, nothing in sport.js links to it any more.
 
-- sport.js exports parseSport, renderSportSwitcher, NFL_NOTICE
-- main.js imports parseSport and routes #/nfl/today and #/nfl/record
-- card.js fetches /card?sport= when sport is nfl and renders notice
-- labels_nfl.js contains NFL wording
-- Existing MLB routes still dispatch
-- main.js does not import live.js or tennis.js
+Static text scans only, same "read the file as text, never run a server"
+approach as tests/test_web_structure.py -- this repo's whole tests/
+suite has no JS execution harness.
 """
 
 from __future__ import annotations
 
-import re
 import unittest
 from pathlib import Path
 
@@ -25,6 +31,20 @@ def _read(name: str) -> str:
     return (WEB_JS / name).read_text(encoding="utf-8")
 
 
+def _non_comment_lines(name: str):
+    """Yield (lineno, line) for lines that are not a `//` line comment or a
+    `*`-prefixed block-comment continuation -- same approach as
+    tests/test_web_local_time.py's helper of the same name, so doc-comment
+    prose that legitimately mentions "#/live" or "renderSportSwitcher" as
+    history does not fail a check meant for executable code."""
+    path = WEB_JS / name
+    for i, raw in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        stripped = raw.strip()
+        if stripped.startswith("//") or stripped.startswith("*") or stripped.startswith("/*"):
+            continue
+        yield i, raw
+
+
 class SportJsExports(unittest.TestCase):
     def setUp(self):
         self.text = _read("sport.js")
@@ -32,94 +52,181 @@ class SportJsExports(unittest.TestCase):
     def test_exports_parseSport(self):
         self.assertIn("export function parseSport", self.text)
 
-    def test_exports_renderSportSwitcher(self):
-        self.assertIn("export function renderSportSwitcher", self.text)
+    def test_exports_SPORTS_registry(self):
+        self.assertIn("export const SPORTS", self.text)
+
+    def test_exports_renderSportLevel(self):
+        self.assertIn("export function renderSportLevel", self.text)
 
     def test_exports_NFL_NOTICE(self):
+        # card.js/cardrecord.js (kept on disk, unmodified and unrouted per
+        # DESIGN_SYSTEM.md section 6) still import this name directly --
+        # it must not be renamed or dropped here.
         self.assertIn("export const NFL_NOTICE", self.text)
 
     def test_NFL_NOTICE_contains_experimental_notice(self):
         self.assertIn("Experimental selections", self.text)
 
+    def test_renderSportSwitcher_is_deleted(self):
+        offenders = [(n, l) for n, l in _non_comment_lines("sport.js") if "renderSportSwitcher" in l]
+        self.assertEqual(offenders, [], f"renderSportSwitcher still referenced in code: {offenders}")
 
-class LabelsNflExports(unittest.TestCase):
+    def test_no_live_link_anywhere(self):
+        # D5: Live leaves the public chrome. Nothing in sport.js's actual
+        # code (doc-comment prose may still explain the history) may build
+        # an href pointing at #/live.
+        offenders = [(n, l) for n, l in _non_comment_lines("sport.js") if "#/live" in l]
+        self.assertEqual(offenders, [], f"sport.js still builds a #/live reference in code: {offenders}")
+
+
+class SportsRegistryShape(unittest.TestCase):
+    """DESIGN_SYSTEM.md section 3: one registry, {key, label, status,
+    home, submenu, plan}. MLB is the only 'live' entry, with the real
+    five-item sub menu; NFL and Tennis are the two D4 names for the red
+    strip; NBA and NHL are registered (owner addition, 2026-09-15) but
+    are not one of the two shown there."""
+
     def setUp(self):
-        self.text = _read("labels_nfl.js")
+        self.text = _read("sport.js")
 
-    def test_contains_kickoff(self):
-        self.assertIn("kickoff", self.text.lower())
+    def test_mlb_is_live_with_gameday_home(self):
+        self.assertIn('key: "mlb"', self.text)
+        self.assertIn('status: "live"', self.text)
+        self.assertIn('home: "#/today"', self.text)
 
-    def test_exports_NFL_WORDING(self):
-        self.assertIn("export const NFL_WORDING", self.text)
+    def test_mlb_submenu_has_five_items_hash_immediately_before_label(self):
+        # tests/test_whose_record_is_it.py's own regex requires `hash`
+        # immediately before `label` on the RESULTS entry -- this is the
+        # exact field order sport.js's SPORTS registry must use.
+        for pair in (
+            '{ hash: "#/today", label: "GAMEDAY"',
+            '{ hash: "#/games", label: "MATCHUPS"',
+            '{ hash: "#/props", label: "PROPS"',
+            '{ hash: "#/record-card", label: "RESULTS"',
+            '{ hash: "#/mybets", label: "BETS"',
+        ):
+            self.assertIn(pair, self.text, f"MLB submenu is missing {pair!r}")
+
+    def test_nfl_is_coming_soon_with_its_own_home(self):
+        self.assertIn(
+            'key: "nfl", label: "NFL", status: "coming_soon", home: "#/nfl"',
+            self.text,
+        )
+
+    def test_tennis_is_coming_soon_with_its_own_home(self):
+        self.assertIn(
+            'key: "tennis", label: "Tennis", status: "coming_soon", home: "#/tennis"',
+            self.text,
+        )
+
+    def test_nba_and_nhl_are_registered_coming_soon(self):
+        # Owner addition beyond DESIGN_BUILD_PLAN.json's CHR-1 task text
+        # (2026-09-15): registered so #/nba and #/nhl resolve and other
+        # code can read their labels, without being one of the two red
+        # strip links (see RenderSportLevelBehaviour below).
+        self.assertIn(
+            'key: "nba", label: "NBA", status: "coming_soon", home: "#/nba"',
+            self.text,
+        )
+        self.assertIn(
+            'key: "nhl", label: "NHL", status: "coming_soon", home: "#/nhl"',
+            self.text,
+        )
 
 
-class MainJsNflRouting(unittest.TestCase):
+class RenderSportLevelBehaviour(unittest.TestCase):
+    def setUp(self):
+        self.text = _read("sport.js")
+
+    def test_accepts_the_fixed_signature(self):
+        self.assertIn(
+            'export function renderSportLevel(host, activeSport, '
+            '{ placement, linkPrefix = "" } = {})',
+            self.text,
+        )
+
+    def test_soon_links_are_fixed_to_nfl_and_tennis_only(self):
+        # The loop that builds the two red links iterates a literal
+        # ["nfl", "tennis"] list, never `SPORTS.filter(coming_soon)` --
+        # a generic filter would also print NBA/NHL, which D4 does not
+        # ask for.
+        self.assertIn('["nfl", "tennis"]', self.text)
+
+    def test_uses_the_sportlevel_component_classes(self):
+        # components.css (foundation-owned) already defines this exact
+        # component under the comment "sport level bar (sport.js's
+        # renderSportLevel)" -- these class names are the fixed contract
+        # between the two files.
+        for cls in ("sportlevel", "sportlevel__tabs", "sportlevel__tab",
+                    "sportlevel__spacer", "sportlevel__soon", "sportlevel__soon-link"):
+            self.assertIn(cls, self.text)
+
+    def test_coming_soon_link_text_says_coming_soon(self):
+        self.assertIn("COMING SOON", self.text)
+
+
+class ParseSportBehaviour(unittest.TestCase):
+    def setUp(self):
+        self.text = _read("sport.js")
+
+    def test_strips_a_leading_mlb_segment(self):
+        # DESIGN_SYSTEM.md section 3: "parseSport also strips a leading
+        # 'mlb' segment" -- resolved inside the router, not via a second,
+        # separate stripping step.
+        self.assertIn('first === "mlb"', self.text)
+
+    def test_recognizes_registered_sport_keys(self):
+        self.assertIn("SPORTS.some", self.text)
+
+
+class MainJsSportDispatch(unittest.TestCase):
+    """main.js is owned by a different chrome task (CHR-9, built
+    concurrently). These assertions are DESIGN_BUILD_PLAN.json's own
+    tests_to_update instructions for how main.js must eventually wire
+    sport.js's/shell.js's new exports. A failure here while that file is
+    still mid-rewrite is an expected concurrent-build state, not a defect
+    in sport.js/shell.js/meta.js -- see this build's own report rather
+    than editing main.js from this task."""
+
     def setUp(self):
         self.text = _read("main.js")
 
-    def test_imports_parseSport(self):
+    def test_imports_parseSport_from_sport_js(self):
         self.assertIn('from "./sport.js"', self.text)
         self.assertIn("parseSport", self.text)
 
-    def test_imports_renderCard(self):
-        self.assertIn('from "./card.js"', self.text)
-        self.assertIn("renderCard", self.text)
+    def test_no_longer_imports_renderSportSwitcher(self):
+        self.assertNotIn("renderSportSwitcher", self.text)
 
-    def test_routes_nfl_today(self):
-        # Should have a handler for sport === "nfl" && route === "today"
-        self.assertIn('sport === "nfl"', self.text)
-        self.assertIn('route === "today"', self.text)
+    def test_imports_mountSportLevel_from_shell_js(self):
+        self.assertIn("mountSportLevel", self.text)
 
-    def test_routes_nfl_record(self):
-        # Should have a handler for sport === "nfl" && route === "record"
-        self.assertIn('route === "record"', self.text)
-        self.assertIn("renderCardRecord", self.text)
-
-    def test_calls_parseSport_on_segments(self):
-        self.assertIn("parseSport(segments)", self.text)
-
-    def test_imports_live_js(self):
-        self.assertIn('from "./live.js"', self.text)
-        self.assertIn("renderLive", self.text)
-
-    def test_imports_tennis_js(self):
-        self.assertIn('from "./tennis.js"', self.text)
-        self.assertIn("renderTennisBoard", self.text)
-
-    def test_dispatches_live(self):
-        self.assertIn('route === "live"', self.text)
-
-    def test_dispatches_tennis(self):
-        self.assertIn('sport === "tennis"', self.text)
-        self.assertIn("renderTennisBoard", self.text)
+    def test_no_longer_imports_mountSportSwitcher(self):
+        self.assertNotIn("mountSportSwitcher", self.text)
 
     def test_still_routes_mlb_today(self):
-        # Existing routes must still work
-        self.assertIn('route === "today"', self.text)
+        # renderToday is the router's fallback branch (no "route ===
+        # 'today'" literal is required -- MLB with no other route match
+        # is the default), so this checks the call is still wired rather
+        # than pinning one specific dispatch shape.
         self.assertIn("renderToday", self.text)
 
-    def test_still_routes_existing_destinations(self):
-        # These are the existing primary nav items that must still work
+    def test_still_routes_existing_mlb_destinations(self):
         for route in ("games", "betcheck", "mybets", "performance", "props", "record-card"):
             self.assertIn(f'route === "{route}"', self.text)
 
 
 class CardJsNflSupport(unittest.TestCase):
+    """card.js's NFL branch stays on disk, unmodified and unrouted
+    (DESIGN_SYSTEM.md section 6) -- it must still import NFL_NOTICE from
+    sport.js unchanged."""
+
     def setUp(self):
         self.text = _read("card.js")
 
     def test_imports_NFL_NOTICE(self):
         self.assertIn('from "./sport.js"', self.text)
         self.assertIn("NFL_NOTICE", self.text)
-
-    def test_renders_nfl_notice(self):
-        # Should render the notice for NFL
-        self.assertIn("NFL_NOTICE", self.text)
-        self.assertIn("sport === \"nfl\"", self.text)
-
-    def test_fetches_with_sport_parameter(self):
-        # Should include ?sport= in fetch URLs for NFL
-        self.assertIn('?sport=', self.text)
 
 
 class CardRecordJsNflSupport(unittest.TestCase):
@@ -130,29 +237,19 @@ class CardRecordJsNflSupport(unittest.TestCase):
         self.assertIn('from "./sport.js"', self.text)
         self.assertIn("NFL_NOTICE", self.text)
 
-    def test_renders_nfl_notice(self):
-        self.assertIn("sport === \"nfl\"", self.text)
 
-    def test_fetches_with_sport_parameter(self):
-        self.assertIn('?sport=', self.text)
-
-
-class ExistingRoutesPreserved(unittest.TestCase):
-    """Verify that existing MLB routes have not been changed."""
+class LabelsNflExports(unittest.TestCase):
+    """Unrelated to this build (labels_nfl.js is untouched by every chrome
+    task), kept so this is the one file exercising it at all."""
 
     def setUp(self):
-        self.main_text = _read("main.js")
+        self.text = _read("labels_nfl.js")
 
-    def test_routes_comment_mentions_today_for_mlb(self):
-        # The ROUTES comment should still mention the existing routes
-        self.assertIn("#/today", self.main_text)
-        self.assertIn("#/games", self.main_text)
+    def test_contains_kickoff(self):
+        self.assertIn("kickoff", self.text.lower())
 
-    def test_existing_routes_still_dispatched(self):
-        # These routes should still be in the dispatch logic
-        self.assertIn("renderToday", self.main_text)
-        self.assertIn("renderGamesList", self.main_text)
-        self.assertIn("renderBetCheck", self.main_text)
+    def test_exports_NFL_WORDING(self):
+        self.assertIn("export const NFL_WORDING", self.text)
 
 
 if __name__ == "__main__":

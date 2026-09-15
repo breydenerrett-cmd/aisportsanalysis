@@ -1,133 +1,102 @@
 /**
- * Shared entrance/parallax/chart-draw engine for the LINEHOUND v1 design
- * system (handoff section 08, "named, measured, reducible"). Foundation
- * for every screen, not just Landing -- phase 2 (Gameday, Bet Check,
- * Games, Odds, Bets) imports the same module rather than re-implementing
- * IntersectionObserver plumbing per page.
+ * Shared entrance/parallax/chart-draw engine -- kept as a module, with
+ * every export it has ever had, but every export now arms nothing.
  *
- * FAIL-SAFE REVEALS (non-negotiable, handoff section 08 + 12)
+ * WHY THIS FILE STILL EXISTS AT ALL (R_MOTION, DESIGN_SYSTEM.md section
+ * 8, "Idle motion — an explicit removal list")
  * -------------------------------------------------------------------
- * Content marked [data-rise]/[data-tile]/[data-price] is visible by
- * default (see css/base.css). This module's only job on arm() is to add
- * .g-armed -- so if this script never runs (blocked, errors, disabled),
- * the page still renders complete and static. Only *after* arming does
- * an element go transparent, and only until its own entrance fires.
+ * "Nothing on the page moves unless the visitor did something or new
+ * data arrived" -- and the ONLY motion the redesign keeps anywhere in
+ * the app is the news banner's 150ms item swap and a disclosure's open/
+ * close, both handled elsewhere (news.js, layout.js's `disclosure()`).
+ * No entrance animation, no scroll-linked parallax, no chart draw-in and
+ * no price-change pulse survive that list, so every function this
+ * module exports below is now a no-op.
  *
- * PREFERS-REDUCED-MOTION (mandatory)
+ * `landing.js` still calls `armEntrances`/`armParallax`/`armCharts`, and
+ * `landing-live.js` still calls `beat` -- rewiring every call site is
+ * landing's own group's work, not foundation's, and DESIGN_SYSTEM.md's
+ * own "Corrections applied" section is explicit that this module "keeps
+ * every export ... since landing.js still calls them" but "arms
+ * nothing." Deleting the exports here would break landing's import
+ * before landing's own pass ever runs; keeping them as inert functions
+ * means every existing call site keeps working, and every element it
+ * touches renders directly in its final visible state instead of
+ * starting hidden/offset and waiting for a script to reveal it.
+ *
+ * THIS IS SAFE BECAUSE OF HOW THE CSS WAS ALREADY WRITTEN
  * -------------------------------------------------------------------
- * When the media query matches, this module does not arm anything, does
- * not install parallax, and does not run the beat-pulse interval -- the
- * script branches before binding, per handoff section 08's reduced-motion
- * table. base.css's own reduced-motion block is the second, CSS-only
- * line of defense if a future call site forgets to check this.
+ * `[data-rise], [data-tile], [data-price] { opacity: 1; }` in base.css
+ * is the fail-safe default this module's own original docstring
+ * described: an element marked for entrance motion is visible UNLESS a
+ * script adds `.g-armed` to it first. Never adding `.g-armed` --
+ * `armEntrances` below never does -- means every one of those elements
+ * simply renders at its final, visible state, exactly as intended.
+ * `landing.css`'s `[data-chart] .chart-stroke` rule reads
+ * `stroke-dasharray: var(--gdash, 0); stroke-dashoffset: var(--gdash,
+ * 0);` -- with `--gdash` never set (armCharts below never sets it), a
+ * zero-length dash array renders as a solid, fully-drawn line, not a
+ * hidden one. No CSS edit was required to make either primitive inert.
+ *
+ * `prefers-reduced-motion: reduce` removed every remaining transition
+ * regardless (base.css's own reduced-motion block) even before this
+ * pass; this module now behaves the same way for every visitor, not
+ * only the ones who asked for it.
  */
 
-const REDUCED_MOTION = typeof window !== "undefined" && window.matchMedia
+/**
+ * Whether the visitor's OS/browser asked for reduced motion. Kept and
+ * still computed -- a caller may still want to know the visitor's own
+ * preference for something unrelated to entrance/parallax/chart motion
+ * -- but no function below reads it to decide whether to arm anything,
+ * because none of them arm anything any more.
+ */
+export const reducedMotion = typeof window !== "undefined" && window.matchMedia
   ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
   : false;
 
-/** Upper bound on how long an armed element may stay invisible waiting
- * for its IntersectionObserver entrance -- see armEntrances. */
-const REVEAL_FAILSAFE_MS = 1500;
-
-/** Arms every [data-rise]/[data-tile]/[data-price] element in `root` for
- * IntersectionObserver-driven entrance, honoring each element's
- * `data-delay` (ms) as a transition-delay. No-ops entirely under reduced
- * motion, per the mandatory table above. */
-export function armEntrances(root = document) {
-  if (REDUCED_MOTION) return;
-  const targets = root.querySelectorAll("[data-rise], [data-tile], [data-price]");
-  if (!targets.length) return;
-  const observer = new IntersectionObserver(
-    (entries, obs) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        entry.target.classList.add("g-in");
-        obs.unobserve(entry.target);
-      }
-    },
-    { threshold: .15, rootMargin: "0px 0px -10% 0px" }
-  );
-  for (const el of targets) {
-    el.classList.add("g-armed");
-    const delay = el.getAttribute("data-delay");
-    if (delay) el.style.transitionDelay = `${delay}ms`;
-    observer.observe(el);
-  }
-  // FAIL-SAFE REVEAL (2026-09-07). An armed element starts at opacity 0
-  // and only becomes visible when the observer says it intersected. In an
-  // embedded/emulated viewport (found on the Game view: price, spotlight
-  // and teams panels stayed invisible even after scrolling) that callback
-  // can simply never arrive, and a product that hides its own content on
-  // a quirk of the host is worse than one that skips an entrance. After
-  // REVEAL_FAILSAFE_MS every still-armed target is revealed regardless;
-  // anything the observer already revealed is untouched.
-  setTimeout(() => {
-    for (const el of targets) {
-      if (!el.classList.contains("g-in")) {
-        el.classList.add("g-in");
-        observer.unobserve(el);
-      }
-    }
-  }, REVEAL_FAILSAFE_MS);
-  return observer;
+/**
+ * Used to mark every [data-rise]/[data-tile]/[data-price] element in
+ * `root` for an IntersectionObserver-driven entrance. Now a deliberate
+ * no-op: base.css already renders those elements at opacity 1 by
+ * default, and never adding `.g-armed` here keeps them there. Kept
+ * (rather than deleted) only so `landing.js`'s existing call does not
+ * throw before landing's own pass removes it.
+ */
+export function armEntrances(_root = document) {
+  return undefined;
 }
 
-/** Installs the rAF-throttled hero-seam parallax on every
- * [data-parallax] element in `root`. No-ops under reduced motion. */
-export function armParallax(root = document) {
-  if (REDUCED_MOTION) return;
-  const targets = Array.from(root.querySelectorAll("[data-parallax]"));
-  if (!targets.length) return;
-  let ticking = false;
-  const update = () => {
-    const y = window.scrollY || window.pageYOffset || 0;
-    for (const el of targets) {
-      const factor = parseFloat(el.getAttribute("data-parallax")) || 0;
-      el.style.transform = `translate3d(0, ${(y * factor).toFixed(2)}px, 0)`;
-    }
-    ticking = false;
-  };
-  window.addEventListener(
-    "scroll",
-    () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(update);
-    },
-    { passive: true }
-  );
+/**
+ * Used to install a scroll-linked parallax transform on every
+ * [data-parallax] element in `root`. Now a deliberate no-op -- no
+ * scroll listener is attached, so no element moves as the visitor
+ * scrolls. Kept only so existing callers do not throw.
+ */
+export function armParallax(_root = document) {
+  return undefined;
 }
 
-/** Measures every [data-chart] SVG path's real length into --gdash so
- * the stroke-dashoffset draw-in animation is exact at any width, per
- * handoff section 08 ("do not hardcode dash lengths"). Under reduced
- * motion, paths are simply set to their final drawn state. */
-export function armCharts(root = document) {
-  const paths = root.querySelectorAll("[data-chart] path.chart-stroke");
-  for (const path of paths) {
-    let length = 0;
-    try {
-      length = path.getTotalLength();
-    } catch (err) {
-      continue;
-    }
-    path.style.setProperty("--gdash", String(length));
-    if (REDUCED_MOTION) {
-      path.style.strokeDashoffset = "0";
-    }
-  }
+/**
+ * Used to measure each [data-chart] path's length into --gdash for a
+ * stroke-draw-in animation. Now a deliberate no-op -- `--gdash` is never
+ * set, so `landing.css`'s own `var(--gdash, 0)` fallback renders every
+ * chart line solid and fully drawn from the start, with no animation.
+ * Kept only so existing callers do not throw.
+ */
+export function armCharts(_root = document) {
+  return undefined;
 }
 
-/** Fires a one-shot [data-beat] pulse (price-change emphasis) on `el`.
- * A no-op under reduced motion -- the figure still updates, it just
- * doesn't animate the update. */
-export function beat(el) {
-  if (!el || REDUCED_MOTION) return;
-  el.classList.remove("g-beat");
-  // Force reflow so re-adding the class restarts the animation.
-  void el.offsetWidth;
-  el.classList.add("g-beat");
+/**
+ * Used to fire a one-shot [data-beat] pulse (price-change emphasis) on
+ * `el`. Now a deliberate no-op: DESIGN_SYSTEM.md section 8 names the
+ * news banner's item swap and a disclosure's open/close as the only
+ * motion anywhere in the app, and a price-change pulse is neither -- the
+ * figure itself still updates wherever it is re-rendered, it simply no
+ * longer animates the update. Kept only so `landing-live.js`'s existing
+ * call does not throw.
+ */
+export function beat(_el) {
+  return undefined;
 }
-
-export const reducedMotion = REDUCED_MOTION;
