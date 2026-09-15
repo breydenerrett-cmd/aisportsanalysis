@@ -88,7 +88,10 @@ class TestTennisCapture(unittest.TestCase):
                     return payload_key2
                 return {"events": []}
 
+            guard_calls = []
+
             def mock_spend_guard(*args, **kwargs):
+                guard_calls.append((args, kwargs))
                 # Always allow
                 decision = mock.Mock()
                 decision.allowed = True
@@ -104,6 +107,13 @@ class TestTennisCapture(unittest.TestCase):
                 multibook_path=str(mb_path),
                 done_path=str(done_path),
             )
+
+            # The guard reads the REAL credit log. Handing it the done log as
+            # `store` made it refuse every capture on the runner on
+            # 2026-09-15 ("quota unreadable").
+            self.assertTrue(guard_calls)
+            for _args, kwargs in guard_calls:
+                self.assertNotIn("store", kwargs)
 
             # Both keys should be captured
             self.assertEqual(len(result["captured"]), 2)

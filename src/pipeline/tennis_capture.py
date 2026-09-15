@@ -239,8 +239,12 @@ def run(*, now: Optional[datetime] = None, keys: Optional[list] = None,
             continue
 
         # Check budget
-        decision = spend_guard(FAMILY, CREDITS_PER_CAPTURE, now=current_time, store=done_path,
-                                families_path=None, remaining=None, spent=None)
+        # No `store=` here. The first version passed store=done_path -- this
+        # module's own done log -- as the CREDIT log, so the guard found no
+        # credit row for today and refused every tennis capture with "quota
+        # unreadable" on the runner (2026-09-15 05:14Z), minutes after the
+        # NFL capture read the same real log fine.
+        decision = spend_guard(FAMILY, CREDITS_PER_CAPTURE, now=current_time)
         if not decision.allowed:
             skipped[key] = decision.reason
             continue
