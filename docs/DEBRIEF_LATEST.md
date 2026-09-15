@@ -1,24 +1,29 @@
 # Debrief (2026-09-15, early evening, Pacific)
 
-Found and fixed a real problem: for several hours this afternoon, the
-system stopped refreshing betting odds for tonight's games, even though
-every automated check kept reporting "all good." Nothing wrong got
-published (the card that went out is fine), but the paper-trading engine
-that runs alongside it refused to make new picks once, correctly
-detecting the stale prices and declining to bet on them rather than
-guessing.
+Nothing wrong with today's actual picks. Found a smaller, quieter problem
+while checking on yesterday's fix, and decided it's not urgent enough to
+rush a fix into a system that runs every 13 minutes around the clock.
 
-Cause: the process that fetches fresh odds only does its full, expensive
-sweep once an hour, timed by a "first few minutes of the hour" rule. With
-tonight's games starting late, and some other testing activity competing
-for the same automated slots today, that once-an-hour window kept getting
-missed, so no fresh sweep landed for over four hours.
+The background job that captures fresh odds every ~13 minutes was also
+supposed to re-run the pick-making process whenever a new lineup posts
+during the day, as a bonus refresh on top of the two main runs (morning
+and afternoon) that actually freeze and publish the card. That bonus
+refresh has quietly been failing every time since it was added a day or
+two ago, because of a plumbing gap: it never got its own copy of some
+historical baseball data it needs, so it correctly refuses to guess and
+just skips itself. It fails silently — no alert fired, which is itself
+something to fix.
 
-Fixed it so the system now checks directly how long it's actually been
-since the last real odds refresh, and forces a fresh sweep itself once
-that gets too old — no more relying on lucky timing. Tested and pushed.
+The two real passes that publish the card are unaffected and have been
+working correctly the whole time. So today's picks are fine, and no
+customer ever saw anything wrong. This only cost the system some
+extra freshness during the day it should have had.
 
-Also worth knowing: the BALLDONTLIE data key you added is working — the
-tennis and NFL historical data pull started successfully.
+I looked at two quick fixes and rejected both: one would have silently
+broken the whole 13-minutes-a-day refresh cycle, the other would have
+made every one of those ~100 daily runs 10 minutes slower, which would
+likely jam the schedule. The right fix needs a bit more care, so I wrote
+it up as a queued task for tomorrow rather than rush it into a system
+that runs unattended all day and night.
 
 Nothing needed from you right now.

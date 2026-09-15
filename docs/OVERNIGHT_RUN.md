@@ -1374,3 +1374,113 @@ working that surface to close out with the roadmap evidence it wants.
 - 2026-09-15T19:50Z afternoon_slate: engine slate --date 2026-09-15 exit=2
 - 2026-09-15T19:50Z afternoon_slate: card publish --date 2026-09-15 exit=0
 - 2026-09-15T19:50Z afternoon_slate: engine slip --date 2026-09-15
+
+## 2026-09-15 19:57Z — hourly cloud routine: today's queue fully claimed; diagnosed a second, distinct intraday-slate refusal (not the staleness bug, and not customer-facing)
+
+Start-of-run check: no NEW top-level `ESCALATE:` line outranked the queue
+(daily-loop hasn't run since 14:30Z, still only the two acknowledged
+patterns; the 90f93ff1 price-staleness fix verified holding — afternoon-slate
+run 35011990916 at 19:10Z succeeded outright). Every Stage 16 row dated
+Tue 9/15 was already DONE, RUNNING or BLOCKED_HUMAN: R16-33 (balldontlie
+harvest) had a push as recent as 19:36Z from an active session; R16-34
+(Card V2) and R16-35 (live betting design) carry a 17:05Z "local session"
+evidence stamp, which is stale by the routine's 2-hour reclaim rule but is
+a different kind of actor than a dead hourly-cloud claim (a local/interactive
+session doing "understand, design panel, adversarial review" work can
+legitimately run for hours), and both are owner-sensitive, customer-facing
+pricing-logic work — reclaiming and duplicating that risked real collision
+for no confirmed benefit, so left both alone. No Wed 9/16+ item is eligible
+yet ("today or earlier" per the routine). Ran the full suite (7229 tests
+green) and `scripts/publication_audit.py` (clean) as a baseline health
+check since nothing else was safely claimable.
+
+While doing that health check, the repeated `afternoon_slate: engine slate
+... exit=2` lines auto-appended above (19:10, 19:22, 19:35, 19:50Z — all
+from `forward-capture.yml`'s chained lineup-cadence call to
+`afternoon_slate.sh`, not the standalone `afternoon-slate.yml`) turned out
+NOT to be the already-fixed price-staleness bug recurring. Pulled the
+actual job logs (run 35012776181, job 104532996667, 19:31-19:35Z): the
+dense capture window correctly widened to 1440 minutes (the 90f93ff1 fix
+is working — `AGE_MIN=317` on a manual replay of its exact bash against
+today's real data confirms it), but `engine slate` then refused with a
+different reason entirely: `ERROR: [LIVE] the matchup feature store
+(Statcast pitch backfill) has no coverage recorded at all`.
+
+**Root cause.** `forward-capture.yml` self-chains via `workflow_dispatch`
+against `CHAIN_BRANCH=claude/sports-betting-analysis-review-g1o0co`
+(`scripts/capture_slot.sh`'s `chain_dispatch`). Every such chained run's
+"Restore the daily loop's git-ignored inputs" cache-restore step misses
+100% of the time: `Cache not found for input keys:
+forward-capture-never-saved-<run_id>, daily-loop-data-` — confirmed on
+run 35012776181 at 19:31Z, seconds after `afternoon-slate.yml` run
+35011990916 (19:10Z, which restored that exact cache successfully and
+ran `engine slate` clean) had saved it. The difference: `afternoon-slate.yml`
+and `daily-loop.yml` both run associated with the repository's default
+branch (`claude/cowork-session-migration-tn3sx2`, confirmed via
+`head_branch` on their own runs even when `workflow_dispatch`-triggered),
+while every `forward-capture.yml` chain link after the first is dispatched
+against the working branch specifically — a different, and per
+`forward-capture.yml`'s own comment "an orphan sharing no history with the
+working line," unrelated ref for GitHub's Actions-cache purposes. Unlike
+`daily-loop.yml` and `afternoon-slate.yml`, `forward-capture.yml` has no
+`scripts/daily_bootstrap.sh` fallback step at all, so on the cache miss
+there is nothing to rebuild Statcast coverage from, and
+`src/engine/preflight.py` correctly refuses rather than staking on an
+empty backfill. The refusal is swallowed by forward-capture.yml's own
+`|| echo "...did not complete cleanly..."` and by forward-capture.yml
+having no ESCALATE-check step of any kind (confirmed: `grep -n "ESCALATE"
+.github/workflows/forward-capture.yml` returns nothing) — so this has
+never shown red in the Actions UI and nobody would have seen it without
+reading a chained run's raw job log.
+
+**Impact, stated plainly.** The two real, customer-facing passes
+(`daily-loop.yml` 10:00Z, `afternoon-slate.yml` 15:40 UTC) are unaffected —
+confirmed by reading their own runs' logs directly, both green, both with
+real Statcast coverage. Those are what freeze and publish the actual card.
+The only casualty is the newer *intraday* re-decisioning enrichment
+`forward-capture.yml`'s chain was supposed to add on top of those two
+(2026-09-14/15 work, "restores the pre-09-05 behaviour" of deciding again
+as soon as a lineup posts) — it has most likely never once succeeded since
+being wired in, silently. No incorrect data was published; nothing here
+touches the card, the ledger, or any customer-facing surface.
+
+**Why this run does not push a fix.** Two tempting fixes are both traps,
+checked and rejected here so nobody repeats the check: (1) pointing
+`CHAIN_BRANCH` at the default branch to match daily-loop/afternoon-slate's
+cache scope — diffed the two branches' copies of this workflow
+(`git diff origin/claude/cowork-session-migration-tn3sx2:.github/workflows/forward-capture.yml
+origin/claude/sports-betting-analysis-review-g1o0co:.github/workflows/forward-capture.yml`)
+and the default branch's copy predates the entire self-chaining/pace-job
+design (still has `workflow_dispatch: {}` with no inputs and a
+workflow-level concurrency group) — dispatching there would run that
+stale copy and silently kill the whole 13-minute cadence, a far worse
+outcome than the bug it would fix, and this routine is explicitly
+forbidden from editing the default branch to fix the staleness. (2) just
+bolting on a bare `bash scripts/daily_bootstrap.sh` step — its Statcast
+piece alone is cheap (a shallow git fetch of the `data-seed/statcast`
+orphan branch), but the full script is measured at ~9-10 minutes on a
+cold miss, this job's cache misses on every single chained run today, and
+the chain fires roughly every 13 minutes — a naive add would tax most of
+~100 runs/day by 9-10 minutes each and very likely back up or break the
+cadence entirely. The real fix needs its own same-branch-scoped cache
+(so only the first run after a scope reset pays the bootstrap cost) and
+should be load-tested against the live cadence before trusting it, which
+is more than this run's remaining budget should spend on a live 24/7
+workflow. Recorded as **R16-36** (OPEN, Wed 9/16) in `docs/ROADMAP.md`
+with the full diagnosis and both rejected approaches, so the next run
+with a proper budget can build and load-test it rather than re-deriving
+any of this.
+
+Verified this run: full suite (`python -m unittest discover -s tests -t .`,
+7229 tests, 447 skipped, 0 failures); `python scripts/publication_audit.py`
+clean. No code changed, so no targeted tests to add — this run's output is
+documentation (roadmap queue row + this section) plus the diagnosis itself.
+
+Commits this run: roadmap R16-36 addition and this section (see next
+commit hash after push). No data/app, no data/raw, no force-push.
+
+Blockers: none new requiring Brey. R16-36 is a pure engineering follow-up,
+not an owner decision, so it is OPEN rather than BLOCKED_HUMAN. Standing
+blockers unchanged: per-sport pricing decisions (R16-28), the API-Tennis
+trial call (R16-22), and R16-02's roadmap-evidence close-out (owned by
+whoever is already on the balldontlie surface) all as before.
