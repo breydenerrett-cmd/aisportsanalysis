@@ -600,6 +600,90 @@ class TheWorkflowWiresTheChain(unittest.TestCase):
             self.assertIn(token, code)
 
 
+class DenseWindowStalenessFallback(unittest.TestCase):
+    """2026-09-15: afternoon-slate refused a slate on a 3.2h-stale board
+    (docs/OVERNIGHT_RUN.md) while every forward-capture slot in between
+    reported success, because the minute<15 widen was never hit -- the
+    chain's gate had yielded slots to a rival and the misses compounded.
+    This exercises the REAL snippet from the script (extracted verbatim,
+    never re-typed) against a fake `date` and a fabricated
+    `data/raw/oddsapi/` tree, so a regression in the fallback shows up here
+    without touching the network or an odds credit."""
+
+    START = 'CAPTURE_NOW="${CAPTURE_NOW:-}"'
+    END = 'echo "  window:'
+
+    FAKE_DATE = """#!/usr/bin/env bash
+case "$*" in
+  "-u +%M") echo "45" ;;
+  "-u +%Y/%m/%d") echo "2026/09/15" ;;
+  "-u -d yesterday +%Y/%m/%d") echo "2026/09/14" ;;
+  "-u +%s") echo "$FAKE_NOW_EPOCH" ;;
+  "-u -d "*" +%s")
+    if [ -n "${FAKE_LATEST_EPOCH:-}" ]; then echo "$FAKE_LATEST_EPOCH"; else exit 1; fi ;;
+  *) echo "unhandled fake date args: $*" >&2; exit 1 ;;
+esac
+"""
+
+    def _snippet(self):
+        start = SLOT.index(self.START)
+        end = SLOT.index(self.END)
+        return SLOT[start:end]
+
+    def _run(self, oddsapi_files=(), **env):
+        tmp = Path(tempfile.mkdtemp(prefix="dense_window_"))
+        self.addCleanup(shutil.rmtree, tmp, True)
+        bindir = tmp / "bin"
+        bindir.mkdir()
+        date_stub = bindir / "date"
+        date_stub.write_text(self.FAKE_DATE, encoding="utf-8")
+        date_stub.chmod(0o755)
+        for rel in oddsapi_files:
+            path = tmp / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"")
+        script = tmp / "check_window.sh"
+        script.write_text(
+            "#!/usr/bin/env bash\nset -uo pipefail\ncd \"$(dirname \"$0\")\"\n"
+            + self._snippet() + '\necho "RESULT=$DENSE_WINDOW"\n',
+            encoding="utf-8")
+        script.chmod(0o755)
+        base = {"PATH": str(bindir) + os.pathsep + os.environ.get("PATH", "")}
+        base.update(env)
+        r = subprocess.run([BASH, script.as_posix()], capture_output=True,
+                           text=True, env=base, timeout=30)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        (result,) = [ln.split("=", 1)[1] for ln in r.stdout.splitlines()
+                     if ln.startswith("RESULT=")]
+        return int(result)
+
+    @unittest.skipUnless(BASH, "no POSIX bash available")
+    def test_a_recent_capture_stays_at_the_narrow_window(self):
+        result = self._run(
+            oddsapi_files=["data/raw/oddsapi/2026/09/15/20260915T180000Z-a.jsonl.gz"],
+            FAKE_NOW_EPOCH="1789489200",  # 2026-09-15T18:20:00Z
+            FAKE_LATEST_EPOCH="1789488000",  # 2026-09-15T18:00:00Z -- 20m old
+        )
+        self.assertEqual(result, 180)
+
+    @unittest.skipUnless(BASH, "no POSIX bash available")
+    def test_a_capture_stale_past_55_minutes_widens_to_a_day(self):
+        """The exact regression: a minute>=15 slot (FAKE_DATE always answers
+        45) with the last real capture over 55 minutes old must still widen,
+        not wait for a lucky minute<15 slot that may not come for hours."""
+        result = self._run(
+            oddsapi_files=["data/raw/oddsapi/2026/09/15/20260915T143130Z-a.jsonl.gz"],
+            FAKE_NOW_EPOCH="1789489200",  # 2026-09-15T18:20:00Z
+            FAKE_LATEST_EPOCH="1789475490",  # 2026-09-15T14:31:30Z -- ~228m old
+        )
+        self.assertEqual(result, 1440)
+
+    @unittest.skipUnless(BASH, "no POSIX bash available")
+    def test_no_prior_capture_on_disk_widens_immediately(self):
+        result = self._run(FAKE_NOW_EPOCH="1789489200")
+        self.assertEqual(result, 1440)
+
+
 class TheCronCopyRestartsTheChain(unittest.TestCase):
     """Cron runs the DEFAULT branch's forward-capture.yml, which this branch
     cannot edit and which has no chain step -- but it runs this branch's

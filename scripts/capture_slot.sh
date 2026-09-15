@@ -356,6 +356,37 @@ DENSE_WINDOW=180
 if [ "$CAPTURE_NOW" = "1" ] || [ "$((10#$(date -u +%M)))" -lt 15 ]; then
     DENSE_WINDOW=1440
 fi
+# STALENESS FALLBACK (2026-09-15, docs/OVERNIGHT_RUN.md): the minute<15
+# widen above assumes SOME slot lands in every hour's first 15 minutes
+# (the chain comment above says as much), but the gate can yield a whole
+# slot to a waiting rival (afternoon-slate, daily-loop) and the chain can
+# drift, so an hour's lucky window can be missed outright -- observed
+# 2026-09-15 17:43Z: afternoon-slate's freshness guard refused a slate on
+# a 3.2h-stale board while forward-capture kept reporting green, because
+# every slot in between had a first pitch outside its 180-minute window
+# AND landed on a minute >=15. Rather than trust wall-clock luck, check
+# how long it has actually been since the newest dense capture landed
+# (the committed `data/raw/oddsapi/YYYY/MM/DD/` files -- durable across
+# every ephemeral runner, unlike `data/processed/l1_observations.jsonl`)
+# and widen anyway past 55 minutes, so a missed lucky window costs at
+# most one extra slot, never hours.
+if [ "$DENSE_WINDOW" -ne 1440 ]; then
+    LATEST_DENSE_TS=$(ls -1 "data/raw/oddsapi/$(date -u +%Y/%m/%d)" \
+                          "data/raw/oddsapi/$(date -u -d 'yesterday' +%Y/%m/%d)" \
+                          2>/dev/null | grep -oE '^[0-9]{8}T[0-9]{6}Z' | sort | tail -1)
+    if [ -z "$LATEST_DENSE_TS" ]; then
+        DENSE_WINDOW=1440
+    else
+        LATEST_FMT="${LATEST_DENSE_TS:0:4}-${LATEST_DENSE_TS:4:2}-${LATEST_DENSE_TS:6:2}T${LATEST_DENSE_TS:9:2}:${LATEST_DENSE_TS:11:2}:${LATEST_DENSE_TS:13:2}Z"
+        LATEST_EPOCH=$(date -u -d "$LATEST_FMT" +%s 2>/dev/null) || LATEST_EPOCH=""
+        if [ -n "$LATEST_EPOCH" ]; then
+            AGE_MIN=$(( ( $(date -u +%s) - LATEST_EPOCH ) / 60 ))
+            if [ "$AGE_MIN" -ge 55 ]; then
+                DENSE_WINDOW=1440
+            fi
+        fi
+    fi
+fi
 echo "  window: ${DENSE_WINDOW} minutes (CAPTURE_NOW=${CAPTURE_NOW:-0})"
 DENSE_OUT=$(python3 -m src.cli dense --captures 1 --interval 0 --window "$DENSE_WINDOW" 2>&1)
 echo "$DENSE_OUT" | sed 's/^/  /'
