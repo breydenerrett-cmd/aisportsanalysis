@@ -204,6 +204,24 @@ class DailyLoopHasMultiSportSteps(unittest.TestCase):
         self.assertGreater(code.count('>> "$RUN_NOTE"'), code[:code.index("== nfl card settle")].count('>> "$RUN_NOTE"'),
                           "new steps should append to RUN_NOTE")
 
+    def test_probe_unmeasured_families_step_exists(self):
+        """Probe step runs after tennis discover and before live settle."""
+        code = _code(DAILY)
+        # Verify the step label and the budget --probe command exist
+        self.assertIn("probe unmeasured capture families", code)
+        self.assertIn("budget --probe", code)
+        # Verify the loop iterates over scores and tennis_h2h
+        self.assertIn("for family in scores tennis_h2h", code)
+        # Verify it's guarded by the measured check
+        self.assertIn("get('measured')", code)
+
+        # Verify positioning: after tennis discover, before live settle
+        tennis_idx = code.index("== tennis discover")
+        probe_idx = code.index("probe unmeasured capture families")
+        live_idx = code.index("== live settle")
+        self.assertLess(tennis_idx, probe_idx, "probe should come after tennis discover")
+        self.assertLess(probe_idx, live_idx, "probe should come before live settle")
+
 
 @unittest.skipUnless(BASH, "no POSIX bash available")
 class BashSyntaxIsValid(unittest.TestCase):

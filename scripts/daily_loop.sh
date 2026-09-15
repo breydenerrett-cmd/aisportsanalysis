@@ -293,6 +293,21 @@ TENNIS_OUT=$(python3 -m src.cli tennis discover 2>&1) || true
 echo "$TENNIS_OUT" | sed 's/^/  /'
 echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: tennis discover" >> "$RUN_NOTE"
 
+# Unmeasured capture families cannot be budgeted until we record a real one-credit
+# measurement. The first measurement happens here (once per family per day), so the
+# daily loop is the gatekeeper: guard by the measured check, spend once, and
+# subsequent runs see "already measured" and skip.
+echo "== probe unmeasured capture families =="
+for family in scores tennis_h2h; do
+    if python3 -c "import json,sys; f=json.load(open('config/capture_families.json'))['families']; sys.exit(0 if not f.get('$family',{}).get('measured') else 1)"; then
+        PROBE_OUT=$(python3 -m src.cli budget --probe "$family" 2>&1) || true
+        echo "$PROBE_OUT" | sed 's/^/  /'
+        echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: budget --probe $family" >> "$RUN_NOTE"
+    else
+        echo "  $family: already measured"
+    fi
+done
+
 echo "== live settle (yesterday, $YESTERDAY) =="
 LIVE_SETTLE_OUT=$(python3 -m src.pipeline.live_window --settle --date "$YESTERDAY" 2>&1) || true
 echo "$LIVE_SETTLE_OUT" | sed 's/^/  /'
@@ -506,7 +521,10 @@ fi
 # lives under one of the paths named here. data/paper_accounts (one ledger
 # per registered system, S5/S6a) and docs/eod (the S7 self-review, one file
 # per date) were added for S8.
-git add data/processed data/watch data/research data/raw/oddsapi evidence data/paper_accounts docs/eod docs/OVERNIGHT_RUN.md artifacts 2>/dev/null || true
+# config/capture_families.json is staged because `budget --probe` records a
+# family's measured cost there; without it the runner's fresh checkout
+# forgets the measurement and the loop would spend a credit re-probing daily.
+git add data/processed data/watch data/research data/raw/oddsapi evidence data/paper_accounts docs/eod docs/OVERNIGHT_RUN.md artifacts config/capture_families.json 2>/dev/null || true
 git reset -q artifacts/demo_latest.html 2>/dev/null || true
 if ! git diff --cached --quiet; then
     BRANCH=$(git rev-parse --abbrev-ref HEAD)
