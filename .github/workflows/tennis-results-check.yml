@@ -1,0 +1,44 @@
+# A standalone, read-only smoke test of the BALLDONTLIE tennis results feed
+# (src/providers/tennis_results.py), separate from the production daily loop
+# on purpose: it makes no odds-budget spend, writes no data, and cannot
+# refuse or escalate anything, so it is safe to dispatch any time to answer
+# "is the feed reachable from a runner right now" without replaying the rest
+# of scripts/daily_loop.sh (NFL settle, statcast catchup, model refit, ...).
+# This same command is also wired into daily_loop.sh's own 10:00Z run
+# (R16-02) for ongoing coverage; this workflow exists for an on-demand check
+# in between.
+name: tennis-results-check
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "YYYY-MM-DD to fetch results for (default: yesterday, UTC)"
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/sports-betting-analysis-review-g1o0co
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Fetch tennis results (read-only)
+        env:
+          BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
+        run: |
+          DATE="${{ inputs.date }}"
+          if [ -z "$DATE" ]; then
+            DATE=$(date -u -d 'yesterday' +%Y-%m-%d)
+          fi
+          python -m src.cli tennis results --date "$DATE"
