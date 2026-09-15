@@ -1,0 +1,8 @@
+season,game_type,team,week,gsis_id,position,full_name,first_name,last_name,report_primary_injury,report_secondary_injury,report_status,practice_primary_injury,practice_secondary_injury,practice_status,date_modified
+2026,REG,BUF,2,00-0037440,QB,Josh Allen,Josh,Allen,,,Probable,,,Full Participation in Practice,2026-09-15T18:05:30Z
+2026,REG,BUF,2,00-0038547,WR,Stefon Diggs,Stefon,Diggs,Ankle,,Questionable,Ankle,,Limited Participation in Practice,2026-09-15T18:07:12Z
+2026,REG,DET,2,00-0035069,WR,Amon-Ra St. Brown,Amon-Ra,St. Brown,,,Out,,,Did Not Participate In Practice,2026-09-15T17:40:02Z
+2026,REG,LA,2,00-0032234,CB,Jalen Ramsey,Jalen,Ramsey,Shoulder,,Probable,Shoulder,,Full Participation in Practice,2026-09-15T19:02:41Z
+2026,REG,NYG,2,00-0033879,RB,Saquon Barkley,Saquon,Barkley,Hamstring,,Out,Hamstring,,Did Not Participate In Practice,2026-09-15T16:55:19Z
+2026,REG,TB,2,00-0032210,WR,Mike Evans,Mike,Evans,Knee,,Questionable,Knee,,Limited Participation in Practice,2026-09-15T18:30:44Z
+2026,REG,KC,2,00-0035228,LT,Orlando Brown,Orlando,Brown,Calf,,Probable,Calf,,Limited Participation in Practice,2026-09-15T17:12:08Z
