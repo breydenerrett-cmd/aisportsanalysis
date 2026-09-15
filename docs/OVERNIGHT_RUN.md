@@ -1848,3 +1848,6 @@ trial call (R16-22), R16-02's roadmap-evidence close-out (same
 rate-limit question), R16-06 waiting on 2026-09-16's daily settle,
 R16-34 waiting on the owner's PREREG_CARD_V2 answers, R16-37's live
 end-to-end confirmation (above).
+- 2026-09-15T23:58Z afternoon_slate: engine slate --date 2026-09-15 exit=2
+- 2026-09-15T23:59Z afternoon_slate: card publish --date 2026-09-15 exit=0
+- 2026-09-15T23:59Z afternoon_slate: engine slip --date 2026-09-15
