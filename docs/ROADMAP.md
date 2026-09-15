@@ -4,12 +4,13 @@
 stage below, take its highest-value unfinished item, and go. Update this file as
 stages move. `docs/OVERNIGHT_RUN.md` is the running log; this is the map.
 
-**CURRENT STAGE POINTER (updated 2026-09-09).** Stages 1–11 below are the
-research programme's history and a pre-rebuild dashboard product — real,
-kept for the audit trail, but NOT the active work queue. Read
-`docs/PRODUCT_DOCTRINE.md` first (LOCKED, governs every product decision),
-then resume at **Stage 12** at the bottom of this file. Stage 9's "IN
-PROGRESS" marker is stale; Stage 12 supersedes it.
+**CURRENT STAGE POINTER (updated 2026-09-15).** Stages 1–15 below are
+history and context, kept for the audit trail, but NOT the active work
+queue. Read `docs/PRODUCT_DOCTRINE.md` first (LOCKED, governs every product
+decision), then resume at **Stage 16** at the bottom of this file: the
+owner-approved roadmap for 2026-09-15 to 2026-10-15, with the queue an
+autonomous run claims from. Stage 12's "ACTIVE" marker and Stage 9's "IN
+PROGRESS" marker are stale; Stage 16 supersedes both.
 
 **Stage states:** OPEN / IN PROGRESS / DONE / BLOCKED / RETIRED. A permanently
 BLOCKED item is moved to RETIRED with its reason rather than left to clog
@@ -622,3 +623,107 @@ is the highest-value research work available and has been fully built and
 sitting idle. Stage 14 (as-of clustering design) follows once 13 is moving.
 Stage 15's autonomous half (PWA) can run in parallel any time; its "needs
 Brey" half is a standing ask, not a blocker on anything else.
+
+---
+
+## Stage 16 — Owner-approved roadmap, 2026-09-15 to 2026-10-15 — **ACTIVE**
+
+Owner, 2026-09-15: "/plan for the rest of the night, the next day, the next
+week and month and commit to roadmap that follows me for autonomous work."
+Approved the same morning with these answers: **hourly scheduled runs**;
+**pre-approved spend** = tennis odds history (~16k credits) and NFL odds
+history (~8k) after the credit reset, and live in-play odds switched on
+(300 credits a day hard cap); **per-sport subscriptions built this week,
+charging nothing yet**; **NBA and NHL added as coming soon**.
+
+Context docs: `docs/SITE_REDESIGN_2026-09-15.md` (redesign decisions),
+`docs/STRATEGY_LAB_PLAN.md` (the $1,000 paper agents and sweeps),
+`docs/PER_SPORT_PRICING_PLAN.md`, `docs/MANAGED_BETTING_AND_POOL_ASSESSMENT.md`,
+`docs/TENNIS_FEED_DECISION_2026-09-15.md`, `docs/MULTI_SPORT_2026-09-14.md`,
+`docs/PREREG_MULTI_SPORT_2026-09-14.md`.
+
+### How a run works (the standing loop for Stage 16)
+
+1. Pull. Read this stage, then the last two sections of
+   `docs/OVERNIGHT_RUN.md` and `docs/DEBRIEF_LATEST.md`. If the capture chain
+   or the daily loop escalated since the last run, that outranks the queue:
+   diagnose, fix inside the rules, or record BLOCKED_HUMAN with the exact
+   question.
+2. Claim: pick the highest-value item that is OPEN and unblocked, set it to
+   RUNNING with the date-time in Evidence, commit and push that first. A
+   RUNNING item older than two hours with no newer evidence is reclaimable.
+   Two runs never work one item.
+3. Execute with the model rule: Haiku subagents for mechanical work, Sonnet
+   for implementation, Opus only when a task fails twice or needs a design
+   call.
+4. Verify: named tests, then `python -m unittest discover -s tests -t .`
+   (stdlib-only CI on 3.10 to 3.12); `tests/test_customer_language.py` and
+   `tests/test_web_structure.py` for any page change; `scripts/publication_audit.py`
+   before any "it is live" claim; open the staging page after a web change.
+5. Commit by path (never `git add -A`; never `data/app`, never `data/raw`),
+   rebase onto the chain's commits, push. Record evidence (commit, run id,
+   numbers) in the item's row; set DONE or the blocker.
+6. Append a dated section to `docs/OVERNIGHT_RUN.md`, write
+   `docs/DEBRIEF_LATEST.md` (under 200 words, plain English, bad news
+   first), commit, push.
+
+**Hard stops, never done by a run:** production deploy; live Stripe charges
+or price creation; access-control changes on production; doctrine edits;
+spend beyond the pre-approved list and the envelopes (900/day capture,
+300/day in-play, 5,000 floor); unsealing 2026-01-01 to 08-27; deleting data
+or destructive git; secrets (Actions secret names only, never values);
+purchases; anything marked BLOCKED_HUMAN. Evidence rules never relax:
+pre-registration before evaluation, losers published, no promotion without
+the full gate, no rescue by threshold change, point-in-time data.
+
+### Queue (statuses: OPEN / RUNNING / DONE / BLOCKED_HUMAN / DEFERRED)
+
+| Id | When | Item | Acceptance | Status | Evidence |
+|---|---|---|---|---|---|
+| R16-01 | Tue 9/15 | Commit this roadmap: Stage 16 here, pointer moved, `docs/ROUTINE_PROMPT.md`, `docs/DEBRIEF_LATEST.md`; `docs/AUTONOMOUS_PRODUCT_QUEUE.md` marked superseded | Committed, pushed, CI green | DONE | 2026-09-15 |
+| R16-33 | **Tue 9/15, first** | **BALLDONTLIE 48-hour ALL-ACCESS trial harvest** (owner, 2026-09-15: "run that completely down ... use that for all sports"). Trial started about 2026-09-15 05:30Z and ends about 2026-09-17 05:30Z. Build `src/providers/balldontlie.py` (one client: raw key in the Authorization header, cursor pagination, 600 requests a minute pacing, 429 back-off, never a key in a URL or message) and `scripts/balldontlie_harvest.py` (resumable, per-sport endpoint plan from each sport's OpenAPI spec, gzip per file, manifest with sha256 and row counts) and `.github/workflows/balldontlie-harvest.yml` (dispatch; uploads the files to a GitHub release `balldontlie-harvest-2026-09`; commits only `data/historical/balldontlie/MANIFEST.json`). Priority order: tennis ATP+WTA matches all seasons, rankings by week, players, opening odds, match stats; NFL games and lines all seasons, team and player stats, injuries; MLB, NBA, NHL games and odds history, stats for the last five seasons. Dispatch the moment the secret exists; watch the run; re-dispatch until every endpoint plan is complete or the trial ends | Release assets with manifest sha256s; row counts per sport and endpoint in the manifest; request rate never over the plan's limit; zero key material anywhere | RUNNING | local session 2026-09-15 16:40Z; blocked on the secret until the owner adds it |
+| R16-02 | Tue 9/15 | **Owner:** add the `BALLDONTLIE_API_KEY` repository secret (Settings, Secrets and variables, Actions). Nothing here may enter the key for him. Then a run adds `python -m src.cli tennis results --date <yesterday>` (read-only) and verifies the feed on the runner | `gh secret list` shows the name; runner log shows result rows | BLOCKED_HUMAN | secret not set as of 2026-09-15 16:40Z |
+| R16-03 | Tue 9/15 | Switch live in-play odds on (pre-approved): repository variable `LIVE_ODDS=1`; verify tonight's MLB window | `data/live/odds_inplay.jsonl` rows tagged `in_play` with `state_snapshot_id`; `live_odds` band at most 300 for the day; run green; `#/live` shows the games | RUNNING | `LIVE_ODDS=1` set 2026-09-15 16:35Z; verify after tonight's window |
+| R16-04 | Tue 9/15 | Resume the site audit (`resumeFromRunId: wf_279c91fb-292`, 12 agents cached); apply the two challenges; save `docs/DESIGN_SYSTEM.md` and `docs/DESIGN_BUILD_PLAN.json` | Both committed; every high-severity finding maps to a build group; no file in two groups | RUNNING | local session 2026-09-15 16:35Z |
+| R16-05 | Tue 9/15 | Redesign group 1, shell and shared: tokens, top strip with red "NFL · COMING SOON" and "TENNIS · COMING SOON" top right (sport switcher removed), dismissible news banner (four true items), sport level plus per-sport sub menu (MLB: GAMEDAY · MATCHUPS · PROPS · RESULTS; CHECK out of main nav; fixed check bar removed; Live out of public chrome), coming-soon page template at `#/nfl`, `#/tennis`, `#/nba`, `#/nhl`, shared header/section/button/state components | Structural tests updated deliberately; language and structure tests green; staging captures at 1440, 390, 360; old NFL and tennis links land on coming soon; `#/live` works by URL | RUNNING | local session 2026-09-15 (after R16-04) |
+| R16-06 | Tue 9/15 | Clear the two standing daily-loop escalations without weakening anything: (a) wire `src/research/battery.run` into `src/engine/settle_slate.py` `build_scorecard` (Stage 13 item 1; 14 systems qualify); (b) acknowledged-escalations ledger `docs/ESCALATIONS.md` so the daily job fails only on NEW escalations; STRONG-tier drift stays open pending the tier-ladder pre-registration (needs 20 dates, has 5) | Next daily loop: scorecards carry battery verdicts; job green with the two known escalations acknowledged; a new escalation still fails (test) | RUNNING | local session 2026-09-15 16:40Z |
+| R16-07 | Tue 9/15 | Create the hourly cloud routine (`0 * * * *` UTC, model claude-sonnet-5, prompt from `docs/ROUTINE_PROMPT.md`), smoke-test that it can pull, test, commit and push; record the routine link here | A routine run's commit on the working branch; its OVERNIGHT_RUN section; fallback recorded if push fails | OPEN | |
+| R16-08 | Tue 9/15 | Hygiene: delete the 12 stray root `test_*.py` files, `test_output.txt` and `%SystemDrive%` (a Linux run can; the Windows session is denied deletes); held daily-loop repair stash stays held | Runner `git status` clean of strays | OPEN | |
+| R16-09 | Wed 9/16 | Redesign page groups in parallel per `docs/DESIGN_BUILD_PLAN.json` (landing; gameday with the simplified compact card and "View breakdown"; matchups and results copy-truth only; props and odds; tools; account); re-capture every page at three widths; full suite; push | Every high finding closed or deferred with a reason; captures under `docs/design_audit/2026-09-16/`; publication audit clean | OPEN | |
+| R16-10 | Wed 9/16 | Tennis on BALLDONTLIE: board matches from the feed where the odds board has none; grading path proven on the runner; retirement rule recorded in the pre-registration doc before any tennis pick is graded | Result rows for yesterday's matches in the runner log; rule recorded; no tennis pick published | OPEN | needs R16-02 |
+| R16-11 | Wed 9/16 | Phase 0 data audits, tennis and NFL (`docs/PHASE0_TENNIS.md`, `docs/PHASE0_NFL.md`): field-by-field point-in-time check, outcome isolation on; backtest-safe vs forward-only fields named. No enumeration before this clears | Both docs committed with pass/fail per field | OPEN | |
+| R16-12 | Wed 9/16 | Per-sport plans part 1, no charges: `src/appstate/plans.py`, entitlements keyed by Stripe subscription id, `LEGACY_INVITE_GRANTS`, per-route sport checks (`/today` and every MLB-only route fixed to mlb), public `/card/record` and `/card/history`, 402 body keeps `error`, `scripts/price_review.py` proposes only; Stripe price env vars unset | Pricing-plan tests 1 to 10 pass (shown failing first); `/ultra-review` or `/code-review` high on the diff before merge; staging unchanged for the public demo; owner told | OPEN | |
+| R16-13 | Wed 9/16 | NFL: T-24h board for Thursday; `#/nfl` coming-soon text truthful; NFL card preview builds | Chain log shows t24h capture, 3 credits; `card publish --sport nfl --date 2026-09-17` prints a preview | OPEN | |
+| R16-14 | Thu 9/17 | First NFL card published and locked (DET@BUF 5:15pm PT, lock 1:15pm PT); NFL live window under the cap; settle Fri; NFL record page internal only | Ledger row locked before kickoff; settle row Fri; credits within cap | OPEN | |
+| R16-15 | Fri 9/18 | `src/research/matrix_tennis.py` (surface, H2H, serve from stored results) and `matrix_nfl.py` (closing lines; injuries forward-only) with first-seen stamps | Tests; Phase 0 verdicts respected | OPEN | |
+| R16-16 | Fri 9/18 | `src/research/bankroll_paths.py`: the $1,000 paper agent per `docs/STRATEGY_LAB_PLAN.md` section 2 (real forward paths, busts carried at minus 100%, one headline window per sport, three stake fractions, non-overlapping window count, hidden under 5), quarantined from the gate | Tests; never imported by fitness, gates or battery | OPEN | |
+| R16-17 | Fri 9/18 | Declare the month's sweep budget in the alpha registry (number of sweeps, family-wise budget) | Registry row | OPEN | |
+| R16-18 | Sat 9/19 | Tennis pre-match sweep pre-registered with its minimum detectable effect, enumerated, placebo ceiling (CPU only); NFL recorded as forward-only this cycle (underpowered); weekend NFL boards | Registry row dated before the run; verdict doc | OPEN | |
+| R16-19 | Sun 9/20 | NFL Sunday card published and locked per kickoff cluster; NFL live window 10am to 9pm PT under the cap; MLB live as usual | Ledger and live rows; credits | OPEN | |
+| R16-20 | Sun 9/20 | Forward paper accounts open at $1,000 for every registered system in all three sports, decisions frozen before results | Paper account rows | OPEN | |
+| R16-21 | Mon 9/21 | Settlements; sweep results published, losers included; $1,000 pages on staging, backtest-labelled, language-checked; `docs/MULTI_SPORT_WEEK1_REPORT.md` | Report committed; pages verified | OPEN | |
+| R16-22 | Mon 9/21 | API-Tennis Business 14-day trial: start only if live tennis rules are wanted in October (owner); decide by day 12; NHL wiring begins | Owner call recorded | BLOCKED_HUMAN | default: skip unless the owner says start |
+| R16-23 | ~Oct 1 | Credit reset check in the credit log before any historical purchase | Reset row; date in `docs/RESOURCE_POLICY.md` | OPEN | |
+| R16-24 | Oct | NFL historical odds (pre-approved ~8k): one 30-credit call first; then 5 snapshots a week, 3 markets, 2023 to 2025; outcome isolation on; pre-registered families with MDE; publish losers | `docs/PREREG_NFL_SWEEP.md`; results doc; credits within estimate | OPEN | after R16-23 |
+| R16-25 | Oct | Tennis historical odds (pre-approved ~16k): two snapshots a day, Slams and 1000s, 2021 to 2026; backtests; publish | Same pattern | OPEN | after R16-23 |
+| R16-26 | Oct | NHL (opens ~Oct 7): BALLDONTLIE NHL provider, `icehockey_nhl` capture via the registry, coming-soon page, `NHL_CARD_V1` pre-registered, private forward test. NBA (~Oct 21): same with `basketball_nba` | Registry rows before first observation; capture rows with `sport`; truthful pages | OPEN | |
+| R16-27 | Oct | Live tennis rules only if the API-Tennis trial passed every check and the licence is a written yes; else unsupported | New family with its own alpha budget, pre-registered | OPEN | after R16-22 |
+| R16-28 | Oct | Per-sport pricing live only after the owner answers the 7 decisions in `docs/PER_SPORT_PRICING_PLAN.md` and creates the Stripe Prices | Owner action | BLOCKED_HUMAN | |
+| R16-29 | Oct | Stage 13 continues: battery verdicts feed the population; retire failed systems; tier ladder recalibrated the day it is answerable (20 dates) | Scorecards with verdicts; ladder adopted or refused per its pre-registration | OPEN | |
+| R16-30 | Oct | Stale-doc cleanup: `.claude/agents/*.md` (132/day, `.env`), `docs/RUNBOOK.md`, this file's Stage 1 grid figure, `docs/AUTONOMOUS_PLAN.md` "no spending" reconciled with `docs/RESOURCE_POLICY.md` | Grep finds no stale figures | OPEN | |
+| R16-31 | Oct | Stage 15 autonomous half: PWA manifest and service worker. Production deploy, domain, live Stripe stay owner-only | Installable on staging | OPEN | |
+| R16-32 | by Oct 15 | Monthly research report: every sweep, every null, credits spent, what is forward-testing; no edge claimed unless the full gate passed | `docs/RESEARCH_REPORT_2026-10.md` | OPEN | |
+
+### Owner decisions still open (defaults in force until answered)
+
+1. `BALLDONTLIE_API_KEY` secret (R16-02): nothing tennis-graded until set.
+2. Pricing decisions 1 to 7 in `docs/PER_SPORT_PRICING_PLAN.md`: build proceeds
+   with $19.99 floors and prices unset; nothing charges.
+3. NFL pick floor: default none (max 5).
+4. Doctrine amendment for multi-sport (`docs/MULTI_SPORT_2026-09-14.md`
+   section 6): proposed, not applied.
+5. API-Tennis Business trial ($80/month after 14 days): default skip unless
+   live tennis rules are wanted in October.
+6. Held daily-loop repair stash: stays held.
+7. Production deploy, domain, live Stripe: owner-only.
+8. Odds API plan tier and reset date: assumed monthly reset near the 1st.

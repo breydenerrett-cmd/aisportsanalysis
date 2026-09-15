@@ -1,5 +1,12 @@
 # Autonomous product queue
 
+> **Superseded 2026-09-15 by `docs/ROADMAP.md` Stage 16**, the owner-approved
+> roadmap and queue for 2026-09-15 to 2026-10-15. Its still-open items live on
+> there (P0-3 ops status and P1-8 staging verification fold into Stage 16's
+> escalation ledger and verification rules; P1-2 to P1-7 are covered by the
+> redesign, per-sport, and Stage 13 items; W4 stays BLOCKED_HUMAN). Kept for the
+> record of 2026-09-06 to 09-14.
+
 Source of truth for product-mode work (owner directive 2026-09-06 ~23:00Z:
 "from research platform to polished demo / beta"). Supersedes
 `docs/WEEKEND_QUEUE.md` for dispatch; that file stays as the weekend record.
