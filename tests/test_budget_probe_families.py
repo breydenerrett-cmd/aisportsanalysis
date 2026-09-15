@@ -40,13 +40,21 @@ class _FakeSportsProvider:
             {"id": "score1", "completed": True, "home_team": "NFL_A", "away_team": "NFL_B"},
             {"id": "score2", "completed": False, "home_team": "NFL_C", "away_team": "NFL_D"},
         ]
-        self.odds_payload = odds_payload or {
-            "id": "event1",
-            "bookmakers": [
-                {"key": "book_a", "markets": [{"key": "h2h", "outcomes": [{"name": "x", "price": 100}]}]},
-                {"key": "book_b", "markets": [{"key": "h2h", "outcomes": [{"name": "y", "price": 100}]}]},
-            ]
-        }
+        # provider.fetch_odds() (used by the tennis_h2h probe) hits
+        # /sports/{sport}/odds, which returns every event for that sport as
+        # a LIST -- not the single-event dict fetch_event_odds_with_usage()
+        # returns. The default here must match that real shape (2026-09-15:
+        # a dict default here hid the 'list' object has no attribute 'get'
+        # crash that only showed up against the real API in production).
+        self.odds_payload = odds_payload if odds_payload is not None else [
+            {
+                "id": "event1",
+                "bookmakers": [
+                    {"key": "book_a", "markets": [{"key": "h2h", "outcomes": [{"name": "x", "price": 100}]}]},
+                    {"key": "book_b", "markets": [{"key": "h2h", "outcomes": [{"name": "y", "price": 100}]}]},
+                ],
+            },
+        ]
         self.sports = sports if sports is not None else [
             {"key": "tennis_wta", "title": "WTA"},
             {"key": "tennis_atp", "title": "ATP"},
@@ -261,6 +269,60 @@ class ProbeTennisH2hTests(unittest.TestCase):
             self.assertTrue(result["probed"])
             # Billed should be calculated as 50000 - 49997 = 3
             self.assertEqual(result["credits_per_event"], 3)
+
+    def test_probe_tennis_h2h_aggregates_shape_across_the_event_list(self):
+        """2026-09-15 crash: fetch_odds() returns a LIST of events, each with
+        its own bookmakers -- _payload_shape must aggregate across the list
+        (max book depth, union of markets, summed outcomes), not assume a
+        single-event dict."""
+        with tempfile.TemporaryDirectory() as folder:
+            path = self._families(folder)
+            store = Path(folder) / "credit_log.jsonl"
+            odds_payload = [
+                {
+                    "id": "event1",
+                    "bookmakers": [
+                        {"key": "book_a", "markets": [
+                            {"key": "h2h", "outcomes": [{"name": "x"}, {"name": "y"}]}]},
+                    ],
+                },
+                {
+                    "id": "event2",
+                    "bookmakers": [
+                        {"key": "book_a", "markets": [
+                            {"key": "h2h", "outcomes": [{"name": "x"}, {"name": "y"}]}]},
+                        {"key": "book_b", "markets": [
+                            {"key": "h2h", "outcomes": [{"name": "x"}, {"name": "y"}]}]},
+                    ],
+                },
+            ]
+            provider = _FakeSportsProvider(sports=[{"key": "tennis_wta"}],
+                                          odds_payload=odds_payload)
+            result = budget.probe_family(
+                "tennis_h2h", provider=provider, now=NOW, families_path=path, store=store)
+            self.assertTrue(result["probed"])
+            shape = result["payload_shape"]
+            self.assertEqual(shape["event_count"], 2)
+            self.assertEqual(shape["books"], 2)  # deepest single event, not summed
+            self.assertEqual(shape["markets_returned"], 1)  # {"h2h"}
+            self.assertEqual(shape["outcomes"], 6)  # 2 + 2 + 2 across every book
+            self.assertFalse(shape["degenerate"])  # 2 books, 1 market >= min(2, 1)
+
+    def test_probe_tennis_h2h_degenerate_when_the_event_list_is_empty(self):
+        """No upcoming tennis events must not crash -- it is a thin, degenerate
+        measurement, same treatment as any other empty/thin probe payload."""
+        with tempfile.TemporaryDirectory() as folder:
+            path = self._families(folder)
+            store = Path(folder) / "credit_log.jsonl"
+            provider = _FakeSportsProvider(sports=[{"key": "tennis_wta"}], odds_payload=[])
+            result = budget.probe_family(
+                "tennis_h2h", provider=provider, now=NOW, families_path=path, store=store)
+            self.assertTrue(result["probed"])
+            self.assertTrue(result["degenerate"])
+            self.assertEqual(result["payload_shape"]["event_count"], 0)
+            # Still recorded as measured -- the fetch happened and cost a credit.
+            recorded = json.loads(path.read_text(encoding="utf-8"))
+            self.assertTrue(recorded["families"]["tennis_h2h"]["measured"])
 
 
 class RealConfigFileUnchangedTests(unittest.TestCase):

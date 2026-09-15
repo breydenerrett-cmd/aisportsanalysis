@@ -682,7 +682,8 @@ def _probe_markets(family: str, provider) -> Optional[tuple]:
 PROBE_MIN_LEAD_MINUTES = 45
 
 
-def _payload_shape(payload, requested_markets, commence_time=None, is_scores=False) -> dict:
+def _payload_shape(payload, requested_markets, commence_time=None, is_scores=False,
+                    is_multi_event=False) -> dict:
     """Books/markets/outcomes actually returned by a probe fetch, plus the
     `degenerate` verdict (S17 bugfix): fewer than 2 books, or fewer than 2 of
     the requested markets actually present, means the payload is too thin to
@@ -691,6 +692,16 @@ def _payload_shape(payload, requested_markets, commence_time=None, is_scores=Fal
 
     For scores payloads (is_scores=True), the payload is a list of events
     (not a dict with bookmakers). We record event count and completed count.
+
+    For multi-event payloads (is_multi_event=True -- provider.fetch_odds()
+    returns every event for a sport in one list, not the single-event dict
+    fetch_event_odds_with_usage() returns), books/markets/outcomes are
+    aggregated across every event in the list: books as the deepest single
+    event seen (a representative depth, not a sum that would double-count
+    the same books across events), markets/outcomes as totals across every
+    event (2026-09-15: the tennis_h2h probe crashed here with
+    `'list' object has no attribute 'get'` because this branch did not
+    exist -- payload.get("bookmakers") assumed the single-event shape).
     """
     if is_scores:
         # Scores payload is a list of events; no bookmakers, no markets.
@@ -704,6 +715,32 @@ def _payload_shape(payload, requested_markets, commence_time=None, is_scores=Fal
         return {
             "event_count": event_count,
             "completed_count": completed_count,
+            "degenerate": degenerate,
+        }
+
+    if is_multi_event:
+        events = payload if isinstance(payload, list) else []
+        requested = set(requested_markets or ())
+        markets_seen = set()
+        books = 0
+        outcomes = 0
+        for event in events:
+            bookmakers = event.get("bookmakers") or []
+            books = max(books, len(bookmakers))
+            for book in bookmakers:
+                for market in (book.get("markets") or []):
+                    key = market.get("key")
+                    if key is not None:
+                        markets_seen.add(key)
+                    outcomes += len(market.get("outcomes") or [])
+        markets_returned = len(markets_seen & requested) if requested else len(markets_seen)
+        needed = min(2, len(requested)) if requested else 2
+        degenerate = not events or books < 2 or markets_returned < needed
+        return {
+            "event_count": len(events),
+            "books": books,
+            "markets_returned": markets_returned,
+            "outcomes": outcomes,
             "degenerate": degenerate,
         }
 
@@ -937,9 +974,11 @@ def probe_family(family: str, env=None, provider=None, now=None,
     creditlog.log(remaining_after_call, billed_for_log, f"budget.probe_family:{family}",
                   store=store if store is not None else CREDIT_LOG_PATH, budget_band=PROBE)
 
-    # Calculate payload shape; special handling for scores vs standard odds
+    # Calculate payload shape; special handling for scores/tennis_h2h vs standard odds
     if is_scores_fetch:
         shape = _payload_shape(payload, None, is_scores=True)
+    elif family == "tennis_h2h":
+        shape = _payload_shape(payload, fetch_markets, is_multi_event=True)
     else:
         shape = _payload_shape(payload, fetch_markets, commence_time=event_commence)
     degenerate = shape.get("degenerate", False)
