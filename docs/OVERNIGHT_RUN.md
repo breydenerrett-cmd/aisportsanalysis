@@ -1272,3 +1272,90 @@ publish) fast-forwarded in between with no conflict.
 Blockers: none new. Standing blockers unchanged — `BALLDONTLIE_API_KEY`
 secret (R16-02), per-sport pricing decisions (R16-28), API-Tennis trial
 call (R16-22) all still BLOCKED_HUMAN as before.
+
+## 2026-09-15 ~18:45Z — hourly cloud routine: NEW escalation diagnosed and fixed (dense capture window)
+
+Start-of-run check found a NEW `ESCALATE:` line not in `docs/ESCALATIONS.md`
+and not previously logged anywhere: `afternoon-slate` run 35002735013
+(17:40:29Z dispatch) failed at 17:43:07Z with `ERROR: engine slate --date
+2026-09-15 refused by the pre-slate freshness guard (LIVE mode)` —
+`price capture for 2026-09-15 is 3.2h stale relative to wall-clock now,
+past the 3h threshold`. Per the routine's own rule this outranks the
+queue, so this run diagnosed and fixed it instead of claiming R16-09.
+
+Also noted in passing (not part of this fix, recorded for whoever claims
+R16-02 next): the BALLDONTLIE_API_KEY secret has clearly been added since
+the last run — `balldontlie-harvest` runs 2, 3 and 4 all dispatched and
+succeeded (commits "balldontlie harvest: 2026-09-15T1{7,8}:{16,33}Z"),
+`data/historical/balldontlie/MANIFEST.json` has real rows for tennis and
+NFL. R16-02's own acceptance (a runner log showing tennis result rows) is
+someone else's to close since R16-33 already owns that surface and is
+RUNNING; left the roadmap untouched here to avoid colliding with that
+session's edits.
+
+**Diagnosis.** `engine slate` refuses when the newest captured price
+(`data/processed/l1_observations.jsonl`, reprojected each run from
+whatever raw odds snapshots are on disk) is older than 3 hours
+(`src/engine/preflight.py`, `PRICE_CAPTURE_STALE_HOURS`). The raw source
+of that projection, `data/raw/oddsapi/YYYY/MM/DD/*.jsonl.gz`, is git-
+committed by `scripts/capture_slot.sh`'s "dense" odds capture step, which
+only fires against every game on the slate (a wide, once-an-hour-budgeted
+call) when the current UTC minute is under 15 or the slot was a hand
+dispatch (`CAPTURE_NOW=1`) — otherwise it only prices games inside a
+180-minute window, and skips entirely if none qualify. Checked the
+actually-committed files: the newest dense capture for 2026-09-15 was
+14:31Z (from the daily loop's own catchup run), nothing since, despite
+`forward-capture` firing every ~13 minutes without a single reported
+failure all afternoon (verified via the GitHub Actions job logs, run
+35006066960 at 18:26Z: `dense (one slot): window: 180 minutes … stopped
+early: no game inside the window`). The design already had a fix for a
+late slate (2026-09-14, same file's comments) — widen to a full-day
+window once an hour — but it depends on SOME chained slot happening to
+land on a wall-clock minute under 15, and the chain's own gate can yield
+an entire slot to a waiting rival (afternoon-slate was being hand-
+dispatched roughly every 30 minutes today for R16-34/35's testing,
+sharing the same `forward-capture` concurrency group); with today's
+first pitch not until 22:40Z, every slot between 14:31Z and past 18:40Z
+apparently landed on an unlucky minute, so the widen never fired and the
+board went 4+ hours stale while every workflow run still reported green.
+
+**Fix**, `scripts/capture_slot.sh` (commit 90f93ff1): left the existing
+minute-under-15 widen untouched, and added a fallback that checks how
+long it has actually been since the newest committed
+`data/raw/oddsapi/` capture (durable across every ephemeral runner,
+unlike the gitignored L1 projection) and widens to the full-day window
+anyway once that exceeds 55 minutes — so a missed lucky window now costs
+at most one extra slot, never hours. Three new tests in
+`tests/test_capture_no_set_time.py` run the real extracted snippet
+(never re-typed) against a stubbed `date` and a fabricated `data/raw/
+oddsapi/` tree: a recent capture stays at the narrow window, a capture
+stale past 55 minutes widens, and no prior capture on disk widens
+immediately. The pre-existing test asserting the exact minute<15
+condition text still passes unchanged.
+
+**Verified**: `tests/test_capture_no_set_time.py` (55 tests, all green,
+including the 3 new ones and the pre-existing regex assertion on the
+unmodified line); full suite (`python -m unittest discover -s tests -t
+.`, 7215 tests, 447 skipped, 0 failures); `python
+scripts/publication_audit.py` clean. No `web/` files touched, so the
+customer-language/web-structure tests weren't separately required.
+
+**Not done this run, and why**: did not add a row to
+`docs/ESCALATIONS.md` — that ledger only gates `daily-loop.yml`'s check
+step (`scripts/escalations.py --check`); `afternoon-slate.yml`'s
+ESCALATE check is a bare `grep` with no ledger lookup, so a ledger row
+here would document but not functionally change anything. Flagging here
+instead: if `afternoon-slate.yml` should also read the ledger, that is a
+small follow-up someone can pick up, not folded into this fix to keep
+the diff to the actual root cause.
+
+Commit: 90f93ff1 (rebased cleanly onto d73676db, a concurrent forward-
+capture data commit, no conflict). Pushed to
+`claude/sports-betting-analysis-review-g1o0co`.
+
+Blockers: none new. Did not claim a numbered roadmap item this run — the
+new escalation outranked the queue per the routine's own rule. Standing
+blockers unchanged: per-sport pricing decisions (R16-28) and the
+API-Tennis trial call (R16-22) still BLOCKED_HUMAN; `BALLDONTLIE_API_KEY`
+(R16-02) appears resolved (see above) but left for whoever is already
+working that surface to close out with the roadmap evidence it wants.
