@@ -118,8 +118,9 @@ def _mlb_favorite_trails_after_3(pregame: Mapping, state: Mapping,
 
     Candidate side: the favourite.
     """
-    # Check probability threshold
-    if pregame.get("favorite_prob", 0) < 0.55:
+    # Check probability threshold. A None favourite probability (fewer than
+    # six books before the game) means no pre-game favourite and no rule.
+    if (pregame.get("favorite_prob") or 0) < 0.55:
         return None
 
     # Check inning threshold: third inning has ended
@@ -288,8 +289,8 @@ def _nfl_favorite_trails_halftime(pregame: Mapping, state: Mapping,
 
     Candidate side: the favourite.
     """
-    # Check probability threshold
-    if pregame.get("favorite_prob", 0) < 0.60:
+    # Check probability threshold (None = no pre-game favourite, no rule).
+    if (pregame.get("favorite_prob") or 0) < 0.60:
         return None
 
     # Check if game is not completed
