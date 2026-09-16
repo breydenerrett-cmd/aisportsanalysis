@@ -449,11 +449,41 @@ def _lineups_section(day, schedule, root, moment) -> dict:
             "path": str(path),
         }
 
+    # THE STORE THIS SECTION IS NAMED FOR (2026-09-16 incident). Everything
+    # above reads data/watch/lineups_watch.jsonl -- the POLLER's own log of
+    # what it fetched -- which is a different file from
+    # data/historical/lineups.jsonl, the durable store api/games.py and
+    # src/pipeline/enrichment.py actually read for tonight's batting orders.
+    # A CI cache-restore step clobbered the latter with a stale snapshot nine
+    # times (4,993 rows -> 119) while the poller kept fetching fine, so this
+    # section reported "lineups healthy" every quarter hour while the store
+    # it claims to describe was emptying out from under the product.
+    #
+    # The fix reads the real store too and cross-checks it against what the
+    # watch stream already proved happened THIS SAME RUN: if the poller has
+    # a posted lineup for a game_pk on today's slate, the store should have a
+    # row for that same (day, game_pk). A gap between the two, in a single
+    # pass, is not a threshold guess -- it is the watch stream catching the
+    # store in the act of having lost something it already had. No history
+    # has to be persisted for that; module stays read-only, per this file's
+    # own contract at the top.
     lineup_path = directory / rosterwatch.LINEUPS_FILE
+    store_path = _historical_path(root) / "lineups.jsonl"
+    store_present = store_path.exists()
+    store_pks_today = set()
+    if store_present:
+        for row in _read_jsonl(store_path):
+            if row.get("game_pk") is None or row.get("date") != day:
+                continue
+            store_pks_today.add(row["game_pk"])
+
     if not lineup_path.exists():
         return {"streams": streams, "games_with_posted_lineups": None,
                 "off_slate_lineups": None, "attributed_by": None,
-                "of_scheduled": None, "coverage_measurable": False}
+                "of_scheduled": None, "coverage_measurable": False,
+                "store_present": store_present,
+                "store_games_today": len(store_pks_today),
+                "posted_missing_from_store": None}
 
     pks = set(schedule.get("game_pks") or ())
     # An authoritative empty slate is measurable too: nothing to cover, nothing
@@ -472,6 +502,13 @@ def _lineups_section(day, schedule, root, moment) -> dict:
         if row["game_pk"] in pks:
             posted.add(row["game_pk"])
 
+    # Only meaningful once the store has actually been read: an absent store
+    # is already its own anomaly below, and re-reporting every posted game_pk
+    # as "missing from the store" on top of "store absent" would just be
+    # noise on the same finding.
+    posted_missing_from_store = (sorted(posted - store_pks_today)
+                                  if store_present else None)
+
     if measurable:
         return {
             "streams": streams,
@@ -483,6 +520,9 @@ def _lineups_section(day, schedule, root, moment) -> dict:
             "attributed_by": "schedule game_pks",
             "of_scheduled": schedule.get("games"),
             "coverage_measurable": True,
+            "store_present": store_present,
+            "store_games_today": len(store_pks_today),
+            "posted_missing_from_store": posted_missing_from_store,
         }
     return {
         "streams": streams,
@@ -491,6 +531,9 @@ def _lineups_section(day, schedule, root, moment) -> dict:
         "attributed_by": "fetch date",
         "of_scheduled": None,
         "coverage_measurable": False,
+        "store_present": store_present,
+        "store_games_today": len(store_pks_today),
+        "posted_missing_from_store": posted_missing_from_store,
     }
 
 
@@ -653,6 +696,22 @@ def _anomalies(out) -> list:
         elif out["all_games_started"] and posted < games:
             found.append(f"Only {posted} of {games} games ever had a posted "
                          f"lineup recorded, though all have started.")
+
+    if lineups.get("store_present") is False:
+        found.append("The lineup store data/historical/lineups.jsonl is "
+                     "absent: api/games.py and enrichment have nothing to "
+                     "read for tonight's batting orders.")
+    missing = lineups.get("posted_missing_from_store")
+    if missing:
+        # The watch stream already proved these lineups posted; the store
+        # this section is named for does not have them for today. That is
+        # the store having lost rows the poller already handed it, caught
+        # in the same run rather than inferred from a history nobody kept.
+        found.append(
+            f"The lineup store has {len(missing)} game(s) the watch stream "
+            f"already recorded a posted lineup for but the store does not "
+            f"({missing}): data/historical/lineups.jsonl looks collapsed, "
+            f"not merely behind.")
 
     # --- snapshot staleness ---------------------------------------------
     if snaps["store_present"]:
@@ -906,6 +965,10 @@ def _f5_path(root) -> Path:
 
 def _watch_dir(root) -> Path:
     return _base(root) / "watch"
+
+
+def _historical_path(root) -> Path:
+    return _base(root) / "historical"
 
 
 def _odds_rows(day, root, schedule=None) -> list:

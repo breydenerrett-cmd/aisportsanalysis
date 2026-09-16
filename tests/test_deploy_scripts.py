@@ -57,6 +57,7 @@ SHELL_SCRIPTS = [
     "scripts/daily_loop.sh",
     "scripts/capture_slot.sh",
     "scripts/daily_bootstrap.sh",
+    "scripts/lib_shrink_guard.sh",
 ]
 
 

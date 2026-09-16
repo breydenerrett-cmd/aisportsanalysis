@@ -90,6 +90,7 @@ class HealthStoreFixture(unittest.TestCase):
         self.build_odds(observed=NOON - timedelta(minutes=12))
         self.build_baseline_day()
         self.build_watch(last_poll=NOON - timedelta(minutes=5))
+        self.build_lineup_store()
         self.build_ledger()
 
     # -- builders ---------------------------------------------------------
@@ -134,6 +135,23 @@ class HealthStoreFixture(unittest.TestCase):
             rows.append({"fetched_utc": stamp, "game_pk": pk,
                          "away_lineup": [1, 2, 3], "home_lineup": [4, 5, 6]})
         _write(watch / "lineups_watch.jsonl", rows)
+
+    def build_lineup_store(self, games=GAMES, day=DAY):
+        """data/historical/lineups.jsonl -- the store api/games.py and
+        enrichment actually read, and a DIFFERENT file from
+        data/watch/lineups_watch.jsonl above (the poller's own fetch log).
+        Both are written in a healthy fixture because the 2026-09-16
+        incident was exactly the two disagreeing: the watch stream stayed
+        green while this store was silently overwritten with a stale, far
+        smaller snapshot."""
+        store = self.root / "historical" / "lineups.jsonl"
+        store.parent.mkdir(parents=True, exist_ok=True)
+        store.write_text("", encoding="utf-8")  # overwrite, never append
+        rows = []
+        for _, _, away, home, pk in games:
+            rows.append({"date": day, "game_pk": pk,
+                         "away": [{"id": 1}], "home": [{"id": 2}]})
+        _write(store, rows)
 
     def build_ledger(self, unsettled_past=False):
         rows = []
@@ -561,6 +579,57 @@ class ContractTests(HealthStoreFixture):
 
         after = self.run_report(now=NOON + timedelta(hours=3))
         self.assertMentions(after, "first-five close store holds no rows")
+
+
+class LineupStoreCollapseTests(HealthStoreFixture):
+    """2026-09-16 incident: a CI cache-restore clobbered
+    data/historical/lineups.jsonl with a stale snapshot nine times (4,993
+    rows -> 119) while data/watch/lineups_watch.jsonl -- a DIFFERENT file --
+    kept polling fine. This module reported lineup health from the watch
+    store while naming the historical store in its own prose, so the
+    collapse ran for days reported as healthy. These tests pin that the
+    module now actually reads the store it names and cannot stay green
+    while that store has lost rows the watch stream already proved posted.
+    """
+
+    def test_an_absent_historical_store_is_flagged_even_though_watch_is_healthy(self):
+        # Watch stream (data/watch/lineups_watch.jsonl) is untouched by
+        # setUp and stays fully healthy -- only the named store is gone.
+        (self.root / "historical" / "lineups.jsonl").unlink()
+        data = self.run_report()
+        self.assertMentions(data, "data/historical/lineups.jsonl is absent")
+        self.assertFalse(data["healthy"])
+
+    def test_a_store_missing_rows_the_watch_stream_already_posted_is_flagged(self):
+        """The exact incident shape: the poller has posted lineups for every
+        game_pk on the slate, but the store that api/games.py reads carries
+        none of them for today -- a stale snapshot from a different date."""
+        self.build_lineup_store(games=[("x", "y", "X", "Y", 999)], day=YESTERDAY)
+        data = self.run_report()
+        self.assertMentions(
+            data, "watch stream already recorded a posted lineup",
+            "collapsed, not merely behind")
+        self.assertFalse(data["healthy"])
+        self.assertEqual(data["lineups"]["store_games_today"], 0)
+        self.assertEqual(len(data["lineups"]["posted_missing_from_store"]), 3)
+
+    def test_a_store_that_matches_the_watch_stream_is_not_flagged(self):
+        """The positive control: the healthy fixture already writes a
+        matching historical store in setUp, so nothing about this new check
+        should fire when the two stores agree."""
+        data = self.run_report()
+        self.assertEqual(data["anomalies"], [])
+        self.assertTrue(data["healthy"])
+        self.assertEqual(data["lineups"]["posted_missing_from_store"], [])
+
+    def test_partial_loss_names_only_the_games_actually_missing(self):
+        """Two of three games in the store, one dropped -- the finding
+        should count exactly one, not all three and not zero."""
+        kept = [g for g in GAMES[:2]]
+        self.build_lineup_store(games=kept)
+        data = self.run_report()
+        self.assertEqual(len(data["lineups"]["posted_missing_from_store"]), 1)
+        self.assertMentions(data, "1 game(s)")
 
 
 if __name__ == "__main__":  # pragma: no cover
