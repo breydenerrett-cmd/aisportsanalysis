@@ -144,6 +144,40 @@ class HistoricalArchiveWiringTests(unittest.TestCase):
                 f"{path} is no longer gitignored -- the archive negation in "
                 ".gitignore is too broad and now un-ignores the live copy too")
 
+    def test_archived_boxscore_seasons_are_ignored_raw(self):
+        """2023-2025 box scores (roadmap W-4 backfill) are archived the same
+        way as the paid odds purchase -- the raw seasons under
+        data/processed/ must stay gitignored so they aren't committed
+        twice (raw + archived)."""
+        for path in (
+            "data/processed/boxscores_2023.jsonl",
+            "data/processed/boxscores_2024.jsonl",
+            "data/processed/boxscores_2025.jsonl",
+        ):
+            self.assertTrue(
+                _is_ignored(path),
+                f"{path} is not gitignored -- it should be archived under "
+                "data/archive/historical/boxscores/, not committed raw")
+
+    def test_live_boxscore_season_stays_tracked(self):
+        """boxscores_2026.jsonl is the LIVE season the daily loop appends
+        to -- it must stay tracked raw, not swept into the archive-only
+        ignore rule added for the historical seasons."""
+        self.assertFalse(
+            _is_ignored("data/processed/boxscores_2026.jsonl"),
+            "data/processed/boxscores_2026.jsonl is gitignored -- the "
+            "live current season must stay tracked raw")
+
+    def test_archived_boxscore_path_is_not_gitignored(self):
+        for path in (
+            "data/archive/historical/boxscores",
+            "data/archive/historical/boxscores/boxscores_2023.jsonl.gz",
+        ):
+            self.assertFalse(
+                _is_ignored(path),
+                f"{path} is gitignored -- the archived box scores would "
+                "never leave this container's disk")
+
 
 class HistoricalArchiveContentTests(unittest.TestCase):
     """These only run once scripts/archive_historical.sh has actually
@@ -167,6 +201,22 @@ class HistoricalArchiveContentTests(unittest.TestCase):
                 mismatches.append(
                     f"{rel_path}: sidecar says {expected_hash}, decompressed to {actual}")
         self.assertEqual(mismatches, [], "\n".join(mismatches))
+
+    def test_boxscore_seasons_present_in_sidecar_once_archived(self):
+        """If any box-score season has been archived, all three historical
+        seasons (2023-2025) must be -- archive_historical.sh refuses a
+        partial backfill, so a run either covers all three or none."""
+        rels = {rel for _, rel in _sidecar_entries()}
+        boxscore_rels = {rel for rel in rels if rel.startswith("boxscores/")}
+        if not boxscore_rels:
+            self.skipTest("no box scores archived yet")
+        for season in (2023, 2024, 2025):
+            self.assertIn(
+                f"boxscores/boxscores_{season}.jsonl.gz", boxscore_rels,
+                f"boxscores_{season} missing from the sidecar's box-score entries")
+        self.assertNotIn(
+            "boxscores/boxscores_2026.jsonl.gz", boxscore_rels,
+            "the live 2026 season must never be archived")
 
     def test_no_archived_gz_exceeds_githubs_soft_limit(self):
         """A single committed blob over ~50MB is what scripts/

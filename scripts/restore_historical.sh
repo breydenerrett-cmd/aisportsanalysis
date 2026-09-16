@@ -21,6 +21,13 @@
 # data/archive/historical/SHA256SUMS BEFORE it is ever written to
 # data/historical/ -- a corrupt archive is refused, never installed.
 #
+# BOX SCORES: data/archive/historical/boxscores/*.jsonl.gz restores to
+# data/processed/, not data/historical/ -- see archive_historical.sh's
+# header for why box scores live under a different source root than the
+# odds purchase. The sidecar's "boxscores/<file>" rel path is remapped
+# below; everything else in this script (hash-before-write, --force,
+# up-to-date no-op) applies identically to both.
+#
 # Usage: scripts/restore_historical.sh [--force]
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -38,6 +45,7 @@ done
 
 SRC_ROOT="data/archive/historical"
 DST_ROOT="data/historical"
+BOXSCORE_DST_ROOT="data/processed"
 SIDECAR="$SRC_ROOT/SHA256SUMS"
 
 if [[ ! -f "$SIDECAR" ]]; then
@@ -88,7 +96,11 @@ while read -r expected_hash rel_path; do
         continue
     fi
 
-    dst_path="$DST_ROOT/$dst_rel"
+    if [[ "$dst_rel" == boxscores/* ]]; then
+        dst_path="$BOXSCORE_DST_ROOT/${dst_rel#boxscores/}"
+    else
+        dst_path="$DST_ROOT/$dst_rel"
+    fi
     if [[ -e "$dst_path" ]]; then
         existing_hash="$(sha256_of "$dst_path")"
         if [[ "$existing_hash" == "$actual_hash" ]]; then

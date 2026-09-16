@@ -135,7 +135,16 @@ data/app/*
 # forward (rather than only in a backfill) is that a day's games become
 # unreachable once far enough in the past falls out of convenient reach --
 # same "capture now" reasoning as the rest of this block. One file per season.
-!data/processed/boxscores_*.jsonl
+# Narrowed 2026-09-16 (roadmap W-4, box-score backfill) from a
+# boxscores_*.jsonl glob to just the live current season: 2023/2024/2025 are
+# now archived (gzip -n + decompressed-sha256 sidecar) under
+# data/archive/historical/boxscores/ by scripts/archive_historical.sh --
+# same "78MB paid by every clone" reasoning as the odds-purchase archive
+# above, even though this source is free to re-pull. Restore them with
+# scripts/restore_historical.sh; the archive is the durable copy, not these
+# raw files. boxscores_2026.jsonl stays tracked raw: it's the live season
+# the daily loop appends to, so archiving it would go stale within a day.
+!data/processed/boxscores_2026.jsonl
 # Added 2026-09-03 (packet W7, docs/planning/attack.md F10): the cadence SLO
 # is computed from the OTHER stores' own poll timestamps, but the SLO row
 # itself -- what gap was actually measured, on which day -- is the record

@@ -47,6 +47,22 @@
 # Nothing in the current purchase is anywhere near that size (~3-4MB
 # compressed per season), but future seasons could get there.
 #
+# BOX SCORES (added with the 2023-2025 StatsAPI backfill, roadmap W-4)
+# ----------------------------------------------------------------------
+# data/processed/boxscores_2023.jsonl, _2024.jsonl and _2025.jsonl (~26MB
+# each) are historical-season box scores pulled from the free MLB StatsAPI
+# during the W-4 backfill. They're free to re-pull in principle, but the
+# point of archiving them the same way as the paid odds purchase is the
+# same "78MB of JSONL would be paid by every clone, including the hourly
+# cloud routine" problem -- not repurchase risk. They're flat files under
+# data/processed/, not a directory, so BOXSCORE_FILES below lists them
+# explicitly rather than reusing SRC_DIRS' directory-glob shape; both feed
+# the same archive_one_file/sidecar/split machinery so there's still just
+# one archive code path. data/processed/boxscores_2026.jsonl is the LIVE
+# current season the daily loop appends to -- it is deliberately excluded
+# from BOXSCORE_FILES and stays tracked raw in git (see .gitignore).
+# Archived under data/archive/historical/boxscores/.
+#
 # Usage: scripts/archive_historical.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -55,6 +71,9 @@ SRC_ROOT="data/historical"
 DST_ROOT="data/archive/historical"
 SIDECAR="$DST_ROOT/SHA256SUMS"
 SRC_DIRS=(odds_history odds_first_five)
+BOXSCORE_ROOT="data/processed"
+BOXSCORE_DST="boxscores"
+BOXSCORE_FILES=(boxscores_2023.jsonl boxscores_2024.jsonl boxscores_2025.jsonl)
 SPLIT_THRESHOLD=$((50 * 1024 * 1024))  # bytes; GitHub's per-file warning line
 SPLIT_CHUNK="40M"                       # split -b unit; stays clear of the above
 
@@ -74,6 +93,40 @@ sidecar_hash_for() {
 
 declare -a REL_PATHS
 declare -a NEW_HASHES
+
+# Gzip (or skip, if unchanged) a single source file into dst_dir, splitting
+# it if the result is over SPLIT_THRESHOLD, and append its rel path/hash to
+# REL_PATHS/NEW_HASHES. Shared by the odds-history dir loop and the
+# box-score explicit-file loop below -- one archiving code path either way.
+archive_one_file() {
+    local src_file="$1" dst_dir="$2" rel="$3"
+    local fname; fname="$(basename "$src_file")"
+    local src_hash; src_hash="$(sha256_of "$src_file")"
+    local existing; existing="$(sidecar_hash_for "$rel")"
+
+    local have_whole=0
+    [[ -f "$dst_dir/$fname.gz" ]] && have_whole=1
+    local have_parts=0
+    for _ in "$dst_dir/$fname.gz.part-"*; do have_parts=1; done
+
+    if [[ "$existing" == "$src_hash" && ( "$have_whole" == 1 || "$have_parts" == 1 ) ]]; then
+        echo "skip (unchanged): $rel"
+    else
+        rm -f "$dst_dir/$fname.gz" "$dst_dir/$fname.gz.part-"*
+        gzip -n -c "$src_file" > "$dst_dir/$fname.gz"
+        local gz_size; gz_size="$(stat -c%s "$dst_dir/$fname.gz")"
+        if (( gz_size > SPLIT_THRESHOLD )); then
+            split -b "$SPLIT_CHUNK" -d -a 3 "$dst_dir/$fname.gz" "$dst_dir/$fname.gz.part-"
+            rm -f "$dst_dir/$fname.gz"
+            local n_parts; n_parts=$(ls "$dst_dir/$fname.gz.part-"* | wc -l)
+            echo "archived (split, ${gz_size}B > $((SPLIT_THRESHOLD))B, $n_parts parts): $rel"
+        else
+            echo "archived (${gz_size}B): $rel"
+        fi
+    fi
+    REL_PATHS+=("$rel")
+    NEW_HASHES+=("$src_hash")
+}
 
 for dir in "${SRC_DIRS[@]}"; do
     src_dir="$SRC_ROOT/$dir"
@@ -102,33 +155,20 @@ for dir in "${SRC_DIRS[@]}"; do
 
     for src_file in "$src_dir"/*.jsonl; do
         fname="$(basename "$src_file")"
-        rel="$dir/$fname.gz"
-        src_hash="$(sha256_of "$src_file")"
-        existing="$(sidecar_hash_for "$rel")"
-
-        have_whole=0
-        [[ -f "$dst_dir/$fname.gz" ]] && have_whole=1
-        have_parts=0
-        for _ in "$dst_dir/$fname.gz.part-"*; do have_parts=1; done
-
-        if [[ "$existing" == "$src_hash" && ( "$have_whole" == 1 || "$have_parts" == 1 ) ]]; then
-            echo "skip (unchanged): $rel"
-        else
-            rm -f "$dst_dir/$fname.gz" "$dst_dir/$fname.gz.part-"*
-            gzip -n -c "$src_file" > "$dst_dir/$fname.gz"
-            gz_size="$(stat -c%s "$dst_dir/$fname.gz")"
-            if (( gz_size > SPLIT_THRESHOLD )); then
-                split -b "$SPLIT_CHUNK" -d -a 3 "$dst_dir/$fname.gz" "$dst_dir/$fname.gz.part-"
-                rm -f "$dst_dir/$fname.gz"
-                n_parts=$(ls "$dst_dir/$fname.gz.part-"* | wc -l)
-                echo "archived (split, ${gz_size}B > $((SPLIT_THRESHOLD))B, $n_parts parts): $rel"
-            else
-                echo "archived (${gz_size}B): $rel"
-            fi
-        fi
-        REL_PATHS+=("$rel")
-        NEW_HASHES+=("$src_hash")
+        archive_one_file "$src_file" "$dst_dir" "$dir/$fname.gz"
     done
+done
+
+# Box scores: explicit file list, not a directory glob (see header).
+box_dst_dir="$DST_ROOT/$BOXSCORE_DST"
+mkdir -p "$box_dst_dir"
+for fname in "${BOXSCORE_FILES[@]}"; do
+    src_file="$BOXSCORE_ROOT/$fname"
+    if [[ ! -f "$src_file" ]]; then
+        echo "archive_historical.sh: missing source file $src_file -- refusing to archive a partial backfill" >&2
+        exit 1
+    fi
+    archive_one_file "$src_file" "$box_dst_dir" "$BOXSCORE_DST/$fname.gz"
 done
 
 # Rewrite the sidecar from scratch, sorted, so it's stable regardless of
