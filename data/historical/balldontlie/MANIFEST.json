@@ -1,4 +1,202 @@
 {
+  "mlb/mlb_games_2022.jsonl.gz": {
+    "bytes": 635204,
+    "complete": true,
+    "endpoint": "games",
+    "file": "mlb/mlb_games_2022.jsonl.gz",
+    "harvested_utc": "2026-09-16T00:08:28Z",
+    "params": {
+      "seasons[]": [
+        2022
+      ]
+    },
+    "rows": 2793,
+    "sha256": "c37207da9b390cb5f6a375d47d51f865955c67dd09bf192267cc9b9ec155b13c",
+    "sport": "mlb"
+  },
+  "mlb/mlb_games_2023.jsonl.gz": {
+    "bytes": 745153,
+    "complete": true,
+    "endpoint": "games",
+    "file": "mlb/mlb_games_2023.jsonl.gz",
+    "harvested_utc": "2026-09-16T00:02:34Z",
+    "params": {
+      "seasons[]": [
+        2023
+      ]
+    },
+    "rows": 2977,
+    "sha256": "ccd06ca1fd887a284e181b096ecb0c94e4fca84005b4c2e782b4cbcc3011e155",
+    "sport": "mlb"
+  },
+  "mlb/mlb_games_2024.jsonl.gz": {
+    "bytes": 718598,
+    "complete": true,
+    "endpoint": "games",
+    "file": "mlb/mlb_games_2024.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:56:16Z",
+    "params": {
+      "seasons[]": [
+        2024
+      ]
+    },
+    "rows": 2981,
+    "sha256": "c0ca3d288bb6b768d43dc1b0a9d17acf9d5fc3c1a038aa6813029c10421679c5",
+    "sport": "mlb"
+  },
+  "mlb/mlb_games_2025.jsonl.gz": {
+    "bytes": 663828,
+    "complete": true,
+    "endpoint": "games",
+    "file": "mlb/mlb_games_2025.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:49:57Z",
+    "params": {
+      "seasons[]": [
+        2025
+      ]
+    },
+    "rows": 2978,
+    "sha256": "34f78837d6e1251b5660dc290fa6386966a550749ddcededa11e825df0d1b1ea",
+    "sport": "mlb"
+  },
+  "mlb/mlb_games_2026.jsonl.gz": {
+    "bytes": 618361,
+    "complete": true,
+    "endpoint": "games",
+    "file": "mlb/mlb_games_2026.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:43:37Z",
+    "params": {
+      "seasons[]": [
+        2026
+      ]
+    },
+    "rows": 2909,
+    "sha256": "4863166835284e2da435227acd645c80da0693a954f30b175ee5047718d6ad85",
+    "sport": "mlb"
+  },
+  "mlb/mlb_odds.jsonl.gz": {
+    "bytes": 35,
+    "complete": false,
+    "endpoint": "odds",
+    "file": "mlb/mlb_odds.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:37:06Z",
+    "http_status": 400,
+    "params": {},
+    "rows": 0,
+    "sha256": null,
+    "sport": "mlb"
+  },
+  "mlb/mlb_odds_opening.jsonl.gz": {
+    "bytes": 43,
+    "complete": false,
+    "endpoint": "odds_opening",
+    "file": "mlb/mlb_odds_opening.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:37:18Z",
+    "http_status": 400,
+    "params": {},
+    "rows": 0,
+    "sha256": null,
+    "sport": "mlb"
+  },
+  "nba/nba_games_2022.jsonl.gz": {
+    "bytes": 48832,
+    "complete": true,
+    "endpoint": "games",
+    "file": "nba/nba_games_2022.jsonl.gz",
+    "harvested_utc": "2026-09-16T00:23:25Z",
+    "params": {
+      "seasons[]": [
+        2022
+      ]
+    },
+    "rows": 1320,
+    "sha256": "92afcf3b538ab998af7cc4f5ed3478a2cbd0ce2897e179842370ef01bca7274f",
+    "sport": "nba"
+  },
+  "nba/nba_games_2023.jsonl.gz": {
+    "bytes": 51567,
+    "complete": true,
+    "endpoint": "games",
+    "file": "nba/nba_games_2023.jsonl.gz",
+    "harvested_utc": "2026-09-16T00:20:28Z",
+    "params": {
+      "seasons[]": [
+        2023
+      ]
+    },
+    "rows": 1319,
+    "sha256": "3e5657e35adcb7af7e2f179278fcf46459e1ba6ba9b88e9a8db2b96c56ddf32b",
+    "sport": "nba"
+  },
+  "nba/nba_games_2024.jsonl.gz": {
+    "bytes": 51866,
+    "complete": true,
+    "endpoint": "games",
+    "file": "nba/nba_games_2024.jsonl.gz",
+    "harvested_utc": "2026-09-16T00:17:31Z",
+    "params": {
+      "seasons[]": [
+        2024
+      ]
+    },
+    "rows": 1321,
+    "sha256": "69f24c34e27cd0418e9c5f074cb2b5e982f8d4daceb43dc47f88d6b7a311a8e5",
+    "sport": "nba"
+  },
+  "nba/nba_games_2025.jsonl.gz": {
+    "bytes": 51924,
+    "complete": true,
+    "endpoint": "games",
+    "file": "nba/nba_games_2025.jsonl.gz",
+    "harvested_utc": "2026-09-16T00:14:34Z",
+    "params": {
+      "seasons[]": [
+        2025
+      ]
+    },
+    "rows": 1322,
+    "sha256": "97c2e395a446ef87ced74969ad40e14e4a2848e4ff008164d199f69bd795a9b4",
+    "sport": "nba"
+  },
+  "nba/nba_games_2026.jsonl.gz": {
+    "bytes": 22906,
+    "complete": true,
+    "endpoint": "games",
+    "file": "nba/nba_games_2026.jsonl.gz",
+    "harvested_utc": "2026-09-16T00:11:37Z",
+    "params": {
+      "seasons[]": [
+        2026
+      ]
+    },
+    "rows": 1200,
+    "sha256": "21915f05a5e264b7b2435bae865749bb5397ff8010a269dbcae0b8dfd2469e7a",
+    "sport": "nba"
+  },
+  "nba/nba_odds.jsonl.gz": {
+    "bytes": 35,
+    "complete": false,
+    "endpoint": "odds",
+    "file": "nba/nba_odds.jsonl.gz",
+    "harvested_utc": "2026-09-16T00:08:41Z",
+    "http_status": 400,
+    "params": {},
+    "rows": 0,
+    "sha256": null,
+    "sport": "nba"
+  },
+  "nba/nba_odds_opening.jsonl.gz": {
+    "bytes": 43,
+    "complete": false,
+    "endpoint": "odds_opening",
+    "file": "nba/nba_odds_opening.jsonl.gz",
+    "harvested_utc": "2026-09-16T00:08:53Z",
+    "http_status": 400,
+    "params": {},
+    "rows": 0,
+    "sha256": null,
+    "sport": "nba"
+  },
   "nfl/nfl_games_2015.jsonl.gz": {
     "bytes": 17835,
     "complete": true,
@@ -60,6 +258,5396 @@
     "rows": 200,
     "sha256": null,
     "sport": "nfl"
+  },
+  "nfl/nfl_games_2019.jsonl.gz": {
+    "bytes": 18367,
+    "complete": true,
+    "endpoint": "games",
+    "file": "nfl/nfl_games_2019.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:27:37Z",
+    "params": {
+      "seasons[]": [
+        2019
+      ]
+    },
+    "rows": 267,
+    "sha256": "4a500078b0047bf3e7eb2e4392581afae245d0a38208c734691de5a65bc15af5",
+    "sport": "nfl"
+  },
+  "nfl/nfl_games_2020.jsonl.gz": {
+    "bytes": 15751,
+    "complete": true,
+    "endpoint": "games",
+    "file": "nfl/nfl_games_2020.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:17:44Z",
+    "params": {
+      "seasons[]": [
+        2020
+      ]
+    },
+    "rows": 269,
+    "sha256": "c7a1d4fe9836257b9751197d5367e89f467a1ee0c8a7dfc20ddd15e34f7cedd0",
+    "sport": "nfl"
+  },
+  "nfl/nfl_games_2021.jsonl.gz": {
+    "bytes": 19733,
+    "complete": true,
+    "endpoint": "games",
+    "file": "nfl/nfl_games_2021.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:07:50Z",
+    "params": {
+      "seasons[]": [
+        2021
+      ]
+    },
+    "rows": 285,
+    "sha256": "25ef513f7cf063dd3cd0e6c5cc05faaf3fa25adaf58310856ce67ef57ce1584c",
+    "sport": "nfl"
+  },
+  "nfl/nfl_games_2022.jsonl.gz": {
+    "bytes": 19667,
+    "complete": true,
+    "endpoint": "games",
+    "file": "nfl/nfl_games_2022.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:57:56Z",
+    "params": {
+      "seasons[]": [
+        2022
+      ]
+    },
+    "rows": 285,
+    "sha256": "e6e11ab93164299f2f7866d56995372a24dcbea02db827c5ae1823ed4e836331",
+    "sport": "nfl"
+  },
+  "nfl/nfl_games_2023.jsonl.gz": {
+    "bytes": 23345,
+    "complete": true,
+    "endpoint": "games",
+    "file": "nfl/nfl_games_2023.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:48:03Z",
+    "params": {
+      "seasons[]": [
+        2023
+      ]
+    },
+    "rows": 285,
+    "sha256": "3aa9403344103b8bc8e0c8376f274b2d6505cc7328101a8f56a47f04c64bde95",
+    "sport": "nfl"
+  },
+  "nfl/nfl_games_2024.jsonl.gz": {
+    "bytes": 23462,
+    "complete": true,
+    "endpoint": "games",
+    "file": "nfl/nfl_games_2024.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:38:09Z",
+    "params": {
+      "seasons[]": [
+        2024
+      ]
+    },
+    "rows": 285,
+    "sha256": "d62a3294de5a0b3f5562a310862dd087260d5b5665af9a9f9bfe377e8043e719",
+    "sport": "nfl"
+  },
+  "nfl/nfl_games_2025.jsonl.gz": {
+    "bytes": 23504,
+    "complete": true,
+    "endpoint": "games",
+    "file": "nfl/nfl_games_2025.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:28:15Z",
+    "params": {
+      "seasons[]": [
+        2025
+      ]
+    },
+    "rows": 285,
+    "sha256": "0a0e0cb0bb23df168b57cfec62c7fdd2138232a1af7cf4a16c4d2ea1d5ccd2ad",
+    "sport": "nfl"
+  },
+  "nfl/nfl_games_2026.jsonl.gz": {
+    "bytes": 8026,
+    "complete": true,
+    "endpoint": "games",
+    "file": "nfl/nfl_games_2026.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:18:09Z",
+    "params": {
+      "seasons[]": [
+        2026
+      ]
+    },
+    "rows": 272,
+    "sha256": "0d90e3a22ad12445f41517256df865cff9ce3d0583b9e17d529a2d6f9ada2e0a",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_2019_wk01.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2019_wk01.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:27:50Z",
+    "params": {
+      "season": 2019,
+      "week": 1
+    },
+    "rows": 0,
+    "sha256": "ad80d9226dfa226d821a04a0eea156fb0a0b5f069a492f7fe81f69c8e29a479b",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2019_wk02.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2019_wk02.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:28:03Z",
+    "params": {
+      "season": 2019,
+      "week": 2
+    },
+    "rows": 0,
+    "sha256": "25e17a6f467e6429e8b6acb03e6adefa27f5a2e02a6396472b92b923a6290bdd",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2019_wk03.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2019_wk03.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:28:15Z",
+    "params": {
+      "season": 2019,
+      "week": 3
+    },
+    "rows": 0,
+    "sha256": "ad71cb89d1e6579ecb5b4e71001656f7e1ca218c9dc8d5aae7e147ed49dccf58",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2019_wk04.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2019_wk04.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:28:28Z",
+    "params": {
+      "season": 2019,
+      "week": 4
+    },
+    "rows": 0,
+    "sha256": "770bdf9967858cb15edb49d14acfb8fd65ace83ee7e034bce976db75676bc4c1",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2019_wk05.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2019_wk05.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:28:41Z",
+    "params": {
+      "season": 2019,
+      "week": 5
+    },
+    "rows": 0,
+    "sha256": "ffd0c14d88f5080d1a205f88511d95d1372d8a84e2e81c7d8407840e18d07a01",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2019_wk06.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2019_wk06.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:28:53Z",
+    "params": {
+      "season": 2019,
+      "week": 6
+    },
+    "rows": 0,
+    "sha256": "1476c0e64610846aa5dbb1db8a71b4c041665636334a9157d1492e2275d4f437",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2019_wk07.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2019_wk07.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:29:06Z",
+    "params": {
+      "season": 2019,
+      "week": 7
+    },
+    "rows": 0,
+    "sha256": "e27b5ea98c2dacc5092bba0f2783bc8f9e0d849279b1d69c1e195f1c97b730a3",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2019_wk08.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2019_wk08.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:29:18Z",
+    "params": {
+      "season": 2019,
+      "week": 8
+    },
+    "rows": 0,
+    "sha256": "00a48d0e838e5ea19e80ff1bc794215936980ef2f4315f4c5695a3a47c69241c",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2019_wk09.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2019_wk09.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:29:31Z",
+    "params": {
+      "season": 2019,
+      "week": 9
+    },
+    "rows": 0,
+    "sha256": "b039af92aee82956fc9ee7eb44d195f8b317d67568160be5530056cd94e1a013",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2019_wk10.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2019_wk10.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:29:44Z",
+    "params": {
+      "season": 2019,
+      "week": 10
+    },
+    "rows": 0,
+    "sha256": "3ecea4ba13c468817260de9c38676bc03f795a07dff5d7377a8cd45facd6d967",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2019_wk11.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2019_wk11.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:29:56Z",
+    "params": {
+      "season": 2019,
+      "week": 11
+    },
+    "rows": 0,
+    "sha256": "8ab1669c7214ecb6ea202b836cb40790660b8f6c5562d1806ac4fbdad389507f",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2019_wk12.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2019_wk12.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:30:09Z",
+    "params": {
+      "season": 2019,
+      "week": 12
+    },
+    "rows": 0,
+    "sha256": "95cdcf5691a4e8682b71275a2d728cf6ff3e3284a374db39eb8591e05c594be9",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2019_wk13.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2019_wk13.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:30:22Z",
+    "params": {
+      "season": 2019,
+      "week": 13
+    },
+    "rows": 0,
+    "sha256": "899803ce3ec11f47283a107e149740f77ac34b18d5ae9446ec0d8616c0fb77ec",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2019_wk14.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2019_wk14.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:30:34Z",
+    "params": {
+      "season": 2019,
+      "week": 14
+    },
+    "rows": 0,
+    "sha256": "83ebf3e47953264f76b9204b4cf40700093d81f0cf0234140af851e66d87d556",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2019_wk15.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2019_wk15.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:30:47Z",
+    "params": {
+      "season": 2019,
+      "week": 15
+    },
+    "rows": 0,
+    "sha256": "73bb05754f07bc8781a81e1bb89b41aa558ef8a2f965059d113ae59059794c3e",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2019_wk16.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2019_wk16.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:30:59Z",
+    "params": {
+      "season": 2019,
+      "week": 16
+    },
+    "rows": 0,
+    "sha256": "1d2b011b219d22062e3494b997a34e1dcfce46c0361f971a33d6cf4120684ea9",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2019_wk17.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2019_wk17.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:31:12Z",
+    "params": {
+      "season": 2019,
+      "week": 17
+    },
+    "rows": 0,
+    "sha256": "bb219f2622c620b9e8061314081827b30d4b2801cc502341b70d25dfce8bf3b9",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2019_wk18.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2019_wk18.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:31:25Z",
+    "params": {
+      "season": 2019,
+      "week": 18
+    },
+    "rows": 0,
+    "sha256": "340668422119dbf15429f43310092a0de086063bf7bb30ac0a06e87e067ff2f1",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2019_wk19.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2019_wk19.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:31:37Z",
+    "params": {
+      "season": 2019,
+      "week": 19
+    },
+    "rows": 0,
+    "sha256": "af1c5920e542c0548dff46d36782cf33f7274087c377833bd5ce50e3bb013aaa",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2019_wk20.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2019_wk20.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:31:50Z",
+    "params": {
+      "season": 2019,
+      "week": 20
+    },
+    "rows": 0,
+    "sha256": "ee840d685fcaa55ccdb111e6c5e574a8f2f9e2802df07a40eb0a0fd4333de019",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2019_wk21.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2019_wk21.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:32:03Z",
+    "params": {
+      "season": 2019,
+      "week": 21
+    },
+    "rows": 0,
+    "sha256": "5990883764d2b5695c4e50a32226ec7af5fb3c6b610c4b0f1d50411cd942f660",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2019_wk22.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2019_wk22.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:32:15Z",
+    "params": {
+      "season": 2019,
+      "week": 22
+    },
+    "rows": 0,
+    "sha256": "a8e59004a6b93d3f137a01c32a7cb060e307a7cace96cee6f9200e0848aaf36f",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2020_wk01.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2020_wk01.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:17:56Z",
+    "params": {
+      "season": 2020,
+      "week": 1
+    },
+    "rows": 0,
+    "sha256": "313c5bbbfca30ad60f7cc8e6e05d9035fd2af33e763fe3aa54f03097d80521da",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2020_wk02.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2020_wk02.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:18:09Z",
+    "params": {
+      "season": 2020,
+      "week": 2
+    },
+    "rows": 0,
+    "sha256": "67f90ec2c13f93b498bca7b861284f39d8adfe89dddd98f71b496d9db03b06dd",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2020_wk03.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2020_wk03.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:18:22Z",
+    "params": {
+      "season": 2020,
+      "week": 3
+    },
+    "rows": 0,
+    "sha256": "980e280382230eff94fab37d8914e6dbc2b9cabc51ed3b9e78751d2030a9e980",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2020_wk04.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2020_wk04.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:18:34Z",
+    "params": {
+      "season": 2020,
+      "week": 4
+    },
+    "rows": 0,
+    "sha256": "0c1fce19a1d64f64cd53919a9be6d1a95a4dcd4a4c75d8f284abb2a5f9eefe0e",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2020_wk05.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2020_wk05.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:18:47Z",
+    "params": {
+      "season": 2020,
+      "week": 5
+    },
+    "rows": 0,
+    "sha256": "179a029e641da3526b394d78d2e9cda5c84f8d8de098d42634bb0745fb07c813",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2020_wk06.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2020_wk06.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:18:59Z",
+    "params": {
+      "season": 2020,
+      "week": 6
+    },
+    "rows": 0,
+    "sha256": "6ffb9c764e4d5e5131de1e4af18a2359433d6d7e38a20adc7395a8ae29d35edf",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2020_wk07.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2020_wk07.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:19:12Z",
+    "params": {
+      "season": 2020,
+      "week": 7
+    },
+    "rows": 0,
+    "sha256": "48fb23f104c8fbdf86a1e2a4d64cfa0117101f817477ba209628eb21a7e0f2ce",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2020_wk08.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2020_wk08.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:19:25Z",
+    "params": {
+      "season": 2020,
+      "week": 8
+    },
+    "rows": 0,
+    "sha256": "28e1d5939b444171dbc3a25af8aff50a1e32c61284bd2f9bd87fc9ab9e694fc6",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2020_wk09.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2020_wk09.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:19:37Z",
+    "params": {
+      "season": 2020,
+      "week": 9
+    },
+    "rows": 0,
+    "sha256": "8e39b7659045d2f41a95248e96356d3e0fda33c7d939d90e93f4c10f0067ee19",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2020_wk10.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2020_wk10.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:19:50Z",
+    "params": {
+      "season": 2020,
+      "week": 10
+    },
+    "rows": 0,
+    "sha256": "78e4e73c141e4a3353c2a5835ca3faef50726b6d139093acee35b5122dec1917",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2020_wk11.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2020_wk11.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:20:03Z",
+    "params": {
+      "season": 2020,
+      "week": 11
+    },
+    "rows": 0,
+    "sha256": "a6e8b6a87ad9a7571f1a1120d0b22f05ec9261d99f07824338490c0b0c3cce9e",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2020_wk12.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2020_wk12.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:20:15Z",
+    "params": {
+      "season": 2020,
+      "week": 12
+    },
+    "rows": 0,
+    "sha256": "e0593bbe99921fcbf32094086ba49ae5dad0466c661acb1ebd31b4e046de3bfa",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2020_wk13.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2020_wk13.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:20:28Z",
+    "params": {
+      "season": 2020,
+      "week": 13
+    },
+    "rows": 0,
+    "sha256": "eaef719a7cf4b58dea0513d62832953c9b9cc9786a37f3dbb5595ca9861e6cea",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2020_wk14.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2020_wk14.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:20:41Z",
+    "params": {
+      "season": 2020,
+      "week": 14
+    },
+    "rows": 0,
+    "sha256": "9fd8dc55cd1702936833a96ea41b40c3b18fe2f8ab1869008b88150585a89fb7",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2020_wk15.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2020_wk15.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:20:53Z",
+    "params": {
+      "season": 2020,
+      "week": 15
+    },
+    "rows": 0,
+    "sha256": "ed4fb537908766ceb037642c62416a31beb72c285cc7dcb9c533efd28b2ca3d5",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2020_wk16.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2020_wk16.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:21:06Z",
+    "params": {
+      "season": 2020,
+      "week": 16
+    },
+    "rows": 0,
+    "sha256": "d9a49d18930fa0ffc6aa3372f57b2659888e9f815a614dd7fce5956af049f1fb",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2020_wk17.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2020_wk17.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:21:18Z",
+    "params": {
+      "season": 2020,
+      "week": 17
+    },
+    "rows": 0,
+    "sha256": "5f0dc53a99db48685fe8c6c2e62f4f390b204ecbedb35003ed89256fd95d707f",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2020_wk18.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2020_wk18.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:21:31Z",
+    "params": {
+      "season": 2020,
+      "week": 18
+    },
+    "rows": 0,
+    "sha256": "db0f0b58dc8402eedaa34eb6213f3ce943f1caba99793ae70902b0b70deca9fc",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2020_wk19.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2020_wk19.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:21:44Z",
+    "params": {
+      "season": 2020,
+      "week": 19
+    },
+    "rows": 0,
+    "sha256": "e5bed6e0ed08d40f781b6ce8a485b278fb88be7559ea902267d7a32015c4f440",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2020_wk20.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2020_wk20.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:21:56Z",
+    "params": {
+      "season": 2020,
+      "week": 20
+    },
+    "rows": 0,
+    "sha256": "43cd412989b5f9902d95787d4179b3dd7a2329e88f8a5e2a62dd78781ae2054e",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2020_wk21.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2020_wk21.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:22:09Z",
+    "params": {
+      "season": 2020,
+      "week": 21
+    },
+    "rows": 0,
+    "sha256": "190235efbaa87ff08f1ca3cb4fbabc296fb120d62886d54df37105e24a8cac8c",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2020_wk22.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2020_wk22.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:22:22Z",
+    "params": {
+      "season": 2020,
+      "week": 22
+    },
+    "rows": 0,
+    "sha256": "e4e2ec298b1d291aabe6dcee4948039f2a730b6dfc4c8e54e5e22bd967e6f192",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2021_wk01.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2021_wk01.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:08:03Z",
+    "params": {
+      "season": 2021,
+      "week": 1
+    },
+    "rows": 0,
+    "sha256": "c293cc551924dde5e7f58ab279443c9ec445b2960e098c89f4b5f47a938dc677",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2021_wk02.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2021_wk02.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:08:15Z",
+    "params": {
+      "season": 2021,
+      "week": 2
+    },
+    "rows": 0,
+    "sha256": "3543c0fd312861b8fedf669603910a06044427160b25cb7b4f87a0d6273f7766",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2021_wk03.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2021_wk03.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:08:28Z",
+    "params": {
+      "season": 2021,
+      "week": 3
+    },
+    "rows": 0,
+    "sha256": "6f30ce9c78a8e6ad638f6c47b98ad6570619a12be223bb84acb3ade71769591a",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2021_wk04.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2021_wk04.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:08:40Z",
+    "params": {
+      "season": 2021,
+      "week": 4
+    },
+    "rows": 0,
+    "sha256": "d311fba480c6daa6b8a74549db4cbe39f3c0e4ad45f56b73611d0e645dc38674",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2021_wk05.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2021_wk05.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:08:53Z",
+    "params": {
+      "season": 2021,
+      "week": 5
+    },
+    "rows": 0,
+    "sha256": "b41f4bff5228bf32d5cd8a1ebc2f967e3fcc0d906e8aaf144ad252dff321aed6",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2021_wk06.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2021_wk06.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:09:06Z",
+    "params": {
+      "season": 2021,
+      "week": 6
+    },
+    "rows": 0,
+    "sha256": "622fdbaf681d3e5da5bbca5c7590041a1b2f14281f78ccc7a5a151c00e764a97",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2021_wk07.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2021_wk07.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:09:18Z",
+    "params": {
+      "season": 2021,
+      "week": 7
+    },
+    "rows": 0,
+    "sha256": "8c4dcaa61a103ee4fbf150e392cbcbfdcdd828813eb4a2ae59293f1cc45398e4",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2021_wk08.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2021_wk08.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:09:31Z",
+    "params": {
+      "season": 2021,
+      "week": 8
+    },
+    "rows": 0,
+    "sha256": "cb4871202b56b9238cdcbb165bc96b9d6be1195b4057d94719bf953e782e52f4",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2021_wk09.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2021_wk09.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:09:44Z",
+    "params": {
+      "season": 2021,
+      "week": 9
+    },
+    "rows": 0,
+    "sha256": "62a300caa3590677f77b530a366677df8871cd714ae5bd6143a1f17162e3c288",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2021_wk10.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2021_wk10.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:09:56Z",
+    "params": {
+      "season": 2021,
+      "week": 10
+    },
+    "rows": 0,
+    "sha256": "f4d3d3a592f817cfaf0cf56d9798dc32856fe8f05ce8765cbef3e53b4d8a1cef",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2021_wk11.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2021_wk11.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:10:09Z",
+    "params": {
+      "season": 2021,
+      "week": 11
+    },
+    "rows": 0,
+    "sha256": "94478ab5fbf780f6120fdeb047bef8dbad9c334f5a4c40ce6b89c9faa2eb3c7c",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2021_wk12.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2021_wk12.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:10:22Z",
+    "params": {
+      "season": 2021,
+      "week": 12
+    },
+    "rows": 0,
+    "sha256": "f0090fd9940eae269277896634aef7497a5683dbd2d267de2f1e361ec2125b04",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2021_wk13.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2021_wk13.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:10:34Z",
+    "params": {
+      "season": 2021,
+      "week": 13
+    },
+    "rows": 0,
+    "sha256": "28f8ee7f943f13ee8c060d0d4192830bb6e5d7108a4862104b84cd36ff0d6acd",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2021_wk14.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2021_wk14.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:10:47Z",
+    "params": {
+      "season": 2021,
+      "week": 14
+    },
+    "rows": 0,
+    "sha256": "4636c433af70f04617f541f8c18423a820492350c9200496dde2f90c6145dcd2",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2021_wk15.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2021_wk15.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:10:59Z",
+    "params": {
+      "season": 2021,
+      "week": 15
+    },
+    "rows": 0,
+    "sha256": "8ac78972f182e98a5d8af6d278562ccca4cae72256594a12ece14b2415f5a41d",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2021_wk16.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2021_wk16.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:11:12Z",
+    "params": {
+      "season": 2021,
+      "week": 16
+    },
+    "rows": 0,
+    "sha256": "7a54910b39602046d18bc139609bf71c0966cd2a90f80c2872086f967134d65d",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2021_wk17.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2021_wk17.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:11:25Z",
+    "params": {
+      "season": 2021,
+      "week": 17
+    },
+    "rows": 0,
+    "sha256": "f12ec89986765441c51e7cab673db9432fd4bb494bcf53b1aafe88eb3a49490b",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2021_wk18.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2021_wk18.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:11:37Z",
+    "params": {
+      "season": 2021,
+      "week": 18
+    },
+    "rows": 0,
+    "sha256": "7e577b60acfc20803a5a3398f4b97f2e757cd660dcf10983d75ae99b233a6f6b",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2021_wk19.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2021_wk19.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:11:50Z",
+    "params": {
+      "season": 2021,
+      "week": 19
+    },
+    "rows": 0,
+    "sha256": "aef02ee82ff8abe548bad7fb708144c35c920f30dc9735dd3786ceca53377584",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2021_wk20.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2021_wk20.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:12:03Z",
+    "params": {
+      "season": 2021,
+      "week": 20
+    },
+    "rows": 0,
+    "sha256": "9fc913091fa3690015cb36848272c5ab1f33db4c45b4d9c08d12557423f59d1c",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2021_wk21.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2021_wk21.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:12:15Z",
+    "params": {
+      "season": 2021,
+      "week": 21
+    },
+    "rows": 0,
+    "sha256": "334d70e8af8627afb6b12783b3dfe48605a536c5fc55ec3f7aa19b526b97b885",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2021_wk22.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2021_wk22.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:12:28Z",
+    "params": {
+      "season": 2021,
+      "week": 22
+    },
+    "rows": 0,
+    "sha256": "15db9549322649faf24cb29f3d0f6365cb305e2516700fdcaa21b68a281452b9",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2022_wk01.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2022_wk01.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:58:09Z",
+    "params": {
+      "season": 2022,
+      "week": 1
+    },
+    "rows": 0,
+    "sha256": "2eb0f1352431f9fc01f05ef3187ea96e9ce3442724ced200ce11f0befdff98cb",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2022_wk02.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2022_wk02.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:58:22Z",
+    "params": {
+      "season": 2022,
+      "week": 2
+    },
+    "rows": 0,
+    "sha256": "c5175f019374061a47ed6aa63cd98c8f5d0aa73bf55b695f722166c9b26c8ff4",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2022_wk03.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2022_wk03.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:58:34Z",
+    "params": {
+      "season": 2022,
+      "week": 3
+    },
+    "rows": 0,
+    "sha256": "4632f3583bc82cf8b24dfd709a65421b47954ecd0aa262c2467f375b81302265",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2022_wk04.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2022_wk04.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:58:47Z",
+    "params": {
+      "season": 2022,
+      "week": 4
+    },
+    "rows": 0,
+    "sha256": "fc94549dfcaa91e0dcf2666f6dd2504ac5353ce3c89996d3578f988de4d67296",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2022_wk05.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2022_wk05.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:58:59Z",
+    "params": {
+      "season": 2022,
+      "week": 5
+    },
+    "rows": 0,
+    "sha256": "bee0a074e4f9eb00dc6c9e5c06453d644d2d91bf9d7e0d75bb254065edb6ad82",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2022_wk06.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2022_wk06.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:59:12Z",
+    "params": {
+      "season": 2022,
+      "week": 6
+    },
+    "rows": 0,
+    "sha256": "b4f9c9d86ab052564e63677b2908b55bcf9182375df83b633e19a5eb56497751",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2022_wk07.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2022_wk07.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:59:25Z",
+    "params": {
+      "season": 2022,
+      "week": 7
+    },
+    "rows": 0,
+    "sha256": "ef6e23f144f7e90df8c8ec8b7f3f3a6d2f206f8d4e3ac14f4c11a0e6b47961d1",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2022_wk08.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2022_wk08.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:59:37Z",
+    "params": {
+      "season": 2022,
+      "week": 8
+    },
+    "rows": 0,
+    "sha256": "fcbb0c49e9305792fcf2be01d819f88dc3c7c073b75b3397f812ce246893697b",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2022_wk09.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2022_wk09.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:59:50Z",
+    "params": {
+      "season": 2022,
+      "week": 9
+    },
+    "rows": 0,
+    "sha256": "92c15eb3fdec9b2f03d8b021186b17e99affb440a2cd5efc2721220c40028144",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2022_wk10.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2022_wk10.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:00:07Z",
+    "params": {
+      "season": 2022,
+      "week": 10
+    },
+    "rows": 0,
+    "sha256": "2fa56fb3c4f2e2cef79331da87bc41c3b0ea54c1568b869bc4fa9d6cd7c1a2ea",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2022_wk11.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2022_wk11.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:00:15Z",
+    "params": {
+      "season": 2022,
+      "week": 11
+    },
+    "rows": 0,
+    "sha256": "ae857ace6600016b0ccacf55586b46d3672ef227498b8f618e37bd0eaafd38e3",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2022_wk12.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2022_wk12.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:00:28Z",
+    "params": {
+      "season": 2022,
+      "week": 12
+    },
+    "rows": 0,
+    "sha256": "badb87c980141a3c1aea54aa733637a2f9b535f074e77400e72fada247aec199",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2022_wk13.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2022_wk13.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:00:41Z",
+    "params": {
+      "season": 2022,
+      "week": 13
+    },
+    "rows": 0,
+    "sha256": "d0bec511395b3d9caa5b667cb6f0313ffacaac2a461d8ed29d9eb5a14282c411",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2022_wk14.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2022_wk14.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:00:53Z",
+    "params": {
+      "season": 2022,
+      "week": 14
+    },
+    "rows": 0,
+    "sha256": "2f0a9a4efee0871037cf01a9a28c1e2f374d10dffabf8a151142815de769c1e9",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2022_wk15.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2022_wk15.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:01:06Z",
+    "params": {
+      "season": 2022,
+      "week": 15
+    },
+    "rows": 0,
+    "sha256": "0e662fe69853c46686b1bb95d95fe4a4c2972c60c6376b15eaba16d7fec16e8d",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2022_wk16.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2022_wk16.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:01:18Z",
+    "params": {
+      "season": 2022,
+      "week": 16
+    },
+    "rows": 0,
+    "sha256": "731f614b9e2cd5c3aba259a0e72d650c4e110288c17d0423aca925e218c306fa",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2022_wk17.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2022_wk17.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:01:31Z",
+    "params": {
+      "season": 2022,
+      "week": 17
+    },
+    "rows": 0,
+    "sha256": "02d3c95d040592e564eb7d4a25d4a08ab084cb89081f5485961c7561ac47eef8",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2022_wk18.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2022_wk18.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:01:44Z",
+    "params": {
+      "season": 2022,
+      "week": 18
+    },
+    "rows": 0,
+    "sha256": "5e62bb5979ebbcec504bb6fa03e67e0c4dcde70d59c078109bb2007a2814bd3b",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2022_wk19.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2022_wk19.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:01:56Z",
+    "params": {
+      "season": 2022,
+      "week": 19
+    },
+    "rows": 0,
+    "sha256": "fa37116112de8d528ebe8eaf2ad2fe924db6ef49c04a3a8bec36cdabeea4dc58",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2022_wk20.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2022_wk20.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:02:09Z",
+    "params": {
+      "season": 2022,
+      "week": 20
+    },
+    "rows": 0,
+    "sha256": "8604be7599a7fad1c39eec7688542810128ff02897b235182fc3f3cfd092bab1",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2022_wk21.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2022_wk21.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:02:22Z",
+    "params": {
+      "season": 2022,
+      "week": 21
+    },
+    "rows": 0,
+    "sha256": "baa6f22d3b09e3e641ee0c78c4f1af76ee16b488b8667c075bee1e50be217374",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2022_wk22.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2022_wk22.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:02:34Z",
+    "params": {
+      "season": 2022,
+      "week": 22
+    },
+    "rows": 0,
+    "sha256": "0ccd768cd9a8d92615135a2436b57a723d71c2a7a65322de6d43349e4ba0b6de",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2023_wk01.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2023_wk01.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:48:15Z",
+    "params": {
+      "season": 2023,
+      "week": 1
+    },
+    "rows": 0,
+    "sha256": "78e9f8dc4fb88d064ba870eb3031c4ae1ab759e28c993bc869dd806177eee83b",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2023_wk02.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2023_wk02.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:48:28Z",
+    "params": {
+      "season": 2023,
+      "week": 2
+    },
+    "rows": 0,
+    "sha256": "503e29782a550c7851dbe17cd06982f38737e07fb7b326095c1de5826ab59125",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2023_wk03.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2023_wk03.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:48:40Z",
+    "params": {
+      "season": 2023,
+      "week": 3
+    },
+    "rows": 0,
+    "sha256": "5eb375a367637eeb3582655d0a654a2b47675170b933dd1b50ace7733ba1c102",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2023_wk04.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2023_wk04.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:48:53Z",
+    "params": {
+      "season": 2023,
+      "week": 4
+    },
+    "rows": 0,
+    "sha256": "6572e680828bafbf85bfe1811f1b5bddc868329bd9e6f84eec38e0c1b8447c75",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2023_wk05.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2023_wk05.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:49:06Z",
+    "params": {
+      "season": 2023,
+      "week": 5
+    },
+    "rows": 0,
+    "sha256": "50988635482d4ec477436293e6ee9c3a227ea2598374736c21ba4cbe1178693c",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2023_wk06.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2023_wk06.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:49:18Z",
+    "params": {
+      "season": 2023,
+      "week": 6
+    },
+    "rows": 0,
+    "sha256": "5d028affef1c85bf76ae1ec18d23637af32ba89bf8e187bfb77199e3ba072efd",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2023_wk07.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2023_wk07.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:49:31Z",
+    "params": {
+      "season": 2023,
+      "week": 7
+    },
+    "rows": 0,
+    "sha256": "c76e3713af4d3d167c76c79e7b129cd949ca0a68784fee885b5792301c1952db",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2023_wk08.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2023_wk08.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:49:44Z",
+    "params": {
+      "season": 2023,
+      "week": 8
+    },
+    "rows": 0,
+    "sha256": "07fb718914670374f46f0e1ba4736ab48140388ae11fd84e28e94b79ea64df50",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2023_wk09.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2023_wk09.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:49:56Z",
+    "params": {
+      "season": 2023,
+      "week": 9
+    },
+    "rows": 0,
+    "sha256": "dcbd3c8aff2612f366acd7e981a4a38dc9f5ec446ecc6f28560923eeaf48f7ef",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2023_wk10.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2023_wk10.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:50:09Z",
+    "params": {
+      "season": 2023,
+      "week": 10
+    },
+    "rows": 0,
+    "sha256": "a0014e3a16b8772fe0875a75d23e0ad44e995c5d1c41a8b3b48162e0a642fe9e",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2023_wk11.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2023_wk11.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:50:22Z",
+    "params": {
+      "season": 2023,
+      "week": 11
+    },
+    "rows": 0,
+    "sha256": "6f63cc8a265846e2c5ad62cf9a6ba0651d7dc8db25781dcc8e34c6c2e3a99d1a",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2023_wk12.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2023_wk12.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:50:34Z",
+    "params": {
+      "season": 2023,
+      "week": 12
+    },
+    "rows": 0,
+    "sha256": "19c5afdb01c120e0794be5757b02e4c814945efeb7d378b25513cc68ba289b5e",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2023_wk13.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2023_wk13.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:50:47Z",
+    "params": {
+      "season": 2023,
+      "week": 13
+    },
+    "rows": 0,
+    "sha256": "0b8296b67bf5f2dd78dddfb256da6b6a1e6fb7a1973d341a274a1d349154df10",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2023_wk14.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2023_wk14.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:50:59Z",
+    "params": {
+      "season": 2023,
+      "week": 14
+    },
+    "rows": 0,
+    "sha256": "ead9d5eeba9df3d073ec10ab682194c7d4abbb732c4b236be8cc990540709fae",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2023_wk15.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2023_wk15.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:51:12Z",
+    "params": {
+      "season": 2023,
+      "week": 15
+    },
+    "rows": 0,
+    "sha256": "37ba5eba5c8f2508885a4ce129342bfd578eefe22a64a6cc91d7909058561210",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2023_wk16.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2023_wk16.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:51:25Z",
+    "params": {
+      "season": 2023,
+      "week": 16
+    },
+    "rows": 0,
+    "sha256": "03b464d4ca704f740ddaedb39fced2a5b268f84f47ffc11f5789154497082859",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2023_wk17.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2023_wk17.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:51:37Z",
+    "params": {
+      "season": 2023,
+      "week": 17
+    },
+    "rows": 0,
+    "sha256": "10eee07f4439ba0a5662d98bedd03dc4bac7858e24aea7ff73c74cf576682cbd",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2023_wk18.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2023_wk18.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:51:50Z",
+    "params": {
+      "season": 2023,
+      "week": 18
+    },
+    "rows": 0,
+    "sha256": "02404665f66d0dd6e4a49027edea122ed665d0d26818c7975238a46e5daff669",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2023_wk19.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2023_wk19.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:52:03Z",
+    "params": {
+      "season": 2023,
+      "week": 19
+    },
+    "rows": 0,
+    "sha256": "8fa1baacd59c31cf8eb68e206f2c9c0540731180070ae21f27e43cda329099d7",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2023_wk20.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2023_wk20.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:52:15Z",
+    "params": {
+      "season": 2023,
+      "week": 20
+    },
+    "rows": 0,
+    "sha256": "49d69e3bde75337f6827ab20d352e807dd3ec49c5535939ddd39b6452ceb5439",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2023_wk21.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2023_wk21.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:52:28Z",
+    "params": {
+      "season": 2023,
+      "week": 21
+    },
+    "rows": 0,
+    "sha256": "a41dda75bd2e4923964175b514ced0947b125ec86654c57849e32576fb48267f",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2023_wk22.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2023_wk22.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:52:41Z",
+    "params": {
+      "season": 2023,
+      "week": 22
+    },
+    "rows": 0,
+    "sha256": "6383d02102a4a6cc503013ee2ca0545380e315dd082069f1baa2d06ae2d1de84",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2024_wk01.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2024_wk01.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:38:22Z",
+    "params": {
+      "season": 2024,
+      "week": 1
+    },
+    "rows": 0,
+    "sha256": "eefab65e797203994f2e38a99d70a315ffb2a91f0e4277e25208323ac8bf212b",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2024_wk02.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2024_wk02.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:38:34Z",
+    "params": {
+      "season": 2024,
+      "week": 2
+    },
+    "rows": 0,
+    "sha256": "e34999b9e5da4442c6cca28439bc5ad8cc618399fe7adbe299b88fe047b149f2",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2024_wk03.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2024_wk03.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:38:47Z",
+    "params": {
+      "season": 2024,
+      "week": 3
+    },
+    "rows": 0,
+    "sha256": "34155cf0476f13c7e0889fcc4cbe5629c3c603f1762e570cd7cb63527552e004",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2024_wk04.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2024_wk04.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:38:59Z",
+    "params": {
+      "season": 2024,
+      "week": 4
+    },
+    "rows": 0,
+    "sha256": "ae0d3450c635b4b26f6430fa400b0eb4092a1ffac57656bb95c871f4e06f9847",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2024_wk05.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2024_wk05.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:39:12Z",
+    "params": {
+      "season": 2024,
+      "week": 5
+    },
+    "rows": 0,
+    "sha256": "4858de422d61665b2353a4b894b6adbf5f9711a6cd36c3be264e3e7da9fdaa81",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2024_wk06.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2024_wk06.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:39:25Z",
+    "params": {
+      "season": 2024,
+      "week": 6
+    },
+    "rows": 0,
+    "sha256": "65347f97a02c389ede478acf47af13f6fac3515909cda8a0275beac7a050c217",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2024_wk07.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2024_wk07.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:39:37Z",
+    "params": {
+      "season": 2024,
+      "week": 7
+    },
+    "rows": 0,
+    "sha256": "481a3e545d6edc7a9a067d937239c84b5fabe54115a8160920b72a3e11ed28f4",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2024_wk08.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2024_wk08.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:39:50Z",
+    "params": {
+      "season": 2024,
+      "week": 8
+    },
+    "rows": 0,
+    "sha256": "64424756383d2c6e5ad1724f4dc6760bda3c8971abd9f136c3b138f64918e0dd",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2024_wk09.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2024_wk09.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:40:03Z",
+    "params": {
+      "season": 2024,
+      "week": 9
+    },
+    "rows": 0,
+    "sha256": "6366480d86504d85e031b55627b1e4639d827b5fe437b11bc2a80f72e5d17b22",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2024_wk10.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2024_wk10.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:40:15Z",
+    "params": {
+      "season": 2024,
+      "week": 10
+    },
+    "rows": 0,
+    "sha256": "3047010cd297024312596dd6c6cc0d8506d77cf3be9b6551181fb553d4240e7b",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2024_wk11.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2024_wk11.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:40:28Z",
+    "params": {
+      "season": 2024,
+      "week": 11
+    },
+    "rows": 0,
+    "sha256": "6ec39d65249fbcc4d5fb8cc9d6892a295682f35b3b98b5262da159028fd216f4",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2024_wk12.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2024_wk12.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:40:40Z",
+    "params": {
+      "season": 2024,
+      "week": 12
+    },
+    "rows": 0,
+    "sha256": "838aca35081a2369b3f99a81eb21c92bd8dc10849057609fb23efb7226553720",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2024_wk13.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2024_wk13.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:40:53Z",
+    "params": {
+      "season": 2024,
+      "week": 13
+    },
+    "rows": 0,
+    "sha256": "e20692ec01f80611bcb78ea4167dab23be04c79dd905a1fd2927bf7ae72ce4a1",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2024_wk14.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2024_wk14.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:41:06Z",
+    "params": {
+      "season": 2024,
+      "week": 14
+    },
+    "rows": 0,
+    "sha256": "6ff98a49b08c544119221fc1b1c6d5e2cd4408b6a3c09555c19795ca9a1fec0d",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2024_wk15.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2024_wk15.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:41:18Z",
+    "params": {
+      "season": 2024,
+      "week": 15
+    },
+    "rows": 0,
+    "sha256": "f33e8df13394176623f381071793b489aa3c09c1305c5e896e3d6d30891a300f",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2024_wk16.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2024_wk16.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:41:31Z",
+    "params": {
+      "season": 2024,
+      "week": 16
+    },
+    "rows": 0,
+    "sha256": "4caeab3343954c1a0ba1daecc0312a046e18acd2fdfb19a598abd4f1dc712024",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2024_wk17.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2024_wk17.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:41:44Z",
+    "params": {
+      "season": 2024,
+      "week": 17
+    },
+    "rows": 0,
+    "sha256": "2a419bd8314dcf15d59be7288362306fa946b2fcf7a42ab23cf63924c890f76f",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2024_wk18.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2024_wk18.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:41:56Z",
+    "params": {
+      "season": 2024,
+      "week": 18
+    },
+    "rows": 0,
+    "sha256": "4a52c1fb80f4562de504960bf0453f55bd9328f2927e26f7a06a745dc97eae4c",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2024_wk19.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2024_wk19.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:42:09Z",
+    "params": {
+      "season": 2024,
+      "week": 19
+    },
+    "rows": 0,
+    "sha256": "f82533855e22bd0f45effe87580174d67d2503524a7f9fae4480b7fb360cb93e",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2024_wk20.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2024_wk20.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:42:22Z",
+    "params": {
+      "season": 2024,
+      "week": 20
+    },
+    "rows": 0,
+    "sha256": "47f0e94adb5f3f4c9c6afab2ac330023fa9f43b9c4ae2ec27ee48240981b9d2c",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2024_wk21.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2024_wk21.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:42:34Z",
+    "params": {
+      "season": 2024,
+      "week": 21
+    },
+    "rows": 0,
+    "sha256": "b41b3c1e0c15ecd664a6e6ebc0cc57f6c85d3f0b5cdb4b57ead54a19254530b7",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2024_wk22.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2024_wk22.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:42:47Z",
+    "params": {
+      "season": 2024,
+      "week": 22
+    },
+    "rows": 0,
+    "sha256": "52897765c42d6cf1cfc3c13440df717283c0dd7d67f4c767bb1cc04962349657",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2025_wk01.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2025_wk01.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:28:28Z",
+    "params": {
+      "season": 2025,
+      "week": 1
+    },
+    "rows": 0,
+    "sha256": "38fd72407c3a2e77c4b5421a44f623b858922f5481e7574ccf71f709bf541224",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2025_wk02.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2025_wk02.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:28:40Z",
+    "params": {
+      "season": 2025,
+      "week": 2
+    },
+    "rows": 0,
+    "sha256": "0080368adab3df5f98f84ed8c0dea14803b1994e006dea06422c65032ee98380",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2025_wk03.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2025_wk03.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:28:53Z",
+    "params": {
+      "season": 2025,
+      "week": 3
+    },
+    "rows": 0,
+    "sha256": "845704f0ff7bcac754f57e64b54d220151c53197c67e57cd35ea147b3bf499dd",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2025_wk04.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2025_wk04.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:29:06Z",
+    "params": {
+      "season": 2025,
+      "week": 4
+    },
+    "rows": 0,
+    "sha256": "7f8ed7615a596215b83f6687eaf75d34b27965e10345191760e9f8aa07e052ef",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2025_wk05.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2025_wk05.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:29:18Z",
+    "params": {
+      "season": 2025,
+      "week": 5
+    },
+    "rows": 0,
+    "sha256": "7f0ecddc1ea15557d25021fc9162a9805aa5c3fa5ee2a08bc5239e4cc1d8f630",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2025_wk06.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2025_wk06.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:29:31Z",
+    "params": {
+      "season": 2025,
+      "week": 6
+    },
+    "rows": 0,
+    "sha256": "f84dcb1d16c3ae4b388f5070cf27d28775bf6ae16a778f41cd509ad6fe9dfb97",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2025_wk07.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2025_wk07.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:29:44Z",
+    "params": {
+      "season": 2025,
+      "week": 7
+    },
+    "rows": 0,
+    "sha256": "9c5d8dd5ba2cc2a9bb471634588c3976d9f87b3380882c659a1f0dff3b9389d5",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2025_wk08.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2025_wk08.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:29:56Z",
+    "params": {
+      "season": 2025,
+      "week": 8
+    },
+    "rows": 0,
+    "sha256": "ef62f3b78cf39a009f826de4886a75767a4acc4a5cebbeec94de22e86375e1ca",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2025_wk09.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2025_wk09.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:30:09Z",
+    "params": {
+      "season": 2025,
+      "week": 9
+    },
+    "rows": 0,
+    "sha256": "ed4d708e2d26e25a13a32493b1b5ad709a749b8fdf7860e2cfd78420b22995ed",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2025_wk10.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2025_wk10.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:30:22Z",
+    "params": {
+      "season": 2025,
+      "week": 10
+    },
+    "rows": 0,
+    "sha256": "86114de2626852875a786ee582f884497df9bcea95d45b81d1f875512e4c90e3",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2025_wk11.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2025_wk11.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:30:34Z",
+    "params": {
+      "season": 2025,
+      "week": 11
+    },
+    "rows": 0,
+    "sha256": "9780d4cbdddfb793d9653b347bd3c70687e5cc08f3027ba3236246892e241559",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2025_wk12.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2025_wk12.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:30:47Z",
+    "params": {
+      "season": 2025,
+      "week": 12
+    },
+    "rows": 0,
+    "sha256": "57cc8019606b35b1f951c80845c6f65159292d65ae0a4fe4c5a7dd7f85f830f6",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2025_wk13.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2025_wk13.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:30:59Z",
+    "params": {
+      "season": 2025,
+      "week": 13
+    },
+    "rows": 0,
+    "sha256": "fde4ad3d768ecc628df18017f485dcf0d8c4ce18a0fc26dddbb5a975f6bf3f06",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2025_wk14.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2025_wk14.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:31:12Z",
+    "params": {
+      "season": 2025,
+      "week": 14
+    },
+    "rows": 0,
+    "sha256": "fa462536cf02363a7de39739e3974c7368548c7649efb9615fd1dfc8f5fbccb3",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2025_wk15.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2025_wk15.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:31:25Z",
+    "params": {
+      "season": 2025,
+      "week": 15
+    },
+    "rows": 0,
+    "sha256": "8b97354d8d32b6b6457ca55df5568b35c189b0619015e06634285723fd5f8207",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2025_wk16.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2025_wk16.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:31:37Z",
+    "params": {
+      "season": 2025,
+      "week": 16
+    },
+    "rows": 0,
+    "sha256": "a11101501b5ad8cf9914f5fca2fb0a0b06d6698d2ae632b0540174fd55c9ad4d",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2025_wk17.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2025_wk17.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:31:50Z",
+    "params": {
+      "season": 2025,
+      "week": 17
+    },
+    "rows": 0,
+    "sha256": "8fab0dfff7a3ad02816b8308d3985476ab2dd2de30341fb7e315c285423875dc",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2025_wk18.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2025_wk18.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:32:03Z",
+    "params": {
+      "season": 2025,
+      "week": 18
+    },
+    "rows": 0,
+    "sha256": "38131a1066e00da817a72dd47095ff80e4db3a58ffb232c3680032c04a82d867",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2025_wk19.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2025_wk19.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:32:15Z",
+    "params": {
+      "season": 2025,
+      "week": 19
+    },
+    "rows": 0,
+    "sha256": "dfe59a58f32834733e3c06afd1aab818d0354a2fa7279a19047a9f21867631f2",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2025_wk20.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2025_wk20.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:32:28Z",
+    "params": {
+      "season": 2025,
+      "week": 20
+    },
+    "rows": 0,
+    "sha256": "41bc43480950720739a896f21f74972ff575dde7dbbe81216648e3b34e0aa1a0",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2025_wk21.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2025_wk21.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:32:41Z",
+    "params": {
+      "season": 2025,
+      "week": 21
+    },
+    "rows": 0,
+    "sha256": "346336336a9c3a2fc937358d362ffc79374f3db0e3bf3bc772959a9b2a66f02b",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2025_wk22.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2025_wk22.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:32:53Z",
+    "params": {
+      "season": 2025,
+      "week": 22
+    },
+    "rows": 0,
+    "sha256": "cd1b3b537628ed95d7cc5c179414739b8d0be47c9e97f578bcbca9bddc0c7f90",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2026_wk01.jsonl.gz": {
+    "bytes": 1915,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2026_wk01.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:18:22Z",
+    "params": {
+      "season": 2026,
+      "week": 1
+    },
+    "rows": 48,
+    "sha256": "b68fb58e6817fcda27eea408b7955ae8aff8d96b4d2254be901e1e83af2d22cf",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_2026_wk02.jsonl.gz": {
+    "bytes": 3128,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2026_wk02.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:18:47Z",
+    "params": {
+      "season": 2026,
+      "week": 2
+    },
+    "rows": 124,
+    "sha256": "e1aecb6232fe0aead7649afbef417f0972458ac4ae2c491c9eb23b1f3b778f34",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_2026_wk03.jsonl.gz": {
+    "bytes": 1581,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2026_wk03.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:18:59Z",
+    "params": {
+      "season": 2026,
+      "week": 3
+    },
+    "rows": 63,
+    "sha256": "4cee93add080c28bdcc723c7e0b12cde6e741ba32ff6a43f3844a88d765dbae3",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_2026_wk04.jsonl.gz": {
+    "bytes": 633,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2026_wk04.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:19:12Z",
+    "params": {
+      "season": 2026,
+      "week": 4
+    },
+    "rows": 16,
+    "sha256": "3ad25ae3acebebeb75fbd9fbb68d2d87193aff721eea8cafcebc88050fbfee10",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_2026_wk05.jsonl.gz": {
+    "bytes": 573,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2026_wk05.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:19:25Z",
+    "params": {
+      "season": 2026,
+      "week": 5
+    },
+    "rows": 15,
+    "sha256": "db6bb142853271a4a8e3d548e2771160d175739e52811aaeac632484bdf12e45",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_2026_wk06.jsonl.gz": {
+    "bytes": 561,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2026_wk06.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:19:37Z",
+    "params": {
+      "season": 2026,
+      "week": 6
+    },
+    "rows": 14,
+    "sha256": "2ae2d3bc068991798f6ae29632b7b2b6bd4db8432da2f761adbe14495a118768",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_2026_wk07.jsonl.gz": {
+    "bytes": 437,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2026_wk07.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:19:50Z",
+    "params": {
+      "season": 2026,
+      "week": 7
+    },
+    "rows": 14,
+    "sha256": "24facfb413e9b0d78168c65b273322c2b465cae2fb02935b371ac39a3e36d6d2",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_2026_wk08.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2026_wk08.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:20:03Z",
+    "params": {
+      "season": 2026,
+      "week": 8
+    },
+    "rows": 0,
+    "sha256": "6f7c49118cf5c75159cffea7732366b85a94d3d83d74568d324960042bcad436",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2026_wk09.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2026_wk09.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:20:15Z",
+    "params": {
+      "season": 2026,
+      "week": 9
+    },
+    "rows": 0,
+    "sha256": "7a997351ecc562fc5fd201cd0c6420cda108b7a6d21f3426247bf43be1f2fbfd",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2026_wk10.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2026_wk10.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:20:28Z",
+    "params": {
+      "season": 2026,
+      "week": 10
+    },
+    "rows": 0,
+    "sha256": "b27e23035b7b4bfa8c0d70af1129414c783cf533108adab1d20053266174fb38",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2026_wk11.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2026_wk11.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:20:40Z",
+    "params": {
+      "season": 2026,
+      "week": 11
+    },
+    "rows": 0,
+    "sha256": "f50f9cc10ad6eaaeeb92751d29a17875b4e6300603788d040d3a1aa5e686983b",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2026_wk12.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2026_wk12.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:20:53Z",
+    "params": {
+      "season": 2026,
+      "week": 12
+    },
+    "rows": 0,
+    "sha256": "ddda369a019daa589a0e41aa688101932d34286291dd2455945ef518df33a8df",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2026_wk13.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2026_wk13.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:21:06Z",
+    "params": {
+      "season": 2026,
+      "week": 13
+    },
+    "rows": 0,
+    "sha256": "270d21237160aaa2c2ecdf9a1d162d8d4e3c497abdd715e58b6c791be57a2077",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2026_wk14.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2026_wk14.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:21:18Z",
+    "params": {
+      "season": 2026,
+      "week": 14
+    },
+    "rows": 0,
+    "sha256": "fd3f6b9bdd077d70c8a483061dd9dfc2c565cbff9595028e4936dcd7943f12af",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2026_wk15.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2026_wk15.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:21:31Z",
+    "params": {
+      "season": 2026,
+      "week": 15
+    },
+    "rows": 0,
+    "sha256": "445d90316a4b57c34d2df4d2558339f0c02d4777540ed2da05b380cf7f3d1c0c",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2026_wk16.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2026_wk16.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:21:44Z",
+    "params": {
+      "season": 2026,
+      "week": 16
+    },
+    "rows": 0,
+    "sha256": "8e3b359746f4e9eb21cb4b3fa37abcae572b269f760fea3f6be382f311cfe5b0",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2026_wk17.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2026_wk17.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:21:56Z",
+    "params": {
+      "season": 2026,
+      "week": 17
+    },
+    "rows": 0,
+    "sha256": "3c85836e6843cf3484dc2ff588f0fb0d1c4a28a7670360d0643270232556fdf7",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2026_wk18.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2026_wk18.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:22:09Z",
+    "params": {
+      "season": 2026,
+      "week": 18
+    },
+    "rows": 0,
+    "sha256": "1b62e059c1cd038dadb38cae972a25fd4c52b6b5635a2c4107c079884cd341bd",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2026_wk19.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2026_wk19.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:22:22Z",
+    "params": {
+      "season": 2026,
+      "week": 19
+    },
+    "rows": 0,
+    "sha256": "73648b7dd7541b0e829819cb042fa1c28a28e5d98c60e2692458c45495e3c32f",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2026_wk20.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2026_wk20.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:22:34Z",
+    "params": {
+      "season": 2026,
+      "week": 20
+    },
+    "rows": 0,
+    "sha256": "dd64337fc16fc255521109eb2f6e68721d33c7645e316c66a1fd9a500e587b95",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2026_wk21.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2026_wk21.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:22:47Z",
+    "params": {
+      "season": 2026,
+      "week": 21
+    },
+    "rows": 0,
+    "sha256": "1afc7eac7ac10aacc31be666a003e378fcd6973258af3dff151a0682a1bbaa82",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_2026_wk22.jsonl.gz": {
+    "bytes": 45,
+    "complete": true,
+    "endpoint": "odds",
+    "file": "nfl/nfl_odds_2026_wk22.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:22:59Z",
+    "params": {
+      "season": 2026,
+      "week": 22
+    },
+    "rows": 0,
+    "sha256": "237854a56b9852b5cd1455bcf17c835e674964c3dfce815006cb534837086e3d",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2019_wk01.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2019_wk01.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:32:28Z",
+    "params": {
+      "season": 2019,
+      "week": 1
+    },
+    "rows": 0,
+    "sha256": "527e9e723a0c2039557ac701b493820a62d75a7dc6eaa8cb77ebd73771f68736",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2019_wk02.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2019_wk02.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:32:41Z",
+    "params": {
+      "season": 2019,
+      "week": 2
+    },
+    "rows": 0,
+    "sha256": "22f70168fa6ada115321e0ed46bd7674b16299094e8d254de1b171683bbc0682",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2019_wk03.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2019_wk03.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:32:53Z",
+    "params": {
+      "season": 2019,
+      "week": 3
+    },
+    "rows": 0,
+    "sha256": "ffb443e1e211acca9d29de60c4696cd80482905cc46a3fc4b50ac0667285ac11",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2019_wk04.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2019_wk04.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:33:06Z",
+    "params": {
+      "season": 2019,
+      "week": 4
+    },
+    "rows": 0,
+    "sha256": "e3a8d3d3f93ef34672953957a22a685dbce0121d1943d06fd27a670fb76919cd",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2019_wk05.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2019_wk05.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:33:18Z",
+    "params": {
+      "season": 2019,
+      "week": 5
+    },
+    "rows": 0,
+    "sha256": "4da531ee201418ec1e70b45d8e28289ec0729c7df3fee295846af6abdb8789c0",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2019_wk06.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2019_wk06.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:33:31Z",
+    "params": {
+      "season": 2019,
+      "week": 6
+    },
+    "rows": 0,
+    "sha256": "b73e46d69b8279acb2bd29193b88c56a7587f85e9e27b8bf90d2cc219688c6c4",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2019_wk07.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2019_wk07.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:33:44Z",
+    "params": {
+      "season": 2019,
+      "week": 7
+    },
+    "rows": 0,
+    "sha256": "4484b17db2ff6ab46b0ff2b052c55fdad1c0b76e8cb06695c31dd050cf016d27",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2019_wk08.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2019_wk08.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:33:56Z",
+    "params": {
+      "season": 2019,
+      "week": 8
+    },
+    "rows": 0,
+    "sha256": "84c9db0d7a67e7a20337ba7624e4c1bf5c0b5b1719dec680f2968ce1165ab65c",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2019_wk09.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2019_wk09.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:34:09Z",
+    "params": {
+      "season": 2019,
+      "week": 9
+    },
+    "rows": 0,
+    "sha256": "bd7d092172b684ff3ab0f45cafeb41c1d66e685a4dee218e8404080148f4084f",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2019_wk10.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2019_wk10.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:34:22Z",
+    "params": {
+      "season": 2019,
+      "week": 10
+    },
+    "rows": 0,
+    "sha256": "f6fd3149842f72e1f1a60c89d196f90f14d4e6dba3c362a5fb6e9996d783ee72",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2019_wk11.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2019_wk11.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:34:34Z",
+    "params": {
+      "season": 2019,
+      "week": 11
+    },
+    "rows": 0,
+    "sha256": "60a7cb464de64cd06e92a64e40a75d64dca9c700ed20e7afa860841db6fb2ae2",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2019_wk12.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2019_wk12.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:34:47Z",
+    "params": {
+      "season": 2019,
+      "week": 12
+    },
+    "rows": 0,
+    "sha256": "1b96d8aa88dadb7f9dc33e6369742cb58c7d51fa988fea9ddd4bea8e96e2d78c",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2019_wk13.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2019_wk13.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:34:59Z",
+    "params": {
+      "season": 2019,
+      "week": 13
+    },
+    "rows": 0,
+    "sha256": "71b9b0ff21d4a744a811a080dd7a2437c0dcaa88ebce5d309c807c84a0873db5",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2019_wk14.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2019_wk14.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:35:12Z",
+    "params": {
+      "season": 2019,
+      "week": 14
+    },
+    "rows": 0,
+    "sha256": "178d1b9760ae6bb19e66be88bd8d290b8713954cbeead07b1511e57369e56370",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2019_wk15.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2019_wk15.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:35:25Z",
+    "params": {
+      "season": 2019,
+      "week": 15
+    },
+    "rows": 0,
+    "sha256": "2ace3abea64c7fb3de3a7286c08cde1a3c57661f39bfafd84a6ca4e0ccb0b55f",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2019_wk16.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2019_wk16.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:35:37Z",
+    "params": {
+      "season": 2019,
+      "week": 16
+    },
+    "rows": 0,
+    "sha256": "80a89283f805640485c500f174090965d347d8b9f98d3fa9a89039f9710a8fc5",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2019_wk17.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2019_wk17.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:35:50Z",
+    "params": {
+      "season": 2019,
+      "week": 17
+    },
+    "rows": 0,
+    "sha256": "79c15bdbb2d91a0ab65d237d6c7ef02202298909e51074051c07923a73fb977c",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2019_wk18.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2019_wk18.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:36:03Z",
+    "params": {
+      "season": 2019,
+      "week": 18
+    },
+    "rows": 0,
+    "sha256": "50a49e483cbb78c324e3203e7906ddd8f5f0c3d196dff3774f71ed2e8bb4ac81",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2019_wk19.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2019_wk19.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:36:15Z",
+    "params": {
+      "season": 2019,
+      "week": 19
+    },
+    "rows": 0,
+    "sha256": "4742bb26419a9c2df513b469b4b38cdbac89f7576d654ffb10e47934be0aa4b7",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2019_wk20.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2019_wk20.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:36:28Z",
+    "params": {
+      "season": 2019,
+      "week": 20
+    },
+    "rows": 0,
+    "sha256": "1874be5e88633275707b1ec8b98b3639fddab930d7c6a2f6b185673a94bf60ee",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2019_wk21.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2019_wk21.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:36:41Z",
+    "params": {
+      "season": 2019,
+      "week": 21
+    },
+    "rows": 0,
+    "sha256": "c03e51ec93b69e9cd79c106799de6e9fc95ab40a7a82daa71114952ba792319f",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2019_wk22.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2019_wk22.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:36:53Z",
+    "params": {
+      "season": 2019,
+      "week": 22
+    },
+    "rows": 0,
+    "sha256": "eea61de9704dbed12009b9b4950b6ff7a08598723d65d9eb66504548536756cf",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2020_wk01.jsonl.gz": {
+    "bytes": 1639,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2020_wk01.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:22:34Z",
+    "params": {
+      "season": 2020,
+      "week": 1
+    },
+    "rows": 65,
+    "sha256": "cadf7b92bbd42bae8e06c0cbef8d2f7467c157bc6c0f4fe31115b98571ca217a",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2020_wk02.jsonl.gz": {
+    "bytes": 1474,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2020_wk02.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:22:47Z",
+    "params": {
+      "season": 2020,
+      "week": 2
+    },
+    "rows": 60,
+    "sha256": "d66619a2b3c14a7846b5cce970b412a3c92e69ab7252a6e7538f5dbcabcd69a6",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2020_wk03.jsonl.gz": {
+    "bytes": 1341,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2020_wk03.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:23:00Z",
+    "params": {
+      "season": 2020,
+      "week": 3
+    },
+    "rows": 54,
+    "sha256": "5ed790fd45a5e96ba892cd5efb4e6f67c9c2dbab461758178b9bc8febe63af27",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2020_wk04.jsonl.gz": {
+    "bytes": 1072,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2020_wk04.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:23:12Z",
+    "params": {
+      "season": 2020,
+      "week": 4
+    },
+    "rows": 42,
+    "sha256": "8445054885279f9750f1d0e90ad2cde53342adaff50338e3605fd1f9fafbb6ab",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2020_wk05.jsonl.gz": {
+    "bytes": 1120,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2020_wk05.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:23:25Z",
+    "params": {
+      "season": 2020,
+      "week": 5
+    },
+    "rows": 41,
+    "sha256": "1fe2da5fe762329f241010efbed5736d2bb200aaaa2032b647549bd0b98fc932",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2020_wk06.jsonl.gz": {
+    "bytes": 1135,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2020_wk06.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:23:37Z",
+    "params": {
+      "season": 2020,
+      "week": 6
+    },
+    "rows": 42,
+    "sha256": "99da1aa1cf5a71804fe526360e1d9e1089deeea5104563f2299353a41d79a9c9",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2020_wk07.jsonl.gz": {
+    "bytes": 1079,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2020_wk07.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:23:50Z",
+    "params": {
+      "season": 2020,
+      "week": 7
+    },
+    "rows": 40,
+    "sha256": "1be3ec4f472acec248be99cb022784b4ccb6ce478b24a804fe3773155c51190a",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2020_wk08.jsonl.gz": {
+    "bytes": 1228,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2020_wk08.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:24:03Z",
+    "params": {
+      "season": 2020,
+      "week": 8
+    },
+    "rows": 42,
+    "sha256": "a017bd37c3a4e204baab6cdf72030652350b77ab2e7c38d049a93b356589c202",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2020_wk09.jsonl.gz": {
+    "bytes": 1188,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2020_wk09.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:24:15Z",
+    "params": {
+      "season": 2020,
+      "week": 9
+    },
+    "rows": 41,
+    "sha256": "928e2d79036b0b7b6536a364e59074365fdca1122734ead1603e402a0cadf2ed",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2020_wk10.jsonl.gz": {
+    "bytes": 1133,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2020_wk10.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:24:28Z",
+    "params": {
+      "season": 2020,
+      "week": 10
+    },
+    "rows": 40,
+    "sha256": "9b02dea402ef6e591842f393da5c9ca01f2984a7f050da141668019b370297f8",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2020_wk11.jsonl.gz": {
+    "bytes": 1162,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2020_wk11.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:24:41Z",
+    "params": {
+      "season": 2020,
+      "week": 11
+    },
+    "rows": 41,
+    "sha256": "a5f34aa6738a84e292701e329680ba93317d1a14b6e8e818deb2ff6291fe8d46",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2020_wk12.jsonl.gz": {
+    "bytes": 1199,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2020_wk12.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:24:53Z",
+    "params": {
+      "season": 2020,
+      "week": 12
+    },
+    "rows": 44,
+    "sha256": "dc918f813fd644631a4c1c0f0fc340fc6f4e9cb781fd264f26922921165fe761",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2020_wk13.jsonl.gz": {
+    "bytes": 1238,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2020_wk13.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:25:06Z",
+    "params": {
+      "season": 2020,
+      "week": 13
+    },
+    "rows": 44,
+    "sha256": "29bf89831352b00b98d5baf621d6f9ae821e709380d0963b05fd41d89de84ddf",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2020_wk14.jsonl.gz": {
+    "bytes": 1331,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2020_wk14.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:25:18Z",
+    "params": {
+      "season": 2020,
+      "week": 14
+    },
+    "rows": 47,
+    "sha256": "396c0f48011f352549f70797145758c5d1a46c9fae08945a0cb5e38ea3b0d684",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2020_wk15.jsonl.gz": {
+    "bytes": 1341,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2020_wk15.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:25:31Z",
+    "params": {
+      "season": 2020,
+      "week": 15
+    },
+    "rows": 48,
+    "sha256": "a922abe43ad554bcc5823dd83593bc74c18796e0c8f48a0e635f60994ca1b659",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2020_wk16.jsonl.gz": {
+    "bytes": 1390,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2020_wk16.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:25:44Z",
+    "params": {
+      "season": 2020,
+      "week": 16
+    },
+    "rows": 48,
+    "sha256": "a1295465ad195ff0ce9772382c35fb3c14f77ea9d9f7f34c808444ad2aa36c38",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2020_wk17.jsonl.gz": {
+    "bytes": 1324,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2020_wk17.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:25:56Z",
+    "params": {
+      "season": 2020,
+      "week": 17
+    },
+    "rows": 48,
+    "sha256": "2b3d03e1f1dd500e08d9bd4d1a1cf941ad6ebe2a3c80380491bbf18db5e0d145",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2020_wk18.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2020_wk18.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:26:09Z",
+    "params": {
+      "season": 2020,
+      "week": 18
+    },
+    "rows": 0,
+    "sha256": "ecc7519f0763a06fba9d26eaffc8eb406865bc65d56797f390393afe00b4f2ba",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2020_wk19.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2020_wk19.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:26:22Z",
+    "params": {
+      "season": 2020,
+      "week": 19
+    },
+    "rows": 0,
+    "sha256": "a3694d76c1c12662a3bf511855a49f1675344da28eaf15d6050799db60ad2acd",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2020_wk20.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2020_wk20.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:26:34Z",
+    "params": {
+      "season": 2020,
+      "week": 20
+    },
+    "rows": 0,
+    "sha256": "d7d1c196f4b23ddae1a08e68b555bb4c2ca33d086d15cf3424a3637b1b266578",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2020_wk21.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2020_wk21.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:26:47Z",
+    "params": {
+      "season": 2020,
+      "week": 21
+    },
+    "rows": 0,
+    "sha256": "6f83f4e2def028c26c6e34f168072bb83a3f14bfc5838cd340bd0038e56547a4",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2020_wk22.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2020_wk22.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:26:59Z",
+    "params": {
+      "season": 2020,
+      "week": 22
+    },
+    "rows": 0,
+    "sha256": "86394f67cbd4c453b7866d1f59e8c5376566f5e4994501f353963c4d375a25d9",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2021_wk01.jsonl.gz": {
+    "bytes": 1601,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2021_wk01.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:12:41Z",
+    "params": {
+      "season": 2021,
+      "week": 1
+    },
+    "rows": 66,
+    "sha256": "8c92d201667d1879e9be82f364cc80cc83249b8aa07d5f3ec8590901bc5e3bda",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2021_wk02.jsonl.gz": {
+    "bytes": 1468,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2021_wk02.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:12:53Z",
+    "params": {
+      "season": 2021,
+      "week": 2
+    },
+    "rows": 60,
+    "sha256": "43e1431442a153b9c2c3d077d7dac78c4bdbc4a1aff8a56de859011da7b891e3",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2021_wk03.jsonl.gz": {
+    "bytes": 1348,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2021_wk03.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:13:06Z",
+    "params": {
+      "season": 2021,
+      "week": 3
+    },
+    "rows": 54,
+    "sha256": "7270ba88a75b507f0809dda766338368662d82fd64ac8c27084d2a0eec1eabe9",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2021_wk04.jsonl.gz": {
+    "bytes": 1244,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2021_wk04.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:13:18Z",
+    "params": {
+      "season": 2021,
+      "week": 4
+    },
+    "rows": 48,
+    "sha256": "3d995810a3d04f4d0aebdbc6417e89d6e0b49970ce2fa86611f9a1a336de8268",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2021_wk05.jsonl.gz": {
+    "bytes": 1235,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2021_wk05.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:13:31Z",
+    "params": {
+      "season": 2021,
+      "week": 5
+    },
+    "rows": 50,
+    "sha256": "d72ad4d852fe82f510d8f21fde5681bc7901fe3adeaec88958f0bb28db434fe6",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2021_wk06.jsonl.gz": {
+    "bytes": 1079,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2021_wk06.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:13:44Z",
+    "params": {
+      "season": 2021,
+      "week": 6
+    },
+    "rows": 42,
+    "sha256": "270790decbb3ece5c8aeaa4314817b227bb500fbc34ae154b1a19dc578438247",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2021_wk07.jsonl.gz": {
+    "bytes": 1081,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2021_wk07.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:13:56Z",
+    "params": {
+      "season": 2021,
+      "week": 7
+    },
+    "rows": 39,
+    "sha256": "9657d501b5bf12d0613cb0328b1132f1e89425bcdd012a133033fcb9014b8c4f",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2021_wk08.jsonl.gz": {
+    "bytes": 1144,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2021_wk08.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:14:09Z",
+    "params": {
+      "season": 2021,
+      "week": 8
+    },
+    "rows": 45,
+    "sha256": "5d87fa7ec4fe115ac550e8b47d48ec70e772c890069fda82ea54759c0a0a3279",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2021_wk09.jsonl.gz": {
+    "bytes": 1094,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2021_wk09.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:14:22Z",
+    "params": {
+      "season": 2021,
+      "week": 9
+    },
+    "rows": 41,
+    "sha256": "d9eb0dd8e0beb4d4c0ba167e4ba8d49634b6f0fd9982d3565ba125d44b7fd780",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2021_wk10.jsonl.gz": {
+    "bytes": 1146,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2021_wk10.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:14:34Z",
+    "params": {
+      "season": 2021,
+      "week": 10
+    },
+    "rows": 42,
+    "sha256": "af873500cb16649a42caa5df0536ffdcc458f77ea332373c69496ecfb6de831b",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2021_wk11.jsonl.gz": {
+    "bytes": 1170,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2021_wk11.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:14:47Z",
+    "params": {
+      "season": 2021,
+      "week": 11
+    },
+    "rows": 45,
+    "sha256": "75b5be52720a815ec125776d5d7fa47c48a7a6b46ab99826a739db4f42ee4c3d",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2021_wk12.jsonl.gz": {
+    "bytes": 1105,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2021_wk12.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:14:59Z",
+    "params": {
+      "season": 2021,
+      "week": 12
+    },
+    "rows": 45,
+    "sha256": "5d7effb5428473ae611e44b09c0b1eace3b593dc8f9daf1355c7aec489bce72d",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2021_wk13.jsonl.gz": {
+    "bytes": 1095,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2021_wk13.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:15:12Z",
+    "params": {
+      "season": 2021,
+      "week": 13
+    },
+    "rows": 42,
+    "sha256": "5f30b7da1998ed717475a9a9ac948fd03084944a93b395f7c2ae745c6006105a",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2021_wk14.jsonl.gz": {
+    "bytes": 1146,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2021_wk14.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:15:25Z",
+    "params": {
+      "season": 2021,
+      "week": 14
+    },
+    "rows": 42,
+    "sha256": "6630c3ede731ae710bd13826da8e355f26d89004898191392661abf5e3d67c68",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2021_wk15.jsonl.gz": {
+    "bytes": 1220,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2021_wk15.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:15:37Z",
+    "params": {
+      "season": 2021,
+      "week": 15
+    },
+    "rows": 48,
+    "sha256": "9bb5fd601e81cc24d531799d257ceaaafcbf833e20c9c0fa348e9f2224bc9cd1",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2021_wk16.jsonl.gz": {
+    "bytes": 1226,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2021_wk16.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:15:50Z",
+    "params": {
+      "season": 2021,
+      "week": 16
+    },
+    "rows": 48,
+    "sha256": "cb0016c619c4cbe2f0d06c27cbe8875644d827b8d9e1889679fd20c31d2e7bfd",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2021_wk17.jsonl.gz": {
+    "bytes": 1123,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2021_wk17.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:16:03Z",
+    "params": {
+      "season": 2021,
+      "week": 17
+    },
+    "rows": 48,
+    "sha256": "22c01a614de38250032386de81e90cbfd1f976785e2a91b18ddebac940baa0ef",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2021_wk18.jsonl.gz": {
+    "bytes": 1203,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2021_wk18.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:16:15Z",
+    "params": {
+      "season": 2021,
+      "week": 18
+    },
+    "rows": 48,
+    "sha256": "8fd7a9edcb71971e476c5ff1f21ffa8ccc4265d8e7eab9115dc1078f13f06c72",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2021_wk19.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2021_wk19.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:16:28Z",
+    "params": {
+      "season": 2021,
+      "week": 19
+    },
+    "rows": 0,
+    "sha256": "51e6bbeb63a06df85522648ade4562a502267733f95303e3e51baa532389c860",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2021_wk20.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2021_wk20.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:16:41Z",
+    "params": {
+      "season": 2021,
+      "week": 20
+    },
+    "rows": 0,
+    "sha256": "ed3de6be4efe845431ae92be3e5adbf2e26b6dfc658ae0deca28b70506a669e9",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2021_wk21.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2021_wk21.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:16:53Z",
+    "params": {
+      "season": 2021,
+      "week": 21
+    },
+    "rows": 0,
+    "sha256": "15c00d7169415e1f389fee6699063288cce90d6e787eab6ce441c673d377625e",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2021_wk22.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2021_wk22.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:17:06Z",
+    "params": {
+      "season": 2021,
+      "week": 22
+    },
+    "rows": 0,
+    "sha256": "b193fe9e971f8b8887ab5c3d5e388a7acf90e92bbdbca8797eb2d16e335f0c53",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2022_wk01.jsonl.gz": {
+    "bytes": 1547,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2022_wk01.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:02:47Z",
+    "params": {
+      "season": 2022,
+      "week": 1
+    },
+    "rows": 66,
+    "sha256": "9b6fe6e6d2ad24728b89d3fa20b8b06f09bffdd5054b9cf363c9aba829094a40",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2022_wk02.jsonl.gz": {
+    "bytes": 1488,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2022_wk02.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:02:59Z",
+    "params": {
+      "season": 2022,
+      "week": 2
+    },
+    "rows": 60,
+    "sha256": "12c454cd1700f10d0604f7b82a6877874ddff44589eba315d57ade3e001d025a",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2022_wk03.jsonl.gz": {
+    "bytes": 1318,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2022_wk03.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:03:12Z",
+    "params": {
+      "season": 2022,
+      "week": 3
+    },
+    "rows": 54,
+    "sha256": "e078d5b09a983b447e1db6f7f7a96fc66b3e38f4c0d3f7b8fb6a8256844a31c6",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2022_wk04.jsonl.gz": {
+    "bytes": 1115,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2022_wk04.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:03:25Z",
+    "params": {
+      "season": 2022,
+      "week": 4
+    },
+    "rows": 48,
+    "sha256": "e90035e875f2fe4deeee38a159d886b7ba3b1f9df0d3b62bfef748d4babe7bf0",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2022_wk05.jsonl.gz": {
+    "bytes": 1297,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2022_wk05.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:03:37Z",
+    "params": {
+      "season": 2022,
+      "week": 5
+    },
+    "rows": 51,
+    "sha256": "102da1f76fe22fa2b65966ed7f44a6b321cfe8d02a2cdcdc46dc34c8194a1b50",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2022_wk06.jsonl.gz": {
+    "bytes": 1090,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2022_wk06.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:03:50Z",
+    "params": {
+      "season": 2022,
+      "week": 6
+    },
+    "rows": 42,
+    "sha256": "64e9a9e7a1feebc46263cacd1900ada7b3ca4aeff4471f88bee6479ca2690a6a",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2022_wk07.jsonl.gz": {
+    "bytes": 1103,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2022_wk07.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:04:03Z",
+    "params": {
+      "season": 2022,
+      "week": 7
+    },
+    "rows": 42,
+    "sha256": "3c78f1135e3c66fe0a60fd36890494f6f92ddf050b8106701430115ef4133d65",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2022_wk08.jsonl.gz": {
+    "bytes": 1153,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2022_wk08.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:04:15Z",
+    "params": {
+      "season": 2022,
+      "week": 8
+    },
+    "rows": 45,
+    "sha256": "69a145d12d08dca1aa3b9fe112c983cc8e889cabb3b8bca16eb87c7231ccb5c4",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2022_wk09.jsonl.gz": {
+    "bytes": 1046,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2022_wk09.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:04:28Z",
+    "params": {
+      "season": 2022,
+      "week": 9
+    },
+    "rows": 39,
+    "sha256": "20aaf605c9b0d8485ef11c0507e267fbcd2eabb41bdf7cb07304c253afc3abd3",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2022_wk10.jsonl.gz": {
+    "bytes": 1087,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2022_wk10.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:04:41Z",
+    "params": {
+      "season": 2022,
+      "week": 10
+    },
+    "rows": 42,
+    "sha256": "4a80978d3381fb66b0b608ad29eff9bd0b60e51b9288eee3921e55fa536dbec9",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2022_wk11.jsonl.gz": {
+    "bytes": 1181,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2022_wk11.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:04:53Z",
+    "params": {
+      "season": 2022,
+      "week": 11
+    },
+    "rows": 42,
+    "sha256": "6976f55b9d0437bd247d458ba54ae224fbf29993b0f6a826f3059e3894d5dfb0",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2022_wk12.jsonl.gz": {
+    "bytes": 1291,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2022_wk12.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:05:06Z",
+    "params": {
+      "season": 2022,
+      "week": 12
+    },
+    "rows": 48,
+    "sha256": "e5a499a8548383351397ab6904ea52e971f49a8958b499f6895b3b82208e4592",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2022_wk13.jsonl.gz": {
+    "bytes": 1141,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2022_wk13.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:05:18Z",
+    "params": {
+      "season": 2022,
+      "week": 13
+    },
+    "rows": 45,
+    "sha256": "ccdaf984b7049aaa2eb568d95e1df49b3f34c64ba0afb42f6e83c9cd87cb8518",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2022_wk14.jsonl.gz": {
+    "bytes": 1068,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2022_wk14.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:05:31Z",
+    "params": {
+      "season": 2022,
+      "week": 14
+    },
+    "rows": 39,
+    "sha256": "eb98ce28fd1adf63c39f9793363b876491ed546be5b0293a56da1cff31106fd5",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2022_wk15.jsonl.gz": {
+    "bytes": 1220,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2022_wk15.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:05:44Z",
+    "params": {
+      "season": 2022,
+      "week": 15
+    },
+    "rows": 48,
+    "sha256": "0660add70ee599bf7129d8f440895d66f348282a81148fea943c4bbbf0f94945",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2022_wk16.jsonl.gz": {
+    "bytes": 1246,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2022_wk16.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:05:56Z",
+    "params": {
+      "season": 2022,
+      "week": 16
+    },
+    "rows": 48,
+    "sha256": "e5a9413600c7af07bbfcf02f4b01a0ccc565418d037509d598e00fafad87fbb2",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2022_wk17.jsonl.gz": {
+    "bytes": 1109,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2022_wk17.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:06:09Z",
+    "params": {
+      "season": 2022,
+      "week": 17
+    },
+    "rows": 45,
+    "sha256": "d6cd73a9dd18ca2adf6e0a36a82c53e56c41dab54d2b8f9f29729c39523fe687",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2022_wk18.jsonl.gz": {
+    "bytes": 1239,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2022_wk18.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:06:22Z",
+    "params": {
+      "season": 2022,
+      "week": 18
+    },
+    "rows": 48,
+    "sha256": "ebdd357380f2354e175530d55ab6834592e6d66faffd8899e5adea6256356e95",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2022_wk19.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2022_wk19.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:06:34Z",
+    "params": {
+      "season": 2022,
+      "week": 19
+    },
+    "rows": 0,
+    "sha256": "51e9a7b289883a53abb71d2fae0adffc73355d551708d5ad6344b78217288d2f",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2022_wk20.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2022_wk20.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:06:47Z",
+    "params": {
+      "season": 2022,
+      "week": 20
+    },
+    "rows": 0,
+    "sha256": "8d03798469230942b561e3f1c95cd337e07bbfcb0688fe22982b3fb076a0f49a",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2022_wk21.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2022_wk21.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:06:59Z",
+    "params": {
+      "season": 2022,
+      "week": 21
+    },
+    "rows": 0,
+    "sha256": "f8ff96aa0c41efd0b26fdfd3982cb1e8a799d4fca39cc1e3819acedec7ca3f11",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2022_wk22.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2022_wk22.jsonl.gz",
+    "harvested_utc": "2026-09-15T23:07:12Z",
+    "params": {
+      "season": 2022,
+      "week": 22
+    },
+    "rows": 0,
+    "sha256": "a2a7c4b30ba1d36e975c2e289386ea0d2022c0aaa2d3a7bce2d767f3848e36ad",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2023_wk01.jsonl.gz": {
+    "bytes": 1573,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2023_wk01.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:52:53Z",
+    "params": {
+      "season": 2023,
+      "week": 1
+    },
+    "rows": 66,
+    "sha256": "de4d49720e858c348bcdea1369b38bdb0dfe383f8c8c2500869be679d36c8868",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2023_wk02.jsonl.gz": {
+    "bytes": 1526,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2023_wk02.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:53:06Z",
+    "params": {
+      "season": 2023,
+      "week": 2
+    },
+    "rows": 60,
+    "sha256": "c41862f930c0742f45c90015578344f7dd8b15305b93b566dd6e9cb21aab655d",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2023_wk03.jsonl.gz": {
+    "bytes": 1426,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2023_wk03.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:53:18Z",
+    "params": {
+      "season": 2023,
+      "week": 3
+    },
+    "rows": 54,
+    "sha256": "d32268ece4f81826d50682bfd3085b96e9651a53ce41cc7fcbc09aaeeacbad9f",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2023_wk04.jsonl.gz": {
+    "bytes": 1303,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2023_wk04.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:53:31Z",
+    "params": {
+      "season": 2023,
+      "week": 4
+    },
+    "rows": 48,
+    "sha256": "f27278c9a3ab0dea8588770ace0daa13b17640dd2e0f625bdad143c4de064378",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2023_wk05.jsonl.gz": {
+    "bytes": 1206,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2023_wk05.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:53:44Z",
+    "params": {
+      "season": 2023,
+      "week": 5
+    },
+    "rows": 45,
+    "sha256": "844f740529da4dd49e3966d1b4397fc0a21b41f3fd7c5610e304691a7fe8b018",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2023_wk06.jsonl.gz": {
+    "bytes": 1215,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2023_wk06.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:53:56Z",
+    "params": {
+      "season": 2023,
+      "week": 6
+    },
+    "rows": 45,
+    "sha256": "d9348ed68f97bfe1ccc7886c114d17f5e031aa895d7076ea0c3bce28e3182c14",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2023_wk07.jsonl.gz": {
+    "bytes": 1123,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2023_wk07.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:54:09Z",
+    "params": {
+      "season": 2023,
+      "week": 7
+    },
+    "rows": 39,
+    "sha256": "e92648ad1bb6cbaedffa7e442c048c264a924d1fdeca0630cd25f9eb97d35a82",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2023_wk08.jsonl.gz": {
+    "bytes": 1219,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2023_wk08.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:54:22Z",
+    "params": {
+      "season": 2023,
+      "week": 8
+    },
+    "rows": 48,
+    "sha256": "03f143d81a5ead97a22a6dafdf465a1746067e31786ade9b15402a4d5ec21952",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2023_wk09.jsonl.gz": {
+    "bytes": 1169,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2023_wk09.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:54:34Z",
+    "params": {
+      "season": 2023,
+      "week": 9
+    },
+    "rows": 42,
+    "sha256": "37986bf8132daaa69a8595acdd2e194b9f7ca574635b792f9036b4c49816fee1",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2023_wk10.jsonl.gz": {
+    "bytes": 1188,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2023_wk10.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:54:47Z",
+    "params": {
+      "season": 2023,
+      "week": 10
+    },
+    "rows": 42,
+    "sha256": "104268a6e0792e4c9b46901ebcb4be3c0388627fdf758a6938cb851acdcbf01a",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2023_wk11.jsonl.gz": {
+    "bytes": 1142,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2023_wk11.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:54:59Z",
+    "params": {
+      "season": 2023,
+      "week": 11
+    },
+    "rows": 42,
+    "sha256": "579b0823cd328f481b465f09dde79f789269f9a4ca4ed78a4481f8b9345fc22b",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2023_wk12.jsonl.gz": {
+    "bytes": 1275,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2023_wk12.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:55:12Z",
+    "params": {
+      "season": 2023,
+      "week": 12
+    },
+    "rows": 48,
+    "sha256": "e7ad6778104c9193a7465f0f00fec2b120068bfb378014a32e19961fc9b6024d",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2023_wk13.jsonl.gz": {
+    "bytes": 1088,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2023_wk13.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:55:25Z",
+    "params": {
+      "season": 2023,
+      "week": 13
+    },
+    "rows": 39,
+    "sha256": "7141723a3ebaf5d81be6f98f744f9d0380321e64e672959432c3a5cd478b4bb4",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2023_wk14.jsonl.gz": {
+    "bytes": 1269,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2023_wk14.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:55:37Z",
+    "params": {
+      "season": 2023,
+      "week": 14
+    },
+    "rows": 45,
+    "sha256": "392ecf6b565777542226571ac9e18752cb28a0616fedfc939c30361aa2894c0f",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2023_wk15.jsonl.gz": {
+    "bytes": 1281,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2023_wk15.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:55:50Z",
+    "params": {
+      "season": 2023,
+      "week": 15
+    },
+    "rows": 47,
+    "sha256": "458bccd22c1befb5bdec62ae2e316ca798614e6874c48605d040e04411b48db6",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2023_wk16.jsonl.gz": {
+    "bytes": 1296,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2023_wk16.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:56:03Z",
+    "params": {
+      "season": 2023,
+      "week": 16
+    },
+    "rows": 48,
+    "sha256": "f4a3ebcc296c54a9cf0c179b791016fd2234e79298a347a86254dc05880e41df",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2023_wk17.jsonl.gz": {
+    "bytes": 1276,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2023_wk17.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:56:15Z",
+    "params": {
+      "season": 2023,
+      "week": 17
+    },
+    "rows": 48,
+    "sha256": "8822bd22de8e7cf609b08fc680f4a491c6bebe623e136fbf0f41f35bab5d07bb",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2023_wk18.jsonl.gz": {
+    "bytes": 1275,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2023_wk18.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:56:28Z",
+    "params": {
+      "season": 2023,
+      "week": 18
+    },
+    "rows": 48,
+    "sha256": "0a2d6881412db73dd43e8b57cb9789b6b91540c2790075bc556fd0fa2ed4aef1",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2023_wk19.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2023_wk19.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:56:40Z",
+    "params": {
+      "season": 2023,
+      "week": 19
+    },
+    "rows": 0,
+    "sha256": "43e7067208172fc566f46cda261a3c19f185770336c7d21f8d7370edbbce78a0",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2023_wk20.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2023_wk20.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:56:53Z",
+    "params": {
+      "season": 2023,
+      "week": 20
+    },
+    "rows": 0,
+    "sha256": "5f74a324493d19de556f2c7b91c7e464751ae4bb561b5db92c38504cd3d0446d",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2023_wk21.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2023_wk21.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:57:06Z",
+    "params": {
+      "season": 2023,
+      "week": 21
+    },
+    "rows": 0,
+    "sha256": "edcd95a35e9ba1cd319bbe97637bcb137d6d03c77c5984e9db6c1e051203160f",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2023_wk22.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2023_wk22.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:57:18Z",
+    "params": {
+      "season": 2023,
+      "week": 22
+    },
+    "rows": 0,
+    "sha256": "525b94209bfec16aed98fe8befa61a92c0352c9b4e52ed7c2e9fc4d6f801fe73",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2024_wk01.jsonl.gz": {
+    "bytes": 1723,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2024_wk01.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:42:59Z",
+    "params": {
+      "season": 2024,
+      "week": 1
+    },
+    "rows": 70,
+    "sha256": "f8fb068c2f98136dcc0ad24c419ffa11d979b0837d6d1a1ed7dfa6e450eec1c4",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2024_wk02.jsonl.gz": {
+    "bytes": 1623,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2024_wk02.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:43:12Z",
+    "params": {
+      "season": 2024,
+      "week": 2
+    },
+    "rows": 64,
+    "sha256": "a5dfc2a4b7c9fbe55b6e59231986a882e1276be5cfdefc4b054bac7b67e6870c",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2024_wk03.jsonl.gz": {
+    "bytes": 1426,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2024_wk03.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:43:25Z",
+    "params": {
+      "season": 2024,
+      "week": 3
+    },
+    "rows": 54,
+    "sha256": "11ed16483c780ecada216ece61b744ed691a293cc4ad30022e5cf4614cfb8a8c",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2024_wk04.jsonl.gz": {
+    "bytes": 1292,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2024_wk04.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:43:37Z",
+    "params": {
+      "season": 2024,
+      "week": 4
+    },
+    "rows": 48,
+    "sha256": "6071341a8e6f8d9995d6a285f08a6ed26992dbad90a3085ca2ef94d5f959b81a",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2024_wk05.jsonl.gz": {
+    "bytes": 1259,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2024_wk05.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:43:50Z",
+    "params": {
+      "season": 2024,
+      "week": 5
+    },
+    "rows": 45,
+    "sha256": "fe650f6134b233ad178d27702202ab4aa94ab33597ef1f7913d110d8b163d528",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2024_wk06.jsonl.gz": {
+    "bytes": 1181,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2024_wk06.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:44:03Z",
+    "params": {
+      "season": 2024,
+      "week": 6
+    },
+    "rows": 42,
+    "sha256": "32e1398e642fda19c010d0c31c1e4c413644a331e9bd86ad8b7389f6d6e70be3",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2024_wk07.jsonl.gz": {
+    "bytes": 1256,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2024_wk07.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:44:15Z",
+    "params": {
+      "season": 2024,
+      "week": 7
+    },
+    "rows": 45,
+    "sha256": "2889f5be1118c5889357f3b9e871c65af39a44ab5dd8898a1c2227d09fa19eaf",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2024_wk08.jsonl.gz": {
+    "bytes": 1326,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2024_wk08.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:44:28Z",
+    "params": {
+      "season": 2024,
+      "week": 8
+    },
+    "rows": 48,
+    "sha256": "17fa06c0a3499c8d0b1efb1fe5c171924c067b70d68883cf8bf0ed8d17923960",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2024_wk09.jsonl.gz": {
+    "bytes": 1258,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2024_wk09.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:44:40Z",
+    "params": {
+      "season": 2024,
+      "week": 9
+    },
+    "rows": 45,
+    "sha256": "523731e1a3ca84d31f6ed274c66958dd3f9bac874426c7eb867c2063aaaf9b32",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2024_wk10.jsonl.gz": {
+    "bytes": 1206,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2024_wk10.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:44:53Z",
+    "params": {
+      "season": 2024,
+      "week": 10
+    },
+    "rows": 42,
+    "sha256": "3ff4db56b24a086251ed26c30ab9a8af4299e2ee466819fd4ac2f16578d3fd82",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2024_wk11.jsonl.gz": {
+    "bytes": 1174,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2024_wk11.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:45:07Z",
+    "params": {
+      "season": 2024,
+      "week": 11
+    },
+    "rows": 41,
+    "sha256": "4b998306131c7603131c92361ec1dcf9f5ba8d923369a1601ea9b1f0bee6ecae",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2024_wk12.jsonl.gz": {
+    "bytes": 1125,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2024_wk12.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:45:18Z",
+    "params": {
+      "season": 2024,
+      "week": 12
+    },
+    "rows": 39,
+    "sha256": "190344da2da4f887741f4620a6ad4fd93cf5e66dc8512ed20009a50978021d0d",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2024_wk13.jsonl.gz": {
+    "bytes": 1336,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2024_wk13.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:45:31Z",
+    "params": {
+      "season": 2024,
+      "week": 13
+    },
+    "rows": 48,
+    "sha256": "1bc430ab82f75a71370acbd5713485fc9ca8b9507c348f69e591ec01f3fab25a",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2024_wk14.jsonl.gz": {
+    "bytes": 1124,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2024_wk14.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:45:44Z",
+    "params": {
+      "season": 2024,
+      "week": 14
+    },
+    "rows": 39,
+    "sha256": "feece2fd1a1dc8586c18e664450f4c12584c8d5df000e9a7e90389dbdb1073a3",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2024_wk15.jsonl.gz": {
+    "bytes": 1290,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2024_wk15.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:45:56Z",
+    "params": {
+      "season": 2024,
+      "week": 15
+    },
+    "rows": 48,
+    "sha256": "a6a9c4c5b1ef2763c124aaece6f029ac57f45986b9faa744b570cf238aa294ab",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2024_wk16.jsonl.gz": {
+    "bytes": 1276,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2024_wk16.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:46:09Z",
+    "params": {
+      "season": 2024,
+      "week": 16
+    },
+    "rows": 47,
+    "sha256": "83a996f2b64aa866443296ac839303d18a4f451347a66edba9b1f646c010cb4d",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2024_wk17.jsonl.gz": {
+    "bytes": 1637,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2024_wk17.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:46:22Z",
+    "params": {
+      "season": 2024,
+      "week": 17
+    },
+    "rows": 64,
+    "sha256": "81f1e8829e3280750ee25188ddebaa10ebd4e6d89545ad09605e323e67fd5c10",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2024_wk18.jsonl.gz": {
+    "bytes": 1310,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2024_wk18.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:46:34Z",
+    "params": {
+      "season": 2024,
+      "week": 18
+    },
+    "rows": 48,
+    "sha256": "f9d0ce83fe077dc2d5d37df980a1c33586967fe91a07f6024825103d98514721",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2024_wk19.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2024_wk19.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:46:47Z",
+    "params": {
+      "season": 2024,
+      "week": 19
+    },
+    "rows": 0,
+    "sha256": "d9bc5f3b38d1b24338b6615a271efa31a50cda20bf3686812b50611942052219",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2024_wk20.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2024_wk20.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:46:59Z",
+    "params": {
+      "season": 2024,
+      "week": 20
+    },
+    "rows": 0,
+    "sha256": "0341dd3a6b5404f9307faa40e6d7bc8940be4153596f4bec04464875730ad4b1",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2024_wk21.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2024_wk21.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:47:12Z",
+    "params": {
+      "season": 2024,
+      "week": 21
+    },
+    "rows": 0,
+    "sha256": "5790bcd8621837dbe1be875d49d75e13a47b8392bc45f3e4f550c3825f645273",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2024_wk22.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2024_wk22.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:47:25Z",
+    "params": {
+      "season": 2024,
+      "week": 22
+    },
+    "rows": 0,
+    "sha256": "a45f482f7c47e1d759deadac042a5bb92088ae20e67e2e42b1468db9fa8690b8",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2025_wk01.jsonl.gz": {
+    "bytes": 2026,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2025_wk01.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:33:06Z",
+    "params": {
+      "season": 2025,
+      "week": 1
+    },
+    "rows": 88,
+    "sha256": "413084044fe126908976eae5498b5ce42f2b178f9d166831ebfd0987017f5f0a",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2025_wk02.jsonl.gz": {
+    "bytes": 1909,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2025_wk02.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:33:18Z",
+    "params": {
+      "season": 2025,
+      "week": 2
+    },
+    "rows": 80,
+    "sha256": "f2a909c4bdc37f20b98644bd41dfe0e207884918bb158b62db02e081a53e86e8",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2025_wk03.jsonl.gz": {
+    "bytes": 1735,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2025_wk03.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:33:31Z",
+    "params": {
+      "season": 2025,
+      "week": 3
+    },
+    "rows": 72,
+    "sha256": "96955a2fb8ab8e55138ddce489236d5e166c564e0eb58283ced8ac2df403bcbe",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2025_wk04.jsonl.gz": {
+    "bytes": 1633,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2025_wk04.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:33:44Z",
+    "params": {
+      "season": 2025,
+      "week": 4
+    },
+    "rows": 64,
+    "sha256": "660ac132a2bc5f597b3601e7c2c9ab28c490b68093066b89a3565b637d3eafe0",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2025_wk05.jsonl.gz": {
+    "bytes": 1716,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2025_wk05.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:33:56Z",
+    "params": {
+      "season": 2025,
+      "week": 5
+    },
+    "rows": 66,
+    "sha256": "b42247fa893127286b929bf53151d7f896255080fdf574e1e544cace289ca824",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2025_wk06.jsonl.gz": {
+    "bytes": 1563,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2025_wk06.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:34:09Z",
+    "params": {
+      "season": 2025,
+      "week": 6
+    },
+    "rows": 60,
+    "sha256": "e26232107c85d1bcdb770864754ce220accc906a0572648fecc18f6e0c687c65",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2025_wk07.jsonl.gz": {
+    "bytes": 1569,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2025_wk07.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:34:22Z",
+    "params": {
+      "season": 2025,
+      "week": 7
+    },
+    "rows": 60,
+    "sha256": "710b23be1bc2c885b07e3e3e48d98d02c96680b6c7b8cd1854181990bad882f7",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2025_wk08.jsonl.gz": {
+    "bytes": 1390,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2025_wk08.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:34:34Z",
+    "params": {
+      "season": 2025,
+      "week": 8
+    },
+    "rows": 52,
+    "sha256": "cda45f372a72842a99a0041074afa68bdb7b98da97f70f61c4110645680aff0e",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2025_wk09.jsonl.gz": {
+    "bytes": 1488,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2025_wk09.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:34:47Z",
+    "params": {
+      "season": 2025,
+      "week": 9
+    },
+    "rows": 56,
+    "sha256": "c998a462f41297bddbc585f62a6ca7c4b1a4c723aec43fab18aedba658d8f8cb",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2025_wk10.jsonl.gz": {
+    "bytes": 1522,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2025_wk10.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:34:59Z",
+    "params": {
+      "season": 2025,
+      "week": 10
+    },
+    "rows": 56,
+    "sha256": "27377d531b17cddae94b0d256019b8b9afa8440c339c55e12ef8eb768cdb4e10",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2025_wk11.jsonl.gz": {
+    "bytes": 1575,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2025_wk11.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:35:12Z",
+    "params": {
+      "season": 2025,
+      "week": 11
+    },
+    "rows": 60,
+    "sha256": "bcacff2c5ab7a9ba02abbad11be8a32a7a39d1df8d49d76793ed29f902a66429",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2025_wk12.jsonl.gz": {
+    "bytes": 1522,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2025_wk12.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:35:25Z",
+    "params": {
+      "season": 2025,
+      "week": 12
+    },
+    "rows": 56,
+    "sha256": "1a95799d31abb6035b68f522d01f8a00d00073931cc136ef5b9613da68537a55",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2025_wk13.jsonl.gz": {
+    "bytes": 1711,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2025_wk13.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:35:37Z",
+    "params": {
+      "season": 2025,
+      "week": 13
+    },
+    "rows": 64,
+    "sha256": "d484b2740220267588093ac07e8b8362feb3cf5541559949a52ccef702022fd5",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2025_wk14.jsonl.gz": {
+    "bytes": 1467,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2025_wk14.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:35:50Z",
+    "params": {
+      "season": 2025,
+      "week": 14
+    },
+    "rows": 56,
+    "sha256": "967e8f3cb2c8fedfc9f40138a4cea354b22ec5865aae092a16a7db05622cfb71",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2025_wk15.jsonl.gz": {
+    "bytes": 1588,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2025_wk15.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:36:03Z",
+    "params": {
+      "season": 2025,
+      "week": 15
+    },
+    "rows": 64,
+    "sha256": "05bbbfad95e2578396ec274b998ca371939c774625588718e511ee11fe5f201c",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2025_wk16.jsonl.gz": {
+    "bytes": 1616,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2025_wk16.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:36:15Z",
+    "params": {
+      "season": 2025,
+      "week": 16
+    },
+    "rows": 64,
+    "sha256": "bcdb9377279c6ffe08c5a0132f3f75227231c170c5fecb2f0d11b2f5aa700207",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2025_wk17.jsonl.gz": {
+    "bytes": 1607,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2025_wk17.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:36:28Z",
+    "params": {
+      "season": 2025,
+      "week": 17
+    },
+    "rows": 64,
+    "sha256": "82a2b4f31cd326dcabece57d60fbc219290fd6823ac80d419f9f219ee97c6526",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2025_wk18.jsonl.gz": {
+    "bytes": 1644,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2025_wk18.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:36:41Z",
+    "params": {
+      "season": 2025,
+      "week": 18
+    },
+    "rows": 64,
+    "sha256": "acf1ff490100462a2f49026069264b6be441f9b83b28604c711077add1894639",
+    "sport": "nfl"
+  },
+  "nfl/nfl_odds_opening_2025_wk19.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2025_wk19.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:36:53Z",
+    "params": {
+      "season": 2025,
+      "week": 19
+    },
+    "rows": 0,
+    "sha256": "002021cc17a4b863a8819ebcf71d064f5357afb1dea2d4cc25435e6e3e4255f9",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2025_wk20.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2025_wk20.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:37:06Z",
+    "params": {
+      "season": 2025,
+      "week": 20
+    },
+    "rows": 0,
+    "sha256": "17f72d86cb7053e9588ccce6c952d3e7f5cef352781764c3ce79422623dd3c31",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2025_wk21.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2025_wk21.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:37:18Z",
+    "params": {
+      "season": 2025,
+      "week": 21
+    },
+    "rows": 0,
+    "sha256": "a43f1f5bddcfa789c66265411976417fcf5470b688f72be9e02157d9d9f6230b",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2025_wk22.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2025_wk22.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:37:31Z",
+    "params": {
+      "season": 2025,
+      "week": 22
+    },
+    "rows": 0,
+    "sha256": "63231c081fdce476aaa6f06a9a8b4d06f95d5a854570a604ca6e05aee54db465",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2026_wk01.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2026_wk01.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:23:12Z",
+    "params": {
+      "season": 2026,
+      "week": 1
+    },
+    "rows": 0,
+    "sha256": "a12ffbc93e838f25c217b29694dc626c026de4868a2db68c586f40d22cda16f3",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2026_wk02.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2026_wk02.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:23:25Z",
+    "params": {
+      "season": 2026,
+      "week": 2
+    },
+    "rows": 0,
+    "sha256": "1b22f325b1cc65e9b8a86402ed9db7fb56f22637eb45b780c9b0d93a351b7ed9",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2026_wk03.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2026_wk03.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:23:37Z",
+    "params": {
+      "season": 2026,
+      "week": 3
+    },
+    "rows": 0,
+    "sha256": "2bd48d1addae93e6a4e153ff424b657bb29220b0f6d2b33ddc76b5699752e26b",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2026_wk04.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2026_wk04.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:23:50Z",
+    "params": {
+      "season": 2026,
+      "week": 4
+    },
+    "rows": 0,
+    "sha256": "90e208a4fc397c90e889c68c2e56f5654b5fee8748f24c43b08c919a43f4f527",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2026_wk05.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2026_wk05.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:24:03Z",
+    "params": {
+      "season": 2026,
+      "week": 5
+    },
+    "rows": 0,
+    "sha256": "9b76be6ea163cb035e5e31892a7bd47221d00298f35b431a2f57dbf064d12d3e",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2026_wk06.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2026_wk06.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:24:15Z",
+    "params": {
+      "season": 2026,
+      "week": 6
+    },
+    "rows": 0,
+    "sha256": "fe37c9c0e3ba2b7f8d788c9479cc15d8e7d3b7b1ff3fe2c669dce7225fa9882e",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2026_wk07.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2026_wk07.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:24:28Z",
+    "params": {
+      "season": 2026,
+      "week": 7
+    },
+    "rows": 0,
+    "sha256": "474dc39ec94fa492c4d9e8012549bddb37c2762f5462e760d6babeb5afb97c78",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2026_wk08.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2026_wk08.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:24:40Z",
+    "params": {
+      "season": 2026,
+      "week": 8
+    },
+    "rows": 0,
+    "sha256": "b5b942e630b90e2cb75b7ffc207aff32a18c8b22f8868513e1be464231af64d5",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2026_wk09.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2026_wk09.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:24:53Z",
+    "params": {
+      "season": 2026,
+      "week": 9
+    },
+    "rows": 0,
+    "sha256": "451d1841b58dce9d0e2d39dd892329f237514cb6d80c9000beb41cae6d799a99",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2026_wk10.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2026_wk10.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:25:06Z",
+    "params": {
+      "season": 2026,
+      "week": 10
+    },
+    "rows": 0,
+    "sha256": "e8ef26a3899046df125edc8f7f2c2f2eb8a66c7bb4678d0b27501c75066b9021",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2026_wk11.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2026_wk11.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:25:18Z",
+    "params": {
+      "season": 2026,
+      "week": 11
+    },
+    "rows": 0,
+    "sha256": "627f2d1c8179f7578a712481d716e4fcec99c8a3f54fbbb11af0372435c530ae",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2026_wk12.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2026_wk12.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:25:31Z",
+    "params": {
+      "season": 2026,
+      "week": 12
+    },
+    "rows": 0,
+    "sha256": "d6cfc72958df16747775709c123373ddc1b4c02049894b8d8659ba27f4540866",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2026_wk13.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2026_wk13.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:25:44Z",
+    "params": {
+      "season": 2026,
+      "week": 13
+    },
+    "rows": 0,
+    "sha256": "487ee1a6d7343c724a3c94afeb660888905831fa3958368dd54d6e2c13d59a50",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2026_wk14.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2026_wk14.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:25:56Z",
+    "params": {
+      "season": 2026,
+      "week": 14
+    },
+    "rows": 0,
+    "sha256": "0c162b9456b14ba7a3575794daeaf425f2579605f59e6d06bd2909dc1e3318eb",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2026_wk15.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2026_wk15.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:26:09Z",
+    "params": {
+      "season": 2026,
+      "week": 15
+    },
+    "rows": 0,
+    "sha256": "c2beb3f257add127f6a162c4bc031c4d822b9f858798a6558713fad24bf5a5c9",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2026_wk16.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2026_wk16.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:26:22Z",
+    "params": {
+      "season": 2026,
+      "week": 16
+    },
+    "rows": 0,
+    "sha256": "319ff59089a678cfe5edd9d20c96ecc033f40474a8662b42861f9b01ab6bcea5",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2026_wk17.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2026_wk17.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:26:34Z",
+    "params": {
+      "season": 2026,
+      "week": 17
+    },
+    "rows": 0,
+    "sha256": "3ba2083b0d6bd5fd918a8269d6387964f7ea9e6bfffc0b8a4566739b4429ff6f",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2026_wk18.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2026_wk18.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:26:47Z",
+    "params": {
+      "season": 2026,
+      "week": 18
+    },
+    "rows": 0,
+    "sha256": "bd5df8dd62598ab6cbe2852ae566afc42675af6290a202172bb5cc6c6e3554a0",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2026_wk19.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2026_wk19.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:26:59Z",
+    "params": {
+      "season": 2026,
+      "week": 19
+    },
+    "rows": 0,
+    "sha256": "2f7c51f5a29603310d61a6ee6a2ecc0bae9c1073bf12619b4b1982dabaefdfe9",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2026_wk20.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2026_wk20.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:27:12Z",
+    "params": {
+      "season": 2026,
+      "week": 20
+    },
+    "rows": 0,
+    "sha256": "2be48d00a93d21aa118f3d35ffdd7131406473777d3016fbd0f406e0391602d2",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2026_wk21.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2026_wk21.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:27:25Z",
+    "params": {
+      "season": 2026,
+      "week": 21
+    },
+    "rows": 0,
+    "sha256": "ccb5181de63c60c9017ef5b042d70ba547cc66024079a73e1c0048db165e501b",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nfl/nfl_odds_opening_2026_wk22.jsonl.gz": {
+    "bytes": 53,
+    "complete": true,
+    "endpoint": "odds_opening",
+    "file": "nfl/nfl_odds_opening_2026_wk22.jsonl.gz",
+    "harvested_utc": "2026-09-15T22:27:37Z",
+    "params": {
+      "season": 2026,
+      "week": 22
+    },
+    "rows": 0,
+    "sha256": "8490b67d2dac18be6f7ff5435245334389d6d8a84fd6d3f504627feceeae77be",
+    "sport": "nfl",
+    "zero_rows": true
+  },
+  "nhl/nhl_games_2022.jsonl.gz": {
+    "bytes": 41,
+    "complete": false,
+    "endpoint": "games",
+    "file": "nhl/nhl_games_2022.jsonl.gz",
+    "harvested_utc": "2026-09-16T00:24:53Z",
+    "http_status": 400,
+    "params": {
+      "seasons": [
+        2022
+      ]
+    },
+    "rows": 0,
+    "sha256": null,
+    "sport": "nhl"
+  },
+  "nhl/nhl_games_2023.jsonl.gz": {
+    "bytes": 41,
+    "complete": false,
+    "endpoint": "games",
+    "file": "nhl/nhl_games_2023.jsonl.gz",
+    "harvested_utc": "2026-09-16T00:24:41Z",
+    "http_status": 400,
+    "params": {
+      "seasons": [
+        2023
+      ]
+    },
+    "rows": 0,
+    "sha256": null,
+    "sport": "nhl"
+  },
+  "nhl/nhl_games_2024.jsonl.gz": {
+    "bytes": 41,
+    "complete": false,
+    "endpoint": "games",
+    "file": "nhl/nhl_games_2024.jsonl.gz",
+    "harvested_utc": "2026-09-16T00:24:28Z",
+    "http_status": 400,
+    "params": {
+      "seasons": [
+        2024
+      ]
+    },
+    "rows": 0,
+    "sha256": null,
+    "sport": "nhl"
+  },
+  "nhl/nhl_games_2025.jsonl.gz": {
+    "bytes": 41,
+    "complete": false,
+    "endpoint": "games",
+    "file": "nhl/nhl_games_2025.jsonl.gz",
+    "harvested_utc": "2026-09-16T00:24:15Z",
+    "http_status": 400,
+    "params": {
+      "seasons": [
+        2025
+      ]
+    },
+    "rows": 0,
+    "sha256": null,
+    "sport": "nhl"
+  },
+  "nhl/nhl_games_2026.jsonl.gz": {
+    "bytes": 41,
+    "complete": false,
+    "endpoint": "games",
+    "file": "nhl/nhl_games_2026.jsonl.gz",
+    "harvested_utc": "2026-09-16T00:24:03Z",
+    "http_status": 400,
+    "params": {
+      "seasons": [
+        2026
+      ]
+    },
+    "rows": 0,
+    "sha256": null,
+    "sport": "nhl"
+  },
+  "nhl/nhl_odds.jsonl.gz": {
+    "bytes": 35,
+    "complete": false,
+    "endpoint": "odds",
+    "file": "nhl/nhl_odds.jsonl.gz",
+    "harvested_utc": "2026-09-16T00:23:37Z",
+    "http_status": 400,
+    "params": {},
+    "rows": 0,
+    "sha256": null,
+    "sport": "nhl"
+  },
+  "nhl/nhl_odds_opening.jsonl.gz": {
+    "bytes": 43,
+    "complete": false,
+    "endpoint": "odds_opening",
+    "file": "nhl/nhl_odds_opening.jsonl.gz",
+    "harvested_utc": "2026-09-16T00:23:50Z",
+    "http_status": 400,
+    "params": {},
+    "rows": 0,
+    "sha256": null,
+    "sport": "nhl"
   },
   "tennis/atp_match_stats.jsonl.gz": {
     "bytes": 20951,
@@ -200,115 +5788,107 @@
     "sport": "tennis"
   },
   "tennis/atp_matches_2019.jsonl.gz": {
-    "bytes": 39273,
-    "complete": false,
+    "bytes": 284148,
+    "complete": true,
     "endpoint": "atp_matches",
     "file": "tennis/atp_matches_2019.jsonl.gz",
-    "harvested_utc": "2026-09-15T17:43:06Z",
-    "http_status": 429,
+    "harvested_utc": "2026-09-15T22:12:53Z",
     "params": {
       "season": 2019
     },
-    "rows": 500,
-    "sha256": null,
+    "rows": 3306,
+    "sha256": "d40e8bd444be8310d16de1066b281e834b76e23114786354a1c5cf7ddb87f5c8",
     "sport": "tennis"
   },
   "tennis/atp_matches_2020.jsonl.gz": {
-    "bytes": 40059,
-    "complete": false,
+    "bytes": 116173,
+    "complete": true,
     "endpoint": "atp_matches",
     "file": "tennis/atp_matches_2020.jsonl.gz",
-    "harvested_utc": "2026-09-15T17:44:10Z",
-    "http_status": 429,
+    "harvested_utc": "2026-09-15T22:04:53Z",
     "params": {
       "season": 2020
     },
-    "rows": 500,
-    "sha256": null,
+    "rows": 1367,
+    "sha256": "846b8d02540a65f3434fe17ab450de25dc26fb470915171b6f351447240ed8a5",
     "sport": "tennis"
   },
   "tennis/atp_matches_2021.jsonl.gz": {
-    "bytes": 38520,
-    "complete": false,
+    "bytes": 260567,
+    "complete": true,
     "endpoint": "atp_matches",
     "file": "tennis/atp_matches_2021.jsonl.gz",
-    "harvested_utc": "2026-09-15T17:45:15Z",
-    "http_status": 429,
+    "harvested_utc": "2026-09-15T21:57:06Z",
     "params": {
       "season": 2021
     },
-    "rows": 500,
-    "sha256": null,
+    "rows": 3005,
+    "sha256": "60ec8f1dff65b38068a87270f77f4132bca7b36d3b85becbb503e20c0558431e",
     "sport": "tennis"
   },
   "tennis/atp_matches_2022.jsonl.gz": {
-    "bytes": 37580,
-    "complete": false,
+    "bytes": 276498,
+    "complete": true,
     "endpoint": "atp_matches",
     "file": "tennis/atp_matches_2022.jsonl.gz",
-    "harvested_utc": "2026-09-15T17:46:19Z",
-    "http_status": 429,
+    "harvested_utc": "2026-09-15T21:44:53Z",
     "params": {
       "season": 2022
     },
-    "rows": 500,
-    "sha256": null,
+    "rows": 3245,
+    "sha256": "46ca0e841798ef32f3ad4af52e0e6bcf669a34fdfda609db0eb9cfc0f9ede3ea",
     "sport": "tennis"
   },
   "tennis/atp_matches_2023.jsonl.gz": {
-    "bytes": 39924,
-    "complete": false,
+    "bytes": 307662,
+    "complete": true,
     "endpoint": "atp_matches",
     "file": "tennis/atp_matches_2023.jsonl.gz",
-    "harvested_utc": "2026-09-15T17:47:24Z",
-    "http_status": 429,
+    "harvested_utc": "2026-09-15T21:31:25Z",
     "params": {
       "season": 2023
     },
-    "rows": 500,
-    "sha256": null,
+    "rows": 3588,
+    "sha256": "c863b63d30a7b19693551e1fd4f03ba98654305f7b9c46d0896af4a5f20b713a",
     "sport": "tennis"
   },
   "tennis/atp_matches_2024.jsonl.gz": {
-    "bytes": 40918,
-    "complete": false,
+    "bytes": 316478,
+    "complete": true,
     "endpoint": "atp_matches",
     "file": "tennis/atp_matches_2024.jsonl.gz",
-    "harvested_utc": "2026-09-15T17:48:28Z",
-    "http_status": 429,
+    "harvested_utc": "2026-09-15T21:15:25Z",
     "params": {
       "season": 2024
     },
-    "rows": 500,
-    "sha256": null,
+    "rows": 3763,
+    "sha256": "ba39708f8320ba9147a022b709a23025f9cd3e8a149ca038adbc42415754b133",
     "sport": "tennis"
   },
   "tennis/atp_matches_2025.jsonl.gz": {
-    "bytes": 40115,
-    "complete": false,
+    "bytes": 352347,
+    "complete": true,
     "endpoint": "atp_matches",
     "file": "tennis/atp_matches_2025.jsonl.gz",
-    "harvested_utc": "2026-09-15T17:49:33Z",
-    "http_status": 429,
+    "harvested_utc": "2026-09-15T20:57:31Z",
     "params": {
       "season": 2025
     },
-    "rows": 500,
-    "sha256": null,
+    "rows": 4140,
+    "sha256": "ad90f82981ed8f364ff8d00ab29719e5534387ee9677c62020a5b9564a7fefc1",
     "sport": "tennis"
   },
   "tennis/atp_matches_2026.jsonl.gz": {
-    "bytes": 52348,
-    "complete": false,
+    "bytes": 326895,
+    "complete": true,
     "endpoint": "atp_matches",
     "file": "tennis/atp_matches_2026.jsonl.gz",
-    "harvested_utc": "2026-09-15T17:50:38Z",
-    "http_status": 429,
+    "harvested_utc": "2026-09-15T20:39:50Z",
     "params": {
       "season": 2026
     },
-    "rows": 500,
-    "sha256": null,
+    "rows": 3296,
+    "sha256": "8085ef83b878b6a5705dce264ff89698389ca71c3ca949af8048253269091018",
     "sport": "tennis"
   },
   "tennis/atp_odds_opening.jsonl.gz": {
@@ -324,24 +5904,22 @@
     "sport": "tennis"
   },
   "tennis/atp_players.jsonl.gz": {
-    "bytes": 38,
-    "complete": false,
+    "bytes": 350152,
+    "complete": true,
     "endpoint": "atp_players",
     "file": "tennis/atp_players.jsonl.gz",
-    "harvested_utc": "2026-09-15T17:53:51Z",
-    "http_status": 429,
+    "harvested_utc": "2026-09-16T01:01:06Z",
     "params": {},
-    "rows": 0,
-    "sha256": null,
+    "rows": 17141,
+    "sha256": "ba4c4014cc3ddedca2d31fa817eb91dc5c39bf050632cde5f7b9387bec90cec0",
     "sport": "tennis"
   },
   "tennis/atp_rankings.jsonl.gz": {
-    "bytes": 39,
+    "bytes": 78,
     "complete": false,
     "endpoint": "atp_rankings",
     "file": "tennis/atp_rankings.jsonl.gz",
-    "harvested_utc": "2026-09-15T17:54:55Z",
-    "http_status": 429,
+    "harvested_utc": "2026-09-16T02:04:15Z",
     "params": {
       "tour": "atp"
     },
@@ -415,17 +5993,16 @@
     "sport": "tennis"
   },
   "tennis/atp_tournaments_2015.jsonl.gz": {
-    "bytes": 47,
-    "complete": false,
+    "bytes": 2042,
+    "complete": true,
     "endpoint": "atp_tournaments",
     "file": "tennis/atp_tournaments_2015.jsonl.gz",
-    "harvested_utc": "2026-09-15T17:51:42Z",
-    "http_status": 429,
+    "harvested_utc": "2026-09-16T01:07:50Z",
     "params": {
       "season": 2015
     },
-    "rows": 0,
-    "sha256": null,
+    "rows": 48,
+    "sha256": "6a43cce2801a28ee06d7bac7d721705e897dbf8e2dec6f18e4177d91d87d33bc",
     "sport": "tennis"
   },
   "tennis/atp_tournaments_2016.jsonl.gz": {
@@ -494,17 +6071,16 @@
     "sport": "tennis"
   },
   "tennis/atp_tournaments_2021.jsonl.gz": {
-    "bytes": 47,
-    "complete": false,
+    "bytes": 1887,
+    "complete": true,
     "endpoint": "atp_tournaments",
     "file": "tennis/atp_tournaments_2021.jsonl.gz",
-    "harvested_utc": "2026-09-15T17:52:46Z",
-    "http_status": 429,
+    "harvested_utc": "2026-09-16T01:07:37Z",
     "params": {
       "season": 2021
     },
-    "rows": 0,
-    "sha256": null,
+    "rows": 43,
+    "sha256": "675c87bd12e671142814b5ec178f49ee34b282cde852afbacf82ae6cca585c33",
     "sport": "tennis"
   },
   "tennis/atp_tournaments_2022.jsonl.gz": {
@@ -706,115 +6282,107 @@
     "sport": "tennis"
   },
   "tennis/wta_matches_2019.jsonl.gz": {
-    "bytes": 45836,
-    "complete": false,
+    "bytes": 239917,
+    "complete": true,
     "endpoint": "wta_matches",
     "file": "tennis/wta_matches_2019.jsonl.gz",
-    "harvested_utc": "2026-09-15T18:00:50Z",
-    "http_status": 429,
+    "harvested_utc": "2026-09-15T22:17:31Z",
     "params": {
       "season": 2019
     },
-    "rows": 500,
-    "sha256": null,
+    "rows": 2621,
+    "sha256": "855570480ac7ddca9f1f195cb3fa37eaac4890d4411ccf783654aac0e1f79c45",
     "sport": "tennis"
   },
   "tennis/wta_matches_2020.jsonl.gz": {
-    "bytes": 48606,
-    "complete": false,
+    "bytes": 129297,
+    "complete": true,
     "endpoint": "wta_matches",
     "file": "tennis/wta_matches_2020.jsonl.gz",
-    "harvested_utc": "2026-09-15T18:01:55Z",
-    "http_status": 429,
+    "harvested_utc": "2026-09-15T22:06:47Z",
     "params": {
       "season": 2020
     },
-    "rows": 500,
-    "sha256": null,
+    "rows": 1371,
+    "sha256": "200f641675d9aa084b717b1b13935d5048ecb70953d034c831f75d3986b11913",
     "sport": "tennis"
   },
   "tennis/wta_matches_2021.jsonl.gz": {
-    "bytes": 50271,
-    "complete": false,
+    "bytes": 312758,
+    "complete": true,
     "endpoint": "wta_matches",
     "file": "tennis/wta_matches_2021.jsonl.gz",
-    "harvested_utc": "2026-09-15T18:02:59Z",
-    "http_status": 429,
+    "harvested_utc": "2026-09-15T22:02:59Z",
     "params": {
       "season": 2021
     },
-    "rows": 500,
-    "sha256": null,
+    "rows": 3283,
+    "sha256": "91fe59b2e956b2c32b35da5a731b60cde22c2c6fc5a9c9b7322ffd7bd526cfd5",
     "sport": "tennis"
   },
   "tennis/wta_matches_2022.jsonl.gz": {
-    "bytes": 49546,
-    "complete": false,
+    "bytes": 358992,
+    "complete": true,
     "endpoint": "wta_matches",
     "file": "tennis/wta_matches_2022.jsonl.gz",
-    "harvested_utc": "2026-09-15T18:04:04Z",
-    "http_status": 429,
+    "harvested_utc": "2026-09-15T21:51:37Z",
     "params": {
       "season": 2022
     },
-    "rows": 500,
-    "sha256": null,
+    "rows": 3637,
+    "sha256": "670fd2eb4d9f23b3ca3f48a9282fda6643ac031c7aa58ccb4d2c9f489276d52c",
     "sport": "tennis"
   },
   "tennis/wta_matches_2023.jsonl.gz": {
-    "bytes": 50790,
-    "complete": false,
+    "bytes": 408675,
+    "complete": true,
     "endpoint": "wta_matches",
     "file": "tennis/wta_matches_2023.jsonl.gz",
-    "harvested_utc": "2026-09-15T18:05:09Z",
-    "http_status": 429,
+    "harvested_utc": "2026-09-15T21:38:59Z",
     "params": {
       "season": 2023
     },
-    "rows": 500,
-    "sha256": null,
+    "rows": 4004,
+    "sha256": "f8c17aa72389cfe925e5cca40d710165e277029d9253556124f91032b30dbcaa",
     "sport": "tennis"
   },
   "tennis/wta_matches_2024.jsonl.gz": {
-    "bytes": 50842,
-    "complete": false,
+    "bytes": 507091,
+    "complete": true,
     "endpoint": "wta_matches",
     "file": "tennis/wta_matches_2024.jsonl.gz",
-    "harvested_utc": "2026-09-15T18:06:13Z",
-    "http_status": 429,
+    "harvested_utc": "2026-09-15T21:24:53Z",
     "params": {
       "season": 2024
     },
-    "rows": 500,
-    "sha256": null,
+    "rows": 4951,
+    "sha256": "1cc7e643320ac57ba60fda36ff5858917e235ab7e63af19722025c73e3c8a432",
     "sport": "tennis"
   },
   "tennis/wta_matches_2025.jsonl.gz": {
-    "bytes": 54269,
-    "complete": false,
+    "bytes": 601832,
+    "complete": true,
     "endpoint": "wta_matches",
     "file": "tennis/wta_matches_2025.jsonl.gz",
-    "harvested_utc": "2026-09-15T18:07:18Z",
-    "http_status": 429,
+    "harvested_utc": "2026-09-15T21:08:28Z",
     "params": {
       "season": 2025
     },
-    "rows": 500,
-    "sha256": null,
+    "rows": 5696,
+    "sha256": "ff6a9b2b60b91a82f307629cda8d06a021cc6a8fbb1f9ba6b1ea31545fde96fc",
     "sport": "tennis"
   },
   "tennis/wta_matches_2026.jsonl.gz": {
-    "bytes": 55626,
-    "complete": false,
+    "bytes": 551819,
+    "complete": true,
     "endpoint": "wta_matches",
     "file": "tennis/wta_matches_2026.jsonl.gz",
-    "harvested_utc": "2026-09-15T18:08:22Z",
-    "http_status": 429,
+    "harvested_utc": "2026-09-15T20:49:44Z",
     "params": {
       "season": 2026
     },
-    "rows": 500,
-    "sha256": null,
+    "rows": 5141,
+    "sha256": "b46ad084618a8c053f3393a0de6614ad7ce1cb12b538d891c22b5141fc61aeff",
     "sport": "tennis"
   },
   "tennis/wta_odds_opening.jsonl.gz": {
@@ -830,15 +6398,14 @@
     "sport": "tennis"
   },
   "tennis/wta_players.jsonl.gz": {
-    "bytes": 16728,
-    "complete": false,
+    "bytes": 99514,
+    "complete": true,
     "endpoint": "wta_players",
     "file": "tennis/wta_players.jsonl.gz",
-    "harvested_utc": "2026-09-15T18:12:39Z",
-    "http_status": 429,
+    "harvested_utc": "2026-09-16T01:07:25Z",
     "params": {},
-    "rows": 500,
-    "sha256": null,
+    "rows": 3491,
+    "sha256": "535f8382a254e88283c8ac8451310412d9f90b59be8563d1f40623597e044c2a",
     "sport": "tennis"
   },
   "tennis/wta_rankings.jsonl.gz": {
@@ -921,17 +6488,16 @@
     "sport": "tennis"
   },
   "tennis/wta_tournaments_2015.jsonl.gz": {
-    "bytes": 47,
-    "complete": false,
+    "bytes": 2237,
+    "complete": true,
     "endpoint": "wta_tournaments",
     "file": "tennis/wta_tournaments_2015.jsonl.gz",
-    "harvested_utc": "2026-09-15T18:09:27Z",
-    "http_status": 429,
+    "harvested_utc": "2026-09-16T01:08:41Z",
     "params": {
       "season": 2015
     },
-    "rows": 0,
-    "sha256": null,
+    "rows": 64,
+    "sha256": "529d83360894144f81563d208bdf9caf2f2e063450b923270a03282bc7701c1a",
     "sport": "tennis"
   },
   "tennis/wta_tournaments_2016.jsonl.gz": {
@@ -1000,17 +6566,16 @@
     "sport": "tennis"
   },
   "tennis/wta_tournaments_2021.jsonl.gz": {
-    "bytes": 47,
-    "complete": false,
+    "bytes": 2292,
+    "complete": true,
     "endpoint": "wta_tournaments",
     "file": "tennis/wta_tournaments_2021.jsonl.gz",
-    "harvested_utc": "2026-09-15T18:10:31Z",
-    "http_status": 429,
+    "harvested_utc": "2026-09-16T01:08:28Z",
     "params": {
       "season": 2021
     },
-    "rows": 0,
-    "sha256": null,
+    "rows": 70,
+    "sha256": "595b3cc03db88d11083be3cfb30485d9da3f0c8e53fdbb49debbb9416c4eb651",
     "sport": "tennis"
   },
   "tennis/wta_tournaments_2022.jsonl.gz": {
@@ -1066,17 +6631,16 @@
     "sport": "tennis"
   },
   "tennis/wta_tournaments_2026.jsonl.gz": {
-    "bytes": 47,
-    "complete": false,
+    "bytes": 3417,
+    "complete": true,
     "endpoint": "wta_tournaments",
     "file": "tennis/wta_tournaments_2026.jsonl.gz",
-    "harvested_utc": "2026-09-15T18:11:35Z",
-    "http_status": 429,
+    "harvested_utc": "2026-09-16T01:08:15Z",
     "params": {
       "season": 2026
     },
-    "rows": 0,
-    "sha256": null,
+    "rows": 126,
+    "sha256": "d2e2f07b94f6c4f23558c530f7b50acbc17e2dafe2967da714503c20cc13280f",
     "sport": "tennis"
   }
 }
