@@ -35,5 +35,26 @@ Live matches observed this run: **19**
 **Question:** How many calls does a busy day take at production rates (live scores, live odds, fixtures, player data)?
 **Threshold:** Under the plan's daily call limit, with room to spare.
 **Measured:** `{"calls_accumulated": 209, "polls_run": 2, "polls_errored": 9, "daily_limit_known": null}`
+**Vendor limit, found 2026-09-16 (api-tennis.com homepage, plan table):** Business
+is $80/month and **200,000 requests/day**. (Starter $40 / 8,000; Premium $60 /
+80,000; Ultra $120 / 2,000,000. Daily allowances only -- no monthly or
+per-minute cap is stated.) So check 10 finally has a number to be scored
+against. At the rate the short window ran (209 calls in about 3 minutes, ~70
+per minute) a 24-hour day at that rate is roughly 100,000 calls, about half
+the Business allowance -- inside the limit, but "room to spare" is thin, and
+the real figure is whatever the full-day run at production polling rates
+records.
+
+**MATERIAL FINDING FOR THE DECISION -- we may be measuring the wrong
+transport.** The same plan table lists **Web Sockets** as a Business-tier
+feature. Every latency number in check 9 was measured by POLLING, and a 37.8s
+median is exactly what polling a slow REST endpoint looks like. If the
+websocket feed pushes state changes, the freshness check could look completely
+different on the transport we would actually pay for, and check 9's threshold
+says "measured at the polling rate we would pay for" -- which presumes polling
+is the transport. Do not record a skip on check 9 alone until the websocket
+feed has been tried or ruled out; a fail measured on a transport we would not
+use is not evidence about the product we would buy.
+
 **Note:** The vendor's Business-plan daily call limit was not published at trial signup, so this reports the measured full-day call count for comparison against whatever limit the plan states; it is not assumed to pass. INSUFFICIENT SAMPLE: this is a partial day only, not a full day at production polling rates. 9 of 11 polls in this file failed to reach the vendor at all (see each record's 'detail' field), so calls_accumulated undercounts even a partial day. Re-run the sampler across a full day once it is reaching the vendor successfully to get a real count.
 
