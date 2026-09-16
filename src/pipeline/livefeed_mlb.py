@@ -34,6 +34,28 @@ LOG = logging.getLogger(__name__)
 
 DEFAULT_LIVE_DIR = data_path("live", "mlb")
 
+# R16-L5 (docs/LIVE_BETTING_SYSTEM.md 3.2): `fetch_schedule`'s hydrate string
+# already includes "linescore", so each game in the schedule payload MAY
+# already carry a usable linescore -- if it does, `poll()` uses it directly
+# instead of an extra per-game `fetch_linescore` call (15 live games: 16
+# calls every 20s drops to about 1). These are exactly the containers
+# `_build_row` reads from a linescore; their PRESENCE (not their values --
+# `outs`/`pitcher_id`/etc. can legitimately be 0 or None between plays) is
+# what "carries every field the rules read" means here.
+_SCHEDULE_LINESCORE_REQUIRED_KEYS = (
+    "currentInning", "inningHalf", "inningState", "outs",
+    "offense", "defense", "teams",
+)
+
+
+def _schedule_linescore_usable(linescore) -> bool:
+    """Whether a schedule-hydrated `linescore` dict carries every container
+    key `_build_row` reads, so a separate `fetch_linescore` call can be
+    skipped for this game this poll."""
+    if not isinstance(linescore, dict):
+        return False
+    return all(key in linescore for key in _SCHEDULE_LINESCORE_REQUIRED_KEYS)
+
 
 def _eastern():
     """MLB's official timezone; a fixed -04:00 when no zone database is installed."""
@@ -110,18 +132,26 @@ def poll(game_date=None, *, live_dir=DEFAULT_LIVE_DIR,
 
         if abstract_state == "Live":
             report["live_games"] += 1
-            # Fetch the linescore.
-            try:
-                linescore = fetch_linescore(raw_pk, timeout=timeout)
-            except Exception as exc:
-                LOG.warning("livefeed_mlb: linescore fetch for game %s failed: %s",
-                           game_pk, exc)
-                report["errors"].append({
-                    "source": "linescore",
-                    "game_pk": game_pk,
-                    "error": str(exc),
-                })
-                continue
+            # R16-L5: use the schedule's own hydrated linescore when it
+            # carries every field _build_row reads -- one schedule call
+            # already paid for it (fetch_schedule's hydrate includes
+            # "linescore"). Only fall back to a per-game fetch_linescore
+            # call when the schedule payload didn't carry a usable one.
+            schedule_linescore = game.get("linescore")
+            if _schedule_linescore_usable(schedule_linescore):
+                linescore = schedule_linescore
+            else:
+                try:
+                    linescore = fetch_linescore(raw_pk, timeout=timeout)
+                except Exception as exc:
+                    LOG.warning("livefeed_mlb: linescore fetch for game %s failed: %s",
+                               game_pk, exc)
+                    report["errors"].append({
+                        "source": "linescore",
+                        "game_pk": game_pk,
+                        "error": str(exc),
+                    })
+                    continue
 
             # Build the state row.
             row = _build_row(game, linescore, observed_utc)

@@ -707,5 +707,211 @@ class TestFirstDefensivePitcher(unittest.TestCase):
         self.assertIsNotNone(candidate)
 
 
+class TestCheckTrigger(unittest.TestCase):
+    """R16-L5: trigger condition checks with no quote/price required -- what
+    a runner calls BEFORE spending any credit."""
+
+    def test_check_trigger_mlb_fires_without_a_quote(self):
+        pregame = {
+            "game_id": "mlb_301", "sport": "mlb", "favorite": "home",
+            "favorite_prob": 0.60, "home_team": "Yankees", "away_team": "Red Sox",
+        }
+        state = {"inning": 3, "inning_state": "End", "home_runs": 2, "away_runs": 3}
+
+        info = live_rules.check_trigger(
+            "mlb_favorite_trails_after_3", pregame=pregame, state=state)
+        self.assertIsNotNone(info)
+        self.assertEqual(info["favorite_side"], "home")
+        self.assertEqual(info["margin"], -1)
+
+    def test_check_trigger_silent_matches_evaluate_silent(self):
+        """The trigger-only check and the full (quote-requiring) evaluate()
+        must agree on whether the condition holds."""
+        pregame = {
+            "game_id": "mlb_302", "sport": "mlb", "favorite": "home",
+            "favorite_prob": 0.60, "home_team": "Yankees", "away_team": "Red Sox",
+        }
+        state = {"inning": 3, "inning_state": "End", "home_runs": 5, "away_runs": 3}
+        quote = {"observed_utc": "2026-09-14T20:00:00Z",
+                 "quotes": [{"book": "DK", "home_price": -110, "away_price": 110}]}
+
+        self.assertIsNone(live_rules.check_trigger(
+            "mlb_favorite_trails_after_3", pregame=pregame, state=state))
+        self.assertIsNone(live_rules.evaluate(
+            "mlb_favorite_trails_after_3", pregame=pregame, state=state, quote=quote))
+
+    def test_check_trigger_nfl_halftime_fires_without_a_quote(self):
+        from datetime import datetime, timezone, timedelta
+        commence = datetime(2026, 9, 14, 20, 0, 0, tzinfo=timezone.utc)
+        observed = commence + timedelta(minutes=90)
+        pregame = {
+            "game_id": "nfl_301", "sport": "nfl", "favorite": "home",
+            "favorite_prob": 0.60, "home_team": "Cowboys", "away_team": "Eagles",
+            "kickoff_utc": commence.isoformat(),
+        }
+        state = {"home_score": 10, "away_score": 14, "completed": False,
+                 "observed_utc": observed.isoformat()}
+
+        info = live_rules.check_trigger(
+            "nfl_favorite_trails_halftime", pregame=pregame, state=state)
+        self.assertIsNotNone(info)
+        self.assertEqual(info["margin"], -4)
+
+
+class TestRegistryGating(unittest.TestCase):
+    """R16-L5: a rule not registered or forward-testing captures nothing.
+    Every test here injects `registry_status` so nothing touches the real
+    ledger file."""
+
+    def _firing_mlb_pregame_and_state(self):
+        pregame = {
+            "game_id": "mlb_401", "sport": "mlb", "favorite": "home",
+            "favorite_prob": 0.60, "home_team": "Yankees", "away_team": "Red Sox",
+        }
+        state = {"inning": 3, "inning_state": "End", "home_runs": 2, "away_runs": 3}
+        return pregame, state
+
+    def test_unregistered_rule_fires_no_trigger(self):
+        pregame, state = self._firing_mlb_pregame_and_state()
+        fired = live_rules.check_all_triggers(
+            pregame=pregame, state=state,
+            registry_status={"mlb_favorite_trails_after_3": "unregistered",
+                             "mlb_starter_pulled_early": "unregistered"})
+        self.assertEqual(fired, {})
+
+    def test_registered_rule_fires_trigger(self):
+        pregame, state = self._firing_mlb_pregame_and_state()
+        fired = live_rules.check_all_triggers(
+            pregame=pregame, state=state,
+            registry_status={"mlb_favorite_trails_after_3": "registered",
+                             "mlb_starter_pulled_early": "unregistered"})
+        self.assertIn("mlb_favorite_trails_after_3", fired)
+
+    def test_forward_testing_status_is_allowed(self):
+        pregame, state = self._firing_mlb_pregame_and_state()
+        fired = live_rules.check_all_triggers(
+            pregame=pregame, state=state,
+            registry_status=lambda rid: "forward-testing")
+        self.assertIn("mlb_favorite_trails_after_3", fired)
+
+    def test_unregistered_rule_captures_nothing_in_evaluate_all(self):
+        """Same gate, on the quote-requiring path: a candidate that WOULD
+        have priced is refused entirely when the rule is not registered."""
+        pregame, state = self._firing_mlb_pregame_and_state()
+        quote = {"observed_utc": "2026-09-14T20:00:00Z",
+                 "quotes": [{"book": "DK", "home_price": -110, "away_price": 110}]}
+
+        candidates = live_rules.evaluate_all(
+            pregame=pregame, state=state, quote=quote,
+            registry_status={"mlb_favorite_trails_after_3": "unregistered",
+                             "mlb_starter_pulled_early": "unregistered"})
+        self.assertEqual(candidates, [])
+
+        # Same inputs, registered: fires.
+        candidates = live_rules.evaluate_all(
+            pregame=pregame, state=state, quote=quote,
+            registry_status={"mlb_favorite_trails_after_3": "registered",
+                             "mlb_starter_pulled_early": "unregistered"})
+        self.assertEqual(len(candidates), 1)
+        self.assertEqual(candidates[0]["rule_id"], "mlb_favorite_trails_after_3")
+
+    def test_default_registry_status_reads_real_registry(self):
+        """No override reads data/research/alpha_registry.jsonl via
+        alpha_registry.read_all -- exercised with a real temp registry file
+        so this test never touches the production ledger."""
+        import json
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "alpha_registry.jsonl"
+            path.write_text(json.dumps({
+                "kind": "hypothesis", "id": "LIVE_V0:mlb_favorite_trails_after_3:h2h",
+                "family": "LIVE_V0", "market": "h2h", "sport": "mlb",
+                "registered_utc": "2026-09-14T00:00:00Z",
+                "data_window": {"discovery": "x", "replication": "y"},
+                "alpha_declared": 0.0167, "source_doc": "docs/x.md",
+                "status": "registered",
+            }) + "\n", encoding="utf-8")
+
+            status = live_rules.default_registry_status(path=path)
+            self.assertEqual(status["mlb_favorite_trails_after_3"], "registered")
+            self.assertEqual(status["mlb_starter_pulled_early"], "unregistered")
+
+    def test_missing_registry_file_fails_closed(self):
+        from pathlib import Path
+        status = live_rules.default_registry_status(
+            path=Path("/nonexistent/does/not/exist.jsonl"))
+        for rule_id in live_rules.RULE_IDS:
+            self.assertEqual(status[rule_id], "unregistered")
+
+
+class TestFreshMedianPrice(unittest.TestCase):
+    """R16-L5/D9: fresh-price rule (3.1, retrieval-time reading) -- median
+    across at least 3 fresh books, price refused below that."""
+
+    def test_needs_at_least_3_fresh_books(self):
+        quotes = [
+            {"book": "DK", "home_price": -110, "last_update": "2026-09-14T20:00:10Z"},
+            {"book": "FD", "home_price": -105, "last_update": "2026-09-14T20:00:20Z"},
+        ]
+        result = live_rules.fresh_median_price(
+            quotes, "home", t0_utc="2026-09-14T20:00:00Z",
+            captured_utc="2026-09-14T20:00:30Z")
+        self.assertIsNone(result["price"])
+        self.assertEqual(result["fresh_count"], 2)
+
+    def test_3_fresh_books_gives_median(self):
+        quotes = [
+            {"book": "DK", "home_price": -110, "last_update": "2026-09-14T20:00:05Z"},
+            {"book": "FD", "home_price": -100, "last_update": "2026-09-14T20:00:10Z"},
+            {"book": "BR", "home_price": -120, "last_update": "2026-09-14T20:00:15Z"},
+        ]
+        result = live_rules.fresh_median_price(
+            quotes, "home", t0_utc="2026-09-14T20:00:00Z",
+            captured_utc="2026-09-14T20:00:20Z")
+        self.assertEqual(result["price"], -110)
+        self.assertEqual(result["fresh_count"], 3)
+
+    def test_book_before_t0_excluded(self):
+        quotes = [
+            {"book": "DK", "home_price": -110, "last_update": "2026-09-14T19:59:00Z"},
+            {"book": "FD", "home_price": -100, "last_update": "2026-09-14T20:00:10Z"},
+            {"book": "BR", "home_price": -120, "last_update": "2026-09-14T20:00:15Z"},
+        ]
+        result = live_rules.fresh_median_price(
+            quotes, "home", t0_utc="2026-09-14T20:00:00Z",
+            captured_utc="2026-09-14T20:00:20Z")
+        self.assertIsNone(result["price"])
+        self.assertEqual(result["fresh_count"], 2)
+        self.assertEqual(result["excluded_stale"], 1)
+
+    def test_book_older_than_max_age_excluded(self):
+        quotes = [
+            # DK's price hasn't moved since T0 -- 120s old at capture, past
+            # the 60s max age. FD/BR repriced recently and are fresh.
+            {"book": "DK", "home_price": -110, "last_update": "2026-09-14T20:00:00Z"},
+            {"book": "FD", "home_price": -100, "last_update": "2026-09-14T20:01:50Z"},
+            {"book": "BR", "home_price": -120, "last_update": "2026-09-14T20:01:55Z"},
+        ]
+        result = live_rules.fresh_median_price(
+            quotes, "home", t0_utc="2026-09-14T20:00:00Z",
+            captured_utc="2026-09-14T20:02:00Z")
+        self.assertIsNone(result["price"])  # only 2 fresh, below the floor of 3
+        self.assertEqual(result["fresh_count"], 2)
+
+    def test_no_last_update_excluded(self):
+        quotes = [
+            {"book": "DK", "home_price": -110},
+            {"book": "FD", "home_price": -100, "last_update": "2026-09-14T20:00:10Z"},
+            {"book": "BR", "home_price": -120, "last_update": "2026-09-14T20:00:15Z"},
+        ]
+        result = live_rules.fresh_median_price(
+            quotes, "home", t0_utc="2026-09-14T20:00:00Z",
+            captured_utc="2026-09-14T20:00:20Z")
+        self.assertIsNone(result["price"])
+        self.assertEqual(result["excluded_no_last_update"], 1)
+
+
 if __name__ == "__main__":
     unittest.main()

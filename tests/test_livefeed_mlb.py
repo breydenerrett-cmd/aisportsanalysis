@@ -109,6 +109,79 @@ class TestLivefeedMLB(unittest.TestCase):
         self.assertEqual(row["away_team"], "Boston Red Sox")
         self.assertEqual(row["sport"], "mlb")
 
+    def test_poll_uses_schedule_hydrated_linescore_when_usable(self):
+        """R16-L5 (3.2): when the schedule's own hydrated payload already
+        carries every field _build_row reads, poll() must NOT make a
+        separate fetch_linescore call for that game -- one schedule call
+        already paid for it."""
+        clock = lambda: datetime(2025, 6, 15, 12, 0, 0, tzinfo=timezone.utc)
+
+        game = _make_game(
+            game_pk=123456, abstract_state="Live", detailed_state="In Play",
+            home_name="New York Yankees", away_name="Boston Red Sox",
+        )
+        game["linescore"] = _make_linescore(
+            current_inning=5, inning_half="Bottom", inning_state="Bottom",
+            outs=1, home_runs=3, away_runs=2,
+        )
+
+        def fetch_schedule(date, timeout=None):
+            return [game]
+
+        def fetch_linescore(game_pk, timeout=None):
+            raise AssertionError(
+                "fetch_linescore must not be called when the schedule's "
+                "own linescore is already usable")
+
+        report = livefeed_mlb.poll(
+            game_date=None, live_dir=self.live_dir,
+            fetch_schedule=fetch_schedule, fetch_linescore=fetch_linescore,
+            clock=clock, timeout=20,
+        )
+
+        self.assertEqual(report["rows_written"], 1)
+        self.assertEqual(len(report["errors"]), 0)
+        rows = livefeed_mlb.read_states("2025-06-15", live_dir=self.live_dir)
+        self.assertEqual(rows[0]["inning"], 5)
+        self.assertEqual(rows[0]["home_runs"], 3)
+
+    def test_poll_falls_back_to_fetch_linescore_when_schedule_incomplete(self):
+        """The schedule's linescore may be present but missing a container
+        key (e.g. no "defense" yet, very early in a game) -- poll() must
+        fall back to fetch_linescore rather than write a row with the rules'
+        fields silently missing."""
+        clock = lambda: datetime(2025, 6, 15, 12, 0, 0, tzinfo=timezone.utc)
+
+        game = _make_game(
+            game_pk=123456, abstract_state="Live", detailed_state="In Play",
+        )
+        game["linescore"] = {"currentInning": 1}  # missing most required keys
+
+        fallback_linescore = _make_linescore(
+            current_inning=1, inning_half="Top", inning_state="Top", outs=0,
+            home_runs=0, away_runs=0,
+        )
+
+        def fetch_schedule(date, timeout=None):
+            return [game]
+
+        calls = []
+
+        def fetch_linescore(game_pk, timeout=None):
+            calls.append(game_pk)
+            return fallback_linescore
+
+        report = livefeed_mlb.poll(
+            game_date=None, live_dir=self.live_dir,
+            fetch_schedule=fetch_schedule, fetch_linescore=fetch_linescore,
+            clock=clock, timeout=20,
+        )
+
+        self.assertEqual(calls, [123456])
+        self.assertEqual(report["rows_written"], 1)
+        rows = livefeed_mlb.read_states("2025-06-15", live_dir=self.live_dir)
+        self.assertEqual(rows[0]["inning"], 1)
+
     def test_state_id_is_16_hex_chars(self):
         """state_id is exactly 16 hex characters."""
         clock = lambda: datetime(2025, 6, 15, 12, 0, 0, tzinfo=timezone.utc)

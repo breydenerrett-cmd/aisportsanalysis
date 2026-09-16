@@ -280,6 +280,12 @@ def capture_inplay(sport, *, state_snapshot_id, reason, env=None,
                 "book": quote.get("book"),
                 "home_price": quote.get("home_price"),
                 "away_price": quote.get("away_price"),
+                # D9: persist the book's OWN last_update alongside the quote
+                # -- fetch_normalized already surfaces it
+                # (src/providers/odds.py:862,879); dropping it here is what
+                # made every stored in-play price unable to prove it
+                # post-dated its trigger (docs/LIVE_BETTING_SYSTEM.md D9).
+                "last_update": quote.get("last_update"),
                 "in_play": True,
                 "state_snapshot_id": state_snapshot_id,
                 "trigger": reason,
@@ -389,6 +395,11 @@ def latest_inplay_quote(rows, event_id) -> Optional[dict]:
             "book": row.get("book"),
             "home_price": row.get("home_price"),
             "away_price": row.get("away_price"),
+            # D9: carried through so a caller (fresh_quotes/
+            # live_rules.fresh_median_price) can tell whether this book's
+            # price post-dates the trigger, rather than only when it was
+            # fetched.
+            "last_update": row.get("last_update"),
         }
         quotes.append(quote)
 
@@ -396,3 +407,109 @@ def latest_inplay_quote(rows, event_id) -> Optional[dict]:
         "observed_utc": newest_utc,
         "quotes": quotes
     }
+
+
+# ---------------------------------------------------------------------------
+# R16-L5: rule-gated capture scheduling (retries + follow-up)
+# ---------------------------------------------------------------------------
+#
+# Replaces the "any change" design above (`should_capture`/`changed_games`
+# still exist for any other caller, but the live window no longer uses them
+# to decide whether to spend a credit -- see live_window.tick). A capture is
+# now driven entirely by a registered rule's TRIGGER (live_rules.
+# check_all_triggers), tracked per (game_id, rule_id) from the poll that
+# first saw it fire (T0) through its retry/follow-up schedule.
+
+# Seconds after T0 at which an unpriced trigger is retried (3.1: "at most
+# two retries for freshness"). The first entry (0) is the initial capture
+# attempt, taken on the very poll the trigger fires.
+RETRY_OFFSETS_S = (0, 45, 90)
+
+# Seconds after T0 at which ONE descriptive follow-up capture is taken,
+# regardless of whether the trigger ever priced (3.1: "price-reaction data,
+# never a gate").
+FOLLOWUP_OFFSET_S = 300
+
+# Reason string a follow-up capture is tagged with; live_window uses this to
+# tell a descriptive (never-graded) capture apart from a gating retry.
+FOLLOWUP_REASON = "followup_5m"
+
+
+def new_trigger_record(t0_utc: str, trigger_info: dict) -> dict:
+    """The tracking record `live_window.tick` stores per (game_id, rule_id)
+    the FIRST time a trigger fires -- never re-created for the same key
+    (3.1: "one trigger per rule per game"). `t0_utc` is the `observed_utc`
+    of the state row that satisfied the condition."""
+    return {
+        "t0_utc": t0_utc,
+        "next_retry_idx": 0,
+        "priced": False,
+        "followup_done": False,
+        "trigger_info": dict(trigger_info),
+    }
+
+
+def due_capture(trigger_record: dict, now) -> Optional[str]:
+    """The capture action due for one tracked trigger at `now` (a
+    timezone-aware datetime), or None if nothing is due yet.
+
+    Returns "retry_<offset>" (e.g. "retry_0", "retry_45", "retry_90") for a
+    gating attempt not yet exhausted or already priced, or
+    `FOLLOWUP_REASON` for the one descriptive capture at T0 + 5 minutes.
+    Never returns two reasons for the same poll -- a retry is checked first,
+    but the follow-up only fires once the retry ladder no longer applies
+    (already priced, or exhausted) OR independently once its own offset is
+    reached, whichever this poll finds due; both can't fire in the SAME
+    call because a caller acts on one reason, then re-evaluates next poll.
+    """
+    t0 = _parse_dt(trigger_record.get("t0_utc"))
+    if t0 is None:
+        return None
+    elapsed_s = (now - t0).total_seconds()
+
+    if not trigger_record.get("priced"):
+        idx = trigger_record.get("next_retry_idx", 0)
+        if idx < len(RETRY_OFFSETS_S) and elapsed_s >= RETRY_OFFSETS_S[idx]:
+            return f"retry_{RETRY_OFFSETS_S[idx]}"
+
+    if not trigger_record.get("followup_done") and elapsed_s >= FOLLOWUP_OFFSET_S:
+        return FOLLOWUP_REASON
+
+    return None
+
+
+def fresh_quotes(quotes: Optional[list], *, t0_utc: str, captured_utc: str,
+                 max_age_s: float = 60) -> list:
+    """Books whose `last_update` is at or after T0 and whose age at capture
+    is `max_age_s` or less (3.1's fresh-price rule, retrieval-time reading).
+    Side-independent (a book is fresh or not regardless of which side is
+    being priced) -- `live_rules.fresh_median_price` does the per-side
+    median on top of this. Used to decide, before pricing, whether a
+    capture has enough fresh books (>= 3) to count as PRICED and stop the
+    retry ladder.
+    """
+    t0 = _parse_dt(t0_utc)
+    captured = _parse_dt(captured_utc)
+    if t0 is None or captured is None or not quotes:
+        return []
+    fresh = []
+    for quote in quotes:
+        last_update = _parse_dt(quote.get("last_update"))
+        if last_update is None or last_update < t0:
+            continue
+        age_s = (captured - last_update).total_seconds()
+        if age_s < 0 or age_s > max_age_s:
+            continue
+        fresh.append(quote)
+    return fresh
+
+
+def _parse_dt(value):
+    if not value or not isinstance(value, str):
+        return None
+    text = value[:-1] + "+00:00" if value.endswith("Z") else value
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)

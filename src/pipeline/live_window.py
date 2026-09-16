@@ -148,16 +148,36 @@ def pregame_context(sport, date=None, *, rows=None, games=None, event_map=None) 
 
 
 def tick(sport, *, state, clock=None, deps=None) -> dict:
-    """One iteration: poll state, capture odds on change, evaluate rules, record candidates.
+    """One iteration: poll state, check registered triggers, capture odds
+    ONLY on a registered trigger (never on any change -- R16-L5), evaluate
+    rules against fresh prices, record candidates.
+
+    Trigger tracking lives in `state["trigger_state"]`, keyed by
+    `(game_id, rule_id)`, across ticks for the life of the window (3.1: "one
+    trigger per rule per game" -- a key already present is never
+    re-registered). Each tracked trigger is retried at T0, T0+45s, T0+90s
+    (`live_odds.due_capture`) until it prices (>= 3 fresh books,
+    `live_rules.fresh_median_price`/`live_odds.fresh_quotes`) or the ladder
+    is exhausted, plus exactly one descriptive follow-up capture at T0+5
+    minutes that is NEVER recorded as a candidate (3.1: "never a gate").
+
+    Time-based triggers (the NFL halftime proxy) fire from this same check
+    on every poll for every live game, not only ones whose state changed
+    (fixes D5) -- `live_rules.check_all_triggers` has no notion of "changed"
+    at all, it just asks "does the condition hold right now".
 
     Args:
         sport: "mlb" or "nfl".
-        state: {"prev_states": dict, "prev_inplay": dict, "pregame": dict, "date": str}.
+        state: {"prev_states": dict, "pregame": dict, "date": str,
+                "trigger_state": dict (created here if absent)}.
         clock: Callable returning UTC datetime.
-        deps: Injected dependencies (poll, capture, evaluate, record functions).
+        deps: Injected dependencies (poll, capture, check_triggers,
+              evaluate_all, record, registry_status, env).
 
     Returns:
         {"polled": int, "changed": int, "captured": int, "candidates_new": int, "errors": int}
+        "changed" counts newly-registered triggers this poll (not raw state
+        changes -- the "any change" design this replaced is gone).
     """
     clock = clock or (lambda: datetime.now(timezone.utc))
     deps = deps or {}
@@ -165,8 +185,10 @@ def tick(sport, *, state, clock=None, deps=None) -> dict:
     # Injected functions
     poll_fn = deps.get("poll")
     capture_fn = deps.get("capture", live_odds.capture_inplay)
-    evaluate_fn = deps.get("evaluate", live_rules.evaluate_all)
+    check_triggers_fn = deps.get("check_triggers", live_rules.check_all_triggers)
+    evaluate_all_fn = deps.get("evaluate", live_rules.evaluate_all)
     record_fn = deps.get("record", live_ledger.record_candidate)
+    registry_status = deps.get("registry_status")
 
     # Default poll function
     if poll_fn is None:
@@ -195,69 +217,206 @@ def tick(sport, *, state, clock=None, deps=None) -> dict:
     else:
         new_states = {}
 
-    # Detect changed games
-    changed = []
-    if new_states:
-        try:
-            for game_id, new_state in new_states.items():
-                prev_state = state.get("prev_states", {}).get(game_id)
-                should_cap, reason = live_odds.should_capture(prev_state, new_state)
-                if should_cap:
-                    changed.append((game_id, reason, new_state))
-        except Exception as exc:
-            LOG.exception("change detection failed: %s", exc)
+    now = clock()
+    pregame_context = state.get("pregame", {})
+    trigger_state = state.setdefault("trigger_state", {})
 
-    # Capture odds for changed games (one call covers all changed games)
-    captured = 0
-    if changed:
+    # 1. Check every registered trigger for every game THIS poll (D5: time-
+    #    based triggers included, unconditionally -- there is no "changed"
+    #    filter here at all). A key already tracked is never re-registered
+    #    (one trigger per rule per game, 3.1).
+    newly_registered = 0
+    for game_id, new_state_row in (new_states or {}).items():
+        pgame = pregame_context.get(game_id)
+        if pgame is None:
+            continue
         try:
-            # Create a state_snapshot_id from the current time
-            now_utc = clock().isoformat()
+            fired = check_triggers_fn(pregame=pgame, state=new_state_row,
+                                      registry_status=registry_status)
+        except Exception as exc:
+            LOG.exception("trigger check failed for %s: %s", game_id, exc)
+            continue
+        for rule_id, trigger_info in fired.items():
+            key = (game_id, rule_id)
+            if key in trigger_state:
+                continue
+            t0_utc = new_state_row.get("observed_utc") or now.isoformat()
+            record = live_odds.new_trigger_record(t0_utc, trigger_info)
+            record["game_id"] = game_id
+            record["rule_id"] = rule_id
+            record["pregame"] = pgame
+            record["state_at_trigger"] = new_state_row
+            trigger_state[key] = record
+            newly_registered += 1
+
+    # 2. Decide which tracked triggers are due for a capture attempt now.
+    due = [(key, live_odds.due_capture(record, now))
+           for key, record in trigger_state.items()]
+    due = [(key, reason) for key, reason in due if reason]
+
+    captured = 0
+    candidates_new = 0
+    if due:
+        try:
+            now_utc = now.isoformat()
             state_snapshot_id = hashlib.sha1(
                 f"{sport}|{now_utc}".encode()).hexdigest()[:16]
 
-            # Call capture_inplay once per tick with all changes
+            # One capture call covers every due trigger in this sport (a
+            # featured /odds call returns every live game at no extra cost,
+            # 3.1), so it is billed and fetched exactly once per poll no
+            # matter how many triggers are due.
             capture_result = capture_fn(
                 sport, state_snapshot_id=state_snapshot_id,
-                reason="; ".join(r[1] for r in changed),
+                reason="; ".join(f"{gid}:{rid}:{reason}"
+                                 for (gid, rid), reason in due),
                 env=deps.get("env"))
             captured = capture_result.get("captured", 0)
         except Exception as exc:
             LOG.exception("capture_inplay failed: %s", exc)
 
-    # Read in-play quotes and evaluate rules
-    candidates_new = 0
-    try:
-        inplay_rows = live_odds.read_inplay(sport=sport)
-        pregame_context = state.get("pregame", {})
+        try:
+            inplay_rows = live_odds.read_inplay(sport=sport)
+        except Exception:
+            inplay_rows = []
 
-        for game_id, reason, new_state in changed:
-            if game_id not in pregame_context:
+        for key, reason in due:
+            record = trigger_state[key]
+            game_id, rule_id = key
+            pgame = record["pregame"]
+            quote = live_odds.latest_inplay_quote(inplay_rows, pgame.get("event_id"))
+            current_state = new_states.get(game_id, record["state_at_trigger"])
+
+            if reason == live_odds.FOLLOWUP_REASON:
+                # 3.1: "a follow-up capture five minutes after the trigger
+                # (descriptive price-reaction data, never a gate)". Taken
+                # once, never recorded as a candidate, never restarts the
+                # retry ladder.
+                record["followup_done"] = True
                 continue
 
-            pgame = pregame_context[game_id]
-            quote = live_odds.latest_inplay_quote(inplay_rows, pgame.get("event_id"))
+            # A gating retry: only counts toward PRICED (stops the ladder)
+            # when at least MIN_FRESH_BOOKS books are fresh as of THIS
+            # capture (3.1's fresh-price rule).
+            quotes = (quote or {}).get("quotes")
+            captured_utc = (quote or {}).get("observed_utc")
+            fresh = (live_odds.fresh_quotes(
+                quotes, t0_utc=record["t0_utc"], captured_utc=captured_utc)
+                if quotes and captured_utc else [])
 
-            # Evaluate rules
-            candidates = evaluate_fn(pregame=pgame, state=new_state, quote=quote)
+            record["next_retry_idx"] = record.get("next_retry_idx", 0) + 1
+
+            if len(fresh) < live_rules.MIN_FRESH_BOOKS:
+                continue  # UNPRICED this attempt; the ladder will retry
+
+            try:
+                candidates = evaluate_all_fn(
+                    pregame=pgame, state=current_state,
+                    quote={"observed_utc": captured_utc, "quotes": fresh},
+                    registry_status=registry_status)
+            except Exception:
+                LOG.exception("rule evaluation failed for %s", key)
+                candidates = []
+
             for candidate in candidates:
+                if candidate.get("rule_id") != rule_id:
+                    continue
                 try:
                     result = record_fn(candidate)
                     if result is not None:
                         candidates_new += 1
+                        record["priced"] = True
                 except Exception as exc:
                     LOG.exception("record_candidate failed: %s", exc)
 
-    except Exception as exc:
-        LOG.exception("rule evaluation failed: %s", exc)
-
     return {
         "polled": polled,
-        "changed": len(changed),
+        "changed": newly_registered,
         "captured": captured,
         "candidates_new": candidates_new,
         "errors": 0,
     }
+
+
+def _parse_iso(value):
+    if not value or not isinstance(value, str):
+        return None
+    text = value[:-1] + "+00:00" if value.endswith("Z") else value
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+
+
+DEFAULT_WINDOW_GAP_TOLERANCE = 1.5
+
+
+def compute_window_gaps(previous_last_by_game: dict, current_first_by_game: dict,
+                        *, poll_interval_s: float,
+                        tolerance: float = DEFAULT_WINDOW_GAP_TOLERANCE) -> list:
+    """R16-L5 (3.2, "Window handoffs"): a live minute no window covers must
+    be COUNTED, never silently skipped. For each game whose state was
+    tracked before this window started (`previous_last_by_game`, from the
+    ending window's last state row for it) and is tracked again now
+    (`current_first_by_game`, this window's first state row for it), a gap
+    longer than `tolerance` poll intervals is one WINDOW_GAP entry -- never
+    invented for a game with no prior row (new to the slate) or no real
+    gap.
+
+    Args:
+        previous_last_by_game: {game_id: observed_utc} for the LAST state
+            row seen for each game before this window started.
+        current_first_by_game: {game_id: observed_utc} for the FIRST state
+            row THIS window recorded for each game.
+        poll_interval_s: this sport's poll cadence (20 for MLB, 300 for NFL).
+
+    Returns:
+        A list of {"kind": "WINDOW_GAP", "game_id", "start_utc", "end_utc",
+        "gap_seconds", "reason"} dicts, oldest first.
+    """
+    gaps = []
+    for game_id, prev_utc in (previous_last_by_game or {}).items():
+        new_utc = (current_first_by_game or {}).get(game_id)
+        if not new_utc or not prev_utc:
+            continue
+        prev_dt = _parse_iso(prev_utc)
+        new_dt = _parse_iso(new_utc)
+        if prev_dt is None or new_dt is None:
+            continue
+        gap_s = (new_dt - prev_dt).total_seconds()
+        if gap_s > poll_interval_s * tolerance:
+            gaps.append({
+                "kind": "WINDOW_GAP",
+                "game_id": game_id,
+                "start_utc": prev_utc,
+                "end_utc": new_utc,
+                "gap_seconds": gap_s,
+                "reason": "no live window covered this span",
+            })
+    return gaps
+
+
+def record_window_gaps(sport, gaps: list, *, path=None) -> int:
+    """Append each gap in `gaps` to `data/live/<sport>/window_gaps.jsonl`
+    (or `path`), one JSON row per line. Returns the count written.
+
+    SEAM NOTE: these rows arguably belong in the hash-chained live ledger
+    next to candidate rows, for the same audit trail -- but
+    `src/appstate/live_ledger.py` is owned by a different agent this pass
+    (see the task's file-ownership split), so this writes its own small
+    append-only store instead of reaching into that module. If the ledger
+    agent wants WINDOW_GAP rows unified into the chain, that is the seam to
+    wire next, not a defect in this file.
+    """
+    if not gaps:
+        return 0
+    target = Path(path) if path is not None else Path(data_path("live", sport, "window_gaps.jsonl"))
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with target.open("a", encoding="utf-8") as handle:
+        for gap in gaps:
+            handle.write(json.dumps(gap, sort_keys=True) + "\n")
+    return len(gaps)
 
 
 def run(sport, *, max_minutes=330, clock=None, sleep=None, deps=None,
@@ -284,8 +443,11 @@ def run(sport, *, max_minutes=330, clock=None, sleep=None, deps=None,
     start_epoch = start_time.timestamp()
     last_commit_epoch = start_epoch
 
-    # Cadence
-    cadence_seconds = 60 if sport == "mlb" else 300
+    # Cadence. MLB polls every 20 seconds (R16-L5, docs/LIVE_BETTING_SYSTEM.md
+    # 3.2) -- the Stats API publishes no rate limit and the schedule call
+    # already hydrates the linescore (see livefeed_mlb.poll), so a 20-second
+    # poll stays well under the "1 a second" ceiling that section sets.
+    cadence_seconds = 20 if sport == "mlb" else 300
 
     # Get today's date
     if sport == "mlb":
@@ -297,6 +459,26 @@ def run(sport, *, max_minutes=330, clock=None, sleep=None, deps=None,
 
     # Load pregame context
     pregame = pregame_context(sport, date_str)
+
+    # R16-L5 (3.2 "Window handoffs"): snapshot the LAST state row this
+    # sport/date has on disk for every game BEFORE this window polls
+    # anything itself. If a prior window (or this one, restarted) left
+    # rows, and this window's own first poll picks the same games up later
+    # than one poll interval after that, the gap between them is a real,
+    # uncovered span of live minutes -- recorded once, right after the
+    # first tick, rather than silently absent from the record.
+    if sport == "mlb":
+        previous_last_states = livefeed_mlb.latest_states(date_str)
+    elif sport == "nfl":
+        previous_last_states = livefeed_nfl.latest_states(date_str)
+    else:
+        previous_last_states = {}
+    previous_last_by_game = {
+        game_id: row.get("observed_utc")
+        for game_id, row in (previous_last_states or {}).items()
+    }
+    window_gap_recorded = not previous_last_by_game  # nothing to compare
+    record_window_gaps_fn = deps.get("record_window_gaps", record_window_gaps)
 
     # Initialize state
     state = {
@@ -337,6 +519,29 @@ def run(sport, *, max_minutes=330, clock=None, sleep=None, deps=None,
             ticks += 1
             candidates_new += result.get("candidates_new", 0)
 
+            # Window-gap check: only once, right after the first tick that
+            # actually saw state (a WINDOW_GAP is about the span BEFORE this
+            # window started polling, not anything that happens later).
+            if not window_gap_recorded:
+                current_first_states = (
+                    livefeed_mlb.latest_states(date_str) if sport == "mlb"
+                    else livefeed_nfl.latest_states(date_str) if sport == "nfl"
+                    else {}
+                )
+                current_first_by_game = {
+                    game_id: row.get("observed_utc")
+                    for game_id, row in (current_first_states or {}).items()
+                }
+                if current_first_by_game:
+                    gaps = compute_window_gaps(
+                        previous_last_by_game, current_first_by_game,
+                        poll_interval_s=cadence_seconds)
+                    try:
+                        record_window_gaps_fn(sport, gaps)
+                    except Exception as exc:
+                        LOG.exception("record_window_gaps failed: %s", exc)
+                    window_gap_recorded = True
+
             # Commit if interval elapsed
             now_epoch = clock().timestamp()
             if commit and (now_epoch - last_commit_epoch) > commit_every_minutes * 60:
@@ -353,21 +558,13 @@ def run(sport, *, max_minutes=330, clock=None, sleep=None, deps=None,
                 game_starting_soon = False
                 try:
                     if sport == "mlb":
+                        # D8: use the same "live or starting soon" definition
+                        # as should_dispatch -- a past start alone is not
+                        # live, and only a future start counts toward the
+                        # 30-minute window.
                         from src.providers import mlb as mlb_provider
                         games = mlb_provider.fetch_games(date_str) or []
-                        for game in games:
-                            start = game.get("start_time_utc")
-                            if start:
-                                try:
-                                    start_dt = datetime.fromisoformat(
-                                        start.replace("Z", "+00:00"))
-                                    if start_dt.tzinfo is None:
-                                        start_dt = start_dt.replace(tzinfo=timezone.utc)
-                                    if (start_dt - now).total_seconds() < 30 * 60:
-                                        game_starting_soon = True
-                                        break
-                                except Exception:
-                                    pass
+                        game_starting_soon, _reason = _mlb_live_or_soon(games, now)
                     elif sport == "nfl":
                         if not livefeed_nfl.in_window(now):
                             return {
@@ -494,6 +691,46 @@ def _gh_run_list(workflow) -> str:
     return result.stdout
 
 
+def _mlb_live_or_soon(games, now) -> tuple[bool, str]:
+    """D8 fix: whether any MLB game is live right now, or starts within 30 min.
+
+    `games` are `mlb.parse_game()`-shaped records (what `mlb.fetch_games()`
+    returns), each carrying `state` -- `mlb.game_state()`'s own coarse
+    classification, which (per its docstring and `is_final`/`is_cancelled`)
+    returns ONLY "final", "cancelled" or "pending"; there is no "live" value.
+    So "live" here is derived, not read off a field: a game's start time is
+    in the past AND its state is neither "final" nor "cancelled" (i.e.
+    "pending" while already underway -- the API leaves a game "pending"
+    through the whole in-progress span, only flipping to "final" at the
+    end). A past start with state "final"/"cancelled" is correctly NOT live.
+    Only a FUTURE start counts toward the 30-minute window: the old code
+    treated any past start time as "starts within 30 minutes", which kept
+    windows dispatching and running long after every game had ended
+    (docs/LIVE_BETTING_SYSTEM.md D8).
+    """
+    for game in games or []:
+        start = game.get("start_time_utc")
+        state = game.get("state")
+        start_dt = None
+        if start:
+            try:
+                start_dt = datetime.fromisoformat(str(start).replace("Z", "+00:00"))
+                if start_dt.tzinfo is None:
+                    start_dt = start_dt.replace(tzinfo=timezone.utc)
+            except (ValueError, TypeError):
+                start_dt = None
+
+        if start_dt is not None and start_dt <= now:
+            if state not in ("final", "cancelled"):
+                return (True, "MLB game is live")
+            continue
+
+        if start_dt is not None and (start_dt - now).total_seconds() < 30 * 60:
+            return (True, "MLB game starts within 30 minutes")
+
+    return (False, "no live games and nothing starts within 30 minutes")
+
+
 def should_dispatch(sport, *, now=None, schedule=None, running=None) -> tuple[bool, str]:
     """Check if this sport's live window should run right now.
 
@@ -544,13 +781,14 @@ def should_dispatch(sport, *, now=None, schedule=None, running=None) -> tuple[bo
         else:
             return (False, f"unknown sport {sport!r}")
 
+        if sport == "mlb":
+            # D8: live means start time in the past AND game_state() is
+            # neither "final" nor "cancelled"; only a future start counts as
+            # "within 30 minutes". See _mlb_live_or_soon.
+            return _mlb_live_or_soon(games, now)
+
         for game in games:
-            # Check if game is live
-            if sport == "mlb":
-                status = (game.get("status") or {}).get("abstractGameState")
-                if status in ("Live", "Final"):
-                    return (True, f"MLB game is {status}")
-            elif sport == "nfl":
+            if sport == "nfl":
                 # For NFL, check start_utc
                 start = game.get("start_utc")
                 if start:
@@ -566,10 +804,7 @@ def should_dispatch(sport, *, now=None, schedule=None, running=None) -> tuple[bo
                         pass
 
             # Check if game starts within 30 minutes
-            if sport == "mlb":
-                start = game.get("start_time_utc")
-            else:
-                start = game.get("start_utc")
+            start = game.get("start_utc")
 
             if start:
                 try:

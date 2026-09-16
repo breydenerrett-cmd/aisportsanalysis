@@ -4,7 +4,7 @@ import json
 import tempfile
 import unittest
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from src.pipeline import live_odds
@@ -536,6 +536,147 @@ class TestLatestInplayQuote(unittest.TestCase):
         result = live_odds.latest_inplay_quote(rows, "e1")
         self.assertIsNotNone(result)
         self.assertEqual(result["observed_utc"], "2026-09-14T10:02:00Z")
+
+    def test_latest_quote_carries_last_update(self):
+        """D9: last_update must survive the round trip through
+        latest_inplay_quote, not just capture_inplay's write."""
+        rows = [
+            {"event_id": "e1", "observed_utc": "2026-09-14T10:00:00Z",
+             "book": "draftkings", "home_price": -110, "away_price": 100,
+             "last_update": "2026-09-14T09:59:50Z"},
+        ]
+        result = live_odds.latest_inplay_quote(rows, "e1")
+        self.assertEqual(result["quotes"][0]["last_update"], "2026-09-14T09:59:50Z")
+
+
+class TestCaptureInplayPersistsLastUpdate(unittest.TestCase):
+    """D9: capture_inplay must not drop each book's own last_update."""
+
+    def test_written_rows_carry_last_update(self):
+        def fake_fetch(markets, env=None, sport=None):
+            return {
+                "fetched_utc": "2026-09-14T20:00:00Z",
+                "usage": {"last": 1, "remaining": 100},
+                "events": [{
+                    "event_id": "e1",
+                    "commence_time": "2026-09-14T19:00:00Z",
+                    "home_team": "Yankees", "away_team": "Red Sox",
+                    "all_books": {"h2h": [
+                        {"book": "draftkings", "home_price": -110, "away_price": 100,
+                         "last_update": "2026-09-14T19:59:50Z"},
+                    ]},
+                }],
+            }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "odds_inplay.jsonl"
+            credit_store = Path(tmp) / "credit_log_live.jsonl"
+
+            result = live_odds.capture_inplay(
+                "mlb", state_snapshot_id="s1", reason="retry_0",
+                fetch_normalized=fake_fetch,
+                spend_guard=Decision(True, "ok"),
+                path=path, credit_store=credit_store,
+                clock=lambda tz: datetime(2026, 9, 14, 20, 0, 0, tzinfo=tz),
+            )
+
+            self.assertEqual(result["captured"], 1)
+            rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+            self.assertEqual(rows[0]["last_update"], "2026-09-14T19:59:50Z")
+
+
+class TestDueCapture(unittest.TestCase):
+    """R16-L5: the retry/follow-up capture schedule for a tracked trigger."""
+
+    def _now(self, **kwargs):
+        return datetime(2026, 9, 14, 20, 0, 0, tzinfo=timezone.utc) + timedelta(**kwargs)
+
+    def test_due_immediately_at_t0(self):
+        record = live_odds.new_trigger_record(
+            "2026-09-14T20:00:00Z", {"margin": -1})
+        reason = live_odds.due_capture(record, self._now())
+        self.assertEqual(reason, "retry_0")
+
+    def test_not_due_before_45s_retry(self):
+        record = live_odds.new_trigger_record("2026-09-14T20:00:00Z", {})
+        record["next_retry_idx"] = 1  # the T0 attempt already happened
+        reason = live_odds.due_capture(record, self._now(seconds=30))
+        self.assertIsNone(reason)
+
+    def test_due_at_45s_retry(self):
+        record = live_odds.new_trigger_record("2026-09-14T20:00:00Z", {})
+        record["next_retry_idx"] = 1
+        reason = live_odds.due_capture(record, self._now(seconds=45))
+        self.assertEqual(reason, "retry_45")
+
+    def test_due_at_90s_retry(self):
+        record = live_odds.new_trigger_record("2026-09-14T20:00:00Z", {})
+        record["next_retry_idx"] = 2
+        reason = live_odds.due_capture(record, self._now(seconds=90))
+        self.assertEqual(reason, "retry_90")
+
+    def test_no_more_retries_after_90s_exhausted(self):
+        record = live_odds.new_trigger_record("2026-09-14T20:00:00Z", {})
+        record["next_retry_idx"] = 3  # all three offsets attempted
+        reason = live_odds.due_capture(record, self._now(seconds=200))
+        self.assertIsNone(reason)  # follow-up (300s) not due yet either
+
+    def test_priced_trigger_stops_retries_but_not_followup(self):
+        record = live_odds.new_trigger_record("2026-09-14T20:00:00Z", {})
+        record["priced"] = True
+        record["next_retry_idx"] = 1
+        # Before follow-up window: nothing due.
+        self.assertIsNone(live_odds.due_capture(record, self._now(seconds=45)))
+        # At follow-up window: the descriptive follow-up is still due.
+        self.assertEqual(
+            live_odds.due_capture(record, self._now(seconds=300)),
+            live_odds.FOLLOWUP_REASON)
+
+    def test_followup_due_once_at_5_minutes(self):
+        record = live_odds.new_trigger_record("2026-09-14T20:00:00Z", {})
+        record["priced"] = True
+        record["next_retry_idx"] = 3
+        reason = live_odds.due_capture(record, self._now(minutes=5))
+        self.assertEqual(reason, live_odds.FOLLOWUP_REASON)
+
+    def test_followup_not_due_again_once_marked_done(self):
+        record = live_odds.new_trigger_record("2026-09-14T20:00:00Z", {})
+        record["priced"] = True
+        record["next_retry_idx"] = 3
+        record["followup_done"] = True
+        reason = live_odds.due_capture(record, self._now(minutes=10))
+        self.assertIsNone(reason)
+
+    def test_nothing_due_before_t0(self):
+        """`now` before T0 (a clock or ordering oddity) must never be
+        treated as "due" -- elapsed must be non-negative."""
+        record = live_odds.new_trigger_record("2026-09-14T20:00:00Z", {})
+        reason = live_odds.due_capture(record, self._now(seconds=-5))
+        self.assertIsNone(reason)
+
+
+class TestFreshQuotes(unittest.TestCase):
+    """Side-independent freshness filter (used to gate PRICED before
+    live_rules.fresh_median_price computes a per-side price)."""
+
+    def test_filters_stale_and_keeps_fresh(self):
+        quotes = [
+            {"book": "DK", "last_update": "2026-09-14T19:59:00Z"},  # before T0
+            {"book": "FD", "last_update": "2026-09-14T20:00:10Z"},
+            {"book": "BR", "last_update": "2026-09-14T20:00:15Z"},
+        ]
+        fresh = live_odds.fresh_quotes(
+            quotes, t0_utc="2026-09-14T20:00:00Z",
+            captured_utc="2026-09-14T20:00:20Z")
+        self.assertEqual({q["book"] for q in fresh}, {"FD", "BR"})
+
+    def test_empty_or_none_quotes(self):
+        self.assertEqual(live_odds.fresh_quotes(
+            None, t0_utc="2026-09-14T20:00:00Z",
+            captured_utc="2026-09-14T20:00:20Z"), [])
+        self.assertEqual(live_odds.fresh_quotes(
+            [], t0_utc="2026-09-14T20:00:00Z",
+            captured_utc="2026-09-14T20:00:20Z"), [])
 
 
 if __name__ == "__main__":
