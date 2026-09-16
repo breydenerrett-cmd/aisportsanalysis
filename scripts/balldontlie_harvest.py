@@ -48,12 +48,37 @@ instead of guessing an unlisted endpoint or parameter value:
    `/nfl/v1/standings` for team win/loss). "team season stats" for NFL is
    therefore not a real endpoint here; standings is what's harvested for
    team-level season data.
-4. `.../odds` (not `/opening`) on MLB/NBA/NHL takes `dates[]`/`game_ids[]`
-   filters, not a `season` filter, and the spec does not say whether an
-   unfiltered call returns everything or 422s asking for a filter. This
-   script tries the unfiltered call as ONE job; if the vendor requires a
-   filter, that comes back as a 4xx, which is recorded in the manifest and
-   skipped like any other HTTP error -- see `_run_paged_job`.
+4. UPDATE 2026-09-15 (DEFECT 2): `.../odds` and `.../odds/opening` on
+   MLB/NBA/NHL are NOT filterable by season -- their specs confirm only
+   `dates`/`game_ids` (NBA's `/v2/odds` alone spells the former `dates[]`,
+   via its own spec's shared `DatesParam` component; every other date filter
+   in this file, `.../odds/opening` included, is unbracketed `dates` --
+   confirmed by direct inspection of each spec, not assumed uniform). The
+   original single unfiltered job per endpoint 400'd for all of them (see
+   MANIFEST.json) exactly as the spec's "Either dates or game_ids is
+   required" note for MLB/NBA/NHL implies. Odds are now swept one job per
+   (season, date) instead -- see `_odds_sweep_jobs`, which prefers real game
+   dates already sitting in that sport's harvested games file and falls
+   back to a generated calendar window only when that file does not exist
+   yet. Tennis's `.../odds/opening` DOES accept a plain `season` filter (its
+   spec confirms it), so it sweeps by season instead of date. All four
+   sports' `.../odds/opening` specs state coverage is "limited to the most
+   recently completed season and ongoing seasons where available" --
+   OPENING_ODDS_SEASON_RANGE (this season + last) is sized to that, not to
+   WIDE_SEASON_RANGE. NFL's odds jobs (filtered by season+week, unaffected
+   by this) were already correct and are unchanged.
+5. UPDATE 2026-09-15 (DEFECT 1): NHL's `/nhl/v1/games` was suspected of using
+   the wrong key for its season filter (MLB/NBA/NFL all spell theirs
+   `seasons[]`). Its OpenAPI spec was re-read directly (raw YAML, not a
+   paraphrase) and confirms the parameter really is named `seasons` (array,
+   no brackets) -- exactly what this script already sent. The recorded
+   http_status:400 for that job is therefore NOT explained by the parameter
+   name/shape per the spec, and the key was deliberately left unchanged
+   (see `_nhl_jobs`) rather than guessed against clear spec text. What DID
+   change: a recorded 400 no longer permanently blocks a job from retrying
+   (see `run_plan`'s `permanent` check) -- 400 is a request-shape problem,
+   not an entitlement one like 401/403/404, so it should get another try
+   rather than being skipped forever by manifest file-path alone.
 
 RESUMABILITY
 ------------
@@ -132,6 +157,14 @@ NFL_WEEK_RANGE = range(1, 23)  # 18 regular-season weeks + up to 4 postseason
 # See module docstring point 1: no stated historical floor for MLB/NBA/NHL.
 WIDE_SEASON_RANGE = range(2000, _CEILING_YEAR + 1)
 RECENT_SEASON_RANGE = range(_CEILING_YEAR - 4, _CEILING_YEAR + 1)  # "last five seasons"
+# `.../odds/opening` on every sport that has it (MLB/NBA/NHL/ATP/WTA) carries
+# the identical spec sentence: "Coverage is limited to the most recently
+# completed season and ongoing seasons where available." (confirmed on all
+# five specs, 2026-09-15) -- sweeping seasons further back than that would
+# just be zero-row requests. Two seasons (this one + last) covers "ongoing"
+# and "most recently completed" under either interpretation of where in the
+# season boundary "today" falls.
+OPENING_ODDS_SEASON_RANGE = range(_CEILING_YEAR - 1, _CEILING_YEAR + 1)
 
 
 # ---------------------------------------------------------------------------
@@ -174,12 +207,23 @@ class Job:
     est_requests: int       # a HEURISTIC guess, for --dry-run only -- never measured
     run: Callable[[RunContext, "Job"], JobResult]
     params: dict = field(default_factory=dict)
+    # Priority-sort-only season, decoupled from `params` (the actual wire
+    # request). The odds sweep jobs below (see _dates_for_odds_sweep) filter
+    # by date/game_ids, not season -- the vendor spec does not accept a
+    # `season` filter on those endpoints, and inventing one would violate
+    # this module's "never send an unconfirmed parameter" rule. This field
+    # lets _job_season/_job_priority still place a per-date odds job in the
+    # right newest-season-first slot without smuggling an extra key onto the
+    # wire. None (the default) means "read the season out of params instead"
+    # -- unchanged behaviour for every job that predates this field.
+    priority_season: Optional[int] = None
 
 
-def _paged_job(sport, endpoint, path, params, out_name, description, est_requests) -> Job:
+def _paged_job(sport, endpoint, path, params, out_name, description, est_requests,
+                priority_season=None) -> Job:
     return Job(sport=sport, endpoint=endpoint, path=path, description=description,
                out_name=out_name, est_requests=est_requests, run=_run_paged_job,
-               params=dict(params))
+               params=dict(params), priority_season=priority_season)
 
 
 def _single_job(sport, endpoint, path, params, out_name, description, est_requests) -> Job:
@@ -195,10 +239,135 @@ def _ranking_probe_job(sport, endpoint, tour, out_name, description, est_request
 
 
 # ---------------------------------------------------------------------------
-# PLAN builders -- pure, no network, so --dry-run costs nothing
+# Odds sweep support (DEFECT 2, 2026-09-15): MLB/NBA/NHL `.../odds` and
+# `.../odds/opening` do not accept a `season` filter -- every spec confirms
+# only `dates`/`game_ids` (see the per-endpoint key map below). An unfiltered
+# call 400s (see the module docstring's former point 4). Rebuilding those as
+# one job per date needs to know WHICH dates actually have games; the
+# cheapest source of that is the games file this same plan already harvests
+# for that sport+season (data/historical/balldontlie/<sport>/<sport>_games_
+# <season>.jsonl.gz) -- read real dates from it when it exists, and only
+# fall back to a generated calendar range when it does not (a fresh
+# checkout, or this season's games job hasn't run yet in THIS plan build --
+# build_plan() runs once, up front, so a games job completing later in the
+# SAME run cannot feed this pass; the next run's plan rebuild will see it).
 # ---------------------------------------------------------------------------
 
-def _tennis_jobs() -> list:
+# Field name the vendor uses for a game's calendar date, per sport -- MLB and
+# NBA schemas both call it `date`; NHL's schema calls it `game_date` (all
+# three confirmed against MLBGame/NBAGame/NHLGame in their OpenAPI specs,
+# 2026-09-15). Checked in this order so either key is tolerated.
+_GAME_DATE_FIELDS = ("date", "game_date")
+
+# Generous, well-known regular-season-plus-playoffs windows, used ONLY when
+# no local games file exists yet to read real dates from (see
+# _dates_for_odds_sweep). Deliberately not spec-derived (the specs give no
+# season calendar) -- this is common public knowledge about when each league
+# plays, not an API behavior guess, and it is only ever a stand-in until the
+# real games file supersedes it on a later plan rebuild. Expressed as
+# (start_month, start_day, start_year_offset, end_month, end_day,
+# end_year_offset) relative to the `season` integer -- NBA/NHL seasons span
+# a calendar-year boundary (e.g. season 2024 runs Oct 2024 -> Jun 2025),
+# MLB's does not.
+_FALLBACK_SEASON_WINDOW = {
+    "mlb": (3, 1, 0, 11, 30, 0),
+    "nba": (10, 1, 0, 6, 30, 1),
+    "nhl": (10, 1, 0, 6, 30, 1),
+}
+
+# Literal query key each sport's odds endpoints use for a date filter --
+# confirmed against each sport's OpenAPI spec (2026-09-15), NOT assumed
+# uniform: MLB/NHL and NBA's own `.../odds/opening` all spell it inline as
+# `dates` (no brackets), but NBA's `.../odds` pulls in the shared
+# `#/components/parameters/DatesParam`, which nba.yml itself defines as
+# `dates[]` (with brackets) -- a genuine inconsistency within the NBA spec
+# itself, not a typo introduced here. `game_ids` is unbracketed everywhere
+# it appears, so no map is needed for it.
+_ODDS_DATE_PARAM_KEY = {
+    ("mlb", "odds"): "dates", ("mlb", "odds_opening"): "dates",
+    ("nba", "odds"): "dates[]", ("nba", "odds_opening"): "dates",
+    ("nhl", "odds"): "dates", ("nhl", "odds_opening"): "dates",
+}
+
+
+def _game_dates_from_file(out_dir: Path, sport: str, season: int) -> list:
+    """Distinct, sorted `YYYY-MM-DD` dates found in the local
+    `<sport>_games_<season>.jsonl.gz` file this plan already harvests, or []
+    if that file does not exist (yet, or at all) on this checkout."""
+    path = _out_path(out_dir, sport, f"{sport}_games_{season}")
+    if not path.exists():
+        return []
+    dates = set()
+    try:
+        with gzip.open(path, "rt", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(row, dict):
+                    continue
+                for field_name in _GAME_DATE_FIELDS:
+                    value = row.get(field_name)
+                    if value:
+                        dates.add(str(value)[:10])  # tolerate a date-time value
+                        break
+    except OSError:
+        return []
+    return sorted(dates)
+
+
+def _fallback_date_range(sport: str, season: int) -> list:
+    """Generated `YYYY-MM-DD` dates spanning this sport's well-known season
+    window (see _FALLBACK_SEASON_WINDOW) -- used only when no games file
+    exists yet for (sport, season)."""
+    sm, sd, so, em, ed, eo = _FALLBACK_SEASON_WINDOW[sport]
+    start = date(season + so, sm, sd)
+    end = date(season + eo, em, ed)
+    out = []
+    d = start
+    while d <= end:
+        out.append(d.isoformat())
+        d += timedelta(days=1)
+    return out
+
+
+def _dates_for_odds_sweep(out_dir: Path, sport: str, season: int) -> list:
+    """Dates to sweep an odds/odds-opening job over for (sport, season):
+    real game dates when the games file is already on disk, else the
+    generated fallback window."""
+    dates = _game_dates_from_file(out_dir, sport, season)
+    return dates if dates else _fallback_date_range(sport, season)
+
+
+def _odds_sweep_jobs(sport: str, endpoint: str, path: str, out_dir: Path,
+                      seasons, description_label: str, est_requests: int) -> list:
+    """One paged job per (season, date) for a sport/endpoint whose spec
+    confirms only a date/game_ids filter -- see the module-level comment
+    above _GAME_DATE_FIELDS for why dates (not game_ids) were chosen, and
+    _ODDS_DATE_PARAM_KEY for the exact per-sport/endpoint query key."""
+    date_key = _ODDS_DATE_PARAM_KEY[(sport, endpoint)]
+    jobs = []
+    for season in seasons:
+        for d in _dates_for_odds_sweep(out_dir, sport, season):
+            jobs.append(_paged_job(
+                sport, endpoint, path, {date_key: [d]},
+                f"{sport}_{endpoint}_{season}_{d}",
+                f"{description_label}, {d} (season {season})", est_requests,
+                priority_season=season))
+    return jobs
+
+
+# ---------------------------------------------------------------------------
+# PLAN builders -- pure (no network; local disk reads only, to read back
+# already-harvested game dates for the odds sweep below), so --dry-run costs
+# nothing but a few file existence checks.
+# ---------------------------------------------------------------------------
+
+def _tennis_jobs(out_dir: Path) -> list:
     jobs = []
     for tour in TENNIS_TOURS:
         up = tour.upper()
@@ -216,16 +385,26 @@ def _tennis_jobs() -> list:
         jobs.append(_ranking_probe_job(
             "tennis", f"{tour}_rankings", tour, f"{tour}_rankings",
             f"{up} rankings, every Monday from the earliest date with data to today", 800))
-        jobs.append(_paged_job(
-            "tennis", f"{tour}_odds_opening", f"/{tour}/v1/odds/opening", {},
-            f"{tour}_odds_opening", f"{up} opening odds (all, GOAT tier)", 20))
+        # DEFECT 2: /{tour}/v1/odds/opening's own spec says "Coverage is
+        # limited to the most recently completed season and ongoing seasons
+        # where available" -- an unfiltered call 400s (see MANIFEST.json),
+        # and there is no need to sweep further back than that stated
+        # coverage window. `season` is a confirmed, valid filter on this
+        # endpoint (same spec), so a per-season sweep -- not a date/match_id
+        # one -- is both spec-correct and the cheapest sufficient form.
+        for season in OPENING_ODDS_SEASON_RANGE:
+            jobs.append(_paged_job(
+                "tennis", f"{tour}_odds_opening", f"/{tour}/v1/odds/opening",
+                {"season": season}, f"{tour}_odds_opening_{season}",
+                f"{up} opening odds, season {season} (GOAT tier)", 5,
+                priority_season=season))
         jobs.append(_paged_job(
             "tennis", f"{tour}_match_stats", f"/{tour}/v1/match_stats", {},
             f"{tour}_match_stats", f"{up} match stats (all, GOAT tier)", 50))
     return jobs
 
 
-def _nfl_jobs() -> list:
+def _nfl_jobs(out_dir: Path) -> list:  # out_dir unused -- NFL odds already filters by season+week
     jobs = []
     for season in NFL_SEASON_RANGE:
         jobs.append(_paged_job(
@@ -259,7 +438,7 @@ def _nfl_jobs() -> list:
     return jobs
 
 
-def _mlb_jobs() -> list:
+def _mlb_jobs(out_dir: Path) -> list:
     jobs = []
     for season in WIDE_SEASON_RANGE:
         jobs.append(_paged_job(
@@ -269,13 +448,16 @@ def _mlb_jobs() -> list:
         jobs.append(_single_job(
             "mlb", "standings", "/mlb/v1/standings", {"season": season},
             f"mlb_standings_{season}", f"MLB standings, season {season}", 1))
-    jobs.append(_paged_job(
-        "mlb", "odds", "/mlb/v1/odds", {},
-        "mlb_odds", "MLB odds, unfiltered (vendor may require dates[]/game_ids[]; "
-        "a 4xx here is recorded and skipped, see module docstring point 4)", 20))
-    jobs.append(_paged_job(
-        "mlb", "odds_opening", "/mlb/v1/odds/opening", {},
-        "mlb_odds_opening", "MLB opening odds, unfiltered (GOAT tier; same caveat)", 20))
+    # DEFECT 2: /mlb/v1/odds and /odds/opening both confirm "Either dates or
+    # game_ids is required" -- the old unfiltered `mlb_odds`/`mlb_odds_opening`
+    # jobs always 400'd (see MANIFEST.json) and are superseded by these
+    # per-date sweeps; the plan no longer emits the unfiltered form at all.
+    jobs.extend(_odds_sweep_jobs(
+        "mlb", "odds", "/mlb/v1/odds", out_dir, RECENT_SEASON_RANGE,
+        "MLB odds", 2))
+    jobs.extend(_odds_sweep_jobs(
+        "mlb", "odds_opening", "/mlb/v1/odds/opening", out_dir,
+        OPENING_ODDS_SEASON_RANGE, "MLB opening odds (GOAT tier)", 2))
     for season in RECENT_SEASON_RANGE:
         jobs.append(_single_job(
             "mlb", "team_season_stats", "/mlb/v1/teams/season_stats", {"season": season},
@@ -292,7 +474,7 @@ def _mlb_jobs() -> list:
     return jobs
 
 
-def _nba_jobs() -> list:
+def _nba_jobs(out_dir: Path) -> list:
     jobs = []
     for season in WIDE_SEASON_RANGE:
         jobs.append(_paged_job(
@@ -302,12 +484,17 @@ def _nba_jobs() -> list:
         jobs.append(_single_job(
             "nba", "standings", "/nba/v1/standings", {"season": season},
             f"nba_standings_{season}", f"NBA standings, season {season}", 1))
-    jobs.append(_paged_job(
-        "nba", "odds", "/nba/v2/odds", {},
-        "nba_odds", "NBA odds, unfiltered (same filter caveat as MLB)", 20))
-    jobs.append(_paged_job(
-        "nba", "odds_opening", "/nba/v2/odds/opening", {},
-        "nba_odds_opening", "NBA opening odds, unfiltered (GOAT tier)", 20))
+    # DEFECT 2: /nba/v2/odds and /odds/opening both confirm "Either dates or
+    # game_ids is required" -- the old unfiltered `nba_odds`/`nba_odds_opening`
+    # jobs always 400'd (see MANIFEST.json) and are superseded by these
+    # per-date sweeps. NOTE the date filter's literal query key differs
+    # between the two NBA endpoints themselves (see _ODDS_DATE_PARAM_KEY).
+    jobs.extend(_odds_sweep_jobs(
+        "nba", "odds", "/nba/v2/odds", out_dir, RECENT_SEASON_RANGE,
+        "NBA odds", 2))
+    jobs.extend(_odds_sweep_jobs(
+        "nba", "odds_opening", "/nba/v2/odds/opening", out_dir,
+        OPENING_ODDS_SEASON_RANGE, "NBA opening odds (GOAT tier)", 2))
     for season in RECENT_SEASON_RANGE:
         jobs.append(_paged_job(
             "nba", "stats", "/nba/v1/stats", {"seasons[]": [season]},
@@ -318,8 +505,24 @@ def _nba_jobs() -> list:
     return jobs
 
 
-def _nhl_jobs() -> list:
+def _nhl_jobs(out_dir: Path) -> list:
     jobs = []
+    # DEFECT 1: /nhl/v1/games' own OpenAPI spec names this parameter
+    # `seasons` (array of integer, no brackets) -- confirmed 2026-09-15 by
+    # reading the raw nhl.yml text directly (not a paraphrase), and it is
+    # what this line already sends. This does NOT match the hypothesis that
+    # NHL needed MLB/NBA/NFL's bracketed `seasons[]` spelling: those three
+    # sports' specs explicitly write the name WITH brackets; NHL's spec
+    # explicitly writes it WITHOUT them (as does NHL's own `dates` param on
+    # this same endpoint, and MLB's `dates` on /mlb/v1/odds -- this vendor is
+    # simply inconsistent about brackets from one sport/endpoint to the
+    # next, confirmed by direct inspection, not assumed uniform). The
+    # http_status:400 recorded in MANIFEST.json for this job is therefore
+    # NOT explained by the parameter name/shape per the spec, and this code
+    # was left unchanged rather than guess a different key against clear
+    # spec text -- see run_plan's `permanent` check below, which no longer
+    # treats a recorded 400 as un-retriable, so a corrected or since-fixed
+    # request gets a real next attempt instead of being skipped forever.
     for season in WIDE_SEASON_RANGE:
         jobs.append(_paged_job(
             "nhl", "games", "/nhl/v1/games", {"seasons": [season]},
@@ -328,12 +531,16 @@ def _nhl_jobs() -> list:
         jobs.append(_single_job(
             "nhl", "standings", "/nhl/v1/standings", {"season": season},
             f"nhl_standings_{season}", f"NHL standings, season {season}", 1))
-    jobs.append(_paged_job(
-        "nhl", "odds", "/nhl/v1/odds", {},
-        "nhl_odds", "NHL odds, unfiltered (same filter caveat as MLB)", 20))
-    jobs.append(_paged_job(
-        "nhl", "odds_opening", "/nhl/v1/odds/opening", {},
-        "nhl_odds_opening", "NHL opening odds, unfiltered (GOAT tier)", 20))
+    # DEFECT 2: /nhl/v1/odds and /odds/opening both confirm "Either dates or
+    # game_ids is required" -- the old unfiltered `nhl_odds`/`nhl_odds_opening`
+    # jobs always 400'd (see MANIFEST.json) and are superseded by these
+    # per-date sweeps.
+    jobs.extend(_odds_sweep_jobs(
+        "nhl", "odds", "/nhl/v1/odds", out_dir, RECENT_SEASON_RANGE,
+        "NHL odds", 2))
+    jobs.extend(_odds_sweep_jobs(
+        "nhl", "odds_opening", "/nhl/v1/odds/opening", out_dir,
+        OPENING_ODDS_SEASON_RANGE, "NHL opening odds (GOAT tier)", 2))
     for season in RECENT_SEASON_RANGE:
         jobs.append(_paged_job(
             "nhl", "box_scores", "/nhl/v1/box_scores", {"season": season},
@@ -399,7 +606,12 @@ _SPORT_VALUE_ORDER = {sport: i for i, sport in enumerate(ALL_SPORTS)}
 def _job_season(job: "Job") -> Optional[int]:
     """The season a job's params carry, under whichever of the three key
     spellings this plan uses (season / seasons[] / seasons), or None for a
-    job with no season param at all (e.g. the unfiltered odds jobs)."""
+    job with no season param at all. Checked first: `job.priority_season`,
+    for jobs (the per-date odds sweep) whose actual wire params carry a
+    date/game_ids filter instead of a season -- see the Job field's
+    docstring."""
+    if job.priority_season is not None:
+        return job.priority_season
     params = job.params
     if "season" in params:
         return params["season"]
@@ -435,14 +647,18 @@ def _job_priority(job: "Job") -> tuple:
     return (1, rank, sport_rank, job.endpoint, -(season or 0), job.out_name)
 
 
-def build_plan(sports=ALL_SPORTS, only: Optional[str] = None) -> list:
-    """Build the priority-ordered job list. Pure -- no network, safe for
-    --dry-run. See the block comment above _TIER0_SEASON_FLOOR for the
-    ordering rules; --sports/--only filtering is unaffected by it."""
+def build_plan(sports=ALL_SPORTS, only: Optional[str] = None,
+                out_dir: Path = DEFAULT_OUT_DIR) -> list:
+    """Build the priority-ordered job list. No network, safe for --dry-run --
+    the odds sweep builders (see _odds_sweep_jobs) do read `out_dir` for
+    already-harvested game dates, but that is a handful of local file-
+    existence checks, never a request. See the block comment above
+    _TIER0_SEASON_FLOOR for the ordering rules; --sports/--only filtering is
+    unaffected by it."""
     jobs = []
     for sport in ALL_SPORTS:  # gather in a fixed order; _job_priority resorts
         if sport in sports:
-            jobs.extend(_SPORT_BUILDERS[sport]())
+            jobs.extend(_SPORT_BUILDERS[sport](out_dir))
     jobs.sort(key=_job_priority)
     if only:
         jobs = [j for j in jobs if j.endpoint == only]
@@ -802,13 +1018,22 @@ def run_plan(jobs: list, ctx: RunContext) -> dict:
         entry = ctx.manifest.get(rel)
         recorded_status = entry.get("http_status") if entry else None
         # A recorded status only skips the job if it is PERMANENT (4xx other
-        # than 429). 429 and 5xx are transient -- e.g. the 2026-09-15 incident
-        # poisoned MANIFEST.json with http_status:429 on every tennis season,
-        # and without this check those jobs would be skipped forever. This is
+        # than 429 or 400). 429 and 5xx are transient -- e.g. the 2026-09-15
+        # incident poisoned MANIFEST.json with http_status:429 on every
+        # tennis season, and without this check those jobs would be skipped
+        # forever. 400 (Bad Request) joined this list 2026-09-15 (DEFECT 1/2
+        # fix): unlike 401/403/404 (genuinely not entitled/not found, no
+        # request would ever succeed), a 400 means THIS request was malformed
+        # -- exactly what the old unfiltered NHL-games and MLB/NBA/NHL/tennis
+        # odds jobs recorded before this fix corrected their params/shape.
+        # Treating 400 as permanent would keep skipping the very jobs this
+        # fix exists to unblock, forever, since the skip check is keyed on
+        # the manifest FILE PATH, not on whether the params changed. This is
         # deliberately a property of the recorded status, not a one-time
-        # manifest edit, so a concurrently-running job rewriting the manifest
-        # can never un-fix it.
-        permanent = recorded_status is not None and recorded_status != 429 and not (500 <= recorded_status < 600)
+        # manifest edit, so a concurrently-running job rewriting the
+        # manifest can never un-fix it.
+        permanent = (recorded_status is not None and recorded_status != 429
+                     and recorded_status != 400 and not (500 <= recorded_status < 600))
         if entry and (entry.get("complete") or permanent):
             skipped += 1
             continue
@@ -954,7 +1179,11 @@ def main(argv=None) -> int:
               file=sys.stderr)
         return 2
 
-    jobs = build_plan(sports, only=args.only)
+    # Computed before build_plan (which reads it, read-only, to enumerate
+    # already-harvested game dates for the odds sweep -- see
+    # _odds_sweep_jobs) rather than after, as it used to be.
+    out_dir = Path(args.out_dir)
+    jobs = build_plan(sports, only=args.only, out_dir=out_dir)
 
     if args.dry_run:
         _print_plan(jobs)
@@ -970,7 +1199,6 @@ def main(argv=None) -> int:
         run_probe(client, sports)
         return 0
 
-    out_dir = Path(args.out_dir)
     manifest = load_manifest(out_dir)
     deadline = (time.monotonic() + args.max_minutes * 60) if args.max_minutes is not None else None
     ctx = RunContext(client=client, out_dir=out_dir, manifest=manifest, deadline=deadline)

@@ -393,6 +393,69 @@ class TestManifestSkipsOnlyPermanentStatus(unittest.TestCase):
         self.assertEqual(summary["completed"], 0)
         self.assertEqual(client.calls, [])
 
+    def test_400_recorded_status_does_not_skip_the_job(self):
+        # DEFECT 1/2 (2026-09-15): a 400 means THIS request was malformed --
+        # exactly what the old unfiltered odds jobs and (maybe) the NHL
+        # games job hit -- not "never entitled" like 401/403/404. Once the
+        # request is corrected, a recorded 400 must not keep skipping it
+        # forever just because the manifest key (file path) is unchanged.
+        job = harvest._paged_job(
+            "tennis", "atp_matches", "/atp/v1/matches", {"season": 2024},
+            "atp_matches_2024", "test job", 1)
+        client = ScriptedClient(page_script={
+            ("/atp/v1/matches", (("season", 2024),)): [[{"id": 1}]],
+        })
+        _rel, manifest = self._poisoned_manifest(400)
+        ctx = harvest.RunContext(client=client, out_dir=self.out_dir, manifest=manifest)
+
+        summary = harvest.run_plan([job], ctx)
+
+        self.assertEqual(summary["skipped"], 0)
+        self.assertEqual(summary["completed"], 1)
+        self.assertEqual(len(client.calls), 1)
+
+    def test_400_recorded_status_resumes_from_saved_cursor_not_from_scratch(self):
+        # The other half of "does not prevent a new OR RESUMED job from
+        # running": a partially-written job with both a saved cursor and a
+        # recorded 400 must resume from that cursor, not skip, and not
+        # restart from page 0.
+        job = harvest._paged_job(
+            "mlb", "games", "/mlb/v1/games", {"seasons[]": [2024]},
+            "mlb_games_2024", "test job", 1)
+        out_path = harvest._out_path(self.out_dir, "mlb", "mlb_games_2024")
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        # Sentinel id 999 stands in for "page 0's real historical row" --
+        # distinct from what the fake's page_script would return for page 0
+        # (id 1) below, so the assertion can tell "resumed, appended" apart
+        # from "restarted from scratch, overwrote": a broken resume would
+        # re-fetch page 0 and either lose 999 (if it overwrites) or produce
+        # {1, 2} instead of {999, 2}.
+        with gzip.open(out_path, "wb") as gz:
+            gz.write((json.dumps({"id": 999, "_harvested_utc": "2026-09-15T00:00:00Z"}) + "\n")
+                     .encode("utf-8"))
+        harvest._sidecar_path(out_path).write_text(json.dumps({"cursor": 1}), encoding="utf-8")
+
+        client = ScriptedClient(page_script={
+            ("/mlb/v1/games", (("seasons[]", (2024,)),)): [[{"id": 1}], [{"id": 2}]],
+        })
+        rel = "mlb/mlb_games_2024.jsonl.gz"
+        manifest = {rel: {
+            "file": rel, "sport": "mlb", "endpoint": "games",
+            "params": {"seasons[]": [2024]}, "harvested_utc": "2026-09-15T00:00:00Z",
+            "rows": 1, "sha256": None, "bytes": out_path.stat().st_size,
+            "complete": False, "http_status": 400,
+        }}
+        ctx = harvest.RunContext(client=client, out_dir=self.out_dir, manifest=manifest)
+
+        summary = harvest.run_plan([job], ctx)
+
+        self.assertEqual(summary["completed"], 1)
+        rows = _read_jsonl_gz(out_path)
+        # 999 (preserved from before) + 2 (page index 1, fetched via
+        # start_cursor=1) -- id 1 (page index 0) must NOT have been
+        # re-fetched, and 999 must not have been discarded.
+        self.assertEqual({r["id"] for r in rows}, {999, 2})
+
 
 class TestRateLimitDoesNotEndTheRun(unittest.TestCase):
     """Root cause B (2026-09-15 incident): a rate-limit exhaustion on one
@@ -991,6 +1054,185 @@ class TestResumeAfterReorder(unittest.TestCase):
         summary2 = harvest.run_plan([job], ctx2)
         self.assertEqual(summary2["skipped"], 1)
         self.assertEqual(client.calls, [])
+
+
+class TestDefect1SeasonParamNames(unittest.TestCase):
+    """DEFECT 1: each sport's `games` job must use the exact season-filter
+    key its own OpenAPI spec names -- confirmed 2026-09-15 by reading each
+    spec's raw YAML directly (not a summary). NFL/MLB/NBA all spell it
+    `seasons[]` (with brackets); NHL's spec spells the identical filter
+    `seasons` (no brackets) -- a real per-sport inconsistency in the
+    vendor's own docs (confirmed: NHL's own `dates` param on this same
+    endpoint, and MLB's `dates` on /mlb/v1/odds, are ALSO unbracketed),
+    not a bug to paper over by forcing every sport to match NFL/MLB/NBA."""
+
+    def _first_games_job(self, sport):
+        jobs = harvest.build_plan([sport], only="games")
+        self.assertTrue(jobs, f"no games job built for {sport}")
+        return jobs[0]
+
+    def test_nfl_games_uses_bracketed_seasons(self):
+        job = self._first_games_job("nfl")
+        self.assertIn("seasons[]", job.params)
+        self.assertNotIn("seasons", job.params)
+
+    def test_mlb_games_uses_bracketed_seasons(self):
+        job = self._first_games_job("mlb")
+        self.assertIn("seasons[]", job.params)
+        self.assertNotIn("seasons", job.params)
+
+    def test_nba_games_uses_bracketed_seasons(self):
+        job = self._first_games_job("nba")
+        self.assertIn("seasons[]", job.params)
+        self.assertNotIn("seasons", job.params)
+
+    def test_nhl_games_uses_unbracketed_seasons(self):
+        job = self._first_games_job("nhl")
+        self.assertIn("seasons", job.params)
+        self.assertNotIn("seasons[]", job.params)
+
+
+class TestDefect2NoUnfilteredOddsJobs(unittest.TestCase):
+    """DEFECT 2: MLB/NBA/NHL's `.../odds` and `.../odds/opening` specs both
+    say "Either dates or game_ids is required"; tennis's `.../odds/opening`
+    accepts `season`. An unfiltered call to any of them 400'd in production
+    (see MANIFEST.json) -- the plan must never build one of those again, and
+    must no longer emit the exact output names that recorded those 400s."""
+
+    OLD_UNFILTERED_NAMES = {
+        ("mlb", "mlb_odds"), ("mlb", "mlb_odds_opening"),
+        ("nba", "nba_odds"), ("nba", "nba_odds_opening"),
+        ("nhl", "nhl_odds"), ("nhl", "nhl_odds_opening"),
+        ("tennis", "atp_odds_opening"), ("tennis", "wta_odds_opening"),
+    }
+
+    def test_no_job_has_empty_params_for_an_odds_endpoint(self):
+        for sport in ("mlb", "nba", "nhl", "tennis"):
+            for job in harvest.build_plan([sport]):
+                if "odds" in job.endpoint:
+                    self.assertTrue(
+                        job.params,
+                        f"{job.sport}/{job.out_name} ({job.endpoint}) is an unfiltered odds job")
+
+    def test_old_unfiltered_out_names_no_longer_emitted(self):
+        jobs = harvest.build_plan(harvest.ALL_SPORTS)
+        names = {(j.sport, j.out_name) for j in jobs}
+        for old in self.OLD_UNFILTERED_NAMES:
+            self.assertNotIn(old, names)
+
+
+class TestDefect2OddsSweepShape(unittest.TestCase):
+    """DEFECT 2: the odds sweep jobs must use the exact per-endpoint filter
+    key each spec confirms, run newest-season-first, and never collide in
+    output name with each other or with the retired unfiltered jobs."""
+
+    def test_mlb_odds_swept_one_job_per_date(self):
+        jobs = harvest.build_plan(["mlb"], only="odds")
+        self.assertTrue(jobs)
+        for job in jobs:
+            self.assertEqual(set(job.params.keys()), {"dates"})
+            self.assertEqual(len(job.params["dates"]), 1)
+
+    def test_nba_odds_and_odds_opening_use_different_literal_date_keys(self):
+        # Confirmed against nba.yml directly: /nba/v2/odds pulls in the
+        # shared DatesParam component, which nba.yml itself defines as
+        # `dates[]`; /nba/v2/odds/opening inlines `dates` (no brackets) --
+        # a real inconsistency within one sport's own spec, not a typo.
+        odds_jobs = harvest.build_plan(["nba"], only="odds")
+        opening_jobs = harvest.build_plan(["nba"], only="odds_opening")
+        self.assertTrue(odds_jobs)
+        self.assertTrue(opening_jobs)
+        self.assertIn("dates[]", odds_jobs[0].params)
+        self.assertIn("dates", opening_jobs[0].params)
+        self.assertNotIn("dates[]", opening_jobs[0].params)
+
+    def test_nhl_odds_swept_one_job_per_date(self):
+        jobs = harvest.build_plan(["nhl"], only="odds")
+        self.assertTrue(jobs)
+        for job in jobs:
+            self.assertEqual(set(job.params.keys()), {"dates"})
+
+    def test_tennis_odds_opening_swept_one_job_per_season_within_coverage_window(self):
+        jobs = harvest.build_plan(["tennis"], only="atp_odds_opening")
+        self.assertTrue(jobs)
+        for job in jobs:
+            self.assertEqual(set(job.params.keys()), {"season"})
+        seasons = sorted(job.params["season"] for job in jobs)
+        self.assertEqual(seasons, list(harvest.OPENING_ODDS_SEASON_RANGE))
+
+    def test_odds_sweeps_are_newest_season_first(self):
+        for sport in ("mlb", "nba", "nhl"):
+            jobs = harvest.build_plan([sport], only="odds")
+            self.assertEqual(jobs[0].priority_season, harvest._CEILING_YEAR,
+                              f"{sport} odds sweep's first job is not the newest season")
+
+    def test_output_names_unique_across_full_plan_with_odds_sweep(self):
+        jobs = harvest.build_plan(harvest.ALL_SPORTS)
+        names = [(j.sport, j.out_name) for j in jobs]
+        self.assertEqual(len(names), len(set(names)))
+
+    def test_dry_run_builds_odds_sweep_without_network(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                rc = harvest.main(["--dry-run", "--sports", "mlb,nba,nhl,tennis", "--out-dir", tmp])
+            self.assertEqual(rc, 0)
+        out = buf.getvalue()
+        self.assertIn("mlb_odds_", out)
+        self.assertIn("nba_odds_", out)
+        self.assertIn("nhl_odds_", out)
+        self.assertIn("atp_odds_opening_", out)
+        self.assertNotIn("mlb_odds.jsonl", out)
+        self.assertNotIn("nba_odds.jsonl", out)
+        self.assertNotIn("nhl_odds.jsonl", out)
+
+
+class TestGameDatesFromFile(unittest.TestCase):
+    """The odds sweep's date enumeration: real dates from an already-
+    harvested games file when one exists, a generated fallback window when
+    it does not."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.out_dir = Path(self._tmp.name)
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def _write_games_file(self, sport, season, rows):
+        path = harvest._out_path(self.out_dir, sport, f"{sport}_games_{season}")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with gzip.open(path, "wt", encoding="utf-8") as f:
+            for row in rows:
+                f.write(json.dumps(row) + "\n")
+        return path
+
+    def test_reads_distinct_sorted_dates_from_mlb_style_date_field(self):
+        self._write_games_file("mlb", 2024, [
+            {"id": 1, "date": "2024-04-02"},
+            {"id": 2, "date": "2024-04-01"},
+            {"id": 3, "date": "2024-04-02"},  # same date, different game
+        ])
+        dates = harvest._game_dates_from_file(self.out_dir, "mlb", 2024)
+        self.assertEqual(dates, ["2024-04-01", "2024-04-02"])
+
+    def test_reads_nhl_style_game_date_field(self):
+        self._write_games_file("nhl", 2024, [{"id": 1, "game_date": "2024-01-05"}])
+        dates = harvest._game_dates_from_file(self.out_dir, "nhl", 2024)
+        self.assertEqual(dates, ["2024-01-05"])
+
+    def test_missing_file_returns_empty(self):
+        self.assertEqual(harvest._game_dates_from_file(self.out_dir, "mlb", 1999), [])
+
+    def test_dates_for_odds_sweep_falls_back_cleanly_when_file_missing(self):
+        dates = harvest._dates_for_odds_sweep(self.out_dir, "mlb", 2024)
+        self.assertTrue(dates)
+        self.assertEqual(dates, harvest._fallback_date_range("mlb", 2024))
+
+    def test_dates_for_odds_sweep_prefers_the_real_file_over_the_fallback(self):
+        self._write_games_file("mlb", 2024, [{"id": 1, "date": "2024-07-04"}])
+        dates = harvest._dates_for_odds_sweep(self.out_dir, "mlb", 2024)
+        self.assertEqual(dates, ["2024-07-04"])
 
 
 def _read_jsonl_gz(path: Path) -> list:
