@@ -180,10 +180,20 @@ reach the page on a 5-minute push cadence (3.1, Stage 1). R16-L16 fixes the
 wording.
 
 A gap in the shipped reporting: the daily loop already prints interim live
-results. `scripts/daily_loop.sh:321-322` runs `live_window --settle` and echoes
-its output into the Actions log, and `live_ledger.settle` returns wins,
+results. `scripts/daily_loop.sh:321-322` ran `live_window --settle` and echoed
+its output into the Actions log, and `live_ledger.settle` returned wins,
 losses, pushes, voids and units by rule. That contradicts Stage 0's "nobody
 computes an interim result" (3.1); R16-L7 removes it.
+
+CLOSED 2026-09-16 (ebf04b4e, 921d0fd8). The loop now runs
+`python3 -m src.appstate.live_ledger settle` at `scripts/daily_loop.sh:328-329`
+and its CLI prints one counts-only line -- `graded=N voids=N unsettled=N
+dates_checked=N` -- with no wins, losses, pushes or units anywhere in it. The
+step also takes NO date on purpose: `settle_recent()` walks yesterday plus any
+date in the last 7 days still carrying unsettled candidates, so a missed night
+heals itself instead of leaving a permanent hole, which pinning it to
+`$YESTERDAY` guaranteed. Anyone reading the old invocation above should read it
+as history, not as the current wiring.
 
 ### 2.4 Gaps that are design, not bugs
 

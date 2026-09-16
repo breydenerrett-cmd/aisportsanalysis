@@ -149,7 +149,7 @@ class DailyLoopHasMultiSportSteps(unittest.TestCase):
         """Live settle runs after tennis discover."""
         code = _code(DAILY)
         self.assertIn("live settle", code)
-        self.assertIn("live_window --settle", code)
+        self.assertIn("python3 -m src.appstate.live_ledger settle", code)
 
     def test_nfl_settle_after_mlb_settle(self):
         """NFL settle comes immediately after MLB settle."""
@@ -183,7 +183,8 @@ class DailyLoopHasMultiSportSteps(unittest.TestCase):
         """Tennis discover and live settle use || true."""
         code = _code(DAILY)
         tennis_line = [l for l in code.splitlines() if "python3 -m src.cli tennis discover" in l][0]
-        live_line = [l for l in code.splitlines() if "live_window --settle" in l][0]
+        live_line = [l for l in code.splitlines()
+                     if "src.appstate.live_ledger settle" in l][0]
         self.assertTrue(tennis_line.rstrip().endswith("|| true"), tennis_line)
         self.assertTrue(live_line.rstrip().endswith("|| true"), live_line)
 
@@ -192,10 +193,21 @@ class DailyLoopHasMultiSportSteps(unittest.TestCase):
         code = _code(DAILY)
         self.assertIn('card settle --sport nfl --date "$YESTERDAY"', code)
 
-    def test_live_settle_uses_yesterday_date(self):
-        """Live settle references $YESTERDAY."""
+    def test_live_settle_takes_no_date_because_it_self_heals(self):
+        """Live settle passes NO date, on purpose (R16-L7).
+
+        It used to be pinned to `--date "$YESTERDAY"`, which meant one missed
+        or failed night left a permanent hole: nothing ever went back for it.
+        `src.appstate.live_ledger settle` walks yesterday PLUS any date in the
+        last 7 days that still has unsettled candidates, so a missed night
+        heals itself on the next run. Passing a date would re-introduce the
+        hole, so this asserts the date is absent rather than present.
+        """
         code = _code(DAILY)
-        self.assertIn('live_window --settle --date "$YESTERDAY"', code)
+        live_line = [l for l in code.splitlines()
+                     if "src.appstate.live_ledger settle" in l][0]
+        self.assertNotIn("--date", live_line)
+        self.assertNotIn('live_window --settle --date "$YESTERDAY"', code)
 
     def test_steps_append_to_run_note(self):
         """All new steps append to RUN_NOTE."""
