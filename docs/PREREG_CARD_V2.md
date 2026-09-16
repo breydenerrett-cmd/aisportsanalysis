@@ -3,7 +3,7 @@
 **Rule id:** `DAILY_CARD_BEST_BETS_V2`
 **REGISTERED_UTC: <set at commit>**
 **Family:** CARD_V2 (MLB daily card)
-**Status:** DRAFT, not registered. Questions 3 and 4 are answered (Brey, 2026-09-15, section 15), and so is question 1. It becomes registered only when Brey has answered section 15 questions 5 to 8 himself (or explicitly accepted each default), dated, the frozen parameter file of 11.2 exists, the code the `code_fingerprint` of 11.2 covers is merged, and this file is committed with those answers, that file's sha256, the fingerprint value and the `v1_code_fingerprint` value of section 10; no V2 pick exists before that instant
+**Status:** DRAFT, not registered. Questions 1, 3 and 4 are answered (Brey, 2026-09-15, section 15). The open part of question 1 (the card's maximum) and questions 2, 5, 6 and 8 are answered (Brey, 2026-09-16 about 00:45Z and about 00:50Z, section 15). **Open: 7, 9, 10 and 11** (11 is new: his "30-45+ percent" band is shut below about +152, including the +150 he named, and 4.6 shows why). It becomes registered only when Brey has answered those four himself (or explicitly accepted each default), dated, the frozen parameter file of 11.2 exists, the code the `code_fingerprint` of 11.2 covers is merged, and this file is committed with those answers, that file's sha256, the fingerprint value and the `v1_code_fingerprint` value of section 10; no V2 pick exists before that instant. One further condition applies to plus-money picks only: the SR1 read already registered in `docs/RESEARCH_STRATEGY_REPLICATION.md` ("home underdog, moneyline price band +100 to +150", status READY_UNTESTED, zero rows read) is run and its result published before the first plus-money pick is shown (build plan T0c). Its result does not gate registration, licenses nothing here and changes no number in this file
 **Succeeds on the customer card:** `DAILY_CARD_MARKET_SIDE_MODEL_AGREEMENT_V1` and `DAILY_CARD_PROP_LIKELY_AND_CLEARS_PRICE_V1` (V1), which keep running in shadow with their record kept separately
 **Diagnosis:** `docs/CARD_V2_DIAGNOSIS_2026-09-15.md` · **Build:** `docs/CARD_V2_BUILD_PLAN.md` · **Roadmap:** R16-34
 
@@ -20,13 +20,26 @@ It registers a selection rule for the MLB daily card and a single forward read
 of how that rule's picks do against the closing market and at the price.
 
 The card lists three bets on a day whose board offers three that clear the
-first checks (owner, 2026-09-15: "Always show 3"). On a day when fewer than
-three pass every gate, the rest are **fills**: the closest calls, labelled on
-their face as not picks, published and graded like picks and kept apart from
-them on the record. On a day whose board offers fewer than three candidates at
-all, the card lists fewer, down to none, and says why (section 6, copy C13).
-The forward read this registers is of the picks only; the fills are reported
-beside it and can never change it (sections 6, 11 and 12).
+first checks (owner, 2026-09-15: "Always show 3"), and **never more than ten
+bets in total, picks and fills together** (owner, 2026-09-16 about 00:45Z). On
+a day when fewer than three pass every gate, the rest are **fills**: the
+closest calls, labelled on their face as not picks, published and graded like
+picks and kept apart from them on the record. On a day whose board offers fewer
+than three candidates at all, the card lists fewer, down to none, and says why
+(section 6, copy C13). The forward read this registers is of the picks only;
+the fills are reported beside it and can never change it (sections 6, 11
+and 12).
+
+Picks come in **two classes, graded apart from each other and never pooled**
+(section 3, 11.1):
+
+- **MAIN**, priced -160 to -100, where the market's own number makes the side
+  more likely than not. This is the band the draft registered.
+- **PLUS_MONEY**, priced +100 to +250, where the market makes the side the
+  underdog. New, on the owner's direction of 2026-09-16 (section 0.1). It is
+  published with a label on its face, on its own record line, under its own
+  floors, its own harm check and its own retirement result, and capped at 3 of
+  the card's slots until he rules otherwise (question 9).
 
 It claims no edge, no positive expected return and no guarantee. On the one
 already-seen board used to design it (2026-09-15), the market's own number
@@ -37,7 +50,109 @@ only the side of each contract the market already makes likely (the board's
 board, not a law. It means that on that board every "Take" this rule could
 publish rested on **our own number** clearing the price, and our number has
 not been shown to beat the market's (`docs/DOES_THE_MODEL_BEAT_THE_MARKET.md`).
-The customer copy says so on every pick (section 13).
+The customer copy says so on every pick (section 13). Under this revision our
+number is **marked down by a fixed amount, registered in advance**, before it
+is allowed to clear any price (section 4), and a candidate whose market number
+already clears its own best price is refused outright as line shopping (G13).
+
+## 0.1 Supersession: what the owner changed on 2026-09-16, and what it replaces
+
+Recorded here, with both quotes and both dates, because the change is a
+reversal of a standing directive and must not be applied quietly.
+
+**The standing directive, 2026-09-11** (`docs/PLAYER_PROPS_NEXT.md:5-7`,
+`docs/LIVE_BETTING_SYSTEM.md:558-562`), verbatim:
+
+> "none of that price matters until we know it's a MORE THAN LIKELY BET, once
+> we have the almost guaranteed bets, then we find the best sports picks of
+> those with the best value, not the other way around."
+
+The draft carried that directive out through G5 and G6, which required both the
+market's number and ours to be above 0.50, and through a ranking that sorted
+survivors by price.
+
+**The superseding answers, 2026-09-16 about 00:50Z** (5:50pm Pacific 9/15),
+verbatim, in reply to plain-words questions about this draft:
+
+> "BOOM KEY QUESTION! Theres a lot of times where trhe underdog actuall makes
+> more sens than the favorite and those are the real bangers, vewgas doesnt
+> always get the stats right and sometimes the underdog isnt because his
+> likelihood iof winning is low, it might be due to other factors and
+> especially UFC when we get to it there so many underdogs, and same with
+> fidning +100 to +250 poicks offer rally good value"
+
+> "even confidence of 30-45+ percent if high enough value (+150, +200 etc etc)
+> we need an algorithm of value x confidence / likelihood"
+
+> "again based on cionfidence x value alrogirthm that we need to dial in"
+
+**What is superseded, and what is not.** For the card, from this revision:
+"establish a bet is more than likely first, then look at price" no longer
+governs the plus-money class. G5 and G6 keep their 0.50 tests in the MAIN band,
+where he did not ask for a change, and are replaced in the plus-money band by a
+market band of 0.20 to below 0.50 and a hard floor of 0.30 on our own number,
+which is his own number. The ranking key is replaced, in both classes, by the
+single value-times-confidence score he asked for (sections 4 and 5). Both
+directives stay in the record. The 2026-09-16 one governs sections 3 to 6 from
+here; the 2026-09-11 one still governs the MAIN band's 0.50 tests and still
+governs every other rule in the repo that cites it, none of which this
+registration changes.
+
+**A second answer, the same instant**, on player props:
+
+> Q: "Player props: may a prop become a pick only after the lineup is posted,
+> roughly the last 2 hours before first pitch?" A: **"No, allow earlier."**
+
+That answers question 2 no, and it removes the lineup test from G10 (sections 3
+and 8). It is not a side effect of the score; it is its own gate change, and it
+matches what the live V1 card already does
+(`src/report/card.py:717` calls `daily_card.select_props(..., require_lineup=False)`;
+`src/analysis/daily_card.py:1274-1280`). Keeping the lineup test would have made
+V2 stricter on props than the product running today, against a direct answer.
+
+## 0.2 The honest problem this design does not refuse
+
+A value-times-confidence score is an estimate of expected value, and expected
+value is only as good as the probability inside it. Stated plainly, before any
+of the mechanism:
+
+- Five separate measurements in this repo fail to show our probability beats
+  the market's, on any market or window
+  (`docs/DOES_THE_MODEL_BEAT_THE_MARKET.md`): team model +0.004 nats over a
+  base rate, prop model +0.0133, a head-to-head paired log-loss difference
+  whose 95% interval spans zero with a blend curve that worsens monotonically
+  away from zero weight on our number, two betting probes with no finding, and
+  a card-rule backtest whose intervals are 20 to 75 points wide.
+- Every populated bucket of the only live reliability table we have is
+  overconfident: 50-60% by +3.8 points (n=212), 60-70% by +4.8 (n=361),
+  70-80% by +18.3 (n=27) (`docs/PROP_CALIBRATION_2026-09-14.md`).
+- The slice that most resembles what a value score surfaces first, contracts
+  where our number sat 10 or more points above the market's, is the worst
+  measured: 40.6% actual against a 62.1% claim, n=32, on settled outcomes.
+- **Nothing on disk measures our probability below 0.50 at all.** Every
+  calibration table this repo has built scored only the side we favour, which
+  by construction sits at or above 0.50. A bet where our own number reads 41%
+  has never been compared against a result anywhere in this project. The band
+  the owner now wants most is the one band that has never been checked.
+- The arithmetic is one-sided. Expected value lost per point of overstatement
+  equals the decimal odds: 1.62% at -160, 2.00% at +100, 3.00% at +200, 3.50%
+  at +250. The same error costs about 2.2 times more at the long prices he
+  wants weighted most heavily than at the short ones the draft favoured.
+
+The design does not refuse the direction. It answers it with mechanisms that
+stay inside the evidence rules, each named where it lives: a fixed markdown of
+our number registered in advance and never fitted (section 4); a required edge
+that grows with the price (section 4); a hard floor under our own number
+(G6, which on a **pick** is dominated by that required edge at every price G4
+allows, in **both** classes, and does work of its own only on a **fill**,
+stated in G6 and measured in 4.5 and 4.6 rather than claimed as a live
+protection it is not); an unchanged
+disagreement cap (G8); a new price ceiling (G4); a new
+refusal of line shopping (G13); a small cap on how many plus-money picks a card
+may hold (G14); and a separately graded, separately floored, separately
+retired record for the plus-money class (11.1, 11.4, 11.7). What it cannot do
+is manufacture the sample that would settle the question: see 11.4, which
+states in the evaluation plan itself how long that is.
 
 ## 1. Evidence rules this registration obeys, and where it does not yet
 
@@ -66,8 +181,12 @@ The customer copy says so on every pick (section 13).
 
 ### 1.1 Fitted inputs and the sealed window
 
-Every number in the model that was fitted or measured on game results, with
-its window. Counted on 2026-09-15 on this machine's stores with each fit's own
+Every number in the model, **and every constant in this rule**, that was fitted
+or measured on game or contract results, with its window. The rule's own
+constants are the last three rows; they are not model parameters, and they are
+in this table because a reader checking what was measured on outcomes should
+find all of them in one place rather than only in the sections that derive
+them. Counted on 2026-09-15 on this machine's stores with each fit's own
 row selection, by date only; no outcome field was read and nothing was re-fitted
 or re-evaluated (`scratchpad/card_v2_revise/fit_window_counts.py`).
 
@@ -80,6 +199,8 @@ or re-evaluated (`scratchpad/card_v2_revise/fit_window_counts.py`).
 | The two prop markets (`daily_card.PROP_MARKETS`) | Which props are candidates | A choice made from `scripts/backtest_player_props.py` over 16,741 2026 batter games; window not recorded | Not known; a choice of markets, not a number | `src/analysis/playerprops.py:200-240` |
 | "0.0012 nats over 1,896 games" | The reason neither V1 nor V2 ranks by our number | Walk-forward evaluation over 2026-04-15 to 2026-09-06 | Most of it (an evaluation already run, quoted, not re-run) | `src/analysis/daily_card.py:43-50`, `docs/THE_CARD.md:197-199` |
 | G8's 10-point cap | Disagreement cap | Props settled 2026-09-08 to 09-12 | None. Forward dates before registration, never counted (11.1) | `docs/PROP_CALIBRATION_2026-09-14.md:167,223-224` |
+| `MARKDOWN = 0.038` | The markdown taken off our number before G7, before the score and before the figure shown on the card | Props settled 2026-09-08 to 09-12: the 50-60% reliability bucket, n=212, predicted 0.5712 and hit 0.5330, +3.8 points (4.1) | None. Forward dates before registration, never counted (11.1) | `docs/PROP_CALIBRATION_2026-09-14.md`, section 4.1 |
+| `BASE_EDGE = 0.010` | The edge G7 requires on top of break-even at the base price, scaled with the decimal odds | The same document, window and table: the spread between the 50-60% bucket (+3.8, n=212) and the 60-70% bucket (+4.8, n=361) (4.2) | None. Forward dates before registration, never counted (11.1) | `docs/PROP_CALIBRATION_2026-09-14.md`, section 4.2 |
 
 Not fitted, and listed so that "no fitted number" is never read as "no sealed
 game": the run model's inputs at call time (each club's 2026 runs scored and
@@ -90,8 +211,10 @@ a later game; no result chooses a parameter through them. The model's other
 constants are published or fixed in advance (`strength.py:101-131`,
 `playerprops.py:88-112`, `GAME_REGRESSION` at `:318`).
 
-Our number drives G6, G7 and G8, so on the design board every V2 pick rested on
-the first three rows of this table.
+Our number drives G6, G7, G8 and the score of section 4, so on the design board
+every V2 pick rested on the first three rows of this table. The markdown of
+section 4 reduces what our number is allowed to claim; it does not change where
+our number comes from.
 
 ### 1.2 The decision on the sealed-window fits
 
@@ -220,28 +343,47 @@ another's or with the market's own number.
 A candidate is a **pick** only if it passes every gate. Probabilities are
 fractions; prices are American odds.
 
+**Price class.** Every candidate carries a `price_class`, fixed by its price
+alone and frozen on its row: `MAIN` when `-160 <= price <= -100`, `PLUS_MONEY`
+when `+100 <= price <= +250`, and no class at all outside those two ranges, in
+which case it fails G4 and is neither a pick nor a fill. American odds take no
+value between -99 and +99, so inside G4's band the two classes are exhaustive
+and cannot overlap, and G4 is exactly the test that a candidate has a class.
+Three gates read the class (G5, G6 and G14); every other gate is the same for
+both.
+
 | Gate | Test | Moneyline and run line | Player prop |
 |---|---|---|---|
 | G1 Not started | First pitch strictly after the publish instant, fail-closed (`src.report.card._has_started`) | yes | yes |
 | G2 Books | Books quoting this exact selection at the board | at least 6 (`prices.MIN_BOOKS`) | at least 2 (`propboard.MIN_BOOKS`) |
 | G3 Fresh | `publish instant - observed_utc` of the quote; a missing or unparseable `observed_utc` fails | at most 3,600 seconds (`grade.FRESH_SECONDS`) | at most 3,600 seconds (`grade.FRESH_SECONDS`) |
-| G4 Worst price | `price >= -160` (so -160 passes and -161 fails); no limit on the long side, because G5 makes a plus-money pick rare (section 4) | yes | yes |
-| G5 Market likely | market number `> 0.50` | yes | yes |
-| G6 Ours likely | our number `> 0.50` | yes | yes |
-| G7 Price test | our number `> breakeven(price)` (section 4) | yes | yes |
-| G8 Disagreement cap | `abs(our number - market number) <= 0.10` | yes | yes |
+| G4 Price band | `-160 <= price <= -100` or `+100 <= price <= +250`. The short end is unchanged (owner, 2026-09-15: "-160"). The long end is new (owner, 2026-09-16: "+100 to +250"); section 4 says why the ceiling exists and why it is there | yes | yes |
+| G5 Market band | `MAIN`: market number `> 0.50`, unchanged. `PLUS_MONEY`: `0.20 <= market number < 0.50`, an underdog by the market's own de-vigged number, not a side the market itself calls near-impossible | yes | yes |
+| G6 Our floor | `MAIN`: our number `> 0.50`, unchanged. `PLUS_MONEY`: our number `>= 0.30` (owner's own number, 2026-09-16: "confidence of 30-45+ percent"). Read on the **raw** model or prop-board number, before the markdown of section 4, and applied to a fill exactly as to a pick. **On a pick neither floor can bind at any price G4 allows**: G7 already demands a raw number of 34.53% at the +250 ceiling, 45.34% at +150, 55.03% at +100 and 66.34% at -160 (4.6), so the smallest number G7 accepts anywhere in the plus-money band is 34.53%, above this gate's 0.30, and the smallest anywhere in the main band is 55.03%, above this gate's 0.50. Both floors are strictly dominated on the pick path. They bind only on a **fill**, which is allowed to fail G7, and on the design board that is exactly where the plus-money floor fired (4.5). It is registered as the owner's own floor and stated here as dominated, rather than listed as a protection that cannot fire on a pick, for the same reason section 4 declines to register a score cap | yes | yes |
+| G7 Value test | `our number - MARKDOWN >= breakeven(price) + required_edge(price)` (section 4). Replaces the draft's `our number > breakeven(price)` and is never weaker than it at any price | yes | yes |
+| G8 Disagreement cap | `abs(our number - market number) <= 0.10`, on the **raw** numbers. Unchanged, both classes, on purpose | yes | yes |
 | G9 Calibrated | the frozen parameter file of 11.2 is loaded with its `sha256` as registered, and holds the moneyline calibration (for a moneyline) or the run-line cover calibration (for a run line). A candidate failing G9 is neither a pick nor a close call | yes | not applicable |
-| G10 Prop data | lineup posted (`expected_pa_source == "batting_slot"`), and `season_games >= 15` (`daily_card.MIN_SEASON_GAMES_FOR_PRELINEUP`; missing `season_games` fails) | not applicable | yes |
-| G11 One per game or player | At most one entry per game across moneyline and run line; at most one entry per player on props; picks and fills (section 6) count alike; a game that already has a locked game entry takes no other game entry | yes | yes |
-| G12 Ceiling | At most 10 picks on the date, locked picks included (owner, 2026-09-15: "3-10 bets"). Fills are not picks and are not counted against it; they exist only while the entries shown number fewer than 3 (section 6). Because the ceiling counts picks only, and a fill once shown is not removed when picks arrive later, a date that begins thin can list 13 bets at once, 10 picks and 3 fills. That is more than the 10 he named; the departure is stated in section 6 and in question 1 for him to rule on before registration | yes | yes |
+| G10 Prop data | `season_games >= 15` (`daily_card.MIN_SEASON_GAMES_FOR_PRELINEUP`; missing `season_games` fails). **The lineup test is removed** (owner, 2026-09-16: "No, allow earlier"); whether a lineup is posted is a disclosure on the entry's face, not a gate (section 8, copy C15) | not applicable | yes |
+| G11 One per game or player | At most one entry per game across moneyline and run line; at most one entry per player on props; picks and fills (section 6) count alike, and both classes count alike, so one game never holds a `MAIN` entry and a `PLUS_MONEY` entry at once; a game that already has a locked game entry takes no other game entry. **Applied before G14 and G12** (section 5) | yes | yes |
+| G12 Ceiling | At most **10 entries on the date in total, picks and fills together**, locked entries included (owner, 2026-09-16 about 00:45Z, replacing the draft's ceiling of 10 picks that let 13 be listed). A day with 10 picks shows no fill; a fill already shown holds one of the 10 | yes | yes |
+| G13 No line shopping | `market number <= breakeven(price)`. A candidate whose own de-vigged consensus already clears its best available price is refused outright: that is a disagreement between books, which the owner ruled out (2026-09-10, 2026-09-11) and which section 4 already refused in prose. New, made a gate so no future board can produce such a pick | yes | yes |
+| G14 Plus-money sub-cap | At most **3** of the card's entries are `PLUS_MONEY` **picks**. Applied after G11 and before G12, dropping the lowest-scored plus-money picks beyond the third. Fills are not counted against it (a fill carries no verb and enters no counted-pick record). Default, owner question 9 | yes | yes |
 
 A **fill** (section 6) is not a pick and does not pass every gate. It must pass
-G1, G2, G4, G5 and G9, have our number available, and fail at least one of G3,
-G6, G7, G8 and G10. It is labelled as not a pick and says which check it failed.
+G1, G2, G4, G5, G6, G8, G9, G10 and G13, have our number available, and fail at
+least one of G3 and G7. It is labelled as not a pick and says which check it
+failed. Two of those are deliberate strengthenings of the draft, which let a
+fill fail G6 or G8: the probability floor is the owner's own floor and a floor
+that bound only picks would publish an entry he said should never be published
+at all, and G8 is the one gate built from a direct measurement of harm, so the
+floor of three must not put the measured-worst tail on the public record.
 
-Where the gate constants come from: 0.50 (G5, G6) is the owner's "more than
-likely" (2026-09-11); -160 (G4) is the owner's 2026-09-15 word, confirmed by
-him the same day against -150 (question 4); 10 (G12) is from the same message;
+Where the gate constants come from: 0.50 (G5, G6, `MAIN`) is the owner's "more
+than likely" (2026-09-11), kept where he did not supersede it; 0.30 (G6,
+`PLUS_MONEY`) and the +250 ceiling (G4) are his own words of 2026-09-16; -160
+(G4) is his 2026-09-15 word, confirmed the same day against -150 (question 4);
+10 entries (G12) is his 2026-09-16 00:45Z answer; 0.20 (G5, `PLUS_MONEY`) and 3
+(G14) are this draft's, stated as defaults and put to him as question 9;
 6, 2, 3,600 and 15 are the existing repo constants named in the table. An
 earlier draft used 4 books and 25 games for props; neither had a source, and
 25 would have shut props out of every 2026 pick, because `season_games` counts
@@ -249,7 +391,8 @@ a batter's prior rows in `data/processed/boxscores_2026.jsonl`, which starts
 2026-08-30 (on 2026-09-15 no batter had more than 15; the season ends
 2026-09-27). With 15, props rest on 15 to about 27 games of history in 2026.
 
-Where G8 comes from: `docs/PROP_CALIBRATION_2026-09-14.md`, where prop
+Where G8 comes from, and why it is not loosened for the class the owner is most
+enthusiastic about: `docs/PROP_CALIBRATION_2026-09-14.md`, where prop
 contracts with our number 10 or more points above the market's hit 40.6%
 against our stated 62.1% (n=32; 25 of the 32 rows, 78%, from one date). That
 is a **prop-only, mostly single-date** measurement of the 10-point-and-over
@@ -257,92 +400,361 @@ tail. It is not evidence about game markets, and nothing on disk measures the
 band from 0 to 10 points; the same document found the market's own number
 tracked results at least as well as ours on every cut. G8 removes the tail the
 measurement flagged; it does not show the band below it is safe (section 4).
+It is measured in exactly the direction a plus-money pick runs, our number
+above the market's on the side we want to bet, so loosening it for that class
+would be loosening the one gate built from the one measurement that warns
+against it. EXPLORATORY, on the already-seen design board: 12 of all 112
+candidates exceed the cap, of which 10 sit inside G4's price band and are
+refused by G8 (the other 2 fail G4 first). Three of the twelve are tied at the
+board's largest gap, 16.9 points, and one of those three is the entry shadow A
+puts at the top of its list: Rockies run line +1.5 at +106, market 46.9%, our
+raw number 63.8%, a gap larger than the tail the measurement flagged. It is
+also the gate the card is most
+sensitive to: at a cap of 0.06 the same board yields no picks at all
+(section 4's sensitivity table).
 
-## 4. The value test
+## 4. The score: one number for the value test and for the ranking
 
+The owner asked for "an algorithm of value x confidence" and for that same
+number to decide what goes at the top of the card (2026-09-16, section 0.1).
+This is it, with every constant fixed here and justified here.
+
+```python
+from src.core import odds
+
+# Registered constants. Each is fixed at REGISTERED_UTC and comes from the
+# owner's words, from an existing repo constant, or from one prior measurement
+# cited beside it. None is fitted: this rule has produced no outcome, and no
+# result it later produces may move any of them (11.7). A different value is a
+# new rule id.
+
+MARKDOWN   = 0.038    # fixed markdown of our own number (4.1)
+BASE_EDGE  = 0.010    # required edge at the base price (4.2)
+BASE_PRICE = -160     # shortest price allowed; leverage 1.0 here by definition
+BEST_PRICE = 250      # longest price allowed (4.3)
+
+def marked_down(our_probability):
+    """Our number after the registered markdown. The value test, the score and
+    the 'our number' figure shown on the card all read this. G6's floor and
+    G8's cap read the RAW number, because one is the owner's floor on our own
+    confidence and the other is a cap on how far our raw number may sit from
+    the market's."""
+    return max(0.0, our_probability - MARKDOWN)
+
+def required_edge(price):
+    """Edge required on top of break-even, growing with the decimal odds
+    because the same probability error costs proportionally more at a longer
+    price: expected value per unit is p*d - 1, so it loses exactly `d` per
+    point of overstatement."""
+    return BASE_EDGE * (odds.american_to_decimal(price)
+                        / odds.american_to_decimal(BASE_PRICE))
+
+def passes_value_test(our_probability, price):                          # G7
+    return marked_down(our_probability) >= (
+        odds.american_to_probability(price) + required_edge(price))
+
+def score(our_probability, price):
+    """Value times confidence, as a Kelly fraction on the marked-down number:
+    the share of a bankroll this confidence at this price would justify.
+    RANKING KEY ONLY -- computed only for a candidate that has already passed
+    every gate, so a high score never rescues a candidate a gate refused. No
+    stake size is ever published, grading is flat 1 unit (section 9), and any
+    positive constant multiple of this key gives the same order, so no
+    fractional-Kelly multiplier and no score cap is registered: neither would
+    change a selection or an order, and listing one as a safeguard would credit
+    a protection that cannot fire."""
+    d = odds.american_to_decimal(price)
+    p = marked_down(our_probability)
+    return p - (1.0 - p) / (d - 1.0)
 ```
-breakeven(price) = src.core.odds.american_to_probability(price)   # vig included
-passes G7        = our_number > breakeven(price)
-```
 
-The market's number is not required to clear `breakeven(price)`: a de-vigged
-consensus clearing the best price is a disagreement between books, which is
-line shopping. On the design board it happened on 0 of 82 game-market sides
-and 0 of 56 likely-side props.
+`breakeven(price)` is `odds.american_to_probability(price)`, which is `1/d`,
+vig included. So `score > 0` exactly when the marked-down number is above
+break-even, and G7 requires it to be above break-even by `required_edge`;
+every pick therefore has a positive score by construction, and the score can
+never order a candidate the value test refused.
 
-**What G7 does in practice.** When the market's number is below the price's
-break-even, which was every candidate on the design board, a candidate passes
-G7 only if **our number is above the market's by more than that gap** (the
-"vig gap", `breakeven(price) - market number`). Among the 34 design-board
-candidates inside -160 with the market above 0.50, the vig gap ran 0.8 to 4.0
-points (median 2.8). So G7 is a disagreement threshold, and every pick sits in
-a positive-disagreement band from its vig gap up to G8's 10 points: of the 15
-game candidates passing G1, G2, G4 and G5 (G3 set aside), exactly two passed
-G7, at +9.3 points (Angels +1.5) and +2.9 (Twins +1.5). Model-over-market
-disagreement is what the 2026-09-09 incident showed selects the model's own
-errors; here it is used as a filter, not a ranking, and our number never
-enters the ranking (section 5), but that does not make it safe. The hit rate of
-that band is unmeasured, so it is watched from the first counted picks by a
-pre-registered, one-way harm check (11.4) and published by S2.
+### 4.1 Where MARKDOWN = 0.038 comes from
 
-**Plus money.** G5 requires the market's number above 0.50. Unless one book's
-price is better than the market's own number, which did not happen once on the
-design board, that puts the break-even above 50%, so a pick is priced shorter
-than even money. On the design board, 0 of the 27 game and prop candidates
-priced +100 or longer had the market above 0.50, and the longest price among
-the 84 candidates with the market above 0.50 was -108. Whether a market
-underdog at plus money may be a pick is owner question 5 (default no).
+`docs/PROP_CALIBRATION_2026-09-14.md`'s reliability table for our own number,
+on 1,200 settled contracts from 2026-09-08 to 09-12: the 50-60% bucket
+predicted 0.5712 and hit 0.5330, **+3.8 points overconfident, n=212**. It is
+the least extreme of the two adequately populated buckets; the other, 60-70%,
+is +4.8 points at n=361, and both are used again in 4.2.
+
+Three numbers in the same document are deliberately **not** used to size it.
+The 70-80% bucket (+18.3 points) has n=27. The 10-point-and-over disagreement
+tail (+21.5 points) has n=32 with 78% of its rows from one date, and it already
+sizes G8; using it twice would count one protection as two and would leave the
+typical case, which the markdown exists for, unaddressed. The market's own
+overconfidence on the same table is not used at all, because the markdown
+corrects our number, not the market's.
+
+What this is not: the window it was measured on (2026-09-08 to 09-12) is
+forward, not sealed and not tuning, so using it is not a sealed-window breach;
+but it is forward-window evidence informing a design choice before the read
+date, exactly as G8's own source already is, and the same caveat applies. And
+it was measured on props, on the side we favour, so **every application of it
+below 0.50 is a transfer, not a measurement** (0.2 and 11.9).
+
+### 4.2 Where BASE_EDGE = 0.010 comes from
+
+The spread between the two adequately populated measured figures: 4.8 minus
+3.8 is 1.0 point. It stands for how uncertain the markdown itself is. It is not
+a standard error and is not called one; it is a fixed, published, unfitted
+number of the right order, used as the margin at the base price and scaled up
+with the decimal odds so that the probability bar itself, not only the expected
+value bar, rises with the price.
+
+The bar a candidate's **raw** number must clear over break-even, and the
+overstatement a pick at that bar can absorb before its expected value turns
+negative (they are the same number, because expected value is zero when the
+true probability equals break-even):
+
+| Price | decimal | `required_edge` | total raw edge needed | EV lost per point of error |
+|---|---:|---:|---:|---:|
+| -160 | 1.625 | 1.00 pt | **4.80 pt** | 1.62% |
+| -140 | 1.714 | 1.05 pt | **4.85 pt** | 1.71% |
+| -114 | 1.877 | 1.16 pt | **4.96 pt** | 1.88% |
+| -100 | 2.000 | 1.23 pt | **5.03 pt** | 2.00% |
+| +110 | 2.100 | 1.29 pt | **5.09 pt** | 2.10% |
+| +150 | 2.500 | 1.54 pt | **5.34 pt** | 2.50% |
+| +200 | 3.000 | 1.85 pt | **5.65 pt** | 3.00% |
+| +250 | 3.500 | 2.15 pt | **5.95 pt** | 3.50% |
+
+Read plainly: the design tolerates 4.8 points of overstatement in our raw
+number at -160 and 5.95 at +250 before a pick that is exactly at the bar turns
+negative. The one error this repo has actually measured on a similar slice is
+21.5 points. If the real error in the plus-money band is anywhere near that,
+these picks lose money and no threshold here stops them quickly; what stops
+them is the harm check of 11.4, and the owner is told so in plain words.
+
+### 4.3 Where BEST_PRICE = +250 comes from
+
+It is the top of the owner's own named range ("+100 to +250"), and it is the
+longest price this repo has ever looked at with our own number: the 138-row
+design board tops out at **+206** on the game side and never reaches plus money
+on any prop, and the paper-trading accounts report only a pooled ">+100"
+bucket. Past it the arithmetic is monotone worse in both directions that matter
+(expected value lost per point of error keeps rising with the decimal odds,
+and the sample needed to tell the band apart from noise keeps rising with it
+too, 11.4), and no owner word asks for anything longer. On the design board
+the ceiling refused nothing, so it is precautionary there, not the thing doing
+the excluding.
+
+### 4.4 What the value test does in practice
+
+The market's number is not required to clear `breakeven(price)`; G13 now
+refuses a candidate whose number does. That is a disagreement between books,
+which is line shopping. On the design board it happened on 0 of 112 candidates,
+so G13 refused nothing there and exists so that no future board can.
+
+When the market's number is below break-even, which was every candidate on the
+design board, a candidate passes G7 only if our raw number is above the
+market's by more than the vig gap (`breakeven - market number`) plus the
+markdown plus the required edge. So G7 is still a disagreement threshold, now a
+higher one, and every pick sits in a band from that threshold up to G8's 10
+points. EXPLORATORY, measured on the design board, the vig gap and the width of
+that band. "Max raw edge" is `0.10 - mean vig gap`, the most a candidate in
+that band could carry without breaching G8; "bar" is `MARKDOWN +
+required_edge` at the reference price named beside the band, because the bar
+varies with the price inside a band:
+
+| Band | n | mean vig gap | max raw edge under G8 | bar (at) | window |
+|---|---:|---:|---:|---:|---:|
+| -160..-110 | 33 | 2.56 pt | 7.44 pt | 4.87 pt (-135) | **2.57 pt** |
+| -109..-100 | 2 | 1.21 pt | 8.79 pt | 5.00 pt (-105) | 3.78 pt |
+| +100..+150 | 17 | 0.89 pt | 9.11 pt | 5.18 pt (+125) | 3.92 pt |
+| +151..+250 | 10 | 0.51 pt | 9.49 pt | 5.65 pt (+200) | 3.85 pt |
+
+Every band stays reachable, and the narrowest is the main band, not the
+plus-money one: the markdown and the required edge eat two thirds of the raw
+edge G8 leaves at -135. That is a real cost of marking our number down while
+keeping the disagreement cap, and it is stated rather than engineered away.
+It also says where the design is fragile: the main band would close if the
+markdown were raised much above 0.048 or the cap tightened below 0.08.
+
+Model-over-market disagreement is what the 2026-09-09 incident showed selects
+the model's own errors. Here it is used as a filter and, through the score, in
+the ranking; the markdown is the answer to that, not a denial of it. The hit
+rate of the band is unmeasured, so it is watched from the first counted picks
+by a pre-registered, one-way harm check (11.4) and published by S2, per class.
+
+### 4.5 Sensitivity of the constants
+
+EXPLORATORY, on the one already-seen design board, G3 set aside, picks by class
+(`scratchpad/value_score/final_extra.py`). Published here, inside the
+registration, so that nobody has to take on trust that these constants were not
+chosen to produce a particular card:
+
+| MARKDOWN (BASE_EDGE 0.010) | 0.028 | 0.033 | **0.038** | 0.043 | 0.048 |
+|---|---:|---:|---:|---:|---:|
+| MAIN / PLUS_MONEY picks | 3 / 3 | 3 / 3 | **2 / 3** | 1 / 3 | 1 / 3 |
+
+| BASE_EDGE (MARKDOWN 0.038) | 0 | 0.005 | 0.0075 | **0.010** | 0.0125 | 0.015 | 0.020 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| MAIN / PLUS_MONEY picks | 3 / 3 | 3 / 3 | 3 / 3 | **2 / 3** | 2 / 3 | 1 / 3 | 1 / 2 |
+
+| G6 plus-money floor | 0.25 | **0.30** | 0.35 | 0.40 |
+|---|---:|---:|---:|---:|
+| MAIN / PLUS_MONEY picks | 2 / 3 | **2 / 3** | 2 / 3 | 2 / 3 |
+
+| G8 cap | 0.06 | 0.08 | **0.10** | 0.12 | 0.15 |
+|---|---:|---:|---:|---:|---:|
+| MAIN / PLUS_MONEY picks | 0 / 0 | 1 / 2 | **2 / 3** | 2 / 3 | 2 / 3 |
+
+| G14 sub-cap | 1 | 2 | **3** | 4 | 10 |
+|---|---:|---:|---:|---:|---:|
+| MAIN / PLUS_MONEY picks | 2 / 1 | 2 / 2 | **2 / 3** | 2 / 4 | 2 / 4 |
+
+No constant is knife-edge: one notch either way on the markdown or the required
+edge moves the card by one pick, not from empty to full. Two facts the table
+makes plain and this draft does not hide. **G8's cap is the load-bearing
+constant**, not the markdown: at 0.06 the board yields nothing at all. And
+**G6's plus-money floor of 0.30 cannot change a pick at any allowed price, and
+the flat sweep above is arithmetic, not luck.** The smallest raw number G7
+accepts is 34.53% at +250 and rises at every shorter price (4.6), so a raw
+number between 0.30 and 0.3453 cannot reach a pick anywhere in G4's band
+whatever the sweep is set to. The same holds in the main band, where G7's smallest raw number is 55.03% at
+-100 and G6's floor there is 0.50, so **neither** of G6's floors can refuse a
+pick. Their only live path is a **fill**, which
+is allowed to fail G7. On this board that path fired once: of 27 plus-money
+candidates exactly one had our raw number below 0.30, Guardians -1.5 at +150 at
+29.96%, and G6 is the only gate that keeps it off the fill list. Its
+marked-down number of 26.2% is far below that price's 41.5% bar, so G7 refuses
+it as a pick, but G7 does not refuse fills. The draft said here that "the value
+test would have refused it in any case"; that is true of the pick path and
+false of the fill path, and it is corrected rather than left standing, because
+the fill path is the whole reason G6 binds fills at all (section 3). The band
+above the floor is reachable and was reached: the board's published plus-money
+picks include our number at 41.1%, inside the owner's 30-to-45 band, and 4.6
+says which part of that band the rule can and cannot serve.
+
+### 4.6 What the owner's direction actually gets, and what it still refuses
+
+- **"+100 to +250 offer really good value."** Published, as the `PLUS_MONEY`
+  class, when the price is in band, the market's own number is 0.20 to below
+  0.50, our raw number is at least 0.30, the marked-down number clears the
+  price by `required_edge`, the raw gap from the market is at most 10 points,
+  and the class has a slot left under G14. On the design board 3 of 5 picks
+  were plus money.
+- **"Confidence of 30-45+ percent if high enough value (+150, +200 etc etc)."**
+  Served at the long end of his prices, **shut at the short end, including the
+  first price he named**, and he should see which before he registers this.
+  What decides it is G7's bar on the **raw** number, which is
+  `breakeven(price) + required_edge(price) + MARKDOWN`:
+
+  | Price | +100 | +110 | +125 | +140 | **+150** | +160 | +175 | +200 | +225 | +250 |
+  |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+  | Smallest raw number a pick may carry | 55.03% | 52.71% | 49.63% | 46.94% | **45.34%** | 43.86% | 41.86% | 38.98% | 36.57% | 34.53% |
+
+  So at +150 the 30-to-45 band is closed: a raw number inside it cannot be a
+  pick there at any size of disagreement, because the bar is 45.34%. The band
+  opens at about +152, is 0.1 of a point wide at +153, 1.1 points at +160, 6.0
+  at +200 and 10.5 at +250. The bottom of his band is never reached at all:
+  34.53% at the +250 ceiling is the smallest raw number this rule can publish
+  anywhere, so "30 per cent" is outside it at every allowed price. What the
+  rule serves is the upper part of his range at the longer half of his prices.
+  Reached on the design board: the Athletics moneyline at +202 is a pick with
+  our number at 41.1%, and the Reds moneyline at +206 at 41.4% was dropped only
+  because G11 gave that game to a higher-scored entry. Of 27 plus-money
+  candidates 15 had our number in that band, and 1 of those 15 became a pick.
+  Opening the band at shorter prices means cutting `MARKDOWN` or `BASE_EDGE`;
+  both are fixed here, neither is moved to reach a band, and a different value
+  is a new rule id (section 4, 11.7). If he wants the short end of his band
+  open, that is a decision to take before registration, not an adjustment
+  afterwards.
+- **"The underdog actually makes more sense than the favorite."** Published
+  when the disagreement is inside G8 and the market is not calling the side
+  near-impossible; the two run-line picks on the design board are exactly this
+  case, our number calling a side outright likely that the market prices as the
+  underdog.
+- **Still refused, whatever the score.** Anything outside -160 to -100 or +100
+  to +250 (G4). Anything more than 10 points from the market's own number
+  (G8), a deliberate refusal of the version of his favourite trade where our
+  raw number alone carries the whole gap, because that is the one slice the
+  repo has measured and it measured 40.6% against a 62.1% claim. Anything the
+  market itself prices below 0.20 (G5). Anything our own raw number puts below
+  0.30 (G6), though the credit for that refusal belongs to G7, which refuses
+  everything below 34.53% first at every allowed price; G6's own work is on
+  fills, and it is listed here as the owner's floor rather than as a live check
+  on a pick. Anything whose market number already clears its own best price
+  (G13). None of these has an exception for a large score.
 
 ## 5. Ranking
 
+Owner question 8 is answered, 2026-09-16 about 00:50Z: "again based on
+cionfidence x value alrogirthm that we need to dial in". So the score of
+section 4 is the ranking key, and the draft's price-first key is superseded
+along with the directive behind it (0.1).
+
 Picks are ordered by, in turn, on unrounded numbers:
 
-1. `breakeven(price)`, ascending: the longest price first (owner question 8;
-   the default follows the 2026-09-11 directive to establish a bet is likely
-   first and then sort the survivors by price; if Brey answers no, this key
-   is removed and the order starts at key 2);
-2. market number, descending;
-3. `abs(our number - market number)`, ascending;
-4. books quoting, descending;
-5. first pitch, ascending;
-6. the bet sentence, alphabetical.
+1. `score(our number, price)`, **descending**;
+2. `abs(our number - market number)`, ascending (the smaller disagreement
+   first, so a tie is broken toward the candidate leaning less on our own
+   number);
+3. books quoting, descending;
+4. first pitch, ascending;
+5. the bet sentence, alphabetical.
 
-No key uses a comparison between books or between our number and the price.
-If a moneyline and a run line on the same game both pass, the one ranked higher
-by this order is kept and the other is dropped (G11). Locked picks count
-toward the ceiling, so provisional candidates compete for the slots that
-remain. The served order applies the same key to every pick on the date,
-locked or provisional, using each pick's own frozen numbers.
+No key uses a comparison between books, and no key uses price alone or the
+market's number alone. **Both classes are ranked together in one list**, so a
+plus-money pick can top the card when its score is highest; each entry carries
+its class on its face (copy C14) and the two are graded apart (11.1). Whether
+he would rather see plus-money picks grouped in their own section below the
+main picks is question 10; until he answers, they are interleaved, because
+interleaving is what his own answer to question 8 says.
+
+**Order of operations, which matters and is fixed here.** Gates G1 to G10 and
+G13 first, on each candidate alone; then the score on the survivors; then the
+rank above; then **G11** dedup in rank order (one entry per game or player,
+higher score kept); then **G14** (drop the lowest-scored plus-money picks
+beyond 3); then **G12** (cut to 10 entries); then fills to the floor of 3
+(section 6). Applying G14 before G11 would drop a plus-money pick that dedup
+was about to remove anyway and leave a slot unused; the illustration of
+section 14 is run in the order given here.
+
+Locked entries count toward G12 and G14, so provisional candidates compete for
+the slots that remain. The served order applies the same key to every pick on
+the date, locked or provisional, using each pick's own frozen numbers.
 
 Fills are not ranked by this key and never mix with the picks: they are ordered
 by the close-call order of section 6 and are listed below every pick.
 
 ## 6. Pick count, the floor of three, fills, thin days and stale boards
 
-- **Floor: 3 entries. Ceiling: 10 picks. Most listed at once: 13.** The card
-  lists three bets on every day whose board offers three candidates past G1,
-  G2, G4, G5 and G9 (owner, 2026-09-15: "Always show 3"), and fewer, down to
-  none, on a board that offers fewer (the "Fewer than 3 entries" bullet below).
-  The rule never adds a **pick** to reach
-  the floor and never relaxes a gate on a thin day. The floor is met by
-  **fills**, which are not picks, say so on their face, and go on the record.
-- **Close calls.** A candidate that passes G1, G2, G4, G5 and G9, has our
-  number available, is not a pick, and fails at least one of G3, G6, G7, G8 or
-  G10 is a close call. G3 is not required of a close call, so a prop whose
-  only price is the pre-lineup capture can still qualify, although it rarely
-  ranks first (section 8); every close call
-  shows how old its price is (copy C6). Close calls are ordered
-  by: fewest failed gates (G10's lineup and sample tests count separately);
-  then shortfall `max(0, breakeven(price) - our number)`, ascending; then
-  market number, descending; then first pitch; then the sentence.
+- **Floor: 3 entries. Ceiling: 10 entries in total, picks and fills together.**
+  The card lists three bets on every day whose board offers three candidates
+  past G1, G2, G4, G5, G6, G8, G9, G10 and G13 (owner, 2026-09-15: "Always
+  show 3"), and fewer, down to none, on a board that offers fewer (the "Fewer
+  than 3 entries" bullet below). It never lists more than ten (owner,
+  2026-09-16 about 00:45Z). The rule never adds a **pick** to reach the floor
+  and never relaxes a gate on a thin day. The floor is met by **fills**, which
+  are not picks, say so on their face, and go on the record.
+- **Close calls.** A candidate that passes G1, G2, G4, G5, G6, G8, G9, G10 and
+  G13, has our number available, is not a pick, and fails G3 or G7 is a close
+  call. G3 is not required of a close call, so a prop whose only price is the
+  pre-lineup capture can still qualify; every close call shows how old its
+  price is (copy C6). Close calls are ordered by: fewest failed checks; then
+  shortfall `max(0, breakeven(price) + required_edge(price) - marked_down(our
+  number))`, ascending; then **score, descending**; then books quoting,
+  descending; then first pitch; then the sentence. The score key matters
+  because on a stale board every candidate fails G3 alone and has zero
+  shortfall, so without it the order would fall through to a tie-break with no
+  bearing on the bet.
 - **Fill.** A fill is the highest-ranked close call in that order, added only
   while the entries currently shown for the date, picks and fills together,
   number fewer than 3. A withdrawn entry is not shown, so it holds no slot. At
   most one entry per game or player across picks and fills (G11), and no fill
-  for a game or player that has a pick. Because a fill passes G4 and G5 it is
-  never priced shorter than -160 and never a side the market makes less likely
-  than not; because G3 is not required of it, a fill may rest on a price last
-  checked more than an hour ago, and it says so on its face (copy C6).
+  for a game or player that has a pick. Because a fill passes G4 it is never
+  priced shorter than -160 or longer than +250; because it passes G5, G6 and
+  G8 it is never a side the market prices below 0.20, never below the class's
+  floor on our own number, and never more than 10 points from the market's
+  number; because G3 is not required of it, a fill may rest on a price last
+  checked more than an hour ago, and it says so on its face (copy C6). A fill
+  carries its class like a pick and is graded on that class's fill line (11.3,
+  F1). G14 does not apply to fills.
 - **Close calls that are not fills are not shown.** The non-pick entries on the
   card are exactly the fills, at most 3 at a time. A day whose first publish run
   already has 3 picks never shows one; a day that starts thin shows the fills
@@ -358,37 +770,39 @@ by the close-call order of section 6 and are listed below every pick.
   picks only, and fills are published beside them as a pre-declared separate
   line (11.1, 11.3, 11.5, 12). No fill can rescue or sink the rule's verdict.
 - **A fill can become a pick.** From the first publish run whose fresh read of
-  it passes G1 to G12, it is a pick, and it locks, is graded and is counted as
-  a pick. A pick never becomes a fill: a pick that fails a gate on a fresh read
-  is withdrawn under L3 and is still graded as a pick.
+  it passes G1 to G14, it is a pick, and it locks, is graded and is counted as
+  a pick in its class. A pick never becomes a fill: a pick that fails a gate on
+  a fresh read is withdrawn under L3 and is still graded as a pick. A fill that
+  would become a plus-money pick when G14's three slots are already taken stays
+  a fill and is graded as one; it is not promoted and then dropped.
 - **A fill once shown stays.** Picks appearing later in the day do not remove
   it. It is carried, locked and graded like a provisional pick, and is
   withdrawn only as L3 withdraws a pick: on a fresh read that fails it on G1,
-  G2, G4 or G5, or when G11 gives its game or player a pick. So a day that
-  begins thin can end with three fills beside several picks, and all of them
-  are graded. At most 3 fills are shown at any one time; a withdrawn fill frees
-  its slot, so a date with withdrawals can put more than 3 fills on the record,
-  each graded at its last shown version and each reported in D3.
-- **The largest card, and a departure from "3-10 bets".** G12's ceiling of 10
-  counts picks only, and the bullet above keeps a fill once it is shown, so the
-  most this rule can list at one time is **13 bets: 10 picks and 3 fills**,
-  every one of them published and graded. The owner named "3-10 bets" on
-  2026-09-15 and was not shown this consequence when he answered "Always show
-  3", so it is written here, in G12, in question 1 and in the diagnosis's
-  2026-09-15 row for him to rule on before registration; until he does, the
-  rule stands as his answer left it. Neither way of holding the total at 10 was
-  taken without him: refusing a pick once 3 fills are shown hides a bet that
-  passed every gate, and withdrawing a shown fill to make room removes a bet
-  already published. Each changes what goes on the public record, which is his
-  decision and not a drafting one.
-- **Fewer than 3 entries.** If fewer than 3 candidates pass G1, G2, G4, G5 and
-  G9 with our number available, the card shows fewer and says so in one plain
-  line (copy C13). It never relaxes a gate to reach three. This is not only a
-  capture failure: on a small slate of one-sided games every favourite can be
-  priced shorter than -160 (failing G4) while every underdog is below 0.50 by
-  the market's number (failing G5), so the board itself can offer fewer than
-  three candidates, and with no qualifying prop the card can show none at all.
-  That state is published as a count, never filled.
+  G2, G4, G5, G6, G8, G10 or G13, or when G11 gives its game or player a pick.
+  So a day that begins thin can end with three fills beside several picks, and
+  all of them are graded. At most 3 fills are shown at any one time; a withdrawn
+  fill frees its slot, so a date with withdrawals can put more than 3 fills on
+  the record, each graded at its last shown version and each reported in D3.
+- **The card's maximum: 10 entries, answered.** The draft's G12 counted picks
+  only and kept a fill once shown, so it could list 13 bets at one time, more
+  than the "3-10 bets" the owner named on 2026-09-15. He was asked and answered
+  on **2026-09-16 about 00:45Z: cap the card at 10 listed bets in total, picks
+  and fills together.** G12 now counts every entry. The consequence he chose,
+  written down here because it is the cost of his answer: on a day that begins
+  thin and then fills with picks, a bet that passed every gate can be refused a
+  slot because a fill already shown is holding one. The rule does not withdraw
+  a published fill to make room, because that would remove a bet already shown
+  to readers; it declines the eleventh entry instead, and D4 counts every date
+  where that happened. At 10 picks no fill is added at all.
+- **Fewer than 3 entries.** If fewer than 3 candidates pass G1, G2, G4, G5, G6,
+  G8, G9, G10 and G13 with our number available, the card shows fewer and says
+  so in one plain line (copy C13). It never relaxes a gate to reach three. This
+  is not only a capture failure: on a small slate every favourite can be priced
+  shorter than -160 and every underdog longer than +250 (failing G4), or every
+  candidate can sit more than 10 points from the market's number (failing G8),
+  so the board itself can offer fewer than three candidates, and with no
+  qualifying prop the card can show none at all. That state is published as a
+  count, never filled.
 - **Thin day.** Fewer than 3 picks is shown as the pick count, with the fills
   beneath it (copy C4).
 - **Stale quotes and the capture schedule.** The dense capture prices every
@@ -415,11 +829,21 @@ by the close-call order of section 6 and are listed below every pick.
 - No STRONG, LEAN, SLIGHT or SPLIT label, and no chip on a pick or a fill. The
   card has two section heads: "Today's picks" and "Close calls, not picks"
   (`docs/DESIGN_SYSTEM.md` section 4 removes per-card label chips). The second
-  section holds the fills, and is absent when the day has none.
+  section holds the fills, and is absent when the day has none. Both classes
+  sit in the first section, interleaved by score (section 5); a plus-money
+  entry is not a chip or a grade but a sentence on its own face (copy C14)
+  saying the market makes the side the underdog, that our number after the
+  markdown is still above what the price needs, and that these are kept on
+  their own record. **That sentence never says our number makes the side more
+  likely than not**, because on most of this class it does not: on the design
+  board every plus-money entry showed a number below 50% (14.2). A prop entry
+  with no posted lineup carries copy C15 on its
+  face. Neither line may sit behind a "View breakdown" control.
 - **Headline-verb rule.** The sentence begins "Take" if and only if the entry
   is a pick **and the newest publish run's read of that selection is fresh
-  (G3) and passes G1 to G12 there**, which includes the newest best price
-  inside G4 and our number above that price's break-even (G7). This holds for
+  (G3) and passes G1 to G14 there**, which includes the newest best price
+  inside G4 and the marked-down number clearing that price's break-even by the
+  required edge (G7). This holds for
   locked picks too: from its lock until first pitch, which is when most people
   bet, a locked pick keeps "Take" only while the newest fresh read still
   passes; otherwise it shows without a verb, with its locked price and the
@@ -431,46 +855,68 @@ by the close-call order of section 6 and are listed below every pick.
   (copy C6 and C12). Nothing outside the picks section ever carries "Take".
 - Every pick shows, on the card face, at every rank and every screen width,
   **both** C2 lines: the market's number, the break-even of its price and our
-  number; and the sentence saying which of the two numbers clears the price
-  and that our number has not been shown to beat the market's. Neither line
-  may sit behind a "View breakdown" control. That disclosure is mandatory; it
-  is not a reason to withhold "Take".
+  number after the markdown; and the sentence saying that the market's number
+  is below what the price needs, that ours is above it after being marked down
+  for how much it has run high in the past, and that our number has not been
+  shown to beat the market's. Because G13 refuses any candidate whose market
+  number already clears its own price, the draft's second form of that
+  sentence ("both numbers are above what this price needs") can no longer
+  occur and is removed. Neither line may sit behind a "View breakdown"
+  control. That disclosure is mandatory; it is not a reason to withhold "Take".
 
 ## 8. Props safeguards (collected)
 
-Market in `batter_hits` or `batter_total_bases`; at least 2 books
-(`propboard.MIN_BOOKS`); lineup posted; at least 15 games of history
-(`daily_card.MIN_SEASON_GAMES_FOR_PRELINEUP`); one pick per player; G5 to G8 as
-for games. A prop with no posted lineup can only ever be a fill.
+**Owner answer, 2026-09-16 about 00:50Z, question 2: "No, allow earlier."**
+Asked whether a prop may become a pick only after its lineup is posted, roughly
+the last 2 hours before first pitch, he answered no. **The lineup test is
+removed from G10.** A prop may be a pick before its lineup posts, priced off
+the batter's season-average plate appearances, exactly as the live V1 card
+already does it (`src/report/card.py:717` calls
+`daily_card.select_props(..., require_lineup=False)`; the season-average path
+and its 15-game guard are `src/analysis/daily_card.py:1274-1280`). Keeping the
+test would have made V2 stricter on props than the product running today,
+against a direct answer, so the change is recorded here on its own line and in
+0.1, not folded into the score.
 
-What a reader sees: batter props are captured twice per game, once 5 to 7
+The safeguards that remain, none of which is about lineups: market in
+`batter_hits` or `batter_total_bases` (`daily_card.PROP_MARKETS`); at least 2
+books (`propboard.MIN_BOOKS`); **at least 15 games of history**
+(`daily_card.MIN_SEASON_GAMES_FOR_PRELINEUP`), which is the whole of G10 now;
+one pick per player (G11); G5, G6, G7, G8 and G13 as for games; props are not
+in the primary metric because no prop on the design board had 6 books (11.3).
+
+**The disclosure stays and becomes mandatory on the face.** Every prop entry
+says whether a lineup is posted. When none is, it carries copy C15: no lineup
+is posted yet for that game, and plate appearances are priced off the batter's
+season average rather than his spot in the order. That line is on the card
+face, not behind a control, on a pick exactly as on a fill.
+
+What a reader sees now: batter props are captured twice per game, once 5 to 7
 hours before first pitch (baseline, before lineups) and once 0 to 2 hours
 before (gate, after the lineup for about 85% of games;
-`src/pipeline/batter_props.py:25-30`, `CAPTURE_LEAD_MINUTES = 120`). Before its
-lineup posts a prop can appear only as a fill, on a day whose picks number
-fewer than 3, showing "lineup not posted yet" and how old its price is, and
-usually it will not appear at all. Its only pre-lineup price is the baseline
-capture, so from
-about an hour after that capture it fails two tests (G3 and G10's lineup test),
-and any close call failing one test ranks ahead of it (section 6). In roughly
-the first hour after the baseline capture it fails only the lineup test and
-can rank first. EXPLORATORY, on the design board with game prices
-treated as fresh and prop prices as stale: the board gave 2 picks and 1 fill,
-and the fill was Cubs to win at -135, failing only G7; Royals +1.5 and Giants
-+1.5 were the next close calls and were not shown; none of the 19 props that
-qualified as close calls was shown
-(`scratchpad/owner_answers/fill_illustration.py`, which reuses
-`scratchpad/card_v2_revise/close_calls_props_stale.py`'s pool and gate tests).
-A prop can
-become a pick only from a fresh read after its lineup posts, which in practice
-means the gate capture, 0 to 2 hours before first pitch, and it then locks at
-once (L2).
+`src/pipeline/batter_props.py:25-30`, `CAPTURE_LEAD_MINUTES = 120`). Under the
+draft, a prop could be a pick only from a fresh read after its lineup posted,
+which meant the gate capture. Under this answer it can be a pick from the
+baseline capture too, for about the first hour after it, while G3 still holds;
+after that hour it is a close call failing G3, as any stale game bet is. The
+practical effect is that props reach the card earlier and more often, which is
+what he asked for, and that a prop pick can rest on a price about an hour old
+and on a plate-appearance estimate that a posted lineup would sharpen.
+
+EXPLORATORY, the size of the change on the already-seen design board
+(`scratchpad/value_score/final_extra.py`, `final_verify.py`): of 56 prop
+candidates, 37 are outside G4's price band, 0 reach plus money at all, and 0
+have a posted lineup; 19 pass G2 and G4; of those, 13 fail G10's 15-game floor
+(2 of the 13 also fail G8), leaving **6 eligible where the draft's lineup test
+left 0**. One of the six becomes a pick with G3 set
+aside (Michael Harris II under 1.5 total bases at -148), and it is the only
+prop the rule publishes on that board (section 14).
 
 ## 9. Lock, withdrawal and grading
 
 Fills (section 6) follow every rule here, with the gates a fill must pass
-(G1, G2, G4, G5, G9) in place of G1 to G12, and are graded on the record apart
-from the picks.
+(G1, G2, G4, G5, G6, G8, G9, G10, G13) in place of G1 to G14, and are graded on
+the record apart from the picks and apart by price class.
 
 - **L1.** A pick is provisional until the first publish run at or after first
   pitch minus 4 hours (`card_ledger.LOCK_LEAD_HOURS`). A fill is provisional on
@@ -480,23 +926,23 @@ from the picks.
   was shown, whatever that run reads (`card_ledger._lock_and_merge`: "the
   reader saw that bet at that price"). A selection not previously shown becomes
   a pick at a run at or after that point only if that run's own fresh read
-  passes G1 to G12, and it locks at that run. A fill locks the same way, and a
+  passes G1 to G14, and it locks at that run. A fill locks the same way, and a
   selection not previously shown becomes a fill at such a run only if that run
   reads it as a close call and the floor of 3 is still short at that run. If no publish run happens at or
   after first pitch minus 4 hours (the capture chain was down), the pick as
   last published is graded, and counted as "graded without a lock run" (D4).
 - **L3 (withdrawal).** Before its lock, a provisional pick is withdrawn only
   when a publish run whose read of that selection is fresh fails it on a gate,
-  or when G11 or G12 displaces it. A stale read never withdraws a pick
+  or when G11, G12 or G14 displaces it. A stale read never withdraws a pick
   (section 6). A withdrawn pick is written to the row's `withdrawn` list with
   the run instant and failed gates, carried forward on every later row for the
   date, **graded at its last shown version**, and shown on the record apart
   from locked picks (R5). A withdrawn selection that passes again before its
   lock returns as the same pick and is graded once, at its last shown version;
   the withdrawal stays in the ledger history. Withdrawn picks do not hold a
-  G11 or G12 slot after withdrawal. A provisional fill is withdrawn only on a
-  fresh read that fails it on G1, G2, G4 or G5, or when G11 gives its game or
-  player a pick; picks appearing later never withdraw it, and a withdrawn fill
+  G11, G12 or G14 slot after withdrawal. A provisional fill is withdrawn only
+  on a fresh read that fails it on G1, G2, G4, G5, G6, G8, G10 or G13, or when
+  G11 gives its game or player a pick; picks appearing later never withdraw it, and a withdrawn fill
   is graded at its last shown version like a withdrawn pick.
 - **L4.** A locked pick is carried forward verbatim and graded whatever later
   runs read. Its headline verb follows section 7. A locked fill is carried
@@ -505,7 +951,10 @@ from the picks.
   `card_ledger.grade_pick` (moneyline winner; run line by margin plus line).
   Props by `card_ledger.grade_prop_pick`. Fills by the same two functions.
   Voids are counted and reported, never dropped. Every graded entry carries the
-  class it held at its graded version, pick or fill, and is graded once.
+  class it held at its graded version, pick or fill, **and its `price_class`,
+  `MAIN` or `PLUS_MONEY`, frozen from the price it is graded at**, and is
+  graded once. No grading number ever adds a `MAIN` entry to a `PLUS_MONEY`
+  one (11.1, R5).
 
 ## 10. Rules computed in shadow on the same days
 
@@ -515,16 +964,28 @@ graded the same way, and never shown to customers.
 | Rule id | Definition | Ledger |
 |---|---|---|
 | `DAILY_CARD_MARKET_SIDE_MODEL_AGREEMENT_V1` and `DAILY_CARD_PROP_LIKELY_AND_CLEARS_PRICE_V1` (V1) | The selection logic, constants and lock rule of `src/analysis/daily_card.py` and `card_ledger` exactly as committed at registration, with the calibration file V1 reads. Its nightly refit, which read sealed-window and forward games (section 1.2; diagnosis section 0), was stopped by Brey on 2026-09-15 ("Freeze it now"; record `docs/CARD_CALIBRATION_FREEZE_2026-09-15.md`, commit `ba09312c`), before V2's first counted day, so V1's **calibration file** does not change during V2's sample. That is all the freeze delivers: it covers only that file's `a` and `b` and says so in terms. The rest of V1's model and its selection code stay live and editable for a sample the read date puts around August 2027, and 11.2 records 15 commits to the model files in five days and 12 to `src/report/card.py` since 2026-08-28. So V1 is pinned by measurement, not by assumption: every V1 shadow row carries a `v1_code_fingerprint`, the sha256 of `src/analysis/strength.py`, `src/analysis/playerprops.py`, `src/analysis/propboard.py`, `src/report/props.py`, `src/analysis/daily_card.py`, `src/report/card.py`, `src/appstate/card_ledger.py` and `data/processed/card_calibration.json`, with the registration-commit value written into section 16. A row carrying another value is reported under 11.6 with the dates and the commits that changed it, never assumed away. Comment-only, docstring-only and customer-copy-only edits (build plan T10, T10b and the interim V1 copy change) are not a change to V1's selection, and a fingerprint change made only of those is reported as such | `evidence/cards_v1.jsonl` until the cutover date, `evidence/cards_v1_shadow.jsonl` from the cutover date; no date in both |
-| `DAILY_CARD_BEST_BETS_V2_SHADOW_A_BAND_ONLY` (A) | V2 with G6, G7 and G8 removed; everything else identical | `evidence/cards_v2_shadow_a.jsonl` |
-| `DAILY_CARD_BEST_BETS_V2_SHADOW_C_OTHER_WORST_PRICE` (C) | V2 with G4 set to the other answer to owner question 4: `price >= -150` if V2 registers -160, `price >= -160` if V2 registers -150; everything else identical | `evidence/cards_v2_shadow_c.jsonl` |
+| `DAILY_CARD_BEST_BETS_V2_SHADOW_A_BAND_ONLY` (A) | V2 with G6, G7, G8 **and G14** removed; everything else identical, including the markdown inside the score, G11's dedup, G12's ceiling of 10, the floor of 3 and the fill rule. **Why G14 goes too, stated rather than assumed:** A exists to measure what the gates on our own number refuse, and G14 is a cap on the card's composition, not a gate on our number. Left in, it would drop V2's own plus-money picks to make room for the three higher-scored ones G8 refuses, so A would not contain V2's picks and the difference between the two records would stop being "what G6, G7 and G8 refused". What that costs is not hidden: A then differs from V2 in four respects, not three, and its card can be almost all plus money (7 of 10 on the design board, 14.3), so A is not a like-for-like comparison of card shape, only of what those three gates keep out | `evidence/cards_v2_shadow_a.jsonl` |
+| `DAILY_CARD_BEST_BETS_V2_SHADOW_C_OTHER_WORST_PRICE` (C) | V2 with G4's short end set to the other answer to owner question 4: `price >= -150` if V2 registers -160, `price >= -160` if V2 registers -150; the +250 ceiling unchanged; everything else identical | `evidence/cards_v2_shadow_c.jsonl` |
+| `DAILY_CARD_BEST_BETS_V2_SHADOW_D_NO_MARKDOWN` (D) | V2 with `MARKDOWN = 0`: the same gates, the same classes, the same ranking, on our raw number. Everything else identical | `evidence/cards_v2_shadow_d.jsonl` |
+| `DAILY_CARD_BEST_BETS_V2_SHADOW_E_LIKELY_FIRST` (E) | The superseded rule: the draft's G4 (`price >= -160`, no ceiling), G5 and G6 at 0.50 for every candidate, G7 as `our raw number > breakeven(price)`, G8 unchanged, no markdown, no plus-money class, ranked longest price first. Its ceiling and floor follow V2's (10 entries, floor 3) so the two records are the same shape | `evidence/cards_v2_shadow_e.jsonl` |
 
-A tests whether the gates on our number do anything. C tests the other of the
+A tests whether the gates on our number do anything, and is the one shadow
+exempt from G14, for the reason written into its row. C tests the other of the
 two worst prices the owner named ("-150 or -160"), which he settled at -160 on
-2026-09-15 (question 4). V1 is the rule being replaced.
+2026-09-15 (question 4). **D measures what the markdown costs and what it
+saves**: it is the only way to find out, without changing the published rule,
+whether marking our number down refused bets that would have won. **E keeps the
+superseded 2026-09-11 directive measured rather than discarded**, so that "more
+than likely first, then price" has a record of its own beside the rule that
+replaced it. V1 is the rule being replaced.
 
-A and C carry V2's floor of 3 and its fill rule unchanged, so their records are
-read the same way: picks apart, fills apart, and the two together. On the
-design board A published 10 picks and no fill, C 2 picks and 1 fill (14.3).
+A, C, D and E carry V2's floor of 3, its ceiling of 10 and its fill rule
+unchanged, and C, D and E carry G14 unchanged as well; A is the single
+exception, for the reason in its row. So their
+records are read the same way: picks apart, fills apart, each class apart, and
+all together. No shadow result changes the published rule (11.6). On the design
+board, G3 set aside, V2 published 5 picks; A published 10, C 5, D 7 and E 2
+(14.3).
 
 ---
 
@@ -560,6 +1021,29 @@ fill that becomes a pick (section 6) is a counted pick and is not a counted
 fill. Counted fills never enter the primary metric, the secondary metrics, the
 floors, the harm check, the verdict, the retirement result or any comparison.
 They are reported beside them (11.3).
+
+**Counted picks split by price class, and the two halves are never pooled.**
+Every counted pick is in exactly one of two populations, by the `price_class`
+frozen on its graded version:
+
+- **counted MAIN picks** (`price <= -100`),
+- **counted PLUS_MONEY picks** (`price >= 100`).
+
+Every metric in 11.3, every floor and harm check in 11.4, every verdict
+condition in 11.5 and every retirement result in 11.7 is computed **separately
+for each population**, and no number in this registration adds one to the
+other. A third figure over all counted picks together is published as a
+description only (D9) and decides nothing: it is never a floor, never a
+verdict input, never a comparison. Counted fills split the same way.
+
+Why the split is structural and not a reporting nicety: a plus-money pick is,
+by this rule's construction, almost always a case of our own raw number sitting
+several points above the market's, which is the one slice this repo has
+measured and measured badly (0.2). Pooling the two would let a good main-band
+run carry a bad plus-money run past the point it should have stopped, and let a
+bad main-band run retire a plus-money class that was doing nothing wrong. That
+is the same pooling mistake `card_ledger.record()`'s own docstring warns about,
+one level further down.
 
 ### 11.2 Model definition
 
@@ -649,9 +1133,12 @@ beats the close = CLV% > 0
 ```
 
 Reported: **share of counted game picks that beat the close**, and **mean
-CLV%**. This starts negative by the pick's vig gap (0.8 to 4.0 points on the
-design board), so a pick beats the close only if the fair market moves toward
-it by more than that. That is the bar `docs/VALIDATION_CRITERIA.md` sets, and
+CLV%**, computed **separately for counted MAIN picks and counted PLUS_MONEY
+picks** (11.1), by the same machinery, against the same bar. Plus money is
+judged by the same measure as everything else, never a softer one. This starts
+negative by the pick's vig gap (0.5 to 3.3 points by band on the design board,
+section 4.4), so a pick beats the close only if the fair market moves toward it
+by more than that. That is the bar `docs/VALIDATION_CRITERIA.md` sets, and
 it is expected to be hard to pass. An earlier draft used the move in the
 de-vigged consensus from lock to close as the primary metric; that is a
 different, looser measure, it is kept only as S4 under the name "consensus
@@ -666,7 +1153,8 @@ pick's quote (`CLOSE_PRECEDES_DECISION`); or the game cannot be joined to an
 odds event. Props are not in the primary metric: on the design board no prop
 had 6 books.
 
-**Secondary.**
+**Secondary. Every one of S1 to S6 is computed separately for counted MAIN
+picks and counted PLUS_MONEY picks, and never over the two together.**
 
 - S1 **ROI** at graded prices, 1 unit, over counted picks graded WIN or LOSS
   (game and prop together, and each kind shown apart), with a 95% interval
@@ -697,15 +1185,22 @@ had 6 books.
   mean log loss of our number against the result beside mean log loss of the
   market number (game and prop together, and apart).
 - S6 **Live calibration error of our number**: over counted picks graded WIN or
-  LOSS, bins by our number [0.50, 0.55), [0.55, 0.60), [0.60, 0.65),
-  [0.65, 1.00]; `ECE = sum over bins of (n_bin / N) * abs(mean our number -
-  hit rate)`.
+  LOSS, `ECE = sum over bins of (n_bin / N) * abs(mean our number - hit rate)`.
+  Bins for `MAIN`: [0.50, 0.55), [0.55, 0.60), [0.60, 0.65), [0.65, 1.00].
+  Bins for `PLUS_MONEY`: [0.30, 0.35), [0.35, 0.40), [0.40, 0.45),
+  [0.45, 0.50), [0.50, 1.00]. The `PLUS_MONEY` bins are the **first
+  measurement this repo will ever have of our own number below 0.50** (0.2),
+  which is why they are declared here, in advance, rather than chosen when the
+  data arrives. S6 is computed on the **raw** number, not the marked-down one,
+  and additionally on the marked-down one, so the record shows both what our
+  model claimed and what the rule published.
 
-**Fills, reported apart (F1).** Over counted fills, published beside every
-number above and never inside one: n; won-lost-push and units at the graded
+**Fills, reported apart (F1), and split by class.** Over counted fills,
+published beside every number above and never inside one, once for `MAIN` fills
+and once for `PLUS_MONEY` fills: n; won-lost-push and units at the graded
 prices; ROI; the share beating the close and the mean CLV% computed exactly as
 the primary metric computes them for picks; the count by the check each fill
-failed (G3, G6, G7, G8, G10 lineup, G10 sample); and the count of fills whose
+failed (G3, G7); and the count of fills whose
 price was more than 3,600 seconds old when they were added. F1 is pre-declared
 here so that the fills are published whatever they do. No F1 number is a pass,
 a fail or an input to one, and no F1 number is compared with a pick number to
@@ -717,69 +1212,133 @@ floor (section 10).
 fail G4 or G7 at the median book's price instead of the best. D3 fills per
 date, the check each failed, and the share of dates whose floor was met by one
 or more fills. D4 per-date pick counts, dates with fewer
-than 3 picks, dates with fewer than 3 entries, dates with a stale board at
-every run, withdrawals per date,
+than 3 picks, dates with fewer than 3 entries, dates where G12's ceiling of 10
+refused an eleventh entry, dates with a stale board at every run, withdrawals
+per date,
 picks graded without a lock run, picks shown without "Take" after their lock.
 D5 knowledge-grade distribution (A to D) of counted game picks. D6 not applied:
 `docs/VALIDATION_CRITERIA.md`'s "live vs backtest ECE, drift > 0.04", because
 no backtest of this rule exists and none may be run on the sealed window.
+**D7 plus money on the card**: per date, the count of `PLUS_MONEY` picks and
+fills, their prices, and the count of dates where G14's sub-cap dropped a
+plus-money pick that had passed every gate. Reported from pick number one,
+because `evidence/cards_v1.jsonl` has never carried a single row priced at plus
+money, published or settled, win, loss, push, void or locked (diagnosis 4.3),
+and the day that stops being true should be visible in the record.
+**D8 props before the lineup**: per date, the count and share of prop picks and
+prop fills whose `lineup_posted` was false at their graded version, and the
+count of prop picks whose plate appearances came from the season-average path
+rather than a batting slot. The owner's answer of 2026-09-16 turned this from
+impossible to normal (section 8), so it is counted from the first day.
+**D9 all counted picks together**: n, won-lost-push, units and ROI over `MAIN`
+and `PLUS_MONEY` together. Shown to readers as the card's overall record and
+used for nothing else: it is never a floor, never a verdict condition, never a
+harm-check input and never a comparison statistic.
 
 ### 11.4 Floors, the harm check, the read date and the stop date
 
-One read, at the first settlement run after which **both** hold. Counted picks
-only; no fill counts toward either floor, however many fills the card
-publishes:
+**Each class reads its own verdict, at its own floor, and neither waits for
+nor rescues the other.** One read per class, at the first settlement run after
+which **both** hold for that class. Counted picks of that class only; no fill
+counts toward either floor, however many fills the card publishes:
 
-- (a) at least 300 counted game picks with a CLV%; and
-- (b) at least 300 counted picks graded WIN or LOSS, across at least 60
-  distinct slate dates.
+- (a) at least 300 counted game picks of that class with a CLV%; and
+- (b) at least 300 counted picks of that class graded WIN or LOSS, across at
+  least 60 distinct slate dates.
 
-Before that the read script prints `PENDING` and the counts, with no interval
-and no direction. **There is no early verdict and no continuation after the
-read.** The record page shows V2's running win-loss and units every day
-(R5); that is a record, not a read, and it is not a verdict. Per-pick closing
-measurements may be written to the ledger as they settle, but nobody summarises
-CLV%, S2, S4, S5 or S6 over counted picks before the read, except the harm
-check below.
+The plus-money class gets **no smaller floor than the main band**. Pooling the
+two to reach 300 faster would let a good main-band run mask a bad plus-money
+one, which is the one thing the split exists to prevent.
 
-**Harm check (one-way, pre-registered, cannot be rescued).** Run once at each
-threshold and published with its counts. Counted picks only; a fill neither
+Before a class's floors are met the read script prints `PENDING` for that class
+and the counts, with no interval and no direction. **There is no early verdict
+and no continuation after the read.** The record page shows V2's running
+win-loss and units every day (R5); that is a record, not a read, and it is not
+a verdict. Per-pick closing measurements may be written to the ledger as they
+settle, but nobody summarises CLV%, S2, S4, S5 or S6 over counted picks before
+the read, except the harm check below.
+
+**How long the plus-money class will read `PENDING`, stated here rather than
+in a footnote.** At the rate the one already-seen board produced (3 plus-money
+picks of 36 base-eligible candidates on a full slate, and 0 props able to reach
+plus money at all), 300 counted plus-money picks is a matter of one to several
+years, on top of the main band's own read, which already falls around August
+2027 (below). And a verdict on the class is a weaker question than the one the
+owner is really asking. Telling a plus-money class apart from a favourite class
+at a true ROI gap of 3 to 5 points needs, under a flat 1-unit bet and the
+variance a fair price implies (`Var = d - 1`), **6,952 to 19,311 bets in the
+plus-money band alone** for a two-sample read, and 4,710 to 13,082 to tell the
+plus-money band apart from zero
+(`scratchpad/value_score/power_calc.py`, reproducing the method of the
+diagnosis 4.4). At 300 counted picks the 95% interval on ROI is about plus or
+minus 13.9 points at +150, far wider than the gap in question. **This is not a
+reason to lower the floor.** It is a reason to expect `PENDING` from the
+plus-money class for a long time, to say so to the owner in plain words before
+the first plus-money pick is published, and to treat the harm check below, not
+the verdict, as the check that will actually fire on this class. It is also the
+reason the registration requires the already-registered SR1 read
+(`docs/RESEARCH_STRATEGY_REPLICATION.md`, "home underdog, moneyline price band
++100 to +150", READY_UNTESTED, zero rows read) to be run and published before
+the first plus-money pick is shown (status line, build plan T0c): it reads the
+same idea on its own purpose-built sample instead of waiting on this card's
+volume.
+
+**Harm check (one-way, pre-registered, cannot be rescued). Run independently
+for each class, at the same thresholds.** Run once per class at each threshold
+and published with its counts. Counted picks of that class only; a fill neither
 triggers it nor delays it:
 
-- at the first settlement run after 100 counted game picks have a CLV%: if the
-  share beating the close is below 50% **and** the 95% bootstrap interval of
-  mean CLV% (over slate dates, 10,000 resamples, seed 20260915) is entirely
-  below zero;
-- at the first settlement run after 50 counted picks graded WIN or LOSS have
-  our number at least 3 points above the market's: if the 95% Wilson interval
-  on their hit rate lies entirely below the mean break-even of their graded
-  prices.
+- at the first settlement run after 100 counted game picks of the class have a
+  CLV%: if the share beating the close is below 50% **and** the 95% bootstrap
+  interval of mean CLV% (over slate dates, 10,000 resamples, seed 20260915) is
+  entirely below zero;
+- at the first settlement run after 50 counted picks of the class graded WIN or
+  LOSS have our **raw** number at least 3 points above the market's: if the 95%
+  Wilson interval on their hit rate lies entirely below the mean break-even of
+  their graded prices.
 
-If either fires, the result is `HARM_STOP`: from the next publish day V2 keeps
-selecting, locking, grading and counting under this id, so the registered read
-still happens, and the floor of 3 and the fill rule keep running with their
-labels, but no entry carries "Take" and the card uses copy C11 in the
-form for the arm that fired (the closing-price form for the first arm, the
-hit-rate form for the second, both sentences if both have fired). A
-`HARM_STOP` is never reversed under this id; a passing later read does not
-restore "Take" without a new registration.
+**The second arm is the plus-money class's real tripwire, and it is read that
+way on purpose.** Because a plus-money pick is, by this rule's construction,
+almost always a case of our raw number sitting several points above the
+market's, the plus-money class reaches that arm's 50-pick threshold in far
+fewer picks of its own than the main band does, and far sooner in calendar time
+than any 300-pick floor. That is not tuned to happen; it falls out of what the
+class is. It is the earliest honest signal this design can produce that the
+0.30-to-0.45 band behaves the way the adjacent measured prop tail (40.6%
+against a 62.1% claim) suggests it might.
 
-**Expected read date.** 300 counted game picks with a CLV% at about 2 a day
-(the illustration's count) is about 150 slate dates. The 2026 regular season
-has at most 12 left after 2026-09-15 (it ends 2026-09-27,
+If an arm fires for a class, the result is `HARM_STOP` **for that class only**:
+from the next publish day V2 keeps selecting, locking, grading and counting
+that class under this id, so the registered read still happens, and the floor
+of 3 and the fill rule keep running with their labels, but **no entry of that
+class carries "Take"** and the card uses copy C11 in the form for the arm that
+fired and the class it fired for (the closing-price form for the first arm, the
+hit-rate form for the second, both sentences if both have fired; C9b when only
+one class is stopped). Entries of the other class keep "Take" if that class has
+not itself been stopped. A `HARM_STOP` is never reversed under this id; a
+passing later read does not restore "Take" without a new registration.
+
+**Expected read date, main band.** 300 counted game picks with a CLV% at about
+2 a day (the illustration's count) is about 150 slate dates. The 2026 regular
+season has at most 12 left after 2026-09-15 (it ends 2026-09-27,
 `docs/SEASON_END_PLAN.md:11`), so the read falls around August 2027 with no
 restart and 2 counted picks every day, and not in 2027 at 1 a day. A restart
-(11.2) pushes it later.
+(11.2) pushes it later. The plus-money read is later still, per the paragraph
+above.
 
 **The ROI fail arm.** At 300 bets the 95% interval on ROI is about plus or
 minus 9 points at -150 and 11 at -115 (`1.96 * sqrt((d - 1) / 300)`), so that
 arm fires only on a point estimate below about -10%. It catches a very bad
 rule, not a mildly losing one.
 
-**Stop date.** If the floors are not met by the end of the 2027 MLB
-postseason, the result is `UNDERPOWERED`: the counts and every 11.3 statistic
-are published once as a named non-verdict read, V2 stops publishing picks
-under this id, and the card uses copy C9 until a successor rule is registered.
+**Stop date.** If a class's floors are not met by the end of the 2027 MLB
+postseason, that class's result is `UNDERPOWERED`: the counts and every 11.3
+statistic for it are published once as a named non-verdict read, **that class**
+stops publishing picks under this id, and the card uses copy C9 (both classes
+stopped) or C9b (one class stopped) until a successor rule is registered. The
+plus-money class is expected to reach this outcome rather than a verdict, for
+the reason given above; that is a safe result, not a useful one, and it is
+named in advance so nobody reads an absence of bad news as good news.
 
 **A successor before the read.** A rule registered to replace V2 before the
 read must, in its registration commit, publish V2's CLV% and ROI at that
@@ -792,9 +1351,12 @@ The floors are not lowered because a season was short.
 
 Thresholds and stop conditions from `docs/VALIDATION_CRITERIA.md`; all five
 stop conditions are applied, and the one criterion not applied is D6. Every
-condition below reads **counted picks only**. Counted fills are published
-beside the verdict as F1 and enter no condition, so a good or bad run of fills
-can neither rescue nor sink it.
+condition below reads **counted picks only**, and is evaluated **once per
+class, on that class's own counted picks**, producing one verdict for `MAIN`
+and one for `PLUS_MONEY`. Neither verdict reads a pick of the other class, and
+D9's combined figure enters none of them. Counted fills are published beside
+each verdict as F1 and enter no condition, so a good or bad run of fills can
+neither rescue nor sink either.
 
 - **FAIL** if any of:
   1. share beating the close below 50%, or mean CLV% at or below 0%;
@@ -845,19 +1407,28 @@ way ("Changing the model restarts the sample",
 ### 11.7 The retirement result
 
 Read on counted picks only; the fills' F1 line is published beside the result
-and never decides it.
+and never decides it. **The result is class-scoped: a class retires on its own
+verdict, and neither class's good run ever rescues the other's bad one.**
 
-On **FAIL** or **UNDERPOWERED**, within one publish day:
+On **FAIL** or **UNDERPOWERED** for a class, within one publish day:
 
-1. `DAILY_CARD_BEST_BETS_V2` stops publishing picks and fills;
-2. the customer card shows shadow A's list under copy that makes no pick
-   claim and uses no "Take" (copy C9) until a successor rule is registered;
-3. the verdict or non-verdict read, every counted pick, every counted fill with
-   its F1 line, and every comparison are published under `docs/`;
-4. no parameter in this file is changed and re-run under this id.
+1. `DAILY_CARD_BEST_BETS_V2` stops publishing picks and fills **of that
+   class**; the other class keeps publishing under its own read if it has not
+   itself failed;
+2. if both classes have stopped, the customer card shows shadow A's list under
+   copy that makes no pick claim and uses no "Take" (copy C9) until a successor
+   rule is registered; if one class has stopped, that class's entries are shown
+   without a verb under copy C9b and the other class's picks are unchanged;
+3. the verdict or non-verdict read for that class, every counted pick of it,
+   every counted fill with its F1 line, and every comparison are published
+   under `docs/`;
+4. no parameter in this file is changed and re-run under this id. In
+   particular a bad plus-money read retires plus-money picks; it does not
+   loosen `MARKDOWN`, `BASE_EDGE`, G6's floor, G8's cap or G14 to try again.
 
-On **HARM_STOP** (11.4), V2 keeps running without "Take" under copy C11, and
-the harm-check result is published under `docs/` within one publish day.
+On **HARM_STOP** (11.4) for a class, V2 keeps running that class without
+"Take" under copy C11 (or C9b when only one class is stopped), and the
+harm-check result is published under `docs/` within one publish day.
 
 ### 11.8 What each result licenses
 
@@ -877,6 +1448,82 @@ the harm-check result is published under `docs/` within one publish day.
   starts after it.
 - **FAIL** and **UNDERPOWERED** are published as stops; **HARM_STOP** is
   published as a stop of "Take".
+- Every licence above is **class-scoped**. A PASS on `MAIN` licenses nothing
+  about `PLUS_MONEY` and the reverse, and no statement may be made about the
+  two together: D9's combined figure is a description of what the card listed,
+  never a finding.
+
+### 11.9 The failure mode of this design, stated honestly
+
+Written before any result exists, so that it cannot be written afterwards to
+fit one.
+
+**The largest assumption.** `MARKDOWN = 0.038` is measured on props, on the
+side we favour, which by construction sits at or above 0.50, and it is applied
+unchanged to game markets and to our own numbers between 0.30 and 0.50, where
+nothing in this repo has ever measured anything (0.2). That transfer is the
+load-bearing step of the whole design. If the true overstatement in the
+plus-money band is smaller than 3.8 points, the rule is too strict and quietly
+refuses bets the owner is asking for, in the name of a caution the evidence
+does not require at that size. If it is larger, and the one adjacent
+measurement of the same mechanism, our number sitting well above the market's,
+found 21.5 points, then a pick can clear every gate here, carry a high score,
+and still rest on a probability that is wrong in exactly the direction that
+costs the most, because the design tolerates only 4.8 to 6.0 points of
+overstatement (4.2) and 21.5 is far outside that.
+
+**What the mechanism structurally prefers, and why that is uncomfortable.**
+On the design board 3 of 5 picks and the 2nd, 3rd and 4th ranks were plus
+money. The mechanism that produces that is **not** the Kelly form of the score,
+which works the other way. Writing `e` for the marked-down number less
+break-even, the score is exactly `e * d/(d-1)`, and that multiplier **falls**
+with the decimal odds: 2.600 at -160, 2.140 at -114, 1.800 at +125, 1.500 at
++200, 1.400 at +250. At equal edge the score therefore penalises the long
+price, and the board's own picks show it, at near-equal edge: Angels +1.5 at
+-114 carries 4.20 points and scores +0.0899, Reds +1.5 at +124 carries 4.25 and
+scores +0.0767, Athletics at +202 carries 4.18 and scores +0.0625, which is
+shortest price first, not longest.
+
+What actually lifts plus money is upstream of the score, and 4.4 already
+measured it: the vig gap between a price's break-even and the market's own
+number is 2.56 points in the -160..-110 band against 0.51 points at +151..+250,
+so the same raw disagreement with the market leaves several more points of edge
+at a long price, and more plus-money candidates clear G7 at all. On this board
+3 of the 27 candidates in the plus-money band became picks against 2 of the 35
+in the main band. The preference is real and it is what the owner asked for; it
+is also exactly the band the evidence says is least trustworthy.
+`required_edge` pushes back on it, and G14 caps it at 3 slots, but neither
+claims to correct a bias nobody has measured. And the correction this leaves
+undone is named rather than implied: if the vig gap is small at plus money
+because those prices are efficient rather than generous, this mechanism keeps
+surfacing them and nothing in the rule detects it. Shadow D and the plus-money
+arm of the harm check are the only instruments pointed at that.
+
+**What it cannot do.** Isolation prevents contamination; it does not
+manufacture a sample. 11.4's arithmetic says the plus-money class may publish
+for years under a label and a separate record without ever reaching a verdict,
+not because it is safe but because the card cannot produce enough of its own
+kind of bet to find out.
+
+**The first measurements that would expose it**, in the order they can arrive:
+
+1. **The harm check's hit-rate arm on `PLUS_MONEY`**, at 50 counted picks of
+   that class with our raw number 3 or more points above the market's (11.4).
+   Nearly every plus-money pick qualifies, so this is the earliest in-card
+   signal, well before any floor.
+2. **S6 restricted to `PLUS_MONEY`**, worth reading as soon as 20 to 30
+   plus-money picks settle, not as a verdict but as the first direct look this
+   project has ever had at our own number below 0.50. It is declared with its
+   bins in 11.3 precisely so it cannot be chosen after the fact.
+3. **SR1**, outside this rule entirely: already registered in
+   `docs/RESEARCH_STRATEGY_REPLICATION.md`, top-ranked, READY_UNTESTED, zero
+   rows read, and covering the exact band this class publishes into (+100 to
+   +150 home underdogs). It answers the owner's instinct on its own sample and
+   is required to be run and published before the first plus-money pick
+   (status line, build plan T0c).
+4. **Shadow D** (section 10), which is the same rule with the markdown set to
+   zero and is the only way to learn, without changing the published rule,
+   whether the markdown refused bets that would have won.
 
 ## 12. Record keeping
 
@@ -885,10 +1532,16 @@ the harm-check result is published under `docs/` within one publish day.
   stale-board states are written to `evidence/cards_v2.jsonl`, hash-chained,
   one row per publish run that changed anything and at least one row per slate
   date, **including dates with 0 picks**. Every row carries
-  `rule: DAILY_CARD_BEST_BETS_V2`, the gate constants in force, the floor and
+  `rule: DAILY_CARD_BEST_BETS_V2`, the gate constants in force (including
+  `MARKDOWN`, `BASE_EDGE`, the price band, G6's two floors, G8's cap, G14's
+  sub-cap and G12's ceiling), the floor and
   the `code_fingerprint` (11.2); every pick and every fill carries its
-  `game_type`, its class (pick or fill) and, on a fill, the checks it failed
-  and its quote age when it was added.
+  `game_type`, its class (pick or fill), its **`price_class`** (`MAIN` or
+  `PLUS_MONEY`), its **raw** number, its **marked-down** number, its
+  **`score`**, and, for a prop, **`lineup_posted`** and the plate-appearance
+  source; and, on a fill, the checks it failed and its quote age when it was
+  added. A row also carries the count of plus-money picks G14 dropped and
+  whether G12's ceiling refused an entry that day (D4, D7).
 - **R2.** Shadow rules write only to their own files (section 10).
 - **R3.** `evidence/cards_v1.jsonl` is never rewritten. It receives no rows
   dated on or after the cutover date.
@@ -900,13 +1553,16 @@ the harm-check result is published under `docs/` within one publish day.
   together, and each kind apart**, with the kind lines of C8 (V2 has no totals,
   section 2, so its block never shows a totals line; V1's block shows one only
   if a V1 total was graded); V2's block also shows withdrawn picks apart.
-  **V2's block shows three headline figures: the picks, the fills and all
-  entries together, each with its own won-lost-push and units.** The picks
-  figure is the rule's record; the fills figure is the record of what the floor
-  of 3 put on the card; the combined figure is what a reader who took every
-  listed bet would have. No figure mixes a pick with a fill inside it, and the
-  page names which is which. The verdict of 11.5 is read on the picks only,
-  and the page never presents a fills or combined figure as the rule's result.
+  **V2's block shows four headline figures: main-band picks, plus-money picks,
+  the fills and all entries together, each with its own won-lost-push and
+  units.** The two pick figures are the rule's record, one per class, and are
+  never added together except in the fourth, clearly-labelled figure (D9); the
+  fills figure is the record of what the floor of 3 put on the card; the
+  combined figure is what a reader who took every listed bet would have. No
+  figure mixes a pick with a fill inside it, no figure mixes the two classes
+  inside a class figure, and the page names which is which. The verdict of 11.5
+  is read per class on the picks only, and the page never presents a fills or
+  combined figure as the rule's result.
   V1's headline today (`card_ledger.record()`, `card_ledger.py:956-1115`)
   counts game picks only and keeps props under `by_kind`, so the staging card's
   "26-12, +4.82 units" leaves out V1's prop picks. EXPLORATORY, store
@@ -926,37 +1582,46 @@ all three show one decimal, then two, until no such pair shows the same text.
 The client never re-rounds. Braces are fields read from the payload.
 
 - **C1 Section head and purpose.** "Today's picks" · "Picks today: {n}" ·
-  "Each pick is priced no shorter than -160, the market makes it more likely
-  than not, and our number is above what the price needs. Because the market
-  has to make it more likely than not, a pick is almost never plus money. The
-  card lists three bets on a day when three clear the first checks. On a day
-  when fewer than three pass every check, the closest calls are listed under
-  the picks and marked as not picks, and on a day when the board offers fewer
-  than three at all the card lists fewer and says so."
+  "Every pick is priced between -160 and +250. On a main-band pick the market
+  makes that side more likely than not. On a plus-money pick the market makes
+  it the underdog, and our own number, after it is marked down for how much it
+  has run high in the past, is still above what the price needs. Plus-money
+  picks are new, are labelled, and are kept on a separate record. The card
+  lists three bets on a day when three clear the first checks. On a day when
+  fewer than three pass every check, the closest calls are listed under the
+  picks and marked as not picks, and on a day when the board offers fewer than
+  three at all the card lists fewer and says so. The card never lists more than
+  ten bets in total."
 - **C2 A pick.** Headline: "Take {selection} at {price}" (only under the
   section 7 rule). Meta: "{book}" and the provisional, "Lock pending · graded
   as published" or locked state from `docs/DESIGN_SYSTEM.md` (true under L2,
   which locks as last published). First line, on the card face: "Market says
   {market}%. Needs {needs}% to break even at {price}. Our number: {ours}%."
-  Second line, also on the card face (`why[1]`): when the market's number is
-  below the break-even: "The market's number is below what this price needs
-  and ours is above it. Our number has not been shown to beat the market's."
-  When the market's number is at or above it: "Both the market's number and
-  ours are above what this price needs. Our number has not been shown to beat
-  the market's."
+  `{ours}` is the **marked-down** number, which is the number the rule acted
+  on; the raw model number is never shown on the card, because showing a number
+  the rule did not use would put a larger claim in front of the reader than the
+  rule makes. Second line, also on the card face (`why[1]`): "The market's
+  number is below what this price needs and ours is above it, after our number
+  is marked down for how much it has run high in the past. Our number has not
+  been shown to beat the market's." There is only one form of this line now:
+  G13 refuses any candidate whose market number already clears its own price,
+  so the draft's second form ("Both the market's number and ours are above what
+  this price needs") can no longer occur and is removed.
 - **C2b A pick shown without "Take"** (section 7). Headline: "{selection} at
   {price}". Added line, one of: locked, newest fresh read fails: "Locked at
   {price} ({book}). On the newest price check the best price is {now_price},
-  and our number is below what that price needs, or the price is shorter than
-  -160." Locked, selection missing from the newest fresh read: "Locked at
+  and our number is below what that price needs, or the price is outside -160
+  to +250." Locked, selection missing from the newest fresh read: "Locked at
   {price} ({book}). No current price for this bet on the newest check."
   Newest read stale: "Waiting for fresh prices. Prices were last checked {age}
   ago." The C2 lines stay on the face.
-- **C3 Added lines.** When the market's number is below 0.55: "The market
-  makes this only slightly more likely than not." Run line +1.5: "+1.5 wins if
-  the {team} win, or lose by one run." Run line -1.5: "-1.5 wins only if the
-  {team} win by two or more runs." Prop: "{player} is batting {ordinal} in the
-  posted lineup, with {season_games} games of history."
+- **C3 Added lines.** When the market's number is between 0.50 and 0.55: "The
+  market makes this only slightly more likely than not." Run line +1.5: "+1.5
+  wins if the {team} win, or lose by one run." Run line -1.5: "-1.5 wins only
+  if the {team} win by two or more runs." Prop with a posted lineup: "{player}
+  is batting {ordinal} in the posted lineup, with {season_games} games of
+  history." Prop with no posted lineup: "{player} has {season_games} games of
+  history this season." (followed by C15, which is mandatory in that case).
 - **C4 Fewer than 3 picks (including 0).** Under C1: "Only bets that pass every
   check are picks, so some days have fewer than three. The bets below fill the
   card to three. They are not picks, each one says which check it did not pass,
@@ -970,12 +1635,14 @@ The client never re-rounds. Braces are fields read from the payload.
   not picks". Entry: "{selection} at
   {price} ({book}). Price checked {age} ago. Market says {market}%. Needs
   {needs}% to break even. Our number: {ours}%. Not a pick: {reasons}."
-  Reasons, joined with "; ": G3 "price not checked in the last hour"; G6 "our
-  number does not make it more likely than not"; G7 "our number is below what
-  the price needs"; G8 "our number is more than 10 points away from the
-  market's"; G10 lineup "lineup not posted yet"; G10 sample "fewer than 15
-  games of history". (A fill has already passed G1, G2, G4, G5 and G9,
-  so no other reason can apply.) Every entry in this section also carries C12.
+  Reasons, joined with "; ": G3 "price not checked in the last hour"; G7 "our
+  number is below what the price needs after the markdown". (A fill has
+  already passed G1, G2, G4, G5, G6, G8, G9, G10 and G13, so no other reason
+  can apply; the draft's G6, G8 and G10-lineup reasons are gone, two because a
+  fill must now pass those gates and one because the lineup test is no longer a
+  check at all.) Every entry in this section also carries C12, and a
+  plus-money entry also carries C14, and a prop with no posted lineup also
+  carries C15.
 - **C7 Disclaimer.** "These are picks, not guarantees. Our number has not been
   shown to beat the market's, and every pick shows both numbers and what the
   price needs. Every pick is published before its game. A pick still on the
@@ -984,12 +1651,16 @@ The client never re-rounds. Braces are fields read from the payload.
   at, and listed as removed. The bets listed as not picks are graded the same
   way, and kept apart from the picks on the record."
 - **C8 Record line.** "Card picks, rule v2 · {first} to {last} · {n} picks ·
-  {w}-{l}-{p} · {units} units at the published prices. Game picks
+  {w}-{l}-{p} · {units} units at the published prices. Main-band picks:
+  {mw}-{ml}-{mp}, {munits} units. Plus-money picks, kept on their own record:
+  {qw}-{ql}-{qp}, {qunits} units. Game picks
   {gw}-{gl}-{gp}, {gunits} units. Player props {pw}-{pl}-{pp}, {punits} units.
   Picks removed before their lock, included above: {rw}-{rl}-{rp}, {runits}
   units. Bets listed as not picks, kept apart from the picks: {fw}-{fl}-{fp},
   {funits} units. Picks and those bets together: {aw}-{al}-{ap}, {aunits}
-  units. Preliminary: not enough picks yet to show an edge or its absence." V1
+  units. Preliminary: not enough picks yet to show an edge or its absence." The
+  two class sentences are left out while that class has graded nothing, under
+  the same omission rule the kind lines already use. V1
   block: "Rule v1, on the card until {cutover}: {w}-{l}-{p} over {days} days,
   {units} units at the published prices. Game picks {gw}-{gl}-{gp}, {gunits}
   units. Player props {pw}-{pl}-{pp}, {punits} units. Game totals
@@ -999,25 +1670,40 @@ The client never re-rounds. Braces are fields read from the payload.
   shows no totals line. The two sentences about bets listed as not picks are
   left out while no such bet has been graded, and V1's block never carries
   them, because V1 has none.
-- **C9 After a FAIL or UNDERPOWERED.** Head "Today's board". Purpose "Bets
-  priced no shorter than -160 that the market makes more likely than not,
-  listed in the order of section 5. These are not picks." No verb on any
+- **C9 After a FAIL or UNDERPOWERED on both classes.** Head "Today's board".
+  Purpose "Bets priced between -160 and +250 that pass our first checks, listed
+  in the order this rule ranks them. These are not picks." No verb on any
   entry.
+- **C9b After a FAIL, UNDERPOWERED or HARM_STOP on one class only** (11.4,
+  11.7). The stopped class's entries stay on the card, without a verb, under
+  this line, and the other class's picks are unchanged. Plus-money form: "The
+  plus-money bets below are still listed, but they are no longer picks. A
+  check on the first graded ones did not come out well enough for us to keep
+  saying take them. The rest of the picks are unchanged." Main-band form: the
+  same sentence with "main-band bets" in place of "plus-money bets".
 - **C10 Switch banner.** "From {cutover} the card uses a new rule: no pick is
-  priced shorter than -160, and on a day when fewer than three bets pass every
-  check the card lists the closest calls beside the picks, marked as not picks
-  and kept apart on the record. The old
+  priced shorter than -160 or longer than +250, some picks are on sides the
+  market makes the underdog and those are kept on a separate record, the card
+  never lists more than ten bets, and on a day when fewer than three bets pass
+  every check the card lists the closest calls beside the picks, marked as not
+  picks and kept apart on the record. The old
   rule's record is kept below, separately." It says how the shortfall is
   filled, never how many entries a given day will have, so it stands beside
   C13 as well as beside C4 and C5.
 - **C11 After a HARM_STOP.** Head "Today's list". Purpose, in the form for the
-  harm-check arm that fired (11.4). Closing-price arm: "These bets pass our
+  harm-check arm that fired **and the class it fired for** (11.4); when only
+  one class is stopped, C9b is used instead and the other class keeps "Take".
+  Closing-price arm: "These bets pass our
   checks, but a check on the first graded ones found they were getting worse
   prices than the market settled at, so we no longer say take them. They are
   not picks." Hit-rate arm: "These bets pass our checks, but a check on the
   first graded picks where our number was well above the market's found they
   won less often than their prices needed, so we no longer say take them.
-  They are not picks." If both arms have fired, the purpose is "These bets pass
+  They are not picks." Plus-money hit-rate arm: "These bets pass our checks,
+  but a check on the first graded plus-money picks found they won less often
+  than their prices needed, so we no longer say take them. They are not picks.
+  The other picks are unchanged." If both arms have fired, the purpose is
+  "These bets pass
   our checks, but checks on the first graded ones found they were getting
   worse prices than the market settled at, and that picks where our number was
   well above the market's won less often than their prices needed, so we no
@@ -1036,43 +1722,77 @@ The client never re-rounds. Braces are fields read from the payload.
   bets beside two entries. On a stale board C5's first three sentences stay and
   C13 follows them. The string: "Today {n} bets are
   listed. Before a bet is listed at all, its game has to be unstarted, enough
-  books have to be quoting the price, the price has to be no shorter than
-  -160, and the market has to make that side more likely than not. Today the
-  board had {n} of those." At n = 0 the card shows this line and no entry,
-  which is the one state the floor cannot fix without breaking G4 or G5, and it
-  never breaks them (section 6).
+  books have to be quoting the price, the price has to be between -160 and
+  +250, and the market's own number has to be no higher than what that price
+  needs. Today the board had {n} of those." At n = 0 the card shows this line
+  and no entry, which is the one state the floor cannot fix without breaking a
+  gate, and it never breaks one (section 6).
+- **C14 The line on every plus-money entry** (sections 5 and 7). On the face of
+  every pick and every fill whose price is +100 or longer, under its C2 or C6
+  lines: "This is a plus-money pick: the market makes this side the underdog,
+  and our number, after it is marked down, is still above what the price needs.
+  Picks like this are kept on their own record, apart
+  from the rest, so a bad run here cannot hide inside the other picks and a
+  good run there cannot cover for one here. There is no record for this kind of
+  pick yet." On a fill the first four words read "This is a plus-money bet"
+  instead, because a fill is never called a pick. **The clause the draft
+  carried here, "and our number does not", was struck on 2026-09-16 as untrue
+  of the class it is printed on.** Our number usually makes the side an
+  underdog too; what it says is that the side is a better underdog than the
+  price pays. On the design board all three plus-money entries showed a number
+  below 50% (Reds +1.5 at +124 showing 48.9%, Athletics at +202 showing 37.3%,
+  Orioles at +117 showing 48.7%, and the Athletics raw number 41.1% is below it
+  as well, 14.2), so the struck clause would have contradicted the "Our number:
+  {ours}%" line printed one line above it, on the class the owner asked for
+  most. The wording that replaces it is C1's, which was already true of the
+  class. **No string on a plus-money entry may state or imply that our number
+  makes that side more likely than not**, and the build plan pins that as an
+  assertion against a below-0.50 fixture rather than as prose
+  (`docs/CARD_V2_BUILD_PLAN.md`, `tests/test_card_v2_copy.py`).
+- **C15 The line on every prop with no posted lineup** (section 8). On the
+  face, under C3: "No lineup is posted yet for this game. Plate appearances are
+  priced off this batter's season average, not his spot in today's order." It
+  is mandatory on a pick exactly as on a fill, and never sits behind a control.
 
 No string on the card claims an edge, value or a guarantee, and none uses
 "STRONG", "sure", "fair price", "best of N books" or calls a model number a
 chance of winning. "Edge" appears only inside the negated record line from
 `docs/DESIGN_SYSTEM.md` (C8), and "lock" only as "Locked", "Locked at
-{price}", "Lock pending" and "before their lock", never as "a lock".
+{price}", "Lock pending" and "before their lock", never as "a lock". Every
+string changed or added by this revision (C1, C2, C3, C6, C8, C9, C9b, C10,
+C11, C13, C14, C15) was checked against `HARD_BANNED`, `NEGATION_ONLY` and
+`NEGATORS` imported from `tests/test_customer_language.py` (the same import
+`tests/test_web_structure.py` uses) and against `BANNED_PHRASES` and
+`BANNED_JARGON` imported from `tests/test_no_nothing_clears_the_bar.py`:
+18 strings, 0 violations
+(`scratchpad/value_score/final_copy_check.py`).
 
 ---
 
 ## 14. What this rule would have published on 2026-09-15
 
-**Illustration on already-seen data, not evidence.** The design used this
-board, so it is excluded from every count in section 11. Source:
-`scratchpad/card_v2/candidate_pool_2026-09-15.csv` (138 candidates rebuilt
-live at about 17:15Z with the repo's own functions) and the published V1 row
-(16:42:48Z). Script: `scratchpad/card_v2/ap_v2_screen.py` (ranks on unrounded
-numbers and recomputes each break-even from the price; it supersedes
-`v2_final_screen.py`, which sorted on numbers rounded to one decimal).
+**EXPLORATORY. Illustration on already-seen data, not evidence for or against
+anything.** The design used this board, so it is excluded from every count in
+section 11 and from every count of every shadow rule. It shows what the gates
+and the score do; it says nothing about whether any of these bets would have
+won. Source: `scratchpad/value_score/candidate_pool_2026-09-15.csv` (the same
+138-candidate pool the draft's own illustration used, rebuilt live at about
+17:15Z with the repo's own functions and copied into this session's scratch
+directory) and the published V1 row (16:42:48Z). Script:
+`scratchpad/value_score/final_rule.py`, which implements sections 3 to 6 as
+revised, reuses `src.core.odds` for every price and probability conversion,
+recomputes each break-even from the price, ranks on unrounded numbers, and
+applies G11 before G14 and G12 in the order section 5 fixes. Supporting counts:
+`scratchpad/value_score/final_extra.py`.
 
 **Which model.** The numbers are the pre-registration model's: the card
 calibration of 14:37Z (n 1,997, `b` 0.769145), `DISPERSION = 2.3352` and
 `RHO = 0.05065`, all fitted on sealed-window games and the calibration on
 forward games too (section 1.1), and **raw,
 uncalibrated run-line numbers**, with G9 treated as passed for run lines
-because no run-line calibration exists yet. The registered default model
-(11.2) would give different numbers, so this shows what the gates do, not what
-the registered model would pick. Independent re-screen of the same pool:
-`scratchpad/card_v2_revise/verify_pool.py` (reproduces the picks, close calls,
-shadow lists and candidate counts below; the quote ages come from the V1 row).
-The floor of 3 and the fills were added to that re-screen, unchanged in every
-other respect, by `scratchpad/owner_answers/fill_illustration.py`, and the
-lists below are its output.
+because no run-line calibration exists yet. The registered model (11.2) is
+fitted once on 2025 and would give different numbers, so this shows what the
+gates and the score do, not what the registered model would pick.
 
 **Quote times.** The pool's 56 game rows have an empty `observed_utc`. The game
 board's capture time, 14:31:29Z, is read from the published V1 row and is the
@@ -1081,6 +1801,20 @@ times (04:09:29Z to 04:09:34Z) are in the pool. Prop rows carry no first pitch;
 the script maps each batter's club to its game (every game on the slate started
 22:40Z or later). The pool must be rebuilt with game quote timestamps before it
 is used as the T12 fixture.
+
+**The candidate pool under the revised gates.** Of 138 rows, 26 are totals and
+are not candidates (section 2). Of the remaining 112: 50 are outside G4's band
+(-160 to -100 or +100 to +250), 35 are `MAIN` and 27 are `PLUS_MONEY`. After
+G1, G2, G5, G6, G8, G9, G10 and G13, **36 candidates are eligible to be a pick
+or a fill**. Counted by check rather than by candidate, so a candidate failing
+two appears under both: 13 fail G10's 15-game floor (all props), 10 fail G8's
+disagreement cap, 8 fail G6's floor on our own number, 1 fails G5's market
+band, and **0 fail G13**, which refused nothing on this board. (Two further
+candidates exceed G8's cap but sit outside G4's band and are refused there
+first, so 12 of all 112 exceed it.) The longest price on the board is +206, so
+G4's +250 ceiling refused nothing either, and of 27 plus-money candidates
+exactly 1 had our own raw number below G6's 0.30 floor, a candidate whose
+marked-down number was in any case far below its price's bar.
 
 ### 14.1 As registered
 
@@ -1091,99 +1825,116 @@ checked 2 h 11 min ago. New picks are only made from prices checked in the last
 hour, so this list waits for the next check. The bets below are not picks. They
 fill the card to three, or to as many as the board offers, at the prices last
 seen, and they are graded at those prices."). The board offered more than three
-candidates past G1, G2, G4, G5 and G9, so C13 does not fire and C5's fill
-sentences stand. The three fills, in the close-call order of section 6, each
-with its price age and its C12 line, and 33 close calls available:
+candidates past the base gates, so C13 does not fire and C5's fill sentences
+stand. The three fills, in the close-call order of section 6 (all fail one
+check, all have zero shortfall, so the score orders them), each with its price
+age, its C12 line and, on the two plus-money entries, its C14 line; 36 close
+calls were available:
 
-| # | Entry | Books | Market | Needs | Ours | Not a pick |
-|---|---|---:|---:|---:|---:|---|
-| 1 | Angels +1.5 at -114 (FanDuel) | 11 | 52.0% | 53.3% | 61.3% | price not checked in the last hour |
-| 2 | Twins +1.5 at -112 (LowVig) | 10 | 51.3% | 52.8% | 54.1% | price not checked in the last hour |
-| 3 | Matt Olson under 1.5 total bases at -157 (Caesars) | 4 | 57.8% | 61.1% | 65.7% | price not checked in the last hour; lineup not posted yet |
+| # | Entry | Class | Books | Market | Needs | Ours (marked down) | Score | Not a pick |
+|---|---|---|---:|---:|---:|---:|---:|---|
+| 1 | Angels +1.5 at -114 (FanDuel) | MAIN | 11 | 52.0% | 53.3% | 57.5% | +0.0899 | price not checked in the last hour |
+| 2 | Reds +1.5 at +124 (LowVig) | PLUS_MONEY | 9 | 43.7% | 44.6% | 48.9% | +0.0767 | price not checked in the last hour |
+| 3 | Athletics to win at +202 (LowVig) | PLUS_MONEY | 11 | 32.8% | 33.1% | 37.3% | +0.0625 | price not checked in the last hour |
 
-Under the owner's answer these three go on the record and are graded at prices
-that were over two hours old, because the floor is met at every publish run and
-a fill does not have to pass G3. Michael Harris II under 1.5 at -148 and Pete
-Alonso under 1.5 at -150 were the next close calls and would not be shown.
-Before the answer the same three appeared as close calls and were never graded.
+Two of the three fills are plus money, which is new: the draft's fills on this
+board were Angels +1.5, Twins +1.5 and Matt Olson under 1.5, all priced shorter
+than even money. Reds moneyline +206 (score +0.0731) and Angels moneyline +149
+(+0.0705) ranked above the Athletics but were dropped by G11, because a
+higher-scored entry already held their game. Under the owner's answer these
+three go on the record and are graded at prices that were over two hours old,
+because the floor is met at every publish run and a fill does not have to pass
+G3.
 
 ### 14.2 With G3 set aside, as if the capture chain had kept the board fresh
 
-Totals excluded (paused). 112 moneyline, run-line and prop candidates.
+Totals excluded (paused). 112 moneyline, run-line and prop candidates, 36
+eligible past the base gates.
 
-**Picks: 2**, in the default order of section 5 (longest price first)
+**Picks: 5. Fills: 0** (five entries already clear the floor of 3). Ranked by
+score, both classes interleaved, as section 5 directs. Prices are the best
+available with the book that quoted them; "ours" is the marked-down number the
+rule acted on, and the raw number is shown beside it here only because this is
+an internal illustration.
 
-| # | Headline | Book (books) | Market | Needs | Ours | Gap |
-|---|---|---|---:|---:|---:|---:|
-| 1 | Take Twins +1.5 at -112 (NYY at MIN) | LowVig (10) | 51.3% | 52.8% | 54.1% | 2.9 |
-| 2 | Take Angels +1.5 at -114 (SEA at LAA) | FanDuel (11) | 52.0% | 53.3% | 61.3% | 9.3 |
+| # | Headline | Class | Book (books) | Market | Needs | Ours raw | Ours marked down | Raw edge | Bar | Score |
+|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|
+| 1 | Take Angels +1.5 at -114 (SEA at LAA) | MAIN | FanDuel (11) | 52.0% | 53.3% | 61.3% | 57.5% | 8.00 pt | 4.96 pt | +0.0899 |
+| 2 | Take Reds +1.5 at +124 (LAD at CIN) | PLUS_MONEY | LowVig (9) | 43.7% | 44.6% | 52.7% | 48.9% | 8.05 pt | 5.18 pt | +0.0767 |
+| 3 | Take Athletics to win at +202 (ATH at TB) | PLUS_MONEY | LowVig (11) | 32.8% | 33.1% | 41.1% | 37.3% | 7.98 pt | 5.66 pt | +0.0625 |
+| 4 | Take Orioles to win at +117 (BAL at NYM) | PLUS_MONEY | BetOnline (11) | 45.2% | 46.1% | 52.5% | 48.7% | 6.41 pt | 5.14 pt | +0.0484 |
+| 5 | Take Michael Harris II under 1.5 total bases at -148 | MAIN | William Hill (3) | 57.0% | 59.7% | 64.9% | 61.1% | 5.25 pt | 4.83 pt | +0.0360 |
 
-With question 8 answered no (market number first), the same two picks in the
-other order. Pick 2 as it would read: "Take Angels +1.5 at -114" · "Market
-says 52%. Needs 53% to break even at -114. Our number: 61%." · "The market's
-number is below what this price needs and ours is above it. Our number has not
-been shown to beat the market's." · "The market makes this only slightly more
-likely than not." · "+1.5 wins if the Angels win, or lose by one run." Under C1
-and C4.
+Dropped before the card, in the order section 5 fixes:
 
-**Fills: 1**, because 2 picks leave one slot to reach the floor of 3. The
-close-call order puts the three pre-lineup props first: each fails one gate with
-no shortfall, so they rank ahead
-of the game close calls that fail G7 (Cubs to win at -135: market 56.2%, needs
-57.4%, ours 57.1%; Royals +1.5 at -150; Giants +1.5 at -149). Of the 31 close
-calls available, one is shown.
+| Dropped by | Entry | Class | Score | Why |
+|---|---|---|---:|---|
+| G11 | Reds to win at +206 | PLUS_MONEY | +0.0731 | Reds +1.5 already holds that game at a higher score |
+| G11 | Angels to win at +149 | PLUS_MONEY | +0.0705 | Angels +1.5 already holds that game at a higher score |
+| G14 | Pirates to win at +190 | PLUS_MONEY | +0.0351 | the plus-money sub-cap's three slots were taken |
 
-| Shown | Entry | Books | Market | Needs | Ours | Not a pick |
-|---|---|---:|---:|---:|---:|---|
-| fill | Matt Olson under 1.5 total bases at -157 (Caesars) | 4 | 57.8% | 61.1% | 65.7% | lineup not posted yet |
-| no | Michael Harris II under 1.5 total bases at -148 (Caesars) | 3 | 57.0% | 59.7% | 64.9% | lineup not posted yet |
-| no | Pete Alonso under 1.5 total bases at -150 (Caesars) | 3 | 56.2% | 60.0% | 62.7% | lineup not posted yet |
+**What this says about the owner's direction, on this one board.** Three of the
+five picks are plus money, and **one** of those three is in the 30-to-45 per
+cent band of our own number: the Athletics at 41.1%. The other two, Reds +1.5
+at 52.7% and Orioles at 52.5%, are above 0.50 on the raw number and below it
+only after the markdown. The Reds moneyline at +206 and 41.4% would have been a
+second, and was dropped by G11. (The draft said two of the three were in the
+band and then named an entry that is not one of the three; corrected
+2026-09-16, and the same sentence is corrected in the diagnosis's 5.3.) So the
+part of his range this board actually reached is one pick in fifteen candidates
+that sat in it: 4.6 gives the reason, which is that the band is shut below
+about +152. Both run-line picks are the case he described: our number calls a
+side outright likely that the market prices as the underdog. The prop pick
+exists only because the lineup test was removed from G10; no prop contract on
+the 04:09Z board had a posted lineup, so under the draft it could not have been
+a pick, and it carries copy C15 on its face.
 
-All three rest on 15 games of history. No prop contract on the 04:09Z board had
-a posted lineup, so no prop could be a pick. The card would therefore be two
-picks and one fill: three entries, of which one is graded apart and carries
-C12.
+**What the rule refused that a looser one would have taken.** Rockies +1.5 at
++106 (market 46.9%, our raw number 63.8%, a 16.9-point gap, tied with two other
+candidates for the largest gap on the board) is refused by G8, a gap larger
+than the tail `docs/PROP_CALIBRATION_2026-09-14.md` measured hitting 40.6%
+against a 62.1% claim. So are Nationals +1.5 at +110 (11.6-point gap) and White
+Sox to win at +135 (10.9). All three appear in shadow A's list below, at its
+top three ranks, which is what A is for.
 
-**With game prices fresh and prop prices stale**, the state the capture
-schedule produces for most of the day: the same 2 picks, and the fill is Cubs
-to win at -135 (market 56.2%, needs 57.4%, ours 57.1%), failing G7 alone.
-Royals +1.5 at -150 and Giants +1.5 at -149 are next and are not shown, and no
-prop is shown (section 8).
-
-**None of V1's 8 published picks passes.** All five game picks fail G4 (-230,
--225, -210, -210, -186) and G7. Cole Young under 1.5 (-184) fails G4 and the
-lineup test. Matt Olson under 1.5 (-157) and Michael Harris II under 1.5 (-148)
-pass G2 (4 and 3 books against a book floor of 2), G4 and the 15-game test, and
-fail only the lineup test; they are the first two close calls, and Olson is the
-one fill.
+**Closest misses on the value test.** Pirates +1.5 at +110 (raw edge 4.90 pt
+against a 5.09 pt bar) and Matt Olson under 1.5 at -157 (4.56 against 4.81)
+are the two nearest, and on a day with fewer than three picks they would be the
+first fills.
 
 ### 14.3 Shadow rules on the same board (G3 set aside)
 
 | Rule | Picks | Fills | Notes |
 |---|---:|---:|---|
+| V2 (this rule) | 5 | 0 | 2 MAIN, 3 PLUS_MONEY, listed above |
 | V1 | 8 | not applicable | As published (section 1 of the diagnosis); V1 fills to 3 from its SPLIT pile, which did not fire on this board |
-| A, band only, default order | 10 (the ceiling; 15 passed before G11 and G12) | 0 | Red Sox -108, Twins +1.5 -112, Angels +1.5 -114, Brewers -1.5 -117, Padres -1.5 -119, Phillies -1.5 -120, Mets -128, Blue Jays -133, Cubs -135, Dodgers -1.5 -140. Our number was above the break-even on 2 of the ten (Twins, Angels); lowest was Padres -1.5 at 36.2% |
-| A, band only, market number first | 10 | 0 | Cardinals -160, Royals +1.5 -150, D-backs -148, Guardians -144, Dodgers -1.5 -140, Cubs -135, Blue Jays -133, Mets -128, Phillies -1.5 -120, Padres -1.5 -119 (market 53.12%, which ranks it above Brewers -1.5 at 53.08%). Our number was below the break-even on all ten; lowest was Padres -1.5 at 36.2% |
-| C, -150 | 2 | 1 | Same two picks as V2. Its one fill is Michael Harris II under 1.5 at -148, not Olson, whose -157 fails C's band; Alonso -150 and Cubs -135 are next and are not shown |
+| A, G6, G7, G8 and G14 removed (section 10) | 10 (the ceiling; 48 passed before G11, 21 after it) | 0 | Rockies +1.5 +106, Nationals +1.5 +110, White Sox +135, Angels +1.5 -114, Reds +1.5 +124, Athletics +202, Orioles +117, Michael Harris II u1.5 -148, Pirates +190, Matt Olson u1.5 -157. The first three are exactly the disagreements G8 refuses, and they take the top three ranks, which is what A exists to measure. Seven of the ten are plus money, which is what dropping G14 costs, and the list holds all five of V2's picks, which is what dropping it buys: the difference between the two lists is exactly what G6, G7 and G8 refused. Carrying G14 in A instead would drop Reds +124, Athletics +202, Orioles +117 and Pirates +190 and fill those four slots with main-band entries whose marked-down number is below break-even (Pete Alonso u1.5 -150, Red Sox -108, Drake Baldwin u1.5 -159, Dominic Canzone u1.5 -159, scores -0.029 to -0.225), which measures the sub-cap and not the three gates. Both readings were computed on this pool; the registered one is the one printed here (`scratchpad/value_score/fix_verify.py`) |
+| C, worst price -150 | 5 | 0 | The same five picks as V2: no V2 pick on this board is priced between -160 and -151, so C's shorter band changes nothing here |
+| D, no markdown | 7 | 0 | The five above plus Matt Olson u1.5 -157 and Pete Alonso u1.5 -150. The markdown's whole effect on this board is to refuse those two props, both of whose raw edge (4.56 and 2.65 points) is under the bar |
+| E, the superseded "likely first" rule | 2 | 1 | Twins +1.5 -112 and Angels +1.5 -114, ranked longest price first, with Matt Olson u1.5 -157 as the fill. These are the draft's own figures for this board, reproduced from the pre-amendment section 14.2 rather than recomputed, because E is the draft rule unchanged. No plus-money entry, no prop pick |
 
 ### 14.4 What cannot be read from this
 
 One date, already seen, with a stale board and the pre-registration model. It
-shows the gates do what they say. It says nothing about whether V2 picks win,
-beat the close or return money, and must never be quoted as either "V2 works"
-or "V2 is too strict". It does show the likely shape: few picks, priced a
-little shorter than even money, close to a coin flip by the market's number,
-each resting on our own number sitting a few points above the market's.
+shows the gates and the score do what they say. It says nothing about whether
+V2 picks win, beat the close or return money, and must never be quoted as
+either "V2 works" or "V2 is too strict". Nothing in 14.2 or 14.3 is a
+comparison between rules: five picks against two is a count of what each rule
+listed on one already-seen board, not evidence that either is better.
 
-It also shows what the floor of 3 costs. On this board the card is 2 picks and
-1 fill with fresh prices, and 0 picks and 3 fills at the real publish instant,
-so on a day like this most of what the reader sees, and between a third and all
-of what goes on the record, is bets the rule itself says are not picks. Whether
-fills win or lose here is unknowable from one already-seen board and is not
-read; what is known in advance is that they are graded, published and kept
-apart, and that they never touch the verdict (11.1, 11.5).
+It does show the likely shape: few picks, most of them plus money, each resting
+on our own number sitting five to eight points above the market's before the
+markdown and still above the price after it. That shape is the thing 0.2 and
+11.9 warn about, and it is visible here on the first board anyone looked at.
 
----
+It also shows what the floor of 3 costs. On this board the card is 5 picks and
+0 fills with fresh prices, and 0 picks and 3 fills at the real publish instant,
+so on a day like that everything the reader sees, and everything that goes on
+the record, is bets the rule itself says are not picks. Whether fills win or
+lose here is unknowable from one already-seen board and is not read; what is
+known in advance is that they are graded, published and kept apart, and that
+they never touch the verdict (11.1, 11.5).
+
 
 ## 15. Owner decisions this needs
 
@@ -1193,14 +1944,20 @@ build, the V2 ledger and the `?rule=v2` preview use until he answers. The line
 under each question says which of his words it departs from, or what it
 settles.
 
-**Answered so far: 1, 3 and 4, all by Brey on 2026-09-15 at about 22:35Z
-(3:35pm Pacific), in chat, in reply to the four questions put to him in plain
-words. Open: 2, 5, 6, 7 and 8.** Registration still requires his explicit
-answer to each open question, or his explicit acceptance of its default, with
-its date; nobody else may accept one for him.
+**Answered: 1 (both parts), 2, 3, 4, 5, 6 and 8.** Questions 1, 3 and 4 were
+answered by Brey on 2026-09-15 at about 22:35Z (3:35pm Pacific); question 1's
+open part (the card's maximum) at about 00:45Z on 2026-09-16; and questions 2,
+5, 6 and 8 at about 00:50Z on 2026-09-16 (5:50pm Pacific 9/15). All were given
+in chat, in reply to plain-words questions about this draft. **Open: 7, 9 and
+10**, of which 9 and 10 are new and arise from the answers of 2026-09-16.
+Registration still requires his explicit answer to each open question, or his
+explicit acceptance of its default, with its date; nobody else may accept one
+for him.
 
-**Question 2 departs from a standing owner directive. The customer card does
-not switch from V1 to V2 until it is answered.**
+**The answers of 2026-09-16 about 00:50Z supersede a standing directive of
+2026-09-11.** Both quotes and both dates are in section 0.1, which is the
+record of that supersession. Nothing was applied quietly and nothing was
+inferred: each answer below is his own text.
 
 1. **On a day when fewer than 3 bets pass every check, does the card fill to 3
    with the closest calls, labelled as not picks, or show fewer? ANSWERED
@@ -1213,46 +1970,44 @@ not switch from V1 to V2 until it is answered.**
    and is met by fills, which are graded and kept apart from the picks
    (sections 6, 9, 11 and 12). This honours "three to five bets every day"
    (2026-09-10) and the floor of the "3-10 bets" of 2026-09-15 on every board
-   that offers three candidates past G1, G2, G4, G5 and G9. **It still departs
-   from both on the board that does not.** No gate was loosened to reach three:
-   a fill still passes those five gates, so it is never priced shorter than
-   -160 and never a side the market makes less likely than not, and where a
-   board offers fewer than three such candidates the card lists fewer, down to
-   none, and says why (copy C13). That state is published as a count. Its cost,
+   that offers three candidates past the base gates. **It still departs from
+   both on the board that does not.** No gate was loosened to reach three: a
+   fill still passes G1, G2, G4, G5, G6, G8, G9, G10 and G13, so it is never
+   priced outside -160 to +250, never below the class's floor on our own
+   number, and never more than 10 points from the market's; and where a board
+   offers fewer than three such candidates the card lists fewer, down to none,
+   and says why (copy C13). That state is published as a count. Its cost,
    stated in the option he chose: entries the rule itself says are not picks go
    on the public record and can drag it down. The rule's verdict is protected
    from that by reading picks only (11.1, 11.5).
-   **Departs from "3-10 bets" on the maximum, and he has not ruled on that.**
-   G12's ceiling of 10 counts picks only, and a fill once shown is not removed
-   when picks arrive later (section 6), so a date that begins thin can list 13
-   bets at once: 10 picks and 3 fills, every one of them graded. That is more
-   than the 10 he named. It follows from this answer and was not in front of
-   him when he gave it, so it is written here for him to rule on before
-   registration; until he does, the rule stands as his answer left it. The two
-   ways to hold the total at 10 were not taken without him: one hides a pick
-   that passed every gate, the other withdraws a fill already published, and
-   each changes what goes on the public record.
+   **The open part of this question, the card's maximum, is now ANSWERED
+   2026-09-16 about 00:45Z: cap the card at 10 listed bets in total, picks and
+   fills together.** The draft's G12 counted picks only and kept a fill once
+   shown, so it could list 13 bets at one time, more than the "3-10 bets" he
+   named on 2026-09-15. He was shown that consequence and ruled on it. G12 now
+   counts every entry, and the 13-bet state cannot occur. The cost of his
+   answer is written into section 6: on a day that begins thin and then fills
+   with picks, an eleventh entry that passed every gate is refused a slot
+   rather than a published fill being withdrawn to make room, and D4 counts
+   every date where that happened.
 2. **May a player prop become a pick only from a price checked after its
    lineup posts, in practice the last 2 hours before first pitch, so that
    before then it appears at most as a fill on a day with fewer than 3 picks,
-   and on most days not at all? Default: yes.**
-   Departs from props analysis that "needs to be ran pre emptively"
-   (2026-09-14). The analysis still runs early, but a reader mostly will not
-   see it: before its lineup posts a prop's only price comes from the capture
-   5 to 7 hours before first pitch and is more than an hour old for most of
-   that time, so close calls with fresh prices rank ahead of it (section 8; on
-   the design board with game prices fresh, the one fill was a game bet and
-   none of 19 props was shown). In 2026 a
-   prop also needs 15 games of history, because the box-score store starts
-   2026-08-30. If no, V2 is not cut over and nothing here is loosened; a rule
-   that publishes pre-lineup props as picks needs its own registration.
-
-**Questions 5 to 8 are still to be answered by Brey himself, or he explicitly
-accepts the default, before the commit that sets `REGISTERED_UTC`; each answer
-is recorded in section 16 with its date. Nobody else may accept a default for
-him. After that commit a different answer is a new rule id. Questions 3 and 4
-are answered below, in his words, with the date and time.**
-
+   and on most days not at all? ANSWERED 2026-09-16 about 00:50Z: "No, allow
+   earlier."**
+   Asked in exactly those words, he answered no. **The lineup test is removed
+   from G10** (sections 0.1, 3 and 8). A prop may be a pick before its lineup
+   posts, priced off the batter's season-average plate appearances, which is
+   what the live V1 card already does (`src/report/card.py:717`,
+   `src/analysis/daily_card.py:1274-1280`). The safeguards that are not about
+   lineups all stay: 2 books, 15 games of history, one pick per player, and
+   G5 to G8 and G13 as for games. **The disclosure stays and is mandatory on
+   the face of every prop with no posted lineup** (copy C15): no lineup is
+   posted, and plate appearances are priced off a season average. This answer
+   honours "needs to be ran pre emptively" (2026-09-14), which the draft's
+   default did not. EXPLORATORY, its size on the design board: 6 prop
+   candidates become eligible where the lineup test left 0, and 1 becomes a
+   pick (section 8, section 14).
 3. **May V2 keep the two model numbers that were fitted only on sealed-window
    games, frozen at registration, with its record saying it can never be
    confirmed on the sealed window? ANSWERED 2026-09-15 about 22:35Z: no.**
@@ -1279,26 +2034,106 @@ are answered below, in his words, with the date and time.**
    He was asked what the shortest price a pick may have is, and answered -160.
    He had written "-150 or -160"; shadow C keeps running -150 beside the rule
    (section 10), and no V2 pick or fill is ever priced shorter than -160 (G4).
+   The long end of G4, +250, comes from his answer to question 5 and is new.
 5. **May a pick be a side the market makes less likely than not, at plus
-   money, when our number beats its price? Default: no.**
-   Under the default a pick is almost never plus money (section 4), which
-   departs from the "-150, -115, +100, or higher" prices in your message.
+   money, when our number beats its price? ANSWERED 2026-09-16 about 00:50Z:
+   yes.** His words, verbatim, in reply to "Underdogs at plus money: our number
+   sometimes says an underdog beats its price while the market says he is under
+   50% to win. Allow those as picks?":
+
+   > "BOOM KEY QUESTION! Theres a lot of times where trhe underdog actuall
+   > makes more sens than the favorite and those are the real bangers, vewgas
+   > doesnt always get the stats right and sometimes the underdog isnt because
+   > his likelihood iof winning is low, it might be due to other factors and
+   > especially UFC when we get to it there so many underdogs, and same with
+   > fidning +100 to +250 poicks offer rally good value"
+
+   So G5's "market above 0.50" is removed for plus-money candidates and
+   replaced by a market band of 0.20 to below 0.50, a price band of +100 to
+   +250 taken from his own named range, and a separate, separately graded
+   `PLUS_MONEY` class (sections 0.1, 3, 4, 11.1). This supersedes the
+   2026-09-11 directive for the card, which is recorded with both quotes in
+   0.1. What it costs, stated to him in plain words and written in 0.2 and
+   11.9: our number has never been checked below 0.50 anywhere in this repo,
+   every bucket that has been checked runs hot, and a fixed-size error costs
+   about 2.2 times more expected value at +250 than at -160.
 6. **Is a pick acceptable when the market makes it only a little more than 50%
-   likely, provided the page says so (copy C3)? Default: yes, floor 0.50.**
-   Settles "high-confidence": both design-board picks were 51% and 52% by the
-   market's number.
+   likely, provided the page says so (copy C3)? ANSWERED 2026-09-16 about
+   00:50Z, and the answer goes further than the question.** His words,
+   verbatim, in reply to "A side the market makes only 51% likely is still
+   likely. Allow picks that barely clear 50%?":
+
+   > "even confidence of 30-45+ percent if high enough value (+150, +200 etc
+   > etc) we need an algorithm of value x confidence / likelihood"
+
+   So the floor on our own number is 0.50 in the main band, unchanged, and
+   **0.30 in the plus-money band**, which is his number, not a drafting choice
+   (G6). The "algorithm of value x confidence" is section 4's score, used both
+   to select and to rank. On the design board the band he named is reached, not
+   just allowed: the Athletics moneyline at +202 is a pick with our number at
+   41.1% (section 14).
 7. **Is it acceptable that every "Take" rests on our own number clearing the
    price, although our number has not been shown to beat the market's,
-   provided every pick says so (copy C2)? Default: yes.**
-   Settles "the value is great": on the 2026-09-15 board the market's number
-   cleared the price on none of 82 game-market sides and none of 56 likely
-   props. "Take" stops for good if the harm check fires (11.4). If no, the card
+   provided every pick says so (copy C2)? Default: yes. STILL OPEN.**
+   His answers of 2026-09-16 presuppose this and make it more load-bearing, not
+   less: with the plus-money class the whole pick rests on our own number, and
+   the markdown of section 4 is the only thing standing between his direction
+   and an unmarked model number. Presupposing is not answering, so the question
+   stays open and is not recorded as settled. Settles "the value is great": on
+   the 2026-09-15 board the market's own number cleared the price on none of
+   112 candidates, and G13 now refuses any candidate where it does. "Take"
+   stops for good, per class, if the harm check fires (11.4). If no, the card
    uses no "Take" and shows shadow A's list under copy C9, as a separate
    registration.
 8. **Among picks that pass every check, list the longest price first rather
-   than the most likely first? Default: yes.**
-   Settles the 2026-09-11 order: likely bets first, then sorted by price. The
-   other order puts the shortest prices at the top.
+   than the most likely first? ANSWERED 2026-09-16 about 00:50Z, by replacing
+   the question.** His words, verbatim, in reply to "Among bets that pass every
+   check, what goes at the top of the card?":
+
+   > "again based on cionfidence x value alrogirthm that we need to dial in"
+
+   So neither of the two orders the draft offered is used. The ranking key is
+   the score of section 4, descending, across both classes in one list
+   (section 5). Question 10 below asks the one thing his answer does not
+   settle: whether he wants plus-money picks grouped in their own section
+   rather than interleaved.
+9. **NEW, and open. Should at most 3 of the card's 10 entries be plus-money
+   picks? Default: yes, `PLUS_MONEY_SUBCAP = 3` (G14).**
+   This is a restriction on the thing he asked for most, and it was not put to
+   him before it was drafted, so it is asked now. The case for it: the class is
+   brand new, its record is empty, `docs/RESEARCH_STRATEGY_REPLICATION.md`'s
+   SR1 treats a slice of this exact band as an open, unread hypothesis, and on
+   the one board checked the sub-cap changed a 5-pick card into a 5-pick card
+   with one plus-money pick dropped (Pirates +190). The case against: it
+   refuses bets that passed every gate, on a judgement no measurement supports.
+   If he answers no, G14 is removed and G12's ceiling of 10 is the only limit.
+10. **NEW, and open. Should plus-money picks be listed in their own section
+    below the main picks, instead of interleaved with them by score?
+    Default: no, interleaved.**
+    Interleaving is what his answer to question 8 says: the top of the card is
+    whatever the score puts there, and on the design board that was a main-band
+    pick with two plus-money picks at ranks 2 and 3. A separate section would
+    mean a plus-money pick can never top the card whatever its score. Either
+    way every plus-money entry carries copy C14 on its face and is graded on
+    its own record; only the layout is in question.
+11. **NEW, and open. His confidence band, "30-45+ percent", is shut below about
+    +152, including +150, the first price he named. Register it that way?
+    Default: yes, `MARKDOWN` and `BASE_EDGE` stand as section 4 fixes them.**
+    G7's bar on the raw number is 55.03% at +100, 45.34% at +150, 43.86% at
+    +160, 38.98% at +200 and 34.53% at +250 (4.6), so a raw number inside his
+    band can be a pick only from about +152 upward, and the bottom of his band,
+    30 per cent, is out of reach at every price G4 allows. That is arithmetic,
+    not a judgement: it follows from the 3.8-point markdown and the required
+    edge, each measured or derived in 4.1 and 4.2, neither chosen to close his
+    band, and it is the reason G6's 0.30 floor can never refuse a pick. The
+    case for leaving it shut: every populated bucket of the one live
+    reliability table we have runs hot, and opening the short end means
+    publishing at exactly the confidence level this repo has never measured on
+    a number we know runs high. The case against: he named +150 himself, and
+    the rule as drafted answers that price with nothing inside his band. If he
+    wants it open, the change is to `MARKDOWN` or to `BASE_EDGE`, it has to be
+    made **before** registration, and a different value is a new rule id
+    (11.7), so it can never be made afterwards to rescue a thin card.
 
 One decision about V1, not V2, is not in this list: whether V1's nightly
 calibration refit keeps reading the sealed window. It is set out in the
@@ -1307,6 +2142,7 @@ diagnosis, section 0, and Brey answered it on 2026-09-15 at about 22:35Z,
 are locked for the current card until V2 replaces it. That work is done
 separately from this registration and its record is
 `docs/CARD_CALIBRATION_FREEZE_2026-09-15.md`. It changes no number here.
+
 
 ## 16. Amendment log
 
@@ -1332,7 +2168,15 @@ change at all; each says what changed and on whose word.
 | 2026-09-16 | Draft correction, on the orchestrator's instruction after a verification pass, no owner answer involved and no number changed. The claim that the freeze stops V1's model changing was narrowed to what the freeze covers, its `a` and `b`; section 10 and 11.6 now pin V1 by a `v1_code_fingerprint` on every shadow row, and 11.6's caveat fires on any change to V1's model or selection files, not only on a refit restart. Sections 10, 11.6, 15 (status line) and 16 |
 | 2026-09-16 | Draft correction, same instruction. C1, C5, C10 and C12 no longer promise three bets on a day the rule itself lets list fewer, and C13 is declared to replace C5's two fill sentences as well as C4. Sections 0, 6 (the floor bullet) and 13 (C1, C5, C10, C12, C13) |
 | 2026-09-16 | Draft correction, same instruction. Question 1's claim that the floor "honours" the 2026-09-10 directive is limited to boards that offer three candidates, with the departure on thinner boards restored in the words the draft used before the amendment. Section 15, question 1; diagnosis section 6's 2026-09-10 row |
-| 2026-09-16 | Draft correction, same instruction. The largest card this rule can list, 13 bets (10 picks and 3 fills), is stated as a departure from the owner's "3-10 bets" in G12, section 6, question 1 and the diagnosis's 2026-09-15 row, for him to rule on before registration. No cap was imposed and no gate changed |
+| 2026-09-16 | Draft correction, same instruction. The largest card this rule can list, 13 bets (10 picks and 3 fills), is stated as a departure from the owner's "3-10 bets" in G12, section 6, question 1 and the diagnosis's 2026-09-15 row, for him to rule on before registration. No cap was imposed and no gate changed. **Superseded by the row below: he ruled on it the same day** |
+| 2026-09-16 about 00:45Z | Owner answer, question 1's open part: cap the card at **10 listed bets in total, picks and fills together**, replacing the draft's ceiling of 10 picks that let 13 be listed. G12 now counts every entry; the 13-bet state and every statement of it are removed from sections 0, 6, G12, question 1 and the diagnosis's 2026-09-15 row. The cost of the answer (an eleventh entry that passed every gate is refused a slot rather than a published fill being withdrawn) is written into section 6 and counted by D4 |
+| 2026-09-16 about 00:50Z | Owner answer, question 2: **"No, allow earlier."** G10's lineup test is removed; a prop may be a pick before its lineup posts, priced off the batter's season-average plate appearances, as the live V1 card already does (`src/report/card.py:717`). The 15-game floor, the 2-book floor, one pick per player and G5 to G8 and G13 are unchanged, and the no-lineup disclosure becomes mandatory on the face (copy C15). Sections 0.1, 3 (G10), 8, 13 (C3, C6, C15), 14, 15 |
+| 2026-09-16 about 00:50Z | Owner answer, question 5: yes, plus-money underdogs may be picks ("BOOM KEY QUESTION!... theres a lot of times where trhe underdog actuall makes more sens than the favorite... +100 to +250 poicks offer rally good value", quoted in full in 0.1 and question 5). G5's 0.50 test is replaced for plus-money candidates by a market band of 0.20 to below 0.50; G4 gains a +250 ceiling; a separately graded `PLUS_MONEY` class is created. Sections 0, 0.1, 3, 4, 5, 6, 10, 11.1, 11.3, 11.4, 11.5, 11.7, 11.8, 11.9, 12, 13, 14, 15 |
+| 2026-09-16 about 00:50Z | Owner answer, question 6: **"even confidence of 30-45+ percent if high enough value (+150, +200 etc etc) we need an algorithm of value x confidence / likelihood."** G6 becomes a floor of 0.50 in the main band and **0.30** in the plus-money band, his own number, applied to fills as well as picks; the "algorithm of value x confidence" is registered as the score of section 4, used for both selection and ranking. Sections 3 (G6, G7), 4, 5, 15 |
+| 2026-09-16 about 00:50Z | Owner answer, question 8: **"again based on cionfidence x value alrogirthm that we need to dial in."** The draft's price-first ranking key is replaced by the score, descending, with both classes interleaved in one list. Sections 4, 5, 15; new questions 9 and 10 added for the two things his answers do not settle (the plus-money sub-cap and the card's section order) |
+| 2026-09-16 | Supersession recorded, not applied quietly: the standing directive of 2026-09-11 ("none of that price matters until we know it's a MORE THAN LIKELY BET...") is superseded for the card by the answers of 2026-09-16 about 00:50Z. Both quotes and both dates are in a new section 0.1, in question 5, in question 8 and in the diagnosis's owner-directive table. The directive is kept for the main band's 0.50 tests and is measured on its own record by new shadow rule E (section 10) |
+| 2026-09-16 | Draft revision applying the four answers above, on the orchestrator's instruction, after an adversarial design competition and an independent judgement. New: the markdown of our own number (`MARKDOWN = 0.038`, section 4.1), the price-scaled required edge (`BASE_EDGE = 0.010`, section 4.2), the +250 ceiling (4.3), the score (section 4), G13 (no line shopping), G14 (plus-money sub-cap), the two price classes and their separate records (11.1), class-scoped floors, harm checks, verdicts and retirement (11.4, 11.5, 11.7), the statistical-power arithmetic moved into the evaluation plan (11.4), the failure-mode section (11.9), the constant-sensitivity table (4.5), descriptive lines D7, D8 and D9, shadow rules D and E, and copy C9b, C14 and C15. The section 14 illustration was re-run under the revised rule on the same already-seen pool (`scratchpad/value_score/final_rule.py`). No evidence threshold, floor, FAIL condition, verdict bar or stop date was loosened; the floors, the 300-pick and 60-date bars and all five stop conditions are unchanged and now apply per class |
+| 2026-09-16 | Draft correction, on the orchestrator's instruction after a verification pass on the revision, no owner answer involved and **no gate, constant, threshold, floor, FAIL condition, verdict bar or stop date changed**. Six things the revision stated wrongly or left unsaid were fixed, each checked against the design pool first (`scratchpad/value_score/fix_verify.py`, `fix_verify2.py`). (1) **Customer truth:** copy C14 told every plus-money reader that our number does not make the side the underdog, while the number printed one line above it was 48.9%, 37.3% or 48.7% on the three entries the registration's own illustration produces. The clause is struck and replaced with C1's wording, which was already true of the class; sections 7 and 13 now state the rule that no plus-money string may imply our number makes the side more likely than not, and the build plan pins it as an assertion against a below-0.50 fixture. (2) **Shadow A** could not produce 14.3's list under section 10's definition. A is now defined as exempt from G14 with the reason written out, the printed list stands, and the build plan's two test rows are aligned so they cannot both pass. (3) **G6** is stated as strictly dominated by G7 on a pick at every allowed price, live only on a fill, in G6, 0.2 and 4.5. (4) **4.5's** claim that the value test would have refused the Guardians fill "in any case" is corrected: it is true of the pick path and false of the fill path. (5) **4.6** gains the smallest raw number a pick may carry at each price, and says plainly that the owner's 30-to-45 band is shut below about +152, including the +150 he named, and that its 30 per cent floor is unreachable everywhere; new open question 11 puts that to him. (6) **11.9** had the ranking mechanism backwards: the Kelly multiplier `d/(d-1)` falls from 2.600 at -160 to 1.400 at +250, so at equal edge the score penalises long prices; what lifts plus money is the smaller vig gap 4.4 already measured. Also corrected: 14.2 and the diagnosis's 5.3 said two of the three plus-money picks were inside his band when one is, and 1.1's inventory of measured numbers gained rows for `MARKDOWN` and `BASE_EDGE`, which come from the same document and window as G8's cap. Sections 0.2, 1.1, 3 (G6), 4.5, 4.6, 7, 10, 11.9, 13 (C14), 14.2, 14.3, 15 (status line, new question 11), 16 |
 
 ## Review record
 
@@ -1395,9 +2239,10 @@ confirmation date) are recorded in those files.
 ### Owner answers of 2026-09-15, applied to the draft
 
 Brey answered four questions in chat at about 22:35Z. Three of them changed
-this file; the fourth is about V1. The draft stays a draft: questions 2, 5, 6,
-7 and 8 are open, and registration still needs his explicit answer or his
-acceptance of each default.
+this file; the fourth is about V1. The draft stayed a draft: at that point
+questions 2, 5, 6, 7 and 8 were open. He answered four of those five the
+following morning; the table after this one records that. Only question 7, and
+the two new questions his answers raised, are open now.
 
 | Answer | Applied where | Note |
 |---|---|---|
@@ -1429,7 +2274,13 @@ was rejected. No number in section 11 changed, and the draft is still a draft.
 | medium | "V1's model does not change during V2's sample" (section 10) and "inside the sample" (11.6) claim more than the freeze delivers | Applied | Confirmed in `docs/CARD_CALIBRATION_FREEZE_2026-09-15.md`: "This freeze covers only the card calibration (`a`, `b` above). It says nothing about `DISPERSION` or `RHO`". This file already recorded 15 commits to the model files in five days (11.2) and 12 to `src/report/card.py` since 2026-08-28, for a sample running to about August 2027, so the sentence asserted what a one-file freeze cannot deliver and 11.6's caveat fired only on a refit restart. Both sentences narrowed to the calibration file; V1 pinned by a `v1_code_fingerprint` on every shadow row, registered in section 16; 11.6's caveat now fires on any detected change that is not comment-only, docstring-only or customer-copy-only; build plan T3, T7 and T14 carry the field, the escalation and the check |
 | medium | C1, C12 and C5 promise three bets a day on days the rule allows fewer, and C13 was declared to replace C4 only | Applied | Confirmed against section 6's "Fewer than 3 entries" bullet and C13's own "At n = 0 the card shows this line and no entry". On a stale board that also offers fewer than three candidates, C5 would have promised three bets beside two entries. C1 and C12 now say three bets on a day when three clear the first checks; C5 says "to three, or to as many as the board offers"; C10 says how the shortfall is filled rather than how many entries a day has; section 6's floor bullet carries the same condition; C13 replaces C5's two fill sentences as well as C4. Every changed string was re-checked against `tests/test_customer_language.py`, `tests/test_no_nothing_clears_the_bar.py` and `tests/test_web_structure.py` (which imports the same three lists), with no violation |
 | medium | Question 1 and the diagnosis's 2026-09-10 row claim the floor "honours"/"keeps" the three-to-five directive, where the pre-amendment draft recorded a departure | Applied | Confirmed: the same documents say a board can offer fewer than three candidates past G1, G2, G4, G5 and G9, and that state is published as a count with no entry. Both now honour the directive on every board that offers three and name the one state that departs, with C13 |
-| medium | The card can list 13 bets (10 picks plus 3 fills) against the owner's "3-10 bets", and no document stated it | Applied | Confirmed: G12 counts picks only and section 6 keeps a fill when picks arrive later. No cap was imposed, because each way of holding the total at 10 changes what goes on the public record and that is the owner's call. The maximum and the departure are now stated in G12, section 6, question 1 and the diagnosis's 2026-09-15 row, for him to rule on before registration |
+| medium | The card can list 13 bets (10 picks plus 3 fills) against the owner's "3-10 bets", and no document stated it | Applied, then settled by the owner | Confirmed: G12 counted picks only and section 6 keeps a fill when picks arrive later. No cap was imposed at the time, because each way of holding the total at 10 changes what goes on the public record and that is the owner's call. He was shown it and answered on 2026-09-16 about 00:45Z: 10 listed bets in total. G12 now counts every entry and the 13-bet state cannot occur |
+
+The gate lists in the two tables above describe the draft as it then stood.
+Under the revision of 2026-09-16 a fill passes G1, G2, G4, G5, G6, G8, G9, G10
+and G13, and the base gates a board's candidate must clear to be counted
+against the floor of 3 are the same nine. Nothing in those findings was
+reopened; only the gate numbering and the fill's gate list changed.
 
 The seven remaining items were read and left as they stand: the diagnosis
 states the fill rule in plainer words than the registration and is an
@@ -1438,3 +2289,113 @@ G12 and section 6 wordings of the fill trigger, section 1.1's present tense,
 the freeze commit (now cited in section 10 and 16), the stale-price grading
 (disclosed and owner-accepted) and the surviving "default" fragments change no
 number and no rule.
+
+### Owner answers of 2026-09-16, applied to the draft
+
+Brey answered four more questions in chat, one at about 00:45Z and three at
+about 00:50Z. All four changed this file. The draft stays a draft: questions 7,
+9 and 10 are open, and registration still needs his explicit answer or his
+acceptance of each default.
+
+| Answer | Applied where | Note |
+|---|---|---|
+| "10 listed bets in total" (00:45Z) | 0, 3 (G12), 6, 11.3 (D4), 15 (question 1), 16 | Replaces the ceiling that counted picks only. The 13-bet state is gone from every document. The cost, an eleventh gate-passing entry refused a slot rather than a published fill withdrawn, is written into section 6 and counted |
+| "No, allow earlier" (00:50Z, question 2) | 0.1, 3 (G10), 8, 13 (C3, C6, C15), 14, 15, 16 | The lineup test leaves G10; the 15-game floor is the whole of G10 now; the no-lineup disclosure becomes mandatory on the face. Matches V1's live behaviour, which the draft would have been stricter than |
+| The plus-money answer (00:50Z, question 5) | 0, 0.1, 3, 4, 5, 6, 10, 11.1, 11.3, 11.4, 11.5, 11.7, 11.8, 11.9, 12, 13, 14, 15, 16 | Creates the `PLUS_MONEY` class with its own gates, its own record, its own floors, its own harm check and its own retirement result. Supersedes the 2026-09-11 directive for the card, with both quotes and both dates in 0.1 |
+| "even confidence of 30-45+ percent... value x confidence" and "again based on cionfidence x value alrogirthm" (00:50Z, questions 6 and 8) | 3 (G6, G7), 4, 5, 15, 16 | Registers the score: a Kelly fraction on the marked-down number, used to select (with `required_edge`) and to rank, both classes in one list |
+
+**How the revision was produced, and what was rejected.** Three independent
+designs for the score were written against the same grounding report and judged
+by a fourth reviewer who re-implemented all three against the design board
+rather than trusting their own scripts. Two were rejected for reasons that
+matter here and are recorded so they are not re-proposed: one shrank our number
+80% toward the market's, which combined with G8's 10-point cap makes the main
+band structurally unreachable (only candidates with a vig gap under 1 point can
+pass, which is almost exclusively plus money); the other set the plus-money
+band's required edge at 21.5 points, which `breakeven(+250) = 28.57%` makes
+mathematically impossible for any sub-50% number at any allowed price, so its
+0.30 floor was a dead letter. The design adopted here was then changed on the
+judgement's instruction in nine ways: G11 is applied before G14 (the winning
+design's own script had them the wrong way round and under-reported its own
+output); a markdown of our number was added, which that design lacked
+altogether; `BASE_EDGE` was re-derived from a measured overconfidence instead
+of the market's vig gap; the sensitivity table was moved into the registration;
+the ranking was interleaved rather than sectioned, and the sub-cap and the
+section order were put to the owner as questions 9 and 10; G13 was added; the
+prop supersession was recorded in its own dated form; the statistical-power
+arithmetic was moved from a footnote into 11.4; the score cap was dropped
+because it could not fire; and SR1 was made a precondition of the first
+plus-money pick.
+
+**What was checked.** Every customer string changed or added was scanned
+against `HARD_BANNED`, `NEGATION_ONLY` and `NEGATORS` imported from
+`tests/test_customer_language.py` and `BANNED_PHRASES` and `BANNED_JARGON`
+imported from `tests/test_no_nothing_clears_the_bar.py`: 18 strings, 0
+violations (`scratchpad/value_score/final_copy_check.py`). The section 14
+illustration was re-run on the same already-seen pool under the revised rule
+(`scratchpad/value_score/final_rule.py`), with the supporting counts, the
+feasibility windows and the sensitivity sweep in
+`scratchpad/value_score/final_extra.py`. Consistency of the band, the
+constants, the gates, the floors, the ceiling, the sub-cap, the rule id and the
+shared copy strings across this file, the build plan and the diagnosis was
+checked by `scratchpad/value_score/final_consistency.py`.
+
+### Verification pass on the revision (2026-09-16)
+
+The revision above was reviewed again against the repo and against the design
+pool, and six findings were applied. Each was re-derived before it was applied,
+from `src.core.odds` and the 2026-09-15 candidate pool rather than from the
+documents (`scratchpad/value_score/fix_verify.py` and `fix_verify2.py`); none
+was accepted on the reviewer's word. **No gate, constant, threshold, floor,
+FAIL condition, verdict bar, harm-check arm, stop date or retirement result
+changed, and the sealed window was not touched.** Section 16's last row lists
+what moved.
+
+The finding that mattered most was customer truth. Copy C14, mandatory on the
+face of every plus-money entry, told the reader that "the market makes this
+side the underdog and our number does not", while the "Our number" figure
+printed one line above it is 48.9%, 37.3% or 48.7% on the three plus-money
+entries this rule produces on its own illustration board, and 41.1% raw on one
+of them. The clause was struck, C1's already-true wording put in its place, and
+the rule behind it written into section 7 and into the build plan's copy test
+so it is an assertion against a below-0.50 fixture rather than prose.
+
+Three findings were honesty gaps, all in the same direction: this file was less
+exact about the plus-money class than about the main band. G6's floors were
+credited as protections when G7 dominates both of them on the pick path; 4.5's
+account of the one candidate the plus-money floor refused was right about picks
+and wrong about fills; and 4.6 answered the owner's "30-45+ percent (+150,
++200)" with "reachable and reached" without saying that his band is shut at
++150 and that its 30 per cent floor is out of reach at every allowed price. The
+last of those is now open question 11, because it is a decision he should take
+and not a detail he should find later.
+
+One finding was reproducibility: section 14.3's shadow A list could not be
+produced by section 10's definition of A, and the build plan pinned both
+readings. A is now registered as exempt from G14, with the reason written into
+its row, the printed list stands, and both build-plan rows were aligned so a
+test built from one cannot pass while contradicting the other. One was an
+arithmetic error in the section written to be honest about the failure mode:
+11.9 said the Kelly score grows with the decimal odds when `d/(d-1)` falls from
+2.600 at -160 to 1.400 at +250. And one was completeness: 1.1's inventory of
+measured numbers carried G8's cap but not `MARKDOWN` or `BASE_EDGE`, which come
+from the same document and the same settled-outcome window.
+
+Two further errors were found while checking those and are corrected in the
+same pass: 14.2 and the diagnosis's 5.3 each said two of the three plus-money
+picks sat inside the owner's confidence band when one does, and G6's main-band
+floor of 0.50 is dominated by G7 exactly as the plus-money one is, which
+neither document said.
+
+**What was checked after.** The 19 customer strings, including both forms of
+the new C14, against `HARD_BANNED`, `NEGATION_ONLY` and `NEGATORS` imported
+from `tests/test_customer_language.py` and `BANNED_PHRASES` and `BANNED_JARGON`
+imported from `tests/test_no_nothing_clears_the_bar.py`: 0 violations
+(`scratchpad/value_score/final_copy_check.py`). The cross-document consistency
+script, extended with a section that holds these six findings closed and
+re-derives the band arithmetic from `src.core.odds` rather than reading it back
+out of the prose. Those checks are scoped to the live text of the section each
+one governs, because section 16 and this record quote the struck wording on
+purpose and a whole-file search would read the record of a fix as the defect:
+0 failures
+(`scratchpad/value_score/final_consistency.py`).
