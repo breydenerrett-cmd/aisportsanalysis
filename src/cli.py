@@ -3739,11 +3739,16 @@ def build_parser() -> argparse.ArgumentParser:
     card_publish.add_argument(
         "--dry-run", action="store_true",
         help="build and print the card without writing to the ledger")
-    card_publish.add_argument(
-        "--force", action="store_true",
-        help="freeze even outside the pre-first-pitch window (operator "
-             "override; the window exists so a scheduler running every half "
-             "hour cannot freeze the card the evening before)")
+    # REMOVED 2026-09-16: `--force` promised to "freeze even outside the
+    # pre-first-pitch window (operator override)". No code has read
+    # args.force on this subcommand since the freeze changed from refusing
+    # to publish early to a preview label plus a per-pick lock -- the veto it
+    # overrode stopped existing, and the flag stayed behind describing it.
+    # An operator reading --help was told a safety gate existed AND that this
+    # flag defeated it; neither was true. No caller passed it (checked
+    # scripts/ and .github/), so removing it breaks nothing. If an override
+    # is ever wanted again, add it with a consumer and a test in the same
+    # change.
     card_settle = card_sub.add_parser(
         "settle", help="grade one date's published card from final scores")
     card_settle.add_argument("--date", required=True, help="YYYY-MM-DD")
