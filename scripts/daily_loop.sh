@@ -317,10 +317,18 @@ for family in scores tennis_h2h; do
     fi
 done
 
-echo "== live settle (yesterday, $YESTERDAY) =="
-LIVE_SETTLE_OUT=$(python3 -m src.pipeline.live_window --settle --date "$YESTERDAY" 2>&1) || true
+# R16-L7: settlement from AUTHORITATIVE finals (mlb.fetch_results), never
+# from the live poller's own rows (D11) -- src.appstate.live_ledger.
+# settle_recent() grades yesterday plus any date in the last 7 days that
+# still has unsettled candidates, and prints ONLY counts (graded, voids,
+# unsettled): Stage 0 (docs/LIVE_BETTING_SYSTEM.md 3.1) forbids a per-rule
+# win-loss figure appearing in this or any other log, so this line must
+# never be changed to print live_ledger.record()/history() or anything else
+# that carries wins/losses/units.
+echo "== live settle (yesterday + unsettled last 7 days) =="
+LIVE_SETTLE_OUT=$(python3 -m src.appstate.live_ledger settle 2>&1) || true
 echo "$LIVE_SETTLE_OUT" | sed 's/^/  /'
-echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: live settle --date $YESTERDAY" >> "$RUN_NOTE"
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: live settle (counts only)" >> "$RUN_NOTE"
 
 # The running record, printed so the run log answers "how is the card doing"
 # without anyone opening the ledger. Read-only, never escalates.

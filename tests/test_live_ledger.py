@@ -149,9 +149,17 @@ class TestSettle(unittest.TestCase):
         summary = live_ledger.settle("2026-09-14", results, path=self.ledger_path)
 
         self.assertIsNotNone(summary)
-        self.assertEqual(summary["wins"], 1)
-        self.assertEqual(summary["losses"], 0)
-        self.assertAlmostEqual(summary["units"], 1.5, places=2)
+        self.assertEqual(summary["graded"], 1)
+        self.assertEqual(summary["voids"], 0)
+        self.assertNotIn("wins", summary)
+        self.assertNotIn("units", summary)
+
+        # The row itself still carries the real grade -- only the printed
+        # summary is stripped.
+        rows = [r for r in live_ledger._ledger(self.ledger_path).read()
+                if r.get("kind") == live_ledger.KIND_SETTLED]
+        self.assertEqual(rows[0]["result"], "WIN")
+        self.assertAlmostEqual(rows[0]["profit_units"], 1.5, places=2)
 
     def test_settle_win_negative_odds(self):
         """Win at -132 pays (100/132) profit ≈ 0.7576."""
@@ -178,10 +186,12 @@ class TestSettle(unittest.TestCase):
         summary = live_ledger.settle("2026-09-14", results, path=self.ledger_path)
 
         self.assertIsNotNone(summary)
-        self.assertEqual(summary["wins"], 1)
-        self.assertEqual(summary["losses"], 0)
+        self.assertEqual(summary["graded"], 1)
+        rows = [r for r in live_ledger._ledger(self.ledger_path).read()
+                if r.get("kind") == live_ledger.KIND_SETTLED]
+        self.assertEqual(rows[0]["result"], "WIN")
         # Profit: 100/132 ≈ 0.7576, rounded
-        self.assertAlmostEqual(summary["units"], 100/132, places=3)
+        self.assertAlmostEqual(rows[0]["profit_units"], 100/132, places=3)
 
     def test_settle_loss_pays_minus_1(self):
         """Loss always pays -1.0."""
@@ -208,9 +218,11 @@ class TestSettle(unittest.TestCase):
         summary = live_ledger.settle("2026-09-14", results, path=self.ledger_path)
 
         self.assertIsNotNone(summary)
-        self.assertEqual(summary["wins"], 0)
-        self.assertEqual(summary["losses"], 1)
-        self.assertAlmostEqual(summary["units"], -1.0, places=2)
+        self.assertEqual(summary["graded"], 1)
+        rows = [r for r in live_ledger._ledger(self.ledger_path).read()
+                if r.get("kind") == live_ledger.KIND_SETTLED]
+        self.assertEqual(rows[0]["result"], "LOSS")
+        self.assertAlmostEqual(rows[0]["profit_units"], -1.0, places=2)
 
     def test_settle_push_is_zero(self):
         """Push scores zero profit."""
@@ -237,11 +249,22 @@ class TestSettle(unittest.TestCase):
         summary = live_ledger.settle("2026-09-14", results, path=self.ledger_path)
 
         self.assertIsNotNone(summary)
-        self.assertEqual(summary["pushes"], 1)
-        self.assertAlmostEqual(summary["units"], 0.0, places=2)
+        self.assertEqual(summary["graded"], 1)
+        rows = [r for r in live_ledger._ledger(self.ledger_path).read()
+                if r.get("kind") == live_ledger.KIND_SETTLED]
+        self.assertEqual(rows[0]["result"], "PUSH")
+        self.assertAlmostEqual(rows[0]["profit_units"], 0.0, places=2)
 
-    def test_settle_void_is_zero(self):
-        """Void (missing score) is zero profit."""
+    def test_settle_no_final_stays_unsettled_not_void(self):
+        """D11 fix: a candidate with no final yet stays UNSETTLED, not VOID.
+
+        The old behaviour wrote a permanent VOID the first time settle() ran
+        without a final for the game -- a window that stopped early, or a
+        feed that briefly failed, would void a real candidate forever. R16-L7
+        requires it stay unsettled and be retried, with VOID reserved for
+        candidates whose OWN date is 7+ days old (see
+        test_live_settle.test_void_only_after_seven_days).
+        """
         candidate = {
             "rule_id": "mlb_favorite_trails_after_3",
             "sport": "mlb",
@@ -258,13 +281,20 @@ class TestSettle(unittest.TestCase):
 
         live_ledger.record_candidate(candidate, path=self.ledger_path)
 
-        results = {}  # No result for this game
+        results = {}  # No result for this game yet
 
-        summary = live_ledger.settle("2026-09-14", results, path=self.ledger_path)
+        summary = live_ledger.settle(
+            "2026-09-14", results, now="2026-09-14T23:00:00Z",
+            path=self.ledger_path)
 
         self.assertIsNotNone(summary)
-        self.assertEqual(summary["voids"], 1)
-        self.assertAlmostEqual(summary["units"], 0.0, places=2)
+        self.assertEqual(summary["voids"], 0)
+        self.assertEqual(summary["graded"], 0)
+        self.assertEqual(summary["unsettled"], 1)
+
+        # Still shows up as unsettled, not silently dropped.
+        still = live_ledger.unsettled(date="2026-09-14", path=self.ledger_path)
+        self.assertEqual(len(still), 1)
 
     def test_settle_returns_none_if_no_candidates(self):
         """settle returns None if no unsettled candidates."""
@@ -272,8 +302,44 @@ class TestSettle(unittest.TestCase):
         summary = live_ledger.settle("2026-09-14", results, path=self.ledger_path)
         self.assertIsNone(summary)
 
+    def test_settle_summary_has_no_win_loss_keys(self):
+        """R16-L7: settle()'s return is counts only -- no wins/losses/units/
+        by_rule anywhere, so a log that prints it cannot leak an interim
+        per-rule record (Stage 0, docs/LIVE_BETTING_SYSTEM.md 3.1)."""
+        candidate1 = {
+            "rule_id": "mlb_favorite_trails_after_3",
+            "sport": "mlb",
+            "game_id": "mlb_210",
+            "side": "home",
+            "price": -110,
+            "observed_utc": "2026-09-14T20:00:00Z",
+        }
+        candidate2 = {
+            "rule_id": "mlb_starter_pulled_early",
+            "sport": "mlb",
+            "game_id": "mlb_211",
+            "side": "away",
+            "price": 150,
+            "observed_utc": "2026-09-14T20:05:00Z",
+        }
+        live_ledger.record_candidate(candidate1, path=self.ledger_path)
+        live_ledger.record_candidate(candidate2, path=self.ledger_path)
+
+        results = {
+            "mlb_210": {"home_score": 3, "away_score": 1},
+            "mlb_211": {"home_score": 2, "away_score": 4},
+        }
+        summary = live_ledger.settle("2026-09-14", results, path=self.ledger_path)
+
+        self.assertIsNotNone(summary)
+        self.assertEqual(set(summary.keys()), {"date", "graded", "voids", "unsettled"})
+        for forbidden in ("wins", "losses", "units", "by_rule", "pushes"):
+            self.assertNotIn(forbidden, summary)
+
     def test_settle_by_rule_breakdown(self):
-        """settle returns by_rule breakdown."""
+        """settle() itself is counts-only (no by_rule); the internal
+        record() aggregate -- never printed by the daily loop -- still
+        carries a by-rule breakdown from the settled rows."""
         candidate1 = {
             "rule_id": "mlb_favorite_trails_after_3",
             "sport": "mlb",
@@ -313,9 +379,13 @@ class TestSettle(unittest.TestCase):
         summary = live_ledger.settle("2026-09-14", results, path=self.ledger_path)
 
         self.assertIsNotNone(summary)
-        self.assertEqual(summary["wins"], 2)
-        self.assertIn("mlb_favorite_trails_after_3", summary["by_rule"])
-        self.assertIn("mlb_starter_pulled_early", summary["by_rule"])
+        self.assertEqual(summary["graded"], 2)
+        self.assertNotIn("by_rule", summary)
+
+        full = live_ledger.record(path=self.ledger_path)
+        self.assertEqual(full["wins"], 2)
+        self.assertIn("mlb_favorite_trails_after_3", full["by_rule"])
+        self.assertIn("mlb_starter_pulled_early", full["by_rule"])
 
 
 class TestRecord(unittest.TestCase):
