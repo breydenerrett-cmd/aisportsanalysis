@@ -70,16 +70,38 @@ class NFLCardPublishTests(unittest.TestCase):
         self.assertFalse(card["frozen"])
 
     def test_card_for_date_with_no_picks_returns_empty_card(self):
-        """Entries with no qualifying picks -> empty card."""
-        # Create an entry that won't make a pick (e.g., game already started)
+        """A priced game that still clears no gate -> the "cleared the bar"
+        reason, not the "no board" one -- this entry HAS h2h_quotes, so the
+        board existed and the game (already started) was refused, which is
+        a different fact from never having had a board at all."""
         past_kickoff = (self.now - __import__('datetime').timedelta(hours=1)).isoformat()
-        entry = self._make_entry(kickoff_utc=past_kickoff)
+        entry = self._make_entry(kickoff_utc=past_kickoff,
+                                 h2h_quotes=self._make_h2h_quotes())
 
         card = nfl_card.card_for_date(
             "2026-09-14", now=self.now, entries=[entry], path=str(self.card_path))
 
         self.assertEqual(len(card["picks"]), 0)
-        self.assertIn("No NFL", card["reason"])
+        self.assertIn("cleared the bar", card["reason"])
+
+    def test_card_for_date_with_no_board_returns_no_board_reason(self):
+        """Entries exist but not one carries a priced board (h2h_quotes is
+        empty on every entry) -> the reason must say plainly that nothing
+        was available to evaluate, not that a candidate was judged and
+        declined. This is the 2026-09-16 defect: boards_by_matchup(sport=
+        "nfl") resolved every NFL team name through the MLB-only translator
+        and returned {} on every date, so nfl_slate built entries with
+        h2h_quotes=[] for every game, every day -- and the old wording
+        ("No NFL game cleared the bar") read as the model exercising
+        judgment when no candidate was ever built to judge."""
+        entry = self._make_entry(h2h_quotes=[])
+
+        card = nfl_card.card_for_date(
+            "2026-09-14", now=self.now, entries=[entry], path=str(self.card_path))
+
+        self.assertEqual(len(card["picks"]), 0)
+        self.assertIn("No priced board was available", card["reason"])
+        self.assertNotIn("cleared the bar", card["reason"])
 
     def test_publish_for_date_with_no_picks_returns_not_published(self):
         """publish_for_date with empty card -> {"published": False}."""

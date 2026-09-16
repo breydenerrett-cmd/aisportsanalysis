@@ -295,10 +295,15 @@ class TestBoardsByMatchupSport(unittest.TestCase):
         boards_mlb = prices.boards_by_matchup(rows)
         self.assertEqual(len(boards_mlb), 1)
 
-        # sport="nfl": the second row has sport="nfl" but team_abbrev_from_name
-        # still recognizes it, so we get 1 board
+        # sport="nfl": the second row is tagged nfl but names MLB clubs, so
+        # the NFL translator (src.sports.nfl_teams) does not recognize it and
+        # it is dropped -- 0 boards, not 1. Before the fix that put the
+        # sport behind the translator choice, this row would have resolved
+        # anyway (team_abbrev_from_name recognizes "Dodgers"/"Giants"
+        # regardless of the sport tag), which is exactly the bug: an NFL
+        # lookup silently accepting an MLB name.
         boards_nfl = prices.boards_by_matchup(rows, sport="nfl")
-        self.assertEqual(len(boards_nfl), 1)
+        self.assertEqual(len(boards_nfl), 0)
 
 
 if __name__ == "__main__":

@@ -21,9 +21,27 @@ from src.pipeline import nfl_slate
 
 
 def _empty_reason(entries: Optional[list]) -> str:
-    """Why the card has no picks."""
+    """Why the card has no picks.
+
+    Two different facts read the same on the page if this collapses them:
+    no game ever had a priced board to look at (nfl_slate found no
+    moneyline quotes at all -- e.g. boards_by_matchup(sport="nfl") returned
+    nothing) versus every game had a board and every candidate was refused
+    by a gate (MIN_BOOKS, kickoff passed, 0.5 consensus). The first is "we
+    had nothing to look at"; the second is "we looked and declined". Before
+    this distinction existed, both said "No NFL game cleared the bar for
+    this date" -- on 2026-09-16 that wording was traced to a join bug
+    (boards_by_matchup resolving NFL team names through the MLB-only
+    translator) that emptied every board, every day, since NFL entries
+    existed. The page would have read as the model exercising judgment on
+    2026-09-17's forward-testing debut when in fact no candidate was ever
+    built to judge.
+    """
     if not entries:
         return "No NFL games on this date."
+    if not any(entry.get("h2h_quotes") for entry in entries):
+        return ("No priced board was available for this date, so nothing "
+                "could be evaluated.")
     return "No NFL game cleared the bar for this date."
 
 

@@ -2993,17 +2993,49 @@ def cmd_card(args) -> int:
         from src.report import nfl_card as nfl_card_mod
 
         now = datetime.now(timezone.utc)
-        result = nfl_card_mod.publish_for_date(date_str, now=now)
+
+        # BUILD FIRST, WRITE SECOND -- same shape as the MLB branch below.
+        # `--dry-run` has to see the card before anything is written to the
+        # ledger; `nfl_card_mod.publish_for_date` used to build AND write in
+        # one call, so this branch ignored `args.dry_run` entirely and wrote
+        # a real row to evidence/cards_nfl_v1.jsonl on every verification
+        # run (found 2026-09-16 running the W-6 forward-test dry run --
+        # `--dry-run` printed "no card: None" and had already published for
+        # real). `prefer_frozen=False`: this command IS the thing that
+        # freezes, and reading the ledger back here would echo an earlier
+        # run's decision as if it were this one's.
+        card = nfl_card_mod.card_for_date(date_str, now=now, entries=None,
+                                          prefer_frozen=False)
 
         print(f"NFL CARD -- {date_str}")
 
-        if result.get("published"):
-            picks = result.get("picks") or []
-            print(f"  published: {len(picks)} pick(s)")
-            for pick in picks:
-                print(f"    #{pick['rank']} [{pick['label']}] {pick['bet']}")
-        else:
-            print(f"  no card: {result.get('reason')}")
+        if not card["picks"]:
+            # `reason` is real text now (see nfl_card._empty_reason): "no
+            # priced board" and "no game cleared the bar" are different
+            # facts and read differently here. THE BUG THIS REPLACES: the
+            # old NFL branch called `publish_for_date`, whose *success*
+            # return (the ledger row itself) carries no "published" key by
+            # design (`tests/test_nfl_card_publish.py` pins that shape
+            # against the *failure* return's `{"published": False, ...}`).
+            # `result.get("published")` is therefore None -- falsy -- on a
+            # genuine publish, so this branch's old `else` fired on success
+            # too and printed "no card: None": a real, STRONG Bills pick
+            # reported as if nothing existed to look at.
+            print(f"  no card: {card.get('reason')}")
+            return EXIT_OK
+
+        for pick in card["picks"]:
+            print(f"    #{pick['rank']} [{pick['label']}] {pick['bet']}")
+
+        if getattr(args, "dry_run", False):
+            print("  --dry-run: nothing written.")
+            return EXIT_OK
+
+        row = card_ledger.publish(card, now=now.isoformat(), sport="nfl")
+        picks = row.get("picks") or []
+        print(f"  published: {len(picks)} pick(s)"
+              + ("  (already published, no change)"
+                 if row.get("already_published") else ""))
 
         return EXIT_OK
 

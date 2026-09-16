@@ -309,6 +309,22 @@ def boards_by_matchup(rows=None, sport="mlb") -> dict:
     from src.pipeline import slate as slate_mod
     from src.pipeline import snapshots
 
+    # THE TRANSLATOR MUST MATCH THE SPORT. slate_mod.team_abbrev_from_name's
+    # `_NAME_TAIL_TO_ABBREV` table holds MLB club-name tails only, so every
+    # NFL row resolved to None on both sides and was dropped by the
+    # `if not away or not home` guard below -- boards_by_matchup(sport="nfl")
+    # returned {} on every date, which silently emptied nfl_slate's
+    # h2h_quotes and made nfl_card.select() return [] for every game, always
+    # (caught 2026-09-16 against 2026-09-17's real Lions @ Bills rows: 88
+    # moneyline rows in, 0 resolved, 0 boards). src.sports.nfl_teams already
+    # holds the NFL roster (nfl_slate.py uses it for full_name()); reused
+    # here rather than typing the 32 teams out a second time.
+    if sport == "nfl":
+        from src.sports import nfl_teams
+        name_to_abbrev = nfl_teams.abbrev
+    else:
+        name_to_abbrev = slate_mod.team_abbrev_from_name
+
     # FULL-GAME MONEYLINE ROWS ONLY. The store has carried spreads, totals
     # and first-five rows alongside h2h since 2026-09-03; without this
     # filter `latest_instant`'s newest-row-per-book rule let a book's
@@ -322,8 +338,8 @@ def boards_by_matchup(rows=None, sport="mlb") -> dict:
         source = [r for r in source if snapshots._is_sport(r, sport)]
     grouped = {}
     for row in source:
-        away = slate_mod.team_abbrev_from_name(row.get("away_team") or "")
-        home = slate_mod.team_abbrev_from_name(row.get("home_team") or "")
+        away = name_to_abbrev(row.get("away_team") or "")
+        home = name_to_abbrev(row.get("home_team") or "")
         date = snapshots.official_date(row.get("commence_time"))
         if not away or not home or not date:
             continue

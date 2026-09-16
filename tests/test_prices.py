@@ -139,6 +139,52 @@ class ForGameTests(unittest.TestCase):
         for quote in board["quotes"]:
             self.assertEqual((quote["away_price"], quote["home_price"]), (-110, -110))
 
+    def _nfl_moneyline_rows(self, n=6):
+        """A realistic NFL moneyline capture: real club names, sport="nfl"."""
+        base = {"observed_utc": "2026-09-16T12:00:00Z", "event_id": "e1",
+                "commence_time": "2026-09-18T00:15:00Z",  # Thu 8:15pm ET
+                "home_team": "Buffalo Bills", "away_team": "Detroit Lions",
+                "sport": "nfl", "book_last_update": "x"}
+        return [dict(base, book=f"book{i}", away_price=115, home_price=-135)
+                for i in range(n)]
+
+    def test_boards_by_matchup_builds_an_nfl_board(self):
+        """Regression, 2026-09-16: boards_by_matchup(sport="nfl") called the
+        MLB-only translator (slate.team_abbrev_from_name) on both team
+        names, which recognizes only MLB club-name tails. Every NFL row
+        resolved to None on both sides and was dropped, so this returned {}
+        for every date, which emptied nfl_slate's h2h_quotes and made
+        nfl_card.select() return [] for every NFL game -- traced against
+        2026-09-17's real Lions @ Bills slate (88 moneyline rows in, 0
+        resolved, 0 boards) the day before NFL forward testing was due to
+        start. Run against the pre-fix code, this test fails with a
+        KeyError (boards_by_matchup returned {}); it must pass now."""
+        boards = prices.boards_by_matchup(
+            rows=self._nfl_moneyline_rows(), sport="nfl")
+        board = boards[("DET", "BUF", "2026-09-17")]
+        self.assertEqual(len(board["quotes"]), 6)
+        for quote in board["quotes"]:
+            self.assertEqual((quote["away_price"], quote["home_price"]),
+                             (115, -135))
+
+    def test_boards_by_matchup_mlb_path_unchanged_by_the_nfl_translator(self):
+        """Regression: choosing the translator by `sport` must not touch
+        the MLB path (the default, and every explicit sport="mlb" call).
+        Same fixture, same assertions as
+        test_boards_by_matchup_holds_only_moneyline_quotes, run both with
+        the default sport and with sport="mlb" made explicit, to pin that
+        neither reads any differently than before this change."""
+        for boards in (
+            prices.boards_by_matchup(rows=self._mixed_market_rows()),
+            prices.boards_by_matchup(rows=self._mixed_market_rows(),
+                                     sport="mlb"),
+        ):
+            board = boards[("ATL", "PHI", "2026-09-07")]
+            self.assertEqual(len(board["quotes"]), 6)
+            for quote in board["quotes"]:
+                self.assertEqual(
+                    (quote["away_price"], quote["home_price"]), (-110, -110))
+
 
 if __name__ == "__main__":
     unittest.main()
