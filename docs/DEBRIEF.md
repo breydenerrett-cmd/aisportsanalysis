@@ -137,7 +137,7 @@ Verified 2026-08-31 ~20:15 UTC unless noted.
 
 | asset | count | note |
 |---|---|---|
-| Game results store | **9,319 games**, span 2023-03-01..2026-08-30 | 871 dates with games; **251 dates inside the span never fetched** (holes, being backfilled); 122 unresolved |
+| Game results store | **4,586 games**, span 2025-03-27..2026-09-10 | Corrected 2026-09-16: the row above read "9,319 games, span 2023-03-01..2026-08-30, 251 dates never fetched", which the file has not matched for some time. There are **no 2023 or 2024 rows at all**, which blocked the first registered screen of the home-underdog family (`docs/SR1_RESULT_2026-09-16.md`); the fix is a free MLB StatsAPI backfill through `src.pipeline.history.ingest_range` |
 | Statcast pitch store | **180 windows, 2,737,968 pitch rows** | rebuilt point-in-time, carries `bb_type` (present on 17.4% = the balls-in-play rate), 0 failed windows |
 | Forward h2h snapshots | `data/processed/odds_snapshots.jsonl` — **894 rows**, 2026-08-27..08-31 | verified by line count |
 | Forward multi-book boards | `data/processed/odds_multibook.jsonl` — **981 rows**, 2026-08-31 only, **11 books** | store is one day old |
