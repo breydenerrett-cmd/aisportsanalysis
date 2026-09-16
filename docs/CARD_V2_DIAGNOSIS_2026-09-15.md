@@ -599,6 +599,45 @@ band +100 to +150") is registered, top-ranked and has never been run, and the
 registration now requires it to be run and published before the first
 plus-money pick is shown.
 
+**The variant family makes the calendar longer still, and the arithmetic is in
+the registration rather than here.** The owner's answers of 2026-09-16 about
+03:10Z turned two disputed settings into a four-arm family
+(`docs/PREREG_CARD_V2.md` section 17). Four arms mean six comparisons, and six
+independent tests at an uncorrected 5 per cent bar produce at least one
+apparent winner by luck alone 26.5 per cent of the time, so the family carries a
+family-wise 0.05 correction whose bar is 0.008333. The six comparisons mature
+years apart and two of them are expected never to read at all, so the bar is
+registered flat at 0.008333 for any comparison read while a sibling is unread,
+and a comparison is read once and never re-read at a looser bar (17.3). That bar
+costs 1.5428 times the sample at 80 per cent power, so a **promotion** decision
+needs 463 counted picks of a class and 93 slate dates, on both arms and again on
+the set of picks only one of them holds (17.3, 11.10). The published card's own
+verdict is untouched at 300 picks and 60 dates.
+
+What that means in dates, at the discordance rates of the design board,
+assuming a fresh board every day, and counting discordance **per class**,
+because the floor is per class: the loose, uncapped arm separates from the
+published card on `PLUS_MONEY` in about 116 slate dates, roughly two thirds of
+the 2027 season, and on `MAIN` in about 463; the loose, capped arm separates on
+`MAIN` in about 232, roughly 1.2 seasons, and its `PLUS_MONEY` comparison has
+zero expected discordance and never reads; and the arm that only removes the
+sub-cap needs about 463 on `PLUS_MONEY`, about 2.5 seasons, which should be
+expected to read `UNDERPOWERED`, while its `MAIN` comparison never reads
+either. The family's real sample starts in late March 2027, because
+the 2026 regular season leaves 12 counted dates. **Nothing in the family will
+ever answer "which is more profitable" on profit**: that needs 6,952 to 19,311
+plus-money bets (4.4's method, `docs/PREREG_CARD_V2.md` 17.8). The instrument
+that fires soonest is again the harm check, which the loose uncapped arm can
+trip in about eight fresh slates because its card is 7 plus money out of 10, and
+which the published card can trip in about seventeen.
+
+**A promotion is scoped to the class it was won on.** The arms differ in
+`MARKDOWN` and `BASE_EDGE`, which govern the main band as much as the
+plus-money band, so a successor card registered on a `PLUS_MONEY` read keeps
+the published card's constants on `MAIN` unchanged (17.4 clause 8). Without
+that, an arm retired as a loser on one class could reach customers on the
+strength of the other.
+
 ---
 
 ## 6. Owner directives this changes
@@ -616,6 +655,7 @@ plus-money pick is shown.
 | 2026-09-14 | "merge the today bets for ALL BETS ... like run lines and the niche bets" | Run line only an alternative; totals paused | **Extends it.** Run lines, both sides, become selectable. Totals stay paused. |
 | 2026-09-14 | Props analysis "needs to be ran pre emptively before any games" (`daily_card.py:1245-1249`) | Pre-lineup props can be picks at 15 games | **Kept, answered 2026-09-16 about 00:50Z: "No, allow earlier."** The draft had made a prop a pick only from a price checked after its lineup posted; asked in plain words, he answered no. The lineup test is removed from G10, so a prop may be a pick before its lineup posts, priced off the batter's season-average plate appearances, which is what V1 already does today (`src/report/card.py:717`). The 15-game history floor, the 2-book floor and one pick per player stay, and every prop with no posted lineup carries that fact on its face with the reason its plate appearances are estimated (`docs/PREREG_CARD_V2.md` section 8, copy C15). EXPLORATORY, on the design board: 19 of 56 prop candidates are inside the price band and have enough books, 13 of those fail the 15-game floor, so 6 become eligible where the lineup test left 0, and 1 becomes a pick. |
 | 2026-09-15 | "the 3-10 bets for the day are the best of the best ... wouldn't be any lower than -150 or -160"; "high-confidence ... and the value is great" | No band, 8 of 8 STRONG favourites | **Implements the worst price and the ceiling of 10, and keeps the floor of 3.** -160 confirmed by him on 2026-09-15 against -150, which keeps running in shadow. **"+100, or higher" is now reachable**, because his answer of 2026-09-16 creates the plus-money class: on the design board 3 of 5 picks are priced +117 to +202. The floor of 3 and "high confidence" cannot both be honoured on thin days, and he chose the floor ("Always show 3"): the card fills to three with labelled close calls that are not picks, inside the same price band and the same class gates, graded apart. **The maximum no longer departs from "3-10 bets", answered 2026-09-16 about 00:45Z: 10 listed bets in total, picks and fills together.** The draft's ceiling of 10 counted picks only and could list 13 at once; he was shown that and ruled on it, G12 now counts every entry, and the 13-bet state cannot occur. |
+| **2026-09-16 about 03:10Z** | Asked which single setting to register on three disputed points, he declined to choose on all three: "Can we try both strategies and see which one is profitable? These are the types of strategies that we should be changing not necessarily just the type of bedding strategy like changing these differences are strategy changes. Does that make sense?" (the markdown and required edge); "Again, these are different strategies that we should be trying because maybe one of them profitable and one of them is not so like try and be more" (the plus-money sub-cap); "Try different strategies on this. Try both separate I want. Try to try mix a hybrid." (the card's section order). On the fourth he answered plainly: "Yes, publish with the line." | V1 has no variants, no shadow rules and one layout | **Turns three settings into a registered variant family, and one into a display experiment.** The three disputed settings stop being single choices. Four arms run on the same board every day over a 2 x 2 of the markdown pair and the sub-cap: A1 (published, `MARKDOWN` 0.038, `BASE_EDGE` 0.010, sub-cap 3), A2 (sub-cap removed), A3 (`MARKDOWN` 0.0090, `BASE_EDGE` 0.0024), A4 (both). Only A1 is served; the other three run on paper and can replace it only under the promotion rule of `docs/PREREG_CARD_V2.md` 17.4, which is fixed before any result and charged against a Holm budget of six comparisons at a family-wise 0.05 (17.3). The layout answer is a product experiment whose result licenses a rendering change and nothing else (17.2). **One part of his direction is refused outright, by arithmetic**: at +150 a true 30 per cent bet returns -0.250 per unit before any gate, so the bottom of his band is positive expectation only at +234 and longer, and no arm serves it (17.0). "Yes, publish with the line" answers question 7 and makes copy C2's honesty line his own condition rather than the draft's default (`docs/PREREG_CARD_V2.md` section 7). |
 | 2026-09-15 | "make a live bet system ... MLB, as well as the NFL and tennis" | None on the customer surface | Out of scope here; R16-35, `docs/LIVE_BETTING_SYSTEM.md`. |
 
 The owner questions are listed in `docs/PREREG_CARD_V2.md` section 15: the
@@ -629,12 +669,22 @@ question 2 ("No, allow earlier"), question 5 (the plus-money answer quoted in
 full in the table above), question 6 ("even confidence of 30-45+ percent if
 high enough value... we need an algorithm of value x confidence / likelihood")
 and question 8 ("again based on cionfidence x value alrogirthm that we need to
-dial in"). **Open: question 7, and three new questions the 2026-09-16 answers
-raise**: question 9, whether at most 3 of the card's 10 entries should be
-plus-money picks; question 10, whether plus-money picks should sit in their
-own section rather than interleaved by score; and question 11, whether to
-register the rule with his own 30-to-45 confidence band shut below about +152,
-including the +150 he named (5.3, and `docs/PREREG_CARD_V2.md` 4.6).
+dial in"). Answered on 2026-09-16 at about 03:10Z: question 7 ("Yes, publish
+with the line"), and questions 9, 10 and 11, none of which he answered as a
+single choice. He said the three disputed settings are themselves strategies
+and should be run against each other and judged on profit, so 9 and 11 became
+the two factors of the variant family of `docs/PREREG_CARD_V2.md` section 17
+and 10 became the display experiment of 17.2.
+
+**Open: three new questions, all raised by that answer.** Question 12, whether
+to register the family as section 17 writes it, including the clause that there
+will be no readout of which arm is winning before the read date. Question 13,
+whether the published card may keep the strict bar, which leaves his 30-to-45
+band shut below about +152 on everything a customer sees for at least a season,
+while the loose bar runs only on paper. Question 14, whether the layout
+experiment's result licenses a rendering change and nothing else. Question 13
+is the one that most deserves his own words, because it is where the card still
+does not do what he pictured.
 
 ---
 
@@ -781,3 +831,36 @@ Evidence status is unchanged: the re-run of 5.3 is an illustration on
 already-seen data, by `scratchpad/value_score/final_rule.py`, and is not
 evidence for or against any rule. No number in sections 0 to 4 of this file
 changed, and no evidence threshold, floor or stop condition moved.
+
+### Owner answers of 2026-09-16 about 03:10Z, applied to this file
+
+Brey answered the four remaining questions in chat at about 03:10Z (8:10pm
+Pacific 9/15). One is a plain yes; three decline to choose between the options
+they were given and say the disputed settings are strategies to be run against
+each other and judged on profit. All four are quoted verbatim in
+`docs/PREREG_CARD_V2.md` sections 15 and 16, and the three that change a
+standing directive are in section 6's table here.
+
+| Answer | Applied where | Note |
+|---|---|---|
+| "Yes, publish with the line." (question 7) | Section 6's new 2026-09-16 about 03:10Z row; the open-questions paragraph | The honesty line on every pick becomes his own condition rather than the draft's default. Question 7 is closed |
+| "Can we try both strategies and see which one is profitable?..." (question 11) | Section 6's new row; 5.4; the open-questions paragraph | The markdown and required edge become one factor of a registered four-arm family. The published card keeps the strict pair; the loose pair runs on paper |
+| "Again, these are different strategies that we should be trying..." (question 9) | Section 6's new row; 5.4 | The plus-money sub-cap becomes the second factor. The cap stands on the published card; its removal runs on paper |
+| "Try different strategies on this. Try both separate I want. Try to try mix a hybrid." (question 10) | Section 6's new row; the open-questions paragraph | The card's section order becomes a display experiment whose result licenses a rendering change and nothing else, and can never be reported as a strategy result |
+
+**What this file says about the answers, and what it refuses to say.** Section 6
+records what each answer changes about a standing directive. 5.4 records what
+the family costs in calendar time and states plainly that it will never answer
+the profit question on profit. Neither section reports any variant as better or
+worse than another: the four-arm illustration on the already-seen 2026-09-15
+board lives in `docs/PREREG_CARD_V2.md` 14.3b, is labelled EXPLORATORY there,
+and is an illustration of what the arms do rather than evidence about any of
+them.
+
+Evidence status is unchanged. No number in sections 0 to 4 of this file changed,
+no evidence threshold, floor, FAIL condition, verdict bar, harm-check arm or
+stop condition moved on the published card, and the sealed window was not
+touched. The one part of the owner's direction this revision refuses is
+arithmetic and is stated as such: a true 30 per cent bet at +150 returns -0.250
+per unit before any gate, so no arm of the family serves the bottom of his
+confidence band at the price he named.

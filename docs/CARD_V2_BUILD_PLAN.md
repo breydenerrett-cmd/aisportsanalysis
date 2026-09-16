@@ -43,23 +43,36 @@ tests and the acceptance line; the maker never grades its own work.
 | T0a | 2025 backfill, the one-time 2025 fit into the frozen parameter file, a season-aware prop store (**owner-approved 2026-09-15**) | Sonnet | T1 | 2 to 3 |
 | T0c | Run and publish the already-registered SR1 read (**new**; required before the first plus-money pick, not before registration) | Sonnet | T1 | 1 |
 | T2 | Pure rule module, built and tested on fixtures only | Sonnet | T1; before T0 | 2 |
+| T2v | **New.** Variant runner: the four family arms over one shared pool | Sonnet | T2; before T0 | 1.5 |
 | T3 | Ledger: V2 files, empty days, lock as last published, withdrawals | Sonnet | T2; before T0 | 2 |
+| T3v | **New.** Per-variant ledgers, `pool_hash`, `family_id`, `arm`, `published` | Sonnet | T2v, T3; before T0 | 1 |
 | T4 | Closing-line measurement for card rows | Sonnet | T3; before T0 | 1 |
 | T5 | Report, API, landing record and CLI wiring, `?rule=v2` preview | Sonnet | T0a, T2, T3; before T0 | 1.5 |
-| T0 | Brey answers 7, 9 and 10, commit the registration with the fingerprint value | orchestrator | T0a, T2, T3, T4, T5, T10, T10b | 0.5 |
+| T0 | Brey answers 12, 13 and 14, commit the registration with the fingerprint value | orchestrator | T0a, T2, T2v, T3, T3v, T4, T5, T10, T10b | 0.5 |
+| T0d | **New.** Write the family's alpha-registry rows | Sonnet | T0 (same push) | 0.25 |
 | T6 | Schedule: publish V2 and shadows, settle all files | Haiku | T5; committed in the same push as T0, directly after it | 0.5 |
 | T7 | Publication audit for V2 | Sonnet | T3, T5 | 1 |
 | T8 | The registered read script | Sonnet | T3, T4 | 1.5 |
+| T8v | **New.** The family read and the promotion check | Sonnet | T3v, T4, T8 | 1.5 |
 | T9 | Web rendering of V2, the record page and landing | Sonnet | T5, R16-05 groups `gameday-card` and `results` | 2 |
+| T9v | **New.** The layout experiment (L1, L2, L3) and its invariant | Sonnet | T9 | 1 |
 | T11 | Docs | Haiku | T9 | 0.5 |
-| T12 | Staging verification at phone width | Sonnet (verifier, not a builder) | T6, T7, T9 | 1 |
-| T13 | Cutover | orchestrator | owner answers 7, 9 and 10 (1 to 6 and 8 are answered), T0c for plus-money picks, T12 | 0.5 |
+| T12 | Staging verification at phone width | Sonnet (verifier, not a builder) | T6, T7, T9, T9v | 1 |
+| T13 | Cutover | orchestrator | owner answers 12, 13 and 14 (1 to 11 are answered), T0c for plus-money picks, T12 | 0.5 |
 | T14 | Independent end-to-end check | Sonnet or Opus checker | T13 | 1 |
 
-About 19 to 21 working sessions in all, plus the wait for R16-05's
+About **24 to 27** working sessions in all, plus the wait for R16-05's
 `gameday-card` group, which is order 2 in `docs/DESIGN_BUILD_PLAN.json` and not
 started while group 1 runs. This does not fit one or two sessions, so the
 defect Brey reported stays on the customer card until T13 unless TI ships.
+
+**The variant family added about 5 to 6 sessions, and the estimate is not
+smoothed to hide it.** T2v (1.5), T3v (1), T8v (1.5), T9v (1) and T0d (0.25)
+are new work, and T2, T3, T5, T6, T7, T12 and T14 each grow a little inside
+their existing estimate because they now handle four arms instead of one. The
+one thing that did **not** grow is capture spend: the four arms screen one
+shared candidate pool per publish run, so the family costs zero additional API
+calls by construction (registration 17.6, asserted by a test in T2v).
 
 **Why T2 to T5 come before T0.** The registration's `code_fingerprint`
 (registration 11.2) covers `src/analysis/best_bets_card.py` (T2) and
@@ -73,16 +86,36 @@ the V2 ledger has a row for every slate date from registration onward
 (registration R1). T4 is merged before T0 so no counted pick lacks the
 closing-line join.
 
-**What customers see meanwhile, and if question 7 is no.** The V1 card, with
-TI's copy change if Brey approves it, and without it otherwise. Questions 1 to
-6 and 8 are answered (2026-09-15 about 22:35Z and 2026-09-16 about 00:45Z and
-00:50Z), so the floor of 3 met by labelled fills, the ceiling of 10 entries in
-total, props before the lineup, the plus-money class and the score as the
-ranking key are all settled and none of them blocks the cutover. If question 7
-is answered no, there is no cutover: V2 and its shadows keep running and
-counting in the background, and the customer card stays V1 (with TI if
-approved) until a successor that does not rest "Take" on our own number is
-registered.
+**What customers see meanwhile.** The V1 card, with TI's copy change if Brey
+approves it, and without it otherwise. Questions 1 to 11 are answered
+(2026-09-15 about 22:35Z, and 2026-09-16 about 00:45Z, 00:50Z and 03:10Z), so
+the floor of 3 met by labelled fills, the ceiling of 10 entries in total, props
+before the lineup, the plus-money class, the score as the ranking key, the
+honesty line on every pick, and the four-arm variant family in place of three
+single choices are all settled and none of them blocks the cutover. **Question 7
+was answered yes on 2026-09-16 about 03:10Z ("Yes, publish with the line"), so
+the "no cutover" branch this plan used to carry is gone.** What now gates the
+cutover is Brey's answer to the three new questions 12, 13 and 14: whether to
+register the family as section 17 writes it, whether the published card may keep
+the strict bar while the loose one runs on paper, and whether the layout
+experiment's result licenses a rendering change and nothing else. If he answers
+12 no, T2v, T3v, T8v and T0d do not ship and the card is A1 alone. If he answers
+13 no, the published arm changes, which is a different registration taken before
+`REGISTERED_UTC` and not an edit to this plan. If he answers 14 no, T9v does not
+ship and the card renders L1 only.
+
+**The variant family, in one place.** Registration section 17 is the source.
+Four arms screen one shared candidate pool every publish run: A1
+(`MARKDOWN` 0.038, `BASE_EDGE` 0.010, sub-cap 3) is the published card; A2 is A1
+with G14 removed; A3 is A1 at `MARKDOWN` 0.0090 and `BASE_EDGE` 0.0024; A4 is
+both changes at once. **Everything else is identical across the four**, and any
+task below that makes an arm differ in anything other than those three constants
+is wrong. Each arm writes to its own ledger, grades with the same machinery, and
+only A1 is ever served to a customer. No task may compute a comparison
+statistic, a p-value or an arm ranking before the read date (registration
+11.10), and no task may read a paper arm's ledger from a customer surface (R8).
+Shadow D is deregistered: any reference to `SHADOW_D` in an older copy of this
+plan is stale and the loose arms replace it.
 
 **The two price classes, in one place.** Registration sections 0.1, 3, 4 and
 11.1 are the source. Every pick and every fill carries a `price_class` fixed by
@@ -240,31 +273,40 @@ shown**, not before registration, and its result licenses nothing about V2.
 
 ## T0. Registration (orchestrator)
 
-- Put questions **7, 9, 10 and 11** of `docs/PREREG_CARD_V2.md` section 15 to
+- Put questions **12, 13 and 14** of `docs/PREREG_CARD_V2.md` section 15 to
   Brey, with the
   section 14 illustration in front of him, and with the plain-words summary of
   what he must be told (0.2, 11.4 and 11.9: our number has never been checked
   below 0.50; every bucket checked runs hot; the design tolerates 4.8 to 6.0
   points of overstatement where the one measured error on a similar slice was
-  21.5; a plus-money read is years away). Question 11 needs his own words most,
-  because it is the one place the rule does not do what he asked: his
-  "30-45+ percent" band is shut below about +152, including the +150 he named,
-  and its 30 per cent floor is out of reach at every allowed price. Put 4.6's
-  table of the smallest raw number a pick may carry at each price in front of
-  him with it. Record each as his own answer or
+  21.5; a plus-money read is years away). **Question 13 needs his own words
+  most, because it is the one place the card still does not do what he asked.**
+  He said to try both bars; only one of the two can be the card, and the card
+  keeps the strict one, so his "30-45+ percent" band stays shut below about
+  +152, including the +150 he named, on everything a customer sees, for at
+  least a season. Put 4.6's table of the smallest raw number a pick may carry
+  at each price in front of him with it, and 17.0's table showing that a true
+  30 per cent bet at +150 loses 0.250 per unit whatever any gate does.
+  **Question 12 needs the refusal stated out loud**: there will be no monthly
+  readout of which arm is winning, and 17.8 says why. Record each as his own
+  answer or
   his explicit acceptance of the default, with its date, in the registration.
   The orchestrator never accepts a default for him. If any answer differs from
-  a default, edit the number in the registration and the matching constant in
-  `src/analysis/best_bets_card.py` (`plus_money_subcap`,
-  `interleave_classes`, and for question 11 `markdown` or `base_edge`)
-  **before** computing the fingerprint and committing. A change to `markdown`
-  or `base_edge` also moves every number in 4.2, 4.4, 4.5, 4.6 and section 14
-  and must be re-run there, not edited by hand.
-- Questions 1, 2, 3, 4, 5, 6 and 8 are answered (2026-09-15 about 22:35Z and
-  2026-09-16 about 00:45Z and 00:50Z, section 15): the floor of 3
+  a default, edit the registration and the matching constant in
+  `src/analysis/best_bets_card.py` or `src/analysis/card_variants.py`
+  **before** computing the fingerprint and committing. A change to the
+  published arm's `markdown` or `base_edge` also moves every number in 4.2,
+  4.4, 4.5, 4.6, 14 and 17.1 and must be re-run there, not edited by hand.
+- Questions 1 to 11 are answered (2026-09-15 about 22:35Z and
+  2026-09-16 about 00:45Z, 00:50Z and 03:10Z, section 15): the floor of 3
   met by fills, the ceiling of 10 entries in total, props before the lineup,
-  O1's one-time 2025 fit, -160, the plus-money class, the 0.30 floor and the
-  score as the ranking key. They are not re-asked. The
+  O1's one-time 2025 fit, -160, the plus-money class, the 0.30 floor, the
+  score as the ranking key, the honesty line on every pick ("Yes, publish with
+  the line"), and the three settings he declined to choose between, which are
+  now the variant family of section 17 and the display experiment of 17.2.
+  They are not re-asked. T0 additionally checks that `card_variants.ARMS`
+  carries exactly the four arms of 17.1 with exactly the constants in that
+  table, and that no fifth arm exists. The
   answers are already in the registration's sections 0.1, 15 and 16; T0 checks
   that
   `best_bets_card.RuleParams` carries `worst_price=-160`, `best_price=250`,
@@ -280,7 +322,7 @@ shown**, not before registration, and its result licenses nothing about V2.
   code runs against live data before this commit; T6 follows it in the same
   push.
 - Acceptance: the file on the branch shows a UTC timestamp, not the
-  placeholder, a dated answer for each of questions 1 to 10, a sha256 in
+  placeholder, a dated answer for each of questions 1 to 14, a sha256 in
   section 16 equal to `sha256sum data/processed/card_v2_frozen_params.json` at
   that commit, and a fingerprint value equal to the one recomputed from that
   commit's files.
@@ -296,6 +338,53 @@ shown**, not before registration, and its result licenses nothing about V2.
   22:35Z: "Freeze it now." It is implemented separately, and its record is
   `docs/CARD_CALIBRATION_FREEZE_2026-09-15.md`. It is not part of V2's
   registration and this build changes nothing in V1 because of it.
+
+## T0d. The family's alpha-registry rows (Sonnet, new, in T0's push)
+
+Registration 17.3 is the source. Seven rows, written once, through
+`src/research/alpha_registry.register()` so the module's append-only guards
+apply; nothing is hand-edited into `data/research/alpha_registry.jsonl`.
+
+- One `sweep` row: id `card_v2_variant_family_2026-09-16`, family `daily_card`,
+  `spec_id` `DAILY_CARD_BEST_BETS_V2_FAMILY`, sport `mlb`, `alpha_declared`
+  `0.05` (family-wise, Holm), `candidates_evaluated` **6**, `data_window`
+  `{discovery: null, replication: "forward from REGISTERED_UTC",
+  sealed_untouched: true}`, `source_doc` `docs/PREREG_CARD_V2.md` section 17,
+  `code_hash` the sha256 of `src/analysis/card_variants.py` at the registration
+  commit. `registered_utc` is `REGISTERED_UTC`, not today's date, and
+  `migrated_utc` is absent because this is a fresh registration.
+- **Six `hypothesis` rows, one per challenger per class** (17.3), with ids
+  `DAILY_CARD_BEST_BETS_V2_VAR_STRICT_NOCAP:MAIN`,
+  `DAILY_CARD_BEST_BETS_V2_VAR_STRICT_NOCAP:PLUS_MONEY`,
+  `DAILY_CARD_BEST_BETS_V2_VAR_LOOSE_CAP3:MAIN`,
+  `DAILY_CARD_BEST_BETS_V2_VAR_LOOSE_CAP3:PLUS_MONEY`,
+  `DAILY_CARD_BEST_BETS_V2_VAR_LOOSE_NOCAP:MAIN` and
+  `DAILY_CARD_BEST_BETS_V2_VAR_LOOSE_NOCAP:PLUS_MONEY`, each with
+  `alpha_declared` **0.008333**, the fixed bar 17.3 registers, and `source_doc`
+  pointing at 17.4. One row per comparison rather than one per arm, because
+  `record_verdict()`'s append-only guard keys on the id alone and a verdict row
+  carries no class field, so three ids would raise on the second class of each
+  arm at the read date (`src/research/alpha_registry.py:353-362`). They exist
+  so `record_verdict()` has a registered id per comparison; **they are not six
+  additional searches**, and no id is registered after `REGISTERED_UTC`.
+- **The family's spend is the sweep row's 6**, and any report that quotes it
+  says so. `total_searched()` keeps `hypotheses` and `sweep_candidates` in
+  separate buckets and never folds one into the other, but a reader who adds
+  the two would charge this family 12 for a spend of 6, so the report prints
+  the sweep row's number and names the hypothesis rows as verdict anchors.
+- No verdict row is written at registration. `record_verdict()` is called only
+  by T8v, at the read date, once per comparison, against that comparison's own
+  id.
+- Test: `tests/test_alpha_registry_card_family.py`, against a temp-dir registry
+  path (never the live file): the seven rows register; a second `register()` on
+  any id raises; `total_searched()` reports `sweep_candidates` 6 and
+  `hypotheses` 6 for this family, and a helper that reports the family's spend
+  returns 6 and not 12; every hypothesis row's `alpha_declared` is 0.008333; a
+  verdict recorded twice for one id raises; and **six verdicts, one per
+  comparison id, all succeed**, which is the case three ids would have failed.
+- Acceptance: the seven rows are on the live ledger after T0's push, the test is
+  green against a temp path, and `scripts/` contains no code that writes to
+  `data/research/alpha_registry.jsonl` other than through the module.
 
 ## T1. Read-only pre-build checks (Haiku)
 
@@ -357,7 +446,9 @@ to `daily_card.py` in this build are T10 and T10b, both before T0.
   (owner, 2026-09-16: "No, allow earlier"), `fresh_seconds=3600`
   (`grade.FRESH_SECONDS`), `ceiling=10` **counting picks and fills together**
   (owner, 2026-09-16 about 00:45Z), `floor=3` (owner, 2026-09-15: "Always show
-  3"), `fill_to_floor=True`, `interleave_classes=True` (question 10 default).
+  3"), `fill_to_floor=True`, `interleave_classes=True` (layout treatment L1,
+  registration 17.2; the other two treatments are a rendering choice in T9v and
+  never a `RuleParams` field, because a layout may not change a selection).
   Constants are imported from their named modules, not retyped. There is no
   `longest_price_first` any more: question 8 was answered by replacing the key
   with the score. There is no parameter that lets a fill skip G1, G2, G4, G5,
@@ -371,11 +462,21 @@ to `daily_card.py` in this build are T10 and T10b, both before T0.
   drops V2's own plus-money picks and stops being a superset of V2);
   `SHADOW_C = replace(V2, rule_id="..._SHADOW_C_OTHER_WORST_PRICE", worst_price=-150)`
   (or -160 if question 4 registers -150);
-  `SHADOW_D = replace(V2, rule_id="..._SHADOW_D_NO_MARKDOWN", markdown=0.0)`;
   `SHADOW_E = replace(V2, rule_id="..._SHADOW_E_LIKELY_FIRST", best_price=None, markdown=0.0, base_edge=0.0, plus_market_floor=None, plus_our_floor=None, main_market_floor=0.50, main_our_floor=0.50, plus_money_subcap=0, rank="longest_price_first")`
   (E is the superseded draft rule and is the one shadow that needs a second
   ranking key, so `rank` is a named enum, `"score"` or
   `"longest_price_first"`, with `"score"` everywhere else.)
+  **There is no `SHADOW_D`.** Registration section 10 deregisters it before
+  registration and the family's loose arms replace it; a `markdown=0.0`
+  parameter set must not be reintroduced under any name.
+- **The four family arms** (registration 17.1), defined here and used by T2v:
+  `A1 = V2`;
+  `A2 = replace(V2, rule_id="..._VAR_STRICT_NOCAP", plus_money_subcap=None)`;
+  `A3 = replace(V2, rule_id="..._VAR_LOOSE_CAP3", markdown=0.0090, base_edge=0.0024)`;
+  `A4 = replace(V2, rule_id="..._VAR_LOOSE_NOCAP", markdown=0.0090, base_edge=0.0024, plus_money_subcap=None)`.
+  Every other field of all four equals `V2`'s, and a test asserts exactly that
+  by comparing `dataclasses.asdict` field by field, so an arm can never drift
+  in a fourth setting.
 - `breakeven(price) -> Optional[float]` via `odds.american_to_probability`.
 - `price_class(price) -> Optional[str]`: `"MAIN"` for `-160 <= price <= -100`,
   `"PLUS_MONEY"` for `100 <= price <= 250`, `None` otherwise. One function,
@@ -470,11 +571,11 @@ to `daily_card.py` in this build are T10 and T10b, both before T0.
 |---|---|---|
 | `tests/test_card_v2_price_band.py` | No pick shorter than -160 or longer than +250; -160 passes and -161 fails; +250 passes and +251 fails; a price of -99 or +99 cannot exist and `price_class` returns `None` for anything outside both bands; shadow C uses -150 | `test_v1_publishes_a_minus_210_favourite`: V1 `select` on the Phillies -210 fixture returns it |
 | `tests/test_card_v2_likelihood.py` | `MAIN`: market 0.50 fails G5, 0.5001 passes; ours 0.50 fails G6. `PLUS_MONEY`: market 0.50 fails G5, 0.4999 passes, 0.20 passes and 0.1999 fails; ours 0.30 passes and 0.2999 fails, on the **raw** number, on a fill as on a pick; a market underdog at +120 with the marked-down number above `value_need` **is** a pick (question 5, answered yes) | none (V1 has G5 by construction) |
-| `tests/test_card_v2_value_test.py` | The bar is `breakeven + required_edge` on the marked-down number, not `breakeven` on the raw one; a candidate whose raw number clears break-even but not the bar is refused; `required_edge` is 1.00 pt at -160 and 2.15 pt at +250 to two decimals; `markdown` is applied exactly once anywhere in the pipeline; setting `markdown=0` reproduces shadow D | `test_v1_takes_padres_below_breakeven`: V1 picks Padres at -186 with ours 0.507 against 0.650 |
+| `tests/test_card_v2_value_test.py` | The bar is `breakeven + required_edge` on the marked-down number, not `breakeven` on the raw one; a candidate whose raw number clears break-even but not the bar is refused; `required_edge` is 1.00 pt at -160 and 2.15 pt at +250 to two decimals; `markdown` is applied exactly once anywhere in the pipeline; setting `markdown=0.0090` and `base_edge=0.0024` reproduces the loose arms' bar at every price in the table of registration 17.1 (66.34/62.68 at -160, 45.34/41.27 at +150, 34.53/29.99 at +250, to two decimals) | `test_v1_takes_padres_below_breakeven`: V1 picks Padres at -186 with ours 0.507 against 0.650 |
 | `tests/test_card_v2_line_shopping.py` | **New.** A candidate whose market number is above its own break-even fails G13 and is neither a pick nor a fill; equal passes; the gate fires on the de-vigged consensus, never on another book's price | `test_v1_has_no_line_shopping_gate`: V1 `select` returns such a fixture |
 | `tests/test_card_v2_disagreement_cap.py` | Gap 0.10 passes, 0.1001 fails, both signs, on the **raw** numbers, in both classes; a fill must also pass it | none |
 | `tests/test_card_v2_score.py` | **New.** `score` is the Kelly fraction on the marked-down number; it is positive exactly when that number is above break-even; the module exposes no fractional multiplier and no cap; a candidate that fails any gate never has a score computed for selection; score ordering is invariant to any positive rescaling | none |
-| `tests/test_card_v2_rank.py` | Order is score descending, then raw disagreement ascending, then books, first pitch, sentence, on unrounded numbers; a plus-money pick with the highest score ranks first, interleaved with `MAIN` (question 10 default); with `interleave_classes=False` the two classes render as separate sections but the within-class order is unchanged | none |
+| `tests/test_card_v2_rank.py` | Order is score descending, then raw disagreement ascending, then books, first pitch, sentence, on unrounded numbers; a plus-money pick with the highest score ranks first, interleaved with `MAIN` (layout treatment L1); **the selection and the within-class order are identical under all three layout treatments**, which is the invariant T9v enforces, so no rendering choice can reach `select` | none |
 | `tests/test_card_v2_order_of_operations.py` | **New, and it exists because a design script got this wrong.** G11 runs before G14 and G14 before G12: on a fixture where a plus-money pick would be removed by dedup, the sub-cap must not consume its slot first. The published card on the 2026-09-15 fixture has 5 picks, and a variant that applies G14 first yields 4, so the test fails against the wrong order | none |
 | `tests/test_card_v2_run_line.py` | Angels +1.5 at -114 fixture (market 0.520, raw ours 0.613, 11 books) is a pick while Angels are the moneyline underdog; the run-line number passes through the run-line calibration, and a missing run-line calibration fails G9 | `test_v1_cannot_select_a_run_line`: no V1 pick has `market == "run_line"` for any fixture |
 | `tests/test_card_v2_one_per_game.py` | Moneyline and run line on one game both passing yield one pick, the higher-scored; a `MAIN` and a `PLUS_MONEY` candidate on the same game yield one entry; one prop pick per player | none |
@@ -484,14 +585,54 @@ to `daily_card.py` in this build are T10 and T10b, both before T0.
 | `tests/test_card_v2_subcap.py` | **New.** At most 3 plus-money picks; a fourth is dropped and recorded; the sub-cap does not apply to fills; with `plus_money_subcap=None` the cap is absent and only the ceiling binds; the dropped picks are the lowest-scored plus-money ones, never a `MAIN` pick | none |
 | `tests/test_card_v2_fills.py` | on a first run, 0 picks gives 3 fills, 2 picks 1 fill, 3 picks 0 fills, 10 picks 0 fills; fills come in the close-call order (a fill failing one check ranks ahead of one failing two, then by shortfall, then by score); on an all-stale board where every close call fails G3 alone with zero shortfall, the score decides the three shown; a candidate failing G1, G2, G4, G5, G6, G8, G10 or G13 is never a fill (a -161 close call, a market-0.49 `MAIN` close call, an 11-point-gap close call and a 0.29 plus-money close call are all refused, so the card shows fewer); a G9 failure is neither pick nor fill; no fill for a game or player with a pick; only 2 qualifying candidates gives 2 entries and `short_card_sentence`; a stale-only board still produces fills, each carrying its quote age; a fill already shown stays when a pick appears later; a fill whose fresh read passes every gate becomes a pick and is no longer a fill, unless G14's slots are full, in which case it stays a fill; a failing fresh read withdraws a fill and a stale one does not, and a withdrawn fill frees its slot so the next close call is added while it stays on the record; `select` never returns more than 3 fills on one run | none (V1 fills to 3 from its SPLIT pile with no price band; `TheCardAlwaysHasAFloor` pins that) |
 | `tests/test_card_v2_copy.py` | "Take" begins a sentence if and only if `take` is true and the entry is a pick; no fill sentence ever starts with a verb, whatever its numbers; every fill carries `fill_note()`; **every entry priced +100 or longer carries `plus_money_note()` saying the market makes it the underdog, that our number after the markdown is still above what the price needs, and that these are kept on their own record, and it reads "pick" on a pick and "bet" on a fill; `plus_money_note()` carries no clause about what our own number makes the side, and on a fixture whose shown number is below 0.50 (the Athletics +202 case, shown 37.3%, and the Reds +1.5 +124 case, shown 48.9%) no string the renderer emits states or implies that our number makes that side more likely than not, so C14 can never contradict the "Our number" figure printed above it. The assertion is on the shown number, not on the raw one, because the shown number is the only one on the card**; **every prop whose `lineup_posted` is false carries `no_lineup_note()`, on a pick as on a fill, and neither note may be rendered behind a control**; its C6 line names every check it failed; `short_card_sentence` is used in place of C4 when the entries are fewer than the floor, and in place of C5's two fill sentences when the board is stale and the entries are fewer than the floor at once; no pick, fill or purpose string promises three bets without naming the condition that three clear the first checks, and none promises more than ten; a locked pick whose newest fresh read fails G7 renders C2b without a verb; every pick's `why[0]` contains the three numbers from `format_triplet` with the marked-down number as `ours`, and `why[1]` contains "has not been shown to beat the market's" and names the markdown; `why[1]` has exactly one form; `harm_stop_sentence` returns the closing-price form, the hit-rate form, the plus-money form and the combined form, and `class_stopped_sentence` returns the C9b form for each class; collision rule at one and two decimals; "only slightly more likely than not" iff the market number is between 0.50 and 0.55; run-line and prop lines; no "best of", "STRONG", "value", "edge" outside the record line; each string passes the phrase lists imported from `tests/test_no_nothing_clears_the_bar.py` and `tests/test_customer_language.py` | `test_v1_says_take_under_price_is_against_you`: V1 `_why_sentences` for Phillies contains "price is against" while `_bet_sentence` starts "Take" |
-| `tests/test_card_v2_shadows.py` | `SHADOW_A` ignores G6, G7, G8 **and G14** and nothing else (registration section 10, which says why the sub-cap goes with them: it is a cap on the card's composition, not a gate on our number, and leaving it in makes A drop the very picks V2 makes). A built with `plus_money_subcap=3` produces a different list of 10 on the illustration fixture, so this row and the illustration row below cannot both pass unless A is built without the sub-cap; `SHADOW_C` differs from V2 only in `worst_price`; `SHADOW_D` differs only in `markdown=0`; `SHADOW_E` is the superseded rule (no ceiling on the long side, 0.50 both ways, raw price test, longest price first, no plus-money class) and produces the draft's own 2 picks on the illustration fixture; all carry `floor=3` and `ceiling=10`; rule ids are distinct strings | none |
-| `tests/test_card_v2_illustration.py` | On the rebuilt 2026-09-15 pool fixture (with game quote times), the module reproduces registration section 14 exactly: as registered, 0 picks and 3 fills, Angels +1.5 -114, Reds +1.5 +124, Athletics +202, in that order; with G3 set aside, 5 picks in the order Angels +1.5 -114, Reds +1.5 +124, Athletics +202, Orioles +117, Michael Harris II u1.5 -148, and 0 fills, with Reds +206 and Angels +149 dropped by G11 and Pirates +190 by G14; shadow A's list of 10, seven of them plus money, headed by Rockies +1.5 +106 and containing all five V2 picks (A carries no sub-cap; with `plus_money_subcap=3` A instead ends Pete Alonso u1.5 -150, Red Sox -108, Drake Baldwin u1.5 -159, Dominic Canzone u1.5 -159, and the test must fail); shadow C 5 picks; shadow D 7 picks; 36 base-eligible candidates and 0 refused by G13 | none |
+| `tests/test_card_v2_shadows.py` | `SHADOW_A` ignores G6, G7, G8 **and G14** and nothing else (registration section 10, which says why the sub-cap goes with them: it is a cap on the card's composition, not a gate on our number, and leaving it in makes A drop the very picks V2 makes). A built with `plus_money_subcap=3` produces a different list of 10 on the illustration fixture, so this row and the illustration row below cannot both pass unless A is built without the sub-cap; `SHADOW_C` differs from V2 only in `worst_price`; **no `SHADOW_D` exists and no parameter set anywhere sets `markdown=0.0`**, because registration section 10 deregisters it; `SHADOW_E` is the superseded rule (no ceiling on the long side, 0.50 both ways, raw price test, longest price first, no plus-money class) and produces the draft's own 2 picks on the illustration fixture; all carry `floor=3` and `ceiling=10`; rule ids are distinct strings | none |
+| `tests/test_card_v2_illustration.py` | On the rebuilt 2026-09-15 pool fixture (with game quote times), the module reproduces registration section 14 exactly: as registered, 0 picks and 3 fills, Angels +1.5 -114, Reds +1.5 +124, Athletics +202, in that order; with G3 set aside, 5 picks in the order Angels +1.5 -114, Reds +1.5 +124, Athletics +202, Orioles +117, Michael Harris II u1.5 -148, and 0 fills, with Reds +206 and Angels +149 dropped by G11 and Pirates +190 by G14; shadow A's list of 10, seven of them plus money, headed by Rockies +1.5 +106 and containing all five V2 picks (A carries no sub-cap; with `plus_money_subcap=3` A instead ends Pete Alonso u1.5 -150, Red Sox -108, Drake Baldwin u1.5 -159, Dominic Canzone u1.5 -159, and the test must fail); shadow C 5 picks; 36 base-eligible candidates and 0 refused by G13. **The four family arms on the same fixture** (registration 14.3b): at the real publish instant all four give 0 picks and 3 fills, A1 and A2 identical to each other and A3 and A4 identical to each other; with G3 set aside A1 gives 5 picks (2 MAIN, 3 PLUS_MONEY), A2 6 (adding Pirates +190), A3 7 (adding Matt Olson u1.5 -157 and Pete Alonso u1.5 -150, both MAIN, and no plus-money pick) and A4 10 at the ceiling (3 MAIN, 7 PLUS_MONEY, dropping Pete Alonso u1.5 -150, Twins +155 and Tigers +121); every arm's pick set is a superset of A1's on this fixture | none |
 
 Acceptance: all of the above green;
 
 Acceptance: all of the above green; the V1 cases fail if the invariant checker
 is broken (verify once by pointing the checker at V2 output for a V1 case and
 seeing it pass, then restoring).
+
+## T2v. Variant runner (Sonnet, new, after T2 and before T0)
+
+**File:** new `src/analysis/card_variants.py`. Pure, stdlib plus
+`src.analysis.best_bets_card`. **No I/O, no clock, and no capture client**:
+every `now` is an argument and the candidate pool is an argument. It is not
+added to the `code_fingerprint` of registration 11.2, because the four arms
+select through T2's module and a change here cannot change what A1 publishes;
+its own sha256 is the `code_hash` T0d writes into the alpha-registry sweep row.
+
+**Functions and constants.**
+
+- `FAMILY_ID = "CARD_V2_VARIANTS_2026_09"`.
+- `ARMS`: an ordered mapping `{"A1": best_bets_card.A1, "A2": ..., "A3": ...,
+  "A4": ...}` from T2's parameter sets, with `PUBLISHED_ARM = "A1"`.
+- `pool_hash(candidates) -> str`: sha256 over a canonical JSON serialisation of
+  the candidate pool, with the fields sorted, so two arms given the same pool
+  always produce the same value and any difference in the board is visible.
+- `run_family(candidates, *, now, prior_by_arm=None) -> dict`: calls
+  `best_bets_card.select` once per arm **on the same pool object**, returns
+  `{arm_id: select_result}` with `pool_hash`, `family_id`, `arm`, `rule` and
+  `published` attached to each result. It never fetches, never re-reads a
+  board, and never passes one arm's output to another.
+- `discordant(result_a, result_b, *, price_class) -> dict` with `only_a`,
+  `only_b` and `shared`, computed on **picks only** at their frozen identity,
+  in both directions (registration 17.4 clause 2). It is a description used by
+  the ledger and by T8v; it computes no statistic.
+
+**Tests to add** (injected fixtures only):
+
+| Test file | Asserts |
+|---|---|
+| `tests/test_card_variants_arms.py` | The four arms differ from `V2` in exactly the fields registration 17.1 lists and in nothing else, checked field by field over `dataclasses.asdict`: A2 only `plus_money_subcap`, A3 only `markdown` and `base_edge`, A4 only those three, plus each arm's `rule_id`; the four rule ids are the exact strings of registration section 10; `PUBLISHED_ARM` is `A1` and `A1.rule_id` is `DAILY_CARD_BEST_BETS_V2` |
+| `tests/test_card_variants_one_board.py` | **The module does not import the capture client**, asserted on the module's own AST and on `sys.modules` after import, so no arm can ever spend an API call; `run_family` calls `select` once per arm and never re-derives the pool; all four results carry the same `pool_hash`; mutating the pool between arms is impossible because the same object is passed (asserted by identity) |
+| `tests/test_card_variants_discordance.py` | `discordant` is symmetric, reads picks only and never a fill, splits by `price_class`, and returns both directions; on a fixture where the challenger's set is a strict superset of A1's, `only_b` is exactly the added picks and `only_a` is empty; on a fixture where the challenger also drops an A1 pick, both sides are non-empty and the test fails against a one-directional implementation |
+| `tests/test_card_variants_illustration.py` | On the rebuilt 2026-09-15 pool fixture the four arms reproduce registration 14.3b exactly, both at the real publish instant and with G3 set aside, including which entries G11, G14 and G12 dropped from each arm |
+
+Acceptance: all green, plus one negative check the checker runs by hand and
+restores: give A3 a fourth changed field and confirm `test_card_variants_arms`
+fails.
 
 ## T3. Ledger (Sonnet, before T0)
 
@@ -500,9 +641,13 @@ seeing it pass, then restoring).
 - Constants: `CARD_STORE_V2 = evidence/cards_v2.jsonl`,
   `CARD_STORE_V2_SHADOW_A = evidence/cards_v2_shadow_a.jsonl`,
   `CARD_STORE_V2_SHADOW_C = evidence/cards_v2_shadow_c.jsonl`,
-  `CARD_STORE_V2_SHADOW_D = evidence/cards_v2_shadow_d.jsonl`,
   `CARD_STORE_V2_SHADOW_E = evidence/cards_v2_shadow_e.jsonl`,
-  `CARD_STORE_V1_SHADOW = evidence/cards_v1_shadow.jsonl`.
+  `CARD_STORE_V1_SHADOW = evidence/cards_v1_shadow.jsonl`,
+  `CARD_STORE_V2_VAR_STRICT_NOCAP = evidence/cards_v2_var_strict_nocap.jsonl`,
+  `CARD_STORE_V2_VAR_LOOSE_CAP3 = evidence/cards_v2_var_loose_cap3.jsonl`,
+  `CARD_STORE_V2_VAR_LOOSE_NOCAP = evidence/cards_v2_var_loose_nocap.jsonl`.
+  There is no `CARD_STORE_V2_SHADOW_D`: shadow D is deregistered (registration
+  section 10) and `evidence/cards_v2_shadow_d.jsonl` is never created.
 - `V2_FROZEN_FIELDS`: V1's `FROZEN_FIELDS` plus `kind`, `our_probability`
   (raw), `our_probability_used` (marked down), `score`, `price_class`
   (`MAIN` or `PLUS_MONEY`, registration 11.1),
@@ -594,6 +739,37 @@ Run unchanged: `tests/test_card_ledger.py`, `tests/test_card_locks_per_game.py`,
 `tests/test_card_ledger_sport_paths.py`, `tests/test_card_frozen_first.py`,
 `tests/test_card_calendar.py`, `tests/test_card_record_page.py`.
 
+## T3v. Per-variant ledgers (Sonnet, new, after T2v and T3, before T0)
+
+**File:** `src/appstate/card_ledger.py`, additive, beside T3's work.
+Registration 12 (R7, R8) and 17.6 are the source.
+
+- `publish_variants(family_result, *, now)`: writes each arm's card to that
+  arm's own store with T3's `publish_v2` machinery unchanged. A1 goes to
+  `evidence/cards_v2.jsonl` exactly as before; A2, A3 and A4 go to their own
+  files. One call per publish run, so the four files never drift apart by a
+  run.
+- Every row of every arm, A1's included, additionally carries `published`
+  (true only on A1), `family_id`, `arm` and `pool_hash` (R7). `params` already
+  carries the arm's own `markdown`, `base_edge` and `plus_money_subcap` from
+  T3, so a reader can reconstruct which arm a row belongs to from the row
+  alone.
+- Locking, withdrawal, settlement and `record()` are **the same functions** for
+  every arm, with the store path as an argument. No paper-arm shortcut exists:
+  a paper pick locks on the same schedule, freezes its own price from the
+  shared board rather than copying A1's, grades flat 1 unit at its own graded
+  price, and produces fills that are graded and published and counted in no
+  metric (registration 11.1, 17.6).
+- `record()` gains no cross-arm mode. Nothing in this module sums two arms.
+
+**Tests to add.**
+
+| Test file | Asserts |
+|---|---|
+| `tests/test_card_variant_ledger_paths.py` | Each arm's rows land only in that arm's file; a paper arm's rule id never appears in `cards_v2.jsonl` and A1's never appears in a `cards_v2_var_*` file; `record(path=...)` on one file counts only that file; no function in the module returns a figure computed over two arms |
+| `tests/test_card_variant_pool_hash.py` | All four arms' rows for one publish run carry the same `pool_hash`; a run built from two different pools produces different values and the audit escalates (T7); `published` is true on A1's rows and false on every other arm's; `family_id` and `arm` are present on every row including A1's |
+| `tests/test_card_variant_grading_is_identical.py` | A paper pick and an A1 pick with identical frozen fields settle to identical graded rows, so no paper shortcut exists; a paper arm's fill is graded and is excluded from every counted-pick figure; a paper pick freezes its own price, and a fixture where A1's price differs from the arm's proves the arm does not inherit A1's |
+
 ## T4. Closing-line measurement for card rows (Sonnet, before T0)
 
 **File:** new `src/report/card_clv.py`, reusing `src/report/clv.py`
@@ -663,7 +839,9 @@ below 6 books; the index is injected and the test never opens
   V1 file for the landing page): read the active rule's ledger and label it
   with `rule`; after cutover it must not present V1's record as the live one
   (registration R4, R5).
-- `src/cli.py`: `card publish --rule v1|v2|shadow-a|shadow-c|shadow-d|shadow-e|all`
+- `src/cli.py`: `card publish --rule v1|v2|shadow-a|shadow-c|shadow-e|all`
+  (there is no `shadow-d` target: shadow D is deregistered and absorbed by A3
+  and A4, registration section 10)
   and `card settle --rule ...|all`, default `v1` so existing scripts behave as
   today until T6.
 
@@ -692,16 +870,24 @@ picks figure as the live one. Update
   removed in the same edit.
 - `scripts/daily_loop.sh`: `card settle --rule all` in place of the V1-only
   settle (`:271-279`), keeping the ESCALATE line.
+- `--rule all` publishes **one shared candidate pool through all four family
+  arms and every shadow, in one process**, by calling
+  `card_variants.run_family` once (T2v) and then `publish_variants` once (T3v).
+  It never builds the pool twice and never calls the capture client per arm,
+  so the family costs no additional API spend (registration 17.6).
 - `evidence/` is already added wholesale by `capture_slot.sh:622-623` (the
-  `git add ... evidence data/paper_accounts` line); confirm the four new files
-  are picked up.
+  `git add ... evidence data/paper_accounts` line); confirm the six new files
+  (the two remaining shadow stores, the V1 shadow store and the three variant
+  stores) are picked up.
 - No default-branch sync. The scheduled workflows on the default branch
   already check out `claude/sports-betting-analysis-review-g1o0co` and run its
   scripts (`.github/workflows/forward-capture.yml:95,171,240`,
   `daily-loop.yml:58,138`), so a change to the scripts alone deploys. A sync
   is needed only if a later change edits workflow YAML; T6 does not.
 - Test: `tests/test_schedule_publishes_card_v2.py`, source-level: both scripts
-  call `--rule all` and neither fails the run on its exit code.
+  call `--rule all` and neither fails the run on its exit code; `--rule all`
+  reaches all four family arms and every registered shadow, and reaches no
+  deregistered one (there is no `shadow_d` target).
 
 ## T7. Publication audit (Sonnet)
 
@@ -741,8 +927,32 @@ beside `audit_card` (`:402`), called from the same entry point.
   a fill added from a quote older than 3,600 s; any date with fewer than 3
   entries, and 3 or more such dates in the last 14 (monitoring thresholds, not
   rule parameters).
+- **ESCALATE, the variant family** (registration 17.6, 17.7, R7, R8): a row in
+  `cards_v2.jsonl` whose `arm` is not `A1` or whose `published` is false; a row
+  in any `cards_v2_var_*` file whose `published` is true or whose `rule` is not
+  that file's arm; two arms' rows for the same publish run carrying different
+  `pool_hash` values; any row of any arm missing `pool_hash`, `family_id` or
+  `arm`; an arm whose `params` differ from registration 17.1's table in any
+  field other than `markdown`, `base_edge` and `plus_money_subcap`; a
+  customer-facing route, template or serializer naming a `cards_v2_var_` path
+  or a `DAILY_CARD_BEST_BETS_V2_VAR_` rule id; a record or API response whose
+  figure was computed over more than one arm; **any comparison statistic,
+  p-value or arm ranking written anywhere before the read date** (registration
+  11.10); **a running win-loss-or-units line computed, printed, logged or
+  served for any arm other than A1 before that arm's read date** (registration
+  11.10, which keeps that line for the published card alone); a verdict
+  recorded against an id that is not that comparison's own per-arm-per-class
+  hypothesis id (T0d); a file named `cards_v2_shadow_d.jsonl` existing at all.
+- WARN, the variant family: an arm publishing 0 picks on 7 or more of the last
+  14 slate dates while another arm published some, which means the arms are
+  separating faster than the design board implied and the calendar of 17.8
+  should be re-read; a slate date on which the four arms' pick sets were
+  identical, counted and reported, because those dates contribute nothing to
+  any comparison.
 - INFO: today's pick count, fill count with the check each failed, entries
-  shown, stale state.
+  shown, stale state; and per arm, today's pick count, fill count, and the
+  discordant count against A1 by class, which is a description and not a
+  statistic.
 - Test: `tests/test_publication_audit_card_v2.py`, one fixture per ESCALATE and
   WARN, one clean fixture producing no ESCALATE. V1 case:
   `test_v1_card_of_2026_09_15_escalates` builds the 8-pick V1 row as a fixture
@@ -808,6 +1018,85 @@ beside `audit_card` (`:402`), called from the same entry point.
   against a pooled implementation; a `MAIN` class that reaches its floor while
   `PLUS_MONEY` has 12 picks prints a verdict for one and `PENDING` for the
   other; a `PLUS_MONEY` HARM_STOP leaves `MAIN` picks carrying "Take"**.
+- **T8 reads one arm at a time and knows nothing about the family.** It is
+  given a store path and a rule id and produces that arm's own 11.5 verdict at
+  the registered 300 and 60 floors. Every family comparison lives in T8v, so a
+  bug in the comparison can never change the published card's own verdict.
+
+## T8v. The family read and the promotion check (Sonnet, new, after T8)
+
+**File:** new `scripts/card_v2_family_read.py`, read-only. Registration 17.3,
+17.4, 17.5 and 11.10 are the source, and where this script and the registration
+disagree the registration wins.
+
+- **It refuses to run before the read date.** The first thing it does is check
+  the promotion floors of 11.10 on the pair it was asked about. Below them it
+  prints `PENDING` with the counts, the discordant count and the rate they are
+  accumulating at, and **exits without computing any statistic**: no mean, no
+  difference, no bootstrap, no p-value, no ranking. This is the clause that
+  keeps the family from becoming a search, and it is a guard at the top of the
+  script rather than a convention.
+- **Floors**, per challenger and per class (11.10): 463 counted picks of that
+  class with a CLV% and 463 graded WIN or LOSS across 93 distinct slate dates,
+  **on both arms and again on the discordant set** between them. Fills count
+  toward none of them. The discordant set comes from
+  `card_variants.discordant`, computed in both directions.
+- **Statistic** (17.4 clause 2 and 3, which name the test per case): the
+  **superset case**, where the incumbent holds no discordant picks of that
+  class, is a one-sample read of the added picks' own mean CLV% against a bar
+  of +1.5 points; the **mixed case**, where both directions are non-empty, is
+  the signed difference between the two arms' mean CLV% against a bar of +1.5
+  points. Both come from `src/report/card_clv.py` against the price actually
+  taken, vig included, in the direction of the challenger. The script prints
+  which case it is in before it prints a number.
+  Bootstrap over slate dates, 10,000 resamples, seed 20260915, the same seed
+  and method T8 uses.
+- **The bar, fixed**: a comparison read while any other comparison in the
+  family is unread is judged at the **fixed Bonferroni bar 0.008333** (17.3),
+  which is the case this design expects, since 17.8 says the six comparisons
+  mature years apart and two of them never read at all. The Holm ladder (six
+  comparisons, p-values sorted ascending, `p(i)` against `0.05 / (6 - i + 1)`,
+  stopping at the first failure) applies only when all six p-values exist at
+  the same read. The script prints which of the two cases it is in, the whole
+  ladder when it applies, and every comparison's rank and bar, not only the
+  ones that passed. **A comparison already read is never re-read at a looser
+  bar**: the script refuses a second read of a comparison that has a verdict
+  row, which the registry's own guard also refuses.
+- **The eight promotion clauses of 17.4**, each evaluated and printed with its
+  own pass or fail, and a promotion recommended only when all eight hold,
+  including clause 8's class scope: the recommendation names the promoted class
+  and states that the successor carries the incumbent's constants on the other
+  class unchanged. It never promotes anything itself: it prints the recommendation, the clause
+  table and the tie-break result, and 17.4 clause 7 is an owner sign-off the
+  script cannot supply.
+- **The tie-break of 17.5**, applied in order and printed even when it does not
+  bind, so the reader can see it was not chosen after the fact.
+- **Retirement**: an arm carrying a `HARM_STOP`, a FAIL or an `UNDERPOWERED`
+  for a class is printed as retired for that class with its counts, and its
+  full record is printed for publication under `docs/` (17.5). Losers are
+  printed whether or not anything promotes.
+- **It writes the verdict rows.** On a read, one `record_verdict()` call per
+  comparison against that comparison's own hypothesis id, the per-arm-per-class
+  ids T0d registered. It never calls
+  `register()`, and a second verdict for an id raises, which is the module's
+  own guard and is not caught.
+
+**Tests to add** (`tests/test_card_v2_family_read.py`, synthetic injected rows,
+never the live ledgers):
+
+| Asserts |
+|---|
+| Below any floor the script prints `PENDING` and the counts and **computes no statistic at all**: the test patches the bootstrap and the mean and asserts neither was called, so the guard is on the code path and not on the printing |
+| The discordant set is picks only, of one class, in both directions; a date on which both arms held identical pick sets contributes nothing and does not count toward the 93 |
+| Holm on fixed p-values (0.001, 0.009, 0.02, 0.03, 0.04, 0.06): 0.001 clears rank 1 at 0.008333; 0.009 fails rank 2 at 0.010000, so testing stops and the remaining four fail regardless of their values; the test fails against a plain Bonferroni implementation and against a per-class family of three |
+| The superset case and the mixed case each select the test 17.4 clause 3 names for them, and a fixture in which the incumbent holds no discordant picks is read one-sample against +1.5 rather than as a difference |
+| A promotion recommended on `PLUS_MONEY` recommends a successor that keeps A1's constants on `MAIN`, and a fixture in which the arm is retired or FAILing on `MAIN` still promotes only `PLUS_MONEY` and never carries its `MAIN` constants (17.4 clause 8) |
+| Six verdict rows, one per comparison id, all record successfully; a fixture that tries to record two classes against one id raises |
+| Each of the eight promotion clauses blocks a promotion on its own fixture: too few discordant picks; a margin below +1.5 points; a bootstrap lower bound at or below zero at that arm's bar; a challenger that beats the incumbent while reading FAIL on its own 11.5 verdict; an ROI interval entirely below zero alongside a positive CLV, which triggers the investigation rather than the promotion; an arm carrying a `HARM_STOP`; a missing owner sign-off; and a successor that would carry a non-promoted class's constants |
+| **A failing incumbent does not promote the least-bad arm**: a fixture where A1 FAILs and A4 is merely less bad produces a retirement of that class under 11.7 and no promotion |
+| Two qualifying arms are resolved by the tie-break in order, and a fixture that reaches clause 3 leaves the incumbent in place and never blends constants |
+| One promotion per family: after a recommended promotion the script refuses to evaluate the family again and says why |
+| `record_verdict()` is called once per challenger per class at the read and never before; a second call for an id raises |
 
 ## T9. Web (Sonnet)
 
@@ -842,9 +1131,11 @@ function, not beside it.
   `lineup_posted` is false renders C15 on its face. Both sit in the same place
   as `why[0]` and `why[1]`, at every rank and every width, and neither may move
   into a "View breakdown" control, on phone rank 4 and below included. The two
-  classes are interleaved in one picks section in payload order (question 10's
-  default); if he answers question 10 yes, the renderer splits them into two
-  headed sections without changing the within-class order or either face line.
+  classes are interleaved in one picks section in payload order, which is
+  treatment **L1** of the layout experiment and the registered behaviour of
+  section 5. T9v adds L2 and L3 over the same payload; under all three, the
+  within-class order and both face lines are unchanged, and the ledger row for
+  the date is byte-identical (registration 17.2).
 - **Empty V2 days.** Today a payload with no bets goes through
   `payloadHasBets` to `lastPublishedCard`, which walks back to yesterday's
   card, then to `emptyCard`'s "NO CARD TODAY" (`web/js/card.js:709-752`,
@@ -906,11 +1197,47 @@ V2 uses C1. The same document's replacement `CARD_BASIS` for V1 says "or the
 pick does not qualify", which is not what V1 does (V1 fills to 3 from SPLIT);
 do not ship that string on V1. Both go to the design owner.
 
+## T9v. The layout experiment (Sonnet, new, after T9)
+
+Registration 17.2 and copy C16 are the source. **This is a product experiment
+and never a strategy result**, and every part of this task exists to keep that
+true in code rather than in prose.
+
+- **Three treatments** in `web/js/card.js`, over the same payload: **L1** one
+  list by score, which is what T9 already builds; **L2** plus-money picks
+  grouped below main-band picks under C16's two labels; **L3** one list by
+  score with a class divider and C16's jump link. Within-class order is the
+  rank of registration section 5 under every treatment, and no treatment
+  reorders within a class.
+- **Assignment** per visitor, sticky, recorded in the web analytics store.
+  Nothing about the assignment is written to `evidence/`, to any ledger, or to
+  any API response that feeds a ledger.
+- **The invariant, and the test that enforces it.** The ledger row written for
+  a slate date is byte-identical whichever treatment any visitor saw. Selection
+  and grading happen server-side before rendering, so the treatment is applied
+  to an already-frozen payload. `tests/test_card_layout_experiment.py` renders
+  the same payload under all three treatments and asserts the served entry set,
+  each entry's frozen numbers, and the ledger row hash are identical, differing
+  only in order and grouping. If a treatment can change a row, the experiment
+  stops and the task is not done.
+- **Copy.** C16's three labels and nothing else. `tests/test_card_v2_copy.py`
+  gains a row asserting the three strings come from the registration verbatim,
+  that no treatment adds any other string, and that C2's two lines, C12, C14
+  and C15 are on the face at every rank and width under all three treatments.
+- **Measurement.** Product metrics only: entries opened, record page reached,
+  session length, return rate. The reporting script refuses to emit any
+  betting metric, and a test asserts that asking it for CLV, ROI, units or a
+  win rate raises.
+- Acceptance: the three treatments render at 360px and at desktop width, the
+  invariant test is green, and the negative test (ask the layout report for
+  ROI) raises.
+
 ## T11. Docs (Haiku)
 
 - `docs/THE_CARD.md`: add a V2 section summarising the registration and
   linking it; keep the V1 text as history, marked as the rule through the
-  cutover date.
+  cutover date. Add a short note that three paper arms run beside the published
+  card, are never shown, and can replace it only under registration 17.4.
 - `docs/ROADMAP.md` R16-34 status line, by the orchestrator.
 
 ## T12. Staging verification at phone width (Sonnet verifier)
@@ -961,26 +1288,44 @@ API payloads they were taken from, saved with the task report.
    Michael Harris II u1.5 -148, and 0 fills, with Reds +206 and Angels +149
    dropped by G11 and Pirates +190 by G14; shadow A's list of 10, seven of them
    plus money, headed by Rockies +1.5 +106 and containing all five V2 picks,
-   because A carries no plus-money sub-cap; shadow C 5 picks; shadow D 7 picks;
+   because A carries no plus-money sub-cap; shadow C 5 picks;
    36 base-eligible candidates and 0 refused by G13).
    `scratchpad/value_score/final_rule.py` is the reference; it ranks on
    unrounded
    numbers and recomputes break-evens from the price. A difference means the
    build or the illustration is wrong; find which before going on.
+6b. Run `tests/test_card_variants_illustration.py` on the same fixture and
+   confirm the four arms reproduce registration 14.3b exactly: at the real
+   publish instant all four give 0 picks and 3 fills, with A1 and A2 identical
+   and A3 and A4 identical; with G3 set aside A1 5, A2 6, A3 7 and A4 10 at the
+   ceiling, and every arm's pick set a superset of A1's.
+   `scratchpad/variants/variant_family.py` is the reference. Then confirm the
+   staging publish run wrote one row per arm to four separate ledgers with one
+   shared `pool_hash`, and that no customer surface names a variant path.
+6c. At 360px and at desktop width, open the card under each of the three layout
+   treatments of T9v and confirm the same entries appear in each, that C2's two
+   lines, C12, C14 and C15 are on the face at every rank under all three, and
+   that the ledger row for the date is byte-identical across the three.
 
 Acceptance: every check passes, or each failure is filed with its screenshot
 and payload.
 
 ## T13. Cutover (orchestrator)
 
-Only after Brey answers questions 7, 9, 10 and 11 of the registration's
-section 15, and T12 passes. Questions 1 to 6 and 8 are answered (2026-09-15 about 22:35Z
-and 2026-09-16 about 00:45Z and 00:50Z), so the floor of 3 met by labelled
+Only after Brey answers questions 12, 13 and 14 of the registration's
+section 15, and T12 passes. Questions 1 to 11 are answered (2026-09-15 about 22:35Z
+and 2026-09-16 about 00:45Z, 00:50Z and 03:10Z), so the floor of 3 met by labelled
 fills, the ceiling of 10 entries in total, props before the lineup, the
-plus-money class and the score as the ranking key are all what cuts over.
+plus-money class, the score as the ranking key and the honesty line on every
+pick are all what cuts over, and the three settings he declined to choose
+between cut over as the family of registration section 17 with A1 as the
+published arm.
 **Plus-money picks additionally wait on T0c**; if T0c has not landed, cut over
 with `plus_money_subcap=0`, which publishes no plus-money pick, and record that
-in section 16 with its dates.
+in section 16 with its dates. Setting `plus_money_subcap=0` applies to **A1
+only**; a paper arm's sub-cap is its own registered setting and is not touched
+by a publishing pause on the customer card, which is recorded in section 16
+with its dates.
 
 - Set `ACTIVE_CARD_RULE = "v2"` and `CUTOVER_DATE` to the next slate date.
 - From that date V1 publishes to `evidence/cards_v1_shadow.jsonl`.
@@ -989,14 +1334,17 @@ in section 16 with its dates.
   `record(path=evidence/cards_v1.jsonl, until=...)` for game picks, props and
   the together figure.
 
-If question 7 is answered no: no cutover. V2 and its shadows keep running and
-counting under the registration; the customer card stays V1, with TI's copy
-change if Brey approved it; the owner's preferred alternative needs its own
-registration. If question 9, 10 or 11 is answered differently from its default,
-the constant or the renderer changes before T0's fingerprint, not after
-cutover; for question 11 that means `markdown` or `base_edge`, with 4.2, 4.4,
-4.5, 4.6 and section 14 re-run, and it can never be done after registration
-(a different value is a new rule id, registration 11.7).
+If question 12 is answered no: the cutover happens without the family. A1 is
+built, published and counted exactly as registered, T2v, T3v, T8v and T0d do
+not ship, and no paper arm exists. If question 13 is answered no: the published
+arm is not A1, which is a different registration taken before `REGISTERED_UTC`
+and not an edit to this plan, so the cutover waits on that registration. If
+question 14 is answered no: T9v does not ship and the card renders L1 only.
+Any answer that changes a published constant changes it **before** T0's
+fingerprint, never after cutover; for the published arm's `markdown` or
+`base_edge` that also means re-running 4.2, 4.4, 4.5, 4.6, section 14 and
+17.1, and it can never be done after registration (a different value is a new
+rule id, registration 11.7).
 
 ## T14. Independent end-to-end check (Sonnet or Opus checker)
 
@@ -1018,7 +1366,12 @@ cutover; for question 11 that means `markdown` or `base_edge`, with 4.2, 4.4,
 
 | Change | Where | Compatibility |
 |---|---|---|
-| Four new ledgers | `evidence/cards_v2.jsonl`, `cards_v2_shadow_a.jsonl`, `cards_v2_shadow_c.jsonl`, `cards_v1_shadow.jsonl` | New files; `cards_v1.jsonl` untouched and closed at cutover |
+| New ledgers | `evidence/cards_v2.jsonl`, `cards_v2_shadow_a.jsonl`, `cards_v2_shadow_c.jsonl`, `cards_v2_shadow_e.jsonl`, `cards_v1_shadow.jsonl`, and the three variant stores `cards_v2_var_strict_nocap.jsonl`, `cards_v2_var_loose_cap3.jsonl`, `cards_v2_var_loose_nocap.jsonl` | New files; `cards_v1.jsonl` untouched and closed at cutover; `cards_v2_shadow_d.jsonl` is never created |
+| `publish_variants`, per-row `published`, `family_id`, `arm`, `pool_hash` | `src/appstate/card_ledger.py` (T3v) | Additive; A1's rows keep every existing field and gain four |
+| `src/analysis/card_variants.py` (`ARMS`, `run_family`, `pool_hash`, `discordant`) | new module (T2v) | New; not in the `code_fingerprint`, its own sha256 is the sweep row's `code_hash` |
+| `scripts/card_v2_family_read.py` | new script (T8v) | New, read-only; writes only verdict rows through `alpha_registry.record_verdict()` |
+| Seven alpha-registry rows | `data/research/alpha_registry.jsonl` (T0d) | Append-only through the module; one sweep row and six per-comparison hypothesis rows; family spend is the sweep row's 6 |
+| Three layout treatments and their assignment | `web/js/card.js`, the analytics store (T9v) | Additive; no ledger row changes under any treatment |
 | `publish_v2`, `_lock_and_merge_v2`, `settle_v2`, `V2_FROZEN_FIELDS` (with `game_type`, `entry_class`, `take`), row `code_fingerprint`, `withdrawn`, `FILL_FROZEN_FIELDS`, `NEAR_FROZEN_FIELDS`, row `v1_code_fingerprint` on the V1 shadow file only | `src/appstate/card_ledger.py` | Additive; V1 `publish`, `_lock_and_merge` and `settle` unchanged, and `cards_v1.jsonl` unchanged |
 | `record(until=, entry_class=)` | same | Default unchanged |
 | `rule` query parameter on `/card`, `/card/{date}`, `/card/record`, `/card/history`; `retired_v1` block; kinds together and apart; picks, fills and combined figures apart | `api/card.py` | Default responses unchanged until cutover |
@@ -1068,9 +1421,9 @@ cutover; for question 11 that means `markdown` or `base_edge`, with 4.2, 4.4,
    so the 13-bet state is gone. The residual cost of the two answers together
    is at the top end: on a day that begins thin and then fills with picks, an
    eleventh gate-passing pick is refused a slot because a published fill is
-   holding one. D4 counts those dates. Questions 7, 9 and 10 must still be
+   holding one. D4 counts those dates. Questions 12, 13 and 14 must still be
    answered with the illustration in front of him, before registration, as
-   section 15 says.
+   section 15 says; questions 1 to 11 are answered.
 3a. **The fills go on the record, and they are not picks.** By the owner's
    answer the card publishes and grades bets the rule itself says do not pass.
    On the design board that is 1 of 3 entries with fresh prices and 3 of 3 at
@@ -1206,6 +1559,42 @@ cutover; for question 11 that means `markdown` or `base_edge`, with 4.2, 4.4,
     or that it is re-specified while being run. Neither is allowed: T0c says
     run it as registered, publish whatever it says, and change no V2 constant
     in response.
+17. **The variant family is a machine for manufacturing a false finding if any
+    of its guards is dropped.** Six comparisons at an uncorrected 5 per cent
+    bar produce at least one apparent winner by luck alone 26.5 per cent of the
+    time (registration 17.3). The guards are the Holm ladder, the 463-pick and
+    93-date promotion floors, the discordant-set requirement, the seven
+    promotion clauses, one promotion per family, and the rule that nothing is
+    computed before the read date. **The most likely way this goes wrong is not
+    a bad statistic; it is a helpful session adding a "which arm is ahead"
+    line to a dashboard or a debrief.** That is why T8v's guard is a code path
+    that exits before computing anything, why T7 escalates on any comparison
+    statistic written before the read date, and why no arm's running record is
+    summarised anywhere but as a plain win-loss-and-units line. A fifth arm
+    added later is not an extension of this family; it is a new family with a
+    new budget, and a session that adds one has spent alpha nobody registered.
+18. **The layout experiment will be read as a strategy result unless it is
+    stopped from being one.** "The hybrid layout won" is a sentence that will
+    be written by somebody, and a layout cannot beat the close or return money.
+    The guard is the byte-identity invariant of T9v plus the negative test that
+    the layout report raises when asked for ROI, CLV, units or a win rate. Its
+    result enters no alpha-registry row and spends none of the family's budget
+    (registration 17.2).
+19. **Two of the three challengers will probably never resolve, and that must
+    not become a reason to change them.** A2 differs from the published card by
+    about one pick a slate, so its discordant floor is about 463 slate dates,
+    roughly 2.5 MLB seasons; A3's plus-money comparison may have a discordant
+    set of zero on most days (registration 17.8). `UNDERPOWERED` is the
+    expected result for both and is published as a named non-verdict read with
+    its counts. **No arm's constants are moved to make it resolve faster**, and
+    a different value is a new rule id in a new family (17.4, 11.7).
+20. **Nothing in this build answers "which strategy is profitable", and the
+    owner asked for exactly that.** Registration 17.8 puts the ROI sample at
+    6,952 to 19,311 plus-money bets and the family's earliest plausible read at
+    mid-2027. The risk is a session under pressure producing a profit
+    comparison from a few dozen picks because it was asked for. The floors are
+    not lowered, the read date is not moved, and the honest answer is the harm
+    check, which can fire within weeks and only ever says stop.
 
 ## Tests to update deliberately, collected
 
@@ -1219,6 +1608,8 @@ cutover; for question 11 that means `markdown` or `base_edge`, with 4.2, 4.4,
 | `tests/test_card_v2_props.py` (new, but noted here because it inverts a draft expectation) | A prop with no posted lineup is a **pick**, not only a fill | Owner answer, 2026-09-16: "No, allow earlier." Any earlier test or fixture asserting the lineup gate must be removed, not allowlisted |
 | `tests/test_web_all_bets.py` | The `:183` count of `if (!payloadHasBets(payload)) {` changes when the V2 branch bypasses the walk-back and empty-card gates; the V1 path keeps both | A 0-pick V2 day must show its count and close calls, never yesterday's card (T9) |
 | `tests/test_landing_record_from_ledger.py` | The landing record reads the active rule's ledger with a `rule` label | After cutover the landing page must not show V1's record as the live one (R4, R5) |
+| `tests/test_web_structure.py` | Add an assertion that no customer-facing template, route or serializer references any `cards_v2_var_` path or any `DAILY_CARD_BEST_BETS_V2_VAR_` rule id | Registration R8 and 17.7: the customer never sees a paper arm, asserted rather than trusted |
+| `tests/test_customer_language.py` | None expected. C16's three labels are scanned like every other string; if a layout label trips it, change the label rather than allowlisting | Keeps the scan strict under the new treatments |
 
 ---
 
@@ -1308,3 +1699,36 @@ evidence threshold, floor, FAIL condition or stop date moved:
 | T8 | Every counted-pick statistic partitioned by class, one result per class, the script raising rather than printing a pooled number, and the plus-money `PENDING` text printed with its own arithmetic |
 | T9, T12 | C14 on every plus-money entry and C15 on every prop with no posted lineup, both on the face at every rank and width; four record lines; the ceiling of 10 checked on the rendered card |
 | Risks | 1 rewritten for the per-class floors and the power arithmetic; 3 rewritten (the 13-bet state is gone, the residual cost named); new 4a (the markdown is a transfer, not a measurement, and what the build must not do about it), 4b (the gate-order mistake, which a design script actually made), 15 (pooling the two classes) and 16 (SR1) |
+
+### Owner answers of 2026-09-16 about 03:10Z, applied to this plan
+
+Four answers, all at about 03:10Z, recorded verbatim in
+`docs/PREREG_CARD_V2.md` sections 15 and 16. One is a plain yes; the other
+three decline to choose between the options they were given and say the
+disputed settings are strategies to be run against each other. What changed
+here, with no evidence threshold, floor, FAIL condition, verdict bar,
+harm-check arm or stop date moved on the published card:
+
+| Area | Change |
+|---|---|
+| Order at a glance | Five new tasks: **T2v** (variant runner), **T3v** (per-variant ledgers), **T0d** (alpha-registry rows), **T8v** (family read and promotion check) and **T9v** (layout experiment). T0's line now names questions 12, 13 and 14; T13's dependency line follows. The estimate moves from 19 to 21 sessions to **24 to 27**, and the added work is itemised rather than smoothed |
+| "What customers see meanwhile" | The "question 7 is no" branch is gone: he answered yes, "publish with the line". What gates the cutover now is questions 12, 13 and 14, and what each "no" would mean is written out |
+| T2 | `SHADOW_D` removed with its store and its three test rows, because registration section 10 deregisters it. The four family arms are defined as `replace(V2, ...)` sets differing in exactly three fields, with a test that compares every field |
+| T2v (new) | The runner: one shared pool through four arms, `pool_hash`, `discordant` in both directions, a test that the module cannot import the capture client, and the 14.3b illustration reproduced |
+| T3 | Three variant store constants added, `cards_v2_shadow_d.jsonl` removed |
+| T3v (new) | `publish_variants`, per-row `published`, `family_id`, `arm` and `pool_hash`, identical grading machinery for every arm, and three tests including one that proves a paper arm freezes its own price rather than inheriting A1's |
+| T0, T0d | T0 asks 12, 13 and 14 and checks the four arms' constants; T0d writes one sweep row charging 6 and six per-comparison hypothesis rows as verdict anchors, each at `alpha_declared` 0.008333, through the module, with the family's spend stated as 6 and not 12 |
+| T6 | `--rule all` runs the four arms from one pool in one process, so the family costs no additional API spend; the schedule test checks it reaches four arms and no deregistered shadow |
+| T7 | Nine new ESCALATE conditions and two WARNs for the family, including a mismatched `pool_hash` between arms, a customer surface naming a variant path, and any comparison statistic written before the read date |
+| T8, T8v | T8 stays one arm at a time at the registered 300 and 60 floors, so a family bug cannot move the published card's verdict. T8v holds every comparison, refuses to compute anything below the promotion floors, prints the bar it is applying and all eight promotion clauses, and writes one verdict row per comparison |
+| T9v (new) | Three layout treatments over one payload, sticky per visitor, with a byte-identity invariant on the ledger row and a negative test that the layout report raises when asked for a betting metric |
+| T12 | Adds the three treatments at phone width and the four-arm publish run to the staging check |
+| Tests to update | `tests/test_web_structure.py` gains the paper-arm isolation assertion; `tests/test_customer_language.py` scans C16 like every other string |
+| Risks | New 17 (the family as a false-finding machine, and the specific way it goes wrong), 18 (the layout experiment read as a strategy result), 19 (two challengers that will probably never resolve, and the rule against moving their constants), 20 (nothing here answers "which is profitable") |
+
+**What did not change.** V1's selection, constants, stores and ledger. The
+published card's gates, score, ranking, floor of 3, ceiling of 10, class
+split, floors, harm check, verdict bars, five FAIL conditions, 2027 stop date
+and retirement result. Every customer string except the three new C16 labels.
+The capture budget, which the family does not touch because all four arms
+screen one shared pool per publish run.

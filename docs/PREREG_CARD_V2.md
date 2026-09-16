@@ -3,7 +3,7 @@
 **Rule id:** `DAILY_CARD_BEST_BETS_V2`
 **REGISTERED_UTC: <set at commit>**
 **Family:** CARD_V2 (MLB daily card)
-**Status:** DRAFT, not registered. Questions 1, 3 and 4 are answered (Brey, 2026-09-15, section 15). The open part of question 1 (the card's maximum) and questions 2, 5, 6 and 8 are answered (Brey, 2026-09-16 about 00:45Z and about 00:50Z, section 15). **Open: 7, 9, 10 and 11** (11 is new: his "30-45+ percent" band is shut below about +152, including the +150 he named, and 4.6 shows why). It becomes registered only when Brey has answered those four himself (or explicitly accepted each default), dated, the frozen parameter file of 11.2 exists, the code the `code_fingerprint` of 11.2 covers is merged, and this file is committed with those answers, that file's sha256, the fingerprint value and the `v1_code_fingerprint` value of section 10; no V2 pick exists before that instant. One further condition applies to plus-money picks only: the SR1 read already registered in `docs/RESEARCH_STRATEGY_REPLICATION.md` ("home underdog, moneyline price band +100 to +150", status READY_UNTESTED, zero rows read) is run and its result published before the first plus-money pick is shown (build plan T0c). Its result does not gate registration, licenses nothing here and changes no number in this file
+**Status:** DRAFT, not registered. Questions 1, 3 and 4 are answered (Brey, 2026-09-15, section 15). The open part of question 1 (the card's maximum) and questions 2, 5, 6 and 8 are answered (Brey, 2026-09-16 about 00:45Z and about 00:50Z, section 15). Question 7 is answered yes and questions 9, 10 and 11 are closed as single choices and replaced by the variant family of section 17 (Brey, 2026-09-16 about 03:10Z, section 15). **Open: 12, 13 and 14**, all new, all arising from that answer: whether to register the family as section 17 writes it, whether the published card may keep the strict bar while the loose one runs on paper, and whether the layout experiment's result licenses a rendering change and nothing else. It becomes registered only when Brey has answered those three himself (or explicitly accepted each default), dated, the frozen parameter file of 11.2 exists, the code the `code_fingerprint` of 11.2 covers is merged, and this file is committed with those answers, that file's sha256, the fingerprint value and the `v1_code_fingerprint` value of section 10; no V2 pick and no paper-arm pick exists before that instant. One further condition applies to plus-money picks only: the SR1 read already registered in `docs/RESEARCH_STRATEGY_REPLICATION.md` ("home underdog, moneyline price band +100 to +150", status READY_UNTESTED, zero rows read) is run and its result published before the first plus-money pick is shown (build plan T0c). Its result does not gate registration, licenses nothing here and changes no number in this file
 **Succeeds on the customer card:** `DAILY_CARD_MARKET_SIDE_MODEL_AGREEMENT_V1` and `DAILY_CARD_PROP_LIKELY_AND_CLEARS_PRICE_V1` (V1), which keep running in shadow with their record kept separately
 **Diagnosis:** `docs/CARD_V2_DIAGNOSIS_2026-09-15.md` · **Build:** `docs/CARD_V2_BUILD_PLAN.md` · **Roadmap:** R16-34
 
@@ -40,6 +40,18 @@ Picks come in **two classes, graded apart from each other and never pooled**
   published with a label on its face, on its own record line, under its own
   floors, its own harm check and its own retirement result, and capped at 3 of
   the card's slots until he rules otherwise (question 9).
+
+**Four rule variants run on the same board every day, and exactly one of them
+is published.** Section 17 registers a fixed family of four arms over the two
+settings the owner disputed on 2026-09-16 about 03:10Z: how far our own number
+is marked down before it may clear a price, and whether the card caps
+plus-money picks at three. The arm registered above, `DAILY_CARD_BEST_BETS_V2`,
+is the one customers see. The other three select, lock, grade and keep a record
+on paper, are never served to a customer, and can replace the published card
+only through the promotion rule of 17.4, which is fixed before any result
+exists and is charged against a multiplicity budget (17.3). The family answers
+a strategy question with a pre-registered comparison instead of an open-ended
+search; what it costs and what it cannot deliver are in 17.8.
 
 It claims no edge, no positive expected return and no guarantee. On the one
 already-seen board used to design it (2026-09-15), the market's own number
@@ -863,6 +875,13 @@ by the close-call order of section 6 and are listed below every pick.
   sentence ("both numbers are above what this price needs") can no longer
   occur and is removed. Neither line may sit behind a "View breakdown"
   control. That disclosure is mandatory; it is not a reason to withhold "Take".
+  **The owner answered question 7 on 2026-09-16 about 03:10Z, "Yes, publish
+  with the line."** So the pairing is his own condition, not this draft's
+  default: "Take" may rest on our own number clearing the price because the
+  line ships with it. Removing the line, moving it behind a control, or
+  shortening it so it no longer says our number has not been shown to beat the
+  market's breaks the condition he attached to his own yes, and is not a copy
+  change but a change to what he agreed to.
 
 ## 8. Props safeguards (collected)
 
@@ -956,36 +975,65 @@ the record apart from the picks and apart by price class.
   graded once. No grading number ever adds a `MAIN` entry to a `PLUS_MONEY`
   one (11.1, R5).
 
-## 10. Rules computed in shadow on the same days
+## 10. Everything computed on the same days
 
-Each is published every run to its own ledger, locked by its own lock rule,
-graded the same way, and never shown to customers.
+One list of every rule that screens the same board at the same publish instant.
+Each is written every run to its own ledger, locked by its own lock rule and
+graded the same way, and none but the published arm is ever shown to a
+customer. The **Kind** column is the difference that matters and is fixed here:
 
-| Rule id | Definition | Ledger |
-|---|---|---|
-| `DAILY_CARD_MARKET_SIDE_MODEL_AGREEMENT_V1` and `DAILY_CARD_PROP_LIKELY_AND_CLEARS_PRICE_V1` (V1) | The selection logic, constants and lock rule of `src/analysis/daily_card.py` and `card_ledger` exactly as committed at registration, with the calibration file V1 reads. Its nightly refit, which read sealed-window and forward games (section 1.2; diagnosis section 0), was stopped by Brey on 2026-09-15 ("Freeze it now"; record `docs/CARD_CALIBRATION_FREEZE_2026-09-15.md`, commit `ba09312c`), before V2's first counted day, so V1's **calibration file** does not change during V2's sample. That is all the freeze delivers: it covers only that file's `a` and `b` and says so in terms. The rest of V1's model and its selection code stay live and editable for a sample the read date puts around August 2027, and 11.2 records 15 commits to the model files in five days and 12 to `src/report/card.py` since 2026-08-28. So V1 is pinned by measurement, not by assumption: every V1 shadow row carries a `v1_code_fingerprint`, the sha256 of `src/analysis/strength.py`, `src/analysis/playerprops.py`, `src/analysis/propboard.py`, `src/report/props.py`, `src/analysis/daily_card.py`, `src/report/card.py`, `src/appstate/card_ledger.py` and `data/processed/card_calibration.json`, with the registration-commit value written into section 16. A row carrying another value is reported under 11.6 with the dates and the commits that changed it, never assumed away. Comment-only, docstring-only and customer-copy-only edits (build plan T10, T10b and the interim V1 copy change) are not a change to V1's selection, and a fingerprint change made only of those is reported as such | `evidence/cards_v1.jsonl` until the cutover date, `evidence/cards_v1_shadow.jsonl` from the cutover date; no date in both |
-| `DAILY_CARD_BEST_BETS_V2_SHADOW_A_BAND_ONLY` (A) | V2 with G6, G7, G8 **and G14** removed; everything else identical, including the markdown inside the score, G11's dedup, G12's ceiling of 10, the floor of 3 and the fill rule. **Why G14 goes too, stated rather than assumed:** A exists to measure what the gates on our own number refuse, and G14 is a cap on the card's composition, not a gate on our number. Left in, it would drop V2's own plus-money picks to make room for the three higher-scored ones G8 refuses, so A would not contain V2's picks and the difference between the two records would stop being "what G6, G7 and G8 refused". What that costs is not hidden: A then differs from V2 in four respects, not three, and its card can be almost all plus money (7 of 10 on the design board, 14.3), so A is not a like-for-like comparison of card shape, only of what those three gates keep out | `evidence/cards_v2_shadow_a.jsonl` |
-| `DAILY_CARD_BEST_BETS_V2_SHADOW_C_OTHER_WORST_PRICE` (C) | V2 with G4's short end set to the other answer to owner question 4: `price >= -150` if V2 registers -160, `price >= -160` if V2 registers -150; the +250 ceiling unchanged; everything else identical | `evidence/cards_v2_shadow_c.jsonl` |
-| `DAILY_CARD_BEST_BETS_V2_SHADOW_D_NO_MARKDOWN` (D) | V2 with `MARKDOWN = 0`: the same gates, the same classes, the same ranking, on our raw number. Everything else identical | `evidence/cards_v2_shadow_d.jsonl` |
-| `DAILY_CARD_BEST_BETS_V2_SHADOW_E_LIKELY_FIRST` (E) | The superseded rule: the draft's G4 (`price >= -160`, no ceiling), G5 and G6 at 0.50 for every candidate, G7 as `our raw number > breakeven(price)`, G8 unchanged, no markdown, no plus-money class, ranked longest price first. Its ceiling and floor follow V2's (10 entries, floor 3) so the two records are the same shape | `evidence/cards_v2_shadow_e.jsonl` |
+- **shadow**: never published to a customer, no promotion path, spends none of
+  the multiplicity budget of 17.3. A shadow result informs and is published;
+  it can never change the published rule (11.6).
+- **family variant**: paper, promotable under the rule of 17.4 and only under
+  that rule, charged against the budget of 17.3. Registered in section 17.
+- **published**: the arm customers see, which is `DAILY_CARD_BEST_BETS_V2`
+  itself and is also arm A1 of the family.
+
+| Rule id | Kind | Definition | Ledger |
+|---|---|---|---|
+| `DAILY_CARD_BEST_BETS_V2` (A1) | published, and family arm | This registration, with `MARKDOWN = 0.038`, `BASE_EDGE = 0.010` and G14's sub-cap of 3 (sections 3 and 4). It is the incumbent every family comparison of 17.4 is measured against | `evidence/cards_v2.jsonl` |
+| `DAILY_CARD_BEST_BETS_V2_VAR_STRICT_NOCAP` (A2) | family variant (paper) | A1 with G14 removed. Nothing else differs (17.1) | `evidence/cards_v2_var_strict_nocap.jsonl` |
+| `DAILY_CARD_BEST_BETS_V2_VAR_LOOSE_CAP3` (A3) | family variant (paper) | A1 with `MARKDOWN = 0.0090` and `BASE_EDGE = 0.0024`. Nothing else differs (17.1) | `evidence/cards_v2_var_loose_cap3.jsonl` |
+| `DAILY_CARD_BEST_BETS_V2_VAR_LOOSE_NOCAP` (A4) | family variant (paper) | A1 with `MARKDOWN = 0.0090`, `BASE_EDGE = 0.0024` and G14 removed (17.1) | `evidence/cards_v2_var_loose_nocap.jsonl` |
+| `DAILY_CARD_MARKET_SIDE_MODEL_AGREEMENT_V1` and `DAILY_CARD_PROP_LIKELY_AND_CLEARS_PRICE_V1` (V1) | shadow | The selection logic, constants and lock rule of `src/analysis/daily_card.py` and `card_ledger` exactly as committed at registration, with the calibration file V1 reads. Its nightly refit, which read sealed-window and forward games (section 1.2; diagnosis section 0), was stopped by Brey on 2026-09-15 ("Freeze it now"; record `docs/CARD_CALIBRATION_FREEZE_2026-09-15.md`, commit `ba09312c`), before V2's first counted day, so V1's **calibration file** does not change during V2's sample. That is all the freeze delivers: it covers only that file's `a` and `b` and says so in terms. The rest of V1's model and its selection code stay live and editable for a sample the read date puts around August 2027, and 11.2 records 15 commits to the model files in five days and 12 to `src/report/card.py` since 2026-08-28. So V1 is pinned by measurement, not by assumption: every V1 shadow row carries a `v1_code_fingerprint`, the sha256 of `src/analysis/strength.py`, `src/analysis/playerprops.py`, `src/analysis/propboard.py`, `src/report/props.py`, `src/analysis/daily_card.py`, `src/report/card.py`, `src/appstate/card_ledger.py` and `data/processed/card_calibration.json`, with the registration-commit value written into section 16. A row carrying another value is reported under 11.6 with the dates and the commits that changed it, never assumed away. Comment-only, docstring-only and customer-copy-only edits (build plan T10, T10b and the interim V1 copy change) are not a change to V1's selection, and a fingerprint change made only of those is reported as such | `evidence/cards_v1.jsonl` until the cutover date, `evidence/cards_v1_shadow.jsonl` from the cutover date; no date in both |
+| `DAILY_CARD_BEST_BETS_V2_SHADOW_A_BAND_ONLY` (A) | shadow | V2 with G6, G7, G8 **and G14** removed; everything else identical, including the markdown inside the score, G11's dedup, G12's ceiling of 10, the floor of 3 and the fill rule. **Why G14 goes too, stated rather than assumed:** A exists to measure what the gates on our own number refuse, and G14 is a cap on the card's composition, not a gate on our number. Left in, it would drop V2's own plus-money picks to make room for the three higher-scored ones G8 refuses, so A would not contain V2's picks and the difference between the two records would stop being "what G6, G7 and G8 refused". What that costs is not hidden: A then differs from V2 in four respects, not three, and its card can be almost all plus money (7 of 10 on the design board, 14.3), so A is not a like-for-like comparison of card shape, only of what those three gates keep out | `evidence/cards_v2_shadow_a.jsonl` |
+| `DAILY_CARD_BEST_BETS_V2_SHADOW_C_OTHER_WORST_PRICE` (C) | shadow | V2 with G4's short end set to the other answer to owner question 4: `price >= -150` if V2 registers -160, `price >= -160` if V2 registers -150; the +250 ceiling unchanged; everything else identical | `evidence/cards_v2_shadow_c.jsonl` |
+| `DAILY_CARD_BEST_BETS_V2_SHADOW_E_LIKELY_FIRST` (E) | shadow | The superseded rule: the draft's G4 (`price >= -160`, no ceiling), G5 and G6 at 0.50 for every candidate, G7 as `our raw number > breakeven(price)`, G8 unchanged, no markdown, no plus-money class, ranked longest price first. Its ceiling and floor follow V2's (10 entries, floor 3) so the two records are the same shape | `evidence/cards_v2_shadow_e.jsonl` |
 
 A tests whether the gates on our number do anything, and is the one shadow
 exempt from G14, for the reason written into its row. C tests the other of the
 two worst prices the owner named ("-150 or -160"), which he settled at -160 on
-2026-09-15 (question 4). **D measures what the markdown costs and what it
-saves**: it is the only way to find out, without changing the published rule,
-whether marking our number down refused bets that would have won. **E keeps the
-superseded 2026-09-11 directive measured rather than discarded**, so that "more
-than likely first, then price" has a record of its own beside the rule that
-replaced it. V1 is the rule being replaced.
+2026-09-15 (question 4). **E keeps the superseded 2026-09-11 directive measured
+rather than discarded**, so that "more than likely first, then price" has a
+record of its own beside the rule that replaced it. V1 is the rule being
+replaced.
 
-A, C, D and E carry V2's floor of 3, its ceiling of 10 and its fill rule
-unchanged, and C, D and E carry G14 unchanged as well; A is the single
-exception, for the reason in its row. So their
-records are read the same way: picks apart, fills apart, each class apart, and
-all together. No shadow result changes the published rule (11.6). On the design
-board, G3 set aside, V2 published 5 picks; A published 10, C 5, D 7 and E 2
-(14.3).
+A, C and E carry V2's floor of 3, its ceiling of 10 and its fill rule
+unchanged, and C and E carry G14 unchanged as well; A is the single exception,
+for the reason in its row. So their records are read the same way: picks apart,
+fills apart, each class apart, and all together. No shadow result changes the
+published rule (11.6). On the design board, G3 set aside, V2 published 5 picks;
+A published 10, C 5 and E 2 (14.3).
+
+**Shadow D is deregistered before registration, and absorbed by the family's
+loose arms.** An earlier draft of this section registered
+`DAILY_CARD_BEST_BETS_V2_SHADOW_D_NO_MARKDOWN`, which was V2 with
+`MARKDOWN = 0`, to measure what the markdown costs and what it saves. The loose
+arms A3 and A4 measure the same thing, at a bar within 0.74 points of D's at
+every price G4 allows, and unlike D they carry a promotion rule, so they answer
+the question the owner actually asked instead of only describing it. Two arms
+that close together would pick the same card on almost every board and could
+never separate, and keeping both would spend multiplicity budget (17.3) on a
+comparison that cannot resolve. EXPLORATORY, on the already-seen 2026-09-15
+board with G3 set aside: shadow D and arm A3 produce the **identical** 7-pick
+card in the identical order
+(`scratchpad/variants/shadow_d_vs_loose.py`). What the swap costs is stated
+rather than hidden: D was a clean one-factor contrast, markdown only with the
+base edge held, and the loose arms move both constants together, because the
+owner's own two numbers set both (17.1). This deregistration is permitted
+because it happens before `REGISTERED_UTC`, which is the only point at which a
+rule in this file may still change at all (section 16).
 
 ---
 
@@ -1404,6 +1452,18 @@ way ("Changing the model restarts the sample",
   published rule.** A challenger that beats V2 can only be adopted through its
   own new registration, counted from after that registration.
 
+**These shadow comparisons and the family comparisons of 17.3 are two different
+objects and are corrected separately, on purpose.** The three comparisons above
+license nothing: V1, A and C have no promotion path, and no result of theirs can
+move a constant, a gate or the published card. They are described, published
+and corrected at their own family-wise 0.05 because that is how a description
+is reported honestly, not because anything hangs on them. The **six** family
+comparisons of 17.3 are the only comparisons in this registration that can
+change what customers see, and they carry the 0.05 family-wise budget that
+matters. Nobody may combine the two sets into one ladder, and nobody may report
+a shadow comparison as though it had cleared the family's bar. The
+`PENDING`-before-the-read rule of 11.4 applies to both sets alike.
+
 ### 11.7 The retirement result
 
 Read on counted picks only; the fills' F1 line is published beside the result
@@ -1496,8 +1556,9 @@ is also exactly the band the evidence says is least trustworthy.
 claims to correct a bias nobody has measured. And the correction this leaves
 undone is named rather than implied: if the vig gap is small at plus money
 because those prices are efficient rather than generous, this mechanism keeps
-surfacing them and nothing in the rule detects it. Shadow D and the plus-money
-arm of the harm check are the only instruments pointed at that.
+surfacing them and nothing in the rule detects it. The family's loose arms
+(section 17) and the plus-money arm of the harm check are the only instruments
+pointed at that.
 
 **What it cannot do.** Isolation prevents contamination; it does not
 manufacture a sample. 11.4's arithmetic says the plus-money class may publish
@@ -1521,9 +1582,114 @@ kind of bet to find out.
    +150 home underdogs). It answers the owner's instinct on its own sample and
    is required to be run and published before the first plus-money pick
    (status line, build plan T0c).
-4. **Shadow D** (section 10), which is the same rule with the markdown set to
-   zero and is the only way to learn, without changing the published rule,
-   whether the markdown refused bets that would have won.
+4. **The loose arms A3 and A4** (section 17), which are the same rule at a
+   markdown of 0.0090 and a base edge of 0.0024, and are the way to learn,
+   without changing the published card, whether the registered markdown refused
+   bets that would have won. They replace the deregistered shadow D, which
+   measured the same thing without a promotion rule (section 10). A4 is also
+   the arm this section's warning applies to most sharply: on the design board
+   its card is 7 plus money out of 10, every entry resting on our raw number
+   sitting 4.0 to 9.3 points above the market's, so it is the arm most likely
+   to reach a `HARM_STOP` rather than a verdict (17.8).
+
+### 11.10 The variant family inside the evaluation plan
+
+Section 17 registers the family. This subsection says what it changes in the
+plan above, and what it deliberately leaves alone.
+
+**What does not change: the published card's own verdict.** A1 is read exactly
+as 11.4 to 11.8 already say. Its floors stay at 300 counted picks of a class
+with a CLV%, 300 graded WIN or LOSS across 60 distinct slate dates. Its verdict
+stays PASS at 55 per cent beating the close and mean CLV% at or above +1.5 per
+cent with no FAIL condition, INCONCLUSIVE otherwise, FAIL on any of the five
+conditions. Its harm check keeps both arms at 100 and 50 counted picks. Its
+stop date stays the end of the 2027 MLB postseason. None of those numbers moves
+because paper arms exist, in either direction: the family may not lower a floor
+to reach a verdict sooner, and it does not raise A1's own floor either, because
+A1's verdict is a one-sample read of the published rule and is not one of the
+six comparisons the budget of 17.3 pays for.
+
+**What is added: a second, stricter set of floors that apply only to a
+promotion decision.** They are the registered floors multiplied by 1.5428, the
+sample cost of the Holm rank-1 bar (17.3), rounded up:
+
+| Floor | A1's own verdict (11.4) | A promotion decision (17.4) |
+|---|---:|---:|
+| counted picks of the class with a CLV% | 300 | **463** |
+| counted picks of the class graded WIN or LOSS | 300 | **463** |
+| distinct slate dates | 60 | **93** |
+
+The promotion floors are read on **both** arms separately and again on the
+**discordant set** between them, defined in 17.4 clause 1. Fills count toward
+none of them, exactly as in 11.1. Each paper arm also reads its own 11.5
+verdict on its own counted picks at the ordinary 300 and 60 floors, published
+with its counts; that verdict is a read of that arm and is not by itself a
+promotion (17.4 clause 4).
+
+**The paper arms' counted populations are defined exactly as 11.1 defines
+V2's**, with the arm's own rule id in place of V2's, the arm's own lock, and
+the same four conditions: shown as a pick on at least one published row of that
+arm's ledger and graded under section 9, first pitch strictly after
+`REGISTERED_UTC`, regular season by the frozen `game_type`, and the shared
+`code_fingerprint` of 11.2. The class split of 11.1 applies to every arm, and
+no number anywhere adds one arm's picks to another's or one class to another's.
+
+**The harm check of 11.4 runs on every arm, per class, at the same two
+thresholds**, and its consequence is arm-scoped. A `HARM_STOP` on the published
+arm removes "Take" from that class of the customer card, as 11.4 already says.
+A `HARM_STOP` on a paper arm removes nothing from any customer surface, because
+that arm has no customer surface; it retires that arm for that class from the
+family permanently (17.5), while the arm keeps selecting, locking, grading and
+counting so that its record is complete and its loser is published.
+
+**Nothing is read before the read date, on any arm.** 11.4's rule that nobody
+summarises CLV%, S2, S4, S5 or S6 over counted picks before the read applies to
+all four arms, with **one exception and no others: the one-way harm check**.
+A plain running win-loss-and-units line is published for **A1 only**, which is
+what R5 already publishes on the customer record page. **No paper arm's running
+units line is computed, printed, logged or shown anywhere before that arm's
+read date**, because four such lines side by side are the arm scoreboard this
+design refuses (17.8), whatever each line is called on its own. No comparison
+statistic, no p-value, no arm ranking and no "arm A4 is up 3 units" exists
+before the read date. This clause is written out because the
+owner asked to see which arm is profitable, and the way that question destroys
+itself is by being answered early and often (17.8).
+
+**How a promotion is recorded, so the published record stays readable across
+the switch.** A promotion is not a switch flipped at the read. Every step below
+happens in the same publish day, and 11.4's "successor before the read" clause
+is what requires most of it:
+
+1. The winning arm is registered as a **new rule id**,
+   `DAILY_CARD_BEST_BETS_V3`, in its own pre-registration file, with its own
+   `REGISTERED_UTC` and with **both classes' constants written in
+   explicitly**: the winner's constants on the class it was promoted on, and
+   the incumbent's constants, unchanged, on the class it was not (17.4 clause
+   8). V3 is therefore a two-class rule with at most one class changed per
+   promotion, never a whole-card cutover won on one class's evidence. It
+   becomes the published card only from that instant.
+2. **V3's counted sample starts at zero.** No pick from the paper window is
+   folded into V3's record, quoted as V3's evidence, or added to any V3 number.
+   The paper window bought the decision; it is spent. 11.7's rule that a result
+   never moves a constant is unchanged.
+3. **A1's record is closed and published at the same instant**, as a named
+   non-verdict read ("V2 interim at successor registration", 11.4), with its
+   CLV%, ROI and counts per class. A bad incumbent run is visible rather than
+   quietly replaced.
+4. `evidence/cards_v2.jsonl` receives no row dated on or after the V3 cutover
+   date, exactly as R3 already holds for `evidence/cards_v1.jsonl`. The record
+   page shows V2's block as a separate, closed block beside V3's, and R4's rule
+   that no number adds two rules' picks together extends to it unchanged.
+5. **Every losing arm's full record is published** under `docs/`, with its
+   counts and its losing numbers, at the same instant.
+6. The family closes. One promotion per family, ever (17.4).
+
+**If nothing promotes, which is the expected outcome** (17.8): A1 keeps
+publishing under its own verdict, every arm's record is published with its
+counts, and the family's result is written up as what it is. An absence of a
+promotion is not a finding about the card; it is the family reporting that it
+could not separate its members, and 11.8's rule that INCONCLUSIVE licenses
+nothing applies to it word for word.
 
 ## 12. Record keeping
 
@@ -1542,11 +1708,13 @@ kind of bet to find out.
   source; and, on a fill, the checks it failed and its quote age when it was
   added. A row also carries the count of plus-money picks G14 dropped and
   whether G12's ceiling refused an entry that day (D4, D7).
-- **R2.** Shadow rules write only to their own files (section 10).
+- **R2.** Shadow rules and paper family arms write only to their own files
+  (section 10, 17.6). Nothing but A1 writes to `evidence/cards_v2.jsonl`.
 - **R3.** `evidence/cards_v1.jsonl` is never rewritten. It receives no rows
   dated on or after the cutover date.
 - **R4.** Records are computed per file. No number anywhere adds V1 and V2
-  picks together, on the page, in the API or in a report.
+  picks together, or a paper arm's pick to a published pick, on the page, in
+  the API or in a report.
 - **R5.** The record page shows V2's record, and V1's record through the
   cutover date as a separate, closed block, both read from their ledgers at
   request time. **Each block shows game picks, player props and game totals
@@ -1571,6 +1739,18 @@ kind of bet to find out.
   +4.1776. The closed V1 block uses the together figure as its headline.
 - **R6.** For 14 days from the cutover date the card shows the switch banner
   (copy C10).
+- **R7.** Every row of every family arm, A1's included, carries `rule` (the
+  arm's own id), `published` (true on A1, false on A2, A3 and A4),
+  `family_id: CARD_V2_VARIANTS_2026_09`, `arm` (`A1` to `A4`), the arm's own
+  constants in force, the shared `code_fingerprint` of 11.2, and `pool_hash`,
+  the sha256 of the shared candidate pool the run screened (17.6). A reader can
+  prove from the ledgers alone that all four arms screened the same board, and
+  a `pool_hash` mismatch between arms on one publish run is a fault, not a
+  difference between rules.
+- **R8.** No customer-facing route, template, serializer or record figure reads
+  a paper arm's ledger or names a paper arm's rule id. The record page's four
+  headline figures of R5 stay on A1's ledger alone. This is asserted by a test,
+  not left to care (17.7).
 
 ## 13. Customer copy
 
@@ -1753,6 +1933,20 @@ The client never re-rounds. Braces are fields read from the payload.
   face, under C3: "No lineup is posted yet for this game. Plate appearances are
   priced off this batter's season average, not his spot in today's order." It
   is mandatory on a pick exactly as on a fill, and never sits behind a control.
+- **C16 Layout section labels** (17.2, the display experiment). Three plain
+  labels, used only by layout treatments L2 and L3 and by nothing else: "Main
+  band", "Plus money", and the jump link "Skip to plus money". They name a
+  class that every entry already carries on its face under C14. They make no
+  claim about either class, carry no verb, and no treatment may add any other
+  string. The entries under either label are the same entries, in the same
+  within-class order, as treatment L1 renders in one list.
+
+**The variant family of section 17 adds no customer string beyond C16 and
+changes no existing one.** The paper arms are never rendered, so they touch no
+copy at all; the display experiment changes the order and grouping of entries
+the card already shows, under labels that name a class the card already names.
+`tests/test_customer_language.py` and `tests/test_no_nothing_clears_the_bar.py`
+bind on C16 exactly as on every other string here.
 
 No string on the card claims an edge, value or a guarantee, and none uses
 "STRONG", "sure", "fair price", "best of N books" or calls a model number a
@@ -1765,7 +1959,9 @@ C11, C13, C14, C15) was checked against `HARD_BANNED`, `NEGATION_ONLY` and
 `tests/test_web_structure.py` uses) and against `BANNED_PHRASES` and
 `BANNED_JARGON` imported from `tests/test_no_nothing_clears_the_bar.py`:
 18 strings, 0 violations
-(`scratchpad/value_score/final_copy_check.py`).
+(`scratchpad/value_score/final_copy_check.py`). C16's three labels were checked
+against the same five lists, imported the same way:
+0 violations (`scratchpad/variants/family_consistency.py`).
 
 ---
 
@@ -1910,17 +2106,72 @@ first fills.
 | V1 | 8 | not applicable | As published (section 1 of the diagnosis); V1 fills to 3 from its SPLIT pile, which did not fire on this board |
 | A, G6, G7, G8 and G14 removed (section 10) | 10 (the ceiling; 48 passed before G11, 21 after it) | 0 | Rockies +1.5 +106, Nationals +1.5 +110, White Sox +135, Angels +1.5 -114, Reds +1.5 +124, Athletics +202, Orioles +117, Michael Harris II u1.5 -148, Pirates +190, Matt Olson u1.5 -157. The first three are exactly the disagreements G8 refuses, and they take the top three ranks, which is what A exists to measure. Seven of the ten are plus money, which is what dropping G14 costs, and the list holds all five of V2's picks, which is what dropping it buys: the difference between the two lists is exactly what G6, G7 and G8 refused. Carrying G14 in A instead would drop Reds +124, Athletics +202, Orioles +117 and Pirates +190 and fill those four slots with main-band entries whose marked-down number is below break-even (Pete Alonso u1.5 -150, Red Sox -108, Drake Baldwin u1.5 -159, Dominic Canzone u1.5 -159, scores -0.029 to -0.225), which measures the sub-cap and not the three gates. Both readings were computed on this pool; the registered one is the one printed here (`scratchpad/value_score/fix_verify.py`) |
 | C, worst price -150 | 5 | 0 | The same five picks as V2: no V2 pick on this board is priced between -160 and -151, so C's shorter band changes nothing here |
-| D, no markdown | 7 | 0 | The five above plus Matt Olson u1.5 -157 and Pete Alonso u1.5 -150. The markdown's whole effect on this board is to refuse those two props, both of whose raw edge (4.56 and 2.65 points) is under the bar |
 | E, the superseded "likely first" rule | 2 | 1 | Twins +1.5 -112 and Angels +1.5 -114, ranked longest price first, with Matt Olson u1.5 -157 as the fill. These are the draft's own figures for this board, reproduced from the pre-amendment section 14.2 rather than recomputed, because E is the draft rule unchanged. No plus-money entry, no prop pick |
+
+### 14.3b The four family arms on the same board
+
+**EXPLORATORY, and the strongest warning in this section applies to it: this is
+an illustration of what the arms DO, on one already-seen date, and must never
+be quoted as one arm beating another.** No arm's numbers here enter any count
+in section 11 or 17. Source
+`scratchpad/variants/variant_family.py`, on the same 138-candidate pool.
+
+**At the real publish instant (16:42:48Z, every quote stale).** All four arms
+publish **0 picks and 3 fills**. A1 and A2 are byte-identical to each other;
+A3 and A4 are byte-identical to each other; the two pairs differ by one entry.
+
+| Arm | Picks | Fills | The three fills |
+|---|---:|---:|---|
+| A1, A2 | 0 | 3 (1 MAIN, 2 PLUS_MONEY) | Angels +1.5 -114; Reds +1.5 +124; Athletics +202 |
+| A3, A4 | 0 | 3 (2 MAIN, 1 PLUS_MONEY) | Angels +1.5 -114; Reds +1.5 +124; Michael Harris II u1.5 -148 |
+
+On the counted population, which is picks only, this date gives the family
+**nothing at all**: every arm contributed zero counted picks. That is the most
+important line here, and 17.8 builds its calendar on it.
+
+**With G3 set aside, as 14.2 does.**
+
+| Arm | Picks | MAIN | PLUS_MONEY | Adds against A1 | Drops against A1 |
+|---|---:|---:|---:|---:|---:|
+| A1 STRICT_CAP3 (published) | 5 | 2 | 3 | 0 | 0 |
+| A2 STRICT_NOCAP | 6 | 2 | 4 | 1 | 0 |
+| A3 LOOSE_CAP3 | 7 | 4 | 3 | 2 | 0 |
+| A4 LOOSE_NOCAP | 10 (the ceiling) | 3 | 7 | 5 | 0 |
+
+- **A2** adds **Pirates +190** and nothing else. G14 was the only thing
+  refusing it.
+- **A3** adds **Matt Olson u1.5 -157** and **Pete Alonso u1.5 -150**, both
+  `MAIN`, and adds **no plus-money pick at all**, because the sub-cap was
+  already full at three. Its plus-money overflow of six candidates (Pirates
+  +190, Royals +146, Cubs -1.5 +154, Giants +147, Twins +155, Tigers +121) is
+  entirely refused by G14.
+- **A4** adds Matt Olson u1.5 -157, Pirates +190, Royals +146, Cubs -1.5 +154
+  and Giants +147. It hits G12's ceiling of 10 and drops Pete Alonso u1.5 -150,
+  Twins +155 and Tigers +121. Its card is **7 plus money out of 10**.
+- **The deregistered shadow D** (`MARKDOWN = 0`, `BASE_EDGE = 0.010`) produces
+  the **identical** 7-pick card to A3, in the identical order, which is the
+  measured reason section 10 absorbs D into the loose arms rather than running
+  both (`scratchpad/variants/shadow_d_vs_loose.py`).
+
+**Four things follow, and 17.8 says them again because they decide whether this
+family ever resolves.** Every arm's pick set here is a strict superset of A1's,
+so no arm drops an A1 pick on this board. A2 differs from the published card by
+one pick. A3, with the cap on, does not reach plus money at all, so the arm
+that loosens the bar while keeping the cap answers a main-band question. And A4
+is the only arm that separates quickly and is the one the measured evidence
+warns about most.
 
 ### 14.4 What cannot be read from this
 
 One date, already seen, with a stale board and the pre-registration model. It
 shows the gates and the score do what they say. It says nothing about whether
 V2 picks win, beat the close or return money, and must never be quoted as
-either "V2 works" or "V2 is too strict". Nothing in 14.2 or 14.3 is a
-comparison between rules: five picks against two is a count of what each rule
-listed on one already-seen board, not evidence that either is better.
+either "V2 works" or "V2 is too strict". Nothing in 14.2, 14.3 or 14.3b is a
+comparison between rules: five picks against two, or ten against five, is a
+count of what each rule listed on one already-seen board, not evidence that
+either is better. In particular, A4 listing twice as many bets as A1 is not a
+point in A4's favour and is not a point against it; it is the reason A4 will
+reach a read first and the reason its harm check will fire first (17.8).
 
 It does show the likely shape: few picks, most of them plus money, each resting
 on our own number sitting five to eight points above the market's before the
@@ -1944,15 +2195,60 @@ build, the V2 ledger and the `?rule=v2` preview use until he answers. The line
 under each question says which of his words it departs from, or what it
 settles.
 
-**Answered: 1 (both parts), 2, 3, 4, 5, 6 and 8.** Questions 1, 3 and 4 were
-answered by Brey on 2026-09-15 at about 22:35Z (3:35pm Pacific); question 1's
-open part (the card's maximum) at about 00:45Z on 2026-09-16; and questions 2,
-5, 6 and 8 at about 00:50Z on 2026-09-16 (5:50pm Pacific 9/15). All were given
-in chat, in reply to plain-words questions about this draft. **Open: 7, 9 and
-10**, of which 9 and 10 are new and arise from the answers of 2026-09-16.
-Registration still requires his explicit answer to each open question, or his
-explicit acceptance of its default, with its date; nobody else may accept one
-for him.
+**Answered: 1 (both parts), 2, 3, 4, 5, 6, 7, 8, 9, 10 and 11.** Questions 1, 3
+and 4 were answered by Brey on 2026-09-15 at about 22:35Z (3:35pm Pacific);
+question 1's open part (the card's maximum) at about 00:45Z on 2026-09-16;
+questions 2, 5, 6 and 8 at about 00:50Z on 2026-09-16 (5:50pm Pacific 9/15);
+and questions 7, 9, 10 and 11 at about 03:10Z on 2026-09-16 (8:10pm Pacific
+9/15). All were given in chat, in reply to plain-words questions about this
+draft. **Open: 12, 13 and 14**, all new, all arising from the answers of
+2026-09-16 about 03:10Z. Registration still requires his explicit answer to
+each open question, or his explicit acceptance of its default, with its date;
+nobody else may accept one for him.
+
+**The answers of 2026-09-16 about 03:10Z did not choose between the options
+they were given.** Asked which single setting to register on three of the four,
+he answered that the disputed settings are themselves strategies and should be
+run against each other and judged on profit. That is a legitimate answer and it
+is taken literally, with one constraint he did not ask for and cannot be
+dropped: running several rules and publishing whichever looks best is the
+standard way to manufacture a false finding, so the answer is a **fixed
+pre-registered family with a multiplicity budget and a promotion rule written
+before any result**, which is section 17, and not an open-ended search. What
+his answer buys, what it costs and what it cannot deliver are in 17.3, 17.4
+and 17.8. His four answers, verbatim and in the order they were asked:
+
+> Q: "Your example was +150 at 30-45 per cent. After the markdown that protects
+> against our model running hot, that band only opens at about +152, and 30 per
+> cent never qualifies. Accept, or loosen?"
+>
+> A: **"Can we try both strategies and see which one is profitable? These are
+> the types of strategies that we should be changing not necessarily just the
+> type of bedding strategy like changing these differences are strategy
+> changes. Does that make sense?"**
+
+> Q: "Plus-money picks are capped at 3 a day so a thin day cannot become an
+> all-underdog card. Keep that cap?"
+>
+> A: **"Again, these are different strategies that we should be trying because
+> maybe one of them profitable and one of them is not so like try and be more"**
+
+> Q: "How should the card display the two kinds (one list by score, or separate
+> sections)?"
+>
+> A: **"Try different strategies on this. Try both separate I want. Try to try
+> mix a hybrid."**
+
+> Q: "Every Take rests on our own number beating the price, and our number has
+> not been shown to beat the market. Each pick will say so. Acceptable?"
+>
+> A: **"Yes, publish with the line."**
+
+**What each answer closes.** The first closes question 11 and the second closes
+question 9, not by choosing a value but by turning each into one factor of the
+2 x 2 family of 17.1. The third closes question 10, not as a strategy question
+at all but as a display experiment that can never count as a strategy result
+(17.2). The fourth answers question 7 yes, outright.
 
 **The answers of 2026-09-16 about 00:50Z supersede a standing directive of
 2026-09-11.** Both quotes and both dates are in section 0.1, which is the
@@ -2074,17 +2370,24 @@ inferred: each answer below is his own text.
    41.1% (section 14).
 7. **Is it acceptable that every "Take" rests on our own number clearing the
    price, although our number has not been shown to beat the market's,
-   provided every pick says so (copy C2)? Default: yes. STILL OPEN.**
-   His answers of 2026-09-16 presuppose this and make it more load-bearing, not
-   less: with the plus-money class the whole pick rests on our own number, and
-   the markdown of section 4 is the only thing standing between his direction
-   and an unmarked model number. Presupposing is not answering, so the question
-   stays open and is not recorded as settled. Settles "the value is great": on
-   the 2026-09-15 board the market's own number cleared the price on none of
-   112 candidates, and G13 now refuses any candidate where it does. "Take"
-   stops for good, per class, if the harm check fires (11.4). If no, the card
-   uses no "Take" and shows shadow A's list under copy C9, as a separate
-   registration.
+   provided every pick says so (copy C2)? ANSWERED 2026-09-16 about 03:10Z:
+   "Yes, publish with the line."**
+   Asked in those words, he answered yes and named the condition himself: the
+   line ships with the pick. So copy C2's second sentence, which states that
+   our number has not been shown to beat the market's and names the markdown,
+   is **mandatory on the face of every pick at every rank and every width**,
+   never behind a control, and the build pins it as an assertion rather than
+   prose (build plan T2, T9, T12). His answers of 2026-09-16 about 00:50Z had
+   presupposed this and made it more load-bearing, not less: with the
+   plus-money class the whole pick rests on our own number, and the markdown of
+   section 4 is the only thing standing between his direction and an unmarked
+   model number. He has now answered it directly rather than by presupposition.
+   It also settles "the value is great": on the 2026-09-15 board the market's
+   own number cleared the price on none of 112 candidates, and G13 now refuses
+   any candidate where it does. The answer licenses nothing else: "Take" still
+   stops for good, per class, if the harm check fires (11.4), and no result of
+   this registration ever licenses customer copy claiming an edge or a
+   guarantee (11.8).
 8. **Among picks that pass every check, list the longest price first rather
    than the most likely first? ANSWERED 2026-09-16 about 00:50Z, by replacing
    the question.** His words, verbatim, in reply to "Among bets that pass every
@@ -2097,43 +2400,120 @@ inferred: each answer below is his own text.
    (section 5). Question 10 below asks the one thing his answer does not
    settle: whether he wants plus-money picks grouped in their own section
    rather than interleaved.
-9. **NEW, and open. Should at most 3 of the card's 10 entries be plus-money
-   picks? Default: yes, `PLUS_MONEY_SUBCAP = 3` (G14).**
-   This is a restriction on the thing he asked for most, and it was not put to
-   him before it was drafted, so it is asked now. The case for it: the class is
-   brand new, its record is empty, `docs/RESEARCH_STRATEGY_REPLICATION.md`'s
-   SR1 treats a slice of this exact band as an open, unread hypothesis, and on
-   the one board checked the sub-cap changed a 5-pick card into a 5-pick card
-   with one plus-money pick dropped (Pirates +190). The case against: it
-   refuses bets that passed every gate, on a judgement no measurement supports.
-   If he answers no, G14 is removed and G12's ceiling of 10 is the only limit.
-10. **NEW, and open. Should plus-money picks be listed in their own section
-    below the main picks, instead of interleaved with them by score?
-    Default: no, interleaved.**
-    Interleaving is what his answer to question 8 says: the top of the card is
-    whatever the score puts there, and on the design board that was a main-band
-    pick with two plus-money picks at ranks 2 and 3. A separate section would
-    mean a plus-money pick can never top the card whatever its score. Either
-    way every plus-money entry carries copy C14 on its face and is graded on
-    its own record; only the layout is in question.
-11. **NEW, and open. His confidence band, "30-45+ percent", is shut below about
-    +152, including +150, the first price he named. Register it that way?
-    Default: yes, `MARKDOWN` and `BASE_EDGE` stand as section 4 fixes them.**
-    G7's bar on the raw number is 55.03% at +100, 45.34% at +150, 43.86% at
-    +160, 38.98% at +200 and 34.53% at +250 (4.6), so a raw number inside his
-    band can be a pick only from about +152 upward, and the bottom of his band,
-    30 per cent, is out of reach at every price G4 allows. That is arithmetic,
-    not a judgement: it follows from the 3.8-point markdown and the required
-    edge, each measured or derived in 4.1 and 4.2, neither chosen to close his
-    band, and it is the reason G6's 0.30 floor can never refuse a pick. The
-    case for leaving it shut: every populated bucket of the one live
-    reliability table we have runs hot, and opening the short end means
-    publishing at exactly the confidence level this repo has never measured on
-    a number we know runs high. The case against: he named +150 himself, and
-    the rule as drafted answers that price with nothing inside his band. If he
-    wants it open, the change is to `MARKDOWN` or to `BASE_EDGE`, it has to be
-    made **before** registration, and a different value is a new rule id
-    (11.7), so it can never be made afterwards to rescue a thin card.
+9. **Should at most 3 of the card's 10 entries be plus-money picks? CLOSED
+   2026-09-16 about 03:10Z as a single choice, and made one factor of the
+   family: "Again, these are different strategies that we should be trying
+   because maybe one of them profitable and one of them is not so like try and
+   be more."**
+   He was given the cap and its alternative and declined to pick one, saying
+   both should run. So G14's sub-cap of 3 is **kept on the published card** and
+   its removal runs as a registered paper arm: A2 is the published rule with
+   G14 removed and nothing else changed, and A4 is the loose bar with G14
+   removed (17.1). Neither can replace the published card except under 17.4.
+   The reasoning that made this a question stands and is why the cap stays on
+   the card customers see: the class is brand new, its record is empty,
+   `docs/RESEARCH_STRATEGY_REPLICATION.md`'s SR1 treats a slice of this exact
+   band as an open, unread hypothesis, and on the one board checked, removing
+   the cap turned a 5-pick card into a 6-pick card at the strict bar and a
+   7-pick card into a 10-pick card with 7 plus money at the loose one (14.3b).
+   What he should know about it, from 17.8: A2 differs from the published card
+   by about one pick a slate, so "the sub-cap did nothing measurable" is the
+   most likely honest answer and it will take about 463 slate dates to say it.
+10. **Should plus-money picks be listed in their own section below the main
+    picks, instead of interleaved with them by score? CLOSED 2026-09-16 about
+    03:10Z as a strategy question, and reopened as a display experiment: "Try
+    different strategies on this. Try both separate I want. Try to try mix a
+    hybrid."**
+    He asked for all three: one list, separate sections, and a hybrid. None of
+    the three changes a gate, a score, a rank, a selection or a ledger row;
+    they change the order in which the same entries are rendered. So this is
+    registered as a **product experiment** in 17.2, with three treatments (L1
+    one list by score, the registered behaviour; L2 plus money grouped below
+    main; L3 one list by score with a class divider and a jump link), assigned
+    per visitor, measured on product metrics only, and bound by an invariant
+    that the ledger row written for a slate date is byte-identical whichever
+    layout the visitor saw. **Its outcome licenses a rendering change and
+    nothing else.** A layout cannot beat the close and cannot return money; it
+    enters no alpha-registry row, spends none of the family's multiplicity
+    budget, and may never be reported as a strategy result. That sentence is in
+    the registration in those words so that a future session cannot report "the
+    hybrid layout won" as evidence about picks. Until the experiment ships, L1
+    is what the card does, which is what his answer to question 8 says. Every
+    plus-money entry carries copy C14 on its face and is graded on its own
+    record under every treatment.
+11. **His confidence band, "30-45+ percent", is shut below about +152,
+    including +150, the first price he named. CLOSED 2026-09-16 about 03:10Z as
+    a single choice, and made the other factor of the family: "Can we try both
+    strategies and see which one is profitable? These are the types of
+    strategies that we should be changing not necessarily just the type of
+    bedding strategy like changing these differences are strategy changes. Does
+    that make sense?"**
+    He was asked to accept the band as shut or to loosen it, and answered that
+    both should run. So `MARKDOWN = 0.038` and `BASE_EDGE = 0.010` **stand on
+    the published card**, and a loose pair derived from his own two numbers,
+    `MARKDOWN = 0.0090` and `BASE_EDGE = 0.0024`, runs as registered paper arms
+    A3 and A4 (17.1). **One part of his direction is refused outright, by
+    arithmetic and not by judgement, and no arm serves it**: at +150 the price
+    itself breaks even at 40.00 per cent, so a bet with a true 30 per cent
+    chance returns `0.30 x 2.5 - 1 = -0.250` per unit before any gate, any
+    markdown and any vig. The bottom of his band is positive expectation only
+    at +234 and longer, a 16-point slice at the very top of G4's range (17.0).
+    What the loose pair does reach: under it his 0.30 floor is reachable at
+    exactly one price, +250, where the bar is 29.99 per cent, and at +150 the
+    band opens from 41.27 per cent upward, which is the whole
+    positive-expectation part of his 30-to-45 range at that price less 1.27
+    points of protection. G7's bar on the raw number under the registered
+    constants is 55.03% at +100, 45.34% at +150, 43.86% at +160, 38.98% at
+    +200 and 34.53% at +250 (4.6), and those are the numbers the published card
+    keeps. Question 13 puts that consequence to him directly, because it is the
+    part of his answer that will not be visible on the customer card for at
+    least a season.
+12. **NEW, and open. Register the variant family of section 17 as it is
+    written: four arms over the two settings above, one published and three on
+    paper, a Holm budget across six comparisons at a family-wise 0.05, floors
+    of 463 counted picks and 93 slate dates for a promotion decision, a
+    promotion rule fixed before any result, one promotion per family ever, and
+    no readout of which arm is winning before the read date? Default: yes.**
+    The last clause is the one he is most likely to object to and it is stated
+    plainly rather than buried: he asked to see which strategy is profitable,
+    and this registration will not give him a monthly scoreboard, because that
+    scoreboard is the mechanism by which a family of four turns into a false
+    finding, and because 17.8's arithmetic says such a readout would be noise
+    for at least a year. What he does get every day is four ledgers on the same
+    board, proof they screened the same pool, a per-date record of how far apart
+    the arms are, and a harm check that can fire within weeks and only ever says
+    stop. He does **not** get a running win-loss-and-units line for any paper
+    arm; that line exists for the published card A1 only (11.10), because four
+    of them side by side are the arm scoreboard this registration refuses. If he wants a
+    different number of arms, that is a decision to take now: 17.3 prices the
+    alternatives and a fifth and sixth arm cost every arm another 46 picks and
+    9 slate dates.
+13. **NEW, and open. The published card keeps the strict bar, so his 30-to-45
+    band stays shut below about +152 on the card customers actually see, for at
+    least a season and probably longer, while the loose bar runs only on paper.
+    Register it that way? Default: yes.**
+    This is the residual of question 11 and the single thing in this revision
+    most likely to be different from what he pictured. His answer was "try
+    both"; a family runs both, but only one of the two can be the card, and
+    17.1 makes that A1 for a stated reason: A1's constants come from a
+    measurement (`docs/PROP_CALIBRATION_2026-09-14.md`), the loose pair comes
+    from a target, and the one measurement this repo owns warns in exactly the
+    direction the loose pair runs. Publishing the loosest arm while its bar is
+    untested would put the measured-worst slice on the customer card. If he
+    wants the loose bar published instead, that is a different registration
+    with A3 or A4 as its published arm, taken before `REGISTERED_UTC`, and it
+    can never be made afterwards to rescue a thin card (11.7).
+14. **NEW, and open. Register the layout experiment as a product experiment
+    whose result licenses a rendering change and nothing else, enters no
+    alpha-registry row, spends none of the family's multiplicity budget, and
+    may never be reported as a strategy result? Default: yes.**
+    He asked to try all three layouts, and all three are built. This question
+    is only about what their result may be used for. A layout cannot beat the
+    close and cannot return money, so a layout result is a product finding
+    about what readers open, not a finding about picks. The invariant that
+    enforces it is in 17.2: the ledger row for a slate date must be
+    byte-identical whichever layout the visitor saw, asserted by a test, and if
+    a layout can change a row the experiment stops.
 
 One decision about V1, not V2, is not in this list: whether V1's nightly
 calibration refit keeps reading the sealed window. It is set out in the
@@ -2177,6 +2557,608 @@ change at all; each says what changed and on whose word.
 | 2026-09-16 | Supersession recorded, not applied quietly: the standing directive of 2026-09-11 ("none of that price matters until we know it's a MORE THAN LIKELY BET...") is superseded for the card by the answers of 2026-09-16 about 00:50Z. Both quotes and both dates are in a new section 0.1, in question 5, in question 8 and in the diagnosis's owner-directive table. The directive is kept for the main band's 0.50 tests and is measured on its own record by new shadow rule E (section 10) |
 | 2026-09-16 | Draft revision applying the four answers above, on the orchestrator's instruction, after an adversarial design competition and an independent judgement. New: the markdown of our own number (`MARKDOWN = 0.038`, section 4.1), the price-scaled required edge (`BASE_EDGE = 0.010`, section 4.2), the +250 ceiling (4.3), the score (section 4), G13 (no line shopping), G14 (plus-money sub-cap), the two price classes and their separate records (11.1), class-scoped floors, harm checks, verdicts and retirement (11.4, 11.5, 11.7), the statistical-power arithmetic moved into the evaluation plan (11.4), the failure-mode section (11.9), the constant-sensitivity table (4.5), descriptive lines D7, D8 and D9, shadow rules D and E, and copy C9b, C14 and C15. The section 14 illustration was re-run under the revised rule on the same already-seen pool (`scratchpad/value_score/final_rule.py`). No evidence threshold, floor, FAIL condition, verdict bar or stop date was loosened; the floors, the 300-pick and 60-date bars and all five stop conditions are unchanged and now apply per class |
 | 2026-09-16 | Draft correction, on the orchestrator's instruction after a verification pass on the revision, no owner answer involved and **no gate, constant, threshold, floor, FAIL condition, verdict bar or stop date changed**. Six things the revision stated wrongly or left unsaid were fixed, each checked against the design pool first (`scratchpad/value_score/fix_verify.py`, `fix_verify2.py`). (1) **Customer truth:** copy C14 told every plus-money reader that our number does not make the side the underdog, while the number printed one line above it was 48.9%, 37.3% or 48.7% on the three entries the registration's own illustration produces. The clause is struck and replaced with C1's wording, which was already true of the class; sections 7 and 13 now state the rule that no plus-money string may imply our number makes the side more likely than not, and the build plan pins it as an assertion against a below-0.50 fixture. (2) **Shadow A** could not produce 14.3's list under section 10's definition. A is now defined as exempt from G14 with the reason written out, the printed list stands, and the build plan's two test rows are aligned so they cannot both pass. (3) **G6** is stated as strictly dominated by G7 on a pick at every allowed price, live only on a fill, in G6, 0.2 and 4.5. (4) **4.5's** claim that the value test would have refused the Guardians fill "in any case" is corrected: it is true of the pick path and false of the fill path. (5) **4.6** gains the smallest raw number a pick may carry at each price, and says plainly that the owner's 30-to-45 band is shut below about +152, including the +150 he named, and that its 30 per cent floor is unreachable everywhere; new open question 11 puts that to him. (6) **11.9** had the ranking mechanism backwards: the Kelly multiplier `d/(d-1)` falls from 2.600 at -160 to 1.400 at +250, so at equal edge the score penalises long prices; what lifts plus money is the smaller vig gap 4.4 already measured. Also corrected: 14.2 and the diagnosis's 5.3 said two of the three plus-money picks were inside his band when one is, and 1.1's inventory of measured numbers gained rows for `MARKDOWN` and `BASE_EDGE`, which come from the same document and window as G8's cap. Sections 0.2, 1.1, 3 (G6), 4.5, 4.6, 7, 10, 11.9, 13 (C14), 14.2, 14.3, 15 (status line, new question 11), 16 |
+
+| 2026-09-16 about 03:10Z | Owner answer, question 7: **"Yes, publish with the line."** Every "Take" may rest on our own number clearing the price, provided copy C2's second sentence ships on the face of every pick at every rank and width. Question 7 is answered yes and is no longer open. Sections 0 (status), 7, 13 (C2), 15 (question 7), 16 |
+| 2026-09-16 about 03:10Z | Owner answer, question 11, which does not choose: **"Can we try both strategies and see which one is profitable? These are the types of strategies that we should be changing not necessarily just the type of bedding strategy like changing these differences are strategy changes. Does that make sense?"** The markdown and required edge stop being a single choice and become one factor of the registered variant family (new section 17). `MARKDOWN = 0.038` and `BASE_EDGE = 0.010` stand on the published card; a loose pair derived from his own two numbers, `MARKDOWN = 0.0090` and `BASE_EDGE = 0.0024`, runs as paper arms A3 and A4. The part of his direction arithmetic refuses, a true 30 per cent bet at +150 returning -0.250 per unit, is stated in 17.0 and served by no arm. Sections 0, 10, 11.10, 12 (R7, R8), 14.3b, 15 (question 11, new question 13), 16, 17 |
+| 2026-09-16 about 03:10Z | Owner answer, question 9, which does not choose: **"Again, these are different strategies that we should be trying because maybe one of them profitable and one of them is not so like try and be more"** G14's sub-cap of 3 stops being a single choice and becomes the second factor of the family. The cap stands on the published card; its removal runs as paper arms A2 and A4. Sections 0, 10, 11.10, 14.3b, 15 (question 9), 16, 17 |
+| 2026-09-16 about 03:10Z | Owner answer, question 10, which replaces the question: **"Try different strategies on this. Try both separate I want. Try to try mix a hybrid."** The card's section order stops being a strategy question and is registered as a display experiment with three treatments (17.2), whose result licenses a rendering change and nothing else, enters no alpha-registry row and spends none of the family's multiplicity budget. New copy C16 (three plain layout labels) is added and checked against the banned lists. Sections 13 (C16), 15 (question 10, new question 14), 16, 17.2 |
+| 2026-09-16 | Draft revision applying the four answers above, on the orchestrator's instruction. **New section 17**, the card-rule variant family: four arms over exactly the two disputed settings (17.1), the display experiment (17.2), the multiplicity budget with its arithmetic (17.3), the promotion rule (17.4), the retirement and tie rules (17.5), the mechanics and per-arm ledgers (17.6), the customer-isolation rules (17.7) and the honest limit (17.8). New 11.10 puts the family inside the evaluation plan. Section 10 becomes one list of everything computed on the same days, with a Kind column separating shadows from family variants. **Shadow D is deregistered before registration and absorbed by the loose arms**, which measure the same thing at a bar within 0.74 points of D's at every allowed price and, unlike D, carry a promotion rule; on the already-seen design board D and arm A3 produce the identical 7-pick card (`scratchpad/variants/shadow_d_vs_loose.py`). New R7 and R8 in section 12; new 14.3b. **No evidence threshold, floor, FAIL condition, verdict bar, harm-check arm, stop date or retirement result of the published card was loosened**: A1's own verdict still reads at 300 counted picks and 60 slate dates with the same five FAIL conditions and the same 2027 stop date, and the family's 463-pick, 93-date floors are a strictening that applies only to a promotion decision (11.10) |
+| 2026-09-16 | Draft correction, same instruction, no owner answer involved and no number changed. Every reference to shadow D outside section 16 and this review record was repointed at the loose arms: 11.9's list of first measurements, 11.9's named instruments, 14.3's shadow table and the build plan's `SHADOW_D` parameter set, store constant and three test rows |
+
+---
+
+## 17. The card-rule variant family
+
+Registered on the owner's answers of 2026-09-16 about 03:10Z (section 15), which
+turned three single choices into strategy questions to be settled by running
+them. This section is the whole of that answer: the arms, what each one is, how
+many comparisons the family may spend, what promotes one, what retires one,
+what happens on a tie, where the rows are written, and what the family cannot
+deliver. Every clause here is fixed at `REGISTERED_UTC` and none may move
+afterwards. A different arm, a different constant or a different bar is a new
+family with its own registration and its own window.
+
+**Family id:** `CARD_V2_VARIANTS_2026_09`
+
+### 17.0 The part of his direction arithmetic refuses
+
+Stated first, because the loose arm below is built to serve every part of his
+direction that can be served and no part that cannot.
+
+He asked for "30 to 45 per cent confidence at +150". At +150 the price itself
+breaks even at **40.00 per cent**. A bet with a true 30 per cent chance at +150
+returns `0.30 x 2.5 - 1 = -0.250` per unit, before any gate, any markdown and
+any vig. That is not a threshold that can be loosened; it is what the price
+means.
+
+| Price | Break-even | Expected value per unit of a true 30 per cent bet |
+|---|---:|---:|
+| +150 | 40.00% | **-0.250** |
+| +200 | 33.33% | **-0.100** |
+| +234 | 29.94% | +0.002 |
+| +250 | 28.57% | **+0.050** |
+
+The bottom of his band is positive expectation only at **+234 and longer**, a
+16-point slice at the very top of G4's allowed range. Everything below it is a
+losing bet by definition. No arm in this family serves it, and no future
+loosening of any constant can, because the refusal is arithmetic and not a
+judgement (`scratchpad/variants/shadow_d_vs_loose.py`).
+
+### 17.1 The family
+
+Four arms. A full 2 x 2 factorial over exactly the two settings he disputed,
+and nothing else.
+
+**The first factor: the markdown and the required edge.**
+
+- **STRICT**, the registered constants: `MARKDOWN = 0.038`, `BASE_EDGE = 0.010`.
+  Both come from `docs/PROP_CALIBRATION_2026-09-14.md`, cited in 4.1 and 4.2:
+  3.8 points of measured overconfidence in the 50-60 per cent bucket (n=212),
+  and the 1.0 point spread between that bucket and the 60-70 per cent bucket
+  (n=361).
+- **LOOSE**, new and derived from his own two numbers before any result:
+  `MARKDOWN = 0.0090`, `BASE_EDGE = 0.0024`.
+
+**Where LOOSE comes from, so that it is a derivation and not a dial.** The raw
+bar a pick must clear is `bar(price) = breakeven(price) + MARKDOWN +
+BASE_EDGE * d(price) / d(-160)`. His two numbers give two constraints:
+
+1. His bottom number reachable at his top price: `bar(+250) <= 0.30`, so
+   `MARKDOWN + 2.1538 * BASE_EDGE <= 0.014286`.
+2. His top number qualifying at his named price: `bar(+150) <= 0.45`, so
+   `MARKDOWN + 1.5385 * BASE_EDGE <= 0.050000`.
+
+Solving both as equalities returns a **negative** `BASE_EDGE` of -0.058: his own
+band is wider relative to break-even at +150 than at +250, so no constant pair
+hits both exactly. Constraint 1 is strictly binding and constraint 2 then clears
+with room. Solving constraint 1 while preserving the registered 3.8 to 1.0 shape
+of the protection gives a scale factor of 0.2399 on both constants, that is
+0.009118 and 0.002399 unrounded. Rounded to the precision this registration
+uses, and rounded so the constraint holds rather than grazes it: **0.0090 and
+0.0024**, a ratio of 3.75 to 1. The LOOSE bar at +250 is then 29.99 per cent and
+at +150 is 41.27 per cent, both inside his constraints
+(`scratchpad/variants/shadow_d_vs_loose.py`).
+
+**What the two settings do, on the raw number a pick must carry:**
+
+| Price | STRICT bar | LOOSE bar | Difference |
+|---:|---:|---:|---:|
+| -160 | 66.34% | 62.68% | 3.66 pt |
+| -110 | 57.36% | 53.56% | 3.79 pt |
+| +100 | 55.03% | 51.20% | 3.84 pt |
+| **+150** | **45.34%** | **41.27%** | 4.07 pt |
+| +200 | 38.98% | 34.68% | 4.30 pt |
+| **+250** | **34.53%** | **29.99%** | 4.54 pt |
+
+Under LOOSE his 0.30 floor is reachable at exactly one price, +250. Under
+STRICT it is reachable nowhere in the band (4.6).
+
+**The second factor: the plus-money sub-cap.** `CAP3` is G14 exactly as section
+3 registers it, at most 3 plus-money picks a day. `NOCAP` removes G14 entirely,
+so plus-money picks are limited only by G11's one-per-game and G12's ceiling of
+10 entries.
+
+**The four arms:**
+
+| Arm | Rule id | MARKDOWN | BASE_EDGE | G14 sub-cap | Status |
+|---|---|---:|---:|---:|---|
+| **A1** | `DAILY_CARD_BEST_BETS_V2` | 0.0380 | 0.0100 | 3 | **published to customers** |
+| A2 | `DAILY_CARD_BEST_BETS_V2_VAR_STRICT_NOCAP` | 0.0380 | 0.0100 | none | paper |
+| A3 | `DAILY_CARD_BEST_BETS_V2_VAR_LOOSE_CAP3` | 0.0090 | 0.0024 | 3 | paper |
+| A4 | `DAILY_CARD_BEST_BETS_V2_VAR_LOOSE_NOCAP` | 0.0090 | 0.0024 | none | paper |
+
+**Everything else is identical across all four**, and this list is exhaustive:
+G1 to G13 unchanged, G4's band -160 to +250, G5's market bands, G6's floors of
+0.50 and 0.30, G8's 10-point disagreement cap, G9, G10's 15-game floor with no
+lineup test, G11's dedup, G12's ceiling of 10 entries, the floor of 3, the fill
+rule, the Kelly-on-marked-down-number ranking key of sections 4 and 5, the
+order of operations of section 5, the lock and withdrawal rules of section 9,
+copy C2's honesty line on every pick, and the frozen model of 11.2. An arm that
+differs in anything not in the table above is not an arm of this family.
+
+**Why four and not more.** The 2 x 2 is the smallest design that answers both
+of his questions and the interaction between them. Three one-factor arms cannot
+tell "the cap matters" from "the cap only matters once the bar is loose", and
+on the one board we have, that interaction is the entire story: with the cap on,
+loosening the bar adds two main-band props and no plus-money pick at all
+(14.3b). Going larger is priced rather than argued (17.3):
+
+| Arms | Comparisons | Holm rank-1 bar | Sample multiplier | 300 becomes | 60 becomes |
+|---:|---:|---:|---:|---:|---:|
+| 2 | 2 | 0.025000 | 1.211 | 364 | 73 |
+| 3 | 4 | 0.012500 | 1.421 | 427 | 86 |
+| **4** | **6** | **0.008333** | **1.543** | **463** | **93** |
+| 6 | 10 | 0.005000 | 1.696 | 509 | 102 |
+| 8 | 14 | 0.003571 | 1.797 | 540 | 108 |
+
+A fifth and sixth arm would cost every arm another 46 picks and 9 slate dates
+on a design whose plus-money class is already expected to read `UNDERPOWERED`
+(17.8). Four is where the budget stops.
+
+**What is deliberately not in the family.** Shadow A (G6, G7, G8 and G14
+removed) stays a shadow and is never promotable: its top three picks on the
+design board are the three largest model-over-market gaps, which is exactly the
+slice `docs/PROP_CALIBRATION_2026-09-14.md` measured hitting 40.6 per cent
+against a 62.1 per cent claim (14.3). Shadow C (-150) and shadow E (the
+superseded likely-first rule) stay shadows: he settled -160 on 2026-09-15 and
+did not reopen it, and E is a retired directive. Shadow D is deregistered and
+absorbed by A3 and A4 (section 10). Shadows compute, publish losers and inform.
+Only family arms can be promoted, and only family arms spend the alpha budget.
+
+**Which one customers see, and why.** A1. It is the only arm whose constants
+come from a measurement rather than from a target, and the one measurement this
+repo owns warns in exactly the direction LOOSE runs (0.2). Publishing the
+loosest arm while its bar is untested would put the measured-worst slice on the
+customer card. A2, A3 and A4 run in paper on the same games, in the same
+publish runs, and are never served. Question 13 puts that consequence to the
+owner directly.
+
+### 17.2 Layout is a display experiment, not a strategy
+
+He asked for one list, separate sections and a hybrid (question 10). None of the
+three changes a gate, a score, a rank, a selection or a ledger row. They change
+the order in which the same entries are rendered. It therefore runs as a product
+experiment, entirely separate from the family:
+
+- **Three treatments.** **L1**, one list by score, which is the registered
+  behaviour of section 5. **L2**, plus-money picks grouped below main-band
+  picks. **L3**, a hybrid: one list by score with a class divider and a jump
+  link. Labels from copy C16 only.
+- **Assignment.** Per visitor, sticky, recorded in the web analytics store and
+  never in `evidence/`.
+- **Measured on product metrics only:** which entries get opened, whether the
+  record page is reached, session length, return rate.
+- **Hard invariant, enforced by a test.** The ledger row written for a slate
+  date is byte-identical whichever layout the visitor saw. Selection and
+  grading happen before rendering. If a layout can change a row, the experiment
+  stops.
+- **This is never a strategy result.** A layout cannot beat the close and cannot
+  return money. Its outcome licenses a rendering change and nothing else. It
+  enters no alpha-registry row, spends none of the family's multiplicity budget,
+  and may never be reported as evidence about picks. Written in those words so
+  that a future session cannot report "the hybrid layout won" as a finding about
+  the card.
+
+### 17.3 The multiplicity budget
+
+**The hazard, in numbers.** With k independent tests at the usual 5 per cent
+bar, the chance at least one clears by luck alone is `1 - 0.95^k`. At k=6 that
+is **26.5 per cent**. Publishing whichever arm looked best would mean selling
+variance about one time in four.
+
+**Method: Holm-Bonferroni at a family-wise alpha of 0.05**, the same correction
+11.6 already applies to its shadow comparisons. Holm rather than plain
+Bonferroni because it is uniformly more powerful and controls the same
+family-wise error rate with no extra assumption.
+
+**The 6 charged tests are the promotion decisions only.** They are the
+comparisons that can move the customer card, and they are the only reads this
+budget licenses to move anything.
+
+**The family also publishes 8 one-sample reads that this budget does not
+charge**, and they are named here so that nobody later mistakes one for a
+result: A1's own 11.5 verdict per class, and each paper arm's own 11.5 verdict
+per class at the ordinary 300 and 60 floors (11.10), which is 2 + 6 = 8 reads
+at the uncorrected 5 per cent bar. At 8 such reads, `1 - 0.95^8` is **33.7 per
+cent** that at least one reads PASS on noise alone. They are not charged
+because none of them can promote anything: clause 4 of 17.4 makes an arm's own
+PASS a necessary condition inside a conjunction, never a sufficient one. What
+they are is **descriptive reads that license nothing on their own**, under
+11.8's `INCONCLUSIVE` rule word for word, and every publication of one of them
+prints the count of how many such reads this family produces, **8**, beside it.
+A sentence of the form "A4's plus-money picks beat the close" is such a read,
+is published with that 8 beside it, and is never reported as a finding about
+which strategy is better.
+
+**The family is k = 6 comparisons**: three challengers (A2, A3, A4) against the
+incumbent A1, each read once for `MAIN` and once for `PLUS_MONEY`. The two
+classes are corrected inside one family rather than as two families of three,
+because the owner's question is one decision and either class can carry it; two
+families of three would leave the overall error at about 9.75 per cent.
+
+**The ladder, fixed now.** Sort the six p-values ascending and compare `p(i)`
+against `0.05 / (6 - i + 1)`. Stop at the first failure; every comparison after
+it fails too.
+
+| Rank | Bar |
+|---:|---:|
+| 1 | 0.008333 |
+| 2 | 0.010000 |
+| 3 | 0.012500 |
+| 4 | 0.016667 |
+| 5 | 0.025000 |
+| 6 | 0.050000 |
+
+The worst-case bar is **0.008333**, a 6.0x tightening.
+
+**The ladder needs all six p-values at once, and 17.8 says they will not exist
+at once.** A4's comparison may read in 2027, A3's in 2028, A2's is expected to
+read `UNDERPOWERED`, and A3's `PLUS_MONEY` comparison may never read at all. A
+Holm rank is a function of the p-values actually observed, so a comparison read
+alone, with five siblings absent, has no determined rank: rank 1 of 6 is
+0.008333 and rank 1 of 1 available is 0.050000, a 6.0x difference a future
+reader could take in good faith. So the bar is registered flat rather than
+ranked:
+
+- **Any comparison read while any other comparison in this family is unread is
+  judged at a fixed Bonferroni bar of 0.008333.** No rank is computed and no
+  sibling's absence loosens anything.
+- The Holm ladder above applies only in the one case where all six p-values
+  exist at the same read, which this design does not expect.
+- **A comparison is read once.** It is never re-read at a looser bar after its
+  siblings expire as `UNDERPOWERED`, are retired, or run out of calendar. An
+  expired sibling frees no alpha.
+- Every hypothesis row therefore carries `alpha_declared` **0.008333** at
+  registration, which is a registered number rather than a rank that does not
+  yet exist.
+
+**What the bar costs in sample.** At 80 per cent power, two-sided, the required
+n scales as `((z(1 - alpha/2) + z(0.80)) / (z(0.975) + z(0.80)))^2`. With
+`z(0.975) = 1.9600`, `z(0.80) = 0.8416` and `z(1 - 0.008333/2) = 2.6383`, the
+multiplier is `(2.6383 + 0.8416)^2 / (1.9600 + 0.8416)^2 = 12.109 / 7.849 =
+1.5428`. So the promotion floors are the registered floors inflated by that
+multiplier and rounded up: **463** counted picks with a CLV%, **463** graded WIN
+or LOSS, **93** distinct slate dates, per arm and per class (11.10). This is a
+strictening, which `docs/VALIDATION_CRITERIA.md`'s amendment rule permits at any
+time, and it satisfies `docs/ARCHITECTURE_BETTING_ENGINE.md` G6 (300 forward
+selections, 60 ledger days) with margin.
+
+**The sample that matters is the discordant one.** The arms screen the same
+board. On a day when two arms hold identical pick sets, their paired daily CLV
+difference is exactly zero and carries no information, only a data point that
+shrinks the apparent variance. So the floors above are floors on **discordant
+counted picks**: picks held by exactly one of the two arms being compared, of
+the class being read. Each arm must separately meet its own 463 and 93 for its
+own 11.5 verdict as well.
+
+**Where the spend is recorded.** `data/research/alpha_registry.jsonl`, through
+`src/research/alpha_registry.py`, at the registration commit:
+
+- One `sweep` row, id `card_v2_variant_family_2026-09-16`, family `daily_card`,
+  `spec_id` `DAILY_CARD_BEST_BETS_V2_FAMILY`, sport `mlb`, `market` the card's
+  market, `alpha_declared` `0.05` (family-wise, Holm), `candidates_evaluated`
+  **6**, `data_window` `{discovery: null, replication: "forward from
+  REGISTERED_UTC", sealed_untouched: true}`, `source_doc`
+  `docs/PREREG_CARD_V2.md` section 17, `code_hash` of the variant runner. This
+  follows the module's own precedent, cited in its docstring: Evolab Phase 2B is
+  one `sweep` row charging 8,811 internally, never expanded into per-candidate
+  rows.
+- **Six `hypothesis` rows, one per challenger per class**, with ids
+  `DAILY_CARD_BEST_BETS_V2_VAR_STRICT_NOCAP:MAIN`,
+  `DAILY_CARD_BEST_BETS_V2_VAR_STRICT_NOCAP:PLUS_MONEY`,
+  `DAILY_CARD_BEST_BETS_V2_VAR_LOOSE_CAP3:MAIN`,
+  `DAILY_CARD_BEST_BETS_V2_VAR_LOOSE_CAP3:PLUS_MONEY`,
+  `DAILY_CARD_BEST_BETS_V2_VAR_LOOSE_NOCAP:MAIN` and
+  `DAILY_CARD_BEST_BETS_V2_VAR_LOOSE_NOCAP:PLUS_MONEY`, each with
+  `alpha_declared` **0.008333**, the fixed bar registered above. One row per
+  comparison, not one per arm, because `record_verdict()` keys its append-only
+  guard on the id alone and a verdict row carries no class field: three ids for
+  six reads would raise on the second class of each arm, years after
+  registration, at the moment the family is finally readable
+  (`src/research/alpha_registry.py`, `record_verdict()`, which refuses any
+  second verdict for an id unless its result is exactly `withdrawn`). The two
+  classes are never pooled into one verdict, which 11.1 forbids, and no id is
+  registered after `REGISTERED_UTC`, which would add uncharged rows.
+  `register()` refuses a second row per id and `record_verdict()` refuses a
+  second verdict, so the append-only discipline holds with no special handling.
+- **How to read the two together, checked against the module rather than
+  assumed.** `total_searched()` keeps `hypotheses` and `sweep_candidates` in
+  separate buckets and never folds a sweep's `candidates_evaluated` into the
+  `hypotheses` count, so it does not double-count. But a reader who adds the two
+  buckets would charge this family 12 for a spend of 6. **The family's spend is
+  the sweep row's `candidates_evaluated` of 6**, and every published statement
+  of it says so and names the six hypothesis rows as the per-comparison verdict
+  anchors they are, not as additional searches.
+
+### 17.4 The promotion rule
+
+Written before any result exists. Every clause is fixed at registration and none
+may move afterwards.
+
+A paper arm replaces A1 as the published card only if **all eight** hold for one
+price class, and **a promotion carries only the class it was won on**:
+
+1. **Sample.** Both arms have at least 463 counted picks of that class with a
+   CLV% and at least 463 graded WIN or LOSS, across at least 93 distinct slate
+   dates; **and** the discordant set between them holds at least 463 counted
+   picks of that class across at least 93 slate dates on which the two arms'
+   pick sets differed. Fills count toward none of these, exactly as in 11.1.
+2. **Primary metric.** Mean CLV% on the discordant set, computed by
+   `src/report/clv.py` against the price actually taken, vig included, in the
+   direction of the challenger. Where every arm's pick set is a superset of
+   A1's, as it was on the design board (14.3b), the discordant set is the picks
+   the challenger adds and the question reduces to a one-sample read: do the
+   added picks beat the close? Where an arm also drops an A1 pick, both
+   directions are computed and published and the statistic is the signed
+   difference. The symmetric difference is computed in both directions on every
+   read, because G11's dedup and G12's ceiling can reshuffle when the scores
+   change and nesting is not guaranteed by construction.
+3. **Margin.** Which test runs is fixed by the shape of the discordant set and
+   not chosen at the read, and the bar is +1.5 percentage points in both cases:
+   - **Superset case**, where the incumbent holds no picks of that class in the
+     discordant set, which is the case the design board produced (14.3b, every
+     arm a strict superset of A1): the statistic is the **added picks' own mean
+     CLV%**, and the bar is **at least +1.5 percentage points against zero**.
+   - **Mixed case**, where both sides hold discordant picks: the statistic is
+     the **signed difference** between the two arms' mean CLV% on the
+     discordant days, and the bar is **at least +1.5 percentage points** on
+     that difference.
+   The +1.5 is **this document's own choice** of margin, registered here before
+   any result. `docs/VALIDATION_CRITERIA.md` sets +1.5 as a one-sample PASS bar
+   against zero for mean CLV, which is the superset case above; using the same
+   number as a between-arm margin is this registration's decision and is not
+   inherited from that document. Stated plainly because a margin can be cleared
+   by a challenger at -0.5 per cent against an incumbent at -2.0 per cent;
+   clause 4, not this clause, is what refuses that; **and** the lower bound of the
+   bootstrap interval on the difference (10,000 resamples over slate dates, seed
+   20260915) is above zero at that comparison's registered bar of 0.008333
+   (17.3), or at its Holm rank only in the single case where all six p-values
+   exist at the same read.
+4. **The challenger passes on its own.** It independently reads PASS on its own
+   11.5 verdict for that class: at least 55 per cent beating the close, mean
+   CLV% at least +1.5 per cent, and no FAIL condition. **A challenger that
+   merely loses less than a failing incumbent is not promoted.** If A1 FAILs,
+   11.7's retirement result applies and that class stops publishing; it is not
+   handed to the least-bad arm.
+5. **ROI is secondary and can never promote alone.** ROI with its bootstrap
+   interval is published for both arms and for the discordant set. A positive
+   CLV read alongside an ROI interval entirely below zero triggers the 11.5
+   investigation before anything is promoted. ROI can block a promotion; it can
+   never cause one.
+6. **No harm stop.** An arm carrying a `HARM_STOP` on that class can never be
+   promoted, at any CLV, ever. A `HARM_STOP` is not reversed by a later read.
+7. **Owner sign-off**, `docs/ARCHITECTURE_BETTING_ENGINE.md` G7, explicit and
+   dated.
+8. **Class scope.** The promotion changes the selection of the promoted class
+   only. The successor card is the incumbent's constants on the class that did
+   not promote plus the winner's constants on the class that did, and the
+   successor's registration writes both in. A1's constants and A1's gates
+   continue to govern the other class until that class wins its own promotion
+   under these same eight clauses. This clause exists because A3 and A4 differ
+   from A1 in `MARKDOWN` and `BASE_EDGE`, which govern the main band as much as
+   the plus-money band (on the design board A3 doubles A1's `MAIN` card, adding
+   Matt Olson u1.5 at -157 and Pete Alonso u1.5 at -150), so a whole-card
+   cutover on a `PLUS_MONEY` read would put an arm's untested, or retired, or
+   failing `MAIN` configuration in front of customers on evidence about a
+   different class. That is exactly what 11.8 forbids: a PASS on one class
+   licenses nothing about the other. An arm that is retired, FAILing or
+   harm-stopped on a class can never supply that class's constants to the
+   successor, at any CLV, ever.
+
+**A promotion rescues nothing, and the mechanics that guarantee it are in
+11.10:** the winner registers as a new rule id carrying only the promoted
+class's selection with its counted sample starting
+at zero, A1's record is closed and published as a named non-verdict read at the
+same instant, every losing arm's full record is published, no constant is
+tweaked and re-run, and **the family closes on promotion: one promotion per
+family, ever.** A promoted arm may register its own family with its own budget
+from scratch. Without that last clause the family would become an open-ended
+search with a fresh alpha each time it failed.
+
+### 17.5 Retirement, and the tie rule
+
+**What retires an arm.**
+
+- **HARM_STOP.** Either arm of the 11.4 harm check firing for a class retires
+  that arm from the family for that class permanently. It keeps selecting,
+  locking, grading and counting under its own id so its record is complete and
+  its loser is published, but it is out of the running.
+- **FAIL.** An arm that reaches its floors and reads FAIL on any 11.5 condition
+  is retired for that class and published as a loser.
+- **UNDERPOWERED.** Floors not met by the end of the **2028** MLB postseason,
+  one season later than the published card's own stop date because the family's
+  floors are 1.5428 times the registered ones, is `UNDERPOWERED` for that arm
+  and class, published as a named non-verdict read with its counts. The
+  published card's own stop date, the end of the 2027 postseason, is unchanged
+  (11.4, 11.10).
+- **No arm is ever retired by deleting it.** Every arm's ledger stays and every
+  loser is published, which is the standing commitment of
+  `docs/STRATEGY_LAB_PLAN.md` section 2 ("We publish the losers") applied here
+  unchanged.
+
+**If two arms qualify at once**, the tie-break is pre-registered and applied in
+order, with no judgement:
+
+1. The larger lower bound on the CLV difference against the incumbent, each at
+   its own registered bar (17.3).
+2. If still tied, the arm that differs from the incumbent in **fewer**
+   registered settings, so a single-factor arm (A2 or A3) beats the
+   double-factor arm (A4). Prefer the smaller change.
+3. If still tied, **the incumbent stays.** Never both, never a blend of their
+   constants, never "run them both live and see". A blend is a fifth arm that
+   was never registered and never charged.
+
+### 17.6 Mechanics: one capture, one board, four screens
+
+The publish job builds the candidate pool **once** per publish run from the
+newest captured board, then hands that same in-memory pool to each of the four
+arms' selection functions. The arms differ only in three constants, so they need
+no data the published card does not already fetch. **Zero additional API spend,
+by construction rather than by policy.**
+
+Enforced, not trusted:
+
+- The variant runner takes the pool as an argument and its module must not
+  import the capture client. A test asserts that (build plan T2v).
+- Every row of every arm, A1's included, carries `pool_hash`, the sha256 of the
+  shared candidate pool that produced the run's cards (R7). A reader can prove
+  all four screened the same board, and a mismatch between arms on one publish
+  run is a fault rather than a difference between rules.
+
+**Ledgers.**
+
+| Arm | File |
+|---|---|
+| A1 (published) | `evidence/cards_v2.jsonl`, unchanged |
+| A2 | `evidence/cards_v2_var_strict_nocap.jsonl` |
+| A3 | `evidence/cards_v2_var_loose_cap3.jsonl` |
+| A4 | `evidence/cards_v2_var_loose_nocap.jsonl` |
+
+R2's rule extends: a paper arm writes only to its own file and nothing writes to
+`evidence/cards_v2.jsonl` but A1. R4's rule extends: no number anywhere adds a
+paper pick to a published pick.
+
+**Grading a paper arm uses identical machinery and no shortcuts.** A paper pick
+locks under section 9's L1 to L3 on the same schedule, freezes its own price
+from the shared board and never assumes the published card's price, grades flat
+1 unit at its graded price, and takes its close from `src/report/clv.py` by the
+same `closing_board` and `closing_consensus` calls, with the same
+`CLOSING_BOARD_THIN`, `CLOSE_PRECEDES_DECISION` and stale-lead exclusions
+counted by reason and never zero-filled. Paper arms produce fills too, graded
+and published, and counted fills stay outside every metric exactly as 11.1
+requires.
+
+**Compute and storage, measured rather than asserted.** The screen is arithmetic
+over roughly 112 to 140 candidate rows; four passes instead of one. On the
+2026-09-15 pool the whole four-arm run including load and reporting completes in
+well under a second. At about 16 publish runs per slate date (measured from
+`evidence/cards_v1.jsonl`: 112 rows over 7 dates), the daily marginal cost of
+the three paper arms is a few seconds of CPU. Storage, from the measured V1
+ledger (mean row 12,355 bytes, 16.0 rows per slate date): about 193 KB per arm
+per date at V1-sized rows, or 386 KB if V2 rows run to roughly double for their
+frozen close calls, so **about 0.6 to 1.1 MB a day and 105 to 210 MB per
+186-date season** for the three paper arms together. For scale,
+`evidence/decisions_v2.jsonl` is already 53 MB
+(`scratchpad/variants/budget.py`).
+
+### 17.7 The customer never sees a paper arm
+
+- The API and the card route read `evidence/cards_v2.jsonl` only.
+- The record page's four headline figures stay exactly as R5 defines them, on
+  A1's ledger alone (R8).
+- A test in the shape of `tests/test_web_structure.py` asserts that no
+  customer-facing template, route or serializer references any
+  `cards_v2_var_` path or any `DAILY_CARD_BEST_BETS_V2_VAR_` rule id.
+- Customer copy is unchanged apart from C16's three layout labels. The arms
+  change no word on the page, so `tests/test_customer_language.py` and
+  `tests/test_no_nothing_clears_the_bar.py` bind as before.
+
+### 17.8 The honest limit
+
+**The calendar comes first.** The 2026 regular season ends 2026-09-27
+(`docs/SEASON_END_PLAN.md`), which is 12 counted slate dates from 2026-09-16.
+Postseason games are published and graded but not counted (11.1). Then there is
+no baseball until spring 2027, so the family's real sample begins in late March
+2027.
+
+**How long the family takes to separate its members**, at the discordance rates
+of the design board and assuming a fresh board every day, which 2026-09-15 was
+not:
+
+The floor of 17.4 clause 1 is a floor on discordant counted picks **of the
+class being read**, so the calendar is per class and not pooled. Counting the
+design board's discordance by class:
+
+| Challenger | Discordant `MAIN` per slate | Slates to 463 `MAIN` | Discordant `PLUS_MONEY` per slate | Slates to 463 `PLUS_MONEY` |
+|---|---:|---:|---:|---:|
+| A2 versus A1 | 0 | never reads | 1 | 463 |
+| A3 versus A1 | 2 | 232 | 0 | never reads |
+| A4 versus A1 | 1 | 463 | 4 | 116 |
+
+So: **A4 versus A1** is the only comparison expected to read, and it needs about
+**116** discordant slate dates on `PLUS_MONEY`, not the 93 an earlier draft of
+this table printed by pooling both classes against a per-class floor. That is
+roughly two thirds of the 2027 season, so a plausible first read late in 2027
+rather than at the All-Star break. Its `MAIN` comparison needs about 463 and
+should be expected to read `UNDERPOWERED`. **A3 versus A1** needs about 232 on
+`MAIN`, roughly 1.2 seasons, so late 2028 at the earliest, and its
+`PLUS_MONEY` comparison has zero expected discordance and **will never read**.
+**A2 versus A1** needs about 463 on `PLUS_MONEY`, about 2.5 seasons, and should
+be expected to read `UNDERPOWERED`; its `MAIN` comparison has zero expected
+discordance and **will never read**. A2 is registered anyway, because "the sub-cap did
+nothing measurable" is the honest answer to his question and must be reachable.
+Those are the optimistic numbers: if a quarter of dates are stale, add a third
+to every figure. On the one real publish instant we have, every arm produced
+zero picks and the date contributed nothing.
+
+**Telling a plus-money class apart from a favourite class on profit is out of
+reach entirely.** 11.4's power arithmetic
+(`scratchpad/value_score/power_calc.py`) puts it at 6,952 to 19,311 plus-money
+bets for a two-sample read at a true 3 to 5 point ROI gap, and 4,710 to 13,082
+to tell plus money apart from zero. At 463 counted picks the 95 per cent
+interval on ROI is about plus or minus 11 points at +150. **Nothing in this
+family will ever answer "which is more profitable" on profit**, and the owner
+should be told that in those words rather than discovering it in 2028.
+
+**The earliest readable signal is the harm check, not the verdict.** The harm
+check's second arm fires on 50 counted picks of a class graded WIN or LOSS whose
+raw number sits at least 3 points above the market's. On the design board every
+pick of every arm clears that 3-point threshold (A1's gaps run 7.3 to 9.3
+points, A4's 4.0 to 9.3), so the threshold is reached in 50 picks of the class,
+not in some fraction of them:
+
+Every figure below is rounded **up**, because a partial slate does not reach a
+threshold:
+
+| Arm | Plus-money picks per fresh slate | Fresh slates to 50 |
+|---|---:|---:|
+| A1 | 3 | 17 |
+| A2 | 4 | 13 |
+| A3 | 3 | 17 |
+| A4 | 7 | 8 |
+
+**A4's plus-money class can trip its harm check in about eight fresh slates and
+A1's in about seventeen.** That is weeks, not years, and it is the only
+fast-moving instrument this design has. It is one-way: it can stop "Take", it
+can never award anything, and it cannot be rescued by a later good run. The
+first harm arm (100 counted picks of the class with a CLV%) lands around 34
+slates for A1's plus-money class and around 15 for A4's.
+
+**What the owner should expect to learn, stated in advance.**
+
+- **In one month (by 2026-10-16):** nothing about which strategy is profitable.
+  Twelve counted regular-season dates, then postseason games published and
+  graded but not counted. What he will have: four ledgers on the same board,
+  proof they screened the same pool, a per-date record of how far apart the arms
+  are (a count of differing picks, no arm's units line and no statistic), and
+  possibly a first harm-check read on `PLUS_MONEY` if the boards are fresh. Anything else read as a result in October is a record, not a read.
+- **In three months (by 2027-01-16):** the offseason, zero additional counted
+  picks. The right moment for the work that does not need baseball: the 2025
+  refit of the frozen parameter file (build plan T0a), the SR1 read that 11.4
+  requires before the first plus-money pick, and the capture-chain work so that
+  2027 does not repeat the 2026-09-15 stale board that gave every arm zero
+  picks.
+- **In one season (through 2027):** realistically one harm-check verdict per
+  class per arm, a `MAIN` verdict for A1 around August 2027 as 11.4 already
+  projects, a first readable A4-against-A1 comparison on `PLUS_MONEY` late in
+  2027 at the earliest and only if the boards cooperate, and `PENDING` or
+  `UNDERPOWERED` on everything else.
+- **The single most likely outcome of the whole family, written here so it
+  cannot be reported later as a surprise:** A4 trips its harm check, A2 reads
+  `UNDERPOWERED`, A3's plus-money comparison never accumulates a discordant set,
+  and the published card stays A1. A promotion would be the surprise, and it
+  would be treated as one and verified twice before anything moved.
+
+**What this design refuses to give him.** He asked to run both and keep whichever
+is profitable. This gives him four fixed arms, a bar tightened 6.0x for the fact
+that there are four, a promotion rule written before the first pick, and every
+loser published. What it will not give him is a monthly readout of which arm is
+winning, because that readout is the mechanism by which a family of four turns
+into a false finding, and because the arithmetic above says such a readout would
+be noise for at least a year. The instrument that will actually fire, and fire
+soon, is the harm check, and it only ever says stop.
+
+---
 
 ## Review record
 
@@ -2399,3 +3381,114 @@ one governs, because section 16 and this record quote the struck wording on
 purpose and a whole-file search would read the record of a fix as the defect:
 0 failures
 (`scratchpad/value_score/final_consistency.py`).
+
+### Owner answers of 2026-09-16 about 03:10Z, applied to the draft
+
+Brey answered the four remaining questions in chat at about 03:10Z (8:10pm
+Pacific 9/15). One of the four is a plain yes. The other three decline to
+choose between the options they were given and say the disputed settings are
+themselves strategies to be run against each other and judged on profit. All
+four are quoted verbatim in section 15 and in section 16.
+
+| Answer | What it closes | Applied where |
+|---|---|---|
+| "Yes, publish with the line." | Question 7, answered yes | 0 (status), 7, 13 (C2), 15 (question 7), 16 |
+| "Can we try both strategies and see which one is profitable?..." | Question 11, closed as a single choice and made the markdown factor of the family | 0, 10, 11.9, 11.10, 12 (R7, R8), 14.3b, 15 (question 11, new 13), 16, 17 |
+| "Again, these are different strategies that we should be trying..." | Question 9, closed as a single choice and made the sub-cap factor of the family | 0, 10, 11.10, 14.3b, 15 (question 9), 16, 17 |
+| "Try different strategies on this. Try both separate I want. Try to try mix a hybrid." | Question 10, closed as a strategy question and reopened as a display experiment | 13 (C16), 15 (question 10, new 14), 16, 17.2 |
+
+**How the family was produced, and the one thing it refuses him.** The design
+was written before any variant was run against any board, and the promotion
+rule, the budget, the floors, the tie-break and the retirement rule were fixed
+before the illustration of 14.3b was computed. The hazard being controlled is
+named in 17.3 in his own terms: six independent tests at a 5 per cent bar
+produce at least one apparent winner by luck alone 26.5 per cent of the time.
+The one thing the registration refuses him is the thing he asked for most
+directly, a running answer to "which one is profitable": 17.8 says why, says
+what he gets instead, and says it in advance rather than as an excuse later.
+
+**What was checked.** The four arms were run against the same already-seen
+2026-09-15 pool the rest of section 14 uses
+(`scratchpad/variants/variant_family.py`), and the claim that shadow D
+duplicates the loose arms was checked by re-running D on the same pool, where
+it produces the identical 7-pick card to A3 in the identical order
+(`scratchpad/variants/shadow_d_vs_loose.py`). The LOOSE constants were
+re-derived from the owner's two numbers with `src.core.odds` rather than taken
+from prose, and the expected value of a true 30 per cent bet at each of his
+named prices was computed the same way. The multiplicity arithmetic, the Holm
+ladder, the 1.5428 sample multiplier, the discordance calendar and the storage
+figures were reproduced by `scratchpad/variants/budget.py`. `total_searched()`
+in `src/research/alpha_registry.py` was read rather than assumed, and what it
+does with a sweep row beside six hypothesis rows is written into 17.3.
+`record_verdict()`'s append-only guard (`:353-362`) was read the same way: it
+keys on the id alone and a verdict row carries no class field, which is why
+17.3 registers one hypothesis row per comparison rather than one per arm.
+Copy C16's three labels were scanned against `HARD_BANNED`, `NEGATION_ONLY` and
+`NEGATORS` imported from `tests/test_customer_language.py` and `BANNED_PHRASES`
+and `BANNED_JARGON` imported from `tests/test_no_nothing_clears_the_bar.py`.
+Consistency of the variant table, the constants, the bars, the caps, the
+ledgers and the shared copy strings across this file, the build plan and the
+diagnosis was checked by `scratchpad/variants/family_consistency.py`.
+
+**No evidence threshold, floor, FAIL condition, verdict bar, harm-check arm,
+stop date or retirement result of the published card was loosened by this
+revision.** A1 still reads its verdict at 300 counted picks of a class and 60
+slate dates, under the same five FAIL conditions, with the same two harm-check
+arms and the same 2027 stop date. The family's 463-pick, 93-date floors are
+strictly larger and apply only to a promotion decision (11.10). The sealed
+window was not touched.
+
+### Verifier pass on the family, and the fixes it forced (2026-09-16)
+
+An independent verifier re-implemented the family from the prose rather than
+from the writer's scripts, reproduced 14.3b exactly, and reproduced every
+multiplicity, bar and calendar figure. It refused the draft on six points.
+All six are closed here, and no threshold of the published card moved.
+
+1. **Six comparisons were planned against three registry ids.**
+   `record_verdict()` refuses a second verdict for an id unless its result is
+   exactly `withdrawn` (`src/research/alpha_registry.py:353-362`), and a
+   verdict row carries no class field, so the second class of each arm would
+   have raised years after registration. 17.3 now registers **six hypothesis
+   rows, one per comparison**, and the naive bucket sum it warns about becomes
+   12 against a spend that is still 6.
+2. **The decision bar was undefined once the comparisons matured years apart.**
+   A Holm rank needs all six p-values at once and 17.8 says they will never
+   exist at once. 17.3 now registers a **fixed Bonferroni bar of 0.008333** for
+   any comparison read while a sibling is unread, writes that number into every
+   hypothesis row's `alpha_declared`, and states that a comparison is read once
+   and is never re-read at a looser bar after a sibling expires.
+3. **A promotion won on one class would have changed the other class's rule.**
+   17.4 gains **clause 8**: a promotion carries only the promoted class's
+   selection, the successor keeps the incumbent's constants on the class that
+   did not promote, and an arm retired, FAILing or harm-stopped on a class can
+   never supply that class's constants. 11.10 step 1 says the same in its
+   mechanics. This is 11.8's class-scoped licence applied to the switch itself.
+4. **17.8's separation calendar pooled the classes against a per-class floor.**
+   The table is now per class: A4 needs about **116** `PLUS_MONEY` slates, not
+   93, and about 463 on `MAIN`; A2's `MAIN` comparison and A3's `PLUS_MONEY`
+   comparison have zero expected discordance and are stated as never reading.
+5. **The budget charged the 6 comparisons but not the 8 one-sample reads the
+   same design publishes.** 17.3 now names them, prints `1 - 0.95^8 = 33.7 per
+   cent`, and binds every one of them to 11.8's licences-nothing rule with the
+   count 8 published beside it.
+6. **The margin clause specified two different tests and mis-attributed its
+   bar.** 17.4 clause 3 now names the test per case, the superset case
+   one-sample against +1.5 and the mixed case a signed difference against +1.5,
+   and registers the +1.5 as this document's own choice rather than inherited
+   from `docs/VALIDATION_CRITERIA.md`, which sets it as a one-sample bar.
+
+Three smaller defects the verifier also found are closed with them: 11.10
+allowed and forbade the per-arm running units line in consecutive sentences
+while question 12 promised it, so that line is now **A1's only** and question 12
+no longer promises it; the harm-check calendar rounded down in four places,
+always toward firing sooner, and now rounds up (A2 13 slates, A4 8, and 34 and
+15 on the first harm arm); and the build plan's stale `shadow-d` CLI target is
+removed, which its own test already forbade.
+
+**Nothing in this pass loosened the published card.** A1's verdict still reads
+at 300 counted picks of a class and 60 slate dates, under the same five FAIL
+conditions, the same two harm-check arms and the same 2027 stop date. Every
+change above either tightens a bar, narrows what a result licenses, or corrects
+a number in the direction that makes a read later rather than sooner. The
+registration stays a **DRAFT**: questions 12, 13 and 14 are open.
