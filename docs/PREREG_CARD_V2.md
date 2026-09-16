@@ -3,7 +3,7 @@
 **Rule id:** `DAILY_CARD_BEST_BETS_V2`
 **REGISTERED_UTC: <set at commit>**
 **Family:** CARD_V2 (MLB daily card)
-**Status:** DRAFT, not registered. It becomes registered only when Brey has answered section 15 questions 3 to 8 himself (or explicitly accepted each default), dated, the frozen parameter file of 11.2 exists, the code the `code_fingerprint` of 11.2 covers is merged, and this file is committed with those answers, that file's sha256 and the fingerprint value; no V2 pick exists before that instant
+**Status:** DRAFT, not registered. Questions 3 and 4 are answered (Brey, 2026-09-15, section 15), and so is question 1. It becomes registered only when Brey has answered section 15 questions 5 to 8 himself (or explicitly accepted each default), dated, the frozen parameter file of 11.2 exists, the code the `code_fingerprint` of 11.2 covers is merged, and this file is committed with those answers, that file's sha256, the fingerprint value and the `v1_code_fingerprint` value of section 10; no V2 pick exists before that instant
 **Succeeds on the customer card:** `DAILY_CARD_MARKET_SIDE_MODEL_AGREEMENT_V1` and `DAILY_CARD_PROP_LIKELY_AND_CLEARS_PRICE_V1` (V1), which keep running in shadow with their record kept separately
 **Diagnosis:** `docs/CARD_V2_DIAGNOSIS_2026-09-15.md` · **Build:** `docs/CARD_V2_BUILD_PLAN.md` · **Roadmap:** R16-34
 
@@ -18,6 +18,15 @@ file. The only permitted later edits are listed in section 16.
 
 It registers a selection rule for the MLB daily card and a single forward read
 of how that rule's picks do against the closing market and at the price.
+
+The card lists three bets on a day whose board offers three that clear the
+first checks (owner, 2026-09-15: "Always show 3"). On a day when fewer than
+three pass every gate, the rest are **fills**: the closest calls, labelled on
+their face as not picks, published and graded like picks and kept apart from
+them on the record. On a day whose board offers fewer than three candidates at
+all, the card lists fewer, down to none, and says why (section 6, copy C13).
+The forward read this registers is of the picks only; the fills are reported
+beside it and can never change it (sections 6, 11 and 12).
 
 It claims no edge, no positive expected return and no guarantee. On the one
 already-seen board used to design it (2026-09-15), the market's own number
@@ -51,7 +60,7 @@ The customer copy says so on every pick (section 13).
   registration, never an adjustment here.
 - **Every loser published.** Every pick ever shown as a pick is graded and
   stays on the record, locked or withdrawn (section 9), and so does every
-  shadow pick.
+  shadow pick and every fill (section 6).
 - **Point in time.** A pick uses only quotes, lineups and model outputs that
   existed at the publish run that wrote it.
 
@@ -101,7 +110,11 @@ window, from 2026-09-10 onward, under V1. No document found records a policy
 freeze or Brey's explicit go for any of them: neither `docs/THE_CARD.md` nor
 `docs/PREREG_RUN_DISPERSION.md` mentions the seal (a search of `docs/` for
 "sealed" matches neither). So, as worded, **the rule was already broken by V1**,
-and V1's nightly refit breaks it again every night. The counts in 1.1 are
+and V1's nightly refit broke it again every night until Brey stopped it on
+2026-09-15 ("Freeze it now"; record
+`docs/CARD_CALIBRATION_FREEZE_2026-09-15.md`). That freeze changes nothing in
+this registration: V2 reads no number from the nightly file under any answer
+(11.2). The counts in 1.1 are
 themselves a coverage count of sealed rows, made on the orchestrator's
 instruction to establish this; they read dates only.
 
@@ -166,16 +179,19 @@ Interpretation, not a measurement:
   the sealed window. That rules out keeping the nightly moneyline calibration
   under any answer, O3 included.
 
-**(c) What this registration adopts.** O1 is the registered default (11.2).
-It is the only option that restores the evidence standard without needing
+**(c) What this registration adopts.** O1, **answered by Brey on 2026-09-15**
+("Rebuild on 2025", question 3 answered no; section 15). It is the only option
+that restores the evidence standard without needing
 Brey to authorise use of the sealed window and without emptying the card; its
 cost is
 free data work (build plan T0a), not a relaxed rule. If T0a cannot build the
 2025 inputs, V2 is not registered until Brey decides; nothing falls back to
 2026 games. O2 is not adopted because it contradicts the owner's line-shopping
-ruling and still selects through the fit. The choice between O1 and O3 is
-genuinely Brey's, because only he can authorise use of the sealed window: it
-is **owner question 3**. Two dependences remain under either answer and are
+ruling and still selects through the fit. O3 is not adopted: the choice was
+genuinely Brey's, because only he can authorise use of the sealed window, and
+he did not authorise it. No sealed-window fit is carried into V2, so no
+published read of V2 carries the "not independent of the sealed window" label.
+Two dependences remain and are
 disclosed, not removed: the choice of the two prop markets was made on 2026
 games, and the model's unfitted inputs read 2026 stores point in time.
 
@@ -216,11 +232,16 @@ fractions; prices are American odds.
 | G8 Disagreement cap | `abs(our number - market number) <= 0.10` | yes | yes |
 | G9 Calibrated | the frozen parameter file of 11.2 is loaded with its `sha256` as registered, and holds the moneyline calibration (for a moneyline) or the run-line cover calibration (for a run line). A candidate failing G9 is neither a pick nor a close call | yes | not applicable |
 | G10 Prop data | lineup posted (`expected_pa_source == "batting_slot"`), and `season_games >= 15` (`daily_card.MIN_SEASON_GAMES_FOR_PRELINEUP`; missing `season_games` fails) | not applicable | yes |
-| G11 One per game or player | At most one moneyline-or-run-line pick per game; at most one prop pick per player; a game that already has a locked game pick takes no other game pick | yes | yes |
-| G12 Ceiling | At most 10 picks on the date, locked picks included (owner, 2026-09-15: "3-10 bets") | yes | yes |
+| G11 One per game or player | At most one entry per game across moneyline and run line; at most one entry per player on props; picks and fills (section 6) count alike; a game that already has a locked game entry takes no other game entry | yes | yes |
+| G12 Ceiling | At most 10 picks on the date, locked picks included (owner, 2026-09-15: "3-10 bets"). Fills are not picks and are not counted against it; they exist only while the entries shown number fewer than 3 (section 6). Because the ceiling counts picks only, and a fill once shown is not removed when picks arrive later, a date that begins thin can list 13 bets at once, 10 picks and 3 fills. That is more than the 10 he named; the departure is stated in section 6 and in question 1 for him to rule on before registration | yes | yes |
+
+A **fill** (section 6) is not a pick and does not pass every gate. It must pass
+G1, G2, G4, G5 and G9, have our number available, and fail at least one of G3,
+G6, G7, G8 and G10. It is labelled as not a pick and says which check it failed.
 
 Where the gate constants come from: 0.50 (G5, G6) is the owner's "more than
-likely" (2026-09-11); -160 (G4) and 10 (G12) are the owner's 2026-09-15 words;
+likely" (2026-09-11); -160 (G4) is the owner's 2026-09-15 word, confirmed by
+him the same day against -150 (question 4); 10 (G12) is from the same message;
 6, 2, 3,600 and 15 are the existing repo constants named in the table. An
 earlier draft used 4 books and 25 games for props; neither had a source, and
 25 would have shut props out of every 2026 pick, because `season_games` counts
@@ -293,24 +314,83 @@ toward the ceiling, so provisional candidates compete for the slots that
 remain. The served order applies the same key to every pick on the date,
 locked or provisional, using each pick's own frozen numbers.
 
-## 6. Pick count, close calls, thin days and stale boards
+Fills are not ranked by this key and never mix with the picks: they are ordered
+by the close-call order of section 6 and are listed below every pick.
 
-- **Floor: none. Ceiling: 10.** The rule never adds a pick to reach a number
-  and never relaxes a gate on a thin day.
+## 6. Pick count, the floor of three, fills, thin days and stale boards
+
+- **Floor: 3 entries. Ceiling: 10 picks. Most listed at once: 13.** The card
+  lists three bets on every day whose board offers three candidates past G1,
+  G2, G4, G5 and G9 (owner, 2026-09-15: "Always show 3"), and fewer, down to
+  none, on a board that offers fewer (the "Fewer than 3 entries" bullet below).
+  The rule never adds a **pick** to reach
+  the floor and never relaxes a gate on a thin day. The floor is met by
+  **fills**, which are not picks, say so on their face, and go on the record.
 - **Close calls.** A candidate that passes G1, G2, G4, G5 and G9, has our
   number available, is not a pick, and fails at least one of G3, G6, G7, G8 or
   G10 is a close call. G3 is not required of a close call, so a prop whose
   only price is the pre-lineup capture can still qualify, although it rarely
-  ranks among the 3 shown (section 8); every close call
-  shows how old its price is (copy C6). Up to 3 are shown every day, ordered
+  ranks first (section 8); every close call
+  shows how old its price is (copy C6). Close calls are ordered
   by: fewest failed gates (G10's lineup and sample tests count separately);
   then shortfall `max(0, breakeven(price) - our number)`, ascending; then
-  market number, descending; then first pitch; then the sentence. At most one
-  close call per game or player, and none for a game or player that already
-  has a pick. Close calls never carry "Take", are never graded on the record,
-  and are frozen on the ledger row for audit.
-- **Thin day.** Fewer than 3 picks is shown as the count, with the close calls
-  beneath (copy C4).
+  market number, descending; then first pitch; then the sentence.
+- **Fill.** A fill is the highest-ranked close call in that order, added only
+  while the entries currently shown for the date, picks and fills together,
+  number fewer than 3. A withdrawn entry is not shown, so it holds no slot. At
+  most one entry per game or player across picks and fills (G11), and no fill
+  for a game or player that has a pick. Because a fill passes G4 and G5 it is
+  never priced shorter than -160 and never a side the market makes less likely
+  than not; because G3 is not required of it, a fill may rest on a price last
+  checked more than an hour ago, and it says so on its face (copy C6).
+- **Close calls that are not fills are not shown.** The non-pick entries on the
+  card are exactly the fills, at most 3 at a time. A day whose first publish run
+  already has 3 picks never shows one; a day that starts thin shows the fills
+  it added and keeps them (the bullet below). So
+  every bet the card lists is graded on the record, and there is no second
+  class of listed-but-ungraded entries. The close calls that are not shown are
+  still frozen on the ledger row for audit.
+- **Fills on the record.** A fill is published, frozen, locked and graded
+  exactly as a pick is (section 9), flat 1 unit at its own graded price (owner,
+  2026-09-15, choosing "Always show 3": "Those fills go on the record and can
+  drag it down"). A fill is never a counted pick: the primary metric, the
+  floors, the harm check, the verdict and the retirement result read counted
+  picks only, and fills are published beside them as a pre-declared separate
+  line (11.1, 11.3, 11.5, 12). No fill can rescue or sink the rule's verdict.
+- **A fill can become a pick.** From the first publish run whose fresh read of
+  it passes G1 to G12, it is a pick, and it locks, is graded and is counted as
+  a pick. A pick never becomes a fill: a pick that fails a gate on a fresh read
+  is withdrawn under L3 and is still graded as a pick.
+- **A fill once shown stays.** Picks appearing later in the day do not remove
+  it. It is carried, locked and graded like a provisional pick, and is
+  withdrawn only as L3 withdraws a pick: on a fresh read that fails it on G1,
+  G2, G4 or G5, or when G11 gives its game or player a pick. So a day that
+  begins thin can end with three fills beside several picks, and all of them
+  are graded. At most 3 fills are shown at any one time; a withdrawn fill frees
+  its slot, so a date with withdrawals can put more than 3 fills on the record,
+  each graded at its last shown version and each reported in D3.
+- **The largest card, and a departure from "3-10 bets".** G12's ceiling of 10
+  counts picks only, and the bullet above keeps a fill once it is shown, so the
+  most this rule can list at one time is **13 bets: 10 picks and 3 fills**,
+  every one of them published and graded. The owner named "3-10 bets" on
+  2026-09-15 and was not shown this consequence when he answered "Always show
+  3", so it is written here, in G12, in question 1 and in the diagnosis's
+  2026-09-15 row for him to rule on before registration; until he does, the
+  rule stands as his answer left it. Neither way of holding the total at 10 was
+  taken without him: refusing a pick once 3 fills are shown hides a bet that
+  passed every gate, and withdrawing a shown fill to make room removes a bet
+  already published. Each changes what goes on the public record, which is his
+  decision and not a drafting one.
+- **Fewer than 3 entries.** If fewer than 3 candidates pass G1, G2, G4, G5 and
+  G9 with our number available, the card shows fewer and says so in one plain
+  line (copy C13). It never relaxes a gate to reach three. This is not only a
+  capture failure: on a small slate of one-sided games every favourite can be
+  priced shorter than -160 (failing G4) while every underdog is below 0.50 by
+  the market's number (failing G5), so the board itself can offer fewer than
+  three candidates, and with no qualifying prop the card can show none at all.
+  That state is published as a count, never filled.
+- **Thin day.** Fewer than 3 picks is shown as the pick count, with the fills
+  beneath it (copy C4).
 - **Stale quotes and the capture schedule.** The dense capture prices every
   game only while some game is within 180 minutes of first pitch; before
   that it widens to the full slate once an hour, in the first 15 minutes of
@@ -320,18 +400,22 @@ locked or provisional, using each pick's own frozen numbers.
   stale, so: a stale read **never adds** a pick and **never withdraws** one.
   A provisional pick whose newest read is stale stays on the card as last
   shown, without "Take", marked as waiting for fresh prices (copy C2b), until
-  a fresh read confirms or withdraws it (L3).
+  a fresh read confirms or withdraws it (L3). A stale read **may add a fill**,
+  because the floor is met at every run and G3 is not required of a fill; that
+  fill shows how old its price is, and it is graded at that price. A stale read
+  never withdraws a fill.
 - **Stale board.** If no quote on the newest board for the slate is within
   3,600 seconds of the publish instant, the served card shows its locked picks
-  and carried provisional picks (neither with "Take"), its close calls with
-  their ages, and the stale-board line (copy C5) with the age read from the
-  board.
+  and carried provisional picks (neither with "Take"), its fills to the floor
+  with their price ages, and the stale-board line (copy C5) with the age read
+  from the board.
 
 ## 7. Labels and the headline verb
 
-- No STRONG, LEAN, SLIGHT or SPLIT label, and no chip on a pick. The card has
-  two section heads: "Today's picks" and "Close calls, not picks"
-  (`docs/DESIGN_SYSTEM.md` section 4 removes per-card label chips).
+- No STRONG, LEAN, SLIGHT or SPLIT label, and no chip on a pick or a fill. The
+  card has two section heads: "Today's picks" and "Close calls, not picks"
+  (`docs/DESIGN_SYSTEM.md` section 4 removes per-card label chips). The second
+  section holds the fills, and is absent when the day has none.
 - **Headline-verb rule.** The sentence begins "Take" if and only if the entry
   is a pick **and the newest publish run's read of that selection is fresh
   (G3) and passes G1 to G12 there**, which includes the newest best price
@@ -341,7 +425,10 @@ locked or provisional, using each pick's own frozen numbers.
   passes; otherwise it shows without a verb, with its locked price and the
   reason (copy C2b), and it is still graded at its locked price. A provisional
   pick whose newest read is stale shows without a verb, marked as waiting for
-  fresh prices. A close call begins with the selection, never a verb.
+  fresh prices. A fill begins with the selection, never a verb, whatever its
+  numbers do, and carries on its face the line saying it is not a pick, which
+  check it failed, and that it is graded on the record apart from the picks
+  (copy C6 and C12). Nothing outside the picks section ever carries "Take".
 - Every pick shows, on the card face, at every rank and every screen width,
   **both** C2 lines: the market's number, the break-even of its price and our
   number; and the sentence saying which of the two numbers clears the price
@@ -354,37 +441,48 @@ locked or provisional, using each pick's own frozen numbers.
 Market in `batter_hits` or `batter_total_bases`; at least 2 books
 (`propboard.MIN_BOOKS`); lineup posted; at least 15 games of history
 (`daily_card.MIN_SEASON_GAMES_FOR_PRELINEUP`); one pick per player; G5 to G8 as
-for games. A prop with no posted lineup can only ever be a close call.
+for games. A prop with no posted lineup can only ever be a fill.
 
 What a reader sees: batter props are captured twice per game, once 5 to 7
 hours before first pitch (baseline, before lineups) and once 0 to 2 hours
 before (gate, after the lineup for about 85% of games;
 `src/pipeline/batter_props.py:25-30`, `CAPTURE_LEAD_MINUTES = 120`). Before its
-lineup posts a prop can appear only as one of the at most 3 close calls of the
-day, showing "lineup not posted yet" and how old its price is, and usually it
-will not appear. Its only pre-lineup price is the baseline capture, so from
+lineup posts a prop can appear only as a fill, on a day whose picks number
+fewer than 3, showing "lineup not posted yet" and how old its price is, and
+usually it will not appear at all. Its only pre-lineup price is the baseline
+capture, so from
 about an hour after that capture it fails two tests (G3 and G10's lineup test),
 and any close call failing one test ranks ahead of it (section 6). In roughly
 the first hour after the baseline capture it fails only the lineup test and
-can rank among the 3. EXPLORATORY, on the design board with game prices
-treated as fresh and prop prices as stale: the 3 close calls were Cubs to win
-at -135, Royals +1.5 and Giants +1.5, each failing only G7; 6 game close calls
-failed exactly one test; none of the 19 props that qualified as close calls
-was shown (`scratchpad/card_v2_revise/close_calls_props_stale.py`). A prop can
+can rank first. EXPLORATORY, on the design board with game prices
+treated as fresh and prop prices as stale: the board gave 2 picks and 1 fill,
+and the fill was Cubs to win at -135, failing only G7; Royals +1.5 and Giants
++1.5 were the next close calls and were not shown; none of the 19 props that
+qualified as close calls was shown
+(`scratchpad/owner_answers/fill_illustration.py`, which reuses
+`scratchpad/card_v2_revise/close_calls_props_stale.py`'s pool and gate tests).
+A prop can
 become a pick only from a fresh read after its lineup posts, which in practice
 means the gate capture, 0 to 2 hours before first pitch, and it then locks at
 once (L2).
 
 ## 9. Lock, withdrawal and grading
 
+Fills (section 6) follow every rule here, with the gates a fill must pass
+(G1, G2, G4, G5, G9) in place of G1 to G12, and are graded on the record apart
+from the picks.
+
 - **L1.** A pick is provisional until the first publish run at or after first
-  pitch minus 4 hours (`card_ledger.LOCK_LEAD_HOURS`).
+  pitch minus 4 hours (`card_ledger.LOCK_LEAD_HOURS`). A fill is provisional on
+  the same schedule.
 - **L2 (as V1).** At that run, a pick on the newest published row locks **as
   last published**: the price, book, both numbers and quote time the reader
   was shown, whatever that run reads (`card_ledger._lock_and_merge`: "the
   reader saw that bet at that price"). A selection not previously shown becomes
   a pick at a run at or after that point only if that run's own fresh read
-  passes G1 to G12, and it locks at that run. If no publish run happens at or
+  passes G1 to G12, and it locks at that run. A fill locks the same way, and a
+  selection not previously shown becomes a fill at such a run only if that run
+  reads it as a close call and the floor of 3 is still short at that run. If no publish run happens at or
   after first pitch minus 4 hours (the capture chain was down), the pick as
   last published is graded, and counted as "graded without a lock run" (D4).
 - **L3 (withdrawal).** Before its lock, a provisional pick is withdrawn only
@@ -396,13 +494,18 @@ once (L2).
   from locked picks (R5). A withdrawn selection that passes again before its
   lock returns as the same pick and is graded once, at its last shown version;
   the withdrawal stays in the ledger history. Withdrawn picks do not hold a
-  G11 or G12 slot after withdrawal.
+  G11 or G12 slot after withdrawal. A provisional fill is withdrawn only on a
+  fresh read that fails it on G1, G2, G4 or G5, or when G11 gives its game or
+  player a pick; picks appearing later never withdraw it, and a withdrawn fill
+  is graded at its last shown version like a withdrawn pick.
 - **L4.** A locked pick is carried forward verbatim and graded whatever later
-  runs read. Its headline verb follows section 7.
+  runs read. Its headline verb follows section 7. A locked fill is carried
+  forward verbatim, graded, and keeps its label.
 - **Grading.** Flat 1 unit at the graded version's price. Game picks by
   `card_ledger.grade_pick` (moneyline winner; run line by margin plus line).
-  Props by `card_ledger.grade_prop_pick`. Voids are counted and reported, never
-  dropped.
+  Props by `card_ledger.grade_prop_pick`. Fills by the same two functions.
+  Voids are counted and reported, never dropped. Every graded entry carries the
+  class it held at its graded version, pick or fill, and is graded once.
 
 ## 10. Rules computed in shadow on the same days
 
@@ -411,13 +514,17 @@ graded the same way, and never shown to customers.
 
 | Rule id | Definition | Ledger |
 |---|---|---|
-| `DAILY_CARD_MARKET_SIDE_MODEL_AGREEMENT_V1` and `DAILY_CARD_PROP_LIKELY_AND_CLEARS_PRICE_V1` (V1) | The selection logic, constants and lock rule of `src/analysis/daily_card.py` and `card_ledger` exactly as committed at registration, including its nightly calibration refit, which reads sealed-window and forward games (section 1.2; diagnosis section 0). Comment-only, docstring-only and customer-copy-only edits (build plan T10, T10b and the interim V1 copy change) are not a change to V1's selection | `evidence/cards_v1.jsonl` until the cutover date, `evidence/cards_v1_shadow.jsonl` from the cutover date; no date in both |
+| `DAILY_CARD_MARKET_SIDE_MODEL_AGREEMENT_V1` and `DAILY_CARD_PROP_LIKELY_AND_CLEARS_PRICE_V1` (V1) | The selection logic, constants and lock rule of `src/analysis/daily_card.py` and `card_ledger` exactly as committed at registration, with the calibration file V1 reads. Its nightly refit, which read sealed-window and forward games (section 1.2; diagnosis section 0), was stopped by Brey on 2026-09-15 ("Freeze it now"; record `docs/CARD_CALIBRATION_FREEZE_2026-09-15.md`, commit `ba09312c`), before V2's first counted day, so V1's **calibration file** does not change during V2's sample. That is all the freeze delivers: it covers only that file's `a` and `b` and says so in terms. The rest of V1's model and its selection code stay live and editable for a sample the read date puts around August 2027, and 11.2 records 15 commits to the model files in five days and 12 to `src/report/card.py` since 2026-08-28. So V1 is pinned by measurement, not by assumption: every V1 shadow row carries a `v1_code_fingerprint`, the sha256 of `src/analysis/strength.py`, `src/analysis/playerprops.py`, `src/analysis/propboard.py`, `src/report/props.py`, `src/analysis/daily_card.py`, `src/report/card.py`, `src/appstate/card_ledger.py` and `data/processed/card_calibration.json`, with the registration-commit value written into section 16. A row carrying another value is reported under 11.6 with the dates and the commits that changed it, never assumed away. Comment-only, docstring-only and customer-copy-only edits (build plan T10, T10b and the interim V1 copy change) are not a change to V1's selection, and a fingerprint change made only of those is reported as such | `evidence/cards_v1.jsonl` until the cutover date, `evidence/cards_v1_shadow.jsonl` from the cutover date; no date in both |
 | `DAILY_CARD_BEST_BETS_V2_SHADOW_A_BAND_ONLY` (A) | V2 with G6, G7 and G8 removed; everything else identical | `evidence/cards_v2_shadow_a.jsonl` |
 | `DAILY_CARD_BEST_BETS_V2_SHADOW_C_OTHER_WORST_PRICE` (C) | V2 with G4 set to the other answer to owner question 4: `price >= -150` if V2 registers -160, `price >= -160` if V2 registers -150; everything else identical | `evidence/cards_v2_shadow_c.jsonl` |
 
 A tests whether the gates on our number do anything. C tests the other of the
-two worst prices the owner named ("-150 or -160"). V1 is the rule being
-replaced.
+two worst prices the owner named ("-150 or -160"), which he settled at -160 on
+2026-09-15 (question 4). V1 is the rule being replaced.
+
+A and C carry V2's floor of 3 and its fill rule unchanged, so their records are
+read the same way: picks apart, fills apart, and the two together. On the
+design board A published 10 picks and no fill, C 2 picks and 1 fill (14.3).
 
 ---
 
@@ -443,9 +550,22 @@ A V2 pick is **counted** if all hold:
 by the same rules, each under its own rule's lock (V1 keeps its own), for the
 comparisons in 11.6.
 
+**Fills are never counted picks.** An entry counts as a pick only if it was
+shown as a pick on at least one published row; an entry shown only as a fill is
+never in that population, whatever its numbers or its result. Graded fills form
+their own population, **counted fills**, defined by the same four conditions
+with "shown as a fill on at least one published V2 row, and a fill at its
+graded version" in place of the first. The two populations do not overlap: a
+fill that becomes a pick (section 6) is a counted pick and is not a counted
+fill. Counted fills never enter the primary metric, the secondary metrics, the
+floors, the harm check, the verdict, the retirement result or any comparison.
+They are reported beside them (11.3).
+
 ### 11.2 Model definition
 
-Part of this rule as registered, subject to owner question 3 (section 1.2):
+Part of this rule as registered. Owner question 3 was answered no on
+2026-09-15 ("Rebuild on 2025"), so option O1 below is what V2 uses and O3 is
+recorded only as the option not taken (section 1.2):
 
 - `model_id` `run_expectancy_poisson_v1`, family `nb1`, with the run model's
   inputs as the card reads them today (team rates, starters, relief rates).
@@ -455,7 +575,7 @@ Part of this rule as registered, subject to owner question 3 (section 1.2):
   plate-appearance table. V2 reads them only from this file and passes them to
   the model explicitly. The module constants and the nightly
   `data/processed/card_calibration.json` that V1 uses are not changed.
-- **Default (question 3 answered no), option O1:** one script, committed
+- **Adopted (question 3 answered no, 2026-09-15), option O1:** one script, committed
   before it runs, fits every number in the file **once** on 2025
   regular-season games from 2025-04-15, after 2025 starter logs, relief
   appearances and box scores are backfilled into stores kept apart from the
@@ -465,18 +585,22 @@ Part of this rule as registered, subject to owner question 3 (section 1.2):
   starter or relief data today (section 1.2, O1). The script's output is
   frozen as it comes out; it is never re-run to get a different answer. If the backfill or the fit cannot be
   built, the rule is not registered until Brey decides.
-- **If question 3 is answered yes, option O3:** the file holds `DISPERSION =
+- **Not taken, option O3 (question 3 answered yes):** the file would have held
+  `DISPERSION =
   2.3352` and `RHO = 0.05065`, the two numbers fitted only on sealed-window
-  games, frozen. The moneyline calibration, the slot table and the run-line
-  cover calibration are still fitted once on 2025 as in O1, by the same script
+  games, frozen, and every published read of V2 would have carried the label
+  "not independent of the sealed window". The moneyline calibration, the slot
+  table and the run-line
+  cover calibration would still have been fitted once on 2025 as in O1, by the
+  same script
   with `DISPERSION = 2.3352` as its model input: the nightly moneyline
   calibration read forward games from 2026-08-28, which no answer can
   authorise; the slot table's window is not recorded (1.1), so it cannot be
   shown to exclude them; and a run-line fit on 2026 would be a new sealed
-  read. Brey's go is recorded with its date
-  in section 16, and every published read of V2 carries the label "not
-  independent of the sealed window".
-- Either way there is **no daily refit** under this rule id: a refit reads
+  read. Brey did not authorise the sealed window, so none of this applies and
+  no V2 read carries that label. It is kept here so the record shows what was
+  offered and refused.
+- Under either option there is **no daily refit** under this rule id: a refit reads
   2026 games, which are sealed or forward. The file's sha256 is written into
   section 16 at registration.
 - The prop board probability method in `src/analysis/playerprops.py`,
@@ -577,10 +701,24 @@ had 6 books.
   [0.65, 1.00]; `ECE = sum over bins of (n_bin / N) * abs(mean our number -
   hit rate)`.
 
+**Fills, reported apart (F1).** Over counted fills, published beside every
+number above and never inside one: n; won-lost-push and units at the graded
+prices; ROI; the share beating the close and the mean CLV% computed exactly as
+the primary metric computes them for picks; the count by the check each fill
+failed (G3, G6, G7, G8, G10 lineup, G10 sample); and the count of fills whose
+price was more than 3,600 seconds old when they were added. F1 is pre-declared
+here so that the fills are published whatever they do. No F1 number is a pass,
+a fail or an input to one, and no F1 number is compared with a pick number to
+draw a conclusion about the rule; a fill can therefore neither rescue nor sink
+the verdict. The same line is published for each shadow rule that carries the
+floor (section 10).
+
 **Descriptive only, never graded.** D2 the share of counted picks that would
-fail G4 or G7 at the median book's price instead of the best. D3 close calls
-graded as if bet (n, hit rate, ROI). D4 per-date pick counts, dates with fewer
-than 3 picks, dates with a stale board at every run, withdrawals per date,
+fail G4 or G7 at the median book's price instead of the best. D3 fills per
+date, the check each failed, and the share of dates whose floor was met by one
+or more fills. D4 per-date pick counts, dates with fewer
+than 3 picks, dates with fewer than 3 entries, dates with a stale board at
+every run, withdrawals per date,
 picks graded without a lock run, picks shown without "Take" after their lock.
 D5 knowledge-grade distribution (A to D) of counted game picks. D6 not applied:
 `docs/VALIDATION_CRITERIA.md`'s "live vs backtest ECE, drift > 0.04", because
@@ -588,7 +726,9 @@ no backtest of this rule exists and none may be run on the sealed window.
 
 ### 11.4 Floors, the harm check, the read date and the stop date
 
-One read, at the first settlement run after which **both** hold:
+One read, at the first settlement run after which **both** hold. Counted picks
+only; no fill counts toward either floor, however many fills the card
+publishes:
 
 - (a) at least 300 counted game picks with a CLV%; and
 - (b) at least 300 counted picks graded WIN or LOSS, across at least 60
@@ -603,7 +743,8 @@ CLV%, S2, S4, S5 or S6 over counted picks before the read, except the harm
 check below.
 
 **Harm check (one-way, pre-registered, cannot be rescued).** Run once at each
-threshold and published with its counts:
+threshold and published with its counts. Counted picks only; a fill neither
+triggers it nor delays it:
 
 - at the first settlement run after 100 counted game picks have a CLV%: if the
   share beating the close is below 50% **and** the 95% bootstrap interval of
@@ -616,7 +757,8 @@ threshold and published with its counts:
 
 If either fires, the result is `HARM_STOP`: from the next publish day V2 keeps
 selecting, locking, grading and counting under this id, so the registered read
-still happens, but no entry carries "Take" and the card uses copy C11 in the
+still happens, and the floor of 3 and the fill rule keep running with their
+labels, but no entry carries "Take" and the card uses copy C11 in the
 form for the arm that fired (the closing-price form for the first arm, the
 hit-rate form for the second, both sentences if both have fired). A
 `HARM_STOP` is never reversed under this id; a passing later read does not
@@ -649,7 +791,10 @@ The floors are not lowered because a season was short.
 ### 11.5 Verdict
 
 Thresholds and stop conditions from `docs/VALIDATION_CRITERIA.md`; all five
-stop conditions are applied, and the one criterion not applied is D6.
+stop conditions are applied, and the one criterion not applied is D6. Every
+condition below reads **counted picks only**. Counted fills are published
+beside the verdict as F1 and enter no condition, so a good or bad run of fills
+can neither rescue nor sink it.
 
 - **FAIL** if any of:
   1. share beating the close below 50%, or mean CLV% at or below 0%;
@@ -666,11 +811,24 @@ stop conditions are applied, and the one criterion not applied is D6.
 
 ### 11.6 Comparisons on the same days
 
-At the same read instant, V2 is compared with V1 (shadow), A and C. V1's
-calibration is refit every night unless Brey stops it, so the V1 comparison is
-reported as a comparison with a model that changed during the sample, and no
-verdict on V1 itself is drawn from it ("Changing the model restarts the
-sample", `docs/VALIDATION_CRITERIA.md`).
+At the same read instant, V2 is compared with V1 (shadow), A and C, on counted
+picks only; fills are outside every comparison. Brey froze V1's nightly
+calibration refit on 2026-09-15, before V2's first counted day
+(`docs/CARD_CALIBRATION_FREEZE_2026-09-15.md`), so V1's calibration file does
+not change inside the sample. **That is all the freeze delivers.** It covers
+only that file's `a` and `b`; `DISPERSION`, `RHO`, the slot table and V1's
+selection code stay live and editable across the whole sample, and the model
+files changed in 15 commits in the five days before this draft (11.2). So the
+comparison is read against the `v1_code_fingerprint` frozen on every V1 shadow
+row (section 10): if any row in the sample carries a value other than the
+registration-commit value in section 16, and the commits behind the change are
+not all comment-only, docstring-only or customer-copy-only, the V1 comparison
+is published as a comparison with a model that changed during the sample,
+naming the dates and the files. The same caveat applies if the nightly refit
+restarts. Its record before the freeze is still the record of a model that
+changed nightly, so no verdict on V1 itself is drawn from the comparison either
+way ("Changing the model restarts the sample",
+`docs/VALIDATION_CRITERIA.md`).
 
 - Statistic: over slate dates on which both rules have at least one counted
   game pick with a CLV%, the mean of (V2's daily mean CLV% minus the other
@@ -686,13 +844,16 @@ sample", `docs/VALIDATION_CRITERIA.md`).
 
 ### 11.7 The retirement result
 
+Read on counted picks only; the fills' F1 line is published beside the result
+and never decides it.
+
 On **FAIL** or **UNDERPOWERED**, within one publish day:
 
-1. `DAILY_CARD_BEST_BETS_V2` stops publishing picks;
+1. `DAILY_CARD_BEST_BETS_V2` stops publishing picks and fills;
 2. the customer card shows shadow A's list under copy that makes no pick
    claim and uses no "Take" (copy C9) until a successor rule is registered;
-3. the verdict or non-verdict read, every counted pick and every comparison
-   are published under `docs/`;
+3. the verdict or non-verdict read, every counted pick, every counted fill with
+   its F1 line, and every comparison are published under `docs/`;
 4. no parameter in this file is changed and re-run under this id.
 
 On **HARM_STOP** (11.4), V2 keeps running without "Take" under copy C11, and
@@ -709,7 +870,8 @@ the harm-check result is published under `docs/` within one publish day.
   licenses customer copy that claims an edge, value or a guarantee. The
   evidence rules forbid a customer claim of an edge or a guarantee outright,
   and `tests/test_customer_language.py` allows "edge" and "guaranteed" only
-  negated.
+  negated. No result licenses any statement about the fills: F1 is published as
+  a record of what the card listed, never as a finding.
 - **INCONCLUSIVE** licenses nothing, ever. V2 may keep publishing with its
   unproven copy. Any further test is a new registration with a window that
   starts after it.
@@ -718,12 +880,15 @@ the harm-check result is published under `docs/` within one publish day.
 
 ## 12. Record keeping
 
-- **R1.** V2 picks, provisional versions, withdrawn picks, close calls and
+- **R1.** V2 picks, fills, provisional versions, withdrawn picks and fills, the
+  close calls that were not shown, and
   stale-board states are written to `evidence/cards_v2.jsonl`, hash-chained,
   one row per publish run that changed anything and at least one row per slate
   date, **including dates with 0 picks**. Every row carries
-  `rule: DAILY_CARD_BEST_BETS_V2`, the gate constants in force and the
-  `code_fingerprint` (11.2); every pick carries its `game_type`.
+  `rule: DAILY_CARD_BEST_BETS_V2`, the gate constants in force, the floor and
+  the `code_fingerprint` (11.2); every pick and every fill carries its
+  `game_type`, its class (pick or fill) and, on a fill, the checks it failed
+  and its quote age when it was added.
 - **R2.** Shadow rules write only to their own files (section 10).
 - **R3.** `evidence/cards_v1.jsonl` is never rewritten. It receives no rows
   dated on or after the cutover date.
@@ -735,6 +900,13 @@ the harm-check result is published under `docs/` within one publish day.
   together, and each kind apart**, with the kind lines of C8 (V2 has no totals,
   section 2, so its block never shows a totals line; V1's block shows one only
   if a V1 total was graded); V2's block also shows withdrawn picks apart.
+  **V2's block shows three headline figures: the picks, the fills and all
+  entries together, each with its own won-lost-push and units.** The picks
+  figure is the rule's record; the fills figure is the record of what the floor
+  of 3 put on the card; the combined figure is what a reader who took every
+  listed bet would have. No figure mixes a pick with a fill inside it, and the
+  page names which is which. The verdict of 11.5 is read on the picks only,
+  and the page never presents a fills or combined figure as the rule's result.
   V1's headline today (`card_ledger.record()`, `card_ledger.py:956-1115`)
   counts game picks only and keeps props under `by_kind`, so the staging card's
   "26-12, +4.82 units" leaves out V1's prop picks. EXPLORATORY, store
@@ -756,8 +928,11 @@ The client never re-rounds. Braces are fields read from the payload.
 - **C1 Section head and purpose.** "Today's picks" · "Picks today: {n}" ·
   "Each pick is priced no shorter than -160, the market makes it more likely
   than not, and our number is above what the price needs. Because the market
-  has to make it more likely than not, a pick is almost never plus money.
-  There is no set number of picks."
+  has to make it more likely than not, a pick is almost never plus money. The
+  card lists three bets on a day when three clear the first checks. On a day
+  when fewer than three pass every check, the closest calls are listed under
+  the picks and marked as not picks, and on a day when the board offers fewer
+  than three at all the card lists fewer and says so."
 - **C2 A pick.** Headline: "Take {selection} at {price}" (only under the
   section 7 rule). Meta: "{book}" and the provisional, "Lock pending · graded
   as published" or locked state from `docs/DESIGN_SYSTEM.md` (true under L2,
@@ -783,30 +958,37 @@ The client never re-rounds. Braces are fields read from the payload.
   {team} win by two or more runs." Prop: "{player} is batting {ordinal} in the
   posted lineup, with {season_games} games of history."
 - **C4 Fewer than 3 picks (including 0).** Under C1: "Only bets that pass every
-  check are picks, so some days have fewer than 3. The closest calls are
-  below. They are not picks."
+  check are picks, so some days have fewer than three. The bets below fill the
+  card to three. They are not picks, each one says which check it did not pass,
+  and each is graded on the record apart from the picks."
 - **C5 Stale board.** "Picks today: {n} so far. Prices were last checked
   {age} ago. New picks are only made from prices checked in the last hour, so
-  this list waits for the next check."
-- **C6 Close calls.** Head: "Close calls, not picks". Entry: "{selection} at
+  this list waits for the next check. The bets below are not picks. They fill
+  the card to three, or to as many as the board offers, at the prices last
+  seen, and they are graded at those prices."
+- **C6 The fills, listed under "Close calls, not picks".** Head: "Close calls,
+  not picks". Entry: "{selection} at
   {price} ({book}). Price checked {age} ago. Market says {market}%. Needs
   {needs}% to break even. Our number: {ours}%. Not a pick: {reasons}."
   Reasons, joined with "; ": G3 "price not checked in the last hour"; G6 "our
   number does not make it more likely than not"; G7 "our number is below what
   the price needs"; G8 "our number is more than 10 points away from the
   market's"; G10 lineup "lineup not posted yet"; G10 sample "fewer than 15
-  games of history". (A close call has already passed G1, G2, G4, G5 and G9,
-  so no other reason can apply.)
+  games of history". (A fill has already passed G1, G2, G4, G5 and G9,
+  so no other reason can apply.) Every entry in this section also carries C12.
 - **C7 Disclaimer.** "These are picks, not guarantees. Our number has not been
   shown to beat the market's, and every pick shows both numbers and what the
   price needs. Every pick is published before its game. A pick still on the
   card four hours before its game is graded at the price shown then, win or
   lose. A pick removed earlier is graded too, at the price it was last shown
-  at, and listed as removed."
+  at, and listed as removed. The bets listed as not picks are graded the same
+  way, and kept apart from the picks on the record."
 - **C8 Record line.** "Card picks, rule v2 · {first} to {last} · {n} picks ·
   {w}-{l}-{p} · {units} units at the published prices. Game picks
   {gw}-{gl}-{gp}, {gunits} units. Player props {pw}-{pl}-{pp}, {punits} units.
   Picks removed before their lock, included above: {rw}-{rl}-{rp}, {runits}
+  units. Bets listed as not picks, kept apart from the picks: {fw}-{fl}-{fp},
+  {funits} units. Picks and those bets together: {aw}-{al}-{ap}, {aunits}
   units. Preliminary: not enough picks yet to show an edge or its absence." V1
   block: "Rule v1, on the card until {cutover}: {w}-{l}-{p} over {days} days,
   {units} units at the published prices. Game picks {gw}-{gl}-{gp}, {gunits}
@@ -814,14 +996,20 @@ The client never re-rounds. Braces are fields read from the payload.
   {tw}-{tl}-{tp}, {tunits} units. Kept as it was, and not added to rule v2's
   numbers." A kind with no graded picks is left out of the line rather than
   shown as zero; V1 graded no totals through 2026-09-14, so today its block
-  shows no totals line.
+  shows no totals line. The two sentences about bets listed as not picks are
+  left out while no such bet has been graded, and V1's block never carries
+  them, because V1 has none.
 - **C9 After a FAIL or UNDERPOWERED.** Head "Today's board". Purpose "Bets
   priced no shorter than -160 that the market makes more likely than not,
   listed in the order of section 5. These are not picks." No verb on any
   entry.
 - **C10 Switch banner.** "From {cutover} the card uses a new rule: no pick is
-  priced shorter than -160, and there is no set number of picks. The old
-  rule's record is kept below, separately."
+  priced shorter than -160, and on a day when fewer than three bets pass every
+  check the card lists the closest calls beside the picks, marked as not picks
+  and kept apart on the record. The old
+  rule's record is kept below, separately." It says how the shortfall is
+  filled, never how many entries a given day will have, so it stands beside
+  C13 as well as beside C4 and C5.
 - **C11 After a HARM_STOP.** Head "Today's list". Purpose, in the form for the
   harm-check arm that fired (11.4). Closing-price arm: "These bets pass our
   checks, but a check on the first graded ones found they were getting worse
@@ -834,7 +1022,25 @@ The client never re-rounds. Braces are fields read from the payload.
   worse prices than the market settled at, and that picks where our number was
   well above the market's won less often than their prices needed, so we no
   longer say take them. They are not picks." No verb on any entry; the C2 lines
-  and the record stay.
+  and the record stay. The fills keep their own head, their C6 entry and C12.
+- **C12 The line on every fill** (section 6, section 7). On the face of every
+  entry under "Close calls, not picks", under its C6 line: "This one did not
+  pass every check, so it is not a pick. It is listed because the card shows
+  three bets on a day when three clear the first checks, and it is graded on
+  the record apart from the picks."
+- **C13 Fewer than three entries.** Used whenever the board offers fewer than
+  three bets that pass the first checks: in place of C4, and in place of C5's
+  two fill sentences ("The bets below are not picks. They fill the card to
+  three, or to as many as the board offers, at the prices last seen, and they
+  are graded at those prices."), so that no string on the card promises three
+  bets beside two entries. On a stale board C5's first three sentences stay and
+  C13 follows them. The string: "Today {n} bets are
+  listed. Before a bet is listed at all, its game has to be unstarted, enough
+  books have to be quoting the price, the price has to be no shorter than
+  -160, and the market has to make that side more likely than not. Today the
+  board had {n} of those." At n = 0 the card shows this line and no entry,
+  which is the one state the floor cannot fix without breaking G4 or G5, and it
+  never breaks them (section 6).
 
 No string on the card claims an edge, value or a guarantee, and none uses
 "STRONG", "sure", "fair price", "best of N books" or calls a model number a
@@ -864,6 +1070,9 @@ because no run-line calibration exists yet. The registered default model
 the registered model would pick. Independent re-screen of the same pool:
 `scratchpad/card_v2_revise/verify_pool.py` (reproduces the picks, close calls,
 shadow lists and candidate counts below; the quote ages come from the V1 row).
+The floor of 3 and the fills were added to that re-screen, unchanged in every
+other respect, by `scratchpad/owner_answers/fill_illustration.py`, and the
+lists below are its output.
 
 **Quote times.** The pool's 56 game rows have an empty `observed_utc`. The game
 board's capture time, 14:31:29Z, is read from the published V1 row and is the
@@ -877,11 +1086,26 @@ is used as the T12 fixture.
 
 At the 16:42:48Z publish instant every game quote was 7,879 seconds old and
 every prop quote over 12 hours old, all above G3's 3,600. **V2 publishes 0
-picks**, serves C5 ("Picks today: 0 so far. Prices were last checked 2 h 11
-min ago. New picks are only made from prices checked in the last hour, so this
-list waits for the next check.") and shows 3 close calls, each with its price
-age: Angels +1.5 at -114 (fails G3 only), Twins +1.5 at -112 (G3 only), and
-Matt Olson under 1.5 total bases at -157 (G3 and lineup not posted).
+picks and 3 fills**, and serves C5 ("Picks today: 0 so far. Prices were last
+checked 2 h 11 min ago. New picks are only made from prices checked in the last
+hour, so this list waits for the next check. The bets below are not picks. They
+fill the card to three, or to as many as the board offers, at the prices last
+seen, and they are graded at those prices."). The board offered more than three
+candidates past G1, G2, G4, G5 and G9, so C13 does not fire and C5's fill
+sentences stand. The three fills, in the close-call order of section 6, each
+with its price age and its C12 line, and 33 close calls available:
+
+| # | Entry | Books | Market | Needs | Ours | Not a pick |
+|---|---|---:|---:|---:|---:|---|
+| 1 | Angels +1.5 at -114 (FanDuel) | 11 | 52.0% | 53.3% | 61.3% | price not checked in the last hour |
+| 2 | Twins +1.5 at -112 (LowVig) | 10 | 51.3% | 52.8% | 54.1% | price not checked in the last hour |
+| 3 | Matt Olson under 1.5 total bases at -157 (Caesars) | 4 | 57.8% | 61.1% | 65.7% | price not checked in the last hour; lineup not posted yet |
+
+Under the owner's answer these three go on the record and are graded at prices
+that were over two hours old, because the floor is met at every publish run and
+a fill does not have to pass G3. Michael Harris II under 1.5 at -148 and Pete
+Alonso under 1.5 at -150 were the next close calls and would not be shown.
+Before the answer the same three appeared as close calls and were never graded.
 
 ### 14.2 With G3 set aside, as if the capture chain had kept the board fresh
 
@@ -902,33 +1126,45 @@ been shown to beat the market's." · "The market makes this only slightly more
 likely than not." · "+1.5 wins if the Angels win, or lose by one run." Under C1
 and C4.
 
-**Close calls: 3.** Each fails one gate with no shortfall, so they rank ahead
+**Fills: 1**, because 2 picks leave one slot to reach the floor of 3. The
+close-call order puts the three pre-lineup props first: each fails one gate with
+no shortfall, so they rank ahead
 of the game close calls that fail G7 (Cubs to win at -135: market 56.2%, needs
-57.4%, ours 57.1%; Royals +1.5 at -150; Giants +1.5 at -149).
+57.4%, ours 57.1%; Royals +1.5 at -150; Giants +1.5 at -149). Of the 31 close
+calls available, one is shown.
 
-| Entry | Books | Market | Needs | Ours | Not a pick |
-|---|---:|---:|---:|---:|---|
-| Matt Olson under 1.5 total bases at -157 (Caesars) | 4 | 57.8% | 61.1% | 65.7% | lineup not posted yet |
-| Michael Harris II under 1.5 total bases at -148 (Caesars) | 3 | 57.0% | 59.7% | 64.9% | lineup not posted yet |
-| Pete Alonso under 1.5 total bases at -150 (Caesars) | 3 | 56.2% | 60.0% | 62.7% | lineup not posted yet |
+| Shown | Entry | Books | Market | Needs | Ours | Not a pick |
+|---|---|---:|---:|---:|---:|---|
+| fill | Matt Olson under 1.5 total bases at -157 (Caesars) | 4 | 57.8% | 61.1% | 65.7% | lineup not posted yet |
+| no | Michael Harris II under 1.5 total bases at -148 (Caesars) | 3 | 57.0% | 59.7% | 64.9% | lineup not posted yet |
+| no | Pete Alonso under 1.5 total bases at -150 (Caesars) | 3 | 56.2% | 60.0% | 62.7% | lineup not posted yet |
 
 All three rest on 15 games of history. No prop contract on the 04:09Z board had
-a posted lineup, so no prop could be a pick.
+a posted lineup, so no prop could be a pick. The card would therefore be two
+picks and one fill: three entries, of which one is graded apart and carries
+C12.
+
+**With game prices fresh and prop prices stale**, the state the capture
+schedule produces for most of the day: the same 2 picks, and the fill is Cubs
+to win at -135 (market 56.2%, needs 57.4%, ours 57.1%), failing G7 alone.
+Royals +1.5 at -150 and Giants +1.5 at -149 are next and are not shown, and no
+prop is shown (section 8).
 
 **None of V1's 8 published picks passes.** All five game picks fail G4 (-230,
 -225, -210, -210, -186) and G7. Cole Young under 1.5 (-184) fails G4 and the
 lineup test. Matt Olson under 1.5 (-157) and Michael Harris II under 1.5 (-148)
-pass G2 (4 and 3 books against a floor of 2), G4 and the 15-game test, and fail
-only the lineup test; they are the first two close calls.
+pass G2 (4 and 3 books against a book floor of 2), G4 and the 15-game test, and
+fail only the lineup test; they are the first two close calls, and Olson is the
+one fill.
 
 ### 14.3 Shadow rules on the same board (G3 set aside)
 
-| Rule | Picks | Notes |
-|---|---:|---|
-| V1 | 8 | As published (section 1 of the diagnosis) |
-| A, band only, default order | 10 (the ceiling; 15 passed before G11 and G12) | Red Sox -108, Twins +1.5 -112, Angels +1.5 -114, Brewers -1.5 -117, Padres -1.5 -119, Phillies -1.5 -120, Mets -128, Blue Jays -133, Cubs -135, Dodgers -1.5 -140. Our number was above the break-even on 2 of the ten (Twins, Angels); lowest was Padres -1.5 at 36.2% |
-| A, band only, market number first | 10 | Cardinals -160, Royals +1.5 -150, D-backs -148, Guardians -144, Dodgers -1.5 -140, Cubs -135, Blue Jays -133, Mets -128, Phillies -1.5 -120, Padres -1.5 -119 (market 53.12%, which ranks it above Brewers -1.5 at 53.08%). Our number was below the break-even on all ten; lowest was Padres -1.5 at 36.2% |
-| C, -150 | 2 | Same two picks as V2; close calls Harris, Alonso and Cubs (Olson's -157 fails -150) |
+| Rule | Picks | Fills | Notes |
+|---|---:|---:|---|
+| V1 | 8 | not applicable | As published (section 1 of the diagnosis); V1 fills to 3 from its SPLIT pile, which did not fire on this board |
+| A, band only, default order | 10 (the ceiling; 15 passed before G11 and G12) | 0 | Red Sox -108, Twins +1.5 -112, Angels +1.5 -114, Brewers -1.5 -117, Padres -1.5 -119, Phillies -1.5 -120, Mets -128, Blue Jays -133, Cubs -135, Dodgers -1.5 -140. Our number was above the break-even on 2 of the ten (Twins, Angels); lowest was Padres -1.5 at 36.2% |
+| A, band only, market number first | 10 | 0 | Cardinals -160, Royals +1.5 -150, D-backs -148, Guardians -144, Dodgers -1.5 -140, Cubs -135, Blue Jays -133, Mets -128, Phillies -1.5 -120, Padres -1.5 -119 (market 53.12%, which ranks it above Brewers -1.5 at 53.08%). Our number was below the break-even on all ten; lowest was Padres -1.5 at 36.2% |
+| C, -150 | 2 | 1 | Same two picks as V2. Its one fill is Michael Harris II under 1.5 at -148, not Olson, whose -157 fails C's band; Alonso -150 and Cubs -135 are next and are not shown |
 
 ### 14.4 What cannot be read from this
 
@@ -939,60 +1175,110 @@ or "V2 is too strict". It does show the likely shape: few picks, priced a
 little shorter than even money, close to a coin flip by the market's number,
 each resting on our own number sitting a few points above the market's.
 
+It also shows what the floor of 3 costs. On this board the card is 2 picks and
+1 fill with fresh prices, and 0 picks and 3 fills at the real publish instant,
+so on a day like this most of what the reader sees, and between a third and all
+of what goes on the record, is bets the rule itself says are not picks. Whether
+fills win or lose here is unknowable from one already-seen board and is not
+read; what is known in advance is that they are graded, published and kept
+apart, and that they never touch the verdict (11.1, 11.5).
+
 ---
 
 ## 15. Owner decisions this needs
 
-Each question is one yes or no, with the default the build, the V2 ledger and
-the `?rule=v2` preview use until Brey answers. The line under each question
-says which of his words it departs from, or what it settles.
+Each question is one yes or no. An answered question records Brey's own words
+with the date and time he gave them; an open question shows the default the
+build, the V2 ledger and the `?rule=v2` preview use until he answers. The line
+under each question says which of his words it departs from, or what it
+settles.
 
-**Questions 1 and 2 depart from a standing owner directive. The customer card
-does not switch from V1 to V2 until both are answered.**
+**Answered so far: 1, 3 and 4, all by Brey on 2026-09-15 at about 22:35Z
+(3:35pm Pacific), in chat, in reply to the four questions put to him in plain
+words. Open: 2, 5, 6, 7 and 8.** Registration still requires his explicit
+answer to each open question, or his explicit acceptance of its default, with
+its date; nobody else may accept one for him.
 
-1. **May the card show fewer than 3 picks, down to 0, on a day when fewer than
-   3 bets pass every check, with the closest calls listed below and never
-   called picks? Default: yes.**
-   Departs from "three to five bets every day" (2026-09-10) and from the "3-10
-   bets" of 2026-09-15: V2 has a ceiling of 10 and no floor. If no, V2 is not
-   cut over and nothing here is loosened; a rule with a floor needs its own
-   registration.
+**Question 2 departs from a standing owner directive. The customer card does
+not switch from V1 to V2 until it is answered.**
+
+1. **On a day when fewer than 3 bets pass every check, does the card fill to 3
+   with the closest calls, labelled as not picks, or show fewer? ANSWERED
+   2026-09-15 about 22:35Z: "Always show 3."**
+   He was given both options in plain words and chose the second: "Show fewer
+   (Recommended): publish only what passes, even 0, with up to 3 near misses
+   listed underneath and clearly not called picks", or "Always show 3: fill to
+   3 with the closest near misses, labelled as not passing the value test.
+   Those fills go on the record and can drag it down." So the floor of 3 stands
+   and is met by fills, which are graded and kept apart from the picks
+   (sections 6, 9, 11 and 12). This honours "three to five bets every day"
+   (2026-09-10) and the floor of the "3-10 bets" of 2026-09-15 on every board
+   that offers three candidates past G1, G2, G4, G5 and G9. **It still departs
+   from both on the board that does not.** No gate was loosened to reach three:
+   a fill still passes those five gates, so it is never priced shorter than
+   -160 and never a side the market makes less likely than not, and where a
+   board offers fewer than three such candidates the card lists fewer, down to
+   none, and says why (copy C13). That state is published as a count. Its cost,
+   stated in the option he chose: entries the rule itself says are not picks go
+   on the public record and can drag it down. The rule's verdict is protected
+   from that by reading picks only (11.1, 11.5).
+   **Departs from "3-10 bets" on the maximum, and he has not ruled on that.**
+   G12's ceiling of 10 counts picks only, and a fill once shown is not removed
+   when picks arrive later (section 6), so a date that begins thin can list 13
+   bets at once: 10 picks and 3 fills, every one of them graded. That is more
+   than the 10 he named. It follows from this answer and was not in front of
+   him when he gave it, so it is written here for him to rule on before
+   registration; until he does, the rule stands as his answer left it. The two
+   ways to hold the total at 10 were not taken without him: one hides a pick
+   that passed every gate, the other withdraws a fill already published, and
+   each changes what goes on the public record.
 2. **May a player prop become a pick only from a price checked after its
    lineup posts, in practice the last 2 hours before first pitch, so that
-   before then it appears at most as one of the 3 close calls a day, and on
-   most days not at all? Default: yes.**
+   before then it appears at most as a fill on a day with fewer than 3 picks,
+   and on most days not at all? Default: yes.**
    Departs from props analysis that "needs to be ran pre emptively"
    (2026-09-14). The analysis still runs early, but a reader mostly will not
    see it: before its lineup posts a prop's only price comes from the capture
    5 to 7 hours before first pitch and is more than an hour old for most of
    that time, so close calls with fresh prices rank ahead of it (section 8; on
-   the design board with game prices fresh, none of 19 props made the 3). In 2026 a
+   the design board with game prices fresh, the one fill was a game bet and
+   none of 19 props was shown). In 2026 a
    prop also needs 15 games of history, because the box-score store starts
-   2026-08-30. If no, as question 1.
+   2026-08-30. If no, V2 is not cut over and nothing here is loosened; a rule
+   that publishes pre-lineup props as picks needs its own registration.
 
-**Questions 3 to 8 are answered by Brey himself, or he explicitly accepts the
-default, before the commit that sets `REGISTERED_UTC`; each answer is recorded
-in section 16 with its date. Nobody else may accept a default for him. After
-that commit a different answer is a new rule id.**
+**Questions 5 to 8 are still to be answered by Brey himself, or he explicitly
+accepts the default, before the commit that sets `REGISTERED_UTC`; each answer
+is recorded in section 16 with its date. Nobody else may accept a default for
+him. After that commit a different answer is a new rule id. Questions 3 and 4
+are answered below, in his words, with the date and time.**
 
 3. **May V2 keep the two model numbers that were fitted only on sealed-window
    games, frozen at registration, with its record saying it can never be
-   confirmed on the sealed window? Default: no.**
-   Settles section 1.2. The two numbers are the run-spread number 2.3352
-   (fitted on 2026-04-15 to 07-15) and the prop correlation 0.05065 (fitted on
-   2026-06-17 to 08-05); their held-out checks also read games from 2026-08-28
-   onward (section 1.1). Under no, every fitted number is fitted once on 2025
-   games after a free 2025 data backfill, then frozen; if that cannot be built,
-   V2 is not registered until you decide again. Under either answer the card
-   calibration is not kept: its nightly fit reads forward games from 2026-08-28
+   confirmed on the sealed window? ANSWERED 2026-09-15 about 22:35Z: no.**
+   He was asked, in plain words, whether to rebuild the two settings on last
+   season instead, and answered "Rebuild on 2025". So option O1 of section 1.2
+   is adopted, not merely the default: every fitted number V2 uses is fitted
+   once on 2025 games after a free 2025 data backfill, then frozen (11.2,
+   build plan T0a, now owner-approved). The two numbers not kept are the
+   run-spread number 2.3352 (fitted on 2026-04-15 to 07-15) and the prop
+   correlation 0.05065 (fitted on 2026-06-17 to 08-05); their held-out checks
+   also read games from 2026-08-28
+   onward (section 1.1). The sealed window is not touched, and no V2 read
+   carries a "not independent of the sealed window" label. If the backfill or
+   the fit cannot be built,
+   V2 is not registered until he decides again. The card
+   calibration is not kept under any answer: its nightly fit read forward games
+   from 2026-08-28
    (148 of the 1,901 games counted here; 1,753 are sealed), and the split
    reserves no go for folding forward games into a fit, so it is fitted on
    2025, as are the batting-slot table (fit window not recorded) and the
-   run-line calibration. Yes is the explicit go the data split reserves to you
-   for the sealed window, and only for it.
-4. **Is -160 the shortest price allowed, rather than -150? Default: yes,
-   -160.**
-   You wrote "-150 or -160"; shadow C runs -150.
+   run-line calibration.
+4. **Is -160 the shortest price allowed, rather than -150? ANSWERED
+   2026-09-15 about 22:35Z: "-160."**
+   He was asked what the shortest price a pick may have is, and answered -160.
+   He had written "-150 or -160"; shadow C keeps running -150 beside the rule
+   (section 10), and no V2 pick or fill is ever priced shorter than -160 (G4).
 5. **May a pick be a side the market makes less likely than not, at plus
    money, when our number beats its price? Default: no.**
    Under the default a pick is almost never plus money (section 4), which
@@ -1016,19 +1302,37 @@ that commit a different answer is a new rule id.**
 
 One decision about V1, not V2, is not in this list: whether V1's nightly
 calibration refit keeps reading the sealed window. It is set out in the
-diagnosis, section 0.
+diagnosis, section 0, and Brey answered it on 2026-09-15 at about 22:35Z,
+"Freeze it now": V1's nightly calibration refit is stopped and today's settings
+are locked for the current card until V2 replaces it. That work is done
+separately from this registration and its record is
+`docs/CARD_CALIBRATION_FREEZE_2026-09-15.md`. It changes no number here.
 
 ## 16. Amendment log
 
 Permitted entries only: a typo that changes no number or rule; the recorded
-owner answers with their dates, the frozen parameter file's sha256 and the
-`code_fingerprint` value (11.2) at the registration commit; the recorded
-cutover date; a recorded model restart under 11.2; links
+owner answers with their dates, the frozen parameter file's sha256, the
+`code_fingerprint` value (11.2) and the `v1_code_fingerprint` value
+(section 10) at the registration commit; the recorded
+cutover date; a recorded model restart under 11.2; a recorded change to the
+`v1_code_fingerprint` under 11.6, which qualifies the V1 comparison and
+changes no V2 number; links
 to the published harm check and read. Anything else is a new rule id.
+
+That restriction runs from `REGISTERED_UTC`. Rows dated before it record
+changes to a draft that is not yet registered, which is where a rule may still
+change at all; each says what changed and on whose word.
 
 | Date (UTC) | Entry |
 |---|---|
-| | |
+| 2026-09-15 about 22:35Z | Owner answer, question 1: "Always show 3", given in chat in reply to a plain-words question offering "Show fewer (Recommended)" or "Always show 3: fill to 3 with the closest near misses, labelled as not passing the value test. Those fills go on the record and can drag it down." Draft amended before registration: floor of 3 met by labelled fills; sections 0, 1, 3, 5, 6, 7, 8, 9, 10, 11.1, 11.3, 11.4, 11.5, 11.6, 11.7, 11.8, 12, 13 (C1, C4, C5, C6, C7, C8, C10 revised; C12 and C13 added), 14 and 15 |
+| 2026-09-15 about 22:35Z | Owner answer, question 4: "-160." -160 stands as G4; shadow C keeps -150 |
+| 2026-09-15 about 22:35Z | Owner answer, question 3: no, "Rebuild on 2025." Option O1 of 1.2 adopted as the owner's answer rather than as the draft's default; no sealed-window fit is carried into V2; build plan T0a is owner-approved |
+| 2026-09-15 about 22:35Z | Owner decision about V1, not this rule: "Freeze it now." V1's nightly calibration refit is stopped; record `docs/CARD_CALIBRATION_FREEZE_2026-09-15.md`, commit `ba09312c`. Recorded here because section 10's shadow V1 and 11.6's comparison describe it |
+| 2026-09-16 | Draft correction, on the orchestrator's instruction after a verification pass, no owner answer involved and no number changed. The claim that the freeze stops V1's model changing was narrowed to what the freeze covers, its `a` and `b`; section 10 and 11.6 now pin V1 by a `v1_code_fingerprint` on every shadow row, and 11.6's caveat fires on any change to V1's model or selection files, not only on a refit restart. Sections 10, 11.6, 15 (status line) and 16 |
+| 2026-09-16 | Draft correction, same instruction. C1, C5, C10 and C12 no longer promise three bets on a day the rule itself lets list fewer, and C13 is declared to replace C5's two fill sentences as well as C4. Sections 0, 6 (the floor bullet) and 13 (C1, C5, C10, C12, C13) |
+| 2026-09-16 | Draft correction, same instruction. Question 1's claim that the floor "honours" the 2026-09-10 directive is limited to boards that offer three candidates, with the departure on thinner boards restored in the words the draft used before the amendment. Section 15, question 1; diagnosis section 6's 2026-09-10 row |
+| 2026-09-16 | Draft correction, same instruction. The largest card this rule can list, 13 bets (10 picks and 3 fills), is stated as a departure from the owner's "3-10 bets" in G12, section 6, question 1 and the diagnosis's 2026-09-15 row, for him to rule on before registration. No cap was imposed and no gate changed |
 
 ## Review record
 
@@ -1087,3 +1391,50 @@ three low items. Each was re-checked before it was applied; none was rejected.
 
 The other two low items (build plan T6 line numbers; the live doc's
 confirmation date) are recorded in those files.
+
+### Owner answers of 2026-09-15, applied to the draft
+
+Brey answered four questions in chat at about 22:35Z. Three of them changed
+this file; the fourth is about V1. The draft stays a draft: questions 2, 5, 6,
+7 and 8 are open, and registration still needs his explicit answer or his
+acceptance of each default.
+
+| Answer | Applied where | Note |
+|---|---|---|
+| Question 1, "Always show 3" | 0, 1, 3, 5, 6, 7, 8, 9, 10, 11.1, 11.3, 11.4, 11.5, 11.6, 11.7, 11.8, 12, 13, 14, 15, 16 | The floor is met by fills, never by relaxing a gate. A fill passes G1, G2, G4, G5 and G9, is labelled on its face as not a pick with the check it failed, is graded on the public record, and is excluded by name from the primary metric, the floors, the harm check, the verdict and every comparison. Close calls beyond the fills are not shown, so every listed bet is graded. The known cost is written down in 14.4 and in question 1 itself |
+| Question 4, "-160" | 3 (G4), 10, 15 | No number changed; the band was already -160 and shadow C already ran -150 |
+| Question 3, "Rebuild on 2025" | 1.2(c), 11.2 reads as adopted, 15 | O1 moves from default to owner answer. No sealed-window fit enters V2, so the "not independent of the sealed window" label is not used |
+| The V1 freeze, "Freeze it now" | 1.2(a), 10, 11.6, 15, 16 | Not part of this registration. It narrows the "model changed during the sample" caveat on the V1 shadow comparison to what the freeze covers: V1's calibration file stops changing from before V2's first counted day, the rest of V1's model does not, and the caveat now fires on any change a `v1_code_fingerprint` detects (section 10, 11.6) |
+
+The illustration of section 14 was re-run on the same already-seen pool with
+the fill rule added and nothing else changed
+(`scratchpad/owner_answers/fill_illustration.py`, built on
+`scratchpad/card_v2_revise/verify_pool.py`). It is an illustration on
+already-seen data, not evidence. Consistency of the band, the floors, the fill
+rule, the rule id and the copy strings across this file, the build plan and the
+diagnosis was checked by
+`scratchpad/owner_answers/consistency_check.py`.
+
+### Verification pass on the amendment (2026-09-16)
+
+An independent verifier re-read the three amended documents against the repo,
+found no way for the fill rule to put a bet on the record that a base gate
+refuses, and confirmed that no evidence threshold, floor, FAIL condition or
+stop date moved. It filed eleven problems, none high. The four with substance
+were re-checked against the text and the repo before they were applied; none
+was rejected. No number in section 11 changed, and the draft is still a draft.
+
+| Severity | Finding | Outcome | Reason |
+|---|---|---|---|
+| medium | "V1's model does not change during V2's sample" (section 10) and "inside the sample" (11.6) claim more than the freeze delivers | Applied | Confirmed in `docs/CARD_CALIBRATION_FREEZE_2026-09-15.md`: "This freeze covers only the card calibration (`a`, `b` above). It says nothing about `DISPERSION` or `RHO`". This file already recorded 15 commits to the model files in five days (11.2) and 12 to `src/report/card.py` since 2026-08-28, for a sample running to about August 2027, so the sentence asserted what a one-file freeze cannot deliver and 11.6's caveat fired only on a refit restart. Both sentences narrowed to the calibration file; V1 pinned by a `v1_code_fingerprint` on every shadow row, registered in section 16; 11.6's caveat now fires on any detected change that is not comment-only, docstring-only or customer-copy-only; build plan T3, T7 and T14 carry the field, the escalation and the check |
+| medium | C1, C12 and C5 promise three bets a day on days the rule allows fewer, and C13 was declared to replace C4 only | Applied | Confirmed against section 6's "Fewer than 3 entries" bullet and C13's own "At n = 0 the card shows this line and no entry". On a stale board that also offers fewer than three candidates, C5 would have promised three bets beside two entries. C1 and C12 now say three bets on a day when three clear the first checks; C5 says "to three, or to as many as the board offers"; C10 says how the shortfall is filled rather than how many entries a day has; section 6's floor bullet carries the same condition; C13 replaces C5's two fill sentences as well as C4. Every changed string was re-checked against `tests/test_customer_language.py`, `tests/test_no_nothing_clears_the_bar.py` and `tests/test_web_structure.py` (which imports the same three lists), with no violation |
+| medium | Question 1 and the diagnosis's 2026-09-10 row claim the floor "honours"/"keeps" the three-to-five directive, where the pre-amendment draft recorded a departure | Applied | Confirmed: the same documents say a board can offer fewer than three candidates past G1, G2, G4, G5 and G9, and that state is published as a count with no entry. Both now honour the directive on every board that offers three and name the one state that departs, with C13 |
+| medium | The card can list 13 bets (10 picks plus 3 fills) against the owner's "3-10 bets", and no document stated it | Applied | Confirmed: G12 counts picks only and section 6 keeps a fill when picks arrive later. No cap was imposed, because each way of holding the total at 10 changes what goes on the public record and that is the owner's call. The maximum and the departure are now stated in G12, section 6, question 1 and the diagnosis's 2026-09-15 row, for him to rule on before registration |
+
+The seven remaining items were read and left as they stand: the diagnosis
+states the fill rule in plainer words than the registration and is an
+abbreviation of it rather than a contradiction; the close-call counts, the
+G12 and section 6 wordings of the fill trigger, section 1.1's present tense,
+the freeze commit (now cited in section 10 and 16), the stale-price grading
+(disclosed and owner-accepted) and the surviving "default" fragments change no
+number and no rule.

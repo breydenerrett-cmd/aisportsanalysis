@@ -20,9 +20,10 @@ sealed 2026 without explicit instruction" and lists "anything touching sealed
 picks were built on, was fitted and evaluated on sealed-window games, starting
 2026-09-10:
 
-- **The card calibration** is refit every night by
+- **The card calibration** was refit every night by
   `scripts/fit_card_calibration.py` from `scripts/daily_loop.sh`, on every
-  completed 2026 game from 2026-04-15. Of the 1,901 rows it selects on this
+  completed 2026 game from 2026-04-15, until the owner stopped it on
+  2026-09-15. Of the 1,901 rows it selects on this
   machine's stores, 1,753 (92.2%) are dated 2026-04-15 to 08-27 and 148 are
   forward games from 2026-08-28, which the split says are "never folded back
   into tuning". Counted by date only, no outcome read
@@ -42,7 +43,8 @@ these: neither `docs/THE_CARD.md` nor `docs/PREREG_RUN_DISPERSION.md` mentions
 the seal. The research code refuses the window by name
 (`src/evolab/replay.py:124-126`); the card model's fit and backtest scripts
 have no guard. **As the repo words the rule, it has been broken since
-2026-09-10, and the nightly refit breaks it again every night.**
+2026-09-10, and the nightly refit broke it again every night until it was
+stopped on 2026-09-15.**
 
 **What it costs (interpretation, not a measurement).**
 
@@ -50,22 +52,43 @@ have no guard. **As the repo words the rule, it has been broken since
    its calibration or the prop model: their parameters were chosen on the
    window and the model was evaluated on it repeatedly. That covers V1 and any
    V2 that keeps these fits.
-2. V1's own forward record is of a model whose calibration changes every
+2. V1's own forward record through 2026-09-15 is of a model whose calibration
+   changed every
    night. `docs/VALIDATION_CRITERIA.md` says "Changing the model restarts the
-   sample", so no V1 closing-line or return verdict could be drawn from it as
-   V1 runs today.
+   sample", so no V1 closing-line or return verdict can be drawn from that
+   record. The freeze of 2026-09-15 stops the change from here on; it does not
+   repair the record behind it.
 3. It does not make V1's forward picks leak: each night's fit uses only games
    finished before that card (the script's docstring; `fitted_through` is
    always the day before). The breach is of the seal and of the
    forward-proof clause, not of point-in-time correctness.
 
-**Open decision, not made here.** Whether V1's nightly refit keeps reading the
-sealed window is Brey's to decide (roadmap hard stop 2), and it changes the
-live card, so this document changes nothing. The orchestrator should put it to
-him beside the V2 questions. The successor rule's decision on these fits, with
+**Decided by the owner on 2026-09-15, about 22:35Z.** Whether V1's nightly
+refit keeps reading the sealed window was Brey's to decide (roadmap hard stop
+2), and it changes the live card, so this document proposed nothing. It was put
+to him beside the V2 questions in plain words, with the options "Freeze it now
+(Recommended): lock today's model settings for the current card until the new
+card replaces it; picks barely change; the protected games stop being used" and
+"Keep refitting". **He answered "Freeze it now."** V1's nightly calibration
+refit is stopped and today's calibration settings, the file's `a` and `b`, are
+locked for the current card until V2
+replaces it; the implementation and its record are
+`docs/CARD_CALIBRATION_FREEZE_2026-09-15.md` (commit `ba09312c`), written
+separately, and no number
+in this document changes because of it. What the freeze does not do is undo the
+reads already made: the seal was used, and the consequences in the next
+paragraphs stand. What it also does not do is freeze the rest of V1: that
+record says in terms that it covers only `a` and `b` and says nothing about
+`DISPERSION` or `RHO`, and V1's selection code stays live and editable, so any
+later comparison against V1 is read against the `v1_code_fingerprint` of
+`docs/PREREG_CARD_V2.md` section 10 rather than assumed stable.
+
+The successor rule's decision on these fits, with
 its options, is `docs/PREREG_CARD_V2.md` section 1.2. Whether V2 may keep the
-two made only on sealed-window games, `DISPERSION` and `RHO`, is owner question
-3. V2 does not keep the card calibration under any answer, because its fit
+two made only on sealed-window games, `DISPERSION` and `RHO`, was owner
+question 3, answered no the same day ("Rebuild on 2025"): V2 keeps neither, and
+every number it uses is fitted once on 2025 and frozen. V2 does not keep the
+card calibration under any answer, because its fit
 also reads forward games, and the split reserves no go for that.
 
 **Evidence status of every other number here.** Everything computed from the
@@ -476,21 +499,33 @@ Applying the rule registered in `docs/PREREG_CARD_V2.md` to the already-seen
 file):
 
 - With the one-hour freshness gate: **0 picks**, because every price on file
-  was more than 2 hours old. The card would list 3 close calls with their
-  price ages: Angels +1.5, Twins +1.5 and Matt Olson under 1.5 total bases.
+  was more than 2 hours old. Under the owner's answer of 2026-09-15 ("Always
+  show 3") the card would fill to three with the closest calls, each labelled
+  as not a pick and each graded on the record: Angels +1.5 at -114, Twins +1.5
+  at -112 and Matt Olson under 1.5 total bases at -157, all three failing only
+  the freshness check (Olson also the lineup check), all three at prices over
+  two hours old.
 - With freshness set aside: **2 picks**, Twins +1.5 at -112 (market 51.3%,
   needs 52.8%, ours 54.1%) and Angels +1.5 at -114 (market 52.0%, needs 53.3%,
   ours 61.3%), in the default longest-price-first order. Both are close to a
   coin flip by the market's number, both rest on our own number sitting above
   the market's by more than the vig, and V1 could not have selected either.
-  The close calls would be three pre-lineup props on 15 games of history.
+  The third entry would be one fill, Matt Olson under 1.5 total bases at -157,
+  a pre-lineup prop on 15 games of history; Harris and Alonso would not be
+  shown. With game prices fresh and prop prices stale, the state the capture
+  schedule produces for most of the day, the fill is Cubs to win at -135
+  instead, and no prop is shown.
 - These numbers come from the model as it stands, with its sealed-window fits
-  and raw run-line numbers; the registered default model would differ.
+  and raw run-line numbers; the registered model, fitted once on 2025 by the
+  owner's answer to question 3, would differ.
 
 That is the honest shape of the answer to the owner: inside his price range,
 "high confidence" by the market's number and "the price pays enough" by any
 measured number do not currently coincide. A card that obeys both will be
 thin, will lean on our unproven number for every "Take", and has to say so.
+The owner has chosen to keep three entries a day anyway, with the shortfall
+made up by bets the rule itself calls not picks, published, labelled and graded
+apart (`docs/PREREG_CARD_V2.md` sections 6 and 15, question 1).
 
 ### 5.4 The calendar
 
@@ -500,9 +535,11 @@ verdict below 300 graded picks. At about 2 counted game picks a day the read
 falls around August 2027 with no model restart, and not in 2027 at 1 a day. A
 restart is likely: the model's files changed in 15 commits between 2026-09-10
 and 09-14, and the prop board hard-codes the 2026 box-score store. Before any
-of that, the registration's default model needs a 2025 data backfill and a
-one-time 2025 fit (section 0; `docs/PREREG_CARD_V2.md` 11.2), so no V2 pick is
-counted until that work is done. The
+of that, the registered model needs a 2025 data backfill and a
+one-time 2025 fit, which the owner chose on 2026-09-15 ("Rebuild on 2025";
+section 0, `docs/PREREG_CARD_V2.md` 11.2), so no V2 pick is
+counted until that work is done. The fills the floor of 3 publishes are graded
+but never counted, so they do not bring the read any closer. The
 registration therefore adds a one-way harm check at 100 counted picks that can
 remove "Take", and a stop date at the end of the 2027 postseason
 (`docs/PREREG_CARD_V2.md` 11.4).
@@ -513,7 +550,7 @@ remove "Take", and a stop date at the end of the 2027 postseason
 
 | Date | Directive (quoted) | V1 today | Card V2 |
 |---|---|---|---|
-| 2026-09-10 | "the page may never again tell a paying reader that nothing cleared the bar"; "There have to be three to five bets every day" (`daily_card.py:6-14`, `tests/test_no_nothing_clears_the_bar.py:1-8`) | Met by filling to 3 from SPLIT picks regardless of price | **Changes, pending owner answer.** No floor; fewer than 3 picks shown as a count with the closest calls beneath, never called picks. The banned phrases stay banned. |
+| 2026-09-10 | "the page may never again tell a paying reader that nothing cleared the bar"; "There have to be three to five bets every day" (`daily_card.py:6-14`, `tests/test_no_nothing_clears_the_bar.py:1-8`) | Met by filling to 3 from SPLIT picks regardless of price | **Kept on every board that offers three candidates, answered 2026-09-15 ("Always show 3"); departs on the boards that do not.** The floor of 3 stays, but nothing is filled from the SPLIT pile and no gate is relaxed: the shortfall is filled with the closest calls, which stay inside the -160 band and the market's 50%, are labelled on their face as not picks with the check each failed, and are graded on the record apart from the picks. Where the board itself offers fewer than three candidates past G1, G2, G4, G5 and G9, the card lists fewer, down to none, and says why (`docs/PREREG_CARD_V2.md` section 6, copy C13); on those days the directive is not met, and the registration says so in question 1 rather than reaching three by relaxing a gate. The banned phrases stay banned. |
 | 2026-09-10 | "if the game is Nationals-Padres there needs to be a bet, and it needs to say take the Padres" (`daily_card.py:7-9`) | "Take" on every pick | **Narrows.** "Take" only on a pick that passed every check and whose price our number clears. |
 | 2026-09-10 | Line-shopping copy: "that has to stop. None of that's important. Nobody fucking cares." (`daily_card.py:357-364`) | Removed as a reason, still printed as "best of N books" at `web/js/card.js:146`, `:269`, `:378` | **Completes it.** "Best of N books" is removed; the book name stays so a reader knows where the price is. |
 | 2026-09-11 | "none of that price matters until we know it's a MORE THAN LIKELY BET, once we have the almost guaranteed bets, then we find the best sports picks of those with the best value, not the other way around"; "move completely away from price checking multiple books" | Likely first (market), price never checked on moneylines | **Keeps the filter order; the sort is an owner question.** Market likelihood first, then the price is checked against our number. The directive then sorts survivors by price; V2's default lists the longest price first, and question 8 asks Brey to confirm that rather than most-likely-first, which puts the shortest prices at the top. No cross-book comparison gates or ranks anything. |
@@ -521,12 +558,16 @@ remove "Take", and a stop date at the end of the 2027 postseason
 | 2026-09-11 | "the value just isn't there still" (-205, ours 51%, market 65%) | Break-even printed, not used | **Turns the disclosure into a gate.** |
 | 2026-09-12 | Knowledge grades A/B/C | C chip on the card face | Grade stays in the breakdown (per `docs/DESIGN_SYSTEM.md`); props need a posted lineup to be picks. |
 | 2026-09-14 | "merge the today bets for ALL BETS ... like run lines and the niche bets" | Run line only an alternative; totals paused | **Extends it.** Run lines, both sides, become selectable. Totals stay paused. |
-| 2026-09-14 | Props analysis "needs to be ran pre emptively before any games" (`daily_card.py:1245-1249`) | Pre-lineup props can be picks at 15 games | **Changes, pending owner answer.** Analysis still runs early, but before its lineup posts a prop can appear only as one of at most 3 close calls a day, and usually will not: its only pre-lineup price is the capture 5 to 7 hours before first pitch, so for most of the day it fails two tests (price older than an hour, lineup not posted) and close calls failing one test rank first (`docs/PREREG_CARD_V2.md` sections 6 and 8). A prop becomes a pick only from a price checked after its lineup posts, in practice the last 2 hours before first pitch. The 15-game history floor stays. |
-| 2026-09-15 | "the 3-10 bets for the day are the best of the best ... wouldn't be any lower than -150 or -160"; "high-confidence ... and the value is great" | No band, 8 of 8 STRONG favourites | **Implements the worst price (-160, with -150 run in shadow) and the ceiling of 10.** "+100, or higher" is not reachable in practice: a pick needs the market above 50%, so it is almost always priced shorter than even money; whether a market underdog may be a pick is question 5. The floor of 3 and "high confidence" cannot both be honoured on thin days; both go to the owner as questions. |
+| 2026-09-14 | Props analysis "needs to be ran pre emptively before any games" (`daily_card.py:1245-1249`) | Pre-lineup props can be picks at 15 games | **Changes, pending owner answer.** Analysis still runs early, but before its lineup posts a prop can appear only as a fill, on a day with fewer than 3 picks, and usually will not: its only pre-lineup price is the capture 5 to 7 hours before first pitch, so for most of the day it fails two tests (price older than an hour, lineup not posted) and close calls failing one test rank first (`docs/PREREG_CARD_V2.md` sections 6 and 8). A prop becomes a pick only from a price checked after its lineup posts, in practice the last 2 hours before first pitch. The 15-game history floor stays. |
+| 2026-09-15 | "the 3-10 bets for the day are the best of the best ... wouldn't be any lower than -150 or -160"; "high-confidence ... and the value is great" | No band, 8 of 8 STRONG favourites | **Implements the worst price and the ceiling of 10, and keeps the floor of 3.** -160 confirmed by him on 2026-09-15 against -150, which keeps running in shadow. "+100, or higher" is not reachable in practice: a pick needs the market above 50%, so it is almost always priced shorter than even money; whether a market underdog may be a pick is question 5. The floor of 3 and "high confidence" cannot both be honoured on thin days, and he chose the floor ("Always show 3"): the card fills to three with labelled close calls that are not picks, inside the same price band and the same 50% test, graded apart. **The maximum departs from "3-10 bets".** The ceiling of 10 counts picks only, and a fill once shown is not removed when picks arrive later, so a date that begins thin can list 13 bets at once, 10 picks and 3 fills, every one of them graded. That is more than the 10 he named; it follows from his "Always show 3" answer and was not in front of him when he gave it, so `docs/PREREG_CARD_V2.md` states it in G12, section 6 and question 1 for him to rule on before registration. |
 | 2026-09-15 | "make a live bet system ... MLB, as well as the NFL and tennis" | None on the customer surface | Out of scope here; R16-35, `docs/LIVE_BETTING_SYSTEM.md`. |
 
-The owner questions are listed, each as one yes or no with the default the
-build uses, in `docs/PREREG_CARD_V2.md` section 15.
+The owner questions are listed in `docs/PREREG_CARD_V2.md` section 15: the
+answered ones with his words and the date, the open ones each as one yes or no
+with the default the build uses. Answered on 2026-09-15 at about 22:35Z:
+question 1 ("Always show 3"), question 3 ("Rebuild on 2025") and question 4
+("-160"), plus the V1 refit decision here in section 0 ("Freeze it now"). Open:
+questions 2, 5, 6, 7 and 8.
 
 ---
 
@@ -554,7 +595,12 @@ Scratch scripts, all read-only against the repo, under
 `fit_window_counts.py` (the fit-window row counts in section 0, dates only) and
 `verify_pool.py` (an independent re-screen of the pool for section 5.3). An
 adversarial review of all three documents, applied the same day, is recorded
-at the end of each.
+at the end of each. The owner's answers of the same evening added, under
+`C:\Users\KC\AppData\Local\Temp\claude\C--Users-KC-Desktop\77c3095f-39f1-44e0-ade4-190cec7dca26\scratchpad\owner_answers\`:
+`fill_illustration.py` (section 5.3 re-run with the floor of 3 and its fills,
+built on `verify_pool.py` and changing nothing else) and
+`consistency_check.py` (the band, floors, fill rule, rule id and copy strings
+compared across the three documents).
 
 ---
 
@@ -588,3 +634,33 @@ touch this file; both were re-checked and applied, and none was rejected.
 |---|---|---|---|
 | medium | Section 6's 2026-09-14 row said pre-lineup props "show as close calls with their price age all day", more than the rule allows: only 3 close calls show and one-test game close calls rank first | Applied | Confirmed EXPLORATORY on the design board with game prices fresh and prop prices stale (none of 19 props among the 3; `scratchpad/card_v2_revise/close_calls_props_stale.py`). The row now says a pre-lineup prop appears at most as one of the 3 and usually not, as the registration's sections 6 and 8 do |
 | high (from the registration) | Keeping the nightly calibration under question 3 would fold forward games into V2's fit | Applied | Section 0's open decision now says question 3 covers only `DISPERSION` and `RHO`, and V2 does not keep the card calibration under any answer |
+
+### Owner answers of 2026-09-15, applied to this file
+
+Brey answered four questions in chat at about 22:35Z. Three of them are
+recorded in `docs/PREREG_CARD_V2.md` sections 15 and 16; the fourth is the V1
+decision this file raised. Changes here, and nothing else:
+
+| Answer | Applied where |
+|---|---|
+| The V1 refit, "Freeze it now" | Section 0: the observed-fact bullet and the headline sentence say the nightly refit ran until 2026-09-15; the open decision becomes the answer, with the options as they were put to him and the record `docs/CARD_CALIBRATION_FREEZE_2026-09-15.md`; consequence 2 now separates the record behind the freeze from the state after it. The freeze does not undo the reads already made, and no number in this file changes |
+| Question 1, "Always show 3" | Section 5.3 re-run with the floor and its fills; section 6's 2026-09-10, 2026-09-14 and 2026-09-15 rows; section 5.4 (fills are graded and never counted); section 7's script list |
+| Question 3, "Rebuild on 2025" | Section 0's closing paragraph and section 5.4: V2 keeps neither sealed-window fit |
+| Question 4, "-160" | Section 6's 2026-09-15 row; no number changes |
+
+Evidence status is unchanged: the re-run of 5.3 is an illustration on
+already-seen data, by
+`scratchpad/owner_answers/fill_illustration.py`, and is not evidence for or
+against any rule.
+
+### Verification pass on the amendment (2026-09-16)
+
+An independent verifier re-read the amended documents. Three of the four
+problems it filed with substance touch this file; each was re-checked before it
+was applied and none was rejected. No number in this file changed.
+
+| Severity | Finding | Outcome | Reason |
+|---|---|---|---|
+| medium | Section 6's 2026-09-10 row recorded the directive as "Kept", where the pre-amendment draft recorded a departure, although a board can offer fewer than three candidates and that state is published as a count with no entry | Applied | Confirmed against `docs/PREREG_CARD_V2.md` section 6 and copy C13. The row now says kept on every board that offers three candidates and names the one state that departs |
+| medium | Section 6's 2026-09-15 row said only that the ceiling of 10 is implemented, where the answered floor lets the card list 13 bets at once | Applied | Confirmed: the ceiling counts picks only and a shown fill is not removed when picks arrive later. The row now states the maximum and the departure from "3-10 bets", and points at the registration's G12, section 6 and question 1, where the owner rules on it before registration |
+| medium | Section 0 said the freeze locks "today's settings", broader than the freeze record, which covers only `a` and `b` | Applied | Confirmed in `docs/CARD_CALIBRATION_FREEZE_2026-09-15.md`. Section 0 now names `a` and `b`, cites the freeze commit, and says the rest of V1 stays live, so a later comparison reads V1 against the `v1_code_fingerprint` of the registration's section 10 |
