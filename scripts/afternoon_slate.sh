@@ -41,8 +41,70 @@ cd "$(dirname "$0")/.."
 [ -f "$(dirname "$0")/foundry_beat.sh" ] && . "$(dirname "$0")/foundry_beat.sh" || true
 type foundry_beat >/dev/null 2>&1 && foundry_beat afternoon_slate start ok || true
 
-TODAY=$(date -u +%Y-%m-%d)
+# THE SLATE DATE -- same mechanism scripts/capture_slot.sh uses (its own
+# SLATE_DATE line), and the ONLY reason this script exists to fix (see the
+# header on afternoon-slate's UTC/Eastern mismatch below). A baseball day is
+# keyed to the AMERICA/NEW_YORK calendar everywhere captures are stored
+# (scripts/capture_slot.sh's SLATE_DATE, src/engine/glue.py's L1 store), so
+# asking `date -u` here was asking a question the capture side never answers
+# -- between 00:00Z and ~04:00Z (8pm-midnight Eastern) the UTC calendar date
+# has already rolled over while that Eastern day's captures are still being
+# written. `date -u` MUST NOT be reintroduced here.
+TODAY=$(TZ=America/New_York date +%Y-%m-%d)
 RUN_NOTE=docs/OVERNIGHT_RUN.md
+
+# THE TOO-EARLY GUARD (2026-09-16, docs/OVERNIGHT_RUN.md incident: runs
+# 35038866058 through 35048887109, every one between 00:10Z and 02:40Z,
+# ESCALATEd because the script asked `engine slate` about an Eastern date
+# whose captures had not started yet -- not a real miss, just too early to
+# have data, and src/engine/preflight.py was correctly refusing on zero
+# capture. That guard must stay exactly as strict; the fix belongs here, in
+# deciding whether to even ask yet.
+#
+# THE RULE: skip with an INFO line (exit 0, no slate/card/slip, no
+# escalation) ONLY when BOTH hold: (a) src/engine/glue.games_captured_on
+# reports zero L1 rows for this Eastern date -- the exact same signal
+# src/engine/preflight.py's guard uses, so this can never disagree with it
+# about what "no capture" means -- AND (b) the MLB schedule's earliest
+# start_utc for this date has not arrived yet, i.e. there was never a
+# capture window open to miss. If the schedule can't be read, or there ARE
+# games and first pitch has passed, or captures exist but are stale, this
+# falls through to the unchanged ESCALATE path below: a schedule read
+# failure must not manufacture a false "too early" excuse for a genuine miss.
+TOO_EARLY_OUT=$(python3 -c "
+import datetime as dt
+from src.engine import glue
+from src.sports import mlb
+
+date_str = '$TODAY'
+now = dt.datetime.now(dt.timezone.utc)
+
+captured = glue.games_captured_on(date_str)
+if captured:
+    print('PROCEED has-captures')
+else:
+    try:
+        games = mlb._schedule(date_str)
+    except Exception as exc:
+        print(f'PROCEED schedule-unreadable: {exc}')
+    else:
+        starts = [g['start_utc'] for g in games if g.get('start_utc')]
+        if not starts:
+            print('PROCEED no-games-scheduled')
+        else:
+            first_pitch = min(starts)
+            fp = dt.datetime.fromisoformat(first_pitch.replace('Z', '+00:00'))
+            if now < fp:
+                print(f'TOO_EARLY first pitch {first_pitch} has not arrived (now {now.isoformat()})')
+            else:
+                print(f'PROCEED first pitch {first_pitch} has passed with zero captures')
+" 2>&1)
+if [ "${TOO_EARLY_OUT%% *}" = "TOO_EARLY" ]; then
+    echo "INFO: skipping afternoon slate for $TODAY -- ${TOO_EARLY_OUT#TOO_EARLY }; nothing to slate yet, not a miss"
+    echo "- $(date -u +%Y-%m-%dT%H:%MZ) afternoon_slate: skipped $TODAY (too early, no capture window open yet)" >> "$RUN_NOTE"
+    type foundry_beat >/dev/null 2>&1 && foundry_beat afternoon_slate done ok || true
+    exit 0
+fi
 
 echo "== engine slate (afternoon pass, $TODAY) =="
 SLATE_OUT=$(python3 -m src.cli engine slate --date "$TODAY" 2>&1)

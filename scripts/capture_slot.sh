@@ -485,6 +485,17 @@ except Exception as exc:
 " 2>&1) || LINEUP_OUT="(lineup top-up raised)"
 echo "$LINEUP_OUT" | sed 's/^/  /'
 
+# THE SLATE DATE, defined before its first use. A baseball day is keyed to
+# the AMERICA/NEW_YORK calendar everywhere captures are stored, so from 00:00Z
+# (5pm PT) the UTC calendar has already moved on while that night's West Coast
+# games are still to come. This used to be computed further down, after the
+# lineup-cadence block below had already called `engine slate` and `engine
+# slip` with `date -u`, which is the same defect that made afternoon-slate
+# refuse and fail every night between 00:10Z and 02:40Z on 2026-09-16
+# (scripts/afternoon_slate.sh carries the incident note). `date -u` must not
+# be reintroduced for a slate date anywhere in this file.
+SLATE_DATE=$(TZ=America/New_York date +%Y-%m-%d)
+
 echo "== lineup cadence gate =="
 GATE_OUT=$(python3 -c "
 from src.pipeline import lineup_store
@@ -497,7 +508,7 @@ except Exception as exc:
 echo "  $GATE_OUT"
 if [ "${GATE_OUT%% *}" = "RUN" ]; then
     echo "== engine slate (lineup cadence) =="
-    python3 -m src.cli engine slate --date "$(date -u +%Y-%m-%d)" 2>&1 \
+    python3 -m src.cli engine slate --date "$SLATE_DATE" 2>&1 \
         | sed 's/^/  /' || echo "  (slate pass failed; scheduled passes unaffected)"
     # engine slip RANKS what engine slate just froze -- see src/engine/slip.py.
     # Without this call nothing ever appends to evidence/slips_v1.jsonl, which
@@ -508,7 +519,7 @@ if [ "${GATE_OUT%% *}" = "RUN" ]; then
     # here costs one ranking, never the frozen decisions or staked wagers
     # engine slate already committed.
     echo "== engine slip (lineup cadence) =="
-    python3 -m src.cli engine slip --date "$(date -u +%Y-%m-%d)" 2>&1 \
+    python3 -m src.cli engine slip --date "$SLATE_DATE" 2>&1 \
         | sed 's/^/  /' || echo "  (slip pass failed; decisions already frozen are unaffected)"
 fi
 
@@ -521,9 +532,8 @@ fi
 # inside its lock window locks on the spot, and a run that changes nothing
 # appends nothing (src/appstate/card_ledger.publish). No odds-API spend -- it
 # reads what the passes above just bought. Never fails the slot.
-# The SLATE date, not the UTC date: from 00:00Z (5 PM PT) the UTC calendar has
-# already moved on while that night's West Coast games are still to come.
-SLATE_DATE=$(TZ=America/New_York date +%Y-%m-%d)
+# The SLATE date is computed once, above the lineup-cadence block, so every
+# command in this file asks about the same baseball day.
 # The odds-event -> game_pk map the card joins player props through
 # (src/report/card.py). It was built only by daily_loop.sh at 10:00Z, and that
 # loop failed 09-12 and 09-13 and was cancelled 09-14: the map held no event
