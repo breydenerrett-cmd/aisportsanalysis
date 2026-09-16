@@ -44,7 +44,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
-from src.paths import processed_path, repo_root
+from src.paths import data_path, processed_path, repo_root
 from src.pipeline import creditlog
 
 LOG = logging.getLogger(__name__)
@@ -99,6 +99,17 @@ LIVE_ODDS_DAILY_CAP = 300
 
 CREDIT_LOG_PATH = creditlog.DEFAULT_STORE
 FAMILIES_CONFIG_PATH = repo_root() / "config" / "capture_families.json"
+
+# R16-L4 (D7): the live window writes its own credit rows here, never to
+# CREDIT_LOG_PATH, so the two runners (the forward-capture chain and the
+# live window) never write the same file at once. `_rows()` below merges
+# the two logs by timestamp at READ time -- an application-level merge, not
+# a git union-merge driver (explicitly rejected in docs/LIVE_BETTING_SYSTEM.md
+# section 6, R16-L4: a union driver can reorder lines and break the delta
+# arithmetic `spent_today()` depends on; sorting the two already-chronological
+# files by `utc` after reading them cannot reorder either file's own rows
+# relative to each other, only interleave the two streams).
+LIVE_CREDIT_LOG_PATH = data_path("live", "credit_log_live.jsonl")
 
 # Environment variable to enable/disable live odds capture. The feature is OFF
 # by default -- live odds capture is only active when this env var is set to
@@ -275,7 +286,22 @@ def days_until_reset(now=None) -> int:
 # ---------------------------------------------------------------------------
 
 def _rows(store=None) -> list:
-    return creditlog.read(store if store is not None else CREDIT_LOG_PATH)
+    """Every credit-log row, chronological.
+
+    An explicit `store` (every test in this repo passes one) reads exactly
+    that file, unchanged from before R16-L4. The default (no `store`, used
+    by the real CLI and the real budget checks) reads BOTH real logs --
+    `CREDIT_LOG_PATH` (the forward-capture chain) and `LIVE_CREDIT_LOG_PATH`
+    (the live window, R16-L4) -- and merges them by `utc` so a caller that
+    does not pass a store never has to know there are two files. This is a
+    read-time merge only; neither file on disk is ever rewritten or
+    reordered by it.
+    """
+    if store is not None:
+        return creditlog.read(store)
+    merged = creditlog.read(CREDIT_LOG_PATH) + creditlog.read(LIVE_CREDIT_LOG_PATH)
+    merged.sort(key=lambda row: row.get("utc") or "")
+    return merged
 
 
 def _row_date(row) -> Optional[str]:
@@ -332,20 +358,63 @@ def spent_today(now=None, store=None, band=None) -> int:
     `test_an_unlogged_historical_spend_is_still_excluded_via_the_envelope_ceiling`).
     `None` (the default) keeps the old whole-day-regardless-of-band total,
     which `status()` still reports so historical/probe spend stays visible.
+
+    R16-L3 (D6): `LIVE_ODDS` is the one exception to all of the above. Two
+    runners (the forward-capture chain and the live window) can each spend
+    credits between one moment and the next, so a balance-delta attributed
+    to "whichever row observed the drop" bills a live_odds capture's real
+    cost to the pre-game envelope (or vice versa) whenever the chain's own
+    checkpoint happens to be the next row logged. `live_odds.capture_inplay`
+    now logs each call's OWN cost, read from that call's own response
+    headers (`x-requests-last`), on `credits_used_last` -- so the live_odds
+    total below is a direct sum of what each call actually billed, never a
+    balance delta, and a `band=LIVE_ODDS` request returns it immediately.
+
+    For every OTHER band, a delta that spans one or more live_odds rows (the
+    two runners interleaved in the merged log) has those calls' own logged
+    cost subtracted before the remainder is classified -- so the same
+    in-play spend is never ALSO counted against `LIVE_CAPTURE`'s envelope
+    just because a live_odds row happened to land between two pre-game
+    checkpoints.
     """
     today = _row_date({"utc": _utc_iso(_now(now))})
     todays_rows = [r for r in _rows(store) if _row_date(r) == today]
+
+    live_odds_total = sum(
+        (r.get("credits_used_last") or 0)
+        for r in todays_rows if row_band(r) == LIVE_ODDS
+    )
+    if band == LIVE_ODDS:
+        return live_odds_total
+
     known = [r for r in todays_rows if r.get("credits_remaining") is not None]
-    total = 0
+    other_total = 0
     for prev, cur in zip(known, known[1:]):
         prev_remaining, cur_remaining = prev["credits_remaining"], cur["credits_remaining"]
-        if cur_remaining < prev_remaining:
-            delta = prev_remaining - cur_remaining
-            if band is None or _delta_band(cur, delta) == band:
-                total += delta
-        # cur >= prev: a reset (or a free, unmetered read) between the two
-        # readings. Contributes nothing to today's spend either way.
-    return total
+        if cur_remaining >= prev_remaining:
+            # A reset (or a free, unmetered read) between the two readings.
+            # Contributes nothing to today's spend either way.
+            continue
+        delta = prev_remaining - cur_remaining
+        cur_band = _delta_band(cur, delta)
+        if cur_band == LIVE_ODDS:
+            # This delta IS a live_odds checkpoint's own drop -- already
+            # counted once in live_odds_total above via its own
+            # credits_used_last; counting it again here would double it.
+            continue
+        prev_utc, cur_utc = prev.get("utc") or "", cur.get("utc") or ""
+        live_odds_inside = sum(
+            (r.get("credits_used_last") or 0)
+            for r in todays_rows
+            if row_band(r) == LIVE_ODDS
+            and prev_utc < (r.get("utc") or "") < cur_utc
+        )
+        delta = max(delta - live_odds_inside, 0)
+        if band is None or cur_band == band:
+            other_total += delta
+    if band is None:
+        return other_total + live_odds_total
+    return other_total
 
 
 def capture_spent_today(now=None, store=None) -> int:

@@ -330,6 +330,97 @@ class TestCaptureInplay(unittest.TestCase):
         finally:
             Path(tmp_path).unlink(missing_ok=True)
 
+    def test_capture_bills_from_response_usage_headers(self):
+        """R16-L3/D6: the credit row bills THIS call's own x-requests-last,
+        read off the response's 'usage' dict, not a market-count estimate."""
+        credit_log_calls = []
+
+        def fake_record_credit(remaining, used_last, caller, **kwargs):
+            credit_log_calls.append({"remaining": remaining, "used_last": used_last})
+
+        event = {
+            "event_id": "e1",
+            "commence_time": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "home_team": "A",
+            "away_team": "B",
+            "all_books": {"h2h": []},
+        }
+
+        def fake_fetch(**kwargs):
+            return {
+                "fetched_utc": datetime.now(timezone.utc).isoformat(),
+                "events": [event],
+                # Real x-requests-last / x-requests-remaining, as
+                # src.providers.odds._get_json_with_usage surfaces them.
+                "usage": {"last": 3, "remaining": 12345},
+            }
+
+        spend_guard = Decision(allowed=True, reason="ok")
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False) as tmp:
+            tmp_path = tmp.name
+
+        try:
+            result = live_odds.capture_inplay(
+                "mlb",
+                state_snapshot_id="snap123",
+                reason="score",
+                spend_guard=spend_guard,
+                fetch_normalized=fake_fetch,
+                record_credit=fake_record_credit,
+                path=tmp_path,
+            )
+
+            self.assertEqual(result["credits"], 3)
+            self.assertEqual(len(credit_log_calls), 1)
+            self.assertEqual(credit_log_calls[0]["used_last"], 3)
+            self.assertEqual(credit_log_calls[0]["remaining"], 12345)
+        finally:
+            Path(tmp_path).unlink(missing_ok=True)
+
+    def test_capture_writes_credit_row_to_live_credit_log_by_default(self):
+        """R16-L4/D7: capture_inplay's default credit_store is the live-only
+        log, never data/processed/credit_log.jsonl, so it never collides
+        with the forward-capture chain's own writes to that file."""
+        self.assertEqual(
+            live_odds.DEFAULT_CREDIT_LOG_PATH.name, "credit_log_live.jsonl")
+        self.assertIn("live", str(live_odds.DEFAULT_CREDIT_LOG_PATH))
+
+    def test_capture_falls_back_to_market_estimate_without_usage(self):
+        """A fetch that does not surface 'usage' (an older test double, or a
+        caller not yet updated) still bills a non-None, non-zero estimate
+        rather than leaving the row unbillable."""
+        event = {
+            "event_id": "e1",
+            "commence_time": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "home_team": "A",
+            "away_team": "B",
+            "all_books": {"h2h": []},
+        }
+
+        def fake_fetch(**kwargs):
+            return {"fetched_utc": datetime.now(timezone.utc).isoformat(),
+                    "events": [event]}
+
+        spend_guard = Decision(allowed=True, reason="ok")
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False) as tmp:
+            tmp_path = tmp.name
+
+        try:
+            result = live_odds.capture_inplay(
+                "mlb",
+                state_snapshot_id="snap123",
+                reason="score",
+                spend_guard=spend_guard,
+                fetch_normalized=fake_fetch,
+                record_credit=lambda *a, **k: None,
+                path=tmp_path,
+            )
+            self.assertEqual(result["credits"], 1)  # len(DEFAULT_MARKETS)
+        finally:
+            Path(tmp_path).unlink(missing_ok=True)
+
 
 class TestReadInplay(unittest.TestCase):
     """Test reading stored in-play odds."""

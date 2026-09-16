@@ -752,8 +752,14 @@ def main(argv):
         if not _git("config", "--get", "user.email").stdout.strip():
             _git("config", "user.name", "live-window-bot")
             _git("config", "user.email", "actions@users.noreply.github.com")
-        _git("add", "data/live", "evidence/live_candidates_v1.jsonl",
-             "data/processed/credit_log.jsonl")
+        # R16-L4 (D7): stage only data/live (which now holds this window's
+        # own credit_log_live.jsonl, see live_odds.DEFAULT_CREDIT_LOG_PATH)
+        # and the live ledger. NEVER data/processed/credit_log.jsonl -- the
+        # forward-capture chain commits and pushes that file on its own
+        # ~13-minute cadence, and staging it here is exactly the two-writer
+        # conflict D7 describes (both runners racing `pull --rebase` on the
+        # same path).
+        _git("add", "data/live", "evidence/live_candidates_v1.jsonl")
         if _git("diff", "--cached", "--quiet").returncode == 0:
             return True  # nothing new since the last commit
         stamp = datetime.now(timezone.utc).strftime("%H:%MZ")

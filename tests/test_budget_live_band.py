@@ -226,6 +226,141 @@ class LiveOddsBandTests(unittest.TestCase):
         self.assertEqual(st["live_odds"]["remaining_in_cap"], 100)
 
 
+class PerCallBillingTests(unittest.TestCase):
+    """R16-L3/D6: live_odds spend is the SUM of each call's own logged
+    credits_used_last, never a delta of the remaining balance -- because two
+    runners (the forward-capture chain and the live window) interleave
+    writes to the credit log, and a delta bills whichever band's row
+    happened to land next."""
+
+    def test_a_day_of_percall_captures_sums_to_the_cap_correctly(self):
+        """40 one-credit in-play captures, each logging its own
+        credits_used_last=1 with budget_band=live_odds, sum to exactly 40 --
+        even though ANOTHER writer (the forward-capture chain) appends its
+        own balance-checkpoint rows in between, at credits_remaining values
+        that would make a delta-based read attribute those drops to the
+        wrong band or the wrong size."""
+        with tempfile.TemporaryDirectory() as folder:
+            store = Path(folder) / "credit_log.jsonl"
+            remaining = 50000
+            for i in range(40):
+                # The chain's own checkpoint: a balance read with no usage
+                # of its own (credits_used_last=0), the shape D6 describes
+                # 164 of 165 real rows taking (2.2 in the doc).
+                creditlog.log(remaining, 0, "dense.run", store=store,
+                             now=NOW + dt.timedelta(seconds=i * 90),
+                             budget_band=budget.LIVE_CAPTURE)
+                # One in-play capture: bills exactly 1 credit of its own.
+                remaining -= 1
+                creditlog.log(remaining, 1, "live_odds.capture_inplay",
+                             store=store,
+                             now=NOW + dt.timedelta(seconds=i * 90 + 30),
+                             budget_band=budget.LIVE_ODDS)
+            live_odds_spent = budget.spent_today(
+                now=NOW, store=store, band=budget.LIVE_ODDS)
+        self.assertEqual(live_odds_spent, 40)
+
+    def test_interleaved_writer_does_not_inflate_or_hide_live_odds_spend(self):
+        """A same-day historical/capture writer logging a LARGE balance
+        checkpoint right after an in-play capture must not swallow that
+        capture's cost into its own band, and must not zero out live_odds's
+        own total either (the exact D6 failure mode: 40 in-play captures
+        between two capture-band checkpoints read as live_odds spent 0,
+        live_capture spent 43)."""
+        with tempfile.TemporaryDirectory() as folder:
+            store = Path(folder) / "credit_log.jsonl"
+            creditlog.log(50000, 0, "dense.run", store=store, now=NOW,
+                         budget_band=budget.LIVE_CAPTURE)
+            for i in range(3):
+                creditlog.log(49999 - i, 1, "live_odds.capture_inplay",
+                             store=store,
+                             now=NOW + dt.timedelta(minutes=i + 1),
+                             budget_band=budget.LIVE_ODDS)
+            # The chain's next checkpoint lands AFTER all three captures.
+            creditlog.log(49990, 0, "dense.run", store=store,
+                         now=NOW + dt.timedelta(minutes=10),
+                         budget_band=budget.LIVE_CAPTURE)
+            live_odds_spent = budget.spent_today(
+                now=NOW, store=store, band=budget.LIVE_ODDS)
+            capture_spent = budget.capture_spent_today(now=NOW, store=store)
+        # live_odds: 3 real captures at 1 credit each.
+        self.assertEqual(live_odds_spent, 3)
+        # capture: 50000 -> 49990 is a 10-credit drop, of which 3 credits
+        # were the in-play captures' own logged cost; only the remaining 7
+        # belong to live_capture.
+        self.assertEqual(capture_spent, 7)
+
+    def test_can_spend_live_odds_cap_is_the_percall_sum_not_a_delta(self):
+        """Interleaving a capture-band checkpoint between two live_odds
+        rows must not change what can_spend_live_odds sees as spent today."""
+        with tempfile.TemporaryDirectory() as folder:
+            store = Path(folder) / "credit_log.jsonl"
+            creditlog.log(50000, 1, "live_odds.capture_inplay", store=store,
+                         now=NOW, budget_band=budget.LIVE_ODDS)
+            # An interleaved capture-band checkpoint that drops the balance
+            # a lot, logged by a different runner in between.
+            creditlog.log(49500, 0, "dense.run", store=store,
+                         now=NOW + dt.timedelta(minutes=1),
+                         budget_band=budget.LIVE_CAPTURE)
+            creditlog.log(49499, 1, "live_odds.capture_inplay", store=store,
+                         now=NOW + dt.timedelta(minutes=2),
+                         budget_band=budget.LIVE_ODDS)
+            decision = budget.can_spend_live_odds(
+                1, env={"LIVE_ODDS": "1"}, now=NOW, store=store,
+                remaining=49499)
+        # 2 real live_odds credits spent (not 500-ish from a delta reading
+        # the interleaved capture-band drop as its own).
+        self.assertTrue(decision.allowed)
+        self.assertIn("2+1", decision.reason)
+
+
+class MergedCreditLogTests(unittest.TestCase):
+    """R16-L4/D7: budget reads the forward-capture chain's
+    data/processed/credit_log.jsonl and the live window's
+    data/live/credit_log_live.jsonl merged by timestamp, with neither file
+    rewritten or reordered on disk -- an explicit rejection of a git
+    union-merge driver, which can reorder lines and break this arithmetic."""
+
+    def test_rows_merges_both_logs_in_time_order_when_no_store_given(self):
+        with tempfile.TemporaryDirectory() as folder:
+            chain_path = Path(folder) / "chain.jsonl"
+            live_path = Path(folder) / "live.jsonl"
+            creditlog.log(50000, 0, "dense.run", store=chain_path, now=NOW,
+                         budget_band=budget.LIVE_CAPTURE)
+            creditlog.log(49999, 1, "live_odds.capture_inplay",
+                         store=live_path,
+                         now=NOW + dt.timedelta(minutes=1),
+                         budget_band=budget.LIVE_ODDS)
+            creditlog.log(49950, 49, "dense.run", store=chain_path,
+                         now=NOW + dt.timedelta(minutes=2),
+                         budget_band=budget.LIVE_CAPTURE)
+
+            original_chain = budget.CREDIT_LOG_PATH
+            original_live = budget.LIVE_CREDIT_LOG_PATH
+            budget.CREDIT_LOG_PATH = chain_path
+            budget.LIVE_CREDIT_LOG_PATH = live_path
+            try:
+                rows = budget._rows()
+            finally:
+                budget.CREDIT_LOG_PATH = original_chain
+                budget.LIVE_CREDIT_LOG_PATH = original_live
+
+        self.assertEqual(len(rows), 3)
+        utcs = [r["utc"] for r in rows]
+        self.assertEqual(utcs, sorted(utcs))
+        self.assertEqual([r["caller"] for r in rows],
+                         ["dense.run", "live_odds.capture_inplay", "dense.run"])
+
+    def test_explicit_store_bypasses_the_merge(self):
+        """Every existing test in this module passes an explicit `store` --
+        that path is read alone, unmerged, exactly as before R16-L4."""
+        with tempfile.TemporaryDirectory() as folder:
+            store = Path(folder) / "credit_log.jsonl"
+            creditlog.log(50000, 0, "test", store=store, now=NOW)
+            rows = budget._rows(store)
+        self.assertEqual(len(rows), 1)
+
+
 class NewFamiliesTests(unittest.TestCase):
     """The two families added for scores and tennis exist in the real config
     (a config fact), and an UNMEASURED entry for either is refused as

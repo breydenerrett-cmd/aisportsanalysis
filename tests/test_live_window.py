@@ -4,13 +4,19 @@ All tests use fakes, temp directories, and a fake clock that advances per sleep.
 """
 
 import json
+import shutil
+import subprocess
 import tempfile
+import threading
+import time
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
 from src.pipeline import live_window
+
+_GIT_AVAILABLE = shutil.which("git") is not None
 
 
 class FakeClock:
@@ -213,8 +219,13 @@ class TestShouldDispatch(unittest.TestCase):
         def mock_schedule(date):
             return games
 
+        # `running` is injected because the default reads the real `gh run
+        # list`: without it these three tests pass or fail according to
+        # whatever this account's Actions queue looks like at the moment they
+        # run, which is how they came to fail on a machine with a live window
+        # queued (2026-09-16).
         can_run, reason = live_window.should_dispatch(
-            "mlb", now=now, schedule=mock_schedule
+            "mlb", now=now, schedule=mock_schedule, running=lambda: False
         )
 
         self.assertTrue(can_run)
@@ -234,8 +245,13 @@ class TestShouldDispatch(unittest.TestCase):
         def mock_schedule(date):
             return games
 
+        # `running` is injected because the default reads the real `gh run
+        # list`: without it these three tests pass or fail according to
+        # whatever this account's Actions queue looks like at the moment they
+        # run, which is how they came to fail on a machine with a live window
+        # queued (2026-09-16).
         can_run, reason = live_window.should_dispatch(
-            "mlb", now=now, schedule=mock_schedule
+            "mlb", now=now, schedule=mock_schedule, running=lambda: False
         )
 
         self.assertTrue(can_run)
@@ -255,8 +271,13 @@ class TestShouldDispatch(unittest.TestCase):
         def mock_schedule(date):
             return games
 
+        # `running` is injected because the default reads the real `gh run
+        # list`: without it these three tests pass or fail according to
+        # whatever this account's Actions queue looks like at the moment they
+        # run, which is how they came to fail on a machine with a live window
+        # queued (2026-09-16).
         can_run, reason = live_window.should_dispatch(
-            "mlb", now=now, schedule=mock_schedule
+            "mlb", now=now, schedule=mock_schedule, running=lambda: False
         )
 
         self.assertFalse(can_run)
@@ -580,6 +601,143 @@ class TestMain(unittest.TestCase):
         script = (Path(__file__).resolve().parents[1] / "scripts" / "daily_loop.sh").read_text(
             encoding="utf-8")
         self.assertIn('src.pipeline.live_window --settle --date "$YESTERDAY"', script)
+
+
+class TestCommitStagesOnlyLiveAndLedger(unittest.TestCase):
+    """R16-L4/D7: the window's own commit must never touch
+    data/processed/credit_log.jsonl -- that is the forward-capture chain's
+    file, committed and pushed on its own ~13-minute cadence, and staging it
+    here is the two-writer race D7 describes."""
+
+    def test_commit_git_add_excludes_processed_credit_log(self):
+        source = Path(live_window.__file__).read_text(encoding="utf-8")
+        self.assertIn('_git("add", "data/live", "evidence/live_candidates_v1.jsonl")',
+                      source)
+        self.assertNotIn('"data/processed/credit_log.jsonl"', source)
+
+
+@unittest.skipUnless(_GIT_AVAILABLE, "git is not available on this machine")
+class TestPushPathNoCreditLogConflict(unittest.TestCase):
+    """R16-L4/D7 acceptance: two runners, each appending to their OWN store
+    (data/live/credit_log_live.jsonl for the window, data/processed/
+    credit_log.jsonl for the forward-capture chain -- never the same file),
+    pushing concurrently within one minute, both land with no rebase
+    failure. Everything here runs against throwaway local (file://) git
+    repos under a temp directory -- no network, so it runs in CI. It does
+    not import live_window._commit (which is nested inside main() and reads
+    real argv/os.environ) but replicates its exact git sequence: add,
+    commit, `pull --rebase --autostash origin <branch>` with up to 3
+    attempts, then push -- so a change to that sequence that reintroduces
+    the D7 race would show up here too.
+    """
+
+    def _git(self, cwd, *argv, check=True):
+        result = subprocess.run(
+            ["git", *argv], cwd=str(cwd), capture_output=True, text=True)
+        if check and result.returncode != 0:
+            raise AssertionError(
+                f"git {' '.join(argv)} in {cwd} failed: {result.stderr}")
+        return result
+
+    def _push_with_rebase_retry(self, clone_dir, branch, errors):
+        """Mirrors live_window.py main()._commit's own retry loop exactly."""
+        for attempt in range(3):
+            pulled = subprocess.run(
+                ["git", "pull", "-q", "--rebase", "--autostash", "origin", branch],
+                cwd=str(clone_dir), capture_output=True, text=True)
+            if pulled.returncode != 0:
+                subprocess.run(["git", "rebase", "--abort"], cwd=str(clone_dir),
+                               capture_output=True, text=True)
+                errors.append(f"rebase failed (attempt {attempt + 1}): "
+                              f"{pulled.stderr.strip()}")
+                continue
+            pushed = subprocess.run(
+                ["git", "push", "-q", "origin", branch],
+                cwd=str(clone_dir), capture_output=True, text=True)
+            if pushed.returncode == 0:
+                return True
+            errors.append(f"push failed (attempt {attempt + 1}): "
+                          f"{pushed.stderr.strip()}")
+        return False
+
+    def test_two_clones_push_concurrently_within_one_minute_no_rebase_failure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            origin = tmp / "origin.git"
+            clone_a = tmp / "clone_a"
+            clone_b = tmp / "clone_b"
+
+            self._git(tmp, "init", "--bare", "-b", "main", str(origin))
+
+            # Seed origin with one commit so both clones start from the
+            # same history (an empty bare repo has no branch to clone).
+            seed = tmp / "seed"
+            self._git(tmp, "clone", "-q", str(origin), str(seed))
+            self._git(seed, "config", "user.email", "test@example.com")
+            self._git(seed, "config", "user.name", "test")
+            (seed / "data").mkdir()
+            (seed / "data" / "live").mkdir()
+            (seed / "data" / "live" / ".gitkeep").write_text("", encoding="utf-8")
+            self._git(seed, "add", "-A")
+            self._git(seed, "commit", "-q", "-m", "seed")
+            self._git(seed, "push", "-q", "origin", "main")
+
+            for name, clone_dir in (("a", clone_a), ("b", clone_b)):
+                self._git(tmp, "clone", "-q", str(origin), str(clone_dir))
+                self._git(clone_dir, "config", "user.email", "test@example.com")
+                self._git(clone_dir, "config", "user.name", "test")
+
+            # Each runner writes to its OWN file -- data/live/credit_log_live.jsonl
+            # for the window (clone_a) and data/processed/credit_log.jsonl for the
+            # forward-capture chain (clone_b) -- exactly the D7 fix: never the
+            # same path, so a genuine three-way merge (both sides adding at the
+            # end of the SAME file) can never happen here even under a race.
+            (clone_a / "data" / "live").mkdir(parents=True, exist_ok=True)
+            (clone_a / "data" / "live" / "credit_log_live.jsonl").write_text(
+                json.dumps({"utc": "2026-09-16T00:00:00Z", "caller": "window"}) + "\n",
+                encoding="utf-8")
+            self._git(clone_a, "add", "data/live/credit_log_live.jsonl")
+            self._git(clone_a, "commit", "-q", "-m", "Live window mlb 00:00Z (external)")
+
+            (clone_b / "data" / "processed").mkdir(parents=True, exist_ok=True)
+            (clone_b / "data" / "processed" / "credit_log.jsonl").write_text(
+                json.dumps({"utc": "2026-09-16T00:00:05Z", "caller": "chain"}) + "\n",
+                encoding="utf-8")
+            self._git(clone_b, "add", "data/processed/credit_log.jsonl")
+            self._git(clone_b, "commit", "-q", "-m", "forward-capture chain")
+
+            errors_a, errors_b = [], []
+            start = time.monotonic()
+            thread_a = threading.Thread(
+                target=self._push_with_rebase_retry,
+                args=(clone_a, "main", errors_a))
+            thread_b = threading.Thread(
+                target=self._push_with_rebase_retry,
+                args=(clone_b, "main", errors_b))
+            thread_a.start()
+            thread_b.start()
+            thread_a.join(timeout=60)
+            thread_b.join(timeout=60)
+            elapsed = time.monotonic() - start
+
+            self.assertLess(elapsed, 60,
+                            "both pushes must land within one minute")
+            self.assertFalse(thread_a.is_alive(), "clone_a push did not finish")
+            self.assertFalse(thread_b.is_alive(), "clone_b push did not finish")
+            rebase_failures = [e for e in errors_a + errors_b if "rebase failed" in e]
+            self.assertEqual(rebase_failures, [],
+                             f"a rebase failed under the race: {rebase_failures}")
+
+            # Both commits landed on the remote.
+            log = self._git(origin, "log", "--oneline", "main").stdout
+            self.assertIn("Live window mlb 00:00Z (external)", log)
+            self.assertIn("forward-capture chain", log)
+            check = self._git(seed, "fetch", "-q", "origin", "main")
+            checkout = self._git(seed, "checkout", "-q", "origin/main", "--",
+                                 "data/live/credit_log_live.jsonl",
+                                 "data/processed/credit_log.jsonl")
+            self.assertTrue((seed / "data" / "live" / "credit_log_live.jsonl").exists())
+            self.assertTrue((seed / "data" / "processed" / "credit_log.jsonl").exists())
 
 
 if __name__ == "__main__":

@@ -29,6 +29,11 @@ from src.pipeline import creditlog
 LOG = logging.getLogger(__name__)
 
 DEFAULT_INPLAY_PATH = data_path("live", "odds_inplay.jsonl")
+# R16-L4 (D7): the live window's own credit rows go here, never to the
+# forward-capture chain's data/processed/credit_log.jsonl, so the two
+# runners never append to the same file at once. src.capture.budget reads
+# both logs merged by timestamp; see budget.LIVE_CREDIT_LOG_PATH.
+DEFAULT_CREDIT_LOG_PATH = data_path("live", "credit_log_live.jsonl")
 CALLER = "live_odds.capture_inplay"
 BAND = "live_odds"
 DEFAULT_MARKETS = ("h2h",)
@@ -125,7 +130,8 @@ def changed_games(prev_states: dict, new_states: dict) -> list[tuple]:
 def capture_inplay(sport, *, state_snapshot_id, reason, env=None,
                    markets=DEFAULT_MARKETS, fetch_normalized=None,
                    spend_guard=None, quota=None, record_credit=None,
-                   clock=None, path=DEFAULT_INPLAY_PATH) -> dict:
+                   clock=None, path=DEFAULT_INPLAY_PATH,
+                   credit_store=DEFAULT_CREDIT_LOG_PATH) -> dict:
     """Capture in-play odds for active games, subject to budget constraints.
 
     Budget guard (spend_guard) is checked first: if it refuses, nothing is
@@ -139,10 +145,27 @@ def capture_inplay(sport, *, state_snapshot_id, reason, env=None,
          market "h2h", book, home_price, away_price, in_play True,
          state_snapshot_id, trigger: reason}
 
-    Credits are logged once via record_credit (default: lazy import of
-    creditlog.log) with budget_band=BAND and caller=CALLER.
+    R16-L3 (D6): the credit row logs THIS call's own cost, read from THIS
+    call's own response headers -- `response["usage"]["last"]`
+    (`x-requests-last`, the vendor's own statement of what the last call
+    billed) and `response["usage"]["remaining"]` (`x-requests-remaining`),
+    exactly as `src.providers.odds._get_json_with_usage` already surfaces
+    for every other metered call in this repo. Billing this way, instead of
+    from a later balance delta, is what lets `budget.spent_today(band=
+    LIVE_ODDS)` sum real per-call costs rather than attribute spend to
+    whichever runner's row happens to log next (see D6 in
+    docs/LIVE_BETTING_SYSTEM.md section 2.3). If the fetch function does not
+    provide `usage` (a test double, or a caller not yet updated), this falls
+    back to the previous `len(markets)` estimate for `credits_used_last` and
+    to the injected `quota` for `credits_remaining` -- never invented from a
+    later, unrelated call.
 
-    Returns {"captured": count, "events_in_play": n, "credits": est,
+    Credits are logged once via record_credit (default: lazy import of
+    creditlog.log, writing to `credit_store` -- `DEFAULT_CREDIT_LOG_PATH`,
+    R16-L4/D7's live-only credit log, never the forward-capture chain's
+    data/processed/credit_log.jsonl) with budget_band=BAND and caller=CALLER.
+
+    Returns {"captured": count, "events_in_play": n, "credits": billed,
              "path": str} on success, or {"captured": 0, "refused": reason,
              "credits": 0} if spend_guard refused.
     """
@@ -212,6 +235,7 @@ def capture_inplay(sport, *, state_snapshot_id, reason, env=None,
         }
 
     events = response.get("events") or []
+    usage = response.get("usage") or {}
     observed_utc = (response.get("fetched_utc") or
                    now.isoformat()).replace("+00:00", "Z")
 
@@ -275,26 +299,31 @@ def capture_inplay(sport, *, state_snapshot_id, reason, env=None,
         except Exception as exc:
             LOG.debug("live_odds.capture_inplay: write failed: %s", exc)
 
-    # Log credits
-    est = len(markets)
+    # Log credits: THIS call's own cost (D6/R16-L3), not a later delta.
+    billed = usage.get("last")
+    remaining = usage.get("remaining")
+    if billed is None:
+        # No real usage on the response (a test double, or a fetch_normalized
+        # that has not been updated to surface it yet) -- fall back to the
+        # old per-market estimate rather than leave the row unbillable.
+        billed = len(markets)
+    if remaining is None and quota is not None:
+        remaining = quota.get("remaining") if isinstance(quota, dict) else None
+
     if record_credit is None:
         # Lazy import creditlog.log
         record_credit = creditlog.log
 
     try:
-        # Get remaining from quota if available, else None
-        remaining = None
-        if quota is not None:
-            remaining = quota.get("remaining") if isinstance(quota, dict) else None
-
-        record_credit(remaining, None, CALLER, budget_band=BAND)
+        record_credit(remaining, billed, CALLER, budget_band=BAND,
+                      store=credit_store)
     except Exception as exc:
         LOG.debug("live_odds.capture_inplay: credit log failed: %s", exc)
 
     return {
         "captured": captured,
         "events_in_play": events_in_play,
-        "credits": est,
+        "credits": billed,
         "path": str(path)
     }
 
