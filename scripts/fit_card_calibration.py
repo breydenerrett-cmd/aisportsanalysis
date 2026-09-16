@@ -1,9 +1,22 @@
 """Fit the card model's Platt scaling on completed games. Writes one file.
 
-Runs nightly from `scripts/daily_loop.sh`. The fit uses only games that have
-FINISHED, so tonight's card is calibrated on yesterday's evidence and never
-on its own -- the same walk-forward discipline `scripts/backtest_card.py`
-measures under, executed rather than simulated.
+FROZEN as of 2026-09-15 (owner decision; see
+docs/CARD_CALIBRATION_FREEZE_2026-09-15.md). This script no longer runs
+from `scripts/daily_loop.sh` -- the nightly refit was reading the sealed
+2026-01-01..08-27 evaluation window every night
+(docs/CARD_V2_DIAGNOSIS_2026-09-15.md section 0). The fitting code below is
+unchanged and still works: `--out <path>` to anywhere other than the live
+store still runs (2025-only research can reuse it), but writing
+`data/processed/card_calibration.json` -- the live store the card reads --
+now requires `--overwrite-frozen-store` in addition, so an accidental
+`python scripts/fit_card_calibration.py` cannot quietly refit the frozen
+file. Lifting the freeze for real needs a new dated owner decision, not
+just the flag.
+
+The fit uses only games that have FINISHED, so a card calibrated from its
+output is calibrated on evidence that predates the games it prices and
+never on its own -- the same walk-forward discipline
+`scripts/backtest_card.py` measures under, executed rather than simulated.
 
 The output is small and boring on purpose:
 
@@ -18,6 +31,7 @@ becoming noise with a shape.
 
 Usage:
     python scripts/fit_card_calibration.py [--season 2026] [--out PATH]
+        [--overwrite-frozen-store]
 """
 
 from __future__ import annotations
@@ -36,13 +50,58 @@ from src.pipeline import history, pitchers as pitcher_store  # noqa: E402
 from src.report import card as card_mod  # noqa: E402
 
 
+FREEZE_RECORD = "docs/CARD_CALIBRATION_FREEZE_2026-09-15.md"
+
+# This repo's root, derived the same way the sys.path.insert above locates
+# `src` -- used only to catch an absolute (or `..`-laden, or symlinked)
+# `--out` that names this checkout's real live store by a different
+# spelling than the literal relative path.
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _writes_live_store(out_path: str) -> bool:
+    """True when `out_path` names the live store the card actually reads
+    (`src/report/card.py:CALIBRATION_STORE`). Two checks:
+
+    1. Plain relative comparison, no `abspath` -- so a test can point
+       `--out` at a temp-directory copy of the same relative path (with
+       `cwd` set to that temp dir) and exercise the guard without ever
+       touching this repo's real store.
+    2. Resolved-path comparison against THIS repo's live store specifically
+       -- so an absolute path (or one with `..` segments, or through a
+       symlink) that resolves to this checkout's real
+       `data/processed/card_calibration.json` cannot clear the guard just
+       by being spelled differently. An absolute path to a *different*
+       repo's or temp dir's same-named file still does not match, since
+       the comparison is against this repo's resolved store, not the bare
+       filename."""
+    if os.path.normpath(out_path) == os.path.normpath(card_mod.CALIBRATION_STORE):
+        return True
+    live_store = os.path.realpath(os.path.join(REPO_ROOT, card_mod.CALIBRATION_STORE))
+    return os.path.realpath(out_path) == live_store
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--season", default=None,
                     help="defaults to the current year")
     ap.add_argument("--out", default=card_mod.CALIBRATION_STORE)
     ap.add_argument("--min-date", default=None)
+    ap.add_argument("--overwrite-frozen-store", action="store_true",
+                     help="required, in addition to --out, to write the "
+                          "live store the card reads -- see " + FREEZE_RECORD)
     args = ap.parse_args(argv)
+
+    # FROZEN 2026-09-15 (owner decision): refuse to write the live store
+    # by accident. `--out` to anywhere else still runs the fit unchanged
+    # below (2025-only research can reuse it); writing the live store back
+    # needs this flag on top of that, and lifting the freeze for real needs
+    # a new dated owner decision, not just the flag.
+    if _writes_live_store(args.out) and not args.overwrite_frozen_store:
+        print(f"refusing to write {args.out}: card calibration is frozen "
+              f"by owner decision 2026-09-15, see {FREEZE_RECORD}",
+              file=sys.stderr)
+        return 1
 
     season = args.season or str(datetime.now(timezone.utc).year)
     store = history.read_results()

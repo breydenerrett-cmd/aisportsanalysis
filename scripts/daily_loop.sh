@@ -327,21 +327,15 @@ echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: live settle --date $YESTERDAY" >
 echo "== card record (running) =="
 python3 -m src.cli card record 2>&1 | sed 's/^/  /' || true
 
-# Refit the card model's calibration on everything that has now finished.
-# Two numbers, and without them src/report/card.py serves the RAW model,
-# which runs about twice as confident as its accuracy earns. Runs AFTER
-# settle so today's card is calibrated on every completed game including
-# yesterday's -- and never on its own, which is the walk-forward discipline
-# scripts/backtest_card.py measures under.
-echo "== card calibration refit =="
-CALFIT_OUT=$(python3 scripts/fit_card_calibration.py 2>&1)
-CALFIT_STATUS=$?
-echo "$CALFIT_OUT" | sed 's/^/  /'
-if [ "$CALFIT_STATUS" -ne 0 ]; then
-    echo "ESCALATE: card calibration refit failed (exit $CALFIT_STATUS) -- the card will keep using the last fit, which ages. If this persists the published probabilities drift from the model's real accuracy."
-    type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "card calibration refit failed" || true
-fi
-echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: fit_card_calibration exit=$CALFIT_STATUS" >> "$RUN_NOTE"
+# Card calibration refit: FROZEN by owner decision, 2026-09-15. The nightly
+# refit (scripts/fit_card_calibration.py) was reading the sealed
+# 2026-01-01..08-27 evaluation window every night
+# (docs/CARD_V2_DIAGNOSIS_2026-09-15.md section 0); Brey chose "Freeze it
+# now" over "Keep refitting" for the current card until Card V2 replaces
+# it. Full record: docs/CARD_CALIBRATION_FREEZE_2026-09-15.md. Do not
+# restore the refit call here without a new dated owner decision -- the
+# script also needs --overwrite-frozen-store to write the live store again.
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: card calibration frozen 2026-09-15 (docs/CARD_CALIBRATION_FREEZE_2026-09-15.md), refit skipped" >> "$RUN_NOTE"
 
 echo "== eod (yesterday, $YESTERDAY) =="
 EOD_OUT=$(python3 -m src.cli eod --date "$YESTERDAY" 2>&1)
