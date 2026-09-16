@@ -28,6 +28,7 @@ and never touch the network.
 
 from __future__ import annotations
 
+import http.client
 import json
 import os
 import socket
@@ -147,8 +148,17 @@ class MLBError(RuntimeError):
 _RETRYABLE_REASON_TYPES = (socket.timeout, TimeoutError, ConnectionResetError)
 
 
-def _is_retryable_transport_error(exc: urllib.error.URLError) -> bool:
-    return isinstance(getattr(exc, "reason", None), _RETRYABLE_REASON_TYPES)
+def _is_retryable_transport_error(exc: BaseException) -> bool:
+    """True for a stall/reset worth retrying once.
+
+    `URLError` carries the underlying socket/connection error on `.reason`.
+    A bare `TimeoutError` (what `urlopen` actually raises on a read timeout
+    -- it is an `OSError` subclass, not a `URLError`) and other bare
+    transport exceptions ARE the underlying error, so `getattr` falls back
+    to the exception itself when there is no `.reason` to unwrap.
+    """
+    reason = getattr(exc, "reason", exc)
+    return isinstance(reason, _RETRYABLE_REASON_TYPES)
 
 
 def _get_json(path: str, params: dict | None = None, timeout: float | None = None):
@@ -163,6 +173,10 @@ def _get_json(path: str, params: dict | None = None, timeout: float | None = Non
 
     Raises MLBError on any transport or decode failure rather than letting a
     urllib exception escape, so callers have one exception type to handle.
+    This includes bare `OSError`/`TimeoutError` and `http.client.HTTPException`
+    -- `urlopen` does not always wrap a transport failure in `URLError`, most
+    notably a read timeout, which raises a bare `TimeoutError` that is an
+    `OSError` subclass, not a `URLError`.
     """
     query = urllib.parse.urlencode(params or {})
     url = f"{API_HOST}/{path.lstrip('/')}"
@@ -182,7 +196,19 @@ def _get_json(path: str, params: dict | None = None, timeout: float | None = Non
         except urllib.error.URLError as exc:
             is_last_attempt = attempt == len(attempt_timeouts) - 1
             if is_last_attempt or not _is_retryable_transport_error(exc):
-                raise MLBError(f"could not reach MLB API: {exc.reason}") from exc
+                raise MLBError(f"could not reach MLB API for {path}: {exc.reason}") from exc
+            continue  # one quick retry on a timeout/reset only
+        except (OSError, http.client.HTTPException) as exc:
+            # `urlopen` does not always wrap transport failures in a
+            # `URLError` -- a read timeout raises a bare `TimeoutError`
+            # (an `OSError` subclass, NOT a `URLError`), and a malformed
+            # response can raise `http.client.HTTPException` directly. Both
+            # get the same retry-once-then-wrap treatment as the URLError
+            # case above so callers never see a bare urllib/socket/http.client
+            # exception escape this function.
+            is_last_attempt = attempt == len(attempt_timeouts) - 1
+            if is_last_attempt or not _is_retryable_transport_error(exc):
+                raise MLBError(f"could not reach MLB API for {path}: {exc}") from exc
             continue  # one quick retry on a timeout/reset only
         except json.JSONDecodeError as exc:
             raise MLBError(f"MLB API returned invalid JSON for {path}") from exc

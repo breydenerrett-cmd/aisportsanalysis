@@ -818,3 +818,108 @@ class TestParseStandings(unittest.TestCase):
     def test_empty_records_list_is_an_empty_list(self):
         self.assertEqual(mlb.parse_standings([]), [])
         self.assertEqual(mlb.parse_standings(None), [])
+
+
+class TestBareTransportExceptions(unittest.TestCase):
+    """Regression coverage for the bug reproduced twice in production: a read
+    timeout inside `urlopen` raises a bare `TimeoutError` (an `OSError`
+    subclass, NOT a `urllib.error.URLError`), so it used to escape `_get_json`
+    unwrapped and break every caller's "catch MLBError only" contract --
+    most importantly `boxscores.ingest_date`'s per-game error isolation.
+    """
+
+    def test_bare_timeout_on_both_attempts_becomes_mlb_error_not_timeout_error(self):
+        with mock.patch("urllib.request.urlopen",
+                        side_effect=[TimeoutError("timed out"), TimeoutError("timed out")]) as fake:
+            with self.assertRaises(MLBError) as ctx:
+                mlb._get_json("schedule")
+        self.assertNotIsInstance(ctx.exception, TimeoutError)
+        self.assertEqual(fake.call_count, 2)
+
+    def test_bare_timeout_on_first_attempt_retries_once_then_succeeds(self):
+        good = FakeResponse(json.dumps({"dates": []}).encode("utf-8"))
+        with mock.patch("urllib.request.urlopen",
+                        side_effect=[TimeoutError("timed out"), good]) as fake:
+            result = mlb._get_json("schedule")
+        self.assertEqual(result, {"dates": []})
+        self.assertEqual(fake.call_count, 2)
+
+    def test_http_client_exception_becomes_mlb_error(self):
+        import http.client
+        with mock.patch("urllib.request.urlopen",
+                        side_effect=http.client.BadStatusLine("garbage")):
+            with self.assertRaises(MLBError):
+                mlb._get_json("schedule")
+
+    def test_existing_http_error_behaviour_is_unchanged(self):
+        with mock.patch("urllib.request.urlopen",
+                        side_effect=urllib.error.HTTPError(
+                            "u", 500, "boom", None, None)) as fake:
+            with self.assertRaises(MLBError) as ctx:
+                mlb._get_json("schedule")
+        self.assertIn("500", str(ctx.exception))
+        self.assertEqual(fake.call_count, 1)  # HTTPError is never retried
+
+    def test_existing_url_error_behaviour_is_unchanged(self):
+        import socket as socket_mod
+        good = FakeResponse(json.dumps({"dates": []}).encode("utf-8"))
+        with mock.patch("urllib.request.urlopen",
+                        side_effect=[urllib.error.URLError(socket_mod.timeout("stalled")), good]) as fake:
+            result = mlb._get_json("schedule")
+        self.assertEqual(result, {"dates": []})
+        self.assertEqual(fake.call_count, 2)
+
+    def test_existing_json_decode_error_behaviour_is_unchanged(self):
+        bad = FakeResponse(b"not json")
+        with mock.patch("urllib.request.urlopen", return_value=bad):
+            with self.assertRaises(MLBError):
+                mlb._get_json("schedule")
+
+
+class TestIngestDateSurvivesATimeout(unittest.TestCase):
+    """The level that actually matters: `boxscores.ingest_date` only catches
+    `mlb.MLBError`. Before the fix, a bare `TimeoutError` escaping
+    `_get_json` would have blown straight through that except clause and
+    killed the whole date -- exactly the failure observed live on 2026-09-16
+    (two of seven parallel shards, one sequential probe).
+    """
+
+    def test_a_boxscore_timeout_is_recorded_and_the_other_game_still_writes(self):
+        # Real `mlb.fetch_boxscore`/`fetch_linescore` (unpatched) go through
+        # the real `_get_json` retry loop -- only `urlopen` itself is faked,
+        # so this exercises the actual production code path: a bare
+        # `TimeoutError` on both attempts must come out the other side as
+        # `MLBError`, which is the only thing `ingest_date` catches.
+        import tempfile
+        from pathlib import Path as _Path
+        from src.pipeline import boxscores
+
+        def fake_results(day, timeout=20):
+            return {"final": [{"game_pk": 822688}, {"game_pk": 822766}]}
+
+        box_766 = FakeResponse((FIXTURES / "mlb_boxscore_822766.json").read_bytes())
+        line_766 = FakeResponse((FIXTURES / "mlb_linescore_822766.json").read_bytes())
+
+        with mock.patch(
+            "urllib.request.urlopen",
+            side_effect=[
+                TimeoutError("timed out"),  # game 822688 boxscore, attempt 1
+                TimeoutError("timed out"),  # game 822688 boxscore, attempt 2 (retry)
+                box_766,                     # game 822766 boxscore
+                line_766,                    # game 822766 linescore
+            ],
+        ) as fake:
+            with tempfile.TemporaryDirectory() as tmp:
+                path = _Path(tmp) / "boxscores_2026.jsonl"
+                report = boxscores.ingest_date(
+                    "2026-08-30", path=path,
+                    fetch_results=fake_results,
+                    sleep=lambda s: None,
+                )
+                written = boxscores.read(path)
+
+        self.assertEqual(fake.call_count, 4)
+        self.assertEqual(report["games_written"], 1)
+        self.assertEqual(len(report["errors"]), 1)
+        self.assertEqual(report["errors"][0]["game_pk"], 822688)
+        self.assertEqual({r["game_pk"] for r in written}, {822766})
