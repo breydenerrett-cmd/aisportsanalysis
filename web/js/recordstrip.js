@@ -60,7 +60,11 @@ function windowCell(window) {
     fig.appendChild(el("span", { class: "rec-cell__sep", "aria-hidden": "true", text: "·" }));
     fig.appendChild(el("span", { class: `rec-cell__units${tone}`, text: units }));
     fig.appendChild(el("span", { class: "rec-cell__sep", "aria-hidden": "true", text: "·" }));
-    fig.appendChild(el("span", { class: `rec-cell__pct${tone}`, text: pct }));
+    // "/u" on the face of the figure, not just in a caption below it: this
+    // percentage is return per unit staked, not bankroll growth, and a
+    // reader skimming past the caption should still see the denominator.
+    fig.appendChild(el("span", { class: `rec-cell__pct${tone}`, text: `${pct}/u`,
+      title: "Return per unit staked -- units won divided by bets made. Not a bankroll figure." }));
     cell.appendChild(fig);
   } else {
     const fig = el("div", { class: "rec-cell__figure", "data-hook": "record-window-figure" });
@@ -141,11 +145,24 @@ export async function renderCardRecordStrip(container) {
   }
   if (pct !== null) {
     fig.appendChild(el("span", { class: "rec-cell__sep", "aria-hidden": "true", text: "·" }));
-    fig.appendChild(el("span", { class: `rec-cell__pct${tone}`, text: pct }));
+    // "/u" on the figure itself, same reasoning as windowCell() above: this
+    // percentage is return per unit staked, not bankroll growth.
+    fig.appendChild(el("span", { class: `rec-cell__pct${tone}`, text: `${pct}/u`,
+      title: "Return per unit staked -- units won divided by bets made. Not a bankroll figure." }));
   }
   cell.appendChild(fig);
   cells.appendChild(cell);
   strip.appendChild(cells);
+
+  // WHAT A UNIT IS, defined once where a reader first meets UNITS/ROI on
+  // this strip (2026-09-16). Every pick is staked a flat 1 unit; a win at
+  // -150 returns +0.67u, a win at +150 returns +1.5u, a loss is -1.0u. The
+  // "/u" figure above is units won divided by bets made -- a return on
+  // what was risked per bet, never a bankroll figure (this page names no
+  // dollar amount for a unit; that is the reader's own stake size).
+  strip.appendChild(el("p", { class: "rec-strip__note", "data-hook": "card-record-units-note",
+    text: "Flat 1-unit stakes: a win at -150 returns +0.67u, a win at +150 returns +1.5u, a loss is -1.0u. "
+        + "The \"/u\" figure is units won divided by bets made -- return per unit staked, not bankroll growth." }));
 
   // THE CHAIN, NAMED ON THE PAGE THAT SHOWS THE NUMBER. A tamper-evident
   // ledger nobody is told about is just a file.
@@ -204,6 +221,15 @@ export async function renderRecordStrip(container) {
   strip.appendChild(el("p", { class: "rec-strip__note", "data-hook": "record-strip-note",
     text: `Our forward-test systems only — not the null baselines or the market-reference republishers. `
         + `Paper results, flat 1-unit stakes. Settled through ${payload.settled_through || "not yet available"}.` }));
+
+  // WHAT A UNIT IS, defined once where a reader first meets the "/u" figure
+  // above (2026-09-16). A win at -150 returns +0.67u, a win at +150 returns
+  // +1.5u, a loss is -1.0u. "/u" is units won divided by bets made -- a
+  // return on what was risked per bet, never a bankroll figure (no dollar
+  // amount is named for a unit; that is the reader's own stake size).
+  strip.appendChild(el("p", { class: "rec-strip__note", "data-hook": "record-strip-units-note",
+    text: "A win at -150 returns +0.67u, a win at +150 returns +1.5u, a loss is -1.0u. The \"/u\" figure is "
+        + "units won divided by bets made -- return per unit staked, not bankroll growth." }));
 
   return strip;
 }

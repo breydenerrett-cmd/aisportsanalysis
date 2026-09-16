@@ -138,7 +138,7 @@ function headline(record) {
   grid.appendChild(statTile("UNITS NET", decided
     ? figure(unitsFmt(record.profit_units), record.profit_units > 0 ? "pos" : record.profit_units < 0 ? "neg" : null)
     : absentFigure()));
-  grid.appendChild(statTile("ROI", decided
+  grid.appendChild(statTile("ROI PER UNIT STAKED", decided
     ? figure(roiFmt(record.roi_pct), record.roi_pct > 0 ? "pos" : record.roi_pct < 0 ? "neg" : null)
     : absentFigure()));
   grid.appendChild(statTile("DAYS SETTLED", figure(String(record.days || 0))));
@@ -181,7 +181,7 @@ function propHeadline(record) {
   grid.appendChild(statTile("UNITS NET", staked
     ? figure(unitsFmt(prop.profit_units), prop.profit_units > 0 ? "pos" : prop.profit_units < 0 ? "neg" : null)
     : absentFigure()));
-  grid.appendChild(statTile("ROI", staked
+  grid.appendChild(statTile("ROI PER UNIT STAKED", staked
     ? figure(roiFmt(prop.roi_pct), prop.roi_pct > 0 ? "pos" : prop.roi_pct < 0 ? "neg" : null)
     : absentFigure()));
   wrap.appendChild(grid);
@@ -223,11 +223,33 @@ function totalHeadline(record) {
   grid.appendChild(statTile("UNITS NET", staked
     ? figure(unitsFmt(total.profit_units), total.profit_units > 0 ? "pos" : total.profit_units < 0 ? "neg" : null)
     : absentFigure()));
-  grid.appendChild(statTile("ROI", staked
+  grid.appendChild(statTile("ROI PER UNIT STAKED", staked
     ? figure(roiFmt(total.roi_pct), total.roi_pct > 0 ? "pos" : total.roi_pct < 0 ? "neg" : null)
     : absentFigure()));
   wrap.appendChild(grid);
   return wrap;
+}
+
+/** WHAT A UNIT IS, defined once where a reader first meets UNITS NET and
+ * ROI PER UNIT STAKED (2026-09-16). A unit is a stake size the reader
+ * picks for themselves -- this page never puts a dollar figure on one
+ * (see this file's own docstring: paper accounts, not real-money returns).
+ * Every pick here is staked a flat 1 unit, so the arithmetic is
+ * reproducible by hand: a win at -150 returns +0.67u, a win at +150
+ * returns +1.5u, a loss is -1.0u. ROI PER UNIT STAKED is units won
+ * divided by bets made -- a return on what was risked per bet, not a
+ * bankroll figure. Someone staking 5% of a $1,000 bankroll per unit and
+ * up 2.6 units is up $130, which is 13% bankroll growth, a different
+ * number from the ROI above -- this page reports the first number, never
+ * the second. */
+function unitsNote() {
+  return el("p", { class: "crp-intro", "data-hook": "record-units-note",
+    text: "A UNIT IS A STAKE SIZE YOU CHOOSE, not a dollar figure we set. Every pick here is staked a flat "
+        + "1 unit: a win at -150 returns +0.67u, a win at +150 returns +1.5u, a loss is -1.0u. ROI PER UNIT "
+        + "STAKED is units won divided by bets made -- your return on what you risked per bet, not bankroll "
+        + "growth. Worked through, with made-up numbers: if your unit is 5% of a $1,000 bankroll, then a "
+        + "2.6-unit gain over 52 bets is $130. That is 5% per unit staked and 13% bankroll growth -- two "
+        + "different figures from the same night. The percentage above is always the first one." });
 }
 
 /** Rendered UNCONDITIONALLY -- whether there are zero voids or forty, the
@@ -608,6 +630,7 @@ export async function renderCardRecord(container, options = {}) {
   screen.appendChild(el("p", { class: "crp-intro",
     text: "Every pick this product has made, frozen before the result was known and chained so none of it can "
         + "be quietly edited afterward — the wins and the losses both." }));
+  screen.appendChild(unitsNote());
 
   // THE CALENDAR SITS ABOVE BOTH BRANCHES, because it is the one thing on
   // this page that has something to show on day one: a published card is a
