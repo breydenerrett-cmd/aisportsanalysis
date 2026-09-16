@@ -37,20 +37,19 @@ class TestPregameContext(unittest.TestCase):
 
     def test_pregame_context_mlb_with_fixture_data(self):
         """pregame_context returns game_pk -> pregame dict with favourite."""
+        # The shape src.providers.mlb.parse_game actually returns: flat keys,
+        # team abbreviations, probable-pitcher ids. This fixture used to carry
+        # the raw Stats API payload (teams.home.team.name), which
+        # fetch_games never hands to this function, so it was testing a shape
+        # production does not produce.
         games = [
             {
                 "game_pk": 747101,
                 "start_time_utc": "2026-09-14T21:40:00Z",
-                "teams": {
-                    "home": {
-                        "team": {"name": "Boston Red Sox"},
-                        "probablePitcher": {"id": 112211},
-                    },
-                    "away": {
-                        "team": {"name": "New York Yankees"},
-                        "probablePitcher": {"id": 123456},
-                    },
-                },
+                "home_team": "BOS",
+                "away_team": "NYY",
+                "home_probable_id": 112211,
+                "away_probable_id": 123456,
             }
         ]
         rows = [
@@ -72,8 +71,8 @@ class TestPregameContext(unittest.TestCase):
 
         self.assertIn("747101", context)
         self.assertEqual(context["747101"]["sport"], "mlb")
-        self.assertEqual(context["747101"]["home_team"], "Boston Red Sox")
-        self.assertEqual(context["747101"]["away_team"], "New York Yankees")
+        self.assertEqual(context["747101"]["home_team"], "BOS")
+        self.assertEqual(context["747101"]["away_team"], "NYY")
         self.assertIn(context["747101"]["favorite"], ["home", "away", None])
 
     def test_pregame_context_nfl_with_data(self):

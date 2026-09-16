@@ -195,10 +195,40 @@ def _mlb_starter_pulled_early(pregame: Mapping, state: Mapping,
     Rule fires when:
     - Favourite is on defence (half matches favourite's side logic)
     - inning <= 4
-    - Pitcher changed from pregame starter
+    - Pitcher changed from the starter recorded in `pregame["starter_ids"]`
     - Favourite leads or is tied
 
     Candidate side: the opponent.
+
+    THE CONTRACT ON `pregame["starter_ids"]` (D12, docs/LIVE_BETTING_SYSTEM.md
+    section 2.3). The rule's registered text says "the favourite's STARTING
+    pitcher" -- the pitcher who actually took the mound -- not "the pitcher
+    the schedule listed as probable before the game". Before first pitch
+    those are usually the same person, but a late scratch or an opener means
+    they are not, and this rule would then fire on the very first batter of
+    the game because the "pregame starter" it is comparing against was never
+    the real starter.
+
+    `live_rules.py` has no state history of its own -- it evaluates one tick
+    at a time and remembers nothing between calls -- so it cannot determine
+    "the first pitcher seen on the favourite's defence" by itself. THE
+    CALLER MUST: seed `pregame["starter_ids"][favorite_side]` with the
+    pregame PROBABLE pitcher only until the game's first live state row with
+    a non-null `pitcher_id` on the favourite's defensive half-inning is
+    observed, and from that tick onward pass the pitcher_id OBSERVED on that
+    first such row instead -- never the probable, once a real one has been
+    seen. `livefeed_mlb.build_pregame_context` documents the same contract
+    on its `starter_ids` field and returns the pregame probable pitcher as
+    the only value knowable before any state row exists; a live tick loop
+    (`live_window.tick`, once wired to the builder) is what must perform the
+    overwrite this docstring describes, using `first_defensive_pitcher`
+    below against that game's accumulated state rows.
+
+    Until a caller performs that overwrite, this rule is comparing against
+    the probable pitcher exactly as before -- correct pregame, potentially
+    wrong the instant a late scratch or opener is used, which is exactly
+    the gap D12 records (EXPLORATORY: 0 of 121 forward games differed in
+    2026, so rare, not impossible).
     """
     favorite_side = pregame.get("favorite")
 
@@ -366,6 +396,37 @@ def _nfl_favorite_trails_halftime(pregame: Mapping, state: Mapping,
             "favorite_prob": pregame.get("favorite_prob"),
         }
     }
+
+
+def first_defensive_pitcher(state_rows, favorite_side: str) -> Optional[int]:
+    """The pitcher_id first observed on `favorite_side`'s defence, or None.
+
+    Implements the "starter" `_mlb_starter_pulled_early`'s docstring (D12)
+    requires the caller to compute: not the pregame probable pitcher, but
+    the pitcher actually seen on the mound once the game is under way.
+
+    Args:
+        state_rows: `livefeed_mlb` state rows for ONE game, in observation
+            order (oldest first) -- e.g. `livefeed_mlb.read_states(date)`
+            filtered to one `game_pk`.
+        favorite_side: "home" or "away" -- the favourite is on DEFENCE when
+            the OPPOSITE side is batting: home favourite -> top half (away
+            bats), away favourite -> bottom half.
+
+    Returns:
+        The first non-null `pitcher_id` recorded while the favourite was on
+        defence, in row order, or None if no such row exists yet (the game
+        has not reached that state, or every row is missing a pitcher_id).
+        Never invents a value: an empty or all-None input returns None.
+    """
+    defensive_half = "top" if favorite_side == "home" else "bottom"
+    for row in state_rows or []:
+        if row.get("half") != defensive_half:
+            continue
+        pitcher_id = row.get("pitcher_id")
+        if pitcher_id is not None:
+            return pitcher_id
+    return None
 
 
 # ---------------------------------------------------------------------------

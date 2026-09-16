@@ -83,7 +83,9 @@ class TestLivefeedMLB(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         row = rows[0]
 
-        self.assertEqual(row["game_pk"], 123456)
+        # D3: game_pk is the canonical string form everywhere this module
+        # writes, not a native JSON int.
+        self.assertEqual(row["game_pk"], "123456")
         self.assertEqual(row["status"], "Live")
         self.assertEqual(row["detailed_state"], "In Play")
         self.assertEqual(row["inning"], 3)
@@ -276,11 +278,13 @@ class TestLivefeedMLB(unittest.TestCase):
         self.assertEqual(report["rows_written"], 1)
         self.assertEqual(len(report["errors"]), 1)
         self.assertEqual(report["errors"][0]["source"], "linescore")
-        self.assertEqual(report["errors"][0]["game_pk"], 111111)
+        # D3: the error row's game_pk is the same canonical string every
+        # other key in this module uses.
+        self.assertEqual(report["errors"][0]["game_pk"], "111111")
 
         rows = livefeed_mlb.read_states("2025-06-15", live_dir=self.live_dir)
         self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0]["game_pk"], 222222)
+        self.assertEqual(rows[0]["game_pk"], "222222")
 
     def test_latest_states_returns_newest_row_per_game(self):
         """latest_states returns the newest row for each game."""
@@ -316,13 +320,14 @@ class TestLivefeedMLB(unittest.TestCase):
 
         latest = livefeed_mlb.latest_states("2025-06-15", live_dir=self.live_dir)
 
+        # D3: latest_states keys on the canonical string form.
         # Game 111111 should have the newest row (batter_id=333).
-        self.assertIn(111111, latest)
-        self.assertEqual(latest[111111]["batter_id"], 333)
+        self.assertIn("111111", latest)
+        self.assertEqual(latest["111111"]["batter_id"], 333)
 
         # Game 222222 should have the only row (batter_id=222).
-        self.assertIn(222222, latest)
-        self.assertEqual(latest[222222]["batter_id"], 222)
+        self.assertIn("222222", latest)
+        self.assertEqual(latest["222222"]["batter_id"], 222)
 
     def test_date_defaults_to_et_date_of_clock(self):
         """game_date defaults to the ET date of clock()."""
@@ -475,6 +480,162 @@ def _make_linescore(current_inning=None, inning_half=None, inning_state=None,
             },
         },
     }
+
+
+class TestBuildPregameContext(unittest.TestCase):
+    """R16-L2: livefeed_mlb.build_pregame_context, the D1/D2/D3/D8/D12 fix.
+
+    live_window.pregame_context is broken (docs/LIVE_BETTING_SYSTEM.md 2.3,
+    D1/D2/D3) and lives in another agent's file for this pass, so the real
+    logic is this pure builder instead. These tests pin its contract.
+    """
+
+    def _six_book_rows(self, event_id, commence_time, *, observed_utc,
+                       home_price=-150, away_price=130, count=6,
+                       home_team="Atlanta Braves", away_team="San Francisco Giants"):
+        return [
+            {
+                "event_id": event_id, "commence_time": commence_time,
+                "home_team": home_team, "away_team": away_team,
+                "observed_utc": observed_utc, "book": f"book{i}",
+                "home_price": home_price, "away_price": away_price,
+            }
+            for i in range(count)
+        ]
+
+    def test_returns_real_favorite_and_probability_from_sides_consensus(self):
+        """D1/D2: a usable context reads favorite/prob straight off
+        prices.snapshot's sides, not a re-derived or nonexistent field."""
+        from src.analysis import prices as prices_mod
+
+        games = [{
+            "game_pk": 823007, "home_team": "STL", "away_team": "SF",
+            "start_time_utc": "2026-09-15T23:15:00Z",
+            "home_probable_id": 111, "away_probable_id": 222,
+        }]
+        rows = self._six_book_rows(
+            "eid1", "2026-09-15T23:15:00Z",
+            observed_utc="2026-09-15T20:00:00Z")
+        gamekey_map = {"eid1": {"game_pk": "823007"}}
+
+        context = livefeed_mlb.build_pregame_context(games, rows, gamekey_map)
+
+        self.assertIn("823007", context)
+        row = context["823007"]
+        self.assertTrue(row["usable"], row.get("reason"))
+
+        expected = prices_mod.snapshot(rows)
+        expected_home = expected["sides"]["home"]["consensus_probability"]
+        expected_away = expected["sides"]["away"]["consensus_probability"]
+        self.assertEqual(row["favorite"],
+                          "home" if expected_home >= expected_away else "away")
+        self.assertEqual(row["favorite_prob"],
+                          expected_home if row["favorite"] == "home" else expected_away)
+        self.assertEqual(row["book_count"], 6)
+
+    def test_game_pk_key_is_canonical_string(self):
+        """D3: the context dict is keyed by the canonical string form."""
+        games = [{"game_pk": 999, "home_team": "A", "away_team": "B",
+                  "start_time_utc": "2026-09-15T23:00:00Z"}]
+        context = livefeed_mlb.build_pregame_context(games, [], {})
+        self.assertIn("999", context)
+        self.assertNotIn(999, context)
+        self.assertEqual(context["999"]["game_id"], "999")
+
+    def test_no_event_id_mapped_is_unusable_with_reason(self):
+        """A game whose game_pk has no gamekey entry gets an explicit reason,
+        never a silent favorite of None with no explanation."""
+        games = [{"game_pk": 1, "home_team": "A", "away_team": "B",
+                  "start_time_utc": "2026-09-15T23:00:00Z"}]
+        context = livefeed_mlb.build_pregame_context(games, [], {})
+        row = context["1"]
+        self.assertFalse(row["usable"])
+        self.assertIn("gamekey map", row["reason"])
+
+    def test_quotes_at_or_after_commence_time_are_excluded(self):
+        """D2: an in-play quote (observed at/after commence_time) never
+        counts toward the pre-game consensus, even when it is the newest
+        row on the store."""
+        games = [{"game_pk": 5, "home_team": "A", "away_team": "B",
+                  "start_time_utc": "2026-09-15T23:00:00Z"}]
+        pregame_rows = self._six_book_rows(
+            "eid5", "2026-09-15T23:00:00Z",
+            observed_utc="2026-09-15T22:00:00Z")
+        inplay_rows = self._six_book_rows(
+            "eid5", "2026-09-15T23:00:00Z",
+            observed_utc="2026-09-16T01:00:00Z",  # after commence_time
+            home_price=-10000, away_price=900)
+        gamekey_map = {"eid5": {"game_pk": "5"}}
+
+        context = livefeed_mlb.build_pregame_context(
+            games, pregame_rows + inplay_rows, gamekey_map)
+
+        row = context["5"]
+        self.assertTrue(row["usable"], row.get("reason"))
+        self.assertEqual(row["newest_quote_utc"], "2026-09-15T22:00:00Z")
+        # If the in-play row had leaked in, the wildly lopsided price would
+        # have moved the consensus far from what six even-money-ish books
+        # actually quoted pre-game.
+        self.assertLess(abs(row["favorite_prob"] - 0.55), 0.1)
+
+    def test_below_book_floor_is_unusable_with_reason(self):
+        """Fewer than 6 pre-game books: unusable, with prices.snapshot's own
+        floor message as the reason (not reimplemented here)."""
+        games = [{"game_pk": 7, "home_team": "A", "away_team": "B",
+                  "start_time_utc": "2026-09-15T23:00:00Z"}]
+        rows = self._six_book_rows(
+            "eid7", "2026-09-15T23:00:00Z",
+            observed_utc="2026-09-15T20:00:00Z", count=3)
+        gamekey_map = {"eid7": {"game_pk": "7"}}
+
+        context = livefeed_mlb.build_pregame_context(games, rows, gamekey_map)
+        row = context["7"]
+        self.assertFalse(row["usable"])
+        self.assertIn("books quoted", row["reason"])
+
+    def test_starter_ids_carry_pregame_probable_pitcher(self):
+        """starter_ids is the best pregame-knowable value (D12's caller
+        contract is documented on live_rules, not enforced here)."""
+        games = [{"game_pk": 42, "home_team": "A", "away_team": "B",
+                  "start_time_utc": "2026-09-15T23:00:00Z",
+                  "home_probable_id": 5001, "away_probable_id": 5002}]
+        context = livefeed_mlb.build_pregame_context(games, [], {})
+        self.assertEqual(context["42"]["starter_ids"],
+                          {"home": 5001, "away": 5002})
+
+    def test_live_window_pregame_context_delegates_to_this_builder(self):
+        """live_window.pregame_context is this builder, for MLB.
+
+        It used to rebuild the consensus by hand and read a key
+        prices.snapshot() does not produce, which is why
+        docs/LIVE_BETTING_SYSTEM.md D1 and D2 recorded a favourite of None
+        for 10 of 10 games. This replaced the gap test that pinned that bug
+        once the delegation landed, and it fails if anyone re-implements the
+        context in the window.
+        """
+        from src.pipeline import live_window
+
+        games = [{
+            "game_pk": 823007, "home_team": "STL", "away_team": "SF",
+            "start_time_utc": "2026-09-15T23:15:00Z",
+            "home_probable_id": 111, "away_probable_id": 222,
+        }]
+        rows = self._six_book_rows(
+            "eid1", "2026-09-15T23:15:00Z",
+            observed_utc="2026-09-15T20:00:00Z")
+        gamekey_map = {"eid1": {"game_pk": "823007"}}
+
+        built = livefeed_mlb.build_pregame_context(games, rows, gamekey_map)
+        self.assertTrue(built["823007"]["usable"])
+        self.assertIsNotNone(built["823007"]["favorite"])
+
+        through_window = live_window.pregame_context(
+            "mlb", "2026-09-15", rows=rows, games=games,
+            event_map=gamekey_map)
+        for field in ("favorite", "favorite_prob", "book_count",
+                      "home_team", "away_team", "usable"):
+            self.assertEqual(through_window["823007"][field],
+                             built["823007"][field], field)
 
 
 if __name__ == "__main__":

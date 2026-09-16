@@ -84,75 +84,17 @@ def pregame_context(sport, date=None, *, rows=None, games=None, event_map=None) 
     # Build context per game
     context = {}
 
-    # For MLB
+    # For MLB: one implementation, in livefeed_mlb.build_pregame_context.
+    # This block used to rebuild the consensus by hand and read a
+    # "home_prob" key that prices.snapshot() does not produce, which is why
+    # docs/LIVE_BETTING_SYSTEM.md D1 and D2 record a favourite of None for
+    # 10 of 10 games on 2026-09-14. The builder reads
+    # sides.home.consensus_probability directly, keys every game by a string
+    # game_pk, and takes each book's newest quote strictly before
+    # commence_time.
     if sport == "mlb" and games:
-        for game in games:
-            game_pk = str(game.get("game_pk"))
-            if not game_pk:
-                continue
-
-            home_team = (game.get("teams", {}).get("home", {}).get("team", {}).get("name"))
-            away_team = (game.get("teams", {}).get("away", {}).get("team", {}).get("name"))
-            start_utc = game.get("start_time_utc")
-
-            # Get probable pitcher IDs
-            starter_ids = {}
-            home_prob = game.get("teams", {}).get("home", {}).get("probablePitcher")
-            away_prob = game.get("teams", {}).get("away", {}).get("probablePitcher")
-            if home_prob and home_prob.get("id"):
-                starter_ids["home"] = home_prob.get("id")
-            if away_prob and away_prob.get("id"):
-                starter_ids["away"] = away_prob.get("id")
-
-            # Get favourite from pre-game quotes for this game
-            game_rows = [r for r in (rows or [])
-                        if r.get("home_team") == home_team
-                        and r.get("away_team") == away_team]
-            if game_rows:
-                # Use newest row for this game
-                newest_row = max(game_rows, key=lambda r: r.get("observed_utc", ""))
-                try:
-                    from src.analysis import prices as prices_mod
-                    consensus = prices_mod.snapshot(game_rows)
-                    if consensus:
-                        favorite = "home" if consensus.get("home_prob", 0.5) > 0.5 else "away"
-                        favorite_prob = max(consensus.get("home_prob", 0.5),
-                                           1 - consensus.get("home_prob", 0.5))
-                    else:
-                        favorite = None
-                        favorite_prob = None
-                except Exception:
-                    favorite = None
-                    favorite_prob = None
-            else:
-                favorite = None
-                favorite_prob = None
-
-            # Find event_id for this game
-            event_id = None
-            for eid, mapping in (event_map or {}).items():
-                mapped_pk = mapping.get("game_pk")
-                if mapped_pk == game_pk:
-                    event_id = eid
-                    break
-                try:
-                    if mapped_pk == int(game_pk):
-                        event_id = eid
-                        break
-                except (ValueError, TypeError):
-                    pass
-
-            context[game_pk] = {
-                "sport": "mlb",
-                "game_id": game_pk,
-                "home_team": home_team,
-                "away_team": away_team,
-                "favorite": favorite,
-                "favorite_prob": favorite_prob,
-                "starter_ids": starter_ids,
-                "kickoff_utc": start_utc,
-                "event_id": event_id,
-            }
+        context.update(livefeed_mlb.build_pregame_context(
+            games, rows, event_map))
 
     # For NFL
     elif sport == "nfl" and games:

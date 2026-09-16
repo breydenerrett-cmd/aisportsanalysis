@@ -631,5 +631,81 @@ class TestEvaluateAll(unittest.TestCase):
         self.assertEqual(len(candidates), 0)
 
 
+class TestFirstDefensivePitcher(unittest.TestCase):
+    """D12: the pitcher first observed on the favourite's defence, the value
+    _mlb_starter_pulled_early's docstring requires a caller to feed into
+    starter_ids -- not the pregame probable pitcher."""
+
+    def test_returns_first_pitcher_id_on_favorites_defensive_half(self):
+        """Home favourite is on defence in the top half; the first top-half
+        row with a pitcher_id wins, even if earlier bottom-half rows (the
+        favourite batting) named a different pitcher_id."""
+        state_rows = [
+            {"half": "bottom", "pitcher_id": "opp_starter"},  # favourite batting
+            {"half": "top", "pitcher_id": None},               # not recorded yet
+            {"half": "top", "pitcher_id": "real_starter"},
+            {"half": "top", "pitcher_id": "reliever"},         # later, irrelevant
+        ]
+        self.assertEqual(
+            live_rules.first_defensive_pitcher(state_rows, "home"),
+            "real_starter")
+
+    def test_away_favorite_uses_bottom_half(self):
+        state_rows = [
+            {"half": "top", "pitcher_id": "opp_starter"},
+            {"half": "bottom", "pitcher_id": "real_starter"},
+        ]
+        self.assertEqual(
+            live_rules.first_defensive_pitcher(state_rows, "away"),
+            "real_starter")
+
+    def test_no_defensive_row_yet_returns_none(self):
+        state_rows = [{"half": "bottom", "pitcher_id": "opp_starter"}]
+        self.assertIsNone(live_rules.first_defensive_pitcher(state_rows, "home"))
+
+    def test_empty_input_returns_none(self):
+        self.assertIsNone(live_rules.first_defensive_pitcher([], "home"))
+        self.assertIsNone(live_rules.first_defensive_pitcher(None, "away"))
+
+    def test_rule_fires_against_the_observed_starter_not_the_probable(self):
+        """D12 end to end: the pregame probable pitcher was scratched: the
+        real starter (found by first_defensive_pitcher over the game's own
+        state history) is who the rule must compare the current pitcher
+        against. Comparing against the stale probable would fire this rule
+        on the very first batter, which is exactly the bug D12 records."""
+        probable_pitcher = "probable_scratched"
+        state_rows = [
+            {"half": "top", "pitcher_id": "actual_starter", "inning": 1},
+            {"half": "top", "pitcher_id": "actual_starter", "inning": 2},
+        ]
+        confirmed_starter = live_rules.first_defensive_pitcher(state_rows, "home")
+        self.assertEqual(confirmed_starter, "actual_starter")
+        self.assertNotEqual(confirmed_starter, probable_pitcher)
+
+        pregame = {
+            "game_id": "mlb_d12", "sport": "mlb", "favorite": "home",
+            "favorite_prob": 0.60, "home_team": "Yankees", "away_team": "Red Sox",
+            # Seeded with the CONFIRMED starter, per the docstring contract --
+            # not the probable pitcher that never actually started.
+            "starter_ids": {"home": confirmed_starter, "away": "away_p"},
+        }
+        # The actual starter is still in: no pitcher change yet, so the rule
+        # must NOT fire, even though it would have if compared against the
+        # stale probable (which never matches "actual_starter" either, and
+        # would have fired immediately on a false "pitcher changed" read).
+        state = {"inning": 2, "half": "top", "pitcher_id": "actual_starter",
+                 "home_runs": 1, "away_runs": 0}
+        quote = {"observed_utc": "2026-09-15T20:00:00Z",
+                 "quotes": [{"book": "DK", "home_price": -110, "away_price": 110}]}
+        self.assertIsNone(live_rules.evaluate(
+            "mlb_starter_pulled_early", pregame=pregame, state=state, quote=quote))
+
+        # The actual starter is pulled for a reliever: now it must fire.
+        state["pitcher_id"] = "actual_reliever"
+        candidate = live_rules.evaluate(
+            "mlb_starter_pulled_early", pregame=pregame, state=state, quote=quote)
+        self.assertIsNotNone(candidate)
+
+
 if __name__ == "__main__":
     unittest.main()
