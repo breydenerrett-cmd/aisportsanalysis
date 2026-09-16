@@ -41,8 +41,11 @@ anyone bet that amount.
 
 from __future__ import annotations
 
+import hashlib
 import os
+from dataclasses import asdict as _asdict
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Mapping, Optional, Sequence
 
 from src.core import odds as odds_math
@@ -1396,3 +1399,751 @@ def verify(*, path: Optional[str] = None, sport: Optional[str] = None):
     record, and the page that shows it has to be able to say so."""
     resolved_path = path if path is not None else store_path(sport)
     return _ledger(resolved_path).verify()
+
+
+# ---------------------------------------------------------------------------
+# V2 LEDGER (build plan T3; rule registered in docs/PREREG_CARD_V2.md)
+# ---------------------------------------------------------------------------
+#
+# WHY A SEPARATE SECTION IN THE SAME FILE, NOT A SEPARATE MODULE
+# ------------------------------------------------------------------
+# The build plan is explicit: "File: src/appstate/card_ledger.py. Additive
+# only." V1's publish/settle/record keep grading evidence/cards_v1.jsonl
+# exactly as they always have -- nothing above this line changes -- but V2
+# needs its own store, its own lock-and-withdraw rule (a fill can be carried,
+# withdrawn or graduated to a pick; V1 has no such state) and its own record
+# shape (main-band picks, plus-money picks and fills reported apart, never
+# pooled the way V1 pools game/prop/total). Reusing HashChainLedger,
+# grade_pick, grade_prop_pick, _index_prop_box_rows, _parse_utc and the
+# RESULT_* constants below is right; re-deriving the pooling and locking
+# logic for a rule with a genuinely different shape (price classes, fills, a
+# floor that fills up to, a ceiling that counts fills) would have forced one
+# of the two rules to bend toward the other's assumptions.
+#
+# WHAT "PRICE_CLASS IS FROZEN AND NEVER RECOMPUTED AT READ TIME" MEANS HERE
+# ----------------------------------------------------------------------------
+# _frozen_v2_entry computes price_class once, at publish_v2/write time, from
+# the price on THAT version of the row, and stores it. record_v2 and
+# settle_v2 below only ever READ the stored value -- neither calls
+# best_bets_card.price_class again. If the MAIN/PLUS_MONEY band in
+# RuleParams ever changes, a row settled under the old band keeps the class
+# it was graded under, because nothing here recomputes it from the row's own
+# price a second time.
+
+from src.analysis import best_bets_card as _v2_rule
+
+CARD_STORE_V2 = os.path.join("evidence", "cards_v2.jsonl")
+CARD_STORE_V2_SHADOW_A = os.path.join("evidence", "cards_v2_shadow_a.jsonl")
+CARD_STORE_V2_SHADOW_C = os.path.join("evidence", "cards_v2_shadow_c.jsonl")
+CARD_STORE_V2_SHADOW_E = os.path.join("evidence", "cards_v2_shadow_e.jsonl")
+CARD_STORE_V1_SHADOW = os.path.join("evidence", "cards_v1_shadow.jsonl")
+CARD_STORE_V2_VAR_STRICT_NOCAP = os.path.join(
+    "evidence", "cards_v2_var_strict_nocap.jsonl")
+CARD_STORE_V2_VAR_LOOSE_CAP3 = os.path.join(
+    "evidence", "cards_v2_var_loose_cap3.jsonl")
+CARD_STORE_V2_VAR_LOOSE_NOCAP = os.path.join(
+    "evidence", "cards_v2_var_loose_nocap.jsonl")
+# THERE IS NO CARD_STORE_V2_SHADOW_D. Registration section 10 deregisters
+# shadow D; evidence/cards_v2_shadow_d.jsonl must never be created by this
+# module. A test pins the absence of the name, not just the absence of a
+# file, because a name that exists unused is the first step toward a file
+# that quietly gets written again.
+
+# The eight paths registration section 10 lists for v1_code_fingerprint --
+# frozen on every CARD_STORE_V1_SHADOW row so 11.6 can say whether the V1 the
+# comparison ran against is the V1 that was registered, without assuming the
+# 2026-09-15 calibration freeze covered files it never touched.
+V1_FINGERPRINT_FILES = (
+    "src/analysis/strength.py",
+    "src/analysis/playerprops.py",
+    "src/analysis/propboard.py",
+    "src/report/props.py",
+    "src/analysis/daily_card.py",
+    "src/report/card.py",
+    "src/appstate/card_ledger.py",
+    "data/processed/card_calibration.json",
+)
+
+# The paths registration 11.2 lists for V2's own code_fingerprint.
+# src/report/card_v2.py and data/processed/card_v2_frozen_params.json are
+# T5/T0a's deliverables and do not exist yet in this repo state; see
+# code_fingerprint's docstring for why an absent path still counts rather
+# than being skipped.
+V2_FINGERPRINT_FILES = (
+    "src/analysis/strength.py",
+    "src/analysis/playerprops.py",
+    "src/analysis/propboard.py",
+    "src/report/props.py",
+    "src/analysis/best_bets_card.py",
+    "src/report/card_v2.py",
+    "data/processed/card_v2_frozen_params.json",
+)
+
+
+def code_fingerprint(paths: Sequence[str] = V2_FINGERPRINT_FILES,
+                      *, root: Optional[str] = None) -> str:
+    """sha256 over the named files' exact bytes, in the given order.
+
+    Each path contributes its own name AND its bytes to the hash (rather
+    than just concatenating bytes) so that swapping two same-sized files
+    between two path slots -- which would leave a bytes-only concatenation
+    unchanged -- still changes the fingerprint.
+
+    A MISSING file contributes a fixed sentinel rather than being skipped.
+    Skipping it would mean a fingerprint computed today, before
+    src/report/card_v2.py exists, is IDENTICAL to one computed after a
+    change to a file that came into existence later -- the two states are
+    not the same and must not hash the same. This also means the value
+    returned right now, before T5/T0a land, is a real, stable, testable
+    fingerprint of "every registered file that exists so far plus fixed
+    placeholders for the two that do not yet" -- not a placeholder itself.
+    """
+    hasher = hashlib.sha256()
+    base = Path(root) if root is not None else Path.cwd()
+    for rel in paths:
+        hasher.update(rel.encode("utf-8"))
+        hasher.update(b"\0")
+        try:
+            hasher.update((base / rel).read_bytes())
+        except OSError:
+            hasher.update(b"<absent>")
+        hasher.update(b"\0")
+    return hasher.hexdigest()
+
+
+# V2_FROZEN_FIELDS: V1's FROZEN_FIELDS plus every field registration 11's
+# frozen-fields list names for a V2 pick. price_class, our_probability_used
+# (the marked-down number), breakeven, value_need and gap are computed and
+# stamped by _frozen_v2_entry at write time, never left to whatever the
+# candidate dict happened to carry, so a row is comparable across dates even
+# if a future caller changes what keys it builds candidates with.
+V2_FROZEN_FIELDS = FROZEN_FIELDS + (
+    "kind", "our_probability", "our_probability_used", "score", "price_class",
+    "breakeven", "value_need", "gap", "lineup_posted", "expected_pa_source",
+    "season_games", "failed_gates", "game_type", "entry_class", "take",
+    "no_take_reason", "player", "player_id", "game_id",
+)
+
+# Fills carry everything a pick carries PLUS the quote age and run instant
+# that ADDED the fill -- registration: "the quote age at the run that added
+# the fill and the run instant that added it". Both are stamped once, at the
+# run that first turns a close call into a shown fill, and are never
+# refreshed on a later run that merely carries the fill forward.
+FILL_FROZEN_FIELDS = V2_FROZEN_FIELDS + ("fill_quote_age_seconds", "fill_added_run_utc")
+
+# Close calls that were NEVER shown are frozen with the quote age alone, for
+# the audit trail -- and, per T3's ledger test table, are never graded:
+# settle_v2 only ever reads all_bets and withdrawn, never
+# close_calls_not_shown.
+NEAR_FROZEN_FIELDS = V2_FROZEN_FIELDS + ("quote_age_seconds",)
+
+
+def _v2_first_pitch(entry: Mapping) -> Optional[str]:
+    """first_pitch_utc if the candidate carries it (the report layer's field
+    name), else first_pitch (the fixture/test shorthand used in
+    tests/test_best_bets_card.py). Both name the same instant; accepting
+    either means a V2 candidate built by either caller locks correctly."""
+    return entry.get("first_pitch_utc") or entry.get("first_pitch")
+
+
+def _is_locked_v2(entry: Mapping, moment: datetime,
+                   lead_hours: float = LOCK_LEAD_HOURS_DEFAULT) -> bool:
+    """_is_locked's V2 counterpart -- same fail-closed rule (an entry with no
+    readable first pitch is treated as locked), reading _v2_first_pitch
+    instead of the single first_pitch_utc key."""
+    first_pitch = _parse_utc(_v2_first_pitch(entry))
+    if first_pitch is None:
+        return True
+    return moment >= first_pitch - timedelta(hours=lead_hours)
+
+
+def _v2_entry_key(entry: Mapping):
+    """The identity _lock_and_merge_v2 and G11 key on: player_id if the
+    entry carries one (a prop), else game_id/game_pk -- exactly
+    best_bets_card._game_key's rule, so the ledger's notion of "the same
+    bet" never drifts from the rule's own G11 dedup."""
+    return entry.get("player_id") or entry.get("game_id") or entry.get("game_pk")
+
+
+def _v2_quote_age(entry: Mapping, moment: datetime) -> Optional[float]:
+    observed = _parse_utc(entry.get("observed_utc"))
+    if observed is None:
+        return None
+    return (moment - observed).total_seconds()
+
+
+def _isoformat(value):
+    """A candidate's `observed_utc`/`first_pitch*` may arrive as a real
+    `datetime` (that is what `tests/test_best_bets_card.py`'s own fixtures
+    build, and what a live caller that just called `datetime.now(utc)`
+    would hand in) or as an ISO string (what a JSONL-backed store round-
+    trips). The ledger row must always be JSON-serialisable, so a `datetime`
+    is frozen to its isoformat string here, once, at write time -- never
+    left for `HashChainLedger.append`'s `json.dumps` to fail on."""
+    if isinstance(value, datetime):
+        return value.isoformat()
+    return value
+
+
+def _frozen_v2_entry(entry: Mapping, params) -> dict:
+    """One candidate, dict-shaped and price_class/our_probability_used/
+    breakeven/value_need/gap stamped from best_bets_card's own formulas --
+    never re-typed here (see the module's WHY THIS IS A NEW MODULE note)."""
+    is_fill = entry.get("entry_class") == "fill"
+    fields = FILL_FROZEN_FIELDS if is_fill else V2_FROZEN_FIELDS
+    row = {key: entry.get(key) for key in fields}
+    for date_field in ("observed_utc", "first_pitch_utc", "first_pitch"):
+        if date_field in row:
+            row[date_field] = _isoformat(row[date_field])
+
+    price = entry.get("price")
+    our_p = entry.get("our_probability")
+    pcls = entry.get("price_class")
+    if pcls is None and price is not None:
+        pcls = _v2_rule.price_class(price)
+    row["price_class"] = pcls
+    row["kind"] = "prop" if _v2_rule._kind_is_prop(entry) else (entry.get("kind") or "game")
+    row["failed_gates"] = list(entry.get("failed_gates") or ())
+
+    if price is not None:
+        row["breakeven"] = _v2_rule.breakeven(price)
+        row["value_need"] = _v2_rule.value_need(price, params)
+    if price is not None and our_p is not None:
+        row["our_probability_used"] = _v2_rule.marked_down(our_p, params)
+        be = row.get("breakeven")
+        row["gap"] = (our_p - be) if be is not None else None
+
+    if entry.get("sport") is not None:
+        row["sport"] = entry["sport"]
+    return row
+
+
+def _apply_g11_v2(merged: list) -> list:
+    """G11 at the ledger level: a LOCKED game/prop entry rejects any other
+    entry sharing its identity. A locked moneyline pick therefore blocks a
+    later run's run-line candidate on the same game -- the two would
+    otherwise carry the same _v2_entry_key (the same game_id) and both
+    survive the merge, which is the exact double-booking G11 exists to
+    prevent inside one publish run; this is that same rule applied across
+    runs."""
+    locked_keys = {
+        _v2_entry_key(e) for e in merged
+        if e.get("locked") and e.get("entry_class") == "pick"
+    }
+    out = []
+    seen = set()
+    for e in merged:
+        key = _v2_entry_key(e)
+        if key is None:
+            out.append(e)
+            continue
+        if e.get("locked"):
+            out.append(e)
+            seen.add(key)
+            continue
+        if key in locked_keys and key not in seen:
+            continue  # rejected: a locked entry already owns this identity
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(e)
+    return out
+
+
+def _apply_plus_money_subcap_v2(merged: list, params) -> list:
+    """G14 at the ledger level (D4, D7). select() already applies the
+    sub-cap to ONE run's fresh candidates, but a LOCKED plus-money pick from
+    an earlier run and a fresh plus-money pick from this run can together
+    exceed plus_money_subcap even though neither run's own candidate pool
+    did -- each run only ever sees its own picks. Locked picks are never
+    demoted (a lock is a lock); the lowest-scored UNLOCKED plus-money picks
+    beyond the room a locked pick leaves are moved out of merged and
+    returned here, mirroring plus_money_dropped_by_subcap from select()."""
+    if params.plus_money_subcap is None:
+        return []
+    plus_picks = [e for e in merged
+                  if e.get("entry_class") == "pick" and e.get("price_class") == "PLUS_MONEY"]
+    locked = [e for e in plus_picks if e.get("locked")]
+    unlocked = [e for e in plus_picks if not e.get("locked")]
+    unlocked.sort(key=lambda e: -(e.get("score") or 0.0))
+    room = max(0, params.plus_money_subcap - len(locked))
+    drop = unlocked[room:]
+    if drop:
+        drop_ids = {id(e) for e in drop}
+        merged[:] = [e for e in merged if id(e) not in drop_ids]
+    return drop
+
+
+def _apply_ceiling_v2(merged: list, params) -> list:
+    """G12 at the ledger level, counting PICKS AND FILLS TOGETHER -- the
+    owner's 2026-09-16 answer (best_bets_card.RuleParams.ceiling's own
+    docstring). Locked entries are never refused (a lock is a lock); the
+    lowest-scored unlocked picks, then unlocked fills, beyond the room a
+    locked entry leaves are moved out of merged and returned as
+    ceiling_refused, mirroring select()'s own field of that name."""
+    locked_shown = [e for e in merged if e.get("locked")]
+    unlocked_picks = [e for e in merged
+                      if not e.get("locked") and e.get("entry_class") == "pick"]
+    unlocked_fills = [e for e in merged
+                      if not e.get("locked") and e.get("entry_class") == "fill"]
+    unlocked_picks.sort(key=lambda e: -(e.get("score") or 0.0))
+    room = max(0, params.ceiling - len(locked_shown))
+    candidates = unlocked_picks + unlocked_fills
+    keep_ids = {id(e) for e in candidates[:room]}
+    refused = [e for e in candidates if id(e) not in keep_ids]
+    if refused:
+        refused_ids = {id(e) for e in refused}
+        merged[:] = [e for e in merged if id(e) not in refused_ids]
+    return refused
+
+
+def _lock_and_merge_v2(prior: Sequence[Mapping], fresh: Sequence[Mapping], *,
+                        moment: datetime, lock_lead_hours: float, params,
+                        fresh_seconds: Optional[float] = None):
+    """The registration's L1 to L4, for V2 entries (picks and fills alike).
+
+    Returns (merged, withdrawn, plus_money_dropped_by_subcap,
+    ceiling_refused). prior is last run's all_bets + withdrawn; fresh is
+    this run's _frozen_v2_entry-shaped candidates (already scored, classed
+    and gated by best_bets_card.select).
+
+    * A prior entry already LOCKED is carried forward verbatim.
+    * A prior PROVISIONAL entry whose game now falls inside the lock window
+      locks AS LAST PUBLISHED -- the reader saw that bet at that price, so a
+      stale or failing fresh read at the locking run does not change it.
+    * Outside the window, a STALE fresh read (missing, or older than
+      fresh_seconds when given) changes nothing.
+    * A FRESH read that fails a prior PICK withdraws it; a FRESH read that
+      fails a prior FILL only on a hard gate (anything but G3/G7, mirroring
+      best_bets_card.is_fill_eligible) withdraws it -- a fill is never
+      withdrawn merely because the picks reached the floor, because nothing
+      here removes a fill for that reason.
+    * A prior FILL whose fresh read clears every gate graduates to a PICK
+      this run.
+    * A WITHDRAWN entry whose fresh read clears every gate returns as the
+      same pick, once.
+    """
+    prior = list(prior or ())
+    fresh = list(fresh or ())
+
+    locked: dict = {}
+    withdrawn_by_key: dict = {}
+    for entry in prior:
+        key = _v2_entry_key(entry)
+        if entry.get("locked"):
+            locked[key] = entry
+        elif entry.get("withdrawn"):
+            withdrawn_by_key[key] = entry
+
+    fresh_by_key = {_v2_entry_key(e): e for e in fresh}
+
+    merged: list = []
+    withdrawn: list = list(withdrawn_by_key.values())
+    seen: set = set()
+
+    for key, entry in locked.items():
+        merged.append(entry)
+        seen.add(key)
+
+    for entry in prior:
+        key = _v2_entry_key(entry)
+        if key in locked or key in withdrawn_by_key:
+            continue
+        fresh_entry = fresh_by_key.get(key)
+
+        if _is_locked_v2(entry, moment, lock_lead_hours):
+            stamped = dict(entry)
+            stamped["locked"] = True
+            stamped["locked_at"] = moment.isoformat()
+            merged.append(stamped)
+            seen.add(key)
+            continue
+
+        if fresh_entry is None:
+            stale = True
+        elif fresh_seconds is not None:
+            age = _v2_quote_age(fresh_entry, moment)
+            stale = age is None or age > fresh_seconds
+        else:
+            stale = False
+
+        if stale:
+            merged.append(entry)
+            seen.add(key)
+            continue
+
+        fails = fresh_entry.get("failed_gates") or []
+        was_fill = entry.get("entry_class") == "fill"
+
+        if was_fill:
+            if not fails:
+                graduated = dict(fresh_entry)
+                graduated["entry_class"] = "pick"
+                graduated["locked"] = False
+                graduated["locked_at"] = None
+                merged.append(graduated)
+                seen.add(key)
+                continue
+            hard_fail = bool(set(fails) - _v2_rule._FILL_ALLOWED_FAILURES)
+            if hard_fail:
+                w = dict(entry)
+                w["withdrawn"] = True
+                w["withdrawn_at"] = moment.isoformat()
+                w["withdrawal_reason"] = fails
+                withdrawn.append(w)
+                seen.add(key)
+                continue
+            merged.append(entry)
+            seen.add(key)
+            continue
+
+        if fails:
+            w = dict(entry)
+            w["withdrawn"] = True
+            w["withdrawn_at"] = moment.isoformat()
+            w["withdrawal_reason"] = fails
+            withdrawn.append(w)
+            seen.add(key)
+            continue
+
+        merged.append(fresh_entry)
+        seen.add(key)
+
+    for key, fresh_entry in fresh_by_key.items():
+        if key in seen:
+            continue
+        if key in withdrawn_by_key:
+            # A previously-withdrawn key's fresh entry is handled ONLY by
+            # the withdrawn-return pass below, never here -- adding it here
+            # too would double-count it (once as a "new" pick, once still
+            # sitting in `withdrawn`, since this loop marks the key `seen`
+            # before that pass gets a chance to check it).
+            continue
+        if fresh_entry.get("entry_class") not in ("pick", "fill"):
+            # A brand-new candidate with no prior entry that hard-failed
+            # this run (entry_class is None). It was never shown, so it is
+            # never added -- unlike a PRIOR key's failing fresh read (the
+            # branch above), there is no earlier row for this key to
+            # withdraw FROM.
+            continue
+        entry = dict(fresh_entry)
+        if _is_locked_v2(entry, moment, lock_lead_hours):
+            entry["locked"] = True
+            entry["locked_at"] = moment.isoformat()
+        else:
+            entry["locked"] = False
+            entry["locked_at"] = None
+        merged.append(entry)
+        seen.add(key)
+
+    still_withdrawn = []
+    for w in withdrawn:
+        key = _v2_entry_key(w)
+        fresh_entry = fresh_by_key.get(key)
+        if (fresh_entry is not None and key not in seen
+                and not (fresh_entry.get("failed_gates") or [])):
+            returned = dict(fresh_entry)
+            locked_now = _is_locked_v2(returned, moment, lock_lead_hours)
+            returned["locked"] = locked_now
+            returned["locked_at"] = moment.isoformat() if locked_now else None
+            merged.append(returned)
+            seen.add(key)
+            continue
+        still_withdrawn.append(w)
+
+    merged = _apply_g11_v2(merged)
+    plus_money_dropped_by_subcap = _apply_plus_money_subcap_v2(merged, params)
+    ceiling_refused = _apply_ceiling_v2(merged, params)
+
+    return merged, still_withdrawn, plus_money_dropped_by_subcap, ceiling_refused
+
+
+def publish_v2(card: Mapping, *, now: Optional[str] = None,
+               path: Optional[str] = None,
+               lock_lead_hours: Optional[float] = None,
+               fresh_seconds: Optional[float] = None) -> dict:
+    """Publish one date's V2 card. Additive counterpart to publish.
+
+    UNLIKE V1's publish, a card with ZERO picks is accepted -- registration
+    section 6 makes "no bet cleared today" a real, recordable state, and
+    T3's empty-day test pins this refusal NOT firing for V2 while it keeps
+    firing for V1 (publish at :503-508 is untouched). The first call for a
+    date always appends, even with nothing to show, so record_v2 never has
+    to guess whether a quiet day was ever actually evaluated.
+    """
+    resolved_path = path or CARD_STORE_V2
+    lead = lock_lead_hours if lock_lead_hours is not None else LOCK_LEAD_HOURS_DEFAULT
+
+    date = card.get("date")
+    if not date:
+        raise CardLedgerError("a V2 card with no date cannot be published")
+
+    params = card.get("params") or _v2_rule.V2
+    moment = _parse_utc(now) or datetime.now(timezone.utc)
+
+    all_bets_in = card.get("all_bets")
+    if all_bets_in is None:
+        all_bets_in = (list(card.get("picks") or ())
+                       + list(card.get("prop_picks") or ())
+                       + list(card.get("fills") or ()))
+
+    prior_row = published_row(date, path=resolved_path)
+    prior_all = list((prior_row or {}).get("all_bets") or ())
+    prior_withdrawn = list((prior_row or {}).get("withdrawn") or ())
+
+    fresh_frozen = []
+    for src_entry in all_bets_in:
+        frozen = _frozen_v2_entry(src_entry, params)
+        # NOT defaulted to "pick". A caller may hand in a candidate that
+        # hard-failed this run (entry_class is None, failed_gates non-empty)
+        # purely so `_lock_and_merge_v2` can see WHY a prior key's fresh
+        # read failed, rather than reading it as merely absent/stale -- see
+        # that function's docstring. Such an entry must never be added as a
+        # NEW pick/fill of its own; `_lock_and_merge_v2`'s new-entries loop
+        # filters on entry_class for exactly this reason.
+        frozen["entry_class"] = src_entry.get("entry_class")
+        fresh_frozen.append(frozen)
+
+    merged, withdrawn, dropped_subcap, ceiling_refused = _lock_and_merge_v2(
+        prior_all + prior_withdrawn, fresh_frozen, moment=moment,
+        lock_lead_hours=lead, params=params, fresh_seconds=fresh_seconds)
+
+    picks = sorted(
+        [e for e in merged if e.get("entry_class") == "pick"],
+        key=lambda e: -(e.get("score") or 0.0))
+    for i, e in enumerate(picks, start=1):
+        e["rank"] = i
+    fills = [e for e in merged if e.get("entry_class") == "fill"]
+    game_picks = [e for e in picks if e.get("kind") != "prop"]
+    prop_picks = [e for e in picks if e.get("kind") == "prop"]
+
+    def _shape(entries):
+        rows = [{k: e.get(k) for k in
+                ("price", "price_class", "entry_class", "locked",
+                 "our_probability", "market", "line", "player", "game_id",
+                 "game_pk")}
+               for e in entries]
+        return sorted(rows, key=lambda r: str(sorted(r.items())))
+
+    unchanged = (
+        prior_row is not None
+        and _shape(prior_all) == _shape(merged)
+        and _shape(prior_withdrawn) == _shape(withdrawn)
+    )
+    if unchanged:
+        out = dict(prior_row)
+        out["already_published"] = True
+        return out
+
+    payload = {
+        "kind": KIND_PUBLISHED,
+        "date": date,
+        "published_utc": now or moment.isoformat(),
+        "rule": params.rule_id,
+        "code_fingerprint": code_fingerprint(),
+        "params": _asdict(params),
+        "all_bets": merged,
+        "picks": game_picks,
+        "prop_picks": prop_picks,
+        "fills": fills,
+        "withdrawn": withdrawn,
+        "close_calls_not_shown": [
+            {key: (_isoformat(v) if key in ("observed_utc", "first_pitch_utc", "first_pitch") else v)
+             for key, v in dict(c).items() if key != "__params__"}
+            for c in (card.get("close_calls_not_shown") or ())
+        ],
+        "stale_board": card.get("stale_board"),
+        "n_picks": len(picks),
+        "n_fills": len(fills),
+        "n_plus_money_picks": sum(1 for e in picks if e.get("price_class") == "PLUS_MONEY"),
+        "plus_money_dropped_by_subcap": dropped_subcap,
+        "ceiling_refused": ceiling_refused,
+        "basis": card.get("basis") or _v2_rule.BASIS,
+        "disclaimer": card.get("disclaimer") or _v2_rule.DISCLAIMER,
+    }
+    row = _ledger(resolved_path).append(payload)
+    out = dict(row)
+    out["already_published"] = False
+    return out
+
+
+def publish_v1_shadow(card: Mapping, *, now: Optional[str] = None,
+                       path: Optional[str] = None) -> dict:
+    """Publish a V1 shadow row carrying v1_code_fingerprint (registration
+    section 10). This is NOT V1's own publish -- it never touches
+    CARD_STORE/cards_v1.jsonl and it does not enforce V1's non-empty-picks
+    refusal, because registration 11.6 needs a fingerprinted shadow row for
+    every date, including a date V1 itself picked nothing for. card must
+    already be V1-shaped (picks/prop_picks/total_picks as publish expects);
+    this function only adds the fingerprint and writes to
+    CARD_STORE_V1_SHADOW."""
+    resolved_path = path or CARD_STORE_V1_SHADOW
+    date = card.get("date")
+    if not date:
+        raise CardLedgerError("a V1 shadow row with no date cannot be published")
+    payload = {
+        "kind": KIND_PUBLISHED,
+        "date": date,
+        "published_utc": now or datetime.now(timezone.utc).isoformat(),
+        "rule": card.get("rule"),
+        "v1_code_fingerprint": code_fingerprint(V1_FINGERPRINT_FILES),
+        "picks": list(card.get("picks") or ()),
+        "prop_picks": list(card.get("prop_picks") or ()),
+        "total_picks": list(card.get("total_picks") or ()),
+    }
+    return _ledger(resolved_path).append(payload)
+
+
+def settle_v2(date: str, results_by_game_pk: Mapping, *,
+              prop_box_rows: Optional[Sequence] = None,
+              now: Optional[str] = None,
+              path: Optional[str] = None) -> Optional[dict]:
+    """Grade one published V2 card and append the outcome as a NEW row.
+
+    Grades every entry on the newest row for date: every entry in all_bets
+    (locked picks AND locked/provisional fills -- a provisional entry left
+    on the last row because no lock run ever happened for it is graded and
+    flagged graded_without_lock_run, never silently skipped) and every entry
+    in withdrawn, each exactly once, each carrying the entry_class and
+    price_class it held at ITS OWN graded version. close_calls_not_shown is
+    never graded -- those were never shown to a reader and are not bets of
+    record.
+
+    Reuses grade_pick and grade_prop_pick unmodified: V2's grading
+    arithmetic (moneyline/run-line win-loss-push, prop over/under/push, flat
+    one-unit stakes) is identical to V1's, only the population and the price
+    classing around it differ.
+    """
+    resolved_path = path or CARD_STORE_V2
+    row = published_row(date, path=resolved_path)
+    if row is None:
+        return None
+    if settled_row(date, path=resolved_path) is not None:
+        return None
+
+    all_bets = row.get("all_bets") or ()
+    graded_without_lock_run = bool(all_bets) and not any(e.get("locked") for e in all_bets)
+    box_index = _index_prop_box_rows(prop_box_rows)
+
+    def _grade_one(entry: Mapping, *, withdrawn: bool) -> dict:
+        if entry.get("kind") == "prop":
+            grade = grade_prop_pick(entry, box_index)
+        else:
+            lookup_key = entry.get("game_id") if entry.get("sport") else entry.get("game_pk")
+            result = (results_by_game_pk.get(lookup_key)
+                     or results_by_game_pk.get(str(lookup_key)) or {})
+            grade = grade_pick(entry, result)
+        out = dict(entry)
+        out.update(grade)
+        out["withdrawn"] = withdrawn
+        out["graded_without_lock_run"] = (not withdrawn) and graded_without_lock_run
+        return out
+
+    graded = [_grade_one(e, withdrawn=False) for e in all_bets]
+    graded += [_grade_one(e, withdrawn=True) for e in (row.get("withdrawn") or ())]
+
+    def _tally(entries):
+        wins = sum(1 for g in entries if g["result"] == RESULT_WIN)
+        losses = sum(1 for g in entries if g["result"] == RESULT_LOSS)
+        pushes = sum(1 for g in entries if g["result"] == RESULT_PUSH)
+        voids = sum(1 for g in entries if g["result"] == RESULT_VOID)
+        staked = wins + losses
+        profit = round(sum(g.get("profit_units") or 0.0 for g in entries
+                           if g["result"] in (RESULT_WIN, RESULT_LOSS)), 4)
+        return wins, losses, pushes, voids, staked, profit
+
+    wins, losses, pushes, voids, staked, profit = _tally(graded)
+
+    payload = {
+        "kind": KIND_SETTLED,
+        "date": date,
+        "settled_utc": now or datetime.now(timezone.utc).isoformat(),
+        "rule": row.get("rule"),
+        "graded": graded,
+        "wins": wins, "losses": losses, "pushes": pushes, "voids": voids,
+        "n_staked": staked, "profit_units": profit,
+        "graded_without_lock_run": graded_without_lock_run,
+    }
+    return _ledger(resolved_path).append(payload)
+
+
+def record_v2(*, path: Optional[str] = None, since: Optional[str] = None,
+              until: Optional[str] = None, price_class: Optional[str] = None,
+              entry_class: Optional[str] = None) -> dict:
+    """The V2 reader (registration R5): main-band picks, plus-money picks
+    and fills reported APART, never pooled into one figure, plus combined
+    (D9 -- the sum of the two PICK class figures, a description, never the
+    rule's own result) and withdrawn (a count, apart from every figure).
+
+    since/until are both inclusive date-string bounds. price_class/
+    entry_class narrow the whole call to one class -- the value read back is
+    exactly the value _frozen_v2_entry froze at publish time, never
+    recomputed here from the row's own price a second time.
+    """
+    resolved_path = path or CARD_STORE_V2
+
+    def _blank():
+        return {"days": 0, "wins": 0, "losses": 0, "pushes": 0, "voids": 0,
+                "n_staked": 0, "profit_units": 0.0, "win_rate": None,
+                "roi_pct": None}
+
+    main_fig, plus_fig, fills_fig, combined = _blank(), _blank(), _blank(), _blank()
+    withdrawn_n = 0
+    days_seen = set()
+
+    def _add(fig, entry):
+        result = entry.get("result")
+        if result == RESULT_WIN:
+            fig["wins"] += 1
+        elif result == RESULT_LOSS:
+            fig["losses"] += 1
+        elif result == RESULT_PUSH:
+            fig["pushes"] += 1
+        elif result == RESULT_VOID:
+            fig["voids"] += 1
+        if result in (RESULT_WIN, RESULT_LOSS):
+            fig["n_staked"] += 1
+            fig["profit_units"] += entry.get("profit_units") or 0.0
+
+    for row in _ledger(resolved_path).read():
+        if row.get("kind") != KIND_SETTLED:
+            continue
+        date = row.get("date") or ""
+        if since and date < since:
+            continue
+        if until and date > until:
+            continue
+        entries = row.get("graded") or ()
+        if entries:
+            days_seen.add(date)
+        for entry in entries:
+            if price_class is not None and entry.get("price_class") != price_class:
+                continue
+            if entry_class is not None and entry.get("entry_class") != entry_class:
+                continue
+            if entry.get("withdrawn"):
+                withdrawn_n += 1
+                continue
+            if entry.get("entry_class") == "fill":
+                _add(fills_fig, entry)
+                continue
+            if entry.get("price_class") == "PLUS_MONEY":
+                _add(plus_fig, entry)
+                _add(combined, entry)
+            elif entry.get("price_class") == "MAIN":
+                _add(main_fig, entry)
+                _add(combined, entry)
+
+    for fig in (main_fig, plus_fig, fills_fig, combined):
+        fig["days"] = len(days_seen)
+        fig["profit_units"] = round(fig["profit_units"], 4)
+        fig["win_rate"] = (round(fig["wins"] / fig["n_staked"], 4)
+                           if fig["n_staked"] else None)
+        fig["roi_pct"] = (round(fig["profit_units"] / fig["n_staked"] * 100.0, 3)
+                          if fig["n_staked"] else None)
+
+    return {
+        "since": since, "until": until,
+        "main": main_fig, "plus_money": plus_fig, "fills": fills_fig,
+        "combined": combined, "withdrawn": withdrawn_n,
+    }
