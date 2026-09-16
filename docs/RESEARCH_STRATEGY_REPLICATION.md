@@ -331,7 +331,7 @@ itself.
 
 | candidate | status at end of this design pass |
 |---|---|
-| SR1/SR2 — home underdog price band | READY_UNTESTED (top-ranked, drafted in full) |
+| SR1/SR2 — home underdog price band | NOT EVALUATED, 2026-09-16 — a run was requested and declined because no frozen spec + hash exists and no Fable-tier review of a registration has occurred; still only a drafted template, not pre-registered. See `docs/SR1_RESULT_2026-09-16.md`. |
 | SR3 — day-after-night home drift | READY_UNTESTED (drafted, low prior stated) |
 | SR4 — series-finale desperation | REJECTED_AT_RANKING-adjacent — drafted for completeness, deprioritized on mechanism quality, not recommended as one of the initial three |
 | SR5 — getaway-day road fade | REJECTED_AT_RANKING-adjacent — too close to N6 (TESTED_NULL) to be a distinct family member; flagged for explicit Fable review before any registration |
