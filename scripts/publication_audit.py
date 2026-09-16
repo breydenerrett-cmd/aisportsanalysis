@@ -393,10 +393,92 @@ def audit(date_iso=None, now=None):
 CARD_STALE_MINUTES = 240
 
 # How old the Platt fit may get before its numbers stop describing the
-# model. It is refit nightly; a week means the loop has been failing quietly
-# for a week, and every published probability has been drifting from the
-# model's real accuracy that whole time.
+# model, in each of the two states this check can find it in:
+#
+# * UN-FROZEN (no freeze marker, see FREEZE_MARKER_GLOB below): the fit is
+#   refit nightly, so past this limit means the nightly refit in
+#   scripts/daily_loop.sh has been failing quietly, and every published
+#   probability has been drifting from the model's real accuracy for that
+#   whole time.
+# * FROZEN: there is no nightly refit to fail -- an owner decision
+#   deliberately stopped it (see docs/CARD_CALIBRATION_FREEZE_2026-09-15.md)
+#   -- so age past this limit is the expected, recorded state, not a
+#   failure, and the staleness check is skipped entirely rather than
+#   reworded (see _calibration_findings for why).
 CALIBRATION_STALE_DAYS = 7
+
+# A freeze marker is a docs/CARD_CALIBRATION_FREEZE_*.md file recording a
+# dated owner decision to stop the nightly card-calibration refit (the
+# first one: docs/CARD_CALIBRATION_FREEZE_2026-09-15.md). The glob is a
+# module constant and the lookup below takes `repo` as a parameter so a
+# test can point it at a tempfile directory instead of the real docs/.
+FREEZE_MARKER_GLOB = "docs/CARD_CALIBRATION_FREEZE_*.md"
+
+
+def calibration_freeze_marker(repo=REPO):
+    """The newest docs/CARD_CALIBRATION_FREEZE_*.md under `repo`, or None.
+
+    Matching by glob rather than hardcoding the one 2026-09-15 filename
+    means a later, separately-dated freeze record is picked up with no
+    code change. Sorting by name works because these files are named with
+    an ISO date, so lexicographic order is chronological order.
+    """
+    matches = sorted(repo.glob(FREEZE_MARKER_GLOB))
+    return matches[-1] if matches else None
+
+
+def _calibration_findings(cal_path, label, now, freeze_marker):
+    """The calibration file's own checks, independent of any card.
+
+    Split out of audit_card so a test can inject `cal_path` (standing in
+    for data/processed/card_calibration.json) and `freeze_marker` (standing
+    in for a docs/ freeze marker, or None) without touching either real
+    store. `label` is what audit_card passes for card_mod.CALIBRATION_STORE,
+    so the real printed messages are unchanged.
+
+    The two ESCALATE checks (file missing, file unreadable) fire whether or
+    not the calibration is frozen -- a missing or corrupt calibration file
+    is broken either way, freeze or no freeze.
+
+    CHOICE (a) of the two offered for the staleness check: while frozen,
+    skip it entirely rather than reword it into a "frozen by owner
+    decision" WARN (choice b). A reworded WARN would still be true, but it
+    would repeat, unchanged, on every one of the ~96 daily audit runs for
+    as long as the freeze lasts -- weeks or months, per
+    docs/CARD_CALIBRATION_FREEZE_2026-09-15.md's unfreeze conditions -- with
+    no new information in any of those repeats. That is exactly the
+    alarm-fatigue failure mode STRONG_SHARE_ALARM above exists to avoid, and
+    the frozen state is already recorded in that dated doc, so this check
+    has nothing to add. With no freeze marker, nothing here changes: the
+    original message fires unchanged, so a genuinely broken nightly refit
+    is still caught.
+    """
+    findings = []
+    if not cal_path.exists():
+        findings.append((
+            "ESCALATE",
+            f"{label} is missing; every card built "
+            f"from here serves the raw model's overconfident numbers"))
+        return findings
+
+    fitted_at = None
+    try:
+        blob = json.loads(cal_path.read_text(encoding="utf-8"))
+        fitted_at = _parse_utc(blob.get("fitted_at"))
+    except (OSError, ValueError):
+        findings.append((
+            "ESCALATE",
+            f"{label} could not be read"))
+
+    if fitted_at is not None and freeze_marker is None:
+        days = (now - fitted_at).total_seconds() / 86400.0
+        if days > CALIBRATION_STALE_DAYS:
+            findings.append((
+                "WARN",
+                f"the card calibration was last fit {days:.0f} days ago "
+                f"(limit {CALIBRATION_STALE_DAYS}) -- the nightly refit "
+                f"in scripts/daily_loop.sh has been failing quietly"))
+    return findings
 
 
 def audit_card(date_iso, now):
@@ -471,28 +553,9 @@ def audit_card(date_iso, now):
 
     # The calibration file itself, independently of any card.
     cal_path = REPO / card_mod.CALIBRATION_STORE
-    if not cal_path.exists():
-        findings.append((
-            "ESCALATE",
-            f"{card_mod.CALIBRATION_STORE} is missing; every card built "
-            f"from here serves the raw model's overconfident numbers"))
-    else:
-        try:
-            blob = json.loads(cal_path.read_text(encoding="utf-8"))
-            fitted_at = _parse_utc(blob.get("fitted_at"))
-        except (OSError, ValueError):
-            findings.append((
-                "ESCALATE",
-                f"{card_mod.CALIBRATION_STORE} could not be read"))
-            fitted_at = None
-        if fitted_at is not None:
-            days = (now - fitted_at).total_seconds() / 86400.0
-            if days > CALIBRATION_STALE_DAYS:
-                findings.append((
-                    "WARN",
-                    f"the card calibration was last fit {days:.0f} days ago "
-                    f"(limit {CALIBRATION_STALE_DAYS}) -- the nightly refit "
-                    f"in scripts/daily_loop.sh has been failing quietly"))
+    findings.extend(_calibration_findings(
+        cal_path, card_mod.CALIBRATION_STORE, now,
+        calibration_freeze_marker()))
 
     # THE LEDGER MUST STILL BE A CHAIN. A published record whose chain is
     # broken is not a record, and the page that shows it has to know.
