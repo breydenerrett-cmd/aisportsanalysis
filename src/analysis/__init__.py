@@ -40,7 +40,11 @@ from __future__ import annotations
 # 42 registrations of which 5 (four V3 forward-window tests and V7) had no
 # verdict yet and one more (V3:transaction_first_seen) only a withdrawn,
 # below-floor one. The product had been saying 41 "tested"; 36 had been.
-_LAST_KNOWN_HYPOTHESES = 36
+# 2026-09-16: 37, after the home-underdog price-band family (SR) was
+# registered and read the same night. Both its bands were killed on
+# discovery data (docs/SR1_RESULT_2026-09-16.md), which is what "tested"
+# counts: read, verdict recorded, loser published.
+_LAST_KNOWN_HYPOTHESES = 37
 _LAST_KNOWN_FAMILIES = 6
 
 _UNITS = ("zero", "one", "two", "three", "four", "five", "six", "seven",
