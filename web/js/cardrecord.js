@@ -242,6 +242,60 @@ function totalHeadline(record) {
  * up 2.6 units is up $130, which is 13% bankroll growth, a different
  * number from the ROI above -- this page reports the first number, never
  * the second. */
+/**
+ * EVERYTHING TOGETHER (2026-09-16).
+ *
+ * The three panels above are each honest and each labelled -- game picks,
+ * props, totals, kept apart so one population's win rate never borrows
+ * another's. But kept apart is not the same as shown, and NOTHING on this
+ * page added them up. A reader met "GAME PICKS 31-17, ROI PER UNIT STAKED
+ * +4.96%" first and took it for the record of the product, when the props
+ * panel below it was 14-9 and DOWN 1.73 units. Whole book: 45-26 and +0.91%.
+ * Reporting the better half first and never stating the sum is how a true
+ * set of numbers adds up to a false impression, so this panel states the sum
+ * and says exactly which populations went into it.
+ *
+ * Every figure is recomputed from the per-kind rows, never from a separate
+ * server field, so this panel cannot drift from the panels above it.
+ */
+function combinedHeadline(record) {
+  const kinds = record.by_kind;
+  if (!kinds) return null;   // an older /card/record without by_kind
+  const parts = ["game", "prop", "total"]
+    .map((name) => kinds[name])
+    .filter((part) => part && typeof part.n_staked === "number");
+  if (parts.length < 2) return null;   // nothing to add up yet
+
+  const sum = (field) => parts.reduce((acc, p) => acc + (p[field] || 0), 0);
+  const wins = sum("wins");
+  const losses = sum("losses");
+  const pushes = sum("pushes");
+  const voids = sum("voids");
+  const staked = sum("n_staked");
+  const units = parts.reduce((acc, p) => acc + (p.profit_units || 0), 0);
+  if (!staked) return null;
+
+  const wrap = el("div", { class: "crp-headline crp-headline--combined panel chamfer",
+    "data-hook": "record-combined-headline" });
+  wrap.appendChild(el("span", { class: "crp-chain__label", text: "EVERYTHING TOGETHER" }));
+  const grid = el("div", { class: "crp-stats" });
+  grid.appendChild(statTile("ALL BETS (W-L-P)", figure(`${wins}-${losses}-${pushes}`)));
+  grid.appendChild(statTile("VOIDS", figure(String(voids), voids ? "warn" : null)));
+  grid.appendChild(statTile("WIN RATE", figure(winRateFmt(wins / staked))));
+  grid.appendChild(statTile("UNITS NET",
+    figure(unitsFmt(units), units > 0 ? "pos" : units < 0 ? "neg" : null)));
+  const roi = (units / staked) * 100;
+  grid.appendChild(statTile("ROI PER UNIT STAKED",
+    figure(roiFmt(roi), roi > 0 ? "pos" : roi < 0 ? "neg" : null)));
+  wrap.appendChild(grid);
+  wrap.appendChild(el("p", { class: "crp-chain__body",
+    text: "Game picks, player props and totals added together — every bet this "
+        + "product has published and graded, in one number. The panels above "
+        + "split the same bets by type; none of them is the whole record on "
+        + "its own." }));
+  return wrap;
+}
+
 function unitsNote() {
   return el("p", { class: "crp-intro", "data-hook": "record-units-note",
     text: "A UNIT IS A STAKE SIZE YOU CHOOSE, not a dollar figure we set. Every pick here is staked a flat "
@@ -652,6 +706,8 @@ export async function renderCardRecord(container, options = {}) {
     if (props) screen.appendChild(props);
     const totals = totalHeadline(record);
     if (totals) screen.appendChild(totals);
+    const combined = combinedHeadline(record);
+    if (combined) screen.appendChild(combined);
     screen.appendChild(chainStatus(record));
 
     const days = (history && history.days) || [];
