@@ -321,6 +321,49 @@ class TheCardAlwaysHasAFloor(unittest.TestCase):
         for pick in out["picks"]:
             self.assertTrue(pick["bet"].startswith("Take "), pick["bet"])
 
+    def test_a_slate_too_thin_to_reach_the_floor_returns_what_it_has(self):
+        """The floor cannot conjure a game that is not on the slate.
+
+        The existing floor test hands select() four candidates and checks it
+        fills to three. That never exercises the case the floor cannot
+        satisfy: an off-day, or a rained-out night, where FEWER THAN THREE
+        games exist at all. A 2026-09-16 copy sweep flagged the gap -- the
+        belief written down elsewhere was that the card "always publishes
+        three to five", and no test had ever starved the pool below three to
+        see whether that holds.
+
+        It does not, and it must not: inventing a third pick out of a
+        two-game slate would be the one thing this product may never do. So
+        this pins the honest behaviour -- select() returns exactly what the
+        board gave it, every returned pick is still a real labelled bet, and
+        nothing is fabricated to reach the number.
+        """
+        from src.analysis import daily_card
+
+        def _c(gid, confidence, agrees):
+            return {"game_id": gid, "confidence": confidence,
+                    "market_probability": confidence, "model_probability": 0.5,
+                    "agrees": agrees, "price": -110, "market": "moneyline",
+                    "team_name": "Padres", "opponent_name": "Nationals",
+                    "is_underdog": False, "label": None,
+                    "us": {"runs_scored": 4.9, "runs_allowed": 3.9},
+                    "them": {"runs_scored": 4.1, "runs_allowed": 5.2}}
+
+        for pool_size in (0, 1, 2):
+            candidates = [_c(f"g{i}", 0.61, True) for i in range(pool_size)]
+            for c in candidates:
+                c["label"] = daily_card._label(c["confidence"], c["agrees"])
+
+            out = daily_card.select(candidates)
+            picks = out["picks"]
+            self.assertEqual(pool_size, len(picks),
+                             f"a {pool_size}-game slate must yield {pool_size} "
+                             f"picks, not a fabricated {daily_card.MIN_PICKS}")
+            self.assertLessEqual(len(picks), daily_card.MIN_PICKS)
+            for pick in picks:
+                self.assertTrue(pick["bet"].startswith("Take "), pick["bet"])
+                self.assertIsNotNone(pick.get("label"))
+
     def test_the_alternative_names_the_line_it_was_priced_at(self):
         """A bet instruction naming the wrong line is worse than no
         alternative at all.

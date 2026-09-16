@@ -154,12 +154,24 @@
       <div class="story-card__title">Tonight's bets,<br>in one sentence each.</div>
       <!-- THE OLD COPY SAID "some nights that list is empty, and we show you
            that instead of filling it." That was true of the engine's slip
-           and is now FALSE of the card, which always publishes three to
-           five. Leaving it would have been the page describing a product
-           that no longer exists -- exactly what scripts/publication_audit.py
-           exists to catch. What replaces it is the honest version of the
-           same promise: the floor is met by lowering the LABEL, and a pick
-           our own numbers disagree with says so on its face. -->
+           and misleading about the card, which fills to a floor of three by
+           lowering the LABEL rather than by leaving the list short. What
+           replaces it is the honest version of the same promise: the floor
+           is met by lowering the label, and a pick our own numbers disagree
+           with says so on its face.
+
+           CORRECTED 2026-09-16: this comment used to say the card "always
+           publishes three to five". It does not, and it must not. The floor
+           fills from the candidate pool that night's SLATE produced; on an
+           off-day or a washed-out night with fewer than three games there is
+           no third game to promote, and select() returns what the board
+           actually gave it. Pinned by
+           tests/test_no_nothing_clears_the_bar.py's
+           test_a_slate_too_thin_to_reach_the_floor_returns_what_it_has,
+           which starves the pool to two, one and zero. Nothing customer-
+           facing ever carried the "always" -- the card heading prints "N of
+           M games" -- but a false belief written down in the repo is how the
+           next person ships the sentence for real. -->
       <p class="story-card__body">"Take Padres −1.5 at −140." Then the reason, in plain English:
         who scores, who pitches, and what the price says. Every card carries how strong the read
         actually is — including the nights when the honest answer is "not very".</p>
