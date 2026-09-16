@@ -7,9 +7,11 @@ stages move. `docs/OVERNIGHT_RUN.md` is the running log; this is the map.
 **CURRENT STAGE POINTER (updated 2026-09-15).** Stages 1–15 below are
 history and context, kept for the audit trail, but NOT the active work
 queue. Read `docs/PRODUCT_DOCTRINE.md` first (LOCKED, governs every product
-decision), then resume at **Stage 16** at the bottom of this file: the
-owner-approved roadmap for 2026-09-15 to 2026-10-15, with the queue an
-autonomous run claims from. Stage 12's "ACTIVE" marker and Stage 9's "IN
+decision), then resume at **Stage 17** at the bottom of this file: the week of
+2026-09-16 to 2026-09-22, whose queue (ids `W-1` to `W-14`) an autonomous
+run claims from. **Stage 16** above it stays live for everything dated
+beyond this week and for its still-open owner decisions; Stage 17 takes
+precedence where the two overlap. Stage 12's "ACTIVE" marker and Stage 9's "IN
 PROGRESS" marker are stale; Stage 16 supersedes both.
 
 **Stage states:** OPEN / IN PROGRESS / DONE / BLOCKED / RETIRED. A permanently
@@ -731,3 +733,110 @@ the full gate, no rescue by threshold change, point-in-time data.
 6. Held daily-loop repair stash: stays held.
 7. Production deploy, domain, live Stripe: owner-only.
 8. Odds API plan tier and reset date: assumed monthly reset near the 1st.
+
+---
+
+# Stage 17 — The week of 2026-09-16 to 2026-09-22: forward testing in three sports, and the strategy lab at its honest size
+
+**Owner, 2026-09-16 (~05:20Z):** "plan for the weeka tnmous load, NFL, MLB,
+Tennis forward testing all of it , 10.000s of stregies and analysis types etc
+etc etc". Earlier the same night, after the home-underdog screen was killed:
+"home undersog is a BEYOND IDIOTIC STRATEGY with no research behind it ... our
+systems and analysis take into cosideration metrics and reccent histroy and
+stats and mathcup and bullpen analysis and bench analysis and all the things a
+backtest coudnt do so that makes sense."
+
+He is right about the first half and half right about the second. Backing a
+price band is not a strategy. A backtest **can** use matchup, bullpen, bench
+and form, but only where a point-in-time value was stored, and for 2023 and
+2024 this repo does not have one for starter and bullpen mechanics. That is a
+data gap, not a law of nature, and closing it is free (item W-12).
+
+## What "tens of thousands of strategies" actually means here
+
+Measured 2026-09-16, not estimated:
+
+| Fact | Number | Source |
+|---|---|---|
+| Genome space enumerated, MLB h2h, 6 registered features, max 3 signals | **11,088 candidates in 1.58 s**, 10.3 MB peak | `evolab.genome.enumerate_genomes` run live |
+| The one registered sweep's declared candidates | 8,811 | `data/research/alpha_registry.jsonl` |
+| Registry today | 47 hypotheses, 1 sweep, 2 audits, 42 verdicts read, **0 survivors** | same file |
+| Newest research artifact other than the registry | 2026-09-06, ten days stale | `data/research/evolab/` |
+| Floor before any verdict | 300 graded picks and 60 ledger dates, closing-line value primary | `docs/VALIDATION_CRITERIA.md` |
+
+So enumerating tens of thousands of strategies is cheap and real: it is seconds
+of CPU, and the placebo ceiling then ranks them against a scrambled-data noise
+floor. **Reaching a verdict is the expensive part.** At 300 graded picks and 60
+dates per surviving candidate, MLB and tennis can settle low single digits to
+low tens of distinct strategies in a season, and NFL essentially none this
+season without historical odds (272 games a season against a ~18,000-bet
+requirement to see a 3-point effect). Enumeration count is not evidence, and
+this file never presents it as evidence. What the lab produces weekly is: a
+declared sweep, a placebo-ceiling ranking, published nulls, and a small number
+of survivors entering forward testing with paper accounts.
+
+**Theatre, named so nobody drifts into it:** quoting the 11,088 or the 8,811 as
+"strategies tested"; drawing any return or closing-line verdict on fewer than
+300 graded picks; or opening a $1,000 paper page as if it were evidence of an
+edge. The paper pages show what betting a rule would have felt like, including
+going broke. They never feed the promotion gate.
+
+## Standing state this week (verified 2026-09-16 04:00 to 05:30Z)
+
+- **Credits:** 20,059 remaining, floor 5,000, envelope about 900 a day, live
+  in-play cap 300 a day. About 15,000 spendable this week without touching the
+  floor; the binding limit is the daily envelope, not the balance.
+- **Green unattended:** forward capture (self-chaining ~13 min), staging
+  deploys, the hourly cloud routine, CI.
+- **Red or blind:** the daily loop fails on its schedule and has succeeded only
+  when dispatched by hand (W-1); the afternoon slate failed every run overnight
+  on a date-basis bug (W-2, fix in flight); the live pipeline has never
+  recorded a candidate row and cannot yet (W-5); `evidence/live_candidates_v1.jsonl`
+  does not exist.
+- **BALLDONTLIE trial ends about 2026-09-17 05:30Z.** 115,649 rows banked
+  before the odds sweeps landed; the account is served at about 5 requests a
+  minute, so only a fraction of the plan will finish (W-10).
+- **Owner questions open:** card V2 questions 12, 13, 14; the live floor
+  question; the seven pricing decisions. Defaults hold until answered, and no
+  build that depends on an answer starts without it.
+
+## The week, by day (Pacific)
+
+| Id | When | Item | Acceptance |
+|---|---|---|---|
+| W-1 | Tue 9/16, first | **Make the daily loop green on its own schedule.** It settles picks, grades the record and writes the day's evidence; it has been failing on schedule since at least 9/13 and succeeding only on manual dispatch. Diagnose from the scheduled runs' logs, fix the cause, and prove it on a scheduled run, not a dispatch | Two consecutive scheduled runs green, with the escalation ledger showing only acknowledged lines |
+| W-2 | Tue 9/16 | **Afternoon slate date basis** (in flight): it asks for the UTC date while captures are keyed to the Eastern slate date, so every run between 8pm and midnight Eastern refuses on a day with no prices and fails the job. Fix the date, keep the freshness guard, and make "too early" an INFO line rather than an alarm | `bash -n` clean; new tests pin the Eastern date and both branches; the next overnight dispatches stop failing |
+| W-3 | Tue 9/16 | **Card V2 build starts** on the parts that need no owner answer: T1 pre-build checks, T2 the pure rule module, T3 the V2 ledger, T4 closing-line measurement, T2v the variant runner, T3v per-variant ledgers. Registration (T0) waits on questions 12 to 14 | Each task's named tests green; nothing registered; no customer surface changed |
+| W-4 | Tue 9/16 | **Free 2023 and 2024 feature backfill** (starters, box scores, bullpen usage, confirmed lineups) through the repo's own StatsAPI path, the same way the results backfill landed. This is what turns the 2023-24 matchup matrix from mostly null into usable, and it is the only honest answer to "a backtest could not do that" | Matrix nulls for starter and bullpen mechanics fall materially; row counts and coverage published; no odds credits spent |
+| W-5 | Wed 9/17 | **Live pipeline able to record** (R16-L2 to R16-L7): pre-game context and keys, in-play credit accounting from the response headers, the push path, rule-gated capture with freshness, ledger rows, settlement from authoritative finals | A real MLB window writes candidate rows with their in-play prices, inside the 300-credit cap, verified by a separate checker |
+| W-6 | **Thu 9/17, kickoff 5:15pm PT** | **NFL forward testing begins**: Thursday card published and locked before kickoff, live window during the game under the cap, settled Friday morning. NFL stays internal and coming-soon on the site | Card row frozen before kickoff; live rows or an honest "no trigger fired"; settlement Friday; nothing published to customers |
+| W-7 | Fri 9/18 | **Tennis forward testing**: results grading proven on the runner against yesterday's completed matches, the retirement rule recorded before any tennis pick is graded, and the board reads from the feed where the odds board has no price | Runner log shows graded rows; rule recorded; tennis still research-only |
+| W-8a | Thu 9/17 | **Wire the sweep to the real stores.** `scripts/evolab_sweep.py` says in its own docstring that it is fixture-only and "NOT A REAL-STORE RUNNER YET"; the single real sweep on disk (8,811 candidates, 2026-09-06) was bridged by hand and left no repeatable path. Until this is a command anyone can run, there is no weekly lab. Wire it through `src/evolab/replay.py`'s point-in-time engine, with the sealed window refused by name as it already is, and have it write its artifacts and its registry row itself | One command reproduces the 2026-09-06 sweep's candidate count from the real stores; the replay engine still refuses the sealed window; an adversarial review of the wiring before any new result is read |
+| W-8 | Fri 9/18 | **The lab's first repeatable sweep, declared before it runs**: one MLB sweep against the placebo ceiling with its alpha spend registered, the enumeration count published beside the verdict count so the two are never confused, and every null published. If W-8a is not finished, this becomes a null-result note rather than a rushed run | Registry shows the sweep row with its candidates; results doc lists survivors and nulls; no survivor skips the gate |
+| W-9 | Sat 9/19 | **Build the $1,000 path engine and open paper accounts** for every registered system in all three sports. The engine does not exist yet: `src/accounts/paper.py` holds live paper wagers, but the path engine `docs/STRATEGY_LAB_PLAN.md` section 2 describes is unbuilt. Build it to that section exactly: $1,000 start, three stake fractions shown side by side, real calendar start points played forward in true order with no shuffling and no resampling, busts marked and carried at minus 100 per cent into every later window, and the count of genuinely non-overlapping windows printed beside every band, with bands under 5 windows hidden. The repo's own refutation doc names the trap: a wrapped bootstrap is a calendar that never happened | Pages render on staging labelled as paper, carrying the line that they are not evidence of an edge and cannot feed the gate; a test proves a busted path stays in the denominator |
+| W-10 | Tue 9/16 to Thu 9/17 05:30Z | **Drain what is left of the BALLDONTLIE trial**: chain a harvest whenever none is active, newest seasons first, odds sweeps ahead of deep history | Manifest rows and release assets grow each run; a final row-count by sport recorded when the trial ends |
+| W-11 | Sun 9/20 | **NFL Sunday cards and live windows**, MLB as usual, and the first cross-sport day the system runs unattended end to end | Every sport's cards frozen before their own kickoffs; credits within envelope; no manual intervention recorded |
+| W-12 | Mon 9/21 | **The week's report**: what was forward tested in each sport, what the lab enumerated and what it settled, credits spent, every null, and what the evidence does and does not license | `docs/WEEK_2026-09-22_REPORT.md`, no edge claimed anywhere |
+| W-13 | through the week | **Redesign groups 2 onward** (copy-truth sweep, gameday card, gameday page, landing, matchups, props and odds, tools, results, account), one group per session, in dependency order from `docs/DESIGN_BUILD_PLAN.json` | Per-group acceptance met; staging verified at three widths; language and structure tests green |
+| W-14 | through the week | **Per-sport plans, part 1, no charges** (R16-12), built behind its tests with Stripe prices unset | Pricing plan tests 1 to 10 pass; checkout returns not-configured; nothing charges |
+
+## What the hourly runner does with this
+
+Same loop as Stage 16: pull, read this stage, claim the highest-value item that
+is OPEN and whose day has arrived, set it RUNNING with a UTC stamp, do it,
+verify against the acceptance column, commit by path, update the row, append to
+`docs/OVERNIGHT_RUN.md` and rewrite `docs/DEBRIEF_LATEST.md`. A NEW escalation
+outranks the queue. W-1 and W-2 outrank everything else until they are green,
+because an alarm that fires every night is an alarm nobody reads.
+
+## The honest limits of this week
+
+1. Nothing published to customers gets a new claim. NFL and tennis stay
+   coming-soon; the card keeps V1's rule until V2 registers, which needs the
+   owner's answers.
+2. No verdict will be drawn this week on any strategy, in any sport. The
+   earliest honest read on the card's own plus-money class is months away, and
+   the variant family's separation date is later still.
+3. The lab's output this week is a declared sweep, a ranking against noise, and
+   published nulls. That is the whole of it, and it is worth doing because it
+   is what makes a later survivor believable.
