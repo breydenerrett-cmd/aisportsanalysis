@@ -130,10 +130,18 @@
       }
     },
     "tennis_h2h": {
-      "measured": false,
-      "credits_per_event": null,
-      "measured_utc": null,
-      "source": "Documented at the-odds-api.com as 1 credit per call, but the measurement is recorded only from a real measurement, not from vendor documentation."
+      "measured": true,
+      "credits_per_event": 0,
+      "measured_utc": "2026-09-16T10:19:01.008694Z",
+      "source": "budget.probe_family: tennis_h2h probe fetching h2h odds for tennis_atp_aus_open_singles; billed=None, remaining_before=17096, remaining_after=17096; DEGENERATE PAYLOAD (books=0, markets_returned=0, outcomes=0, does not satisfy PROBE_REQUIRED, does not block a same-day re-probe)",
+      "degenerate": true,
+      "payload_shape": {
+        "event_count": 0,
+        "books": 0,
+        "markets_returned": 0,
+        "outcomes": 0,
+        "degenerate": true
+      }
     }
   }
 }
