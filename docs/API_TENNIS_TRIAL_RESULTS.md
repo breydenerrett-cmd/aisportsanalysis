@@ -16,8 +16,7 @@ Live matches observed this run: **19**
 
 **Question:** For >=20 matches, how long from end of set 1 to the first unsuspended second-set price updated after the set ended?
 **Threshold:** Within 120 seconds in at least 80% of matches.
-**Measured:** `{"matches_sampled": 19, "matches_with_set_betting_quoted": 8, "rate": 0.421}`
-**Note:** only 19 matches with a completed set 1 sampled this run (need >=20); this check needs repeated runs across the trial window -- see docs/TENNIS_FEED_DECISION_2026-09-15.md.
+**Measured:** `{"matches_sampled": 65, "matches_with_set_betting_quoted": 38, "rate": 0.585}`
 
 ## Check 8: Suspension flag -- FAIL
 
@@ -29,12 +28,12 @@ Live matches observed this run: **19**
 
 **Question:** At >=20 triggers, how long from the trigger to the first unsuspended price updated after it?
 **Threshold:** Median <=10 seconds, worst <=30 seconds, at the polling rate we'd pay for.
-**Measured:** `{"triggers_observed": 7, "poll_gap_seconds": 5.0, "median_latency_seconds": 23.578524112701416, "worst_latency_seconds": 24.511838912963867}`
-**Note:** only 7 price-change triggers observed in one 5.0s poll window (need >=20); this check needs a longer-running poller across the trial, not one script pass.
+**Measured:** `{"triggers_observed": 35, "median_latency_seconds": 37.80629277229309, "worst_latency_seconds": 39.245381593704224}`
 
 ## Check 10: Volume -- NOT ENOUGH DATA
 
 **Question:** How many calls does a busy day take at production rates (live scores, live odds, fixtures, player data)?
 **Threshold:** Under the plan's daily call limit, with room to spare.
-**Measured:** `{"calls_this_run": 77, "daily_limit_known": null}`
-**Note:** This run's own call count is a lower bound only. The real check needs counting every call across one full day at the intended production polling rate (live scores, live odds, fixtures, player data) and comparing to the Business plan's stated daily limit -- run scripts/api_tennis_trial.py on a schedule for a day and sum its calls, or check the vendor dashboard's own daily usage counter if it has one.
+**Measured:** `{"calls_accumulated": 209, "polls_run": 2, "polls_errored": 9, "daily_limit_known": null}`
+**Note:** The vendor's Business-plan daily call limit was not published at trial signup, so this reports the measured full-day call count for comparison against whatever limit the plan states; it is not assumed to pass. INSUFFICIENT SAMPLE: this is a partial day only, not a full day at production polling rates. 9 of 11 polls in this file failed to reach the vendor at all (see each record's 'detail' field), so calls_accumulated undercounts even a partial day. Re-run the sampler across a full day once it is reaching the vendor successfully to get a real count.
+

@@ -24,19 +24,51 @@ docs/TENNIS_FEED_DECISION_2026-09-15.md, "The free-trial checklist"):
 --dry-run exercises the full check list and code paths with a fake
 transport (no network, no key needed) and prints what would run.
 
+--sample-until <ISO8601 UTC, e.g. 2026-09-17T04:00:00Z> runs a full-day
+sampling mode instead of the single-pass check above. Checks 7, 9 and 10
+each need >=20 observations that one process invocation, run once, cannot
+gather (a single pass only sees whatever matches happen to be live at that
+moment) -- they need polling repeated across a day of play. In this mode the
+script polls every --poll-interval-seconds (default 90s -- long enough that
+a day of polling stays well inside a typical vendor daily-call budget;
+tighter than that risks burning the plan's call limit before check 10 can
+even be scored) until the given UTC deadline, and after every poll appends
+one JSON line per raw observation to --observations-file (default
+data/tennis_trial/observations.jsonl, created if absent). Appending (never
+rewriting) that file is what makes the sampling both crash-safe and
+restart-safe: a second run picks the existing file back up and keeps adding
+to the same count instead of starting over, and the file survives a killed
+process because each poll's observations are flushed to disk before the
+next sleep. Pass --daily-call-limit to stop the loop (not crash it) once the
+running call count -- summed from the same observations file, so it also
+survives a restart -- would reach that many calls; the vendor page did not
+publish one at trial signup, so it defaults to unset (unlimited), but check
+10 measures the true count either way so the limit can be applied to the
+data after the fact if it turns out to matter.
+
+--rescore reads the accumulated --observations-file and rewrites only the
+Check 7, Check 9 and Check 10 sections of docs/API_TENNIS_TRIAL_RESULTS.md
+against the thresholds in docs/TENNIS_FEED_DECISION_2026-09-15.md, using the
+full accumulated sample rather than one pass. Checks 6 and 8 are untouched.
+Run this once the sampling window has produced enough observations, or at
+any time to see where the count currently stands.
+
 SECURITY: reads the key only from API_TENNIS_KEY via client_from_env. Never
 prints, logs, or writes the key anywhere -- including into
-docs/API_TENNIS_TRIAL_RESULTS.md, which holds no key.
+docs/API_TENNIS_TRIAL_RESULTS.md or the observations file, neither of which
+holds a key.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -46,7 +78,30 @@ from src.providers.api_tennis import (  # noqa: E402
     client_from_env,
 )
 
-RESULTS_PATH = Path(__file__).resolve().parents[1] / "docs" / "API_TENNIS_TRIAL_RESULTS.md"
+REPO_ROOT = Path(__file__).resolve().parents[1]
+RESULTS_PATH = REPO_ROOT / "docs" / "API_TENNIS_TRIAL_RESULTS.md"
+DEFAULT_OBSERVATIONS_PATH = REPO_ROOT / "data" / "tennis_trial" / "observations.jsonl"
+DEFAULT_POLL_INTERVAL_SECONDS = 90.0
+
+
+def _load_dotenv(path=None) -> None:
+    """Read .env into os.environ. Values already exported win. Same idiom as
+    src/pipeline/prop_prices.py's _load_dotenv (lines 467-479): the scripts
+    in this repo do not otherwise load .env themselves, so the trial key in
+    the gitignored .env at the repo root would never reach client_from_env
+    without this."""
+    import os
+    env_file = Path(path) if path else REPO_ROOT / ".env"
+    if not env_file.exists():
+        return
+    for line in env_file.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key, value = key.strip(), value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
 
 CHECKS = [
     {
@@ -221,6 +276,7 @@ def check_second_set_speed(client: Client, live_matches: list) -> dict:
             "matches_with_set_betting_quoted": within_threshold,
             "rate": round(rate, 3),
         },
+        "samples": samples,  # raw per-match observations, for accumulation across polls
         "pass": passed,
         "note": None if n >= 20 else
             f"only {n} matches with a completed set 1 sampled this run (need >=20); "
@@ -319,6 +375,7 @@ def check_freshness(client: Client, live_matches: list) -> dict:
             "median_latency_seconds": median,
             "worst_latency_seconds": worst,
         },
+        "latencies": latencies,  # raw per-trigger latencies, for accumulation across polls
         "pass": passed,
         "note": None if n >= 20 else
             f"only {n} price-change triggers observed in one {poll_gap_seconds}s poll window "
@@ -465,14 +522,296 @@ def run_live(print_fn=print) -> int:
     return 0
 
 
+# ---------------------------------------------------------------------------
+# Full-day sampling mode (checks 7, 9, 10 need >=20 observations built up
+# across a day of live play; one process invocation cannot gather that).
+# ---------------------------------------------------------------------------
+
+def _append_jsonl(path: Path, records: list) -> None:
+    """Append-only: never truncates, never rewrites an existing line. Each
+    record is flushed before returning so a killed process loses at most
+    the observations from its current poll, never an earlier one."""
+    if not records:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as fh:
+        for record in records:
+            fh.write(json.dumps(record, sort_keys=True))
+            fh.write("\n")
+            fh.flush()
+
+
+def _load_jsonl(path: Path) -> list:
+    """Read every accumulated record. Tolerates a half-written last line
+    (e.g. from a process killed mid-write) by skipping only that line,
+    never the whole file -- that is the point of an append-only store."""
+    if not path.exists():
+        return []
+    records = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            records.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return records
+
+
+def _cumulative_calls(records: list) -> int:
+    return sum(r.get("calls", 0) for r in records if r.get("kind") == "call_count")
+
+
+def sample_one_pass(client: Client, counting: "_CountingClient", now_iso: str) -> list:
+    """One poll pass: find live matches, run the raw-observation halves of
+    checks 7 and 9, and record the calls it cost (for check 10). Returns the
+    list of jsonl records this pass produced -- callers append them."""
+    records = []
+    calls_before = counting.call_count
+    try:
+        live_matches = find_live_matches(counting)
+    except ApiTennisError as exc:
+        records.append({"kind": "error", "ts": now_iso, "detail": str(exc)})
+        records.append({"kind": "call_count", "ts": now_iso, "calls": counting.call_count - calls_before})
+        return records
+
+    if not live_matches:
+        records.append({"kind": "no_live_match", "ts": now_iso})
+        records.append({"kind": "call_count", "ts": now_iso, "calls": counting.call_count - calls_before})
+        return records
+
+    records.append({"kind": "poll_meta", "ts": now_iso, "live_match_count": len(live_matches)})
+
+    check7 = check_second_set_speed(counting, live_matches)
+    for sample in check7["samples"]:
+        records.append({
+            "kind": "check7_sample", "ts": now_iso,
+            "event_key": sample["event_key"],
+            "set_betting_present": sample["set_betting_present"],
+        })
+
+    check9 = check_freshness(counting, live_matches)
+    for latency in check9["latencies"]:
+        records.append({"kind": "check9_latency", "ts": now_iso, "latency_seconds": latency})
+
+    records.append({"kind": "call_count", "ts": now_iso, "calls": counting.call_count - calls_before})
+    return records
+
+
+def run_sample(sample_until: datetime, *, poll_interval_seconds: float,
+                observations_path: Path, daily_call_limit=None,
+                client: Optional[Client] = None, print_fn=print,
+                now_fn=None, sleep_fn=None, max_iterations: Optional[int] = None) -> int:
+    """Poll live matches every poll_interval_seconds until sample_until (UTC),
+    appending raw observations to observations_path. Resumable: a second
+    invocation reads the same file's existing call_count records and keeps
+    counting from there rather than from zero. max_iterations is a test seam
+    only (bounds the loop without needing a real sample_until in the past)."""
+    import time as _time
+    now_fn = now_fn or (lambda: datetime.now(timezone.utc))
+    sleep_fn = sleep_fn or _time.sleep
+
+    if client is None:
+        try:
+            client = client_from_env()
+        except ApiTennisError as exc:
+            print_fn(f"API_TENNIS_KEY not usable: {exc}")
+            return 1
+
+    iterations = 0
+    while True:
+        now = now_fn()
+        if now >= sample_until:
+            print_fn(f"sampling window ended ({sample_until.isoformat()}); stopping.")
+            return 0
+        if max_iterations is not None and iterations >= max_iterations:
+            return 0
+
+        existing = _load_jsonl(observations_path)
+        cumulative_calls = _cumulative_calls(existing)
+        if daily_call_limit is not None and cumulative_calls >= daily_call_limit:
+            print_fn(f"stopping: daily call limit reached ({cumulative_calls} >= {daily_call_limit}).")
+            return 0
+
+        counting = _CountingClient(client)
+        now_iso = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+        try:
+            new_records = sample_one_pass(client, counting, now_iso)
+        except ApiTennisError as exc:
+            new_records = [{"kind": "error", "ts": now_iso, "detail": str(exc)}]
+        _append_jsonl(observations_path, new_records)
+        pass_calls = counting.call_count
+        live_count = next((r["live_match_count"] for r in new_records if r.get("kind") == "poll_meta"), 0)
+        print_fn(f"[{now_iso}] live_matches={live_count} calls_this_pass={pass_calls} "
+                 f"cumulative_calls={cumulative_calls + pass_calls}")
+
+        iterations += 1
+        if max_iterations is not None and iterations >= max_iterations:
+            return 0
+        sleep_fn(poll_interval_seconds)
+
+
+def rescore_checks_7_9_10(observations_path: Path) -> list:
+    """Re-derive checks 7, 9 and 10 from every accumulated observation in
+    observations_path (the full sample built up across the sampling window,
+    not one pass), against the same thresholds run_live() uses."""
+    records = _load_jsonl(observations_path)
+
+    check7_samples = [r for r in records if r.get("kind") == "check7_sample"]
+    n7 = len(check7_samples)
+    within7 = sum(1 for r in check7_samples if r.get("set_betting_present"))
+    rate7 = (within7 / n7) if n7 else 0.0
+    result7 = {
+        "id": 7, "name": "Second-set market speed",
+        "measured": {
+            "matches_sampled": n7,
+            "matches_with_set_betting_quoted": within7,
+            "rate": round(rate7, 3),
+        },
+        "pass": n7 >= 20 and rate7 >= 0.80,
+        "note": None if n7 >= 20 else
+            f"INSUFFICIENT SAMPLE: n={n7} accumulated observations (need >=20). This is the "
+            "real accumulated count as of this rescore, not the one-pass number from the "
+            "first run -- see the accumulation log for why the count is this low.",
+    }
+
+    latencies = [r["latency_seconds"] for r in records if r.get("kind") == "check9_latency"]
+    n9 = len(latencies)
+    if n9:
+        latencies_sorted = sorted(latencies)
+        median9 = latencies_sorted[n9 // 2]
+        worst9 = latencies_sorted[-1]
+    else:
+        median9 = worst9 = None
+    result9 = {
+        "id": 9, "name": "Freshness",
+        "measured": {
+            "triggers_observed": n9,
+            "median_latency_seconds": median9,
+            "worst_latency_seconds": worst9,
+        },
+        "pass": n9 >= 20 and median9 is not None and median9 <= 10 and worst9 <= 30,
+        "note": None if n9 >= 20 else
+            f"INSUFFICIENT SAMPLE: n={n9} accumulated observations (need >=20). This is the "
+            "real accumulated count as of this rescore, not the one-pass number from the "
+            "first run -- see the accumulation log for why the count is this low.",
+    }
+
+    total_calls = _cumulative_calls(records)
+    live_polls = sum(1 for r in records if r.get("kind") in ("poll_meta", "no_live_match"))
+    error_polls = sum(1 for r in records if r.get("kind") == "error")
+    result10 = {
+        "id": 10, "name": "Volume",
+        "measured": {
+            "calls_accumulated": total_calls,
+            "polls_run": live_polls,
+            "polls_errored": error_polls,
+            "daily_limit_known": None,
+        },
+        "pass": None,
+        "note": _volume_note(total_calls, live_polls, error_polls),
+    }
+    return [result7, result9, result10]
+
+
+def _volume_note(total_calls: int, live_polls: int, error_polls: int) -> str:
+    base = ("The vendor's Business-plan daily call limit was not published at trial "
+            "signup, so this reports the measured full-day call count for comparison "
+            "against whatever limit the plan states; it is not assumed to pass.")
+    total_polls = live_polls + error_polls
+    if not error_polls and live_polls >= 20:
+        return base
+    parts = [base, "INSUFFICIENT SAMPLE: this is a partial day only, not a full day at "
+             "production polling rates."]
+    if error_polls:
+        parts.append(
+            f"{error_polls} of {total_polls} polls in this file failed to reach the vendor "
+            "at all (see each record's 'detail' field), so calls_accumulated undercounts even "
+            "a partial day.")
+    parts.append("Re-run the sampler across a full day once it is reaching the vendor "
+                  "successfully to get a real count.")
+    return " ".join(parts)
+
+
+def rewrite_results_sections(results: list) -> None:
+    """Replace only the '## Check 7', '## Check 9' and '## Check 10' blocks
+    in docs/API_TENNIS_TRIAL_RESULTS.md, leaving checks 6 and 8 (and the
+    file's header) untouched."""
+    text = RESULTS_PATH.read_text(encoding="utf-8")
+    for r in results:
+        status = "PASS" if r["pass"] is True else ("FAIL" if r["pass"] is False else "NOT ENOUGH DATA")
+        check_def = next(c for c in CHECKS if c["id"] == r["id"])
+        block_lines = [
+            f"## Check {r['id']}: {r['name']} -- {status}",
+            "",
+            f"**Question:** {check_def['question']}",
+            f"**Threshold:** {check_def['threshold']}",
+            f"**Measured:** `{json.dumps(r['measured'])}`",
+        ]
+        if r.get("note"):
+            block_lines.append(f"**Note:** {r['note']}")
+        block_lines.append("")
+        new_block = "\n".join(block_lines) + "\n"  # trailing blank line before the next header
+
+        pattern = re.compile(
+            rf"^## Check {r['id']}:.*?(?=^## Check \d|\Z)", re.MULTILINE | re.DOTALL)
+        if pattern.search(text):
+            text = pattern.sub(new_block, text, count=1)
+        else:
+            text = text.rstrip("\n") + "\n\n" + new_block
+    RESULTS_PATH.write_text(text, encoding="utf-8")
+
+
+def _parse_iso8601_utc(value: str) -> datetime:
+    text = value.strip()
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    moment = datetime.fromisoformat(text)
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+    return moment.astimezone(timezone.utc)
+
+
 def main(argv=None) -> int:
+    _load_dotenv()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dry-run", action="store_true",
                          help="exercise the full check list with a fake transport, no network")
+    parser.add_argument("--sample-until", metavar="ISO8601_UTC", default=None,
+                         help="run full-day sampling mode until this UTC timestamp, "
+                              "e.g. 2026-09-17T04:00:00Z")
+    parser.add_argument("--poll-interval-seconds", type=float,
+                         default=DEFAULT_POLL_INTERVAL_SECONDS,
+                         help=f"seconds between sampling polls (default {DEFAULT_POLL_INTERVAL_SECONDS})")
+    parser.add_argument("--daily-call-limit", type=int, default=None,
+                         help="stop sampling once the accumulated call count reaches this")
+    parser.add_argument("--observations-file", default=str(DEFAULT_OBSERVATIONS_PATH),
+                         help=f"append-only jsonl store (default {DEFAULT_OBSERVATIONS_PATH})")
+    parser.add_argument("--rescore", action="store_true",
+                         help="rewrite checks 7/9/10 in docs/API_TENNIS_TRIAL_RESULTS.md "
+                              "from the accumulated observations file and exit")
     args = parser.parse_args(argv)
+
+    observations_path = Path(args.observations_file)
+
+    if args.rescore:
+        results = rescore_checks_7_9_10(observations_path)
+        rewrite_results_sections(results)
+        print(f"Rescored checks 7, 9, 10 from {observations_path} into {RESULTS_PATH}")
+        for r in results:
+            print(f"  check {r['id']} {r['name']}: pass={r['pass']} measured={r['measured']}")
+        return 0
 
     if args.dry_run:
         return run_dry()
+
+    if args.sample_until:
+        sample_until = _parse_iso8601_utc(args.sample_until)
+        return run_sample(sample_until, poll_interval_seconds=args.poll_interval_seconds,
+                           observations_path=observations_path,
+                           daily_call_limit=args.daily_call_limit)
+
     return run_live()
 
 

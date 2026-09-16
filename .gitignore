@@ -229,3 +229,6 @@ data/research/evolab/masks-*.bin
 
 # Local scheduler tick log -- machine-local evidence, not repo history.
 data/logs/
+
+# Trial sampling observations (W-17); regenerable, and the run appends live.
+data/tennis_trial/
