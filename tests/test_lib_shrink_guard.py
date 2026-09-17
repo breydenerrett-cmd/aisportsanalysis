@@ -232,27 +232,202 @@ class GuardOnAThrowawayRepo(unittest.TestCase):
 
 
 class CaptureScriptsCallTheGuard(unittest.TestCase):
-    """Textual proof that both data-plane scripts actually source and
-    invoke the guard where they stage the three historical stores --
-    complements GuardOnAThrowawayRepo's proof that the guard itself works."""
+    """Textual proof that both data-plane scripts actually source the guard,
+    read the declaration (not a literal filename list), stage exactly those
+    declared paths, and invoke the guard on them afterwards -- complements
+    GuardOnAThrowawayRepo's proof that the guard itself works.
 
-    def test_capture_slot_and_forward_capture_call_the_guard(self):
+    H4 (2026-09-16): this used to assert the literal string "git add
+    data/historical/lineups.jsonl" appeared in both scripts -- that was
+    itself the hand-kept-list problem H4 removes, so the assertion changed
+    along with the fix. What must stay true is the invariant, not the
+    wording: both scripts source read_append_only_stores, stage whatever
+    it returns, and guard exactly that same set, in that order."""
+
+    def test_capture_slot_and_forward_capture_read_the_declaration(self):
         for rel in ("scripts/capture_slot.sh", "scripts/forward_capture.sh"):
             with self.subTest(script=rel):
                 text = (REPO / rel).read_text(encoding="utf-8")
                 self.assertIn("lib_shrink_guard.sh", text,
                              f"{rel} does not source the shrink guard")
+                self.assertIn("read_append_only_stores", text,
+                             f"{rel} does not read the single declaration "
+                             "of append-only stores -- it must not carry "
+                             "its own literal list")
+                self.assertNotIn("git add data/historical/lineups.jsonl", text,
+                                 f"{rel} still hardcodes a store's git add "
+                                 "instead of reading the declaration "
+                                 "(mentioning the path in a comment is fine "
+                                 "-- staging it literally is not)")
                 self.assertIn("guard_staged_no_shrink", text,
                              f"{rel} sources the guard but never calls it")
-                # The call must come after the git add of the three
-                # historical stores, or it would check nothing staged yet.
-                add_pos = text.index(
-                    "git add data/historical/lineups.jsonl")
-                guard_pos = text.index("guard_staged_no_shrink")
-                self.assertLess(
-                    add_pos, guard_pos,
-                    f"{rel} calls the guard before staging the historical "
-                    "stores, so it would have nothing to check")
+                # The declared paths must be read, then staged, then
+                # guarded, in that order -- guarding before staging would
+                # have nothing to check; staging before reading the
+                # declaration would have nothing to stage.
+                read_pos = text.index("read_append_only_stores)")
+                add_pos = text.index("git add $DECLARED_STORES")
+                guard_pos = text.index("guard_staged_no_shrink $DECLARED_STORES")
+                self.assertLess(read_pos, add_pos,
+                                f"{rel} stages before reading the declaration")
+                self.assertLess(add_pos, guard_pos,
+                                f"{rel} calls the guard before staging the "
+                                "declared stores, so it would have nothing "
+                                "to check")
+
+    def test_declaration_file_lists_the_three_known_stores(self):
+        """The declaration itself must still carry (at minimum) the three
+        stores the original incident and guard were built around -- H4
+        generalises HOW a store gets protected, not WHICH ones currently
+        are."""
+        sys.path.insert(0, str(REPO))
+        from scripts.store_registry import load_declared_stores
+        declared = load_declared_stores()
+        for path in ("data/historical/lineups.jsonl",
+                     "data/historical/matchup_history.jsonl",
+                     "data/historical/matchup_pairs.json"):
+            self.assertIn(path, declared)
+
+
+class DeclarationDrivenGuardTest(unittest.TestCase):
+    """Proves the guard is actually driven BY the declaration file, not
+    just by whatever paths a caller happens to pass -- i.e. that
+    read_append_only_stores + guard_staged_no_shrink together reproduce
+    exactly the behaviour the old hand-kept lists gave, for a store that
+    exists ONLY in the declaration, never typed into this test by name
+    anywhere else."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.repo = Path(self._tmp.name) / "repo"
+        (self.repo / "data" / "historical").mkdir(parents=True)
+        _run("git", "init", "-q", cwd=self.repo)
+        _run("git", "config", "user.email", "test@example.com", cwd=self.repo)
+        _run("git", "config", "user.name", "Test", cwd=self.repo)
+        shutil.copy(GUARD, self.repo / "lib_shrink_guard.sh")
+        # A declaration naming a store this test never hardcodes anywhere
+        # else -- proves the guard follows the FILE, not a copy of the list
+        # baked into this test.
+        (self.repo / "append_only_stores.txt").write_text(
+            "# test declaration\n"
+            "data/historical/quietly_declared.jsonl\n",
+            encoding="utf-8")
+
+    def _declared_guard(self):
+        script = ("set -uo pipefail\n"
+                 ". ./lib_shrink_guard.sh\n"
+                 "STORES=$(read_append_only_stores)\n"
+                 "guard_staged_no_shrink $STORES\n")
+        return _run(BASH, "-c", script, cwd=self.repo)
+
+    def test_a_store_named_only_in_the_declaration_is_still_protected(self):
+        (self.repo / "data/historical/quietly_declared.jsonl").write_text(
+            '{"r":0}\n{"r":1}\n{"r":2}\n', encoding="utf-8")
+        _run("git", "add", "data/historical/quietly_declared.jsonl", cwd=self.repo)
+        _run("git", "commit", "-q", "-m", "initial", cwd=self.repo)
+
+        (self.repo / "data/historical/quietly_declared.jsonl").write_text(
+            '{"r":0}\n', encoding="utf-8")  # 3 -> 1
+        _run("git", "add", "data/historical/quietly_declared.jsonl", cwd=self.repo)
+
+        result = self._declared_guard()
+
+        self.assertIn(
+            "ESCALATE: data/historical/quietly_declared.jsonl would shrink "
+            "3 -> 1 rows, refusing", result.stdout)
+        staged = _run("git", "diff", "--cached", "--name-only", cwd=self.repo).stdout
+        self.assertNotIn("quietly_declared.jsonl", staged)
+
+    def test_an_undeclared_store_is_not_protected_by_the_declaration_reader(self):
+        """Sanity check on the other side of the same mechanism: a store
+        NOT in append_only_stores.txt gets no protection from
+        read_append_only_stores, because it never reads that path at all.
+        (It could still be protected if a caller passed its path directly,
+        as the pre-H4 scripts used to -- this test is about the
+        declaration-driven path specifically.)"""
+        (self.repo / "data/historical/undeclared.jsonl").write_text(
+            '{"r":0}\n{"r":1}\n', encoding="utf-8")
+        _run("git", "add", "data/historical/undeclared.jsonl", cwd=self.repo)
+        _run("git", "commit", "-q", "-m", "initial", cwd=self.repo)
+
+        (self.repo / "data/historical/undeclared.jsonl").write_text(
+            '{"r":0}\n', encoding="utf-8")  # 2 -> 1, would shrink
+        _run("git", "add", "data/historical/undeclared.jsonl", cwd=self.repo)
+
+        result = self._declared_guard()
+
+        self.assertNotIn("undeclared.jsonl", result.stdout)
+
+
+class LintCatchesUndeclaredStoresTest(unittest.TestCase):
+    """H4 requirement 3: an append-only store that exists in the tree but
+    is NOT declared must fail a test -- scripts/lint_append_only_declarations.py
+    is that lint. This exercises it against a throwaway repo built to have
+    exactly the append-only growth signature (rows only ever increase
+    across >= 2 commits, top-level under data/historical/*.jsonl), the same
+    signature the lint itself looks for -- see that script's module
+    docstring for the full definition and its documented blind spots
+    (single-commit stores, nested subdirectories, and anything outside
+    data/historical/ are NOT checked by this lint)."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.repo = Path(self._tmp.name) / "repo"
+        (self.repo / "data" / "historical").mkdir(parents=True)
+        (self.repo / "scripts").mkdir()
+        _run("git", "init", "-q", cwd=self.repo)
+        _run("git", "config", "user.email", "test@example.com", cwd=self.repo)
+        _run("git", "config", "user.name", "Test", cwd=self.repo)
+
+    def _commit_jsonl(self, rel, row_counts):
+        for n in row_counts:
+            (self.repo / rel).write_text(
+                "".join(f'{{"row":{i}}}\n' for i in range(n)), encoding="utf-8")
+            _run("git", "add", rel, cwd=self.repo)
+            _run("git", "commit", "-q", "-m", f"{rel} -> {n} rows", cwd=self.repo)
+
+    def _lint(self):
+        return subprocess.run(
+            [sys.executable, str(REPO / "scripts" / "lint_append_only_declarations.py"),
+             str(self.repo)],
+            capture_output=True, text=True)
+
+    def test_a_grows_only_store_with_no_declaration_fails_the_lint(self):
+        self._commit_jsonl("data/historical/new_store.jsonl", [2, 3, 5])
+        (self.repo / "scripts" / "append_only_stores.txt").write_text(
+            "", encoding="utf-8")
+
+        result = self._lint()
+
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("UNDECLARED: data/historical/new_store.jsonl",
+                      result.stdout)
+
+    def test_a_declared_grows_only_store_passes_the_lint(self):
+        self._commit_jsonl("data/historical/known_store.jsonl", [2, 3, 5])
+        (self.repo / "scripts" / "append_only_stores.txt").write_text(
+            "data/historical/known_store.jsonl\n", encoding="utf-8")
+
+        result = self._lint()
+
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertNotIn("UNDECLARED", result.stdout)
+
+    def test_documented_blind_spot_a_single_commit_store_is_not_caught(self):
+        """Names the limitation instead of hiding it: with only one commit
+        there is no growth history to test "never shrinks" against, so the
+        lint skips it rather than guessing. An undeclared brand-new store
+        will NOT be caught until its second commit."""
+        self._commit_jsonl("data/historical/brand_new.jsonl", [3])
+        (self.repo / "scripts" / "append_only_stores.txt").write_text(
+            "", encoding="utf-8")
+
+        result = self._lint()
+
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertNotIn("brand_new.jsonl", result.stdout)
 
 
 if __name__ == "__main__":  # pragma: no cover

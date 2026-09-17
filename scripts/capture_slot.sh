@@ -631,14 +631,18 @@ fi
 # commit made ninety-six times a day.
 git add data/watch data/processed data/raw/oddsapi data/live docs/OVERNIGHT_RUN.md \
         evidence data/paper_accounts 2>/dev/null || true
-git add data/historical/lineups.jsonl data/historical/matchup_history.jsonl data/historical/matchup_pairs.json 2>/dev/null || true
-# GUARD (2026-09-16 incident, scripts/lib_shrink_guard.sh): a CI cache
-# restore can silently clobber these three stores with a stale, smaller
-# snapshot before this script ever runs. Refuse to commit a shrink on any
-# one of them; the rest of the commit proceeds either way.
+# H4 (2026-09-16): the historical stores staged below used to be a literal
+# filename list here (and a second copy in forward_capture.sh) -- protected
+# only if someone remembered to update both. They now come from the single
+# declaration scripts/append_only_stores.txt via read_append_only_stores.
 . "$(dirname "$0")/lib_shrink_guard.sh"
-guard_staged_no_shrink data/historical/lineups.jsonl \
-    data/historical/matchup_history.jsonl data/historical/matchup_pairs.json
+DECLARED_STORES=$(read_append_only_stores)
+git add $DECLARED_STORES 2>/dev/null || true
+# GUARD (2026-09-16 incident, scripts/lib_shrink_guard.sh): a CI cache
+# restore can silently clobber these stores with a stale, smaller snapshot
+# before this script ever runs. Refuse to commit a shrink on any one of
+# them; the rest of the commit proceeds either way.
+guard_staged_no_shrink $DECLARED_STORES
 if ! git diff --cached --quiet; then
     BRANCH=$(git rev-parse --abbrev-ref HEAD)
     if ! git commit -q -m "Forward capture slot $(date -u +%H:%MZ) (external)"; then

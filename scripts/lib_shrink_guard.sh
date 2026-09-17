@@ -33,6 +33,33 @@
 # against what this repo's own HEAD already has.
 # It does not change the writer -- lineup_store.py's append-only behavior is
 # already correct; the corruption happens after it, in git staging.
+# H4 (2026-09-16): protection used to depend on capture_slot.sh and
+# forward_capture.sh each carrying their own literal three-path list --
+# a new append-only store was only protected if a future person remembered
+# to edit both. read_append_only_stores replaces that hand-kept list with
+# a single declaration (scripts/append_only_stores.txt) both scripts read.
+# See that file's header for the format and why it's a flat text list.
+#
+# Prints one repo-root-relative path per line, comments and blanks
+# stripped. Callers pass its output, unquoted, to git add / guard_staged_
+# no_shrink exactly the way the old literal lists were passed -- none of
+# these paths contain spaces, so word-splitting is safe and matches the
+# rest of this file's style.
+read_append_only_stores() {
+    local declfile line
+    declfile="$(dirname "${BASH_SOURCE[0]}")/append_only_stores.txt"
+    if [ ! -f "$declfile" ]; then
+        echo "ESCALATE: $declfile missing, no append-only stores declared" >&2
+        return 0
+    fi
+    while IFS= read -r line || [ -n "$line" ]; do
+        line="${line%%#*}"                     # strip trailing comment
+        line="${line#"${line%%[![:space:]]*}"}" # trim leading whitespace
+        line="${line%"${line##*[![:space:]]}"}" # trim trailing whitespace
+        [ -n "$line" ] && printf '%s\n' "$line"
+    done < "$declfile"
+}
+
 guard_staged_no_shrink() {
     local path staged_blob head_blob staged_n head_n unit
     for path in "$@"; do

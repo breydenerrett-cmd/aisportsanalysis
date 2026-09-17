@@ -1,0 +1,51 @@
+# Declaration of append-only stores that must never shrink.
+#
+# WHY THIS FILE EXISTS (H4, 2026-09-16, following the lineups.jsonl
+# incident diagnosed and fixed by scripts/lib_shrink_guard.sh). That guard
+# is correct but its weakness was structural: capture_slot.sh and
+# forward_capture.sh each carried their OWN literal list of three path
+# names. A future append-only store is protected only if whoever adds it
+# also remembers to edit both scripts by hand -- a guarantee rest on human
+# memory, the same failure class as the original bug (a workflow file
+# nobody remembered restores a stale cache over a fresh checkout). This
+# file is the single place a store declares itself; both scripts, and the
+# lint in tests/test_lib_shrink_guard.py, read it instead of hand-copying
+# a list.
+#
+# FORMAT, AND WHY THIS FORMAT
+# ----------------------------
+# One repo-root-relative path per line. Blank lines and lines starting
+# with "#" are ignored. That's the entire grammar.
+#
+# This repo is stdlib-only Python plus POSIX shell -- no PyYAML, no jq, no
+# new dependency is allowed for either side to parse this file. A flat
+# newline-delimited list needs no parser at all: shell reads it with a
+# plain `while read -r line` loop (see read_append_only_stores in
+# lib_shrink_guard.sh) and Python reads it with `.splitlines()` (see
+# scripts/store_registry.py) -- both stdlib, both already idiomatic in
+# this repo's other scripts. JSON would need `git add`-style quoting
+# handled on the shell side for no benefit (nothing here is nested or
+# structured); YAML would add a dependency this repo has deliberately
+# never taken on. A one-path-per-line text file is the simplest format
+# that is trivially correct in both languages.
+#
+# The unit used to detect a shrink (rows vs. bytes) is NOT declared here --
+# lib_shrink_guard.sh already derives that from the path's extension
+# (*.jsonl -> line count, everything else -> byte size), so duplicating it
+# here would just be a second place that fact could go stale.
+#
+# Walked with `git show <sha>:<path> | wc -l` across each candidate's full
+# commit history before adding (2026-09-16): none of data/watch/*.jsonl,
+# data/processed/f5_close.jsonl, data/processed/odds_snapshots.jsonl,
+# data/processed/prop_listing.jsonl, data/processed/credit_log.jsonl,
+# data/historical/bullpen_log.jsonl, data/historical/pitcher_logs.jsonl,
+# data/historical/standings.jsonl, or data/historical/transactions.jsonl
+# has ever shrunk between commits, and none of them is staged by name the
+# way the three below are (capture_slot.sh/forward_capture.sh `git add`
+# their parent directories wholesale) -- so none of them belong here yet.
+# The three below are staged by individual filename in both scripts,
+# which is exactly the shape of the incident this guard exists for.
+
+data/historical/lineups.jsonl
+data/historical/matchup_history.jsonl
+data/historical/matchup_pairs.json
