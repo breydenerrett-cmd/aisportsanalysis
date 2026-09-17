@@ -23,7 +23,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Request
 
 from api.games import _build_entries, _record_page_view
-from src.analysis import daily_card, grade
+from src.analysis import best_bets_card, daily_card, grade
 from src.analysis import opportunities as opportunities_mod
 from src.analysis import strength
 from src.report import card as card_mod
@@ -48,8 +48,27 @@ def _validate_sport(sport: str) -> None:
             detail=f"sport must be one of {valid_sports}, got {sport!r}")
 
 
+# T5 (docs/CARD_V2_BUILD_PLAN.md). The only two rule ids any card route
+# accepts -- there is no third value, and neither string is guessed from
+# elsewhere: "v1" is `daily_card.CARD_RULE`'s family, "v2" is
+# `best_bets_card.V2.rule_id`'s. `?rule=` defaults to `card_mod.
+# ACTIVE_CARD_RULE`, so every existing caller (no `rule` param at all) keeps
+# getting exactly what it always has -- V1 -- until `ACTIVE_CARD_RULE`
+# itself flips at T13's registration commit.
+_VALID_RULES = ("v1", "v2")
+
+
+def _resolve_rule(rule: Optional[str]) -> str:
+    resolved = rule or card_mod.ACTIVE_CARD_RULE
+    if resolved not in _VALID_RULES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"rule must be one of {_VALID_RULES}, got {resolved!r}")
+    return resolved
+
+
 def _build_payload(date: str, request: Optional[Request], route: str,
-                   sport: str = "mlb") -> dict:
+                   sport: str = "mlb", rule: Optional[str] = None) -> dict:
     """The card for one date.
 
     THE FROZEN CHECK COMES FIRST, AND IT IS WORTH 15 SECONDS A REQUEST.
@@ -94,6 +113,14 @@ def _build_payload(date: str, request: Optional[Request], route: str,
         payload = nfl_card.card_for_date(date, now=now)
         _record_page_view(request, route, date)
         return payload
+
+    resolved_rule = _resolve_rule(rule)
+
+    # MLB, rule v2: the PREVIEW path (T5). Kept entirely separate from the
+    # branch below so `rule=None`/`rule="v1"` -- every existing caller --
+    # reaches the untouched v1 code and gets the untouched v1 byte shape.
+    if resolved_rule == "v2":
+        return _build_payload_v2(date, request, route)
 
     # MLB: existing code path (default)
     now = datetime.now(timezone.utc)
@@ -146,17 +173,61 @@ def _build_payload(date: str, request: Optional[Request], route: str,
     return payload
 
 
+def _build_payload_v2(date: str, request: Optional[Request], route: str) -> dict:
+    """The V2 preview payload for one date (T5, `?rule=v2`).
+
+    Serves the FROZEN row when V2 has published one for this date (same
+    "check the ledger first" shape `_build_payload`'s v1 branch uses, for
+    the identical reason -- see that function's docstring), and builds live
+    otherwise. Nothing publishes V2 before T0's registration commit, so in
+    practice every request through this path today builds live; the frozen
+    branch exists so this route does not need to change again the day T6
+    starts writing rows.
+
+    `CardV2Error` (the frozen-parameter file missing or unreadable) is a 503,
+    not a 500 and not a quietly empty card: V2 cannot be built at all
+    without its own fitted numbers, and that is an operational fact about
+    this deployment, not a fact about tonight's board.
+    """
+    from src.report import card_v2
+
+    now = datetime.now(timezone.utc)
+
+    frozen = card_v2.frozen_card_v2(date)
+    if frozen is not None:
+        frozen["generated_at"] = now.isoformat()
+        _record_page_view(request, route, date)
+        return frozen
+
+    entries, _notes, meta = _build_entries(date)
+    opportunities = opportunities_mod.build_opportunities(
+        entries, date=date, now=now)
+    try:
+        payload = card_v2.card_v2_for_date(
+            entries, opportunities.get("rows") or [], date=date, now=now)
+    except card_v2.CardV2Error as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    payload["freshness"] = meta
+    _record_page_view(request, route, date)
+    return payload
+
+
 # DECLARED BEFORE /card/{date}, because FastAPI matches routes in
 # declaration order and "record" would otherwise be captured as a date and
 # rejected by _validate_date as a 400.
 @router.get("/card/record")
-def get_card_record(request: Request = None, sport: str = "mlb") -> dict:
+def get_card_record(request: Request = None, sport: str = "mlb",
+                    rule: Optional[str] = None) -> dict:
     """The card's public record: every settled day, pooled.
 
     Pooling is correct here and is not the pooling mistake this repo warns
     about elsewhere. The card is ONE system with ONE rule, so its picks are
     one population; the warning is about pooling different systems, where a
     control and a forward test average into a number describing neither.
+    That is still true within V2's own record (`rule=v2`, `sport=mlb` only)
+    -- what changes is that V2 has TWO price classes and a fills population,
+    reported apart from each other and never summed into one figure a
+    reader could mistake for the rule's own result (registration R5).
 
     The chain is verified on every request and reported. A published record
     whose hash chain is broken is not a record, and the page showing it has
@@ -165,6 +236,15 @@ def get_card_record(request: Request = None, sport: str = "mlb") -> dict:
     from src.appstate import card_ledger
 
     _validate_sport(sport)
+    resolved_rule = _resolve_rule(rule)
+
+    if sport == "mlb" and resolved_rule == "v2":
+        payload = card_ledger.record_v2()
+        payload["rule"] = "v2"
+        payload["basis"] = best_bets_card.BASIS
+        payload["disclaimer"] = best_bets_card.DISCLAIMER
+        _record_page_view(request, "card_record", None)
+        return payload
 
     payload = card_ledger.record(sport=sport)
     chain = card_ledger.verify()
@@ -190,7 +270,7 @@ def get_card_record(request: Request = None, sport: str = "mlb") -> dict:
 # _validate_date. See that route's comment and tests/test_api_card.py.
 @router.get("/card/history")
 def get_card_history(request: Request = None, limit: int = DEFAULT_HISTORY_LIMIT,
-                     sport: str = "mlb") -> dict:
+                     sport: str = "mlb", rule: Optional[str] = None) -> dict:
     """Every settled day, newest first -- the day-by-day detail behind
     /card/record's pooled totals: each day's picks, results, prices, books
     and profit, plus that day's published row_hash.
@@ -204,11 +284,18 @@ def get_card_history(request: Request = None, limit: int = DEFAULT_HISTORY_LIMIT
     from src.appstate import card_ledger
 
     _validate_sport(sport)
+    resolved_rule = _resolve_rule(rule)
 
     if limit < 1 or limit > MAX_HISTORY_LIMIT:
         raise HTTPException(
             status_code=400,
             detail=f"limit must be between 1 and {MAX_HISTORY_LIMIT} (got {limit!r})")
+
+    if sport == "mlb" and resolved_rule == "v2":
+        payload = card_ledger.history_v2(limit=limit)
+        _record_page_view(request, "card_history", None)
+        return payload
+
     payload = card_ledger.history(limit=limit, sport=sport)
     if sport == "nfl":
         payload["sport"] = "nfl"
@@ -219,11 +306,12 @@ def get_card_history(request: Request = None, limit: int = DEFAULT_HISTORY_LIMIT
 
 @router.get("/card/{date}")
 def get_card_for_date(date: str, request: Request = None,
-                      sport: str = "mlb") -> dict:
-    return _build_payload(date, request, "card", sport=sport)
+                      sport: str = "mlb", rule: Optional[str] = None) -> dict:
+    return _build_payload(date, request, "card", sport=sport, rule=rule)
 
 
 @router.get("/card")
-def get_card_today(request: Request = None, sport: str = "mlb") -> dict:
+def get_card_today(request: Request = None, sport: str = "mlb",
+                   rule: Optional[str] = None) -> dict:
     return _build_payload(date_cls.today().isoformat(), request, "card",
-                         sport=sport)
+                         sport=sport, rule=rule)

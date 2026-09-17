@@ -2884,6 +2884,39 @@ def cmd_card(args) -> int:
 
     sub = getattr(args, "card_command", None)
     sport = getattr(args, "sport", None) or "mlb"
+    rule = getattr(args, "rule", None) or "v1"
+
+    def _results_and_box_rows(for_date: str):
+        """`(by_pk, prop_box_rows)` for grading one date -- the exact
+        construction V1's settle branch always used, factored out so T5's
+        v2-family settle path (below) grades off the identical inputs
+        rather than a second, possibly-drifting copy of this join. Returns
+        `(None, [])` if the historical store is empty; the caller decides
+        what an empty store means for its own rule (V1 refuses outright,
+        V2's `settle_v2` just finds nothing to grade against and no-ops).
+        """
+        store = history.read_results()
+        if not store:
+            return None, []
+        by_pk = {}
+        for row in store.values():
+            if str(row.get("date")) == for_date:
+                pk = row.get("game_pk")
+                by_pk[pk] = row
+                by_pk[str(pk)] = row
+                try:
+                    by_pk[int(pk)] = row
+                except (TypeError, ValueError):
+                    pass
+        from src.pipeline import boxscores as boxscores_mod
+        try:
+            prop_box_rows = boxscores_mod.read(
+                processed_path(f"boxscores_{for_date[:4]}.jsonl"))
+        except boxscores_mod.BoxscoresError as exc:
+            print(f"WARNING: prop box scores unreadable for {for_date}: {exc} "
+                  "-- prop picks will grade VOID.", file=sys.stderr)
+            prop_box_rows = []
+        return by_pk, prop_box_rows
 
     if sub == "record":
         rec = card_ledger.record(sport=sport, since=getattr(args, "since", None))
@@ -2923,6 +2956,42 @@ def cmd_card(args) -> int:
                       f"({row.get('n_wins', 0)} win, {row.get('n_losses', 0)} loss)")
             else:
                 print(f"settled {date_str}: {row.get('n_settled', 0)} game(s)")
+            return EXIT_OK
+
+        # T5/T6: v2-family settle -- entirely separate from V1's settle
+        # logic below, so `--rule v1` (the default) reaches code this
+        # change does not touch at all. MLB only, same as v2-family
+        # publish.
+        if rule != "v1":
+            if sport != "mlb":
+                print(f"ERROR: --rule {rule} is MLB-only, got --sport {sport}",
+                      file=sys.stderr)
+                return EXIT_ERROR
+            from src.appstate import card_ledger
+
+            by_pk, prop_box_rows = _results_and_box_rows(date_str)
+            if by_pk is None:
+                print("historical store is empty -- run `ingest` first.",
+                      file=sys.stderr)
+                return EXIT_ERROR
+
+            stores = {
+                "v2": card_ledger.CARD_STORE_V2,
+                "shadow-a": card_ledger.CARD_STORE_V2_SHADOW_A,
+                "shadow-c": card_ledger.CARD_STORE_V2_SHADOW_C,
+                "shadow-e": card_ledger.CARD_STORE_V2_SHADOW_E,
+            }
+            names = list(stores) if rule == "all" else [rule]
+            for name in names:
+                row = card_ledger.settle_v2(date_str, by_pk,
+                                            prop_box_rows=prop_box_rows,
+                                            path=stores[name])
+                if row is None:
+                    print(f"  {name}: nothing to settle for {date_str}")
+                    continue
+                print(f"  {name}: settled {date_str}: "
+                      f"{row.get('wins', 0)}-{row.get('losses', 0)}"
+                      + (f"-{row['pushes']}" if row.get("pushes") else ""))
             return EXIT_OK
 
         # Handle MLB card settle (existing logic)
@@ -2987,6 +3056,131 @@ def cmd_card(args) -> int:
         return EXIT_OK
 
     # publish
+
+    # T5 (docs/CARD_V2_BUILD_PLAN.md): every rule id besides "v1" is MLB
+    # only -- V2 and its shadows have no NFL/tennis counterpart -- and
+    # entirely separate from the v1 branch below, so `--rule v1` (the
+    # default) reaches code this change does not touch at all.
+    if rule != "v1":
+        if sport != "mlb":
+            print(f"ERROR: --rule {rule} is MLB-only, got --sport {sport}",
+                  file=sys.stderr)
+            return EXIT_ERROR
+        from src.analysis import best_bets_card
+        from src.report import card_v2 as card_v2_mod
+
+        # name -> (RuleParams, its own store, the label printed above the
+        # card). "all" is handled separately below -- it needs V1's own
+        # card too, which none of these single-rule branches build.
+        rule_table = {
+            "v2": (best_bets_card.V2, card_ledger.CARD_STORE_V2, "v2 preview"),
+            "shadow-a": (best_bets_card.SHADOW_A,
+                        card_ledger.CARD_STORE_V2_SHADOW_A, "shadow-a"),
+            "shadow-c": (best_bets_card.SHADOW_C,
+                        card_ledger.CARD_STORE_V2_SHADOW_C, "shadow-c"),
+            "shadow-e": (best_bets_card.SHADOW_E,
+                        card_ledger.CARD_STORE_V2_SHADOW_E, "shadow-e"),
+        }
+
+        try:
+            games = mlb.fetch_games(date_str)
+        except mlb.MLBError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return EXIT_ERROR
+        store = history.read_results()
+        slate = briefing.build_slate(
+            games, store, **enrichment.enrichment_inputs(games, date_str, store))
+        entries = slate["games"]
+        now = datetime.now(timezone.utc)
+        opportunities = opportunities_mod.build_opportunities(
+            entries, date=date_str, now=now)
+        opportunity_rows = opportunities.get("rows") or []
+
+        def _print_one(name: str, card: dict) -> None:
+            label = rule_table[name][2]
+            print(f"THE CARD ({label}) -- {date_str}")
+            print(f"  slate {card['games_on_slate']}   raw pool "
+                  f"{card['raw_pool_size']}   picks {card['n_picks']}   "
+                  f"fills {card['n_fills']}   plus-money "
+                  f"{card['n_plus_money_picks']}")
+            if card["n_picks"] == 0 and not card["fills"]:
+                print(f"  no card: {card.get('empty_reason')}")
+                return
+            for pick in card["picks"] + card["prop_picks"]:
+                verb = "Take" if pick.get("take", True) else "--"
+                print(f"  [{pick.get('price_class')}] {verb} "
+                      f"{pick.get('bet_sentence')}"
+                      f"   ({pick.get('books')} books)")
+            for fill in card["fills"]:
+                print(f"  [FILL {fill.get('price_class')}] "
+                      f"{fill.get('bet_sentence')}   failed: "
+                      f"{', '.join(fill.get('failed_gates') or ())}")
+
+        if rule == "all":
+            # ONE shared board (`entries`/`opportunity_rows`, already
+            # fetched above) through V1's own build plus every v2-family
+            # rule -- `card.publish_all` (registration 17.6: no second
+            # capture call per rule).
+            v1_card = card_mod.card_for_date(
+                entries, opportunity_rows, date=date_str, now=now,
+                prefer_frozen=False)
+            print(f"THE CARD -- {date_str}")
+            if not v1_card["picks"]:
+                print(f"  no card: {v1_card.get('reason')}")
+            else:
+                for pick in v1_card["picks"]:
+                    print(f"  #{pick['rank']} [{pick['label']}] {pick['bet']}")
+
+            cards_by_name = {}
+            for name, (params, _store, _label) in rule_table.items():
+                try:
+                    cards_by_name[name] = card_v2_mod.card_v2_for_date(
+                        entries, opportunity_rows, date=date_str, now=now,
+                        params=params)
+                except card_v2_mod.CardV2Error as exc:
+                    print(f"  {name}: ERROR: {exc}", file=sys.stderr)
+                    continue
+                _print_one(name, cards_by_name[name])
+
+            if getattr(args, "dry_run", False):
+                print("  --dry-run: nothing written.")
+                return EXIT_OK
+
+            published = card_mod.publish_all(
+                date_str, now=now, entries=entries,
+                opportunity_rows=opportunity_rows, v1_card=v1_card)
+            for name, row in published.items():
+                print(f"  {name}: published "
+                      f"{row.get('n_picks', len(row.get('picks') or ()))} "
+                      "pick(s)"
+                      + ("  (already published, no change)"
+                         if row.get("already_published") else ""))
+            return EXIT_OK
+
+        # A single v2-family rule: v2, shadow-a, shadow-c or shadow-e.
+        params, rule_store, _label = rule_table[rule]
+        try:
+            card = card_v2_mod.card_v2_for_date(
+                entries, opportunity_rows, date=date_str, now=now,
+                params=params)
+        except card_v2_mod.CardV2Error as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return EXIT_ERROR
+
+        _print_one(rule, card)
+        if card["n_picks"] == 0 and not card["fills"]:
+            return EXIT_OK
+
+        if getattr(args, "dry_run", False):
+            print("  --dry-run: nothing written.")
+            return EXIT_OK
+
+        row = card_ledger.publish_v2(card, now=now.isoformat(), path=rule_store)
+        print(f"  published: {row.get('n_picks', 0)} pick(s), "
+              f"{row.get('n_fills', 0)} fill(s)"
+              + ("  (already published, no change)"
+                 if row.get("already_published") else ""))
+        return EXIT_OK
 
     # Handle NFL card publish
     if sport == "nfl":
@@ -3739,6 +3933,19 @@ def build_parser() -> argparse.ArgumentParser:
     card_publish.add_argument(
         "--dry-run", action="store_true",
         help="build and print the card without writing to the ledger")
+    # T5 (docs/CARD_V2_BUILD_PLAN.md): the rule ids this command accepts.
+    # Default "v1" so every existing script and workflow keeps publishing
+    # exactly as it does today until T13 flips `card.ACTIVE_CARD_RULE`.
+    # "v2" is DAILY_CARD_BEST_BETS_V2's own preview/publish path; "shadow-a"
+    # / "shadow-c" / "shadow-e" are its three registered shadows
+    # (registration section 10 -- there is no "shadow-d", it is
+    # deregistered and absorbed by the separate T2v/T3v family arms);
+    # "all" builds one shared board and publishes V1, V2 and all three
+    # shadows from it (`card.publish_all`). Every one of these is MLB only.
+    card_publish.add_argument(
+        "--rule", default="v1",
+        choices=("v1", "v2", "shadow-a", "shadow-c", "shadow-e", "all"),
+        help="which card rule to build (default: v1)")
     # REMOVED 2026-09-16: `--force` promised to "freeze even outside the
     # pre-first-pitch window (operator override)". No code has read
     # args.force on this subcommand since the freeze changed from refusing
@@ -3755,6 +3962,14 @@ def build_parser() -> argparse.ArgumentParser:
     card_settle.add_argument(
         "--sport", default="mlb", choices=sport_choices,
         help="which sport (default: mlb)")
+    # T5/T6: settle needs the same rule set publish does, so a scheduled
+    # `--rule all` settle run (scripts/daily_loop.sh, T6) can grade every
+    # file `--rule all` publish wrote. Default "v1" -- unchanged behavior
+    # for every existing caller.
+    card_settle.add_argument(
+        "--rule", default="v1",
+        choices=("v1", "v2", "shadow-a", "shadow-c", "shadow-e", "all"),
+        help="which card rule's ledger to settle (default: v1)")
     card_record = card_sub.add_parser(
         "record", help="the running record over every settled card")
     card_record.add_argument(

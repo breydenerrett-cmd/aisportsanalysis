@@ -141,22 +141,49 @@ LABEL_SPLIT = "SPLIT"
 # moneyline and shows the run line beside it as an alternative, with the
 # trade stated in words. No model has to be right for that to be useful, and
 # a reader who wants the shorter price can take it knowing what it costs.
+#
+# T10 note (2026-09-17, coordinated with the copy-truth-sweep group): the
+# overdispersion correction this comment calls "not being applied yet" is a
+# DIFFERENT correction from `strength.DISPERSION`. `DISPERSION = 2.3352` was
+# adopted into the live model on 2026-09-10 and has applied to every
+# moneyline and run-line probability this module has computed since --
+# see `strength.py`'s own comment above that constant. What stays
+# unapplied is the separate run-line THRESHOLD correction referenced two
+# paragraphs up (0.3151 against the 0.30 stability limit). So the run line
+# is still only an alternative under V1 by rule -- this module's decision,
+# unchanged since 2026-09-10 -- and not because any correction is missing
+# from the model itself.
 RUNLINE_AS_ALTERNATIVE = True
 
 STANDARD_RUN_LINE = 1.5
 
 CARD_RULE = "DAILY_CARD_MARKET_SIDE_MODEL_AGREEMENT_V1"
+# T10b / CTS-1 (docs/DESIGN_BUILD_PLAN.json, R16-05 copy-truth-sweep,
+# 2026-09-17, coordinated with that group). Only these two string VALUES
+# changed -- CARD_RULE, every other constant in this module and every
+# selection function are untouched, and this edit carries no change to what
+# V1 selects or how it is labelled internally (registration section 10 for
+# DAILY_CARD_BEST_BETS_V2 treats this as not a change to V1's selection).
+# CARD_BASIS dropped "or the pick is labelled SPLIT" (SPLIT is being retired
+# from every customer-facing surface, not from this module's LABEL_SPLIT
+# constant or _label()'s own logic) and "confident" (banned register: a
+# probability is not a feeling). CARD_DISCLAIMER dropped "still loses money
+# at the vig", replaced with the amendment's own restated conclusion --
+# registration section 0: "no edge, no positive expected return and no
+# guarantee" -- and dropped "frozen", which named an internal mechanism
+# (the ledger's lock) rather than a fact the reader needs.
 CARD_BASIS = (
     "The side is whichever the multi-book market makes more likely. Our own "
-    "run model has to agree, or the pick is labelled SPLIT. The bet is the "
-    "moneyline unless the run line prices the same opinion better. Ranked by "
-    "how confident the market is."
+    "run model has to agree. The bet is the moneyline unless the run line "
+    "prices the same opinion better. Ranked by how likely the market makes "
+    "it."
 )
 CARD_DISCLAIMER = (
     "These are reads, not guarantees, and they are not claims of positive "
     "expected value. Backing the more likely side wins most individual bets "
-    "and still loses money at the vig. Every pick here is published before "
-    "first pitch, frozen, and graded win or lose."
+    "and shows no positive estimated return under the market benchmark. "
+    "Every pick here is published before first pitch and graded win or "
+    "lose."
 )
 
 
@@ -1353,10 +1380,12 @@ def prop_rank_probability(contract: Mapping) -> float:
 
     "model"  -- our own probability.
     "market" -- the de-vigged market probability.
-    "both"   -- ranked by the market's number, but only when BOTH our
-                probability and the market's clear the contract's own
-                break-even and the market's clears 50% (the declared
-                setting since 2026-09-14); a contract that fails either ranks last (0.0)
+    "both"   -- ranked by the market's number, but only when the market's
+                own number is above 50% AND our number clears the
+                contract's break-even (the actual gate below, and the
+                declared setting since 2026-09-14 -- the market is never
+                itself checked against break-even here, only against the
+                50% floor); a contract that fails either ranks last (0.0)
                 rather than raising, because this function has to return a
                 number for every prop pick handed to it, not refuse some.
     """

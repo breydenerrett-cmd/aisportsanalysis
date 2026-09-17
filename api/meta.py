@@ -124,7 +124,20 @@ def _card_record() -> dict:
     """
     try:
         from src.appstate import card_ledger
-        rec = card_ledger.record()
+        from src.report import card as card_mod
+
+        # T5: follow the ACTIVE rule rather than always reading V1's file
+        # (registration R4, R5 -- once V2 is active this must not keep
+        # presenting V1's record as the live one). V2's reader
+        # (`record_v2`) reports main-band and plus-money PICKS apart and a
+        # `combined` figure that is their sum ONLY -- fills are a separate
+        # figure there and are deliberately excluded from what this
+        # single-sentence fallback calls "the record", the same way a fill
+        # is never a pick anywhere else on this surface.
+        if card_mod.ACTIVE_CARD_RULE == "v2":
+            rec = card_ledger.record_v2()["combined"]
+        else:
+            rec = card_ledger.record()
         return {key: rec.get(key) for key in
                 ("days", "wins", "losses", "pushes", "voids")}
     except Exception:  # noqa: BLE001

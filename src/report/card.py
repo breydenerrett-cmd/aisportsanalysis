@@ -17,7 +17,7 @@ from __future__ import annotations
 import json
 import os
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Sequence
+from typing import Mapping, Optional, Sequence
 
 from src.analysis import calibrate, daily_card, gamepayload, grade, strength
 from src.analysis import prices as prices_mod
@@ -582,6 +582,98 @@ _PROP_NONE_SELECTED_FROZEN = (
 # true (checker problem 4). See `frozen_card`.
 _PROP_NOT_PART_OF_CARD = "Player props were not part of this card when it was frozen."
 
+# T5 (docs/CARD_V2_BUILD_PLAN.md, registration docs/PREREG_CARD_V2.md).
+# Which rule the DEFAULT, unparametrised routes serve -- `GET /card`,
+# `api/meta.py`'s landing record, and `src.cli.cmd_card`'s default
+# `--rule`. Switched to "v2" only by T13, at T0's registration commit;
+# until then every existing route and test keeps V1's exact byte shape,
+# and `?rule=v2` / `--rule v2` is a PREVIEW path that reads nothing this
+# constant does not already point away from as the published card.
+ACTIVE_CARD_RULE = "v1"
+
+# The slate date V2 becomes the published card, or `None` before that
+# commit. Sets the boundary `frozen_card_v2`'s `retired_v1` block reads V1's
+# own ledger up to (registration R4, R5): the day before this date, never
+# this date itself, because V2 first serves as "the card" starting on this
+# date's slate. `None` means no cutover has happened -- there is no boundary
+# to read yet, and `ACTIVE_CARD_RULE` alone decides what every route serves.
+CUTOVER_DATE = None
+
+
+def publish_all(date: str, *, now: Optional[datetime] = None,
+                 entries: Sequence = (), opportunity_rows: Sequence = (),
+                 v1_card: Optional[Mapping] = None) -> dict:
+    """T5 -- one publish run covering V1, V2 and V2's three registered
+    shadows (registration section 10: A, C and E). Built for T6's
+    `--rule all`, which is meant to reach every rule this build wires
+    without spending a second capture call per rule (registration 17.6).
+
+    THERE IS NO SHADOW D, ON PURPOSE. The build plan's own T5 row still
+    lists "shadows A, C, D and E" -- a leftover from before the 2026-09-16
+    amendment that deregisters shadow D and absorbs it into the T2v/T3v
+    family arms (A3, A4); the very next line of that same plan section
+    corrects it ("there is no shadow-d target"), and
+    `docs/PREREG_CARD_V2.md` section 10 states the deregistration directly.
+    This function's rule table has three shadows, never four, and
+    `tests/test_card_publish_all.py::test_no_shadow_d_anywhere` pins that a
+    `cards_v2_shadow_d.jsonl` file is never created by calling it. The A1-A4
+    family itself is a separate mechanism (`src.analysis.card_variants`,
+    already built by T2v/T3v) and is not reached from here -- T6 drives it
+    on its own, so a family bug can never take this function down with it.
+
+    `entries`/`opportunity_rows` are the SAME already-fetched board every
+    rule below reads -- passed in rather than fetched here so (a) this
+    function is testable on injected fixtures with no live-store read, and
+    (b) building four rule-parametrised cards from one already-fetched
+    board costs no additional capture-client call, which is the whole of
+    what "no additional API spend" (registration 17.6) requires; nothing
+    below this line ever calls a network client. `v1_card` is V1's own
+    already-built card (`card_for_date`'s return value) -- built by the
+    caller, exactly as `src.cli.cmd_card`'s existing v1 branch already does
+    it, so this function makes no V1 selection decision of its own; `None`
+    skips V1 (a caller that only wants V2 and its shadows for one run).
+
+    Returns `{rule_name: publish_row}` for every rule actually published
+    this call (a rule whose `card_v2_for_date` raises `CardV2Error` --
+    typically a missing frozen-parameter file -- is left out of the result
+    rather than aborting the other three; T7's audit reads the ledger
+    files themselves for that day, not this return value, so a partial
+    result here loses no evidence).
+    """
+    from src.analysis import best_bets_card
+    from src.appstate import card_ledger
+    from src.report import card_v2 as card_v2_mod
+
+    now = now or datetime.now(timezone.utc)
+    now_iso = now.isoformat()
+    results: dict = {}
+
+    if v1_card is not None:
+        results["v1"] = card_ledger.publish(v1_card, now=now_iso)
+
+    # name -> (RuleParams, its own store). V2 first so `record_v2`'s own
+    # rule keeps being the first row built if a reader ever diffs by order.
+    rule_stores = (
+        ("v2", best_bets_card.V2, card_ledger.CARD_STORE_V2),
+        ("shadow-a", best_bets_card.SHADOW_A, card_ledger.CARD_STORE_V2_SHADOW_A),
+        ("shadow-c", best_bets_card.SHADOW_C, card_ledger.CARD_STORE_V2_SHADOW_C),
+        ("shadow-e", best_bets_card.SHADOW_E, card_ledger.CARD_STORE_V2_SHADOW_E),
+    )
+    for name, params, store in rule_stores:
+        try:
+            card = card_v2_mod.card_v2_for_date(
+                entries, opportunity_rows, date=date, now=now, params=params)
+        except card_v2_mod.CardV2Error:
+            # A missing/unreadable frozen-parameter file blocks every V2
+            # rule identically (they all read the same file) -- recorded by
+            # skipping all four rather than raising, so a V1-only caller
+            # (v1_card given, frozen params absent) still gets its V1 row.
+            continue
+        results[name] = card_ledger.publish_v2(card, now=now_iso, path=store)
+
+    return results
+
+
 # THE SAME THREE-WAY SPLIT, FOR TOTALS. ADDED 2026-09-14, same reasoning as
 # the prop reasons just above: "nothing cleared" is a verdict on our own
 # confidence and this surface never states one; each string here states a
@@ -681,13 +773,46 @@ def _build_prop_picks(entries: Sequence, *, date: str, now: datetime,
     moneyline card down with it: the moneyline picks are the product this
     surface has always sold, and props are additive to it.
     """
+    enriched, reason = _enriched_prop_contracts(
+        entries, date=date, prop_board=prop_board, event_map=event_map)
+    if reason is not None:
+        return [], reason
+
+    # `require_lineup=False`: the owner's ask is analysis run pre-emptively,
+    # before any lineup posts (see `daily_card.select_props`'s own docstring
+    # for the full reasoning and the replacement mechanism).
+    picks = daily_card.select_props(enriched, now=now, require_lineup=False)
+    if not picks:
+        return [], _PROP_NONE_SELECTED_LIVE
+    return picks, None
+
+
+def _enriched_prop_contracts(entries: Sequence, *, date: str,
+                             prop_board=None, event_map=None) -> tuple:
+    """`(enriched_contracts, reason)` -- the prop board's contracts, joined
+    to today's schedule, BEFORE any rule (V1's `select_props` or V2's
+    `best_bets_card.select`) is applied to them.
+
+    Split out of `_build_prop_picks` (T5, `docs/CARD_V2_BUILD_PLAN.md`) so
+    `src.report.card_v2` can build its own candidates from the identical
+    join this function already does for V1, rather than a second copy of
+    the event_id -> game_pk resolution that could drift from this one. V1's
+    own behaviour is unchanged: `_build_prop_picks` below calls this and
+    then applies `daily_card.select_props` exactly as it always has.
+
+    `reason` is `None` on a successful read (`enriched` may still be `[]`
+    if nothing on the board joins to tonight's schedule) and a reader-facing
+    string when the board itself could not be read at all or came back with
+    no contracts -- the same two states `_build_prop_picks` returned before
+    this split, preserved so its behaviour is byte-identical.
+    """
     from src.report import props as props_mod
 
     board_fn = prop_board or (
         lambda d: props_mod.board_for_date(d, limit=props_mod.MAX_LIMIT))
     try:
         board = board_fn(date)
-    except Exception:  # noqa: BLE001 -- see the docstring above
+    except Exception:  # noqa: BLE001 -- see `_build_prop_picks`'s docstring
         return [], "Player props aren't available for today's games right now."
 
     contracts = (board or {}).get("contracts") or []
@@ -727,14 +852,7 @@ def _build_prop_picks(entries: Sequence, *, date: str, now: datetime,
             "first_pitch_utc": game.get("first_pitch_utc"),
             "team": team,
         })
-
-    # `require_lineup=False`: the owner's ask is analysis run pre-emptively,
-    # before any lineup posts (see `daily_card.select_props`'s own docstring
-    # for the full reasoning and the replacement mechanism).
-    picks = daily_card.select_props(enriched, now=now, require_lineup=False)
-    if not picks:
-        return [], _PROP_NONE_SELECTED_LIVE
-    return picks, None
+    return enriched, None
 
 
 def _served_prop_order(picks) -> list:

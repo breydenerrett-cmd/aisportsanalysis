@@ -2170,6 +2170,42 @@ def record_v2(*, path: Optional[str] = None, since: Optional[str] = None,
     }
 
 
+def history_v2(*, path: Optional[str] = None, limit: Optional[int] = 60) -> dict:
+    """Every V2 settled day, newest first (T5's `/card/history?rule=v2`).
+
+    `record_v2`'s counterpart the way V1's `history` is `record`'s: pooled
+    totals answer "how has V2 done", this answers "what happened each day".
+    Each day's `graded` entries carry their own frozen `price_class` and
+    `entry_class` already (`_frozen_v2_entry`, `settle_v2`'s `_grade_one`),
+    so this function reshapes nothing -- it only sorts, caps, and reports
+    `truncated` the same honest way `history` does, never silently.
+    """
+    resolved_path = path if path is not None else CARD_STORE_V2
+    settled = [row for row in _ledger(resolved_path).read()
+              if row.get("kind") == KIND_SETTLED]
+    settled.sort(key=lambda r: r.get("date") or "", reverse=True)
+    total_days = len(settled)
+    capped = settled if limit is None else settled[:max(limit, 0)]
+    days = [
+        {
+            "date": row.get("date"),
+            "rule": row.get("rule"),
+            "settled_utc": row.get("settled_utc"),
+            "wins": row.get("wins"), "losses": row.get("losses"),
+            "pushes": row.get("pushes"), "voids": row.get("voids"),
+            "n_staked": row.get("n_staked"),
+            "profit_units": row.get("profit_units"),
+            "graded": row.get("graded") or [],
+            "graded_without_lock_run": row.get("graded_without_lock_run"),
+        }
+        for row in capped
+    ]
+    return {
+        "days": days, "total_days": total_days,
+        "truncated": limit is not None and total_days > len(capped),
+    }
+
+
 # ---------------------------------------------------------------------------
 # T3v -- per-variant ledgers (registration 12 R7/R8, 17.6)
 # ---------------------------------------------------------------------------
