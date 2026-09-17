@@ -98,19 +98,41 @@ def rows(price_index) -> list:
     return out
 
 
+def _empty_reason(price_index) -> str:
+    """Why the board is empty, in the reader's terms.
+
+    `rows()` drops any matchup section (or side within one) marked
+    `"skipped"` -- see `src.analysis.prices.by_matchup`/`snapshot`, which
+    skips a whole matchup below the MIN_BOOKS floor and a side with no
+    priceable quote. An empty `price_index` means there was nothing to look
+    at at all (no matchups captured); a non-empty one where every section
+    or side came back skipped means real matchups existed and every one was
+    too thin to measure. Those are different facts -- see H3 of Stage 18:
+    the same collapse (one sentence covering "no input" and "input refused")
+    is exactly the shape that hid the NFL join bug, so this board does not
+    repeat it even though every branch here already renders *some* honest
+    sentence.
+    """
+    if not price_index:
+        return ("No multi-book board is captured for today's games yet. "
+                "The board goes up as soon as prices are.")
+    return ("Every matchup on today's board is below the book floor this "
+            "board needs to measure a price improvement -- evaluated, and "
+            "none was thick enough to price.")
+
+
 def render(price_index=None) -> str:
     """The Ranker page. While ENGINE2 is None it ranks prices, never bets."""
     assert ENGINE2 is None or _engine2_unlocked(), (
         "ENGINE2 is set but the unlock conditions module does not exist; "
         "see the module docstring")
-    listed = rows(prices_mod.by_matchup() if price_index is None
-                  else price_index)
+    resolved_index = (prices_mod.by_matchup() if price_index is None
+                       else price_index)
+    listed = rows(resolved_index)
     body = []
     body.append(f'<p class="banner">{_esc(BANNER)}</p>')
     if not listed:
-        body.append('<p class="gap">No multi-book board is thick enough to '
-                    'measure right now; the list is empty rather than '
-                    'padded.</p>')
+        body.append(f'<p class="gap">{_esc(_empty_reason(resolved_index))}</p>')
     else:
         positive = [r for r in listed
                     if (r.get("improvement_points") or 0) > 0]

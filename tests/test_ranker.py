@@ -109,8 +109,26 @@ class GateTests(unittest.TestCase):
 
     def test_an_empty_board_is_empty_not_padded(self):
         page = ranker.render({})
-        self.assertIn("empty rather than", page)
         self.assertNotIn("<table>", page)
+
+    def test_no_input_and_declined_input_read_differently(self):
+        """H3 of Stage 18: an empty `price_index` (nothing captured at all)
+        must not read the same as a `price_index` full of matchups that
+        were every one skipped for thinness (evaluated and declined) --
+        the exact collapse that hid the NFL join bug."""
+        nothing_captured = ranker.render({})
+        all_declined = ranker.render({
+            ("BOS", "NYY", "2026-08-31"): {"skipped": "2 books"},
+            ("LAD", "SF", "2026-08-31"): {"skipped": "1 book"},
+        })
+        self.assertNotIn("<table>", nothing_captured)
+        self.assertNotIn("<table>", all_declined)
+        self.assertNotEqual(
+            ranker._empty_reason({}),
+            ranker._empty_reason({("BOS", "NYY", "2026-08-31"):
+                                   {"skipped": "2 books"}}))
+        self.assertIn("captured", nothing_captured)
+        self.assertIn("evaluated", all_declined)
 
 
 class ListTests(unittest.TestCase):
