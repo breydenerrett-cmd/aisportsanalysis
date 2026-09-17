@@ -1861,7 +1861,11 @@ def _lock_and_merge_v2(prior: Sequence[Mapping], fresh: Sequence[Mapping], *,
 def publish_v2(card: Mapping, *, now: Optional[str] = None,
                path: Optional[str] = None,
                lock_lead_hours: Optional[float] = None,
-               fresh_seconds: Optional[float] = None) -> dict:
+               fresh_seconds: Optional[float] = None,
+               family_id: Optional[str] = None,
+               arm: Optional[str] = None,
+               pool_hash: Optional[str] = None,
+               published: Optional[bool] = None) -> dict:
     """Publish one date's V2 card. Additive counterpart to publish.
 
     UNLIKE V1's publish, a card with ZERO picks is accepted -- registration
@@ -1870,6 +1874,15 @@ def publish_v2(card: Mapping, *, now: Optional[str] = None,
     firing for V1 (publish at :503-508 is untouched). The first call for a
     date always appends, even with nothing to show, so record_v2 never has
     to guess whether a quiet day was ever actually evaluated.
+
+    `family_id`/`arm`/`pool_hash`/`published` are T3v's per-variant row
+    stamps (registration 17.6, R7): row-level, like `code_fingerprint`,
+    never per-entry, so a reader can tell which arm and which publish run a
+    ledger row belongs to without re-deriving anything. Left `None` by a
+    caller that isn't part of the variant family (T3's own callers, and
+    every existing test), in which case the key is simply absent -- this
+    function does not require the family machinery to exist to publish a
+    plain V2 card.
     """
     resolved_path = path or CARD_STORE_V2
     lead = lock_lead_hours if lock_lead_hours is not None else LOCK_LEAD_HOURS_DEFAULT
@@ -1961,6 +1974,14 @@ def publish_v2(card: Mapping, *, now: Optional[str] = None,
         "basis": card.get("basis") or _v2_rule.BASIS,
         "disclaimer": card.get("disclaimer") or _v2_rule.DISCLAIMER,
     }
+    if family_id is not None:
+        payload["family_id"] = family_id
+    if arm is not None:
+        payload["arm"] = arm
+    if pool_hash is not None:
+        payload["pool_hash"] = pool_hash
+    if published is not None:
+        payload["published"] = published
     row = _ledger(resolved_path).append(payload)
     out = dict(row)
     out["already_published"] = False
@@ -2147,3 +2168,75 @@ def record_v2(*, path: Optional[str] = None, since: Optional[str] = None,
         "main": main_fig, "plus_money": plus_fig, "fills": fills_fig,
         "combined": combined, "withdrawn": withdrawn_n,
     }
+
+
+# ---------------------------------------------------------------------------
+# T3v -- per-variant ledgers (registration 12 R7/R8, 17.6)
+# ---------------------------------------------------------------------------
+
+# Arm id -> its own store. A2/A3/A4 are paper; A1's store is CARD_STORE_V2,
+# unchanged from T3, so nothing about where the published card lives moves
+# because the family exists.
+_VARIANT_STORE_BY_ARM = {
+    "A1": CARD_STORE_V2,
+    "A2": CARD_STORE_V2_VAR_STRICT_NOCAP,
+    "A3": CARD_STORE_V2_VAR_LOOSE_CAP3,
+    "A4": CARD_STORE_V2_VAR_LOOSE_NOCAP,
+}
+
+
+def publish_variants(family_result: Mapping[str, Mapping], *, now: Optional[str] = None,
+                      lock_lead_hours: Optional[float] = None,
+                      fresh_seconds: Optional[float] = None,
+                      store_by_arm: Optional[Mapping[str, str]] = None) -> dict:
+    """Write each arm's card to that arm's own store, using T3's
+    `publish_v2` machinery unchanged (registration 17.6: "R2's rule
+    extends -- a paper arm writes only to its own file and nothing writes
+    to evidence/cards_v2.jsonl but A1").
+
+    `family_result` is `card_variants.run_family`'s return, with a `date`
+    key added to each arm's result by the caller first (`select()` itself
+    is date-less -- it only ever sees one night's pool -- so the publish
+    job stamps the slate date once, the same way it already does for V1's
+    `publish` and T3's `publish_v2`). Each arm's dict already carries that
+    arm's `pool_hash`, `family_id`, `arm` and `published` (stamped by the
+    runner, not re-derived here -- this
+    function trusts the runner's stamps rather than recomputing pool_hash
+    from the arm's own output, because hashing an arm's OUTPUT instead of
+    the shared INPUT pool would prove nothing: two arms can select
+    different picks from the identical pool by design, so an output hash
+    would legitimately differ between arms even when they saw the same
+    board, defeating the one thing pool_hash exists to prove).
+
+    One call per publish run, so the four files are written from one
+    `family_result` and can never drift apart by a run reaching some arms
+    and not others (a caller that wants that guarantee should call this
+    once per run, not once per arm).
+
+    There is no cross-arm return value here and no per-arm win-loss figure
+    -- see `src/analysis/card_variants.py`'s module docstring for why that
+    is a hard rule and not an oversight. This function's return is just
+    `{arm_id: publish_v2's own return}`, so a caller can see whether each
+    write was a no-op (`already_published`) without this module summing
+    anything across arms.
+    """
+    stores = dict(_VARIANT_STORE_BY_ARM)
+    if store_by_arm:
+        stores.update(store_by_arm)
+
+    out: dict = {}
+    for arm_id, result in family_result.items():
+        path = stores[arm_id]
+        card = dict(result)
+        out[arm_id] = publish_v2(
+            card,
+            now=now,
+            path=path,
+            lock_lead_hours=lock_lead_hours,
+            fresh_seconds=fresh_seconds,
+            family_id=result.get("family_id"),
+            arm=result.get("arm", arm_id),
+            pool_hash=result.get("pool_hash"),
+            published=result.get("published", arm_id == "A1"),
+        )
+    return out
