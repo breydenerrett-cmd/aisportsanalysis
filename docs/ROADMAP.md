@@ -844,3 +844,68 @@ because an alarm that fires every night is an alarm nobody reads.
 3. The lab's output this week is a declared sweep, a ranking against noise, and
    published nulls. That is the whole of it, and it is worth doing because it
    is what makes a later survivor believable.
+
+---
+
+## Stage 18 — Harden, finish, and make it look like a product
+
+Owner directive, 2026-09-16: "What can you build or design or improve? What can
+you harden? What can you redesign or make it look better? What can you future
+proof?" — then execute autonomously.
+
+**Why this stage exists, in one paragraph.** 2026-09-16 found four separate
+things that were broken while looking like they worked: an NFL card path that
+could never produce a card yet printed "no game cleared the bar"; a health
+check that reported lineups healthy while reading a different file; an
+automated job that had silently deleted 4,874 rows of history nine times; and
+a record page whose three true panels never stated their sum, so the first
+figure a reader met overstated the whole book by 4.05 points. None of these
+were caught by tests, because every one of them had green tests covering the
+function rather than the path. Stage 18 is the systematic version of what
+those four accidents taught, plus the product work that was already queued.
+
+The ordering rule for this stage: **hardening before polish, and polish before
+new surface.** A prettier page over a path that has never run is the exact
+failure this stage exists to stop.
+
+### H — Harden (first, and H1 outranks everything)
+
+| # | Item | Acceptance |
+|---|---|---|
+| H1 | **The never-ran audit.** For every production code path that can emit a customer-visible or evidence-bearing artifact, determine whether it has EVER produced one. The NFL card had not, and nothing said so. Walk the stores and the git history, not the tests. Produce a register: path, artifact it should produce, first and last time it actually did, verdict LIVE / NEVER-RAN / DORMANT | `docs/NEVER_RAN_REGISTER.md` lists every such path with evidence; each NEVER-RAN entry gets a roadmap row or a documented reason it is expected to be empty |
+| H2 | **The join-integrity audit.** The NFL bug was a join that silently dropped every row, and a copy sweep flagged the MLB card's `_game_identity` vs `gamepayload.game_id()` as possibly the same shape. Find every join between two stores or two id constructions; for each, assert non-empty on real data and fail loudly when a join yields zero | Each join has a test that starves it and asserts the failure is DISTINGUISHABLE from an honest empty; the MLB card id-join question is answered with real data |
+| H3 | **Empty-output honesty sweep.** Every "nothing to show" message must distinguish *nothing to evaluate* from *evaluated and declined*. Fixed for the NFL card; do the rest | Every empty branch emits one of two distinct reasons; a test per branch |
+| H4 | **Store contracts.** The shrink guard covers three files by name. Generalise: every append-only store declares itself append-only, and the guard reads that declaration rather than a hand-kept list | A new store is protected by declaring it, not by remembering to edit a script; test proves an undeclared store is caught by a lint |
+| H5 | **Monitor-target correctness.** health.py was reading a different file than it named. Audit every health/alarm check: does it read the artifact it claims to describe? | Each check names its artifact in code and a test asserts the path it reads matches the thing it reports on |
+
+### B — Build (finish what is started)
+
+| # | Item | Acceptance |
+|---|---|---|
+| B1 | Card V2 T2v and T3v — the variant runner and per-variant ledgers (T0 registration still blocked on owner questions 12-14) | Named tests green; nothing registered |
+| B2 | The private in-play watcher (W-16), now that two of its three owner decisions are answered: -200 allowed only where our post-markdown number is ≥0.75, and a conviction-sized shadow account runs beside a ledger that stays flat 1 unit | One real match watched end to end, one paper ticket or an honest no-trigger, chain valid, one alert delivered |
+| B3 | Tennis rules narrowed to match-winner if W-17 decides skip | The substitution is stated on the face of the rule, not in a footnote |
+| B4 | NFL live window observed firing for the first time (W-6, Thursday) | A real dispatch → capture → candidate row, or an honest no-trigger with the reason |
+
+### D — Design and redesign
+
+| # | Item | Acceptance |
+|---|---|---|
+| D1 | **Gameday card** (W-13 group 2) — the customer's nightly touchpoint, and the surface the copy sweep says to fix before anything visual sits on it | Acceptance per DESIGN_BUILD_PLAN.json; verified at three widths |
+| D2 | **The record page**, now that it states the whole book — make the combined panel read as the headline it is, rather than a fourth panel below three others | A visitor's first figure is the whole book; the splits read as the detail |
+| D3 | Gameday page, landing, matchups, props/odds, tools, results, account — in dependency order | Per-group acceptance; language and structure tests green |
+
+### F — Future-proof
+
+| # | Item | Acceptance |
+|---|---|---|
+| F1 | **Sport abstraction.** The NFL bug existed because a sport-specific table was reached through a sport-agnostic call. Every place that switches on sport does so through one seam, and adding a sport is a registration, not a grep | A new sport can be added without editing a name-translation table by hand; test proves the seam is the only switch |
+| F2 | **Evidence-store durability.** A build product was committed while its input was lost. Inputs that a committed artifact depends on are declared, and a check fails when an artifact is newer than a missing input | The lineups/matrix case would have been caught at commit time |
+| F3 | **Registration discipline as code.** V2 is unregistered and V1 publishes a price the owner ruled out. The gap between "the rule we believe" and "the rule that runs" must be visible, not tribal | A standing report names every rule that is built but unregistered, and what it would have done differently on the live board |
+
+### The rule this stage does not break
+
+Nothing here relaxes the evidence standard. Pre-registration before evaluation,
+published losers, 2025 tuning-only, sealed 2026, no promotion without the full
+gate, no rescue by threshold change, point-in-time correctness. Hardening buys
+confidence that a null is a real null, which is worth more than any of it.
