@@ -1,0 +1,58 @@
+{
+ "DISPERSION": 2.3615,
+ "DISPERSION_FAMILY": "nb1",
+ "DISPERSION_n_team_games": 4054,
+ "RHO": 0.05885,
+ "RHO_n_predictions": 42667,
+ "RHO_observed_dispersion": 1.1609,
+ "_header": {
+  "fit_run_once": true,
+  "fitted_not_on": "2026-01-01 through 2026-08-27 is SEALED and was never read by this script (see _sealed_guard calls throughout scripts/fit_card_v2_frozen_params.py); 2023 and 2024 were not read either -- 2025 only",
+  "fitted_on": "2025 regular season, 2025-04-15 through 2025-12-31, MLB Stats API (free), from data/historical/mlb_results.csv, data/historical/pitcher_logs_2025.jsonl, data/historical/bullpen_log_2025.jsonl and data/processed/boxscores_2025.jsonl",
+  "owner_decision": "2026-09-15 22:35Z, question 3 answered no ('Rebuild on 2025'), option O1",
+  "purpose": "T0a frozen parameters for card v2 (docs/PREREG_CARD_V2.md 11.2, docs/CARD_V2_BUILD_PLAN.md T0a)"
+ },
+ "games_used": 2027,
+ "league_runs_per_game": 4.3967,
+ "model_id": "run_expectancy_poisson_v1",
+ "moneyline_calibration": {
+  "a": 0.071234,
+  "b": 0.685153,
+  "base_rate": 0.529847,
+  "fitted": true,
+  "games_with_relief_rate": 2027,
+  "n": 2027,
+  "skipped_no_model_line": 0
+ },
+ "runline_calibration": {
+  "a": 0.0,
+  "b": 0.950892,
+  "base_rate": 0.5,
+  "fitted": true,
+  "n": 8108,
+  "n_side_observations": 8108
+ },
+ "season": "2025",
+ "slot_plate_appearances": {
+  "1": 4.155,
+  "2": 4.045,
+  "3": 3.947,
+  "4": 3.842,
+  "5": 3.662,
+  "6": 3.513,
+  "7": 3.325,
+  "8": 3.161,
+  "9": 2.872
+ },
+ "slot_sample_sizes": {
+  "1": 5389,
+  "2": 5404,
+  "3": 5417,
+  "4": 5438,
+  "5": 5566,
+  "6": 5649,
+  "7": 5802,
+  "8": 5909,
+  "9": 6311
+ }
+}

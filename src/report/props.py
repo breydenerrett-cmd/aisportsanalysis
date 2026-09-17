@@ -35,6 +35,22 @@ from src.pipeline import batter_props, boxscores, lineup_store
 
 BOX_STORE = processed_path("boxscores_2026.jsonl")
 
+
+def box_store_for_season(date: str):
+    """The boxscore store for the slate's own season, `boxscores_<yyyy>.jsonl`.
+
+    ADDED for T0a: was hardcoded to `boxscores_2026.jsonl`, so a 2027 slate
+    (or any card built against an earlier season) would have silently read
+    the wrong year's box lines, or none. `boxscores.py` already keys its
+    store by the game's own year (`_default_store_path`); this just points
+    `props.py` at the same convention instead of one frozen path. No other
+    change -- a caller reading the 2026 store today gets the identical path.
+    """
+    year = str(date)[:4] if date else None
+    if not year or not year.isdigit():
+        return BOX_STORE
+    return processed_path(f"boxscores_{year}.jsonl")
+
 # How many contracts a caller gets by default. The board runs to a few
 # hundred on a full slate and no reader wants that; a caller that genuinely
 # does asks for it.
@@ -112,7 +128,8 @@ def board_for_date(date: str, *, limit: Optional[int] = DEFAULT_LIMIT,
     """
     rows = (list(prop_rows) if prop_rows is not None
             else batter_props.read_processed())
-    batters = list(batter_rows) if batter_rows is not None else _batter_rows()
+    batters = (list(batter_rows) if batter_rows is not None
+              else _batter_rows(box_store_for_season(date)))
     by_name = _by_name(batters)
 
     # League rates come from every batter-game BEFORE this slate. Measured,

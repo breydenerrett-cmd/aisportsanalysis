@@ -148,7 +148,7 @@ SLOT_PLATE_APPEARANCES = {
 }
 
 
-def expected_pa_for_slot(slot) -> Optional[float]:
+def expected_pa_for_slot(slot, table: Optional[Mapping] = None) -> Optional[float]:
     """Expected plate appearances for tonight's batting slot, or None.
 
     None for a slot outside 1-9 rather than a clamped guess: an unreadable
@@ -160,6 +160,10 @@ def expected_pa_for_slot(slot) -> Optional[float]:
     number-two hitter -- a plausible answer to a question nobody asked.
     A batting slot is an integer by definition, and anything else is a fault
     in the card rather than a slot to round toward.
+
+    `table` is ADDITIVE (T0a, card v2): omitted, this is exactly V1's
+    module-level `SLOT_PLATE_APPEARANCES`. Passed, it lets a caller use a
+    slot table frozen from a one-time 2025-only fit instead.
     """
     if isinstance(slot, bool) or slot is None:
         return None
@@ -169,7 +173,7 @@ def expected_pa_for_slot(slot) -> Optional[float]:
         return None
     if as_int != slot:
         return None
-    return SLOT_PLATE_APPEARANCES.get(as_int)
+    return (table if table is not None else SLOT_PLATE_APPEARANCES).get(as_int)
 
 
 MODEL_ID = "batter_pa_outcome_v1"
@@ -717,13 +721,20 @@ def price_prop(*, market: str, line: float, batter_lines: Sequence[Mapping],
                league: Mapping, expected_pa: Optional[float] = None,
                batting_slot: Optional[int] = None,
                pitcher_hits_allowed: Optional[int] = None,
-               pitcher_batters_faced: Optional[int] = None) -> dict:
+               pitcher_batters_faced: Optional[int] = None,
+               rho: Optional[float] = None,
+               slot_table: Optional[Mapping] = None) -> dict:
     """The whole model for one batter and one line, with the workings kept.
 
     Every intermediate is returned because the customer-facing sentence is
     built out of them: "Betts has a hit in 71% of his games this season and
     faces a starter allowing more than league average" is this dict read
     aloud.
+
+    `rho` and `slot_table` are ADDITIVE (T0a, card v2): omitted, this is
+    exactly V1's call (`probability_over`'s own `RHO` default,
+    `SLOT_PLATE_APPEARANCES`). Passed, they let a caller use values frozen
+    from a one-time 2025-only fit without touching V1's module constants.
     """
     rates = batter_rates(batter_lines, league)
     # PREFERENCE ORDER, and it is measured rather than assumed: an explicit
@@ -734,7 +745,7 @@ def price_prop(*, market: str, line: float, batter_lines: Sequence[Mapping],
     pa_source = "explicit"
     pa = expected_pa
     if not pa:
-        pa = expected_pa_for_slot(batting_slot)
+        pa = expected_pa_for_slot(batting_slot, table=slot_table)
         pa_source = "batting_slot" if pa else None
     if not pa:
         pa = rates["pa_per_game"]
@@ -749,7 +760,7 @@ def price_prop(*, market: str, line: float, batter_lines: Sequence[Mapping],
     # simplification is stated rather than hidden.
     blended = STARTER_SHARE * factor + (1.0 - STARTER_SHARE) * 1.0
 
-    probability = probability_over(market, line, rates, pa, blended)
+    probability = probability_over(market, line, rates, pa, blended, rho=rho)
     return {
         "market": market,
         "line": line,

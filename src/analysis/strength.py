@@ -621,16 +621,24 @@ def run_line_probability(line: Mapping, side: str, *, underdog: bool) -> float:
 
 
 def model_line(features: Mapping, *, league_rpg: float,
-               run_line: float = 1.5, totals: Optional[list] = None) -> dict:
+               run_line: float = 1.5, totals: Optional[list] = None,
+               dispersion: Optional[float] = None) -> dict:
     """`run_means` and `market_probabilities` in one call -- the whole model.
 
     Raises `StrengthError` rather than returning a 50/50 when the inputs are
     not there. See that class's docstring for why the distinction is
     load-bearing.
+
+    `dispersion` is ADDITIVE (T0a, card v2): omitted, this is exactly V1's
+    call and `market_probabilities` falls back to the module `DISPERSION`
+    constant. Passed, it lets a caller (card v2) use a value frozen from a
+    one-time 2025-only fit without touching V1's module constant or its
+    live behaviour.
     """
     means = run_means(features, league_rpg=league_rpg)
     probs = market_probabilities(means["away_mean"], means["home_mean"],
-                                 run_line=run_line, totals=totals)
+                                 run_line=run_line, totals=totals,
+                                 dispersion=dispersion)
     out = dict(means)
     out.update(probs)
     return out

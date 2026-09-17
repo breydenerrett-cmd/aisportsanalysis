@@ -827,6 +827,15 @@ def parse_boxscore(game_pk, boxscore: dict) -> dict:
                     "sb": _as_int(batting.get("stolenBases")),
                     "total_bases": total_bases,
                     "hits_runs_rbi": hits + runs + rbi,
+                    # ADDED for T0a (card v2 slot table, fit on 2025 only).
+                    # The raw field is a 3-digit string: the first digit is
+                    # the batting slot (1-9), the trailing two digits are a
+                    # substitution sequence ("100" = leadoff starter, "501"
+                    # = first sub batting fifth). A bench player who never
+                    # entered carries no battingOrder at all, hence the
+                    # guard. Additive only -- every existing reader of this
+                    # dict ignores an unknown key.
+                    "batting_order": _batting_slot(player.get("battingOrder")),
                 })
     return {"game_pk": _as_int(game_pk), "pitchers": pitchers, "batters": batters}
 
@@ -904,6 +913,22 @@ def _innings_to_float(value):
         f"innings pitched {value!r} has an unexpected fraction; baseball uses "
         "thirds (.0, .1, .2) and misreading it silently skews every rate stat"
     )
+
+
+def _batting_slot(batting_order) -> "int | None":
+    """The 1-9 batting slot from the raw `battingOrder` field, or None.
+
+    `battingOrder` is a 3-digit string ("100".."900" for a starter, "501"
+    etc. for a substitution) -- the first digit is the slot. Missing or
+    unparseable is None, never guessed.
+    """
+    if batting_order in (None, ""):
+        return None
+    text = str(batting_order).strip()
+    if not text or not text[0].isdigit():
+        return None
+    slot = int(text[0])
+    return slot if 1 <= slot <= 9 else None
 
 
 def _as_int(value):

@@ -232,3 +232,8 @@ data/logs/
 
 # Trial sampling observations (W-17); regenerable, and the run appends live.
 data/tennis_trial/
+
+# The V2 registration cites this file's sha256, so it MUST be in git:
+# a registration that references an untracked artifact references nothing
+# anyone else can obtain. 1.6KB, written once, never regenerated nightly.
+!data/processed/card_v2_frozen_params.json
