@@ -24,6 +24,7 @@ from src.analysis import prices as prices_mod
 from src.appstate import freshness
 from src.core import odds as odds_math
 from src.detect import dossier as dossier_mod
+from src import joins as joins_mod
 
 # Long enough that a page refresh never re-parses the odds store, short
 # enough that a fresh capture reaches the card within one cadence slot
@@ -185,9 +186,25 @@ def _game_identity(entry, *, date: str) -> dict:
                else (dossier or {}))
     game = payload.get("game") or {}
     away, home = game.get("away_team"), game.get("home_team")
-    number = game.get("game_number") or 1
+    # DELEGATED, NOT DUPLICATED (fixed 2026-09-16, Stage 18 join-integrity
+    # audit). This used to hand-roll `f"{away}-{home}-{date}-{number}"` --
+    # raw team names, always appending a marker (defaulting to 1 when
+    # `game_number` was absent). `src.analysis.opportunities.build_opportunities`
+    # keys its moneyline rows on `gamepayload.game_id(game)`, which slugs the
+    # names and appends a marker ONLY when `game_number` or `game_pk` is
+    # present. The two constructions happened to agree on every real game
+    # checked (every 2026-09-16 slate entry carries `game_number: 1`, so both
+    # sides append "-1"), but a game missing BOTH `game_number` and
+    # `game_pk` would get no suffix from `gamepayload.game_id` while this
+    # function still appended "-1" -- a silent id mismatch that would make
+    # `daily_card.build_pick_candidates` find zero moneyline rows for that
+    # game and the card would report it as unpriced. Calling the same
+    # function both sides call removes the chance of the two drifting
+    # again; `game.get("date")` also has to agree with the `date` argument
+    # here, which is why it defaults to it below.
+    game_for_id = game if game.get("date") else {**game, "date": date}
     return {
-        "game_id": f"{away}-{home}-{date}-{number}",
+        "game_id": gamepayload.game_id(game_for_id),
         "game_pk": game.get("game_pk"),
         "event_id": game.get("event_id"),
         "date": date,
@@ -958,10 +975,25 @@ def card_for_date(entries: Sequence, opportunity_rows: Sequence, *, date: str,
         games.append(game)
         model_lines[game["game_id"]] = line
 
+    ml_rows = moneyline_rows(opportunity_rows)
+    # LOUD ZERO, NOT A SILENT ONE (Stage 18 join-integrity audit, 2026-09-16).
+    # `games` is keyed by `_game_identity`'s `game_id`; `ml_rows` is keyed by
+    # `gamepayload.game_id()` via `opportunities.build_opportunities`. Both
+    # now delegate to the same function (see `_game_identity`), but this is
+    # exactly the shape the NFL outage had -- two id constructions that can
+    # drift apart with nothing raising when they do. If today's slate and
+    # today's priced board are both non-empty but not one game_id lines up
+    # between them, that is a code failure (an id-construction mismatch),
+    # not the honest "books haven't posted yet" this function reports
+    # below when `ml_rows` itself is empty.
+    joins_mod.report_join_result(
+        name="card-slate-to-moneyline-board",
+        left=games, right=ml_rows,
+        matched=[g for g in games if g.get("game_id") in ml_rows])
     candidates = daily_card.build_pick_candidates(
         games,
         model_lines=model_lines,
-        moneyline_rows=moneyline_rows(opportunity_rows),
+        moneyline_rows=ml_rows,
         runline_rows=run_line_rows(date, rows=multibook_rows),
     )
     payload = daily_card.select(candidates)
