@@ -51,8 +51,22 @@ understand it before criticising the modelling.
   must not be recorded as a measured edge. This is a genuinely good piece of
   design and a reviewer should note it.
 
-**Current evidential position: 92 registry rows, 42 verdicts, ZERO
-survivors.** Nothing has been shown to beat the market.
+**Current evidential position, corrected 2026-09-17.** The registry holds 47
+hypotheses and 42 verdicts. An earlier draft of this handoff said "ZERO
+survivors"; that was wrong, and the error is instructive enough to leave
+visible. Counting the verdict rows: **35 null, 2 false_positive, 2 CANDIDATE,
+2 audit, 1 withdrawn.**
+
+Nothing has been PROMOTED, and nothing has been shown to beat the market.
+But two hypotheses are alive, and one of them is a live forward test:
+**`V6:lineup_surprise_direction:h2h`** — a depleted lineup moves its own
+price — n=149, hit rate 0.584, CI [0.5033, 0.6691], NOT PROMOTED, held for
+forward replication with a floor of 150.
+
+**Its forward counter reads n=0, six days after it opened, because the probe
+that would feed it is scheduled nowhere.** See
+`URGENT_V6_NOT_ACCUMULATING.md` in this directory. A reviewer should treat
+this as the project's single most important open item.
 
 ## 3. Architecture, briefly
 
