@@ -81,3 +81,45 @@ evidence for why F3 matters rather than a tidy-up.
 No threshold anywhere was changed in response to these results, and none may
 be. Seven days of live picks is a reason to finish a registration, never a
 reason to move a bar.
+
+## Addendum, same day: what the calibration was doing underneath
+
+Checking whether the owner's 2026-09-15 freeze order actually took effect
+turned up a second thing worth recording.
+
+**The freeze held.** `data/processed/card_calibration.json` was last refit at
+2026-09-15T21:04Z, before the order at about 22:35Z. The daily loops of 09-16
+and 09-17 both ran and left it alone. Verified by walking every commit that
+touched the file.
+
+**What it had been doing before that is the point.** The nightly refit moved
+the calibration constant `b` like this, one fit per day:
+
+| Fit | b | n |
+|---|---|---|
+| 09-10 | 0.70785 | 1896 |
+| 09-11 | 0.725406 | 1942 |
+| 09-12 | 0.743582 | 1957 |
+| 09-13 | 0.753131 | 1972 |
+| 09-14 | 0.744719 | 1987 |
+| 09-15 10:15Z | 0.769145 | 1997 |
+| 09-15 21:04Z | **0.735183** | 1911 |
+
+That is roughly an 8% wander in six days, and it was refitting on the sealed
+window — the same outcomes the card was being graded against. That is the
+leakage the owner stopped.
+
+**The observation, and its limits.** Cards published 09-10 to 09-15 ran under
+a calibration refit nightly against data overlapping their own grading. The
+first card published under the frozen number is 09-16, and 09-16 was the
+worst day on the board (6-7, −3.15u).
+
+That is ONE day. It establishes nothing, and it must not be reported as
+establishing anything. But it is a testable prediction rather than a story: if
+the early winning days were flattered by a calibration tuned on the outcomes
+it was graded against, then frozen-calibration days should look systematically
+worse than the leaky ones. Enough frozen days will answer it, and the answer
+is worth having whichever way it falls — a product whose good results came
+from leakage needs to know that before it sells anything.
+
+Nothing here changes a threshold, and nothing here may.
