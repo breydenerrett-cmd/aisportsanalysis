@@ -2116,6 +2116,44 @@ be quoted as one arm beating another.** No arm's numbers here enter any count
 in section 11 or 17. Source
 `scratchpad/variants/variant_family.py`, on the same 138-candidate pool.
 
+**NOT REPRODUCIBLE AS WRITTEN — established 2026-09-17, before
+`REGISTERED_UTC`, and left standing rather than quietly deleted.**
+An independent check tried to re-derive this table from the committed tree
+and could not, for two reasons that are worth separating:
+
+1. The cited source, `scratchpad/variants/variant_family.py`, does not exist
+   anywhere in this repository, and neither do the other scratchpad files
+   section 14 cites. The numbers below were produced by code that was never
+   committed.
+2. The model side needs the calibration as it stood at the publish instant --
+   `b=0.769145, n=1997`, fitted 2026-09-15T14:36Z. `data/processed/card_calibration.json`
+   no longer holds it: a later daily loop refit it at 21:04Z the same day to
+   `b=0.735183, n=1911`. The original survives ONLY at commit `7db02b0a`, and
+   a reader working from the current tree would silently get the wrong model
+   and wrong numbers with nothing to warn them.
+
+What IS confirmed from the committed tree: the raw board is there --
+`data/processed/odds_multibook.jsonl` yields 14,989 quote rows for
+2026-09-15 at or before 16:42:48Z, whose newest observation is 14:31:29Z,
+matching 14.3's stated capture instant exactly. `DISPERSION = 2.3352`
+(`src/analysis/strength.py`) and `RHO = 0.05065` (`src/analysis/playerprops.py`)
+match this document. So the inputs were real; it is the derivation that is
+unavailable.
+
+This table therefore records **what the code did once, on a date, by a route
+no independent reader can currently re-run.** That is weaker than it reads,
+and it is stated here rather than fixed by deletion because deleting an
+inconvenient illustration from a pre-registration is the worse act. It costs
+the registration nothing: 14.3b is exploratory, enters no count in section 11
+or 17, and no promotion, floor or threshold anywhere depends on it.
+
+The lesson generalises and is logged as Stage 18 F2: this project has now
+found three artifacts whose supporting input was not kept -- the lineup store
+an automated job deleted nine times, this calibration, and the V2 frozen
+parameter file, which was gitignored while the registration cited its sha256
+(fixed at c59300fd). An artifact that outlives its input cannot be checked by
+anyone, including us.
+
 **At the real publish instant (16:42:48Z, every quote stale).** All four arms
 publish **0 picks and 3 fills**. A1 and A2 are byte-identical to each other;
 A3 and A4 are byte-identical to each other; the two pairs differ by one entry.
