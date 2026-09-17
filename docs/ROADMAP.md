@@ -913,3 +913,77 @@ Nothing here relaxes the evidence standard. Pre-registration before evaluation,
 published losers, 2025 tuning-only, sealed 2026, no promotion without the full
 gate, no rescue by threshold change, point-in-time correctness. Hardening buys
 confidence that a null is a real null, which is worth more than any of it.
+
+---
+
+## Stage 19 — Strategies worth testing, forward-tested daily
+
+Owner directive, 2026-09-17, verbatim: "I need you to figure out how to test
+different strategies, not just 'let's bet on the home team every time.' I
+don't need fucking retarded strategies. I need you to forward test different
+strategies every day... We're looking for player props. We're looking for
+things that we can find statistics on, historical data, and make an accurate
+estimate of what's going to happen using some sort of algorithm that we've
+come up with."
+
+He is right, and the SR1 home-underdog family is the exhibit. It was one
+number — is the home side an underdog — with no mechanism behind it. It died
+on a sign flip between 2023 and 2024, which is what a strategy with no
+mechanism does. Testing more strategies of that shape faster produces nothing
+except more confident noise.
+
+### The bar a strategy must clear to be worth a day of testing
+
+Every candidate is written down before it is evaluated, and must state:
+
+1. **A mechanism.** Why should this be mispriced — what does the market
+   plausibly not weight correctly? "Travelled fewer miles" is not a
+   mechanism; "a contact-heavy batter against a pitcher whose whiff rate
+   collapses the third time through, in a park that suppresses fly balls" is.
+   A strategy that cannot name a mechanism is refused at proposal, not tested.
+2. **Point-in-time inputs.** Every feature must have been knowable before the
+   first pitch of the game it is applied to. This is the rule that kills most
+   attractive ideas, and it kills them at proposal rather than after a
+   flattering backtest.
+3. **A named population and a floor.** Which props, which players, how many
+   before anyone may look.
+4. **A kill condition fixed in advance**, including the sign. A strategy that
+   can be rescued by reading the result the other way was never a test.
+
+### Why props first
+
+Three reasons, and the third is the strongest.
+
+- Props are per-player, so the statistics that support an estimate actually
+  exist at the unit of the bet. A team moneyline aggregates away the thing we
+  can model.
+- We now hold the inputs: 1.43M Statcast pitches across 2023-24, 5,003 lineup
+  rows, pitcher and bullpen logs, handedness, park and arsenal data.
+- **Our prop record is the worst thing on the board**: 23-15 at a 60.5% hit
+  rate and DOWN 3.46 units, a -9.1% return. That is the same disease the game
+  picks have — winning often at prices that need more — and it is where the
+  most money is currently being lost. Fixing the worst surface beats adding a
+  sixth.
+
+### The programme
+
+| # | Item | Acceptance |
+|---|---|---|
+| S1 | **The proposal gate**: a strategy file format carrying mechanism, point-in-time inputs, population, floor, kill condition and sign, registered before evaluation. A proposal missing a mechanism is refused by the gate, not by a reviewer's judgement | A strategy cannot be evaluated unless registered; a test proves an unregistered or mechanism-less proposal is refused |
+| S2 | **The daily forward runner**: every registered live strategy scores the day's board, writes its selections to its own ledger before first pitch, and is graded after. No strategy may be added to a date after that date's picks are frozen | Selections exist before first pitch with a timestamp that proves it; a test pins that a late addition is refused |
+| S3 | **Kills published as they happen.** A strategy that hits its kill condition is closed, dated, and written to the public research record the same day, with the number that killed it | `docs/` carries every death with its evidence; the registry's `record_verdict` is the only way a strategy closes |
+| S4 | **The first real families**, props-led, each with a stated mechanism: third-time-through-the-order contact, arsenal-versus-contact-profile mismatches, park-and-handedness interactions, bullpen-usage fatigue into late-inning props. Each is registered, run daily, and expected to die | Each family registered before its first evaluation; the count searched is published whether or not anything survives |
+| S5 | **The daily strategy report**: what ran, what it selected, what died, and how many remain alive. This is what answers "which ones are working" honestly — deaths arrive fast, survivors arrive slowly, and nothing is promoted without the full gate | A daily artifact naming every live strategy and every death; no survivor claim without the registered floor met |
+
+### What this stage refuses
+
+It does not give a running profitability scoreboard per strategy before its
+floor is met. That is the same refusal the card family carries, for the same
+reason: with many strategies on one board, a number you can watch is a number
+you steer by. The honest fast signal is a DEATH, and this stage is built to
+deliver those quickly and publicly.
+
+It also does not promise a winner. The registry has searched a large number of
+hypotheses and none has survived. The expected outcome of S4 is more deaths.
+That is the point: a survivor is only believable because the deaths were
+published too.

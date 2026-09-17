@@ -2524,6 +2524,61 @@ separately from this registration and its record is
 `docs/CARD_CALIBRATION_FREEZE_2026-09-15.md`. It changes no number here.
 
 
+## 15b. Answers to questions 12, 13 and 14
+
+**Answered 2026-09-17. Decided by Claude (Opus 5) under an explicit
+delegation, not by the owner.** Asked to choose, he replied: "I need you to
+take over, take charge, and make the correct choices ... I just don't need to
+be answering these questions for you. You need to be solving them." That is
+recorded verbatim because who decided a registration question, and on what
+authority, is part of the registration.
+
+**12 — the variant family, registered as written. YES, the default.**
+Four arms, one published and three on paper, Holm across six comparisons at a
+family-wise 0.05, floors of 463 counted picks and 93 slate dates, promotion
+rule fixed before any result, one promotion per family ever, and **no readout
+of which arm leads before the read date**.
+
+The owner's standing wish is to know which strategies work, and he repeated
+it when delegating. This registration still refuses the arm scoreboard, and
+the reason is not bureaucratic: with four arms on one pool, a number you can
+watch is a number you will steer by, and steering by it is precisely how a
+family of four manufactures a winner that is not there. 17.8's arithmetic
+says such a readout is noise for at least a year, so it would not even be
+informative while it corrupted the result.
+
+What he gets instead, daily and without waiting: four ledgers on one board,
+proof they screened the same pool, a per-date record of how far apart the
+arms sit, and a harm check that can fire within weeks and only ever says
+stop. A KILL is fast and is real knowledge; a promotion is slow. That
+asymmetry is the honest answer to "which ones are working", and it is met
+properly by the separate strategy programme (Stage 19), not by weakening this
+registration.
+
+**13 — strict bar on the published card, loose on paper. YES, the default.**
+A1's constants come from a measurement this repo owns
+(`docs/PROP_CALIBRATION_2026-09-14.md`); the loose pair comes from a target,
+and that one measurement warns in exactly the direction the loose pair runs.
+Publishing the loosest arm while its bar is untested would put the
+measured-worst slice on the customer card. The owner's 30-to-45 band
+therefore stays shut below about +152 on the public card for at least a
+season, and runs on paper beside it from day one. If the paper arm earns it,
+promotion is the mechanism -- not an edit to this line.
+
+**14 — the layout experiment licenses a rendering change and nothing else.
+YES, the default.** No alpha-registry row, none of the family's multiplicity
+budget, never reported as a strategy result. A layout cannot move a price, so
+a layout result is a fact about what readers open. 17.2's invariant enforces
+it: a slate date's ledger row must be byte-identical whichever layout the
+visitor saw, asserted by a test, and the experiment stops if a layout can
+change a row.
+
+**What these answers cost, stated plainly.** The owner wanted to watch the
+horse race. He is not getting that on this family, by my decision, and he
+should hold me to the alternative: Stage 19 must actually deliver daily
+forward-tested strategies with their deaths published, or this refusal was
+just a refusal.
+
 ## 16. Amendment log
 
 Permitted entries only: a typo that changes no number or rule; the recorded
