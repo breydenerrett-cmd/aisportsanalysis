@@ -31,9 +31,10 @@
  */
 
 import { apiGet } from "./api.js";
-import { el, clear, renderError, formatAmerican, formatEasternTime } from "./dom.js";
+import { el, renderError, formatAmerican, formatEasternTime } from "./dom.js";
 import { bookLabel } from "./labels.js";
 import { NFL_NOTICE } from "./sport.js";
+import { experimentalNotice, disclosure, chip } from "./layout.js";
 
 // Mirrors src/analysis/daily_card.py's labels. Kept as a lookup rather than
 // rendered raw so the page controls its own typography, and so a label the
@@ -75,6 +76,153 @@ function hoursSince(iso) {
   return Math.max((Date.now() - then) / 3600000, 0);
 }
 
+// Mirrors card_ledger.LOCK_LEAD_HOURS (src/appstate/card_ledger.py) -- a
+// pick locks four hours before its own first pitch. The server does not
+// hand this number over the wire, so it is kept here, named against its
+// source, the same way STALE_PRICE_HOURS above already mirrors a server
+// constant rather than guessing at one.
+const LOCK_LEAD_HOURS = 4;
+
+/** A whole-percent string from a 0-1 fraction, or null. Never invents a
+ * number for a missing probability -- the caller must not render this
+ * line at all when the underlying figure is absent. */
+function pct0(fraction) {
+  if (typeof fraction !== "number" || !Number.isFinite(fraction)) return null;
+  return `${Math.round(fraction * 100)}%`;
+}
+
+/** The win rate an American price needs to break even, as a whole percent.
+ * Arithmetic on the stated price alone (the same de-vig-free formula
+ * landing-live.js's own breakevenPct uses) -- not a fabricated number, the
+ * price's own implied probability. */
+function breakevenPct(price) {
+  const n = Number(price);
+  if (!Number.isFinite(n) || n === 0) return null;
+  const p = n < 0 ? Math.abs(n) / (Math.abs(n) + 100) : 100 / (n + 100);
+  return Math.round(p * 100);
+}
+
+/** Word chips naming the real conditions behind a pick -- never a claim
+ * about our confidence, only facts the payload actually carries.
+ * `pick.knowledge.core` (game/total picks, src/analysis/grade.py) names
+ * whether lineups and starters were in when the pick was frozen;
+ * `pick.lineup_posted` (prop picks) is the same fact under its own name.
+ * The lock state reads `pick.locked` and the first-pitch clock against
+ * LOCK_LEAD_HOURS -- never a guess, since a pick that has not locked yet
+ * really can still move. */
+function conditionChips(pick) {
+  const chips = [];
+  const core = pick.knowledge && pick.knowledge.core;
+  if (core) {
+    chips.push(core.lineups
+      ? chip("Lineup posted", "confirmed")
+      : chip("Lineup not posted", "waiting"));
+    chips.push(core.starters
+      ? chip("Starters confirmed", "confirmed")
+      : chip("Starter unconfirmed", "waiting"));
+  }
+  // A prop's own `lineup_posted === false` gets the fuller, named-detail
+  // sentence (`lineupNotPostedWarning`, above the bet line) rather than a
+  // bare chip here -- see that function's own comment for why the detail
+  // (season-average plate appearances, not tonight's order) has to survive
+  // as prose, not a three-word tag.
+
+  if (pick.locked) {
+    chips.push(chip("Locked", "neutral"));
+  } else if (pick.first_pitch_utc) {
+    const hoursLeft = hoursUntil(pick.first_pitch_utc);
+    if (hoursLeft !== null && hoursLeft <= LOCK_LEAD_HOURS) {
+      // Past the lock cutoff but not yet stamped locked -- the gap between
+      // a publish run passing the cutoff and the next one stamping it.
+      chips.push(chip("Lock pending · graded as published", "neutral"));
+    } else if (hoursLeft !== null) {
+      chips.push(chip(`Provisional until ${formatEasternTime(
+        new Date(Date.parse(pick.first_pitch_utc) - LOCK_LEAD_HOURS * 3600000).toISOString()
+      )}`, "neutral"));
+    }
+  }
+  return chips;
+}
+
+/** Hours from now until an ISO timestamp, or null if it cannot be read.
+ * The mirror of `hoursSince` above, for a first-pitch clock still ahead of
+ * us rather than behind. */
+function hoursUntil(iso) {
+  if (!iso) return null;
+  const then = Date.parse(String(iso).replace(" ", "T"));
+  if (Number.isNaN(then)) return null;
+  return (then - Date.now()) / 3600000;
+}
+
+/** The "View breakdown" body every kind of pick shares: what the market
+ * says, what our own number says, what the price needs, the rest of the
+ * why (why[0] already sits above, unsplit), the alternate bet for a game
+ * pick, and the knowledge grade with its served legend. Every figure here
+ * is a real payload field or plain arithmetic on one -- nothing here is
+ * invented to fill a box. */
+function breakdownBody(pick, { ourLabel = "Our number", showAlternative = false, payload } = {}) {
+  const nodes = [];
+  const figures = el("div", { class: "card2bd__figures" });
+  const market = pct0(pick.market_probability);
+  if (market !== null) {
+    figures.appendChild(el("p", { class: "card2bd__figure",
+      text: `Market says ${market}` }));
+  }
+  const ours = pct0(typeof pick.probability === "number" ? pick.probability : pick.model_probability);
+  if (ours !== null) {
+    figures.appendChild(el("p", { class: "card2bd__figure",
+      text: `${ourLabel} ${ours}` }));
+  }
+  const needs = typeof pick.breakeven === "number" ? pct0(pick.breakeven) : breakevenPct(pick.price);
+  if (needs !== null && pick.price !== undefined) {
+    figures.appendChild(el("p", { class: "card2bd__figure",
+      text: `Needs ${needs}% to break even at ${formatAmerican(pick.price)}` }));
+  }
+  if (figures.childNodes.length) nodes.push(figures);
+
+  for (const sentence of (pick.why || []).slice(1)) {
+    nodes.push(el("p", { class: "card2bd__why", text: sentence }));
+  }
+
+  if (showAlternative && pick.alternative && pick.alternative.bet) {
+    const alt = el("div", { class: "card2__alt", "data-hook": "card-alternative" });
+    alt.appendChild(el("span", { class: "card2__alt-label", text: "OR" }));
+    const body = el("div", { class: "card2__alt-body" });
+    body.appendChild(el("span", { class: "card2__alt-bet", text: pick.alternative.bet }));
+    if (pick.alternative.book) {
+      body.appendChild(el("span", { class: "card2__alt-book",
+        text: bookLabel(pick.alternative.book) || pick.alternative.book }));
+    }
+    alt.appendChild(body);
+    nodes.push(alt);
+  }
+
+  const knowledge = pick.knowledge || null;
+  if (knowledge && knowledge.grade) {
+    const gradeRow = el("div", { class: "card2bd__grade" });
+    gradeRow.appendChild(el("span", {
+      class: `card2__grade card2__grade--${String(knowledge.letter || "").toLowerCase()}`,
+      "data-hook": "card-grade",
+      title: knowledge.why || "",
+      text: knowledge.grade,
+    }));
+    gradeRow.appendChild(el("span", { class: "card2bd__grade-why", text: knowledge.why || "" }));
+    nodes.push(gradeRow);
+    for (const line of (payload && payload.knowledge_legend) || []) {
+      nodes.push(el("p", { class: "card2note__body card2note__body--mute",
+        "data-hook": "card-grade-legend", text: line }));
+    }
+  }
+
+  const gameDate = pick.date || (pick.first_pitch_utc ? String(pick.first_pitch_utc).slice(0, 10) : null);
+  if (gameDate && pick.away_team && pick.home_team) {
+    nodes.push(el("a", { class: "btn btn--text", "data-hook": "card-open-matchup",
+      href: `#/game/${encodeURIComponent(gameDate)}/${encodeURIComponent(pick.away_team)}/${encodeURIComponent(pick.home_team)}`,
+      text: "Open this matchup" }));
+  }
+  return nodes;
+}
+
 function sectionHead(label, meta) {
   const head = el("div", { class: "sechead" });
   head.appendChild(el("span", { class: "sechead__label", text: label }));
@@ -83,23 +231,27 @@ function sectionHead(label, meta) {
   return head;
 }
 
-function betCheckHref(pick) {
-  const params = new URLSearchParams();
-  if (pick.date) params.set("date", pick.date);
-  if (pick.bet) params.set("q", pick.bet.replace(/^Take\s+/i, ""));
-  return `#/betcheck?${params.toString()}`;
-}
-
-/** One pick. The instruction is the biggest thing in it, deliberately. */
-function pickCard(pick, total) {
+/** One pick, in the compact anatomy: rank · away at home · local first
+ * pitch; the instruction sentence; price at book · published time; the
+ * conditions behind it as word chips; the first reason sentence; then
+ * "View breakdown" for everything else -- the market number, our number,
+ * what the price needs, the rest of the reasoning, the alternate bet and
+ * the knowledge grade. Nothing here is invented; every figure comes from
+ * `pick` or `payload` as served.
+ *
+ * `compactPickCard` is the one export other screens (landing-live.js) use;
+ * `pickCard` stays the name this file's own render path and tests call.
+ */
+export function compactPickCard(pick, opts = {}) {
+  const { total = 1, payload = null, kindTag = null } = opts;
   const tone = LABEL_TONE[pick.label] || "slight";
+  const rank1 = (pick.position || pick.rank) === 1;
   const card = el("article", {
-    class: `card2 panel chamfer card2--${tone}`,
+    class: `card2 panel chamfer card2--${tone}${rank1 ? " card2--rank1" : ""}`,
     "data-hook": "card-pick",
     "data-rank": String(pick.rank || ""),
     "data-label": pick.label || "",
     "data-market": pick.market || "",
-    "data-rise": "",
   });
 
   const top = el("div", { class: "card2__top" });
@@ -110,89 +262,55 @@ function pickCard(pick, total) {
   // page printed "3 OF 9" twice (2026-09-11). The server orders and numbers;
   // this only prints.
   top.appendChild(el("span", { class: "card2__rank",
-    text: `${pick.position || pick.rank} OF ${total}` }));
-  top.appendChild(el("span", { class: `card2__label card2__label--${tone}`,
-    text: pick.label || "" }));
-  // THE KNOWLEDGE GRADE (src/analysis/grade.py): how complete our read of
-  // this game was when the pick was frozen. A letter beside the label, the
-  // one-line reason on hover, the legend once under READ THIS ONCE. It is
-  // not a forecast and the legend says so; the "+" is the only place a
-  // price enters.
-  const knowledge = pick.knowledge || null;
-  if (knowledge && knowledge.grade) {
-    top.appendChild(el("span", {
-      class: `card2__grade card2__grade--${String(knowledge.letter || "").toLowerCase()}`,
-      "data-hook": "card-grade",
-      title: knowledge.why || "",
-      text: knowledge.grade,
-    }));
-  }
-  if (pick.first_pitch_utc) {
-    top.appendChild(el("span", { class: "card2__time",
-      text: formatEasternTime(pick.first_pitch_utc) || "" }));
-  }
+    text: `#${pick.position || pick.rank} · ${pick.away_team} at ${pick.home_team}`
+        + `${pick.first_pitch_utc ? ` · ${formatEasternTime(pick.first_pitch_utc) || ""}` : ""}` }));
+  if (kindTag) top.appendChild(kindTag);
   card.appendChild(top);
 
-  // THE SENTENCE. Server-composed, rendered verbatim, and the only thing on
-  // this card set in the display face.
+  // THE SENTENCE. Server-composed, rendered verbatim, and the largest thing
+  // on the card.
   card.appendChild(el("p", { class: "card2__bet", "data-hook": "card-bet",
     text: pick.bet || "" }));
 
-  const matchup = el("div", { class: "card2__matchup" });
-  matchup.appendChild(el("span", { class: "card2__teams",
-    text: `${pick.away_team} at ${pick.home_team}` }));
   if (pick.book) {
-    matchup.appendChild(el("span", { class: "card2__book",
-      text: `${bookLabel(pick.book) || pick.book}${pick.books ? ` · best of ${pick.books} books` : ""}` }));
-  }
-  card.appendChild(matchup);
-
-  const why = el("div", { class: "card2__why", "data-hook": "card-why" });
-  for (const sentence of pick.why || []) {
-    why.appendChild(el("p", { class: "card2__whyline", text: sentence }));
-  }
-  card.appendChild(why);
-
-  // THE ALTERNATIVE. Offered, never recommended, and visually quieter than
-  // the pick so it cannot be mistaken for one. It exists because the run
-  // line is a genuinely different bet on the same opinion and a reader is
-  // better served choosing it themselves than having a model choose for
-  // them -- especially this model, whose run distribution is measured wrong
-  // (see src/analysis/daily_card.py's RUNLINE_AS_ALTERNATIVE).
-  if (pick.alternative && pick.alternative.bet) {
-    const alt = el("div", { class: "card2__alt", "data-hook": "card-alternative" });
-    alt.appendChild(el("span", { class: "card2__alt-label", text: "OR" }));
-    const body = el("div", { class: "card2__alt-body" });
-    body.appendChild(el("span", { class: "card2__alt-bet",
-      text: pick.alternative.bet }));
-    if (pick.alternative.book) {
-      body.appendChild(el("span", { class: "card2__alt-book",
-        text: bookLabel(pick.alternative.book) || pick.alternative.book }));
-    }
-    alt.appendChild(body);
-    card.appendChild(alt);
+    card.appendChild(el("p", { class: "card2__book",
+      text: `${formatAmerican(pick.price)} at ${bookLabel(pick.book) || pick.book}`
+          + `${pick.published_utc ? ` · published ${formatEasternTime(pick.published_utc) || ""}`
+             : pick.observed_utc ? ` · published ${formatEasternTime(pick.observed_utc) || ""}` : ""}`
+          + `${pick.books ? ` · best of ${pick.books} books` : ""}` }));
   }
 
-  // THE LABEL MEANING LINE IS GONE, 2026-09-10.
-  //
-  // A STRONG pick already carries a STRONG chip and a sentence naming both
-  // probabilities and which way they differ (src/analysis/daily_card.py's
-  // `_why`). Printing "The market and our numbers both make this side a
-  // clear favourite" under that says the same thing a third time in vaguer
-  // words -- and on most picks it is not even true: the model usually sits
-  // BELOW the de-vigged market number, which is why that sentence stopped
-  // saying "our own numbers agree at X" on 2026-09-11.
-  // LABEL_MEANING stays in this file for the tooltip and the legend, where
-  // explaining the vocabulary is the whole point.
+  // THE ONE REASON SENTENCE. why[0], rendered whole and never split
+  // client-side -- the rest of `pick.why` moves into the breakdown below.
+  const firstWhy = (pick.why || [])[0];
+  if (firstWhy) {
+    card.appendChild(el("p", { class: "card2__whyline card2__whyline--lead",
+      "data-hook": "card-why", text: firstWhy }));
+  }
 
-  const actions = el("div", { class: "card2__actions" });
-  actions.appendChild(el("a", {
-    class: "btn btn--ghost chamfer chamfer--btn",
-    href: betCheckHref(pick),
-    "data-hook": "card-check-this",
-    text: "CHECK THIS PRICE YOURSELF" }));
-  card.appendChild(actions);
+  // CONDITION CHIPS, under the reason line -- outside "View breakdown" so
+  // the real facts behind a pick (lineup posted, starters confirmed, lock
+  // state) are visible without a tap.
+  const chipsRow = conditionChips(pick);
+  if (chipsRow.length) {
+    const chipsWrap = el("div", { class: "card2__chips", "data-hook": "card-conditions" });
+    for (const c of chipsRow) chipsWrap.appendChild(c);
+    card.appendChild(chipsWrap);
+  }
+
+  card.appendChild(disclosure({
+    summary: "View breakdown",
+    id: `card-breakdown-${pick.game_pk || pick.event_id || pick.rank || Math.random().toString(36).slice(2)}`,
+    body: breakdownBody(pick, { showAlternative: true, payload }),
+  }));
+
   return card;
+}
+
+/** Legacy name this file's own render path and tests call -- see
+ * `compactPickCard`, the one implementation. */
+function pickCard(pick, total) {
+  return compactPickCard(pick, { total });
 }
 
 /* -----------------------------------------------------------------------
@@ -247,12 +365,12 @@ function propSectionHead(servingOlderDate, withSubhead = true) {
     wrap.appendChild(el("p", { class: "card2lede card2lede--mute",
       "data-hook": "card-prop-subhead",
       text: "The likeliest props that night that also cleared their price. "
-          + "Ranked by how likely we made them, never by the price." }));
+          + "Ranked by how strongly the market favoured each, never by the price." }));
   } else {
     wrap.appendChild(el("p", { class: "card2lede card2lede--mute",
       "data-hook": "card-prop-subhead",
       text: "The likeliest props tonight that also clear their price. "
-          + "Ranked by how likely we make them, never by the price." }));
+          + "Ranked by how strongly the market favours each, never by the price." }));
   }
   return wrap;
 }
@@ -278,8 +396,9 @@ function propMetaLine(pick) {
  * picks were frozen against. */
 function propPickCard(pick, total, servingOlderDate) {
   const tone = LABEL_TONE[pick.label] || "slight";
+  const rank1 = (pick.position || pick.rank || 1) === 1;
   const card = el("article", {
-    class: `card2 panel chamfer card2--${tone}`,
+    class: `card2 panel chamfer card2--${tone}${rank1 ? " card2--rank1" : ""}`,
     "data-hook": "card-prop-pick",
     "data-rank": String(pick.position || pick.rank || ""),
     "data-label": pick.label || "",
@@ -288,35 +407,42 @@ function propPickCard(pick, total, servingOlderDate) {
 
   const top = el("div", { class: "card2__top" });
   top.appendChild(el("span", { class: "card2__rank",
-    text: `${pick.position || pick.rank || 1} OF ${total}` }));
-  top.appendChild(el("span", { class: `card2__label card2__label--${tone}`,
-    text: pick.label || "" }));
-  if (pick.first_pitch_utc) {
-    top.appendChild(el("span", { class: "card2__time",
-      text: formatEasternTime(pick.first_pitch_utc) || "" }));
-  }
+    text: `#${pick.position || pick.rank || 1} · ${propMetaLine(pick)}` }));
   card.appendChild(top);
 
   // THE SENTENCE. Server-composed, same as the game picks' own bet line.
   card.appendChild(el("p", { class: "card2__bet", "data-hook": "card-prop-bet",
     text: pick.bet || "" }));
 
-  card.appendChild(el("p", { class: "card2__meta", "data-hook": "card-prop-meta",
-    text: propMetaLine(pick) }));
-
-  const why = el("div", { class: "card2__why", "data-hook": "card-prop-why" });
-  for (const sentence of pick.why || []) {
-    why.appendChild(el("p", { class: "card2__whyline", text: sentence }));
+  if (pick.book) {
+    card.appendChild(el("p", { class: "card2__book",
+      text: `${formatAmerican(pick.price)} at ${bookLabel(pick.book) || pick.book}`
+          + `${pick.observed_utc ? ` · published ${formatEasternTime(pick.observed_utc) || ""}` : ""}`
+          + `${pick.books ? ` · best of ${pick.books} books` : ""}` }));
   }
-  card.appendChild(why);
 
-  const actions = el("div", { class: "card2__actions" });
-  actions.appendChild(el("a", {
-    class: "btn btn--ghost chamfer chamfer--btn",
+  const firstWhy = (pick.why || [])[0];
+  if (firstWhy) {
+    card.appendChild(el("p", { class: "card2__whyline card2__whyline--lead",
+      "data-hook": "card-prop-why", text: firstWhy }));
+  }
+
+  const chipsRow = conditionChips(pick);
+  if (chipsRow.length) {
+    const chipsWrap = el("div", { class: "card2__chips", "data-hook": "card-conditions" });
+    for (const c of chipsRow) chipsWrap.appendChild(c);
+    card.appendChild(chipsWrap);
+  }
+
+  const boardLink = el("a", { class: "btn btn--text", "data-hook": "card-prop-board-link",
     href: servingOlderDate ? `#/props/${servingOlderDate}` : "#/props",
-    "data-hook": "card-prop-board-link",
-    text: "SEE THE PROP BOARD" }));
-  card.appendChild(actions);
+    text: "SEE THE PROP BOARD" });
+
+  card.appendChild(disclosure({
+    summary: "View breakdown",
+    id: `card-prop-breakdown-${pick.game_pk || pick.player || pick.rank || Math.random().toString(36).slice(2)}`,
+    body: [...breakdownBody(pick, { ourLabel: "Our number" }), boardLink],
+  }));
   return card;
 }
 
@@ -347,8 +473,9 @@ const BETCHECK_SUPPORTS_TOTALS = false;
  * the props' own count -- same convention `propPickCard` already follows. */
 function totalPickCard(pick, total) {
   const tone = LABEL_TONE[pick.label] || "slight";
+  const rank1 = (pick.position || pick.rank || 1) === 1;
   const card = el("article", {
-    class: `card2 panel chamfer card2--${tone}`,
+    class: `card2 panel chamfer card2--${tone}${rank1 ? " card2--rank1" : ""}`,
     "data-hook": "card-total-pick",
     "data-rank": String(pick.position || pick.rank || ""),
     "data-label": pick.label || "",
@@ -357,47 +484,42 @@ function totalPickCard(pick, total) {
 
   const top = el("div", { class: "card2__top" });
   top.appendChild(el("span", { class: "card2__rank",
-    text: `${pick.position || pick.rank || 1} OF ${total}` }));
-  top.appendChild(el("span", { class: `card2__label card2__label--${tone}`,
-    text: pick.label || "" }));
-  if (pick.first_pitch_utc) {
-    top.appendChild(el("span", { class: "card2__time",
-      text: formatEasternTime(pick.first_pitch_utc) || "" }));
-  }
+    text: `#${pick.position || pick.rank || 1} · ${pick.away_team} at ${pick.home_team}`
+        + `${pick.first_pitch_utc ? ` · ${formatEasternTime(pick.first_pitch_utc) || ""}` : ""}` }));
   card.appendChild(top);
 
   // THE SENTENCE. Server-composed, same as the game picks' own bet line.
   card.appendChild(el("p", { class: "card2__bet", "data-hook": "card-total-bet",
     text: pick.bet || "" }));
 
-  const matchup = el("div", { class: "card2__matchup" });
-  matchup.appendChild(el("span", { class: "card2__teams",
-    text: `${pick.away_team} at ${pick.home_team}` }));
   if (pick.book) {
-    matchup.appendChild(el("span", { class: "card2__book",
-      text: `${bookLabel(pick.book) || pick.book}${pick.books ? ` · best of ${pick.books} books` : ""}` }));
+    card.appendChild(el("p", { class: "card2__book",
+      text: `${formatAmerican(pick.price)} at ${bookLabel(pick.book) || pick.book}`
+          + `${pick.observed_utc ? ` · published ${formatEasternTime(pick.observed_utc) || ""}` : ""}`
+          + `${pick.books ? ` · best of ${pick.books} books` : ""}` }));
   }
-  card.appendChild(matchup);
 
-  const why = el("div", { class: "card2__why", "data-hook": "card-total-why" });
-  for (const sentence of pick.why || []) {
-    why.appendChild(el("p", { class: "card2__whyline", text: sentence }));
+  const firstWhy = (pick.why || [])[0];
+  if (firstWhy) {
+    card.appendChild(el("p", { class: "card2__whyline card2__whyline--lead",
+      "data-hook": "card-total-why", text: firstWhy }));
   }
-  card.appendChild(why);
 
-  // NO ACTION ROW while BETCHECK_SUPPORTS_TOTALS is false -- see that
-  // constant's own comment. Unlike a prop pick, a total has no board of
-  // its own to fall back to either, so nothing renders here at all until
-  // Bet Check itself can take a totals ticket.
-  if (BETCHECK_SUPPORTS_TOTALS) {
-    const actions = el("div", { class: "card2__actions" });
-    actions.appendChild(el("a", {
-      class: "btn btn--ghost chamfer chamfer--btn",
-      href: betCheckHref(pick),
-      "data-hook": "card-check-this",
-      text: "CHECK THIS PRICE YOURSELF" }));
-    card.appendChild(actions);
+  const chipsRow = conditionChips(pick);
+  if (chipsRow.length) {
+    const chipsWrap = el("div", { class: "card2__chips", "data-hook": "card-conditions" });
+    for (const c of chipsRow) chipsWrap.appendChild(c);
+    card.appendChild(chipsWrap);
   }
+
+  // NO CHECK-THIS-PRICE LINK while BETCHECK_SUPPORTS_TOTALS is false -- see
+  // that constant's own comment. "Open this matchup" still works: it needs
+  // no Bet Check support, only the game route.
+  card.appendChild(disclosure({
+    summary: "View breakdown",
+    id: `card-total-breakdown-${pick.game_pk || pick.rank || Math.random().toString(36).slice(2)}`,
+    body: breakdownBody(pick, { ourLabel: "Our number" }),
+  }));
   return card;
 }
 
@@ -673,17 +795,22 @@ function recordLine(rec) {
   }
   if (rec.chain_ok === false) {
     wrap.appendChild(el("p", { class: "card2rec__warn",
-      text: "The record's tamper-proof chain does not currently verify, so "
-          + "treat the numbers above as unconfirmed until it does." }));
+      text: "The record's hash chain does not currently verify, so treat "
+          + "the numbers above as unconfirmed until it does." }));
   }
   wrap.appendChild(seeFullRecord());
   return wrap;
 }
 
-/** The one honest line about what a card is and is not, always rendered. */
+/** The one honest line about what a card is and is not -- now a disclosure
+ * ("How this card works") at the bottom of the page rather than a fixed
+ * panel between the picks and the record, so it stops competing with the
+ * picks for a reader's first look while staying one tap away. Holds the
+ * same server-composed disclaimer/basis/legend as before, verbatim. */
 function standingNote(payload) {
-  const note = el("div", { class: "card2note chamfer", "data-hook": "card-standing-note" });
-  note.appendChild(el("span", { class: "card2note__label", text: "READ THIS ONCE" }));
+  const note = el("div", { class: "card2note", "data-hook": "card-standing-note" });
+  note.appendChild(el("p", { class: "card2note__body card2note__body--label",
+    text: "Note stored with this card" }));
   note.appendChild(el("p", { class: "card2note__body", text: payload.disclaimer || "" }));
   note.appendChild(el("p", { class: "card2note__body card2note__body--mute",
     text: payload.basis || "" }));
@@ -787,6 +914,13 @@ export async function renderCard(host, options = {}) {
   const wrap = el("section", { class: "gutter", "data-hook": "card" });
   host.appendChild(wrap);
 
+  // THE ONE EXPERIMENTAL NOTICE, above every pick and kept through the
+  // empty and error branches (GC-2, 2026-09-16) -- the empty-card branch
+  // below used to call clear(wrap) before rendering emptyCard(), which
+  // wiped this notice along with everything else. Every later clear() in
+  // this function must clear the CONTENT past this point, never this node.
+  wrap.appendChild(experimentalNotice());
+
   // Render notice for NFL
   if (sport === "nfl") {
     wrap.appendChild(el("p", { class: "card2lede card2lede--notice",
@@ -873,7 +1007,9 @@ export async function renderCard(host, options = {}) {
       // Both the card and the fallback are unreachable. This really is an
       // outage, and the ORIGINAL error is the one that describes it -- not
       // the fallback's.
-      renderError(wrap, err);
+      const errBody = el("div", { "data-hook": "card-error-body" });
+      wrap.appendChild(errBody);
+      renderError(errBody, err);
       return { rendered: false, firstPick: null };
     }
     payload = last;
@@ -894,7 +1030,10 @@ export async function renderCard(host, options = {}) {
   }
 
   if (!payloadHasBets(payload)) {
-    clear(wrap);
+    // Re-append past the notice mounted at the top of this function -- do
+    // not clear(wrap), which would wipe it along with everything else
+    // (GC-2, 2026-09-16; the same defect this comment already described
+    // before this rewrite).
     wrap.appendChild(emptyCard(payload));
     return { rendered: false, firstPick: null };
   }
@@ -919,7 +1058,7 @@ export async function renderCard(host, options = {}) {
       // is a small claim and it was still a false one, on the page whose
       // whole pitch is that the claims are checkable.
       text: `Tomorrow's card posts in the morning. These are the bets from `
-          + `${servingOlderCard}, frozen before those games started.` }));
+          + `${servingOlderCard}, published before those games started.` }));
   }
 
   // TWO DIFFERENT PROMISES, AND THE PAGE MUST NOT MAKE THE WRONG ONE.
@@ -1038,6 +1177,10 @@ export async function renderCard(host, options = {}) {
   }
 
   wrap.appendChild(recordLine(record));
-  wrap.appendChild(standingNote(payload));
+  wrap.appendChild(disclosure({
+    summary: "How this card works",
+    id: "card-standing-note-panel",
+    body: standingNote(payload),
+  }));
   return { rendered: true, firstPick: firstPickOf(payload) };
 }

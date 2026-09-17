@@ -167,8 +167,8 @@ export async function renderCardRecordStrip(container) {
   // THE CHAIN, NAMED ON THE PAGE THAT SHOWS THE NUMBER. A tamper-evident
   // ledger nobody is told about is just a file.
   strip.appendChild(el("p", { class: "rec-strip__note", "data-hook": "card-record-note",
-    text: `${days} graded card${days === 1 ? "" : "s"}, every pick frozen `
-        + `before first pitch. `
+    text: `${days} graded card${days === 1 ? "" : "s"}, each pick graded as `
+        + `it stood at its lock. `
         + (rec.chain_ok === false
              ? "The ledger's hash chain does NOT verify — treat these numbers "
                + "as unconfirmed until that is resolved."

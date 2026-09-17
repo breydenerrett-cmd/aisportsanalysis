@@ -77,7 +77,7 @@ class CardReadsPropPicks(unittest.TestCase):
         body = _function_body(self.text, "function propSectionHead(")
         self.assertIn('"data-hook": "card-prop-divider"', body)
         self.assertIn('sectionHead("PLAYER PROPS")', body)
-        self.assertIn("Ranked by how likely we make them, never by the price.", body)
+        self.assertIn("Ranked by how strongly the market favours each, never by the price.", body)
 
     def test_each_pick_carries_its_own_hook(self):
         body = _function_body(self.text, "function propPickCard(")

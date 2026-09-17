@@ -79,28 +79,17 @@
 }
 .card2__rank {
   font-family: var(--font-mono);
-  font-size: 12.5px;
-  letter-spacing: .16em;
-  color: var(--text-dim);
-}
-.card2__label {
-  font-family: var(--font-display);
   font-size: 13px;
-  font-weight: 800;
-  letter-spacing: .18em;
-  padding: 2px 7px;
-  border: 1px solid currentColor;
-  color: var(--text-mute);
+  letter-spacing: .04em;
+  color: var(--text-2);
 }
-.card2__label--strong { color: var(--v-live-label); }
-.card2__label--lean { color: var(--v-live-label); opacity: .8; }
-.card2__label--slight { color: var(--text-mute); }
-.card2__label--split { color: var(--v-warn-label); }
-/* The knowledge grade (src/analysis/grade.py). Mono, boxed, no colour for
- * A and B beyond the page's own text, muted for C and D -- a letter is a
- * fact about what we hold, not a call, so it gets no money red. */
+/* THE KNOWLEDGE GRADE (src/analysis/grade.py) now lives inside "View
+ * breakdown" (GC-1, 2026-09-16), never in the visible top row -- a
+ * reader's first look is the bet, not a letter grade. Mono, boxed, no
+ * colour for A and B beyond the page's own text, muted for C and D -- a
+ * letter is a fact about what we hold, not a call, so it gets no money
+ * red. */
 .card2__grade {
-  margin-left: var(--sp-4);
   padding: 2px 7px;
   font-family: var(--font-mono);
   font-size: 12px;
@@ -111,6 +100,8 @@
   cursor: help;
 }
 .card2__grade--c, .card2__grade--d { color: var(--text-mute); }
+.card2bd__grade { display: flex; align-items: baseline; gap: var(--sp-4); margin-top: var(--sp-5); }
+.card2bd__grade-why { font-size: 13.5px; color: var(--text-3); }
 .card2__time {
   margin-left: auto;
   font-family: var(--font-mono);
@@ -118,6 +109,64 @@
   letter-spacing: .12em;
   color: var(--text-dim);
   white-space: nowrap;
+}
+
+/* THE KIND TAG (mergedBetCard) rides the top row beside the rank -- kept
+ * here unchanged, still appended into .card2__top. */
+
+/* CONDITION CHIPS -- the real facts behind a pick (lineup posted,
+ * starters confirmed, provisional/locked), in words, from the shared
+ * .chip classes (components.css), never a colour-only signal. */
+.card2__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+}
+
+/* PRICE AT BOOK · PUBLISHED TIME -- the second line of the compact
+ * anatomy, one step down from the bet sentence. */
+.card2__book {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: .04em;
+  color: var(--text-3);
+}
+
+/* THE ONE VISIBLE REASON SENTENCE -- the rest of `why` moves into the
+ * breakdown; this line reads slightly larger than the breakdown's own
+ * reasoning so it still reads as the headline reason, not a footnote. */
+.card2__whyline--lead {
+  font-size: 15px;
+  color: var(--text-hi);
+  border-top: none;
+  padding-top: 0;
+}
+
+/* RANK 1 -- the flagship pick on the card gets the --edge-hi treatment
+ * (a brighter leading edge), never a louder label -- there is no more
+ * STRONG/LEAN/SPLIT chip to carry that distinction. */
+.card2--rank1 { --card2-accent: var(--edge-hi, var(--v-live)); }
+.card2--rank1::before { width: 3px; }
+
+/* THE BREAKDOWN -- everything a reader does not need at a glance: the
+ * market and our own numbers, the break-even the price demands, the rest
+ * of the reasoning, the alternate bet, the knowledge grade and its
+ * legend, and the link to the full matchup. */
+.card2bd__figures { display: flex; flex-direction: column; gap: var(--sp-3); margin: 0 0 var(--sp-5); }
+.card2bd__figure {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  letter-spacing: .02em;
+  color: var(--text-2);
+}
+.card2bd__why {
+  margin: 0 0 var(--sp-4);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-3);
 }
 
 /* THE INSTRUCTION. The largest type on the screen, on purpose. */
@@ -256,6 +305,26 @@
 .card2--split .card2__meaning { color: var(--v-warn-label); }
 
 .card2__actions { margin-top: auto; padding-top: var(--sp-4); }
+
+/* PHONE FLOOR (GC-5, 2026-09-16): no text inside a compact pick card
+ * computes under 15px at <=899px -- raised here rather than lowered
+ * anywhere at desktop width. */
+@media (max-width: 899px) {
+  .card2lede,
+  .card2lede--mute,
+  .card2__rank,
+  .card2__book,
+  .card2__meta,
+  .card2bd__figure,
+  .card2bd__why,
+  .card2bd__grade-why,
+  .card2note__body,
+  .card2note__body--mute,
+  .card2rec__meta,
+  .card2rec__body,
+  .card2rec__link { font-size: 15px; }
+  .card2__whyline { font-size: 15px; }
+}
 
 /* THE RECORD. Sits between the picks and the standing note, because it is
    the reason to believe the picks and it belongs where a reader is still
@@ -425,7 +494,9 @@
   font-weight: 800; line-height: 1; color: var(--text-hi);
 }
 .crp-stat__figure--pos { color: var(--v-win-lit); }
-.crp-stat__figure--neg { color: var(--v-money-lit); }
+/* A loss is a fact, not a warning to flash red at the reader (GC-5,
+ * 2026-09-16) -- neutral, same treatment as the settled LOSS chip. */
+.crp-stat__figure--neg { color: var(--text-hi); }
 .crp-stat__figure--warn { color: var(--v-warn-label); }
 .crp-stat__figure--absent { font-style: normal; color: var(--text-ghost); }
 
@@ -451,7 +522,7 @@
 .crp-day__voids { font-family: var(--font-mono); font-size: 13px; color: var(--v-warn-label); }
 .crp-day__net { margin-left: auto; font-family: var(--font-mono); font-size: 14.5px; font-weight: 700; color: var(--text-2); }
 .crp-day__net--pos { color: var(--v-win-lit); }
-.crp-day__net--neg { color: var(--v-money-lit); }
+.crp-day__net--neg { color: var(--text-hi); }
 .crp-day__hash {
   margin: 0; font-family: var(--font-mono); font-size: 12.5px; letter-spacing: .01em; color: var(--text-ghost);
   word-break: break-all;
@@ -479,7 +550,7 @@
   margin: 3px 0 0; font-family: var(--font-mono); font-size: 12.5px; color: var(--text-mute); white-space: normal;
 }
 .crp-figure--pos { color: var(--v-win-lit); }
-.crp-figure--neg { color: var(--v-money-lit); }
+.crp-figure--neg { color: var(--text-hi); }
 
 /* VOID -- grey/outline like PUSH rather than amber: a void is not a
    caution about this PAGE, it is a fact about a game that did not finish.

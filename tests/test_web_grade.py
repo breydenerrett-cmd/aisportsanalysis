@@ -17,28 +17,39 @@ def _read(name: str) -> str:
 
 
 class TheCardShowsIt(unittest.TestCase):
+    """GC-1, 2026-09-16: the grade chip and its legend moved off the
+    visible face of the card and into "View breakdown" -- a reader's
+    first look is the bet, not a letter grade. `breakdownBody` is the one
+    place both now live, shared by every pick kind's disclosure."""
+
     def setUp(self):
         self.text = _read("card.js")
 
-    def test_a_grade_chip_sits_beside_the_label(self):
-        body = self.text.split("function pickCard(")[1].split("\nfunction ")[0]
+    def test_a_grade_chip_renders_inside_the_breakdown(self):
+        body = self.text.split("function breakdownBody(")[1].split("\nfunction ")[0]
         self.assertIn('"data-hook": "card-grade"', body)
         self.assertIn("pick.knowledge", body)
-        label_at = body.find("card2__label card2__label--")
-        grade_at = body.find('"data-hook": "card-grade"')
-        self.assertLess(label_at, grade_at)
 
     def test_the_reason_is_the_hover_text(self):
-        body = self.text.split("function pickCard(")[1].split("\nfunction ")[0]
+        body = self.text.split("function breakdownBody(")[1].split("\nfunction ")[0]
         self.assertIn("title: knowledge.why", body)
 
     def test_the_legend_is_served_not_typed(self):
-        note = self.text.split("function standingNote(")[1].split("\nfunction ")[0]
-        self.assertIn("payload.knowledge_legend", note)
-        self.assertIn('"data-hook": "card-grade-legend"', note)
+        body = self.text.split("function breakdownBody(")[1].split("\nfunction ")[0]
+        self.assertIn("payload.knowledge_legend", body)
+        self.assertIn('"data-hook": "card-grade-legend"', body)
         # No client-side copy of the legend's sentences.
         rendered = " ".join(t for _n, t in _rendered_strings(WEB_JS / "card.js"))
         self.assertNotIn("not how much we expect to win", rendered)
+
+    def test_the_breakdown_is_reachable_from_every_pick_card(self):
+        """`compactPickCard`, `propPickCard` and `totalPickCard` each mount
+        a "View breakdown" disclosure whose body is `breakdownBody(...)` --
+        the grade is reachable from every kind of pick, not only games."""
+        for fn in ("compactPickCard", "propPickCard", "totalPickCard"):
+            body = self.text.split(f"function {fn}(")[1].split("\nfunction ")[0]
+            self.assertIn("breakdownBody(pick", body,
+                          f"{fn} must mount breakdownBody in its disclosure")
 
 
 class TheGamesGridShowsIt(unittest.TestCase):
