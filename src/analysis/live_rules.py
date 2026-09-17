@@ -213,6 +213,17 @@ def default_registry_status(path=None) -> dict[str, str]:
     return status
 
 
+def registry_status_for_sport(sport: str, registry_status: RegistryStatus = None) -> dict[str, str]:
+    """Public convenience: resolved {rule_id: status} for every rule this
+    sport runs, via the same resolution `evaluate_all`/`check_all_triggers`
+    use. Exists for the window-evidence artifact (`live_window.tick`),
+    which must report registry status even for a rule whose trigger
+    condition was never checked because an earlier gate already excluded
+    it -- `check_all_triggers` alone never surfaces that distinction.
+    """
+    return _resolve_registry_status(registry_status, _rules_for_sport(sport))
+
+
 def _resolve_registry_status(registry_status: RegistryStatus, rules: list[str]) -> dict[str, str]:
     """Turn the injected `registry_status` (None, a dict, or a callable) into
     a plain {rule_id: status} map for exactly the rules being evaluated.
@@ -258,6 +269,189 @@ def evaluate_all(*, pregame: Mapping, state: Mapping,
             candidates.append(candidate)
 
     return candidates
+
+
+def rule_diagnostic(rule_id: str, *, pregame: Mapping, state: Mapping) -> Optional[dict]:
+    """Structured, always-on diagnostic for one rule against one state row.
+
+    Unlike `check_trigger` (yes/no, no quote), this reports the ACTUAL
+    observed values whether or not the condition holds, plus a `distance`:
+    0.0 when the condition holds, otherwise a nonnegative score comparable
+    only within the same rule_id (smaller = closer to firing; the units mix
+    different fields on purpose and are never compared across rule_ids).
+
+    Built for the window-evidence artifact (docs/LIVE_BETTING_SYSTEM.md 3.1
+    closest-miss reporting): the 2026-09-16 incident this exists to prevent
+    was a 511-tick, zero-candidate window with no record of what the
+    evaluator actually saw. Tracking the minimum `distance` seen across a
+    window's ticks, per (game, rule), is what lets a reader learn "TOR
+    margin=-1, favorite_prob=0.551" instead of a bare zero.
+
+    Returns None for a rule_id this sport does not run (mirrors
+    `_rules_for_sport`) -- never invents a cross-sport diagnostic.
+    """
+    if rule_id == "mlb_favorite_trails_after_3":
+        return _diag_mlb_favorite_trails_after_3(pregame, state)
+    if rule_id == "mlb_starter_pulled_early":
+        return _diag_mlb_starter_pulled_early(pregame, state)
+    if rule_id == "nfl_favorite_trails_halftime":
+        return _diag_nfl_favorite_trails_halftime(pregame, state)
+    return None
+
+
+def _diag_mlb_favorite_trails_after_3(pregame: Mapping, state: Mapping) -> dict:
+    favorite_prob = pregame.get("favorite_prob")
+    favorite_side = pregame.get("favorite")
+    inning = state.get("inning")
+    inning_state = state.get("inning_state")
+    half = state.get("half")
+    outs = state.get("outs")
+    home_runs = state.get("home_runs")
+    away_runs = state.get("away_runs")
+
+    third_ended = (inning == 3 and inning_state == "End") or (
+        inning == 4 and half == "top" and outs == 0)
+
+    margin = None
+    if favorite_side in ("home", "away") and home_runs is not None and away_runs is not None:
+        margin = (home_runs - away_runs) if favorite_side == "home" else (away_runs - home_runs)
+
+    condition_met = bool(
+        (favorite_prob or 0) >= 0.55 and third_ended
+        and margin is not None and -2 <= margin <= -1)
+
+    prob_gap = max(0.0, 0.55 - favorite_prob) if favorite_prob is not None else float("inf")
+    timing_gap = 0.0 if third_ended else 1.0
+    if margin is None:
+        margin_gap = float("inf")
+    elif -2 <= margin <= -1:
+        margin_gap = 0.0
+    else:
+        margin_gap = min(abs(margin - (-1)), abs(margin - (-2)))
+
+    return {
+        "rule_id": "mlb_favorite_trails_after_3",
+        "condition_met": condition_met,
+        "distance": 0.0 if condition_met else prob_gap * 100 + timing_gap * 50 + margin_gap,
+        "values": {
+            "favorite_prob": favorite_prob,
+            "favorite_side": favorite_side,
+            "inning": inning,
+            "inning_state": inning_state,
+            "half": half,
+            "outs": outs,
+            "margin": margin,
+            "observed_utc": state.get("observed_utc"),
+        },
+    }
+
+
+def _diag_mlb_starter_pulled_early(pregame: Mapping, state: Mapping) -> dict:
+    favorite_side = pregame.get("favorite")
+    half = state.get("half")
+    inning = state.get("inning", 0)
+    current_pitcher = state.get("pitcher_id")
+    starter_ids = pregame.get("starter_ids") or {}
+    pregame_starter = starter_ids.get(favorite_side) if favorite_side in ("home", "away") else None
+    home_runs = state.get("home_runs")
+    away_runs = state.get("away_runs")
+
+    favorite_on_defense = (
+        (favorite_side == "home" and half == "top")
+        or (favorite_side == "away" and half == "bottom"))
+
+    margin = None
+    if favorite_side in ("home", "away") and home_runs is not None and away_runs is not None:
+        margin = (home_runs - away_runs) if favorite_side == "home" else (away_runs - home_runs)
+
+    pitcher_changed = (
+        current_pitcher is not None and pregame_starter is not None
+        and current_pitcher != pregame_starter)
+
+    condition_met = bool(
+        favorite_on_defense and (inning or 0) <= 4 and pitcher_changed
+        and margin is not None and margin >= 0)
+
+    half_gap = 0.0 if favorite_on_defense else 1.0
+    inning_gap = 0.0 if (inning or 0) <= 4 else float((inning or 0) - 4)
+    if current_pitcher is None or pregame_starter is None:
+        pitcher_gap = float("inf")
+    else:
+        pitcher_gap = 0.0 if pitcher_changed else 1.0
+    margin_gap = 0.0 if (margin is not None and margin >= 0) else (
+        float("inf") if margin is None else abs(margin))
+
+    return {
+        "rule_id": "mlb_starter_pulled_early",
+        "condition_met": condition_met,
+        "distance": 0.0 if condition_met else (
+            half_gap * 50 + inning_gap * 20 + pitcher_gap * 30 + margin_gap),
+        "values": {
+            "favorite_side": favorite_side,
+            "half": half,
+            "inning": inning,
+            "current_pitcher": current_pitcher,
+            "pregame_starter": pregame_starter,
+            "margin": margin,
+            "observed_utc": state.get("observed_utc"),
+        },
+    }
+
+
+def _diag_nfl_favorite_trails_halftime(pregame: Mapping, state: Mapping) -> dict:
+    favorite_prob = pregame.get("favorite_prob")
+    favorite_side = pregame.get("favorite")
+    completed = bool(state.get("completed", False))
+    observed_utc_str = state.get("observed_utc")
+    commence_utc_str = pregame.get("kickoff_utc") or state.get("commence_time")
+    home_score = state.get("home_score")
+    away_score = state.get("away_score")
+
+    elapsed = None
+    if observed_utc_str and commence_utc_str:
+        observed_dt = _parse_dt(observed_utc_str)
+        commence_dt = _parse_dt(commence_utc_str)
+        if observed_dt is not None and commence_dt is not None:
+            elapsed = (observed_dt - commence_dt).total_seconds() / 60
+
+    margin = None
+    if favorite_side in ("home", "away") and home_score is not None and away_score is not None:
+        margin = (home_score - away_score) if favorite_side == "home" else (away_score - home_score)
+
+    in_window = elapsed is not None and 80 <= elapsed <= 100
+    condition_met = bool(
+        (favorite_prob or 0) >= 0.60 and not completed and in_window
+        and margin is not None and -7 <= margin <= -1)
+
+    prob_gap = max(0.0, 0.60 - favorite_prob) if favorite_prob is not None else float("inf")
+    completed_gap = 1.0 if completed else 0.0
+    if elapsed is None:
+        elapsed_gap = float("inf")
+    elif in_window:
+        elapsed_gap = 0.0
+    else:
+        elapsed_gap = min(abs(elapsed - 80), abs(elapsed - 100))
+    if margin is None:
+        margin_gap = float("inf")
+    elif -7 <= margin <= -1:
+        margin_gap = 0.0
+    else:
+        margin_gap = min(abs(margin - (-1)), abs(margin - (-7)))
+
+    return {
+        "rule_id": "nfl_favorite_trails_halftime",
+        "condition_met": condition_met,
+        "distance": 0.0 if condition_met else (
+            prob_gap * 100 + completed_gap * 200 + elapsed_gap + margin_gap),
+        "values": {
+            "favorite_prob": favorite_prob,
+            "favorite_side": favorite_side,
+            "completed": completed,
+            "elapsed_minutes": round(elapsed, 1) if elapsed is not None else None,
+            "margin": margin,
+            "observed_utc": observed_utc_str,
+        },
+    }
 
 
 def check_trigger(rule_id: str, *, pregame: Mapping, state: Mapping) -> Optional[dict]:

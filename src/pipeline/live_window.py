@@ -221,6 +221,16 @@ def tick(sport, *, state, clock=None, deps=None) -> dict:
     pregame_context = state.get("pregame", {})
     trigger_state = state.setdefault("trigger_state", {})
 
+    # Window-evidence bookkeeping (the fix for the 2026-09-16 defect: a
+    # window that evaluates hundreds of ticks and reports a bare
+    # `candidates_new: 0` is indistinguishable from one that evaluated
+    # nothing). Registry status is resolved once per tick, for every rule
+    # this sport runs -- including a rule whose trigger condition is never
+    # checked below because it is not registered, which `check_all_triggers`
+    # alone would never surface.
+    evidence = state.setdefault("evidence", {})
+    registry_status_map = live_rules.registry_status_for_sport(sport, registry_status)
+
     # 1. Check every registered trigger for every game THIS poll (D5: time-
     #    based triggers included, unconditionally -- there is no "changed"
     #    filter here at all). A key already tracked is never re-registered
@@ -228,8 +238,62 @@ def tick(sport, *, state, clock=None, deps=None) -> dict:
     newly_registered = 0
     for game_id, new_state_row in (new_states or {}).items():
         pgame = pregame_context.get(game_id)
+
+        # Evidence: record whether a pregame context exists (and why not),
+        # then -- for every applicable rule -- the closest this state row
+        # came to firing, whether or not it actually did. Runs for EVERY
+        # game seen this poll, not gated on a trigger, because a
+        # "closest miss" can only be known if every tick is looked at.
+        game_evidence = evidence.setdefault(game_id, {
+            "pregame_built": pgame is not None and pgame.get("usable", True),
+            "pregame_reason": None if pgame is None else pgame.get("reason"),
+            "ticks_seen": 0,
+            "rules": {},
+        })
+        game_evidence["ticks_seen"] += 1
+        if pgame is not None:
+            for rule_id in registry_status_map:
+                rule_ev = game_evidence["rules"].setdefault(rule_id, {
+                    "registry_status": registry_status_map.get(rule_id, live_rules.UNREGISTERED_STATUS),
+                    "closest_miss": None,
+                })
+                diag = live_rules.rule_diagnostic(rule_id, pregame=pgame, state=new_state_row)
+                if diag is not None:
+                    best = rule_ev["closest_miss"]
+                    if best is None or diag["distance"] < best["distance"]:
+                        rule_ev["closest_miss"] = diag
+
         if pgame is None:
             continue
+
+        # D12 fix (docs/LIVE_BETTING_SYSTEM.md 2.3, live_rules.py's own
+        # docstring on `_mlb_starter_pulled_early`): the rule's registered
+        # text means the pitcher actually observed on the mound, not the
+        # pregame probable. The first live state row that shows the
+        # favourite on defence with a real pitcher_id overwrites
+        # `pregame["starter_ids"][favorite_side]` with that OBSERVED id --
+        # once, never again for this game (a later pitching change is
+        # exactly what the rule is trying to detect, so the observed
+        # starter must stay fixed after this first sighting). Before that
+        # first sighting, `starter_ids` still holds the probable, same as
+        # `livefeed_mlb.build_pregame_context` seeds it -- there is nothing
+        # else to compare against yet.
+        if sport == "mlb":
+            favorite_side = pgame.get("favorite")
+            if favorite_side in ("home", "away"):
+                observed_flag_key = f"_starter_observed_{favorite_side}"
+                defensive_half = "top" if favorite_side == "home" else "bottom"
+                if (not pgame.get(observed_flag_key)
+                        and new_state_row.get("half") == defensive_half):
+                    observed_pitcher_id = new_state_row.get("pitcher_id")
+                    if observed_pitcher_id is not None:
+                        starter_ids = pgame.get("starter_ids")
+                        if not isinstance(starter_ids, dict):
+                            starter_ids = {}
+                            pgame["starter_ids"] = starter_ids
+                        starter_ids[favorite_side] = observed_pitcher_id
+                        pgame[observed_flag_key] = True
+
         try:
             fired = check_triggers_fn(pregame=pgame, state=new_state_row,
                                       registry_status=registry_status)
@@ -305,6 +369,13 @@ def tick(sport, *, state, clock=None, deps=None) -> dict:
                 if quotes and captured_utc else [])
 
             record["next_retry_idx"] = record.get("next_retry_idx", 0) + 1
+            # Evidence: the price-gate diagnostics a "state condition met,
+            # price gate refused" row needs (item 2 of the observability
+            # fix) -- overwritten each attempt so the artifact always shows
+            # the LAST attempt's numbers, not the first.
+            record["last_fresh_count"] = len(fresh)
+            record["last_quotes_seen"] = len(quotes) if quotes else 0
+            record["last_capture_utc"] = captured_utc
 
             if len(fresh) < live_rules.MIN_FRESH_BOOKS:
                 continue  # UNPRICED this attempt; the ladder will retry
@@ -419,6 +490,112 @@ def record_window_gaps(sport, gaps: list, *, path=None) -> int:
     return len(gaps)
 
 
+def build_window_evidence(sport, *, date, ticks, window_start_utc, window_end_utc,
+                          evidence: dict, trigger_state: dict, stopped_reason: str) -> dict:
+    """Assemble the end-of-window evidence artifact -- the fix this task
+    exists to build (see the module docstring's WHY and
+    docs/LIVE_BETTING_SYSTEM.md 3.1). Written by `run()` on EVERY exit path,
+    including a zero-candidate one, so a reader can answer "did the
+    evaluator run, and what did it see" without the CI job.
+
+    For every game seen this window and every rule applicable to this
+    sport, classifies the outcome into exactly one of:
+      - "unregistered": the rule's registry status was not
+        registered/forward-testing this window -- it was never even
+        trigger-checked.
+      - "priced_candidate_recorded": the trigger fired and
+        `live_ledger.record_candidate` (or whatever `record` dep) accepted
+        it.
+      - "state_condition_met_price_refused": the trigger fired (its state
+        condition held) but no candidate was ever recorded -- the price
+        gate refused every attempt (fewer than `live_rules.MIN_FRESH_BOOKS`
+        fresh books) before the window ended. Distinct from "never came
+        close": this game DID meet the state condition.
+      - "state_condition_not_met": the trigger never fired this window.
+        `closest_miss` names the nearest any tick came, with the actual
+        observed values (never a placeholder) -- `null` only if this rule
+        was never diagnosable for this game (e.g. no pregame context).
+
+    Every value under `closest_miss` and the price-gate fields is a STATE
+    value or a gate reason -- never an outcome, per
+    docs/LIVE_BETTING_SYSTEM.md 3.1's counts-only discipline. No win, loss,
+    or unit figure is ever written by this function.
+    """
+    games_out = {}
+    for game_id, game_ev in (evidence or {}).items():
+        rules_out = {}
+        for rule_id, rule_ev in (game_ev.get("rules") or {}).items():
+            status = rule_ev.get("registry_status", live_rules.UNREGISTERED_STATUS)
+
+            if status not in live_rules.ALLOWED_RULE_STATUSES:
+                rules_out[rule_id] = {
+                    "registry_status": status,
+                    "outcome": "unregistered",
+                }
+                continue
+
+            trig = (trigger_state or {}).get((game_id, rule_id))
+            if trig is not None:
+                outcome = ("priced_candidate_recorded" if trig.get("priced")
+                          else "state_condition_met_price_refused")
+                rules_out[rule_id] = {
+                    "registry_status": status,
+                    "outcome": outcome,
+                    "trigger_values": trig.get("trigger_info"),
+                    "t0_utc": trig.get("t0_utc"),
+                    "retries_attempted": trig.get("next_retry_idx", 0),
+                    "min_fresh_books_required": live_rules.MIN_FRESH_BOOKS,
+                    "last_fresh_count": trig.get("last_fresh_count"),
+                    "last_quotes_seen": trig.get("last_quotes_seen"),
+                    "last_capture_utc": trig.get("last_capture_utc"),
+                }
+            else:
+                rules_out[rule_id] = {
+                    "registry_status": status,
+                    "outcome": "state_condition_not_met",
+                    "closest_miss": rule_ev.get("closest_miss"),
+                }
+
+        games_out[game_id] = {
+            "pregame_built": game_ev.get("pregame_built"),
+            "pregame_reason": game_ev.get("pregame_reason"),
+            "ticks_seen": game_ev.get("ticks_seen", 0),
+            "rules": rules_out,
+        }
+
+    return {
+        "kind": "WINDOW_EVIDENCE",
+        "sport": sport,
+        "date": date,
+        "window_start_utc": window_start_utc,
+        "window_end_utc": window_end_utc,
+        "ticks": ticks,
+        "stopped_reason": stopped_reason,
+        "games": games_out,
+    }
+
+
+def record_window_evidence(sport, artifact: dict, *, path=None) -> bool:
+    """Append the end-of-window evidence artifact to
+    `data/live/<sport>/window_evidence.jsonl`, one JSON line per window --
+    same append-only store convention as `record_window_gaps` (SEAM NOTE
+    there applies here too: this is a small store of its own rather than a
+    reach into `src/appstate/live_ledger.py`, owned elsewhere this pass).
+
+    Never raises: a failed evidence write must not stop `run()` from
+    returning its result. Returns True on success, False on any failure.
+    """
+    target = Path(path) if path is not None else Path(data_path("live", sport, "window_evidence.jsonl"))
+    try:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with target.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(artifact, sort_keys=True) + "\n")
+        return True
+    except Exception as exc:
+        LOG.exception("record_window_evidence failed: %s", exc)
+        return False
+
+
 def run(sport, *, max_minutes=330, clock=None, sleep=None, deps=None,
         commit=None, commit_every_minutes=5) -> dict:
     """Main loop: poll, evaluate, capture until max_minutes or no live games nearby.
@@ -479,6 +656,7 @@ def run(sport, *, max_minutes=330, clock=None, sleep=None, deps=None,
     }
     window_gap_recorded = not previous_last_by_game  # nothing to compare
     record_window_gaps_fn = deps.get("record_window_gaps", record_window_gaps)
+    record_window_evidence_fn = deps.get("record_window_evidence", record_window_evidence)
 
     # Initialize state
     state = {
@@ -492,19 +670,42 @@ def run(sport, *, max_minutes=330, clock=None, sleep=None, deps=None,
     candidates_new = 0
     credits_spent = 0
 
+    def _finish(reason: str) -> dict:
+        """Build the result dict AND write the end-of-window evidence
+        artifact, on every exit path -- including the trivial one where
+        `max_minutes` is already elapsed before a single tick runs (`state`
+        then has no "evidence"/"trigger_state" keys yet; `.get(..., {})`
+        below still produces a valid, empty-games artifact rather than
+        skipping the write). This is the fix itself: a window that emits
+        zero candidates must still leave a record of what it evaluated.
+        """
+        result = {
+            "sport": sport,
+            "ticks": ticks,
+            "candidates_new": candidates_new,
+            "credits": credits_spent,
+            "stopped_reason": reason,
+        }
+        try:
+            artifact = build_window_evidence(
+                sport, date=date_str, ticks=ticks,
+                window_start_utc=start_time.isoformat(),
+                window_end_utc=clock().isoformat(),
+                evidence=state.get("evidence", {}),
+                trigger_state=state.get("trigger_state", {}),
+                stopped_reason=reason)
+            record_window_evidence_fn(sport, artifact)
+        except Exception as exc:
+            LOG.exception("window evidence build/record failed: %s", exc)
+        return result
+
     window_marker = Path(data_path("live", sport, "window.lock"))
     try:
         while True:
             now = clock()
             elapsed = (now.timestamp() - start_epoch) / 60
             if elapsed > max_minutes:
-                return {
-                    "sport": sport,
-                    "ticks": ticks,
-                    "candidates_new": candidates_new,
-                    "credits": credits_spent,
-                    "stopped_reason": f"max_minutes ({max_minutes}) elapsed",
-                }
+                return _finish(f"max_minutes ({max_minutes}) elapsed")
 
             # Write/refresh window marker
             try:
@@ -567,13 +768,7 @@ def run(sport, *, max_minutes=330, clock=None, sleep=None, deps=None,
                         game_starting_soon, _reason = _mlb_live_or_soon(games, now)
                     elif sport == "nfl":
                         if not livefeed_nfl.in_window(now):
-                            return {
-                                "sport": sport,
-                                "ticks": ticks,
-                                "candidates_new": candidates_new,
-                                "credits": credits_spent,
-                                "stopped_reason": "outside NFL broadcast window",
-                            }
+                            return _finish("outside NFL broadcast window")
                         from src.providers import nfl as nfl_provider
                         games = nfl_provider.schedule_for_date(date_str) or []
                         for game in games:
@@ -593,13 +788,7 @@ def run(sport, *, max_minutes=330, clock=None, sleep=None, deps=None,
                     LOG.exception("game check failed: %s", exc)
 
                 if not game_starting_soon:
-                    return {
-                        "sport": sport,
-                        "ticks": ticks,
-                        "candidates_new": candidates_new,
-                        "credits": credits_spent,
-                        "stopped_reason": "no live games and nothing starts within 30 minutes",
-                    }
+                    return _finish("no live games and nothing starts within 30 minutes")
 
             # Update state for next iteration
             if sport == "mlb":

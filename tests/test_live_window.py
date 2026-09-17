@@ -355,6 +355,292 @@ class TestTick(unittest.TestCase):
         self.assertEqual(len(capture_calls), 1)
 
 
+class TestWindowEvidence(unittest.TestCase):
+    """R16 window-evidence artifact: the fix for the 2026-09-16 defect
+    (run 35136716193: 511 ticks, `candidates_new: 0`, no record of what was
+    evaluated). Proves each failure mode is legible and distinguishable, per
+    the task's acceptance criteria -- these tests fail against the
+    pre-fix `tick`/`run` (no `state["evidence"]`, no `build_window_evidence`
+    at all)."""
+
+    PREGAME = {
+        "pk1": {
+            "sport": "mlb",
+            "game_id": "pk1",
+            "home_team": "Boston Red Sox",
+            "away_team": "New York Yankees",
+            "favorite": "home",
+            "favorite_prob": 0.6,
+            "starter_ids": {"home": 1, "away": 2},
+            "event_id": "evt1",
+        }
+    }
+
+    TRIGGERING_STATE = {
+        "status": "Live", "home_runs": 2, "away_runs": 3,
+        "inning": 3, "inning_state": "End",
+        "observed_utc": "2026-09-14T20:00:00Z",
+    }
+
+    def _quote(self, observed_utc, last_update, n_books=3):
+        return {
+            "observed_utc": observed_utc,
+            "quotes": [
+                {"book": f"book{i}", "home_price": -110 - i, "away_price": 100 + i,
+                 "last_update": last_update}
+                for i in range(n_books)
+            ],
+        }
+
+    def _make_state(self):
+        return {"date": "2026-09-14", "prev_states": {}, "pregame": self.PREGAME}
+
+    def _deps(self, capture_fn, registry_status=None):
+        return {
+            "poll": lambda: {"live_games": 1, "rows_written": 1},
+            "capture": capture_fn,
+            "record": lambda candidate: {**candidate, "recorded_utc": "test"},
+            "registry_status": registry_status or {
+                "mlb_favorite_trails_after_3": "registered",
+                "mlb_starter_pulled_early": "unregistered",
+            },
+        }
+
+    def test_state_condition_met_but_price_gate_refused(self):
+        """The trigger's state condition holds (favourite trails by 2 after
+        the 3rd) but every capture attempt sees fewer than
+        `live_rules.MIN_FRESH_BOOKS` fresh books -- the artifact must say
+        the price gate refused, distinct from the state never having been
+        met, and must name the actual fresh-book count it saw."""
+        from src.analysis import live_rules
+        from src.pipeline import live_window
+
+        def mock_capture(*args, **kwargs):
+            return {"captured": 2}
+
+        clock = FakeClock(start_utc=datetime(2026, 9, 14, 20, 0, 0, tzinfo=timezone.utc))
+        state = self._make_state()
+        deps = self._deps(mock_capture)
+
+        # Never enough fresh books at any retry offset (0, 45, 90).
+        quote_2_books = self._quote("2026-09-14T20:00:00Z", "2026-09-14T20:00:00Z", n_books=2)
+
+        with mock.patch("src.pipeline.livefeed_mlb.latest_states") as m_states:
+            m_states.return_value = {"pk1": self.TRIGGERING_STATE}
+            with mock.patch("src.pipeline.live_odds.read_inplay", return_value=[]):
+                with mock.patch("src.pipeline.live_odds.latest_inplay_quote",
+                                return_value=quote_2_books):
+                    live_window.tick("mlb", state=state, clock=clock, deps=deps)
+                    clock.sleep(45)
+                    live_window.tick("mlb", state=state, clock=clock, deps=deps)
+                    clock.sleep(45)  # T0 + 90s: ladder exhausted after this
+                    live_window.tick("mlb", state=state, clock=clock, deps=deps)
+
+        artifact = live_window.build_window_evidence(
+            "mlb", date="2026-09-14", ticks=3,
+            window_start_utc="2026-09-14T20:00:00Z",
+            window_end_utc="2026-09-14T20:01:30Z",
+            evidence=state["evidence"], trigger_state=state["trigger_state"],
+            stopped_reason="max_minutes (5) elapsed")
+
+        rule_ev = artifact["games"]["pk1"]["rules"]["mlb_favorite_trails_after_3"]
+        self.assertEqual(rule_ev["outcome"], "state_condition_met_price_refused")
+        self.assertEqual(rule_ev["last_fresh_count"], 2)
+        self.assertEqual(rule_ev["min_fresh_books_required"], live_rules.MIN_FRESH_BOOKS)
+        self.assertNotIn("closest_miss", rule_ev)  # this is a fired-trigger row, not a miss
+
+    def test_nothing_close_writes_closest_miss_with_actual_values(self):
+        """When a rule's condition never comes close to firing, the artifact
+        still names the closest the state got, with real observed values --
+        never a bare zero and never a placeholder."""
+        from src.pipeline import live_window
+
+        far_state = {
+            "status": "Live", "home_runs": 0, "away_runs": 0,
+            "inning": 1, "inning_state": "Top",
+            "observed_utc": "2026-09-14T19:10:00Z",
+        }
+
+        def mock_capture(*args, **kwargs):
+            return {"captured": 0}
+
+        state = self._make_state()
+        with mock.patch("src.pipeline.livefeed_mlb.latest_states") as m_states:
+            m_states.return_value = {"pk1": far_state}
+            live_window.tick("mlb", state=state, deps=self._deps(mock_capture))
+
+        artifact = live_window.build_window_evidence(
+            "mlb", date="2026-09-14", ticks=1,
+            window_start_utc="2026-09-14T19:10:00Z",
+            window_end_utc="2026-09-14T19:10:20Z",
+            evidence=state["evidence"], trigger_state=state.get("trigger_state", {}),
+            stopped_reason="no live games and nothing starts within 30 minutes")
+
+        rule_ev = artifact["games"]["pk1"]["rules"]["mlb_favorite_trails_after_3"]
+        self.assertEqual(rule_ev["outcome"], "state_condition_not_met")
+        miss = rule_ev["closest_miss"]
+        self.assertIsNotNone(miss)
+        self.assertFalse(miss["condition_met"])
+        self.assertEqual(miss["values"]["inning"], 1)
+        self.assertEqual(miss["values"]["margin"], 0)
+        self.assertEqual(miss["values"]["observed_utc"], "2026-09-14T19:10:00Z")
+
+    def test_unregistered_rule_distinguished_from_rule_that_did_not_fire(self):
+        """Two rules for the same game/tick: one registered whose condition
+        never holds, one simply not registered. The artifact must not
+        conflate them -- an unregistered rule was never even checked."""
+        from src.pipeline import live_window
+
+        def mock_capture(*args, **kwargs):
+            return {"captured": 0}
+
+        state = self._make_state()
+        deps = self._deps(mock_capture, registry_status={
+            "mlb_favorite_trails_after_3": "registered",
+            "mlb_starter_pulled_early": "unregistered",
+        })
+
+        with mock.patch("src.pipeline.livefeed_mlb.latest_states") as m_states:
+            m_states.return_value = {"pk1": {
+                "status": "Live", "home_runs": 0, "away_runs": 0,
+                "inning": 1, "inning_state": "Top",
+                "observed_utc": "2026-09-14T19:10:00Z",
+            }}
+            live_window.tick("mlb", state=state, deps=deps)
+
+        artifact = live_window.build_window_evidence(
+            "mlb", date="2026-09-14", ticks=1,
+            window_start_utc="2026-09-14T19:10:00Z",
+            window_end_utc="2026-09-14T19:10:20Z",
+            evidence=state["evidence"], trigger_state=state.get("trigger_state", {}),
+            stopped_reason="no live games and nothing starts within 30 minutes")
+
+        rules = artifact["games"]["pk1"]["rules"]
+        self.assertEqual(rules["mlb_favorite_trails_after_3"]["outcome"], "state_condition_not_met")
+        self.assertEqual(rules["mlb_starter_pulled_early"]["outcome"], "unregistered")
+        self.assertNotIn("closest_miss", rules["mlb_starter_pulled_early"])
+
+    def test_record_window_evidence_writes_jsonl(self):
+        """record_window_evidence appends one JSON line per call, same
+        append-only store convention as record_window_gaps."""
+        from src.pipeline import live_window
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "window_evidence.jsonl"
+            artifact = {"kind": "WINDOW_EVIDENCE", "sport": "mlb", "ticks": 5}
+            ok1 = live_window.record_window_evidence("mlb", artifact, path=path)
+            ok2 = live_window.record_window_evidence("mlb", artifact, path=path)
+
+            self.assertTrue(ok1)
+            self.assertTrue(ok2)
+            lines = path.read_text(encoding="utf-8").splitlines()
+            self.assertEqual(len(lines), 2)
+            self.assertEqual(json.loads(lines[0])["kind"], "WINDOW_EVIDENCE")
+
+    def test_priced_candidate_outcome_distinct_from_price_refused(self):
+        """A trigger that DOES price is a third, distinct outcome from
+        both the refused-price and never-met cases above."""
+        from src.pipeline import live_window
+
+        def mock_capture(*args, **kwargs):
+            return {"captured": 3}
+
+        clock = FakeClock(start_utc=datetime(2026, 9, 14, 20, 0, 0, tzinfo=timezone.utc))
+        state = self._make_state()
+
+        with mock.patch("src.pipeline.livefeed_mlb.latest_states") as m_states:
+            m_states.return_value = {"pk1": self.TRIGGERING_STATE}
+            with mock.patch("src.pipeline.live_odds.read_inplay", return_value=[]):
+                with mock.patch("src.pipeline.live_odds.latest_inplay_quote") as m_quote:
+                    m_quote.return_value = self._quote(
+                        "2026-09-14T20:00:00Z", "2026-09-14T20:00:00Z")
+                    live_window.tick("mlb", state=state, clock=clock, deps=self._deps(mock_capture))
+
+        artifact = live_window.build_window_evidence(
+            "mlb", date="2026-09-14", ticks=1,
+            window_start_utc="2026-09-14T20:00:00Z",
+            window_end_utc="2026-09-14T20:00:20Z",
+            evidence=state["evidence"], trigger_state=state["trigger_state"],
+            stopped_reason="max_minutes (5) elapsed")
+
+        rule_ev = artifact["games"]["pk1"]["rules"]["mlb_favorite_trails_after_3"]
+        self.assertEqual(rule_ev["outcome"], "priced_candidate_recorded")
+
+
+class TestD12StarterObservedOverwrite(unittest.TestCase):
+    """docs/LIVE_BETTING_SYSTEM.md D12: `live_rules._mlb_starter_pulled_early`
+    must compare against the pitcher actually observed on defence, not the
+    pregame probable, once a real one has been seen. Fails against the
+    pre-fix `tick`, which never performed this overwrite (the docstring's
+    own words: 'live_window.tick never does that')."""
+
+    def _deps(self, capture_fn):
+        return {
+            "poll": lambda: {"live_games": 1, "rows_written": 1},
+            "capture": capture_fn,
+            "record": lambda candidate: {**candidate, "recorded_utc": "test"},
+            "registry_status": {
+                "mlb_favorite_trails_after_3": "unregistered",
+                "mlb_starter_pulled_early": "registered",
+            },
+        }
+
+    def test_first_observed_defensive_pitcher_overwrites_probable(self):
+        """An opener (observed pitcher != probable) on the very first
+        defensive row must NOT be mistaken for a mid-game pull -- the
+        probable is overwritten with the observed id before evaluation, so
+        the rule compares against reality, not the pregame guess."""
+        from src.pipeline import live_window
+
+        pregame = {
+            "pk1": {
+                "sport": "mlb", "game_id": "pk1",
+                "home_team": "BOS", "away_team": "NYY",
+                "favorite": "home", "favorite_prob": 0.6,
+                # Probable pitcher (id 111) turns out NOT to be who actually
+                # takes the mound (an opener, id 999) -- D12's exact scenario.
+                "starter_ids": {"home": 111, "away": 2},
+                "event_id": "evt1",
+            }
+        }
+        state = {"date": "2026-09-14", "prev_states": {}, "pregame": pregame}
+        capture_calls = []
+
+        def mock_capture(*args, **kwargs):
+            capture_calls.append(kwargs.get("reason"))
+            return {"captured": 0}
+
+        # Home favourite on defence = top half. The opener (999) is the
+        # first pitcher ever observed there -- must become the "starter"
+        # for D12 purposes, not trigger a false "starter pulled".
+        opener_row = {
+            "status": "Live", "half": "top", "inning": 1,
+            "pitcher_id": 999, "home_runs": 0, "away_runs": 0,
+            "observed_utc": "2026-09-14T19:05:00Z",
+        }
+
+        with mock.patch("src.pipeline.livefeed_mlb.latest_states") as m_states:
+            m_states.return_value = {"pk1": opener_row}
+            live_window.tick("mlb", state=state, deps=self._deps(mock_capture))
+
+        self.assertEqual(pregame["pk1"]["starter_ids"]["home"], 999)
+        self.assertEqual(capture_calls, [])  # no false "starter pulled" trigger
+
+        # A REAL pull two innings later, still <= 4, favourite still ahead:
+        # now it must fire, compared against the OBSERVED starter (999).
+        pulled_row = {
+            "status": "Live", "half": "top", "inning": 3,
+            "pitcher_id": 777, "home_runs": 2, "away_runs": 0,
+            "observed_utc": "2026-09-14T19:35:00Z",
+        }
+        with mock.patch("src.pipeline.livefeed_mlb.latest_states") as m_states:
+            m_states.return_value = {"pk1": pulled_row}
+            result = live_window.tick("mlb", state=state, deps=self._deps(mock_capture))
+
+        self.assertEqual(result["changed"], 1)  # trigger now registered
+        self.assertEqual(pregame["pk1"]["starter_ids"]["home"], 999)  # unchanged
+
+
 class TestShouldDispatch(unittest.TestCase):
     """Tests for should_dispatch."""
 
@@ -636,6 +922,9 @@ class TestRun(unittest.TestCase):
 
         deps = {
             "poll": mock_poll,
+            # Never let a run() test reach the real data/live/ store --
+            # every run() call now writes a window-evidence artifact.
+            "record_window_evidence": lambda sport, artifact: True,
         }
 
         with mock.patch("src.pipeline.livefeed_mlb.latest_states") as m_states:
@@ -660,7 +949,7 @@ class TestRun(unittest.TestCase):
         def mock_commit():
             commits.append(clock())
 
-        deps = {"poll": mock_poll}
+        deps = {"poll": mock_poll, "record_window_evidence": lambda sport, artifact: True}
 
         with mock.patch("src.pipeline.livefeed_mlb.latest_states") as m_states:
             m_states.return_value = {"pk1": {"status": "Live"}}
@@ -692,7 +981,7 @@ class TestRun(unittest.TestCase):
         def mock_poll():
             return {"live_games": 1, "rows_written": 1}
 
-        deps = {"poll": mock_poll}
+        deps = {"poll": mock_poll, "record_window_evidence": lambda sport, artifact: True}
 
         with mock.patch("src.pipeline.livefeed_mlb.latest_states") as m_states:
             m_states.return_value = {"pk1": {"status": "Live"}}
@@ -779,7 +1068,8 @@ class TestWindowGaps(unittest.TestCase):
         def mock_poll():
             return {"live_games": 1, "rows_written": 1}
 
-        deps = {"poll": mock_poll, "record_window_gaps": fake_record_window_gaps}
+        deps = {"poll": mock_poll, "record_window_gaps": fake_record_window_gaps,
+                "record_window_evidence": lambda sport, artifact: True}
 
         prior_row = {"pk1": {"status": "Live", "observed_utc": "2026-09-14T20:20:00Z"}}
         current_row = {"pk1": {"status": "Live", "observed_utc": "2026-09-14T21:00:00Z"}}

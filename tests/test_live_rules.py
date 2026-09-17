@@ -846,6 +846,95 @@ class TestRegistryGating(unittest.TestCase):
             self.assertEqual(status[rule_id], "unregistered")
 
 
+class TestRuleDiagnostic(unittest.TestCase):
+    """`rule_diagnostic`: the always-on values-and-distance report the
+    window-evidence artifact uses for closest-miss reporting. Distinct from
+    `check_trigger` -- this must report real values even when the condition
+    does not hold, and 0.0 distance exactly when it does."""
+
+    def test_condition_met_gives_zero_distance(self):
+        pregame = {"favorite": "home", "favorite_prob": 0.6}
+        state = {"inning": 3, "inning_state": "End", "home_runs": 2, "away_runs": 3}
+        diag = live_rules.rule_diagnostic(
+            "mlb_favorite_trails_after_3", pregame=pregame, state=state)
+        self.assertTrue(diag["condition_met"])
+        self.assertEqual(diag["distance"], 0.0)
+        self.assertEqual(diag["values"]["margin"], -1)
+
+    def test_condition_not_met_reports_real_values_and_positive_distance(self):
+        """A far-off state (first inning, no lead at all) still reports the
+        ACTUAL observed numbers, never a placeholder, with distance > 0."""
+        pregame = {"favorite": "home", "favorite_prob": 0.6}
+        state = {"inning": 1, "inning_state": "Top", "home_runs": 0, "away_runs": 0}
+        diag = live_rules.rule_diagnostic(
+            "mlb_favorite_trails_after_3", pregame=pregame, state=state)
+        self.assertFalse(diag["condition_met"])
+        self.assertGreater(diag["distance"], 0.0)
+        self.assertEqual(diag["values"]["inning"], 1)
+        self.assertEqual(diag["values"]["margin"], 0)
+
+    def test_low_favorite_prob_increases_distance_over_borderline_margin_miss(self):
+        """A favourite_prob below threshold is the dominant gap -- the
+        weighting favours reporting the threshold miss, not just the
+        margin, so a reader sees WHY it missed, not just THAT it missed."""
+        pregame = {"favorite": "home", "favorite_prob": 0.50}  # below 0.55
+        borderline_state = {"inning": 3, "inning_state": "End",
+                            "home_runs": 2, "away_runs": 3}  # margin -1, in range
+        diag = live_rules.rule_diagnostic(
+            "mlb_favorite_trails_after_3", pregame=pregame, state=borderline_state)
+        self.assertFalse(diag["condition_met"])
+        self.assertGreater(diag["distance"], 0.0)
+        self.assertEqual(diag["values"]["favorite_prob"], 0.50)
+
+    def test_unknown_rule_id_returns_none(self):
+        self.assertIsNone(live_rules.rule_diagnostic(
+            "not_a_real_rule", pregame={}, state={}))
+
+    def test_starter_pulled_early_diagnostic_values(self):
+        pregame = {"favorite": "home", "starter_ids": {"home": 111, "away": 222}}
+        state = {"half": "top", "inning": 2, "pitcher_id": 999,
+                 "home_runs": 1, "away_runs": 0}
+        diag = live_rules.rule_diagnostic(
+            "mlb_starter_pulled_early", pregame=pregame, state=state)
+        self.assertTrue(diag["condition_met"])
+        self.assertEqual(diag["distance"], 0.0)
+        self.assertEqual(diag["values"]["current_pitcher"], 999)
+        self.assertEqual(diag["values"]["pregame_starter"], 111)
+
+    def test_nfl_halftime_diagnostic_values(self):
+        pregame = {"favorite": "home", "favorite_prob": 0.65,
+                  "kickoff_utc": "2026-09-14T18:00:00Z"}
+        state = {"home_score": 10, "away_score": 14, "completed": False,
+                 "observed_utc": "2026-09-14T19:30:00Z"}  # 90 min elapsed
+        diag = live_rules.rule_diagnostic(
+            "nfl_favorite_trails_halftime", pregame=pregame, state=state)
+        self.assertTrue(diag["condition_met"])
+        self.assertEqual(diag["distance"], 0.0)
+        self.assertEqual(diag["values"]["elapsed_minutes"], 90.0)
+        self.assertEqual(diag["values"]["margin"], -4)
+
+
+class TestRegistryStatusForSport(unittest.TestCase):
+    """`registry_status_for_sport`: the public wrapper the window-evidence
+    artifact uses to report a rule's status even when it was never even
+    trigger-checked (an unregistered rule is filtered out of
+    `check_all_triggers`'s own output entirely)."""
+
+    def test_returns_status_for_every_rule_this_sport_runs(self):
+        status = live_rules.registry_status_for_sport(
+            "mlb", registry_status={"mlb_favorite_trails_after_3": "registered",
+                                    "mlb_starter_pulled_early": "unregistered"})
+        self.assertEqual(status, {
+            "mlb_favorite_trails_after_3": "registered",
+            "mlb_starter_pulled_early": "unregistered",
+        })
+
+    def test_nfl_sport_excludes_mlb_rules(self):
+        status = live_rules.registry_status_for_sport(
+            "nfl", registry_status={"nfl_favorite_trails_halftime": "registered"})
+        self.assertEqual(list(status.keys()), ["nfl_favorite_trails_halftime"])
+
+
 class TestFreshMedianPrice(unittest.TestCase):
     """R16-L5/D9: fresh-price rule (3.1, retrieval-time reading) -- median
     across at least 3 fresh books, price refused below that."""
