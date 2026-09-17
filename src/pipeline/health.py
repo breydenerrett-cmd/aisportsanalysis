@@ -119,6 +119,17 @@ BOOK_USUAL_DAY_FRACTION = 0.5
 
 MARKETS_EXPECTED = ("h2h", "spreads", "totals")
 
+# THE DURABLE LINEUP STORE, under data/historical/ -- NOT the poller's own
+# log at data/watch/lineups_watch.jsonl. The two are one directory apart and
+# reading the wrong one is the 2026-09-16 incident in its entirety: this
+# section described the store api/games.py and src/pipeline/enrichment.py
+# actually read for tonight's batting orders, while measuring the watch log
+# instead, and reported "lineups healthy" through nine truncations of the
+# store (4,993 rows -> 119) over four days. Named as a constant so a future
+# edit that swaps it breaks tests/test_health.py's path assertion instead of
+# going quiet. Matches src.pipeline.lineup_store.DEFAULT_STORE's filename.
+LINEUP_STORE_FILE = "lineups.jsonl"
+
 # How far a book's stated first pitch may sit from MLB's before the quote stops
 # being about that game. Wide enough for a rounded or slightly revised start,
 # far narrower than the ~20 hours between two meetings of the same clubs in a
@@ -468,11 +479,25 @@ def _lineups_section(day, schedule, root, moment) -> dict:
     # has to be persisted for that; module stays read-only, per this file's
     # own contract at the top.
     lineup_path = directory / rosterwatch.LINEUPS_FILE
-    store_path = _historical_path(root) / "lineups.jsonl"
+    #: NAMED, not spelled inline at the one use site. This is the store the
+    #: section is titled for and the one every message below quotes; a path
+    #: that only exists as an expression is a path that drifts.
+    store_path = _historical_path(root) / LINEUP_STORE_FILE
     store_present = store_path.exists()
     store_pks_today = set()
+    store_rows_total = None
     if store_present:
-        for row in _read_jsonl(store_path):
+        # THE WHOLE FILE, NOT JUST TODAY (2026-09-16). The per-day
+        # intersection below can only see rows for `day`, so the failure
+        # this section exists to catch -- the CI cache-restore that
+        # clobbered 4,993 rows down to 119 -- is invisible to it every
+        # morning before the first lineup posts, and invisible ALWAYS for
+        # the thousands of historical rows the backtest reads. A total row
+        # count cannot tell you the right number, but it can tell you the
+        # store went empty, which "present" cannot.
+        rows = _read_jsonl(store_path)
+        store_rows_total = len(rows)
+        for row in rows:
             if row.get("game_pk") is None or row.get("date") != day:
                 continue
             store_pks_today.add(row["game_pk"])
@@ -482,6 +507,8 @@ def _lineups_section(day, schedule, root, moment) -> dict:
                 "off_slate_lineups": None, "attributed_by": None,
                 "of_scheduled": None, "coverage_measurable": False,
                 "store_present": store_present,
+                "store_path": str(store_path),
+                "store_rows_total": store_rows_total,
                 "store_games_today": len(store_pks_today),
                 "posted_missing_from_store": None}
 
@@ -521,6 +548,8 @@ def _lineups_section(day, schedule, root, moment) -> dict:
             "of_scheduled": schedule.get("games"),
             "coverage_measurable": True,
             "store_present": store_present,
+            "store_path": str(store_path),
+            "store_rows_total": store_rows_total,
             "store_games_today": len(store_pks_today),
             "posted_missing_from_store": posted_missing_from_store,
         }
@@ -532,6 +561,8 @@ def _lineups_section(day, schedule, root, moment) -> dict:
         "of_scheduled": None,
         "coverage_measurable": False,
         "store_present": store_present,
+        "store_path": str(store_path),
+        "store_rows_total": store_rows_total,
         "store_games_today": len(store_pks_today),
         "posted_missing_from_store": posted_missing_from_store,
     }
@@ -558,12 +589,32 @@ def _snapshot_section(moment, root) -> dict:
 
 
 def _settlement_section(ledger_path) -> dict:
-    """Settlement gaps, straight from the ledger's own status()."""
+    """Settlement gaps, straight from the ledger's own status().
+
+    THE STORE THIS SECTION READS IS NAMED IN THE OUTPUT (`path`), and it is
+    NOT under `data_dir`. Everything else in this report is redirected by
+    `report(data_dir=...)`; the ledger lives at evidence/forward_ledger.jsonl
+    and is reached through `ledger_mod.DEFAULT_LEDGER` unless the caller
+    passes `ledger_path` explicitly. A reader comparing a report built over
+    a synthetic tree against one built over the real one would otherwise
+    have no way to tell that this one section came from somewhere else.
+
+    BOTH GAPS status() KNOWS ABOUT, NOT ONE (2026-09-16). This section used
+    to publish `unsettled_past_dates` and silently drop `orphan_settlements`
+    -- while its own first line promised "settlement gaps". Those are two
+    different failures and only one of them moves `pending`: ledger.status's
+    own comment says an orphan settlement "settles nothing ... so a settle
+    loop working off the wrong pk reports success forever while `pending`
+    never moves". A settle loop keyed on the wrong game_pk therefore wrote
+    settlements all day, left every recommendation pending, and this report
+    -- claiming to cover settlement gaps -- had no field that could say so.
+    """
     path = Path(ledger_path) if ledger_path is not None else Path(
         ledger_mod.DEFAULT_LEDGER)
     if not path.exists():
         return {"store_present": False, "games_recorded": None, "settled": None,
-                "pending": None, "unsettled_past_dates": None}
+                "pending": None, "unsettled_past_dates": None,
+                "orphan_settlements": None, "path": str(path)}
     status = ledger_mod.status(path)
     return {
         "store_present": True,
@@ -571,6 +622,8 @@ def _settlement_section(ledger_path) -> dict:
         "settled": status["settled"],
         "pending": status["pending"],
         "unsettled_past_dates": status["unsettled_past_dates"],
+        "orphan_settlements": status["orphan_settlements"],
+        "path": str(path),
     }
 
 
@@ -697,10 +750,26 @@ def _anomalies(out) -> list:
             found.append(f"Only {posted} of {games} games ever had a posted "
                          f"lineup recorded, though all have started.")
 
+    # The canonical repo-relative name AND the file actually opened. The
+    # name is what a reader recognises; the resolved path is what proves the
+    # check read it, and is the thing that goes wrong when someone swaps it.
+    store_named = (f"the lineup store data/historical/{LINEUP_STORE_FILE} "
+                   f"(read from {lineups.get('store_path')})")
     if lineups.get("store_present") is False:
-        found.append("The lineup store data/historical/lineups.jsonl is "
-                     "absent: api/games.py and enrichment have nothing to "
-                     "read for tonight's batting orders.")
+        found.append(f"The lineup store data/historical/{LINEUP_STORE_FILE} is "
+                     f"absent: api/games.py and enrichment have nothing to "
+                     f"read for tonight's batting orders "
+                     f"(looked at {lineups.get('store_path')}).")
+    elif lineups.get("store_rows_total") == 0:
+        # PRESENT IS NOT HEALTHY -- this module's own honesty rule, applied
+        # to the one store that used to get only an `exists()`. An emptied
+        # file passes every check below it (no posted lineup can be "missing
+        # from the store" before any lineup has posted today), so without
+        # this line a clobbered store reads clean all morning.
+        found.append(f"{store_named[0].upper()}{store_named[1:]} exists "
+                     "but holds no rows at all: it has been emptied, not "
+                     "merely not-yet-written -- every historical batting "
+                     "order the backtest reads is gone with it.")
     missing = lineups.get("posted_missing_from_store")
     if missing:
         # The watch stream already proved these lineups posted; the store
@@ -730,6 +799,14 @@ def _anomalies(out) -> list:
         found.append(
             f"{len(dates)} past date(s) in the ledger carry recommendations "
             f"that were never settled: {', '.join(dates)}.")
+    if settle["store_present"] and settle.get("orphan_settlements"):
+        orphans = settle["orphan_settlements"]
+        found.append(
+            f"{len(orphans)} settlement(s) in {settle.get('path')} name a "
+            f"game_pk the ledger never recommended ({', '.join(orphans[:6])}"
+            f"{', ...' if len(orphans) > 6 else ''}): they settle nothing, so "
+            f"a settle loop keyed on the wrong pk reports success while every "
+            f"recommendation stays pending.")
 
     return found
 

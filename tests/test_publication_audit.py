@@ -20,6 +20,7 @@ from scripts.publication_audit import (
     SLIP_STALE_MINUTES,
     STRONG_SHARE_MIN_PICKS,
     audit_slip,
+    card_start_findings,
 )
 
 REPO = Path(__file__).resolve().parents[1]
@@ -249,6 +250,113 @@ class DoctrineClaims(unittest.TestCase):
         findings = audit_slip(_synthetic([_pick()], slip_utc=fresh),
                               lambda _e: None, None, INCIDENT_NOW)
         self.assertEqual(set(), _slip_severities(findings))
+
+
+CARD_DATE = "2026-09-16"
+CARD_NOW = datetime(2026, 9, 16, 23, 30, tzinfo=timezone.utc)
+
+
+def _card_pick(rank=1, game_pk=800001, first_pitch="2026-09-17T02:40:00Z"):
+    return {"rank": rank, "game_pk": game_pk, "bet": "SEA ML",
+            "price": -110, "book": "fanduel", "first_pitch_utc": first_pitch}
+
+
+def _game(game_pk=800001, start="2026-09-16T23:05:00Z", state="in_progress"):
+    return {"game_pk": game_pk, "start_time_utc": start, "state": state,
+            "away_team": "SEA", "home_team": "TEX"}
+
+
+class CardIsCheckedAgainstTheWorldTests(unittest.TestCase):
+    """Stage 18 H5, 2026-09-16: `audit_card`'s first line promised "checked
+    against the world" and it read `pick["first_pitch_utc"]` -- a field the
+    card wrote about itself. A card carrying a wrong start time therefore
+    audited clean on exactly the failure the whole file exists to catch.
+
+    src/analysis/opportunities.py is where that stamp can legitimately come
+    from a BOOK's commence_time rather than MLB's schedule, so "the card's
+    number disagrees with the schedule's" is not hypothetical.
+    """
+
+    def test_a_started_game_the_card_claims_is_future_is_caught(self):
+        """THE REPRODUCTION. First pitch was 23:05Z and it is now 23:30Z;
+        the card says 02:40Z tomorrow. Reading the card, nothing started.
+        Reading the world, the game is in progress and published as live.
+        """
+        picks = [_card_pick(first_pitch="2026-09-17T02:40:00Z")]
+        world = {"800001": _game(start="2026-09-16T23:05:00Z")}
+
+        card_only, started_card_only = card_start_findings(
+            picks, CARD_DATE, CARD_NOW, schedule=None)
+        self.assertEqual(started_card_only, [],
+                         "pre-fix behaviour: the card's own stamp says the "
+                         "game has not started, and that is all this saw")
+
+        findings, started = card_start_findings(
+            picks, CARD_DATE, CARD_NOW, schedule=world)
+        self.assertEqual(len(started), 1)
+        self.assertEqual(started[0][1], "the schedule")
+        blob = " ".join(m for _s, m in findings)
+        self.assertIn("ESCALATE", _severities(findings))
+        self.assertIn("but the schedule says", blob)
+        self.assertIn("already started", blob)
+
+    def test_a_card_agreeing_with_the_schedule_is_clean(self):
+        picks = [_card_pick(first_pitch="2026-09-17T02:40:00Z")]
+        world = {"800001": _game(start="2026-09-17T02:40:00Z",
+                                 state="scheduled")}
+        findings, started = card_start_findings(
+            picks, CARD_DATE, CARD_NOW, schedule=world)
+        self.assertEqual(findings, [])
+        self.assertEqual(started, [])
+
+    def test_a_final_game_is_started_even_if_the_clock_disagrees(self):
+        """The coarse state is the second independent signal, the same one
+        audit_slip already trusts."""
+        picks = [_card_pick(first_pitch="2026-09-17T02:40:00Z")]
+        world = {"800001": _game(start="2026-09-17T02:40:00Z",
+                                 state="final")}
+        _findings, started = card_start_findings(
+            picks, CARD_DATE, CARD_NOW, schedule=world)
+        self.assertEqual(len(started), 1)
+
+    def test_a_cancelled_game_is_not_a_started_game(self):
+        picks = [_card_pick(first_pitch="2026-09-16T20:00:00Z")]
+        world = {"800001": _game(start="2026-09-16T20:00:00Z",
+                                 state="cancelled")}
+        findings, started = card_start_findings(
+            picks, CARD_DATE, CARD_NOW, schedule=world)
+        self.assertEqual(started, [])
+        self.assertEqual(findings, [])
+
+    def test_a_pick_on_no_scheduled_game_says_its_time_is_unverified(self):
+        picks = [_card_pick(game_pk=999999)]
+        findings, _started = card_start_findings(
+            picks, CARD_DATE, CARD_NOW, schedule={"800001": _game()})
+        blob = " ".join(m for _s, m in findings)
+        self.assertIn("matches no game", blob)
+        self.assertIn("the card's own unverified claim", blob)
+
+    def test_without_a_schedule_the_output_says_the_time_came_from_the_card(self):
+        """The degraded path must not read like an independent check. If the
+        network is down the audit still runs, but it says whose number it
+        used."""
+        picks = [_card_pick(first_pitch="2026-09-16T20:00:00Z")]
+        findings, started = card_start_findings(
+            picks, CARD_DATE, CARD_NOW, schedule=None)
+        self.assertEqual(started[0][1], "the card")
+        blob = " ".join(m for _s, m in findings)
+        self.assertIn("start time taken from the card itself, not the "
+                      "schedule", blob)
+
+    def test_main_hands_the_card_the_same_world_it_audited_the_slip_with(self):
+        # The wiring, not just the function: if main() stops passing the
+        # schedule, audit_card silently reverts to auditing the card
+        # against the card and every test above keeps passing.
+        source = (Path(__file__).resolve().parents[1]
+                  / "scripts" / "publication_audit.py").read_text(
+                      encoding="utf-8")
+        self.assertIn("audit_card(\n            day, datetime.now(timezone.utc), "
+                      "schedule=schedule)", source)
 
 
 if __name__ == "__main__":

@@ -27,6 +27,35 @@ it fires mid-suite the fingerprints legitimately differ, and failing there
 would train everyone to ignore this test -- the one outcome that must never
 happen. So a live capture process means SKIP, loudly, never PASS-by-accident
 and never a false red.
+
+WHY "I CANNOT SEE /proc" IS NOT "A CAPTURE IS RUNNING" (2026-09-16)
+--------------------------------------------------------------------
+The first version of the probe below answered any error with `return True`
+on the reasoning that "if we cannot tell, skipping is the safe call". That
+made the probe's answer a constant on every platform without a Linux /proc:
+on the Windows developer checkout `Path("/proc").iterdir()` raises
+FileNotFoundError immediately, the probe answered True, and BOTH this
+module's fingerprint test AND scripts/test_parallel.py's authoritative
+whole-run version of it skipped on every single run -- printing
+"forward_capture.sh is running" about a script that cannot even execute
+there. The only check that can catch a write this process's `open` patch
+does not intercept was therefore permanently off, while reporting a
+specific, false reason for being off.
+
+So the probe now answers three states, not two, and only a capture we
+actually SAW skips outright:
+
+  RUNNING      a /proc entry's cmdline really contains forward_capture
+  NOT_RUNNING  /proc was scanned successfully and nothing matched
+  UNAVAILABLE  there is no readable /proc here; we know nothing either way
+
+UNAVAILABLE still runs the comparison, because an UNCHANGED fingerprint is
+unambiguous no matter who might have been running: nothing appended, so
+there is nothing to attribute to anybody. Only UNAVAILABLE *plus* a changed
+store is genuinely ambiguous, and that -- not the platform -- is what earns
+a skip. The result: a real contamination on a machine with no /proc now goes
+red instead of vanishing, and a live capture still never produces a false
+red anywhere.
 """
 
 from __future__ import annotations
@@ -41,27 +70,55 @@ from pathlib import Path
 import tests as suite
 
 
-def _capture_is_running() -> bool:
-    """True if scripts/forward_capture.sh is live right now.
+#: The process table this probe reads, named once so a future edit that
+#: points it somewhere else breaks `test_the_probe_reads_proc` rather than
+#: silently changing what "a capture is running" means.
+PROC_ROOT = Path("/proc")
 
-    Reads /proc directly rather than shelling out to `ps`, so it works in the
-    minimal containers this runs in. Any error answers "yes": if we cannot
-    tell whether a capture is in flight, skipping is the safe call -- a
-    false skip costs a check, a false failure costs trust in the check.
+#: The three answers `capture_probe` can give. See the module docstring's
+#: "WHY 'I CANNOT SEE /proc' IS NOT 'A CAPTURE IS RUNNING'".
+CAPTURE_RUNNING = "running"
+CAPTURE_NOT_RUNNING = "not_running"
+CAPTURE_UNKNOWN = "unavailable"
+
+
+def capture_probe(proc_root: Path = None) -> tuple:
+    """(state, detail) for "is scripts/forward_capture.sh live right now".
+
+    Reads `PROC_ROOT` directly rather than shelling out to `ps`, so it works
+    in the minimal containers this runs in. `proc_root` is injectable so the
+    probe's own three answers can be tested without a real process table.
+
+    Returns CAPTURE_RUNNING only when a cmdline actually matched;
+    CAPTURE_NOT_RUNNING when the scan completed and found nothing; and
+    CAPTURE_UNKNOWN when there is no readable process table here at all --
+    which is a statement about this machine, never about the capture.
     """
+    root = PROC_ROOT if proc_root is None else Path(proc_root)
     try:
-        for entry in Path("/proc").iterdir():
-            if not entry.name.isdigit():
-                continue
-            try:
-                cmdline = (entry / "cmdline").read_bytes()
-            except (OSError, PermissionError):
-                continue
-            if b"forward_capture" in cmdline:
-                return True
-        return False
-    except Exception:
-        return True
+        entries = list(root.iterdir())
+    except Exception as exc:  # noqa: BLE001 -- no /proc on this platform, etc.
+        return CAPTURE_UNKNOWN, f"{root} is not readable here ({exc})"
+    for entry in entries:
+        if not entry.name.isdigit():
+            continue
+        try:
+            cmdline = (entry / "cmdline").read_bytes()
+        except (OSError, PermissionError):
+            continue
+        if b"forward_capture" in cmdline:
+            return CAPTURE_RUNNING, f"pid {entry.name} is running forward_capture"
+    return CAPTURE_NOT_RUNNING, f"scanned {root}; no forward_capture process"
+
+
+def _capture_is_running() -> bool:
+    """Back-compatible boolean: True ONLY when a capture was actually seen.
+
+    Kept because scripts/test_parallel.py and any other caller may still ask
+    the yes/no question. It no longer answers True for "I could not look",
+    which is the bug this shape had: see the module docstring.
+    """
+    return capture_probe()[0] == CAPTURE_RUNNING
 
 
 class ForwardStoreWriteBlockerTests(unittest.TestCase):
@@ -132,16 +189,89 @@ class AppDbIsRedirectedTests(unittest.TestCase):
         self.assertEqual(suite.fingerprint_store(real), before)
 
 
+class CaptureProbeTests(unittest.TestCase):
+    """The probe must not answer "a capture is running" about a machine it
+    simply cannot see into. Regression test for 2026-09-16: on the Windows
+    developer checkout `Path("/proc").iterdir()` raises FileNotFoundError,
+    the old probe answered True, and the fingerprint check below -- plus
+    scripts/test_parallel.py's authoritative whole-run copy of it -- skipped
+    on every run while naming forward_capture.sh as the reason.
+    """
+
+    def test_the_probe_reads_the_process_table_it_names(self):
+        # The docstring and every skip message say "is forward_capture.sh
+        # running"; the artifact that answers that is the process table.
+        # Named as a constant so a swapped path breaks here, not silently.
+        self.assertEqual(PROC_ROOT, Path("/proc"))
+
+    def test_an_unreadable_process_table_is_unavailable_not_running(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            missing = Path(tmp) / "no-such-proc"
+            state, detail = capture_probe(missing)
+        self.assertEqual(state, CAPTURE_UNKNOWN)
+        self.assertNotEqual(state, CAPTURE_RUNNING)
+        self.assertIn("not readable", detail)
+
+    def test_a_scanned_empty_process_table_is_not_running(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state, detail = capture_probe(Path(tmp))
+        self.assertEqual(state, CAPTURE_NOT_RUNNING)
+        self.assertIn("no forward_capture", detail)
+
+    def test_a_real_capture_cmdline_is_still_detected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            pid_dir = Path(tmp) / "4242"
+            pid_dir.mkdir()
+            (pid_dir / "cmdline").write_bytes(
+                b"/bin/bash\x00scripts/forward_capture.sh\x00")
+            (Path(tmp) / "not-a-pid").mkdir()
+            state, detail = capture_probe(Path(tmp))
+        self.assertEqual(state, CAPTURE_RUNNING)
+        self.assertIn("4242", detail)
+
+    def test_the_boolean_wrapper_is_false_when_it_could_not_look(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            missing = Path(tmp) / "gone"
+            self.assertEqual(capture_probe(missing)[0], CAPTURE_UNKNOWN)
+        # And the wrapper only ever says True for CAPTURE_RUNNING.
+        self.assertIs(_capture_is_running(),
+                      capture_probe()[0] == CAPTURE_RUNNING)
+
+    def test_the_parallel_runner_uses_the_three_state_probe(self):
+        # scripts/test_parallel.py holds the AUTHORITATIVE whole-run version
+        # of the fingerprint check. If it goes back to the boolean that
+        # answered True for "cannot look", the whole-run proof silently
+        # switches off again on any machine without /proc.
+        runner = (Path(__file__).resolve().parent.parent
+                  / "scripts" / "test_parallel.py").read_text(encoding="utf-8")
+        self.assertIn("guard_mod.capture_probe()", runner)
+        self.assertIn("guard_mod.CAPTURE_RUNNING", runner)
+        self.assertNotIn("guard_mod._capture_is_running()", runner)
+
+
 class ForwardStoresUnchangedTests(unittest.TestCase):
     """The end-of-suite fingerprint check."""
 
     def test_no_forward_store_changed_during_the_suite(self):
-        if _capture_is_running():
+        state, detail = capture_probe()
+        if state == CAPTURE_RUNNING:
             self.skipTest(
-                "scripts/forward_capture.sh is running; its appends are real "
-                "captures, not contamination, and cannot be told apart from "
-                "one here. Re-run with the capture stopped for a clean check.")
+                f"scripts/forward_capture.sh is running ({detail}); its "
+                "appends are real captures, not contamination, and cannot be "
+                "told apart from one here. Re-run with the capture stopped "
+                "for a clean check.")
         after = suite.snapshot_stores()
+        changed = [p for p, b in suite.BASELINE_STORES.items() if after[p] != b]
+        if changed and state == CAPTURE_UNKNOWN:
+            # The ONLY genuinely ambiguous case: something appended, and this
+            # machine has no process table to rule a live capture in or out.
+            # An unchanged fingerprint needs no such alibi, which is why this
+            # branch is reached only once `changed` is non-empty.
+            self.skipTest(
+                f"{len(changed)} forward store(s) changed and a live capture "
+                f"could not be ruled in or out here ({detail}). This is NOT a "
+                "clean result: re-run somewhere the process table is readable, "
+                "or confirm by hand that no capture was in flight.")
         for path, baseline in sorted(suite.BASELINE_STORES.items()):
             with self.subTest(store=Path(path).name):
                 self.assertEqual(

@@ -216,18 +216,31 @@ def check_forward_stores_unchanged(baseline: dict) -> tuple[bool, str]:
 
     Returns (ok, message). `ok=True` covers both "unchanged" and "skipped
     because a live capture is running" -- see
-    tests/test_zz_forward_store_guard.py's `_capture_is_running` docstring
-    for why a live capture must never read as a failure here either.
+    tests/test_zz_forward_store_guard.py's `capture_probe` docstring for why
+    a live capture must never read as a failure here either, AND for why "I
+    could not read /proc" is no longer allowed to masquerade as that: it
+    skipped this check on every run of every non-Linux checkout, printing a
+    named cause that was not true.
     """
-    if guard_mod._capture_is_running():
+    state, detail = guard_mod.capture_probe()
+    if state == guard_mod.CAPTURE_RUNNING:
         return True, ("SKIPPED forward-store fingerprint check: "
-                       "scripts/forward_capture.sh is running (its appends "
-                       "are real captures, not contamination).")
+                       f"scripts/forward_capture.sh is running ({detail}); its "
+                       "appends are real captures, not contamination.")
     after = suite.snapshot_stores()
     changed = [path for path, before in sorted(baseline.items())
                if after[path] != before]
     if not changed:
         return True, f"forward-store fingerprint check: OK ({len(baseline)} stores unchanged)"
+    if state == guard_mod.CAPTURE_UNKNOWN:
+        # Something appended AND no process table to rule a capture in or
+        # out. Not a pass and not a red: say so in full.
+        lines = "\n".join(f"  - {p}" for p in changed)
+        return True, ("INCONCLUSIVE forward-store fingerprint check: "
+                       f"{len(changed)} store(s) changed and a live capture "
+                       f"could not be ruled in or out here ({detail}).\n"
+                       f"{lines}\nRe-run where the process table is readable, "
+                       "or confirm by hand that no capture was in flight.")
     lines = "\n".join(f"  - {p}" for p in changed)
     return False, ("forward-store fingerprint check FAILED -- these stores "
                     f"changed during the run:\n{lines}\n"

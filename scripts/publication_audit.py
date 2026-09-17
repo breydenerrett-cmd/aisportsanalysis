@@ -361,23 +361,38 @@ def audit(date_iso=None, now=None):
         # with no picks" are different facts and only one of them is normal.
         return [("INFO", f"no slip published for {date_iso} yet")]
 
+    resolve, schedule, error = load_world(date_iso)
+    if error is not None:
+        return ([("WARN", f"schedule unavailable, cannot verify game states: "
+                          f"{error}")]
+                + audit_slip(slip, lambda _e: None, None, now))
+
+    return audit_slip(slip, resolve, schedule, now)
+
+
+def load_world(date_iso):
+    """(resolve, schedule, error) -- the world both audits measure against.
+
+    Factored out of `audit()` so `main()` can fetch it ONCE and hand the
+    same schedule to `audit_card`, which until 2026-09-16 had no way to see
+    it and therefore checked the card against the card (see audit_card's
+    docstring). One fetch, both surfaces, same instant.
+
+    `schedule` is keyed by str: game_pk_for_event returns the canonical
+    string form while parse_game keeps the raw int, and an int/str mismatch
+    here would silently resolve nothing and report a clean slip.
+    """
     try:
         from src.board import gamekey
         from src.providers import mlb
         gk_map = gamekey.load_map()
-        # Keyed by str: game_pk_for_event returns the canonical string form
-        # while parse_game keeps the raw int, and an int/str mismatch here
-        # would silently resolve nothing and report a clean slip.
         schedule = {str(g.get("game_pk")): g for g in mlb.fetch_games(date_iso)}
 
         def resolve(event_id):
             return gamekey.game_pk_for_event(event_id, gk_map)
     except Exception as exc:  # noqa: BLE001
-        return ([("WARN", f"schedule unavailable, cannot verify game states: "
-                          f"{exc}")]
-                + audit_slip(slip, lambda _e: None, None, now))
-
-    return audit_slip(slip, resolve, schedule, now)
+        return (lambda _e: None), None, exc
+    return resolve, schedule, None
 
 
 # THE CARD'S OWN CHECKS.
@@ -481,14 +496,47 @@ def _calibration_findings(cal_path, label, now, freeze_marker):
     return findings
 
 
-def audit_card(date_iso, now):
-    """The published card for `date_iso`, checked against the world."""
+def audit_card(date_iso, now, schedule=None, published=None):
+    """The published card for `date_iso`, checked against the world.
+
+    `schedule` maps str(game_pk) -> the provider's game record, exactly as
+    `audit()` builds it. IT IS THE "WORLD" HALF OF THIS FUNCTION'S OWN NAME.
+
+    WHY IT IS A PARAMETER AND WHY IT WAS A BUG THAT IT DID NOT EXIST
+    ----------------------------------------------------------------
+    Until 2026-09-16 this function decided whether a published pick was for
+    a game already underway by reading `pick["first_pitch_utc"]` -- a field
+    written INTO the card by the code that built it -- and comparing it to
+    the clock. That is the card's own claim about when the game starts,
+    checked against nothing. `audit_slip` above goes to the provider on
+    purpose and says why in its docstring ("a check that calls the code
+    under test is an echo, not an audit"); this one quietly did the
+    opposite while carrying the same promise in its first line.
+
+    It matters because that stamp is demonstrably not always MLB's: see
+    src/analysis/opportunities.py, where first_pitch_utc falls back to a
+    BOOK's `commence_time` when the schedule row has no start. A card built
+    with a wrong or missing start time is exactly the 2026-09-09 failure --
+    finished games published as live recommendations -- and the audit for
+    it read the wrong number back from the same artifact and called it
+    clean.
+
+    So: with a schedule, every pick's start is taken from the provider and
+    a DISAGREEMENT with the card's own stamp is itself a finding. Without
+    one (network down; a caller that has none), the fallback still runs but
+    the wording now says out loud that the time came from the card, so
+    nobody reads the quiet version as an independent check.
+
+    `published` is injectable for the same reason `_calibration_findings`
+    takes `cal_path`: so a test can pin a card without the real ledger.
+    """
     from src.appstate import card_ledger
     from src.report import card as card_mod
 
     findings = []
 
-    published = card_ledger.published_row(date_iso)
+    if published is None:
+        published = card_ledger.published_row(date_iso)
     if published is None:
         # Normal before the afternoon pass. Stated rather than skipped: "no
         # card yet" and "a card with no picks" are different facts.
@@ -506,22 +554,9 @@ def audit_card(date_iso, now):
         # card is frozen once and then served for the rest of the day, so
         # nothing stops it presenting a game in the sixth inning as a live
         # recommendation.
-        started = []
-        for pick in picks:
-            first_pitch = _parse_utc(pick.get("first_pitch_utc"))
-            if first_pitch is None:
-                findings.append((
-                    "WARN",
-                    f"card pick #{pick.get('rank')} has no first-pitch time, "
-                    f"so whether it is still actionable cannot be checked"))
-            elif first_pitch <= now:
-                started.append(pick)
-        if started:
-            findings.append((
-                "WARN",
-                f"{len(started)} of {len(picks)} card picks are for games "
-                f"that have already started -- the card is frozen by design, "
-                f"but the page must not present these as live"))
+        start_findings, started = card_start_findings(
+            picks, date_iso, now, schedule)
+        findings.extend(start_findings)
 
         published_at = _parse_utc(published.get("published_utc"))
         if published_at is not None:
@@ -568,13 +603,95 @@ def audit_card(date_iso, now):
     return findings
 
 
+def card_start_findings(picks, date_iso, now, schedule):
+    """(findings, started) for "is each published card pick still live".
+
+    Split out of `audit_card` as a PURE function, the same way `audit_slip`
+    and `_calibration_findings` already are, so this can be tested against
+    a pinned world with no ledger, no calibration file and no network --
+    and so the schedule stays a visible argument rather than an implicit
+    dependency that can quietly go missing again.
+
+    `started` is a list of (pick, source) where source names WHERE the start
+    time came from -- "the schedule" or "the card". That distinction is the
+    whole point: before 2026-09-16 every answer came from the card and the
+    output did not say so.
+    """
+    findings = []
+    started = []
+    for pick in picks:
+        card_stamp = _parse_utc(pick.get("first_pitch_utc"))
+        world = (schedule or {}).get(str(pick.get("game_pk")))
+        world_stamp = _parse_utc((world or {}).get("start_time_utc"))
+        world_state = (world or {}).get("state")
+
+        # The provider wins wherever it can answer. The card's own stamp
+        # is only ever the fallback, and it is labelled as one.
+        first_pitch = world_stamp if world_stamp is not None else card_stamp
+        source = "the schedule" if world_stamp is not None else "the card"
+
+        if world_state == "cancelled":
+            continue
+        if first_pitch is None:
+            findings.append((
+                "WARN",
+                f"card pick #{pick.get('rank')} has no first-pitch time "
+                f"in {'the schedule or ' if schedule else ''}the card, "
+                f"so whether it is still actionable cannot be checked"))
+        elif first_pitch <= now or world_state == "final":
+            started.append((pick, source))
+
+        # THE CARD DISAGREEING WITH THE WORLD IS ITSELF THE FINDING. A
+        # card whose stamp is hours later than MLB's is how a started
+        # game keeps looking live to every check that trusts the card.
+        if world_stamp is not None and card_stamp is not None:
+            drift = abs((world_stamp - card_stamp).total_seconds()) / 60.0
+            if drift > 60.0:
+                findings.append((
+                    "ESCALATE",
+                    f"card pick #{pick.get('rank')} says first pitch is "
+                    f"{card_stamp.isoformat()} but the schedule says "
+                    f"{world_stamp.isoformat()} ({drift:.0f} min apart) "
+                    f"-- every staleness check that trusts the card's own "
+                    f"stamp is measuring against the wrong instant"))
+        elif world is not None and world_stamp is None and card_stamp is not None:
+            findings.append((
+                "WARN",
+                f"card pick #{pick.get('rank')} resolves to a scheduled "
+                f"game with no start time, so its first-pitch claim "
+                f"({card_stamp.isoformat()}) cannot be corroborated"))
+        elif schedule is not None and world is None:
+            findings.append((
+                "WARN",
+                f"card pick #{pick.get('rank')} (game_pk "
+                f"{pick.get('game_pk')!r}) matches no game on "
+                f"{date_iso}'s schedule, so its start time is the card's "
+                f"own unverified claim"))
+    if started:
+        by_card_only = sum(1 for _, src in started if src == "the card")
+        findings.append((
+            "WARN",
+            f"{len(started)} of {len(picks)} card picks are for games "
+            f"that have already started -- the card is frozen by design, "
+            f"but the page must not present these as live"
+            + (f" (start time taken from the card itself, not the "
+               f"schedule, for {by_card_only} of them)"
+               if by_card_only else "")))
+    return findings, started
+
+
 def main():
     date_iso = sys.argv[1] if len(sys.argv) > 1 else None
     findings = audit(date_iso)
     try:
+        day = date_iso or datetime.now(timezone.utc).date().isoformat()
+        # The same world audit() measured the slip against, so the card is
+        # checked against the schedule rather than against its own stamps.
+        # A failed fetch means schedule=None, which audit_card already
+        # degrades to the labelled card-only fallback.
+        _resolve, schedule, _error = load_world(day)
         findings = findings + audit_card(
-            date_iso or datetime.now(timezone.utc).date().isoformat(),
-            datetime.now(timezone.utc))
+            day, datetime.now(timezone.utc), schedule=schedule)
     except Exception as exc:  # noqa: BLE001
         # An audit that dies takes the whole check down and reports CLEAN by
         # absence, which is the one outcome this file exists to prevent.

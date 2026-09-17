@@ -632,5 +632,91 @@ class LineupStoreCollapseTests(HealthStoreFixture):
         self.assertMentions(data, "1 game(s)")
 
 
+class ChecksReadWhatTheyClaimTests(HealthStoreFixture):
+    """Stage 18 H5: every check that names an artifact must READ that
+    artifact, and must be able to detect the failure its own wording
+    describes. These pin the two gaps found on 2026-09-16.
+    """
+
+    # -- the lineup store: named, and emptiable ---------------------------
+
+    def test_the_lineup_section_names_the_store_it_actually_read(self):
+        """A path that only exists as an inline expression drifts. The
+        report now publishes the exact file it opened, and it must be the
+        HISTORICAL store -- not the watch log one directory over, which is
+        what this section used to measure while naming this one.
+        """
+        data = self.run_report()
+        store_path = Path(data["lineups"]["store_path"])
+        self.assertEqual(store_path,
+                         self.root / "historical" / health.LINEUP_STORE_FILE)
+        self.assertEqual(store_path.name, "lineups.jsonl")
+        self.assertEqual(store_path.parent.name, "historical")
+        # And emphatically NOT the poller's own log.
+        watch = Path(data["lineups"]["streams"]["lineups"]["path"])
+        self.assertNotEqual(store_path, watch)
+        self.assertEqual(watch.parent.name, "watch")
+
+    def test_an_emptied_lineup_store_is_not_healthy_before_lineups_post(self):
+        """THE MORNING BLIND SPOT. The cross-check against the watch stream
+        can only fire once the poller has seen a lineup post. Empty the
+        store at 14:00Z -- before any lineup for tonight exists -- and every
+        per-day check has nothing to compare, so the old report went green
+        over a store that had just been wiped.
+        """
+        morning = datetime(2026, 8, 31, 14, 0, tzinfo=timezone.utc)
+        store = self.root / "historical" / "lineups.jsonl"
+        store.write_text("", encoding="utf-8")   # clobbered, not deleted
+        # The watch stream has polled but nothing has posted yet: exactly
+        # the state that makes posted_missing_from_store empty.
+        (self.root / "watch" / "lineups_watch.jsonl").write_text(
+            json.dumps({"fetched_utc": morning.isoformat(), "poll": True})
+            + "\n", encoding="utf-8")
+
+        data = self.run_report(now=morning)
+        self.assertTrue(store.exists())                       # present...
+        self.assertEqual(data["lineups"]["store_rows_total"], 0)  # ...and empty
+        self.assertEqual(data["lineups"]["posted_missing_from_store"], [])
+        self.assertMentions(data, "exists but holds no rows at all",
+                            "emptied, not merely not-yet-written")
+        self.assertFalse(data["healthy"])
+
+    def test_a_populated_store_reports_its_real_total_and_stays_clean(self):
+        """Positive control for the counter: it counts the whole file, not
+        just today, and a healthy store still raises nothing."""
+        data = self.run_report()
+        self.assertEqual(data["lineups"]["store_rows_total"], len(GAMES))
+        self.assertEqual(data["anomalies"], [])
+
+    # -- settlement: BOTH gaps status() knows about -----------------------
+
+    def test_the_settlement_section_names_the_ledger_it_actually_read(self):
+        """This section is the one part of the report NOT redirected by
+        `data_dir`. It must say which file it opened, or a reader cannot
+        tell a synthetic report from a real one."""
+        data = self.run_report()
+        self.assertEqual(Path(data["settlement"]["path"]), self.ledger)
+
+    def test_settlements_naming_a_pk_the_ledger_never_recommended_are_flagged(self):
+        """The gap the docstring promised and the fields could not express:
+        a settle loop keyed on the wrong game_pk writes settlements all day,
+        `pending` never moves, and nothing in this report could say so.
+        """
+        _write(self.ledger, [
+            {"kind": "settlement", "game_pk": 777001,
+             "settled_at": f"{DAY}T23:30:00+00:00",
+             "result": {"home_won": True}, "closing": -120}])
+        data = self.run_report()
+        self.assertEqual(data["settlement"]["orphan_settlements"], ["777001"])
+        self.assertMentions(data, "settle nothing",
+                            "name a game_pk the ledger never recommended")
+        self.assertFalse(data["healthy"])
+
+    def test_a_ledger_with_no_orphans_stays_clean(self):
+        data = self.run_report()
+        self.assertEqual(data["settlement"]["orphan_settlements"], [])
+        self.assertEqual(data["anomalies"], [])
+
+
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()
