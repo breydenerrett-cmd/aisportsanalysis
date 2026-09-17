@@ -256,13 +256,37 @@ new trigger is data. Only a new predicate operator is code.
     - match_status: in_progress
     - first_occurrence_in_match: true  # one trigger per rule per match, always
   want:
-    market: set_winner                 # set_winner needs API-Tennis; otherwise match_winner
-    scope: set_2
+    # NARROWED 2026-09-17, and this is a SUBSTITUTION, not the bet that was
+    # asked for. The owner's bet is the SECOND SET moneyline after a
+    # favourite drops the first. No licensed source for it is reachable: The
+    # Odds API carries tennis match-winner only, with no set-winner and no
+    # next-set market, and API-Tennis -- the one vendor that documents
+    # set-level odds with a suspension flag -- was measured across a full day
+    # and SKIPPED (docs/API_TENNIS_TRIAL_RESULTS.md, dated 2026-09-17: price
+    # freshness median 54.0s against a 10s bar, second-set markets quoted on
+    # 59.9% of matches against 80%, and 104 moments priced while the market
+    # was suspended).
+    #
+    # So this rule buys the MATCH winner instead. That is a different and
+    # worse bet: it pays less, it carries the rest of the match's risk, and
+    # the mispricing the owner is hunting -- a market slow to re-rate one set
+    # -- is not the mispricing this market offers. It is written here rather
+    # than in a footnote so nobody later reads a match-winner result as
+    # evidence about the second-set idea. Restore set_winner only if a feed
+    # is found whose in-play prices arrive inside ten seconds and which never
+    # quotes a suspended market.
+    market: match_winner
+    scope: match
     side: entity
   price:
     source: fresh_median               # at least 3 books fresh under the registered rule
     threshold: formula:v1              # section 4, computed per entity per state
-    floor: -150                        # owner band, decision 2
+    # Owner, 2026-09-16: -200 is allowed, but ONLY where our own post-markdown
+    # number is 0.75 or better -- section 4 shows that is the only region
+    # where -200 clears the value test. Anything worse than -150 outside that
+    # region stays OUTSIDE_BAND and is not a candidate.
+    floor: -150
+    floor_exception: {worst_price: -200, requires_marked_down_prob: ">=0.75"}
     market_prob_min: 0.50              # "more than likely", owner 2026-09-11
   stake:
     rule: FLAT_1U                      # the only rule the evidence path allows
