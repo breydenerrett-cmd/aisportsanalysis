@@ -97,3 +97,40 @@ Covered fully in `docs/NEVER_RAN_REGISTER.md` (commit 623f2b03) and not restated
 2. **The resolution is not to re-run the missing scripts.** They are gone and re-deriving every illustration would take days the product does not have while V1 publishes −230 favourites. The resolution is to **separate the mechanism from the illustrations**: the mechanism is reproducible and can be registered; every number sourced to a missing scratchpad file gets 14.3b's banner, verbatim and without exception, or is deleted. A registration may contain an unreproducible illustration that says so. It may not contain one that does not.
 3. **C2 is fixed by landing T11** — mark THE_CARD.md's evidence section as produced under the leak, keeping the text as history.
 4. **C3 must be resolved before V2 registers**, because V2's core claim depends on which statement is true.
+
+---
+
+## CORRECTION, same day — C7 was nearly recorded as a fabricated manifest
+
+An investigator reported that `data/historical/balldontlie/MANIFEST.json`
+"falsely records (with byte counts and sha256 hashes) that MLB/NBA/NFL/NHL
+game files were harvested and complete — none of those files exist on disk or
+in git history." I verified the disk half: **461 manifest entries, 0 present
+locally**, every one carrying a size and a hash. On that evidence it looks
+like a manifest asserting cryptographic hashes for data that was never
+collected, which would have been the worst integrity finding of the audit.
+
+**It is not true, and the manifest is accurate.** The harvest ran in CI and
+published to GitHub RELEASE ASSETS, not to the working tree. The release
+`balldontlie-harvest-2026-09` holds **959 assets: 505 mlb, 364 nfl, 38 atp,
+38 wta, 7 nhl, 7 nba**. The data exists. The manifest describes a remote
+store, and a check against the local disk cannot see it.
+
+**This is the third time today** an agent concluded data did not exist because
+it was not where they looked — the 2026-09-15 board was called absent while
+sitting in `odds_multibook.jsonl`; the registration's calibration was called
+gone while sitting at commit `7db02b0a`; and now this. I nearly propagated
+this one into the audit. "Not where I looked" is not "not there", and an
+audit that gets this wrong manufactures crises.
+
+**The real finding is narrower and more useful.** The data was bought,
+harvested and stored — 959 files across five sports — and **nothing consumes
+it**. `grep -rln balldontlie src/` returns exactly three provider modules
+(`balldontlie.py`, `api_tennis.py`, `tennis_results.py`) and NOTHING under
+`src/analysis`, `src/model`, `src/engine` or `src/pipeline`. Only tennis has
+a consumer at all, and tennis was just skipped on 2026-09-17.
+
+So: a multi-sport dataset, paid for and successfully collected, feeding
+nothing. That is a dark-data finding of the first order and it belongs in
+`DATA_GAP_AND_DARK_DATA_AUDIT.md` as an asset to exploit, not in this ledger
+as an integrity failure.
