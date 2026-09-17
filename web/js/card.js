@@ -25,9 +25,17 @@
  * "nothing clears the bar" cannot appear on this surface, and
  * tests/test_no_nothing_clears_the_bar.py enforces that across all of web/.
  *
- * It also never hides the SPLIT label. A pick our own model disagrees with
- * is on the card because the slate was thin, it says so on its own face, and
- * a reader who only reads the big sentence still sees the word.
+ * It also never hides the DISAGREEMENT. A pick our own model disagrees with
+ * is on the card because the slate was thin, and it says so on its own face.
+ *
+ * CORRECTED 2026-09-17: this paragraph used to promise the reader "still
+ * sees the word" SPLIT. D1 removed the STRONG/LEAN/SPLIT chips from the
+ * card's face on purpose -- they were driven by MARKET confidence, so a
+ * short-priced favourite wore the same badge as real value -- and the
+ * promise was left behind, describing a page that no longer exists. The
+ * DISCLOSURE survives and is what actually matters: the thin-slate sentence
+ * still states plainly that our numbers do not agree with the market on
+ * those picks. The label's explanatory copy remains inside the breakdown.
  */
 
 import { apiGet } from "./api.js";
@@ -741,11 +749,16 @@ function filledNote(payload) {
   // Named out loud. A reader is entitled to know that the last pick is on
   // the card because it was the next best thing available, not because
   // anything about it was convincing.
+  // 2026-09-17: this used to end "and they are marked SPLIT". The D1 rebuild
+  // removed the STRONG/LEAN/SPLIT chips from the card's face, so that clause
+  // pointed a reader at a marking that is no longer anywhere on the page --
+  // a dangling reference, which is worse than the label itself was. The
+  // sentence now states the fact directly instead of naming a vanished
+  // badge. Nothing about what it discloses has been softened.
   return el("p", { class: "card2lede card2lede--mute",
     text: `${payload.filled} of tonight's picks are here because the slate `
         + `was thin — our own numbers do not agree with the market on `
-        + `${payload.filled === 1 ? "it" : "them"}, and ${payload.filled === 1 ? "it is" : "they are"} `
-        + `marked SPLIT.` });
+        + `${payload.filled === 1 ? "it" : "them"}.` });
 }
 
 /** The card's own running record, or an honest statement that there is none.
