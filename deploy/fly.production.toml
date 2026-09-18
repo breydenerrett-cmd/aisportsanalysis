@@ -48,7 +48,16 @@ primary_region = "iad"
   # deployed. WHEN A CUSTOM DOMAIN IS BOUGHT AND ITS DNS/TLS IS LIVE, change
   # this line and redeploy -- it is deliberately not a secret, so it lives
   # here in version control where a review can see what it points at.
-  PUBLIC_BASE_URL = "https://linehound-prod.fly.dev"
+  #
+  # 2026-09-17: linehound.app was purchased (Cloudflare Registrar). This line
+  # is now the custom domain, per the instruction directly above. IT MUST NOT
+  # BE DEPLOYED BEFORE THE DNS AND TLS FOR THAT NAME ARE LIVE -- if the app
+  # goes up pointing at a domain that does not yet resolve, Stripe's return
+  # redirect goes nowhere, which is the exact failure the comment above this
+  # one describes. Order: create the app, add the Fly cert, point Cloudflare
+  # DNS at it, confirm the name resolves and serves, and only then deploy
+  # with this value. `deploy/CLOUDFLARE.md` has the record set.
+  PUBLIC_BASE_URL = "https://linehound.app"
 
   # APP_PUBLIC_DEMO IS DELIBERATELY ABSENT, and must stay absent.
   # deploy/fly.staging.toml sets it to "1", which makes api/app.py drop the

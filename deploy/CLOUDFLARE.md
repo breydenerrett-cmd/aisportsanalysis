@@ -35,10 +35,35 @@ Point the domain at whichever Fly app is live (staging first, production
 later -- `deploy/DEPLOY_RUNBOOK.md`'s promotion checklist covers when to
 add a second record set for production).
 
+**FILLED IN 2026-09-17: the domain is `linehound.app`**, bought through
+Cloudflare Registrar, so the zone already exists in the same account and no
+nameserver delegation step is needed.
+
 | Type | Name | Content | Proxy status |
 |------|------|---------|--------------|
-| CNAME | `staging` (or `app`, `www` -- Brey's naming call) | `<real-app-name>.fly.dev` | Proxied (orange cloud) |
-| CNAME | `api` (if the API gets its own subdomain from a future web frontend) | `<real-app-name>.fly.dev` | Proxied (orange cloud) |
+| CNAME | `@` (the apex, `linehound.app`) | `linehound-prod.fly.dev` | Proxied (orange cloud) |
+| CNAME | `www` | `linehound-prod.fly.dev` | Proxied (orange cloud) |
+
+An apex CNAME is not legal in plain DNS; Cloudflare's CNAME flattening makes
+it work and is on by default for a proxied record at the root, which is why
+the apex row above is a CNAME rather than an A record. Do not substitute an
+A record pointing at a Fly IP -- Fly's edge addresses are not fixed per app,
+which is the reason the paragraph below gives for requiring a CNAME.
+
+**`linehound-prod` DOES NOT EXIST YET.** These records point at an app that
+has not been created (`deploy/DEPLOY_RUNBOOK.md`'s promotion checklist, step
+2). Adding the DNS first is harmless -- the name simply will not resolve to
+anything serving -- but `fly certs add` will fail until the app exists, and
+the order that avoids a broken window is: create the app, deploy it, add the
+cert, then add these records.
+
+**DO NOT point these at `linehound-staging.fly.dev` as a shortcut.**
+`deploy/fly.staging.toml:43` sets `APP_PUBLIC_DEMO = "1"`, which
+`api/app.py` reads as "drop the paid dependency from every game surface" and
+`web/js/betcheck.js` reads as "send anonymous visitors to the uncapped
+endpoint". That is correct for a staging URL nobody has and catastrophic at
+the brand's real address: it would publish the entire paid product for free,
+at `linehound.app`, to anyone who typed it.
 
 Fly's own docs require a CNAME (not an A record pointing at a fixed IP)
 for apps behind Fly's shared proxy, since Fly's edge IPs are not fixed
