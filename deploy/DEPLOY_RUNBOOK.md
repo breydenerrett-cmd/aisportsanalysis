@@ -231,3 +231,46 @@ fire daily is sufficient without a separate cleanup job. This is
 documented here rather than wired automatically because no scheduler
 exists yet with access to the staging app -- the moment one does, this is
 the one line it needs.
+
+## FLY_API_TOKEN's actual scope, measured 2026-09-18
+
+The promotion checklist above needs `fly apps create`. Whether the repository
+secret can do that was asked directly, with a throwaway read-only workflow
+(`flyctl apps list` and `flyctl orgs list`, nothing else), rather than assumed
+from a comment. Run 35310187810:
+
+```
+=== flyctl apps list ===
+Error: unauthorized
+
+=== flyctl orgs list ===
+Name            Slug      Type
+breyden errett  personal  PERSONAL
+```
+
+**The token is APP-SCOPED to linehound-staging.** It authenticates into the
+personal org but has no account-wide app read, which is the signature of a
+deploy token issued for one app. `deploy-staging.yml`'s header was accurate.
+
+**Consequence for the promotion checklist:** steps 2, 3 and 4 (create app,
+create volume, set secrets) cannot be done from CI with the secret as it
+stands today. One of two things unblocks them, and they are Brey's to choose:
+
+1. **He runs three commands locally**, after `fly auth login`:
+   ```
+   fly apps create linehound-prod
+   fly volumes create app_data_production --app linehound-prod --region iad --size 1
+   fly secrets set APP_ADMIN_TOKEN=<fresh> --app linehound-prod
+   ```
+   Then CI can deploy to it only if a deploy token for THAT app is added as a
+   second repository secret.
+
+2. **He issues an org-scoped token** (`fly tokens create org`) and stores it as
+   a NEW secret, e.g. `FLY_ORG_TOKEN`. That lets the whole checklist run from a
+   reviewable workflow. It is also a broader credential than the one that
+   exists now, and `deploy/secrets.md`'s "do not reuse a token across
+   environments" rule means it should NOT replace `FLY_API_TOKEN` -- staging
+   keeps its narrow one.
+
+Option 1 is the smaller credential and the slower path; option 2 is the
+faster path and the wider blast radius. Neither is chosen here.
