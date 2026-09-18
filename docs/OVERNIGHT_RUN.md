@@ -1987,3 +1987,486 @@ end-to-end confirmation (above).
 - 2026-09-16T18:44Z afternoon_slate: engine slate --date 2026-09-16 exit=2
 - 2026-09-16T18:45Z afternoon_slate: card publish --date 2026-09-16 exit=0
 - 2026-09-16T18:45Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T18:57Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T18:58Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T18:58Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T19:03Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T19:03Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T19:03Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T19:09Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T19:10Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T19:10Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T19:22Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T19:23Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T19:23Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T19:36Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T19:37Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T19:37Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T19:41Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T19:41Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T19:41Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T19:49Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T19:50Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T19:50Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T20:02Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T20:03Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T20:03Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T20:11Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T20:11Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T20:11Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T20:15Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T20:15Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T20:15Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T20:27Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T20:28Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T20:28Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T20:41Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T20:42Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T20:42Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T20:42Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T20:42Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T20:42Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T20:54Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T20:55Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T20:55Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T21:07Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T21:08Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T21:08Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T21:11Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T21:11Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T21:11Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T21:20Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T21:21Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T21:21Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T21:32Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T21:33Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T21:33Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T21:39Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T21:39Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T21:39Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T21:45Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T21:46Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T21:46Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T21:59Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T22:00Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T22:00Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T22:12Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T22:13Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T22:13Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T22:14Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T22:14Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T22:14Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T22:25Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T22:25Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T22:25Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T22:38Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T22:38Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T22:38Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T22:41Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T22:41Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T22:41Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T22:51Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T22:52Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T22:52Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T23:03Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T23:04Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T23:04Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T23:11Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T23:11Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T23:11Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T23:17Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T23:17Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T23:17Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T23:30Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T23:31Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T23:31Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T23:41Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T23:41Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T23:41Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T23:43Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T23:44Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T23:44Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T23:47Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T23:48Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T23:48Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-16T23:55Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-16T23:56Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-16T23:56Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-17T00:11Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-17T00:12Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-17T00:12Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-17T00:23Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-17T00:24Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-17T00:24Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-17T00:26Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-17T00:26Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-17T00:26Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-17T00:34Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-17T00:35Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-17T00:35Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-17T00:48Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-17T00:49Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-17T00:49Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-17T00:56Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-17T00:56Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-17T00:56Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-17T01:02Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-17T01:02Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-17T01:02Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-17T01:15Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-17T01:15Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-17T01:15Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-17T01:28Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-17T01:28Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-17T01:28Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-17T01:30Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-17T01:30Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-17T01:30Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-17T01:41Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-17T01:42Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-17T01:42Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-17T01:43Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-17T01:43Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-17T01:43Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-17T01:53Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-17T01:53Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-17T01:53Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-17T02:06Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-17T02:07Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-17T02:07Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-17T02:11Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-17T02:11Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-17T02:11Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-17T02:20Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-17T02:21Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-17T02:21Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-17T02:33Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-17T02:34Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-17T02:34Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-17T02:41Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-17T02:41Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-17T02:41Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-17T02:46Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-17T02:46Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-17T02:46Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-17T02:59Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-17T03:00Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-17T03:00Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-17T03:11Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-17T03:12Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-17T03:12Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-17T03:25Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-17T03:26Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-17T03:26Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-17T03:39Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-17T03:39Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-17T03:39Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-17T03:52Z afternoon_slate: engine slate --date 2026-09-16 exit=2
+- 2026-09-17T03:52Z afternoon_slate: card publish --date 2026-09-16 exit=0
+- 2026-09-17T03:52Z afternoon_slate: engine slip --date 2026-09-16
+- 2026-09-17T10:11Z daily_loop: standings catchup end=2026-09-17
+- 2026-09-17T10:11Z daily_loop: lineups+matchup_history date=2026-09-17
+- 2026-09-17T10:11Z daily_loop: pitcher splits date=2026-09-17
+- 2026-09-17T10:11Z daily_loop: pitch arsenals season=2026
+- 2026-09-17T10:11Z daily_loop: statcast --catchup exit=0
+- 2026-09-17T10:11Z daily_loop: gamekey --date 2026-09-16 --end 2026-09-17 exit=0
+- 2026-09-17T10:11Z daily_loop: gameflow --date 2026-09-16 exit=0
+- 2026-09-17T10:15Z daily_loop: engine slate --date 2026-09-17 exit=0
+- 2026-09-17T10:15Z daily_loop: engine slip --date 2026-09-17
+- 2026-09-17T10:16Z daily_loop: engine settle --date 2026-09-16 exit=0
+- 2026-09-17T10:16Z daily_loop: card settle --date 2026-09-16 exit=0
+- 2026-09-17T10:16Z daily_loop: nfl card settle --date 2026-09-16 exit=0
+- 2026-09-17T10:16Z daily_loop: tennis discover
+- 2026-09-17T10:16Z daily_loop: tennis results --date 2026-09-16
+- 2026-09-17T10:16Z daily_loop: live settle (counts only)
+- 2026-09-17T10:16Z daily_loop: card calibration frozen 2026-09-15 (docs/CARD_CALIBRATION_FREEZE_2026-09-15.md), refit skipped
+- 2026-09-17T10:16Z daily_loop: eod --date 2026-09-16 exit=0
+- 2026-09-17T10:17Z daily_loop: postmortem --date 2026-09-16 exit=0
+- 2026-09-17T10:18Z daily_loop: train exit=0
+- 2026-09-17T10:18Z daily_loop: closing-audit exit=0
+- 2026-09-17T10:18Z daily_loop: calibration_drift_audit exit=1
+- 2026-09-17T10:18Z daily_loop: test_tier_ladder exit=0
+- 2026-09-17T10:18Z daily_loop: research-readiness exit=0
+- 2026-09-17T10:18Z daily_loop: prereg-clv exit=0
+- 2026-09-17T14:15Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T14:16Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T14:16Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T14:28Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T14:29Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T14:29Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T14:30Z daily_loop: standings catchup end=2026-09-17
+- 2026-09-17T14:31Z daily_loop: lineups+matchup_history date=2026-09-17
+- 2026-09-17T14:31Z daily_loop: pitcher splits date=2026-09-17
+- 2026-09-17T14:31Z daily_loop: pitch arsenals season=2026
+- 2026-09-17T14:31Z daily_loop: statcast --catchup exit=0
+- 2026-09-17T14:31Z daily_loop: gamekey --date 2026-09-16 --end 2026-09-17 exit=0
+- 2026-09-17T14:31Z daily_loop: gameflow --date 2026-09-16 exit=0
+- 2026-09-17T14:34Z daily_loop: engine slate --date 2026-09-17 exit=0
+- 2026-09-17T14:34Z daily_loop: engine slip --date 2026-09-17
+- 2026-09-17T14:34Z daily_loop: engine settle --date 2026-09-16 exit=0
+- 2026-09-17T14:34Z daily_loop: card settle --date 2026-09-16 exit=0
+- 2026-09-17T14:34Z daily_loop: nfl card settle --date 2026-09-16 exit=0
+- 2026-09-17T14:34Z daily_loop: tennis discover
+- 2026-09-17T14:35Z daily_loop: tennis results --date 2026-09-16
+- 2026-09-17T14:35Z daily_loop: live settle (counts only)
+- 2026-09-17T14:35Z daily_loop: card calibration frozen 2026-09-15 (docs/CARD_CALIBRATION_FREEZE_2026-09-15.md), refit skipped
+- 2026-09-17T14:35Z daily_loop: eod --date 2026-09-16 exit=0
+- 2026-09-17T14:35Z daily_loop: postmortem --date 2026-09-16 exit=0
+- 2026-09-17T14:36Z daily_loop: train exit=0
+- 2026-09-17T14:36Z daily_loop: closing-audit exit=0
+- 2026-09-17T14:36Z daily_loop: calibration_drift_audit exit=1
+- 2026-09-17T14:36Z daily_loop: test_tier_ladder exit=0
+- 2026-09-17T14:36Z daily_loop: research-readiness exit=0
+- 2026-09-17T14:37Z daily_loop: prereg-clv exit=0
+- 2026-09-17T14:43Z afternoon_slate: engine slate --date 2026-09-17 exit=0
+- 2026-09-17T14:44Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T14:44Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T14:55Z afternoon_slate: engine slate --date 2026-09-17 exit=0
+- 2026-09-17T14:56Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T14:56Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T15:07Z afternoon_slate: engine slate --date 2026-09-17 exit=0
+- 2026-09-17T15:07Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T15:07Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T15:22Z afternoon_slate: engine slate --date 2026-09-17 exit=0
+- 2026-09-17T15:22Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T15:22Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T15:34Z afternoon_slate: engine slate --date 2026-09-17 exit=0
+- 2026-09-17T15:34Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T15:34Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T15:46Z afternoon_slate: engine slate --date 2026-09-17 exit=0
+- 2026-09-17T15:47Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T15:47Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T15:59Z afternoon_slate: engine slate --date 2026-09-17 exit=0
+- 2026-09-17T16:00Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T16:00Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T16:13Z afternoon_slate: engine slate --date 2026-09-17 exit=0
+- 2026-09-17T16:14Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T16:14Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T16:26Z afternoon_slate: engine slate --date 2026-09-17 exit=0
+- 2026-09-17T16:26Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T16:26Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T16:39Z afternoon_slate: engine slate --date 2026-09-17 exit=0
+- 2026-09-17T16:39Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T16:39Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T16:42Z afternoon_slate: engine slate --date 2026-09-17 exit=0
+- 2026-09-17T16:43Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T16:43Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T16:52Z afternoon_slate: engine slate --date 2026-09-17 exit=0
+- 2026-09-17T16:52Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T16:53Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T17:05Z afternoon_slate: engine slate --date 2026-09-17 exit=0
+- 2026-09-17T17:06Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T17:06Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T17:13Z afternoon_slate: engine slate --date 2026-09-17 exit=0
+- 2026-09-17T17:13Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T17:13Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T17:19Z afternoon_slate: engine slate --date 2026-09-17 exit=0
+- 2026-09-17T17:19Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T17:19Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T17:31Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T17:32Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T17:32Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T17:43Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T17:44Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T17:44Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T17:47Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T17:47Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T17:47Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T17:56Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T17:57Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T17:57Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T18:09Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T18:10Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T18:10Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T18:11Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T18:11Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T18:11Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T18:22Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T18:22Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T18:22Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T18:35Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T18:36Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T18:36Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T18:41Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T18:42Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T18:42Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T18:47Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T18:47Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T18:47Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T19:01Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T19:02Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T19:02Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T19:11Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T19:11Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T19:11Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T19:15Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T19:16Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T19:16Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T19:17Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T19:17Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T19:17Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T19:27Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T19:28Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T19:28Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T19:40Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T19:41Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T19:41Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T19:53Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T19:54Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T19:54Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T19:57Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T19:57Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T19:57Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T20:06Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T20:07Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T20:07Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T20:18Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T20:19Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T20:19Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T20:27Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T20:27Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T20:27Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T20:32Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T20:33Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T20:33Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T20:44Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T20:45Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T20:45Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T20:58Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T20:59Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T20:59Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T21:01Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T21:01Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T21:01Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T21:11Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T21:12Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T21:12Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T21:24Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T21:25Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T21:25Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T21:27Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T21:27Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T21:27Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T21:37Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T21:38Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T21:38Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T21:42Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T21:42Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T21:42Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T21:52Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T21:53Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T21:53Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T22:03Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T22:04Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T22:04Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T22:16Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T22:17Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T22:17Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T22:27Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T22:27Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T22:27Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T22:30Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T22:31Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T22:31Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T22:43Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T22:44Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T22:44Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T22:54Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T22:55Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T22:55Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T22:57Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T22:57Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T22:57Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T23:07Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T23:07Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T23:07Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T23:21Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T23:22Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T23:22Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T23:27Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T23:27Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T23:27Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T23:35Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T23:36Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T23:36Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T23:39Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T23:39Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T23:39Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-17T23:47Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-17T23:48Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-17T23:48Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-18T00:00Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-18T00:01Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-18T00:01Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-18T00:15Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-18T00:16Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-18T00:16Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-18T00:17Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-18T00:18Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-18T00:18Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-18T00:28Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-18T00:29Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-18T00:29Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-18T00:41Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-18T00:42Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-18T00:42Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-18T00:44Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-18T00:44Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-18T00:44Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-18T00:53Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-18T00:54Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-18T00:54Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-18T01:06Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-18T01:07Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-18T01:07Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-18T01:12Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-18T01:12Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-18T01:12Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-18T01:20Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-18T01:20Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-18T01:20Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-18T01:29Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-18T01:29Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-18T01:29Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-18T01:33Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-18T01:34Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-18T01:34Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-18T01:45Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-18T01:46Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-18T01:46Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-18T01:59Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-18T01:59Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-18T01:59Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-18T02:11Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-18T02:11Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-18T02:12Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-18T02:14Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-18T02:14Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-18T02:14Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-18T02:25Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-18T02:26Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-18T02:26Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-18T02:38Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-18T02:39Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-18T02:39Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-18T02:41Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-18T02:42Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-18T02:42Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-18T02:51Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-18T02:52Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-18T02:52Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-18T03:03Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-18T03:04Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-18T03:04Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-18T03:17Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-18T03:18Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-18T03:18Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-18T03:29Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-18T03:29Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-18T03:29Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-18T03:43Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-18T03:44Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-18T03:44Z afternoon_slate: engine slip --date 2026-09-17
+- 2026-09-18T03:56Z afternoon_slate: engine slate --date 2026-09-17 exit=2
+- 2026-09-18T03:57Z afternoon_slate: card publish --date 2026-09-17 exit=0
+- 2026-09-18T03:57Z afternoon_slate: engine slip --date 2026-09-17
