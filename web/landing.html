@@ -67,13 +67,38 @@
   <div class="hero__seam" aria-hidden="true"></div>
   <div class="hero__seam-sweep" aria-hidden="true"><span></span></div>
 
-  <div class="hero__scanner" data-rise data-delay="60">
+  <!-- THE HOOK, 2026-09-19. Owner: the hero used to open with a scanner
+       line and a demo matchup card, so the strongest thing this product
+       has -- that it publishes its own losses to a public, hash-chained
+       ledger -- was nowhere near the top. This is the first thing on the
+       page now; the scanner line and matchup card below still exist, but
+       they support this claim rather than open the page.
+
+       The record sentence carries the card-record hook -- moved here from
+       the "graded pick" section further down (tests/
+       test_landing_record_from_ledger.py requires that hook appear exactly
+       once). Filled from the ledger by landing.js's fillCardRecord(); the
+       fallback below names no figure on purpose, so a slow or failed
+       fetch never leaves a stale number on the page. -->
+  <div class="hero__claim" data-rise data-delay="40" data-hook="hero-claim">
+    <span class="eyebrow eyebrow--money">The part nobody else prints</span>
+    <h1 class="hero__claim-title">We publish every pick before first pitch —<br>and we publish the losses too.</h1>
+    <p class="hero__claim-body">Each one is written to a public, hash-chained record the moment it's made.
+      Nothing is re-graded, re-ranked or quietly removed afterwards.</p>
+    <p class="hero__claim-record" data-hook="hero-claim-record">
+      <span data-hook="card-record">Every graded night is posted on the record page, losses included.</span>
+    </p>
+    <p class="hero__claim-research"><span data-hook="research-count">37</span> pre-registered research ideas
+      tested against real games. Zero survived. We say so here, not only on a research page.</p>
+  </div>
+
+  <div class="hero__scanner" data-rise data-delay="120">
     <span class="hero__scanner-bracket" aria-hidden="true"></span>
-    <span class="hero__scanner-text" data-hook="hero-scanner-text">Tonight · 15 games · 11 books scanned</span>
+    <span class="hero__scanner-text" data-hook="hero-scanner-text">Example slate · 15 games · 11 books scanned</span>
     <span class="badge badge--outline chamfer chamfer--chip" data-hook="sample-slate-badge">Sample slate · demo data</span>
   </div>
 
-  <div class="hero__matchup" data-rise data-delay="170" data-hook="hero-matchup">
+  <div class="hero__matchup" data-rise data-delay="200" data-hook="hero-matchup">
     <div class="hero__team hero__team--away">
       <div class="hero__team-name" data-hook="hero-away-name">Pirates</div>
       <div class="hero__team-rule" data-hook="hero-away-rule" style="background:linear-gradient(90deg, var(--team-pit), transparent)"></div>
@@ -352,7 +377,11 @@
         published — nothing edited after the fact.</p>
     </div>
   </div>
-  <p class="section__lede" style="max-width:none">This is one of three picks from the first night this record graded, 2026-09-10: 2 wins, 1 loss. <span data-hook="card-record">Every night since is graded the same way and posted on the record page, losses included.</span></p>
+  <!-- The card-record hook lives in the hero now (data-hook must appear
+       exactly once, tests/test_landing_record_from_ledger.py) -- this
+       sentence keeps the dated, historical first-night fact and points
+       at the record page without re-claiming a hook. -->
+  <p class="section__lede" style="max-width:none">This is one of three picks from the first night this record graded, 2026-09-10: 2 wins, 1 loss. That result is exactly what shipped, and every night since has graded the same way, on the record page, losses included.</p>
 </section>
 
 <!-- QUICK / ADVANCED (Advanced appends beneath Quick, never replaces it) -->

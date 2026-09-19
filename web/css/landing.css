@@ -77,6 +77,31 @@
   background: linear-gradient(180deg, transparent, rgba(168, 244, 255, .85) 50%, transparent);
   animation: gseam var(--dur-gseam) var(--ease-seam) infinite;
 }
+/* ---- hero claim -- the hook itself, leads the page ------------------*/
+.hero__claim {
+  position: relative;
+  padding: var(--sp-13) var(--gutter-desktop) 0;
+  max-width: 760px;
+}
+.hero__claim-title {
+  font-family: var(--font-display); font-style: italic; font-weight: 800;
+  font-size: clamp(28px, 4vw, 44px); line-height: 1.05;
+  color: #FFFFFF; text-shadow: 0 10px 40px rgba(0, 0, 0, .55);
+  margin-top: var(--sp-5);
+}
+.hero__claim-body {
+  font-size: 16px; line-height: 1.55; color: rgba(255, 255, 255, .74);
+  margin-top: var(--sp-6); max-width: 600px;
+}
+.hero__claim-record {
+  font-family: var(--font-mono); font-size: 13.5px; line-height: 1.5;
+  color: var(--live-lit); margin-top: var(--sp-8); max-width: 560px;
+}
+.hero__claim-research {
+  font-size: 14px; line-height: 1.5; color: rgba(255, 255, 255, .58);
+  margin-top: var(--sp-4); max-width: 560px;
+}
+
 .hero__scanner {
   position: relative; display: flex; align-items: center; gap: var(--sp-5);
   padding: var(--sp-12) var(--gutter-desktop) 0;
@@ -364,6 +389,16 @@
 @media (max-width: 899px) {
   .section { padding: var(--sp-9) var(--gutter-mobile) 0; }
   .section__title { font-size: 34px; }
+  /* The claim is the first thing a phone visitor sees -- keep it tight so
+     the scanner line and matchup card (which now support the claim
+     instead of opening the page) are reachable within the first scroll,
+     not stacked below a full-height headline. */
+  .hero__claim { padding: var(--sp-9) var(--gutter-mobile) 0; }
+  .hero__claim-title { font-size: 27px; }
+  .hero__claim-body { font-size: 15px; margin-top: var(--sp-4); }
+  .hero__claim-record { margin-top: var(--sp-6); font-size: 13px; }
+  .hero__claim-research { font-size: 13.5px; }
+  .hero__scanner { padding-top: var(--sp-9); }
   .hero__matchup { flex-direction: column; align-items: stretch; gap: var(--sp-6); padding: var(--sp-9) var(--gutter-mobile) 0; }
   .hero__team--home { text-align: left; }
   .hero__team--home .hero__team-rule { margin-left: 0; }
