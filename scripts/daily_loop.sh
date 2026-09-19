@@ -260,33 +260,50 @@ if [ "$SETTLE_STATUS" -ne 0 ]; then
 fi
 echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: engine settle --date $YESTERDAY exit=$SETTLE_STATUS" >> "$RUN_NOTE"
 
-# THE CARD'S RECEIPTS. Grades yesterday's frozen card from the results just
-# ingested and appends the outcome as a SEPARATE ledger row -- the published
-# row is never touched, so the file reads as what was claimed and then what
-# happened, in that order. Idempotent: a date already settled is a no-op.
+# THE CARD'S RECEIPTS. Grades yesterday's frozen card, plus any date in the
+# last card_ledger.CARD_SETTLE_WINDOW_DAYS (7) days that is still published
+# and unsettled, and appends each outcome as a SEPARATE ledger row -- the
+# published row is never touched, so the file reads as what was claimed and
+# then what happened, in that order. Idempotent: a date already settled is
+# a no-op.
+#
+# SELF-HEALING WINDOW (R-2026-09-19), replacing a single `--date
+# $YESTERDAY` shot. A date used to get exactly one settle attempt, ever --
+# a late publish, a feed hiccup, a transient error orphaned it permanently.
+# That is exactly what happened to the only NFL pick ever published (Bills
+# -225, 2026-09-17): still ungraded two days later because nothing ever
+# tried that date again after the one morning its single attempt found
+# nothing published yet. `--recent` (src.appstate.card_ledger.settle_recent,
+# src.report.nfl_card.settle_recent) retries every such date automatically.
+#
+# COUNTS ONLY, PLUS A REASON PER MISS. A bare "nothing to settle" is what
+# hid the 2026-09-17 miss for two days -- see card_ledger.settle_recent's
+# own docstring. Each unsettled date this pass could not grade prints WHY:
+# no card published, no final score yet, or a results/pick mismatch worth
+# investigating as a join bug rather than a feed lag.
 #
 # ESCALATES. This is the number the product sells, and a record that
 # silently stops updating is a record that quietly drifts into flattering
-# itself. A day with no published card exits 0 and says so.
-echo "== card settle (yesterday, $YESTERDAY) =="
-CARDSETTLE_OUT=$(python3 -m src.cli card settle --date "$YESTERDAY" 2>&1)
+# itself. A day with no published card is a legible miss, not a failure.
+echo "== card settle (self-healing window: yesterday + unsettled last 7 days) =="
+CARDSETTLE_OUT=$(python3 -m src.cli card settle --recent 2>&1)
 CARDSETTLE_STATUS=$?
 echo "$CARDSETTLE_OUT" | sed 's/^/  /'
 if [ "$CARDSETTLE_STATUS" -ne 0 ]; then
-    echo "ESCALATE: card settle failed for $YESTERDAY (exit $CARDSETTLE_STATUS) -- the public record stops updating silently if this keeps failing. See src/appstate/card_ledger.py."
+    echo "ESCALATE: card settle failed (exit $CARDSETTLE_STATUS) -- the public record stops updating silently if this keeps failing. See src/appstate/card_ledger.py."
     type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "card settle failed" || true
 fi
-echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: card settle --date $YESTERDAY exit=$CARDSETTLE_STATUS" >> "$RUN_NOTE"
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: card settle --recent exit=$CARDSETTLE_STATUS" >> "$RUN_NOTE"
 
-echo "== nfl card settle (yesterday, $YESTERDAY) =="
-NFLSETTLE_OUT=$(python3 -m src.cli card settle --sport nfl --date "$YESTERDAY" 2>&1)
+echo "== nfl card settle (self-healing window: yesterday + unsettled last 7 days) =="
+NFLSETTLE_OUT=$(python3 -m src.cli card settle --sport nfl --recent 2>&1)
 NFLSETTLE_STATUS=$?
 echo "$NFLSETTLE_OUT" | sed 's/^/  /'
 if [ "$NFLSETTLE_STATUS" -ne 0 ]; then
-    echo "ESCALATE: nfl card settle failed for $YESTERDAY (exit $NFLSETTLE_STATUS)"
+    echo "ESCALATE: nfl card settle failed (exit $NFLSETTLE_STATUS)"
     type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "nfl card settle failed" || true
 fi
-echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: nfl card settle --date $YESTERDAY exit=$NFLSETTLE_STATUS" >> "$RUN_NOTE"
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: nfl card settle --recent exit=$NFLSETTLE_STATUS" >> "$RUN_NOTE"
 
 echo "== tennis discover =="
 TENNIS_OUT=$(python3 -m src.cli tennis discover 2>&1) || true

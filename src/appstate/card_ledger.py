@@ -44,7 +44,7 @@ from __future__ import annotations
 import hashlib
 import os
 from dataclasses import asdict as _asdict
-from datetime import datetime, timedelta, timezone
+from datetime import date as date_cls, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Mapping, Optional, Sequence
 
@@ -950,6 +950,198 @@ def settle(date: str, results_by_game_pk: Mapping, *,
                           if total_staked else None),
     }
     return _ledger(resolved_path).append(payload)
+
+
+# ---------------------------------------------------------------------------
+# Self-healing settle window (owner directive 2026-09-19)
+# ---------------------------------------------------------------------------
+#
+# WHY THIS EXISTS. scripts/daily_loop.sh used to call `card settle --date
+# $YESTERDAY` exactly once, every morning, for MLB and NFL alike. A date
+# gets exactly one attempt for the rest of time -- a late publish, a feed
+# outage, a transient error, and that date's picks are orphaned forever,
+# silently, because the loop moves on and never looks at that date again.
+# This is what happened to the only NFL pick ever published (Bills -225,
+# 2026-09-17): its published row and settled row were both checked directly
+# against the ledger two days after the game finished -- the published row
+# existed, the settled row did not. The likely mechanism (never fully
+# provable after the fact, since nothing logs WHEN a card was published):
+# the card was published sometime on 2026-09-17 or after the single
+# 2026-09-18 settle attempt already ran and reported "nothing to settle"
+# (honestly true at that moment -- nothing WAS published yet when it ran),
+# and no later run ever tried 2026-09-17 again.
+#
+# Modeled on src/appstate/live_ledger.py's settle_recent(): walk yesterday,
+# plus every date in the window that still has a published row and no
+# settled row, and retry it. THE ONE THING THAT DOES NOT TRANSLATE from
+# live_ledger: its VOID-after-7-days rule exists because a live CANDIDATE
+# can sit UNSETTLED indefinitely (settle() there refuses to guess). A
+# published CARD pick has no such intermediate state -- `settle()` above
+# grades every pick the moment it runs, VOIDing on the spot any pick whose
+# game has no final score in whatever results map it was handed (see
+# `grade_pick`). That is exactly the behaviour this window must NOT trigger
+# on a transient miss: if `settle()` ran here with an empty or incomplete
+# results map just because the feed had not posted a final yet, it would
+# permanently VOID a game that later would have graded WIN or LOSS, and the
+# only way anyone would ever notice is by re-deriving it from a box score
+# by hand. So the real fix is upstream of settle() -- `_settle_one_date`
+# below refuses to call it at all until it can see evidence that AT LEAST
+# ONE of this date's own picks is actually present in the results map; see
+# `_pick_lookup_keys` and the three refusal reasons.
+CARD_SETTLE_WINDOW_DAYS = 7
+
+# The four ways a date, checked on any one pass of settle_recent, does not
+# come away settled -- each distinguishable in the output, which is the
+# whole point (src/report/card.py's `_empty_reason` and src/joins.py's
+# `report_join_result` are the two existing places in this repo that draw
+# exactly this kind of distinction, and this follows their shape: an
+# honestly quiet state prints one thing, a shape that smells like a code
+# bug prints another). A bare "nothing to settle" collapses all four into
+# one sentence, which is what let the 2026-09-17 NFL miss hide for two days.
+REASON_NO_PUBLISHED_ROW = "no card was published for this date"
+REASON_ALREADY_SETTLED = "already settled"
+REASON_NO_RESULTS_YET = ("results feed returned no final score yet for any of this "
+                         "date's {n_picks} pick(s)")
+REASON_RESULTS_UNMATCHED = ("results feed returned {n_results} final(s) but none "
+                            "matched this date's {n_picks} pick(s) -- check the join, "
+                            "not the feed (see src/joins.py)")
+REASON_FEED_ERROR = "results feed error: {error}"
+
+
+def _pick_lookup_keys(published: Mapping) -> set:
+    """The set of lookup keys `settle()` would try for one published row's
+    GAME and TOTAL picks -- game_id for a non-MLB sport, game_pk for MLB,
+    both stringified, exactly like `settle`'s own `results_map.get(key) or
+    results_map.get(str(key))` (see `_score`'s docstring for why the str
+    fallback exists at all: the results store round-trips through
+    CSV/JSON and disagrees on int vs str).
+
+    PROP PICKS ARE DELIBERATELY EXCLUDED. They grade from `prop_box_rows`,
+    a different results source entirely (see `grade_prop_pick`) -- folding
+    their keys in here would make a date with only prop picks look
+    unsettleable whenever the (irrelevant) game results map is empty.
+    """
+    keys = set()
+    for pick in list(published.get("picks") or ()) + list(published.get("total_picks") or ()):
+        key = pick.get("game_id") if pick.get("sport") else pick.get("game_pk")
+        if key is not None:
+            keys.add(str(key))
+    return keys
+
+
+def _settle_one_date(date: str, *, path: str, sport: Optional[str],
+                     fetch_results, now: Optional[str],
+                     prop_box_rows_for_date) -> dict:
+    """One date's worth of settle_recent: decide whether `settle()` can
+    honestly run today, and if so, run it. Returns `{"date", "settled",
+    "reason"}` on a miss, or `{"date", "settled": True, "row": ...}` on a
+    grade -- never raises; a results-fetch failure is caught and reported
+    as REASON_FEED_ERROR so one bad night's feed does not take the whole
+    daily loop down with it (the same "enrichment never blocks" contract
+    scripts/daily_loop.sh already applies to everything else it wraps in
+    its own try/except).
+    """
+    published = published_row(date, path=path)
+    if published is None:
+        return {"date": date, "settled": False, "reason": REASON_NO_PUBLISHED_ROW}
+    if settled_row(date, path=path) is not None:
+        return {"date": date, "settled": False, "reason": REASON_ALREADY_SETTLED}
+
+    try:
+        results = fetch_results(date) or {}
+    except Exception as exc:  # feed down, not configured, network -- stay retryable
+        return {"date": date, "settled": False,
+                "reason": REASON_FEED_ERROR.format(error=exc)}
+
+    pick_keys = _pick_lookup_keys(published)
+    if pick_keys:
+        result_keys = {str(k) for k in results.keys()}
+        matched = pick_keys & result_keys
+        if not result_keys:
+            return {"date": date, "settled": False,
+                    "reason": REASON_NO_RESULTS_YET.format(n_picks=len(pick_keys))}
+        if not matched:
+            return {"date": date, "settled": False,
+                    "reason": REASON_RESULTS_UNMATCHED.format(
+                        n_results=len(result_keys), n_picks=len(pick_keys))}
+
+    prop_box_rows = prop_box_rows_for_date(date) if prop_box_rows_for_date else None
+    row = settle(date, results, prop_box_rows=prop_box_rows, now=now,
+                 path=path, sport=sport)
+    if row is None:
+        # The guards above already confirmed published-and-unsettled, so
+        # this should not happen -- but a walker that ASSUMES success
+        # instead of checking it is exactly the kind of silent gap this
+        # whole feature exists to remove.
+        return {"date": date, "settled": False, "reason": REASON_ALREADY_SETTLED}
+    return {"date": date, "settled": True, "row": row}
+
+
+def settle_recent(*, sport: Optional[str] = None, fetch_results,
+                  path: Optional[str] = None, now: Optional[str] = None,
+                  today: Optional[str] = None,
+                  window_days: int = CARD_SETTLE_WINDOW_DAYS,
+                  prop_box_rows_for_date=None) -> dict:
+    """What a daily loop should call instead of one `settle()` per date
+    (R-2026-09-19, the card ledger's counterpart to
+    `live_ledger.settle_recent`): grade yesterday, plus every date in the
+    last `window_days` days that still carries a published row and no
+    settled row.
+
+    `fetch_results(date_str) -> Mapping` is called once per date this pass
+    actually checks -- NEVER once per date in the whole window regardless
+    of need, matching `settle_mlb_date`'s own per-date call. THE CREDIT
+    RULE THIS EXISTS TO PROTECT: for a source that charges per call (the
+    Odds API's `/scores` endpoint NFL settling reads, 1 credit or 2 with
+    `daysFrom`), the caller is expected to close over one shared fetch and
+    serve every date's call from it -- see `src/report/nfl_card.py`'s own
+    `settle_recent`, which fetches `daysFrom=3` scores exactly once no
+    matter how many stale dates this window walks, and reuses that same
+    list for all of them. A naive per-date fetch here would have turned a
+    7-day retry window into up to 7x the credit cost of the single-shot
+    call it replaces -- the opposite of what a credit-aware retry should
+    do. MLB's own `fetch_results` (`history.read_results()`) is a free
+    local read and has no such constraint, but the interface is identical
+    either way so a caller never has to reason about which sport it is.
+
+    A DATE OLDER THAN OFFSET 1 IS ONLY CHECKED WHEN IT STILL NEEDS IT --
+    published and not yet settled -- mirroring `live_ledger.settle_recent`'s
+    own "a settled week does not re-run the fetch seven times a night for
+    nothing". Yesterday (offset 1) is always checked regardless, so a day
+    with nothing published yet still gets an honest REASON_NO_PUBLISHED_ROW
+    in the output instead of silently vanishing from it.
+
+    Returns `{"dates_checked", "settled", "misses": [{"date","reason"}]}`.
+    `misses` is the legible half of this feature -- see the module docstring
+    above `CARD_SETTLE_WINDOW_DAYS` for why a bare count was what hid the
+    2026-09-17 NFL miss for two days.
+    """
+    resolved_path = path if path is not None else store_path(sport)
+    moment = _parse_utc(now) or datetime.now(timezone.utc)
+    anchor = date_cls.fromisoformat(today) if today else moment.date()
+    now_str = now if now else moment.isoformat()
+
+    checked = []
+    for offset in range(1, window_days + 1):
+        d = (anchor - timedelta(days=offset)).isoformat()
+        if offset != 1:
+            if published_row(d, path=resolved_path) is None:
+                continue
+            if settled_row(d, path=resolved_path) is not None:
+                continue
+        outcome = _settle_one_date(
+            d, path=resolved_path, sport=sport, fetch_results=fetch_results,
+            now=now_str, prop_box_rows_for_date=prop_box_rows_for_date)
+        checked.append(outcome)
+
+    settled_count = sum(1 for o in checked if o["settled"])
+    misses = [{"date": o["date"], "reason": o["reason"]}
+             for o in checked if not o["settled"]]
+    return {
+        "dates_checked": len(checked),
+        "settled": settled_count,
+        "misses": misses,
+    }
 
 
 # ---------------------------------------------------------------------------

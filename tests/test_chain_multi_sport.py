@@ -154,7 +154,7 @@ class DailyLoopHasMultiSportSteps(unittest.TestCase):
     def test_nfl_settle_after_mlb_settle(self):
         """NFL settle comes immediately after MLB settle."""
         code = _code(DAILY)
-        mlb_idx = code.index("== card settle (yesterday")
+        mlb_idx = code.index("== card settle (self-healing window")
         nfl_idx = code.index("== nfl card settle")
         self.assertLess(mlb_idx, nfl_idx)
 
@@ -188,10 +188,24 @@ class DailyLoopHasMultiSportSteps(unittest.TestCase):
         self.assertTrue(tennis_line.rstrip().endswith("|| true"), tennis_line)
         self.assertTrue(live_line.rstrip().endswith("|| true"), live_line)
 
-    def test_nfl_settle_uses_yesterday_date(self):
-        """NFL settle references $YESTERDAY."""
+    def test_nfl_settle_uses_the_self_healing_window_not_a_single_date(self):
+        """R-2026-09-19: NFL settle used to be pinned to
+        `--date "$YESTERDAY"`, which meant a date published after that
+        morning's one and only attempt (exactly what happened to the only
+        NFL pick ever published, Bills -225 on 2026-09-17) sat ungraded
+        forever -- nothing ever went back for it. `card settle --sport nfl
+        --recent` walks yesterday PLUS any date in the last week that is
+        still published and unsettled (src.report.nfl_card.settle_recent),
+        so a missed night heals itself on the next run -- same fix, same
+        reasoning as `test_live_settle_takes_no_date_because_it_self_heals`
+        above. Passing a fixed `--date` would re-introduce the hole, so
+        this asserts `--recent` is present and `--date` is absent from the
+        NFL settle line specifically."""
         code = _code(DAILY)
-        self.assertIn('card settle --sport nfl --date "$YESTERDAY"', code)
+        nfl_line = next(l for l in code.splitlines()
+                        if "card settle --sport nfl" in l)
+        self.assertIn("--recent", nfl_line)
+        self.assertNotIn("--date", nfl_line)
 
     def test_live_settle_takes_no_date_because_it_self_heals(self):
         """Live settle passes NO date, on purpose (R16-L7).

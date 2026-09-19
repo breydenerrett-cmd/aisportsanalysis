@@ -18,6 +18,7 @@ from typing import Optional
 from src.analysis import nfl_card
 from src.appstate import card_ledger
 from src.pipeline import nfl_slate
+from src.providers import odds as odds_provider
 
 
 def _empty_reason(entries: Optional[list]) -> str:
@@ -103,6 +104,23 @@ def card_for_date(date_str: str, *, now: Optional[datetime] = None,
     if entries:
         week = entries[0].get("week")
 
+    # PROVENANCE. Same four fields src/appstate/card_ledger.py's `publish()`
+    # reads off an MLB card (`basis`, `disclaimer`, `model_id`,
+    # `calibrated`) -- added 2026-09-19 after every published NFL row was
+    # found to carry null for all four (see src/analysis/nfl_card.py's
+    # MODEL_ID/CARD_BASIS/CARD_DISCLAIMER docstring). `calibrated` is always
+    # False and `calibration` always None here, honestly: NFL_CARD_V1 is a
+    # market-consensus rule with no fitted probability curve, unlike MLB's
+    # `strength.Calibration` -- there is nothing to calibrate and claiming
+    # otherwise would be worse than the null it replaces.
+    provenance = {
+        "basis": nfl_card.CARD_BASIS,
+        "disclaimer": nfl_card.CARD_DISCLAIMER,
+        "model_id": nfl_card.MODEL_ID,
+        "calibrated": False,
+        "calibration": None,
+    }
+
     if picks:
         return {
             "date": date_str,
@@ -118,6 +136,7 @@ def card_for_date(date_str: str, *, now: Optional[datetime] = None,
             "generated_utc": now.isoformat(),
             "week": week,
             "games_considered": games_considered,
+            **provenance,
         }
     else:
         return {
@@ -134,6 +153,7 @@ def card_for_date(date_str: str, *, now: Optional[datetime] = None,
             "generated_utc": now.isoformat(),
             "week": week,
             "games_considered": games_considered,
+            **provenance,
         }
 
 
@@ -211,3 +231,68 @@ def settle_for_date(date_str: str, *, now: Optional[datetime] = None,
     return card_ledger.settle(date_str, results, sport="nfl",
                              now=now.isoformat() if now is not None else None,
                              path=path)
+
+
+def _cached_scores_fetch(*, scores=None):
+    """A `fetch_results(date_str)` closure for `card_ledger.settle_recent`
+    that hits the odds API's `/scores` endpoint AT MOST ONCE, however many
+    stale dates a settle_recent() pass ends up checking.
+
+    THE CREDIT RULE THIS EXISTS TO PROTECT (owner directive 2026-09-19):
+    `odds.fetch_scores(sport="nfl", days_from=3)` costs 2 credits per call.
+    `nfl_slate.results_for_date`'s own default fetches fresh every time it
+    is called with no `scores=` -- exactly right for the old single-shot
+    settle (one date, one call), exactly wrong for a 7-day retry window,
+    which would otherwise re-buy the same handful of recent scores up to
+    7 times a night. This closure fetches once, on the FIRST date that
+    actually needs it (a fully caught-up week costs zero calls), and every
+    later date in the same pass reads the cached list.
+
+    `scores` lets a caller (tests, or a future caller with its own fetch
+    already in hand) inject the normalized score list directly and skip the
+    network path entirely -- when given, no API call is ever made.
+    """
+    cache: dict = {}
+
+    def fetch(date_str: str) -> dict:
+        if "scores" not in cache:
+            if scores is not None:
+                cache["scores"] = scores
+            else:
+                scores_raw = odds_provider.fetch_scores(sport="nfl", days_from=3)
+                cache["scores"] = [odds_provider.normalize_score(s) for s in scores_raw]
+        return nfl_slate.results_for_date(date_str, scores=cache["scores"])
+
+    return fetch
+
+
+def settle_recent(*, now: Optional[datetime] = None, today: Optional[str] = None,
+                  path: Optional[str] = None, window_days: Optional[int] = None,
+                  fetch_results=None) -> dict:
+    """R-2026-09-19: what scripts/daily_loop.sh should call instead of one
+    `settle_for_date(--date $YESTERDAY)` a night -- grades yesterday's NFL
+    card plus any date in the last week that is still published and
+    unsettled, self-healing the single-shot gap that left the 2026-09-17
+    Bills pick ungraded two days after the game (see
+    `src.appstate.card_ledger`'s own `settle_recent` docstring for the full
+    story and why a bare "nothing to settle" is not printed by this path).
+
+    `fetch_results` is injectable so a test (or a future caller) can supply
+    canned per-date results with no network or API key required; defaults
+    to `_cached_scores_fetch()`, which fetches the Odds API's NFL scores at
+    most once for the whole pass regardless of how many dates it checks.
+
+    Returns card_ledger.settle_recent's own shape:
+    `{"dates_checked", "settled", "misses": [{"date","reason"}]}`.
+    """
+    kwargs = {}
+    if window_days is not None:
+        kwargs["window_days"] = window_days
+    return card_ledger.settle_recent(
+        sport="nfl",
+        fetch_results=fetch_results or _cached_scores_fetch(),
+        path=path,
+        now=now.isoformat() if now is not None else None,
+        today=today,
+        **kwargs,
+    )

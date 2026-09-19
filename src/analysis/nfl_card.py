@@ -40,6 +40,33 @@ MAX_PICKS = 5
 
 NFL_CARD_RULE = "NFL_CARD_V1"
 
+# PROVENANCE, published on every card row so a reader can check what made
+# the pick the same way an MLB row lets them (src/appstate/card_ledger.py's
+# FROZEN_FIELDS/publish() read `basis`/`disclaimer`/`model_id`/`calibrated`
+# straight off whatever card dict is handed to `publish()`). Distinct from
+# MLB's own strings (src.analysis.strength.MODEL_ID, daily_card.CARD_BASIS/
+# CARD_DISCLAIMER) because the rule itself is different: no fitted
+# probability model, no calibration curve -- a market-consensus read that a
+# separate team-strength model either agrees or splits with. Until
+# 2026-09-19 `src/report/nfl_card.py`'s live card payload never set any of
+# these four fields at all, so every published NFL row on the record had a
+# null `basis`, `disclaimer`, `model_id` and `calibrated` where an MLB row
+# has real values -- a slip on the public record nobody could check.
+MODEL_ID = "nfl_market_consensus_v1"
+CARD_BASIS = (
+    "The side is whichever the de-vigged multi-book market consensus makes "
+    "more likely. Our own team-strength model has to agree that side is "
+    "more likely, or the pick is labelled SPLIT. The bet is always the "
+    "moneyline. Ranked by market confidence."
+)
+CARD_DISCLAIMER = (
+    "These are reads, not guarantees, and they are not claims of positive "
+    "expected value. Backing the more likely side wins most individual bets "
+    "and shows no positive estimated return under the market benchmark. "
+    "Every pick here is published before kickoff and graded win or lose. "
+    "NFL_CARD_V1 is experimental -- performance is still being evaluated."
+)
+
 
 def _fmt_price(american) -> str:
     """Format American odds. "-205" or "+118"."""

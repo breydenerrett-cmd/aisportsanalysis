@@ -126,7 +126,7 @@ class DailyLoopScriptWiringTest(unittest.TestCase):
 
     def test_multi_sport_steps_present_in_order(self):
         """NFL, tennis and live steps run after MLB card settle."""
-        mlb_settle_pos = self.text.index("== card settle (yesterday")
+        mlb_settle_pos = self.text.index("== card settle (self-healing window")
         nfl_settle_pos = self.text.index("== nfl card settle")
         tennis_pos = self.text.index("== tennis discover")
         live_settle_pos = self.text.index("== live settle")

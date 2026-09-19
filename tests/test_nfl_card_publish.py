@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
+from src.appstate import card_ledger
 from src.pipeline import nfl_slate
 from src.report import nfl_card
 
@@ -322,6 +323,188 @@ class ResultsForDateMatchingTests(unittest.TestCase):
             "g1": {"home_score": 24, "away_score": 20, "completed": True},
         })
         self.assertNotIn("g2", results)
+
+
+class NFLCardProvenanceTests(unittest.TestCase):
+    """Owner directive 2026-09-19: a published NFL row must carry the same
+    provenance fields an MLB row does -- basis, disclaimer, model_id,
+    calibrated. A slip on the public record nobody can check the basis of
+    is not a slip anyone can audit.
+
+    PARENT-COMMIT BEHAVIOUR: before this fix, `card_for_date`'s live-card
+    dict literal set no "basis"/"disclaimer"/"model_id"/"calibrated" keys
+    at all, so every one of the assertions below failed -- including on the
+    real 2026-09-17 Bills -225 row, the only NFL pick ever published.
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.card_path = Path(self.tmpdir.name) / "cards_nfl.jsonl"
+        self.now = datetime(2026, 9, 14, 16, 0, 0, tzinfo=timezone.utc)
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
+
+    def _entry(self):
+        return {
+            "game_id": "2026_09_DET_BUF", "week": 1,
+            "home_team": "Buffalo Bills", "away_team": "Detroit Lions",
+            "home_code": "BUF", "away_code": "DET",
+            "kickoff_utc": (self.now + timedelta(hours=6)).isoformat(),
+            "neutral_site": False,
+            "h2h_quotes": [
+                {"book": f"book{i}", "home_price": -300, "away_price": 250,
+                 "observed_utc": self.now.isoformat()}
+                for i in range(6)
+            ],
+            "spread_quotes": [], "model": None,
+            "grade": {"ready": True, "reasons": []},
+        }
+
+    def test_published_row_carries_provenance_like_mlb(self):
+        row = nfl_card.publish_for_date(
+            "2026-09-14", now=self.now, entries=[self._entry()],
+            path=str(self.card_path))
+
+        self.assertNotIn("published", row)  # a real publish, not the empty shape
+        self.assertIsNotNone(row.get("basis"))
+        self.assertIsNotNone(row.get("disclaimer"))
+        self.assertIsNotNone(row.get("model_id"))
+        self.assertIsInstance(row.get("calibrated"), bool)
+
+        from src.analysis import nfl_card as nfl_card_analysis
+        self.assertEqual(row["basis"], nfl_card_analysis.CARD_BASIS)
+        self.assertEqual(row["disclaimer"], nfl_card_analysis.CARD_DISCLAIMER)
+        self.assertEqual(row["model_id"], nfl_card_analysis.MODEL_ID)
+
+
+class NFLCardSettleRecentTests(unittest.TestCase):
+    """R-2026-09-19: nfl_card.settle_recent, the self-healing settle window
+    that fixes the exact failure the only NFL pick ever published hit --
+    published after the single daily settle attempt already ran and found
+    nothing to settle, then never retried, so it sat ungraded for two days.
+    Every provider seam is mocked or injected; no network, no real clock
+    beyond the `now`/`today` each test passes in.
+    """
+
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.card_path = Path(self.tmpdir.name) / "cards_nfl.jsonl"
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
+
+    def _publish(self, date, game_id, now):
+        entry = {
+            "game_id": game_id, "week": 2,
+            "home_team": "Buffalo Bills", "away_team": "New York Jets",
+            "home_code": "BUF", "away_code": "NYJ",
+            "kickoff_utc": (now + timedelta(hours=6)).isoformat(),
+            "neutral_site": False,
+            "h2h_quotes": [
+                {"book": f"book{i}", "home_price": -225, "away_price": 185,
+                 "observed_utc": now.isoformat()}
+                for i in range(6)
+            ],
+            "spread_quotes": [], "model": None,
+            "grade": {"ready": True, "reasons": []},
+        }
+        return nfl_card.publish_for_date(
+            date, now=now, entries=[entry], path=str(self.card_path))
+
+    def test_late_publish_settles_on_a_later_pass_not_the_first(self):
+        """The exact 2026-09-17 story: the card publishes on game day,
+        AFTER the morning a single-shot settle would already have run and
+        found nothing published. The old single-`--date` code never tried
+        that date again. This one does, on the very next scheduled pass."""
+        game_day = datetime(2026, 9, 17, 23, 0, 0, tzinfo=timezone.utc)
+        self._publish("2026-09-17", "nfl_bills_jets", now=game_day)
+
+        # Pass 1 (2026-09-18 morning): no final score in the feed yet.
+        totals1 = nfl_card.settle_recent(
+            path=str(self.card_path), today="2026-09-18",
+            fetch_results=lambda d: {})
+        self.assertEqual(totals1["settled"], 0)
+        miss = next(m for m in totals1["misses"] if m["date"] == "2026-09-17")
+        self.assertIn("no final score yet", miss["reason"])
+        self.assertIsNone(card_ledger.settled_row(
+            "2026-09-17", path=str(self.card_path), sport="nfl"))
+
+        # Pass 2 (2026-09-19 morning): the final score has posted.
+        totals2 = nfl_card.settle_recent(
+            path=str(self.card_path), today="2026-09-19",
+            fetch_results=lambda d: (
+                {"nfl_bills_jets": {"home_score": 27, "away_score": 13}}
+                if d == "2026-09-17" else {}))
+        self.assertEqual(totals2["settled"], 1)
+        settled = card_ledger.settled_row(
+            "2026-09-17", path=str(self.card_path), sport="nfl")
+        self.assertIsNotNone(settled)
+        self.assertEqual(settled["wins"], 1)
+
+    def test_odds_api_scores_fetched_at_most_once_per_pass(self):
+        """CREDIT RULE (owner directive 2026-09-19): odds.fetch_scores
+        costs 2 credits with daysFrom. Two different stale dates checked in
+        ONE settle_recent() pass must cost exactly one call, not one per
+        date -- see `_cached_scores_fetch`'s docstring. A naive per-date
+        fetch would turn a 7-day retry window into up to 7x the credits a
+        single-shot settle used to spend."""
+        now1 = datetime(2026, 9, 15, 23, 0, 0, tzinfo=timezone.utc)
+        now2 = datetime(2026, 9, 17, 23, 0, 0, tzinfo=timezone.utc)
+        self._publish("2026-09-15", "nfl_a", now=now1)
+        self._publish("2026-09-17", "nfl_b", now=now2)
+
+        calls = {"n": 0}
+
+        def fake_fetch_scores(*, sport, days_from):
+            calls["n"] += 1
+            return [
+                {"id": "nfl_a", "completed": True,
+                 "home_team": "Buffalo Bills", "away_team": "New York Jets",
+                 "scores": [{"name": "Buffalo Bills", "score": "20"},
+                            {"name": "New York Jets", "score": "10"}]},
+                {"id": "nfl_b", "completed": True,
+                 "home_team": "Buffalo Bills", "away_team": "New York Jets",
+                 "scores": [{"name": "Buffalo Bills", "score": "27"},
+                            {"name": "New York Jets", "score": "13"}]},
+            ]
+
+        def fake_schedule_for_date(date_str):
+            game_id = {"2026-09-15": "nfl_a", "2026-09-17": "nfl_b"}.get(date_str)
+            if not game_id:
+                return []
+            return [{"game_id": game_id, "away_team": "NYJ", "home_team": "BUF",
+                    "week": 2, "start_utc": "2026-09-16T00:00:00Z"}]
+
+        with mock.patch("src.report.nfl_card.odds_provider.fetch_scores",
+                        side_effect=fake_fetch_scores), \
+             mock.patch("src.providers.nfl.schedule_for_date",
+                        side_effect=fake_schedule_for_date):
+            totals = nfl_card.settle_recent(
+                path=str(self.card_path), today="2026-09-19")
+
+        self.assertEqual(calls["n"], 1)
+        self.assertEqual(totals["settled"], 2)
+
+    def test_fetch_error_is_a_legible_miss_not_a_crash(self):
+        """A results-feed error (not configured, network down) must not
+        propagate out of settle_recent and must not silently VOID the pick
+        -- it stays unsettled, retryable next pass, with a reason naming
+        the error."""
+        now = datetime(2026, 9, 17, 23, 0, 0, tzinfo=timezone.utc)
+        self._publish("2026-09-17", "nfl_c", now=now)
+
+        def raises(date_str):
+            raise RuntimeError("ODDS_API_KEY not set")
+
+        totals = nfl_card.settle_recent(
+            path=str(self.card_path), today="2026-09-18", fetch_results=raises)
+
+        self.assertEqual(totals["settled"], 0)
+        miss = next(m for m in totals["misses"] if m["date"] == "2026-09-17")
+        self.assertIn("ODDS_API_KEY not set", miss["reason"])
+        self.assertIsNone(card_ledger.settled_row(
+            "2026-09-17", path=str(self.card_path), sport="nfl"))
 
 
 if __name__ == "__main__":

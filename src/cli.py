@@ -2861,6 +2861,93 @@ def _record_from_row(cls, row):
     return cls(**{k: v for k, v in row.items() if k in valid})
 
 
+def _mlb_fetch_results_recent():
+    """A `fetch_results(date_str)` closure for
+    `card_ledger.settle_recent` (MLB, R-2026-09-19).
+
+    `history.read_results()` is a free local read (already ingested by an
+    earlier daily_loop.sh step), so unlike NFL's odds-API scores there is no
+    credit reason to share one fetch across dates -- this caches it anyway,
+    once per settle_recent() pass, purely to avoid re-parsing the same file
+    off disk once per date in the retry window.
+
+    FILTERED PER DATE, deliberately, not returned as one global game_pk map
+    -- an empty per-date slice is what should read as "not ingested yet for
+    this date" (card_ledger.REASON_NO_RESULTS_YET); a global map filtered
+    only once would look non-empty the moment ANY date has ever settled,
+    misreporting every real miss as a join mismatch instead. Mirrors the
+    exact by_pk construction `cmd_card`'s own MLB settle branch has used
+    since 2026-09-10 (both raw and str(game_pk), the results store
+    round-trips through CSV and disagrees on int vs str -- see
+    card_ledger._score's docstring).
+    """
+    cache: dict = {}
+
+    def fetch(date_str: str) -> dict:
+        if "store" not in cache:
+            from src.pipeline import history as history_mod
+            cache["store"] = history_mod.read_results() or {}
+        by_pk = {}
+        for row in cache["store"].values():
+            if str(row.get("date")) == date_str:
+                pk = row.get("game_pk")
+                by_pk[pk] = row
+                by_pk[str(pk)] = row
+                try:
+                    by_pk[int(pk)] = row
+                except (TypeError, ValueError):
+                    pass
+        return by_pk
+
+    return fetch
+
+
+def _mlb_prop_box_rows_for_date(date_str: str) -> list:
+    """This date's batter box rows for prop grading, or `[]` on a missing/
+    unreadable store -- the same fallback `cmd_card`'s MLB settle branch
+    already uses (see its own comment on `boxscores_mod.BoxscoresError`)."""
+    from src.pipeline import boxscores as boxscores_mod
+    try:
+        return boxscores_mod.read(processed_path(f"boxscores_{date_str[:4]}.jsonl"))
+    except boxscores_mod.BoxscoresError:
+        return []
+
+
+def _cmd_card_settle_recent(sport: str) -> int:
+    """`card settle --recent [--sport mlb|nfl]`: the self-healing settle
+    window (owner directive 2026-09-19) -- grades yesterday plus any date
+    in the last `card_ledger.CARD_SETTLE_WINDOW_DAYS` days that is still
+    published and unsettled, instead of the old single-shot `--date
+    $YESTERDAY` that let the 2026-09-17 NFL pick sit ungraded for two days
+    once its publish landed after that morning's one and only attempt.
+
+    COUNTS ONLY, plus a per-date reason for every miss -- see
+    `src.appstate.card_ledger.settle_recent`'s own docstring for why a bare
+    "nothing to settle" is exactly what hid that miss. This is the print
+    scripts/daily_loop.sh's card-settle steps now run.
+    """
+    from src.appstate import card_ledger
+
+    if sport == "nfl":
+        from src.report import nfl_card as nfl_card_mod
+        totals = nfl_card_mod.settle_recent()
+    elif sport == "mlb":
+        totals = card_ledger.settle_recent(
+            sport="mlb", fetch_results=_mlb_fetch_results_recent(),
+            prop_box_rows_for_date=_mlb_prop_box_rows_for_date)
+    else:
+        print(f"ERROR: --recent is not wired for --sport {sport} yet "
+              "(only mlb and nfl publish through a card ledger today)",
+              file=sys.stderr)
+        return EXIT_ERROR
+
+    print(f"dates_checked={totals['dates_checked']} "
+          f"settled={totals['settled']} misses={len(totals['misses'])}")
+    for miss in totals["misses"]:
+        print(f"  MISS {miss['date']}: {miss['reason']}")
+    return EXIT_OK
+
+
 def cmd_card(args) -> int:
     """`card publish|settle|record`: THE CARD's frozen public receipts.
 
@@ -2941,7 +3028,17 @@ def cmd_card(args) -> int:
         print(f"  chain: {'intact' if getattr(chain, 'ok', True) else 'BROKEN'}")
         return EXIT_OK
 
+    if sub == "settle" and getattr(args, "recent", False):
+        # R-2026-09-19: the self-healing window, replacing single-shot
+        # `--date $YESTERDAY`. Checked before `date_str = args.date` below
+        # -- --recent does not require --date at all.
+        return _cmd_card_settle_recent(sport)
+
     date_str = args.date
+    if sub == "settle" and not date_str:
+        print("ERROR: --date is required unless --recent is given",
+              file=sys.stderr)
+        return EXIT_ERROR
 
     if sub == "settle":
         # Handle NFL card settle
@@ -3958,7 +4055,15 @@ def build_parser() -> argparse.ArgumentParser:
     # change.
     card_settle = card_sub.add_parser(
         "settle", help="grade one date's published card from final scores")
-    card_settle.add_argument("--date", required=True, help="YYYY-MM-DD")
+    card_settle.add_argument(
+        "--date", default=None,
+        help="YYYY-MM-DD (required unless --recent is given)")
+    card_settle.add_argument(
+        "--recent", action="store_true",
+        help="self-healing window (R-2026-09-19): settle yesterday plus "
+             "any date in the last card_ledger.CARD_SETTLE_WINDOW_DAYS "
+             "days that is still published and unsettled, instead of one "
+             "single-shot --date attempt. Ignores --date. mlb and nfl only.")
     card_settle.add_argument(
         "--sport", default="mlb", choices=sport_choices,
         help="which sport (default: mlb)")
