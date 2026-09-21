@@ -99,6 +99,7 @@ class TestTennisCapture(unittest.TestCase):
 
             result = tennis_capture.run(
                 now=now,
+                paused=False,
                 keys=[key1, key2],
                 list_events=mock_list_events,
                 fetch_normalized=mock_fetch_normalized,
@@ -161,6 +162,7 @@ class TestTennisCapture(unittest.TestCase):
 
             result = tennis_capture.run(
                 now=now,
+                paused=False,
                 keys=[key],
                 list_events=mock_list_events,
                 fetch_normalized=mock.Mock(),  # Should not be called
@@ -224,6 +226,7 @@ class TestTennisCapture(unittest.TestCase):
             # First run
             result1 = tennis_capture.run(
                 now=now,
+                paused=False,
                 keys=[key],
                 list_events=mock_list_events,
                 fetch_normalized=mock_fetch_normalized,
@@ -239,6 +242,7 @@ class TestTennisCapture(unittest.TestCase):
             # Second run at same time
             result2 = tennis_capture.run(
                 now=now,
+                paused=False,
                 keys=[key],
                 list_events=mock_list_events,
                 fetch_normalized=mock_fetch_normalized,
@@ -288,6 +292,7 @@ class TestTennisCapture(unittest.TestCase):
 
             result = tennis_capture.run(
                 now=now,
+                paused=False,
                 keys=keys,
                 list_events=mock_list_events,
                 fetch_normalized=mock_fetch_normalized,
@@ -354,6 +359,7 @@ class TestTennisCapture(unittest.TestCase):
 
             result = tennis_capture.run(
                 now=now,
+                paused=False,
                 keys=[key1, key2],
                 list_events=mock_list_events,
                 fetch_normalized=mock_fetch_normalized,
@@ -401,6 +407,7 @@ class TestTennisCapture(unittest.TestCase):
 
             result = tennis_capture.run(
                 now=now,
+                paused=False,
                 keys=[key],
                 list_events=mock_list_events,
                 fetch_normalized=mock_fetch_normalized,
@@ -413,6 +420,58 @@ class TestTennisCapture(unittest.TestCase):
             # Nothing captured
             self.assertEqual(len(result["captured"]), 0)
             self.assertEqual(result["credits"], 0)
+
+
+class TestTennisCapturePause(unittest.TestCase):
+    """The explicit pause switch (docs/drafts/CREDIT_TRIM_PLAN_2026-09-21.md
+    section 5.3): BALLDONTLIE's ATP/WTA results return HTTP 401, so a
+    captured tennis price cannot be graded right now -- pause the whole
+    capture rather than cut its cadence. `test_default_env_is_paused` fails
+    against the pre-pause code because `tennis_capture_paused` did not
+    exist and `run()` always attempted a real capture.
+    """
+
+    def test_default_env_is_paused(self):
+        self.assertTrue(tennis_capture.tennis_capture_paused(env={}))
+
+    def test_explicit_falsy_values_resume(self):
+        for value in ("0", "false", "No", "OFF", " off "):
+            self.assertFalse(
+                tennis_capture.tennis_capture_paused(env={"TENNIS_CAPTURE_PAUSED": value}),
+                msg=f"{value!r} should resume capture")
+
+    def test_explicit_truthy_or_unrecognized_values_stay_paused(self):
+        for value in ("1", "true", "yes", "on", "garbage"):
+            self.assertTrue(
+                tennis_capture.tennis_capture_paused(env={"TENNIS_CAPTURE_PAUSED": value}))
+
+    def test_run_defaults_to_paused_and_spends_nothing(self):
+        # No `paused=` override, no mocks for list_events/fetch_normalized/
+        # spend_guard at all -- a paused run must never reach any of them.
+        with mock.patch.dict("os.environ", {}, clear=False):
+            import os
+            os.environ.pop("TENNIS_CAPTURE_PAUSED", None)
+            result = tennis_capture.run(
+                now=datetime(2026, 9, 21, 12, 0, tzinfo=timezone.utc))
+        self.assertTrue(result["paused"])
+        self.assertEqual(result["captured"], [])
+        self.assertEqual(result["credits"], 0)
+        self.assertIn("BALLDONTLIE", result["skipped"]["_all"])
+
+    def test_paused_true_short_circuits_even_with_due_matches(self):
+        def boom(*args, **kwargs):
+            raise AssertionError("a paused run must never call this")
+
+        result = tennis_capture.run(
+            now=datetime(2026, 9, 21, 12, 0, tzinfo=timezone.utc),
+            paused=True,
+            keys=["tennis_atp_open"],
+            list_events=boom,
+            fetch_normalized=boom,
+            spend_guard=boom,
+        )
+        self.assertTrue(result["paused"])
+        self.assertEqual(result["rows"], 0)
 
 
 if __name__ == "__main__":

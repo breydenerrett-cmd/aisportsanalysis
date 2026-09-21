@@ -43,6 +43,47 @@ FAMILY = "tennis_h2h"
 CREDITS_PER_CAPTURE = 1
 DEFAULT_DONE_PATH = processed_path("tennis_capture_done.jsonl")
 
+# ---------------------------------------------------------------------------
+# THE PAUSE SWITCH (2026-09-21, docs/drafts/CREDIT_TRIM_PLAN_2026-09-21.md
+# section 5.3)
+# ---------------------------------------------------------------------------
+#
+# WHY. BALLDONTLIE's ATP/WTA results endpoint returns HTTP 401 while the
+# account's real plan tier is unverified, so nothing captured by this module
+# right now can ever be graded -- every credit spent is pure spend with zero
+# evidence value, at ANY cadence. This is a PAUSE, not a cadence cut: an
+# ungradable capture is worth the same near-zero amount whether it runs
+# every 13 minutes or once a day, so slowing tennis down would not address
+# the actual problem the way it does for dense.run.
+#
+# THE SWITCH is explicit and easy to flip back, the same shape as
+# scripts/capture_slot.sh's own CAPTURE_CHAIN kill switch: an env var,
+# defaulting to the paused state so nobody has to remember to re-set it
+# during the squeeze this change exists to fix. Set TENNIS_CAPTURE_PAUSED to
+# "0"/"false"/"no"/"off" to resume once BALLDONTLIE's auth/tier question is
+# resolved -- no code change needed either direction.
+ENV_TENNIS_PAUSED = "TENNIS_CAPTURE_PAUSED"
+TENNIS_PAUSE_REASON = (
+    "paused: BALLDONTLIE ATP/WTA results return HTTP 401, so captured tennis "
+    "prices are ungradable (docs/drafts/CREDIT_TRIM_PLAN_2026-09-21.md 5.3); "
+    "set TENNIS_CAPTURE_PAUSED=0 to resume once results are readable again"
+)
+
+
+def tennis_capture_paused(env=None) -> bool:
+    """True unless TENNIS_CAPTURE_PAUSED is explicitly set to a falsy value.
+
+    `env`, if given, is a dict to read (used for testing); omit it to read
+    the real process environment. Defaults to PAUSED (True) with no env var
+    set at all -- see the block comment above for why that is the safe
+    default while BALLDONTLIE returns 401 on tennis results.
+    """
+    import os
+    if env is None:
+        env = os.environ
+    value = env.get(ENV_TENNIS_PAUSED, "1").strip().lower()
+    return value not in ("0", "false", "no", "off")
+
 
 @dataclass(frozen=True)
 class DonePair:
@@ -129,8 +170,15 @@ def run(*, now: Optional[datetime] = None, keys: Optional[list] = None,
         spend_guard: Optional[Callable] = None, snapshot_path: Optional[str] = None,
         multibook_path: Optional[str] = None, done_path: str = DEFAULT_DONE_PATH,
         env: Optional[dict] = None, quota: Optional[Callable] = None,
-        record_credit: Optional[Callable] = None) -> dict:
+        record_credit: Optional[Callable] = None,
+        paused: Optional[bool] = None) -> dict:
     """Run one cycle of tennis h2h capture.
+
+    `paused`: None (the default) reads `tennis_capture_paused()` off the
+    real process environment; a test passes True/False explicitly to
+    control it without touching os.environ. Paused returns immediately --
+    no `keys` resolution, no `list_events`/`fetch_normalized` call, no
+    credit spend -- so the pause is a true no-op, not a cheaper capture.
 
     Args:
         now: Override current time for testing.
@@ -153,6 +201,12 @@ def run(*, now: Optional[datetime] = None, keys: Optional[list] = None,
     """
     current_time = _now(now)
     observed_utc = _timestamp(current_time)
+
+    if paused is None:
+        paused = tennis_capture_paused()
+    if paused:
+        return {"keys": [], "captured": [], "skipped": {"_all": TENNIS_PAUSE_REASON},
+                "credits": 0, "rows": 0, "paused": True}
 
     # Lazy defaults
     if keys is None:

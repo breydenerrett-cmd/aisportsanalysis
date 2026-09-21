@@ -130,6 +130,124 @@ CLOSE_WINDOW_MINUTES = 25
 MISSED_WINDOW_MINUTES = 30
 
 
+# ---------------------------------------------------------------------------
+# THE RE-PRICE GATE (2026-09-21, docs/drafts/CREDIT_TRIM_PLAN_2026-09-21.md)
+# ---------------------------------------------------------------------------
+#
+# WHY. The owner's product thesis, same doc section 4: a pick is graded at
+# the AVERAGE price across books at lock, not the best price we could catch
+# by chasing every wiggle -- so dense.run no longer needs a fresh multi-book
+# snapshot every ~13 minutes (the forward-capture chain's own cadence,
+# scripts/capture_slot.sh CHAIN_MIN_SPACING_MINUTES), it needs one shortly
+# before each game's lock and one shortly before first pitch. dense.run is
+# 75-82% of daily paid-capture spend (same doc, section 2) and its cost is
+# directly proportional to call count (3 credits/event, flat, every event on
+# the board every call) -- so slowing IT down is the highest-leverage single
+# change, and it can be made without touching the chain's own 13-minute
+# cadence, which lineup polling, card publish and the MLB value-shadow
+# publish all still need (owner instruction, 2026-09-21).
+#
+# WHAT IT DOES. A fresh dense capture is skipped when less than
+# REPRICE_MIN_MINUTES have passed since the last one landed, UNLESS some
+# upcoming game is inside the PRELOCK_FRESH_MINUTES window before its own
+# card lock -- card.py / src/appstate/card_ledger.LOCK_LEAD_HOURS is when a
+# pick freezes, and a stale lock-time price is the one thing the
+# average-price thesis cannot recover after the fact, so that window always
+# gets a fresh look regardless of the cooldown. The pass nearest first pitch
+# is untouched by this gate: CLOSE_WINDOW_MINUTES's own close-capture pass
+# below is a separate, much smaller spend (~20/day, plan doc section 6) that
+# always fires when a game is in its closing minutes, gate or no gate --
+# that is the "and before first pitch" half of the freshness guarantee this
+# gate must not break.
+#
+# WHAT IT DOES NOT TOUCH. nfl_capture.run does not call this module or
+# snapshots.capture() through dense.run -- it has its own phase-based
+# cadence (src/pipeline/nfl_capture.py PHASES) and is unaffected by this
+# gate entirely, by construction, not by exemption logic. Same for
+# prop_listing.run/prop_prices.run/batter_props.run/derivative_markets.run --
+# they ride the chain's own 13-minute slot cadence unchanged; only dense.run
+# itself (named here, and the dominant cost) is gated. See the report this
+# change shipped with for the resulting daily estimate and what full 1/3
+# parity would additionally require.
+REPRICE_MIN_MINUTES = 40
+
+# How long before a game's card lock the freshness guarantee opens. A game
+# whose lock is inside this many minutes always gets a fresh capture even if
+# the cooldown above has not elapsed.
+PRELOCK_FRESH_MINUTES = 60
+
+# src/appstate/card_ledger.LOCK_LEAD_HOURS, duplicated rather than imported:
+# card_ledger sits in src.appstate and already imports from src.pipeline
+# indirectly through card.py, so importing it here risks a cycle for the
+# sake of one float. A value drift between the two would only ever make this
+# gate's pre-lock window wrong, never card.py's actual lock -- worth a
+# comment, not worth the import risk. Kept equal by
+# `test_lock_lead_hours_matches_card_ledger` in tests/test_dense.py.
+LOCK_LEAD_HOURS = 4.0
+
+
+def _in_prelock_window(start, now, lock_lead_hours=LOCK_LEAD_HOURS,
+                       prelock_minutes=PRELOCK_FRESH_MINUTES) -> bool:
+    """True when `now` sits inside the freshness window before `start`'s lock.
+
+    Lock happens `lock_lead_hours` before first pitch. The window is
+    [lock - prelock_minutes, lock], so it opens PRELOCK_FRESH_MINUTES before
+    lock and closes exactly at lock (a capture taken after lock is too late
+    to inform the price the pick already froze at).
+    """
+    lock_time = start - timedelta(hours=lock_lead_hours)
+    window_open = lock_time - timedelta(minutes=prelock_minutes)
+    return window_open <= now <= lock_time
+
+
+def reprice_due(events, now, last_capture_at,
+                reprice_min_minutes=REPRICE_MIN_MINUTES) -> "budget_module.Decision":
+    """Is a fresh dense capture worth spending on right now?
+
+    `last_capture_at=None` (nothing on record, or the signal was
+    unreadable) always allows -- unknown means spend, the same direction
+    every other guard in this module takes when a read fails. Otherwise a
+    capture is due when the cooldown has elapsed OR any event in `events`
+    is inside its own pre-lock freshness window (`_in_prelock_window`).
+    Pure function: no I/O, so the 40-minutes-blocks / 41-minutes-allows /
+    always-allows-in-the-pre-lock-hour behaviour is directly unit-testable
+    without touching a store or the network.
+    """
+    if last_capture_at is None:
+        return budget_module.Decision(True, "ok: no prior dense capture on record")
+    age_minutes = (now - last_capture_at).total_seconds() / 60.0
+    if age_minutes >= reprice_min_minutes:
+        return budget_module.Decision(
+            True, f"ok: last dense capture {age_minutes:.0f} min ago "
+                  f">= {reprice_min_minutes}-min re-price cooldown")
+    for row in events or []:
+        start = _parse(row.get("commence_time"))
+        if start is not None and _in_prelock_window(start, now):
+            return budget_module.Decision(
+                True, "ok: a game is inside its pre-lock freshness window")
+    return budget_module.Decision(
+        False, f"skipped: re-price cooldown ({age_minutes:.0f} min since last "
+               f"dense capture, < {reprice_min_minutes}-min cooldown, no game "
+               f"in its pre-lock window)")
+
+
+def _last_dense_capture_at(sport=None):
+    """Most recent `observed_utc` across the MLB snapshot store, or None.
+
+    This is the real "last priced" signal `reprice_due` reads by default --
+    a plain module function, not a method, so a test can monkeypatch it
+    exactly like `_upcoming` above. None (an empty/unreadable store) is not
+    an error: it is the state a fresh checkout starts in, and `reprice_due`
+    treats "unknown" as "spend", never as "skip".
+    """
+    latest = None
+    for row in snapshots.read(sport=sport):
+        parsed = _parse(row.get("observed_utc"))
+        if parsed is not None and (latest is None or parsed > latest):
+            latest = parsed
+    return latest
+
+
 class DenseCaptureError(RuntimeError):
     """Raised when a dense run cannot proceed safely."""
 
@@ -353,6 +471,11 @@ def run(env=None, captures=CAPTURES_PER_RUN, interval_minutes=INTERVAL_MINUTES,
         approaching = games_in_window(events, moment, window_minutes)
         if approaching == 0:
             reason = "no game inside the window"
+            break
+
+        gate = reprice_due(events, moment, _last_dense_capture_at())
+        if not gate.allowed:
+            reason = gate.reason
             break
 
         captured = snapshots.capture(env=env)

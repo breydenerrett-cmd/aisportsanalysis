@@ -79,14 +79,24 @@ class RunTests(unittest.TestCase):
         self.real_status = dense.odds_provider.status
         self.real_capture = dense.snapshots.capture
         self.real_upcoming = dense._upcoming
+        self.real_last_capture_at = dense._last_dense_capture_at
         dense.odds_provider.status = lambda env=None: {"configured": True}
         dense.snapshots.capture = self._capture
+        # No prior dense capture on record by default -- the re-price gate
+        # (reprice_due) always allows in that state, so every test below
+        # that does not care about the gate keeps behaving exactly as it did
+        # before the gate existed. Without this, `_last_dense_capture_at()`
+        # would fall through to its real default and read this checkout's
+        # OWN data/processed/odds_snapshots.jsonl, whose real timestamps
+        # have nothing to do with these tests' fixed `NOW` clock.
+        dense._last_dense_capture_at = lambda sport=None: None
 
     def tearDown(self):
         dense.odds_provider.quota = self.real_quota
         dense.odds_provider.status = self.real_status
         dense.snapshots.capture = self.real_capture
         dense._upcoming = self.real_upcoming
+        dense._last_dense_capture_at = self.real_last_capture_at
 
     def _capture(self, env=None):
         self.calls.append("capture")
@@ -164,6 +174,141 @@ class RunTests(unittest.TestCase):
         result = dense.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, captures=4, now=NOW, sleep=None)
         self.assertEqual(result["captures"], 2)
         self.assertEqual(result["stopped_early"], "no game inside the window")
+
+
+class RepriceGateTests(unittest.TestCase):
+    """The 40-minute re-price cooldown (docs/drafts/CREDIT_TRIM_PLAN_2026-09-21.md
+    section 5.1's replacement): a game does not need a fresh dense capture
+    more often than REPRICE_MIN_MINUTES, unless it is inside the hour before
+    its own card lock.
+
+    These exercise `dense.reprice_due` directly -- no I/O, no `dense.run()`
+    plumbing -- so the cooldown/allow/pre-lock behaviour is pinned exactly.
+    Every test here FAILS against the pre-gate code, because `reprice_due`
+    (and the constants it reads) did not exist before this change: importing
+    `dense.reprice_due` raises AttributeError on the old module.
+    """
+
+    def test_lock_lead_hours_matches_card_ledger(self):
+        # dense.py deliberately does not import card_ledger (comment above
+        # LOCK_LEAD_HOURS explains why), so this is the tripwire that keeps
+        # the duplicated constant honest if card_ledger's ever changes.
+        from src.appstate import card_ledger
+        self.assertEqual(dense.LOCK_LEAD_HOURS, card_ledger.LOCK_LEAD_HOURS)
+
+    def test_a_reprice_within_the_cooldown_is_skipped(self):
+        last = NOW - timedelta(minutes=20)
+        # No game anywhere near its lock, so only the cooldown is in play.
+        events = _rows("2026-08-30T21:00:00Z")  # 6h out; lock is 2h out
+        decision = dense.reprice_due(events, NOW, last)
+        self.assertFalse(decision.allowed)
+        self.assertIn("cooldown", decision.reason)
+
+    def test_a_reprice_exactly_at_the_cooldown_boundary_is_allowed(self):
+        last = NOW - timedelta(minutes=dense.REPRICE_MIN_MINUTES)
+        decision = dense.reprice_due([], NOW, last)
+        self.assertTrue(decision.allowed)
+
+    def test_a_reprice_past_the_cooldown_is_allowed(self):
+        last = NOW - timedelta(minutes=dense.REPRICE_MIN_MINUTES + 1)
+        decision = dense.reprice_due([], NOW, last)
+        self.assertTrue(decision.allowed)
+
+    def test_no_prior_capture_on_record_always_allows(self):
+        decision = dense.reprice_due([], NOW, None)
+        self.assertTrue(decision.allowed)
+        self.assertIn("no prior", decision.reason)
+
+    def test_inside_the_prelock_hour_always_allows_even_within_cooldown(self):
+        # Lock is LOCK_LEAD_HOURS (4h) before first pitch. A game starting in
+        # 4h05m has its lock 5 minutes from now -- inside the 60-minute
+        # pre-lock window -- even though the last capture was 10 minutes ago.
+        last = NOW - timedelta(minutes=10)
+        start = NOW + timedelta(hours=dense.LOCK_LEAD_HOURS, minutes=5)
+        events = _rows(start.isoformat().replace("+00:00", "Z"))
+        decision = dense.reprice_due(events, NOW, last)
+        self.assertTrue(decision.allowed)
+        self.assertIn("pre-lock", decision.reason)
+
+    def test_just_outside_the_prelock_hour_still_respects_the_cooldown(self):
+        # Lock is 61 minutes from now -- one minute outside the window.
+        last = NOW - timedelta(minutes=10)
+        start = NOW + timedelta(hours=dense.LOCK_LEAD_HOURS, minutes=61)
+        events = _rows(start.isoformat().replace("+00:00", "Z"))
+        decision = dense.reprice_due(events, NOW, last)
+        self.assertFalse(decision.allowed)
+
+    def test_a_game_already_past_lock_does_not_force_a_reprice(self):
+        # Lock was 5 minutes ago (game starts in 3h55m) -- the window closes
+        # AT lock, not after it: a capture now cannot inform a price that
+        # already froze.
+        last = NOW - timedelta(minutes=10)
+        start = NOW + timedelta(hours=dense.LOCK_LEAD_HOURS, minutes=-5)
+        events = _rows(start.isoformat().replace("+00:00", "Z"))
+        decision = dense.reprice_due(events, NOW, last)
+        self.assertFalse(decision.allowed)
+
+
+class RunGateIntegrationTests(unittest.TestCase):
+    """The gate wired into `dense.run()` itself, not just the pure function."""
+
+    def setUp(self):
+        self.calls = []
+        self.real_quota = dense.odds_provider.quota
+        self.real_status = dense.odds_provider.status
+        self.real_capture = dense.snapshots.capture
+        self.real_upcoming = dense._upcoming
+        self.real_last_capture_at = dense._last_dense_capture_at
+        dense.odds_provider.status = lambda env=None: {"configured": True}
+        dense.snapshots.capture = self._capture
+
+    def tearDown(self):
+        dense.odds_provider.quota = self.real_quota
+        dense.odds_provider.status = self.real_status
+        dense.snapshots.capture = self.real_capture
+        dense._upcoming = self.real_upcoming
+        dense._last_dense_capture_at = self.real_last_capture_at
+
+    def _capture(self, env=None):
+        self.calls.append("capture")
+        return {"captured": 30, "events": 15, "configured": True}
+
+    def test_a_recent_capture_with_no_game_near_lock_spends_nothing(self):
+        dense.odds_provider.quota = lambda env=None: {"remaining": 50000}
+        # A game 2h out: inside the 3h dense window (so `approaching` > 0
+        # and the loop reaches the gate), but its lock (4h before first
+        # pitch) was already 2h ago -- well outside the pre-lock hour.
+        dense._upcoming = lambda now=None, timeout=20: _rows("2026-08-30T17:00:00Z")
+        dense._last_dense_capture_at = lambda sport=None: NOW - timedelta(minutes=15)
+        result = dense.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, now=NOW, sleep=None)
+        self.assertEqual(result["captures"], 0)
+        self.assertIn("cooldown", result["stopped_early"])
+        self.assertEqual(self.calls, [])
+
+    def test_a_stale_last_capture_still_spends(self):
+        dense.odds_provider.quota = lambda env=None: {"remaining": 50000}
+        dense._upcoming = lambda now=None, timeout=20: _rows("2026-08-30T17:00:00Z")
+        dense._last_dense_capture_at = lambda sport=None: NOW - timedelta(minutes=45)
+        result = dense.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, now=NOW,
+                           sleep=None, captures=1)
+        self.assertEqual(result["captures"], 1)
+        self.assertEqual(len(self.calls), 1)
+
+    def test_the_prelock_window_spends_even_inside_the_cooldown(self):
+        # A game's pre-lock hour sits 4-5h before first pitch -- outside the
+        # default 180-minute dense WINDOW_MINUTES, but exactly what the
+        # once-an-hour widened window (capture_slot.sh's DENSE_WINDOW=1440
+        # top-of-hour/staleness-fallback pass) exists to reach. Pass a wide
+        # window_minutes here to model that pass, same as production does.
+        dense.odds_provider.quota = lambda env=None: {"remaining": 50000}
+        start = NOW + timedelta(hours=dense.LOCK_LEAD_HOURS, minutes=10)
+        dense._upcoming = lambda now=None, timeout=20: _rows(
+            start.isoformat().replace("+00:00", "Z"))
+        dense._last_dense_capture_at = lambda sport=None: NOW - timedelta(minutes=15)
+        result = dense.run(credit_log_store=HERMETIC_CREDIT_LOG_STORE, now=NOW,
+                           sleep=None, window_minutes=300, captures=1)
+        self.assertEqual(result["captures"], 1)
+        self.assertEqual(len(self.calls), 1)
 
 
 class ScheduleHorizonTests(unittest.TestCase):
