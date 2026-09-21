@@ -171,6 +171,14 @@ def bout_consensus(rows_for_bout: Sequence[Mapping]) -> Optional[dict]:
     if len(home_probs) < MIN_BOOKS:
         return None
 
+    def _avg_american(prices):
+        # Average in DECIMAL odds, then convert back (2026-09-21 review). A
+        # plain mean of American prices breaks across even money: -105 and
+        # +105 average to 0, which is not a price, and near-even fights are
+        # exactly the ones this card picks.
+        decimals = [odds_math.american_to_decimal(p) for p in prices]
+        return odds_math.decimal_to_american(sum(decimals) / len(decimals))
+
     return {
         "n_books": len(home_probs),
         "home_team": home_team,
@@ -178,8 +186,8 @@ def bout_consensus(rows_for_bout: Sequence[Mapping]) -> Optional[dict]:
         "commence_time": commence_time,
         "home_probability": sum(home_probs) / len(home_probs),
         "away_probability": sum(away_probs) / len(away_probs),
-        "home_avg_price": sum(home_prices) / len(home_prices),
-        "away_avg_price": sum(away_prices) / len(away_prices),
+        "home_avg_price": _avg_american(home_prices),
+        "away_avg_price": _avg_american(away_prices),
     }
 
 

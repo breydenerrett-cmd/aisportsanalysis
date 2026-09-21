@@ -39,9 +39,12 @@ removing one book from its own consensus (leave-one-book-out) would swing
 the number most on the bout that most needs it to be stable, so this rule
 uses the plain, full-board mean instead.
 
-The **average American price** per side is the plain arithmetic mean of
-the American prices themselves across the same books. This is the number
-the card is graded at (see item 9) -- not the best single book's price.
+The **average American price** per side is the mean of the books' DECIMAL
+odds, converted back to American. It is never a plain mean of American
+prices, which breaks across even money (-105 and +105 would average to 0).
+This correction was made before registration, on 2026-09-21, before any
+UFC result existed. This is the number the card is graded at (see item 9),
+not the best single book's price.
 
 ## 4. Candidate rule
 

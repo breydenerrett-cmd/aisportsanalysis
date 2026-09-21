@@ -42,6 +42,20 @@ def _consensus(**kw):
     return base
 
 
+class AveragePriceAcrossEvenMoney(unittest.TestCase):
+    """2026-09-21 review: a plain mean of American prices breaks across even
+    money (-105 and +105 average to 0, which is not a price). The average is
+    taken in decimal odds and converted back, so it is always a real price."""
+
+    def test_average_across_even_money_is_a_real_price(self):
+        rows = [_row("b1", -105, -115), _row("b2", 105, -125), _row("b3", 100, -120)]
+        consensus = ufc_card.bout_consensus(rows)
+        home = consensus["home_avg_price"]
+        self.assertGreaterEqual(abs(home), 100.0)
+        # decimals 1.952, 2.05, 2.0 -> mean 2.0008 -> about +100
+        self.assertAlmostEqual(home, 100.08, places=1)
+
+
 class MinBooksRule(unittest.TestCase):
     def test_fewer_than_three_books_is_never_evaluated(self):
         rows = _books(2, lambda b: _row(b, -150, 130))
