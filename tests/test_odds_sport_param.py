@@ -62,6 +62,13 @@ class TestSportKey(unittest.TestCase):
     def test_nfl_key_resolves_to_americanfootball_nfl(self):
         self.assertEqual(odds.sport_key("nfl"), "americanfootball_nfl")
 
+    def test_mma_resolves_and_the_capture_module_key_is_accepted(self):
+        # 2026-09-21: the UFC pipeline's own key was refused by this resolver
+        # in production, while the unit tests' fake providers hid it.
+        from src.pipeline import mma_capture
+        self.assertEqual(odds.sport_key("mma"), "mma_mixed_martial_arts")
+        self.assertEqual(odds.sport_key(mma_capture.SPORT_KEY), "mma_mixed_martial_arts")
+
     def test_tennis_key_passes_through(self):
         self.assertEqual(odds.sport_key("tennis_atp_china_open"), "tennis_atp_china_open")
 

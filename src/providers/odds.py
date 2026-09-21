@@ -43,7 +43,12 @@ from src.paths import raw_path
 
 API_HOST = "https://api.the-odds-api.com/v4"
 SPORT = "baseball_mlb"
-SPORT_KEYS = {"mlb": "baseball_mlb", "nfl": "americanfootball_nfl"}
+# "mma" added 2026-09-21 for UFC_CARD_V1. The first production slot after the
+# UFC merge showed every mma_capture/probe call refused here ("unknown sport
+# 'mma_mixed_martial_arts'"). The unit tests had injected fake providers, so
+# they never reached this whitelist.
+SPORT_KEYS = {"mlb": "baseball_mlb", "nfl": "americanfootball_nfl",
+              "mma": "mma_mixed_martial_arts"}
 USER_AGENT = "aisportsanalysis/0.1 (stdlib urllib)"
 DEFAULT_TIMEOUT = 20
 
@@ -238,7 +243,7 @@ def sport_key(sport=None) -> str:
     if sport in SPORT_KEYS.values():
         return sport
     raise OddsProviderError(
-        f"unknown sport {sport!r}; known: mlb, nfl, tennis_<tournament>"
+        f"unknown sport {sport!r}; known: mlb, nfl, mma, tennis_<tournament>"
     )
 
 
