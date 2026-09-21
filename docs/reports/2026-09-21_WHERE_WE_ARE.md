@@ -66,9 +66,12 @@ rest is the overnight report, corrected where the day proved it wrong.*
   grade picks:** even with your new BALLDONTLIE key, tennis results return
   **HTTP 401**. That key does not include ATP/WTA results.
 - **MLB's record is positive, but every single game pick has been a
-  favourite.** Game picks are 57-31 (+5.58u) over 10 settled days. Props are
-  57-28 (+1.41u) over 6 settled days. All 88 game picks were favourites, and
-  38 of the 85 props were bought at −200 or worse. That breaks your own rule.
+  favourite.** *(Updated after 09-20 settled.)* Game picks are 66-34
+  (+8.21u) over 11 settled days. Props are 64-30 (+2.75u). All 100 game
+  picks were favourites, 16 of them at −200 or worse, and 44 of the 94 props
+  were bought at −200 or worse. That breaks your own rule. The +8.2% return
+  is still within what luck produces over 100 picks (the plan's section 3.1
+  has the interval).
   Hits Unders lost money despite winning 61%.
 - **MLB's regular season ends 09-27.** That changes what's urgent: NFL is the
   sport that runs through the winter.
@@ -185,8 +188,8 @@ None of it was acted on.
 ### 3.1 MLB — on the site, picks every day
 
 - **The public card is V1** (`DAILY_CARD_MARKET_SIDE_MODEL_AGREEMENT_V1`). It
-  ranks sides by how likely the market thinks they are. **All 88 settled game
-  picks were favourites.** Its STRONG picks have a median price of −188.
+  ranks sides by how likely the market thinks they are. **All 100 settled game
+  picks were favourites** (as of 09-20). Its STRONG picks have a median price of −188.
 - **Your value card, V2 (−160 to +250), has never run.** Its pre-registration
   (`docs/PREREG_CARD_V2.md`) is a draft waiting on your answers to questions
   12–14. Answering alone is not enough. Registration also needs a commit that
@@ -275,23 +278,26 @@ bet. These are small samples: they show where to look, not what works.*
 
 ### 4.1 The MLB card
 
+*Updated 09-21 afternoon, after 09-20 settled (recomputed from
+`evidence/cards_v1.jsonl`; see the plan's section 3.1).*
+
 | Part | Days | W-L | Units | Note |
 |---|---|---|---|---|
-| Game picks, all | 10 | 57-31 | **+5.58** | all 88 are favourites |
-| — STRONG | | 26-5 | +8.15 | median −188 |
-| — LEAN | | 17-16 | −4.44 | |
-| — SLIGHT | | 11-6 | +3.64 | |
+| Game picks, all | 11 | 66-34 | **+8.21** | all 100 are favourites; 16 at −200 or worse |
+| — STRONG | | 29-5 | +9.48 | |
+| — LEAN | | 22-18 | −3.03 | |
+| — SLIGHT | | 12-7 | +3.53 | |
 | — SPLIT | | 3-4 | −1.77 | |
-| Props, all | 6 | 57-28 | **+1.41** | 38 of 85 at −200 or worse |
-| — Total bases Over | | 13-5 | +2.68 | median −172 |
-| — Total bases Under | | 13-5 | +2.47 | median −182 |
-| — Hits Over | | 9-4 | +1.19 | median −182 |
-| — Hits Under | | 22-14 | **−4.93** | median **−246** |
+| Props, all | ~7 | 64-30 | **+2.75** | 44 of 94 at −200 or worse |
+| — Total bases Over | | 13-5 | +2.68 | |
+| — Total bases Under | | 16-6 | +3.05 | |
+| — Hits Over | | 10-4 | +1.69 | |
+| — Hits Under | | 25-15 | **−4.66** | median **−246** |
 
-A 61% hit rate on Hits Under still lost money, because at −246 you need about
-71% just to break even. That is the −950 problem again, on props. Total bases
-is the best prop market *so far*: 26-10, +5.15u. On 36 bets, and a category
-picked after seeing results, that is a lead to test, not a finding.
+A 62.5% hit rate on Hits Under still lost money, because at −246 you need
+about 71% just to break even. That is the −950 problem again, on props. Total
+bases is the best prop market *so far*: 29-11, +5.73u. On 40 bets, and a
+category picked after seeing results, that is a lead to test, not a finding.
 
 ### 4.2 Run lines
 
@@ -322,8 +328,8 @@ This is a small, filtered first read of the "no skill" line, not a strategy.
 ## 5. What the evidence does and does not show
 
 - **Does show:** every MLB card pick was frozen before first pitch and graded
-  win or lose, with the ledger chain intact. Game picks are 57-31 and props
-  57-28.
+  win or lose, with the ledger chain intact. Game picks are 66-34 and props
+  64-30 (after 09-20).
 - **Does not show:** that any of it beats the market. Ten days (props: six) is
   noise territory. Every game pick was a favourite. No research hypothesis has
   survived its test.
