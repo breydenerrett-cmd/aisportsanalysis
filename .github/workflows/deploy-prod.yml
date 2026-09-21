@@ -6,8 +6,11 @@
 # deploy would mean every commit -- including a work-in-progress one -- is
 # one push away from charging real customers against untested code.
 #
-# Requires ONE repository secret: FLY_API_TOKEN (an app-scoped deploy
-# token for linehound-prod specifically -- see deploy/DEPLOY_RUNBOOK.md
+# Requires ONE repository secret: FLY_PROD_API_TOKEN. Its own name, because
+# FLY_API_TOKEN is already staging's secret (deploy-staging.yml), and
+# sharing the name would force one environment's token onto the other. It
+# is an app-scoped deploy token for linehound-prod specifically -- see
+# deploy/DEPLOY_RUNBOOK.md
 # Step 0 for how Brey generates it, and BOUNDARY 3 in
 # deploy/fly.production.toml for why it must never be the staging token
 # reused). Without the secret the job fails fast at the guard step -- it
@@ -35,11 +38,11 @@ jobs:
       - name: Guard - secret present
         run: |
           if [ -z "$TOKEN" ]; then
-            echo "Neither FLY_API_TOKEN nor FLY_ORG_TOKEN repository secret is set (Settings -> Secrets and variables -> Actions)."
+            echo "Neither FLY_PROD_API_TOKEN nor FLY_ORG_TOKEN repository secret is set (Settings -> Secrets and variables -> Actions)."
             exit 1
           fi
         env:
-          TOKEN: ${{ secrets.FLY_API_TOKEN || secrets.FLY_ORG_TOKEN }}
+          TOKEN: ${{ secrets.FLY_PROD_API_TOKEN || secrets.FLY_ORG_TOKEN }}
       - name: Guard - linehound-prod app must already exist
         run: |
           echo "This workflow deploys to an EXISTING app (deploy/DEPLOY_RUNBOOK.md's"
@@ -48,12 +51,17 @@ jobs:
           echo "session, never from this workflow). If the app or its volume does not"
           echo "exist yet, 'flyctl deploy' below will fail loudly rather than silently"
           echo "creating something unreviewed."
+      # Pinned, never the dispatch ref (2026-09-21 review): Run workflow in the
+      # Actions tab defaults to the DEFAULT branch, which holds only workflow
+      # YAMLs. Checking that out would deploy an empty app to production.
       - uses: actions/checkout@v4
+        with:
+          ref: claude/sports-betting-analysis-review-g1o0co
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Deploy
         run: flyctl deploy -c deploy/fly.production.toml -a linehound-prod --remote-only --yes
         env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN || secrets.FLY_ORG_TOKEN }}
+          FLY_API_TOKEN: ${{ secrets.FLY_PROD_API_TOKEN || secrets.FLY_ORG_TOKEN }}
       # Same two-phase shape as deploy-staging.yml's own health check
       # (see that file's comment for why a single /health pass is not
       # enough) -- up first, then a real page request, then still-alive a
@@ -116,4 +124,4 @@ jobs:
         if: failure()
         run: flyctl logs -a linehound-prod --no-tail | tail -120
         env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN || secrets.FLY_ORG_TOKEN }}
+          FLY_API_TOKEN: ${{ secrets.FLY_PROD_API_TOKEN || secrets.FLY_ORG_TOKEN }}
