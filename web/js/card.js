@@ -1204,8 +1204,17 @@ export async function renderCard(host, options = {}) {
     // actually read. "Keep it minimal, to the point."
     // "first pitch" on an NFL card (seen on #/nfl, 2026-09-20) -- the
     // same sentence, in the sport's own word.
+    // NOT "LOCKED" WHILE ANY PICK IS STILL PROVISIONAL (2026-09-21
+    // fact-check). A published card can hold picks that have not locked
+    // yet -- each carries its own "Provisional until <time>" chip -- and the
+    // page read "Locked at 9:53 PM PDT" above one of them.
+    const startWord = sport === "nfl" ? "kickoff" : "first pitch";
+    const anyProvisional = (payload.picks || []).some((p) => p && p.locked === false);
     wrap.appendChild(el("p", { class: "card2lede", "data-hook": "card-frozen",
-      text: `Locked${at ? ` at ${at}` : ""}, before ${sport === "nfl" ? "kickoff" : "first pitch"}. `
+      text: anyProvisional
+        ? `Published${at ? ` at ${at}` : ""}. A pick marked provisional can still `
+          + `change until it locks before ${startWord}. Graded after — win or lose.`
+        : `Locked${at ? ` at ${at}` : ""}, before ${startWord}. `
           + "Graded after — win or lose." }));
 
     // A FROZEN PRICE IS A HISTORICAL FACT, NOT A QUOTE. On a slate with an

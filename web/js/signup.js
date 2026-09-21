@@ -87,7 +87,8 @@ export async function renderSignup(main) {
   card.appendChild(el("p", { class: "eyebrow eyebrow--money signup-card__eyebrow", text: "FOUNDING BETA ACCESS" }));
   card.appendChild(el("h1", { class: "signup-card__title", text: "Tonight's bets, written down before first pitch." }));
   card.appendChild(el("p", { class: "signup-card__subhead", text:
-    "Three to five picks a day: which side is more likely, what the price needs, and the record of every one — win or lose." }));
+    // No count promised (2026-09-21): the card held 7-13 picks a day, not 3-5.
+    "Every pick on the card: which side is more likely, what the price needs, and the record of every one — win or lose." }));
 
   card.appendChild(renderPricingBadge());
   card.appendChild(renderBenefits());

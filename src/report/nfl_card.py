@@ -34,6 +34,12 @@ RULES = (RETIRED_RULE, LIVE_RULE)
 NOTICE = ("Every pick here is part of an ongoing test. Value means a better "
           "price than the rest of the market, not a sure thing -- bet at your "
           "own risk.")
+# A frozen card from the retired rule never carries the live rule's "value"
+# sentence (2026-09-21 fact-check: Rams -300, a V1 favourite, was served
+# under "Value means a better price than the rest of the market").
+RETIRED_NOTICE = ("Every pick here is part of an ongoing test. This card was "
+                  "made by our old NFL rule, which took the favourite -- it "
+                  "makes no claim about price value. Bet at your own risk.")
 
 # The note each rule's card carries ("How this card works" on the page).
 # A frozen row stores its own. Every V1 row in evidence/cards_nfl_v1.jsonl
@@ -217,7 +223,7 @@ def _frozen_payload(date_str: str, frozen: dict) -> dict:
         "count": len(picks),
         "reason": None,
         "experimental": True,
-        "notice": NOTICE,
+        "notice": NOTICE if rule == LIVE_RULE else RETIRED_NOTICE,
         "frozen": True,
         "published_utc": frozen.get("published_utc"),
         "generated_utc": frozen.get("published_utc"),  # Same as published

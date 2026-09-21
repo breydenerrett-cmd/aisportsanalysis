@@ -628,7 +628,7 @@ function gqvTonightsPick(pick, quick) {
       "data-hook": "game-pick-none" });
     none.appendChild(el("p", { class: "gqv-pick__eyebrow", text: "NOT ON TONIGHT'S CARD" }));
     none.appendChild(el("p", { class: "gqv-pick__none-body",
-      text: "This one didn't make the day's three to five. The full read is below." }));
+      text: "This one isn't on today's card. The full read is below." }));
     return none;
   }
 

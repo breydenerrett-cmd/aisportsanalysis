@@ -579,6 +579,23 @@ class FivePicksPerDate(_TempLedger):
         self.assertEqual(sorted(p["rank"] for p in picks), [1, 2, 3, 4, 5])
 
 
+class RetiredCardNotice(unittest.TestCase):
+    """2026-09-21 fact-check: the live NFL page served Rams -300 (a V1
+    favourite) under V2's "Value means a better price than the rest of the
+    market" -- a price-value claim V1 never made."""
+
+    def test_a_frozen_v1_card_never_carries_the_value_sentence(self):
+        out = nfl_card._frozen_payload(DATE, {"rule": V1, "picks": [_pick(GID, price=-300)],
+                                              "published_utc": "2026-09-21T04:14:30+00:00"})
+        self.assertNotIn("Value means", out["notice"])
+        self.assertIn("old NFL rule", out["notice"])
+
+    def test_a_frozen_v2_card_keeps_the_live_notice(self):
+        out = nfl_card._frozen_payload(DATE, {"rule": V2, "picks": [],
+                                              "published_utc": "2026-09-24T12:00:00+00:00"})
+        self.assertEqual(out["notice"], nfl_card.NOTICE)
+
+
 class LockTimeOnAFrozenCard(unittest.TestCase):
     """The page's "Locked at <time>" line and its stale-price warning read
     `frozen_at`/`prices_as_of`. A Sunday card is built across publishes; the
