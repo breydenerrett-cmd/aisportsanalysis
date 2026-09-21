@@ -138,8 +138,14 @@ jobs:
       # failed 10:00Z loop is still covered by bootstrap's seed-branch
       # restore. The working branch's copy of this file carries the same
       # change (efaf3239); this is the copy the schedule actually runs.
+      #
+      # It must be actions/cache/RESTORE, not actions/cache (2026-09-21, second
+      # pass): the combined action also SAVES in its post-job step whenever
+      # the primary key misses, and a run_id key always misses. Removing the
+      # explicit save step alone therefore still re-saved stale data after
+      # every run, and the slate kept reading coverage ending 2026-09-14.
       - name: Restore historical + processed data cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             data/historical/statcast
