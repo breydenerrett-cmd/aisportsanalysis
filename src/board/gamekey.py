@@ -48,6 +48,7 @@ from src.core.asof import game_pk_key
 from src.data import parks
 from src.paths import processed_path
 from src.pipeline import slate as slate_mod
+from src.pipeline import store_archive
 from src.pipeline.snapshots import official_date
 from src.providers import mlb
 
@@ -132,17 +133,18 @@ def _now_iso(now: datetime | None = None) -> str:
 # ---------------------------------------------------------------------------
 
 def _read_jsonl(path: Path) -> Iterable[dict]:
-    if not path.exists():
-        return
-    with path.open("r", encoding="utf-8") as handle:
-        for line in handle:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                yield json.loads(line)
-            except json.JSONDecodeError:
-                continue
+    """Every row of the LOGICAL store at `path` (src.pipeline.store_archive):
+    DEFAULT_EVENT_SOURCES includes odds_multibook.jsonl, rotated since the
+    2026-09-21 100MB-push incident -- a path with no archive directory reads
+    exactly as a plain scan always did."""
+    for line in store_archive.iter_lines(path):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            yield json.loads(line)
+        except json.JSONDecodeError:
+            continue
 
 
 def events_for_date(date_str: str, *,

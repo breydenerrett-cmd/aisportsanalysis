@@ -38,6 +38,29 @@ data/app/*
 !data/processed/f5_close.jsonl
 !data/processed/prop_listing.jsonl
 
+# COLD-STORAGE ARCHIVE SEGMENTS (2026-09-21 incident, src.pipeline.
+# store_archive): odds_multibook.jsonl grew to 100.08 MB and GitHub started
+# rejecting every push -- "python3 -m src.cli store rotate" moves the old
+# prefix of a rotatable store's hot file into gzip segments under
+# data/processed/archive/<store-name>/ instead of letting the hot file grow
+# forever. Those segments are exactly as unbackfillable as the forward
+# captures they came from (same reasoning as the block above -- a price
+# observed months ago cannot be re-fetched at any price today), so they are
+# tracked the same way: a tree negation, not a per-file list, because a
+# rotation adds a new segment file on its own schedule and nobody should
+# have to remember to un-ignore it by name (data/raw/oddsapi/ below sets the
+# same precedent for the same reason).
+!data/processed/archive/
+!data/processed/archive/**
+# ...EXCEPT the orphan temp files `rotate`'s own tempfile.mkstemp can leave
+# behind (2026-09-21 review): `!data/processed/archive/**` above un-ignores
+# EVERYTHING under the tree, including a `*.tmp` segment-in-progress that a
+# hard kill between its write and its `os.replace` into a real segment name
+# left sitting there. `segments()` already filters these out by name so no
+# reader is affected, but without this line a persistent checkout could
+# `git add`/commit one as if it were real archive data.
+data/processed/archive/**/*.tmp
+
 # THE CARD'S CALIBRATION IS A DEPLOY INPUT, not a scratch file. Two numbers,
 # refit nightly by scripts/fit_card_calibration.py -- and without them
 # src/report/card.py serves the RAW model, which says 73% about games that

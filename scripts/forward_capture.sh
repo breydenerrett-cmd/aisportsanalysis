@@ -180,6 +180,16 @@ if ! flock -w 300 9; then
     exit 1
 fi
 
+# STORE ROTATION, BEFORE STAGING (2026-09-21 incident, src.pipeline.
+# store_archive): data/processed/odds_multibook.jsonl grew to 100.08 MB and
+# GitHub started rejecting every push from the capture runners -- see
+# scripts/capture_slot.sh's copy of this comment for the full incident.
+# Under the same GIT_LOCK the commit below uses, strictly before `git add`.
+# GIT_FAILED, not just echo (2026-09-21 fact-check, capture_slot.sh's copy
+# of this comment): an ESCALATE line alone does not fail this script.
+python3 -m src.cli store rotate --all --if-over-mb 60 --keep-days 3 \
+    || { echo "ESCALATE: store rotation failed -- a rotatable store may be approaching GitHub's 100MB push limit unrotated"; GIT_FAILED=1; }
+
 # Explicit paths, never bare `data`: data/app (customer/auth state) and
 # data/raw (reproducible provider pulls, gitignored) must never be staged by an
 # automated pass. `evidence` and `data/paper_accounts` are staged because the
@@ -220,6 +230,9 @@ git add $DECLARED_STORES 2>/dev/null || true
 # before this script ever runs. Refuse to commit a shrink on any one of
 # them; the rest of the commit proceeds either way.
 guard_staged_no_shrink $DECLARED_STORES
+# GUARD (2026-09-21 incident): the size-gate backstop for whatever store
+# rotation above did not catch -- prints WARN/ESCALATE, never blocks.
+guard_staged_size
 if ! git diff --cached --quiet; then
     BRANCH=$(git rev-parse --abbrev-ref HEAD)
     if ! git commit -q -m "Forward capture $(date -u +%H:%MZ)"; then

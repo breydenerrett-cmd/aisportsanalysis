@@ -69,6 +69,7 @@ temp-dir fixture reads only its own temp dir.
 
 from __future__ import annotations
 
+import gzip
 import json
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -87,6 +88,7 @@ from src.engine.features import FeatureSources, build_features
 from src.engine.snapshot import PriceBlindSnapshot, PricedBoard
 from src.engine.truncation import ArrivalRecord, TruncationSample
 from src.paths import processed_path
+from src.pipeline import store_archive
 
 L1_PATH = processed_path("l1_observations.jsonl")
 # `l1_observations.jsonl` rows (PriceObservation) carry no `commence_time`
@@ -269,49 +271,91 @@ def sport_tag_paths(l1_path: Path | str = L1_PATH,
     seen: set[str] = set()
     for p in candidates:
         key = str(p)
-        if key in seen or not p.exists():
+        # store_archive.exists, not p.exists(): a store rotated hard enough
+        # to leave an empty or absent hot file (src.pipeline.store_archive,
+        # 2026-09-21 100MB-push incident) still carries real sport tags in
+        # its archive segments and must stay a valid source here.
+        if key in seen or not store_archive.exists(p):
             continue
         seen.add(key)
         out.append(p)
     return tuple(out)
 
 
-# (resolved path, size, mtime_ns) -> {event_id: non-MLB sport tag}. The
-# multibook store is ~100MB and `iter_board_rows` runs once per L1 read (many
-# per slate), so each file is scanned once per content version, not per read.
-_NON_MLB_CACHE: dict[tuple, dict[str, str]] = {}
+# Two cache tiers, not one -- see `_non_mlb_tags_in`'s docstring for why.
+# ARCHIVE SEGMENTS are immutable once written (store_archive.rotate never
+# edits, appends to, or replaces one), so a segment is scanned once ever,
+# keyed on its own path.
+_NON_MLB_SEGMENT_CACHE: dict[str, dict[str, str]] = {}
+# The HOT FILE is the only part that still changes; (resolved path, size,
+# mtime_ns) -> {event_id: non-MLB sport tag}, same fingerprint discipline the
+# single-tier cache this replaced always used.
+_NON_MLB_HOT_CACHE: dict[tuple, dict[str, str]] = {}
+
+
+def _non_mlb_tags_from_lines(lines: Iterable[str]) -> dict[str, str]:
+    out: dict[str, str] = {}
+    for line in lines:
+        # A legacy MLB row has no `sport` key at all -- skip the parse.
+        if '"sport"' not in line:
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(row, dict):
+            continue
+        event_id = row.get("event_id")
+        tag = row.get("sport")
+        if event_id is None or is_mlb_sport_tag(tag):
+            continue
+        out.setdefault(str(event_id), str(tag))
+    return out
 
 
 def _non_mlb_tags_in(path: Path) -> dict[str, str]:
-    try:
-        st = path.stat()
-    except (FileNotFoundError, NotADirectoryError):
-        return {}
-    resolved = str(path.resolve())
-    key = (resolved, st.st_size, st.st_mtime_ns)
-    cached = _NON_MLB_CACHE.get(key)
-    if cached is not None:
-        return cached
+    """{event_id: non-MLB sport tag} found in the LOGICAL store at `path`
+    (src.pipeline.store_archive): every archive segment, plus the hot file.
+
+    CACHED IN TWO TIERS (module comment above `_NON_MLB_SEGMENT_CACHE`/
+    `_NON_MLB_HOT_CACHE`) rather than the single (path, size, mtime) cache
+    this function used to keep on the one file it used to read: a whole-file
+    fingerprint cache would be invalidated by every hot-file append, forcing
+    a full re-scan of every archived segment on every content change once
+    odds_multibook.jsonl starts rotating (2026-09-21 100MB-push incident) --
+    exactly the "multibook store is ~100MB and `iter_board_rows` runs once
+    per L1 read, many per slate" cost this cache exists to avoid. Splitting
+    the immutable segments from the mutable hot file means only the hot file
+    (small; a rotation keeps it under its own threshold) is ever re-scanned.
+    """
     out: dict[str, str] = {}
-    with path.open("r", encoding="utf-8") as fh:
-        for line in fh:
-            # A legacy MLB row has no `sport` key at all -- skip the parse.
-            if '"sport"' not in line:
-                continue
-            try:
-                row = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            if not isinstance(row, dict):
-                continue
-            event_id = row.get("event_id")
-            tag = row.get("sport")
-            if event_id is None or is_mlb_sport_tag(tag):
-                continue
-            out.setdefault(str(event_id), str(tag))
-    for stale in [k for k in _NON_MLB_CACHE if k[0] == resolved]:
-        del _NON_MLB_CACHE[stale]
-    _NON_MLB_CACHE[key] = out
+    for segment in store_archive.segments(path):
+        seg_key = str(segment)
+        cached_seg = _NON_MLB_SEGMENT_CACHE.get(seg_key)
+        if cached_seg is None:
+            with gzip.open(segment, "rt", encoding="utf-8") as fh:
+                cached_seg = _non_mlb_tags_from_lines(fh)
+            _NON_MLB_SEGMENT_CACHE[seg_key] = cached_seg
+        for event_id, tag in cached_seg.items():
+            out.setdefault(event_id, tag)
+
+    hot = Path(path)
+    try:
+        st = hot.stat()
+    except (FileNotFoundError, NotADirectoryError):
+        st = None
+    if st is not None:
+        resolved = str(hot.resolve())
+        key = (resolved, st.st_size, st.st_mtime_ns)
+        cached_hot = _NON_MLB_HOT_CACHE.get(key)
+        if cached_hot is None:
+            with hot.open("r", encoding="utf-8") as fh:
+                cached_hot = _non_mlb_tags_from_lines(fh)
+            for stale in [k for k in _NON_MLB_HOT_CACHE if k[0] == resolved]:
+                del _NON_MLB_HOT_CACHE[stale]
+            _NON_MLB_HOT_CACHE[key] = cached_hot
+        for event_id, tag in cached_hot.items():
+            out.setdefault(event_id, tag)
     return out
 
 

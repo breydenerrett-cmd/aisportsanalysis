@@ -33,6 +33,7 @@ from pathlib import Path
 
 from src.core import odds as odds_math
 from src.paths import processed_path
+from src.pipeline import store_archive
 from src.providers import odds as odds_provider
 
 DEFAULT_SPORT = "mlb"
@@ -337,24 +338,31 @@ def read(path=DEFAULT_SNAPSHOT_PATH, skip_corrupt: bool = True, sport=DEFAULT_SP
     right trade for an append-only log.
 
     sport=DEFAULT_SPORT (mlb) returns only MLB rows. sport=None returns every row.
+
+    Reads the LOGICAL store at `path` (src.pipeline.store_archive): archive
+    segments oldest-first, then the hot file, in original order -- serves
+    both this function's own default (odds_snapshots.jsonl) and
+    `read_multibook` (odds_multibook.jsonl, rotated since the 2026-09-21
+    100MB-push incident, the most-called reader of that store in this
+    project -- src.report.card, src.pipeline.dense, src.pipeline.grading and
+    a dozen others all go through this). A path with no archive directory
+    reads exactly as the old plain read did.
     """
-    target = Path(path)
-    if not target.exists():
+    if not store_archive.exists(path):
         return []
     rows = []
-    with target.open(encoding="utf-8") as handle:
-        for number, line in enumerate(handle, start=1):
-            line = line.strip()
-            if not line:
+    for number, line in enumerate(store_archive.iter_lines(path), start=1):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+            if _is_sport(row, sport):
+                rows.append(row)
+        except json.JSONDecodeError:
+            if skip_corrupt:
                 continue
-            try:
-                row = json.loads(line)
-                if _is_sport(row, sport):
-                    rows.append(row)
-            except json.JSONDecodeError:
-                if skip_corrupt:
-                    continue
-                raise SnapshotError(f"corrupt snapshot on line {number} of {target}")
+            raise SnapshotError(f"corrupt snapshot on line {number} of {path}")
     return rows
 
 
@@ -493,33 +501,40 @@ def iter_multibook(path=DEFAULT_MULTIBOOK_PATH, skip_corrupt: bool = True,
     so `market=None` means "every row" and never "rows whose market is null".
 
     sport filters rows by sport; sport=None returns every row.
+
+    Reads the LOGICAL store at `path` (src.pipeline.store_archive) -- still
+    one line at a time, still no materialised list, so a rotation
+    (2026-09-21 incident) does not reintroduce the 2026-09-10 memory
+    incident this function's own docstring describes: each archive segment
+    is decompressed and iterated lazily (gzip.open in text-streaming mode
+    inside `iter_lines`), never read whole into memory, exactly like the hot
+    file was before. A path with no archive directory reads exactly as the
+    old plain read did.
     """
-    target = Path(path)
-    if not target.exists():
+    if not store_archive.exists(path):
         return
     needle = f'"{market}"' if market else None
-    with target.open(encoding="utf-8") as handle:
-        for number, line in enumerate(handle, start=1):
-            line = line.strip()
-            if not line:
+    for number, line in enumerate(store_archive.iter_lines(path), start=1):
+        line = line.strip()
+        if not line:
+            continue
+        if needle is not None and needle not in line:
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            if skip_corrupt:
                 continue
-            if needle is not None and needle not in line:
-                continue
-            try:
-                row = json.loads(line)
-            except json.JSONDecodeError:
-                if skip_corrupt:
-                    continue
-                raise SnapshotError(
-                    f"corrupt snapshot on line {number} of {target}")
-            # The exact check the prefilter is only an approximation of.
-            if market is not None and row.get("market") != market:
-                continue
-            if not _is_sport(row, sport):
-                continue
-            if keep is not None and not keep(row):
-                continue
-            yield row
+            raise SnapshotError(
+                f"corrupt snapshot on line {number} of {path}")
+        # The exact check the prefilter is only an approximation of.
+        if market is not None and row.get("market") != market:
+            continue
+        if not _is_sport(row, sport):
+            continue
+        if keep is not None and not keep(row):
+            continue
+        yield row
 
 
 def is_pregame(row) -> bool:

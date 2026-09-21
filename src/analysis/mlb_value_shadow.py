@@ -344,7 +344,24 @@ def _iter_jsonl(path, *, needle_groups: Sequence[Sequence[str]] = (), keep=None)
     """Stream a JSONL store. `needle_groups` is a text prefilter that may
     only over-match: a line is parsed only if, for EVERY group, it contains
     at least one of that group's needles. `keep` is the exact check on the
-    parsed row. Corrupt lines are skipped."""
+    parsed row. Corrupt lines are skipped.
+
+    DELIBERATELY NOT ARCHIVE-AWARE (src.pipeline.store_archive, 2026-09-21
+    100MB-push incident) -- and not just as an oversight: this module's own
+    "WHAT IT IS NOT" isolation contract (see module docstring, enforced by
+    tests/test_mlb_value_shadow.py's Isolation.
+    test_the_shadow_source_imports_nothing_customer_facing_or_paid, a static
+    AST check) forbids importing `src.pipeline` -- or anything else under
+    providers/report/engine/api/capture -- from this file's source AT ALL,
+    anywhere, not only at module level (the test walks the whole AST, so a
+    function-local import would still trip it). That is not a gap this
+    function's callers pay for: `read_multibook_rows`/`read_prop_rows` are
+    always scoped to one `date` via `_date_needles`, called for TODAY's
+    slate (scripts/capture_slot.sh's "mlb value shadow" step runs same-day),
+    which is always inside any rotation's `keep_days` window -- a rotation
+    only ever archives rows OLDER than that window, so the rows this
+    function's callers ask for are never the rows a rotation could have
+    moved into cold storage."""
     target = Path(path)
     if not target.exists():
         return

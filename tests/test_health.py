@@ -21,7 +21,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from src.pipeline import health
+from src.pipeline import health, store_archive
 
 DAY = "2026-08-31"
 YESTERDAY = "2026-08-30"
@@ -533,6 +533,22 @@ class EmptyStoreHonestyTests(HealthStoreFixture):
         self.assertEqual(data["odds"]["rows"], 0)
         self.assertIsNone(data["odds"]["usual_books"])
         self.assertMentions(data, "holds no rows at all")
+
+    def test_a_fully_rotated_multibook_store_reads_as_present_not_absent(self):
+        """src/pipeline/store_archive.py (2026-09-21 review): `_snapshot_
+        section` used to gate presence on a bare `path.exists()` while its
+        content read already went through the logical store (`_read_jsonl`
+        -> `store_archive.iter_lines`) -- the two disagreed the moment a
+        store's hot file was gone but its history lived in `archive/`, the
+        same disagreement `_odds_section`/`_usual_books` in this module were
+        already fixed against."""
+        path = self.root / "processed" / "odds_multibook.jsonl"
+        path.unlink()  # no hot file at all -- rotate() leaving pure history
+        seg_dir = store_archive.segment_dir(path)
+        seg_dir.mkdir(parents=True)
+        (seg_dir / "0001_2026-08-01_2026-08-20.jsonl.gz").write_bytes(b"")
+        data = self.run_report()
+        self.assertTrue(data["snapshots"]["store_present"])
 
     def test_an_absent_multibook_store_reads_as_unknown_not_zero(self):
         (self.root / "processed" / "odds_multibook.jsonl").unlink()

@@ -168,11 +168,26 @@ if ! flock -w 300 9; then
     exit 1
 fi
 
+# STORE ROTATION, BEFORE STAGING (2026-09-21 incident, src.pipeline.
+# store_archive): data/processed/odds_multibook.jsonl grew to 100.08 MB and
+# GitHub started rejecting every push from the capture runners -- see
+# scripts/capture_slot.sh's copy of this comment for the full incident.
+# This pass stages `data/processed` wholesale below, same as the capture
+# scripts, so it runs the same rotation under the same GIT_LOCK, strictly
+# before `git add`. GIT_FAILED, not just echo (2026-09-21 fact-check): an
+# ESCALATE line alone does not fail this script by itself.
+python3 -m src.cli store rotate --all --if-over-mb 60 --keep-days 3 \
+    || { echo "ESCALATE: store rotation failed -- a rotatable store may be approaching GitHub's 100MB push limit unrotated"; GIT_FAILED=1; }
+. "$(dirname "$0")/lib_shrink_guard.sh"
+
 # Explicit paths, never bare `data`: data/app (customer/auth state) and
 # data/raw must never be staged by an automated pass. This pass writes
 # decisions and paper wagers, and refreshes the stores `engine slate` itself
 # rebuilds on the way in.
 git add data/processed evidence data/paper_accounts docs/OVERNIGHT_RUN.md 2>/dev/null || true
+# GUARD (2026-09-21 incident): size-gate backstop for whatever store
+# rotation above did not catch -- prints WARN/ESCALATE, never blocks.
+guard_staged_size
 if ! git diff --cached --quiet; then
     BRANCH=$(git rev-parse --abbrev-ref HEAD)
     if ! git commit -q -m "Afternoon slate $TODAY"; then

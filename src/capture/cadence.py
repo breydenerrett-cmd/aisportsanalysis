@@ -41,6 +41,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from src.paths import data_path, processed_path
+from src.pipeline import store_archive
 
 LOG = logging.getLogger(__name__)
 
@@ -80,11 +81,14 @@ def grade_from_gap(seconds) -> str:
 
 
 def _read_jsonl(path) -> list:
-    target = Path(path)
-    if not target.exists():
-        return []
+    """Every row of the LOGICAL store at `path` (src.pipeline.store_archive).
+    Serves both `compute`'s per-source reads -- SOURCES["odds_multibook"]
+    rotates since the 2026-09-21 100MB-push incident -- and this module's own
+    cadence_slo.jsonl store, which has never been rotated and so reads
+    exactly as a plain scan always did (no archive directory -> iter_lines
+    falls through to the hot file alone)."""
     rows = []
-    for line in target.read_text(encoding="utf-8").splitlines():
+    for line in store_archive.iter_lines(path):
         line = line.strip()
         if not line:
             continue

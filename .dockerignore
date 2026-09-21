@@ -27,6 +27,30 @@ data/*
 !data/app/
 data/app/*
 !data/app/.gitkeep
+# COLD-STORAGE ARCHIVE SHIPS IN THE IMAGE (2026-09-21 incident, src.
+# pipeline.store_archive; corrected 2026-09-21 review -- an earlier version
+# of this comment said the archive could be left out because the ONLY
+# reader of odds_multibook.jsonl in the serving container is apphealth's
+# check_store. That was false: it only grepped api/ itself, not what api/
+# imports. At least seven served routes read odds_multibook's CONTENT
+# through snapshots.read_multibook / iter_multibook / gamekey.
+# events_for_date, all of which now read the LOGICAL store (hot + archive)
+# via store_archive -- api/odds.py -> prices.boards_by_matchup,
+# api/games.py -> engine_bridge.decisions_for_date, api/card.py ->
+# report.card / report.nfl_card, api/tennis.py -> tennis_board, api/
+# today.py -> gamekey.events_for_date. Every one of those takes an
+# arbitrary `date` (the UI has a date picker and deep-links from past card
+# picks, web/js/games.js, web/js/card.js), so leaving the archive out of
+# the image would make every past-date /odds, /games, /card and /opportunities
+# view go blank the moment a store rotation first fires -- a real,
+# customer-facing regression from what the image served before this
+# incident (the full, unrotated file). The archive is gzip and, for the
+# rotation policy this project actually runs (3-day keep window), small: a
+# multi-week segment compresses to a few MB, nowhere near the 100 MB hot
+# file the image already shipped pre-incident. apphealth.check_store stays
+# hot-file-only regardless (its own docstring) -- that was never the reason
+# to exclude the archive, only a fact that happens to be true either way.
+# data/processed/archive/  -- INTENTIONALLY NOT EXCLUDED, see above.
 # Paper-account ledgers: read by the Performance surface (2026-09-07).
 !data/paper_accounts/
 # F-2 (2026-09-07): the historical stores the matchup page reads for team

@@ -36,6 +36,7 @@ checks by running them.
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import sys
@@ -231,6 +232,110 @@ class GuardOnAThrowawayRepo(unittest.TestCase):
         self.assertNotIn("ESCALATE:", result.stdout, result.stdout)
 
 
+@unittest.skipUnless(BASH, "no usable POSIX bash found on this machine")
+class GuardSizeOnAThrowawayRepo(unittest.TestCase):
+    """guard_staged_size (2026-09-21 incident: data/processed/odds_multibook
+    .jsonl hit 100.08 MB and GitHub rejected every push). A real git repo
+    under tempfile.TemporaryDirectory(), never this repo's own working
+    tree -- same discipline as GuardOnAThrowawayRepo above.
+
+    GUARD_SIZE_WARN_MIB/GUARD_SIZE_ESCALATE_MIB are overridden to small
+    values (env, "${VAR:-default}" in lib_shrink_guard.sh) so this proves
+    the gate fires without writing genuinely 75-95MB files into a throwaway
+    repo on every run of the fast suite -- the comparison logic (staged
+    blob size in MiB via `git cat-file -s`, >= escalate / >= warn / below
+    both) is identical at any threshold; only the numbers are smaller here.
+    """
+
+    WARN_MIB = 1
+    ESCALATE_MIB = 2
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.repo = Path(self._tmp.name) / "repo"
+        self.repo.mkdir()
+        _run("git", "init", "-q", cwd=self.repo)
+        _run("git", "config", "user.email", "test@example.com", cwd=self.repo)
+        _run("git", "config", "user.name", "Test", cwd=self.repo)
+        (self.repo / "data" / "processed").mkdir(parents=True)
+        shutil.copy(GUARD, self.repo / "lib_shrink_guard.sh")
+
+    def _write_bytes(self, rel, size_bytes):
+        path = self.repo / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("wb") as fh:
+            fh.truncate(size_bytes)
+
+    def _guard_size(self):
+        env = dict(os.environ)
+        env["GUARD_SIZE_WARN_MIB"] = str(self.WARN_MIB)
+        env["GUARD_SIZE_ESCALATE_MIB"] = str(self.ESCALATE_MIB)
+        script = ("set -uo pipefail\n"
+                 ". ./lib_shrink_guard.sh\n"
+                 "guard_staged_size\n")
+        return subprocess.run([BASH, "-c", script], cwd=str(self.repo),
+                              capture_output=True, text=True, env=env)
+
+    def test_a_file_at_or_over_the_escalate_threshold_escalates(self):
+        self._write_bytes("data/processed/odds_multibook.jsonl",
+                          (self.ESCALATE_MIB + 1) * 1024 * 1024)
+        _run("git", "add", "data/processed/odds_multibook.jsonl", cwd=self.repo)
+
+        result = self._guard_size()
+
+        self.assertIn("ESCALATE: data/processed/odds_multibook.jsonl is", result.stdout)
+        self.assertIn("GitHub rejects files over 100 MB", result.stdout)
+
+    def test_a_file_between_warn_and_escalate_warns_not_escalates(self):
+        self._write_bytes("data/processed/derivative_markets.jsonl",
+                          int((self.WARN_MIB + 0.5) * 1024 * 1024))
+        _run("git", "add", "data/processed/derivative_markets.jsonl", cwd=self.repo)
+
+        result = self._guard_size()
+
+        self.assertIn("WARN: data/processed/derivative_markets.jsonl is", result.stdout)
+        self.assertIn("add it to store rotation", result.stdout)
+        self.assertNotIn("ESCALATE:", result.stdout)
+
+    def test_a_small_file_is_silent(self):
+        self._write_bytes("data/processed/gate_results.jsonl", 128)
+        _run("git", "add", "data/processed/gate_results.jsonl", cwd=self.repo)
+
+        result = self._guard_size()
+
+        self.assertNotIn("ESCALATE:", result.stdout)
+        self.assertNotIn("WARN:", result.stdout)
+
+    def test_the_guard_never_prints_file_contents(self):
+        """The size gate reports sizes, never bytes -- a staged store can
+        hold real market data and this must never leak it into a log."""
+        secret_marker = b"THIS-MUST-NEVER-APPEAR-IN-GUARD-OUTPUT"
+        path = self.repo / "data/processed/odds_multibook.jsonl"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("wb") as fh:
+            fh.write(secret_marker)
+            fh.truncate((self.ESCALATE_MIB + 1) * 1024 * 1024)
+        _run("git", "add", "data/processed/odds_multibook.jsonl", cwd=self.repo)
+
+        result = self._guard_size()
+
+        self.assertIn("ESCALATE:", result.stdout)
+        self.assertNotIn("THIS-MUST-NEVER-APPEAR", result.stdout)
+        self.assertNotIn("THIS-MUST-NEVER-APPEAR", result.stderr)
+
+    def test_only_currently_staged_paths_are_checked(self):
+        """An oversized file sitting in the worktree but never `git add`ed
+        must not be flagged -- what matters is what would actually be
+        pushed."""
+        self._write_bytes("data/processed/odds_multibook.jsonl",
+                          (self.ESCALATE_MIB + 1) * 1024 * 1024)
+        # Deliberately never `git add`ed.
+        result = self._guard_size()
+        self.assertNotIn("ESCALATE:", result.stdout)
+        self.assertNotIn("WARN:", result.stdout)
+
+
 class CaptureScriptsCallTheGuard(unittest.TestCase):
     """Textual proof that both data-plane scripts actually source the guard,
     read the declaration (not a literal filename list), stage exactly those
@@ -279,6 +384,50 @@ class CaptureScriptsCallTheGuard(unittest.TestCase):
                                 f"{rel} calls the guard before staging the "
                                 "declared stores, so it would have nothing "
                                 "to check")
+
+    def test_rotation_runs_before_staging_and_the_size_guard_before_commit(self):
+        """2026-09-21 review: nothing asserted that the four committing
+        scripts actually call `store rotate` / `guard_staged_size` in the
+        order the incident write-up describes -- rotate BEFORE `git add`
+        (rotating after staging would leave a stale, oversized blob already
+        in the index even though the working-tree file had shrunk) and
+        `guard_staged_size` BEFORE `git commit` (its only job is to warn on
+        what is about to be committed). A future edit that reorders these
+        would pass every other test in this file and still recreate the
+        bug store rotation exists to fix."""
+        anchors = {
+            "scripts/capture_slot.sh": "git add $STAGE_PATHS",
+            "scripts/forward_capture.sh":
+                "git add data/watch data/processed data/raw/oddsapi",
+            "scripts/daily_loop.sh": "git add data/processed",
+            "scripts/afternoon_slate.sh": "git add data/processed",
+        }
+        for rel, add_anchor in anchors.items():
+            with self.subTest(script=rel):
+                text = (REPO / rel).read_text(encoding="utf-8")
+                # Each anchor is searched for STARTING AFTER the previous
+                # one, not just anywhere in the file: an earlier comment
+                # (e.g. the rotation call's own docstring-style comment)
+                # can legitimately mention a later step by name, and a bare
+                # `text.index` would find that mention instead of the real
+                # call it is describing.
+                rotate_pos = text.index("store rotate --all")
+                add_pos = text.index(add_anchor, rotate_pos)
+                guard_pos = text.index("guard_staged_size", add_pos)
+                commit_pos = text.index("git commit -q", guard_pos)
+                self.assertLess(
+                    rotate_pos, add_pos,
+                    f"{rel} stages data/processed before rotating it -- a "
+                    "stale, oversized blob would already be in the index "
+                    "even though the working-tree file had shrunk")
+                self.assertLess(
+                    add_pos, guard_pos,
+                    f"{rel} calls guard_staged_size before staging -- it "
+                    "would have nothing staged to check")
+                self.assertLess(
+                    guard_pos, commit_pos,
+                    f"{rel} commits before guard_staged_size ever runs -- "
+                    "the size WARN/ESCALATE would fire too late to matter")
 
     def test_declaration_file_lists_the_three_known_stores(self):
         """The declaration itself must still carry (at minimum) the three

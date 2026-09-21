@@ -3,3 +3,16 @@
 # turned them CRLF and those tests failed here for that reason alone.
 # They are LF everywhere, always.
 *.sh text eol=lf
+
+# JSONL forward-capture stores (src/pipeline/store_archive.py, 2026-09-21
+# archive-rotation incident) must be byte-for-byte identical to what the
+# writer produced -- `rotate`'s own verification proof depends on it, and
+# so does every reader that hashes or diffs raw lines. src.pipeline.
+# snapshots.append writes them LF-only. Without this, a Windows checkout
+# with core.autocrlf=true (this machine, 2026-09-21 review: a 319,571-byte
+# gap between this checkout's odds_multibook.jsonl and its HEAD blob, one
+# CR per line) silently turns every line CRLF on checkout, which would
+# break that proof for anyone running a local capture loop on Windows --
+# store_archive.py's own module docstring explicitly supports that case
+# ("Windows dev boxes included").
+data/processed/*.jsonl text eol=lf

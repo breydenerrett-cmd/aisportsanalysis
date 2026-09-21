@@ -20,6 +20,7 @@ from src.capture import budget as budget_module
 from src.capture import cadence as cadence_module
 from src.pipeline import creditlog
 from src.pipeline import slate as slate_pipeline
+from src.pipeline import store_archive
 from src.providers import mlb
 from src.providers import odds as odds_provider
 
@@ -163,6 +164,92 @@ def cmd_cadence(args) -> int:
               f"longest_gap_s={slo['longest_gap_seconds']}  "
               f"p95_gap_s={slo['p95_gap_seconds']}  grade={slo['grade']}")
     return EXIT_OK
+
+
+def cmd_store(args) -> int:
+    if args.store_command == "rotate":
+        return _cmd_store_rotate(args)
+    raise SystemExit(f"unknown store subcommand {args.store_command!r}")
+
+
+def _cmd_store_rotate(args) -> int:
+    """`store rotate [--store NAME | --all] --if-over-mb N --keep-days K
+    [--now ISO]`.
+
+    Moves the old prefix of each selected store's hot file into a new cold
+    archive segment (src.pipeline.store_archive.rotate) -- the fix for the
+    2026-09-21 incident: data/processed/odds_multibook.jsonl grew to 100.08
+    MB and GitHub rejected every push from the capture runners ("File ...
+    exceeds GitHub's file size limit of 100.00 MB"), losing a 13-minute
+    capture slot every time until this ran. scripts/capture_slot.sh and
+    scripts/forward_capture.sh call this with `--all --if-over-mb 60
+    --keep-days 3` before staging, every slot.
+
+    Exits EXIT_OK (0) when every selected store rotated or no-opped
+    cleanly; EXIT_ERROR (2, non-zero) when a name is not a known rotatable
+    store or a rotation's own byte-identity proof failed
+    (store_archive.StoreArchiveError) -- either way the hot file is left
+    exactly as it was, but a caller must know NOT to trust this run to have
+    shrunk anything, which is what makes the caller's `|| echo ESCALATE:`
+    fire.
+    """
+    if args.now:
+        now = datetime.fromisoformat(args.now.replace("Z", "+00:00"))
+        if now.tzinfo is None:
+            now = now.replace(tzinfo=timezone.utc)
+    else:
+        now = datetime.now(timezone.utc)
+
+    if args.all:
+        names = sorted(store_archive.ROTATABLE_STORES)
+    else:
+        names = [args.store]
+
+    threshold_bytes = int(args.if_over_mb * 1024 * 1024)
+    failed = False
+    for name in names:
+        cfg = store_archive.ROTATABLE_STORES.get(name)
+        if cfg is None:
+            known = ", ".join(sorted(store_archive.ROTATABLE_STORES))
+            print(f"store rotate {name}: ESCALATE unknown store (known: {known})")
+            failed = True
+            continue
+        path = cfg["path"]() if callable(cfg["path"]) else Path(cfg["path"])
+        try:
+            report = store_archive.rotate(
+                path, keep_days=args.keep_days, now=now,
+                threshold_bytes=threshold_bytes, stamp_field=cfg["stamp_field"])
+        # OSError and ValueError too, not just StoreArchiveError (2026-09-21
+        # review): a bad --keep-days raises ValueError, and a disk-level
+        # failure (ENOSPC, EIO, or -- realistic on a Windows checkout with a
+        # `--reload` dev server or Defender holding the hot file open --
+        # PermissionError replacing it) raises a plain OSError. Before this
+        # fix either one crashed out of this command as an uncaught
+        # traceback instead of the clean ESCALATE line every other failure
+        # here prints; store_archive.rotate itself already guarantees the
+        # hot file and archive directory are left untouched (or rolled
+        # back) before any of these propagate.
+        except (store_archive.StoreArchiveError, OSError, ValueError) as exc:
+            print(f"store rotate {name}: ESCALATE {exc}")
+            failed = True
+            continue
+        if report["rotated"]:
+            print(f"store rotate {name}: rotated {report['archived_lines']} "
+                  f"row(s), {report['archived_bytes']} byte(s), into "
+                  f"{report['segment']} -- hot file "
+                  f"{report['hot_size_before']} -> {report['hot_size_after']} bytes")
+        elif report["reason"].startswith("no complete, parseable line"):
+            # WARN, not a quiet no-op (2026-09-21 review): this reason only
+            # ever comes back when the hot file IS over threshold (rotate
+            # returns the "hot size < threshold" reason first otherwise) --
+            # meaning something is blocking every future rotation of this
+            # store at the same spot (module docstring: "THE GUARD THAT
+            # LOOKED LIKE A GUARANTEE, AND ISN'T"), and the only remaining
+            # backstop is guard_staged_size's 75 MiB WARN / 95 MiB ESCALATE.
+            print(f"store rotate {name}: WARN {report['reason']}")
+        else:
+            print(f"store rotate {name}: no-op ({report['reason']})")
+    return EXIT_ERROR if failed else EXIT_OK
 
 
 def cmd_l1(args) -> int:
@@ -3912,6 +3999,31 @@ def build_parser() -> argparse.ArgumentParser:
     cadence_cmd.add_argument("--date", default=None,
                              help="YYYY-MM-DD (defaults to today, UTC)")
 
+    store_cmd = sub.add_parser(
+        "store", help="cold-storage rotation for append-only JSONL stores "
+                      "(src.pipeline.store_archive; 2026-09-21 100MB-push incident)")
+    store_sub = store_cmd.add_subparsers(dest="store_command", required=True)
+    store_rotate_cmd = store_sub.add_parser(
+        "rotate", help="move a store's old rows into a cold gzip segment "
+                       "when its hot file is over --if-over-mb")
+    store_rotate_group = store_rotate_cmd.add_mutually_exclusive_group(required=True)
+    store_rotate_group.add_argument(
+        "--store", choices=sorted(store_archive.ROTATABLE_STORES),
+        help="rotate this one registered store")
+    store_rotate_group.add_argument(
+        "--all", action="store_true", help="rotate every registered store")
+    store_rotate_cmd.add_argument(
+        "--if-over-mb", type=float, required=True, dest="if_over_mb",
+        help="no-op below this hot-file size in MB (capture scripts pass 60)")
+    store_rotate_cmd.add_argument(
+        "--keep-days", type=int, required=True, dest="keep_days",
+        help="keep this many days' rows in the hot file; archive the rest "
+             "(capture scripts pass 3)")
+    store_rotate_cmd.add_argument(
+        "--now", default=None, metavar="ISO8601",
+        help="cutoff clock (defaults to the real UTC now); tests and dry "
+             "runs pass this instead of racing the wall clock")
+
     health_cmd = sub.add_parser("health", help="slate data-quality health "
                                                "report (read-only; non-zero "
                                                "exit on anomalies)")
@@ -4160,6 +4272,7 @@ COMMANDS = {
     "calibration-demo": cmd_calibration_demo,
     "budget": cmd_budget,
     "cadence": cmd_cadence,
+    "store": cmd_store,
     "l1": cmd_l1,
     "gamekey": cmd_gamekey,
     "statcast": cmd_statcast,

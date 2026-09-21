@@ -45,6 +45,7 @@ from typing import Optional
 
 from src import paths
 from src.appstate import users as users_store
+from src.pipeline import store_archive
 
 # The odds store api/today.py and api/betcheck.py both price games from --
 # its newest row's age is the single most useful "is the pipeline still
@@ -76,7 +77,7 @@ class StoreCheck:
     rows: Optional[int]
     newest_row_age_seconds: Optional[float]
     newest_row_utc: Optional[str]
-    status: str  # "ok" | "empty" | "missing" | "unreadable"
+    status: str  # "ok" | "empty" | "missing" | "unreadable" | "archived_only"
     reason: Optional[str] = None
 
     def to_dict(self) -> dict:
@@ -151,6 +152,29 @@ def _newest_timestamp(path: Path, field_name: str) -> tuple:
     collector, not proof the rest of the file is unusable.
 
     Memoised on the file's size and mtime -- see `_SCAN_CACHE` above.
+
+    DELIBERATELY SCANS THE HOT FILE ONLY, NOT THE LOGICAL STORE
+    --------------------------------------------------------------
+    src.pipeline.store_archive (2026-09-21, the 100MB-push incident) moves
+    only the PREFIX of a store older than its keep-window into cold gzip
+    segments -- the newest row is, by construction, always still in the hot
+    file, UNLESS every row in the store has been rotated (a hot file over
+    threshold with nothing captured for `keep_days`, which `check_store`
+    below handles as its own "archived_only" case rather than assuming this
+    function's `rows == 0` always means genuinely empty; see the 2026-09-21
+    review note on that branch). Short of that edge case, this function
+    answers "how old is the newest row", which the hot file alone always
+    answers correctly, and this exact module's docstring records the
+    incident that makes reading more than that a regression: a
+    full-store rescan on every /health poll (Fly, every 30s) measured
+    1,087-1,212ms and starved everything else on a shared vCPU (see the
+    `_SCAN_CACHE` block above) BEFORE this file's mtime-fingerprint cache was
+    added. Rescanning every gzip segment on every cache miss would put that
+    same cost back for a number the archive can never change the answer to.
+    `check_store`'s presence check below still calls `store_archive.exists`,
+    so a store that has been rotated hard enough to leave an EMPTY hot file
+    is still reported present, not "missing" -- only the age/count scan
+    itself stays on the hot file.
     """
     try:
         stat = path.stat()
@@ -200,13 +224,32 @@ def check_store(path: Path, timestamp_field: str, *,
     `now` is injectable so tests can assert an exact age instead of racing
     the wall clock (the pattern api/today.py's odds_meta ageing already
     uses).
+
+    Presence is `store_archive.exists` (hot file OR archive segments), not a
+    bare `path.exists()` -- a store rotated hard enough to leave its hot file
+    empty or absent (src.pipeline.store_archive, 2026-09-21 incident) still
+    holds real history and must not be reported "missing". `_newest_timestamp`
+    itself stays hot-file-only on purpose (see its own docstring); the
+    genuinely rare case of a rotation leaving NO hot file at all (every row
+    archived, none captured since) is reported honestly below rather than
+    either fabricated as "empty" (0 rows -- false; the store has history) or
+    crashed into "unreadable" (the hot file legitimately does not exist,
+    that is not an I/O error).
     """
     now = now or datetime.now(timezone.utc)
-    if not path.exists():
+    if not store_archive.exists(path):
         return StoreCheck(present=False, rows=None, newest_row_age_seconds=None,
                           newest_row_utc=None, status="missing",
                           reason=f"{path.name} is absent -- nothing has been "
                                  "captured yet, or the volume is not mounted")
+    if not path.exists():
+        return StoreCheck(present=True, rows=None, newest_row_age_seconds=None,
+                          newest_row_utc=None, status="archived_only",
+                          reason=f"{path.name} has no hot file (fully rotated "
+                                 "to cold storage); its history is in "
+                                 f"{store_archive.segment_dir(path)}, but "
+                                 "nothing has been captured since the last "
+                                 "rotation")
     try:
         rows, newest = _newest_timestamp(path, timestamp_field)
     except OSError as exc:
@@ -214,6 +257,25 @@ def check_store(path: Path, timestamp_field: str, *,
                           newest_row_utc=None, status="unreadable",
                           reason=f"{path.name} could not be read: {exc}")
     if rows == 0:
+        # ARCHIVED_ONLY, not "empty" (2026-09-21 review): `rotate` never
+        # deletes the hot file, even when it archives every row in it -- it
+        # writes the (possibly zero-byte) remaining suffix back with
+        # `os.replace` (src/pipeline/store_archive.py). So the ONE real way
+        # "every row rotated out" shows up here is a hot file that EXISTS,
+        # is readable, and has 0 rows -- exactly the state this branch used
+        # to report as "empty" (0 rows -- false; the store has history in
+        # its archive segments) rather than the store's own THE HONESTY
+        # RULE this module's docstring states: "a present-but-empty store
+        # is not the same as an absent one". The `not path.exists()` branch
+        # above is the defensive case (a hot file literally missing, e.g.
+        # never created); this is the one rotation actually produces.
+        if store_archive.segments(path):
+            return StoreCheck(present=True, rows=0, newest_row_age_seconds=None,
+                              newest_row_utc=None, status="archived_only",
+                              reason=f"{path.name}'s hot file has 0 rows -- "
+                                     "fully rotated to cold storage, nothing "
+                                     "captured since; history is in "
+                                     f"{store_archive.segment_dir(path)}")
         return StoreCheck(present=True, rows=0, newest_row_age_seconds=None,
                           newest_row_utc=None, status="empty",
                           reason=f"{path.name} exists but holds no rows")

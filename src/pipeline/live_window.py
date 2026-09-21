@@ -27,6 +27,7 @@ from src.analysis import live_rules
 from src.appstate import live_ledger
 from src.board import gamekey
 from src.pipeline import snapshots
+from src.pipeline import store_archive
 
 LOG = logging.getLogger(__name__)
 
@@ -51,7 +52,11 @@ def pregame_context(sport, date=None, *, rows=None, games=None, event_map=None) 
         from src.paths import processed_path
         try:
             all_rows = []
-            for line in Path(processed_path("odds_multibook.jsonl")).read_text().splitlines():
+            # store_archive.iter_lines, not a plain read: odds_multibook.jsonl
+            # rotates since the 2026-09-21 100MB-push incident, and this used
+            # to open the hot file directly -- silently blind to any row a
+            # rotation had already moved into archive/.
+            for line in store_archive.iter_lines(processed_path("odds_multibook.jsonl")):
                 if line.strip():
                     try:
                         all_rows.append(json.loads(line))

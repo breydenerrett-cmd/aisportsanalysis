@@ -16,6 +16,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from src.appstate import apphealth
+from src.pipeline import store_archive
 
 NOW = datetime(2026, 8, 31, 20, 0, tzinfo=timezone.utc)
 
@@ -50,6 +51,27 @@ class CheckStoreTests(unittest.TestCase):
         self.assertEqual(result.rows, 0)
         self.assertIsNone(result.newest_row_age_seconds)
         self.assertEqual(result.status, "empty")
+
+    def test_fully_rotated_store_with_empty_hot_file_reports_archived_only(self):
+        """src/pipeline/store_archive.py (2026-09-21 review): `rotate` never
+        deletes the hot file, even when every row in it gets archived -- it
+        replaces it with a (possibly 0-byte) remaining suffix. Before this
+        fix, `check_store`'s `rows == 0` branch reported that state as
+        "empty" (0 rows -- false; the store has real history in its archive
+        segments), losing the staleness signal THE HONESTY RULE in this
+        module's own docstring promises: "a present-but-empty store is not
+        the same as an absent one"."""
+        path = self.root / "rotated.jsonl"
+        path.touch()  # exactly what rotate() leaves when it archives everything
+        seg_dir = store_archive.segment_dir(path)
+        seg_dir.mkdir(parents=True)
+        (seg_dir / "0001_2026-08-01_2026-08-20.jsonl.gz").write_bytes(b"")
+        result = apphealth.check_store(path, "observed_utc", now=NOW)
+        self.assertTrue(result.present)
+        self.assertEqual(result.rows, 0)
+        self.assertIsNone(result.newest_row_age_seconds)
+        self.assertEqual(result.status, "archived_only")
+        self.assertIn("fully rotated", result.reason)
 
     def test_fresh_row_reports_a_small_age(self):
         path = self.root / "fresh.jsonl"

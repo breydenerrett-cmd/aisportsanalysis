@@ -20,10 +20,15 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from collections import Counter
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO))
+
+from src.pipeline import store_archive  # noqa: E402
+
 # DATA_ROOT lets this script be pointed at a sibling checkout that holds the
 # real (gitignored, large) data/ directory when run from a worktree that
 # only carries tracked files -- output always writes into THIS repo's docs/.
@@ -32,17 +37,20 @@ OUT = REPO / "docs" / "TOTALS_COVERAGE.md"
 
 
 def _iter_jsonl(path: Path):
-    if not path.exists():
-        return
-    with path.open() as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                yield json.loads(line)
-            except json.JSONDecodeError:
-                continue
+    """Every row of the LOGICAL store at `path` (src.pipeline.store_archive):
+    odds_multibook.jsonl rotates since the 2026-09-21 100MB-push incident,
+    and this audit's whole point is a total row count -- reading the hot
+    file alone after a rotation would silently undercount. A path with no
+    archive directory (the season archives, l1_observations.jsonl) reads
+    exactly as the old plain read did."""
+    for line in store_archive.iter_lines(path):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            yield json.loads(line)
+        except json.JSONDecodeError:
+            continue
 
 
 def audit_archive(season: int) -> dict:

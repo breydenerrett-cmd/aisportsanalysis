@@ -87,6 +87,14 @@ PROTECTED_STORES = frozenset({
 #: a fixed one.
 PROTECTED_DIRS = frozenset({
     _REAL_DATA / "raw" / "oddsapi",
+    # src/pipeline/store_archive.py (2026-09-21 100MB-push incident): a
+    # buggy test that rotated a real store would place a real, permanent
+    # gzip segment under here via `os.replace` (the archive segment lands
+    # BEFORE the hot file is ever touched, so a bug that only trips this
+    # guard's hot-file check would still have written one real archive
+    # file first). Same failure mode this file exists to prevent, just in
+    # the archive half of a store instead of the hot half.
+    _REAL_DATA / "processed" / "archive",
 })
 
 

@@ -193,6 +193,30 @@ class ForwardEvidenceIsTrackedTests(unittest.TestCase):
                 except OSError:
                     pass
 
+    def test_archive_segments_are_tracked_but_the_rotator_tmp_file_is_not(self):
+        """Cold-storage archive segments (src/pipeline/store_archive.py,
+        2026-09-21 incident) are exactly as unbackfillable as the forward
+        stores above -- FORWARD_EVIDENCE's own reasoning -- so the tree
+        negation that tracks them must actually work, the same property
+        this file already checks for every named store.
+
+        The flip side (2026-09-21 review): `rotate`'s own `tempfile.
+        mkstemp(dir=seg_dir, suffix=".tmp")` writes its in-progress segment
+        INSIDE that same tree. `!data/processed/archive/**` un-ignores
+        everything under it indiscriminately, so before this fix an orphan
+        `*.tmp` left by an interrupted rotation (a hard kill between the
+        segment's `os.replace` and its own cleanup) would be exactly as
+        trackable as a real segment -- a persistent checkout could `git add`
+        a half-written temp file as if it were archive data.
+        """
+        self.assertFalse(
+            _is_ignored("data/processed/archive/odds_multibook/"
+                        "0001_2026-09-01_2026-09-02.jsonl.gz"),
+            "a real archive segment must not be gitignored")
+        self.assertTrue(
+            _is_ignored("data/processed/archive/odds_multibook/tmpab12cd.tmp"),
+            "rotate()'s orphan temp segment file must be gitignored")
+
     def test_the_capture_script_commits_the_store_directories(self):
         """The hourly script is what actually persists the evidence.
 

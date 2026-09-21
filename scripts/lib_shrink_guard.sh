@@ -112,3 +112,63 @@ guard_staged_no_shrink() {
         fi
     done
 }
+
+# WHY THIS EXISTS (2026-09-21 incident): data/processed/odds_multibook.jsonl
+# grew to 100.08 MB and GitHub started rejecting every push from the capture
+# runners --
+#
+#   remote: error: File data/processed/odds_multibook.jsonl is 100.08 MB;
+#   this exceeds GitHub's file size limit of 100.00 MB
+#   ESCALATE: push failed after retries -- commit is local only, needs
+#   manual push
+#
+# -- silently losing a 13-minute capture slot every time it fired, because
+# the local commit that held it could never reach origin. src.pipeline.
+# store_archive (`python3 -m src.cli store rotate`) is the fix for
+# odds_multibook itself; this guard is the backstop for every OTHER store
+# that grows toward the same 100MB wall before anyone adds it to rotation --
+# derivative_markets.jsonl (63MB), evidence/decisions_v2.jsonl (57MB) and
+# batter_props.jsonl (40MB) were all already headed there the day this was
+# written (store_archive.py's own module docstring cites the same numbers).
+#
+# CHECKS THE STAGED BLOB, NOT THE WORKING-TREE FILE -- same distinction
+# guard_staged_no_shrink makes above, for the same reason: what actually
+# gets pushed is the staged blob, `git cat-file -s`, never a `wc -c` on the
+# working copy, which could disagree with what is about to be committed.
+#
+# THRESHOLDS ARE MiB, MATCHING GITHUB'S OWN ERROR MESSAGE. GitHub states its
+# limit as "100.00 MB" but a store measured exactly at the wall printed
+# "100.08 MB" for a file `ls -l` also reports in binary units -- so this
+# guard's MB is MiB (1,048,576 bytes) throughout, deliberately conservative
+# against GitHub's own decimal-vs-binary ambiguity rather than risking a
+# WARN or ESCALATE that fires a few MB later than the real limit does.
+# "${VAR:-default}", not a plain assignment -- same convention
+# scripts/capture_slot.sh's CHAIN_* constants use, so a test can override
+# either threshold (tests/test_lib_shrink_guard.py does, to prove the gate
+# fires without writing genuinely 75-95MB files into a throwaway repo on
+# every run of the fast suite) without touching this file.
+GUARD_SIZE_ESCALATE_MIB="${GUARD_SIZE_ESCALATE_MIB:-95}"
+GUARD_SIZE_WARN_MIB="${GUARD_SIZE_WARN_MIB:-75}"
+
+# Checks EVERY currently staged path, not a fixed list: an oversized blob
+# can arrive from any committing script and any store (see the incident
+# note above), and the whole point of this guard is to catch the NEXT store
+# that grows into the wall, not only the one already fixed. Callers run this
+# after staging and before `git commit` -- exactly like guard_staged_no_
+# shrink, this only ever prints; it never unstages or blocks a commit, so
+# one oversized-but-otherwise-fine file never costs the rest of a capture
+# slot (the ESCALATE line is what a human, or scripts/escalations.py, acts
+# on). MUST NEVER print file contents -- only sizes, via `git cat-file -s`.
+guard_staged_size() {
+    local path blob size_bytes size_mib
+    for path in $(git diff --cached --name-only); do
+        blob=$(git rev-parse ":$path" 2>/dev/null) || continue
+        size_bytes=$(git cat-file -s "$blob" 2>/dev/null) || continue
+        size_mib=$((size_bytes / 1048576))
+        if [ "$size_mib" -ge "$GUARD_SIZE_ESCALATE_MIB" ]; then
+            echo "ESCALATE: $path is ${size_mib} MB staged; GitHub rejects files over 100 MB -- this push will fail"
+        elif [ "$size_mib" -ge "$GUARD_SIZE_WARN_MIB" ]; then
+            echo "WARN: $path is ${size_mib} MB; add it to store rotation before it reaches 100 MB"
+        fi
+    done
+}

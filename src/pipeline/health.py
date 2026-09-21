@@ -84,6 +84,7 @@ from pathlib import Path
 from src.paths import data_path
 from src.pipeline import ledger as ledger_mod
 from src.pipeline import rosterwatch
+from src.pipeline import store_archive
 from src.pipeline.dense import F5_CLOSE_MAX_EVENTS
 from src.pipeline.slate import team_abbrev_from_name
 from src.providers import mlb
@@ -322,6 +323,12 @@ def _odds_derived_schedule(day, root, csv_note, reason) -> dict:
 def _odds_section(day, schedule, root) -> dict:
     """Books per game on the multi-book board, and who is missing from it."""
     path = _multibook_path(root)
+    # store_archive.exists, not path.exists(): a store rotated hard enough
+    # to leave nothing newer than its keep-window can have an empty or
+    # absent hot file while archive/ still holds real history (module
+    # docstring on store_archive.exists) -- path.exists() alone would
+    # misreport a rotated-but-healthy store as "no data captured".
+    present = store_archive.exists(path)
     rows = _multibook_rows(day, root, schedule)
     by_game = {}
     for row in rows:
@@ -339,8 +346,8 @@ def _odds_section(day, schedule, root) -> dict:
         missing_games = [k for k in schedule["keys"] if k not in by_game]
 
     return {
-        "store_present": path.exists(),
-        "games_with_odds": len(by_game) if path.exists() else None,
+        "store_present": present,
+        "games_with_odds": len(by_game) if present else None,
         "games_without_odds": sorted(missing_games),
         "thin_games": sorted(k for k, b in by_game.items()
                              if len(b) < MIN_BOOKS_PER_GAME),
@@ -352,7 +359,7 @@ def _odds_section(day, schedule, root) -> dict:
         "books_missing": (sorted(usual - set(seen_books))
                           if usual is not None else None),
         "baseline_days": baseline_days,
-        "rows": len(rows) if path.exists() else None,
+        "rows": len(rows) if present else None,
     }
 
 
@@ -364,7 +371,7 @@ def _usual_books(day, root):
     would either invent absentees or bless a day on which half the board left.
     """
     path = _multibook_path(root)
-    if not path.exists():
+    if not store_archive.exists(path):
         return None, 0
     per_day = {}
     for row in _read_jsonl(path):
@@ -576,7 +583,13 @@ def _snapshot_section(moment, root) -> dict:
     to "when did we last successfully see the market", which is the question.
     """
     path = _multibook_path(root)
-    if not path.exists():
+    # store_archive.exists, not path.exists() (2026-09-21 review): this
+    # already reads the logical store via `_read_jsonl` -> `store_archive.
+    # iter_lines` below, matching `_odds_section` and `_usual_books` in this
+    # same module -- a bare `path.exists()` disagreed with them and
+    # reported a fully-rotated store (real archived history, empty hot
+    # file... or no hot file at all) as absent.
+    if not store_archive.exists(path):
         return {"store_present": False, "newest_utc": None,
                 "age_minutes": None, "observations": None}
     stamps = [r.get("observed_utc") for r in _read_jsonl(path)
@@ -992,17 +1005,19 @@ def _parse(value):
 
 
 def _read_jsonl(path) -> list:
-    """Rows of a JSONL store; a corrupt line costs one row, never the file.
+    """Rows of the LOGICAL JSONL store at `path`
+    (src.pipeline.store_archive); a corrupt line costs one row, never the
+    file.
 
     Same tolerance the writers assume -- an interrupted append is the normal
     signature of a killed run, and a monitor that raises on it would go blind
-    exactly when something has gone wrong.
+    exactly when something has gone wrong. Serves every store this module
+    reads, including odds_multibook.jsonl (rotated since the 2026-09-21
+    100MB-push incident); a store nobody has ever rotated has no archive
+    directory, so this reads exactly as the old plain read did.
     """
-    target = Path(path)
-    if not target.exists():
-        return []
     rows = []
-    for line in target.read_text(encoding="utf-8").splitlines():
+    for line in store_archive.iter_lines(path):
         line = line.strip()
         if not line:
             continue

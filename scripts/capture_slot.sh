@@ -630,6 +630,28 @@ if ! flock -w 300 9; then
     exit 1
 fi
 
+# STORE ROTATION, BEFORE STAGING (2026-09-21 incident, src.pipeline.
+# store_archive): data/processed/odds_multibook.jsonl grew to 100.08 MB and
+# GitHub started rejecting every push from the capture runners --
+#   "File data/processed/odds_multibook.jsonl is 100.08 MB; this exceeds
+#   GitHub's file size limit of 100.00 MB"
+# -- silently losing a 13-minute capture slot every time it fired, because
+# the local commit that held it could never reach origin. Run under the
+# same GIT_LOCK the commit below uses (rotation rewrites the hot file this
+# process is about to stage; a concurrent slot must not see it mid-rewrite),
+# and strictly BEFORE `git add` -- rotating AFTER staging would leave a
+# stale, oversized blob already in the index even though the working-tree
+# file had shrunk. A rotation failure never loses the capture (it already
+# happened; rotation is purely a pre-commit housekeeping step), but it DOES
+# fail the slot now (2026-09-21 fact-check, same lesson as the git-add
+# ESCALATE below): forward-capture has no ESCALATE-to-failure step of its
+# own, so an ESCALATE line here used to sit in a green run right up until
+# guard_staged_size's 95 MiB line finally blocked a push outright. Setting
+# GIT_FAILED makes THIS failure visible the same run it happens, not only
+# once the size guard catches its consequence.
+python3 -m src.cli store rotate --all --if-over-mb 60 --keep-days 3 \
+    || { echo "ESCALATE: store rotation failed -- a rotatable store may be approaching GitHub's 100MB push limit unrotated"; GIT_FAILED=1; }
+
 # evidence/ and data/paper_accounts are staged because the gated slate pass
 # above now writes those ledgers. Without them a pass would freeze decisions
 # locally and hand the next `pull --rebase --autostash` an uncommitted ledger.
@@ -682,6 +704,10 @@ fi
 # before this script ever runs. Refuse to commit a shrink on any one of
 # them; the rest of the commit proceeds either way.
 guard_staged_no_shrink $DECLARED_STORES
+# GUARD (2026-09-21 incident): the size-gate backstop for whatever store
+# rotation above did not catch -- prints WARN/ESCALATE, never blocks the
+# commit (same only-ever-prints contract as guard_staged_no_shrink).
+guard_staged_size
 if ! git diff --cached --quiet; then
     BRANCH=$(git rev-parse --abbrev-ref HEAD)
     if ! git commit -q -m "Forward capture slot $(date -u +%H:%MZ) (external)"; then

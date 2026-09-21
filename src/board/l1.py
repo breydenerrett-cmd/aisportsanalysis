@@ -101,6 +101,7 @@ from src.board.record import RecordValidationError, price_observation_from_dict
 from src.capture.cadence import grade_from_gap
 from src.core.asof import game_pk_key
 from src.paths import processed_path, raw_path
+from src.pipeline import store_archive
 
 OUTPUT_PATH = processed_path("l1_observations.jsonl")
 RAW_ROOT = raw_path("oddsapi")
@@ -181,18 +182,22 @@ class RefusalReport:
 
 
 def _read_jsonl(path: Path) -> list[dict]:
-    if not path.exists():
-        return []
+    """Every row of the LOGICAL store at `path` -- archive segments (if any,
+    src.pipeline.store_archive) followed by the hot file. Serves every
+    SOURCE_STORES path (including odds_multibook.jsonl, the store the
+    2026-09-21 100MB-push incident forced rotation onto) plus L1's own
+    output store and any discovered closing_*.jsonl store; a path nobody has
+    ever rotated has no archive directory, so `store_archive.iter_lines`
+    falls through to exactly the plain read this used to do."""
     rows = []
-    with path.open(encoding="utf-8") as handle:
-        for line in handle:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                rows.append(json.loads(line))
-            except json.JSONDecodeError:
-                continue
+    for line in store_archive.iter_lines(path):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            rows.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
     return rows
 
 
@@ -526,10 +531,10 @@ def run(
         source_stats = {
             "rows_seen": 0, "observations_seen": 0, "written": 0,
             "skipped_existing": 0, "refused": 0, "raw_matched": 0,
-            "path": str(path), "present": path.exists(),
+            "path": str(path), "present": store_archive.exists(path),
         }
         report["by_source"][source_name] = source_stats
-        if not path.exists():
+        if not store_archive.exists(path):
             continue
 
         all_rows = _read_jsonl(path)
