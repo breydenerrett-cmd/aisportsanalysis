@@ -255,6 +255,21 @@ class PriceRules(Base):
         self.assertEqual(rows[0]["label"], shadow.LABEL_THIN)
         self.assertEqual(rows[0]["n_other_books"], 2)
 
+    def test_thin_consensus_is_on_every_row_and_every_printed_line(self):
+        """The prereg says arm B is labelled THIN_CONSENSUS on every row;
+        final review 2026-09-21 found it only on decision rows and the
+        record. Scan and settled rows, and every printed arm name, carry
+        it now."""
+        self.s.set_props(_board("Cal Raleigh", 2, market="batter_hits", line="0.5"))
+        self.s.publish(arms=["B_HITS"])
+        self.s.set_box([_batter(GAME_PK, "Cal Raleigh", h=2), _linescore(GAME_PK, 1, 3)])
+        self.s.settle(now=NOW + timedelta(days=1))
+        self.assertTrue(self.s.scans("B_HITS"))
+        for row in self.s.scans("B_HITS") + self.s.settled("B_HITS"):
+            self.assertEqual(row.get("label"), shadow.LABEL_THIN, row.get("kind"))
+        self.assertIn(shadow.LABEL_THIN, shadow._arm_tag("B_HITS"))
+        self.assertEqual(shadow._arm_tag("A_TOTAL_BASES"), "A_TOTAL_BASES")
+
     def test_a_stale_book_is_neither_judged_nor_in_the_consensus(self):
         rows = _board("Cal Raleigh", 5, soft=None)
         rows += _prop("asleep", "Cal Raleigh", 130, -160, minutes_ago=45)
@@ -587,6 +602,31 @@ class PropGrading(Base):
         batter["date"] = "2026-09-23"
         self.s.set_box([batter, line])
         self.s.settle(now=NOW + timedelta(days=3))
+        self.assertEqual(self.s.settled(arm)[0]["result"], "WIN")
+
+    def test_a_postponed_game_made_up_on_another_date_is_void(self):
+        """Final review, 2026-09-21: MLB keeps the gamePk of a POSTPONED game
+        and moves its officialDate to the makeup day. Graded by game_pk
+        alone, the makeup's box score -- other starters, other lineups --
+        settled this decision. The results file's official date is the
+        signal; a suspended game keeps its date and still grades (above)."""
+        arm = self._lock()
+        self.s.set_box([_batter(GAME_PK, "Jose Ramirez", total_bases=2),
+                        _linescore(GAME_PK, 1, 3)])
+        self.s.set_results([{"game_pk": GAME_PK, "date": "2026-09-23",
+                             "away_score": 1, "home_score": 3}])
+        self.s.settle(now=NOW + timedelta(days=3))
+        settled = self.s.settled(arm)[0]
+        self.assertEqual((settled["result"], settled["reason"]),
+                         ("VOID", "postponed to another date"))
+
+    def test_a_game_on_its_own_official_date_still_grades(self):
+        arm = self._lock()
+        self.s.set_box([_batter(GAME_PK, "Jose Ramirez", total_bases=2),
+                        _linescore(GAME_PK, 1, 3)])
+        self.s.set_results([{"game_pk": GAME_PK, "date": DATE,
+                             "away_score": 1, "home_score": 3}])
+        self.s.settle(now=NOW + timedelta(days=1))
         self.assertEqual(self.s.settled(arm)[0]["result"], "WIN")
 
     def test_settle_dry_run_writes_nothing(self):
@@ -1229,7 +1269,8 @@ class Cli(unittest.TestCase):
             self.assertIn("WOULD LOCK A_TOTAL_BASES", text)
             self.assertIn("Cal Raleigh Over 1.5 +110 @ soft", text)
             for arm in shadow.ARMS:
-                self.assertIn(f"{arm.name}: boards", text)
+                # Each arm's line carries its label, if it has one.
+                self.assertIn(f"{shadow._arm_tag(arm.name)}: boards", text)
             self.assertFalse(ledger.exists())
 
     def test_unknown_arm_is_refused(self):

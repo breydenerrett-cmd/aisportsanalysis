@@ -772,7 +772,7 @@ def _publish_arm(arm: Arm, rows, *, now: datetime, date: str, dry_run: bool,
         if _last_scan_counts(spath, date) != counts:
             HashChainLedger(spath).append({
                 "kind": KIND_SCAN, "family": FAMILY, "rule_id": arm.rule_id,
-                "arm": arm.name, "schema_version": SCHEMA_VERSION,
+                "arm": arm.name, "schema_version": SCHEMA_VERSION, "label": arm.label,
                 "date": date, "recorded_utc": _iso(now), "counts": counts,
             })
     return {"counts": counts, "decisions": written if not dry_run else decisions}
@@ -846,20 +846,54 @@ def load_results_scores(path=None) -> dict:
     return out
 
 
+def load_results_dates(path=None) -> dict:
+    """{game_pk: official date} from mlb_results.csv (its `date` column is the
+    game's officialDate). Missing file: empty.
+
+    WHY (final review, 2026-09-21, before the first decision): MLB keeps a
+    game's gamePk when it POSTPONES it and moves its officialDate to the
+    makeup day, but keeps the officialDate of a SUSPENDED game that is
+    finished later. Finals are looked up by game_pk alone, so a decision
+    locked on a game that was rained out and made up within
+    VOID_AFTER_DAYS was graded on the makeup -- other starters, other
+    lineups -- where the prereg says a postponed game is VOID. A differing
+    official date is the one signal that separates the two."""
+    target = Path(path) if path else default_results_path()
+    out: dict = {}
+    if not target.exists():
+        return out
+    with target.open(newline="", encoding="utf-8") as handle:
+        for row in csv.DictReader(handle):
+            gpk = game_pk_key(row.get("game_pk"))
+            when = (row.get("date") or "").strip()
+            if gpk is not None and when:
+                out[gpk] = when
+    return out
+
+
 def _void(reason: str) -> dict:
     return {"result": RESULT_VOID, "profit_units": 0.0, "reason": reason}
 
 
 def grade_decision(decision: Mapping, box: BoxIndex, results: Mapping, *,
-                   now: datetime) -> Optional[dict]:
+                   now: datetime, results_dates: Optional[Mapping] = None) -> Optional[dict]:
     """The settled outcome for one decision, or None to leave it pending.
 
     A pending decision carries no row at all; `{"pending": "mismatch"}` is
     returned (not written) when the two final-score sources disagree so the
     caller can count it.
+
+    `results_dates` ({game_pk: official date}, `load_results_dates`): when
+    the game's official date is not the decision's date, the game was
+    postponed and made up on another day, and the decision is VOID
+    "postponed to another date" on every arm. A game missing from it (a
+    stale results file) is graded as before.
     """
     arm = ARMS_BY_NAME[decision["arm"]]
     gpk = game_pk_key(decision.get("game_pk"))
+    official = (results_dates or {}).get(gpk)
+    if official and decision.get("date") and official != decision["date"]:
+        return _void("postponed to another date")
     try:
         age_days = (now.date() - date_cls.fromisoformat(decision["date"])).days
     except (KeyError, TypeError, ValueError):
@@ -990,22 +1024,25 @@ def settle_recent(*, now: Optional[datetime] = None, ledger_dir=None, dry_run: b
 
     box = load_box_index(years, box_paths=box_paths)
     results = load_results_scores(results_path)
+    results_dates = load_results_dates(results_path)
     for arm in ARMS:
         if arm.name not in pending_by_arm:
             continue
         try:
             _settle_arm(arm, pending_by_arm[arm.name], box, results, now=now,
-                        dry_run=dry_run, ledger_dir=ledger_dir, counts=counts[arm.name])
+                        dry_run=dry_run, ledger_dir=ledger_dir, counts=counts[arm.name],
+                        results_dates=results_dates)
         except Exception as exc:  # noqa: BLE001 -- one arm's broken file must not stop the rest
             counts[arm.name]["error"] = _error_text(exc)
     return counts
 
 
 def _settle_arm(arm: Arm, pending: Sequence[Mapping], box: BoxIndex, results: Mapping, *,
-                now: datetime, dry_run: bool, ledger_dir: Path, counts: dict) -> None:
+                now: datetime, dry_run: bool, ledger_dir: Path, counts: dict,
+                results_dates: Optional[Mapping] = None) -> None:
     ledger = HashChainLedger(settled_path(ledger_dir, arm))
     for decision in pending:
-        outcome = grade_decision(decision, box, results, now=now)
+        outcome = grade_decision(decision, box, results, now=now, results_dates=results_dates)
         if outcome is None or "pending" in outcome:
             counts["unsettled"] += 1
             if outcome is not None:
@@ -1019,7 +1056,7 @@ def _settle_arm(arm: Arm, pending: Sequence[Mapping], box: BoxIndex, results: Ma
             continue
         row = {
             "kind": KIND_SETTLED, "family": FAMILY, "rule_id": arm.rule_id,
-            "arm": arm.name, "schema_version": SCHEMA_VERSION,
+            "arm": arm.name, "schema_version": SCHEMA_VERSION, "label": arm.label,
             "decision_row_hash": decision.get(ROW_HASH_FIELD),
             "decision_key": decision.get("decision_key"),
             "date": decision.get("date"), "game_pk": decision.get("game_pk"),
@@ -1165,6 +1202,14 @@ def _fmt_price(price) -> str:
     return f"+{n}" if n > 0 else str(n)
 
 
+def _arm_tag(name: str) -> str:
+    """An arm's name with its label, e.g. "B_HITS [THIN_CONSENSUS]" -- on
+    every printed line, as the prereg promises (final review, 2026-09-21:
+    the label was on decision rows and the record only)."""
+    arm = ARMS_BY_NAME.get(name)
+    return f"{name} [{arm.label}]" if arm is not None and arm.label else name
+
+
 def _describe(row: Mapping) -> str:
     game = f"{row.get('away_team')} @ {row.get('home_team')}"
     price = _fmt_price(row["price"])
@@ -1175,7 +1220,7 @@ def _describe(row: Mapping) -> str:
         what = f"{team} {row['line']:+g}"
     else:
         what = f"{row['side'].title()} {row['line']:g}"
-    return (f"{row['arm']}: {game} -- {what} {price} @ {row['book']} | EV "
+    return (f"{_arm_tag(row['arm'])}: {game} -- {what} {price} @ {row['book']} | EV "
             f"{100.0 * row['ev']:.2f}% (lowest of 3), fair {100.0 * row['fair_probability']:.1f}%, "
             f"{row['n_other_books']} other books, {row.get('minutes_to_first_pitch')} min to first pitch")
 
@@ -1235,10 +1280,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         # including one that failed.
         for name, item in summary.items():
             if item.get("error"):
-                print(f"  {name}: ERROR {item['error']}")
+                print(f"  {_arm_tag(name)}: ERROR {item['error']}")
                 continue
             c = item["counts"]
-            print(f"  {name}: boards {c['boards_seen']} (outside window {c['boards_outside_window']}, "
+            print(f"  {_arm_tag(name)}: boards {c['boards_seen']} (outside window {c['boards_outside_window']}, "
                   f"stale {c['boards_stale']}, judged {c['boards_judged']}), book-lines judged "
                   f"{c['lines_judged']}, candidates {c['candidates']}, new {c['new_decisions']}, "
                   f"held {c['held']}, capped {c['capped']}, unmapped {c['skipped_unmapped']}, "
@@ -1251,7 +1296,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         mode = " (DRY RUN, nothing written)" if args.dry_run else ""
         print(f"{tag} settle{mode} -- counts only")
         for name, c in counts.items():
-            print(f"  {name}: graded {c['graded']}, voids {c['voids']}, unsettled {c['unsettled']}"
+            print(f"  {_arm_tag(name)}: graded {c['graded']}, voids {c['voids']}, unsettled {c['unsettled']}"
                   + (f", MISMATCH {c['mismatches']}" if c["mismatches"] else "")
                   + (f"; ERROR {c['error']}" if c.get("error") else ""))
         return 1 if any(c.get("error") for c in counts.values()) else 0

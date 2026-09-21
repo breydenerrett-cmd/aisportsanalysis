@@ -270,7 +270,15 @@ disagree".
 **Pending and void.**
 - No final yet: **unsettled**, retried every run.
 - Still no final once the decision date is 7 days old: **VOID "no final"**.
-  This covers postponed games and a missed box ingest.
+  This covers a missed box ingest, and a postponed game not yet made up.
+- **A postponed game made up on another date is VOID "postponed to another
+  date"**, on every arm. MLB keeps a postponed game's gamePk and moves its
+  official date, so its makeup's final would otherwise grade the original
+  decision against a different game. When `mlb_results.csv` gives the game
+  an official date other than the decision's date, it voids. A suspended
+  game keeps its official date and still grades. A game missing from the
+  results file is graded as before. *(Corrected before the first decision;
+  see "Corrections", 7.)*
 - Two different linescores stored for one game: **unsettled** (MISMATCH),
   and VOID "box-score linescores disagree" after 7 days.
 - Any other input the graders cannot use (a stat missing from the box row,
@@ -450,6 +458,16 @@ operations.
    it. Now each arm runs on its own, the failing arm prints an ERROR line
    and exits 1, and the run note carries the settle's exit status.
    Operational only: no decision or grade changes.
+7. **Postponed games void** (Grading, "Pending and void"). Found by the
+   final independent review before merge. As first written, finals were
+   looked up by game_pk alone, so a decision on a game rained out and made
+   up within 7 days was graded on the makeup: a fixture graded it WIN where
+   this file said VOID. Now it is VOID "postponed to another date" when the
+   results file's official date differs from the decision's date.
+8. **THIN_CONSENSUS on every row and printed line** (Per-arm constants, arm
+   B). As first written, the label was on decision rows and the record
+   only: scan and settled rows, and the publish and settle log lines,
+   omitted it. They carry it now. Reporting only.
 
 After this section, the "Changing it" rules below apply in full: any
 further change to a number, market, key or grading rule is a new rule id.
