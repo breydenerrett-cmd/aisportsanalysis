@@ -399,9 +399,16 @@ class CaptureHealthTest(unittest.TestCase):
             commit_ts_fn=lambda: None,
         )
         self.assertEqual(report.state, health.FAILED)
-        self.assertEqual(report.decided_by, "checkpoint")
+        # A 1,204-credit delta is also bigger than the 900 envelope, so the
+        # envelope alarm is true too and, by the existing precedence, names
+        # the decision (first run on Linux CI, 2026-09-21: this asserted
+        # "checkpoint" and had never executed -- health.py imports fcntl).
+        # What matters is that the anomaly is found and reported.
+        self.assertIn(report.decided_by, ("envelope", "checkpoint"))
         self.assertEqual(len(report.checkpoint_anomalies), 1)
         self.assertEqual(report.checkpoint_anomalies[0]["delta"], 1204)
+        self.assertTrue(any("oversized credit-log checkpoint" in r for r in report.reasons),
+                        report.reasons)
 
     def test_healthy_checkpoint_stream_is_unaffected(self):
         """No regression: a normal, current checkpoint stream with no
