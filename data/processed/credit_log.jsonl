@@ -3739,3 +3739,4 @@
 {"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 9556, "credits_used_last": 0, "utc": "2026-09-21T10:05:50.919299Z"}
 {"budget_band": "live_capture", "caller": "derivative_markets.run", "credits_remaining": 9556, "credits_used_last": 0, "utc": "2026-09-21T10:05:51.244102Z"}
 {"budget_band": "live_capture", "caller": "nfl_capture.run", "credits_remaining": 9553, "credits_used_last": 0, "utc": "2026-09-21T10:06:04.154290Z"}
+{"budget_band": "probe", "caller": "budget.probe_family:tennis_h2h", "credits_remaining": 9538, "credits_used_last": 1, "utc": "2026-09-21T10:16:06.809345Z"}

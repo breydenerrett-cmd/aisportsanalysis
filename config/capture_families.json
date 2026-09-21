@@ -131,16 +131,16 @@
     },
     "tennis_h2h": {
       "measured": true,
-      "credits_per_event": 0,
-      "measured_utc": "2026-09-16T10:19:01.008694Z",
-      "source": "budget.probe_family: tennis_h2h probe fetching h2h odds for tennis_atp_aus_open_singles; billed=None, remaining_before=17096, remaining_after=17096; DEGENERATE PAYLOAD (books=0, markets_returned=0, outcomes=0, does not satisfy PROBE_REQUIRED, does not block a same-day re-probe)",
-      "degenerate": true,
+      "credits_per_event": 1,
+      "measured_utc": "2026-09-21T10:16:06.311229Z",
+      "source": "budget.probe_family: tennis_h2h probe fetching h2h odds for tennis_wta_singapore_open; billed=None, remaining_before=9539, remaining_after=9538",
+      "degenerate": false,
       "payload_shape": {
-        "event_count": 0,
-        "books": 0,
-        "markets_returned": 0,
-        "outcomes": 0,
-        "degenerate": true
+        "event_count": 7,
+        "books": 9,
+        "markets_returned": 1,
+        "outcomes": 124,
+        "degenerate": false
       }
     }
   }
