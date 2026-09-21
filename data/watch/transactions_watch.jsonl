@@ -1445,3 +1445,5 @@
 {"category": "il_activation", "date": "2026-09-21", "first_seen_utc": "2026-09-21T22:18:43.271649+00:00", "player": "Roki Sasaki", "player_id": 808963, "team": "LAD", "transaction_id": 943411}
 {"category": "il_activation", "date": "2026-09-21", "first_seen_utc": "2026-09-21T22:18:43.271649+00:00", "player": "Andy Pages", "player_id": 681624, "team": "LAD", "transaction_id": 943412}
 {"fetched_utc": "2026-09-21T22:18:44.254404+00:00", "game_date": "2026-09-21", "poll": true}
+{"fetched_utc": "2026-09-21T22:26:30.454002+00:00", "game_date": "2026-09-21", "poll": true}
+{"fetched_utc": "2026-09-21T22:26:31.523694+00:00", "game_date": "2026-09-21", "poll": true}
