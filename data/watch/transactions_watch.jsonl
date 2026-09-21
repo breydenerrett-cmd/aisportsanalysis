@@ -1385,3 +1385,7 @@
 {"fetched_utc": "2026-09-21T14:25:24.007700+00:00", "game_date": "2026-09-21", "poll": true}
 {"fetched_utc": "2026-09-21T17:40:24.853187+00:00", "game_date": "2026-09-21", "poll": true}
 {"fetched_utc": "2026-09-21T17:40:26.854532+00:00", "game_date": "2026-09-21", "poll": true}
+{"fetched_utc": "2026-09-21T17:53:08.739401+00:00", "game_date": "2026-09-21", "poll": true}
+{"category": "il_activation", "date": "2026-09-21", "first_seen_utc": "2026-09-21T17:53:08.739401+00:00", "player": "DJ Herz", "player_id": 687792, "team": "WSH", "transaction_id": 943391}
+{"category": "optioned", "date": "2026-09-21", "first_seen_utc": "2026-09-21T17:53:08.739401+00:00", "player": "Jared Simpson", "player_id": 688692, "team": "WSH", "transaction_id": 943392}
+{"category": "other", "date": "2026-09-21", "first_seen_utc": "2026-09-21T17:53:08.739401+00:00", "player": "Cole Henry", "player_id": 669371, "team": "WSH", "transaction_id": 943393}
