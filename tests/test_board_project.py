@@ -10,25 +10,31 @@ from src.board.project import (
     unproject_h2h_row,
 )
 from src.board.record import price_observation_from_dict
+from src.pipeline import store_archive
 
 DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "processed" / "odds_multibook.jsonl"
 MIN_ROWS = 1000
 
 
 def _load_rows(limit=None):
+    # The LOGICAL store: archive segments first, then the hot file
+    # (src.pipeline.store_archive, 2026-09-21). After the first rotation the
+    # hot file's head moved from the 08-31 h2h-only rows to 09-18 rows that
+    # include line markets with no home_price. That turned this test red in CI
+    # while it stayed green on any unrotated local copy. Reading the logical
+    # store gives the same first rows the test was written against.
     rows = []
-    with open(DATA_PATH, "r", encoding="utf-8") as fh:
-        for line in fh:
-            line = line.strip()
-            if not line:
-                continue
-            rows.append(json.loads(line))
-            if limit and len(rows) >= limit:
-                break
+    for line in store_archive.iter_lines(DATA_PATH):
+        line = line.strip()
+        if not line:
+            continue
+        rows.append(json.loads(line))
+        if limit and len(rows) >= limit:
+            break
     return rows
 
 
-@unittest.skipUnless(DATA_PATH.exists(), "odds_multibook.jsonl not present")
+@unittest.skipUnless(store_archive.exists(DATA_PATH), "odds_multibook.jsonl not present")
 class RealRowRoundTripTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
