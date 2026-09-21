@@ -8,8 +8,10 @@ and can never fail the job it rides in.
   * scripts/daily_loop.sh settles after `daily` has ingested yesterday's box
     scores, next to the other settles, and prints the per-arm record next to
     the card's.
-  * Both new steps end in `|| true`, and are proved tolerant by running them
-    under `set -euo pipefail` with `python3` stubbed to fail.
+  * The publish and record steps end in `|| true`; the settle captures its
+    exit status (`|| SHADOW_SETTLE_STATUS=$?`) and writes it into the run
+    note. All three are proved tolerant by running them under
+    `set -euo pipefail` with `python3` stubbed to fail.
   * Both scripts already stage `evidence`, which holds the ledgers.
 """
 
@@ -18,6 +20,7 @@ from __future__ import annotations
 import shutil
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -34,6 +37,8 @@ RECORD = "python3 -m src.analysis.mlb_value_shadow record"
 SLOT_HEADER = 'echo "== mlb value shadow ($SLATE_DATE) =="'
 SETTLE_HEADER = 'echo "== mlb value shadow grading'
 RECORD_HEADER = 'echo "== mlb value shadow record'
+SETTLE_STATUS = "SHADOW_SETTLE_STATUS"
+RUN_NOTE_APPEND = '>> "$RUN_NOTE"'
 
 
 def _code(text: str) -> str:
@@ -148,17 +153,34 @@ class DailyLoopSettlesAndRecords(unittest.TestCase):
         self.assertLess(self.code.index("== card record (running) =="), at)
         self.assertLess(at, self.code.index("git add data/processed"))
 
-    def test_both_steps_end_in_or_true(self):
-        for needle in (SETTLE, RECORD):
-            line = _line_with(self.text, needle)
-            self.assertTrue(line.rstrip().endswith("|| true"), line)
+    def test_both_steps_are_tolerant(self):
+        # The settle captures its exit status for the run note instead of
+        # discarding it with `|| true`; either way a failure cannot stop
+        # the loop (proved by running it below).
+        settle = _line_with(self.text, SETTLE).rstrip()
+        self.assertTrue(settle.endswith(f"|| {SETTLE_STATUS}=$?"), settle)
+        record = _line_with(self.text, RECORD).rstrip()
+        self.assertTrue(record.endswith("|| true"), record)
 
-    def test_the_settle_step_notes_the_run(self):
-        block = _block(self.text, SETTLE_HEADER, SETTLE)
-        after = self.code[self.code.index(SETTLE):]
-        next_line = after.splitlines()[1]
-        self.assertIn('>> "$RUN_NOTE"', next_line)
+    def test_the_settle_step_notes_the_run_with_its_exit_status(self):
+        block = _block(self.text, SETTLE_HEADER, RUN_NOTE_APPEND)
+        notes = [line for line in block.splitlines() if RUN_NOTE_APPEND in line]
+        self.assertEqual(len(notes), 1, block)
+        self.assertIn(f"exit=${SETTLE_STATUS}", notes[0])
+        self.assertIn(f"{SETTLE_STATUS}=0", block)       # set before use under `set -u`
         self.assertNotIn("ESCALATE", block)
+
+    @unittest.skipUnless(_bash(), "bash not available")
+    def test_a_crashing_settle_writes_its_exit_status_to_the_run_note(self):
+        block = _block(self.text, SETTLE_HEADER, RUN_NOTE_APPEND)
+        with tempfile.TemporaryDirectory() as tmp:
+            note = Path(tmp) / "run_note.md"
+            out = _run_failing(block, f'RUN_NOTE="{note.as_posix()}"')
+            self.assertEqual(out.returncode, 0, out.stderr)
+            self.assertIn("STEP_SURVIVED", out.stdout)
+            self.assertIn("Traceback: simulated failure", out.stdout)   # still printed
+            self.assertIn("mlb value shadow settle --recent exit=3",
+                          note.read_text(encoding="utf-8"))
 
     def test_the_loop_stages_the_settled_ledgers_without_a_new_pathspec(self):
         staged = _staged_paths(self.text)

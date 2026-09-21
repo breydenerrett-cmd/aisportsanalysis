@@ -103,9 +103,10 @@ def _batter(game_pk, name, *, player_id=1, pa=4, h=1, total_bases=1):
             "hits_runs_rbi": h, "observed_utc": "2026-09-22T10:10:00Z"}
 
 
-def _linescore(game_pk, away_runs, home_runs):
+def _linescore(game_pk, away_runs, home_runs, *, innings_played=9):
     innings = [{"num": 1, "away_runs": away_runs, "home_runs": home_runs}]
-    innings += [{"num": n, "away_runs": 0, "home_runs": 0} for n in range(2, 10)]
+    innings += [{"num": n, "away_runs": 0, "home_runs": 0}
+                for n in range(2, innings_played + 1)]
     return {"type": "linescore", "game_pk": int(game_pk), "date": DATE, "innings": innings,
             "first_inning_away_runs": away_runs, "first_inning_home_runs": home_runs,
             "first_inning_scored": bool(away_runs or home_runs), "first_team_to_score": None,
@@ -610,7 +611,7 @@ class GameLineGrading(Base):
         for (away, home), result in (((1, 3), "WIN"), ((2, 3), "LOSS"), ((4, 3), "LOSS")):
             with self.subTest(score=(away, home)):
                 d_arm = shadow.ARMS_BY_NAME["C_RUN_LINE"]
-                box = shadow.BoxIndex(batters={}, finals={GAME_PK: {(away, home)}})
+                box = shadow.BoxIndex(batters={}, finals={GAME_PK: {(away, home, 9)}})
                 out = shadow.grade_decision(d, box, {}, now=NOW + timedelta(days=1))
                 self.assertEqual(out["result"], result)
                 self.assertEqual(d_arm.grade_as, shadow.GRADE_RUN_LINE)
@@ -619,7 +620,7 @@ class GameLineGrading(Base):
         d = self._lock_run_line(-150, 130, -175, 150)
         self.assertEqual((d["side"], d["line"]), ("away", 1.5))
         for (away, home), result in (((2, 3), "WIN"), ((1, 3), "LOSS"), ((5, 3), "WIN")):
-            box = shadow.BoxIndex(batters={}, finals={GAME_PK: {(away, home)}})
+            box = shadow.BoxIndex(batters={}, finals={GAME_PK: {(away, home, 9)}})
             out = shadow.grade_decision(d, box, {}, now=NOW + timedelta(days=1))
             self.assertEqual(out["result"], result, (away, home))
 
@@ -638,7 +639,7 @@ class GameLineGrading(Base):
         self.s.publish(arms=["D_GAME_TOTAL"])
         d = self.s.decisions("D_GAME_TOTAL")[0]
         for (away, home), result in (((4, 5), "WIN"), ((3, 4), "LOSS"), ((4, 4), "PUSH")):
-            box = shadow.BoxIndex(batters={}, finals={GAME_PK: {(away, home)}})
+            box = shadow.BoxIndex(batters={}, finals={GAME_PK: {(away, home, 9)}})
             out = shadow.grade_decision(d, box, {}, now=NOW + timedelta(days=1))
             self.assertEqual(out["result"], result, (away, home))
 
@@ -682,10 +683,15 @@ class Records(Base):
 
     def test_an_empty_day_says_which_kind_of_empty(self):
         self.s.set_props(_board("Cal Raleigh", 4))          # judged, too few books
-        self.s.set_lines([_spread(f"book{i}", -1.5, 130, -150, minutes_ago=90) for i in range(6)])
+        self.s.set_lines([_spread(f"book{i}", -1.5, 130, -150, minutes_ago=90) for i in range(6)]
+                         + [_total(f"book{i}", 8.5, -110, -110) for i in range(6)])
         self.s.publish()
         rec = shadow.record(ledger_dir=self.s.ledger)
-        self.assertEqual(rec["A_TOTAL_BASES"]["days"], {"looked and declined": 1})
+        # Only 4 other books on the line: nothing was compared, so the rule
+        # did not "look and decline" -- it could not judge.
+        self.assertEqual(rec["A_TOTAL_BASES"]["days"], {"too few books to judge any line": 1})
+        # Six books at one price: lines were compared and none was value.
+        self.assertEqual(rec["D_GAME_TOTAL"]["days"], {"looked and declined": 1})
         self.assertEqual(rec["C_RUN_LINE"]["days"], {"board too old to judge": 1})
         self.assertEqual(rec["B_HITS"]["days"], {"no board": 1})
 
@@ -710,14 +716,359 @@ class Records(Base):
 
 
 # ---------------------------------------------------------------------------
+# Corrections made before the first decision existed (prereg "Corrections")
+# ---------------------------------------------------------------------------
+
+class ShortenedGames(Base):
+    """A game called before regulation is VOID on every arm. Books void run
+    lines and totals unless 9 innings are played (8.5 with the home side
+    ahead); a shortened game has fewer runs and fewer plate appearances, so
+    grading it would hand Unders and run-line leaders wins no book pays."""
+
+    def _lock_run_line_home(self):
+        rows = [_spread(f"book{i}", -1.5, 130, -150) for i in range(5)]
+        rows.append(_spread("soft", -1.5, 150, -175))
+        self.s.set_lines(rows)
+        self.s.publish(arms=["C_RUN_LINE"])
+        d = self.s.decisions("C_RUN_LINE")[0]
+        self.assertEqual((d["side"], d["line"]), ("home", -1.5))
+        return d
+
+    def _lock_total_under(self):
+        rows = [_total(f"book{i}", 8.5, -110, -110) for i in range(5)]
+        rows.append(_total("soft", 8.5, -130, 110))
+        self.s.set_lines(rows)
+        self.s.publish(arms=["D_GAME_TOTAL"])
+        d = self.s.decisions("D_GAME_TOTAL")[0]
+        self.assertEqual((d["side"], d["line"], d["price"]), ("under", 8.5, 110))
+        return d
+
+    def test_the_box_index_carries_the_innings_count(self):
+        path = Path(self._tmp.name) / "box.jsonl"
+        _write_jsonl(path, [_linescore(GAME_PK, 0, 3, innings_played=5)])
+        box = shadow.load_box_index(["2026"], box_paths={"2026": path})
+        self.assertEqual(box.finals[GAME_PK], {(0, 3, 5)})
+
+    def test_a_five_inning_game_voids_the_run_line_and_the_total(self):
+        self._lock_run_line_home()
+        self._lock_total_under()
+        self.s.set_box([_linescore(GAME_PK, 0, 3, innings_played=5)])
+        self.s.set_results([{"game_pk": GAME_PK, "date": DATE, "away_score": 0, "home_score": 3}])
+        counts = self.s.settle(now=NOW + timedelta(days=1))
+        for arm in ("C_RUN_LINE", "D_GAME_TOTAL"):
+            with self.subTest(arm=arm):
+                self.assertEqual(counts[arm]["voids"], 1)
+                s = self.s.settled(arm)[0]
+                self.assertEqual((s["result"], s["reason"], s["profit_units"]),
+                                 ("VOID", "game shortened", 0.0))
+                self.assertEqual(s["innings"], 5)
+
+    def test_a_shortened_game_voids_a_prop(self):
+        self.s.set_props(_board("Jose Ramirez", 5))
+        self.s.publish(arms=["A_TOTAL_BASES"])
+        self.s.set_box([_batter(GAME_PK, "Jose Ramirez", total_bases=2),
+                        _linescore(GAME_PK, 0, 3, innings_played=6)])
+        self.s.settle(now=NOW + timedelta(days=1))
+        s = self.s.settled("A_TOTAL_BASES")[0]
+        self.assertEqual((s["result"], s["reason"]), ("VOID", "game shortened"))
+
+    def test_regulation_is_a_ninth_inning_listed(self):
+        """8 innings with the home side ahead has NOT reached 8.5: the top of
+        the 9th was never played. A 9th inning listed with the home side
+        ahead is the 8.5 case -- the store writes the unplayed bottom half as
+        0 -- and it grades."""
+        d = self._lock_run_line_home()
+        for innings_played, result in ((5, "VOID"), (8, "VOID"), (9, "WIN"), (10, "WIN")):
+            with self.subTest(innings=innings_played):
+                path = Path(self._tmp.name) / f"box{innings_played}.jsonl"
+                _write_jsonl(path, [_linescore(GAME_PK, 2, 5, innings_played=innings_played)])
+                box = shadow.load_box_index(["2026"], box_paths={"2026": path})
+                out = shadow.grade_decision(d, box, {}, now=NOW + timedelta(days=1))
+                self.assertEqual(out["result"], result)
+                self.assertEqual(out["innings"], innings_played)
+
+
+class WithdrawnGameLineQuotes(Base):
+    """A book missing from the board's newest capture instant is not quoted:
+    the store writes every book the feed returns at every capture, so its
+    absence means its price was not live at the decision."""
+
+    FIRST = NOW                               # 20:00Z capture
+    SECOND = NOW + timedelta(minutes=15)      # 20:15Z capture
+    RUN = NOW + timedelta(minutes=16)
+
+    def _row(self, book, over, under, *, observed, stamp):
+        return {"observed_utc": observed.isoformat(), "event_id": EVENT,
+                "commence_time": _z(FIRST_PITCH), "home_team": HOME, "away_team": AWAY,
+                "market": "totals", "book": book, "book_last_update": _z(stamp),
+                "total": "8.5", "over_price": over, "under_price": under}
+
+    def _history(self, *, still_listed):
+        books = [f"book{i}" for i in range(6)]
+        rows = [self._row(b, -110, -110, observed=self.FIRST,
+                          stamp=self.FIRST - timedelta(minutes=1))
+                for b in books + ["betonlineag"]]
+        rows += [self._row(b, -140, 118, observed=self.SECOND,
+                           stamp=self.SECOND - timedelta(minutes=1)) for b in books]
+        if still_listed:   # listed again at 20:15, its own stamp unchanged
+            rows.append(self._row("betonlineag", -110, -110, observed=self.SECOND,
+                                  stamp=self.FIRST - timedelta(minutes=1)))
+        return rows
+
+    def test_a_book_absent_from_the_newest_capture_is_not_judged(self):
+        self.s.set_lines(self._history(still_listed=False))
+        out = self.s.publish(arms=["D_GAME_TOTAL"], now=self.RUN, dry_run=True)
+        self.assertEqual(out["D_GAME_TOTAL"]["decisions"], [])
+        self.assertEqual(out["D_GAME_TOTAL"]["counts"]["candidates"], 0)
+        # Control: the SAME price, still listed at 20:15 with its old stamp,
+        # is live and is judged. Only the book's presence differs.
+        self.s.set_lines(self._history(still_listed=True))
+        self.s.publish(arms=["D_GAME_TOTAL"], now=self.RUN)
+        rows = self.s.decisions("D_GAME_TOTAL")
+        self.assertEqual([(d["book"], d["side"], d["price"]) for d in rows],
+                         [("betonlineag", "over", -110)])
+
+    def test_a_withdrawn_book_is_not_in_anyone_elses_consensus(self):
+        # At 20:15 five books remain plus a soft one. The withdrawn book
+        # would have made the soft book's sixth "other"; without it the soft
+        # book has only 5 others -- still enough -- but its fair price comes
+        # from the five live books alone.
+        books = [f"book{i}" for i in range(5)]
+        rows = [self._row(b, -110, -110, observed=self.FIRST,
+                          stamp=self.FIRST - timedelta(minutes=1)) for b in books + ["gone"]]
+        rows += [self._row(b, -110, -110, observed=self.SECOND,
+                           stamp=self.SECOND - timedelta(minutes=1)) for b in books]
+        rows.append(self._row("soft", 110, -130, observed=self.SECOND,
+                              stamp=self.SECOND - timedelta(minutes=1)))
+        self.s.set_lines(rows)
+        self.s.publish(arms=["D_GAME_TOTAL"], now=self.RUN)
+        d = self.s.decisions("D_GAME_TOTAL")[0]
+        self.assertEqual(d["book"], "soft")
+        self.assertEqual(d["other_books"], sorted(books))
+
+
+class KnownLimitsAreTrue(unittest.TestCase):
+    def test_dropping_a_non_updating_book_can_create_a_candidate_and_the_prereg_says_so(self):
+        """The prop store writes no row when a book's stamp is unchanged, so
+        a book whose market did not move can fail the 30-minute book test.
+        Removing it from the consensus moves the fair price EITHER way: here
+        it creates a candidate that the full consensus refused."""
+        params = shadow.ARMS_BY_NAME["A_TOTAL_BASES"].params
+        fresh = NOW - timedelta(minutes=5)
+
+        def quote(book, over, under, when):
+            return {"book": book, "line_key": ("cal raleigh", "1.5"),
+                    "pair": (("over", 1.5, over), ("under", 1.5, under)),
+                    "quote_time": when, "meta": {}}
+
+        board = [quote("draftkings", 180, -250, fresh)]
+        board += [quote(b, 150, -195, fresh)
+                  for b in ("betmgm", "williamhill_us", "bovada", "betonlineag", "fanatics")]
+        with_it = board + [quote("mybookieag", 175, -225, fresh)]
+        without_it = board + [quote("mybookieag", 175, -225, NOW - timedelta(hours=6))]
+
+        self.assertEqual(lobo.judge_board(with_it, now=NOW, params=params)["candidates"], [])
+        cands = lobo.judge_board(without_it, now=NOW, params=params)["candidates"]
+        self.assertEqual([(c["book"], c["side"], c["price"]) for c in cands],
+                         [("draftkings", "over", 180)])
+
+        text = " ".join(PREREG.read_text(encoding="utf-8").split())
+        self.assertNotIn("can only remove books, never add value", text)
+        self.assertIn("can move the fair price either way", text)
+
+
+class NameJoinFallback(Base):
+    def _lock(self, player, market="batter_total_bases", line="1.5"):
+        arm = "A_TOTAL_BASES" if market == "batter_total_bases" else "B_HITS"
+        n = 5 if arm == "A_TOTAL_BASES" else 2
+        self.s.set_props(_board(player, n, market=market, line=line))
+        self.s.publish(arms=[arm])
+        self.assertEqual(len(self.s.decisions(arm)), 1)
+        return arm
+
+    def test_a_box_score_nickname_grades_by_first_name_prefix(self):
+        # batter_props says "Leonardo Bernal"; the box score says "Leo Bernal".
+        arm = self._lock("Leonardo Bernal")
+        self.s.set_box([_batter(GAME_PK, "Leo Bernal", player_id=699024, total_bases=4),
+                        _linescore(GAME_PK, 1, 3)])
+        self.s.settle(now=NOW + timedelta(days=1))
+        s = self.s.settled(arm)[0]
+        self.assertEqual((s["result"], s["stat_value"]), ("WIN", 4))
+        self.assertEqual((s["name_join"], s["box_player_id"], s["box_player_name"]),
+                         ("first_name_prefix", 699024, "Leo Bernal"))
+
+    def test_the_exact_join_is_used_first_and_recorded(self):
+        arm = self._lock("Leo Bernal")
+        self.s.set_box([_batter(GAME_PK, "Leo Bernal", player_id=1, total_bases=0),
+                        _batter(GAME_PK, "Leonardo Bernal", player_id=2, total_bases=4),
+                        _linescore(GAME_PK, 1, 3)])
+        self.s.settle(now=NOW + timedelta(days=1))
+        s = self.s.settled(arm)[0]
+        self.assertEqual((s["result"], s["name_join"], s["box_player_id"]), ("LOSS", "exact", 1))
+
+    def test_a_different_first_name_is_never_joined(self):
+        # Colson Montgomery's prop, Braden Montgomery in the box: a wrong-player
+        # grade would be worse than a void.
+        arm = self._lock("Colson Montgomery")
+        self.s.set_box([_batter(GAME_PK, "Braden Montgomery", pa=3, h=0, total_bases=0),
+                        _linescore(GAME_PK, 1, 3)])
+        self.s.settle(now=NOW + timedelta(days=1))
+        s = self.s.settled(arm)[0]
+        self.assertEqual((s["result"], s["reason"], s["name_join"]), ("VOID", "did not bat", None))
+
+    def test_two_prefix_matches_are_ambiguous(self):
+        arm = self._lock("Alex Smith")
+        self.s.set_box([_batter(GAME_PK, "Alexander Smith", player_id=1),
+                        _batter(GAME_PK, "Alexis Smith", player_id=2),
+                        _linescore(GAME_PK, 1, 3)])
+        self.s.settle(now=NOW + timedelta(days=1))
+        self.assertEqual(self.s.settled(arm)[0]["reason"], "ambiguous name")
+
+    def test_the_prefix_rule(self):
+        cases = {("leonardo bernal", "leo bernal"): True,
+                 ("leo bernal", "leonardo bernal"): True,
+                 ("colson montgomery", "braden montgomery"): False,
+                 ("leonardo bernal", "leo bernard"): False,
+                 ("al smith", "albert smith"): False,         # under 3 letters: never
+                 ("bernal", "bernal"): False,                 # one token: never
+                 ("leo bernal", "leo bernal"): False}         # the exact join's job
+        for (a, b), expected in cases.items():
+            self.assertEqual(shadow.first_name_prefix_match(a, b), expected, (a, b))
+
+
+class OneBrokenArmStopsNoOther(Base):
+    """A line JSON cannot parse (a leftover conflict marker, a truncated
+    append) in one arm's ledger fails that arm only, loudly."""
+
+    def _run_line_board(self):
+        rows = [_spread(f"book{i}", -1.5, 130, -150) for i in range(5)]
+        rows.append(_spread("soft", -1.5, 150, -175))
+        self.s.set_lines(rows)
+
+    def _corrupt(self, arm_name, kind="decisions"):
+        arm = shadow.ARMS_BY_NAME[arm_name]
+        path = {"decisions": shadow.decisions_path, "settled": shadow.settled_path,
+                "scans": shadow.scans_path}[kind](self.s.ledger, arm)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "a", encoding="utf-8") as fh:
+            fh.write("<<<<<<< HEAD\n")
+
+    def test_publish_goes_on_to_the_other_arms(self):
+        self._corrupt("A_TOTAL_BASES")
+        self._run_line_board()
+        out = self.s.publish()
+        self.assertIn("error", out["A_TOTAL_BASES"])
+        self.assertEqual(len(self.s.decisions("C_RUN_LINE")), 1)
+        self.assertEqual(out["C_RUN_LINE"]["counts"]["new_decisions"], 1)
+        self.assertEqual(len(self.s.scans("B_HITS")), 1)
+
+    def test_settle_goes_on_to_the_other_arms(self):
+        self._run_line_board()
+        self.s.publish()
+        self._corrupt("A_TOTAL_BASES")
+        self.s.set_box([_linescore(GAME_PK, 1, 3)])
+        counts = self.s.settle(now=NOW + timedelta(days=1))
+        self.assertIn("error", counts["A_TOTAL_BASES"])
+        self.assertEqual(counts["C_RUN_LINE"]["graded"], 1)
+        self.assertEqual(self.s.settled("C_RUN_LINE")[0]["result"], "WIN")
+
+    def test_record_and_verify_go_on_to_the_other_arms(self):
+        self._run_line_board()
+        self.s.publish()
+        self._corrupt("A_TOTAL_BASES", "scans")
+        rec = shadow.record(ledger_dir=self.s.ledger)
+        self.assertIn("error", rec["A_TOTAL_BASES"])
+        self.assertEqual(rec["C_RUN_LINE"]["decisions"], 1)
+        v = shadow.verify(ledger_dir=self.s.ledger)
+        self.assertFalse(v["A_TOTAL_BASES_scans.jsonl"]["ok"])
+        self.assertTrue(v["C_RUN_LINE_decisions.jsonl"]["ok"])
+
+    def test_the_cli_names_the_broken_arm_and_exits_nonzero(self):
+        from unittest import mock
+        self._corrupt("A_TOTAL_BASES")
+        data_root = Path(self._tmp.name) / "data"
+        _write_jsonl(data_root / "processed" / "event_game_map.jsonl", [_map_row(EVENT, GAME_PK)])
+        rows = [_spread(f"book{i}", -1.5, 130, -150) for i in range(5)]
+        rows.append(_spread("soft", -1.5, 150, -175))
+        _write_jsonl(data_root / "processed" / "odds_multibook.jsonl", rows)
+        for command in (["publish", "--date", DATE, "--now", _z(NOW)],
+                        ["settle", "--recent", "--now", _z(NOW + timedelta(days=1))],
+                        ["record"], ["verify"]):
+            with self.subTest(command=command[0]):
+                buf = io.StringIO()
+                with mock.patch.dict("os.environ", {"AISPORTS_DATA_DIR": str(data_root)}), \
+                        redirect_stdout(buf):
+                    code = shadow.main(command + ["--ledger-dir", str(self.s.ledger)])
+                text = buf.getvalue()
+                self.assertEqual(code, 1, text)
+                self.assertIn("A_TOTAL_BASES", text)
+                self.assertTrue(re.search(r"A_TOTAL_BASES\S*: .*(ERROR|BROKEN)", text), text)
+                if command[0] == "publish":
+                    self.assertIn("C_RUN_LINE: boards 1", text)
+
+
+class RecordSaysWhichKindOfEmpty(Base):
+    def _run_line_board(self):
+        rows = [_spread(f"book{i}", -1.5, 130, -150) for i in range(5)]
+        rows.append(_spread("soft", -1.5, 150, -175))
+        self.s.set_lines(rows)
+
+    def test_value_dropped_by_an_unmapped_game_is_not_looked_and_declined(self):
+        self.s.set_map([_map_row(EVENT2, GAME_PK2)])        # EVENT has no game_pk
+        self._run_line_board()
+        out = self.s.publish(arms=["C_RUN_LINE"])
+        c = out["C_RUN_LINE"]["counts"]
+        self.assertEqual((c["candidates"], c["skipped_unmapped"], c["new_decisions"]), (1, 1, 0))
+        rec = shadow.record(ledger_dir=self.s.ledger)["C_RUN_LINE"]
+        self.assertEqual(rec["days"], {"value found but game unmapped or ambiguous": 1})
+        self.assertEqual((rec["skipped_unmapped"], rec["skipped_ambiguous"], rec["capped"]),
+                         (1, 0, 0))
+
+    def test_value_on_a_doubleheader_is_not_looked_and_declined(self):
+        self.s.set_map([_map_row(EVENT, GAME_PK, ambiguous=True)])
+        self.s.set_props(_board("Cal Raleigh", 5))
+        self.s.publish(arms=["A_TOTAL_BASES"])
+        rec = shadow.record(ledger_dir=self.s.ledger)["A_TOTAL_BASES"]
+        self.assertEqual(rec["days"], {"value found but game unmapped or ambiguous": 1})
+        self.assertEqual(rec["skipped_ambiguous"], 1)
+
+    def test_skip_and_cap_totals_are_per_date_peaks_not_run_sums(self):
+        self.s.set_map([_map_row(EVENT2, GAME_PK2)])
+        self._run_line_board()
+        self.s.publish(arms=["C_RUN_LINE"])
+        # A later run the same day with a different count appends a second
+        # scan row; the same skipped key must not be counted twice.
+        rows = [_spread(f"book{i}", -1.5, 130, -150, now=NOW + timedelta(minutes=5))
+                for i in range(6)]
+        rows.append(_spread("soft", -1.5, 150, -175, now=NOW + timedelta(minutes=5)))
+        self.s.set_lines(rows)
+        self.s.publish(arms=["C_RUN_LINE"], now=NOW + timedelta(minutes=5))
+        self.assertEqual(len(self.s.scans("C_RUN_LINE")), 2)
+        self.assertEqual(shadow.record(ledger_dir=self.s.ledger)["C_RUN_LINE"]["skipped_unmapped"], 1)
+
+    def test_the_record_printout_shows_the_skips(self):
+        self.s.set_map([_map_row(EVENT2, GAME_PK2)])
+        self._run_line_board()
+        self.s.publish(arms=["C_RUN_LINE"])
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            shadow.main(["record", "--ledger-dir", str(self.s.ledger)])
+        line = next(l for l in buf.getvalue().splitlines() if "C_RUN_LINE" in l)
+        self.assertIn("unmapped 1", line)
+        self.assertIn("value found but game unmapped or ambiguous 1", line)
+
+
+# ---------------------------------------------------------------------------
 # Registration and isolation
 # ---------------------------------------------------------------------------
 
+# Corrected before the first decision existed (prereg "Corrections"): the
+# constants now carry regulation_innings and name_prefix_min_letters.
 REGISTERED_SHA256 = {
-    "A_TOTAL_BASES": "6345b03d780b256ee63081c747e46f52a526fce813085259cd0d0bada869179b",
-    "B_HITS": "5f21504807985f3b3820edfcd0b63ee4ae1dca5eb861ea536d4b73633c63da3d",
-    "C_RUN_LINE": "4daf957eab6e8b70869822cc662aca09daa6ea20fb8961e96113e6a10c315ae3",
-    "D_GAME_TOTAL": "930d70f5caa1d01826a0a02623ed9c7180259b353ef9001058878f58aae6ed06",
+    "A_TOTAL_BASES": "508219c4a2fcb4515651b0572a7f71cdf03604e6eb9d6f2798ca29f6b7ec3d15",
+    "B_HITS": "7a2fa3f8bfa965ca29ddf61bf4f41bc790014dfe3690e98a07e7a8cfae21c01c",
+    "C_RUN_LINE": "426cb4e8e4d521a4a5bab7c4c0849e0a7f01751a3f2221112c61e7e11f13e63b",
+    "D_GAME_TOTAL": "bfe53c9be5018ec80cf0f4f10b3faf00d0059b4e3acb7f74e9b0fab263a327dc",
 }
 PREREG = ROOT / "docs" / "PREREG_MLB_VALUE_SHADOW_V1.md"
 
@@ -740,6 +1091,8 @@ class Registration(unittest.TestCase):
         self.assertEqual(shadow.LOCK_LEAD_HOURS, 4.0)
         self.assertEqual(shadow.MAX_PER_DATE, 15)
         self.assertEqual(shadow.VOID_AFTER_DAYS, 7)
+        self.assertEqual(shadow.REGULATION_INNINGS, 9)
+        self.assertEqual(shadow.NAME_PREFIX_MIN_LETTERS, 3)
         for arm in shadow.ARMS:
             self.assertEqual(tuple(arm.params.devig_methods), ("proportional", "shin", "power"))
 

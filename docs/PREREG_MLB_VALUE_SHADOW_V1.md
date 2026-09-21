@@ -56,10 +56,17 @@ types are future registrations with their own ids and records.
 3. **Lock window.** A game is judged only while
    `first pitch − 4 hours ≤ now < first pitch`. Nothing is decided before the
    window, or at or after first pitch.
-4. **Each book's latest quote.** For game lines, each book's newest row per
-   game and market. For props, each book's newest **observation** of that
-   game and market: every row captured at that instant. A player the book
-   no longer lists at its newest observation is not quoted by that book.
+4. **Each book's latest quote.** For game lines, only the rows of the
+   board's (game and market's) **newest capture instant**: each book listed
+   there is quoted at that row. The store writes every book the feed
+   returns at every capture, so a book missing from the newest capture was
+   not quoting that market then (pulled on a listed-pitcher change or
+   weather, or dropped by the feed). Its older row is not quoted: never
+   judged, never in anyone's consensus. For props, each book's newest
+   **observation** of that game and market: every row captured at that
+   instant. A player the book no longer lists at its newest observation is
+   not quoted by that book. *(Game-line part corrected before the first
+   decision; see "Corrections".)*
 5. **Two-way only.** A prop quote is one player at one line at one book,
    with exactly one Over and one Under row. A one-sided quote (betrivers
    posts Overs only) and a duplicated row are never judged and never in
@@ -106,9 +113,23 @@ types are future registrations with their own ids and records.
     its counts equal that arm's previous scan row for the date. A scan row
     records boards seen, outside window, stale, judged, book-lines judged,
     candidates, keys, held, unmapped, ambiguous, capped and new decisions.
-    The record classes every scanned date as one of: "no board"; "never
-    run inside the lock window"; "board too old to judge"; "looked and
-    declined"; "decided".
+    The record classes every scanned date by the furthest any run that day
+    got, as one of (lowest to highest):
+    - "no board": no upcoming board on the date;
+    - "never run inside the lock window": boards, all more than 4 hours out;
+    - "board too old to judge": in the window, newest quote over an hour old;
+    - "too few books to judge any line": judged, but no line had N other
+      books, so nothing was compared;
+    - "looked and declined": lines were compared and none cleared the bar;
+    - "value found but game unmapped or ambiguous": candidates cleared the
+      bar, but every one was on a game with no game_pk or an ambiguous one,
+      so nothing could be decided;
+    - "decided": at least one decision on the date.
+
+    The record also prints each arm's keys skipped as unmapped, as
+    ambiguous, and capped: per date the most any run that day counted
+    (a later run re-counts the same key), summed over dates. *(Class list
+    corrected before the first decision; see "Corrections".)*
 
 ## Per-arm constants
 
@@ -116,19 +137,24 @@ Common to every arm: price floor **−200** (strictly better required);
 **MIN_EV 0.02** under proportional, Shin and power, lowest reported;
 freshness **1800 s** per book and **3600 s** per board; lock window
 **4.0 h**; **15** per arm per date; **VOID after 7 days** with no final;
-flat **1 unit**.
+flat **1 unit**; regulation **9 innings** listed in the linescore (fewer:
+VOID "game shortened"). Props only (A, B): the name-join fallback's
+shortest first-name prefix is **3 letters** (C and D carry `null`).
 
 | Arm | Store, market | Other books (N) | Grades on | Label | `constants_sha256` |
 |---|---|---|---|---|---|
-| A | batter_props, `batter_total_bases` | **5** | box `total_bases` | — | `6345b03d780b256ee63081c747e46f52a526fce813085259cd0d0bada869179b` |
-| B | batter_props, `batter_hits` | **2** | box `h` | THIN_CONSENSUS | `5f21504807985f3b3820edfcd0b63ee4ae1dca5eb861ea536d4b73633c63da3d` |
-| C | odds_multibook, `spreads` | **5** | final score, run-line arithmetic | — | `4daf957eab6e8b70869822cc662aca09daa6ea20fb8961e96113e6a10c315ae3` |
-| D | odds_multibook, `totals` | **5** | final score, total runs | — | `930d70f5caa1d01826a0a02623ed9c7180259b353ef9001058878f58aae6ed06` |
+| A | batter_props, `batter_total_bases` | **5** | box `total_bases` | — | `508219c4a2fcb4515651b0572a7f71cdf03604e6eb9d6f2798ca29f6b7ec3d15` |
+| B | batter_props, `batter_hits` | **2** | box `h` | THIN_CONSENSUS | `7a2fa3f8bfa965ca29ddf61bf4f41bc790014dfe3690e98a07e7a8cfae21c01c` |
+| C | odds_multibook, `spreads` | **5** | final score, run-line arithmetic | — | `426cb4e8e4d521a4a5bab7c4c0849e0a7f01751a3f2221112c61e7e11f13e63b` |
+| D | odds_multibook, `totals` | **5** | final score, total runs | — | `bfe53c9be5018ec80cf0f4f10b3faf00d0059b4e3acb7f74e9b0fab263a327dc` |
 
 `constants_sha256` is the sha256 of the arm's canonical constants JSON
 (`Arm.constants()`: every number above plus rule id, market, store, grader
 and label). Every decision row carries it. A test pins each value to this
-table.
+table. *(The hashes changed before the first decision, when
+`regulation_innings` and `name_prefix_min_letters` were added; see
+"Corrections". The registration commit's hashes were never written on any
+decision.)*
 
 ### Why arm B uses 2 other books, decided from coverage, not volume
 
@@ -168,6 +194,37 @@ holds its linescore row with at least one inning. The store is indexed by
 **game_pk, not date**, so a suspended game that finishes on a later date
 still grades.
 
+**Shortened games: VOID on every arm.** *(Corrected before the first
+decision; see "Corrections".)* The box ingest treats "Completed Early"
+(a game called after 5 innings) as final and writes only the innings
+played. A game whose linescore lists **fewer than 9 innings** is **VOID
+"game shortened"** on all four arms, and the settled row records the
+innings count.
+- **Run line and totals (C, D).** US books give these action only after
+  9 innings, or 8.5 with the home side ahead (house rules as commonly
+  published; not checked against a live rulebook). The store writes an unplayed
+  bottom half as 0 runs, so a game the home side won without batting in the
+  9th lists 9 innings and grades: the 8.5 case. 8 innings listed is not
+  8.5 (the top of the 9th was never played), even with the home side ahead,
+  so it voids.
+- **No "already decided" exception.** Some books pay an Over that had
+  already cleared the line when the game was called. This test does not:
+  every shortened game voids, whatever its score, so no side is favoured by
+  the choice.
+- **Props (A, B) void too.** Book rules on player props in a shortened game
+  vary. A shortened game cuts plate appearances, which pushes results
+  toward Unders: the same one-directional bias as totals. Voiding removes
+  it at the cost of a few decisions a season.
+- **What the count cannot see.** A game called during the top of the 9th
+  lists 9 innings and grades. The stored linescore cannot tell it apart,
+  because an unplayed half is written as 0 runs. It is rare, and recorded
+  here as a limit, not handled.
+- **How often.** The local box-score stores hold 3 (2023), 4 (2024, plus 2 with
+  0 innings, which are "no final") and 5 (2025) finals with 1 to 8
+  innings, and none of 281 so far in 2026: about 0.2% of games.
+- **Order.** For C and D the results-file cross-check (below) runs first, so
+  two disagreeing sources still show as a MISMATCH.
+
 **Props (A, B).**
 - **Name join.** The decision's player is matched to that game's batter
   rows by normalised name:
@@ -175,18 +232,29 @@ still grades.
   - `(2002)`-style parentheses dropped;
   - `.` and `'` dropped, hyphens and commas read as spaces;
   - trailing Jr/Sr/II/III/IV tokens dropped.
+- **Fallback, only when that finds no row.** *(Corrected before the first
+  decision; see "Corrections".)* In the same game, a batter whose
+  normalised name has the **same surname tokens** and a **different first
+  name, one a prefix of the other, at least 3 letters long**. For example,
+  the props feed's "Leonardo Bernal" is the box score's "Leo Bernal". It
+  never joins a different first name ("Colson" vs "Braden Montgomery"), an
+  initial, or a one-word name.
 - **The match must be unique** (batter rows are first de-duplicated by
-  player_id).
+  player_id). This applies to the fallback too.
+- **Recorded.** The settled row carries `name_join` (`exact`,
+  `first_name_prefix`, or null when nothing joined) and the box row's
+  player id and name.
 - **The grade.** Stat vs line: total bases for A, hits for B. Above the line
   wins the Over, below wins the Under, exactly on it is a PUSH. A .5 line
   never pushes.
 - **Voids.**
-  - No batter row, or 0 plate appearances: **VOID "did not bat"**. Books
-    void players who do not play.
+  - No batter row by either join, or 0 plate appearances: **VOID "did not
+    bat"**. Books void players who do not play.
   - Two different players match: **VOID "ambiguous name"**.
 
 **Run line (C).**
-- **Final score:** the sum of the linescore's innings.
+- **Final score:** the sum of the linescore's innings (a game of 9 or more
+  innings; shorter games void, above).
 - **Arithmetic:** the picked side's margin plus its signed line. Positive
   wins, negative loses, zero is a PUSH (`card_ledger.grade_pick`).
 
@@ -215,12 +283,20 @@ void is 0.
 **Settle output is counts only:** graded, voids, unsettled and mismatches
 per arm.
 
+**One arm fails alone.** *(Corrected before the first decision; see
+"Corrections".)* publish, settle, record and verify handle each arm on its
+own. An arm whose file cannot be read (a line JSON cannot parse, such as a
+leftover conflict marker or a truncated append) prints `<ARM>: ERROR ...`
+and the command exits 1. Every other arm still publishes, settles and
+records. The daily loop writes the settle's exit status into the run note.
+
 ## Record
 
 - **Per arm, never pooled.** Each arm's record comes from its own files:
   - `record` prints W-L-P, voids, pending, units, ROI and mean claimed EV;
   - ROI is units ÷ units staked on W+L+P;
-  - it also prints the count of dates by kind (rule 14).
+  - it also prints the count of dates by kind, and the keys skipped as
+    unmapped, as ambiguous, and capped (rule 14).
 - **There is no all-arms total, anywhere.**
 - **Files.** Each arm has its own hash-chained files under
   `evidence/mlb_value_shadow_v1/`:
@@ -287,7 +363,21 @@ per arm.
   keeps its older stamp and can fail the 30-minute book test. Measured:
   - one book in the 36 twice-captured events was absent at the later
     instant;
-  - the effect can only remove books, never add value.
+  - excluding a non-updating book removes it from the consensus, which can
+    move the fair price either way, and so can add or remove candidates.
+    For example, a board where the full consensus refuses a price can make
+    it a candidate once one slow book drops out
+    (`tests/test_mlb_value_shadow.py`, `KnownLimitsAreTrue`). Its effect on
+    the record is not measured. *(Corrected before the first decision: the
+    registered draft claimed the exclusion could only remove books and
+    never add value, which was false.)*
+- **Withdrawn game-line quotes.** Rule 4 drops a book missing from a game
+  line's newest capture. In the stored history (2026-09-03 to 09-21), 19
+  such absent-book quotes would otherwise have passed the 30-minute test,
+  and none became a candidate. Most came back at a later capture, and on
+  two instants bovada was missing from every board, which looks like the
+  feed dropping it rather than a market being pulled. Either way its price
+  was not confirmed live at the decision, which is what a decision records.
 - **The box ingest is not retried.** `daily` fetches yesterday only. A missed
   game's decisions VOID after 7 days rather than being re-fetched. The shadow
   never writes the shared box store.
@@ -301,7 +391,68 @@ per arm.
   wanted, it is a separate registration.
 - **Name joins.** Normalisation could merge two different players into one
   name. Inside one game this voids as "ambiguous name". In the value rule,
-  it drops that line.
+  it drops that line. The opposite failure, one player under two names,
+  is what the first-name-prefix fallback covers. Replayed on the stored
+  2026 props and box scores:
+  - 346 of 2,946 mapped prop player-games have no exact join, 209 of them
+    in games with a final;
+  - the fallback joins exactly one name, "Leonardo Bernal" to "Leo Bernal",
+    in 8 games, and nothing else;
+  - the rest look like players who did not play (rest days), and stay VOID
+    "did not bat".
+
+  Any other nickname the fallback cannot see (e.g. a first name that is not
+  a prefix, such as "Mike" for "Michael") still voids. That shrinks the
+  sample; it does not bias W-L, because the void depends on the name, not
+  the result.
+
+## Corrections before the first decision
+
+Recorded 2026-09-21 (UTC), on branch `claude/mlb-value-shadow`, before this
+file had reached the production branch and before any MLB_VALUE_SHADOW_V1
+decision, scan or settled row existed. No outcome of any kind had been read
+or graded. Each came from a review of the implementation, and each is a
+change to a rule written above, not only to code, so each is listed here
+rather than hidden in a commit message. Only correction 2 changes which
+prices can become decisions; the others change grading, reporting or
+operations.
+
+1. **Shortened games void** (Grading, "Shortened games"). As first written,
+   a game called after 5 innings was graded on its partial score. A
+   shortened game has fewer runs and fewer plate appearances, so Unders and
+   run-line leaders would have collected wins no book pays. Now VOID "game
+   shortened" on every arm when the linescore lists fewer than 9 innings.
+   `regulation_innings: 9` joins the constants, so every arm's
+   `constants_sha256` changed.
+2. **Withdrawn game-line quotes are not quoted** (rule 4). As first written,
+   a book's last game-line row counted until its stamp fell 30 minutes
+   behind the board, even after the book had left the market. A fixture
+   reproduced a decision on a price the book no longer offered. Now only
+   the board's newest capture instant is quoted. The rule inherited from
+   NFL_CARD_V2 is unchanged there: `nfl_value.py` and `lobo_value.py`'s
+   NFL-parity path are not edited; the filter runs in the MLB adapter.
+3. **Known-limits sentence corrected** (Known limits, "Update-stamp
+   dedup"). A statement of fact, not a rule. It changes no constant.
+4. **Name-join fallback** (Grading, "Props"). As first written, "Leonardo
+   Bernal" in the props feed never joined "Leo Bernal" in the box score,
+   so a batter who played would have been VOID "did not bat". Now a
+   same-surname, first-name-prefix fallback applies when the exact join
+   finds no row. `name_prefix_min_letters: 3` joins the props arms'
+   constants.
+5. **Record classes** (rule 14). As first written, a day where value was
+   found but the game join failed, or where no line had enough books to
+   compare, was reported as "looked and declined". Two classes were added
+   and the skip totals are printed. Reporting only: no decision or grade
+   changes.
+6. **One arm fails alone** (Grading, "One arm fails alone"). As first
+   written, one unreadable line in any arm's file stopped every arm's
+   publish, settle and record, and the daily loop's run note did not show
+   it. Now each arm runs on its own, the failing arm prints an ERROR line
+   and exits 1, and the run note carries the settle's exit status.
+   Operational only: no decision or grade changes.
+
+After this section, the "Changing it" rules below apply in full: any
+further change to a number, market, key or grading rule is a new rule id.
 
 ## Changing it
 

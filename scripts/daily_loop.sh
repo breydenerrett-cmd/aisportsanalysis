@@ -310,9 +310,13 @@ echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: nfl card settle --recent exit=$N
 # game_pk; no final yet stays pending, VOID only after 7 days. Counts only.
 # Writes only evidence/mlb_value_shadow_v1/*_settled.jsonl (the capture slot
 # owns the decision files). Shadow, never on the card; never fails the loop.
+# Its exit status goes into the run note: an arm whose ledger cannot be read
+# prints "<ARM>: ERROR" and exits 1 while the other arms still settle.
 echo "== mlb value shadow grading (pending decisions, 7-day void window) =="
-python3 -m src.analysis.mlb_value_shadow settle --recent 2>&1 | sed 's/^/  /' || true
-echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: mlb value shadow settle (counts only)" >> "$RUN_NOTE"
+SHADOW_SETTLE_STATUS=0
+SHADOW_SETTLE_OUT=$(python3 -m src.analysis.mlb_value_shadow settle --recent 2>&1) || SHADOW_SETTLE_STATUS=$?
+echo "$SHADOW_SETTLE_OUT" | sed 's/^/  /' || true
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: mlb value shadow settle --recent exit=$SHADOW_SETTLE_STATUS (counts only)" >> "$RUN_NOTE"
 
 echo "== tennis discover =="
 TENNIS_OUT=$(python3 -m src.cli tennis discover 2>&1) || true

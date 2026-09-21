@@ -49,15 +49,30 @@ GRADING (settle, run by the daily loop)
 ---------------------------------------
 From the box-score store (data/processed/boxscores_<yyyy>.jsonl), indexed by
 game_pk so a suspended game that ends on a later date still grades:
+  * a game whose linescore lists fewer than REGULATION_INNINGS innings (called
+    early, "Completed Early") is VOID "game shortened" on EVERY arm.
   * props: the batter row whose accent-and-suffix-normalised name uniquely
-    matches in that game, stat vs line. No row (or 0 plate appearances):
-    VOID "did not bat". Two matches: VOID "ambiguous name".
+    matches in that game; only if none does, a unique same-surname
+    first-name-prefix match ("Leonardo" / "Leo"). Stat vs line. No row (or 0
+    plate appearances): VOID "did not bat". Two matches: VOID "ambiguous
+    name". The settled row records which join was used.
   * run line and total: the final score is the sum of the linescore's
     innings. If data/historical/mlb_results.csv also carries the game and
     disagrees, the decision stays unsettled (MISMATCH).
   * No final yet: unsettled, retried next run; VOID only once the decision
     date is VOID_AFTER_DAYS old.
 The settle printout is COUNTS ONLY. The per-arm record is `record`.
+
+GAME-LINE QUOTES (arms C, D)
+----------------------------
+Only rows from the board's newest capture instant are quoted: a book the
+feed stopped returning has no live price (rows_at_newest_capture).
+
+ONE ARM FAILS ALONE
+-------------------
+publish, settle, record and verify handle each arm separately: an arm whose
+ledger cannot be read prints "<ARM>: ERROR ..." and the command exits 1, but
+every other arm still runs.
 
 ONE WRITER PER FILE
 -------------------
@@ -114,6 +129,8 @@ LOCK_LEAD_HOURS = 4.0         # decide only inside [first pitch - 4h, first pitc
 MAX_PER_DATE = 15             # per arm per ET date; a flood guard, overflow counted
 VOID_AFTER_DAYS = 7           # no final after this many days: VOID "no final"
 STAKE_UNITS = 1.0             # flat
+REGULATION_INNINGS = 9        # fewer innings in the linescore: VOID "game shortened", every arm
+NAME_PREFIX_MIN_LETTERS = 3   # the prop name-join fallback's shortest first-name prefix
 
 KIND_DECISION = "decision"
 KIND_SCAN = "scan"
@@ -173,6 +190,9 @@ class Arm:
             "max_per_date": MAX_PER_DATE,
             "void_after_days": VOID_AFTER_DAYS,
             "stake_units": STAKE_UNITS,
+            "regulation_innings": REGULATION_INNINGS,
+            "name_prefix_min_letters": (NAME_PREFIX_MIN_LETTERS
+                                        if self.source == SOURCE_PROPS else None),
         }
 
     def constants_sha256(self) -> str:
@@ -294,6 +314,23 @@ def norm_name(name) -> str:
     while tokens and tokens[-1] in _SUFFIXES:
         tokens.pop()
     return " ".join(tokens)
+
+
+NAME_JOIN_EXACT = "exact"
+NAME_JOIN_PREFIX = "first_name_prefix"
+
+
+def first_name_prefix_match(a: str, b: str) -> bool:
+    """The grading join's fallback, for two NORMALISED names: the same
+    surname tokens, different first names, and one first name a prefix of
+    the other of at least NAME_PREFIX_MIN_LETTERS letters ("leo bernal" /
+    "leonardo bernal"). Never a different first name ("colson montgomery" /
+    "braden montgomery"), never an initial, never a one-token name."""
+    ta, tb = str(a or "").split(), str(b or "").split()
+    if len(ta) < 2 or len(tb) < 2 or ta[1:] != tb[1:] or ta[0] == tb[0]:
+        return False
+    short, long_ = sorted((ta[0], tb[0]), key=len)
+    return len(short) >= NAME_PREFIX_MIN_LETTERS and long_.startswith(short)
 
 
 def _line_text(value) -> Optional[str]:
@@ -482,11 +519,43 @@ def prop_boards(rows: Iterable[Mapping], *, now: datetime) -> dict:
     return boards
 
 
+def rows_at_newest_capture(rows: Iterable[Mapping]) -> list:
+    """Game-line rows from each board's (game and market's) newest capture
+    instant only.
+
+    The multi-book store writes every book the feed returns at every
+    capture (src/pipeline/snapshots.py multibook_rows), so a book missing
+    from the board's newest capture was not quoting that market then -- it
+    was pulled (a listed-pitcher change, weather) or dropped by the feed.
+    Its older row is not a live price and is never quoted: not judged, not
+    in anyone's consensus. The MLB counterpart of the prop adapter's "a
+    player the book no longer lists at its newest observation is not quoted
+    by that book". lobo_value.multibook_boards is left as NFL_CARD_V2 has it
+    (its parity test pins that); this filter runs before it, for MLB only.
+    """
+    rows = list(rows)
+    newest: dict = {}
+    for row in rows:
+        seen = lobo.parse_utc(row.get("observed_utc"))
+        if seen is None:
+            continue
+        key = (row.get("event_id"), row.get("market") or "h2h")
+        if key not in newest or seen > newest[key]:
+            newest[key] = seen
+    out = []
+    for row in rows:
+        seen = lobo.parse_utc(row.get("observed_utc"))
+        key = (row.get("event_id"), row.get("market") or "h2h")
+        if seen is not None and seen == newest.get(key):
+            out.append(row)
+    return out
+
+
 def boards_for_arm(arm: Arm, rows: Iterable[Mapping], *, now: datetime) -> dict:
     rows = [r for r in rows if r.get("market") == arm.market]
     if arm.source == SOURCE_PROPS:
         return prop_boards(rows, now=now)
-    return lobo.multibook_boards(rows, now=now, markets=(arm.market,))
+    return lobo.multibook_boards(rows_at_newest_capture(rows), now=now, markets=(arm.market,))
 
 
 # ---------------------------------------------------------------------------
@@ -652,6 +721,11 @@ def publish(date: str, *, now: Optional[datetime] = None, dry_run: bool = False,
             props_path=None, multibook_path=None, map_path=None) -> dict:
     """Judge every selected arm for ET `date` at `now` and (unless dry_run)
     append new decisions and a scan row. Returns {arm: {counts, decisions}}.
+
+    Each arm runs on its own: an arm whose ledger cannot be read or
+    appended (a line JSON cannot parse -- a leftover conflict marker, a
+    truncated append) comes back as {"error": ...} and the others still
+    run. The CLI prints the error and exits non-zero.
     """
     date_cls.fromisoformat(date)  # refuse a malformed date before any read
     now = now or datetime.now(timezone.utc)
@@ -669,26 +743,39 @@ def publish(date: str, *, now: Optional[datetime] = None, dry_run: bool = False,
     summary = {}
     for arm in selected:
         rows = prop_rows if arm.source == SOURCE_PROPS else line_rows
-        boards = boards_for_arm(arm, rows, now=now)
-        existing = _rows_of_kind(decisions_path(ledger_dir, arm), KIND_DECISION)
-        held = {r.get("decision_key") for r in existing}
-        on_date = sum(1 for r in existing if r.get("date") == date)
-        decisions, counts = decide_arm(arm, boards, now=now, date=date, game_map=game_map,
-                                       held_keys=held, decided_on_date=on_date)
-        written = []
-        if not dry_run:
-            ledger = HashChainLedger(decisions_path(ledger_dir, arm))
-            for row in decisions:
-                written.append(ledger.append(row))
-            spath = scans_path(ledger_dir, arm)
-            if _last_scan_counts(spath, date) != counts:
-                HashChainLedger(spath).append({
-                    "kind": KIND_SCAN, "family": FAMILY, "rule_id": arm.rule_id,
-                    "arm": arm.name, "schema_version": SCHEMA_VERSION,
-                    "date": date, "recorded_utc": _iso(now), "counts": counts,
-                })
-        summary[arm.name] = {"counts": counts, "decisions": written if not dry_run else decisions}
+        try:
+            summary[arm.name] = _publish_arm(arm, rows, now=now, date=date, dry_run=dry_run,
+                                             ledger_dir=ledger_dir, game_map=game_map)
+        except Exception as exc:  # noqa: BLE001 -- one arm's broken file must not stop the rest
+            summary[arm.name] = {"error": _error_text(exc), "counts": None, "decisions": []}
     return summary
+
+
+def _error_text(exc: BaseException) -> str:
+    return f"{type(exc).__name__}: {exc}"
+
+
+def _publish_arm(arm: Arm, rows, *, now: datetime, date: str, dry_run: bool,
+                 ledger_dir: Path, game_map: Mapping) -> dict:
+    boards = boards_for_arm(arm, rows, now=now)
+    existing = _rows_of_kind(decisions_path(ledger_dir, arm), KIND_DECISION)
+    held = {r.get("decision_key") for r in existing}
+    on_date = sum(1 for r in existing if r.get("date") == date)
+    decisions, counts = decide_arm(arm, boards, now=now, date=date, game_map=game_map,
+                                   held_keys=held, decided_on_date=on_date)
+    written = []
+    if not dry_run:
+        ledger = HashChainLedger(decisions_path(ledger_dir, arm))
+        for row in decisions:
+            written.append(ledger.append(row))
+        spath = scans_path(ledger_dir, arm)
+        if _last_scan_counts(spath, date) != counts:
+            HashChainLedger(spath).append({
+                "kind": KIND_SCAN, "family": FAMILY, "rule_id": arm.rule_id,
+                "arm": arm.name, "schema_version": SCHEMA_VERSION,
+                "date": date, "recorded_utc": _iso(now), "counts": counts,
+            })
+    return {"counts": counts, "decisions": written if not dry_run else decisions}
 
 
 # ---------------------------------------------------------------------------
@@ -698,14 +785,21 @@ def publish(date: str, *, now: Optional[datetime] = None, dry_run: bool = False,
 @dataclass
 class BoxIndex:
     batters: dict      # {(game_pk, norm_name): {player_id: row}}
-    finals: dict       # {game_pk: set of (away_runs, home_runs)}
+    finals: dict       # {game_pk: set of (away_runs, home_runs, innings listed)}
 
 
 def load_box_index(years: Iterable[str], *, box_paths: Optional[Mapping] = None) -> BoxIndex:
     """Index the box-score store(s) by game_pk (never by date, so a game
     suspended and finished on a later date still grades). Batter rows are
     de-duplicated by player_id within a game so a re-ingested game cannot
-    turn one player into an "ambiguous name"."""
+    turn one player into an "ambiguous name".
+
+    A final carries the number of innings its linescore lists, because the
+    ingest treats "Completed Early" (a game called after 5 innings) as final
+    and writes only the innings played. The store writes an unplayed bottom
+    half as 0 runs, so a game the home side won without batting in the 9th
+    lists 9 innings: the count cannot tell 8.5 from 9, and it does not need
+    to -- both are regulation."""
     batters: dict = defaultdict(dict)
     finals: dict = defaultdict(set)
     for year in sorted(set(years)):
@@ -729,7 +823,7 @@ def load_box_index(years: Iterable[str], *, box_paths: Optional[Mapping] = None)
                     continue
                 away = sum(int(i.get("away_runs") or 0) for i in innings)
                 home = sum(int(i.get("home_runs") or 0) for i in innings)
-                finals[gpk].add((away, home))
+                finals[gpk].add((away, home, len(innings)))
     return BoxIndex(batters=dict(batters), finals=dict(finals))
 
 
@@ -777,43 +871,21 @@ def grade_decision(decision: Mapping, box: BoxIndex, results: Mapping, *,
         if len(final_set) > 1:
             return _void("box-score linescores disagree") if expired else {"pending": "mismatch"}
         return _void("no final") if expired else None
-    away, home = next(iter(final_set))
+    away, home, innings = next(iter(final_set))
 
     if arm.grade_as == GRADE_PROP:
-        from src.board import settle_props
-
-        matches = box.batters.get((gpk, decision.get("player_norm")), {})
-        if not matches:
-            return _void("did not bat")
-        if len(matches) > 1:
-            return _void("ambiguous name")
-        row = next(iter(matches.values()))
-        if not row.get("pa"):
-            return _void("did not bat")
-        try:
-            outcome = settle_props.settle(row, {
-                "subject_id": None, "stat": arm.box_stat,
-                "line": str(decision.get("line_text")),
-                "side": decision.get("side"),
-            })
-        except settle_props.SettleError as exc:
-            return _void(f"unsettleable selection: {exc}")
-        stat_value = row.get(arm.box_stat)
-        if outcome == "void":
-            return _void("box row carries no value for the stat")
-        if outcome == "push":
-            return {"result": RESULT_PUSH, "profit_units": 0.0, "stat_value": stat_value}
-        won = outcome == "win"
-        try:
-            profit = (odds_math.american_to_decimal(decision["price"]) - 1.0) if won else -1.0
-        except (odds_math.OddsError, TypeError, ValueError, KeyError):
-            return _void("unusable price")
-        return {"result": RESULT_WIN if won else RESULT_LOSS,
-                "profit_units": round(profit * STAKE_UNITS, 4), "stat_value": stat_value}
+        if innings < REGULATION_INNINGS:
+            return dict(_void("game shortened"), innings=innings)
+        return dict(_grade_prop(arm, decision, box, gpk), innings=innings)
 
     csv_score = results.get(gpk)
     if csv_score is not None and tuple(csv_score) != (away, home):
         return _void("final score sources disagree") if expired else {"pending": "mismatch"}
+    if innings < REGULATION_INNINGS:
+        # Books give run lines and totals action only after 9 innings (8.5
+        # with the home side ahead); a called game is void, never graded on
+        # its partial score. Every arm voids it the same way.
+        return dict(_void("game shortened"), away_score=away, home_score=home, innings=innings)
 
     from src.appstate import card_ledger
 
@@ -828,136 +900,257 @@ def grade_decision(decision: Mapping, box: BoxIndex, results: Mapping, *,
                                                "price": decision.get("price")}, score)
     out = {"result": graded["result"],
            "profit_units": round(float(graded.get("profit_units") or 0.0) * STAKE_UNITS, 4),
-           "away_score": away, "home_score": home}
+           "away_score": away, "home_score": home, "innings": innings}
     if graded.get("reason"):
         out["reason"] = graded["reason"]
     return out
 
 
+def match_batter(box: BoxIndex, game_pk: str, player_norm: Optional[str]) -> tuple:
+    """({player_id: box row}, join method) for a prop's player in one game.
+
+    The exact normalised-name join first. Only when it finds no row, the
+    first-name-prefix fallback (first_name_prefix_match) over that game's
+    batters -- "Leonardo Bernal" in the props feed is "Leo Bernal" in the
+    box score. Returns ({}, None) when neither joins."""
+    exact = box.batters.get((game_pk, player_norm)) or {}
+    if exact:
+        return dict(exact), NAME_JOIN_EXACT
+    fallback: dict = {}
+    for (gpk, name), rows in box.batters.items():
+        if gpk == game_pk and first_name_prefix_match(player_norm, name):
+            fallback.update(rows)
+    if fallback:
+        return fallback, NAME_JOIN_PREFIX
+    return {}, None
+
+
+def _grade_prop(arm: Arm, decision: Mapping, box: BoxIndex, gpk: str) -> dict:
+    from src.board import settle_props
+
+    matches, join = match_batter(box, gpk, decision.get("player_norm"))
+    joined = {"name_join": join}
+    if not matches:
+        return dict(_void("did not bat"), **joined)
+    if len(matches) > 1:
+        return dict(_void("ambiguous name"), **joined)
+    row = next(iter(matches.values()))
+    joined.update(box_player_id=row.get("player_id"), box_player_name=row.get("player_name"))
+    if not row.get("pa"):
+        return dict(_void("did not bat"), **joined)
+    try:
+        outcome = settle_props.settle(row, {
+            "subject_id": None, "stat": arm.box_stat,
+            "line": str(decision.get("line_text")),
+            "side": decision.get("side"),
+        })
+    except settle_props.SettleError as exc:
+        return dict(_void(f"unsettleable selection: {exc}"), **joined)
+    stat_value = row.get(arm.box_stat)
+    if outcome == "void":
+        return dict(_void("box row carries no value for the stat"), **joined)
+    if outcome == "push":
+        return {"result": RESULT_PUSH, "profit_units": 0.0, "stat_value": stat_value, **joined}
+    won = outcome == "win"
+    try:
+        profit = (odds_math.american_to_decimal(decision["price"]) - 1.0) if won else -1.0
+    except (odds_math.OddsError, TypeError, ValueError, KeyError):
+        return dict(_void("unusable price"), **joined)
+    return {"result": RESULT_WIN if won else RESULT_LOSS,
+            "profit_units": round(profit * STAKE_UNITS, 4), "stat_value": stat_value, **joined}
+
+
 def settle_recent(*, now: Optional[datetime] = None, ledger_dir=None, dry_run: bool = False,
                   box_paths: Optional[Mapping] = None, results_path=None) -> dict:
     """Grade every unsettled decision of every arm. Returns COUNTS ONLY:
-    {arm: {graded, voids, unsettled, mismatches}}."""
+    {arm: {graded, voids, unsettled, mismatches}}, plus "error" on an arm
+    whose ledger could not be read or appended -- the other arms still
+    grade."""
     now = now or datetime.now(timezone.utc)
     ledger_dir = Path(ledger_dir) if ledger_dir else default_ledger_dir()
 
+    counts = {arm.name: {"graded": 0, "voids": 0, "unsettled": 0, "mismatches": 0}
+              for arm in ARMS}
     pending_by_arm = {}
     years = set()
     for arm in ARMS:
-        decisions = _rows_of_kind(decisions_path(ledger_dir, arm), KIND_DECISION)
-        done = {r.get("decision_row_hash")
-                for r in _rows_of_kind(settled_path(ledger_dir, arm), KIND_SETTLED)}
+        try:
+            decisions = _rows_of_kind(decisions_path(ledger_dir, arm), KIND_DECISION)
+            done = {r.get("decision_row_hash")
+                    for r in _rows_of_kind(settled_path(ledger_dir, arm), KIND_SETTLED)}
+        except Exception as exc:  # noqa: BLE001 -- one arm's broken file must not stop the rest
+            counts[arm.name]["error"] = _error_text(exc)
+            continue
         pending = [d for d in decisions if d.get(ROW_HASH_FIELD) not in done]
         pending_by_arm[arm.name] = pending
         years.update(str(d.get("date") or "")[:4] for d in pending if d.get("date"))
 
-    counts = {arm.name: {"graded": 0, "voids": 0, "unsettled": 0, "mismatches": 0}
-              for arm in ARMS}
     if not any(pending_by_arm.values()):
         return counts
 
     box = load_box_index(years, box_paths=box_paths)
     results = load_results_scores(results_path)
     for arm in ARMS:
-        ledger = HashChainLedger(settled_path(ledger_dir, arm))
-        for decision in pending_by_arm[arm.name]:
-            outcome = grade_decision(decision, box, results, now=now)
-            if outcome is None or "pending" in outcome:
-                counts[arm.name]["unsettled"] += 1
-                if outcome is not None:
-                    counts[arm.name]["mismatches"] += 1
-                continue
-            if outcome["result"] == RESULT_VOID:
-                counts[arm.name]["voids"] += 1
-            else:
-                counts[arm.name]["graded"] += 1
-            if dry_run:
-                continue
-            row = {
-                "kind": KIND_SETTLED, "family": FAMILY, "rule_id": arm.rule_id,
-                "arm": arm.name, "schema_version": SCHEMA_VERSION,
-                "decision_row_hash": decision.get(ROW_HASH_FIELD),
-                "decision_key": decision.get("decision_key"),
-                "date": decision.get("date"), "game_pk": decision.get("game_pk"),
-                "settled_utc": _iso(now),
-                **outcome,
-            }
-            row.setdefault("reason", None)
-            ledger.append(row)
+        if arm.name not in pending_by_arm:
+            continue
+        try:
+            _settle_arm(arm, pending_by_arm[arm.name], box, results, now=now,
+                        dry_run=dry_run, ledger_dir=ledger_dir, counts=counts[arm.name])
+        except Exception as exc:  # noqa: BLE001 -- one arm's broken file must not stop the rest
+            counts[arm.name]["error"] = _error_text(exc)
     return counts
+
+
+def _settle_arm(arm: Arm, pending: Sequence[Mapping], box: BoxIndex, results: Mapping, *,
+                now: datetime, dry_run: bool, ledger_dir: Path, counts: dict) -> None:
+    ledger = HashChainLedger(settled_path(ledger_dir, arm))
+    for decision in pending:
+        outcome = grade_decision(decision, box, results, now=now)
+        if outcome is None or "pending" in outcome:
+            counts["unsettled"] += 1
+            if outcome is not None:
+                counts["mismatches"] += 1
+            continue
+        if outcome["result"] == RESULT_VOID:
+            counts["voids"] += 1
+        else:
+            counts["graded"] += 1
+        if dry_run:
+            continue
+        row = {
+            "kind": KIND_SETTLED, "family": FAMILY, "rule_id": arm.rule_id,
+            "arm": arm.name, "schema_version": SCHEMA_VERSION,
+            "decision_row_hash": decision.get(ROW_HASH_FIELD),
+            "decision_key": decision.get("decision_key"),
+            "date": decision.get("date"), "game_pk": decision.get("game_pk"),
+            "settled_utc": _iso(now),
+            **outcome,
+        }
+        row.setdefault("reason", None)
+        ledger.append(row)
 
 
 # ---------------------------------------------------------------------------
 # Record (per arm, never pooled)
 # ---------------------------------------------------------------------------
 
+# How far a scanned date got, lowest to highest. A date is classed by the
+# furthest any run that day got, so an empty day says WHICH kind of empty it
+# was -- and value the rule found but could not decide (its game had no
+# game_pk, or an ambiguous one) is never reported as the rule declining.
+DAY_CLASSES = (
+    "no board",                                    # no upcoming board on the date
+    "never run inside the lock window",            # boards, all more than 4h out
+    "board too old to judge",                      # in window, newest quote > 1h old
+    "too few books to judge any line",             # judged, no line had N other books
+    "looked and declined",                         # lines compared, none cleared the bar
+    "value found but game unmapped or ambiguous",  # candidates, all on unmappable games
+    "decided",                                     # at least one decision on the date
+)
+
+
+def _day_rank(counts: Mapping) -> int:
+    if (counts.get("skipped_unmapped") or 0) + (counts.get("skipped_ambiguous") or 0):
+        return 5
+    if counts.get("lines_judged"):
+        return 4
+    if counts.get("boards_judged"):
+        return 3
+    if counts.get("boards_stale"):
+        return 2
+    if counts.get("boards_seen"):
+        return 1
+    return 0
+
+
 def record(*, ledger_dir=None) -> dict:
     """{arm: record}. W-L-P-V, pending, staked (W+L+P at 1u), units, ROI%,
-    mean claimed EV, and each scanned date's kind of outcome. There is no
-    all-arms total, by design."""
+    mean claimed EV, each scanned date's kind of outcome (DAY_CLASSES), and
+    the keys skipped as unmapped / ambiguous and capped. There is no
+    all-arms total, by design. An arm whose files cannot be read comes back
+    as {"error": ...}; the other arms are still recorded."""
     ledger_dir = Path(ledger_dir) if ledger_dir else default_ledger_dir()
     out = {}
     for arm in ARMS:
-        decisions = _rows_of_kind(decisions_path(ledger_dir, arm), KIND_DECISION)
-        settled = {r.get("decision_row_hash"): r
-                   for r in _rows_of_kind(settled_path(ledger_dir, arm), KIND_SETTLED)}
-        scans = _rows_of_kind(scans_path(ledger_dir, arm), KIND_SCAN)
-        tally = {RESULT_WIN: 0, RESULT_LOSS: 0, RESULT_PUSH: 0, RESULT_VOID: 0}
-        units = 0.0
-        pending = 0
-        for d in decisions:
-            s = settled.get(d.get(ROW_HASH_FIELD))
-            if s is None:
-                pending += 1
-                continue
-            tally[s.get("result")] = tally.get(s.get("result"), 0) + 1
-            units += float(s.get("profit_units") or 0.0)
-        staked = (tally[RESULT_WIN] + tally[RESULT_LOSS] + tally[RESULT_PUSH]) * STAKE_UNITS
-
-        # Each scanned date is classed by the furthest any run that day got,
-        # so an empty day says WHICH kind of empty it was.
-        decided_dates = {d.get("date") for d in decisions}
-        days = {}
-        for scan in scans:
-            date = scan.get("date")
-            c = scan.get("counts") or {}
-            rank = (4 if date in decided_dates else
-                    3 if c.get("boards_judged") else
-                    2 if c.get("boards_stale") else
-                    1 if c.get("boards_seen") else 0)
-            days[date] = max(days.get(date, 0), rank)
-        for date in decided_dates:
-            days[date] = 4
-        names = {4: "decided", 3: "looked and declined", 2: "board too old to judge",
-                 1: "never run inside the lock window", 0: "no board"}
-        by_kind = defaultdict(int)
-        for rank in days.values():
-            by_kind[names[rank]] += 1
-
-        evs = [float(d.get("ev") or 0.0) for d in decisions]
-        out[arm.name] = {
-            "rule_id": arm.rule_id,
-            "label": arm.label,
-            "decisions": len(decisions),
-            "wins": tally[RESULT_WIN], "losses": tally[RESULT_LOSS],
-            "pushes": tally[RESULT_PUSH], "voids": tally[RESULT_VOID],
-            "pending": pending,
-            "staked_units": staked,
-            "units": round(units, 4),
-            "roi_pct": round(100.0 * units / staked, 2) if staked else None,
-            "mean_claimed_ev_pct": round(100.0 * sum(evs) / len(evs), 2) if evs else None,
-            "days": dict(by_kind),
-        }
+        try:
+            out[arm.name] = _record_arm(arm, ledger_dir)
+        except Exception as exc:  # noqa: BLE001 -- one arm's broken file must not stop the rest
+            out[arm.name] = {"rule_id": arm.rule_id, "label": arm.label,
+                             "error": _error_text(exc)}
     return out
 
 
+def _record_arm(arm: Arm, ledger_dir: Path) -> dict:
+    decisions = _rows_of_kind(decisions_path(ledger_dir, arm), KIND_DECISION)
+    settled = {r.get("decision_row_hash"): r
+               for r in _rows_of_kind(settled_path(ledger_dir, arm), KIND_SETTLED)}
+    scans = _rows_of_kind(scans_path(ledger_dir, arm), KIND_SCAN)
+    tally = {RESULT_WIN: 0, RESULT_LOSS: 0, RESULT_PUSH: 0, RESULT_VOID: 0}
+    units = 0.0
+    pending = 0
+    for d in decisions:
+        s = settled.get(d.get(ROW_HASH_FIELD))
+        if s is None:
+            pending += 1
+            continue
+        tally[s.get("result")] = tally.get(s.get("result"), 0) + 1
+        units += float(s.get("profit_units") or 0.0)
+    staked = (tally[RESULT_WIN] + tally[RESULT_LOSS] + tally[RESULT_PUSH]) * STAKE_UNITS
+
+    decided = len(DAY_CLASSES) - 1
+    decided_dates = {d.get("date") for d in decisions}
+    days: dict = {}
+    # Scan counts are per run, and a skipped key is counted again by every
+    # later run that sees it, so a date contributes its PEAK, never a sum.
+    peaks: dict = defaultdict(lambda: {"skipped_unmapped": 0, "skipped_ambiguous": 0,
+                                       "capped": 0})
+    for scan in scans:
+        date = scan.get("date")
+        c = scan.get("counts") or {}
+        rank = decided if date in decided_dates else _day_rank(c)
+        days[date] = max(days.get(date, 0), rank)
+        for field in peaks[date]:
+            peaks[date][field] = max(peaks[date][field], int(c.get(field) or 0))
+    for date in decided_dates:
+        days[date] = decided
+    by_kind = defaultdict(int)
+    for rank in days.values():
+        by_kind[DAY_CLASSES[rank]] += 1
+
+    evs = [float(d.get("ev") or 0.0) for d in decisions]
+    return {
+        "rule_id": arm.rule_id,
+        "label": arm.label,
+        "decisions": len(decisions),
+        "wins": tally[RESULT_WIN], "losses": tally[RESULT_LOSS],
+        "pushes": tally[RESULT_PUSH], "voids": tally[RESULT_VOID],
+        "pending": pending,
+        "staked_units": staked,
+        "units": round(units, 4),
+        "roi_pct": round(100.0 * units / staked, 2) if staked else None,
+        "mean_claimed_ev_pct": round(100.0 * sum(evs) / len(evs), 2) if evs else None,
+        "days": dict(by_kind),
+        "skipped_unmapped": sum(p["skipped_unmapped"] for p in peaks.values()),
+        "skipped_ambiguous": sum(p["skipped_ambiguous"] for p in peaks.values()),
+        "capped": sum(p["capped"] for p in peaks.values()),
+    }
+
+
 def verify(*, ledger_dir=None) -> dict:
+    """{file name: {ok, rows, reason}} for every arm's three chains. A file
+    that cannot even be read (a line JSON cannot parse) is reported not ok,
+    never raised, so the other files are still checked."""
     ledger_dir = Path(ledger_dir) if ledger_dir else default_ledger_dir()
     out = {}
     for arm in ARMS:
         for path in (decisions_path(ledger_dir, arm), scans_path(ledger_dir, arm),
                      settled_path(ledger_dir, arm)):
-            result = HashChainLedger(path).verify()
+            try:
+                result = HashChainLedger(path).verify()
+            except Exception as exc:  # noqa: BLE001 -- report it, check the rest
+                out[path.name] = {"ok": False, "rows": 0,
+                                  "reason": f"unreadable: {_error_text(exc)}"}
+                continue
             out[path.name] = {"ok": result.ok, "rows": result.rows_checked,
                               "reason": result.reason}
     return out
@@ -1038,14 +1231,19 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         for name, item in summary.items():
             for row in item["decisions"]:
                 print(f"  {'WOULD LOCK' if args.dry_run else 'LOCKED'} {_describe(row)}")
+        # One line per arm, last, so a tailed log always shows every arm --
+        # including one that failed.
         for name, item in summary.items():
+            if item.get("error"):
+                print(f"  {name}: ERROR {item['error']}")
+                continue
             c = item["counts"]
             print(f"  {name}: boards {c['boards_seen']} (outside window {c['boards_outside_window']}, "
                   f"stale {c['boards_stale']}, judged {c['boards_judged']}), book-lines judged "
                   f"{c['lines_judged']}, candidates {c['candidates']}, new {c['new_decisions']}, "
                   f"held {c['held']}, capped {c['capped']}, unmapped {c['skipped_unmapped']}, "
                   f"ambiguous {c['skipped_ambiguous']}")
-        return 0
+        return 1 if any(item.get("error") for item in summary.values()) else 0
 
     if args.command == "settle":
         counts = settle_recent(now=_parse_now(args.now), ledger_dir=args.ledger_dir,
@@ -1054,21 +1252,28 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print(f"{tag} settle{mode} -- counts only")
         for name, c in counts.items():
             print(f"  {name}: graded {c['graded']}, voids {c['voids']}, unsettled {c['unsettled']}"
-                  + (f", MISMATCH {c['mismatches']}" if c["mismatches"] else ""))
-        return 0
+                  + (f", MISMATCH {c['mismatches']}" if c["mismatches"] else "")
+                  + (f"; ERROR {c['error']}" if c.get("error") else ""))
+        return 1 if any(c.get("error") for c in counts.values()) else 0
 
     if args.command == "record":
         print(f"{tag} record -- per arm, never pooled, never on a customer surface")
+        failed = False
         for name, r in record(ledger_dir=args.ledger_dir).items():
+            label = f" [{r['label']}]" if r["label"] else ""
+            if r.get("error"):
+                failed = True
+                print(f"  {name}{label}: ERROR {r['error']}")
+                continue
             roi = "n/a" if r["roi_pct"] is None else f"{r['roi_pct']:+.2f}%"
             ev = "n/a" if r["mean_claimed_ev_pct"] is None else f"{r['mean_claimed_ev_pct']:.2f}%"
-            label = f" [{r['label']}]" if r["label"] else ""
             days = ", ".join(f"{k} {v}" for k, v in sorted(r["days"].items())) or "no scans"
             print(f"  {name}{label}: {r['decisions']} decisions, {r['wins']}-{r['losses']}"
                   f"-{r['pushes']} (W-L-P), {r['voids']} void, {r['pending']} pending, "
                   f"units {r['units']:+.2f} on {r['staked_units']:.0f} staked, ROI {roi}, "
-                  f"mean claimed EV {ev}; days: {days}")
-        return 0
+                  f"mean claimed EV {ev}; days: {days}; keys skipped: unmapped "
+                  f"{r['skipped_unmapped']}, ambiguous {r['skipped_ambiguous']}, capped {r['capped']}")
+        return 1 if failed else 0
 
     if args.command == "verify":
         bad = 0
