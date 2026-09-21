@@ -11,6 +11,31 @@ has been corrected in this version. Items marked **[10:00Z]** depend on the
 
 ## 1. TL;DR
 
+*Updated 2026-09-21 ~18:30Z. The first four bullets are today's news. The
+rest is the overnight report, corrected where the day proved it wrong.*
+
+- **New outage today, fixed: about 3 hours of odds captures were lost.** The
+  main odds file passed GitHub's 100 MB file limit, and every capture push
+  from 14:39Z to 17:41Z was rejected. Old rows now move automatically into
+  compressed archive files that every reader still sees (`f0b68c70`). The
+  first run on the fix archived 08-31..09-17 into 2.3 MB and left the live
+  file at 36 MB. Three other files are heading for the same wall (63, 57 and
+  40 MB); a warning now fires at 75 MB. *(Section 11.)*
+- **The afternoon MLB board was still blocked, and my overnight fix was
+  wrong.** The real cause: the afternoon job asked the cache for a different
+  list of files than the daily job saves, so it never received the daily
+  job's data and kept reading pitch data frozen at 09-14. That is also why
+  the engine's test strategies have been silent since the 14th. Fixed at
+  18:13Z (`6414a280`, on the branch the schedule runs). *(Section 11 has the
+  confirmation.)*
+- **The engine's NFL leak is fixed and 09-20 has settled.** The daily run
+  fired late (16:02Z; the "13:31Z retry" I expected never happened). It voided
+  the 84 NFL paper bets and settled the MLB ones.
+- **The all-sports + UFC + paid-product plan is written:**
+  [`docs/plans/2026-09-21_ALL_SPORTS_UFC_AND_PAID_PLAN.md`](../plans/2026-09-21_ALL_SPORTS_UFC_AND_PAID_PLAN.md).
+  UFC can run as a free, labelled test page this Saturday. Nothing can
+  honestly be sold as a proven edge yet: the MLB card's +8.2% return over
+  100 picks is still within what luck produces.
 - **For six days the capture pipeline threw away most of what it paid to
   capture, and the warnings that it was going wrong were ignored.** From
   2026-09-15 04:27Z to 2026-09-21 04:14Z, one line in the capture script staged
@@ -18,11 +43,11 @@ has been corrected in this version. Items marked **[10:00Z]** depend on the
   ESCALATE lines and red afternoon runs appeared every day from 09-16, but
   nothing acted on them. Fixed, tested, and **proven in production at 04:14Z**.
   A failed save now also turns the job red. *(Section 2.)*
-- **The afternoon MLB board had a second, separate blocker, now also fixed.**
-  From 09-18 a CI cache kept feeding it pitch data four days stale. My first
-  fix for that went to the wrong branch and did nothing. The real fix went to
-  the branch the schedule actually runs from at about 06:00Z. **[10:00Z/afternoon]**
-  confirmation pending.
+- **The afternoon MLB board had a second, separate blocker.** From 09-18 a CI
+  cache kept feeding it pitch data a week stale. *Corrected 09-21 afternoon:*
+  both overnight fixes (removing the cache re-save, first on the wrong branch
+  and then on the right one) treated a symptom. The cause was a mismatched
+  cache file list; see the top bullets and section 11.
 - **Sunday proved your −200 rule.** The old NFL favourites card went **5-3 and
   lost 1.03 units** (settled 10:16Z). Its 49ers win at −950 earned 0.11u, and
   each of its three losses at −295, −420 and −380 cost a full unit. Winning
@@ -47,17 +72,19 @@ has been corrected in this version. Items marked **[10:00Z]** depend on the
   Hits Unders lost money despite winning 61%.
 - **MLB's regular season ends 09-27.** That changes what's urgent: NFL is the
   sport that runs through the winter.
-- **Credits look under control after the fix, but watch today.** Every day
-  from 09-15 to 09-20 spent 1,400–4,100 credits against a 900 budget. Today
-  (09-21) had spent **280 by 10:20Z**, about 24 an hour overnight since the
-  fix, with a checkpoint every slot. The balance is 9,534 against a 5,000
-  floor. Daytime MLB prop buying is the heavy part, so the real test is
-  whether today stays under 900.
-- **New bug found and being fixed: the MLB engine bets NFL games.** On 09-20
-  its baseline strategies placed 84 paper bets on NFL games, because the
-  engine doesn't filter the shared odds store by sport. So 09-20's MLB paper
-  record can't settle. It is not from tonight's changes (09-17 had one), and
-  the fix is in progress for the 13:31Z retry *(section 4.3)*.
+- **Credits look under control after the fix, but the month is tight.** Every
+  day from 09-15 to 09-20 spent 1,400–4,100 credits against a 900 budget.
+  Today (09-21) spent **about 380 by 14:26Z**. The balance is 9,436, so 4,436
+  above the 5,000 floor. At the full 900 a day that runs out around **09-26,
+  UFC Saturday**, before the expected ~10-01 reset. At today's pace it lasts
+  longer. The $119/month tier (5 million credits, versus $59 for 100,000)
+  would end the problem. It's your call: see the plan's section 10.
+- **New bug found and fixed: the MLB engine was betting NFL games.** On 09-20
+  its baseline strategies placed 84 paper bets on NFL games, because the odds
+  store feeding the engine labelled every row "MLB". That blocked 09-20's MLB
+  paper record from settling, and 09-17's too. It is not from tonight's
+  changes. Fixed and pushed at 11:30Z; 09-20 settled in the 16:02Z daily run
+  *(section 11)*.
 - **Four decisions are yours** *(section 10)*.
 
 ---
@@ -511,13 +538,77 @@ An MLB-only plan does not cover NFL.
   since the fix. The daytime rate is still to come.
 - [x] **Pitch data advanced to 09-20** in the daily loop. With the cache fix on
   the default branch, the afternoon slate should now read it.
-- [ ] **New: the MLB engine placed 84 paper bets on NFL games on 09-20**, so
-  engine settle refused 09-20 (a new ESCALATE; the job correctly went red).
-  It is not from tonight's changes (09-17 had one). The engine reads the
-  shared odds store without a sport filter. **Fix in progress** for the 13:31Z
-  retry.
-- [ ] **[afternoon 09-21, after you wake]** the afternoon MLB board builds
-  without "coverage ends 2026-09-14", and the genomes decide.
+- [x] **New: the MLB engine placed paper bets on NFL games.** It placed 6 on
+  09-17, 84 on 09-20 and 6 on 09-21. Tennis games were about to follow, now
+  that tennis prices exist. The cause: the odds store that feeds the engine
+  stamps every row "MLB". Engine settle then refused 09-17 and 09-20
+  entirely. **Fixed** (`b18b4e5d`, pushed 11:30Z):
+  - the engine drops every non-MLB game;
+  - settle VOIDs the leaked NFL bets with an explicit reason and settles the
+    MLB ones.
+
+  On copies of the real stores the fix settles 09-20 at 58-53-2 (+84 VOID)
+  and 09-17 at 31-27-4 (+6 VOID), with the MLB results identical to the old
+  code and every chain verified. An independent verifier passed it.
+  **Confirmed in production:** there was no 13:31Z retry (my assumption was
+  wrong: the daily loop's cron is 10:00Z and GitHub fired it at 16:02Z, run
+  35623033089). That run voided all 84 NFL paper bets on 14 NFL events with
+  the explicit reason, settled the MLB ones (every system still correctly
+  REFUSEd for promotion), and raised no new ESCALATE.
+  **Follow-ups:**
+  - 09-17 needs a one-time manual `engine settle --date 2026-09-17`, because
+    the loop only retries yesterday;
+  - the upstream store (`src/board/l1.py`) should stop labelling NFL and
+    tennis rows as MLB.
+- [x] **The afternoon MLB board builds again. The overnight cache fix was
+  not the cause.** The 17:55Z run still refused with "coverage ends
+  2026-09-14". The GitHub cache API showed why:
+  - a cache entry only matches a restore with an identical file list;
+  - the daily loop saves 12 paths, while the afternoon slate asked for 7;
+  - so the afternoon slate never received a daily-loop save (version
+    `6a008b5f8a`), and kept restoring its own old saves (version
+    `01d0944ab7`, the 02:43Z entry), frozen at Statcast 09-14.
+
+  Removing its re-save (overnight) could not help. The fix is on the default
+  branch the schedule runs (`5e8a3bf8`, `6414a280`):
+  - restore the byte-identical 12-path list, restore-only;
+  - then `git checkout -- data/historical`, so git's fresher tracked stores
+    (lineups, matchups) win over cached copies, and only the untracked
+    Statcast store comes from the cache.
+
+  **Verified:** the dispatched run 35636959615 (18:13Z) restored
+  `daily-loop-data-35623033089`, built the board for all 3 games, raised no
+  ESCALATE, and succeeded. This is likely why the genomes were silent all
+  week, not just NO_LINEUP.
+- [ ] **Genomes deciding is still unproven.** At 18:13Z all 156 genome
+  checks stood down NO_LINEUP, correctly: no lineup had posted yet (first
+  pitch 22:35Z). The 18:40Z, 21:40Z and dispatched passes after lineups post
+  are the real test.
+- [x] **New outage today, fixed: the main odds file hit GitHub's 100 MB
+  limit.** `data/processed/odds_multibook.jsonl` reached 100.08 MB. Every
+  forward-capture push from 14:39Z to 17:41Z was rejected (runs red,
+  `ESCALATE: push failed after retries`). About 3 hours of odds captures
+  for every sport are lost for good.
+  - **Fix** (`f0b68c70`): old rows move into gzip archive segments under
+    `data/processed/archive/odds_multibook/`. Every content reader sees
+    archive + live file, byte-identical to the unrotated store.
+  - **Size gate:** a new check warns at 75 MB and escalates at 95 MB for any
+    staged file.
+  - **Review:** three independent verifiers reviewed it; their majors were
+    fixed with regression tests.
+  - **Verified in production:** the 17:41Z slot archived 08-31..09-17 into a
+    2.3 MB segment and left the live file at 36.1 MB. Slots since then commit
+    normally.
+  - **Next:** `derivative_markets.jsonl` (63 MB), `evidence/decisions_v2.jsonl`
+    (57 MB) and `batter_props.jsonl` (40 MB) need the same treatment.
+- [x] **Credits by 14:26Z: about 380 spent today; 9,436 left** (4,436 above
+  the floor). See the plan's section 10 for the month-end squeeze.
+- [x] **The all-sports + UFC plan is written and fact-checked:**
+  `docs/plans/2026-09-21_ALL_SPORTS_UFC_AND_PAID_PLAN.md`.
+  - Five researchers, one writer, an independent fact-checker (33 issues
+    found and fixed) and a completeness critic.
+  - I corrected two more lines by hand: billing is built in Stripe test mode
+    for one flat plan; the outage is fixed.
 - [x] **Monday's NFL card:** neither V2 nor empty. It is the old rule's Rams
   −300, published before V2 went live and labelled as such. V2 starts
   Thursday.

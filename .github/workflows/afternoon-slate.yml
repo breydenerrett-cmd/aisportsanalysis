@@ -111,8 +111,17 @@ jobs:
       # bootstrap has nothing to rebuild. Saved forward under this run's own
       # key so an afternoon run still primes tomorrow morning if the 10:00Z
       # loop failed.
+      #
+      # MIRROR of the default branch's copy (6414a280), which is the one the
+      # schedule and the dispatcher actually run. A cache entry matches only a
+      # restore with an IDENTICAL path list, because the list is hashed into
+      # the entry's version. With seven paths here against daily-loop.yml's
+      # twelve, this job never saw a daily-loop save and read Statcast
+      # coverage frozen at 2026-09-14. Keep this list byte-identical to
+      # daily-loop.yml's save step. Restore-only: the combined actions/cache
+      # also saves in its post step.
       - name: Restore historical + processed data cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             data/historical/statcast
@@ -122,9 +131,20 @@ jobs:
             data/historical/bullpen_log.jsonl
             data/historical/lineups.jsonl
             data/historical/handedness.json
+            data/historical/matchup_history.jsonl
+            data/historical/matchup_pairs.json
+            data/historical/pitcher_splits.json
+            data/historical/arsenals
+            data/historical/standings.jsonl
           key: daily-loop-data-${{ github.run_id }}
           restore-keys: |
             daily-loop-data-
+
+      # Everything above except the Statcast store is tracked in git and the
+      # checkout is fresher, so git's copies win. Only the pitch store comes
+      # from the cache.
+      - name: Keep git's tracked historical stores over the cache's copies
+        run: git checkout -- data/historical
 
       # Same hard stops as the daily loop: a missing Statcast manifest that
       # the seed branch cannot supply is a refusal, not a silent full build.
