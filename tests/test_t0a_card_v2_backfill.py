@@ -107,7 +107,21 @@ class FrozenParamsSchema(unittest.TestCase):
                 a, b, "plate appearances must fall from leadoff to ninth")
 
 
+# The fit reads 2025 stores that are git-ignored (data/historical/* is in
+# .gitignore) and exist only where the T0a backfill was run. On a fresh CI
+# checkout they are absent, so the fit exits 1 before it can be compared --
+# which kept the CI tests gate red on every run (seen 2026-09-21, runs
+# 35559625814 and 35571736626). Skipped, with the reason, where the inputs
+# are missing; it still runs wherever they exist.
+FIT_INPUTS = (
+    REPO / "data" / "historical" / "pitcher_logs_2025.jsonl",
+    REPO / "data" / "historical" / "bullpen_log_2025.jsonl",
+)
+
+
 @unittest.skipUnless(FIT_SCRIPT.exists(), "fit script not present")
+@unittest.skipUnless(all(p.exists() for p in FIT_INPUTS),
+                     "2025 fit inputs are git-ignored and not built on this machine")
 class Determinism(unittest.TestCase):
     def test_two_runs_are_byte_identical(self):
         with tempfile.TemporaryDirectory() as tmp:
