@@ -101,19 +101,23 @@ explains why Flexible causes a redirect loop against Fly).
 
 ## 7. Dispatch the production deploy
 
-`.github/workflows/deploy-prod.yml` is **workflow_dispatch only** -- it
-never runs automatically, on any push. It needs a `FLY_API_TOKEN`
-repository secret (an app-scoped token for `linehound-prod` --
-`fly tokens create deploy -a linehound-prod`), set once at
-GitHub -> repo -> Settings -> Secrets and variables -> Actions.
+`.github/workflows/deploy-prod.yml` is **workflow_dispatch only**. It
+never runs automatically on a push. It needs its own repository secret,
+**`FLY_PROD_API_TOKEN`**. Do not reuse `FLY_API_TOKEN`: that one belongs to
+staging. Create it and set it once (you run these):
 
-**Before you can dispatch it from the Actions tab, the workflow file
-itself has to be on the repository's default branch**
-(`claude/cowork-session-migration-tn3sx2` -- see note at the bottom of
-this doc). Once it's there:
+```bash
+fly tokens create deploy -a linehound-prod
+gh secret set FLY_PROD_API_TOKEN --repo breydenerrett-cmd/aisportsanalysis
+```
+
+(`gh` prompts for the value, so paste the token there.) Then deploy:
 
 - GitHub UI: Actions tab -> "deploy-prod" -> **Run workflow**.
-- Or: `gh workflow run deploy-prod.yml`.
+- Or: `gh workflow run deploy-prod.yml --repo breydenerrett-cmd/aisportsanalysis`
+
+It always deploys the working branch's code (the checkout is pinned),
+whichever branch you run it from.
 
 ## 8. Smoke test (three lines)
 
@@ -154,13 +158,7 @@ suspended:
 
 ## Note on workflow registration
 
-GitHub only lists a `workflow_dispatch` workflow in the Actions UI (and
-resolves an unqualified `gh workflow run <name>`) once that workflow
-file exists on the repository's **default branch** --
-`claude/cowork-session-migration-tn3sx2` here, not the working branch
-this task was done on. `.github/workflows/daily-loop.yml`'s own comments
-in this repo document the same constraint biting a cache-restore step for
-exactly this reason. This session did not push `deploy-prod.yml`
-anywhere -- it is committed locally on this worktree's branch only. You
-(or a future session with push access to the default branch) need to
-land it there before step 7 above will work from the Actions tab.
+GitHub only lists a `workflow_dispatch` workflow once its file exists on
+the repository's **default branch** (`claude/cowork-session-migration-tn3sx2`).
+**Done 2026-09-21** (commit `034d8341`), so no action is needed. If you
+change `deploy-prod.yml`, keep both branches' copies identical.
