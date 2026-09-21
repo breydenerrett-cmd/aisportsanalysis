@@ -28,10 +28,16 @@ import argparse
 import io
 import unittest
 from contextlib import redirect_stdout
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from unittest import mock
 
 from src import cli
+
+# The CLI reads the real clock, so the kickoff is RELATIVE to it. These
+# tests used a fixed 2026-09-18 kickoff "far in the future" and started
+# failing the day it passed.
+KICKOFF = (datetime.now(timezone.utc) + timedelta(days=2)).replace(microsecond=0)
+KICKOFF_ISO = KICKOFF.isoformat().replace("+00:00", "Z")
 
 
 def _args(date_str="2026-09-17", dry_run=False):
@@ -39,24 +45,30 @@ def _args(date_str="2026-09-17", dry_run=False):
                               date=date_str, dry_run=dry_run)
 
 
-class CmdCardNFLBranchTests(unittest.TestCase):
-    NOW = datetime(2026, 9, 16, 12, 0, 0, tzinfo=timezone.utc)
+def _value_rows():
+    """Multi-book moneyline rows giving NFL_CARD_V2 one pick: six books at
+    -150/+130, a seventh paying -130 on Buffalo (~+2.6% against the six)."""
+    stamp = datetime.now(timezone.utc).isoformat()
 
-    def _entry_with_board(self, n_books=11):
-        """A real, priced candidate: kickoff ahead, MIN_BOOKS+ quotes,
-        a lopsided consensus -- the STRONG shape of tomorrow's real
-        Lions @ Bills slate."""
+    def row(book, home, away):
+        return {"event_id": "ev-det-buf", "commence_time": KICKOFF_ISO,
+                "home_team": "Buffalo Bills", "away_team": "Detroit Lions",
+                "book": book, "market": None, "observed_utc": stamp,
+                "book_last_update": stamp, "home_price": home,
+                "away_price": away, "sport": "nfl"}
+
+    return [row(f"book{i}", -150, 130) for i in range(6)] + [row("soft", -130, 105)]
+
+
+class CmdCardNFLBranchTests(unittest.TestCase):
+    def _entry_with_board(self):
+        """This week's schedule entry for the priced game above."""
         return [{
             "game_id": "2026_02_DET_BUF", "week": 2,
             "home_team": "Buffalo Bills", "away_team": "Detroit Lions",
             "home_code": "BUF", "away_code": "DET",
-            "kickoff_utc": "2026-09-18T00:15:00Z", "neutral_site": False,
-            "h2h_quotes": [
-                {"book": f"book{i}", "home_price": -218, "away_price": 180,
-                 "observed_utc": self.NOW.isoformat()}
-                for i in range(n_books)
-            ],
-            "spread_quotes": [], "model": None,
+            "kickoff_utc": KICKOFF_ISO, "neutral_site": False,
+            "h2h_quotes": [], "spread_quotes": [], "model": None,
             "grade": {"ready": True, "reasons": []},
         }]
 
@@ -66,13 +78,13 @@ class CmdCardNFLBranchTests(unittest.TestCase):
         trusted `result.get("published")`), this fails: the printed output
         contains "no card: None" instead of the bet.
 
-        `nfl_slate.entries_for_date` is mocked with a kickoff far in the
-        future (2026-09-18), so this needs no clock injection to stay
-        true regardless of when it runs. `card_ledger._ledger` is mocked
-        so the write never touches disk.
+        The schedule and the odds store are both mocked, and
+        `card_ledger._ledger` is mocked so the write never touches disk.
         """
         with mock.patch("src.pipeline.nfl_slate.entries_for_date",
                         return_value=self._entry_with_board()), \
+             mock.patch("src.pipeline.snapshots.read_multibook",
+                        return_value=_value_rows()), \
              mock.patch("src.appstate.card_ledger._ledger") as mock_ledger_cls:
             mock_ledger = mock.MagicMock()
             mock_ledger.append.side_effect = lambda payload: dict(
@@ -99,6 +111,8 @@ class CmdCardNFLBranchTests(unittest.TestCase):
         against evidence/cards_nfl_v1.jsonl on 2026-09-16."""
         with mock.patch("src.pipeline.nfl_slate.entries_for_date",
                         return_value=self._entry_with_board()), \
+             mock.patch("src.pipeline.snapshots.read_multibook",
+                        return_value=_value_rows()), \
              mock.patch("src.appstate.card_ledger._ledger") as mock_ledger_cls:
             mock_ledger_cls.return_value = mock.MagicMock()
 
@@ -110,18 +124,26 @@ class CmdCardNFLBranchTests(unittest.TestCase):
         self.assertEqual(result, cli.EXIT_OK)
         self.assertIn("Take Buffalo Bills to win", text)
         self.assertIn("--dry-run: nothing written.", text)
+        # WRITES nothing. It does READ the date's newest row since review on
+        # 2026-09-20: the dry run builds through `nfl_card.card_to_publish`,
+        # the same function a real publish uses, and that function has to
+        # see the date's card to refuse another rule's date and to hold
+        # already-locked games -- a dry run that skipped both would preview a
+        # card the real publish would never write.
         mock_ledger_cls.return_value.append.assert_not_called()
-        mock_ledger_cls.assert_not_called()
 
     def test_no_board_prints_the_honest_no_board_reason(self):
-        """No entry carries a board (h2h_quotes empty on every entry) ->
-        the CLI must print the "no priced board" wording, not "cleared the
-        bar" and not a bare None."""
-        entries = self._entry_with_board()
-        entries[0]["h2h_quotes"] = []
-
+        """No quote at all for the date's games -> the CLI must print the
+        "no priced board" wording, not the "looked and declined" one and not
+        a bare None. The ledger is injected empty: since 2026-09-20 the CLI
+        reads the date's row, and the real evidence/cards_nfl_v1.jsonl holds
+        a V1 card for this very date -- read unmocked, this test passed or
+        failed by whatever that file held."""
         with mock.patch("src.pipeline.nfl_slate.entries_for_date",
-                        return_value=entries):
+                        return_value=self._entry_with_board()), \
+             mock.patch("src.pipeline.snapshots.read_multibook", return_value=[]), \
+             mock.patch("src.appstate.card_ledger._ledger") as mock_ledger_cls:
+            mock_ledger_cls.return_value.read.return_value = []
             out = io.StringIO()
             with redirect_stdout(out):
                 result = cli.cmd_card(_args(dry_run=True))

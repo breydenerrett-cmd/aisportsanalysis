@@ -67,6 +67,21 @@ def _resolve_rule(rule: Optional[str]) -> str:
     return resolved
 
 
+def _resolve_nfl_rule(rule: Optional[str]) -> str:
+    """`?rule=` for sport=nfl: one of src/report/nfl_card.RULES, default the
+    live rule. ADDED 2026-09-20: the NFL ledger holds NFL_CARD_V1 (retired)
+    and NFL_CARD_V2 (live) and the record shows one at a time, never the two
+    pooled -- so the retired record needs its own address to stay public.
+    MLB's "v1"/"v2" are not NFL rule ids and are refused here, not guessed."""
+    from src.report import nfl_card as nfl_report
+    resolved = (rule or nfl_report.LIVE_RULE).upper()
+    if resolved not in nfl_report.RULES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"rule must be one of {nfl_report.RULES} for sport=nfl, got {rule!r}")
+    return resolved
+
+
 def _build_payload(date: str, request: Optional[Request], route: str,
                    sport: str = "mlb", rule: Optional[str] = None) -> dict:
     """The card for one date.
@@ -229,6 +244,9 @@ def get_card_record(request: Request = None, sport: str = "mlb",
     reported apart from each other and never summed into one figure a
     reader could mistake for the rule's own result (registration R5).
 
+    For sport=nfl, `rule` is an NFL rule id instead (src/report/nfl_card.
+    RULES, default the live one) -- see `_resolve_nfl_rule`.
+
     The chain is verified on every request and reported. A published record
     whose hash chain is broken is not a record, and the page showing it has
     to be able to say so rather than keep printing the totals.
@@ -236,7 +254,11 @@ def get_card_record(request: Request = None, sport: str = "mlb",
     from src.appstate import card_ledger
 
     _validate_sport(sport)
-    resolved_rule = _resolve_rule(rule)
+    # NFL's ledger holds two rules since 2026-09-20; the page shows one at a
+    # time (default the live one, src/report/nfl_card.LIVE_RULE; `?rule=`
+    # names the retired one), never the two pooled.
+    nfl_rule = _resolve_nfl_rule(rule) if sport == "nfl" else None
+    resolved_rule = None if sport == "nfl" else _resolve_rule(rule)
 
     if sport == "mlb" and resolved_rule == "v2":
         payload = card_ledger.record_v2()
@@ -246,8 +268,15 @@ def get_card_record(request: Request = None, sport: str = "mlb",
         _record_page_view(request, "card_record", None)
         return payload
 
-    payload = card_ledger.record(sport=sport)
-    chain = card_ledger.verify()
+    if sport == "nfl":
+        from src.report import nfl_card as nfl_report
+    payload = card_ledger.record(sport=sport, rule=nfl_rule)
+    # THE CHAIN OF THE LEDGER THIS RECORD WAS READ FROM (review,
+    # 2026-09-20). A bare `verify()` walks MLB's file, so the NFL record
+    # page said "338 entries so far ... That chain verifies right now" off
+    # MLB's ledger (the NFL file had 9 rows), and a tampered NFL file still
+    # read as verified. MLB keeps `verify()` exactly as before.
+    chain = card_ledger.verify(sport=None if sport == "mlb" else sport)
     payload["chain_ok"] = bool(getattr(chain, "ok", True))
     payload["chain_detail"] = None if payload["chain_ok"] else str(chain)
     payload["rows_checked"] = getattr(chain, "rows_checked", None)
@@ -260,7 +289,9 @@ def get_card_record(request: Request = None, sport: str = "mlb",
         payload["basis"] = daily_card.CARD_BASIS
     elif sport == "nfl":
         payload["sport"] = "nfl"
-        payload["notice"] = "Experimental selections. Performance is still being evaluated."
+        payload["rule"] = nfl_rule
+        payload["live_rule"] = nfl_report.LIVE_RULE
+        payload["notice"] = nfl_report.NOTICE
     _record_page_view(request, "card_record", None)
     return payload
 
@@ -284,7 +315,8 @@ def get_card_history(request: Request = None, limit: int = DEFAULT_HISTORY_LIMIT
     from src.appstate import card_ledger
 
     _validate_sport(sport)
-    resolved_rule = _resolve_rule(rule)
+    nfl_rule = _resolve_nfl_rule(rule) if sport == "nfl" else None
+    resolved_rule = None if sport == "nfl" else _resolve_rule(rule)
 
     if limit < 1 or limit > MAX_HISTORY_LIMIT:
         raise HTTPException(
@@ -296,10 +328,18 @@ def get_card_history(request: Request = None, limit: int = DEFAULT_HISTORY_LIMIT
         _record_page_view(request, "card_history", None)
         return payload
 
-    payload = card_ledger.history(limit=limit, sport=sport)
     if sport == "nfl":
+        from src.report import nfl_card as nfl_report
+        # One rule's days only, published AND settled: card_ledger.history
+        # leaves another rule's dates out of `pending_days` too, so a V1 date
+        # never shows on the V2 calendar as PENDING (review, 2026-09-20).
+        payload = card_ledger.history(limit=limit, sport=sport, rule=nfl_rule)
         payload["sport"] = "nfl"
-        payload["notice"] = "Experimental selections. Performance is still being evaluated."
+        payload["rule"] = nfl_rule
+        payload["live_rule"] = nfl_report.LIVE_RULE
+        payload["notice"] = nfl_report.NOTICE
+    else:
+        payload = card_ledger.history(limit=limit, sport=sport)
     _record_page_view(request, "card_history", None)
     return payload
 

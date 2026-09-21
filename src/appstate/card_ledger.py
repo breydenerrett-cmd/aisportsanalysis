@@ -299,7 +299,22 @@ def _pick_key(pick: Mapping):
     For MLB, uses game_pk. Both are stringified deliberately -- the results
     store round-trips through CSV, and the int/str mismatch has already cost
     this project two separate all-VOID incidents (see `_score`).
+
+    AN NFL PICK IS KEYED ON ITS GAME ALONE (review, 2026-09-20). NFL_CARD_V2
+    picks the best-value line per game across spreads, totals and
+    moneylines, so the market, the number and the side all move between
+    publishes. Keyed on (game_id, market, line) like a moneyline card, a
+    later run whose best line on an already-LOCKED game had moved got a
+    fresh key, `_lock_and_merge` locked it on the spot, and carried the old
+    pick too: DET -6.5 locked at 13:30Z plus NYJ +7 at 15:05Z graded as a
+    PUSH and a WIN -- two bets, on opposite sides, on one game, against the
+    registered one-pick-per-game rule. The same failure `_total_pick_key`
+    below fixed for MLB totals on 2026-09-14, and the same fix: a locked
+    pick blocks any fresh pick on its game. V1 (moneyline only) always had
+    one key per game, so its rows read identically under this key.
     """
+    if pick.get("sport") == "nfl":
+        return (str(pick.get("game_id")),)
     if pick.get("sport"):
         # Non-MLB sport: use game_id
         game_key = str(pick.get("game_id"))
@@ -411,6 +426,42 @@ def settled_row(date: str, *, path: Optional[str] = None,
     return None
 
 
+# The rule an NFL row with no `rule` field was published under -- every NFL
+# row before NFL_CARD_V2 (2026-09-20) was V1's. Kept as a literal rather than
+# imported from src.analysis.nfl_card so the ledger does not import a rule.
+NFL_RULE_BEFORE_RULE_IDS = "NFL_CARD_V1"
+
+
+def _is_nfl_card(picks: Sequence, sport: Optional[str]) -> bool:
+    return sport == "nfl" or any(p.get("sport") == "nfl" for p in picks or ())
+
+
+def locked_game_ids(row: Optional[Mapping], *, now,
+                    sport: Optional[str] = None,
+                    lock_lead_hours: Optional[float] = None) -> set:
+    """The game_ids on a published row that a publish at `now` must leave
+    alone -- ADDED 2026-09-20 for NFL_CARD_V2's one-bet-per-game rule.
+
+    Two kinds: every pick already LOCKED, and every provisional pick whose
+    game has since come inside the lock window, because `_lock_and_merge`
+    locks that one AS LAST PUBLISHED on this very publish. A publisher that
+    leaves these games out of its fresh read never spends a pick slot on a
+    game whose bet of record is already decided (the ledger would carry the
+    locked pick over it anyway -- see `_pick_key`).
+    """
+    if not row:
+        return set()
+    moment = _parse_utc(now.isoformat() if isinstance(now, datetime) else now)
+    moment = moment or datetime.now(timezone.utc)
+    lead = lock_lead_hours if lock_lead_hours is not None else lock_lead_for(sport)
+    held = set()
+    for pick in row.get("picks") or ():
+        if pick.get("locked") or _is_locked(pick, moment, lead):
+            if pick.get("game_id") is not None:
+                held.add(str(pick.get("game_id")))
+    return held
+
+
 def _lock_and_merge(prior, fresh_source, *, moment, lock_lead_hours, key_fn, frozen_fn):
     """One publish's worth of lock-and-carry-forward, generic over game
     picks and prop picks alike -- ADDED 2026-09-12 by pulling the logic
@@ -519,6 +570,22 @@ def publish(card: Mapping, *, now: Optional[str] = None,
 
     moment = _parse_utc(now) or datetime.now(timezone.utc)
     previous = published_row(date, path=resolved_path)
+    # NEVER TWO RULES ON ONE NFL DATE (review, 2026-09-20). The merge below
+    # carries the previous row's locked picks into this one and stamps the
+    # result with THIS card's rule, so a V2 publish onto a date whose newest
+    # row is V1 would lock V1's favourites into a row labelled NFL_CARD_V2
+    # and count them in V2's record. `src/report/nfl_card.card_to_publish`
+    # refuses first, for both publishers; this is the floor under any
+    # caller that ever skips it. NFL only: an NFL row with no rule is a V1
+    # row (the same default src/report/nfl_card.py reads it with), and
+    # MLB's own rule history is not this check's business.
+    if previous is not None and _is_nfl_card(picks, sport):
+        prior_rule = previous.get("rule") or NFL_RULE_BEFORE_RULE_IDS
+        this_rule = card.get("rule") or NFL_RULE_BEFORE_RULE_IDS
+        if prior_rule != this_rule:
+            raise CardLedgerError(
+                f"{date} already carries a {prior_rule} card; a {this_rule} "
+                "card is never merged onto it")
     prior_picks = list((previous or {}).get("picks") or ())
     prior_prop_picks = list((previous or {}).get("prop_picks") or ())
     prior_total_picks = list((previous or {}).get("total_picks") or ())
@@ -625,6 +692,13 @@ def grade_pick(pick: Mapping, result: Mapping) -> dict:
     bad night, which is the single easiest way for a public record to become
     quietly wrong in the flattering direction's opposite.
     """
+    # A game total on the main card (NFL_CARD_V2 publishes spreads, totals
+    # and moneylines as ONE system, so they share `picks`). Routed before the
+    # home/away side check below, which would otherwise VOID every over and
+    # under.
+    if pick.get("market") == "total":
+        return grade_total_pick(pick, result)
+
     away = _score(result.get("away_score"))
     home = _score(result.get("home_score"))
     if away is None or home is None:
@@ -639,7 +713,8 @@ def grade_pick(pick: Mapping, result: Mapping) -> dict:
     margin = home - away  # home minus away, everywhere in this repo
     market = pick.get("market")
 
-    if market == "run_line":
+    # "spread" is the NFL point spread; the arithmetic is the run line's.
+    if market in ("run_line", "spread"):
         line = pick.get("line")
         if not isinstance(line, (int, float)):
             return {"result": RESULT_VOID, "profit_units": 0.0,
@@ -1149,7 +1224,7 @@ def settle_recent(*, sport: Optional[str] = None, fetch_results,
 # ---------------------------------------------------------------------------
 
 def record(*, path: Optional[str] = None, since: Optional[str] = None,
-           sport: Optional[str] = None) -> dict:
+           sport: Optional[str] = None, rule: Optional[str] = None) -> dict:
     """The running record: every settled card, pooled.
 
     Pooled is CORRECT here and is not the pooling mistake this repo warns
@@ -1158,10 +1233,19 @@ def record(*, path: Optional[str] = None, since: Optional[str] = None,
     a control and a forward test get averaged into a number describing
     neither.
 
+    `rule`, when given, keeps only settled cards whose PUBLISHED row (joined
+    by `published_row_hash`) carries that rule id. Added 2026-09-20 when the
+    NFL ledger changed rules mid-season (NFL_CARD_V1 favourites ->
+    NFL_CARD_V2 value lines): one ledger file then holds two systems, and
+    pooling them is exactly the mistake the paragraph above rules out.
+
     VOIDS ARE COUNTED AND REPORTED, never dropped. A record that silently
     omits postponed games is a record with a hole in it that nobody can see.
     """
     resolved_path = path if path is not None else store_path(sport)
+    all_rows = list(_ledger(resolved_path).read())
+    rule_of_published = {r.get("row_hash"): r.get("rule") for r in all_rows
+                         if r.get("kind") == KIND_PUBLISHED}
 
     days, wins, losses, pushes, voids, staked = 0, 0, 0, 0, 0, 0
     profit = 0.0
@@ -1172,10 +1256,12 @@ def record(*, path: Optional[str] = None, since: Optional[str] = None,
     total_wins = total_losses = total_pushes = total_voids = total_staked = 0
     total_profit = 0.0
     total_by_label = {}
-    for row in _ledger(resolved_path).read():
+    for row in all_rows:
         if row.get("kind") != KIND_SETTLED:
             continue
         if since and (row.get("date") or "") < since:
+            continue
+        if rule is not None and rule_of_published.get(row.get("published_row_hash")) != rule:
             continue
         days += 1
         wins += row.get("wins") or 0
@@ -1314,7 +1400,16 @@ def record(*, path: Optional[str] = None, since: Optional[str] = None,
 def _frozen_for_graded(graded: Mapping, frozen_picks: Sequence) -> Mapping:
     """The published pick a graded game pick came from -- by game_pk, then
     by the bet sentence when a day holds two picks on one game, then by
-    rank only for a pick that carries no game_pk at all. See `history`."""
+    rank only for a pick that carries no game key at all. See `history`.
+
+    A NON-MLB PICK JOINS ON game_id (review, 2026-09-20). Every NFL pick has
+    game_pk None -- its game key is the schedule's game_id, which `settle`
+    grades it by -- so every NFL pick used to fall through to the rank
+    match. A Sunday card is composed from picks locked in different kickoff
+    windows, each keeping the rank it had then (the live 09-20 V1 card holds
+    ranks 2, 4 and 5 twice each), so the record page printed the Bills pick
+    under "Denver Broncos -- Seattle Seahawks" with the other pick's book:
+    the Brewers/Guardians bug `history` describes, one sport over."""
     pk = graded.get("game_pk")
     if pk is not None:
         same_game = [p for p in frozen_picks
@@ -1327,6 +1422,15 @@ def _frozen_for_graded(graded: Mapping, frozen_picks: Sequence) -> Mapping:
                     return p
             return same_game[0]
         return {}
+    gid = graded.get("game_id")
+    if gid is not None:
+        same_game = [p for p in frozen_picks
+                     if p.get("game_id") is not None and str(p.get("game_id")) == str(gid)]
+        for p in same_game:
+            if p.get("bet") == graded.get("bet"):
+                return p
+        # No match is an empty join, never a neighbour's teams and book.
+        return same_game[0] if same_game else {}
     for p in frozen_picks:
         if p.get("game_pk") is None and p.get("rank") == graded.get("rank"):
             return p
@@ -1334,7 +1438,7 @@ def _frozen_for_graded(graded: Mapping, frozen_picks: Sequence) -> Mapping:
 
 
 def history(*, path: Optional[str] = None, limit: Optional[int] = 60,
-            sport: Optional[str] = None) -> dict:
+            sport: Optional[str] = None, rule: Optional[str] = None) -> dict:
     """Every settled day, newest first, each joined back to its own
     PUBLISHED row for the book and team names a settled row does not carry.
 
@@ -1358,9 +1462,9 @@ def history(*, path: Optional[str] = None, limit: Optional[int] = 60,
     morning after the first composed card settled. `game_pk` is the key a
     pick is graded by (`settle` looks its result up by it), so it is the
     key the page reads it back by; the bet sentence breaks a tie if a day
-    ever carries two picks on one game, and a pick with no game_pk (none
-    published so far, but the ledger is append-only and old) falls back to
-    rank as before.
+    ever carries two picks on one game. A non-MLB pick (NFL) has no game_pk
+    and joins on its game_id the same way (2026-09-20, see
+    `_frozen_for_graded`); only a pick with neither key falls back to rank.
 
     `limit` caps how many days come back, newest first -- the ledger only
     grows, and the public record page has no reason to pull every day that
@@ -1374,13 +1478,29 @@ def history(*, path: Optional[str] = None, limit: Optional[int] = 60,
     resolved_path = path if path is not None else store_path(sport)
     ledger = _ledger(resolved_path)
     published_by_date: dict = {}
+    published_by_hash: dict = {}
+    rule_of_published: dict = {}
     settled: list = []
     for row in ledger.read():
         kind = row.get("kind")
         if kind == KIND_PUBLISHED:
             published_by_date[row.get("date")] = row
+            published_by_hash[row.get("row_hash")] = row
+            rule_of_published[row.get("row_hash")] = row.get("rule")
         elif kind == KIND_SETTLED:
             settled.append(row)
+    # EVERY graded date, whatever its rule, before the rule filter below. A
+    # date that settled under another rule is still a GRADED date: built
+    # from the filtered list instead, every settled NFL_CARD_V1 day came back
+    # in `pending_days` under rule=NFL_CARD_V2 and the record calendar showed
+    # the already-graded 2026-09-17 Bills pick as "published, not yet
+    # graded" -- forever, since no V2 settlement can ever match it (review,
+    # 2026-09-20).
+    settled_dates = {row.get("date") for row in settled}
+    # `rule`: same one-system filter as `record`'s -- see its docstring.
+    if rule is not None:
+        settled = [r for r in settled
+                   if rule_of_published.get(r.get("published_row_hash")) == rule]
 
     # Lexicographic order on YYYY-MM-DD is chronological order.
     settled.sort(key=lambda r: r.get("date") or "", reverse=True)
@@ -1389,7 +1509,11 @@ def history(*, path: Optional[str] = None, limit: Optional[int] = 60,
 
     days = []
     for row in capped:
-        published = published_by_date.get(row.get("date")) or {}
+        # The exact row this settlement graded, which its own
+        # `published_row_hash` names; the date's newest row only when an old
+        # settled row carries no hash.
+        published = (published_by_hash.get(row.get("published_row_hash"))
+                     or published_by_date.get(row.get("date")) or {})
         frozen_picks = list(published.get("picks") or ())
         picks = []
         for graded in row.get("picks") or ():
@@ -1524,10 +1648,16 @@ def history(*, path: Optional[str] = None, limit: Optional[int] = 60,
     # Kept as its own key rather than mixed into `days` so no existing
     # consumer of `days` starts seeing rows with no result in them. A caller
     # that wants both merges them and knows which is which.
+    #
+    # UNDER ONE RULE, ONLY THAT RULE'S DAYS (review, 2026-09-20). With `rule`
+    # given, a date whose card of record was published under another rule is
+    # not this rule's pending day: the NFL_CARD_V2 calendar listed the
+    # retired V1 favourites card of 2026-09-20 as a V2 card awaiting grading.
     pending = []
-    settled_dates = {row.get("date") for row in settled}
     for date, row in published_by_date.items():
         if date in settled_dates:
+            continue
+        if rule is not None and row.get("rule") != rule:
             continue
         pending.append({
             "date": date,

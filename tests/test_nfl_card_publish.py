@@ -8,9 +8,35 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
+from src.analysis import nfl_value
 from src.appstate import card_ledger
 from src.pipeline import nfl_slate
 from src.report import nfl_card
+
+
+def _value_rows(home_team, away_team, kickoff, now, *, value_side="home"):
+    """Multi-book moneyline rows that give NFL_CARD_V2 exactly one pick.
+
+    Six books agree (-150/+130, the favourite de-vigs to ~58%); a seventh,
+    "soft", pays -130 on `value_side` -- about +2.6% against the other six,
+    over the 2% floor and well inside the -200 price rule. Since 2026-09-20
+    the NFL card prices lines from these raw rows (src/analysis/nfl_value.py);
+    V1 read `h2h_quotes` off the entries and took the favourite.
+    """
+    kickoff_iso = (kickoff if isinstance(kickoff, str) else kickoff.isoformat())
+    stamp = now.isoformat()
+    fav, dog = (-150, 130)
+    home, away = (fav, dog) if value_side == "home" else (dog, fav)
+
+    def row(book, home_price, away_price):
+        return {"event_id": f"ev-{home_team}-{away_team}", "commence_time": kickoff_iso,
+                "home_team": home_team, "away_team": away_team, "book": book,
+                "market": None, "observed_utc": stamp, "book_last_update": stamp,
+                "home_price": home_price, "away_price": away_price, "sport": "nfl"}
+
+    rows = [row(f"book{i}", home, away) for i in range(6)]
+    rows.append(row("soft", -130, 105) if value_side == "home" else row("soft", 105, -130))
+    return rows
 
 
 class NFLCardPublishTests(unittest.TestCase):
@@ -65,25 +91,29 @@ class NFLCardPublishTests(unittest.TestCase):
 
         self.assertEqual(card["date"], "2026-09-14")
         self.assertEqual(card["sport"], "nfl")
-        self.assertEqual(card["rule"], "NFL_CARD_V1")
+        self.assertEqual(card["rule"], nfl_value.RULE_ID)
         self.assertEqual(len(card["picks"]), 0)
         self.assertIn("No NFL", card["reason"])
         self.assertFalse(card["frozen"])
 
     def test_card_for_date_with_no_picks_returns_empty_card(self):
-        """A priced game that still clears no gate -> the "cleared the bar"
-        reason, not the "no board" one -- this entry HAS h2h_quotes, so the
-        board existed and the game (already started) was refused, which is
-        a different fact from never having had a board at all."""
+        """A priced game that has already kicked off yields no pick -- and
+        says THAT, not the "looked and declined" sentence. Until review on
+        2026-09-20 this test pinned "No NFL line today was priced better than
+        the rest of the market" here: a claim about prices for a board V2
+        never judged (it never judges a started game), on a date where the
+        stored board in fact held a qualifying line."""
         past_kickoff = (self.now - __import__('datetime').timedelta(hours=1)).isoformat()
-        entry = self._make_entry(kickoff_utc=past_kickoff,
-                                 h2h_quotes=self._make_h2h_quotes())
+        entry = self._make_entry(kickoff_utc=past_kickoff)
+        rows = _value_rows("Buffalo Bills", "Detroit Lions", past_kickoff, self.now)
 
         card = nfl_card.card_for_date(
-            "2026-09-14", now=self.now, entries=[entry], path=str(self.card_path))
+            "2026-09-14", now=self.now, entries=[entry], rows=rows,
+            path=str(self.card_path))
 
         self.assertEqual(len(card["picks"]), 0)
-        self.assertIn("cleared the bar", card["reason"])
+        self.assertEqual(card["reason"], "Every game on this date has already started.")
+        self.assertNotIn("priced better than the rest of the market", card["reason"])
 
     def test_card_for_date_with_no_board_returns_no_board_reason(self):
         """Entries exist but not one carries a priced board (h2h_quotes is
@@ -126,8 +156,8 @@ class NFLCardPublishTests(unittest.TestCase):
             "2026-09-14", now=self.now, entries=[], path=str(self.card_path))
 
         self.assertTrue(card["experimental"])
-        self.assertIn("Experimental", card["notice"])
-        self.assertIn("still being evaluated", card["notice"])
+        self.assertIn("ongoing test", card["notice"])
+        self.assertIn("bet at your own risk", card["notice"])
 
     def test_card_for_date_frozen_returns_published_row(self):
         """card_for_date with prefer_frozen=True vs prefer_frozen=False."""
@@ -159,12 +189,12 @@ class NFLCardPublishTests(unittest.TestCase):
         """A real, qualifying candidate publishes with sport='nfl' and its
         game_id -- the fields settle_for_date and card_ledger.settle() join
         on for a non-MLB sport."""
-        entry = self._make_entry(
-            h2h_quotes=self._make_h2h_quotes(home_price=-300, away_price=250),
-            kickoff_utc=(self.now + timedelta(hours=6)).isoformat())
+        kickoff = (self.now + timedelta(hours=6)).isoformat()
+        entry = self._make_entry(kickoff_utc=kickoff)
 
         row = nfl_card.publish_for_date(
             "2026-09-14", now=self.now, entries=[entry],
+            rows=_value_rows("Buffalo Bills", "Detroit Lions", kickoff, self.now),
             path=str(self.card_path))
 
         self.assertNotIn("published", row)  # not the empty-card shape
@@ -181,42 +211,40 @@ class NFLCardPublishTests(unittest.TestCase):
         the OTHER side -- 'nothing that already locked can be rewritten'."""
         # Kickoff 2h out, NFL's lock_lead_hours is 4.0 -> locked immediately.
         kickoff = (self.now + timedelta(hours=2)).isoformat()
-        home_favoured = self._make_entry(
-            h2h_quotes=self._make_h2h_quotes(home_price=-300, away_price=250),
-            kickoff_utc=kickoff)
+        entry = self._make_entry(kickoff_utc=kickoff)
 
         first = nfl_card.publish_for_date(
-            "2026-09-14", now=self.now, entries=[home_favoured],
+            "2026-09-14", now=self.now, entries=[entry],
+            rows=_value_rows("Buffalo Bills", "Detroit Lions", kickoff, self.now),
             path=str(self.card_path))
         first_pick = first["picks"][0]
         self.assertTrue(first_pick["locked"])
         self.assertEqual(first_pick["side"], "home")
-        self.assertEqual(first_pick["price"], -300)
+        self.assertEqual(first_pick["price"], -130)
 
-        # A later run, still before kickoff, where the market has flipped to
-        # favour the AWAY side. If locking worked, the published pick does
-        # not move.
-        away_favoured = self._make_entry(
-            h2h_quotes=self._make_h2h_quotes(home_price=250, away_price=-300),
-            kickoff_utc=kickoff)
+        # A later run, still before kickoff, where the value has moved to
+        # the AWAY side. If locking worked, the published pick does not move.
+        later = self.now + timedelta(minutes=30)
         second = nfl_card.publish_for_date(
-            "2026-09-14", now=self.now + timedelta(minutes=30),
-            entries=[away_favoured], path=str(self.card_path))
+            "2026-09-14", now=later, entries=[entry],
+            rows=_value_rows("Buffalo Bills", "Detroit Lions", kickoff, later,
+                             value_side="away"),
+            path=str(self.card_path))
         second_pick = second["picks"][0]
 
         self.assertEqual(second_pick["side"], "home")
-        self.assertEqual(second_pick["price"], -300)
+        self.assertEqual(second_pick["price"], -130)
         self.assertTrue(second_pick["locked"])
         self.assertEqual(second_pick["game_id"], first_pick["game_id"])
 
     def test_settle_win_by_game_id(self):
         """settle_for_date grades WIN when the picked side's team wins,
         matched to the result by game_id (non-MLB join key)."""
-        entry = self._make_entry(
-            h2h_quotes=self._make_h2h_quotes(home_price=-300, away_price=250),
-            kickoff_utc=(self.now + timedelta(hours=6)).isoformat())
+        kickoff = (self.now + timedelta(hours=6)).isoformat()
+        entry = self._make_entry(kickoff_utc=kickoff)
         published = nfl_card.publish_for_date(
             "2026-09-14", now=self.now, entries=[entry],
+            rows=_value_rows("Buffalo Bills", "Detroit Lions", kickoff, self.now),
             path=str(self.card_path))
         game_id = published["picks"][0]["game_id"]
         self.assertEqual(published["picks"][0]["side"], "home")  # BUF picked
@@ -236,11 +264,11 @@ class NFLCardPublishTests(unittest.TestCase):
 
     def test_settle_loss_by_game_id(self):
         """settle_for_date grades LOSS when the picked side's team loses."""
-        entry = self._make_entry(
-            h2h_quotes=self._make_h2h_quotes(home_price=-300, away_price=250),
-            kickoff_utc=(self.now + timedelta(hours=6)).isoformat())
+        kickoff = (self.now + timedelta(hours=6)).isoformat()
+        entry = self._make_entry(kickoff_utc=kickoff)
         published = nfl_card.publish_for_date(
             "2026-09-14", now=self.now, entries=[entry],
+            rows=_value_rows("Buffalo Bills", "Detroit Lions", kickoff, self.now),
             path=str(self.card_path))
         game_id = published["picks"][0]["game_id"]
         self.assertEqual(published["picks"][0]["side"], "home")  # BUF picked
@@ -283,12 +311,17 @@ class NFLCardIntegrationTests(unittest.TestCase):
         call); the patch simulates "no games on the slate" for this date.
         """
         with mock.patch("src.report.nfl_card.nfl_slate.entries_for_date",
-                        return_value=[]) as mock_entries:
+                        return_value=[]) as mock_entries, \
+             mock.patch("src.report.nfl_card.snapshots.read_multibook",
+                        return_value=[]) as mock_rows:
             card = nfl_card.card_for_date(
                 "2026-09-14", now=self.now, entries=None,
                 path=str(self.card_path))
 
-        mock_entries.assert_called_once_with("2026-09-14", now=self.now)
+        # Nothing injected -> the store is read ONCE and the same rows are
+        # handed to the slate builder (never a second read).
+        mock_rows.assert_called_once_with(sport="nfl")
+        mock_entries.assert_called_once_with("2026-09-14", now=self.now, rows=[])
         self.assertIsNotNone(card)
         self.assertEqual(card["date"], "2026-09-14")
         self.assertEqual(card["picks"], [])
@@ -362,29 +395,43 @@ class NFLCardProvenanceTests(unittest.TestCase):
         }
 
     def test_published_row_carries_provenance_like_mlb(self):
+        entry = self._entry()
         row = nfl_card.publish_for_date(
-            "2026-09-14", now=self.now, entries=[self._entry()],
+            "2026-09-14", now=self.now, entries=[entry],
+            rows=_value_rows("Buffalo Bills", "Detroit Lions",
+                             entry["kickoff_utc"], self.now),
             path=str(self.card_path))
 
         self.assertNotIn("published", row)  # a real publish, not the empty shape
         self.assertIsNotNone(row.get("basis"))
         self.assertIsNotNone(row.get("disclaimer"))
         self.assertIsNotNone(row.get("model_id"))
-        self.assertIsInstance(row.get("calibrated"), bool)
+        # The field is on the row, and it is None, not False: V2 has no model
+        # of its own to calibrate, and `calibrated: False` made the card page
+        # say "Our own probabilities are running uncalibrated right now"
+        # (review, 2026-09-20). The served card says why with has_model.
+        self.assertIn("calibrated", row)
+        self.assertIsNone(row["calibrated"])
+        served = nfl_card.card_for_date("2026-09-14", now=self.now,
+                                        path=str(self.card_path))
+        self.assertIs(served["has_model"], False)
+        self.assertEqual(served["basis"], nfl_value.CARD_BASIS)
 
-        from src.analysis import nfl_card as nfl_card_analysis
-        self.assertEqual(row["basis"], nfl_card_analysis.CARD_BASIS)
-        self.assertEqual(row["disclaimer"], nfl_card_analysis.CARD_DISCLAIMER)
-        self.assertEqual(row["model_id"], nfl_card_analysis.MODEL_ID)
+        # The live rule's own strings (NFL_CARD_V2 since 2026-09-20).
+        self.assertEqual(row["basis"], nfl_value.CARD_BASIS)
+        self.assertEqual(row["disclaimer"], nfl_value.CARD_DISCLAIMER)
+        self.assertEqual(row["model_id"], nfl_value.MODEL_ID)
+        self.assertEqual(row["rule"], nfl_value.RULE_ID)
 
 
 class NFLCardSettleRecentTests(unittest.TestCase):
-    """R-2026-09-19: nfl_card.settle_recent, the self-healing settle window
-    that fixes the exact failure the only NFL pick ever published hit --
-    published after the single daily settle attempt already ran and found
-    nothing to settle, then never retried, so it sat ungraded for two days.
-    Every provider seam is mocked or injected; no network, no real clock
-    beyond the `now`/`today` each test passes in.
+    """R-2026-09-19: nfl_card.settle_recent, the self-healing settle window.
+    A single-shot `--date "$YESTERDAY"` settle never went back for a date
+    published after its one attempt. (The Bills -225 pick it was built
+    around had in fact graded normally on 2026-09-18 -- the "ungraded"
+    reading came from a checkout 143 commits behind origin -- but the hole
+    was real.) Every provider seam is mocked or injected; no network, no
+    real clock beyond the `now`/`today` each test passes in.
     """
 
     def setUp(self):
@@ -410,7 +457,10 @@ class NFLCardSettleRecentTests(unittest.TestCase):
             "grade": {"ready": True, "reasons": []},
         }
         return nfl_card.publish_for_date(
-            date, now=now, entries=[entry], path=str(self.card_path))
+            date, now=now, entries=[entry],
+            rows=_value_rows("Buffalo Bills", "New York Jets",
+                             entry["kickoff_utc"], now),
+            path=str(self.card_path))
 
     def test_late_publish_settles_on_a_later_pass_not_the_first(self):
         """The exact 2026-09-17 story: the card publishes on game day,

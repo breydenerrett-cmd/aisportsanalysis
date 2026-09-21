@@ -3006,8 +3006,20 @@ def cmd_card(args) -> int:
         return by_pk, prop_box_rows
 
     if sub == "record":
-        rec = card_ledger.record(sport=sport, since=getattr(args, "since", None))
-        chain = card_ledger.verify()
+        # NFL's ledger holds two rules since 2026-09-20; one record per rule,
+        # never pooled -- the live rule here, the same as the API's default.
+        nfl_rule = None
+        if sport == "nfl":
+            from src.report import nfl_card as nfl_report
+            nfl_rule = nfl_report.LIVE_RULE
+        rec = card_ledger.record(sport=sport, since=getattr(args, "since", None),
+                                 rule=nfl_rule)
+        if nfl_rule:
+            print(f"(NFL record for the live rule, {nfl_rule}, only)")
+        # THE CHAIN OF THE LEDGER JUST READ (review, 2026-09-20): a bare
+        # `verify()` walks MLB's file, so `--sport nfl` reported MLB's chain
+        # as the NFL record's -- intact even with the NFL file edited.
+        chain = card_ledger.verify(sport=None if sport == "mlb" else sport)
         print(f"THE CARD -- {rec['days']} settled day(s)"
               + (f" since {rec['since']}" if rec.get("since") else ""))
         if not rec["n_staked"]:
@@ -3295,8 +3307,15 @@ def cmd_card(args) -> int:
         # real). `prefer_frozen=False`: this command IS the thing that
         # freezes, and reading the ledger back here would echo an earlier
         # run's decision as if it were this one's.
-        card = nfl_card_mod.card_for_date(date_str, now=now, entries=None,
-                                          prefer_frozen=False)
+        #
+        # THROUGH `card_to_publish`, THE SAME FUNCTION `publish_for_date`
+        # USES (review, 2026-09-20). This branch used to call `card_for_date`
+        # and `card_ledger.publish` itself, so the guard that refuses to put
+        # NFL_CARD_V2 onto a date already carrying a V1 card -- and the
+        # one-bet-per-game hold on already-locked games -- never ran here,
+        # on the path scripts/capture_slot.sh actually runs. A refusal comes
+        # back as a card with no picks and a `reason`, printed below.
+        card = nfl_card_mod.card_to_publish(date_str, now=now)
 
         print(f"NFL CARD -- {date_str}")
 
