@@ -1,0 +1,119 @@
+# Deploys linehound-prod. workflow_dispatch ONLY -- there is no `push:`
+# trigger in this file, on purpose, and it must stay that way. Unlike
+# deploy-staging.yml (which redeploys on every push to the working branch
+# so staging always reflects the latest commit), production only ever
+# ships when a human clicks "Run workflow." A push-triggered production
+# deploy would mean every commit -- including a work-in-progress one -- is
+# one push away from charging real customers against untested code.
+#
+# Requires ONE repository secret: FLY_API_TOKEN (an app-scoped deploy
+# token for linehound-prod specifically -- see deploy/DEPLOY_RUNBOOK.md
+# Step 0 for how Brey generates it, and BOUNDARY 3 in
+# deploy/fly.production.toml for why it must never be the staging token
+# reused). Without the secret the job fails fast at the guard step -- it
+# never half-deploys. `FLY_ORG_TOKEN` is accepted as an alternate secret
+# name (some Fly org setups issue an org-scoped token instead of an
+# app-scoped one) -- whichever is present wins; see the guard step below.
+#
+# WHY ACTIONS AND NOT THE SESSION CONTAINER: same reason as
+# deploy-staging.yml -- the container's egress proxy breaks the depot
+# builder's TLS handshake, and app-scoped tokens are not authorized for
+# the classic remote builder. GitHub's runners have clean egress.
+name: deploy-prod
+
+on:
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Guard - secret present
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "Neither FLY_API_TOKEN nor FLY_ORG_TOKEN repository secret is set (Settings -> Secrets and variables -> Actions)."
+            exit 1
+          fi
+        env:
+          TOKEN: ${{ secrets.FLY_API_TOKEN || secrets.FLY_ORG_TOKEN }}
+      - name: Guard - linehound-prod app must already exist
+        run: |
+          echo "This workflow deploys to an EXISTING app (deploy/DEPLOY_RUNBOOK.md's"
+          echo "promotion checklist covers 'fly apps create linehound-prod' and the"
+          echo "persistent volume -- both one-time, run by Brey from his own Fly"
+          echo "session, never from this workflow). If the app or its volume does not"
+          echo "exist yet, 'flyctl deploy' below will fail loudly rather than silently"
+          echo "creating something unreviewed."
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Deploy
+        run: flyctl deploy -c deploy/fly.production.toml -a linehound-prod --remote-only --yes
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN || secrets.FLY_ORG_TOKEN }}
+      # Same two-phase shape as deploy-staging.yml's own health check
+      # (see that file's comment for why a single /health pass is not
+      # enough) -- up first, then a real page request, then still-alive a
+      # minute later. Production has no PUBLIC_DEMO, so every card/game
+      # route below correctly answers 401 unauthenticated; that is the
+      # SUCCESS case here, same as staging's own check documents.
+      - name: Health check
+        run: |
+          set -u
+          BASE=https://linehound-prod.fly.dev
+          up=0
+          for i in $(seq 1 12); do
+            if curl -sf "$BASE/health" >/dev/null; then up=1; break; fi
+            sleep 10
+          done
+          if [ "$up" -ne 1 ]; then
+            echo "health check did not pass within 2 minutes"; exit 1
+          fi
+          echo "up; now exercising the page path"
+
+          ET=$(TZ=America/New_York date +%Y-%m-%d)
+          UTC=$(date -u +%Y-%m-%d)
+          DATES="$ET"
+          [ "$UTC" != "$ET" ] && DATES="$ET $UTC"
+          paths="/card/record /today"
+          for d in $DATES; do
+            paths="$paths /card/$d /opportunities/$d /games/$d /changed/$d /odds/$d"
+          done
+          for path in $paths; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 45 "$BASE$path" || echo 000)
+            echo "  $path -> $code"
+            case "$code" in
+              5*|000) echo "ESCALATE: $path returned $code -- the deploy is up but cannot serve a page"; exit 1 ;;
+            esac
+          done
+
+          # `checkout: broken` here means billing is switched on and a
+          # paying customer would land nowhere -- see deploy/secrets.md.
+          # A production deploy that ships broken must be loud about it
+          # even though the health check as a whole still passes (a
+          # missing Stripe secret is not a reason to leave the site down,
+          # only a reason to not yet announce it).
+          health_body=$(curl -sf "$BASE/health" || echo '{}')
+          echo "$health_body" | grep -o '"checkout":{[^}]*}' || true
+          case "$health_body" in
+            *'"checkout":{"status":"broken"'*)
+              echo "::warning::billing is ON and misconfigured on linehound-prod -- a paying customer would be charged and land nowhere. See deploy/secrets.md." ;;
+          esac
+
+          for i in $(seq 1 6); do
+            sleep 10
+            if ! curl -sf "$BASE/health" >/dev/null; then
+              echo "ESCALATE: the app answered a page request and then stopped responding -- almost certainly out of memory"
+              exit 1
+            fi
+          done
+          echo "healthy, and still healthy after serving real requests"
+
+      - name: Container logs (only when the check failed)
+        if: failure()
+        run: flyctl logs -a linehound-prod --no-tail | tail -120
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN || secrets.FLY_ORG_TOKEN }}

@@ -74,7 +74,7 @@ class Subscription:
     """
     user_id: int
     plan_id: str
-    status: str  # "active" | "canceled" | "not_configured"
+    status: str  # "active" | "trialing" | "canceled" | "not_configured"
     provider_ref: Optional[str] = None
     created_at: Optional[str] = None
     cancel_at_period_end: bool = False
@@ -110,6 +110,37 @@ def beta_plan_stripe_price_id() -> Optional[str]:
     one yet and set STRIPE_BETA_PRICE_ID. See the env var's own comment
     above for why this is checked separately from STRIPE_API_KEY."""
     return (os.environ.get(ENV_STRIPE_BETA_PRICE_ID) or "").strip() or None
+
+
+# Free-trial length for the beta plan's Checkout Session
+# (subscription_data[trial_period_days] -- Stripe's own documented field
+# for starting a subscription trialing rather than charging immediately).
+# Env-configurable, not a literal at the one call site that uses it, for
+# the same reason BETA_PLAN_PRICE_CENTS is a named constant: the owner
+# (never this code) decides the number, and launch-day is exactly the kind
+# of moment that number might change without a code review to match. "0"
+# disables the trial outright (Checkout charges immediately), which is the
+# honest way to turn it off without a second code path -- Stripe simply
+# omits trial_period_days from the session when this is 0.
+ENV_STRIPE_TRIAL_DAYS = "STRIPE_TRIAL_DAYS"
+DEFAULT_TRIAL_DAYS = 7
+
+
+def trial_period_days() -> int:
+    """Trial length in days for a new Checkout Session, from
+    STRIPE_TRIAL_DAYS or DEFAULT_TRIAL_DAYS. Never raises on a malformed
+    env value (a typo'd env var must not 500 every checkout attempt) --
+    falls back to the default instead, same as every other env-parsing
+    helper in this module. Negative values clamp to 0 (disabled) rather
+    than being sent to Stripe, which would reject the request outright."""
+    raw = (os.environ.get(ENV_STRIPE_TRIAL_DAYS) or "").strip()
+    if not raw:
+        return DEFAULT_TRIAL_DAYS
+    try:
+        value = int(raw)
+    except ValueError:
+        return DEFAULT_TRIAL_DAYS
+    return max(0, value)
 
 
 class BillingProvider(Protocol):
@@ -598,6 +629,14 @@ class StripeBillingProvider:
         }
         if customer_id:
             form["customer"] = customer_id
+        # trial_period_days lives under subscription_data, not top-level --
+        # Stripe's own Checkout Session shape for "start this subscription
+        # trialing instead of charging today." Omitted entirely (not sent
+        # as "0") when trial_period_days() is 0, since Stripe's own docs
+        # treat a present-but-zero field as invalid rather than "no trial".
+        trial_days = trial_period_days()
+        if trial_days > 0:
+            form["subscription_data[trial_period_days]"] = str(trial_days)
         body = self._call("POST", "/v1/checkout/sessions", form=form, idempotency_key=key)
         return body.get("url", "") or ""
 
@@ -640,7 +679,7 @@ class StripeBillingProvider:
         sub = subs[0]
         items = ((sub.get("items") or {}).get("data")) or [{}]
         plan_id = (items[0].get("price") or {}).get("id", "none")
-        status = "active" if sub.get("status") == "active" else "canceled"
+        status = _normalize_subscription_status(sub.get("status"))
         return Subscription(user_id=user_id, plan_id=plan_id, status=status,
                              provider_ref=sub.get("id"), created_at=None,
                              cancel_at_period_end=bool(sub.get("cancel_at_period_end")),
@@ -666,10 +705,23 @@ class StripeBillingProvider:
         already-scheduled subscription just gets the same flag set again,
         and an already-canceled or never-started one returns its current
         state without a write call at all.
+
+        ACTS ON A TRIALING SUBSCRIPTION TOO. A customer who cancels during
+        the free trial (STRIPE_TRIAL_DAYS) has a real Stripe subscription
+        in `status: "trialing"`, not "active" -- refusing to touch it here
+        would silently no-op the cancel button for exactly the customers
+        most likely to press it (a free trial is a MUCH more visited
+        cancel path than a paid month). cancel_at_period_end still applies:
+        Stripe's own `current_period_end` for a trialing subscription is
+        the trial's end, so this reduces to "stop renewal, access still
+        runs to the end of the trial" -- the same policy as an active
+        subscription, matched by the entitlement decision in
+        src.appstate.customers.has_paid_access (PAID_STATUSES includes
+        "trialing").
         """
         self._require_configured()
         current = self.subscription_status(user_id)
-        if current.status != "active" or not current.provider_ref:
+        if current.status not in ("active", "trialing") or not current.provider_ref:
             return current
         return self._set_cancel_at_period_end(user_id, current, True)
 
@@ -684,10 +736,13 @@ class StripeBillingProvider:
         a finished subscription, and inventing a success here would be the
         exact fabrication this module refuses everywhere else. Idempotent
         on an already-renewing subscription.
+
+        Same "trialing" acceptance as cancel() above, for the mirror case:
+        undoing a scheduled cancel made during the trial.
         """
         self._require_configured()
         current = self.subscription_status(user_id)
-        if current.status != "active" or not current.provider_ref:
+        if current.status not in ("active", "trialing") or not current.provider_ref:
             return current
         return self._set_cancel_at_period_end(user_id, current, False)
 
@@ -700,7 +755,7 @@ class StripeBillingProvider:
                            form={"cancel_at_period_end": "true" if value else "false"})
         return Subscription(
             user_id=user_id, plan_id=current.plan_id,
-            status="active" if body.get("status") == "active" else "canceled",
+            status=_normalize_subscription_status(body.get("status")),
             provider_ref=current.provider_ref, created_at=current.created_at,
             cancel_at_period_end=bool(body.get("cancel_at_period_end")),
             cancel_at=_epoch_to_iso(body.get("cancel_at")),
@@ -710,6 +765,26 @@ class StripeBillingProvider:
             # (which has_paid_access reads as not-entitled).
             current_period_end=(_epoch_to_iso(body.get("current_period_end"))
                                 or current.current_period_end))
+
+
+def _normalize_subscription_status(raw_status: Optional[str]) -> str:
+    """Stripe's own subscription-status vocabulary (active, trialing,
+    past_due, unpaid, incomplete, incomplete_expired, canceled, paused,
+    ...), collapsed to what this app persists and gates entitlement on.
+
+    "active" and "trialing" both mean currently-entitled
+    (src.appstate.customers.PAID_STATUSES) and must NOT be folded
+    together: collapsing "trialing" into "canceled" here is exactly the
+    bug that would have made a customer on a free trial (a real Stripe
+    subscription, correctly not yet charged) read as churned everywhere
+    this app checks status, including require_paid_access. Every other
+    Stripe status is not currently paying, so it collapses to "canceled"
+    -- the same honest non-renewing bucket this module has always used for
+    anything that is not actively active or trialing (see
+    apply_stripe_webhook_event's own past-due test:
+    test_subscription_updated_past_due_maps_to_canceled).
+    """
+    return raw_status if raw_status in ("active", "trialing") else "canceled"
 
 
 def verify_stripe_webhook_signature(payload: bytes, sig_header: Optional[str], secret: str, *,
@@ -791,20 +866,44 @@ def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> Non
         pending_payment -> active transition and the one-time GET
         /signup/complete token both happen here, since this is the one
         place this app knows a real Stripe payment was verified.
-      - customer.subscription.updated / customer.subscription.deleted:
-        looks the event's customer id back up to a local user_id (the
-        event itself never carries one) and overwrites that user's
-        recorded status. `.deleted` is always recorded as "canceled"
-        regardless of the object's own `status` field, since a deleted
-        subscription is canceled by definition even if Stripe's payload
-        still shows its last pre-deletion status. `cancel_at` (Stripe's
-        "scheduled to cancel at period end" unix timestamp) and
-        `current_period_end` (the paid-through timestamp entitlement
-        expires at -- src.appstate.customers.has_paid_access) ride along
-        when present, so GET /billing/status and the paid-surface gate can
-        both answer without a live Stripe call. A SCHEDULED cancel arrives
-        as `updated` with status still "active" and is recorded that way,
-        which is why entitlement never reads the status string alone.
+      - customer.subscription.created / .updated / .deleted: looks the
+        event's customer id back up to a local user_id (the event itself
+        never carries one) and overwrites that user's recorded status.
+        `.deleted` is always recorded as "canceled" regardless of the
+        object's own `status` field, since a deleted subscription is
+        canceled by definition even if Stripe's payload still shows its
+        last pre-deletion status. `.created` and `.updated` both go
+        through _normalize_subscription_status, which keeps "active" and
+        "trialing" apart (a free-trial subscription -- STRIPE_TRIAL_DAYS on
+        checkout.session's subscription_data -- reports "trialing" here,
+        and PAID_STATUSES treats that as entitled the same as "active")
+        while collapsing everything else (past_due, unpaid, incomplete,
+        ...) to "canceled". `cancel_at` (Stripe's "scheduled to cancel at
+        period end" unix timestamp) and `current_period_end` (the
+        paid-through timestamp entitlement expires at --
+        src.appstate.customers.has_paid_access) ride along when present,
+        so GET /billing/status and the paid-surface gate can both answer
+        without a live Stripe call. A SCHEDULED cancel arrives as `updated`
+        with status still "active" (or "trialing") and is recorded that
+        way, which is why entitlement never reads the status string alone.
+        `.created` is handled the same as `.updated` (not just `.updated`
+        alone) because a brand-new trial subscription's very first status
+        report IS a `.created` event -- without it, a checkout that starts
+        a trial would show "active" (checkout.session.completed's own
+        honest-but-incomplete guess below) until something else happened
+        to trigger an `.updated`, which could be days later or never.
+
+      - checkout.session.completed records the new subscription as
+        "active" (not "trialing") when one was created, even for a trial
+        checkout -- a checkout.session object carries no expanded
+        subscription status, only its id, so there is nothing truer to
+        record at this exact event. The `customer.subscription.created`
+        event Stripe sends around the same time (handled above) corrects
+        it to "trialing" moments later. This is a brief, honest display lag
+        (the same kind GET /billing/status's own docstring already
+        documents for webhook freshness generally), never an entitlement
+        gap: "active" is in PAID_STATUSES exactly like "trialing" is, so
+        access is never mistakenly withheld during that window.
 
     Any other event type, or one of these missing the fields it needs
     (e.g. no local mapping yet for a subscription.updated whose
@@ -841,7 +940,8 @@ def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> Non
                 cancel_at=known.get("cancel_at"),
                 current_period_end=known.get("current_period_end"), db=db)
         _activate_signup(user_id, obj.get("id"), db=db)
-    elif event_type in ("customer.subscription.updated", "customer.subscription.deleted"):
+    elif event_type in ("customer.subscription.created", "customer.subscription.updated",
+                         "customer.subscription.deleted"):
         customer_id = obj.get("customer")
         subscription_id = obj.get("id")
         if not customer_id or not subscription_id:
@@ -850,7 +950,7 @@ def apply_stripe_webhook_event(event: dict, *, db: Optional[Path] = None) -> Non
         if user_id is None:
             return
         status = ("canceled" if event_type == "customer.subscription.deleted"
-                  else ("active" if obj.get("status") == "active" else "canceled"))
+                  else _normalize_subscription_status(obj.get("status")))
         customers.upsert_subscription(
             user_id, subscription_id, status,
             cancel_at=_epoch_to_iso(obj.get("cancel_at")),

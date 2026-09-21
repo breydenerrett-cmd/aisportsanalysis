@@ -260,6 +260,114 @@ class StripeBillingProviderConfiguredTests(unittest.TestCase):
         self.assertEqual(self.transport.calls, [])
 
 
+class StripeTrialTests(unittest.TestCase):
+    """STRIPE_TRIAL_DAYS: the Checkout Session field, the env override, and
+    that "trialing" is treated as paid access everywhere status is read --
+    never collapsed into "canceled" the way every OTHER non-"active"
+    Stripe status still is (test_subscription_status_reports_trialing
+    pins the one status this suite must NOT fold in, alongside the
+    existing past_due-still-maps-to-canceled pin elsewhere in this file)."""
+
+    def setUp(self):
+        self.transport = _FakeTransport()
+        self.provider = billing.StripeBillingProvider(
+            api_key="sk_test_synthetic", transport=self.transport)
+        _deliverable(self)
+        # Never let a stray STRIPE_TRIAL_DAYS from the real environment
+        # leak into a test asserting the DEFAULT_TRIAL_DAYS behavior.
+        patcher = mock.patch.dict(os.environ, {}, clear=False)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        os.environ.pop(billing.ENV_STRIPE_TRIAL_DAYS, None)
+
+    def test_default_trial_days_is_seven(self):
+        self.assertEqual(billing.trial_period_days(), 7)
+        self.assertEqual(billing.DEFAULT_TRIAL_DAYS, 7)
+
+    def test_env_override_changes_trial_days(self):
+        with mock.patch.dict(os.environ, {billing.ENV_STRIPE_TRIAL_DAYS: "14"}):
+            self.assertEqual(billing.trial_period_days(), 14)
+
+    def test_zero_disables_the_trial(self):
+        with mock.patch.dict(os.environ, {billing.ENV_STRIPE_TRIAL_DAYS: "0"}):
+            self.assertEqual(billing.trial_period_days(), 0)
+
+    def test_malformed_env_value_falls_back_to_default(self):
+        with mock.patch.dict(os.environ, {billing.ENV_STRIPE_TRIAL_DAYS: "not-a-number"}):
+            self.assertEqual(billing.trial_period_days(), 7)
+
+    def test_negative_env_value_clamps_to_zero(self):
+        with mock.patch.dict(os.environ, {billing.ENV_STRIPE_TRIAL_DAYS: "-3"}):
+            self.assertEqual(billing.trial_period_days(), 0)
+
+    def test_checkout_session_carries_the_default_trial_period(self):
+        self.transport.queue(200, {"id": "cs_1", "url": "https://checkout.stripe.com/1"})
+        self.provider.create_checkout(1, "price_beta")
+        data = self.transport.calls[-1]["data"].decode("utf-8")
+        self.assertIn("subscription_data%5Btrial_period_days%5D=7", data)
+
+    def test_checkout_session_omits_trial_period_when_disabled(self):
+        with mock.patch.dict(os.environ, {billing.ENV_STRIPE_TRIAL_DAYS: "0"}):
+            self.transport.queue(200, {"id": "cs_1", "url": "https://checkout.stripe.com/1"})
+            self.provider.create_checkout(1, "price_beta")
+        data = self.transport.calls[-1]["data"].decode("utf-8")
+        self.assertNotIn("trial_period_days", data)
+
+    def test_subscription_status_reports_trialing_not_canceled(self):
+        provider = billing.StripeBillingProvider(
+            api_key="sk_test_synthetic", transport=self.transport,
+            customer_ref_lookup=lambda user_id: "cus_test_1")
+        self.transport.queue(200, {"data": [{
+            "id": "sub_test_1", "status": "trialing",
+            "items": {"data": [{"price": {"id": "price_beta"}}]},
+        }]})
+        sub = provider.subscription_status(7)
+        self.assertEqual(sub.status, "trialing")
+
+    def test_cancel_acts_on_a_trialing_subscription(self):
+        """The bug this trial adds a real way to hit: cancel() used to
+        refuse anything whose status wasn't literally "active", which
+        would have silently no-op'd the Cancel button for every customer
+        who clicks it during their free trial."""
+        provider = billing.StripeBillingProvider(
+            api_key="sk_test_synthetic", transport=self.transport,
+            customer_ref_lookup=lambda user_id: "cus_test_1")
+        period_end = int(datetime(2026, 10, 1, tzinfo=timezone.utc).timestamp())
+        self.transport.queue(200, {"data": [{
+            "id": "sub_test_1", "status": "trialing",
+            "current_period_end": period_end,
+            "items": {"data": [{"price": {"id": "price_beta"}}]},
+        }]})
+        self.transport.queue(200, {"id": "sub_test_1", "status": "trialing",
+                                   "cancel_at_period_end": True,
+                                   "cancel_at": period_end,
+                                   "current_period_end": period_end})
+        result = provider.cancel(7)
+        self.assertEqual(result.status, "trialing")
+        self.assertTrue(result.cancel_at_period_end)
+        # A write call was actually made -- proves this did not take the
+        # idempotent-no-op shortcut a non-"active"/"trialing" status would.
+        self.assertEqual(len(self.transport.calls), 2)
+
+    def test_trialing_and_canceled_scheduled_cancel_is_not_entitled_after_trial_ends(self):
+        """End-to-end through the policy this feature promises:
+        "Cancellation during the trial ends access at trial end." Persist
+        exactly what cancel() above would write, then check
+        has_paid_access on both sides of that timestamp."""
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        db = Path(tmp.name) / "app.db"
+        trial_end = datetime(2026, 10, 1, tzinfo=timezone.utc)
+        customers.upsert_subscription(
+            7, "sub_test_1", "trialing",
+            cancel_at=trial_end.isoformat(),
+            current_period_end=trial_end.isoformat(), db=db)
+        self.assertTrue(customers.has_paid_access(
+            7, now=trial_end - timedelta(days=1), db=db))
+        self.assertFalse(customers.has_paid_access(
+            7, now=trial_end + timedelta(days=1), db=db))
+
+
 class StripeCheckoutPersistenceWiringTests(unittest.TestCase):
     """create_checkout wired to real src.appstate.customers persistence
     (the shape get_billing_provider() uses in production) -- pins customer
@@ -364,6 +472,36 @@ class StripeWebhookPersistenceTests(unittest.TestCase):
         billing.apply_stripe_webhook_event(event, db=self.db)
         record = customers.get_subscription_record(7, db=self.db)
         self.assertEqual(record["status"], "canceled")
+
+    def test_subscription_updated_trialing_is_not_collapsed_to_canceled(self):
+        """The exact bug a free trial would have hit: `.updated` events
+        during an active trial (status still "trialing", nothing else
+        changed) used to fold anything but literal "active" into
+        "canceled" -- which would have shown a trial customer as churned,
+        and (were PAID_STATUSES not already checked independently)
+        revoked access mid-trial."""
+        customers.upsert_customer(7, "cus_7", db=self.db)
+        event = {
+            "type": "customer.subscription.updated",
+            "data": {"object": {"id": "sub_7", "customer": "cus_7", "status": "trialing"}},
+        }
+        billing.apply_stripe_webhook_event(event, db=self.db)
+        record = customers.get_subscription_record(7, db=self.db)
+        self.assertEqual(record["status"], "trialing")
+
+    def test_subscription_created_records_trialing(self):
+        """Stripe fires `customer.subscription.created` (not `.updated`)
+        for a brand-new trial subscription's first status report -- this
+        must be handled the same way `.updated` is, not silently ignored
+        as an unhandled event type."""
+        customers.upsert_customer(7, "cus_7", db=self.db)
+        event = {
+            "type": "customer.subscription.created",
+            "data": {"object": {"id": "sub_7", "customer": "cus_7", "status": "trialing"}},
+        }
+        billing.apply_stripe_webhook_event(event, db=self.db)
+        record = customers.get_subscription_record(7, db=self.db)
+        self.assertEqual(record["status"], "trialing")
 
     def test_subscription_deleted_marks_canceled_regardless_of_status_field(self):
         customers.upsert_customer(7, "cus_7", db=self.db)

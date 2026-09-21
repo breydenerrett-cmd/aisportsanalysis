@@ -15,6 +15,11 @@
  * docs/PRICING_OFFER_VALIDATION.md, pending Brey's final sign-off; if he
  * changes it, billing.py and this file change together (test-checked
  * against the API in test_web_structure where feasible).
+ *
+ * billing_note states the trial length (src/appstate/billing.py's
+ * STRIPE_TRIAL_DAYS, default 7) -- if that env var ever changes the
+ * default in production, this string is the one place to update to match
+ * (same "one source, not a duplicated literal" rule as the price itself).
  */
 
 export const BETA_TIER = Object.freeze({
@@ -23,5 +28,5 @@ export const BETA_TIER = Object.freeze({
   price_cents: 1999,
   price_display: "$19.99/mo",
   billing_note:
-    "Founding-member beta price. Cancel your renewal anytime; access runs through the period you've already paid for.",
+    "7-day free trial, then $19.99/month. Cancel anytime.",
 });
