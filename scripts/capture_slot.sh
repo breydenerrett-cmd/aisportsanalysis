@@ -546,6 +546,14 @@ echo "== card publish ($SLATE_DATE) =="
 CARD_OUT=$(python3 -m src.cli card publish --date "$SLATE_DATE" 2>&1) || true
 echo "$CARD_OUT" | tail -n 25 | sed 's/^/  /'
 
+# MLB_VALUE_SHADOW_V1 (docs/PREREG_MLB_VALUE_SHADOW_V1.md): a SHADOW forward
+# test, never on the card. Runs here because this is where the post-lineup
+# prop capture (capture extras), the multi-book odds and the game map above
+# all exist. Reads stored prices only -- no odds-API spend -- and writes
+# only evidence/mlb_value_shadow_v1/ (staged below). Never fails the slot.
+echo "== mlb value shadow ($SLATE_DATE) =="
+python3 -m src.analysis.mlb_value_shadow publish --date "$SLATE_DATE" 2>&1 | tail -n 15 | sed 's/^/  /' || true
+
 echo "== nfl capture =="
 python3 -m src.cli nfl capture 2>&1 | sed 's/^/  /' || true
 
