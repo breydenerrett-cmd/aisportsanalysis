@@ -112,10 +112,10 @@ class MmaCaptureTests(unittest.TestCase):
             done_path=self.done_path)
         self.assertFalse(result2["captured"])
 
-    def test_general_cadence_fires_again_after_sixty_minutes(self):
+    def test_general_cadence_fires_again_after_the_interval(self):
         # A bout far enough out that its own prefight window never triggers,
-        # so only the general 60-minute cadence is in play.
-        commence = (self.now + timedelta(hours=6)).isoformat()
+        # so only the general GENERAL_INTERVAL_MINUTES cadence is in play.
+        commence = (self.now + timedelta(hours=24)).isoformat()
         events = [{"id": "boutX", "commence_time": commence}]
 
         def fetch(*, markets, env, sport):
@@ -137,7 +137,7 @@ class MmaCaptureTests(unittest.TestCase):
             done_path=self.done_path)
         self.assertFalse(r2["captured"])
 
-        later = self.now + timedelta(minutes=61)
+        later = self.now + timedelta(minutes=mma_capture.GENERAL_INTERVAL_MINUTES + 1)
         r3 = mma_capture.run(
             now=later, list_events=lambda *, env, sport: events,
             fetch_normalized=fetch, spend_guard=_allow,

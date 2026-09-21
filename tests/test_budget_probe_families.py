@@ -171,6 +171,27 @@ class ProbeScoresTests(unittest.TestCase):
             self.assertFalse(result["degenerate"])
 
 
+class ProbeMmaH2hTests(unittest.TestCase):
+    """2026-09-21: without its own branch, a probe of mma_h2h fell through to
+    the default path, which lists MLB events, and measured an MLB game."""
+
+    def test_probe_mma_h2h_fetches_the_mma_sport_key_not_an_mlb_event(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = _write_families(folder, {"mma_h2h": {
+                "measured": False, "credits_per_event": None, "measured_utc": None}})
+            store = Path(folder) / "credit_log.jsonl"
+            provider = _FakeSportsProvider(remaining_before=9000, billed=1,
+                                           remaining_after=8999, sports=[])
+            result = budget.probe_family(
+                "mma_h2h", provider=provider, now=NOW, families_path=path, store=store)
+            calls_by_name = {c[0]: c for c in provider.calls}
+            self.assertIn("fetch_odds", calls_by_name)
+            self.assertEqual(calls_by_name["fetch_odds"][1]["sport"], "mma_mixed_martial_arts")
+            self.assertEqual(calls_by_name["fetch_odds"][1]["markets"], ["h2h"])
+            self.assertNotIn("list_events", calls_by_name)
+            self.assertEqual(result["sport_key"], "mma_mixed_martial_arts")
+
+
 class ProbeTennisH2hTests(unittest.TestCase):
     def _families(self, folder, extra=None):
         families = {"tennis_h2h": {"measured": False, "credits_per_event": None,

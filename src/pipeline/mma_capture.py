@@ -66,7 +66,12 @@ FAMILY = "mma_h2h"
 # config/capture_families.json) can turn this family's spending on.
 CREDITS_PER_CAPTURE = 2
 
-GENERAL_INTERVAL_MINUTES = 60
+# 6 hours, not 1 (2026-09-21 review): picks are graded at the AVERAGE price
+# across books at lock (owner thesis), so fight week needs only a periodic
+# look plus the per-bout PREFIGHT pull that lands just before each 90-minute
+# lock. Hourly would be about 72 pulls per card with no product benefit, in
+# the middle of a credit squeeze (docs/drafts/CREDIT_TRIM_PLAN_2026-09-21.md).
+GENERAL_INTERVAL_MINUTES = 360
 PREFIGHT_MINUTES = 120
 # UFC cards are frequent (often weekly) -- an 8-day horizon would make the
 # hourly cadence fire almost continuously, all year, which is not "during
@@ -276,7 +281,7 @@ def run(*, now: Optional[datetime] = None,
 
     if not prefight_due_ids and not general_due:
         return {"captured": False,
-                "reason": ("not due: the 60-minute cadence has not elapsed and no "
+                "reason": (f"not due: the {GENERAL_INTERVAL_MINUTES}-minute cadence has not elapsed and no "
                            "bout has entered its own pre-fight window"),
                 "credits": 0, "rows": 0}
 

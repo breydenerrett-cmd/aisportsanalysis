@@ -867,6 +867,8 @@ def _probe_markets(family: str, provider) -> Optional[tuple]:
         return ("SPECIAL:fetch_scores",)  # Sentinel for special handling
     if family == "tennis_h2h":
         return ("SPECIAL:fetch_odds_tennis_h2h",)  # Sentinel for special handling
+    if family == "mma_h2h":
+        return ("SPECIAL:fetch_odds_mma_h2h",)  # Sentinel for special handling
     return None
 
 
@@ -1108,6 +1110,23 @@ def probe_family(family: str, env=None, provider=None, now=None,
             remaining_after_call = None
         result["sport_key"] = tennis_key
         fetch_markets = ["h2h"]
+    elif family == "mma_h2h":
+        # UFC/MMA (2026-09-21): one sport-wide h2h pull covers the whole card,
+        # the same shape as tennis above. The default branch below lists MLB
+        # events, so without this branch a probe of mma_h2h would measure an
+        # MLB game and record the wrong cost for UFC.
+        try:
+            payload = provider.fetch_odds(markets=["h2h"], env=env,
+                                          sport="mma_mixed_martial_arts")
+        except provider.OddsProviderError as exc:
+            result["error"] = f"probe fetch failed: {exc}"
+            return result
+        try:
+            remaining_after_call = provider.quota(env).get("remaining")
+        except provider.OddsProviderError:
+            remaining_after_call = None
+        result["sport_key"] = "mma_mixed_martial_arts"
+        fetch_markets = ["h2h"]
     else:
         # STANDARD EVENT ODDS FETCH PATH
         try:
@@ -1180,7 +1199,7 @@ def probe_family(family: str, env=None, provider=None, now=None,
     # Calculate payload shape; special handling for scores/tennis_h2h vs standard odds
     if is_scores_fetch:
         shape = _payload_shape(payload, None, is_scores=True)
-    elif family == "tennis_h2h":
+    elif family in ("tennis_h2h", "mma_h2h"):
         shape = _payload_shape(payload, fetch_markets, is_multi_event=True)
     else:
         shape = _payload_shape(payload, fetch_markets, commence_time=event_commence)
@@ -1191,7 +1210,7 @@ def probe_family(family: str, env=None, provider=None, now=None,
         source_str = (f"budget.probe_family: {family} probe fetching NFL scores; "
                       f"billed={billed!r}, remaining_before={remaining_before!r}, "
                       f"remaining_after={remaining_after_call!r}")
-    elif family == "tennis_h2h":
+    elif family in ("tennis_h2h", "mma_h2h"):
         source_str = (f"budget.probe_family: {family} probe fetching h2h odds for "
                       f"{result.get('sport_key')}; "
                       f"billed={billed!r}, remaining_before={remaining_before!r}, "
