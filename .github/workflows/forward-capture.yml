@@ -79,6 +79,13 @@ jobs:
       # runs, the slate refuses with the message above, and the capture
       # commits normally -- the same "never a blocker" contract the gate
       # itself keeps.
+      # The path list MUST stay byte-identical to daily-loop.yml's save step
+      # (2026-09-21): it is hashed into the cache entry's version, and a
+      # restore only matches entries of the same version. With seven paths
+      # here against the daily loop's twelve, this step never saw one
+      # daily-loop save. It restored the afternoon slate's old self-saves,
+      # frozen at Statcast coverage 2026-09-14, so this slot's slate pass
+      # refused every day.
       - name: Restore the daily loop's historical stores (read-only)
         uses: actions/cache/restore@v4
         continue-on-error: true
@@ -91,9 +98,24 @@ jobs:
             data/historical/bullpen_log.jsonl
             data/historical/lineups.jsonl
             data/historical/handedness.json
+            data/historical/matchup_history.jsonl
+            data/historical/matchup_pairs.json
+            data/historical/pitcher_splits.json
+            data/historical/arsenals
+            data/historical/standings.jsonl
           key: forward-capture-readonly-${{ github.run_id }}
           restore-keys: |
             daily-loop-data-
+
+      # Everything above except data/historical/statcast is tracked in git,
+      # and the checkout is always at least as fresh as a cache save. So
+      # restore git's copies and keep only the untracked pitch store. This
+      # stops a cached lineups.jsonl or matchup store from clobbering the
+      # committed one, the 2026-09-16 truncation class that
+      # scripts/lib_shrink_guard.sh exists to catch after the fact.
+      - name: Keep git's tracked historical stores over the cache's copies
+        continue-on-error: true
+        run: git checkout -- data/historical
 
       - name: Configure git identity for the commit this run may make
         run: |

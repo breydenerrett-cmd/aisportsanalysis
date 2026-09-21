@@ -139,11 +139,17 @@ jobs:
       # restore. The working branch's copy of this file carries the same
       # change (efaf3239); this is the copy the schedule actually runs.
       #
-      # It must be actions/cache/RESTORE, not actions/cache (2026-09-21, second
-      # pass): the combined action also SAVES in its post-job step whenever
-      # the primary key misses, and a run_id key always misses. Removing the
-      # explicit save step alone therefore still re-saved stale data after
-      # every run, and the slate kept reading coverage ending 2026-09-14.
+      # THE ACTUAL ROOT CAUSE (2026-09-21, found after the fix above did not
+      # clear the refusal): a cache entry only matches a restore whose `path`
+      # list is IDENTICAL, because the path list is hashed into the entry's
+      # version. The daily loop saves TWELVE paths, and this step listed
+      # seven. So this job never saw one daily-loop save. It restored only
+      # its own old saves (version 01d0944ab7 vs the daily loop's 6a008b5f8a),
+      # a closed loop frozen at Statcast coverage 2026-09-14. The GitHub cache
+      # API showed it: the 17:55Z run restored the 02:43Z entry and skipped
+      # the daily loop's 16:11Z one. The list below MUST stay byte-identical
+      # to daily-loop.yml's save step. Restore-only, never actions/cache: the
+      # combined action saves again in its post step.
       - name: Restore historical + processed data cache
         uses: actions/cache/restore@v4
         with:
@@ -155,9 +161,24 @@ jobs:
             data/historical/bullpen_log.jsonl
             data/historical/lineups.jsonl
             data/historical/handedness.json
+            data/historical/matchup_history.jsonl
+            data/historical/matchup_pairs.json
+            data/historical/pitcher_splits.json
+            data/historical/arsenals
+            data/historical/standings.jsonl
           key: daily-loop-data-${{ github.run_id }}
           restore-keys: |
             daily-loop-data-
+
+      # Every path above except data/historical/statcast is now tracked in
+      # git, and the checkout is at least as fresh as any cache save (the
+      # capture slots commit posted lineups hours after the 10:00Z loop
+      # saves). So put git's copies back and keep ONLY the untracked pitch
+      # store from the cache. Without this, a stale cached lineups.jsonl
+      # would hide lineups posted since the morning -- the exact case the
+      # afternoon pass exists for (genomes stand down NO_LINEUP otherwise).
+      - name: Keep git's tracked historical stores over the cache's copies
+        run: git checkout -- data/historical
 
       # Same hard stops as the daily loop: a missing Statcast manifest that
       # the seed branch cannot supply is a refusal, not a silent full build.
