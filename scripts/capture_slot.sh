@@ -648,6 +648,11 @@ for p in data/watch data/processed data/raw/oddsapi data/live docs/OVERNIGHT_RUN
 done
 if [ -n "$STAGE_PATHS" ] && ! git add $STAGE_PATHS; then
     echo "ESCALATE: git add of capture output failed -- this slot's data is NOT staged"
+    # AND THE JOB GOES RED (2026-09-21 fact-check). An ESCALATE line alone
+    # changes nothing: forward-capture has no ESCALATE-to-failure step, and
+    # the credit and freshness ESCALATEs of 09-16..09-20 sat in green runs
+    # for days. GIT_FAILED ends this script with exit 1 below.
+    GIT_FAILED=1
 fi
 # H4 (2026-09-16): the historical stores staged below used to be a literal
 # filename list here (and a second copy in forward_capture.sh) -- protected
@@ -655,7 +660,15 @@ fi
 # declaration scripts/append_only_stores.txt via read_append_only_stores.
 . "$(dirname "$0")/lib_shrink_guard.sh"
 DECLARED_STORES=$(read_append_only_stores)
-git add $DECLARED_STORES 2>/dev/null || true
+# Same rule as the add above: stage what exists, never silence git.
+DECLARED_PRESENT=""
+for p in $DECLARED_STORES; do
+    [ -e "$p" ] && DECLARED_PRESENT="$DECLARED_PRESENT $p"
+done
+if [ -n "$DECLARED_PRESENT" ] && ! git add $DECLARED_PRESENT; then
+    echo "ESCALATE: git add of the declared historical stores failed"
+    GIT_FAILED=1
+fi
 # GUARD (2026-09-16 incident, scripts/lib_shrink_guard.sh): a CI cache
 # restore can silently clobber these stores with a stale, smaller snapshot
 # before this script ever runs. Refuse to commit a shrink on any one of

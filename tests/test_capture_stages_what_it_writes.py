@@ -87,8 +87,12 @@ def _staged_paths(text: str) -> list:
         stripped = line.strip()
         if stripped.startswith("for p in ") and "; do" in stripped:
             body = stripped[len("for p in "):stripped.index("; do")]
-            if "STAGE_PATHS" in text:
-                staged.extend(body.split())
+            if "STAGE_PATHS" in text or "DECLARED_PRESENT" in text:
+                for part in body.split():
+                    if part == "$DECLARED_STORES":
+                        staged.extend(_declared_stores())
+                    else:
+                        staged.append(part)
             continue
         if not stripped.startswith("git add "):
             continue
@@ -97,7 +101,7 @@ def _staged_paths(text: str) -> list:
         for part in body.split():
             if part.startswith("-") or part == "$STAGE_PATHS":
                 continue
-            if part == "$DECLARED_STORES":
+            if part in ("$DECLARED_STORES", "$DECLARED_PRESENT"):
                 staged.extend(_declared_stores())
             else:
                 staged.append(part)

@@ -110,6 +110,16 @@ class CaptureStagingSurvivesAMissingPath(unittest.TestCase):
 
         self.assertIn("data/live/mlb/2026-09-19.jsonl", self._staged())
 
+    def test_a_failed_add_turns_the_job_red(self):
+        """An ESCALATE line alone changed nothing for five days: the
+        forward-capture job has no ESCALATE-to-failure step. A failed add
+        must set GIT_FAILED, which ends the script with exit 1."""
+        block = _staging_block()
+        self.assertIn("ESCALATE: git add of capture output failed", block)
+        after = block[block.index("ESCALATE: git add of capture output failed"):]
+        self.assertIn("GIT_FAILED=1", after[:after.index("fi")])
+        self.assertIn('if [ "$GIT_FAILED" -eq 1 ]; then\n    exit 1', CAPTURE)
+
     def test_a_failed_add_is_not_silent(self):
         """The old line discarded git's error, which is why this went
         unnoticed for four days. Whatever form the block takes, it must not

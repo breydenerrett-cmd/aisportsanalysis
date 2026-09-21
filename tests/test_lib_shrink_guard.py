@@ -266,7 +266,12 @@ class CaptureScriptsCallTheGuard(unittest.TestCase):
                 # have nothing to check; staging before reading the
                 # declaration would have nothing to stage.
                 read_pos = text.index("read_append_only_stores)")
-                add_pos = text.index("git add $DECLARED_STORES")
+                # capture_slot.sh stages the declared stores through an
+                # existence filter since 2026-09-21 ($DECLARED_PRESENT --
+                # one missing path makes git refuse a whole add).
+                add_pos = (text.index("git add $DECLARED_PRESENT")
+                           if "git add $DECLARED_PRESENT" in text
+                           else text.index("git add $DECLARED_STORES"))
                 guard_pos = text.index("guard_staged_no_shrink $DECLARED_STORES")
                 self.assertLess(read_pos, add_pos,
                                 f"{rel} stages before reading the declaration")
