@@ -125,9 +125,19 @@ jobs:
       # Restores whatever the morning daily-loop saved a few hours earlier
       # (same `daily-loop-data-` prefix, restore-keys prefix match), so the
       # Statcast pitch store the pre-slate guard checks is already on disk and
-      # bootstrap has nothing to rebuild. Saved forward under this run's own
-      # key so an afternoon run still primes tomorrow morning if the 10:00Z
-      # loop failed.
+      # bootstrap has nothing to rebuild.
+      #
+      # RESTORE ONLY, NEVER SAVE (2026-09-21 incident fix). This job used to
+      # re-save these paths under the same prefix after every run, about
+      # every 30 minutes. It never advances them itself -- statcast catchup
+      # runs only in the daily loop -- and restore-keys resolves to the MOST
+      # RECENTLY CREATED entry, so its no-op re-saves buried the daily loop's
+      # single real advance. The slate kept reading pitch coverage ending
+      # 2026-09-14 while the daily loop's store reached 09-18, and the
+      # pre-slate guard refused the afternoon board every day from 09-18. A
+      # failed 10:00Z loop is still covered by bootstrap's seed-branch
+      # restore. The working branch's copy of this file carries the same
+      # change (efaf3239); this is the copy the schedule actually runs.
       - name: Restore historical + processed data cache
         uses: actions/cache@v4
         with:
@@ -168,17 +178,3 @@ jobs:
             exit 1
           fi
           echo "no ESCALATE lines -- clean run"
-
-      - name: Save historical + processed data cache
-        if: always()
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            data/historical/statcast
-            data/historical/mlb_results.csv
-            data/historical/mlb_results.manifest.json
-            data/historical/pitcher_logs.jsonl
-            data/historical/bullpen_log.jsonl
-            data/historical/lineups.jsonl
-            data/historical/handedness.json
-          key: daily-loop-data-${{ github.run_id }}
