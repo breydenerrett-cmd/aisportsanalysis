@@ -1404,3 +1404,6 @@
 {"category": "il_activation", "date": "2026-09-21", "first_seen_utc": "2026-09-21T19:11:07.538355+00:00", "player": "Trey Yesavage", "player_id": 702056, "team": "TOR", "transaction_id": 943398}
 {"category": "designated", "date": "2026-09-21", "first_seen_utc": "2026-09-21T19:11:07.538355+00:00", "player": "Joe Mantiply", "player_id": 573009, "team": "TOR", "transaction_id": 943399}
 {"fetched_utc": "2026-09-21T19:11:09.349985+00:00", "game_date": "2026-09-21", "poll": true}
+{"fetched_utc": "2026-09-21T19:24:23.042676+00:00", "game_date": "2026-09-21", "poll": true}
+{"category": "recalled", "date": "2026-09-21", "first_seen_utc": "2026-09-21T19:24:23.042676+00:00", "player": "Chad Dallas", "player_id": 689149, "team": "TOR", "transaction_id": 943400}
+{"category": "optioned", "date": "2026-09-21", "first_seen_utc": "2026-09-21T19:24:23.042676+00:00", "player": "Spencer Arrighetti", "player_id": 681293, "team": "TOR", "transaction_id": 943401}
