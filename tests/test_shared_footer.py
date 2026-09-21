@@ -104,11 +104,13 @@ class FooterMatchesTheRedesign(unittest.TestCase):
         # "Three to five bets a day, frozen before first pitch and graded
         # after" overclaimed a fixed price a later publish can still
         # replace (section 5's record wording) -- this exact sentence
-        # replaces it.
+        # replaces it. Extended 2026-09-20 (NFL and tennis live): every pick
+        # is part of a test, analysis not advice, bet at your own risk.
         self.assertIn(
-            "Beta. Picks are published before each game and graded as "
-            "they stood at their lock, win or lose. Nothing here is a "
-            "guarantee.",
+            "Beta. Every pick here is part of an ongoing test — published "
+            "before each game and graded as it stood at its lock, win or "
+            "lose. This is analysis, not advice. Nothing here is a "
+            "guarantee; bet at your own risk.",
             self.code,
         )
 

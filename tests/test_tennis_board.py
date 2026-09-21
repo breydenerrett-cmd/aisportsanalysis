@@ -284,5 +284,50 @@ class TestBoardForDate(unittest.TestCase):
         self.assertIn("Wimbledon", tournament["title"])
 
 
+def _tennis_row(observed, commence, sport="tennis_wta_singapore_open", book="fanduel"):
+    return {"observed_utc": observed, "event_id": "evt_1", "commence_time": commence,
+            "away_team": "Player A", "home_team": "Player B", "book": book,
+            "away_price": -110, "home_price": -110, "sport": sport}
+
+
+class TestBoardSaysWhetherAnyTennisPriceIsCaptured(unittest.TestCase):
+    """An empty board meant two different things and said one of them
+    (2026-09-20). Tennis capture was halted from 2026-09-16 by a probe
+    deadlock, so the store held zero tennis rows -- and the page told every
+    reader "No tennis matches are priced for this date", a claim about the
+    market, when the true fact was that nothing had been captured. The
+    payload now carries `captured_any` (and the newest capture time) so the
+    page can say which it is."""
+
+    def test_empty_store_reports_nothing_captured(self):
+        from src.report import tennis_board
+        payload = tennis_board.board_for_date("2026-09-21", rows=[], tournaments=[])
+        self.assertIs(payload["captured_any"], False)
+        self.assertIsNone(payload["last_captured_utc"])
+
+    def test_default_read_ignores_other_sports_rows(self):
+        # The default path reads the whole multibook store; MLB/NFL rows in
+        # it are not tennis captures. Injected, never read from disk.
+        from unittest import mock
+        from src.report import tennis_board
+        nfl = dict(_tennis_row("2026-09-21T00:09:43+00:00", "2026-09-21T17:00:00Z"),
+                   sport="americanfootball_nfl")
+        with mock.patch.object(tennis_board.snapshots, "read_multibook",
+                               return_value=[nfl]):
+            payload = tennis_board.board_for_date("2026-09-21", tournaments=[])
+        self.assertIs(payload["captured_any"], False)
+        self.assertEqual(payload["tournaments"], [])
+
+    def test_captures_on_another_date_are_reported(self):
+        from src.report import tennis_board
+        rows = [_tennis_row("2026-09-19T10:00:00+00:00", "2026-09-19T14:00:00Z"),
+                _tennis_row("2026-09-19T11:30:00+00:00", "2026-09-19T14:00:00Z",
+                            book="draftkings")]
+        payload = tennis_board.board_for_date("2026-09-21", rows=rows, tournaments=[])
+        self.assertEqual(payload["tournaments"], [])
+        self.assertIs(payload["captured_any"], True)
+        self.assertEqual(payload["last_captured_utc"], "2026-09-19T11:30:00+00:00")
+
+
 if __name__ == "__main__":
     unittest.main()

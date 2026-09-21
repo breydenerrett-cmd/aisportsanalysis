@@ -4,10 +4,13 @@ Verifies:
 - main.js dispatches "live" to renderLive, unchanged by the 2026-09-15
   redesign (D5: Live leaves the public chrome but keeps its typed-URL
   route exactly as it was)
-- main.js dispatches sport "tennis" to the shared renderComingSoon page,
-  not the live tennis board (D4: tennis is not shown until results
-  grading is connected -- tennis.js itself stays on disk, unmodified and
-  unrouted, per docs/DESIGN_SYSTEM.md's "NFL and Tennis" section)
+- main.js dispatches sport "tennis" to the real research board
+  (tennis.js's renderTennisBoard), not the shared coming-soon page --
+  AMENDED 2026-09-19: tennis went live as a picks-free research board
+  (docs/DESIGN_SYSTEM.md's "NFL and Tennis" section, amended in the same
+  change). It was previously routed to renderComingSoon; that behaviour
+  is gone and this file's own history said so explicitly, so the old
+  assertion is replaced rather than left to silently pass on stale intent.
 - NAV_ITEMS does not contain "#/live"
 - sport.js's rendered chrome carries no "#/live" link anywhere (D5)
 - api/app.py includes the tennis router with the paid dependency
@@ -62,12 +65,23 @@ class LiveTennisWiring(unittest.TestCase):
         self.assertIn('route === "live"', self.main_text)
         self.assertIn("renderLive", self.main_text)
 
-    def test_dispatches_tennis_route_to_coming_soon(self):
-        """Redesign, 2026-09-15 (D4): main.js should dispatch sport ===
-        'tennis' -- every route under it, #/tennis and #/tennis/board alike
-        -- to the shared renderComingSoon page, not the live tennis board."""
+    def test_dispatches_tennis_route_to_the_real_board(self):
+        """Amended 2026-09-19: main.js dispatches sport === 'tennis' --
+        every route under it, #/tennis and #/tennis/board alike -- to the
+        real research board (tennis.js's renderTennisBoard), not the
+        shared coming-soon page. Tennis publishes no pick; the board's own
+        notice says so."""
         self.assertIn('sport === "tennis"', self.main_text)
-        self.assertIn("renderComingSoon", self.main_text)
+        self.assertIn("renderTennisBoard", self.main_text)
+
+    def test_dispatches_nfl_route_to_the_real_card_and_record(self):
+        """Amended 2026-09-19: main.js dispatches sport === 'nfl' to
+        card.js's renderCard for the gameday routes and cardrecord.js's
+        renderCardRecord for #/nfl/record, both called with
+        {sport: "nfl"} -- not the shared coming-soon page."""
+        self.assertIn('sport === "nfl"', self.main_text)
+        self.assertIn('renderCard(main, { sport: "nfl" })', self.main_text)
+        self.assertIn('renderCardRecord(main, { sport: "nfl" })', self.main_text)
 
     def test_live_not_in_nav_items(self):
         """NAV_ITEMS should not contain #/live."""
@@ -79,13 +93,14 @@ class LiveTennisWiring(unittest.TestCase):
         self.assertIn('from "./live.js"', self.main_text)
         self.assertIn("renderLive", self.main_text)
 
-    def test_does_not_import_the_live_tennis_board_module(self):
-        """Redesign, 2026-09-15 (D4): tennis routes no longer reach
-        web/js/tennis.js at all -- it stays on disk, unmodified and
-        unrouted (docs/DESIGN_SYSTEM.md's "NFL and Tennis" section), so
-        tests/test_web_tennis_board.py, which reads tennis.js directly,
-        keeps passing untouched."""
-        self.assertNotIn('from "./tennis.js"', self.main_text)
+    def test_imports_the_live_tennis_board_module(self):
+        """Amended 2026-09-19: tennis went live, so main.js now imports
+        renderTennisBoard from web/js/tennis.js to route #/tennis to it.
+        tests/test_web_tennis_board.py, which reads tennis.js directly, is
+        unaffected either way -- it never depended on tennis.js staying
+        unrouted, only on tennis.js's own content."""
+        self.assertIn('from "./tennis.js"', self.main_text)
+        self.assertIn("renderTennisBoard", self.main_text)
 
     def test_imports_render_coming_soon(self):
         """main.js should import renderComingSoon from comingsoon.js."""

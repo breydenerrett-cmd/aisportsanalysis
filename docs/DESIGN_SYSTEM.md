@@ -115,7 +115,26 @@ There is no sport switcher dropdown, no Live link, no section-label text and
 no status readout in the strip (shell-01, shell-02, live-1). The status line
 moves into the page header (section 4).
 
-**COMING SOON items.**
+**AMENDMENT, 2026-09-19 — NFL AND TENNIS WENT LIVE.** Both used to be the
+two names in "COMING SOON items" below, rendered as red text links. They
+are now live sports (`sport.js`'s SPORTS registry: `status: "live"`) and
+render as ordinary tabs in item 3 above, beside MLB — "MLB", "NFL",
+"Tennis", same 17px display weight, same 3px red underline when selected.
+Item 5, the coming-soon items, is currently **empty**: nothing is
+registered `coming_soon` and named in `renderSportLevel`'s
+`TOP_STRIP_COMING_SOON` list (NBA/NHL stay registered but, per the
+un-amended paragraph below, are deliberately not named there). The "COMING
+SOON items" bullet list and the phone-row bullets below describe the
+pre-2026-09-19 shape exactly two red links occupied; they are kept as
+written, for the mechanism's shape and measurements, rather than rewritten
+around a currently-empty list — re-verify the phone-row width numbers
+against an actual layout pass before NBA or NHL is ever added to
+`TOP_STRIP_COMING_SOON`, since this amendment does not re-measure them.
+NFL's card and Tennis's research board are covered in section 6's "NFL and
+Tennis" paragraph, also amended today.
+
+**COMING SOON items** (pre-2026-09-19 shape; see amendment above — the list
+this describes is empty today).
 - "NFL · COMING SOON" links to `#/nfl`; "TENNIS · COMING SOON" links to
   `#/tennis`.
 - Display 700, 15px, uppercase, letter-spacing .06em, colour `--primary`
@@ -130,13 +149,24 @@ moves into the page header (section 4).
 
 **Phone (under 900px).**
 - **Row 1**, 56px: hound mark and LINEHOUND at 18px. No clock (shell-04).
-- **Row 2**, the sport row, 44px, 16px gutters: "MLB" tab on the left, both
-  red items on the right, wrapping allowed if a fallback font is briefly
-  wider (measured: at 360px, both red labels total 275px against a 328px
-  content width once the MLB tab is hidden below 400px — see section 9).
-- **Under 400px the MLB tab hides**, not under 375px as the first draft
-  said — measured slack at 375-399px is 4px, not enough headroom for any
-  real font metric or tab padding.
+- **Row 2**, the sport row, 44px, 16px gutters: pre-2026-09-19 this was
+  "MLB tab on the left, both red items on the right" (measured: at 360px,
+  both red labels total 275px against a 328px content width once the MLB
+  tab is hidden below 400px — see section 9). With NFL and Tennis now live
+  tabs and the red-item list empty, the row shows three tabs ("MLB",
+  "NFL", "Tennis") and nothing on the right. **Every tab shows at every
+  width** (2026-09-20, measured in the browser: the three tabs span
+  x=16-136px at 320, 375 and 400px wide, with no horizontal page scroll at
+  320px).
+- ~~**Under 400px the MLB tab hides**~~ — **removed 2026-09-20.** The rule
+  in `app.css` hid every `.sportlevel__tab`, not only MLB's. It was right
+  for the two-red-link layout (4px of slack at 375-399px, and the bottom
+  tab bar still covered MLB), but once NFL and Tennis became tabs it hid
+  all three and left the sport row empty: on every phone narrower than
+  400px nothing in the chrome linked to NFL or Tennis, and nothing on an
+  NFL or Tennis page linked back to MLB. `tests/test_web_nfl_tennis_truth.py`
+  fails if any stylesheet hides a sport tab again. If a future coming-soon
+  link needs the room, re-measure then — do not bring back a blanket hide.
 - Neither row is sticky. One host element renders the sport-level content;
   CSS repositions it between the desktop strip and the phone row (a single
   `renderSportLevel` mount, not two — see the corrected build note below).
@@ -190,6 +220,16 @@ nfl-today-3). One registry holds every sport as `{key, label, status: "live"
 | "coming_soon", home, submenu, plan: null}`. NBA and NHL are added as
 entries when they are announced (D6), and then appear as red items
 automatically. A sport that goes live becomes a tab with its own sub menu.
+
+- **Each live sport mounts its own sub menu** in the rail and the phone tab
+  bar (2026-09-20): `main.js`'s `mountNav(rail, tabbar, activeHash, sport)`
+  looks the sport up in `sport.js`'s SPORTS registry and renders its
+  `submenu`, with the sport's own label as the rail heading. MLB renders
+  `NAV_ITEMS` (below); NFL renders GAMEDAY `#/nfl` and RESULTS
+  `#/nfl/record`; Tennis renders BOARD `#/tennis`. Only a coming-soon
+  sport (NBA, NHL) keeps MLB's menu, with nothing selected. Do not put
+  MLB's menu back on NFL or Tennis pages — before this, RESULTS on the NFL
+  page opened MLB's record.
 
 - `renderSportLevel(host, activeSport, {placement, linkPrefix})` renders
   live sports as tabs and coming-soon sports as the two red links.
@@ -611,7 +651,7 @@ Numbers carry their context:
 
 | Where (finding) | Now | Replace with |
 |---|---|---|
-| Footer, every page (shell-07) | "Three to five bets a day, frozen before first pitch and graded after" | "Beta. Picks are published before each game and graded as they stood at their lock, win or lose. Nothing here is a guarantee." |
+| Footer, every page (shell-07) | "Three to five bets a day, frozen before first pitch and graded after" | "Beta. Every pick here is part of an ongoing test — published before each game and graded as it stood at its lock, win or lose. This is analysis, not advice. Nothing here is a guarantee; bet at your own risk." (extended 2026-09-20 when NFL and tennis went live) |
 | Landing title (landing-05) | "tonight's picks, frozen before first pitch" | "LINEHOUND — Daily MLB picks and matchup analysis" |
 | Landing record card (landing-05) | "frozen before first pitch and written to a tamper-proof chain" | "published before each game and recorded in a hash-chained ledger" |
 | Landing hero (landing-03, -06) | "Needs 56% to break even · we make it 57%"; "Try 3 Bet Checks free" | The adopted headline, a sample card (via `compactPickCard`), "See today's picks". No "Tonight" before the card loads. |
@@ -891,7 +931,85 @@ closed by the chrome group's shell work, not repeated per page.
   overlap) — `app.css` already reserves bottom padding sized to clear the
   tab bar, so this may already be a capture artifact, not a live bug.
 
-**NFL and Tennis.**
+**NFL and Tennis** (amended 2026-09-19 — both went live; the paragraph below
+this line describes the pre-2026-09-19 shape and is kept for history).
+- ~~The coming-soon page on all five routes (nfl-today-1 to -5, nfl-record-1
+  to -5, tennis-board-1 to -5).~~ Superseded: `#/nfl` and `#/nfl/today` now
+  render `card.js`'s `renderCard(main, {sport: "nfl"})`; `#/nfl/record`
+  renders `cardrecord.js`'s `renderCardRecord(main, {sport: "nfl"})`;
+  `#/tennis` and `#/tennis/board` render `tennis.js`'s
+  `renderTennisBoard(main)`. NBA and NHL are the only sports still on the
+  shared coming-soon page.
+- **Each sport has its own menu** (corrected 2026-09-20 — an earlier
+  version of this bullet said MLB's NAV_ITEMS stay visible on NFL and
+  Tennis pages; that was the bug, not the design). `main.js`'s
+  `mountNav(rail, tabbar, activeHash, sport)` mounts the live sport's own
+  `submenu` from `sport.js`'s SPORTS registry: NFL gets GAMEDAY (`#/nfl`)
+  and RESULTS (`#/nfl/record`), Tennis gets BOARD (`#/tennis`), each with
+  the sport's label as the rail heading. With MLB's menu on the NFL page,
+  RESULTS opened MLB's record. `tests/test_web_nfl_tennis_truth.py` pins
+  the per-sport mount.
+- **NFL's record counts one rule at a time** (2026-09-20). The favourites
+  rule (NFL_CARD_V1, retired 2026-09-20) was replaced by NFL_CARD_V2
+  (spreads, totals and moneylines, never at -200 or worse). `#/nfl/record`
+  shows the live rule's record only and says so ("EVERY CARD UNDER THE
+  CURRENT NFL RULE"), never "every card we have ever published";
+  `#/nfl/record?rule=NFL_CARD_V1` is the retired rule's own record (the
+  graded 2026-09-17 pick lives there), linked from both the record page
+  and the retired-rule label on an old NFL card. The two are never pooled.
+  If the server answers a `?rule=` request with another rule's record, the
+  page shows no figures rather than that rule's numbers under the wrong
+  name. The card's record line reads "THE RECORD SO FAR · CURRENT NFL RULE".
+- **Sample size, not spin.** `card.js`'s `recordLine` and `cardrecord.js`'s
+  `headline` suppress the win-rate/ROI percentage below `NFL_SAMPLE_FLOOR`
+  (10) graded picks and render the raw count plus an explicit sample-size
+  sentence (`data-hook="card-record-small-sample"` /
+  `data-hook="record-nfl-sample-note"`). `NFL_NOTICE` ("Experimental
+  selections. Performance is still being evaluated.") still renders.
+- **NFL's record page has no props, totals or "EVERYTHING TOGETHER"
+  panel** (2026-09-20). Those are MLB's populations; NFL_CARD_V2 keeps
+  spreads, totals and moneylines in the one `picks` list, so its headline
+  is labelled ALL PICKS (W-L-P) and a sentence says every market is in it.
+  On NFL the old panels said "No total has graded yet" after a total had
+  graded, named props NFL never had, and the combined panel printed a WIN
+  RATE and ROI off one pick, straight past the sample floor.
+- **NFL cards carry no model copy** when the payload says `has_model:
+  false` (every NFL_CARD_V2 card — its fair price is the market's own
+  consensus): no "Our number", no "uncalibrated" warning, no thin-slate
+  "our own numbers do not agree" sentence. MLB never sends the key and is
+  unchanged. NFL picks carry no "Open this matchup" link — that route is
+  MLB's game page and 404s on an NFL game.
+- Tennis is live as a **research board only**. `tennis.js`'s own notice —
+  "Research only. No tennis picks until results grading is connected." —
+  is unchanged and still renders. There is no tennis pick, slip or record
+  surface anywhere in the router, and none should ever be added while
+  results grading is not connected (verified 2026-09-19: the BALLDONTLIE
+  tennis results feed returns HTTP 401 in CI — a plan/entitlement limit,
+  not a broken key — so no tennis pick could be graded even if one were
+  published). Separately, `src.pipeline.snapshots.read_multibook` carries
+  zero tennis rows as of 2026-09-20: tennis capture has been refused since
+  2026-09-16 by a probe deadlock (`== tennis capture ==` logs "1 key(s)
+  considered, 0 captured"), while books were pricing WTA matches.
+  **CORRECTED 2026-09-20:** the empty state used to read "No tennis matches
+  are priced for this date." — a claim about the market, and false. The
+  board payload now carries `captured_any` and `last_captured_utc`
+  (`tennis_board.board_for_date`), and the page says which empty it is:
+  "No tennis prices have been captured yet … This board fills in as prices
+  are captured." when nothing is on file at all, or "We have no captured
+  prices for a tennis match on this date." (plus the newest capture time)
+  when there are captures for other dates. Neither sentence describes what
+  the books are doing. The news banner's tennis item says the same: the
+  board fills in as prices are captured, no picks until results can be
+  graded.
+- A failure on the tennis board (401 without an invite token, a 5xx, a
+  timeout) renders the shared sign-in or REQUEST FAILED panel. Before
+  2026-09-20 `tennis.js` called `renderError(err)` instead of
+  `renderError(main, err)`, threw inside its own catch, and left the page
+  blank.
+
+<details>
+<summary>Pre-2026-09-19 text (history)</summary>
+
 - The coming-soon page on all five routes (nfl-today-1 to -5, nfl-record-1
   to -5, tennis-board-1 to -5).
 - The MLB menu stays visible, with nothing in it selected.
@@ -899,6 +1017,8 @@ closed by the chrome group's shell work, not repeated per page.
   `card.js`'s NFL branches, `cardrecord.js`'s NFL branch) stay on disk,
   unmodified and unrouted — `tests/test_web_tennis_board.py` reads only
   `tennis.js` directly and keeps passing untouched.
+
+</details>
 
 **Live `#/live` (internal).**
 - Linked from nowhere in any public chrome.
@@ -916,8 +1036,10 @@ closed by the chrome group's shell work, not repeated per page.
 - Interactive targets are 44x44px or larger.
 - A 16px side gutter everywhere, including forms and states.
 - One column. Tables with more than three columns stack.
-- **Hidden on phone:** the clock, the rail, context columns (their content
-  follows the main column), and the MLB tab under 400px.
+- **Hidden on phone:** the clock, the rail and context columns (their
+  content follows the main column). No sport tab is hidden at any width —
+  the under-400px MLB-tab hide was removed on 2026-09-20 (section 3,
+  "Phone").
 - **Never hidden:** section meta, sample sizes, conditions, the
   experimental notice.
 - Only the tab bar is fixed. Content ends above it.
@@ -1119,7 +1241,9 @@ verification performed.
 - `.tabbar` five-tab width at 360px — measured against the condensed font
   metrics; added an explicit acceptance check where none existed.
 - The MLB tab hides under 400px, not 375px — measured slack at 375-399px
-  is 4px, not enough for real font/padding variance.
+  is 4px, not enough for real font/padding variance. (Superseded
+  2026-09-20: with NFL and Tennis as tabs the same rule hid all three, so
+  it was removed — see section 3, "Phone".)
 - The news banner's text and controls split onto two rows — measured the
   longest item at 636px, wider than "one line" or "two lines with an
   inline tag" can support at the stated widths.

@@ -45,7 +45,13 @@ def _non_comment_lines(name: str):
 class SportsRegistryIncludesFourComingSoonSports(unittest.TestCase):
     """Owner addition, 2026-09-15 (beyond DESIGN_BUILD_PLAN.json's CHR-1
     task text): "the SPORTS registry also carries nba and nhl with status
-    coming_soon and homes #/nba and #/nhl.\""""
+    coming_soon and homes #/nba and #/nhl."
+
+    AMENDED 2026-09-19: NFL and Tennis went live (docs/DESIGN_SYSTEM.md
+    section 3 amendment) -- this class's name is now stale (only two
+    sports are coming_soon, not four) but is kept rather than renamed so
+    this file's own history stays legible; its two NFL/Tennis assertions
+    are replaced with the live-status equivalents rather than deleted."""
 
     def setUp(self):
         self.text = _read("sport.js")
@@ -57,15 +63,15 @@ class SportsRegistryIncludesFourComingSoonSports(unittest.TestCase):
         self.assertIn('key: "mlb"', self.text)
         self.assertIn('status: "live"', self.text)
 
-    def test_nfl_coming_soon(self):
+    def test_nfl_live(self):
         self.assertIn(
-            'key: "nfl", label: "NFL", status: "coming_soon", home: "#/nfl"',
+            'key: "nfl",\n    label: "NFL",\n    status: "live",\n    home: "#/nfl"',
             self.text,
         )
 
-    def test_tennis_coming_soon(self):
+    def test_tennis_live(self):
         self.assertIn(
-            'key: "tennis", label: "Tennis", status: "coming_soon", home: "#/tennis"',
+            'key: "tennis",\n    label: "Tennis",\n    status: "live",\n    home: "#/tennis"',
             self.text,
         )
 
@@ -82,13 +88,17 @@ class SportsRegistryIncludesFourComingSoonSports(unittest.TestCase):
         )
 
 
-class TopStripShowsOnlyNflAndTennis(unittest.TestCase):
-    """Decision 4 (SITE_REDESIGN_2026-09-15.md): "Top right, in red: 'NFL
-    · COMING SOON' and 'TENNIS · COMING SOON'." NBA/NHL are registered
-    (above) but must not render in the strip -- DESIGN_SYSTEM.md never
-    places them in the phone sport row or the desktop rail heading list
-    either, so renderSportLevel must not loop generically over every
-    coming_soon entry."""
+class TopStripShowsNoComingSoonLinksToday(unittest.TestCase):
+    """Decision 4 (SITE_REDESIGN_2026-09-15.md) originally read: "Top
+    right, in red: 'NFL · COMING SOON' and 'TENNIS · COMING SOON'."
+    AMENDED 2026-09-19: both graduated to live tabs, so the strip's
+    coming-soon list (`TOP_STRIP_COMING_SOON`) is empty today. NBA/NHL
+    stay registered `coming_soon` but are still not one of that list's
+    entries -- DESIGN_SYSTEM.md never places them in the phone sport row
+    or the desktop rail heading list either, so renderSportLevel must not
+    loop generically over every coming_soon entry (that would surface
+    NBA/NHL the moment either is registered, which is not what D6 asked
+    for)."""
 
     def setUp(self):
         self.text = _read("sport.js")
@@ -100,15 +110,28 @@ class TopStripShowsOnlyNflAndTennis(unittest.TestCase):
             self.text,
         )
 
-    def test_the_two_soon_links_are_a_fixed_list_not_a_generic_filter(self):
-        self.assertIn('["nfl", "tennis"]', self.text)
-        # A generic filter would read SPORTS for every coming_soon entry
-        # and render four links, not two.
-        self.assertNotIn("SPORTS.filter", self.text)
+    def test_the_soon_links_are_a_named_list_not_a_generic_filter(self):
+        self.assertIn("const TOP_STRIP_COMING_SOON = [];", self.text)
+        self.assertIn("for (const key of TOP_STRIP_COMING_SOON)", self.text)
+        # A generic filter would read SPORTS for every coming_soon entry and
+        # render a link for each one registered, not the named list -- code
+        # only, since this file's own doc comments now explain (in prose)
+        # why that pattern is avoided, which legitimately names it.
+        offenders = [(n, l) for n, l in _non_comment_lines("sport.js") if "SPORTS.filter" in l]
+        self.assertEqual(offenders, [], f"sport.js uses SPORTS.filter in code: {offenders}")
 
     def test_live_sports_render_as_tabs(self):
         self.assertIn('status !== "live"', self.text)
         self.assertIn("sportlevel__tab", self.text)
+
+    def test_nfl_and_tennis_are_live_not_in_the_coming_soon_list(self):
+        # The literal pair must not appear as a CODE list any more -- they
+        # graduated to tabs (SportsRegistryIncludesFourComingSoonSports.
+        # test_nfl_live/test_tennis_live above). Doc comments are allowed to
+        # keep naming the pair as history (this file's own amendment note
+        # does exactly that), so this checks code lines only.
+        offenders = [(n, l) for n, l in _non_comment_lines("sport.js") if '["nfl", "tennis"]' in l]
+        self.assertEqual(offenders, [], f"sport.js still uses [\"nfl\", \"tennis\"] as a code list: {offenders}")
 
 
 class LiveLeavesThePublicChrome(unittest.TestCase):
@@ -179,9 +202,10 @@ class FooterSummaryMatchesTheRedesign(unittest.TestCase):
 
     def test_summary_constant_exists_with_the_new_wording(self):
         self.assertIn(
-            "Beta. Picks are published before each game and graded as "
-            "they stood at their lock, win or lose. Nothing here is a "
-            "guarantee.",
+            "Beta. Every pick here is part of an ongoing test — published "
+            "before each game and graded as it stood at its lock, win or "
+            "lose. This is analysis, not advice. Nothing here is a "
+            "guarantee; bet at your own risk.",
             self.text,
         )
 

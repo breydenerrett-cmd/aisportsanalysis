@@ -27,6 +27,11 @@
  * `daily_card.CARD_DISCLAIMER` verbatim (GET /card/record's `disclaimer`
  * field), never a second hand-written sentence that could drift from it.
  *
+ * NFL IS ONE RULE AT A TIME (2026-09-20). `#/nfl/record` counts the live
+ * NFL rule only and says so; `#/nfl/record?rule=NFL_CARD_V1` is the
+ * retired favourites rule's own record. The two are never pooled, and
+ * neither page shows MLB's props/totals panels (see renderCardRecord).
+ *
  * LOSSES AND VOIDS GET NO SMALLER A TYPEFACE THAN WINS. The headline W-L-P
  * is one string in one size and one colour -- see headline() below -- and
  * voidsNote() is rendered unconditionally, not only when there happen to
@@ -38,7 +43,7 @@
 import { apiGet } from "./api.js";
 import { el, clear, renderError, renderLoading, notYetAvailable, formatAmerican } from "./dom.js";
 import { bookLabel } from "./labels.js";
-import { NFL_NOTICE } from "./sport.js";
+import { NFL_NOTICE, NFL_RETIRED_RULE } from "./sport.js";
 
 // GET /card/history's own default (api/card.py's DEFAULT_HISTORY_LIMIT) --
 // kept in sync by eye rather than fetched, since it only ever changes the
@@ -117,12 +122,27 @@ function statTile(label, valueNode) {
   return tile;
 }
 
-function headline(record) {
+/** Below this many graded picks, a sport's win rate or ROI is noise dressed
+ * as a track record. Mirrors card.js's own NFL_SAMPLE_FLOOR exactly (kept
+ * as a separate constant, not a shared import, because this page has no
+ * existing import from card.js and one two-line constant is not worth
+ * introducing a cross-file dependency for) -- NFL published and graded its
+ * first pick on 2026-09-17 (n=1 today); this floor is a round, conservative
+ * number, not derived from that one pick. */
+const NFL_SAMPLE_FLOOR = 10;
+
+function headline(record, sport = "mlb") {
   const wrap = el("div", { class: "crp-headline panel chamfer", "data-hook": "record-headline" });
   const grid = el("div", { class: "crp-stats" });
 
   const staked = typeof record.n_staked === "number" ? record.n_staked : 0;
   const decided = staked > 0;
+  // SAMPLE SIZE, NOT SPIN (2026-09-19, NFL going live). A win rate or ROI
+  // off a handful of NFL picks reads like a track record and is not one --
+  // below the floor, those two tiles show the raw count instead of a
+  // percentage, and an unmissable note states the actual sample size
+  // rather than leaving a reader to notice it is tiny on their own.
+  const tooSmallForARate = sport === "nfl" && staked > 0 && staked < NFL_SAMPLE_FLOOR;
 
   // ONE STRING. Wins and losses are two numbers inside the same span, at
   // the same size, in the same colour -- never two separately-tinted
@@ -132,19 +152,43 @@ function headline(record) {
   // props, graded apart (card_ledger.record's `by_kind`). The top-level
   // figures are the game picks alone -- the label says so, and the prop
   // record has its own panel below rather than being pooled in here.
-  grid.appendChild(statTile("GAME PICKS (W-L-P)", figure(wlp)));
+  // NFL is one population (2026-09-20): NFL_CARD_V2 puts spreads, totals
+  // and moneylines in the one `picks` list and has no props, so its count
+  // is every pick, labelled as such -- see the markets note below.
+  grid.appendChild(statTile(sport === "nfl" ? "ALL PICKS (W-L-P)" : "GAME PICKS (W-L-P)",
+    figure(wlp)));
   grid.appendChild(statTile("VOIDS", figure(String(record.voids || 0), record.voids ? "warn" : null)));
-  grid.appendChild(statTile("WIN RATE", decided ? figure(winRateFmt(record.win_rate)) : absentFigure()));
+  grid.appendChild(statTile("WIN RATE", decided && !tooSmallForARate
+    ? figure(winRateFmt(record.win_rate)) : absentFigure()));
   grid.appendChild(statTile("UNITS NET", decided
     ? figure(unitsFmt(record.profit_units), record.profit_units > 0 ? "pos" : record.profit_units < 0 ? "neg" : null)
     : absentFigure()));
-  grid.appendChild(statTile("ROI PER UNIT STAKED", decided
+  grid.appendChild(statTile("ROI PER UNIT STAKED", decided && !tooSmallForARate
     ? figure(roiFmt(record.roi_pct), record.roi_pct > 0 ? "pos" : record.roi_pct < 0 ? "neg" : null)
     : absentFigure()));
   grid.appendChild(statTile("DAYS SETTLED", figure(String(record.days || 0))));
 
   wrap.appendChild(grid);
+
+  if (tooSmallForARate) {
+    wrap.appendChild(el("p", { class: "crp-voids", "data-hook": "record-nfl-sample-note",
+      text: `NFL sample size: ${staked} pick${staked === 1 ? "" : "s"} graded. That is too few for a `
+          + `win rate or ROI to mean anything -- the W-L-P count above is the whole record so far, not `
+          + `a percentage.` }));
+  }
   return wrap;
+}
+
+/** What the NFL headline's one count holds (2026-09-20). MLB's page splits
+ * game picks, props and totals into three panels; NFL has one population,
+ * so instead of those panels it gets this sentence saying so. The retired
+ * rule only ever took moneylines, and its sentence says that instead. */
+function nflMarketsNote(rule) {
+  return el("p", { class: "crp-voids", "data-hook": "record-nfl-markets-note",
+    text: rule === NFL_RETIRED_RULE
+      ? "Every pick the old rule made is in this one count. It only ever took moneylines."
+      : "Every NFL pick is in this one count -- spreads, totals and moneylines alike. NFL has "
+        + "no player props and no separate totals record." });
 }
 
 /**
@@ -627,16 +671,26 @@ function calendar(settledDays, pendingDays) {
 }
 
 
-function emptyRecord() {
+function emptyRecord(sport = "mlb", rule = null) {
   const wrap = el("section", { class: "gutter", "data-hook": "record-empty" });
   const panel = el("div", { class: "panel chamfer card2empty" });
   panel.appendChild(el("span", { class: "card2empty__label", text: "NOTHING SETTLED YET" }));
+  // NFL's page counts one rule at a time (2026-09-20), so its empty state
+  // names the rule -- "nothing has been graded" over an NFL ledger that
+  // holds a graded 2026-09-17 pick under the old rule would be false.
+  const nothingYet = sport !== "nfl" ? "Nothing has been graded yet."
+    : rule === NFL_RETIRED_RULE ? "Nothing from the old NFL rule has been graded yet."
+      : "Nothing has been graded under the current NFL rule yet.";
   panel.appendChild(el("p", { class: "card2empty__body",
-    text: "Nothing has been graded yet. Every card is settled the morning after it runs, win or lose, and this "
+    text: `${nothingYet} Every card is settled the morning after it runs, win or lose, and this `
         + "page fills in from the first settled day on — including the days it loses." }));
   const actions = el("div", { class: "card2empty__actions" });
+  // Sport-aware since 2026-09-19 (NFL went live): an NFL reader here should
+  // land on NFL's own card, not MLB's -- see card.js's emptyCard for the
+  // same reasoning applied to the card page's own empty state.
   actions.appendChild(el("a", { class: "btn btn--primary chamfer chamfer--btn",
-    href: "#/today", text: "SEE TONIGHT'S CARD" }));
+    href: sport === "nfl" ? "#/nfl" : "#/today",
+    text: sport === "nfl" ? "SEE THE NFL CARD" : "SEE TONIGHT'S CARD" }));
   panel.appendChild(actions);
   wrap.appendChild(panel);
   return wrap;
@@ -646,12 +700,70 @@ function emptyRecord() {
  * View
  * ------------------------------------------------------------------- */
 
+/** The NFL record's heading and intro, naming the rule it counts
+ * (2026-09-20). NFL's ledger holds two rules since NFL_CARD_V1 (take the
+ * favourite) was retired for NFL_CARD_V2 (value lines); the page shows ONE
+ * rule's record at a time and never the two pooled. So it cannot say
+ * "every card we have ever published" -- it says which rule, and links to
+ * the other one's record, so the old rule's losses never quietly drop out
+ * of sight. */
+function nflIntro(screen, rule) {
+  if (rule === NFL_RETIRED_RULE) {
+    screen.appendChild(el("p", { class: "card2lede card2lede--notice",
+      "data-hook": "record-nfl-retired-notice",
+      text: "This is the record of our old NFL rule, retired on 2026-09-20. It is kept apart from the "
+          + "current rule's record and never added to it." }));
+    screen.appendChild(sectionHead("THE RECORD", "THE OLD NFL RULE"));
+    screen.appendChild(el("p", { class: "crp-intro",
+      text: "Every pick our old NFL rule made -- it took the market favourite in every game -- frozen "
+          + "before the result was known, graded as published, and chained so none of it can be quietly "
+          + "edited afterward: the wins and the losses both." }));
+    screen.appendChild(el("a", { class: "card2rec__link", href: "#/nfl/record",
+      "data-hook": "record-current-rule-link", text: "SEE THE CURRENT NFL RULE'S RECORD →" }));
+    return;
+  }
+  screen.appendChild(el("p", { class: "card2lede card2lede--notice",
+    "data-hook": "record-nfl-notice", text: NFL_NOTICE }));
+  screen.appendChild(sectionHead("THE RECORD", "EVERY CARD UNDER THE CURRENT NFL RULE"));
+  screen.appendChild(el("p", { class: "crp-intro",
+    text: "Every NFL pick made under the current rule -- spreads, totals and moneylines, never at -200 "
+        + "or worse -- frozen before the result was known and chained so none of it can be quietly edited "
+        + "afterward: the wins and the losses both. Picks made by our old rule, which took the favourite, "
+        + "stay in the same ledger exactly as published and have a record of their own." }));
+  screen.appendChild(el("a", { class: "card2rec__link",
+    href: `#/nfl/record?rule=${NFL_RETIRED_RULE}`,
+    "data-hook": "record-retired-rule-link", text: "SEE THE OLD RULE'S RECORD →" }));
+}
+
+/** Shown instead of any figure when the retired rule's record was asked
+ * for and the server answered with a different rule's (a server that does
+ * not know `?rule=` yet serves the live rule). Printing those numbers
+ * under the old rule's heading would be a false page. */
+function ruleUnavailable(screen) {
+  const wrap = el("section", { class: "gutter", "data-hook": "record-rule-unavailable" });
+  const panel = el("div", { class: "panel chamfer card2empty" });
+  panel.appendChild(el("span", { class: "card2empty__label", text: "NOT AVAILABLE HERE YET" }));
+  panel.appendChild(el("p", { class: "card2empty__body",
+    text: "This server did not send the old NFL rule's record, so nothing is shown rather than another "
+        + "rule's numbers under its name. Its picks are kept in the ledger exactly as published." }));
+  const actions = el("div", { class: "card2empty__actions" });
+  actions.appendChild(el("a", { class: "btn btn--primary chamfer chamfer--btn", href: "#/nfl/record",
+    text: "SEE THE CURRENT NFL RECORD" }));
+  panel.appendChild(actions);
+  wrap.appendChild(panel);
+  screen.appendChild(wrap);
+}
+
 export async function renderCardRecord(container, options = {}) {
   // Support both old signature renderCardRecord(container) and new
   // renderCardRecord(container, {sport}) for backward compatibility
   const sport = (typeof options === "object" && options !== null)
     ? (options.sport || "mlb")
     : "mlb";
+  // Only the one retired NFL rule id is ever forwarded (2026-09-20) -- a
+  // typed `?rule=` reaches the API only if it is exactly that id.
+  const rule = sport === "nfl" && options && options.rule === NFL_RETIRED_RULE
+    ? NFL_RETIRED_RULE : null;
 
   clear(container);
   const screen = el("div", { class: "screen crp-screen", "data-view": "record-card" });
@@ -661,8 +773,9 @@ export async function renderCardRecord(container, options = {}) {
   let record;
   let history;
   try {
-    const recordUrl = `/card/record${sport !== "mlb" ? `?sport=${sport}` : ""}`;
-    const historyUrl = `/card/history?limit=${HISTORY_LIMIT}${sport !== "mlb" ? `&sport=${sport}` : ""}`;
+    const ruleParam = rule ? `&rule=${encodeURIComponent(rule)}` : "";
+    const recordUrl = `/card/record${sport !== "mlb" ? `?sport=${sport}${ruleParam}` : ""}`;
+    const historyUrl = `/card/history?limit=${HISTORY_LIMIT}${sport !== "mlb" ? `&sport=${sport}${ruleParam}` : ""}`;
     [record, history] = await Promise.all([
       apiGet(recordUrl),
       apiGet(historyUrl),
@@ -674,16 +787,18 @@ export async function renderCardRecord(container, options = {}) {
   }
   clear(screen);
 
-  // Render notice for NFL
   if (sport === "nfl") {
-    screen.appendChild(el("p", { class: "card2lede card2lede--notice",
-      "data-hook": "record-nfl-notice", text: NFL_NOTICE }));
+    nflIntro(screen, rule);
+    if (rule && (!record || record.rule !== rule)) {
+      ruleUnavailable(screen);
+      return;
+    }
+  } else {
+    screen.appendChild(sectionHead("THE RECORD", "EVERY CARD WE HAVE EVER PUBLISHED"));
+    screen.appendChild(el("p", { class: "crp-intro",
+      text: "Every pick this product has made, frozen before the result was known and chained so none of it can "
+          + "be quietly edited afterward — the wins and the losses both." }));
   }
-
-  screen.appendChild(sectionHead("THE RECORD", "EVERY CARD WE HAVE EVER PUBLISHED"));
-  screen.appendChild(el("p", { class: "crp-intro",
-    text: "Every pick this product has made, frozen before the result was known and chained so none of it can "
-        + "be quietly edited afterward — the wins and the losses both." }));
   screen.appendChild(unitsNote());
 
   // THE CALENDAR SITS ABOVE BOTH BRANCHES, because it is the one thing on
@@ -698,16 +813,29 @@ export async function renderCardRecord(container, options = {}) {
   const nothingSettled = !record.days;
   if (nothingSettled) {
     screen.appendChild(chainStatus(record));
-    screen.appendChild(emptyRecord());
+    screen.appendChild(emptyRecord(sport, rule));
   } else {
-    screen.appendChild(headline(record));
+    screen.appendChild(headline(record, sport));
     screen.appendChild(voidsNote(record));
-    const props = propHeadline(record);
-    if (props) screen.appendChild(props);
-    const totals = totalHeadline(record);
-    if (totals) screen.appendChild(totals);
-    const combined = combinedHeadline(record);
-    if (combined) screen.appendChild(combined);
+    // MLB-ONLY PANELS (2026-09-20). Props, totals-graded-apart and their
+    // sum describe MLB's card, which splits those populations. NFL's rule
+    // keeps spreads, totals and moneylines in ONE `picks` list, so on NFL
+    // these panels said "No total has graded yet" after a total had graded
+    // (inside the headline count), named props NFL has never had, and the
+    // combined panel printed WIN RATE 100.0% / ROI +105.0% off one pick --
+    // straight past NFL_SAMPLE_FLOOR, one panel below the note saying no
+    // rate would be shown. NFL gets one sentence saying what its count
+    // holds instead.
+    if (sport === "nfl") {
+      screen.appendChild(nflMarketsNote(rule));
+    } else {
+      const props = propHeadline(record);
+      if (props) screen.appendChild(props);
+      const totals = totalHeadline(record);
+      if (totals) screen.appendChild(totals);
+      const combined = combinedHeadline(record);
+      if (combined) screen.appendChild(combined);
+    }
     screen.appendChild(chainStatus(record));
 
     const days = (history && history.days) || [];

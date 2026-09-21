@@ -37,8 +37,13 @@ import { BRAND_NAME } from "./brand.js";
 // the instant it was first published. This line now matches that policy
 // exactly, and drops the specific "three to five" count and "frozen"
 // verb, neither of which the record wording repeats.
+//
+// EXTENDED 2026-09-20 (owner: NFL and tennis go live beside MLB). With
+// three sports on the page, one of them with a single graded pick and one
+// with no graded picks at all, the footer now says outright that every
+// pick is part of a test and that any bet is the reader's own decision.
 const SUMMARY =
-  "Beta. Picks are published before each game and graded as they stood at their lock, win or lose. Nothing here is a guarantee.";
+  "Beta. Every pick here is part of an ongoing test — published before each game and graded as it stood at its lock, win or lose. This is analysis, not advice. Nothing here is a guarantee; bet at your own risk.";
 
 /**
  * THE RESEARCH COUNTS, FROM THE REGISTRY, ONCE.

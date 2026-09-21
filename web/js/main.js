@@ -10,20 +10,38 @@
  * reload. `#/betcheck?date=...` needs no server-side rewrite rule at all.
  *
  * REDESIGN, 2026-09-15 (docs/DESIGN_SYSTEM.md section 3) -- every sport is
- * its own section (D6): MLB is live and keeps its sub menu below; NFL,
- * TENNIS and any future sport (NBA, NHL) show the one shared coming-soon
- * page (comingsoon.js) instead of a real board, however many routes they
- * carry. #/live stays wired exactly as before -- reachable by a typed URL,
- * linked from nowhere in this file's rendered chrome (D5).
+ * its own section (D6): MLB is live and keeps its sub menu below; NBA and
+ * NHL show the one shared coming-soon page (comingsoon.js) instead of a
+ * real board, however many routes they carry. #/live stays wired exactly
+ * as before -- reachable by a typed URL, linked from nowhere in this
+ * file's rendered chrome (D5).
+ *
+ * NFL AND TENNIS WENT LIVE 2026-09-19 -- both used to be coming-soon
+ * sports here too; they now route to their real (kept-on-disk-until-now)
+ * views instead. NFL genuinely publishes picks (card.js's `renderCard`,
+ * cardrecord.js's `renderCardRecord`, both called with `{sport: "nfl"}`)
+ * -- one pick has been published and graded so far, and both views render
+ * an explicit sample-size line alongside NFL_NOTICE rather than a win
+ * rate or ROI off that one pick. Tennis routes to `tennis.js`'s
+ * `renderTennisBoard`, a de-vigged research board that publishes no pick,
+ * slip or record, ever -- its own "Research only" notice stays on screen.
  *
  * ROUTES
  * -------------------------------------------------------------------
  *   #/today                                  GAMEDAY (MLB)
- *   #/nfl, #/nfl/today, #/nfl/record          NFL coming-soon page
- *   #/tennis, #/tennis/board                  Tennis coming-soon page
+ *   #/nfl, #/nfl/today                       NFL GAMEDAY (the card,
+ *                                             {sport: "nfl"})
+ *   #/nfl/record                             NFL RESULTS (the graded
+ *                                             record, {sport: "nfl"} --
+ *                                             the live rule only)
+ *   #/nfl/record?rule=NFL_CARD_V1            The retired favourites
+ *                                             rule's own record, apart
+ *                                             from the live rule's
+ *   #/tennis, #/tennis/board                  TENNIS BOARD (research only,
+ *                                             no picks -- tennis.js)
  *   #/nba, #/nhl                              Coming-soon page (D6, ahead
  *                                             of either sport joining the
- *                                             SPORTS registry)
+ *                                             SPORTS registry live)
  *   #/games[/YYYY-MM-DD]                     GAMES (slate)
  *   #/game/YYYY-MM-DD/AWAY/HOME               GAMES (one game, quick+advanced)
  *   #/betcheck[?date=&away=&home=]           BET CHECK
@@ -61,10 +79,12 @@ import { el, clear, formatEasternDate, formatEasternClock } from "./dom.js";
 import { setPublicDemo, getToken } from "./api.js";
 import { setShellStatus, mountSportLevel } from "./shell.js";
 import { renderDisclaimerFooter, meta as fetchMeta } from "./meta.js";
-import { parseSport, SPORTS } from "./sport.js";
+import { parseSport, SPORTS, NFL_RETIRED_RULE } from "./sport.js";
 import { mountNews } from "./news.js";
 import { renderComingSoon } from "./comingsoon.js";
 import { renderToday } from "./today.js";
+import { renderCard } from "./card.js";
+import { renderTennisBoard } from "./tennis.js";
 import { renderGamesList, renderGameDetail } from "./games.js";
 import { renderBetCheck } from "./betcheck.js";
 import { renderSignin } from "./signin.js";
@@ -106,12 +126,14 @@ const ROUTE_ALIASES = {
   results: "record-card",
 };
 
-// Sports with no real board yet (D4/D6): every route under one of these
-// goes to the single shared coming-soon page, whatever sub-route it
-// carries. NBA and NHL are not in sport.js's SPORTS registry yet (added
-// only once each is announced), so they are also matched directly by the
-// route's own first segment below, not only through parseSport's sport.
-const COMING_SOON_SPORTS = new Set(["nfl", "tennis", "nba", "nhl"]);
+// Sports with no real board yet (D6): every route under one of these goes
+// to the single shared coming-soon page, whatever sub-route it carries.
+// NFL and TENNIS were in this set too until 2026-09-19, when both went
+// live and moved to their own dispatch branches below. NBA and NHL are
+// matched both here and directly by the route's own first segment further
+// down, since parseSport only recognises a sport once it is in
+// sport.js's SPORTS registry.
+const COMING_SOON_SPORTS = new Set(["nba", "nhl"]);
 
 // GET /meta's public_demo flag, fetched once at boot (see boot() below).
 // null until the fetch resolves -- mountNav treats "not known yet" the
@@ -153,23 +175,35 @@ function navItem(item, isActive, withSub) {
 }
 
 /**
- * `activeHash` is the NAV_ITEMS hash the current route answers to
- * (navHashForRoute), or null while browsing a coming-soon sport -- MLB's
- * menu stays visible with nothing in it selected (docs/DESIGN_SYSTEM.md,
- * "NFL and Tennis" section), rather than reusing MLB's own routes'
- * highlight by accident.
+ * `activeHash` is the menu hash the current route answers to: a NAV_ITEMS
+ * hash for MLB (navHashForRoute), the sport's own submenu hash for a live
+ * NFL/Tennis route, or null while browsing a coming-soon sport (NBA/NHL)
+ * -- MLB's menu stays visible there with nothing in it selected, rather
+ * than reusing MLB's own routes' highlight by accident. Live NFL and
+ * Tennis mount their OWN registry submenu instead (docs/DESIGN_SYSTEM.md
+ * section 6, "NFL and Tennis"; tests/test_web_nfl_tennis_truth.py pins
+ * it).
  */
-function mountNav(rail, tabbar, activeHash) {
+function mountNav(rail, tabbar, activeHash, sport = "mlb") {
   clear(rail);
   clear(tabbar);
-  rail.appendChild(el("div", { class: "rail__heading", text: railHeadingLabel() }));
+  // A LIVE non-MLB sport gets its own menu from sport.js's registry
+  // (2026-09-20). Before that, NFL and Tennis kept MLB's menu, so the
+  // RESULTS link on the NFL page silently opened MLB's record.
+  const own = sport !== "mlb"
+    ? SPORTS.find((entry) => entry.key === sport && entry.status === "live"
+        && entry.submenu && entry.submenu.length)
+    : null;
+  rail.appendChild(el("div", { class: "rail__heading",
+    text: own ? own.label : railHeadingLabel() }));
   const items = el("div", { class: "rail__items" });
   // A public-demo visitor, or one with no invite token at all, has no
   // saved-bets identity -- BETS is hidden rather than shown as a route
   // that will only ever 401 (D7).
   const signedIn = !!getToken();
   const showBets = signedIn && !publicDemo;
-  const visibleItems = showBets ? NAV_ITEMS : NAV_ITEMS.filter((item) => item.hash !== "#/mybets");
+  const visibleItems = own ? own.submenu
+    : showBets ? NAV_ITEMS : NAV_ITEMS.filter((item) => item.hash !== "#/mybets");
   for (const item of visibleItems) {
     const isActive = activeHash !== null && item.hash === activeHash;
     items.appendChild(navItem(item, isActive, true));
@@ -240,9 +274,13 @@ async function _renderRouteInner(main) {
   const tabbar = document.querySelector("[data-hook='primary-nav-mobile']");
   const newsHost = document.querySelector("[data-hook='news-host']");
 
-  // MLB's menu stays visible with nothing selected while browsing a
-  // coming-soon sport (docs/DESIGN_SYSTEM.md, "NFL and Tennis" section).
-  mountNav(rail, tabbar, sport === "mlb" ? navHashForRoute(route) : null);
+  // MLB gets NAV_ITEMS; a live NFL/Tennis gets its own registry submenu
+  // (mountNav); a coming-soon sport keeps MLB's menu with nothing selected.
+  let activeHash = null;
+  if (sport === "mlb") activeHash = navHashForRoute(route);
+  else if (sport === "nfl") activeHash = route === "record" ? "#/nfl/record" : "#/nfl";
+  else if (sport === "tennis") activeHash = "#/tennis";
+  mountNav(rail, tabbar, activeHash, sport);
   setShellStatus(null);
   setClock();
   // Runs on every route change, not once at boot -- aria-current and the
@@ -255,10 +293,35 @@ async function _renderRouteInner(main) {
   window.scrollTo(0, 0);
   if (route === "billing") {
     await renderBilling(main);
-  } else if (sport === "nfl" || sport === "tennis" || sport === "nba" || sport === "nhl") {
-    // Every route under a coming-soon sport, however many sub-segments it
-    // carries, shows the one shared page -- no API calls, no picks, no
-    // figures (D4).
+  } else if (sport === "nfl") {
+    // NFL went live 2026-09-19: #/nfl and #/nfl/today are the card
+    // (mirrors #/today's default-to-gameday fallback -- any route under
+    // nfl that is not "record" shows the card, same as MLB's own router
+    // falls through to renderToday at the bottom of this chain);
+    // #/nfl/record is the graded record. Both are card.js's/
+    // cardrecord.js's own functions, called with {sport: "nfl"} exactly
+    // as they already supported before this route existed (see those
+    // files' own backward-compatible options handling).
+    // #/nfl/record?rule=NFL_CARD_V1 is the retired favourites rule's own
+    // record (2026-09-20) -- kept apart from the live rule's, never pooled.
+    // Only that one known id is passed on; any other ?rule= is ignored.
+    if (route === "record" && query.rule === NFL_RETIRED_RULE) {
+      await renderCardRecord(main, { sport: "nfl", rule: NFL_RETIRED_RULE });
+    } else if (route === "record") {
+      await renderCardRecord(main, { sport: "nfl" });
+    } else {
+      await renderCard(main, { sport: "nfl" });
+    }
+  } else if (sport === "tennis") {
+    // Tennis went live 2026-09-19 too, but as a research board only --
+    // every route under it, however many sub-segments it carries, shows
+    // the one board (tennis.js's renderTennisBoard). No picks, no slip,
+    // no record surface exists for tennis anywhere in this router.
+    await renderTennisBoard(main);
+  } else if (sport === "nba" || sport === "nhl") {
+    // NBA and NHL are still coming-soon (D6): every route under either,
+    // however many sub-segments it carries, shows the one shared page --
+    // no API calls, no picks, no figures (D4).
     await renderComingSoon(main, sport);
   } else if (route === "nba" || route === "nhl") {
     // parseSport does not register nba/nhl as sport prefixes until each is

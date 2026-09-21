@@ -6,10 +6,19 @@
  * remembered per browser.
  *
  * EVERY ITEM MUST BE TRUE TODAY. Verified against the repo, not assumed:
- *   1. NFL COMING SOON -- sport.js's registry (CHR-1) marks nfl
- *      `status: "coming_soon"`; nothing on `#/nfl` publishes a pick
- *      (comingsoon.js, CHR-4).
- *   2. TENNIS COMING SOON -- same, tennis is `status: "coming_soon"`.
+ *   1. NFL LIVE -- sport.js's registry marks nfl `status: "live"` (went
+ *      live 2026-09-19); `#/nfl` renders card.js's real card. One pick has
+ *      been published and graded so far (`data-hook="card-record-small-
+ *      sample"` on that page states the count), which the item's wording
+ *      does not overstate.
+ *   2. TENNIS LIVE, RESEARCH ONLY -- tennis is `status: "live"` too, but
+ *      `#/tennis` is tennis.js's match board, which never publishes a
+ *      pick (see that module's own notice, unchanged by this). CORRECTED
+ *      2026-09-20: the item advertised the board as if it had matches on
+ *      it. Tennis capture was halted from 2026-09-16, the store held no
+ *      tennis prices, and the board was empty for every date -- so the
+ *      item now says the board fills in as prices are captured, which is
+ *      true whether or not any are on file yet.
  *   3. Player props on the card -- src/analysis/daily_card.py's
  *      "PLAYER PROPS ON THE CARD" section (`select_props`,
  *      `_build_prop_pick`, `merge_card_and_props`) genuinely merges prop
@@ -54,24 +63,26 @@ import { chip } from "./layout.js";
 const STORAGE_KEY = "lh.news.dismissed";
 
 /** Bumped whenever NEWS_ITEMS changes, so an old dismissal never hides a
- * genuinely new item list. */
-export const NEWS_VERSION = "2026-09-15";
+ * genuinely new item list. Bumped 2026-09-19: items 1 and 2 below replace
+ * the "COMING SOON" wording that stopped being true the moment NFL and
+ * Tennis were routed to their real pages. Bumped 2026-09-20: NFL switched
+ * from the market favourite to value lines (NFL_CARD_V2), and its record
+ * restarts with the new rule. */
+export const NEWS_VERSION = "2026-09-20";
 
-/** Verbatim, in this order (SITE_REDESIGN_2026-09-15.md decision 3,
- * DESIGN_SYSTEM.md section 3). `href` is the bare app hash; `mountNews`
- * applies `linkPrefix` at render time so the same list works from
- * `index.html` and, prefixed, from `landing.html`. Item 4 has no link in
- * the source spec -- it names a fact about every clock on the site, not
- * one destination. */
+/** `href` is the bare app hash; `mountNews` applies `linkPrefix` at render
+ * time so the same list works from `index.html` and, prefixed, from
+ * `landing.html`. Item 4 has no link in the source spec -- it names a fact
+ * about every clock on the site, not one destination. */
 export const NEWS_ITEMS = [
   {
-    tag: "COMING SOON",
-    text: "NFL: picks for this season are being tested on this week's games before they go on the record.",
+    tag: "NEW",
+    text: "NFL no longer takes favourites. It now picks only prices that beat the rest of the market -- spreads, totals, and moneylines better than -200 -- and often picks nothing. Its record starts fresh with the new rule.",
     href: "#/nfl",
   },
   {
-    tag: "COMING SOON",
-    text: "Tennis: a match board for ATP and WTA events.",
+    tag: "NEW",
+    text: "Tennis: a research match board for ATP and WTA events. It fills in as prices are captured. No picks until results can be graded.",
     href: "#/tennis",
   },
   {

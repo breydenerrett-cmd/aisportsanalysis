@@ -41,8 +41,8 @@
 import { apiGet } from "./api.js";
 import { el, renderError, formatAmerican, formatEasternTime } from "./dom.js";
 import { bookLabel } from "./labels.js";
-import { NFL_NOTICE } from "./sport.js";
 import { experimentalNotice, disclosure, chip } from "./layout.js";
+import { NFL_RETIRED_RULE } from "./sport.js";
 
 // Mirrors src/analysis/daily_card.py's labels. Kept as a lookup rather than
 // rendered raw so the page controls its own typography, and so a label the
@@ -66,6 +66,13 @@ const LABEL_MEANING = {
 // on a quiet board. Past that a reader quoting our number at a book is
 // likely to find a different one.
 const STALE_PRICE_HOURS = 4;
+
+// Below this many graded picks, a sport's win rate or ROI is noise dressed
+// as a track record -- recordLine() shows the raw count and units instead
+// of a percentage for sports below this floor. NFL published and graded
+// its first pick on 2026-09-17 (n=1 today); this floor is a round,
+// conservative number, not derived from that one pick.
+const NFL_SAMPLE_FLOOR = 10;
 
 /** How long the last-published-card fallback may hold up the page.
  *
@@ -162,13 +169,27 @@ function hoursUntil(iso) {
   return (then - Date.now()) / 3600000;
 }
 
+/** Whether a card carries probabilities of its own (2026-09-20).
+ * NFL_CARD_V2 prices every pick off the market's own consensus -- there is
+ * no model, so nothing of ours can be miscalibrated or disagree with the
+ * market -- and its payload says so with `has_model: false`
+ * (src/report/nfl_card.py). A live V2 card used to tell readers "Our own
+ * probabilities are running uncalibrated", which was false. MLB never
+ * sends the key, so every MLB card reads as having its model, exactly as
+ * before. */
+function cardHasOwnModel(payload) {
+  return !(payload && payload.has_model === false);
+}
+
 /** The "View breakdown" body every kind of pick shares: what the market
  * says, what our own number says, what the price needs, the rest of the
  * why (why[0] already sits above, unsplit), the alternate bet for a game
  * pick, and the knowledge grade with its served legend. Every figure here
  * is a real payload field or plain arithmetic on one -- nothing here is
- * invented to fill a box. */
-function breakdownBody(pick, { ourLabel = "Our number", showAlternative = false, payload } = {}) {
+ * invented to fill a box. `hasModel: false` drops "Our number" (see
+ * cardHasOwnModel); `sport` decides whether the matchup link applies. */
+function breakdownBody(pick, { ourLabel = "Our number", showAlternative = false, payload,
+                               sport = null, hasModel = true } = {}) {
   const nodes = [];
   const figures = el("div", { class: "card2bd__figures" });
   const market = pct0(pick.market_probability);
@@ -176,7 +197,9 @@ function breakdownBody(pick, { ourLabel = "Our number", showAlternative = false,
     figures.appendChild(el("p", { class: "card2bd__figure",
       text: `Market says ${market}` }));
   }
-  const ours = pct0(typeof pick.probability === "number" ? pick.probability : pick.model_probability);
+  const ours = hasModel
+    ? pct0(typeof pick.probability === "number" ? pick.probability : pick.model_probability)
+    : null;
   if (ours !== null) {
     figures.appendChild(el("p", { class: "card2bd__figure",
       text: `${ourLabel} ${ours}` }));
@@ -222,8 +245,14 @@ function breakdownBody(pick, { ourLabel = "Our number", showAlternative = false,
     }
   }
 
+  // MLB ONLY (2026-09-20). #/game/{date}/{away}/{home} is MLB's game page
+  // and looks the teams up in MLB's schedule; an NFL pick's link opened it
+  // and got a 404 ("no game found") under MLB's menu. NFL has no game page
+  // yet, so its picks carry no link rather than a dead one. `pick.sport`
+  // rides every NFL pick (V1 and V2); MLB picks carry none.
+  const pickSport = sport || pick.sport || "mlb";
   const gameDate = pick.date || (pick.first_pitch_utc ? String(pick.first_pitch_utc).slice(0, 10) : null);
-  if (gameDate && pick.away_team && pick.home_team) {
+  if (pickSport === "mlb" && gameDate && pick.away_team && pick.home_team) {
     nodes.push(el("a", { class: "btn btn--text", "data-hook": "card-open-matchup",
       href: `#/game/${encodeURIComponent(gameDate)}/${encodeURIComponent(pick.away_team)}/${encodeURIComponent(pick.home_team)}`,
       text: "Open this matchup" }));
@@ -251,7 +280,8 @@ function sectionHead(label, meta) {
  * `pickCard` stays the name this file's own render path and tests call.
  */
 export function compactPickCard(pick, opts = {}) {
-  const { total = 1, payload = null, kindTag = null } = opts;
+  const { total = 1, payload = null, kindTag = null, sport = null } = opts;
+  const hasModel = opts.hasModel !== undefined ? opts.hasModel : cardHasOwnModel(payload);
   const tone = LABEL_TONE[pick.label] || "slight";
   const rank1 = (pick.position || pick.rank) === 1;
   const card = el("article", {
@@ -309,16 +339,19 @@ export function compactPickCard(pick, opts = {}) {
   card.appendChild(disclosure({
     summary: "View breakdown",
     id: `card-breakdown-${pick.game_pk || pick.event_id || pick.rank || Math.random().toString(36).slice(2)}`,
-    body: breakdownBody(pick, { showAlternative: true, payload }),
+    body: breakdownBody(pick, { showAlternative: true, payload, sport, hasModel }),
   }));
 
   return card;
 }
 
 /** Legacy name this file's own render path and tests call -- see
- * `compactPickCard`, the one implementation. */
-function pickCard(pick, total) {
-  return compactPickCard(pick, { total });
+ * `compactPickCard`, the one implementation. `extra` carries the card's
+ * `sport` and `hasModel` (2026-09-20) -- never the payload itself, which
+ * would add the grade legend to every breakdown on this path and change
+ * MLB's page. */
+function pickCard(pick, total, extra = {}) {
+  return compactPickCard(pick, { total, ...extra });
 }
 
 /* -----------------------------------------------------------------------
@@ -746,6 +779,9 @@ function mergedBetCard(item, full, allBetsTotal, index, servingOlderDate) {
  * appending an empty paragraph. */
 function filledNote(payload) {
   if (!payload.filled) return null;
+  // "Our own numbers do not agree with the market" needs numbers of our
+  // own -- a card with none (has_model: false, 2026-09-20) cannot say it.
+  if (!cardHasOwnModel(payload)) return null;
   // Named out loud. A reader is entitled to know that the last pick is on
   // the card because it was the next best thing available, not because
   // anything about it was convincing.
@@ -772,19 +808,29 @@ function filledNote(payload) {
  * an empty record is a fact about how new it is; a product that hides the
  * empty record is making a different, worse impression on purpose.
  */
-function recordLine(rec) {
+function recordLine(rec, sport = "mlb") {
   const wrap = el("div", { class: "card2rec chamfer", "data-hook": "card-record" });
-  wrap.appendChild(el("span", { class: "card2rec__label", text: "THE RECORD SO FAR" }));
+  // NFL's record counts the current rule only (2026-09-20) -- named here,
+  // or "Nothing graded yet" under a card the old rule made reads as a
+  // claim about THAT card, whose picks are graded on their own record.
+  wrap.appendChild(el("span", { class: "card2rec__label",
+    text: sport === "nfl" ? "THE RECORD SO FAR · CURRENT NFL RULE" : "THE RECORD SO FAR" }));
 
   // EVERY DAY, INCLUDING THE ONES WITH NOTHING GRADED YET -- this is the
   // one link off the page that sells the product on its own past, so it
   // sits here whether or not this pooled summary has numbers to show yet.
-  const seeFullRecord = () => el("a", { class: "card2rec__link", href: "#/record-card",
+  // Sport-aware since 2026-09-19 (NFL went live): MLB's record lives at
+  // #/record-card, NFL's at #/nfl/record -- pointing an NFL reader at
+  // MLB's own record page would show them the wrong sport's numbers under
+  // a link they clicked from an NFL screen.
+  const recordHref = sport === "nfl" ? "#/nfl/record" : "#/record-card";
+  const seeFullRecord = () => el("a", { class: "card2rec__link", href: recordHref,
     "data-hook": "card-record-link", text: "SEE THE FULL RECORD, DAY BY DAY →" });
 
   if (!rec || !rec.n_staked) {
     wrap.appendChild(el("p", { class: "card2rec__body",
-      text: "Nothing graded yet. Every card is settled the morning after, "
+      text: `${sport === "nfl" ? "Nothing graded yet under the current NFL rule." : "Nothing graded yet."} `
+          + "Every card is settled the morning after, "
           + "win or lose, and the running record appears here from then on." }));
     wrap.appendChild(seeFullRecord());
     return wrap;
@@ -793,12 +839,33 @@ function recordLine(rec) {
   const line = el("p", { class: "card2rec__figures" });
   line.appendChild(el("span", { class: "card2rec__wl",
     text: `${rec.wins}-${rec.losses}${rec.pushes ? `-${rec.pushes}` : ""}` }));
+
+  // SAMPLE SIZE, NOT SPIN. NFL has published and graded exactly one pick as
+  // of 2026-09-19 -- "100% of bets won" off n=1 reads like a track record
+  // and is not one. Below NFL_SAMPLE_FLOOR picks, NFL shows the raw count
+  // and the units won (a plain sum, not a rate) instead of a win-rate or
+  // ROI percentage, plus an explicit line naming the sample size so nobody
+  // has to do the division themselves to notice it is tiny. MLB is
+  // unaffected -- it has never had a sample this small since this page
+  // shipped, and the moment it did this same guard would apply to it too.
+  const tooSmallForARate = sport === "nfl" && rec.n_staked < NFL_SAMPLE_FLOOR;
   line.appendChild(el("span", { class: "card2rec__meta",
-    text: `${rec.days} day${rec.days === 1 ? "" : "s"} · `
+    text: tooSmallForARate
+      ? `${rec.days} day${rec.days === 1 ? "" : "s"} · `
+        + `${rec.profit_units > 0 ? "+" : ""}${rec.profit_units.toFixed(2)} units `
+        + `at 1 unit a bet`
+      : `${rec.days} day${rec.days === 1 ? "" : "s"} · `
         + `${(rec.win_rate * 100).toFixed(0)}% of bets won · `
         + `${rec.profit_units > 0 ? "+" : ""}${rec.profit_units.toFixed(2)} units `
         + `at 1 unit a bet` }));
   wrap.appendChild(line);
+
+  if (tooSmallForARate) {
+    wrap.appendChild(el("p", { class: "card2rec__warn", "data-hook": "card-record-small-sample",
+      text: `Only ${rec.n_staked} NFL pick${rec.n_staked === 1 ? " has" : "s have"} been graded. `
+          + `That is too few to show a win rate or a return -- read the count above, not a `
+          + `percentage, until there are more.` }));
+  }
 
   if (rec.voids) {
     wrap.appendChild(el("p", { class: "card2rec__body",
@@ -833,11 +900,13 @@ function standingNote(payload) {
     note.appendChild(el("p", { class: "card2note__body card2note__body--mute",
       "data-hook": "card-grade-legend", text: line }));
   }
-  if (payload.calibrated === false) {
+  if (payload.calibrated === false && cardHasOwnModel(payload)) {
     // A card built without the calibration file publishes the raw model's
     // numbers, which run about twice as confident as they should. That is a
     // deploy fault and the reader is told rather than shown a number the
-    // page cannot stand behind.
+    // page cannot stand behind. A card with no model at all (has_model:
+    // false -- NFL_CARD_V2, 2026-09-20) has nothing to calibrate, and the
+    // warning would be false there.
     note.appendChild(el("p", { class: "card2note__warn",
       text: "Our own probabilities are running uncalibrated right now, which "
           + "makes them read more confident than they should. The market "
@@ -846,7 +915,7 @@ function standingNote(payload) {
   return note;
 }
 
-function emptyCard(payload) {
+function emptyCard(payload, sport = "mlb") {
   const wrap = el("section", { class: "gutter", "data-hook": "card-empty" });
   const panel = el("div", { class: "panel chamfer card2empty" });
   panel.appendChild(el("span", { class: "card2empty__label", text: "NO CARD TODAY" }));
@@ -856,10 +925,23 @@ function emptyCard(payload) {
   panel.appendChild(el("p", { class: "card2empty__body",
     text: payload.reason || "Today's card is not available." }));
   const actions = el("div", { class: "card2empty__actions" });
-  actions.appendChild(el("a", { class: "btn btn--primary chamfer chamfer--btn",
-    href: "#/betcheck", text: "CHECK A BET OF YOUR OWN" }));
-  actions.appendChild(el("a", { class: "btn btn--ghost chamfer chamfer--btn",
-    href: "#/odds", text: "OPEN THE FULL BOARD" }));
+  // Bet Check and the Odds board are MLB tools -- neither reads a `sport`
+  // parameter. Sending an NFL reader with no NFL card today to either would
+  // quietly hand them MLB's board under an NFL empty state, which is a
+  // worse answer than the plain truth: NFL's picks are the live MLB card
+  // and its own graded record, nothing else, so those are what this state
+  // points at instead.
+  if (sport === "nfl") {
+    actions.appendChild(el("a", { class: "btn btn--primary chamfer chamfer--btn",
+      href: "#/today", text: "SEE TONIGHT'S MLB PICKS" }));
+    actions.appendChild(el("a", { class: "btn btn--ghost chamfer chamfer--btn",
+      href: "#/nfl/record", text: "VIEW THE NFL RECORD" }));
+  } else {
+    actions.appendChild(el("a", { class: "btn btn--primary chamfer chamfer--btn",
+      href: "#/betcheck", text: "CHECK A BET OF YOUR OWN" }));
+    actions.appendChild(el("a", { class: "btn btn--ghost chamfer chamfer--btn",
+      href: "#/odds", text: "OPEN THE FULL BOARD" }));
+  }
   panel.appendChild(actions);
   wrap.appendChild(panel);
   return wrap;
@@ -932,13 +1014,9 @@ export async function renderCard(host, options = {}) {
   // below used to call clear(wrap) before rendering emptyCard(), which
   // wiped this notice along with everything else. Every later clear() in
   // this function must clear the CONTENT past this point, never this node.
+  // It already reads exactly NFL_NOTICE's sentence, so NFL gets no second
+  // copy here -- the go-live pass (2026-09-20) printed it twice in a row.
   wrap.appendChild(experimentalNotice());
-
-  // Render notice for NFL
-  if (sport === "nfl") {
-    wrap.appendChild(el("p", { class: "card2lede card2lede--notice",
-      "data-hook": "card-nfl-notice", text: NFL_NOTICE }));
-  }
 
   // Two reads, and the record must never take the card down with it: a
   // failed record fetch is not a night with no picks, and the picks are the
@@ -986,7 +1064,11 @@ export async function renderCard(host, options = {}) {
   // One day back is also all a reader wants: "last night's card" means last
   // night, not last week. FALLBACK_TIMEOUT_MS bounds the worst case; the
   // normal case is a frozen row and returns in about 200ms.
-  async function lastPublishedCard(fromDate) {
+  // `rule`: the card being replaced's own rule id. A card published under a
+  // DIFFERENT rule is never shown as the fallback (2026-09-20): the NFL card
+  // switched from favourites (NFL_CARD_V1) to value lines (NFL_CARD_V2), and
+  // on V2's first quiet day this used to put V1's -950 card back on screen.
+  async function lastPublishedCard(fromDate, rule = null) {
     const start = fromDate ? new Date(`${fromDate}T12:00:00Z`) : new Date();
     if (Number.isNaN(start.getTime())) return null;
     const day = new Date(start.getTime() - 86400000).toISOString().slice(0, 10);
@@ -994,6 +1076,7 @@ export async function renderCard(host, options = {}) {
       const url = `/card/${day}${sport !== "mlb" ? `?sport=${sport}` : ""}`;
       const older = await apiGet(url,
                                  { timeoutMs: FALLBACK_TIMEOUT_MS });
+      if (rule && older && older.rule && older.rule !== rule) return null;
       return older && payloadHasBets(older) ? older : null;
     } catch (_err) {
       // A fallback that cannot load is not an error worth showing. The
@@ -1032,7 +1115,7 @@ export async function renderCard(host, options = {}) {
   }
 
   if (!payloadHasBets(payload)) {
-    const last = await lastPublishedCard(payload.date || date);
+    const last = await lastPublishedCard(payload.date || date, payload.rule || null);
     if (last) {
       payload = last;
       servingOlderCard = last.date || null;
@@ -1047,7 +1130,7 @@ export async function renderCard(host, options = {}) {
     // not clear(wrap), which would wipe it along with everything else
     // (GC-2, 2026-09-16; the same defect this comment already described
     // before this rewrite).
-    wrap.appendChild(emptyCard(payload));
+    wrap.appendChild(emptyCard(payload, sport));
     return { rendered: false, firstPick: null };
   }
   // `picks` (game picks only) can still be empty here -- a card can be
@@ -1063,6 +1146,29 @@ export async function renderCard(host, options = {}) {
   // a heading that says TONIGHT'S.
   wrap.appendChild(sectionHead(
     servingOlderCard ? "LAST PUBLISHED CARD" : "TONIGHT'S CARD", meta));
+  // A frozen NFL card from before 2026-09-20 was made by the retired
+  // favourites rule. Its picks stay in the ledger as published -- evidence
+  // is never edited -- but it must not read as today's method.
+  // CORRECTED 2026-09-20: this said the old rule "stays on the record",
+  // while the NFL record page (and the record line under this card) had
+  // just switched to counting the current rule only -- the old rule's
+  // results were nowhere a reader could see them. It now says where they
+  // are, and links there.
+  if (sport === "nfl" && payload.rule === NFL_RETIRED_RULE) {
+    wrap.appendChild(el("p", { class: "card2lede card2lede--notice",
+      "data-hook": "card-retired-rule",
+      text: "This card was made by our old NFL rule, which simply took the "
+        + "favourite. Its picks stay in the ledger exactly as published and are "
+        + "graded on a record of their own; the NFL record below counts only "
+        + "the current rule. The current rule takes spreads, totals and "
+        + "moneylines only where one book's price beats the rest of the "
+        + "market's by a set margin, and never at -200 or worse." }));
+    // In its own lede paragraph, so it takes the lede spacing rather than
+    // running into the "Locked at" line below it.
+    wrap.appendChild(el("p", { class: "card2lede" }, [el("a", { class: "card2rec__link",
+      href: `#/nfl/record?rule=${NFL_RETIRED_RULE}`,
+      "data-hook": "card-retired-rule-link", text: "SEE THE OLD RULE'S RECORD →" })]));
+  }
   if (servingOlderCard) {
     wrap.appendChild(el("p", { class: "card2lede", "data-hook": "card-older",
       // "already graded" was wrong and shipped for about ten minutes. A card
@@ -1096,15 +1202,21 @@ export async function renderCard(host, options = {}) {
     // and the first bet on the page. The claim survives intact -- locked
     // before first pitch, graded either way -- in a line someone will
     // actually read. "Keep it minimal, to the point."
+    // "first pitch" on an NFL card (seen on #/nfl, 2026-09-20) -- the
+    // same sentence, in the sport's own word.
     wrap.appendChild(el("p", { class: "card2lede", "data-hook": "card-frozen",
-      text: `Locked${at ? ` at ${at}` : ""}, before first pitch. Graded after — win or lose.` }));
+      text: `Locked${at ? ` at ${at}` : ""}, before ${sport === "nfl" ? "kickoff" : "first pitch"}. `
+          + "Graded after — win or lose." }));
 
     // A FROZEN PRICE IS A HISTORICAL FACT, NOT A QUOTE. On a slate with an
     // early game the card freezes in the morning, and a reader arriving at
     // 4pm would otherwise take "-149 at DraftKings" as a number they can
     // still get. Told plainly at the point of confusion rather than left to
     // the reader to work out from the timestamp.
-    const ageHours = hoursSince(payload.frozen_at);
+    // `prices_as_of` (NFL, 2026-09-21): the OLDEST lock on a card built
+    // across several publishes, so the warning never understates how old a
+    // price is. MLB's payload has no such field and keeps using frozen_at.
+    const ageHours = hoursSince(payload.prices_as_of || payload.frozen_at);
     if (ageHours !== null && ageHours >= STALE_PRICE_HOURS) {
       wrap.appendChild(el("p", { class: "card2lede card2lede--warn",
         "data-hook": "card-stale-prices",
@@ -1114,7 +1226,7 @@ export async function renderCard(host, options = {}) {
   } else {
     wrap.appendChild(el("p", { class: "card2lede", "data-hook": "card-live",
       text: "Live prices — tonight's card is not locked in yet. It freezes "
-          + "before first pitch, and from that point the bets and prices "
+          + `before ${sport === "nfl" ? "kickoff" : "first pitch"}, and from that point the bets and prices `
           + "below cannot change. Every one is then graded win or lose on "
           + "the record page, including the ones that lose." }));
   }
@@ -1159,7 +1271,8 @@ export async function renderCard(host, options = {}) {
     }
   } else {
     const grid = el("div", { class: "card2grid", "data-hook": "card-grid" });
-    for (const pick of picks) grid.appendChild(pickCard(pick, picks.length));
+    const pickOpts = { sport, hasModel: cardHasOwnModel(payload) };
+    for (const pick of picks) grid.appendChild(pickCard(pick, picks.length, pickOpts));
     wrap.appendChild(grid);
 
     const note = filledNote(payload);
@@ -1189,7 +1302,7 @@ export async function renderCard(host, options = {}) {
     }
   }
 
-  wrap.appendChild(recordLine(record));
+  wrap.appendChild(recordLine(record, sport));
   wrap.appendChild(disclosure({
     summary: "How this card works",
     id: "card-standing-note-panel",

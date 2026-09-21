@@ -59,6 +59,8 @@ def board_for_date(date_str: str, *, rows=None, tournaments=None, now=None) -> d
             "notice": "Research only. No tennis picks until results grading is
                       connected.",
             "generated_utc": ISO string,
+            "captured_any": whether ANY tennis price row exists, for any date,
+            "last_captured_utc": newest tennis observed_utc on file, or None,
         }
     """
     if rows is None:
@@ -66,6 +68,19 @@ def board_for_date(date_str: str, *, rows=None, tournaments=None, now=None) -> d
         all_rows = snapshots.read_multibook(sport=None)
         rows = [r for r in all_rows if isinstance(r.get("sport"), str)
                 and r.get("sport", "").startswith("tennis_")]
+
+    # WHETHER ANY TENNIS PRICE HAS BEEN CAPTURED, AT ALL (2026-09-20). An
+    # empty board meant two different things and the page said only one:
+    # "No tennis matches are priced for this date", a claim about the
+    # market. Tennis capture was halted from 2026-09-16 by a probe deadlock,
+    # the store held zero tennis rows, and books were pricing WTA matches
+    # the whole time. `captured_any` lets the page tell "we have captured
+    # nothing yet" apart from "nothing captured for this date";
+    # `last_captured_utc` says how old our newest tennis price is.
+    captured = [r.get("observed_utc") or "" for r in rows
+                if isinstance(r.get("sport"), str) and r["sport"].startswith("tennis_")]
+    captured_any = bool(captured)
+    last_captured_utc = (max(captured) or None) if captured else None
 
     if tournaments is None:
         tournaments = tennis_discovery.latest()
@@ -222,4 +237,6 @@ def board_for_date(date_str: str, *, rows=None, tournaments=None, now=None) -> d
         "tournaments": tournaments_list,
         "notice": "Research only. No tennis picks until results grading is connected.",
         "generated_utc": generated_utc,
+        "captured_any": captured_any,
+        "last_captured_utc": last_captured_utc,
     }

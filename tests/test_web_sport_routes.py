@@ -81,10 +81,12 @@ class SportJsExports(unittest.TestCase):
 
 class SportsRegistryShape(unittest.TestCase):
     """DESIGN_SYSTEM.md section 3: one registry, {key, label, status,
-    home, submenu, plan}. MLB is the only 'live' entry, with the real
-    five-item sub menu; NFL and Tennis are the two D4 names for the red
-    strip; NBA and NHL are registered (owner addition, 2026-09-15) but
-    are not one of the two shown there."""
+    home, submenu, plan}. MLB, NFL and Tennis are 'live' entries (NFL and
+    Tennis since 2026-09-19 -- amended below, this class's docstring
+    originally called them "the two D4 names for the red strip", which
+    stopped being true the moment both graduated to tabs); NBA and NHL are
+    registered (owner addition, 2026-09-15) but stay coming_soon and are
+    not shown in the top strip."""
 
     def setUp(self):
         self.text = _read("sport.js")
@@ -107,23 +109,28 @@ class SportsRegistryShape(unittest.TestCase):
         ):
             self.assertIn(pair, self.text, f"MLB submenu is missing {pair!r}")
 
-    def test_nfl_is_coming_soon_with_its_own_home(self):
-        self.assertIn(
-            'key: "nfl", label: "NFL", status: "coming_soon", home: "#/nfl"',
-            self.text,
-        )
+    def test_nfl_is_live_with_its_own_home_and_submenu(self):
+        # AMENDED 2026-09-19: NFL went live with a two-item submenu
+        # mirroring MLB's field order (hash immediately before label).
+        self.assertIn('key: "nfl"', self.text)
+        self.assertIn('status: "live"', self.text)
+        self.assertIn('home: "#/nfl"', self.text)
+        self.assertIn('{ hash: "#/nfl", label: "GAMEDAY"', self.text)
+        self.assertIn('{ hash: "#/nfl/record", label: "RESULTS"', self.text)
 
-    def test_tennis_is_coming_soon_with_its_own_home(self):
-        self.assertIn(
-            'key: "tennis", label: "Tennis", status: "coming_soon", home: "#/tennis"',
-            self.text,
-        )
+    def test_tennis_is_live_with_its_own_home(self):
+        # AMENDED 2026-09-19: Tennis went live as a research-only board --
+        # no pick, slip or record surface, so its own submenu stays a
+        # single BOARD entry rather than mirroring MLB's five items.
+        self.assertIn('key: "tennis"', self.text)
+        self.assertIn('home: "#/tennis"', self.text)
+        self.assertIn('{ hash: "#/tennis", label: "BOARD"', self.text)
 
     def test_nba_and_nhl_are_registered_coming_soon(self):
         # Owner addition beyond DESIGN_BUILD_PLAN.json's CHR-1 task text
         # (2026-09-15): registered so #/nba and #/nhl resolve and other
-        # code can read their labels, without being one of the two red
-        # strip links (see RenderSportLevelBehaviour below).
+        # code can read their labels, without being one of the entries in
+        # TOP_STRIP_COMING_SOON (see RenderSportLevelBehaviour below).
         self.assertIn(
             'key: "nba", label: "NBA", status: "coming_soon", home: "#/nba"',
             self.text,
@@ -145,12 +152,16 @@ class RenderSportLevelBehaviour(unittest.TestCase):
             self.text,
         )
 
-    def test_soon_links_are_fixed_to_nfl_and_tennis_only(self):
-        # The loop that builds the two red links iterates a literal
-        # ["nfl", "tennis"] list, never `SPORTS.filter(coming_soon)` --
-        # a generic filter would also print NBA/NHL, which D4 does not
-        # ask for.
-        self.assertIn('["nfl", "tennis"]', self.text)
+    def test_soon_links_are_a_named_list_not_a_generic_filter(self):
+        # AMENDED 2026-09-19: the loop that builds the coming-soon links
+        # iterates `TOP_STRIP_COMING_SOON`, a literal (currently empty)
+        # list -- NFL and TENNIS were that list's only two names until
+        # both went live; the mechanism is unchanged (never
+        # `SPORTS.filter(coming_soon)`, which would also print NBA/NHL).
+        self.assertIn("const TOP_STRIP_COMING_SOON = [];", self.text)
+        self.assertIn("for (const key of TOP_STRIP_COMING_SOON)", self.text)
+        offenders = [(n, l) for n, l in _non_comment_lines("sport.js") if "SPORTS.filter" in l]
+        self.assertEqual(offenders, [], f"sport.js uses SPORTS.filter in code: {offenders}")
 
     def test_uses_the_sportlevel_component_classes(self):
         # components.css (foundation-owned) already defines this exact
@@ -217,16 +228,17 @@ class MainJsSportDispatch(unittest.TestCase):
 
 
 class CardJsNflSupport(unittest.TestCase):
-    """card.js's NFL branch stays on disk, unmodified and unrouted
-    (DESIGN_SYSTEM.md section 6) -- it must still import NFL_NOTICE from
-    sport.js unchanged."""
+    """NFL is routed and live (2026-09-20). card.js shows the one shared
+    experimental notice -- whose sentence is NFL_NOTICE's word for word --
+    and must not add a second NFL-only copy: the go-live pass printed the
+    same sentence twice in a row at the top of the NFL card."""
 
     def setUp(self):
         self.text = _read("card.js")
 
-    def test_imports_NFL_NOTICE(self):
-        self.assertIn('from "./sport.js"', self.text)
-        self.assertIn("NFL_NOTICE", self.text)
+    def test_shows_one_notice_not_two(self):
+        self.assertEqual(self.text.count("experimentalNotice()"), 1)
+        self.assertNotIn("card-nfl-notice", self.text)
 
 
 class CardRecordJsNflSupport(unittest.TestCase):

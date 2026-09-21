@@ -1,17 +1,24 @@
 /**
  * The coming-soon page (DESIGN_SYSTEM.md section 4, "Coming-soon page";
- * CHR-4). Used on `#/nfl`, `#/nfl/today`, `#/nfl/record`, `#/tennis` and
- * `#/tennis/board` -- main.js sends every one of those five routes to this
- * one function instead of `renderCard`/`renderCardRecord`/
- * `renderTennisBoard`, and stops importing `tennis.js` for the purpose of
- * routing (tennis.js itself stays on disk, unmodified and unrouted, per
- * DESIGN_SYSTEM.md section 6's "NFL and Tennis" -- `tests/test_web_tennis_
- * board.py` reads it directly and keeps passing untouched).
+ * CHR-4). Used on `#/nba` and `#/nhl` (every route under either) --
+ * main.js sends both to this one function rather than a real board,
+ * pending each sport's own announcement (D6).
+ *
+ * NFL AND TENNIS MOVED OFF THIS PAGE 2026-09-19. Both used to route here
+ * too -- `#/nfl`, `#/nfl/today`, `#/nfl/record`, `#/tennis` and
+ * `#/tennis/board` all showed this static copy -- until they went live
+ * and main.js started sending them to `card.js`'s `renderCard`/
+ * `renderCardRecord` and `tennis.js`'s `renderTennisBoard` instead (see
+ * docs/DESIGN_SYSTEM.md section 6's "NFL and Tennis" paragraph, updated in
+ * the same change). `COPY.nfl`/`COPY.tennis` below are unreachable through
+ * the router now and kept only as `copyFor`'s named entries for those
+ * keys, in case either sport is ever taken back off live for some reason;
+ * deleting them buys nothing this file's tests check for.
  *
  * NEVER SHOWN: a pick, a figure, a price, a percentage, a count or a
- * subscribe action (shell-09, nfl-today-2, tennis-board-2). NO API CALLS
- * OF ANY KIND -- this module imports nothing from api.js. The page is
- * static copy plus two links to the live MLB product.
+ * subscribe action (shell-09). NO API CALLS OF ANY KIND -- this module
+ * imports nothing from api.js. The page is static copy plus two links to
+ * the live MLB product.
  *
  * COPY, VERIFIED TRUE TODAY:
  *   - NFL/Tennis text is DESIGN_SYSTEM.md section 4's own corrected

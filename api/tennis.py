@@ -52,7 +52,11 @@ def get_tennis_board(date: Optional[str] = None) -> dict:
                 }
             ],
             "notice": "Research only...",
-            "generated_utc": ISO timestamp
+            "generated_utc": ISO timestamp,
+            "captured_any": bool -- any tennis price captured at all, for
+                            any date (2026-09-20: lets the page tell "none
+                            captured yet" from "none for this date"),
+            "last_captured_utc": newest tennis capture time, or None
         }
     """
     if date is None:
