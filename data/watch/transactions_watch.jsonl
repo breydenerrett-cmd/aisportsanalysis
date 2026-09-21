@@ -1389,3 +1389,7 @@
 {"category": "il_activation", "date": "2026-09-21", "first_seen_utc": "2026-09-21T17:53:08.739401+00:00", "player": "DJ Herz", "player_id": 687792, "team": "WSH", "transaction_id": 943391}
 {"category": "optioned", "date": "2026-09-21", "first_seen_utc": "2026-09-21T17:53:08.739401+00:00", "player": "Jared Simpson", "player_id": 688692, "team": "WSH", "transaction_id": 943392}
 {"category": "other", "date": "2026-09-21", "first_seen_utc": "2026-09-21T17:53:08.739401+00:00", "player": "Cole Henry", "player_id": 669371, "team": "WSH", "transaction_id": 943393}
+{"fetched_utc": "2026-09-21T18:06:10.311874+00:00", "game_date": "2026-09-21", "poll": true}
+{"category": "other", "date": "2026-09-21", "first_seen_utc": "2026-09-21T18:06:10.311874+00:00", "player": "Aaron Sabato", "player_id": 693306, "team": "MIN", "transaction_id": 943394}
+{"category": "designated", "date": "2026-09-21", "first_seen_utc": "2026-09-21T18:06:10.311874+00:00", "player": "Alex Jackson", "player_id": 656577, "team": "MIN", "transaction_id": 943395}
+{"fetched_utc": "2026-09-21T18:06:12.491617+00:00", "game_date": "2026-09-21", "poll": true}
