@@ -117,11 +117,15 @@ class TheCardIsRepublishedEverySlot(unittest.TestCase):
         self.assertTrue(line.rstrip().endswith("|| true"), line)
 
     def test_the_ledger_it_writes_is_staged(self):
+        # Since 2026-09-19 the slot stages its paths through an existence-
+        # filtered loop (one missing path used to make git refuse the whole
+        # add); evidence/ must still be one of the paths that loop stages.
         code = _code(SLOT)
-        staging = code[code.index("git add data/watch"):]
-        self.assertTrue(re.match(r"git add data/watch[^\n]*\\\n\s*evidence\b", staging),
+        staging = code[code.index("STAGE_PATHS="):]
+        loop = staging[staging.index("for p in"):staging.index("done")]
+        self.assertTrue(re.search(r"\bevidence\b", loop),
                         "evidence/ (the card ledger) is not staged by the slot's commit")
-        self.assertLess(code.index("card publish"), code.index("git add data/watch"))
+        self.assertLess(code.index("card publish"), code.index("STAGE_PATHS="))
 
 
 # ---------------------------------------------------------------------------

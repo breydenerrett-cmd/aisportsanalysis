@@ -173,6 +173,8 @@ class HealthReport:
     monthly_remaining: Optional[int] = None
     historical_spend_today: Optional[int] = None
     last_escalate_line: Optional[str] = None
+    checkpoint_age_min: Optional[float] = None
+    checkpoint_anomalies: List[dict] = field(default_factory=list)
     reasons: List[str] = field(default_factory=list)
 
     def summary(self) -> str:
@@ -463,6 +465,27 @@ def assess(now=None, raw_root=None, lock_path=None, heartbeat_path=None,
     except Exception as exc:  # noqa: BLE001 -- informational fields, never fatal
         reasons.append(f"budget read failed: {exc}")
 
+    # 2026-09-19 incident (src.capture.budget's own section on this):
+    # credit_log.jsonl went 11.6 hours with zero new rows while capture kept
+    # running and spending for real -- undetectable by artifact age (the
+    # WORKING TREE gets a fresh .gz every cycle whether or not any of it
+    # ever reaches a commit; see the fresh_artifact note below) and
+    # undetectable by envelope_exhausted (`capture_spent_today()` was
+    # reading the SAME frozen log, so it read low, not exhausted, for the
+    # whole gap). These two reads close that blind spot directly on the
+    # credit log itself. Best-effort, like every other budget read above:
+    # a failure here must never block a health verdict artifacts/lock
+    # already answered.
+    checkpoint_age_min = None
+    checkpoint_anomalies: list = []
+    try:
+        checkpoint_age_min = budget.checkpoint_age_minutes(
+            now=moment, store=credit_log_store)
+        checkpoint_anomalies = budget.oversized_checkpoint_deltas(
+            now=moment, store=credit_log_store)
+    except Exception as exc:  # noqa: BLE001 -- informational fields, never fatal
+        reasons.append(f"checkpoint read failed: {exc}")
+
     escalate_path = Path(escalate_log_path) if escalate_log_path is not None else None
     escalate_line = _last_escalate_line(escalate_path, moment, ESCALATE_WINDOW_MIN)
 
@@ -470,6 +493,15 @@ def assess(now=None, raw_root=None, lock_path=None, heartbeat_path=None,
         live_remaining is not None and live_remaining <= 0
         and live_spent is not None and live_spent >= budget.DAILY_ENVELOPE
     )
+
+    # FAILED_AGE_MIN (two-plus hourly cycles), not HEALTHY_IDLE_MAX_AGE_MIN:
+    # a checkpoint should land every capture pass (13-60m depending on
+    # quiet-hours spacing -- see capture_slot.sh's self-chaining cadence),
+    # but this must tolerate the same one-slow-slot jitter artifact age
+    # does before it is trusted as a real outage rather than noise.
+    checkpoint_stale = (
+        checkpoint_age_min is not None and checkpoint_age_min > FAILED_AGE_MIN)
+    checkpoint_anomaly_found = bool(checkpoint_anomalies)
 
     # --- state decision ------------------------------------------------
     # RUNNING: lock currently held -- a capture pass is mid-commit right now,
@@ -483,7 +515,8 @@ def assess(now=None, raw_root=None, lock_path=None, heartbeat_path=None,
             artifacts_today=artifacts_today, lock_held=lock_held,
             live_band_spent_today=live_spent, live_band_remaining=live_remaining,
             monthly_remaining=monthly_remaining, historical_spend_today=historical_spend,
-            last_escalate_line=escalate_line, reasons=reasons,
+            last_escalate_line=escalate_line, checkpoint_age_min=checkpoint_age_min,
+            checkpoint_anomalies=checkpoint_anomalies, reasons=reasons,
         )
 
     if age_min is None and heartbeat_age_min is None:
@@ -494,13 +527,23 @@ def assess(now=None, raw_root=None, lock_path=None, heartbeat_path=None,
             artifacts_today=artifacts_today, lock_held=lock_held,
             live_band_spent_today=live_spent, live_band_remaining=live_remaining,
             monthly_remaining=monthly_remaining, historical_spend_today=historical_spend,
-            last_escalate_line=escalate_line, reasons=reasons,
+            last_escalate_line=escalate_line, checkpoint_age_min=checkpoint_age_min,
+            checkpoint_anomalies=checkpoint_anomalies, reasons=reasons,
         )
 
     if escalate_line is not None:
         reasons.append(f"unresolved escalation within {ESCALATE_WINDOW_MIN}m: {escalate_line}")
     if envelope_exhausted:
         reasons.append("live-capture envelope exhausted for today")
+    if checkpoint_stale:
+        reasons.append(
+            f"credit-log checkpoint is {checkpoint_age_min:.0f}m old (> {FAILED_AGE_MIN}m) "
+            "-- capture may be spending without any envelope check seeing it")
+    if checkpoint_anomaly_found:
+        reasons.append(
+            f"{len(checkpoint_anomalies)} oversized credit-log checkpoint delta(s) today "
+            "(a single drop bigger than one day's envelope -- checkpoints were missing "
+            "somewhere in between, see src.capture.budget.oversized_checkpoint_deltas)")
 
     fresh_artifact = age_min is not None and age_min <= HEALTHY_IDLE_MAX_AGE_MIN
 
@@ -516,11 +559,16 @@ def assess(now=None, raw_root=None, lock_path=None, heartbeat_path=None,
         stale_heartbeat_failed = heartbeat_age_min > FAILED_AGE_MIN
         if stale_heartbeat_failed:
             reasons.append(f"heartbeat is {heartbeat_age_min:.0f}m old (> {FAILED_AGE_MIN}m)")
-        if escalate_line is not None or envelope_exhausted:
-            # Escalation/envelope facts are always fatal, even over a fresh
-            # artifact (test_envelope_exhausted_marks_failed_even_with_fresh_artifact).
+        if escalate_line is not None or envelope_exhausted or checkpoint_stale or checkpoint_anomaly_found:
+            # Escalation/envelope/checkpoint facts are always fatal, even
+            # over a fresh artifact
+            # (test_envelope_exhausted_marks_failed_even_with_fresh_artifact) --
+            # a fresh artifact only proves THIS runner wrote a file locally
+            # moments ago, never that any of the last N cycles' worth of
+            # writes actually reached a commit (2026-09-19 incident).
             state = FAILED
-            decided_by = "escalate" if escalate_line is not None else "envelope"
+            decided_by = ("escalate" if escalate_line is not None
+                          else "envelope" if envelope_exhausted else "checkpoint")
         elif fresh_heartbeat or fresh_artifact:
             # A fresh artifact proves the runner is producing data RIGHT
             # NOW regardless of heartbeat staleness -- never let a stale or
@@ -548,10 +596,13 @@ def assess(now=None, raw_root=None, lock_path=None, heartbeat_path=None,
         # behavior rather than guessing.
         if age_min is not None and age_min > FAILED_AGE_MIN:
             reasons.append(f"newest artifact is {age_min:.0f}m old (> {FAILED_AGE_MIN}m)")
-        if (age_min is not None and age_min > FAILED_AGE_MIN) or escalate_line is not None or envelope_exhausted:
+        stale_artifact_failed = age_min is not None and age_min > FAILED_AGE_MIN
+        if stale_artifact_failed or escalate_line is not None or envelope_exhausted \
+                or checkpoint_stale or checkpoint_anomaly_found:
             state = FAILED
-            decided_by = "artifact" if (age_min is not None and age_min > FAILED_AGE_MIN) else (
-                "escalate" if escalate_line is not None else "envelope")
+            decided_by = "artifact" if stale_artifact_failed else (
+                "escalate" if escalate_line is not None else
+                "envelope" if envelope_exhausted else "checkpoint")
         elif age_min is not None and age_min > HEALTHY_IDLE_MAX_AGE_MIN:
             state = OVERDUE
             decided_by = "artifact"
@@ -567,5 +618,6 @@ def assess(now=None, raw_root=None, lock_path=None, heartbeat_path=None,
         artifacts_today=artifacts_today, lock_held=lock_held,
         live_band_spent_today=live_spent, live_band_remaining=live_remaining,
         monthly_remaining=monthly_remaining, historical_spend_today=historical_spend,
-        last_escalate_line=escalate_line, reasons=reasons,
+        last_escalate_line=escalate_line, checkpoint_age_min=checkpoint_age_min,
+        checkpoint_anomalies=checkpoint_anomalies, reasons=reasons,
     )

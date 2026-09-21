@@ -351,6 +351,76 @@ class CaptureHealthTest(unittest.TestCase):
         self.assertEqual(report.state, health.HEALTHY_IDLE)
         self.assertEqual(report.decided_by, "artifact")
 
+    # ------------------------------------------------------------------
+    # Checkpoint observability (2026-09-19 incident): a fresh artifact on
+    # the LOCAL WORKING TREE proves only that THIS runner wrote a file
+    # moments ago, never that any of the last N cycles' worth of writes
+    # ever reached a commit. capture_slot.sh's forward-capture `capture`
+    # job ran every ~13 minutes for 11.6 hours (gh run list,
+    # 2026-09-19T04:00Z-15:36Z) writing real, fresh-looking artifacts and
+    # real credit-log rows on each ephemeral runner's own disk, while not
+    # one of those runs' own git-commit step found anything to commit --
+    # confirmed against the real branch's commit history for
+    # data/processed/credit_log.jsonl (zero "Forward capture slot" commits
+    # land in that window). Pre-fix, `fresh_artifact` alone (added for the
+    # 2026-09-04/05 false-OVERDUE-alarm) would have reported this as
+    # HEALTHY_IDLE the entire time. These tests are the regression: a
+    # stale or anomalous credit-log checkpoint must fail the assessment
+    # even while the artifact stream still looks perfectly fresh.
+    # ------------------------------------------------------------------
+
+    def test_stale_checkpoint_is_not_masked_by_a_fresh_artifact(self):
+        self.raw_root.mkdir(parents=True)
+        _write_artifact(self.raw_root, NOW - timedelta(minutes=5))  # looks perfectly healthy
+        # The one credit-log row is from ~11.6h ago -- exactly the real gap.
+        _log_row(self.credit_store, 90000, NOW - timedelta(hours=11, minutes=36),
+                 caller="dense.run", budget_band="live_capture")
+        report = health.assess(
+            now=NOW, raw_root=self.raw_root, lock_path=self.lock_path,
+            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate,
+            commit_ts_fn=lambda: None,
+        )
+        self.assertEqual(report.state, health.FAILED)
+        self.assertEqual(report.decided_by, "checkpoint")
+        self.assertTrue(any("checkpoint" in r for r in report.reasons))
+
+    def test_oversized_checkpoint_delta_is_not_masked_by_a_fresh_artifact(self):
+        self.raw_root.mkdir(parents=True)
+        _write_artifact(self.raw_root, NOW - timedelta(minutes=5))
+        # The real 2026-09-19 shape: a gap-swallowed delta bigger than one
+        # day's envelope, explicitly tagged live_capture (never legacy).
+        _log_row(self.credit_store, 12500, NOW - timedelta(hours=11, minutes=39),
+                 caller="nfl_capture.run", budget_band="live_capture")
+        _log_row(self.credit_store, 12500 - 1204, NOW,
+                 caller="dense.run", budget_band="live_capture")
+        report = health.assess(
+            now=NOW, raw_root=self.raw_root, lock_path=self.lock_path,
+            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate,
+            commit_ts_fn=lambda: None,
+        )
+        self.assertEqual(report.state, health.FAILED)
+        self.assertEqual(report.decided_by, "checkpoint")
+        self.assertEqual(len(report.checkpoint_anomalies), 1)
+        self.assertEqual(report.checkpoint_anomalies[0]["delta"], 1204)
+
+    def test_healthy_checkpoint_stream_is_unaffected(self):
+        """No regression: a normal, current checkpoint stream with no
+        oversized delta must still read HEALTHY_IDLE off a fresh artifact,
+        exactly as before this change."""
+        self.raw_root.mkdir(parents=True)
+        _write_artifact(self.raw_root, NOW - timedelta(minutes=5))
+        _log_row(self.credit_store, 90000, NOW - timedelta(minutes=10),
+                 caller="dense.run", budget_band="live_capture")
+        _log_row(self.credit_store, 89989, NOW - timedelta(minutes=3),
+                 caller="batter_props.run", budget_band="live_capture")
+        report = health.assess(
+            now=NOW, raw_root=self.raw_root, lock_path=self.lock_path,
+            credit_log_store=self.credit_store, escalate_log_path=self.empty_escalate,
+            commit_ts_fn=lambda: None,
+        )
+        self.assertEqual(report.state, health.HEALTHY_IDLE)
+        self.assertEqual(report.checkpoint_anomalies, [])
+
     def test_summary_line_has_expected_shape(self):
         self.raw_root.mkdir(parents=True)
         _write_artifact(self.raw_root, NOW - timedelta(minutes=10))

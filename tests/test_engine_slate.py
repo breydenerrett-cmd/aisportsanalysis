@@ -559,6 +559,83 @@ class TestL1ProjectionMarker(SlateTestBase):
             statcast_store=self.statcast_store)
         self.assertTrue(after_refresh.ok, after_refresh.reasons)
 
+    # ------------------------------------------------------------------
+    # too_early_for_slate (2026-09-19 incident): scripts/afternoon_slate.sh's
+    # too-early guard called `glue.games_captured_on(date_str)` against the
+    # default, git-ignored L1 store WITHOUT ever refreshing it first --
+    # `engine slate` is the only thing that ever builds that store
+    # (scripts/daily_bootstrap.sh's own header), and it runs AFTER this
+    # guard, so on a fresh CI checkout `games_captured_on` was guaranteed to
+    # read empty regardless of what the durable, tracked odds stores
+    # actually held. The guard's "real captures exist" branch was dead code
+    # in production: every run before first pitch reported "too early" and
+    # exited success, hiding whatever the real capture state was for hours.
+    # ------------------------------------------------------------------
+
+    def test_too_early_for_slate_refreshes_l1_before_checking_captures(self):
+        """The bug, at the function level: a fresh capture sits in the
+        durable source, never yet projected into L1 -- a fresh checkout's
+        exact starting condition. Reading `games_captured_on` directly, the
+        way the pre-fix inline guard did, sees nothing (asserted below as
+        the fixture's own precondition); `too_early_for_slate`, which
+        refreshes L1 first, correctly sees the real capture and answers
+        PROCEED, never TOO_EARLY, regardless of the clock."""
+        self._write_fresh_capture()
+        _write_jsonl(self.l1_path, [])  # exists, but never projected -- the fresh-checkout state
+
+        self.assertEqual(
+            glue_module.games_captured_on("2026-09-02", path=self.l1_path), (),
+            "fixture precondition: a real source and an unprojected L1 -- "
+            "the exact 2026-09-19 starting condition")
+
+        # Well before any plausible first pitch: pre-fix (no refresh first)
+        # this reads TOO_EARLY regardless of the real capture sitting in
+        # the source -- exactly today's incident.
+        now = datetime(2026, 9, 2, 10, 0, tzinfo=timezone.utc)
+        too_early, reason = slate.too_early_for_slate(
+            "2026-09-02", now=now, l1_path=self.l1_path,
+            l1_sources=self._sources())
+        self.assertFalse(too_early, reason)
+        self.assertEqual(reason, "has-captures")
+
+    def test_too_early_for_slate_still_skips_a_genuinely_empty_early_slate(self):
+        """No regression: with no source data at all and first pitch not
+        yet arrived, the guard still skips silently -- its original,
+        correct 2026-09-16 behavior."""
+        _write_jsonl(self.l1_path, [])
+        now = datetime(2026, 9, 2, 10, 0, tzinfo=timezone.utc)
+        with mock.patch("src.sports.mlb._schedule") as mock_schedule:
+            mock_schedule.return_value = [{"start_utc": "2026-09-02T18:00:00Z"}]
+            too_early, reason = slate.too_early_for_slate(
+                "2026-09-02", now=now, l1_path=self.l1_path)
+        self.assertTrue(too_early, reason)
+
+    def test_too_early_for_slate_proceeds_once_first_pitch_has_passed(self):
+        """No captures and first pitch has already passed: PROCEED, so the
+        caller reaches `engine slate` -> `preflight.check`, which refuses
+        loudly on its own instead of this guard silently eating a real
+        miss (2026-09-16's original incident, still fixed)."""
+        _write_jsonl(self.l1_path, [])
+        now = datetime(2026, 9, 2, 20, 0, tzinfo=timezone.utc)
+        with mock.patch("src.sports.mlb._schedule") as mock_schedule:
+            mock_schedule.return_value = [{"start_utc": "2026-09-02T18:00:00Z"}]
+            too_early, reason = slate.too_early_for_slate(
+                "2026-09-02", now=now, l1_path=self.l1_path)
+        self.assertFalse(too_early, reason)
+        self.assertIn("has passed", reason)
+
+    def test_too_early_for_slate_falls_through_on_unreadable_schedule(self):
+        """A schedule read failure must PROCEED, never manufacture a false
+        'too early' excuse for what might be a genuine miss -- the same
+        rule the pre-fix inline guard stated in its own comment."""
+        _write_jsonl(self.l1_path, [])
+        with mock.patch("src.sports.mlb._schedule",
+                        side_effect=RuntimeError("boom")):
+            too_early, reason = slate.too_early_for_slate(
+                "2026-09-02", l1_path=self.l1_path)
+        self.assertFalse(too_early, reason)
+        self.assertIn("schedule-unreadable", reason)
+
 
 class TestRecordedUtcIsWriteInstant(SlateTestBase):
     """B1 (slice-review-2026-09-03): `recorded_utc` must be the real

@@ -629,8 +629,26 @@ fi
 # never `data/historical` wholesale: that directory also holds the results
 # CSV and the arsenals tree, multi-megabyte churn that does not belong in a
 # commit made ninety-six times a day.
-git add data/watch data/processed data/raw/oddsapi data/live docs/OVERNIGHT_RUN.md \
-        evidence data/paper_accounts 2>/dev/null || true
+#
+# STAGE ONLY PATHS THAT EXIST (2026-09-19 incident). This used to be one
+# `git add a b c ... 2>/dev/null || true`. git validates every pathspec
+# before staging anything, so ONE missing path makes it refuse the whole
+# add -- and `data/live` (added here 2026-09-15, zero tracked files, only
+# ever created by the separate live-window job) is missing on almost every
+# fresh checkout. From 09-15 on, every capture this script paid for was
+# staged by nothing, reported "no data changes", and died with the runner
+# unless the afternoon slate happened to commit it after first pitch. The
+# lost batter-props "done today" state then re-fetched the same games every
+# slot and blew the credit envelope. The silencing hid all of it, so git's
+# own error is no longer discarded: a failed add prints ESCALATE.
+STAGE_PATHS=""
+for p in data/watch data/processed data/raw/oddsapi data/live docs/OVERNIGHT_RUN.md \
+         evidence data/paper_accounts; do
+    [ -e "$p" ] && STAGE_PATHS="$STAGE_PATHS $p"
+done
+if [ -n "$STAGE_PATHS" ] && ! git add $STAGE_PATHS; then
+    echo "ESCALATE: git add of capture output failed -- this slot's data is NOT staged"
+fi
 # H4 (2026-09-16): the historical stores staged below used to be a literal
 # filename list here (and a second copy in forward_capture.sh) -- protected
 # only if someone remembered to update both. They now come from the single

@@ -1125,7 +1125,20 @@ def main(argv):
         # ~13-minute cadence, and staging it here is exactly the two-writer
         # conflict D7 describes (both runners racing `pull --rebase` on the
         # same path).
-        _git("add", "data/live", "evidence/live_candidates_v1.jsonl")
+        # Stage only paths that exist (2026-09-19 incident, same defect as
+        # scripts/capture_slot.sh): git refuses a WHOLE add when any one
+        # pathspec is missing, and the candidates ledger does not exist
+        # until a window produces its first candidate -- so every window
+        # with zero candidates staged nothing, returned "nothing new", and
+        # threw its data/live polling away with the runner. Neither path
+        # had a single tracked file as of that date.
+        stage = [p for p in ("data/live", "evidence/live_candidates_v1.jsonl")
+                 if Path(p).exists()]
+        if stage:
+            added = _git("add", *stage)
+            if added.returncode != 0:
+                LOG.error("live_window: git add failed: %s", added.stderr.strip())
+                return False
         if _git("diff", "--cached", "--quiet").returncode == 0:
             return True  # nothing new since the last commit
         stamp = datetime.now(timezone.utc).strftime("%H:%MZ")

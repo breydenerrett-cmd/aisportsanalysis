@@ -771,6 +771,107 @@ class StatusTests(unittest.TestCase):
         self.assertEqual(result["spent_today"], 0)
         self.assertEqual(result["families"], {})
 
+    def test_status_surfaces_checkpoint_health_fields(self):
+        with tempfile.TemporaryDirectory() as folder:
+            store = Path(folder) / "credit_log.jsonl"
+            creditlog.log(90000, 0, "dense.run", store=store, now=NOW,
+                          budget_band=budget.LIVE_CAPTURE)
+            result = budget.status(now=NOW, store=store)
+        self.assertEqual(result["checkpoint_age_minutes"], 0.0)
+        self.assertEqual(result["checkpoint_anomalies"], [])
+
+
+class CheckpointObservabilityTests(unittest.TestCase):
+    """2026-09-19 incident: capture_slot.sh's forward-capture `capture` job
+    ran on its normal ~13-minute cadence from 2026-09-19T04:00Z through
+    15:36Z (gh run list, ~51 completed/success runs) and each run's own
+    step output showed real spend (dense, the non-droppable batter-props
+    floor family, nfl_capture), but not one run's git-commit step found
+    anything to commit -- confirmed against the real branch's commit
+    history for data/processed/credit_log.jsonl, which shows zero
+    "Forward capture slot" commits landing in that window. The credit log
+    went dark for 11.6 hours while can_spend() kept approving calls
+    against a stale, low `spent_today()` that no checkpoint updated. These
+    tests cover the two functions that make that condition detectable
+    without a human eyeballing timestamps after the fact."""
+
+    def test_checkpoint_age_is_none_with_no_rows(self):
+        with tempfile.TemporaryDirectory() as folder:
+            store = Path(folder) / "credit_log.jsonl"
+            self.assertIsNone(budget.checkpoint_age_minutes(now=NOW, store=store))
+
+    def test_checkpoint_age_is_minutes_since_the_latest_row(self):
+        with tempfile.TemporaryDirectory() as folder:
+            store = Path(folder) / "credit_log.jsonl"
+            creditlog.log(90000, 0, "dense.run", store=store,
+                          now=NOW - dt.timedelta(hours=11, minutes=36),
+                          budget_band=budget.LIVE_CAPTURE)
+            age = budget.checkpoint_age_minutes(now=NOW, store=store)
+        self.assertAlmostEqual(age, 11 * 60 + 36, delta=1)
+
+    def test_no_anomaly_when_every_delta_stays_under_the_envelope(self):
+        with tempfile.TemporaryDirectory() as folder:
+            store = Path(folder) / "credit_log.jsonl"
+            t = NOW
+            creditlog.log(99365, 0, "dense.run", store=store, now=t,
+                          budget_band=budget.LIVE_CAPTURE)
+            t += dt.timedelta(minutes=13)
+            creditlog.log(99354, 11, "batter_props.run", store=store, now=t,
+                          budget_band=budget.LIVE_CAPTURE)
+            anomalies = budget.oversized_checkpoint_deltas(now=t, store=store)
+        self.assertEqual(anomalies, [])
+
+    def test_a_gap_swallowed_delta_is_flagged_even_though_explicitly_banded(self):
+        # The real 2026-09-19 shape: ~51 runs' worth of real, exempt
+        # floor-family spend (batter_props' NON_DROPPABLE_FAMILY -- see
+        # CanSpendTests.test_the_non_droppable_floor_is_never_gated_by_floor
+        # _or_envelope) never landed a checkpoint for 11.6 hours, so the
+        # whole gap's drop surfaces as one delta on the next row that DOES
+        # commit -- 1204 credits against a 900 envelope, tagged
+        # budget_band=live_capture exactly like every real call site does.
+        with tempfile.TemporaryDirectory() as folder:
+            store = Path(folder) / "credit_log.jsonl"
+            t = NOW
+            creditlog.log(12500, 0, "nfl_capture.run", store=store, now=t,
+                          budget_band=budget.LIVE_CAPTURE)
+            t += dt.timedelta(hours=11, minutes=39)
+            creditlog.log(12500 - 1204, 0, "dense.run", store=store, now=t,
+                          budget_band=budget.LIVE_CAPTURE)
+
+            anomalies = budget.oversized_checkpoint_deltas(now=t, store=store)
+            self.assertEqual(len(anomalies), 1)
+            self.assertEqual(anomalies[0]["delta"], 1204)
+            self.assertEqual(anomalies[0]["to_caller"], "dense.run")
+            # The delta must stay classified live_capture -- see this
+            # function's own docstring: reclassifying an EXPLICITLY banded
+            # row away from live_capture would hide the overspend, not
+            # surface it.
+            row = creditlog.read(store)[-1]
+            self.assertEqual(budget.row_band(row), budget.LIVE_CAPTURE)
+            self.assertEqual(
+                budget.capture_spent_today(now=t, store=store), 1204,
+                "the oversized delta must still count against capture "
+                "spend -- flagging it as an anomaly must never make "
+                "can_spend() blind to it on the next call")
+
+    def test_anomaly_detector_respects_the_requested_band(self):
+        with tempfile.TemporaryDirectory() as folder:
+            store = Path(folder) / "credit_log.jsonl"
+            t = NOW
+            creditlog.log(99365, 0, "probe_historical_boundaries.preflight",
+                          store=store, now=t, budget_band=budget.HISTORICAL_BACKFILL)
+            t += dt.timedelta(minutes=5)
+            # A large, explicitly historical delta must never show up as a
+            # LIVE_CAPTURE anomaly -- band separation still applies here.
+            creditlog.log(50000, 49365, "probe_historical_boundaries.back_2023",
+                          store=store, now=t, budget_band=budget.HISTORICAL_BACKFILL)
+            live_anomalies = budget.oversized_checkpoint_deltas(
+                now=t, store=store, band=budget.LIVE_CAPTURE)
+            historical_anomalies = budget.oversized_checkpoint_deltas(
+                now=t, store=store, band=budget.HISTORICAL_BACKFILL)
+        self.assertEqual(live_anomalies, [])
+        self.assertEqual(len(historical_anomalies), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

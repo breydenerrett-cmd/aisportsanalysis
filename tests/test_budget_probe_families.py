@@ -354,5 +354,63 @@ class RealConfigFileUnchangedTests(unittest.TestCase):
             self.assertTrue(recorded["families"]["scores"]["measured"])
 
 
+class TennisProbeDeadlock20260916Tests(unittest.TestCase):
+    """2026-09-16: the tennis_h2h probe took the first tennis key from the
+    FULL sports list -- the out-of-season Australian Open -- got an empty
+    payload, and recorded `measured: true, degenerate: true`. can_spend
+    treats degenerate as unmeasured (PROBE_REQUIRED), while daily_loop.sh's
+    re-probe gate only looked at `measured`, so it never probed again and
+    tennis capture stayed refused from then on."""
+
+    def test_probe_skips_a_tennis_key_marked_inactive(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = _write_families(folder, {"tennis_h2h": {
+                "measured": False, "credits_per_event": None, "measured_utc": None}})
+            sports = [
+                {"key": "tennis_atp_aus_open_singles", "title": "ATP Australian Open",
+                 "active": False},
+                {"key": "tennis_wta_singapore_open", "title": "WTA Singapore Open",
+                 "active": True},
+            ]
+            provider = _FakeSportsProvider(sports=sports, billed=1)
+            result = budget.probe_family(
+                "tennis_h2h", provider=provider, now=NOW, families_path=path,
+                store=Path(folder) / "credit_log.jsonl")
+            self.assertEqual(result["sport_key"], "tennis_wta_singapore_open")
+
+    def _daily_loop_gate_says_probe(self, entry):
+        """Run daily_loop.sh's own re-probe gate (its `python3 -c` line,
+        with $family substituted) against a config holding `entry`.
+        Exit 0 means "probe it"."""
+        import subprocess
+        import sys
+        repo = Path(__file__).resolve().parents[1]
+        text = (repo / "scripts" / "daily_loop.sh").read_text(encoding="utf-8")
+        block = text[text.index("== probe unmeasured capture families =="):]
+        line = next(l for l in block.splitlines()
+                    if "python3 -c" in l and "capture_families.json" in l)
+        code = line.split('python3 -c "', 1)[1].rsplit('"', 1)[0]
+        code = code.replace("$family", "tennis_h2h")
+        with tempfile.TemporaryDirectory() as folder:
+            (Path(folder) / "config").mkdir()
+            (Path(folder) / "config" / "capture_families.json").write_text(
+                json.dumps({"families": {"tennis_h2h": entry}}), encoding="utf-8")
+            done = subprocess.run([sys.executable, "-c", code], cwd=folder,
+                                  capture_output=True, text=True, timeout=30)
+        return done.returncode == 0
+
+    def test_daily_loop_reprobes_a_degenerate_measurement(self):
+        self.assertTrue(self._daily_loop_gate_says_probe(
+            {"measured": True, "credits_per_event": 0, "degenerate": True}))
+
+    def test_daily_loop_leaves_a_good_measurement_alone(self):
+        self.assertFalse(self._daily_loop_gate_says_probe(
+            {"measured": True, "credits_per_event": 1, "degenerate": False}))
+
+    def test_daily_loop_probes_an_unmeasured_family(self):
+        self.assertTrue(self._daily_loop_gate_says_probe(
+            {"measured": False, "credits_per_event": None}))
+
+
 if __name__ == "__main__":
     unittest.main()

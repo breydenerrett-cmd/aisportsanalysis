@@ -1208,9 +1208,12 @@ class TestCommitStagesOnlyLiveAndLedger(unittest.TestCase):
     here is the two-writer race D7 describes."""
 
     def test_commit_git_add_excludes_processed_credit_log(self):
+        # The staged paths are the existence-filtered tuple (2026-09-19: a
+        # literal two-path add refused everything whenever the candidates
+        # ledger did not exist yet).
         source = Path(live_window.__file__).read_text(encoding="utf-8")
-        self.assertIn('_git("add", "data/live", "evidence/live_candidates_v1.jsonl")',
-                      source)
+        self.assertIn('("data/live", "evidence/live_candidates_v1.jsonl")', source)
+        self.assertIn('_git("add", *stage)', source)
         self.assertNotIn('"data/processed/credit_log.jsonl"', source)
 
 

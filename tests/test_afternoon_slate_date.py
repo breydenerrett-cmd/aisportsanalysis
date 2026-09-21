@@ -100,10 +100,20 @@ class TestSlateDateIsEastern(unittest.TestCase):
     def test_too_early_guard_present_and_uses_preflights_own_signal(self):
         # Must reuse src.engine.glue.games_captured_on -- the exact function
         # src/engine/preflight.py's guard calls -- so the two can never
-        # disagree about what "no capture" means.
-        self.assertIn("games_captured_on", CODE)
+        # disagree about what "no capture" means. Since 2026-09-19 the
+        # script delegates to src.engine.slate.too_early_for_slate, which
+        # refreshes L1 FIRST and then asks games_captured_on (the inline
+        # version asked before any L1 existed and always saw zero).
+        self.assertIn("too_early_for_slate", CODE)
         self.assertIn("TOO_EARLY", CODE)
         self.assertIn("exit 0", CODE)
+        import inspect
+        from src.engine import slate
+        body = inspect.getsource(slate.too_early_for_slate)
+        code = body.split('"""', 2)[2]  # past the docstring, which names both
+        self.assertIn("games_captured_on", code)
+        self.assertLess(code.index("refresh_l1_if_stale("),
+                        code.index("games_captured_on("))
 
 
 @unittest.skipUnless(BASH, "no usable bash found")

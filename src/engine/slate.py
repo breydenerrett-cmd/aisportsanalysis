@@ -397,6 +397,79 @@ def refresh_l1_if_stale(date_str: str, *, l1_path=glue_module.L1_PATH,
     return True
 
 
+def too_early_for_slate(date_str: str, *, now=None, l1_path=glue_module.L1_PATH,
+                         l1_sources: Sequence | None = None,
+                         l1_raw_root=None) -> tuple:
+    """Is `date_str` genuinely too early to slate yet -- no captures, and
+    the MLB schedule's own first pitch has not arrived?
+
+    THE 2026-09-19 BUG THIS FIXES. scripts/afternoon_slate.sh's too-early
+    guard (added 2026-09-16) asked `glue.games_captured_on(date_str)`
+    WITHOUT calling `refresh_l1_if_stale()` first. `l1_path`'s default,
+    `data/processed/l1_observations.jsonl`, is git-ignored
+    (scripts/daily_bootstrap.sh's own header: "NOT touched here. `engine
+    slate` ... rebuilds/refreshes this itself from the TRACKED odds stores
+    ... immediately before reading it, on every invocation") -- and `engine
+    slate` is exactly what the too-early guard runs BEFORE. So on every
+    fresh CI checkout, `games_captured_on()` read an L1 store that had
+    never been built yet, returned empty every time, and the guard's
+    "real captures exist" branch was unreachable in production: its
+    two-part rule ("no captures AND too early") silently collapsed to one
+    part ("too early", by the clock, alone). From 2026-09-16 on, every
+    afternoon-slate run before first pitch reported "too early" and exited
+    0/success -- whether or not a genuine capture-pipeline failure was
+    already underway underneath, as one was 2026-09-19: the credit
+    envelope's own checkpoints went dark ~04:00-06:17Z
+    (src.capture.budget's checkpoint-observability section), and nothing
+    surfaced from afternoon-slate until first pitch passed at 18:10Z, hours
+    later, when `engine slate` finally ran and `preflight.check` refused
+    for real.
+
+    This function refreshes L1 from the durable, git-tracked odds sources
+    FIRST -- exactly what `engine slate` would do moments later anyway;
+    `refresh_l1_if_stale` is idempotent and marker-guarded, so calling it
+    here cannot double-charge or double-write anything -- so
+    `games_captured_on()` answers from the REAL, current capture state
+    instead of a guaranteed-empty one. `l1_path`/`l1_sources`/`l1_raw_root`
+    thread straight through to `refresh_l1_if_stale` (same safety rail: a
+    synthetic `l1_path` alone, with neither `l1_sources` nor `l1_raw_root`
+    given, is left untouched -- a test's isolated fixture never pulls in
+    real production data).
+
+    Returns `(too_early, reason)`. `too_early=False` means PROCEED to
+    `engine slate` -- which refuses loudly on its own (via
+    `preflight.check`) if inputs are actually stale; this function only
+    answers "is there anything to even ask about yet", never "is it
+    fresh enough". `too_early=True` means skip silently: there was never a
+    capture window open to have missed.
+    """
+    moment = now if now is not None else datetime.now(timezone.utc)
+
+    refresh_l1_if_stale(date_str, l1_path=l1_path, l1_sources=l1_sources,
+                        l1_raw_root=l1_raw_root)
+    if glue_module.games_captured_on(date_str, path=l1_path):
+        return False, "has-captures"
+
+    from src.sports import mlb
+    try:
+        games = mlb._schedule(date_str)
+    except Exception as exc:  # noqa: BLE001 -- a schedule read failure must fall
+        # through to PROCEED, never manufacture a false "too early" excuse
+        # for what might be a genuine miss (this mirrors the guard's own
+        # original, pre-2026-09-19 rule for this branch).
+        return False, f"schedule-unreadable: {exc}"
+
+    starts = [g["start_utc"] for g in games if g.get("start_utc")]
+    if not starts:
+        return False, "no-games-scheduled"
+
+    first_pitch = min(starts)
+    fp = datetime.fromisoformat(first_pitch.replace("Z", "+00:00"))
+    if moment < fp:
+        return True, f"first pitch {first_pitch} has not arrived (now {moment.isoformat()})"
+    return False, f"first pitch {first_pitch} has passed with zero captures"
+
+
 def decision_key(record: DecisionRecord) -> tuple:
     """The identity tuple a decision is deduplicated on. Mirrors
     `src.factory.scorecard.decision_key_for`'s own four fields exactly, plus

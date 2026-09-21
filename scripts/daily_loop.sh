@@ -323,9 +323,13 @@ echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: tennis results --date $YESTERDAY
 # measurement. The first measurement happens here (once per family per day), so the
 # daily loop is the gatekeeper: guard by the measured check, spend once, and
 # subsequent runs see "already measured" and skip.
+# A DEGENERATE measurement (empty payload) is re-probed: can_spend treats it
+# as PROBE_REQUIRED, so skipping it here deadlocked tennis capture from
+# 2026-09-16 -- this loop said "already measured" while every capture slot
+# refused tennis_h2h as unmeasured.
 echo "== probe unmeasured capture families =="
 for family in scores tennis_h2h; do
-    if python3 -c "import json,sys; f=json.load(open('config/capture_families.json'))['families']; sys.exit(0 if not f.get('$family',{}).get('measured') else 1)"; then
+    if python3 -c "import json,sys; e=json.load(open('config/capture_families.json'))['families'].get('$family',{}); sys.exit(0 if (not e.get('measured') or e.get('degenerate')) else 1)"; then
         PROBE_OUT=$(python3 -m src.cli budget --probe "$family" 2>&1) || true
         echo "$PROBE_OUT" | sed 's/^/  /'
         echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: budget --probe $family" >> "$RUN_NOTE"

@@ -72,7 +72,7 @@ class CaptureHasMultiSportSteps(unittest.TestCase):
         nfl_cap_idx = code.index("nfl capture")
         tennis_cap_idx = code.index("tennis capture")
         nfl_pub_idx = code.index("nfl card publish")
-        git_idx = code.index("git add data/watch")
+        git_idx = code.index("STAGE_PATHS=")
 
         # Order: MLB card -> NFL capture -> tennis capture -> NFL card -> git
         self.assertLess(mlb_pub_idx, nfl_cap_idx)
@@ -120,13 +120,13 @@ class CaptureHasMultiSportSteps(unittest.TestCase):
     def test_git_staging_includes_data_live(self):
         """git add includes data/live."""
         code = _code(CAPTURE)
-        git_block = code[code.index("git add data/watch"):]
+        git_block = code[code.index("STAGE_PATHS="):]
         self.assertIn("data/live", git_block)
 
     def test_git_staging_includes_evidence_for_new_ledgers(self):
         """git add evidence covers all card and live ledger files."""
         code = _code(CAPTURE)
-        staging = code[code.index("git add data/watch"):]
+        staging = code[code.index("STAGE_PATHS="):]
         # evidence is already in the git add, which covers both
         # evidence/cards_nfl_v1.jsonl and evidence/live_candidates_v1.jsonl
         self.assertIn("evidence", staging)

@@ -61,9 +61,13 @@ RUN_NOTE=docs/OVERNIGHT_RUN.md
 # capture. That guard must stay exactly as strict; the fix belongs here, in
 # deciding whether to even ask yet.
 #
-# THE RULE: skip with an INFO line (exit 0, no slate/card/slip, no
-# escalation) ONLY when BOTH hold: (a) src/engine/glue.games_captured_on
-# reports zero L1 rows for this Eastern date -- the exact same signal
+# THE RULE (src.engine.slate.too_early_for_slate -- factored out
+# 2026-09-19 after `games_captured_on` was found reading a guaranteed-empty
+# L1 store here every single time; see that function's own docstring for
+# the full incident): skip with an INFO line (exit 0, no slate/card/slip,
+# no escalation) ONLY when BOTH hold: (a) src/engine/glue.games_captured_on
+# reports zero L1 rows for this Eastern date AFTER refreshing L1 from the
+# durable, tracked odds stores -- the exact same signal
 # src/engine/preflight.py's guard uses, so this can never disagree with it
 # about what "no capture" means -- AND (b) the MLB schedule's earliest
 # start_utc for this date has not arrived yet, i.e. there was never a
@@ -72,32 +76,10 @@ RUN_NOTE=docs/OVERNIGHT_RUN.md
 # falls through to the unchanged ESCALATE path below: a schedule read
 # failure must not manufacture a false "too early" excuse for a genuine miss.
 TOO_EARLY_OUT=$(python3 -c "
-import datetime as dt
-from src.engine import glue
-from src.sports import mlb
+from src.engine import slate
 
-date_str = '$TODAY'
-now = dt.datetime.now(dt.timezone.utc)
-
-captured = glue.games_captured_on(date_str)
-if captured:
-    print('PROCEED has-captures')
-else:
-    try:
-        games = mlb._schedule(date_str)
-    except Exception as exc:
-        print(f'PROCEED schedule-unreadable: {exc}')
-    else:
-        starts = [g['start_utc'] for g in games if g.get('start_utc')]
-        if not starts:
-            print('PROCEED no-games-scheduled')
-        else:
-            first_pitch = min(starts)
-            fp = dt.datetime.fromisoformat(first_pitch.replace('Z', '+00:00'))
-            if now < fp:
-                print(f'TOO_EARLY first pitch {first_pitch} has not arrived (now {now.isoformat()})')
-            else:
-                print(f'PROCEED first pitch {first_pitch} has passed with zero captures')
+too_early, reason = slate.too_early_for_slate('$TODAY')
+print(('TOO_EARLY ' if too_early else 'PROCEED ') + reason)
 " 2>&1)
 if [ "${TOO_EARLY_OUT%% *}" = "TOO_EARLY" ]; then
     echo "INFO: skipping afternoon slate for $TODAY -- ${TOO_EARLY_OUT#TOO_EARLY }; nothing to slate yet, not a miss"

@@ -152,16 +152,28 @@ jobs:
           fi
           echo "no ESCALATE lines -- clean run"
 
-      - name: Save historical + processed data cache
-        if: always()
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            data/historical/statcast
-            data/historical/mlb_results.csv
-            data/historical/mlb_results.manifest.json
-            data/historical/pitcher_logs.jsonl
-            data/historical/bullpen_log.jsonl
-            data/historical/lineups.jsonl
-            data/historical/handedness.json
-          key: daily-loop-data-${{ github.run_id }}
+      # REMOVED 2026-09-19 (Defect 3 of that day's incident, see
+      # docs/OVERNIGHT_RUN.md). This step used to re-save every one of
+      # these paths under the SAME `daily-loop-data-` prefix daily-loop.yml
+      # (cron "0 10 * * *", once a day) and this job (self-chaining,
+      # roughly every 13-20 minutes) both use. `actions/cache`'s
+      # restore-keys always resolves to the MOST RECENTLY CREATED entry
+      # matching the prefix, not the most complete one -- and this job's
+      # own script (scripts/afternoon_slate.sh: "Runs `engine slate` for
+      # TODAY and nothing else... No settle, no eod") never advances a
+      # single one of these files itself (statcast --catchup is called
+      # ONLY by daily_loop.sh -- scripts/daily_bootstrap.sh's own header).
+      # So every save here was a byte-identical re-cache of whatever this
+      # job had just restored, dozens of times a day, each one creating a
+      # newer cache entry than daily-loop's single genuine advance and
+      # burying it until the next day's 10:00Z run -- which then got
+      # buried again ~15-20 minutes later by this job's next save. Observed
+      # 2026-09-19: daily-loop's statcast catchup reached 2026-09-18
+      # (run 35446004013, 13:41Z) while this job kept reading a manifest
+      # ending 2026-09-14 all day, because every restore after 13:41Z
+      # served a newer, unchanged afternoon-slate resave instead. Deleting
+      # this step (this job still RESTORES the cache above, just never
+      # writes back to a prefix it never actually advances) is the fix --
+      # not a bigger cache key namespace, which would still let this job's
+      # frequent no-op saves compete for "most recent" against daily-loop's
+      # rare real one.

@@ -55,16 +55,52 @@ WRITERS = (
 )
 
 
+DECLARED = ROOT / "scripts" / "append_only_stores.txt"
+
+
+def _declared_stores() -> list:
+    """scripts/append_only_stores.txt, read with the same grammar
+    lib_shrink_guard.sh's read_append_only_stores uses."""
+    out = []
+    for line in DECLARED.read_text(encoding="utf-8").splitlines():
+        line = line.split("#", 1)[0].strip()
+        if line:
+            out.append(line)
+    return out
+
+
 def _staged_paths(text: str) -> list:
-    """Every path named on a `git add` line in the script."""
+    """Every path the script stages.
+
+    Three shapes, all of which the scripts really use:
+      * a literal `git add a b c` line (with `\\` continuations);
+      * `git add $DECLARED_STORES`, expanded from append_only_stores.txt
+        (since H4, 2026-09-16 -- before this expansion the check could not
+        see the lineup store at all and failed on a store that WAS staged);
+      * the existence-filtered `for p in a b c; do ... STAGE_PATHS=...` loop
+        capture_slot.sh stages through since 2026-09-19 (one missing path
+        in a literal `git add` refused the whole add).
+    """
+    joined = re.sub(r"\\\n\s*", " ", text)
     staged = []
-    for line in text.splitlines():
+    for line in joined.splitlines():
         stripped = line.strip()
+        if stripped.startswith("for p in ") and "; do" in stripped:
+            body = stripped[len("for p in "):stripped.index("; do")]
+            if "STAGE_PATHS" in text:
+                staged.extend(body.split())
+            continue
         if not stripped.startswith("git add "):
             continue
         body = stripped[len("git add "):]
         body = re.split(r"\s+2>|\s+\|\||\s+&&", body)[0]
-        staged.extend(part for part in body.split() if not part.startswith("-"))
+        for part in body.split():
+            if part.startswith("-") or part == "$STAGE_PATHS":
+                continue
+            if part == "$DECLARED_STORES":
+                staged.extend(_declared_stores())
+            else:
+                staged.append(part)
     return staged
 
 

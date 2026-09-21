@@ -430,6 +430,132 @@ def capture_spent_today(now=None, store=None) -> int:
     return spent_today(now=now, store=store, band=LIVE_CAPTURE)
 
 
+# ---------------------------------------------------------------------------
+# Checkpoint observability (2026-09-19 incident)
+# ---------------------------------------------------------------------------
+#
+# WHY THIS EXISTS. `can_spend()` gates every live-capture call BEFORE it
+# spends, against `capture_spent_today()`'s running total read off
+# credit_log.jsonl -- so the whole envelope design depends on a checkpoint
+# landing in that file roughly as often as capture runs. 2026-09-19T04:00Z-
+# 15:36Z, capture_slot.sh's forward-capture.yml `capture` job ran on its
+# normal ~13-minute cadence the entire time (`gh run list --workflow=
+# forward-capture`, ~51 completed/success runs in the window) and each run's
+# own step output showed real work -- dense captures, the non-droppable
+# batter-props floor family (exempt from both the floor and the envelope by
+# `can_spend`'s own contract, see NON_DROPPABLE_FAMILY below), nfl_capture --
+# yet not one of those runs' own git-commit step found anything to commit
+# ("== no data changes ==" every single time; confirmed against `git log
+# --since ... --until ... -- data/processed/credit_log.jsonl` on the real
+# branch, which shows only the unrelated Daily-loop/Afternoon-slate commits
+# landing in that window, zero "Forward capture slot" commits). The credit
+# log went completely silent for 11.6 hours while real spend kept
+# happening -- confirmed by the SAME run's own in-process envelope math
+# advancing checkpoint to checkpoint (e.g. one 06:18Z run read spent=927 at
+# its dense.run() call and spent=938 eleven credits later at its
+# nfl_capture call, the exact size of that run's own batter-props floor
+# spend) even though the file those numbers came from never left that one
+# ephemeral runner. When a checkpoint finally committed again, the entire
+# gap's real spend landed as one outsized delta.
+#
+# `can_spend()` cannot protect against this on its own: it can only ever
+# refuse a call it gets to see, and every call in the gap read a stale,
+# low `spent_today()` because no checkpoint before it had landed either.
+# These two functions do not change any spend decision -- they make the
+# checkpoint stream's own health machine-checkable, so a human or
+# `src.capture.health.assess()` finds out inside one cadence, not 11.6
+# hours and an eyeballed timestamp diff later.
+
+def checkpoint_age_minutes(now=None, store=None) -> Optional[float]:
+    """Minutes since the most recently logged credit-log row (merged
+    stores, chronological -- see `_rows()`), or None if the log has no
+    rows at all.
+
+    A live-capture cadence that is actually running writes a checkpoint
+    roughly every capture pass (dense.run/prop_listing.run/batter_props.run
+    etc. each call `creditlog.log()` before deciding whether to spend, win
+    or lose). This number going unusually large while capture keeps
+    reporting success -- rather than the log simply having no rows for a
+    quiet overnight stretch -- is exactly the 2026-09-19 signature: real
+    calls, no checkpoints. Read from a FRESH checkout (this file, unlike
+    the raw artifacts `health.py` also watches, is git-tracked and not
+    reproducible/redirected per-runner), this is the plain number a human
+    manually reconstructed from timestamps during that incident, made
+    machine-checkable.
+    """
+    moment = _now(now)
+    rows = _rows(store)
+    if not rows:
+        return None
+    latest_utc = rows[-1].get("utc")
+    if not latest_utc:
+        return None
+    try:
+        latest = datetime.fromisoformat(str(latest_utc).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if latest.tzinfo is None:
+        latest = latest.replace(tzinfo=timezone.utc)
+    return max(0.0, (moment - latest).total_seconds() / 60.0)
+
+
+def oversized_checkpoint_deltas(now=None, store=None, band=LIVE_CAPTURE,
+                                 threshold=None) -> list:
+    """Every consecutive same-day delta in `band` bigger than `threshold`
+    (default `DAILY_ENVELOPE`), as a list of
+    `{"from_utc", "to_utc", "delta", "from_caller", "to_caller"}` dicts.
+
+    `can_spend()` refuses BEFORE spending whenever `capture_spent_today()`
+    plus the request would exceed `DAILY_ENVELOPE` -- so under this
+    system's own invariant, genuine live-capture spend should never show
+    up as one checkpoint-to-checkpoint delta bigger than a full day's
+    envelope; it should show up as many deltas, each individually held
+    under it. A single delta this large means the checkpoints in between
+    never landed (see the module-level comment above this section for the
+    2026-09-19 incident this documents) -- `can_spend()` was reading a
+    stale, low "spent so far" number for the whole gap and never got the
+    chance to refuse anything.
+
+    THIS DOES NOT RECLASSIFY THE DELTA THE WAY `_delta_band()`'S
+    LEGACY-ONLY CEILING RULE DOES. `_delta_band()` only ever reclassifies a
+    LEGACY row (no explicit `budget_band`) away from LIVE_CAPTURE, on the
+    theory that a real live-capture overspend this size "could never have
+    been approved" -- see that function's own docstring, and note it is
+    guarded to rows with NO explicit band: today's 2026-09-19 spike row
+    carries `"budget_band": "live_capture"` explicitly, so that rule never
+    runs on it at all, legacy or not. That is correct, not a hole to
+    patch: this row IS genuine live-capture spend that was never approved
+    one checkpoint at a time, because no checkpoint got the chance to run
+    the approval -- reclassifying it as historical/backfill would hide the
+    exact overspend this function exists to surface, precisely the
+    failure `_delta_band()`'s own docstring warns against. This function
+    uses `row_band()` (explicit band if present, else the plain
+    caller-name fallback, WITHOUT the ceiling special case) and never
+    changes what band a delta reports as -- it only flags the size.
+    """
+    threshold = DAILY_ENVELOPE if threshold is None else threshold
+    today = _row_date({"utc": _utc_iso(_now(now))})
+    todays_rows = [r for r in _rows(store) if _row_date(r) == today]
+    known = [r for r in todays_rows if r.get("credits_remaining") is not None]
+    anomalies = []
+    for prev, cur in zip(known, known[1:]):
+        prev_remaining, cur_remaining = prev["credits_remaining"], cur["credits_remaining"]
+        if cur_remaining >= prev_remaining:
+            continue
+        delta = prev_remaining - cur_remaining
+        if row_band(cur) != band:
+            continue
+        if delta > threshold:
+            anomalies.append({
+                "from_utc": prev.get("utc"),
+                "to_utc": cur.get("utc"),
+                "delta": delta,
+                "from_caller": prev.get("caller"),
+                "to_caller": cur.get("caller"),
+            })
+    return anomalies
+
+
 def can_spend_live_odds(est_credits: int, now=None, store=None, env=None,
                         remaining=None) -> Decision:
     """May we spend `est_credits` on in-play odds right now?
@@ -695,6 +821,10 @@ def status(now=None, store=None, families_path=None) -> dict:
         "capture_spent_today": capture_spent,
         "envelope_remaining_today": (
             (DAILY_ENVELOPE - capture_spent) if capture_spent is not None else None),
+        # 2026-09-19 incident (see the section above capture_spent_today):
+        # the checkpoint stream's own health, surfaced instead of assumed.
+        "checkpoint_age_minutes": checkpoint_age_minutes(now=now, store=store),
+        "checkpoint_anomalies": oversized_checkpoint_deltas(now=now, store=store),
         "live_odds": {
             "enabled": live_odds_enabled(),
             "spent_today": live_odds_spent,
@@ -950,12 +1080,16 @@ def probe_family(family: str, env=None, provider=None, now=None,
         except provider.OddsProviderError as exc:
             result["error"] = f"could not fetch sports list: {exc}"
             return result
-        # Find the first active tennis sport key
+        # Find the first ACTIVE tennis sport key. `all_sports=True` also
+        # lists out-of-season tournaments (`"active": false`); the 2026-09-16
+        # probe took the first tennis key regardless, landed on the
+        # Australian Open in September, got an empty payload, and recorded a
+        # degenerate measurement that left tennis capture PROBE_REQUIRED from
+        # then on. A key with no `active` field at all is treated as active.
         tennis_key = None
         for sport in sports:
             key = sport.get("key", "")
-            # Look for sports with "tennis" in the key
-            if "tennis" in key.lower():
+            if "tennis" in key.lower() and sport.get("active", True) is not False:
                 tennis_key = key
                 break
         if tennis_key is None:
