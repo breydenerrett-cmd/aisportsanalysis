@@ -23,6 +23,10 @@ has been corrected in this version. Items marked **[10:00Z]** depend on the
   fix for that went to the wrong branch and did nothing. The real fix went to
   the branch the schedule actually runs from at about 06:00Z. **[10:00Z/afternoon]**
   confirmation pending.
+- **Sunday proved your −200 rule.** The old NFL favourites card went **5-3 and
+  lost 1.03 units** (settled 10:16Z). Its 49ers win at −950 earned 0.11u, and
+  each of its three losses at −295, −420 and −380 cost a full unit. Winning
+  62.5% of bets lost money.
 - **NFL no longer picks favourites.** The old rule took the favourite in every
   game it picked, down to San Francisco −950. The new rule (NFL_CARD_V2) only
   publishes a price that beats the other books' consensus under three standard
@@ -31,9 +35,11 @@ has been corrected in this version. Items marked **[10:00Z]** depend on the
   published before V2 went live and labelled as the old rule. **V2's first
   possible card is Thursday 09-24.**
 - **All three sports are on the staging preview site** (production isn't
-  live). MLB has picks. NFL has the new rule. Tennis has a research page, but
-  **tennis prices have never been captured at all**; a blocked probe is fixed
-  tonight.
+  live). MLB has picks. NFL has the new rule. Tennis has a research page, and
+  **tennis prices were captured for the first time ever this morning** (WTA
+  Singapore Open) once the blocked probe was fixed. **Tennis still can't
+  grade picks:** even with your new BALLDONTLIE key, tennis results return
+  **HTTP 401**. That key does not include ATP/WTA results.
 - **MLB's record is positive, but every single game pick has been a
   favourite.** Game picks are 57-31 (+5.58u) over 10 settled days. Props are
   57-28 (+1.41u) over 6 settled days. All 88 game picks were favourites, and
@@ -41,10 +47,17 @@ has been corrected in this version. Items marked **[10:00Z]** depend on the
   Hits Unders lost money despite winning 61%.
 - **MLB's regular season ends 09-27.** That changes what's urgent: NFL is the
   sport that runs through the winter.
-- **Credits are tight.** The balance was 9,634 at 05:33Z against a 5,000 floor.
-  Every day from 09-15 to 09-20 spent 1,400–4,100 credits against a 900 budget.
-  If the fix doesn't bring that down, paid capture stops around **09-24**.
-  **[10:00Z]** first clean-day rate pending.
+- **Credits look under control after the fix, but watch today.** Every day
+  from 09-15 to 09-20 spent 1,400–4,100 credits against a 900 budget. Today
+  (09-21) had spent **280 by 10:20Z**, about 24 an hour overnight since the
+  fix, with a checkpoint every slot. The balance is 9,534 against a 5,000
+  floor. Daytime MLB prop buying is the heavy part, so the real test is
+  whether today stays under 900.
+- **New bug found and being fixed: the MLB engine bets NFL games.** On 09-20
+  its baseline strategies placed 84 paper bets on NFL games, because the
+  engine doesn't filter the shared odds store by sport. So 09-20's MLB paper
+  record can't settle. It is not from tonight's changes (09-17 had one), and
+  the fix is in progress for the 13:31Z retry *(section 4.3)*.
 - **Four decisions are yours** *(section 10)*.
 
 ---
@@ -214,15 +227,16 @@ None of it was acted on.
 
 ### 3.3 Tennis — a research page, no picks, no prices yet
 
-- **Why no picks:** grading needs final results. The Odds API has no tennis
-  results. BALLDONTLIE returned **HTTP 401** for tennis results on 09-18 and
-  09-19. The likeliest cause is the old key or trial, not tennis entitlement.
-  You set a **new BALLDONTLIE key at 03:42Z tonight**. **[10:00Z]**
-- **Why no prices:** capture was never measured, then blocked by the
-  degenerate probe (section 2, item 6). The 10:00Z daily loop should re-probe
-  a live tournament, and capture would start **for the first time**.
-  **[10:00Z]**
-- The page says so plainly: "No tennis prices have been captured yet".
+- **Why no picks:** grading needs final results, and The Odds API has no
+  tennis results. BALLDONTLIE returned HTTP 401 for tennis results on 09-18
+  and 09-19, and **still returns 401 with the new key you set at 03:42Z**
+  (10:16Z run). That key doesn't include ATP/WTA results. Tennis picks need a
+  BALLDONTLIE plan that does, or another results source.
+- **Prices: flowing for the first time.** The 10:16Z run re-probed a live
+  tournament (WTA Singapore Open) and got a valid measurement, and the first
+  tennis capture followed. The research board fills as captures continue.
+  Until the next deploy it says "No tennis prices have been captured yet",
+  which was true when written.
 
 ---
 
@@ -348,7 +362,7 @@ This is a small, filtered first read of the "no skill" line, not a strategy.
 | Service | Status | Needed for |
 |---|---|---|
 | The Odds API (100k/month) | 9,634 left at 05:33Z; floor 5,000; reset **assumed** 10-01 | all odds capture, every sport |
-| BALLDONTLIE | new key set 03:42Z tonight; tennis results 401'd before it | tennis grading; NFL stats and props |
+| BALLDONTLIE | new key set 03:42Z; **tennis results still 401 with it** | tennis grading (needs a plan with ATP/WTA); NFL stats and props |
 | API-Tennis | trial expired | not needed if BALLDONTLIE works |
 
 **Credits.** About 4,600 are usable above the floor. At the floor, every paid
@@ -358,9 +372,11 @@ capture stops, for MLB and NFL alike.
   **09-24**, before the last MLB weekend and NFL Sunday 09-27.
 - **If the fix makes the 900/day budget actually bind:** around **09-26**.
 
-The post-fix overnight rate (57 credits over five slots, about 11 per slot)
-says nothing yet about the daytime MLB prop buying that dominates spend.
-**[10:00Z]**
+Since the fix: **280 spent on 09-21 by 10:20Z**, about 24 an hour overnight,
+with a checkpoint every slot so the 900 budget can now actually bind. The
+daytime MLB prop buying that dominates spend has not happened yet. If 09-21
+ends under 900, the floor is about 09-26, five days before the assumed
+10-01 reset.
 
 **BALLDONTLIE and the NFL** (from its published spec):
 
@@ -432,8 +448,14 @@ An MLB-only plan does not cover NFL.
    API tier, or accept a smaller daily budget that captures less?
 3. **Production.** When you want linehound.app live, the steps in section 7
    are yours (app, volume, secrets, deploy token).
-4. **BALLDONTLIE GOAT tier** ($39.99/mo) for NFL player props and odds, if you
-   want NFL props tested this season.
+4. **BALLDONTLIE plan.** Your new key still gets HTTP 401 on tennis results.
+   Pick what you want covered:
+   - **ATP/WTA results**, to grade tennis picks at all;
+   - **NFL GOAT** ($39.99/mo), for NFL player props and odds;
+   - both.
+
+   Without ATP/WTA results, tennis stays a research page with prices and no
+   picks.
 
 ---
 
@@ -473,11 +495,27 @@ An MLB-only plan does not cover NFL.
   on them (07:41Z, run 35574127485) ran all four arms cleanly and committed.
   No decisions yet, correctly: every game was more than 4 hours from first
   pitch. CI is green on the merge (run 35573833475).
-- [ ] **[10:00Z]** tennis re-probe non-degenerate; tennis capture starts.
-- [ ] **[10:00Z]** tennis results with the new BALLDONTLIE key: still 401?
-- [ ] **[10:00Z]** the new 7-day settle window grades MLB 09-20 and NFL 09-20
-  exactly once, and does not re-grade NFL 09-17.
-- [ ] **[10:00Z]** the first clean-day credit rate.
+- [x] **Tennis probe fixed, and capture started.** The 10:16Z daily loop
+  (run 35587312001) probed WTA Singapore Open: 1 credit per event, a valid
+  measurement. The credit log then shows the first-ever
+  `tennis_capture.run`.
+- [x] **Tennis results with your new BALLDONTLIE key are still HTTP 401.** The
+  key does not cover ATP/WTA results, so tennis still can't grade picks.
+- [x] **The new 7-day settle window worked the first time in production.**
+  - MLB: 1 date checked, 1 settled (09-20). The card is now **66-34, +8.21u
+    over 11 days**.
+  - NFL: 1 date checked, 1 settled. The old rule's 09-20 card went 5-3,
+    **−1.03u**.
+  - NFL 09-17 was not re-graded.
+- [x] **Credits so far today:** 280 by 10:20Z, about 24 an hour overnight
+  since the fix. The daytime rate is still to come.
+- [x] **Pitch data advanced to 09-20** in the daily loop. With the cache fix on
+  the default branch, the afternoon slate should now read it.
+- [ ] **New: the MLB engine placed 84 paper bets on NFL games on 09-20**, so
+  engine settle refused 09-20 (a new ESCALATE; the job correctly went red).
+  It is not from tonight's changes (09-17 had one). The engine reads the
+  shared odds store without a sport filter. **Fix in progress** for the 13:31Z
+  retry.
 - [ ] **[afternoon 09-21, after you wake]** the afternoon MLB board builds
   without "coverage ends 2026-09-14", and the genomes decide.
 - [x] **Monday's NFL card:** neither V2 nor empty. It is the old rule's Rams

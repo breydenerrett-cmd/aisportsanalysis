@@ -154,6 +154,9 @@ class SettleTestBase(unittest.TestCase):
     def run_settle(self, date_str, **kwargs):
         # Hermetic: never read the real event->game_pk map from a test.
         kwargs.setdefault("game_pk_map_path", self.game_pk_map_path)
+        # Nor the real price-source stores' sport tags (read only when a
+        # wager is unresolved -- tests/test_engine_sport_scope.py covers it).
+        kwargs.setdefault("sport_source_paths", ())
         kwargs.setdefault("wagers_path", self.wagers_path)
         kwargs.setdefault("results_path", self.results_path)
         kwargs.setdefault("f5_historical_path", self.f5_path)

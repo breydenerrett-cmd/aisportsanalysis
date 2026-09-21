@@ -39,6 +39,32 @@ resolved (not yet run through `gamekey --date`, or genuinely unresolvable)
 still gets the same honest, feature-sparse `PriceBlindSnapshot` this module
 always produced for an unmapped event -- no guessing, only what the map
 and the price store actually know.
+
+MLB ONLY: THE SPORT SCOPE OF EVERY L1 READ HERE (2026-09-21)
+--------------------------------------------------------------
+This engine is an MLB engine. `odds_multibook.jsonl`/`odds_snapshots.jsonl`
+also carry other sports' captures (NFL since 2026-09-15, tennis since
+2026-09-21) -- tagged by the capture path with an explicit `sport` field
+(`src.pipeline.snapshots`: a row carries `sport` only when it is NOT the
+default MLB capture; legacy MLB rows carry no `sport` at all). But
+`src.board.l1.run` projects EVERY source row into L1 and stamps each
+PriceObservation `sport="mlb"` (`src.board.project`'s default -- the source
+row's own tag is never passed through), so an L1 row cannot tell an NFL
+game from an MLB one. Every L1 key used to reach `engine slate` unfiltered:
+the 2026-09-20 slate staked 84 paper wagers on 14 NFL games, which then
+blocked `engine settle` for the whole date (no MLB game_pk, no MLB result).
+
+The truth about an event's sport lives only on the SOURCE rows, so every L1
+read this module (and `src.engine.slate`) performs applies `excluded_sport`
+(via `iter_board_rows`, or directly in `slate.games_for_slate_date`), which
+drops every row of an event any price-source store tags with an explicit
+non-MLB sport (`non_mlb_events`), and every row whose own `sport` is
+explicitly non-MLB. "The price-source stores" are the ones
+the L1 store at `path` is projected from: `src.board.l1.SOURCE_STORES`'
+file names plus any `closing_*.jsonl`, resolved in the L1 store's own
+directory (`sport_tag_paths` -- the same sibling convention `l1.run` uses to
+discover closing stores), so production reads the real stores and a test's
+temp-dir fixture reads only its own temp dir.
 """
 
 from __future__ import annotations
@@ -199,17 +225,150 @@ def _row_key(raw: Mapping) -> str | None:
     return None
 
 
+# ---------------------------------------------------------------------------
+# Sport scope (module docstring: "MLB ONLY")
+# ---------------------------------------------------------------------------
+
+# Explicit tags that still mean MLB. The capture path writes NO tag for an
+# MLB row (`src.pipeline.snapshots`: `sport` is set only when the resolved
+# sport is not the default "mlb"); "mlb" is what `src.board.project` stamps
+# on every L1 row, and "baseball_mlb" is the odds provider's own key
+# (`src.providers.odds.SPORT`). Anything else -- "nfl",
+# "tennis_wta_singapore_open", ... -- is not this engine's sport.
+MLB_SPORT_TAGS = frozenset({"mlb", "baseball_mlb"})
+
+
+def is_mlb_sport_tag(tag) -> bool:
+    """True when a row's `sport` value means MLB: absent/None/empty (the
+    legacy MLB capture shape) or one of `MLB_SPORT_TAGS`."""
+    if tag is None:
+        return True
+    if not isinstance(tag, str):
+        return False
+    normalized = tag.strip().lower()
+    return normalized == "" or normalized in MLB_SPORT_TAGS
+
+
+def sport_tag_paths(l1_path: Path | str = L1_PATH,
+                    extra: Iterable[Path | str] = ()) -> tuple[Path, ...]:
+    """The existing price-source stores whose rows carry the `sport` tag for
+    the L1 store at `l1_path`: `src.board.l1.SOURCE_STORES`' own file names
+    plus any `closing_*.jsonl`, resolved in `l1_path`'s directory (the
+    sibling convention `src.board.l1.run` itself uses for closing stores),
+    plus `extra` (a caller's commence store or explicit L1 sources). Only
+    paths that exist are returned, de-duplicated, in a stable order."""
+    from src.board import l1 as l1_module
+
+    directory = Path(l1_path).parent
+    candidates = [directory / Path(s["path"]).name
+                  for s in l1_module.SOURCE_STORES]
+    candidates += [Path(s["path"]) for s in
+                   l1_module._discover_closing_stores(directory)]
+    candidates += [Path(p) for p in extra]
+    out: list[Path] = []
+    seen: set[str] = set()
+    for p in candidates:
+        key = str(p)
+        if key in seen or not p.exists():
+            continue
+        seen.add(key)
+        out.append(p)
+    return tuple(out)
+
+
+# (resolved path, size, mtime_ns) -> {event_id: non-MLB sport tag}. The
+# multibook store is ~100MB and `iter_board_rows` runs once per L1 read (many
+# per slate), so each file is scanned once per content version, not per read.
+_NON_MLB_CACHE: dict[tuple, dict[str, str]] = {}
+
+
+def _non_mlb_tags_in(path: Path) -> dict[str, str]:
+    try:
+        st = path.stat()
+    except (FileNotFoundError, NotADirectoryError):
+        return {}
+    resolved = str(path.resolve())
+    key = (resolved, st.st_size, st.st_mtime_ns)
+    cached = _NON_MLB_CACHE.get(key)
+    if cached is not None:
+        return cached
+    out: dict[str, str] = {}
+    with path.open("r", encoding="utf-8") as fh:
+        for line in fh:
+            # A legacy MLB row has no `sport` key at all -- skip the parse.
+            if '"sport"' not in line:
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(row, dict):
+                continue
+            event_id = row.get("event_id")
+            tag = row.get("sport")
+            if event_id is None or is_mlb_sport_tag(tag):
+                continue
+            out.setdefault(str(event_id), str(tag))
+    for stale in [k for k in _NON_MLB_CACHE if k[0] == resolved]:
+        del _NON_MLB_CACHE[stale]
+    _NON_MLB_CACHE[key] = out
+    return out
+
+
+def non_mlb_events(paths: Iterable[Path | str]) -> dict[str, str]:
+    """`{event_id: sport}` for every event any store in `paths` tags with an
+    explicit non-MLB `sport` (see `is_mlb_sport_tag`). An event absent from
+    every store, or tagged only as MLB, is not in the result -- this names
+    what the stores positively say is another sport, never a guess."""
+    out: dict[str, str] = {}
+    for p in paths:
+        for event_id, tag in _non_mlb_tags_in(Path(p)).items():
+            out.setdefault(event_id, tag)
+    return out
+
+
+def excluded_sport(raw: Mapping, non_mlb: Mapping[str, str]) -> str | None:
+    """The non-MLB sport that excludes this L1 row from the MLB board, or
+    None when the row is in scope."""
+    event_id = raw.get("event_id")
+    if event_id is not None and str(event_id) in non_mlb:
+        return non_mlb[str(event_id)]
+    tag = raw.get("sport")
+    if not is_mlb_sport_tag(tag):
+        return str(tag)
+    return None
+
+
+def iter_board_rows(path: Path | str = L1_PATH, *,
+                    extra_sport_paths: Iterable[Path | str] = ()
+                    ) -> Iterable[dict]:
+    """Every raw L1 row at `path` that belongs to an MLB event (module
+    docstring: "MLB ONLY") -- the reader behind `read_l1_observations` and
+    `games_captured_on`; `src.engine.slate.games_for_slate_date` applies
+    the same `excluded_sport` test itself so it can COUNT what it drops.
+    Rows of an event a price-source store tags as another sport never
+    become a board, a slate game, a capture-freshness signal or a
+    truncation sample."""
+    path = Path(path)
+    non_mlb = non_mlb_events(sport_tag_paths(path, extra_sport_paths))
+    for raw in _iter_l1_raw(path):
+        if excluded_sport(raw, non_mlb) is not None:
+            continue
+        yield raw
+
+
 def read_l1_observations(game: "GameRef | str | int", *,
                           path: Path | str = L1_PATH
                           ) -> tuple[PriceObservation, ...]:
     """Every L1 `PriceObservation` row for `game`, unfiltered by time.
     Malformed rows (a future store-shape change this record's own
     validators reject) are skipped, never raised past the caller -- L1 is a
-    read this module does not own the writing side of."""
+    read this module does not own the writing side of. MLB events only
+    (`iter_board_rows`): a non-MLB event has no rows here."""
     ref = GameRef.of(game)
     key = ref.board_key
     out = []
-    for raw in _iter_l1_raw(Path(path)):
+    for raw in iter_board_rows(path):
         if _row_key(raw) != key:
             continue
         try:
@@ -254,9 +413,12 @@ def games_captured_on(date_str: str, *, path: Path | str = L1_PATH
     """Every `board_key` (see `GameRef`) with at least one L1 observation
     whose `observed_utc` date-prefix is `date_str`, sorted for determinism.
     Empty when the date has no captures at all -- callers refuse on that,
-    this function just reports it honestly."""
+    this function just reports it honestly. MLB events only
+    (`iter_board_rows`): an NFL capture is not an MLB capture, so it can
+    neither become a sampled game nor keep the preflight freshness guard
+    green while MLB captures have stopped."""
     keys: set[str] = set()
-    for raw in _iter_l1_raw(Path(path)):
+    for raw in iter_board_rows(path):
         observed = raw.get("observed_utc") or ""
         if observed[:10] != date_str:
             continue

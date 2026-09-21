@@ -25,6 +25,23 @@ IDEMPOTENCY
 A bet whose `bet_id` already appears in its system's own
 `src.accounts.paper.PaperAccount` ledger is skipped -- re-running `engine
 settle --date DATE` after it already ran settles nothing a second time.
+
+NOT-AN-MLB-EVENT WAGERS ARE VOIDED, NAMED, NEVER A PERMANENT BLOCK
+--------------------------------------------------------------------
+Before 2026-09-21 the slate built MLB boards from every L1 row regardless
+of sport (`src.engine.glue`'s "MLB ONLY" section), so the append-only wager
+ledger holds paper wagers on NFL games (2026-09-17: 6, 2026-09-20: 84,
+2026-09-21: 6). Such a wager can never get an MLB `game_pk` or an MLB
+result, so the refusal above would block its whole date forever. A wager
+whose `game_pk` is still unresolved AND whose `event_id` a price-source
+store positively tags as another sport (`glue.non_mlb_events`) is
+therefore settled VOID (zero profit, zero stake exposure) with an explicit
+`void_reason` on its account-ledger row, appended exactly like any other
+settlement -- no existing row is edited -- and counted on the report
+(`SettleReport.voided_not_mlb`). Everything else is unchanged: every MLB
+wager settles normally, and an MLB wager with no resolved game_pk or no
+result still refuses the whole date. An event the stores do not
+positively tag as another sport is never voided on a guess.
 """
 
 from __future__ import annotations
@@ -38,9 +55,10 @@ from pathlib import Path
 from typing import Mapping
 
 from src.accounts.paper import PaperAccount, PaperBet, SettledBet
-from src.board.settle import GameResult, LOSS, WIN
+from src.board.settle import GameResult, LOSS, VOID, WIN
 from src.board import gamekey
 from src.core.asof import game_pk_key
+from src.engine import glue as glue_module
 from src.factory.fitness import promotion_verdict
 from src.factory.scorecard import build_scorecard, decision_key_for
 from src.ledger.bridge import V2_LEDGER_PATH
@@ -192,6 +210,76 @@ def _with_resolved_game_pk(wager: Mapping, game_pk_index: Mapping[str, dict]) ->
         if resolved is not None:
             row["game_pk"] = int(resolved)
     return row
+
+
+# The reason every not-an-MLB-event VOID carries (module docstring). The
+# sport itself is appended per wager from the store's own tag.
+NOT_MLB_VOID_REASON = (
+    "not an MLB event -- a non-MLB game wagered by the pre-2026-09-21 "
+    "engine sport-filter bug (MLB boards were built from every L1 row "
+    "regardless of sport); the MLB settle has no result for it, so it is "
+    "voided, never graded")
+
+
+def not_mlb_void_reason(sport: str) -> str:
+    return f"{NOT_MLB_VOID_REASON} [price-store sport tag: {sport}]"
+
+
+@dataclass(frozen=True, slots=True)
+class VoidedNotMlbBet(SettledBet):
+    """A VOID settlement of a wager on a non-MLB event, carrying WHY on its
+    own account-ledger row -- a bare "void" would be indistinguishable from
+    an ordinary unsettleable-market VOID (e.g. F5 with no linescore)."""
+
+    void_reason: str = ""
+    event_id: str | None = None
+    sport: str | None = None
+
+    def to_dict(self) -> dict:
+        row = SettledBet.to_dict(self)
+        row["void_reason"] = self.void_reason
+        row["event_id"] = self.event_id
+        row["sport"] = self.sport
+        return row
+
+
+def partition_not_mlb(wagers, non_mlb: Mapping[str, str]) -> tuple:
+    """`(mlb_wagers, not_mlb)`: `not_mlb` is `((wager, sport), ...)` for
+    every wager whose `game_pk` is still unresolved AND whose `event_id` is
+    positively tagged as another sport in `non_mlb`
+    (`glue.non_mlb_events`). A wager with a resolved MLB game_pk is always
+    MLB, and an unresolved one the stores do not tag stays MLB -- it still
+    refuses the date exactly as before, never voided on a guess."""
+    mlb, not_mlb = [], []
+    for w in wagers:
+        event_id = w.get("event_id")
+        if (w.get("game_pk") is None and event_id is not None
+                and str(event_id) in non_mlb):
+            not_mlb.append((w, non_mlb[str(event_id)]))
+        else:
+            mlb.append(w)
+    return tuple(mlb), tuple(not_mlb)
+
+
+def build_void_review_for(decision: DecisionRecord | None,
+                          settled: SettledBet, settle_utc: str) -> ReviewRecord:
+    """The ReviewRecord for a not-an-MLB-event VOID. No mechanism is
+    measured (there is no MLB game to measure it against, and none is ever
+    invented) and no late information is read (no MLB game_pk to key it
+    on), so the thesis is UNTESTED by `compute_thesis_outcome`'s own
+    rule -- the same shape any other VOID with no checks gets."""
+    decision_key = (decision_key_for(decision) if decision is not None
+                    else (settled.bet.selection_id, settled.bet.market_key,
+                          settled.bet.selection_id, settle_utc))
+    return ReviewRecord(
+        decision_key=decision_key, review_utc=settle_utc,
+        settled=settled.outcome,
+        thesis_outcome=compute_thesis_outcome((), settled.outcome),
+        mechanism_checks=(), market_path={}, late_information=(),
+        missed_information=(), lineup_delta={}, bullpen_delta={},
+        counterargument_realized=(), variance_flag=False,
+        system_action="none", new_hypothesis=None,
+    )
 
 
 def _record_from_row(cls, row: Mapping):
@@ -370,6 +458,12 @@ class SettleReport:
     n_wagers_considered: int
     n_games: int
     systems: tuple  # tuple[SystemSettlement, ...]
+    # Wagers on this date identified as NOT an MLB event (module docstring),
+    # whether voided by this run or by an earlier one.
+    n_not_mlb_wagers: int = 0
+    # The ones THIS run voided: `({"bet_id", "system_id", "event_id",
+    # "sport", "reason"}, ...)`.
+    voided_not_mlb: tuple = ()
 
 
 def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
@@ -379,8 +473,17 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
                decisions_path=None, review_path=None, scorecard_path=None,
                account_ledger_path_fn=None,
                game_pk_map_path=None,
+               sport_source_paths=None,
                battery_run=battery.run,
                now: datetime | None = None) -> SettleReport:
+    """Settle `date_str`'s paper wagers (module docstring).
+
+    `sport_source_paths`: the price-source stores whose `sport` tags say
+    which events are not MLB (`glue.non_mlb_events`). `None` means the real
+    stores the production L1 is projected from
+    (`glue.sport_tag_paths(glue.L1_PATH)`); an explicit sequence (`()`
+    included) is used as given -- how a test stays off the real stores.
+    Read only when some wager's game_pk is still unresolved."""
     game_pk_index = gamekey.load_map(
         game_pk_map_path if game_pk_map_path is not None
         else gamekey.DEFAULT_MAP_PATH)
@@ -395,14 +498,24 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
     # 2026-09-05, all 99 wagers) is resolved HERE, read-only, from the
     # event->game_pk map as it stands now. Identity join only: which MLB game
     # an odds event was, never how it ended. Anything still unresolved is
-    # refused below exactly as before.
+    # refused below exactly as before -- unless the price stores positively
+    # tag its event as another sport, in which case it is voided by name.
     wagers = tuple(_with_resolved_game_pk(w, game_pk_index) for w in wagers)
 
+    non_mlb: Mapping[str, str] = {}
+    if any(w.get("game_pk") is None for w in wagers):
+        paths = (tuple(sport_source_paths) if sport_source_paths is not None
+                 else glue_module.sport_tag_paths(glue_module.L1_PATH))
+        non_mlb = glue_module.non_mlb_events(paths)
+    mlb_wagers, not_mlb = partition_not_mlb(wagers, non_mlb)
+    not_mlb_sport = {id(w): sport for w, sport in not_mlb}
+
     results = load_mlb_results(results_path)
-    game_pks = sorted({game_pk_key(w.get("game_pk")) for w in wagers
+    game_pks = sorted({game_pk_key(w.get("game_pk")) for w in mlb_wagers
                        if w.get("game_pk") is not None})
     missing = [pk for pk in game_pks if pk not in results]
-    unresolved_events = sorted({w.get("event_id") for w in wagers if w.get("game_pk") is None})
+    unresolved_events = sorted({w.get("event_id") for w in mlb_wagers
+                                if w.get("game_pk") is None})
     if missing or unresolved_events:
         detail = []
         if missing:
@@ -435,6 +548,7 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
     for w in wagers:
         by_system.setdefault(w["system_id"], []).append(w)
 
+    voided_not_mlb: list = []
     system_settlements = []
     for system_id, rows in sorted(by_system.items()):
         already = already_settled_bet_ids(system_id, account_ledger_path_fn)
@@ -458,6 +572,41 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
         for w in rows:
             if w["bet_id"] in already:
                 n_dupe += 1
+                continue
+            if id(w) in not_mlb_sport:
+                sport = not_mlb_sport[id(w)]
+                reason = not_mlb_void_reason(sport)
+                bet = PaperBet(
+                    bet_id=w["bet_id"], system_id=w["system_id"],
+                    market_key=w["market_key"], selection_id=w["selection_id"],
+                    side=w["side"], line=w.get("line"),
+                    price_american=w["price_american"],
+                    settlement_rule=w["settlement_rule"],
+                    stake_units=w.get("stake_units", 1.0), game_pk=None,
+                )
+                voided = VoidedNotMlbBet(
+                    bet=bet, outcome=VOID, profit_units=0.0,
+                    void_reason=reason, event_id=w.get("event_id"),
+                    sport=sport)
+                # The account's OWN bookkeeping for a settled bet (totals,
+                # n_voids, one appended hash-chained row) -- the same call
+                # `settle_and_record` makes once `settle()` has graded a
+                # bet; here the grade is VOID by identity, not by a result.
+                account._record_settlement(voided, date_str)
+                newly_settled.append(voided)
+                voided_not_mlb.append({
+                    "bet_id": w["bet_id"], "system_id": w["system_id"],
+                    "event_id": w.get("event_id"), "sport": sport,
+                    "reason": reason,
+                })
+                decision = decisions_by_key.get(
+                    (w.get("event_id"), w["system_id"], w["market_key"],
+                     w["selection_id"], w.get("decision_utc")))
+                review = build_void_review_for(decision, voided, settle_utc)
+                if review_path is not None:
+                    append_review(review, path=review_path)
+                else:
+                    append_review(review)
                 continue
             game_pk = w.get("game_pk")
             result = build_game_result(game_pk, results, f5_historical, f5_boxscore)
@@ -542,8 +691,21 @@ def run_settle(date_str: str, *, wagers_path=None, results_path=MLB_RESULTS_CSV,
             scorecard_verdict=verdict, scorecard_absent=absent,
         ))
 
+    if not_mlb:
+        by_sport: dict = {}
+        for _w, sport in not_mlb:
+            by_sport[sport] = by_sport.get(sport, 0) + 1
+        n_events = len({str(w.get("event_id")) for w, _s in not_mlb})
+        print(f"  [PAPER] not-an-MLB-event wagers on {date_str}: {len(not_mlb)} "
+              f"on {n_events} event(s) "
+              f"({', '.join(f'{s}: {n}' for s, n in sorted(by_sport.items()))}); "
+              f"voided this run: {len(voided_not_mlb)}, already voided: "
+              f"{len(not_mlb) - len(voided_not_mlb)} -- {NOT_MLB_VOID_REASON}")
+
     return SettleReport(date=date_str, n_wagers_considered=len(wagers),
-                        n_games=len(game_pks), systems=tuple(system_settlements))
+                        n_games=len(game_pks), systems=tuple(system_settlements),
+                        n_not_mlb_wagers=len(not_mlb),
+                        voided_not_mlb=tuple(voided_not_mlb))
 
 
 def _replay_prior_settlements(account: PaperAccount) -> None:

@@ -545,6 +545,14 @@ class SlateReport:
     dry_run: bool
     systems: tuple  # system ids run
     games: tuple  # tuple[GameOutcome, ...]
+    # `(event_id, sport)` for every non-MLB event on this date that the L1
+    # store carried and `games_for_slate_date` kept OFF the board -- never
+    # considered, so not in `games`, but counted here rather than silent.
+    excluded_non_mlb: tuple = ()
+
+    @property
+    def n_excluded_non_mlb(self) -> int:
+        return len(self.excluded_non_mlb)
 
     @property
     def n_games_considered(self) -> int:
@@ -680,6 +688,7 @@ def _load_existing_positions(path) -> set:
 def games_for_slate_date(date_str: str, *, l1_path=glue_module.L1_PATH,
                           commence_path=glue_module.ODDS_SNAPSHOTS_PATH,
                           game_pk_map: Mapping[str, dict] | None = None,
+                          return_excluded: bool = False,
                           ) -> tuple:
     """Every L1 `board_key` whose game's own OFFICIAL (Eastern) calendar
     date is `date_str` -- NOT `glue.games_captured_on`'s "captured on this
@@ -689,16 +698,36 @@ def games_for_slate_date(date_str: str, *, l1_path=glue_module.L1_PATH,
     and miss today's games captured yesterday evening). Scans every
     `board_key` the L1 store has ever seen (not just one day's rows) and
     keeps the ones whose resolved `commence_time` files under `date_str`.
+
+    MLB EVENTS ONLY (2026-09-21). L1 stamps every row `sport="mlb"` whatever
+    sport its source row was (see `src.engine.glue`'s "MLB ONLY" section),
+    so before this filter every NFL game captured for `date_str` became a
+    slate game -- 84 NFL paper wagers on 2026-09-20. An event that the
+    price-source stores (or `commence_path`, the store that times it) tag
+    as another sport is never a candidate. With `return_excluded=True`
+    this returns `(games, excluded)`, `excluded` being the
+    `(event_id, sport)` pairs dropped for `date_str`, so the exclusion is
+    counted rather than silent.
     """
     from pathlib import Path as _Path
 
     from src.pipeline.snapshots import official_date as _official_date
 
+    non_mlb = glue_module.non_mlb_events(
+        glue_module.sport_tag_paths(l1_path, (commence_path,)))
     all_keys: set = set()
+    excluded_sport_of: dict = {}
     for raw in glue_module._iter_l1_raw(_Path(l1_path)):
         key = glue_module._row_key(raw)
-        if key:
-            all_keys.add(key)
+        if not key:
+            continue
+        sport = glue_module.excluded_sport(raw, non_mlb)
+        if sport is not None:
+            excluded_sport_of.setdefault(key, sport)
+            continue
+        all_keys.add(key)
+    # A key excluded on ANY of its rows is out entirely, never half-in.
+    all_keys -= set(excluded_sport_of)
 
     matches = []
     for key in sorted(all_keys):
@@ -708,7 +737,16 @@ def games_for_slate_date(date_str: str, *, l1_path=glue_module.L1_PATH,
             continue
         if _official_date(commence) == date_str:
             matches.append(key)
-    return tuple(matches)
+    if not return_excluded:
+        return tuple(matches)
+
+    excluded = []
+    for key in sorted(excluded_sport_of):
+        commence = glue_module.commence_time_for(
+            key, path=commence_path, game_pk_map=game_pk_map)
+        if commence is not None and _official_date(commence) == date_str:
+            excluded.append((key, excluded_sport_of[key]))
+    return tuple(matches), tuple(excluded)
 
 
 def _decision_payload(record: DecisionRecord) -> dict:
@@ -882,9 +920,17 @@ def run_slate(
     resolved_game_pk_map = (game_pk_map if game_pk_map is not None
                             else gamekey_module.load_map())
 
-    games = games_for_slate_date(date_str, l1_path=l1_path,
-                                 commence_path=commence_path,
-                                 game_pk_map=resolved_game_pk_map)
+    games, excluded_non_mlb = games_for_slate_date(
+        date_str, l1_path=l1_path, commence_path=commence_path,
+        game_pk_map=resolved_game_pk_map, return_excluded=True)
+    if excluded_non_mlb:
+        by_sport: dict = {}
+        for _event_id, sport in excluded_non_mlb:
+            by_sport[sport] = by_sport.get(sport, 0) + 1
+        print(f"  note: {len(excluded_non_mlb)} non-MLB event(s) on "
+              f"{date_str} kept off the MLB board "
+              f"({', '.join(f'{s}: {n}' for s, n in sorted(by_sport.items()))})",
+              file=sys.stderr)
     game_outcomes: list[GameOutcome] = []
 
     for game_key in games:
@@ -1040,7 +1086,8 @@ def run_slate(
 
     return SlateReport(date=date_str, dry_run=dry_run,
                        systems=tuple(s.id for s in systems),
-                       games=tuple(game_outcomes))
+                       games=tuple(game_outcomes),
+                       excluded_non_mlb=tuple(excluded_non_mlb))
 
 
 STAND_DOWNS_PATH = "evidence/stand_downs_v1.jsonl"
