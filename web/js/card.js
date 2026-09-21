@@ -73,6 +73,9 @@ const STALE_PRICE_HOURS = 4;
 // its first pick on 2026-09-17 (n=1 today); this floor is a round,
 // conservative number, not derived from that one pick.
 const NFL_SAMPLE_FLOOR = 10;
+// Owner rule for UFC (item 5): raw W-L and units only, never a win rate,
+// below n=20 -- see `recordLine` below.
+const UFC_SAMPLE_FLOOR = 20;
 
 /** How long the last-published-card fallback may hold up the page.
  *
@@ -814,7 +817,9 @@ function recordLine(rec, sport = "mlb") {
   // or "Nothing graded yet" under a card the old rule made reads as a
   // claim about THAT card, whose picks are graded on their own record.
   wrap.appendChild(el("span", { class: "card2rec__label",
-    text: sport === "nfl" ? "THE RECORD SO FAR · CURRENT NFL RULE" : "THE RECORD SO FAR" }));
+    text: sport === "nfl" ? "THE RECORD SO FAR · CURRENT NFL RULE"
+        : sport === "mma" ? "THE RECORD SO FAR · UFC_CARD_V1"
+        : "THE RECORD SO FAR" }));
 
   // EVERY DAY, INCLUDING THE ONES WITH NOTHING GRADED YET -- this is the
   // one link off the page that sells the product on its own past, so it
@@ -823,13 +828,16 @@ function recordLine(rec, sport = "mlb") {
   // #/record-card, NFL's at #/nfl/record -- pointing an NFL reader at
   // MLB's own record page would show them the wrong sport's numbers under
   // a link they clicked from an NFL screen.
-  const recordHref = sport === "nfl" ? "#/nfl/record" : "#/record-card";
+  const recordHref = sport === "nfl" ? "#/nfl/record"
+    : sport === "mma" ? "#/ufc/record" : "#/record-card";
   const seeFullRecord = () => el("a", { class: "card2rec__link", href: recordHref,
     "data-hook": "card-record-link", text: "SEE THE FULL RECORD, DAY BY DAY →" });
 
   if (!rec || !rec.n_staked) {
     wrap.appendChild(el("p", { class: "card2rec__body",
-      text: `${sport === "nfl" ? "Nothing graded yet under the current NFL rule." : "Nothing graded yet."} `
+      text: `${sport === "nfl" ? "Nothing graded yet under the current NFL rule."
+          : sport === "mma" ? "Nothing graded yet under UFC_CARD_V1."
+          : "Nothing graded yet."} `
           + "Every card is settled the morning after, "
           + "win or lose, and the running record appears here from then on." }));
     wrap.appendChild(seeFullRecord());
@@ -848,7 +856,12 @@ function recordLine(rec, sport = "mlb") {
   // has to do the division themselves to notice it is tiny. MLB is
   // unaffected -- it has never had a sample this small since this page
   // shipped, and the moment it did this same guard would apply to it too.
-  const tooSmallForARate = sport === "nfl" && rec.n_staked < NFL_SAMPLE_FLOOR;
+  // UFC_CARD_V1 (owner rule, docs/plans/2026-09-21_ALL_SPORTS_UFC_AND_PAID_
+  // PLAN.md item 5): never show a win rate below n=20 -- a UFC card is at
+  // most a handful of picks a week, so this floor is twice NFL's and will
+  // stay binding for months, not days, by design.
+  const sampleFloor = sport === "mma" ? UFC_SAMPLE_FLOOR : NFL_SAMPLE_FLOOR;
+  const tooSmallForARate = (sport === "nfl" || sport === "mma") && rec.n_staked < sampleFloor;
   line.appendChild(el("span", { class: "card2rec__meta",
     text: tooSmallForARate
       ? `${rec.days} day${rec.days === 1 ? "" : "s"} · `
@@ -861,8 +874,9 @@ function recordLine(rec, sport = "mlb") {
   wrap.appendChild(line);
 
   if (tooSmallForARate) {
+    const label = sport === "mma" ? "UFC" : "NFL";
     wrap.appendChild(el("p", { class: "card2rec__warn", "data-hook": "card-record-small-sample",
-      text: `Only ${rec.n_staked} NFL pick${rec.n_staked === 1 ? " has" : "s have"} been graded. `
+      text: `Only ${rec.n_staked} ${label} pick${rec.n_staked === 1 ? " has" : "s have"} been graded. `
           + `That is too few to show a win rate or a return -- read the count above, not a `
           + `percentage, until there are more.` }));
   }
@@ -1208,7 +1222,7 @@ export async function renderCard(host, options = {}) {
     // fact-check). A published card can hold picks that have not locked
     // yet -- each carries its own "Provisional until <time>" chip -- and the
     // page read "Locked at 9:53 PM PDT" above one of them.
-    const startWord = sport === "nfl" ? "kickoff" : "first pitch";
+    const startWord = sport === "nfl" ? "kickoff" : sport === "mma" ? "first bell" : "first pitch";
     const anyProvisional = (payload.picks || []).some((p) => p && p.locked === false);
     wrap.appendChild(el("p", { class: "card2lede", "data-hook": "card-frozen",
       text: anyProvisional
@@ -1235,7 +1249,7 @@ export async function renderCard(host, options = {}) {
   } else {
     wrap.appendChild(el("p", { class: "card2lede", "data-hook": "card-live",
       text: "Live prices — tonight's card is not locked in yet. It freezes "
-          + `before ${sport === "nfl" ? "kickoff" : "first pitch"}, and from that point the bets and prices `
+          + `before ${sport === "nfl" ? "kickoff" : sport === "mma" ? "first bell" : "first pitch"}, and from that point the bets and prices `
           + "below cannot change. Every one is then graded win or lose on "
           + "the record page, including the ones that lose." }));
   }

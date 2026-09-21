@@ -26,7 +26,7 @@ class TestSportsRegistry(unittest.TestCase):
         import src.sports
         result = src.sports.keys()
         self.assertIsInstance(result, tuple)
-        self.assertEqual(result, ("mlb", "nfl", "tennis"))
+        self.assertEqual(result, ("mlb", "nfl", "tennis", "mma"))
 
     def test_spec_default_is_mlb(self):
         """spec() with no argument should return MLB spec."""

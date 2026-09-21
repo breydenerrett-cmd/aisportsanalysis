@@ -280,6 +280,7 @@ async function _renderRouteInner(main) {
   if (sport === "mlb") activeHash = navHashForRoute(route);
   else if (sport === "nfl") activeHash = route === "record" ? "#/nfl/record" : "#/nfl";
   else if (sport === "tennis") activeHash = "#/tennis";
+  else if (sport === "ufc") activeHash = route === "record" ? "#/ufc/record" : "#/ufc";
   mountNav(rail, tabbar, activeHash, sport);
   setShellStatus(null);
   setClock();
@@ -318,6 +319,18 @@ async function _renderRouteInner(main) {
     // the one board (tennis.js's renderTennisBoard). No picks, no slip,
     // no record surface exists for tennis anywhere in this router.
     await renderTennisBoard(main);
+  } else if (sport === "ufc") {
+    // UFC went live for 2026-09-26's card, reusing the exact NFL card/
+    // record renderers (card.js/cardrecord.js already read `sport` off
+    // their options rather than assuming "nfl") -- the route key is "ufc"
+    // (see web/js/sport.js's registry comment) but the API's own sport id
+    // is "mma", so that is what is passed here, explicitly, the same way
+    // the nfl branch above passes {sport: "nfl"}.
+    if (route === "record") {
+      await renderCardRecord(main, { sport: "mma" });
+    } else {
+      await renderCard(main, { sport: "mma" });
+    }
   } else if (sport === "nba" || sport === "nhl") {
     // NBA and NHL are still coming-soon (D6): every route under either,
     // however many sub-segments it carries, shows the one shared page --

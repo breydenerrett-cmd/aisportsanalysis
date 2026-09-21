@@ -142,6 +142,12 @@
         "outcomes": 124,
         "degenerate": false
       }
+    },
+    "mma_h2h": {
+      "measured": false,
+      "credits_per_event": null,
+      "measured_utc": null,
+      "source": "docs/plans/2026-09-21_ALL_SPORTS_UFC_AND_PAID_PLAN.md S5.2: the vendor's own product page says one pull covers the whole card at roughly 1-2 credits, but that is a vendor estimate, not a measurement taken against this account. Kept unmeasured on purpose -- src.capture.budget.can_spend refuses to spend against mma_h2h (PROBE_REQUIRED) until a real `python3 -m src.cli budget --probe mma_h2h` measurement is recorded here. src/pipeline/mma_capture.py never spends credits before that probe exists."
     }
   }
 }

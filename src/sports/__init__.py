@@ -21,6 +21,7 @@ declaration rebinds the same name to itself, last, for good.
 from src.sports.mlb import MLB
 from src.sports.nfl import NFL
 from src.sports.tennis import TENNIS
+from src.sports.mma import MMA
 
 DEFAULT_SPORT = "mlb"
 
@@ -29,7 +30,7 @@ class UnknownSport(KeyError):
     """Raised when an unknown sport key is requested."""
 
 
-SPORTS = {"mlb": MLB, "nfl": NFL, "tennis": TENNIS}
+SPORTS = {"mlb": MLB, "nfl": NFL, "tennis": TENNIS, "mma": MMA}
 
 
 def keys() -> tuple:

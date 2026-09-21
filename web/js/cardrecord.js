@@ -130,6 +130,10 @@ function statTile(label, valueNode) {
  * first pick on 2026-09-17 (n=1 today); this floor is a round, conservative
  * number, not derived from that one pick. */
 const NFL_SAMPLE_FLOOR = 10;
+// UFC_CARD_V1 (owner rule): raw W-L and units only, never a win rate or
+// ROI, below n=20 -- a UFC card is at most a handful of picks a week, so
+// this floor is twice NFL's and stays binding far longer.
+const UFC_SAMPLE_FLOOR = 20;
 
 function headline(record, sport = "mlb") {
   const wrap = el("div", { class: "crp-headline panel chamfer", "data-hook": "record-headline" });
@@ -142,7 +146,8 @@ function headline(record, sport = "mlb") {
   // below the floor, those two tiles show the raw count instead of a
   // percentage, and an unmissable note states the actual sample size
   // rather than leaving a reader to notice it is tiny on their own.
-  const tooSmallForARate = sport === "nfl" && staked > 0 && staked < NFL_SAMPLE_FLOOR;
+  const sampleFloor = sport === "mma" ? UFC_SAMPLE_FLOOR : NFL_SAMPLE_FLOOR;
+  const tooSmallForARate = (sport === "nfl" || sport === "mma") && staked > 0 && staked < sampleFloor;
 
   // ONE STRING. Wins and losses are two numbers inside the same span, at
   // the same size, in the same colour -- never two separately-tinted
@@ -155,7 +160,7 @@ function headline(record, sport = "mlb") {
   // NFL is one population (2026-09-20): NFL_CARD_V2 puts spreads, totals
   // and moneylines in the one `picks` list and has no props, so its count
   // is every pick, labelled as such -- see the markets note below.
-  grid.appendChild(statTile(sport === "nfl" ? "ALL PICKS (W-L-P)" : "GAME PICKS (W-L-P)",
+  grid.appendChild(statTile((sport === "nfl" || sport === "mma") ? "ALL PICKS (W-L-P)" : "GAME PICKS (W-L-P)",
     figure(wlp)));
   grid.appendChild(statTile("VOIDS", figure(String(record.voids || 0), record.voids ? "warn" : null)));
   grid.appendChild(statTile("WIN RATE", decided && !tooSmallForARate
@@ -171,8 +176,9 @@ function headline(record, sport = "mlb") {
   wrap.appendChild(grid);
 
   if (tooSmallForARate) {
+    const label = sport === "mma" ? "UFC" : "NFL";
     wrap.appendChild(el("p", { class: "crp-voids", "data-hook": "record-nfl-sample-note",
-      text: `NFL sample size: ${staked} pick${staked === 1 ? "" : "s"} graded. That is too few for a `
+      text: `${label} sample size: ${staked} pick${staked === 1 ? "" : "s"} graded. That is too few for a `
           + `win rate or ROI to mean anything -- the W-L-P count above is the whole record so far, not `
           + `a percentage.` }));
   }

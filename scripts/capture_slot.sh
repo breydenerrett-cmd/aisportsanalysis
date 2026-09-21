@@ -565,10 +565,25 @@ python3 -m src.cli nfl capture 2>&1 | sed 's/^/  /' || true
 echo "== tennis capture =="
 python3 -m src.cli tennis capture 2>&1 | sed 's/^/  /' || true
 
+# UFC/MMA: same bounded-cadence shape as nfl/tennis above -- mma_h2h starts
+# unmeasured in config/capture_families.json, so src.capture.budget refuses
+# every spend here (PROBE_REQUIRED) until a real `budget --probe mma_h2h`
+# measurement is recorded; this call is safe to run on every slot from day
+# one because it cannot spend a credit before that.
+echo "== ufc capture =="
+python3 -m src.cli ufc capture 2>&1 | sed 's/^/  /' || true
+
 echo "== nfl card publish ($SLATE_DATE) =="
 NFL_DATE="$SLATE_DATE"
 NFL_CARD_OUT=$(python3 -m src.cli card publish --sport nfl --date "$NFL_DATE" 2>&1) || true
 echo "$NFL_CARD_OUT" | tail -n 25 | sed 's/^/  /'
+
+# UFC card publish: same "build first, write second" shape as NFL's just
+# above (src/report/ufc_card.py's card_to_publish). Each bout locks 90
+# minutes before its own commence_time regardless of when this slot runs.
+echo "== ufc card publish ($SLATE_DATE) =="
+UFC_CARD_OUT=$(python3 -m src.cli card publish --sport mma --date "$SLATE_DATE" 2>&1) || true
+echo "$UFC_CARD_OUT" | tail -n 25 | sed 's/^/  /'
 
 # Live window dispatch: check if we should dispatch live-window workflow for each sport.
 # SAME gh mechanism as chain_dispatch: this step runs from the "Capture one

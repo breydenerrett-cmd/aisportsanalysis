@@ -129,6 +129,16 @@ def _build_payload(date: str, request: Optional[Request], route: str,
         _record_page_view(request, route, date)
         return payload
 
+    # UFC/MMA: use ufc_card. Free/public, no different than the other live
+    # rules here -- the "free, being tested" framing lives in the payload's
+    # own notice/disclaimer text, not in a separate auth gate.
+    if sport == "mma":
+        from src.report import ufc_card
+        now = datetime.now(timezone.utc)
+        payload = ufc_card.card_for_date(date, now=now)
+        _record_page_view(request, route, date)
+        return payload
+
     resolved_rule = _resolve_rule(rule)
 
     # MLB, rule v2: the PREVIEW path (T5). Kept entirely separate from the
@@ -292,6 +302,13 @@ def get_card_record(request: Request = None, sport: str = "mlb",
         payload["rule"] = nfl_rule
         payload["live_rule"] = nfl_report.LIVE_RULE
         payload["notice"] = nfl_report.NOTICE
+    elif sport == "mma":
+        from src.report import ufc_card as ufc_report
+        payload["sport"] = "mma"
+        payload["rule"] = ufc_report.RULE_ID
+        payload["notice"] = ufc_report.NOTICE
+        payload["basis"] = ufc_report.ufc_rule.CARD_BASIS
+        payload["disclaimer"] = ufc_report.ufc_rule.CARD_DISCLAIMER
     _record_page_view(request, "card_record", None)
     return payload
 
@@ -338,6 +355,12 @@ def get_card_history(request: Request = None, limit: int = DEFAULT_HISTORY_LIMIT
         payload["rule"] = nfl_rule
         payload["live_rule"] = nfl_report.LIVE_RULE
         payload["notice"] = nfl_report.NOTICE
+    elif sport == "mma":
+        from src.report import ufc_card as ufc_report
+        payload = card_ledger.history(limit=limit, sport=sport)
+        payload["sport"] = "mma"
+        payload["rule"] = ufc_report.RULE_ID
+        payload["notice"] = ufc_report.NOTICE
     else:
         payload = card_ledger.history(limit=limit, sport=sport)
     _record_page_view(request, "card_history", None)

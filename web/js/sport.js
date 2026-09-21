@@ -120,6 +120,23 @@ export const SPORTS = [
     ],
     plan: null,
   },
+  {
+    // Route/registry key is "ufc" (the URL segment, "#/ufc"); the backend's
+    // sport id is "mma" (src.sports.SPORTS, matching The Odds API's own
+    // "mma_mixed_martial_arts" key) -- main.js's router passes {sport:
+    // "mma"} to renderCard/renderCardRecord explicitly, the same way it
+    // hardcodes {sport: "nfl"} for the "nfl" key, rather than assuming the
+    // route key and the API sport id are always the same string.
+    key: "ufc",
+    label: "UFC",
+    status: "live",
+    home: "#/ufc",
+    submenu: [
+      { hash: "#/ufc", label: "GAMEDAY", sub: "This card's picks" },
+      { hash: "#/ufc/record", label: "RESULTS", sub: "Every pick, graded" },
+    ],
+    plan: null,
+  },
   { key: "nba", label: "NBA", status: "coming_soon", home: "#/nba", submenu: [], plan: null },
   { key: "nhl", label: "NHL", status: "coming_soon", home: "#/nhl", submenu: [], plan: null },
 ];

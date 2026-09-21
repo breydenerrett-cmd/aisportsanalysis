@@ -3154,6 +3154,27 @@ def cmd_card(args) -> int:
                 print(f"settled {date_str}: {row.get('n_settled', 0)} game(s)")
             return EXIT_OK
 
+        # Handle UFC card settle -- against src.pipeline.ufc_results, the
+        # manually-entered store `ufc result` writes to (no results API for
+        # UFC; see that module's docstring). Draw/no-contest/cancelled and
+        # any bout whose fighter pair changed since lock all grade VOID.
+        if sport == "mma":
+            from src.report import ufc_card as ufc_card_mod
+            row = ufc_card_mod.settle_for_date(date_str)
+            if row is None:
+                print(f"nothing to settle for {date_str}")
+                return EXIT_OK
+            print(f"settled {date_str}: {row['wins']}-{row['losses']}"
+                  + (f"   {row['profit_units']:+.2f}u" if row.get("n_staked") else ""))
+            for pick in row.get("picks") or []:
+                print(f"    [{pick['result']}] {pick.get('bet')}"
+                      f"   {pick.get('profit_units', 0.0):+.2f}u")
+            if row.get("voids"):
+                print(f"  {row['voids']} VOID -- no matching result yet, a "
+                      "draw/no-contest/cancelled bout, or the fighter pair "
+                      "changed since lock.")
+            return EXIT_OK
+
         # T5/T6: v2-family settle -- entirely separate from V1's settle
         # logic below, so `--rule v1` (the default) reaches code this
         # change does not touch at all. MLB only, same as v2-family
@@ -3429,6 +3450,36 @@ def cmd_card(args) -> int:
             return EXIT_OK
 
         row = card_ledger.publish(card, now=now.isoformat(), sport="nfl")
+        picks = row.get("picks") or []
+        print(f"  published: {len(picks)} pick(s)"
+              + ("  (already published, no change)"
+                 if row.get("already_published") else ""))
+
+        return EXIT_OK
+
+    # Handle UFC card publish -- same "build first, write second" shape as
+    # NFL just above, through `card_to_publish` (holds already-locked bouts,
+    # never mixes a fresh read onto a locked one).
+    if sport == "mma":
+        from src.report import ufc_card as ufc_card_mod
+
+        now = datetime.now(timezone.utc)
+        card = ufc_card_mod.card_to_publish(date_str, now=now)
+
+        print(f"UFC CARD -- {date_str}")
+
+        if not card["picks"]:
+            print(f"  no card: {card.get('reason')}")
+            return EXIT_OK
+
+        for pick in card["picks"]:
+            print(f"    #{pick['rank']} [{pick['label']}] {pick['bet']}")
+
+        if getattr(args, "dry_run", False):
+            print("  --dry-run: nothing written.")
+            return EXIT_OK
+
+        row = card_ledger.publish(card, now=now.isoformat(), sport="mma")
         picks = row.get("picks") or []
         print(f"  published: {len(picks)} pick(s)"
               + ("  (already published, no change)"
@@ -3765,6 +3816,61 @@ def cmd_tennis(args) -> int:
         return EXIT_OK
 
     print(f"unknown tennis subcommand: {sub}")
+    return EXIT_ERROR
+
+
+def cmd_ufc(args) -> int:
+    """UFC commands: bounded odds capture, and manual result entry."""
+    sub = getattr(args, "ufc_command", None)
+
+    if sub == "capture":
+        from src.pipeline import mma_capture
+
+        try:
+            result = mma_capture.run()
+        except Exception as exc:  # noqa: BLE001 -- the chain step is tolerant
+            print(f"ERROR: mma capture failed: {exc}", file=sys.stderr)
+            return EXIT_ERROR
+        print(f"  mma capture: captured={bool(result.get('captured'))}, "
+              f"credits={result.get('credits', 0)}, rows={result.get('rows', 0)}")
+        if result.get("reason"):
+            print(f"    reason: {result['reason']}")
+        if result.get("prefight_events"):
+            print(f"    pre-fight window covered: {result['prefight_events']}")
+        if result.get("general"):
+            print("    60-minute general cadence fired this run")
+        return EXIT_OK
+
+    if sub == "result":
+        from src.pipeline import ufc_results
+
+        outcome = ufc_results.OUTCOME_WIN
+        if getattr(args, "draw", False):
+            outcome = ufc_results.OUTCOME_DRAW
+        elif getattr(args, "no_contest", False):
+            outcome = ufc_results.OUTCOME_NO_CONTEST
+        elif getattr(args, "cancelled", False):
+            outcome = ufc_results.OUTCOME_CANCELLED
+
+        if outcome == ufc_results.OUTCOME_WIN and not args.winner:
+            print("ERROR: --winner is required unless --draw, --no-contest "
+                  "or --cancelled is given", file=sys.stderr)
+            return EXIT_ERROR
+
+        try:
+            row = ufc_results.record_result(
+                date=args.date, fight=args.fight, winner=args.winner,
+                outcome=outcome, entered_by=args.entered_by)
+        except ufc_results.UfcResultsError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return EXIT_ERROR
+
+        print(f"recorded: {row['date']}  {row['fight']}  outcome={row['outcome']}"
+              + (f"  winner={row['winner']}" if row.get("winner") else ""))
+        print(f"  entered_by={row['entered_by']}  entered_utc={row['entered_utc']}")
+        return EXIT_OK
+
+    print(f"unknown ufc subcommand: {sub}")
     return EXIT_ERROR
 
 
@@ -4228,6 +4334,31 @@ def build_parser() -> argparse.ArgumentParser:
         "results", help="read-only: fetch tennis results for one date")
     tennis_results_cmd.add_argument("--date", required=True, help="YYYY-MM-DD")
 
+    ufc_cmd = sub.add_parser("ufc", help="UFC commands")
+    ufc_sub = ufc_cmd.add_subparsers(dest="ufc_command", required=True)
+    ufc_capture_cmd = ufc_sub.add_parser(
+        "capture", help="fetch and store UFC/MMA h2h odds (bounded cadence)")
+    ufc_result_cmd = ufc_sub.add_parser(
+        "result", help="manually record one fight's result for grading "
+                       "(data/historical/ufc_results.jsonl)")
+    ufc_result_cmd.add_argument("--date", required=True, help="YYYY-MM-DD the bout was fought")
+    ufc_result_cmd.add_argument(
+        "--fight", required=True,
+        help='"Fighter A vs Fighter B", matched to a published pick by name')
+    ufc_result_cmd.add_argument(
+        "--winner", default=None,
+        help="the winning fighter's name (required unless --draw/--no-contest/--cancelled)")
+    ufc_result_outcome = ufc_result_cmd.add_mutually_exclusive_group()
+    ufc_result_outcome.add_argument(
+        "--draw", action="store_true", help="the bout was a draw -- grades VOID")
+    ufc_result_outcome.add_argument(
+        "--no-contest", action="store_true", help="ruled a no contest -- grades VOID")
+    ufc_result_outcome.add_argument(
+        "--cancelled", action="store_true", help="the bout was cancelled -- grades VOID")
+    ufc_result_cmd.add_argument(
+        "--entered-by", dest="entered_by", required=True,
+        help="who is recording this result (email or handle) -- every row is attributed")
+
     eod_cmd = sub.add_parser(
         "eod", help="build and write the end-of-day self-review (S7)")
     eod_cmd.add_argument("--date", required=True, help="YYYY-MM-DD")
@@ -4281,6 +4412,7 @@ COMMANDS = {
     "eod": cmd_eod,
     "nfl": cmd_nfl,
     "tennis": cmd_tennis,
+    "ufc": cmd_ufc,
 }
 
 
