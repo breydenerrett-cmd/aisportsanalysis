@@ -231,8 +231,13 @@ def reprice_due(events, now, last_capture_at,
                f"in its pre-lock window)")
 
 
-def _last_dense_capture_at(sport=None):
-    """Most recent `observed_utc` across the MLB snapshot store, or None.
+def _last_dense_capture_at(sport=snapshots.DEFAULT_SPORT):
+    """Most recent MLB `observed_utc` in the snapshot store, or None.
+
+    MLB ONLY, on purpose (2026-09-21 review). odds_snapshots.jsonl also
+    carries NFL and tennis rows, which are most of its recent lines. Reading
+    every sport would make an NFL capture count as "MLB was just priced", so
+    the cooldown would starve MLB pricing outside the pre-lock windows.
 
     This is the real "last priced" signal `reprice_due` reads by default --
     a plain module function, not a method, so a test can monkeypatch it

@@ -802,5 +802,28 @@ class DenseCommandSkipOutputTests(unittest.TestCase):
         self.assertIn("90000 credits remaining, floor is", out)
 
 
+class LastDenseCaptureIsMlbOnlyTests(unittest.TestCase):
+    """2026-09-21 review: odds_snapshots.jsonl also holds NFL and tennis rows,
+    which are most of its recent lines. An NFL capture must not count as
+    "MLB was just priced", or the re-price cooldown starves MLB pricing."""
+
+    def test_nfl_and_tennis_rows_do_not_reset_the_mlb_cooldown(self):
+        from src.pipeline import snapshots
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "odds_snapshots.jsonl"
+            rows = [
+                {"observed_utc": "2026-09-21T10:00:00+00:00", "event_id": "m1"},
+                {"observed_utc": "2026-09-21T18:00:00+00:00", "event_id": "n1", "sport": "nfl"},
+                {"observed_utc": "2026-09-21T18:10:00+00:00", "event_id": "t1",
+                 "sport": "tennis_wta_singapore_open"},
+            ]
+            path.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+            real_read = snapshots.read
+            with mock.patch.object(dense.snapshots, "read",
+                                   lambda sport=snapshots.DEFAULT_SPORT, **kw: real_read(path, sport=sport)):
+                latest = dense._last_dense_capture_at()
+        self.assertEqual(latest, datetime(2026, 9, 21, 10, 0, tzinfo=timezone.utc))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -399,7 +399,12 @@ PROP_OUT=$(python3 -m src.pipeline.prop_listing 2>&1)
 echo "$PROP_OUT" | sed 's/^/  /'
 
 echo "== capture extras =="
-EXTRAS_OUT=$(PROP_PRICES=1 BATTER_PROPS=1 DERIVATIVES=1 bash scripts/capture_extras.sh 2>&1)
+# Derivative markets (team totals, alternates, F5 trio) are research-only
+# capture, about 96 credits a day. They are PAUSED for the 2026-09-21 credit
+# squeeze (docs/drafts/CREDIT_TRIM_PLAN_2026-09-21.md): the balance must
+# reach the ~10-01 reset above the 5,000 floor. No card or registered shadow
+# arm reads them. Set DERIVATIVES_CAPTURE=1 in the workflow env to resume.
+EXTRAS_OUT=$(PROP_PRICES=1 BATTER_PROPS=1 DERIVATIVES="${DERIVATIVES_CAPTURE:-0}" bash scripts/capture_extras.sh 2>&1)
 echo "$EXTRAS_OUT" | grep -v "^ESCALATE:" | sed 's/^/  /'
 
 # ---------------------------------------------------------------------------
