@@ -5,17 +5,33 @@ publish run ... Zero additional API spend, by construction rather than by
 policy." The way this file makes that a guarantee rather than a promise is
 that `card_variants.py` cannot import a capture client at all -- checked on
 the module's own AST (so a `# noqa`-style workaround can't hide it) and on
-`sys.modules` after import (so a transitive import through some other path
-would also be caught).
+`sys.modules` after importing it in a fresh interpreter (so a transitive
+import through some other path would also be caught).
+
+The `sys.modules` check runs in a subprocess, not in this process: by the
+time the suite reaches this file, other test modules have already imported
+capture modules, so this process's `sys.modules` says nothing about what
+importing card_variants pulls in. Deleting entries here to fake a clean slate
+is not an option either -- a second copy of `src.providers.odds` then gets
+imported later in the run, and code holding the first copy stops catching
+the second copy's exceptions. That is what broke tests.test_f5_tminus2 on
+3.11+ only: from 3.11, `mock.patch("src.providers.odds.quota")` (in
+tests.test_cli_capture_commands_run) resolves its target with importlib and
+so re-imports the deleted module, while src.pipeline.f5_tminus2 still holds
+the first copy and its `except MarketsUnavailableAtDate` no longer matches.
 """
 
 import ast
-import importlib
+import json
+import subprocess
 import sys
 import unittest
+from pathlib import Path
 
 from src.analysis import best_bets_card
 from src.analysis import card_variants
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
 
 # Modules that actually reach the network for odds/board capture. If
 # card_variants ever needs one of these, that is exactly the "no additional
@@ -30,6 +46,30 @@ _CAPTURE_MODULES = (
 
 def _module_source_path():
     return card_variants.__file__
+
+
+# Runs in a fresh interpreter: import the named module, then report which of
+# the capture modules are now loaded. Nothing else is imported first.
+_PROBE = (
+    "import importlib, json, sys\n"
+    "importlib.import_module(sys.argv[1])\n"
+    "print(json.dumps(sorted(m for m in sys.argv[2:] if m in sys.modules)))\n"
+)
+
+
+def _capture_modules_loaded_by_importing(module_name):
+    """Capture modules present after importing `module_name` from scratch."""
+    result = subprocess.run(
+        [sys.executable, "-c", _PROBE, module_name, *_CAPTURE_MODULES],
+        cwd=_REPO_ROOT,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    if result.returncode != 0:
+        raise AssertionError(
+            f"importing {module_name} in a fresh interpreter failed:\n{result.stderr}")
+    return json.loads(result.stdout.strip().splitlines()[-1])
 
 
 def _top_level_imports(tree: ast.Module):
@@ -58,12 +98,18 @@ class TestNoCapture(unittest.TestCase):
             )
 
     def test_capture_modules_not_pulled_in_by_importing_card_variants(self):
-        for mod in list(sys.modules):
-            if mod.startswith("src.pipeline.live_odds") or mod.startswith("src.providers.odds"):
-                del sys.modules[mod]
-        importlib.reload(card_variants)
-        for capture_mod in _CAPTURE_MODULES:
-            self.assertNotIn(capture_mod, sys.modules)
+        loaded = _capture_modules_loaded_by_importing("src.analysis.card_variants")
+        self.assertEqual(
+            loaded, [],
+            f"importing src.analysis.card_variants pulls in capture module(s) {loaded}")
+
+    def test_the_probe_sees_a_transitive_capture_import(self):
+        # Control: without it an empty list above could mean the probe is
+        # blind. nfl_capture reaches src.providers.odds only through
+        # src.pipeline.snapshots, so this also proves transitive imports show.
+        loaded = _capture_modules_loaded_by_importing("src.pipeline.nfl_capture")
+        self.assertIn("src.pipeline.nfl_capture", loaded)
+        self.assertIn("src.providers.odds", loaded)
 
 
 def _candidate(game_pk, price=-140, our_probability=0.62, price_class=None, kind="game"):
