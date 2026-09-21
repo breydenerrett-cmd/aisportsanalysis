@@ -1433,3 +1433,15 @@
 {"fetched_utc": "2026-09-21T21:50:29.904863+00:00", "game_date": "2026-09-21", "poll": true}
 {"fetched_utc": "2026-09-21T22:00:33.191061+00:00", "game_date": "2026-09-21", "poll": true}
 {"fetched_utc": "2026-09-21T22:00:34.717152+00:00", "game_date": "2026-09-21", "poll": true}
+{"fetched_utc": "2026-09-21T22:18:43.271649+00:00", "game_date": "2026-09-21", "poll": true}
+{"category": "il_placement", "date": "2026-09-20", "first_seen_utc": "2026-09-21T22:18:43.271649+00:00", "player": "Colt Keith", "player_id": 690993, "team": "DET", "transaction_id": 943402}
+{"category": "il_placement", "date": "2026-09-21", "first_seen_utc": "2026-09-21T22:18:43.271649+00:00", "player": "Troy Melton", "player_id": 675512, "team": "DET", "transaction_id": 943403}
+{"category": "recalled", "date": "2026-09-21", "first_seen_utc": "2026-09-21T22:18:43.271649+00:00", "player": "Jace Jung", "player_id": 690291, "team": "DET", "transaction_id": 943404}
+{"category": "il_activation", "date": "2026-09-21", "first_seen_utc": "2026-09-21T22:18:43.271649+00:00", "player": "Tony Gonsolin", "player_id": 664062, "team": "KC", "transaction_id": 943405}
+{"category": "optioned", "date": "2026-09-21", "first_seen_utc": "2026-09-21T22:18:43.271649+00:00", "player": "Spencer Bivens", "player_id": 702352, "team": "KC", "transaction_id": 943406}
+{"category": "other", "date": "2026-09-21", "first_seen_utc": "2026-09-21T22:18:43.271649+00:00", "player": "Michael Lorenzen", "player_id": 547179, "team": "TOR", "transaction_id": 943407}
+{"category": "optioned", "date": "2026-09-21", "first_seen_utc": "2026-09-21T22:18:43.271649+00:00", "player": "Emmet Sheehan", "player_id": 686218, "team": "LAD", "transaction_id": 943409}
+{"category": "optioned", "date": "2026-09-21", "first_seen_utc": "2026-09-21T22:18:43.271649+00:00", "player": "Eliezer Alfonzo", "player_id": 672613, "team": "LAD", "transaction_id": 943410}
+{"category": "il_activation", "date": "2026-09-21", "first_seen_utc": "2026-09-21T22:18:43.271649+00:00", "player": "Roki Sasaki", "player_id": 808963, "team": "LAD", "transaction_id": 943411}
+{"category": "il_activation", "date": "2026-09-21", "first_seen_utc": "2026-09-21T22:18:43.271649+00:00", "player": "Andy Pages", "player_id": 681624, "team": "LAD", "transaction_id": 943412}
+{"fetched_utc": "2026-09-21T22:18:44.254404+00:00", "game_date": "2026-09-21", "poll": true}

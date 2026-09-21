@@ -4041,3 +4041,11 @@
 {"budget_band": "live_capture", "caller": "derivative_markets.run", "credits_remaining": 9124, "credits_used_last": 0, "utc": "2026-09-21T22:01:03.144709Z"}
 {"budget_band": "live_capture", "caller": "nfl_capture.run", "credits_remaining": 9121, "credits_used_last": 0, "utc": "2026-09-21T22:02:00.107141Z"}
 {"budget_band": "live_capture", "caller": "tennis_capture.run (tennis_wta_singapore_open)", "credits_remaining": 9120, "credits_used_last": 0, "utc": "2026-09-21T22:02:00.351989Z"}
+{"budget_band": "live_capture", "caller": "dense.run", "credits_remaining": 9120, "credits_used_last": 0, "utc": "2026-09-21T22:18:43.803751Z"}
+{"budget_band": "live_capture", "caller": "dense.close_capture", "credits_remaining": 9117, "credits_used_last": 0, "utc": "2026-09-21T22:18:44.395039Z"}
+{"budget_band": "live_capture", "caller": "prop_listing.run", "credits_remaining": 9113, "credits_used_last": 0, "utc": "2026-09-21T22:18:44.783443Z"}
+{"budget_band": "live_capture", "caller": "prop_prices.run", "credits_remaining": 9112, "credits_used_last": 0, "utc": "2026-09-21T22:19:08.464616Z"}
+{"budget_band": "live_capture", "caller": "batter_props.run", "credits_remaining": 9111, "credits_used_last": 0, "utc": "2026-09-21T22:19:08.864425Z"}
+{"budget_band": "live_capture", "caller": "derivative_markets.run", "credits_remaining": 9111, "credits_used_last": 0, "utc": "2026-09-21T22:19:09.069524Z"}
+{"budget_band": "live_capture", "caller": "nfl_capture.run", "credits_remaining": 9102, "credits_used_last": 0, "utc": "2026-09-21T22:20:08.354342Z"}
+{"budget_band": "live_capture", "caller": "tennis_capture.run (tennis_wta_singapore_open)", "credits_remaining": 9101, "credits_used_last": 0, "utc": "2026-09-21T22:20:08.527529Z"}
