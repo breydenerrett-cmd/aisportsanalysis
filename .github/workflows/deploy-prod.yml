@@ -80,6 +80,15 @@ jobs:
           if [ "$up" -ne 1 ]; then
             echo "health check did not pass within 2 minutes"; exit 1
           fi
+          # Wait for the first cache warm-up pass (api/warmup.py, reported on
+          # /health) before exercising pages -- see deploy-staging.yml.
+          for i in $(seq 1 36); do
+            h=$(curl -s "$BASE/health" || true)
+            case "$h" in
+              *'"enabled":false'*|*'"passes_completed":'[1-9]*) break ;;
+            esac
+            sleep 10
+          done
           echo "up; now exercising the page path"
 
           ET=$(TZ=America/New_York date +%Y-%m-%d)
