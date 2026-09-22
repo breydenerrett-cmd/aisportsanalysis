@@ -1,17 +1,19 @@
 # LINEHOUND Launch Kit — 24-hour push
 
-Facts used throughout: MLB card 66-34, +8.21 units over 11 settled days (100 picks). Every pick published before first pitch, hash-chained, losses included. Bet Check across ~11 books. MLB / NFL / UFC (new, testing) / tennis (research). $19.99/mo founding beta, 7-day free trial, 3 free Bet Checks no card. Never a moneyline at -200 or worse. Always: "21+. Analysis, not advice. Bet at your own risk."
+**Before every post: copy the current record from the site's Results page. These numbers are as of 2026-09-22 (68-35, +8.93u, 12 days) and change nightly.**
+
+Facts used throughout: MLB card 68-35, +8.93 units over 12 settled days (103 picks). Every pick published before first pitch, hash-chained, losses included. Bet Check across ~11 books. MLB / NFL / UFC (new, testing) / tennis (research). $19.99/mo founding beta, 7-day free trial, 3 free Bet Checks no card. NFL and UFC never pick a moneyline at -200 or worse (the MLB card can, so never claim it site-wide). Always: "21+. Analysis, not advice. Bet at your own risk."
 
 ---
 
 ## 1. Replacement hero
 
-**Headline:** 66-34. +8.21 units. Every pick, every loss, on the record.
+**Headline:** 68-35. +8.93 units. Every pick, every loss, on the record.
 
 **Subhead:** LINEHOUND posts its MLB picks before first pitch and grades them in public the next morning — wins and losses at the same size, on a hash-chained record nobody edits after the fact. NFL and UFC are live now, being tested the same way.
 
 **Bullets:**
-- 66-34, +8.21 units over 11 settled days (100 picks) — verifiable on the record page, losses included
+- 68-35, +8.93 units over 12 settled days (103 picks) — verifiable on the record page, losses included
 - Bet Check: paste any moneyline, see the market's real win chance across ~11 books vs. what the price needs
 - 3 free Bet Checks, no card. Then $19.99/mo founding beta with a 7-day free trial. Cancel anytime.
 
@@ -36,7 +38,7 @@ Secondary: See the record → `index.html#/record-card` (the graded results page
 
 ## 2. Discord / gaming community launch post (~120 words)
 
-Been running a side project that's finally worth sharing: **LINEHOUND**, an MLB betting analysis tool. Not a tipster, not "trust me bro" — every pick gets posted publicly before first pitch and graded the next morning, wins and losses both, on a record nobody can quietly edit. Current card: 66-34, +8.21 units over the last 11 days.
+Been running a side project that's finally worth sharing: **LINEHOUND**, an MLB betting analysis tool. Not a tipster, not "trust me bro" — every pick gets posted publicly before first pitch and graded the next morning, wins and losses both, on a record nobody can quietly edit. Current card: 68-35, +8.93 units over the last 12 days.
 
 There's also a Bet Check tool — paste any moneyline bet and it shows you the actual win chance across ~11 sportsbooks vs. what the price needs to break even, so you stop laying -180 on a 58% team.
 
@@ -46,7 +48,7 @@ There's also a Bet Check tool — paste any moneyline bet and it shows you the a
 
 ## 3. X/Twitter thread (4 posts)
 
-**1/** We've been publishing every MLB pick before first pitch for 11 straight days. Record so far: 66-34, +8.21 units. Every loss is on the record too — nothing gets edited after the fact.
+**1/** We've been publishing every MLB pick before first pitch for 12 straight days. Record so far: 68-35, +8.93 units. Every loss is on the record too — nothing gets edited after the fact.
 
 **2/** How it works: each pick goes to a public hash-chained record the moment it's made. Graded the next morning. You don't have to take our word for the timestamp — you can check it.
 
@@ -58,7 +60,7 @@ There's also a Bet Check tool — paste any moneyline bet and it shows you the a
 
 ## 4. DM template for friends (~50 words)
 
-Hey — been building a sports betting analysis site (LINEHOUND) and finally have a real track record to show: 66-34, +8.21 units over the last 11 days, every pick posted before the game and graded publicly after. Free tool on there too (Bet Check) — no card needed. Would love your eyes on it: [link]
+Hey — been building a sports betting analysis site (LINEHOUND) and finally have a real track record to show: 68-35, +8.93 units over the last 12 days, every pick posted before the game and graded publicly after. Free tool on there too (Bet Check) — no card needed. Would love your eyes on it: [link]
 
 ---
 

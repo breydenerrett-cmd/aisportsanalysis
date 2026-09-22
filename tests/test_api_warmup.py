@@ -276,6 +276,14 @@ class WarmupLoopIntervalTests(unittest.TestCase):
         self.assertGreaterEqual(len(pass_count), 2)
 
 
+try:  # the CI test gate installs no fastapi (same guard as test_api_card.py)
+    import fastapi  # noqa: F401
+    _HAVE_FASTAPI = True
+except Exception:  # noqa: BLE001
+    _HAVE_FASTAPI = False
+
+
+@unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")
 class DefaultItemsTests(unittest.TestCase):
     """Only checks the SHAPE of the production wiring (names, callability,
     that it imports cleanly) -- not real behaviour, which needs real data
@@ -308,6 +316,7 @@ class WarmupStatusTests(unittest.TestCase):
         self.assertFalse(after["running"])
         self.assertIsNotNone(after["last_pass_utc"])
 
+    @unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")
     def test_health_carries_the_warmup_block_without_changing_status(self):
         from fastapi.testclient import TestClient
         from api.app import app
