@@ -355,3 +355,42 @@ jobs:
           else
             echo "no new capture commit this run -- nothing to redeploy for"
           fi
+
+      # PRODUCTION DATA REFRESH (2026-09-22). The app bakes its stores into the
+      # image, so without this, linehound.app would show whatever data existed
+      # at the last manual deploy, and picks and odds would be hours stale
+      # within a day. Same hourly cadence as staging, with two extra gates:
+      #   1. OFF until FLY_PROD_API_TOKEN exists. Before the owner creates the
+      #      app and sets that secret, nothing is dispatched and nothing fails.
+      #   2. Only when the latest completed CI (tests) run on this branch
+      #      passed. A red suite never ships to paying customers.
+      # deploy-prod.yml itself stays workflow_dispatch-only, pins the working
+      # branch, waits for warm-up and runs its own page checks.
+      - name: Dispatch production data refresh (hourly, CI-green, once prod exists)
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PROD_TOKEN_PRESENT: ${{ secrets.FLY_PROD_API_TOKEN != '' }}
+        run: |
+          BRANCH="claude/sports-betting-analysis-review-g1o0co"
+          MINUTE=$(date -u +%M)
+          if [ "$PROD_TOKEN_PRESENT" != "true" ]; then
+            echo "FLY_PROD_API_TOKEN not set -- production not live yet, no refresh"
+          elif [ "${MINUTE#0}" -ge 15 ]; then
+            echo "minute ${MINUTE}: not the first slot of the hour -- no production refresh this run"
+          elif ! git log -1 --pretty=%s | grep -q "^Forward capture slot"; then
+            echo "no new capture commit this run -- nothing to refresh"
+          else
+            CI=$(curl -sS -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/tests.yml/runs?branch=${BRANCH}&status=completed&per_page=1" \
+              | python3 -c "import json,sys; r=json.load(sys.stdin).get('workflow_runs') or []; print(r[0]['conclusion'] if r else 'none')" || echo "unknown")
+            if [ "$CI" != "success" ]; then
+              echo "latest CI run is '${CI}', not success -- production NOT refreshed (staging still is)"
+            else
+              curl -sS -X POST \
+                -H "Authorization: Bearer ${GH_TOKEN}" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/deploy-prod.yml/dispatches" \
+                -d "{\"ref\":\"${BRANCH}\"}" || echo "prod refresh dispatch failed (non-fatal; production keeps its last image)"
+            fi
+          fi
