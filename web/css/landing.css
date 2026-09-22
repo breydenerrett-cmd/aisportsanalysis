@@ -41,7 +41,11 @@
 /* ---- hero -----------------------------------------------------------*/
 .hero {
   position: relative;
-  min-height: clamp(560px, 74vh, 760px);
+  /* Sized by its content (2026-09-22): the old fixed min-height was built
+     for the full-width matchup module, which is now shown only for a
+     qualifying live pick, and it left an empty band under the claim. */
+  min-height: 0;
+  padding-bottom: var(--sp-13, 96px);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -172,7 +176,8 @@
 .hero__price-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--money-lit); box-shadow: 0 0 14px rgba(255, 61, 87, .9); }
 .hero__price-label { font-family: var(--font-display); font-size: 14.5px; font-weight: 700; letter-spacing: .24em; color: var(--money-label); }
 .hero__price-row { display: flex; align-items: flex-end; gap: var(--sp-10); }
-.hero__cta-group { display: flex; flex-direction: column; gap: var(--sp-5); align-items: flex-start; margin-top: var(--sp-9); }
+.hero__cta-group { display: flex; flex-direction: row; flex-wrap: wrap; gap: var(--sp-4) var(--sp-5); align-items: center; margin-top: var(--sp-9); }
+.hero__cta-group .hero__cta-note { flex-basis: 100%; }
 .hero__feature { position: relative; }
 .hero__cta-note { font-size: 14.5px; color: var(--text-dim); max-width: 320px; }
 /* ---- public-demo front-door entry (hidden unless GET /meta says
@@ -391,8 +396,75 @@
 .footnote-link a { color: var(--text-faint); text-decoration: underline; text-underline-offset: 2px; }
 .footnote-link a:hover { color: var(--text-mute); }
 
+/* ---- hero top row: claim left, live record panel right (2026-09-22) ----
+   The hero background splits into two diagonal team panels. With no
+   qualifying featured pick, the right panel was empty, so the ledger record
+   now sits there as a glass card. */
+.hero__top {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr);
+  gap: var(--sp-9, 48px);
+  align-items: center;
+  padding-right: var(--gutter-desktop);
+}
+.hero__top .hero__claim { max-width: none; }
+.hero__proof {
+  position: relative;
+  margin-top: var(--sp-13, 96px);
+  padding: 28px 30px 26px;
+  border-radius: 18px;
+  background: linear-gradient(160deg, rgba(12, 20, 32, .72), rgba(8, 12, 20, .58));
+  border: 1px solid rgba(255, 255, 255, .12);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .06);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.hero__proof-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+.hero__stat {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 16px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .04);
+  border: 1px solid rgba(255, 255, 255, .07);
+}
+.hero__stat-value {
+  font-family: var(--font-display); font-style: italic; font-weight: 800;
+  font-size: clamp(26px, 2.6vw, 38px); line-height: 1; color: #FFFFFF;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.hero__stat-value.is-up { color: #4FE3A4; }
+.hero__stat-value.is-down { color: #FF6B6B; }
+.hero__stat-label {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .12em;
+  text-transform: uppercase; color: rgba(255, 255, 255, .55);
+}
+.hero__proof-sub {
+  margin-top: 14px; font-size: 13px; line-height: 1.5; color: rgba(255, 255, 255, .6);
+}
+.hero__proof-note {
+  margin-top: 16px; font-size: 14px; line-height: 1.55; color: rgba(255, 255, 255, .72);
+}
+.hero__proof-link {
+  display: inline-block; margin-top: 16px;
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em;
+  text-transform: uppercase; color: #FFFFFF; text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, .35); padding-bottom: 2px;
+}
+.hero__proof-link:hover { border-bottom-color: #FFFFFF; }
+
 /* ---- responsive: < 900px is the 390px mobile canvas ------------------*/
 @media (max-width: 899px) {
+  .hero__top { grid-template-columns: 1fr; gap: var(--sp-7, 32px); padding-right: 0; }
+  .hero__proof { margin: 0 var(--gutter-mobile); padding: 22px 18px; }
+  .hero__proof-grid { gap: 8px; }
+  .hero__stat { padding: 12px 10px; }
+  .hero__stat-value { font-size: 24px; }
   .section { padding: var(--sp-9) var(--gutter-mobile) 0; }
   .section__title { font-size: 34px; }
   /* The claim is the first thing a phone visitor sees -- keep it tight so

@@ -179,6 +179,59 @@ export function recordSentence(rec) {
   return `Across ${nights} graded so far: ${parts.join(", ")}. Every one of them is on the record page.`;
 }
 
+/**
+ * The hero's proof panel (2026-09-22 redesign), filled from the same
+ * GET /meta card_record the record sentence reads. Figures come ONLY from
+ * the ledger: on a failed fetch or a null field the markup's dashes stay.
+ *
+ * `profit_units` and `previous_rule` are optional. When the public card
+ * changes rule, the new rule's record starts fresh, and the earlier rule's
+ * figures show on their own labelled line, never added into the new one.
+ */
+export function proofFigures(rec) {
+  if (!rec || typeof rec.wins !== "number" || typeof rec.losses !== "number") return null;
+  const units = typeof rec.profit_units === "number" ? rec.profit_units : null;
+  return {
+    wl: `${rec.wins}–${rec.losses}`,
+    units: units === null ? null : `${units >= 0 ? "+" : "−"}${Math.abs(units).toFixed(2)}`,
+    unitsSign: units === null ? 0 : Math.sign(units),
+    days: typeof rec.days === "number" ? String(rec.days) : null,
+  };
+}
+
+async function fillProofPanel() {
+  const panel = document.querySelector("[data-hook='hero-proof']");
+  if (!panel) return;
+  try {
+    const meta = await fetchMeta();
+    const rec = meta && meta.card_record;
+    const figs = proofFigures(rec);
+    if (!figs) return;
+    const set = (hook, text) => {
+      const node = panel.querySelector(`[data-hook='${hook}']`);
+      if (node && text) node.textContent = text;
+      return node;
+    };
+    set("proof-wl", figs.wl);
+    const unitsNode = set("proof-units", figs.units);
+    if (unitsNode && figs.units) unitsNode.classList.add(figs.unitsSign >= 0 ? "is-up" : "is-down");
+    set("proof-days", figs.days);
+    const prev = rec.previous_rule;
+    const prevFigs = proofFigures(prev);
+    if (prevFigs) {
+      const sub = panel.querySelector("[data-hook='proof-sub']");
+      if (sub) {
+        const label = (prev && prev.label) || "Our first card rule";
+        sub.textContent = `${label}: ${prevFigs.wl}${prevFigs.units ? `, ${prevFigs.units}u` : ""}`
+          + `${prevFigs.days ? ` over ${prevFigs.days} nights` : ""}. Counted separately.`;
+        sub.hidden = false;
+      }
+    }
+  } catch (err) {
+    // Leave the dashes in place -- never a guessed figure.
+  }
+}
+
 async function fillCardRecord() {
   const nodes = document.querySelectorAll("[data-hook='card-record']");
   if (!nodes.length) return;
@@ -200,6 +253,7 @@ function boot() {
   revealPublicDemoEntry();
   fillResearchCounts();
   fillCardRecord();
+  fillProofPanel();
   // Tonight's real slate replaces the hardcoded Aug 28 sample matchup, or
   // degrades to an honest labelled-sample state on failure -- see
   // landing-live.js's module docstring. Fire-and-forget, same rule as

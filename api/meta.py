@@ -138,11 +138,13 @@ def _card_record() -> dict:
             rec = card_ledger.record_v2()["combined"]
         else:
             rec = card_ledger.record()
+        # profit_units added 2026-09-22 for the landing hero's proof panel:
+        # the same ledger figure /card/record already serves, 1 unit per pick.
         return {key: rec.get(key) for key in
-                ("days", "wins", "losses", "pushes", "voids")}
+                ("days", "wins", "losses", "pushes", "voids", "profit_units")}
     except Exception:  # noqa: BLE001
         return {"days": None, "wins": None, "losses": None,
-                "pushes": None, "voids": None}
+                "pushes": None, "voids": None, "profit_units": None}
 
 
 @router.get("/meta")

@@ -89,8 +89,10 @@ class MetaServesTheLedgerRecord(unittest.TestCase):
         from src.appstate import card_ledger
         payload = meta_api.get_meta()
         rec = card_ledger.record()
+        # profit_units added 2026-09-22 for the landing hero's proof panel.
         self.assertEqual(payload["card_record"],
-                         {k: rec[k] for k in ("days", "wins", "losses", "pushes", "voids")})
+                         {k: rec.get(k) for k in
+                          ("days", "wins", "losses", "pushes", "voids", "profit_units")})
 
     def test_meta_never_guesses_when_the_ledger_is_unreadable(self):
         from api import meta as meta_api
@@ -99,7 +101,7 @@ class MetaServesTheLedgerRecord(unittest.TestCase):
             payload = meta_api.get_meta()
         self.assertEqual(payload["card_record"],
                          {"days": None, "wins": None, "losses": None,
-                          "pushes": None, "voids": None})
+                          "pushes": None, "voids": None, "profit_units": None})
 
 
 if __name__ == "__main__":

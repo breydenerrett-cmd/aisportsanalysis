@@ -203,8 +203,10 @@ function resolveFeatured(today, card) {
  * other hero element exactly as the markup already has it -- the frozen
  * Aug 28 demo matchup stays, but nothing claims it is "Tonight". */
 function showSampleFallback(root) {
-  setText(root, "hero-scanner-text", "Sample matchup · live feed unavailable");
-  setHidden(root, "sample-slate-badge", false);
+  // 2026-09-22 redesign: a sample matchup built from demo data does not
+  // belong on a paid landing page. With no live qualifying pick, the module
+  // is omitted and the hero's proof panel carries the page.
+  setHidden(root, "hero-feature", true);
 }
 
 function applyLiveHero(root, { gamesCount, featured }) {

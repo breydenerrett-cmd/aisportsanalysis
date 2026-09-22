@@ -79,24 +79,42 @@
        from the ledger by landing.js's fillCardRecord(); the fallback below
        names no figure on purpose, so a slow or failed fetch never leaves a
        stale number on the page. -->
+  <div class="hero__top">
   <div class="hero__claim" data-rise data-delay="40" data-hook="hero-claim">
     <span class="eyebrow eyebrow--money">MLB · NFL · UFC — graded in public</span>
     <h1 class="hero__claim-title">Every pick posted before the game.<br>Every loss kept on the record.</h1>
-    <p class="hero__claim-record" data-hook="hero-claim-record">
-      <span data-hook="card-record">Every graded night is posted on the record page, losses included.</span>
-    </p>
+    <p class="hero__claim-body">MLB, NFL and UFC picks, published before every game and graded in public the next morning.</p>
     <div class="hero__cta-group" data-rise data-delay="160">
       <a class="btn btn--primary" href="index.html#/signup" data-hook="cta-signup-hero">Start your 7-day free trial</a>
       <a class="btn btn--ghost" href="index.html#/record-card" data-hook="cta-record-secondary">See every pick, graded</a>
       <p class="hero__cta-note">7-day free trial, then $19.99/month. Cancel anytime.</p>
-      <!-- Public-demo front door: revealed only when GET /meta says
-           public_demo is true (landing.js's revealPublicDemoEntry). Stays
-           hidden by markup by default -- tests/test_web_polish.py. -->
-      <div class="hero__demo-entry" data-hook="public-demo-entry" hidden>
-        <a class="btn btn--cyan on-live" href="index.html#/today" data-hook="cta-open-demo">OPEN THE LIVE DEMO</a>
-        <p class="hero__cta-note" data-hook="public-demo-note">No sign-up needed while this preview is open.</p>
+    </div>
+  </div>
+
+  <!-- THE PROOF PANEL (2026-09-22 redesign). Fills the hero's right side with
+       the live ledger record from GET /meta (landing.js fillProofPanel). The
+       dashes are the honest no-JS / failed-fetch state: no figure is ever
+       typed into this markup (see api/meta.py _card_record). -->
+  <aside class="hero__proof" data-rise data-delay="120" data-hook="hero-proof" aria-label="The record so far">
+    <span class="eyebrow eyebrow--money" data-hook="proof-title">The record so far</span>
+    <div class="hero__proof-grid">
+      <div class="hero__stat">
+        <span class="hero__stat-value" data-hook="proof-wl">&mdash;</span>
+        <span class="hero__stat-label">Won&ndash;lost</span>
+      </div>
+      <div class="hero__stat">
+        <span class="hero__stat-value" data-hook="proof-units">&mdash;</span>
+        <span class="hero__stat-label">Units</span>
+      </div>
+      <div class="hero__stat">
+        <span class="hero__stat-value" data-hook="proof-days">&mdash;</span>
+        <span class="hero__stat-label">Nights graded</span>
       </div>
     </div>
+    <p class="hero__proof-sub" data-hook="proof-sub" hidden></p>
+    <p class="hero__proof-note" data-hook="hero-claim-record"><span data-hook="card-record">Every graded night is posted on the record page, losses included.</span></p>
+    <a class="hero__proof-link" href="index.html#/record-card">See every pick &rarr;</a>
+  </aside>
   </div>
 
   <!-- THE FEATURED PICK MODULE. web/js/landing-live.js replaces this with
@@ -105,7 +123,7 @@
        favourite is not an advertising pick. The markup below is a labelled
        SAMPLE, never presented as tonight's real game unless the live fetch
        succeeds and the price qualifies. -->
-  <div class="hero__feature" data-hook="hero-feature">
+  <div class="hero__feature" data-hook="hero-feature" hidden>
     <div class="hero__scanner" data-rise data-delay="120">
       <span class="hero__scanner-bracket" aria-hidden="true"></span>
       <span class="hero__scanner-text" data-hook="hero-scanner-text">Example slate · 15 games · 11 books scanned</span>

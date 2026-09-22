@@ -70,36 +70,16 @@ class LandingPublicDemoEntryTests(unittest.TestCase):
         self.assertIn("apiGet", meta_js)
         self.assertIn('"/meta"', meta_js)
 
-    def test_contains_the_literal_open_the_live_demo_copy(self):
-        self.assertIn("OPEN THE LIVE DEMO", self.js + self.html)
-
-    def test_demo_entry_links_to_today_with_no_signup(self):
-        self.assertIn("index.html#/today", self.js + self.html)
-
-    def test_entry_point_starts_hidden_in_markup(self):
-        # Revealed only by JS once /meta confirms public_demo -- if /meta
-        # never resolves (or resolves false) the element must never show.
-        match = re.search(
-            r'<div class="hero__demo-entry" data-hook="public-demo-entry"[^>]*>',
-            self.html)
-        self.assertIsNotNone(match, "public-demo-entry host not found in landing.html")
-        self.assertIn("hidden", match.group(0))
-
-    def test_reveal_only_flips_hidden_false_never_removes_the_gate(self):
-        # The gate itself (host.hidden = false) must be conditioned on the
-        # meta.public_demo read, not unconditional.
-        fn_match = re.search(
-            r"async function revealPublicDemoEntry\(\)\s*\{(.*?)\n\}",
-            self.js, re.DOTALL)
-        self.assertIsNotNone(fn_match, "revealPublicDemoEntry() not found")
-        body = fn_match.group(1)
-        self.assertIn("public_demo", body)
-        self.assertIn("hidden = false", body)
-        # The catch branch must not also reveal the entry -- an unreachable
-        # /meta must change nothing about the page.
-        try_catch = re.search(r"try\s*\{(.*?)\}\s*catch[^{]*\{(.*?)\n  \}", body, re.DOTALL)
-        self.assertIsNotNone(try_catch, "expected a try/catch around the /meta fetch")
-        self.assertNotIn("hidden = false", try_catch.group(2))
+    def test_the_public_demo_front_door_is_gone(self):
+        # UPDATED 2026-09-22 (owner-directed landing redesign). The 09-07
+        # 'OPEN THE LIVE DEMO' entry is removed: the landing sells one thing,
+        # the 7-day free trial. Production never ran demo mode, and on staging
+        # the button put a free copy of the paid product on the front door.
+        # landing.js's revealPublicDemoEntry stays harmless (it returns when
+        # the host is absent).
+        self.assertNotIn('data-hook="public-demo-entry"', self.html)
+        self.assertNotIn('OPEN THE LIVE DEMO', self.html)
+        self.assertIn('if (!host) return;', self.js)
 
     def test_existing_ctas_and_sample_slate_label_untouched(self):
         # UPDATED 2026-09-22 (owner-directed landing redesign): "Try 3 Bet
