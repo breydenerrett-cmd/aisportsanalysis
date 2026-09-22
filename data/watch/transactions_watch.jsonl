@@ -1584,3 +1584,6 @@
 {"category": "il_transfer", "date": "2026-09-22", "first_seen_utc": "2026-09-22T21:11:38.436478+00:00", "player": "J.T. Ginn", "player_id": 669372, "team": "OAK", "transaction_id": 943685}
 {"category": "optioned", "date": "2026-09-22", "first_seen_utc": "2026-09-22T21:11:38.436478+00:00", "player": "Adam Macko", "player_id": 671936, "team": "TEX", "transaction_id": 943686}
 {"category": "il_activation", "date": "2026-09-22", "first_seen_utc": "2026-09-22T21:11:38.436478+00:00", "player": "Peyton Gray", "player_id": 682608, "team": "TEX", "transaction_id": 943687}
+{"fetched_utc": "2026-09-22T21:34:00.913720+00:00", "game_date": "2026-09-22", "poll": true}
+{"category": "other", "date": "2026-09-22", "first_seen_utc": "2026-09-22T21:34:00.913720+00:00", "player": "Jorge Barrosa", "player_id": 678489, "team": "HOU", "transaction_id": 943689}
+{"fetched_utc": "2026-09-22T21:34:02.909921+00:00", "game_date": "2026-09-22", "poll": true}
