@@ -1595,3 +1595,5 @@
 {"category": "recalled", "date": "2026-09-22", "first_seen_utc": "2026-09-22T22:28:51.998639+00:00", "player": "Braxton Roxby", "player_id": 694820, "team": "SF", "transaction_id": 943695}
 {"category": "il_placement", "date": "2026-09-22", "first_seen_utc": "2026-09-22T22:28:51.998639+00:00", "player": "Blade Tidwell", "player_id": 694918, "team": "SF", "transaction_id": 943696}
 {"fetched_utc": "2026-09-22T22:28:53.436837+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-22T23:10:31.964145+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-22T23:10:33.469056+00:00", "game_date": "2026-09-22", "poll": true}
