@@ -31,6 +31,16 @@ from src.report import card as card_mod
 
 router = APIRouter()
 
+# GET /card?sport=nfl had no cache at all: every request re-ran
+# nfl_card.card_for_date, which -- when the date is not yet frozen -- pays
+# for a live nfl_slate build. Measured cold on staging 2026-09-21: 3.3s.
+# Same fix shape as the mma cache directly below: cache the BUILT payload
+# per date, TTL-only, same 120s TTL every other date-keyed cache here uses.
+# Added so api/warmup.py has a real cache to warm -- see that module's
+# docstring for why a warm-up call must go through the same cached path a
+# real request does, not call nfl_card.card_for_date directly.
+_nfl_card_cache = freshness.SingleFlightTTLCache(ttl_s=120.0)
+
 # GET /card?sport=mma's LIVE branch (measured on staging 2026-09-21: 2.7s)
 # reads `snapshots.read_multibook(sport="mma")` -- the whole multibook
 # store, once per request, only to throw most of it away filtering to one
@@ -136,11 +146,14 @@ def _build_payload(date: str, request: Optional[Request], route: str,
             "reason": "Research only. No tennis picks until results grading is connected."
         }
 
-    # NFL: use nfl_card
+    # NFL: use nfl_card, cached per date -- see _nfl_card_cache above.
     if sport == "nfl":
         from src.report import nfl_card
-        now = datetime.now(timezone.utc)
-        payload = nfl_card.card_for_date(date, now=now)
+
+        def _rebuild():
+            return nfl_card.card_for_date(date, now=datetime.now(timezone.utc))
+
+        payload, _meta = _nfl_card_cache.get(("nfl_card", date), _rebuild)
         _record_page_view(request, route, date)
         return payload
 

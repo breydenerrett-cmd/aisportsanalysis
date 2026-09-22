@@ -47,6 +47,7 @@ from api.mybets import router as mybets_router
 from api.digest import router as digest_router
 from api.funnel import router as funnel_router
 from api.today import get_today_payload_cached
+from api import warmup
 
 app = FastAPI(title="aisportsanalysis api", description=(
     "Read-only. JSON only -- no HTML, no styling. The design gate covers "
@@ -145,6 +146,22 @@ app.include_router(betcheck_router, dependencies=_authed_paid)
 # per-IP hourly limiter -- none of which lets it become the bulk slate/odds
 # surface that finding was about.
 app.include_router(free_betcheck_router)
+
+
+# -- background cache warm-up -----------------------------------------------
+#
+# See api/warmup.py's module docstring for the full problem and design.
+# Short version: every date-keyed cache in this app (freshness.py's
+# SingleFlightTTLCache, one per route) is cold on the first request after
+# every deploy (several a day) and after every midnight date rollover, and
+# that first visitor pays 10-13s or, once, a 502 (measured on staging
+# 2026-09-21). An HTTP self-request to warm these routes would hit
+# require_paid_access and get a 401, so this calls the routes' own cached
+# builder functions directly, on a background daemon thread that never
+# blocks startup or /health.
+@app.on_event("startup")
+def _start_cache_warmup() -> None:
+    warmup.start_background_warmup()
 
 
 # -- request logging + structured 500s -------------------------------------
