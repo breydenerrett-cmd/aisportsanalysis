@@ -24,9 +24,12 @@
 
 export const BETA_TIER = Object.freeze({
   id: "beta",
-  name: "Founding beta access",
+  name: "Founding access",
   price_cents: 1999,
   price_display: "$19.99/mo",
   billing_note:
-    "7-day free trial, then $19.99/month. Cancel anytime.",
+    "7-day free trial, then $19.99/month. Cancel anytime. This is the "
+    + "founding price: it rises as the public record grows, and it can fall "
+    + "if the record does. Founding members keep $19.99 for as long as their "
+    + "subscription stays active.",
 });
