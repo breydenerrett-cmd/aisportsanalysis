@@ -1569,3 +1569,9 @@
 {"category": "il_activation", "date": "2026-09-22", "first_seen_utc": "2026-09-22T19:54:35.049527+00:00", "player": "Devin Williams", "player_id": 642207, "team": "NYM", "transaction_id": 943654}
 {"category": "il_placement", "date": "2026-09-22", "first_seen_utc": "2026-09-22T19:54:35.049527+00:00", "player": "Christian Scott", "player_id": 681035, "team": "NYM", "transaction_id": 943655}
 {"fetched_utc": "2026-09-22T19:54:37.384383+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-22T20:28:51.453025+00:00", "game_date": "2026-09-22", "poll": true}
+{"category": "rehab", "date": "2026-09-22", "first_seen_utc": "2026-09-22T20:28:51.453025+00:00", "player": "Ryan Thompson", "player_id": 657044, "team": "ARI", "transaction_id": 943658}
+{"category": "optioned", "date": "2026-09-22", "first_seen_utc": "2026-09-22T20:28:51.453025+00:00", "player": "Max Schuemann", "player_id": 680474, "team": "NYY", "transaction_id": 943659}
+{"category": "il_activation", "date": "2026-09-22", "first_seen_utc": "2026-09-22T20:28:51.453025+00:00", "player": "Jazz Chisholm Jr.", "player_id": 665862, "team": "NYY", "transaction_id": 943660}
+{"category": "rehab", "date": "2026-09-22", "first_seen_utc": "2026-09-22T20:28:51.453025+00:00", "player": "Ryan Thompson", "player_id": 657044, "team": "ARI", "transaction_id": 943661}
+{"fetched_utc": "2026-09-22T20:28:54.082695+00:00", "game_date": "2026-09-22", "poll": true}
