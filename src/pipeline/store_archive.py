@@ -129,6 +129,16 @@ _SEGMENT_NAME_RE = re.compile(
 )
 
 
+def _coerce_date(value: str | date | None) -> date | None:
+    """`since`/`until` accept either a `date` or a YYYY-MM-DD string --
+    every caller in this codebase already carries dates as plain ISO
+    strings (route params, ledger fields), so requiring a `date` object
+    would just push a `date.fromisoformat` onto every call site."""
+    if value is None or isinstance(value, date):
+        return value
+    return date.fromisoformat(value)
+
+
 def segment_dir(path: Path | str) -> Path:
     """Where `path`'s archive segments live: `<parent>/archive/<stem>/`.
 
@@ -176,10 +186,29 @@ def exists(path: Path | str) -> bool:
     return path.exists() or bool(segments(path))
 
 
-def iter_lines(path: Path | str) -> Iterator[str]:
+def iter_lines(path: Path | str, *, since: str | date | None = None) -> Iterator[str]:
     """Every text line of the LOGICAL store, in original order: every
     archive segment oldest-first, then the (possibly empty, possibly
     absent) hot file.
+
+    `since` (added 2026-09-21, the /odds and /games latency fix): an
+    optional YYYY-MM-DD date (str or `date`). A segment is skipped
+    ENTIRELY, without ever being opened or decompressed, when its own
+    filename says its LAST archived row is dated strictly before `since` --
+    the segment name already carries that fact (module docstring: `NNNN_
+    <first-date>_<last-date>.jsonl.gz`, and `rotate`'s stamp field is
+    `observed_utc`, so this compares against observed dates, not commence
+    dates). The hot file is always read in full: it carries no per-segment
+    date metadata cheap enough to check without opening it, and it is the
+    small tail of the store by construction. `since=None` (the default)
+    changes nothing -- every segment is opened exactly as before, which is
+    what keeps a caller that never passes `since` reading the identical
+    bytes it always did.
+
+    This is a coarse, whole-segment filter, not a row filter: a segment
+    that overlaps `since` at all (its `last` date is on or after `since`)
+    is still opened and fully yielded, so per-row filtering is still the
+    caller's job -- see src.pipeline.snapshots.read's own `since`/`until`.
 
     Yields str with the line's own trailing newline kept (or omitted for a
     final, unterminated line) exactly as it existed in the file the segment
@@ -219,7 +248,12 @@ def iter_lines(path: Path | str) -> Iterator[str]:
     the same checkout) must not assume the rows it sees mid-iteration are
     the complete, current logical store.
     """
+    since_date = _coerce_date(since)
     for segment in segments(path):
+        if since_date is not None:
+            match = _SEGMENT_NAME_RE.match(segment.name)
+            if match and date.fromisoformat(match["last"]) < since_date:
+                continue
         with gzip.open(segment, "rb") as handle:
             for raw_line in handle:
                 yield raw_line.decode("utf-8")

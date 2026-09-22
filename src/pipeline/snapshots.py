@@ -330,7 +330,154 @@ def _ends_ragged(target) -> bool:
 # Read
 # ---------------------------------------------------------------------------
 
-def read(path=DEFAULT_SNAPSHOT_PATH, skip_corrupt: bool = True, sport=DEFAULT_SPORT) -> list:
+# PRE-GAME LEAD TIME, MEASURED (2026-09-21, /odds and /games latency fix).
+# `since`/`until` below window a read by `observed_utc`, not by the game's
+# own commence_time -- rows are captured up to this many days BEFORE a
+# game, so a caller asking for date D's board still needs observations from
+# well before D. Measured against the real store on 2026-09-21
+# (data/processed/odds_multibook.jsonl + its one archive segment, 345,930
+# rows): MLB rows (`sport` unset on the row, the default) lead by at most
+# 1.36 days (240,098 rows checked), tennis by at most 1.06 (2,475 checked),
+# but NFL futures-style lines lead by up to 13.18 days (103,357 checked,
+# p99 10.95). A single margin sized for NFL would leave /odds and /games --
+# both MLB, sport=DEFAULT_SPORT -- windowing in far more of the store than
+# they ever need, so the margin is PER SPORT: generous headroom over each
+# sport's own measured max, never a number "enough for MLB" reused
+# elsewhere and silently wrong for NFL. `_UNTIL_MARGIN_DAYS` (every sport)
+# covers a game observed same-day but filed a UTC calendar day later (a
+# late-ET first pitch) plus any in-play observation shortly after it --
+# `is_pregame`/`pregame_rows` still do the real pre-game filtering; this is
+# only a coarse pre-parse window, and it may only ever OVER-include, never
+# under-include, the same rule `iter_multibook`'s own text prefilter
+# already follows. An unlisted/unknown sport gets the NFL-sized (widest
+# measured) margin -- the conservative default when this store's actual
+# lead time for that sport has never been checked.
+_SINCE_MARGIN_DAYS_BY_SPORT = {
+    "mlb": 4,     # measured max 1.36 days
+    "tennis": 4,  # measured max 1.06 days (tennis_* rows carry their own
+                  # tournament-specific sport string, matched via prefix below)
+}
+_DEFAULT_SINCE_MARGIN_DAYS = 16  # measured NFL max 13.18 days, plus headroom
+_UNTIL_MARGIN_DAYS = 2
+
+
+def _since_margin_days(sport) -> int:
+    if sport is None:
+        return _DEFAULT_SINCE_MARGIN_DAYS
+    if sport.startswith("tennis"):
+        return _SINCE_MARGIN_DAYS_BY_SPORT["tennis"]
+    return _SINCE_MARGIN_DAYS_BY_SPORT.get(sport, _DEFAULT_SINCE_MARGIN_DAYS)
+
+
+def window_for_date(date_str, sport=DEFAULT_SPORT) -> tuple[str, str]:
+    """`(since, until)` ISO date strings bracketing `date_str` with the
+    measured margins above -- the window `boards_by_matchup`/`event_index`/
+    etc. pass down to `read`/`read_multibook`/`iter_multibook` when they
+    know which single date (and, for the `since` margin, which sport) they
+    are building a board for. `sport=DEFAULT_SPORT` (mlb) matches every
+    existing caller of this function (all of them build an MLB board)."""
+    from datetime import date as _date
+
+    d = _date.fromisoformat(date_str)
+    since = (d - timedelta(days=_since_margin_days(sport))).isoformat()
+    until = (d + timedelta(days=_UNTIL_MARGIN_DAYS)).isoformat()
+    return since, until
+
+
+def _observed_in_window(row, since, until) -> bool:
+    """True unless `row`'s `observed_utc` is provably outside [since, until].
+
+    A row with no parseable `observed_utc` is kept -- exactly the
+    over-match-never-under-match rule `iter_multibook`'s docstring already
+    states for its text prefilter, applied here to the parsed field
+    instead. Comparison is on the leading 10 characters (YYYY-MM-DD),
+    lexicographically -- `observed_utc` is always written UTC ISO-8601
+    (module docstring), so this is a plain string compare, no parsing.
+    """
+    if since is None and until is None:
+        return True
+    observed = row.get("observed_utc")
+    if not isinstance(observed, str) or len(observed) < 10:
+        return True
+    day = observed[:10]
+    if since is not None and day < since:
+        return False
+    if until is not None and day > until:
+        return False
+    return True
+
+
+_OBSERVED_UTC_MARKER = '"observed_utc":"'
+
+
+def _line_probably_out_of_window(line, since, until) -> bool:
+    """A cheap, TEXT-ONLY pre-check: True only when this raw line can be
+    proven out of [since, until] window without calling `json.loads` --
+    the actual cost `_observed_in_window` exists to avoid paying on every
+    row of a 100k+-row file, for the same reason `iter_multibook`'s
+    `market` prefilter exists (its own docstring: "a little parsing" per
+    line is fine, a FULL parse of every line on the store is not).
+
+    THIS MAY ONLY EVER UNDER-REJECT, NEVER OVER-REJECT -- the mirror image
+    of the market prefilter's own rule, because getting this wrong in the
+    other direction silently drops real rows rather than costing a wasted
+    parse. Every ambiguous case (`json.dumps`'s key order guarantees
+    `observed_utc` appears verbatim like this in every row this project's
+    writers produce, but a row from a future writer, a hand-edited fixture,
+    or one where the field is simply absent must not be silently treated as
+    in-window by construction) returns False here -- "cannot prove it is
+    out of window" -- and falls through to the exact, parsed check
+    (`_observed_in_window`) that actually decides.
+    """
+    if since is None and until is None:
+        return False
+    idx = line.find(_OBSERVED_UTC_MARKER)
+    if idx == -1:
+        return False
+    start = idx + len(_OBSERVED_UTC_MARKER)
+    day = line[start:start + 10]
+    if len(day) < 10:
+        return False
+    if since is not None and day < since:
+        return True
+    if until is not None and day > until:
+        return True
+    return False
+
+
+_SPORT_MARKER = '"sport":"'
+
+
+def _line_probably_wrong_sport(line, sport) -> bool:
+    """A cheap, TEXT-ONLY pre-check mirroring `_line_probably_out_of_window`:
+    True only when this raw line can be PROVEN not to belong to `sport`
+    without calling `json.loads`.
+
+    `row_sport`'s own rule is "missing field means mlb" -- so a line with
+    no `"sport":"..."` substring at all is proven to be mlb (never
+    ambiguous: `snapshots.capture`/`nfl_slate`/`ufc_card`'s writers always
+    write the field explicitly for every non-mlb row, so its absence is not
+    a "maybe" the way an unparseable line is). Any line where the field IS
+    present is read out to its own closing quote and compared exactly, the
+    same "over-match only" discipline `iter_multibook`'s own `market`
+    prefilter and `_line_probably_out_of_window` both use: an unterminated
+    or otherwise unparseable-looking value returns False (cannot prove
+    wrong-sport) and falls through to the real, parsed `_is_sport` check.
+    """
+    if sport is None:
+        return False
+    idx = line.find(_SPORT_MARKER)
+    if idx == -1:
+        return sport != DEFAULT_SPORT
+    start = idx + len(_SPORT_MARKER)
+    end = line.find('"', start)
+    if end == -1:
+        return False
+    return line[start:end] != sport
+
+
+def read(path=DEFAULT_SNAPSHOT_PATH, skip_corrupt: bool = True, sport=DEFAULT_SPORT,
+         *, since=None, until=None) -> list:
     """Read observations, optionally filtered by sport.
 
     A truncated final line is the normal signature of a run killed mid-write. With
@@ -338,6 +485,21 @@ def read(path=DEFAULT_SNAPSHOT_PATH, skip_corrupt: bool = True, sport=DEFAULT_SP
     right trade for an append-only log.
 
     sport=DEFAULT_SPORT (mlb) returns only MLB rows. sport=None returns every row.
+
+    `since`/`until` (added 2026-09-21, the /odds and /games latency fix):
+    optional YYYY-MM-DD bounds on `observed_utc` (see `_observed_in_window`
+    and `window_for_date`). Both default to None, which reads and returns
+    every row exactly as this function always has -- no caller that omits
+    them sees any change. Passed straight to `store_archive.iter_lines` as
+    `since` so whole archive segments outside the window are never opened,
+    and checked again per-row (via `_observed_in_window`, right after
+    `json.loads`, before this function's caller ever sees the row) so an
+    out-of-window row costs one JSON parse and nothing else -- it is this
+    function's CALLERS (`boards_by_matchup`, `event_index`, and everything
+    each of them does per row: team-name resolution, pregame filtering,
+    board assembly) that pay the real cost of a request for one date out of
+    a 38+ MB, 100k+-row store, and this window is what lets them skip
+    paying it for every row that was never going to matter for that date.
 
     Reads the LOGICAL store at `path` (src.pipeline.store_archive): archive
     segments oldest-first, then the hot file, in original order -- serves
@@ -351,13 +513,17 @@ def read(path=DEFAULT_SNAPSHOT_PATH, skip_corrupt: bool = True, sport=DEFAULT_SP
     if not store_archive.exists(path):
         return []
     rows = []
-    for number, line in enumerate(store_archive.iter_lines(path), start=1):
+    for number, line in enumerate(store_archive.iter_lines(path, since=since), start=1):
         line = line.strip()
         if not line:
             continue
+        if _line_probably_out_of_window(line, since, until):
+            continue
+        if _line_probably_wrong_sport(line, sport):
+            continue
         try:
             row = json.loads(line)
-            if _is_sport(row, sport):
+            if _is_sport(row, sport) and _observed_in_window(row, since, until):
                 rows.append(row)
         except json.JSONDecodeError:
             if skip_corrupt:
@@ -466,13 +632,17 @@ def group_by_game(rows, market: str = "h2h") -> dict:
     return grouped
 
 
-def read_multibook(path=DEFAULT_MULTIBOOK_PATH, skip_corrupt: bool = True, sport=DEFAULT_SPORT) -> list:
-    """All multi-book observations, optionally filtered by sport. Same resilience rules as `read`."""
-    return read(path=path, skip_corrupt=skip_corrupt, sport=sport)
+def read_multibook(path=DEFAULT_MULTIBOOK_PATH, skip_corrupt: bool = True, sport=DEFAULT_SPORT,
+                   *, since=None, until=None) -> list:
+    """All multi-book observations, optionally filtered by sport. Same
+    resilience rules as `read`. `since`/`until`: see `read`'s docstring --
+    both default to None, unchanged behaviour."""
+    return read(path=path, skip_corrupt=skip_corrupt, sport=sport, since=since, until=until)
 
 
 def iter_multibook(path=DEFAULT_MULTIBOOK_PATH, skip_corrupt: bool = True,
-                   *, market=None, keep=None, sport=DEFAULT_SPORT):
+                   *, market=None, keep=None, sport=DEFAULT_SPORT,
+                   since=None, until=None):
     """Multi-book observations one at a time, filtered while reading.
 
     WHY THIS EXISTS RATHER THAN `read_multibook(...)` PLUS A LIST
@@ -502,6 +672,12 @@ def iter_multibook(path=DEFAULT_MULTIBOOK_PATH, skip_corrupt: bool = True,
 
     sport filters rows by sport; sport=None returns every row.
 
+    `since`/`until` (added 2026-09-21, the /odds and /games latency fix):
+    optional YYYY-MM-DD bounds on `observed_utc`, same rule and same
+    `_observed_in_window`/`window_for_date` helpers `read` uses. Both
+    default to None -- unchanged behaviour for every existing caller.
+    `since` also skips whole archive segments via `store_archive.iter_lines`.
+
     Reads the LOGICAL store at `path` (src.pipeline.store_archive) -- still
     one line at a time, still no materialised list, so a rotation
     (2026-09-21 incident) does not reintroduce the 2026-09-10 memory
@@ -514,11 +690,15 @@ def iter_multibook(path=DEFAULT_MULTIBOOK_PATH, skip_corrupt: bool = True,
     if not store_archive.exists(path):
         return
     needle = f'"{market}"' if market else None
-    for number, line in enumerate(store_archive.iter_lines(path), start=1):
+    for number, line in enumerate(store_archive.iter_lines(path, since=since), start=1):
         line = line.strip()
         if not line:
             continue
         if needle is not None and needle not in line:
+            continue
+        if _line_probably_out_of_window(line, since, until):
+            continue
+        if _line_probably_wrong_sport(line, sport):
             continue
         try:
             row = json.loads(line)
@@ -527,6 +707,8 @@ def iter_multibook(path=DEFAULT_MULTIBOOK_PATH, skip_corrupt: bool = True,
                 continue
             raise SnapshotError(
                 f"corrupt snapshot on line {number} of {path}")
+        if not _observed_in_window(row, since, until):
+            continue
         # The exact check the prefilter is only an approximation of.
         if market is not None and row.get("market") != market:
             continue

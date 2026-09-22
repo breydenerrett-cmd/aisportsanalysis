@@ -26,9 +26,24 @@ from api.games import _build_entries, _record_page_view
 from src.analysis import best_bets_card, daily_card, grade
 from src.analysis import opportunities as opportunities_mod
 from src.analysis import strength
+from src.appstate import freshness
 from src.report import card as card_mod
 
 router = APIRouter()
+
+# GET /card?sport=mma's LIVE branch (measured on staging 2026-09-21: 2.7s)
+# reads `snapshots.read_multibook(sport="mma")` -- the whole multibook
+# store, once per request, only to throw most of it away filtering to one
+# date -- every time the day's card is not yet FROZEN (`ufc_card.
+# card_for_date`'s own `prefer_frozen` check already makes the common case,
+# a published card, cheap; this only covers the live-build path). Same
+# fix shape as api/odds.py and api/games.py's own caches: cache the BUILT
+# payload per date, TTL-only (no fingerprint check -- unlike the multibook
+# reader fix, this file has no reason to reimplement store-window logic
+# just to save a rebuild), same 120s TTL every other date-keyed cache in
+# this project uses. Only the VALUE is reused, never the meta -- this
+# route's response shape is unchanged, so no `freshness` key is added.
+_mma_card_cache = freshness.SingleFlightTTLCache(ttl_s=120.0)
 
 # GET /card/history's page size. Capped, not unlimited -- the record page
 # is the public sales pitch, not a data export; a reader who wants the
@@ -134,8 +149,11 @@ def _build_payload(date: str, request: Optional[Request], route: str,
     # own notice/disclaimer text, not in a separate auth gate.
     if sport == "mma":
         from src.report import ufc_card
-        now = datetime.now(timezone.utc)
-        payload = ufc_card.card_for_date(date, now=now)
+
+        def _rebuild():
+            return ufc_card.card_for_date(date, now=datetime.now(timezone.utc))
+
+        payload, _meta = _mma_card_cache.get(("mma_card", date), _rebuild)
         _record_page_view(request, route, date)
         return payload
 

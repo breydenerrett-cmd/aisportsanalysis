@@ -33,10 +33,21 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, Request
 
+from src.appstate import freshness
 from src.pipeline import prop_listing
 from src.report import props as props_mod
 
 router = APIRouter()
+
+# Measured on staging 2026-09-21: 2.7s. `props_mod.board_for_date` reads
+# `batter_props.read_processed()` (42 MB) and a season's boxscore store in
+# full on every request, the same "whole store, every request" pattern
+# behind the /odds and /games fix, just a different pair of stores. Same
+# per-date TTL cache shape as api/tennis.py's `_tennis_cache` -- the
+# derivation itself is untouched, so every field this board ever returned
+# is unchanged; only a repeat request for the same (date, limit) within the
+# TTL is served from cache instead of re-reading both stores.
+_props_cache = freshness.SingleFlightTTLCache(ttl_s=120.0)
 
 
 def _validate(date: str) -> str:
@@ -72,9 +83,18 @@ def _board(date: str, limit: Optional[int]) -> dict:
     An empty board with a `reason` is a real answer -- prices may not be
     posted yet. A board that could not be built at all is not, and a client
     must be able to tell those apart.
+
+    Cached per (date, limit) -- see `_props_cache` -- so a rebuild failure
+    still reaches this function's own except-block on a cold key exactly as
+    before; `SingleFlightTTLCache.get` re-raises an untouched exception when
+    there is no prior good value to fall back on (its own docstring).
     """
-    try:
+    def _rebuild():
         return props_mod.board_for_date(date, limit=limit)
+
+    try:
+        value, _meta = _props_cache.get(("props_board", date, limit), _rebuild)
+        return value
     except HTTPException:
         raise
     except Exception as exc:  # noqa: BLE001 -- surfaced, never swallowed

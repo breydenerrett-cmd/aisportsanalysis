@@ -15,12 +15,28 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 
+from src.appstate import freshness
 from src.report import tennis_board
 
 router = APIRouter()
 
 # Module-level readers, patchable for testing
 _board_for_date = tennis_board.board_for_date
+
+# Measured on staging 2026-09-21: 3.9s. `tennis_board.board_for_date` reads
+# `snapshots.read_multibook(sport=None)` -- EVERY row in the store,
+# regardless of sport, because `captured_any`/`last_captured_utc` (the
+# "have we ever captured a tennis price at all" fields) need the full
+# history, not one date's window -- windowing the read here the way
+# api/odds.py's boards_by_matchup(date=...) fix does would silently change
+# THOSE two fields for any date outside the window, which is exactly the
+# kind of quiet wrongness this project's incidents keep coming back to.
+# A plain per-date TTL cache in front of the whole built payload sidesteps
+# that risk entirely: the underlying read/derivation is untouched, so
+# every field -- including `captured_any` -- is exactly what it always
+# was, just not recomputed on every request for the same date within the
+# TTL. Same 120s TTL as every other date-keyed cache in this project.
+_tennis_cache = freshness.SingleFlightTTLCache(ttl_s=120.0)
 
 
 def _validate_date(date_str: str) -> str:
@@ -64,4 +80,5 @@ def get_tennis_board(date: Optional[str] = None) -> dict:
     else:
         date = _validate_date(date)
 
-    return _board_for_date(date)
+    value, _meta = _tennis_cache.get(("tennis_board", date), lambda: _board_for_date(date))
+    return value

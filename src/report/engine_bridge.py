@@ -100,7 +100,7 @@ def _field(obj, name, default=None):
     return getattr(obj, name, default)
 
 
-def event_index(rows=None) -> dict:
+def event_index(rows=None, *, date=None) -> dict:
     """`{event_id: {away_abbrev, home_abbrev, away_name, home_name,
     commence_time, date}}`, built once from the multi-book store's own
     event rows (the same store `src.analysis.prices` reads boards from) --
@@ -111,9 +111,24 @@ def event_index(rows=None) -> dict:
     already returns `[]` for a missing file, and any other failure here is
     caught rather than propagated, since a container without this store
     must still serve the rest of the game surface.
+
+    `date` (added 2026-09-21, the /odds and /games latency fix): same
+    windowing hint as `src.analysis.prices.boards_by_matchup`'s own `date`
+    -- when given (and `rows` is None), windows the store read to
+    `snapshots.window_for_date(date)` instead of reading every row this
+    store has ever recorded just to keep the handful whose `date` matches.
+    `date=None` (the default -- `daily_record.py` and `paper_performance.py`
+    both call this with no date, and keep the full read they always got)
+    changes nothing.
     """
     try:
-        source = snapshots.read_multibook() if rows is None else rows
+        if rows is not None:
+            source = rows
+        elif date is not None:
+            since, until = snapshots.window_for_date(date)
+            source = snapshots.read_multibook(since=since, until=until)
+        else:
+            source = snapshots.read_multibook()
     except Exception:
         return {}
     out: dict = {}
@@ -182,7 +197,7 @@ def decisions_for_date(date, decisions=None, wagers=None) -> dict:
     except Exception:
         wagers = ()
     try:
-        idx = event_index()
+        idx = event_index(date=date)
     except Exception:
         idx = {}
 

@@ -264,8 +264,21 @@ def matchup_key(away, home, date) -> tuple:
             parks.canonical_team(home or ""), date)
 
 
-def boards_by_matchup(rows=None, sport="mlb") -> dict:
+def boards_by_matchup(rows=None, sport="mlb", *, date=None) -> dict:
     """{(away_abbrev, home_abbrev, date): board} for the multibook store.
+
+    `date` (added 2026-09-21, the /odds and /games latency fix): an
+    optional YYYY-MM-DD hint that this call only cares about one game
+    date. When given (and `rows` is None, i.e. this function is doing its
+    own store read), it windows the read to `snapshots.window_for_date
+    (date)` -- observations from well before that date through the day
+    after -- instead of reading the store's entire history just to filter
+    it down to one date's boards afterward. `date=None` (the default, and
+    every pre-existing caller) reads the whole store exactly as before:
+    this parameter changes nothing for any caller that does not pass it,
+    and a caller that does still gets a dict that MAY hold other dates too
+    (the window has slack on both sides) -- looking a board up by its own
+    `matchup_key` is unaffected either way.
 
     A board is {"quotes": [...], "observed_utc": ts, "source": SOURCE}: ONE
     capture instant, one row per book, exactly the list `snapshot` summarises.
@@ -332,8 +345,14 @@ def boards_by_matchup(rows=None, sport="mlb") -> dict:
     # replace its moneyline row, and every board on /odds and every card
     # read "9 books, no consensus" (2026-09-07). snapshots.moneyline_rows is
     # the one place that decides which rows are a moneyline.
-    source = snapshots.moneyline_rows(snapshots.pregame_rows(
-        snapshots.read_multibook(sport=sport) if rows is None else rows))
+    if rows is None:
+        since = until = None
+        if date is not None:
+            since, until = snapshots.window_for_date(date, sport=sport)
+        multibook_rows = snapshots.read_multibook(sport=sport, since=since, until=until)
+    else:
+        multibook_rows = rows
+    source = snapshots.moneyline_rows(snapshots.pregame_rows(multibook_rows))
     if rows is not None:
         source = [r for r in source if snapshots._is_sport(r, sport)]
     grouped = {}

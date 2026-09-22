@@ -170,6 +170,16 @@ def _build_entries(date: str, **build_slate_kwargs) -> list:
         # caller's explicit kwarg still wins over the loaded default.
         inputs = _enrichment_inputs(games, date, store)
         inputs.update(build_slate_kwargs)
+        # `date=date` (2026-09-21 latency fix): windows build_slate's own
+        # multibook read to this one date -- see briefing.build_slate's and
+        # prices.boards_by_matchup's docstrings. `build_slate_kwargs` still
+        # wins if a caller ever passes its own `date` (dict-unpack order:
+        # `inputs` was updated with build_slate_kwargs above, so an explicit
+        # `date=date` here would be a duplicate keyword if that ever
+        # happened -- it does not today, no caller of `_build_entries`
+        # passes `date` as a kwarg, but guard it via inputs.setdefault
+        # rather than risk a TypeError if one ever does).
+        inputs.setdefault("date", date)
         slate = briefing.build_slate(games, store, **inputs)
         return slate["games"], slate.get("notes", [])
 

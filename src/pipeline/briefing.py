@@ -58,12 +58,22 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
                 news_by_pk=None, matchup_depth_by_pk=None,
                 price_improvement_by_key=None, price_boards_by_key=None,
                 roster_events_by_pk=None, standings_by_pk=None,
-                detectors=None, information_time=None) -> dict:
+                detectors=None, information_time=None, date=None) -> dict:
     """One briefing for one date.
 
     The scanner's verdict and the detectors run over the same dossier, so a
     verdict can never disagree with the facts shown beneath it -- they are
     computed from one snapshot of one game's information.
+
+    `date` (added 2026-09-21, the /odds and /games latency fix): an
+    optional YYYY-MM-DD hint, forwarded to `prices_mod.boards_by_matchup`'s
+    own `date` when this function is doing its own multibook read (i.e.
+    `price_boards_by_key` was not injected) -- see that function's
+    docstring for what the window actually is. `date=None` (the default;
+    every existing caller -- the CLI briefing, every test that builds a
+    slate directly) keeps the full, unwindowed read exactly as before.
+    api/games.py's `_build_entries` is the one caller that passes it,
+    because it already knows the single date this slate is for.
     """
     entries, notes = [], []
 
@@ -85,7 +95,7 @@ def build_slate(games, store, pitcher_logs=None, prices_by_matchup=None,
     # mapping the same way. A store that does not exist yet simply yields no
     # boards, and every dossier then carries the honest gap instead.
     if price_boards_by_key is None:
-        price_boards_by_key = prices_mod.boards_by_matchup()
+        price_boards_by_key = prices_mod.boards_by_matchup(date=date)
     if price_improvement_by_key is None:
         price_improvement_by_key = prices_mod.by_matchup(
             boards=price_boards_by_key)

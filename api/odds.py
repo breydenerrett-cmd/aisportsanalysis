@@ -114,7 +114,12 @@ def _build_odds_inputs(date: str) -> Tuple[list, dict, dict]:
 
     def _rebuild():
         games = mlb.fetch_games(date)
-        boards = prices_mod.boards_by_matchup()
+        # `date=date` (2026-09-21 latency fix): windows the store read to
+        # this one date instead of the whole multibook history -- see
+        # prices.boards_by_matchup's own docstring. Every OTHER caller of
+        # boards_by_matchup (briefing.py, nfl_slate.py, clv.py, ...) still
+        # calls it with no date and gets the unwindowed read it always did.
+        boards = prices_mod.boards_by_matchup(date=date)
         return games, boards
 
     try:
