@@ -1557,3 +1557,4 @@
 {"fetched_utc": "2026-09-22T17:24:15.962444+00:00", "game_date": "2026-09-22", "poll": true}
 {"category": "designated", "date": "2026-09-22", "first_seen_utc": "2026-09-22T17:24:15.962444+00:00", "player": "Camilo Doval", "player_id": 666808, "team": "PIT", "transaction_id": 943648}
 {"category": "il_activation", "date": "2026-09-22", "first_seen_utc": "2026-09-22T17:24:15.962444+00:00", "player": "Kirby Yates", "player_id": 489446, "team": "PIT", "transaction_id": 943649}
+{"fetched_utc": "2026-09-22T17:56:15.174306+00:00", "game_date": "2026-09-22", "poll": true}
