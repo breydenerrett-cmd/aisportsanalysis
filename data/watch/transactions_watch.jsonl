@@ -1587,3 +1587,11 @@
 {"fetched_utc": "2026-09-22T21:34:00.913720+00:00", "game_date": "2026-09-22", "poll": true}
 {"category": "other", "date": "2026-09-22", "first_seen_utc": "2026-09-22T21:34:00.913720+00:00", "player": "Jorge Barrosa", "player_id": 678489, "team": "HOU", "transaction_id": 943689}
 {"fetched_utc": "2026-09-22T21:34:02.909921+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-22T22:28:51.998639+00:00", "game_date": "2026-09-22", "poll": true}
+{"category": "other", "date": "2026-09-22", "first_seen_utc": "2026-09-22T22:28:51.998639+00:00", "player": "Jorge Barrosa", "player_id": 678489, "team": "HOU", "transaction_id": 943691}
+{"category": "other", "date": "2026-09-22", "first_seen_utc": "2026-09-22T22:28:51.998639+00:00", "player": "Jake Fraley", "player_id": 641584, "team": "TB", "transaction_id": 943692}
+{"category": "other", "date": "2026-09-22", "first_seen_utc": "2026-09-22T22:28:51.998639+00:00", "player": "Vimael Mach\u00edn", "player_id": 605353, "team": "COL", "transaction_id": 943693}
+{"category": "other", "date": "2026-09-22", "first_seen_utc": "2026-09-22T22:28:51.998639+00:00", "player": "Ryan Ward", "player_id": 669899, "team": "LAD", "transaction_id": 943694}
+{"category": "recalled", "date": "2026-09-22", "first_seen_utc": "2026-09-22T22:28:51.998639+00:00", "player": "Braxton Roxby", "player_id": 694820, "team": "SF", "transaction_id": 943695}
+{"category": "il_placement", "date": "2026-09-22", "first_seen_utc": "2026-09-22T22:28:51.998639+00:00", "player": "Blade Tidwell", "player_id": 694918, "team": "SF", "transaction_id": 943696}
+{"fetched_utc": "2026-09-22T22:28:53.436837+00:00", "game_date": "2026-09-22", "poll": true}
