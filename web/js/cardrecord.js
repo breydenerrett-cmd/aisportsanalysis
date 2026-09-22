@@ -43,7 +43,7 @@
 import { apiGet } from "./api.js";
 import { el, clear, renderError, renderLoading, notYetAvailable, formatAmerican } from "./dom.js";
 import { bookLabel } from "./labels.js";
-import { NFL_NOTICE, NFL_RETIRED_RULE } from "./sport.js";
+import { NFL_NOTICE, NFL_RETIRED_RULE, MLB_SHADOW_RULE } from "./sport.js";
 
 // GET /card/history's own default (api/card.py's DEFAULT_HISTORY_LIMIT) --
 // kept in sync by eye rather than fetched, since it only ever changes the
@@ -741,6 +741,39 @@ function nflIntro(screen, rule) {
     "data-hook": "record-retired-rule-link", text: "SEE THE OLD RULE'S RECORD →" }));
 }
 
+/** MLB's version of `nflIntro`, added at V2's cutover (`docs/PREREG_CARD_V2.md`
+ * R3/R5): the record page shows V2 (the live rule) by default and links to
+ * V1's own record, in shadow, never the two pooled. Before cutover
+ * (`?rule=v1` requested but the server still serves V1 as the only rule, or
+ * `card.CUTOVER_DATE` is `None`) `record.rule` will not read back "v1" in
+ * the shadow sense the retired-rule branch below expects -- `renderCardRecord`
+ * only calls this after checking that case (`mlbShadowRequestedButUnavailable`),
+ * same guard shape as NFL's `ruleUnavailable`. */
+function mlbIntro(screen, rule) {
+  if (rule === MLB_SHADOW_RULE) {
+    screen.appendChild(el("p", { class: "card2lede card2lede--notice",
+      "data-hook": "record-mlb-shadow-notice",
+      text: "This is the record of our old MLB rule, which picked market favourites -- including some "
+          + "priced at -200 or worse. It ran in shadow from V2's cutover and is kept apart from V2's "
+          + "record and never added to it." }));
+    screen.appendChild(sectionHead("THE RECORD", "THE OLD MLB RULE (SHADOW)"));
+    screen.appendChild(el("p", { class: "crp-intro",
+      text: "Every pick our old rule made, frozen before the result was known, graded as published, and "
+          + "chained so none of it can be quietly edited afterward: the wins and the losses both." }));
+    screen.appendChild(el("a", { class: "card2rec__link", href: "#/record-card",
+      "data-hook": "record-current-rule-link", text: "SEE THE CURRENT RULE'S RECORD →" }));
+    return;
+  }
+  screen.appendChild(sectionHead("THE RECORD", "EVERY CARD WE HAVE EVER PUBLISHED"));
+  screen.appendChild(el("p", { class: "crp-intro",
+    text: "Every pick this product has made, frozen before the result was known and chained so none of it "
+        + "can be quietly edited afterward — the wins and the losses both. V2's record starts fresh at its "
+        + "own cutover; the old rule's picks, including some priced at -200 or worse, stay in their own "
+        + "ledger exactly as published and have a record of their own, in shadow." }));
+  screen.appendChild(el("a", { class: "card2rec__link", href: `#/record-card?rule=${MLB_SHADOW_RULE}`,
+    "data-hook": "record-shadow-rule-link", text: "SEE THE OLD RULE'S RECORD (SHADOW) →" }));
+}
+
 /** Shown instead of any figure when the retired rule's record was asked
  * for and the server answered with a different rule's (a server that does
  * not know `?rule=` yet serves the live rule). Printing those numbers
@@ -766,10 +799,13 @@ export async function renderCardRecord(container, options = {}) {
   const sport = (typeof options === "object" && options !== null)
     ? (options.sport || "mlb")
     : "mlb";
-  // Only the one retired NFL rule id is ever forwarded (2026-09-20) -- a
-  // typed `?rule=` reaches the API only if it is exactly that id.
+  // Only the one retired/shadow rule id is ever forwarded, per sport
+  // (2026-09-20 for NFL, V2 cutover for MLB) -- a typed `?rule=` reaches
+  // the API only if it is exactly that sport's one known non-default id.
   const rule = sport === "nfl" && options && options.rule === NFL_RETIRED_RULE
-    ? NFL_RETIRED_RULE : null;
+    ? NFL_RETIRED_RULE
+    : sport === "mlb" && options && options.rule === MLB_SHADOW_RULE
+      ? MLB_SHADOW_RULE : null;
 
   clear(container);
   const screen = el("div", { class: "screen crp-screen", "data-view": "record-card" });
@@ -780,8 +816,14 @@ export async function renderCardRecord(container, options = {}) {
   let history;
   try {
     const ruleParam = rule ? `&rule=${encodeURIComponent(rule)}` : "";
-    const recordUrl = `/card/record${sport !== "mlb" ? `?sport=${sport}${ruleParam}` : ""}`;
-    const historyUrl = `/card/history?limit=${HISTORY_LIMIT}${sport !== "mlb" ? `&sport=${sport}${ruleParam}` : ""}`;
+    // MLB has no `?sport=` of its own (the API defaults to it), so its
+    // `?rule=` needs its own leading `?` rather than piggy-backing on a
+    // `sport` param that is never sent for this sport.
+    const recordUrl = sport !== "mlb" ? `/card/record?sport=${sport}${ruleParam}`
+      : rule ? `/card/record?rule=${encodeURIComponent(rule)}` : "/card/record";
+    const historyUrl = sport !== "mlb"
+      ? `/card/history?limit=${HISTORY_LIMIT}&sport=${sport}${ruleParam}`
+      : `/card/history?limit=${HISTORY_LIMIT}${rule ? `&rule=${encodeURIComponent(rule)}` : ""}`;
     [record, history] = await Promise.all([
       apiGet(recordUrl),
       apiGet(historyUrl),
@@ -795,6 +837,12 @@ export async function renderCardRecord(container, options = {}) {
 
   if (sport === "nfl") {
     nflIntro(screen, rule);
+    if (rule && (!record || record.rule !== rule)) {
+      ruleUnavailable(screen);
+      return;
+    }
+  } else if (sport === "mlb") {
+    mlbIntro(screen, rule);
     if (rule && (!record || record.rule !== rule)) {
       ruleUnavailable(screen);
       return;

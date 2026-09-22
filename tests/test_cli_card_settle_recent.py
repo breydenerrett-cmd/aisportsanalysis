@@ -51,6 +51,13 @@ class CmdCardSettleRecentDispatchTests(unittest.TestCase):
                       "score yet", out)
 
     def test_recent_dispatches_to_mlb_card_ledger_settle_recent(self):
+        # T13 cutover (2026-09-22): V1's ledger split at CUTOVER_DATE
+        # (card.v1_store_path, docs/PREREG_CARD_V2.md R3), and this window
+        # can straddle that boundary, so cmd_card now calls settle_recent
+        # TWICE for mlb -- once against evidence/cards_v1.jsonl, once
+        # against evidence/cards_v1_shadow.jsonl -- and sums the totals
+        # (src.cli._cmd_card_settle_recent). Both calls share one
+        # fetch_results closure (no double read of the results store).
         totals = {"dates_checked": 1, "settled": 1, "misses": []}
         with mock.patch("src.appstate.card_ledger.settle_recent",
                         return_value=totals) as mocked:
@@ -59,9 +66,13 @@ class CmdCardSettleRecentDispatchTests(unittest.TestCase):
                 code = cli.cmd_card(_args(sport="mlb"))
 
         self.assertEqual(code, cli.EXIT_OK)
-        self.assertEqual(mocked.call_args.kwargs.get("sport"), "mlb")
-        self.assertIn("fetch_results", mocked.call_args.kwargs)
-        self.assertIn("dates_checked=1", buf.getvalue())
+        self.assertEqual(2, mocked.call_count)
+        paths = {call.kwargs.get("path") for call in mocked.call_args_list}
+        self.assertEqual(2, len(paths), "each call must target its own store")
+        for call in mocked.call_args_list:
+            self.assertEqual(call.kwargs.get("sport"), "mlb")
+            self.assertIn("fetch_results", call.kwargs)
+        self.assertIn("dates_checked=2", buf.getvalue())
         self.assertIn("misses=0", buf.getvalue())
 
     def test_recent_for_an_unwired_sport_errors_without_crashing(self):

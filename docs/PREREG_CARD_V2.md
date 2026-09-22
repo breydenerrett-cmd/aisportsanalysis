@@ -1,9 +1,44 @@
 # Pre-registration: DAILY_CARD_BEST_BETS_V2
 
 **Rule id:** `DAILY_CARD_BEST_BETS_V2`
-**REGISTERED_UTC: <set at commit>**
+**REGISTERED_UTC: 2026-09-22T14:35:00Z**
+**Registration-time note, part of this registration (orchestrator review,
+2026-09-22).** The three PAPER arms of section 17 (A2-A4) have no production
+wiring at this instant: no CLI or capture step publishes them yet (build plan
+T6). They start on the first slate date after that wiring lands, and that date
+is recorded here in a section 16 permitted edit. No arm's result is read
+before section 17's read date either way. The published arm A1
+(`DAILY_CARD_BEST_BETS_V2`) and the V1 shadow run from the cutover date
+`2026-09-23`.
+
 **Family:** CARD_V2 (MLB daily card)
-**Status:** DRAFT, not registered. Questions 1, 3 and 4 are answered (Brey, 2026-09-15, section 15). The open part of question 1 (the card's maximum) and questions 2, 5, 6 and 8 are answered (Brey, 2026-09-16 about 00:45Z and about 00:50Z, section 15). Question 7 is answered yes and questions 9, 10 and 11 are closed as single choices and replaced by the variant family of section 17 (Brey, 2026-09-16 about 03:10Z, section 15). **Open: 12, 13 and 14**, all new, all arising from that answer: whether to register the family as section 17 writes it, whether the published card may keep the strict bar while the loose one runs on paper, and whether the layout experiment's result licenses a rendering change and nothing else. It becomes registered only when Brey has answered those three himself (or explicitly accepted each default), dated, the frozen parameter file of 11.2 exists, the code the `code_fingerprint` of 11.2 covers is merged, and this file is committed with those answers, that file's sha256, the fingerprint value and the `v1_code_fingerprint` value of section 10; no V2 pick and no paper-arm pick exists before that instant. One further condition applies to plus-money picks only: the SR1 read already registered in `docs/RESEARCH_STRATEGY_REPLICATION.md` ("home underdog, moneyline price band +100 to +150", status READY_UNTESTED, zero rows read) is run and its result published before the first plus-money pick is shown (build plan T0c). Its result does not gate registration, licenses nothing here and changes no number in this file
+**Status:** REGISTERED, 2026-09-22T14:35:00Z. All of questions 1 to 11 are
+answered by Brey himself (2026-09-15 and 2026-09-16, section 15). Questions
+12, 13 and 14 are answered 2026-09-17 by Claude (Opus 5) under Brey's explicit
+delegation ("I need you to take over, take charge, and make the correct
+choices ... I just don't need to be answering these questions for you. You
+need to be solving them."), all three YES at their stated defaults (section
+15b): the variant family registers as written (12), the published card A1
+keeps the strict bar while the loose pair runs only on paper (13), and the
+layout experiment licenses a rendering change and nothing else (14). The
+frozen parameter file of 11.2 exists at `data/processed/card_v2_frozen_params.json`,
+sha256 `64e96b4a9a8d56753fa38f2f0b97b51eb87b3c48adaf29db199eb10b6467db3d`. The
+code the `code_fingerprint` of 11.2 covers is merged; its value at this commit
+is `8a641de0ee76091972d482cc316b47924a474e063334d67056333513ee4d2061`
+(`src.appstate.card_ledger.code_fingerprint()`, computed over
+`V2_FINGERPRINT_FILES`). The `v1_code_fingerprint` of section 10 at this
+commit is `10f5cac7191ff23d0afcebc1f3566c8e747b9e4286a1eacbbfd8be09bf1c92ee`
+(computed over `V1_FINGERPRINT_FILES`). No V2 pick and no paper-arm pick
+existed before this instant: `evidence/cards_v2.jsonl` and every family/shadow
+store did not exist before this commit (checked directly, not assumed). The
+one further condition on plus-money picks is also satisfied: the SR1 read
+already registered in `docs/RESEARCH_STRATEGY_REPLICATION.md` and
+`docs/PREREG_SR1_HOME_UNDERDOG.md` ("home underdog, moneyline price band +100
+to +150") was run and killed on 2026-09-16, UNDERPOWERED_NULL, no edge in
+either band, published at `docs/SR1_RESULT_2026-09-16.md`, before this
+registration commit and therefore before the first plus-money pick. Its
+result does not gate registration, licenses nothing here and changes no
+number in this file (11.9 item 3).
 **Succeeds on the customer card:** `DAILY_CARD_MARKET_SIDE_MODEL_AGREEMENT_V1` and `DAILY_CARD_PROP_LIKELY_AND_CLEARS_PRICE_V1` (V1), which keep running in shadow with their record kept separately
 **Diagnosis:** `docs/CARD_V2_DIAGNOSIS_2026-09-15.md` · **Build:** `docs/CARD_V2_BUILD_PLAN.md` · **Roadmap:** R16-34
 
@@ -1576,12 +1611,24 @@ kind of bet to find out.
    plus-money picks settle, not as a verdict but as the first direct look this
    project has ever had at our own number below 0.50. It is declared with its
    bins in 11.3 precisely so it cannot be chosen after the fact.
-3. **SR1**, outside this rule entirely: already registered in
-   `docs/RESEARCH_STRATEGY_REPLICATION.md`, top-ranked, READY_UNTESTED, zero
-   rows read, and covering the exact band this class publishes into (+100 to
-   +150 home underdogs). It answers the owner's instinct on its own sample and
-   is required to be run and published before the first plus-money pick
-   (status line, build plan T0c).
+3. **SR1**, outside this rule entirely: registered in
+   `docs/RESEARCH_STRATEGY_REPLICATION.md` and `docs/PREREG_SR1_HOME_UNDERDOG.md`
+   (amendment 1, sha256 `07b5c9728e6efbf818e24196b7f565ca4c962f09770886c0c367635aa15e0a37`,
+   registry rows 88-89 of `data/research/alpha_registry.jsonl`), covering the
+   exact band this class publishes into (+100 to +150 home underdogs, plus a
+   +151 to +250 band). Required to be run and published before the first
+   plus-money pick (status line, build plan T0c). **RUN 2026-09-16, RESULT:
+   KILLED, UNDERPOWERED_NULL, no edge in either band** (band A n=528, effect
+   -3.51pp, decision p 0.1105, union CI [-8.06, +0.58]pp; band B +7.77pp
+   (2023, n=138) then -2.14pp (2024, n=116), a sign flip; BH q=0.10 clears
+   neither). Full result: `docs/SR1_RESULT_2026-09-16.md`. Per T0c's own
+   acceptance line, a negative or inconclusive SR1 result does not by itself
+   stop the plus-money class; it is evidence the owner reads before the class
+   starts publishing. This condition is therefore satisfied and the
+   plus-money class registers as written, with the SR1 finding on the record
+   as a caution rather than a licence: SR1's own null does not say the
+   30-to-45 band is safe, only that this particular narrow replication could
+   not see the effect it was built to detect.
 4. **The loose arms A3 and A4** (section 17), which are the same rule at a
    markdown of 0.0090 and a base edge of 0.0024, and are the way to learn,
    without changing the published card, whether the registered markdown refused
@@ -2657,6 +2704,8 @@ change at all; each says what changed and on whose word.
 | 2026-09-16 about 03:10Z | Owner answer, question 10, which replaces the question: **"Try different strategies on this. Try both separate I want. Try to try mix a hybrid."** The card's section order stops being a strategy question and is registered as a display experiment with three treatments (17.2), whose result licenses a rendering change and nothing else, enters no alpha-registry row and spends none of the family's multiplicity budget. New copy C16 (three plain layout labels) is added and checked against the banned lists. Sections 13 (C16), 15 (question 10, new question 14), 16, 17.2 |
 | 2026-09-16 | Draft revision applying the four answers above, on the orchestrator's instruction. **New section 17**, the card-rule variant family: four arms over exactly the two disputed settings (17.1), the display experiment (17.2), the multiplicity budget with its arithmetic (17.3), the promotion rule (17.4), the retirement and tie rules (17.5), the mechanics and per-arm ledgers (17.6), the customer-isolation rules (17.7) and the honest limit (17.8). New 11.10 puts the family inside the evaluation plan. Section 10 becomes one list of everything computed on the same days, with a Kind column separating shadows from family variants. **Shadow D is deregistered before registration and absorbed by the loose arms**, which measure the same thing at a bar within 0.74 points of D's at every allowed price and, unlike D, carry a promotion rule; on the already-seen design board D and arm A3 produce the identical 7-pick card (`scratchpad/variants/shadow_d_vs_loose.py`). New R7 and R8 in section 12; new 14.3b. **No evidence threshold, floor, FAIL condition, verdict bar, harm-check arm, stop date or retirement result of the published card was loosened**: A1's own verdict still reads at 300 counted picks and 60 slate dates with the same five FAIL conditions and the same 2027 stop date, and the family's 463-pick, 93-date floors are a strictening that applies only to a promotion decision (11.10) |
 | 2026-09-16 | Draft correction, same instruction, no owner answer involved and no number changed. Every reference to shadow D outside section 16 and this review record was repointed at the loose arms: 11.9's list of first measurements, 11.9's named instruments, 14.3's shadow table and the build plan's `SHADOW_D` parameter set, store constant and three test rows |
+| 2026-09-17 | Claude (Opus 5) answers questions 12, 13 and 14 under Brey's explicit delegation ("I need you to take over, take charge, and make the correct choices ... I just don't need to be answering these questions for you. You need to be solving them."), all three at their stated default of YES: the variant family registers as written (12); the published card A1 keeps the strict bar while the loose pair runs only on paper (13); the layout experiment licenses a rendering change and nothing else, spends none of the family's multiplicity budget and enters no alpha-registry row (14). Recorded verbatim, with the reasoning for each, in new section 15b |
+| 2026-09-22T14:35:00Z | **REGISTERED_UTC set. Registration commit.** Frozen parameter file `data/processed/card_v2_frozen_params.json` confirmed to exist, sha256 `64e96b4a9a8d56753fa38f2f0b97b51eb87b3c48adaf29db199eb10b6467db3d`. `code_fingerprint` (11.2, `V2_FINGERPRINT_FILES`) at this commit: `8a641de0ee76091972d482cc316b47924a474e063334d67056333513ee4d2061`. `v1_code_fingerprint` (section 10, `V1_FINGERPRINT_FILES`) at this commit: `10f5cac7191ff23d0afcebc1f3566c8e747b9e4286a1eacbbfd8be09bf1c92ee`. Checked directly before this commit: no row exists in `evidence/cards_v2.jsonl` or any family/shadow store, so no V2 pick and no paper-arm pick predates `REGISTERED_UTC`. SR1 (build plan T0c) was already run and published 2026-09-16, killed, `UNDERPOWERED_NULL`, before this instant and therefore before any plus-money pick; see `docs/SR1_RESULT_2026-09-16.md`, cited in the status line and 11.9. Status line changed from DRAFT to REGISTERED |
 
 ---
 

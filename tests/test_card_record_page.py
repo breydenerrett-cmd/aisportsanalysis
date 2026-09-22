@@ -223,14 +223,30 @@ class ApiShape(unittest.TestCase):
     ledger it controls completely."""
 
     def test_record_disclaimer_is_the_one_true_constant_not_a_second_copy(self):
-        payload = card_api.get_card_record()
+        # T13 cutover (2026-09-22): the DEFAULT route is V2 now
+        # (card.ACTIVE_CARD_RULE), so V1's own disclaimer/basis constants
+        # are asserted against `rule="v1"` explicitly -- V1 stays reachable,
+        # in shadow, it is only retired from the default. See
+        # test_default_record_is_v2_since_the_t13_cutover below for the new
+        # default's own shape.
+        payload = card_api.get_card_record(rule="v1")
         self.assertEqual(daily_card.CARD_DISCLAIMER, payload["disclaimer"])
         self.assertEqual(daily_card.CARD_BASIS, payload["basis"])
         self.assertIn("chain_ok", payload)
         self.assertIn("rows_checked", payload)
 
+    def test_default_record_is_v2_since_the_t13_cutover(self):
+        payload = card_api.get_card_record()
+        self.assertEqual("v2", payload["rule"])
+        self.assertIn("basis", payload)
+        self.assertIn("disclaimer", payload)
+
     def test_history_returns_the_documented_shape(self):
-        payload = card_api.get_card_history(limit=5)
+        # Same reasoning as the disclaimer test above: V1's documented
+        # shape (including `limit`, which `history_v2` does not carry) is
+        # asserted against `rule="v1"` explicitly since the default moved to
+        # V2 at the T13 cutover.
+        payload = card_api.get_card_history(limit=5, rule="v1")
         for key in ("days", "limit", "total_days", "truncated"):
             self.assertIn(key, payload)
         self.assertLessEqual(len(payload["days"]), 5)

@@ -295,6 +295,23 @@ if [ "$CARDSETTLE_STATUS" -ne 0 ]; then
 fi
 echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: card settle --recent exit=$CARDSETTLE_STATUS" >> "$RUN_NOTE"
 
+# V2 + its three registered shadows (T13 cutover, 2026-09-22): `--recent`
+# above is V1-only (card_ledger.settle_recent has no v2-family equivalent),
+# so this is single-shot on yesterday's slate rather than a self-healing
+# window -- matching card_settle's own "--rule all" shape (src.cli.cmd_card),
+# grading every file "--rule all" publish wrote (scripts/capture_slot.sh).
+# Idempotent per date like every other settle call here: a date with
+# nothing published, or already settled, is a legible no-op, not a failure.
+echo "== card settle v2-family, yesterday ($YESTERDAY) =="
+CARDSETTLE_V2_OUT=$(python3 -m src.cli card settle --rule all --date "$YESTERDAY" 2>&1)
+CARDSETTLE_V2_STATUS=$?
+echo "$CARDSETTLE_V2_OUT" | sed 's/^/  /'
+if [ "$CARDSETTLE_V2_STATUS" -ne 0 ]; then
+    echo "ESCALATE: card settle --rule all failed (exit $CARDSETTLE_V2_STATUS) -- the V2 record stops updating silently if this keeps failing. See src/appstate/card_ledger.py."
+    type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "card settle --rule all failed" || true
+fi
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: card settle --rule all --date $YESTERDAY exit=$CARDSETTLE_V2_STATUS" >> "$RUN_NOTE"
+
 echo "== nfl card settle (self-healing window: yesterday + unsettled last 7 days) =="
 NFLSETTLE_OUT=$(python3 -m src.cli card settle --sport nfl --recent 2>&1)
 NFLSETTLE_STATUS=$?
