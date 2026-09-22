@@ -324,7 +324,20 @@ def remaining_today(now=None, store=None) -> Optional[int]:
     rows = [r for r in _rows(store) if _row_date(r) == today]
     if not rows:
         return None
-    return rows[-1].get("credits_remaining")
+    # The LAST KNOWN reading, not just the last row (2026-09-21 incident).
+    # live_odds.capture_inplay logs rows with credits_remaining None and only
+    # credits_used_last set. Returning the last row's None made every
+    # log-reading family (nfl_capture, mma_capture) refuse "quota unreadable"
+    # for as long as the live window kept capturing -- that is, exactly while
+    # games were on. Walk back to the newest real reading and subtract what
+    # the later None rows say they used, so the answer stays conservative.
+    used_since = 0
+    for row in reversed(rows):
+        value = row.get("credits_remaining")
+        if value is not None:
+            return max(value - used_since, 0)
+        used_since += row.get("credits_used_last") or 0
+    return None
 
 
 def spent_today(now=None, store=None, band=None) -> int:

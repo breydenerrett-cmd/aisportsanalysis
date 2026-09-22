@@ -99,6 +99,22 @@ class SpentTodayTests(unittest.TestCase):
                           now=NOW + dt.timedelta(minutes=5))
             self.assertEqual(budget.remaining_today(now=NOW, store=store), 497)
 
+    def test_a_trailing_unreadable_row_does_not_make_today_unknown(self):
+        # 2026-09-21 incident: live_odds.capture_inplay logs
+        # credits_remaining=None with credits_used_last set. Returning that
+        # None blocked nfl/mma capture "quota unreadable" all through the
+        # live window. The answer is the last real reading minus what the
+        # later None rows used.
+        with tempfile.TemporaryDirectory() as folder:
+            store = Path(folder) / "credit_log.jsonl"
+            creditlog.log(9060, 0, "nfl_capture.run", store=store, now=NOW)
+            creditlog.log(None, 1, "live_odds.capture_inplay", store=store,
+                          now=NOW + dt.timedelta(minutes=10))
+            creditlog.log(None, 2, "live_odds.capture_inplay", store=store,
+                          now=NOW + dt.timedelta(minutes=20))
+            self.assertEqual(budget.remaining_today(
+                now=NOW + dt.timedelta(minutes=30), store=store), 9057)
+
 
 class FamilyCostTests(unittest.TestCase):
     def test_an_unmeasured_family_returns_none(self):
