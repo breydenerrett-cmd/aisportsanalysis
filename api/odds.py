@@ -58,7 +58,7 @@ ODDS_CACHE_TTL_S = 120.0
 # and GET /odds/{date}/{away}/{home} both want the identical (games, boards)
 # pair, so caching it once here covers both instead of each paying for its
 # own schedule fetch and board-store read.
-_odds_cache = freshness.SingleFlightTTLCache(ttl_s=ODDS_CACHE_TTL_S)
+_odds_cache = freshness.SingleFlightTTLCache(ttl_s=ODDS_CACHE_TTL_S, stale_while_revalidate_s=900.0)
 
 
 def _validate_date(date: str) -> None:

@@ -47,7 +47,7 @@ router = APIRouter()
 # derivation itself is untouched, so every field this board ever returned
 # is unchanged; only a repeat request for the same (date, limit) within the
 # TTL is served from cache instead of re-reading both stores.
-_props_cache = freshness.SingleFlightTTLCache(ttl_s=120.0)
+_props_cache = freshness.SingleFlightTTLCache(ttl_s=120.0, stale_while_revalidate_s=900.0)
 
 
 def _validate(date: str) -> str:

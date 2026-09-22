@@ -36,7 +36,7 @@ _board_for_date = tennis_board.board_for_date
 # every field -- including `captured_any` -- is exactly what it always
 # was, just not recomputed on every request for the same date within the
 # TTL. Same 120s TTL as every other date-keyed cache in this project.
-_tennis_cache = freshness.SingleFlightTTLCache(ttl_s=120.0)
+_tennis_cache = freshness.SingleFlightTTLCache(ttl_s=120.0, stale_while_revalidate_s=900.0)
 
 
 def _validate_date(date_str: str) -> str:

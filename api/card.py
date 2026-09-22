@@ -39,7 +39,7 @@ router = APIRouter()
 # Added so api/warmup.py has a real cache to warm -- see that module's
 # docstring for why a warm-up call must go through the same cached path a
 # real request does, not call nfl_card.card_for_date directly.
-_nfl_card_cache = freshness.SingleFlightTTLCache(ttl_s=120.0)
+_nfl_card_cache = freshness.SingleFlightTTLCache(ttl_s=120.0, stale_while_revalidate_s=900.0)
 
 # GET /card?sport=mma's LIVE branch (measured on staging 2026-09-21: 2.7s)
 # reads `snapshots.read_multibook(sport="mma")` -- the whole multibook
@@ -53,7 +53,13 @@ _nfl_card_cache = freshness.SingleFlightTTLCache(ttl_s=120.0)
 # just to save a rebuild), same 120s TTL every other date-keyed cache in
 # this project uses. Only the VALUE is reused, never the meta -- this
 # route's response shape is unchanged, so no `freshness` key is added.
-_mma_card_cache = freshness.SingleFlightTTLCache(ttl_s=120.0)
+_mma_card_cache = freshness.SingleFlightTTLCache(ttl_s=120.0, stale_while_revalidate_s=900.0)
+
+# MLB card, LIVE (unpublished) branch only -- see _build_payload. The stale
+# window (here and on the NFL/UFC caches above, 2026-09-21) pairs with
+# api/warmup.py's 10-minute pass: past the 120 s TTL the last good payload is
+# served at once while it rebuilds in the background, so no visitor waits.
+_mlb_live_card_cache = freshness.SingleFlightTTLCache(ttl_s=120.0, stale_while_revalidate_s=900.0)
 
 # GET /card/history's page size. Capped, not unlimited -- the record page
 # is the public sales pitch, not a data export; a reader who wants the
@@ -216,15 +222,24 @@ def _build_payload(date: str, request: Optional[Request], route: str,
         _record_page_view(request, route, date)
         return frozen
 
-    entries, _notes, meta = _build_entries(date)
-    # The moneyline board comes from the SAME builder the price board uses,
-    # so the card and the board can never quote different best prices for
-    # the same bet on the same page.
-    opportunities = opportunities_mod.build_opportunities(
-        entries, date=date, now=now)
-    payload = card_mod.card_for_date(
-        entries, opportunities.get("rows") or [], date=date, now=now)
-    payload["freshness"] = meta
+    # The LIVE (not yet published) branch is cached per date, like the NFL and
+    # UFC cards (2026-09-21). On staging it cost about 3 s on every request,
+    # and the day's card is served from here until its first publish. Only
+    # this branch is cached: the frozen check above runs first on every
+    # request, so a card published a second ago is served immediately.
+    def _rebuild_live():
+        entries, _notes, meta = _build_entries(date)
+        # The moneyline board comes from the SAME builder the price board uses,
+        # so the card and the board can never quote different best prices for
+        # the same bet on the same page.
+        opportunities = opportunities_mod.build_opportunities(
+            entries, date=date, now=now)
+        built = card_mod.card_for_date(
+            entries, opportunities.get("rows") or [], date=date, now=now)
+        built["freshness"] = meta
+        return built
+
+    payload, _meta = _mlb_live_card_cache.get(("mlb_live_card", date), _rebuild_live)
     _record_page_view(request, route, date)
     return payload
 
