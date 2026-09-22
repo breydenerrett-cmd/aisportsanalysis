@@ -166,14 +166,28 @@ class MmaCaptureTests(unittest.TestCase):
         self.assertFalse(fetch_called, "no fetch (and no spend) once the "
                                         "budget guard refuses")
 
-    def test_real_budget_refuses_the_unmeasured_mma_h2h_family(self):
-        """The actual config/capture_families.json entry, not a fake --
-        confirms mma_h2h really is registered unmeasured, so a production
-        run of this module never spends a credit before a real probe."""
+    def test_real_budget_refuses_an_unmeasured_mma_h2h_family(self):
+        """The real budget.can_spend refuses mma_h2h while it is unmeasured.
+
+        UPDATED 2026-09-22: this used to read the live
+        config/capture_families.json and assert mma_h2h was unmeasured. The
+        daily loop's probe measured it that morning (1 credit, non-degenerate),
+        which is the pipeline working, and it turned the test red. The rule
+        under test is "no spend before a probe", so it now runs against its
+        own unmeasured config rather than the live one."""
+        import json
+        import tempfile
+        from pathlib import Path
         from src.capture import budget
 
-        decision = budget.can_spend(mma_capture.FAMILY, mma_capture.CREDITS_PER_CAPTURE,
-                                    now=self.now, remaining=99000, spent=0)
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "capture_families.json"
+            path.write_text(json.dumps({"families": {mma_capture.FAMILY: {
+                "measured": False, "credits_per_event": None, "measured_utc": None}}}),
+                encoding="utf-8")
+            decision = budget.can_spend(mma_capture.FAMILY, mma_capture.CREDITS_PER_CAPTURE,
+                                        now=self.now, remaining=99000, spent=0,
+                                        families_path=path)
         self.assertFalse(decision.allowed)
         self.assertIn("PROBE_REQUIRED", decision.reason)
 
