@@ -102,11 +102,13 @@ class LandingPublicDemoEntryTests(unittest.TestCase):
         self.assertNotIn("hidden = false", try_catch.group(2))
 
     def test_existing_ctas_and_sample_slate_label_untouched(self):
-        # Every pre-existing primary CTA and the sample-slate badge must
-        # still be present verbatim -- this job only adds an element, never
-        # removes or rewords one.
+        # UPDATED 2026-09-22 (owner-directed landing redesign): "Try 3 Bet
+        # Checks free" is gone on purpose -- the owner said outright that
+        # Bet Check is not something advertised on the marketing page ("not
+        # advertising that that's what we do, because it's not"). The CTA
+        # hooks and sample-slate badge this job actually cares about (the
+        # public-demo entry point sits beside them) still must be present.
         for needle in (
-            "Try 3 Bet Checks free",
             'data-hook="cta-signup-hero"',
             'data-hook="cta-signup"',
             'data-hook="cta-signup-bottom"',
@@ -116,7 +118,10 @@ class LandingPublicDemoEntryTests(unittest.TestCase):
             self.assertIn(needle, self.html, f"missing pre-existing copy/hook: {needle!r}")
 
     def test_pricing_and_faq_copy_untouched(self):
-        self.assertIn("Run three bets on us first.", self.html)
+        # UPDATED 2026-09-22: "Run three bets on us first." was the old
+        # free-Bet-Check pricing card headline, removed with the rest of
+        # that offer in the landing redesign.
+        self.assertIn("One plan. No tiers to compare.", self.html)
         self.assertIn("Frequently asked questions.", self.html)
 
 

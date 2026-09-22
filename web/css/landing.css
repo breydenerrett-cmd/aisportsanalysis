@@ -172,7 +172,8 @@
 .hero__price-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--money-lit); box-shadow: 0 0 14px rgba(255, 61, 87, .9); }
 .hero__price-label { font-family: var(--font-display); font-size: 14.5px; font-weight: 700; letter-spacing: .24em; color: var(--money-label); }
 .hero__price-row { display: flex; align-items: flex-end; gap: var(--sp-10); }
-.hero__cta-group { display: flex; flex-direction: column; gap: var(--sp-5); align-items: flex-start; }
+.hero__cta-group { display: flex; flex-direction: column; gap: var(--sp-5); align-items: flex-start; margin-top: var(--sp-9); }
+.hero__feature { position: relative; }
 .hero__cta-note { font-size: 14.5px; color: var(--text-dim); max-width: 320px; }
 /* ---- public-demo front-door entry (hidden unless GET /meta says
    public_demo -- see landing.js's revealPublicDemoEntry) --------------*/
@@ -384,6 +385,11 @@
 .app-disclaimer { padding-top: var(--sp-7); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07); display: grid; gap: var(--sp-3); }
 .app-disclaimer p { font-size: 13.5px; line-height: 1.5; color: var(--text-faint); margin: 0; }
 .app-disclaimer__product { color: var(--text-mute) !important; font-weight: 600; }
+
+/* ---- footer utility link (Bet Check, unadvertised) -------------------*/
+.footnote-link { margin-top: var(--sp-5); font-size: 12.5px; }
+.footnote-link a { color: var(--text-faint); text-decoration: underline; text-underline-offset: 2px; }
+.footnote-link a:hover { color: var(--text-mute); }
 
 /* ---- responsive: < 900px is the 390px mobile canvas ------------------*/
 @media (max-width: 899px) {

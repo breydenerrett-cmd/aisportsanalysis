@@ -6,6 +6,12 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "uvicorn", "api.app:app", "--port", "8000"],
       "port": 8000
+    },
+    {
+      "name": "linehound-web",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8123"],
+      "port": 8123
     }
   ]
 }

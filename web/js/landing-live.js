@@ -44,6 +44,19 @@
  * beside our own number when the card has one for the moneyline. There
  * is no "everywhere else" comparison: which book was worst is not a
  * thing a reader needs.
+ *
+ * NEVER FEATURE A HEAVY FAVOURITE (owner, 2026-09-22)
+ * -------------------------------------------------------------------
+ * The hero used to feature "Cubs to win at -203" -- a heavy favourite is
+ * not an advertising pick; it tells a visitor almost nothing about the
+ * product and reads as "the safest possible bet", which this product does
+ * not sell. `priceQualifies` gates the whole module (scanner + matchup +
+ * price, `[data-hook="hero-feature"]`), not just the price line, on the
+ * card's own pick pricing better than -200 (i.e. -199 through +250). When
+ * the featured pick does not qualify -- or there is no priced pick at all
+ * -- the module is hidden outright and the record line already in the
+ * claim block above is the only thing the hero shows. Never fabricate a
+ * pick to fill the gap.
  */
 
 import { apiGet } from "./api.js";
@@ -86,6 +99,15 @@ function signedLine(line) {
   const n = Number(line);
   if (!Number.isFinite(n)) return String(line);
   return n > 0 ? `+${n}` : `${n}`;
+}
+
+/** True when an American price is better than -200, up to +250 -- the
+ * owner's stated range for a pick this page is allowed to feature (-199 to
+ * +250). A heavy favourite (-200 or worse) is never advertised here. */
+export function priceQualifies(price) {
+  const n = Number(price);
+  if (!Number.isFinite(n) || n === 0) return false;
+  return n > -200 && n <= 250;
 }
 
 /** The card's first pick as the hero's price block. `market_probability`
@@ -187,6 +209,16 @@ function showSampleFallback(root) {
 
 function applyLiveHero(root, { gamesCount, featured }) {
   const { awayAbbr, homeAbbr, firstPitchUtc, awayProbable, homeProbable, price } = featured;
+
+  // Never feature a heavy favourite. No price at all, or a price of -200
+  // or worse, means the whole module is omitted -- the record line in the
+  // claim block above is the fallback, not a fabricated or discouraged
+  // pick.
+  if (!price || !priceQualifies(price.price)) {
+    setHidden(root, "hero-feature", true);
+    return;
+  }
+  setHidden(root, "hero-feature", false);
 
   let scannerText = `Tonight · ${gamesCount} game${gamesCount === 1 ? "" : "s"}`;
   if (price && price.books) scannerText += ` · ${price.books} books quoting`;
