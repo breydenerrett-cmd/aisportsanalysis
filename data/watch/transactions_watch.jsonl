@@ -1552,3 +1552,4 @@
 {"category": "recalled", "date": "2026-09-22", "first_seen_utc": "2026-09-22T16:28:05.455717+00:00", "player": "Connor Phillips", "player_id": 683175, "team": "CIN", "transaction_id": 943642}
 {"fetched_utc": "2026-09-22T16:28:07.003362+00:00", "game_date": "2026-09-22", "poll": true}
 {"fetched_utc": "2026-09-22T16:38:26.660067+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-22T16:54:16.665003+00:00", "game_date": "2026-09-22", "poll": true}
