@@ -79,7 +79,7 @@ import { el, clear, formatEasternDate, formatEasternClock } from "./dom.js";
 import { setPublicDemo, getToken } from "./api.js";
 import { setShellStatus, mountSportLevel } from "./shell.js";
 import { renderDisclaimerFooter, meta as fetchMeta } from "./meta.js";
-import { parseSport, SPORTS, NFL_RETIRED_RULE } from "./sport.js";
+import { parseSport, SPORTS, NFL_RETIRED_RULE, MLB_SHADOW_RULE } from "./sport.js";
 import { mountNews } from "./news.js";
 import { renderComingSoon } from "./comingsoon.js";
 import { renderToday } from "./today.js";
@@ -361,7 +361,14 @@ async function _renderRouteInner(main) {
   } else if (route === "day" && rest.length >= 1) {
     await renderDayDetail(main, rest[0]);
   } else if (route === "record-card") {
-    await renderCardRecord(main);
+    // #/record-card?rule=v1 -- V1's own record, kept apart from V2's
+    // (T13 cutover, docs/PREREG_CARD_V2.md R3/R5). Only that one known id
+    // is ever forwarded, same guard shape as NFL's ?rule=NFL_CARD_V1 above.
+    if (query.rule === MLB_SHADOW_RULE) {
+      await renderCardRecord(main, { rule: MLB_SHADOW_RULE });
+    } else {
+      await renderCardRecord(main);
+    }
   } else if (route === "live") {
     await renderLive(main);
   } else if (route === "signin") {

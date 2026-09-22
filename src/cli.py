@@ -3019,9 +3019,30 @@ def _cmd_card_settle_recent(sport: str) -> int:
         from src.report import nfl_card as nfl_card_mod
         totals = nfl_card_mod.settle_recent()
     elif sport == "mlb":
+        # V1's ledger split at CUTOVER_DATE (card.v1_store_path,
+        # docs/PREREG_CARD_V2.md R3): `evidence/cards_v1.jsonl` for dates
+        # before it, `evidence/cards_v1_shadow.jsonl` from it. The window
+        # this self-healing pass walks can straddle that boundary -- a date
+        # published before cutover but only settling after it -- so both
+        # files are checked, not just whichever one today's date maps to. A
+        # shared fetch (`_mlb_fetch_results_recent()`) is reused across both
+        # calls so this costs no extra read of the results store.
+        from src.report import card as card_mod
+        fetch_results = _mlb_fetch_results_recent()
         totals = card_ledger.settle_recent(
-            sport="mlb", fetch_results=_mlb_fetch_results_recent(),
+            sport="mlb", fetch_results=fetch_results,
+            path=card_ledger.CARD_STORE,
             prop_box_rows_for_date=_mlb_prop_box_rows_for_date)
+        if card_mod.CUTOVER_DATE is not None:
+            shadow_totals = card_ledger.settle_recent(
+                sport="mlb", fetch_results=fetch_results,
+                path=card_ledger.CARD_STORE_V1_SHADOW,
+                prop_box_rows_for_date=_mlb_prop_box_rows_for_date)
+            totals = {
+                "dates_checked": totals["dates_checked"] + shadow_totals["dates_checked"],
+                "settled": totals["settled"] + shadow_totals["settled"],
+                "misses": totals["misses"] + shadow_totals["misses"],
+            }
     else:
         print(f"ERROR: --recent is not wired for --sport {sport} yet "
               "(only mlb and nfl publish through a card ledger today)",
@@ -3252,7 +3273,8 @@ def cmd_card(args) -> int:
             print(f"WARNING: prop box scores unreadable for {date_str}: {exc} "
                   "-- prop picks will grade VOID.", file=sys.stderr)
             prop_box_rows = []
-        row = card_ledger.settle(date_str, by_pk, prop_box_rows=prop_box_rows)
+        row = card_ledger.settle(date_str, by_pk, prop_box_rows=prop_box_rows,
+                                path=card_mod.v1_store_path(date_str))
         if row is None:
             published = card_ledger.published_row(date_str)
             print(f"nothing to settle for {date_str}: "
@@ -3550,7 +3572,7 @@ def cmd_card(args) -> int:
         print("  (published as a preview; each pick locks 4h before its own "
               "first pitch and can improve until then)")
 
-    row = card_ledger.publish(card)
+    row = card_ledger.publish(card, path=card_mod.v1_store_path(date_str))
     picks = row.get("picks") or []
     locked = sum(1 for p in picks if p.get("locked"))
     open_picks = len(picks) - locked

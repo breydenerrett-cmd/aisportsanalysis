@@ -50,6 +50,17 @@ export const NFL_NOTICE = "Experimental selections. Performance is still being e
  * it to label a card this rule made. */
 export const NFL_RETIRED_RULE = "NFL_CARD_V1";
 
+/** The MLB rule retired at cutover to `DAILY_CARD_BEST_BETS_V2`
+ * (`src.report.card.CUTOVER_DATE`, registration `docs/PREREG_CARD_V2.md`
+ * R3/R5) -- it published market favourites, including moneylines shorter
+ * than -200, which V2's own G4 gate can never do (docs/PREREG_CARD_V2.md
+ * section 3). Its picks stay in `evidence/cards_v1.jsonl` exactly as
+ * published and are graded on a record of their own, in shadow, never
+ * pooled with V2's. Same shape as `NFL_RETIRED_RULE` just above: the ONE
+ * other value `#/record-card?rule=` may carry, so a typed query string
+ * never reaches the API unchecked. */
+export const MLB_SHADOW_RULE = "v1";
+
 /**
  * THE ONE SPORT REGISTRY (DESIGN_SYSTEM.md section 3).
  *

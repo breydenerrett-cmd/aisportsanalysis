@@ -3,6 +3,14 @@ this build touched the file -- pinned by hashing a fixture card's row,
 excluding only the chain fields (`row_hash`/`prev_hash`) that any second
 publish (V1's own re-run in a fresh ledger) would legitimately differ on for
 reasons that have nothing to do with V2's additions.
+
+ONE INTENTIONAL EXCEPTION, added at the T13 cutover (owner directive
+2026-09-22 over the frozen -203 Cubs pick): every row now also carries
+`blocked_by_price_guard`, the auditable trace of the hard -200-or-worse
+moneyline guard in `card_ledger.publish` (see
+`tests/test_card_v1_v2_cutover.py`). That is a deliberate, disclosed
+addition to the row shape, not drift, so it is in `expected_keys` below by
+name rather than being silently swallowed into "unaffected".
 """
 
 from __future__ import annotations
@@ -58,7 +66,7 @@ class V1RowsUnchanged(unittest.TestCase):
             "model_id", "calibrated", "calibration", "n_picks", "n_filled",
             "games_on_slate", "picks", "n_locked", "prop_picks", "n_prop_picks",
             "n_prop_locked", "total_picks", "n_total_picks", "n_total_locked",
-            "totals_paused", "row_hash", "prev_hash",
+            "totals_paused", "row_hash", "prev_hash", "blocked_by_price_guard",
         }
         self.assertEqual(expected_keys, set(row.keys()) - {"already_published"})
 

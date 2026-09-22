@@ -589,15 +589,47 @@ _PROP_NOT_PART_OF_CARD = "Player props were not part of this card when it was fr
 # until then every existing route and test keeps V1's exact byte shape,
 # and `?rule=v2` / `--rule v2` is a PREVIEW path that reads nothing this
 # constant does not already point away from as the published card.
-ACTIVE_CARD_RULE = "v1"
+# T13 (docs/CARD_V2_BUILD_PLAN.md), owner directive 2026-09-22 (the -203
+# Cubs pick: "Can you make sure that we're not picking -200 or higher...
+# We've talked about this 15,000 times") and the standing ruling of
+# 2026-09-20 (no moneyline at -200 or worse, ever). Flipped at the
+# registration commit that sets `docs/PREREG_CARD_V2.md`'s `REGISTERED_UTC`
+# (2026-09-22T14:07:11Z) -- V2's own G4 gate can never publish a moneyline
+# shorter than -160, so this is the mechanism that ends the -200-or-worse
+# picks on the public card, not merely a relabelling.
+ACTIVE_CARD_RULE = "v2"
 
-# The slate date V2 becomes the published card, or `None` before that
-# commit. Sets the boundary `frozen_card_v2`'s `retired_v1` block reads V1's
-# own ledger up to (registration R4, R5): the day before this date, never
-# this date itself, because V2 first serves as "the card" starting on this
-# date's slate. `None` means no cutover has happened -- there is no boundary
-# to read yet, and `ACTIVE_CARD_RULE` alone decides what every route serves.
-CUTOVER_DATE = None
+# The slate date V2 becomes the published card. Sets the boundary
+# `frozen_card_v2`'s `retired_v1` block reads V1's own ledger up to
+# (registration R4, R5): the day before this date, never this date itself,
+# because V2 first serves as "the card" starting on this date's slate.
+# `None` would mean no cutover has happened; that state is retired along
+# with `ACTIVE_CARD_RULE = "v1"` above -- both change in the same commit,
+# never one without the other (a `resolved_rule == "v2"` route reading a
+# `None` cutover boundary would have no meaning).
+CUTOVER_DATE = "2026-09-23"
+
+
+def v1_store_path(date: str) -> str:
+    """Which V1 ledger file a publish/settle call for this MLB slate date
+    should use (registration R3: "`evidence/cards_v1.jsonl` is never
+    rewritten. It receives no rows dated on or after the cutover date.").
+
+    Before `CUTOVER_DATE`, or when it is unset, V1 is still the published
+    card and writes where it always has. From `CUTOVER_DATE` on, V1 keeps
+    running -- unattended, nothing here stops it -- but every row it writes
+    lands in `card_ledger.CARD_STORE_V1_SHADOW` instead, so the file that
+    backs the public "previous rule" record (`?rule=v1` on `/card/record`)
+    is frozen exactly at the cutover and never gains another row. This is
+    the one place that decision is made; every V1 publish/settle call site
+    (src.cli's `card publish`/`card settle`, this module's own `publish_all`)
+    routes its `path=` through this function rather than each re-deriving
+    the same date comparison.
+    """
+    from src.appstate import card_ledger
+    if CUTOVER_DATE is not None and date >= CUTOVER_DATE:
+        return card_ledger.CARD_STORE_V1_SHADOW
+    return card_ledger.CARD_STORE
 
 
 def publish_all(date: str, *, now: Optional[datetime] = None,
@@ -649,7 +681,8 @@ def publish_all(date: str, *, now: Optional[datetime] = None,
     results: dict = {}
 
     if v1_card is not None:
-        results["v1"] = card_ledger.publish(v1_card, now=now_iso)
+        results["v1"] = card_ledger.publish(
+            v1_card, now=now_iso, path=v1_store_path(date))
 
     # name -> (RuleParams, its own store). V2 first so `record_v2`'s own
     # rule keeps being the first row built if a reader ever diffs by order.

@@ -436,6 +436,64 @@ def _is_nfl_card(picks: Sequence, sport: Optional[str]) -> bool:
     return sport == "nfl" or any(p.get("sport") == "nfl" for p in picks or ())
 
 
+def _is_mlb_card(picks: Sequence, sport: Optional[str]) -> bool:
+    """MLB picks carry no `sport` field at all (only NFL/UFC picks do,
+    `p.get("sport") == "nfl"/"mma"`) and MLB is `publish`'s default when the
+    caller passes no `sport=` kwarg -- see `_is_nfl_card` just above for the
+    same pattern applied to NFL."""
+    if sport not in (None, "mlb"):
+        return False
+    return not any(p.get("sport") in ("nfl", "mma") for p in picks or ())
+
+
+# Owner ruling, 2026-09-20 ("no ML at -200 or worse ever") and repeated
+# verbatim 2026-09-22 over the frozen -203 Cubs pick ("Can you make sure
+# that we're not picking -200 or higher... We've talked about this 15,000
+# times"). American odds: -200 or shorter (closer to even money is a
+# SMALLER magnitude, so "-200 or worse" reads as `price <= -200`) is refused
+# outright, for every MLB rule this ledger ever writes -- V2's own G4 gate
+# (docs/PREREG_CARD_V2.md section 3) already cannot reach past -160, so this
+# constant only ever bites V1 or a future rule that has no such gate of its
+# own. It is enforced HERE, in the publish path itself, deliberately not
+# only inside any one rule's selection logic (`src.analysis.daily_card`,
+# `src.analysis.best_bets_card`): a selection bug or a future rule that
+# forgets this constraint must still be unable to WRITE such a pick to a
+# ledger a customer can read, not merely be discouraged from choosing one.
+MLB_MONEYLINE_HARD_PRICE_FLOOR = -200.0
+
+
+def _blocked_by_moneyline_price_guard(picks: Sequence) -> list:
+    """Every MLB moneyline pick this ledger refuses to publish outright,
+    priced at `MLB_MONEYLINE_HARD_PRICE_FLOOR` (-200) or worse -- see that
+    constant's docstring. Only `market == "moneyline"` is checked: a run
+    line or total at a short price is a different bet with different
+    arithmetic and is not what the owner's ruling names."""
+    blocked = []
+    for pick in picks or ():
+        if pick.get("market") != "moneyline":
+            continue
+        price = pick.get("price")
+        if isinstance(price, (int, float)) and price <= MLB_MONEYLINE_HARD_PRICE_FLOOR:
+            blocked.append(pick)
+    return blocked
+
+
+def _apply_moneyline_price_guard(picks: Sequence, *, sport: Optional[str]) -> tuple:
+    """Returns `(allowed_picks, blocked_picks)`. `blocked_picks` is always
+    `[]` for a non-MLB card (`_is_mlb_card`) -- this guard is MLB-only, by
+    the owner's own words ("MLB focus props + run lines", owner rulings
+    2026-09-20; NFL and UFC have no such standing ruling and are untouched).
+    """
+    if not _is_mlb_card(picks, sport):
+        return list(picks or ()), []
+    blocked = _blocked_by_moneyline_price_guard(picks)
+    if not blocked:
+        return list(picks or ()), []
+    blocked_ids = {id(p) for p in blocked}
+    allowed = [p for p in (picks or ()) if id(p) not in blocked_ids]
+    return allowed, blocked
+
+
 def locked_game_ids(row: Optional[Mapping], *, now,
                     sport: Optional[str] = None,
                     lock_lead_hours: Optional[float] = None) -> set:
@@ -555,6 +613,35 @@ def publish(card: Mapping, *, now: Optional[str] = None,
     if not date:
         raise CardLedgerError("a card with no date cannot be published")
     picks = card.get("picks") or []
+    # HARD GUARD (owner ruling 2026-09-20, repeated 2026-09-22 over the
+    # frozen -203 Cubs pick): no MLB moneyline pick at -200 or worse is ever
+    # written to a ledger, whatever rule built the card and whatever that
+    # rule's own gates did or did not catch. See
+    # `_apply_moneyline_price_guard`'s docstring for why this lives here
+    # rather than only inside a rule's own selection logic. Blocked entries
+    # are dropped from `picks` before anything below sees them -- they never
+    # lock, are never graded and never enter `n_picks` -- and are recorded on
+    # the payload under `blocked_by_price_guard` so a blocked pick is a
+    # visible, auditable fact on the receipt rather than a silent drop.
+    #
+    # PUBLIC CARD ONLY (orchestrator review 2026-09-22): the guard is a rule
+    # about what customers are shown. From the cutover, V1 runs in SHADOW
+    # (CARD_STORE_V1_SHADOW) as a frozen, unedited rule whose record exists
+    # to be compared against. Dropping its -200 picks there would silently
+    # retrofit V1 midstream, which the owner ruled out on 2026-09-17 and which
+    # pre-registration forbids. So the shadow store is exempt.
+    if os.path.normpath(str(resolved_path)) == os.path.normpath(CARD_STORE_V1_SHADOW):
+        blocked_by_price_guard = []
+    else:
+        picks, blocked_by_price_guard = _apply_moneyline_price_guard(picks, sport=sport)
+    if not picks and blocked_by_price_guard:
+        raise CardLedgerError(
+            f"the card for {date} had {len(blocked_by_price_guard)} pick(s), "
+            "all refused by the -200-or-worse moneyline guard "
+            "(MLB_MONEYLINE_HARD_PRICE_FLOOR); there is nothing left to "
+            "freeze. An empty card is a real state, but this is a rule "
+            "producing nothing but refused picks, which is worth seeing as "
+            "an error rather than a silent empty card.")
     if not picks:
         raise CardLedgerError(
             f"the card for {date} has no picks; there is nothing to freeze. "
@@ -628,6 +715,13 @@ def publish(card: Mapping, *, now: Optional[str] = None,
         "n_picks": len(picks),
         "n_filled": card.get("filled"),
         "games_on_slate": card.get("games_on_slate"),
+        # The auditable trace of the -200-or-worse guard above: which
+        # selections this rule wanted to publish that were refused outright,
+        # by bet sentence and price, never silently dropped. Empty on every
+        # ordinary card.
+        "blocked_by_price_guard": [
+            {"bet": p.get("bet"), "price": p.get("price"), "market": p.get("market")}
+            for p in blocked_by_price_guard],
         # ALREADY FROZEN-SHAPED. Re-running `_frozen_pick` here would strip
         # `locked`/`locked_at` straight back off, because they are not in
         # FROZEN_FIELDS -- every pick would land unlocked and a later run
@@ -2176,6 +2270,25 @@ def _lock_and_merge_v2(prior: Sequence[Mapping], fresh: Sequence[Mapping], *,
     merged = _apply_g11_v2(merged)
     plus_money_dropped_by_subcap = _apply_plus_money_subcap_v2(merged, params)
     ceiling_refused = _apply_ceiling_v2(merged, params)
+
+    # SAME HARD GUARD AS V1's `publish`, applied here too ("whatever the
+    # rule" -- owner ruling 2026-09-20/2026-09-22). V2's own G4 gate
+    # (docs/PREREG_CARD_V2.md section 3, `params.worst_price`) already
+    # cannot pass a moneyline shorter than -160, so this should never fire
+    # in practice; it exists so a future change to `params.worst_price`, or
+    # a bug in G4 itself, cannot silently reintroduce a -200-or-worse pick
+    # through this path the way it did through V1's. Fails loudly rather
+    # than dropping the entry, because a candidate that reaches here having
+    # already passed every V2 gate slipping past this one too is a bug in
+    # the gate, not an ordinary refused candidate.
+    smuggled = _blocked_by_moneyline_price_guard(
+        [e for e in merged if e.get("entry_class") in ("pick", "fill")])
+    if smuggled:
+        raise CardLedgerError(
+            f"{date}: {len(smuggled)} V2 entry(ies) at "
+            f"{MLB_MONEYLINE_HARD_PRICE_FLOOR} or worse reached publish_v2 "
+            "despite G4 -- this is a gate bug, not a normal refusal; "
+            f"see {[s.get('bet') for s in smuggled]}")
 
     return merged, still_withdrawn, plus_money_dropped_by_subcap, ceiling_refused
 

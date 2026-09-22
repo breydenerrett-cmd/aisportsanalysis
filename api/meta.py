@@ -140,8 +140,18 @@ def _card_record() -> dict:
             rec = card_ledger.record()
         # profit_units added 2026-09-22 for the landing hero's proof panel:
         # the same ledger figure /card/record already serves, 1 unit per pick.
-        return {key: rec.get(key) for key in
-                ("days", "wins", "losses", "pushes", "voids", "profit_units")}
+        keys = ("days", "wins", "losses", "pushes", "voids", "profit_units")
+        out = {key: rec.get(key) for key in keys}
+        if card_mod.ACTIVE_CARD_RULE == "v2":
+            # The rule that preceded V2 on the public card, from its own
+            # frozen ledger (cards_v1.jsonl never gains a row after the
+            # cutover). Shown on its own labelled line and never added into
+            # V2's figures, which start from zero.
+            prev = card_ledger.record()
+            out["previous_rule"] = dict(
+                {key: prev.get(key) for key in keys},
+                label="Our first card rule")
+        return out
     except Exception:  # noqa: BLE001
         return {"days": None, "wins": None, "losses": None,
                 "pushes": None, "voids": None, "profit_units": None}

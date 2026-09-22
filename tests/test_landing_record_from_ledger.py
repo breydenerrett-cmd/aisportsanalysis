@@ -84,19 +84,49 @@ class LandingJsFillsItFromMeta(unittest.TestCase):
 
 @unittest.skipUnless(HAS_FASTAPI, "fastapi not installed")
 class MetaServesTheLedgerRecord(unittest.TestCase):
-    def test_meta_carries_the_ledgers_own_numbers(self):
+    """`api.meta._card_record` follows `card.ACTIVE_CARD_RULE` (its own
+    docstring, written at T5): V1's `record()` while V1 is the published
+    card, V2's `record_v2()["combined"]` from the T13 cutover on. Both
+    paths are covered here rather than just whichever one happens to be
+    active in this checkout, since ACTIVE_CARD_RULE itself is what this
+    build changes."""
+
+    def test_meta_carries_v2s_combined_figures_since_the_t13_cutover(self):
         from api import meta as meta_api
         from src.appstate import card_ledger
-        payload = meta_api.get_meta()
-        rec = card_ledger.record()
-        # profit_units added 2026-09-22 for the landing hero's proof panel.
+        from src.report import card as card_mod
+        self.assertEqual("v2", card_mod.ACTIVE_CARD_RULE)
+        blank = {"days": 3, "wins": 2, "losses": 1, "pushes": 0, "voids": 0,
+                "n_staked": 3, "profit_units": 1.0, "win_rate": 0.667,
+                "roi_pct": 10.0}
+        with mock.patch.object(card_ledger, "record_v2",
+                              return_value={"combined": blank}):
+            payload = meta_api.get_meta()
+        # profit_units added 2026-09-22 for the landing hero's proof panel;
+        # previous_rule carries V1's frozen record on its own labelled line.
+        got = dict(payload["card_record"])
+        prev = got.pop("previous_rule")
+        self.assertEqual(got, {k: blank.get(k) for k in
+                               ("days", "wins", "losses", "pushes", "voids", "profit_units")})
+        self.assertEqual(prev["label"], "Our first card rule")
+        v1 = card_ledger.record()
+        self.assertEqual(prev["wins"], v1.get("wins"))
+        self.assertEqual(prev["losses"], v1.get("losses"))
+
+    def test_meta_reads_v1_record_when_active_card_rule_is_v1(self):
+        from api import meta as meta_api
+        from src.appstate import card_ledger
+        from src.report import card as card_mod
+        with mock.patch.object(card_mod, "ACTIVE_CARD_RULE", "v1"):
+            rec = card_ledger.record()
+            payload = meta_api.get_meta()
         self.assertEqual(payload["card_record"],
                          {k: rec.get(k) for k in
                           ("days", "wins", "losses", "pushes", "voids", "profit_units")})
 
     def test_meta_never_guesses_when_the_ledger_is_unreadable(self):
         from api import meta as meta_api
-        with mock.patch("src.appstate.card_ledger.record",
+        with mock.patch("src.appstate.card_ledger.record_v2",
                         side_effect=RuntimeError("gone")):
             payload = meta_api.get_meta()
         self.assertEqual(payload["card_record"],

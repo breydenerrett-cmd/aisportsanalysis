@@ -204,9 +204,25 @@ async function fillProofPanel() {
   if (!panel) return;
   try {
     const meta = await fetchMeta();
-    const rec = meta && meta.card_record;
+    const current = meta && meta.card_record;
+    const prevRec = current && current.previous_rule;
+    // Until the current card rule has graded a night, the tiles show the
+    // previous rule's record, under its own label. The new rule is still
+    // named and counts separately from zero. Never merged.
+    const currentUngraded = !current || !(current.days > 0);
+    const showPrev = currentUngraded && proofFigures(prevRec);
+    const rec = showPrev ? prevRec : current;
     const figs = proofFigures(rec);
     if (!figs) return;
+    if (showPrev) {
+      const title = panel.querySelector("[data-hook='proof-title']");
+      if (title) title.textContent = (prevRec.label || "Our first card rule");
+      const sub = panel.querySelector("[data-hook='proof-sub']");
+      if (sub) {
+        sub.textContent = "Our new value card has started. Its record counts separately, from zero.";
+        sub.hidden = false;
+      }
+    }
     const set = (hook, text) => {
       const node = panel.querySelector(`[data-hook='${hook}']`);
       if (node && text) node.textContent = text;
@@ -216,7 +232,7 @@ async function fillProofPanel() {
     const unitsNode = set("proof-units", figs.units);
     if (unitsNode && figs.units) unitsNode.classList.add(figs.unitsSign >= 0 ? "is-up" : "is-down");
     set("proof-days", figs.days);
-    const prev = rec.previous_rule;
+    const prev = showPrev ? null : current && current.previous_rule;
     const prevFigs = proofFigures(prev);
     if (prevFigs) {
       const sub = panel.querySelector("[data-hook='proof-sub']");

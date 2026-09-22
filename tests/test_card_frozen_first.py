@@ -87,13 +87,23 @@ class AFrozenCardCostsOneLedgerRead(unittest.TestCase):
     def test_neither_expensive_builder_runs(self):
         """THE ONE THAT MATTERS. Both spies raise; reaching either fails."""
         self._arm(FROZEN)
-        payload = apicard._build_payload("2026-09-10", None, "card")
+        # rule="v1" explicit: T13 cutover (2026-09-22) flipped the default
+        # route to v2 (card.ACTIVE_CARD_RULE) -- this suite is specifically
+        # about V1's own frozen-card-skips-rebuild behaviour, still reached
+        # by an explicit rule, so it targets that rule rather than the new
+        # default.
+        payload = apicard._build_payload("2026-09-10", None, "card", rule="v1")
         self.assertTrue(payload["frozen"])
         self.assertEqual(len(payload["picks"]), 1)
 
     def test_the_card_itself_is_unchanged(self):
         self._arm(FROZEN)
-        payload = apicard._build_payload("2026-09-10", None, "card")
+        # rule="v1" explicit: T13 cutover (2026-09-22) flipped the default
+        # route to v2 (card.ACTIVE_CARD_RULE) -- this suite is specifically
+        # about V1's own frozen-card-skips-rebuild behaviour, still reached
+        # by an explicit rule, so it targets that rule rather than the new
+        # default.
+        payload = apicard._build_payload("2026-09-10", None, "card", rule="v1")
         self.assertEqual(payload["picks"], FROZEN["picks"])
         self.assertEqual(payload["rule"], FROZEN["rule"])
         self.assertEqual(payload["disclaimer"], FROZEN["disclaimer"])
@@ -107,7 +117,12 @@ class AFrozenCardCostsOneLedgerRead(unittest.TestCase):
         THIS ONCE -- found by opening the page, 2026-09-12."""
         from src.analysis import grade
         self._arm(FROZEN)
-        payload = apicard._build_payload("2026-09-10", None, "card")
+        # rule="v1" explicit: T13 cutover (2026-09-22) flipped the default
+        # route to v2 (card.ACTIVE_CARD_RULE) -- this suite is specifically
+        # about V1's own frozen-card-skips-rebuild behaviour, still reached
+        # by an explicit rule, so it targets that rule rather than the new
+        # default.
+        payload = apicard._build_payload("2026-09-10", None, "card", rule="v1")
         self.assertEqual(payload["knowledge_legend"], list(grade.legend()))
 
     def test_freshness_is_still_present_and_describes_the_freeze(self):
@@ -118,7 +133,12 @@ class AFrozenCardCostsOneLedgerRead(unittest.TestCase):
         about a card doing its job, or hide an old quote behind a fresh build
         time."""
         self._arm(FROZEN)
-        payload = apicard._build_payload("2026-09-10", None, "card")
+        # rule="v1" explicit: T13 cutover (2026-09-22) flipped the default
+        # route to v2 (card.ACTIVE_CARD_RULE) -- this suite is specifically
+        # about V1's own frozen-card-skips-rebuild behaviour, still reached
+        # by an explicit rule, so it targets that rule rather than the new
+        # default.
+        payload = apicard._build_payload("2026-09-10", None, "card", rule="v1")
         fresh = payload.get("freshness")
         self.assertIsInstance(fresh, dict)
         self.assertFalse(fresh["stale"])
@@ -130,7 +150,12 @@ class AFrozenCardCostsOneLedgerRead(unittest.TestCase):
         """Absent is not zero, and a bad timestamp is not an outage. The card
         still serves; only the age is unknown."""
         self._arm(dict(FROZEN, frozen_at="not a timestamp"))
-        payload = apicard._build_payload("2026-09-10", None, "card")
+        # rule="v1" explicit: T13 cutover (2026-09-22) flipped the default
+        # route to v2 (card.ACTIVE_CARD_RULE) -- this suite is specifically
+        # about V1's own frozen-card-skips-rebuild behaviour, still reached
+        # by an explicit rule, so it targets that rule rather than the new
+        # default.
+        payload = apicard._build_payload("2026-09-10", None, "card", rule="v1")
         self.assertTrue(payload["frozen"])
         self.assertIsNone(payload["freshness"]["age_s"])
 
@@ -155,7 +180,7 @@ class AFrozenCardCostsOneLedgerRead(unittest.TestCase):
         apicard.card_mod.card_for_date = lambda *a, **k: {"picks": [],
                                                           "frozen": False}
         try:
-            payload = apicard._build_payload("2099-01-01", None, "card")
+            payload = apicard._build_payload("2099-01-01", None, "card", rule="v1")
         finally:
             apicard.card_mod.card_for_date = saved_live
         self.assertEqual(called["entries"], 1)

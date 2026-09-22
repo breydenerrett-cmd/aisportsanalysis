@@ -63,19 +63,41 @@ class ResolveRule(unittest.TestCase):
 
 @unittest.skipUnless(_HAVE_FASTAPI, "fastapi not installed")
 class CardRouteRuleDispatch(unittest.TestCase):
-    def test_default_rule_never_touches_card_v2(self):
-        """No `rule` param at all -- every existing caller -- must reach
-        exactly V1's branch. Patching `card_v2_for_date` to raise means
-        this test fails loudly if the v1 default path is ever routed
-        through v2 by mistake."""
-        with mock.patch.object(card_v2_mod, "card_v2_for_date",
-                               side_effect=AssertionError("v2 called on default rule")), \
-             mock.patch.object(card_v1_mod, "frozen_card", return_value=None), \
+    def test_default_rule_reaches_v2_since_the_t13_cutover(self):
+        """No `rule` param at all -- every existing caller -- now reaches
+        V2's branch: `card.ACTIVE_CARD_RULE` flipped to "v2" at the
+        registration commit (docs/PREREG_CARD_V2.md `REGISTERED_UTC`,
+        2026-09-22T14:07:11Z). Patching V1's `frozen_card` to raise means
+        this fails loudly if the default path is ever routed back through
+        V1 by mistake. `test_explicit_rule_v1_still_reaches_v1` right below
+        is the mirror of this test: V1 stays reachable, on purpose, by
+        `?rule=v1` -- it is retired from the default, not deleted."""
+        with mock.patch.object(card_v1_mod, "frozen_card",
+                               side_effect=AssertionError("v1 called on default rule")), \
+             mock.patch.object(card_v2_mod, "frozen_card_v2", return_value=None), \
+             mock.patch.object(card_v2_mod, "card_v2_for_date",
+                               return_value=_v2_payload()) as fake_build, \
              mock.patch("api.card._build_entries", return_value=([], [], {})), \
              mock.patch("api.card.opportunities_mod.build_opportunities",
                         return_value={"rows": []}):
             payload = card_mod.get_card_for_date(
                 "2026-09-20", request=_FakeRequest())
+        self.assertTrue(fake_build.called)
+        self.assertEqual("DAILY_CARD_BEST_BETS_V2", payload["rule"])
+
+    def test_explicit_rule_v1_still_reaches_v1(self):
+        """V1 is retired from the default route, never deleted -- it keeps
+        running in shadow (registration R3) and stays reachable by an
+        explicit `?rule=v1`, which is what the record page's "SEE THE OLD
+        RULE'S RECORD" link (web/js/cardrecord.js's `mlbIntro`) sends."""
+        with mock.patch.object(card_v2_mod, "card_v2_for_date",
+                               side_effect=AssertionError("v2 called on rule=v1")), \
+             mock.patch.object(card_v1_mod, "frozen_card", return_value=None), \
+             mock.patch("api.card._build_entries", return_value=([], [], {})), \
+             mock.patch("api.card.opportunities_mod.build_opportunities",
+                        return_value={"rows": []}):
+            payload = card_mod.get_card_for_date(
+                "2026-09-20", request=_FakeRequest(), rule="v1")
         self.assertNotIn("raw_pool_size", payload)
 
     def test_rule_v2_serves_the_live_build_when_nothing_is_published(self):
@@ -132,15 +154,24 @@ class CardRecordRuleDispatch(unittest.TestCase):
                "plus_money": dict(blank), "fills": dict(blank),
                "combined": dict(blank), "withdrawn": 0}
 
-    def test_default_record_never_touches_record_v2(self):
+    def test_default_record_reaches_record_v2_since_the_t13_cutover(self):
+        with mock.patch("src.appstate.card_ledger.record",
+                        side_effect=AssertionError("v1 record() called on default rule")), \
+             mock.patch("src.appstate.card_ledger.record_v2",
+                        return_value=self._record_v2_fixture()):
+            payload = card_mod.get_card_record(request=_FakeRequest())
+        self.assertIn("main", payload)
+        self.assertEqual("v2", payload["rule"])
+
+    def test_explicit_rule_v1_record_still_reaches_v1(self):
         with mock.patch("src.appstate.card_ledger.record_v2",
-                        side_effect=AssertionError("record_v2 called")), \
+                        side_effect=AssertionError("record_v2 called on rule=v1")), \
              mock.patch("src.appstate.card_ledger.record",
                         return_value={"days": 0, "wins": 0, "losses": 0,
                                       "pushes": 0, "voids": 0, "n_staked": 0}), \
              mock.patch("src.appstate.card_ledger.verify",
                         return_value=mock.Mock(ok=True, rows_checked=0)):
-            payload = card_mod.get_card_record(request=_FakeRequest())
+            payload = card_mod.get_card_record(request=_FakeRequest(), rule="v1")
         self.assertNotIn("main", payload)
 
     def test_rule_v2_returns_main_plus_money_fills_and_combined_apart(self):

@@ -547,8 +547,16 @@ fi
 # (already-mapped events are skipped), and run before the publish that needs it.
 echo "== gamekey map ($SLATE_DATE) =="
 python3 -m src.cli gamekey --date "$SLATE_DATE" 2>&1 | tail -n 4 | sed 's/^/  /' || true
+# --rule all (T13 cutover, 2026-09-22): before REGISTERED_UTC this slot only
+# ever published V1 (--rule's own default). ACTIVE_CARD_RULE is now "v2"
+# (src/report/card.py), so the PUBLIC card is v2 from here on, but nothing
+# reads that constant unless this command is told to build every rule --
+# `--rule all` builds V1 (now routed to evidence/cards_v1_shadow.jsonl from
+# CUTOVER_DATE by card.v1_store_path, never cards_v1.jsonl again) plus V2 and
+# its three registered shadows (A, C, E), from the ONE board this call
+# fetches -- no second odds-API spend per rule (registration 17.6).
 echo "== card publish ($SLATE_DATE) =="
-CARD_OUT=$(python3 -m src.cli card publish --date "$SLATE_DATE" 2>&1) || true
+CARD_OUT=$(python3 -m src.cli card publish --date "$SLATE_DATE" --rule all 2>&1) || true
 echo "$CARD_OUT" | tail -n 25 | sed 's/^/  /'
 
 # MLB_VALUE_SHADOW_V1 (docs/PREREG_MLB_VALUE_SHADOW_V1.md): a SHADOW forward
