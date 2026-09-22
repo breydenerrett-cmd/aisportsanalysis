@@ -1546,3 +1546,44 @@
 {"fetched_utc": "2026-09-22T14:54:39.855157+00:00", "game_date": "2026-09-22", "poll": true}
 {"fetched_utc": "2026-09-22T15:27:41.091050+00:00", "game_date": "2026-09-22", "poll": true}
 {"fetched_utc": "2026-09-22T15:27:43.556900+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-22T16:07:13.202353+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-22T16:28:05.455717+00:00", "game_date": "2026-09-22", "poll": true}
+{"category": "il_placement", "date": "2026-09-19", "first_seen_utc": "2026-09-22T16:28:05.455717+00:00", "player": "Tony Santillan", "player_id": 663574, "team": "CIN", "transaction_id": 943645}
+{"category": "recalled", "date": "2026-09-22", "first_seen_utc": "2026-09-22T16:28:05.455717+00:00", "player": "Connor Phillips", "player_id": 683175, "team": "CIN", "transaction_id": 943642}
+{"fetched_utc": "2026-09-22T16:28:07.003362+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-22T16:38:26.660067+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-22T16:54:16.665003+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-22T17:04:54.516330+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-22T17:24:15.962444+00:00", "game_date": "2026-09-22", "poll": true}
+{"category": "designated", "date": "2026-09-22", "first_seen_utc": "2026-09-22T17:24:15.962444+00:00", "player": "Camilo Doval", "player_id": 666808, "team": "PIT", "transaction_id": 943648}
+{"category": "il_activation", "date": "2026-09-22", "first_seen_utc": "2026-09-22T17:24:15.962444+00:00", "player": "Kirby Yates", "player_id": 489446, "team": "PIT", "transaction_id": 943649}
+{"fetched_utc": "2026-09-22T17:56:15.174306+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-22T18:07:04.674302+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-22T18:07:05.797763+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-22T18:10:01.492507+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-22T18:10:03.531489+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-22T18:35:40.057647+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-22T18:55:03.114793+00:00", "game_date": "2026-09-22", "poll": true}
+{"category": "other", "date": "2026-09-22", "first_seen_utc": "2026-09-22T18:55:03.114793+00:00", "player": "TJ Friedl", "player_id": 670770, "team": "CIN", "transaction_id": 943651}
+{"fetched_utc": "2026-09-22T19:54:35.049527+00:00", "game_date": "2026-09-22", "poll": true}
+{"category": "il_activation", "date": "2026-09-22", "first_seen_utc": "2026-09-22T19:54:35.049527+00:00", "player": "Devin Williams", "player_id": 642207, "team": "NYM", "transaction_id": 943654}
+{"category": "il_placement", "date": "2026-09-22", "first_seen_utc": "2026-09-22T19:54:35.049527+00:00", "player": "Christian Scott", "player_id": 681035, "team": "NYM", "transaction_id": 943655}
+{"fetched_utc": "2026-09-22T19:54:37.384383+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-22T20:28:51.453025+00:00", "game_date": "2026-09-22", "poll": true}
+{"category": "rehab", "date": "2026-09-22", "first_seen_utc": "2026-09-22T20:28:51.453025+00:00", "player": "Ryan Thompson", "player_id": 657044, "team": "ARI", "transaction_id": 943658}
+{"category": "optioned", "date": "2026-09-22", "first_seen_utc": "2026-09-22T20:28:51.453025+00:00", "player": "Max Schuemann", "player_id": 680474, "team": "NYY", "transaction_id": 943659}
+{"category": "il_activation", "date": "2026-09-22", "first_seen_utc": "2026-09-22T20:28:51.453025+00:00", "player": "Jazz Chisholm Jr.", "player_id": 665862, "team": "NYY", "transaction_id": 943660}
+{"category": "rehab", "date": "2026-09-22", "first_seen_utc": "2026-09-22T20:28:51.453025+00:00", "player": "Ryan Thompson", "player_id": 657044, "team": "ARI", "transaction_id": 943661}
+{"fetched_utc": "2026-09-22T20:28:54.082695+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-22T20:58:56.713378+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-22T20:58:58.767878+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-22T21:11:37.101998+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-22T21:11:38.436478+00:00", "game_date": "2026-09-22", "poll": true}
+{"category": "il_placement", "date": "2026-09-22", "first_seen_utc": "2026-09-22T21:11:38.436478+00:00", "player": "Max Muncy", "player_id": 691777, "team": "OAK", "transaction_id": 943683}
+{"category": "il_activation", "date": "2026-09-22", "first_seen_utc": "2026-09-22T21:11:38.436478+00:00", "player": "Joshua Kuroda-Grauer", "player_id": 811965, "team": "OAK", "transaction_id": 943684}
+{"category": "il_transfer", "date": "2026-09-22", "first_seen_utc": "2026-09-22T21:11:38.436478+00:00", "player": "J.T. Ginn", "player_id": 669372, "team": "OAK", "transaction_id": 943685}
+{"category": "optioned", "date": "2026-09-22", "first_seen_utc": "2026-09-22T21:11:38.436478+00:00", "player": "Adam Macko", "player_id": 671936, "team": "TEX", "transaction_id": 943686}
+{"category": "il_activation", "date": "2026-09-22", "first_seen_utc": "2026-09-22T21:11:38.436478+00:00", "player": "Peyton Gray", "player_id": 682608, "team": "TEX", "transaction_id": 943687}
+{"fetched_utc": "2026-09-22T21:34:00.913720+00:00", "game_date": "2026-09-22", "poll": true}
+{"category": "other", "date": "2026-09-22", "first_seen_utc": "2026-09-22T21:34:00.913720+00:00", "player": "Jorge Barrosa", "player_id": 678489, "team": "HOU", "transaction_id": 943689}
+{"fetched_utc": "2026-09-22T21:34:02.909921+00:00", "game_date": "2026-09-22", "poll": true}
