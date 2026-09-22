@@ -37,4 +37,9 @@ def get_health(response: Response) -> dict:
         return {"status": "degraded", "reasons": [f"health check itself failed: {exc}"]}
     if data["status"] != "ok":
         response.status_code = 503
+    # Warm-up progress (api/warmup.py). Informational only: it never changes
+    # `status`, because a cold cache is slow, not unhealthy. Deploy checks
+    # read `passes_completed` to wait before exercising pages.
+    from api import warmup
+    data["warmup"] = warmup.status()
     return data

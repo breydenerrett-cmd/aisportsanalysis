@@ -225,6 +225,19 @@ def warm_interval_seconds(env: Optional[dict] = None) -> float:
         return DEFAULT_WARM_INTERVAL_SECONDS
 
 
+# Exposed on /health (api/health.py) so a deploy check can WAIT for the first
+# pass before exercising pages (2026-09-21). Otherwise its page requests race
+# the first pass on a 1-CPU machine: the 01:15Z staging deploy got a 502 on
+# /today and was marked failed while the app itself was fine.
+_STATUS = {"enabled": False, "passes_completed": 0, "running": False,
+           "last_pass_utc": None}
+
+
+def status() -> dict:
+    """A copy of the warm-up progress, for /health. Never raises."""
+    return dict(_STATUS)
+
+
 def _warmup_loop(*, items_factory: Callable[[], List[WarmItem]],
                  interval_s: float, stop_event: threading.Event,
                  dates_fn: Callable[[], List[str]] = warm_dates,
@@ -240,6 +253,7 @@ def _warmup_loop(*, items_factory: Callable[[], List[WarmItem]],
     without restarting the thread.
     """
     while not stop_event.is_set():
+        _STATUS["running"] = True
         try:
             items = items_factory()
             dates = dates_fn()
@@ -249,6 +263,10 @@ def _warmup_loop(*, items_factory: Callable[[], List[WarmItem]],
             # log it and try again next interval rather than let the daemon
             # thread die silently.
             log.exception("warmup pass crashed")
+        finally:
+            _STATUS["running"] = False
+            _STATUS["passes_completed"] += 1
+            _STATUS["last_pass_utc"] = datetime.now(timezone.utc).isoformat()
         if stop_event.wait(interval_s):
             break
 
@@ -278,6 +296,7 @@ def start_background_warmup(*, interval_s: Optional[float] = None,
         kwargs=dict(items_factory=items_factory, interval_s=resolved_interval,
                    stop_event=event),
         daemon=True, name="cache-warmup")
+    _STATUS["enabled"] = True
     thread.start()
     logger.info("cache warm-up thread started, interval=%ss", resolved_interval)
     return thread

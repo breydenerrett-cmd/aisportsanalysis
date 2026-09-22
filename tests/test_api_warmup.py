@@ -289,5 +289,32 @@ class DefaultItemsTests(unittest.TestCase):
             self.assertTrue(callable(builder))
 
 
+class WarmupStatusTests(unittest.TestCase):
+    """2026-09-22: /health reports warm-up progress, so deploy checks wait
+    for the first pass instead of racing it (the 01:15Z /today 502)."""
+
+    def test_a_completed_pass_is_counted_even_when_an_item_fails(self):
+        before = warmup.status()["passes_completed"]
+        stop = threading.Event()
+
+        def boom(_date):
+            stop.set()
+            raise RuntimeError("builder failed")
+
+        warmup._warmup_loop(items_factory=lambda: [("x", boom)], interval_s=60,
+                            stop_event=stop, dates_fn=lambda: ["2026-09-22"])
+        after = warmup.status()
+        self.assertEqual(after["passes_completed"], before + 1)
+        self.assertFalse(after["running"])
+        self.assertIsNotNone(after["last_pass_utc"])
+
+    def test_health_carries_the_warmup_block_without_changing_status(self):
+        from fastapi.testclient import TestClient
+        from api.app import app
+        body = TestClient(app).get("/health").json()
+        self.assertIn("warmup", body)
+        self.assertIn("passes_completed", body["warmup"])
+
+
 if __name__ == "__main__":
     unittest.main()

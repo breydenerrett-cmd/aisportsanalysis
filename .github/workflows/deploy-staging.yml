@@ -199,6 +199,17 @@ jobs:
           if [ "$up" -ne 1 ]; then
             echo "health check did not pass within 2 minutes"; exit 1
           fi
+          # Wait for the first cache warm-up pass (api/warmup.py, reported on
+          # /health) before exercising pages. Racing it on a 1-CPU machine
+          # 502'd /today on the 2026-09-22 01:15Z deploy while the app was fine.
+          # Capped at 6 minutes; an app with warm-up disabled skips the wait.
+          for i in $(seq 1 36); do
+            h=$(curl -s "$BASE/health" || true)
+            case "$h" in
+              *'"enabled":false'*|*'"passes_completed":'[1-9]*) break ;;
+            esac
+            sleep 10
+          done
           echo "up; now exercising the page path"
 
           # The card route is behind the paid gate, so 401 is the SUCCESS
