@@ -28,10 +28,51 @@ enumeration input extract is committed gzipped (279 KB, from 8.2 MB); its
 uncompressed sha256 is recorded in the manifest so the reference still
 resolves. Secret scan over every committed file: clean.
 
-**Baseline-versus-patch comparison: NOT YET COMPLETE.** An isolated
-two-worktree comparison of `069f9a16` against `2def4f83` is running. Until it
-returns, the attribution I have is the weaker kind the ruling rejected, and I
-am not presenting it as more. See §2.
+Two further commits after the first report:
+
+| Commit | Workstream |
+|---|---|
+| `f06ec689` | Integration report; state the all-stale snapshot explicitly |
+| `054f0ebc` | Freshness audit: decide "checked after the game" on real timestamps |
+
+### Baseline-versus-patch comparison — COMPLETE, and the critical column is empty
+
+Two isolated `git worktree` checkouts outside the repo tree, at `069f9a16`
+(baseline) and `2def4f83` (patch), given the **same** real `data/` and
+`evidence/` trees by copy (not symlink), sha256-verified identical to the
+live pitcher-log store in all three locations. Same interpreter. Full
+`scripts/test_parallel.py` in both, output captured to file.
+
+| | count |
+|---|---|
+| failing in both | 40 |
+| baseline only | 1 |
+| **patch only** | **0** |
+
+The patch introduces no new failure anywhere in 8,200+ tests. The single
+baseline-only entry is a real-wall-clock boundary flip in an unrelated
+afternoon-slate subsystem between two runs twenty minutes apart, not
+something the patch fixed.
+
+Common-failure mechanisms, named rather than waved at: `wsl.exe` on PATH with
+no distribution installed, so the bash-finder cannot parse `.sh` files (9
+scripts); NTFS having no POSIX executable bit (9 scripts); `src/capture/health.py`
+importing `fcntl` unconditionally; `Path("/tmp/...")` resolving to
+`C:/tmp/...`; two tests computing against real `datetime.now()` and real
+captured data whose age has drifted; one network-flaky NFL fixture. None
+touches `pitchers.py`, `store_archive.py`, `cli.py`'s pitcher step or the new
+tests.
+
+**Caveat recorded, not glossed:** the comparison ran on *copies* of `data/`
+taken while this session was writing to the live tree, and one archive
+sidecar check fails on those copies while passing on the live checkout. It
+affects both arms identically so the comparison holds, but the absolute
+health reading for that one test must come from the live checkout.
+
+**Not verified:** an actual Ubuntu runner, Python 3.10–3.12 (this box has
+only 3.14), and the no-network gate across the whole suite rather than the
+16 relevant tests. Nothing found suggests they would differ; I did not check
+them.
 
 ---
 
@@ -41,19 +82,70 @@ am not presenting it as more. See §2.
 workflows run the default branch, so no change here has reached the
 production runner.
 
-### Pitcher refresh — activation still BLOCKED
-Committed at `2def4f83`, not activated. The bounded checks the ruling made
-conditions of activation are in flight: the isolated baseline-vs-patch run,
-the deployment-environment check, the 20-hour-rule probe, the behavioural
-regression through the daily caller, the snapshot-restore proof against the
-real store, and the full downstream-consumer enumeration. **Activation is not
-authorised by me and has not happened.** The rollback reference is
-`069f9a16`, the commit immediately before the patch.
+### Pitcher refresh — checks now PASS; merge is blocked on approval
+Committed at `2def4f83` plus `054f0ebc`. **Not activated.** Every bounded
+check the ruling made a condition has now run:
 
-One thing already verified (RUN): the before/after sample was taken against a
-scratch copy, and the real store's hash and mtime are unchanged — which is
-what kept the enumeration reconstruction's inputs intact while both
-workstreams ran.
+* **Baseline vs patch** — patch-only failures: 0 (above).
+* **Behavioural regression through the daily caller** (RUN) —
+  `tests/test_cmd_daily_pitcher_refresh_regression.py`. Both arms call the
+  real `src.cli.cmd_daily` with an injected fetch seam and no network; the
+  old arm strips only the new kwargs so the executed call is byte-identical
+  to the pre-fix shape. Verbatim:
+
+  ```
+  OLD       daily-path dates after run: ['2026-09-10']
+  CORRECTED daily-path dates after run: ['2026-09-10', '2026-09-22']
+  ```
+
+  A missed completed appearance, picked up. Not a `TypeError` from an
+  unknown keyword.
+* **Snapshot restore against the real store** (RUN) — snapshot taken on a
+  faithful copy whose sha256 matches the live store exactly
+  (`85b8646e…965f7c`), segment decompressed, restored copy byte-identical.
+  The real store's path was never written to, and its hash is unchanged
+  afterwards.
+* **20-hour rule** — **FAILED, and is now fixed.** See below.
+* **Downstream consumer** (RUN + CODE) — the concrete answer is
+  `mismatch.scan_game` via `src/pipeline/briefing.py:154`, called from
+  `cmd_daily` step 5 every day, whose `verdict`/`side`/`summary` feed
+  `make_entry` and reach the rendered card payload. That displayed
+  assessment changes when a starter's latest appearance is missing. The live
+  staking command (`src/engine/slate.py`) and the deployed win-probability
+  model do **not** change — `model.json`'s 37 features are all team-level,
+  zero `sp_*`, confirmed at runtime rather than inferred from `cmd_predict`.
+
+**The 20-hour rule did label known-missing coverage as healthy.**
+`checked_after_game` was `str(checked_utc)[:10] > target_date` — a date-string
+comparison. A refresh at 23:50Z on the game's own day, minutes after an
+afternoon game went final and without the appearance, compared equal rather
+than greater: status `PENDING`, `main()` exit 0, "not a failure". Fixed in
+`054f0ebc` by comparing real timestamps against the instant the game is
+certainly over, from its own `start_time_utc`. Four regression tests cover
+the boundary the original suite never exercised. The audit is wired into no
+workflow, so nothing in production was corrupted by it — it mattered because
+activation was about to start trusting its exit code.
+
+**Why activation has not happened.** Merging is a permission-gated action in
+this session and I did not route around it. Two things also need saying
+before anyone runs it:
+
+1. The branch is **73 commits behind its own remote** (capture-bot commits,
+   arriving every few minutes). Those must be integrated first.
+2. The baseline-vs-patch comparison covered the pitcher patch **in
+   isolation**. The ceiling and fingerprint work landed afterwards. Those have
+   708 card/ledger/API tests plus their own suites green, but they have not
+   been through the same isolated comparison. Merging the whole branch would
+   deploy them together.
+
+Rollback reference: `069f9a16` for the pitcher patch, `77dd901e` for the
+ceiling change (and every row it produces carries
+`ceiling_admission_version`, so rows from either side stay distinguishable
+without inference).
+
+The first successful runtime result cannot be recorded in this session
+regardless: the daily loop's cron is `0 10 * * *` and it is currently
+~03:20Z.
 
 ### Ceiling — INTEGRATED into the real publisher path
 `77dd901e`. `card_ledger._apply_ceiling_v2` now applies the cap at
@@ -215,10 +307,22 @@ apart. That is a separate registration and does not ride on any of this work.
 
 ## Open blockers
 
-1. **Pitcher activation** — waits on the bounded checks now running. Not
-   authorised until they pass, and the "patch only" failure column is empty.
+1. **Merge and activation** — permission-gated in this session. The sequence,
+   in order, is: integrate the 73 remote capture commits into this branch;
+   re-run the suite on the integrated tree (the ceiling and fingerprint work
+   has not been through the isolated comparison the pitcher patch has); push
+   this branch, which triggers nothing because schedules run the default
+   branch; then merge into the default branch
+   `claude/cowork-session-migration-tn3sx2`, which is the deploy. Watch the
+   10:00Z daily-loop run and record its pitcher-fetch line as the first
+   runtime result.
 2. **First complete forward shadow result** — waits on a board that clears
-   the six-book floor.
+   the six-book floor. Re-run
+   `python scripts/shadow_enumeration_run.py --date 2026-09-23` once the
+   morning board fills.
 3. **Enumeration promotion** — still shadow-only. Under §16 promotion is a
    new rule id with its own registration and count, and the model gates have
    never been evaluated on a real forward board.
+4. **`src/capture/health.py` imports `fcntl` unconditionally**, so
+   `tests/test_capture_health` cannot even be collected on Windows. Noticed
+   in passing, unrelated to any of this work, not fixed.
