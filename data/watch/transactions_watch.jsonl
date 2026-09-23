@@ -1708,3 +1708,17 @@
 {"category": "il_activation", "date": "2026-09-23", "first_seen_utc": "2026-09-23T20:52:00.702285+00:00", "player": "Ceddanne Rafaela", "player_id": 678882, "team": "BOS", "transaction_id": 943756}
 {"category": "optioned", "date": "2026-09-23", "first_seen_utc": "2026-09-23T20:52:00.702285+00:00", "player": "Nate Eaton", "player_id": 681987, "team": "BOS", "transaction_id": 943757}
 {"fetched_utc": "2026-09-23T20:52:02.851218+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T21:42:37.010756+00:00", "game_date": "2026-09-23", "poll": true}
+{"category": "il_placement", "date": "2026-09-20", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "Dylan Cease", "player_id": 656302, "team": "TOR", "transaction_id": 943767}
+{"category": "recalled", "date": "2026-09-23", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "Mason Englert", "player_id": 669438, "team": "TB", "transaction_id": 943759}
+{"category": "optioned", "date": "2026-09-23", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "Alex Cook", "player_id": 702047, "team": "TB", "transaction_id": 943760}
+{"category": "optioned", "date": "2026-09-23", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "Luis De Le\u00f3n", "player_id": 801725, "team": "BAL", "transaction_id": 943761}
+{"category": "recalled", "date": "2026-09-23", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "Trey Gibson", "player_id": 694346, "team": "BAL", "transaction_id": 943762}
+{"category": "other", "date": "2026-09-23", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "Philip Abner", "player_id": 691769, "team": "NYM", "transaction_id": 943764}
+{"category": "optioned", "date": "2026-09-23", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "Jos\u00e9 Rodr\u00edguez", "player_id": 692064, "team": "TOR", "transaction_id": 943765}
+{"category": "recalled", "date": "2026-09-23", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "Chase Lee", "player_id": 695445, "team": "TOR", "transaction_id": 943766}
+{"category": "recalled", "date": "2026-09-23", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "CJ Van Eyk", "player_id": 669310, "team": "TOR", "transaction_id": 943769}
+{"category": "il_placement", "date": "2026-09-23", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "Cristian Javier", "player_id": 664299, "team": "HOU", "transaction_id": 943770}
+{"category": "il_placement", "date": "2026-09-23", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "Jake Meyers", "player_id": 676694, "team": "HOU", "transaction_id": 943771}
+{"category": "other", "date": "2026-09-23", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "Josh Hendrickson", "player_id": 681973, "team": "HOU", "transaction_id": 943772}
+{"fetched_utc": "2026-09-23T21:42:39.020625+00:00", "game_date": "2026-09-23", "poll": true}
