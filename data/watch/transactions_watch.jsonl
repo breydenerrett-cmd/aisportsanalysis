@@ -1702,3 +1702,9 @@
 {"category": "optioned", "date": "2026-09-23", "first_seen_utc": "2026-09-23T20:02:53.524136+00:00", "player": "Owen Murphy", "player_id": 702566, "team": "ATL", "transaction_id": 943752}
 {"category": "il_activation", "date": "2026-09-23", "first_seen_utc": "2026-09-23T20:02:53.524136+00:00", "player": "Robert Suarez", "player_id": 663158, "team": "ATL", "transaction_id": 943753}
 {"fetched_utc": "2026-09-23T20:02:55.795520+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T20:52:00.702285+00:00", "game_date": "2026-09-23", "poll": true}
+{"category": "il_activation", "date": "2026-09-23", "first_seen_utc": "2026-09-23T20:52:00.702285+00:00", "player": "Shawn Armstrong", "player_id": 542888, "team": "CLE", "transaction_id": 943754}
+{"category": "designated", "date": "2026-09-23", "first_seen_utc": "2026-09-23T20:52:00.702285+00:00", "player": "Connor Brogdon", "player_id": 641401, "team": "CLE", "transaction_id": 943755}
+{"category": "il_activation", "date": "2026-09-23", "first_seen_utc": "2026-09-23T20:52:00.702285+00:00", "player": "Ceddanne Rafaela", "player_id": 678882, "team": "BOS", "transaction_id": 943756}
+{"category": "optioned", "date": "2026-09-23", "first_seen_utc": "2026-09-23T20:52:00.702285+00:00", "player": "Nate Eaton", "player_id": 681987, "team": "BOS", "transaction_id": 943757}
+{"fetched_utc": "2026-09-23T20:52:02.851218+00:00", "game_date": "2026-09-23", "poll": true}
