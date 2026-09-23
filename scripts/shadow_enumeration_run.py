@@ -81,6 +81,33 @@ def _git(*args):
         return "<unknown>"
 
 
+def _iso_to_dt(value):
+    """Parse an ISO-8601 instant, assuming UTC when no offset is given."""
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+
+
+def _drop_observed_after(candidates, moment):
+    """`(kept, dropped)` -- candidates observed after `moment` are removed.
+
+    The leakage guard for `--now`. Evaluating as of a past instant is only
+    honest if the run cannot see anything that had not been observed yet;
+    a candidate whose quote arrived later is future information and is
+    counted out rather than quietly used.
+    """
+    if moment is None:
+        return list(candidates), []
+    kept, dropped = [], []
+    for c in candidates:
+        ob = c.get("observed_utc")
+        ob = ob if isinstance(ob, datetime) else _iso_to_dt(ob)
+        (dropped if (ob is not None and ob > moment) else kept).append(c)
+    return kept, dropped
+
+
 def _iso(value):
     if value is None:
         return None
@@ -278,6 +305,15 @@ def main(argv=None) -> int:
     ap.add_argument("--out-dir", default=OUT_DIR)
     ap.add_argument("--dry-run", action="store_true",
                     help="build and print the summary, write no file")
+    ap.add_argument("--now", default=None,
+                    help="evaluate AS OF this UTC instant instead of the "
+                         "wall clock (ISO-8601). Every candidate observed "
+                         "AFTER it is dropped and counted, so this can only "
+                         "ever narrow what the run sees -- it cannot make an "
+                         "old quote fresh, and it cannot let a later "
+                         "observation leak backwards. Use it to evaluate "
+                         "inside a capture's freshness window that the wall "
+                         "clock has already left.")
     ap.add_argument("--arm", default="moneyline",
                     choices=("moneyline", "moneyline+props"),
                     help="which enumeration arm to run. 'moneyline' is the "
@@ -287,7 +323,20 @@ def main(argv=None) -> int:
                          "contract and is a separate arm with its own id.")
     args = ap.parse_args(argv)
 
-    now = datetime.now(timezone.utc)
+    wall_clock = datetime.now(timezone.utc)
+    now = wall_clock
+    as_of = None
+    if args.now:
+        as_of = _iso_to_dt(args.now)
+        if as_of is None:
+            print(f"ERROR: --now is not an ISO-8601 instant: {args.now!r}",
+                  file=sys.stderr)
+            return 1
+        if as_of > wall_clock:
+            print("ERROR: --now is in the future; this tool evaluates past "
+                  "instants only", file=sys.stderr)
+            return 1
+        now = as_of
     params = best_bets_card.V2
 
     try:
@@ -297,10 +346,21 @@ def main(argv=None) -> int:
         return 1
 
     try:
-        entries, opportunity_rows, coverage = build_board(args.date, now=now)
+        entries, opportunity_rows, coverage = build_board(
+            args.date, now=wall_clock)
     except Exception as exc:  # noqa: BLE001 - a board failure is a result
         print(f"ERROR building the board: {exc!r}", file=sys.stderr)
         return 1
+
+    # LEAKAGE GUARD. With --now, a quote observed after the evaluation
+    # instant is future information and must not reach either arm. Both
+    # arms read the same filtered board, so the comparison stays like for
+    # like.
+    opportunity_rows, dropped_quotes = _drop_observed_after(
+        opportunity_rows, as_of)
+    if as_of is not None:
+        print(f"as-of {as_of.isoformat()}: dropped {len(dropped_quotes)} "
+              f"quote row(s) observed after it", file=sys.stderr)
 
     models, model_excluded = model_record(entries, date=args.date, now=now,
                                           frozen=frozen)
@@ -394,6 +454,9 @@ def main(argv=None) -> int:
         "published": False,
         "date": args.date,
         "run_utc": now.isoformat(),
+        "wall_clock_utc": wall_clock.isoformat(),
+        "evaluated_as_of": as_of.isoformat() if as_of else None,
+        "quote_rows_dropped_as_future": len(dropped_quotes),
         "arm": args.arm,
         "implementation": {
             "registered": "consensus_side_favourite_only",
