@@ -278,6 +278,13 @@ def main(argv=None) -> int:
     ap.add_argument("--out-dir", default=OUT_DIR)
     ap.add_argument("--dry-run", action="store_true",
                     help="build and print the summary, write no file")
+    ap.add_argument("--arm", default="moneyline",
+                    choices=("moneyline", "moneyline+props"),
+                    help="which enumeration arm to run. 'moneyline' is the "
+                         "arm already collecting a forward record and its "
+                         "behaviour must not change; 'moneyline+props' also "
+                         "enumerates both sides of every registered prop "
+                         "contract and is a separate arm with its own id.")
     args = ap.parse_args(argv)
 
     now = datetime.now(timezone.utc)
@@ -305,17 +312,53 @@ def main(argv=None) -> int:
     reg_candidates, reg_pool = card_v2._build_game_candidates(
         entries, opportunity_rows, date=args.date, now=now, frozen=frozen)
 
+    enumerate_props = args.arm == "moneyline+props"
     corrected = shadow.card_v2_for_date_shadow(
         entries, opportunity_rows, date=args.date, now=now, frozen=frozen,
-        params=params)
+        params=params, enumerate_props=enumerate_props)
     cor_candidates, cor_pool, not_built = shadow.build_game_candidates(
         entries, opportunity_rows, date=args.date, now=now, frozen=frozen)
+
+    # PROP CANDIDATES ARE PART OF "EVERY GATE RESULT". Rebuilt here so the
+    # artifact records them with their own gate outcomes -- an earlier
+    # version recorded only the game pool, so a reader could see that the
+    # prop pool doubled but not what happened to any of it, which is the
+    # question the prop arm exists to answer.
+    reg_props, reg_prop_pool = card_v2._build_prop_candidates(
+        entries, date=args.date, now=now)
+    cor_props, cor_prop_pool = card_v2._build_prop_candidates(
+        entries, date=args.date, now=now,
+        prop_board=(shadow.both_sides_prop_board if enumerate_props else None))
 
     census_by_id = {}
     for row in corrected.get("gate_census") or ():
         key = (row.get("game_id"), row.get("side"), row.get("market"),
                row.get("player_id"))
         census_by_id[key] = row
+
+    # The registered arm's prop pool needs its own census: it is a different
+    # candidate set from the corrected arm's, so the census above does not
+    # cover it.
+    reg_census_by_id = {}
+    for row in shadow.gate_census(reg_candidates + reg_props, now=now,
+                                  params=params):
+        key = (row.get("game_id"), row.get("side"), row.get("market"),
+               row.get("player_id"))
+        reg_census_by_id[key] = row
+
+    def _prop_gate_summary(candidates, census):
+        out = {}
+        by_side = {}
+        for c in candidates:
+            key = (c.get("game_id"), c.get("side"), c.get("market"),
+                   c.get("player_id"))
+            reason = ((census.get(key) or {}).get("primary_reason")
+                      or "all_gates_passed")
+            out[reason] = out.get(reason, 0) + 1
+            side_key = f"{c.get('side')}|{reason}"
+            by_side[side_key] = by_side.get(side_key, 0) + 1
+        return {"by_primary_reason": dict(sorted(out.items())),
+                "by_side_and_reason": dict(sorted(by_side.items()))}
 
     # Check the recorded raw -> calibrated arithmetic against the number the
     # candidates actually carry, per game, rather than asserting it.
@@ -351,9 +394,11 @@ def main(argv=None) -> int:
         "published": False,
         "date": args.date,
         "run_utc": now.isoformat(),
+        "arm": args.arm,
         "implementation": {
             "registered": "consensus_side_favourite_only",
-            "corrected": shadow.ENUMERATION_ID,
+            "corrected": corrected.get("enumeration"),
+            "enumerate_props": enumerate_props,
             "runner": "scripts/shadow_enumeration_run.py",
         },
         "identity": {
@@ -413,8 +458,12 @@ def main(argv=None) -> int:
             "n_fills": registered.get("n_fills"),
             "n_plus_money_picks": registered.get("n_plus_money_picks"),
             "empty_reason": registered.get("empty_reason"),
-            "candidates": [_candidate_record(c, census_by_id)
-                           for c in reg_candidates],
+            "game_candidate_rows": [_candidate_record(c, reg_census_by_id)
+                                    for c in reg_candidates],
+            "prop_candidates": reg_prop_pool,
+            "prop_candidate_rows": [_candidate_record(c, reg_census_by_id)
+                                    for c in reg_props],
+            "prop_gates": _prop_gate_summary(reg_props, reg_census_by_id),
             "selections": _selection_record(registered),
         },
         "corrected_path": {
@@ -429,8 +478,12 @@ def main(argv=None) -> int:
             "added_sides_by_gate_primary_reason": dict(sorted(
                 added_gates.items())),
             "added_sides_missing_model_input": len(added_missing_model),
-            "candidates": [_candidate_record(c, census_by_id)
-                           for c in cor_candidates],
+            "game_candidate_rows": [_candidate_record(c, census_by_id)
+                                    for c in cor_candidates],
+            "prop_candidates": cor_prop_pool,
+            "prop_candidate_rows": [_candidate_record(c, census_by_id)
+                                    for c in cor_props],
+            "prop_gates": _prop_gate_summary(cor_props, census_by_id),
             "selections": _selection_record(corrected),
         },
         "difference": {
@@ -485,7 +538,8 @@ def main(argv=None) -> int:
 
     os.makedirs(args.out_dir, exist_ok=True)
     stamp = now.strftime("%Y%m%dT%H%M%SZ")
-    out_path = os.path.join(args.out_dir, f"{args.date}_{stamp}.json")
+    suffix = "" if args.arm == "moneyline" else f"_{args.arm.replace('+', '-')}"
+    out_path = os.path.join(args.out_dir, f"{args.date}_{stamp}{suffix}.json")
     with open(out_path, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(json.dumps(payload, indent=2, default=str) + "\n")
     print(f"wrote {out_path}", file=sys.stderr)

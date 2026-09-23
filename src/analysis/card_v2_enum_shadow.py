@@ -65,6 +65,15 @@ from src.report import card_v2
 # `test_registered_candidates_are_passed_through_unchanged` checks.
 ENUMERATION_ID = "moneyline_both_sides_v1"
 
+# The PROP arm, added 2026-09-23. A SEPARATE id on purpose.
+#
+# `moneyline_both_sides_v1` is already collecting a forward record under its
+# recorded rule. Folding props into it would silently change what that arm
+# measures halfway through its own sample, which is the thing a registered
+# experiment may never do. So props are their own arm, off by default, and
+# a run states which arm produced it. Neither arm's thresholds move.
+ENUMERATION_ID_PROPS = "props_both_sides_v1"
+
 # Why a side the registered path built could not be mirrored. These are
 # NOT gate names: a gate refusal means the candidate existed and the rule
 # said no, which is a different fact from the candidate never being built,
@@ -207,6 +216,75 @@ def build_game_candidates(entries: Sequence, opportunity_rows: Sequence, *,
     return registered + added, registered_pool + len(added), not_built
 
 
+def both_sides_prop_board(date: str, **kwargs) -> dict:
+    """`props.board_for_date`'s payload with BOTH sides of every registered
+    contract, for injection as `card_v2_for_date`'s `prop_board`.
+
+    THE DEFECT. Registration section 2 registers the prop candidate set as
+    "Both sides of every `batter_hits` and `batter_total_bases` contract".
+    `propboard.build` already produces both -- `propboard.py:232` loops
+    `(("Over", over), ("Under", under))` and stamps `side` on each, with its
+    own price and de-vigged probability. Nothing is missing at the board.
+
+    The loss is one filter. `props.board_for_date` passes the board through
+    `propboard.most_likely`, which keeps only `probability > LIKELY_FLOOR`
+    (0.50). Since the two sides of a contract are complementary by
+    construction, that discards the under side of every contract, and any
+    over the model makes less than even. V2 never sees them.
+
+    This reuses the registered builder and skips only that filter and the
+    display cap. It does NOT widen the market set: section 2 registers two
+    markets, so `daily_card.PROP_MARKETS` is applied here. Home runs stay
+    out -- they are not registered, and no book quotes their under
+    (`propboard.py:59`), so there is no second side to enumerate anyway.
+
+    `card_v2._build_prop_candidates` takes this through
+    `card._enriched_prop_contracts`'s injection seam, so the schedule join,
+    the started-game filter and the candidate shape are all the registered
+    ones. No registered file is edited.
+    """
+    from src.analysis import playerprops, propboard
+    from src.pipeline import batter_props
+    from src.report import props as props_mod
+
+    rows = kwargs.get("prop_rows")
+    rows = list(rows) if rows is not None else batter_props.read_processed()
+    batters = kwargs.get("batter_rows")
+    batters = (list(batters) if batters is not None
+               else props_mod._batter_rows(
+                   props_mod.box_store_for_season(date)))
+    by_name = props_mod._by_name(batters)
+
+    history = [row for row in batters
+               if str(row.get("date") or "")[:10] < date]
+    if not history:
+        return {"date": date, "contracts": [], "counts": {},
+                "reason": "no batter history before this date"}
+
+    slots = kwargs.get("slots")
+    built = propboard.build(
+        rows, date=date, batters_by_name=by_name,
+        league=playerprops.league_rates(history),
+        slots_by_player=(slots if slots is not None
+                         else props_mod._slots_for(date)))
+
+    registered = [c for c in built["contracts"]
+                  if c.get("market") in daily_card.PROP_MARKETS]
+    registered.sort(key=lambda c: (str(c.get("player") or ""),
+                                   str(c.get("market") or ""),
+                                   str(c.get("line") or ""),
+                                   str(c.get("side") or "")))
+    return {
+        "date": date,
+        "contracts": [props_mod._public(c) for c in registered],
+        "long_shots": [],
+        "counts": propboard.summarise(built),
+        "reason": None if registered else (
+            "no registered prop contracts are priced for this slate yet"),
+        "enumeration": ENUMERATION_ID_PROPS,
+    }
+
+
 def gate_census(candidates: Sequence, *, now: datetime,
                 params: best_bets_card.RuleParams) -> list:
     """Per-candidate gate outcome, for candidates `select` throws away.
@@ -254,7 +332,7 @@ def card_v2_for_date_shadow(entries: Sequence, opportunity_rows: Sequence, *,
                             frozen: Optional[Mapping] = None,
                             prior: Optional[Mapping] = None,
                             multibook_rows=None, prop_board=None,
-                            event_map=None) -> dict:
+                            event_map=None, enumerate_props: bool = False) -> dict:
     """`card_v2.card_v2_for_date`'s payload with both moneyline sides.
 
     Deliberately a copy of that function's post-`select` assembly rather
@@ -270,6 +348,14 @@ def card_v2_for_date_shadow(entries: Sequence, opportunity_rows: Sequence, *,
     game_candidates, game_pool, not_built = build_game_candidates(
         entries, opportunity_rows, date=date, now=now, frozen=frozen,
         multibook_rows=multibook_rows)
+
+    # OFF BY DEFAULT. With `enumerate_props=False` this call is byte-for-byte
+    # the moneyline arm that is already collecting a forward record, and its
+    # prop pool is the registered one-sided board. Turning it on is a
+    # DIFFERENT arm with its own id -- never a mid-sample change to the
+    # arm above.
+    if enumerate_props and prop_board is None:
+        prop_board = both_sides_prop_board
     prop_candidates, prop_pool = card_v2._build_prop_candidates(
         entries, date=date, now=now, prop_board=prop_board,
         event_map=event_map)
@@ -295,7 +381,10 @@ def card_v2_for_date_shadow(entries: Sequence, opportunity_rows: Sequence, *,
         # id because the RULE is unchanged -- only the candidate set differs
         # -- and a reader who sees this payload must be able to tell that
         # apart from a published V2 card at a glance.
-        "enumeration": ENUMERATION_ID,
+        "enumeration": (
+            f"{ENUMERATION_ID}+{ENUMERATION_ID_PROPS}" if enumerate_props
+            else ENUMERATION_ID),
+        "enumerate_props": enumerate_props,
         "shadow": True,
         "sides_not_built": not_built,
         "gate_census": gate_census(candidates, now=now, params=params),

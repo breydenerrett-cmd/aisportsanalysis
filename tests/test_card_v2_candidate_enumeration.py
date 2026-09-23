@@ -684,5 +684,93 @@ class GatesStillRunAfterEnumeration(unittest.TestCase):
         self.assertEqual(best_bets_card.V2.rule_id, payload["rule"])
 
 
+# ---------------------------------------------------------------------------
+# 6. The prop arm. A SEPARATE arm, and the moneyline arm must not move.
+# ---------------------------------------------------------------------------
+
+def _contract(player, side, *, probability, price, market="batter_hits",
+              line=0.5):
+    """A propboard-shaped contract, both sides of which are complementary."""
+    return {
+        "player": player, "market": market, "line": line, "side": side,
+        "probability": probability, "market_probability": 0.5,
+        "breakeven": 0.5, "price": price, "books": 4,
+        "observed_utc": NOW.isoformat(), "season_games": 120,
+        "expected_pa_source": "batting_slot", "event_id": "E1",
+    }
+
+
+class PropArmIsSeparate(unittest.TestCase):
+
+    def test_the_moneyline_arm_is_unchanged_when_props_are_off(self):
+        """The arm already collecting a forward record must be byte-identical
+        with the prop capability present. Folding props into it would change
+        what that arm measures halfway through its own sample."""
+        entries, rows, frozen = _slate(1, our_home=0.47)
+        off = shadow.card_v2_for_date_shadow(
+            entries, rows, date="2026-09-20", now=NOW, frozen=frozen,
+            prop_board=_no_props, event_map={})
+        self.assertEqual(shadow.ENUMERATION_ID, off["enumeration"])
+        self.assertFalse(off["enumerate_props"])
+
+    def test_turning_props_on_gives_the_run_its_own_identity(self):
+        entries, rows, frozen = _slate(1, our_home=0.47)
+        on = shadow.card_v2_for_date_shadow(
+            entries, rows, date="2026-09-20", now=NOW, frozen=frozen,
+            prop_board=_no_props, event_map={}, enumerate_props=True)
+        self.assertIn(shadow.ENUMERATION_ID_PROPS, on["enumeration"])
+        self.assertTrue(on["enumerate_props"])
+        self.assertNotEqual(shadow.ENUMERATION_ID, on["enumeration"])
+
+    def test_an_explicit_prop_board_is_never_overridden(self):
+        """A caller that injects its own board -- every test in this repo --
+        keeps it even with the prop arm on."""
+        entries, rows, frozen = _slate(1, our_home=0.47)
+        on = shadow.card_v2_for_date_shadow(
+            entries, rows, date="2026-09-20", now=NOW, frozen=frozen,
+            prop_board=_no_props, event_map={}, enumerate_props=True)
+        self.assertEqual(0, on["raw_pool_size"] - 2)
+
+
+class BothSidesPropBoard(unittest.TestCase):
+    """`both_sides_prop_board` against `propboard.most_likely`'s own rule."""
+
+    def test_the_under_side_is_what_the_live_filter_discards(self):
+        """The defect, stated as arithmetic rather than asserted.
+
+        The two sides of a contract are complementary, so exactly one of
+        them can exceed 0.50. `most_likely` keeps only that one, which is
+        why the under side of every contract is invisible to V2.
+        """
+        from src.analysis import propboard
+
+        contracts = [
+            _contract("A", "Over", probability=0.62, price=-140),
+            _contract("A", "Under", probability=0.38, price=115),
+            _contract("B", "Over", probability=0.44, price=120),
+            _contract("B", "Under", probability=0.56, price=-135),
+        ]
+        kept = propboard.most_likely(contracts)
+        self.assertEqual(2, len(kept))
+        self.assertEqual({("A", "Over"), ("B", "Under")},
+                         {(c["player"], c["side"]) for c in kept})
+        # Both discarded sides carry a real price and a real probability --
+        # they are not missing data, they are filtered data.
+        discarded = [c for c in contracts if c not in kept]
+        self.assertEqual(2, len(discarded))
+        for c in discarded:
+            self.assertIsNotNone(c["price"])
+            self.assertGreater(c["probability"], 0.0)
+
+    def test_only_the_registered_markets_are_enumerated(self):
+        """Section 2 registers batter_hits and batter_total_bases. Home runs
+        are not registered, and no book quotes their under anyway."""
+        from src.analysis import daily_card as dc
+
+        self.assertEqual(("batter_hits", "batter_total_bases"),
+                         dc.PROP_MARKETS)
+        self.assertNotIn("batter_home_runs", dc.PROP_MARKETS)
+
+
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()
