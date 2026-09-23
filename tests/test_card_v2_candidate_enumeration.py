@@ -327,16 +327,30 @@ class RegisteredFilesAreUntouched(unittest.TestCase):
                     bad.append(f"from {node.module} import ...")
         self.assertEqual([], bad)
 
-    def test_nothing_in_the_publish_path_imports_the_shadow_module(self):
+    def test_only_the_authorised_runner_imports_the_shadow_module(self):
         """Shadow-first, enforced by the import graph rather than a flag.
 
         A default-off flag inside the published module is a promise; an
         import that does not exist is a fact. `src/`, `api/` and `scripts/`
         are every path a scheduled publish or a served request can run
         through.
+
+        ALLOWED, deliberately, since 2026-09-22: the forward shadow runner
+        `scripts/shadow_enumeration_run.py`. Forbidding every caller would
+        forbid measuring the thing, which is the opposite of the point. The
+        rule is an allow-list of one, not a ban -- so a NEW importer still
+        fails this test and has to be argued for, while the authorised
+        runner does not have to fight it.
+
+        What the allow-list does NOT permit: the runner is not a publisher.
+        `test_the_runner_publishes_nothing` below is what holds that line.
         """
         import os
 
+        allowed = {
+            os.path.normpath("src/analysis/card_v2_enum_shadow.py"),
+            os.path.normpath("scripts/shadow_enumeration_run.py"),
+        }
         offenders = []
         for root_dir in ("src", "api", "scripts"):
             for dirpath, _dirnames, filenames in os.walk(root_dir):
@@ -346,13 +360,40 @@ class RegisteredFilesAreUntouched(unittest.TestCase):
                     if not name.endswith(".py"):
                         continue
                     path = os.path.join(dirpath, name)
-                    if os.path.abspath(path) == os.path.abspath(
-                            "src/analysis/card_v2_enum_shadow.py"):
+                    if os.path.normpath(path) in allowed:
                         continue
                     with open(path, encoding="utf-8") as fh:
                         if "card_v2_enum_shadow" in fh.read():
                             offenders.append(path)
         self.assertEqual([], offenders)
+
+    def test_the_runner_publishes_nothing(self):
+        """The allow-list buys the runner an import, not a publish.
+
+        Parsed rather than grepped: the file's prose explains at length that
+        it never publishes, so a substring search would fail on its own
+        documentation.
+        """
+        import ast
+
+        with open("scripts/shadow_enumeration_run.py", encoding="utf-8") as fh:
+            tree = ast.parse(fh.read())
+
+        banned_attrs = {"publish", "publish_v2", "publish_all",
+                        "write_logs", "append_row"}
+        bad = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call) and isinstance(node.func,
+                                                         ast.Attribute):
+                if node.func.attr in banned_attrs:
+                    bad.append(f"call .{node.func.attr}()")
+        self.assertEqual([], bad)
+
+        # And it may only write inside its own evidence directory.
+        with open("scripts/shadow_enumeration_run.py", encoding="utf-8") as fh:
+            source = fh.read()
+        self.assertIn('OUT_DIR = os.path.join("evidence", '
+                      '"shadow_enumeration")', source)
 
 
 # ---------------------------------------------------------------------------
