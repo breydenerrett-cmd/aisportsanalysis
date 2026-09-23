@@ -522,6 +522,108 @@ def rotate(path: Path | str, *, keep_days: int, now: datetime,
     return report
 
 
+def snapshot_full(path: Path | str, *, now: datetime) -> dict:
+    """Copy the WHOLE current hot file into a new archive segment, unchanged,
+    leaving the hot file itself untouched.
+
+    `rotate` (above) assumes its input is an append-only log where row N's
+    stamp is never later than row N+1's, so it can archive a linear PREFIX
+    and trim the hot file down to the remaining suffix. Not every store this
+    project caches looks like that: `src/pipeline/pitchers.py`'s
+    `pitcher_logs.jsonl` is grouped by person_id (ascending) and only sorted
+    by date WITHIN one person, so there is no whole-file prefix `rotate`
+    could archive, and -- unlike odds_multibook -- the whole file is REWRITTEN
+    on every `write_logs` call rather than appended to. Added 2026-09-22 for
+    exactly that store, so a run that is about to call `write_logs` (and
+    therefore fully replace whatever is on disk) has a durable, verified copy
+    of what was there immediately before, reusing this module's directory
+    layout, gzip determinism, and byte-identity proof rather than inventing a
+    second archiving mechanism.
+
+    No-op (`{"snapshotted": False, "reason": ...}`, touches nothing) when the
+    hot file is absent or empty -- there is nothing to lose in that case.
+
+    The segment name still follows `_SEGMENT_NAME_RE` (`NNNN_<first>_<last>
+    .jsonl.gz`) so it sorts and is recognised the same way a `rotate` segment
+    is, but both dates are `now.date()`: this is a POINT-IN-TIME COPY of
+    whatever the file held at snapshot time, not an archive of rows dated in
+    that range the way a `rotate` segment's name would imply for
+    odds_multibook.
+
+    Verified the same way `rotate` verifies its own prefix: the temp segment
+    is decompressed and sha256'd against the original hot bytes BEFORE the
+    segment is made durable (`os.replace`); a mismatch raises
+    `StoreArchiveError` and leaves the archive directory exactly as it was.
+    The hot file is never opened for writing here at all, so there is no
+    rollback path to speak of -- either the copy is proven byte-identical and
+    made durable, or nothing durable exists yet.
+
+    Calling this twice in the same UTC day for the same store produces two
+    distinct segments (the sequence number, not the date pair, disambiguates
+    them) -- no `label` parameter is offered because the one caller this was
+    built for (`pitchers.build_log_store`) runs at most once per invocation,
+    and every segment name must stay conformant with `_SEGMENT_NAME_RE` so
+    `segments()`'s own next-sequence-number scan keeps seeing it.
+    """
+    path = Path(path)
+    report: dict = {
+        "path": str(path), "snapshotted": False, "segment": None,
+        "bytes": 0,
+    }
+    if not path.exists():
+        report["reason"] = "hot file does not exist -- nothing to snapshot"
+        return report
+
+    original = path.read_bytes()
+    if not original:
+        report["reason"] = "hot file is empty -- nothing to snapshot"
+        return report
+
+    now_utc = now.astimezone(timezone.utc) if now.tzinfo is not None else now
+    stamp = now_utc.date().isoformat()
+
+    seg_dir = segment_dir(path)
+    seg_dir.mkdir(parents=True, exist_ok=True)
+    existing_seqs = [int(_SEGMENT_NAME_RE.match(p.name)["seq"])
+                      for p in segments(path)]
+    next_seq = max(existing_seqs, default=0) + 1
+    segment_name = f"{next_seq:04d}_{stamp}_{stamp}.jsonl.gz"
+    segment_path = seg_dir / segment_name
+    if segment_path.exists():
+        raise StoreArchiveError(
+            f"snapshot_full refusing to overwrite existing segment "
+            f"{segment_path} -- archive directory left untouched")
+
+    fd, tmp_name = tempfile.mkstemp(dir=str(seg_dir), suffix=".tmp")
+    os.close(fd)
+    tmp_path = Path(tmp_name)
+    try:
+        with open(tmp_path, "wb") as raw:
+            with gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as gz:
+                gz.write(original)
+
+        with gzip.open(tmp_path, "rb") as check:
+            decompressed = check.read()
+        if hashlib.sha256(decompressed).hexdigest() != hashlib.sha256(original).hexdigest():
+            raise StoreArchiveError(
+                f"snapshot_full verification failed for {path}: decompressed "
+                f"copy does not match the original bytes -- refusing, hot "
+                f"file and archive directory left untouched")
+
+        os.replace(tmp_path, segment_path)
+    except Exception:
+        if tmp_path.exists():
+            tmp_path.unlink()
+        raise
+
+    report.update({
+        "snapshotted": True,
+        "segment": str(segment_path),
+        "bytes": len(original),
+    })
+    return report
+
+
 # ---------------------------------------------------------------------------
 # The registry `src.cli`'s `store rotate` command drives. Starting with just
 # odds_multibook (the store that is actually over GitHub's limit right now)

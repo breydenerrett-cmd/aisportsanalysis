@@ -220,9 +220,16 @@ from src.pipeline import history, pitchers
 
 store = history.read_results()
 ids = pitchers.probable_pitcher_ids(store)
-report = pitchers.build_log_store(ids, "$SEASON")
+# refresh=True: $SEASON is the current, still-accruing season here too (this
+# branch only runs on a cold/empty store, but the daily loop's own
+# do_pitchers step reruns against this same store every day after -- see
+# src/cli.py's do_pitchers docstring comment for the 2026-09-22 defect this
+# matches semantics with).
+report = pitchers.build_log_store(ids, "$SEASON", refresh=True,
+                                  max_refetch_per_run=400)
 print(f"  pitcher logs: {report['processed']} fetched, "
-      f"{report['pitchers_in_store']} in store, {len(report.get('errors') or [])} error(s)")
+      f"{report['pitchers_in_store']} in store, {len(report.get('errors') or [])} error(s), "
+      f"{report.get('deferred_by_budget', 0)} deferred by budget")
 PYEOF
 else
     echo "  pitcher logs present -- daily_loop.sh's own refresh step will keep it current"

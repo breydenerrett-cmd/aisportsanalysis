@@ -2042,10 +2042,20 @@ def cmd_daily(args) -> int:
         from src.pipeline import history, pitchers
         store = history.read_results()
         ids = pitchers.probable_pitcher_ids(store)
-        report = pitchers.build_log_store(ids, today[:4])
+        # refresh=True: this is the CURRENT, still-accruing season, not a
+        # closed backfill -- plain resume=True (the old, unqualified call
+        # here) skips a pitcher forever the moment ANY row for this season
+        # is cached, which is the "0 pitchers fetched" defect fixed
+        # 2026-09-22 (see build_log_store's docstring). max_refetch_per_run
+        # is a runaway guard, not a routine throttle: a season runs
+        # ~150-250 distinct starters (scripts/daily_bootstrap.sh), so 400
+        # covers a full one-time catch-up in one run with headroom.
+        report = pitchers.build_log_store(ids, today[:4], refresh=True,
+                                          max_refetch_per_run=400)
         print(f"      {report['processed']} pitcher(s) fetched, "
               f"{report['pitchers_in_store']} in store, "
-              f"{report['appearances']} appearances")
+              f"{report['appearances']} appearances, "
+              f"{report.get('deferred_by_budget', 0)} deferred by budget")
 
     def do_pen():
         from src.pipeline import bullpen
