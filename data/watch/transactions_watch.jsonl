@@ -1587,3 +1587,93 @@
 {"fetched_utc": "2026-09-22T21:34:00.913720+00:00", "game_date": "2026-09-22", "poll": true}
 {"category": "other", "date": "2026-09-22", "first_seen_utc": "2026-09-22T21:34:00.913720+00:00", "player": "Jorge Barrosa", "player_id": 678489, "team": "HOU", "transaction_id": 943689}
 {"fetched_utc": "2026-09-22T21:34:02.909921+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-22T22:28:51.998639+00:00", "game_date": "2026-09-22", "poll": true}
+{"category": "other", "date": "2026-09-22", "first_seen_utc": "2026-09-22T22:28:51.998639+00:00", "player": "Jorge Barrosa", "player_id": 678489, "team": "HOU", "transaction_id": 943691}
+{"category": "other", "date": "2026-09-22", "first_seen_utc": "2026-09-22T22:28:51.998639+00:00", "player": "Jake Fraley", "player_id": 641584, "team": "TB", "transaction_id": 943692}
+{"category": "other", "date": "2026-09-22", "first_seen_utc": "2026-09-22T22:28:51.998639+00:00", "player": "Vimael Mach\u00edn", "player_id": 605353, "team": "COL", "transaction_id": 943693}
+{"category": "other", "date": "2026-09-22", "first_seen_utc": "2026-09-22T22:28:51.998639+00:00", "player": "Ryan Ward", "player_id": 669899, "team": "LAD", "transaction_id": 943694}
+{"category": "recalled", "date": "2026-09-22", "first_seen_utc": "2026-09-22T22:28:51.998639+00:00", "player": "Braxton Roxby", "player_id": 694820, "team": "SF", "transaction_id": 943695}
+{"category": "il_placement", "date": "2026-09-22", "first_seen_utc": "2026-09-22T22:28:51.998639+00:00", "player": "Blade Tidwell", "player_id": 694918, "team": "SF", "transaction_id": 943696}
+{"fetched_utc": "2026-09-22T22:28:53.436837+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-22T23:10:31.964145+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-22T23:10:33.469056+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-23T00:11:01.927360+00:00", "game_date": "2026-09-22", "poll": true}
+{"category": "il_placement", "date": "2026-09-19", "first_seen_utc": "2026-09-23T00:11:01.927360+00:00", "player": "Joc Pederson", "player_id": 592626, "team": "TEX", "transaction_id": 943699}
+{"category": "il_activation", "date": "2026-09-22", "first_seen_utc": "2026-09-23T00:11:01.927360+00:00", "player": "Michael Helman", "player_id": 680737, "team": "TEX", "transaction_id": 943700}
+{"category": "il_transfer", "date": "2026-09-22", "first_seen_utc": "2026-09-23T00:11:01.927360+00:00", "player": "Cal Quantrill", "player_id": 615698, "team": "TEX", "transaction_id": 943701}
+{"fetched_utc": "2026-09-23T00:11:03.015528+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-23T00:13:57.897110+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-23T00:26:34.977889+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-23T00:51:03.458776+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-23T00:53:46.227937+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-23T01:22:40.326865+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-23T01:22:41.849496+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-23T02:15:01.528434+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-23T02:23:40.914602+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-23T02:38:38.138313+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-23T02:49:51.975600+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-23T03:02:40.865555+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-23T03:02:42.577458+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-23T03:15:43.126718+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-23T03:28:40.112557+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-23T03:41:43.869315+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-23T03:54:23.439748+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-23T04:07:42.128552+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T04:07:43.828562+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T04:20:45.008844+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T04:33:45.960377+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T04:46:28.576107+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T04:59:45.369152+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T05:12:54.623593+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T05:12:56.880116+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T05:25:51.186300+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T05:38:47.078662+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T05:52:19.544456+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T06:04:24.533797+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T06:04:26.603512+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T06:17:46.997618+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T06:30:38.625678+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T06:43:49.539252+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T06:57:23.706998+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T07:09:16.499639+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T07:09:18.536036+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T07:22:53.358191+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T07:26:22.711526+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T07:35:49.898228+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T07:48:42.480804+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T08:01:33.513421+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T08:01:35.354577+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T08:14:51.649719+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T08:27:45.442439+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T08:40:55.616153+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T08:53:35.462244+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T09:06:39.748662+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T09:06:41.870222+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T09:19:33.187489+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T09:32:41.667514+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T09:45:49.787651+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T09:59:24.751140+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T10:11:57.761744+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T10:11:59.937075+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T10:36:30.690137+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T10:39:56.347600+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T10:50:45.330515+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T11:03:54.061295+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T11:03:56.488005+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T11:17:00.579169+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T11:30:02.052713+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T11:43:11.950590+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T11:55:42.986200+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T12:08:52.946260+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T12:08:54.801870+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T12:21:40.146055+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T12:34:51.017299+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T12:47:54.792067+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T12:55:42.482364+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T13:00:58.369536+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T13:01:00.234255+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T13:13:55.373175+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T13:13:57.670853+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T13:27:12.730154+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T13:39:59.562147+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T13:52:14.455585+00:00", "game_date": "2026-09-23", "poll": true}
