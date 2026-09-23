@@ -83,11 +83,49 @@ def _slate_pitchers(results: dict, target_date: str) -> list:
         for key in ("away_probable_id", "home_probable_id"):
             pid = row.get(key)
             if pid not in (None, ""):
-                entries.append((str(pid), row.get("game_pk")))
+                entries.append((str(pid), row.get("game_pk"),
+                                row.get("start_time_utc")))
                 saw_one = True
         if not saw_one:
             source_gaps += 1
     return entries, source_gaps
+
+
+# A nine-inning game runs about three hours. Six is a deliberately generous
+# upper bound covering extra innings and rain delays: after it, a game that
+# started at `start_time_utc` is certainly final.
+GAME_LENGTH_UPPER_BOUND_HOURS = 6.0
+
+
+def _game_certainly_final_at(start_time_utc, target_date: str):
+    """The instant after which this game is certainly over.
+
+    From the game's OWN start time when the results row carries one --
+    every real row does, `start_time_utc` being a column of
+    `mlb_results.csv`.
+
+    The fallback, for a row without one, is midnight UTC the day after the
+    slate date. That is deliberately the SAME boundary the old calendar-day
+    string comparison drew: with no start time there is no better
+    information, and moving the line without it would trade a known
+    behaviour for a guess. The correction applies where the evidence to
+    correct it exists.
+    """
+    parsed = _parse_utc(start_time_utc)
+    if parsed is not None:
+        return parsed + timedelta(hours=GAME_LENGTH_UPPER_BOUND_HOURS)
+    return datetime.fromisoformat(target_date).replace(
+        tzinfo=timezone.utc) + timedelta(days=1)
+
+
+def _parse_utc(value):
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
 
 
 def audit(results: dict, logs: dict, target_date: str, now: datetime) -> dict:
@@ -100,7 +138,7 @@ def audit(results: dict, logs: dict, target_date: str, now: datetime) -> dict:
     entries, source_gaps = _slate_pitchers(results, target_date)
     seen = set()
     rows = []
-    for pid, game_pk in entries:
+    for pid, game_pk, start_time_utc in entries:
         if pid in seen:
             continue
         seen.add(pid)
@@ -109,7 +147,25 @@ def audit(results: dict, logs: dict, target_date: str, now: datetime) -> dict:
         restored_copy_ok = bool(existing)
         marker = pitchers.coverage_marker(existing, season)
         checked_utc = marker.get("checked_utc") if marker else None
-        checked_after_game = bool(checked_utc) and str(checked_utc)[:10] > target_date
+        # CORRECTED 2026-09-23. This was
+        #     str(checked_utc)[:10] > target_date
+        # -- a calendar-day STRING comparison, wrong in both directions.
+        #
+        # Too lenient, and this is the one that matters: a refresh that ran
+        # at 23:50Z on the game's own day, minutes after an afternoon game
+        # went final, compared equal rather than greater, so a KNOWN-missing
+        # completed appearance was reported PENDING and the audit exited 0
+        # calling it healthy. That is exactly the "must not label coverage
+        # healthy" condition this script exists to enforce.
+        #
+        # Too strict the other way: a check at 00:05Z counted as "after" a
+        # 23:05Z night game that was still in the fourth inning.
+        #
+        # Both go away by comparing real timestamps against the instant the
+        # game is certainly over, taken from the game's own start time.
+        checked_dt = _parse_utc(checked_utc)
+        final_at = _game_certainly_final_at(start_time_utc, target_date)
+        checked_after_game = checked_dt is not None and checked_dt >= final_at
 
         real_appearance = any(
             a.get("date") == target_date and not a.get("empty") for a in existing)

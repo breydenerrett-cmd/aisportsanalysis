@@ -140,5 +140,72 @@ class TestMainExitCodes(unittest.TestCase):
         self.assertFalse(findings)
 
 
+class TestCheckedAfterGameUsesRealTimestamps(unittest.TestCase):
+    """The boundary the calendar-day string comparison got wrong.
+
+    `checked_after_game` used to be `str(checked_utc)[:10] > target_date`.
+    That is a comparison of DATE STRINGS, and it failed in both directions.
+    The dangerous direction is the first test below: a refresh that ran
+    minutes after an afternoon game went final, on the game's own calendar
+    day, compared equal rather than greater -- so a completed appearance
+    that was KNOWN to be missing came back PENDING and the audit exited 0
+    reporting healthy coverage. That is precisely what this script exists to
+    prevent, and it is now decided by real timestamps against the instant
+    the game is certainly over, derived from the game's own start time.
+    """
+
+    def _game(self, start_time_utc):
+        row = _final_game("1", TARGET, "100", "999")
+        row["start_time_utc"] = start_time_utc
+        return {"1": row}
+
+    def test_a_same_day_check_after_an_afternoon_game_is_not_healthy(self):
+        # First pitch 17:10Z, so certainly final by 23:10Z. The refresh ran
+        # at 23:50Z the SAME calendar day and did not bring the appearance.
+        results = self._game("2026-09-10T17:10:00Z")
+        logs = {"100": [_appearance("100", "2026-09-04"),
+                        _marker("100", "2026",
+                                checked_utc="2026-09-10T23:50:00+00:00")]}
+        result = plfa.audit(results, logs, TARGET, NOW)
+        row = [r for r in result["rows"] if r["person_id"] == "100"][0]
+        self.assertTrue(row["checked_after_game"])
+        self.assertEqual("MISSING_AFTER_REFRESH", row["status"])
+
+    def test_a_check_during_a_night_game_is_still_pending(self):
+        # First pitch 23:05Z, so not certainly final until 05:05Z next day.
+        # A check at 00:05Z is on a LATER calendar day -- which the old
+        # string rule counted as "after the game" and escalated -- but the
+        # game was still in progress, so nothing is yet known missing.
+        results = self._game("2026-09-10T23:05:00Z")
+        logs = {"100": [_appearance("100", "2026-09-04"),
+                        _marker("100", "2026",
+                                checked_utc="2026-09-11T00:05:00+00:00")]}
+        result = plfa.audit(results, logs, TARGET, NOW)
+        row = [r for r in result["rows"] if r["person_id"] == "100"][0]
+        self.assertFalse(row["checked_after_game"])
+        self.assertEqual("PENDING", row["status"])
+
+    def test_a_missing_start_time_keeps_the_old_midnight_boundary(self):
+        # No start time means no better information than the calendar-day
+        # rule had, so the boundary stays where it was rather than moving on
+        # a guess. The correction applies where the evidence exists.
+        results = {"1": _final_game("1", TARGET, "100", "999")}
+        logs = {"100": [_appearance("100", "2026-09-04"),
+                        _marker("100", "2026",
+                                checked_utc="2026-09-11T00:30:00+00:00")]}
+        result = plfa.audit(results, logs, TARGET, NOW)
+        row = [r for r in result["rows"] if r["person_id"] == "100"][0]
+        self.assertTrue(row["checked_after_game"])
+        self.assertEqual("MISSING_AFTER_REFRESH", row["status"])
+
+    def test_an_unparseable_checked_utc_never_certifies_coverage(self):
+        results = self._game("2026-09-10T17:10:00Z")
+        logs = {"100": [_appearance("100", "2026-09-04"),
+                        _marker("100", "2026", checked_utc="not a timestamp")]}
+        result = plfa.audit(results, logs, TARGET, NOW)
+        row = [r for r in result["rows"] if r["person_id"] == "100"][0]
+        self.assertFalse(row["checked_after_game"])
+
+
 if __name__ == "__main__":
     unittest.main()
