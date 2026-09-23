@@ -1692,3 +1692,7 @@
 {"fetched_utc": "2026-09-23T17:02:07.369447+00:00", "game_date": "2026-09-23", "poll": true}
 {"fetched_utc": "2026-09-23T18:01:01.860476+00:00", "game_date": "2026-09-23", "poll": true}
 {"fetched_utc": "2026-09-23T18:01:03.365902+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T19:02:41.513968+00:00", "game_date": "2026-09-23", "poll": true}
+{"category": "other", "date": "2026-09-23", "first_seen_utc": "2026-09-23T19:02:41.513968+00:00", "player": "Lyon Richardson", "player_id": 680689, "team": "MIL", "transaction_id": 943750}
+{"category": "optioned", "date": "2026-09-23", "first_seen_utc": "2026-09-23T19:02:41.513968+00:00", "player": "Colton Gordon", "player_id": 676467, "team": "MIL", "transaction_id": 943751}
+{"fetched_utc": "2026-09-23T19:02:43.431955+00:00", "game_date": "2026-09-23", "poll": true}
