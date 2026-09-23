@@ -432,11 +432,46 @@ class CeilingCountsFillsInvariant(unittest.TestCase):
         self.assertLessEqual(len(merged), bbc.V2.ceiling)
         self.assertEqual(len(merged) + len(refused), 15)
 
-    def test_locked_entries_are_never_refused_by_the_ceiling(self):
-        merged = self._mixed_entries(n_locked_picks=12, n_fresh_picks=2, n_fresh_fills=1)
+    def test_being_locked_does_not_exempt_an_entry_from_the_ceiling(self):
+        """REPLACES `test_locked_entries_are_never_refused_by_the_ceiling`
+        (2026-09-23, owner ruling "restore the existing ten-entry limit").
+
+        That test asserted the exemption -- 12 locked entries all kept, only
+        the 3 unlocked ones refused -- and passed, while the behaviour it
+        was pinning is what let real cards reach 12, 13 and 14 entries
+        against a cap of 10 on 2026-09-22. An entry locks at its own first
+        pitch and is carried forward, so exempting locked entries meant the
+        cap dissolved as the day went on.
+
+        The exemption was never what the owner granted. His answer of
+        2026-09-16 about 00:45Z caps the card at ten listed bets and accepts
+        that "an eleventh entry that passed every gate is refused a slot
+        rather than a published fill being withdrawn" -- a rule about
+        ADMISSION, not about locks. What is protected is an entry a reader
+        has ALREADY BEEN SHOWN, which is a different property, tested below
+        and through the real publisher in
+        `tests/test_card_ledger_ceiling_admission.py`.
+        """
+        merged = self._mixed_entries(n_locked_picks=12, n_fresh_picks=2,
+                                     n_fresh_fills=1)
         refused = cl._apply_ceiling_v2(merged, bbc.V2)
+        self.assertEqual(bbc.V2.ceiling, len(merged))
+        self.assertEqual(5, len(refused))
+
+    def test_an_already_published_entry_keeps_its_slot(self):
+        """The property that actually protects a reader's bet: it was
+        published, not that it happens to be locked."""
+        merged = self._mixed_entries(n_locked_picks=12, n_fresh_picks=2,
+                                     n_fresh_fills=1)
+        published = frozenset(
+            cl._v2_entry_key(e) for e in merged if e.get("locked"))
+        refused = cl._apply_ceiling_v2(merged, bbc.V2,
+                                       already_published_keys=published)
+        # All twelve stay, over the ceiling, because none may be withdrawn;
+        # the three newcomers are refused admission instead.
+        self.assertEqual(12, len(merged))
         self.assertTrue(all(e.get("locked") for e in merged))
-        self.assertEqual(len(refused), 3)
+        self.assertEqual(3, len(refused))
 
 
 class PlusMoneySubcapInvariant(unittest.TestCase):

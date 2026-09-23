@@ -67,8 +67,21 @@ FUTURE = "2026-09-20T23:05:00Z"
 # registered file.
 V2_CONTENT_FINGERPRINT = (
     "a6957bc3851f412c84d76d9f638153c0566e47d252da75796376c83a8f15f3bf")
+
+# CHANGED 2026-09-23, deliberately and on the owner's ruling. The ceiling
+# correction edits `src/appstate/card_ledger.py`, which is a member of
+# V1_FINGERPRINT_FILES, so the V1 content fingerprint moves from
+# 1d79e1ba9038dac0bc43af784a86a13c1a19e80daeca82723bb6533243bacd2b
+# to the value below. Registration section 16 permits exactly this entry --
+# "a recorded change to the v1_code_fingerprint under 11.6, which qualifies
+# the V1 comparison and changes no V2 number" -- and it is recorded there.
+#
+# `card_ledger.py` is NOT in V2_FINGERPRINT_FILES, so V2's own
+# code_fingerprint is untouched and V2's counted sample does NOT restart.
+# That is why the V2 constant above is unchanged, and why these two are
+# asserted separately rather than as one "nothing moved" check.
 V1_CONTENT_FINGERPRINT = (
-    "1d79e1ba9038dac0bc43af784a86a13c1a19e80daeca82723bb6533243bacd2b")
+    "ea858a545afbd2ecd981a951841cb537fb32bfcc085f8d3deecbdeafa3f793d7")
 
 
 def _content_fingerprint(paths) -> str:

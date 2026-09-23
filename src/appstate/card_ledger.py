@@ -2090,21 +2090,78 @@ def _apply_plus_money_subcap_v2(merged: list, params) -> list:
     return drop
 
 
-def _apply_ceiling_v2(merged: list, params) -> list:
-    """G12 at the ledger level, counting PICKS AND FILLS TOGETHER -- the
-    owner's 2026-09-16 answer (best_bets_card.RuleParams.ceiling's own
-    docstring). Locked entries are never refused (a lock is a lock); the
-    lowest-scored unlocked picks, then unlocked fills, beyond the room a
-    locked entry leaves are moved out of merged and returned as
-    ceiling_refused, mirroring select()'s own field of that name."""
-    locked_shown = [e for e in merged if e.get("locked")]
-    unlocked_picks = [e for e in merged
-                      if not e.get("locked") and e.get("entry_class") == "pick"]
-    unlocked_fills = [e for e in merged
-                      if not e.get("locked") and e.get("entry_class") == "fill"]
-    unlocked_picks.sort(key=lambda e: -(e.get("score") or 0.0))
-    room = max(0, params.ceiling - len(locked_shown))
-    candidates = unlocked_picks + unlocked_fills
+# Which ceiling rule produced a row. Stamped on every V2 publish so a row
+# can never be read under the wrong one, and so the change is identifiable
+# separately from the candidate-enumeration and data-refresh work.
+CEILING_ADMISSION_VERSION = "v2_admission_2026_09_23"
+
+
+def _apply_ceiling_v2(merged: list, params, *,
+                      already_published_keys=frozenset()) -> list:
+    """G12 at the ledger level, applied at ADMISSION.
+
+    Counts PICKS AND FILLS TOGETHER -- the owner's 2026-09-16 about 00:45Z
+    answer, which caps the card at "10 listed bets in total" and accepts the
+    cost section 16 records with it: "an eleventh entry that passed every
+    gate is refused a slot rather than a published fill being withdrawn."
+
+    WHAT THIS REPLACED, AND WHY (2026-09-23)
+    ----------------------------------------
+    The previous version gave room to locked entries:
+
+        locked_shown = [e for e in merged if e.get("locked")]
+        room = max(0, params.ceiling - len(locked_shown))
+
+    An entry locks at its own first pitch and is carried forward on every
+    later publish, so across a day the locked set grew, `room` fell to zero,
+    nothing unlocked was left to refuse, and the card grew past the cap. On
+    2026-09-22 three of seven publishes listed 12, 13 and 14 entries against
+    a cap of 10 (docs/CARD_V2_IMPLEMENTATION_ERRATUM_2026-09-22.md, E5).
+
+    The breach is not the lock. It is admitting an eleventh entry to a card
+    that already holds ten -- an entry never admitted never locks. So the
+    cap is applied HERE, on what is new this run, and a locked arrival gets
+    no privilege it did not already earn by being published.
+
+    THE RULES, IN THE OWNER'S OWN TERMS (2026-09-22 ruling)
+    ------------------------------------------------------
+    * An entry a reader has ALREADY been shown keeps its slot. It is never
+      removed to make room, and this function can only refuse admission --
+      it never withdraws a published selection.
+    * A NEW entry cannot bypass the cap by arriving already locked or by
+      being carried forward: admission looks at whether the entry was
+      previously PUBLISHED, not at its lock flag.
+    * If a day's card already exceeds the ceiling -- which three historical
+      2026-09-22 rows do -- every one of those entries is preserved and
+      `room` is zero, so no further entry is admitted. History is not
+      rewritten to look compliant.
+    * A clean slate gets the ordinary ten-entry rule.
+
+    `already_published_keys` is the key set of the PRIOR row's `all_bets`.
+    An empty set means a first publish, where every entry is new and the
+    plain cap applies.
+
+    `src/appstate/ceiling_admission.py` holds the same rule as a standalone,
+    testable helper used by scripts/ceiling_reconciliation.py. The logic is
+    duplicated here ON PURPOSE: this file is inside `V1_FINGERPRINT_FILES`
+    and that one is not, so a rule that decides what gets published has to
+    live where the fingerprint can see it.
+    `tests/test_card_ledger_ceiling_admission.py` asserts the two agree, so
+    the duplication cannot drift unnoticed.
+    """
+    already, new_entries = [], []
+    for entry in merged:
+        if _v2_entry_key(entry) in already_published_keys:
+            already.append(entry)
+        else:
+            new_entries.append(entry)
+
+    new_picks = [e for e in new_entries if e.get("entry_class") == "pick"]
+    new_fills = [e for e in new_entries if e.get("entry_class") == "fill"]
+    new_picks.sort(key=lambda e: -(e.get("score") or 0.0))
+
+    room = max(0, params.ceiling - len(already))
+    candidates = new_picks + new_fills
     keep_ids = {id(e) for e in candidates[:room]}
     refused = [e for e in candidates if id(e) not in keep_ids]
     if refused:
@@ -2115,7 +2172,8 @@ def _apply_ceiling_v2(merged: list, params) -> list:
 
 def _lock_and_merge_v2(prior: Sequence[Mapping], fresh: Sequence[Mapping], *,
                         moment: datetime, lock_lead_hours: float, params,
-                        fresh_seconds: Optional[float] = None):
+                        fresh_seconds: Optional[float] = None,
+                        already_published_keys=frozenset()):
     """The registration's L1 to L4, for V2 entries (picks and fills alike).
 
     Returns (merged, withdrawn, plus_money_dropped_by_subcap,
@@ -2269,7 +2327,8 @@ def _lock_and_merge_v2(prior: Sequence[Mapping], fresh: Sequence[Mapping], *,
 
     merged = _apply_g11_v2(merged)
     plus_money_dropped_by_subcap = _apply_plus_money_subcap_v2(merged, params)
-    ceiling_refused = _apply_ceiling_v2(merged, params)
+    ceiling_refused = _apply_ceiling_v2(
+        merged, params, already_published_keys=already_published_keys)
 
     # SAME HARD GUARD AS V1's `publish`, applied here too ("whatever the
     # rule" -- owner ruling 2026-09-20/2026-09-22). V2's own G4 gate
@@ -2352,9 +2411,16 @@ def publish_v2(card: Mapping, *, now: Optional[str] = None,
         frozen["entry_class"] = src_entry.get("entry_class")
         fresh_frozen.append(frozen)
 
+    # The keys a reader has ALREADY been shown -- prior_all only, never
+    # prior_withdrawn: a withdrawn entry is no longer on the card, so it
+    # holds no slot and must not consume room. These keep their slots and
+    # the ceiling is applied to what is new (see `_apply_ceiling_v2`).
+    already_published_keys = frozenset(_v2_entry_key(e) for e in prior_all)
+
     merged, withdrawn, dropped_subcap, ceiling_refused = _lock_and_merge_v2(
         prior_all + prior_withdrawn, fresh_frozen, moment=moment,
-        lock_lead_hours=lead, params=params, fresh_seconds=fresh_seconds)
+        lock_lead_hours=lead, params=params, fresh_seconds=fresh_seconds,
+        already_published_keys=already_published_keys)
 
     picks = sorted(
         [e for e in merged if e.get("entry_class") == "pick"],
@@ -2406,6 +2472,7 @@ def publish_v2(card: Mapping, *, now: Optional[str] = None,
         "n_plus_money_picks": sum(1 for e in picks if e.get("price_class") == "PLUS_MONEY"),
         "plus_money_dropped_by_subcap": dropped_subcap,
         "ceiling_refused": ceiling_refused,
+        "ceiling_admission_version": CEILING_ADMISSION_VERSION,
         "basis": card.get("basis") or _v2_rule.BASIS,
         "disclaimer": card.get("disclaimer") or _v2_rule.DISCLAIMER,
     }
