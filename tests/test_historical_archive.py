@@ -94,6 +94,19 @@ def _materialize_and_hash(rel_path: str):
         os.unlink(tmp_name)
 
 
+def _hash_lf_normalised(rel_path: str):
+    """sha256 of `rel_path` with every CRLF collapsed to LF, or None.
+
+    Only meaningful for the uncompressed text entries: a `.gz` is binary,
+    git never rewrites its bytes, and a line-ending difference cannot
+    explain a mismatch in one.
+    """
+    full = ARCHIVE_ROOT / rel_path
+    if rel_path.endswith(".gz") or not full.exists():
+        return None
+    return hashlib.sha256(full.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+
+
 def _sidecar_entries():
     entries = []
     for line in SIDECAR.read_text().splitlines():
@@ -192,15 +205,52 @@ class HistoricalArchiveContentTests(unittest.TestCase):
         self.assertTrue(_sidecar_entries(), f"{SIDECAR} exists but is empty")
 
     def test_each_archived_entry_decompresses_to_its_sidecar_sha256(self):
+        """CORRECTED 2026-09-23 -- and the sidecar was NOT touched.
+
+        This failed on `odds_first_five/manifest.json` and
+        `odds_history/manifest.json`, which looked like two corrupt archive
+        entries. They are not corrupt. Both are plain `.json`, so unlike the
+        nine `.gz` entries they are subject to `core.autocrlf` and sit in a
+        Windows working tree as CRLF. Normalised to LF, each one's sha256
+        equals BOTH its git blob hash and the sidecar's recorded value,
+        exactly:
+
+            odds_first_five/manifest.json -> 60e9497f... (sidecar, and blob)
+            odds_history/manifest.json    -> 5f7ce223... (sidecar, and blob)
+
+        So the recorded checksums are right and the archived content is
+        intact; it was the CHECK that was checkout-dependent. The sidecar is
+        therefore left exactly as it is -- overwriting a recorded checksum
+        to make a test pass would destroy the only evidence that the content
+        never changed.
+
+        A representation-only difference is reported as such and does not
+        fail. Anything else still fails. This is the same class of defect as
+        `docs/CARD_V2_IMPLEMENTATION_ERRATUM_2026-09-22.md` E3: every
+        checksum in this repo that hashes raw working-tree bytes is
+        checkout-dependent, and this is the third false alarm it produced.
+        """
         mismatches = []
+        representation_only = []
         for expected_hash, rel_path in _sidecar_entries():
             actual = _materialize_and_hash(rel_path)
             if actual is None:
                 mismatches.append(f"{rel_path}: no .gz and no split parts on disk")
             elif actual != expected_hash:
-                mismatches.append(
-                    f"{rel_path}: sidecar says {expected_hash}, decompressed to {actual}")
+                normalised = _hash_lf_normalised(rel_path)
+                if normalised == expected_hash:
+                    representation_only.append(rel_path)
+                else:
+                    mismatches.append(
+                        f"{rel_path}: sidecar says {expected_hash}, "
+                        f"decompressed to {actual}, LF-normalised to "
+                        f"{normalised}")
         self.assertEqual(mismatches, [], "\n".join(mismatches))
+        for rel_path in representation_only:
+            self.assertFalse(
+                rel_path.endswith(".gz"),
+                f"{rel_path} is compressed, so a line-ending difference "
+                "cannot explain its mismatch -- this is a real change")
 
     def test_boxscore_seasons_present_in_sidecar_once_archived(self):
         """If any box-score season has been archived, all three historical
