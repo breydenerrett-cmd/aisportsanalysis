@@ -19,6 +19,23 @@ from src.report import card as card_mod
 from tests.test_card_ledger import _card, _pick
 
 
+def _real_store_digest(path=os.path.join("evidence", "cards_v2.jsonl")):
+    """The real V2 store's bytes, or `None` when it does not exist.
+
+    Used as a leak check: the value has to be the SAME before and after a
+    publish that was supposed to write only to temp paths. Comparing
+    contents rather than asserting non-existence keeps the check meaningful
+    now that V2 publishes for real.
+    """
+    import hashlib
+
+    try:
+        with open(path, "rb") as fh:
+            return hashlib.sha256(fh.read()).hexdigest()
+    except OSError:
+        return None
+
+
 class CutoverConstants(unittest.TestCase):
     """The switch itself: `ACTIVE_CARD_RULE` and `CUTOVER_DATE` must move
     together, and the date must be one V2 can actually serve (on or after
@@ -71,6 +88,7 @@ class PublishAllRoutesV1ToShadowAfterCutover(unittest.TestCase):
         import unittest.mock as mock
 
         v1_card = _card(date=card_mod.CUTOVER_DATE, picks=[_pick(price=-150)])
+        real_store_before = _real_store_digest()
         temp_path = lambda name: os.path.join(self._tmp.name, name)  # noqa: E731
         with mock.patch.object(card_ledger, "CARD_STORE_V1_SHADOW",
                               temp_path("cards_v1_shadow.jsonl")), \
@@ -90,7 +108,19 @@ class PublishAllRoutesV1ToShadowAfterCutover(unittest.TestCase):
             self.assertIsNotNone(card_ledger.published_row(
                 card_mod.CUTOVER_DATE, path=card_ledger.CARD_STORE_V1_SHADOW))
             # And confirm none of this leaked into the real evidence/ files.
-            self.assertFalse(os.path.exists(os.path.join("evidence", "cards_v2.jsonl")))
+            #
+            # CORRECTED 2026-09-22. This asserted the real store did not
+            # EXIST, which stopped being a leak check the moment V2
+            # published for the first time (2026-09-22T14:43:31Z) and turned
+            # into a permanent failure that says nothing about leakage. What
+            # it has to check is that this test did not WRITE to it, so it
+            # compares the file's bytes across the publish instead -- which
+            # works whether or not the store exists, and unlike the old
+            # version would actually catch a leak into an existing store.
+            self.assertEqual(_real_store_digest(),
+                             real_store_before,
+                             "publish_all leaked into the real "
+                             "evidence/cards_v2.jsonl")
 
 
 class MoneylinePriceGuard(unittest.TestCase):
