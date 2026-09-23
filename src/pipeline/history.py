@@ -234,8 +234,24 @@ def ingest_date(game_date, store: dict, manifest: dict, timeout: int = 20,
 
 def ingest_range(start, end, store_path=DEFAULT_STORE,
                  manifest_path=DEFAULT_MANIFEST, timeout: int = 20,
-                 resume: bool = True, on_date=None, flush_every: int = 10) -> dict:
+                 resume: bool = True, on_date=None, flush_every: int = 10,
+                 game_types=mlb.TRAINING_GAME_TYPES) -> dict:
     """Ingest a date range into the store, resumably.
+
+    `game_types` is forwarded to `ingest_date` and defaults to
+    `TRAINING_GAME_TYPES` (regular season only), which is what every caller
+    got before this argument existed -- passing it changes no existing
+    behaviour.
+
+    PASS `mlb.DECISIVE_GAME_TYPES` TO STORE THE POSTSEASON. Until 2026-09-23
+    this function could not, and the consequence was not theoretical: a
+    postseason pick is modelled, priced, published and locked by the live
+    card exactly like any other (nothing in the card path filters on
+    `game_type`), and then graded VOID -- "no final score stored for this
+    game" -- because the outcome never reached this store. Wild Card play
+    begins 2026-09-29 (`docs/SEASON_END_PLAN.md`), so forward ingest wants
+    the decisive set, and so does any backfill meant to make October
+    gradeable or testable.
 
     `flush_every` writes partial progress to disk periodically. A long backfill that dies
     at date 400 of 560 should not lose the first 399 -- without periodic flushing the whole
@@ -254,7 +270,8 @@ def ingest_range(start, end, store_path=DEFAULT_STORE,
     processed = 0
     for day in targets:
         try:
-            summary = ingest_date(day, store, manifest, timeout=timeout)
+            summary = ingest_date(day, store, manifest, timeout=timeout,
+                                  game_types=game_types)
         except mlb.MLBError as exc:
             errors.append({"date": day, "error": str(exc)})
             continue

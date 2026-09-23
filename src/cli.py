@@ -495,9 +495,15 @@ def cmd_ingest(args) -> int:
               f"pending={summary['pending']:>2}  cancelled={summary['cancelled']:>2}  "
               f"(+{summary['added']} new)")
 
+    game_types = (mlb.DECISIVE_GAME_TYPES
+                  if getattr(args, "game_types", "training") == "decisive"
+                  else mlb.TRAINING_GAME_TYPES)
+    print(f"  storing gameTypes: {','.join(sorted(game_types))}")
+
     report = history.ingest_range(
         args.start, args.end, resume=args.resume,
         on_date=progress if args.verbose else None,
+        game_types=game_types,
     )
 
     print(f"\n  attempted    : {report['attempted']}")
@@ -3935,6 +3941,14 @@ def build_parser() -> argparse.ArgumentParser:
     ingest_cmd.add_argument("--no-resume", dest="resume", action="store_false",
                             help="re-fetch dates already ingested")
     ingest_cmd.add_argument("--verbose", "-v", action="store_true")
+    ingest_cmd.add_argument(
+        "--game-types", choices=("training", "decisive"), default="training",
+        help="which gameTypes to STORE. 'training' (default) is regular "
+             "season only, the behaviour this command has always had. "
+             "'decisive' adds the postseason (F/D/L/W/P) -- needed for "
+             "October to be gradeable at all, since a postseason pick is "
+             "published and locked by the card but grades VOID when its "
+             "result is not in this store.")
     ingest_cmd.set_defaults(resume=True)
 
     boxscores_cmd = sub.add_parser(
