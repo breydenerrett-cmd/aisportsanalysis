@@ -99,6 +99,19 @@ over each file, not estimates.
 - Verified **94 data files** (the task's "95" includes `manifest.json`, which is not a data file) totaling **1,432,440 pitches** — matches the task's ~1.43M estimate. Date range: **2023-03-30 → 2024-09-30 only** (2023 and 2024 seasons; no 2025, no 2026). Per-pitch fields: `pitch_type`, `release_speed`, `stand`, `p_throws`, `events`, `description`, `woba_value`, `bb_type`, etc. — genuinely raw, not aggregated.
 - **Temporal gap**: this is the only granular pitch-level source in the repo, and its 2023-2024 range does not overlap the 2026 arsenal rollups, the 2026 gameflow/win-probability data, or the sealed evaluation window (2026-01-01 → 2026-08-27) at all. Nothing in the repo currently joins raw pitch detail to the actual backtest period.
 
+> **CORRECTION (verified 2026-09-23T00:14Z, RUNTIME OBSERVED).** This
+> "2023-2024 only" reading was true of this checkout's git-ignored local copy
+> of `data/historical/statcast/` on 2026-09-17, but that copy was never the
+> live store — it is not tracked in git (`.gitignore:13`). The production
+> store is seeded from the `data-seed/statcast` branch (committed 2026-09-06,
+> already running through 2026-09-05) and extended daily by `python3 -m
+> src.cli statcast --catchup` inside the `daily-loop` GitHub Actions workflow.
+> The actual `daily-loop` run on 2026-09-22 (14:15Z, run `35738754285`) logged
+> `statcast catchup -- last covered before: 2026-09-21, through: 2026-09-21`.
+> The live pitch store is current to within one day; only a local checkout on
+> this machine was stale. Full corrected writeup:
+> `docs/handoff/STATE_OF_PLAY_2026-09-22.md` §4.1.3.
+
 ### Handedness reference (`data/historical/handedness.json`)
 
 - 1,643 players, `{bats, throws, name}` — static reference table, fine as-is.
@@ -130,6 +143,20 @@ Bought 2026-09-15 as a 48-hour trial (per `src/providers/balldontlie.py`'s own d
 
 - **`data/historical/balldontlie/MANIFEST.json`** lists 461 harvest-job entries across mlb (7)/nba (7)/nfl (364)/nhl (7)/tennis (76), many marked `"complete": true` with byte counts, row counts, and sha256 hashes — e.g. `mlb/mlb_games_2022.jsonl.gz`: 2,793 rows, sha256 `c37207d...`, harvested 2026-09-16T00:08:28Z.
 - **These files do not exist.** `Glob` over `data/historical/balldontlie/**/*` and `git ls-files` both confirm the only files that actually exist (on disk or in git history) are `MANIFEST.json` itself and 35 `.jsonl.gz.cursor` retry-state sidecars — 2 for NFL (the two 429-rate-limited seasons, correctly marked `"complete": false`) and 33 for tennis. **Every MLB, NBA, and completed-NFL `.jsonl.gz` payload the manifest claims to have harvested and hashed is gone** — never committed (the harvest-bot commits, `38f83f64`/`38608b94`/`8a8c7008`, touch only `MANIFEST.json` and cursor files) and not present locally. **This is a known bug**: the manifest is a false record of successfully captured, checksummed data. Anyone trusting the manifest without checking the filesystem would believe MLB/NBA/NFL/NHL BALLDONTLIE data exists when it does not.
+
+> **CORRECTION (verified 2026-09-23T00:14Z, RUNTIME OBSERVED).** This check
+> looked at disk and git history only. The files are not gone: they are
+> uploaded as GitHub release assets on `balldontlie-harvest-2026-09` (created
+> 2026-09-15T16:51:40Z; that release was still being built by chained runs on
+> 2026-09-16, the day before this audit). `gh release view
+> balldontlie-harvest-2026-09 --json assets` lists **959 assets**, all
+> `.jsonl.gz`. `MANIFEST.json`'s 461 entries are a narrower catalog than the
+> release (mostly season-level files; many per-day/per-week odds-sweep files
+> were uploaded but never logged into the manifest) — 959 and 461 count two
+> different things, not one number restated. Whether the BALLDONTLIE key
+> saved 2026-09-21 still grants live access was **not verified** in this
+> pass; see `docs/handoff/STATE_OF_PLAY_2026-09-22.md` §4.1.2 for the
+> entitlement-check attempt and why it could not be completed cheaply today.
 - **What's actually wired**: `grep` for `balldontlie`/`BallDontLie` across `src/` hits only `src/providers/balldontlie.py`, `src/providers/api_tennis.py`, `src/providers/tennis_results.py`, and their tests — **zero hits** in `src/analysis`, `src/model`, `src/engine`, `src/board`, `src/report`, or `src/pipeline`. Only the tennis path (`tennis_results.BallDontLieFeed`, used for live results grading) is read by anything beyond the harvester and its tests. MLB/NBA/NFL/NHL data from this vendor is not read by any model or pipeline code, and per the point above, mostly doesn't exist to be read anyway.
 - All `*_odds*.jsonl.gz` entries for every sport show `http_status: 400` or `429` and `"complete": false` — BALLDONTLIE's odds endpoints are not usable on this account regardless of sport.
 

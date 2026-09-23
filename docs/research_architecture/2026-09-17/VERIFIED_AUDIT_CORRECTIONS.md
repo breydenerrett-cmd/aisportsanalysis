@@ -178,6 +178,16 @@ pitch data cannot inform a 2026 card even in the display branch —
 `matchup.py:466-470` is the path that renders "no pitch-level data is available
 for this season" to the reader.
 
+> **UPDATE (verified 2026-09-23T00:14Z, RUNTIME OBSERVED).** This was true of
+> this checkout's git-ignored local copy on 2026-09-17. It is no longer true
+> of the live store: seeded from the `data-seed/statcast` branch (2026-09-06,
+> already through 2026-09-05) and extended daily by a `daily-loop` catchup
+> step, confirmed current through 2026-09-21 by that workflow's own
+> 2026-09-22 run log. The "never reaches the published probability" finding
+> above is unaffected and still holds — see
+> `docs/handoff/STATE_OF_PLAY_2026-09-22.md` §4.1.3 for the full corrected
+> raw/features/consumption breakdown.
+
 ### H4 — Phase 2A's scope. **CONFIRMED.**
 
 Features accumulated only to the first day of the game's own month
