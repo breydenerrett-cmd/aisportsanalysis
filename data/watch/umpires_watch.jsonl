@@ -1415,3 +1415,5 @@
 {"game_date": "2026-09-23", "observed_utc": "2026-09-23T15:01:21.265332+00:00", "poll": true}
 {"commence_time": "2026-09-23T17:35:00Z", "crew": [{"id": 427533, "name": "Mark Wegner", "officialType": "Home Plate"}, {"id": 658325, "name": "Tyler Jones", "officialType": "First Base"}, {"id": 658536, "name": "Austin Jones", "officialType": "Second Base"}, {"id": 547380, "name": "Carlos Torres", "officialType": "Third Base"}], "game_date": "2026-09-23", "game_pk": 824785, "game_state": "Pre-Game", "home_plate_umpire": "Mark Wegner", "observed_utc": "2026-09-23T15:01:21.265332+00:00", "prev_poll_utc": "2026-09-23T14:19:03.158764+00:00", "revealed": true}
 {"game_date": "2026-09-24", "observed_utc": "2026-09-23T15:01:21.535817+00:00", "poll": true}
+{"game_date": "2026-09-23", "observed_utc": "2026-09-23T15:59:44.757021+00:00", "poll": true}
+{"game_date": "2026-09-24", "observed_utc": "2026-09-23T15:59:44.940329+00:00", "poll": true}
