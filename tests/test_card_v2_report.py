@@ -143,16 +143,44 @@ class CardV2ForDateGameCandidates(unittest.TestCase):
         self.assertEqual([], payload["all_bets"])
         self.assertEqual(1, payload["raw_pool_size"])
 
-    def test_price_class_is_stamped_correctly_for_a_plus_money_underdog(self):
-        # Flip the favourite: NYY is now the market's underdog at +150,
-        # market number 0.40 (< 0.50, >= plus_market_floor 0.20).
-        payload = self._build(home_price=150, home_p=0.40, home_books=8)
-        # Whether this one clears G6/G7 depends on the model's own number,
-        # which this test does not control tightly enough to assert a pick
-        # -- it only asserts that IF it reaches all_bets it is classed right.
-        for entry in payload["all_bets"]:
-            if entry.get("price") == 150:
-                self.assertEqual("PLUS_MONEY", entry["price_class"])
+    def test_a_market_underdog_never_reaches_the_plus_money_class(self):
+        """REPLACES a test that could not fail (2026-09-22).
+
+        The old version passed `home_p=0.40` while leaving `away_p` at its
+        0.40 default, describing a de-vigged board whose two sides sum to
+        0.80 -- one that cannot exist. On that impossible board
+        `_consensus_side`'s `max(p_away, p_home)` returned 0.40, which is
+        the only way a game moneyline can carry a below-0.50 market number
+        at all. It then asserted inside `if entry.get("price") == 150:`
+        inside a loop over `all_bets`, and the single candidate died on G8
+        (|0.6752 - 0.40| = 0.275 against the 0.10 cap), so `all_bets` was
+        empty and the assertion never executed. Green, and proving nothing.
+
+        This is the same scenario on a board that CAN exist -- 0.60 away,
+        0.40 home, complementary -- and it asserts the live path's real
+        behaviour: the +150 underdog is never built, so it can never be
+        classed PLUS_MONEY, whatever our number says. That departure from
+        registration section 2 ("Both sides of every game") is written up in
+        `docs/CARD_V2_IMPLEMENTATION_ERRATUM_2026-09-22.md` and driven both
+        ways in `tests/test_card_v2_candidate_enumeration.py`.
+        """
+        entries = [_entry()]
+        gid = _game_id()
+        rows = _opportunity_rows(gid, home_price=150, home_p=0.40,
+                                 away_price=-160, away_p=0.60, home_books=8)
+        candidates, raw_pool = card_v2._build_game_candidates(
+            entries, rows, date="2026-09-20", now=NOW, frozen=FROZEN)
+        self.assertEqual(1, raw_pool)
+        self.assertEqual(["away"], [c["side"] for c in candidates])
+        self.assertEqual([], [c for c in candidates if c["price"] == 150])
+
+        payload = card_v2.card_v2_for_date(
+            entries, rows, date="2026-09-20", now=NOW, frozen=FROZEN,
+            prop_board=_no_props, event_map={},
+            params=best_bets_card.V2)
+        self.assertEqual(1, payload["raw_pool_size"])
+        self.assertEqual([], [e for e in payload["all_bets"]
+                              if e.get("price") == 150])
 
 
 class CardV2GameTypeField(unittest.TestCase):

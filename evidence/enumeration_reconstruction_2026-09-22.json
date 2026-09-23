@@ -1,0 +1,2578 @@
+{
+  "kind": "controlled_reconstruction",
+  "not_a_replay_because": "no point-in-time snapshot of the dossier/feature state exists, so our own number cannot be rebuilt as the publisher held it; only the odds board is reconstructible to an exact instant",
+  "counting_units": {
+    "events_*": "one scheduled game",
+    "sides_*": "one side of one game moneyline contract",
+    "books": "one bookmaker quote on one board",
+    "snapshots": "one publish run; never pooled across runs"
+  },
+  "manifest": {
+    "date": "2026-09-22",
+    "revision": {
+      "head": "b525c54e7dbc8f884afc0736381905f1ea03a056",
+      "branch": "claude/sports-betting-analysis-review-g1o0co",
+      "dirty_tracked_files": [
+        "ocs/audits/2026-09-17_algorithm_reopen/DATA_GAP_AND_DARK_DATA_AUDIT.md",
+        "docs/research_architecture/2026-09-17/VERIFIED_AUDIT_CORRECTIONS.md",
+        "scripts/daily_bootstrap.sh",
+        "src/cli.py",
+        "src/pipeline/pitchers.py",
+        "src/pipeline/store_archive.py",
+        "tests/test_card_v2_report.py"
+      ]
+    },
+    "enumeration_implementations": {
+      "before": "consensus_side_favourite_only",
+      "after": "moneyline_both_sides_v1"
+    },
+    "rule_params": {
+      "rule_id": "DAILY_CARD_BEST_BETS_V2",
+      "ceiling": 10,
+      "floor": 3,
+      "game_min_books": 6,
+      "fresh_seconds": 3600,
+      "worst_price": -160.0,
+      "best_price": 250.0,
+      "main_market_floor": 0.5,
+      "plus_market_floor": 0.2
+    },
+    "parameter_version": {
+      "path": "data/processed/card_v2_frozen_params.json",
+      "sha256": "674790b50879b8fab6f73710cd69f134d521729800f6bd103dc7742c6841d36a"
+    },
+    "inputs": [
+      {
+        "logical_store": "data/processed/odds_multibook.jsonl",
+        "parts": [
+          {
+            "path": "data\\processed\\archive\\odds_multibook\\0001_2026-08-31_2026-09-17.jsonl.gz",
+            "sha256": "58435aaf09307853c85d18ff725fea0e7ea5343eff1997b46b572a3e1dfb1bb7"
+          },
+          {
+            "path": "data\\processed\\archive\\odds_multibook\\0002_2026-09-18_2026-09-18.jsonl.gz",
+            "sha256": "ff5274cba08bc40fd8a7d7925148f4f640dfecd669adfcf98c5a7f8d95397abf"
+          },
+          {
+            "path": "data/processed/odds_multibook.jsonl",
+            "sha256": "355b7108052a26f69b540ede55b673ea06a2fb3f2a0bd2739822626cab95a7cd"
+          }
+        ]
+      },
+      {
+        "logical_store": "evidence/cards_v2.jsonl",
+        "parts": [
+          {
+            "path": "evidence/cards_v2.jsonl",
+            "sha256": "16aa47f6e983fd3a9c592de307f14eb8f11504fb890a2f5a97d0ea68e303c407"
+          }
+        ]
+      }
+    ],
+    "pinned_input_extract": {
+      "path": "evidence\\enumeration_inputs_pinned_2026-09-22.jsonl",
+      "rows": 23742,
+      "sha256": "7bdd93a056b570d2153d98c29c8c8bcbea3e7c1081d88864f769ab57fe0e8fe9",
+      "note": "every quote row this reconstruction consumed for this slate date, sorted and deduplicated; replaces the rotating live store as the citable input"
+    },
+    "inputs_NOT_reconstructible": [
+      {
+        "input": "dossier / feature state per game",
+        "why": "no point-in-time snapshot is stored; the live dossier is rebuilt each run and overwritten",
+        "affects": "our own number, and therefore G6, G7, G8"
+      },
+      {
+        "input": "player prop board at each publish instant",
+        "why": "the prop board is not stored per instant; only the published entries survive",
+        "affects": "every prop candidate, which is every entry all seven of these cards actually listed"
+      },
+      {
+        "input": "pitcher and bullpen logs as held at each publish",
+        "why": "the log stores are rewritten in place by the daily job; a concurrent repair to the refresh path may change them further",
+        "affects": "model inputs, hence the same three gates"
+      }
+    ],
+    "prior_locked_state": {
+      "source": "evidence/cards_v2.jsonl",
+      "note": "each snapshot's own all_bets carries locked / locked_at per entry, so the prior locked set IS recoverable from the card store and is covered by its hash above"
+    },
+    "snapshots_evaluated": [
+      "2026-09-22T14:43:31.680820+00:00",
+      "2026-09-22T15:41:59.902020+00:00",
+      "2026-09-22T19:14:07.914130+00:00",
+      "2026-09-22T20:12:45.451746+00:00",
+      "2026-09-22T21:00:25.883124+00:00",
+      "2026-09-22T21:31:49.533234+00:00",
+      "2026-09-22T22:02:40.520210+00:00"
+    ],
+    "gates_decided_here": [
+      "G1_STARTED",
+      "G2_BOOKS",
+      "G3_STALE",
+      "G4_BAND",
+      "G5_MARKET",
+      "G13_LINE_SHOPPING"
+    ],
+    "gates_not_decided_here": [
+      "G6_FLOOR",
+      "G7_VALUE",
+      "G8_DISAGREEMENT"
+    ]
+  },
+  "snapshots": [
+    {
+      "published_utc": "2026-09-22T14:43:31.680820+00:00",
+      "rule": "DAILY_CARD_BEST_BETS_V2",
+      "n_picks": 0,
+      "n_fills": 3,
+      "n_entries_listed": 3,
+      "n_plus_money_picks": 0,
+      "code_fingerprint": "a6957bc3851f412c84d76d9f638153c0566e47d252da75796376c83a8f15f3bf",
+      "status": "reconstructed",
+      "counts": {
+        "events_on_slate": 25,
+        "events_with_a_board_at_t": 16,
+        "events_already_commenced_at_t": 4,
+        "events_no_quote_at_t": 0,
+        "events_below_book_floor": 5,
+        "sides_enumerated_registered": 16,
+        "sides_enumerated_corrected": 32,
+        "sides_added_by_correction": 16
+      },
+      "added_sides_by_board_gate_primary_reason": {
+        "G5_MARKET": 1,
+        "board_gates_all_passed": 15
+      },
+      "added_sides_listed": [
+        {
+          "event_id": "0ae15942e1f4c4657b06458868afbf96",
+          "side": "away",
+          "away_team": "Los Angeles Angels",
+          "home_team": "Athletics",
+          "best_price": -105,
+          "best_book": "betonlineag",
+          "market_probability": 0.4993,
+          "market_underdog": true,
+          "positive_price": false,
+          "price_class": "MAIN",
+          "books": 11,
+          "quote_age_seconds": 1713.7,
+          "board_gate_primary_reason": "G5_MARKET",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "0c17c76059d99e5bb249df6a7c540127",
+          "side": "away",
+          "away_team": "Cincinnati Reds",
+          "home_team": "Atlanta Braves",
+          "best_price": 166,
+          "best_book": "betonlineag",
+          "market_probability": 0.37085,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1713.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "1cfde197827ecee7feb17929bf32793b",
+          "side": "away",
+          "away_team": "New York Mets",
+          "home_team": "Texas Rangers",
+          "best_price": 111,
+          "best_book": "betus",
+          "market_probability": 0.46489,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1713.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "2ec6c946384087513c61f58aad6e082f",
+          "side": "away",
+          "away_team": "Milwaukee Brewers",
+          "home_team": "Philadelphia Phillies",
+          "best_price": 120,
+          "best_book": "betonlineag",
+          "market_probability": 0.44059,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1713.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "388cb001ef45b493163b9d37cf60f606",
+          "side": "away",
+          "away_team": "St. Louis Cardinals",
+          "home_team": "Pittsburgh Pirates",
+          "best_price": 149,
+          "best_book": "betonlineag",
+          "market_probability": 0.39286,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1713.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "394e1e2b849c5b4eaf2b5984eaa74b79",
+          "side": "away",
+          "away_team": "Tampa Bay Rays",
+          "home_team": "New York Yankees",
+          "best_price": 110,
+          "best_book": "betonlineag",
+          "market_probability": 0.46794,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1713.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "3b4ceeb7bb4bee993b6876fead12eeba",
+          "side": "away",
+          "away_team": "Cleveland Guardians",
+          "home_team": "Boston Red Sox",
+          "best_price": 112,
+          "best_book": "betus",
+          "market_probability": 0.46298,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1713.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "574050c10d1acc2da7baf72384eeaa11",
+          "side": "away",
+          "away_team": "Tampa Bay Rays",
+          "home_team": "New York Yankees",
+          "best_price": 116,
+          "best_book": "betrivers",
+          "market_probability": 0.4556,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1713.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "7fafa79a573ac098f38c8c6c4293b93e",
+          "side": "away",
+          "away_team": "Toronto Blue Jays",
+          "home_team": "Baltimore Orioles",
+          "best_price": 108,
+          "best_book": "betus",
+          "market_probability": 0.47361,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1713.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "81f539754930db6ffbd116ca2d30ee9c",
+          "side": "home",
+          "away_team": "Minnesota Twins",
+          "home_team": "San Francisco Giants",
+          "best_price": 117,
+          "best_book": "betus",
+          "market_probability": 0.45256,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1713.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "82b37a47daa08ef041c888d37b999303",
+          "side": "away",
+          "away_team": "Miami Marlins",
+          "home_team": "Chicago Cubs",
+          "best_price": 185,
+          "best_book": "betrivers",
+          "market_probability": 0.34576,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1713.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "85b75fcab1b69e0a4e414382b9f1cc7e",
+          "side": "away",
+          "away_team": "San Diego Padres",
+          "home_team": "Los Angeles Dodgers",
+          "best_price": 110,
+          "best_book": "bovada",
+          "market_probability": 0.46621,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 9,
+          "quote_age_seconds": 1713.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "a5e0deb6f51b7edebbd82d0eaf966294",
+          "side": "away",
+          "away_team": "Houston Astros",
+          "home_team": "Seattle Mariners",
+          "best_price": 120,
+          "best_book": "fanduel",
+          "market_probability": 0.44477,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1713.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "afbac30624ec674873fd96ac159f69ad",
+          "side": "home",
+          "away_team": "Arizona Diamondbacks",
+          "home_team": "Colorado Rockies",
+          "best_price": 170,
+          "best_book": "betonlineag",
+          "market_probability": 0.36321,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1713.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "e1693becb4cbacb4b30e46c1c960d9a5",
+          "side": "away",
+          "away_team": "Washington Nationals",
+          "home_team": "Detroit Tigers",
+          "best_price": 136,
+          "best_book": "williamhill_us",
+          "market_probability": 0.41477,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1713.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "ebb664c5095200280fa1b15540c2c88b",
+          "side": "home",
+          "away_team": "Chicago White Sox",
+          "home_team": "Kansas City Royals",
+          "best_price": 105,
+          "best_book": "betonlineag",
+          "market_probability": 0.47895,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1713.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        }
+      ],
+      "added_sides_listed_truncated_at": 40,
+      "added_sides_listed_total": 16
+    },
+    {
+      "published_utc": "2026-09-22T15:41:59.902020+00:00",
+      "rule": "DAILY_CARD_BEST_BETS_V2",
+      "n_picks": 2,
+      "n_fills": 3,
+      "n_entries_listed": 5,
+      "n_plus_money_picks": 0,
+      "code_fingerprint": "a6957bc3851f412c84d76d9f638153c0566e47d252da75796376c83a8f15f3bf",
+      "status": "reconstructed",
+      "counts": {
+        "events_on_slate": 25,
+        "events_with_a_board_at_t": 16,
+        "events_already_commenced_at_t": 4,
+        "events_no_quote_at_t": 0,
+        "events_below_book_floor": 5,
+        "sides_enumerated_registered": 16,
+        "sides_enumerated_corrected": 32,
+        "sides_added_by_correction": 16
+      },
+      "added_sides_by_board_gate_primary_reason": {
+        "G13_LINE_SHOPPING": 1,
+        "G5_MARKET": 1,
+        "board_gates_all_passed": 14
+      },
+      "added_sides_listed": [
+        {
+          "event_id": "0ae15942e1f4c4657b06458868afbf96",
+          "side": "away",
+          "away_team": "Los Angeles Angels",
+          "home_team": "Athletics",
+          "best_price": -105,
+          "best_book": "betonlineag",
+          "market_probability": 0.4997,
+          "market_underdog": true,
+          "positive_price": false,
+          "price_class": "MAIN",
+          "books": 11,
+          "quote_age_seconds": 856.8,
+          "board_gate_primary_reason": "G5_MARKET",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "0c17c76059d99e5bb249df6a7c540127",
+          "side": "away",
+          "away_team": "Cincinnati Reds",
+          "home_team": "Atlanta Braves",
+          "best_price": 166,
+          "best_book": "betonlineag",
+          "market_probability": 0.37173,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 856.8,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "1cfde197827ecee7feb17929bf32793b",
+          "side": "away",
+          "away_team": "New York Mets",
+          "home_team": "Texas Rangers",
+          "best_price": 110,
+          "best_book": "betrivers",
+          "market_probability": 0.46524,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 856.8,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "2ec6c946384087513c61f58aad6e082f",
+          "side": "away",
+          "away_team": "Milwaukee Brewers",
+          "home_team": "Philadelphia Phillies",
+          "best_price": 120,
+          "best_book": "betonlineag",
+          "market_probability": 0.44215,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 856.8,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "388cb001ef45b493163b9d37cf60f606",
+          "side": "away",
+          "away_team": "St. Louis Cardinals",
+          "home_team": "Pittsburgh Pirates",
+          "best_price": 149,
+          "best_book": "betonlineag",
+          "market_probability": 0.39295,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 856.8,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "394e1e2b849c5b4eaf2b5984eaa74b79",
+          "side": "away",
+          "away_team": "Tampa Bay Rays",
+          "home_team": "New York Yankees",
+          "best_price": 118,
+          "best_book": "betonlineag",
+          "market_probability": 0.45332,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 856.8,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "3b4ceeb7bb4bee993b6876fead12eeba",
+          "side": "away",
+          "away_team": "Cleveland Guardians",
+          "home_team": "Boston Red Sox",
+          "best_price": 112,
+          "best_book": "betus",
+          "market_probability": 0.46264,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 856.8,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "574050c10d1acc2da7baf72384eeaa11",
+          "side": "away",
+          "away_team": "Tampa Bay Rays",
+          "home_team": "New York Yankees",
+          "best_price": 116,
+          "best_book": "betrivers",
+          "market_probability": 0.45598,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 856.8,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "7fafa79a573ac098f38c8c6c4293b93e",
+          "side": "away",
+          "away_team": "Toronto Blue Jays",
+          "home_team": "Baltimore Orioles",
+          "best_price": 108,
+          "best_book": "betus",
+          "market_probability": 0.4744,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 856.8,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "81f539754930db6ffbd116ca2d30ee9c",
+          "side": "home",
+          "away_team": "Minnesota Twins",
+          "home_team": "San Francisco Giants",
+          "best_price": 123,
+          "best_book": "betrivers",
+          "market_probability": 0.44985,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 856.8,
+          "board_gate_primary_reason": "G13_LINE_SHOPPING",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "82b37a47daa08ef041c888d37b999303",
+          "side": "away",
+          "away_team": "Miami Marlins",
+          "home_team": "Chicago Cubs",
+          "best_price": 176,
+          "best_book": "betonlineag",
+          "market_probability": 0.35578,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 856.8,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "85b75fcab1b69e0a4e414382b9f1cc7e",
+          "side": "away",
+          "away_team": "San Diego Padres",
+          "home_team": "Los Angeles Dodgers",
+          "best_price": 114,
+          "best_book": "betus",
+          "market_probability": 0.45959,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 9,
+          "quote_age_seconds": 856.8,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "a5e0deb6f51b7edebbd82d0eaf966294",
+          "side": "away",
+          "away_team": "Houston Astros",
+          "home_team": "Seattle Mariners",
+          "best_price": 120,
+          "best_book": "fanduel",
+          "market_probability": 0.44613,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 856.8,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "afbac30624ec674873fd96ac159f69ad",
+          "side": "home",
+          "away_team": "Arizona Diamondbacks",
+          "home_team": "Colorado Rockies",
+          "best_price": 170,
+          "best_book": "betonlineag",
+          "market_probability": 0.36561,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 856.8,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "e1693becb4cbacb4b30e46c1c960d9a5",
+          "side": "away",
+          "away_team": "Washington Nationals",
+          "home_team": "Detroit Tigers",
+          "best_price": 136,
+          "best_book": "williamhill_us",
+          "market_probability": 0.41479,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 856.8,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "ebb664c5095200280fa1b15540c2c88b",
+          "side": "home",
+          "away_team": "Chicago White Sox",
+          "home_team": "Kansas City Royals",
+          "best_price": 105,
+          "best_book": "betonlineag",
+          "market_probability": 0.47859,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 856.8,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        }
+      ],
+      "added_sides_listed_truncated_at": 40,
+      "added_sides_listed_total": 16
+    },
+    {
+      "published_utc": "2026-09-22T19:14:07.914130+00:00",
+      "rule": "DAILY_CARD_BEST_BETS_V2",
+      "n_picks": 2,
+      "n_fills": 3,
+      "n_entries_listed": 5,
+      "n_plus_money_picks": 0,
+      "code_fingerprint": "a6957bc3851f412c84d76d9f638153c0566e47d252da75796376c83a8f15f3bf",
+      "status": "reconstructed",
+      "counts": {
+        "events_on_slate": 25,
+        "events_with_a_board_at_t": 15,
+        "events_already_commenced_at_t": 5,
+        "events_no_quote_at_t": 0,
+        "events_below_book_floor": 5,
+        "sides_enumerated_registered": 15,
+        "sides_enumerated_corrected": 30,
+        "sides_added_by_correction": 15
+      },
+      "added_sides_by_board_gate_primary_reason": {
+        "G3_STALE": 15
+      },
+      "added_sides_listed": [
+        {
+          "event_id": "0ae15942e1f4c4657b06458868afbf96",
+          "side": "away",
+          "away_team": "Los Angeles Angels",
+          "home_team": "Athletics",
+          "best_price": -102,
+          "best_book": "betonlineag",
+          "market_probability": 0.49801,
+          "market_underdog": true,
+          "positive_price": false,
+          "price_class": "MAIN",
+          "books": 11,
+          "quote_age_seconds": 3844.9,
+          "board_gate_primary_reason": "G3_STALE",
+          "board_gates_also_failed": [
+            "G5_MARKET"
+          ],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "0c17c76059d99e5bb249df6a7c540127",
+          "side": "away",
+          "away_team": "Cincinnati Reds",
+          "home_team": "Atlanta Braves",
+          "best_price": 166,
+          "best_book": "betonlineag",
+          "market_probability": 0.37198,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 3844.9,
+          "board_gate_primary_reason": "G3_STALE",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "1cfde197827ecee7feb17929bf32793b",
+          "side": "away",
+          "away_team": "New York Mets",
+          "home_team": "Texas Rangers",
+          "best_price": 110,
+          "best_book": "betrivers",
+          "market_probability": 0.46439,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 3844.9,
+          "board_gate_primary_reason": "G3_STALE",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "2ec6c946384087513c61f58aad6e082f",
+          "side": "away",
+          "away_team": "Milwaukee Brewers",
+          "home_team": "Philadelphia Phillies",
+          "best_price": 120,
+          "best_book": "betonlineag",
+          "market_probability": 0.44076,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 3844.9,
+          "board_gate_primary_reason": "G3_STALE",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "388cb001ef45b493163b9d37cf60f606",
+          "side": "away",
+          "away_team": "St. Louis Cardinals",
+          "home_team": "Pittsburgh Pirates",
+          "best_price": 149,
+          "best_book": "betonlineag",
+          "market_probability": 0.39281,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 3844.9,
+          "board_gate_primary_reason": "G3_STALE",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "3b4ceeb7bb4bee993b6876fead12eeba",
+          "side": "away",
+          "away_team": "Cleveland Guardians",
+          "home_team": "Boston Red Sox",
+          "best_price": 112,
+          "best_book": "betus",
+          "market_probability": 0.46214,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 3844.9,
+          "board_gate_primary_reason": "G3_STALE",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "574050c10d1acc2da7baf72384eeaa11",
+          "side": "away",
+          "away_team": "Tampa Bay Rays",
+          "home_team": "New York Yankees",
+          "best_price": 116,
+          "best_book": "betrivers",
+          "market_probability": 0.45301,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 3844.9,
+          "board_gate_primary_reason": "G3_STALE",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "7fafa79a573ac098f38c8c6c4293b93e",
+          "side": "away",
+          "away_team": "Toronto Blue Jays",
+          "home_team": "Baltimore Orioles",
+          "best_price": 108,
+          "best_book": "betus",
+          "market_probability": 0.47253,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 4022.3,
+          "board_gate_primary_reason": "G3_STALE",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "81f539754930db6ffbd116ca2d30ee9c",
+          "side": "home",
+          "away_team": "Minnesota Twins",
+          "home_team": "San Francisco Giants",
+          "best_price": 123,
+          "best_book": "betrivers",
+          "market_probability": 0.44985,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 3844.9,
+          "board_gate_primary_reason": "G3_STALE",
+          "board_gates_also_failed": [
+            "G13_LINE_SHOPPING"
+          ],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "82b37a47daa08ef041c888d37b999303",
+          "side": "away",
+          "away_team": "Miami Marlins",
+          "home_team": "Chicago Cubs",
+          "best_price": 176,
+          "best_book": "betonlineag",
+          "market_probability": 0.35493,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 3844.9,
+          "board_gate_primary_reason": "G3_STALE",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "85b75fcab1b69e0a4e414382b9f1cc7e",
+          "side": "away",
+          "away_team": "San Diego Padres",
+          "home_team": "Los Angeles Dodgers",
+          "best_price": 117,
+          "best_book": "betonlineag",
+          "market_probability": 0.45531,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 3844.9,
+          "board_gate_primary_reason": "G3_STALE",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "a5e0deb6f51b7edebbd82d0eaf966294",
+          "side": "away",
+          "away_team": "Houston Astros",
+          "home_team": "Seattle Mariners",
+          "best_price": 120,
+          "best_book": "fanduel",
+          "market_probability": 0.44797,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 3844.9,
+          "board_gate_primary_reason": "G3_STALE",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "afbac30624ec674873fd96ac159f69ad",
+          "side": "home",
+          "away_team": "Arizona Diamondbacks",
+          "home_team": "Colorado Rockies",
+          "best_price": 170,
+          "best_book": "betonlineag",
+          "market_probability": 0.36336,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 3844.9,
+          "board_gate_primary_reason": "G3_STALE",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "e1693becb4cbacb4b30e46c1c960d9a5",
+          "side": "away",
+          "away_team": "Washington Nationals",
+          "home_team": "Detroit Tigers",
+          "best_price": 139,
+          "best_book": "betonlineag",
+          "market_probability": 0.41321,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 3844.9,
+          "board_gate_primary_reason": "G3_STALE",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "ebb664c5095200280fa1b15540c2c88b",
+          "side": "home",
+          "away_team": "Chicago White Sox",
+          "home_team": "Kansas City Royals",
+          "best_price": 105,
+          "best_book": "betonlineag",
+          "market_probability": 0.47838,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 3844.9,
+          "board_gate_primary_reason": "G3_STALE",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        }
+      ],
+      "added_sides_listed_truncated_at": 40,
+      "added_sides_listed_total": 15
+    },
+    {
+      "published_utc": "2026-09-22T20:12:45.451746+00:00",
+      "rule": "DAILY_CARD_BEST_BETS_V2",
+      "n_picks": 2,
+      "n_fills": 4,
+      "n_entries_listed": 6,
+      "n_plus_money_picks": 0,
+      "code_fingerprint": "a6957bc3851f412c84d76d9f638153c0566e47d252da75796376c83a8f15f3bf",
+      "status": "reconstructed",
+      "counts": {
+        "events_on_slate": 25,
+        "events_with_a_board_at_t": 15,
+        "events_already_commenced_at_t": 5,
+        "events_no_quote_at_t": 0,
+        "events_below_book_floor": 5,
+        "sides_enumerated_registered": 15,
+        "sides_enumerated_corrected": 30,
+        "sides_added_by_correction": 15
+      },
+      "added_sides_by_board_gate_primary_reason": {
+        "G3_STALE": 1,
+        "G5_MARKET": 1,
+        "board_gates_all_passed": 13
+      },
+      "added_sides_listed": [
+        {
+          "event_id": "0ae15942e1f4c4657b06458868afbf96",
+          "side": "away",
+          "away_team": "Los Angeles Angels",
+          "home_team": "Athletics",
+          "best_price": -102,
+          "best_book": "betonlineag",
+          "market_probability": 0.49843,
+          "market_underdog": true,
+          "positive_price": false,
+          "price_class": "MAIN",
+          "books": 11,
+          "quote_age_seconds": 1088.6,
+          "board_gate_primary_reason": "G5_MARKET",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "0c17c76059d99e5bb249df6a7c540127",
+          "side": "away",
+          "away_team": "Cincinnati Reds",
+          "home_team": "Atlanta Braves",
+          "best_price": 187,
+          "best_book": "betonlineag",
+          "market_probability": 0.34768,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1088.6,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "1cfde197827ecee7feb17929bf32793b",
+          "side": "away",
+          "away_team": "New York Mets",
+          "home_team": "Texas Rangers",
+          "best_price": 110,
+          "best_book": "betrivers",
+          "market_probability": 0.46388,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1088.6,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "2ec6c946384087513c61f58aad6e082f",
+          "side": "away",
+          "away_team": "Milwaukee Brewers",
+          "home_team": "Philadelphia Phillies",
+          "best_price": 122,
+          "best_book": "betonlineag",
+          "market_probability": 0.44009,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1088.6,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "388cb001ef45b493163b9d37cf60f606",
+          "side": "away",
+          "away_team": "St. Louis Cardinals",
+          "home_team": "Pittsburgh Pirates",
+          "best_price": 149,
+          "best_book": "betonlineag",
+          "market_probability": 0.39499,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1088.6,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "3b4ceeb7bb4bee993b6876fead12eeba",
+          "side": "away",
+          "away_team": "Cleveland Guardians",
+          "home_team": "Boston Red Sox",
+          "best_price": 112,
+          "best_book": "betus",
+          "market_probability": 0.46037,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1088.6,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "574050c10d1acc2da7baf72384eeaa11",
+          "side": "away",
+          "away_team": "Tampa Bay Rays",
+          "home_team": "New York Yankees",
+          "best_price": 116,
+          "best_book": "betrivers",
+          "market_probability": 0.45307,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1088.6,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "7fafa79a573ac098f38c8c6c4293b93e",
+          "side": "away",
+          "away_team": "Toronto Blue Jays",
+          "home_team": "Baltimore Orioles",
+          "best_price": 108,
+          "best_book": "betus",
+          "market_probability": 0.47253,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 7539.8,
+          "board_gate_primary_reason": "G3_STALE",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "81f539754930db6ffbd116ca2d30ee9c",
+          "side": "home",
+          "away_team": "Minnesota Twins",
+          "home_team": "San Francisco Giants",
+          "best_price": 123,
+          "best_book": "betrivers",
+          "market_probability": 0.44764,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1088.6,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "82b37a47daa08ef041c888d37b999303",
+          "side": "away",
+          "away_team": "Miami Marlins",
+          "home_team": "Chicago Cubs",
+          "best_price": 176,
+          "best_book": "betonlineag",
+          "market_probability": 0.35504,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1088.6,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "85b75fcab1b69e0a4e414382b9f1cc7e",
+          "side": "away",
+          "away_team": "San Diego Padres",
+          "home_team": "Los Angeles Dodgers",
+          "best_price": 117,
+          "best_book": "betonlineag",
+          "market_probability": 0.45481,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1088.6,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "a5e0deb6f51b7edebbd82d0eaf966294",
+          "side": "away",
+          "away_team": "Houston Astros",
+          "home_team": "Seattle Mariners",
+          "best_price": 120,
+          "best_book": "fanduel",
+          "market_probability": 0.44958,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1088.6,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "afbac30624ec674873fd96ac159f69ad",
+          "side": "home",
+          "away_team": "Arizona Diamondbacks",
+          "home_team": "Colorado Rockies",
+          "best_price": 170,
+          "best_book": "betonlineag",
+          "market_probability": 0.36225,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1088.6,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "e1693becb4cbacb4b30e46c1c960d9a5",
+          "side": "away",
+          "away_team": "Washington Nationals",
+          "home_team": "Detroit Tigers",
+          "best_price": 135,
+          "best_book": "betonlineag",
+          "market_probability": 0.41872,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1088.6,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "ebb664c5095200280fa1b15540c2c88b",
+          "side": "home",
+          "away_team": "Chicago White Sox",
+          "home_team": "Kansas City Royals",
+          "best_price": 104,
+          "best_book": "betrivers",
+          "market_probability": 0.47943,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1088.6,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        }
+      ],
+      "added_sides_listed_truncated_at": 40,
+      "added_sides_listed_total": 15
+    },
+    {
+      "published_utc": "2026-09-22T21:00:25.883124+00:00",
+      "rule": "DAILY_CARD_BEST_BETS_V2",
+      "n_picks": 9,
+      "n_fills": 3,
+      "n_entries_listed": 12,
+      "n_plus_money_picks": 0,
+      "code_fingerprint": "a6957bc3851f412c84d76d9f638153c0566e47d252da75796376c83a8f15f3bf",
+      "status": "reconstructed",
+      "counts": {
+        "events_on_slate": 25,
+        "events_with_a_board_at_t": 15,
+        "events_already_commenced_at_t": 5,
+        "events_no_quote_at_t": 0,
+        "events_below_book_floor": 5,
+        "sides_enumerated_registered": 15,
+        "sides_enumerated_corrected": 30,
+        "sides_added_by_correction": 15
+      },
+      "added_sides_by_board_gate_primary_reason": {
+        "G13_LINE_SHOPPING": 2,
+        "G3_STALE": 1,
+        "G5_MARKET": 1,
+        "board_gates_all_passed": 11
+      },
+      "added_sides_listed": [
+        {
+          "event_id": "0ae15942e1f4c4657b06458868afbf96",
+          "side": "away",
+          "away_team": "Los Angeles Angels",
+          "home_team": "Athletics",
+          "best_price": -102,
+          "best_book": "betonlineag",
+          "market_probability": 0.49843,
+          "market_underdog": true,
+          "positive_price": false,
+          "price_class": "MAIN",
+          "books": 11,
+          "quote_age_seconds": 87.7,
+          "board_gate_primary_reason": "G5_MARKET",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "0c17c76059d99e5bb249df6a7c540127",
+          "side": "away",
+          "away_team": "Cincinnati Reds",
+          "home_team": "Atlanta Braves",
+          "best_price": 213,
+          "best_book": "betonlineag",
+          "market_probability": 0.32166,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 87.7,
+          "board_gate_primary_reason": "G13_LINE_SHOPPING",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "1cfde197827ecee7feb17929bf32793b",
+          "side": "away",
+          "away_team": "New York Mets",
+          "home_team": "Texas Rangers",
+          "best_price": 110,
+          "best_book": "betrivers",
+          "market_probability": 0.46428,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 87.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "2ec6c946384087513c61f58aad6e082f",
+          "side": "away",
+          "away_team": "Milwaukee Brewers",
+          "home_team": "Philadelphia Phillies",
+          "best_price": 125,
+          "best_book": "betus",
+          "market_probability": 0.43761,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 87.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "388cb001ef45b493163b9d37cf60f606",
+          "side": "away",
+          "away_team": "St. Louis Cardinals",
+          "home_team": "Pittsburgh Pirates",
+          "best_price": 152,
+          "best_book": "betonlineag",
+          "market_probability": 0.39299,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 87.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "3b4ceeb7bb4bee993b6876fead12eeba",
+          "side": "away",
+          "away_team": "Cleveland Guardians",
+          "home_team": "Boston Red Sox",
+          "best_price": 108,
+          "best_book": "betus",
+          "market_probability": 0.47118,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 87.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "574050c10d1acc2da7baf72384eeaa11",
+          "side": "away",
+          "away_team": "Tampa Bay Rays",
+          "home_team": "New York Yankees",
+          "best_price": 116,
+          "best_book": "betrivers",
+          "market_probability": 0.45557,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 87.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "7fafa79a573ac098f38c8c6c4293b93e",
+          "side": "away",
+          "away_team": "Toronto Blue Jays",
+          "home_team": "Baltimore Orioles",
+          "best_price": 108,
+          "best_book": "betus",
+          "market_probability": 0.47253,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 10400.2,
+          "board_gate_primary_reason": "G3_STALE",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "81f539754930db6ffbd116ca2d30ee9c",
+          "side": "home",
+          "away_team": "Minnesota Twins",
+          "home_team": "San Francisco Giants",
+          "best_price": 123,
+          "best_book": "betrivers",
+          "market_probability": 0.4496,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 87.7,
+          "board_gate_primary_reason": "G13_LINE_SHOPPING",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "82b37a47daa08ef041c888d37b999303",
+          "side": "away",
+          "away_team": "Miami Marlins",
+          "home_team": "Chicago Cubs",
+          "best_price": 181,
+          "best_book": "betonlineag",
+          "market_probability": 0.35302,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 87.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "85b75fcab1b69e0a4e414382b9f1cc7e",
+          "side": "away",
+          "away_team": "San Diego Padres",
+          "home_team": "Los Angeles Dodgers",
+          "best_price": 117,
+          "best_book": "betonlineag",
+          "market_probability": 0.453,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 87.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "a5e0deb6f51b7edebbd82d0eaf966294",
+          "side": "away",
+          "away_team": "Houston Astros",
+          "home_team": "Seattle Mariners",
+          "best_price": 120,
+          "best_book": "fanduel",
+          "market_probability": 0.44767,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 87.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "afbac30624ec674873fd96ac159f69ad",
+          "side": "home",
+          "away_team": "Arizona Diamondbacks",
+          "home_team": "Colorado Rockies",
+          "best_price": 164,
+          "best_book": "betonlineag",
+          "market_probability": 0.3695,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 87.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "e1693becb4cbacb4b30e46c1c960d9a5",
+          "side": "away",
+          "away_team": "Washington Nationals",
+          "home_team": "Detroit Tigers",
+          "best_price": 135,
+          "best_book": "betonlineag",
+          "market_probability": 0.41938,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 87.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "ebb664c5095200280fa1b15540c2c88b",
+          "side": "home",
+          "away_team": "Chicago White Sox",
+          "home_team": "Kansas City Royals",
+          "best_price": 107,
+          "best_book": "betrivers",
+          "market_probability": 0.47742,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 87.7,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        }
+      ],
+      "added_sides_listed_truncated_at": 40,
+      "added_sides_listed_total": 15
+    },
+    {
+      "published_utc": "2026-09-22T21:31:49.533234+00:00",
+      "rule": "DAILY_CARD_BEST_BETS_V2",
+      "n_picks": 10,
+      "n_fills": 3,
+      "n_entries_listed": 13,
+      "n_plus_money_picks": 0,
+      "code_fingerprint": "a6957bc3851f412c84d76d9f638153c0566e47d252da75796376c83a8f15f3bf",
+      "status": "reconstructed",
+      "counts": {
+        "events_on_slate": 25,
+        "events_with_a_board_at_t": 15,
+        "events_already_commenced_at_t": 5,
+        "events_no_quote_at_t": 0,
+        "events_below_book_floor": 5,
+        "sides_enumerated_registered": 15,
+        "sides_enumerated_corrected": 30,
+        "sides_added_by_correction": 15
+      },
+      "added_sides_by_board_gate_primary_reason": {
+        "G13_LINE_SHOPPING": 2,
+        "G3_STALE": 1,
+        "G5_MARKET": 1,
+        "board_gates_all_passed": 11
+      },
+      "added_sides_listed": [
+        {
+          "event_id": "0ae15942e1f4c4657b06458868afbf96",
+          "side": "away",
+          "away_team": "Los Angeles Angels",
+          "home_team": "Athletics",
+          "best_price": -102,
+          "best_book": "betonlineag",
+          "market_probability": 0.49843,
+          "market_underdog": true,
+          "positive_price": false,
+          "price_class": "MAIN",
+          "books": 11,
+          "quote_age_seconds": 1211.3,
+          "board_gate_primary_reason": "G5_MARKET",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "0c17c76059d99e5bb249df6a7c540127",
+          "side": "away",
+          "away_team": "Cincinnati Reds",
+          "home_team": "Atlanta Braves",
+          "best_price": 213,
+          "best_book": "betonlineag",
+          "market_probability": 0.31995,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1211.3,
+          "board_gate_primary_reason": "G13_LINE_SHOPPING",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "1cfde197827ecee7feb17929bf32793b",
+          "side": "away",
+          "away_team": "New York Mets",
+          "home_team": "Texas Rangers",
+          "best_price": 110,
+          "best_book": "betrivers",
+          "market_probability": 0.46428,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1211.3,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "2ec6c946384087513c61f58aad6e082f",
+          "side": "away",
+          "away_team": "Milwaukee Brewers",
+          "home_team": "Philadelphia Phillies",
+          "best_price": 123,
+          "best_book": "betus",
+          "market_probability": 0.43778,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1211.3,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "388cb001ef45b493163b9d37cf60f606",
+          "side": "away",
+          "away_team": "St. Louis Cardinals",
+          "home_team": "Pittsburgh Pirates",
+          "best_price": 152,
+          "best_book": "betonlineag",
+          "market_probability": 0.39366,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1211.3,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "3b4ceeb7bb4bee993b6876fead12eeba",
+          "side": "away",
+          "away_team": "Cleveland Guardians",
+          "home_team": "Boston Red Sox",
+          "best_price": 108,
+          "best_book": "betus",
+          "market_probability": 0.4708,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1211.3,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "574050c10d1acc2da7baf72384eeaa11",
+          "side": "away",
+          "away_team": "Tampa Bay Rays",
+          "home_team": "New York Yankees",
+          "best_price": 116,
+          "best_book": "betrivers",
+          "market_probability": 0.45557,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1211.3,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "7fafa79a573ac098f38c8c6c4293b93e",
+          "side": "away",
+          "away_team": "Toronto Blue Jays",
+          "home_team": "Baltimore Orioles",
+          "best_price": 108,
+          "best_book": "betus",
+          "market_probability": 0.47253,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 12283.9,
+          "board_gate_primary_reason": "G3_STALE",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "81f539754930db6ffbd116ca2d30ee9c",
+          "side": "home",
+          "away_team": "Minnesota Twins",
+          "home_team": "San Francisco Giants",
+          "best_price": 123,
+          "best_book": "betrivers",
+          "market_probability": 0.4496,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1211.3,
+          "board_gate_primary_reason": "G13_LINE_SHOPPING",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "82b37a47daa08ef041c888d37b999303",
+          "side": "away",
+          "away_team": "Miami Marlins",
+          "home_team": "Chicago Cubs",
+          "best_price": 181,
+          "best_book": "betonlineag",
+          "market_probability": 0.35325,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1211.3,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "85b75fcab1b69e0a4e414382b9f1cc7e",
+          "side": "away",
+          "away_team": "San Diego Padres",
+          "home_team": "Los Angeles Dodgers",
+          "best_price": 117,
+          "best_book": "betonlineag",
+          "market_probability": 0.453,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1211.3,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "a5e0deb6f51b7edebbd82d0eaf966294",
+          "side": "away",
+          "away_team": "Houston Astros",
+          "home_team": "Seattle Mariners",
+          "best_price": 120,
+          "best_book": "fanduel",
+          "market_probability": 0.44767,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1211.3,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "afbac30624ec674873fd96ac159f69ad",
+          "side": "home",
+          "away_team": "Arizona Diamondbacks",
+          "home_team": "Colorado Rockies",
+          "best_price": 164,
+          "best_book": "betonlineag",
+          "market_probability": 0.3695,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1211.3,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "e1693becb4cbacb4b30e46c1c960d9a5",
+          "side": "away",
+          "away_team": "Washington Nationals",
+          "home_team": "Detroit Tigers",
+          "best_price": 135,
+          "best_book": "betonlineag",
+          "market_probability": 0.42007,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1211.3,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "ebb664c5095200280fa1b15540c2c88b",
+          "side": "home",
+          "away_team": "Chicago White Sox",
+          "home_team": "Kansas City Royals",
+          "best_price": 107,
+          "best_book": "betrivers",
+          "market_probability": 0.47722,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1211.3,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        }
+      ],
+      "added_sides_listed_truncated_at": 40,
+      "added_sides_listed_total": 15
+    },
+    {
+      "published_utc": "2026-09-22T22:02:40.520210+00:00",
+      "rule": "DAILY_CARD_BEST_BETS_V2",
+      "n_picks": 11,
+      "n_fills": 3,
+      "n_entries_listed": 14,
+      "n_plus_money_picks": 0,
+      "code_fingerprint": "a6957bc3851f412c84d76d9f638153c0566e47d252da75796376c83a8f15f3bf",
+      "status": "reconstructed",
+      "counts": {
+        "events_on_slate": 25,
+        "events_with_a_board_at_t": 15,
+        "events_already_commenced_at_t": 5,
+        "events_no_quote_at_t": 0,
+        "events_below_book_floor": 5,
+        "sides_enumerated_registered": 15,
+        "sides_enumerated_corrected": 30,
+        "sides_added_by_correction": 15
+      },
+      "added_sides_by_board_gate_primary_reason": {
+        "G13_LINE_SHOPPING": 1,
+        "G3_STALE": 1,
+        "G5_MARKET": 1,
+        "board_gates_all_passed": 12
+      },
+      "added_sides_listed": [
+        {
+          "event_id": "0ae15942e1f4c4657b06458868afbf96",
+          "side": "away",
+          "away_team": "Los Angeles Angels",
+          "home_team": "Athletics",
+          "best_price": -102,
+          "best_book": "betonlineag",
+          "market_probability": 0.49843,
+          "market_underdog": true,
+          "positive_price": false,
+          "price_class": "MAIN",
+          "books": 11,
+          "quote_age_seconds": 1718.1,
+          "board_gate_primary_reason": "G5_MARKET",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "0c17c76059d99e5bb249df6a7c540127",
+          "side": "away",
+          "away_team": "Cincinnati Reds",
+          "home_team": "Atlanta Braves",
+          "best_price": 201,
+          "best_book": "betonlineag",
+          "market_probability": 0.32604,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1718.1,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "1cfde197827ecee7feb17929bf32793b",
+          "side": "away",
+          "away_team": "New York Mets",
+          "home_team": "Texas Rangers",
+          "best_price": 110,
+          "best_book": "betrivers",
+          "market_probability": 0.46365,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1718.1,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "2ec6c946384087513c61f58aad6e082f",
+          "side": "away",
+          "away_team": "Milwaukee Brewers",
+          "home_team": "Philadelphia Phillies",
+          "best_price": 123,
+          "best_book": "betus",
+          "market_probability": 0.43788,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1718.1,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "388cb001ef45b493163b9d37cf60f606",
+          "side": "away",
+          "away_team": "St. Louis Cardinals",
+          "home_team": "Pittsburgh Pirates",
+          "best_price": 152,
+          "best_book": "betonlineag",
+          "market_probability": 0.39366,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1718.1,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "3b4ceeb7bb4bee993b6876fead12eeba",
+          "side": "away",
+          "away_team": "Cleveland Guardians",
+          "home_team": "Boston Red Sox",
+          "best_price": 108,
+          "best_book": "betus",
+          "market_probability": 0.4708,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1718.1,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "574050c10d1acc2da7baf72384eeaa11",
+          "side": "away",
+          "away_team": "Tampa Bay Rays",
+          "home_team": "New York Yankees",
+          "best_price": 114,
+          "best_book": "betrivers",
+          "market_probability": 0.46172,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1718.1,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "7fafa79a573ac098f38c8c6c4293b93e",
+          "side": "away",
+          "away_team": "Toronto Blue Jays",
+          "home_team": "Baltimore Orioles",
+          "best_price": 108,
+          "best_book": "betus",
+          "market_probability": 0.47253,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 14134.9,
+          "board_gate_primary_reason": "G3_STALE",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "81f539754930db6ffbd116ca2d30ee9c",
+          "side": "home",
+          "away_team": "Minnesota Twins",
+          "home_team": "San Francisco Giants",
+          "best_price": 123,
+          "best_book": "betrivers",
+          "market_probability": 0.4496,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1718.1,
+          "board_gate_primary_reason": "G13_LINE_SHOPPING",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "82b37a47daa08ef041c888d37b999303",
+          "side": "away",
+          "away_team": "Miami Marlins",
+          "home_team": "Chicago Cubs",
+          "best_price": 181,
+          "best_book": "betonlineag",
+          "market_probability": 0.35363,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1718.1,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "85b75fcab1b69e0a4e414382b9f1cc7e",
+          "side": "away",
+          "away_team": "San Diego Padres",
+          "home_team": "Los Angeles Dodgers",
+          "best_price": 116,
+          "best_book": "betrivers",
+          "market_probability": 0.45433,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1718.1,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "a5e0deb6f51b7edebbd82d0eaf966294",
+          "side": "away",
+          "away_team": "Houston Astros",
+          "home_team": "Seattle Mariners",
+          "best_price": 120,
+          "best_book": "fanduel",
+          "market_probability": 0.44767,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1718.1,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "afbac30624ec674873fd96ac159f69ad",
+          "side": "home",
+          "away_team": "Arizona Diamondbacks",
+          "home_team": "Colorado Rockies",
+          "best_price": 163,
+          "best_book": "betrivers",
+          "market_probability": 0.37939,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1718.1,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "e1693becb4cbacb4b30e46c1c960d9a5",
+          "side": "away",
+          "away_team": "Washington Nationals",
+          "home_team": "Detroit Tigers",
+          "best_price": 135,
+          "best_book": "betonlineag",
+          "market_probability": 0.42003,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1718.1,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        },
+        {
+          "event_id": "ebb664c5095200280fa1b15540c2c88b",
+          "side": "home",
+          "away_team": "Chicago White Sox",
+          "home_team": "Kansas City Royals",
+          "best_price": 107,
+          "best_book": "betrivers",
+          "market_probability": 0.47702,
+          "market_underdog": true,
+          "positive_price": true,
+          "price_class": "PLUS_MONEY",
+          "books": 11,
+          "quote_age_seconds": 1718.1,
+          "board_gate_primary_reason": "board_gates_all_passed",
+          "board_gates_also_failed": [],
+          "model_gates": {
+            "G6_FLOOR": "model_input_unavailable",
+            "G7_VALUE": "model_input_unavailable",
+            "G8_DISAGREEMENT": "model_input_unavailable"
+          }
+        }
+      ],
+      "added_sides_listed_truncated_at": 40,
+      "added_sides_listed_total": 15
+    }
+  ]
+}
