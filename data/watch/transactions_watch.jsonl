@@ -1597,3 +1597,8 @@
 {"fetched_utc": "2026-09-22T22:28:53.436837+00:00", "game_date": "2026-09-22", "poll": true}
 {"fetched_utc": "2026-09-22T23:10:31.964145+00:00", "game_date": "2026-09-22", "poll": true}
 {"fetched_utc": "2026-09-22T23:10:33.469056+00:00", "game_date": "2026-09-22", "poll": true}
+{"fetched_utc": "2026-09-23T00:11:01.927360+00:00", "game_date": "2026-09-22", "poll": true}
+{"category": "il_placement", "date": "2026-09-19", "first_seen_utc": "2026-09-23T00:11:01.927360+00:00", "player": "Joc Pederson", "player_id": 592626, "team": "TEX", "transaction_id": 943699}
+{"category": "il_activation", "date": "2026-09-22", "first_seen_utc": "2026-09-23T00:11:01.927360+00:00", "player": "Michael Helman", "player_id": 680737, "team": "TEX", "transaction_id": 943700}
+{"category": "il_transfer", "date": "2026-09-22", "first_seen_utc": "2026-09-23T00:11:01.927360+00:00", "player": "Cal Quantrill", "player_id": 615698, "team": "TEX", "transaction_id": 943701}
+{"fetched_utc": "2026-09-23T00:11:03.015528+00:00", "game_date": "2026-09-22", "poll": true}
