@@ -1567,3 +1567,5 @@
 {"game_date": "2026-09-24", "observed_utc": "2026-09-24T14:57:04.120797+00:00", "poll": true}
 {"commence_time": "2026-09-24T18:10:00Z", "crew": [{"id": 429805, "name": "Todd Tichenor", "officialType": "Home Plate"}, {"id": 484183, "name": "Cory Blaser", "officialType": "First Base"}, {"id": 503077, "name": "Adam Hamari", "officialType": "Second Base"}, {"id": 623949, "name": "Clint Vondrak", "officialType": "Third Base"}], "game_date": "2026-09-24", "game_pk": 824059, "game_state": "Pre-Game", "home_plate_umpire": "Todd Tichenor", "observed_utc": "2026-09-24T14:57:04.120797+00:00", "prev_poll_utc": "2026-09-24T14:27:46.794872+00:00", "revealed": true}
 {"game_date": "2026-09-25", "observed_utc": "2026-09-24T14:57:04.278103+00:00", "poll": true}
+{"game_date": "2026-09-24", "observed_utc": "2026-09-24T15:01:19.528266+00:00", "poll": true}
+{"game_date": "2026-09-25", "observed_utc": "2026-09-24T15:01:19.773312+00:00", "poll": true}
