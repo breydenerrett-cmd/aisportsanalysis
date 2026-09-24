@@ -1835,3 +1835,7 @@
 {"fetched_utc": "2026-09-24T18:36:49.174179+00:00", "game_date": "2026-09-24", "poll": true}
 {"fetched_utc": "2026-09-24T18:42:20.528166+00:00", "game_date": "2026-09-24", "poll": true}
 {"fetched_utc": "2026-09-24T18:42:22.451321+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T19:12:05.513216+00:00", "game_date": "2026-09-24", "poll": true}
+{"category": "other", "date": "2026-09-24", "first_seen_utc": "2026-09-24T19:12:05.513216+00:00", "player": "Camilo Doval", "player_id": 666808, "team": "SF", "transaction_id": 943835}
+{"category": "il_transfer", "date": "2026-09-24", "first_seen_utc": "2026-09-24T19:12:05.513216+00:00", "player": "Blade Tidwell", "player_id": 694918, "team": "SF", "transaction_id": 943836}
+{"fetched_utc": "2026-09-24T19:12:07.372327+00:00", "game_date": "2026-09-24", "poll": true}
