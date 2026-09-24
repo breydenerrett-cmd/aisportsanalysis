@@ -15,6 +15,46 @@ cd "$(dirname "$0")/.."
 [ -f "$(dirname "$0")/foundry_beat.sh" ] && . "$(dirname "$0")/foundry_beat.sh" || true
 type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop start ok || true
 
+# FIRST, and deliberately so. Every step below depends on it.
+#
+# `src.cli daily` builds team run rates from data/historical/mlb_results.csv
+# during briefing, `engine slate` forecasts off those rates, and `engine
+# settle` grades a pick by looking its game up in the same store. Nothing was
+# refreshing it: `ingest` is a manual command and was never in this script,
+# so on 2026-09-23 the store still ended at 2026-09-10 and the live card was
+# pricing games off two-week-old team rates.
+#
+# `--game-types decisive` stores the postseason (F/D/L/W/P) as well. Without
+# it a postseason pick is published and locked by the card -- nothing in that
+# path filters on game_type -- and then graded VOID, "no final score stored
+# for this game". Wild Card play begins 2026-09-29 (docs/SEASON_END_PLAN.md).
+#
+# Resume is scope-aware (src/pipeline/history.missing_dates), so a date
+# previously stored under the R-only filter is re-fetched once to pick up its
+# postseason rows and is then left alone. Idempotent after that.
+#
+# Never an ESCALATE blocker on its own, same contract as standings below: a
+# stalled MLB call must not stop slate/settle/eod. But unlike standings this
+# one is logged with its exit, because a silent failure here degrades every
+# forecast downstream.
+# TODAY/RUN_NOTE are (re)defined together with YESTERDAY further down, next
+# to the S8 ordering note that explains them. They are set here too because
+# this step runs before that point and `set -u` is on; the later assignment
+# is identical and harmless.
+TODAY=$(date -u +%Y-%m-%d)
+RUN_NOTE=docs/OVERNIGHT_RUN.md
+INGEST_START=$(date -u -d '14 days ago' +%Y-%m-%d)
+echo "== results catch-up ($INGEST_START..$TODAY, incl. postseason) =="
+INGEST_OUT=$(python3 -m src.cli ingest "$INGEST_START" "$TODAY" \
+    --game-types decisive 2>&1)
+INGEST_STATUS=$?
+echo "$INGEST_OUT" | sed 's/^/  /'
+if [ "$INGEST_STATUS" -ne 0 ]; then
+    echo "ESCALATE: results ingest failed (exit $INGEST_STATUS) -- team rates, forecasts and settlement all read a store that did not advance"
+    type foundry_beat >/dev/null 2>&1 && foundry_beat daily_loop escalate escalate "" "results ingest failed" || true
+fi
+echo "- $(date -u +%Y-%m-%dT%H:%MZ) daily_loop: ingest $INGEST_START..$TODAY --game-types decisive exit=$INGEST_STATUS" >> "$RUN_NOTE"
+
 echo "== daily =="
 DAILY_OUT=$(python3 -m src.cli daily 2>&1)
 echo "$DAILY_OUT" | sed 's/^/  /'
@@ -603,7 +643,25 @@ python3 -m src.cli store rotate --all --if-over-mb 60 --keep-days 3 \
 # config/capture_families.json is staged because `budget --probe` records a
 # family's measured cost there; without it the runner's fresh checkout
 # forgets the measurement and the loop would spend a credit re-probing daily.
-git add data/processed data/watch data/research data/raw/oddsapi evidence data/paper_accounts docs/eod docs/OVERNIGHT_RUN.md artifacts config/capture_families.json 2>/dev/null || true
+# data/historical IS NOT COMMITTED WHOLESALE, and the three files added on
+# 2026-09-23 are the exception rather than a change of policy. The directory
+# holds ~45MB of statcast plus multi-megabyte bullpen/lineup/pitcher stores;
+# committing those daily is what the run-scoped Actions cache exists to
+# avoid, and this repo has already had one 100MB push outage.
+#
+# But the cache is restored with `restore-keys: daily-loop-data-` AFTER the
+# checkout, so a cached copy silently overwrites whatever git holds. That is
+# fine for a store only this loop writes, and wrong for one a human or a
+# backfill also edits: on 2026-09-23 the results store was 13 days stale in
+# git while CI ran on a current cached copy, standings read `dates_built: 0`
+# against a git copy 15 days old, and a postseason backfill committed to git
+# would have been discarded by the next restore.
+#
+# These three are small (results ~1.2MB, manifest ~110KB, standings ~14KB),
+# they are the ones settlement and any bracket forecast depend on, and they
+# are the ones that must survive a cache miss. Committing them makes git and
+# the cache converge instead of diverge.
+git add data/processed data/watch data/research data/raw/oddsapi evidence data/paper_accounts docs/eod docs/OVERNIGHT_RUN.md artifacts config/capture_families.json data/historical/mlb_results.csv data/historical/mlb_results.manifest.json data/historical/standings.jsonl 2>/dev/null || true
 git reset -q artifacts/demo_latest.html 2>/dev/null || true
 # GUARD (2026-09-21 incident): size-gate backstop for whatever store
 # rotation above did not catch -- prints WARN/ESCALATE, never blocks.

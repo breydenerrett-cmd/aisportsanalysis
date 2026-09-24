@@ -125,6 +125,101 @@ class IngestRangeForwardsGameTypes(unittest.TestCase):
         self.assertEqual(2, day["final"])
 
 
+class ResumeIsScopeAware(unittest.TestCase):
+    """A date stored under a NARROWER gameType scope is not complete for a
+    wider request.
+
+    This is what made the 2025 backfill silently return nothing: every
+    October 2025 date had been ingested under the R-only filter, recorded
+    its postseason games as `skipped_game_type`, and marked the date done.
+    A later decisive request was told "all 38 dates already ingested" and
+    only `--no-resume` recovered them -- which re-fetches genuinely finished
+    dates too. Resume has to be correct so the daily job heals itself.
+    """
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.manifest = os.path.join(self._tmp.name, "manifest.json")
+
+    def _manifest(self, entry):
+        history.write_manifest({"2025-10-05": entry}, self.manifest)
+
+    def test_an_r_only_date_is_incomplete_for_a_decisive_request(self):
+        self._manifest({"total": 4, "final": 4, "pending": 0, "cancelled": 0,
+                        "stored": 0, "skipped_game_type": 4,
+                        "game_types": ["R"]})
+        missing = history.missing_dates("2025-10-05", "2025-10-05",
+                                        self.manifest,
+                                        game_types=mlb.DECISIVE_GAME_TYPES)
+        self.assertEqual(["2025-10-05"], missing)
+
+    def test_a_decisive_date_is_complete_for_a_training_request(self):
+        """Scope containment runs one way: a wider store satisfies a
+        narrower ask, and must not trigger a pointless re-fetch."""
+        self._manifest({"total": 4, "final": 4, "pending": 0, "cancelled": 0,
+                        "stored": 4, "skipped_game_type": 0,
+                        "game_types": sorted(mlb.DECISIVE_GAME_TYPES)})
+        missing = history.missing_dates("2025-10-05", "2025-10-05",
+                                        self.manifest,
+                                        game_types=mlb.TRAINING_GAME_TYPES)
+        self.assertEqual([], missing)
+
+    def test_a_decisive_date_stays_complete_for_a_decisive_request(self):
+        """Idempotency. The daily job must not re-fetch the same date
+        forever once it has been stored at the right scope."""
+        self._manifest({"total": 4, "final": 4, "pending": 0, "cancelled": 0,
+                        "stored": 4, "skipped_game_type": 0,
+                        "game_types": sorted(mlb.DECISIVE_GAME_TYPES)})
+        missing = history.missing_dates("2025-10-05", "2025-10-05",
+                                        self.manifest,
+                                        game_types=mlb.DECISIVE_GAME_TYPES)
+        self.assertEqual([], missing)
+
+    def test_a_legacy_entry_with_no_scope_reads_as_regular_season_only(self):
+        """Every manifest entry written before this existed came from the
+        one caller there was, which passed TRAINING_GAME_TYPES. That is a
+        fact about those runs, not an assumption."""
+        self._manifest({"total": 4, "final": 4, "pending": 0,
+                        "cancelled": 0, "stored": 0, "skipped_game_type": 4})
+        self.assertEqual(
+            ["2025-10-05"],
+            history.missing_dates("2025-10-05", "2025-10-05", self.manifest,
+                                  game_types=mlb.DECISIVE_GAME_TYPES))
+        self.assertEqual(
+            [],
+            history.missing_dates("2025-10-05", "2025-10-05", self.manifest,
+                                  game_types=mlb.TRAINING_GAME_TYPES))
+
+    def test_unfinished_dates_still_come_back_regardless_of_scope(self):
+        """A date fetched while games were in progress owes results whatever
+        the scope question says."""
+        self._manifest({"total": 4, "final": 1, "pending": 3, "cancelled": 0,
+                        "stored": 1, "skipped_game_type": 0,
+                        "game_types": sorted(mlb.DECISIVE_GAME_TYPES)})
+        self.assertEqual(
+            ["2025-10-05"],
+            history.missing_dates("2025-10-05", "2025-10-05", self.manifest,
+                                  game_types=mlb.DECISIVE_GAME_TYPES))
+
+    def test_omitting_game_types_preserves_the_old_behaviour_exactly(self):
+        self._manifest({"total": 4, "final": 4, "pending": 0, "cancelled": 0,
+                        "stored": 0, "skipped_game_type": 4,
+                        "game_types": ["R"]})
+        self.assertEqual(
+            [], history.missing_dates("2025-10-05", "2025-10-05",
+                                      self.manifest))
+
+    def test_the_scope_is_recorded_on_the_manifest_entry(self):
+        store, manifest, _s = {}, {}, None
+        with mock.patch.object(mlb, "fetch_results",
+                               return_value=_results([_final(1, "F")])):
+            history.ingest_date("2026-09-29", store, manifest,
+                                game_types=mlb.DECISIVE_GAME_TYPES)
+        self.assertEqual(sorted(mlb.DECISIVE_GAME_TYPES),
+                         manifest["2026-09-29"]["game_types"])
+
+
 class DecisiveTypesCoverTheWholeBracket(unittest.TestCase):
     """The 2026 calendar in docs/SEASON_END_PLAN.md names exactly these
     gameTypes; if the constant ever loses one, October goes ungraded again

@@ -33,6 +33,7 @@ import json
 import os
 from datetime import date
 from pathlib import Path
+from typing import Mapping
 
 from src.paths import historical_path
 from src.providers import mlb
@@ -139,19 +140,59 @@ def unfinished_dates(path=DEFAULT_MANIFEST) -> set:
     return {d for d, entry in manifest.items() if (entry or {}).get("pending", 0)}
 
 
+def stored_scope(entry: Mapping) -> frozenset:
+    """Which gameTypes a manifest entry was stored under.
+
+    Entries written before this was recorded carry no `game_types` key. They
+    were all written by the only caller that existed, which passed
+    `TRAINING_GAME_TYPES` -- so that is what an absent key means, and it is a
+    fact about those runs rather than a guess.
+    """
+    recorded = (entry or {}).get("game_types")
+    if recorded is None:
+        return frozenset(mlb.TRAINING_GAME_TYPES)
+    return frozenset(recorded)
+
+
+def covers_scope(entry: Mapping, wanted) -> bool:
+    """Is this date's stored scope wide enough for `wanted`?"""
+    if wanted is None:          # None means "store everything"
+        return False
+    return frozenset(wanted) <= stored_scope(entry)
+
+
 def missing_dates(start, end, path=DEFAULT_MANIFEST,
-                  include_unfinished: bool = True) -> list:
+                  include_unfinished: bool = True, game_types=None) -> list:
     """Dates in a range that still owe us results.
 
     This is the resume primitive: it answers "what is left to do" from durable state
-    rather than from a counter held in memory by a run that may have died. Two kinds
-    of date owe results -- one never fetched, and one fetched too early, while games
-    were still in progress. Both must come back or the missing games are lost
+    rather than from a counter held in memory by a run that may have died. Three kinds
+    of date owe results -- one never fetched, one fetched too early while games
+    were still in progress, and one fetched under a NARROWER gameType scope than
+    the caller now wants. All three must come back or the missing games are lost
     silently; see `unfinished_dates`.
+
+    SCOPE AWARENESS, ADDED 2026-09-23. A date ingested under
+    `TRAINING_GAME_TYPES` recorded every postseason game it saw as
+    `skipped_game_type` and then marked the date done. A later request for
+    `DECISIVE_GAME_TYPES` would be told the date was already complete and the
+    postseason rows would never arrive -- which is exactly what happened to the
+    2025 backfill, where every October date was "complete" with zero postseason
+    games in it and only `--no-resume` could recover them. `--no-resume` is a
+    recovery tool: it re-fetches an entire range including dates that are
+    genuinely finished. This makes resume correct instead, so the daily job
+    heals the gap on its own.
+
+    `game_types=None` keeps the pre-existing behaviour exactly: dates are judged
+    on whether they were fetched at all, not on what was kept.
     """
-    already = fetched_dates(path)
+    manifest = read_manifest(path)
+    already = set(manifest)
     if include_unfinished:
         already -= unfinished_dates(path)
+    if game_types is not None:
+        already = {d for d in already
+                   if covers_scope(manifest.get(d, {}), game_types)}
     return [d for d in mlb.iter_dates(start, end) if d not in already]
 
 
@@ -227,6 +268,10 @@ def ingest_date(game_date, store: dict, manifest: dict, timeout: int = 20,
         "cancelled": result["summary"]["cancelled"],
         "stored": added + updated,
         "skipped_game_type": skipped,
+        # What this date was stored UNDER, so a later run wanting a wider
+        # scope can tell "already done" from "done, but not for what you are
+        # asking". Sorted for a stable manifest diff.
+        "game_types": sorted(game_types) if game_types is not None else None,
     }
     return {"date": day, "added": added, "updated": updated,
             "skipped_game_type": skipped, **result["summary"]}
@@ -263,7 +308,8 @@ def ingest_range(start, end, store_path=DEFAULT_STORE,
     store = read_results(store_path)
     manifest = read_manifest(manifest_path)
 
-    targets = (missing_dates(start, end, manifest_path) if resume
+    targets = (missing_dates(start, end, manifest_path,
+                             game_types=game_types) if resume
                else list(mlb.iter_dates(start, end)))
 
     errors = []

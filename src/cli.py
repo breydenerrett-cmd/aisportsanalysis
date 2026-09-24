@@ -480,7 +480,17 @@ def cmd_ingest(args) -> int:
     """Ingest a date range into the historical store. Idempotent and resumable."""
     from src.pipeline import history
 
-    remaining = history.missing_dates(args.start, args.end)
+    game_types = (mlb.DECISIVE_GAME_TYPES
+                  if getattr(args, "game_types", "training") == "decisive"
+                  else mlb.TRAINING_GAME_TYPES)
+
+    # Scope-aware, like `ingest_range` itself. Without the argument this
+    # guard answers a different question from the one the run is about to
+    # ask -- "was this date fetched at all" rather than "was it fetched for
+    # what I want" -- and short-circuits a decisive request that still owes
+    # postseason rows.
+    remaining = history.missing_dates(args.start, args.end,
+                                      game_types=game_types)
     total = len(list(mlb.iter_dates(args.start, args.end)))
     if args.resume and not remaining:
         print(f"{args.start}..{args.end}: all {total} dates already ingested.")
@@ -495,9 +505,6 @@ def cmd_ingest(args) -> int:
               f"pending={summary['pending']:>2}  cancelled={summary['cancelled']:>2}  "
               f"(+{summary['added']} new)")
 
-    game_types = (mlb.DECISIVE_GAME_TYPES
-                  if getattr(args, "game_types", "training") == "decisive"
-                  else mlb.TRAINING_GAME_TYPES)
     print(f"  storing gameTypes: {','.join(sorted(game_types))}")
 
     report = history.ingest_range(
