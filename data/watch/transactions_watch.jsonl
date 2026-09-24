@@ -1816,3 +1816,9 @@
 {"fetched_utc": "2026-09-24T14:57:05.428709+00:00", "game_date": "2026-09-24", "poll": true}
 {"fetched_utc": "2026-09-24T15:01:19.172813+00:00", "game_date": "2026-09-24", "poll": true}
 {"fetched_utc": "2026-09-24T15:01:20.848392+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T15:58:35.866414+00:00", "game_date": "2026-09-24", "poll": true}
+{"category": "other", "date": "2026-09-24", "first_seen_utc": "2026-09-24T15:58:35.866414+00:00", "player": "Steven Cruz", "player_id": 674444, "team": "KC", "transaction_id": 943791}
+{"category": "recalled", "date": "2026-09-24", "first_seen_utc": "2026-09-24T15:58:35.866414+00:00", "player": "Spencer Bivens", "player_id": 702352, "team": "KC", "transaction_id": 943792}
+{"category": "optioned", "date": "2026-09-24", "first_seen_utc": "2026-09-24T15:58:35.866414+00:00", "player": "Khristian Curtis", "player_id": 694753, "team": "PIT", "transaction_id": 943817}
+{"category": "recalled", "date": "2026-09-24", "first_seen_utc": "2026-09-24T15:58:35.866414+00:00", "player": "Evan Sisk", "player_id": 681895, "team": "PIT", "transaction_id": 943818}
+{"fetched_utc": "2026-09-24T15:58:37.873309+00:00", "game_date": "2026-09-24", "poll": true}
