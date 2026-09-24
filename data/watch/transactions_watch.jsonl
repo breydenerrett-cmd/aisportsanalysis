@@ -1736,3 +1736,8 @@
 {"category": "recalled", "date": "2026-09-23", "first_seen_utc": "2026-09-24T00:37:15.799406+00:00", "player": "Lucas Spence", "player_id": 828599, "team": "HOU", "transaction_id": 943784}
 {"category": "il_placement", "date": "2026-09-23", "first_seen_utc": "2026-09-24T00:37:15.799406+00:00", "player": "Brice Matthews", "player_id": 694728, "team": "HOU", "transaction_id": 943785}
 {"fetched_utc": "2026-09-24T00:37:17.539412+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-24T01:36:59.697822+00:00", "game_date": "2026-09-23", "poll": true}
+{"category": "il_activation", "date": "2026-09-23", "first_seen_utc": "2026-09-24T01:36:59.697822+00:00", "player": "Jason Adam", "player_id": 592094, "team": "SD", "transaction_id": 943787}
+{"category": "optioned", "date": "2026-09-23", "first_seen_utc": "2026-09-24T01:36:59.697822+00:00", "player": "Griffin Canning", "player_id": 656288, "team": "SD", "transaction_id": 943788}
+{"category": "designated", "date": "2026-09-23", "first_seen_utc": "2026-09-24T01:36:59.697822+00:00", "player": "Alek Jacob", "player_id": 689690, "team": "SD", "transaction_id": 943789}
+{"fetched_utc": "2026-09-24T01:37:01.776656+00:00", "game_date": "2026-09-23", "poll": true}
