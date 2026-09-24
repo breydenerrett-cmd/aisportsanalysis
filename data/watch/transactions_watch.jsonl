@@ -1722,3 +1722,13 @@
 {"category": "il_placement", "date": "2026-09-23", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "Jake Meyers", "player_id": 676694, "team": "HOU", "transaction_id": 943771}
 {"category": "other", "date": "2026-09-23", "first_seen_utc": "2026-09-23T21:42:37.010756+00:00", "player": "Josh Hendrickson", "player_id": 681973, "team": "HOU", "transaction_id": 943772}
 {"fetched_utc": "2026-09-23T21:42:39.020625+00:00", "game_date": "2026-09-23", "poll": true}
+{"fetched_utc": "2026-09-23T23:27:17.320917+00:00", "game_date": "2026-09-23", "poll": true}
+{"category": "other", "date": "2026-09-23", "first_seen_utc": "2026-09-23T23:27:17.320917+00:00", "player": "Alex Jackson", "player_id": 656577, "team": "MIN", "transaction_id": 943773}
+{"category": "optioned", "date": "2026-09-23", "first_seen_utc": "2026-09-23T23:27:17.320917+00:00", "player": "Josue De Paula", "player_id": 800543, "team": "LAD", "transaction_id": 943774}
+{"category": "optioned", "date": "2026-09-23", "first_seen_utc": "2026-09-23T23:27:17.320917+00:00", "player": "Kyle Hurt", "player_id": 669165, "team": "LAD", "transaction_id": 943775}
+{"category": "il_activation", "date": "2026-09-23", "first_seen_utc": "2026-09-23T23:27:17.320917+00:00", "player": "Shohei Ohtani", "player_id": 660271, "team": "LAD", "transaction_id": 943776}
+{"category": "il_activation", "date": "2026-09-23", "first_seen_utc": "2026-09-23T23:27:17.320917+00:00", "player": "Tarik Skubal", "player_id": 669373, "team": "LAD", "transaction_id": 943777}
+{"category": "designated", "date": "2026-09-23", "first_seen_utc": "2026-09-23T23:27:17.320917+00:00", "player": "Xzavion Curry", "player_id": 675540, "team": "NYM", "transaction_id": 943778}
+{"category": "optioned", "date": "2026-09-23", "first_seen_utc": "2026-09-23T23:27:17.320917+00:00", "player": "Winston Santos", "player_id": 692437, "team": "TEX", "transaction_id": 943779}
+{"category": "recalled", "date": "2026-09-23", "first_seen_utc": "2026-09-23T23:27:17.320917+00:00", "player": "Gavin Collyer", "player_id": 686560, "team": "TEX", "transaction_id": 943780}
+{"fetched_utc": "2026-09-23T23:27:18.999372+00:00", "game_date": "2026-09-23", "poll": true}
