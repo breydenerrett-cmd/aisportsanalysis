@@ -1831,3 +1831,5 @@
 {"category": "il_placement", "date": "2026-09-24", "first_seen_utc": "2026-09-24T18:06:21.452523+00:00", "player": "Luis Castillo", "player_id": 622491, "team": "CWS", "transaction_id": 943833}
 {"category": "recalled", "date": "2026-09-24", "first_seen_utc": "2026-09-24T18:06:21.452523+00:00", "player": "Tyler Davis", "player_id": 699823, "team": "CWS", "transaction_id": 943834}
 {"fetched_utc": "2026-09-24T18:06:23.284371+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T18:36:47.549905+00:00", "game_date": "2026-09-24", "poll": true}
+{"fetched_utc": "2026-09-24T18:36:49.174179+00:00", "game_date": "2026-09-24", "poll": true}
