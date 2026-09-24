@@ -1601,3 +1601,5 @@
 {"game_date": "2026-09-24", "observed_utc": "2026-09-24T21:28:08.378969+00:00", "poll": true}
 {"commence_time": "2026-09-25T01:40:00Z", "crew": [{"id": 427128, "name": "Rob Drake", "officialType": "Home Plate"}, {"id": 427164, "name": "Andy Fletcher", "officialType": "First Base"}, {"id": 676580, "name": "Steven Jaschinski", "officialType": "Second Base"}, {"id": 665302, "name": "Dillon Wilson", "officialType": "Third Base"}], "game_date": "2026-09-24", "game_pk": 823087, "game_state": "Pre-Game", "home_plate_umpire": "Rob Drake", "observed_utc": "2026-09-24T21:28:08.378969+00:00", "prev_poll_utc": "2026-09-24T20:40:06.967944+00:00", "revealed": true}
 {"game_date": "2026-09-25", "observed_utc": "2026-09-24T21:28:08.665747+00:00", "poll": true}
+{"game_date": "2026-09-24", "observed_utc": "2026-09-24T21:32:48.749241+00:00", "poll": true}
+{"game_date": "2026-09-25", "observed_utc": "2026-09-24T21:32:48.962240+00:00", "poll": true}
