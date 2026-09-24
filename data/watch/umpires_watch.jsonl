@@ -1586,3 +1586,5 @@
 {"game_date": "2026-09-24", "observed_utc": "2026-09-24T18:36:47.814723+00:00", "poll": true}
 {"commence_time": "2026-09-24T22:45:00Z", "crew": [{"id": 511890, "name": "Quinn Wolcott", "officialType": "Home Plate"}, {"id": 482641, "name": "Adrian Johnson", "officialType": "First Base"}, {"id": 594151, "name": "Ramon De Jesus", "officialType": "Second Base"}, {"id": 607884, "name": "Paul Clemons", "officialType": "Third Base"}], "game_date": "2026-09-24", "game_pk": 824707, "game_state": "Pre-Game", "home_plate_umpire": "Quinn Wolcott", "observed_utc": "2026-09-24T18:36:47.814723+00:00", "prev_poll_utc": "2026-09-24T18:06:21.726631+00:00", "revealed": true}
 {"game_date": "2026-09-25", "observed_utc": "2026-09-24T18:36:47.947086+00:00", "poll": true}
+{"game_date": "2026-09-24", "observed_utc": "2026-09-24T18:42:20.911561+00:00", "poll": true}
+{"game_date": "2026-09-25", "observed_utc": "2026-09-24T18:42:21.125777+00:00", "poll": true}
